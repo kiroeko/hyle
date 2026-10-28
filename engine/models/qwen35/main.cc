@@ -42,6 +42,7 @@
 #include "prefix_cache.h"
 #include "batch_schedule.h"
 #include "mtp_graph.h"
+#include "block_graph.h"
 #include "../../inference/mtp_acceptance.h"
 #include "../../inference/sampling_graph.h"
 #include "../../inference/ct_block128_graph.h"
@@ -66,6 +67,7 @@
 #include "../../inference/packed_rows.h"
 #include "../../inference/version_admission.h"
 #include "../../inference/batch_dispatch.h"
+#include "../../inference/request_batch_execution.h"
 #include "../../inference/execution_observation.h"
 #include "../../reporting/execution_report.h"
 #include "generation_schedule.h"
@@ -704,19 +706,6 @@ struct Recipe final {
         .accumulation_type = Type::kFloat32}, {square}, dense_spec(spec(square).data_type(), dimensions));
     sum = binary(c::BinaryKind::kAdd, sum, scalar(1.e-6F, spec(x).data_type()));
     return binary(c::BinaryKind::kMultiply, x, unary(c::UnaryKind::kRsqrt, sum));
-  }
-  V ffn(V x, const std::string &prefix, std::span<V> probes = {}) {
-    auto normalized = norm(x, prefix + "post_attention_layernorm.weight");
-    auto projected_gate = linear(normalized, prefix + "mlp.gate_proj.weight");
-    auto gate = unary(c::UnaryKind::kSilu, projected_gate);
-    auto up = linear(normalized, prefix + "mlp.up_proj.weight");
-    auto product = binary(c::BinaryKind::kMultiply, gate, up);
-    if (!probes.empty()) {
-      probes[3] = product; probes[5] = x; probes[6] = normalized;
-      probes[7] = projected_gate; probes[8] = up;
-    }
-    auto result = linear(product, prefix + "mlp.down_proj.weight");
-    return binary(c::BinaryKind::kAdd, x, result);
   }
   V gdn_key_rows(V rows) {
     if (geometry.gdn_layout == GdnHeadLayout::kCyclic || geometry.gdn_key_heads == geometry.gdn_value_heads)
@@ -2369,19 +2358,10 @@ public:
                r.dense_spec(Type::kFloat32, {batch, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth), f(geometry.gdn_key_depth)})});
           store_state(ports.recurrent, recurrent_schema,
               r.reshape(recurrent[1], {batch, f(recurrent_schema.item_elements())}));
-          auto y = r.cast(recurrent[0], precision.activation_type());
-          if (i == 0) definition.probe_ports[0] = y;
-          const auto y_f32 = r.cast(y, Type::kFloat32);
-          y = r.cast(r.same(c::RmsNorm{.epsilon = geometry.epsilon}, {y_f32}, y_f32), precision.activation_type());
-          const auto norm_scale = r.weight(prefix + "linear_attn.norm.weight");
-          y = r.binary(c::BinaryKind::kMultiply, r.cast(y, r.spec(norm_scale).data_type()), norm_scale);
-          const auto z = r.reshape(r.linear(normalized, prefix + "linear_attn.in_proj_z.weight"),
-              {packed, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth)});
-          y = r.cast(r.binary(c::BinaryKind::kMultiply, r.cast(y, Type::kFloat32),
-              r.unary(c::UnaryKind::kSilu, r.cast(z, Type::kFloat32))), precision.activation_type());
-          if (i == 0) definition.probe_ports[1] = y;
-          mixed = r.linear(r.reshape(y, {packed, f(geometry.gdn_value_width())}), prefix + "linear_attn.out_proj.weight");
-          if (i == 0) definition.probe_ports[2] = mixed;
+          mixed = block_graph::emit_gdn_epilogue(r, recurrent[0], normalized,
+              "model.language_model." + prefix,
+              {packed, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth)}, packed,
+              i == 0 ? std::span<V>(definition.probe_ports) : std::span<V>{});
         } else {
           auto qkv = r.reshape(r.linear(normalized, prefix + "linear_attn.in_proj_qkv.weight"), {batch, t, f(geometry.gdn_qkv_width())});
           auto samples = r.one(c::Concat{.axis = 1}, {history, qkv},
@@ -2430,21 +2410,10 @@ public:
                    : r.dense_spec(Type::kFloat32, {batch, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth), f(geometry.gdn_key_depth)})});
           store_state(ports.recurrent, recurrent_schema, r.reshape(recurrent[1],
               {f(static_cast<std::int64_t>(requests * prefix_rows)), f(recurrent_schema.item_elements())}));
-          auto y = r.cast(recurrent[0], precision.activation_type());
-          if (i == 0) definition.probe_ports[0] = y;
-          const auto y_f32 = r.cast(y, Type::kFloat32);
-          y = r.cast(r.same(c::RmsNorm{.epsilon = geometry.epsilon}, {y_f32}, y_f32), precision.activation_type());
-          // Original storage is F32 in the official checkpoint and BF16 in
-          // these quantized artifacts. Preserve its actual product rounding.
-          const auto norm_scale = r.weight(prefix + "linear_attn.norm.weight");
-          y = r.binary(c::BinaryKind::kMultiply, r.cast(y, r.spec(norm_scale).data_type()), norm_scale);
-          auto z = r.reshape(r.linear(normalized, prefix + "linear_attn.in_proj_z.weight"), {batch, t, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth)});
-          y = r.cast(r.binary(c::BinaryKind::kMultiply, r.cast(y, Type::kFloat32),
-              r.unary(c::UnaryKind::kSilu, r.cast(z, Type::kFloat32))), precision.activation_type());
-          auto projection_input = r.reshape(y, {packed, f(geometry.gdn_value_width())});
-          if (i == 0) definition.probe_ports[1] = y; // Same BF16 payload before its metadata-only out_proj reshape.
-          mixed = r.linear(projection_input, prefix + "linear_attn.out_proj.weight");
-          if (i == 0) definition.probe_ports[2] = mixed;
+          mixed = block_graph::emit_gdn_epilogue(r, recurrent[0], normalized,
+              "model.language_model." + prefix,
+              {batch, t, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth)}, packed,
+              i == 0 ? std::span<V>(definition.probe_ports) : std::span<V>{});
         }
       } else {
         const auto layer = geometry.attention_slot(i);
@@ -2491,7 +2460,8 @@ public:
       const auto ffn_input = r.binary(c::BinaryKind::kAdd, x, mixed);
       {
         GraphAssembly::Scope scope(assembly, ffn_placement.ffn_on_cpu(i) ? assembly.cpu() : assembly.primary());
-        x = r.ffn(ffn_input, prefix, i == 0 ? std::span<V>(definition.probe_ports) : std::span<V>{});
+        x = block_graph::emit_ffn(r, ffn_input, "model.language_model." + prefix,
+            i == 0 ? std::span<V>(definition.probe_ports) : std::span<V>{});
       }
       if (i == 0) definition.probe_ports[4] = x;
     }
@@ -7850,8 +7820,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   const auto resident_count = [&] {
     return static_cast<std::size_t>(std::count_if(requests.begin(), requests.end(), [](const auto &request) { return bool(request.session); }));
   };
-  inference::BatchIndices batch_indices;
-  batch_indices.prepare(model.cache_plan.resident_sessions, model.cache_plan.active_sequences);
+  inference::RequestBatchWorkspace<PreparedGenerationCall> batch_workspace;
+  batch_workspace.prepare(model.cache_plan.resident_sessions, model.cache_plan.active_sequences);
   GenerationContinuation continuation; continuation.enabled = decode_overlap;
   if (decode_overlap) continuation.prepare(model.cache_plan.active_sequences);
   const auto ready = Clock::now();
@@ -7909,73 +7879,70 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     observe_capacity();
   };
   const auto execute_ready = [&](inference::RequestWave wave) {
-    const auto active = wave.keys;
-    // Resolve every lookup/admission in this wave before any checkpoint is
-    // published. A same-wave prompt cannot observe another member's new head.
-    hyle::container::SmallVector<PreparedGenerationCall, 2> calls;
-    if (!calls.try_reserve(active.size())) throw std::bad_alloc{};
-    for (auto key : active) {
+    const auto prepare_call = [&](inference::RequestKey key) {
       auto &request = requests[key.slot];
       std::cerr << "generation_session id=" << request.id << " turn=" << request.progress.turn_index + 1 << " episode=" << request.rounds.size() << '\n';
-      calls.push_back(prepare_generation_call(model, request, request.progress.output_limit(), prefix.get(), requests,
-          request_loop.credit(key, request.progress.generated.size()), max_prefill_rows));
-    }
-    inference::dispatch_batches(batch_indices, calls.size(),
-        [](std::size_t) { return true; },
-        [&](std::size_t first) { return calls[first].full_hit ? std::size_t{1} : model.cache_plan.active_sequences; },
-        [&](std::size_t first, std::size_t j) {
-        return calls[j].full_hit == calls[first].full_hit &&
-            calls[j].request->sampling_index == calls[first].request->sampling_index &&
-            calls[j].generation == calls[first].generation && calls[j].role == calls[first].role &&
-            calls[j].completion == calls[first].completion &&
-            (calls[j].planned_rows() == calls[first].planned_rows() ||
-             (!calls[first].full_hit && !calls[first].generation &&
-              (calls[first].role == GraphRole::kText || is_mtp_prefill(calls[first].role)) &&
-              model.prefill_capacity((std::max)(calls[j].planned_rows(), calls[first].planned_rows()),
-                  calls[first].completion, calls[first].request->sampling_index, 2, calls[first].role)));
-        }, [&](std::span<const std::size_t> selected) -> std::size_t {
-          hyle::container::SmallVector<PreparedGenerationCall, 2> bucket;
-          if (!bucket.try_reserve(selected.size())) throw std::bad_alloc{};
-          for (auto j : selected) bucket.push_back(calls[j]);
-          while (bucket.size() > 1 && !bucket[0].full_hit) {
-            const auto members = std::span(bucket.data(), bucket.size());
-            const bool unequal = std::ranges::any_of(members,
-                [&](const auto &call) { return call.ids().size() != bucket[0].ids().size(); });
-            if ((!unequal || generation_prefill_capacity(model, members)) &&
-                make_generation_batch_room(model, prefix.get(), members, requests)) break;
-            bucket.pop_back();
-          }
-          std::cerr << "generation_batch requests=" << bucket.size() << " T=" << bucket[0].planned_rows()
-                    << " role=" << static_cast<int>(bucket[0].role) << " full_hit=" << bucket[0].full_hit << '\n';
-          try {
-            execute_generation_calls(model, std::span(bucket.data(), bucket.size()), trace_states, prefix.get(), requests,
-                nullptr, decode_overlap ? &continuation : nullptr, observe_batch,
-                bucket.size() == active.size(), wave.credits);
-          } catch (const inference::EvaluationFailure &failure) {
-            // The final submitted bucket may be smaller or differently ordered
-            // than the active request wave. Attribute only its original member.
-            throw inference::RequestExecutionFailure::from_evaluation(failure, bucket.size(),
-                [&](std::size_t member) { return bucket[member].request->request_key; });
-          }
-          auto finished = endpoint;
-          for (std::size_t j = 0; j < bucket.size(); ++j) {
-            const auto index = active[selected[j]].slot;
-            if (bucket[j].full_hit) {
-              // A cache hit is a logical dispatch, never an invented Graph.
-              dispatch.push_back(index); dispatch_turns.push_back(requests[index].progress.turn_index);
-            }
-            finished = (std::max)(finished, requests[index].endpoint);
-          }
-          // Real Graph batches report their own completion above, including
-          // a successor observed on a later pump. A full hit has no Graph.
-          if (bucket[0].full_hit) {
-            const auto seconds = std::chrono::duration<double>(finished - endpoint).count();
-            (bucket[0].generation ? decode_seconds : prefill_seconds) += seconds; endpoint = finished;
-          }
-          observe_capacity();
-          return bucket.size();
-        });
-    for (auto &call : calls) publish_generation_prompt(model, call, prefix.get());
+      return prepare_generation_call(model, request, request.progress.output_limit(), prefix.get(), requests,
+          request_loop.credit(key, request.progress.generated.size()), max_prefill_rows);
+    };
+    const auto batch_limit = [&](const PreparedGenerationCall &first) -> std::size_t {
+      return first.full_hit ? std::size_t{1} : model.cache_plan.active_sequences;
+    };
+    const auto compatible_calls = [&](const PreparedGenerationCall &first, const PreparedGenerationCall &other) {
+      return other.full_hit == first.full_hit && other.request->sampling_index == first.request->sampling_index &&
+          other.generation == first.generation && other.role == first.role && other.completion == first.completion &&
+          (other.planned_rows() == first.planned_rows() ||
+           (!first.full_hit && !first.generation && (first.role == GraphRole::kText || is_mtp_prefill(first.role)) &&
+            model.prefill_capacity((std::max)(other.planned_rows(), first.planned_rows()),
+                first.completion, first.request->sampling_index, 2, first.role)));
+    };
+    const auto fits = [&](std::span<PreparedGenerationCall> members) {
+      if (members[0].full_hit) return true;
+      const bool unequal = std::ranges::any_of(members,
+          [&](const auto &call) { return call.ids().size() != members[0].ids().size(); });
+      return (!unequal || generation_prefill_capacity(model, members)) &&
+          make_generation_batch_room(model, prefix.get(), members, requests);
+    };
+    const auto execute_batch = [&](std::span<PreparedGenerationCall> bucket, bool entire_wave) {
+      std::cerr << "generation_batch requests=" << bucket.size() << " T=" << bucket[0].planned_rows()
+                << " role=" << static_cast<int>(bucket[0].role) << " full_hit=" << bucket[0].full_hit << '\n';
+      try {
+        execute_generation_calls(model, bucket, trace_states, prefix.get(), requests,
+            nullptr, decode_overlap ? &continuation : nullptr, observe_batch, entire_wave, wave.credits);
+      } catch (const inference::EvaluationFailure &failure) {
+        // Only the real admitted bucket may attribute a native member failure.
+        throw inference::RequestExecutionFailure::from_evaluation(failure, bucket.size(),
+            [&](std::size_t member) { return bucket[member].request->request_key; });
+      }
+      auto finished = endpoint;
+      for (const auto &call : bucket) {
+        const auto index = call.request->request_key.slot;
+        if (call.full_hit) {
+          // A cache hit is a logical dispatch, never an invented Graph.
+          dispatch.push_back(index); dispatch_turns.push_back(requests[index].progress.turn_index);
+        }
+        finished = (std::max)(finished, requests[index].endpoint);
+      }
+      // Real Graph batches report their own completion, including a successor
+      // observed on a later pump. A full hit has no Graph.
+      if (bucket[0].full_hit) {
+        const auto seconds = std::chrono::duration<double>(finished - endpoint).count();
+        (bucket[0].generation ? decode_seconds : prefill_seconds) += seconds; endpoint = finished;
+      }
+      observe_capacity();
+    };
+    const auto publish_call = [&](PreparedGenerationCall &call) { publish_generation_prompt(model, call, prefix.get()); };
+    // These typed callable references bind the original model stages directly;
+    // they hold no Model interface, runtime callbacks or execution authority.
+    struct Policy final {
+      decltype(prepare_call) &prepare;
+      decltype(batch_limit) &limit;
+      decltype(compatible_calls) &compatible;
+      decltype(fits) &fit;
+      decltype(execute_batch) &execute;
+      decltype(publish_call) &publish;
+    } policy{prepare_call, batch_limit, compatible_calls, fits, execute_batch, publish_call};
+    inference::execute_request_batches(batch_workspace, wave.keys, policy);
     if (decode_overlap && continuation.ready)
       for (const auto &member : continuation.members)
         if (!request_loop.credit(member.key, requests[member.key.slot].progress.generated.size())) {

@@ -12,6 +12,7 @@
 
 #include "hyle/compute/batch_ops.h"
 #include "hyle/graph/batch.h"
+#include "block_graph.h"
 #include "model_geometry.h"
 
 // Consumer-only graph construction for the identified one-block Qwen3.5 MTP
@@ -322,13 +323,7 @@ Head full_head(R &r, const Projection &projection, const KeyValue &kv,
       r.unary(compute::UnaryKind::kSigmoid, gate));
   auto x = r.binary(compute::BinaryKind::kAdd, projection.fused,
       detail::linear_absolute(r, gated, "mtp.layers.0.self_attn.o_proj.weight"));
-  const auto ffn_input = detail::norm_absolute(r, x, "mtp.layers.0.post_attention_layernorm.weight");
-  const auto ffn_gate = r.unary(compute::UnaryKind::kSilu,
-      detail::linear_absolute(r, ffn_input, "mtp.layers.0.mlp.gate_proj.weight"));
-  const auto up = detail::linear_absolute(r, ffn_input, "mtp.layers.0.mlp.up_proj.weight");
-  const auto product = r.binary(compute::BinaryKind::kMultiply, ffn_gate, up);
-  x = r.binary(compute::BinaryKind::kAdd, x,
-      detail::linear_absolute(r, product, "mtp.layers.0.mlp.down_proj.weight"));
+  x = block_graph::emit_ffn(r, x, "mtp.layers.0.");
   const auto hidden_rows = detail::norm_absolute(r, x, "mtp.norm.weight");
   const auto selected = shape.requests == 1
       ? r.copy(r.slice(hidden_rows, 0, last_row, fixed(1)))

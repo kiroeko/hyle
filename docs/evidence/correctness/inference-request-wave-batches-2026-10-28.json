@@ -1,0 +1,664 @@
+{
+  "schema": "hyle.request-wave-batches.correctness.v1",
+  "status": "PASS_EIGHT_FINITE_CPU_CUDA_CASES",
+  "native_processes": 8,
+  "native_reruns": 0,
+  "structured_state_comparisons": 52,
+  "byte_exact_state_comparisons": 36,
+  "maximum_gdn_absolute_difference": 4.65661e-10,
+  "existing_gdn_absolute_budget": 3e-06,
+  "actual_build": {
+    "CXX_processes": 2,
+    "failed_first_Tiny_CXX": {
+      "pid": 42660,
+      "exit": 2,
+      "started": 1793183935.308403,
+      "seconds": 7.027748346328735,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "successful_Tiny_CXX": {
+      "pid": 43804,
+      "exit": 0,
+      "started": 1793184020.3595784,
+      "seconds": 56.42106914520264,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "links": 1,
+    "successful_link": {
+      "pid": 49528,
+      "exit": 0,
+      "started": 1793184120.8310177,
+      "seconds": 1.7929339408874512,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "link_inputs": 228,
+    "retained_SDK_weights": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0
+  },
+  "ready_pin": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\ready-tiny.json",
+    "bytes": 3041,
+    "sha256": "80cbd7d8f4efc1d6da26acff0e5856f3f196515fb7d6517e184108c05674b40f"
+  },
+  "first_failure": {
+    "kind": "actual_CXX_failure",
+    "cause": "Tiny driver passed backend to the pre-existing one-argument sampling-policy case. Corrected case now accepts optional BackendKind defaulting to CUDA; no product/math/compile flag workaround.",
+    "logs": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\logs\\tiny\\command.json",
+        "bytes": 3507,
+        "sha256": "22f9961a1227d57cd2fb74acbaa6f26568087a76371480cdfd4c991bc2e04eb7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\logs\\tiny\\process.json",
+        "bytes": 149,
+        "sha256": "18c093b75ef9e6662096614b8cd6167c7b34e94fe2cf4315bf28c73b0f33d459"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\logs\\tiny\\stdout.log",
+        "bytes": 431,
+        "sha256": "9bc080a77628944ea891497d9fee16a2e67087e10886a1096914e65d75a64125"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\logs\\tiny\\stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ]
+  },
+  "architecture": {
+    "common_wave": "Cold-reserved call/bucket/index workspace; whole-wave prepare, static compatibility/admission, no-throw original call move-back, actual-bucket RequestKey mapping, then original prompt publication.",
+    "model_math": "Qwen FFN/GDN epilogue equations live in model-local block_graph.h and reuse the original Recipe; Compute/Graph ABI, native owner, arithmetic order and placement remain unchanged.",
+    "retained": "Original Model/Step/Graph/Store/Append/Completion/retirement and prefix/state owners. No new executor, runtime callback table or permission ledger."
+  },
+  "boundaries": {
+    "synthetic_cached_GA_fixture": true,
+    "trained_quality": false,
+    "performance": false,
+    "Apple_tested": false,
+    "Vulkan_tested": false,
+    "whole_RequestLoop_service_test": false,
+    "unknown_native_failure_claim": false,
+    "notes": [
+      "Wave case includes an intentionally failing old-copy component recipe caught within the same successful process; it is not a failed native model process.",
+      "Structured state comparison subtotal counts ragged9 and sampler17 per backend. Other wave/policy assertions stay in complete original reports and are not invented byte-check counts.",
+      "Ordinary natural endpoint reports retain one charged prefix/checkpoint; the original C++ case checks zero versions after the function returns and that directory is destroyed.",
+      "Newly computed F32 GDN alone retains the existing3e-6 bound; old checkpoints, boundary/RNG and other payload requirements remain those enforced by each actual consumer."
+    ]
+  },
+  "parser": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\package.py",
+    "bytes": 11712,
+    "sha256": "a71b442a99c0d46368afef38957ec313a364859f57bf6b881e9d6fe364462095"
+  },
+  "reused_parsers": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-execution-preparation-20261028\\parse.py",
+      "bytes": 6048,
+      "sha256": "ad293210378461d37d0f7add4d2f28bed6c00dbd8f10c293e0132c012e311e13"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-sampling-20261028\\refinement-v4\\run.py",
+      "bytes": 8456,
+      "sha256": "d08c71ece68e4d809418ddae1755f432a55537bea41b7d19e212cfcce967c050"
+    }
+  ],
+  "cases": [
+    {
+      "name": "wave-cpu",
+      "status": "PASS",
+      "backend": "cpu",
+      "kind": "wave",
+      "process": {
+        "pid": 45128,
+        "exit": 0,
+        "started": 1793184130.8397775,
+        "seconds": 0.7977979183197021,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "command": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\bin\\tiny.exe",
+          "--cpu",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input",
+          "--generation-wave"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "timeout_seconds": 300
+      },
+      "evidence": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\wave-cpu\\command.json",
+          "bytes": 359,
+          "sha256": "40fd6175ccac37b0777a2d129bebb4b137d811f4b4ce969b36c55cf338058ebe"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\wave-cpu\\process.json",
+          "bytes": 151,
+          "sha256": "47b4e322da2edae2fe50644a9f43985f6dc949811e979681d7873e33794c78e0"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\wave-cpu\\stdout.log",
+          "bytes": 396,
+          "sha256": "d914d25f6c63d171cbaa31d8e2d6322d54ce04dc84b0afb67577c669b6c6a5eb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\wave-cpu\\stderr.log",
+          "bytes": 2442,
+          "sha256": "3e947a93002be381259c7ea9b4cf3f5d6835e89271e5cd1be793d9a79d00f8fe"
+        }
+      ],
+      "raw_logs_archive_directory": "attempt2/runs/wave-cpu/",
+      "checks": {
+        "status": "PASS",
+        "case": "generation-wave",
+        "backend": "cpu",
+        "models": 1,
+        "native_submissions": 3,
+        "old_copy_component_failure_reproduced": true,
+        "cancelled_disposition_returned": true,
+        "whole_wave_prepare_before_publish": true,
+        "cancelled_heads_ledger_rng_unchanged": true,
+        "survivor_same_key_retry": true,
+        "prefix_unpublished_on_cancel": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0
+      }
+    },
+    {
+      "name": "wave-cuda",
+      "status": "PASS",
+      "backend": "cuda",
+      "kind": "wave",
+      "process": {
+        "pid": 18912,
+        "exit": 0,
+        "started": 1793184139.656658,
+        "seconds": 0.7300925254821777,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "command": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\bin\\tiny.exe",
+          "--cuda",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input",
+          "--generation-wave"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "timeout_seconds": 300
+      },
+      "evidence": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\wave-cuda\\command.json",
+          "bytes": 360,
+          "sha256": "ea1df192c8c2ac15888c144301b5aa6af39cedacb01749f948dd4b56548fa6f7"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\wave-cuda\\process.json",
+          "bytes": 150,
+          "sha256": "adf222d0f2485472bc834874a73a9a0acab91871233180d732c740643e8edecb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\wave-cuda\\stdout.log",
+          "bytes": 397,
+          "sha256": "2319610e3b86563d3711a43537f546440493ca98bbcb7c0281a9062d9f8dcd78"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\wave-cuda\\stderr.log",
+          "bytes": 2171,
+          "sha256": "455af2f02aa5b56c4233693dd69838029a32c58a602e215782c7dc806d868211"
+        }
+      ],
+      "raw_logs_archive_directory": "attempt2/runs/wave-cuda/",
+      "checks": {
+        "status": "PASS",
+        "case": "generation-wave",
+        "backend": "cuda",
+        "models": 1,
+        "native_submissions": 3,
+        "old_copy_component_failure_reproduced": true,
+        "cancelled_disposition_returned": true,
+        "whole_wave_prepare_before_publish": true,
+        "cancelled_heads_ledger_rng_unchanged": true,
+        "survivor_same_key_retry": true,
+        "prefix_unpublished_on_cancel": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0
+      }
+    },
+    {
+      "name": "ragged-cpu",
+      "status": "PASS",
+      "backend": "cpu",
+      "kind": "ragged",
+      "process": {
+        "pid": 54312,
+        "exit": 0,
+        "started": 1793184140.9669778,
+        "seconds": 0.4580838680267334,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "command": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\bin\\tiny.exe",
+          "--cpu",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input",
+          "--ragged-prefill"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "timeout_seconds": 300
+      },
+      "evidence": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\ragged-cpu\\command.json",
+          "bytes": 358,
+          "sha256": "1c364e29b3eb88557c46f5e3690a6a406b57b5d0bb9dbc03254f53e81acf6233"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\ragged-cpu\\process.json",
+          "bytes": 151,
+          "sha256": "0dca6b0ba2b0622f26156efc8692f51f4a3609fb90ee5f26d1e5cf0a60c2f686"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\ragged-cpu\\stdout.log",
+          "bytes": 4557,
+          "sha256": "2568b31103ac3e16ed896058e3c783c1d3781c82c7f3252a41a4a8aa45dcb16c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\ragged-cpu\\stderr.log",
+          "bytes": 8458,
+          "sha256": "f28972d4ef26f424ad35ec49559515c37710c4ee6012d07db2e6679d98586f2a"
+        }
+      ],
+      "raw_logs_archive_directory": "attempt2/runs/ragged-cpu/",
+      "checks": {
+        "mode": "ragged_prefill",
+        "actual_prefill_rows": 22,
+        "physical_prefill_rows": 64,
+        "committed_prefill_rows": 21,
+        "cancelled_prefill_rows": 1,
+        "peer_decode_rows": 1,
+        "old_checkpoints_byte_unchanged": true,
+        "rng_and_epochs_equal": true,
+        "numerically_equivalent": true,
+        "final_versions": 0,
+        "final_images": 0,
+        "final_native_episodes": 0,
+        "state_comparisons": 9,
+        "byte_exact": 1
+      }
+    },
+    {
+      "name": "ragged-cuda",
+      "status": "PASS",
+      "backend": "cuda",
+      "kind": "ragged",
+      "process": {
+        "pid": 46960,
+        "exit": 0,
+        "started": 1793184142.0115893,
+        "seconds": 0.7995638847351074,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "command": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\bin\\tiny.exe",
+          "--cuda",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input",
+          "--ragged-prefill"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "timeout_seconds": 300
+      },
+      "evidence": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\ragged-cuda\\command.json",
+          "bytes": 359,
+          "sha256": "bb4aed06e332cd0a6b6eab559c45895776f4a546155a9366605473ff5cbf42d2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\ragged-cuda\\process.json",
+          "bytes": 151,
+          "sha256": "17952eeaed28f1aa629f6d2546ff39130bb2fe90ba9a29c6b2d9cb0252a75308"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\ragged-cuda\\stdout.log",
+          "bytes": 4553,
+          "sha256": "f9ef17632d586325900fd40cc33db595e25d74576b7c6e423602fc886cf4aae6"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\ragged-cuda\\stderr.log",
+          "bytes": 14808,
+          "sha256": "b2d12afe843196bee881e0db59f23fcc9b40d15677be76b684929a9940e1069b"
+        }
+      ],
+      "raw_logs_archive_directory": "attempt2/runs/ragged-cuda/",
+      "checks": {
+        "mode": "ragged_prefill",
+        "actual_prefill_rows": 22,
+        "physical_prefill_rows": 64,
+        "committed_prefill_rows": 21,
+        "cancelled_prefill_rows": 1,
+        "peer_decode_rows": 1,
+        "old_checkpoints_byte_unchanged": true,
+        "rng_and_epochs_equal": true,
+        "numerically_equivalent": true,
+        "final_versions": 0,
+        "final_images": 0,
+        "final_native_episodes": 0,
+        "state_comparisons": 9,
+        "byte_exact": 1
+      }
+    },
+    {
+      "name": "policies-cpu",
+      "status": "PASS",
+      "backend": "cpu",
+      "kind": "policies",
+      "process": {
+        "pid": 18920,
+        "exit": 0,
+        "started": 1793184150.4724214,
+        "seconds": 0.4869251251220703,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "command": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\bin\\tiny.exe",
+          "--cpu",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input",
+          "--sampling-policies"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "timeout_seconds": 300
+      },
+      "evidence": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\policies-cpu\\command.json",
+          "bytes": 361,
+          "sha256": "b7cc1e87c06c293501b5a818a4b62268b14f0fffb43e0c85e9983794520f0da2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\policies-cpu\\process.json",
+          "bytes": 151,
+          "sha256": "55cd1b312f5514960cb188d162ea9c48824305fff5389f6cb049cb542efb7ea4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\policies-cpu\\stdout.log",
+          "bytes": 50988,
+          "sha256": "ec4ae7fc72b5e65d52a1fba1e7481a3bdcc14d17effc635e583cf9a5286bc602"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\policies-cpu\\stderr.log",
+          "bytes": 26370,
+          "sha256": "41c7161de6710253e554120dc6a91e77073d8ac6d36b461da4b25f562fe90541"
+        }
+      ],
+      "raw_logs_archive_directory": "attempt2/runs/policies-cpu/",
+      "checks": {
+        "status": "PASS",
+        "case": "sampling-policies",
+        "ordinary": true,
+        "same_model": true,
+        "configurations": 4,
+        "requests": 6,
+        "turns": 12,
+        "N": 2,
+        "R": 2,
+        "quality_claim": false,
+        "performance_claim": false,
+        "endpoint_report": {
+          "backend": "cpu",
+          "session_count": 6,
+          "turn_count": 12,
+          "generated_tokens": 30,
+          "live_committed_versions": 1,
+          "prefix_entries": 1,
+          "admitted_requests": 6,
+          "retired_requests": 6
+        }
+      }
+    },
+    {
+      "name": "policies-cuda",
+      "status": "PASS",
+      "backend": "cuda",
+      "kind": "policies",
+      "process": {
+        "pid": 43712,
+        "exit": 0,
+        "started": 1793184151.5614753,
+        "seconds": 0.8406500816345215,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "command": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\bin\\tiny.exe",
+          "--cuda",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input",
+          "--sampling-policies"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "timeout_seconds": 300
+      },
+      "evidence": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\policies-cuda\\command.json",
+          "bytes": 362,
+          "sha256": "6599b730ca178f7be215696f7d31cfbc53e8d8487824eb6493f686e2d1c68f93"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\policies-cuda\\process.json",
+          "bytes": 151,
+          "sha256": "9038552543409c38f38b6a4522476eb972af6dfbb8c24ad7c36dc9f6f1043523"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\policies-cuda\\stdout.log",
+          "bytes": 49651,
+          "sha256": "be734aa8a09264ef740f717e157c7d974f44b715a049bc464cf797312044f596"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\policies-cuda\\stderr.log",
+          "bytes": 49601,
+          "sha256": "fdaea3edb42fcfecfb8bcb5785533b9ecc258e9f8263df426665d4ef7174a155"
+        }
+      ],
+      "raw_logs_archive_directory": "attempt2/runs/policies-cuda/",
+      "checks": {
+        "status": "PASS",
+        "case": "sampling-policies",
+        "ordinary": true,
+        "same_model": true,
+        "configurations": 4,
+        "requests": 6,
+        "turns": 12,
+        "N": 2,
+        "R": 2,
+        "quality_claim": false,
+        "performance_claim": false,
+        "endpoint_report": {
+          "backend": "cuda",
+          "session_count": 6,
+          "turn_count": 12,
+          "generated_tokens": 30,
+          "live_committed_versions": 1,
+          "prefix_entries": 1,
+          "admitted_requests": 6,
+          "retired_requests": 6
+        }
+      }
+    },
+    {
+      "name": "sampler-cpu",
+      "status": "PASS",
+      "backend": "cpu",
+      "kind": "sampler",
+      "process": {
+        "pid": 48908,
+        "exit": 0,
+        "started": 1793184152.9766605,
+        "seconds": 0.6963675022125244,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "command": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\bin\\tiny.exe",
+          "--cpu",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input",
+          "--mtp-sampling"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "timeout_seconds": 300
+      },
+      "evidence": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\sampler-cpu\\command.json",
+          "bytes": 356,
+          "sha256": "44440399b473a0b9e5a83ba0c350c16d56d1b82d73a29cfc39e5aa794d9eaf3b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\sampler-cpu\\process.json",
+          "bytes": 151,
+          "sha256": "a01febbc6b4a1c3151fc74cfa78808723810a696aaf80fce5e35d26f63e4605d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\sampler-cpu\\stdout.log",
+          "bytes": 31969,
+          "sha256": "33561c2a4d36565a801afda8a50bb2b76eeaaed6efcbaf638d594646af2cb4f9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\sampler-cpu\\stderr.log",
+          "bytes": 40799,
+          "sha256": "78c9d4e2d5de8fe892753f9e43ce2221437931ed920e5cd2daae4740e5df68f1"
+        }
+      ],
+      "raw_logs_archive_directory": "attempt2/runs/sampler-cpu/",
+      "checks": {
+        "status": "PASS",
+        "case": "mtp-sampling-policies",
+        "backend": "cpu",
+        "sequential_models": 2,
+        "manual_state_checks": 17,
+        "natural_requests": 3,
+        "natural_outputs_per_request": 4,
+        "natural_configurations": 3,
+        "natural_recursive_cold_plan": true,
+        "natural_default_random_extra_greedy": true,
+        "completed_q_released": true,
+        "actual_B2_simultaneous_q": 4,
+        "synthetic_untrained": true,
+        "final_versions": 0,
+        "quality_claim": false,
+        "performance_claim": false,
+        "state_comparisons": 17,
+        "byte_exact": 17
+      }
+    },
+    {
+      "name": "sampler-cuda",
+      "status": "PASS",
+      "backend": "cuda",
+      "kind": "sampler",
+      "process": {
+        "pid": 33096,
+        "exit": 0,
+        "started": 1793184154.2490554,
+        "seconds": 1.277648687362671,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "command": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\bin\\tiny.exe",
+          "--cuda",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input",
+          "--mtp-sampling"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "timeout_seconds": 300
+      },
+      "evidence": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\sampler-cuda\\command.json",
+          "bytes": 357,
+          "sha256": "d3cbd61b0ce1b0d4b831b0a4c54415a6b75aa1c8332104fcf3ee7428b9a470f3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\sampler-cuda\\process.json",
+          "bytes": 150,
+          "sha256": "7f3960fb12f3f47593fcb0657d0f794238682c6b4f3f0727bddabb1c6667e6ad"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\sampler-cuda\\stdout.log",
+          "bytes": 31018,
+          "sha256": "6b8e6f4c5326af17a04f6feba2165d1a6854873491d2b05f0a415431680f38f0"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\runs\\sampler-cuda\\stderr.log",
+          "bytes": 89066,
+          "sha256": "c218233b39d8de96623e10ddd95408f0107108f0e02793041aca7a8843594a51"
+        }
+      ],
+      "raw_logs_archive_directory": "attempt2/runs/sampler-cuda/",
+      "checks": {
+        "status": "PASS",
+        "case": "mtp-sampling-policies",
+        "backend": "cuda",
+        "sequential_models": 2,
+        "manual_state_checks": 17,
+        "natural_requests": 3,
+        "natural_outputs_per_request": 4,
+        "natural_configurations": 3,
+        "natural_recursive_cold_plan": true,
+        "natural_default_random_extra_greedy": true,
+        "completed_q_released": true,
+        "actual_B2_simultaneous_q": 4,
+        "synthetic_untrained": true,
+        "final_versions": 0,
+        "quality_claim": false,
+        "performance_claim": false,
+        "state_comparisons": 17,
+        "byte_exact": 17
+      }
+    }
+  ],
+  "source_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-batches-20261028\\validation\\attempt2\\final-source-freeze.json",
+    "bytes": 5786,
+    "sha256": "7df54733343c85cd1746434f2d7cfd1a314b09a522497ded131ea32471e541cc"
+  },
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-request-wave-batches-2026-10-28.zip",
+    "bytes": 580423,
+    "sha256": "ac48444bfe54439d6c705c9ac73c0963ba5f46a9a77440248a757bf1ce52bf66"
+  },
+  "archive_members": 123,
+  "archive_readback": {
+    "CRC": true,
+    "member_SHA256": true
+  },
+  "excludes": [
+    "OBJ",
+    "EXE",
+    "DLL",
+    "PDB",
+    "LIB",
+    "SDK/header copies outside changed source snapshots",
+    "weight/model payloads"
+  ],
+  "detailed_reports_archive_member": "support/.scratch/inference-wave-batches-20261028/analysis.json",
+  "summary_note": "Public JSON keeps counts, scope, process identities and archive references. Complete parsed reports and raw logs remain in the CRC/SHA-checked ZIP; this condensation reruns no native work."
+}

@@ -1036,6 +1036,11 @@ TopK 仍按原 logits 排序，避免缩放使极小不同值变成并列。T≤
 不能靠预先补自然 token 来复用静态调度。
 
 一波先完成 lookup／接纳，再执行兼容 batch，最后发布新检查点，避免同波次请求观察顺序依赖。
+自然请求通过共同的 `RequestBatchWorkspace` 冷预留调用、批次及索引工作区；
+`execute_request_batches` 用静态适配依次完成整波准备、兼容分组、实际准入缩批、原执行和统一发布。
+选中的原调用移动到批次，缩尾、成功及异常都归还实际执行事实，避免取消只修改副本、发布仍读取旧结果。
+工作区不拥有 head、Completion、credit 或原生退休权限；跨 pump 的 episode 保留自己的调用事实，
+不能借用本波暂存。模型仍负责真实资格、容量、执行、错误归属及前缀发布。
 按同一已准备模型、阶段、真实行数和状态合同分桶；MTP EOS 后按实际验证宽度拆组，
 不 padding 到最大 R／K，也不把 q／hidden 下载到 CPU 以统一格式。
 
@@ -1163,6 +1168,9 @@ carry／prior 和多草稿修复保留同一已发布行的别名，未接受候
 模型构图使用冷装配提供的常量、字面量和位置，不直接挑 Backend 资源或 Queue。
 当前 Qwen 已将这些职责从 Recipe 移入 GraphAssembly；CPU FFN 放置在数学调用之外，
 普通主干、draft、接受采样和前沿采样沿用各自原图。后续共享化以真实跨模型共同点为依据。
+Qwen 私有的 `block_graph` 共用 target／NextN 的相同 FFN 方程，以及 exact／packed GDN 的尾部方程；
+绝对权重前缀和原物理维度由调用方给出，Store、放置作用域、probe 及发布仍沿原顺序。
+该拆分保持原 Cast、norm scale 实际存储类型及乘积舍入，不增加融合、执行器或跨模型数学接口。
 
 原参数接入可用现有 GraphConstantBinding 借入同一 ReadLease；冷期重排只保必要的派生布局，
 不为构图复制大矩阵或添加第二权重 owner。Kimi [有限绑定检查](../evidence/correctness/kimi-original-attention-binding-2026-10-25.json)

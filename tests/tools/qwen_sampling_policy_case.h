@@ -79,7 +79,7 @@ void boundaries(q::Model &model, std::span<const std::int32_t> prompt, std::int3
   require(model.snapshot_versions.live == 0 && !model.active_step && !model.carrier_borrowed, "policy boundaries leaked live state");
 }
 }
-inline int run(const std::filesystem::path &input) {
+inline int run(const std::filesystem::path &input, q::BackendKind kind = q::BackendKind::kCuda) {
   const auto geometry = q::read_weight_geometry(input / "weights.tsv");
   auto prompt = q::read_ids(input / "prompt.ids", geometry.vocabulary, static_cast<std::size_t>(geometry.context_limit));
   require(prompt.size() >= 2 && geometry.vocabulary > 1, "sampling policy case requires two prompt tokens and a nontrivial vocabulary");
@@ -95,7 +95,7 @@ inline int run(const std::filesystem::path &input) {
       q::SamplingConfiguration{true, {.7F, (std::min)(std::size_t{8}, static_cast<std::size_t>(geometry.vocabulary)), .9F}},
       q::SamplingConfiguration{true, {1.F, 0, 1.F}}};
   q::Model model(input / "weights.tsv", geometry, capacity, plan, {}, false, q::ReplayPolicy::kCommands, 1073741824,
-      {.enabled = false, .policy = {}, .seed = 123}, 0, {.primary = q::BackendKind::kCuda}, additional);
+      {.enabled = false, .policy = {}, .seed = 123}, 0, {.primary = kind}, additional);
   // The original filtered boundary producer remains independent of the new R2 cohort.
   const std::array boundary_chunks{prompt.size()};
   model.prepare_family(boundary_chunks, false, 1, q::GraphRole::kText, false, q::TextCompletion::kEmitNext, 2);
