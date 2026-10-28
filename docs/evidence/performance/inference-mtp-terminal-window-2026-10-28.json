@@ -1,0 +1,2849 @@
+{
+  "schema": "hyle.performance.mtp-terminal-candidate.v1",
+  "date": "2026-10-28",
+  "status": "COMPLETE8_STABLE_CANDIDATE_NOT_ADOPTED",
+  "candidate_decision": "NOT_ADOPTED",
+  "decision": "No net end-to-end speedup; larger cold preparation and target plan workspace. Keep only the independent failure fix.",
+  "source": {
+    "control_main_sha256": "41199a68784ea521affc47542b62f01ba430faeaebc1d56e34ff6e403bc86a15",
+    "candidate_main_sha256": "27cd19c1e87b457007cc7ae4bbd4a90fae1a4e7df570f93c733b6c0cbcbf1080",
+    "control_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-small-projection-20261028\\model-candidate\\attempt2\\bin\\hyle-ab-group-control.exe",
+      "bytes": 142753280,
+      "sha256": "0c6227e048997fbf9f830153664371558b40bf2fc011ff587772a525cf4b76d9"
+    },
+    "candidate_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-terminal-20261028\\cli\\bin\\hyle-current.exe",
+      "bytes": 142742016,
+      "sha256": "c20d3b03b0f13c07ee29ca2fd0def3d60f5d7702eae16cc6787bd0b4b1db5246"
+    },
+    "closure_inputs_per_image": 229,
+    "changed_link_inputs": [
+      {
+        "control": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-cohort-20261028\\cli\\compile\\model\\unit.obj",
+          "bytes": 19609418,
+          "sha256": "ff22d11a294a5aa507034b09efeb475b1aedd514f473b974c970436f24f51e52"
+        },
+        "current": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-terminal-20261028\\cli\\compile\\model\\unit.obj",
+          "bytes": 19398118,
+          "sha256": "d0fd890c6861823fffb3c4dfa50950de67d9a2114a5056bfccde3e6675f693c6"
+        }
+      }
+    ],
+    "scope": "Same ON227 SDK/weights plus original entry; current Model also includes two intervening cold abstractions and retired-ledger fix. Not terminal-only causal isolation."
+  },
+  "counts": {
+    "CXX": 1,
+    "links": 1,
+    "timing_native_processes": 6,
+    "independent_memory_native_processes": 2,
+    "diagnostic_profile_consumer_processes": 2,
+    "diagnostic_profiler_controller_processes": 2,
+    "total_model_processes": 10,
+    "native_failures": 0,
+    "successful_native_reruns": 0,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "policy": {
+    "sampling": "random",
+    "temperature": 1,
+    "top_k": 0,
+    "top_p": 1,
+    "seed": 17,
+    "max_drafts": 2
+  },
+  "workload": {
+    "prompt_tokens": 154,
+    "requested_outputs": 64,
+    "sequences": 1,
+    "sessions": 1,
+    "turns": 1,
+    "capacity": 1024,
+    "backend": "cuda",
+    "draft_K": 2,
+    "decode_overlap": "off",
+    "peer_comparison": false
+  },
+  "four_metrics": [
+    {
+      "metric": "prefill_tokens_per_second",
+      "control": {
+        "count": 3,
+        "median": 2004.6262608643585,
+        "min": 1998.1419874506303,
+        "max": 2123.016392719432,
+        "samples": [
+          2123.016392719432,
+          2004.6262608643585,
+          1998.1419874506303
+        ]
+      },
+      "candidate": {
+        "count": 3,
+        "median": 2023.2728935298624,
+        "min": 1917.6983634810458,
+        "max": 2179.3521946359633,
+        "samples": [
+          1917.6983634810458,
+          2023.2728935298624,
+          2179.3521946359633
+        ]
+      },
+      "candidate_delta_percent": 0.9301800055968368
+    },
+    {
+      "metric": "full_decode_tokens_per_second",
+      "control": {
+        "count": 3,
+        "median": 88.95795917450967,
+        "min": 87.37349046692809,
+        "max": 89.36109371170237,
+        "samples": [
+          89.36109371170237,
+          87.37349046692809,
+          88.95795917450967
+        ]
+      },
+      "candidate": {
+        "count": 3,
+        "median": 86.04343991839254,
+        "min": 85.04709989389363,
+        "max": 87.4950905532523,
+        "samples": [
+          86.04343991839254,
+          85.04709989389363,
+          87.4950905532523
+        ]
+      },
+      "candidate_delta_percent": -3.276288353692658
+    },
+    {
+      "metric": "session_output_tokens_per_second",
+      "control": {
+        "count": 3,
+        "median": 81.50049543387107,
+        "min": 80.21409140997322,
+        "max": 82.31054973029791,
+        "samples": [
+          82.31054973029791,
+          80.21409140997322,
+          81.50049543387107
+        ]
+      },
+      "candidate": {
+        "count": 3,
+        "median": 78.7699190971392,
+        "min": 78.3468520418475,
+        "max": 80.94056989243505,
+        "samples": [
+          78.7699190971392,
+          78.3468520418475,
+          80.94056989243505
+        ]
+      },
+      "candidate_delta_percent": -3.350380046397927
+    },
+    {
+      "metric": "session_processed_tokens_per_second",
+      "control": {
+        "count": 3,
+        "median": 276.3376173304691,
+        "min": 271.97590368694046,
+        "max": 279.08420767929135,
+        "samples": [
+          279.08420767929135,
+          271.97590368694046,
+          276.3376173304691
+        ]
+      },
+      "candidate": {
+        "count": 3,
+        "median": 267.07925693873756,
+        "min": 265.6447952043892,
+        "max": 274.43911979153756,
+        "samples": [
+          267.07925693873756,
+          265.6447952043892,
+          274.43911979153756
+        ]
+      },
+      "candidate_delta_percent": -3.3503800463979383
+    }
+  ],
+  "end_to_end": {
+    "control": {
+      "prefill_seconds": {
+        "count": 3,
+        "median": 0.0768223,
+        "min": 0.0725383,
+        "max": 0.0770716,
+        "samples": [
+          0.0725383,
+          0.0768223,
+          0.0770716
+        ]
+      },
+      "decode_seconds": {
+        "count": 3,
+        "median": 0.7081997000000001,
+        "min": 0.7050048000000002,
+        "max": 0.7210425,
+        "samples": [
+          0.7050048000000002,
+          0.7210425,
+          0.7081997000000001
+        ]
+      },
+      "session_seconds": {
+        "count": 3,
+        "median": 0.7852713,
+        "min": 0.7775431,
+        "max": 0.7978648,
+        "samples": [
+          0.7775431,
+          0.7978648,
+          0.7852713
+        ]
+      },
+      "weights_load_seconds": {
+        "count": 3,
+        "median": 0.882314,
+        "min": 0.871958,
+        "max": 0.891933,
+        "samples": [
+          0.882314,
+          0.891933,
+          0.871958
+        ]
+      },
+      "startup_to_ready_seconds": {
+        "count": 3,
+        "median": 1.9601756,
+        "min": 1.9485017,
+        "max": 1.9715237,
+        "samples": [
+          1.9601756,
+          1.9485017,
+          1.9715237
+        ]
+      },
+      "first_token_elapsed_seconds": {
+        "count": 3,
+        "median": 2.0327677,
+        "min": 2.0253827,
+        "max": 2.0486548,
+        "samples": [
+          2.0327677,
+          2.0253827,
+          2.0486548
+        ]
+      },
+      "startup_to_endpoint_seconds": {
+        "count": 3,
+        "median": 2.7464252,
+        "min": 2.7377725,
+        "max": 2.7568545,
+        "samples": [
+          2.7377725,
+          2.7464252,
+          2.7568545
+        ]
+      },
+      "cold_output_tokens_per_second": {
+        "count": 3,
+        "median": 23.30301950331653,
+        "min": 23.214863171052368,
+        "max": 23.376668441223657,
+        "samples": [
+          23.376668441223657,
+          23.30301950331653,
+          23.214863171052368
+        ]
+      }
+    },
+    "current": {
+      "prefill_seconds": {
+        "count": 3,
+        "median": 0.0761143,
+        "min": 0.0706632,
+        "max": 0.0803046,
+        "samples": [
+          0.0803046,
+          0.0761143,
+          0.0706632
+        ]
+      },
+      "decode_seconds": {
+        "count": 3,
+        "median": 0.7321883000000003,
+        "min": 0.7200403999999999,
+        "max": 0.7407659999999999,
+        "samples": [
+          0.7321883000000003,
+          0.7407659999999999,
+          0.7200403999999999
+        ]
+      },
+      "session_seconds": {
+        "count": 3,
+        "median": 0.8124929,
+        "min": 0.7907036,
+        "max": 0.8168803,
+        "samples": [
+          0.8124929,
+          0.8168803,
+          0.7907036
+        ]
+      },
+      "weights_load_seconds": {
+        "count": 3,
+        "median": 0.882369,
+        "min": 0.872508,
+        "max": 0.892023,
+        "samples": [
+          0.882369,
+          0.892023,
+          0.872508
+        ]
+      },
+      "startup_to_ready_seconds": {
+        "count": 3,
+        "median": 2.0168611,
+        "min": 2.0012093,
+        "max": 2.019222,
+        "samples": [
+          2.0168611,
+          2.019222,
+          2.0012093
+        ]
+      },
+      "first_token_elapsed_seconds": {
+        "count": 3,
+        "median": 2.0953912,
+        "min": 2.0719358,
+        "max": 2.0972297,
+        "samples": [
+          2.0972297,
+          2.0953912,
+          2.0719358
+        ]
+      },
+      "startup_to_endpoint_seconds": {
+        "count": 3,
+        "median": 2.829418,
+        "min": 2.7919762,
+        "max": 2.8361572,
+        "samples": [
+          2.829418,
+          2.8361572,
+          2.7919762
+        ]
+      },
+      "cold_output_tokens_per_second": {
+        "count": 3,
+        "median": 22.61949277201177,
+        "min": 22.56574494530839,
+        "max": 22.922831505512114,
+        "samples": [
+          22.61949277201177,
+          22.56574494530839,
+          22.922831505512114
+        ]
+      }
+    }
+  },
+  "same_task": {
+    "identical_generated_IDs_acceptance_RNG_and_actual_row_work": true,
+    "full_semantic_differences": [],
+    "graph_episodes": {
+      "control": 131,
+      "candidate": 105
+    },
+    "complete_non_time_differences": [
+      {
+        "path": "$.actual_graph_calls",
+        "control": 131,
+        "current": 105
+      },
+      {
+        "path": "$.graph_participations",
+        "control": 131,
+        "current": 105
+      },
+      {
+        "path": "$.prefix_decision_graph_calls",
+        "control": 26,
+        "current": null
+      },
+      {
+        "path": "$.rounds[0].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[1].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[2].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[3].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[4].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[5].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[6].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[7].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[8].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[9].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[10].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[11].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[12].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[13].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[14].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[15].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[16].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[17].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[18].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[19].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[20].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[21].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[22].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[23].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[24].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.rounds[25].auxiliary_graph_calls",
+        "control": 3,
+        "current": 2
+      },
+      {
+        "path": "$.sessions[0].ledger[1].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[2].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[3].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[4].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[5].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[6].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[7].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[8].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[9].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[10].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[11].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[12].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[13].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[14].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[15].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[16].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[17].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[18].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[19].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[20].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[21].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[22].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[23].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[24].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[25].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].ledger[26].auxiliary_graph_calls",
+        "control": 3,
+        "current": 2
+      },
+      {
+        "path": "$.sessions[0].result.graph_participations",
+        "control": 131,
+        "current": 105
+      },
+      {
+        "path": "$.sessions[0].result.prefix_decision_graph_calls",
+        "control": 26,
+        "current": null
+      },
+      {
+        "path": "$.sessions[0].result.rounds[0].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[1].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[2].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[3].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[4].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[5].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[6].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[7].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[8].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[9].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[10].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[11].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[12].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[13].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[14].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[15].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[16].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[17].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[18].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[19].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[20].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[21].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[22].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[23].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[24].auxiliary_graph_calls",
+        "control": 4,
+        "current": 3
+      },
+      {
+        "path": "$.sessions[0].result.rounds[25].auxiliary_graph_calls",
+        "control": 3,
+        "current": 2
+      }
+    ],
+    "actual_processes": [
+      {
+        "variant": "control",
+        "pid": 62396,
+        "exit": 0,
+        "started_unix_ns": 1793180901230655500,
+        "finished_unix_ns": 1793180904514113000,
+        "generated_ids": [
+          464,
+          54572,
+          198,
+          464,
+          19298,
+          271,
+          727,
+          14733,
+          20250,
+          17885,
+          23573,
+          11,
+          11439,
+          1328,
+          5675,
+          11,
+          9637,
+          5433,
+          1590,
+          198,
+          262,
+          4071,
+          198,
+          262,
+          24209,
+          14733,
+          10562,
+          3269,
+          383,
+          279,
+          2574,
+          49124,
+          13,
+          271,
+          262,
+          13131,
+          25,
+          198,
+          262,
+          3470,
+          318,
+          1947,
+          470,
+          1590,
+          5396,
+          49124,
+          310,
+          3269,
+          13,
+          198,
+          262,
+          1328,
+          318,
+          91907,
+          11,
+          9801,
+          1590,
+          5534,
+          310,
+          8385,
+          11960,
+          1328,
+          494,
+          3470
+        ],
+        "actual_work": {
+          "actual_graph_calls": 131,
+          "actual_graph_tokens": null,
+          "actual_target_rows": 232,
+          "actual_draft_rows": 289,
+          "target_compute_calls": null,
+          "draft_compute_calls": null,
+          "committed_target_rows": 217,
+          "verified_target_rows": 78,
+          "committed_target_decode_rows": 63,
+          "target_decode_calls": null,
+          "draft_decode_calls": null,
+          "draft_rows": 135,
+          "draft_decode_rows": null,
+          "draft_rounds": 26,
+          "agreements": 21,
+          "accepted_drafts": 36,
+          "proposals": null,
+          "generated_decode_tokens": 63,
+          "prefill_target_rows": 154,
+          "prefill_draft_rows": 154,
+          "visible_tokens": 217,
+          "draft_frontier": 217,
+          "draft_lag": 0,
+          "target_cache_backing_bytes": null,
+          "draft_cache_backing_bytes": null,
+          "cache_live_requested_bytes": 93081651,
+          "cache_peak_requested_bytes": 93081651,
+          "shared_model_objects": null,
+          "native_contexts": null
+        }
+      },
+      {
+        "variant": "current",
+        "pid": 58492,
+        "exit": 0,
+        "started_unix_ns": 1793180904733907600,
+        "finished_unix_ns": 1793180908491907800,
+        "generated_ids": [
+          464,
+          54572,
+          198,
+          464,
+          19298,
+          271,
+          727,
+          14733,
+          20250,
+          17885,
+          23573,
+          11,
+          11439,
+          1328,
+          5675,
+          11,
+          9637,
+          5433,
+          1590,
+          198,
+          262,
+          4071,
+          198,
+          262,
+          24209,
+          14733,
+          10562,
+          3269,
+          383,
+          279,
+          2574,
+          49124,
+          13,
+          271,
+          262,
+          13131,
+          25,
+          198,
+          262,
+          3470,
+          318,
+          1947,
+          470,
+          1590,
+          5396,
+          49124,
+          310,
+          3269,
+          13,
+          198,
+          262,
+          1328,
+          318,
+          91907,
+          11,
+          9801,
+          1590,
+          5534,
+          310,
+          8385,
+          11960,
+          1328,
+          494,
+          3470
+        ],
+        "actual_work": {
+          "actual_graph_calls": 105,
+          "actual_graph_tokens": null,
+          "actual_target_rows": 232,
+          "actual_draft_rows": 289,
+          "target_compute_calls": null,
+          "draft_compute_calls": null,
+          "committed_target_rows": 217,
+          "verified_target_rows": 78,
+          "committed_target_decode_rows": 63,
+          "target_decode_calls": null,
+          "draft_decode_calls": null,
+          "draft_rows": 135,
+          "draft_decode_rows": null,
+          "draft_rounds": 26,
+          "agreements": 21,
+          "accepted_drafts": 36,
+          "proposals": null,
+          "generated_decode_tokens": 63,
+          "prefill_target_rows": 154,
+          "prefill_draft_rows": 154,
+          "visible_tokens": 217,
+          "draft_frontier": 217,
+          "draft_lag": 0,
+          "target_cache_backing_bytes": null,
+          "draft_cache_backing_bytes": null,
+          "cache_live_requested_bytes": 93081651,
+          "cache_peak_requested_bytes": 93081651,
+          "shared_model_objects": null,
+          "native_contexts": null
+        }
+      },
+      {
+        "variant": "current",
+        "pid": 10728,
+        "exit": 0,
+        "started_unix_ns": 1793180908724678900,
+        "finished_unix_ns": 1793180912099109100,
+        "generated_ids": [
+          464,
+          54572,
+          198,
+          464,
+          19298,
+          271,
+          727,
+          14733,
+          20250,
+          17885,
+          23573,
+          11,
+          11439,
+          1328,
+          5675,
+          11,
+          9637,
+          5433,
+          1590,
+          198,
+          262,
+          4071,
+          198,
+          262,
+          24209,
+          14733,
+          10562,
+          3269,
+          383,
+          279,
+          2574,
+          49124,
+          13,
+          271,
+          262,
+          13131,
+          25,
+          198,
+          262,
+          3470,
+          318,
+          1947,
+          470,
+          1590,
+          5396,
+          49124,
+          310,
+          3269,
+          13,
+          198,
+          262,
+          1328,
+          318,
+          91907,
+          11,
+          9801,
+          1590,
+          5534,
+          310,
+          8385,
+          11960,
+          1328,
+          494,
+          3470
+        ],
+        "actual_work": {
+          "actual_graph_calls": 105,
+          "actual_graph_tokens": null,
+          "actual_target_rows": 232,
+          "actual_draft_rows": 289,
+          "target_compute_calls": null,
+          "draft_compute_calls": null,
+          "committed_target_rows": 217,
+          "verified_target_rows": 78,
+          "committed_target_decode_rows": 63,
+          "target_decode_calls": null,
+          "draft_decode_calls": null,
+          "draft_rows": 135,
+          "draft_decode_rows": null,
+          "draft_rounds": 26,
+          "agreements": 21,
+          "accepted_drafts": 36,
+          "proposals": null,
+          "generated_decode_tokens": 63,
+          "prefill_target_rows": 154,
+          "prefill_draft_rows": 154,
+          "visible_tokens": 217,
+          "draft_frontier": 217,
+          "draft_lag": 0,
+          "target_cache_backing_bytes": null,
+          "draft_cache_backing_bytes": null,
+          "cache_live_requested_bytes": 93081651,
+          "cache_peak_requested_bytes": 93081651,
+          "shared_model_objects": null,
+          "native_contexts": null
+        }
+      },
+      {
+        "variant": "control",
+        "pid": 39072,
+        "exit": 0,
+        "started_unix_ns": 1793180912343978500,
+        "finished_unix_ns": 1793180915634845100,
+        "generated_ids": [
+          464,
+          54572,
+          198,
+          464,
+          19298,
+          271,
+          727,
+          14733,
+          20250,
+          17885,
+          23573,
+          11,
+          11439,
+          1328,
+          5675,
+          11,
+          9637,
+          5433,
+          1590,
+          198,
+          262,
+          4071,
+          198,
+          262,
+          24209,
+          14733,
+          10562,
+          3269,
+          383,
+          279,
+          2574,
+          49124,
+          13,
+          271,
+          262,
+          13131,
+          25,
+          198,
+          262,
+          3470,
+          318,
+          1947,
+          470,
+          1590,
+          5396,
+          49124,
+          310,
+          3269,
+          13,
+          198,
+          262,
+          1328,
+          318,
+          91907,
+          11,
+          9801,
+          1590,
+          5534,
+          310,
+          8385,
+          11960,
+          1328,
+          494,
+          3470
+        ],
+        "actual_work": {
+          "actual_graph_calls": 131,
+          "actual_graph_tokens": null,
+          "actual_target_rows": 232,
+          "actual_draft_rows": 289,
+          "target_compute_calls": null,
+          "draft_compute_calls": null,
+          "committed_target_rows": 217,
+          "verified_target_rows": 78,
+          "committed_target_decode_rows": 63,
+          "target_decode_calls": null,
+          "draft_decode_calls": null,
+          "draft_rows": 135,
+          "draft_decode_rows": null,
+          "draft_rounds": 26,
+          "agreements": 21,
+          "accepted_drafts": 36,
+          "proposals": null,
+          "generated_decode_tokens": 63,
+          "prefill_target_rows": 154,
+          "prefill_draft_rows": 154,
+          "visible_tokens": 217,
+          "draft_frontier": 217,
+          "draft_lag": 0,
+          "target_cache_backing_bytes": null,
+          "draft_cache_backing_bytes": null,
+          "cache_live_requested_bytes": 93081651,
+          "cache_peak_requested_bytes": 93081651,
+          "shared_model_objects": null,
+          "native_contexts": null
+        }
+      },
+      {
+        "variant": "control",
+        "pid": 52296,
+        "exit": 0,
+        "started_unix_ns": 1793180915869770100,
+        "finished_unix_ns": 1793180919184310500,
+        "generated_ids": [
+          464,
+          54572,
+          198,
+          464,
+          19298,
+          271,
+          727,
+          14733,
+          20250,
+          17885,
+          23573,
+          11,
+          11439,
+          1328,
+          5675,
+          11,
+          9637,
+          5433,
+          1590,
+          198,
+          262,
+          4071,
+          198,
+          262,
+          24209,
+          14733,
+          10562,
+          3269,
+          383,
+          279,
+          2574,
+          49124,
+          13,
+          271,
+          262,
+          13131,
+          25,
+          198,
+          262,
+          3470,
+          318,
+          1947,
+          470,
+          1590,
+          5396,
+          49124,
+          310,
+          3269,
+          13,
+          198,
+          262,
+          1328,
+          318,
+          91907,
+          11,
+          9801,
+          1590,
+          5534,
+          310,
+          8385,
+          11960,
+          1328,
+          494,
+          3470
+        ],
+        "actual_work": {
+          "actual_graph_calls": 131,
+          "actual_graph_tokens": null,
+          "actual_target_rows": 232,
+          "actual_draft_rows": 289,
+          "target_compute_calls": null,
+          "draft_compute_calls": null,
+          "committed_target_rows": 217,
+          "verified_target_rows": 78,
+          "committed_target_decode_rows": 63,
+          "target_decode_calls": null,
+          "draft_decode_calls": null,
+          "draft_rows": 135,
+          "draft_decode_rows": null,
+          "draft_rounds": 26,
+          "agreements": 21,
+          "accepted_drafts": 36,
+          "proposals": null,
+          "generated_decode_tokens": 63,
+          "prefill_target_rows": 154,
+          "prefill_draft_rows": 154,
+          "visible_tokens": 217,
+          "draft_frontier": 217,
+          "draft_lag": 0,
+          "target_cache_backing_bytes": null,
+          "draft_cache_backing_bytes": null,
+          "cache_live_requested_bytes": 93081651,
+          "cache_peak_requested_bytes": 93081651,
+          "shared_model_objects": null,
+          "native_contexts": null
+        }
+      },
+      {
+        "variant": "current",
+        "pid": 26904,
+        "exit": 0,
+        "started_unix_ns": 1793180919414613600,
+        "finished_unix_ns": 1793180922730777600,
+        "generated_ids": [
+          464,
+          54572,
+          198,
+          464,
+          19298,
+          271,
+          727,
+          14733,
+          20250,
+          17885,
+          23573,
+          11,
+          11439,
+          1328,
+          5675,
+          11,
+          9637,
+          5433,
+          1590,
+          198,
+          262,
+          4071,
+          198,
+          262,
+          24209,
+          14733,
+          10562,
+          3269,
+          383,
+          279,
+          2574,
+          49124,
+          13,
+          271,
+          262,
+          13131,
+          25,
+          198,
+          262,
+          3470,
+          318,
+          1947,
+          470,
+          1590,
+          5396,
+          49124,
+          310,
+          3269,
+          13,
+          198,
+          262,
+          1328,
+          318,
+          91907,
+          11,
+          9801,
+          1590,
+          5534,
+          310,
+          8385,
+          11960,
+          1328,
+          494,
+          3470
+        ],
+        "actual_work": {
+          "actual_graph_calls": 105,
+          "actual_graph_tokens": null,
+          "actual_target_rows": 232,
+          "actual_draft_rows": 289,
+          "target_compute_calls": null,
+          "draft_compute_calls": null,
+          "committed_target_rows": 217,
+          "verified_target_rows": 78,
+          "committed_target_decode_rows": 63,
+          "target_decode_calls": null,
+          "draft_decode_calls": null,
+          "draft_rows": 135,
+          "draft_decode_rows": null,
+          "draft_rounds": 26,
+          "agreements": 21,
+          "accepted_drafts": 36,
+          "proposals": null,
+          "generated_decode_tokens": 63,
+          "prefill_target_rows": 154,
+          "prefill_draft_rows": 154,
+          "visible_tokens": 217,
+          "draft_frontier": 217,
+          "draft_lag": 0,
+          "target_cache_backing_bytes": null,
+          "draft_cache_backing_bytes": null,
+          "cache_live_requested_bytes": 93081651,
+          "cache_peak_requested_bytes": 93081651,
+          "shared_model_objects": null,
+          "native_contexts": null
+        }
+      },
+      {
+        "variant": "control",
+        "pid": 37208,
+        "exit": 0,
+        "started_unix_ns": 1793180989837748600,
+        "finished_unix_ns": 1793180993344289800,
+        "generated_ids": [
+          464,
+          54572,
+          198,
+          464,
+          19298,
+          271,
+          727,
+          14733,
+          20250,
+          17885,
+          23573,
+          11,
+          11439,
+          1328,
+          5675,
+          11,
+          9637,
+          5433,
+          1590,
+          198,
+          262,
+          4071,
+          198,
+          262,
+          24209,
+          14733,
+          10562,
+          3269,
+          383,
+          279,
+          2574,
+          49124,
+          13,
+          271,
+          262,
+          13131,
+          25,
+          198,
+          262,
+          3470,
+          318,
+          1947,
+          470,
+          1590,
+          5396,
+          49124,
+          310,
+          3269,
+          13,
+          198,
+          262,
+          1328,
+          318,
+          91907,
+          11,
+          9801,
+          1590,
+          5534,
+          310,
+          8385,
+          11960,
+          1328,
+          494,
+          3470
+        ],
+        "actual_work": {
+          "actual_graph_calls": 131,
+          "actual_graph_tokens": null,
+          "actual_target_rows": 232,
+          "actual_draft_rows": 289,
+          "target_compute_calls": null,
+          "draft_compute_calls": null,
+          "committed_target_rows": 217,
+          "verified_target_rows": 78,
+          "committed_target_decode_rows": 63,
+          "target_decode_calls": null,
+          "draft_decode_calls": null,
+          "draft_rows": 135,
+          "draft_decode_rows": null,
+          "draft_rounds": 26,
+          "agreements": 21,
+          "accepted_drafts": 36,
+          "proposals": null,
+          "generated_decode_tokens": 63,
+          "prefill_target_rows": 154,
+          "prefill_draft_rows": 154,
+          "visible_tokens": 217,
+          "draft_frontier": 217,
+          "draft_lag": 0,
+          "target_cache_backing_bytes": null,
+          "draft_cache_backing_bytes": null,
+          "cache_live_requested_bytes": 93081651,
+          "cache_peak_requested_bytes": 93081651,
+          "shared_model_objects": null,
+          "native_contexts": null
+        }
+      },
+      {
+        "variant": "current",
+        "pid": 30044,
+        "exit": 0,
+        "started_unix_ns": 1793180993573141700,
+        "finished_unix_ns": 1793180996929508100,
+        "generated_ids": [
+          464,
+          54572,
+          198,
+          464,
+          19298,
+          271,
+          727,
+          14733,
+          20250,
+          17885,
+          23573,
+          11,
+          11439,
+          1328,
+          5675,
+          11,
+          9637,
+          5433,
+          1590,
+          198,
+          262,
+          4071,
+          198,
+          262,
+          24209,
+          14733,
+          10562,
+          3269,
+          383,
+          279,
+          2574,
+          49124,
+          13,
+          271,
+          262,
+          13131,
+          25,
+          198,
+          262,
+          3470,
+          318,
+          1947,
+          470,
+          1590,
+          5396,
+          49124,
+          310,
+          3269,
+          13,
+          198,
+          262,
+          1328,
+          318,
+          91907,
+          11,
+          9801,
+          1590,
+          5534,
+          310,
+          8385,
+          11960,
+          1328,
+          494,
+          3470
+        ],
+        "actual_work": {
+          "actual_graph_calls": 105,
+          "actual_graph_tokens": null,
+          "actual_target_rows": 232,
+          "actual_draft_rows": 289,
+          "target_compute_calls": null,
+          "draft_compute_calls": null,
+          "committed_target_rows": 217,
+          "verified_target_rows": 78,
+          "committed_target_decode_rows": 63,
+          "target_decode_calls": null,
+          "draft_decode_calls": null,
+          "draft_rows": 135,
+          "draft_decode_rows": null,
+          "draft_rounds": 26,
+          "agreements": 21,
+          "accepted_drafts": 36,
+          "proposals": null,
+          "generated_decode_tokens": 63,
+          "prefill_target_rows": 154,
+          "prefill_draft_rows": 154,
+          "visible_tokens": 217,
+          "draft_frontier": 217,
+          "draft_lag": 0,
+          "target_cache_backing_bytes": null,
+          "draft_cache_backing_bytes": null,
+          "cache_live_requested_bytes": 93081651,
+          "cache_peak_requested_bytes": 93081651,
+          "shared_model_objects": null,
+          "native_contexts": null
+        }
+      }
+    ]
+  },
+  "independent_memory": {
+    "control": {
+      "sampled_peaks": {
+        "sampled_max_working_set_bytes": 1316392960,
+        "observed_os_peak_working_set_bytes": 1316392960,
+        "sampled_max_private_commit_bytes": 6521147392,
+        "observed_os_peak_commit_bytes": 6521147392,
+        "sampled_peak_gpu_dedicated_bytes": 4530978816,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4612767744
+      },
+      "ready_baseline": {
+        "ready_marker_ns": 507677703557200,
+        "first_prefill_marker_ns": 507677703635200,
+        "sample": null,
+        "unknown": true,
+        "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+      },
+      "actual_sample_gaps_ms": {
+        "count": 294,
+        "min": 0.1227,
+        "median": 15.1228,
+        "max": 20.8933
+      },
+      "sample_cost_ms": {
+        "count": 295,
+        "min": 0.0609,
+        "median": 0.1433,
+        "max": 0.4847
+      },
+      "sample_count": 314,
+      "running_sample_count": 295,
+      "requested_interval_seconds": 0.01,
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 32,
+        "gpu_shared_bytes": 32,
+        "gpu_total_bytes": 32
+      },
+      "setup_error": null,
+      "thread_error": null,
+      "phase_windows": {
+        "window_prefill": {
+          "begin_ns": 507677703635200,
+          "end_ns": 507677781140300,
+          "sample_count": 7,
+          "exact_phase_boundary_values": false,
+          "bracket_ages_ns": {
+            "before": 1912500,
+            "after": 13531500
+          },
+          "values": {
+            "working_set_bytes": {
+              "count": 7,
+              "min": 1144856576,
+              "median": 1191026688,
+              "max": 1215217664
+            },
+            "private_commit_bytes": {
+              "count": 7,
+              "min": 6078566400,
+              "median": 6189133824,
+              "max": 6216769536
+            },
+            "gpu_dedicated_bytes": {
+              "count": 7,
+              "min": 4352716800,
+              "median": 4375789568,
+              "max": 4375789568
+            },
+            "gpu_shared_bytes": {
+              "count": 7,
+              "min": 79691776,
+              "median": 81788928,
+              "max": 81788928
+            },
+            "gpu_total_bytes": {
+              "count": 7,
+              "min": 4432408576,
+              "median": 4457578496,
+              "max": 4457578496
+            }
+          }
+        },
+        "window_decode": {
+          "begin_ns": 507677781147500,
+          "end_ns": 507678486088200,
+          "sample_count": 67,
+          "exact_phase_boundary_values": false,
+          "bracket_ages_ns": {
+            "before": 2275900,
+            "after": 5920400
+          },
+          "values": {
+            "working_set_bytes": {
+              "count": 67,
+              "min": 1224732672,
+              "median": 1259454464,
+              "max": 1315213312
+            },
+            "private_commit_bytes": {
+              "count": 67,
+              "min": 6232317952,
+              "median": 6323466240,
+              "max": 6519865344
+            },
+            "gpu_dedicated_bytes": {
+              "count": 67,
+              "min": 4388372480,
+              "median": 4442898432,
+              "max": 4530978816
+            },
+            "gpu_shared_bytes": {
+              "count": 67,
+              "min": 81788928,
+              "median": 81788928,
+              "max": 81788928
+            },
+            "gpu_total_bytes": {
+              "count": 67,
+              "min": 4470161408,
+              "median": 4524687360,
+              "max": 4612767744
+            }
+          }
+        }
+      }
+    },
+    "current": {
+      "sampled_peaks": {
+        "sampled_max_working_set_bytes": 1313103872,
+        "observed_os_peak_working_set_bytes": 1313116160,
+        "sampled_max_private_commit_bytes": 6522081280,
+        "observed_os_peak_commit_bytes": 6522081280,
+        "sampled_peak_gpu_dedicated_bytes": 4535173120,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4616962048
+      },
+      "ready_baseline": {
+        "ready_marker_ns": 507681267302400,
+        "first_prefill_marker_ns": 507681267314600,
+        "sample": null,
+        "unknown": true,
+        "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+      },
+      "actual_sample_gaps_ms": {
+        "count": 303,
+        "min": 0.1242,
+        "median": 15.0824,
+        "max": 19.0993
+      },
+      "sample_cost_ms": {
+        "count": 304,
+        "min": 0.058,
+        "median": 0.1426,
+        "max": 0.3264
+      },
+      "sample_count": 323,
+      "running_sample_count": 304,
+      "requested_interval_seconds": 0.01,
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 34,
+        "gpu_shared_bytes": 34,
+        "gpu_total_bytes": 34
+      },
+      "setup_error": null,
+      "thread_error": null,
+      "phase_windows": {
+        "window_prefill": {
+          "begin_ns": 507681267314600,
+          "end_ns": 507681340520000,
+          "sample_count": 8,
+          "exact_phase_boundary_values": false,
+          "bracket_ages_ns": {
+            "before": 12730500,
+            "after": 6143800
+          },
+          "values": {
+            "working_set_bytes": {
+              "count": 8,
+              "min": 1126027264,
+              "median": 1163804672.0,
+              "max": 1202966528
+            },
+            "private_commit_bytes": {
+              "count": 8,
+              "min": 5940060160,
+              "median": 6060167168.0,
+              "max": 6176899072
+            },
+            "gpu_dedicated_bytes": {
+              "count": 8,
+              "min": 4199620608,
+              "median": 4319162368.0,
+              "max": 4342235136
+            },
+            "gpu_shared_bytes": {
+              "count": 8,
+              "min": 79691776,
+              "median": 79691776.0,
+              "max": 81788928
+            },
+            "gpu_total_bytes": {
+              "count": 8,
+              "min": 4279312384,
+              "median": 4398854144.0,
+              "max": 4424024064
+            }
+          }
+        },
+        "window_decode": {
+          "begin_ns": 507681340526400,
+          "end_ns": 507682070815200,
+          "sample_count": 69,
+          "exact_phase_boundary_values": false,
+          "bracket_ages_ns": {
+            "before": 8612800,
+            "after": 43700
+          },
+          "values": {
+            "working_set_bytes": {
+              "count": 69,
+              "min": 1204346880,
+              "median": 1252864000,
+              "max": 1310470144
+            },
+            "private_commit_bytes": {
+              "count": 69,
+              "min": 6178258944,
+              "median": 6303547392,
+              "max": 6500847616
+            },
+            "gpu_dedicated_bytes": {
+              "count": 69,
+              "min": 4348526592,
+              "median": 4432412672,
+              "max": 4516298752
+            },
+            "gpu_shared_bytes": {
+              "count": 69,
+              "min": 81788928,
+              "median": 81788928,
+              "max": 81788928
+            },
+            "gpu_total_bytes": {
+              "count": 69,
+              "min": 4430315520,
+              "median": 4514201600,
+              "max": 4598087680
+            }
+          }
+        }
+      }
+    }
+  },
+  "compiled_plan_facts": {
+    "both_target_routes": "Commands, recorded/reused capture zero in all27 stderr target episodes; shape_admission_seconds zero",
+    "target_T3": {
+      "control_steps": 1086,
+      "current_steps": 1358,
+      "control_workspace_bytes": 615424,
+      "current_workspace_bytes": 19987204
+    },
+    "target_T2": {
+      "control_steps": 1086,
+      "current_steps": 1237,
+      "control_workspace_bytes": 410624,
+      "current_workspace_bytes": 14565896
+    },
+    "target_prefill_and_final_single": "Identical printed steps, workspace, compiled known bytes and unknown provider counts",
+    "old_terminal_readback": "m2 old private program reads valid/accepted/finalID per row (6 read calls); current target batches the same predicate/ID facts into3 groups",
+    "interpretation": "26 removed whole-Graph helper episodes do not remove their math. Fused target has a larger native/Commands plan; observed submit grows while post-submit shrinks. The total steady path is near flat and lazy carrier setup is larger. API/GPU attribution and a sole causal explanation need the two optional unmodified-image diagnostics."
+  },
+  "stage_attribution": {
+    "groups": {
+      "control": {
+        "sums_seconds": {
+          "step_seconds": {
+            "median": 0.5125357,
+            "mean": 0.5145805,
+            "min": 0.5089473,
+            "max": 0.5222585,
+            "samples": [
+              0.5125357,
+              0.5222585,
+              0.5089473
+            ]
+          },
+          "seconds": {
+            "median": 0.4411699,
+            "mean": 0.44169753333333334,
+            "min": 0.437725,
+            "max": 0.4461977,
+            "samples": [
+              0.4411699,
+              0.4461977,
+              0.437725
+            ]
+          },
+          "prepare_total": {
+            "median": 0.07136580000000001,
+            "mean": 0.07288296666666667,
+            "min": 0.0712223,
+            "max": 0.07606080000000001,
+            "samples": [
+              0.07136580000000001,
+              0.07606080000000001,
+              0.0712223
+            ]
+          },
+          "cold_batch_seconds": {
+            "median": 0.0227431,
+            "mean": 0.023236566666666666,
+            "min": 0.0222757,
+            "max": 0.024690900000000002,
+            "samples": [
+              0.0227431,
+              0.024690900000000002,
+              0.0222757
+            ]
+          },
+          "prepare_outside_cold_batch": {
+            "median": 0.04894660000000001,
+            "mean": 0.04964640000000001,
+            "min": 0.048622700000000005,
+            "max": 0.0513699,
+            "samples": [
+              0.048622700000000005,
+              0.0513699,
+              0.04894660000000001
+            ]
+          },
+          "submit_seconds": {
+            "median": 0.1237247,
+            "mean": 0.1288786,
+            "min": 0.1189103,
+            "max": 0.1440008,
+            "samples": [
+              0.1237247,
+              0.1440008,
+              0.1189103
+            ]
+          },
+          "post_submit_total": {
+            "median": 0.3174452,
+            "mean": 0.3128189333333333,
+            "min": 0.3021969,
+            "max": 0.3188147,
+            "samples": [
+              0.3174452,
+              0.3021969,
+              0.3188147
+            ]
+          },
+          "proposal_seconds_inferred": {
+            "median": 0.1964499999999999,
+            "mean": 0.19454909999999995,
+            "min": 0.19021449999999995,
+            "max": 0.1969828,
+            "samples": [
+              0.19021449999999995,
+              0.1964499999999999,
+              0.1969828
+            ]
+          },
+          "decode_outside_recorded_steps": {
+            "median": 0.0022696000000000938,
+            "mean": 0.002286066666666827,
+            "min": 0.0022546000000002175,
+            "max": 0.0023340000000001693,
+            "samples": [
+              0.0022546000000002175,
+              0.0023340000000001693,
+              0.0022696000000000938
+            ]
+          }
+        },
+        "steady_episodes_3_to_25": {
+          "step_seconds": {
+            "median": 0.38946970000000003,
+            "mean": 0.39019410000000004,
+            "min": 0.387317,
+            "max": 0.3937956,
+            "samples": [
+              0.38946970000000003,
+              0.3937956,
+              0.387317
+            ]
+          },
+          "seconds": {
+            "median": 0.3754406,
+            "mean": 0.37535953333333333,
+            "min": 0.3725706,
+            "max": 0.3780674,
+            "samples": [
+              0.3754406,
+              0.3780674,
+              0.3725706
+            ]
+          },
+          "prepare_total": {
+            "median": 0.014746400000000003,
+            "mean": 0.014834566666666675,
+            "min": 0.01402910000000001,
+            "max": 0.015728200000000015,
+            "samples": [
+              0.01402910000000001,
+              0.015728200000000015,
+              0.014746400000000003
+            ]
+          },
+          "cold_batch_seconds": {
+            "median": 0.0135599,
+            "mean": 0.013902466666666667,
+            "min": 0.0132966,
+            "max": 0.0148509,
+            "samples": [
+              0.0132966,
+              0.0148509,
+              0.0135599
+            ]
+          },
+          "prepare_outside_cold_batch": {
+            "median": 0.0008773000000000148,
+            "mean": 0.0009321000000000093,
+            "min": 0.0007325000000000096,
+            "max": 0.0011865000000000035,
+            "samples": [
+              0.0007325000000000096,
+              0.0008773000000000148,
+              0.0011865000000000035
+            ]
+          },
+          "submit_seconds": {
+            "median": 0.0906608,
+            "mean": 0.09728099999999999,
+            "min": 0.0899912,
+            "max": 0.111191,
+            "samples": [
+              0.0906608,
+              0.111191,
+              0.0899912
+            ]
+          },
+          "post_submit_total": {
+            "median": 0.2825794,
+            "mean": 0.2780785333333333,
+            "min": 0.2668764,
+            "max": 0.28477979999999997,
+            "samples": [
+              0.28477979999999997,
+              0.2668764,
+              0.2825794
+            ]
+          }
+        },
+        "compiled": [
+          {
+            "T": 154.0,
+            "steps": 1144.0,
+            "workspace/slot": 32835328.0,
+            "compiled_known_bytes": 2234056.0,
+            "compiled_unknown_providers": 668.0,
+            "child_prepare_seconds": 0.000205
+          },
+          {
+            "T": 3.0,
+            "steps": 1086.0,
+            "workspace/slot": 615424.0,
+            "compiled_known_bytes": 2211048.0,
+            "compiled_unknown_providers": 645.0,
+            "child_prepare_seconds": 0.0002144
+          },
+          {
+            "T": 2.0,
+            "steps": 1086.0,
+            "workspace/slot": 410624.0,
+            "compiled_known_bytes": 2211048.0,
+            "compiled_unknown_providers": 645.0,
+            "child_prepare_seconds": 0.0004359
+          },
+          {
+            "T": 1.0,
+            "steps": 1078.0,
+            "workspace/slot": 4232704.0,
+            "compiled_known_bytes": 2225864.0,
+            "compiled_unknown_providers": 602.0,
+            "child_prepare_seconds": 0.0002804
+          }
+        ],
+        "ggml_graph_messages": [
+          {
+            "warmup_complete": 500,
+            "warmup_reset": 9
+          },
+          {
+            "warmup_complete": 500,
+            "warmup_reset": 9
+          },
+          {
+            "warmup_complete": 500,
+            "warmup_reset": 9
+          }
+        ],
+        "cold_compile_seconds": {
+          "median": 0.959871,
+          "mean": 0.96041,
+          "min": 0.940132,
+          "max": 0.981227,
+          "samples": [
+            0.959871,
+            0.940132,
+            0.981227
+          ]
+        }
+      },
+      "current": {
+        "sums_seconds": {
+          "step_seconds": {
+            "median": 0.5285049,
+            "mean": 0.5282247333333334,
+            "min": 0.5202522,
+            "max": 0.5359171,
+            "samples": [
+              0.5285049,
+              0.5359171,
+              0.5202522
+            ]
+          },
+          "seconds": {
+            "median": 0.4446421,
+            "mean": 0.44422093333333335,
+            "min": 0.437801,
+            "max": 0.4502197,
+            "samples": [
+              0.4446421,
+              0.4502197,
+              0.437801
+            ]
+          },
+          "prepare_total": {
+            "median": 0.08386280000000002,
+            "mean": 0.0840038,
+            "min": 0.0824512,
+            "max": 0.08569739999999999,
+            "samples": [
+              0.08386280000000002,
+              0.08569739999999999,
+              0.0824512
+            ]
+          },
+          "cold_batch_seconds": {
+            "median": 0.0258756,
+            "mean": 0.026331666666666666,
+            "min": 0.025582999999999998,
+            "max": 0.0275364,
+            "samples": [
+              0.025582999999999998,
+              0.0275364,
+              0.0258756
+            ]
+          },
+          "prepare_outside_cold_batch": {
+            "median": 0.058161000000000004,
+            "mean": 0.05767213333333334,
+            "min": 0.056575600000000004,
+            "max": 0.05827980000000001,
+            "samples": [
+              0.05827980000000001,
+              0.058161000000000004,
+              0.056575600000000004
+            ]
+          },
+          "submit_seconds": {
+            "median": 0.1874425,
+            "mean": 0.18787043333333334,
+            "min": 0.186619,
+            "max": 0.1895498,
+            "samples": [
+              0.1874425,
+              0.1895498,
+              0.186619
+            ]
+          },
+          "post_submit_total": {
+            "median": 0.2571996,
+            "mean": 0.2563505,
+            "min": 0.251182,
+            "max": 0.2606699,
+            "samples": [
+              0.2571996,
+              0.2606699,
+              0.251182
+            ]
+          },
+          "proposal_seconds_inferred": {
+            "median": 0.20130190000000014,
+            "mean": 0.2003601,
+            "min": 0.1974385999999999,
+            "max": 0.20233979999999996,
+            "samples": [
+              0.20130190000000014,
+              0.20233979999999996,
+              0.1974385999999999
+            ]
+          },
+          "decode_outside_recorded_steps": {
+            "median": 0.0023815000000001474,
+            "mean": 0.00241340000000001,
+            "min": 0.0023495999999999517,
+            "max": 0.002509099999999931,
+            "samples": [
+              0.0023815000000001474,
+              0.002509099999999931,
+              0.0023495999999999517
+            ]
+          }
+        },
+        "steady_episodes_3_to_25": {
+          "step_seconds": {
+            "median": 0.3918928,
+            "mean": 0.3918721,
+            "min": 0.3901698,
+            "max": 0.3935537,
+            "samples": [
+              0.3935537,
+              0.3918928,
+              0.3901698
+            ]
+          },
+          "seconds": {
+            "median": 0.3743243,
+            "mean": 0.3742969,
+            "min": 0.3723165,
+            "max": 0.37624989999999997,
+            "samples": [
+              0.37624989999999997,
+              0.3743243,
+              0.3723165
+            ]
+          },
+          "prepare_total": {
+            "median": 0.0175685,
+            "mean": 0.017575200000000003,
+            "min": 0.017303800000000008,
+            "max": 0.017853300000000003,
+            "samples": [
+              0.017303800000000008,
+              0.0175685,
+              0.017853300000000003
+            ]
+          },
+          "cold_batch_seconds": {
+            "median": 0.015867,
+            "mean": 0.015852133333333334,
+            "min": 0.01572,
+            "max": 0.0159694,
+            "samples": [
+              0.0159694,
+              0.015867,
+              0.01572
+            ]
+          },
+          "prepare_outside_cold_batch": {
+            "median": 0.0017014999999999992,
+            "mean": 0.0017230666666666694,
+            "min": 0.0013344000000000081,
+            "max": 0.0021333000000000007,
+            "samples": [
+              0.0013344000000000081,
+              0.0017014999999999992,
+              0.0021333000000000007
+            ]
+          },
+          "submit_seconds": {
+            "median": 0.1425271,
+            "mean": 0.14095163333333333,
+            "min": 0.1370822,
+            "max": 0.1432456,
+            "samples": [
+              0.1425271,
+              0.1370822,
+              0.1432456
+            ]
+          },
+          "post_submit_total": {
+            "median": 0.23372279999999998,
+            "mean": 0.23334526666666666,
+            "min": 0.2290709,
+            "max": 0.23724209999999998,
+            "samples": [
+              0.23372279999999998,
+              0.23724209999999998,
+              0.2290709
+            ]
+          }
+        },
+        "compiled": [
+          {
+            "T": 154.0,
+            "steps": 1144.0,
+            "workspace/slot": 32835328.0,
+            "compiled_known_bytes": 2234056.0,
+            "compiled_unknown_providers": 668.0,
+            "child_prepare_seconds": 0.0002714
+          },
+          {
+            "T": 3.0,
+            "steps": 1358.0,
+            "workspace/slot": 19987204.0,
+            "compiled_known_bytes": 2267232.0,
+            "compiled_unknown_providers": 710.0,
+            "child_prepare_seconds": 0.000327
+          },
+          {
+            "T": 2.0,
+            "steps": 1237.0,
+            "workspace/slot": 14565896.0,
+            "compiled_known_bytes": 2241432.0,
+            "compiled_unknown_providers": 680.0,
+            "child_prepare_seconds": 0.0004105
+          },
+          {
+            "T": 1.0,
+            "steps": 1078.0,
+            "workspace/slot": 4232704.0,
+            "compiled_known_bytes": 2225864.0,
+            "compiled_unknown_providers": 602.0,
+            "child_prepare_seconds": 0.0001869
+          }
+        ],
+        "ggml_graph_messages": [
+          {
+            "warmup_complete": 501,
+            "warmup_reset": 9
+          },
+          {
+            "warmup_complete": 501,
+            "warmup_reset": 9
+          },
+          {
+            "warmup_complete": 501,
+            "warmup_reset": 9
+          }
+        ],
+        "cold_compile_seconds": {
+          "median": 1.020527,
+          "mean": 1.0195763333333334,
+          "min": 1.016451,
+          "max": 1.021751,
+          "samples": [
+            1.021751,
+            1.016451,
+            1.020527
+          ]
+        }
+      }
+    },
+    "definitions": {
+      "prepare_total": "stderr step_seconds - seconds: prepare_evaluations entry through submit_evaluations entry; excludes recursive proposals",
+      "cold_batch_seconds": "subset of prepare_total: dynamic IO/layout/batch/Store/Append prepare plus prepare_replay",
+      "submit_seconds": "original submit entry through ExecutionEpisode.submit return; includes Commands host orchestration and any synchronous native waits, not CPU-only time",
+      "post_submit_total": "stderr seconds-submit_seconds: target wait/readback/selection/repair/publication; control includes old PrefixSamplingProgram here",
+      "proposal_seconds_inferred": "report decode_step_sum_seconds minus sum(stderr target step_seconds); original per-call recursive proposal timings, stderr rounding uncertainty",
+      "steady_episodes_3_to_25": "same23 T3 episodes; excludes first2 episodes and final T2/Single"
+    },
+    "limitations": [
+      "No separate wait/readback/repair timing in these stderr logs; post_submit_total is inclusive of those stages.",
+      "No CUDA API/kernel trace collected for this experiment; no GPU/CPU attribution or host-busy claim.",
+      "Medians of separate partitions need not add to the median total; use each sample for conservation.",
+      "Only six existing timing processes, no reruns. A structured cost change is not proof of sole slowdown cause."
+    ]
+  },
+  "whole_process_profiles": [
+    {
+      "variant": "control",
+      "consumer_pid": 36488,
+      "controller": {
+        "exit": 0,
+        "pid": 54780,
+        "seconds": 7.829441900015809
+      },
+      "quality": {
+        "status": "PASS_SAME_OUTPUT_AND_MATH_TASK",
+        "differences": [],
+        "reference": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-terminal-20261028\\perf\\timing\\01-control\\consumer-result.json",
+          "bytes": 81420,
+          "sha256": "21f1baa6cd8dbde7c08fdc5b882e63cab4fd76496a0351e269214aa1d4982350"
+        }
+      },
+      "work": {
+        "actual_graph_calls": 131,
+        "decode_graph_calls": 27,
+        "draft_rounds": 26,
+        "consumed_drafts": 36,
+        "actual_target_rows": 232,
+        "actual_draft_rows": 289,
+        "generated_tokens": 64
+      },
+      "gpu": {
+        "kernel_count": 32259,
+        "kernel_sum_ms": 566.171172,
+        "all_activity_union_ms": 733.350374,
+        "activity_envelope_ms": 2887.902234,
+        "by_kind": [
+          {
+            "key": "KERNEL",
+            "count": 32259,
+            "sum_ms": 566.171172,
+            "median_us": 1.695,
+            "bytes": 0
+          },
+          {
+            "key": "MEMCPY",
+            "count": 5906,
+            "sum_ms": 167.077218,
+            "median_us": 0.832,
+            "bytes": 4035020879
+          },
+          {
+            "key": "MEMSET",
+            "count": 194,
+            "sum_ms": 0.101984,
+            "median_us": 0.288,
+            "bytes": 19550548
+          }
+        ],
+        "memcpy_by_kind": [
+          {
+            "key": "Host-to-Device",
+            "count": 2078,
+            "sum_ms": 163.435596,
+            "median_us": 0.32,
+            "bytes": 3885377628
+          },
+          {
+            "key": "Device-to-Device",
+            "count": 3412,
+            "sum_ms": 3.179611,
+            "median_us": 0.8,
+            "bytes": 149641848
+          },
+          {
+            "key": "Device-to-Host",
+            "count": 416,
+            "sum_ms": 0.462011,
+            "median_us": 0.96,
+            "bytes": 1403
+          }
+        ]
+      },
+      "api_count": 82691,
+      "api_duration_sum_ms": 1159.444518,
+      "scope": "Whole actual consumer including loading/cold preparation/prefill/decode/teardown. No asserted per-step or decode partition; API sums are not host busy wall time.",
+      "SQLite_identity_only": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-terminal-20261028\\perf\\profile\\runs\\control\\trace.sqlite",
+        "bytes": 7897088,
+        "sha256": "ddc2f106a474a9ddeab79473dacf857dd21b8ed913015606513abbd3c3350f75"
+      }
+    },
+    {
+      "variant": "current",
+      "consumer_pid": 54408,
+      "controller": {
+        "exit": 0,
+        "pid": 56952,
+        "seconds": 6.515055500029121
+      },
+      "quality": {
+        "status": "PASS_SAME_OUTPUT_AND_MATH_TASK",
+        "differences": [],
+        "reference": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-terminal-20261028\\perf\\timing\\02-current\\consumer-result.json",
+          "bytes": 81373,
+          "sha256": "7bd4d80c3d363f01595e4149a09dd29428aa2a1e828dddd5fa7bc672d53fb525"
+        }
+      },
+      "work": {
+        "actual_graph_calls": 105,
+        "decode_graph_calls": 27,
+        "draft_rounds": 26,
+        "consumed_drafts": 36,
+        "actual_target_rows": 232,
+        "actual_draft_rows": 289,
+        "generated_tokens": 64
+      },
+      "gpu": {
+        "kernel_count": 32308,
+        "kernel_sum_ms": 539.994086,
+        "all_activity_union_ms": 706.383983,
+        "activity_envelope_ms": 2843.743764,
+        "by_kind": [
+          {
+            "key": "KERNEL",
+            "count": 32308,
+            "sum_ms": 539.994086,
+            "median_us": 1.664,
+            "bytes": 0
+          },
+          {
+            "key": "MEMCPY",
+            "count": 5759,
+            "sum_ms": 166.296395,
+            "median_us": 0.8,
+            "bytes": 4035020262
+          },
+          {
+            "key": "MEMSET",
+            "count": 168,
+            "sum_ms": 0.093502,
+            "median_us": 0.288,
+            "bytes": 19550444
+          }
+        ],
+        "memcpy_by_kind": [
+          {
+            "key": "Host-to-Device",
+            "count": 2058,
+            "sum_ms": 162.730535,
+            "median_us": 0.32,
+            "bytes": 3885377448
+          },
+          {
+            "key": "Device-to-Device",
+            "count": 3412,
+            "sum_ms": 3.238246,
+            "median_us": 0.8,
+            "bytes": 149641848
+          },
+          {
+            "key": "Device-to-Host",
+            "count": 289,
+            "sum_ms": 0.327614,
+            "median_us": 1.056,
+            "bytes": 966
+          }
+        ]
+      },
+      "api_count": 82405,
+      "api_duration_sum_ms": 1106.428799,
+      "scope": "Whole actual consumer including loading/cold preparation/prefill/decode/teardown. No asserted per-step or decode partition; API sums are not host busy wall time.",
+      "SQLite_identity_only": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-terminal-20261028\\perf\\profile\\runs\\current\\trace.sqlite",
+        "bytes": 7872512,
+        "sha256": "477140d0435173b354b58c6e17e0d9d661ac8e0b0c30d14675bda4f883c18ae6"
+      }
+    }
+  ],
+  "profile_deltas": {
+    "status": "TWO_WHOLE_PROCESS_STRUCTURE_DELTAS",
+    "kernel_count_changes": [
+      {
+        "kernel": "void concat_cont<unsigned int, (int)1>(const T1 *, const T1 *, T1 *, long long, long long, long long, long long, long long, long long)",
+        "control": {
+          "count": 51,
+          "sum_ms": 0.073471
+        },
+        "current": {
+          "count": 76,
+          "sum_ms": 0.107776
+        },
+        "delta_count": 25
+      },
+      {
+        "kernel": "void hyle::compute::cuda_native::collectives::<unnamed>::arg_finish_kernel<float>(hyle::compute::cuda_native::collectives::Program, const void *, const hyle::compute::cuda_native::collectives::<unnamed>::ArgPair<std::conditional<std::is_same_v, long long, float>::type> *, T1 *, int *)",
+        "control": {
+          "count": 26,
+          "sum_ms": 0.06732700000000001
+        },
+        "current": {
+          "count": 0,
+          "sum_ms": 0
+        },
+        "delta_count": -26
+      },
+      {
+        "kernel": "void hyle::compute::cuda_native::collectives::<unnamed>::arg_tiles_kernel<float>(hyle::compute::cuda_native::collectives::Program, const void *, hyle::compute::cuda_native::collectives::<unnamed>::ArgPair<std::conditional<std::is_same_v, long long, float>::type> *)",
+        "control": {
+          "count": 26,
+          "sum_ms": 3.1800040000000003
+        },
+        "current": {
+          "count": 0,
+          "sum_ms": 0
+        },
+        "delta_count": -26
+      },
+      {
+        "kernel": "void hyle::compute::cuda_native::native::<unnamed>::concat<unsigned char, (unsigned int)2>(hyle::compute::cuda_native::native::ConcatPointers, T1 *, hyle::compute::cuda_native::native::ConcatLayout)",
+        "control": {
+          "count": 0,
+          "sum_ms": 0
+        },
+        "current": {
+          "count": 25,
+          "sum_ms": 0.036607
+        },
+        "delta_count": 25
+      },
+      {
+        "kernel": "void hyle::compute::cuda_native::native::<unnamed>::tensor<(hyle::compute::cuda_native::native::TensorKind)2, bool, float, (bool)1>(const void *, const void *, const void *, T2 *, hyle::compute::cuda_native::native::TensorLayout)",
+        "control": {
+          "count": 1545,
+          "sum_ms": 1.589202
+        },
+        "current": {
+          "count": 1571,
+          "sum_ms": 1.594964
+        },
+        "delta_count": 26
+      },
+      {
+        "kernel": "void hyle::compute::cuda_native::native::<unnamed>::tensor<(hyle::compute::cuda_native::native::TensorKind)3, unsigned char, unsigned char, (bool)1>(const void *, const void *, const void *, T2 *, hyle::compute::cuda_native::native::TensorLayout)",
+        "control": {
+          "count": 1415,
+          "sum_ms": 1.349404
+        },
+        "current": {
+          "count": 1440,
+          "sum_ms": 1.356187
+        },
+        "delta_count": 25
+      }
+    ],
+    "api_count_changes": [
+      {
+        "api": "cuKernelGetName",
+        "control": 5141,
+        "current": 5091
+      },
+      {
+        "api": "cuMemAlloc_v2",
+        "control": 2592,
+        "current": 2571
+      },
+      {
+        "api": "cuMemFree_v2",
+        "control": 2592,
+        "current": 2571
+      },
+      {
+        "api": "cuMemcpyDtoH_v2",
+        "control": 285,
+        "current": 184
+      },
+      {
+        "api": "cuMemcpyHtoD_v2",
+        "control": 996,
+        "current": 976
+      },
+      {
+        "api": "cuStreamSynchronize",
+        "control": 1059,
+        "current": 1039
+      },
+      {
+        "api": "cudaEventRecord_v3020",
+        "control": 1632,
+        "current": 1606
+      },
+      {
+        "api": "cudaEventSynchronize_v3020",
+        "control": 1632,
+        "current": 1606
+      },
+      {
+        "api": "cudaGetDeviceProperties_v12000",
+        "control": 167,
+        "current": 137
+      },
+      {
+        "api": "cudaGraphDestroy_v10000",
+        "control": 500,
+        "current": 501
+      },
+      {
+        "api": "cudaGraphExecDestroy_v10000",
+        "control": 495,
+        "current": 496
+      },
+      {
+        "api": "cudaGraphExecUpdate_v10020",
+        "control": 500,
+        "current": 501
+      },
+      {
+        "api": "cudaGraphInstantiate_v12000",
+        "control": 495,
+        "current": 496
+      },
+      {
+        "api": "cudaGraphLaunch_v10000",
+        "control": 11311,
+        "current": 11335
+      },
+      {
+        "api": "cudaLaunchKernel_v7000",
+        "control": 12189,
+        "current": 12215
+      },
+      {
+        "api": "cudaMemcpyAsync_v3020",
+        "control": 1338,
+        "current": 1312
+      },
+      {
+        "api": "cudaMemsetAsync_v3020",
+        "control": 131,
+        "current": 105
+      },
+      {
+        "api": "cudaStreamBeginCapture_v10000",
+        "control": 500,
+        "current": 501
+      },
+      {
+        "api": "cudaStreamEndCapture_v10000",
+        "control": 500,
+        "current": 501
+      },
+      {
+        "api": "cudaStreamIsCapturing_v10000",
+        "control": 13748,
+        "current": 13773
+      }
+    ],
+    "conclusions": [
+      "26 fewer engine auxiliary Graph episodes remove26 original completion event synchronizations, but are not26 fewer CUDA GraphLaunch calls.",
+      "Old Verify raw TopK contributes26 arg_tiles and26 arg_finish kernels, absent in current. Added predicate/concat kernels total101; net kernel count +49.",
+      "D2D count and bytes are identical. DtoH count/bytes decrease, consistent with grouped predicate/ID reads plus fewer episode status transfers; readback API calls and DMA counts are distinct.",
+      "No observed whole-process bulk-copy increase or major extra GPU compute explains the eight-process slowdown. Current whole-process GPU/API duration is lower in this one instrumented sample, which cannot establish a decode speedup.",
+      "The preserved stderr attribution shows larger target Commands plan and lazy carrier setup. Do not hide that cost by changing default warmup or claim that structural fusion itself guarantees speed.",
+      "No further profile/leaf matrix is justified by these two diagnostics alone; retain the measured no-net-speedup result when deciding whether the fused candidate stays."
+    ],
+    "parser_amendment": {
+      "original_profile_helper_unchanged": true,
+      "original_failure": "Root reported both original parse actions failed because nsys redirected app output to SQLite ProcessStreams; no raw parse-failure files were supplied. Frozen original code and successful native/process/SQLite remain intact.",
+      "actual_recovery": "Read ProcessStreams StringIds contents filtered by CUDA-device/context-proven consumer PID; preserve exact aggregate report, merge only missing sole-session result fields for the existing window.task comparator.",
+      "offline_only": true,
+      "native_reruns": 0
+    },
+    "scope": "Whole process only; loading/cold preparation/prefill/decode/teardown are not separately labeled. No formal TPS update or sole-cause claim.",
+    "candidate_decision": "NOT_ADOPTED",
+    "decision_basis": "Root restored product main to pre-candidate HEAD plus the independent12-line retired-ledger fix. Candidate27cd source, patch, eight-process observations and two actual profiles remain preserved; no performance improvement was established.",
+    "next_bounded_candidate": {
+      "implemented": false,
+      "proposal": "Independently remove old stochastic Verify raw TopK only if its real ID-output/observer contracts can be preserved.",
+      "evidence": "The diagnostic eliminated26 arg_tiles plus26 arg_finish kernels. This52-kernel removal is structural, not an isolated speed measurement or proof every consumer ignores the IDs.",
+      "scope": "Not implemented or tested in this batch; no further compiler/model/profile processes."
+    }
+  },
+  "parser_amendment": {
+    "original_profile_helper_unchanged": true,
+    "original_failure": "Root reported both original parse actions failed because nsys redirected app output to SQLite ProcessStreams; no raw parse-failure files were supplied. Frozen original code and successful native/process/SQLite remain intact.",
+    "actual_recovery": "Read ProcessStreams StringIds contents filtered by CUDA-device/context-proven consumer PID; preserve exact aggregate report, merge only missing sole-session result fields for the existing window.task comparator.",
+    "offline_only": true,
+    "native_reruns": 0
+  },
+  "CLI_helper_amendment": {
+    "schema": "hyle.helper-post-freeze-amendment.v1",
+    "status": "EXACT_FROZEN_BODY_RECOVERED_BY_SHA256",
+    "original_frozen_helper": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-terminal-20261028\\cli\\build.py",
+      "bytes": 10267,
+      "sha256": "6e0af52df78085267c8eae48e37200367ccb89985cf71e15e6d101c54aac8081"
+    },
+    "recovered_frozen_body": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-terminal-20261028\\cli\\build-frozen-recovered.py",
+      "bytes": 10267,
+      "sha256": "6e0af52df78085267c8eae48e37200367ccb89985cf71e15e6d101c54aac8081"
+    },
+    "post_freeze_helper": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-terminal-20261028\\cli\\build.py",
+      "bytes": 10335,
+      "sha256": "d3403c579ab6b390b42451011c9240d5df9b6291366a9e24dca0de53fb89972c"
+    },
+    "difference": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-terminal-20261028\\cli\\build-helper-post-freeze.patch",
+      "bytes": 467,
+      "sha256": "fdfda898c1efc3ef5fccff839f21d749293ca6fee314097747fc228b2d066e32"
+    },
+    "inserted_line": "        if t.key(row['path']) == t.key(original['path']): continue",
+    "change_bytes": 68,
+    "affected_action": "prepare only: skip the replaced original Model OBJ while creating a future retained-input stat roster",
+    "actual_existing_prepare": "Original build-plan/retained-input-stats, recipes, compile/link commands/processes and ready image are preserved unchanged. The later helper change does not retroactively change them.",
+    "recovery": "Remove the sole inserted68-byte CRLF line; recovered10267-byte body matches the frozen SHA256 exactly. No fabricated reconstruction.",
+    "native_rebuilds": 0,
+    "native_reruns": 0
+  },
+  "package_attempt1": {
+    "status": "OFFLINE_PACKAGE_ATTEMPT1_FAILED_BEFORE_ARTIFACT_WRITE",
+    "helper": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-terminal-20261028\\perf\\package-attempt1.py",
+      "bytes": 13461,
+      "sha256": "eb3e533b93ebe41419bf9883bef1bf51d9c4162d067641327ed2570efeaddda3"
+    },
+    "failure": "Frozen CLI helper pin expected10267B/SHA6e0af52d...8081; post-freeze helper10335B/SHAd3403c...972c mismatched at exact(source_freeze.helper).",
+    "provenance": "Root-reported actual packaging assertion; no standalone process/traceback file was supplied to this helper.",
+    "produced_artifacts": false,
+    "compiler_processes": 0,
+    "model_processes": 0,
+    "native_reruns": 0,
+    "repair": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-terminal-20261028\\cli\\build-helper-amendment.json",
+      "bytes": 1768,
+      "sha256": "97e3cbe63410369b754effa1f9f82e965874fb91c964a1d50f77467f2066d430"
+    }
+  },
+  "limitations": [
+    "Three timing samples per image are descriptive; no significance, sole-cause or stable-speedup claim.",
+    "Do not pool with earlier default K1 or peer windows. This is P154/K2/random/seed17, not the default K1 board.",
+    "Control differs by the candidate plus two intervening cold abstractions and retired-ledger fix; this does not isolate terminal fusion alone.",
+    "Memory is independent PSAPI/PDH sampling. Ready baselines are null/unknown, actual gaps are retained, and sampled peaks are lower bounds.",
+    "Two profiles cover whole consumer processes including loading, cold prepare, prefill, decode and teardown. GPU/API sums are not decode wall time.",
+    "Profile raw output was recovered offline from ProcessStreams; two original parser failures did not cause a native rerun. See amendment for unavailable raw parser-failure files.",
+    "No trained-quality, tensor-bit-equality, new-native capability or overlapping-episode claim is established by this performance window.",
+    "Candidate was withdrawn. These measurements do not describe the separately retained failure-fix product image."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-mtp-terminal-window-2026-10-28.zip",
+    "bytes": 940821,
+    "sha256": "c379ecef6a5eb8fc5fb971c04181b161788d29b09e40e62e0573cc788f0fa602",
+    "members": 160,
+    "manifest_sha256": "dd45ac03246acc975d5d39ad6a76bae794f69c6d6a8a090c57b8a08d704e6bac",
+    "CRC": "PASS",
+    "all_member_SHA256": "PASS"
+  }
+}

@@ -262,6 +262,18 @@ CPU另完成[AVX2公平短窗](../../evidence/performance/inference-cpu-avx2-win
 
 ## 目标与当前基线
 
+**多草稿末端合图候选：2026-10-28 17:48:21～17:49:56，未采用。** 同窗比较Hyle控制`0c6227e0`与候选`c20d3b03`，CUDA／BF16、P154、C1024、N1／R1、K2随机，temperature1／top-k0／top-p1／seed17，最多64个自然输出。六个交错计时及两个独立内存进程均首次成功；两臂输出、接受、RNG及数学任务相同，actual target rows232／draft rows289。
+
+| 控制→候选 | prefill tok/s | decode tok/s | 综合输出 tok/s | dedicated峰GiB |
+|---|---:|---:|---:|---:|
+| K2随机单轮 | 2004.63→2023.27 | 88.96→86.04 | 81.50→78.77 | 4.220→4.224 |
+
+引擎Graph episode为131→105，但未见净提速，decode中位−3.28%、三样本范围部分重叠，不签显著回归。ready中位1.960→2.017s，WS采样峰1.226→1.223GiB、private commit6.073→6.074GiB；内存每臂一次，ready基线均未知，峰值为下界。候选也包含两片冷抽象和账簿修复，不称末端合图的严格单因素归因，不混入下面普通／K1的跨引擎表。
+
+原日志中同23个稳态T3的target合计中位389.47→391.89ms，较多增量在首次／尾部载体准备；T3执行计划1086→1358步、局部workspace615424→19987204B。另各一次完整进程Nsight观察到kernel32259→32308、CUDA GraphLaunch11311→11335、D2D次数及字节相同；这些包含加载、准备与prefill，没有精确decode分区，不用其时长代签吞吐。减少episode主要将工作移进target，不能据此推定减少kernel或原生launch。[完整结果与归因](../../evidence/performance/inference-mtp-terminal-window-2026-10-28.json)
+
+候选源码和四后端有限检查保留。产品撤回合图，只保留实际退休后撤销原未提交账簿槽的独立修复；成功热路径未改，不声明新的普通／K1提速。最终产品CPU／CUDA检查和候选检查分别计数，见[检查记录](../../evidence/correctness/inference-mtp-terminal-2026-10-28.json)。
+
 **最新短输入／多轮／MTP：2026-10-28 15:52:14～15:59:28，`0c6227e0`／`433e7051`。** 主线来源4ca9，Model源41199a及当前ON229链接输入；N32未合入。参考为冻结本地镜像，consumer／编链身份保留，core git revision未知，不是最新上游。N1／R1、C1024、BF16、CUDA greedy、prefix off，单轮P154与两轮真实pending-flush配方不变；两轮不是B2多用户。主线普通auto／MTP、参考普通／MTP四臂，各场景3次计时、1次独立内存，共32进程，均首次成功，无补样或带仪器测速。下表为中位数，各格Hyle／参考，速度tok/s，显存为dedicated采样峰GiB。
 
 | 工况 | prefill | decode | 综合输出 | dedicated峰GiB |

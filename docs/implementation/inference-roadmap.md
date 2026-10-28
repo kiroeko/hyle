@@ -56,8 +56,10 @@ GDN a/b N32候选已完成[32进程整模型A/B](../evidence/performance/inferen
 随后使用计数、冻结上限和有界FIFO接纳政策已迁入共同`ColdShapePlan`，原数学资格及实际载体退休仍归模型。
 [3次增量编译／链接及六个有限进程](../evidence/correctness/inference-cold-shape-plan-2026-10-28.json)通过；
 主机退休／构造失败契约不代签原生故障，CPU／CUDA实际接纳尚未触发FIFO淘汰。
-下一片优先核对并共用MTP末端决策与读回：K1已有图内接受，多草稿仍有完成target后的辅助采样episode。
-先保原EOS／quota、RNG及完整head原子发布，再减少重复编排；固定有效行与设备后继仍需独立接线，不能直接删除状态权限检查。
+多草稿末端合图候选已完成四后端84项状态检查和K2随机8进程对照；输出、接受及RNG相同，episode减少26次，decode中位却未提升，候选撤回。
+全进程跟踪还观察到kernel净增49、CUDA GraphLaunch多24，不能从引擎episode数推导原生工作减少；固定形状与设备后继仍需独立设计。
+产品仅保留本批发现的目标失败后未提交账簿撤回：原工作真实退休后清理其原槽，已提交前缀、head与RNG保持，CPU／CUDA新增回归通过。
+候选、最终保留版本及范围分别见[检查记录](../evidence/correctness/inference-mtp-terminal-2026-10-28.json)和[测速归因](../evidence/performance/inference-mtp-terminal-window-2026-10-28.json)。
 具体候选允许因测量无净收益而不合入，但必须留下实测结论、适用边界或明确未解决项，不能默默移出任务。
 核实不成立的指控也要给结论：例如`deepseek_provider()`当前表示kernel来源与codec合同，路由并不要求
 ModelId，不能仅因名字含模型来源就判定存在模型白名单。基础执行接口收敛不以HTTP服务实现为前置。

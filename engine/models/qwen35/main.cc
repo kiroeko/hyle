@@ -5187,8 +5187,20 @@ public:
       // this target episode. Its negative observation cannot be overwritten
       // by retiring only the target; retain it until its original owner drains.
       const bool private_pending = failure.retirement_observed() && !failure.retirement().retired;
+      const auto failed_step = active_step; // Failure-only pin across original abort/detach.
       auto retired = abort_episode();
       retired.retired = retired.retired && !private_pending;
+      if (retired.retired && failed_step) for (auto &member : failed_step->members) {
+        // A retired failed attempt never authorizes a new ledger result. Only
+        // its exact still-uncommitted slot may be discarded; successful or
+        // partially published peers and any later current slot stay intact.
+        auto *ledger = member.commit_ledger;
+        if (!ledger || ledger->committed_count >= ledger->records.size()) continue;
+        auto &record = ledger->records[ledger->committed_count];
+        if (&record != member.commit_record || record.committed) continue;
+        ledger->discard_uncommitted();
+        member.commit_record = nullptr; member.commit_ledger = nullptr;
+      }
       failure.observe_retirement(retired);
       throw;
     } catch (...) { (void)abort_episode(); throw; }

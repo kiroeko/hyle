@@ -394,6 +394,38 @@ inline void unchanged(q::Model &model, q::GenerationRequest &request, const e::S
   h::same_image(before.image, p::capture(model, *reader, storage)); h::retire(reader); t::idle(model);
 }
 
+inline void terminal_failure_unchanged(q::Model &model, q::GenerationRequest &request, const e::SavedRequest &before,
+    const std::shared_ptr<i::HostStateStorage> &storage) {
+  require(request.session->head.get() == before.head && request.session->head.epoch() == before.epoch &&
+      request.progress.generated == before.generated && request.progress.observed_commits() == before.observed &&
+      request.ledger->committed_count == before.commits && request.turn_input_consumed == before.consumed &&
+      request.input_turn == before.input_turn && request.history.get() == before.history &&
+      (!request.history || request.history->length == before.history_length) && request.ledger->sampling == before.sampling &&
+      !request.ledger->successor_ordinal() && request.ledger->records.size() == before.records.size(),
+      "terminal failure changed the committed head/RNG/progress/ledger or retained a successor reservation");
+  for (std::size_t at = 0; at != before.commits; ++at)
+    require(e::same_record(before.records[at], request.ledger->records[at]),
+        "terminal failure changed an authoritative committed ledger record");
+  const auto &slot = request.ledger->records.at(before.commits), &old_slot = before.records.at(before.commits);
+  // Submission legitimately fills this reserved slot. Retirement must clear
+  // all proposal/publication metadata, not restore the initial {-1,-1} sizes.
+  // same_record covers quota/pending/input owner, accepted/verified IDs,
+  // before/after boundaries, result/commit bits and timing/publication facts.
+  q::GenerationCommitRecord cleared;
+  cleared.emitted.clear(); cleared.accepted_inputs.clear(); cleared.verification_inputs.clear();
+  require(e::same_record(cleared, slot) && slot.emitted.capacity() >= old_slot.emitted.capacity() &&
+      slot.accepted_inputs.capacity() >= old_slot.accepted_inputs.capacity() &&
+      slot.verification_inputs.capacity() >= old_slot.verification_inputs.capacity(),
+      "terminal failure retained uncommitted authority or shrank its cold metadata capacity");
+  for (std::size_t at = before.commits + 1; at < before.records.size(); ++at)
+    require(e::same_record(before.records[at], request.ledger->records[at]),
+        "terminal failure changed another reserved ledger slot");
+  h::same_image(before.image, p::capture(model, *request.session, storage));
+  auto reader = model.create_session({}, before.checkpoint, q::GraphRole::kMtpSingle, {}, false,
+      q::TextCompletion::kEmitNext, request.sampling_index);
+  h::same_image(before.image, p::capture(model, *reader, storage)); h::retire(reader); t::idle(model);
+}
+
 inline void request_journey(q::Model &model, const std::shared_ptr<i::HostStateStorage> &storage,
     const Payload &a, const Payload &b, const Payload &next, const Payload &masked, const Payload &nan,
     std::vector<p::StepReport> &checks) {
@@ -516,6 +548,51 @@ inline void request_journey(q::Model &model, const std::shared_ptr<i::HostStateS
     qwen_mtp_logits_case::unchanged(model, owner, saved, storage);
   }
   owner.logits = original_inputs;
+  // The original q failures above retire the draft before target submission.
+  // Here the actual q is valid: only the target's admitted mask is changed.
+  // The real Verify episode runs before the original private prefix sampler
+  // rejects its target distribution; neither may publish tentative state,
+  // consume RNG or change the request key.
+  {
+    const auto versions = model.snapshot_versions.live;
+    const auto target_pages = model.page_inventory.free_ids.size(), draft_pages = model.draft_inventory.free_ids.size();
+    const auto &proposal_program = *model.draft_programs.at({1, true, owner.sampling_index});
+    const auto q_blocks = proposal_program.probability_pool.stats().live_blocks;
+    std::array terminal_call{prepare(owner, 3)};
+    auto &call = terminal_call[0];
+    require(call.role == q::GraphRole::kVerify, "invalid terminal check did not select the real recursive verifier");
+    call.verification_ids = model.propose_recursive(*owner.session, call.maximum, q::model_eos_tokens,
+        &call.draft_log_probabilities, &owner.ledger->stop_policy(), original_inputs);
+    require(call.verification_ids.size() == 3 && call.draft_log_probabilities.size() == 2,
+        "invalid terminal check lost its two real valid proposal distributions");
+    q_rows(model, call.draft_log_probabilities, next);
+    const auto native_before = model.draft_program_graph_calls;
+    const auto terminals_before = model.prefix_decision_graph_calls;
+    call.logits = masked.inputs;
+    bool target_submitted = false, numeric_failed = false;
+    try {
+      q::execute_generation_calls(model, terminal_call, false, nullptr, requests, [&] {
+        const auto &step = *model.active_step;
+        target_submitted = step.submitted && step.members.size() == 1 && step.input_tokens == 3 &&
+            step.phase->family->role == q::GraphRole::kVerify &&
+            step.phase->family->sampling == &owner.session->sampling_configuration();
+      });
+    } catch (const i::EvaluationFailure &failure) {
+      numeric_failed = failure.status().IsInvalidArgument() && !failure.status().has_native_error() &&
+          failure.participant() && *failure.participant() == 0 && failure.retirement_observed() &&
+          failure.retirement().retired && failure.retirement().status.ok();
+    }
+    require(target_submitted && numeric_failed && model.draft_program_graph_calls == native_before &&
+        model.prefix_decision_graph_calls == terminals_before + 1,
+        "invalid private prefix terminal was preflight-only, rebuilt q or lost its original target retirement");
+    terminal_failure_unchanged(model, owner, saved, storage);
+    call.draft_log_probabilities.clear();
+    require(owner.request_key == key && window.matches(key) && !owner.session->pending && model.snapshot_versions.live == versions &&
+        model.page_inventory.free_ids.size() == target_pages && model.draft_inventory.free_ids.size() == draft_pages &&
+        proposal_program.probability_pool.stats().live_blocks == q_blocks,
+        "failed private prefix terminal retained candidate state, append pages or private proposal reads");
+    t::idle(model);
+  }
   h::ImageBytes expected_next; q::MtpRoundResult expected_outputs;
   {
     const std::array three{std::size_t{3}};
@@ -577,7 +654,8 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       "\"finite_math_branches\":2,\"already_normalized_q_not_reprocessed\":true,\"original_B2_snapshots\":true,"
       "\"StateOnly_no_input_or_draw\":true,\"partial_HostImage\":true,\"prefix_frontier_numeric_failure\":true,"
       "\"new_prefix_policy_payload\":true,\"strict_modifier_replay_rejected\":true,\"historical_StateOnly_rebuild\":true,"
-      "\"known_key_metadata_zero_native\":true,\"numeric_q_failures\":2,\"same_key_retry\":true,"
+      "\"known_key_metadata_zero_native\":true,\"numeric_q_failures\":2,\"target_terminal_numeric_failure\":true,"
+      "\"target_terminal_retired_without_publish\":true,\"target_terminal_resources_returned\":true,\"same_key_retry\":true,"
       "\"synthetic_untrained\":true,\"quality_claim\":false,\"performance_claim\":false,\"final_versions\":0,\"state_checks\":[";
   for (std::size_t at = 0; at != checks.size(); ++at) { if (at) std::cout << ','; p::write_step(checks[at]); }
   std::cout << "]}\n"; return 0;

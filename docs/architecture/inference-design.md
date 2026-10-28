@@ -1386,6 +1386,9 @@ Store事务借用及候选额度借用。模型先声明参与者pins，再嵌�
 普通与NextN共用这一顺序；NextN正常成功保留热carrier，只有失败且事务真实归还后才reset。
 `retire`仅观察原carrier；完整episode回收仍须`recover`。成功路径仍由模型核全体expected-base、
 接受和RNG后联合发布，输出观察结束才归还admission；模型数学、形状、状态和发布没有移入共同资源组件。
+账簿的下一条reserved记录是本次尝试的暂存，不是已提交结果。类型化计算失败在原episode确认退休后，
+只撤销与原成员`commit_record`一致的当前未提交槽；已提交前缀或后来的当前槽不变，冷容量保留。
+未知退休及尚在途的私有工作不由这一清理分支冒认完成。该修正不扩展generic异常分支，也不增加成功热路径复制或分配。
 [本片有限检查](../evidence/correctness/inference-execution-episode-2026-10-28.json)覆盖CPU／CUDA NextN真实失败后重试、
 旧快照、R2取消后的幸存续算和在途前驱下后继拒绝；未注入未知退休故障，没有新的性能结论。
 共同准备协议现沿原顺序分步表达：`prepare_appends`准备batch metadata并绑定选定Append；
