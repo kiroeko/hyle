@@ -63,6 +63,7 @@
 #include "../../inference/request_execution_failure.h"
 #include "../../inference/prepared_output.h"
 #include "../../inference/request_progress.h"
+#include "../../inference/commit_observation.h"
 #include "../../inference/request_stop_policy.h"
 #include "../../inference/request_window.h"
 #include "../../inference/request_loop.h"
@@ -1063,6 +1064,9 @@ struct StepMember final {
   bool sampled_accept = false;
   GenerationCommitRecord *commit_record = nullptr;
   GenerationLedger *commit_ledger = nullptr;
+  // Borrowed only by finish, after the original ledger slot is checked. No
+  // native work or successor reads this host publication ticket.
+  std::optional<inference::PreparedRecordCommit<GenerationCommitRecord>> commit_publication;
 
   const c::PagedArenaFrame &frame(std::size_t layer, bool key) const noexcept {
     const auto &candidate = key ? next->keys[layer] : next->values[layer];
@@ -5125,6 +5129,10 @@ public:
           if (step.discard_stopped_members && outputs[j].session->stopping) {
             step.members[j].commit_ledger = nullptr; step.members[j].commit_record = nullptr;
             outputs[j].generation_ledger->discard_uncommitted();
+          } else {
+            auto &ledger = *outputs[j].generation_ledger;
+            step.members[j].commit_publication.emplace(take(inference::prepare_record_commit(
+                std::span(ledger.records), ledger.committed_count, record)));
           }
         } else if (outputs[j].expected_episode)
           throw std::runtime_error("expected episode record requires a fresh commit witness");
@@ -5385,7 +5393,8 @@ public:
         member.next->next_id = next_ids[j];
         member.session->tails = std::move(member.next_tails);
         member.session->draft_tails = std::move(member.next_draft_tails);
-        member.session->head.commit(std::move(member.next),
+        const auto publish = [&]() noexcept -> hyle::Status {
+          member.session->head.commit(std::move(member.next),
             [&](cache::State *previous, cache::State &candidate) noexcept { member.publish_frames(previous, candidate); },
             [&](cache::State &previous) noexcept {
           // Only an exclusively owned successful old working head reaches
@@ -5396,16 +5405,20 @@ public:
             state_pools[i].history_reuse.recycle(previous.state[i].history);
             state_pools[i].recurrent_reuse.recycle(previous.state[i].recurrent);
           }
-        });
+          });
+          return {};
+        };
+        // Mark each original record immediately after its own no-fail head
+        // swap, before any subsequent reporting or observation can fail.
+        if (member.commit_publication) {
+          const auto status = member.commit_publication->publish(publish);
+          HYLE_FATAL_ASSERT(status.ok());
+          member.commit_publication.reset();
+        } else {
+          (void)publish();
+        }
         member.session->tail_epoch = member.session->head.epoch();
         member.session->draft_tail_epoch = member.session->head.epoch();
-      }
-      // Every bound and expected decision was checked before publication.
-      // The reserved host slot is now authoritative even if trace/report IO
-      // below throws. No callback, allocation or permission is acquired here.
-      for (auto &member : step.members) if (member.commit_record) {
-        member.commit_record->committed = true;
-        ++member.commit_ledger->committed_count;
       }
       if (step.execution.sources) step.execution.sources->release_publication_views();
       if (packs_prefill(phase.family->packing)) {
@@ -5422,6 +5435,7 @@ public:
       // by retiring only the target; retain it until its original owner drains.
       const bool private_pending = failure.retirement_observed() && !failure.retirement().retired;
       const auto failed_step = active_step; // Failure-only pin across original abort/detach.
+      if (failed_step) for (auto &member : failed_step->members) member.commit_publication.reset();
       auto retired = abort_episode();
       retired.retired = retired.retired && !private_pending;
       if (retired.retired && failed_step) for (auto &member : failed_step->members) {
@@ -5437,7 +5451,10 @@ public:
       }
       failure.observe_retirement(retired);
       throw;
-    } catch (...) { (void)abort_episode(); throw; }
+    } catch (...) {
+      if (active_step) for (auto &member : active_step->members) member.commit_publication.reset();
+      (void)abort_episode(); throw;
+    }
     const auto finished = Clock::now();
     for (std::size_t j = 0; j < outputs.size(); ++j) if ((published_members.empty() || published_members[j]) && outputs[j].generation_ledger) {
       const auto &output = outputs[j];
@@ -6121,71 +6138,80 @@ void import_generation_prompt_ledger(GenerationLedger &ledger, const cache::Repl
   ledger.committed_count = prefix.chunks;
 }
 
+void apply_generation_observation(GenerationRequest &request, const GenerationCommitRecord &record,
+    const inference::CommitObservation &observation) noexcept {
+  const auto output_end = request.progress.generated.size();
+  if (record.user_output) {
+    if (record.generation) {
+      MtpRoundResult result;
+      result.pending = record.pending_input; result.draft = record.draft;
+      result.target_first = record.target_first; result.target_second = record.target_second;
+      result.next_id = record.after.next_id; result.agreed = record.agreed;
+      result.accepted_draft = record.accepted_draft; result.stopped = record.stopped;
+      result.processed_target = record.accepted; result.processed_draft = record.draft_rows;
+      result.proposal_count = record.verified_rows ? record.verified_rows - 1 : 0;
+      result.verified_rows = record.verified_rows; result.consumed_drafts = record.consumed_drafts;
+      result.auxiliary_graph_calls = record.auxiliary_graph_calls;
+      result.emitted = std::move(request.round_emitted[request.rounds.size()]);
+      result.emitted.assign(record.emitted.begin(), record.emitted.begin() + record.emitted_count);
+      request.rounds.push_back(std::move(result));
+      request.verified_rows += record.verified_rows;
+      request.draft_rows += record.draft_rows; request.draft_rounds += record.draft_limit ? 1 : 0;
+      request.agreements += record.agreed ? 1 : 0; request.accepts += record.consumed_drafts;
+      request.auxiliary_graph_calls += record.auxiliary_graph_calls;
+      request.decode_step_sum_seconds += record.step_seconds;
+    }
+  }
+  if (!record.generation && !record.imported) {
+    ++request.prefill_graph_calls; request.prefill_graph_tokens += record.ids().size();
+    request.prefill_draft_rows += record.draft_rows;
+    request.prefill_step_seconds += record.step_seconds;
+  }
+  request.visible_tokens = record.after.length; request.draft_frontier = record.after.frontier;
+  request.draft_lag = record.after.lag; request.fresh_next_id = record.after.next_id;
+  if (!record.imported) request.endpoint = record.endpoint;
+  if (observation.prefill_complete) {
+    request.prefill_endpoint = record.endpoint;
+    if (!request.turn_observations.empty()) {
+      auto &turn = request.turn_observations[request.progress.turn_index];
+      turn.start = request.prefill_start; turn.prefill_endpoint = record.endpoint;
+    }
+  }
+  if (!request.turn_observations.empty()) {
+    auto &turn = request.turn_observations[request.progress.turn_index];
+    turn.endpoint = request.endpoint; turn.output_end = output_end;
+    turn.context_after = request.visible_tokens;
+  }
+}
+
 // Consume committed host facts even when a subsequent diagnostic write threw.
 // The authoritative ledger was installed by the original head-swap transaction.
 void observe_generation_commits(GenerationRequest &request) {
   if (!request.ledger) throw std::runtime_error("generation request requires its cold-prepared commit ledger");
   while (request.progress.observed_commits() < request.ledger->committed_count) {
     const auto ordinal = request.progress.observed_commits();
-    const auto &record = request.ledger->records[ordinal];
-    if (record.emitted_count > record.emitted.size())
-      throw std::runtime_error("committed output count exceeds its original record storage");
-    const auto emitted = std::span(record.emitted).first(record.emitted_count);
-    const bool prefill_complete = !record.generation && !record.imported && record.prefill_complete;
-    const auto input = !record.generation && !record.imported
-        ? std::optional<inference::RequestInputCommit>{{record.turn, record.input_begin, record.ids()}}
-        : std::nullopt;
-    const bool stopped = record.completion == TextCompletion::kEmitNext && record.stopped;
-    if (!request.progress.preflight_commit(ordinal, emitted, record.user_output, prefill_complete, stopped, input))
-      continue;
-    if (record.user_output && record.generation &&
+    (void)inference::observe_record_commit(std::span<const GenerationCommitRecord>(request.ledger->records),
+        request.ledger->committed_count, ordinal, request.progress,
+        [](const GenerationCommitRecord &record) {
+          if (record.emitted_count > record.emitted.size())
+            throw std::runtime_error("committed output count exceeds its original record storage");
+          return inference::CommitObservation{
+              std::span(record.emitted).first(record.emitted_count), record.user_output,
+              !record.generation && !record.imported && record.prefill_complete,
+              record.completion == TextCompletion::kEmitNext && record.stopped,
+              !record.generation && !record.imported
+                  ? std::optional<inference::RequestInputCommit>{{record.turn, record.input_begin, record.ids()}}
+                  : std::nullopt};
+        },
+        [&](const GenerationCommitRecord &record, const inference::CommitObservation &) {
+          if (record.user_output && record.generation &&
         (request.rounds.size() == request.rounds.capacity() || request.rounds.size() >= request.round_emitted.size() ||
          record.emitted_count > request.round_emitted[request.rounds.size()].capacity()))
-      throw std::runtime_error("generation observer requires its original cold-reserved round storage");
-    const auto output_end = request.progress.generated.size() + (record.user_output ? emitted.size() : 0);
-    if (record.user_output) {
-      if (record.generation) {
-        MtpRoundResult result;
-        result.pending = record.pending_input; result.draft = record.draft;
-        result.target_first = record.target_first; result.target_second = record.target_second;
-        result.next_id = record.after.next_id; result.agreed = record.agreed;
-        result.accepted_draft = record.accepted_draft; result.stopped = record.stopped;
-        result.processed_target = record.accepted; result.processed_draft = record.draft_rows;
-        result.proposal_count = record.verified_rows ? record.verified_rows - 1 : 0;
-        result.verified_rows = record.verified_rows; result.consumed_drafts = record.consumed_drafts;
-        result.auxiliary_graph_calls = record.auxiliary_graph_calls;
-        result.emitted = std::move(request.round_emitted[request.rounds.size()]);
-        result.emitted.assign(record.emitted.begin(), record.emitted.begin() + record.emitted_count);
-        request.rounds.push_back(std::move(result));
-        request.verified_rows += record.verified_rows;
-        request.draft_rows += record.draft_rows; request.draft_rounds += record.draft_limit ? 1 : 0;
-        request.agreements += record.agreed ? 1 : 0; request.accepts += record.consumed_drafts;
-        request.auxiliary_graph_calls += record.auxiliary_graph_calls;
-        request.decode_step_sum_seconds += record.step_seconds;
-      }
-    }
-    if (!record.generation && !record.imported) {
-      ++request.prefill_graph_calls; request.prefill_graph_tokens += record.ids().size();
-      request.prefill_draft_rows += record.draft_rows;
-      request.prefill_step_seconds += record.step_seconds;
-    }
-    request.visible_tokens = record.after.length; request.draft_frontier = record.after.frontier;
-    request.draft_lag = record.after.lag; request.fresh_next_id = record.after.next_id;
-    if (!record.imported) request.endpoint = record.endpoint;
-    if (prefill_complete) {
-      request.prefill_endpoint = record.endpoint;
-      if (!request.turn_observations.empty()) {
-        auto &turn = request.turn_observations[request.progress.turn_index];
-        turn.start = request.prefill_start; turn.prefill_endpoint = record.endpoint;
-      }
-    }
-    if (!request.turn_observations.empty()) {
-      auto &turn = request.turn_observations[request.progress.turn_index];
-      turn.endpoint = request.endpoint; turn.output_end = output_end;
-      turn.context_after = request.visible_tokens;
-    }
-    // No fallible family bookkeeping follows the one host observation mark.
-    (void)request.progress.observe_commit(ordinal, emitted, record.user_output, prefill_complete, stopped, input);
+            throw std::runtime_error("generation observer requires its original cold-reserved round storage");
+        },
+        [&](const GenerationCommitRecord &record, const inference::CommitObservation &observation) noexcept {
+          apply_generation_observation(request, record, observation);
+        });
   }
 }
 

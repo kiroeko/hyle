@@ -17,6 +17,7 @@
 #include "qwen_e4_cache_case.h"
 #include "qwen_request_loop_case.h"
 #include "qwen_request_control_case.h"
+#include "inference_commit_observation_case.h"
 namespace q = qwen35;
 namespace i = hyle::inference;
 namespace {
@@ -68,6 +69,8 @@ void finish_payload(q::GenerationRequest &request){
 }
 int main(int argc,char **argv){
  try{
+  if(argc==2 && std::string_view(argv[1])=="--commit-observation-only")
+    return inference_commit_observation_case::run();
   if(argc==2 && std::string_view(argv[1])=="--retirement-status-only") {
     retirement_status_contract();
     std::cout<<"retirement status: 7 host checks passed; no device error injected\n";return 0;

@@ -50,6 +50,7 @@
 #include "../../engine/inference/prefix_directory.h"
 #include "../../engine/inference/request_window.h"
 #include "../../engine/inference/request_progress.h"
+#include "../../engine/inference/commit_observation.h"
 #include "model_graph_run.h"
 #include "model_resident_fragment.h"
 #include "glm_gguf_mtp_fragment.h"
@@ -1753,6 +1754,27 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
       std::size_t request_turns=0;
       std::array<hyle::inference::GenerationTurn,2> progress_turns;
       std::array<std::optional<hyle::inference::RequestProgress>,2> request_progress;
+      struct RequestCommit final {
+        bool committed=false,stopped=false;
+        std::array<std::int32_t,1> emitted{};
+        std::int32_t cursor=0,index_cursor=0,lag=0;
+        std::uint64_t epoch=0;
+        SamplingCursor sampling;
+      };
+      std::array<RequestCommit,2> request0_records;
+      std::array<RequestCommit,1> request1_records;
+      std::array<std::size_t,2> request_commits{},family_observations{};
+      std::size_t request_publications=0,record_projections=0,late_catchup_refusals=0,observer_refusals=0;
+      const auto request_records=[&](std::size_t index)->std::span<RequestCommit> {
+        return index?std::span<RequestCommit>(request1_records):std::span<RequestCommit>(request0_records);
+      };
+      const auto request_submission_counts=[&] {
+        return std::array{initial_program.submissions,first_program.native_submissions(),second_program.native_submissions(),
+            continuation_zero_program.native_submissions(),continuation_one_program.native_submissions(),
+            skip_zero_program.native_submissions(),skip_one_program.native_submissions(),catchup_program.submissions,
+            verifier_program.submissions,repair_program->native_submissions(),target_program->native_submissions(),
+            policy_program->submissions,random_q->submissions,random_decision->submissions};
+      };
       std::array<std::array<std::int32_t,1>,2> progress_inputs{};
       std::array<const std::int32_t*,2> progress_storage{};
       std::array<std::size_t,2> progress_capacity{};
@@ -2017,6 +2039,43 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
             checkpoint=attach_target(state,repaired,target);
           }
           auto head=take(c::StateHead::create(state.store,base),"one atomic Pro accepted Head");
+          const auto publish_request_result=[&](std::size_t index,const c::StateIdentity &expected,
+              const c::StateVersion &version,std::span<const std::int32_t> emitted,bool stopped) {
+            const auto records=request_records(index);
+            require_observed(emitted.size()==1&&request_commits[index]<records.size(),
+                "original GLM request reserves one real emitted pending per Graph result");
+            auto &record=records[request_commits[index]];
+            record.emitted[0]=emitted[0];record.stopped=stopped;
+            // The ledger witnesses publication without retaining a native
+            // StateIdentity, which would pin this historical GPU version.
+            record.cursor=state.scalar(version,kCursor);record.index_cursor=state.scalar(version,kIndexCursor);
+            record.lag=state.scalar(version,kLag);record.epoch=state.epoch(version).epoch;
+            record.sampling=random_cursor(version);
+            const auto ordinal=request_commits[index];
+            auto commit=take(hyle::inference::prepare_record_commit(records,request_commits[index],record),
+                "prepare original GLM result commit witness");
+            check(commit.publish([&]() noexcept {return head.publish(expected,version);}),
+                "publish original GLM Head and immediately attest its result record");
+            ++request_publications;
+            require_observed(record.committed&&request_commits[index]==ordinal+1&&!commit.valid(),
+                "successful GLM Head publication immediately owns exactly one record ordinal");
+          };
+          const auto observe_request_result=[&](std::size_t index,std::size_t ordinal,
+              const c::StateVersion &actual) {
+            return hyle::inference::observe_record_commit(
+                std::span<const RequestCommit>(request_records(index)),request_commits[index],ordinal,*request_progress[index],
+                [&](const RequestCommit &record) {
+                  ++record_projections;
+                  return hyle::inference::CommitObservation{record.emitted,true,true,record.stopped};
+                },
+                [&](const RequestCommit &record,const hyle::inference::CommitObservation &) {
+                  if(record.emitted[0]!=state.scalar(actual,kPending)||record.sampling!=random_cursor(actual)||
+                      record.cursor!=state.scalar(actual,kCursor)||record.index_cursor!=state.scalar(actual,kIndexCursor)||
+                      record.lag!=state.scalar(actual,kLag)||record.epoch!=state.epoch(actual).epoch)
+                    throw std::runtime_error("GLM observation requires its actual committed pending/RNG result");
+                },
+                [&](const RequestCommit &,const hyle::inference::CommitObservation &) noexcept {++family_observations[index];});
+          };
           {
             auto discarded=take(state.store.begin(checkpoint),"cancelled Pro acceptance draft");
             check(discarded.replace(state.entry(kPending),pending),"cancelled actual pending lease");
@@ -2045,7 +2104,8 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
             require_observed(request_progress[0]->preflight_commit(0,selection_emitted,true,true,decision.stopped),
                 "preflight actual K1 host output before its complete Head publication");
           }
-          check(head.publish(base.identity(),published),"atomically publish Pro accepted prefix and pending");
+          if(request_directory_demo)publish_request_result(0,base.identity(),published,selection_emitted,decision.stopped);
+          else check(head.publish(base.identity(),published),"atomically publish Pro accepted prefix and pending");
           if(stochastic)EXPECT_EQ(random_cursor(take(head.current(),"successful Pro publish advances RNG once")),initial_random.advanced(3));
           EXPECT_FALSE(head.publish(base.identity(),second).ok());++stale_publish;
           const auto published_image=image(state,published);
@@ -2101,6 +2161,23 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
             caught=execute_step(state,published,catchup_step,*source,7,
                 [&](std::span<const c::ReadLease> input){return catchup_program.execute(queue,input);});
             ++catchups;check(head.publish(published.identity(),caught),"same accepted Head catches up its one journal row");
+          } else if(request_directory_demo) {
+            const auto submissions=request_submission_counts();
+            const auto publications=request_publications;
+            bool refused=false;
+            try {validate_step(state,published,catchup_step);}
+            catch(const std::runtime_error &error) {
+              require_observed(std::string(error.what())=="finite Pro catchup requires the next actual accepted journal row",
+                  "late GLM catchup preserves its original journal precondition");
+              refused=true;
+            }
+            require_observed(refused,"no accepted GLM journal row may launch catchup after publication");
+            ++late_catchup_refusals;
+            EXPECT_TRUE(request0_records[0].committed);EXPECT_EQ(request_commits[0],1u);
+            EXPECT_EQ(request_progress[0]->observed_commits(),0u);EXPECT_TRUE(request_progress[0]->generated.empty());
+            EXPECT_EQ(take(head.current(),"late catchup refusal retains actual committed Head").identity(),published.identity());
+            EXPECT_EQ(image(state,published),published_image);EXPECT_EQ(random_cursor(published),initial_random.advanced(3));
+            EXPECT_EQ(request_submission_counts(),submissions);EXPECT_EQ(request_publications,publications);
           } else EXPECT_THROW(validate_step(state,published,catchup_step),std::runtime_error);
           EXPECT_EQ(state.scalar(caught,kLag),0);EXPECT_EQ(state.scalar(caught,kCursor),state.scalar(caught,kIndexCursor));
           if(use_target)for(const auto entry:{kTargetMain,kTargetCursor,kTargetTap})
@@ -2114,8 +2191,20 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
           const SamplingCursor second_random{initial_random.seed,initial_random.stream+1,0};
           if(request_directory_demo) {
             auto &progress=*request_progress[0];
-            EXPECT_TRUE(progress.observe_commit(0,selection_emitted,true,true,decision.stopped));
-            EXPECT_FALSE(progress.observe_commit(0,selection_emitted,true,true,decision.stopped));
+            const auto submissions=request_submission_counts();
+            const auto publications=request_publications;
+            const auto before=image(state,caught);
+            // A late observer supplied an actual stale result. Only its host
+            // observation is retried; the real Head/record already committed.
+            EXPECT_THROW((void)observe_request_result(0,0,base),std::runtime_error);++observer_refusals;
+            EXPECT_TRUE(request0_records[0].committed);EXPECT_EQ(request_commits[0],1u);
+            EXPECT_EQ(progress.observed_commits(),0u);EXPECT_TRUE(progress.generated.empty());EXPECT_EQ(family_observations[0],0u);
+            EXPECT_TRUE(observe_request_result(0,0,published));
+            EXPECT_FALSE(observe_request_result(0,0,base)); // Duplicate returns before even checking the stale family witness.
+            EXPECT_EQ(request_submission_counts(),submissions);EXPECT_EQ(request_publications,publications);
+            EXPECT_EQ(take(head.current(),"GLM observer retry never republishes Head").identity(),caught.identity());
+            EXPECT_EQ(image(state,caught),before);EXPECT_EQ(random_cursor(caught),initial_random.advanced(3));
+            EXPECT_EQ(family_observations[0],1u);
             EXPECT_EQ(progress.observed_commits(),1u);EXPECT_EQ(progress.generated.size(),1u);
             EXPECT_EQ(progress.generated.back(),state.scalar(caught,kPending));
             EXPECT_TRUE(progress.turn_done);EXPECT_EQ(progress.remaining_outputs(),0u);
@@ -2238,11 +2327,14 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
             require_observed(request_progress[0]->preflight_commit(1,emitted,true,true,progress_stopped(emitted[0])),
                 "preflight original request's actual ordinary continuation");
           }
-          check(head.publish(caught.identity(),continued),"publish actual accepted-frontier fresh seed in the same Head");
           if(request_directory_demo) {
             const std::array emitted{state.scalar(continued,kPending)};
-            EXPECT_TRUE(request_progress[0]->observe_commit(1,emitted,true,true,progress_stopped(emitted[0])));
-            EXPECT_FALSE(request_progress[0]->observe_commit(1,emitted,true,true,progress_stopped(emitted[0])));
+            publish_request_result(0,caught.identity(),continued,emitted,progress_stopped(emitted[0]));
+          } else check(head.publish(caught.identity(),continued),"publish actual accepted-frontier fresh seed in the same Head");
+          if(request_directory_demo) {
+            const std::array emitted{state.scalar(continued,kPending)};
+            EXPECT_TRUE(observe_request_result(0,1,continued));
+            EXPECT_FALSE(observe_request_result(0,1,base));
             EXPECT_EQ(request_progress[0]->observed_commits(),2u);EXPECT_EQ(request_progress[0]->generated.size(),2u);
             EXPECT_EQ(request_progress[0]->generated.back(),emitted[0]);EXPECT_TRUE(request_progress[0]->turn_done);
             EXPECT_EQ(request_progress[0]->remaining_outputs(),0u);EXPECT_FALSE(request_progress[0]->more_turns());
@@ -2311,9 +2403,9 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
             const std::array emitted{state.scalar(continued,kPending)};
             require_observed(request_progress[1]->preflight_commit(0,emitted,true,true,progress_stopped(emitted[0])),
                 "preflight second request's actual ordinary continuation");
-            check(head.publish(second_request.version.identity(),continued),"publish second request continuation atomically");
-            EXPECT_TRUE(request_progress[1]->observe_commit(0,emitted,true,true,progress_stopped(emitted[0])));
-            EXPECT_FALSE(request_progress[1]->observe_commit(0,emitted,true,true,progress_stopped(emitted[0])));
+            publish_request_result(1,second_request.version.identity(),continued,emitted,progress_stopped(emitted[0]));
+            EXPECT_TRUE(observe_request_result(1,0,continued));
+            EXPECT_FALSE(observe_request_result(1,0,base));
             EXPECT_EQ(request_progress[1]->observed_commits(),1u);EXPECT_EQ(request_progress[1]->generated.size(),2u);
             EXPECT_EQ(request_progress[1]->generated.back(),emitted[0]);EXPECT_TRUE(request_progress[1]->turn_done);
             EXPECT_EQ(request_progress[1]->remaining_outputs(),0u);EXPECT_FALSE(request_progress[1]->more_turns());
@@ -2338,6 +2430,17 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
             ::testing::Test::RecordProperty("request_progress_duplicate_commit_noops",3);
             ::testing::Test::RecordProperty("request_progress_full_hit_outputs",1);
             ::testing::Test::RecordProperty("request_progress_pending_only_turn_inputs",2);
+            EXPECT_EQ(request_commits,(std::array<std::size_t,2>{2,1}));
+            EXPECT_EQ(family_observations,request_commits);EXPECT_EQ(request_publications,3u);
+            EXPECT_EQ(record_projections,4u);EXPECT_EQ(late_catchup_refusals,1u);EXPECT_EQ(observer_refusals,1u);
+            ::testing::Test::RecordProperty("request_record_committed_prefixes","2,1");
+            ::testing::Test::RecordProperty("request_record_head_publications",int(request_publications));
+            ::testing::Test::RecordProperty("request_record_late_catchup_refusals",int(late_catchup_refusals));
+            ::testing::Test::RecordProperty("request_record_observer_refusals",int(observer_refusals));
+            ::testing::Test::RecordProperty("request_record_projected_observations",int(record_projections));
+            ::testing::Test::RecordProperty("request_record_observer_retry_graphs",0);
+            ::testing::Test::RecordProperty("request_record_observer_retry_head_publications",0);
+            ::testing::Test::RecordProperty("request_record_observer_retry_rng_draws",0);
             ::testing::Test::RecordProperty("request_progress_scope","Shared RequestProgress on the existing real one-emission natural K1 branch and new-request cache fork, then the two original ordinary continuations. Each finite turn has quota1; actual model selector/EOS facts are preserved. A later empty new-user suffix consumes only its actual historical pending. No extra graph, model publication, RNG address, complete GLM prompt prefill or request server is introduced.");
             ::testing::Test::RecordProperty("request_directory_requests",2);
             ::testing::Test::RecordProperty("request_directory_turns",int(request_turns));

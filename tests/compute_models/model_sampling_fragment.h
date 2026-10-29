@@ -3,6 +3,7 @@
 #include <array>
 #include <bit>
 #include <initializer_list>
+#include <span>
 #include <stdexcept>
 #include <vector>
 
@@ -28,6 +29,14 @@ public:
     if (!result) throw std::runtime_error(std::string(result.error().message()));
     return std::move(*result);
   }
+  static g::TensorSpec dense_spec(c::DataType type, std::span<const g::Dimension> dimensions) {
+    auto result = g::TensorSpec::dense(type, dimensions);
+    if (!result) throw std::runtime_error(std::string(result.error().message()));
+    return std::move(*result);
+  }
+  static g::TensorSpec dense_spec(c::DataType type, std::initializer_list<g::Dimension> dimensions) {
+    return dense_spec(type, std::span(dimensions.begin(), dimensions.size()));
+  }
   Value input(c::TensorDesc description) { return fragment_.input(std::move(description)); }
   Value constant(c::TensorDesc description, std::vector<std::byte> bytes) {
     return fragment_.constant(std::move(description), std::move(bytes));
@@ -42,6 +51,18 @@ public:
   template<class Operation>
   Value one(Operation operation, std::initializer_list<Value> ports) {
     return fragment_.one(c::Operation(std::move(operation)), ports);
+  }
+  template<class Operation>
+  Value one(Operation operation, std::initializer_list<Value> ports, g::TensorSpec output) {
+    auto expected = output.concrete_description();
+    if (!expected) throw std::runtime_error(std::string(expected.error().message()));
+    const auto actual = one(std::move(operation), ports);
+    // This adapter owns fixed physical descriptions. Preserve the original
+    // schema inference and check the declared output; never replace it with
+    // a guessed descriptor or drop the common history branch.
+    if (fragment_.description(actual) != *expected)
+      throw std::runtime_error("sampling fragment output differs from its declared fixed spec");
+    return actual;
   }
   Value copy(Value value) { return one(c::Copy{}, {value}); }
   Value cast(Value value, c::DataType type) { return one(c::Cast{.output_type=type}, {value}); }

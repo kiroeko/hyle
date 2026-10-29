@@ -1,0 +1,896 @@
+{
+  "schema": "hyle.correctness.commit-observation.v1",
+  "date": "2026-10-29",
+  "status": "PASS_AFTER_RECORDED_CORRECTIONS",
+  "base_commit": "0b39ef22d52c6a9b4ea32f8a7475fe1d4b0ea862",
+  "change": "Reuse original reserved record/count for immediate successful-head witness and contiguous, duplicate-free RequestProgress observation; Qwen and actual GLM Pro component use one common mechanism.",
+  "counts": {
+    "CXX_attempts": 6,
+    "successful_final_CXX": 3,
+    "links": 4,
+    "retained_SDK_inputs": 227,
+    "SDK_rebuilds": 0,
+    "NVCC": 0,
+    "native_processes": 7,
+    "passed_finite_cases": 5,
+    "pre_model_fixture_reuse_refusals": 1,
+    "detected_and_corrected_GLM_version_retention_failures": 1,
+    "downloads": 0
+  },
+  "builds": {
+    "qwen": {
+      "compiles": [
+        {
+          "state": "TERMINAL",
+          "pid": 51336,
+          "started": 1793262269.6171668,
+          "seconds": 35.40951347351074,
+          "exit": 0,
+          "timed_out": false
+        },
+        {
+          "state": "TERMINAL",
+          "pid": 19648,
+          "started": 1793262407.7533095,
+          "seconds": 38.47752833366394,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "links": [
+        {
+          "state": "TERMINAL",
+          "pid": 36288,
+          "started": 1793262571.9424562,
+          "seconds": 1.765869140625,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-commit-observation-20261029\\compile\\qwen\\unit.obj",
+        "bytes": 23730701,
+        "sha256": "a134e516245e01f30934b9db266be05cf6ae93965f8d0d874a355c3b2e1262b7"
+      },
+      "source_inputs": 206
+    },
+    "ordinary": {
+      "compiles": [
+        {
+          "state": "TERMINAL",
+          "pid": 38600,
+          "started": 1793262489.8812628,
+          "seconds": 38.263676404953,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "links": [
+        {
+          "state": "TERMINAL",
+          "pid": 55100,
+          "started": 1793262657.9731905,
+          "seconds": 1.75325345993042,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-commit-observation-20261029\\compile\\ordinary\\unit.obj",
+        "bytes": 26039908,
+        "sha256": "379775cacf51346e937cc13e8a3c382ccec487b2f08c6af80aaff50902ef5f29"
+      },
+      "source_inputs": 198
+    },
+    "glm": {
+      "compiles": [
+        {
+          "state": "TERMINAL",
+          "pid": 55752,
+          "started": 1793262457.3867018,
+          "seconds": 4.7599804401397705,
+          "exit": 2,
+          "timed_out": false
+        },
+        {
+          "state": "TERMINAL",
+          "pid": 58140,
+          "started": 1793262599.3607023,
+          "seconds": 20.151154041290283,
+          "exit": 0,
+          "timed_out": false
+        },
+        {
+          "state": "TERMINAL",
+          "pid": 47524,
+          "started": 1793263075.12932,
+          "seconds": 21.06185293197632,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "links": [
+        {
+          "state": "TERMINAL",
+          "pid": 45752,
+          "started": 1793263197.367209,
+          "seconds": 1.8377277851104736,
+          "exit": 0,
+          "timed_out": false
+        },
+        {
+          "state": "TERMINAL",
+          "pid": 50392,
+          "started": 1793262672.616361,
+          "seconds": 1.832326889038086,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-commit-observation-20261029\\compile\\glm\\unit.obj",
+        "bytes": 37174492,
+        "sha256": "2480fa9999e2c587f19902547178054f7b88cafffcdb4f47785a81e1c1b96d09"
+      },
+      "source_inputs": 150
+    }
+  },
+  "cases": {
+    "host": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 40436,
+        "started": 1793262684.2621346,
+        "seconds": 0.697157621383667,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "commit-observation",
+        "models": 0,
+        "native_submissions": 0,
+        "publisher_refusal_preserved": true,
+        "original_commit_witness": true,
+        "moved_ticket_invalid": true,
+        "duplicate_publication_rejected": true,
+        "contiguous_observation": true,
+        "duplicate_payload_not_projected": true,
+        "observation_retry_without_republication": true
+      }
+    },
+    "ledger-cpu": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 46680,
+        "started": 1793262691.7573864,
+        "seconds": 0.43880486488342285,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "backend": "cpu",
+        "ordinary": true,
+        "missing_prepare_atomic": true,
+        "missing_later_execute_member_atomic": true,
+        "duplicate_Session_before_prefix_eviction": true,
+        "same_request_retry": true,
+        "real_R2_late_trace_error": true,
+        "both_ledgers_observed": true,
+        "duplicate_observation_noop": true,
+        "both_pending_continuations": true,
+        "raw_Session_without_request_ledger": true,
+        "A_ids": [
+          2,
+          8
+        ],
+        "B_ids": [
+          2,
+          8
+        ],
+        "final_versions": 0,
+        "GPU": false,
+        "HTTP": 0
+      }
+    },
+    "mtp-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 51172,
+        "started": 1793262699.147022,
+        "seconds": 3.3321590423583984,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "mtp-natural-relay",
+        "backend": "cuda",
+        "models": 1,
+        "journeys": 2,
+        "prompt_tokens": 154,
+        "capacity": 256,
+        "resident_capacity": 1,
+        "state_slots": 5,
+        "hidden_slots": 6,
+        "output_limit": 40,
+        "outputs": 40,
+        "serial_submissions": 23,
+        "auto_submissions": 24,
+        "source_submissions": 22,
+        "successor_submissions": 3,
+        "successor_publications": 2,
+        "successor_discards": 1,
+        "successor_refusals": 0,
+        "pending_pairs_before_A_publish": 3,
+        "deferred_waves": 2,
+        "reserved_two_grants": 2,
+        "accepted_drafts": 17,
+        "rejected_drafts": 4,
+        "ledger_records": 23,
+        "natural_RequestLoop": true,
+        "controlled_acceptance": false,
+        "original_ledger_equal": true,
+        "generated_ids_equal": true,
+        "greedy_rng_unchanged": true,
+        "all_sources_expired": true,
+        "simultaneous_native_inflight_claim": false,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0,
+        "state_checks": [
+          {
+            "sequence": 0,
+            "prefix": 193,
+            "active_rows": 1,
+            "physical_rows": 1,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 14733,
+            "bucket_next": 14733,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          }
+        ],
+        "ids": [
+          71093,
+          12305,
+          198,
+          464,
+          19298,
+          198,
+          1445,
+          18904,
+          1120,
+          5586,
+          11,
+          51338,
+          11,
+          36760,
+          11,
+          1697,
+          11,
+          11906,
+          11,
+          3856,
+          3829,
+          271,
+          51,
+          283,
+          3856,
+          3829,
+          482,
+          51,
+          837,
+          198,
+          42,
+          283,
+          3856,
+          3829,
+          482,
+          42,
+          837,
+          271,
+          727,
+          14733
+        ],
+        "batches": [
+          {
+            "ordinal": 0,
+            "quota": 0,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 154,
+            "draft_rows": 154,
+            "generation": false,
+            "discarded": false
+          },
+          {
+            "ordinal": 1,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 2,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 3,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 4,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 5,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 6,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 7,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 8,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 9,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 10,
+            "quota": 4,
+            "reserved": 2,
+            "additional": 2,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 11,
+            "quota": 2,
+            "reserved": 2,
+            "additional": 2,
+            "emitted": 0,
+            "accepted": 0,
+            "draft_rows": 0,
+            "generation": true,
+            "discarded": true
+          },
+          {
+            "ordinal": 11,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 12,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 13,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 14,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 15,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 16,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 17,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 18,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 19,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 20,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 21,
+            "quota": 3,
+            "reserved": 2,
+            "additional": 1,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 22,
+            "quota": 1,
+            "reserved": 0,
+            "additional": 1,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          }
+        ]
+      }
+    },
+    "ordinary-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 56888,
+        "started": 1793262772.6893713,
+        "seconds": 0.9836893081665039,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "backend": "cuda",
+        "fixture": "untrained_GA_H64",
+        "prompt_tokens": 18,
+        "outputs_per_live_member": 14,
+        "capacity": 32,
+        "in_flight_batches": 2,
+        "control_and_candidate_arms": 16,
+        "same_original_executor": true,
+        "complete_prefix_state_epoch_rng_equal": true,
+        "actual_owner_credit_checked": true,
+        "all_source_session_page_owners_retired": true,
+        "model_eos_run": false,
+        "synthetic_v64_extra_stop_shares_eos_contract": true,
+        "synthetic_fixture_directory": "continuous-extra-stop-v64",
+        "synthetic_role_payload_bytes": 65536,
+        "accepted_work_control_exception": true,
+        "gpu_native_fault_injected": false,
+        "model_quality_claim": false,
+        "performance_claim": false,
+        "candidates": [
+          {
+            "requests": 1,
+            "mode": "normal",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 5,
+            "max_consecutive_pending": 5,
+            "submit_before_observe": 5,
+            "renewals": 4,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "normal",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 5,
+            "max_consecutive_pending": 5,
+            "submit_before_observe": 5,
+            "renewals": 4,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "credit_exhaustion",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 1,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "member_cancel",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 1,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "yield_resume",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 1,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "cancel_then_control_exception",
+            "pumps": 16,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 1,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 3,
+            "control_exceptions": 1,
+            "aborted_actual_submissions": 2
+          },
+          {
+            "requests": 1,
+            "mode": "extra_stop",
+            "pumps": 13,
+            "actual_batches": 13,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 3,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 1,
+            "extra_stop_accepted_successor": true,
+            "discarded_batches": 1,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "extra_stop",
+            "pumps": 15,
+            "actual_batches": 15,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 3,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 1,
+            "extra_stop_accepted_successor": true,
+            "discarded_batches": 1,
+            "survivor_r1_steps": 2,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          }
+        ]
+      }
+    },
+    "glm-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 25828,
+        "started": 1793263208.862688,
+        "seconds": 86.4996030330658,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "test": "CudaOriginalTarget77AndNextNRandomVerifierContinuesAtomically",
+        "properties": {
+          "head_provider": "cublasLt",
+          "request_directory_r0_pending": "28122",
+          "request_directory_r0_committed_draws": "4",
+          "request_progress_output_counts": "2,2",
+          "request_progress_committed_observations": "2,1",
+          "request_progress_duplicate_commit_noops": "3",
+          "request_progress_full_hit_outputs": "1",
+          "request_progress_pending_only_turn_inputs": "2",
+          "request_record_committed_prefixes": "2,1",
+          "request_record_head_publications": "3",
+          "request_record_late_catchup_refusals": "1",
+          "request_record_observer_refusals": "1",
+          "request_record_projected_observations": "4",
+          "request_record_observer_retry_graphs": "0",
+          "request_record_observer_retry_head_publications": "0",
+          "request_record_observer_retry_rng_draws": "0",
+          "request_progress_scope": "Shared RequestProgress on the existing real one-emission natural K1 branch and new-request cache fork, then the two original ordinary continuations. Each finite turn has quota1; actual model selector/EOS facts are preserved. A later empty new-user suffix consumes only its actual historical pending. No extra graph, model publication, RNG address, complete GLM prompt prefill or request server is introduced.",
+          "request_directory_requests": "2",
+          "request_directory_turns": "4",
+          "request_directory_fifo": "0,1,0,1",
+          "request_directory_full_hits": "1",
+          "request_directory_evictions": "1",
+          "request_directory_same_request_restore_graphs": "0",
+          "request_directory_new_request_draws": "2",
+          "request_directory_cancelled_forks": "1",
+          "request_directory_stale_forks": "1",
+          "request_directory_retained_state_versions": "6",
+          "request_directory_current_backing_bytes": "241678044",
+          "request_directory_scope": "Original target77/NextN78 finite suffix after this exact initial StateVersion and upstream fixture; N1 FIFO limits active admissions, not all retained StateStore versions. Directory holds real complete lag0 state. New request resamples full-V pending with stream18; same request restores stream17 draw3 without sampling. Each request then consumes its own pending through actual target+NextN ordinary continuation. No arbitrary GLM prompt prefill or complete-model/server claim.",
+          "original_target_roles": "1559",
+          "original_target_source_bytes": "9872042432",
+          "actual_target_calls": "5",
+          "actual_target_submissions": "10",
+          "actual_target_policy_submissions": "5",
+          "accepted_target_conditioned_repairs": "0",
+          "actual_accepted_kv_repair_submissions": "0",
+          "stochastic_policy": "Actual NextN q samples proposal at draw0; actual target p0/q/p1 consumes accept1/final2. Same complete StateHead publishes pending and Cursor. Cancellation/stale publish advances0, successful K1 advances3; real target-only continuation consumes actual residual/bonus, samples its target pending and atomically advances one additional draw.",
+          "random_accepted": "0",
+          "random_rejected": "1",
+          "random_actual_proposal": "42456",
+          "random_committed_draws": "4",
+          "actual_nextn_steps": "5",
+          "actual_catchups": "0",
+          "actual_target_conditioned_repairs": "0",
+          "state_budget_bytes": "446998016",
+          "peak_state_backing_bytes": "291742452",
+          "scope": "Finite original target77+NextN78 natural K1 plus two-request/two-turn typed directory and FIFO adapter; original request tokens/pending/draw4 unchanged, second request independently resamples and continues actual target+NextN from the complete cached boundary. Previous layer input/residual/upstream74 index selection and initial history remain explicit fixtures. Not arbitrary prompt prefill, full-model generation, task quality, acceptance-rate measurement, TPS or other quantized source coverage."
+        }
+      }
+    }
+  },
+  "source_inputs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\commit_observation.h",
+      "bytes": 7343,
+      "sha256": "ef12a0806138813b728b8307cea925b7aab5568fc35b23d7b87182210e5fe7a2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 637213,
+      "sha256": "91c8fe0d7222785c88b727b957eeca85d3a8d20ee142705cf3f6c7b7d24c9a04"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_commit_observation_case.h",
+      "bytes": 7490,
+      "sha256": "47d934879e01b666c02b52d87b1da2ef108c5d0d091437f4140de09b35a8141f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_request_lifecycle_test.cc",
+      "bytes": 22177,
+      "sha256": "c7e19f569ae6aada5c015d196faad5d2413ec6ef27820d8b93c0f7e5a56c3bea"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_mtp_state_consumer_test.cc",
+      "bytes": 199325,
+      "sha256": "3bdcb21434dd86634a04c1daf68e90ed7956365c744373d31c5dac45b7867437"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\model_sampling_fragment.h",
+      "bytes": 6291,
+      "sha256": "8bd4157dc572171217ab7e3aafac2f8bc951d2d0f25feb51cfc83be1e2583af6"
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-commit-observation-2026-10-29.zip",
+    "bytes": 412394,
+    "sha256": "42a36ec5212c2a9fe422ee766382d4e06ead662062e17ce7368e1e9f8f73c66d"
+  },
+  "reference_boundaries": {
+    "source": "Read-only local checkout inspection; no claim of clean worktree or newest upstream.",
+    "vllm": {
+      "commit": "276fbcff2717",
+      "paths": [
+        "v1/engine/core.py",
+        "v1/core/sched/scheduler.py",
+        "model_executor/models/qwen3_5.py"
+      ],
+      "finding": "Common scheduler consumes original executor result; model provides math, logits and recurrent-state facts."
+    },
+    "tensorrt_llm": {
+      "commit": "46d9966b54d9",
+      "paths": [
+        "tensorrt_llm/_torch/pyexecutor/engine/model_call.py",
+        "tensorrt_llm/_torch/pyexecutor/py_executor.py",
+        "tensorrt_llm/_torch/pyexecutor/model_engine.py"
+      ],
+      "finding": "Model invocation borrows metadata; resource, request and response updates have distinct responsibilities. Do not copy a large dynamic ModelEngine or a second resource authority."
+    }
+  },
+  "corrections": [
+    "First Qwen compile passed; read-only review found active call-scoped tickets could survive failed finish with an unretired Step. Failure-only resets added and Qwen recompiled before native cases.",
+    "First GLM compile rejected existing model_sampling_fragment Builder missing dense_spec and explicit TensorSpec one. Adapter now preserves original inference and verifies actual fixed output; no shared sampling algorithm or history branch removed.",
+    "First GLM native run detected 5 retained versions versus original required 2. Record StateIdentity retained 3 complete versions. Replaced it with scalar pending/RNG/cursor/lag/epoch facts; original retirement thresholds and actual Head identity checks remain unchanged.",
+    "First ordinary process rejected a previously generated stop fixture before creating Model. Final run used fresh metadata-only input folder referencing the same weight payloads; previous fixture/results preserved."
+  ],
+  "limits": [
+    "Qwen request-ledger and ordinary control cases use finite untrained H64 fixtures; no quality/performance claim.",
+    "Natural Qwen CUDA case uses cached actual 2B trained weights and 40 greedy outputs; serial and pipeline ledger/IDs/full state match, without throughput measurement.",
+    "GLM uses actual target77/NextN78 and full-vocabulary components with finite cached experts and fixture-provided upstream state; not full-model GLM generation or throughput.",
+    "Existing lifecycle dispatcher wiring is source-reviewed; the same host helper body is compiled/run by this finite adapter.",
+    "Common witness does not prove a complete model-independent execution engine, all model combinations, multiple devices or distributed inference."
+  ]
+}

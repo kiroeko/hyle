@@ -61,6 +61,18 @@ Source接线及准备／提交／退休编排。本次复审将共同episode寿�
 模型适配说明完整状态和计算依赖，冷放置决定其使用的端点与资源。普通、MTP、稠密、MoE或递归状态的实际差异保留，
 共同层不要求它们采用Qwen的阶段数、单个KV银行、隐藏状态或单Queue接力方式。
 
+多模型边界同时参考本地成熟引擎：vLLM `276fbcff2717`的调度器消费原执行结果，模型提供forward、logits及递归状态形状；
+TensorRT-LLM `46d9966b54d9`将模型调用、资源更新、请求更新与响应处理分开。
+Hyle沿用职责分离，以实际消费者和静态直接调用落实，不照搬其大型动态接口；这些本地版本也不等于最新上游或Hyle正确性的证明。
+
+结果提交与主机观察是两个时刻。`PreparedRecordCommit`只在原owner调用期间借用已预留的记录及提交计数，
+原模型的Head发布拒绝时不记成功；成功则立即无抛地标记原记录。之后的catch-up、统计或报告失败，只能按原ordinal补观察，
+不能重跑Graph或重新采样。`observe_record_commit`先去重，再借原token／输入span调用一次原`RequestProgress`观察，
+家族统计预检在前，无抛更新在后；共同层不持有另一份ledger、状态、Completion或RNG。
+Qwen的无失败head swap与GLM的可拒绝StateHead发布仍各自保留，不要求不同用户的Head组成跨用户原子事务。
+纯主机见证保存原结果的必要标量，不能把会保活完整版本的`StateIdentity`当作无所有权ID存入历史；
+[Qwen／GLM有限检查](../evidence/correctness/inference-commit-observation-2026-10-29.json)保留原版本回收断言。
+
 Graph已有多个StorageDomain／ExecutionTarget／ExecutionLane及QueueBinding的表达，一个Invocation／Completion可覆盖聚合工作，
 物理IO槽数与设备数、分片数无关。当前Backend仍只装配一个主端点及可选CPU辅助；Qwen状态集中放置，
 CUDA跨Context搬运／等待尚未接通，跨机执行也未实现。这些是当前路线限制，不写成共同请求、缓存或退休合同。
