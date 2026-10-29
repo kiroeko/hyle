@@ -1315,10 +1315,16 @@ greedy／随机、StateOnly、同key HostImage恢复及新key完整前缀重采�
 符号view的计数更新声明真实逻辑输出规格，交原exact child处理布局；不提前要求物理描述。上述新增结果使用小型合成制品，覆盖原generation入口与RequestWindow，并非新增完整RequestLoop或服务层验证；未知native故障及其它平台未由这些旅程证明。
 以上为接线和资源合同，实际数学／Model检查结果另记，不代签逐步动态语法、全平台、质量或性能。
 
-**逐条件前缀输入已实现原语，完整接入仍在进行。** 上面的真实消费计数不等于随每个
+**逐条件前缀输入已接通原语与显式Verify，自然接入仍在进行。** 上面的真实消费计数不等于随每个
 假设前缀变化的约束。共同typed输入和原采样原语现可接收已准备的条件行，模型只绑定自己的数学端口；
 Compute／Graph不理解grammar或tokenizer。[有限CPU／CUDA检查](../evidence/correctness/inference-conditional-logits-2026-10-29.json)已核真实递归提案与原terminal，
-尚未接完整条件Verify状态发布或自然请求提供者，不能以合成目标logits的采样检查代签。
+[真实Verify检查](../evidence/correctness/inference-conditional-verify-2026-10-29.json)已从实际目标F32 logits核对独立接受数学及完整target／draft发布，
+覆盖后行坏输入的退休／原q重试；这仍是有限R1显式驱动，不代签自然请求提供者。
+
+`ConditionalLogitsInputs`只冻结元数据和原ReadLease，私有共享数组不暴露可变别名，prefix保留同一owner。
+默认空值不分配；它沿EvaluationRequest按值交给原StepMember，直到原episode实际退休后释放。
+实际Verify行数、冷terminal及全部元数据在候选创建前核对；已知key的纯输入错误保原key且不声称观察过退休。
+payload权限仍由原租约／StorageOwner证明，不复制词表，不把条件输入写进Snapshot、缓存或账簿。
 
 条件行i在q_i采样前取得一次，保留同一不可变bias／mask给p_i；最后一行用于bonus。
 每行继续调用原process_logits([1,V])，history仍由C0和实际草稿推进；已归一化q不重复施加约束。

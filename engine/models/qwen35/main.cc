@@ -830,29 +830,44 @@ void validate_logits_inputs(const SamplingConfiguration &configuration, const Lo
   validate_logits_input_leases(configuration, inputs);
 }
 // The base retains the one C0 history. Conditional rows supply only immutable
-// bias/mask snapshots; preflight every descriptor before any native binding.
-void validate_prefix_logits_inputs(const SamplingConfiguration &configuration, const LogitsInputs &inputs,
-    std::span<const LogitsInputs> conditional, std::size_t rows, std::int64_t vocabulary) {
-  if (conditional.empty()) { validate_logits_inputs(configuration, inputs, vocabulary); return; }
+// bias/mask snapshots. Descriptor errors can retain the original request key;
+// lease permission and native checks remain with their original mechanisms.
+hyle::Status prefix_logits_inputs_metadata_status(const SamplingConfiguration &configuration, const LogitsInputs &inputs,
+    std::span<const LogitsInputs> conditional, std::size_t rows, std::int64_t vocabulary) noexcept {
+  if (conditional.empty()) return logits_inputs_metadata_status(configuration, inputs, vocabulary);
   if (conditional.size() != rows || (!configuration.modifiers.bias && !configuration.modifiers.allowed))
-    throw std::runtime_error("conditional logits require one configured bias/mask row per actual target including bonus");
+    return hyle::Status::InvalidArgument("conditional logits require one configured bias/mask row per actual target including bonus");
   auto base = configuration, per_row = configuration;
   base.modifiers.bias = false; base.modifiers.allowed = false;
   per_row.modifiers.history = {};
-  check(logits_inputs_metadata_status(base, inputs, vocabulary));
-  for (const auto &row : conditional) check(logits_inputs_metadata_status(per_row, row, vocabulary));
+  HYLE_RETURN_IF_ERROR(logits_inputs_metadata_status(base, inputs, vocabulary));
+  for (const auto &row : conditional) HYLE_RETURN_IF_ERROR(logits_inputs_metadata_status(per_row, row, vocabulary));
+  return hyle::Status::Ok();
+}
+void validate_prefix_logits_input_leases(const SamplingConfiguration &configuration, const LogitsInputs &inputs,
+    std::span<const LogitsInputs> conditional) {
+  if (conditional.empty()) { validate_logits_input_leases(configuration, inputs); return; }
+  auto base = configuration, per_row = configuration;
+  base.modifiers.bias = false; base.modifiers.allowed = false; per_row.modifiers.history = {};
   validate_logits_input_leases(base, inputs);
   for (const auto &row : conditional) validate_logits_input_leases(per_row, row);
 }
+void validate_prefix_logits_inputs(const SamplingConfiguration &configuration, const LogitsInputs &inputs,
+    std::span<const LogitsInputs> conditional, std::size_t rows, std::int64_t vocabulary) {
+  check(prefix_logits_inputs_metadata_status(configuration, inputs, conditional, rows, vocabulary));
+  validate_prefix_logits_input_leases(configuration, inputs, conditional);
+}
 // A registered request has its own complete key before any bucket or native
 // episode exists. Do not manufacture EvaluationFailure.participant from it.
-void validate_request_logits_inputs(const SamplingConfiguration &configuration, const LogitsInputs &inputs,
-    std::int64_t vocabulary, inference::RequestKey key) {
-  auto status = logits_inputs_metadata_status(configuration, inputs, vocabulary);
+void check_request_logits_metadata(hyle::Status status, inference::RequestKey key) {
   if (status.IsInvalidArgument() && !status.has_native_error() && key.generation &&
       key.slot != (std::numeric_limits<std::size_t>::max)())
     throw inference::RequestExecutionFailure::from_preflight(std::move(status), key);
   check(std::move(status)); // Unregistered/raw consumers retain their original error path.
+}
+void validate_request_logits_inputs(const SamplingConfiguration &configuration, const LogitsInputs &inputs,
+    std::int64_t vocabulary, inference::RequestKey key) {
+  check_request_logits_metadata(logits_inputs_metadata_status(configuration, inputs, vocabulary), key);
   validate_logits_input_leases(configuration, inputs);
 }
 sampling::LogitsInputsFor<V> prepare_logits_inputs(Recipe &r, sampling::LogitsPolicy policy) {
@@ -1037,6 +1052,7 @@ struct StepMember final {
   // callback reads this policy; the original owner keeps it through finish.
   const inference::RequestStopPolicy *stop_policy = nullptr;
   LogitsInputs logits{}; // Original admitted episode snapshot, never history.
+  inference::ConditionalLogitsInputs conditional_logits{};
   std::unique_ptr<cache::State> next{};
   hyle::container::SmallVector<c::PagedArenaCommit, 16> key_updates{}, value_updates{};
   std::array<c::PagedArenaCommit, 2> draft_updates{};
@@ -1196,6 +1212,8 @@ struct EvaluationRequest final {
   std::span<const std::int32_t> ids;
   const inference::RequestStopPolicy *stop_policy = nullptr;
   LogitsInputs logits{};
+  inference::ConditionalLogitsInputs conditional_logits{};
+  inference::RequestKey request_key{}; // Diagnostic identity only; not admission authority.
 };
 
 // CPU topology only, never a candidate/head or permission. A weak identity and
@@ -4598,7 +4616,18 @@ public:
       const auto &stop_policy = inference::request_stop_policy(request.stop_policy);
       stop_policy.validate(vocabulary);
       if (&session.sampling_configuration() != &prepared_sampling) throw std::runtime_error("batch requires one cold sampling configuration");
-      if (completion == TextCompletion::kEmitNext) validate_logits_inputs(selected_sampler, request.logits, vocabulary);
+      if (!request.conditional_logits.empty()) {
+        const auto rows = request.conditional_logits.rows();
+        auto status = role == GraphRole::kVerify && completion == TextCompletion::kEmitNext
+            ? prefix_logits_inputs_metadata_status(selected_sampler, request.logits, rows, request.ids.size(), vocabulary)
+            : hyle::Status::InvalidArgument("conditional evaluation logits require an emitting Verify episode");
+        if (status.ok() && (request.ids.empty() || !prefix_sampling_programs.contains(
+            {request.ids.size() - 1, sampling_index, true})))
+          status = hyle::Status::InvalidArgument("conditional verification width was not cold prepared");
+        check_request_logits_metadata(std::move(status), request.request_key);
+        validate_prefix_logits_input_leases(selected_sampler, request.logits, rows);
+      } else if (completion == TextCompletion::kEmitNext)
+        validate_request_logits_inputs(selected_sampler, request.logits, vocabulary, request.request_key);
       if (session.stopping || session.failed || (session.pending && (!predecessor || session.pending != predecessor.get())))
         throw std::runtime_error("batch session is stopped, failed or already pending");
       session.head.preflight_commit();
@@ -4655,6 +4684,7 @@ public:
           .base_epoch = request.session->head.epoch() + (predecessor ? 1u : 0u),
           .stop_policy = request.stop_policy,
           .logits = completion == TextCompletion::kEmitNext ? request.logits : LogitsInputs{},
+          .conditional_logits = request.conditional_logits,
           .input_tokens = packed_target ? request.ids.size() : tokens});
       candidate->members.back().first_input = relay ? (predecessor ? -1 : request.session->head->next_id) : request.ids.front();
       if (role == GraphRole::kVerify)
@@ -5610,7 +5640,7 @@ public:
             decision = sample_recursive_prefix(logits,
                 std::span<const std::int32_t>(member.verification_inputs).subspan(1),
                 selection.draft_log_probabilities, member.base->sampling, selection.output_quota,
-                eos, member.stop_policy, selected_sampling.index, member.logits);
+                eos, member.stop_policy, selected_sampling.index, member.logits, member.conditional_logits.rows());
           } catch (const inference::EvaluationFailure &failure) {
             // Exact private validation of this original submitted member's
             // target rows; neither a request bucket nor a q-pool index.

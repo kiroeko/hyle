@@ -1,0 +1,310 @@
+{
+  "schema": "hyle.inference-conditional-verify.v1",
+  "status": "PASS_FINITE_CONDITIONAL_VERIFY",
+  "product_sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\logits_inputs.h",
+      "bytes": 2345,
+      "sha256": "a86c53df558d058dfd5fce157b8d14c9bff948f29a34a01b23687e167ea92806"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 629026,
+      "sha256": "769c846b796fcf01bc4f899b215211272b10e64d1bbf8cc17f0c11dbc859ae66"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_conditional_verify_case.h",
+      "bytes": 21002,
+      "sha256": "5a421d8c895cf23c804a62bc1e6958246651049abc693ae03a993a6af547a64d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+      "bytes": 9153,
+      "sha256": "781efe2434283742b2dd77fa16b649842ca97544f98769b726226896c43ad232"
+    }
+  ],
+  "source_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-conditional-verify-20261029\\attempt2\\source-freeze.json",
+    "bytes": 48520,
+    "sha256": "4c60fcfa27ea0b343416331f60df87d581f00edf9470367cf77f8bada0e62d25"
+  },
+  "frozen_project_files": 243,
+  "actual_compiled_project_files": 229,
+  "image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-conditional-verify-20261029\\attempt2\\bin\\tiny.exe",
+    "bytes": 144985088,
+    "sha256": "f740ac980988902a6c9d97357d54344d7b1853f4cdc35a30b1eeb26a4a2be712"
+  },
+  "object": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-conditional-verify-20261029\\attempt2\\compile\\tiny\\unit.obj",
+    "bytes": 53806047,
+    "sha256": "384840e4dc2d82c6d5d614c4a35a93f1be5387d94cf24969e377272f4670fd63"
+  },
+  "CXX": {
+    "pid": 32904,
+    "exit": 0,
+    "started": 1793246463.8513079,
+    "seconds": 71.26368474960327,
+    "state": "TERMINAL",
+    "timed_out": false
+  },
+  "link": {
+    "pid": 22464,
+    "exit": 0,
+    "started": 1793246574.553879,
+    "seconds": 1.8827502727508545,
+    "state": "TERMINAL",
+    "timed_out": false
+  },
+  "prior_failed_CXX": {
+    "process": {
+      "pid": 34960,
+      "exit": 2,
+      "started": 1793246268.754499,
+      "seconds": 7.209740400314331,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "command": "records/attempt1/logs/compile-tiny/command.json",
+    "logs_prefix": "records/attempt1/logs/compile-tiny/",
+    "source_freeze": "records/attempt1/source-freeze.json",
+    "historical_source": "historical-source/attempt1/engine/inference/logits_inputs.h",
+    "reason": "Status was returned without explicit std::unexpected into Result; one header line corrected before a distinct second CXX."
+  },
+  "actual_process_counts": {
+    "CXX": 2,
+    "failed_CXX": 1,
+    "link": 1,
+    "native": 5,
+    "failed_native": 0
+  },
+  "SDK": {
+    "retained_inputs": 227,
+    "objects": 202,
+    "libraries": 25,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "existing_object_receipts_inspected": 122,
+    "unavailable_object_receipts": 80,
+    "existing_engine_consumers": 2,
+    "source_identities_checked_unchanged": true
+  },
+  "native_processes": {
+    "verify-cpu": {
+      "process": {
+        "pid": 24992,
+        "exit": 0,
+        "started": 1793246583.7744498,
+        "seconds": 0.8277692794799805,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "verified_finite_pass": true,
+      "problems": [],
+      "facts": {
+        "conditional_rows": 3,
+        "target_submissions": 4,
+        "actual_target_F32_oracles": 2,
+        "actual_private_q_rows": 2,
+        "accepted_target_rows": 3,
+        "RNG_reserved_draws": 5,
+        "numeric_failure_participant": 0,
+        "complete_target_draft_state": true,
+        "same_q_retry": true,
+        "metadata_and_role_key_zero_target": true,
+        "numeric_failure_retired": true,
+        "immutable_owner_survives_caller": true,
+        "old_checkpoints_unchanged": true,
+        "host_owner_move_prefix": true,
+        "natural_conditional_supplier": false,
+        "final_versions": 0
+      },
+      "report": {
+        "member": "records/attempt2/runs/verify-cpu/report.json",
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-conditional-verify-20261029\\attempt2\\runs\\verify-cpu\\report.json",
+        "bytes": 1090,
+        "sha256": "1ee365f1d328c90395223272c4edd6cbd05dc93c32728941bd7cb6d8b3e30cb2"
+      },
+      "logs_prefix": "records/attempt2/runs/verify-cpu/"
+    },
+    "verify-cuda": {
+      "process": {
+        "pid": 38932,
+        "exit": 0,
+        "started": 1793246594.9780107,
+        "seconds": 0.7787501811981201,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "verified_finite_pass": true,
+      "problems": [],
+      "facts": {
+        "conditional_rows": 3,
+        "target_submissions": 4,
+        "actual_target_F32_oracles": 2,
+        "actual_private_q_rows": 2,
+        "accepted_target_rows": 2,
+        "RNG_reserved_draws": 5,
+        "numeric_failure_participant": 0,
+        "complete_target_draft_state": true,
+        "same_q_retry": true,
+        "metadata_and_role_key_zero_target": true,
+        "numeric_failure_retired": true,
+        "immutable_owner_survives_caller": true,
+        "old_checkpoints_unchanged": true,
+        "host_owner_move_prefix": true,
+        "natural_conditional_supplier": false,
+        "final_versions": 0
+      },
+      "report": {
+        "member": "records/attempt2/runs/verify-cuda/report.json",
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-conditional-verify-20261029\\attempt2\\runs\\verify-cuda\\report.json",
+        "bytes": 1091,
+        "sha256": "3c36fdbfd99068c17b69edfab55d32b4fc7b8b1787fbc4184cae1ce6a1b0f65e"
+      },
+      "logs_prefix": "records/attempt2/runs/verify-cuda/"
+    },
+    "conditional-cpu": {
+      "process": {
+        "pid": 20740,
+        "exit": 0,
+        "started": 1793246617.077153,
+        "seconds": 0.4565279483795166,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "verified_finite_pass": true,
+      "problems": [],
+      "facts": {
+        "configurations": 3,
+        "conditional_rows": 3,
+        "actual_private_q_rows": 2,
+        "conditional_metadata_failures": 4,
+        "conditional_history_counts": true,
+        "greedy_conditional": true,
+        "full_target_publication": false,
+        "natural_conditional_supplier": false,
+        "final_versions": 0
+      },
+      "report": {
+        "member": "records/attempt2/runs/conditional-cpu/report.json",
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-conditional-verify-20261029\\attempt2\\runs\\conditional-cpu\\report.json",
+        "bytes": 912,
+        "sha256": "63544c849490de6a1b8ad6350a045ad2960bf4a9228042779cccf7551eefb129"
+      },
+      "logs_prefix": "records/attempt2/runs/conditional-cpu/"
+    },
+    "conditional-cuda": {
+      "process": {
+        "pid": 50552,
+        "exit": 0,
+        "started": 1793246618.300909,
+        "seconds": 0.8142650127410889,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "verified_finite_pass": true,
+      "problems": [],
+      "facts": {
+        "configurations": 3,
+        "conditional_rows": 3,
+        "actual_private_q_rows": 2,
+        "conditional_metadata_failures": 4,
+        "conditional_history_counts": true,
+        "greedy_conditional": true,
+        "full_target_publication": false,
+        "natural_conditional_supplier": false,
+        "final_versions": 0
+      },
+      "report": {
+        "member": "records/attempt2/runs/conditional-cuda/report.json",
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-conditional-verify-20261029\\attempt2\\runs\\conditional-cuda\\report.json",
+        "bytes": 913,
+        "sha256": "0f28ddd9ef9257a24638d648f81b027d185f041cee2f55e68bb7fdb04868c8e0"
+      },
+      "logs_prefix": "records/attempt2/runs/conditional-cuda/"
+    },
+    "natural-cuda": {
+      "process": {
+        "pid": 60632,
+        "exit": 0,
+        "started": 1793246619.8775232,
+        "seconds": 3.239192247390747,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "verified_finite_pass": true,
+      "problems": [],
+      "facts": {
+        "outputs": 40,
+        "ledger_records": 23,
+        "resident_capacity": 1,
+        "state_slots": 5,
+        "hidden_slots": 6,
+        "successor_submissions": 3,
+        "successor_publications": 2,
+        "successor_discards": 1,
+        "successor_refusals": 0,
+        "accepted_drafts": 17,
+        "rejected_drafts": 4,
+        "natural_RequestLoop": true,
+        "controlled_acceptance": false,
+        "final_versions": 0
+      },
+      "report": {
+        "member": "records/attempt2/runs/natural-cuda/report.json",
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-conditional-verify-20261029\\attempt2\\runs\\natural-cuda\\report.json",
+        "bytes": 7117,
+        "sha256": "783435df8c542066c8a5d00b9e5efb96c73ce3179744f702e70a44c33ebf323d"
+      },
+      "logs_prefix": "records/attempt2/runs/natural-cuda/"
+    }
+  },
+  "unresolved_evidence_issues": [],
+  "complete_state_comparisons": {
+    "total": 3,
+    "numerically_equivalent": 3,
+    "byte_identical": 3,
+    "F32_GDN_absolute_budget": 3e-06
+  },
+  "scope": {
+    "raw_EvaluationRequest": true,
+    "real_target_Verify": true,
+    "real_F32_math_oracle": true,
+    "conditional_target_and_draft_state_publication": true,
+    "finite_R1_CPU_CUDA_untrained_model": true,
+    "natural_conditional_supplier": false,
+    "request_scheduler_supplier": false,
+    "trained_quality_claim": false,
+    "throughput_claim": false,
+    "full_goal_completion": false,
+    "verified_for_all_requested_cases": true
+  },
+  "records": {
+    "plan": "records/attempt2/plan.json",
+    "compile": "records/attempt2/compile/tiny/compiled.json",
+    "ready": "records/attempt2/ready-tiny.json",
+    "SDK_review": "records/attempt2/sdk-engine-dependencies.json",
+    "fixtures": "fixtures/",
+    "note": "Complete reports/state rows and all335 weight identities/extents live only in ZIP records/attempt2/plan.json and original reports; summary retains counts and key facts."
+  },
+  "limits": [
+    "Raw immutable conditional inputs enter the original EvaluationRequest -> bounded Verify -> submit -> recursive finish path; no natural grammar/scheduler supplier is implemented by this slice.",
+    "Finite R1 checks use cached untrained GA/H64/V64/C16 weights. Actual acceptance row counts are reported as observed, without forced acceptance or all-prefix coverage claim.",
+    "Successful Verify observers read real F32 target logits and compare actual original-q acceptance/residual/bonus equations, alongside complete target/draft state publication and failure/same-q retry.",
+    "Preflight metadata/role rejection has no target candidate and no observed retirement; submitted numeric failure requires actual target/private retirement before retry.",
+    "Separate existing conditional terminal mathematics and natural greedy CUDA K1 RequestLoop remain regressions, without expanded pipeline applicability.",
+    "Complete-state comparisons retain the existing F32 GDN absolute budget3e-6; old immutable checkpoints stay byte-exact.",
+    "Initial CXX PID34960 exited2; its source/header, command, logs, helper, plan and freeze remain distinct from the successful second attempt.",
+    "SDK reuse checks available adjacent receipts and unchanged engine dependencies. Missing SDK object receipts remain explicit; no full SDK rebuild is claimed.",
+    "Archive excludes environment values, tensor payloads and binaries; failures retain their original process/log/report facts and are never relabeled PASS."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-conditional-verify-2026-10-29.zip",
+    "bytes": 1374737,
+    "sha256": "60c81a06493af787ac4a7a98b4e3dd5e5cd501705ea4467143f690b34c31403d"
+  },
+  "archive_members": 310,
+  "crc_and_member_sha256_readback": true
+}

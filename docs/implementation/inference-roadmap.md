@@ -219,7 +219,10 @@ PreparedGenerationCall分开规划上界与实际提交行数，报告不按接�
 继续复查确认history推进与episode快照不能代签逐条件动态约束，原98%估计偏高。
 [逐条件输入首片](../evidence/correctness/inference-conditional-logits-2026-10-29.json)已抽出共同typed输入，冷准备独立逐行端口，真实递归提案按行采样，原terminal复用同一bias／mask和原q租约；C0唯一并按实际草稿推进。
 CPU／CUDA有限检查覆盖接受、拒绝、bonus、history计数、greedy、EOS截短、完整元数据预检及非首行全mask失败／重试，head／RNG／旧检查点保持；原共享modifier和真实Qwen K1自然接力回归通过。
-共1次CXX／链接和5个有限进程，无SDK重编或下载。条件目标logits仍是有限合成输入，尚未接完整条件Verify发布或自然请求提供者；下一片复用原Verify、提交、发布及失败退休，不另造执行器。职责见[架构合同](../architecture/inference-design.md)。
+首片共1次CXX／链接和5个有限进程，无SDK重编或下载；当时条件目标logits为有限合成输入，不代签完整发布。
+随后[真实Verify发布](../evidence/correctness/inference-conditional-verify-2026-10-29.json)已将不可变条件行沿原EvaluationRequest交给StepMember，候选创建前完整检查实际行数、元数据和冷程序，纯输入错误保原RequestKey；租约和原生错误仍由原机制处理。
+原terminal读取成员条件行，完整target／draft及账簿仍沿原提交／发布／失败退休。CPU／CUDA有限R1检查实际接受3／2行，以真实目标F32 logits和原q独立核对决策；真实非首行全mask失败后同key／原q重试，旧检查点不变，全部版本和页归还。当前3项完整状态对照均逐字节相同，仍保留既有GDN数值预算而非推广逐字节保证。
+本片2次CXX（首轮Result错误返回写法失败已修并保留）、1次链接、5个有限进程，无SDK重编或下载。自然请求提供者、条件K1及其控制／恢复边界继续实现；没有新吞吐结论。职责见[架构合同](../architecture/inference-design.md)。
 
 ## 当前实现概况
 
