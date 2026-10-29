@@ -61,11 +61,18 @@ Source接线及准备／提交／退休编排。本次复审将共同episode寿�
 模型适配说明完整状态和计算依赖，冷放置决定其使用的端点与资源。普通、MTP、稠密、MoE或递归状态的实际差异保留，
 共同层不要求它们采用Qwen的阶段数、单个KV银行、隐藏状态或单Queue接力方式。
 
-多模型边界同时参考本地成熟引擎：vLLM `276fbcff2717`的调度器消费原执行结果，模型提供forward、logits及递归状态形状；
-TensorRT-LLM `46d9966b54d9`将模型调用、资源更新、请求更新与响应处理分开。
-Hyle沿用职责分离，以实际消费者和静态直接调用落实，不照搬其大型动态接口；这些本地版本也不等于最新上游或Hyle正确性的证明。
-vLLM的`gpu_input_batch.py`管理共同请求槽，`qwen3_5_mtp.py`与`deepseek_mtp.py`分别表达自己的预测层、hidden时序与head；
-共同批次不需要理解GDN或NextN状态含义。SGLang本地`234ccba7f625`以同一`keep_indices`同步过滤请求、采样与speculative数据，
+多模型边界参考本地vLLM `276fbcff2717`、SGLang `234ccba7f625`和TensorRT-LLM `46d9966b54d9`。
+沿用职责分离，以实际消费者和静态直接调用落实，不照搬其大型动态接口。具体保留三条边界：
+
+| 共同部分 | 模型保留的差异 | 本地参考位置 |
+|---|---|---|
+| 请求工作量、容量与资源类别 | 混合层选择、完整状态schema、dtype／shape及恢复方式 | vLLM `model_executor/models/qwen3_5.py`、`v1/worker/gpu_model_runner.py`；SGLang `srt/models/qwen3_5.py`、`srt/managers/schedule_batch.py` |
+| 原执行owner的持久输入缓冲、冷准备和动态位置更新 | 实际forward及模型端口含义 | TensorRT-LLM `_torch/pyexecutor/engine/runners/decoder/runner.py`、`inputs.py` |
+| 实际输出前缀、接受长度、提交ordinal及成员退出 | MTP carry、归一化位置、训练阶段和完整续算状态 | vLLM `model_executor/models/qwen3_5_mtp.py`、`deepseek_mtp.py`；TensorRT-LLM `_torch/speculative/mtp.py` |
+
+所引文件内容已核对各自HEAD；未据此声明整个工作树干净、版本为最新上游或已运行参考实现。
+共同缓存仅保不变物理事实，lease权限和Completion仍按原代际与实际执行核验；模型差异不能被简化成统一的GDN、NextN或单hidden形状。
+SGLang以同一`keep_indices`同步过滤请求、采样与speculative数据，
 过滤发生在下一批准备，不能改写已提交批次的行坐标。vLLM收取原执行结果时跳过已结束请求，KV块仍独立等待真实执行序号；
 Hyle采用同一职责边界，保留自身head／ledger／RNG原子发布合同，不据此声称取消后GPU不再计算该行。
 
@@ -76,6 +83,11 @@ Hyle采用同一职责边界，保留自身head／ledger／RNG原子发布合同
 Qwen的无失败head swap与GLM的可拒绝StateHead发布仍各自保留，不要求不同用户的Head组成跨用户原子事务。
 纯主机见证保存原结果的必要标量，不能把会保活完整版本的`StateIdentity`当作无所有权ID存入历史；
 [Qwen／GLM有限检查](../evidence/correctness/inference-commit-observation-2026-10-29.json)保留原版本回收断言。
+
+GLM有限消费者现直接复用`RequestLoop`与`advance_request_wave`：原自然K1、前缀命中新请求采样及两次普通续算在wave内执行，
+同一套模型数学也供原scenario调用。N1只限制当前驻留Head，目录和读者可保留历史版本；完整命中输出不伪造Graph提交。
+已提交但观察失败时，下次pump只读原记录，不能重新计算／发布／抽样；退休取原Invocation完成或drain，不能用StateStore回收代替。
+[原权重CUDA组件检查](../evidence/correctness/inference-glm-request-loop-2026-10-29.json)保留初始历史与上游激活fixture，不外推完整GLM生成或多模型引擎已完成。
 
 Graph已有多个StorageDomain／ExecutionTarget／ExecutionLane及QueueBinding的表达，一个Invocation／Completion可覆盖聚合工作，
 物理IO槽数与设备数、分片数无关。当前Backend仍只装配一个主端点及可选CPU辅助；Qwen状态集中放置，

@@ -1,0 +1,341 @@
+{
+  "schema": "hyle.correctness.glm-request-loop.v1",
+  "date": "2026-10-29",
+  "status": "PASS",
+  "base_commit": "04e55e250e9e860abae5ee273c09ffdd4d6a0377",
+  "changes": [
+    "Original finite GLM target77/NextN78 journey executes real work inside RequestLoop waves; FIFO, admission, turn changes and original-owner retirement use existing common contracts.",
+    "A natural K1 committed result with late host observer refusal is observed by a later pump without a new Graph, Head publication or RNG draw.",
+    "Full-prefix new-request sampling preserves its independent cursor and does not invent a Graph commit; same-request restoration consumes its historical pending.",
+    "Shared scheduling does not require Qwen GDN, paged Frame or hidden-state geometry. Family StateStore/StateHead and original programs remain authoritative."
+  ],
+  "counts": {
+    "CXX_attempts": 1,
+    "links": 1,
+    "retained_SDK_inputs": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "full_builds": 0,
+    "native_processes": 1,
+    "passed_native_processes": 1,
+    "downloads": 0
+  },
+  "build": {
+    "compiles": [
+      {
+        "state": "TERMINAL",
+        "pid": 44152,
+        "started": 1793271283.5049129,
+        "seconds": 27.875786066055298,
+        "exit": 0,
+        "timed_out": false
+      }
+    ],
+    "links": [
+      {
+        "state": "TERMINAL",
+        "pid": 42772,
+        "started": 1793271330.0544755,
+        "seconds": 1.8381195068359375,
+        "exit": 0,
+        "timed_out": false
+      }
+    ],
+    "object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-request-loop-20261029\\compile\\glm\\unit.obj",
+      "bytes": 45305552,
+      "sha256": "7f8113e4d3ddbdb808ff5dcfda83bd3bb177d79d56515765148ada8105cf4488"
+    }
+  },
+  "result": {
+    "process": {
+      "state": "TERMINAL",
+      "pid": 28360,
+      "started": 1793271338.4092796,
+      "seconds": 124.5525951385498,
+      "exit": 0,
+      "timed_out": false
+    },
+    "properties": {
+      "head_provider": "cublasLt",
+      "request_directory_r0_pending": "28122",
+      "request_directory_r0_committed_draws": "4",
+      "request_progress_output_counts": "2,2",
+      "request_progress_committed_observations": "2,1",
+      "request_progress_duplicate_commit_noops": "3",
+      "request_progress_full_hit_outputs": "1",
+      "request_progress_pending_only_turn_inputs": "2",
+      "request_record_committed_prefixes": "2,1",
+      "request_record_head_publications": "3",
+      "request_record_late_catchup_refusals": "1",
+      "request_record_observer_refusals": "1",
+      "request_record_projected_observations": "4",
+      "request_record_observer_retry_graphs": "0",
+      "request_record_observer_retry_head_publications": "0",
+      "request_record_observer_retry_rng_draws": "0",
+      "request_progress_scope": "Shared RequestProgress on the existing real one-emission natural K1 branch and new-request cache fork, then the two original ordinary continuations. Each finite turn has quota1; actual model selector/EOS facts are preserved. A later empty new-user suffix consumes only its actual historical pending. No extra graph, model publication, RNG address, complete GLM prompt prefill or request server is introduced.",
+      "request_directory_requests": "2",
+      "request_directory_turns": "4",
+      "request_directory_fifo": "0,1,0,1",
+      "request_directory_full_hits": "1",
+      "request_directory_evictions": "1",
+      "request_directory_same_request_restore_graphs": "0",
+      "request_directory_new_request_draws": "2",
+      "request_directory_cancelled_forks": "1",
+      "request_directory_stale_forks": "1",
+      "request_directory_retained_state_versions": "5",
+      "request_directory_current_backing_bytes": "190543788",
+      "request_directory_scope": "Original target77/NextN78 finite suffix driven by shared RequestLoop and advance_request_wave after this exact initial StateVersion and upstream fixture; N1 FIFO limits resident Heads, not all retained StateStore versions. Directory holds real complete lag0 state. New request resamples full-V pending with stream18; same request restores stream17 draw3 without sampling. Each request then consumes its own pending through actual target+NextN ordinary continuation. No arbitrary GLM prompt prefill or complete-model/server claim.",
+      "request_loop_pumps": "5",
+      "request_loop_resident_evictions": "2",
+      "request_wave_late_observer_retry": "1",
+      "original_target_roles": "1559",
+      "original_target_source_bytes": "9872042432",
+      "actual_target_calls": "5",
+      "actual_target_submissions": "10",
+      "actual_target_policy_submissions": "5",
+      "accepted_target_conditioned_repairs": "0",
+      "actual_accepted_kv_repair_submissions": "0",
+      "stochastic_policy": "Actual NextN q samples proposal at draw0; actual target p0/q/p1 consumes accept1/final2. Same complete StateHead publishes pending and Cursor. Cancellation/stale publish advances0, successful K1 advances3; real target-only continuation consumes actual residual/bonus, samples its target pending and atomically advances one additional draw.",
+      "random_accepted": "0",
+      "random_rejected": "1",
+      "random_actual_proposal": "42456",
+      "random_committed_draws": "4",
+      "actual_nextn_steps": "5",
+      "actual_catchups": "0",
+      "actual_target_conditioned_repairs": "0",
+      "state_budget_bytes": "446998016",
+      "peak_state_backing_bytes": "291742452",
+      "scope": "Finite original target77+NextN78 natural K1 plus two-request/two-turn typed directory and FIFO adapter; original request tokens/pending/draw4 unchanged, second request independently resamples and continues actual target+NextN from the complete cached boundary. Previous layer input/residual/upstream74 index selection and initial history remain explicit fixtures. Not arbitrary prompt prefill, full-model generation, task quality, acceptance-rate measurement, TPS or other quantized source coverage."
+    },
+    "preserved_previous_fields": [
+      "request_directory_r0_pending",
+      "request_directory_r0_committed_draws",
+      "request_progress_output_counts",
+      "request_progress_committed_observations",
+      "request_progress_duplicate_commit_noops",
+      "request_progress_full_hit_outputs",
+      "request_progress_pending_only_turn_inputs",
+      "request_record_committed_prefixes",
+      "request_record_head_publications",
+      "request_record_late_catchup_refusals",
+      "request_record_observer_refusals",
+      "request_record_observer_retry_graphs",
+      "request_record_observer_retry_head_publications",
+      "request_record_observer_retry_rng_draws",
+      "request_directory_requests",
+      "request_directory_turns",
+      "request_directory_fifo",
+      "request_directory_full_hits",
+      "request_directory_same_request_restore_graphs",
+      "request_directory_new_request_draws",
+      "request_directory_cancelled_forks",
+      "request_directory_stale_forks",
+      "original_target_roles",
+      "original_target_source_bytes",
+      "actual_target_calls",
+      "actual_target_submissions",
+      "actual_target_policy_submissions",
+      "accepted_target_conditioned_repairs",
+      "actual_accepted_kv_repair_submissions",
+      "random_accepted",
+      "random_rejected",
+      "random_actual_proposal",
+      "random_committed_draws",
+      "actual_nextn_steps",
+      "actual_catchups",
+      "actual_target_conditioned_repairs",
+      "state_budget_bytes"
+    ],
+    "previous_result": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-commit-observation-20261029\\runs\\glm-cuda\\owner-fix\\results.xml",
+      "bytes": 5676,
+      "sha256": "901651a173319eca55d69dfc4e6d5f990a3daaa2af3c537c988750c5ebd2ae20"
+    }
+  },
+  "attempts": {
+    "runs\\glm-cuda\\attempt1": {
+      "state": "TERMINAL",
+      "pid": 28360,
+      "started": 1793271338.4092796,
+      "seconds": 124.5525951385498,
+      "exit": 0,
+      "timed_out": false
+    }
+  },
+  "references": {
+    "scope": "Read local source only. Selected paths checked against local HEAD; no upstream freshness, execution, performance or complete feature coverage claim.",
+    "repositories": {
+      "vllm": {
+        "local_commit": "276fbcff2717bd934cfa37c8a2e4c391f3e7237b",
+        "selected_paths_git_diff_against_HEAD": [],
+        "selected_content_different_from_HEAD": [],
+        "files": [
+          {
+            "file": "vllm/model_executor/models/qwen3_5.py",
+            "bytes": 27942,
+            "sha256": "ea7e71303c902b9678e85ff3e9a75a7ab6e69b5770605d540ad6ab1084e18187",
+            "HEAD_blob_sha256": "ea7e71303c902b9678e85ff3e9a75a7ab6e69b5770605d540ad6ab1084e18187"
+          },
+          {
+            "file": "vllm/v1/worker/gpu_model_runner.py",
+            "bytes": 334085,
+            "sha256": "491751bed71a2e4502229bce31e997921321103fe1a77db17c40829a5d4c7d74",
+            "HEAD_blob_sha256": "491751bed71a2e4502229bce31e997921321103fe1a77db17c40829a5d4c7d74"
+          },
+          {
+            "file": "vllm/v1/core/sched/scheduler.py",
+            "bytes": 162487,
+            "sha256": "938c9ce589e4fd9a7a36065a1592fb091ee7f39fd52875f9d5410f8c05ad24e0",
+            "HEAD_blob_sha256": "938c9ce589e4fd9a7a36065a1592fb091ee7f39fd52875f9d5410f8c05ad24e0"
+          },
+          {
+            "file": "vllm/model_executor/models/qwen3_5_mtp.py",
+            "bytes": 11766,
+            "sha256": "fbf31b1dd2b63eaf1911e325e3b43db602cf1d4268dfb2d388727e44caffadc2",
+            "HEAD_blob_sha256": "fbf31b1dd2b63eaf1911e325e3b43db602cf1d4268dfb2d388727e44caffadc2"
+          },
+          {
+            "file": "vllm/model_executor/models/deepseek_mtp.py",
+            "bytes": 23415,
+            "sha256": "aae80e30b2dbfd1df41b83f51aaba4722e9f2dc3b4479d2a38ce1e32926fac11",
+            "HEAD_blob_sha256": "aae80e30b2dbfd1df41b83f51aaba4722e9f2dc3b4479d2a38ce1e32926fac11"
+          }
+        ]
+      },
+      "sglang": {
+        "local_commit": "234ccba7f625e12639e621044496bcc6197c3758",
+        "selected_paths_git_diff_against_HEAD": [],
+        "selected_content_different_from_HEAD": [],
+        "files": [
+          {
+            "file": "python/sglang/srt/models/qwen3_5.py",
+            "bytes": 119896,
+            "sha256": "af6502d2112a21059eae648ee421b20dbc06bbc11151acaf6c160bf4db52e73a",
+            "HEAD_blob_sha256": "af6502d2112a21059eae648ee421b20dbc06bbc11151acaf6c160bf4db52e73a"
+          },
+          {
+            "file": "python/sglang/srt/managers/schedule_batch.py",
+            "bytes": 168067,
+            "sha256": "514bbcbc6f6555042c660196aa7e55443e590c18203ceb7d7f008adf292f47f9",
+            "HEAD_blob_sha256": "514bbcbc6f6555042c660196aa7e55443e590c18203ceb7d7f008adf292f47f9"
+          },
+          {
+            "file": "python/sglang/srt/models/qwen3_5_mtp.py",
+            "bytes": 20124,
+            "sha256": "13c9feb1674e28083cd7b3364040a2f1d9f0e8b10d1d6dc06156abe54a695c36",
+            "HEAD_blob_sha256": "13c9feb1674e28083cd7b3364040a2f1d9f0e8b10d1d6dc06156abe54a695c36"
+          },
+          {
+            "file": "python/sglang/srt/models/deepseek_nextn.py",
+            "bytes": 12616,
+            "sha256": "b83261e82f4195bafc75ed7c92c2b0bc05d77b794866d841c92e6226269bf470",
+            "HEAD_blob_sha256": "b83261e82f4195bafc75ed7c92c2b0bc05d77b794866d841c92e6226269bf470"
+          }
+        ]
+      },
+      "TensorRT-LLM": {
+        "local_commit": "46d9966b54d9d11998b712e732fb20f64d4d35c0",
+        "selected_paths_git_diff_against_HEAD": [
+          "tensorrt_llm/_torch/pyexecutor/engine/runners/decoder/inputs.py",
+          "tensorrt_llm/_torch/pyexecutor/engine/runners/decoder/runner.py",
+          "tensorrt_llm/_torch/speculative/mtp.py"
+        ],
+        "selected_content_different_from_HEAD": [],
+        "files": [
+          {
+            "file": "tensorrt_llm/_torch/pyexecutor/engine/runners/decoder/runner.py",
+            "bytes": 40714,
+            "sha256": "9f799860dbfa62124e7333f0329ca4401806001706c4428090e7ce72fe2f2e6d",
+            "HEAD_blob_sha256": "9f799860dbfa62124e7333f0329ca4401806001706c4428090e7ce72fe2f2e6d"
+          },
+          {
+            "file": "tensorrt_llm/_torch/pyexecutor/engine/runners/decoder/inputs.py",
+            "bytes": 119858,
+            "sha256": "8d3ba522d8de71f1cbf60c6470760633ff027bcfa6bc1a5f896259d58affa42c",
+            "HEAD_blob_sha256": "8d3ba522d8de71f1cbf60c6470760633ff027bcfa6bc1a5f896259d58affa42c"
+          },
+          {
+            "file": "tensorrt_llm/_torch/speculative/mtp.py",
+            "bytes": 51116,
+            "sha256": "b59b55fd78ada4e239c3b592f582afc3d805058ee88cf883ce3ea7f450203531",
+            "HEAD_blob_sha256": "b59b55fd78ada4e239c3b592f582afc3d805058ee88cf883ce3ea7f450203531"
+          }
+        ]
+      }
+    },
+    "decisions": [
+      "The family describes actual layer and complete state schema; shared scheduling consumes request work, resource classes and capacity.",
+      "Original execution owner retains persistent input buffers and cold preparation; actual lease permissions and completion are not cached facts.",
+      "Share actual emitted prefixes, acceptance length, ordinals and member exits; retain family-specific MTP hidden/carry/normalization and restoration."
+    ]
+  },
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_mtp_state_consumer_test.cc",
+      "bytes": 217462,
+      "sha256": "9442b5420b9c85ce72067b919b7aa0f215d6e1302a541e138ba286ae554990d3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\request_loop.h",
+      "bytes": 25380,
+      "sha256": "6547eef6b4081cd9b7990822ca384f466347244e4468373b509b543bf456ecf9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\request_wave_execution.h",
+      "bytes": 3503,
+      "sha256": "6c4e5e13232b10aff556a1396f943662715220170213011995e23643e589cc09"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\commit_observation.h",
+      "bytes": 7343,
+      "sha256": "ef12a0806138813b728b8307cea925b7aab5568fc35b23d7b87182210e5fe7a2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\request_progress.h",
+      "bytes": 16517,
+      "sha256": "dabf7ab001d5ba473c4447f23cab54ce857c645d2dec0cc1865a1729345dbafb"
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-glm-request-loop-2026-10-29.zip",
+    "bytes": 183808,
+    "sha256": "aca101d9a6d469c6b85f03718f152831f54fca36c5a7944b956c70bb4b3af322"
+  },
+  "boundaries": [
+    "One finite CUDA GLM component case using cached original target77 and NextN78 weights, actual global-expert supply and full-vocabulary projection; upstream activations and initial history remain explicit fixtures.",
+    "N1 limits current resident logical Heads; immutable states retained by readers and PrefixDirectory do not become extra active requests.",
+    "Existing complete-state immutability, cancel/stale refusal, original native counts, cold host capacities and final version/draft collection assertions remain meaningful checks.",
+    "Actual original Invocation completion/drain determines retirement; StateStore collection is not native retirement. No native fault injection or unknown-device recovery claim.",
+    "No arbitrary GLM prompt prefill, complete78-layer generation, full second CLI model, serving API, multiple-GPU implementation, task quality or throughput measurement claim.",
+    "The separate non-request GLM K1/K2 cases were compiled in the same consumer translation unit, not rerun in this slice.",
+    "No original SDK or provider mathematics changed; no need to rebuild or rerun unrelated Qwen consumers for this test-consumer-only change."
+  ],
+  "cleanup": {
+    "status": "PASS",
+    "files": 4,
+    "bytes": 143498464.0,
+    "removed": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-request-loop-20261029\\bin\\glm.exe",
+        "bytes": 142225408,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-request-loop-20261029\\bin\\glm.exp",
+        "bytes": 24974,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-request-loop-20261029\\bin\\glm.lib",
+        "bytes": 41298,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-request-loop-20261029\\bin\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "removed": true
+      }
+    ]
+  }
+}

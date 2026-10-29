@@ -50,6 +50,8 @@
 #include "../../engine/inference/prefix_directory.h"
 #include "../../engine/inference/request_window.h"
 #include "../../engine/inference/request_progress.h"
+#include "../../engine/inference/request_loop.h"
+#include "../../engine/inference/request_wave_execution.h"
 #include "../../engine/inference/commit_observation.h"
 #include "model_graph_run.h"
 #include "model_resident_fragment.h"
@@ -1513,6 +1515,154 @@ struct ConvertedRuntime final {
   }
 };
 
+// The finite original GLM consumer owns its actual StateHeads and programs.
+// RequestLoop owns only FIFO, turns and credits; old StateVersions retained by
+// the fixture/directory do not count as resident execution owners.
+struct GlmRequestDirectory final {
+  using Progress=hyle::inference::RequestProgress;
+  using Key=hyle::inference::RequestKey;
+  using Cursor=hyle::inference::SamplingCursor;
+  struct Commit final {
+    bool committed=false,stopped=false;
+    std::array<std::int32_t,1> emitted{};
+    std::int32_t cursor=0,index_cursor=0,lag=0;
+    std::uint64_t epoch=0;
+    Cursor sampling;
+  };
+  State &state;
+  const c::StateVersion &base;
+  std::span<g::Invocation *const> originals;
+  hyle::inference::RequestLoop loop;
+  std::array<Key,2> keys;
+  std::array<std::optional<Progress>,2> progress;
+  std::array<hyle::inference::GenerationTurn,2> turns;
+  std::array<std::array<std::int32_t,1>,2> inputs{};
+  std::array<c::StateHead,2> heads;
+  std::array<GlmCheckpoint,2> parked;
+  std::array<Commit,2> records0;
+  std::array<Commit,1> records1;
+  std::array<std::size_t,2> committed{},observed{};
+  std::array<std::size_t,4> order{};
+  std::size_t admissions=0,publications=0,projections=0;
+  hyle::inference::PrefixDirectory<GlmCheckpoint> directory{1};
+  hyle::inference::CacheDomain domain;
+  hyle::inference::TokenPlanRef prefix_input;
+  hyle::inference::PrefixDirectory<GlmCheckpoint>::Hit hit;
+  std::array<std::int32_t,2> consumed_inputs{};
+  std::size_t evictions=0;
+  hyle::Status native_status;
+
+  GlmRequestDirectory(State &actual,const c::StateVersion &initial,
+      std::span<g::Invocation *const> native,hyle::inference::CacheDomain identity,Cursor rng)
+      :state(actual),base(initial),originals(native),domain(identity) {
+    turns[0]={{state.scalar(base,kPending)},1};turns[1]={{},1};
+    parked[0]={base,0,state.scalar(base,kCursor)};
+    for(std::size_t at=0;at<progress.size();++at) {
+      progress[at].emplace(2);progress[at]->bind_turns(turns);
+      progress[at]->initial_sampling={rng.seed,rng.stream+at,0};
+      inputs[at][0]=state.scalar(base,kPending);
+    }
+    loop.prepare(2,1);
+    for(std::size_t at=0;at<keys.size();++at)keys[at]=loop.enqueue(at);
+  }
+  std::span<Commit> records(std::size_t index) {
+    return index?std::span<Commit>(records1):std::span<Commit>(records0);
+  }
+  hyle::inference::RetirementObservation native_retirement(bool abort) noexcept {
+    bool retired=true;
+    for(auto *original:originals) {
+      if(abort&&original->in_flight())
+        hyle::inference::record_retirement_status(native_status,original->drain());
+      retired=retired&&!original->in_flight();
+    }
+    return {retired,native_status};
+  }
+  void admit(Key key) {
+    const auto index=key.slot;
+    require_observed(index<2&&admissions<order.size(),"finite GLM admission identity/capacity");
+    auto &p=*progress[index];
+    require_observed(!heads[1-index].valid(),"N1 GLM admits one real resident Head");
+    if(!heads[index].valid()) {
+      if(index==1&&!p.turn_index) {
+        require_observed(bool(prefix_input),"new GLM request waits for the real complete prefix");
+        const auto length=prefix_input->ids.size();
+        hit=directory.lookup(domain,*prefix_input,length,length);
+        require_observed(bool(hit),"new GLM request really hits the original complete boundary");
+        parked[index]=hit.payload;
+      }
+      heads[index]=take(c::StateHead::create(state.store,parked[index].version),"admit actual GLM complete Head");
+    }
+    if(!p.turn_started()) {
+      const auto pending=state.scalar(take(heads[index].current(),"actual admitted GLM pending"),kPending);
+      const auto input=p.begin_turn(inputs[index],p.turn_index?std::optional<std::int32_t>(pending):std::nullopt);
+      require_observed(input.size()==1&&(!p.turn_index?input[0]==state.scalar(base,kPending):input[0]==pending),
+          "GLM first input is the matched suffix; later input is its own actual pending");
+      if(p.turn_index)require_observed(p.generated.back()==pending&&p.turn_output_begin==1,
+          "later GLM turn retains its exact pending-only input boundary");
+    }
+    order[admissions++]=index;
+  }
+  void publish_turn(Key key) {
+    const auto version=take(heads[key.slot].current(),"complete GLM turn checkpoint");
+    const auto cursor=state.scalar(version,kCursor);
+    parked[key.slot]={version,std::size_t(cursor-kBasePosition),cursor};
+    if(!key.slot&&!progress[0]->turn_index) {
+      const auto length=parked[0].consumed;
+      require_observed(length&&length<=consumed_inputs.size(),"GLM prefix has its actual consumed suffix extent");
+      prefix_input=hyle::inference::token_plan(std::span(consumed_inputs).first(length),std::size_t(kCapacity-kBasePosition));
+      require_observed(directory.publish(domain,prefix_input,length,parked[0]),"publish real complete GLM prefix");
+      require_observed(directory.retains([&](const GlmCheckpoint &entry){return entry.version.identity()==version.identity();}),
+          "typed GLM directory retains the original complete boundary");
+    }
+  }
+  hyle::inference::RetirementObservation retire(Key key,hyle::inference::RequestRetirement reason) {
+    auto result=native_retirement(false);
+    if(!result.retired)return result;
+    const bool resident=heads[key.slot].valid();heads[key.slot]={};
+    if(reason==hyle::inference::RequestRetirement::kEvicted)evictions+=resident;
+    else parked[key.slot]={};
+    hyle::inference::record_retirement_status(result.status,state.store.collect());
+    return result;
+  }
+  template<class Execute>
+  hyle::inference::RequestPumpResult pump(Execute &execute) {
+    struct Adapter final {
+      GlmRequestDirectory &owner;Execute &execute;
+      Progress &progress(Key key)const noexcept{return *owner.progress[key.slot];}
+      bool resident(Key key)const noexcept{return owner.heads[key.slot].valid();}
+      void admission_preflight(Key key)const {
+        require_observed(key.slot<2&&owner.native_retirement(false).retired,"GLM admission needs retired original programs");
+      }
+      void admit(Key key,std::span<const Key>)const{owner.admit(key);}
+      void publish_turn(Key key)const{owner.publish_turn(key);}
+      hyle::inference::RetirementObservation retire(Key key,hyle::inference::RequestRetirement reason)const{return owner.retire(key,reason);}
+      hyle::inference::RequestWaveResult execute_wave(hyle::inference::RequestWave wave,std::span<std::size_t> remaining)const {
+        struct Stage final {
+          GlmRequestDirectory &owner;Execute &execute;
+          std::size_t pending_count()const noexcept{return 0;}
+          hyle::inference::RequestWavePendingMember pending_member(std::size_t)const noexcept{return {};}
+          hyle::inference::RequestWaveAdvance advance(hyle::inference::RequestWaveAction action,hyle::inference::RequestWave actual)const {
+            if(action==hyle::inference::RequestWaveAction::kDrain)return {.remaining=owner.native_retirement(false)};
+            require_observed(action==hyle::inference::RequestWaveAction::kStart&&actual.keys.size()==1,
+                "finite GLM synchronous wave retains its real N1 cohort");
+            require_observed(actual.credits[0].additional==1&&!actual.credits[0].reserved,
+                "finite GLM turn has one actual output credit");
+            execute(actual.keys[0]);
+            return {.advanced=true,.remaining=owner.native_retirement(false)};
+          }
+          hyle::inference::RetirementObservation retire(hyle::inference::RequestWaveRetirement)const noexcept {
+            // An observation after a failed drain still drives the same
+            // original owners. Successful idle programs are never closed.
+            return owner.native_retirement(true);
+          }
+        } stage{owner,execute};
+        return hyle::inference::advance_request_wave(wave,remaining,stage);
+      }
+    } adapter{*this,execute};
+    return loop.pump_once(adapter);
+  }
+};
+
 template<class Runtime=OfficialRuntime>
 void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_target=false
 #if defined(HYLE_TEST_GLM_STATE_CUDA)
@@ -1748,299 +1898,249 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
       if(stochastic)initial[*state.sampling_entry]={state.entries[*state.sampling_entry],{},std::as_bytes(std::span(&initial_random,1))};
       const auto base=take(state.store.import(initial),"import complete original Pro continuation");
       const auto base_image=image(state,base);
-      hyle::inference::RequestWindow request_window;
-      std::array<hyle::inference::RequestKey,2> request_keys;
-      std::array<std::size_t,4> request_order{};
-      std::size_t request_turns=0;
-      std::array<hyle::inference::GenerationTurn,2> progress_turns;
-      std::array<std::optional<hyle::inference::RequestProgress>,2> request_progress;
-      struct RequestCommit final {
-        bool committed=false,stopped=false;
-        std::array<std::int32_t,1> emitted{};
-        std::int32_t cursor=0,index_cursor=0,lag=0;
-        std::uint64_t epoch=0;
-        SamplingCursor sampling;
-      };
-      std::array<RequestCommit,2> request0_records;
-      std::array<RequestCommit,1> request1_records;
-      std::array<std::size_t,2> request_commits{},family_observations{};
-      std::size_t request_publications=0,record_projections=0,late_catchup_refusals=0,observer_refusals=0;
-      const auto request_records=[&](std::size_t index)->std::span<RequestCommit> {
-        return index?std::span<RequestCommit>(request1_records):std::span<RequestCommit>(request0_records);
-      };
-      const auto request_submission_counts=[&] {
-        return std::array{initial_program.submissions,first_program.native_submissions(),second_program.native_submissions(),
-            continuation_zero_program.native_submissions(),continuation_one_program.native_submissions(),
-            skip_zero_program.native_submissions(),skip_one_program.native_submissions(),catchup_program.submissions,
-            verifier_program.submissions,repair_program->native_submissions(),target_program->native_submissions(),
-            policy_program->submissions,random_q->submissions,random_decision->submissions};
-      };
-      std::array<std::array<std::int32_t,1>,2> progress_inputs{};
-      std::array<const std::int32_t*,2> progress_storage{};
-      std::array<std::size_t,2> progress_capacity{};
-      const auto progress_stopped=[&](std::int32_t token) {
-        return std::ranges::find(limits.eos,token)!=limits.eos.end();
-      };
-      if(request_directory_demo) {
-        // The known original natural K1 branch emits one real pending. These
-        // finite host turn quotas do not change its original verifier limits.
-        progress_turns[0]={{state.scalar(base,kPending)},1};
-        progress_turns[1]={{},1}; // Later turn consumes pending only, no invented user suffix.
-        for(std::size_t index=0;index<request_progress.size();++index) {
-          request_progress[index].emplace(2);
-          auto &progress=*request_progress[index];progress.bind_turns(progress_turns);
-          progress.initial_sampling={initial_random.seed,initial_random.stream+index,0};
-          progress_inputs[index][0]=state.scalar(base,kPending);
-          progress_storage[index]=progress.generated.data();progress_capacity[index]=progress.generated.capacity();
+
+      // The ordinary scenario and the request wave call these same original
+      // mathematical stages. Only scheduling, publication and observation differ.
+      const auto execute_first=[&](c::ReadLease &first_logits) {
+        if(stochastic&&std::ranges::find(limits.eos,state.scalar(base,kPending))!=limits.eos.end())throw std::runtime_error("Pro cannot consume an EOS pending token");
+        EXPECT_THROW(validate_step(state,base,catchup_step),std::runtime_error);
+        auto first=execute_step(state,base,first_step,*source,7,
+            [&](std::span<const c::ReadLease> input){return first_program.execute(queue,input,cuda);},target_before,stochastic?&first_logits:nullptr);
+        ++feedback;
+        if(use_target) {
+          const auto target=execute_target(*target_step,*target_program,*target_source,*source,owner,queue,cuda,
+              state.member(base,kPending),state.member(base,kTargetMain),state.member(base,kTargetCursor),upstream_ids);
+          first=attach_target(state,first,target);
+          if(!stochastic) {
+            const std::array input{state.member(first,kTargetTap)};
+            policy_checked=policy_program->execute(queue,input);
+            (void)check_verifier(*policy,policy_checked,values<Tap>(input[0]),false);
+          }
         }
-        request_window.prepare(2,1);
-        for(std::size_t index=0;index<request_keys.size();++index)request_keys[index]=request_window.enqueue(index);
-        EXPECT_EQ(request_window.waiting_front(),std::optional{request_keys[0]});
-        request_window.admitted(request_keys[0]);request_order[request_turns++]=0;
-        const auto input=request_progress[0]->begin_turn(progress_inputs[0]);
-        EXPECT_EQ(input.size(),1u);EXPECT_EQ(input[0],state.scalar(base,kPending));
-      }
-      if(stochastic&&std::ranges::find(limits.eos,state.scalar(base,kPending))!=limits.eos.end())throw std::runtime_error("Pro cannot consume an EOS pending token");
-      EXPECT_THROW(validate_step(state,base,catchup_step),std::runtime_error);
-      c::ReadLease first_logits;
-      auto first=execute_step(state,base,first_step,*source,7,
-          [&](std::span<const c::ReadLease> input){return first_program.execute(queue,input,cuda);},target_before,stochastic?&first_logits:nullptr);
-      ++feedback;
-      if(use_target) {
-        const auto target=execute_target(*target_step,*target_program,*target_source,*source,owner,queue,cuda,
-            state.member(base,kPending),state.member(base,kTargetMain),state.member(base,kTargetCursor),upstream_ids);
-        first=attach_target(state,first,target);
-        if(!stochastic) {
-          const std::array input{state.member(first,kTargetTap)};
-          policy_checked=policy_program->execute(queue,input);
-          (void)check_verifier(*policy,policy_checked,values<Tap>(input[0]),false);
-        }
-      }
-      if(stochastic&&maximum_drafts==2&&!limits.single_row()) {
-        const auto q=sample_logits(first_logits,initial_random);
-        const auto q0=values<std::int32_t>(q[1]).at(0);
-        const bool recurse=limits.quota>2&&limits.remaining_context>2&&std::ranges::find(limits.eos,q0)==limits.eos.end();
-        if(recurse) {
-          const auto with_pending=[&](const c::StateVersion &from,const c::ReadLease &id) {
-            auto draft=take(state.store.begin(from),"Pro recursive actual sampled proposal");
-            check(draft.replace(state.entry(kPending),id),"Pro recursive I32 proposal lease");
-            return take(draft.finalize(),"Pro complete recursive input state");
-          };
-          const auto joint=[&](const c::StateVersion &from,const Step &step,Resident &program,
-              std::uint64_t epoch,c::ReadLease *logits=nullptr) {
-            auto result=execute_step(state,from,step,*source,epoch,
-                [&](std::span<const c::ReadLease> input){return program.execute(queue,input,cuda);},
-                step.fresh?state.member(from,kTargetTap):c::ReadLease{},logits);
-            const auto target=execute_target(*target_step,*target_program,*target_source,*source,owner,queue,cuda,
-                state.member(from,kPending),state.member(from,kTargetMain),state.member(from,kTargetCursor),upstream_ids);
-            result=attach_target(state,result,target);
-            EXPECT_EQ(state.scalar(result,kTargetCursor),state.scalar(result,kCursor));return result;
-          };
-          const auto proposed0=with_pending(first,q[1]);c::ReadLease q1_logits;
-          const auto second=joint(proposed0,second_step,second_program,7,&q1_logits);
-          const auto q_next=sample_logits(q1_logits,initial_random.advanced(1));
-          const auto q1=values<std::int32_t>(q_next[1]).at(0);
-          const auto proposed1=with_pending(second,q_next[1]);
-          const auto third=joint(proposed1,skip_zero,skip_zero_program,7);
-          const std::array taps{state.member(first,kTargetTap),state.member(second,kTargetTap),state.member(third,kTargetTap)};
-          const auto projected=recursive_verifier->execute(queue,taps);
-          const auto p=values<float>(projected[0]);const auto vocabulary=std::size_t(model::kVocabulary);
-          EXPECT_EQ(p.size(),3*vocabulary);
-          std::vector<Tap> joined;for(const auto &tap:taps){const auto data=values<Tap>(tap);joined.insert(joined.end(),data.begin(),data.end());}
-          const std::array required{q0,q1,q1};
-          require_observed(Runtime::check_logits(*source,p,joined,false,required,cuda),"actual Pro T3 full-vocabulary target projection");
-          const std::array ids{q0,q1};const auto id_lease=upload(owner,sem::bytes(std::vector(ids.begin(),ids.end())));
-          const auto decide_prefix=[&](std::array<std::uint64_t,3> offsets) {
-            std::vector<std::uint32_t> words;for(const auto offset:offsets){const auto key=initial_random.identity(offset);words.insert(words.end(),key.begin(),key.end());}
-            const std::array input{projected[0],upload(owner,sem::bytes(words)),id_lease,q[0],q_next[0]};
-            const auto output=recursive_decision->execute(queue,input);glm_stochastic_prefix_fragment::Decision result;
-            for(std::size_t row=0;row<2;++row) {
-              if(!random_valid(output[row*3+2]))throw std::runtime_error("actual Pro K2 p/q decision invalid");
-              result.accepts[row]=std::uint8_t(random_valid(output[row*3]));result.final_leases[row]=output[row*3+1];
-              result.final_ids[row]=values<std::int32_t>(result.final_leases[row]).at(0);
-            }return result;
-          };
-          std::array<c::StateVersion,3> repaired{first,{},{}};
-          const auto replay=[&](std::size_t count) {
-            for(std::size_t row=1;row<=count;++row)if(!repaired[row].valid()) {
-              const auto from=with_pending(repaired[row-1],row==1?q[1]:q_next[1]);
-              auto &step=row==1?*repair_step:*repair_second_step;
-              auto &program=row==1?*repair_program:*repair_second_program;
-              auto fixed=execute_step(state,from,step,*source,7,
-                  [&](std::span<const c::ReadLease> input){return program.execute(queue,input,cuda);},state.member(row==1?first:second,kTargetTap));
-              const auto &target=row==1?second:third;TargetFrame frame;
-              const std::array entries{kTargetMain,kTargetCursor,kTargetTap};
-              for(std::size_t i=0;i<entries.size();++i)frame.state[i]=state.member(target,entries[i]);
-              repaired[row]=attach_target(state,fixed,frame);
-            }return repaired[count];
-          };
-          const auto observe=[&](const c::StateVersion &selected,const c::StateVersion &checkpoint,
-              const hyle::inference::mtp::AcceptedPrefix &selection,SamplingCursor rng) {
-            EXPECT_EQ(random_cursor(selected),rng);EXPECT_EQ(state.scalar(selected,kPending),selection.next_id);
-            EXPECT_EQ(state.scalar(selected,kCursor),std::int32_t(kBasePosition+selection.consumed));
-            EXPECT_EQ(state.scalar(selected,kTargetCursor),state.scalar(selected,kCursor));
-            EXPECT_EQ(state.scalar(selected,kLag),std::int32_t(selection.consumed_drafts));
-            for(std::size_t i=0;i<resource_count;++i)if(i!=layout.slot(kPending))same_storage(state.physical_member(selected,i),state.physical_member(checkpoint,i));
-            for(const auto entry:{kTargetMain,kTargetCursor,kTargetTap})same_storage(state.member(selected,entry),state.member(checkpoint,entry));
-          };
-          const auto continued=[&](c::StateHead &head,const c::StateVersion &selected,std::size_t consumed,SamplingCursor rng) {
-            auto caught=selected;
-            for(std::size_t slot=0;slot<consumed;++slot) {
-              auto &step=slot==0?catchup_step:*recursive_catchup_step;auto &program=slot==0?catchup_program:*recursive_catchup;
-              const auto next=execute_step(state,caught,step,*source,7,
-                  [&](std::span<const c::ReadLease> input){return program.execute(queue,input);});
-              check(head.publish(caught.identity(),next),"Pro K2 actual accepted journal row publication");caught=next;
-            }
-            EXPECT_EQ(state.scalar(caught,kLag),0);EXPECT_EQ(state.scalar(caught,kCursor),state.scalar(caught,kIndexCursor));
-            auto &step=consumed==0?continuation_zero:consumed==1?continuation_one:*recursive_fresh_step;
-            auto &program=consumed==0?continuation_zero_program:consumed==1?continuation_one_program:*recursive_fresh_program;
-            const auto next=joint(caught,step,program,8);
-            const std::array input{state.member(next,kTargetTap)};const auto target=policy_program->execute(queue,input);
-            const auto sampled=sample_logits(target[policy->logits],rng);auto draft=take(state.store.begin(next),"Pro K2 target-only real pending continuation");
-            check(draft.replace(state.entry(kPending),sampled[1]),"Pro K2 next target categorical result");const auto advanced=rng.advanced(1);
-            check(draft.replace_metadata(state.entries[*state.sampling_entry],std::as_bytes(std::span(&advanced,1))),"Pro K2 target-only continuation RNG");
-            const auto version=take(draft.finalize(),"Pro K2 complete real continuation");check(head.publish(caught.identity(),version),"Pro K2 next epoch consumes actual pending");
-            EXPECT_EQ(random_cursor(version),advanced);EXPECT_EQ(state.scalar(version,kCursor),std::int32_t(kBasePosition+2+consumed));
-            std::printf("GLM PRO K2 CONTINUED consumed_drafts=%zu consumed_pending=%d next_pending=%d cursor=%llu\n",consumed,state.scalar(caught,kPending),state.scalar(version,kPending),static_cast<unsigned long long>(advanced.draw));
-          };
-          const auto q0_log=values<float>(q[0]),q1_log=values<float>(q_next[0]);
-          const std::array alpha{glm_stochastic_prefix_fragment::log_alpha(std::span(p).first(vocabulary),q0_log,q0),
-              glm_stochastic_prefix_fragment::log_alpha(std::span(p).subspan(vocabulary,vocabulary),q1_log,q1)};
-          glm_stochastic_prefix_fragment::exercise(state.store,base,state.entry(kPending),state.entries[*state.sampling_entry],state.scalar(base,kPending),ids,
-              std::array{q[1],q_next[1]},state.member(first,kTargetTap),initial_random,std::int32_t(model::kVocabulary),cuda,alpha,limits,
-              decide_prefix,replay,observe,continued);
-          EXPECT_EQ(image(state,base),base_image);return;
-        }
-      }
-      std::vector<c::ReadLease> random_draft;
-      if(stochastic) {
+        return first;
+      };
+      const auto single_current=[&](const c::StateVersion &first,hyle::inference::mtp::SamplingLimits boundary,bool terminal_control) {
+        boundary.validate(model::kVocabulary);
         const auto current_id=state.scalar(base,kPending);
-        if(std::ranges::find(limits.eos,current_id)!=limits.eos.end())throw std::runtime_error("Pro cannot consume an EOS pending token");
-        const auto single=[&](hyle::inference::mtp::SamplingLimits boundary,bool terminal_control) {
-          boundary.validate(model::kVocabulary);
-          const auto before_nextn=source->checked_steps,before_target=target_source->checked_steps;
-          const auto before_second=second_program.native_submissions();
-          const std::array input{state.member(first,kTargetTap)};
+        const auto before_nextn=source->checked_steps,before_target=target_source->checked_steps;
+        const auto before_second=second_program.native_submissions();
+        const std::array input{state.member(first,kTargetTap)};
+        const auto target=policy_program->execute(queue,input);
+        (void)check_verifier(*policy,target,values<Tap>(input[0]),false);
+        const auto sampled=sample_logits(target[policy->logits],initial_random);
+        const auto id=values<std::int32_t>(sampled[1]).at(0);const std::array terminal{id};
+        if(terminal_control)boundary.eos=terminal;
+        const std::array inputs{current_id},finals{id};std::vector<std::int32_t> emitted;
+        const auto selected=hyle::inference::mtp::select_sampled_prefix(inputs,{},finals,boundary.quota,boundary.eos,
+            std::int32_t(model::kVocabulary),emitted);
+        auto head=take(c::StateHead::create(state.store,base),"single target Pro bounded Head");
+        auto draft=take(state.store.begin(first),"complete mandatory-current Pro prefix");
+        check(draft.replace(state.entry(kPending),sampled[1]),"actual Pro target-only sampled pending lease");
+        const auto rng=initial_random.advanced(1);
+        check(draft.replace_metadata(state.entries[*state.sampling_entry],std::as_bytes(std::span(&rng,1))),"one target draw with complete Pro state");
+        const auto published=take(draft.finalize(),"single Pro target complete checkpoint");
+        EXPECT_FALSE(head.publish(first.identity(),published).ok());EXPECT_EQ(random_cursor(take(head.current(),"single Pro stale cursor")),initial_random);
+        check(head.publish(base.identity(),published),"single Pro target result publishes once");
+        EXPECT_EQ(selected.consumed,1u);EXPECT_EQ(selected.consumed_drafts,0u);EXPECT_EQ(selected.stopped,terminal_control||std::ranges::find(boundary.eos,id)!=boundary.eos.end());
+        same_storage(state.member(published,kPending),sampled[1]);EXPECT_EQ(random_cursor(published),rng);
+        EXPECT_EQ(state.scalar(published,kCursor),std::int32_t(kBasePosition+1));EXPECT_EQ(state.scalar(published,kTargetCursor),state.scalar(published,kCursor));
+        for(std::size_t slot=0;slot<resource_count;++slot)if(slot!=layout.slot(kPending))same_storage(state.physical_member(published,slot),state.physical_member(first,slot));
+        for(const auto entry:{kTargetMain,kTargetCursor,kTargetTap})same_storage(state.member(published,entry),state.member(first,entry));
+        EXPECT_EQ(source->checked_steps,before_nextn);EXPECT_EQ(target_source->checked_steps,before_target);EXPECT_EQ(second_program.native_submissions(),before_second);
+        std::printf("GLM PRO RANDOM TAIL context=%zu quota=%zu emitted=%d stopped=%d consumed=1 draw=1 second_submissions=0\n",boundary.remaining_context,boundary.quota,id,int(selected.stopped));
+      };
+      const auto execute_second=[&](const c::StateVersion &first_checkpoint) {
+        auto second=execute_step(state,first_checkpoint,second_step,*source,7,
+            [&](std::span<const c::ReadLease> input){return second_program.execute(queue,input,cuda);});
+        ++feedback;++skips;
+        if(use_target) {
+          const auto target=execute_target(*target_step,*target_program,*target_source,*source,owner,queue,cuda,
+              state.member(first_checkpoint,kPending),state.member(first_checkpoint,kTargetMain),
+              state.member(first_checkpoint,kTargetCursor),upstream_ids);
+          second=attach_target(state,second,target);
+          const std::array input{state.member(first_checkpoint,kTargetTap),state.member(second,kTargetTap)};
+          checked=verifier_program.execute(queue,input);
+          auto taps=values<Tap>(input[0]);const auto tail=values<Tap>(input[1]);
+          taps.insert(taps.end(),tail.begin(),tail.end());
+          target_ids=check_verifier(verifier,checked,taps,!full_target_checked);full_target_checked=true;
+        }
+        return second;
+      };
+      struct SelectedPrefix final {
+        hyle::inference::mtp::AcceptedPrefix prefix;
+        c::ReadLease pending;
+        bool sampled_accept=false;
+      };
+      const auto select_current_prefix=[&](std::int32_t proposal,std::span<const c::ReadLease> random_draft) {
+        c::ReadLease actual_random_pending;
+        bool sampled_accept=false;
+        const auto decision=[&] {
+          const std::array inputs{state.scalar(base,kPending),proposal};
+          // Greedy preserves its original quota2/no-EOS component contract.
+          if(!stochastic)return hyle::inference::mtp::select_greedy_prefix(inputs,target_ids,2,{},
+              std::int32_t(model::kVocabulary),selection_emitted);
+          const std::array input{checked[verifier.logits],random_draft[0],random_draft[1],
+              random_identity(initial_random,1),random_identity(initial_random,2)};
+          const auto output=random_decision->execute(queue,input);
+          if(!random_valid(output[2]))throw std::runtime_error("actual original Pro p/q/bonus decision is invalid");
+          sampled_accept=random_valid(output[0]);
+          const auto id=values<std::int32_t>(output[1]);
+          if(id.size()!=1||id[0]<0||id[0]>=model::kVocabulary)throw std::runtime_error("original Pro random result outside vocabulary");
+          const std::array flags{std::uint8_t(sampled_accept)};
+          const auto selection=hyle::inference::mtp::select_sampled_prefix(inputs,flags,id,limits.quota,limits.eos,
+              std::int32_t(model::kVocabulary),selection_emitted);
+          actual_random_pending=sampled_accept&&selection.consumed==1?random_draft[1]:output[1];
+          return selection;
+        }();
+        const auto pending=stochastic?actual_random_pending:checked[verifier.pending[decision.consumed_drafts]];
+        return SelectedPrefix{decision,pending,sampled_accept};
+      };
+      const auto repair_prefix=[&](const c::StateVersion &first_checkpoint,const c::StateVersion &second,std::size_t consumed) {
+        auto checkpoint=consumed?second:first_checkpoint;
+        if(use_target&&consumed) {
+          const auto count=repair_program->native_submissions();
+          const auto repaired=execute_step(state,first_checkpoint,*repair_step,*source,7,
+              [&](std::span<const c::ReadLease> input){return repair_program->execute(queue,input,cuda);},
+              state.member(first_checkpoint,kTargetTap));
+          ++feedback;++skips;++repairs;add_bound(repair_submissions,repair_program->native_submissions()-count);
+          TargetFrame target;
+          const std::array entries{kTargetMain,kTargetCursor,kTargetTap};
+          for(std::size_t i=0;i<entries.size();++i)target.state[i]=state.member(second,entries[i]);
+          checkpoint=attach_target(state,repaired,target);
+        }
+        return checkpoint;
+      };
+      const auto prepare_acceptance=[&](c::StateHead &head,const c::StateVersion &checkpoint,
+          const c::StateVersion &first,const c::ReadLease &pending) {
+        {
+          auto discarded=take(state.store.begin(checkpoint),"cancelled Pro acceptance draft");
+          check(discarded.replace(state.entry(kPending),pending),"cancelled actual pending lease");
+          if(stochastic) {
+            const auto next=initial_random.advanced(3);
+            check(discarded.replace_metadata(state.entries[*state.sampling_entry],std::as_bytes(std::span(&next,1))),"cancel uncommitted Pro random cursor");
+            EXPECT_FALSE(discarded.replace(state.entry(kPending),state.member(first,kTargetTap)).ok());
+          }
+          check(discarded.cancel(),"cancel whole uncommitted Pro acceptance");++cancelled;
+          EXPECT_EQ(image(state,take(head.current(),"cancelled Pro draft cannot change Head")),base_image);
+          if(stochastic)EXPECT_EQ(random_cursor(take(head.current(),"Pro cancellation retains RNG")),initial_random);
+        }
+        auto acceptance=take(state.store.begin(checkpoint),"all-resource K1 Pro acceptance");
+        check(acceptance.replace(state.entry(kPending),pending),"direct actual target policy result lease");
+        if(stochastic) {
+          const auto next=initial_random.advanced(3);
+          check(acceptance.replace_metadata(state.entries[*state.sampling_entry],std::as_bytes(std::span(&next,1))),"same complete Pro transaction advances RNG");
+        }
+        const auto published=take(acceptance.finalize(),"complete K1 Pro accepted checkpoint");
+        return published;
+      };
+      const auto exercise_prefix_policies=[&](const c::StateVersion &first_checkpoint,
+          const c::StateVersion &checkpoint,std::int32_t proposal,const hyle::inference::mtp::AcceptedPrefix &decision,bool sampled_accept,
+          const c::ReadLease &pending,const c::ReadLease &draft_token) {
+
+        const std::array inputs{state.scalar(base,kPending),proposal};
+        const std::array flags{std::uint8_t(sampled_accept)};
+        const std::array finals{values<std::int32_t>(pending).at(0)};
+        // Actual accepted-prefix resources and real ID leases are reused
+        // by independent policy Heads; no logits, q or acceptance changed.
+        const auto boundary=[&](std::size_t quota,std::span<const std::int32_t> eos,const char *name) {
+          std::vector<std::int32_t> tokens;
+          const auto policy=hyle::inference::mtp::select_sampled_prefix(inputs,flags,finals,quota,eos,std::int32_t(model::kVocabulary),tokens);
+          const auto lease=sampled_accept&&policy.consumed==1?draft_token:pending;
+          const auto from=policy.consumed_drafts?checkpoint:first_checkpoint;
+          auto branch=take(c::StateHead::create(state.store,base),"Pro independent bounded policy Head");
+          auto draft=take(state.store.begin(from),"Pro same complete selected prefix");
+          check(draft.replace(state.entry(kPending),lease),"Pro bounded original pending lease");
+          const auto rng=initial_random.advanced(3);
+          check(draft.replace_metadata(state.entries[*state.sampling_entry],std::as_bytes(std::span(&rng,1))),"Pro bounded policy preserves reserved draws");
+          const auto bounded=take(draft.finalize(),"Pro bounded same-prefix checkpoint");
+          check(branch.publish(base.identity(),bounded),"Pro bounded actual lease/state publication");
+          same_storage(state.member(bounded,kPending),lease);EXPECT_EQ(state.scalar(bounded,kPending),policy.next_id);
+          EXPECT_EQ(state.scalar(bounded,kCursor),std::int32_t(kBasePosition+policy.consumed));EXPECT_EQ(state.scalar(bounded,kTargetCursor),state.scalar(bounded,kCursor));
+          EXPECT_EQ(random_cursor(bounded),rng);
+          for(std::size_t slot=0;slot<resource_count;++slot)if(slot!=layout.slot(kPending))same_storage(state.physical_member(bounded,slot),state.physical_member(from,slot));
+          for(const auto entry:{kTargetMain,kTargetCursor,kTargetTap})same_storage(state.member(bounded,entry),state.member(from,entry));
+          std::printf("GLM PRO RANDOM BOUNDARY name=%s accept=%d emitted=%zu consumed=%zu pending=%d stopped=%d draw=3\n",name,int(sampled_accept),tokens.size(),policy.consumed,policy.next_id,int(policy.stopped));
+        };
+        if(limits.quota==std::numeric_limits<std::size_t>::max()&&limits.remaining_context==std::numeric_limits<std::size_t>::max()&&limits.eos.empty()) {
+          boundary(1,{},"quota1");check(state.store.collect(),"retire independent Pro quota Head");
+          if(sampled_accept&&proposal!=inputs[0]){const std::array eos{proposal};boundary(2,eos,"accepted_proposal_EOS");check(state.store.collect(),"retire independent Pro accepted EOS Head");}
+          if(finals[0]!=inputs[0]&&(!sampled_accept||finals[0]!=proposal)){const std::array eos{finals[0]};boundary(2,eos,sampled_accept?"bonus_EOS":"residual_EOS");check(state.store.collect(),"retire independent Pro final EOS Head");}
+        } else {
+          ::testing::Test::RecordProperty("random_finite_emitted",int(selection_emitted.size()));::testing::Test::RecordProperty("random_finite_consumed",int(decision.consumed));
+          ::testing::Test::RecordProperty("random_finite_stopped",int(decision.stopped));::testing::Test::RecordProperty("random_committed_draws",3);
+          return false; // Preserve the finite original policy result.
+        }
+        return true;
+      };
+      const auto continue_from=[&](const c::StateVersion &from,const Step &step,Resident &program,
+          const c::ReadLease &target_input,SamplingCursor cursor) {
+        auto continued=execute_step(state,from,step,*source,8,
+            [&](std::span<const c::ReadLease> input){return program.execute(queue,input,cuda);},target_input);
+        ++feedback;
+        if(use_target) {
+          const auto target=execute_target(*target_step,*target_program,*target_source,*source,owner,queue,cuda,
+              state.member(from,kPending),state.member(from,kTargetMain),state.member(from,kTargetCursor),upstream_ids);
+          continued=attach_target(state,continued,target);
+          EXPECT_EQ(state.scalar(continued,kTargetCursor),state.scalar(continued,kCursor));
+        }
+        if(stochastic) {
+          // A single ordinary target continuation consumes the real residual
+          // or bonus, then samples its next target pending with one draw.
+          // The private NextN skip below remains unverified and unpublished.
+          const std::array input{state.member(continued,kTargetTap)};
           const auto target=policy_program->execute(queue,input);
           (void)check_verifier(*policy,target,values<Tap>(input[0]),false);
-          const auto sampled=sample_logits(target[policy->logits],initial_random);
-          const auto id=values<std::int32_t>(sampled[1]).at(0);const std::array terminal{id};
-          if(terminal_control)boundary.eos=terminal;
-          const std::array inputs{current_id},finals{id};std::vector<std::int32_t> emitted;
-          const auto selected=hyle::inference::mtp::select_sampled_prefix(inputs,{},finals,boundary.quota,boundary.eos,
-              std::int32_t(model::kVocabulary),emitted);
-          auto head=take(c::StateHead::create(state.store,base),"single target Pro bounded Head");
-          auto draft=take(state.store.begin(first),"complete mandatory-current Pro prefix");
-          check(draft.replace(state.entry(kPending),sampled[1]),"actual Pro target-only sampled pending lease");
-          const auto rng=initial_random.advanced(1);
-          check(draft.replace_metadata(state.entries[*state.sampling_entry],std::as_bytes(std::span(&rng,1))),"one target draw with complete Pro state");
-          const auto published=take(draft.finalize(),"single Pro target complete checkpoint");
-          EXPECT_FALSE(head.publish(first.identity(),published).ok());EXPECT_EQ(random_cursor(take(head.current(),"single Pro stale cursor")),initial_random);
-          check(head.publish(base.identity(),published),"single Pro target result publishes once");
-          EXPECT_EQ(selected.consumed,1u);EXPECT_EQ(selected.consumed_drafts,0u);EXPECT_EQ(selected.stopped,terminal_control||std::ranges::find(boundary.eos,id)!=boundary.eos.end());
-          same_storage(state.member(published,kPending),sampled[1]);EXPECT_EQ(random_cursor(published),rng);
-          EXPECT_EQ(state.scalar(published,kCursor),std::int32_t(kBasePosition+1));EXPECT_EQ(state.scalar(published,kTargetCursor),state.scalar(published,kCursor));
-          for(std::size_t slot=0;slot<resource_count;++slot)if(slot!=layout.slot(kPending))same_storage(state.physical_member(published,slot),state.physical_member(first,slot));
-          for(const auto entry:{kTargetMain,kTargetCursor,kTargetTap})same_storage(state.member(published,entry),state.member(first,entry));
-          EXPECT_EQ(source->checked_steps,before_nextn);EXPECT_EQ(target_source->checked_steps,before_target);EXPECT_EQ(second_program.native_submissions(),before_second);
-          std::printf("GLM PRO RANDOM TAIL context=%zu quota=%zu emitted=%d stopped=%d consumed=1 draw=1 second_submissions=0\n",boundary.remaining_context,boundary.quota,id,int(selected.stopped));
-        };
-        if(limits.single_row()) {
-          single(limits,false);
-          ::testing::Test::RecordProperty("random_tail_target_rows",1);::testing::Test::RecordProperty("random_tail_draws",1);
-          ::testing::Test::RecordProperty("scope","Finite one-row target-only emission with same-prefix mandatory-current NextN maintenance; no q sample or proposed second-row execution. Actual p0 pending and one draw publish with the complete Head. Not a request scheduler.");
-          return;
+          const auto sampled=sample_logits(target[policy->logits],cursor);
+          auto next=take(state.store.begin(continued),"real Pro target-only continuation");
+          check(next.replace(state.entry(kPending),sampled[1]),"actual target categorical pending after residual/bonus consumption");
+          const auto rng=cursor.advanced(1);
+          check(next.replace_metadata(state.entries[*state.sampling_entry],std::as_bytes(std::span(&rng,1))),"target-only draw belongs to its successful full Head");
+          continued=take(next.finalize(),"original complete Pro next target pending and RNG");
         }
-        single({1,1,{}},false);check(state.store.collect(),"retire independent Pro single Head");single({1,1,{}},true);check(state.store.collect(),"retire independent Pro terminal Head");
-        random_draft=sample_logits(first_logits,initial_random);
-        auto sampled=take(state.store.begin(first),"actual original Pro random proposal");
-        check(sampled.replace(state.entry(kPending),random_draft[1]),"real NextN categorical I32 feeds target row1");
-        first=take(sampled.finalize(),"preserve complete original Pro proposal checkpoint");
-      }
-      const auto first_image=image(state,first);
-      bool wrong_skip_submitted=false;
-      EXPECT_THROW((void)execute_step(state,first,second_step,*source,8,
-          [&](std::span<const c::ReadLease>) {
-            wrong_skip_submitted=true;return std::vector<c::ReadLease>{};
-          }),std::runtime_error);
-      EXPECT_FALSE(wrong_skip_submitted);
-      // One natural trial and two separately labelled controls. Matching uses
-      // the actual full-V Top1 lease; rejection uses the actual distinct Top2
-      // lease. The second real Graph consumes precisely that proposal lease.
-      for(int scenario=0;scenario<(stochastic?1:3);++scenario) {
-        SCOPED_TRACE(::testing::Message()<<"GLM Pro K1 scenario="<<scenario);
+        return continued;
+      };
+      if(request_directory_demo) {
+        c::StateVersion first;
         {
-          auto first_checkpoint=first;
-          if(scenario) {
-            auto controlled=take(state.store.begin(first),"explicit controlled proposal policy");
-            check(controlled.replace(state.entry(kPending),policy_checked[scenario==1?(use_target?policy->pending[0]:verifier.pending[0]):(use_target?policy->reject:verifier.reject)]),
-                "controlled proposal retains actual target Top1/Top2 I32 output");
-            first_checkpoint=take(controlled.finalize(),"controlled actual pending checkpoint");
+          std::vector<g::Invocation*> originals{&initial_program.invocation,&catchup_program.invocation,
+              &verifier_program.invocation,&policy_program->invocation,&random_q->invocation,&random_decision->invocation};
+          for(auto *program:model_programs)for(auto &phase:program->phases)originals.push_back(&phase.invocation);
+          for(auto *program:{&*repair_program,&*target_program})
+            for(auto &phase:program->phases)originals.push_back(&phase.invocation);
+          GlmRequestDirectory driver(state,base,originals,{source.get(),&base},initial_random);
+          auto &request_window=driver.loop;auto &request_keys=driver.keys;
+          auto &request_progress=driver.progress;auto &request_commits=driver.committed;
+          auto &request0_records=driver.records0;auto &request_order=driver.order;
+          auto &request_turns=driver.admissions;auto &family_observations=driver.observed;
+          auto &request_publications=driver.publications;auto &record_projections=driver.projections;
+          const auto request_records=[&](std::size_t index){return driver.records(index);};
+          const auto request_submission_counts=[&] {
+            return std::array{initial_program.submissions,first_program.native_submissions(),second_program.native_submissions(),
+                continuation_zero_program.native_submissions(),continuation_one_program.native_submissions(),
+                skip_zero_program.native_submissions(),skip_one_program.native_submissions(),catchup_program.submissions,
+                verifier_program.submissions,repair_program->native_submissions(),target_program->native_submissions(),
+                policy_program->submissions,random_q->submissions,random_decision->submissions};
+          };
+          const auto progress_stopped=[&](std::int32_t token){return std::ranges::find(limits.eos,token)!=limits.eos.end();};
+          std::array<const std::int32_t*,2> progress_storage;
+          std::array<std::size_t,2> progress_capacity;
+          for(std::size_t at=0;at<2;++at) {
+            progress_storage[at]=request_progress[at]->generated.data();
+            progress_capacity[at]=request_progress[at]->generated.capacity();
           }
-          const auto proposal=state.scalar(first_checkpoint,kPending);
-          const auto first_checkpoint_image=image(state,first_checkpoint);
-          auto second=execute_step(state,first_checkpoint,second_step,*source,7,
-              [&](std::span<const c::ReadLease> input){return second_program.execute(queue,input,cuda);});
-          ++feedback;++skips;
-          if(use_target) {
-            const auto target=execute_target(*target_step,*target_program,*target_source,*source,owner,queue,cuda,
-                state.member(first_checkpoint,kPending),state.member(first_checkpoint,kTargetMain),
-                state.member(first_checkpoint,kTargetCursor),upstream_ids);
-            second=attach_target(state,second,target);
-            const std::array input{state.member(first_checkpoint,kTargetTap),state.member(second,kTargetTap)};
-            checked=verifier_program.execute(queue,input);
-            auto taps=values<Tap>(input[0]);const auto tail=values<Tap>(input[1]);
-            taps.insert(taps.end(),tail.begin(),tail.end());
-            target_ids=check_verifier(verifier,checked,taps,!full_target_checked);full_target_checked=true;
-          }
-          const auto second_image=image(state,second);
-          if(scenario==0) {
-            bool wrong_catchup_submitted=false;
-            EXPECT_THROW((void)execute_step(state,second,catchup_step,*source,8,
-                [&](std::span<const c::ReadLease>) {
-                  wrong_catchup_submitted=true;return std::vector<c::ReadLease>{};
-                }),std::runtime_error);
-            EXPECT_FALSE(wrong_catchup_submitted);
-          }
-          c::ReadLease actual_random_pending;
-          bool sampled_accept=false;
-          const auto decision=[&] {
-            const std::array inputs{state.scalar(base,kPending),proposal};
-            // Greedy preserves its original quota2/no-EOS component contract.
-            if(!stochastic)return hyle::inference::mtp::select_greedy_prefix(inputs,target_ids,2,{},
-                std::int32_t(model::kVocabulary),selection_emitted);
-            const std::array input{checked[verifier.logits],random_draft[0],random_draft[1],
-                random_identity(initial_random,1),random_identity(initial_random,2)};
-            const auto output=random_decision->execute(queue,input);
-            if(!random_valid(output[2]))throw std::runtime_error("actual original Pro p/q/bonus decision is invalid");
-            sampled_accept=random_valid(output[0]);
-            const auto id=values<std::int32_t>(output[1]);
-            if(id.size()!=1||id[0]<0||id[0]>=model::kVocabulary)throw std::runtime_error("original Pro random result outside vocabulary");
-            const std::array flags{std::uint8_t(sampled_accept)};
-            const auto selection=hyle::inference::mtp::select_sampled_prefix(inputs,flags,id,limits.quota,limits.eos,
-                std::int32_t(model::kVocabulary),selection_emitted);
-            actual_random_pending=sampled_accept&&selection.consumed==1?random_draft[1]:output[1];
-            return selection;
-          }();
-          const auto pending=stochastic?actual_random_pending:checked[verifier.pending[decision.consumed_drafts]];
-          if(scenario==0){natural_proposal=proposal;natural_accepted=std::uint32_t(decision.consumed_drafts);}
-          else EXPECT_EQ(decision.consumed_drafts,scenario==1?1u:0u);
-          ++accepted.at(decision.consumed_drafts);
-          auto checkpoint=decision.consumed_drafts?second:first_checkpoint;
-          if(use_target&&decision.consumed_drafts) {
-            const auto count=repair_program->native_submissions();
-            const auto repaired=execute_step(state,first_checkpoint,*repair_step,*source,7,
-                [&](std::span<const c::ReadLease> input){return repair_program->execute(queue,input,cuda);},
-                state.member(first_checkpoint,kTargetTap));
-            ++feedback;++skips;++repairs;add_bound(repair_submissions,repair_program->native_submissions()-count);
-            TargetFrame target;
-            const std::array entries{kTargetMain,kTargetCursor,kTargetTap};
-            for(std::size_t i=0;i<entries.size();++i)target.state[i]=state.member(second,entries[i]);
-            checkpoint=attach_target(state,repaired,target);
-          }
-          auto head=take(c::StateHead::create(state.store,base),"one atomic Pro accepted Head");
+          c::StateVersion first_checkpoint,second,published,caught;
+          Image first_image,first_checkpoint_image,second_image,published_image,caught_image,second_request_image;
+          c::ReadLease pending;
+          std::int32_t proposal=0;
+          hyle::inference::mtp::AcceptedPrefix decision{};
+          const SamplingCursor second_random{initial_random.seed,initial_random.stream+1,0};
+          auto *checkpoints=&driver.directory;GlmCheckpoint second_request;
+          std::size_t late_catchup_refusals=0,observer_refusals=0;
+          std::optional<decltype(request_submission_counts())> retry_submissions,restore_submissions;
+          std::size_t retry_publications=0;
           const auto publish_request_result=[&](std::size_t index,const c::StateIdentity &expected,
               const c::StateVersion &version,std::span<const std::int32_t> emitted,bool stopped) {
+            auto &head=driver.heads[index];
             const auto records=request_records(index);
             require_observed(emitted.size()==1&&request_commits[index]<records.size(),
                 "original GLM request reserves one real emitted pending per Graph result");
@@ -2063,402 +2163,600 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
           const auto observe_request_result=[&](std::size_t index,std::size_t ordinal,
               const c::StateVersion &actual) {
             return hyle::inference::observe_record_commit(
-                std::span<const RequestCommit>(request_records(index)),request_commits[index],ordinal,*request_progress[index],
-                [&](const RequestCommit &record) {
+                std::span<const GlmRequestDirectory::Commit>(request_records(index)),request_commits[index],ordinal,*request_progress[index],
+                [&](const GlmRequestDirectory::Commit &record) {
                   ++record_projections;
                   return hyle::inference::CommitObservation{record.emitted,true,true,record.stopped};
                 },
-                [&](const RequestCommit &record,const hyle::inference::CommitObservation &) {
+                [&](const GlmRequestDirectory::Commit &record,const hyle::inference::CommitObservation &) {
                   if(record.emitted[0]!=state.scalar(actual,kPending)||record.sampling!=random_cursor(actual)||
                       record.cursor!=state.scalar(actual,kCursor)||record.index_cursor!=state.scalar(actual,kIndexCursor)||
                       record.lag!=state.scalar(actual,kLag)||record.epoch!=state.epoch(actual).epoch)
                     throw std::runtime_error("GLM observation requires its actual committed pending/RNG result");
                 },
-                [&](const RequestCommit &,const hyle::inference::CommitObservation &) noexcept {++family_observations[index];});
+                [&](const GlmRequestDirectory::Commit &,const hyle::inference::CommitObservation &) noexcept {++family_observations[index];});
           };
-          {
-            auto discarded=take(state.store.begin(checkpoint),"cancelled Pro acceptance draft");
-            check(discarded.replace(state.entry(kPending),pending),"cancelled actual pending lease");
-            if(stochastic) {
-              const auto next=initial_random.advanced(3);
-              check(discarded.replace_metadata(state.entries[*state.sampling_entry],std::as_bytes(std::span(&next,1))),"cancel uncommitted Pro random cursor");
-              EXPECT_FALSE(discarded.replace(state.entry(kPending),state.member(first,kTargetTap)).ok());
+
+          const auto execute=[&](hyle::inference::RequestKey key) {
+            const auto index=key.slot;auto &progress=*request_progress[index];auto &head=driver.heads[index];
+            constexpr int scenario=0;
+            // A head/record can be authoritative while a later host observer
+            // refused. The next common wave consumes that original result only.
+            if(request_commits[index]>progress.observed_commits()) {
+              require_observed(index==0&&progress.observed_commits()==0&&request_commits[0]==1&&observer_refusals==1,
+                  "GLM retry names its one real published unobserved result");
+              EXPECT_EQ(request_submission_counts(),*retry_submissions);EXPECT_EQ(request_publications,retry_publications);
+              const auto before=image(state,caught);
+              EXPECT_TRUE(observe_request_result(0,0,published));
+              EXPECT_FALSE(observe_request_result(0,0,base));
+              EXPECT_EQ(request_submission_counts(),*retry_submissions);EXPECT_EQ(request_publications,retry_publications);
+              EXPECT_EQ(take(head.current(),"GLM observer retry never republishes Head").identity(),caught.identity());
+              EXPECT_EQ(image(state,caught),before);EXPECT_EQ(random_cursor(caught),initial_random.advanced(3));
+              EXPECT_EQ(family_observations[0],1u);EXPECT_EQ(progress.observed_commits(),1u);
+              EXPECT_EQ(progress.generated.size(),1u);EXPECT_EQ(progress.generated.back(),state.scalar(caught,kPending));
+              EXPECT_TRUE(progress.turn_done);EXPECT_EQ(progress.remaining_outputs(),0u);
+              return;
             }
-            check(discarded.cancel(),"cancel whole uncommitted Pro acceptance");++cancelled;
-            EXPECT_EQ(image(state,take(head.current(),"cancelled Pro draft cannot change Head")),base_image);
-            if(stochastic)EXPECT_EQ(random_cursor(take(head.current(),"Pro cancellation retains RNG")),initial_random);
-          }
-          auto acceptance=take(state.store.begin(checkpoint),"all-resource K1 Pro acceptance");
-          check(acceptance.replace(state.entry(kPending),pending),"direct actual target policy result lease");
-          if(stochastic) {
-            const auto next=initial_random.advanced(3);
-            check(acceptance.replace_metadata(state.entries[*state.sampling_entry],std::as_bytes(std::span(&next,1))),"same complete Pro transaction advances RNG");
-          }
-          const auto published=take(acceptance.finalize(),"complete K1 Pro accepted checkpoint");
-          if(stochastic) {
-            EXPECT_FALSE(head.publish(second.identity(),published).ok());
-            EXPECT_EQ(random_cursor(take(head.current(),"stale Pro publish keeps RNG")),initial_random);
-          }
-          if(request_directory_demo) {
-            require_observed(selection_emitted.size()==1,"finite original request adapter retains its real one-emission natural K1 branch");
-            require_observed(request_progress[0]->preflight_commit(0,selection_emitted,true,true,decision.stopped),
-                "preflight actual K1 host output before its complete Head publication");
-          }
-          if(request_directory_demo)publish_request_result(0,base.identity(),published,selection_emitted,decision.stopped);
-          else check(head.publish(base.identity(),published),"atomically publish Pro accepted prefix and pending");
-          if(stochastic)EXPECT_EQ(random_cursor(take(head.current(),"successful Pro publish advances RNG once")),initial_random.advanced(3));
-          EXPECT_FALSE(head.publish(base.identity(),second).ok());++stale_publish;
-          const auto published_image=image(state,published);
-          EXPECT_EQ(state.scalar(published,kCursor),std::int32_t(kBasePosition+1+decision.consumed_drafts));
-          EXPECT_EQ(state.scalar(published,kIndexCursor),std::int32_t(kBasePosition+1));
-          EXPECT_EQ(state.scalar(published,kLag),std::int32_t(decision.consumed_drafts));
-          EXPECT_EQ(state.scalar(published,kPending),decision.next_id);
-          same_storage(state.member(published,kPending),pending);
-          for(std::size_t i=0;i<resource_count;++i)if(i!=layout.slot(kPending))
-            same_storage(state.physical_member(published,i),state.physical_member(checkpoint,i));
-          if(use_target) {
-            for(const auto entry:{kTargetMain,kTargetCursor,kTargetTap})
-              same_storage(state.member(published,entry),state.member(checkpoint,entry));
-            EXPECT_EQ(state.scalar(published,kTargetCursor),state.scalar(published,kCursor));
-          }
-          if(stochastic) {
-            const std::array inputs{state.scalar(base,kPending),proposal};
-            const std::array flags{std::uint8_t(sampled_accept)};
-            const std::array finals{values<std::int32_t>(actual_random_pending).at(0)};
-            // Actual accepted-prefix resources and real ID leases are reused
-            // by independent policy Heads; no logits, q or acceptance changed.
-            const auto boundary=[&](std::size_t quota,std::span<const std::int32_t> eos,const char *name) {
-              std::vector<std::int32_t> tokens;
-              const auto policy=hyle::inference::mtp::select_sampled_prefix(inputs,flags,finals,quota,eos,std::int32_t(model::kVocabulary),tokens);
-              const auto lease=sampled_accept&&policy.consumed==1?random_draft[1]:actual_random_pending;
-              const auto from=policy.consumed_drafts?checkpoint:first_checkpoint;
-              auto branch=take(c::StateHead::create(state.store,base),"Pro independent bounded policy Head");
-              auto draft=take(state.store.begin(from),"Pro same complete selected prefix");
-              check(draft.replace(state.entry(kPending),lease),"Pro bounded original pending lease");
-              const auto rng=initial_random.advanced(3);
-              check(draft.replace_metadata(state.entries[*state.sampling_entry],std::as_bytes(std::span(&rng,1))),"Pro bounded policy preserves reserved draws");
-              const auto bounded=take(draft.finalize(),"Pro bounded same-prefix checkpoint");
-              check(branch.publish(base.identity(),bounded),"Pro bounded actual lease/state publication");
-              same_storage(state.member(bounded,kPending),lease);EXPECT_EQ(state.scalar(bounded,kPending),policy.next_id);
-              EXPECT_EQ(state.scalar(bounded,kCursor),std::int32_t(kBasePosition+policy.consumed));EXPECT_EQ(state.scalar(bounded,kTargetCursor),state.scalar(bounded,kCursor));
-              EXPECT_EQ(random_cursor(bounded),rng);
-              for(std::size_t slot=0;slot<resource_count;++slot)if(slot!=layout.slot(kPending))same_storage(state.physical_member(bounded,slot),state.physical_member(from,slot));
-              for(const auto entry:{kTargetMain,kTargetCursor,kTargetTap})same_storage(state.member(bounded,entry),state.member(from,entry));
-              std::printf("GLM PRO RANDOM BOUNDARY name=%s accept=%d emitted=%zu consumed=%zu pending=%d stopped=%d draw=3\n",name,int(sampled_accept),tokens.size(),policy.consumed,policy.next_id,int(policy.stopped));
-            };
-            if(limits.quota==std::numeric_limits<std::size_t>::max()&&limits.remaining_context==std::numeric_limits<std::size_t>::max()&&limits.eos.empty()) {
-              boundary(1,{},"quota1");check(state.store.collect(),"retire independent Pro quota Head");
-              if(sampled_accept&&proposal!=inputs[0]){const std::array eos{proposal};boundary(2,eos,"accepted_proposal_EOS");check(state.store.collect(),"retire independent Pro accepted EOS Head");}
-              if(finals[0]!=inputs[0]&&(!sampled_accept||finals[0]!=proposal)){const std::array eos{finals[0]};boundary(2,eos,sampled_accept?"bonus_EOS":"residual_EOS");check(state.store.collect(),"retire independent Pro final EOS Head");}
-            } else {
-              ::testing::Test::RecordProperty("random_finite_emitted",int(selection_emitted.size()));::testing::Test::RecordProperty("random_finite_consumed",int(decision.consumed));
-              ::testing::Test::RecordProperty("random_finite_stopped",int(decision.stopped));::testing::Test::RecordProperty("random_committed_draws",3);
-              return; // A finite component episode is not a request scheduler.
+            if(index==0&&!progress.turn_index) {
+              c::ReadLease first_logits;
+              first=execute_first(first_logits);
+              std::vector<c::ReadLease> random_draft;
+              if(stochastic) {
+                const auto current_id=state.scalar(base,kPending);
+                if(std::ranges::find(limits.eos,current_id)!=limits.eos.end())throw std::runtime_error("Pro cannot consume an EOS pending token");
+
+                if(limits.single_row()) {
+                  single_current(first,limits,false);
+                  ::testing::Test::RecordProperty("random_tail_target_rows",1);::testing::Test::RecordProperty("random_tail_draws",1);
+                  ::testing::Test::RecordProperty("scope","Finite one-row target-only emission with same-prefix mandatory-current NextN maintenance; no q sample or proposed second-row execution. Actual p0 pending and one draw publish with the complete Head. Not a request scheduler.");
+                  return;
+                }
+                single_current(first,{1,1,{}},false);check(state.store.collect(),"retire independent Pro single Head");single_current(first,{1,1,{}},true);check(state.store.collect(),"retire independent Pro terminal Head");
+                random_draft=sample_logits(first_logits,initial_random);
+                auto sampled=take(state.store.begin(first),"actual original Pro random proposal");
+                check(sampled.replace(state.entry(kPending),random_draft[1]),"real NextN categorical I32 feeds target row1");
+                first=take(sampled.finalize(),"preserve complete original Pro proposal checkpoint");
+              }
+              first_image=image(state,first);
+              bool wrong_skip_submitted=false;
+              EXPECT_THROW((void)execute_step(state,first,second_step,*source,8,
+                  [&](std::span<const c::ReadLease>) {
+                    wrong_skip_submitted=true;return std::vector<c::ReadLease>{};
+                  }),std::runtime_error);
+              EXPECT_FALSE(wrong_skip_submitted);
+              first_checkpoint=first;
+              if(scenario) {
+                auto controlled=take(state.store.begin(first),"explicit controlled proposal policy");
+                check(controlled.replace(state.entry(kPending),policy_checked[scenario==1?(use_target?policy->pending[0]:verifier.pending[0]):(use_target?policy->reject:verifier.reject)]),
+                    "controlled proposal retains actual target Top1/Top2 I32 output");
+                first_checkpoint=take(controlled.finalize(),"controlled actual pending checkpoint");
+              }
+              proposal=state.scalar(first_checkpoint,kPending);
+              first_checkpoint_image=image(state,first_checkpoint);
+              second=execute_second(first_checkpoint);
+              second_image=image(state,second);
+              if(scenario==0) {
+                bool wrong_catchup_submitted=false;
+                EXPECT_THROW((void)execute_step(state,second,catchup_step,*source,8,
+                    [&](std::span<const c::ReadLease>) {
+                      wrong_catchup_submitted=true;return std::vector<c::ReadLease>{};
+                    }),std::runtime_error);
+                EXPECT_FALSE(wrong_catchup_submitted);
+              }
+              const auto selected_prefix=select_current_prefix(proposal,random_draft);
+              decision=selected_prefix.prefix;pending=selected_prefix.pending;
+              const bool sampled_accept=selected_prefix.sampled_accept;
+              if(scenario==0){natural_proposal=proposal;natural_accepted=std::uint32_t(decision.consumed_drafts);}
+              else EXPECT_EQ(decision.consumed_drafts,scenario==1?1u:0u);
+              ++accepted.at(decision.consumed_drafts);
+              auto checkpoint=repair_prefix(first_checkpoint,second,decision.consumed_drafts);
+              published=prepare_acceptance(head,checkpoint,first,pending);
+              if(stochastic) {
+                EXPECT_FALSE(head.publish(second.identity(),published).ok());
+                EXPECT_EQ(random_cursor(take(head.current(),"stale Pro publish keeps RNG")),initial_random);
+              }
+              if(request_directory_demo) {
+                require_observed(selection_emitted.size()==1,"finite original request adapter retains its real one-emission natural K1 branch");
+                require_observed(request_progress[0]->preflight_commit(0,selection_emitted,true,true,decision.stopped),
+                    "preflight actual K1 host output before its complete Head publication");
+              }
+              if(request_directory_demo)publish_request_result(0,base.identity(),published,selection_emitted,decision.stopped);
+              else check(head.publish(base.identity(),published),"atomically publish Pro accepted prefix and pending");
+              if(stochastic)EXPECT_EQ(random_cursor(take(head.current(),"successful Pro publish advances RNG once")),initial_random.advanced(3));
+              EXPECT_FALSE(head.publish(base.identity(),second).ok());++stale_publish;
+              published_image=image(state,published);
+              EXPECT_EQ(state.scalar(published,kCursor),std::int32_t(kBasePosition+1+decision.consumed_drafts));
+              EXPECT_EQ(state.scalar(published,kIndexCursor),std::int32_t(kBasePosition+1));
+              EXPECT_EQ(state.scalar(published,kLag),std::int32_t(decision.consumed_drafts));
+              EXPECT_EQ(state.scalar(published,kPending),decision.next_id);
+              same_storage(state.member(published,kPending),pending);
+              for(std::size_t i=0;i<resource_count;++i)if(i!=layout.slot(kPending))
+                same_storage(state.physical_member(published,i),state.physical_member(checkpoint,i));
+              if(use_target) {
+                for(const auto entry:{kTargetMain,kTargetCursor,kTargetTap})
+                  same_storage(state.member(published,entry),state.member(checkpoint,entry));
+                EXPECT_EQ(state.scalar(published,kTargetCursor),state.scalar(published,kCursor));
+              }
+              if(stochastic&&!exercise_prefix_policies(first_checkpoint,checkpoint,proposal,decision,sampled_accept,pending,random_draft[1]))return;
+              caught=published;
+              if(decision.consumed_drafts) {
+                caught=execute_step(state,published,catchup_step,*source,7,
+                    [&](std::span<const c::ReadLease> input){return catchup_program.execute(queue,input);});
+                ++catchups;check(head.publish(published.identity(),caught),"same accepted Head catches up its one journal row");
+              } else if(request_directory_demo) {
+                const auto submissions=request_submission_counts();
+                const auto publications=request_publications;
+                bool refused=false;
+                try {validate_step(state,published,catchup_step);}
+                catch(const std::runtime_error &error) {
+                  require_observed(std::string(error.what())=="finite Pro catchup requires the next actual accepted journal row",
+                      "late GLM catchup preserves its original journal precondition");
+                  refused=true;
+                }
+                require_observed(refused,"no accepted GLM journal row may launch catchup after publication");
+                ++late_catchup_refusals;
+                EXPECT_TRUE(request0_records[0].committed);EXPECT_EQ(request_commits[0],1u);
+                EXPECT_EQ(request_progress[0]->observed_commits(),0u);EXPECT_TRUE(request_progress[0]->generated.empty());
+                EXPECT_EQ(take(head.current(),"late catchup refusal retains actual committed Head").identity(),published.identity());
+                EXPECT_EQ(image(state,published),published_image);EXPECT_EQ(random_cursor(published),initial_random.advanced(3));
+                EXPECT_EQ(request_submission_counts(),submissions);EXPECT_EQ(request_publications,publications);
+              } else EXPECT_THROW(validate_step(state,published,catchup_step),std::runtime_error);
+              EXPECT_EQ(state.scalar(caught,kLag),0);EXPECT_EQ(state.scalar(caught,kCursor),state.scalar(caught,kIndexCursor));
+              if(use_target)for(const auto entry:{kTargetMain,kTargetCursor,kTargetTap})
+                same_storage(state.member(caught,entry),state.member(published,entry));
+              require_observed(glm_shared_vocabulary_reference::expect_feedback(values<std::int32_t>(state.member(caught,kPending)),
+                  values<std::int32_t>(pending)),"actual target pending enters next embedding");
+              if(stochastic)EXPECT_EQ(random_cursor(caught),initial_random.advanced(3));
+
+              driver.consumed_inputs={state.scalar(base,kPending),proposal};
+              caught_image=image(state,caught);
+              retry_submissions=request_submission_counts();retry_publications=request_publications;
+              // The original stale-family witness is rejected after commit.
+              // Let RequestLoop see this late failure; a later pump observes
+              // the same original record without resubmitting any math.
+              ++observer_refusals;
+              (void)observe_request_result(0,0,base);
+              throw std::runtime_error("stale GLM observer unexpectedly accepted its old witness");
             }
-          }
-          auto caught=published;
-          if(decision.consumed_drafts) {
-            caught=execute_step(state,published,catchup_step,*source,7,
-                [&](std::span<const c::ReadLease> input){return catchup_program.execute(queue,input);});
-            ++catchups;check(head.publish(published.identity(),caught),"same accepted Head catches up its one journal row");
-          } else if(request_directory_demo) {
-            const auto submissions=request_submission_counts();
-            const auto publications=request_publications;
-            bool refused=false;
-            try {validate_step(state,published,catchup_step);}
-            catch(const std::runtime_error &error) {
-              require_observed(std::string(error.what())=="finite Pro catchup requires the next actual accepted journal row",
-                  "late GLM catchup preserves its original journal precondition");
-              refused=true;
-            }
-            require_observed(refused,"no accepted GLM journal row may launch catchup after publication");
-            ++late_catchup_refusals;
-            EXPECT_TRUE(request0_records[0].committed);EXPECT_EQ(request_commits[0],1u);
-            EXPECT_EQ(request_progress[0]->observed_commits(),0u);EXPECT_TRUE(request_progress[0]->generated.empty());
-            EXPECT_EQ(take(head.current(),"late catchup refusal retains actual committed Head").identity(),published.identity());
-            EXPECT_EQ(image(state,published),published_image);EXPECT_EQ(random_cursor(published),initial_random.advanced(3));
-            EXPECT_EQ(request_submission_counts(),submissions);EXPECT_EQ(request_publications,publications);
-          } else EXPECT_THROW(validate_step(state,published,catchup_step),std::runtime_error);
-          EXPECT_EQ(state.scalar(caught,kLag),0);EXPECT_EQ(state.scalar(caught,kCursor),state.scalar(caught,kIndexCursor));
-          if(use_target)for(const auto entry:{kTargetMain,kTargetCursor,kTargetTap})
-            same_storage(state.member(caught,entry),state.member(published,entry));
-          require_observed(glm_shared_vocabulary_reference::expect_feedback(values<std::int32_t>(state.member(caught,kPending)),
-              values<std::int32_t>(pending)),"actual target pending enters next embedding");
-          if(stochastic)EXPECT_EQ(random_cursor(caught),initial_random.advanced(3));
-          std::optional<hyle::inference::PrefixDirectory<GlmCheckpoint>> checkpoints;
-          GlmCheckpoint second_request;
-          Image caught_image,second_request_image;
-          const SamplingCursor second_random{initial_random.seed,initial_random.stream+1,0};
-          if(request_directory_demo) {
-            auto &progress=*request_progress[0];
-            const auto submissions=request_submission_counts();
-            const auto publications=request_publications;
-            const auto before=image(state,caught);
-            // A late observer supplied an actual stale result. Only its host
-            // observation is retried; the real Head/record already committed.
-            EXPECT_THROW((void)observe_request_result(0,0,base),std::runtime_error);++observer_refusals;
-            EXPECT_TRUE(request0_records[0].committed);EXPECT_EQ(request_commits[0],1u);
-            EXPECT_EQ(progress.observed_commits(),0u);EXPECT_TRUE(progress.generated.empty());EXPECT_EQ(family_observations[0],0u);
-            EXPECT_TRUE(observe_request_result(0,0,published));
-            EXPECT_FALSE(observe_request_result(0,0,base)); // Duplicate returns before even checking the stale family witness.
-            EXPECT_EQ(request_submission_counts(),submissions);EXPECT_EQ(request_publications,publications);
-            EXPECT_EQ(take(head.current(),"GLM observer retry never republishes Head").identity(),caught.identity());
-            EXPECT_EQ(image(state,caught),before);EXPECT_EQ(random_cursor(caught),initial_random.advanced(3));
-            EXPECT_EQ(family_observations[0],1u);
-            EXPECT_EQ(progress.observed_commits(),1u);EXPECT_EQ(progress.generated.size(),1u);
-            EXPECT_EQ(progress.generated.back(),state.scalar(caught,kPending));
-            EXPECT_TRUE(progress.turn_done);EXPECT_EQ(progress.remaining_outputs(),0u);
-            checkpoints.emplace(1);
-            caught_image=image(state,caught);
-            // This is a suffix after this exact immutable initial fixture,
-            // not a claim that the component can prefill arbitrary GLM text.
-            const hyle::inference::CacheDomain domain{source.get(),&base};
-            const std::array consumed{state.scalar(base,kPending),proposal};
-            const auto length=std::size_t(state.scalar(caught,kCursor)-kBasePosition);
-            EXPECT_EQ(length,decision.consumed);EXPECT_GE(length,1u);EXPECT_LE(length,consumed.size());
-            const auto input=hyle::inference::token_plan(std::span(consumed).first(length),std::size_t(kCapacity-kBasePosition));
-            EXPECT_TRUE(checkpoints->publish(domain,input,length,
-                GlmCheckpoint{caught,length,state.scalar(caught,kCursor)}));
-            EXPECT_TRUE(checkpoints->retains([&](const GlmCheckpoint &entry){return entry.version.identity()==caught.identity();}));
-            EXPECT_TRUE(progress.more_turns());
-            EXPECT_EQ(request_window.release_turn(request_keys[0],progress.more_turns()),1u);head={};progress.advance_turn();
-            EXPECT_EQ(request_window.waiting_front(),std::optional{request_keys[1]});
-            request_window.admitted(request_keys[1]);request_order[request_turns++]=1;
-            const auto second_request_input=request_progress[1]->begin_turn(progress_inputs[1]);
-            EXPECT_EQ(second_request_input.size(),1u);EXPECT_EQ(second_request_input[0],state.scalar(base,kPending));
-            auto hit=checkpoints->lookup(domain,*input,length,length);
-            require_observed(bool(hit),"second GLM request really hits the complete suffix boundary");
-            EXPECT_EQ(hit.complete_length(),length);EXPECT_EQ(hit.payload.consumed,length);
-            EXPECT_EQ(hit.payload.cursor,state.scalar(caught,kCursor));
-            EXPECT_EQ(hit.payload.version.identity(),caught.identity());
-            EXPECT_FALSE(checkpoints->evict_one());
-            EXPECT_FALSE(checkpoints->lookup({source.get(),&first},*input,length,length));
-            head=take(c::StateHead::create(state.store,hit.payload.version),"new GLM request begins at actual cache hit");
-            const auto hit_image=image(state,hit.payload.version);
-            const std::array tap{state.member(hit.payload.version,kTargetTap)};
-            const auto target=policy_program->execute(queue,tap);
-            (void)check_verifier(*policy,target,values<Tap>(tap[0]),false);
-            const auto sampled=sample_logits(target[policy->logits],second_random);
-            const auto rng=second_random.advanced(1);
-            {
-              auto cancelled_hit=take(state.store.begin(hit.payload.version),"cancel new GLM request cache fork");
-              check(cancelled_hit.replace(state.entry(kPending),sampled[1]),"cancel actual cache-hit sampled pending");
-              check(cancelled_hit.replace_metadata(state.entries[*state.sampling_entry],std::as_bytes(std::span(&rng,1))),
-                  "cancel cache-hit sampling cursor");
-              check(cancelled_hit.cancel(),"discard whole cache-hit fork");
-              EXPECT_EQ(image(state,take(head.current(),"cancelled cache fork Head")),hit_image);
+            if(index==1&&!progress.turn_index) {
+              const auto &input=driver.prefix_input;
+              const auto length=input->ids.size();
+              EXPECT_FALSE(checkpoints->evict_one());
+              EXPECT_FALSE(checkpoints->lookup({source.get(),&first},*input,length,length));
+              auto &hit=driver.hit;
+              require_observed(bool(hit),"second GLM request really hits the complete suffix boundary");
+              EXPECT_EQ(hit.complete_length(),length);EXPECT_EQ(hit.payload.consumed,length);
+              EXPECT_EQ(hit.payload.cursor,state.scalar(caught,kCursor));
+              EXPECT_EQ(hit.payload.version.identity(),caught.identity());
+              EXPECT_FALSE(checkpoints->evict_one());
+              EXPECT_FALSE(checkpoints->lookup({source.get(),&first},*input,length,length));
+              const auto hit_image=image(state,hit.payload.version);
+              const std::array tap{state.member(hit.payload.version,kTargetTap)};
+              const auto target=policy_program->execute(queue,tap);
+              (void)check_verifier(*policy,target,values<Tap>(tap[0]),false);
+              const auto sampled=sample_logits(target[policy->logits],second_random);
+              const auto rng=second_random.advanced(1);
+              {
+                auto cancelled_hit=take(state.store.begin(hit.payload.version),"cancel new GLM request cache fork");
+                check(cancelled_hit.replace(state.entry(kPending),sampled[1]),"cancel actual cache-hit sampled pending");
+                check(cancelled_hit.replace_metadata(state.entries[*state.sampling_entry],std::as_bytes(std::span(&rng,1))),
+                    "cancel cache-hit sampling cursor");
+                check(cancelled_hit.cancel(),"discard whole cache-hit fork");
+                EXPECT_EQ(image(state,take(head.current(),"cancelled cache fork Head")),hit_image);
+                EXPECT_EQ(request_window.active().size(),1u);EXPECT_EQ(request_window.active()[0].slot,1u);
+                EXPECT_EQ(request_window.active()[0],request_keys[1]);
+                EXPECT_FALSE(request_window.waiting_front());EXPECT_EQ(request_turns,2u);
+                EXPECT_TRUE(request_progress[1]->generated.empty());EXPECT_EQ(request_progress[1]->observed_commits(),0u);
+              }
+              auto fork=take(state.store.begin(hit.payload.version),"new request full-prefix sampling fork");
+              check(fork.replace(state.entry(kPending),sampled[1]),"new request directly retains its actual sampled token lease");
+              check(fork.replace_metadata(state.entries[*state.sampling_entry],std::as_bytes(std::span(&rng,1))),
+                  "new request has an independent sampling stream");
+              auto version=take(fork.finalize(),"complete new GLM request cache fork");
+              EXPECT_FALSE(head.publish(base.identity(),version).ok());
+              EXPECT_EQ(image(state,take(head.current(),"stale cache fork leaves Head unchanged")),hit_image);
               EXPECT_EQ(request_window.active().size(),1u);EXPECT_EQ(request_window.active()[0].slot,1u);
               EXPECT_EQ(request_window.active()[0],request_keys[1]);
               EXPECT_FALSE(request_window.waiting_front());EXPECT_EQ(request_turns,2u);
               EXPECT_TRUE(request_progress[1]->generated.empty());EXPECT_EQ(request_progress[1]->observed_commits(),0u);
+              const std::array fork_output{state.scalar(version,kPending)};
+              request_progress[1]->preflight_outputs(fork_output,true,true,progress_stopped(fork_output[0]));
+              check(head.publish(hit.payload.version.identity(),version),"atomically publish new request pending and RNG");
+              request_progress[1]->apply_outputs(fork_output,true,true,progress_stopped(fork_output[0]));
+              EXPECT_EQ(request_progress[1]->observed_commits(),0u); // A cache fork is not another Graph commit.
+              EXPECT_EQ(request_progress[1]->generated.size(),1u);EXPECT_EQ(request_progress[1]->generated.back(),fork_output[0]);
+              EXPECT_TRUE(request_progress[1]->turn_done);EXPECT_EQ(request_progress[1]->remaining_outputs(),0u);
+              EXPECT_EQ(random_cursor(version),rng);EXPECT_EQ(random_cursor(caught),initial_random.advanced(3));
+              EXPECT_EQ(image(state,hit.payload.version),hit_image);
+              same_storage(state.member(version,kPending),sampled[1]);
+              for(std::size_t i=0;i<resource_count;++i)if(i!=layout.slot(kPending))
+                same_storage(state.physical_member(version,i),state.physical_member(caught,i));
+              for(const auto entry:{kTargetMain,kTargetCursor,kTargetTap})
+                same_storage(state.member(version,entry),state.member(caught,entry));
+              second_request={std::move(version),hit.payload.consumed,hit.payload.cursor};
+              second_request_image=image(state,second_request.version);
+              hit.reset();
+
+              EXPECT_TRUE(request_progress[1]->more_turns());
+              restore_submissions=request_submission_counts();
+              return;
             }
-            auto fork=take(state.store.begin(hit.payload.version),"new request full-prefix sampling fork");
-            check(fork.replace(state.entry(kPending),sampled[1]),"new request directly retains its actual sampled token lease");
-            check(fork.replace_metadata(state.entries[*state.sampling_entry],std::as_bytes(std::span(&rng,1))),
-                "new request has an independent sampling stream");
-            auto version=take(fork.finalize(),"complete new GLM request cache fork");
-            EXPECT_FALSE(head.publish(base.identity(),version).ok());
-            EXPECT_EQ(image(state,take(head.current(),"stale cache fork leaves Head unchanged")),hit_image);
-            EXPECT_EQ(request_window.active().size(),1u);EXPECT_EQ(request_window.active()[0].slot,1u);
-            EXPECT_EQ(request_window.active()[0],request_keys[1]);
-            EXPECT_FALSE(request_window.waiting_front());EXPECT_EQ(request_turns,2u);
-            EXPECT_TRUE(request_progress[1]->generated.empty());EXPECT_EQ(request_progress[1]->observed_commits(),0u);
-            const std::array fork_output{state.scalar(version,kPending)};
-            request_progress[1]->preflight_outputs(fork_output,true,true,progress_stopped(fork_output[0]));
-            check(head.publish(hit.payload.version.identity(),version),"atomically publish new request pending and RNG");
-            request_progress[1]->apply_outputs(fork_output,true,true,progress_stopped(fork_output[0]));
-            EXPECT_EQ(request_progress[1]->observed_commits(),0u); // A cache fork is not another Graph commit.
-            EXPECT_EQ(request_progress[1]->generated.size(),1u);EXPECT_EQ(request_progress[1]->generated.back(),fork_output[0]);
-            EXPECT_TRUE(request_progress[1]->turn_done);EXPECT_EQ(request_progress[1]->remaining_outputs(),0u);
-            EXPECT_EQ(random_cursor(version),rng);EXPECT_EQ(random_cursor(caught),initial_random.advanced(3));
-            EXPECT_EQ(image(state,hit.payload.version),hit_image);
-            same_storage(state.member(version,kPending),sampled[1]);
-            for(std::size_t i=0;i<resource_count;++i)if(i!=layout.slot(kPending))
-              same_storage(state.physical_member(version,i),state.physical_member(caught,i));
-            for(const auto entry:{kTargetMain,kTargetCursor,kTargetTap})
-              same_storage(state.member(version,entry),state.member(caught,entry));
-            second_request={std::move(version),hit.payload.consumed,hit.payload.cursor};
-            second_request_image=image(state,second_request.version);
-            hit.reset();
-            EXPECT_TRUE(request_progress[1]->more_turns());
-            EXPECT_EQ(request_window.release_turn(request_keys[1],request_progress[1]->more_turns()),2u);head={};request_progress[1]->advance_turn();
-            EXPECT_EQ(request_window.waiting_front(),std::optional{request_keys[0]});
-            request_window.admitted(request_keys[0]);request_order[request_turns++]=0;
-            const auto sampling_submissions=random_q->submissions;
-            const auto projection_submissions=policy_program->submissions;
-            head=take(c::StateHead::create(state.store,caught),"restore original request's historical complete boundary");
-            const auto restored=take(head.current(),"same-request GLM restore");
-            EXPECT_EQ(restored.identity(),caught.identity());EXPECT_EQ(image(state,restored),hit_image);
-            EXPECT_EQ(random_cursor(restored),initial_random.advanced(3));
-            same_storage(state.member(restored,kPending),pending);
-            const auto pending_input=progress.begin_turn(progress_inputs[0],state.scalar(restored,kPending));
-            EXPECT_EQ(pending_input.size(),1u);EXPECT_EQ(pending_input[0],state.scalar(restored,kPending));
-            EXPECT_EQ(pending_input[0],progress.generated.back());EXPECT_EQ(progress.turn_output_begin,1u);
-            EXPECT_EQ(random_q->submissions,sampling_submissions);EXPECT_EQ(policy_program->submissions,projection_submissions);
-          }
-          {
-          auto &next_step=decision.consumed_drafts?continuation_one:continuation_zero;
-          auto &next_program=decision.consumed_drafts?continuation_one_program:continuation_zero_program;
-          auto continued=execute_step(state,caught,next_step,*source,8,
-              [&](std::span<const c::ReadLease> input){return next_program.execute(queue,input,cuda);},use_target?state.member(caught,kTargetTap):next_targets[decision.consumed_drafts]);
-          ++feedback;
-          if(use_target) {
-            const auto target=execute_target(*target_step,*target_program,*target_source,*source,owner,queue,cuda,
-                state.member(caught,kPending),state.member(caught,kTargetMain),state.member(caught,kTargetCursor),upstream_ids);
-            continued=attach_target(state,continued,target);
-            EXPECT_EQ(state.scalar(continued,kTargetCursor),state.scalar(continued,kCursor));
-          }
-          if(stochastic) {
-            // A single ordinary target continuation consumes the real residual
-            // or bonus, then samples its next target pending with one draw.
-            // The private NextN skip below remains unverified and unpublished.
-            const std::array input{state.member(continued,kTargetTap)};
-            const auto target=policy_program->execute(queue,input);
-            (void)check_verifier(*policy,target,values<Tap>(input[0]),false);
-            const auto sampled=sample_logits(target[policy->logits],initial_random.advanced(3));
-            auto next=take(state.store.begin(continued),"real Pro target-only continuation");
-            check(next.replace(state.entry(kPending),sampled[1]),"actual target categorical pending after residual/bonus consumption");
-            const auto rng=initial_random.advanced(4);
-            check(next.replace_metadata(state.entries[*state.sampling_entry],std::as_bytes(std::span(&rng,1))),"target-only draw belongs to its successful full Head");
-            continued=take(next.finalize(),"original complete Pro next target pending and RNG");
-          }
-          if(request_directory_demo) {
-            const std::array emitted{state.scalar(continued,kPending)};
-            require_observed(request_progress[0]->preflight_commit(1,emitted,true,true,progress_stopped(emitted[0])),
-                "preflight original request's actual ordinary continuation");
-          }
-          if(request_directory_demo) {
-            const std::array emitted{state.scalar(continued,kPending)};
-            publish_request_result(0,caught.identity(),continued,emitted,progress_stopped(emitted[0]));
-          } else check(head.publish(caught.identity(),continued),"publish actual accepted-frontier fresh seed in the same Head");
-          if(request_directory_demo) {
-            const std::array emitted{state.scalar(continued,kPending)};
-            EXPECT_TRUE(observe_request_result(0,1,continued));
-            EXPECT_FALSE(observe_request_result(0,1,base));
-            EXPECT_EQ(request_progress[0]->observed_commits(),2u);EXPECT_EQ(request_progress[0]->generated.size(),2u);
-            EXPECT_EQ(request_progress[0]->generated.back(),emitted[0]);EXPECT_TRUE(request_progress[0]->turn_done);
-            EXPECT_EQ(request_progress[0]->remaining_outputs(),0u);EXPECT_FALSE(request_progress[0]->more_turns());
-          }
-          if(stochastic)EXPECT_EQ(random_cursor(take(head.current(),"next target result and RNG published together")),initial_random.advanced(4));
-          const auto continued_image=image(state,continued);
-          const auto seed=take(head.current(),"actual accepted fresh Pro seed");
-          EXPECT_EQ(seed.identity(),continued.identity());EXPECT_EQ(state.epoch(seed).epoch,8u);
-          EXPECT_EQ(state.epoch(seed).selection_position,std::uint64_t(next_step.position));
-          EXPECT_EQ(state.epoch(seed).reuses,0u);
-          auto &step_zero=decision.consumed_drafts?skip_one:skip_zero;
-          auto &zero_program=decision.consumed_drafts?skip_one_program:skip_zero_program;
-          const auto skipped=execute_step(state,seed,step_zero,*source,8,
-              [&](std::span<const c::ReadLease> input){return zero_program.execute(queue,input,cuda);});
-          ++feedback;++skips;
-          same_storage(state.member(skipped,kSelection),state.member(seed,kSelection));
-          same_storage(state.member(skipped,kCodes),state.member(seed,kCodes));
-          EXPECT_EQ(state.epoch(skipped).epoch,8u);EXPECT_EQ(state.epoch(skipped).reuses,1u);
-          EXPECT_EQ(state.scalar(skipped,kLag),1);
-          EXPECT_EQ(image(state,take(head.current(),"unverified step0 stays unpublished")),continued_image);
-          EXPECT_EQ(image(state,published),published_image);EXPECT_EQ(image(state,first_checkpoint),first_checkpoint_image);
-          EXPECT_EQ(image(state,second),second_image);EXPECT_EQ(image(state,base),base_image);EXPECT_EQ(image(state,first),first_image);
-          EXPECT_FALSE(state.member(published,kPending).try_write());EXPECT_FALSE(state.member(continued,kMain).try_write());
-          EXPECT_LE(state.peak_backing,budget);
-          std::printf("GLM Pro K1 stochastic=%d scenario=%d proposal=%d target0=%d target1=%d accepted=%u frontier=%d pending=%d continued_pending=%d\n",
-              int(stochastic),scenario,proposal,target_ids[0],target_ids[1],std::uint32_t(decision.consumed_drafts),state.scalar(published,kCursor),decision.next_id,state.scalar(continued,kPending));
-          if(request_directory_demo) {
-            EXPECT_EQ(request_window.release_turn(request_keys[0],request_progress[0]->more_turns()),0u);head={};
-            ::testing::Test::RecordProperty("request_directory_r0_pending",state.scalar(continued,kPending));
-            ::testing::Test::RecordProperty("request_directory_r0_committed_draws",int(random_cursor(continued).draw));
-          }
-          } // Retire request0 continuation/skip readers before reusing its pools.
-          if(request_directory_demo) {
-            check(state.store.collect(),"retire inactive request0 backing before request1 reuses the bounded pools");
-            request_window.release(request_keys[0]);
-            EXPECT_EQ(request_window.waiting_front(),std::optional{request_keys[1]});
-            request_window.admitted(request_keys[1]);request_order[request_turns++]=1;
-            head=take(c::StateHead::create(state.store,second_request.version),"restore second request's own complete boundary");
+            if(index==0&&progress.turn_index==1) {
+              EXPECT_EQ(request_submission_counts(),*restore_submissions);
+              const auto restored=take(head.current(),"same-request GLM restore");
+              EXPECT_EQ(restored.identity(),caught.identity());EXPECT_EQ(image(state,restored),caught_image);
+              EXPECT_EQ(random_cursor(restored),initial_random.advanced(3));same_storage(state.member(restored,kPending),pending);
+              {
+              auto &next_step=decision.consumed_drafts?continuation_one:continuation_zero;
+              auto &next_program=decision.consumed_drafts?continuation_one_program:continuation_zero_program;
+              auto continued=continue_from(caught,next_step,next_program,
+                  use_target?state.member(caught,kTargetTap):next_targets[decision.consumed_drafts],initial_random.advanced(3));
+              if(request_directory_demo) {
+                const std::array emitted{state.scalar(continued,kPending)};
+                require_observed(request_progress[0]->preflight_commit(1,emitted,true,true,progress_stopped(emitted[0])),
+                    "preflight original request's actual ordinary continuation");
+              }
+              if(request_directory_demo) {
+                const std::array emitted{state.scalar(continued,kPending)};
+                publish_request_result(0,caught.identity(),continued,emitted,progress_stopped(emitted[0]));
+              } else check(head.publish(caught.identity(),continued),"publish actual accepted-frontier fresh seed in the same Head");
+              if(request_directory_demo) {
+                const std::array emitted{state.scalar(continued,kPending)};
+                EXPECT_TRUE(observe_request_result(0,1,continued));
+                EXPECT_FALSE(observe_request_result(0,1,base));
+                EXPECT_EQ(request_progress[0]->observed_commits(),2u);EXPECT_EQ(request_progress[0]->generated.size(),2u);
+                EXPECT_EQ(request_progress[0]->generated.back(),emitted[0]);EXPECT_TRUE(request_progress[0]->turn_done);
+                EXPECT_EQ(request_progress[0]->remaining_outputs(),0u);EXPECT_FALSE(request_progress[0]->more_turns());
+              }
+              if(stochastic)EXPECT_EQ(random_cursor(take(head.current(),"next target result and RNG published together")),initial_random.advanced(4));
+              const auto continued_image=image(state,continued);
+              const auto seed=take(head.current(),"actual accepted fresh Pro seed");
+              EXPECT_EQ(seed.identity(),continued.identity());EXPECT_EQ(state.epoch(seed).epoch,8u);
+              EXPECT_EQ(state.epoch(seed).selection_position,std::uint64_t(next_step.position));
+              EXPECT_EQ(state.epoch(seed).reuses,0u);
+              auto &step_zero=decision.consumed_drafts?skip_one:skip_zero;
+              auto &zero_program=decision.consumed_drafts?skip_one_program:skip_zero_program;
+              const auto skipped=execute_step(state,seed,step_zero,*source,8,
+                  [&](std::span<const c::ReadLease> input){return zero_program.execute(queue,input,cuda);});
+              ++feedback;++skips;
+              same_storage(state.member(skipped,kSelection),state.member(seed,kSelection));
+              same_storage(state.member(skipped,kCodes),state.member(seed,kCodes));
+              EXPECT_EQ(state.epoch(skipped).epoch,8u);EXPECT_EQ(state.epoch(skipped).reuses,1u);
+              EXPECT_EQ(state.scalar(skipped,kLag),1);
+              EXPECT_EQ(image(state,take(head.current(),"unverified step0 stays unpublished")),continued_image);
+              EXPECT_EQ(image(state,published),published_image);EXPECT_EQ(image(state,first_checkpoint),first_checkpoint_image);
+              EXPECT_EQ(image(state,second),second_image);EXPECT_EQ(image(state,base),base_image);EXPECT_EQ(image(state,first),first_image);
+              EXPECT_FALSE(state.member(published,kPending).try_write());EXPECT_FALSE(state.member(continued,kMain).try_write());
+              EXPECT_LE(state.peak_backing,budget);
+              std::printf("GLM Pro K1 stochastic=%d scenario=%d proposal=%d target0=%d target1=%d accepted=%u frontier=%d pending=%d continued_pending=%d\n",
+                  int(stochastic),scenario,proposal,target_ids[0],target_ids[1],std::uint32_t(decision.consumed_drafts),state.scalar(published,kCursor),decision.next_id,state.scalar(continued,kPending));
+              if(request_directory_demo) {
+                ::testing::Test::RecordProperty("request_directory_r0_pending",state.scalar(continued,kPending));
+                ::testing::Test::RecordProperty("request_directory_r0_committed_draws",int(random_cursor(continued).draw));
+              }
+
+              }
+              return;
+            }
+            require_observed(index==1&&progress.turn_index==1,"finite GLM wave keeps its original request/turn");
             EXPECT_EQ(image(state,take(head.current(),"second request restores pending and RNG")),second_request_image);
             EXPECT_EQ(random_cursor(second_request.version),second_random.advanced(1));
             EXPECT_EQ(second_request.cursor,state.scalar(second_request.version,kCursor));
-            const auto pending_input=request_progress[1]->begin_turn(progress_inputs[1],state.scalar(second_request.version,kPending));
-            EXPECT_EQ(pending_input.size(),1u);EXPECT_EQ(pending_input[0],state.scalar(second_request.version,kPending));
-            EXPECT_EQ(pending_input[0],request_progress[1]->generated.back());EXPECT_EQ(request_progress[1]->turn_output_begin,1u);
-            auto &step=second_request.consumed==2?continuation_one:continuation_zero;
-            auto &program=second_request.consumed==2?continuation_one_program:continuation_zero_program;
-            auto continued=execute_step(state,second_request.version,step,*source,8,
-                [&](std::span<const c::ReadLease> input){return program.execute(queue,input,cuda);},
-                state.member(second_request.version,kTargetTap));
-            ++feedback;
-            const auto target=execute_target(*target_step,*target_program,*target_source,*source,owner,queue,cuda,
-                state.member(second_request.version,kPending),state.member(second_request.version,kTargetMain),
-                state.member(second_request.version,kTargetCursor),upstream_ids);
-            continued=attach_target(state,continued,target);
-            EXPECT_EQ(state.scalar(continued,kTargetCursor),state.scalar(continued,kCursor));
-            const std::array tap{state.member(continued,kTargetTap)};
-            const auto projection=policy_program->execute(queue,tap);
-            (void)check_verifier(*policy,projection,values<Tap>(tap[0]),false);
-            const auto sampled=sample_logits(projection[policy->logits],second_random.advanced(1));
-            auto next=take(state.store.begin(continued),"second request ordinary continuation transaction");
-            check(next.replace(state.entry(kPending),sampled[1]),"second request actual next pending");
-            const auto rng=second_random.advanced(2);
-            check(next.replace_metadata(state.entries[*state.sampling_entry],std::as_bytes(std::span(&rng,1))),
-                "second request commits its own next sampling draw");
-            continued=take(next.finalize(),"complete second request target and NextN continuation");
-            const std::array emitted{state.scalar(continued,kPending)};
-            require_observed(request_progress[1]->preflight_commit(0,emitted,true,true,progress_stopped(emitted[0])),
-                "preflight second request's actual ordinary continuation");
-            publish_request_result(1,second_request.version.identity(),continued,emitted,progress_stopped(emitted[0]));
-            EXPECT_TRUE(observe_request_result(1,0,continued));
-            EXPECT_FALSE(observe_request_result(1,0,base));
-            EXPECT_EQ(request_progress[1]->observed_commits(),1u);EXPECT_EQ(request_progress[1]->generated.size(),2u);
-            EXPECT_EQ(request_progress[1]->generated.back(),emitted[0]);EXPECT_TRUE(request_progress[1]->turn_done);
-            EXPECT_EQ(request_progress[1]->remaining_outputs(),0u);EXPECT_FALSE(request_progress[1]->more_turns());
-            EXPECT_EQ(random_cursor(take(head.current(),"second request final Head")),rng);
-            EXPECT_EQ(state.scalar(continued,kCursor),second_request.cursor+1);
-            EXPECT_EQ(image(state,second_request.version),second_request_image);
-            EXPECT_EQ(image(state,caught),caught_image);
-            EXPECT_EQ(request_window.release_turn(request_keys[1],request_progress[1]->more_turns()),0u);head={};
-            EXPECT_EQ(request_order,(std::array<std::size_t,4>{0,1,0,1}));EXPECT_EQ(request_turns,4u);
-            EXPECT_TRUE(request_window.active().empty());EXPECT_FALSE(request_window.waiting_front());
-            EXPECT_TRUE(checkpoints->evict_one());EXPECT_EQ(checkpoints->size(),0u);EXPECT_EQ(checkpoints->evictions,1u);
-            EXPECT_EQ(image(state,second_request.version),second_request_image);
-            EXPECT_LE(state.peak_backing,budget);
-            EXPECT_LE(state.store.stats().backing_bytes,budget);
-            for(std::size_t index=0;index<request_progress.size();++index) {
-              const auto &progress=*request_progress[index];
-              EXPECT_EQ(progress.generated.data(),progress_storage[index]);EXPECT_EQ(progress.generated.capacity(),progress_capacity[index]);
-              EXPECT_EQ(progress.turn_index,1u);EXPECT_EQ(progress.output_limit(),2u);EXPECT_TRUE(progress.prefilled);
+              auto &step=second_request.consumed==2?continuation_one:continuation_zero;
+              auto &program=second_request.consumed==2?continuation_one_program:continuation_zero_program;
+              auto continued=continue_from(second_request.version,step,program,state.member(second_request.version,kTargetTap),second_random.advanced(1));
+              const auto rng=second_random.advanced(2);
+              const std::array emitted{state.scalar(continued,kPending)};
+              require_observed(request_progress[1]->preflight_commit(0,emitted,true,true,progress_stopped(emitted[0])),
+                  "preflight second request's actual ordinary continuation");
+              publish_request_result(1,second_request.version.identity(),continued,emitted,progress_stopped(emitted[0]));
+              EXPECT_TRUE(observe_request_result(1,0,continued));
+              EXPECT_FALSE(observe_request_result(1,0,base));
+              EXPECT_EQ(request_progress[1]->observed_commits(),1u);EXPECT_EQ(request_progress[1]->generated.size(),2u);
+              EXPECT_EQ(request_progress[1]->generated.back(),emitted[0]);EXPECT_TRUE(request_progress[1]->turn_done);
+              EXPECT_EQ(request_progress[1]->remaining_outputs(),0u);EXPECT_FALSE(request_progress[1]->more_turns());
+              EXPECT_EQ(random_cursor(take(head.current(),"second request final Head")),rng);
+              EXPECT_EQ(state.scalar(continued,kCursor),second_request.cursor+1);
+              EXPECT_EQ(image(state,second_request.version),second_request_image);
+              EXPECT_EQ(image(state,caught),caught_image);
+
+          };
+          std::size_t pumps=0,late_failures=0;
+          while(driver.loop.matches(request_keys[0])||driver.loop.matches(request_keys[1])) {
+            require_observed(++pumps<=8,"finite GLM request loop did not finish its four real turns");
+            try {(void)driver.pump(execute);}
+            catch(const std::runtime_error &error) {
+              if(late_failures||std::string(error.what())!="GLM observation requires its actual committed pending/RNG result")throw;
+              ++late_failures;
+              EXPECT_TRUE(request0_records[0].committed);EXPECT_EQ(request_commits[0],1u);
+              EXPECT_EQ(request_progress[0]->observed_commits(),0u);EXPECT_TRUE(request_progress[0]->generated.empty());
+              EXPECT_EQ(family_observations[0],0u);
+              EXPECT_EQ(take(driver.heads[0].current(),"late observer failure keeps original complete Head").identity(),caught.identity());
+              EXPECT_EQ(image(state,caught),caught_image);EXPECT_EQ(random_cursor(caught),initial_random.advanced(3));
+              EXPECT_EQ(request_submission_counts(),*retry_submissions);EXPECT_EQ(request_publications,retry_publications);
+              require_observed(driver.native_retirement(false).retired,"late GLM observer failure really retired original native work");
             }
-            ::testing::Test::RecordProperty("request_progress_output_counts","2,2");
-            ::testing::Test::RecordProperty("request_progress_committed_observations","2,1");
-            ::testing::Test::RecordProperty("request_progress_duplicate_commit_noops",3);
-            ::testing::Test::RecordProperty("request_progress_full_hit_outputs",1);
-            ::testing::Test::RecordProperty("request_progress_pending_only_turn_inputs",2);
-            EXPECT_EQ(request_commits,(std::array<std::size_t,2>{2,1}));
-            EXPECT_EQ(family_observations,request_commits);EXPECT_EQ(request_publications,3u);
-            EXPECT_EQ(record_projections,4u);EXPECT_EQ(late_catchup_refusals,1u);EXPECT_EQ(observer_refusals,1u);
-            ::testing::Test::RecordProperty("request_record_committed_prefixes","2,1");
-            ::testing::Test::RecordProperty("request_record_head_publications",int(request_publications));
-            ::testing::Test::RecordProperty("request_record_late_catchup_refusals",int(late_catchup_refusals));
-            ::testing::Test::RecordProperty("request_record_observer_refusals",int(observer_refusals));
-            ::testing::Test::RecordProperty("request_record_projected_observations",int(record_projections));
-            ::testing::Test::RecordProperty("request_record_observer_retry_graphs",0);
-            ::testing::Test::RecordProperty("request_record_observer_retry_head_publications",0);
-            ::testing::Test::RecordProperty("request_record_observer_retry_rng_draws",0);
-            ::testing::Test::RecordProperty("request_progress_scope","Shared RequestProgress on the existing real one-emission natural K1 branch and new-request cache fork, then the two original ordinary continuations. Each finite turn has quota1; actual model selector/EOS facts are preserved. A later empty new-user suffix consumes only its actual historical pending. No extra graph, model publication, RNG address, complete GLM prompt prefill or request server is introduced.");
-            ::testing::Test::RecordProperty("request_directory_requests",2);
-            ::testing::Test::RecordProperty("request_directory_turns",int(request_turns));
-            ::testing::Test::RecordProperty("request_directory_fifo","0,1,0,1");
-            ::testing::Test::RecordProperty("request_directory_full_hits",1);
-            ::testing::Test::RecordProperty("request_directory_evictions",int(checkpoints->evictions));
-            ::testing::Test::RecordProperty("request_directory_same_request_restore_graphs",0);
-            ::testing::Test::RecordProperty("request_directory_new_request_draws",2);
-            ::testing::Test::RecordProperty("request_directory_cancelled_forks",1);
-            ::testing::Test::RecordProperty("request_directory_stale_forks",1);
-            ::testing::Test::RecordProperty("request_directory_retained_state_versions",int(state.store.stats().versions));
-            ::testing::Test::RecordProperty("request_directory_current_backing_bytes",std::to_string(state.store.stats().backing_bytes));
-            ::testing::Test::RecordProperty("request_directory_scope","Original target77/NextN78 finite suffix after this exact initial StateVersion and upstream fixture; N1 FIFO limits active admissions, not all retained StateStore versions. Directory holds real complete lag0 state. New request resamples full-V pending with stream18; same request restores stream17 draw3 without sampling. Each request then consumes its own pending through actual target+NextN ordinary continuation. No arbitrary GLM prompt prefill or complete-model/server claim.");
+          }
+          EXPECT_EQ(late_failures,1u);EXPECT_EQ(pumps,5u);
+          EXPECT_EQ(request_order,(std::array<std::size_t,4>{0,1,0,1}));EXPECT_EQ(request_turns,4u);
+          EXPECT_TRUE(request_window.active().empty());EXPECT_FALSE(request_window.waiting_front());
+          EXPECT_TRUE(checkpoints->evict_one());EXPECT_EQ(checkpoints->size(),0u);EXPECT_EQ(checkpoints->evictions,1u);
+          EXPECT_EQ(image(state,second_request.version),second_request_image);
+          EXPECT_LE(state.peak_backing,budget);
+          EXPECT_LE(state.store.stats().backing_bytes,budget);
+          for(std::size_t index=0;index<request_progress.size();++index) {
+            const auto &progress=*request_progress[index];
+            EXPECT_EQ(progress.generated.data(),progress_storage[index]);EXPECT_EQ(progress.generated.capacity(),progress_capacity[index]);
+            EXPECT_EQ(progress.turn_index,1u);EXPECT_EQ(progress.output_limit(),2u);EXPECT_TRUE(progress.prefilled);
+          }
+          ::testing::Test::RecordProperty("request_progress_output_counts","2,2");
+          ::testing::Test::RecordProperty("request_progress_committed_observations","2,1");
+          ::testing::Test::RecordProperty("request_progress_duplicate_commit_noops",3);
+          ::testing::Test::RecordProperty("request_progress_full_hit_outputs",1);
+          ::testing::Test::RecordProperty("request_progress_pending_only_turn_inputs",2);
+          EXPECT_EQ(request_commits,(std::array<std::size_t,2>{2,1}));
+          EXPECT_EQ(family_observations,request_commits);EXPECT_EQ(request_publications,3u);
+          EXPECT_EQ(record_projections,4u);EXPECT_EQ(late_catchup_refusals,1u);EXPECT_EQ(observer_refusals,1u);
+          ::testing::Test::RecordProperty("request_record_committed_prefixes","2,1");
+          ::testing::Test::RecordProperty("request_record_head_publications",int(request_publications));
+          ::testing::Test::RecordProperty("request_record_late_catchup_refusals",int(late_catchup_refusals));
+          ::testing::Test::RecordProperty("request_record_observer_refusals",int(observer_refusals));
+          ::testing::Test::RecordProperty("request_record_projected_observations",int(record_projections));
+          ::testing::Test::RecordProperty("request_record_observer_retry_graphs",0);
+          ::testing::Test::RecordProperty("request_record_observer_retry_head_publications",0);
+          ::testing::Test::RecordProperty("request_record_observer_retry_rng_draws",0);
+          ::testing::Test::RecordProperty("request_progress_scope","Shared RequestProgress on the existing real one-emission natural K1 branch and new-request cache fork, then the two original ordinary continuations. Each finite turn has quota1; actual model selector/EOS facts are preserved. A later empty new-user suffix consumes only its actual historical pending. No extra graph, model publication, RNG address, complete GLM prompt prefill or request server is introduced.");
+          ::testing::Test::RecordProperty("request_directory_requests",2);
+          ::testing::Test::RecordProperty("request_directory_turns",int(request_turns));
+          ::testing::Test::RecordProperty("request_directory_fifo","0,1,0,1");
+          ::testing::Test::RecordProperty("request_directory_full_hits",1);
+          ::testing::Test::RecordProperty("request_directory_evictions",int(checkpoints->evictions));
+          ::testing::Test::RecordProperty("request_directory_same_request_restore_graphs",0);
+          ::testing::Test::RecordProperty("request_directory_new_request_draws",2);
+          ::testing::Test::RecordProperty("request_directory_cancelled_forks",1);
+          ::testing::Test::RecordProperty("request_directory_stale_forks",1);
+          ::testing::Test::RecordProperty("request_directory_retained_state_versions",int(state.store.stats().versions));
+          ::testing::Test::RecordProperty("request_directory_current_backing_bytes",std::to_string(state.store.stats().backing_bytes));
+          ::testing::Test::RecordProperty("request_directory_scope","Original target77/NextN78 finite suffix driven by shared RequestLoop and advance_request_wave after this exact initial StateVersion and upstream fixture; N1 FIFO limits resident Heads, not all retained StateStore versions. Directory holds real complete lag0 state. New request resamples full-V pending with stream18; same request restores stream17 draw3 without sampling. Each request then consumes its own pending through actual target+NextN ordinary continuation. No arbitrary GLM prompt prefill or complete-model/server claim.");
+
+          EXPECT_EQ(driver.evictions,2u);EXPECT_FALSE(driver.heads[0].valid());EXPECT_FALSE(driver.heads[1].valid());
+          ::testing::Test::RecordProperty("request_loop_pumps",int(pumps));
+          ::testing::Test::RecordProperty("request_loop_resident_evictions",int(driver.evictions));
+          ::testing::Test::RecordProperty("request_wave_late_observer_retry",1);
+        }
+        check(state.store.collect(),"retire finite GLM request loop while retaining base/first readers");
+        EXPECT_EQ(state.store.stats().versions,2u);EXPECT_EQ(state.store.stats().drafts,0u);
+      } else {
+
+        c::ReadLease first_logits;
+        auto first=execute_first(first_logits);
+        if(stochastic&&maximum_drafts==2&&!limits.single_row()) {
+          const auto q=sample_logits(first_logits,initial_random);
+          const auto q0=values<std::int32_t>(q[1]).at(0);
+          const bool recurse=limits.quota>2&&limits.remaining_context>2&&std::ranges::find(limits.eos,q0)==limits.eos.end();
+          if(recurse) {
+            const auto with_pending=[&](const c::StateVersion &from,const c::ReadLease &id) {
+              auto draft=take(state.store.begin(from),"Pro recursive actual sampled proposal");
+              check(draft.replace(state.entry(kPending),id),"Pro recursive I32 proposal lease");
+              return take(draft.finalize(),"Pro complete recursive input state");
+            };
+            const auto joint=[&](const c::StateVersion &from,const Step &step,Resident &program,
+                std::uint64_t epoch,c::ReadLease *logits=nullptr) {
+              auto result=execute_step(state,from,step,*source,epoch,
+                  [&](std::span<const c::ReadLease> input){return program.execute(queue,input,cuda);},
+                  step.fresh?state.member(from,kTargetTap):c::ReadLease{},logits);
+              const auto target=execute_target(*target_step,*target_program,*target_source,*source,owner,queue,cuda,
+                  state.member(from,kPending),state.member(from,kTargetMain),state.member(from,kTargetCursor),upstream_ids);
+              result=attach_target(state,result,target);
+              EXPECT_EQ(state.scalar(result,kTargetCursor),state.scalar(result,kCursor));return result;
+            };
+            const auto proposed0=with_pending(first,q[1]);c::ReadLease q1_logits;
+            const auto second=joint(proposed0,second_step,second_program,7,&q1_logits);
+            const auto q_next=sample_logits(q1_logits,initial_random.advanced(1));
+            const auto q1=values<std::int32_t>(q_next[1]).at(0);
+            const auto proposed1=with_pending(second,q_next[1]);
+            const auto third=joint(proposed1,skip_zero,skip_zero_program,7);
+            const std::array taps{state.member(first,kTargetTap),state.member(second,kTargetTap),state.member(third,kTargetTap)};
+            const auto projected=recursive_verifier->execute(queue,taps);
+            const auto p=values<float>(projected[0]);const auto vocabulary=std::size_t(model::kVocabulary);
+            EXPECT_EQ(p.size(),3*vocabulary);
+            std::vector<Tap> joined;for(const auto &tap:taps){const auto data=values<Tap>(tap);joined.insert(joined.end(),data.begin(),data.end());}
+            const std::array required{q0,q1,q1};
+            require_observed(Runtime::check_logits(*source,p,joined,false,required,cuda),"actual Pro T3 full-vocabulary target projection");
+            const std::array ids{q0,q1};const auto id_lease=upload(owner,sem::bytes(std::vector(ids.begin(),ids.end())));
+            const auto decide_prefix=[&](std::array<std::uint64_t,3> offsets) {
+              std::vector<std::uint32_t> words;for(const auto offset:offsets){const auto key=initial_random.identity(offset);words.insert(words.end(),key.begin(),key.end());}
+              const std::array input{projected[0],upload(owner,sem::bytes(words)),id_lease,q[0],q_next[0]};
+              const auto output=recursive_decision->execute(queue,input);glm_stochastic_prefix_fragment::Decision result;
+              for(std::size_t row=0;row<2;++row) {
+                if(!random_valid(output[row*3+2]))throw std::runtime_error("actual Pro K2 p/q decision invalid");
+                result.accepts[row]=std::uint8_t(random_valid(output[row*3]));result.final_leases[row]=output[row*3+1];
+                result.final_ids[row]=values<std::int32_t>(result.final_leases[row]).at(0);
+              }return result;
+            };
+            std::array<c::StateVersion,3> repaired{first,{},{}};
+            const auto replay=[&](std::size_t count) {
+              for(std::size_t row=1;row<=count;++row)if(!repaired[row].valid()) {
+                const auto from=with_pending(repaired[row-1],row==1?q[1]:q_next[1]);
+                auto &step=row==1?*repair_step:*repair_second_step;
+                auto &program=row==1?*repair_program:*repair_second_program;
+                auto fixed=execute_step(state,from,step,*source,7,
+                    [&](std::span<const c::ReadLease> input){return program.execute(queue,input,cuda);},state.member(row==1?first:second,kTargetTap));
+                const auto &target=row==1?second:third;TargetFrame frame;
+                const std::array entries{kTargetMain,kTargetCursor,kTargetTap};
+                for(std::size_t i=0;i<entries.size();++i)frame.state[i]=state.member(target,entries[i]);
+                repaired[row]=attach_target(state,fixed,frame);
+              }return repaired[count];
+            };
+            const auto observe=[&](const c::StateVersion &selected,const c::StateVersion &checkpoint,
+                const hyle::inference::mtp::AcceptedPrefix &selection,SamplingCursor rng) {
+              EXPECT_EQ(random_cursor(selected),rng);EXPECT_EQ(state.scalar(selected,kPending),selection.next_id);
+              EXPECT_EQ(state.scalar(selected,kCursor),std::int32_t(kBasePosition+selection.consumed));
+              EXPECT_EQ(state.scalar(selected,kTargetCursor),state.scalar(selected,kCursor));
+              EXPECT_EQ(state.scalar(selected,kLag),std::int32_t(selection.consumed_drafts));
+              for(std::size_t i=0;i<resource_count;++i)if(i!=layout.slot(kPending))same_storage(state.physical_member(selected,i),state.physical_member(checkpoint,i));
+              for(const auto entry:{kTargetMain,kTargetCursor,kTargetTap})same_storage(state.member(selected,entry),state.member(checkpoint,entry));
+            };
+            const auto continued=[&](c::StateHead &head,const c::StateVersion &selected,std::size_t consumed,SamplingCursor rng) {
+              auto caught=selected;
+              for(std::size_t slot=0;slot<consumed;++slot) {
+                auto &step=slot==0?catchup_step:*recursive_catchup_step;auto &program=slot==0?catchup_program:*recursive_catchup;
+                const auto next=execute_step(state,caught,step,*source,7,
+                    [&](std::span<const c::ReadLease> input){return program.execute(queue,input);});
+                check(head.publish(caught.identity(),next),"Pro K2 actual accepted journal row publication");caught=next;
+              }
+              EXPECT_EQ(state.scalar(caught,kLag),0);EXPECT_EQ(state.scalar(caught,kCursor),state.scalar(caught,kIndexCursor));
+              auto &step=consumed==0?continuation_zero:consumed==1?continuation_one:*recursive_fresh_step;
+              auto &program=consumed==0?continuation_zero_program:consumed==1?continuation_one_program:*recursive_fresh_program;
+              const auto next=joint(caught,step,program,8);
+              const std::array input{state.member(next,kTargetTap)};const auto target=policy_program->execute(queue,input);
+              const auto sampled=sample_logits(target[policy->logits],rng);auto draft=take(state.store.begin(next),"Pro K2 target-only real pending continuation");
+              check(draft.replace(state.entry(kPending),sampled[1]),"Pro K2 next target categorical result");const auto advanced=rng.advanced(1);
+              check(draft.replace_metadata(state.entries[*state.sampling_entry],std::as_bytes(std::span(&advanced,1))),"Pro K2 target-only continuation RNG");
+              const auto version=take(draft.finalize(),"Pro K2 complete real continuation");check(head.publish(caught.identity(),version),"Pro K2 next epoch consumes actual pending");
+              EXPECT_EQ(random_cursor(version),advanced);EXPECT_EQ(state.scalar(version,kCursor),std::int32_t(kBasePosition+2+consumed));
+              std::printf("GLM PRO K2 CONTINUED consumed_drafts=%zu consumed_pending=%d next_pending=%d cursor=%llu\n",consumed,state.scalar(caught,kPending),state.scalar(version,kPending),static_cast<unsigned long long>(advanced.draw));
+            };
+            const auto q0_log=values<float>(q[0]),q1_log=values<float>(q_next[0]);
+            const std::array alpha{glm_stochastic_prefix_fragment::log_alpha(std::span(p).first(vocabulary),q0_log,q0),
+                glm_stochastic_prefix_fragment::log_alpha(std::span(p).subspan(vocabulary,vocabulary),q1_log,q1)};
+            glm_stochastic_prefix_fragment::exercise(state.store,base,state.entry(kPending),state.entries[*state.sampling_entry],state.scalar(base,kPending),ids,
+                std::array{q[1],q_next[1]},state.member(first,kTargetTap),initial_random,std::int32_t(model::kVocabulary),cuda,alpha,limits,
+                decide_prefix,replay,observe,continued);
+            EXPECT_EQ(image(state,base),base_image);return;
           }
         }
-        check(state.store.collect(),"retire finite Pro scenario while retaining base/first readers");
-        if(request_directory_demo)request_window.release(request_keys[1]);
-        EXPECT_EQ(state.store.stats().versions,2u);EXPECT_EQ(state.store.stats().drafts,0u);
+        std::vector<c::ReadLease> random_draft;
+        if(stochastic) {
+          const auto current_id=state.scalar(base,kPending);
+          if(std::ranges::find(limits.eos,current_id)!=limits.eos.end())throw std::runtime_error("Pro cannot consume an EOS pending token");
+
+          if(limits.single_row()) {
+            single_current(first,limits,false);
+            ::testing::Test::RecordProperty("random_tail_target_rows",1);::testing::Test::RecordProperty("random_tail_draws",1);
+            ::testing::Test::RecordProperty("scope","Finite one-row target-only emission with same-prefix mandatory-current NextN maintenance; no q sample or proposed second-row execution. Actual p0 pending and one draw publish with the complete Head. Not a request scheduler.");
+            return;
+          }
+          single_current(first,{1,1,{}},false);check(state.store.collect(),"retire independent Pro single Head");single_current(first,{1,1,{}},true);check(state.store.collect(),"retire independent Pro terminal Head");
+          random_draft=sample_logits(first_logits,initial_random);
+          auto sampled=take(state.store.begin(first),"actual original Pro random proposal");
+          check(sampled.replace(state.entry(kPending),random_draft[1]),"real NextN categorical I32 feeds target row1");
+          first=take(sampled.finalize(),"preserve complete original Pro proposal checkpoint");
+        }
+        const auto first_image=image(state,first);
+        bool wrong_skip_submitted=false;
+        EXPECT_THROW((void)execute_step(state,first,second_step,*source,8,
+            [&](std::span<const c::ReadLease>) {
+              wrong_skip_submitted=true;return std::vector<c::ReadLease>{};
+            }),std::runtime_error);
+        EXPECT_FALSE(wrong_skip_submitted);
+        // One natural trial and two separately labelled controls. Matching uses
+        // the actual full-V Top1 lease; rejection uses the actual distinct Top2
+        // lease. The second real Graph consumes precisely that proposal lease.
+        for(int scenario=0;scenario<(stochastic?1:3);++scenario) {
+          SCOPED_TRACE(::testing::Message()<<"GLM Pro K1 scenario="<<scenario);
+          {
+            auto first_checkpoint=first;
+            if(scenario) {
+              auto controlled=take(state.store.begin(first),"explicit controlled proposal policy");
+              check(controlled.replace(state.entry(kPending),policy_checked[scenario==1?(use_target?policy->pending[0]:verifier.pending[0]):(use_target?policy->reject:verifier.reject)]),
+                  "controlled proposal retains actual target Top1/Top2 I32 output");
+              first_checkpoint=take(controlled.finalize(),"controlled actual pending checkpoint");
+            }
+            const auto proposal=state.scalar(first_checkpoint,kPending);
+            const auto first_checkpoint_image=image(state,first_checkpoint);
+            auto second=execute_second(first_checkpoint);
+            const auto second_image=image(state,second);
+            if(scenario==0) {
+              bool wrong_catchup_submitted=false;
+              EXPECT_THROW((void)execute_step(state,second,catchup_step,*source,8,
+                  [&](std::span<const c::ReadLease>) {
+                    wrong_catchup_submitted=true;return std::vector<c::ReadLease>{};
+                  }),std::runtime_error);
+              EXPECT_FALSE(wrong_catchup_submitted);
+            }
+            const auto selected_prefix=select_current_prefix(proposal,random_draft);
+            const auto &decision=selected_prefix.prefix;const auto &pending=selected_prefix.pending;
+            const bool sampled_accept=selected_prefix.sampled_accept;
+            if(scenario==0){natural_proposal=proposal;natural_accepted=std::uint32_t(decision.consumed_drafts);}
+            else EXPECT_EQ(decision.consumed_drafts,scenario==1?1u:0u);
+            ++accepted.at(decision.consumed_drafts);
+            auto checkpoint=repair_prefix(first_checkpoint,second,decision.consumed_drafts);
+            auto head=take(c::StateHead::create(state.store,base),"one atomic Pro accepted Head");
+            const auto published=prepare_acceptance(head,checkpoint,first,pending);
+            if(stochastic) {
+              EXPECT_FALSE(head.publish(second.identity(),published).ok());
+              EXPECT_EQ(random_cursor(take(head.current(),"stale Pro publish keeps RNG")),initial_random);
+            }
+
+            check(head.publish(base.identity(),published),"atomically publish Pro accepted prefix and pending");
+            if(stochastic)EXPECT_EQ(random_cursor(take(head.current(),"successful Pro publish advances RNG once")),initial_random.advanced(3));
+            EXPECT_FALSE(head.publish(base.identity(),second).ok());++stale_publish;
+            const auto published_image=image(state,published);
+            EXPECT_EQ(state.scalar(published,kCursor),std::int32_t(kBasePosition+1+decision.consumed_drafts));
+            EXPECT_EQ(state.scalar(published,kIndexCursor),std::int32_t(kBasePosition+1));
+            EXPECT_EQ(state.scalar(published,kLag),std::int32_t(decision.consumed_drafts));
+            EXPECT_EQ(state.scalar(published,kPending),decision.next_id);
+            same_storage(state.member(published,kPending),pending);
+            for(std::size_t i=0;i<resource_count;++i)if(i!=layout.slot(kPending))
+              same_storage(state.physical_member(published,i),state.physical_member(checkpoint,i));
+            if(use_target) {
+              for(const auto entry:{kTargetMain,kTargetCursor,kTargetTap})
+                same_storage(state.member(published,entry),state.member(checkpoint,entry));
+              EXPECT_EQ(state.scalar(published,kTargetCursor),state.scalar(published,kCursor));
+            }
+            if(stochastic&&!exercise_prefix_policies(first_checkpoint,checkpoint,proposal,decision,sampled_accept,pending,random_draft[1]))return;
+            auto caught=published;
+            if(decision.consumed_drafts) {
+              caught=execute_step(state,published,catchup_step,*source,7,
+                  [&](std::span<const c::ReadLease> input){return catchup_program.execute(queue,input);});
+              ++catchups;check(head.publish(published.identity(),caught),"same accepted Head catches up its one journal row");
+            } else EXPECT_THROW(validate_step(state,published,catchup_step),std::runtime_error);
+            EXPECT_EQ(state.scalar(caught,kLag),0);EXPECT_EQ(state.scalar(caught,kCursor),state.scalar(caught,kIndexCursor));
+            if(use_target)for(const auto entry:{kTargetMain,kTargetCursor,kTargetTap})
+              same_storage(state.member(caught,entry),state.member(published,entry));
+            require_observed(glm_shared_vocabulary_reference::expect_feedback(values<std::int32_t>(state.member(caught,kPending)),
+                values<std::int32_t>(pending)),"actual target pending enters next embedding");
+            if(stochastic)EXPECT_EQ(random_cursor(caught),initial_random.advanced(3));
+
+            {
+            auto &next_step=decision.consumed_drafts?continuation_one:continuation_zero;
+            auto &next_program=decision.consumed_drafts?continuation_one_program:continuation_zero_program;
+            auto continued=continue_from(caught,next_step,next_program,
+                use_target?state.member(caught,kTargetTap):next_targets[decision.consumed_drafts],initial_random.advanced(3));
+
+            check(head.publish(caught.identity(),continued),"publish actual accepted-frontier fresh seed in the same Head");
+
+            if(stochastic)EXPECT_EQ(random_cursor(take(head.current(),"next target result and RNG published together")),initial_random.advanced(4));
+            const auto continued_image=image(state,continued);
+            const auto seed=take(head.current(),"actual accepted fresh Pro seed");
+            EXPECT_EQ(seed.identity(),continued.identity());EXPECT_EQ(state.epoch(seed).epoch,8u);
+            EXPECT_EQ(state.epoch(seed).selection_position,std::uint64_t(next_step.position));
+            EXPECT_EQ(state.epoch(seed).reuses,0u);
+            auto &step_zero=decision.consumed_drafts?skip_one:skip_zero;
+            auto &zero_program=decision.consumed_drafts?skip_one_program:skip_zero_program;
+            const auto skipped=execute_step(state,seed,step_zero,*source,8,
+                [&](std::span<const c::ReadLease> input){return zero_program.execute(queue,input,cuda);});
+            ++feedback;++skips;
+            same_storage(state.member(skipped,kSelection),state.member(seed,kSelection));
+            same_storage(state.member(skipped,kCodes),state.member(seed,kCodes));
+            EXPECT_EQ(state.epoch(skipped).epoch,8u);EXPECT_EQ(state.epoch(skipped).reuses,1u);
+            EXPECT_EQ(state.scalar(skipped,kLag),1);
+            EXPECT_EQ(image(state,take(head.current(),"unverified step0 stays unpublished")),continued_image);
+            EXPECT_EQ(image(state,published),published_image);EXPECT_EQ(image(state,first_checkpoint),first_checkpoint_image);
+            EXPECT_EQ(image(state,second),second_image);EXPECT_EQ(image(state,base),base_image);EXPECT_EQ(image(state,first),first_image);
+            EXPECT_FALSE(state.member(published,kPending).try_write());EXPECT_FALSE(state.member(continued,kMain).try_write());
+            EXPECT_LE(state.peak_backing,budget);
+            std::printf("GLM Pro K1 stochastic=%d scenario=%d proposal=%d target0=%d target1=%d accepted=%u frontier=%d pending=%d continued_pending=%d\n",
+                int(stochastic),scenario,proposal,target_ids[0],target_ids[1],std::uint32_t(decision.consumed_drafts),state.scalar(published,kCursor),decision.next_id,state.scalar(continued,kPending));
+
+            } // Retire request0 continuation/skip readers before reusing its pools.
+
+          }
+          check(state.store.collect(),"retire finite Pro scenario while retaining base/first readers");
+
+          EXPECT_EQ(state.store.stats().versions,2u);EXPECT_EQ(state.store.stats().drafts,0u);
+        }
       }
     }
     members={};initial_output.clear();

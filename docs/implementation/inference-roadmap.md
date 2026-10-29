@@ -39,7 +39,7 @@ HYLE 的产品目标是完整推理引擎；Compute、Graph、内存、调度、
 多模型形状同时参考本地成熟引擎的实际实现：vLLM `276fbcff2717`的`v1/engine/core.py`、`v1/core/sched/scheduler.py`和`model_executor/models/qwen3_5.py`，
 TensorRT-LLM `46d9966b54d9`的`_torch/pyexecutor/engine/model_call.py`、`py_executor.py`及`model_engine.py`。
 重点借鉴模型数学／状态事实、共同调度、原资源和结果观察之间的边界，不引入其大型动态ModelEngine或第二资源管理器。
-版本来自本地checkout，尚未核工作树差异；参考职责并不代表已复现其性能或全部失败语义。
+版本来自本地checkout，所引文件内容已核对各自HEAD，未声明整个工作树干净或最新上游；参考职责并不代表已复现其性能或全部失败语义。
 
 2026-10-29已纠正将共同原语完成误算成完整编排完成的估计，功能与共同形状联合审查。
 实际已通过的检查保留；百分比统一维护在看板，不把新的任务拆分计成新增实现。
@@ -69,7 +69,12 @@ Head成功后立即无失败地记录该成员结果，后续报告／catch-up�
 并保留普通CUDA流水与真实模型MTP回归。三次history测试接线失败如实保留；没有新的吞吐或全平台结论。
 随后[共同尾收尾与首错恢复](../evidence/correctness/inference-append-tail-return-2026-10-29.json)合并普通target、融合draft与私有NextN的原尾归还，
 去掉R1／R2三处固定元数据堆分配，并保留原失败Status、participant、退休事实与逐成员观察重试；八个有限CPU／CUDA进程通过。
-GLM已有提交见证不再套纯转发发布接口；下一片复用现有RequestLoop替换其真实有限旅程的手动FIFO／turn驱动，模型状态与原计算保留。
+随后[GLM共同请求驱动](../evidence/correctness/inference-glm-request-loop-2026-10-29.json)已用既有RequestLoop／wave替换手动FIFO、接纳和turn切换；
+自然K1、缓存新请求采样及两次普通续算实际在wave内执行，原数学片段由旧路径及wave复用。
+一次原权重CUDA组件旅程通过，晚观察失败后仅补观察，37项原输出／RNG／提交事实不变；不等同第二个完整引擎模型或性能结论。
+后续组合审查已定位两项：DeepSeek原组件的真实Head发布需接共同提交见证与晚观察恢复；
+DS／Kimi共享的测试执行路径需保留原Status和独立退休事实，清理错误不能遮蔽首错。
+Kimi现有KDA／MLA消费者不产生生成token，不为共用请求接口虚构生成阶段。
 本轮工程入口、完整依赖装配、文档导航及许可交付整改已完成，结果见[工程检查记录](../evidence/licensing/dependency-licenses-2026-10-29.json)。
 当前收敛完整执行编排、普通／MTP共同机制及SDK接线，随后集中连续后继、GPU融合及带宽等性能工作。
 共同架构同时审查多模型、复杂阶段及未来多端点的依赖边界，避免将当前Qwen／单卡放置固化为通用合同；
