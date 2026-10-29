@@ -1,0 +1,283 @@
+{
+  "schema": "hyle.natural-logits-control.v1",
+  "status": "PASS_FINITE_NATURAL_LOGITS_CONTROL",
+  "source_inputs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\logits_inputs.h",
+      "bytes": 2860,
+      "sha256": "4455a7fe4126cb6316c6adb5c694d0ad308391b653c47752029d17533dd7d524"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 637394,
+      "sha256": "c37a89547b7df8ec6273668e5f8dc2c5bd1b40285e8d3d58a2675cd90101ba44"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_natural_logits_control_case.h",
+      "bytes": 23055,
+      "sha256": "4fe61897273badb5af5e2dd83871deabd432b92fdbc14fa35287bdd1a1e09e00"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+      "bytes": 9709,
+      "sha256": "b7b63bd543c0f80f74a42cf47a5a30758fc5541b76f89a6c2c28e7b509f9f225"
+    }
+  ],
+  "source_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-natural-logits-control-20261029\\source-freeze.json",
+    "bytes": 48934,
+    "sha256": "7f97247b0a2d6da34913fc38aefef12f3425718872d5adfe9caaa6a32f537f09"
+  },
+  "frozen_project_files": 245,
+  "actual_compiled_project_files": 231,
+  "image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-natural-logits-control-20261029\\bin\\tiny.exe",
+    "bytes": 145419264,
+    "sha256": "13c239f16a4921e4e3d62f16edc4cbd4b74f64657cfbd6aa10ccfedbb0372de1"
+  },
+  "object": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-natural-logits-control-20261029\\compile\\tiny\\unit.obj",
+    "bytes": 70862325,
+    "sha256": "bce03924fcae410f49c3936fb137c58249c329764581baac8b564f024e5efcdd"
+  },
+  "CXX": {
+    "pid": 6748,
+    "exit": 0,
+    "started": 1793249766.1661417,
+    "seconds": 89.29200959205627,
+    "state": "TERMINAL",
+    "timed_out": false
+  },
+  "link": {
+    "pid": 20084,
+    "exit": 0,
+    "started": 1793249883.0083847,
+    "seconds": 1.907268762588501,
+    "state": "TERMINAL",
+    "timed_out": false
+  },
+  "actual_process_counts": {
+    "CXX": 1,
+    "failed_CXX": 0,
+    "link": 1,
+    "native": 5,
+    "failed_native": 0
+  },
+  "SDK": {
+    "retained_inputs": 227,
+    "objects": 202,
+    "libraries": 25,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "existing_object_receipts_inspected": 122,
+    "unavailable_object_receipts": 80,
+    "existing_engine_consumers": 2,
+    "source_identities_checked_unchanged": true
+  },
+  "native_processes": {
+    "controls-cpu": {
+      "process": {
+        "pid": 48404,
+        "exit": 0,
+        "started": 1793249891.3731122,
+        "seconds": 0.90120530128479,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "verified_finite_pass": true,
+      "problems": [],
+      "facts": {
+        "models": 1,
+        "target_submissions": 9,
+        "stop_provider_calls": 2,
+        "stop_verified_rows": 2,
+        "stop_reserved_draws": 3,
+        "terminated_hypothesis_callbacks": 0,
+        "successful_R2_Verify_submissions": 1,
+        "cancelled_R2_Verify_submissions": 1,
+        "survivor_R1_Verify_submissions": 1,
+        "real_q_leases_per_R2": 4,
+        "parked_resident_versions": 0,
+        "independent_request_RNG": true,
+        "HostImage_same_key_restore": true,
+        "natural_RequestLoop": false
+      },
+      "report": {
+        "member": "records/runs/controls-cpu/report.json",
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-natural-logits-control-20261029\\runs\\controls-cpu\\report.json",
+        "bytes": 2073,
+        "sha256": "413b936db06b39719c3137a79e89ffc669e853d3714b5f95ceef6be7d9a39728"
+      },
+      "logs_prefix": "records/runs/controls-cpu/"
+    },
+    "controls-cuda": {
+      "process": {
+        "pid": 48100,
+        "exit": 0,
+        "started": 1793249900.0721014,
+        "seconds": 0.8421196937561035,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "verified_finite_pass": true,
+      "problems": [],
+      "facts": {
+        "models": 1,
+        "target_submissions": 9,
+        "stop_provider_calls": 2,
+        "stop_verified_rows": 2,
+        "stop_reserved_draws": 3,
+        "terminated_hypothesis_callbacks": 0,
+        "successful_R2_Verify_submissions": 1,
+        "cancelled_R2_Verify_submissions": 1,
+        "survivor_R1_Verify_submissions": 1,
+        "real_q_leases_per_R2": 4,
+        "parked_resident_versions": 0,
+        "independent_request_RNG": true,
+        "HostImage_same_key_restore": true,
+        "natural_RequestLoop": false
+      },
+      "report": {
+        "member": "records/runs/controls-cuda/report.json",
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-natural-logits-control-20261029\\runs\\controls-cuda\\report.json",
+        "bytes": 2074,
+        "sha256": "d7b030482b428864a26b48c86c38105a976c936acf2e53f29b2076f5ffb58e75"
+      },
+      "logs_prefix": "records/runs/controls-cuda/"
+    },
+    "logits-cpu": {
+      "process": {
+        "pid": 17748,
+        "exit": 0,
+        "started": 1793249907.8027303,
+        "seconds": 0.5388667583465576,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "verified_finite_pass": true,
+      "problems": [],
+      "facts": {
+        "models": 3,
+        "natural_RequestLoop": true,
+        "stochastic_K2": true,
+        "independent_request_RNG": true,
+        "late_provider_retired": true,
+        "same_key_retry": true,
+        "complete_state_comparisons": 13
+      },
+      "report": {
+        "member": "records/runs/logits-cpu/report.json",
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-natural-logits-control-20261029\\runs\\logits-cpu\\report.json",
+        "bytes": 127813,
+        "sha256": "1e4c09bb7dfc3e91d988560aa178e84cfe7c7be60ac8d39d86e89f45ca35a85c"
+      },
+      "logs_prefix": "records/runs/logits-cpu/"
+    },
+    "logits-cuda": {
+      "process": {
+        "pid": 61756,
+        "exit": 0,
+        "started": 1793249914.2488303,
+        "seconds": 1.043668270111084,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "verified_finite_pass": true,
+      "problems": [],
+      "facts": {
+        "models": 3,
+        "natural_RequestLoop": true,
+        "stochastic_K2": true,
+        "independent_request_RNG": true,
+        "late_provider_retired": true,
+        "same_key_retry": true,
+        "complete_state_comparisons": 13
+      },
+      "report": {
+        "member": "records/runs/logits-cuda/report.json",
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-natural-logits-control-20261029\\runs\\logits-cuda\\report.json",
+        "bytes": 124337,
+        "sha256": "aba6cd4ce397cd3bded0eba5f20d78b52398ee71066c8abc223f70b2973b6aae"
+      },
+      "logs_prefix": "records/runs/logits-cuda/"
+    },
+    "natural-cuda": {
+      "process": {
+        "pid": 42040,
+        "exit": 0,
+        "started": 1793249922.6226351,
+        "seconds": 3.2704083919525146,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "verified_finite_pass": true,
+      "problems": [],
+      "facts": {
+        "models": 1,
+        "outputs": 40,
+        "resident_capacity": 1,
+        "state_slots": 5,
+        "hidden_slots": 6,
+        "successor_submissions": 3,
+        "successor_publications": 2,
+        "successor_discards": 1,
+        "successor_refusals": 0,
+        "natural_RequestLoop": true,
+        "controlled_acceptance": false
+      },
+      "report": {
+        "member": "records/runs/natural-cuda/report.json",
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-natural-logits-control-20261029\\runs\\natural-cuda\\report.json",
+        "bytes": 7117,
+        "sha256": "783435df8c542066c8a5d00b9e5efb96c73ce3179744f702e70a44c33ebf323d"
+      },
+      "logs_prefix": "records/runs/natural-cuda/"
+    }
+  },
+  "unresolved_evidence_issues": [],
+  "complete_state_comparisons": {
+    "total": 33,
+    "numerically_equivalent": 33,
+    "byte_equal_state_payloads": 33,
+    "F32_GDN_absolute_budget": 3e-06
+  },
+  "scope": {
+    "conditional_controls_verified": true,
+    "stochastic_stop_shortening_verified": true,
+    "absorbing_bonus_and_zero_ended_prepare_callbacks_verified": true,
+    "mixed_R2_static_dynamic_policy_verified": true,
+    "shared_episode_cancel_and_unchanged_survivor_verified": true,
+    "same_key_HostImage_restore_and_continuation_verified": true,
+    "independent_actual_request_RNG_verified": true,
+    "natural_RequestLoop_control_case": false,
+    "trained_quality_claim": false,
+    "throughput_claim": false,
+    "full_goal_completion": false
+  },
+  "records": {
+    "plan": "records/plan.json",
+    "compile": "records/compile/tiny/compiled.json",
+    "ready": "records/ready-tiny.json",
+    "SDK_review": "records/sdk-engine-dependencies.json",
+    "fixtures": "fixtures/",
+    "note": "Full nested natural reports, all state rows, commands and original process results are preserved in ZIP only; no inherited parser failure counts are attributed to this batch."
+  },
+  "limits": [
+    "Finite cached untrained GA/H64/V64/C16 CPU/CUDA components use actual singleton sampling inputs and original kernels; acceptance is never forced by a selector.",
+    "The new control consumer uses original GenerationRequest, RequestWindow and native episode owners. It does not claim a new end-to-end RequestLoop control journey.",
+    "Stop consumes one target row, repairs lag0 and reserves three actual stochastic draw addresses after a real one-draft Verify2. Its unreachable bonus retains the last live immutable policy without querying a terminated grammar.",
+    "Mixed R2 compares static and dynamic policies against original R1 consumers, with each actual seed/stream/draw preserved. Whole-episode cancellation is retained; the dynamic survivor resumes after exact HostImage park/restore on its original key.",
+    "Natural K1/K2/cache RequestLoop consumers and the real cached Qwen CUDA greedy K1 pipeline are separate regressions; they do not imply all control/provider/backend combinations are complete.",
+    "Only new F32 GDN computations use the pre-existing3e-6 absolute comparison budget; non-GDN state and old checkpoints remain exact.",
+    "Prior helpers are reused as source dependencies. Prior native/parser failures are not copied into this batch process counts. No current full throughput comparison, SDK rebuild or model download is performed.",
+    "Environment values, tensor payloads and binaries are excluded. Any failed actual process/report remains a failure in the evidence."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-natural-logits-control-2026-10-29.zip",
+    "bytes": 1224475,
+    "sha256": "872499ca5f9e71a87755f3286fc812730ad8e4c2fe54d02927c96bc1e51e407c"
+  },
+  "archive_members": 300,
+  "crc_and_member_sha256_readback": true
+}

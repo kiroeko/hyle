@@ -1343,7 +1343,13 @@ payload权限仍由原租约／StorageOwner证明，不复制词表，不把条�
 终止草稿仍保留原q：接受即止于该token，拒绝也止于该位置，因此末bonus不可达。
 动态提供者不查询终止后的语法，而以最后合法条件行延伸该不可达bonus；原全部行数值检查仍运行，普通全mask错误不能忽略。
 晚期提供失败沿原私有资源实际退休后释放q与条件owner；成功peer若需重备保留首行及C0，不提前推进原head／RNG。
-只有实际发布输出能推进外部策略。终止分支与混合R2的取消／恢复交叉检查尚待完成，未宣称全平台、质量或吞吐通过。
+只有实际发布输出能推进外部策略。[控制交叉检查](../evidence/correctness/inference-natural-logits-control-2026-10-29.json)
+已在CPU／CUDA核对终止草稿、动态／静态同一R2 Verify、真实提交后取消及同key HostImage恢复。
+停止草稿只消费原pending，原q及3次RNG地址保留，结束后prepare不再调用提供者。
+取消保留双方完整head／账簿／RNG，原episode实际退休后清q与条件owner；释放检查点pin后换出，
+驻留版本归零，恢复不重采样pending、不调用提供者，幸存请求从原输出继续解析。
+同检查点、同实际cursor的R1对照核对完整状态；这是原GenerationRequest／RequestWindow入口的有限检查，
+自然RequestLoop另有前述依据，未宣称全平台、训练质量或吞吐通过。
 
 
 CT BF16 block128的[共同冷图片段](../evidence/correctness/ct-block128-supplied-graph-2026-10-25.json)接收实际Value／TensorSpec及原租约绑定，固定形状和symbolic token行共用同体，按真实几何追加既有Graph数学；原fixture复用同体。它不拥有存储、调度或源格式注册表；BF16 block QDQ、channel／token与F32-scale code-dot仍由制品策略明确区分，不能仅按SF形状猜数学。[普通引擎冷入口](../evidence/correctness/ct-block128-model-binding-2026-10-25.json)由源配置选择reader、角色保留原W／SF及local FP4舍入，Recipe将片段生成的真实NodeId交回原GraphAssembly记录placement；后端继续消费同一Graph，不增加运行时路由。

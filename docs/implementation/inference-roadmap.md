@@ -29,8 +29,8 @@ HYLE 的产品目标是完整推理引擎；Compute、Graph、内存、调度、
 | GPU热点 | GDN a/b小投影并入同输入投影或专用GEMV；qkv/z/a/b、q/k/v、gate/up的整模型融合候选；模型内GEMM实际DRAM带宽；norm、残差、concat等小kernel融合。已关闭候选须有适用边界与重新评价条件，不能用旧叶子结果排除不同工况 |
 | 测量与回归 | 当前版本R1／B2的off／auto及MTP跟踪、capture数量和主机／GPU分解；schedule对steps的交错A/A；原始startup、ready、prefill、decode、每turn与综合端点；显存／内存；长输入、多轮、多会话、跨平台及CPU＋GPU／MoE适用基线。重叠step时长不可相加代替墙时，旧Nsight不代签当前版本 |
 
-当前实施顺序：先补完已确认的底层功能尾项（逐条件动态logits的完整Verify发布、自然请求提供者及控制／恢复边界），
-再收敛完整执行编排、普通／MTP共同机制、SDK接线和工程文档，随后集中连续后继、GPU融合及带宽等性能工作。
+底层功能补全已于2026-10-29结束：当前约定范围内已发现缺项均已实现，相关有限检查通过，独立复核未发现新增机制缺项。
+当前收敛完整执行编排、普通／MTP共同机制、SDK接线和工程文档，随后集中连续后继、GPU融合及带宽等性能工作。
 必要的正确性及短回归随实现进行；完整性能窗口放在实质改动之后，不以反复性能实验替代功能开发。
 原看板“功能与工程边界95%”已拆为底层功能、工程边界：有效长度prefill按后续已完成实现及有限检查结项；
 CPU路由剩余成本覆盖归性能，已安装Graph Source／Store／Append的detail收敛归共同架构。它们不再作为底层功能的未完比例。
@@ -227,7 +227,12 @@ CPU／CUDA有限检查覆盖接受、拒绝、bonus、history计数、greedy、E
 CPU／CUDA有限检查覆盖K1与随机K2的两请求／两轮、N2三请求缓存完整命中使用当前新策略，以及两条真实q产生后提供失败、实际退休与原key重试；head／账簿／RNG／旧检查点保持，最终版本及页归还。
 29项完整状态比较通过；随机两请求先独立核验实际seed／stream／draw，完整状态比较只在期望副本转换已知stream标识，不改实际结果。
 共1次CXX／链接和5个有限进程，无SDK重编或下载。两次离线解析错误（完整JSON分行、缓存目录析构前版本数）保留并修复，原生均成功且未重跑。
-目前未发现还需新增的功能机制；接着做终止前缀、混合R2及取消／恢复的有限交叉检查，再结束功能阶段。架构与性能另计，不等待其完成才结项。职责见[架构合同](../architecture/inference-design.md)。
+随后[条件输入控制](../evidence/correctness/inference-natural-logits-control-2026-10-29.json)完成CPU／CUDA终止前缀、静态／动态同一R2 Verify、提交后整episode取消及幸存者同key主机恢复；
+终止后零提供者调用，取消不发布原head／账簿／RNG，真实退休后清q与条件owner；换出时驻留版本归零，恢复后从原输出继续。
+6项控制完整状态对照使用原检查点与相同实际cursor，加原自然输入和真实Qwen接力回归共33项，保留原数值门；1次CXX／链接、5个有限进程，无SDK重编或下载，无新吞吐结论。
+功能独立复核确认旧Vulkan非4字节文件输入已由[对齐修复](../evidence/correctness/inference-stream-padding-2026-10-26.json)覆盖，不能沿用旧OPEN；token、终止、取消、credit／ACK及原key分类失败行为已有原共享实现和[控制依据](../evidence/correctness/inference-request-controls-2026-10-26.json)。
+当前约定底层范围的已发现功能缺项均已补齐，功能阶段标100%；新条件输入实际检查CPU／CUDA小制品，不代签Apple／Vulkan最新组合、全部制品／量化／平台或未知原生故障。
+共同输出入口、完整模型编排、SDK detail收敛和普通／MTP后继及吞吐余差继续属于已列架构／性能工作，整体goal不结束。职责见[架构合同](../architecture/inference-design.md)。
 
 ## 当前实现概况
 
