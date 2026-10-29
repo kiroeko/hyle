@@ -1602,6 +1602,9 @@ child地址固定并覆盖载体借用寿命；目录只持原Graph句柄和冷�
 普通／MTP target和NextN的槽安装、Store／Source绑定均借这个child资源图，不再由模型维护平行state graph数组。
 模型仍负责实际资源集合、形状键、容量、接纳淘汰与完整编排；
 不能把这四处冷准备的共用视为执行引擎已经完全抽离。
+Model先在稳定地址构建完整Family再一次发布，不预插空槽，也不让CLI清理编译失败。
+有限及已接纳exact形状共用一次family／具体child定位；诊断、role、completion、采样和packing仍严格分离。
+正token须是实际child成员；完整前缀的空计划只核接纳资格，不要求0行图，也不触发新shape接纳。
 [资源图有限检查](../evidence/correctness/inference-resource-graphs-2026-10-28.json)覆盖冷资源节点／签名拒绝后的合法重试，
 以及CPU ragged、CUDA MTP packed、NextN采样和原R2接力；原数值及完整状态门保持，不提供新的性能结论。
 [CPU／CUDA有限检查](../evidence/correctness/inference-prepared-program-family-2026-10-28.json)复用原logits、采样及MTP packed消费者，
@@ -1609,7 +1612,7 @@ child地址固定并覆盖载体借用寿命；目录只持原Graph句柄和冷�
 形状使用计数、冻结后的额外容量、FIFO及接纳／淘汰计数由`ColdShapePlan`共同持有，
 Shape／Key对该政策不透明；Model只核数学资格，并提供原载体真实退休、Family构造和清理步骤。
 元数据先预留、实际退休成功后才移除旧记录，新Family构造完成后才发布使用计数和FIFO；
-构造失败保留原异常、清理本次未发布Family，不回滚已经完成的淘汰，也不改既有计划计数。
+构造失败保留原异常，不留部分Family；接纳后续元数据失败仍撤回本次Family，不回滚已经完成的淘汰，也不改既有计划计数。
 该算法仅在冷接纳执行，不为热查找增加FIFO扫描、分配或另一套资源owner。
 [本片有限检查](../evidence/correctness/inference-cold-shape-plan-2026-10-28.json)包含主机政策契约和CPU／CUDA实际接纳／预热复用；
 原生旅程未触发FIFO淘汰，主机异常钩子不代表设备故障注入。

@@ -107,7 +107,7 @@ inline int run(const std::filesystem::path &input) {
   model.plan_replay_uses(2, 1, 16, q::GraphRole::kText, q::TextCompletion::kStateOnly);
   model.prepare_execution(emit_rows);
   model.prepare_execution(state_rows, 1, q::GraphRole::kText, q::TextCompletion::kStateOnly);
-  require(!model.find_family(1, 2, q::GraphRole::kText, false,
+  require(!model.find_child(1, 2, q::GraphRole::kText, false,
           q::TextCompletion::kStateOnly, 0, q::RowPacking::kPrefill),
       "CPU journey unexpectedly prepared a packed prefill family");
 

@@ -106,7 +106,11 @@ GLM Flash／Pro、DeepSeek正式Flash／Pro与Kimi的原组件程序已接共同
 复用原RequestLoop／grant及ledger，不增加每步分配、重复额度验证或第二个执行owner。实际Source、状态边界、MTP数学、slot轮转及ledger绑定仍由模型承担。
 27组主机合同与5条CPU／CUDA消费者通过；普通连续16臂、mixed-lag及原权重40输出MTP保留完整状态／RNG／账簿。
 新测试采用独立host依赖，原error-only请求循环测试不被迫链接container；最小链接还修正了原账簿测试漏声明的Compute依赖。
-该片不证明GLM异步路径或完整执行核心完成；下一片处理Model冷family提前插空槽导致调用者自行回滚，以及有限／exact选择重复，不新建公共执行接口。
+该片不证明GLM异步路径或完整执行核心完成。
+随后[冷程序完整发布](../evidence/correctness/inference-cold-family-publication-2026-10-30.json)修复Model提前插空槽及3处调用方失败清理，
+有限／已接纳exact形状共用family与具体child选择，保留完整前缀接纳、diagnostic／packing隔离及原ColdShapePlan退休／回滚。
+5个CPU／CUDA进程通过，含真实预算拒绝后重试、原Invocation签名、普通连续16臂及原权重40输出MTP；后两份完整报告与上一片一致。
+3个消费者刷新、227个SDK／引擎输入复用，无SDK重编、下载或新吞吐结论。多宽度冷调用并非整调用事务，未强制触发不支持packed路由的返回分支。
 共同架构同时审查多模型、复杂阶段及未来多端点的依赖边界，避免将当前Qwen／单卡放置固化为通用合同；
 本轮不据组件通过声明大模型整机、多卡或跨机实现完成。现有硬件上的decode、MTP和含预热／换轮的综合速度仍是投入价值的关键检验，
 架构按实际热点与维护问题调整，不以等待更大硬件或无限整理抽象替代速度改进。

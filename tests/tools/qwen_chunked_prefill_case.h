@@ -48,8 +48,8 @@ inline int run(const std::filesystem::path &input){try{
   model.prepare_execution(emit_shapes);
   model.prepare_prefill_execution(state_shapes,q::TextCompletion::kStateOnly);model.prepare_prefill_execution(state_shapes);
   for(auto rows:state_shapes){
-    const auto *state_family=model.find_family(1,rows,q::GraphRole::kText,false,q::TextCompletion::kStateOnly,0,q::RowPacking::kPrefill);
-    require(state_family&&!state_family->logits_port&&!state_family->id_port&&!state_family->sampling_identity_port&&!state_family->sampling_valid_port,"state-only graph has a score/sampler/ID port");
+    const auto state_child=model.find_child(1,rows,q::GraphRole::kText,false,q::TextCompletion::kStateOnly,0,q::RowPacking::kPrefill);
+    require(state_child&&!state_child->family.logits_port&&!state_child->family.id_port&&!state_child->family.sampling_identity_port&&!state_child->family.sampling_valid_port,"state-only graph has a score/sampler/ID port");
   }
   std::vector<i::GenerationTurn> turns_a{{prompt,1},{std::vector<std::int32_t>(prompt.begin(),prompt.begin()+130),1},{{},1}};
   std::vector<i::GenerationTurn> turns_b{{std::vector<std::int32_t>(prompt.begin(),prompt.begin()+16),3}};

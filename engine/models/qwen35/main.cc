@@ -960,6 +960,10 @@ struct Family final : FamilyPorts {
   g::DimensionId last_row;
   std::vector<std::size_t> chunks;
 };
+struct FamilyChild final {
+  Family &family;
+  const inference::PreparedProgram &program;
+};
 // Physical IO/control carriers are independent of candidate depth. A reader
 // may still retain the preceding carrier after its producer publishes.
 constexpr std::size_t execution_slot_count = 3;
@@ -2150,8 +2154,8 @@ public:
     if (is_mtp_prefill(role) && std::ranges::any_of(planned_chunks, [](auto t) { return t < 2; }))
       throw std::runtime_error("MTP multi-token prefill requires at least two rows; use its single-token family for T1");
     const auto family_key = admitted_exact ? FamilyKey::exact(requests, role, planned_chunks.front(), completion, sampling_index) : FamilyKey(requests, role, prefix_rows, completion, sampling_index, packing);
-    auto &selected = diagnostic ? probe_families[family_key] : families[family_key];
-    if (selected) throw std::runtime_error("text finite family was already prepared");
+    auto &table = diagnostic ? probe_families : families;
+    if (table.contains(family_key)) throw std::runtime_error("text finite family was already prepared");
     auto result = std::make_unique<Family>();
     auto &definition = *result;
     definition.layers.resize(geometry.layers.size()); definition.attention_nodes.resize(target_kv_layers);
@@ -2718,7 +2722,10 @@ public:
       report_packed_projections(definition.graph, child.compiled.report, r.packed_projection_nodes,
           child.compiled.executable.workspace_bytes());
     }
-    selected = std::move(result);
+    // Publish only a complete cold candidate. Unsupported routes and failures
+    // leave no slot for callers to repair; the original Family address stays
+    // stable for every concrete program and its later execution carriers.
+    table.emplace(family_key, std::move(result));
     return true;
   }
 
@@ -2731,22 +2738,24 @@ public:
     // A graph without that carrier, or a diagnostic graph with different
     // published boundaries, has no implementation of this packed signature.
     if (!target_kv_layers || !layer0_probe.empty()) return false;
-    const FamilyKey key(requests, role, 0, completion, sampling_index, RowPacking::kPrefill);
-    if (prepare_family(capacities, false, requests, role, false, completion, sampling_index, RowPacking::kPrefill)) return true;
-    families.erase(key);
-    return false;
+    return prepare_family(capacities, false, requests, role, false, completion, sampling_index, RowPacking::kPrefill);
   }
 
-  Family *find_family(std::size_t requests, std::size_t tokens, GraphRole role,
+  std::optional<FamilyChild> find_child(std::size_t requests, std::size_t tokens, GraphRole role,
                       bool diagnostic = false, TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0,
                       RowPacking packing = RowPacking::kRectangular) {
     auto &table = diagnostic ? probe_families : families;
-    const auto primary = table.find({requests, role, tokens, completion, sampling_index, packing});
-    if (primary != table.end() && primary->second &&
-        std::ranges::find(primary->second->chunks, tokens) != primary->second->chunks.end()) return primary->second.get();
-    if (packing != RowPacking::kRectangular) return nullptr;
-    const auto exact = table.find(FamilyKey::exact(requests, role, tokens, completion, sampling_index));
-    return exact == table.end() ? nullptr : exact->second.get();
+    const auto select = [&](const FamilyKey &key) -> std::optional<FamilyChild> {
+      const auto found = table.find(key);
+      if (found == table.end()) return {};
+      auto &family = *found->second;
+      const auto point = std::ranges::find(family.chunks, tokens);
+      if (point == family.chunks.end()) return {};
+      return FamilyChild{family, family.programs.child(static_cast<std::size_t>(point - family.chunks.begin()))};
+    };
+    if (auto primary = select({requests, role, tokens, completion, sampling_index, packing})) return primary;
+    if (packing != RowPacking::kRectangular) return {};
+    return select(FamilyKey::exact(requests, role, tokens, completion, sampling_index));
   }
 
   std::size_t prefill_capacity(std::size_t rows, TextCompletion completion, std::size_t sampling_index,
@@ -2796,7 +2805,7 @@ public:
 
   void admit_exact_shape(std::size_t tokens, std::size_t requests, GraphRole role,
                          TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0) {
-    if (find_family(requests, tokens, role, false, completion, sampling_index)) return;
+    if (find_child(requests, tokens, role, false, completion, sampling_index)) return;
     const auto admission_start = Clock::now();
     if (!state_storage_prepared || active_step || carrier_borrowed || !tokens || tokens > capacity ||
         !requests || requests > cache_plan.active_sequences ||
@@ -3566,7 +3575,7 @@ public:
     if (!phases.empty() || !probe_phases.empty() || carrier_borrowed)
       throw std::runtime_error("execution use plans must precede carrier preparation");
     for (const auto tokens : calls) {
-      if (!families.contains({requests, role, tokens, completion, sampling_index}) || std::find(families.at({requests, role, tokens, completion, sampling_index})->chunks.begin(), families.at({requests, role, tokens, completion, sampling_index})->chunks.end(), tokens) == families.at({requests, role, tokens, completion, sampling_index})->chunks.end())
+      if (!find_child(requests, tokens, role, false, completion, sampling_index))
         throw std::runtime_error("execution plan chunk is outside the shared finite family");
       shape_plan.add_use({requests, tokens, role, completion, sampling_index}, slot_index);
     }
@@ -3579,7 +3588,7 @@ public:
                         RowPacking packing = RowPacking::kRectangular) {
     if (!phases.empty() || !probe_phases.empty() || carrier_borrowed)
       throw std::runtime_error("execution use plans must precede carrier preparation");
-    if (!find_family(requests, tokens, role, false, completion, sampling_index, packing))
+    if (!find_child(requests, tokens, role, false, completion, sampling_index, packing))
       throw std::runtime_error("execution use shape is outside the shared finite family");
     shape_plan.add_uses({requests, tokens, role, completion, sampling_index, false, packing}, count);
   }
@@ -3597,7 +3606,7 @@ public:
     prepare_state_storage();
     const auto initial_rows = planned_chunks.empty() ? 0 : planned_chunks.front();
     const auto prepared_rows = [&](std::size_t rows) {
-      return find_family(1, rows, role, false, completion, sampling_index) ||
+      return find_child(1, rows, role, false, completion, sampling_index) ||
           ((role == GraphRole::kText || is_mtp_prefill(role)) && planned_prefill_member(rows, completion, sampling_index, role));
     };
     for (const auto rows : planned_chunks)
@@ -3608,7 +3617,9 @@ public:
     const bool prepared_adoption = families.contains({1, role, 0, completion, sampling_index}) ||
         ((role == GraphRole::kText || is_mtp_prefill(role)) && planned_prefill_member(1, completion, sampling_index, role));
     if ((planned_chunks.empty() ? !prepared_adoption : !prepared_rows(initial_rows)) ||
-        (!layer0_probe.empty() && !probe_families.contains({1, role, initial_rows, completion, sampling_index})))
+        (!layer0_probe.empty() && (planned_chunks.empty()
+            ? !probe_families.contains({1, role, 0, completion, sampling_index})
+            : !find_child(1, initial_rows, role, true, completion, sampling_index))))
       throw std::runtime_error("session requires the shared text families first");
     if (planned_chunks.empty() && !prefix) throw std::runtime_error("session requires an ordered call plan or a complete prefix");
     if (prefix && (prefix->model != this || prefix->math != math_identity() || prefix->length > capacity ||
@@ -3623,10 +3634,8 @@ public:
     for (const auto tokens : planned_chunks) {
       if (tokens == 0 || tokens > capacity - total)
         throw std::runtime_error("session plan exceeds nonempty context capacity");
-      for (const auto *selected : {find_family(1, tokens, role, false, completion, sampling_index), layer0_probe.empty() ? nullptr : probe_families.at({1, role, tokens, completion, sampling_index}).get()}) {
-        if (selected && std::find(selected->chunks.begin(), selected->chunks.end(), tokens) == selected->chunks.end())
-          throw std::runtime_error("session chunk is outside the shared finite family");
-      }
+      if (!layer0_probe.empty() && !find_child(1, tokens, role, true, completion, sampling_index))
+        throw std::runtime_error("session chunk is outside the shared diagnostic family");
       total += tokens;
       if (!shape_plan.contains({1, tokens, role, completion, sampling_index}) &&
           !((role == GraphRole::kText || is_mtp_prefill(role)) && planned_prefill_member(tokens, completion, sampling_index, role)))
@@ -3745,14 +3754,11 @@ public:
     auto &cache = diagnostic ? probe_phases : phases;
     const auto found = cache.find({requests, tokens, role, completion, sampling_index, imported_sources, packing});
     if (found != cache.end()) return *found->second;
-    auto *selected = find_family(requests, tokens, role, diagnostic, completion, sampling_index, packing);
+    const auto selected = find_child(requests, tokens, role, diagnostic, completion, sampling_index, packing);
     if (!selected) throw std::runtime_error("text finite family has not been prepared");
-    auto &definition = *selected;
+    auto &definition = selected->family;
     const auto &selected_sampler = definition.sampling->configuration;
-    const auto point = std::find(definition.chunks.begin(), definition.chunks.end(), tokens);
-    if (point == definition.chunks.end()) throw std::runtime_error("unlisted text chunk has no prepared exact child");
     const auto start = Clock::now();
-    const auto index = static_cast<std::size_t>(point - definition.chunks.begin());
     auto result = std::make_unique<Phase>();
     auto &phase = *result;
     std::size_t physical_slots = 1;
@@ -3772,7 +3778,7 @@ public:
     if (imported_sources) for (auto &source : phase.state_sources) source.mode = g::slots::SourceMode::kImported;
     const auto planned_slot_uses = shape_plan.uses({requests, tokens, role, completion, sampling_index, false, packing});
     phase.attention_schema = definition.attention_schema;
-    phase.child = &definition.programs.child(index);
+    phase.child = &selected->program;
     phase.family = &definition;
     std::vector<inference::SlotTransactionSpec> transactions;
     phase.state_banks.reserve(phase.state_sources.size() + (phase.hidden_state.store.valid() ? 1u : 0u));
@@ -4005,7 +4011,7 @@ public:
       // schedule. Use the same bounded admission and original family owners
       // as execution, before borrowing a Session or accepting native work.
       if (!packed_prefill && state_storage_prepared && (role == GraphRole::kText || is_mtp_prefill(role)) &&
-          !find_family(requests, tokens, role, false, completion, sampling_index))
+          !find_child(requests, tokens, role, false, completion, sampling_index))
         admit_exact_shape(tokens, requests, role, completion, sampling_index);
       if (!layer0_probe.empty()) prepare_child(tokens, false, requests, role, completion, sampling_index);
       auto &phase = prepare_child(tokens, !layer0_probe.empty(), requests, role, completion, sampling_index, false, packing);
@@ -4497,13 +4503,13 @@ public:
     if (packed_target) for (const auto &request : requests) tokens = (std::max)(tokens, request.ids.size());
     const auto physical_tokens = packed_target ? physical_rows : tokens;
     if (compact_draft && (completion != TextCompletion::kEmitNext ||
-        !find_family(requests.size(), physical_tokens, role, false, completion, sampling_index, packing)))
+        !find_child(requests.size(), physical_tokens, role, false, completion, sampling_index, packing)))
       throw std::runtime_error("mixed MTP draft rows require their original cold compact family");
     if (packed_prefill && (relay || (role != GraphRole::kText && !is_mtp_prefill(role)) ||
-        physical_tokens < tokens || !find_family(requests.size(), physical_tokens, role, false, completion, sampling_index, RowPacking::kPrefill)))
+        physical_tokens < tokens || !find_child(requests.size(), physical_tokens, role, false, completion, sampling_index, RowPacking::kPrefill)))
       throw std::runtime_error("prefill extent is outside its original cold packed family");
     if (packed_verify && (relay || physical_tokens < tokens || completion != TextCompletion::kEmitNext ||
-        !find_family(requests.size(), physical_tokens, role, false, completion, sampling_index, packing)))
+        !find_child(requests.size(), physical_tokens, role, false, completion, sampling_index, packing)))
       throw std::runtime_error("verification extent is outside its original cold prefix capacity");
     if ((has_mtp(role) && !cache_plan.draft_cache) ||
         (cache_plan.draft_cache && role == GraphRole::kText))
@@ -4570,7 +4576,7 @@ public:
     const auto step_start = Clock::now();
     double shape_admission_seconds = 0;
     if (!packed_prefill && (role == GraphRole::kText || is_mtp_prefill(role)) &&
-        !find_family(requests.size(), tokens, role, false, completion, sampling_index)) {
+        !find_child(requests.size(), tokens, role, false, completion, sampling_index)) {
       admit_exact_shape(tokens, requests.size(), role, completion, sampling_index);
       shape_admission_seconds = std::chrono::duration<double>(Clock::now() - step_start).count();
     }
@@ -8080,8 +8086,6 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
           sampling_index, RowPacking::kVerify))
         model.plan_replay_uses(capacity, width, decode_bound, GraphRole::kVerify,
             TextCompletion::kEmitNext, sampling_index, RowPacking::kVerify);
-      else model.families.erase({width, GraphRole::kVerify, capacity,
-          TextCompletion::kEmitNext, sampling_index, RowPacking::kVerify});
     }
     if constexpr (mtp) if (decode_bound && width > 1 && width <= policy_decoding_requests &&
         model.max_drafts() == 1 && !model.recursive_mtp() && width <= policy_decoding_requests - dynamic_decoding_requests) {
@@ -8089,7 +8093,6 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       if (model.prepare_family(pair, false, width, role, false, TextCompletion::kEmitNext,
           sampling_index, RowPacking::kDraft))
         model.plan_replay_uses(2, width, decode_bound, role, TextCompletion::kEmitNext, sampling_index, RowPacking::kDraft);
-      else model.families.erase({width, role, 2, TextCompletion::kEmitNext, sampling_index, RowPacking::kDraft});
     }
   }
   }
@@ -8262,7 +8265,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
           [&](const auto &call) { return call.ids().size() != members[0].ids().size(); });
       const bool mixed_roles = std::ranges::any_of(members,
           [&](const auto &call) { return call.role != members[0].role; });
-      if (mixed_roles && !model.find_family(members.size(), 2, GraphRole::kMtpCatchupRound, false,
+      if (mixed_roles && !model.find_child(members.size(), 2, GraphRole::kMtpCatchupRound, false,
           members[0].completion, members[0].request->sampling_index, RowPacking::kDraft)) return false;
       return (!unequal || generation_prefill_capacity(model, members) || generation_verification_capacity(model, members)) &&
           make_generation_batch_room(model, prefix.get(), members, requests);

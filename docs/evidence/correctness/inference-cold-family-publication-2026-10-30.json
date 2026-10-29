@@ -1,0 +1,921 @@
+{
+  "schema": "hyle.correctness.cold-family-publication.v1",
+  "date": "2026-10-30",
+  "status": "PASS",
+  "base_commit": "a32cf0f76640d5255a7210347235b10f63c24c6c",
+  "changes": [
+    "Qwen builds a stable complete local Family and publishes one table entry only after successful graph and child preparation.",
+    "Cold unsupported/exception paths leave no empty family entry; prefill adapter and two CLI branches no longer repair Model inventory.",
+    "Finite/exact planning, Session validation and physical preparation share family plus concrete program selection without new resource owners.",
+    "Diagnostic/role/completion/sampling/packing isolation and zero-row full-prefix admission remain distinct; original ColdShapePlan retirement and rollback are preserved."
+  ],
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 624881,
+      "sha256": "cbf20d13eb90cb3ef0549efc0c1d2ca51871e64d0e3e2db64218c6a94e098a22"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_cold_family_case.h",
+      "bytes": 11132,
+      "sha256": "b5b1edb476bd1aee4dcb30bdc628df4104f9808390e1b46b317379a3640c6640"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+      "bytes": 10471,
+      "sha256": "ca6b7c9158b3b49cef8eec4ea6c527c5c2ed3aefb3750079690a7bb94b26863b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_chunked_prefill_case.h",
+      "bytes": 14096,
+      "sha256": "7c9fdec3e11f2876979c7acc16430aa14789483f173193ee5244a204994588e0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_request_case.h",
+      "bytes": 19782,
+      "sha256": "c340af50221632986f7e59b5aa70b517cf355a9efe7477e748d93038db1e1061"
+    }
+  ],
+  "counts": {
+    "current_CXX_consumers": 3,
+    "CXX_attempts": 3,
+    "link_attempts": 3,
+    "native_processes": 5,
+    "current_passed_processes": 5,
+    "retained_SDK_engine_inputs": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "whole_builds": 0,
+    "throughput_windows": 0
+  },
+  "builds": [
+    {
+      "unit": "model",
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-family-publication-20261030\\compile\\model\\unit.obj",
+        "bytes": 90134337,
+        "sha256": "16d7f6461a88847ae8af6d4d763232b18fa8ee6c2ec2e18abb42aa9b51a343b5"
+      },
+      "compile": {
+        "state": "TERMINAL",
+        "pid": 16264,
+        "started": 1793296356.1082966,
+        "seconds": 115.30400085449219,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link": {
+        "state": "TERMINAL",
+        "pid": 62396,
+        "started": 1793296481.0773838,
+        "seconds": 1.9898273944854736,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    {
+      "unit": "request",
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-family-publication-20261030\\compile\\request\\unit.obj",
+        "bytes": 31957065,
+        "sha256": "d72adeb0e8c7b23912ec3a6d839d6f602c4a3d32bfa4118fc3d84461282bf927"
+      },
+      "compile": {
+        "state": "TERMINAL",
+        "pid": 54432,
+        "started": 1793296356.1160588,
+        "seconds": 48.42960834503174,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link": {
+        "state": "TERMINAL",
+        "pid": 34180,
+        "started": 1793296430.099142,
+        "seconds": 2.1229021549224854,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    {
+      "unit": "ordinary",
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-family-publication-20261030\\compile\\ordinary\\unit.obj",
+        "bytes": 27311437,
+        "sha256": "0a90bdffd4b92634792aa0f5d89cfe96552cdf51ad437c6e0c28c5fa8ba28fb4"
+      },
+      "compile": {
+        "state": "TERMINAL",
+        "pid": 17972,
+        "started": 1793296356.1165621,
+        "seconds": 43.321367502212524,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link": {
+        "state": "TERMINAL",
+        "pid": 22052,
+        "started": 1793296430.128758,
+        "seconds": 2.155733585357666,
+        "exit": 0,
+        "timed_out": false
+      }
+    }
+  ],
+  "runs": [
+    {
+      "case": "cold-family-cpu",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 42080,
+        "started": 1793296489.146915,
+        "seconds": 0.7744810581207275,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "backend": "cpu",
+        "finite_children": 2,
+        "admitted_exact_children": 1,
+        "typed_budget_refusal_retry": true,
+        "failed_candidate_unpublished": true,
+        "stable_original_family": true,
+        "plan_prepare_selection_equal": true,
+        "unlisted_warm_rejected": true,
+        "submitted_graphs": 0,
+        "HTTP": 0
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-family-publication-20261030\\bin\\model.exe",
+        "bytes": 145499136,
+        "sha256": "81395a2bc6933daf8f0cfdc87ad01656265f4eab180bd6fd20f1569eb5a35da8"
+      }
+    },
+    {
+      "case": "program-cpu",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 32240,
+        "started": 1793296489.1459146,
+        "seconds": 0.7555925846099854,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "program-carrier",
+        "backend": "cpu",
+        "models": 0,
+        "native_submissions": 2,
+        "carriers": 2,
+        "cold_failure_atomic": true,
+        "independent_fixed_bindings": true,
+        "real_completion_retirement": true,
+        "GraphOutput_pin_preserved": true,
+        "typed_io_installation": true,
+        "common_slot_inventory": true,
+        "group_cold_failure_unpublished": true,
+        "group_initialization_idempotent": true,
+        "group_initialization_recipe_lazy": true,
+        "group_retirement_original": true,
+        "unsealed_io_rejected": true,
+        "foreign_io_rejected": true,
+        "standalone_signature_preserved": true,
+        "finite_child_signature_preserved": true,
+        "finite_child_variant_preserved": true,
+        "partial_installation_failed": true,
+        "partial_caller_writer_tested": true,
+        "partial_caller_writer_recovered": true,
+        "valid_io_retry_output_checked": true,
+        "exact_resource_rejection_atomic": true,
+        "exact_resource_original_graph_borrowed": true,
+        "pending_observed": true,
+        "closed_handle_not_reused": true,
+        "teardown_handoff_irreversible": true
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-family-publication-20261030\\bin\\model.exe",
+        "bytes": 145499136,
+        "sha256": "81395a2bc6933daf8f0cfdc87ad01656265f4eab180bd6fd20f1569eb5a35da8"
+      }
+    },
+    {
+      "case": "request-cpu",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 42508,
+        "started": 1793296441.0230997,
+        "seconds": 0.8786180019378662,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "fixture": "untrained_A_H64",
+        "natural_request_loop": true,
+        "N": 1,
+        "partial_prefix_rows": 2,
+        "state_only_chunks": 2,
+        "idle_evictions": 1,
+        "host_restores": 1,
+        "restore_capacity_status": "ResourceExhausted",
+        "failed_import_preserved_image": true,
+        "restored_state_byte_equal": true,
+        "delivery_capacity": 1,
+        "request_waves": 5,
+        "target_calls": 6,
+        "A_commits": 5,
+        "B_commits": 1,
+        "A_draw": 2,
+        "B_draw": 1,
+        "ledger_rebuild_graph_calls": 0,
+        "final_versions": 0,
+        "final_images": 0
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-family-publication-20261030\\bin\\request.exe",
+        "bytes": 143318528,
+        "sha256": "c826b7c0f9f8d3d841ef696411965bca3bee27417f09e75c8baa4158578e36c1"
+      }
+    },
+    {
+      "case": "continuous-cuda",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 53824,
+        "started": 1793296441.0062366,
+        "seconds": 1.4604856967926025,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "backend": "cuda",
+        "fixture": "untrained_GA_H64",
+        "prompt_tokens": 18,
+        "outputs_per_live_member": 14,
+        "capacity": 32,
+        "in_flight_batches": 2,
+        "control_and_candidate_arms": 16,
+        "same_original_executor": true,
+        "complete_prefix_state_epoch_rng_equal": true,
+        "actual_owner_credit_checked": true,
+        "all_source_session_page_owners_retired": true,
+        "model_eos_run": false,
+        "synthetic_v64_extra_stop_shares_eos_contract": true,
+        "synthetic_fixture_directory": "continuous-extra-stop-v64",
+        "synthetic_role_payload_bytes": 65536,
+        "accepted_work_control_exception": true,
+        "gpu_native_fault_injected": false,
+        "model_quality_claim": false,
+        "performance_claim": false,
+        "candidates": [
+          {
+            "requests": 1,
+            "mode": "normal",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 5,
+            "max_consecutive_pending": 5,
+            "submit_before_observe": 5,
+            "renewals": 4,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "normal",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 5,
+            "max_consecutive_pending": 5,
+            "submit_before_observe": 5,
+            "renewals": 4,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "credit_exhaustion",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 1,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "member_cancel",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 1,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "yield_resume",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 1,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "cancel_then_control_exception",
+            "pumps": 16,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 1,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 3,
+            "control_exceptions": 1,
+            "aborted_actual_submissions": 2
+          },
+          {
+            "requests": 1,
+            "mode": "extra_stop",
+            "pumps": 13,
+            "actual_batches": 13,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 3,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 1,
+            "extra_stop_accepted_successor": true,
+            "discarded_batches": 1,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "extra_stop",
+            "pumps": 15,
+            "actual_batches": 15,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 3,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 1,
+            "extra_stop_accepted_successor": true,
+            "discarded_batches": 1,
+            "survivor_r1_steps": 2,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          }
+        ]
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-family-publication-20261030\\bin\\ordinary.exe",
+        "bytes": 142910976,
+        "sha256": "a4234e1c4a78f863bef40e1db82be45a1e5702c375f4de4d22cf5066cd98b88d"
+      }
+    },
+    {
+      "case": "natural-cuda",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 55724,
+        "started": 1793296496.5025024,
+        "seconds": 3.2952687740325928,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "mtp-natural-relay",
+        "backend": "cuda",
+        "models": 1,
+        "journeys": 2,
+        "prompt_tokens": 154,
+        "capacity": 256,
+        "resident_capacity": 1,
+        "state_slots": 5,
+        "hidden_slots": 6,
+        "output_limit": 40,
+        "outputs": 40,
+        "serial_submissions": 23,
+        "auto_submissions": 24,
+        "source_submissions": 22,
+        "successor_submissions": 3,
+        "successor_publications": 2,
+        "successor_discards": 1,
+        "successor_refusals": 0,
+        "pending_pairs_before_A_publish": 3,
+        "deferred_waves": 2,
+        "reserved_two_grants": 2,
+        "accepted_drafts": 17,
+        "rejected_drafts": 4,
+        "ledger_records": 23,
+        "natural_RequestLoop": true,
+        "controlled_acceptance": false,
+        "original_ledger_equal": true,
+        "generated_ids_equal": true,
+        "greedy_rng_unchanged": true,
+        "all_sources_expired": true,
+        "simultaneous_native_inflight_claim": false,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0,
+        "state_checks": [
+          {
+            "sequence": 0,
+            "prefix": 193,
+            "active_rows": 1,
+            "physical_rows": 1,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 14733,
+            "bucket_next": 14733,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          }
+        ],
+        "ids": [
+          71093,
+          12305,
+          198,
+          464,
+          19298,
+          198,
+          1445,
+          18904,
+          1120,
+          5586,
+          11,
+          51338,
+          11,
+          36760,
+          11,
+          1697,
+          11,
+          11906,
+          11,
+          3856,
+          3829,
+          271,
+          51,
+          283,
+          3856,
+          3829,
+          482,
+          51,
+          837,
+          198,
+          42,
+          283,
+          3856,
+          3829,
+          482,
+          42,
+          837,
+          271,
+          727,
+          14733
+        ],
+        "batches": [
+          {
+            "ordinal": 0,
+            "quota": 0,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 154,
+            "draft_rows": 154,
+            "generation": false,
+            "discarded": false
+          },
+          {
+            "ordinal": 1,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 2,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 3,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 4,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 5,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 6,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 7,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 8,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 9,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 10,
+            "quota": 4,
+            "reserved": 2,
+            "additional": 2,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 11,
+            "quota": 2,
+            "reserved": 2,
+            "additional": 2,
+            "emitted": 0,
+            "accepted": 0,
+            "draft_rows": 0,
+            "generation": true,
+            "discarded": true
+          },
+          {
+            "ordinal": 11,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 12,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 13,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 14,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 15,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 16,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 17,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 18,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 19,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 20,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 21,
+            "quota": 3,
+            "reserved": 2,
+            "additional": 1,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 22,
+            "quota": 1,
+            "reserved": 0,
+            "additional": 1,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          }
+        ]
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-family-publication-20261030\\bin\\model.exe",
+        "bytes": 145499136,
+        "sha256": "81395a2bc6933daf8f0cfdc87ad01656265f4eab180bd6fd20f1569eb5a35da8"
+      }
+    }
+  ],
+  "previous_reports": [
+    {
+      "case": "continuous-cuda",
+      "original_report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-control-20261030\\runs\\continuous-cuda\\attempt2\\report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      },
+      "current_report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-family-publication-20261030\\runs\\continuous-cuda\\attempt1\\report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      },
+      "complete_report_equal": true
+    },
+    {
+      "case": "natural-cuda",
+      "original_report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-control-20261030\\runs\\natural-cuda\\attempt1\\report.json",
+        "bytes": 7117,
+        "sha256": "783435df8c542066c8a5d00b9e5efb96c73ce3179744f702e70a44c33ebf323d"
+      },
+      "current_report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-family-publication-20261030\\runs\\natural-cuda\\attempt1\\report.json",
+        "bytes": 7117,
+        "sha256": "783435df8c542066c8a5d00b9e5efb96c73ce3179744f702e70a44c33ebf323d"
+      },
+      "complete_report_equal": true
+    }
+  ],
+  "fixtures": {
+    "small": {
+      "directory": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\bf16-original",
+      "manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\bf16-original\\weights.tsv",
+        "bytes": 5308,
+        "sha256": "11ebd54357e5f87839792ee772d228536256b8fb59ef65f37fe432fcdd5413d2"
+      },
+      "prompt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\bf16-original\\prompt.ids",
+        "bytes": 5,
+        "sha256": "01d16d3fc9baf02b7e1f16368d22e0d2b71cc96ac27eb8aa6f752c70ad323a70"
+      }
+    },
+    "original": {
+      "directory": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original",
+      "manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\weights.tsv",
+        "bytes": 56735,
+        "sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1"
+      },
+      "prompt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\prompt.ids",
+        "bytes": 733,
+        "sha256": "b6a10feefb0af4687ee536285c9666bfbdf093fc9e484ab0461834345a5993a4"
+      }
+    },
+    "continuous": {
+      "directory": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-family-publication-20261030\\continuous-input",
+      "manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-family-publication-20261030\\continuous-input\\weights.tsv",
+        "bytes": 7816,
+        "sha256": "d35fb3b00d1724b7689190a2526409b6516ca41dfbdab9100710428c92171ab0"
+      },
+      "prompt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-family-publication-20261030\\continuous-input\\prompt.ids",
+        "bytes": 7,
+        "sha256": "d0bd45d1262e6c4df3e45026a6f9852c04a3b806be64f4d614ddd37a8561be0a"
+      }
+    }
+  },
+  "cleanup_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-family-publication-20261030\\cleanup-plan.json",
+    "bytes": 2611,
+    "sha256": "d7e4d9ccab177b7121d3a83d30b9531910fadd0bd59ffe57c897080af6f683cc"
+  },
+  "next_link_base": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-family-publication-20261030\\model-link-base.json",
+    "bytes": 96768,
+    "sha256": "862c7c167a3cdb383d4d82cb9de10f7c92cf96d8843d73d5116e4725aef14eb6"
+  },
+  "boundaries": [
+    "The new cold Model case submits no Graph; it exercises real CPU compilation, budget ResourceExhausted, retry, stable children and original Invocation installation.",
+    "Original program-carrier CPU case submits two actual graphs; request journey covers partial prefix, StateOnly, actual host eviction/restore and output credit.",
+    "CUDA ordinary continuation covers 16 arms; original BF16 Qwen P154 MTP compares 40 outputs, state, ledger, RNG and retirement. Their complete reports equal the prior batch.",
+    "Consumers are compiled with current CPU/CUDA configuration; CPU execution is not a CUDA-free-link claim.",
+    "Unsupported packed-provider return-false was not forced; implementation removes its early map mutation but this batch does not claim an observed Unimplemented branch.",
+    "No fresh CMake configure/install, Apple/Vulkan execution, whole-large-model checks or throughput claim; multi-width cold calls are not whole-call transactions."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-cold-family-publication-2026-10-30.zip",
+    "bytes": 373957,
+    "sha256": "ff99f13c395598832d06453e335b236c0676e2c6ed112f5adf994fb7e05dfae0"
+  },
+  "cleanup": {
+    "status": "COMPLETE",
+    "files": 10,
+    "bytes": 433135250,
+    "scope": "Only this batch native images/link outputs and copied DLL; current consumer objects and 227 SDK/engine inputs retained."
+  }
+}
