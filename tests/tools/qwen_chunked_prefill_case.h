@@ -16,7 +16,7 @@ std::vector<std::vector<std::byte>> full_state_bytes(q::Model &model,const q::ca
   const auto add=[&](const q::c::ReadLease &lease){
     const auto view=q::take(lease.view());result.emplace_back(view.size());q::check(model.execution.read(view,result.back()));
   };
-  for(std::size_t layer=0;layer<head.keys.size();++layer)for(const auto *frame:{&head.keys[layer],&head.values[layer]}){
+  for(std::size_t layer=0;layer<head.paged.frames.size() / 2;++layer)for(const auto *frame:{&head.paged.frames[2 * layer],&head.paged.frames[2 * layer + 1]}){
     const auto footprint=q::take(frame->view());std::vector<q::c::ReadLease> pieces(footprint.layout().host().page_indices.size());
     q::check(footprint.page_prefixes(pieces));for(const auto &piece:pieces)add(piece);
   }

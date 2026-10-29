@@ -12,7 +12,7 @@ inline void idle(Model &model, Session *session = nullptr) {
     throw std::runtime_error("complete state transfer requires an idle live committed model boundary");
 }
 
-inline void check_frame(const c::PagedArenaFrame &frame, const std::vector<cache::PageRef> &pages,
+inline void check_frame(const c::PagedArenaFrame &frame, const std::vector<hyle::inference::PagedPageRef> &pages,
     std::size_t length) {
   if (!frame.valid() || frame.page_count() != pages.size())
     throw std::runtime_error("host image frame has an incomplete page inventory");
@@ -51,7 +51,7 @@ struct RestoreScope final {
   }
 };
 
-inline c::BatchLayoutVersion layout(Model &model, const std::vector<cache::PageRef> &pages,
+inline c::BatchLayoutVersion layout(Model &model, const std::vector<hyle::inference::PagedPageRef> &pages,
     std::size_t length) {
   std::vector<std::int32_t> ids; ids.reserve(pages.size());
   for (const auto &page : pages) ids.push_back(static_cast<std::int32_t>(page.page()));
@@ -125,11 +125,11 @@ inline std::shared_ptr<const cache::HostImage> Model::export_session(Session &se
     }
   }
   const auto &head = *scope->source->state_identity();
-  std::vector<c::ReadLease> bank(head.pages.size());
+  std::vector<c::ReadLease> bank(head.paged.pages.size());
   std::size_t cursor = 0;
   for (std::size_t slot = 0; slot < target_kv_layers; ++slot)
-    for (const auto *frame : {&head.keys[slot], &head.values[slot]}) {
-      session_transfer::check_frame(*frame, head.pages, head.length);
+    for (const auto *frame : {&head.paged.frames[2 * slot], &head.paged.frames[2 * slot + 1]}) {
+      session_transfer::check_frame(*frame, head.paged.pages, head.length);
       check(take(frame->view()).page_prefixes(bank));
       for (const auto &lease : bank) copies[cursor++].source = lease;
     }
@@ -140,9 +140,9 @@ inline std::shared_ptr<const cache::HostImage> Model::export_session(Session &se
   if (head.carry_hidden.valid()) copies[cursor++].source = head.carry_hidden;
   if (head.prior_hidden.valid()) copies[cursor++].source = head.prior_hidden;
   if (head.draft) {
-    bank.resize(head.draft->pages.size());
-    for (const auto *frame : {&head.draft->key, &head.draft->value}) {
-      session_transfer::check_frame(*frame, head.draft->pages, head.draft->frontier);
+    bank.resize(head.draft->paged.pages.size());
+    for (const auto *frame : {&head.draft->paged.frames[0], &head.draft->paged.frames[1]}) {
+      session_transfer::check_frame(*frame, head.draft->paged.pages, head.draft->frontier);
       check(take(frame->view()).page_prefixes(bank));
       for (const auto &lease : bank) copies[cursor++].source = lease;
     }
@@ -181,27 +181,26 @@ inline std::shared_ptr<Session> Model::restore_session(std::shared_ptr<const cac
   const auto &parts = scope->image->layout; const auto count = parts.size();
   scope->pages.resize(count); scope->readers.resize(count);
   const auto page_count = state.length / cache::Plan::page_rows + (state.length % cache::Plan::page_rows != 0);
-  state.pages.reserve(page_count);
+  state.paged.pages.reserve(page_count);
   for (std::size_t page = 0; page < page_count; ++page) {
     auto reservation = take(page_inventory.acquire());
-    state.pages.push_back(std::move(reservation.reference));
-    for (std::size_t slot = 0; slot < target_kv_layers; ++slot) {
-      scope->pages[(slot * 2) * page_count + page] = std::move(reservation.keys[slot]);
-      scope->pages[(slot * 2 + 1) * page_count + page] = std::move(reservation.values[slot]);
-    }
+    state.paged.pages.push_back(std::move(reservation.reference));
+    for (std::size_t bank = 0; bank < reservation.writers.size(); ++bank)
+      scope->pages[bank * page_count + page] = std::move(reservation.writers[bank]);
   }
   std::size_t draft_begin = count, draft_pages = 0;
   if (boundary.draft) {
     state.draft.emplace(); auto &draft = *state.draft;
+    if (!draft.paged.frames.try_resize(2)) throw std::bad_alloc{};
     draft.frontier = boundary.draft->frontier; draft.lag = boundary.draft->lag;
     draft.catchup_token = boundary.draft->catchup_token;
     draft_pages = draft.frontier / cache::Plan::page_rows + (draft.frontier % cache::Plan::page_rows != 0);
-    draft_begin = count - draft_pages * 2; draft.pages.reserve(draft_pages);
+    draft_begin = count - draft_pages * 2; draft.paged.pages.reserve(draft_pages);
     for (std::size_t page = 0; page < draft_pages; ++page) {
       auto reservation = take(draft_inventory.acquire());
-      draft.pages.push_back(std::move(reservation.reference));
-      scope->pages[draft_begin + page] = std::move(reservation.keys[0]);
-      scope->pages[draft_begin + draft_pages + page] = std::move(reservation.values[0]);
+      draft.paged.pages.push_back(std::move(reservation.reference));
+      scope->pages[draft_begin + page] = std::move(reservation.writers[0]);
+      scope->pages[draft_begin + draft_pages + page] = std::move(reservation.writers[1]);
     }
   }
   std::vector<inference::StateTransferCopy> copies(count);
@@ -239,11 +238,11 @@ inline std::shared_ptr<Session> Model::restore_session(std::shared_ptr<const cac
       else session->tails[geometry.attention_slot(part.layer) * 2 + bank] = std::move(published.appender);
     }
   }
-  const auto target_layout = session_transfer::layout(*this, state.pages, state.length);
+  const auto target_layout = session_transfer::layout(*this, state.paged.pages, state.length);
   for (std::size_t slot = 0; slot < target_kv_layers; ++slot) {
-    state.keys[slot] = working_frame(take(page_inventory.keys[slot].read(target_layout,
+    state.paged.frames[2 * slot] = working_frame(take(page_inventory.banks[2 * slot].read(target_layout,
         std::span(scope->readers).subspan(slot * 2 * page_count, page_count))));
-    state.values[slot] = working_frame(take(page_inventory.values[slot].read(target_layout,
+    state.paged.frames[2 * slot + 1] = working_frame(take(page_inventory.banks[2 * slot + 1].read(target_layout,
         std::span(scope->readers).subspan((slot * 2 + 1) * page_count, page_count))));
   }
   for (std::size_t i = 0; i < count; ++i) switch (parts[i].role) {
@@ -254,10 +253,10 @@ inline std::shared_ptr<Session> Model::restore_session(std::shared_ptr<const cac
     default: break;
   }
   if (state.draft) {
-    const auto draft_layout = session_transfer::layout(*this, state.draft->pages, state.draft->frontier);
-    state.draft->key = working_frame(take(draft_inventory.keys[0].read(draft_layout,
+    const auto draft_layout = session_transfer::layout(*this, state.draft->paged.pages, state.draft->frontier);
+    state.draft->paged.frames[0] = working_frame(take(draft_inventory.banks[0].read(draft_layout,
         std::span(scope->readers).subspan(draft_begin, draft_pages))));
-    state.draft->value = working_frame(take(draft_inventory.values[0].read(draft_layout,
+    state.draft->paged.frames[1] = working_frame(take(draft_inventory.banks[1].read(draft_layout,
         std::span(scope->readers).subspan(draft_begin + draft_pages, draft_pages))));
   }
   validate_mtp_snapshot(state);

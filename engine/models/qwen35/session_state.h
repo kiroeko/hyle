@@ -19,6 +19,7 @@
 #include "model_geometry.h"
 #include "../../inference/sampling_cursor.h"
 #include "../../inference/reusable_output_storage.h"
+#include "../../inference/paged_sequence.h"
 
 namespace qwen35::cache {
 namespace c = hyle::compute;
@@ -165,86 +166,6 @@ inline Plan plan(const ModelGeometry &geometry, CacheRowBytes row_bytes,
   return result;
 }
 
-struct PageInventory;
-class PageRef final {
-public:
-  PageRef() noexcept = default;
-  PageRef(const PageRef &) noexcept;
-  PageRef &operator=(const PageRef &) noexcept;
-  PageRef(PageRef &&other) noexcept
-      : owner_(std::exchange(other.owner_, nullptr)), page_(other.page_) {}
-  PageRef &operator=(PageRef &&other) noexcept {
-    if (this != &other) { PageRef next(std::move(other)); swap(next); }
-    return *this;
-  }
-  ~PageRef();
-  std::uint32_t page() const noexcept { return page_; }
-private:
-  friend struct PageInventory;
-  PageRef(PageInventory *owner, std::uint32_t page) noexcept : owner_(owner), page_(page) {}
-  void swap(PageRef &other) noexcept { std::swap(owner_, other.owner_); std::swap(page_, other.page_); }
-  PageInventory *owner_ = nullptr;
-  std::uint32_t page_ = 0;
-};
-struct PageReservation final {
-  // Writers die before the policy reference can make this ID eligible again.
-  PageRef reference;
-  hyle::container::SmallVector<c::PagedPageWriter, 16> keys, values;
-};
-struct PageInventory final {
-  std::vector<c::PagedArena> keys, values;
-  std::vector<std::uint32_t> owners, free_ids;
-  std::size_t active_layers = 0;
-  void prepare(std::uint32_t pages, std::size_t layers) {
-    keys.resize(layers); values.resize(layers);
-    owners.assign(pages, 0); free_ids.clear(); free_ids.reserve(pages);
-    for (auto page = pages; page != 0; --page) free_ids.push_back(page - 1);
-    active_layers = layers;
-  }
-  hyle::Result<PageReservation> acquire() noexcept {
-    if (keys.size() != active_layers || values.size() != active_layers)
-      return std::unexpected(hyle::Status::InvalidArgument("Qwen page inventory layer count is invalid"));
-    auto attempts = free_ids.size();
-    while (attempts--) {
-      const auto page = free_ids.back(); free_ids.pop_back();
-      PageReservation result;
-      if (!result.keys.try_resize(active_layers) || !result.values.try_resize(active_layers)) {
-        free_ids.push_back(page);
-        return std::unexpected(hyle::Status::ResourceExhausted("Qwen page writer metadata allocation failed"));
-      }
-      hyle::Status status;
-      for (std::size_t i = 0; i < active_layers && status.ok(); ++i) {
-        auto key = keys[i].acquire(page);
-        if (!key) { status = key.error(); break; }
-        result.keys[i] = std::move(*key);
-        auto value = values[i].acquire(page);
-        if (!value) { status = value.error(); break; }
-        result.values[i] = std::move(*value);
-      }
-      if (status.ok()) {
-        owners[page] = 1; result.reference = PageRef(this, page); return result;
-      }
-      // Policy eligibility never proves native retirement. The real acquire
-      // can defer an ID while old Graph readers still retain its blocks.
-      if (status.IsUnavailable()) { free_ids.insert(free_ids.begin(), page); continue; }
-      free_ids.push_back(page); return std::unexpected(std::move(status));
-    }
-    return std::unexpected(hyle::Status::ResourceExhausted("shared Qwen KV pages are retained; release a prefix/session or enlarge the cache"));
-  }
-  void retain(std::uint32_t page) noexcept { ++owners[page]; }
-  void release(std::uint32_t page) noexcept {
-    if (--owners[page] == 0) free_ids.push_back(page);
-  }
-};
-inline PageRef::PageRef(const PageRef &other) noexcept : owner_(other.owner_), page_(other.page_) {
-  if (owner_) owner_->retain(page_);
-}
-inline PageRef &PageRef::operator=(const PageRef &other) noexcept {
-  if (this != &other) { PageRef next(other); swap(next); }
-  return *this;
-}
-inline PageRef::~PageRef() { if (owner_) owner_->release(page_); }
-
 struct Recurrent final { c::ReadLease history, recurrent; };
 struct StatePools final {
   c::LeasePool history, recurrent;
@@ -292,9 +213,7 @@ private:
   VersionCount *owner_ = nullptr;
 };
 struct DraftState final {
-  // Reverse destruction releases the actual ready frames before page policy.
-  std::vector<PageRef> pages;
-  c::PagedArenaFrame key, value;
+  hyle::inference::PagedSequenceState paged;
   std::size_t frontier = 0;
   // Committed MTP heads have frontier == target length - lag. Lag1 also
   // requires a valid catchup_token and State.prior_hidden; lag0 has no token.
@@ -309,17 +228,14 @@ using SnapshotRef = std::shared_ptr<const State>;
 // Native payloads keep their original ready leases and retirement authority.
 struct State final {
   // The complete cold inventory/control addresses outlive escaped prefixes
-  // and every VersionRef/PageRef below. Never retain the application Model.
+  // and every version/page reference below. Never retain the application Model.
   std::shared_ptr<const void> resource_owner;
   // Reverse destruction releases actual frames before policy references.
   VersionRef version;
   // Sampling-only wrappers share one evaluated model-state version. The
   // origin is always canonical (its own state_origin is empty), never a chain.
   SnapshotRef state_origin;
-  std::vector<PageRef> pages;
-  // Inline capacities avoid new hot allocations for current geometries; they
-  // are storage optimizations, not supported-model or layer-count limits.
-  hyle::container::SmallVector<c::PagedArenaFrame, 16> keys, values;
+  hyle::inference::PagedSequenceState paged;
   hyle::container::SmallVector<Recurrent, 64> state;
   c::ReadLease carry_hidden, prior_hidden;
   std::optional<DraftState> draft;
@@ -331,30 +247,24 @@ struct State final {
   const State *state_identity() const noexcept { return state_origin ? state_origin.get() : this; }
 
   hyle::Status can_seal() const noexcept {
-    for (const auto &frame : keys) HYLE_RETURN_IF_ERROR(frame.can_seal());
-    for (const auto &frame : values) HYLE_RETURN_IF_ERROR(frame.can_seal());
-    if (draft) {
-      HYLE_RETURN_IF_ERROR(draft->key.can_seal());
-      HYLE_RETURN_IF_ERROR(draft->value.can_seal());
-    }
+    HYLE_RETURN_IF_ERROR(paged.can_seal());
+    if (draft && draft->paged.frames.size() != 2)
+      return hyle::Status::FailedPrecondition("Qwen MTP snapshot requires its two original draft banks");
+    if (draft) HYLE_RETURN_IF_ERROR(draft->paged.can_seal());
     return hyle::Status::Ok();
   }
   void seal() noexcept {
     // The owner preflights the whole collection before publishing a Snapshot.
-    for (auto &frame : keys) { const auto status = frame.seal(); HYLE_FATAL_ASSERT(status.ok()); }
-    for (auto &frame : values) { const auto status = frame.seal(); HYLE_FATAL_ASSERT(status.ok()); }
-    if (draft) {
-      const auto key = draft->key.seal(), value = draft->value.seal();
-      HYLE_FATAL_ASSERT(key.ok() && value.ok());
-    }
+    paged.seal();
+    if (draft) draft->paged.seal();
   }
 
   // Called only after the original Graph/native readers have withdrawn. Empty
   // metadata may be reused; no old payload, page policy or version stays pinned.
   // Release the resource owner last, just as in normal reverse destruction.
   void clear() noexcept {
-    keys.clear(); values.clear(); state.clear();
-    carry_hidden = {}; prior_hidden = {}; draft.reset(); pages.clear();
+    paged.clear(); state.clear();
+    carry_hidden = {}; prior_hidden = {}; draft.reset();
     state_origin.reset(); version = {}; resource_owner.reset();
     model = nullptr; math = nullptr; length = 0; next_id = -1; sampling = {};
   }

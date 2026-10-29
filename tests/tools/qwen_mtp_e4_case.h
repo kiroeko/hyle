@@ -75,8 +75,8 @@ inline void storage_facts(q::Model &model, const q::CacheStoragePair &target) {
   const auto draft_bank = q::cache::add(q::cache::multiply(plan.max_pages, 16 * 128), 1);
   require(plan.key_bank_bytes == target_bank && plan.value_bank_bytes == target_bank &&
       plan.draft_key_bank_bytes == draft_bank && plan.draft_value_bank_bytes == draft_bank &&
-      model.page_inventory.keys[0].page_bytes() == 16 * 64 && model.page_inventory.values[0].page_bytes() == 16 * 64 &&
-      model.draft_inventory.keys[0].page_bytes() == 16 * 128 && model.draft_inventory.values[0].page_bytes() == 16 * 128,
+      model.page_inventory.banks[2 * (0)].page_bytes() == 16 * 64 && model.page_inventory.banks[2 * (0) + 1].page_bytes() == 16 * 64 &&
+      model.draft_inventory.banks[0].page_bytes() == 16 * 128 && model.draft_inventory.banks[1].page_bytes() == 16 * 128,
       "E4 target and BF16 draft arenas did not reserve their independent exact byte extents");
   auto expected_backing = q::cache::add(q::cache::multiply(2, target_bank), q::cache::multiply(2, draft_bank));
   for (std::size_t layer = 0; layer != model.state_schema.size(); ++layer) if (model.geometry.is_gdn(layer)) {

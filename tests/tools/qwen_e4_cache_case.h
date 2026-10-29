@@ -11,8 +11,9 @@ inline void require(bool value, const char *message) {
 using BankBytes = std::vector<std::vector<std::byte>>;
 inline BankBytes read_pages(q::Model &model, const q::cache::State &head) {
   BankBytes result;
-  for (const auto *banks : {&head.keys, &head.values})
-    for (const auto &bank : *banks) {
+  for (std::size_t role = 0; role != 2; ++role)
+    for (std::size_t layer = 0; layer < head.paged.frames.size() / 2; ++layer) {
+      const auto &bank = head.paged.frames[layer * 2 + role];
       const auto footprint = q::take(bank.view());
       require(footprint.page_count() == 1, "finite E4 case requires one ready physical page per bank");
       std::array<q::c::ReadLease, 1> pages;
@@ -148,8 +149,8 @@ inline int run(const std::filesystem::path &input,
     require(schema.capacity().key_storage == storage[layer][0] &&
         schema.capacity().value_storage == storage[layer][1],
         "target layer lost the original shared topology or its own calibration");
-    require(model.page_inventory.keys[layer].page_bytes() == 16 * 64 &&
-        model.page_inventory.values[layer].page_bytes() == 16 * 64,
+    require(model.page_inventory.banks[2 * layer].page_bytes() == 16 * 64 &&
+        model.page_inventory.banks[2 * layer + 1].page_bytes() == 16 * 64,
         "actual E4 arenas retained the old 16-bit extent");
   }
   for (const auto &[key, family] : model.families) {
@@ -173,9 +174,9 @@ inline int run(const std::filesystem::path &input,
       "E4 prefill did not publish a complete ordinary boundary");
   auto old = first->checkpoint();
   for (std::size_t layer = 0; layer < 2; ++layer)
-    require(model.target_attention_schema(layer).owns(old->keys[layer].layout()) &&
-        model.attention_schema.owns(old->values[layer].layout()) &&
-        old->keys[layer].layout() == old->values[layer].layout(),
+    require(model.target_attention_schema(layer).owns(old->paged.frames[2 * layer].layout()) &&
+        model.attention_schema.owns(old->paged.frames[2 * layer + 1].layout()) &&
+        old->paged.frames[2 * layer].layout() == old->paged.frames[2 * layer + 1].layout(),
         "E4 banks did not retain the same original metadata domain/version");
   const auto old_bytes = read_pages(model, *old);
   const std::array<std::size_t, 1> continuation{1};

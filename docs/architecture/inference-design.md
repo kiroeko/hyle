@@ -120,7 +120,7 @@ Qwen特殊token集中在模型自己的`generation_tokens.h`，请求额外停�
 GLM的StateStore／StateHead不使用这些分页尾，不为接口统一而引入伪Frame或Qwen状态。共同结果见证已经共用，不再叠加纯转发的发布接口。
 
 完整页准备归`prepare_append_pages`：预留原候选引用和dirty-bank容量，保留原完整前缀，尝试真实尾预留，必要时回落COW并逐页取得原Inventory引用。
-普通／验证／后继target、批量draft及私有NextN直接共用这一算法。模型只提供真实银行范围、epoch／relay资格及静态页获取适配，仍决定逻辑状态和Frame提交。
+普通／验证／后继target、批量draft及私有NextN直接共用这一算法。模型提供真实银行范围、epoch／relay资格及静态页获取适配，仍决定逻辑状态和完整Head发布。
 返回尾的目的容量由原episode预留；晚获取失败保留此前已移入的原引用、writer和尾权限，交原恢复机制处理，不推定退休或另建资源owner。
 [12项真实CPU页权限检查及模型回归](../evidence/correctness/inference-sidecar-pages-2026-10-29.json)覆盖尾复用、跨页、晚bank拒绝后的COW和晚新页获取失败。
 
@@ -128,6 +128,14 @@ GLM的StateStore／StateHead不使用这些分页尾，不为接口统一而引�
 目标及旧历史各一份缓冲，原Schema同步复制后再复用；R1仍只创建原成员版本，多成员才创建原聚合版本。
 packed行偏移、decode-ahead原缓存和真实Source不放进这份整数缓冲；原版本分配、generation与Schema验证继续保留。
 [四项布局检查与CPU／CUDA模型回归](../evidence/correctness/inference-paged-layout-2026-10-29.json)覆盖混长、空历史、共享重复页、超界拒绝和预留地址稳定；不是吞吐或完整执行核心完成的证明。
+
+分页资源生命周期归`PagedPageInventory`、`PagedSequenceState`和`PagedSequenceEdit`：同一政策页ID可覆盖任意数量的原Arena银行，
+序列保存原页引用与Frame，编辑只借用原base、candidate和提交票据。共同层执行原Frame的source、fork／冻结别名及整束提交预检和提交，
+不固定K／V配对，不保存另一份长度或frontier；独立页空间使用各自库存，模型保留实际银行映射与缓存布局。
+Qwen的target、图内draft及私有NextN直接使用同一实现，旧库存与帧提交算法已删除。原Frame／Append仍决定权限，原episode负责退休，原Head／ledger／RNG发布不变。
+库存只是政策引用计数，原Arena的Unavailable仍须真实等待；临时取得的原writer先释放，才允许政策ID复用。
+扫描多个不可用页只在结束时重排一次，保留原页选择顺序，避免逐页搬移数组的平方成本。
+[单银行真实Graph及模型回归](../evidence/correctness/inference-paged-sequence-2026-10-29.json)覆盖完整追加／分叉／COW／尾复用、实际页回收、晚银行拒绝及普通／MTP路径；没有增加载荷复制或第二执行器，也不据此宣称吞吐提升。
 
 完整前缀命中可在同wave后续请求准备失败前已经采样新frontier，但尚未向原请求交付。
 普通随机预算预检按原输入、导入记录、游标及live head核对这一事实，只扣已执行的一个draw，继续严格核未来输出；
@@ -712,14 +720,14 @@ history接线保留CastF32之前原精度samples的逐前缀窗口；它与F32 G
 无端口的bank沿原write-only绑定，NextN只借自己的两项draft银行。
 晚bind拒绝保留已成功转交的bound前缀，只有真实take返回后才清标记；部分take不重复取已返回项。
 未返回时不discard，尾页rollback与新页discard只操作调用方实际持有的原对象。
-该借用不增加分配、Queue、Completion、权限、状态owner或发布策略；whole状态及数学／Source／Frame提交留在模型层。
+该借用不增加分配、Queue、Completion、权限、状态owner或发布策略；whole状态及数学仍归模型，原Source／Frame生命周期由前述共同分页序列机制处理。
 
 同一设施现扩展到NextN私有draft、target图内draft及target KV三条准备路径的逻辑追加范围和多bank尾权预留。
 `append_extent`只计真实输入行，draft计实际Li+lag，物理padding不追加；页数取整避免溢出的ceil分子。
 `tail_compatible`只是调用方原epoch／relay／私有工作资格下的只读容量提示，元数据匹配不授予追加权；真正权限仍由各原appender的`reserve_rows`接纳。
 晚bank的Unavailable只有在已成功bank全部rollback成功后才返回“改走COW”；rollback错误保留原对象和失败状态，不能伪装成可COW。
 NextN和图内draft先按尾复用实际需要预留dirty元数据，原SDK拒绝复用并成功回滚后才补COW容量，不再先要求未必使用的COW页对应的dirty元数据容量。
-完整页准备现由前述`prepare_append_pages`执行；模型仍决定epoch资格、原页池及银行映射、逻辑状态和Frame提交，保留原page／state owner，没有新增清理账簿或运行期回调。早期范围／尾预留的host Append 6项及普通CPU／CUDA各13项完整状态对照保留在[原检查记录](../evidence/correctness/inference-history-controls-2026-10-28.json)，当前完整准备检查见前述记录。
+完整页准备现由前述`prepare_append_pages`执行，原Frame提交由共同`PagedSequenceEdit`处理；模型决定epoch资格、原页池及银行映射、逻辑状态和完整Head发布，保留原page／state owner，没有新增清理账簿或运行期回调。早期范围／尾预留的host Append 6项及普通CPU／CUDA各13项完整状态对照保留在[原检查记录](../evidence/correctness/inference-history-controls-2026-10-28.json)，当前完整准备检查见前述记录。
 [有限检查](../evidence/correctness/inference-append-transactions-2026-10-28.json)覆盖晚bank拒绝及真实CPU Graph追加后确定性拒绝，
 核原页、回收和失败不产生ready；原读取fixture失败及修正保留。真实2B普通有7次后继发布，K2有9次NextN调用，
 另有CPU／CUDA的单行lag1 StateOnly及B2 MTP状态回归；不据共同代码抽离宣称性能提升。

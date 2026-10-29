@@ -54,8 +54,8 @@ inline std::vector<std::vector<std::byte>> state_bytes(q::Model &model,
     result.emplace_back(view.size());
     q::check(model.execution.read(view, result.back()));
   };
-  for (std::size_t layer = 0; layer < head.keys.size(); ++layer)
-    for (const auto *frame : {&head.keys[layer], &head.values[layer]}) {
+  for (std::size_t layer = 0; layer < head.paged.frames.size() / 2; ++layer)
+    for (const auto *frame : {&head.paged.frames[2 * layer], &head.paged.frames[2 * layer + 1]}) {
       const auto footprint = q::take(frame->view());
       std::vector<q::c::ReadLease> pieces(footprint.layout().host().page_indices.size());
       q::check(footprint.page_prefixes(pieces));
@@ -234,7 +234,7 @@ inline int run(const std::filesystem::path &input) {
   // submit. Returning the original reservations must permit the same FIFO key.
   require(prefix.evict_one() && !prefix.size() && !model.snapshot_versions.live,
       "peer checkpoint did not release its original committed version");
-  std::vector<q::cache::PageReservation> blockers; blockers.reserve(plan.max_pages);
+  std::vector<hyle::inference::PagedPageReservation> blockers; blockers.reserve(plan.max_pages);
   while (!model.page_inventory.free_ids.empty())
     blockers.push_back(q::take(model.page_inventory.acquire()));
   require(blockers.size() == plan.max_pages, "page shortage did not occupy the actual finite original inventory");

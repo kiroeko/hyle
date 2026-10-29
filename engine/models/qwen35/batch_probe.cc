@@ -167,8 +167,8 @@ struct SavedSnapshot final {
 
 SavedSnapshot save(q::cache::SnapshotRef head) {
   require(static_cast<bool>(head), "missing committed snapshot"); SavedSnapshot result; result.head = std::move(head);
-  for (std::size_t i = 0; i < result.head->keys.size(); ++i)
-    for (const auto *frame : {&result.head->keys[i], &result.head->values[i]}) {
+  for (std::size_t i = 0; i < result.head->paged.frames.size() / 2; ++i)
+    for (const auto *frame : {&result.head->paged.frames[2 * i], &result.head->paged.frames[2 * i + 1]}) {
       const auto view = q::take(frame->view());
       const auto guards = q::take(q::probe::unique_page_prefixes(view));
       for (const auto &guard : guards) result.kv.push_back(read_lease(guard));
@@ -190,15 +190,15 @@ bool disjoint(const c::ReadLease &a, const c::ReadLease &b) {
 
 void check_frames(const q::cache::State &a, const q::cache::State &b) {
   require(a.length == 131 && b.length == 132, "B2 publication used a common position instead of individual histories");
-  require(a.pages.back().page() != b.pages.back().page(), "batch requests share a dirty physical tail");
+  require(a.paged.pages.back().page() != b.paged.pages.back().page(), "batch requests share a dirty physical tail");
   for (const auto *head : {&a, &b}) {
-    for (std::size_t bank = 0; bank < head->keys.size(); ++bank)
-      for (const auto *frame : {&head->keys[bank], &head->values[bank]}) {
+    for (std::size_t bank = 0; bank < head->paged.frames.size() / 2; ++bank)
+      for (const auto *frame : {&head->paged.frames[2 * bank], &head->paged.frames[2 * bank + 1]}) {
         const auto layout = frame->layout(); const auto host = layout.host();
         require(layout.facts().requests == 1 && layout.facts().query_rows == 1, "public Session frame still exposes the packed batch");
-        require(host.page_indices.size() == head->pages.size(), "projected frame has another Session's footprint");
-        for (std::size_t i = 0; i < head->pages.size(); ++i)
-          require(host.page_indices[i] == static_cast<std::int32_t>(head->pages[i].page()), "projected frame mapping differs from its Session inventory");
+        require(host.page_indices.size() == head->paged.pages.size(), "projected frame has another Session's footprint");
+        for (std::size_t i = 0; i < head->paged.pages.size(); ++i)
+          require(host.page_indices[i] == static_cast<std::int32_t>(head->paged.pages[i].page()), "projected frame mapping differs from its Session inventory");
       }
   }
 }

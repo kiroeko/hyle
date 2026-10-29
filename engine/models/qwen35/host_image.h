@@ -188,7 +188,7 @@ inline hyle::Result<HostImageBoundary> host_image_boundary(const State &state) n
   const auto *evaluated = state.state_identity();
   if (!state.model || !state.math || !evaluated || evaluated->state_origin ||
       evaluated->model != state.model || evaluated->math != state.math || evaluated->length != state.length ||
-      evaluated->keys.size() != state.keys.size() || evaluated->values.size() != state.values.size() ||
+      evaluated->paged.frames.size() != state.paged.frames.size() ||
       evaluated->state.size() != state.state.size() || evaluated->draft.has_value() != state.draft.has_value() ||
       evaluated->carry_hidden.valid() != state.carry_hidden.valid() || evaluated->prior_hidden.valid() != state.prior_hidden.valid())
     return std::unexpected(hyle::Status::InvalidArgument("host image requires a flat canonical evaluated state origin"));
@@ -294,10 +294,11 @@ inline hyle::Status validate_host_image_source(const HostImageSchema &schema, co
   const auto layout = make_host_image_layout(schema, *boundary);
   if (!layout) return layout.error();
   const auto &evaluated = *state.state_identity();
-  if (evaluated.keys.size() != schema.attention.size() || evaluated.values.size() != schema.attention.size() ||
-      evaluated.state.size() != schema.geometry.layers.size() || evaluated.pages.size() != host_image_detail::page_count(evaluated.length))
+  if (evaluated.paged.frames.size() != schema.attention.size() * 2 ||
+      evaluated.state.size() != schema.geometry.layers.size() || evaluated.paged.pages.size() != host_image_detail::page_count(evaluated.length))
     return hyle::Status::InvalidArgument("host image source has incomplete target inventories");
-  const auto frame = [](const c::PagedArenaFrame &read, std::span<const PageRef> pages, std::size_t rows) {
+  const auto frame = [](const c::PagedArenaFrame &read,
+      std::span<const hyle::inference::PagedPageRef> pages, std::size_t rows) {
     if (!read.valid()) return false;
     const auto version = read.layout(); const auto facts = version.facts();
     if (facts.requests != 1 || facts.kv_rows != rows || facts.page_refs != pages.size()) return false;
@@ -310,8 +311,8 @@ inline hyle::Status validate_host_image_source(const HostImageSchema &schema, co
     return true;
   };
   for (std::size_t bank = 0; bank < schema.attention.size(); ++bank)
-    if (!frame(evaluated.keys[bank], evaluated.pages, evaluated.length) ||
-        !frame(evaluated.values[bank], evaluated.pages, evaluated.length))
+    if (!frame(evaluated.paged.frames[2 * bank], evaluated.paged.pages, evaluated.length) ||
+        !frame(evaluated.paged.frames[2 * bank + 1], evaluated.paged.pages, evaluated.length))
       return hyle::Status::InvalidArgument("host image source K/V frames do not describe their exact logical pages");
   std::size_t recurrent = 0;
   for (std::size_t layer = 0; layer < schema.geometry.layers.size(); ++layer) {
@@ -326,9 +327,10 @@ inline hyle::Status validate_host_image_source(const HostImageSchema &schema, co
   for (const auto *hidden : {&evaluated.carry_hidden, &evaluated.prior_hidden})
     if (hidden->valid() && hidden->size() != schema.hidden_row_bytes)
       return hyle::Status::InvalidArgument("host image source hidden carrier has the wrong extent");
-  if (evaluated.draft && (evaluated.draft->pages.size() != host_image_detail::page_count(evaluated.draft->frontier) ||
-      !frame(evaluated.draft->key, evaluated.draft->pages, evaluated.draft->frontier) ||
-      !frame(evaluated.draft->value, evaluated.draft->pages, evaluated.draft->frontier)))
+  if (evaluated.draft && (evaluated.draft->paged.frames.size() != 2 ||
+      evaluated.draft->paged.pages.size() != host_image_detail::page_count(evaluated.draft->frontier) ||
+      !frame(evaluated.draft->paged.frames[0], evaluated.draft->paged.pages, evaluated.draft->frontier) ||
+      !frame(evaluated.draft->paged.frames[1], evaluated.draft->paged.pages, evaluated.draft->frontier)))
     return hyle::Status::InvalidArgument("host image source lacks its complete draft logical pages");
   return {};
 }

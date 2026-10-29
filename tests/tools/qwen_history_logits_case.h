@@ -21,9 +21,9 @@ inline s::StateImage snapshot(q::Model &model, const q::cache::State &state) {
     result.payloads.push_back(s::read(model, state.state[layer].history));
     result.payloads.push_back(s::read(model, state.state[layer].recurrent));
   }
-  for (std::size_t layer = 0; layer != state.keys.size(); ++layer) {
-    result.target.push_back(s::frame(model, state.keys[layer], state.length));
-    result.target.push_back(s::frame(model, state.values[layer], state.length));
+  for (std::size_t layer = 0; layer != state.paged.frames.size() / 2; ++layer) {
+    result.target.push_back(s::frame(model, state.paged.frames[2 * layer], state.length));
+    result.target.push_back(s::frame(model, state.paged.frames[2 * layer + 1], state.length));
   }
   result.payloads.push_back(s::read(model, state.carry_hidden));
   result.payloads.push_back(s::read(model, state.prior_hidden));

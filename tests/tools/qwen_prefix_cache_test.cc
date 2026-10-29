@@ -374,18 +374,19 @@ void working_state_reuses_metadata_and_freezes_explicitly() {
   const auto next = [&](std::size_t length) {
     auto candidate = working.acquire_candidate();
     candidate->version = p::VersionRef::acquire(versions).value();
-    candidate->pages.reserve(8);
-    if (!candidate->keys.try_resize(3) || !candidate->values.try_resize(3) ||
+    candidate->paged.pages.reserve(8);
+    if (!candidate->paged.frames.try_resize(6) ||
         !candidate->state.try_resize(2)) throw std::bad_alloc();
     if (!working)
-      for (std::size_t i = 0; i < candidate->keys.size(); ++i) {
-        candidate->keys[i] = empty_working_frame(); candidate->values[i] = empty_working_frame();
+      for (std::size_t i = 0; i < candidate->paged.frames.size() / 2; ++i) {
+        candidate->paged.frames[2 * i] = empty_working_frame(); candidate->paged.frames[2 * i + 1] = empty_working_frame();
       }
     candidate->length = length; candidate->next_id = 17; candidate->sampling = {1,2,length};
     working.commit(std::move(candidate), [](p::State *previous, p::State &next) noexcept {
       if (previous)
-        for (std::size_t i = 0; i < next.keys.size(); ++i) {
-          next.keys[i] = std::move(previous->keys[i]); next.values[i] = std::move(previous->values[i]);
+        for (std::size_t i = 0; i < next.paged.frames.size() / 2; ++i) {
+          next.paged.frames[2 * i] = std::move(previous->paged.frames[2 * i]);
+          next.paged.frames[2 * i + 1] = std::move(previous->paged.frames[2 * i + 1]);
         }
     }, [](p::State &) noexcept {});
   };
@@ -412,9 +413,9 @@ void working_state_reuses_metadata_and_freezes_explicitly() {
   require(stable, "ordinary commits allocated/replaced warm metadata or kept an old version");
   const auto *identity = working.get(); const auto epoch = working.epoch();
   std::array<p::c::PagedArenaFootprint, 6> footprints;
-  for (std::size_t i = 0; i < working->keys.size(); ++i) {
-    footprints[i * 2] = working->keys[i].view().value();
-    footprints[i * 2 + 1] = working->values[i].view().value();
+  for (std::size_t i = 0; i < working->paged.frames.size() / 2; ++i) {
+    footprints[i * 2] = working->paged.frames[2 * i].view().value();
+    footprints[i * 2 + 1] = working->paged.frames[2 * i + 1].view().value();
   }
 #if defined(HYLE_PREFIX_CACHE_STANDALONE)
   bool rejected = false; reject_allocations = true;
@@ -425,16 +426,16 @@ void working_state_reuses_metadata_and_freezes_explicitly() {
   require(rejected && working.get() == identity && working.epoch() == epoch && versions.live == 1 &&
       working->length == 130 && working->next_id == 17 && working->sampling == p::SamplingCursor{1,2,130},
       "checkpoint allocation failure changed the unique committed boundary or version");
-  for (std::size_t i = 0; i < working->keys.size(); ++i)
-    require(!working->keys[i].sealed() && !working->values[i].sealed() &&
+  for (std::size_t i = 0; i < working->paged.frames.size() / 2; ++i)
+    require(!working->paged.frames[2 * i].sealed() && !working->paged.frames[2 * i + 1].sealed() &&
         footprints[i * 2].valid() && footprints[i * 2 + 1].valid(),
         "checkpoint allocation failure sealed or invalidated a working frame");
 #endif
   auto frozen = working.checkpoint();
   require(frozen.get() == identity && working.get() == identity && working.epoch() == epoch && versions.live == 1,
       "checkpoint copied State, changed epoch or counted a second version");
-  for (std::size_t i = 0; i < frozen->keys.size(); ++i)
-    require(frozen->keys[i].sealed() && frozen->values[i].sealed() &&
+  for (std::size_t i = 0; i < frozen->paged.frames.size() / 2; ++i)
+    require(frozen->paged.frames[2 * i].sealed() && frozen->paged.frames[2 * i + 1].sealed() &&
         footprints[i * 2].valid() && footprints[i * 2 + 1].valid(),
         "checkpoint failed to permanently seal the original frame metadata");
   require(working.checkpoint() == frozen, "repeated checkpoint replaced an immutable committed identity");
@@ -447,15 +448,17 @@ void working_state_adopts_sampling_origin_without_another_version() {
   auto initial = source.acquire_candidate(); initial->version = p::VersionRef::acquire(versions).value();
   initial->length = 3; initial->next_id = 71; initial->sampling = {1,2,3};
   initial->draft.emplace(); initial->draft->frontier = 2; initial->draft->lag = 1; initial->draft->catchup_token = 5;
-  initial->draft->key = empty_working_frame(); initial->draft->value = empty_working_frame();
+  require(initial->draft->paged.frames.try_resize(2), "draft bank metadata preparation failed");
+  initial->draft->paged.frames[0] = empty_working_frame(); initial->draft->paged.frames[1] = empty_working_frame();
   source.commit(std::move(initial)); auto canonical = source.checkpoint();
   fork.adopt(canonical); source.reset();
   require(fork.get() == canonical.get() && versions.live == 1, "checkpoint adoption copied its version");
   auto wrapper = fork.acquire_candidate();
   wrapper->state_origin = canonical; wrapper->length = canonical->length; wrapper->draft.emplace();
-  wrapper->draft->pages = canonical->draft->pages;
-  wrapper->draft->key = frozen_alias(canonical->draft->key);
-  wrapper->draft->value = frozen_alias(canonical->draft->value);
+  require(wrapper->draft->paged.frames.try_resize(2), "sampling-wrapper draft bank metadata preparation failed");
+  wrapper->draft->paged.pages = canonical->draft->paged.pages;
+  wrapper->draft->paged.frames[0] = frozen_alias(canonical->draft->paged.frames[0]);
+  wrapper->draft->paged.frames[1] = frozen_alias(canonical->draft->paged.frames[1]);
   wrapper->draft->frontier = canonical->draft->frontier; wrapper->draft->lag = canonical->draft->lag;
   wrapper->draft->catchup_token = canonical->draft->catchup_token;
   wrapper->next_id = 81; wrapper->sampling = {11,12,13};
@@ -480,7 +483,7 @@ void recycled_candidate_releases_permissions_and_owners() {
   auto canonical = std::make_shared<p::State>(); canonical->version = p::VersionRef::acquire(origins).value();
   auto candidate = working.acquire_candidate(); const auto *metadata = candidate.get();
   candidate->version = p::VersionRef::acquire(versions).value(); candidate->resource_owner = owner;
-  candidate->state_origin = canonical; candidate->pages.reserve(8);
+  candidate->state_origin = canonical; candidate->paged.pages.reserve(8);
   require(candidate->state.try_resize(1), "candidate state metadata could not be prepared");
   auto writer = pool.allocate(128).value();
   candidate->state[0].history = writer.publish().value(); owner.reset(); canonical.reset();
@@ -490,7 +493,7 @@ void recycled_candidate_releases_permissions_and_owners() {
   require(!versions.live && !origins.live && lifetime.expired() && !pool.stats().live_blocks && !working,
       "empty candidate metadata retained an old lease, owner, origin or version");
   auto reused = working.acquire_candidate();
-  require(reused.get() == metadata && reused->pages.capacity() >= 8 && reused->pages.empty() && reused->state.empty() &&
+  require(reused.get() == metadata && reused->paged.pages.capacity() >= 8 && reused->paged.pages.empty() && reused->state.empty() &&
       !reused->state_origin && !reused->resource_owner && !reused->carry_hidden && !reused->prior_hidden && !reused->draft,
       "candidate reuse lost metadata capacity or revived old permissions");
 }
@@ -625,7 +628,8 @@ void working_state_recycles_only_successfully_superseded_unique_heads() {
   auto pool = c::LeasePool::create(hyle::mem::system_resource(), 769, {.max_blocks = 3}).value();
   hyle::inference::ReusableOutputStorage cache;
   require(cache.prepare(1, 128).ok(), "commit-hook cache metadata preparation failed");
-  p::VersionCount versions{0, 3}; p::PageInventory pages; pages.prepare(1, 0);
+  p::VersionCount versions{0, 3}; hyle::inference::PagedPageInventory pages;
+  require(pages.prepare(1, 0).ok(), "zero-bank page policy preparation failed");
   p::WorkingState working;
   auto token = std::make_shared<int>(23); std::weak_ptr<const void> old_owner = token;
   const auto candidate = [&](std::size_t length) {
@@ -640,12 +644,12 @@ void working_state_recycles_only_successfully_superseded_unique_heads() {
   auto first = candidate(1);
   const auto generation = first->state[0].history.generation();
   auto page = pages.acquire().value(); const auto page_id = page.reference.page();
-  first->pages.push_back(std::move(page.reference)); first->resource_owner = token; token.reset();
+  first->paged.pages.push_back(std::move(page.reference)); first->resource_owner = token; token.reset();
   std::size_t callbacks = 0; bool hook_valid = true;
   const auto recycle = [&](p::State &previous) noexcept {
     ++callbacks;
     hook_valid = hook_valid && previous.length == 1 && versions.live == 2 &&
-        previous.pages.size() == 1 && pages.owners[page_id] == 1 && !old_owner.expired();
+        previous.paged.pages.size() == 1 && pages.owners[page_id] == 1 && !old_owner.expired();
     hook_valid = hook_valid && cache.recycle(previous.state[0].history);
   };
   working.commit(std::move(first), recycle);

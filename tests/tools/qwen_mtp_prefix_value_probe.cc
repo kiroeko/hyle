@@ -179,8 +179,8 @@ PrefixValueCase check_prefix(q::Model &model, const q::cache::SnapshotRef &base,
     (void)model.execute_draft(reference,tokens,shifted,false);
     require(reference.state.frontier==session->head->draft->frontier,
         "repaired draft retained another number of original input rows");
-    const auto key=logical_rows(model.draft_inventory.keys[0],reference.state.key,reference.state.frontier),
-        value=logical_rows(model.draft_inventory.values[0],reference.state.value,reference.state.frontier);
+    const auto key=logical_rows(model.draft_inventory.banks[0],reference.state.paged.frames[0],reference.state.frontier),
+        value=logical_rows(model.draft_inventory.banks[1],reference.state.paged.frames[1],reference.state.frontier);
     exact_bytes(key,named(result.selected,"draft.key.bf16").bytes,"draft.key.bf16");
     exact_bytes(value,named(result.selected,"draft.value.bf16").bytes,"draft.value.bf16");
     result.draft_reference_bytes=key.size()+value.size();

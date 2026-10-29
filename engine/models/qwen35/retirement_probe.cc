@@ -66,8 +66,8 @@ std::vector<std::vector<std::byte>> committed_pages(const q::cache::State &head)
       q::check(q::take(lease.view()).read(bytes));
     }
   };
-  for (std::size_t i = 0; i < head.keys.size(); ++i) { append(head.keys[i]); append(head.values[i]); }
-  if (head.draft) { append(head.draft->key); append(head.draft->value); }
+  for (std::size_t i = 0; i < head.paged.frames.size() / 2; ++i) { append(head.paged.frames[2 * i]); append(head.paged.frames[2 * i + 1]); }
+  if (head.draft) { append(head.draft->paged.frames[0]); append(head.draft->paged.frames[1]); }
   return result;
 }
 
@@ -87,15 +87,15 @@ std::size_t head_lease_bytes(const q::cache::State &head, const q::Model &model)
     bytes = q::cache::add(bytes, state.history.size());
     bytes = q::cache::add(bytes, state.recurrent.size());
   }
-  for (std::size_t i = 0; i < head.keys.size(); ++i) {
-    bytes = q::cache::add(bytes, q::cache::multiply(head.keys[i].page_count(),
-                                                model.page_inventory.keys[i].page_bytes()));
-    bytes = q::cache::add(bytes, q::cache::multiply(head.values[i].page_count(),
-                                                model.page_inventory.values[i].page_bytes()));
+  for (std::size_t i = 0; i < head.paged.frames.size() / 2; ++i) {
+    bytes = q::cache::add(bytes, q::cache::multiply(head.paged.frames[2 * i].page_count(),
+                                                model.page_inventory.banks[2 * i].page_bytes()));
+    bytes = q::cache::add(bytes, q::cache::multiply(head.paged.frames[2 * i + 1].page_count(),
+                                                model.page_inventory.banks[2 * i + 1].page_bytes()));
   }
   if (head.draft) {
-    bytes = q::cache::add(bytes, q::cache::multiply(head.draft->key.page_count(), model.draft_inventory.keys[0].page_bytes()));
-    bytes = q::cache::add(bytes, q::cache::multiply(head.draft->value.page_count(), model.draft_inventory.values[0].page_bytes()));
+    bytes = q::cache::add(bytes, q::cache::multiply(head.draft->paged.frames[0].page_count(), model.draft_inventory.banks[0].page_bytes()));
+    bytes = q::cache::add(bytes, q::cache::multiply(head.draft->paged.frames[1].page_count(), model.draft_inventory.banks[1].page_bytes()));
     bytes = q::cache::add(bytes, head.carry_hidden.size());
     bytes = q::cache::add(bytes, head.prior_hidden.size());
   }
@@ -114,10 +114,10 @@ MtpSaved save_mtp(const q::cache::State &head) {
   require(head.draft && head.carry_hidden.valid(), "MTP probe needs a complete target/draft head");
   MtpSaved saved;
   saved.pages = committed_pages(head); saved.recurrent = committed_recurrent(head);
-  for (std::size_t i = 0; i < head.keys.size(); ++i) {
-    saved.layouts[i * 2] = head.keys[i].layout(); saved.layouts[i * 2 + 1] = head.values[i].layout();
+  for (std::size_t i = 0; i < head.paged.frames.size() / 2; ++i) {
+    saved.layouts[i * 2] = head.paged.frames[2 * i].layout(); saved.layouts[i * 2 + 1] = head.paged.frames[2 * i + 1].layout();
   }
-  saved.layouts[12] = head.draft->key.layout(); saved.layouts[13] = head.draft->value.layout();
+  saved.layouts[12] = head.draft->paged.frames[0].layout(); saved.layouts[13] = head.draft->paged.frames[1].layout();
   for (const auto *lease : {&head.carry_hidden, &head.prior_hidden}) if (lease->valid()) {
     auto &bytes = saved.hidden.emplace_back(lease->size());
     q::check(q::take(lease->view()).read(bytes));
@@ -141,7 +141,7 @@ void complete_mtp(q::Model &model, const q::Session &session) {
   model.validate_mtp_snapshot(*session.head);
   const auto &head = *session.head;
   const auto exact = [](const c::PagedArenaFrame &frame, std::size_t rows,
-                        const std::vector<q::cache::PageRef> &pages) {
+                        const std::vector<hyle::inference::PagedPageRef> &pages) {
     const auto layout = frame.layout().host();
     const auto count = (rows + q::cache::Plan::page_rows - 1) / q::cache::Plan::page_rows;
     require(count && frame.page_count() == count && pages.size() == count &&
@@ -153,11 +153,11 @@ void complete_mtp(q::Model &model, const q::Session &session) {
       require(layout.page_indices[i] == static_cast<std::int32_t>(pages[i].page()),
               "MTP ready frame has another page inventory");
   };
-  for (std::size_t i = 0; i < head.keys.size(); ++i) {
-    exact(head.keys[i], head.length, head.pages); exact(head.values[i], head.length, head.pages);
+  for (std::size_t i = 0; i < head.paged.frames.size() / 2; ++i) {
+    exact(head.paged.frames[2 * i], head.length, head.paged.pages); exact(head.paged.frames[2 * i + 1], head.length, head.paged.pages);
   }
-  exact(head.draft->key, head.draft->frontier, head.draft->pages);
-  exact(head.draft->value, head.draft->frontier, head.draft->pages);
+  exact(head.draft->paged.frames[0], head.draft->frontier, head.draft->paged.pages);
+  exact(head.draft->paged.frames[1], head.draft->frontier, head.draft->paged.pages);
 }
 
 void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_path) {
@@ -196,7 +196,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
   const auto old_kv = committed_pages(*old_prefix);
   const auto old_recurrent = committed_recurrent(*old_prefix);
   require(old_recurrent.size() == 36, "probe did not retain all36conv/GDN state resources");
-  const auto old_pages = old_prefix->pages.size();
+  const auto old_pages = old_prefix->paged.pages.size();
   const auto retained_logical_bytes = head_lease_bytes(*old_prefix, model);
 
   // These idle logical owners alias one committed version; they allocate no
@@ -227,8 +227,8 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
           "stopping an idle Session disturbed another Session's shared execution loan");
   const auto *candidate_identity = session->pending->members[0].next.get();
   require(candidate_identity, "prepared episode has no unique unpublished candidate");
-  const auto dirty_page = session->pending->members[0].next->pages.back().page();
-  require(dirty_page == old_prefix->pages.back().page(),
+  const auto dirty_page = session->pending->members[0].next->paged.pages.back().page();
+  require(dirty_page == old_prefix->paged.pages.back().page(),
           "probe did not enter actual same-page exclusive suffix continuation");
   require(model.snapshot_versions.live == 2 && model.carrier_borrowed,
           "prepared N+1candidate is not actually retained or admitted serially");
@@ -300,7 +300,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
   require(same_id.status == hyle::inference::CacheAdmissionStatus::kRetirementUnproven &&
           other_id.status == hyle::inference::CacheAdmissionStatus::kRetirementUnproven,
           "resident limit1 readmitted a still-retiring owner or another owner");
-  auto forbidden = model.page_inventory.keys[0].acquire(dirty_page);
+  auto forbidden = model.page_inventory.banks[2 * (0)].acquire(dirty_page);
   require(!forbidden && forbidden.error().IsUnavailable(),
           "pending dirty page was writable before real retirement");
 
@@ -316,14 +316,14 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
           model.snapshot_versions.live == 1 && !model.carrier_borrowed && !model.active_step &&
           !shared_run->valid(),
           "actual retirement did not release the candidate/owner");
-  require(old_prefix->length == 129 && old_prefix->pages.size() == old_pages &&
+  require(old_prefix->length == 129 && old_prefix->paged.pages.size() == old_pages &&
           sample(old_prefix->state[0].history) == old_conv &&
           sample(old_prefix->state[0].recurrent) == old_gdn &&
           committed_pages(*old_prefix) == old_kv && committed_recurrent(*old_prefix) == old_recurrent,
           "cancellation changed the retained committed prefix");
-  for (std::size_t i = 0; i < model.page_inventory.keys.size(); ++i) {
-    auto key = model.page_inventory.keys[i].acquire(dirty_page);
-    auto value = model.page_inventory.values[i].acquire(dirty_page);
+  for (std::size_t i = 0; i < model.page_inventory.banks.size() / 2; ++i) {
+    auto key = model.page_inventory.banks[2 * i].acquire(dirty_page);
+    auto value = model.page_inventory.banks[2 * i + 1].acquire(dirty_page);
     require(!key && key.error().IsUnavailable() && !value && value.error().IsUnavailable(),
             "retained old prefix lost its original page after suffix retirement");
   }
@@ -380,9 +380,9 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
   const auto live_drain = recovered->drain(); q::check(live_drain.status);
   require(!live_drain.retired && recovered->head, "draining an unstopped Session retired its committed head");
   recovered.reset();
-  for (std::size_t i = 0; i < model.page_inventory.keys.size(); ++i) {
-    auto key = q::take(model.page_inventory.keys[i].acquire(dirty_page));
-    auto value = q::take(model.page_inventory.values[i].acquire(dirty_page));
+  for (std::size_t i = 0; i < model.page_inventory.banks.size() / 2; ++i) {
+    auto key = q::take(model.page_inventory.banks[2 * i].acquire(dirty_page));
+    auto value = q::take(model.page_inventory.banks[2 * i + 1].acquire(dirty_page));
     require(key.initialized_rows() == 0 && value.initialized_rows() == 0,
             "retired original page could not be reclaimed after all old readers released");
   }
@@ -482,8 +482,8 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
   require(run->valid() && model.carrier_borrowed && all_bound(), "idle stop closed another MTP carrier");
   const auto *candidate_identity = session->pending->members[0].next.get();
   require(candidate_identity, "prepared MTP episode has no unique unpublished candidate");
-  const auto target_page = session->pending->members[0].next->pages.back().page();
-  const auto draft_page = session->pending->members[0].next->draft->pages.back().page();
+  const auto target_page = session->pending->members[0].next->paged.pages.back().page();
+  const auto draft_page = session->pending->members[0].next->draft->paged.pages.back().page();
   const auto native_pending_bytes = q::take(model.cache_budget.usage(model.execution.device())).live_bytes;
   require(model.snapshot_versions.live == 2 && model.carrier_borrowed,
           "MTP pending candidate did not retain its finite version/admission");
@@ -540,10 +540,10 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
   require(same_id.status == hyle::inference::CacheAdmissionStatus::kRetirementUnproven &&
           other_id.status == hyle::inference::CacheAdmissionStatus::kRetirementUnproven,
           "MTP retiring directory slot was readmitted");
-  for (std::size_t i = 0; i < model.page_inventory.keys.size(); ++i)
-    require(!model.page_inventory.keys[i].acquire(target_page) && !model.page_inventory.values[i].acquire(target_page),
+  for (std::size_t i = 0; i < model.page_inventory.banks.size() / 2; ++i)
+    require(!model.page_inventory.banks[2 * i].acquire(target_page) && !model.page_inventory.banks[2 * i + 1].acquire(target_page),
             "native-pending target dirty authority was reacquired");
-  require(!model.draft_inventory.keys[0].acquire(draft_page) && !model.draft_inventory.values[0].acquire(draft_page),
+  require(!model.draft_inventory.banks[0].acquire(draft_page) && !model.draft_inventory.banks[1].acquire(draft_page),
           "native-pending draft dirty authority was reacquired");
   // No device readback while the original Queue is blocked. Compare every
   // immutable byte only after native retirement has actually become observable.
@@ -575,10 +575,10 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
   auto policy_session = model.create_session(catchup_calls, old_prefix, catchup_role);
   model.prepare_evaluation(*policy_session, std::span(&pending, 1), nullptr, catchup_role);
   auto *const policy_run = policy_session->pending->execution.run;
-  const auto policy_target_page = policy_session->pending->members[0].next->pages.back().page();
-  const auto policy_draft_page = policy_session->pending->members[0].next->draft->pages.back().page();
-  require(policy_target_page != old_prefix->pages.back().page() &&
-          policy_draft_page != old_prefix->draft->pages.back().page(),
+  const auto policy_target_page = policy_session->pending->members[0].next->paged.pages.back().page();
+  const auto policy_draft_page = policy_session->pending->members[0].next->draft->paged.pages.back().page();
+  require(policy_target_page != old_prefix->paged.pages.back().page() &&
+          policy_draft_page != old_prefix->draft->paged.pages.back().page(),
           "policy rejection probe did not reserve fresh target and draft dirty pages");
   const auto *const policy_candidate = policy_session->pending->members[0].next.get();
   const auto policy_epoch = policy_session->head.epoch();
@@ -611,14 +611,14 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
           model.snapshot_versions.live == 1 && !policy_run->valid(),
           "host selector failure published a head or retained an MTP candidate/carrier");
   unchanged_mtp(*old_prefix, saved);
-  for (std::size_t i = 0; i < model.page_inventory.keys.size(); ++i) {
-    auto k = q::take(model.page_inventory.keys[i].acquire(policy_target_page));
-    auto v = q::take(model.page_inventory.values[i].acquire(policy_target_page));
+  for (std::size_t i = 0; i < model.page_inventory.banks.size() / 2; ++i) {
+    auto k = q::take(model.page_inventory.banks[2 * i].acquire(policy_target_page));
+    auto v = q::take(model.page_inventory.banks[2 * i + 1].acquire(policy_target_page));
     require(k.lease().valid() && v.lease().valid(), "selector rejection retained target dirty permissions");
   }
   {
-    auto k = q::take(model.draft_inventory.keys[0].acquire(policy_draft_page));
-    auto v = q::take(model.draft_inventory.values[0].acquire(policy_draft_page));
+    auto k = q::take(model.draft_inventory.banks[0].acquire(policy_draft_page));
+    auto v = q::take(model.draft_inventory.banks[1].acquire(policy_draft_page));
     require(k.lease().valid() && v.lease().valid(), "selector rejection retained draft dirty permissions");
   }
   model.prepare_evaluation(*policy_session, std::span(&pending, 1), nullptr, catchup_role);

@@ -39,12 +39,12 @@ StateBytes state_bytes(q::Model &model, const q::cache::State &state) {
     case q::cache::HostPayloadRole::kTargetKey:
     case q::cache::HostPayloadRole::kTargetValue: {
       const auto found = std::find(model.attention_layer_ids.begin(), model.attention_layer_ids.end(), part.layer);
-      require(found != model.attention_layer_ids.end() && part.page < evaluated.pages.size(),
+      require(found != model.attention_layer_ids.end() && part.page < evaluated.paged.pages.size(),
           "logical snapshot names an absent attention layer/page");
       const auto bank = static_cast<std::size_t>(found - model.attention_layer_ids.begin());
       const auto &frame = part.role == q::cache::HostPayloadRole::kTargetKey
-          ? evaluated.keys[bank] : evaluated.values[bank];
-      lease = q::take(q::take(frame.view()).page_prefix(evaluated.pages[part.page].page()));
+          ? evaluated.paged.frames[2 * bank] : evaluated.paged.frames[2 * bank + 1];
+      lease = q::take(q::take(frame.view()).page_prefix(evaluated.paged.pages[part.page].page()));
       break;
     }
     case q::cache::HostPayloadRole::kConvHistory:

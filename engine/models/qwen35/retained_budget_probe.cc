@@ -77,23 +77,23 @@ HeadImage image(q::Model &model, const q::cache::State &head) {
   require(head.draft && head.carry_hidden.valid(), "native MTP Snapshot is incomplete");
   HeadImage result;
   result.boundary = q::generation_boundary(head); result.model = head.model; result.math = head.math;
-  for (const auto &page : head.pages) result.target_pages.push_back(page.page());
-  for (const auto &page : head.draft->pages) result.draft_pages.push_back(page.page());
+  for (const auto &page : head.paged.pages) result.target_pages.push_back(page.page());
+  for (const auto &page : head.draft->paged.pages) result.draft_pages.push_back(page.page());
   for (std::size_t layer = 0; layer < head.state.size(); ++layer) if (layer % 4 != 3) {
     result.blobs.push_back({"layer" + std::to_string(layer) + ".conv.bf16", read(head.state[layer].history)});
     result.blobs.push_back({"layer" + std::to_string(layer) + ".gdn.f32", read(head.state[layer].recurrent)});
   }
-  for (std::size_t layer = 0; layer < head.keys.size(); ++layer) {
-    result.layouts[layer * 2] = head.keys[layer].layout();
-    result.layouts[layer * 2 + 1] = head.values[layer].layout();
+  for (std::size_t layer = 0; layer < head.paged.frames.size() / 2; ++layer) {
+    result.layouts[layer * 2] = head.paged.frames[2 * layer].layout();
+    result.layouts[layer * 2 + 1] = head.paged.frames[2 * layer + 1].layout();
     result.blobs.push_back({"target" + std::to_string(layer) + ".key.bf16",
-        logical_rows(model.page_inventory.keys[layer], head.keys[layer], head.length)});
+        logical_rows(model.page_inventory.banks[2 * layer], head.paged.frames[2 * layer], head.length)});
     result.blobs.push_back({"target" + std::to_string(layer) + ".value.bf16",
-        logical_rows(model.page_inventory.values[layer], head.values[layer], head.length)});
+        logical_rows(model.page_inventory.banks[2 * layer + 1], head.paged.frames[2 * layer + 1], head.length)});
   }
-  result.layouts[12] = head.draft->key.layout(); result.layouts[13] = head.draft->value.layout();
-  result.blobs.push_back({"draft.key.bf16", logical_rows(model.draft_inventory.keys[0], head.draft->key, head.draft->frontier)});
-  result.blobs.push_back({"draft.value.bf16", logical_rows(model.draft_inventory.values[0], head.draft->value, head.draft->frontier)});
+  result.layouts[12] = head.draft->paged.frames[0].layout(); result.layouts[13] = head.draft->paged.frames[1].layout();
+  result.blobs.push_back({"draft.key.bf16", logical_rows(model.draft_inventory.banks[0], head.draft->paged.frames[0], head.draft->frontier)});
+  result.blobs.push_back({"draft.value.bf16", logical_rows(model.draft_inventory.banks[1], head.draft->paged.frames[1], head.draft->frontier)});
   result.blobs.push_back({"carry.bf16", read(head.carry_hidden)});
   result.blobs.push_back({"prior.bf16", read(head.prior_hidden)});
   require(result.blobs.size() == 52, "complete MTP comparison must contain 36 states, 14 KV ranges and two hidden rows");

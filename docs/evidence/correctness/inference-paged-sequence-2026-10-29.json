@@ -1,0 +1,292 @@
+{
+  "schema": "hyle.correctness.paged-sequence.v1",
+  "date": "2026-10-29",
+  "status": "PASS_WITH_PRESERVED_BUILD_AND_HARNESS_CORRECTIONS",
+  "base_commit": "55704391cfd63b84ad9decf57729625f56787c1a",
+  "changes": [
+    "Move original policy-page inventory/ref/reservation and original frame fork/freeze/source/commit into model-independent paged_sequence.h; remove Qwen duplicate implementation without aliases.",
+    "Each policy ID spans an arbitrary cohort of original arena banks. Shared state has no K/V pairing, model layer, GDN, NextN, duplicated row count or frontier.",
+    "Qwen ordinary/successor target, fused draft and private recursive NextN use original shared edits. Model keeps complete Head/ledger/RNG publication and semantic lengths/lag/hidden.",
+    "Original Arena/Frame/Append/Store permissions and actual retirement remain authoritative. Borrowed edits do not create another executor, completion, state owner or hot callback table.",
+    "Unavailable inventory scan preserves original selection/order using one final rotation instead of per-page vector insertions; partial native writers release before policy reuse."
+  ],
+  "counts": {
+    "consumer_TUs": 6,
+    "refreshed_engine_weights_TUs": 1,
+    "CXX_attempts": 9,
+    "successful_CXX": 7,
+    "preserved_compile_failures": 2,
+    "links": 6,
+    "unchanged_SDK_inputs": 226,
+    "current_link_inputs": 227,
+    "NVCC": 0,
+    "full_builds": 0,
+    "downloads": 0,
+    "native_processes": 9,
+    "passed_native_processes": 9,
+    "new_actual_Graph_tests": 2,
+    "current_session_prefix_tests": 14,
+    "finite_model_processes": 7
+  },
+  "build_corrections": [
+    {
+      "unit": "sequence",
+      "attempt": "attempt1",
+      "kind": "new_test_compile_error",
+      "detail": "Const bank traversal called the original nonconst writer lease accessor; change traversal qualification, preserve all native assertions."
+    },
+    {
+      "unit": "model",
+      "attempt": "attempt1",
+      "kind": "generated_consumer_include_error",
+      "detail": "Bounded generated consumer omitted the original chunked-prefill helper namespace dependency; include the existing helper, no product change."
+    },
+    {
+      "case": "prefix-cpu",
+      "attempt": "attempt1",
+      "kind": "harness_expected_count_error",
+      "detail": "Native exit0 and XML14/14 passed. Harness expected16; correct expectation and recheck the same original XML, no native rerun."
+    }
+  ],
+  "builds": [
+    {
+      "unit": "budget",
+      "attempt": "attempt1",
+      "native_exit": 0
+    },
+    {
+      "unit": "host-image",
+      "attempt": "attempt1",
+      "native_exit": 0
+    },
+    {
+      "unit": "model",
+      "attempt": "attempt1",
+      "native_exit": 2
+    },
+    {
+      "unit": "model",
+      "attempt": "attempt2",
+      "native_exit": 0
+    },
+    {
+      "unit": "ordinary",
+      "attempt": "attempt1",
+      "native_exit": 0
+    },
+    {
+      "unit": "prefix",
+      "attempt": "attempt1",
+      "native_exit": 0
+    },
+    {
+      "unit": "sequence",
+      "attempt": "attempt1",
+      "native_exit": 2
+    },
+    {
+      "unit": "sequence",
+      "attempt": "attempt2",
+      "native_exit": 0
+    },
+    {
+      "unit": "weights",
+      "attempt": "attempt1",
+      "native_exit": 0
+    }
+  ],
+  "links": [
+    {
+      "unit": "budget",
+      "native_exit": 0
+    },
+    {
+      "unit": "host-image",
+      "native_exit": 0
+    },
+    {
+      "unit": "model",
+      "native_exit": 0
+    },
+    {
+      "unit": "ordinary",
+      "native_exit": 0
+    },
+    {
+      "unit": "prefix",
+      "native_exit": 0
+    },
+    {
+      "unit": "sequence",
+      "native_exit": 0
+    }
+  ],
+  "results": [
+    {
+      "case": "sequence-cpu",
+      "native_exit": 0,
+      "report": {
+        "status": "PASS",
+        "tests": 2,
+        "failures": 0,
+        "skipped": 0
+      },
+      "details": "batch/runs/sequence-cpu/attempt1/report.json"
+    },
+    {
+      "case": "prefix-cpu",
+      "native_exit": 0,
+      "report": {
+        "status": "PASS",
+        "tests": 14,
+        "failures": 0,
+        "skipped": 0,
+        "note": "Original terminal XML rechecked after correcting harness expected count16 to actual14; no rerun."
+      },
+      "details": "batch/runs/prefix-cpu/attempt1/report.json"
+    },
+    {
+      "case": "history-cpu",
+      "native_exit": 0,
+      "report": {
+        "status": "PASS",
+        "case": "history-control",
+        "backend": "cpu",
+        "models": 1,
+        "member_cancel_B2_K2": true,
+        "whole_episode_retired": true,
+        "old_checkpoints_unchanged": true,
+        "final_versions": 0
+      },
+      "details": "batch/runs/history-cpu/attempt1/report.json"
+    },
+    {
+      "case": "mixed-lag-cuda",
+      "native_exit": 0,
+      "report": {
+        "status": "PASS",
+        "backend": "cuda",
+        "mode": "mtp_mixed_lag",
+        "requests": 2,
+        "base_lags": [
+          0,
+          1
+        ],
+        "controlled_accepted": [
+          1,
+          2
+        ],
+        "numerically_equivalent": true,
+        "old_checkpoints_unchanged": true,
+        "full_request_history_import_coverage": false,
+        "final_versions": 0
+      },
+      "details": "batch/runs/mixed-lag-cuda/attempt1/report.json"
+    },
+    {
+      "case": "mtp-ragged-cuda",
+      "native_exit": 0,
+      "report": {
+        "backend": "cuda",
+        "mode": "mtp_ragged_prefill",
+        "final_versions": 0,
+        "final_images": 0,
+        "numerically_equivalent": true,
+        "status": "PASS"
+      },
+      "details": "batch/runs/mtp-ragged-cuda/attempt1/report.json"
+    },
+    {
+      "case": "mtp-natural-cuda",
+      "native_exit": 0,
+      "report": {
+        "status": "PASS",
+        "case": "mtp-natural-relay",
+        "backend": "cuda",
+        "models": 1,
+        "prompt_tokens": 154,
+        "output_limit": 40,
+        "outputs": 40,
+        "source_submissions": 22,
+        "successor_submissions": 3,
+        "successor_publications": 2,
+        "successor_discards": 1,
+        "original_ledger_equal": true,
+        "generated_ids_equal": true,
+        "final_versions": 0
+      },
+      "details": "batch/runs/mtp-natural-cuda/attempt1/report.json"
+    },
+    {
+      "case": "ordinary-cuda",
+      "native_exit": 0,
+      "report": {
+        "status": "PASS",
+        "backend": "cuda",
+        "fixture": "untrained_GA_H64",
+        "prompt_tokens": 18,
+        "control_and_candidate_arms": 16,
+        "complete_prefix_state_epoch_rng_equal": true,
+        "all_source_session_page_owners_retired": true
+      },
+      "details": "batch/runs/ordinary-cuda/attempt1/report.json"
+    },
+    {
+      "case": "host-image-cpu",
+      "native_exit": 0,
+      "report": {
+        "status": "PASS",
+        "fixture": "untrained_A_H64",
+        "N": 1,
+        "idle_evictions": 1,
+        "host_restores": 1,
+        "restore_capacity_status": "ResourceExhausted",
+        "restored_state_byte_equal": true,
+        "request_waves": 5,
+        "target_calls": 6,
+        "ledger_rebuild_graph_calls": 0,
+        "final_versions": 0,
+        "final_images": 0
+      },
+      "details": "batch/runs/host-image-cpu/attempt1/report.json"
+    },
+    {
+      "case": "budget-cpu",
+      "native_exit": 0,
+      "report": {
+        "status": "PASS",
+        "backend": "cpu",
+        "final_versions": 0
+      },
+      "details": "batch/runs/budget-cpu/attempt1/report.json"
+    }
+  ],
+  "current_link_base": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-sequence-20261029\\model-link-base.json",
+    "bytes": 138095,
+    "sha256": "251fac432a1bebd8c0f8077844f159e8dc69f0cde0e1681b13a14b5e83dbead0"
+  },
+  "sdk_engine_dependencies": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-sequence-20261029\\sdk-engine-dependencies.json",
+    "bytes": 102094,
+    "sha256": "fec41049646a8cd1af89fbfa10407c0e1362be03f33147b8cb246edd35ed7256"
+  },
+  "limitations": [
+    "Finite CPU/CUDA checks on the existing machine; no new Apple/Vulkan run, multi-device implementation, device fault injection or complete family engine claim.",
+    "Single-bank real Graph demonstrates a non-NextN/non-GDN consumer. Pure-GDN zero-target-bank path was read-reviewed, not a separate native model process in this batch.",
+    "Ragged/packed and exact math retain original tolerances; numerical equivalence is not universal byte equality. Trained2B natural relay checks the original two paths, not general model task quality.",
+    "No current throughput or full memory window; prior complete performance numbers remain dated2026-10-28. Architecture extraction alone is not evidence of faster decode.",
+    "Full preparation/publication orchestration and Source/ordinary/successor contract convergence remain unfinished."
+  ],
+  "cleanup": {
+    "status": "PASS",
+    "files": 22,
+    "bytes": 906700220.0
+  },
+  "review": {
+    "common_header": "Read review found no substantive defect in Frame ticket identity, move/destruction order, borrowed inventory lifetime, zero-target-bank or recursive-Verify no-draft-ticket paths.",
+    "uncompiled_probes": "Six mechanically migrated probe TUs read-reviewed; fixed2B geometry gates retain their original scope. Not compiled in this batch."
+  },
+  "source_identity_manifest": "batch/product-sources.json in accompanying ZIP",
+  "fixture_identity_manifest": "batch/fixture-identities.json in accompanying ZIP; original range metadata retained, no downloads"
+}

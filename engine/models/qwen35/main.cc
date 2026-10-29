@@ -1047,7 +1047,7 @@ struct StepMember final {
   LogitsInputs logits{}; // Original admitted episode snapshot, never history.
   inference::ConditionalLogitsInputs conditional_logits{};
   std::unique_ptr<cache::State> next{};
-  hyle::container::SmallVector<c::PagedArenaCommit, 16> key_updates{}, value_updates{};
+  hyle::container::SmallVector<c::PagedArenaCommit, 32> target_updates{};
   std::array<c::PagedArenaCommit, 2> draft_updates{};
   hyle::container::SmallVector<c::PagedPageAppender, 32> next_tails{};
   std::array<c::PagedPageAppender, 2> next_draft_tails{};
@@ -1066,55 +1066,22 @@ struct StepMember final {
   // native work or successor reads this host publication ticket.
   std::optional<inference::PreparedRecordCommit<GenerationCommitRecord>> commit_publication;
 
-  const c::PagedArenaFrame &frame(std::size_t layer, bool key) const noexcept {
-    const auto &candidate = key ? next->keys[layer] : next->values[layer];
-    return candidate.valid() ? candidate : key ? base->keys[layer] : base->values[layer];
+  inference::PagedSequenceEdit target_edit() noexcept {
+    return {base->paged, next->paged, {target_updates.data(), target_updates.size()}};
   }
-  c::PagedArenaFootprint source(std::size_t layer, bool key) {
-    auto &candidate = key ? next->keys[layer] : next->values[layer];
-    const auto &original = key ? base->keys[layer] : base->values[layer];
-    if (!candidate.valid() && original.sealed())
-      candidate = take(c::PagedArenaFrame::fork(take(original.view())));
-    return take(frame(layer, key).view());
+  inference::PagedSequenceEdit draft_edit() noexcept {
+    return {base->draft->paged, next->draft->paged, draft_updates};
   }
-  const c::PagedArenaFrame &draft_frame(bool key) const noexcept {
-    const auto &candidate = key ? next->draft->key : next->draft->value;
-    return candidate.valid() ? candidate : key ? base->draft->key : base->draft->value;
-  }
-  c::PagedArenaFootprint draft_source(bool key) {
-    auto &candidate = key ? next->draft->key : next->draft->value;
-    const auto &original = key ? base->draft->key : base->draft->value;
-    if (!candidate.valid() && original.sealed())
-      candidate = take(c::PagedArenaFrame::fork(take(original.view())));
-    return take(draft_frame(key).view());
-  }
-  void preflight_frames() const {
-    for (std::size_t i = 0; i < key_updates.size(); ++i) {
-      check(frame(i, true).validate_commit(key_updates[i]));
-      check(frame(i, false).validate_commit(value_updates[i]));
-    }
-    for (std::size_t i = 0; i < draft_updates.size(); ++i) if (draft_updates[i].valid())
-      check(draft_frame(i == 0).validate_commit(draft_updates[i]));
+  void preflight_frames() {
+    check(target_edit().preflight());
+    if (draft_updates[0].valid() || draft_updates[1].valid()) check(draft_edit().preflight());
   }
   void publish_frames(cache::State *previous, cache::State &candidate) noexcept {
-    const auto publish = [](c::PagedArenaFrame &destination, c::PagedArenaFrame *old,
-        c::PagedArenaCommit &ticket) noexcept {
-      if (!destination.valid()) {
-        HYLE_FATAL_ASSERT(old && old->valid() && !old->sealed());
-        destination = std::move(*old);
-      }
-      const auto status = destination.commit(std::move(ticket));
-      HYLE_FATAL_ASSERT(status.ok());
-    };
-    for (std::size_t i = 0; i < key_updates.size(); ++i) {
-      publish(candidate.keys[i], previous ? &previous->keys[i] : nullptr, key_updates[i]);
-      publish(candidate.values[i], previous ? &previous->values[i] : nullptr, value_updates[i]);
-    }
-    for (std::size_t i = 0; i < draft_updates.size(); ++i) if (draft_updates[i].valid()) {
-      auto &destination = i == 0 ? candidate.draft->key : candidate.draft->value;
-      auto *old = previous ? (i == 0 ? &previous->draft->key : &previous->draft->value) : nullptr;
-      publish(destination, old, draft_updates[i]);
-    }
+    inference::PagedSequenceEdit{base->paged, candidate.paged,
+        {target_updates.data(), target_updates.size()}}.publish(previous ? &previous->paged : nullptr);
+    if (draft_updates[0].valid() || draft_updates[1].valid())
+      inference::PagedSequenceEdit{base->draft->paged, candidate.draft->paged, draft_updates}
+          .publish(previous ? &previous->draft->paged : nullptr);
   }
 };
 // Typed views of one original Graph submission. They contain no executor,
@@ -1418,7 +1385,7 @@ struct ColdResources final {
   c::ResourceBudget cache_budget, execution_budget, allocation_budget;
   cache::VersionCount snapshot_versions;
   std::size_t carrier_borrowed = 0;
-  cache::PageInventory page_inventory, draft_inventory;
+  hyle::inference::PagedPageInventory page_inventory, draft_inventory;
   std::vector<cache::StatePools> state_pools;
   c::LeasePool hidden_pool, history_counts_pool;
   c::LeaseSlotLayout hidden_layout;
@@ -1570,7 +1537,7 @@ public:
   cache::VersionCount &snapshot_versions;
   std::size_t &carrier_borrowed;
   static constexpr std::size_t slot_index = 0;
-  cache::PageInventory &page_inventory, &draft_inventory;
+  hyle::inference::PagedPageInventory &page_inventory, &draft_inventory;
   std::vector<cache::StatePools> &state_pools;
   c::LeasePool &hidden_pool;
   c::LeaseSlotLayout &hidden_layout;
@@ -2022,20 +1989,20 @@ public:
     prepared_schemas.reserve(resources_->attention_storage.size());
     for (const auto &pair : resources_->attention_storage)
       prepared_schemas.push_back(take(prepared_schema.with_cache_storage(pair[0], pair[1])));
-    cache::PageInventory prepared_inventory, prepared_draft;
-    prepared_inventory.prepare(cache_plan.max_pages, target_kv_layers);
-    for (std::size_t i = 0; i < prepared_inventory.keys.size(); ++i) {
+    hyle::inference::PagedPageInventory prepared_inventory, prepared_draft;
+    check(prepared_inventory.prepare(cache_plan.max_pages, target_kv_layers * 2));
+    for (std::size_t i = 0; i < prepared_inventory.banks.size() / 2; ++i) {
       const auto &schema = prepared_schemas.empty() ? prepared_schema : prepared_schemas[i];
-      prepared_inventory.keys[i] = take(c::PagedArena::create(schema, c::BatchCacheRole::kKey,
+      prepared_inventory.banks[2 * i] = take(c::PagedArena::create(schema, c::BatchCacheRole::kKey,
           execution.device(), {.max_backing_bytes = cache_plan.key_bank_bytes, .resource_budget = cache_budget}, allocation_budget));
-      prepared_inventory.values[i] = take(c::PagedArena::create(schema, c::BatchCacheRole::kValue,
+      prepared_inventory.banks[2 * i + 1] = take(c::PagedArena::create(schema, c::BatchCacheRole::kValue,
           execution.device(), {.max_backing_bytes = cache_plan.value_bank_bytes, .resource_budget = cache_budget}, allocation_budget));
     }
     if (cache_plan.draft_cache) {
-      prepared_draft.prepare(cache_plan.max_pages, 1);
-      prepared_draft.keys[0] = take(c::PagedArena::create(prepared_schema, c::BatchCacheRole::kKey,
+      check(prepared_draft.prepare(cache_plan.max_pages, 2));
+      prepared_draft.banks[0] = take(c::PagedArena::create(prepared_schema, c::BatchCacheRole::kKey,
           execution.device(), {.max_backing_bytes = cache_plan.draft_key_bank_bytes, .resource_budget = cache_budget}, allocation_budget));
-      prepared_draft.values[0] = take(c::PagedArena::create(prepared_schema, c::BatchCacheRole::kValue,
+      prepared_draft.banks[1] = take(c::PagedArena::create(prepared_schema, c::BatchCacheRole::kValue,
           execution.device(), {.max_backing_bytes = cache_plan.draft_value_bank_bytes, .resource_budget = cache_budget}, allocation_budget));
     }
     const auto prepared_bytes = cache::add(cache::multiply(
@@ -2046,7 +2013,7 @@ public:
     input_scratch.next_layout_rows.prepare(layout_capacity.max_requests, layout_capacity.max_page_refs);
     // No PageRef exists until this complete cold source tuple is published.
     // Leave the schema sentinel invalid on failure so released quota can retry.
-    static_assert(std::is_nothrow_move_assignable_v<cache::PageInventory>);
+    static_assert(std::is_nothrow_move_assignable_v<hyle::inference::PagedPageInventory>);
     static_assert(std::is_nothrow_move_assignable_v<c::BatchSchema>);
     page_inventory = std::move(prepared_inventory);
     draft_inventory = std::move(prepared_draft);
@@ -3099,26 +3066,26 @@ public:
       const auto length = work.state.frontier;
       const auto extent = take(inference::append_extent(length, ids.size(), capacity, cache::Plan::page_rows));
       next.frontier = extent.after_rows;
-      (void)take(inference::prepare_append_pages(extent, std::span<const cache::PageRef>(work.state.pages),
-          next.pages, work.tails, true,
+      if (!next.paged.frames.try_resize(work.state.paged.frames.size())) throw std::bad_alloc{};
+      std::array<c::PagedArenaCommit, 2> commits;
+      inference::PagedSequenceEdit edit(work.state.paged, next.paged, commits);
+      (void)take(inference::prepare_append_pages(extent, std::span<const hyle::inference::PagedPageRef>(work.state.paged.pages),
+          next.paged.pages, work.tails, true,
           std::span(guard.execution.dirty.data() + draft_bank, 2),
-          std::span(guard.execution.tails.data() + draft_bank, 2), [&]() -> hyle::Result<cache::PageRef> {
-            HYLE_ASSIGN_OR_RETURN(auto page, draft_inventory.acquire());
-            guard.execution.dirty[draft_bank].push_back(std::move(page.keys[0]));
-            guard.execution.dirty[draft_bank + 1].push_back(std::move(page.values[0]));
-            return std::move(page.reference);
+          std::span(guard.execution.tails.data() + draft_bank, 2), [&]() -> hyle::Result<hyle::inference::PagedPageRef> {
+            return draft_inventory.acquire_into(std::span(guard.execution.dirty.data() + draft_bank, 2));
           }));
       auto &layout_rows = input_scratch.next_layout_rows;
       layout_rows.reset();
       check(layout_rows.append(ids.size(), next.frontier, cache::Plan::page_rows,
-          std::span<const cache::PageRef>(next.pages)));
+          std::span<const hyle::inference::PagedPageRef>(next.paged.pages)));
       const auto layout = take(layout_rows.member_version(attention_schema, 0));
       auto &positions = input_scratch.draft_positions;
       positions.clear();
       for (std::size_t i = 0; i < ids.size(); ++i) positions.push_back(static_cast<std::int32_t>(length + i));
-      const std::array sources{take(work.state.key.view()), take(work.state.value.view())};
+      const std::array sources{take(edit.source(0)), take(edit.source(1))};
       for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank) {
-        auto &arena = bank == draft_bank ? draft_inventory.keys[0] : draft_inventory.values[0];
+        auto &arena = bank == draft_bank ? draft_inventory.banks[0] : draft_inventory.banks[1];
         const auto &source = sources[bank - draft_bank];
         guard.execution.appends[bank] = take(g::batch::PagedAppendPages::create(arena, layout,
             source.layout(), std::span(&source, 1), guard.execution.dirty[bank], guard.execution.tails[bank],
@@ -3176,21 +3143,17 @@ public:
       }
       auto key_delta = take(guard.execution.appends[draft_bank].ready_delta(sources[0], layout));
       auto value_delta = take(guard.execution.appends[draft_bank + 1].ready_delta(sources[1], layout));
-      auto key_commit = take(work.state.key.prepare_commit(std::move(key_delta)));
-      auto value_commit = take(work.state.value.prepare_commit(std::move(value_delta)));
+      check(edit.prepare_commit(0, std::move(key_delta)));
+      check(edit.prepare_commit(1, std::move(value_delta)));
       std::array<c::PagedPageAppender, 2> tails;
-      const std::array<inference::AppendTailOwner, 1> owners{{{next.pages.back().page(), 0}}};
+      const std::array<inference::AppendTailOwner, 1> owners{{{next.paged.pages.back().page(), 0}}};
       check(guard.execution.append_transactions().subspan(draft_bank, 2).return_tails(owners,
           [&](std::size_t bank, std::size_t) noexcept -> inference::AppendTailDestination {
             return {static_cast<std::uint32_t>(next.frontier % cache::Plan::page_rows), &tails[bank]};
           }));
       check(program.io.release_inputs(program.carrier));
-      check(work.state.key.validate_commit(key_commit));
-      check(work.state.value.validate_commit(value_commit));
-      next.key = std::move(work.state.key); next.value = std::move(work.state.value);
-      const auto key_status = next.key.commit(std::move(key_commit));
-      const auto value_status = next.value.commit(std::move(value_commit));
-      HYLE_FATAL_ASSERT(key_status.ok() && value_status.ok());
+      check(edit.preflight());
+      edit.publish(&work.state.paged);
       work.tails = std::move(tails); work.state = std::move(next);
       for (auto &append : guard.execution.appends) append = {};
       for (auto &bank : guard.execution.dirty) bank.clear();
@@ -3458,22 +3421,16 @@ public:
   static c::PagedArenaFrame working_frame(c::PagedArenaRead read) {
     return take(c::PagedArenaFrame::fork(take(c::PagedArenaFootprint::from_read(read))));
   }
-  static c::PagedArenaFrame snapshot_alias(const c::PagedArenaFrame &frame) {
-    return take(c::PagedArenaFrame::from_frozen(take(frame.snapshot())));
-  }
   static cache::DraftState fork_draft(const cache::DraftState &source) {
     cache::DraftState next;
-    next.pages = source.pages; next.frontier = source.frontier;
+    next.paged = take(source.paged.fork()); next.frontier = source.frontier;
     next.lag = source.lag; next.catchup_token = source.catchup_token;
-    next.key = take(c::PagedArenaFrame::fork(take(source.key.view())));
-    next.value = take(c::PagedArenaFrame::fork(take(source.value.view())));
     return next;
   }
   static cache::DraftState alias_draft(const cache::DraftState &source) {
     cache::DraftState next;
-    next.pages = source.pages; next.frontier = source.frontier;
+    next.paged = take(source.paged.frozen_alias()); next.frontier = source.frontier;
     next.lag = source.lag; next.catchup_token = source.catchup_token;
-    next.key = snapshot_alias(source.key); next.value = snapshot_alias(source.value);
     return next;
   }
 
@@ -3481,7 +3438,7 @@ public:
     auto version = take(cache::VersionRef::acquire(snapshot_versions));
     auto result = owner.acquire_candidate();
     result->resource_owner = resources_;
-    if (!result->keys.try_resize(target_kv_layers) || !result->values.try_resize(target_kv_layers) ||
+    if (!result->paged.frames.try_resize(target_kv_layers * 2) ||
         !result->state.try_resize(geometry.layers.size())) throw std::bad_alloc{};
     result->version = std::move(version); result->model = this; result->math = math_identity();
     return result;
@@ -3496,12 +3453,7 @@ public:
       throw std::runtime_error("sampling fork belongs to another model or compiled policy");
     auto next = std::make_shared<cache::State>();
     next->state_origin = base->state_origin ? base->state_origin : base;
-    next->pages = base->pages;
-    if (!next->keys.try_resize(base->keys.size()) || !next->values.try_resize(base->values.size()))
-      throw std::bad_alloc{};
-    for (std::size_t i = 0; i < base->keys.size(); ++i) {
-      next->keys[i] = snapshot_alias(base->keys[i]); next->values[i] = snapshot_alias(base->values[i]);
-    }
+    next->paged = take(base->paged.frozen_alias());
     next->state = base->state; next->carry_hidden = base->carry_hidden;
     next->prior_hidden = base->prior_hidden;
     if (base->draft) next->draft.emplace(alias_draft(*base->draft));
@@ -3716,14 +3668,15 @@ public:
       const std::array<std::int32_t, 2> empty{0, 0};
       const std::array<std::int32_t, 1> tail{0};
       const auto layout = take(attention_schema.version({empty, empty, {}, tail}));
-      for (std::size_t i = 0; i < initial->keys.size(); ++i) {
-        initial->keys[i] = working_frame(take(page_inventory.keys[i].read(layout, {})));
-        initial->values[i] = working_frame(take(page_inventory.values[i].read(layout, {})));
+      for (std::size_t i = 0; i < initial->paged.frames.size() / 2; ++i) {
+        initial->paged.frames[2 * i] = working_frame(take(page_inventory.banks[2 * i].read(layout, {})));
+        initial->paged.frames[2 * i + 1] = working_frame(take(page_inventory.banks[2 * i + 1].read(layout, {})));
       }
       if (cache_plan.draft_cache) {
         initial->draft.emplace();
-        initial->draft->key = working_frame(take(draft_inventory.keys[0].read(layout, {})));
-        initial->draft->value = working_frame(take(draft_inventory.values[0].read(layout, {})));
+        if (!initial->draft->paged.frames.try_resize(2)) throw std::bad_alloc{};
+        initial->draft->paged.frames[0] = working_frame(take(draft_inventory.banks[0].read(layout, {})));
+        initial->draft->paged.frames[1] = working_frame(take(draft_inventory.banks[1].read(layout, {})));
         auto zero = take(hidden_pool.allocate(geometry.hidden_bytes(), cache::state_pool_alignment));
         check(zero.view()->fill(std::byte{})); initial->carry_hidden = take(zero.publish());
       }
@@ -3766,10 +3719,12 @@ public:
       throw std::runtime_error("snapshot does not contain the configured complete MTP state");
     if (!head.draft) return;
     const auto &draft = *head.draft;
+    if (draft.paged.frames.size() != 2)
+      throw std::runtime_error("snapshot does not contain its complete draft bank cohort");
     const auto key = candidate && candidate->draft_updates[0].valid()
-        ? take(candidate->draft_updates[0].view()) : take(draft.key.view());
+        ? take(candidate->draft_updates[0].view()) : take(draft.paged.frames[0].view());
     const auto value = candidate && candidate->draft_updates[1].valid()
-        ? take(candidate->draft_updates[1].view()) : take(draft.value.view());
+        ? take(candidate->draft_updates[1].view()) : take(draft.paged.frames[1].view());
     if (draft.lag > 1 || head.length < draft.lag || draft.frontier != head.length - draft.lag ||
         !key.valid() || !value.valid() || key.layout().facts().kv_rows != draft.frontier ||
         value.layout().facts().kv_rows != draft.frontier || !head.carry_hidden.valid() ||
@@ -4279,25 +4234,23 @@ public:
       const auto &old = *member.base->draft;
       const auto rows = row_inputs[j].rows;
       member.next->draft.emplace(); auto &next = *member.next->draft;
+      if (!next.paged.frames.try_resize(2)) throw std::bad_alloc{};
       const auto extent = take(inference::append_extent(old.frontier, rows, capacity, cache::Plan::page_rows));
       next.frontier = extent.after_rows;
-      (void)take(inference::prepare_append_pages(extent, std::span<const cache::PageRef>(old.pages), next.pages,
+      (void)take(inference::prepare_append_pages(extent, std::span<const hyle::inference::PagedPageRef>(old.paged.pages), next.paged.pages,
           relay ? std::span<c::PagedPageAppender>{} : std::span(session.draft_tails),
           !relay && session.draft_tail_epoch == member.base_epoch,
           std::span(step.execution.dirty.data() + draft_bank, 2),
-          std::span(step.execution.tails.data() + draft_bank, 2), [&]() -> hyle::Result<cache::PageRef> {
+          std::span(step.execution.tails.data() + draft_bank, 2), [&]() -> hyle::Result<hyle::inference::PagedPageRef> {
             if (!relay) session.draft_tail_epoch = 0;
-            HYLE_ASSIGN_OR_RETURN(auto reservation, draft_inventory.acquire());
-            step.execution.dirty[draft_bank].push_back(std::move(reservation.keys[0]));
-            step.execution.dirty[draft_bank + 1].push_back(std::move(reservation.values[0]));
-            return std::move(reservation.reference);
+            return draft_inventory.acquire_into(std::span(step.execution.dirty.data() + draft_bank, 2));
           }));
       if (!relay) session.draft_tail_epoch = 0;
       check(next_layout_rows.append(rows, next.frontier, cache::Plan::page_rows,
-          std::span<const cache::PageRef>(next.pages)));
+          std::span<const hyle::inference::PagedPageRef>(next.paged.pages)));
       member.draft_layout = take(next_layout_rows.member_version(attention_schema, j));
       if (width != 1) check(old_layout_rows.append(0, old.frontier, cache::Plan::page_rows,
-          std::span<const cache::PageRef>(old.pages)));
+          std::span<const hyle::inference::PagedPageRef>(old.paged.pages)));
       if (draft_lag(role) && !relay) {
         catchups.push_back(compact_draft && !old.lag ? member.first_input : old.catchup_token);
       }
@@ -4307,14 +4260,14 @@ public:
     const auto old_layout = width == 1 ? c::BatchLayoutVersion{} : take(attention_schema.version(old_layout_rows.layout()));
     std::vector<c::PagedArenaFootprint> sources(width);
     for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank) {
-      auto &arena = bank == draft_bank ? draft_inventory.keys[0] : draft_inventory.values[0];
+      auto &arena = bank == draft_bank ? draft_inventory.banks[0] : draft_inventory.banks[1];
       if (relay) {
         if (!step.execution.predecessor_episode) for (auto &member : step.members)
-          (void)member.draft_source(bank == draft_bank);
+          (void)take(member.draft_edit().source(bank - draft_bank));
         step.execution.appends[bank] = take(g::batch::detail::make_append_from_source(arena, layout,
             step.execution.incoming->owner->pages[bank], step.execution.dirty[bank], {.resource_budget = cache_budget}));
       } else {
-        for (std::size_t j = 0; j < width; ++j) sources[j] = step.members[j].draft_source(bank == draft_bank);
+        for (std::size_t j = 0; j < width; ++j) sources[j] = take(step.members[j].draft_edit().source(bank - draft_bank));
         const auto previous = width == 1 ? sources[0].layout() : old_layout;
         step.execution.appends[bank] = take(g::batch::PagedAppendPages::create(arena, layout, previous, sources,
             step.execution.dirty[bank], step.execution.tails[bank], {.resource_budget = cache_budget}));
@@ -4404,7 +4357,7 @@ public:
       for (const auto &member : active_step->members)
         if (!member.next || member.session->failed || member.session->stopping ||
             member.base->length >= capacity - 1 || member.base_epoch == UINT64_MAX ||
-            member.next->pages.size() > prepared.page_stride)
+            member.next->paged.pages.size() > prepared.page_stride)
           return fail(hyle::Status::Unavailable("decode metadata member cannot continue"));
       prune_decode_ahead(); prepared.clear_output();
       bool replaced = false;
@@ -4428,9 +4381,9 @@ public:
         auto &saved = prepared.members[index]; replaced = replaced || saved.ready;
         saved = {member.session, member.base_epoch + 1, member.base->length,
             member.next->length, active_step->phase->family->sampling->index, true, true};
-        for (std::size_t page = 0; page < member.next->pages.size(); ++page)
+        for (std::size_t page = 0; page < member.next->paged.pages.size(); ++page)
           prepared.candidate_ids[index * prepared.page_stride + page] =
-              static_cast<std::int32_t>(member.next->pages[page].page());
+              static_cast<std::int32_t>(member.next->paged.pages[page].page());
         prepared.selected.push_back(index);
       }
       if (replaced) ++cpu_ahead_discarded;
@@ -4465,10 +4418,10 @@ public:
         auto owner = saved.session.lock();
         if (owner != request.session || owner.owner_before(request.session) || request.session.owner_before(owner)) continue;
         if (owner->head.epoch() != saved.epoch || owner->length() <= saved.base_length ||
-            owner->length() > saved.maximum_length || owner->head->pages.size() > prepared.page_stride) break;
+            owner->length() > saved.maximum_length || owner->head->paged.pages.size() > prepared.page_stride) break;
         bool same_pages = true;
-        for (std::size_t page = 0; page < owner->head->pages.size(); ++page)
-          if (owner->head->pages[page].page() != static_cast<std::uint32_t>(
+        for (std::size_t page = 0; page < owner->head->paged.pages.size(); ++page)
+          if (owner->head->paged.pages[page].page() != static_cast<std::uint32_t>(
               prepared.candidate_ids[i * prepared.page_stride + page])) { same_pages = false; break; }
         if (same_pages) index = i;
         break;
@@ -4481,7 +4434,7 @@ public:
       const auto index = prepared.selected[j]; const auto &owner = *requests[j].session;
       for (std::size_t row = 0; row < tokens; ++row)
         prepared.positions.push_back(static_cast<std::int32_t>(owner.length() + row));
-      for (std::size_t page = 0; page < owner.head->pages.size(); ++page)
+      for (std::size_t page = 0; page < owner.head->paged.pages.size(); ++page)
         prepared.old_ids.push_back(prepared.candidate_ids[index * prepared.page_stride + page]);
       prepared.old_indptr.push_back(static_cast<std::int32_t>(prepared.old_ids.size()));
       prepared.old_last.push_back(static_cast<std::int32_t>((owner.length() - 1) % cache::Plan::page_rows + 1));
@@ -4787,26 +4740,21 @@ public:
         member.next->length = extent.after_rows;
         member.next->sampling = selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify ? member.base->sampling.advanced(drafts_token(role) ? 3 : 1)
             : member.base->sampling;
-        (void)take(inference::prepare_append_pages(extent, std::span<const cache::PageRef>(member.base->pages),
-            member.next->pages, relay ? std::span<c::PagedPageAppender>{}
+        (void)take(inference::prepare_append_pages(extent, std::span<const hyle::inference::PagedPageRef>(member.base->paged.pages),
+            member.next->paged.pages, relay ? std::span<c::PagedPageAppender>{}
                 : std::span(session.tails.data(), session.tails.size()),
             !relay && session.tail_epoch == member.base_epoch,
             std::span(step.execution.dirty.data(), draft_bank),
-            std::span(step.execution.tails.data(), draft_bank), [&]() -> hyle::Result<cache::PageRef> {
+            std::span(step.execution.tails.data(), draft_bank), [&]() -> hyle::Result<hyle::inference::PagedPageRef> {
               if (!relay) session.tail_epoch = 0;
-              HYLE_ASSIGN_OR_RETURN(auto reservation, page_inventory.acquire());
-              for (std::size_t layer = 0; layer < reservation.keys.size(); ++layer) {
-                step.execution.dirty[layer * 2].push_back(std::move(reservation.keys[layer]));
-                step.execution.dirty[layer * 2 + 1].push_back(std::move(reservation.values[layer]));
-              }
-              return std::move(reservation.reference);
+              return page_inventory.acquire_into(std::span(step.execution.dirty.data(), draft_bank));
             }));
         if (!relay) session.tail_epoch = 0;
         check(next_layout_rows.append(member_tokens, member.next->length, cache::Plan::page_rows,
-            std::span<const cache::PageRef>(member.next->pages)));
+            std::span<const hyle::inference::PagedPageRef>(member.next->paged.pages)));
         member.layout = take(next_layout_rows.member_version(attention_schema, j));
         if (width != 1 && !ahead) check(old_layout_rows.append(0, length, cache::Plan::page_rows,
-            std::span<const cache::PageRef>(member.base->pages)));
+            std::span<const hyle::inference::PagedPageRef>(member.base->paged.pages)));
       }
       io.attention_layout = width == 1 ? step.members[0].layout
           : take(attention_schema.version(next_layout_rows.layout()));
@@ -4820,19 +4768,19 @@ public:
           : take(attention_schema.version(old_layout_rows.layout()));
       if (ahead) decode_ahead->clear_output(); // version() copied this group's borrowed integers.
       std::vector<c::PagedArenaFootprint> sources(width);
-      for (std::size_t layer = 0; layer < page_inventory.keys.size(); ++layer) {
+      for (std::size_t layer = 0; layer < page_inventory.banks.size() / 2; ++layer) {
         // A ready immutable head needs its own mutable frame metadata, just as
         // on the direct path. A pending predecessor has no ready frame yet;
         // that original frame is transferred only after its ordered commit.
         if (relay && !predecessor) for (auto &member : step.members) {
-          (void)member.source(layer, true); (void)member.source(layer, false);
+          (void)take(member.target_edit().source(layer * 2)); (void)take(member.target_edit().source(layer * 2 + 1));
         }
         const auto compose = [&](bool key) {
           for (std::size_t j = 0; j < width; ++j)
-            sources[j] = step.members[j].source(layer, key);
+            sources[j] = take(step.members[j].target_edit().source(layer * 2 + (key ? 0 : 1)));
           return width == 1 ? sources[0].layout() : old_layout;
         };
-        auto &key_arena = page_inventory.keys[layer]; auto &value_arena = page_inventory.values[layer];
+        auto &key_arena = page_inventory.banks[2 * layer]; auto &value_arena = page_inventory.banks[2 * layer + 1];
         step.execution.appends[layer * 2] = relay ? take(g::batch::detail::make_append_from_source(key_arena, io.attention_layout,
             step.execution.incoming->owner->pages[layer * 2], step.execution.dirty[layer * 2], {.resource_budget = cache_budget}))
           : take(g::batch::PagedAppendPages::create(key_arena, io.attention_layout,
@@ -5147,7 +5095,7 @@ public:
         auto &member = step.members[j];
         // Retain every original physical owner for whole-cohort tail return,
         // even when no accepted prefix will be published for this member.
-        member.verified_last_page = member.next->pages.back().page();
+        member.verified_last_page = member.next->paged.pages.back().page();
         if (step.withdrawn(member)) { next_ids[j] = -1; continue; }
         if (!member.accepted_tokens || member.accepted_tokens > member.input_tokens ||
             (member.accepted_tokens != member.input_tokens && !verifies_prefix(phase.family->role)) ||
@@ -5156,11 +5104,11 @@ public:
         if (member.accepted_tokens != member.input_tokens) {
           member.next->length = member.base->length + member.accepted_tokens;
           const auto page_count = (member.next->length + cache::Plan::page_rows - 1) / cache::Plan::page_rows;
-          member.next->pages.resize(page_count);
+          member.next->paged.pages.resize(page_count);
           auto &layout_rows = input_scratch.next_layout_rows;
           layout_rows.reset();
           check(layout_rows.append(member.accepted_tokens, member.next->length, cache::Plan::page_rows,
-              std::span<const cache::PageRef>(member.next->pages)));
+              std::span<const hyle::inference::PagedPageRef>(member.next->paged.pages)));
           member.layout = take(layout_rows.member_version(attention_schema, 0));
         }
       }
@@ -5226,20 +5174,19 @@ public:
         // Unaccepted MTP candidates are discarded, never made visible.
         check(transactions.clear(bank_index));
       }
-      for (std::size_t layer = 0; layer < page_inventory.keys.size(); ++layer) {
+      for (std::size_t layer = 0; layer < page_inventory.banks.size() / 2; ++layer) {
         for (std::size_t j = 0; j < outputs.size(); ++j) {
           auto &member = step.members[j];
           if (step.withdrawn(member)) continue;
-          if (!member.key_updates.try_resize(page_inventory.keys.size()) ||
-              !member.value_updates.try_resize(page_inventory.keys.size())) throw std::bad_alloc{};
+          if (!member.target_updates.try_resize(page_inventory.banks.size())) throw std::bad_alloc{};
           auto key = step.execution.sources ? take(step.execution.sources->pages[layer * 2].ready_delta(
-              step.execution.appends[layer * 2], take(member.frame(layer, true).view()), member.layout))
-              : take(step.execution.appends[layer * 2].ready_delta(take(member.frame(layer, true).view()), member.layout));
+              step.execution.appends[layer * 2], take(member.target_edit().selected(layer * 2).view()), member.layout))
+              : take(step.execution.appends[layer * 2].ready_delta(take(member.target_edit().selected(layer * 2).view()), member.layout));
           auto value = step.execution.sources ? take(step.execution.sources->pages[layer * 2 + 1].ready_delta(
-              step.execution.appends[layer * 2 + 1], take(member.frame(layer, false).view()), member.layout))
-              : take(step.execution.appends[layer * 2 + 1].ready_delta(take(member.frame(layer, false).view()), member.layout));
-          member.key_updates[layer] = take(member.frame(layer, true).prepare_commit(std::move(key)));
-          member.value_updates[layer] = take(member.frame(layer, false).prepare_commit(std::move(value)));
+              step.execution.appends[layer * 2 + 1], take(member.target_edit().selected(layer * 2 + 1).view()), member.layout))
+              : take(step.execution.appends[layer * 2 + 1].ready_delta(take(member.target_edit().selected(layer * 2 + 1).view()), member.layout));
+          check(member.target_edit().prepare_commit(layer * 2, std::move(key)));
+          check(member.target_edit().prepare_commit(layer * 2 + 1, std::move(value)));
         }
       }
       if (has_mtp(phase.family->role)) {
@@ -5247,16 +5194,16 @@ public:
         if (!owners.try_reserve(outputs.size())) throw std::bad_alloc{};
         for (std::size_t j = 0; j < outputs.size(); ++j) {
           auto &member = step.members[j]; auto &draft = *member.next->draft;
-          owners.emplace_back(draft.pages.back().page(), j);
+          owners.emplace_back(draft.paged.pages.back().page(), j);
           if (step.withdrawn(member)) continue;
           auto key = step.execution.sources ? take(step.execution.sources->pages[draft_bank].ready_delta(
-              step.execution.appends[draft_bank], take(member.draft_frame(true).view()), member.draft_layout))
-              : take(step.execution.appends[draft_bank].ready_delta(take(member.draft_frame(true).view()), member.draft_layout));
+              step.execution.appends[draft_bank], take(member.draft_edit().selected(0).view()), member.draft_layout))
+              : take(step.execution.appends[draft_bank].ready_delta(take(member.draft_edit().selected(0).view()), member.draft_layout));
           auto value = step.execution.sources ? take(step.execution.sources->pages[draft_bank + 1].ready_delta(
-              step.execution.appends[draft_bank + 1], take(member.draft_frame(false).view()), member.draft_layout))
-              : take(step.execution.appends[draft_bank + 1].ready_delta(take(member.draft_frame(false).view()), member.draft_layout));
-          member.draft_updates[0] = take(member.draft_frame(true).prepare_commit(std::move(key)));
-          member.draft_updates[1] = take(member.draft_frame(false).prepare_commit(std::move(value)));
+              step.execution.appends[draft_bank + 1], take(member.draft_edit().selected(1).view()), member.draft_layout))
+              : take(step.execution.appends[draft_bank + 1].ready_delta(take(member.draft_edit().selected(1).view()), member.draft_layout));
+          check(member.draft_edit().prepare_commit(0, std::move(key)));
+          check(member.draft_edit().prepare_commit(1, std::move(value)));
         }
         std::sort(owners.begin(), owners.end());
         check(step.execution.append_transactions().subspan(draft_bank, 2).return_tails(
@@ -5327,7 +5274,7 @@ public:
             member.session->pending != &step ||
             (member.session->stopping && !step.discard_stopped_members))
           throw std::runtime_error("batch snapshot expected-base conflict");
-      for (const auto &member : step.members)
+      for (auto &member : step.members)
         if (!step.withdrawn(member)) member.preflight_frames();
       // Every delta owns its changed guards and every tail has transferred.
       // A successor still retains this original Step, but must not thereby
@@ -5828,7 +5775,7 @@ void observe_completed_evaluation(Model &model, const EvaluationOutput &output,
       }
       std::ofstream layout_trace(directory / "kv-layout.json");
       layout_trace << "{\"visible_tokens\":" << completed.head.length << ",\"page_rows\":" << cache::Plan::page_rows << ",\"pages\":[";
-      for (std::size_t i = 0; i < completed.head.pages.size(); ++i) layout_trace << (i ? "," : "") << completed.head.pages[i].page();
+      for (std::size_t i = 0; i < completed.head.paged.pages.size(); ++i) layout_trace << (i ? "," : "") << completed.head.paged.pages[i].page();
       layout_trace << "]}\n"; if (!layout_trace) throw std::runtime_error("cannot write KV layout trace");
     }
   }

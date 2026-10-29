@@ -49,12 +49,12 @@ inline StateImage image(q::Model &model, const q::cache::State &state) {
       result.payloads.push_back(read(model, state.state[layer].history));
       result.payloads.push_back(read(model, state.state[layer].recurrent));
     }
-  for (std::size_t layer = 0; layer < state.keys.size(); ++layer) {
-    result.target.push_back(frame(model, state.keys[layer], state.length));
-    result.target.push_back(frame(model, state.values[layer], state.length));
+  for (std::size_t layer = 0; layer < state.paged.frames.size() / 2; ++layer) {
+    result.target.push_back(frame(model, state.paged.frames[2 * layer], state.length));
+    result.target.push_back(frame(model, state.paged.frames[2 * layer + 1], state.length));
   }
-  result.payloads.push_back(frame(model, state.draft->key, state.draft->frontier));
-  result.payloads.push_back(frame(model, state.draft->value, state.draft->frontier));
+  result.payloads.push_back(frame(model, state.draft->paged.frames[0], state.draft->frontier));
+  result.payloads.push_back(frame(model, state.draft->paged.frames[1], state.draft->frontier));
   result.payloads.push_back(read(model, state.carry_hidden));
   result.payloads.push_back(read(model, state.prior_hidden));
   return result;
@@ -224,8 +224,8 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     const std::array epochs{sessions[0]->head.epoch(), sessions[1]->head.epoch()};
     q::DraftWork work; work.state = q::Model::fork_draft(*original[0]->draft);
     const auto frontier = work.state.frontier;
-    const auto old_key = frame(model, work.state.key, frontier);
-    const auto old_value = frame(model, work.state.value, frontier);
+    const auto old_key = frame(model, work.state.paged.frames[0], frontier);
+    const auto old_value = frame(model, work.state.paged.frames[1], frontier);
     const std::array shifted{original[0]->carry_hidden};
     const std::array<std::int32_t, 1> invalid{-1};
     const auto identity = original[0]->sampling.identity(0);
@@ -241,8 +241,8 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     require(!program.guard.execution.has_completion() && !program.guard.execution.cleanup_pending &&
         !program.hidden_transactions.bound() && !program.carrier.pending(),
         "NextN checked failure did not really retire its original episode");
-    require(work.state.frontier == frontier && frame(model, work.state.key, frontier) == old_key &&
-        frame(model, work.state.value, frontier) == old_value,
+    require(work.state.frontier == frontier && frame(model, work.state.paged.frames[0], frontier) == old_key &&
+        frame(model, work.state.paged.frames[1], frontier) == old_value,
         "NextN failure published a private KV prefix or frontier");
     for (std::size_t j = 0; j < sessions.size(); ++j)
       require(sessions[j]->head.epoch() == epochs[j] && image(model, *sessions[j]->head) == original_images[j] &&
@@ -254,8 +254,8 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
         work.state.frontier == frontier + 1 && !program.guard.execution.has_completion() &&
         !program.guard.execution.cleanup_pending && !program.hidden_transactions.bound() && !program.carrier.pending(),
         "NextN original program did not recover for a valid one-row proposal");
-    const auto new_key = frame(model, work.state.key, frontier + 1);
-    const auto new_value = frame(model, work.state.value, frontier + 1);
+    const auto new_key = frame(model, work.state.paged.frames[0], frontier + 1);
+    const auto new_value = frame(model, work.state.paged.frames[1], frontier + 1);
     require(new_key.size() * frontier == old_key.size() * (frontier + 1) &&
         new_value.size() * frontier == old_value.size() * (frontier + 1) &&
         std::equal(old_key.begin(), old_key.end(), new_key.begin()) &&

@@ -220,11 +220,11 @@ inline ModeReport run_mode(const std::filesystem::path &input, q::BackendKind ki
       imported = std::move(parked[0].session); report.adapter_parking = true;
     }
     require(model.snapshot_versions.live == versions + 1 && imported->head->state_identity() != old_alias->state_identity() &&
-        imported->head->pages.size() == old_alias->pages.size(), "restore did not acquire one fresh complete model-state version");
-    for (std::size_t page = 0; page < old_alias->pages.size(); ++page)
-      require(imported->head->pages[page].page() != old_alias->pages[page].page(), "restored target page aliases the retained old permission");
-    if (draft) for (std::size_t page = 0; page < old_alias->draft->pages.size(); ++page)
-      require(imported->head->draft->pages[page].page() != old_alias->draft->pages[page].page(),
+        imported->head->paged.pages.size() == old_alias->paged.pages.size(), "restore did not acquire one fresh complete model-state version");
+    for (std::size_t page = 0; page < old_alias->paged.pages.size(); ++page)
+      require(imported->head->paged.pages[page].page() != old_alias->paged.pages[page].page(), "restored target page aliases the retained old permission");
+    if (draft) for (std::size_t page = 0; page < old_alias->draft->paged.pages.size(); ++page)
+      require(imported->head->draft->paged.pages[page].page() != old_alias->draft->paged.pages[page].page(),
           "restored draft page aliases the retained old permission");
     auto second = model.export_session(*imported, storage);
     same_image(original, read_image(*second));
