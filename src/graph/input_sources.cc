@@ -326,6 +326,27 @@ InputSource bound_input_source(const InvocationState &state, ValueId value,
   const auto *binding = find_binding(*state.input_sources.get(), value);
   return binding && binding->source.vtable() == expected_table ? binding->source : InputSource{};
 }
+Result<InputSource> bound_input_source(const InvocationState &state,
+    const InputSourceVTable *expected_table) noexcept {
+  if (!state.input_sources || !expected_table)
+    return std::unexpected(Status::FailedPrecondition("original consumer has no attached source bundle"));
+  InputSource found;
+  const auto collect = [&](const auto &binding) noexcept -> Status {
+    const auto &source = binding.source;
+    if (!source.valid() || source.vtable() != expected_table) return Status::Ok();
+    if (found.valid() && (found.state() != source.state() || !found.same_owner(source)))
+      return Status::FailedPrecondition("original consumer has conflicting attached source bundles");
+    if (!found.valid()) found = source;
+    return Status::Ok();
+  };
+  for (const auto &binding : state.input_sources.get()->bindings)
+    HYLE_RETURN_IF_ERROR(collect(binding));
+  for (const auto &binding : state.input_sources.get()->effects)
+    HYLE_RETURN_IF_ERROR(collect(binding));
+  if (!found.valid())
+    return std::unexpected(Status::FailedPrecondition("original consumer has no attached source bundle"));
+  return found;
+}
 bool input_source_matches(const InvocationState &state, ValueId value,
     const InputSource &source) noexcept {
   if (!state.input_sources) return false;

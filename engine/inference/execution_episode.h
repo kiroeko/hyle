@@ -20,7 +20,9 @@ namespace hyle::inference {
 
 template<class Sources> struct IncomingExecutionSources final {
   std::shared_ptr<Sources> owner;
-  std::vector<graph::detail::OutputBinding> bindings;
+  // Call descriptors live only until atomic binding succeeds. The original
+  // Invocation then retains the accepted facts; capacity stays reusable.
+  std::vector<graph::SourceBinding> bindings;
   bool bound = false;
 };
 
@@ -91,15 +93,16 @@ class ExecutionEpisode final {
     if (!run || !carrier)
       return Status::FailedPrecondition("execution episode has no original carrier");
     if (incoming) {
-      HYLE_RETURN_IF_ERROR(graph::detail::bind_outputs(*run, incoming->bindings));
+      HYLE_RETURN_IF_ERROR(graph::bind_sources(*run, incoming->bindings));
       incoming->bound = true;
+      incoming->bindings.clear();
     }
     return state_transactions ? state_transactions->bind(*run, state_graph) : Status::Ok();
   }
   Status prepare_replay(graph::ReplayOptions options = {}) noexcept {
     if (!run || !carrier)
       return Status::FailedPrecondition("execution episode has no original carrier");
-    return incoming ? graph::detail::prepare_outputs(*run, incoming->bindings, carrier->queues())
+    return incoming ? graph::prepare_sources(*run, carrier->queues())
                     : run->prepare_replay(carrier->queues(), options);
   }
 
@@ -110,7 +113,7 @@ class ExecutionEpisode final {
       return Status::FailedPrecondition("execution episode has no original carrier");
     HYLE_ASSIGN_OR_RETURN(completion, carrier->submit(scope,
         [&](graph::Invocation &invocation, std::span<const graph::QueueBinding> queues) noexcept {
-          return incoming ? graph::detail::submit_outputs(invocation, incoming->bindings, queues)
+          return incoming ? graph::submit_sources(invocation, queues)
                           : invocation.submit(queues);
         }));
     return Status::Ok();
@@ -129,7 +132,7 @@ class ExecutionEpisode final {
     if (!run || !carrier)
       return Status::FailedPrecondition("execution episode has no original carrier");
     if (incoming && incoming->bound) {
-      HYLE_RETURN_IF_ERROR(graph::detail::release_outputs(*run, incoming->bindings));
+      HYLE_RETURN_IF_ERROR(graph::release_sources(*run));
       incoming->bound = false;
     }
     return Status::Ok();

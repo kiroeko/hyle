@@ -160,7 +160,8 @@ struct PagedAppend final {
 static_assert(compute::detail::InlineCustomOperationDescriptor<PagedAppend>);
 HYLE_GRAPH_BATCH_API Result<PagedAppend> paged_append(compute::BatchSchema,
      compute::BatchCacheRole)noexcept;
-namespace detail {struct PagedAppendData;struct PagedAppendAccess;struct PagedAppendSourceData;struct PagedAppendSourceAccess;class PagedAppendSource;}
+class PagedAppendSource;
+namespace detail {struct PagedAppendData;struct PagedAppendAccess;struct PagedAppendSourceData;struct PagedAppendSourceAccess;}
 struct PagedAppendOptions final {
   mem::AllocatorRef allocator=mem::system_allocator();
   compute::ResourceBudget resource_budget{};
@@ -220,7 +221,7 @@ public:
       compute::PagedArenaFootprint expected,compute::BatchLayoutVersion accepted)noexcept;
 private:
   friend struct detail::PagedAppendAccess;
-  friend class detail::PagedAppendSource;
+  friend class PagedAppendSource;
   friend struct detail::PagedAppendSourceAccess;
   static Result<PagedAppendPages> create_impl(compute::PagedArena,
       compute::BatchLayoutVersion,compute::BatchLayoutVersion,

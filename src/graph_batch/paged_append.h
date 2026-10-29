@@ -5,7 +5,8 @@
 #include "hyle/compute/detail/paged_append_backend.h"
 #include "native_append_regions.h"
 #include <memory>
-#include "hyle/graph/detail/paged_append_source.h"
+#include "hyle/graph/paged_append_source.h"
+#include "hyle/graph/detail/resource_source.h"
 
 namespace hyle::graph::batch::detail {
 // Exact original carrier -> logical token rows; no storage/content conversion.
@@ -50,10 +51,10 @@ struct PagedAppendSourceAccess final {
       PagedAppendSource&,std::span<compute::PagedPageWriter>,PagedAppendOptions) noexcept;
   static Result<AppendFacts> facts(const PagedAppendSource&) noexcept;
   static Status covers(const PagedAppendSource&,compute::BatchLayoutVersion) noexcept;
-  static Result<graph::detail::OutputBinding> binding(PagedAppendSource&,ValueId,
+  static Result<SourceBinding> binding(PagedAppendSource&,ValueId,
       compute::BatchLayoutVersion,std::span<const graph::detail::ProjectedReader>,
       std::span<const graph::detail::ResourceReadyInput>) noexcept;
-  static Result<graph::detail::OutputBinding> effect_binding(Invocation&,NodeId,
+  static Result<SourceBinding> effect_binding(Invocation&,NodeId,
       PagedAppendSource&) noexcept;
 };
 } // namespace hyle::graph::batch::detail

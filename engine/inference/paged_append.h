@@ -13,7 +13,7 @@
 #include "append_transactions.h"
 #include "paged_layout_scratch.h"
 #include "paged_sequence.h"
-#include "hyle/graph/detail/paged_append_source.h"
+#include "hyle/graph/paged_append_source.h"
 
 namespace hyle::inference {
 
@@ -62,7 +62,7 @@ struct PagedAppendMember final {
 
 struct PagedAppendPreparation final {
   std::size_t capacity_rows = 0;
-  std::span<graph::batch::detail::PagedAppendSource> incoming{};
+  std::span<graph::batch::PagedAppendSource> incoming{};
   bool pending_predecessor = false;
   const compute::HostBatchLayout *previous_layout = nullptr;
   graph::batch::PagedAppendOptions append_options{};
@@ -212,7 +212,7 @@ Result<compute::BatchLayoutVersion> prepare_paged_append(const compute::BatchSch
           HYLE_ASSIGN_OR_RETURN(auto source, PagedSequenceEdit(member.base, *member.candidate).source(bank));
           (void)source;
         }
-        HYLE_ASSIGN_OR_RETURN(banks.appends[bank], graph::batch::detail::make_append_from_source(
+        HYLE_ASSIGN_OR_RETURN(banks.appends[bank], graph::batch::make_append_from_source(
             banks.inventory.banks[bank], next, options.incoming[bank], banks.dirty[bank], options.append_options));
       } else {
         scratch.sources.resize(count); // The cold capacity was proved above.
@@ -240,7 +240,7 @@ Result<compute::BatchLayoutVersion> prepare_paged_append(const compute::BatchSch
 template<class FinishAt>
 Status prepare_paged_append_commits(std::span<graph::batch::PagedAppendPages> appends,
     std::size_t count, FinishAt &&member_at,
-    std::span<const graph::batch::detail::PagedAppendSource> outgoing = {}) noexcept {
+    std::span<const graph::batch::PagedAppendSource> outgoing = {}) noexcept {
   static_assert(std::is_nothrow_invocable_v<FinishAt &, std::size_t> &&
       std::is_same_v<std::invoke_result_t<FinishAt &, std::size_t>, PagedAppendFinishMember>,
       "paged finish facts must be borrowed without throwing");

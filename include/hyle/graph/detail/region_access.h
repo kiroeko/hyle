@@ -4,13 +4,17 @@
 #include "hyle/compute/detail/provider_extension.h"
 #include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/detail/operation_access.h"
-namespace hyle::graph { struct ProviderRegionPreparedVTable; struct ProviderRegionPrepared; }
+namespace hyle::graph {
+struct ProviderRegionPreparedVTable;
+struct ProviderRegionPrepared;
+class SubmissionSource;
+HYLE_GRAPH_API Status release_sources(Invocation &) noexcept;
+}
 namespace hyle::compute::detail { class AppendLease; }
 namespace hyle::graph::detail {
 struct PlanState;
 struct InvocationState;
 class InputSource;
-struct OutputBinding;
 class PreparedRegion;
 class RegionInvocation;
 // Cold cleanup of the actual selected slot, queried through its existing
@@ -392,8 +396,8 @@ public:
   HYLE_GRAPH_API static Result<compute::WriteLease> take_write(
       Invocation&,ValueId caller_output) noexcept;
 private:
-  friend class SubmissionSource;
-  friend HYLE_GRAPH_API Status release_outputs(Invocation &, std::span<const OutputBinding>) noexcept;
+  friend class ::hyle::graph::SubmissionSource;
+  friend HYLE_GRAPH_API Status hyle::graph::release_sources(Invocation &) noexcept;
   static Status visit_pinned(InvocationState *,NodeId,RegionAccessFn,void *) noexcept;
   static Status withdraw_bindings_impl(Invocation&,std::span<const ValueId>,
       bool ready_projection, const InputSource *source_owner = nullptr) noexcept;

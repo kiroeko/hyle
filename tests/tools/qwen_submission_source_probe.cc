@@ -443,7 +443,10 @@ RelayArm run_relay_arm(q::Model &model, bool relay, bool reject_successor = fals
         "relay episode omitted a state bank or selected another physical carrier");
     if (relay) {
       require(step.execution.incoming && step.execution.incoming->bound && step.execution.incoming->owner &&
-          step.execution.incoming->bindings.size() == 1 + expected_stores + expected_pages,
+          step.execution.incoming->bindings.empty() &&
+          step.execution.incoming->owner->primary_output.valid() &&
+          step.execution.incoming->owner->states.size() == expected_stores &&
+          step.execution.incoming->owner->pages.size() == expected_pages,
           "relay omitted its complete original token/Store/KV effect bundle");
       const auto sources = q::take(step.execution.run->input_source_report());
       require(sources.source_count == 1 && sources.device_wait_count == 1 && !sources.host_wait_count,

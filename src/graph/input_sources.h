@@ -61,6 +61,11 @@ HYLE_GRAPH_API bool has_input_source_table(const InvocationState &,
 // inference, new dependency, admission or generic opaque-state cast is allowed.
 HYLE_GRAPH_API InputSource bound_input_source(const InvocationState &, ValueId,
     const InputSourceVTable *expected_table) noexcept;
+// Retain one exact adapter attached to current inputs or implicit effects.
+// Different bundle states are not interchangeable even when same_owner dedups
+// their common producer. Historical prepared sources confer no attachment.
+HYLE_GRAPH_API Result<InputSource> bound_input_source(const InvocationState &,
+    const InputSourceVTable *expected_table) noexcept;
 // Commit after complete exact-owner/retirement preflight. Other original
 // source bindings survive; this never submits or changes a resource guard.
 HYLE_GRAPH_API void release_bound_input_sources(InvocationState &,

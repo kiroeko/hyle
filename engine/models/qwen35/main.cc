@@ -101,9 +101,8 @@
 #include "hyle/graph/batch.h"
 #include "hyle/graph/slots.h"
 #include "hyle/graph/progress.h"
-#include "hyle/graph/detail/output_source.h"
-#include "hyle/graph/detail/store_source.h"
-#include "hyle/graph/detail/paged_append_source.h"
+#include "hyle/graph/source.h"
+#include "hyle/graph/paged_append_source.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/io/file.h"
 #include "hyle/io/io_context.h"
@@ -1109,7 +1108,7 @@ struct StepSources final : inference::SubmissionViews {
   std::vector<c::ReadLease> published_states;
   // K1 keeps the producer's full two-prefix publication rights in states.
   // These independent original final-prefix views serve the next Gather.
-  std::vector<g::detail::StoreSource> successor_states;
+  std::vector<g::StoreSource> successor_states;
   bool mtp_full_candidate = false;
   void release_publication_views() noexcept {
     if (!mtp_full_candidate) return;
@@ -3822,7 +3821,7 @@ public:
       // This same ordinary-input inventory serves every episode of the Phase.
       // Prove its separation from the actual cold Source ports once; pending
       // Source permissions and selected reader access are still checked by
-      // reader_binding/bind_outputs for each original invocation below.
+      // reader_binding/bind_sources for each original invocation below.
       const auto check_source_input = [&](V value) {
         if (std::ranges::find(phase.state_resource_ports, value) != phase.state_resource_ports.end())
           throw std::runtime_error("ordinary caller input overlaps its imported Source projection");
@@ -4309,7 +4308,7 @@ public:
         input_scratch.paged_appends, member_at,
         {.capacity_rows = capacity,
          .incoming = relay ? std::span(step.execution.incoming->owner->pages).subspan(draft_bank, 2)
-             : std::span<g::batch::detail::PagedAppendSource>{},
+             : std::span<g::batch::PagedAppendSource>{},
          .pending_predecessor = bool(step.execution.predecessor_episode),
          .append_options = {.resource_budget = cache_budget}},
         invalidate_tail, begin_member));
@@ -4799,7 +4798,7 @@ public:
           input_scratch.paged_appends, member_at,
           {.capacity_rows = capacity,
            .incoming = relay ? std::span(step.execution.incoming->owner->pages).first(draft_bank)
-               : std::span<g::batch::detail::PagedAppendSource>{},
+               : std::span<g::batch::PagedAppendSource>{},
            .pending_predecessor = bool(predecessor),
            .previous_layout = ahead && width != 1 ? &previous_layout : nullptr,
            .append_options = {.resource_budget = cache_budget}},
@@ -4847,8 +4846,8 @@ public:
       if (relay) {
         auto &input = *step.execution.incoming; auto &previous = *input.owner;
         input.bindings.reserve(1 + previous.states.size() + previous.pages.size() + (mtp_relay ? 1u : 0u));
-        input.bindings.push_back({phase.token_port, &previous.primary_output});
-        if (mtp_relay) input.bindings.push_back({phase.catchup_token_port, &previous.extra_outputs[0]});
+        input.bindings.push_back(previous.primary_output.reader_binding(phase.token_port));
+        if (mtp_relay) input.bindings.push_back(previous.extra_outputs[0].reader_binding(phase.catchup_token_port));
         const bool ready_states = previous.published_states.size() == previous.states.size() * width + (mtp_relay ? 1u : 0u) &&
             std::ranges::all_of(previous.published_states, [](const auto &lease) { return lease.valid(); });
         for (std::size_t bank = 0; bank < previous.states.size(); ++bank) {
@@ -4860,7 +4859,7 @@ public:
                   : std::span<const c::ReadLease>{})));
         }
         for (std::size_t bank = 0; bank < previous.pages.size(); ++bank)
-          input.bindings.push_back(take(g::batch::detail::append_binding(run, phase.append_nodes[bank], previous.pages[bank])));
+          input.bindings.push_back(take(g::batch::append_binding(run, phase.append_nodes[bank], previous.pages[bank])));
       }
       check(step.execution.bind_consumers(phase.state_graph()));
       if (packed_target) {
@@ -4937,8 +4936,8 @@ public:
     if (mtp) {
       sources->successor_states.reserve(geometry.recurrent_layers() * 2);
       for (std::size_t bank = 0; bank < geometry.recurrent_layers() * 2; ++bank)
-        sources->successor_states.push_back(take(g::detail::StoreSource::prepare(*step.execution.run,
-            phase.state_sources[bank].store, storage, g::detail::StoreDestinationRange{1, 1},
+        sources->successor_states.push_back(take(g::StoreSource::prepare(*step.execution.run,
+            phase.state_sources[bank].store, storage, g::StoreDestinationRange{1, 1},
             {.resource_budget = execution_budget})));
     }
     step.execution.sources = sources;
@@ -5236,8 +5235,8 @@ public:
       };
       check(inference::prepare_paged_append_commits(
           std::span(step.execution.appends.data(), draft_bank), outputs.size(), target_finish_at,
-          step.execution.sources ? std::span<const g::batch::detail::PagedAppendSource>(step.execution.sources->pages).first(draft_bank)
-              : std::span<const g::batch::detail::PagedAppendSource>{}));
+          step.execution.sources ? std::span<const g::batch::PagedAppendSource>(step.execution.sources->pages).first(draft_bank)
+              : std::span<const g::batch::PagedAppendSource>{}));
       if (has_mtp(phase.family->role)) {
         const auto draft_finish_at = [&](std::size_t j) noexcept -> inference::PagedAppendFinishMember {
           auto &member = step.members[j]; auto &draft = *member.next->draft;
@@ -5247,8 +5246,8 @@ public:
         };
         check(inference::prepare_paged_append_commits(
             std::span(step.execution.appends.data() + draft_bank, 2), outputs.size(), draft_finish_at,
-            step.execution.sources ? std::span<const g::batch::detail::PagedAppendSource>(step.execution.sources->pages).subspan(draft_bank, 2)
-                : std::span<const g::batch::detail::PagedAppendSource>{}));
+            step.execution.sources ? std::span<const g::batch::PagedAppendSource>(step.execution.sources->pages).subspan(draft_bank, 2)
+                : std::span<const g::batch::PagedAppendSource>{}));
         check(inference::return_paged_append_tails(
             step.execution.append_transactions().subspan(draft_bank, 2), 2, outputs.size(),
             input_scratch.paged_appends, draft_finish_at));

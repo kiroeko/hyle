@@ -1,15 +1,17 @@
 #pragma once
 
 #include "hyle/graph/batch.h"
-#include "hyle/graph/detail/output_source.h"
-#include "hyle/graph/detail/resource_source.h"
+#include "hyle/graph/source.h"
 
-namespace hyle::graph::batch::detail {
+namespace hyle::graph::batch {
+namespace detail {
 struct PagedAppendSourceData;
 struct PagedAppendSourceAccess;
-// Same-build typed view of one original append transaction. The common
-// ResourceSource retains the sole submission verdict and actual permissions;
-// this owner retains only its arena/layout/prefix interpretation.
+}
+
+// Typed view of one original append transaction. The common submission
+// retains the sole terminal verdict and actual permissions; this view retains
+// only its arena/layout/prefix interpretation.
 class PagedAppendSource final {
 public:
   PagedAppendSource() noexcept = default;
@@ -24,7 +26,7 @@ public:
       const compute::StorageOwner &, PagedAppendOptions = {}) noexcept;
   bool prepared() const noexcept { return data_ != nullptr; }
   HYLE_GRAPH_BATCH_API bool valid() const noexcept;
-  HYLE_GRAPH_BATCH_API Status capture(const graph::detail::SubmissionSource &) noexcept;
+  HYLE_GRAPH_BATCH_API Status capture(const SubmissionSource &) noexcept;
   // No wait: whole success plus actual retirement and matching returned
   // owners authorize the original page/frontier publication. Retry preserves
   // already published guards. Fresh appendable conversion closes full-ticket
@@ -33,17 +35,18 @@ public:
   HYLE_GRAPH_BATCH_API Result<compute::PagedArenaDelta> ready_delta(PagedAppendPages &,
       compute::PagedArenaFootprint, compute::BatchLayoutVersion accepted) const noexcept;
 private:
-  friend struct PagedAppendSourceAccess;
-  explicit PagedAppendSource(PagedAppendSourceData *data) noexcept : data_(data) {}
-  PagedAppendSourceData *data_ = nullptr;
+  friend struct detail::PagedAppendSourceAccess;
+  explicit PagedAppendSource(detail::PagedAppendSourceData *data) noexcept : data_(data) {}
+  detail::PagedAppendSourceData *data_ = nullptr;
 };
 // Cold once per typed view, after B's ordinary batch::prepare. Requires the
 // shared reader's actual ready metadata, either its explicit configuration
 // input or the original selected slot's private owned-layout mirror. B's query
 // metadata may differ from A; every referenced physical prefix must be covered.
-// Returns a call descriptor whose spans remain owned by source. The caller
-// combines it with token/Store views in the original single bind_outputs call.
-HYLE_GRAPH_BATCH_API Result<graph::detail::OutputBinding> reader_binding(Invocation &,
+// The descriptor borrows this view and grants no authority by itself. Combine
+// it with tensor/Store views in the original single graph::bind_sources call;
+// after successful binding the original Invocation retains its accepted facts.
+HYLE_GRAPH_BATCH_API Result<SourceBinding> reader_binding(Invocation &,
     ValueId bank, PagedAppendSource &, compute::BatchLayoutVersion read_layout) noexcept;
 // COW continuation of an original prepared/submitted append. The successor
 // owns only fresh dirty pages; it never borrows the predecessor's tail right.
@@ -57,7 +60,7 @@ HYLE_GRAPH_BATCH_API Result<PagedAppendPages> make_append_from_source(compute::P
     compute::BatchLayoutVersion next, PagedAppendSource &previous,
     std::span<compute::PagedPageWriter> dirty, PagedAppendOptions = {}) noexcept;
 // Cold descriptor of the original bound append's implicit prefix reads. Mix
-// this effect entry with any tensor entries in one bind_outputs call.
-HYLE_GRAPH_BATCH_API Result<graph::detail::OutputBinding> append_binding(Invocation &,
+// this effect entry with tensor entries in one graph::bind_sources call.
+HYLE_GRAPH_BATCH_API Result<SourceBinding> append_binding(Invocation &,
     NodeId append, PagedAppendSource &previous) noexcept;
-} // namespace hyle::graph::batch::detail
+} // namespace hyle::graph::batch

@@ -12,7 +12,7 @@
 #include <gtest/gtest.h>
 #include "hyle/graph/progress.h"
 #include "hyle/graph/cpu_cuda.h"
-#include "hyle/graph/detail/output_source.h"
+#include "hyle/graph/source.h"
 #include "hyle/platform/fs.h"
 #include "hyle/sched/blocking.h"
 #include "hyle/sched/join.h"
@@ -245,9 +245,9 @@ TEST(QwenBackendCpuCuda, ReadbackI32WriterSupportsTheOriginalSubmissionSource) {
   ASSERT_TRUE(run.prepare_replay(backend.queue_bindings(), {.mode = g::ReplayMode::kCommands}).ok());
   auto submitted = run.submit(backend.queue_bindings());
   ASSERT_TRUE(submitted) << submitted.error().message();
-  auto common = g::detail::SubmissionSource::create(run, std::move(*submitted), backend.storage_owner());
+  auto common = g::SubmissionSource::create(run, std::move(*submitted), backend.storage_owner());
   ASSERT_TRUE(common) << common.error().message();
-  auto source = g::detail::OutputSource::create(*common, output, backend.storage_owner(), readback.pool());
+  auto source = g::OutputSource::create(*common, output, backend.storage_owner(), readback.pool());
   ASSERT_TRUE(source) << source.error().message();
   ASSERT_TRUE(common->wait().ok());
   EXPECT_TRUE(readback.reclaim(run).IsUnavailable()); // Source still pins the producer.

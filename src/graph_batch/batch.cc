@@ -1195,10 +1195,10 @@ Result<c::ReadLease> query_offsets(graph::Invocation&invocation,NodeId node)noex
       std::size_t(count)*sizeof(std::int32_t));
 }
 Status prepare_replay(graph::Invocation&invocation,std::span<const QueueBinding>queues)noexcept{return capture_native(invocation,queues);}
-Result<gd::OutputBinding>detail::reader_binding(Invocation&invocation,ValueId bank,
+Result<SourceBinding>reader_binding(Invocation&invocation,ValueId bank,
     PagedAppendSource&source,c::BatchLayoutVersion layout)noexcept{
-  HYLE_RETURN_IF_ERROR(PagedAppendSourceAccess::covers(source,layout));
-  HYLE_ASSIGN_OR_RETURN(auto facts,PagedAppendSourceAccess::facts(source));
+  HYLE_RETURN_IF_ERROR(detail::PagedAppendSourceAccess::covers(source,layout));
+  HYLE_ASSIGN_OR_RETURN(auto facts,detail::PagedAppendSourceAccess::facts(source));
   HYLE_ASSIGN_OR_RETURN(auto p,frame_resources(invocation));HYLE_RETURN_IF_ERROR(p->reusable());
   if(p->contains(bank))return std::unexpected(Status::FailedPrecondition("another pending source owns this cache input"));
   detail::ProjectedReaders proofs{mem::StdAllocator<gd::ProjectedReader>(p->allocator)};
@@ -1239,7 +1239,7 @@ Result<gd::OutputBinding>detail::reader_binding(Invocation&invocation,ValueId ba
     }
   }}catch(...){return std::unexpected(Status::ResourceExhausted("pending append reader cold proof metadata"));}
   if(proofs.empty())return std::unexpected(Status::Unimplemented("pending append bank has no selected shared page reader"));
-  return PagedAppendSourceAccess::binding(source,bank,std::move(layout),proofs,metadata);
+  return detail::PagedAppendSourceAccess::binding(source,bank,std::move(layout),proofs,metadata);
 }
 Status bind_append(Invocation&invocation,const Graph&graph,NodeId append,ValueId value,PagedAppendPages&&pages)noexcept{
   HYLE_ASSIGN_OR_RETURN(auto p,frame_resources(invocation));HYLE_RETURN_IF_ERROR(p->reusable());

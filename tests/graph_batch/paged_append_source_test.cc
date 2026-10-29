@@ -5,7 +5,8 @@
 #include "hyle/compute/paged_frame.h"
 #include "hyle/graph/batch.h"
 #include "hyle/graph/cuda.h"
-#include "hyle/graph/detail/paged_append_source.h"
+#include "hyle/graph/paged_append_source.h"
+#include "hyle/graph/detail/source_binding_access.h"
 #include "hyle/graph/result.h"
 
 #include <algorithm>
@@ -26,7 +27,6 @@ namespace cd = c::detail;
 namespace g = hyle::graph;
 namespace gd = g::detail;
 namespace gb = g::batch;
-namespace gbd = gb::detail;
 
 // A bounded original-Queue host gate. Every assertion exit releases it before
 // the Invocation/resource owners unwind; no device spin kernel is involved.
@@ -183,9 +183,9 @@ void pending_original_pages_publish_while_attention_reads(bool owned_layout) {
   ASSERT_TRUE(gb::bind_append(producer, first_graph, append_value, std::move(value_pages)).ok());
   ASSERT_TRUE(producer.bind(first_key, rows, key_input).ok());
   ASSERT_TRUE(producer.bind(first_value, rows, value_input).ok());
-  auto key_source_result = gbd::PagedAppendSource::prepare(producer, append_key, storage);
+  auto key_source_result = gb::PagedAppendSource::prepare(producer, append_key, storage);
   ASSERT_TRUE(key_source_result) << key_source_result.error().message();
-  auto value_source_result = gbd::PagedAppendSource::prepare(producer, append_value, storage);
+  auto value_source_result = gb::PagedAppendSource::prepare(producer, append_value, storage);
   ASSERT_TRUE(value_source_result) << value_source_result.error().message();
   auto key_source = std::move(*key_source_result), value_source = std::move(*value_source_result);
 
@@ -229,16 +229,18 @@ void pending_original_pages_publish_while_attention_reads(bool owned_layout) {
   ASSERT_EQ(consumer.replay_route(), g::ReplayRoute::kCaptured);
   const auto warm_report = consumer.replay_report().value();
   ASSERT_EQ(warm_report.recorded_capture_range_count, 1u);
-  auto key_binding = gbd::reader_binding(consumer, second_key, key_source, reader_layout);
+  auto key_binding = gb::reader_binding(consumer, second_key, key_source, reader_layout);
   ASSERT_TRUE(key_binding) << key_binding.error().message();
-  auto value_binding = gbd::reader_binding(consumer, second_value, value_source, reader_layout);
+  auto value_binding = gb::reader_binding(consumer, second_value, value_source, reader_layout);
   ASSERT_TRUE(value_binding) << value_binding.error().message();
+  const auto &key_binding_data = gd::SourceBindingAccess::get(*key_binding);
+  const auto &value_binding_data = gd::SourceBindingAccess::get(*value_binding);
   if (owned_layout) {
     // This node really has only Q/K/V ports. The ready proof belongs to its
     // original private control, not an invented external metadata input.
-    ASSERT_EQ(key_binding->ready_inputs.size(), 1u);
-    ASSERT_EQ(value_binding->ready_inputs.size(), 1u);
-    const auto &control = key_binding->ready_inputs.front();
+    ASSERT_EQ(key_binding_data.ready_inputs.size(), 1u);
+    ASSERT_EQ(value_binding_data.ready_inputs.size(), 1u);
+    const auto &control = key_binding_data.ready_inputs.front();
     EXPECT_FALSE(control.input.valid());
     EXPECT_EQ(control.region, attention);
     EXPECT_TRUE(control.read.valid());
@@ -253,7 +255,7 @@ void pending_original_pages_publish_while_attention_reads(bool owned_layout) {
   ASSERT_EQ(cudaLaunchHostFunc(gate.stream, &PageSourceGate::wait, &gate), cudaSuccess);
   auto submitted = producer.submit(queues);
   ASSERT_TRUE(submitted) << submitted.error().message();
-  auto common_result = gd::SubmissionSource::create(producer, std::move(*submitted), storage);
+  auto common_result = g::SubmissionSource::create(producer, std::move(*submitted), storage);
   ASSERT_TRUE(common_result) << common_result.error().message();
   auto common = std::move(*common_result);
   EXPECT_EQ(*common.poll(), c::CompletionPoll::kPending);
@@ -262,18 +264,18 @@ void pending_original_pages_publish_while_attention_reads(bool owned_layout) {
   const auto captured_values = value_source.capture(common);
   ASSERT_TRUE(captured_values.ok()) << captured_values.message();
   if (owned_layout) {
-    auto invalid_control = value_binding->ready_inputs.front();
+    auto invalid_control = gd::SourceBindingAccess::get(*value_binding).ready_inputs.front();
     invalid_control.ordinal = UINT32_MAX;
     const std::array invalid_ready{invalid_control};
     auto invalid_bindings = bindings;
-    invalid_bindings.back().ready_inputs = invalid_ready;
+    gd::SourceBindingAccess::get(invalid_bindings.back()).ready_inputs = invalid_ready;
     // Reject the final private control before committing any of this bundle.
     // The original complete bundle below must still bind both source views.
-    EXPECT_FALSE(gd::bind_outputs(consumer, invalid_bindings).ok());
+    EXPECT_FALSE(g::bind_sources(consumer, invalid_bindings).ok());
   }
-  const auto bound = gd::bind_outputs(consumer, bindings);
+  const auto bound = g::bind_sources(consumer, bindings);
   ASSERT_TRUE(bound.ok()) << bound.message();
-  const auto replay = gd::prepare_outputs(consumer, bindings, queues);
+  const auto replay = g::prepare_sources(consumer, queues);
   ASSERT_TRUE(replay.ok()) << replay.message();
   EXPECT_EQ(consumer.replay_route(), g::ReplayRoute::kCaptured);
   const auto replay_report = consumer.replay_report().value();
@@ -286,7 +288,7 @@ void pending_original_pages_publish_while_attention_reads(bool owned_layout) {
   EXPECT_FALSE(consumer.submit(queues));
   reader_gate.arm(gate.stream);
   ASSERT_EQ(cudaLaunchHostFunc(reader_gate.stream, &PageSourceGate::wait, &reader_gate), cudaSuccess);
-  auto consumed = gd::submit_outputs(consumer, bindings, queues);
+  auto consumed = g::submit_sources(consumer, queues);
   ASSERT_TRUE(consumed) << consumed.error().message();
   gate.release();
   ASSERT_TRUE(common.wait().ok());
@@ -351,7 +353,7 @@ void pending_original_pages_publish_while_attention_reads(bool owned_layout) {
     // The same layout remains preparable. A different exact version with
     // changed page IDs must not overwrite the private mirror still retained
     // by these typed source views, even though its address/geometry is stable.
-    const auto mirror_result = key_binding->ready_inputs.front().read.view();
+    const auto mirror_result = key_binding_data.ready_inputs.front().read.view();
     ASSERT_TRUE(mirror_result) << mirror_result.error().message();
     const auto mirror = *mirror_result;
     std::vector<std::byte> before(mirror.size()), after(mirror.size());
@@ -470,12 +472,12 @@ void pending_append_inherits_published_pages(bool full_page_boundary, bool relay
   ASSERT_TRUE(gb::prepare(producer, queues, {}, options).ok());
   ASSERT_TRUE(gb::bind_append(producer, a_graph, a_append, std::move(a_pages)).ok());
   ASSERT_TRUE(producer.bind(a_input, a_rows, a_input_ready).ok());
-  auto source_result = gbd::PagedAppendSource::prepare(producer, a_append, storage);
+  auto source_result = gb::PagedAppendSource::prepare(producer, a_append, storage);
   ASSERT_TRUE(source_result) << source_result.error().message();
   auto source = std::move(*source_result);
   // Cold geometry only: B owns a distinct fresh destination. It receives no
   // fake ready lease for A's pending tail and never borrows A's tail authority.
-  auto b_pages_result = gbd::make_append_from_source(arena, b_layout, source, b_dirty);
+  auto b_pages_result = gb::make_append_from_source(arena, b_layout, source, b_dirty);
   ASSERT_TRUE(b_pages_result) << b_pages_result.error().message();
   auto b_builder = g::GraphBuilder::create().value();
   const auto b_input = b_builder.input(b_rows).value();
@@ -537,14 +539,14 @@ void pending_append_inherits_published_pages(bool full_page_boundary, bool relay
     ASSERT_TRUE(b_route == g::ReplayRoute::kCaptured || b_route == g::ReplayRoute::kHybrid);
     ASSERT_GT(consumer.replay_report()->recorded_capture_range_count, 0u);
   }
-  gbd::PagedAppendSource b_source;
+  gb::PagedAppendSource b_source;
   c::PagedArena third_keys;
   c::LeasePool third_payload;
   std::array<c::ReadLease, 4> third_foreign_guards;
   g::Invocation third;
   g::ValueId third_value{}, third_output{};
   if (relay_to_attention) {
-    auto b_source_result = gbd::PagedAppendSource::prepare(consumer, b_append, storage);
+    auto b_source_result = gb::PagedAppendSource::prepare(consumer, b_append, storage);
     ASSERT_TRUE(b_source_result) << b_source_result.error().message();
     b_source = std::move(*b_source_result);
     third_keys = c::PagedArena::create(schema, c::BatchCacheRole::kKey,
@@ -604,39 +606,40 @@ void pending_append_inherits_published_pages(bool full_page_boundary, bool relay
   ASSERT_EQ(cudaLaunchHostFunc(producer_gate.stream, &PageSourceGate::wait, &producer_gate), cudaSuccess);
   auto submitted = producer.submit(queues);
   ASSERT_TRUE(submitted) << submitted.error().message();
-  auto common_result = gd::SubmissionSource::create(producer, std::move(*submitted), storage);
+  auto common_result = g::SubmissionSource::create(producer, std::move(*submitted), storage);
   ASSERT_TRUE(common_result) << common_result.error().message();
   auto common = std::move(*common_result);
   ASSERT_EQ(*common.poll(), c::CompletionPoll::kPending);
   const auto captured = source.capture(common);
   ASSERT_TRUE(captured.ok()) << captured.message();
-  auto binding_result = gbd::append_binding(consumer, b_append, source);
+  auto binding_result = gb::append_binding(consumer, b_append, source);
   ASSERT_TRUE(binding_result) << binding_result.error().message();
+  const auto &binding_data = gd::SourceBindingAccess::get(*binding_result);
   // There is no pending tensor input in this bundle: the original append's
   // The selected effect consumes the same submission terminal even when a
   // full-page boundary requires no COW read of any pending payload.
-  EXPECT_FALSE(binding_result->input.valid());
+  EXPECT_FALSE(binding_data.input.valid());
   const std::array bindings{*binding_result};
-  ASSERT_NE(binding_result->resource, nullptr);
+  ASSERT_NE(binding_data.resource, nullptr);
   if (local_attention) {
     // B's selected attention consumes every inherited prefix, including the
     // full-page/no-COW case. One exact range per physical predecessor page is
     // also one original ordered native read; new page 3 uses B's writer.
-    ASSERT_EQ(binding_result->effect_reads.size(), 3u);
+    ASSERT_EQ(binding_data.effect_reads.size(), 3u);
     const auto bank = cd::PagedArenaAccess::tensor(arena).value().storage();
     for (std::size_t page = 0; page < 3; ++page) {
-      const auto range = binding_result->effect_reads[page];
+      const auto range = binding_data.effect_reads[page];
       EXPECT_EQ(range.resource(), bank.resource());
       EXPECT_EQ(range.native_handle(), bank.native_handle());
       EXPECT_EQ(range.offset(), bank.offset() + page * arena.page_bytes());
       EXPECT_EQ(range.size(), page == 2 && !full_page_boundary ? 128u : 256u);
-      EXPECT_TRUE(binding_result->resource->covers_range(range).ok());
+      EXPECT_TRUE(binding_data.resource->covers_range(range).ok());
     }
   } else if (full_page_boundary) {
-    EXPECT_TRUE(binding_result->effect_reads.empty());
+    EXPECT_TRUE(binding_data.effect_reads.empty());
   } else {
-    ASSERT_EQ(binding_result->effect_reads.size(), 1u);
-    const auto prefix = binding_result->effect_reads.front();
+    ASSERT_EQ(binding_data.effect_reads.size(), 1u);
+    const auto prefix = binding_data.effect_reads.front();
     ASSERT_EQ(prefix.size(), 128u);
     ASSERT_LT(prefix.size(), arena.page_bytes());
     const auto capacity_view = cd::PagedArenaAccess::tensor(arena).value().storage();
@@ -645,23 +648,23 @@ void pending_append_inherits_published_pages(bool full_page_boundary, bool relay
     ASSERT_GE(prefix.offset(), capacity_view.offset());
     const auto overread = capacity_view.subview(prefix.offset() - capacity_view.offset(), prefix.size() + 1);
     ASSERT_TRUE(overread) << overread.error().message();
-    const auto covered = binding_result->resource->covers_range(prefix);
+    const auto covered = binding_data.resource->covers_range(prefix);
     ASSERT_TRUE(covered.ok()) << covered.message();
-    const auto uncovered = binding_result->resource->covers_range(*overread);
+    const auto uncovered = binding_data.resource->covers_range(*overread);
     EXPECT_TRUE(uncovered.IsInvalidArgument()) << uncovered.message();
     const std::array invalid_reads{*overread};
     auto invalid_binding = *binding_result;
-    invalid_binding.effect_reads = invalid_reads;
+    gd::SourceBindingAccess::get(invalid_binding).effect_reads = invalid_reads;
     const std::array invalid_bindings{invalid_binding};
     // This byte is inside A's original full page but outside its genuinely
     // written prefix. The source-range query above checks initialized coverage;
     // this separate registration rejection must leave the real bundle intact.
-    const auto rejected = gd::bind_outputs(consumer, invalid_bindings);
+    const auto rejected = g::bind_sources(consumer, invalid_bindings);
     EXPECT_TRUE(rejected.IsInvalidArgument()) << rejected.message();
   }
-  const auto bound = gd::bind_outputs(consumer, bindings);
+  const auto bound = g::bind_sources(consumer, bindings);
   ASSERT_TRUE(bound.ok()) << bound.message();
-  const auto prepared = gd::prepare_outputs(consumer, bindings, queues);
+  const auto prepared = g::prepare_sources(consumer, queues);
   ASSERT_TRUE(prepared.ok()) << prepared.message();
   EXPECT_EQ(consumer.replay_route(), b_route);
   if (local_attention) {
@@ -675,25 +678,26 @@ void pending_append_inherits_published_pages(bool full_page_boundary, bool relay
   EXPECT_FALSE(consumer.submit(queues));
   consumer_gate.arm(producer_gate.stream);
   ASSERT_EQ(cudaLaunchHostFunc(consumer_gate.stream, &PageSourceGate::wait, &consumer_gate), cudaSuccess);
-  auto consumed = gd::submit_outputs(consumer, bindings, queues);
+  auto consumed = g::submit_sources(consumer, queues);
   ASSERT_TRUE(consumed) << consumed.error().message();
-  gd::SubmissionSource b_common;
-  std::array<gd::OutputBinding, 1> third_bindings;
+  g::SubmissionSource b_common;
+  std::array<g::SourceBinding, 1> third_bindings;
   if (relay_to_attention) {
-    auto b_common_result = gd::SubmissionSource::create(consumer, std::move(*consumed), storage);
+    auto b_common_result = g::SubmissionSource::create(consumer, std::move(*consumed), storage);
     ASSERT_TRUE(b_common_result) << b_common_result.error().message();
     b_common = std::move(*b_common_result);
     ASSERT_EQ(*b_common.poll(), c::CompletionPoll::kPending);
     ASSERT_EQ(*common.poll(), c::CompletionPoll::kPending);
     const auto captured_b = b_source.capture(b_common);
     ASSERT_TRUE(captured_b.ok()) << captured_b.message();
-    auto third_binding = gbd::reader_binding(third, third_value, b_source, b_layout);
+    auto third_binding = gb::reader_binding(third, third_value, b_source, b_layout);
     ASSERT_TRUE(third_binding) << third_binding.error().message();
-    ASSERT_NE(third_binding->resource, nullptr);
-    const auto premature = third_binding->resource->publish_ready({});
+    const auto &third_data = gd::SourceBindingAccess::get(*third_binding);
+    ASSERT_NE(third_data.resource, nullptr);
+    const auto premature = third_data.resource->publish_ready({});
     EXPECT_TRUE(premature.IsUnavailable()) << premature.message();
     third_bindings.front() = *third_binding;
-    const auto third_bound = gd::bind_outputs(third, third_bindings);
+    const auto third_bound = g::bind_sources(third, third_bindings);
     ASSERT_TRUE(third_bound.ok()) << third_bound.message();
   }
   producer_gate.release();
@@ -733,7 +737,7 @@ void pending_append_inherits_published_pages(bool full_page_boundary, bool relay
     // COW variant drops it and must retain only inherited pages 0 and 1.
     source = {};
     ASSERT_EQ(*b_common.poll(), c::CompletionPoll::kPending);
-    const auto prepared_third = gd::prepare_outputs(third, third_bindings, queues);
+    const auto prepared_third = g::prepare_sources(third, queues);
     ASSERT_TRUE(prepared_third.ok()) << prepared_third.message();
     const auto replay = third.replay_report().value();
     EXPECT_EQ(replay.recorded_capture_range_count, 0u);
@@ -745,7 +749,7 @@ void pending_append_inherits_published_pages(bool full_page_boundary, bool relay
     EXPECT_FALSE(third.submit(queues));
     third_gate.arm(producer_gate.stream);
     ASSERT_EQ(cudaLaunchHostFunc(third_gate.stream, &PageSourceGate::wait, &third_gate), cudaSuccess);
-    auto submitted_third = gd::submit_outputs(third, third_bindings, queues);
+    auto submitted_third = g::submit_sources(third, queues);
     ASSERT_TRUE(submitted_third) << submitted_third.error().message();
     third_completion = std::move(*submitted_third);
     ASSERT_EQ(*third_completion.poll(), c::CompletionPoll::kPending);
@@ -757,7 +761,7 @@ void pending_append_inherits_published_pages(bool full_page_boundary, bool relay
     ASSERT_EQ(*third_completion.poll(), c::CompletionPoll::kPending);
     // Complete cardinality and each physical prefix length match B; only the
     // actual K roots/ranges are foreign to its V publication authority.
-    const auto foreign = third_bindings.front().resource->publish_ready(
+    const auto foreign = gd::SourceBindingAccess::get(third_bindings.front()).resource->publish_ready(
         std::span(third_foreign_guards).first(b_ids.size()));
     EXPECT_TRUE(foreign.IsInvalidArgument()) << foreign.message();
   } else {

@@ -1154,6 +1154,28 @@ drain 能主动观察原 Completion，并等待真正的 accepted prefix 退休�
 CPU+CUDA同样使用本节的GraphOutput与资源合同，pending权重的typed绑定见
 [CPU与GPU组合](#cpu-与-gpu-组合)。
 
+### 已提交输出作为后继输入
+
+包含`hyle/graph/source.h`，用`SubmissionSource`接管一次原提交，再从它建立`OutputSource`或`StoreSource`。
+前者的`reader_binding(input)`描述完整输出的读取；后者可按下一Store或普通checked Gather生成读取描述。
+分页视图使用`hyle/graph/paged_append_source.h`中的`batch::PagedAppendSource`及其typed工厂。
+
+消费者已绑定普通输入、输出，并具备非阻塞Commands或真实预热capture后，按以下顺序接线：
+
+```cpp
+{
+  const std::array bindings{source.reader_binding(next_input)};
+  HYLE_RETURN_IF_ERROR(graph::bind_sources(consumer, bindings));
+} // 描述可释放，Invocation保留实际视图与完整绑定事实。
+HYLE_RETURN_IF_ERROR(graph::prepare_sources(consumer, queues));
+HYLE_ASSIGN_OR_RETURN(auto done, graph::submit_sources(consumer, queues));
+HYLE_RETURN_IF_ERROR(done.wait());
+```
+
+这不公开pending字节；原Queue、Source权限和最终物理绑定仍逐次校验，重绑实际输入会使原束失效。
+完成后先取回受影响的Store／Append，再用`release_sources(consumer)`撤回原束；原错误和真实退休要求不变。
+完整例子见[原输出与混合来源检查](../../tests/graph/output_source_cuda_test.cc)。
+
 ### 外部固定槽写入
 
 `<hyle/graph/slots.h>` 的 `slots::Store` 将稠密 `rows[M,E]` 原码写入同一

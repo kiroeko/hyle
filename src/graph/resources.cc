@@ -2,8 +2,8 @@
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/graph/detail/replay_access.h"
 #include "hyle/graph/result.h"
-#include "hyle/graph/detail/output_source.h"
-#include "hyle/graph/detail/store_source.h"
+#include "hyle/graph/source.h"
+#include "hyle/graph/detail/source_binding_access.h"
 #include "hyle/graph/detail/input_source.h"
 
 #include <algorithm>
@@ -2782,56 +2782,21 @@ bool same_projection(ResourceProjection a, ResourceProjection b) noexcept {
   return a.capacity == b.capacity && a.metadata == b.metadata && a.reader == b.reader &&
       a.capability == b.capability && std::ranges::equal(a.access_nodes, b.access_nodes);
 }
-bool same_reader(ProjectedReader a, ProjectedReader b) noexcept {
-  return a.step == b.step && a.implementation == b.implementation && a.prepared == b.prepared &&
-      a.input_port == b.input_port && a.permission_changes_preserve_commands == b.permission_changes_preserve_commands;
-}
 bool same_ready_guard(const compute::ReadLease &left, const compute::ReadLease &right) noexcept {
   if (compute::detail::LeaseAccess::identity(left) != compute::detail::LeaseAccess::identity(right) ||
       left.generation() != right.generation()) return false;
   const auto a = left.view(), b = right.view();
   return a && b && same_resource_range(*a, *b);
 }
-bool same_required_input(const ResourceReadyInput &a, const ResourceReadyInput &b) noexcept {
-  const auto left = a.tensor.storage(), right = b.tensor.storage();
-  const auto a_guard = a.read.view(), b_guard = b.read.view();
-  return a_guard && b_guard && a.input == b.input && a.region == b.region && a.ordinal == b.ordinal &&
-      a.tensor.description() == b.tensor.description() &&
-      left.resource() == right.resource() && left.native_handle() == right.native_handle() &&
-      left.offset() == right.offset() && left.size() == right.size() &&
-      compute::detail::LeaseAccess::identity(a.read) == compute::detail::LeaseAccess::identity(b.read) &&
-      a.read.generation() == b.read.generation() && a.read.size() == b.read.size() &&
-      a_guard->resource() == b_guard->resource() && a_guard->native_handle() == b_guard->native_handle() &&
-      a_guard->offset() == b_guard->offset() && a_guard->size() == b_guard->size();
-}
-Result<OutputBindingBundle *> bound_output_bundle(Invocation &invocation,
-    std::span<const OutputBinding> bindings) noexcept {
-  if (bindings.empty()) return std::unexpected(Status::InvalidArgument("output bundle is empty"));
-  const auto *token = OutputSourceAccess::state(bindings.front().output);
-  const auto *store = OutputSourceAccess::state(bindings.front().store);
-  const auto *resource = OutputSourceAccess::state(bindings.front().resource);
-  auto *bundle = token ? token->bundle : store ? store->bundle : resource ? resource->bundle : nullptr;
-  if (!bundle || bundle->entries.size() != bindings.size() ||
-      bundle->consumer != InvocationAccess::state(invocation))
+Result<InputSource> bound_output_bundle(Invocation &invocation) noexcept {
+  const auto *state = InvocationAccess::state(invocation);
+  if (!state)
+    return std::unexpected(Status::FailedPrecondition("output bundle has no original consumer"));
+  HYLE_ASSIGN_OR_RETURN(auto owner, bound_input_source(*state, &output_source_table));
+  const auto *bundle = static_cast<const OutputBindingBundle *>(owner.state());
+  if (bundle->consumer != state || owner.identity() != bundle->submission.get())
     return std::unexpected(Status::FailedPrecondition("output bundle was not bound to this original consumer"));
-  for (std::size_t i = 0; i < bindings.size(); ++i) {
-    const auto &entry = bundle->entries[i];
-    if (OutputSourceAccess::state(bindings[i].output) != entry.view.get() ||
-        OutputSourceAccess::state(bindings[i].store) != entry.store.get() ||
-        OutputSourceAccess::state(bindings[i].resource) != entry.resource.get() ||
-        (entry.view && bindings[i].input != entry.input) ||
-        (entry.store && (bindings[i].input.valid() || !same_projection(bindings[i].projection, entry.projection) ||
-            !std::ranges::equal(bindings[i].store_ready, entry.store_ready, same_ready_guard))) ||
-        (entry.resource && (bindings[i].input != entry.input ||
-            bindings[i].effect.node!=entry.effect.node || bindings[i].effect.step!=entry.effect.step ||
-            bindings[i].effect.implementation!=entry.effect.implementation ||
-            bindings[i].effect.prepared!=entry.effect.prepared ||
-            !std::ranges::equal(bindings[i].effect_reads,entry.effect_reads,same_resource_range) ||
-            !std::ranges::equal(bindings[i].readers, entry.readers, same_reader) ||
-            !std::ranges::equal(bindings[i].ready_inputs, entry.ready_inputs, same_required_input))))
-      return std::unexpected(Status::InvalidArgument("output bundle differs from its original complete binding"));
-  }
-  return bundle;
+  return owner;
 }
 } // namespace
 
@@ -2866,6 +2831,10 @@ Result<StoreProjectionInputs> RegionAccess::store_source_projection(
   }
   return StoreProjectionInputs{found->store->capacity, found->store->indices};
 }
+} // namespace detail
+
+using namespace detail;
+
 SubmissionSource::SubmissionSource(SubmissionSource &&other) noexcept
     : state_(std::exchange(other.state_, nullptr)) {}
 SubmissionSource &SubmissionSource::operator=(SubmissionSource &&other) noexcept {
@@ -2960,6 +2929,7 @@ Status SubmissionSource::visit(NodeId node, RegionAccessFn callback, void *user)
   } pin{original};
   return RegionAccess::visit_pinned(original, node, callback, user);
 }
+namespace detail {
 Status RegionAccess::visit_pinned(InvocationState *original, NodeId node,
     RegionAccessFn callback, void *user) noexcept {
   const auto &plan = *original->plan;
@@ -3310,6 +3280,8 @@ Status ResourceSource::publish_ready(std::span<const compute::ReadLease> ready) 
   }
   return Status::Ok();
 }
+} // namespace detail
+
 OutputSource::OutputSource(OutputSource &&other) noexcept
     : state_(std::exchange(other.state_, nullptr)) {}
 OutputSource &OutputSource::operator=(OutputSource &&other) noexcept {
@@ -3408,6 +3380,7 @@ Status OutputSource::detach() noexcept {
   --source.borrows;
   return Status::Ok();
 }
+namespace detail {
 namespace {
 bool source_retains_allocator(const compute::StorageOwner &storage, mem::AllocatorRef selected) noexcept {
   const auto actual = compute::detail::ResourceBudgetAccess::original_allocator(selected);
@@ -3522,6 +3495,8 @@ Result<StoreSourceState *> prepare_store_source(Invocation &invocation, NodeId n
   return owner.release();
 }
 } // namespace
+} // namespace detail
+
 StoreSource::StoreSource(StoreSource &&other) noexcept
     : state_(std::exchange(other.state_, nullptr)) {}
 StoreSource &StoreSource::operator=(StoreSource &&other) noexcept {
@@ -3534,13 +3509,13 @@ StoreSource &StoreSource::operator=(StoreSource &&other) noexcept {
 StoreSource::~StoreSource() { if (state_) state_->decref(); }
 bool StoreSource::valid() const noexcept { return state_ && state_->submission; }
 std::size_t StoreSource::destination_count() const noexcept { return state_ ? state_->tickets.size() : 0; }
-Result<OutputBinding> StoreSource::reader_binding(Invocation &invocation, const Graph &graph,
+Result<SourceBinding> StoreSource::reader_binding(Invocation &invocation, const Graph &graph,
     NodeId store, std::span<const compute::ReadLease> ready) const noexcept {
   if (!valid()) return std::unexpected(Status::FailedPrecondition("Store reader needs its captured original source"));
   HYLE_ASSIGN_OR_RETURN(auto projection, slots::detail::source_projection(invocation, store));
   HYLE_RETURN_IF_ERROR(validate_store_reader(&graph, projection, *state_, *InvocationAccess::state(invocation)));
   HYLE_RETURN_IF_ERROR(validate_store_ready(*state_, ready));
-  return OutputBinding{.store = this, .projection = projection, .graph = &graph, .store_ready = ready};
+  return SourceBindingAccess::make({.store = this, .projection = projection, .graph = &graph, .store_ready = ready});
 }
 Result<StoreSource> StoreSource::prepare(Invocation &invocation, NodeId node,
     const compute::StorageOwner &storage, ResourceOptions options) noexcept {
@@ -3637,16 +3612,36 @@ Result<compute::ReadLease> StoreSource::publish(std::size_t destination,
       state_->tickets[destination - state_->first_destination], writer));
   return compute::detail::LeaseAccess::publish_after_writes(writer);
 }
-Status bind_outputs(Invocation &invocation, std::span<const OutputBinding> bindings) noexcept {
+SourceBinding OutputSource::reader_binding(ValueId input) const noexcept {
+  return SourceBindingAccess::make({.input = input, .output = this});
+}
+Result<SourceBinding> StoreSource::reader_binding(Invocation &invocation, const Graph &graph,
+    std::span<const NodeId> readers, std::span<const compute::ReadLease> ready) const noexcept {
+  if (!valid()) return std::unexpected(Status::FailedPrecondition("Store reader needs its captured original source"));
+  if (readers.size() != 1)
+    return std::unexpected(Status::InvalidArgument("Store source needs one original checked Gather reader"));
+  auto *state = InvocationAccess::state(invocation);
+  if (!state || !state->plan)
+    return std::unexpected(Status::FailedPrecondition("Store reader has no original consumer"));
+  HYLE_ASSIGN_OR_RETURN(auto capacity, graph.node_input(readers.front(), 0));
+  HYLE_ASSIGN_OR_RETURN(auto metadata, graph.node_input(readers.front(), 1));
+  const ResourceProjection projection{capacity, metadata, readers.front(), readers,
+      compute::detail::kProjectedInputReadExtensionId};
+  HYLE_RETURN_IF_ERROR(validate_store_reader(&graph, projection, *state_, *state));
+  HYLE_RETURN_IF_ERROR(validate_store_ready(*state_, ready));
+  return SourceBindingAccess::make({.store = this, .projection = projection, .graph = &graph, .store_ready = ready});
+}
+Status bind_sources(Invocation &invocation, std::span<const SourceBinding> bindings) noexcept {
   auto *state = InvocationAccess::state(invocation);
   HYLE_RETURN_IF_ERROR(resource_control_ready(state));
   if (bindings.empty() || bindings.size() > state->plan->input_ids.size()+state->plan->steps.size())
     return Status::InvalidArgument("output bundle has an invalid size");
   if (has_input_source_table(*state, &output_source_table))
     return Status::FailedPrecondition("original consumer already has its complete pending submission bundle");
-  auto *first_token = OutputSourceAccess::state(bindings.front().output);
-  auto *first_store = OutputSourceAccess::state(bindings.front().store);
-  auto *first_resource = OutputSourceAccess::state(bindings.front().resource);
+  const auto &first = SourceBindingAccess::get(bindings.front());
+  auto *first_token = OutputSourceAccess::state(first.output);
+  auto *first_store = OutputSourceAccess::state(first.store);
+  auto *first_resource = OutputSourceAccess::state(first.resource);
   auto *source = first_token ? first_token->submission.get()
       : first_store ? first_store->submission.get()
       : first_resource ? first_resource->submission.get() : nullptr;
@@ -3654,7 +3649,8 @@ Status bind_outputs(Invocation &invocation, std::span<const OutputBinding> bindi
   std::size_t incoming_count = 0, node_count = 0, ticket_count = 0, reader_count = 0, ready_input_count = 0,
       effect_read_count = 0, store_ready_count = 0;
   ResourceOptions reserve_options{source->metadata_owner.allocator(), {}};
-  for (const auto &binding : bindings) {
+  for (const auto &descriptor : bindings) {
+    const auto &binding = SourceBindingAccess::get(descriptor);
     auto *token = OutputSourceAccess::state(binding.output);
     auto *store = OutputSourceAccess::state(binding.store);
     auto *resource = OutputSourceAccess::state(binding.resource);
@@ -3718,7 +3714,8 @@ Status bind_outputs(Invocation &invocation, std::span<const OutputBinding> bindi
     bundle->effect_reads.reserve(effect_read_count);
     bundle->store_ready.reserve(store_ready_count);
     bundle->release_values.reserve(incoming_count); bundle->release_effects.reserve(bindings.size());
-    for (const auto &binding : bindings) {
+    for (const auto &descriptor : bindings) {
+      const auto &binding = SourceBindingAccess::get(descriptor);
       if (auto *token = OutputSourceAccess::state(binding.output)) {
         bundle->entries.push_back({.input = binding.input, .view = util::retain_ref(token)});
         bundle->replacements.push_back({binding.input, token->tensor});
@@ -3894,13 +3891,13 @@ Status bind_outputs(Invocation &invocation, std::span<const OutputBinding> bindi
   }
   return Status::Ok();
 }
-Status release_outputs(Invocation &invocation, std::span<const OutputBinding> bindings) noexcept {
-  HYLE_ASSIGN_OR_RETURN(auto *bundle, bound_output_bundle(invocation, bindings));
+Status release_sources(Invocation &invocation) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto owner, bound_output_bundle(invocation));
+  auto *bundle = static_cast<OutputBindingBundle *>(owner.state());
   auto *state = InvocationAccess::state(invocation);
   if (!RegionAccess::outcome_available(invocation) ||
       state->preparation_uses.load(std::memory_order_acquire))
     return Status::Unavailable("source bundle still has native work, results, observations or preparation");
-  HYLE_ASSIGN_OR_RETURN(auto owner, output_input_source(bundle));
   const auto &episode = *state->resources.get();
   for (const auto &replacement : bundle->replacements) {
     if (!input_source_matches(*state, replacement.input, owner))
@@ -3937,9 +3934,9 @@ Status release_outputs(Invocation &invocation, std::span<const OutputBinding> bi
   bundle->consumer = nullptr;
   return Status::Ok();
 }
-Status prepare_outputs(Invocation &invocation, std::span<const OutputBinding> bindings,
-    std::span<const QueueBinding> queues) noexcept {
-  HYLE_ASSIGN_OR_RETURN(auto bundle, bound_output_bundle(invocation, bindings));
+Status prepare_sources(Invocation &invocation, std::span<const QueueBinding> queues) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto owner, bound_output_bundle(invocation));
+  auto *bundle = static_cast<OutputBindingBundle *>(owner.state());
   HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, *bundle, queues, true));
   if (queues.size() != 1) return Status::InvalidArgument("output relay requires one actual Queue");
   if (bundle->submitted) return Status::FailedPrecondition("output bundle consumer was already submitted");
@@ -3959,9 +3956,10 @@ Status prepare_outputs(Invocation &invocation, std::span<const OutputBinding> bi
   return invocation.prepare_replay(queues,
       {.mode = ReplayMode::kCommands, .host_wait = HostWaitPolicy::kReject});
 }
-Result<compute::Completion> submit_outputs(Invocation &invocation,
-    std::span<const OutputBinding> bindings, std::span<const QueueBinding> queues) noexcept {
-  HYLE_ASSIGN_OR_RETURN(auto bundle, bound_output_bundle(invocation, bindings));
+Result<compute::Completion> submit_sources(Invocation &invocation,
+    std::span<const QueueBinding> queues) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto owner, bound_output_bundle(invocation));
+  auto *bundle = static_cast<OutputBindingBundle *>(owner.state());
   HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, *bundle, queues, true));
   const auto expected = bundle->consumer_route;
   if (queues.size() != 1 || invocation.replay_route() != expected)
@@ -4030,7 +4028,6 @@ Result<compute::Completion> submit_outputs(Invocation &invocation,
   if (result) bundle->submitted = true;
   return result;
 }
-} // namespace detail
 
 GraphOutput::GraphOutput(detail::InvocationState *state,
     std::uint32_t instance) noexcept : state_(state), instance_(instance) {

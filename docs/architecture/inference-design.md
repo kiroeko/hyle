@@ -369,10 +369,11 @@ extraStop不冒充模型EOS。[普通多成员接力](../evidence/correctness/in
 - Graph的`InputSource`可保留尚未完成的不可变生产者，按原Queue选择device／host wait，
   在消费者真实退休后补核生产者完整Status。`OrderedGraphSubmission`及typed pending frame
   已用于原批次搬运组合，Compute已有有序读取writer的内部权限原语。
-- `Invocation::result/output`继续只导出成功终结的输出。同build的`detail::SubmissionSource`
+- `Invocation::result/output`继续只导出成功终结的输出。同build的公开`graph::SubmissionSource`
   接管一次原提交proxy、Queue和完整终结事实，只有一个producer保留；`OutputSource`借用固定caller-owned完整dense／plain输出，
   各自核原writer／pool、精确范围及Plan强持的真实`StorageOwner`，不公开pending字节或制造ready租约。
-  一组视图用原子`OutputBinding` bundle绑定，依赖按共同Source身份去重，实际资源权限仍逐值接纳。
+  typed工厂生成`graph::SourceBinding`，原子绑定后由Invocation保留完整事实；后续操作不再接收调用方描述镜像。
+  依赖按共同Source身份去重，实际资源权限仍逐值接纳。
   bundle保全部视图寿命，Source不反持bundle；原生退休另保真实owner，不增加观察者或执行器。
 - 一次A→B依赖链与持续有限槽轮换分别实现。完整成功且实际退休后，view的`detach()`取得原只读权限；
   所有借用解除后，调用方显式`SubmissionSource::detach()`结束该代导出并归还producer保留。
@@ -540,7 +541,7 @@ tuple miss保留拒绝；没有旧artifact的合法Prepared Commands不变，避
 同一真实成功提交的token detach、完整Store ready及KV已发布范围可共同准备首个捕获；
 KV权限按当前贡献的精确bound裁剪，不能继承origin的更宽前缀。已装入原资源绑定的ready读
 只接纳一次；pending读、隐式effect及私有控制仍走原权限接纳。完成状态本身不证明载荷已初始化。
-`take`只回收后继目的权，保留无权限物理配置；`release_outputs`须等本消费者真实退休、先take受影响writer，
+`take`只回收后继目的权，保留无权限物理配置；`release_sources`须等本消费者真实退休、先take受影响writer，
 再沿原native全部预检撤本束来源及guard，失败也可清理，不能提前撤在途读权限或牵连其它输入。
 私有ID值不变时复用原成功发布的真实carrier，免去重复上传及同Queue等待；改值仍须原try_write、传输及真实退休。
 [有限CUDA旅程](../evidence/correctness/inference-pending-indexed-source-2026-10-27.json)覆盖F32 GDN／conv、原捕获复用、
@@ -569,7 +570,7 @@ ggml CUDA普通Commands仍可能维护内部graph cache、惰性分配或走同�
 Graph已增加窄`detail::ReplayAccess`沿原准备实现复用已完成的捕获：核同一实际Queue、物理key、
 稳定地址／私有参数及实际range／gap覆盖，pending输入只允许复用，所有range预检命中后才选择原记录。
 miss在begin capture及variant eviction之前拒绝，不新录制、不降回managed Commands，普通`ReplayOptions`不扩维。
-`prepare_outputs`固定该bundle选择的Commands、Captured或Hybrid模式，submit仍核实际完整路由与原有序读权限。
+`prepare_sources`固定该bundle选择的Commands、Captured或Hybrid模式，submit仍核实际完整路由与原有序读权限。
 [有限CUDA检查](../evidence/correctness/inference-graph-output-capture-2026-10-27.json)证明原ggml Gather→Add区域
 在生产者pending时取得0次新录制／1次复用，物理tuple不匹配时拒绝，原块读写权限交接及结果正确。
 仍执行原metadata hook／预算及权限准备，不表示零分配。真实双Concat I32生产者的pending接力另已通过有限CUDA检查。

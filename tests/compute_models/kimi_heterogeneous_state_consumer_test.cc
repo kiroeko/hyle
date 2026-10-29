@@ -399,7 +399,7 @@ struct Run final : std::enable_shared_from_this<Run> {
           throw std::runtime_error("Kimi MLA requires its unobserved original KDA submission");
         episode.incoming=std::make_unique<inference::IncomingExecutionSources<inference::SubmissionViews>>();
         episode.incoming->owner=previous->execution->sources;
-        episode.incoming->bindings.push_back({cold_program->input_ports[0].id,&episode.incoming->owner->primary_output});
+        episode.incoming->bindings.push_back(episode.incoming->owner->primary_output.reader_binding(cold_program->input_ports[0].id));
         episode.predecessor_episode=previous->execution;
       }
       if(capture_hidden) {

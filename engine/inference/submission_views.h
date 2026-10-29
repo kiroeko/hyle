@@ -8,8 +8,8 @@
 #include <utility>
 #include <vector>
 
-#include "hyle/graph/detail/paged_append_source.h"
-#include "hyle/graph/detail/store_source.h"
+#include "hyle/graph/paged_append_source.h"
+#include "hyle/graph/source.h"
 #include "hyle/graph/slots.h"
 
 namespace hyle::inference {
@@ -18,13 +18,13 @@ namespace hyle::inference {
 // keeps its existing owner and recovery protocol; these views introduce no
 // independent Completion, publication authority or submission path.
 struct SubmissionViews {
-  graph::detail::SubmissionSource submission;
+  graph::SubmissionSource submission;
   // First selected tensor, such as a generated ID or an inter-program hidden
   // value. Its original description determines type; no token dtype is implied.
-  graph::detail::OutputSource primary_output;
-  std::vector<graph::detail::StoreSource> states;
-  std::vector<graph::batch::detail::PagedAppendSource> pages;
-  std::vector<graph::detail::OutputSource> extra_outputs;
+  graph::OutputSource primary_output;
+  std::vector<graph::StoreSource> states;
+  std::vector<graph::batch::PagedAppendSource> pages;
+  std::vector<graph::OutputSource> extra_outputs;
 
   // Borrowed only for capture. Each output keeps its own actual storage owner;
   // its pool proves that complete original writer. Graph checks the owner's
@@ -56,12 +56,12 @@ struct SubmissionViews {
     pages.reserve(std::ranges::size(appends));
     extra_outputs.resize(extra_output_count);
     for (const auto &store : stores) {
-      HYLE_ASSIGN_OR_RETURN(auto view, graph::detail::StoreSource::prepare(
+      HYLE_ASSIGN_OR_RETURN(auto view, graph::StoreSource::prepare(
           run, store.store, store.storage, {.resource_budget = budget}));
       states.push_back(std::move(view));
     }
     for (const auto &append : appends) {
-      HYLE_ASSIGN_OR_RETURN(auto view, graph::batch::detail::PagedAppendSource::prepare(
+      HYLE_ASSIGN_OR_RETURN(auto view, graph::batch::PagedAppendSource::prepare(
           run, append.append, append.storage, {.resource_budget = budget}));
       pages.push_back(std::move(view));
     }
@@ -87,7 +87,7 @@ struct SubmissionViews {
         return std::unexpected(Status::FailedPrecondition("submission views already captured an extra output"));
     if (outputs.empty() || outputs.size() - 1 != extra_outputs.size())
       return std::unexpected(Status::InvalidArgument("output capture count differs from its prepared submission views"));
-    auto exported = graph::detail::SubmissionSource::create(run, std::move(completion), metadata_owner);
+    auto exported = graph::SubmissionSource::create(run, std::move(completion), metadata_owner);
     if (!exported) {
       const auto &error = exported.error();
       // Only create's success-only transfer may decline. Once transferred,
@@ -97,10 +97,10 @@ struct SubmissionViews {
       return std::unexpected(error);
     }
     submission = std::move(*exported);
-    HYLE_ASSIGN_OR_RETURN(primary_output, graph::detail::OutputSource::create(
+    HYLE_ASSIGN_OR_RETURN(primary_output, graph::OutputSource::create(
         submission, outputs[0].output, outputs[0].storage, outputs[0].pool));
     for (std::size_t i = 0; i < extra_outputs.size(); ++i) {
-      HYLE_ASSIGN_OR_RETURN(extra_outputs[i], graph::detail::OutputSource::create(
+      HYLE_ASSIGN_OR_RETURN(extra_outputs[i], graph::OutputSource::create(
           submission, outputs[i + 1].output, outputs[i + 1].storage, outputs[i + 1].pool));
     }
     for (auto &state : states) HYLE_RETURN_IF_ERROR(state.capture(submission));

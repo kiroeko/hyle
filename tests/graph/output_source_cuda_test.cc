@@ -14,9 +14,8 @@
 
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/graph/cuda.h"
-#include "hyle/graph/detail/output_source.h"
-#include "hyle/graph/detail/submission_source.h"
-#include "hyle/graph/detail/store_source.h"
+#include "hyle/graph/source.h"
+#include "hyle/graph/detail/source_binding_access.h"
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/graph/detail/replay_access.h"
 #include "hyle/graph/detail/region_adapter.h"
@@ -199,20 +198,20 @@ void relay(bool bad_producer_index, bool reuse_producer = false, bool region_con
   auto submitted = producer.submit(queues);
   ASSERT_TRUE(submitted) << submitted.error().message();
   auto foreign = c::Completion::completed();
-  EXPECT_FALSE(gd::SubmissionSource::create(producer, std::move(foreign), storage));
+  EXPECT_FALSE(g::SubmissionSource::create(producer, std::move(foreign), storage));
   EXPECT_TRUE(foreign.valid());
-  auto submission_result = gd::SubmissionSource::create(producer, std::move(*submitted), storage);
+  auto submission_result = g::SubmissionSource::create(producer, std::move(*submitted), storage);
   ASSERT_TRUE(submission_result) << submission_result.error().message();
   auto submission_source = std::move(*submission_result);
-  auto source_result = gd::OutputSource::create(submission_source, token, storage, source_pool);
+  auto source_result = g::OutputSource::create(submission_source, token, storage, source_pool);
   ASSERT_TRUE(source_result) << source_result.error().message();
   auto source = std::move(*source_result);
-  const std::array bindings{gd::OutputBinding{second_index, &source}};
+  const std::array bindings{source.reader_binding(second_index)};
   EXPECT_FALSE(submitted->valid());
   ASSERT_TRUE(source.poll());
   EXPECT_EQ(*source.poll(), c::CompletionPoll::kPending);
   if (bad_producer_index) {
-    gd::SubmissionSource empty;
+    g::SubmissionSource empty;
     EXPECT_TRUE(empty.request_cancel().IsFailedPrecondition());
     // The original CUDA work cannot be preempted. Its capability result is
     // independent of the still-pending whole verdict and the later bad ID.
@@ -224,13 +223,13 @@ void relay(bool bad_producer_index, bool reuse_producer = false, bool region_con
   }
   EXPECT_TRUE(source.detach().IsUnavailable());
   EXPECT_FALSE(producer.reset().ok());
-  EXPECT_FALSE(gd::bind_outputs(producer, std::array{gd::OutputBinding{first_index, &source}}).ok());
-  const auto bound = gd::bind_outputs(consumer, bindings);
+  EXPECT_FALSE(g::bind_sources(producer, std::array{source.reader_binding(first_index)}).ok());
+  const auto bound = g::bind_sources(consumer, bindings);
   ASSERT_TRUE(bound.ok()) << bound.message();
-  EXPECT_FALSE(gd::bind_outputs(consumer, bindings).ok());
+  EXPECT_FALSE(g::bind_sources(consumer, bindings).ok());
   EXPECT_FALSE(consumer.prepare_replay(queues,
       {.mode = g::ReplayMode::kRequireCapture, .host_wait = g::HostWaitPolicy::kReject}).ok());
-  const auto prepared = gd::prepare_outputs(consumer, bindings, queues);
+  const auto prepared = g::prepare_sources(consumer, queues);
   ASSERT_TRUE(prepared.ok()) << prepared.message();
   EXPECT_EQ(consumer.replay_route(), g::ReplayRoute::kCommands);
   if (region_consumer) {
@@ -251,7 +250,7 @@ void relay(bool bad_producer_index, bool reuse_producer = false, bool region_con
     reader_gate.arm(gate.stream);
     ASSERT_EQ(cudaLaunchHostFunc(reader_gate.stream, &Gate::wait, &reader_gate), cudaSuccess);
   }
-  auto consumed = gd::submit_outputs(consumer, bindings, queues);
+  auto consumed = g::submit_sources(consumer, queues);
   ASSERT_TRUE(consumed) << consumed.error().message();
   auto pending = consumed->poll();
   ASSERT_TRUE(pending) << pending.error().message();
@@ -494,28 +493,28 @@ TEST(GraphOutputSourceCuda, PendingI32ReusesRealNativeRegionCaptureWithoutRecord
   ASSERT_EQ(cudaLaunchHostFunc(gate.stream, &Gate::wait, &gate), cudaSuccess);
   auto submitted = producer.submit(queues);
   ASSERT_TRUE(submitted) << submitted.error().message();
-  auto submission_result = gd::SubmissionSource::create(producer, std::move(*submitted), storage);
+  auto submission_result = g::SubmissionSource::create(producer, std::move(*submitted), storage);
   ASSERT_TRUE(submission_result) << submission_result.error().message();
   auto submission_source = std::move(*submission_result);
-  auto source_result = gd::OutputSource::create(submission_source, token, storage, token_pool);
+  auto source_result = g::OutputSource::create(submission_source, token, storage, token_pool);
   ASSERT_TRUE(source_result) << source_result.error().message();
   auto source = std::move(*source_result);
-  const std::array bindings{gd::OutputBinding{second_index, &source}};
+  const std::array bindings{source.reader_binding(second_index)};
   ASSERT_TRUE(source.poll());
   ASSERT_EQ(*source.poll(), c::CompletionPoll::kPending);
   {
     // A typed view belongs to one reader bundle. Use another genuine view of
     // this submission so rejection cannot consume the successful reader's view.
-    auto refused_view = gd::OutputSource::create(submission_source, token, storage, token_pool);
+    auto refused_view = g::OutputSource::create(submission_source, token, storage, token_pool);
     if (!refused_view) gate.release();
     ASSERT_TRUE(refused_view) << refused_view.error().message();
-    const std::array refused_bindings{gd::OutputBinding{second_index, &*refused_view}};
-    const auto attached = gd::bind_outputs(commands_consumer, refused_bindings);
+    const std::array refused_bindings{refused_view->reader_binding(second_index)};
+    const auto attached = g::bind_sources(commands_consumer, refused_bindings);
     if (!attached.ok()) gate.release();
     ASSERT_TRUE(attached.ok()) << attached.message();
-    const auto refused = gd::prepare_outputs(commands_consumer, refused_bindings, queues);
+    const auto refused = g::prepare_sources(commands_consumer, queues);
     EXPECT_TRUE(refused.IsUnavailable()) << refused.message();
-    auto refused_submission = gd::submit_outputs(commands_consumer, refused_bindings, queues);
+    auto refused_submission = g::submit_sources(commands_consumer, queues);
     EXPECT_FALSE(refused_submission);
     if (refused_submission) {
       // A regression must still retire an accidentally accepted callback before
@@ -533,10 +532,10 @@ TEST(GraphOutputSourceCuda, PendingI32ReusesRealNativeRegionCaptureWithoutRecord
     EXPECT_EQ(*still_pending, c::CompletionPoll::kPending);
   }
   ASSERT_TRUE(consumer.bind(second_table, table_f32, other_embedding_ready).ok());
-  const auto bound = gd::bind_outputs(consumer, bindings);
+  const auto bound = g::bind_sources(consumer, bindings);
   ASSERT_TRUE(bound.ok()) << bound.message();
-  EXPECT_FALSE(gd::prepare_outputs(consumer, bindings, queues).ok());
-  EXPECT_FALSE(gd::submit_outputs(consumer, bindings, queues));
+  EXPECT_FALSE(g::prepare_sources(consumer, queues).ok());
+  EXPECT_FALSE(g::submit_sources(consumer, queues));
   EXPECT_TRUE(source.valid());
   EXPECT_FALSE(consumer.in_flight());
   EXPECT_EQ(consumer.replay_route(), g::ReplayRoute::kUnprepared);
@@ -544,7 +543,7 @@ TEST(GraphOutputSourceCuda, PendingI32ReusesRealNativeRegionCaptureWithoutRecord
   ASSERT_TRUE(source.poll());
   EXPECT_EQ(*source.poll(), c::CompletionPoll::kPending);
   ASSERT_TRUE(consumer.bind(second_table, table_f32, embedding_ready).ok());
-  const auto prepared = gd::prepare_outputs(consumer, bindings, queues);
+  const auto prepared = g::prepare_sources(consumer, queues);
   ASSERT_TRUE(prepared.ok()) << prepared.message();
   EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
   ASSERT_TRUE(source.poll());
@@ -557,7 +556,7 @@ TEST(GraphOutputSourceCuda, PendingI32ReusesRealNativeRegionCaptureWithoutRecord
   EXPECT_EQ(dependencies.device_wait_count, 1u);
   EXPECT_EQ(dependencies.host_wait_count, 0u);
   EXPECT_FALSE(consumer.submit(queues)); // The pending input still needs ordered admission.
-  auto consumed = gd::submit_outputs(consumer, bindings, queues);
+  auto consumed = g::submit_sources(consumer, queues);
   ASSERT_TRUE(consumed) << consumed.error().message();
   ASSERT_TRUE(consumed->poll());
   EXPECT_EQ(*consumed->poll(), c::CompletionPoll::kPending);
@@ -667,19 +666,19 @@ TEST(GraphOutputSourceCuda, CapturedManagedI32ProducerRetainsItsOriginalSubmissi
   ASSERT_EQ(cudaLaunchHostFunc(gate.stream, &Gate::wait, &gate), cudaSuccess);
   auto submitted = producer.submit(queues);
   ASSERT_TRUE(submitted) << submitted.error().message();
-  auto common_result = gd::SubmissionSource::create(producer, std::move(*submitted), storage);
+  auto common_result = g::SubmissionSource::create(producer, std::move(*submitted), storage);
   ASSERT_TRUE(common_result) << common_result.error().message();
   auto common = std::move(*common_result);
-  auto source_result = gd::OutputSource::create(common, token, storage, token_pool);
+  auto source_result = g::OutputSource::create(common, token, storage, token_pool);
   ASSERT_TRUE(source_result) << source_result.error().message();
   auto source = std::move(*source_result);
   ASSERT_TRUE(common.poll());
   EXPECT_EQ(*common.poll(), c::CompletionPoll::kPending);
   EXPECT_FALSE(producer.reset().ok());
-  const std::array bindings{gd::OutputBinding{second_index, &source}};
-  const auto bound = gd::bind_outputs(consumer, bindings);
+  const std::array bindings{source.reader_binding(second_index)};
+  const auto bound = g::bind_sources(consumer, bindings);
   ASSERT_TRUE(bound.ok()) << bound.message();
-  const auto prepared = gd::prepare_outputs(consumer, bindings, queues);
+  const auto prepared = g::prepare_sources(consumer, queues);
   ASSERT_TRUE(prepared.ok()) << prepared.message();
   EXPECT_EQ(consumer.replay_route(), g::ReplayRoute::kCommands);
   EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
@@ -688,7 +687,7 @@ TEST(GraphOutputSourceCuda, CapturedManagedI32ProducerRetainsItsOriginalSubmissi
   EXPECT_EQ(dependency.device_wait_count, 1u);
   EXPECT_EQ(dependency.host_wait_count, 0u);
   EXPECT_FALSE(consumer.submit(queues));
-  auto consumed = gd::submit_outputs(consumer, bindings, queues);
+  auto consumed = g::submit_sources(consumer, queues);
   ASSERT_TRUE(consumed) << consumed.error().message();
   ASSERT_TRUE(consumed->poll());
   EXPECT_EQ(*consumed->poll(), c::CompletionPoll::kPending);
@@ -730,7 +729,7 @@ TEST(GraphOutputSourceCuda, TwoOutputsShareOneOriginalSubmissionAndAtomicBundle)
       std::array<std::int64_t, 2>{1, 2}).value();
   auto inputs = c::LeasePool::create(storage.ref(), 6 * 256, {.max_blocks = 6}).value();
   auto tokens_pool = c::LeasePool::create(storage.ref(), 2 * 256, {.max_blocks = 2}).value();
-  auto output_pool = c::LeasePool::create(storage.ref(), 2 * 256, {.max_blocks = 2}).value();
+  auto output_pool = c::LeasePool::create(storage.ref(), 4 * 256, {.max_blocks = 4}).value();
   auto table = inputs.allocate(4 * sizeof(std::int32_t), 256).value();
   auto embedding = inputs.allocate(8 * sizeof(float), 256).value();
   constexpr std::array<std::int32_t, 4> token_values{2, 1, 3, 0};
@@ -804,6 +803,13 @@ TEST(GraphOutputSourceCuda, TwoOutputsShareOneOriginalSubmissionAndAtomicBundle)
     EXPECT_EQ(step.runtime.replay_class, c::ProviderReplayClass::kPrepared);
     EXPECT_FALSE(step.runtime.blocks_host);
   }
+  auto rebound_consumer = consumer_plan->executable.create_invocation().value();
+  ASSERT_TRUE(rebound_consumer.prepare_resources().ok());
+  ASSERT_TRUE(rebound_consumer.bind(second_table, table_f32, embedding_ready).ok());
+  for (const auto output : selected) {
+    auto writer = output_pool.allocate(2 * sizeof(float), 256).value();
+    ASSERT_TRUE(rebound_consumer.bind(output, row_f32, std::move(writer)).ok());
+  }
   const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
   ASSERT_TRUE(producer.prepare_replay(queues,
       {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kReject}).ok());
@@ -812,33 +818,61 @@ TEST(GraphOutputSourceCuda, TwoOutputsShareOneOriginalSubmissionAndAtomicBundle)
   ASSERT_EQ(cudaLaunchHostFunc(gate.stream, &Gate::wait, &gate), cudaSuccess);
   auto submitted = producer.submit(queues);
   ASSERT_TRUE(submitted) << submitted.error().message();
-  auto common_result = gd::SubmissionSource::create(producer, std::move(*submitted), storage);
-  ASSERT_TRUE(common_result) << common_result.error().message();
-  auto common = std::move(*common_result);
-  EXPECT_FALSE(submitted->valid());
-  auto left_result = gd::OutputSource::create(common, tokens[0], storage, tokens_pool);
-  auto right_result = gd::OutputSource::create(common, tokens[1], storage, tokens_pool);
-  ASSERT_TRUE(left_result) << left_result.error().message();
-  ASSERT_TRUE(right_result) << right_result.error().message();
-  std::array<gd::OutputSource, 2> views{std::move(*left_result), std::move(*right_result)};
-  ASSERT_TRUE(common.poll());
-  ASSERT_EQ(*common.poll(), c::CompletionPoll::kPending);
-  // The second input is foreign. A late rejection must neither replace the
-  // first original reader nor claim either typed view's one-shot input name.
-  const std::array rejected{gd::OutputBinding{second_indices[0], &views[0]},
-                            gd::OutputBinding{first_indices[1], &views[1]}};
-  EXPECT_FALSE(gd::bind_outputs(consumer, rejected).ok());
-  auto preserved = previous_indices[0].try_write();
-  ASSERT_FALSE(preserved) << "rejected bundle partially replaced its first input";
-  EXPECT_TRUE(previous_indices[0].valid());
-  EXPECT_TRUE(views[0].valid()); EXPECT_TRUE(views[1].valid());
-  EXPECT_FALSE(consumer.in_flight());
-  const std::array bindings{gd::OutputBinding{second_indices[0], &views[0]},
-                            gd::OutputBinding{second_indices[1], &views[1]}};
-  const auto bound = gd::bind_outputs(consumer, bindings);
-  ASSERT_TRUE(bound.ok()) << bound.message();
-  EXPECT_FALSE(gd::bind_outputs(consumer, bindings).ok());
-  const auto prepared = gd::prepare_outputs(consumer, bindings, queues);
+  {
+    auto common_result = g::SubmissionSource::create(producer, std::move(*submitted), storage);
+    ASSERT_TRUE(common_result) << common_result.error().message();
+    auto common = std::move(*common_result);
+    EXPECT_FALSE(submitted->valid());
+    auto left_result = g::OutputSource::create(common, tokens[0], storage, tokens_pool);
+    auto right_result = g::OutputSource::create(common, tokens[1], storage, tokens_pool);
+    ASSERT_TRUE(left_result) << left_result.error().message();
+    ASSERT_TRUE(right_result) << right_result.error().message();
+    std::array<g::OutputSource, 2> views{std::move(*left_result), std::move(*right_result)};
+    ASSERT_TRUE(common.poll());
+    ASSERT_EQ(*common.poll(), c::CompletionPoll::kPending);
+    // The second input is foreign. A late rejection must neither replace the
+    // first original reader nor claim either typed view's one-shot input name.
+    const std::array rejected{views[0].reader_binding(second_indices[0]),
+                              views[1].reader_binding(first_indices[1])};
+    EXPECT_FALSE(g::bind_sources(consumer, rejected).ok());
+    auto preserved = previous_indices[0].try_write();
+    ASSERT_FALSE(preserved) << "rejected bundle partially replaced its first input";
+    EXPECT_TRUE(previous_indices[0].valid());
+    EXPECT_TRUE(views[0].valid()); EXPECT_TRUE(views[1].valid());
+    EXPECT_FALSE(consumer.in_flight());
+    const std::array bindings{views[0].reader_binding(second_indices[0]),
+                              views[1].reader_binding(second_indices[1])};
+    const auto bound = g::bind_sources(consumer, bindings);
+    ASSERT_TRUE(bound.ok()) << bound.message();
+    EXPECT_FALSE(g::bind_sources(consumer, bindings).ok());
+
+    auto other_left = g::OutputSource::create(common, tokens[0], storage, tokens_pool);
+    auto other_right = g::OutputSource::create(common, tokens[1], storage, tokens_pool);
+    if (!other_left || !other_right) gate.release();
+    ASSERT_TRUE(other_left) << other_left.error().message();
+    ASSERT_TRUE(other_right) << other_right.error().message();
+    const std::array other_bindings{other_left->reader_binding(second_indices[0]),
+                                    other_right->reader_binding(second_indices[1])};
+    const auto other_bound = g::bind_sources(rebound_consumer, other_bindings);
+    if (!other_bound.ok()) gate.release();
+    ASSERT_TRUE(other_bound.ok()) << other_bound.message();
+    // A retained bundle is no substitute for the actual original attachment.
+    const auto rebound = rebound_consumer.bind(second_indices[0], i32, previous_indices[0]);
+    if (!rebound.ok()) gate.release();
+    ASSERT_TRUE(rebound.ok()) << rebound.message();
+    EXPECT_TRUE(g::prepare_sources(rebound_consumer, queues).IsFailedPrecondition());
+    auto rebound_submission = g::submit_sources(rebound_consumer, queues);
+    EXPECT_FALSE(rebound_submission);
+    if (rebound_submission) {
+      gate.release();
+      EXPECT_TRUE(rebound_submission->wait().ok());
+    }
+    EXPECT_TRUE(g::release_sources(rebound_consumer).IsFailedPrecondition());
+    EXPECT_FALSE(rebound_consumer.in_flight());
+  }
+  // Neither descriptions nor public source wrappers remain. Only the two
+  // original Invocations retain their once-bound views and whole completion.
+  const auto prepared = g::prepare_sources(consumer, queues);
   ASSERT_TRUE(prepared.ok()) << prepared.message();
   EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
   EXPECT_EQ(consumer.replay_route(), g::ReplayRoute::kCommands);
@@ -847,14 +881,14 @@ TEST(GraphOutputSourceCuda, TwoOutputsShareOneOriginalSubmissionAndAtomicBundle)
   EXPECT_EQ(report.device_wait_count, 1u);
   EXPECT_EQ(report.host_wait_count, 0u);
   EXPECT_FALSE(consumer.submit(queues));
-  auto consumed = gd::submit_outputs(consumer, bindings, queues);
+  auto consumed = g::submit_sources(consumer, queues);
   ASSERT_TRUE(consumed) << consumed.error().message();
   ASSERT_TRUE(consumed->poll());
   EXPECT_EQ(*consumed->poll(), c::CompletionPoll::kPending);
   gate.release();
   const auto terminal = consumed->wait();
   ASSERT_TRUE(terminal.ok()) << terminal.message();
-  ASSERT_TRUE(common.wait().ok());
+  EXPECT_FALSE(producer.in_flight());
   EXPECT_FALSE(gate.timed_out.load(std::memory_order_acquire));
   constexpr std::array<std::array<float, 2>, 2> expected{{{30, 31}, {20, 21}}};
   for (std::size_t i = 0; i < 2; ++i) {
@@ -865,7 +899,13 @@ TEST(GraphOutputSourceCuda, TwoOutputsShareOneOriginalSubmissionAndAtomicBundle)
   }
   EXPECT_EQ(tokens_pool.stats().active_uses, 0u);
   EXPECT_EQ(output_pool.stats().active_uses, 0u);
-  *consumed = {}; views = {}; consumer = {}; common = {}; producer = {};
+  *consumed = {};
+  const auto released = g::release_sources(consumer);
+  ASSERT_TRUE(released.ok()) << released.message();
+  EXPECT_TRUE(g::release_sources(consumer).IsFailedPrecondition());
+  // Destroy the never-submitted negative control only after both real native
+  // submissions retired, so native workspace cleanup cannot wait on the Gate.
+  rebound_consumer = {}; consumer = {}; producer = {};
   EXPECT_EQ(tokens_pool.stats().live_blocks, 0u);
   EXPECT_EQ(output_pool.stats().live_blocks, 0u);
 }
@@ -1074,26 +1114,26 @@ void store_relay(bool failed_producer, bool selected_range = false) {
     auto actual = g::slots::SlotBindings::create(layout, {}, destinations).value();
     ASSERT_TRUE(g::slots::bind(producer, first_graph, store, std::move(actual)).ok());
     // Empty and out-of-bounds ranges must not affect the original transaction.
-    for (const auto invalid : std::array{gd::StoreDestinationRange{0, 0},
-             gd::StoreDestinationRange{2, 1}, gd::StoreDestinationRange{1, 2},
-             gd::StoreDestinationRange{SIZE_MAX, 1}}) {
-      auto rejected = gd::StoreSource::prepare(producer, store, storage, invalid, {});
+    for (const auto invalid : std::array{g::StoreDestinationRange{0, 0},
+             g::StoreDestinationRange{2, 1}, g::StoreDestinationRange{1, 2},
+             g::StoreDestinationRange{SIZE_MAX, 1}}) {
+      auto rejected = g::StoreSource::prepare(producer, store, storage, invalid, {});
       ASSERT_FALSE(rejected); EXPECT_TRUE(rejected.error().IsInvalidArgument());
     }
   }
   // Both overloads share one cold preparation path. Explicit {} retains its
   // original ResourceOptions meaning rather than becoming an ambiguous range.
-  auto state_result = gd::StoreSource::prepare(producer, store, storage, {});
+  auto state_result = g::StoreSource::prepare(producer, store, storage, {});
   ASSERT_TRUE(state_result) << state_result.error().message();
   auto state = std::move(*state_result);
   auto another_result = selected_range
-      ? gd::StoreSource::prepare(producer, store, storage, gd::StoreDestinationRange{1, 1}, {})
-      : gd::StoreSource::prepare(producer, store, storage);
+      ? g::StoreSource::prepare(producer, store, storage, g::StoreDestinationRange{1, 1}, {})
+      : g::StoreSource::prepare(producer, store, storage);
   ASSERT_TRUE(another_result) << another_result.error().message();
   auto another_view = std::move(*another_result);
-  gd::StoreSource proof_view;
+  g::StoreSource proof_view;
   if (selected_range) {
-    auto proof = gd::StoreSource::prepare(producer, store, storage, gd::StoreDestinationRange{1, 1}, {});
+    auto proof = g::StoreSource::prepare(producer, store, storage, g::StoreDestinationRange{1, 1}, {});
     ASSERT_TRUE(proof) << proof.error().message(); proof_view = std::move(*proof);
   }
   ASSERT_TRUE(producer.prepare_replay(queues,
@@ -1104,7 +1144,7 @@ void store_relay(bool failed_producer, bool selected_range = false) {
   ASSERT_EQ(cudaLaunchHostFunc(gate.stream, &Gate::wait, &gate), cudaSuccess);
   auto submitted = producer.submit(queues);
   ASSERT_TRUE(submitted) << submitted.error().message();
-  auto common_result = gd::SubmissionSource::create(producer, std::move(*submitted), storage);
+  auto common_result = g::SubmissionSource::create(producer, std::move(*submitted), storage);
   ASSERT_TRUE(common_result) << common_result.error().message();
   auto common = std::move(*common_result);
   const auto captured = state.capture(common);
@@ -1121,24 +1161,25 @@ void store_relay(bool failed_producer, bool selected_range = false) {
   } else {
     another_view = {};
   }
-  auto token_result = gd::OutputSource::create(common, token, storage, token_pool);
+  auto token_result = g::OutputSource::create(common, token, storage, token_pool);
   ASSERT_TRUE(token_result) << token_result.error().message();
   auto token_source = std::move(*token_result);
   const std::array access{gather};
+  auto state_binding = (selected_range ? another_view : state).reader_binding(
+      consumer, second_graph, access);
+  ASSERT_TRUE(state_binding) << state_binding.error().message();
   const std::array bindings{
-      gd::OutputBinding{token_input, &token_source},
-      gd::OutputBinding{.store = selected_range ? &another_view : &state,
-          .projection = {bank_input, source_ids, gather, access,
-              c::detail::kProjectedInputReadExtensionId}, .graph = &second_graph}};
+      token_source.reader_binding(token_input),
+      *state_binding};
   auto bad_bindings = bindings;
   // Same shape/resource as the real IDs, but it controls another Gather.
   // Accepting it would let the state reader use the old {1,3} IDs while only
   // admitting tickets for {0,2}. Rejection must preserve this unrelated input.
-  bad_bindings[1].projection.metadata = unrelated_ids;
-  EXPECT_FALSE(gd::bind_outputs(consumer, bad_bindings).ok());
-  const auto bound = gd::bind_outputs(consumer, bindings);
+  gd::SourceBindingAccess::get(bad_bindings[1]).projection.metadata = unrelated_ids;
+  EXPECT_FALSE(g::bind_sources(consumer, bad_bindings).ok());
+  const auto bound = g::bind_sources(consumer, bindings);
   ASSERT_TRUE(bound.ok()) << bound.message();
-  const auto prepared = gd::prepare_outputs(consumer, bindings, queues);
+  const auto prepared = g::prepare_sources(consumer, queues);
   ASSERT_TRUE(prepared.ok()) << prepared.message();
   EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
   if (selected_range) {
@@ -1152,7 +1193,7 @@ void store_relay(bool failed_producer, bool selected_range = false) {
   EXPECT_FALSE(consumer.submit(queues));
   reader_gate.arm(gate.stream);
   ASSERT_EQ(cudaLaunchHostFunc(reader_gate.stream, &Gate::wait, &reader_gate), cudaSuccess);
-  auto consumed = gd::submit_outputs(consumer, bindings, queues);
+  auto consumed = g::submit_sources(consumer, queues);
   ASSERT_TRUE(consumed) << consumed.error().message();
   EXPECT_EQ(*consumed->poll(), c::CompletionPoll::kPending);
   gate.release();
@@ -1190,11 +1231,13 @@ void store_relay(bool failed_producer, bool selected_range = false) {
     if (selected_range) {
       // A complete producer succeeded and truly retired. These checks therefore
       // reach the exact guard validator, not a pending/result/output gate.
-      auto guard_binding = bindings[1]; guard_binding.store = &proof_view;
+      auto guard_binding = bindings[1];
+      gd::SourceBindingAccess::get(guard_binding).store = &proof_view;
       const auto rejects_ready = [&](std::span<const c::ReadLease> ready,
                                     const char *message) {
-        auto bad = guard_binding; bad.store_ready = ready;
-        const auto status = gd::bind_outputs(guard_probe, std::span(&bad, 1));
+        auto bad = guard_binding;
+        gd::SourceBindingAccess::get(bad).store_ready = ready;
+        const auto status = g::bind_sources(guard_probe, std::span(&bad, 1));
         EXPECT_TRUE(status.IsInvalidArgument()) << status.message();
         EXPECT_EQ(status.message(), message);
       };
@@ -1568,7 +1611,7 @@ TEST(GraphOutputSourceCuda, HybridPendingTokenAndStoreReuseOnlyExistingRanges) {
   EXPECT_EQ(current.indices.storage().native_handle(), control.indices.storage().native_handle());
   EXPECT_EQ(current.indices.storage().offset(), control.indices.storage().offset());
   EXPECT_EQ(current.indices.storage().size(), control.indices.storage().size());
-  auto state_result = gd::StoreSource::prepare(producer, store, storage);
+  auto state_result = g::StoreSource::prepare(producer, store, storage);
   ASSERT_TRUE(state_result) << state_result.error().message();
   auto state = std::move(*state_result);
   ASSERT_TRUE(producer.prepare_replay(queues,
@@ -1579,34 +1622,34 @@ TEST(GraphOutputSourceCuda, HybridPendingTokenAndStoreReuseOnlyExistingRanges) {
   ASSERT_EQ(cudaLaunchHostFunc(gate.stream, &Gate::wait, &gate), cudaSuccess);
   auto submitted = producer.submit(queues);
   ASSERT_TRUE(submitted) << submitted.error().message();
-  auto common_result = gd::SubmissionSource::create(producer, std::move(*submitted), storage);
+  auto common_result = g::SubmissionSource::create(producer, std::move(*submitted), storage);
   ASSERT_TRUE(common_result) << common_result.error().message();
   auto common = std::move(*common_result);
   ASSERT_TRUE(state.capture(common).ok());
-  auto token_result = gd::OutputSource::create(common, token, storage, token_pool);
+  auto token_result = g::OutputSource::create(common, token, storage, token_pool);
   ASSERT_TRUE(token_result) << token_result.error().message();
   auto token_source = std::move(*token_result);
+  auto state_binding = state.reader_binding(consumer, second_graph, access);
+  ASSERT_TRUE(state_binding) << state_binding.error().message();
   const std::array bindings{
-      gd::OutputBinding{token_input, &token_source},
-      gd::OutputBinding{.store = &state,
-          .projection = {bank_input, source_ids, gather, access,
-              c::detail::kProjectedInputReadExtensionId}, .graph = &second_graph}};
+      token_source.reader_binding(token_input),
+      *state_binding};
   // Source authority can be bound before an unrelated captured input exists.
   // Only final preparation/submission qualifies the complete physical tuple.
   ASSERT_TRUE(consumer.unbind(marker_input).ok());
-  const auto bound = gd::bind_outputs(consumer, bindings);
+  const auto bound = g::bind_sources(consumer, bindings);
   ASSERT_TRUE(bound.ok()) << bound.message();
-  EXPECT_FALSE(gd::prepare_outputs(consumer, bindings, queues).ok());
+  EXPECT_FALSE(g::prepare_sources(consumer, queues).ok());
   ASSERT_TRUE(consumer.bind(marker_input, token_desc, other_marker_ready).ok());
-  EXPECT_FALSE(gd::prepare_outputs(consumer, bindings, queues).ok());
-  EXPECT_FALSE(gd::submit_outputs(consumer, bindings, queues));
+  EXPECT_FALSE(g::prepare_sources(consumer, queues).ok());
+  EXPECT_FALSE(g::submit_sources(consumer, queues));
   EXPECT_EQ(consumer.replay_route(), g::ReplayRoute::kUnprepared);
   EXPECT_FALSE(consumer.replay_report());
   ASSERT_TRUE(common.poll());
   EXPECT_EQ(*common.poll(), c::CompletionPoll::kPending);
   EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
   ASSERT_TRUE(consumer.bind(marker_input, token_desc, marker_ready).ok());
-  const auto prepared = gd::prepare_outputs(consumer, bindings, queues);
+  const auto prepared = g::prepare_sources(consumer, queues);
   ASSERT_TRUE(prepared.ok()) << prepared.message();
   ASSERT_EQ(consumer.replay_route(), g::ReplayRoute::kHybrid);
   EXPECT_EQ(consumer.replay_report()->recorded_capture_range_count, 0u);
@@ -1620,11 +1663,11 @@ TEST(GraphOutputSourceCuda, HybridPendingTokenAndStoreReuseOnlyExistingRanges) {
   EXPECT_FALSE(consumer.submit(queues));
   reader_gate.arm(gate.stream);
   ASSERT_EQ(cudaLaunchHostFunc(reader_gate.stream, &Gate::wait, &reader_gate), cudaSuccess);
-  auto consumed = gd::submit_outputs(consumer, bindings, queues);
+  auto consumed = g::submit_sources(consumer, queues);
   ASSERT_TRUE(consumed) << consumed.error().message();
   // The same Hybrid execution is also a producer of its original submission;
   // transfer that one exact proxy, without adding a view, graph or observer.
-  auto successor_result = gd::SubmissionSource::create(consumer, std::move(*consumed), storage);
+  auto successor_result = g::SubmissionSource::create(consumer, std::move(*consumed), storage);
   ASSERT_TRUE(successor_result) << successor_result.error().message();
   auto successor = std::move(*successor_result);
   EXPECT_FALSE(consumed->valid());
@@ -1790,27 +1833,27 @@ void mixed_full_writer_relay(c::DataType type, bool failed_producer = false) {
   ASSERT_EQ(cudaLaunchHostFunc(gate.stream, &Gate::wait, &gate), cudaSuccess);
   auto submitted = producer.submit(queues);
   ASSERT_TRUE(submitted) << submitted.error().message();
-  auto common_result = gd::SubmissionSource::create(producer, std::move(*submitted), storage);
+  auto common_result = g::SubmissionSource::create(producer, std::move(*submitted), storage);
   ASSERT_TRUE(common_result) << common_result.error().message();
   auto common = std::move(*common_result);
-  auto token_result = gd::OutputSource::create(common, token, storage, sources);
-  auto float_result = gd::OutputSource::create(common, floats, storage, sources);
+  auto token_result = g::OutputSource::create(common, token, storage, sources);
+  auto float_result = g::OutputSource::create(common, floats, storage, sources);
   ASSERT_TRUE(token_result) << token_result.error().message();
   ASSERT_TRUE(float_result) << float_result.error().message();
-  std::array<gd::OutputSource, 2> views{std::move(*token_result), std::move(*float_result)};
-  EXPECT_FALSE(gd::OutputSource::create(common, first_rows, storage, inputs)); // An input is not an owned output.
+  std::array<g::OutputSource, 2> views{std::move(*token_result), std::move(*float_result)};
+  EXPECT_FALSE(g::OutputSource::create(common, first_rows, storage, inputs)); // An input is not an owned output.
   EXPECT_TRUE(views[1].detach().IsUnavailable());
-  const std::array rejected{gd::OutputBinding{second_index, &views[0]},
-                            gd::OutputBinding{first_rows, &views[1]}};
-  EXPECT_FALSE(gd::bind_outputs(consumer, rejected).ok());
+  const std::array rejected{views[0].reader_binding(second_index),
+                            views[1].reader_binding(first_rows)};
+  EXPECT_FALSE(g::bind_sources(consumer, rejected).ok());
   EXPECT_FALSE(previous_ready.try_write()); // The first old binding was not consumed by a late error.
   ASSERT_TRUE(consumer.replay_report()); // Its preexisting preparation also survived.
   EXPECT_EQ(consumer.replay_route(), g::ReplayRoute::kCommands);
-  const std::array bindings{gd::OutputBinding{second_index, &views[0]},
-                            gd::OutputBinding{second_rows, &views[1]}};
-  const auto bound = gd::bind_outputs(consumer, bindings);
+  const std::array bindings{views[0].reader_binding(second_index),
+                            views[1].reader_binding(second_rows)};
+  const auto bound = g::bind_sources(consumer, bindings);
   ASSERT_TRUE(bound.ok()) << bound.message();
-  const auto prepared = gd::prepare_outputs(consumer, bindings, queues);
+  const auto prepared = g::prepare_sources(consumer, queues);
   ASSERT_TRUE(prepared.ok()) << prepared.message();
   EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
   ASSERT_TRUE(common.poll()); EXPECT_EQ(*common.poll(), c::CompletionPoll::kPending);
@@ -1822,7 +1865,7 @@ void mixed_full_writer_relay(c::DataType type, bool failed_producer = false) {
     reader_gate.arm(gate.stream);
     ASSERT_EQ(cudaLaunchHostFunc(reader_gate.stream, &Gate::wait, &reader_gate), cudaSuccess);
   }
-  auto consumed = gd::submit_outputs(consumer, bindings, queues);
+  auto consumed = g::submit_sources(consumer, queues);
   ASSERT_TRUE(consumed) << consumed.error().message();
   ASSERT_TRUE(consumed->poll()); EXPECT_EQ(*consumed->poll(), c::CompletionPoll::kPending);
   EXPECT_FALSE(gate.released.load(std::memory_order_acquire));

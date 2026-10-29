@@ -18,8 +18,7 @@
 
 #include "hyle/compute/model_ops.h"
 #include "hyle/graph/cuda.h"
-#include "hyle/graph/detail/output_source.h"
-#include "hyle/graph/detail/store_source.h"
+#include "hyle/graph/source.h"
 #include "hyle/graph/slots.h"
 #include "../compute_models/gdn_snapshot_fixture.h"
 #include "../compute_provider_ggml_cuda/tensor_test_support.h"
@@ -257,10 +256,10 @@ void relay(bool convolution, bool failed_producer = false, bool rotate_destinati
   check(s::prepare(producer, queues, {.host_workspace = staging.ref()}), "prepare A controls");
   auto a_transaction = take(s::SlotBindings::create(layout, {}, a_writers), "warm A transaction");
   check(s::bind(producer, a_graph, a_store, std::move(a_transaction)), "bind warm A");
-  auto source = take(gd::StoreSource::prepare(producer, a_store, storage), "warm A Source metadata");
+  auto source = take(g::StoreSource::prepare(producer, a_store, storage), "warm A Source metadata");
   check(producer.prepare_replay(queues, {.mode = g::ReplayMode::kCommands}), "prepare warm A");
   auto warm_submitted = take(producer.submit(queues), "submit warm A");
-  auto common = take(gd::SubmissionSource::create(producer, std::move(warm_submitted), storage), "warm A terminal");
+  auto common = take(g::SubmissionSource::create(producer, std::move(warm_submitted), storage), "warm A terminal");
   check(source.capture(common), "capture warm A Store");
   check(common.wait(), "retire warm A"); check(common.detach(), "detach warm A");
   auto returned_a = take(s::take(producer, a_store), "take warm A");
@@ -301,19 +300,19 @@ void relay(bool convolution, bool failed_producer = false, bool rotate_destinati
   }
   auto warm_binding = take(source.reader_binding(consumer, graph.graph, graph.store, warm_ready), "true-ready B descriptor");
   const std::array warm_bindings{warm_binding};
-  check(gd::bind_outputs(consumer, warm_bindings), "bind true-ready B");
+  check(g::bind_sources(consumer, warm_bindings), "bind true-ready B");
   auto b_transaction = take(s::SlotBindings::create(layout, {}, b_writers), "warm B destination-only transaction");
   check(s::bind(consumer, graph.graph, graph.store, std::move(b_transaction)), "bind warm B destinations");
-  check(gd::prepare_outputs(consumer, warm_bindings, queues), "record actual ready B");
+  check(g::prepare_sources(consumer, queues), "record actual ready B");
   ASSERT_EQ(consumer.replay_route(), g::ReplayRoute::kCaptured);
   EXPECT_EQ(consumer.replay_report()->recorded_capture_range_count, 1u);
-  auto warm_done = take(gd::submit_outputs(consumer, warm_bindings, queues), "run warm B");
+  auto warm_done = take(g::submit_sources(consumer, queues), "run warm B");
   check(warm_done.wait(), "retire warm B"); warm_done = {};
-  EXPECT_FALSE(gd::release_outputs(consumer, warm_bindings).ok()); // Original destination owners must be taken first.
+  EXPECT_FALSE(g::release_sources(consumer).ok()); // Original destination owners must be taken first.
   auto returned_b = take(s::take(consumer, graph.store), "take warm imported B");
   ASSERT_EQ(returned_b.source_count(), 0u);
   for (std::size_t row = 0; row < kB; ++row) b_writers[row] = std::move(returned_b.destinations()[row]);
-  check(gd::release_outputs(consumer, warm_bindings), "release only retired warm bundle");
+  check(g::release_sources(consumer), "release only retired warm bundle");
   if (rotate_destinations) std::swap(b_writers.front(), b_writers.back());
   source = {}; common = {}; returned_a = {}; returned_b = {};
   // Only this last owning ready handle remains. Reclaim the exact source
@@ -329,24 +328,24 @@ void relay(bool convolution, bool failed_producer = false, bool rotate_destinati
   }
   auto actual_a = take(s::SlotBindings::create(layout, {}, a_writers), "actual A transaction");
   check(s::bind(producer, a_graph, a_store, std::move(actual_a)), "rebind actual A same controls");
-  source = take(gd::StoreSource::prepare(producer, a_store, storage), "actual A Source metadata");
+  source = take(g::StoreSource::prepare(producer, a_store, storage), "actual A Source metadata");
   check(producer.prepare_replay(queues, {.mode = g::ReplayMode::kCommands}), "prepare actual A");
 
   Gate gate, reader_gate;
   gate.arm(take(c::cuda::stream(queue), "original Queue stream"));
   ASSERT_EQ(cudaLaunchHostFunc(gate.stream, &Gate::wait, &gate), cudaSuccess);
   auto submitted = take(producer.submit(queues), "submit actual A");
-  common = take(gd::SubmissionSource::create(producer, std::move(submitted), storage), "actual A terminal");
+  common = take(g::SubmissionSource::create(producer, std::move(submitted), storage), "actual A terminal");
   check(source.capture(common), "capture pending A Store");
   EXPECT_EQ(take(common.poll(), "pending A"), c::CompletionPoll::kPending);
   auto binding = take(source.reader_binding(consumer, graph.graph, graph.store), "pending B descriptor");
   const std::array bindings{binding};
-  check(gd::bind_outputs(consumer, bindings), "bind original pending B source");
+  check(g::bind_sources(consumer, bindings), "bind original pending B source");
   auto actual_b = take(s::SlotBindings::create(layout, {}, b_writers), "actual B destination-only transaction");
   check(s::bind(consumer, graph.graph, graph.store, std::move(actual_b)), "bind actual B destination controls");
   EXPECT_EQ(take(common.poll(), "A remains pending after B control upload"), c::CompletionPoll::kPending);
   EXPECT_FALSE(gate.released.load());
-  check(gd::prepare_outputs(consumer, bindings, queues), "reuse exact native B capture");
+  check(g::prepare_sources(consumer, queues), "reuse exact native B capture");
   EXPECT_EQ(consumer.replay_route(), g::ReplayRoute::kCaptured);
   EXPECT_EQ(consumer.replay_report()->recorded_capture_range_count, 0u);
   EXPECT_EQ(consumer.replay_report()->reused_capture_range_count, 1u);
@@ -356,11 +355,11 @@ void relay(bool convolution, bool failed_producer = false, bool rotate_destinati
   EXPECT_FALSE(consumer.submit(queues));
   reader_gate.arm(gate.stream);
   ASSERT_EQ(cudaLaunchHostFunc(reader_gate.stream, &Gate::wait, &reader_gate), cudaSuccess);
-  auto done = take(gd::submit_outputs(consumer, bindings, queues), "submit actual B");
+  auto done = take(g::submit_sources(consumer, queues), "submit actual B");
   gate.release();
   const auto a_terminal = common.wait();
   EXPECT_EQ(take(done.poll(), "B still pending"), c::CompletionPoll::kPending);
-  EXPECT_FALSE(gd::release_outputs(consumer, bindings).ok()); // Pending work still owns the complete source bundle.
+  EXPECT_FALSE(g::release_sources(consumer).ok()); // Pending work still owns the complete source bundle.
   std::array<c::ReadLease, kB> published_a;
   if (!failed_producer) {
     ASSERT_TRUE(a_terminal.ok()) << a_terminal.message();
@@ -390,7 +389,7 @@ void relay(bool convolution, bool failed_producer = false, bool rotate_destinati
     auto failed = take(s::take(consumer, graph.store), "take failed imported B after actual retirement");
     ASSERT_EQ(failed.source_count(), 0u);
     ASSERT_EQ(failed.destination_count(), kB);
-    check(gd::release_outputs(consumer, bindings), "release failed retired B bundle without publishing state");
+    check(g::release_sources(consumer), "release failed retired B bundle without publishing state");
   } else {
     ASSERT_TRUE(b_terminal.ok()) << b_terminal.message();
     expect_bits(half_test::read<float>(output), math.expected_output);

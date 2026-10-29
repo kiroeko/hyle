@@ -2,7 +2,8 @@
 
 #include "hyle/compute/detail/lease_access.h"
 #include "hyle/graph/detail/region_access.h"
-#include "hyle/graph/detail/submission_source.h"
+
+namespace hyle::graph { class SubmissionSource; }
 
 namespace hyle::graph::detail {
 struct ResourceSourceState;

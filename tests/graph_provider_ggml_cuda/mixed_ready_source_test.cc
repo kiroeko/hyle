@@ -22,8 +22,9 @@
 #include "hyle/compute/detail/paged_arena_access.h"
 #include "hyle/graph/batch.h"
 #include "hyle/graph/cuda.h"
-#include "hyle/graph/detail/paged_append_source.h"
-#include "hyle/graph/detail/store_source.h"
+#include "hyle/graph/paged_append_source.h"
+#include "hyle/graph/source.h"
+#include "hyle/graph/detail/source_binding_access.h"
 #include "hyle/graph/slots.h"
 #include "hyle/util/scope_guard.h"
 
@@ -33,7 +34,6 @@ namespace cd = c::detail;
 namespace g = hyle::graph;
 namespace gd = g::detail;
 namespace gb = g::batch;
-namespace gbd = gb::detail;
 namespace s = g::slots;
 
 template<class T> T take(hyle::Result<T> value, const char *what) {
@@ -79,7 +79,7 @@ struct Gate final {
 // Actual Store, full I32 output and PagedAppend/Attention permissions share one
 // terminal. The first iteration is real ready work; the second changes only
 // authority, retaining the same token/ID/page/control/workspace addresses.
-TEST(GgmlCudaMixedReadySource, RealTokenStoreAndKvWarmHybridThenReusePending) {
+TEST(GgmlCudaMixedReadySource, RealTokenStoreAndKvWarmCaptureThenReusePending) {
   auto context = take(g::cuda::create_context(), "Context");
   auto queue = take(context.create_queue(), "Queue");
   check(queue.reserve_completions(12), "Completion capacity");
@@ -193,7 +193,8 @@ TEST(GgmlCudaMixedReadySource, RealTokenStoreAndKvWarmHybridThenReusePending) {
   const auto gathered = take(second.result(gather), "B state rows");
   check(second.publish(gathered), "publish B state rows");
   const auto destination_ids = take(second.input(ids), "B private destination IDs");
-  const auto b_store = take(second.add_node(c::Operation::custom(s::Store{state_schema}), std::array{gathered, destination_ids}), "B Store prepared gap");
+  // The default CUDA indexed-copy Store participates in the full capture.
+  const auto b_store = take(second.add_node(c::Operation::custom(s::Store{state_schema}), std::array{gathered, destination_ids}), "B capturable Store");
   const auto query = take(second.input(kv_rows), "B query");
   const auto key = take(second.input(take(c::batch_cache_description(schema, c::BatchCacheRole::kKey), "key capacity")), "B keys");
   const auto value = take(second.input(take(c::batch_cache_description(schema, c::BatchCacheRole::kValue), "value capacity")), "B values");
@@ -235,16 +236,16 @@ TEST(GgmlCudaMixedReadySource, RealTokenStoreAndKvWarmHybridThenReusePending) {
     check(gb::bind_append(producer, a_graph, append, std::move(append_pages)), "bind A append");
     check(s::bind(producer, a_graph, a_store,
         take(s::SlotBindings::create(layout, {}, a_destinations), "A transaction")), "bind A Store");
-    auto state_source = take(gd::StoreSource::prepare(producer, a_store, storage), "A state Source");
-    auto kv_source = take(gbd::PagedAppendSource::prepare(producer, append, storage), "A KV Source");
+    auto state_source = take(g::StoreSource::prepare(producer, a_store, storage), "A state Source");
+    auto kv_source = take(gb::PagedAppendSource::prepare(producer, append, storage), "A KV Source");
     check(producer.prepare_replay(queues, {.mode = g::ReplayMode::kPreferCapture}), "prepare original A");
     if (pass) {
       producer_gate.arm(take(c::cuda::stream(queue), "stream"));
       ASSERT_EQ(cudaLaunchHostFunc(producer_gate.stream, &Gate::wait, &producer_gate), cudaSuccess);
     }
     auto done = take(producer.submit(queues), "submit A");
-    gd::SubmissionSource common;
-    gd::OutputSource token_source;
+    g::SubmissionSource common;
+    g::OutputSource token_source;
     c::Completion consumed;
     // Keep the original terminals and typed Source owners alive until their
     // actual work retires, including an exception or fatal test assertion.
@@ -264,9 +265,9 @@ TEST(GgmlCudaMixedReadySource, RealTokenStoreAndKvWarmHybridThenReusePending) {
       else if (done.valid()) observe(done.wait(), "producer Completion");
       consumed = {}; done = {};
     }};
-    common = take(gd::SubmissionSource::create(producer, std::move(done), storage), "whole A terminal");
+    common = take(g::SubmissionSource::create(producer, std::move(done), storage), "whole A terminal");
     mark("capture A views");
-    token_source = take(gd::OutputSource::create(common, token, storage, token_pool), "original I32 Source");
+    token_source = take(g::OutputSource::create(common, token, storage, token_pool), "original I32 Source");
     check(state_source.capture(common), "capture A Store");
     check(kv_source.capture(common), "capture A KV");
     c::ReadLease state_ready;
@@ -295,23 +296,24 @@ TEST(GgmlCudaMixedReadySource, RealTokenStoreAndKvWarmHybridThenReusePending) {
     const std::array access{gather};
     std::array real_ready{state_ready};
     std::array bindings{
-        gd::OutputBinding{token_input, &token_source},
-        gd::OutputBinding{.store = &state_source,
-            .projection = {bank, source_ids, gather, access, cd::kProjectedInputReadExtensionId},
-            .graph = &b_graph, .store_ready = pass ? std::span<const c::ReadLease>{} : std::span<const c::ReadLease>(real_ready)},
-        take(gbd::reader_binding(consumer, value, kv_source, kv_layout), "original KV reader proof")};
+        token_source.reader_binding(token_input),
+        take(state_source.reader_binding(consumer, b_graph, access,
+            pass ? std::span<const c::ReadLease>{} : std::span<const c::ReadLease>(real_ready)),
+            "original Store reader proof"),
+        take(gb::reader_binding(consumer, value, kv_source, kv_layout), "original KV reader proof")};
     if (!pass) {
       const std::array foreign_ready{unrelated_ready};
-      auto bad = bindings; bad[1].store_ready = foreign_ready;
-      EXPECT_TRUE(gd::bind_outputs(consumer, bad).IsInvalidArgument());
+      auto bad = bindings;
+      gd::SourceBindingAccess::get(bad[1]).store_ready = foreign_ready;
+      EXPECT_TRUE(g::bind_sources(consumer, bad).IsInvalidArgument());
     }
-    check(gd::bind_outputs(consumer, bindings), "bind complete token/Store/KV bundle");
+    check(g::bind_sources(consumer, bindings), "bind complete token/Store/KV bundle");
     std::array<c::WriteLease, 1> b_destinations{std::move(writers[2])};
     check(s::bind(consumer, b_graph, b_store,
         take(s::SlotBindings::create(layout, {}, b_destinations), "B transaction")), "bind B Store");
     mark("prepare B replay");
-    check(gd::prepare_outputs(consumer, bindings, queues), "prepare real mixed bundle");
-    ASSERT_EQ(consumer.replay_route(), g::ReplayRoute::kHybrid);
+    check(g::prepare_sources(consumer, queues), "prepare real mixed bundle");
+    ASSERT_EQ(consumer.replay_route(), g::ReplayRoute::kCaptured);
     const auto replay = take(consumer.replay_report(), "actual replay report");
     if (!pass) EXPECT_GT(replay.recorded_capture_range_count, 0u);
     else {
@@ -335,7 +337,7 @@ TEST(GgmlCudaMixedReadySource, RealTokenStoreAndKvWarmHybridThenReusePending) {
       }
     }
     mark("submit B");
-    consumed = take(gd::submit_outputs(consumer, bindings, queues), "submit mixed consumer");
+    consumed = take(g::submit_sources(consumer, queues), "submit mixed consumer");
     if (pass) {
       EXPECT_EQ(take(common.poll(), "A pending"), c::CompletionPoll::kPending);
       producer_gate.release();
@@ -358,7 +360,7 @@ TEST(GgmlCudaMixedReadySource, RealTokenStoreAndKvWarmHybridThenReusePending) {
     mark("take B Store");
     auto b_returned = take(s::take(consumer, b_store), "take original B writer");
     mark("release B bundle");
-    check(gd::release_outputs(consumer, bindings), "release retired exact mixed bundle without resetting capture");
+    check(g::release_sources(consumer), "release retired exact mixed bundle without resetting capture");
     writers[2] = std::move(b_returned.destinations()[0]);
     frame = {}; returned_pages = {}; returned_state.clear();
     bindings = {}; real_ready = {}; token_source = {}; state_source = {}; kv_source = {}; common = {};

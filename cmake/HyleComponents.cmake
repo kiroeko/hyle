@@ -578,7 +578,7 @@ _hyle_declare_component(compute_state
     PRIVATE_DEPS core util_core compute_ops
     PUBLIC_DEPS graph compute_batch compute error mem
     PUBLIC_TYPE_DEPS graph compute_batch compute error mem
-  SPLIT_PUBLIC_HEADERS hyle/graph/batch.h hyle/graph/detail/paged_append_source.h)
+  SPLIT_PUBLIC_HEADERS hyle/graph/batch.h hyle/graph/paged_append_source.h)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # implementation, and must never be used by an internal factor edge. A facade

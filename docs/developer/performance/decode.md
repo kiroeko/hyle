@@ -12,6 +12,15 @@
 单会话普通／MTP的最近跨引擎完整表见[推理进度](../inference-progress.md#最近完整性能对照)；
 下面的B2、CPU和局部候选属于不同窗口，各自保留版本与测量边界。
 
+2026-10-30的[公开Source与一次绑定](../../evidence/correctness/inference-source-binding-2026-10-30.json)
+删除调用方在prepare／submit／release时重复传递和比较整束描述；Graph从当前tensor／effect附件保留原绑定束，
+仍核实际权限、完整tuple、原Status和真实退休。29项Source／分页／读回、Kimi7项和真实Qwen消费者通过。
+ABBA122.65→123.00tok/s（＋0.28%，每版两样本），完整非时间报告相同，未证明速度收益，未刷新跨引擎表。
+同批离线核实两次MTP后继丢弃都来自A拒绝草稿，而非额度／turn；提交前尚未知接受结果，不能靠已有额度消除。
+原`actual_draft_rows`仅汇总发布账簿，漏掉两B的4个实际draft行：单／两轮216／434应另加4，
+这是源码与旧报告推导，尚非修复后观测。吞吐时间仍包含这些执行；不能将旧draft计数称为全部原生工作。
+设备条件Graph是待研究候选：本地SDK具备接口，但当前capture及未执行输出／退休合同尚未接入，不宣称收益。
+
 2026-10-30的[计划冷事实复用](../../evidence/performance/inference-plan-cold-facts-2026-10-30.json)
 把不可变命令资格与计划capture覆盖移到每次冷`build_segments`成功末尾；重排入口先清为保守值。
 实际Source、Queue、物理绑定、原生capture和退休仍逐次检查，没有把权限缓存成资格提示。
