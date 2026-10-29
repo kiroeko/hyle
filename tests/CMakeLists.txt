@@ -513,6 +513,11 @@ if(TARGET hyle_engine AND _HYLE_COMPUTE_HAVE_CUDA)
     set_tests_properties(hyle_qwen_sampling_budget_test PROPERTIES
       LABELS "tooling;generation;sampling;admission;cpu;local-model" TIMEOUT 120
       SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
+    add_test(NAME hyle_qwen_host_image_request_test
+      COMMAND hyle_qwen_request_lifecycle_test --host-image-request)
+    set_tests_properties(hyle_qwen_host_image_request_test PROPERTIES
+      LABELS "tooling;generation;cache;delivery;retirement;cpu;local-model" TIMEOUT 120
+      SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
     add_test(NAME hyle_qwen_request_stop_policy_test
       COMMAND hyle_qwen_request_lifecycle_test --stop-policies)
     set_tests_properties(hyle_qwen_request_stop_policy_test PROPERTIES

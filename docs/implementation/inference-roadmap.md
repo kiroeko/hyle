@@ -82,10 +82,15 @@ Head成功后立即无失败地记录该成员结果，后续报告／catch-up�
 旧Flash四round记录不作为当前五round的同版本基线，侧车组件亦不外推完整大模型生成。
 随后[共同分页布局](../evidence/correctness/inference-paged-layout-2026-10-29.json)将target、draft、私有NextN及部分接受后的元数据组装接入同一冷预留缓冲，
 保留原Schema版本、R1路径、ahead及Source权限。四项布局测试及七个CPU／CUDA模型进程通过；多行JSON日志仅修收集解析，没有重跑或放宽数值门。
-联合复审另定位完整前缀命中后同wave失败重试的RNG预算重复计数，正在补真实请求回归与修复；自动换出换入与分块、背压组合尚待逐链核对。
+联合复审的[请求恢复整改](../evidence/correctness/inference-request-recovery-2026-10-29.json)修复完整前缀命中后同wave失败重试的RNG预算重复计数，
+也修复普通StateOnly重建未选到packed容量时仍声明packed的错误。先后两次真实产品失败保留，同一原采样预算旅程修复后通过。
+自然N1双请求另完成部分前缀、StateOnly分块、自动HostImage换出换入及ACK背压的联合旅程；真实页耗尽拒绝保留原image／key／ledger，释放后继续，
+6次target提交、无ledger重算，最终版本及image均为0。仅编两个小消费者并复用SDK，没有重编全部请求测试入口或刷新吞吐。
 Kimi现有KDA／MLA消费者不产生生成token，不为共用请求接口虚构生成阶段。
 本轮工程入口、完整依赖装配、文档导航及许可交付整改已完成，结果见[工程检查记录](../evidence/licensing/dependency-licenses-2026-10-29.json)。
 当前收敛完整执行编排、普通／MTP共同机制及SDK接线，随后集中连续后继、GPU融合及带宽等性能工作。
+下一片架构交付是分页序列缓存的共同生命周期：将原库存、任意银行的Frame、追加、冻结／分叉与提交组合成一份实际机制，
+替换Qwen中的重复资源算法；模型保留数学、GDN／conv／hidden及NextN规则，原ExecutionEpisode继续承担提交和退休。
 共同架构同时审查多模型、复杂阶段及未来多端点的依赖边界，避免将当前Qwen／单卡放置固化为通用合同；
 本轮不据组件通过声明大模型整机、多卡或跨机实现完成。现有硬件上的decode、MTP和含预热／换轮的综合速度仍是投入价值的关键检验，
 架构按实际热点与维护问题调整，不以等待更大硬件或无限整理抽象替代速度改进。

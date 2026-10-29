@@ -13,6 +13,7 @@
 #include "qwen_participant_failure_case.h"
 #include "qwen_request_stop_case.h"
 #include "qwen_sampling_budget_case.h"
+#include "qwen_host_image_request_case.h"
 #include "qwen_request_ledger_case.h"
 #include "qwen_e4_cache_case.h"
 #include "qwen_request_loop_case.h"
@@ -89,8 +90,9 @@ int main(int argc,char **argv){
   const bool e4_cache=argc>1 && std::string_view(argv[1])=="--e4-cache";
   const bool request_loop=argc>1 && std::string_view(argv[1])=="--request-loop";
   const bool request_control=argc>1 && std::string_view(argv[1])=="--request-control";
-  const int argument=(chunked||dual||sampling||logits||turn_context||retirement||midturn||participant_failure||stop_policy||sampling_budget||request_ledger||e4_cache||request_loop||request_control)?2:1;
-  if(argc>argument+1)throw std::runtime_error("usage: qwen_request_lifecycle_test [--chunked-prefill|--dual-model|--sampling-policies|--logits-modifiers|--turn-context|--retirement-observation|--midturn-resume|--participant-failure|--stop-policies|--sampling-budget|--request-ledger|--e4-cache|--request-loop|--request-control] [prepared_input_directory]");
+  const bool host_image_request=argc>1 && std::string_view(argv[1])=="--host-image-request";
+  const int argument=(chunked||dual||sampling||logits||turn_context||retirement||midturn||participant_failure||stop_policy||sampling_budget||request_ledger||e4_cache||request_loop||request_control||host_image_request)?2:1;
+  if(argc>argument+1)throw std::runtime_error("usage: qwen_request_lifecycle_test [--chunked-prefill|--dual-model|--sampling-policies|--logits-modifiers|--turn-context|--retirement-observation|--midturn-resume|--participant-failure|--stop-policies|--sampling-budget|--request-ledger|--e4-cache|--request-loop|--request-control|--host-image-request] [prepared_input_directory]");
   const char *input_environment=e4_cache?"HYLE_QWEN_E4_INPUTS":request_loop||request_control?"HYLE_QWEN_REQUEST_LOOP_INPUTS":"HYLE_QWEN_REQUEST_INPUTS";
   const std::string input_directory=argc==argument+1?argv[argument]:input_directory_from_environment(input_environment);
   if(input_directory.empty()){std::cerr<<"SKIP: pass prepared input directory or set "<<input_environment<<'\n';return 77;}
@@ -105,6 +107,7 @@ int main(int argc,char **argv){
   if(participant_failure)return qwen_participant_failure_case::run(input);
   if(stop_policy)return qwen_request_stop_case::run(input);
   if(sampling_budget)return qwen_sampling_budget_case::run(input);
+  if(host_image_request)return qwen_host_image_request_case::run(input);
   if(request_ledger)return qwen_request_ledger_case::run(input);
   if(e4_cache)return qwen_e4_cache_case::run(input);
   if(request_loop)return qwen_request_loop_case::run(input);

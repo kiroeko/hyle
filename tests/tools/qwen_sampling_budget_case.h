@@ -32,6 +32,105 @@ inline void retire(q::GenerationRequest &value) {
   q::check(observed.status);
   require(observed.retired, "sampling-budget Session did not actually retire");
 }
+inline void full_hit_peer_preflight_retry(q::Model &model, q::cache::PrefixCache &prefix,
+    const q::cache::TokenPlanRef &input, std::span<const std::int32_t> prompt,
+    std::uint64_t maximum) {
+  std::vector<q::GenerationRequest> owners; owners.reserve(2);
+  owners.push_back(request("full-hit-unobserved", prompt, 1, maximum - 1, 1));
+  owners.push_back(request("peer-preflight", prompt, 1, 0, 1, 1));
+  for (auto &owner : owners) { owner.input = input; owner.turn_observations.resize(1); }
+  auto &a = owners[0]; auto &b = owners[1];
+  std::size_t provider_calls = 0;
+  // This is a real request argument error: this greedy configuration has no
+  // external bias/mask ports. The original preflight must reject B, not call
+  // its provider or manufacture a target participant/retirement observation.
+  b.logits_provider = [&](std::span<const std::int32_t>, std::span<const std::int32_t>)
+      -> hyle::Result<q::LogitsInputs> { ++provider_calls; return q::LogitsInputs{}; };
+  i::OutputDelivery delivery(1);
+  i::RequestLoop loop; loop.prepare(2, 2);
+  struct Saved final {
+    const void *head = nullptr;
+    std::uint64_t epoch = 0;
+    q::GenerationBoundary boundary;
+    q::GenerationCommitRecord record; // Host facts only; no native version pin.
+  };
+  std::optional<Saved> saved;
+  std::size_t prepared_waves = 0, executed_waves = 0, target_submissions = 0;
+  const auto frontier_calls = model.frontier_sampling_graph_calls;
+  const auto execute_wave = [&](std::span<const i::RequestKey> active) {
+    ++prepared_waves;
+    require((!saved && active.size() == 2 && active[0] == a.request_key && active[1] == b.request_key) ||
+        (saved && active.size() == 1 && active[0] == a.request_key),
+        "full-hit recovery changed its original wave/key order");
+    std::vector<q::PreparedGenerationCall> calls; calls.reserve(active.size());
+    for (const auto key : active)
+      calls.push_back(q::prepare_generation_call(model, owners[key.slot], 1, &prefix, owners,
+          loop.credit(key, owners[key.slot].progress.generated.size())));
+    q::execute_generation_calls(model, calls, false, &prefix, owners, [&] { ++target_submissions; });
+    ++executed_waves;
+    require(saved && calls.size() == 1 && calls[0].full_hit &&
+        calls[0].disposition == q::EvaluationDisposition::kPublished &&
+        a.session->head.get() == saved->head && a.session->head.epoch() == saved->epoch &&
+        q::generation_boundary(*a.session->head) == saved->boundary &&
+        a.ledger->committed_count == 1 && a.ledger->records[0].same_result(saved->record) &&
+        a.ledger->records[0].committed && a.ledger->records[0].imported &&
+        a.ledger->records[0].user_output && a.ledger->records[0].ids().data() == saved->record.ids().data() &&
+        a.ledger->records[0].ids().size() == saved->record.ids().size() &&
+        a.progress.generated == std::vector<std::int32_t>{saved->boundary.next_id} &&
+        a.progress.observed_commits() == 1 && a.progress.prefilled && a.progress.request_done(),
+        "full-hit recovery reran sampling, changed its committed boundary/ledger or duplicated its output");
+    for (auto &call : calls) q::publish_generation_prompt(model, call, &prefix);
+  };
+  q::SynchronousGenerationWave wave{model, execute_wave};
+  q::GenerationRequestAdapter adapter{model, &prefix, std::span(owners), false,
+      static_cast<std::vector<std::size_t> *>(nullptr), wave};
+  a.request_key = loop.enqueue(0, &delivery); b.request_key = loop.enqueue(1);
+  const auto key_a = a.request_key, key_b = b.request_key;
+  bool rejected_b = false;
+  try { (void)loop.pump_once(adapter); }
+  catch (const i::RequestExecutionFailure &failure) {
+    const auto &evaluation = failure.evaluation();
+    rejected_b = failure.request_key() == key_b && evaluation.status().IsInvalidArgument() &&
+        !evaluation.status().has_native_error() && !evaluation.participant() && !evaluation.retirement_observed();
+  }
+  require(rejected_b && prepared_waves == 1 && !executed_waves && !target_submissions && !provider_calls &&
+      loop.matches(key_a) && loop.matches(key_b) && a.request_key == key_a && b.request_key == key_b &&
+      a.session && a.session->head && a.session->head->sampling.draw == maximum &&
+      a.prefix_full_hits == 1 && a.prefix_sampling_calls == 1 &&
+      model.frontier_sampling_graph_calls == frontier_calls + 1 &&
+      a.ledger->committed_count == 1 && a.ledger->records[0].committed && a.ledger->records[0].imported &&
+      a.progress.observed_commits() == 1 && a.progress.generated.empty() && !a.progress.prefilled &&
+      !a.progress.turn_done && a.progress.input_consumed() == prompt.size() && !delivery.acknowledged() &&
+      !b.session && !b.ledger->committed_count && b.progress.generated.empty() &&
+      !model.active_step && !model.successor_step && !model.carrier_borrowed,
+      "peer preflight did not preserve A's real unobserved full-hit result and B's original error/key");
+  saved.emplace(Saved{a.session->head.get(), a.session->head.epoch(),
+      q::generation_boundary(*a.session->head), a.ledger->records[0]});
+  q::check(loop.cancel(key_b, adapter));
+  // No new random address is needed: A's only output is already sampled at
+  // MAX. The next real pump must observe it without preparing another draw.
+  const auto recovered = loop.pump_once(adapter);
+  require(recovered.executed && recovered.completed == 1 && recovered.cancelled == 1 &&
+      recovered.waiting_output && !recovered.waiting_retirement &&
+      prepared_waves == 2 && executed_waves == 1 && !target_submissions && !provider_calls &&
+      model.frontier_sampling_graph_calls == frontier_calls + 1 &&
+      loop.matches(key_a) && !loop.matches(key_b) && a.request_key == key_a && b.request_key == key_b &&
+      !a.session && !b.session && !delivery.acknowledged() &&
+      delivery.pending(a.progress.generated).size() == 1 &&
+      delivery.pending(a.progress.generated).front() == saved->boundary.next_id &&
+      a.ledger->committed_count == 1 && a.ledger->records[0].same_result(saved->record),
+      "full-hit recovery submitted again, lost its key or retired before preserving one pending delivery");
+  require(loop.acknowledge(key_a, 1, adapter) && loop.acknowledge(key_a, 1, adapter),
+      "full-hit result rejected its original or duplicate delivery acknowledgement");
+  const auto released = loop.pump_once(adapter);
+  require(released.completed == 1 && !released.executed && !released.cancelled &&
+      !released.waiting_output && !released.waiting_retirement && !loop.matches(key_a) &&
+      loop.active().empty() && !loop.waiting_front() && delivery.acknowledged() == 1 &&
+      delivery.pending(a.progress.generated).empty() && a.progress.generated.size() == 1 &&
+      model.frontier_sampling_graph_calls == frontier_calls + 1 &&
+      !model.active_step && !model.successor_step && !model.carrier_borrowed,
+      "full-hit delivery acknowledgement duplicated output or retained its original request authority");
+}
 inline int run(const std::filesystem::path &input) {
   const auto geometry = q::read_weight_geometry(input / "weights.tsv");
   require(geometry.hidden == 64 && geometry.intermediate == 128 &&
@@ -127,7 +226,9 @@ inline int run(const std::filesystem::path &input) {
   execute(hit, &prefix);
   require(hit.progress.request_done() && hit.session->head->sampling.draw == maximum &&
       hit.progress.generated.size() == 2, "full-hit final pending consumed an extra draw");
-  retire(hit); prefix.evict_one();
+  retire(hit);
+  full_hit_peer_preflight_retry(model, prefix, publisher.completed_checkpoint.input, prompt, maximum);
+  prefix.evict_one();
 
   // A later unstarted turn uses its immutable new quota, not the previous
   // output_begin. Its live head and then original evicted ledger are decisive.
@@ -208,6 +309,7 @@ inline int run(const std::filesystem::path &input) {
   std::cout << "{\"status\":\"PASS\",\"backend\":\"cpu\",\"ordinary\":true,"
       "\"initial_rejection_atomic\":true,\"same_request_cursor_retry\":true,\"MAX_minus_1_quota_1\":true,"
       "\"full_hit_request_cursor\":true,\"later_head_budget\":true,\"evicted_ledger_budget\":true,"
+      "\"full_hit_peer_preflight_recovery\":true,\"full_hit_recovery_sampling_calls\":1,\"full_hit_delivery_once\":true,"
       "\"state_only_no_draw\":true,\"raw_draw_preflight\":true,\"greedy_unchanged\":true,"
       "\"pending_only_single_consumption\":true,\"final_versions\":0,\"GPU\":false,\"HTTP\":0}\n";
   return 0;

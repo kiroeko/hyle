@@ -4499,7 +4499,8 @@ public:
     const auto physical = !requests.empty() && requests[0].session &&
         (role == GraphRole::kText || is_mtp_prefill(role))
         ? prefill_capacity(maximum, completion, requests[0].session->sampling_configuration().index, requests.size(), role) : 0;
-    prepare_evaluations(requests, preparation, role, completion, {}, 0, physical, RowPacking::kPrefill);
+    prepare_evaluations(requests, preparation, role, completion, {}, 0, physical,
+        physical ? RowPacking::kPrefill : RowPacking::kRectangular);
   }
 
   void prepare_verification_evaluations(std::span<const EvaluationRequest> requests,
@@ -6447,8 +6448,24 @@ void preflight_generation_sampling(const Model &model, const GenerationRequest &
       throw std::runtime_error("request recovery exceeds its original committed ledger");
     cursor = request.ledger->records[request.ledger->committed_count - 1].after.sampling;
   }
-  // Includes the prefill/full-hit output; the last pending token needs no
-  // additional draw. State-only chunks do not consume this checked budget.
+  // A full hit may have sampled its new frontier before a later request's
+  // preparation failed. Import adopted the source ordinals, but its first
+  // output is still unobserved. Budget only future draws from that exact
+  // published frontier, including when restoring its original ledger.
+  const auto &ledger = *request.ledger;
+  if (progress.turn_started() && !progress.turn_index && !progress.prefilled &&
+      progress.generated.empty() && progress.input_admitted() &&
+      progress.input_consumed() == progress.input().size() && ledger.committed_count &&
+      ledger.committed_count <= ledger.records.size() && progress.observed_commits() == ledger.committed_count) {
+    const auto &last = ledger.records[ledger.committed_count - 1];
+    if (last.committed && last.imported && last.user_output && last.turn == progress.turn_index &&
+        last.emitted_count == 1 && !last.emitted.empty() && last.emitted[0] == last.after.next_id &&
+        last.after.next_id >= 0 && last.after.length == progress.input().size() && last.after.sampling == cursor &&
+        (!request.session || generation_boundary(*request.session->head) == last.after))
+      --outputs;
+  }
+  // Includes each not-yet-executed prefill/full-hit output. The last pending
+  // token and StateOnly chunks require no additional draw.
   (void)cursor.advanced(outputs);
 }
 

@@ -1,0 +1,305 @@
+{
+  "schema": "hyle.correctness.request-recovery.v1",
+  "date": "2026-10-29",
+  "status": "PASS_WITH_PRESERVED_PRODUCT_FAILURES",
+  "base_commit": "68dbe56546620406ab09d61f88c8d1dbad70b178",
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 634205,
+      "sha256": "08a1e22344cfd763de6f4a7e325687a442875191b3f7b383161a109164df664e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_sampling_budget_case.h",
+      "bytes": 21287,
+      "sha256": "83ba5184722ac73f8d61855705fd542751f114495193d631f361cf1cc2edfae6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_request_case.h",
+      "bytes": 19733,
+      "sha256": "a366f6530a87155e6d66fdec40a812b89fa26df7fddc64338641dbeb17336876"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_request_lifecycle_test.cc",
+      "bytes": 22426,
+      "sha256": "19502d0d0ec1e41a6ca54f80217f8127d2738337f6ddcb1287800a6ecad2d96a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\CMakeLists.txt",
+      "bytes": 32900,
+      "sha256": "6ca900277d4d39acd30aaf674661e7ec639d9f4786dc6756c396e5e1700c5b5d"
+    }
+  ],
+  "changes": [
+    "No prepared packed prefill capacity selects original rectangular evaluation; original shape/row/capacity guards still apply.",
+    "Ordinary sampling preflight excludes one already sampled, unobserved full-hit frontier only when original input/imported ledger/cursor/live head facts match. Future output draws and invalid Session checks remain strict.",
+    "A real same-wave peer argument error retains its key; A recovers the original result at the last legal draw and delivers/acknowledges once, without a second frontier Graph.",
+    "A natural N1 request-loop journey combines partial prefix, StateOnly chunks, automatic HostImage eviction/recovery and output credit/acknowledgement with original resource retirement."
+  ],
+  "counts": {
+    "CXX_attempts": 4,
+    "links": 4,
+    "current_consumer_TUs": 2,
+    "retained_SDK_inputs": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "full_builds": 0,
+    "downloads": 0,
+    "native_processes": 4,
+    "current_passed_processes": 2,
+    "preserved_product_failures": 2
+  },
+  "builds": [
+    {
+      "unit": "consumer",
+      "attempt": "baseline",
+      "compile": {
+        "state": "TERMINAL",
+        "pid": 44292,
+        "started": 1793283661.4342353,
+        "seconds": 35.77016520500183,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link": {
+        "state": "TERMINAL",
+        "pid": 31696,
+        "started": 1793283781.239247,
+        "seconds": 1.7980210781097412,
+        "exit": 0,
+        "timed_out": false
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-full-hit-retry-20261029\\compile\\consumer\\unit.obj",
+        "bytes": 24452010,
+        "sha256": "c60b56d5a38949cfd9128e22df222cf95eab8578edb06fe8acd287510f2a308f"
+      }
+    },
+    {
+      "unit": "consumer",
+      "attempt": "rectangular-fallback",
+      "compile": {
+        "state": "TERMINAL",
+        "pid": 40252,
+        "started": 1793283948.0459173,
+        "seconds": 35.475544691085815,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link": {
+        "state": "TERMINAL",
+        "pid": 57328,
+        "started": 1793284040.5208366,
+        "seconds": 1.7991366386413574,
+        "exit": 0,
+        "timed_out": false
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-full-hit-retry-20261029\\compile\\consumer\\unit.obj",
+        "bytes": 24452017,
+        "sha256": "ec5e3ff28222970ab34e6cd4f54174bcbffc1fb950ce16225e51b29c4978c25e"
+      }
+    },
+    {
+      "unit": "consumer",
+      "attempt": "fixed",
+      "compile": {
+        "state": "TERMINAL",
+        "pid": 53964,
+        "started": 1793284132.2967885,
+        "seconds": 35.4860520362854,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link": {
+        "state": "TERMINAL",
+        "pid": 57844,
+        "started": 1793284206.7055125,
+        "seconds": 1.789201021194458,
+        "exit": 0,
+        "timed_out": false
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-full-hit-retry-20261029\\compile\\consumer\\unit.obj",
+        "bytes": 24456173,
+        "sha256": "ec674ae06357d2248acbc5a5550cd78b591f32072e53b03e23309e2f29e96d3a"
+      }
+    },
+    {
+      "unit": "host-image",
+      "attempt": "attempt1",
+      "compile": {
+        "state": "TERMINAL",
+        "pid": 21080,
+        "started": 1793284631.9549131,
+        "seconds": 35.37507081031799,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link": {
+        "state": "TERMINAL",
+        "pid": 10252,
+        "started": 1793284724.8041482,
+        "seconds": 1.8170952796936035,
+        "exit": 0,
+        "timed_out": false
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-full-hit-retry-20261029\\compile\\host-image\\unit.obj",
+        "bytes": 24378440,
+        "sha256": "2590656a8732fdebe66e5ca9b3669f373d02c981b94dff5978cc6517b6391a55"
+      }
+    }
+  ],
+  "cases": {
+    "baseline": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 52972,
+        "started": 1793283784.0533092,
+        "seconds": 1.3582475185394287,
+        "exit": 1,
+        "timed_out": false
+      },
+      "report": null,
+      "last_stderr_line": "target row capacity differs from its declared packing"
+    },
+    "rectangular-fallback": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 62600,
+        "started": 1793284043.2395203,
+        "seconds": 0.6551833152770996,
+        "exit": 1,
+        "timed_out": false
+      },
+      "report": null,
+      "last_stderr_line": "sampling draw cursor is exhausted"
+    },
+    "fixed": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 62928,
+        "started": 1793284209.442536,
+        "seconds": 0.7646560668945312,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "backend": "cpu",
+        "ordinary": true,
+        "initial_rejection_atomic": true,
+        "same_request_cursor_retry": true,
+        "MAX_minus_1_quota_1": true,
+        "full_hit_request_cursor": true,
+        "later_head_budget": true,
+        "evicted_ledger_budget": true,
+        "full_hit_peer_preflight_recovery": true,
+        "full_hit_recovery_sampling_calls": 1,
+        "full_hit_delivery_once": true,
+        "state_only_no_draw": true,
+        "raw_draw_preflight": true,
+        "greedy_unchanged": true,
+        "pending_only_single_consumption": true,
+        "final_versions": 0,
+        "GPU": false,
+        "HTTP": 0
+      },
+      "last_stderr_line": "memory_phase=generation_greedy-independent_decode_end"
+    },
+    "host-image": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 63084,
+        "started": 1793284727.657502,
+        "seconds": 0.7750601768493652,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "fixture": "untrained_A_H64",
+        "natural_request_loop": true,
+        "N": 1,
+        "partial_prefix_rows": 2,
+        "state_only_chunks": 2,
+        "idle_evictions": 1,
+        "host_restores": 1,
+        "restore_capacity_status": "ResourceExhausted",
+        "failed_import_preserved_image": true,
+        "restored_state_byte_equal": true,
+        "delivery_capacity": 1,
+        "request_waves": 5,
+        "target_calls": 6,
+        "A_commits": 5,
+        "B_commits": 1,
+        "A_draw": 2,
+        "B_draw": 1,
+        "ledger_rebuild_graph_calls": 0,
+        "final_versions": 0,
+        "final_images": 0
+      },
+      "last_stderr_line": "memory_phase=generation_A_decode_end"
+    }
+  },
+  "cleanup": {
+    "status": "PASS",
+    "files": 9,
+    "bytes": 395005590.0,
+    "removed": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-full-hit-retry-20261029\\bin\\consumer.exe",
+        "bytes": 142671872,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-full-hit-retry-20261029\\bin\\consumer.exp",
+        "bytes": 24983,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-full-hit-retry-20261029\\bin\\consumer.lib",
+        "bytes": 41736,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-full-hit-retry-20261029\\bin\\host-image.exe",
+        "bytes": 142647296,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-full-hit-retry-20261029\\bin\\host-image.exp",
+        "bytes": 24987,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-full-hit-retry-20261029\\bin\\host-image.lib",
+        "bytes": 41912,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-full-hit-retry-20261029\\bin\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-layout-20261029\\compile\\qwen\\unit.obj",
+        "bytes": 81661963,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-layout-20261029\\compile\\ordinary\\unit.obj",
+        "bytes": 26684057,
+        "removed": true
+      }
+    ]
+  },
+  "boundaries": [
+    "CPU finite A/H64/FFN128/V64 fixture; original real Model/Graph/RequestLoop/Arena, not a complete trained-model quality or throughput window.",
+    "Sampling-budget regression covers a resident unobserved full-hit head; it does not claim that same frontier was evicted/restored in the same journey.",
+    "Separate joint HostImage journey covers its reported bounded StateOnly/partial-prefix/credit behavior, not a Cartesian product of model/backend/configuration cases.",
+    "No device-fault injection, GPU timing, latest llama.cpp comparison or performance claim. Earlier paged-layout CPU/CUDA evidence belongs to its own source revision."
+  ],
+  "archive": "inference-request-recovery-2026-10-29.zip"
+}

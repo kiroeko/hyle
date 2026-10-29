@@ -129,6 +129,13 @@ GLM的StateStore／StateHead不使用这些分页尾，不为接口统一而引�
 packed行偏移、decode-ahead原缓存和真实Source不放进这份整数缓冲；原版本分配、generation与Schema验证继续保留。
 [四项布局检查与CPU／CUDA模型回归](../evidence/correctness/inference-paged-layout-2026-10-29.json)覆盖混长、空历史、共享重复页、超界拒绝和预留地址稳定；不是吞吐或完整执行核心完成的证明。
 
+完整前缀命中可在同wave后续请求准备失败前已经采样新frontier，但尚未向原请求交付。
+普通随机预算预检按原输入、导入记录、游标及live head核对这一事实，只扣已执行的一个draw，继续严格核未来输出；
+不按历史导入的observed ordinal推算已交付token数，也不放宽原游标或失效Session检查。
+prefill未选到packed冷容量时走原矩形路径，保留等长、精确族和容量门；不能以零physical rows声明packed布局。
+[请求恢复检查](../evidence/correctness/inference-request-recovery-2026-10-29.json)保留两处修复前的真实失败及修复后结果，
+并在自然N1双请求中联合检查部分前缀、StateOnly、自动HostImage、真实页容量拒绝和ACK背压；不外推全平台或新吞吐。
+
 发生执行或完成后的异常时，原head／ledger提交仍是权威事实。补观察逐成员尝试，某个观察器再次拒绝不能遮蔽首个错误的Status、participant与退休事实，
 也不阻断其它已提交成员的观察；未观察的ordinal保留在原账簿，原owner修复观察条件后只重试观察，不能重跑Graph或重新采样。
 这不把第二个观察错误视为成功，也不提供新的退休或输出额度权限。
