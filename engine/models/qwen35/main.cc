@@ -71,6 +71,7 @@
 #include "../../inference/request_wave_execution.h"
 #include "../../inference/prefill_plan.h"
 #include "../../inference/packed_rows.h"
+#include "../../inference/paged_layout_scratch.h"
 #include "../../inference/version_admission.h"
 #include "../../inference/batch_dispatch.h"
 #include "../../inference/request_batch_execution.h"
@@ -1014,16 +1015,16 @@ struct InputPreparationScratch final {
   std::vector<inference::PackedRowInput> row_inputs;
   std::vector<std::int32_t> query_indptr, last_rows;
   std::vector<std::uint32_t> sampling_identities;
-  // BatchSchema::version synchronously copies this integer source range.
-  // Keep page readers, immutable layout versions and NodeLayouts outside scratch.
-  std::vector<std::int32_t> target_page_ids;
+  // BatchSchema::version synchronously copies these borrowed integer ranges.
+  // Target, draft and private NextN reuse them in their serial preparation;
+  // page readers, immutable versions and NodeLayouts stay with original owners.
+  inference::PagedLayoutScratch old_layout_rows, next_layout_rows;
   void prepare(const Phase &phase) {
     const auto &io = phase.slots[0].data; // All slots share the same cold descriptions.
     const auto reserve = [](auto &values, const Tensor &tensor) {
       using Element = typename std::decay_t<decltype(values)>::value_type;
       values.reserve(take(tensor.description.required_bytes()) / sizeof(Element));
     };
-    target_page_ids.reserve(phase.attention_schema.capacity().max_page_refs);
     row_inputs.reserve(phase.family->requests);
     query_indptr.reserve(phase.family->requests + 1);
     last_rows.reserve(phase.family->requests);
@@ -2040,6 +2041,9 @@ public:
     const auto prepared_bytes = cache::add(cache::multiply(
         cache::add(cache_plan.key_bank_bytes, cache_plan.value_bank_bytes), target_kv_layers),
         cache::add(cache_plan.draft_key_bank_bytes, cache_plan.draft_value_bank_bytes));
+    const auto layout_capacity = prepared_schema.capacity();
+    input_scratch.old_layout_rows.prepare(layout_capacity.max_requests, layout_capacity.max_page_refs);
+    input_scratch.next_layout_rows.prepare(layout_capacity.max_requests, layout_capacity.max_page_refs);
     // No PageRef exists until this complete cold source tuple is published.
     // Leave the schema sentinel invalid on failure so released quota can retry.
     static_assert(std::is_nothrow_move_assignable_v<cache::PageInventory>);
@@ -2980,6 +2984,7 @@ public:
     program.literals = std::move(assembly.literals);
     program.token_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
     program.position_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
+    input_scratch.draft_positions.reserve(rows);
     if (head && selected_sampler.enabled)
       program.identity_values = caller_tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
     check(program.io.prepare(compiled_program, head && selected_sampler.enabled ? 3 : 2,
@@ -3103,13 +3108,14 @@ public:
             guard.execution.dirty[draft_bank + 1].push_back(std::move(page.values[0]));
             return std::move(page.reference);
           }));
-      std::vector<std::int32_t> page_ids, positions;
-      for (const auto &page : next.pages) page_ids.push_back(static_cast<std::int32_t>(page.page()));
+      auto &layout_rows = input_scratch.next_layout_rows;
+      layout_rows.reset();
+      check(layout_rows.append(ids.size(), next.frontier, cache::Plan::page_rows,
+          std::span<const cache::PageRef>(next.pages)));
+      const auto layout = take(layout_rows.member_version(attention_schema, 0));
+      auto &positions = input_scratch.draft_positions;
+      positions.clear();
       for (std::size_t i = 0; i < ids.size(); ++i) positions.push_back(static_cast<std::int32_t>(length + i));
-      const std::array<std::int32_t, 2> query{0, static_cast<std::int32_t>(ids.size())},
-          kv{0, static_cast<std::int32_t>(page_ids.size())};
-      const std::array last{static_cast<std::int32_t>((next.frontier - 1) % cache::Plan::page_rows + 1)};
-      const auto layout = take(attention_schema.version({query, kv, page_ids, last}));
       const std::array sources{take(work.state.key.view()), take(work.state.value.view())};
       for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank) {
         auto &arena = bank == draft_bank ? draft_inventory.keys[0] : draft_inventory.values[0];
@@ -4204,8 +4210,9 @@ public:
     const bool compact_draft = packs_draft(phase.family->packing);
     const auto physical_rows = cache::multiply(width, is_mtp_prefill(role)
         ? cache::add(phase.query_rows, draft_lag(role)) : draft_lag(role) + 1);
-    hyle::container::SmallVector<std::int32_t, 2> query{0}, old_ptr{0}, next_ptr{0}, old_last, next_last;
-    std::vector<std::int32_t> old_ids, next_ids;
+    auto &old_layout_rows = input_scratch.old_layout_rows;
+    auto &next_layout_rows = input_scratch.next_layout_rows;
+    old_layout_rows.reset(); next_layout_rows.reset();
     auto &positions = input_scratch.draft_positions, &catchups = input_scratch.catchups;
     positions.resize(physical_rows); catchups.clear();
     auto &row_inputs = input_scratch.row_inputs;
@@ -4267,17 +4274,6 @@ public:
           io.draft_hidden_indices[destination + row] = static_cast<std::int32_t>(prefix_rows + target_begin + row - 1);
       }
     }
-    for (auto *table : {&query, &old_ptr, &next_ptr})
-      if (!table->try_reserve(width + 1)) throw std::bad_alloc{};
-    for (auto *table : {&old_last, &next_last})
-      if (!table->try_reserve(width)) throw std::bad_alloc{};
-    std::size_t old_count = 0, next_count = 0;
-    for (std::size_t j = 0; j < width; ++j) {
-      const auto &member = step.members[j];
-      old_count = cache::add(old_count, member.base->draft->pages.size());
-      next_count = cache::add(next_count, (cache::add(member.base->draft->frontier, row_inputs[j].rows) + cache::Plan::page_rows - 1) / cache::Plan::page_rows);
-    }
-    old_ids.reserve(old_count); next_ids.reserve(next_count);
     for (std::size_t j = 0; j < width; ++j) {
       auto &member = step.members[j]; auto &session = *member.session;
       const auto &old = *member.base->draft;
@@ -4285,7 +4281,6 @@ public:
       member.next->draft.emplace(); auto &next = *member.next->draft;
       const auto extent = take(inference::append_extent(old.frontier, rows, capacity, cache::Plan::page_rows));
       next.frontier = extent.after_rows;
-      const auto count = extent.page_count;
       (void)take(inference::prepare_append_pages(extent, std::span<const cache::PageRef>(old.pages), next.pages,
           relay ? std::span<c::PagedPageAppender>{} : std::span(session.draft_tails),
           !relay && session.draft_tail_epoch == member.base_epoch,
@@ -4298,23 +4293,18 @@ public:
             return std::move(reservation.reference);
           }));
       if (!relay) session.draft_tail_epoch = 0;
-      for (const auto &page : old.pages) old_ids.push_back(static_cast<std::int32_t>(page.page()));
-      const auto begin = next_ids.size();
-      for (const auto &page : next.pages) next_ids.push_back(static_cast<std::int32_t>(page.page()));
-      query.push_back(offsets[j + 1]);
-      old_ptr.push_back(static_cast<std::int32_t>(old_ids.size())); next_ptr.push_back(static_cast<std::int32_t>(next_ids.size()));
-      old_last.push_back(old.frontier ? static_cast<std::int32_t>((old.frontier - 1) % cache::Plan::page_rows + 1) : 0);
-      next_last.push_back(static_cast<std::int32_t>((next.frontier - 1) % cache::Plan::page_rows + 1));
-      const std::array<std::int32_t, 2> one_query{0, static_cast<std::int32_t>(rows)}, one_kv{0, static_cast<std::int32_t>(count)};
-      member.draft_layout = take(attention_schema.version({one_query, one_kv, std::span(next_ids).subspan(begin, count), std::span(&next_last.back(), 1)}));
+      check(next_layout_rows.append(rows, next.frontier, cache::Plan::page_rows,
+          std::span<const cache::PageRef>(next.pages)));
+      member.draft_layout = take(next_layout_rows.member_version(attention_schema, j));
+      if (width != 1) check(old_layout_rows.append(0, old.frontier, cache::Plan::page_rows,
+          std::span<const cache::PageRef>(old.pages)));
       if (draft_lag(role) && !relay) {
         catchups.push_back(compact_draft && !old.lag ? member.first_input : old.catchup_token);
       }
     }
-    const auto layout = width == 1 ? step.members[0].draft_layout : take(attention_schema.version({query, next_ptr, next_ids, next_last}));
+    const auto layout = width == 1 ? step.members[0].draft_layout : take(attention_schema.version(next_layout_rows.layout()));
     step.draft_layout = layout;
-    std::vector<std::int32_t> old_query(width == 1 ? 0 : width + 1, 0);
-    const auto old_layout = width == 1 ? c::BatchLayoutVersion{} : take(attention_schema.version({old_query, old_ptr, old_ids, old_last}));
+    const auto old_layout = width == 1 ? c::BatchLayoutVersion{} : take(attention_schema.version(old_layout_rows.layout()));
     std::vector<c::PagedArenaFootprint> sources(width);
     for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank) {
       auto &arena = bank == draft_bank ? draft_inventory.keys[0] : draft_inventory.values[0];
@@ -4776,19 +4766,14 @@ public:
         io.sampling_identities.write<std::uint32_t>(identities);
       }
       const auto cold_start = Clock::now();
-      hyle::container::SmallVector<std::int32_t, 2> query_indptr{0}, old_indptr{0}, new_indptr{0}, old_last, new_last;
-      for (auto *table : {&query_indptr, &old_indptr, &new_indptr, &old_last, &new_last})
-        if (!table->try_reserve(width + 1)) throw std::bad_alloc{};
-      std::vector<std::int32_t> old_ids;
-      auto &new_ids = input_scratch.target_page_ids;
-      new_ids.clear();
-      std::size_t old_refs = 0, new_refs = 0;
+      auto &old_layout_rows = input_scratch.old_layout_rows;
+      auto &next_layout_rows = input_scratch.next_layout_rows;
+      old_layout_rows.reset(); next_layout_rows.reset();
+      std::size_t new_refs = 0;
       for (const auto &member : step.members) {
-        old_refs = cache::add(old_refs, member.base->pages.size());
         new_refs = cache::add(new_refs, (member.base->length + member.input_tokens + cache::Plan::page_rows - 1) / cache::Plan::page_rows);
       }
-      if (width != 1 && !ahead) old_ids.reserve(old_refs);
-      if (new_refs > new_ids.capacity())
+      if (new_refs > next_layout_rows.max_page_refs())
         throw std::runtime_error("target page-index scratch exceeds prepared schema capacity");
       for (auto &bank : step.execution.tails) if (!bank.try_reserve(width)) throw std::bad_alloc{};
       for (std::size_t j = 0; j < width; ++j) {
@@ -4801,7 +4786,6 @@ public:
         member.next->length = extent.after_rows;
         member.next->sampling = selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify ? member.base->sampling.advanced(drafts_token(role) ? 3 : 1)
             : member.base->sampling;
-        const auto page_count = extent.page_count;
         (void)take(inference::prepare_append_pages(extent, std::span<const cache::PageRef>(member.base->pages),
             member.next->pages, relay ? std::span<c::PagedPageAppender>{}
                 : std::span(session.tails.data(), session.tails.size()),
@@ -4817,30 +4801,22 @@ public:
               return std::move(reservation.reference);
             }));
         if (!relay) session.tail_epoch = 0;
-        if (width != 1 && !ahead) for (const auto &page : member.base->pages) old_ids.push_back(static_cast<std::int32_t>(page.page()));
-        const auto begin = new_ids.size();
-        for (const auto &page : member.next->pages) new_ids.push_back(static_cast<std::int32_t>(page.page()));
-        query_indptr.push_back(packed_target ? input_scratch.query_indptr[j + 1]
-            : static_cast<std::int32_t>(cache::add(static_cast<std::size_t>(query_indptr.back()), member_tokens)));
-        old_indptr.push_back(static_cast<std::int32_t>(old_ids.size()));
-        new_indptr.push_back(static_cast<std::int32_t>(new_ids.size()));
-        old_last.push_back(length ? static_cast<std::int32_t>((length - 1) % cache::Plan::page_rows + 1) : 0);
-        new_last.push_back(static_cast<std::int32_t>((member.next->length - 1) % cache::Plan::page_rows + 1));
-        const std::array<std::int32_t, 2> one_query{0, static_cast<std::int32_t>(member_tokens)}, one_kv{0, static_cast<std::int32_t>(page_count)};
-        member.layout = take(attention_schema.version({one_query, one_kv,
-            std::span(new_ids).subspan(begin, page_count), std::span(&new_last.back(), 1)}));
+        check(next_layout_rows.append(member_tokens, member.next->length, cache::Plan::page_rows,
+            std::span<const cache::PageRef>(member.next->pages)));
+        member.layout = take(next_layout_rows.member_version(attention_schema, j));
+        if (width != 1 && !ahead) check(old_layout_rows.append(0, length, cache::Plan::page_rows,
+            std::span<const cache::PageRef>(member.base->pages)));
       }
       io.attention_layout = width == 1 ? step.members[0].layout
-          : take(attention_schema.version({query_indptr, new_indptr, new_ids, new_last}));
+          : take(attention_schema.version(next_layout_rows.layout()));
       // Old layouts describe no new queries, but retain each independent history.
-      const std::vector<std::int32_t> old_query(width == 1 || ahead ? 0 : width + 1, 0);
       const auto old_layout = width == 1 ? c::BatchLayoutVersion{}
           : ahead ? take(attention_schema.version({
               {decode_ahead->old_query.data(), decode_ahead->old_query.size()},
               {decode_ahead->old_indptr.data(), decode_ahead->old_indptr.size()},
               {decode_ahead->old_ids.data(), decode_ahead->old_ids.size()},
               {decode_ahead->old_last.data(), decode_ahead->old_last.size()}}))
-          : take(attention_schema.version({old_query, old_indptr, old_ids, old_last}));
+          : take(attention_schema.version(old_layout_rows.layout()));
       if (ahead) decode_ahead->clear_output(); // version() copied this group's borrowed integers.
       std::vector<c::PagedArenaFootprint> sources(width);
       for (std::size_t layer = 0; layer < page_inventory.keys.size(); ++layer) {
@@ -5180,13 +5156,11 @@ public:
           member.next->length = member.base->length + member.accepted_tokens;
           const auto page_count = (member.next->length + cache::Plan::page_rows - 1) / cache::Plan::page_rows;
           member.next->pages.resize(page_count);
-          std::vector<std::int32_t> ids;
-          ids.reserve(page_count);
-          for (const auto &page : member.next->pages) ids.push_back(static_cast<std::int32_t>(page.page()));
-          const std::array<std::int32_t, 2> query{0, static_cast<std::int32_t>(member.accepted_tokens)},
-              kv{0, static_cast<std::int32_t>(page_count)};
-          const std::array last{static_cast<std::int32_t>((member.next->length - 1) % cache::Plan::page_rows + 1)};
-          member.layout = take(attention_schema.version({query, kv, ids, last}));
+          auto &layout_rows = input_scratch.next_layout_rows;
+          layout_rows.reset();
+          check(layout_rows.append(member.accepted_tokens, member.next->length, cache::Plan::page_rows,
+              std::span<const cache::PageRef>(member.next->pages)));
+          member.layout = take(layout_rows.member_version(attention_schema, 0));
         }
       }
       if (has_mtp(phase.family->role)) for (auto &member : step.members) {

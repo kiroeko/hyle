@@ -80,6 +80,9 @@ Head成功后立即无失败地记录该成员结果，后续报告／catch-up�
 七个当前有限进程通过，含12项真实CPU页权限检查、CPU history K2、CUDA混合lag、真实2B MTP及普通连续流水16臂；
 一次旧夹具目录冲突拒绝已保留，改用本批两份元数据文件复用原权重。无SDK重编、下载或吞吐刷新；完整执行编排仍未抽完。
 旧Flash四round记录不作为当前五round的同版本基线，侧车组件亦不外推完整大模型生成。
+随后[共同分页布局](../evidence/correctness/inference-paged-layout-2026-10-29.json)将target、draft、私有NextN及部分接受后的元数据组装接入同一冷预留缓冲，
+保留原Schema版本、R1路径、ahead及Source权限。四项布局测试及七个CPU／CUDA模型进程通过；多行JSON日志仅修收集解析，没有重跑或放宽数值门。
+联合复审另定位完整前缀命中后同wave失败重试的RNG预算重复计数，正在补真实请求回归与修复；自动换出换入与分块、背压组合尚待逐链核对。
 Kimi现有KDA／MLA消费者不产生生成token，不为共用请求接口虚构生成阶段。
 本轮工程入口、完整依赖装配、文档导航及许可交付整改已完成，结果见[工程检查记录](../evidence/licensing/dependency-licenses-2026-10-29.json)。
 当前收敛完整执行编排、普通／MTP共同机制及SDK接线，随后集中连续后继、GPU融合及带宽等性能工作。

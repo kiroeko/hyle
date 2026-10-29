@@ -1,3 +1,5 @@
 hyle_add_header_self_contained_test(compute_batch HEADER_DIR compute
   HEADERS batch_layout.h batch_ops.h batch_execution.h detail/batch_provider.h detail/batch_graph_access.h batch_materialize.h batch_paged_native.h paged_arena.h row_cache_paged.h detail/paged_arena_access.h detail/materialized_native_controller.h)
 hyle_add_test(compute_batch SOURCES batch_layout_test.cc batch_materialize_test.cc native_paged_metadata_test.cc paged_arena_test.cc row_cache_paged_test.cc workspace_test.cc DEPS hyle_compute_state hyle_compute_backend_cpu)
+hyle_add_test(compute_batch NAME inference_layout SOURCES ../tools/inference_batch_layout_test.cc)
+hyle_stage_runtime(hyle_compute_batch_inference_layout_test)

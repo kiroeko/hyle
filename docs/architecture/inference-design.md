@@ -124,6 +124,11 @@ GLM的StateStore／StateHead不使用这些分页尾，不为接口统一而引�
 返回尾的目的容量由原episode预留；晚获取失败保留此前已移入的原引用、writer和尾权限，交原恢复机制处理，不推定退休或另建资源owner。
 [12项真实CPU页权限检查及模型回归](../evidence/correctness/inference-sidecar-pages-2026-10-29.json)覆盖尾复用、跨页、晚bank拒绝后的COW和晚新页获取失败。
 
+分页布局整数由`PagedLayoutScratch`冷预留，target、批量draft、私有NextN及部分接受后共用页ID、query／KV偏移和末页长度的组装。
+目标及旧历史各一份缓冲，原Schema同步复制后再复用；R1仍只创建原成员版本，多成员才创建原聚合版本。
+packed行偏移、decode-ahead原缓存和真实Source不放进这份整数缓冲；原版本分配、generation与Schema验证继续保留。
+[四项布局检查与CPU／CUDA模型回归](../evidence/correctness/inference-paged-layout-2026-10-29.json)覆盖混长、空历史、共享重复页、超界拒绝和预留地址稳定；不是吞吐或完整执行核心完成的证明。
+
 发生执行或完成后的异常时，原head／ledger提交仍是权威事实。补观察逐成员尝试，某个观察器再次拒绝不能遮蔽首个错误的Status、participant与退休事实，
 也不阻断其它已提交成员的观察；未观察的ordinal保留在原账簿，原owner修复观察条件后只重试观察，不能重跑Graph或重新采样。
 这不把第二个观察错误视为成功，也不提供新的退休或输出额度权限。

@@ -1,0 +1,2301 @@
+{
+  "schema": "hyle.correctness.paged-layout.v1",
+  "date": "2026-10-29",
+  "status": "PASS",
+  "base_commit": "d47e4b2b52676ed7b2c5056b523a50fec8d1c5cc",
+  "changes": [
+    "PagedLayoutScratch cold-reserves only host integer ranges; prepares page IDs/query and KV indptr/tail lengths, preserving repeated shared pages and actual visible rows.",
+    "Target, batched draft, private NextN and partial-accept layout use the original BatchSchema::version and original number/order of versions. R1 does not mint an extra aggregate.",
+    "Original target early cohort capacity check, packed row offsets, decode-ahead direct spans and all source/page permissions remain separate. Scratch is reused only after version synchronously copies it.",
+    "Private NextN positions are cold-reserved. Schema active snapshots/generation/allocation and source footprint vectors remain original; no second executor or new permission owner."
+  ],
+  "counts": {
+    "CXX_attempts": 3,
+    "links": 3,
+    "consumer_TUs": 3,
+    "retained_SDK_inputs": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "full_builds": 0,
+    "downloads": 0,
+    "native_processes": 8,
+    "passed_processes": 8,
+    "GTests": 4,
+    "ordinary_control_and_candidate_arms": 16
+  },
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\paged_layout_scratch.h",
+      "bytes": 5329,
+      "sha256": "1bf799819e677a8d7d3712c4abd240346b6aed76d3458844b1628e66306cb006"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 632997,
+      "sha256": "71abf102e5dbda1f550dd31c4566284af30b65e83d26f69b146206dd6b48fb30"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_batch_layout_test.cc",
+      "bytes": 8862,
+      "sha256": "536a9bf423f31eaba8db03f9d2fb2e1f5cdaaa98dbded446d96ace42be65a49c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_batch\\CMakeLists.txt",
+      "bytes": 703,
+      "sha256": "33615c365867c85b4815e43a8ae8c0d7ab54b825f8b183366b0da1269b4cce4c"
+    }
+  ],
+  "builds": {
+    "layout": {
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-layout-20261029\\compile\\layout\\unit.obj",
+        "bytes": 672246,
+        "sha256": "7f9fc27e3902a2746b548c8d7e7ceb60349c5669a51c5195c80209445d62a0ab"
+      },
+      "compile": {
+        "state": "TERMINAL",
+        "pid": 47704,
+        "started": 1793275584.2385805,
+        "seconds": 1.846863031387329,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link": {
+        "state": "TERMINAL",
+        "pid": 55388,
+        "started": 1793275615.115029,
+        "seconds": 2.025580644607544,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    "qwen": {
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-layout-20261029\\compile\\qwen\\unit.obj",
+        "bytes": 81661963,
+        "sha256": "7866b71eda85df4c5b9616c502d2519dc3afad36c73f324dc9be616836656df3"
+      },
+      "compile": {
+        "state": "TERMINAL",
+        "pid": 16972,
+        "started": 1793275518.801777,
+        "seconds": 170.52136898040771,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link": {
+        "state": "TERMINAL",
+        "pid": 45756,
+        "started": 1793275808.03066,
+        "seconds": 1.9801135063171387,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    "ordinary": {
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-layout-20261029\\compile\\ordinary\\unit.obj",
+        "bytes": 26684057,
+        "sha256": "dc2bfd2bac8a1c24809bbfc811f37729d91773856878b3c43f4e2eb7881dd14e"
+      },
+      "compile": {
+        "state": "TERMINAL",
+        "pid": 58596,
+        "started": 1793275518.801777,
+        "seconds": 63.042529821395874,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link": {
+        "state": "TERMINAL",
+        "pid": 60716,
+        "started": 1793275615.185516,
+        "seconds": 2.0330991744995117,
+        "exit": 0,
+        "timed_out": false
+      }
+    }
+  },
+  "cases": {
+    "layout-cpu": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 18820,
+        "started": 1793275631.6159594,
+        "seconds": 0.4512972831726074,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "tests": 4,
+        "failures": 0,
+        "skipped": 0
+      }
+    },
+    "history-cpu": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 53012,
+        "started": 1793275820.4877608,
+        "seconds": 0.8519566059112549,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "history-control",
+        "backend": "cpu",
+        "models": 1,
+        "configurations": 1,
+        "history_only": true,
+        "member_cancel_B2_K2": true,
+        "whole_episode_retired": true,
+        "postsubmit_cancel_returned_normally": true,
+        "survivor_same_R2_published": true,
+        "survivor_original_member_index": 1,
+        "cancelled_member_postverify_auxiliary_calls": 0,
+        "postrestore_next_R1_round": true,
+        "committed_counts_only": true,
+        "escaped_readonly_C0": true,
+        "bounded_pool_refusal": true,
+        "release_then_retry": true,
+        "idle_HostImage_restore": true,
+        "idle_resident_versions_zero": true,
+        "old_checkpoints_unchanged": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0,
+        "state_checks": [
+          {
+            "sequence": 0,
+            "prefix": 6,
+            "active_rows": 0,
+            "physical_rows": 0,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 5,
+            "bucket_next": 5,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 0,
+            "prefix": 6,
+            "active_rows": 0,
+            "physical_rows": 0,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 5,
+            "bucket_next": 5,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 0,
+            "prefix": 9,
+            "active_rows": 0,
+            "physical_rows": 0,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 27,
+            "bucket_next": 27,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          }
+        ]
+      }
+    },
+    "mixed-lag-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 60824,
+        "started": 1793275923.706509,
+        "seconds": 0.8654429912567139,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "backend": "cuda",
+        "mode": "mtp_mixed_lag",
+        "synthetic_untrained": true,
+        "requests": 2,
+        "base_lags": [
+          0,
+          1
+        ],
+        "controlled_accepted": [
+          1,
+          2
+        ],
+        "mixed_target_submissions": 2,
+        "target_submissions": 14,
+        "target_rows_per_member": 2,
+        "actual_draft_rows": 3,
+        "physical_draft_rows": 4,
+        "hidden_indices": [
+          0,
+          3,
+          1,
+          0
+        ],
+        "token_indices": [
+          2,
+          1,
+          3,
+          0
+        ],
+        "natural_processed_target": [
+          1,
+          1
+        ],
+        "natural_processed_draft": [
+          1,
+          2
+        ],
+        "state_checks": [
+          {
+            "sequence": 0,
+            "prefix": 3,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 3,
+            "exact_next": 59,
+            "bucket_next": 59,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 0,
+            "prefix": 5,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 4,
+            "exact_next": 7,
+            "bucket_next": 7,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 1,
+            "prefix": 3,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 2,
+            "exact_next": 22,
+            "bucket_next": 22,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 1,
+            "prefix": 5,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 5,
+            "exact_next": 41,
+            "bucket_next": 41,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 2,
+            "prefix": 3,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 3,
+            "exact_next": -1,
+            "bucket_next": -1,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 2,
+            "prefix": 5,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 6,
+            "exact_next": -1,
+            "bucket_next": -1,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          }
+        ],
+        "payloads_byte_equal": true,
+        "numerically_equivalent": true,
+        "old_checkpoints_unchanged": true,
+        "StateOnly_no_pending_or_draw": true,
+        "natural_R1_results_equal": true,
+        "mixed_engine_single_submission": true,
+        "original_member_roles_committed": true,
+        "retired_head_rejected_before_prepare": true,
+        "mixed_cancelled_head_ledger_rng_unchanged": true,
+        "mixed_cancelled_new_outputs": 0,
+        "mixed_survivor_original_submission_published": true,
+        "mixed_survivor_complete_R1_state_equal": true,
+        "full_request_history_import_coverage": false,
+        "final_versions": 0,
+        "natural_acceptance_quality_claim": false,
+        "performance_claim": false
+      }
+    },
+    "mtp-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 40492,
+        "started": 1793275944.2127366,
+        "seconds": 3.5411834716796875,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "mtp-natural-relay",
+        "backend": "cuda",
+        "models": 1,
+        "journeys": 2,
+        "prompt_tokens": 154,
+        "capacity": 256,
+        "resident_capacity": 1,
+        "state_slots": 5,
+        "hidden_slots": 6,
+        "output_limit": 40,
+        "outputs": 40,
+        "serial_submissions": 23,
+        "auto_submissions": 24,
+        "source_submissions": 22,
+        "successor_submissions": 3,
+        "successor_publications": 2,
+        "successor_discards": 1,
+        "successor_refusals": 0,
+        "pending_pairs_before_A_publish": 3,
+        "deferred_waves": 2,
+        "reserved_two_grants": 2,
+        "accepted_drafts": 17,
+        "rejected_drafts": 4,
+        "ledger_records": 23,
+        "natural_RequestLoop": true,
+        "controlled_acceptance": false,
+        "original_ledger_equal": true,
+        "generated_ids_equal": true,
+        "greedy_rng_unchanged": true,
+        "all_sources_expired": true,
+        "simultaneous_native_inflight_claim": false,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0,
+        "state_checks": [
+          {
+            "sequence": 0,
+            "prefix": 193,
+            "active_rows": 1,
+            "physical_rows": 1,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 14733,
+            "bucket_next": 14733,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          }
+        ],
+        "ids": [
+          71093,
+          12305,
+          198,
+          464,
+          19298,
+          198,
+          1445,
+          18904,
+          1120,
+          5586,
+          11,
+          51338,
+          11,
+          36760,
+          11,
+          1697,
+          11,
+          11906,
+          11,
+          3856,
+          3829,
+          271,
+          51,
+          283,
+          3856,
+          3829,
+          482,
+          51,
+          837,
+          198,
+          42,
+          283,
+          3856,
+          3829,
+          482,
+          42,
+          837,
+          271,
+          727,
+          14733
+        ],
+        "batches": [
+          {
+            "ordinal": 0,
+            "quota": 0,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 154,
+            "draft_rows": 154,
+            "generation": false,
+            "discarded": false
+          },
+          {
+            "ordinal": 1,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 2,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 3,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 4,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 5,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 6,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 7,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 8,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 9,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 10,
+            "quota": 4,
+            "reserved": 2,
+            "additional": 2,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 11,
+            "quota": 2,
+            "reserved": 2,
+            "additional": 2,
+            "emitted": 0,
+            "accepted": 0,
+            "draft_rows": 0,
+            "generation": true,
+            "discarded": true
+          },
+          {
+            "ordinal": 11,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 12,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 13,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 14,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 15,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 16,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 17,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 18,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 19,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 20,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 21,
+            "quota": 3,
+            "reserved": 2,
+            "additional": 1,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 22,
+            "quota": 1,
+            "reserved": 0,
+            "additional": 1,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          }
+        ]
+      }
+    },
+    "ragged-cpu": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 11716,
+        "started": 1793275820.4877608,
+        "seconds": 0.8499562740325928,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "backend": "cpu",
+        "mode": "ragged_prefill",
+        "synthetic_untrained": true,
+        "cold_rows_per_member": 8,
+        "width": 2,
+        "actual_prefill_rows": 22,
+        "physical_prefill_rows": 64,
+        "committed_prefill_rows": 21,
+        "cancelled_prefill_rows": 1,
+        "peer_decode_rows": 1,
+        "batches": [
+          {
+            "order": [
+              0,
+              1
+            ],
+            "Li": [
+              1,
+              3
+            ],
+            "active_rows": 4,
+            "physical_rows": 16,
+            "committed_rows": 4,
+            "state_only": true,
+            "member_cancelled": false,
+            "retirement_deferred": false,
+            "members": [
+              {
+                "sequence": 0,
+                "prefix": 0,
+                "active_rows": 1,
+                "physical_rows": 8,
+                "prefill": true,
+                "epoch": 2,
+                "exact_next": -1,
+                "bucket_next": -1,
+                "boundary_equal": true,
+                "payloads_byte_equal": true,
+                "numerically_equivalent": true,
+                "differences": []
+              },
+              {
+                "sequence": 1,
+                "prefix": 0,
+                "active_rows": 3,
+                "physical_rows": 8,
+                "prefill": true,
+                "epoch": 2,
+                "exact_next": -1,
+                "bucket_next": -1,
+                "boundary_equal": true,
+                "payloads_byte_equal": false,
+                "numerically_equivalent": true,
+                "differences": [
+                  {
+                    "role": 3,
+                    "layer": 0,
+                    "page": 0,
+                    "bytes": 16384,
+                    "first_byte": 260,
+                    "different_bytes": 579,
+                    "maximum_absolute": 1.16415e-10,
+                    "maximum_relative": 0.000126308,
+                    "nonfinite_differences": 0
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "order": [
+              1,
+              0
+            ],
+            "Li": [
+              3,
+              1
+            ],
+            "active_rows": 4,
+            "physical_rows": 16,
+            "committed_rows": 4,
+            "state_only": false,
+            "member_cancelled": false,
+            "retirement_deferred": false,
+            "members": [
+              {
+                "sequence": 1,
+                "prefix": 3,
+                "active_rows": 3,
+                "physical_rows": 8,
+                "prefill": true,
+                "epoch": 3,
+                "exact_next": 16,
+                "bucket_next": 16,
+                "boundary_equal": true,
+                "payloads_byte_equal": false,
+                "numerically_equivalent": true,
+                "differences": [
+                  {
+                    "role": 3,
+                    "layer": 0,
+                    "page": 0,
+                    "bytes": 16384,
+                    "first_byte": 592,
+                    "different_bytes": 335,
+                    "maximum_absolute": 2.32831e-10,
+                    "maximum_relative": 7.62856e-05,
+                    "nonfinite_differences": 0
+                  }
+                ]
+              },
+              {
+                "sequence": 0,
+                "prefix": 1,
+                "active_rows": 1,
+                "physical_rows": 8,
+                "prefill": true,
+                "epoch": 3,
+                "exact_next": 36,
+                "bucket_next": 36,
+                "boundary_equal": true,
+                "payloads_byte_equal": false,
+                "numerically_equivalent": true,
+                "differences": [
+                  {
+                    "role": 3,
+                    "layer": 0,
+                    "page": 0,
+                    "bytes": 16384,
+                    "first_byte": 1028,
+                    "different_bytes": 369,
+                    "maximum_absolute": 5.82077e-11,
+                    "maximum_relative": 7.1979e-06,
+                    "nonfinite_differences": 0
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "order": [
+              0,
+              1
+            ],
+            "Li": [
+              8,
+              2
+            ],
+            "active_rows": 10,
+            "physical_rows": 16,
+            "committed_rows": 10,
+            "state_only": false,
+            "member_cancelled": false,
+            "retirement_deferred": false,
+            "members": [
+              {
+                "sequence": 0,
+                "prefix": 2,
+                "active_rows": 8,
+                "physical_rows": 8,
+                "prefill": true,
+                "epoch": 4,
+                "exact_next": 53,
+                "bucket_next": 53,
+                "boundary_equal": true,
+                "payloads_byte_equal": false,
+                "numerically_equivalent": true,
+                "differences": [
+                  {
+                    "role": 3,
+                    "layer": 0,
+                    "page": 0,
+                    "bytes": 16384,
+                    "first_byte": 0,
+                    "different_bytes": 550,
+                    "maximum_absolute": 2.32831e-10,
+                    "maximum_relative": 2.22747e-05,
+                    "nonfinite_differences": 0
+                  }
+                ]
+              },
+              {
+                "sequence": 1,
+                "prefix": 6,
+                "active_rows": 2,
+                "physical_rows": 8,
+                "prefill": true,
+                "epoch": 4,
+                "exact_next": 52,
+                "bucket_next": 52,
+                "boundary_equal": true,
+                "payloads_byte_equal": false,
+                "numerically_equivalent": true,
+                "differences": [
+                  {
+                    "role": 3,
+                    "layer": 0,
+                    "page": 0,
+                    "bytes": 16384,
+                    "first_byte": 264,
+                    "different_bytes": 672,
+                    "maximum_absolute": 4.65661e-10,
+                    "maximum_relative": 0.000164764,
+                    "nonfinite_differences": 0
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "order": [
+              1,
+              0
+            ],
+            "Li": [
+              1,
+              3
+            ],
+            "active_rows": 4,
+            "physical_rows": 16,
+            "committed_rows": 3,
+            "state_only": false,
+            "member_cancelled": true,
+            "retirement_deferred": true,
+            "members": [
+              {
+                "sequence": 1,
+                "prefix": 8,
+                "active_rows": 1,
+                "physical_rows": 8,
+                "prefill": true,
+                "epoch": 4,
+                "exact_next": 52,
+                "bucket_next": 52,
+                "boundary_equal": true,
+                "payloads_byte_equal": false,
+                "numerically_equivalent": true,
+                "differences": [
+                  {
+                    "role": 3,
+                    "layer": 0,
+                    "page": 0,
+                    "bytes": 16384,
+                    "first_byte": 264,
+                    "different_bytes": 672,
+                    "maximum_absolute": 4.65661e-10,
+                    "maximum_relative": 0.000164764,
+                    "nonfinite_differences": 0
+                  }
+                ]
+              },
+              {
+                "sequence": 0,
+                "prefix": 10,
+                "active_rows": 3,
+                "physical_rows": 8,
+                "prefill": true,
+                "epoch": 5,
+                "exact_next": 16,
+                "bucket_next": 16,
+                "boundary_equal": true,
+                "payloads_byte_equal": false,
+                "numerically_equivalent": true,
+                "differences": [
+                  {
+                    "role": 3,
+                    "layer": 0,
+                    "page": 0,
+                    "bytes": 16384,
+                    "first_byte": 112,
+                    "different_bytes": 825,
+                    "maximum_absolute": 2.32831e-10,
+                    "maximum_relative": 1.805e-05,
+                    "nonfinite_differences": 0
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "peer_decode": {
+          "sequence": 0,
+          "prefix": 13,
+          "active_rows": 1,
+          "physical_rows": 1,
+          "prefill": false,
+          "epoch": 6,
+          "exact_next": 53,
+          "bucket_next": 53,
+          "boundary_equal": true,
+          "payloads_byte_equal": false,
+          "numerically_equivalent": true,
+          "differences": [
+            {
+              "role": 3,
+              "layer": 0,
+              "page": 0,
+              "bytes": 16384,
+              "first_byte": 112,
+              "different_bytes": 616,
+              "maximum_absolute": 4.65661e-10,
+              "maximum_relative": 5.47958e-05,
+              "nonfinite_differences": 0
+            }
+          ]
+        },
+        "old_checkpoints_byte_unchanged": true,
+        "rng_and_epochs_equal": true,
+        "final_versions": 0,
+        "final_images": 0,
+        "final_native_episodes": 0,
+        "payloads_byte_equal": false,
+        "numerically_equivalent": true,
+        "gdn_state_absolute_budget": 3e-06,
+        "numerical_budget_basis": "packed_sequence_case.h independent FP64 component oracle",
+        "performance_claim": false,
+        "status": "PASS"
+      }
+    },
+    "mtp-ragged-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 57664,
+        "started": 1793275820.4877608,
+        "seconds": 1.2676358222961426,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "backend": "cuda",
+        "mode": "mtp_ragged_prefill",
+        "synthetic_untrained": true,
+        "width": 2,
+        "target_capacity": 8,
+        "lag1_draft_capacity": 10,
+        "batches": [
+          {
+            "role": 2,
+            "order": [
+              0,
+              1
+            ],
+            "Li": [
+              2,
+              3
+            ],
+            "active_rows": 5,
+            "physical_rows": 8,
+            "accepted_rows": 5,
+            "draft_active_rows": 5,
+            "draft_physical_rows": 8,
+            "hidden_indices": [
+              0,
+              2,
+              1,
+              4,
+              5,
+              0,
+              0,
+              0
+            ],
+            "token_indices": [],
+            "members": [
+              {
+                "frontier_before": 0,
+                "frontier_after": 2,
+                "lag_before": 0,
+                "lag_after": 0,
+                "state": {
+                  "sequence": 0,
+                  "prefix": 0,
+                  "active_rows": 2,
+                  "physical_rows": 4,
+                  "prefill": true,
+                  "epoch": 2,
+                  "exact_next": 42,
+                  "bucket_next": 42,
+                  "boundary_equal": true,
+                  "payloads_byte_equal": false,
+                  "numerically_equivalent": true,
+                  "differences": [
+                    {
+                      "role": 3,
+                      "layer": 0,
+                      "page": 0,
+                      "bytes": 16384,
+                      "first_byte": 0,
+                      "different_bytes": 2614,
+                      "maximum_absolute": 1.16415e-10,
+                      "maximum_relative": 9.9598e-05,
+                      "nonfinite_differences": 0
+                    }
+                  ]
+                }
+              },
+              {
+                "frontier_before": 0,
+                "frontier_after": 3,
+                "lag_before": 0,
+                "lag_after": 0,
+                "state": {
+                  "sequence": 1,
+                  "prefix": 0,
+                  "active_rows": 3,
+                  "physical_rows": 4,
+                  "prefill": true,
+                  "epoch": 2,
+                  "exact_next": 10,
+                  "bucket_next": 10,
+                  "boundary_equal": true,
+                  "payloads_byte_equal": false,
+                  "numerically_equivalent": true,
+                  "differences": [
+                    {
+                      "role": 3,
+                      "layer": 0,
+                      "page": 0,
+                      "bytes": 16384,
+                      "first_byte": 8,
+                      "different_bytes": 1948,
+                      "maximum_absolute": 2.32831e-10,
+                      "maximum_relative": 0.000133596,
+                      "nonfinite_differences": 0
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "role": 2,
+            "order": [
+              1,
+              0
+            ],
+            "Li": [
+              2,
+              4
+            ],
+            "active_rows": 6,
+            "physical_rows": 8,
+            "accepted_rows": 6,
+            "draft_active_rows": 6,
+            "draft_physical_rows": 8,
+            "hidden_indices": [
+              0,
+              2,
+              1,
+              4,
+              5,
+              6,
+              0,
+              0
+            ],
+            "token_indices": [],
+            "members": [
+              {
+                "frontier_before": 3,
+                "frontier_after": 5,
+                "lag_before": 0,
+                "lag_after": 0,
+                "state": {
+                  "sequence": 1,
+                  "prefix": 3,
+                  "active_rows": 2,
+                  "physical_rows": 4,
+                  "prefill": true,
+                  "epoch": 3,
+                  "exact_next": 9,
+                  "bucket_next": 9,
+                  "boundary_equal": true,
+                  "payloads_byte_equal": false,
+                  "numerically_equivalent": true,
+                  "differences": [
+                    {
+                      "role": 3,
+                      "layer": 0,
+                      "page": 0,
+                      "bytes": 16384,
+                      "first_byte": 0,
+                      "different_bytes": 1676,
+                      "maximum_absolute": 2.32831e-10,
+                      "maximum_relative": 0.000127927,
+                      "nonfinite_differences": 0
+                    }
+                  ]
+                }
+              },
+              {
+                "frontier_before": 2,
+                "frontier_after": 6,
+                "lag_before": 0,
+                "lag_after": 0,
+                "state": {
+                  "sequence": 0,
+                  "prefix": 2,
+                  "active_rows": 4,
+                  "physical_rows": 4,
+                  "prefill": true,
+                  "epoch": 3,
+                  "exact_next": 0,
+                  "bucket_next": 0,
+                  "boundary_equal": true,
+                  "payloads_byte_equal": false,
+                  "numerically_equivalent": true,
+                  "differences": [
+                    {
+                      "role": 3,
+                      "layer": 0,
+                      "page": 0,
+                      "bytes": 16384,
+                      "first_byte": 0,
+                      "different_bytes": 2329,
+                      "maximum_absolute": 2.32831e-10,
+                      "maximum_relative": 0.000370973,
+                      "nonfinite_differences": 0
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "role": 1,
+            "order": [
+              0,
+              1
+            ],
+            "Li": [
+              3,
+              3
+            ],
+            "active_rows": 6,
+            "physical_rows": 6,
+            "accepted_rows": 4,
+            "draft_active_rows": 2,
+            "draft_physical_rows": 2,
+            "hidden_indices": [],
+            "token_indices": [],
+            "members": [
+              {
+                "frontier_before": 6,
+                "frontier_after": 7,
+                "lag_before": 0,
+                "lag_after": 1,
+                "state": {
+                  "sequence": 0,
+                  "prefix": 6,
+                  "active_rows": 3,
+                  "physical_rows": 3,
+                  "prefill": false,
+                  "epoch": 4,
+                  "exact_next": 8,
+                  "bucket_next": 8,
+                  "boundary_equal": true,
+                  "payloads_byte_equal": false,
+                  "numerically_equivalent": true,
+                  "differences": [
+                    {
+                      "role": 3,
+                      "layer": 0,
+                      "page": 0,
+                      "bytes": 16384,
+                      "first_byte": 96,
+                      "different_bytes": 645,
+                      "maximum_absolute": 2.32831e-10,
+                      "maximum_relative": 2.53536e-05,
+                      "nonfinite_differences": 0
+                    }
+                  ]
+                }
+              },
+              {
+                "frontier_before": 5,
+                "frontier_after": 6,
+                "lag_before": 0,
+                "lag_after": 1,
+                "state": {
+                  "sequence": 1,
+                  "prefix": 5,
+                  "active_rows": 3,
+                  "physical_rows": 3,
+                  "prefill": false,
+                  "epoch": 4,
+                  "exact_next": 48,
+                  "bucket_next": 48,
+                  "boundary_equal": true,
+                  "payloads_byte_equal": false,
+                  "numerically_equivalent": true,
+                  "differences": [
+                    {
+                      "role": 3,
+                      "layer": 0,
+                      "page": 0,
+                      "bytes": 16384,
+                      "first_byte": 0,
+                      "different_bytes": 305,
+                      "maximum_absolute": 2.32831e-10,
+                      "maximum_relative": 1.91602e-05,
+                      "nonfinite_differences": 0
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "role": 7,
+            "order": [
+              1,
+              0
+            ],
+            "Li": [
+              2,
+              3
+            ],
+            "active_rows": 5,
+            "physical_rows": 8,
+            "accepted_rows": 5,
+            "draft_active_rows": 7,
+            "draft_physical_rows": 10,
+            "hidden_indices": [
+              2,
+              0,
+              4,
+              3,
+              1,
+              6,
+              7,
+              0,
+              0,
+              0
+            ],
+            "token_indices": [
+              0,
+              2,
+              3,
+              1,
+              4,
+              5,
+              6,
+              0,
+              0,
+              0
+            ],
+            "members": [
+              {
+                "frontier_before": 6,
+                "frontier_after": 9,
+                "lag_before": 1,
+                "lag_after": 0,
+                "state": {
+                  "sequence": 1,
+                  "prefix": 7,
+                  "active_rows": 2,
+                  "physical_rows": 4,
+                  "prefill": true,
+                  "epoch": 5,
+                  "exact_next": 44,
+                  "bucket_next": 44,
+                  "boundary_equal": true,
+                  "payloads_byte_equal": false,
+                  "numerically_equivalent": true,
+                  "differences": [
+                    {
+                      "role": 3,
+                      "layer": 0,
+                      "page": 0,
+                      "bytes": 16384,
+                      "first_byte": 4,
+                      "different_bytes": 2397,
+                      "maximum_absolute": 9.31323e-10,
+                      "maximum_relative": 0.000650929,
+                      "nonfinite_differences": 0
+                    }
+                  ]
+                }
+              },
+              {
+                "frontier_before": 7,
+                "frontier_after": 11,
+                "lag_before": 1,
+                "lag_after": 0,
+                "state": {
+                  "sequence": 0,
+                  "prefix": 8,
+                  "active_rows": 3,
+                  "physical_rows": 4,
+                  "prefill": true,
+                  "epoch": 5,
+                  "exact_next": 48,
+                  "bucket_next": 48,
+                  "boundary_equal": true,
+                  "payloads_byte_equal": false,
+                  "numerically_equivalent": true,
+                  "differences": [
+                    {
+                      "role": 3,
+                      "layer": 0,
+                      "page": 0,
+                      "bytes": 16384,
+                      "first_byte": 0,
+                      "different_bytes": 3032,
+                      "maximum_absolute": 5.82077e-10,
+                      "maximum_relative": 6.94925e-05,
+                      "nonfinite_differences": 0
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "role": 1,
+            "order": [
+              0,
+              1
+            ],
+            "Li": [
+              3,
+              3
+            ],
+            "active_rows": 6,
+            "physical_rows": 6,
+            "accepted_rows": 4,
+            "draft_active_rows": 2,
+            "draft_physical_rows": 2,
+            "hidden_indices": [],
+            "token_indices": [],
+            "members": [
+              {
+                "frontier_before": 11,
+                "frontier_after": 12,
+                "lag_before": 0,
+                "lag_after": 1,
+                "state": {
+                  "sequence": 0,
+                  "prefix": 11,
+                  "active_rows": 3,
+                  "physical_rows": 3,
+                  "prefill": false,
+                  "epoch": 6,
+                  "exact_next": 50,
+                  "bucket_next": 50,
+                  "boundary_equal": true,
+                  "payloads_byte_equal": false,
+                  "numerically_equivalent": true,
+                  "differences": [
+                    {
+                      "role": 3,
+                      "layer": 0,
+                      "page": 0,
+                      "bytes": 16384,
+                      "first_byte": 4,
+                      "different_bytes": 905,
+                      "maximum_absolute": 4.65661e-10,
+                      "maximum_relative": 1.54366e-05,
+                      "nonfinite_differences": 0
+                    }
+                  ]
+                }
+              },
+              {
+                "frontier_before": 9,
+                "frontier_after": 10,
+                "lag_before": 0,
+                "lag_after": 1,
+                "state": {
+                  "sequence": 1,
+                  "prefix": 9,
+                  "active_rows": 3,
+                  "physical_rows": 3,
+                  "prefill": false,
+                  "epoch": 6,
+                  "exact_next": 37,
+                  "bucket_next": 37,
+                  "boundary_equal": true,
+                  "payloads_byte_equal": false,
+                  "numerically_equivalent": true,
+                  "differences": [
+                    {
+                      "role": 3,
+                      "layer": 0,
+                      "page": 0,
+                      "bytes": 16384,
+                      "first_byte": 44,
+                      "different_bytes": 1097,
+                      "maximum_absolute": 4.65661e-10,
+                      "maximum_relative": 0.000346261,
+                      "nonfinite_differences": 0
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "role": 7,
+            "order": [
+              0,
+              1
+            ],
+            "Li": [
+              2,
+              4
+            ],
+            "active_rows": 6,
+            "physical_rows": 8,
+            "accepted_rows": 6,
+            "draft_active_rows": 8,
+            "draft_physical_rows": 10,
+            "hidden_indices": [
+              2,
+              0,
+              4,
+              3,
+              1,
+              6,
+              7,
+              8,
+              0,
+              0
+            ],
+            "token_indices": [
+              0,
+              2,
+              3,
+              1,
+              4,
+              5,
+              6,
+              7,
+              0,
+              0
+            ],
+            "members": [
+              {
+                "frontier_before": 12,
+                "frontier_after": 15,
+                "lag_before": 1,
+                "lag_after": 0,
+                "state": {
+                  "sequence": 0,
+                  "prefix": 13,
+                  "active_rows": 2,
+                  "physical_rows": 4,
+                  "prefill": true,
+                  "epoch": 7,
+                  "exact_next": 52,
+                  "bucket_next": 52,
+                  "boundary_equal": true,
+                  "payloads_byte_equal": false,
+                  "numerically_equivalent": true,
+                  "differences": [
+                    {
+                      "role": 3,
+                      "layer": 0,
+                      "page": 0,
+                      "bytes": 16384,
+                      "first_byte": 0,
+                      "different_bytes": 2475,
+                      "maximum_absolute": 3.49246e-10,
+                      "maximum_relative": 4.44973e-05,
+                      "nonfinite_differences": 0
+                    }
+                  ]
+                }
+              },
+              {
+                "frontier_before": 10,
+                "frontier_after": 15,
+                "lag_before": 1,
+                "lag_after": 0,
+                "state": {
+                  "sequence": 1,
+                  "prefix": 11,
+                  "active_rows": 4,
+                  "physical_rows": 4,
+                  "prefill": true,
+                  "epoch": 7,
+                  "exact_next": 7,
+                  "bucket_next": 7,
+                  "boundary_equal": true,
+                  "payloads_byte_equal": false,
+                  "numerically_equivalent": true,
+                  "differences": [
+                    {
+                      "role": 3,
+                      "layer": 0,
+                      "page": 0,
+                      "bytes": 16384,
+                      "first_byte": 0,
+                      "different_bytes": 2255,
+                      "maximum_absolute": 4.65661e-10,
+                      "maximum_relative": 0.000284371,
+                      "nonfinite_differences": 0
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "role": 5,
+            "order": [
+              1,
+              0
+            ],
+            "Li": [
+              1,
+              1
+            ],
+            "active_rows": 2,
+            "physical_rows": 2,
+            "accepted_rows": 2,
+            "draft_active_rows": 2,
+            "draft_physical_rows": 2,
+            "hidden_indices": [],
+            "token_indices": [],
+            "members": [
+              {
+                "frontier_before": 15,
+                "frontier_after": 16,
+                "lag_before": 0,
+                "lag_after": 0,
+                "state": {
+                  "sequence": 1,
+                  "prefix": 15,
+                  "active_rows": 1,
+                  "physical_rows": 1,
+                  "prefill": false,
+                  "epoch": 8,
+                  "exact_next": 13,
+                  "bucket_next": 13,
+                  "boundary_equal": true,
+                  "payloads_byte_equal": false,
+                  "numerically_equivalent": true,
+                  "differences": [
+                    {
+                      "role": 3,
+                      "layer": 0,
+                      "page": 0,
+                      "bytes": 16384,
+                      "first_byte": 0,
+                      "different_bytes": 1914,
+                      "maximum_absolute": 4.65661e-10,
+                      "maximum_relative": 0.000159974,
+                      "nonfinite_differences": 0
+                    }
+                  ]
+                }
+              },
+              {
+                "frontier_before": 15,
+                "frontier_after": 16,
+                "lag_before": 0,
+                "lag_after": 0,
+                "state": {
+                  "sequence": 0,
+                  "prefix": 15,
+                  "active_rows": 1,
+                  "physical_rows": 1,
+                  "prefill": false,
+                  "epoch": 8,
+                  "exact_next": 15,
+                  "bucket_next": 15,
+                  "boundary_equal": true,
+                  "payloads_byte_equal": false,
+                  "numerically_equivalent": true,
+                  "differences": [
+                    {
+                      "role": 3,
+                      "layer": 0,
+                      "page": 0,
+                      "bytes": 16384,
+                      "first_byte": 0,
+                      "different_bytes": 1416,
+                      "maximum_absolute": 2.32831e-10,
+                      "maximum_relative": 4.09813e-05,
+                      "nonfinite_differences": 0
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "actual_target_rows": 36,
+        "physical_target_rows": 46,
+        "committed_target_rows": 32,
+        "actual_draft_rows": 32,
+        "physical_draft_rows": 42,
+        "controlled_verify_width": 3,
+        "controlled_accepted_rows": 2,
+        "discarded_target_rows": 4,
+        "actual_i32_selectors_checked": true,
+        "old_checkpoints_byte_unchanged": true,
+        "rng_and_epochs_equal": true,
+        "final_lengths": [
+          16,
+          16
+        ],
+        "final_frontiers": [
+          16,
+          16
+        ],
+        "final_rng_draws": [
+          5,
+          5
+        ],
+        "final_versions": 0,
+        "final_images": 0,
+        "final_native_episodes": 0,
+        "payloads_byte_equal": false,
+        "numerically_equivalent": true,
+        "gdn_state_absolute_budget": 3e-06,
+        "natural_acceptance_claim": false,
+        "performance_claim": false,
+        "status": "PASS"
+      }
+    },
+    "varlen-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 54276,
+        "started": 1793275942.852264,
+        "seconds": 0.8099548816680908,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "mode": "mtp_varlen_verify",
+        "backend": "cuda",
+        "models": 1,
+        "requests": 2,
+        "physical_rows_per_member": 3,
+        "active_rows": 4,
+        "physical_rows": 6,
+        "length_orders": [
+          [
+            1,
+            3
+          ],
+          [
+            3,
+            1
+          ],
+          [
+            1,
+            3
+          ]
+        ],
+        "controlled_accepted": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            1
+          ]
+        ],
+        "target_submissions": 11,
+        "bounded_target_submissions": 3,
+        "natural_proposal_rows": [
+          0,
+          2
+        ],
+        "natural_rng_draws": [
+          1,
+          5
+        ],
+        "natural_processed_target": [
+          1,
+          3
+        ],
+        "natural_processed_draft": [
+          2,
+          4
+        ],
+        "state_checks": [
+          {
+            "sequence": 0,
+            "prefix": 3,
+            "active_rows": 1,
+            "physical_rows": 3,
+            "prefill": false,
+            "epoch": 3,
+            "exact_next": 1,
+            "bucket_next": 1,
+            "boundary_equal": true,
+            "payloads_byte_equal": false,
+            "numerically_equivalent": true,
+            "differences": [
+              {
+                "role": 3,
+                "layer": 0,
+                "page": 0,
+                "bytes": 16384,
+                "first_byte": 0,
+                "different_bytes": 1300,
+                "maximum_absolute": 2.32831e-10,
+                "maximum_relative": 7.8978e-05,
+                "nonfinite_differences": 0
+              }
+            ]
+          },
+          {
+            "sequence": 0,
+            "prefix": 3,
+            "active_rows": 3,
+            "physical_rows": 3,
+            "prefill": false,
+            "epoch": 3,
+            "exact_next": 50,
+            "bucket_next": 50,
+            "boundary_equal": true,
+            "payloads_byte_equal": false,
+            "numerically_equivalent": true,
+            "differences": [
+              {
+                "role": 3,
+                "layer": 0,
+                "page": 0,
+                "bytes": 16384,
+                "first_byte": 16,
+                "different_bytes": 1735,
+                "maximum_absolute": 9.31323e-10,
+                "maximum_relative": 0.000507406,
+                "nonfinite_differences": 0
+              }
+            ]
+          },
+          {
+            "sequence": 1,
+            "prefix": 3,
+            "active_rows": 3,
+            "physical_rows": 3,
+            "prefill": false,
+            "epoch": 4,
+            "exact_next": 10,
+            "bucket_next": 10,
+            "boundary_equal": true,
+            "payloads_byte_equal": false,
+            "numerically_equivalent": true,
+            "differences": [
+              {
+                "role": 3,
+                "layer": 0,
+                "page": 0,
+                "bytes": 16384,
+                "first_byte": 0,
+                "different_bytes": 1974,
+                "maximum_absolute": 9.31323e-10,
+                "maximum_relative": 4.48354e-05,
+                "nonfinite_differences": 0
+              }
+            ]
+          },
+          {
+            "sequence": 1,
+            "prefix": 3,
+            "active_rows": 1,
+            "physical_rows": 3,
+            "prefill": false,
+            "epoch": 4,
+            "exact_next": 50,
+            "bucket_next": 50,
+            "boundary_equal": true,
+            "payloads_byte_equal": false,
+            "numerically_equivalent": true,
+            "differences": [
+              {
+                "role": 3,
+                "layer": 0,
+                "page": 0,
+                "bytes": 16384,
+                "first_byte": 0,
+                "different_bytes": 1896,
+                "maximum_absolute": 1.86265e-09,
+                "maximum_relative": 5.49917e-05,
+                "nonfinite_differences": 0
+              }
+            ]
+          },
+          {
+            "sequence": 2,
+            "prefix": 3,
+            "active_rows": 1,
+            "physical_rows": 3,
+            "prefill": false,
+            "epoch": 5,
+            "exact_next": 7,
+            "bucket_next": 7,
+            "boundary_equal": true,
+            "payloads_byte_equal": false,
+            "numerically_equivalent": true,
+            "differences": [
+              {
+                "role": 3,
+                "layer": 0,
+                "page": 0,
+                "bytes": 16384,
+                "first_byte": 8,
+                "different_bytes": 2072,
+                "maximum_absolute": 1.86265e-09,
+                "maximum_relative": 4.95965e-05,
+                "nonfinite_differences": 0
+              }
+            ]
+          },
+          {
+            "sequence": 2,
+            "prefix": 3,
+            "active_rows": 3,
+            "physical_rows": 3,
+            "prefill": false,
+            "epoch": 5,
+            "exact_next": 4,
+            "bucket_next": 4,
+            "boundary_equal": true,
+            "payloads_byte_equal": false,
+            "numerically_equivalent": true,
+            "differences": [
+              {
+                "role": 3,
+                "layer": 0,
+                "page": 0,
+                "bytes": 16384,
+                "first_byte": 4,
+                "different_bytes": 2408,
+                "maximum_absolute": 3.72529e-09,
+                "maximum_relative": 6.09339e-05,
+                "nonfinite_differences": 0
+              }
+            ]
+          }
+        ],
+        "payloads_byte_equal": false,
+        "numerically_equivalent": true,
+        "old_checkpoints_unchanged": true,
+        "accepted_prefixes_1_2_3": true,
+        "fixed_carrier_reused": true,
+        "engine_unequal_lengths_one_submission": true,
+        "original_q_identity_and_release": true,
+        "batch_observer_calls": 1,
+        "batch_member_target_rows": [
+          1,
+          3
+        ],
+        "batch_active_rows": 4,
+        "batch_physical_rows": 6,
+        "natural_R1_results_equal": true,
+        "ledger_reserved_width": 8,
+        "ledger_record_storage_checks": 24,
+        "ledger_cold_storage_reused": true,
+        "ledger_host_prepare_withdraw_reprepare": true,
+        "full_request_history_import_coverage": false,
+        "synthetic_untrained": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0,
+        "preliminary_reports": [
+          {
+            "status": "PASS",
+            "case": "packed-prefix-rows",
+            "allocation_free_selector": true,
+            "manual_orders": 2,
+            "zero_history": true,
+            "late_failure_preserves_outputs": true,
+            "overlap_preserves_outputs": true,
+            "models": 0
+          }
+        ]
+      }
+    },
+    "ordinary-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 54256,
+        "started": 1793275631.6369827,
+        "seconds": 1.4315519332885742,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "backend": "cuda",
+        "fixture": "untrained_GA_H64",
+        "prompt_tokens": 18,
+        "outputs_per_live_member": 14,
+        "capacity": 32,
+        "in_flight_batches": 2,
+        "control_and_candidate_arms": 16,
+        "same_original_executor": true,
+        "complete_prefix_state_epoch_rng_equal": true,
+        "actual_owner_credit_checked": true,
+        "all_source_session_page_owners_retired": true,
+        "model_eos_run": false,
+        "synthetic_v64_extra_stop_shares_eos_contract": true,
+        "synthetic_fixture_directory": "continuous-extra-stop-v64",
+        "synthetic_role_payload_bytes": 65536,
+        "accepted_work_control_exception": true,
+        "gpu_native_fault_injected": false,
+        "model_quality_claim": false,
+        "performance_claim": false,
+        "candidates": [
+          {
+            "requests": 1,
+            "mode": "normal",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 5,
+            "max_consecutive_pending": 5,
+            "submit_before_observe": 5,
+            "renewals": 4,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "normal",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 5,
+            "max_consecutive_pending": 5,
+            "submit_before_observe": 5,
+            "renewals": 4,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "credit_exhaustion",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 1,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "member_cancel",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 1,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "yield_resume",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 1,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "cancel_then_control_exception",
+            "pumps": 16,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 1,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 3,
+            "control_exceptions": 1,
+            "aborted_actual_submissions": 2
+          },
+          {
+            "requests": 1,
+            "mode": "extra_stop",
+            "pumps": 13,
+            "actual_batches": 13,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 3,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 1,
+            "extra_stop_accepted_successor": true,
+            "discarded_batches": 1,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "extra_stop",
+            "pumps": 15,
+            "actual_batches": 15,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 3,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 1,
+            "extra_stop_accepted_successor": true,
+            "discarded_batches": 1,
+            "survivor_r1_steps": 2,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          }
+        ]
+      }
+    }
+  },
+  "cleanup": {
+    "status": "PASS",
+    "files": 12,
+    "bytes": 538613141.0,
+    "removed": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-layout-20261029\\bin\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-layout-20261029\\bin\\layout.exe",
+        "bytes": 139955200,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-layout-20261029\\bin\\layout.exp",
+        "bytes": 24977,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-layout-20261029\\bin\\layout.lib",
+        "bytes": 41560,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-layout-20261029\\bin\\ordinary.exe",
+        "bytes": 142915072,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-layout-20261029\\bin\\ordinary.exp",
+        "bytes": 24981,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-layout-20261029\\bin\\ordinary.lib",
+        "bytes": 41736,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-layout-20261029\\bin\\qwen.exe",
+        "bytes": 145582080,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-layout-20261029\\bin\\qwen.exp",
+        "bytes": 24973,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-layout-20261029\\bin\\qwen.lib",
+        "bytes": 41384,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sidecar-pages-20261029\\compile\\qwen\\unit.obj",
+        "bytes": 82005874,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sidecar-pages-20261029\\compile\\ordinary\\unit.obj",
+        "bytes": 26748520,
+        "removed": true
+      }
+    ]
+  },
+  "postprocess": {
+    "native_status": "PASS",
+    "native_exit": 0,
+    "first_parser_error": "JSONDecodeError: Extra data: line 2 column 1",
+    "cause": "Original consumer emits two separate PASS JSON objects; initial harness assumed one document.",
+    "recovery": "Parse both original objects and collect the original terminal process; no native rerun, source or numeric gate change."
+  },
+  "boundaries": [
+    "No new throughput or whole-engine memory measurement; unchanged schema version allocation is not claimed eliminated.",
+    "Varlen original oracle is numerically equivalent, not byte-identical; original numeric gates were retained.",
+    "CPU/ragged/mixed/ordinary fixtures are finite untrained geometry. Natural MTP is trained Qwen3.5-2B P154/O40 and compares original Hyle paths, not llama.cpp.",
+    "This shared layout preparation is part of full architecture convergence; the complete model-independent engine and future multi-device execution are not complete."
+  ],
+  "archive": "inference-paged-layout-2026-10-29.zip"
+}
