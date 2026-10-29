@@ -164,8 +164,22 @@ set_tests_properties(hyle_qwen_generation_schedule_test PROPERTIES
   LABELS "tooling;generation;parser" TIMEOUT 30)
 
 if(TARGET hyle_container)
+  add_executable(hyle_inference_continuation_test tools/inference_continuation_test.cc)
+  target_link_libraries(hyle_inference_continuation_test PRIVATE hyle_container)
+  target_compile_features(hyle_inference_continuation_test PRIVATE cxx_std_23)
+  hyle_apply_warnings(hyle_inference_continuation_test)
+  hyle_apply_sanitizer(hyle_inference_continuation_test)
+  set_target_properties(hyle_inference_continuation_test PROPERTIES
+    FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+  add_dependencies(hyle_tests hyle_inference_continuation_test)
+  add_test(NAME hyle_inference_continuation_test COMMAND hyle_inference_continuation_test)
+  set_tests_properties(hyle_inference_continuation_test PROPERTIES
+    LABELS "tooling;generation;continuation;identity" TIMEOUT 30)
+endif()
+
+if(TARGET hyle_container AND TARGET hyle_compute)
   add_executable(hyle_qwen_generation_ledger_test tools/qwen_generation_ledger_test.cc)
-  target_link_libraries(hyle_qwen_generation_ledger_test PRIVATE hyle_container)
+  target_link_libraries(hyle_qwen_generation_ledger_test PRIVATE hyle_container hyle_compute)
   target_compile_features(hyle_qwen_generation_ledger_test PRIVATE cxx_std_23)
   hyle_apply_warnings(hyle_qwen_generation_ledger_test)
   hyle_apply_sanitizer(hyle_qwen_generation_ledger_test)

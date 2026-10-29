@@ -223,7 +223,7 @@ inline Result run_arm(q::Model &model, const std::array<std::vector<std::int32_t
   const auto execute_wave = [&](i::RequestWave wave, std::span<std::size_t> reserved) {
     current_wave = wave;
     const bool resumed = !continuation.pending_calls.empty();
-    const bool draining = wave.drain_requested || continuation.drain_requested ||
+    const bool draining = wave.drain_requested || continuation.cohort.drain_requested() ||
         std::ranges::any_of(wave.credits, [](const auto &grant) { return grant.cancelled; });
     const auto answer = q::advance_generation_wave(model, wave, reserved, false, continuation, execute_ready, on_submit, on_batch);
     for (std::size_t at = 0; at < wave.keys.size(); ++at) returned_reserved[wave.keys[at].slot] = reserved[at];

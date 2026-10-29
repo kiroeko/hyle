@@ -102,8 +102,11 @@ GLM Flash／Pro、DeepSeek正式Flash／Pro与Kimi的原组件程序已接共同
 真实DeepSeek首次压缩检查还发现CUDA索引分数的归约漏填stride；修改前后消费者在同SDK上均失败，独立小回归在旧对象上准确失败。
 已补物理[key,token,head]步长，4项索引检查、真实首次压缩／窗口环绕及GLM回归通过；
 [本批有限检查](../evidence/correctness/inference-program-io-consumers-2026-10-30.json)共18项测试及2个载体进程通过，226个SDK／引擎输入复用、仅刷新1个provider CXX对象，无NVCC或下载。
-下一片收拢跨pump连续cohort的身份、额度与drain决策，复用原RequestLoop／RequestCreditGrant及退休事实；
-实际Source、状态边界、MTP数学、slot轮转及ledger绑定保留模型职责，不为缩短Qwen文件新造统一执行器。
+随后[连续请求控制](../evidence/correctness/inference-continuation-control-2026-10-30.json)已收拢跨pump的有序身份、额度数值边界及整组后继保留决策，
+复用原RequestLoop／grant及ledger，不增加每步分配、重复额度验证或第二个执行owner。实际Source、状态边界、MTP数学、slot轮转及ledger绑定仍由模型承担。
+27组主机合同与5条CPU／CUDA消费者通过；普通连续16臂、mixed-lag及原权重40输出MTP保留完整状态／RNG／账簿。
+新测试采用独立host依赖，原error-only请求循环测试不被迫链接container；最小链接还修正了原账簿测试漏声明的Compute依赖。
+该片不证明GLM异步路径或完整执行核心完成；下一片处理Model冷family提前插空槽导致调用者自行回滚，以及有限／exact选择重复，不新建公共执行接口。
 共同架构同时审查多模型、复杂阶段及未来多端点的依赖边界，避免将当前Qwen／单卡放置固化为通用合同；
 本轮不据组件通过声明大模型整机、多卡或跨机实现完成。现有硬件上的decode、MTP和含预热／换轮的综合速度仍是投入价值的关键检验，
 架构按实际热点与维护问题调整，不以等待更大硬件或无限整理抽象替代速度改进。

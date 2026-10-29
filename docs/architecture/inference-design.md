@@ -1682,6 +1682,13 @@ B可先于A主机观察提交，但只有A实际完整接受且Session、epoch�
 
 A成功提交全部head与账簿后，模型释放未绑定消费者的full GDN／conv publication views；B继续持独立末前缀，hidden两行及原Submission不变。避免旧ready保留多余首前缀，使N1／R1／D2使用原state=5、hidden=6容量。此为模型私有生命周期，不授权清空外部仍被binding引用的SDK Source wrapper。[原权重自然检查](../evidence/correctness/inference-mtp-natural-2026-10-29.json)覆盖40输出、双额度、实际接受／部分丢弃及默认auto入口；当前仅CUDA greedy K1，未证明其它后继模式或GPU物理并行，无新吞吐结论。
 
+连续请求的共同控制与物理执行分开：`ContinuationCohort`只保留有序RequestKey／turn和drain意图；
+原pending call、Source、Step、head／epoch以及物理槽预热仍由模型持有。共同额度函数只计算有界原grant，
+在原ledger内执行一次，原record／完整边界校验不变。共同保留决策消费实际发布事实：一个A成员不能继续时，
+整组已接受B由原owner退休，成功A保留；纯drain不抹掉已接受工作。ready重置或确认控制意图都不等于设备退休。
+未知进度异常仍走原catch／abort，晚观察真实退休后清理drain意图。[有限检查](../evidence/correctness/inference-continuation-control-2026-10-30.json)
+覆盖普通／K1、输出额度耗尽、取消、yield、停止和提交后控制异常；主机合同输入不冒充设备完成，不声明其它模型异步执行已接通。
+
 共同准备协议现沿原顺序分步表达：`prepare_appends`准备batch metadata并绑定选定Append；
 `bind_consumers`先绑定真实incoming Source、成功才置原bound，再绑定已有Store cohort；
 `prepare_replay`按实际incoming选择原Source完整tuple门或普通replay，保留原mode／host-wait行为。

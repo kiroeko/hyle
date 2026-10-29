@@ -15,6 +15,7 @@
 #include "../../inference/request_stop_policy.h"
 #include "../../inference/sampling_cursor.h"
 #include "../../inference/history_counts.h"
+#include "../../inference/continuation.h"
 #include "hyle/container/small_vector.h"
 
 namespace qwen35 {
@@ -176,6 +177,8 @@ public:
     const bool ordinary = record.role == GraphRole::kText && !record.draft_limit;
     const bool k1 = k1_pending_boundary(record) && record.quota >= 2;
     const auto width = ordinary ? std::size_t{1} : std::size_t{2};
+    const auto quota = hyle::inference::continuation_quota(
+        {reserved_outputs, additional_outputs}, width, remaining_outputs);
     if (successor_ordinal_ || observed_commits != committed_count || (!ordinary && !k1) ||
         !record.generation || record.completion != TextCompletion::kEmitNext ||
         !record.user_output || record.imported || record.ids().size() != 1 ||
@@ -183,11 +186,9 @@ public:
         record.before != actual || record.turn != turn || !record.quota ||
         record.accepted || record.verified_rows || record.emitted_count || record.stopped ||
         (k1 && (record.consumed_drafts || record.draft_rows)) ||
-        reserved_outputs != width || reserved_outputs > remaining_outputs ||
-        additional_outputs > remaining_outputs - reserved_outputs)
+        !quota)
       throw std::runtime_error("quota renewal requires its bound pending record and actual owner grant");
-    // Subtraction above proves both the turn bound and addition overflow safety.
-    record.quota = reserved_outputs + additional_outputs;
+    record.quota = *quota;
     return record;
   }
 

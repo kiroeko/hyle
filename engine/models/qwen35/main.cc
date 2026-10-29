@@ -69,6 +69,7 @@
 #include "../../inference/request_window.h"
 #include "../../inference/request_loop.h"
 #include "../../inference/request_wave_execution.h"
+#include "../../inference/continuation.h"
 #include "../../inference/prefill_plan.h"
 #include "../../inference/packed_rows.h"
 #include "../../inference/paged_append.h"
@@ -6507,62 +6508,54 @@ void observe_generation_batch(Observer &observer, std::span<const PreparedGenera
 // a deferred generation call may cross pumps without exporting another head.
 // Exact Model/Graph checks, not warm-direction hints, authorize execution.
 struct GenerationContinuation final {
-  struct Member final {
-    inference::RequestKey key;
-    std::size_t turn;
-    friend bool operator==(const Member &, const Member &) = default;
-  };
   bool enabled = true, unavailable = false;
-  hyle::container::SmallVector<Member, 2> members;
+  inference::ContinuationCohort cohort;
   std::size_t next_slot = 0;
   std::optional<std::size_t> ready_slot;
   std::array<bool, execution_slot_count> direction_warm{};
   std::size_t ready_steps = 0;
   std::shared_ptr<StepSources> ready;
   hyle::container::SmallVector<PreparedGenerationCall, 2> pending_calls;
-  bool drain_requested = false;
   std::size_t completed_steps = 0, successor_submissions = 0, successor_publications = 0,
       successor_discards = 0, successor_refusals = 0;
 
   void prepare(std::size_t maximum_members) {
-    if (!members.try_reserve(maximum_members) || !pending_calls.try_reserve(maximum_members)) throw std::bad_alloc{};
+    cohort.prepare(maximum_members);
+    if (!pending_calls.try_reserve(maximum_members)) throw std::bad_alloc{};
   }
   void release_ready() noexcept {
     ready.reset(); ready_slot.reset(); next_slot = 0;
   }
-  void reset() noexcept {
-    release_ready(); members.clear(); direction_warm.fill(false); ready_steps = 0;
+  void reset_reuse() noexcept {
+    release_ready(); direction_warm.fill(false); ready_steps = 0;
   }
-  bool select(std::span<const PreparedGenerationCall> calls) noexcept {
-    if (calls.empty() || calls.size() > members.capacity()) { reset(); return false; }
-    bool same = members.size() == calls.size();
-    for (std::size_t j = 0; same && j < calls.size(); ++j)
-      same = members[j] == Member{calls[j].request->request_key, calls[j].request->progress.turn_index};
-    if (!same) {
-      reset();
-      for (const auto &call : calls)
-        members.push_back({call.request->request_key, call.request->progress.turn_index});
-    }
+  void reset() noexcept { reset_reuse(); cohort.reset_ready(); }
+  static inference::ContinuationMember identity(const PreparedGenerationCall &call) noexcept {
+    return {call.request->request_key, call.request->progress.turn_index};
+  }
+  bool select(std::span<const PreparedGenerationCall> calls) {
+    const auto selected = cohort.select(calls, identity, !pending_calls.empty());
+    if (selected == inference::ContinuationCohort::Selection::kPendingConflict)
+      throw std::logic_error("pending continuation cannot change its original cohort");
+    if (selected == inference::ContinuationCohort::Selection::kRejected) { reset(); return false; }
+    if (selected == inference::ContinuationCohort::Selection::kChanged) reset_reuse();
     return true;
   }
   // Admission may run for one member before the next compatible batch exists.
   // Keep a matching cohort, but release it before another owner needs slots.
   void admission(inference::RequestKey selected, std::size_t selected_turn) noexcept {
-    if (std::ranges::none_of(members, [&](const auto &member) {
-          return member.key == selected && member.turn == selected_turn;
-        })) reset();
+    if (cohort.admission({selected, selected_turn}, !pending_calls.empty()) == inference::ContinuationCohort::Release::kReady)
+      reset();
   }
   void release(inference::RequestKey selected) noexcept {
-    if (std::ranges::any_of(members, [&](const auto &member) { return member.key == selected; })) {
-      if (!pending_calls.empty()) drain_requested = true;
-      else reset();
-    }
+    if (cohort.release(selected, !pending_calls.empty()) == inference::ContinuationCohort::Release::kReady) reset();
   }
   bool matches(std::span<const PreparedGenerationCall> calls) const noexcept {
+    const auto members = cohort.members();
     if (!ready || calls.size() != members.size() || ready->boundaries.size() != calls.size()) return false;
     for (std::size_t j = 0; j < calls.size(); ++j) {
       const auto &request = *calls[j].request;
-      if (members[j] != Member{request.request_key, request.progress.turn_index} || !request.session || !request.session->head)
+      if (members[j] != identity(calls[j]) || !request.session || !request.session->head)
         return false;
       const auto &boundary = ready->boundaries[j]; const auto owner = boundary.session.lock();
       if (owner != request.session || owner.owner_before(request.session) || request.session.owner_before(owner) ||
@@ -6882,7 +6875,7 @@ bool execute_generation_continuation(Model &model, std::span<PreparedGenerationC
     Model &model; GenerationContinuation &continuation;
     ~RetiredCalls() {
       if (!model.active_step && !model.successor_step) {
-        continuation.pending_calls.clear(); continuation.drain_requested = false;
+        continuation.pending_calls.clear(); continuation.cohort.clear_drain();
       }
     }
   } retired_calls{model, continuation};
@@ -7026,8 +7019,7 @@ bool execute_generation_continuation(Model &model, std::span<PreparedGenerationC
       finish(calls); ++continuation.completed_steps; discard_records();
       continuation.reset(); continuation.unavailable = true; return true;
     }
-    const bool draining = drain_requested || continuation.drain_requested ||
-        std::ranges::any_of(credits, [](const auto &grant) { return grant.cancelled; });
+    const bool draining = continuation.cohort.draining(drain_requested, credits);
     if (resumed && !draining) {
       if (credits.size() != calls.size()) throw std::logic_error("pending batch lost its original request grants");
       for (std::size_t j = 0; j < calls.size(); ++j) {
@@ -7113,12 +7105,13 @@ bool execute_generation_continuation(Model &model, std::span<PreparedGenerationC
       // Pending sources are a complete same-order cohort. A partial A result
       // cannot be projected into B. Retire all B, preserve every successful A,
       // and let the original owner choose the next runnable subset.
-      if ((model.active_step && model.active_step->cancelled) ||
-          std::ranges::any_of(calls, [](const auto &call) {
+      if (inference::continuation_retention(calls, [](const auto &call) {
             const auto &request = *call.request;
-            return call.disposition != EvaluationDisposition::kPublished || request.progress.turn_done ||
-                request.session->stopping || request.session->failed || !request.progress.remaining_outputs();
-          })) {
+            return inference::ContinuationProgress{call.disposition == EvaluationDisposition::kPublished,
+                request.progress.turn_done, request.session->stopping, request.session->failed,
+                request.progress.remaining_outputs()};
+          }, true, model.active_step && model.active_step->cancelled, continuation.unavailable, draining) ==
+          inference::ContinuationRetention::kRetirePending) {
         ++continuation.successor_discards;
         require_retired(release_and_abort()); discard_records();
         const auto retired_at = Clock::now();
@@ -7140,7 +7133,7 @@ bool execute_generation_continuation(Model &model, std::span<PreparedGenerationC
         // the original promoted active_step; only its host call crosses pumps.
         continuation.pending_calls.clear();
         for (auto &call : second) continuation.pending_calls.push_back(std::move(call));
-        continuation.drain_requested = false;
+        continuation.cohort.clear_drain();
         continuation.next_slot = (next_slot + 1) % execution_slot_count;
         return true;
       }
@@ -7160,13 +7153,15 @@ bool execute_generation_continuation(Model &model, std::span<PreparedGenerationC
       // Withdrawn A records have no commit; clear only their unpublished work.
       discard_records();
     }
-    if (std::ranges::any_of(calls, [](const auto &call) {
+    const auto retention = inference::continuation_retention(calls, [](const auto &call) {
           const auto &request = *call.request;
-          return call.disposition != EvaluationDisposition::kPublished || request.progress.turn_done ||
-              request.session->stopping || request.session->failed;
-        }) || continuation.unavailable) continuation.reset();
-    else if (draining || std::ranges::any_of(calls, [](const auto &call) { return call.quota <= 1; }))
-      continuation.release_ready();
+          return inference::ContinuationProgress{call.disposition == EvaluationDisposition::kPublished,
+              request.progress.turn_done, request.session->stopping, request.session->failed,
+              request.progress.remaining_outputs()};
+        }, false, false, continuation.unavailable, draining);
+    if (retention == inference::ContinuationRetention::kResetReady) continuation.reset();
+    else if (retention == inference::ContinuationRetention::kReleaseReady ||
+        std::ranges::any_of(calls, [](const auto &call) { return call.quota <= 1; })) continuation.release_ready();
     return true;
   } catch (inference::EvaluationFailure &failure) {
     failure.observe_retirement(release_and_abort()); recover_records();
@@ -7578,7 +7573,9 @@ inference::RequestWaveResult advance_generation_wave(Model &model, inference::Re
     inference::RetirementObservation retire(inference::RequestWaveRetirement action) noexcept {
       const auto retired = action == inference::RequestWaveRetirement::kObserve
           ? model.try_retire_episode() : model.abort_episode();
-      if (retired.retired) { continuation.pending_calls.clear(); continuation.reset(); }
+      if (retired.retired) {
+        continuation.pending_calls.clear(); continuation.reset(); continuation.cohort.clear_drain();
+      }
       return retired;
     }
   } stage{model, continuation, trace_states, execute_ready, after_submit, batch_observer};
@@ -8311,7 +8308,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     } policy{prepare_call, batch_limit, compatible_calls, fits, execute_batch, publish_call};
     inference::execute_request_batches(batch_workspace, wave.keys, policy);
     if (decode_overlap && continuation.ready)
-      for (const auto &member : continuation.members)
+      for (const auto &member : continuation.cohort.members())
         if (!request_loop.credit(member.key, requests[member.key.slot].progress.generated.size())) {
           continuation.release_ready(); break;
         }

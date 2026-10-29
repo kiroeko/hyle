@@ -1,0 +1,80 @@
+{
+  "schema": "hyle.correctness.continuation-control.v1",
+  "date": "2026-10-30",
+  "status": "PASS",
+  "base_commit": "374ff2e57232f0e0b697e15695f3abe9b2165e0b",
+  "changes": [
+    "Original ordered (RequestKey including Window owner/generation, turn) cohort and drain intent moved to common ContinuationCohort. Native calls, StepSources, Head/boundaries, replay slots and retirement remain with the model.",
+    "Pending-cohort regrouping rejects without losing identity. A foreign admission during accepted work requests drain rather than erasing ready/cohort metadata. Ready reset never clears pending calls or acknowledges retirement.",
+    "Ordinary width1/K1 width2 quota arithmetic is shared and evaluated once by the original ledger, preserving original boundary checks, error type/message and prepared storage.",
+    "Whole-cohort post-publication continuation decisions share actual request facts. A stopped/unpublished/failed predecessor retires all B and preserves A; drain alone may still observe accepted B. Model warm/Source/capacity hints stay model-owned.",
+    "Progress projection exceptions preserve their original type through the original catch/abort path. A later actual-retired observe-only Stage clears handled drain intent; an unretired outcome cannot clear pending metadata.",
+    "New continuation test links only container/mem host dependencies, preserving the original error-only request-loop test. Minimal linkage exposed an existing ledger ResourceBudget dependency; its CMake target now explicitly links Compute and only exists when that product is available."
+  ],
+  "counts": {
+    "current_consumer_TUs": 5,
+    "CXX_attempts": 6,
+    "link_attempts": 7,
+    "native_attempts": 10,
+    "current_passed_processes": 8,
+    "host_contract_groups": 27,
+    "model_consumer_processes": 5,
+    "ordinary_serial_relay_arms": 6,
+    "continuous_control_candidate_arms": 16,
+    "retained_SDK_engine_inputs": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "full_builds": 0
+  },
+  "results": {
+    "host_groups": {
+      "request_loop": 16,
+      "continuation": 3,
+      "ledger": 8
+    },
+    "model_cases": [
+      "ordinary-cuda",
+      "continuous-cuda",
+      "mixed-cpu",
+      "mixed-cuda",
+      "natural-cuda"
+    ],
+    "prior_complete_reports_identical": [
+      "natural-cuda",
+      "mixed-cuda",
+      "continuous-cuda"
+    ],
+    "host_PE_imports_exclude_native_SDK": true
+  },
+  "preserved_attempts": [
+    "First continuous invocation refused an existing generated stop fixture in the old shared input directory before model work. Retried once with this batch two small manifest/prompt files referencing the same cached weights; no payload download or copy.",
+    "Minimal ledger link failed missing ResourceBudget destructor. Fixed the actual Compute dependency, using the current retained budget object in the finite host link; no SDK rebuild."
+  ],
+  "reference": {
+    "engine": "local vLLM",
+    "revision": "276fbcff2717bd934cfa37c8a2e4c391f3e7237b",
+    "scope": "Original future and SchedulerOutput retained together; cancellation intent and actual resource retirement remain separate. Hyle delivery credit is not vLLM token scheduling budget."
+  },
+  "reproduction": {
+    "directory": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-control-20261030",
+    "details": "verification.json, plan.json, source/dependency/command/process receipts and finite 64KiB stop fixture in ZIP"
+  },
+  "limitations": [
+    "No whole GLM/DeepSeek async-engine claim: the existing real GLM consumer is synchronous and already uses common RequestLoop/wave. The new async control consumer remains Qwen ordinary/K1.",
+    "Host retirement inputs are contract checks, not fabricated device completion. Native tests exercise actual submissions/control failures; no unknown native fault or delayed-retirement fault was injected.",
+    "Pending select conflict is guarded by the common API but current Qwen resumed execution still validates its original pending span directly and does not call select again.",
+    "Current sources were compiled and linked against minimal cached host libraries, and PE imports checked; this batch did not regenerate CMake or claim a fresh installation.",
+    "No new throughput/VRAM/kernel-count claim. Full cross-model orchestration, multi-draft unification and other roadmap items remain incomplete."
+  ],
+  "evidence_bundle": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-continuation-control-2026-10-30.zip",
+    "bytes": 514576,
+    "sha256": "f213b2a6efb09da26c784bd35bc018eb74b671cee510f3e2f9094c466540d6f0"
+  },
+  "cleanup": {
+    "files": 12,
+    "bytes": 288263546,
+    "status": "COMPLETE"
+  }
+}
