@@ -1726,6 +1726,10 @@ A成功提交全部head与账簿后，模型释放未绑定消费者的full GDN�
 共同准备协议现沿原顺序分步表达：`prepare_appends`准备batch metadata并绑定选定Append；
 `bind_consumers`先绑定真实incoming Source、成功才置原bound，再绑定已有Store cohort；
 `prepare_replay`按实际incoming选择原Source完整tuple门或普通replay，保留原mode／host-wait行为。
+普通输入沿原冷库存释放；导入Phase按真实token／catchup和Store Gather端口冷证明不相交，不再逐episode扫描Source并复制库存。
+先撤Source且记录成功，再释放普通输入；后者拒绝仍保原incoming owner与predecessor，恢复不能重复撤Source。
+单页Append Source直接比较本轮target页号，多页仍用原排序；没有跨episode保存页身份或票据。
+[有限检查](../evidence/correctness/inference-source-preparation-2026-10-30.json)保留原页／模型及晚拒恢复合同，没有新的吞吐结论。
 模型在Append绑定后构造真实Source，并在Store绑定后取得packed offsets；不能用一个封闭回调抹去这些依赖。
 部分成功事实由同一episode回收；数学、shape、候选帧及全成员原子发布仍由模型负责。
 [本片7项CPU／CUDA旅程](../evidence/correctness/inference-execution-preparation-2026-10-28.json)覆盖普通异长、MTP packed、

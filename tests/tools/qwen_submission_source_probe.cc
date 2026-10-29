@@ -473,8 +473,11 @@ RelayArm run_relay_arm(q::Model &model, bool relay, bool reject_successor = fals
       auto *const transactions = step.execution.state_transactions;
       record_episode(round, step, false);
       // Only caller-port metadata is invalid. Source withdrawal must succeed
-      // first; the original Graph unbind then rejects this unknown ValueId.
-      step.execution.incoming->outside_inputs.emplace_back();
+      // first; release_consumers receives this original ordinary-input list,
+      // then the original Graph unbind rejects its unknown ValueId.
+      auto &ordinary_inputs = step.phase->state_resource_ports;
+      ordinary_inputs.emplace_back();
+      hyle::util::ScopeGuard restore_inputs{[&]() noexcept { ordinary_inputs.pop_back(); }};
       model.submit_evaluations(step); ++result.native_submissions;
       bool rejected = false;
       try {

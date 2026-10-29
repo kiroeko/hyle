@@ -12,6 +12,11 @@
 单会话普通／MTP的最近跨引擎完整表见[目标与当前基线](#目标与当前基线)；
 下面的B2、CPU和局部候选属于不同窗口，各自保留版本与测量边界。
 
+2026-10-30正在调查小投影的原生M2双输出路线。现有same-A paired MMVF并非只受Graph matcher限制：
+tensor lowering、native资格及launcher也限定M1，Ampere／Ada原单叶偏好同样不选择BF16 M2。
+候选应只扩已证明的双MatMul闭合region，保两个原权重与独立dense输出，普通M2单叶保原路线；不能仅放开matcher。
+尚未实现或计时，不把此前concat候选的结论外推到这条原生路线。
+
 2026-10-28 **22:10:38～22:11:20**完成[全幅只读View资格与8进程筛查](../../evidence/correctness/inference-view-spans-2026-10-28.json)
 保留原alias权限表，用冷Plan后裔索引复用原完整tuple证明；普通真实诊断由0/64提升至58/64，MTP仍32/35。
 14项有限检查通过，普通／MTP及全部计时进程的完整非时间报告保持相同。

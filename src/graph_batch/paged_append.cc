@@ -1161,12 +1161,20 @@ Result<PagedAppendSource>PagedAppendSource::prepare(Invocation&invocation,NodeId
   HYLE_ASSIGN_OR_RETURN(auto old,cd::BatchLayoutAccess::page_footprint(p.previous_layout));
   auto allocator=options.allocator;if(options.resource_budget.valid()){HYLE_ASSIGN_OR_RETURN(allocator,options.resource_budget.metadata_allocator());}
   std::vector<std::uint32_t,mem::StdAllocator<std::uint32_t>>changed{mem::StdAllocator<std::uint32_t>(allocator)};
-  try{changed.reserve(p.targets.size());for(const auto&target:p.targets)changed.push_back(target.page);}
-  catch(...){return std::unexpected(Status::ResourceExhausted("append source target lookup"));}
-  std::sort(changed.begin(),changed.end());
+  // A one-page append needs no temporary lookup allocation. Keep reading its
+  // actual transaction here; no page identity or permission crosses calls.
+  if(p.targets.size()>1){
+    try{changed.reserve(p.targets.size());for(const auto&target:p.targets)changed.push_back(target.page);}
+    catch(...){return std::unexpected(Status::ResourceExhausted("append source target lookup"));}
+    std::sort(changed.begin(),changed.end());
+  }
+  const auto is_changed=[&](std::uint32_t page)noexcept{
+    return p.targets.size()==1?p.targets.front().page==page:
+        std::binary_search(changed.begin(),changed.end(),page);
+  };
   std::size_t ready_count=0;
   for(const auto page:footprint.pages)
-    ready_count+=!std::binary_search(changed.begin(),changed.end(),std::uint32_t(page));
+    ready_count+=!is_changed(std::uint32_t(page));
   HYLE_ASSIGN_OR_RETURN(auto resource,gd::ResourceSource::prepare(invocation,
       {p.previous_source?0:ready_count,p.writers.size(),p.input_appenders,p.previous_source?ready_count:0},
       storage,{options.allocator,options.resource_budget}));
@@ -1184,7 +1192,7 @@ Result<PagedAppendSource>PagedAppendSource::prepare(Invocation&invocation,NodeId
     s.full.resize(p.writers.size());s.append.resize(p.input_appenders);
     if(p.previous_source)s.inherited.reserve(ready_count);else s.ready.reserve(ready_count);
     for(std::size_t i=0;i<footprint.pages.size();++i){const auto page=footprint.pages[i];
-      if(std::binary_search(changed.begin(),changed.end(),std::uint32_t(page)))continue;
+      if(is_changed(std::uint32_t(page)))continue;
       const auto found=std::lower_bound(old.begin(),old.end(),page);
       if(found==old.end() || *found!=page)return std::unexpected(Status::InvalidArgument("append source untouched page has no original guard"));
       const auto bytes=std::size_t(footprint.required_rows[i])*p.row_bytes;

@@ -3811,6 +3811,22 @@ public:
     std::erase_if(phase.state_resource_ports, [&](V value) {
       return value.kind() != g::ValueKind::kInput && !phase.child->output(value).caller_owned();
     });
+    if (imported_sources) {
+      // This same ordinary-input inventory serves every episode of the Phase.
+      // Prove its separation from the actual cold Source ports once; pending
+      // Source permissions and selected reader access are still checked by
+      // reader_binding/bind_outputs for each original invocation below.
+      const auto check_source_input = [&](V value) {
+        if (std::ranges::find(phase.state_resource_ports, value) != phase.state_resource_ports.end())
+          throw std::runtime_error("ordinary caller input overlaps its imported Source projection");
+      };
+      check_source_input(phase.token_port);
+      if (phase.catchup_token_port) check_source_input(phase.catchup_token_port);
+      for (const auto &source : phase.state_sources) {
+        check_source_input(take(phase.state_graph().node_input(source.gather, 0)));
+        check_source_input(take(phase.state_graph().node_input(source.gather, 1)));
+      }
+    }
     const auto t = static_cast<std::int64_t>(tokens);
     if (completion == TextCompletion::kEmitNext)
       phase.logits_facts = &phase.child->output(phase.logits_port);
@@ -4806,12 +4822,6 @@ public:
         }
         for (std::size_t bank = 0; bank < previous.pages.size(); ++bank)
           input.bindings.push_back(take(g::batch::detail::append_binding(run, phase.append_nodes[bank], previous.pages[bank])));
-        for (auto value : phase.state_resource_ports) {
-          const bool attached = std::ranges::any_of(input.bindings, [&](const auto &binding) {
-            return binding.input == value || (binding.store && (binding.projection.capacity == value || binding.projection.metadata == value));
-          });
-          if (!attached) input.outside_inputs.push_back(value);
-        }
       }
       check(step.execution.bind_consumers(phase.state_graph()));
       if (packed_target) {

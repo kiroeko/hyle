@@ -21,7 +21,6 @@ namespace hyle::inference {
 template<class Sources> struct IncomingExecutionSources final {
   std::shared_ptr<Sources> owner;
   std::vector<graph::detail::OutputBinding> bindings;
-  std::vector<graph::ValueId> outside_inputs;
   bool bound = false;
 };
 
@@ -138,6 +137,8 @@ class ExecutionEpisode final {
 
   // Call only after the original outputs have been retained and Store/Append
   // transactions taken. Model policy decides when this may precede commit.
+  // The caller's cold ordinary-input inventory excludes Source projections;
+  // no episode-local copy or permission inference is needed here.
   // Keep the incoming owner and predecessor until both withdrawals succeed;
   // a failed preparation with no Source binding must not invent one to release.
   Status release_consumers(std::span<const graph::ValueId> ordinary_inputs) noexcept {
@@ -145,7 +146,7 @@ class ExecutionEpisode final {
       return Status::FailedPrecondition("execution episode has no original carrier");
     if (!incoming) return carrier->release_inputs(ordinary_inputs);
     HYLE_RETURN_IF_ERROR(release_source_bindings());
-    HYLE_RETURN_IF_ERROR(carrier->release_inputs(incoming->outside_inputs));
+    HYLE_RETURN_IF_ERROR(carrier->release_inputs(ordinary_inputs));
     incoming.reset(); predecessor_episode.reset();
     return Status::Ok();
   }
