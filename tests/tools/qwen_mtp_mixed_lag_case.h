@@ -18,7 +18,8 @@ inline void cold(q::Model &model) {
   model.prepare_family(two, false, 1, q::GraphRole::kVerify);
   model.plan_replay_uses(2, 1, 1, q::GraphRole::kVerify);
   for (const auto role : {q::GraphRole::kMtpRound, q::GraphRole::kMtpCatchupRound}) {
-    model.prepare_family(two, false, 1, role); model.plan_replay_uses(2, 1, 2, role);
+    model.prepare_family(two, false, 1, role);
+    model.plan_replay_uses(2, 1, role == q::GraphRole::kMtpRound ? 3 : 2, role);
   }
   for (const auto role : {q::GraphRole::kMtpSingle, q::GraphRole::kMtpCatchupSingle}) {
     model.prepare_family(one, false, 1, role, false, q::TextCompletion::kStateOnly);
@@ -105,6 +106,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     controls[member] = model.create_session({}, original[member], member ? q::GraphRole::kMtpCatchupRound : q::GraphRole::kMtpRound);
   }
   std::vector<p::StepReport> reports; reports.reserve(6);
+  bool mixed_cancelled_member_unchanged = false, mixed_survivor_original_commit = false;
   const auto old_unchanged = [&] {
     for (std::size_t member = 0; member < 2; ++member)
       require(s::image(model, *original[member]) == original_images[member], "mixed-lag work mutated an immutable complete checkpoint");
@@ -229,17 +231,22 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   {
     std::array<s::StateImage, 2> before;
     std::array<std::uint64_t, 2> epochs;
+    auto cancelled_base = sessions[0]->checkpoint();
+    const auto *cancelled_head = sessions[0]->head.get();
     std::vector<q::GenerationRequest> owners; owners.reserve(2);
+    i::RequestWindow window; window.prepare(2, 2);
     for (std::size_t member = 0; member < 2; ++member) {
       before[member] = s::image(model, *sessions[member]->head); epochs[member] = sessions[member]->head.epoch();
       owners.emplace_back("mixed-frontier" + std::to_string(member), std::span<const std::int32_t>{}, std::filesystem::path{}, 3);
       auto &request = owners.back(); request.session = sessions[member];
+      request.request_key = window.enqueue(member); window.admitted(request.request_key);
       request.ledger = std::make_unique<q::GenerationLedger>(2, 2);
       request.round_emitted.resize(2); for (auto &emitted : request.round_emitted) emitted.reserve(2);
       request.turn_observations.resize(1); request.progress.initial_sampling = request.session->head->sampling;
       (void)request.progress.begin_turn();
       request.progress.apply_outputs(std::span(&request.session->head->next_id, 1), true, true, false);
     }
+    const std::array keys{owners[0].request_key, owners[1].request_key};
     std::array calls{q::prepare_generation_call(model, owners[0], 3, nullptr, owners, 2),
         q::prepare_generation_call(model, owners[1], 3, nullptr, owners, 2)};
     require(calls[0].generation && calls[1].generation && calls[0].role == q::GraphRole::kMtpRound &&
@@ -249,10 +256,30 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     q::execute_generation_calls(model, calls, false, nullptr, owners, [&] {
       inspect_mixed(true); ++submitted_batches; ++target_submissions; ++mixed_submissions;
       require(submitted_batches == 1, "mixed-lag Engine entry split the actual K1 target submission");
+      (void)owners[0].session->stop();
+      require(!model.active_step->cancelled && model.active_step->discard_stopped_members &&
+          model.active_step->execution.has_completion() && !owners[1].session->stopping,
+          "mixed-lag K1 withdrawal aborted its original surviving member or retired native work early");
     });
-    require(submitted_batches == 1, "mixed-lag Engine entry did not submit its actual target");
+    require(submitted_batches == 1 && !model.active_step && !model.successor_step && !model.carrier_borrowed,
+        "mixed-lag Engine entry did not retire its one actual target submission");
     for (std::size_t member = 0; member < 2; ++member) {
       const auto &request = owners[member]; const auto &record = request.ledger->records[0];
+      require(request.request_key == keys[member], "mixed-lag withdrawal changed its original RequestKey");
+      if (!member) {
+        require(calls[member].disposition == q::EvaluationDisposition::kCancelled &&
+            request.session == sessions[member] && request.session->head.get() == cancelled_head &&
+            request.session->head.epoch() == epochs[member] && s::image(model, *request.session->head) == before[member] &&
+            !request.ledger->committed_count && !record.committed && !record.accepted && !record.emitted_count &&
+            !record.quota && !record.input_owner && record.pending_input == -1 && record.prompt_ids.empty() &&
+            record.accepted_inputs.empty() && record.verification_inputs.empty() &&
+            !request.progress.observed_commits() && request.rounds.empty() &&
+            request.progress.generated.size() == 1 && request.progress.generated.front() == before[member].pending &&
+            calls[member].draft_log_probabilities.empty() && !calls[member].logits.counts.lease.valid(),
+            "withdrawn mixed-lag K1 member changed its original complete head/RNG/ledger or emitted new output");
+        mixed_cancelled_member_unchanged = true;
+        continue;
+      }
       require(calls[member].disposition == q::EvaluationDisposition::kPublished &&
           request.session == sessions[member] && request.ledger->committed_count == 1 && record.committed &&
           record.role == calls[member].role && record.requests == 2 && record.member_index == member &&
@@ -270,7 +297,48 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
           after.sampling == before[member].sampling.advanced(3),
           "natural mixed Engine K1 changed accepted rows, actual draft work, epoch, pending or RNG");
       r::preserved_prefix(before[member], after);
+      same_round(expected[member], actual[member]);
+      p::StepReport checked;
+      p::compare(model, p::capture(model, *controls[member], storage), p::capture(model, *sessions[member], storage), checked);
+      require(checked.numerically_equivalent && calls[member].draft_log_probabilities.empty() &&
+          !calls[member].logits.counts.lease.valid(),
+          "surviving mixed-lag K1 original submission differs from its complete independent R1 state");
+      mixed_survivor_original_commit = true;
     }
+    // Retire the cancelled identity. A fresh fork supplies the existing rest
+    // of this journey; the surviving B result is never submitted again.
+    h::retire(sessions[0]);
+    sessions[0] = model.create_session({}, cancelled_base, q::GraphRole::kMtpRound);
+    cancelled_base.reset();
+    std::vector<q::GenerationRequest> replacement; replacement.reserve(1);
+    replacement.emplace_back("mixed-frontier-replacement", std::span<const std::int32_t>{}, std::filesystem::path{}, 3);
+    auto &renewed = replacement.front(); renewed.session = sessions[0];
+    i::RequestWindow renewed_window; renewed_window.prepare(1, 1);
+    renewed.request_key = renewed_window.enqueue(0); renewed_window.admitted(renewed.request_key);
+    renewed.ledger = std::make_unique<q::GenerationLedger>(2, 2);
+    renewed.round_emitted.resize(2); for (auto &emitted : renewed.round_emitted) emitted.reserve(2);
+    renewed.turn_observations.resize(1); renewed.progress.initial_sampling = renewed.session->head->sampling;
+    (void)renewed.progress.begin_turn();
+    renewed.progress.apply_outputs(std::span(&renewed.session->head->next_id, 1), true, true, false);
+    std::array renewed_call{q::prepare_generation_call(model, renewed, 3, nullptr, replacement, 2)};
+    std::size_t renewed_submissions = 0;
+    q::execute_generation_calls(model, renewed_call, false, nullptr, replacement, [&] {
+      require(model.active_step && model.active_step->submitted && model.active_step->members.size() == 1,
+          "replacement K1 request did not submit its independent R1 target");
+      ++renewed_submissions; ++target_submissions;
+    });
+    require(renewed_submissions == 1 && renewed_call[0].disposition == q::EvaluationDisposition::kPublished &&
+        renewed.ledger->committed_count == 1 && renewed.ledger->records[0].committed &&
+        renewed.ledger->records[0].role == q::GraphRole::kMtpRound && renewed.ledger->records[0].requests == 1 &&
+        renewed.ledger->records[0].member_index == 0 && renewed.progress.observed_commits() == 1 && renewed.rounds.size() == 1 &&
+        renewed.progress.generated.front() == before[0].pending &&
+        renewed.progress.generated.size() == 1 + renewed.rounds.front().emitted.size() &&
+        std::ranges::equal(std::span(renewed.progress.generated).subspan(1), renewed.rounds.front().emitted),
+        "new R1 request did not retain its real original role, ledger and observed output");
+    actual[0] = renewed.rounds.front();
+    require(!owners[0].session->head && !owners[0].ledger->committed_count && owners[0].rounds.empty() &&
+        owners[0].progress.generated.size() == 1 && owners[1].ledger->committed_count == 1,
+        "replacement journey resurrected the cancelled identity or republished its surviving peer");
   }
   for (std::size_t member = 0; member < 2; ++member) same_round(expected[member], actual[member]);
   compare_states(1);
@@ -306,7 +374,8 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
         !program->hidden_transactions.bound() && !program->carrier.pending(), "mixed-lag repair retained its original NextN resources");
   require(!model.active_step && !model.successor_step && !model.carrier_borrowed && !model.snapshot_versions.live &&
       !storage->live_images() && model.page_inventory.free_ids.size() == plan.max_pages &&
-      model.draft_inventory.free_ids.size() == plan.max_pages && mixed_submissions == 2 && target_submissions == 13,
+      model.draft_inventory.free_ids.size() == plan.max_pages && mixed_submissions == 2 && target_submissions == 14 &&
+      mixed_cancelled_member_unchanged && mixed_survivor_original_commit,
       "mixed-lag journey split a B2 submission or retained a state, image, target/draft page owner");
   bool equivalent = true, exact = true;
   for (const auto &report : reports) { equivalent = equivalent && report.numerically_equivalent; exact = exact && report.payloads_equal; }
@@ -322,6 +391,8 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       << ",\"numerically_equivalent\":" << (equivalent ? "true" : "false")
       << ",\"old_checkpoints_unchanged\":true,\"StateOnly_no_pending_or_draw\":true,\"natural_R1_results_equal\":true,"
       "\"mixed_engine_single_submission\":true,\"original_member_roles_committed\":true,\"retired_head_rejected_before_prepare\":true,"
+      "\"mixed_cancelled_head_ledger_rng_unchanged\":true,\"mixed_cancelled_new_outputs\":0,"
+      "\"mixed_survivor_original_submission_published\":true,\"mixed_survivor_complete_R1_state_equal\":true,"
       "\"full_request_history_import_coverage\":false,"
       "\"final_versions\":0,\"natural_acceptance_quality_claim\":false,\"performance_claim\":false}\n";
   cleanup.dismiss();

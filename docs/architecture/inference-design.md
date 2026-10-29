@@ -24,7 +24,7 @@ Source接线及准备／提交／退休编排。本次复审将共同episode寿�
 | 线程与所有权 | 一个owner串行控制请求、Session和缓存；设备异步执行不授权其它线程直接修改Session。Model保图与池，Session保已提交状态，原Step／Source保设备工作；控制操作核对完整RequestKey。 |
 | 提交与观察 | 设备episode准备只建立未发布候选，submit仅表示工作被接受；完成选择及状态检查后才发布head／账簿／RNG，提交序号只观察一次。完整前缀命中可不执行设备图而推进逻辑工作；晚报告失败不撤回已提交事实。 |
 | 输出与额度 | 提交前取得真实输出credit；ACK只确认已交付前缀，不代替计算提交。最终输出未排空时保留请求key与输出，即使Session已实际退休；背压不表示turn结束。 |
-| 取消与退休 | cancel只记意图。普通已提交批次可撤回单成员，MTP仍遵守原整episode取消范围。Status与实际retired分别判断，错误或取消不授予提前释放权限。 |
+| 取消与退休 | cancel只记意图。普通／MTP已提交多成员批次有幸存者时，只撤回停止成员的发布；单成员、全部停止、提交前停止或owner明确abort仍中止整episode。Status与实际retired分别判断，取消不授予提前释放权限。 |
 | 错误 | 保留原Status、已证实的participant／RequestKey及独立退休事实；未知成员或native故障不伪造成单请求失败。现有普通C++异常尚未全部统一，不能根据异常字符串自动重试或回滚。 |
 | 平台与缓存 | 冷准备按实际设备、类型和布局选路，不隐式换设备或降精度重算。auto不适用时走原单步执行。pending只消费一次；前缀和HostImage保完整已提交状态，不保存外部动态modifier，新请求按自己的政策采样。 |
 
@@ -64,6 +64,10 @@ Source接线及准备／提交／退休编排。本次复审将共同episode寿�
 多模型边界同时参考本地成熟引擎：vLLM `276fbcff2717`的调度器消费原执行结果，模型提供forward、logits及递归状态形状；
 TensorRT-LLM `46d9966b54d9`将模型调用、资源更新、请求更新与响应处理分开。
 Hyle沿用职责分离，以实际消费者和静态直接调用落实，不照搬其大型动态接口；这些本地版本也不等于最新上游或Hyle正确性的证明。
+vLLM的`gpu_input_batch.py`管理共同请求槽，`qwen3_5_mtp.py`与`deepseek_mtp.py`分别表达自己的预测层、hidden时序与head；
+共同批次不需要理解GDN或NextN状态含义。SGLang本地`234ccba7f625`以同一`keep_indices`同步过滤请求、采样与speculative数据，
+过滤发生在下一批准备，不能改写已提交批次的行坐标。vLLM收取原执行结果时跳过已结束请求，KV块仍独立等待真实执行序号；
+Hyle采用同一职责边界，保留自身head／ledger／RNG原子发布合同，不据此声称取消后GPU不再计算该行。
 
 结果提交与主机观察是两个时刻。`PreparedRecordCommit`只在原owner调用期间借用已预留的记录及提交计数，
 原模型的Head发布拒绝时不记成功；成功则立即无抛地标记原记录。之后的catch-up、统计或报告失败，只能按原ordinal补观察，
@@ -148,16 +152,17 @@ Source身份变化不必否决这份几何，但必须撤销旧replay，并在�
 只有真实退休才清理待观察的调用。该抽取只是共同wave驱动；Graph接线、载体与整个Model执行编排仍有待继续收敛。
 
 `cancel`沿原模型`stop`返回真实Status：排队／暂停请求撤回，活动请求先记意图，原波结束后才移除，
-不破坏借用的active span。普通R2以上已提交batch沿原成员撤回合同完成幸存者；其它角色仍遵守原
-整体取消范围，不把MTP假装成普通单成员取消。可选的静态提交后观察点让同一owner在原submit之后处理控制，
+不破坏借用的active span。普通／MTP已提交多成员batch有幸存者时，只撤回停止成员的发布；
+原成员顺序、行坐标和完整资源事务保留到真实退休。可选的静态提交后观察点让同一owner在原submit之后处理控制，
 同步调用省略时不引入回调表。高层生成读取真实`EvaluationDisposition`，取消成员不发布token、ledger或prompt history。
 原生退休与输出排空分别判断；只有无native错误的预期取消可作为正常取消结果，真实设备错误继续保留。
 
-MTP生成入口在原提交后若看到Step已cancelled，且确有原成员stopping，先沿原abort／Append／Store恢复证明实际退休。
+生成入口在原提交后若看到Step已cancelled，且确有原成员stopping，先沿原abort／Append／Store恢复证明实际退休。
 只有退休完成且终结为OK或无native错误的预期Cancelled，才正常返回整cohort取消：所有调用标记Cancelled，
 撤销原未提交账簿槽并释放q／C0；各成员已提交head、pending、RNG和账簿不变，未停止的peer可用原key重新准备。
 未知／未退休、设备或其它终结错误仍以`EvaluationFailure`携原Status和真实退休观察传播，不制造participant，也不提前清权限。
-普通多成员的“停止一人、幸存者正常发布”分支保持原合同。CPU／CUDA均已实跑真实B2 K2提交后stop A的正常返回与原生退休，取消cohort不发布head／ledger／RNG／pending，幸存者按原key续算，见[本轮有限记录](../evidence/correctness/inference-history-controls-2026-10-28.json)。
+此为单成员、全部停止或owner明确整批中止的恢复合同。2026-10-28的[有限记录](../evidence/correctness/inference-history-controls-2026-10-28.json)
+检查的是当时MTP整批取消政策，不证明当前逐成员撤回；当前幸存者直接使用原批次结果。
 
 当前控制由单owner串行驱动；这与设备执行并发是两个维度。未来应用可向owner投递请求、取消和输出额度，
 观察有序事件，不能直接并发改Session。已有错误事实包括底层`Status`和带成员／退休信息的`EvaluationFailure`，
@@ -974,7 +979,7 @@ host 用例覆盖 pending 时不写入，未注入原生设备故障。
 | 共同机制 | 现有实现与所有权 |
 |---|---|
 | 有界运行中接纳 | `RequestWindow`固定槽和FIFO，世代拒绝旧身份；owner先准备payload，再在合法波次边界接纳。`RequestProgress`借用稳定输入，open turns按turn数、累计prompt token及输出额度接纳；传输字节和输入所有权仍归调用者 |
-| 请求级取消与失败 | 等待撤回不触及设备；已提交普通多成员批次可只丢弃停止成员，幸存者提交原候选。其它模式或明确放弃整批沿原中止／退休；已定位参与者失败与设备失败分别处理，交付失败保留已提交事实 |
+| 请求级取消与失败 | 等待撤回不触及设备；已提交普通／MTP多成员批次有幸存者时可只丢弃停止成员，幸存者提交原候选。单成员、全部停止、提交前停止或明确放弃整批沿原中止／退休；已定位参与者失败与设备失败分别处理，交付失败保留已提交事实 |
 | 输出消费与背压 | `OutputDelivery`的credit／ACK与提交观察分开。提交前检查episode最大输出；满时由原窗口暂停该请求，让其它就绪任务推进。owner保留未交付输出，异步交接不让`CompletedEvaluationView`／原生租约逃逸 |
 | 有界prefill工作量 | 原`TextCompletion`表达state-only中间块与最终输出；ledger保真正已消费偏移，中间块不投影词表、发token或消费RNG。原窗口的队尾重排允许其它ready decode推进，quantum由owner选择 |
 | 多Model资源与调度 | 每个Model保原端点、队列和单在途合同；共用`ResourceBudget`按指定真实资源行接纳已知权重／缓存／workspace。未知私有分配仍标未知；跨Model优先级归owner，不把共享计数称为物理显存上限 |
@@ -1070,16 +1075,21 @@ pending 已返回但尚未消费。只有真正消费的输入进入 KV、位置
 不能退回消费当前输入之前的 base。greedy 和随机路径都由同一前缀规则处理停止／额度；
 模型据此捕获完整状态及原 pending 租约，采样游标仍按实际使用的 RNG 地址推进。
 
-所有可失败的选择、状态捕获、修复及合法性检查先完成，再以不抛异常的 head 交换发布整个 batch。
+所有可失败的选择、状态捕获、修复及合法性检查先完成，再以不抛异常的head交换逐成员发布；撤回成员不发布。
 提交前失败保留旧状态和游标；提交后 trace／报告失败不能重抽样或重复返回。
 提交记录是权威事实，观察序号保证幂等；异常本身不能代表“模型没有前进”。
-在途MTP取消、提交前取消及最后一个成员取消仍走整批中止。已提交且无draft状态的普通多成员批次，
+提交前取消、单成员或最后一个成员取消仍走整批中止。已提交的普通／MTP多成员批次有幸存者时，
 停止一个成员只撤回其发布，设备计算正常完成，幸存者不重算；原生／导出失败仍不能部分发布。
+停止成员跳过接受选择、prefix采样、draft修复和候选状态预检；Store／Append仍按原完整批次take、归还tail并退休。
+原成员索引和物理行不压缩，下一批准备才重组；本轮提案耗时不写入停止成员的旧提交记录。
 停止成员不改head／RNG，不提交其账簿、不调用成功观察函数；`EvaluationDisposition`区分未发布、已发布和已取消。
 `stop()`确认请求被接纳，不能把这次成功撤回伪装成原生退休错误。等待幸存者完成期间，任一成员的退休／drain
 返回尚未退休，不隐式撤销整批；原owner仍可明确中止整个episode。输出观察的局部掩码仅在撤回时准备，
 普通R>2不增加每步缓冲分配。当前[有限CPU检查](../evidence/correctness/inference-review-fixes-2026-10-26.json)
 覆盖greedy R2、空账簿、原候选发布／继续和全部取消；不代签GPU物理在途、随机取消或设备故障。
+随后[MTP成员撤回检查](../evidence/correctness/inference-mtp-member-withdrawal-2026-10-29.json)在CPU／CUDA有限消费者覆盖prefill、
+不同lag K1、history／动态条件K2及E4缓存，撤回成员零新增输出、幸存者保留原索引并核完整状态；
+仅幸存者执行post-verify采样及repair。旧checkpoint、HostImage、真实背压ACK与整束资源回收保留，不代签其它平台或设备故障。
 
 普通／MTP 和固定回放共用模型无关的执行观察记录。模型完成接口只接收原提交目标、事实
 目的地和明确的捕获需求；名字、路径、默认打印及 trace 写入由入口处理。CLI formatter 只读取
@@ -1189,7 +1199,7 @@ R 继续交现有分桶及真实执行容量处理。模型提供容量查询、
 Session、Model、冷资源与逻辑缓存统一返回 `RetirementObservation { retired, status }`，
 没有 bool 转换或旧兼容出口。owner 遇错仍沿原收集流程；确认退休后归还旧会话、窗口槽或
 目录费用，再报告原错，失败的接纳不继续装入新任务。单纯尚未退休不写成持久故障。
-等待普通部分撤回的幸存者发布时，成员`drain`不代替原owner完成或中止，返回尚未退休。
+等待普通／MTP部分撤回的幸存者发布时，成员`drain`不代替原owner完成或中止，返回尚未退休。
 其它路径中未停止 Session 的 `drain`只驱动原执行并观察错误，不退休其head，也不固化peer的纯取消；
 停止后的观察持续保留第一条真实错误。实际释放权限仍来自原 Graph／页／原生保留门。
 [有限检查](../evidence/correctness/inference-retirement-observation-2026-10-25.json)已通过三组缓存
@@ -1364,7 +1374,7 @@ StateOnly不读counts、不抽样，实际提交token在下次同步计入；同
 计数更新不经F32往返，不另设2^24上限或新provider；罚分计算仍用原F32数学。CUDA现有Scan是Managed并有主机等待，history路线使用原Commands回落，不能宣称捕获或吞吐改善。
 history-only严格决策回放按原已提交token重建C0，保留记录的角色、实际宽度、配置与消费前缀；含外部bias／mask仍拒绝严格回放。
 history-only R1严格回放的CPU／CUDA检查各通过9项完整状态逐字节对照，覆盖greedy／随机、StateOnly、K1／K2原记录回放及继续执行，ledger和RNG一致；没有放宽字节比较或修正sampling wrapper来掩盖不同合同。
-control的CPU／CUDA检查各通过2项完整状态逐字节对照，另核真实B2 K2提交后stop A正常返回、原生退休及零head／ledger／RNG／pending发布，幸存者保原key继续。
+2026-10-28的control CPU／CUDA检查各通过2项完整状态逐字节对照，另核当时整episode中止的B2 K2提交后stop A正常返回、原生退休及零head／ledger／RNG／pending发布，幸存者保原key继续。
 同一旅程实际保留只读C0别名令原池容量拒绝，释放后合法重试，并经HostImage换出恢复继续R1 K2；见[本轮记录](../evidence/correctness/inference-history-controls-2026-10-28.json)。
 取消或池拒绝不推进主机提交计数；原别名仍持读权时即使native已退休也不能抢回writer。HostImage只从空闲live Session导出，
 停止成员的旧状态通过其已证明相同的checkpoint活reader核查，不放宽stopping导出门或把stop当退休。
@@ -1404,7 +1414,7 @@ payload权限仍由原租约／StorageOwner证明，不复制词表，不把条�
 只有实际发布输出能推进外部策略。[控制交叉检查](../evidence/correctness/inference-natural-logits-control-2026-10-29.json)
 已在CPU／CUDA核对终止草稿、动态／静态同一R2 Verify、真实提交后取消及同key HostImage恢复。
 停止草稿只消费原pending，原q及3次RNG地址保留，结束后prepare不再调用提供者。
-取消保留双方完整head／账簿／RNG，原episode实际退休后清q与条件owner；释放检查点pin后换出，
+该次旧整episode中止检查保留双方完整head／账簿／RNG，原episode实际退休后清q与条件owner；释放检查点pin后换出，
 驻留版本归零，恢复不重采样pending、不调用提供者，幸存请求从原输出继续解析。
 同检查点、同实际cursor的R1对照核对完整状态；这是原GenerationRequest／RequestWindow入口的有限检查，
 自然RequestLoop另有前述依据，未宣称全平台、训练质量或吞吐通过。
@@ -1462,7 +1472,7 @@ backing按目标attention层数与独立draft银行分别计费，state、hidden
 HostImage已有两组存储描述，直接按实际初始化字节换出换入，不新增格式兼容层或转码。
 [CPU／CUDA有限消费者](../evidence/correctness/inference-mtp-e4-2026-10-28.json)各通过11次完整状态字节比较，
 覆盖K1／K2、StateOnly、原key及部分镜像恢复、真实B2验证和取消后幸存请求续算；
-B2的不同接受前缀为受控状态检查，MTP取消仍按原整episode合同。该批没有新增整模型质量、原生平台或速度结论。
+B2的不同接受前缀为受控状态检查，该次MTP取消按当时整episode合同。当前逐成员撤回另记，不改写旧实验事实；该批没有新增整模型质量、原生平台或速度结论。
 
 追加的逻辑token行数与物理carrier第一维分别表达：由原`cache_carrier_description`的单token描述取得首轴倍率，
 恢复query_rows后再核完整描述和strides，不另列dtype／codec白名单；例如Q8_0将头数合入U8第一维。

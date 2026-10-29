@@ -78,8 +78,9 @@ Verify 提案截短不按规划上界计数，接受部分前缀也不抹掉已�
 主 Phase、NextN、frontier 和接受采样沿共同程序载体持有原 Invocation／Completion／资源租约。
 
 成功后先收齐结果和页事务、核 expected base，再发布完整状态；失败保留旧 head，按真实退休归还资源。
-普通已提交的多成员 Text 批次可只丢弃停止成员并发布幸存者；MTP成员停止仍取消整个原 episode，
-幸存者保留旧 head／RNG，实际退休后可以重试。取消不是 GPU 抢占，丢弃 Completion 也不表示资源可写。
+普通／MTP已提交多成员批次有幸存者时，只丢弃停止成员的发布；幸存者使用原批次结果，不重算。
+停止成员保留旧head／ledger／RNG；单成员、全部停止、提交前停止或明确abort仍中止整episode。
+取消不是GPU抢占，原Store／Append及Completion仍须整束真实退休，丢弃Completion不表示资源可写。
 空闲 Session 可导出完整 HostImage 后退休／恢复；缺少可用快照时按账簿中已消费输入重建，
 保持历史已返回 token 和 RNG，不重新采样过去输出。带外部 modifier 的严格决策回放仍需其原载荷。
 完整条件控制的有限范围见[控制检查](../../../docs/evidence/correctness/inference-natural-logits-control-2026-10-29.json)。

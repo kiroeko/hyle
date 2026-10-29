@@ -204,29 +204,90 @@ inline void batch_cancel(q::Model &model, const std::shared_ptr<i::HostStateStor
         model.propose_recursive(*sessions[1], 2, q::model_eos_tokens, &probabilities[1])};
     require(ids[0].size() == 3 && ids[1].size() == 3 && probabilities[0].size() == 2 && probabilities[1].size() == 2,
         "E4 B2 did not retain its four actual BF16-draft proposal distributions");
+    std::array<q::MtpRoundResult, 2> expected;
+    h::ImageBytes survivor_image;
+    if (cancel) {
+      // Explicit episode abort still withdraws the whole original cohort.
+      // This is independent of stopping one member and committing its peer.
+      {
+        std::array aborted{model.create_session(planned, old[0], q::GraphRole::kVerify),
+            model.create_session(planned, old[1], q::GraphRole::kVerify)};
+        const std::array abort_epochs{aborted[0]->head.epoch(), aborted[1]->head.epoch()};
+        const std::array abort_inputs{q::EvaluationRequest{aborted[0], ids[0]}, q::EvaluationRequest{aborted[1], ids[1]}};
+        model.prepare_evaluations(abort_inputs, nullptr, q::GraphRole::kVerify); model.submit_evaluations();
+        const auto retired = model.abort_episode();
+        if (!retired.status.IsCancelled() || retired.status.has_native_error()) q::check(retired.status);
+        require(retired.retired, "E4 explicit abort did not retire its original shared verifier");
+        for (std::size_t member = 0; member != 2; ++member) {
+          require(s::image(model, *aborted[member]->head) == before[member] &&
+              aborted[member]->head.epoch() == abort_epochs[member],
+              "E4 explicit abort published a head, byte, epoch or RNG state");
+          (void)aborted[member]->stop(); const auto released = aborted[member]->try_retire();
+          if (!released.status.IsCancelled() || released.status.has_native_error()) q::check(released.status);
+          require(released.retired, "E4 explicit abort retained a Session owner"); aborted[member].reset();
+        }
+        t::idle(model);
+      }
+      // Resolve the same physical B2/K3 verifier with the same actual q rows.
+      // The later survivor is compared to this original geometry, not to an
+      // R1 re-execution after cancellation.
+      std::array control{model.create_session(planned, old[0], q::GraphRole::kVerify),
+          model.create_session(planned, old[1], q::GraphRole::kVerify)};
+      const std::array control_inputs{q::EvaluationRequest{control[0], ids[0]}, q::EvaluationRequest{control[1], ids[1]}};
+      const std::array control_outputs{q::EvaluationOutput{.session = control[0]}, q::EvaluationOutput{.session = control[1]}};
+      const std::array control_selections{
+          q::MtpGenerationSelection{control[0], old[0]->next_id, 3, probabilities[0], 2},
+          q::MtpGenerationSelection{control[1], old[1]->next_id, 3, probabilities[1], 2}};
+      model.prepare_evaluations(control_inputs, nullptr, q::GraphRole::kVerify); model.submit_evaluations();
+      model.finish_recursive_mtp(control_selections, q::model_eos_tokens, control_outputs, expected, [](auto, const auto &) {});
+      survivor_image = p::capture(model, *control[1], storage);
+      h::retire(control[0]); h::retire(control[1]); t::idle(model);
+    }
     const std::array inputs{q::EvaluationRequest{sessions[0], ids[0]}, q::EvaluationRequest{sessions[1], ids[1]}};
     model.prepare_evaluations(inputs, nullptr, q::GraphRole::kVerify); model.submit_evaluations();
     require(model.active_step->submitted && model.active_step->members.size() == 2 && model.active_step->input_tokens == 3,
         "E4 B2 did not submit one original shared K3 verifier");
     if (cancel) {
-      (void)sessions[0]->stop(); require(model.active_step->cancelled && !model.active_step->discard_stopped_members,
-          "MTP cancellation changed the original whole-episode contract");
-      const auto retired = model.abort_episode();
-      if (!retired.status.IsCancelled() || retired.status.has_native_error()) q::check(retired.status);
-      require(retired.retired && !sessions[1]->stopping && !sessions[1]->failed && sessions[1]->retirement_status.ok(),
-          "E4 cancelled MTP episode did not retire or permanently stopped its survivor");
+      auto *phase = model.active_step->phase; const auto slot = model.active_step->state_slot;
+      auto *run = model.active_step->execution.run;
+      const auto repairs = model.draft_program_graph_calls, decisions = model.prefix_decision_graph_calls;
+      (void)sessions[0]->stop(); require(!model.active_step->cancelled && model.active_step->discard_stopped_members,
+          "E4 stopped MTP member cancelled its survivor's original verifier");
+      std::array dispositions{q::EvaluationDisposition::kNotPublished, q::EvaluationDisposition::kNotPublished};
+      const std::array surviving_outputs{
+          q::EvaluationOutput{.session = sessions[0], .disposition = &dispositions[0]},
+          q::EvaluationOutput{.session = sessions[1], .disposition = &dispositions[1]}};
+      const std::array selections{
+          q::MtpGenerationSelection{sessions[0], old[0]->next_id, 3, probabilities[0], 2},
+          q::MtpGenerationSelection{sessions[1], old[1]->next_id, 3, probabilities[1], 2}};
+      std::array<q::MtpRoundResult, 2> actual; std::size_t observed = 0;
+      model.finish_recursive_mtp(selections, q::model_eos_tokens, surviving_outputs, actual,
+          [&](std::size_t member, const auto &) {
+            require(member == 1, "E4 observed the withdrawn MTP member"); ++observed;
+          });
+      require(dispositions[0] == q::EvaluationDisposition::kCancelled &&
+          dispositions[1] == q::EvaluationDisposition::kPublished && observed == 1 &&
+          actual[0].emitted.empty() && !actual[0].processed_target && !actual[0].processed_draft &&
+          model.draft_program_graph_calls == repairs + 1 && model.prefix_decision_graph_calls == decisions + 1 &&
+          !sessions[1]->stopping && !sessions[1]->failed && sessions[1]->retirement_status.ok(),
+          "E4 withdrawal delivered A, repeated B or retained A's sampling/repair work");
+      require(sessions[0]->head.get() == old[0].get() && s::image(model, *sessions[0]->head) == before[0] &&
+          sessions[0]->head.epoch() == epochs[0] && sessions[0]->head->sampling == before[0].sampling &&
+          sessions[1]->head.epoch() == epochs[1] + 1 &&
+          sessions[1]->head->sampling == before[1].sampling.advanced(5) &&
+          sessions[1]->length() == before[1].length + actual[1].processed_target,
+          "E4 withdrawal changed A's complete old boundary or B's one original commit");
+      h::same_round(expected[1], actual[1]); same(survivor_image, p::capture(model, *sessions[1], storage), checks);
       for (std::size_t member = 0; member != 2; ++member)
-        require(s::image(model, *sessions[member]->head) == before[member] &&
-            sessions[member]->head.epoch() == epochs[member] && s::image(model, *old[member]) == before[member],
-            "E4 cancelled MTP published a head, byte, epoch or RNG state");
+        require(s::image(model, *old[member]) == before[member], "E4 withdrawn B2 changed an original complete checkpoint");
+      require(!run->in_flight() && !phase->slots[slot].carrier.pending() && !phase->slots[slot].transactions.bound(),
+          "E4 MTP withdrawal retained the original shared verifier or Store cohort");
+      state_bytes(model, *sessions[1]->head); t::idle(model);
       probabilities = {};
       const auto released = sessions[0]->try_retire();
       if (!released.status.IsCancelled() || released.status.has_native_error()) q::check(released.status);
       require(released.retired, "E4 stopped member was released before actual shared retirement"); sessions[0].reset();
-      auto control = model.create_session(planned, old[1], q::GraphRole::kVerify);
-      const auto expected = u::round(model, control, true); const auto actual = u::round(model, sessions[1], true);
-      h::same_round(expected, actual); same(p::capture(model, *control, storage), p::capture(model, *sessions[1], storage), checks);
-      h::retire(control); h::retire(sessions[1]);
+      h::retire(sessions[1]);
     } else {
       // The explicit prefix selector guarantees both the one-row lag0 and
       // two-row lag1 repairs. Natural K1/K2 sampling is checked separately;
@@ -296,7 +357,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
          "\"exact_cache_backing_bytes\":" << plan.backing_bytes << ",\"complete_byte_equal_checks\":" << checks
       << ",\"K1_K2\":true,\"StateOnly_no_draw\":true,\"partial_HostImage\":true,\"original_request_key\":true,"
          "\"B2_actual_verify\":true,\"controlled_B2_accepted_prefixes\":[1,2],\"controlled_B2_RNG_unchanged\":true,"
-         "\"B2_whole_episode_cancel\":true,\"survivor_R1_continue\":true,"
+         "\"explicit_abort_whole_cohort\":true,\"B2_withdrawn_member_unchanged\":true,\"survivor_same_B2_commit\":true,"
          "\"old_checkpoints_unchanged\":true,\"final_versions\":0,\"synthetic_untrained\":true,"
          "\"quality_claim\":false,\"performance_claim\":false}\n";
   return 0;

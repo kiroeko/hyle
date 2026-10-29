@@ -1,0 +1,1292 @@
+{
+  "schema": "hyle.correctness.mtp-member-withdrawal.v1",
+  "date": "2026-10-29",
+  "status": "PASS_WITH_PRESERVED_TEST_INTEGRATION_FAILURES",
+  "base_commit": "b1704817d9ba8c9e04b1957153ee3122caae11b4",
+  "change": "Submitted ordinary/MTP cohorts share per-member withdrawal eligibility. Keep original member indices and whole native take/retirement; skip withdrawn acceptance, repair, state/head/RNG/ledger publication and successful observation. Survivors publish original submitted results.",
+  "counts": {
+    "CXX_attempts": 5,
+    "links": 5,
+    "current_SDK_inputs": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "full_builds": 0,
+    "native_consumer_processes": 10,
+    "passed_finite_cases": 7,
+    "preserved_test_integration_failures": 3,
+    "downloads": 0
+  },
+  "builds": {
+    "qwen": {
+      "compiles": [
+        {
+          "state": "TERMINAL",
+          "pid": 48168,
+          "started": 1793267122.3233535,
+          "seconds": 138.06619882583618,
+          "exit": 0,
+          "timed_out": false
+        },
+        {
+          "state": "TERMINAL",
+          "pid": 59112,
+          "started": 1793267387.8727465,
+          "seconds": 115.31267285346985,
+          "exit": 0,
+          "timed_out": false
+        },
+        {
+          "state": "TERMINAL",
+          "pid": 50228,
+          "started": 1793267559.3884816,
+          "seconds": 118.73748731613159,
+          "exit": 0,
+          "timed_out": false
+        },
+        {
+          "state": "TERMINAL",
+          "pid": 53524,
+          "started": 1793267752.2398689,
+          "seconds": 106.33292150497437,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "links": [
+        {
+          "state": "TERMINAL",
+          "pid": 43032,
+          "started": 1793267269.599831,
+          "seconds": 1.9214909076690674,
+          "exit": 0,
+          "timed_out": false
+        },
+        {
+          "state": "TERMINAL",
+          "pid": 14952,
+          "started": 1793267516.3439949,
+          "seconds": 2.0063703060150146,
+          "exit": 0,
+          "timed_out": false
+        },
+        {
+          "state": "TERMINAL",
+          "pid": 45648,
+          "started": 1793267687.0677805,
+          "seconds": 1.9752295017242432,
+          "exit": 0,
+          "timed_out": false
+        },
+        {
+          "state": "TERMINAL",
+          "pid": 42440,
+          "started": 1793267866.8196619,
+          "seconds": 1.9916880130767822,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "final_object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-member-withdrawal-20261029\\compile\\qwen\\unit.obj",
+        "bytes": 74858974,
+        "sha256": "31f9c1a81c0e65a58a984821db8d6cf39c8ab1307b7629d59e52e39b3394ff0e"
+      },
+      "source_inputs": 234
+    },
+    "ordinary": {
+      "compiles": [
+        {
+          "state": "TERMINAL",
+          "pid": 32992,
+          "started": 1793267584.1276684,
+          "seconds": 55.99229025840759,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "links": [
+        {
+          "state": "TERMINAL",
+          "pid": 58224,
+          "started": 1793267652.7597342,
+          "seconds": 1.958876609802246,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "final_object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-member-withdrawal-20261029\\compile\\ordinary\\unit.obj",
+        "bytes": 26132076,
+        "sha256": "5282af78e1fbd92aca8c4d4e9ca240feb6e41ca15bd8ab002578e56a43b1919c"
+      },
+      "source_inputs": 199
+    }
+  },
+  "results": {
+    "prefill-cpu": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 48020,
+        "started": 1793267278.4273055,
+        "seconds": 0.814896821975708,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "generation-wave",
+        "backend": "cpu",
+        "models": 1,
+        "native_submissions": 3,
+        "old_copy_component_failure_reproduced": true,
+        "cancelled_disposition_returned": true,
+        "whole_wave_prepare_before_publish": true,
+        "cancelled_heads_ledger_rng_unchanged": true,
+        "survivor_original_submission_published": true,
+        "survivor_complete_R1_state_equal": true,
+        "cancelled_prefix_unpublished": true,
+        "survivor_prefix_published": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0
+      }
+    },
+    "history-cpu": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 47400,
+        "started": 1793267869.89216,
+        "seconds": 0.9223067760467529,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "history-control",
+        "backend": "cpu",
+        "models": 1,
+        "configurations": 1,
+        "history_only": true,
+        "member_cancel_B2_K2": true,
+        "whole_episode_retired": true,
+        "postsubmit_cancel_returned_normally": true,
+        "survivor_same_R2_published": true,
+        "survivor_original_member_index": 1,
+        "cancelled_member_postverify_auxiliary_calls": 0,
+        "postrestore_next_R1_round": true,
+        "committed_counts_only": true,
+        "escaped_readonly_C0": true,
+        "bounded_pool_refusal": true,
+        "release_then_retry": true,
+        "idle_HostImage_restore": true,
+        "idle_resident_versions_zero": true,
+        "old_checkpoints_unchanged": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0,
+        "state_checks": [
+          {
+            "sequence": 0,
+            "prefix": 6,
+            "active_rows": 0,
+            "physical_rows": 0,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 5,
+            "bucket_next": 5,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 0,
+            "prefix": 6,
+            "active_rows": 0,
+            "physical_rows": 0,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 5,
+            "bucket_next": 5,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 0,
+            "prefix": 9,
+            "active_rows": 0,
+            "physical_rows": 0,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 27,
+            "bucket_next": 27,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          }
+        ]
+      }
+    },
+    "natural-controls-cpu": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 58052,
+        "started": 1793267306.0018663,
+        "seconds": 0.49456238746643066,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "natural-logits-control",
+        "backend": "cpu",
+        "models": 1,
+        "configurations": 1,
+        "original_GenerationRequest": true,
+        "natural_RequestLoop": false,
+        "extra_stop_first_draft": true,
+        "terminated_hypothesis_callbacks": 0,
+        "absorbing_bonus_reuses_last_row": true,
+        "ended_prepare_provider_calls": 0,
+        "stop_provider_calls": 2,
+        "stop_verified_rows": 2,
+        "stop_reserved_draws": 3,
+        "mixed_R2_dynamic_static": true,
+        "fully_published_R2_Verify_submissions": 1,
+        "member_cancel_R2_Verify_submissions": 1,
+        "survivor_same_R2_published": true,
+        "survivor_original_member_index": 1,
+        "postrestore_next_R1_Verify_submissions": 1,
+        "cancelled_member_postverify_auxiliary_calls": 0,
+        "real_q_leases_per_R2": 4,
+        "q_conditional_owners_cleared": true,
+        "whole_episode_retired": true,
+        "cancelled_member_head_ledger_RNG_unchanged": true,
+        "independent_request_RNG": true,
+        "HostImage_same_key_restore": true,
+        "parked_resident_versions": 0,
+        "old_checkpoints_unchanged": true,
+        "target_submissions": 10,
+        "synthetic_untrained": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0,
+        "state_checks": [
+          {
+            "sequence": 0,
+            "prefix": 3,
+            "active_rows": 3,
+            "physical_rows": 3,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 12,
+            "bucket_next": 12,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 1,
+            "prefix": 3,
+            "active_rows": 3,
+            "physical_rows": 3,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 11,
+            "bucket_next": 11,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 2,
+            "prefix": 6,
+            "active_rows": 3,
+            "physical_rows": 3,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 14,
+            "bucket_next": 14,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 3,
+            "prefix": 9,
+            "active_rows": 3,
+            "physical_rows": 3,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 17,
+            "bucket_next": 17,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          }
+        ]
+      }
+    },
+    "e4-cpu": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 47768,
+        "started": 1793267312.397576,
+        "seconds": 0.5640878677368164,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "mtp-e4-cache",
+        "backend": "cpu",
+        "models": 1,
+        "original_calibration_roles_used": 2,
+        "original_calibration_roles_available": 4,
+        "target_row_bytes": 64,
+        "draft_row_bytes": 128,
+        "target_storage": "E4M3FN",
+        "draft_storage": "BF16",
+        "exact_cache_backing_bytes": 314119,
+        "complete_byte_equal_checks": 11,
+        "K1_K2": true,
+        "StateOnly_no_draw": true,
+        "partial_HostImage": true,
+        "original_request_key": true,
+        "B2_actual_verify": true,
+        "controlled_B2_accepted_prefixes": [
+          1,
+          2
+        ],
+        "controlled_B2_RNG_unchanged": true,
+        "explicit_abort_whole_cohort": true,
+        "B2_withdrawn_member_unchanged": true,
+        "survivor_same_B2_commit": true,
+        "old_checkpoints_unchanged": true,
+        "final_versions": 0,
+        "synthetic_untrained": true,
+        "quality_claim": false,
+        "performance_claim": false
+      }
+    },
+    "mixed-lag-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 42180,
+        "started": 1793267318.5493195,
+        "seconds": 0.8710670471191406,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "backend": "cuda",
+        "mode": "mtp_mixed_lag",
+        "synthetic_untrained": true,
+        "requests": 2,
+        "base_lags": [
+          0,
+          1
+        ],
+        "controlled_accepted": [
+          1,
+          2
+        ],
+        "mixed_target_submissions": 2,
+        "target_submissions": 14,
+        "target_rows_per_member": 2,
+        "actual_draft_rows": 3,
+        "physical_draft_rows": 4,
+        "hidden_indices": [
+          0,
+          3,
+          1,
+          0
+        ],
+        "token_indices": [
+          2,
+          1,
+          3,
+          0
+        ],
+        "natural_processed_target": [
+          1,
+          1
+        ],
+        "natural_processed_draft": [
+          1,
+          2
+        ],
+        "state_checks": [
+          {
+            "sequence": 0,
+            "prefix": 3,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 3,
+            "exact_next": 59,
+            "bucket_next": 59,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 0,
+            "prefix": 5,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 4,
+            "exact_next": 7,
+            "bucket_next": 7,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 1,
+            "prefix": 3,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 2,
+            "exact_next": 22,
+            "bucket_next": 22,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 1,
+            "prefix": 5,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 5,
+            "exact_next": 41,
+            "bucket_next": 41,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 2,
+            "prefix": 3,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 3,
+            "exact_next": -1,
+            "bucket_next": -1,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 2,
+            "prefix": 5,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 6,
+            "exact_next": -1,
+            "bucket_next": -1,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          }
+        ],
+        "payloads_byte_equal": true,
+        "numerically_equivalent": true,
+        "old_checkpoints_unchanged": true,
+        "StateOnly_no_pending_or_draw": true,
+        "natural_R1_results_equal": true,
+        "mixed_engine_single_submission": true,
+        "original_member_roles_committed": true,
+        "retired_head_rejected_before_prepare": true,
+        "mixed_cancelled_head_ledger_rng_unchanged": true,
+        "mixed_cancelled_new_outputs": 0,
+        "mixed_survivor_original_submission_published": true,
+        "mixed_survivor_complete_R1_state_equal": true,
+        "full_request_history_import_coverage": false,
+        "final_versions": 0,
+        "natural_acceptance_quality_claim": false,
+        "performance_claim": false
+      }
+    },
+    "mtp-natural-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 42788,
+        "started": 1793267327.4398065,
+        "seconds": 3.365738868713379,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "mtp-natural-relay",
+        "backend": "cuda",
+        "models": 1,
+        "journeys": 2,
+        "prompt_tokens": 154,
+        "capacity": 256,
+        "resident_capacity": 1,
+        "state_slots": 5,
+        "hidden_slots": 6,
+        "output_limit": 40,
+        "outputs": 40,
+        "serial_submissions": 23,
+        "auto_submissions": 24,
+        "source_submissions": 22,
+        "successor_submissions": 3,
+        "successor_publications": 2,
+        "successor_discards": 1,
+        "successor_refusals": 0,
+        "pending_pairs_before_A_publish": 3,
+        "deferred_waves": 2,
+        "reserved_two_grants": 2,
+        "accepted_drafts": 17,
+        "rejected_drafts": 4,
+        "ledger_records": 23,
+        "natural_RequestLoop": true,
+        "controlled_acceptance": false,
+        "original_ledger_equal": true,
+        "generated_ids_equal": true,
+        "greedy_rng_unchanged": true,
+        "all_sources_expired": true,
+        "simultaneous_native_inflight_claim": false,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0,
+        "state_checks": [
+          {
+            "sequence": 0,
+            "prefix": 193,
+            "active_rows": 1,
+            "physical_rows": 1,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 14733,
+            "bucket_next": 14733,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          }
+        ],
+        "ids": [
+          71093,
+          12305,
+          198,
+          464,
+          19298,
+          198,
+          1445,
+          18904,
+          1120,
+          5586,
+          11,
+          51338,
+          11,
+          36760,
+          11,
+          1697,
+          11,
+          11906,
+          11,
+          3856,
+          3829,
+          271,
+          51,
+          283,
+          3856,
+          3829,
+          482,
+          51,
+          837,
+          198,
+          42,
+          283,
+          3856,
+          3829,
+          482,
+          42,
+          837,
+          271,
+          727,
+          14733
+        ],
+        "batches": [
+          {
+            "ordinal": 0,
+            "quota": 0,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 154,
+            "draft_rows": 154,
+            "generation": false,
+            "discarded": false
+          },
+          {
+            "ordinal": 1,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 2,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 3,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 4,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 5,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 6,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 7,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 8,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 9,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 10,
+            "quota": 4,
+            "reserved": 2,
+            "additional": 2,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 11,
+            "quota": 2,
+            "reserved": 2,
+            "additional": 2,
+            "emitted": 0,
+            "accepted": 0,
+            "draft_rows": 0,
+            "generation": true,
+            "discarded": true
+          },
+          {
+            "ordinal": 11,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 12,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 13,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 14,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 15,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 16,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 17,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 18,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 19,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 20,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 21,
+            "quota": 3,
+            "reserved": 2,
+            "additional": 1,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 22,
+            "quota": 1,
+            "reserved": 0,
+            "additional": 1,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          }
+        ]
+      }
+    },
+    "ordinary-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 48068,
+        "started": 1793267655.7218792,
+        "seconds": 1.3776557445526123,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "backend": "cuda",
+        "fixture": "untrained_GA_H64",
+        "prompt_tokens": 18,
+        "outputs_per_live_member": 14,
+        "capacity": 32,
+        "in_flight_batches": 2,
+        "control_and_candidate_arms": 16,
+        "same_original_executor": true,
+        "complete_prefix_state_epoch_rng_equal": true,
+        "actual_owner_credit_checked": true,
+        "all_source_session_page_owners_retired": true,
+        "model_eos_run": false,
+        "synthetic_v64_extra_stop_shares_eos_contract": true,
+        "synthetic_fixture_directory": "continuous-extra-stop-v64",
+        "synthetic_role_payload_bytes": 65536,
+        "accepted_work_control_exception": true,
+        "gpu_native_fault_injected": false,
+        "model_quality_claim": false,
+        "performance_claim": false,
+        "candidates": [
+          {
+            "requests": 1,
+            "mode": "normal",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 5,
+            "max_consecutive_pending": 5,
+            "submit_before_observe": 5,
+            "renewals": 4,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "normal",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 5,
+            "max_consecutive_pending": 5,
+            "submit_before_observe": 5,
+            "renewals": 4,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "credit_exhaustion",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 1,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "member_cancel",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 1,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "yield_resume",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 1,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "cancel_then_control_exception",
+            "pumps": 16,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 1,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 3,
+            "control_exceptions": 1,
+            "aborted_actual_submissions": 2
+          },
+          {
+            "requests": 1,
+            "mode": "extra_stop",
+            "pumps": 13,
+            "actual_batches": 13,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 3,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 1,
+            "extra_stop_accepted_successor": true,
+            "discarded_batches": 1,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "extra_stop",
+            "pumps": 15,
+            "actual_batches": 15,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 3,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 1,
+            "extra_stop_accepted_successor": true,
+            "discarded_batches": 1,
+            "survivor_r1_steps": 2,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          }
+        ]
+      }
+    }
+  },
+  "preserved_failures": [
+    {
+      "attempt": 1,
+      "process": {
+        "state": "TERMINAL",
+        "pid": 54372,
+        "started": 1793267286.1210606,
+        "seconds": 0.49604249000549316,
+        "exit": 1,
+        "timed_out": false
+      },
+      "reason": "B cold reserved slot was incorrectly checked as a discarded cancellation slot.",
+      "product_change_needed": false,
+      "preserved_source": "failed-history-source"
+    },
+    {
+      "attempt": 2,
+      "process": {
+        "state": "TERMINAL",
+        "pid": 45560,
+        "started": 1793267519.3609018,
+        "seconds": 0.8725559711456299,
+        "exit": 1,
+        "timed_out": false
+      },
+      "reason": "Generic ordinary preflight helper imported an MTP checkpoint with Text role.",
+      "product_change_needed": false,
+      "preserved_source": "failed-history-source2"
+    },
+    {
+      "attempt": 3,
+      "process": {
+        "state": "TERMINAL",
+        "pid": 50556,
+        "started": 1793267690.0492442,
+        "seconds": 0.860029935836792,
+        "exit": 1,
+        "timed_out": false
+      },
+      "reason": "New next R1 round omitted ACK of the outputs now published by original B2.",
+      "product_change_needed": false,
+      "preserved_source": "failed-history-source3"
+    }
+  ],
+  "source_freeze": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 638427,
+      "sha256": "e2507db937e3fd4a15c89528aa67b8f824682c0db699d80a66dd9ecd6e0d2013"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_generation_wave_case.h",
+      "bytes": 12744,
+      "sha256": "aeb7bde96a9357bab158afb5fbc9302727e15b422f62aaacdf2fe700b5d07880"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_history_control_case.h",
+      "bytes": 22218,
+      "sha256": "5ee91db41ce1410499d9eb9bbdc39aad2577992eacb9e87686ac27aa505c733f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_e4_case.h",
+      "bytes": 27473,
+      "sha256": "4f7ee0b28aa70ccb94cdf751ac96787ca1b27aaf72b0e0ab90a7d4ba328102af"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_mixed_lag_case.h",
+      "bytes": 29329,
+      "sha256": "662b7b6af231956749af22e156862b65ed91d743d6533e3c9449e2b338126c66"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_natural_logits_control_case.h",
+      "bytes": 26349,
+      "sha256": "fe34f4a94dd1c01e55b242525a2b1fb3b8edcd532a8df1c2f64054f7bf3723cf"
+    }
+  ],
+  "reference_sources": [
+    {
+      "project": "vllm",
+      "local_HEAD": "276fbcff2717bd934cfa37c8a2e4c391f3e7237b",
+      "source_files": [
+        {
+          "path": "C:\\public\\project-hyle\\vllm\\vllm\\v1\\core\\sched\\scheduler.py",
+          "bytes": 162487,
+          "sha256": "938c9ce589e4fd9a7a36065a1592fb091ee7f39fd52875f9d5410f8c05ad24e0"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\vllm\\vllm\\v1\\worker\\gpu_input_batch.py",
+          "bytes": 48601,
+          "sha256": "79f1dad9d093f404ad84d8e94906227d69620d356175654e4e8dd1377b55f388"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\vllm\\vllm\\v1\\worker\\gpu_model_runner.py",
+          "bytes": 334085,
+          "sha256": "491751bed71a2e4502229bce31e997921321103fe1a77db17c40829a5d4c7d74"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\vllm\\vllm\\model_executor\\models\\qwen3_5_mtp.py",
+          "bytes": 11766,
+          "sha256": "fbf31b1dd2b63eaf1911e325e3b43db602cf1d4268dfb2d388727e44caffadc2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\vllm\\vllm\\model_executor\\models\\deepseek_mtp.py",
+          "bytes": 23415,
+          "sha256": "aae80e30b2dbfd1df41b83f51aaba4722e9f2dc3b4479d2a38ce1e32926fac11"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\vllm\\vllm\\model_executor\\models\\qwen3_5.py",
+          "bytes": 27942,
+          "sha256": "ea7e71303c902b9678e85ff3e9a75a7ab6e69b5770605d540ad6ab1084e18187"
+        }
+      ],
+      "worktree_clean_claim": false,
+      "latest_upstream_claim": false
+    },
+    {
+      "project": "sglang",
+      "local_HEAD": "234ccba7f625e12639e621044496bcc6197c3758",
+      "source_files": [
+        {
+          "path": "C:\\public\\project-hyle\\sglang\\python\\sglang\\srt\\managers\\scheduler.py",
+          "bytes": 265382,
+          "sha256": "705fdfaacea7f3eff59e4103e078eadb9fd9adff7ce83948d6df6786f0c96a1f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\sglang\\python\\sglang\\srt\\managers\\schedule_batch.py",
+          "bytes": 168067,
+          "sha256": "514bbcbc6f6555042c660196aa7e55443e590c18203ceb7d7f008adf292f47f9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\sglang\\python\\sglang\\srt\\speculative\\eagle_info.py",
+          "bytes": 17773,
+          "sha256": "b0ae7719dcd20a52cb7897c78444dcdd2c962d7cfbcad98e6bf504bf8b9f7c7e"
+        }
+      ],
+      "worktree_clean_claim": false,
+      "latest_upstream_claim": false
+    },
+    {
+      "project": "TensorRT-LLM",
+      "local_HEAD": "46d9966b54d9d11998b712e732fb20f64d4d35c0",
+      "source_files": [
+        {
+          "path": "C:\\public\\project-hyle\\TensorRT-LLM\\tensorrt_llm\\_torch\\pyexecutor\\engine\\runners\\decoder\\inputs.py",
+          "bytes": 119858,
+          "sha256": "8d3ba522d8de71f1cbf60c6470760633ff027bcfa6bc1a5f896259d58affa42c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\TensorRT-LLM\\tensorrt_llm\\_torch\\pyexecutor\\engine\\runners\\decoder\\runner.py",
+          "bytes": 40714,
+          "sha256": "9f799860dbfa62124e7333f0329ca4401806001706c4428090e7ce72fe2f2e6d"
+        }
+      ],
+      "worktree_clean_claim": false,
+      "latest_upstream_claim": false
+    }
+  ],
+  "reference_conclusions": [
+    "Local vLLM separates common batch/request identity from Qwen/DeepSeek MTP math and recurrent state layouts.",
+    "Finished/withdrawn host publication is separate from whole submitted execution and delayed block retirement.",
+    "SGLang keep_indices jointly filters request, sampler and speculative metadata for the next batch; do not rewrite submitted row positions."
+  ],
+  "boundaries": [
+    "This is a finite member-withdrawal slice, not completion of model-independent execution orchestration.",
+    "MTP cancellation cases use real CPU/CUDA consumers with synthetic finite GA/H64/V64 weights; trained Qwen2B CUDA is an unchanged natural MTP/pipeline regression.",
+    "Cancelled rows may already have executed inside the original shared Graph; only post-verify host selection/auxiliary repair/publication is skipped.",
+    "Single/all-member, pre-submit and explicit whole-episode abort retain original native retirement; E4 explicitly checks whole-episode abort.",
+    "No GPU physical-inflight assertion, device fault injection, model-quality, throughput, other-platform or arbitrary-model claim.",
+    "Earlier successful cases were not rerun after history-helper-only fixes; product source remained identical. Original dependency receipts and failed-helper snapshots are preserved.",
+    "No extra Source, executor, completion owner, model download, pool expansion or output-credit bypass."
+  ],
+  "archive": {
+    "path": "docs\\evidence\\correctness\\inference-mtp-member-withdrawal-2026-10-29.zip",
+    "bytes": 411985,
+    "sha256": "9ac70251e8b33fc51747e70c41eb6e67e24c2bf639ef910f38927c71f7882bf3"
+  },
+  "cleanup": {
+    "script": {
+      "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+      "bytes": 3632,
+      "sha256": "7c3e0b317421bf8da739b6240ba9c1fdc486f73a47f20d2519cd931992a5ae53"
+    },
+    "result": {
+      "deleted_files": 9,
+      "deleted_bytes": 388522348,
+      "retained_objects": 5,
+      "retained_SDK_inputs": 227,
+      "native_source_and_receipts_deleted": false
+    },
+    "reuse_base": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-member-withdrawal-20261029\\model-link-base.json",
+      "bytes": 96936,
+      "sha256": "0084b19a0a49a1542e2f769fc44df06fa0f0629c48c4f1fbfb74c34ff431fdd2"
+    }
+  }
+}

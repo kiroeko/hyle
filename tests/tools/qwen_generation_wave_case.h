@@ -10,6 +10,7 @@ namespace i = hyle::inference;
 namespace h = qwen_host_image_case;
 namespace s = qwen_mtp_batch_state_case;
 namespace t = qwen_mtp_stop_case;
+namespace p = qwen_packed_prefill_case;
 using h::require;
 
 struct Saved final {
@@ -73,14 +74,16 @@ struct Policy final {
       if (cancel) {
         require(expected == 2 && batch.size() == 2, "cancel witness lost its original B2 cohort");
         (void)requests[0].session->stop();
-        require(model.active_step->cancelled && !model.active_step->discard_stopped_members,
-            "MTP stop changed the original whole-episode cancellation policy");
+        require(!model.active_step->cancelled && model.active_step->discard_stopped_members &&
+            model.active_step->execution.completion.valid(),
+            "MTP prefill withdrawal aborted its surviving member's original submission");
       }
     });
     require(!model.active_step && !model.successor_step && !model.carrier_borrowed,
         "generation wave returned before original native retirement/transaction recovery");
     for (const auto &call : batch) {
-      require(call.disposition == (cancel ? q::EvaluationDisposition::kCancelled : q::EvaluationDisposition::kPublished),
+      require(call.disposition == (cancel && call.request == &requests[0]
+          ? q::EvaluationDisposition::kCancelled : q::EvaluationDisposition::kPublished),
           "executed call lost its real cancellation/publication disposition");
       require(call.draft_log_probabilities.empty() && !call.logits.counts.lease.valid(),
           "retired generation call retained private q/counts leases");
@@ -89,7 +92,7 @@ struct Policy final {
   void publish(q::PreparedGenerationCall &call) {
     require(prepared == expected && submissions == 1,
         "wave prompt publication preceded complete preparation/native execution");
-    if (cancel) {
+    if (cancel && call.request == &requests[0]) {
       require(call.disposition == q::EvaluationDisposition::kCancelled,
           "move-back failed to return the actual Cancelled disposition");
       ++cancelled;
@@ -109,6 +112,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   q::Model model(std::move(source), geometry, 16, plan, {}, false, q::ReplayPolicy::kCommands, SIZE_MAX,
       {.enabled = false, .policy = {}, .seed = 123}, 0, {.primary = kind});
   model.configure_draft_policy({.max_drafts = 2});
+  const auto storage = q::take(i::HostStateStorage::create(model.execution, 1, 4u << 20));
   const std::array shapes{std::size_t{3}};
   for (const auto width : {std::size_t{1}, std::size_t{2}}) {
     model.prepare_family(shapes, false, width, q::GraphRole::kMtpPrefill);
@@ -148,35 +152,58 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       require(old_copy_reproduced, "old copied-call witness did not reproduce the incorrect prompt publication");
     } else {
       i::execute_request_batches(workspace, keys, policy);
-      require(policy.cancelled == 2 && policy.publications == 2,
-          "common wave did not return both original cancelled calls before prompt publication");
+      require(policy.cancelled == 1 && policy.publications == 2,
+          "common wave did not return the original cancelled A and published B before prompt publication");
     }
     native_submissions += policy.submissions;
-    require(prefix.size() == 0 && requests[0].session->stopping && !requests[1].session->stopping,
-        "cancelled wave published a prefix or poisoned its unchanged peer");
-    for (std::size_t member = 0; member != 2; ++member) unchanged(model, requests[member], saved[member]);
+    require(prefix.size() == (old_copy ? 0u : 1u) && requests[0].session->stopping && !requests[1].session->stopping,
+        "withdrawn A published a prefix or poisoned B's original publication");
+    unchanged(model, requests[0], saved[0]);
+    require(requests[1].request_key == saved[1].key && requests[1].ledger->committed_count == 1 &&
+        requests[1].ledger->records[0].committed && requests[1].ledger->records[0].requests == 2 &&
+        requests[1].ledger->records[0].member_index == 1 && requests[1].progress.observed_commits() == 1 &&
+        requests[1].progress.generated.size() == 1 && requests[1].progress.prefilled &&
+        requests[1].session->length() == 3 && requests[1].session->head.epoch() == saved[1].epoch + 1,
+        "B did not publish its original B2 result, request key, ledger, output and epoch");
     if (!old_copy) {
-      const auto peer_key = requests[1].request_key;
-      Policy retry{model, requests, prefix, saved}; retry.cancel = false; retry.expected = 1;
-      const std::array peer{peer_key}; i::execute_request_batches(workspace, peer, retry);
-      native_submissions += retry.submissions;
-      require(requests[1].request_key == peer_key && requests[1].ledger->committed_count == 1 &&
-          requests[1].progress.generated.size() == 1 && requests[1].history->length == 3 &&
-          requests[1].session->length() == 3 && requests[1].session->head.epoch() == saved[1].epoch + 1 &&
-          prefix.size() == 1 && retry.publications == 1,
-          "survivor failed same-key retry or lost its real committed prompt/prefix");
+      require(requests[1].history->length == 3 && prefix.size() == 1,
+          "original surviving B2 result did not publish its complete prompt and prefix");
+      // The third Graph is an independent R1 oracle from a fresh request. B
+      // itself is never resubmitted to manufacture successful cancellation.
+      std::vector<q::GenerationRequest> controls; controls.reserve(1);
+      controls.emplace_back("generation-wave-control", prompts[1], std::filesystem::path{}, 2);
+      t::prepare_request(controls[0], 16);
+      i::RequestWindow control_window; control_window.prepare(1, 1);
+      controls[0].request_key = control_window.enqueue(0); control_window.admitted(controls[0].request_key);
+      q::cache::PrefixCache control_prefix(1); std::array<Saved, 2> control_saved{};
+      Policy control{model, controls, control_prefix, control_saved}; control.cancel = false; control.expected = 1;
+      const std::array control_key{controls[0].request_key}; i::execute_request_batches(workspace, control_key, control);
+      native_submissions += control.submissions;
+      p::StepReport checked;
+      p::compare(model, p::capture(model, *controls[0].session, storage),
+          p::capture(model, *requests[1].session, storage), checked);
+      require(checked.numerically_equivalent && controls[0].progress.generated == requests[1].progress.generated &&
+          controls[0].session->head->sampling == requests[1].session->head->sampling &&
+          requests[1].ledger->committed_count == 1 && requests[1].session->head.epoch() == saved[1].epoch + 1 &&
+          control.submissions == 1 && control.publications == 1 && policy.submissions == 1,
+          "surviving original B2 complete state/output/RNG differs from the independent R1 oracle");
+      while (control_prefix.evict_one()) {}
+      h::retire(controls[0].session);
       unchanged(model, requests[0], saved[0]);
     }
     while (prefix.evict_one()) {}
     for (auto &request : requests) h::retire(request.session);
-    require(!model.snapshot_versions.live && !model.active_step && !model.carrier_borrowed,
+    require(!model.snapshot_versions.live && !model.active_step && !model.successor_step && !model.carrier_borrowed &&
+        !storage->live_images(),
         "generation-wave cleanup retained an original state/native owner");
   }
+  require(native_submissions == 3, "generation-wave changed its finite three original target submissions");
   std::cout << "{\"status\":\"PASS\",\"case\":\"generation-wave\",\"backend\":\"" << h::backend_name(kind)
       << "\",\"models\":1,\"native_submissions\":" << native_submissions
       << ",\"old_copy_component_failure_reproduced\":true,\"cancelled_disposition_returned\":true,"
          "\"whole_wave_prepare_before_publish\":true,\"cancelled_heads_ledger_rng_unchanged\":true,"
-         "\"survivor_same_key_retry\":true,\"prefix_unpublished_on_cancel\":true,"
+         "\"survivor_original_submission_published\":true,\"survivor_complete_R1_state_equal\":true,"
+         "\"cancelled_prefix_unpublished\":true,\"survivor_prefix_published\":true,"
          "\"quality_claim\":false,\"performance_claim\":false,\"final_versions\":0}\n";
   return 0;
 }

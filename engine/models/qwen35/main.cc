@@ -1156,6 +1156,7 @@ struct StepState final {
   bool prepared = false, submitted = false, cancelled = false;
   std::size_t state_slot = 0;
   bool discard_stopped_members = false;
+  bool withdrawn(const StepMember &member) const noexcept;
 
   hyle::Result<bool> try_abort() noexcept {
     return execution.recover([&]() noexcept {
@@ -1194,14 +1195,17 @@ public:
   std::weak_ptr<ColdResources> sampling_owner() const noexcept { return resources_; }
   Session(const Session &) = delete;
   Session &operator=(const Session &) = delete;
-  // After ordinary multi-request submission, stop withdraws only this member's
-  // publication while a survivor remains. Other roles and pre-submit stop abort
-  // the whole episode. Cancellation never proves native retirement.
+  // After multi-request submission, stop withdraws only this member's
+  // publication while a survivor remains, including MTP. Single/all-member and
+  // pre-submit stops abort the whole episode. Cancellation is not retirement.
   hyle::Status stop() noexcept;
   inference::RetirementObservation try_retire() noexcept;
   inference::RetirementObservation drain() noexcept;
   ~Session();
 };
+bool StepState::withdrawn(const StepMember &member) const noexcept {
+  return discard_stopped_members && member.session->stopping;
+}
 struct EvaluationRequest final {
   std::shared_ptr<Session> session;
   std::span<const std::int32_t> ids;
@@ -1286,6 +1290,11 @@ struct MtpRoundResult final {
   std::size_t proposal_count = 0, consumed_drafts = 0, verified_rows = 0;
   std::size_t auxiliary_graph_calls = 0;
   std::vector<std::int32_t> emitted;
+  void reset() noexcept {
+    auto storage = std::move(emitted);
+    *this = MtpRoundResult{};
+    emitted = std::move(storage); emitted.clear();
+  }
 };
 struct MtpGenerationSelection final {
   std::shared_ptr<Session> session;
@@ -5127,7 +5136,7 @@ public:
             throw std::runtime_error("generation ledger entry differs from its actual episode");
           if (outputs[j].expected_episode && !outputs[j].expected_episode->committed)
             throw std::runtime_error("expected episode record is not committed");
-          if (step.discard_stopped_members && outputs[j].session->stopping) {
+          if (step.withdrawn(step.members[j])) {
             step.members[j].commit_ledger = nullptr; step.members[j].commit_record = nullptr;
             outputs[j].generation_ledger->discard_uncommitted();
           } else {
@@ -5155,7 +5164,7 @@ public:
         auto bad = std::ranges::find_if(io.sampling_valid_values, [](auto value) { return value != 1; });
         if (step.discard_stopped_members)
           while (bad != io.sampling_valid_values.end() &&
-              step.members[static_cast<std::size_t>(bad - io.sampling_valid_values.begin())].session->stopping)
+              step.withdrawn(step.members[static_cast<std::size_t>(bad - io.sampling_valid_values.begin())]))
             bad = std::find_if(bad + 1, io.sampling_valid_values.end(), [](auto value) { return value != 1; });
         if (bad != io.sampling_valid_values.end()) {
           std::optional<std::size_t> participant;
@@ -5163,8 +5172,8 @@ public:
           // Only the failure path inspects the remainder for a unique 0.
           bool unique = true;
           for (auto it = bad + 1; it != io.sampling_valid_values.end(); ++it)
-            if (*it != 1 && !(step.discard_stopped_members &&
-                step.members[static_cast<std::size_t>(it - io.sampling_valid_values.begin())].session->stopping)) unique = false;
+            if (*it != 1 && !step.withdrawn(
+                step.members[static_cast<std::size_t>(it - io.sampling_valid_values.begin())])) unique = false;
           if (*bad == 0 && unique)
             participant = static_cast<std::size_t>(bad - io.sampling_valid_values.begin());
           throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
@@ -5189,12 +5198,14 @@ public:
       }
       for (std::size_t j = 0; j < outputs.size(); ++j) {
         auto &member = step.members[j];
+        // Retain every original physical owner for whole-cohort tail return,
+        // even when no accepted prefix will be published for this member.
+        member.verified_last_page = member.next->pages.back().page();
+        if (step.withdrawn(member)) { next_ids[j] = -1; continue; }
         if (!member.accepted_tokens || member.accepted_tokens > member.input_tokens ||
             (member.accepted_tokens != member.input_tokens && !verifies_prefix(phase.family->role)) ||
-            (!state_only && !(step.discard_stopped_members && member.session->stopping) &&
-                (next_ids[j] < 0 || next_ids[j] >= vocabulary)))
+            (!state_only && (next_ids[j] < 0 || next_ids[j] >= vocabulary)))
           throw std::runtime_error("invalid accepted target boundary");
-        member.verified_last_page = member.next->pages.back().page();
         if (member.accepted_tokens != member.input_tokens) {
           member.next->length = member.base->length + member.accepted_tokens;
           const auto page_count = (member.next->length + cache::Plan::page_rows - 1) / cache::Plan::page_rows;
@@ -5209,6 +5220,7 @@ public:
         }
       }
       if (has_mtp(phase.family->role)) for (auto &member : step.members) {
+        if (step.withdrawn(member)) continue;
         auto &draft = *member.next->draft;
         draft.lag = static_cast<std::uint32_t>(member.next->length - draft.frontier);
         draft.catchup_token = draft.lag ? member.draft_token : -1;
@@ -5236,6 +5248,7 @@ public:
         auto writers = take(transactions.returned(bank_index));
         for (std::size_t j = 0; j < outputs.size(); ++j) {
           auto &member = step.members[j];
+          if (step.withdrawn(member)) continue;
           if (bank.kind == StateBankKind::kHidden) {
             const auto count = verifies_prefix(phase.family->role) ? member.accepted_tokens : 1;
             const bool repair = phase.family->role == GraphRole::kVerify && cache_plan.draft_cache;
@@ -5271,6 +5284,7 @@ public:
       for (std::size_t layer = 0; layer < page_inventory.keys.size(); ++layer) {
         for (std::size_t j = 0; j < outputs.size(); ++j) {
           auto &member = step.members[j];
+          if (step.withdrawn(member)) continue;
           if (!member.key_updates.try_resize(page_inventory.keys.size()) ||
               !member.value_updates.try_resize(page_inventory.keys.size())) throw std::bad_alloc{};
           auto key = step.execution.sources ? take(step.execution.sources->pages[layer * 2].ready_delta(
@@ -5287,6 +5301,8 @@ public:
         std::vector<std::pair<std::uint32_t, std::size_t>> owners; owners.reserve(outputs.size());
         for (std::size_t j = 0; j < outputs.size(); ++j) {
           auto &member = step.members[j]; auto &draft = *member.next->draft;
+          owners.emplace_back(draft.pages.back().page(), j);
+          if (step.withdrawn(member)) continue;
           auto key = step.execution.sources ? take(step.execution.sources->pages[draft_bank].ready_delta(
               step.execution.appends[draft_bank], take(member.draft_frame(true).view()), member.draft_layout))
               : take(step.execution.appends[draft_bank].ready_delta(take(member.draft_frame(true).view()), member.draft_layout));
@@ -5295,7 +5311,6 @@ public:
               : take(step.execution.appends[draft_bank + 1].ready_delta(take(member.draft_frame(false).view()), member.draft_layout));
           member.draft_updates[0] = take(member.draft_frame(true).prepare_commit(std::move(key)));
           member.draft_updates[1] = take(member.draft_frame(false).prepare_commit(std::move(value)));
-          owners.emplace_back(draft.pages.back().page(), j);
         }
         std::sort(owners.begin(), owners.end());
         for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
@@ -5304,7 +5319,9 @@ public:
             const auto found = std::lower_bound(owners.begin(), owners.end(), std::pair{tail.page(), std::size_t{0}});
             if (found == owners.end() || found->first != tail.page())
               throw std::runtime_error("draft append returned a tail outside all final pages");
-            auto &member = step.members[found->second]; auto &draft = *member.next->draft;
+            auto &member = step.members[found->second];
+            if (step.withdrawn(member)) { tail = {}; continue; }
+            auto &draft = *member.next->draft;
             if (tail.reserved_rows() || member.next_draft_tails[bank - draft_bank].valid() ||
                 tail.initialized_rows() != draft.frontier % cache::Plan::page_rows)
               throw std::runtime_error("draft append returned an invalid committed frontier");
@@ -5316,7 +5333,8 @@ public:
       // actual target hidden rows here, before ledger checks or any head swap.
       complete(step);
       if (cache_plan.draft_cache)
-        for (const auto &member : step.members) validate_mtp_snapshot(*member.next, &member);
+        for (const auto &member : step.members)
+          if (!step.withdrawn(member)) validate_mtp_snapshot(*member.next, &member);
       for (std::size_t j = 0; j < outputs.size(); ++j) if (auto *record = step.members[j].commit_record) {
         const auto &member = step.members[j];
         record->requests = outputs.size(); record->member_index = j;
@@ -5364,7 +5382,7 @@ public:
           // A ready T2 tail already owns the verified physical frontier.
           // Partial acceptance only narrows read authority; discard its mutable
           // capability and use the original COW path next, never rewind it.
-          if (member.accepted_tokens != member.input_tokens) { tail = {}; continue; }
+          if (step.withdrawn(member) || member.accepted_tokens != member.input_tokens) { tail = {}; continue; }
           if (tail.reserved_rows() || member.next_tails[bank].valid() || tail.initialized_rows() != member.next->length % cache::Plan::page_rows)
             throw std::runtime_error("batch append returned an invalid committed tail");
           member.next_tails[bank] = std::move(tail);
@@ -5375,17 +5393,18 @@ public:
             member.session->pending != &step ||
             (member.session->stopping && !step.discard_stopped_members))
           throw std::runtime_error("batch snapshot expected-base conflict");
-      for (const auto &member : step.members) member.preflight_frames();
+      for (const auto &member : step.members)
+        if (!step.withdrawn(member)) member.preflight_frames();
       // Every delta owns its changed guards and every tail has transferred.
       // A successor still retains this original Step, but must not thereby
       // pin replaced input tails from its consumed returned append wrappers.
       for (auto &append : step.execution.appends) append = {};
       // All fallible native/export/metadata work is complete. The head swaps
-      // below cannot throw. Stopped ordinary members discard their unpublished
+      // below cannot throw. Stopped members discard their unpublished
       // candidate; every surviving member keeps this original successful work.
       for (std::size_t j = 0; j < step.members.size(); ++j) {
         auto &member = step.members[j];
-        if (step.discard_stopped_members && member.session->stopping) {
+        if (step.withdrawn(member)) {
           published_members[j] = 0;
           if (outputs[j].disposition) *outputs[j].disposition = EvaluationDisposition::kCancelled;
           continue;
@@ -5601,6 +5620,7 @@ public:
     if (step.phase->family->role != GraphRole::kVerify || !cache_plan.draft_cache)
       throw std::runtime_error("draft repair requires its unpublished target verifier");
     for (auto &member : step.members) {
+      if (step.withdrawn(member)) continue;
       const auto n = member.accepted_tokens;
       if (!n || member.verification_inputs.size() < n || member.carry_prefix.size() != n)
         throw std::runtime_error("draft repair requires every actually consumed target prefix row");
@@ -5629,7 +5649,7 @@ public:
   void finish_recursive_mtp(std::span<const MtpGenerationSelection> selections,
       std::span<const std::int32_t> eos, std::span<const EvaluationOutput> outputs,
       std::span<MtpRoundResult> results, Observe observe) {
-    if (!active_step || selections.empty() || active_step->phase->family->role != GraphRole::kVerify ||
+    if (!active_step || selections.empty() || !active_step->phase || active_step->phase->family->role != GraphRole::kVerify ||
         !cache_plan.draft_cache || selections.size() != active_step->members.size() ||
         outputs.size() != selections.size() || results.size() != selections.size())
       throw std::runtime_error("recursive finish requires the complete original verification batch");
@@ -5638,8 +5658,11 @@ public:
     std::vector<std::int32_t> next(selections.size(), -1);
     for (std::size_t j = 0; j < selections.size(); ++j) {
       const auto &selection = selections[j];
-      if (!selection.output_quota || selection.session != active_step->members[j].session ||
-          selection.session != outputs[j].session || inference::request_token_stopped(
+      if (selection.session != active_step->members[j].session || selection.session != outputs[j].session)
+        throw std::runtime_error("recursive selection differs from its original batch member");
+      results[j].reset();
+      if (active_step->withdrawn(active_step->members[j])) continue;
+      if (!selection.output_quota || inference::request_token_stopped(
               selection.expected_pending, eos, active_step->members[j].stop_policy))
         throw std::runtime_error("recursive generation requires its nonterminal pending token and positive quota");
       results[j].emitted.clear(); results[j].emitted.reserve(active_step->input_tokens);
@@ -5658,6 +5681,7 @@ public:
       }
       for (std::size_t j = 0; j < selections.size(); ++j) {
         auto &member = step.members[j]; auto &result = results[j]; const auto &selection = selections[j];
+        if (step.withdrawn(member)) { selected[j] = -1; continue; }
         if (member.first_input != selection.expected_pending || selection.expected_pending != member.base->next_id)
           throw std::runtime_error("recursive verifier input differs from the emitted pending token");
          const auto width = member.input_tokens;
@@ -5741,6 +5765,7 @@ public:
     finish_selected_evaluations(outputs, next_ids,
         [](std::span<const std::int32_t> ids, StepState &step, std::span<std::int32_t> next) {
           for (std::size_t j = 0; j < step.members.size(); ++j) {
+            if (step.withdrawn(step.members[j])) { next[j] = -1; continue; }
             step.members[j].accepted_tokens = step.members[j].input_tokens; next[j] = ids[j];
           }
         }, std::move(observe));
@@ -5759,8 +5784,11 @@ public:
     const auto role = active_step->phase->family->role;
     const auto &selected_sampler = active_step->phase->family->sampling->configuration;
     for (std::size_t j = 0; j < selections.size(); ++j) {
-      if (!selections[j].output_quota || selections[j].session != active_step->members[j].session ||
-          selections[j].session != outputs[j].session || selections[j].expected_pending < 0 ||
+      if (selections[j].session != active_step->members[j].session || selections[j].session != outputs[j].session)
+        throw std::runtime_error("MTP selection differs from its original batch member");
+      results[j].reset();
+      if (active_step->withdrawn(active_step->members[j])) continue;
+      if (!selections[j].output_quota || selections[j].expected_pending < 0 ||
           selections[j].expected_pending >= vocabulary || inference::request_token_stopped(
               selections[j].expected_pending, eos, active_step->members[j].stop_policy))
         throw std::runtime_error("MTP generation requires its emitted pending token and positive quota");
@@ -5773,6 +5801,7 @@ public:
         [&](std::span<const std::int32_t> ids, StepState &step, std::span<std::int32_t> selected) {
           for (std::size_t j = 0; j < selections.size(); ++j) {
             const auto &selection = selections[j]; auto &member = step.members[j]; auto &result = results[j];
+            if (step.withdrawn(member)) { selected[j] = -1; continue; }
             if (member.first_input != selection.expected_pending)
               throw std::runtime_error("MTP generation input differs from its emitted pending token");
             result.target_first = ids[drafts_token(role) ? 2 * j : j]; result.draft = member.draft_token;
@@ -5940,8 +5969,7 @@ hyle::Status Session::stop() noexcept {
   stopping = true;
   if (pending) {
     if (!pending->cancelled && pending->submitted && pending->execution.has_completion() &&
-        pending->phase && pending->phase->family->role == GraphRole::kText &&
-        model_ && !model_->cache_plan.draft_cache && pending->members.size() > 1 &&
+        pending->phase && model_ && pending->members.size() > 1 &&
         std::ranges::any_of(pending->members, [](const auto &member) { return !member.session->stopping; })) {
       pending->discard_stopped_members = true;
       // This acknowledges the requested withdrawal, rather than reporting a
@@ -7511,8 +7539,8 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
       catch (...) { (void)model.abort_episode(); throw; }
     }
     if (model.active_step && model.active_step->cancelled) {
-      // MTP stops cancel their one original shared episode. Its unchanged
-      // peer can retry only after actual retirement returns every transaction.
+      // A single/all-member or pre-submit stop cancels the whole episode.
+      // Its original transactions still require actual native retirement.
       const bool requested = std::ranges::any_of(model.active_step->members,
           [](const auto &member) { return member.session->stopping; });
       auto retired = model.abort_episode();
@@ -7570,7 +7598,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
       target_seconds = (std::max)(target_seconds, calls[j].step_seconds);
       proposal_seconds += calls[j].proposal_seconds;
       calls[j].step_seconds += calls[j].proposal_seconds;
-      if (calls[j].proposal_seconds) {
+      if (calls[j].proposal_seconds && calls[j].disposition == EvaluationDisposition::kPublished) {
         auto &ledger = *calls[j].request->ledger;
         ledger.records[ledger.committed_count - 1].step_seconds += calls[j].proposal_seconds;
       }

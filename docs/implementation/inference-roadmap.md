@@ -62,9 +62,11 @@ Head成功后立即无失败地记录该成员结果，后续报告／catch-up�
 从实际状态池布局冷存writer字节，原物理槽复用batch准备数组并立即释放暂借layout。六项有限检查通过，数学、原lease及Graph权限不变；
 普通CPU内存直接物化到CUDA的测试假设被原Graph拒绝，改用原qualified pinned-host资源，没有放宽复制资格或新增回退。
 逐成员完整状态原子发布已有能力，不要求不同用户的所有Head额外组成跨用户原子事务；必要的模型差异分别表达。
-多成员MTP的撤销目前仍取消整批，幸存者退休后重试；普通成员已有独立保留结果。
-下一片统一原成员撤销事实，仍完整取回原Store／Append，跳过撤销成员的接受选择、repair与发布，避免重跑幸存者；
-不能只放宽stop条件，也不能把本轮proposal耗时写入撤销成员上一条已提交记录。
+多成员MTP撤销已沿普通路径统一为原成员发布资格：完整取回原Store／Append，跳过撤销成员的接受选择、repair与发布，
+幸存者使用原批次结果，不重跑；本轮proposal耗时只写实际新提交，不能改撤销成员上一条记录。
+单成员、全部停止、提交前停止和owner明确abort仍按原整episode退休；
+[七项有限消费者](../evidence/correctness/inference-mtp-member-withdrawal-2026-10-29.json)通过prefill、混合lag K1、history／动态条件K2及E4状态，
+并保留普通CUDA流水与真实模型MTP回归。三次history测试接线失败如实保留；没有新的吞吐或全平台结论。
 本轮工程入口、完整依赖装配、文档导航及许可交付整改已完成，结果见[工程检查记录](../evidence/licensing/dependency-licenses-2026-10-29.json)。
 当前收敛完整执行编排、普通／MTP共同机制及SDK接线，随后集中连续后继、GPU融合及带宽等性能工作。
 共同架构同时审查多模型、复杂阶段及未来多端点的依赖边界，避免将当前Qwen／单卡放置固化为通用合同；
@@ -160,12 +162,12 @@ CPU／CUDA各通过MTP 17项、普通13项完整状态对照，原modifier配置
 首轮符号view接线错误、测试API和原终止错误观察错误均保留原收据；四个已成功进程未因后续测试修正而重跑。
 细节见[共同采样与history合同](../architecture/inference-design.md)及[本片记录](../evidence/correctness/inference-history-logits-2026-10-28.json)。
 本轮history-only R1严格回放与K1／K2续算在CPU／CUDA各通过9项完整状态逐字节对照；control各2项，并实际核只读C0别名容量拒绝／释放重试和同key HostImage换出恢复。
-MTP生成入口也接入提交后正常取消：原Step确因成员停止而cancelled，须先由原abort证明实际退休，才撤未提交账簿、释放q／C0并标整cohort Cancelled；
-CPU／CUDA均已检查真实B2 K2提交后stop A正常返回和原生退休：head／ledger／RNG／pending不发布，peer原key继续。未知／未退、native或其它错误仍带原Status和退休事实抛出，不影响普通多成员幸存者发布合同。
+2026-10-28的MTP生成检查采用当时整episode取消政策：原Step确因成员停止而cancelled，须先由原abort证明实际退休，才撤未提交账簿、释放q／C0并标整cohort Cancelled；
+CPU／CUDA当时检查B2 K2提交后stop A正常返回和原生退休：head／ledger／RNG／pending不发布，peer原key继续。当前逐成员撤回另记；未知／未退、native或其它错误仍带原Status和退休事实抛出。
 这些检查使用小型合成制品和原generation入口＋RequestWindow，不是新增完整RequestLoop／服务层验证；逐前缀动态语法、其它平台和未知native故障未由此证明，没有trained quality或性能结论。[本轮记录](../evidence/correctness/inference-history-controls-2026-10-28.json)。
 E4目标KV＋原BF16 draft的MTP组合已接通：准备器提供两组实际行字节，容量按独立银行计费，
 沿原schema／COW／状态及HostImage执行。CPU／CUDA各11次完整状态字节比较、真实B2受控不同接受前缀、
-整episode取消后幸存请求续算及默认路径回归通过；元数据与独立容量检查通过。
+当时整episode取消后幸存请求续算及默认路径回归通过；元数据与独立容量检查通过，当前撤回合同另记。
 没有新增draft E4校准、整模型质量、原生平台或速度结论。[本片记录](../evidence/correctness/inference-mtp-e4-2026-10-28.json)。
 逐请求停止政策已接齐提案、接受、观察、缓存命中及恢复，host与CPU／CUDA有限完整状态检查通过；该旅程未运行真实模型EOS，ignoreEOS为host规则检查。
 普通请求坏logits元数据的分类和原key归属已补，CPU／CUDA双请求及原数值失败回归通过。

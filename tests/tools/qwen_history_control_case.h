@@ -40,7 +40,7 @@ inline void cache_is_committed(q::Model &model, q::GenerationLedger &ledger) {
 }
 
 inline void unchanged_committed(q::Model &model, q::GenerationRequest &request, const e::SavedRequest &before,
-    const std::shared_ptr<i::HostStateStorage> &storage) {
+    const std::shared_ptr<i::HostStateStorage> &storage, bool discarded_attempt = true) {
   require(request.session && request.session->head.get() == before.head && request.session->head.epoch() == before.epoch &&
       request.progress.generated == before.generated && request.progress.prefilled && !request.progress.turn_done &&
       request.progress.observed_commits() == before.observed && request.ledger->committed_count == before.commits &&
@@ -52,14 +52,19 @@ inline void unchanged_committed(q::Model &model, q::GenerationRequest &request, 
   for (std::size_t at = 0; at != before.commits; ++at)
     require(e::same_record(request.ledger->records[at], before.records[at]),
         "history cancellation changed an authoritative committed record");
-  const auto &slot = request.ledger->records.at(before.commits);
-  const auto &old_slot = before.records.at(before.commits);
-  require(!slot.committed && !slot.input_deferred && !slot.accepted && !slot.emitted_count && !slot.quota &&
-      !slot.input_owner && slot.pending_input == -1 && slot.prompt_ids.empty() && slot.accepted_inputs.empty() &&
-      slot.verification_inputs.empty() && !slot.draft_limit && !slot.verified_rows &&
-      slot.emitted.capacity() >= old_slot.emitted.capacity() && slot.accepted_inputs.capacity() >= old_slot.accepted_inputs.capacity() &&
-      slot.verification_inputs.capacity() >= old_slot.verification_inputs.capacity(),
-      "cancelled ledger retained proposal/publication authority or shrank its reusable cold metadata capacity");
+  if (discarded_attempt) {
+    const auto &slot = request.ledger->records.at(before.commits);
+    const auto &old_slot = before.records.at(before.commits);
+    require(!slot.committed && !slot.input_deferred && !slot.accepted && !slot.emitted_count && !slot.quota &&
+        !slot.input_owner && slot.pending_input == -1 && slot.prompt_ids.empty() && slot.accepted_inputs.empty() &&
+        slot.verification_inputs.empty() && !slot.draft_limit && !slot.verified_rows &&
+        slot.emitted.capacity() >= old_slot.emitted.capacity() && slot.accepted_inputs.capacity() >= old_slot.accepted_inputs.capacity() &&
+        slot.verification_inputs.capacity() >= old_slot.verification_inputs.capacity(),
+        "cancelled ledger retained proposal/publication authority or shrank its reusable cold metadata capacity");
+  }
+  for (std::size_t at = before.commits + (discarded_attempt ? 1u : 0u); at < before.records.size(); ++at)
+    require(e::same_record(request.ledger->records[at], before.records[at]),
+        "capacity rejection or member withdrawal changed another reserved ledger record");
   // The pointer/epoch check above ties this live head to its immutable old
   // checkpoint. A stopped Session cannot admit a new export operation.
   qwen_history_control_case::check_old(model, before.checkpoint, before.image, storage);
@@ -124,8 +129,18 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   std::array before{e::save(model, owners[0], storage), e::save(model, owners[1], storage)};
   std::array expected{hc::counts(model, hc::consumed(*owners[0].ledger), std::span(&owners[0].session->head->next_id, 1)),
       hc::counts(model, hc::consumed(*owners[1].ledger), std::span(&owners[1].session->head->next_id, 1))};
+  const std::array planned{std::size_t{3}};
+  const auto survivor_control = [&] {
+    auto control = model.create_session(planned, before[1].checkpoint, q::GraphRole::kVerify);
+    const q::LogitsInputs c0{.counts = m::ready<std::int32_t>(model, q::Type::kInt32, expected[1])};
+    auto result = control_round(model, control, c0);
+    auto image = p::capture(model, *control, storage); h::retire(control);
+    return std::pair{std::move(result), std::move(image)};
+  }();
+  std::vector<p::StepReport> checks;
   std::array<q::LogitsInput, 2> escaped;
   bool submitted = false;
+  std::size_t decisions = 0, repairs = 0;
   {
     std::array calls{prepare(0), prepare(1)};
     q::execute_generation_calls(model, calls, false, nullptr, owners, [&] {
@@ -142,21 +157,45 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
             require(row.valid() && row.size() == static_cast<std::size_t>(model.vocabulary) * sizeof(float),
                 "history cancel lost its complete normalized q owner");
         }
+        decisions = model.prefix_decision_graph_calls; repairs = model.draft_program_graph_calls;
         submitted = true; (void)owners[0].session->stop();
-        require(model.active_step->cancelled && !model.active_step->discard_stopped_members,
-            "history MTP member cancellation changed the original whole-episode policy");
+        require(!model.active_step->cancelled && model.active_step->discard_stopped_members &&
+            model.active_step->execution.has_completion() && model.active_step->members.size() == 2,
+            "history member stop cancelled the surviving member's original shared verifier");
+        for (const auto &call : calls)
+          require(call.logits.counts.lease.valid() && call.draft_log_probabilities.size() == 2 &&
+              std::ranges::all_of(call.draft_log_probabilities, [](const auto &lease) { return lease.valid(); }),
+              "member stop released q/C0 before the original complete cohort retired");
     });
     require(submitted && !model.active_step && !model.carrier_borrowed,
         "history cancelled cohort did not return normally after real native retirement");
-    for (const auto &call : calls)
-      require(call.disposition == q::EvaluationDisposition::kCancelled && !call.logits.counts.lease.valid() &&
-          call.draft_log_probabilities.empty(), "normally cancelled call retained private q/C0 or claimed publication");
+    for (std::size_t member = 0; member != calls.size(); ++member)
+      require(calls[member].disposition == (member ? q::EvaluationDisposition::kPublished : q::EvaluationDisposition::kCancelled) &&
+          !calls[member].logits.counts.lease.valid() && calls[member].draft_log_probabilities.empty(),
+          "member cancellation lost the original survivor publication or retained retired q/C0");
   } // Completed/aborted caller metadata drops q and its own C0 references.
   t::idle(model);
+  require(model.prefix_decision_graph_calls == decisions + 1 && model.draft_program_graph_calls == repairs + 1,
+      "cancelled K2 member executed acceptance sampling or draft repair after its original verifier");
+  unchanged_committed(model, owners[0], before[0], storage);
   for (std::size_t member = 0; member != 2; ++member) {
-    unchanged_committed(model, owners[member], before[member], storage);
     hc::same_counts(model, escaped[member], expected[member]); cache_is_committed(model, *owners[member].ledger);
   }
+  auto expected_generated = before[1].generated;
+  expected_generated.insert(expected_generated.end(), survivor_control.first.emitted.begin(), survivor_control.first.emitted.end());
+  const auto &record = owners[1].ledger->records.at(before[1].commits);
+  require(owners[1].ledger->committed_count == before[1].commits + 1 &&
+      owners[1].progress.observed_commits() == before[1].observed + 1 && owners[1].progress.generated == expected_generated &&
+      owners[1].session->head.epoch() == before[1].epoch + 1 &&
+      owners[1].session->head->sampling == before[1].checkpoint->sampling.advanced(5) &&
+      record.committed && record.requests == 2 && record.member_index == 1 && record.verified_rows == 3 &&
+      record.after == q::generation_boundary(*owners[1].session->head),
+      "survivor did not publish once under its original R2 member index and RNG interval");
+  for (std::size_t at = 0; at != before[1].commits; ++at)
+    require(e::same_record(owners[1].ledger->records[at], before[1].records[at]),
+        "survivor publication changed an older committed record");
+  h::same_round(survivor_control.first, owners[1].rounds.back());
+  u::same(model, survivor_control.second, p::capture(model, *owners[1].session, storage), checks);
   require(!owners[1].session->stopping && !owners[1].session->failed && owners[1].session->retirement_status.ok() &&
       owners[1].request_key == keys[1] && window.matches(keys[1]), "cancelled MTP peer permanently stopped or lost its original key");
 
@@ -164,17 +203,23 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   require(pool.stats().max_blocks == plan.active_sequences && pool.stats().live_blocks == 2,
       "escaped readonly C0 did not occupy the original fixed executing-cohort pool");
   const auto pending = owners[1].session->head->next_id;
+  const auto next_counts = hc::counts(model, hc::consumed(*owners[1].ledger), std::span(&pending, 1));
+  auto committed_survivor = e::save(model, owners[1], storage);
   bool refused = false;
   try { (void)model.history_logits_inputs(*owners[1].ledger, std::span(&pending, 1)); }
   catch (const std::runtime_error &failure) { refused = std::string_view(failure.what()) == "lease block capacity"; }
   const auto denied = pool.allocate(static_cast<std::size_t>(model.vocabulary) * sizeof(std::int32_t));
   require(refused && !denied && denied.error().IsResourceExhausted() && pool.stats().live_blocks == 2,
       "escaped C0 caused no real bounded-pool refusal or expanded its capacity");
-  cache_is_committed(model, *owners[1].ledger); unchanged_committed(model, owners[1], before[1], storage);
+  // B published successfully; its next cold slot was never prepared or
+  // discarded. Capacity rejection must preserve that exact slot, including
+  // its original sentinel entries, rather than impose A's cleared-slot shape.
+  cache_is_committed(model, *owners[1].ledger); unchanged_committed(model, owners[1], committed_survivor, storage, false);
+  committed_survivor.checkpoint.reset();
   escaped = {}; require(pool.stats().live_blocks == 0, "retired escaped C0 still retained original pool blocks");
   {
     auto retry = model.history_logits_inputs(*owners[1].ledger, std::span(&pending, 1));
-    hc::same_counts(model, retry.counts, expected[1]); cache_is_committed(model, *owners[1].ledger);
+    hc::same_counts(model, retry.counts, next_counts); cache_is_committed(model, *owners[1].ledger);
     require(pool.stats().max_blocks == plan.active_sequences && pool.stats().live_blocks == 1,
         "same-key C0 retry used a larger or second snapshot pool");
   }
@@ -190,7 +235,6 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   owners[0].session.reset(); window.retire_active(keys[0]); window.release(keys[0]);
   require(!window.matches(keys[0]) && window.matches(keys[1]), "retiring the stopped member changed its peer's key");
 
-  std::vector<p::StepReport> checks;
   auto image = model.export_session(*owners[1].session, storage); const auto parked = h::read_image(*image);
   const auto boundary = q::generation_boundary(*owners[1].session->head);
   const auto generated = owners[1].progress.generated; const auto observed = owners[1].progress.observed_commits();
@@ -205,18 +249,23 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       "host restore resampled pending/cursor or changed the original history/request progress");
   u::same(model, parked, p::capture(model, *owners[1].session, storage), checks);
   window.wake(keys[1]); window.admitted(keys[1]);
-  const std::array planned{std::size_t{3}};
   auto restored_checkpoint = owners[1].session->checkpoint();
   auto control = model.create_session(planned, restored_checkpoint, q::GraphRole::kVerify);
-  const q::LogitsInputs explicit_c0{.counts = m::ready<std::int32_t>(model, q::Type::kInt32, expected[1])};
+  const q::LogitsInputs explicit_c0{.counts = m::ready<std::int32_t>(model, q::Type::kInt32, next_counts)};
   const auto control_result = control_round(model, control, explicit_c0);
   const auto epoch = owners[1].session->head.epoch();
   const auto cursor = owners[1].session->head->sampling;
+  // B's original R2 outputs now occupy the real delivery window. A new round
+  // needs the caller's ACK, even after HostImage restore; restoring state does
+  // not manufacture output credit or acknowledge any previously emitted token.
+  require(delivery[1].available(owners[1].progress.generated.size()) == 0,
+      "survivor's original R2 outputs did not retain their bounded delivery credit");
+  delivery[1].acknowledge_prefix(owners[1].progress.generated.size(), owners[1].progress.generated.size());
   std::array survivor{prepare(1)};
   q::execute_generation_calls(model, survivor, false, nullptr, owners, [&] {
     require(model.active_step->submitted && model.active_step->members.size() == 1 && model.active_step->input_tokens == 3,
-        "history peer did not continue in its original R1 K2 geometry");
-    hc::same_counts(model, survivor[0].logits.counts, expected[1]);
+        "restored history peer did not begin its next R1 K2 round after the original R2 publication");
+    hc::same_counts(model, survivor[0].logits.counts, next_counts);
   });
   h::same_round(control_result, owners[1].rounds.back());
   u::same(model, p::capture(model, *control, storage), p::capture(model, *owners[1].session, storage), checks);
@@ -240,8 +289,9 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       model.page_inventory.free_ids.size() == plan.max_pages && model.draft_inventory.free_ids.size() == model.draft_inventory.owners.size(),
       "history controls retained old heads, images, request keys, C0 blocks or page writers"); t::idle(model);
   std::cout << "{\"status\":\"PASS\",\"case\":\"history-control\",\"backend\":\"" << h::backend_name(kind)
-      << "\",\"models\":1,\"configurations\":1,\"history_only\":true,\"cancelled_B2_K2\":true,"
-         "\"whole_episode_retired\":true,\"postsubmit_cancel_returned_normally\":true,\"peer_same_key_R1\":true,"
+      << "\",\"models\":1,\"configurations\":1,\"history_only\":true,\"member_cancel_B2_K2\":true,"
+         "\"whole_episode_retired\":true,\"postsubmit_cancel_returned_normally\":true,\"survivor_same_R2_published\":true,"
+         "\"survivor_original_member_index\":1,\"cancelled_member_postverify_auxiliary_calls\":0,\"postrestore_next_R1_round\":true,"
          "\"committed_counts_only\":true,\"escaped_readonly_C0\":true,\"bounded_pool_refusal\":true,"
          "\"release_then_retry\":true,\"idle_HostImage_restore\":true,\"idle_resident_versions_zero\":true,\"old_checkpoints_unchanged\":true,"
          "\"quality_claim\":false,\"performance_claim\":false,\"final_versions\":0,\"state_checks\":[";
