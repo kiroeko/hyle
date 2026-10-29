@@ -1,5 +1,21 @@
 include_guard(GLOBAL)
 
+# Static development archives and runtime distributions both redistribute HYLE.
+# Keep the same notices in component-only installs and standalone engine installs.
+function(hyle_install_project_notices source_root)
+  foreach(_component IN ITEMS Hyle_Runtime Hyle_Development)
+    install(FILES "${source_root}/LICENSE"
+      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
+      RENAME HYLE-LICENSE COMPONENT "${_component}")
+    install(FILES "${source_root}/NOTICE"
+      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
+      RENAME HYLE-NOTICE COMPONENT "${_component}")
+    install(FILES "${source_root}/THIRD_PARTY_NOTICES.md"
+      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
+      RENAME THIRD_PARTY-NOTICES.md COMPONENT "${_component}")
+  endforeach()
+endfunction()
+
 function(_hyle_package_define_export_group group)
   foreach(_target IN LISTS ARGN)
     get_target_property(_existing "${_target}" HYLE_PACKAGE_EXPORT_GROUP)
@@ -339,14 +355,7 @@ function(hyle_install_package)
   unset(_hyle_public_header)
   unset(_hyle_public_header_directory)
   unset(_hyle_public_header_relative)
-  install(FILES "${HYLE_SOURCE_DIR}/LICENSE"
-    DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
-    RENAME HYLE-LICENSE
-    COMPONENT Hyle_Runtime)
-  install(FILES "${HYLE_SOURCE_DIR}/THIRD_PARTY_NOTICES.md"
-    DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
-    RENAME THIRD_PARTY-NOTICES.md
-    COMPONENT Hyle_Runtime)
+  hyle_install_project_notices("${HYLE_SOURCE_DIR}")
   # Third-party payload follows the same module-owned registry as export and
   # feature metadata; the package layer never switches on dependency names.
   hyle_package_install_registered_assets()

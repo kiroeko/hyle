@@ -3,6 +3,8 @@
 Core、Error、Platform、Mem、Container、Time、Math、Obs和Util各有公开产品，但不需要各复制一套
 生命周期、错误、交付与验证规则。本页保留共同原则及无法由它们直接推出的实现取舍。
 具体接口见[用户文档](../user/README.md)与[公开头](../../include/hyle/)。
+各模块的详细决策、被放弃的方案与已知限制见[架构索引](README.md#基础模块)中的模块设计文档，
+实测数据见[模块性能数据](../developer/performance/modules.md)。
 
 ## 五项共同原则
 

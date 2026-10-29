@@ -1,0 +1,85 @@
+{
+  "date": "2026-10-29",
+  "scope": "Project license migration and selected dependency notice delivery; no claim of universal legal clearance.",
+  "project": {
+    "license": "Apache-2.0",
+    "choice": "Explicitly confirmed by the maintainer.",
+    "official_text": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+    "body_matches_official": true,
+    "normalization": "Only line endings and surrounding blank newlines for comparison.",
+    "spdx": "29 replacements in 28 existing first-party files, including SIMD generator templates; third-party and historical declarations retained."
+  },
+  "inventory": {
+    "locked_dependencies": 56,
+    "locked_sdks": 2,
+    "local_license_files_verified": 89,
+    "normalized_lock_sha256": "346d87aa28fd0700b6119b273f0aff3b93e246a7bcc059e9545d03bfbe674cba",
+    "boundary": "Fetched texts were checked where original local caches exist; no assertion of reading every source tree or of a reproducible binary build."
+  },
+  "fixes": [
+    "HYLE LICENSE, NOTICE and third-party index included in Runtime and Development installs, including standalone engine.",
+    "Authenticated dependency notices included in Development-only as well as Runtime-only installs.",
+    "FlashInfer NOTICE and four bundled license texts added to the lock and package projection.",
+    "flatcc original portable headers retain the complete additional MIT, BSD-3-Clause and Zlib notices.",
+    "CPU LibTorch missing source and bundled notices supplemented by original texts and explicit provenance.",
+    "CUDA ATen also includes common CPU runtime notices; CUDA wheel/NVIDIA runtime notices and Windows Toolkit EULA retained.",
+    "Explicit Windows SHARED OpenSSL targets retain matching supplier notices during staging/install; shared SDK uses relative installed assets and static SDK uses the consumer supplier.",
+    "Unknown initialization products rejected before dependency preparation using the real CMake product catalog."
+  ],
+  "configuration_policy": {
+    "finding": "No remaining public ATen/Provider/TLS/HTTP2 capability-trimming options found in the current implementation.",
+    "behavior": "Selected products and hardware routes require their complete dependency closure. Missing dependencies fail explicitly; no feature removal to reduce downloads.",
+    "retained": "Products, hardware backends, link/install mode, tests, benchmarks, diagnostics, ISA/toolchain and cache locations.",
+    "corrected_document": "docs/architecture/build-system.md no longer instructs maintainers to add ON/OFF for ordinary product capabilities."
+  },
+  "torch_provenance": "../../../third_party/torch_sdk/ORIGIN.json",
+  "verification": {
+    "native_builds": 0,
+    "native_inference_runs": 0,
+    "model_downloads": 0,
+    "checks": [
+      {
+        "command": "python tests/tooling/package_components_test.py",
+        "result": "PASS",
+        "tests": 17,
+        "scope": "Tiny interface targets, actual install/import operations, static/shared and component-only notice bytes; no native SDK build."
+      },
+      {
+        "command": "python tests/tooling/development_scripts_test.py",
+        "result": "PASS",
+        "tests": 40,
+        "scope": "Mocked initialization/build/test commands; no toolchain or dependency download."
+      },
+      {
+        "command": "python tests/tooling/openssl_runtime_test.py",
+        "result": "PASS",
+        "tests": 9,
+        "scope": "NONE-language metadata fixtures and actual fake-DLL component installation; supplier bytes and configuration mapping checked, no native compilation or DLL execution."
+      },
+      {
+        "command": "python scripts/simd-op-coverage.py --check",
+        "result": "PASS",
+        "operations": 387,
+        "families": 2
+      },
+      {
+        "command": "cmake -P cmake/HyleDependencyVersions.cmake",
+        "result": "PASS",
+        "scope": "In-tree and integrated-source identities, after correcting the stale IREE patch snapshot digest."
+      }
+    ]
+  },
+  "existing_iree_digest_repair": {
+    "dependency": "iree_vulkan_runtime_patches",
+    "before": "35a19c375a6e9e152494907108061691eb553ff9fa3870066dd8998ede9c4a76",
+    "after": "36fe25bad8fe5ef59dfa7b5df9762d4df9308120fb369ee63b12cabae0f58dc6",
+    "basis": "The first direct audit failed. Worktree normalized bytes equal every tracked HEAD blob; no extra or missing files. Updated only the stale digest, not the upstream identity or vendor source."
+  },
+  "limits": [
+    "GNU/LLVM OpenMP exact binary source releases are unproven; fixed-source original texts identify terms and do not establish source-offer compliance.",
+    "The companion CPU wheel aggregate is supplementary attribution, not the identity of a locked LibTorch SDK binary.",
+    "UNKNOWN or STATIC Windows OpenSSL imports remain externally supplied; arbitrary strings in a .lib are not treated as proof of a runtime DLL.",
+    "New notice install tests ran on Windows; no new full Linux/macOS native build or installation is claimed.",
+    "No new throughput or memory result; the existing performance table remains unchanged."
+  ]
+}

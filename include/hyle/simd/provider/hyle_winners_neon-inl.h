@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary */
+/* SPDX-License-Identifier: Apache-2.0 */
 #pragma once
 
 // Finite AppleClang/NEON HYLE winners retained by simd-v3.  The functions use

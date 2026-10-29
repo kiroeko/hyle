@@ -40,5 +40,8 @@ add_subdirectory(models/qwen35)
 
 if(_hyle_engine_standalone)
   include(GNUInstallDirs)
-  install(TARGETS hyle_engine RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+  install(TARGETS hyle_engine RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT Hyle_Runtime)
+  include("${CMAKE_CURRENT_LIST_DIR}/../cmake/HylePackage.cmake")
+  hyle_install_project_notices("${CMAKE_CURRENT_LIST_DIR}/..")
 endif()

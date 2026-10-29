@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -88,6 +89,12 @@ endforeach()
 target_link_libraries(hyle_product_compute INTERFACE hyle_compute_backend_cpu)
 
 include("${HYLE_SOURCE_DIR}/cmake/HylePackageRegistry.cmake")
+set(HYLE_DEPENDENCY_NAMES fixture_runtime)
+set(HYLE_DEP_FIXTURE_RUNTIME_CLASS in_tree)
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/fixture-LICENSE" "fixture source license\n")
+string(SHA256 _fixture_license_sha256 "fixture source license\n")
+set(HYLE_DEP_FIXTURE_RUNTIME_LICENSE_FILE_SPECS
+  "hyle|third_party/fixture/LICENSE|${_fixture_license_sha256}")
 add_library(HyleFixtureRuntime::runtime INTERFACE IMPORTED)
 target_link_libraries(hyle_core INTERFACE HyleFixtureRuntime::runtime)
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/HyleFixtureRuntimeConfig.cmake"
@@ -97,6 +104,9 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/HyleFixtureRuntimeConfig.cmake"
   "endif()\nset(HyleFixtureRuntime_FOUND TRUE)\n")
 hyle_register_package_dependency(NAME bundled_runtime OWNER core
   FIND_DEPENDENCIES HyleFixtureRuntime
+  LOCKED_DEPENDENCIES fixture_runtime
+  RUNTIME_FILE_SPECS
+    "${CMAKE_CURRENT_BINARY_DIR}/fixture-LICENSE|share/licenses/Hyle|fixture-LICENSE"
   DEVELOPMENT_FILE_SPECS
     "${CMAKE_CURRENT_BINARY_DIR}/HyleFixtureRuntimeConfig.cmake|lib/cmake/HyleFixtureRuntime")
 hyle_register_package_dependency(NAME cpu OWNER compute_backend_cpu
@@ -129,6 +139,22 @@ function(_hyle_component_public_headers factor output)
     set(${output} "${HYLE_SOURCE_DIR}/include/hyle/version.h" PARENT_SCOPE)
   endif()
 endfunction()
+include("${HYLE_SOURCE_DIR}/src/compute_provider_native/torch_cpu_fetch.cmake")
+set(_torch_notice_source "${CMAKE_CURRENT_BINARY_DIR}/torch-notice-source")
+set(_torch_notice_root "${_torch_notice_source}/third_party/torch_sdk")
+foreach(_notice IN ITEMS LICENSE NOTICE ORIGIN.json)
+  file(WRITE "${_torch_notice_root}/${_notice}" "fixture Torch ${_notice}\n")
+endforeach()
+foreach(_platform IN ITEMS windows linux macos)
+  file(WRITE "${_torch_notice_root}/licenses/${_platform}/LICENSE.txt"
+    "fixture ${_platform} runtime terms\n")
+endforeach()
+file(WRITE "${_torch_notice_root}/licenses/common/LICENSE.txt"
+  "fixture companion release notices\n")
+set(_torch_sdk "${CMAKE_CURRENT_BINARY_DIR}/torch-sdk")
+file(WRITE "${_torch_sdk}/share/doc/dnnl/LICENSE" "fixture bundled oneDNN terms\n")
+file(WRITE "${_torch_sdk}/include/not-a-notice.h" "must not ship as a notice\n")
+hyle_install_torch_sdk_notices("${_torch_notice_source}" "${_torch_sdk}")
 include("${HYLE_SOURCE_DIR}/cmake/HylePackage.cmake")
 hyle_install_package()
 '''
@@ -198,6 +224,40 @@ class PackageComponentsTest(unittest.TestCase):
             "cmake", "-S", source, "-B", source / "build",
             "-DHyle_DIR=" + str(self.prefixes[variant] / "lib/cmake/Hyle"),
             "-DCMAKE_PREFIX_PATH=" + str(self.dependencies), success=success)
+
+    def test_project_and_dependency_notices_ship_in_each_component(self):
+        notices = {"HYLE-LICENSE": (ROOT / "LICENSE").read_bytes(),
+                   "HYLE-NOTICE": (ROOT / "NOTICE").read_bytes(),
+                   "THIRD_PARTY-NOTICES.md":
+                       (ROOT / "THIRD_PARTY_NOTICES.md").read_bytes(),
+                   "fixture-LICENSE":
+                       (self.directory / "build-static/fixture-LICENSE").read_bytes()}
+        prefixes = list(self.prefixes.values())
+        for variant in ("static", "shared"):
+            for component in ("Hyle_Runtime", "Hyle_Development"):
+                prefix = self.directory / f"notices-{variant}-{component}"
+                self.command("cmake", "--install", self.directory / f"build-{variant}",
+                             "--prefix", prefix, "--component", component)
+                prefixes.append(prefix)
+        for prefix in prefixes:
+            for name, expected in notices.items():
+                with self.subTest(prefix=prefix.name, notice=name):
+                    self.assertEqual(
+                        (prefix / "share/licenses/Hyle" / name).read_bytes(), expected)
+            platform = "windows" if os.name == "nt" else "macos" if sys.platform == "darwin" else "linux"
+            source = self.directory / "build-static/torch-notice-source/third_party/torch_sdk"
+            installed = prefix / "share/licenses/Hyle/torch-sdk"
+            for name in ("LICENSE", "NOTICE", "ORIGIN.json", f"licenses/{platform}/LICENSE.txt",
+                         "licenses/common/LICENSE.txt"):
+                with self.subTest(prefix=prefix.name, torch_notice=name):
+                    self.assertEqual((installed / name).read_bytes(), (source / name).read_bytes())
+            for other in {"windows", "linux", "macos"} - {platform}:
+                self.assertFalse((installed / "licenses" / other).exists())
+            original = self.directory / "build-static/torch-sdk/share/doc/dnnl/LICENSE"
+            self.assertEqual(
+                (prefix / "share/licenses/Hyle/torch-cpu-sdk/share/doc/dnnl/LICENSE").read_bytes(),
+                original.read_bytes())
+            self.assertFalse((prefix / "share/licenses/Hyle/torch-cpu-sdk/include").exists())
 
     def test_mem_import_does_not_probe_or_import_compute(self):
         for variant in ("static", "shared"):

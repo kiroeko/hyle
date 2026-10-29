@@ -1,28 +1,46 @@
 # Qwen3.5-2B 模型实现与诊断
 
-这是Hyle正式推理入口当前使用的Qwen模型实现，使用本地官方权重执行完整24层纯文本计算，默认关闭MTP，尚未接视觉。Qwen BF16 greedy K1、多会话／多轮／B2及有界重建已在CUDA、Apple和Vulkan实际运行；[三平台单槽结果](../../../docs/evidence/correctness/qwen-serial-carrier-2026-10-22.json)覆盖同一N2／R2三会话两轮，[完整前缀检查](../../../docs/evidence/correctness/qwen-native-protocol-2026-10-22.json)每平台各534项向量与自身相同分块参考逐字节一致。既有Vulkan大权重展开、结果复用和冗余双槽引起的OOM已修复。[本轮有限取消／退休与Vulkan额度恢复](../../../docs/evidence/correctness/qwen-native-protocol-2026-10-22.json)已通过；Apple仅证明原生FIFO接纳Model Job，未证明该Model的GPU命令已提交。此前列明制品的有限MTP流程与四臂性能窗口已完成；它们不代表全部模型、量化、平台或完整任务质量通过。当前功能边界与用法见[引擎指南](../../../docs/user/inference.md)。
-模型与生成策略属于引擎层，Compute／Graph保持模型无关。当前仍需本地输入准备，通用loader、C++ tokenizer和服务入口属于后续工作。
-CPU入口的缓存元数据计费已修，普通／MTP P154＋4 短旅程通过，见[库存与有限预算记录](../../../docs/evidence/correctness/qwen-mtp-cpu-layout-budget-2026-10-24.json)。固定 GPTQ 制品也已完成 CPU／CUDA 普通与 MTP 四条短旅程，见[原量化完整模型记录](../../../docs/evidence/correctness/qwen-mtp-original-gptq-2026-10-24.json)；更多量化、采样与状态的已检查范围见[推理工程范围](../../../docs/implementation/inference-roadmap.md)，不据此声称完整质量或性能通过。
+这是 `hyle` 程序当前使用的真实文本模型实现，默认关闭 MTP，尚未接视觉。
+当前仍以真实模型检验底层支持，使用本地权重清单和 token IDs；通用目录 loader、C++ tokenizer、
+聊天服务及稳定引擎应用 API 留待后续。第一次构建、准备输入与运行见[引擎指南](../../../docs/user/inference.md)。
+模块用户仍可独立使用 Compute／Graph；模型、生成政策和请求编排归 `engine/`。
 
-以下精度说明对应官方BF16权重；量化制品以JSON中的实际`score_policy`为准。target与MTP draft末分数显式使用公共`dense-linear-f32`合同：原BF16权重和BF16激活直接得到F32 scores，中间linear仍为BF16。`score_dtype`／`score_policy`写入JSON，区别于旧BF16投影后再Cast(F32)的舍入；同一Model的缓存只属于其固定数学政策。CUDA默认路由已接cuBLASLt混合输出实现，权重只改描述符方向，消费者无需判断Provider。[本轮数值与完整窗口](../../../docs/evidence/performance/qwen-cublas-scores-2026-10-22.json)保留同一F32合同：普通固定输入的hidden／分数字节相同，P154／64自然输出窗prefill中位＋15.48%、综合＋1.82%，decode范围重叠、近持平；dedicated单进程旁采峰少108MiB。11项相关测试、真实双会话追赶和N1重建通过；这些不是完整模型质量或其它系统通过。下文历史逐字节结果仅对应原证据中的精度和分块。
+官方 BF16 与选定量化制品的整模型／组件检查范围见[推理工程范围](../../../docs/implementation/inference-roadmap.md)，
+不能从某个有限旅程外推全部模型、量化、平台或任务质量。最新速度与内存对照统一见
+[decode 性能资料](../../../docs/developer/performance/decode.md)，本页不重复旧性能窗口数字。
 
-`prepare.py` 校验原输入清单的13个文件，输出权重偏移和token IDs；Python只做输入准备与独立参考。
-官方 BF16 输入默认准备320个文本张量。`prepare.py --mtp`另含15个原始MTP张量；同一完整清单可用`--mtp off`只加载文本权重，或用`--mtp on`执行草拟与验证，默认 greedy、K1。量化制品的物理角色数不同，JSON 按实际加载清单计数；权重沿同一管线加载，见[原始GPU字节检查](../../../docs/evidence/correctness/qwen-mtp-weights-2026-10-22.json)。
-CPU／CUDA 已补有界多草稿、随机采样、置信阈值、完整及部分生成后检查点恢复，见[新增控制与检查点记录](../../../docs/evidence/correctness/qwen35-mtp-multidraft-checkpoint-controls-2026-10-24.json)。Apple／Vulkan 已完成 K1 普通／MTP、greedy／random，以及 [K4 随机和双用户 K2 随机](../../../docs/evidence/correctness/mtp-qwen35-native-multik-random-complete-input-2026-10-24.json)有限旅程。
-MTP复用Recipe和原Graph执行链：prefill保存独立草拟KV；每轮设备I32边连接草拟ID与目标T2，收齐原Completion后选择接受边界，一次提交target／draft／carry。接受后落后一行时，下轮用真实token和prior hidden追赶。输出额度或剩余上下文只有一行时走目标T1，同时维护草拟KV；遇EOS停止。CUDA自然接受／拒绝、追赶、旧快照分支及T1的[实际结果](../../../docs/evidence/correctness/qwen-mtp-round-2026-10-22.json)已记录。[取消、独立CPU参考和MTP peer](../../../docs/evidence/correctness/qwen-mtp-retirement-2026-10-22.json)另核原生退休、完整前缀恢复和有限协议输出。[P154／64自然输出四臂窗口](../../../docs/evidence/performance/qwen-mtp-window-2026-10-22.json)已完成；peer MTP从第19枚输出起分歧。后续固定同state对照已证明T1／T2形状数值差足以翻转本次相近top2，所测pending恢复未见额外误差；不等于全部rollback或完整质量通过，也不作同token速度胜负。
+## 输入与数值政策
 
-Model串行提交一个Graph batch，每个实际准备的形状只保留一个执行槽；批宽和MTP接受边界不增加在途Graph数量。T1 family／计划保持冷编；自然普通生成已知要decode时，在ready前准备T1载体，其余未选中的载体按需创建。旧快照通过独立readonly owner保活，完整结果读取和原生退休前不归还执行槽；捕获仍按实际绑定身份失效。[三平台多会话与CUDA取消检查](../../../docs/evidence/correctness/qwen-serial-carrier-2026-10-22.json)已记录，本次改动尚未做完整性能对比。
-普通与MTP共用自然生成循环：`--session-schedules FILE`运行多个会话，`--schedule FILE`运行单个会话，用`--mtp off|on`切换。普通路径只加载文本权重并使用Text图，不准备draft资源。自然多轮schedule交替写`prompt IDSFILE`和`generate N`，N为本轮最多输出数，包含prefill首token。仅一行prompt仍可配合`--steps N`，显式generate与显式steps互斥。MTP拒绝旧`decode IDSFILE`固定输入带，不将其解释为自然生成。`--active-sequences auto|R`按输入、缓存数量及预算解析；每波按实际T、角色及draft lag分桶，每桶用同一Model／Graph执行一个真实批次，不padding。各成员独立选择接受边界，全部expected base核对后一次提交所有head；取消任一成员则取消整批。
-驻留数可小于会话数：生成中的head受到保护，轮次间的空闲head按LRU淘汰，实际退休后才准入下一条。CPU账本保存实际已消费输入块及生成观察；正常恢复沿这些输入用原Graph重算，将draft补到target前缀并归一为lag0，不重新采样历史。接受两行时消费的是旧pending和当时接受的draft，bonus仍未消费。完整恢复成功才公开新Session；真实新预测、`recomputed_decision_changes`与`normalized_lag_rows`另列，允许合法数值变化。严格复现原R1角色／分块的旧恢复入口仅保留作诊断，不用于正常缓存恢复。
-下一轮prompt只提供新增用户输入，也可指向空IDS文件表示继续生成；首轮仍须非空。消费者把上一轮已返回但尚未写入KV的末尾token补在前面，恰好消费一次，不重复返回；该token由引擎输出记录保存，不能用恢复后的新greedy预测替换。draft落后一行时在同一Graph里追赶。因此新输入U行对应target的U＋1行，lag1时draft再多一行。EOS只结束当前生成轮次。
-多会话manifest默认`--prefix-cache auto`，单schedule默认off。初始prompt与完整生成轮次均可发布检查点，键只包含实际已消费的输入；快照保留target／draft KV、conv/GDN、carry、位置、pending和draft lag。只有真实保存的状态边界可以命中，radix分支不凭空制造中间状态；部分命中只计算实际后缀。完整prompt命中跳过target／draft计算：greedy执行0次Graph，random按当前请求RNG执行1次frontier采样Graph。恢复同一请求的完整生成检查点时保留它自己的RNG和pending，不重新抽样；未命中则沿已提交账本重建。目录与会话head共用N份版本预算，压力下先撤掉可淘汰的目录引用，N1续算不额外保留旧检查点。多轮自然生成使用schedule；`--continuation`、固定decode带、准备诊断和layer0 probe不适用于MTP入口。
-`--trace`按`prefill`、`mtp1`等轮次导出实际目标候选hidden／logits和已选状态，T2保留两行；多会话按`session<序号>_<ID>`子目录隔离。接受决策另列在stdout的`rounds`，不能把被拒绝行当成已提交状态。
+`prepare.py --model LOCAL_MODEL --output NEW_DIR` 默认扫描本地 `config.json`、safetensors 索引及
+张量头，校验实际角色、类型、形状和文件范围，对使用的原权重范围计算 hash，输出偏移与 token IDs。
+`--role-files` 使用固定 repository／revision 与角色 hash 的显式原文件记录，GGUF 使用
+`--gguf-role-files`。准备器不下载或复制整模型；原权重文件必须持续可访问。
+本地 tokenizer 由已安装的兼容 Transformers 调用，C++ 初始化脚本不安装该 Python 环境。
 
-```text
-hyle --inputs MTP_DIR --mtp on --session-schedules sessions.txt --steps 64 --capacity 1024
-```
+官方 BF16 输入包含 320 个文本张量；`prepare.py --mtp` 另含 15 个原 MTP 张量。
+完整清单可用 `--mtp off` 只加载文本权重，或用 `--mtp on` 执行草拟与验证。
+量化制品按实际物理角色计数，不能套用 BF16 张量数。FP8／量化 reader 与 KV 政策说明见
+[输入准备](../../../docs/user/inference.md#准备本地输入并运行)。target E4 KV 可与原 plain／BF16 draft KV 组合，
+二者独立描述、计费与追加；不推造 draft 校准参数，有限检查见[E4 MTP](../../../docs/evidence/correctness/inference-mtp-e4-2026-10-28.json)。
 
-自然多轮的schedule示例（此时命令行省略显式`--steps`）：
+官方 BF16 的 target 与 draft 末分数使用 `dense-linear-f32`：原 BF16 权重与激活得到 F32 scores，
+中间线性输出仍为 BF16；实际输入的 `score_dtype`／`score_policy` 写入 JSON。
+形状、批宽、分块及合法归约可引起数值变化，同 seed 不保证普通／MTP或不同后端逐 token 相同。
+完整状态、质量与性能分别检查；历史逐字节结果只覆盖其记录中的精度与分块。
+
+普通与 MTP 请求都支持固定的逐请求 bias／mask、历史罚分与逐假设前缀条件提供者。
+这些是 `engine/` 内的 C++ 请求扩展，目前没有对应 CLI 参数或安装后的引擎 SDK／server API。
+提供者取得当前 turn 已提交输出与未来草稿前缀；pending 已在前者，后者不重复它。
+q 与 p 复用同一不可变条件行；被取消或失败的候选不发布新的 head、账簿或 RNG。
+使用范围与有限检查见[采样说明](../../../docs/user/inference.md)，严格决策回放仍不凭空恢复外部 bias／mask 载荷。
+
+## 自然生成、批次与状态
+
+普通与 MTP 共用 `--schedule FILE`／`--session-schedules FILE` 自然请求循环；
+每轮交替写 `prompt IDSFILE` 和 `generate N`，N 包含 prefill 首 token。
+只有一行 prompt 时可用 `--steps N`，显式 generate 与显式 steps 互斥。
+下一轮 prompt 只含新增用户输入，可以为空；首轮必须非空。上一轮的末尾 pending 恰好补入一次，
+不重复返回，也不以恢复时的新预测替换历史输出。MTP 不接受固定 `decode IDSFILE` 输入带。
 
 ```text
 prompt first.ids
@@ -31,31 +49,66 @@ prompt next-user.ids
 generate 64
 ```
 
-普通／MTP自然生成统一在`session_count`、`dispatch`及`sessions[].result`中报告；单请求也读取`sessions[0].result.generated_ids`，不保留旧扁平结果。排队后prefill与decode会交错；顶层`phase_timing=disjoint_continuous_episode_intervals`按每个实际episode分类累计，从上次host端点至本次token可见，包含lookup、准入及协调间隙，P＋D等于一次`session_seconds`。最后端点后的日志、目录及退休尾成本另列`post_endpoint_seconds`。每会话延迟包含等待其它会话的时间，不能相加作为总耗时。单请求也沿同一循环和计时协议；首prefill及普通已知decode的T1载体在ready前准备，后续会话准入及其它载体首用计入真实请求时间。
-`logical_user_prompt_tokens`计新用户输入，`pending_flushed_tokens`计多轮补入的末尾token；二者合为`logical_prompt_tokens`。`reused_tokens`另计前缀复用，`prefill_target_rows`／`actual_target_rows`／`actual_draft_rows`只计真实计算。`restored_*`单列恢复工作，并计入actual工作量，不增加逻辑输入／输出；恢复位于下一轮prefill wall内。全局`actual_graph_calls`每桶只计一次，不包含0Graph命中；每会话`graph_participations`计参与次数，不能相加当作物理调用数。每会话P／D是各轮延迟之和，轮间等待另列`between_turn_seconds`，三者合为该会话wall；不同会话延迟不可相加。`prefill_tokens_per_second`是含复用的有效输入率，不能拿它冒充相同计算量的算子速度。完整命中trace只有`cache-hit.json`，明确无本次hidden／logits载荷。
-`main.cc` 用一份模型语义图表达prefill、带状态的多token continuation和decode，在启动时预列本次调用序列，
-以有限shape图族一次冷编译。Model共享权重、图族、不可变child及按实际执行并发使用的Phase／IO／workspace；每个驻留Session保存完整KV／conv／GDN与位置，不各自复制执行载体。每个实际准备的child最多两个Invocation槽，共用IO所以整体独占借用；空闲会话不占槽。
-自然请求冷编有限shape，提前准备首prefill及普通已知decode的T1载体；其余实际批宽／前缀suffix首次选中才在请求内创建载体。固定输入重放仍沿已知调用计划提前准备。只实例化已有编译child，不临时建图、搜索Provider、编译或padding；首次准备仍计入对应冷准备或请求及含启动总时间。
-conv/GDN状态真实反馈，KV使用有界共享页池，只写新增行及COW尾页。普通文本Snapshot同时保留12份KV帧、36份conv/GDN读租约与位置；MTP另保2份草拟KV、frontier／lag／catchup token及目标carry／prior。收齐成功结果、取回append事务并撤回已退休状态绑定后，对全部参与会话检查expected base后，以无抛交换提交完整head。失败保留旧head并按真实退休回收候选，不发布部分状态。
+```text
+hyle --inputs MTP_DIR --mtp on --session-schedules sessions.txt --capacity 1024
+```
 
-六个BF16 GQA attention共用一份BatchSchema，每次执行共享同一owned layout与metadata输入。
-schema按最大请求数R和每请求最大预列chunk设界，具体Q/output行数是当前批次的合计；各请求的KV可见长度由layout和positions分别表达。
-例如23-token prefill→4-token continuation→单token decode使用同图族的23/4/1三个child；head深度等模型常数保持固定。
-每槽冷准备IO与状态端口；每步更新token、position与layout，绑定精确页写事务和状态租约，沿原Invocation执行`graph::batch::prepare`→`prepare_replay`→submit→Completion，再取回结果与状态。
-单槽借用不授权并发覆盖tokens、KV或状态；CUDA共享原Queue，Apple沿原生Runtime FIFO，控制须外部串行化。借用在写输入前取得，实际退休、状态提交及最后report／trace读取后才归还；失败只在真实退休后销毁本次Invocation，下次显式prepare重建。`evaluate`组合原有prepare／submit／finish；拆开调用可在真实工作在途时停止会话。Model拥有一个批次episode及参与Session的强引用，Session只借用pending链接。`stop`停止任一参与者时采用整批取消政策，关闭本次借用而不关闭Model池；其它会话保原head，退休后可以重试。`try_retire`只在原Completion及页权限退休门通过后清理本会话状态。目录retiring项不可查询或重新接纳，实际收集前继续计费。取消不表示GPU抢占，丢弃Completion也不表示页已可写。显式shutdown仍drain，所有Session须先于Model销毁；普通CLI与独立探针均使用同一批次episode，没有第二套执行器。
+Model 共享权重、冷图族及执行资源，每个 Session 保留自己的完整 KV、conv／GDN、位置、pending 与 RNG；
+MTP 另保 draft KV、frontier／lag／catchup 和 carry／prior hidden。N 是可保留完整版本数，R 是活动序列上限，
+二者不表示复制 N 份模型或同时发射 R 个独立图。初始 prompt 和轮次检查点可进入有界 Radix 目录，
+键只覆盖实际已消费 token 与模型／数学身份；树的分叉不凭空生成状态。
+完整命中跳过主模型计算；无 modifier 的默认 greedy 可直接返回已保存 ID，其余需重新选择的政策走 frontier 采样。
+恢复同一请求保留历史 pending／RNG，decode 不逐 token 查树。
 
-构建消费者的已安装SDK须包含`compute;graph;graph_progress;compute_stream;mem`产品及所需路由。SDK导出的能力给出可选集合，运行时用`--backend cpu|cuda|apple|vulkan`选择主后端；构建的`metal`路线使用运行时名称`apple`。默认选择唯一的GPU路线，没有GPU时选择CPU，同时编入多个GPU路线则要求显式选择；失败不自动回退。CUDA保留原Context／StorageOwner／设备内存／pinned暂存／Queue；Apple使用原生Context／共享内存／ExecutionSource，Vulkan使用原生Context／device与staging资源／ExecutionSource；原生路线不制造通用Queue。Backend只装配冷环境与外部I/O，Recipe和MTP数学共用。
-CMake只查包和链接，不构建原生依赖，也不增加用户后端开关。示例：
+普通 Phase 使用一个槽，已接通的设备后继 Phase 使用三个固定槽轮换，最多保留两个有序在途批次。
+CUDA greedy 普通自然生成以及单活动请求的 K1 MTP 可自动接力；其它采样、MTP宽度、后端、混合执行、
+资源不足或不满足当前绑定条件时沿原单步路径推进。每槽有自己的 IO／状态事务，旧读者和原生工作退休前不能覆盖。
+后继仍由原 Model／Graph 的提交、完成、状态发布与退休机制管理，没有额外执行器；控制由调用方串行化。
+实际接力条件与冷准备选项见[用户指南](../../../docs/user/inference.md#准备本地输入并运行)。
+
+有限 prefill 按真实有效行推进，例如 P154／量子64是 `64+64+26`。
+兼容的 prefill／Verify 可在有相应 Provider 能力时使用容量载体合批；私有载体可以大于有效行，
+KV、递归状态、位置和采样只提交各成员实际行。其它组合按 exact 形状分组。
+`batches.input_rows` 是各成员真实目标行数，`active_rows` 是总和，`physical_rows` 是载体容量；
+Verify 提案截短不按规划上界计数，接受部分前缀也不抹掉已执行行。
+
+已知形状与后端选择在冷路径规划，首 prefill 和普通已知 decode 的 T1 载体在 ready 前准备。
+`--warmup-shapes planned` 可准备已有计划的其它载体；默认按需准备，未列 exact 形状仍可进入有界冷接纳。
+首次编译／载体准备／capture 都按实际发生的启动或请求边界计时，不把按需准备写成稳态热路径路由。
+主 Phase、NextN、frontier 和接受采样沿共同程序载体持有原 Invocation／Completion／资源租约。
+
+成功后先收齐结果和页事务、核 expected base，再发布完整状态；失败保留旧 head，按真实退休归还资源。
+普通已提交的多成员 Text 批次可只丢弃停止成员并发布幸存者；MTP成员停止仍取消整个原 episode，
+幸存者保留旧 head／RNG，实际退休后可以重试。取消不是 GPU 抢占，丢弃 Completion 也不表示资源可写。
+空闲 Session 可导出完整 HostImage 后退休／恢复；缺少可用快照时按账簿中已消费输入重建，
+保持历史已返回 token 和 RNG，不重新采样过去输出。带外部 modifier 的严格决策回放仍需其原载荷。
+完整条件控制的有限范围见[控制检查](../../../docs/evidence/correctness/inference-natural-logits-control-2026-10-29.json)。
+
+自然生成结果在 `sessions[].result`，单请求也读取 `sessions[0].result.generated_ids`。
+prefill／decode 按实际 episode 的不重叠 host 端点区间计时，和为 `session_seconds`；
+末端日志与退休尾成本另列 `post_endpoint_seconds`。流水 episode 的 `step_seconds` 可以重叠，不能相加替代真实 wall。
+`logical_user_prompt_tokens` 只计新增用户输入，`pending_flushed_tokens` 计多轮 pending，二者合为逻辑输入；
+`reused_tokens` 与 `restored_*` 分别记录复用及恢复，`actual_target_rows`／`actual_draft_rows` 记录真实计算。
+每请求延迟和参与次数可以重叠，不能相加当作物理调用或总耗时；含缓存的有效输入率也不等于相同计算量的算子速度。
+
+## 构建与参数
+
+普通源码构建使用[三脚本入口](../../../docs/developer/setup/README.md)，默认组件为 `engine`，
+只要基础库时显式选择所需产品。也可对已安装 SDK 单独构建此引擎：
 
 ```text
-cmake -S engine -B .scratch/qwen35-build -DHyle_DIR="<SDK>/lib/cmake/Hyle"
+cmake -S engine -B .scratch/qwen35-build -DCMAKE_BUILD_TYPE=Release -DHyle_DIR="<SDK>/lib/cmake/Hyle"
 cmake --build .scratch/qwen35-build --config Release --target hyle_engine
 ```
 
-Apple生成的conv／GDN与MTP carry／prior沿原Graph结果租约保活，在选择接受边界后、取回任何页事务及发布整批快照前，按完整实际backing进入缓存预算。同一预算／资源内可证明共享的backing只计一次；失败沿原退休／回滚流程保留旧快照。结果槽、旧读者或在途工作仍持有租约时继续计费。MLX中间值／私有分配、权重、IO及驱动占用另计；原生计算可能先于保留准入发生，缓存额度不约束其瞬时分配峰值。下文CUDA性能和取消／批次结果不自动扩展到Apple。
+该 SDK 须有 `compute;graph;graph_progress;compute_stream;mem` 及所需后端，应用只查包、链接与暂存运行资源。
+`--backend cpu|cuda|apple|vulkan` 选择主后端，初始化参数 `metal` 对应运行时 `apple`。
+默认选唯一 GPU，无 GPU 时选 CPU，多 GPU 路线并存时须明确选择；失败不自动换设备。
+CUDA 使用原 Context／Queue／device 与 pinned 资源；Apple／Vulkan使用各自原生 Runtime／资源／ExecutionSource。
+
 `--inputs DIR`指向准备后的输入；可用选项：
 
-- `--continuation IDS`：prefill后追加多token输入；`--steps N`指定生成阶段数。
+- `--continuation IDS`：普通非schedule模式在prefill后追加给定token IDs；不适用于MTP。`--steps N`是最多输出数，包含prefill首token。
 - `--mtp on|off`：默认off；on需要`prepare.py --mtp`的清单。`--steps`仍为最多输出token数，包含prefill首token；每轮可输出接受的草稿和一枚目标token，不重复输出已返回的pending token。普通版和MTP均按完整旅程校验：prompt、continuation与后续最多`steps−1`行输入须放得进`--capacity`，不另设128枚输出上限；自然生成遇EOS提前停止。stdout分列实际验证行数、草拟写入行数、提交行数及自然agreement／accept数；短样例不代表普遍接受率或提速。
 - `--mtp-max-drafts N`：须配合 `--mtp on`，默认1，0禁用草稿。实际草稿数还受上下文、输出额度和置信阈值约束；冷图按需要的验证宽度准备。
 - `--mtp-min-probability P`：须配合 `--mtp on`，范围[0,1]、默认0。用实际草稿分布的最大概率决定是否继续，不另造置信度头；截短或无草稿时保留正确的目标续算和 RNG 位置。
@@ -63,11 +116,11 @@ Apple生成的conv／GDN与MTP carry／prior沿原Graph结果租约保活，在�
 - `--schedule FILE`：普通／MTP均支持prompt／generate自然多轮；一行prompt可配合`--steps`，显式generate与显式steps互斥。普通模式另支持prompt／decode固定重放，与显式steps互斥；MTP拒绝固定重放。schedule与continuation／decode-ids互斥。先检查完整语法，再读取所有ID并校验会话容量，最后创建Model。
 - `--session-schedules FILE`：执行多会话manifest，与`--schedule`互斥；普通／MTP的prompt-only自然请求可配合`--steps`。同一manifest的所有会话必须使用一致的自然生成或固定重放语法，在读取token文件前检查。每行`SESSION_ID SCHEDULE_FILE`，路径相对manifest，支持双引号和整行`#`注释；Windows清单中的路径使用`/`，例如`user1 "C:/inputs/user one.txt"`，避免双引号中的反斜杠被当成转义。ID为ASCII字母／数字开头，后续可含`_`／`-`且不能重复。`--capacity`是每会话上下文上限，所有会话和ID均先校验再加载模型。
 - `--max-sessions auto|N`：保留的设备缓存会话上限；默认auto取本次输入会话数。普通文本和MTP都可淘汰空闲head；MTP生成中的head不淘汰，轮次间可淘汰并在下轮恢复。共享backing按解析后的容量预留，不为各会话复制权重或执行载体。
-- `--active-sequences auto|R`：活跃请求和单次真实Graph批次的序列上限，实际按等T分桶，批宽不超过R；不是同时提交多个独立Invocation。默认auto随输入、缓存数量和字节预算解析，满足`1≤R≤N`；显式值受输入数量和缓存容量约束。
-- `--cache-bytes auto|N`：共享KV页池、初始／caller状态池及选中保留的原生结果backing的请求字节额度。CUDA默认auto按N份可提交版本及最多R份在途候选解析；显式额度不足时缩小可驻留数量，不能容纳活跃请求则在加载前报错。Apple／Vulkan的auto不设字节额度，仍执行N／R及版本数边界；显式额度按实际池及完成后的结果准入，不用CUDA公式预估可驻留会话数，空间不足会报错并保留旧快照，可提高额度或减少会话／上下文后重试。淘汰归还页／版本，Model池及仍有读者的结果继续计费。这不是全进程或物理显存上限。
-- `--prefix-cache off|auto`：多会话manifest默认auto，单会话schedule及普通生成默认off；显式auto须使用schedule。在prompt或轮次恢复边界查找同Model／数学图族的精确已保存前缀，借用完整Snapshot并计算剩余输入。完整prompt命中的greedy返回已有next ID、执行0次Graph；random使用当前请求RNG执行1次frontier采样Graph。恢复同一请求的完整生成检查点保留其pending与RNG，不重采样。decode直接使用Session。目录最多N项，旧检查点与会话head共用N份完整版本额度，额外R份只供候选。
+- `--active-sequences auto|R`：活跃请求和一次真实Graph批次的序列上限，批宽不超过R；不是同时提交R个独立Invocation。自然请求按角色、完成方式、采样和可用容量组合，支持有效行的载体可合批不同长度，其余按exact形状分组。默认auto随输入、缓存数量和预算解析，满足`1≤R≤N`；显式值受输入数量和缓存容量约束。
+- `--cache-bytes auto|N`：KV页池、状态池及保留原生结果backing的请求字节额度。CUDA的auto按实际N／R、草稿候选边界及在途深度规划；显式额度不足时缩小可驻留数量，不能容纳活动请求则在加载前报错。CPU／Apple／Vulkan的auto不设字节额度，仍受N／R和版本数约束。显式额度包含各自实际资源计费，原生结果在完成后、发布前准入；失败保留旧快照。淘汰归还页／版本，仍有读者和Model池的材料继续计费。该参数不是全进程或物理显存上限。
+- `--prefix-cache off|auto`：多会话manifest默认auto，单会话schedule及普通生成默认off；显式auto须使用schedule。在prompt／轮次恢复边界借用同Model和数学政策下真实保存的完整Snapshot，再计算后缀。完整prompt命中跳过主模型；无modifier的默认greedy可直接使用已保存ID，其它须重新选择的政策走frontier采样。恢复同一请求保留历史pending／RNG。目录最多N项，与会话head共用N份完整版本预算，在途候选材料另按实际深度准备；decode直接使用Session。
 - `--progress direct|scheduler`：默认direct；scheduler在原槽上准备进度驱动，复用同一提交机制。
-- `--replay auto|commands|prefer-capture`：默认auto，在Model范围冷聚合每个批宽／child／槽的使用上界，只用一次走commands，预计复用才prefer-capture。固定输入重放保留有序调用的精确slot计数；自然请求、动态批次、前缀suffix和恢复按有限波次保守计数。主Phase与辅助NextN proposal／repair图使用同一冷选择。辅助图目前没有可靠使用次数提示，Auto按一次处理，保持原Commands；显式prefer-capture将PreferCapture传给原Graph，不支持捕获的范围仍按Graph合同回退Commands，不保证整图捕获。随机采样的主Phase／NextN、接受采样和完整前缀重采样辅助图保留强制Commands，显式prefer-capture不覆盖该合同。模式在冷准备时保存，不在每步重新选择。生成可能提前结束，不保证每份capture都会复用；换会话仍由实际资源／布局身份决定是否重录。`planned_replay`记录冷选择，逐步日志记录实际录制与复用；不做虚假预热或把首次执行移出计时。
+- `--replay auto|commands|prefer-capture`：默认auto，按冷计划中各批宽／child／槽的使用上界选择；一次使用走Commands，预计复用才PreferCapture。辅助NextN没有可靠使用次数提示，Auto仍按一次处理。当前主Phase有随机采样或history罚分时使用Commands，NextN带head的history分支亦使用Commands；接受采样和frontier程序当前显式使用Commands。其它满足条件的分支可把PreferCapture交给原Graph，捕获范围仍由原生能力和实际绑定决定。`planned_replay`记录冷选择，逐步日志记录实际录制／复用；用户不逐步选择Provider或另设流水开关。
 - `--decode-ids FILE`：固定单token输入带，允许跨过预测EOS；若同时给steps，须等于输入数加一。正常生成遇到endoftext或im_end停止。
 - `--trace DIR --trace-level decisions`：仅导出logits与最后hidden；默认full还导出conv/GDN状态与`kv-layout.json`。分页帧不公开原始bank载荷，后者记录实际页布局，不再导出dense KV文件。路由写入DIR/routes，不增加图输出。
 - `--layer0-probe DIR`：诊断时另行发布layer0边界并比较实际路由；诊断图会影响合法融合，因此与普通图分别冷准备，均计入启动时间。多会话的边界输出按`session<序号>_<ID>`子目录隔离，不覆盖其他会话；共享图的路由说明仍在DIR。
@@ -78,6 +131,10 @@ Apple生成的conv／GDN与MTP carry／prior沿原Graph结果租约保活，在�
 Apple／Vulkan提供按需构建的`hyle_qwen35_retained_budget_probe`目标，使用`--inputs <已准备的MTP输入> --out <尚不存在的结果目录>`。它在真实计算完成后施加纯额度压力，核旧完整状态、失败回收及原槽重试；不分配对应压力的设备内存，不用于测速。实际命令与结果见[保留状态预算记录](../../../docs/evidence/correctness/qwen-retained-budget-2026-10-22.json)。
 
 普通文本和MTP均已接真实多请求批次。[本批MTP证据](../../../docs/evidence/correctness/qwen-mtp-batch-2026-10-22.json)包含B2的不同接受边界、lag1新输入、整批取消／原槽重试、有界重建及0Graph完整命中。R1／R2续文确有分歧，跨批宽质量未收口；本批为诊断运行，不作吞吐或显存收益结论。
+
+## 固定输入重放（诊断）
+
+本节描述普通 `prompt/decode` 固定输入带及其日志；自然生成的有效行合批与后继执行见上文。
 
 普通模式的固定重放manifest每行是`prompt IDSFILE`或`decode IDSFILE`，须从prompt开始并交替；Qwen消费者允许最后一轮仅有prompt，表示只取首token。共享parser的默认完整prompt／decode合同不变。
 ID文件路径相对manifest所在目录；含空格的路径用双引号，ID文件使用空白分隔的整数。例如：
@@ -95,9 +152,9 @@ hyle --inputs DIR --schedule session/manifest.txt --capacity 1024
 
 每个prompt块产生一个逻辑结果，每个decode ID产生一次单token逻辑调用，固定输入允许跨过预测EOS；同波次的兼容调用可以合成一次真实Graph批次。
 后续prompt沿同一个Session及原KV、conv/GDN状态追加，不重新加载或重置缓存。
-图族按所有会话的shape并集冷编译，Model按有序调用冷统计每个形状的串行槽使用上界，预选Commands或PreferCapture。完整prompt命中跳过prompt计算和预热；random仍有上述frontier采样Graph。切换会话不复制载体。准备诊断的prior-use计数属于共享执行槽，跨会话不清零，失败后重建该槽才清零。
+图族按所有会话的shape并集冷编译，Model按有序调用冷统计每个形状的串行槽使用上界，预选Commands或PreferCapture。完整prompt命中跳过主模型计算和预热；需要重新选择输出的政策仍执行frontier采样Graph。切换会话不复制载体。准备诊断的prior-use计数属于共享执行槽，跨会话不清零，失败后重建该槽才清零。
 
-普通随机生成中，同策略、无logits修改且不执行top-k／top-p过滤的多请求批次，直接沿原Categorical算子批量采样；每行保留原请求的随机身份和draw位置。过滤策略继续按原逐行路径执行，用户无需另设优化开关。四请求CUDA有限对照的decode约提升10.8%，边界及原始数据见[本轮采样对照](../../../docs/evidence/performance/inference-random-four-request-screen-2026-10-26.json)；不代表单请求或MTP提速。
+普通随机生成中，同策略、无logits修改且不执行top-k／top-p过滤的多请求批次，直接沿原Categorical算子批量采样；每行保留原请求的随机身份和draw位置。过滤策略继续按原逐行路径执行，用户无需另设优化开关。对应有限对照保留在[采样记录](../../../docs/evidence/performance/inference-random-four-request-screen-2026-10-26.json)，当前性能以[最新对照](../../../docs/developer/performance/decode.md)为准。
 日志标签为`round1_prefill`、`round1_decode1`等；每个阶段另有
 `memory_phase=roundX_prefill_begin/end`或`roundX_decode_begin/end`标记，供独立显存旁采定位，不代表消费者已测得显存数值。
 
@@ -134,9 +191,13 @@ off模式已知shape／slot及首组状态的准备计入`shape_prepare_seconds`
 共享Model与2／4会话隔离的[原回归](../../../docs/evidence/correctness/qwen-multi-session-isolation-2026-10-21.json)和dense状态容量限制的[三组检查](../../../docs/evidence/correctness/qwen-session-capacity-2026-10-21.json)已通过。完整分页快照后的[单会话与四会话淘汰重建](../../../docs/evidence/correctness/qwen-paged-snapshot-2026-10-21.json)保留18／72份决策向量对照。[实际前缀／分支与有界淘汰恢复](../../../docs/evidence/correctness/qwen-prefix-reuse-2026-10-21.json)另核完整命中0Graph、T1／T16两条分支和之后的原会话续写。[CUDA在途回收](../../../docs/evidence/correctness/qwen-native-retirement-2026-10-21.json)使用真实队列阻塞，核取消／丢弃Completion不提前返还资源，实际退休后才能重新接纳。独占尾页与Radix的本批结果见下；其它原生后端的完整消费者及并发吞吐仍待补。
 
 当前前缀目录使用有界压缩Radix树，按实际token与模型／数学身份查询完整快照，结构分叉不自动生成检查点。
-lookup只发生在请求边界；greedy完整命中为0Graph，random完整prompt命中另执行1次frontier采样Graph，普通decode不逐token查树。目录及LRU在初始化时预留容量，活跃命中可同时只读持有。
+lookup只发生在请求边界；无modifier的默认greedy完整命中可为0Graph，其它需要重新选择输出的政策另走frontier采样，普通decode不逐token查树。目录及LRU在初始化时预留容量，活跃命中可同时只读持有。
 Session独占自己的尾权，同页续写只写未提交后缀；前缀命中不会复制尾权，分支沿原COW路径，旧快照范围始终不变。
 [本批实现、回归与性能](../../../docs/evidence/performance/qwen-exclusive-radix-2026-10-21.json)不代表其它原生后端或GPU并发吞吐已交付。
+
+## 专项诊断与历史依据
+
+下列日期记录保留当时冻结代码、命令与结果；其数值、状态布局及未运行项不自动更新为当前版本的结论。
 
 `hyle_qwen35_retirement_probe`与`hyle_qwen35_mtp_session_probe`已登记CUDA／Apple／Vulkan构建；原生会话探针当前仅开放`--scenario prefix`，退休探针的三平台有限T2检查已通过列明范围。`hyle_qwen35_batch_probe`仍仅在CUDA SDK下提供。普通模型数学与状态通过公共Compute／Graph接口执行；这些按需诊断可借用原生私有状态来检查在途寿命，结果按各证据实际后端分别说明。
 CUDA 测试目标 `hyle_qwen_request_lifecycle_test INPUT_DIR` 使用原 P154 BF16 输入检查普通随机 R2 的取消、存活请求续跑、有界输出及增量续轮；不用于测速。也可设置 `HYLE_QWEN_REQUEST_INPUTS` 后运行同名 CTest；未提供输入时跳过，显式不存在的目录按失败处理。[原生结果](../../../docs/evidence/correctness/qwen-live-request-lifecycle-2026-10-25.json)来自归档消费者。正式入口严格编译、链接及主机错误合并检查已通过；新增 `--retirement-status-only` 仅检查主机状态分类，未注入设备错误，正式入口未重跑 GPU。
@@ -147,10 +208,11 @@ CUDA 测试目标 `hyle_qwen_request_lifecycle_test INPUT_DIR` 使用原 P154 BF
 探针当前覆盖同页独占后缀取消：实际退休前保留资源，退休后旧快照仍持页，所有旧读者释放后才可重新取得整页。
 该目标另可用`--inputs MTP_DIR --mtp on [--verify-rows 1|2]`检查真实MTP取消，和`--decode-ids`互斥。默认2行验证；1行分支实际覆盖没有attention读者的草拟KV写effect。两种分支均已实跑：使用自然接受后的lag1前缀，取消并丢弃Completion后保留全部14份KV写事务、状态、候选和执行借用；真实退休后核旧字节及同槽重建。另核成功terminal后的接受策略异常不会发布head，回收后原完整前缀仍可续算。这是有限取消／host异常检查，没有注入GPU设备错误，也不用于测速。
 
-下述请求backing公式对应CUDA预留池；Apple的native生成backing未计全，不能将公式作为其完整字节上限。
-普通无MTP页大小16。设每序列容量C、可保留完整快照数N、一次批次最多R条序列（1≤R≤N）：12份KV arena各容纳`N*ceil(C/16)+R`页，36份conv/GDN池各有N＋R个块。单版本有效载荷合计19,537,920字节，各backing另有1字节尾部；总额为`12*((N*ceil(C/16)+R)*16*1024+1)+19,537,920*(N+R)+36`。query／KV行和page refs的schema上限是批内各请求之和，物理页池按不同物理页计数。CLI按实际解析的R准备该额度；R1、C256、N1／N2示例仍为42,418,224／65,101,872字节。额外R份不是历史检查点额度：若已有L份完整版本，本次r名成员只会真正释放D份不同旧base，须满足`L+r-D≤N`。目录或未选会话保留的旧base不能抵扣，淘汰目录别名后按真实版本数重算；无法容纳时拒绝，不提交超过N份的完整版本。新建初始head也须先满足N份额度，同一Snapshot别名不重复计版本。
-
-MTP同样按实际R准备：同样页几何下增加2份独立草拟arena，conv/GDN预留`N+2R`份材料，并保留`2*(N+R)`个4096B carry/prior槽。总请求backing为`14*((N*ceil(C/16)+R)*16*1024+1)+19,537,920*(N+2R)+36+4096*2*(N+R)+1`，不是物理显存上限。
+请求backing按实际geometry、target／draft各自的K/V行字节、上下文C、驻留版本N、活动序列R、
+验证边界K和在途深度D计算，见[当前容量实现](session_state.h)。页容量包括每个在途序列的COW尾页，
+各候选前缀保留独立递归／hidden材料；N份完整版本额度不因候选空间增加而扩大。
+真正能释放的旧base才可抵扣，目录别名或旧读者仍pin住的版本继续计费，无法容纳时在提交前拒绝。
+CPU元数据、Apple原生生成backing及后端私有执行占用另有实际计费／未知边界，不能把旧CUDA公式当作总显存上限。
 
 独立目标`hyle_qwen35_mtp_session_probe`运行时传`--inputs MTP_DIR --output NEW_DIR`；默认使用原23-token输入的前15／23枚，在同一N2／R1 Model上先独立执行、退休，再交错自然生成。[原检查](../../../docs/evidence/correctness/qwen-mtp-sessions-2026-10-22.json)的378份向量逐字节一致，只对应当时的R1范围。追加`--scenario batch`检查真实B2、接受边界[2,1]、取消／原槽重试、已提交输入重建及独立的非argmax pending政策；本批14次Graph中，同分块重建54项逐字节一致，跨B的108项有4项draft K/V数值不同。完整质量、其它原生后端及吞吐仍须分别检查。
 
@@ -164,17 +226,14 @@ CLI批次及同源R1对照的prefill、decode、总会话与采样显存见[本�
 
 加载沿现有FileResourcePipeline，用两个8MiB暂存读取原权重范围并上传：CUDA用原pinned／device资源，Apple接原生shared资源和文件管线。官方 BF16 文本选择320个原始张量，MTP另加15个，均保留原分配和持久目标租约；量化清单按实际物理角色加载。
 完整Model／ready／首token计时包含文件关闭、管线退休和临时运行时销毁。新进程未清OS页缓存，不能称冷盘加载。
-`step_seconds`包含输入上传、layout准备、绑定、replay准备、提交、等待及token读回；首次shape编译在启动时完成，trace导出不在step内。
+`step_seconds`包含该episode的输入上传、layout准备、绑定、replay准备、提交、等待及token读回；首次exact形状可能在启动或有界请求冷接纳时准备。trace导出不在该子段内，流水episode可重叠。
 普通生成和MTP的`prefill_seconds`从实际prepare前计至head发布且token在host可见；`decode_seconds`从同一prefill端点计至最后成功finish端点，`session_seconds`是两段连续wall之和。`startup_total_seconds`（同`startup_to_endpoint_seconds`）含加载与冷准备；`step_sum_seconds`单列，不能替代完整elapsed。四个`generation_*`内存标记仅供旁采近似分段，不替代计时端点；trace运行标为diagnostic，不混入速度表。stdout将实际Graph调用、目标验证行、草拟行、已提交行和真实输出分别计账，接受token数不冒充计算量。
 `seconds`和`submit_seconds`是更窄子段，不可直接与另一引擎的完整decode相比；完整启动至首token看`first_token_elapsed_seconds`。
 
-本次有限图族已完成原128+31旅程的64份hidden/logits逐byte对照，以及23/4/1 scheduler＋capture旅程的6份对照。
-两组独立性能窗口确认准备开销减少；decode小差异反向，未证明稳定提速。详见[有限图族实测](../../../docs/evidence/performance/qwen-finite-family-2026-10-20.json)，
-最新同窗指标见[decode性能记录](../../../docs/developer/performance/decode.md)。报告中的compiled storage保留unknown计数，不等于完整显存峰值。
-默认auto及其一次性chunk／重复槽选择见[最新实测与完整证据](../../../docs/evidence/performance/qwen-auto-replay-policy-2026-10-21.json)；该策略修复了首次缓存续算损项，完整短decode的首次准备成本仍在排查。
-另有独立的[进程内存／显存采样](../../../docs/evidence/performance/qwen-memory-current-2026-10-20.json)：GPU峰值为采样下界，
-驻留集、private commit和GPU共享内存分别记录；mmap与文件缓存会影响归属，不能将进程差直接当作全机RAM节省。
+当前完整窗口、计数边界和已知热点统一见[decode性能记录](../../../docs/developer/performance/decode.md)。
+报告中的compiled storage保留unknown计数，不等于完整显存峰值；GPU旁采峰值是采样下界，
+驻留集、private commit与GPU共享内存分开解释，mmap与文件缓存也影响进程归属。
 
 `reference.py`是独立Torch参考，候选不会读取参考状态或结果。固定输入与向量相同属于回归检查，独立质量验收仍未完成；
 BF16舍入、归约和RoPE诊断见[底座审查证据](../../../docs/evidence/correctness/inference-foundation-review-2026-10-18/README.md)。
-原输入位于仓库`.scratch/inference-execution-refactor-2026-10-18/qwen35-text/`，不复制权重或SDK。
+历史输入与运行命令以所属证据为准；新使用者按引擎指南准备本地输入，源码构建不要求某个既有`.scratch`目录。

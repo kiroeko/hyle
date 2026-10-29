@@ -71,9 +71,11 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
   # Unlike locked source dependencies, this license belongs to the installed
   # machine SDK. Respect both install opt-in and the production package closure.
   if(HYLE_INSTALL AND "compute_provider_cuda" IN_LIST HYLE_PRODUCTION_COMPONENT_LIST)
-    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/CCCL-LICENSE.txt"
-      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
-      RENAME cuda-cccl-LICENSE.txt COMPONENT Hyle_Runtime)
+    foreach(_license_component IN ITEMS Hyle_Runtime Hyle_Development)
+      install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/CCCL-LICENSE.txt"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
+        RENAME cuda-cccl-LICENSE.txt COMPONENT "${_license_component}")
+    endforeach()
   endif()
   hyle_register_package_dependency(
     NAME sglang_activation

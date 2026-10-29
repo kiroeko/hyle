@@ -9,8 +9,7 @@ documentation, scripts, and in-tree third-party materials.
 Local build trees, caches, ignored files, and fetched dependency checkouts are not
 part of the HYLE source tree and are not included. Pinned fetched dependencies can
 be obtained by CMake or supplied separately through the standard
-FETCHCONTENT_SOURCE_DIR_<NAME> inputs for an offline/customer-controlled build.
+FETCHCONTENT_SOURCE_DIR_<NAME> inputs for an offline build.
 
-Source access does not change the license. Rights to use, modify, disclose, or
-redistribute this source are defined by LICENSE, THIRD_PARTY_NOTICES.md, and the
-recipient's separate written authorization from the applicable rightsholder(s).
+HYLE's original code is licensed under the Apache License 2.0; see LICENSE and NOTICE.
+Third-party materials keep their own licenses; see THIRD_PARTY_NOTICES.md.

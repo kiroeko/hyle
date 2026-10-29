@@ -28,6 +28,9 @@ class DevelopmentCommandsTest(unittest.TestCase):
         self.base = Path(self.temporary.name)
         self.root = self.base / "source with spaces"
         self.root.mkdir()
+        (self.root / "cmake").mkdir()
+        self.catalog = self.root / "cmake/HyleComponents.cmake"
+        self.catalog.write_bytes((REPO / "cmake/HyleComponents.cmake").read_bytes())
         self.commands: list[list[str]] = []
         self.failures: list[int] = []
         self.compiler = str(self.base / "tool chain/g++")
@@ -136,6 +139,52 @@ class DevelopmentCommandsTest(unittest.TestCase):
         for option in ("--backends", "--components"):
             with self.subTest(empty_option=option):
                 self.assertNotEqual(self.invoke("init", option, "", "--dry-run")[0], 0)
+
+    def test_unknown_products_fail_before_tools_or_dependency_preparation(self):
+        with patch.object(support, "discover_environment", wraps=self.environment) as discovery, \
+                patch.object(support, "find_openssl") as openssl:
+            for value in ("typo", "compute,typo", "io;typo", "util_core"):
+                with self.subTest(components=value):
+                    result, _, errors = self.invoke("init", "--components", value, "--backends", "vulkan")
+                    self.assertEqual(result, 2)
+                    self.assertIn("Unknown Hyle product(s)", errors)
+                    self.assertIn(value.split(",")[-1].split(";")[-1], errors)
+            directory = self.root / ".scratch/build/old"
+            self.write_cache(directory, HYLE_COMPONENTS="compute;cached_typo", HYLE_COMPUTE_ROUTES="vulkan")
+            result, _, errors = self.invoke("init", "--name", "old")
+            self.assertEqual(result, 2)
+            self.assertIn("cached_typo", errors)
+            discovery.assert_not_called()
+            openssl.assert_not_called()
+        self.assertEqual(self.commands, [])
+        self.resources.assert_not_called()
+
+    def test_product_catalog_remains_the_source_of_public_product_names(self):
+        with self.catalog.open("a", encoding="utf-8") as stream:
+            stream.write('\n_hyle_declare_product(new_fixture FACTORS core)\n'
+                         '# _hyle_declare_product(comment_only FACTORS core)\n'
+                         '_hyle_declare_component(internal_only PUBLIC_DEPS core)\n'
+                         'foreach(unrelated IN ITEMS other_fixture)\nendforeach()\n')
+        self.succeeds("init", "--components", "NEW_FIXTURE,core,new_fixture")
+        self.assertEqual(support.read_cache(self.selected())["HYLE_COMPONENTS"], "new_fixture;core")
+        # Includes the three route products declared by the real literal foreach.
+        self.succeeds("init", "--components", "compute,graph,compute_stream")
+        self.succeeds("init", "--components", "all")
+        for name in ("comment_only", "internal_only", "other_fixture"):
+            with self.subTest(name=name):
+                self.assertNotEqual(self.invoke("init", "--components", name, "--dry-run")[0], 0)
+
+    def test_unrecognized_product_declarations_fail_without_preparing_dependencies(self):
+        with self.catalog.open("a", encoding="utf-8") as stream:
+            stream.write('\n_hyle_declare_product("${unknown_product}" FACTORS core)\n')
+        with patch.object(support, "discover_environment", wraps=self.environment) as discovery:
+            result, _, errors = self.invoke("init", "--components", "compute", "--backends", "vulkan")
+            self.assertEqual(result, 2)
+            self.assertIn("product catalog", errors)
+            self.assertIn("unsupported product declaration", errors)
+            discovery.assert_not_called()
+        self.assertEqual(self.commands, [])
+        self.resources.assert_not_called()
 
     def test_file_service_passes_its_backend_without_full_math_restrictions(self):
         with patch.object(support, "_host", return_value=("Linux", "aarch64")):

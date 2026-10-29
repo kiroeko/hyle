@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: Apache-2.0
+include(CMakeFindDependencyMacro)
+include("${CMAKE_CURRENT_LIST_DIR}/openssl_runtime.cmake")
+if(Hyle_STATIC)
+  # A static archive must use the consumer's own OpenSSL SDK and its notices.
+  find_dependency(OpenSSL 3.0)
+  hyle_register_openssl_runtime(_hyle_openssl_unused)
+elseif(WIN32)
+  # A shared SDK already carries its chosen runtime, without requiring headers
+  # or a build-machine OpenSSL installation in a relocated consumer.
+  include("${CMAKE_CURRENT_LIST_DIR}/HyleOpenSSLFiles.cmake")
+  list(FILTER _hyle_openssl_files EXCLUDE REGEX "^$")
+  list(REMOVE_DUPLICATES _hyle_openssl_files)
+  get_filename_component(_hyle_openssl_prefix
+    "${CMAKE_CURRENT_LIST_DIR}/@HYLE_OPENSSL_PREFIX_FROM_CONFIG@" ABSOLUTE)
+  set(_hyle_openssl_runtime "")
+  foreach(_relative IN LISTS _hyle_openssl_files)
+    if(NOT EXISTS "${_hyle_openssl_prefix}/${_relative}" OR
+       IS_DIRECTORY "${_hyle_openssl_prefix}/${_relative}")
+      message(FATAL_ERROR "Incomplete Hyle OpenSSL runtime: ${_relative}")
+    endif()
+    list(APPEND _hyle_openssl_runtime "${_hyle_openssl_prefix}/${_relative}")
+  endforeach()
+  if(_hyle_openssl_runtime)
+    hyle_register_runtime_files(TARGETS hyle::_factor_io_tls FILES ${_hyle_openssl_runtime})
+  endif()
+endif()
+set(HyleOpenSSLRuntime_FOUND TRUE)

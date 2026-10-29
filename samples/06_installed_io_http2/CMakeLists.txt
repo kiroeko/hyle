@@ -4,7 +4,7 @@ project(hyle_sample_installed_io_http2 LANGUAGES CXX)
 find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS io)
 if(NOT io_http2 IN_LIST Hyle_AVAILABLE_FEATURES)
   message(FATAL_ERROR
-    "This sample requires an HYLE package built with HYLE_IO_HTTP2=ON; "
+    "This sample requires an HYLE SDK containing the io product and its HTTP/2 capability; "
     "available features: ${Hyle_AVAILABLE_FEATURES}")
 endif()
 

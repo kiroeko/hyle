@@ -5,7 +5,7 @@
     "torch_cpu": {
       "owner": "compute_provider_native",
       "version": "2.8.0+cpu",
-      "license": "BSD-3-Clause; SDK redistribution also retains the licenses of its bundled dependencies",
+      "license": "BSD-3-Clause for PyTorch; retain bundled component terms including MIT, Zlib, Intel developer-tools EULA, GPL-3.0-or-later WITH GCC-exception-3.1, and Apache-2.0 WITH LLVM-exception as applicable to the platform",
       "platforms": {
         "Windows-x86_64": {
           "url": "https://download.pytorch.org/libtorch/cpu/libtorch-win-shared-with-deps-2.8.0%2Bcpu.zip",
@@ -20,12 +20,85 @@
           "sha256": "be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7",
           "version": "2.8.0"
         }
-      }
+      },
+      "notice_origin": "third_party/torch_sdk/ORIGIN.json",
+      "license_files": [
+        {
+          "root": "hyle",
+          "path": "third_party/torch_sdk/LICENSE",
+          "sha256": "a8a2c6b67cf8a597ffaa5c82380a6bd1b82629c0417e00673d8013d662eb500a"
+        },
+        {
+          "root": "hyle",
+          "path": "third_party/torch_sdk/licenses/common/PyTorch-2.8.0-CPU-wheel-LICENSE",
+          "sha256": "836895c5759803e8852bf107b19d94498bbd4efa7870b1c7878bbe5c86c0694d"
+        },
+        {
+          "root": "hyle",
+          "path": "third_party/torch_sdk/licenses/linux/asmjit/LICENSE.md",
+          "sha256": "c8d30b463d35bd5a14b868bae5d8345a1a77cbc6b4a94669f437c619f2ebef61"
+        },
+        {
+          "root": "hyle",
+          "path": "third_party/torch_sdk/licenses/linux/fbgemm/LICENSE",
+          "sha256": "12c2370ec32e78115dcd71ba22cdcb1297320fdc4ade81f798136d42357c58b8"
+        },
+        {
+          "root": "hyle",
+          "path": "third_party/torch_sdk/licenses/linux/gcc-libgomp/COPYING.RUNTIME",
+          "sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74"
+        },
+        {
+          "root": "hyle",
+          "path": "third_party/torch_sdk/licenses/linux/gcc-libgomp/COPYING3",
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "root": "hyle",
+          "path": "third_party/torch_sdk/licenses/macos/llvm-openmp/LICENSE.TXT",
+          "sha256": "fdad1758a9e1f9d5a81e18879b3406772115edc92c24bfa36b70c654f325e8e4"
+        },
+        {
+          "root": "hyle",
+          "path": "third_party/torch_sdk/licenses/windows/asmjit/LICENSE.md",
+          "sha256": "c8d30b463d35bd5a14b868bae5d8345a1a77cbc6b4a94669f437c619f2ebef61"
+        },
+        {
+          "root": "hyle",
+          "path": "third_party/torch_sdk/licenses/windows/fbgemm/LICENSE",
+          "sha256": "12c2370ec32e78115dcd71ba22cdcb1297320fdc4ade81f798136d42357c58b8"
+        },
+        {
+          "root": "hyle",
+          "path": "third_party/torch_sdk/licenses/windows/intel-openmp/LICENSE.txt",
+          "sha256": "cf98d2d1c2f0ad468374113478e3d63e3ad5bd5f1f61d6c36fcd763bbbd654e9"
+        },
+        {
+          "root": "hyle",
+          "path": "third_party/torch_sdk/licenses/windows/intel-openmp/third-party-programs.txt",
+          "sha256": "279308260bf2960d1c17174706852abe9e678480e5d5fb59bde5713661c937d5"
+        },
+        {
+          "root": "hyle",
+          "path": "third_party/torch_sdk/licenses/windows/libuv/LICENSE",
+          "sha256": "6d20216ae022fbeed23916f48508fd807ece3d8464992330643b0e64e5c0c24b"
+        },
+        {
+          "root": "hyle",
+          "path": "third_party/torch_sdk/NOTICE",
+          "sha256": "c2cc7bf0caec7652c2b460a8a470bea1677f241e4ab8e431df34cf17f5a9fec0"
+        },
+        {
+          "root": "hyle",
+          "path": "third_party/torch_sdk/ORIGIN.json",
+          "sha256": "1a4ca9734e34612976d93a91cad51fa3a8bbb1c9ca23a6c2345c1408cae4a549"
+        }
+      ]
     },
     "torch_cuda_leaf": {
       "owner": "compute_provider_torch_cuda",
       "version": "2.8.0+cu129",
-      "license": "BSD-3-Clause; retain all licenses of the bundled CUDA leaf dependencies",
+      "license": "BSD-3-Clause for PyTorch; retain the common CPU runtime notices, the original wheel LICENSE/NOTICE, and the distinct NVIDIA runtime licenses",
       "platforms": {
         "Windows-x86_64": {
           "url": "https://download-r2.pytorch.org/whl/cu129/torch-2.8.0%2Bcu129-cp312-cp312-win_amd64.whl",
@@ -207,7 +280,8 @@
             }
           ]
         }
-      }
+      },
+      "shared_notice_sdk": "torch_cpu"
     }
   },
   "dependencies": [
@@ -247,7 +321,7 @@
       },
       "expanded_tree_sha256": "5640fe0b16539a264496249a92dde43e11f2ea42764355a17d12dee1a49a6c74",
       "license": {
-        "expression": "Apache-2.0",
+        "expression": "Apache-2.0 AND MIT AND BSD-3-Clause AND Zlib",
         "files": [
           {
             "root": "dependency",
@@ -263,6 +337,31 @@
             "root": "dependency",
             "path": "include/flatcc/portable/LICENSE",
             "sha256": "cdaa0a9f209382e44e614ab520c05111b0edfc486e3800da093b77c054d02ea1"
+          },
+          {
+            "root": "dependency",
+            "path": "include/flatcc/portable/pstdint.h",
+            "sha256": "8f70f6980e1e199c72fe076edd20e799d9ff8a2dbbd02776f87eb2707f2315a8"
+          },
+          {
+            "root": "dependency",
+            "path": "include/flatcc/portable/pprintint.h",
+            "sha256": "698dae7a175cb5130e744a611a780bc14e7b8724e6ed789266bcf7f9b06cd4ab"
+          },
+          {
+            "root": "dependency",
+            "path": "include/flatcc/portable/punaligned.h",
+            "sha256": "1bc41dfcea7748810c377af08a2a09e0091b69c9a7a6ec35101dfaa4c4875841"
+          },
+          {
+            "root": "dependency",
+            "path": "include/flatcc/portable/pmemaccess.h",
+            "sha256": "eb85816fbc524804eaf347331708cdf1428b50f4ddcf24ffe8ce7500efd8961a"
+          },
+          {
+            "root": "dependency",
+            "path": "include/flatcc/portable/pstatic_assert_scope.h",
+            "sha256": "a992928f70d3cb283279a686e675d1b8fe0a706fece98e4128ccb6082e2e00a6"
           }
         ]
       }
@@ -368,7 +467,7 @@
       },
       "vendored": {
         "path": "third_party/iree_vulkan_runtime",
-        "tree_sha256": "35a19c375a6e9e152494907108061691eb553ff9fa3870066dd8998ede9c4a76"
+        "tree_sha256": "36fe25bad8fe5ef59dfa7b5df9762d4df9308120fb369ee63b12cabae0f58dc6"
       }
     },
     {
@@ -1251,12 +1350,37 @@
       },
       "expanded_tree_sha256": "dda66e35e3485f5f986f92d9eb0edd06a6f46c5b3a94cd9267dd8eea9f909d78",
       "license": {
-        "expression": "Apache-2.0",
+        "expression": "Apache-2.0 AND BSD-3-Clause AND MIT",
         "files": [
           {
             "root": "dependency",
             "path": "LICENSE",
             "sha256": "f3514f24f2b94d09c409abbf4020cf600e4059098c697110eb91a4a2b235fbb7"
+          },
+          {
+            "root": "dependency",
+            "path": "NOTICE",
+            "sha256": "90bb9e1dec06f26a34f8f8ce98c53ded10b4fd8e1a9e91e2360e6be354e81db3"
+          },
+          {
+            "root": "dependency",
+            "path": "licenses/LICENSE.cutlass.txt",
+            "sha256": "6fc6ad419e4d26571a14c7c4d26b65345865c20dd8686ddcf5e8673f54d3d233"
+          },
+          {
+            "root": "dependency",
+            "path": "licenses/LICENSE.flashattention3.txt",
+            "sha256": "8c9ccb96c065e706135b6cbad279b721da6156e51f3a5f27c6b3329af9416d73"
+          },
+          {
+            "root": "dependency",
+            "path": "licenses/LICENSE.fmt.txt",
+            "sha256": "825c9324e70f8c839c8ba910543dd4a7daee243b86ef960594c11381a19980b8"
+          },
+          {
+            "root": "dependency",
+            "path": "licenses/LICENSE.spdlog.txt",
+            "sha256": "c703fb8266409f5660523b307bbefd2bc8d7b92c848d0b973e6dd8640a5389f7"
           }
         ]
       }

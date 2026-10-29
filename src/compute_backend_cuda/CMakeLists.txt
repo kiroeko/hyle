@@ -50,6 +50,19 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
     endif()
   endif()
   hyle_target_compute_capability(hyle_compute_backend_cuda cuda)
+  if(WIN32 AND HYLE_INSTALL AND "compute_backend_cuda" IN_LIST HYLE_PRODUCTION_COMPONENT_LIST)
+    # The runtime closure includes Toolkit cudart/cuBLAS/cuBLASLt DLLs.
+    # Preserve the selected machine SDK's terms alongside redistributed assets.
+    find_file(_hyle_cuda_eula NAMES EULA.txt LICENSE
+      PATHS "${CUDAToolkit_LIBRARY_ROOT}" "${CUDAToolkit_TARGET_DIR}"
+            "${CUDAToolkit_BIN_DIR}/.."
+      NO_DEFAULT_PATH NO_CACHE REQUIRED)
+    foreach(_component IN ITEMS Hyle_Runtime Hyle_Development)
+      install(FILES "${_hyle_cuda_eula}"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
+        RENAME CUDA-Toolkit-EULA.txt COMPONENT "${_component}")
+    endforeach()
+  endif()
   hyle_register_package_dependency(
     NAME compute_cuda_sdk
     OWNER compute_backend_cuda

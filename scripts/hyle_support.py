@@ -193,6 +193,29 @@ def _boolean(args: argparse.Namespace, name: str, cache: dict[str, str], key: st
     return cache.get(key, "OFF").upper() in _BOOL_TRUE if value is None else value
 
 
+def _product_catalog() -> set[str]:
+    # Read the existing declarations, not a second product table or the factor DAG.
+    path = ROOT / "cmake/HyleComponents.cmake"
+    try:
+        manifest = re.sub(r"(?m)^\s*#.*$", "", path.read_text(encoding="utf-8"))
+    except OSError as error:
+        raise SetupError(f"Cannot read Hyle's product catalog at {path}: {error}") from error
+    declarations = set(re.findall(r"(?m)^\s*_hyle_declare_product\(\s*([^\s)]+)", manifest))
+    products = {name for name in declarations if re.fullmatch(r"[a-z][a-z0-9_]*", name)}
+    recognized = set(products)
+    for variable, items, body in re.findall(
+            r"(?ms)^\s*foreach\(\s*(\w+)\s+IN\s+ITEMS\s+([^)]*)\)(.*?)^\s*endforeach\(\)", manifest):
+        name = '"${' + variable + '}"'
+        if re.search(r"(?m)^\s*_hyle_declare_product\(\s*" + re.escape(name) + r"\s+FACTORS\b", body):
+            if not all(re.fullmatch(r"[a-z][a-z0-9_]*", item) for item in items.split()):
+                raise SetupError(f"Cannot read Hyle's product catalog at {path}: expected literal product names.")
+            products.update(items.split())
+            recognized.add(name)
+    if not products or declarations - recognized:
+        raise SetupError(f"Cannot read Hyle's product catalog at {path}: unsupported product declaration.")
+    return products
+
+
 def _selection(args: argparse.Namespace, cache: dict[str, str], saved_config: str | None = None) -> dict:
     system, arch = _host()
     backend_value = args.backends if args.backends is not None else cache.get("HYLE_COMPUTE_ROUTES", "cpu")
@@ -202,6 +225,11 @@ def _selection(args: argparse.Namespace, cache: dict[str, str], saved_config: st
         raise SetupError("--components must be product names separated by commas, or all.")
     if "all" in products and products != ["all"]:
         raise SetupError("Use --components all alone, or list the products you need.")
+    known_products = _product_catalog()
+    unknown = set(products) - known_products - {"engine", "all"}
+    if unknown:
+        raise SetupError(f"Unknown Hyle product(s): {', '.join(sorted(unknown))}. "
+                         f"Use --components engine, all, or {', '.join(sorted(known_products))}.")
     # An unused cached route does not constrain a foundation-only product.
     routes = (parse_backends(backend_value, system, arch,
                              complete_math=bool({"engine", "all", "compute", "graph"}.intersection(products)))

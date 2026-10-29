@@ -1,0 +1,178 @@
+{
+  "purpose": "Original upstream terms supplement the locked CPU LibTorch archives, which omit main and some bundled notices. CUDA-only ATen also uses this common CPU runtime.",
+  "pytorch_build_commit": "a1cb3cc05d46d198467bebbb6e8fba50a325d4e7",
+  "build_identity": {
+    "Windows": "a1cb3cc05d46d198467bebbb6e8fba50a325d4e7",
+    "Linux": "a1cb3cc05d46d198467bebbb6e8fba50a325d4e7",
+    "Darwin": "a1cb3cc05d46d198467bebbb6e8fba50a325d4e7",
+    "basis": "Read original cached archive/extracted libtorch build-hash text, no library execution. Windows/Linux build-version 2.8.0+cpu; Darwin 2.8.0."
+  },
+  "files": [
+    {
+      "path": "LICENSE",
+      "bytes": 3464,
+      "sha256": "a8a2c6b67cf8a597ffaa5c82380a6bd1b82629c0417e00673d8013d662eb500a",
+      "url": "https://raw.githubusercontent.com/pytorch/pytorch/a1cb3cc05d46d198467bebbb6e8fba50a325d4e7/LICENSE",
+      "basis": "Actual SDK build commit; original bytes verified against release-tag text."
+    },
+    {
+      "path": "NOTICE",
+      "bytes": 23632,
+      "sha256": "c2cc7bf0caec7652c2b460a8a470bea1677f241e4ab8e431df34cf17f5a9fec0",
+      "url": "https://raw.githubusercontent.com/pytorch/pytorch/a1cb3cc05d46d198467bebbb6e8fba50a325d4e7/NOTICE",
+      "basis": "Actual SDK build commit; original bytes verified against release-tag text."
+    },
+    {
+      "path": "licenses/windows/fbgemm/LICENSE",
+      "bytes": 1535,
+      "sha256": "12c2370ec32e78115dcd71ba22cdcb1297320fdc4ade81f798136d42357c58b8",
+      "url": "https://raw.githubusercontent.com/pytorch/fbgemm/157e88b750c452bef2ab4653fe9d1eeb151ce4c3/LICENSE",
+      "revision": "157e88b750c452bef2ab4653fe9d1eeb151ce4c3",
+      "basis": "FBGEMM/AsmJit submodule at actual PyTorch build commit."
+    },
+    {
+      "path": "licenses/linux/fbgemm/LICENSE",
+      "bytes": 1535,
+      "sha256": "12c2370ec32e78115dcd71ba22cdcb1297320fdc4ade81f798136d42357c58b8",
+      "url": "https://raw.githubusercontent.com/pytorch/fbgemm/157e88b750c452bef2ab4653fe9d1eeb151ce4c3/LICENSE",
+      "revision": "157e88b750c452bef2ab4653fe9d1eeb151ce4c3",
+      "basis": "FBGEMM/AsmJit submodule at actual PyTorch build commit."
+    },
+    {
+      "path": "licenses/windows/asmjit/LICENSE.md",
+      "bytes": 862,
+      "sha256": "c8d30b463d35bd5a14b868bae5d8345a1a77cbc6b4a94669f437c619f2ebef61",
+      "url": "https://raw.githubusercontent.com/asmjit/asmjit/e5d7c0bd5d9aec44d68830187138149e6a8c4e32/LICENSE.md",
+      "revision": "e5d7c0bd5d9aec44d68830187138149e6a8c4e32",
+      "basis": "FBGEMM/AsmJit submodule at actual PyTorch build commit."
+    },
+    {
+      "path": "licenses/linux/asmjit/LICENSE.md",
+      "bytes": 862,
+      "sha256": "c8d30b463d35bd5a14b868bae5d8345a1a77cbc6b4a94669f437c619f2ebef61",
+      "url": "https://raw.githubusercontent.com/asmjit/asmjit/e5d7c0bd5d9aec44d68830187138149e6a8c4e32/LICENSE.md",
+      "revision": "e5d7c0bd5d9aec44d68830187138149e6a8c4e32",
+      "basis": "FBGEMM/AsmJit submodule at actual PyTorch build commit."
+    },
+    {
+      "path": "licenses/windows/libuv/LICENSE",
+      "bytes": 3143,
+      "sha256": "6d20216ae022fbeed23916f48508fd807ece3d8464992330643b0e64e5c0c24b",
+      "url": "https://raw.githubusercontent.com/libuv/libuv/4e69e333252693bd82d6338d6124f0416538dbfc/LICENSE",
+      "revision": "4e69e333252693bd82d6338d6124f0416538dbfc",
+      "basis": "Actual DLL declares libuv 1.40.0; no exact source-patch proof."
+    },
+    {
+      "path": "licenses/linux/gcc-libgomp/COPYING3",
+      "bytes": 35147,
+      "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+      "url": "https://raw.githubusercontent.com/gcc-mirror/gcc/5115c7e447fc07457443df874bf57840e8316d5f/COPYING3",
+      "revision": "5115c7e447fc07457443df874bf57840e8316d5f",
+      "basis": "Fixed reference identifies terms; actual binary source release is unproven."
+    },
+    {
+      "path": "licenses/linux/gcc-libgomp/COPYING.RUNTIME",
+      "bytes": 3324,
+      "sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74",
+      "url": "https://raw.githubusercontent.com/gcc-mirror/gcc/5115c7e447fc07457443df874bf57840e8316d5f/COPYING.RUNTIME",
+      "revision": "5115c7e447fc07457443df874bf57840e8316d5f",
+      "basis": "Fixed reference identifies terms; actual binary source release is unproven."
+    },
+    {
+      "path": "licenses/macos/llvm-openmp/LICENSE.TXT",
+      "bytes": 19741,
+      "sha256": "fdad1758a9e1f9d5a81e18879b3406772115edc92c24bfa36b70c654f325e8e4",
+      "url": "https://raw.githubusercontent.com/llvm/llvm-project/87f0227cb60147a26a1eeb4fb06e3b505e9c7261/openmp/LICENSE.TXT",
+      "revision": "87f0227cb60147a26a1eeb4fb06e3b505e9c7261",
+      "basis": "Fixed reference identifies terms; actual binary source release is unproven."
+    },
+    {
+      "path": "licenses/windows/intel-openmp/LICENSE.txt",
+      "bytes": 25224,
+      "sha256": "febfb69a5b058f55892dc7f341108a9ca29d50e9fe85723a57eebbb826436958",
+      "url": "https://files.pythonhosted.org/packages/bc/37/bab8e9283407798d8782f4d9b374436e51c7a297e1b6dc05073df550c010/intel_openmp-2025.2.0-py2.py3-none-win_amd64.whl",
+      "archive_member": "intel_openmp-2025.2.0.dist-info/LICENSE.txt",
+      "supplier_version": "2025.2.0",
+      "basis": "Supplier RECORD SHA256 and sizes match both actual SDK Intel DLLs."
+    },
+    {
+      "path": "licenses/windows/intel-openmp/third-party-programs.txt",
+      "bytes": 31578,
+      "sha256": "f8ce918fe7311ce279e68380a2e233f8a42b1cd3dda8f4c48d6de97a0255c1d7",
+      "url": "https://files.pythonhosted.org/packages/bc/37/bab8e9283407798d8782f4d9b374436e51c7a297e1b6dc05073df550c010/intel_openmp-2025.2.0-py2.py3-none-win_amd64.whl",
+      "archive_member": "intel_openmp-2025.2.0.data/data/share/doc/compiler/licensing/openmp/third-party-programs.txt",
+      "supplier_version": "2025.2.0",
+      "basis": "Supplier RECORD SHA256 and sizes match both actual SDK Intel DLLs."
+    },
+    {
+      "path": "licenses/common/PyTorch-2.8.0-CPU-wheel-LICENSE",
+      "bytes": 506902,
+      "sha256": "d61701e874c39a858d92c47c2cbf3bd8b9e498032a18ae42832fba591752ce1f",
+      "url": "https://download.pytorch.org/whl/cpu/torch-2.8.0%2Bcpu-cp312-cp312-win_amd64.whl",
+      "archive_member": "torch-2.8.0+cpu.dist-info/LICENSE",
+      "basis": "Companion CPU release aggregated third-party terms; not an assertion of SDK binary identity or exact platform dependency composition."
+    }
+  ],
+  "fbgemm_source_chain": {
+    "pytorch_third_party_fbgemm": "157e88b750c452bef2ab4653fe9d1eeb151ce4c3",
+    "fbgemm_external_asmjit": "e5d7c0bd5d9aec44d68830187138149e6a8c4e32",
+    "basis": "GitHub submodule entries independently read at actual PyTorch binary build commit and FBGEMM commit. This identifies source tree dependencies, not a reproducible binary rebuild."
+  },
+  "libuv": {
+    "source_tag": "v1.40.0",
+    "source_commit": "4e69e333252693bd82d6338d6124f0416538dbfc",
+    "basis": "Existing Windows uv.dll PE export uv_version function raw bytes b800280100c3 returns 0x012800; uv_version_string points to NUL-terminated 1.40.0. Binary was not executed. This establishes declared upstream version, not exact source revision/patch proof.",
+    "license": "MIT and bundled additional notices as supplied by libuv LICENSE; full file retained."
+  },
+  "intel_openmp": {
+    "supplier_version": "2025.2.0",
+    "wheel_url": "https://files.pythonhosted.org/packages/bc/37/bab8e9283407798d8782f4d9b374436e51c7a297e1b6dc05073df550c010/intel_openmp-2025.2.0-py2.py3-none-win_amd64.whl",
+    "license_identity": "Intel End User License Agreement for Developer Tools (Version August 2024)",
+    "matched_binaries": [
+      {
+        "name": "libiomp5md.dll",
+        "bytes": 1613680,
+        "sha256": "d9d66ed25f1a0ea725fa3a41b22cfd5d182c19dbe4771d9c90ca02ad7466f6a1"
+      },
+      {
+        "name": "libiompstubs5md.dll",
+        "bytes": 43888,
+        "sha256": "daeb39e4ced3bfce4a622b63b8b0281613eb8180266f8dd1dc678346df1c7697"
+      }
+    ]
+  },
+  "gcc_libgomp": {
+    "binary": "libtorch/lib/libgomp-98b21ff3.so.1",
+    "binary_size": 283265,
+    "binary_sha256": "6b254201cafdc5389580d77139398a298f63ce3b139cfbcceade961ac0d721cb",
+    "elf_build_id": "4c54e52f5c58cdda349cf2b8a47b4a09814a0d70",
+    "actual_gcc_release": "UNPROVEN",
+    "fixed_reference_tag": "releases/gcc-15.2.0",
+    "fixed_reference_commit": "5115c7e447fc07457443df874bf57840e8316d5f",
+    "license_identification": "GNU GPL version 3 or later with GCC Runtime Library Exception 3.1, as declared in upstream libgomp header. Full GPL3 and runtime exception texts retained.",
+    "boundary": "Fixed upstream source is a license identification reference only; no assertion that this GCC release produced the shipped ELF. No complete corresponding source or relink/runtime distribution obligations determination is claimed."
+  },
+  "llvm_openmp": {
+    "binary": "libtorch/lib/libomp.dylib",
+    "binary_size": 735616,
+    "binary_sha256": "f16b7e35fa03c013cc7c51fce1e5fab5e825bb5bd2ee4f7a236075fbdc088992",
+    "actual_llvm_release": "UNPROVEN",
+    "fixed_reference_tag": "llvmorg-20.1.8",
+    "fixed_reference_commit": "87f0227cb60147a26a1eeb4fb06e3b505e9c7261",
+    "license_identification": "Upstream OpenMP LICENSE.TXT includes Apache-2.0 with LLVM exceptions and legacy MIT notices; original complete file retained.",
+    "basis": "Actual PyTorch source .ci/wheel/build_wheel.sh runs brew install libomp; supplied Mach-O LC_ID_DYLIB is /opt/homebrew/opt/libomp/lib/libomp.dylib. Library strings identify LLVM OpenMP and Clang16 build compiler; ABI version 5.0.20140926 is not treated as LLVM release.",
+    "boundary": "No Homebrew receipt exists in current local cache. Fixed LLVM source identifies current upstream terms but is not asserted to be exact binary source revision."
+  },
+  "companion_release_notices": {
+    "url": "https://download.pytorch.org/whl/cpu/torch-2.8.0%2Bcpu-cp312-cp312-win_amd64.whl",
+    "full_archive_hash_verified": false,
+    "source": "Only original license members were read with bounded HTTP Range requests.",
+    "notice_deduplicated": "The companion NOTICE is identical to the actual source NOTICE after newline normalization."
+  },
+  "boundaries": [
+    "These notices do not change upstream license terms or assert a reproducible binary build.",
+    "The actual GNU and LLVM OpenMP source releases are unproven; retain this limitation when distributing the corresponding SDK binaries.",
+    "Keeping license texts alone does not establish that all source-offer or other redistribution obligations have been satisfied.",
+    "Original SDK and CUDA wheel license/NOTICE files remain independently installed."
+  ]
+}

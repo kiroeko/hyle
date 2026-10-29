@@ -1,5 +1,46 @@
 include_guard(GLOBAL)
 
+# Build-side packaging only; resolving an installed SDK never invokes this.
+# Keep source-supplied PyTorch terms separate from the SDK's own notice paths.
+function(hyle_install_torch_sdk_notices source_root sdk_root)
+  if(NOT HYLE_INSTALL)
+    return()
+  endif()
+  if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(_platform windows)
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(_platform linux)
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(_platform macos)
+  else()
+    message(FATAL_ERROR "No Torch SDK notice selection for ${CMAKE_SYSTEM_NAME}")
+  endif()
+  set(_notices "${source_root}/third_party/torch_sdk")
+  file(GLOB_RECURSE _sdk_files LIST_DIRECTORIES FALSE RELATIVE "${sdk_root}"
+    "${sdk_root}/*")
+  foreach(_component IN ITEMS Hyle_Runtime Hyle_Development)
+    install(FILES "${_notices}/LICENSE" "${_notices}/NOTICE" "${_notices}/ORIGIN.json"
+      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle/torch-sdk"
+      COMPONENT "${_component}")
+    install(DIRECTORY "${_notices}/licenses/${_platform}/"
+      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle/torch-sdk/licenses/${_platform}"
+      COMPONENT "${_component}")
+    install(DIRECTORY "${_notices}/licenses/common/"
+      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle/torch-sdk/licenses/common"
+      COMPONENT "${_component}")
+    foreach(_relative IN LISTS _sdk_files)
+      get_filename_component(_name "${_relative}" NAME)
+      string(TOUPPER "${_name}" _name)
+      if(_name MATCHES "^(LICENSE|NOTICE|COPYING|COPYRIGHT)([._-].*)?$")
+        get_filename_component(_directory "${_relative}" DIRECTORY)
+        install(FILES "${sdk_root}/${_relative}"
+          DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle/torch-cpu-sdk/${_directory}"
+          COMPONENT "${_component}")
+      endif()
+    endforeach()
+  endforeach()
+endfunction()
+
 function(_hyle_torch_cpu_platform output)
   set(_processor "${HYLE_TARGET_PROCESSOR}")
   if(NOT _processor)

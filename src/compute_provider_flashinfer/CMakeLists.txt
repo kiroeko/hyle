@@ -75,5 +75,10 @@ hyle_register_package_dependency(
   LOCKED_DEPENDENCIES flashinfer flashinfer_cache_patches
   RUNTIME_FILE_SPECS
     "${flashinfer_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|flashinfer-LICENSE"
+    "${flashinfer_SOURCE_DIR}/NOTICE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|flashinfer-NOTICE"
+    "${flashinfer_SOURCE_DIR}/licenses/LICENSE.cutlass.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|flashinfer-cutlass-LICENSE.txt"
+    "${flashinfer_SOURCE_DIR}/licenses/LICENSE.flashattention3.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|flashinfer-flashattention3-LICENSE.txt"
+    "${flashinfer_SOURCE_DIR}/licenses/LICENSE.fmt.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|flashinfer-fmt-LICENSE.txt"
+    "${flashinfer_SOURCE_DIR}/licenses/LICENSE.spdlog.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|flashinfer-spdlog-LICENSE.txt"
     "${_cache_patch_root}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|flashinfer-cache-patches-LICENSE"
     "${_cache_patch_root}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|flashinfer-cache-patches-NOTICE.md")

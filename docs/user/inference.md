@@ -38,9 +38,10 @@ python scripts/build.py --target hyle_engine --jobs 2
 
 ## 准备本地输入并运行
 
-准备器读取[固定模型输入清单](../implementation/tasks/compute/qwen35-2b-local-input.json)，
-核对本地文件身份，生成权重偏移与 token IDs；不下载模型、不复制整份权重。
-本地模型目录须与清单匹配，并保持可访问。Python tokenizer 需要准备器所用的 Transformers 环境，
+默认准备器读取本地模型的 `config.json`、safetensors 索引与张量头，校验所需角色、类型、形状和文件范围，
+对实际使用的原权重范围计算 hash，生成权重偏移与 token IDs；不下载模型、不复制整份权重。
+指定 `--role-files` 时则核对固定 repository／revision 及原角色 hash，GGUF 使用 `--gguf-role-files`。
+本地原权重与 tokenizer 文件须保持可访问。Python tokenizer 需要兼容的 Transformers 环境，
 初始化 C++ 构建不会自动安装它或获取模型。
 
 ```text
@@ -56,8 +57,10 @@ JSON 的 `text_tensors`／`mtp_tensors` 统计实际加载的物理角色，`wei
 原 CT channel/token FP8 与 local NVFP4 混合清单使用
 `--fp8-reader compressed-tensors-0.17.2a20260716` 固定参考算法；存在原 KV 校准参数时，
 还须显式选择缓存政策：`--kv-cache-dtype bf16` 保留原 BF16 缓存并省略校准角色加载；
-普通推理也可用 `--kv-cache-dtype e4m3fn`，读取每层原 BF16 K/V scale，采用固定校准的 E4 缓存。
-后者不能与 `--mtp` 合用，缺失、非正或非有限 scale 会在冷准备时拒绝；不合成默认 scale。
+也可用 `--kv-cache-dtype e4m3fn`，读取每层原 BF16 K/V scale，采用固定校准的 target E4 缓存。
+它可与 `--mtp` 合用，draft KV 保留原 BF16／plain 存储，不推造 draft 校准参数；
+CPU／CUDA 的有限完整状态、真实合批、取消和恢复见[组合检查](../evidence/correctness/inference-mtp-e4-2026-10-28.json)。
+缺失、非正或非有限 scale 会在冷准备时拒绝，不合成默认 scale。
 两者都将校准参数的名字、形状及 hash 保留在输入身份和记录中，不把它们装成模型权重张量。
 E4 的缓存行载荷为 BF16 的一半，实际总 backing 仍包括页、元数据和其它状态。
 缓存政策不改变 activation、recurrent 或投影计算精度。channel/token 保留 BF16 QDQ 与逐权重舍入，
@@ -102,7 +105,15 @@ CUDA greedy 的K1 MTP也已接入单活动请求的自然接力；其它MTP宽�
 默认 greedy；也可用 `--sampling random --temperature 0.8 --top-k 40 --top-p 0.95 --seed 42`。
 普通与 MTP 共用温度→top-k→top-p 分布，`--top-k 0` 关闭该过滤。
 底层请求可以从同一Model的有限冷配置中选择greedy或不同温度／过滤政策；不同政策的兼容组共享权重和缓存，
-完整前缀命中按新请求自己的政策选择pending，同请求恢复保留历史pending和随机游标。MTP逐请求bias／mask尚未接通。
+完整前缀命中按新请求自己的政策选择pending，同请求恢复保留历史pending和随机游标。
+普通与MTP的C++请求编排现支持逐请求只读bias／mask，以及按实际已消费历史推进的重复、出现和频率罚分；
+MTP同时对草稿q、目标p和拒绝残差使用同一数学政策。
+动态条件提供者接收当前turn已提交输出及未来草稿前缀；pending已在前者，不在后者重复。
+每个实际q条件行只取得一次，目标验证复用原行和q租约；StateOnly中间块不调用提供者。
+CPU／CUDA小型制品的多轮、缓存命中及失败重试见[自然条件输入](../evidence/correctness/inference-natural-logits-2026-10-29.json)，
+终止前缀、动态／静态合批、取消和同键主机恢复见[条件控制](../evidence/correctness/inference-natural-logits-control-2026-10-29.json)。
+这些逐请求扩展位于 `engine/` 的C++请求编排，目前没有对应CLI参数或已安装的server／引擎SDK入口；
+不据有限检查外推其它平台、任意语法提供者或完整任务质量。现有Compute／Graph SDK仍提供模型无关的计算与资源接口。
 每个会话有独立随机流，提交失败或取消不推进已发布的随机数位置；前缀命中保留当前会话的随机流。
 固定随机地址的恢复、重试及真实取消已检查，见[功能记录](../evidence/correctness/qwen-mtp-random-integration-2026-10-24.json)。
 相同 seed 不保证不同后端或普通／MTP 路径逐 token 相同。

@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary */
+/* SPDX-License-Identifier: Apache-2.0 */
 
 #include "hyle/core/assert.h"
 #include "hyle/core/cache.h"

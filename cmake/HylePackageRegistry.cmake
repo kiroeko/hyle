@@ -571,8 +571,12 @@ function(hyle_package_install_registered_assets)
   foreach(_dependency IN LISTS _dependencies)
     _hyle_package_dependency_property(
       "${_dependency}" RUNTIME_FILE_SPECS _runtime_files)
-    _hyle_package_install_file_specs(
-      "${_dependency}" Hyle_Runtime ${_runtime_files})
+    # These are the authenticated license texts, not generated runtime binaries.
+    # A development-only SDK also redistributes headers and static archives.
+    foreach(_component IN ITEMS Hyle_Runtime Hyle_Development)
+      _hyle_package_install_file_specs(
+        "${_dependency}" "${_component}" ${_runtime_files})
+    endforeach()
     _hyle_package_dependency_property(
       "${_dependency}" GENERATED_RUNTIME_FILE_SPECS _generated_files)
     foreach(_spec IN LISTS _generated_files)

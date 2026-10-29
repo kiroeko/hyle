@@ -10,4 +10,6 @@ docs/evidence/validation-selector-v1/receipts/*.log -text whitespace=cr-at-eol
 third_party/mimalloc/** whitespace=-trailing-space
 third_party/simdutf/simdutf.cpp whitespace=cr-at-eol
 third_party/simdutf/simdutf.h whitespace=cr-at-eol
+# Original SDK license/notice bytes are pinned in torch_sdk/ORIGIN.json.
+third_party/torch_sdk/** -text whitespace=cr-at-eol,-trailing-space,-blank-at-eof
 SOURCE-MANIFEST.txt export-subst

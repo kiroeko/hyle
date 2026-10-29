@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary */
+/* SPDX-License-Identifier: Apache-2.0 */
 #pragma once
 
 // Source-only finite HYLE provider exceptions.  Include this only in a target

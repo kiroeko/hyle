@@ -16,6 +16,8 @@
   字段中的阶段名和历史结果不自动代表当前支持范围。
 - `tasks/compute/` 的其余 JSON：原始需求、格式、handoff 与实验索引；不作为新任务或开发门禁。
 - [evidence](../evidence/README.md)：历史源码、日志、输入、数据与复现资产；JSON/ZIP 保留旧实验参数、结果与归档。
+  基础模块的性能结果已汇总到[模块性能数据](../developer/performance/modules.md)，各模块的设计决策见
+  [架构索引](../architecture/README.md)。
 
 ## 追溯旧文档
 

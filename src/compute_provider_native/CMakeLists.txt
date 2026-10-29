@@ -51,6 +51,9 @@ if(_HYLE_COMPUTE_HAVE_TORCH_CPU)
     target_link_options(hyle_compute_provider_native PRIVATE LINKER:--disable-new-dtags)
   endif()
   hyle_target_compute_capability(hyle_compute_provider_native torch_cpu VISIBILITY PRIVATE)
+  if("compute_provider_native" IN_LIST HYLE_PRODUCTION_COMPONENT_LIST)
+    hyle_install_torch_sdk_notices("${HYLE_SOURCE_DIR}" "${_hyle_torch_root}")
+  endif()
   hyle_register_package_dependency(
     NAME torch_cpu_sdk
     OWNER compute_provider_native

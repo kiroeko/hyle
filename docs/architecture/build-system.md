@@ -36,7 +36,7 @@ CPU/CUDA 适配只要求实际复制 backend，不因此选择默认数学 Provi
 
 | 配置层 | 责任 |
 |---|---|
-| 用户意图 | 选择产品、可用后端集合、交付及需要的协议能力 |
+| 用户意图 | 选择产品、可用后端集合、构建和交付方式 |
 | 开发诊断 | tests、bench、sanitizer、trace、精确ISA与内部factor隔离 |
 | 工具和获取路径 | 已安装compiler/SDK、工具路径、锁定源码cache或原始archive override |
 | 内部事实 | 目标平台、选中factor、实际可用实现、capability与需要传播的宏 |
@@ -44,9 +44,10 @@ CPU/CUDA 适配只要求实际复制 backend，不因此选择默认数学 Provi
 [统一初始化](../developer/setup/README.md)以 `--backends` 选择后端集合，映射到底层CMake的
 `HYLE_COMPUTE_ROUTES`；CPU、单GPU或混合执行由运行时选择，不增加模式或逐Provider布尔选择。
 路线、公开专家入口与混合桥接由内部装配描述推导，factor依赖仍只在中央DAG声明。
-未选后端不探测/下载；已选的完整产品缺必要依赖就明确失败，不静默形成lite版本。
+未选后端不探测/下载；已选产品完整装配其Provider、协议和其它必要能力。
+依赖体积、下载量或引用库的数量不是删减能力的理由；缺必要依赖就明确失败。
 
-普通能力用ON/OFF；确实允许探测降级的能力才用AUTO/ON/OFF，ON缺件失败、OFF不探测。
+ON/OFF只用于确实独立的构建、测试和诊断用途，不为已选产品再提供省依赖的能力开关。
 从平台、产品或target已能推导的事实不得变成第二个cache输入。
 SDK root/archive override仅改变获取位置，不改变版本、能力或锁身份。
 

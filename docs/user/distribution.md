@@ -14,7 +14,8 @@
 
 三种方式使用相同的 `hyle::<product>` target 和 C++23 API。静态 HYLE 不表示全部第三方运行库
 也静态链接；例如 CPU Compute 的 ATen 路径使用外部 shared CPU runtime。当前没有产品 C API 或跨语言 FFI。
-许可证和再分发权限按仓库法律文本与第三方 notice 处理。
+HYLE 本身采用 Apache-2.0，第三方组件按各自许可证；安装包在 `share/licenses/Hyle/` 下附带
+实际包含组件的许可证文本，见[许可与第三方代码边界](../architecture/licensing.md)。
 
 ## 源码嵌入
 

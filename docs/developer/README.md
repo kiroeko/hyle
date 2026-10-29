@@ -13,6 +13,8 @@
 | 定位崩溃、挂起、数值或测量异常 | [排障](debugging/README.md) |
 | 比较性能、定位慢项 | [性能测量](performance/README.md) |
 | 查询 CUDA decode 测量结果与调查边界 | [decode 记录](performance/decode.md) |
+| 查询基础模块与外部库的性能对照 | [模块性能数据](performance/modules.md) |
+| 查缩写和术语（B2、N2／R2、pending 等） | [术语表](../glossary.md) |
 | 修改 SIMD 实现或生成路由 | [SIMD 维护](maintenance/simd-dispatch-guide.md) |
 | 了解模块边界和设计取舍 | [架构](../architecture/README.md) |
 | 查询已验证模型、算子与边界 | [模型与算子覆盖](../implementation/model-operators.md) |

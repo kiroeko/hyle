@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.25)
 project(hyle_sample_inference_service LANGUAGES CXX)
 
-# This source-embedding consumer exercises HTTP/1. Optional TLS/HTTP2 stay at
-# HYLE's default OFF unless the caller explicitly enables them.
+# This source-embedding consumer exercises HTTP/1. The io product supplies its
+# full TLS/HTTP2 dependency closure even though this sample does not use it.
 set(HYLE_COMPONENTS "container;util;sched;io;simd;obs;platform;mem")
 add_subdirectory(../.. hyle_build)
 

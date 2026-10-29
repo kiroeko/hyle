@@ -1,0 +1,9 @@
+HYLE
+Copyright 2026 The HYLE Authors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product includes or adapts third-party software. Each component keeps
+its own copyright and license terms, recorded in the component's directory
+under third_party/ or in the pinned upstream source fetched by the build.
+See THIRD_PARTY_NOTICES.md for the complete list.

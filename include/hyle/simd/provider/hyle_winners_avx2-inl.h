@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary */
+/* SPDX-License-Identifier: Apache-2.0 */
 #pragma once
 
 // Finite HYLE AVX2 winners retained by simd-v3.  This is deliberately not a
