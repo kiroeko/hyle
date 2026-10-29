@@ -173,12 +173,54 @@ class ExecutionEpisode final {
   // is the model's nonthrowing final candidate discard, never publication.
   template<class Recycle>
   Result<bool> recover(Recycle &&recycle) noexcept {
+    return recover_impl(false, {}, std::forward<Recycle>(recycle));
+  }
+
+  // Discard unpublished work only after observing its original whole-Graph
+  // success. Keep the open carrier and fixed IO; the next preparation still
+  // acquires every dynamic permission and validates its complete physical tuple.
+  // A partial return retains the success observation and every remaining owner.
+  // Errors leave those facts available to the original destructive recovery.
+  template<class Recycle>
+  Result<bool> discard_successful(std::span<const graph::ValueId> ordinary_inputs,
+      Recycle &&recycle) noexcept {
+    return recover_impl(true, ordinary_inputs, std::forward<Recycle>(recycle));
+  }
+
+ private:
+  // A default terminal Status is not evidence of successful execution. Keep
+  // this observation after the original Completion/Source has been released,
+  // and remember withdrawal if later page rollback needs another attempt.
+  enum class SuccessfulDiscard : std::uint8_t {
+    kUnobserved, kSuccessObserved, kConsumersReleased
+  };
+  SuccessfulDiscard successful_discard_ = SuccessfulDiscard::kUnobserved;
+
+  template<class Recycle>
+  Result<bool> recover_impl(bool keep_carrier,
+      std::span<const graph::ValueId> ordinary_inputs, Recycle &&recycle) noexcept {
     static_assert(noexcept(std::forward<Recycle>(recycle)()));
     // Destroying an unsubmitted successor's capture may synchronize its
     // context. Preserve the original predecessor gate before any withdrawal.
     if (cleanup_pending && predecessor_episode && predecessor_episode->run &&
         predecessor_episode->run->in_flight()) return false;
-    if (has_completion()) {
+    if (keep_carrier) {
+      if (!run || !carrier || !carrier->initialized() || carrier->closing())
+        return std::unexpected(Status::FailedPrecondition("successful discard requires its original open carrier"));
+      if (!terminal.ok()) return std::unexpected(terminal);
+      if (successful_discard_ == SuccessfulDiscard::kUnobserved) {
+        if (!has_completion())
+          return std::unexpected(Status::FailedPrecondition("successful discard requires its original completion"));
+        const auto observed = poll();
+        if (!observed) return std::unexpected(observed.error());
+        if (*observed == compute::CompletionPoll::kPending) return false;
+        successful_discard_ = SuccessfulDiscard::kSuccessObserved;
+        completion = {};
+      }
+      // Completion success and the carrier's real native/retention retirement
+      // are separate facts. Neither alone permits withdrawal or slot reuse.
+      if (run->in_flight() || carrier->pending()) return false;
+    } else if (has_completion()) {
       auto observed = poll();
       if (observed && *observed == compute::CompletionPoll::kPending) return false;
       if (!observed) record_retirement_status(terminal, observed.error());
@@ -204,9 +246,18 @@ class ExecutionEpisode final {
         HYLE_ASSIGN_OR_RETURN(const bool recovered, state_transactions->recover(*run));
         if (!recovered) return false;
       }
-      HYLE_RETURN_IF_ERROR(release_source_bindings());
-      incoming.reset(); predecessor_episode.reset();
-      HYLE_RETURN_IF_ERROR(carrier->reset_retired());
+      if (keep_carrier) {
+        if (successful_discard_ != SuccessfulDiscard::kConsumersReleased) {
+          HYLE_RETURN_IF_ERROR(release_consumers(ordinary_inputs));
+          successful_discard_ = SuccessfulDiscard::kConsumersReleased;
+        }
+      } else {
+        HYLE_RETURN_IF_ERROR(release_source_bindings());
+        incoming.reset(); predecessor_episode.reset();
+        // Destructive recovery remains destructive even when it takes over
+        // the remaining facts of a partially completed successful discard.
+        HYLE_RETURN_IF_ERROR(carrier->reset_retired());
+      }
     }
     HYLE_ASSIGN_OR_RETURN(const bool appends_discarded, append_transactions().discard());
     if (!appends_discarded) return false;
@@ -225,6 +276,7 @@ class ExecutionEpisode final {
     for (auto &bank : tails) bank.clear();
     std::forward<Recycle>(recycle)();
     run = nullptr; carrier = nullptr; state_transactions = nullptr;
+    successful_discard_ = SuccessfulDiscard::kUnobserved;
     release_admission();
     return true;
   }

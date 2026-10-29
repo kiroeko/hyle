@@ -191,6 +191,10 @@ GDN a/b N32候选已完成[32进程整模型A/B](../evidence/performance/inferen
 现已接通[原生M2双输出](../evidence/performance/inference-paired-m2-2026-10-30.json)，保持独立原权重与dense结果；
 有限数值／寿命检查通过，同CLI同步MTP初筛约＋3.37%。[当前默认auto完整窗口](../evidence/performance/inference-current-auto-window-2026-10-30.json)
 同时暴露MTP后继的重录与丢弃工作开销；该整改纳入现goal，先查实际capture失配与状态／端口轮换，再减少准备和重录，不能靠诊断off规避。
+后续[成功投机丢弃保留载体](../evidence/performance/inference-successful-discard-2026-10-30.json)定位到正常丢弃误走销毁路径，
+由共同episode在真实成功退休后回收原事务并保留固定IO和capture；Session停止及真实失败仍销毁。
+5组载体／58次提交及普通16组检查通过，64输出完整非时间报告不变；默认auto交错初筛约＋11.31%。
+新32进程窗口MTP单／两轮118.02／130.69tok/s，冻结参考135.69／139.78；首次捕获、预热及无效后继仍待优化。
 普通／MTP／NextN及采样前沿的有限exact目录与输出事实已统一到共同冷程序准备；
 1次增量CXX、1次链接和CPU／CUDA六个现有消费者检查通过，原数值门不变。
 [本片记录](../evidence/correctness/inference-prepared-program-family-2026-10-28.json)不代签完整编排抽离或性能提升；

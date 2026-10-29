@@ -327,6 +327,9 @@ struct RelayArm final {
   bool pending_prepare = false, pending_submit = false, publish_before_successor_retirement = false;
   bool rejected_successor_preserved_predecessor = false;
   bool released_source_input_failure_recovered = false;
+  bool successful_discard_preserved_carrier = false;
+  bool unobserved_discard_refused = false, pending_discard_deferred = false;
+  bool stopped_successful_discard_refused = false;
 };
 
 // A real callback on the original compute stream, never on the metadata
@@ -363,21 +366,23 @@ struct RelayGate final {
 };
 
 RelayArm run_relay_arm(q::Model &model, bool relay, bool reject_successor = false,
-    bool reject_released_inputs = false) {
+    bool reject_released_inputs = false, bool discard_unpublished = false) {
+  require(!discard_unpublished || !relay,
+      "successful discard fixture requires ordinary ready inputs and an independent outgoing Source");
   require(!model.active_step && !model.successor_step && !model.carrier_borrowed && !model.snapshot_versions.live,
       "previous relay arm retained an original episode or model version");
-  std::array<std::size_t, relay_decode_steps + 1> calls;
-  calls.fill(1); calls[0] = 3;
+  std::vector<std::size_t> calls(relay_decode_steps + 1 + (discard_unpublished ? 1 : 0), 1);
+  calls[0] = 3;
   auto session = model.create_session(calls);
   q::cache::SnapshotRef checkpoint;
   std::shared_ptr<q::StepSources> previous, a_sources, b_sources;
   std::array<std::weak_ptr<q::StepSources>, relay_decode_steps + 1> lifetimes;
-  RelayGate predecessor_gate, successor_gate;
+  RelayGate predecessor_gate, successor_gate, discard_gate;
   // On every exceptional exit open both callbacks before waiting. The Model
   // keeps the original graph/candidate owners; release external Source pins
   // only after their accepted work has retired, then use its normal abort.
   hyle::util::ScopeGuard cleanup{[&]() noexcept {
-    predecessor_gate.release(); successor_gate.release();
+    predecessor_gate.release(); successor_gate.release(); discard_gate.release();
     if (model.successor_step && model.successor_step->execution.has_completion()) {
       model.successor_step->execution.wait().IgnoreError();
       if (model.successor_step->execution.run) model.execution.drain_retired(*model.successor_step->execution.run).IgnoreError();
@@ -453,6 +458,116 @@ RelayArm run_relay_arm(q::Model &model, bool relay, bool reject_successor = fals
   };
 
   for (std::size_t round = 0; round < relay_decode_steps; ++round) {
+    if (discard_unpublished && round == 0) {
+      // Export actual outgoing Sources while retaining the committed ready
+      // inputs. The relay arm checks its separate once-per-reader input bundle.
+      const auto *committed = session->head.get();
+      const auto epoch = session->head.epoch();
+      const auto before = q::generation_boundary(*session->head);
+      const auto free_pages = model.page_inventory.free_ids.size();
+      const auto page_owners = model.page_inventory.owners;
+      const auto live_versions = model.snapshot_versions.live;
+      const auto pending = session->head->next_id;
+      q::GenerationLedger ledger(1, 1);
+      q::prepare_generation_record(ledger, *session, q::GraphRole::kText,
+          std::span(&pending, 1), true, 1, 0);
+      model.prepare_evaluation(*session, std::span(&pending, 1));
+      auto &step = *model.active_step;
+      a_sources = model.prepare_submission_sources(step);
+      const auto outgoing_lifetime = std::weak_ptr(a_sources);
+      const auto step_lifetime = std::weak_ptr(model.active_step);
+      auto *const phase = step.phase;
+      const auto ordinary_inputs = phase->state_resource_ports;
+      auto *const carrier = step.execution.carrier;
+      auto *const run = step.execution.run;
+      const auto *const native_state = g::detail::InvocationAccess::state(*run);
+      auto *const transactions = step.execution.state_transactions;
+      record_episode(round, step, false);
+      require(!step.submitted && !step.execution.has_completion() && step.execution.terminal.ok(),
+          "unsubmitted discard fixture unexpectedly has an observed native outcome");
+      const auto unobserved = step.try_discard_successful();
+      require(!unobserved && unobserved.error().IsFailedPrecondition() && step.execution.terminal.ok(),
+          "default Ok without an original Completion authorized successful discard");
+      require(step.execution.run == run && step.execution.carrier == carrier &&
+          carrier->initialized() && !carrier->closing() && !carrier->pending() &&
+          g::detail::InvocationAccess::state(*run) == native_state,
+          "unobserved successful discard changed its original open carrier or Invocation");
+      require(!step.execution.incoming && phase->state_resource_ports == ordinary_inputs &&
+          step.execution.sources == a_sources && transactions->bound(),
+          "unobserved successful discard withdrew its original Source or ordinary transactions");
+      require(session->pending == &step && model.carrier_borrowed == 1,
+          "unobserved successful discard released its original Session or carrier admission");
+      result.unobserved_discard_refused = true;
+
+      // The real compute stream is held after cold capture. Polling this
+      // accepted episode must defer, regardless of its default terminal Ok.
+      const auto queues = carrier->queues();
+      require(queues.size() == 1 && queues[0].queue,
+          "successful discard gate requires its original compute Queue");
+      discard_gate.enqueue(q::take(c::cuda::stream(*queues[0].queue)));
+      model.submit_evaluations(step); ++result.native_submissions;
+      require(q::take(a_sources->submission.poll()) == c::CompletionPoll::kPending,
+          "controlled discard episode completed before its pending check");
+      const auto deferred = step.try_discard_successful();
+      require(deferred && !*deferred && !discard_gate.released.load(std::memory_order_acquire) &&
+          carrier->initialized() && !carrier->closing() && carrier->pending() &&
+          step.execution.run == run && step.execution.has_completion() &&
+          g::detail::InvocationAccess::state(*run) == native_state &&
+          !step.execution.incoming && transactions->bound() &&
+          step.execution.sources == a_sources && !outgoing_lifetime.expired() &&
+          session->pending == &step && model.carrier_borrowed == 1 &&
+          session->head.get() == committed && session->head.epoch() == epoch &&
+          q::generation_boundary(*session->head) == before && !ledger.committed_count,
+          "pending successful discard waited, released an owner or published its candidate");
+      result.pending_discard_deferred = true;
+      discard_gate.release();
+      q::check(step.execution.wait());
+      require(q::take(a_sources->submission.poll()) == c::CompletionPoll::kComplete &&
+          !run->in_flight() && !carrier->pending(),
+          "successful discard lacks its actual whole-Graph completion and native retirement");
+      const auto retained = step.try_discard_successful();
+      require(retained && !*retained && step.execution.sources == a_sources &&
+          !outgoing_lifetime.expired() && !step.execution.incoming && transactions->bound(),
+          "successful discard ignored a retained original outgoing Source owner");
+      a_sources.reset();
+      const auto discarded = model.discard_successful_episode(); q::check(discarded.status);
+      require(discarded.retired && step_lifetime.expired() && outgoing_lifetime.expired() &&
+          carrier->initialized() && !carrier->closing() && !carrier->pending() &&
+          q::take(carrier->borrow()) == run && g::detail::InvocationAccess::state(*run) == native_state &&
+          !transactions->bound() && !model.active_step && !model.successor_step &&
+          !model.carrier_borrowed && !session->pending &&
+          model.snapshot_versions.live == live_versions && model.page_inventory.free_ids.size() == free_pages &&
+          model.page_inventory.owners == page_owners && session->head.get() == committed &&
+          session->head.epoch() == epoch && q::generation_boundary(*session->head) == before &&
+          state_bytes(model, *session->head) == old && checkpoint->state_identity() == checkpoint_identity &&
+          state_bytes(model, *checkpoint) == old && !ledger.committed_count && !ledger.records.front().committed,
+          "successful unpublished discard replaced its open carrier or changed committed state, epoch, RNG or ledger");
+
+      // Admit the same Session through the same original physical carrier.
+      // Graph still validates its new transaction permissions and full tuple.
+      q::prepare_generation_record(ledger, *session, q::GraphRole::kText,
+          std::span(&pending, 1), true, 1, 0);
+      model.prepare_evaluation(*session, std::span(&pending, 1));
+      auto &retry = *model.active_step;
+      require(retry.phase == phase && retry.execution.carrier == carrier && retry.execution.run == run &&
+          g::detail::InvocationAccess::state(*retry.execution.run) == native_state && !retry.execution.incoming &&
+          retry.execution.state_transactions == transactions && transactions->bound(),
+          "discarded successful carrier could not admit the same Session without Invocation replacement");
+      a_sources = model.prepare_submission_sources(retry); lifetimes[round + 1] = a_sources;
+      record_episode(round, retry, false);
+      model.submit_evaluations(retry); ++result.native_submissions;
+      const auto id = q::finish_evaluation(model, *session, "relay-successful-discard-retry", {}, false,
+          nullptr, nullptr, nullptr, nullptr, {}, &ledger);
+      check_after_finish(round, id, false);
+      require(ledger.committed_count == 1 && ledger.records.front().committed &&
+          carrier->initialized() && !carrier->closing() && q::take(carrier->borrow()) == run &&
+          g::detail::InvocationAccess::state(*run) == native_state &&
+          !discard_gate.timed_out.load(std::memory_order_acquire),
+          "same-carrier retry failed to publish exactly one original result or relied on the gate watchdog");
+      a_sources.reset();
+      result.successful_discard_preserved_carrier = true;
+      continue;
+    }
     if (reject_released_inputs && round == 0) {
       const auto *committed = session->head.get();
       const auto epoch = session->head.epoch();
@@ -499,6 +614,14 @@ RelayArm run_relay_arm(q::Model &model, bool relay, bool reject_successor = fals
           checkpoint->state_identity() == checkpoint_identity && state_bytes(model, *checkpoint) == old &&
           !ledger.committed_count && !ledger.records.front().committed,
           "released Source failure lost its remaining owner or published a head, checkpoint, epoch, RNG or ledger");
+      auto *const failed_carrier = step.execution.carrier;
+      auto *const failed_run = step.execution.run;
+      const auto failed_discard = step.try_discard_successful();
+      require(!failed_discard && failed_discard.error().IsFailedPrecondition() &&
+          step.execution.carrier == failed_carrier &&
+          step.execution.run == failed_run && failed_carrier->initialized() && failed_carrier->closing() &&
+          step.execution.incoming && !step.execution.incoming->bound && step.execution.sources == a_sources,
+          "successful discard accepted a real failed/closed episode or lost its destructive recovery facts");
       // Keep the invalid caller metadata intact: retired recovery discards
       // the original Invocation and must not withdraw its released Source again.
       a_sources.reset(); previous.reset();
@@ -506,6 +629,7 @@ RelayArm run_relay_arm(q::Model &model, bool relay, bool reject_successor = fals
       require(retired.retired && step_lifetime.expired() && outgoing_lifetime.expired() && prior_lifetime.expired() &&
           !model.active_step && !model.successor_step && !model.carrier_borrowed && !session->pending &&
           !transactions->bound() && model.snapshot_versions.live == live_versions &&
+          !failed_carrier->initialized() && !failed_carrier->closing() &&
           model.page_inventory.free_ids.size() == free_pages && model.page_inventory.owners == page_owners &&
           !session->failed && !session->stopping && session->retirement_status.ok() &&
           session->head.get() == committed && session->head.epoch() == epoch &&
@@ -662,9 +786,60 @@ RelayArm run_relay_arm(q::Model &model, bool relay, bool reject_successor = fals
 
   previous.reset();
   for (const auto &lifetime : lifetimes) require(lifetime.expired(), "relay left a previous source generation retained");
-  checkpoint.reset(); q::check(session->stop());
-  const auto drained = session->drain(); q::check(drained.status);
-  const auto retired = session->try_retire(); q::check(retired.status);
+  const auto expected_stop = [](const hyle::Status &status) {
+    return status.ok() || (status.IsCancelled() && !status.has_native_error());
+  };
+  if (discard_unpublished) {
+    const auto *committed = session->head.get();
+    const auto epoch = session->head.epoch();
+    const auto before = q::generation_boundary(*session->head);
+    const auto pending = session->head->next_id;
+    const auto free_pages = model.page_inventory.free_ids.size();
+    const auto page_owners = model.page_inventory.owners;
+    const auto live_versions = model.snapshot_versions.live;
+    model.prepare_evaluation(*session, std::span(&pending, 1));
+    auto &step = *model.active_step;
+    auto *const carrier = step.execution.carrier;
+    auto *const run = step.execution.run;
+    const auto *const native_state = g::detail::InvocationAccess::state(*run);
+    const auto step_lifetime = std::weak_ptr(model.active_step);
+    model.submit_evaluations(step); ++result.native_submissions;
+    q::check(step.execution.wait());
+    require(step.execution.terminal.ok() && step.execution.has_completion() && !run->in_flight(),
+        "stop/discard fixture requires a real successful unpublished episode");
+    const auto stopped = session->stop();
+    require(expected_stop(stopped) && session->stopping && step.cancelled && native_state->closed &&
+        carrier->initialized() && !carrier->closing(),
+        "Session stop did not close its original Graph independently of the carrier flag");
+    const auto refused = model.discard_successful_episode();
+    require(!refused.retired && refused.status.ok() && step.execution.terminal.ok() &&
+        model.active_step.get() == &step && session->pending == &step && model.carrier_borrowed == 1 &&
+        step.execution.run == run && step.execution.carrier == carrier &&
+        g::detail::InvocationAccess::state(*run) == native_state && native_state->closed &&
+        carrier->initialized() && !carrier->closing() && session->head.get() == committed &&
+        session->head.epoch() == epoch && q::generation_boundary(*session->head) == before,
+        "successful-discard policy reused a Session-closed Graph or changed its original terminal observation");
+    const auto retired = model.retire_failed_publication();
+    require(retired.retired && expected_stop(retired.status) && step_lifetime.expired() &&
+        !carrier->initialized() && !carrier->closing() && !model.active_step && !model.successor_step &&
+        !model.carrier_borrowed && !session->pending && model.snapshot_versions.live == live_versions &&
+        model.page_inventory.free_ids.size() == free_pages && model.page_inventory.owners == page_owners &&
+        session->head.get() == committed && session->head.epoch() == epoch &&
+        q::generation_boundary(*session->head) == before && state_bytes(model, *session->head) == result.states.back() &&
+        checkpoint->state_identity() == checkpoint_identity && state_bytes(model, *checkpoint) == old,
+        "Session-closed successful episode escaped destructive retirement or published its discarded state");
+    result.stopped_successful_discard_refused = true;
+  }
+  checkpoint.reset();
+  const auto stopped = session->stop();
+  if (discard_unpublished) require(expected_stop(stopped), "stopped discard arm reported a native retirement error");
+  else q::check(stopped);
+  const auto drained = session->drain();
+  if (discard_unpublished) require(expected_stop(drained.status), "stopped discard arm failed its actual drain");
+  else q::check(drained.status);
+  const auto retired = session->try_retire();
+  if (discard_unpublished) require(expected_stop(retired.status), "stopped discard arm failed its Session retirement");
+  else q::check(retired.status);
   require(retired.retired, "relay arm did not actually retire its original Session");
   session.reset();
   require(!model.active_step && !model.successor_step && !model.carrier_borrowed && !model.snapshot_versions.live,
@@ -677,8 +852,8 @@ int run_relay(const std::filesystem::path &input) {
   auto source = q::prepare_weight_source(input / "weights.tsv", false);
   const auto geometry = source.roles.geometry;
   const auto context = (std::min)(static_cast<std::size_t>(geometry.context_limit), std::size_t{32});
-  require(context >= 3 + relay_decode_steps && geometry.vocabulary > 3,
-      "relay probe requires enough actual context for its prompt and ten decodes, and four tokens");
+  require(context >= 3 + relay_decode_steps + 1 && geometry.vocabulary > 3,
+      "relay probe requires enough actual context for its prompt, ten decodes and one unpublished stop, and four tokens");
   const auto plan = q::cache::plan(geometry, source.cache_row_bytes, context, 3, 3,
       q::recurrent_bytes(q::state_schema_for(geometry, context), geometry), 1, 1, false, false, 2);
   q::Model model(std::move(source), geometry, context, plan, {}, false, q::ReplayPolicy::kPreferCapture,
@@ -691,6 +866,7 @@ int run_relay(const std::filesystem::path &input) {
   const auto relay = run_relay_arm(model, true);
   const auto rejected = run_relay_arm(model, true, true);
   const auto released = run_relay_arm(model, true, false, true);
+  const auto discarded = run_relay_arm(model, false, false, false, true);
   require(serial.ids == relay.ids && serial.epochs == relay.epochs && serial.states == relay.states,
       "relay changed generated IDs, complete initialized KV/recurrent state, epochs or greedy RNG");
   require(rejected.rejected_successor_preserved_predecessor && serial.ids == rejected.ids &&
@@ -700,6 +876,11 @@ int run_relay(const std::filesystem::path &input) {
       serial.epochs == released.epochs && serial.states == released.states &&
       released.native_submissions == serial.native_submissions + 1,
       "released Source input failure/retry changed complete serial results or the actual accepted submission count");
+  require(discarded.successful_discard_preserved_carrier && discarded.unobserved_discard_refused &&
+      discarded.pending_discard_deferred && discarded.stopped_successful_discard_refused &&
+      serial.ids == discarded.ids && serial.epochs == discarded.epochs &&
+      serial.states == discarded.states && discarded.native_submissions == serial.native_submissions + 2,
+      "successful unpublished discard/retry changed complete serial results or replaced its original carrier");
   require(relay.pending_prepare && relay.pending_submit && relay.publish_before_successor_retirement,
       "finite model relay did not prove its controlled pair of actual pending episodes");
   std::size_t compared_bytes = 0;
@@ -709,11 +890,15 @@ int run_relay(const std::filesystem::path &input) {
       "\"prefill_tokens\":3,\"decode_steps_per_arm\":" << relay_decode_steps
       << ",\"ready_decode_steps_before_pending_pair\":" << relay_ready_steps
       << ",\"physical_carriers\":3,\"candidate_depth\":2,\"controlled_pending_pairs\":1,"
-      "\"arms\":4,\"native_submissions\":" << serial.native_submissions + relay.native_submissions +
-          rejected.native_submissions + released.native_submissions
+      "\"arms\":5,\"native_submissions\":" << serial.native_submissions + relay.native_submissions +
+          rejected.native_submissions + released.native_submissions + discarded.native_submissions
       << ",\"released_source_failure_native_submissions\":" << released.native_submissions
       << ",\"released_source_failure_extra_native_submissions\":1,"
       "\"released_source_then_input_rejected\":true,\"source_withdrawal_not_repeated\":true,"
+      "\"successful_unpublished_discard_preserved_carrier\":true,\"successful_discard_extra_native_submissions\":2,"
+      "\"unobserved_completion_discard_refused\":true,\"pending_completion_discard_deferred\":true,"
+      "\"retained_source_defers_successful_discard\":true,\"failed_episode_destructive_recovery\":true,"
+      "\"session_closed_successful_discard_refused\":true,\"session_closed_graph_destructively_recovered\":true,"
       "\"failure_head_checkpoint_epoch_rng_ledger_unpublished\":true,\"same_session_retry_matches_serial\":true,"
       "\"successor_prepared_while_predecessor_pending\":true,\"successor_submitted_while_predecessor_pending\":true,"
       "\"predecessor_published_while_successor_pending\":true,\"pending_capture_recorded\":0,"

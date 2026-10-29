@@ -1137,14 +1137,21 @@ struct StepState final {
   bool discard_stopped_members = false;
   bool withdrawn(const StepMember &member) const noexcept;
 
+  void recycle_unpublished() noexcept {
+    for (auto &member : members) {
+      member.target_publication = {}; member.draft_publication = {};
+      member.owner_state->recycle_candidate(std::move(member.next)); member.base = nullptr;
+    }
+    phase = nullptr;
+  }
   hyle::Result<bool> try_abort() noexcept {
-    return execution.recover([&]() noexcept {
-      for (auto &member : members) {
-        member.target_publication = {}; member.draft_publication = {};
-        member.owner_state->recycle_candidate(std::move(member.next)); member.base = nullptr;
-      }
-      phase = nullptr;
-    });
+    return execution.recover([&]() noexcept { recycle_unpublished(); });
+  }
+  hyle::Result<bool> try_discard_successful() noexcept {
+    if (!phase)
+      return std::unexpected(hyle::Status::FailedPrecondition("unpublished episode lost its original program"));
+    return execution.discard_successful(phase->state_resource_ports,
+        [&]() noexcept { recycle_unpublished(); });
   }
 };
 
@@ -4151,6 +4158,38 @@ public:
     return {*retired, status};
   }
 
+  // A speculative result can be unusable even though its whole original
+  // Graph completed successfully. Withdraw that unpublished episode through
+  // the same transactions while keeping its open carrier and dormant capture.
+  // Any incomplete/failed recovery remains owned for the ordinary abort path.
+  inference::RetirementObservation discard_successful_episode() noexcept {
+    discard_decode_ahead();
+    if (!active_step) return {true, {}};
+    auto &step = *active_step;
+    if (successor_step || !step.submitted || !step.phase || !step.execution.run ||
+        !step.execution.has_completion()) return {false, step.execution.terminal};
+    // Session withdrawal can close the original Invocation directly, without
+    // setting ProgramCarrier::closing(). Keep that real cancellation on the
+    // destructive retirement path even if its native work already succeeded.
+    if (std::ranges::any_of(step.members,
+        [](const auto &member) { return member.session->stopping; }))
+      return {false, step.execution.terminal};
+    if (!step.execution.terminal.ok()) return {false, step.execution.terminal};
+    const auto completed = step.execution.wait();
+    if (!completed.ok()) {
+      inference::record_retirement_status(step.execution.terminal, completed);
+      return {false, step.execution.terminal};
+    }
+    const auto discarded = step.try_discard_successful();
+    if (!discarded) {
+      inference::record_retirement_status(step.execution.terminal, discarded.error());
+      return {false, step.execution.terminal};
+    }
+    const auto status = step.execution.terminal;
+    if (*discarded) detach_episode();
+    return {*discarded, status};
+  }
+
   inference::RetirementObservation abort_episode() noexcept {
     discard_decode_ahead();
     if (!active_step) return {true, {}};
@@ -6980,6 +7019,14 @@ bool execute_generation_continuation(Model &model, std::span<PreparedGenerationC
     return model.retire_failed_publication(
         failure && failure->retirement_observed() && !failure->retirement().retired);
   };
+  const auto release_and_discard = [&]() noexcept {
+    b_source.reset(); a_source.reset(); continuation.reset();
+    auto discarded = model.discard_successful_episode();
+    if (discarded.retired) return discarded;
+    const auto retired = model.retire_failed_publication();
+    inference::record_retirement_status(discarded.status, retired.status);
+    return inference::RetirementObservation{retired.retired, discarded.status};
+  };
   const auto require_retired = [](inference::RetirementObservation observation) {
     if (!observation.retired || (!observation.status.ok() &&
         (!observation.status.IsCancelled() || observation.status.has_native_error()))) {
@@ -7165,7 +7212,7 @@ bool execute_generation_continuation(Model &model, std::span<PreparedGenerationC
           }, true, model.active_step && model.active_step->cancelled, continuation.unavailable, draining) ==
           inference::ContinuationRetention::kRetirePending) {
         ++continuation.successor_discards;
-        require_retired(release_and_abort()); discard_records();
+        require_retired(release_and_discard()); discard_records();
         const auto retired_at = Clock::now();
         observe_cancelled(std::span(second.data(), second.size()), second_start, retired_at);
         for (const auto &call : calls) {

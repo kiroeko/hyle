@@ -1682,12 +1682,15 @@ GLM／DeepSeek／Kimi的测试消费者用稳定冷对象持有原CompiledGraph�
 共同`ExecutionEpisode`承载一个原Graph episode的资源部分：原bank、Completion、Source／incoming、
 Store事务借用及候选额度借用。模型先声明参与者pins，再嵌入该组件，保证资源先于Session pins析构；
 Qwen后继以aliasing shared_ptr保留原Step，不新增owner、分配、权限表或执行器。提交始终经过原`ProgramCarrier`。
-回收依次保留前驱门、观察、撤回自身输出Source、真实Append／Store取回、解除输入Source、原载体reset、页尾回滚及页丢弃，
+失败回收依次保留前驱门、观察、撤回自身输出Source、真实Append／Store取回、解除输入Source、原载体reset、页尾回滚及页丢弃，
 最后才调用模型的noexcept候选回收并归还额度。未知退休保留原对象和剩余事实，不在析构里自动drain。
 成功收尾也由原episode解除输入Source及caller输入；Source撤销成功立即清除bound事实，后续解绑失败保留剩余owner。
 退休恢复只重试尚存的Source，原caller绑定随Invocation reset归还，不重新借用已关闭载体。
 [四个有限原生检查](../evidence/correctness/inference-episode-release-2026-10-29.json)覆盖真实解绑拒绝、外部owner门及同会话完整状态重试，未重测吞吐。
 普通与NextN共用这一顺序；NextN正常成功保留热carrier，只有失败且事务真实归还后才reset。
+正常投机丢弃同样可保留原热carrier：必须实际观察原Completion成功，并确认原Invocation与retention均已退休；
+随后用同一事务回收、撤销Source及动态输入、丢弃候选，保留固定IO和休眠capture。未知、失败或真实Session停止仍走原销毁式回收。
+撤销成功的阶段立即记账，晚失败保留剩余owner并可退回原失败回收；保留载体不省略下一步的权限或完整物理tuple核对。
 `retire`仅观察原carrier；完整episode回收仍须`recover`。成功路径仍由模型核全体expected-base、
 接受和RNG后联合发布，输出观察结束才归还admission；模型数学、形状、状态和发布没有移入共同资源组件。
 Qwen、GLM及DeepSeek组件已接共同记录提交见证：每个成员的原Head实际发布成功后，
