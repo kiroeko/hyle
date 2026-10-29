@@ -3,9 +3,11 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <span>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "hyle/graph/batch.h"
 
@@ -76,6 +78,67 @@ inline Result<bool> reserve_tail(std::span<compute::PagedPageAppender> tails,
     return std::unexpected(status);
   }
   return true;
+}
+
+// Prepare one sequence's actual page-reference/dirty-bank cohort. PageRef is
+// the original inventory's policy reference, not a new native capability.
+// Acquire synchronously obtains one original page, puts its real writers in
+// the already reserved dirty banks, and returns that page's original ref.
+// The caller reserves one tail destination per bank before this call; no
+// callback or borrowed container survives it. Source-epoch/relay eligibility
+// remains the caller's fact; an empty source-tail span changes no owner.
+//
+// A late refusal keeps prior references, writers and moved tails in these same
+// candidate containers for original episode recovery. It does not roll back a
+// native acquisition or infer retirement. Only a real tail Unavailable, after
+// reserve_tail's original rollback, permits the existing COW acquisition path.
+template<class PageRef, class DirtyBanks, class TailBanks, class Acquire>
+Result<bool> prepare_append_pages(const AppendExtent &extent,
+    std::span<const PageRef> old_pages, std::vector<PageRef> &next_pages,
+    std::span<compute::PagedPageAppender> reusable_tails, bool allow_tail_reuse,
+    DirtyBanks &&dirty_banks, TailBanks &&returned_tails, Acquire &&acquire_page) {
+  static_assert(std::is_nothrow_copy_constructible_v<PageRef> &&
+      std::is_nothrow_move_constructible_v<PageRef>,
+      "original page references must copy and move without throwing");
+  static_assert(std::is_same_v<std::invoke_result_t<Acquire &>, Result<PageRef>>,
+      "page acquisition must return the original inventory reference");
+  if (!next_pages.empty() || !extent.dirty_count || extent.page_count < extent.prefix_pages ||
+      extent.dirty_count != extent.page_count - extent.prefix_pages ||
+      old_pages.size() < extent.prefix_pages + (extent.tail_rows ? 1u : 0u) ||
+      dirty_banks.size() != returned_tails.size() ||
+      (!reusable_tails.empty() && reusable_tails.size() != dirty_banks.size()))
+    return std::unexpected(Status::InvalidArgument("append pages differ from their original sequence and bank cohort"));
+  bool reuse = tail_compatible(reusable_tails, old_pages.empty() ? 0 : old_pages.back().page(),
+      extent, allow_tail_reuse && !old_pages.empty());
+  next_pages.reserve(extent.page_count);
+  const auto reserve_dirty = [&](std::size_t count) -> Status {
+    for (auto &bank : dirty_banks) {
+      if (count > (std::numeric_limits<std::size_t>::max)() - bank.size())
+        return Status::OutOfRange("append dirty-bank capacity overflows");
+      bank.reserve(bank.size() + count);
+    }
+    return Status::Ok();
+  };
+  HYLE_RETURN_IF_ERROR(reserve_dirty(extent.dirty_count - (reuse ? 1u : 0u)));
+  if (reuse) {
+    HYLE_ASSIGN_OR_RETURN(const bool reserved, reserve_tail(reusable_tails, extent));
+    if (!reserved) {
+      reuse = false;
+      HYLE_RETURN_IF_ERROR(reserve_dirty(extent.dirty_count));
+    }
+  }
+  for (std::size_t page = 0; page < extent.prefix_pages; ++page)
+    next_pages.push_back(old_pages[page]);
+  if (reuse) {
+    next_pages.push_back(old_pages.back());
+    for (std::size_t bank = 0; bank < reusable_tails.size(); ++bank)
+      returned_tails[bank].push_back(std::move(reusable_tails[bank]));
+  } else for (auto &tail : reusable_tails) tail = {};
+  for (std::size_t page = reuse ? 1u : 0u; page < extent.dirty_count; ++page) {
+    HYLE_ASSIGN_OR_RETURN(auto reference, acquire_page());
+    next_pages.push_back(std::move(reference));
+  }
+  return reuse;
 }
 
 // Borrow an original episode's already reserved storage. No transaction,

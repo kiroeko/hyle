@@ -333,11 +333,11 @@ struct TailPair final {
   std::array<std::vector<std::byte>, 2> before;
   std::size_t row_bytes = 0;
 
-  TailPair() {
+  explicit TailPair(std::uint32_t pages = 2) {
     const auto plain = take(c::CacheStorage::plain(c::DataType::kBFloat16));
     schema = take(c::BatchSchema::create({.query_type = c::DataType::kBFloat16, .output_type = c::DataType::kBFloat16,
-        .key_storage = plain, .value_storage = plain, .max_requests = 1, .max_query_rows = 1, .max_kv_rows = 8,
-        .max_pages = 2, .max_page_refs = 2, .query_heads = 1, .kv_heads = 1, .qk_head_dim = 64,
+        .key_storage = plain, .value_storage = plain, .max_requests = 1, .max_query_rows = 1, .max_kv_rows = pages * page_rows,
+        .max_pages = pages, .max_page_refs = pages, .query_heads = 1, .kv_heads = 1, .qk_head_dim = 64,
         .value_head_dim = 64, .page_size = page_rows}));
     for (std::size_t bank = 0; bank != arenas.size(); ++bank) {
       arenas[bank] = take(c::PagedArena::create(schema, bank ? c::BatchCacheRole::kValue : c::BatchCacheRole::kKey,
@@ -361,6 +361,36 @@ struct TailPair final {
       EXPECT_EQ(prefixes[bank].size(), row_bytes);
       EXPECT_FALSE(prefixes[bank].subview(0, row_bytes * 2));
     }
+  }
+};
+
+// Policy IDs only; all actual permissions remain in the original arena's
+// dirty writers, appenders and ready prefixes. No alternative page owner or
+// native executor is introduced by this acquisition fixture.
+struct PhysicalPage final {
+  std::uint32_t id;
+  std::uint32_t page() const noexcept { return id; }
+};
+struct PagePreparation final {
+  TailPair pair{3};
+  const std::array<PhysicalPage, 1> old{{{0}}};
+  std::vector<PhysicalPage> next;
+  std::array<std::vector<c::PagedPageWriter>, 2> dirty;
+  std::array<std::vector<c::PagedPageAppender>, 2> returned;
+  std::uint32_t next_id = 1;
+  std::size_t acquisitions = 0;
+
+  PagePreparation() { for (auto &bank : returned) bank.reserve(1); }
+  hyle::Result<PhysicalPage> acquire() {
+    const auto id = next_id++; ++acquisitions;
+    auto key = pair.arenas[0].acquire(id);
+    if (!key) return std::unexpected(key.error());
+    auto value = pair.arenas[1].acquire(id);
+    if (!value) return std::unexpected(value.error());
+    // Both are real original writers from this one physical page. The common
+    // preparation has already reserved each destination bank's capacity.
+    dirty[0].push_back(std::move(*key)); dirty[1].push_back(std::move(*value));
+    return PhysicalPage{id};
   }
 };
 
@@ -446,5 +476,96 @@ TEST(InferenceAppendTransactions, LateTailErrorReturnsOriginalStatusAfterEarlier
   EXPECT_TRUE(refused.error().IsFailedPrecondition()); EXPECT_EQ(refused.error().message(), original.message());
   EXPECT_EQ(pair.tails[0].reserved_rows(), 0u); EXPECT_EQ(pair.tails[1].reserved_rows(), 0u);
   pair.old_unchanged();
+}
+
+TEST(InferenceAppendTransactions, CompletePreparationMovesOnlyActuallyReservedTailCapabilities) {
+  PagePreparation prepared;
+  const auto extent = take(i::append_extent(1, 2, 12, TailPair::page_rows));
+  const auto reused = i::prepare_append_pages(extent, std::span<const PhysicalPage>(prepared.old), prepared.next,
+      prepared.pair.tails, true, prepared.dirty, prepared.returned, [&] { return prepared.acquire(); });
+  ASSERT_TRUE(reused) << reused.error().message(); ASSERT_TRUE(*reused);
+  ASSERT_EQ(prepared.next.size(), 1u); EXPECT_EQ(prepared.next[0].page(), 0u);
+  EXPECT_EQ(prepared.acquisitions, 0u);
+  for (std::size_t bank = 0; bank != prepared.dirty.size(); ++bank) {
+    EXPECT_TRUE(prepared.dirty[bank].empty()); EXPECT_FALSE(prepared.pair.tails[bank].valid());
+    ASSERT_EQ(prepared.returned[bank].size(), 1u);
+    auto &tail = prepared.returned[bank][0];
+    EXPECT_EQ(tail.page(), 0u); EXPECT_EQ(tail.initialized_rows(), 1u); EXPECT_EQ(tail.reserved_rows(), 2u);
+    check(i::AppendTransactions::rollback_tail(tail));
+    EXPECT_EQ(tail.reserved_rows(), 0u); EXPECT_EQ(tail.initialized_rows(), 1u);
+    prepared.pair.tails[bank] = std::move(tail);
+  }
+  prepared.pair.old_unchanged();
+}
+
+TEST(InferenceAppendTransactions, CompletePreparationCrossesPageWithOriginalBankWriters) {
+  PagePreparation prepared;
+  const auto extent = take(i::append_extent(1, 5, 12, TailPair::page_rows));
+  const auto reused = i::prepare_append_pages(extent, std::span<const PhysicalPage>(prepared.old), prepared.next,
+      prepared.pair.tails, true, prepared.dirty, prepared.returned, [&] { return prepared.acquire(); });
+  ASSERT_TRUE(reused) << reused.error().message(); ASSERT_TRUE(*reused);
+  ASSERT_EQ(prepared.next.size(), 2u); EXPECT_EQ(prepared.next[0].page(), 0u); EXPECT_EQ(prepared.next[1].page(), 1u);
+  EXPECT_EQ(prepared.acquisitions, 1u);
+  for (std::size_t bank = 0; bank != prepared.dirty.size(); ++bank) {
+    ASSERT_EQ(prepared.returned[bank].size(), 1u); ASSERT_EQ(prepared.dirty[bank].size(), 1u);
+    auto &tail = prepared.returned[bank][0]; auto &page = prepared.dirty[bank][0];
+    EXPECT_EQ(tail.page(), 0u); EXPECT_EQ(tail.initialized_rows(), 1u); EXPECT_EQ(tail.reserved_rows(), 3u);
+    EXPECT_EQ(page.page(), 1u); EXPECT_EQ(page.initialized_rows(), 0u); EXPECT_TRUE(page.lease().valid());
+    const auto blocked = prepared.pair.arenas[bank].acquire(1);
+    ASSERT_FALSE(blocked); EXPECT_TRUE(blocked.error().IsUnavailable());
+    check(i::AppendTransactions::rollback_tail(tail)); prepared.pair.tails[bank] = std::move(tail);
+    check(i::AppendTransactions::discard_page(page)); EXPECT_FALSE(page.valid());
+    auto recovered = take(prepared.pair.arenas[bank].acquire(1)); EXPECT_EQ(recovered.initialized_rows(), 0u);
+  }
+  prepared.pair.old_unchanged();
+}
+
+TEST(InferenceAppendTransactions, CompletePreparationUsesCowAfterRealLateTailAdmissionRefusal) {
+  PagePreparation prepared;
+  auto uses = take(c::LeaseUsePool::create({.max_batches = 1, .max_resources_per_batch = 1}));
+  auto second_bank = take(uses.begin()); check(second_bank.read(prepared.pair.prefixes[1]));
+  const auto extent = take(i::append_extent(1, 1, 12, TailPair::page_rows));
+  const auto reused = i::prepare_append_pages(extent, std::span<const PhysicalPage>(prepared.old), prepared.next,
+      prepared.pair.tails, true, prepared.dirty, prepared.returned, [&] { return prepared.acquire(); });
+  ASSERT_TRUE(reused) << reused.error().message(); EXPECT_FALSE(*reused);
+  ASSERT_EQ(prepared.next.size(), 1u); EXPECT_EQ(prepared.next[0].page(), 1u); EXPECT_EQ(prepared.acquisitions, 1u);
+  for (std::size_t bank = 0; bank != prepared.dirty.size(); ++bank) {
+    EXPECT_FALSE(prepared.pair.tails[bank].valid()); EXPECT_TRUE(prepared.returned[bank].empty());
+    ASSERT_EQ(prepared.dirty[bank].size(), 1u); auto &page = prepared.dirty[bank][0];
+    EXPECT_EQ(page.page(), 1u); EXPECT_TRUE(page.lease().valid()); EXPECT_EQ(page.initialized_rows(), 0u);
+    EXPECT_FALSE(prepared.pair.arenas[bank].acquire(0)); // The original ready prefix remains retained.
+    check(i::AppendTransactions::discard_page(page));
+  }
+  second_bank = {}; prepared.pair.old_unchanged();
+}
+
+TEST(InferenceAppendTransactions, LateActualPageAcquireRefusalPreservesEarlierStagingPermissions) {
+  PagePreparation prepared;
+  auto occupied = take(prepared.pair.arenas[1].acquire(2));
+  const auto original = prepared.pair.arenas[1].acquire(2);
+  ASSERT_FALSE(original); ASSERT_TRUE(original.error().IsUnavailable());
+  const auto extent = take(i::append_extent(1, 8, 12, TailPair::page_rows));
+  const auto refused = i::prepare_append_pages(extent, std::span<const PhysicalPage>(prepared.old), prepared.next,
+      prepared.pair.tails, true, prepared.dirty, prepared.returned, [&] { return prepared.acquire(); });
+  ASSERT_FALSE(refused); EXPECT_EQ(refused.error(), original.error()); EXPECT_EQ(prepared.acquisitions, 2u);
+  ASSERT_EQ(prepared.next.size(), 2u); EXPECT_EQ(prepared.next[0].page(), 0u); EXPECT_EQ(prepared.next[1].page(), 1u);
+  for (std::size_t bank = 0; bank != prepared.dirty.size(); ++bank) {
+    EXPECT_FALSE(prepared.pair.tails[bank].valid()); ASSERT_EQ(prepared.returned[bank].size(), 1u);
+    const auto &tail = prepared.returned[bank][0];
+    EXPECT_TRUE(tail.valid()); EXPECT_EQ(tail.page(), 0u); EXPECT_EQ(tail.initialized_rows(), 1u); EXPECT_EQ(tail.reserved_rows(), 3u);
+    ASSERT_EQ(prepared.dirty[bank].size(), 1u); EXPECT_TRUE(prepared.dirty[bank][0].lease().valid());
+    EXPECT_EQ(prepared.dirty[bank][0].page(), 1u); EXPECT_FALSE(prepared.pair.arenas[bank].acquire(1));
+  }
+  // The failed second page's earlier key acquisition was never moved into
+  // staging. Its actual original writer returned through normal scope exit.
+  { auto unconsumed_key = take(prepared.pair.arenas[0].acquire(2)); EXPECT_TRUE(unconsumed_key.lease().valid()); }
+  EXPECT_TRUE(occupied.lease().valid()); prepared.pair.old_unchanged();
+  for (std::size_t bank = 0; bank != prepared.dirty.size(); ++bank) {
+    auto &tail = prepared.returned[bank][0]; check(i::AppendTransactions::rollback_tail(tail));
+    EXPECT_EQ(tail.reserved_rows(), 0u); prepared.pair.tails[bank] = std::move(tail);
+    check(i::AppendTransactions::discard_page(prepared.dirty[bank][0]));
+    auto recovered = take(prepared.pair.arenas[bank].acquire(1)); EXPECT_EQ(recovered.initialized_rows(), 0u);
+  }
+  prepared.pair.old_unchanged();
 }
 } // namespace

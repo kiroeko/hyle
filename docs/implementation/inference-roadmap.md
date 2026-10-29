@@ -75,7 +75,11 @@ Head成功后立即无失败地记录该成员结果，后续报告／catch-up�
 本次[多模型提交与错误接入](../evidence/correctness/inference-multimodel-observation-2026-10-29.json)已接DeepSeek Pro／正式Flash原角色的真实多token提交与晚观察；
 发布前使用原RequestProgress完整预检，记录不保活历史状态。DS测试消费者删除重复Graph生命周期，复用GLM／Kimi原共同路径，保留Status及独立清理／退休事实。
 四个当前有限进程、六项测试通过，含真实CPU资源拒绝、Gather越界、保留结果时清理拒绝及GLM CUDA回归；一项新夹具资源声明遗漏已修并保留。
-DeepSeek压缩GGUF／BF16侧车的提交观察仍待接入；本次未刷新吞吐，也未将旧Flash四round记录当作当前五round的同版本基线。
+随后[压缩侧车与完整页准备](../evidence/correctness/inference-sidecar-pages-2026-10-29.json)接通Q8／BF16侧车的原提交观察、晚观察恢复及实际pending续算，
+并把Qwen普通／验证／后继target、批量draft及私有NextN的完整分页准备合为一份静态算法。晚获取失败保留原episode已有权限，不另建执行或清理机制。
+七个当前有限进程通过，含12项真实CPU页权限检查、CPU history K2、CUDA混合lag、真实2B MTP及普通连续流水16臂；
+一次旧夹具目录冲突拒绝已保留，改用本批两份元数据文件复用原权重。无SDK重编、下载或吞吐刷新；完整执行编排仍未抽完。
+旧Flash四round记录不作为当前五round的同版本基线，侧车组件亦不外推完整大模型生成。
 Kimi现有KDA／MLA消费者不产生生成token，不为共用请求接口虚构生成阶段。
 本轮工程入口、完整依赖装配、文档导航及许可交付整改已完成，结果见[工程检查记录](../evidence/licensing/dependency-licenses-2026-10-29.json)。
 当前收敛完整执行编排、普通／MTP共同机制及SDK接线，随后集中连续后继、GPU融合及带宽等性能工作。

@@ -89,8 +89,9 @@ GLM有限消费者现直接复用`RequestLoop`与`advance_request_wave`：原自
 已提交但观察失败时，下次pump只读原记录，不能重新计算／发布／抽样；退休取原Invocation完成或drain，不能用StateStore回收代替。
 [原权重CUDA组件检查](../evidence/correctness/inference-glm-request-loop-2026-10-29.json)保留初始历史与上游激活fixture，不外推完整GLM生成或多模型引擎已完成。
 
-DeepSeek Pro／正式Flash原角色组件也复用同一提交见证与RequestProgress，保留实际多token输出、Boundary与RNG标量，
-发布前执行原完整主机预检。晚观察失败只补原记录；压缩侧车仍待接入，不将此组件证明扩大为完整模型生成。
+DeepSeek Pro／正式Flash原角色及Q8／BF16压缩侧车组件也复用同一提交见证与RequestProgress，保留实际多token输出、Boundary与RNG标量，
+发布前执行原完整主机预检。晚观察失败只补原记录；未观察时拒绝开始下一轮，重复观察不再推进请求。
+侧车原pending实际续算，记录不保活原生版本；[有限检查](../evidence/correctness/inference-sidecar-pages-2026-10-29.json)不扩大为完整模型生成。
 模型测试消费者共用`model_graph_run`原Graph生命周期：原Status通过既有EvaluationFailure保留类别、native信息和上下文，
 清理结果另附真实退休事实，未知绑定器异常仍保持原类型。drain会关闭原Invocation，仅用于真实在途或已接受未成功观察的工作；
 已空闲但仍被结果借用的reset拒绝保持原权限与可恢复性，不无条件drain，也不因native退休宣称权限已撤销。
@@ -117,6 +118,11 @@ Qwen特殊token集中在模型自己的`generation_tokens.h`，请求额外停�
 撤回或部分接受是否保留该尾由模型提供，原成员索引不重排；晚银行拒绝保留早银行已移动和剩余capability，修正后可继续原收尾。
 普通target、融合MTP draft和私有NextN共用该算法；R1／R2的尾归属与递归结果暂存使用已有SmallVector内联容量，实际更宽批次仍按宽度准备。
 GLM的StateStore／StateHead不使用这些分页尾，不为接口统一而引入伪Frame或Qwen状态。共同结果见证已经共用，不再叠加纯转发的发布接口。
+
+完整页准备归`prepare_append_pages`：预留原候选引用和dirty-bank容量，保留原完整前缀，尝试真实尾预留，必要时回落COW并逐页取得原Inventory引用。
+普通／验证／后继target、批量draft及私有NextN直接共用这一算法。模型只提供真实银行范围、epoch／relay资格及静态页获取适配，仍决定逻辑状态和Frame提交。
+返回尾的目的容量由原episode预留；晚获取失败保留此前已移入的原引用、writer和尾权限，交原恢复机制处理，不推定退休或另建资源owner。
+[12项真实CPU页权限检查及模型回归](../evidence/correctness/inference-sidecar-pages-2026-10-29.json)覆盖尾复用、跨页、晚bank拒绝后的COW和晚新页获取失败。
 
 发生执行或完成后的异常时，原head／ledger提交仍是权威事实。补观察逐成员尝试，某个观察器再次拒绝不能遮蔽首个错误的Status、participant与退休事实，
 也不阻断其它已提交成员的观察；未观察的ordinal保留在原账簿，原owner修复观察条件后只重试观察，不能重跑Graph或重新采样。
@@ -701,7 +707,7 @@ history接线保留CastF32之前原精度samples的逐前缀窗口；它与F32 G
 `tail_compatible`只是调用方原epoch／relay／私有工作资格下的只读容量提示，元数据匹配不授予追加权；真正权限仍由各原appender的`reserve_rows`接纳。
 晚bank的Unavailable只有在已成功bank全部rollback成功后才返回“改走COW”；rollback错误保留原对象和失败状态，不能伪装成可COW。
 NextN和图内draft先按尾复用实际需要预留dirty元数据，原SDK拒绝复用并成功回滚后才补COW容量，不再先要求未必使用的COW页对应的dirty元数据容量。
-模型仍决定epoch资格、页池取得、候选prefix和Frame提交，保留原page／state owner，没有新增清理账簿或运行期回调。三条真实路径已编译并由本轮有限Model检查覆盖；host Append 6项通过，普通CPU／CUDA回归各13项完整状态对照通过，见[本轮记录](../evidence/correctness/inference-history-controls-2026-10-28.json)。
+完整页准备现由前述`prepare_append_pages`执行；模型仍决定epoch资格、原页池及银行映射、逻辑状态和Frame提交，保留原page／state owner，没有新增清理账簿或运行期回调。早期范围／尾预留的host Append 6项及普通CPU／CUDA各13项完整状态对照保留在[原检查记录](../evidence/correctness/inference-history-controls-2026-10-28.json)，当前完整准备检查见前述记录。
 [有限检查](../evidence/correctness/inference-append-transactions-2026-10-28.json)覆盖晚bank拒绝及真实CPU Graph追加后确定性拒绝，
 核原页、回收和失败不产生ready；原读取fixture失败及修正保留。真实2B普通有7次后继发布，K2有9次NextN调用，
 另有CPU／CUDA的单行lag1 StateOnly及B2 MTP状态回归；不据共同代码抽离宣称性能提升。

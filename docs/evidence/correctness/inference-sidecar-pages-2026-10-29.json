@@ -1,0 +1,1231 @@
+{
+  "schema": "hyle.correctness.sidecar-pages.v1",
+  "date": "2026-10-29",
+  "status": "PASS_WITH_PRESERVED_FIXTURE_REJECTION",
+  "base_commit": "2293bdf5a9e50679df334fd5f031a8f0b2ff9254",
+  "changes": [
+    "Q8 and BF16 original sidecars use PreparedRecordCommit/RequestProgress with real multi-token cold storage and complete preflight before original atomic Head publish.",
+    "Actual late-observer refusal blocks a new round; retry only observes original committed result, duplicates do not advance output. Actual pending continues without repeating native work or changing original Head/state/RNG.",
+    "Qwen target, batched draft and private NextN share complete prepare_append_pages: capacity, prefix refs, actual tail reservation, permitted COW fallback and original inventory acquisition.",
+    "Model epoch/relay eligibility, bank mapping, logical state and original bind/submit/take/publication/retirement remain in their original owners. Late acquire failure retains original staged capabilities for episode recovery.",
+    "Target reserves dirty metadata only for its actual target banks, rather than also reserving unrelated draft banks."
+  ],
+  "counts": {
+    "CXX_attempts": 4,
+    "links": 4,
+    "current_consumer_TUs": 4,
+    "retained_SDK_inputs": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "full_builds": 0,
+    "downloads": 0,
+    "native_attempt_processes": 8,
+    "current_passed_processes": 7,
+    "current_passed_GTests": 14,
+    "raw_consumer_processes": 4,
+    "ordinary_control_and_candidate_arms": 16,
+    "preserved_fixture_rejections": 1
+  },
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\append_transactions.h",
+      "bytes": 15232,
+      "sha256": "631f150f47d338acff16da65addfd56aa914031a9410612d0197885ff0841361"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 635545,
+      "sha256": "146a76531cbc684bc22fc75d2d0c37391cfb234ba2c149941060d1af90ef13b3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_append_transactions_test.cc",
+      "bytes": 31418,
+      "sha256": "dc94dcfe97bc1059e25410f1f8b820cccab060b09bcd045e4046cf57d5a258af"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+      "bytes": 205369,
+      "sha256": "e097f6bf0dbbae43878fc16bac6208ab795e83bbdd7dfd3604a76cf7c2958b8c"
+    }
+  ],
+  "builds": {
+    "ds": {
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sidecar-pages-20261029\\compile\\ds\\unit.obj",
+        "bytes": 22411052,
+        "sha256": "d5cfe5f651d603a2fcd828dddf07b05098a17024b94e0937b56f18d1f71f7b8a"
+      },
+      "compile": {
+        "state": "TERMINAL",
+        "pid": 40620,
+        "started": 1793274002.985616,
+        "seconds": 23.581720113754272,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link": {
+        "state": "TERMINAL",
+        "pid": 29912,
+        "started": 1793274109.6089,
+        "seconds": 1.8442106246948242,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    "qwen": {
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sidecar-pages-20261029\\compile\\qwen\\unit.obj",
+        "bytes": 82005874,
+        "sha256": "943f048a1648177de0a81327586b783c8e2700db12f85fe1854832a97101f42f"
+      },
+      "compile": {
+        "state": "TERMINAL",
+        "pid": 51828,
+        "started": 1793274122.1090274,
+        "seconds": 179.70518374443054,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link": {
+        "state": "TERMINAL",
+        "pid": 60220,
+        "started": 1793274413.317162,
+        "seconds": 2.1351211071014404,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    "append": {
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sidecar-pages-20261029\\compile\\append\\unit.obj",
+        "bytes": 1949459,
+        "sha256": "461758c691409268fa6421ff3b103123b3f6b2ea24d4b1a79ccc08851311b31a"
+      },
+      "compile": {
+        "state": "TERMINAL",
+        "pid": 22204,
+        "started": 1793274412.4316347,
+        "seconds": 3.2353272438049316,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link": {
+        "state": "TERMINAL",
+        "pid": 59724,
+        "started": 1793274433.4616172,
+        "seconds": 1.947371482849121,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    "ordinary": {
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sidecar-pages-20261029\\compile\\ordinary\\unit.obj",
+        "bytes": 26748520,
+        "sha256": "8ac47c33a70862fffdbdec0ac692db31b40a8860e22deb71db333cf088c9c4a9"
+      },
+      "compile": {
+        "state": "TERMINAL",
+        "pid": 58884,
+        "started": 1793274412.4316347,
+        "seconds": 63.6522490978241,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link": {
+        "state": "TERMINAL",
+        "pid": 21096,
+        "started": 1793274521.0911303,
+        "seconds": 1.9115228652954102,
+        "exit": 0,
+        "timed_out": false
+      }
+    }
+  },
+  "cases": {
+    "q8-cpu": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 53888,
+        "started": 1793274112.0529597,
+        "seconds": 172.31768989562988,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "tests": 1,
+        "failures": 0,
+        "skipped": 0,
+        "properties": {
+          "draft_vocabulary_provider": "ggml-cpu",
+          "shared_projection0_provider": "ggml-cpu",
+          "shared_projection1_provider": "ggml-cpu",
+          "shared_projection2_provider": "ggml-cpu",
+          "shared_projection3_provider": "ggml-cpu",
+          "shared_projection4_provider": "ggml-cpu",
+          "shared_projection5_provider": "ggml-cpu",
+          "shared_projection6_provider": "ggml-cpu",
+          "shared_projection7_provider": "ggml-cpu",
+          "shared_projection8_provider": "ggml-cpu",
+          "shared_q8_activation_codec": "actual fixed ggml CPU worker AVX Q8_0 nearest-even: exact arch/x86/quants.c.obj disassembly in BK/review/cpu-q8-quantizer.json; no main-executable capability inference",
+          "attention_projection0_provider": "ggml-cpu",
+          "attention_projection1_provider": "ggml-cpu",
+          "attention_projection2_provider": "ggml-cpu",
+          "attention_projection3_provider": "ggml-cpu",
+          "attention_projection4_provider": "ggml-cpu",
+          "attention_projection5_provider": "ggml-cpu",
+          "attention_projection6_provider": "ggml-cpu",
+          "attention_projection7_provider": "ggml-cpu",
+          "attention_projection8_provider": "ggml-cpu",
+          "attention_projection9_provider": "ggml-cpu",
+          "attention_projection10_provider": "ggml-cpu",
+          "attention_projection11_provider": "ggml-cpu",
+          "attention_output_a_layout": "original single Q8_0 role canonical[8,1024,4096],actualF32[5,8,4096],I32ids[5,8]0..7,GroupedMatMul->F32[5,8,1024]; native CUDA tokenbatch5 uses sameMMVQ codec, not40-row dense/MMQ math",
+          "stage0_attention_fn_provider": "ggml-cpu",
+          "stage0_ffn_fn_provider": "ggml-cpu",
+          "stage1_attention_fn_provider": "ggml-cpu",
+          "stage1_ffn_fn_provider": "ggml-cpu",
+          "stage2_attention_fn_provider": "ggml-cpu",
+          "stage2_ffn_fn_provider": "ggml-cpu",
+          "output_hc_fn_provider": "ggml-cpu",
+          "expert_stage0_leg0_provider": "ggml-cpu",
+          "expert_stage0_leg1_provider": "ggml-cpu",
+          "expert_stage0_leg2_provider": "ggml-cpu",
+          "expert_stage1_leg0_provider": "ggml-cpu",
+          "expert_stage1_leg1_provider": "ggml-cpu",
+          "expert_stage1_leg2_provider": "ggml-cpu",
+          "expert_stage2_leg0_provider": "ggml-cpu",
+          "expert_stage2_leg1_provider": "ggml-cpu",
+          "expert_stage2_leg2_provider": "ggml-cpu",
+          "target_verifier1_provider": "ggml-cpu",
+          "target_verifier2_provider": "ggml-cpu",
+          "target_verifier3_provider": "ggml-cpu",
+          "target_verifier4_provider": "ggml-cpu",
+          "target_verifier5_provider": "ggml-cpu",
+          "target_verifier6_provider": "ggml-cpu",
+          "actual_random_pending_consumed_next": "26608",
+          "random_publications": "2",
+          "random_pending_continuations": "1",
+          "sampled_markov_rows": "2",
+          "random_request_committed_records": "2",
+          "random_request_observed_records": "2",
+          "random_request_family_observations": "2",
+          "random_request_record_projections": "3",
+          "random_request_first_emitted": "1",
+          "random_request_total_emitted": "2",
+          "random_request_late_observer_refusals": "1",
+          "random_request_observe_only_retries": "1",
+          "random_request_duplicate_observations": "2",
+          "state_members": "31",
+          "actual_submissions": "35",
+          "state_backing_peak": "65562824",
+          "state_backing_budget": "416936448",
+          "head_storage": "F32 hidden/Markov projection; original BF16 W, F32 product/accum",
+          "scope": "Actual inventoried sidecar stem/base logits + sampled-predecessor Markov q -> original target40/41/42/head p -> shared stochastic prefix -> complete model/pending/RNG Head and one real pending continuation. Common original record commit/observation with cold multi-token output storage; actual post-publication observer refusal retries only its committed result, without repeating Graph, Head or RNG. Layer39 input/cacheprefix finite fixtures; no RequestLoop, full model, natural acceptance-rate, quality or TPS claim."
+        }
+      }
+    },
+    "bfloat-cpu": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 32804,
+        "started": 1793274412.587312,
+        "seconds": 125.5198142528534,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "tests": 1,
+        "failures": 0,
+        "skipped": 0,
+        "properties": {
+          "draft_vocabulary_provider": "ggml-cpu",
+          "expert_stage0_leg0_provider": "ggml-cpu",
+          "expert_stage0_leg1_provider": "ggml-cpu",
+          "expert_stage0_leg2_provider": "ggml-cpu",
+          "expert_stage1_leg0_provider": "ggml-cpu",
+          "expert_stage1_leg1_provider": "ggml-cpu",
+          "expert_stage1_leg2_provider": "ggml-cpu",
+          "expert_stage2_leg0_provider": "ggml-cpu",
+          "expert_stage2_leg1_provider": "ggml-cpu",
+          "expert_stage2_leg2_provider": "ggml-cpu",
+          "S03_stage0_attention_fn_provider": "ggml-cpu",
+          "S03_stage0_ffn_fn_provider": "ggml-cpu",
+          "blk.0.ffn_gate_shexp.weight_provider": "ggml-cpu",
+          "blk.0.ffn_up_shexp.weight_provider": "ggml-cpu",
+          "blk.0.ffn_down_shexp.weight_provider": "ggml-cpu",
+          "blk.0.attn_q_a.weight_provider": "ggml-cpu",
+          "blk.0.attn_q_b.weight_provider": "ggml-cpu",
+          "blk.0.attn_output_a.weight_provider": "ggml-cpu",
+          "blk.0.attn_output_b.weight_provider": "ggml-cpu",
+          "S03_stage1_attention_fn_provider": "ggml-cpu",
+          "S03_stage1_ffn_fn_provider": "ggml-cpu",
+          "blk.1.ffn_gate_shexp.weight_provider": "ggml-cpu",
+          "blk.1.ffn_up_shexp.weight_provider": "ggml-cpu",
+          "blk.1.ffn_down_shexp.weight_provider": "ggml-cpu",
+          "blk.1.attn_q_a.weight_provider": "ggml-cpu",
+          "blk.1.attn_q_b.weight_provider": "ggml-cpu",
+          "blk.1.attn_output_a.weight_provider": "ggml-cpu",
+          "blk.1.attn_output_b.weight_provider": "ggml-cpu",
+          "S03_stage2_attention_fn_provider": "ggml-cpu",
+          "S03_stage2_ffn_fn_provider": "ggml-cpu",
+          "blk.2.ffn_gate_shexp.weight_provider": "ggml-cpu",
+          "blk.2.ffn_up_shexp.weight_provider": "ggml-cpu",
+          "blk.2.ffn_down_shexp.weight_provider": "ggml-cpu",
+          "blk.2.attn_q_a.weight_provider": "ggml-cpu",
+          "blk.2.attn_q_b.weight_provider": "ggml-cpu",
+          "blk.2.attn_output_a.weight_provider": "ggml-cpu",
+          "blk.2.attn_output_b.weight_provider": "ggml-cpu",
+          "S03_output_hc_fn_provider": "ggml-cpu",
+          "target_verifier1_provider": "ggml-cpu",
+          "target_verifier2_provider": "ggml-cpu",
+          "target_verifier3_provider": "ggml-cpu",
+          "target_verifier4_provider": "ggml-cpu",
+          "target_verifier5_provider": "ggml-cpu",
+          "target_verifier6_provider": "ggml-cpu",
+          "actual_random_pending_consumed_next": "26719",
+          "random_publications": "2",
+          "random_pending_continuations": "1",
+          "sampled_markov_rows": "2",
+          "random_request_committed_records": "2",
+          "random_request_observed_records": "2",
+          "random_request_family_observations": "2",
+          "random_request_record_projections": "3",
+          "random_request_first_emitted": "1",
+          "random_request_total_emitted": "2",
+          "random_request_late_observer_refusals": "1",
+          "random_request_observe_only_retries": "1",
+          "random_request_duplicate_observations": "2",
+          "state_members": "31",
+          "actual_submissions": "35",
+          "state_backing_peak": "65611976",
+          "state_backing_budget": "416817664",
+          "head_storage": "F32 hidden/Markov visible -> BF16 projection input; original BF16 W",
+          "scope": "Actual inventoried sidecar stem/base logits + sampled-predecessor Markov q -> original target40/41/42/head p -> shared stochastic prefix -> complete model/pending/RNG Head and one real pending continuation. Common original record commit/observation with cold multi-token output storage; actual post-publication observer refusal retries only its committed result, without repeating Graph, Head or RNG. Layer39 input/cacheprefix finite fixtures; no RequestLoop, full model, natural acceptance-rate, quality or TPS claim."
+        }
+      }
+    },
+    "append-cpu": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 61904,
+        "started": 1793274444.518722,
+        "seconds": 0.46325230598449707,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "tests": 12,
+        "failures": 0,
+        "skipped": 0,
+        "properties": {}
+      }
+    },
+    "history-cpu": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 5036,
+        "started": 1793274432.8899586,
+        "seconds": 0.986290693283081,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "history-control",
+        "backend": "cpu",
+        "models": 1,
+        "configurations": 1,
+        "history_only": true,
+        "member_cancel_B2_K2": true,
+        "whole_episode_retired": true,
+        "postsubmit_cancel_returned_normally": true,
+        "survivor_same_R2_published": true,
+        "survivor_original_member_index": 1,
+        "cancelled_member_postverify_auxiliary_calls": 0,
+        "postrestore_next_R1_round": true,
+        "committed_counts_only": true,
+        "escaped_readonly_C0": true,
+        "bounded_pool_refusal": true,
+        "release_then_retry": true,
+        "idle_HostImage_restore": true,
+        "idle_resident_versions_zero": true,
+        "old_checkpoints_unchanged": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0,
+        "state_checks": [
+          {
+            "sequence": 0,
+            "prefix": 6,
+            "active_rows": 0,
+            "physical_rows": 0,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 5,
+            "bucket_next": 5,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 0,
+            "prefix": 6,
+            "active_rows": 0,
+            "physical_rows": 0,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 5,
+            "bucket_next": 5,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 0,
+            "prefix": 9,
+            "active_rows": 0,
+            "physical_rows": 0,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 27,
+            "bucket_next": 27,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          }
+        ]
+      }
+    },
+    "mixed-lag-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 16248,
+        "started": 1793274444.5928528,
+        "seconds": 1.1040186882019043,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "backend": "cuda",
+        "mode": "mtp_mixed_lag",
+        "synthetic_untrained": true,
+        "requests": 2,
+        "base_lags": [
+          0,
+          1
+        ],
+        "controlled_accepted": [
+          1,
+          2
+        ],
+        "mixed_target_submissions": 2,
+        "target_submissions": 14,
+        "target_rows_per_member": 2,
+        "actual_draft_rows": 3,
+        "physical_draft_rows": 4,
+        "hidden_indices": [
+          0,
+          3,
+          1,
+          0
+        ],
+        "token_indices": [
+          2,
+          1,
+          3,
+          0
+        ],
+        "natural_processed_target": [
+          1,
+          1
+        ],
+        "natural_processed_draft": [
+          1,
+          2
+        ],
+        "state_checks": [
+          {
+            "sequence": 0,
+            "prefix": 3,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 3,
+            "exact_next": 59,
+            "bucket_next": 59,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 0,
+            "prefix": 5,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 4,
+            "exact_next": 7,
+            "bucket_next": 7,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 1,
+            "prefix": 3,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 2,
+            "exact_next": 22,
+            "bucket_next": 22,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 1,
+            "prefix": 5,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 5,
+            "exact_next": 41,
+            "bucket_next": 41,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 2,
+            "prefix": 3,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 3,
+            "exact_next": -1,
+            "bucket_next": -1,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 2,
+            "prefix": 5,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 6,
+            "exact_next": -1,
+            "bucket_next": -1,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          }
+        ],
+        "payloads_byte_equal": true,
+        "numerically_equivalent": true,
+        "old_checkpoints_unchanged": true,
+        "StateOnly_no_pending_or_draw": true,
+        "natural_R1_results_equal": true,
+        "mixed_engine_single_submission": true,
+        "original_member_roles_committed": true,
+        "retired_head_rejected_before_prepare": true,
+        "mixed_cancelled_head_ledger_rng_unchanged": true,
+        "mixed_cancelled_new_outputs": 0,
+        "mixed_survivor_original_submission_published": true,
+        "mixed_survivor_complete_R1_state_equal": true,
+        "full_request_history_import_coverage": false,
+        "final_versions": 0,
+        "natural_acceptance_quality_claim": false,
+        "performance_claim": false
+      }
+    },
+    "mtp-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 4936,
+        "started": 1793274463.616416,
+        "seconds": 3.738065004348755,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "mtp-natural-relay",
+        "backend": "cuda",
+        "models": 1,
+        "journeys": 2,
+        "prompt_tokens": 154,
+        "capacity": 256,
+        "resident_capacity": 1,
+        "state_slots": 5,
+        "hidden_slots": 6,
+        "output_limit": 40,
+        "outputs": 40,
+        "serial_submissions": 23,
+        "auto_submissions": 24,
+        "source_submissions": 22,
+        "successor_submissions": 3,
+        "successor_publications": 2,
+        "successor_discards": 1,
+        "successor_refusals": 0,
+        "pending_pairs_before_A_publish": 3,
+        "deferred_waves": 2,
+        "reserved_two_grants": 2,
+        "accepted_drafts": 17,
+        "rejected_drafts": 4,
+        "ledger_records": 23,
+        "natural_RequestLoop": true,
+        "controlled_acceptance": false,
+        "original_ledger_equal": true,
+        "generated_ids_equal": true,
+        "greedy_rng_unchanged": true,
+        "all_sources_expired": true,
+        "simultaneous_native_inflight_claim": false,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0,
+        "state_checks": [
+          {
+            "sequence": 0,
+            "prefix": 193,
+            "active_rows": 1,
+            "physical_rows": 1,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 14733,
+            "bucket_next": 14733,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          }
+        ],
+        "ids": [
+          71093,
+          12305,
+          198,
+          464,
+          19298,
+          198,
+          1445,
+          18904,
+          1120,
+          5586,
+          11,
+          51338,
+          11,
+          36760,
+          11,
+          1697,
+          11,
+          11906,
+          11,
+          3856,
+          3829,
+          271,
+          51,
+          283,
+          3856,
+          3829,
+          482,
+          51,
+          837,
+          198,
+          42,
+          283,
+          3856,
+          3829,
+          482,
+          42,
+          837,
+          271,
+          727,
+          14733
+        ],
+        "batches": [
+          {
+            "ordinal": 0,
+            "quota": 0,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 154,
+            "draft_rows": 154,
+            "generation": false,
+            "discarded": false
+          },
+          {
+            "ordinal": 1,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 2,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 3,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 4,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 5,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 6,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 7,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 8,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 9,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 10,
+            "quota": 4,
+            "reserved": 2,
+            "additional": 2,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 11,
+            "quota": 2,
+            "reserved": 2,
+            "additional": 2,
+            "emitted": 0,
+            "accepted": 0,
+            "draft_rows": 0,
+            "generation": true,
+            "discarded": true
+          },
+          {
+            "ordinal": 11,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 12,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 13,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 14,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 15,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 16,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 17,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 18,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 19,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 20,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 21,
+            "quota": 3,
+            "reserved": 2,
+            "additional": 1,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 22,
+            "quota": 1,
+            "reserved": 0,
+            "additional": 1,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          }
+        ]
+      }
+    },
+    "ordinary-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 63224,
+        "started": 1793274572.38851,
+        "seconds": 0.9593758583068848,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "backend": "cuda",
+        "fixture": "untrained_GA_H64",
+        "prompt_tokens": 18,
+        "outputs_per_live_member": 14,
+        "capacity": 32,
+        "in_flight_batches": 2,
+        "control_and_candidate_arms": 16,
+        "same_original_executor": true,
+        "complete_prefix_state_epoch_rng_equal": true,
+        "actual_owner_credit_checked": true,
+        "all_source_session_page_owners_retired": true,
+        "model_eos_run": false,
+        "synthetic_v64_extra_stop_shares_eos_contract": true,
+        "synthetic_fixture_directory": "continuous-extra-stop-v64",
+        "synthetic_role_payload_bytes": 65536,
+        "accepted_work_control_exception": true,
+        "gpu_native_fault_injected": false,
+        "model_quality_claim": false,
+        "performance_claim": false,
+        "candidates": [
+          {
+            "requests": 1,
+            "mode": "normal",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 5,
+            "max_consecutive_pending": 5,
+            "submit_before_observe": 5,
+            "renewals": 4,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "normal",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 5,
+            "max_consecutive_pending": 5,
+            "submit_before_observe": 5,
+            "renewals": 4,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "credit_exhaustion",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 1,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "member_cancel",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 1,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "yield_resume",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 1,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "cancel_then_control_exception",
+            "pumps": 16,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 1,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 3,
+            "control_exceptions": 1,
+            "aborted_actual_submissions": 2
+          },
+          {
+            "requests": 1,
+            "mode": "extra_stop",
+            "pumps": 13,
+            "actual_batches": 13,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 3,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 1,
+            "extra_stop_accepted_successor": true,
+            "discarded_batches": 1,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "extra_stop",
+            "pumps": 15,
+            "actual_batches": 15,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 3,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 1,
+            "extra_stop_accepted_successor": true,
+            "discarded_batches": 1,
+            "survivor_r1_steps": 2,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          }
+        ]
+      }
+    }
+  },
+  "preserved_rejection": {
+    "process": {
+      "state": "TERMINAL",
+      "pid": 11552,
+      "started": 1793274536.6502817,
+      "seconds": 0.8197715282440186,
+      "exit": 1,
+      "timed_out": false
+    },
+    "stderr": "continuous stop fixture already exists; preserve its previous attempt\n",
+    "cause": "Old ordinary fixture directory already contained generated finite stop fixture. No compile/product fix: use fresh two-file metadata directory pointing to original weights, keep rejected attempt.",
+    "corrected_attempt": "ordinary-cuda/attempt2"
+  },
+  "cleanup": {
+    "status": "PASS",
+    "files": 16,
+    "bytes": 683927399.0,
+    "removed": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sidecar-pages-20261029\\bin\\append.exe",
+        "bytes": 141154816,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sidecar-pages-20261029\\bin\\append.exp",
+        "bytes": 24978,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sidecar-pages-20261029\\bin\\append.lib",
+        "bytes": 41560,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sidecar-pages-20261029\\bin\\ds.exe",
+        "bytes": 142614528,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sidecar-pages-20261029\\bin\\ds.exp",
+        "bytes": 24970,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sidecar-pages-20261029\\bin\\ds.lib",
+        "bytes": 41208,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sidecar-pages-20261029\\bin\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sidecar-pages-20261029\\bin\\ordinary.exe",
+        "bytes": 142927872,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sidecar-pages-20261029\\bin\\ordinary.exp",
+        "bytes": 24982,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sidecar-pages-20261029\\bin\\ordinary.lib",
+        "bytes": 41736,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sidecar-pages-20261029\\bin\\qwen.exe",
+        "bytes": 145607168,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sidecar-pages-20261029\\bin\\qwen.exp",
+        "bytes": 24974,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sidecar-pages-20261029\\bin\\qwen.lib",
+        "bytes": 41384,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-tail-return-20261029\\compile\\qwen\\unit.obj",
+        "bytes": 81931699,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-tail-return-20261029\\compile\\ordinary\\unit.obj",
+        "bytes": 26674345,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-tail-return-20261029\\compile\\append\\unit.obj",
+        "bytes": 1544395,
+        "removed": true
+      }
+    ]
+  },
+  "boundaries": [
+    "Sidecars are original-role CPU components with fixed layer39 input/cache history; not full DeepSeek generation, RequestLoop coverage, CUDA sidecar stochastic proof, acceptance-rate or task quality.",
+    "Qwen history K2/mixed-lag/ordinary fixture cases are finite untrained geometry. MTP natural relay uses original trained Qwen3.5-2B P154/O40 and compares its two paths, not a reference engine.",
+    "No new throughput, loading/memory benchmark, GPU overlap amount, device-fault injection, cross-platform or multi-device claim.",
+    "Shared complete page preparation does not mean all model-independent execution orchestration is extracted."
+  ],
+  "archive": "inference-sidecar-pages-2026-10-29.zip"
+}

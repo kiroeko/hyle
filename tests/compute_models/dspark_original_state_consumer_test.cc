@@ -55,6 +55,7 @@
 #include "dspark_original_target_program.h"
 #include "dspark_original_target_reference.h"
 #include "dspark_target_tail_checks.h"
+#include "../../engine/inference/commit_observation.h"
 #include "hyle/graph/weight_binding.h"
 #include "cpu_c4_flash_sidecars.h"
 #include "row_cache_fixture.h"
@@ -1903,7 +1904,46 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
       const auto old=image(state,base);
       if(stochastic) {
         using Cursor=hyle::inference::SamplingCursor;
-        std::size_t sampled_markov_rows=0;
+        struct Commit final {
+          bool committed=false,stopped=false;
+          std::array<std::int32_t,6> emitted{};
+          std::size_t emitted_count=0;
+          x::Boundary frontier{};
+          Cursor sampling{};
+        };
+        std::array<Commit,2> records{};
+        std::size_t committed_records=0,record_projections=0,family_observations=0,sampled_markov_rows=0,
+          observer_refusals=0,observer_retries=0,duplicate_observations=0;
+        // The first m<=2 round can emit three real tokens, followed by the
+        // existing ordinary token. No record retains a historical native head.
+        hyle::inference::RequestProgress progress(4);progress.initial_sampling=initial_random;
+        (void)progress.begin_turn();
+        const auto *output_storage=progress.generated.data();const auto output_capacity=progress.generated.capacity();
+        std::vector<std::int32_t> emitted;emitted.reserve(6);
+        const auto work_counts=[&] {
+          return std::array<std::size_t,11>{std::size_t(backend.submissions),proposal.completed_phases,
+              proposal.completed_episodes,trained_target->completed_rows,observed_rows,main_submissions,
+              history_submissions,head_calls,actual_pending_feedback,sampled_markov_rows,publications};
+        };
+        const auto observe=[&](std::size_t ordinal,const c::StateVersion &actual) {
+          return hyle::inference::observe_record_commit(std::span<const Commit>(records),committed_records,
+              ordinal,progress,
+              [&](const Commit &record) {
+                ++record_projections;
+                return hyle::inference::CommitObservation{
+                    std::span(record.emitted).first(record.emitted_count),true,true,record.stopped};
+              },
+              [&](const Commit &record,const hyle::inference::CommitObservation &) {
+                const auto current=take(state.boundary(actual),"sidecar observed actual frontier");
+                const auto &expected=record.frontier;
+                if(current.session!=expected.session||current.branch!=expected.branch||current.epoch!=expected.epoch||
+                    current.next_position!=expected.next_position||current.pending!=expected.pending||
+                    current.consumed!=expected.consumed||take(state.random(actual),"sidecar observed actual RNG")!=record.sampling||
+                    !record.emitted_count||record.emitted[record.emitted_count-1]!=current.pending)
+                  throw std::runtime_error("sidecar observation requires its actual committed pending/RNG result");
+              },
+              [&](const Commit &,const hyle::inference::CommitObservation &) noexcept {++family_observations;});
+        };
         const auto key_lease=[&](const Cursor &cursor,std::size_t count,bool proposal_keys) {
           std::vector<std::uint32_t> words;
           for(std::size_t row=0;row<(proposal_keys?count:count+1);++row) {
@@ -1915,9 +1955,12 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
         {
           auto head=take(c::StateHead::create(state.store,base),"sidecar stochastic complete Head");
           const auto round=[&](std::size_t maximum,std::uint64_t epoch,
-              x::Block5Limits bounds={.output_quota=6,.context_rows=6,.vocabulary=d::vocabulary}) {
+              x::Block5Limits bounds={.output_quota=6,.context_rows=6,.vocabulary=d::vocabulary},
+              bool fail_observation=false) {
             const auto from=take(head.current(),"sidecar stochastic actual Head");
             const auto facts=take(state.boundary(from),"sidecar stochastic frontier");
+            if(committed_records!=progress.observed_commits())
+              throw std::runtime_error("sidecar must observe its original committed result before another round");
             if(maximum>5)throw std::runtime_error("sidecar sampled maximum exceeds five trained draft rows");
             if(bounds.draft.max_drafts>5)throw std::runtime_error("sampled sidecar policy exceeds five trained draft rows");
             if(bounds.vocabulary!=d::vocabulary||facts.next_position<0||facts.next_position>TargetPrograms::capacity)
@@ -1927,6 +1970,7 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
             const auto capacity=take(x::block5_verification_capacity(bounds),"sampled sidecar bounded row capacity");
             if(!capacity||std::ranges::find(bounds.eos_tokens,facts.pending)!=bounds.eos_tokens.end())
               throw std::runtime_error("sampled sidecar reached output/context/EOS boundary");
+            if(committed_records>=records.size())throw std::runtime_error("sidecar cold result record capacity exhausted");
             auto count=capacity-1;
             const auto cursor=take(state.random(from),"sidecar committed random cursor");
             std::vector<std::int32_t> ids{facts.pending};std::vector<c::ReadLease> sampled;
@@ -1979,7 +2023,7 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
               accepts.push_back(valid[0]);
             }
             while(accepted<accepts.size()&&accepts[accepted])++accepted;
-            std::vector<std::int32_t> final_ids,emitted;
+            std::vector<std::int32_t> final_ids;
             for(const auto port:program.recipe.final_ids) {
               const auto id=values<std::int32_t>(decisions[port]);if(id.size()!=1)throw std::runtime_error("sidecar final token is not I32 scalar");
               final_ids.push_back(id[0]);
@@ -1994,7 +2038,19 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
             const b::CaptureFrame frame{actual_target,5,7,epoch,facts.next_position,std::int64_t(consumed)};
             auto candidate=take(state.select_verified(from,rows[selected].history,rows[selected].captures,rows[selected].target,
                 pending,frame,consumed,&next),"sidecar sampled complete prefix and RNG");
-            check(head.publish(from.identity(),candidate),"sidecar model/pending/RNG atomic commit");++publications;account();
+            if(emitted.empty()||emitted.size()!=choice.consumed||emitted.size()>records.front().emitted.size())
+              throw std::runtime_error("sidecar emitted prefix exceeds its cold result extent");
+            const auto ordinal=committed_records;auto &record=records[ordinal];
+            record.emitted_count=emitted.size();std::copy(emitted.begin(),emitted.end(),record.emitted.begin());
+            record.stopped=choice.stopped;record.frontier=take(state.boundary(candidate),"sidecar actual commit frontier");
+            record.sampling=take(state.random(candidate),"sidecar actual commit RNG");
+            if(!progress.preflight_commit(ordinal,std::span(record.emitted).first(record.emitted_count),true,true,record.stopped))
+              throw std::runtime_error("new sidecar result was already observed before Head publication");
+            auto commit=take(hyle::inference::prepare_record_commit(std::span<Commit>(records),committed_records,record),
+                "prepare original sidecar result commit witness");
+            check(commit.publish([&]() noexcept {return head.publish(from.identity(),candidate);}),
+                "sidecar model/pending/RNG atomic commit and original record witness");++publications;account();
+            EXPECT_TRUE(record.committed);EXPECT_EQ(committed_records,ordinal+1);EXPECT_FALSE(commit.valid());
             EXPECT_EQ(take(state.random(candidate),"sidecar committed advanced cursor"),next);
             EXPECT_EQ(take(state.random(from),"sidecar immutable old cursor"),cursor);
             EXPECT_EQ(take(state.boundary(candidate),"sidecar consumed frontier").next_position,facts.next_position+consumed);
@@ -2002,14 +2058,57 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
             EXPECT_TRUE(head.publish(from.identity(),candidate).IsUnavailable());
             std::printf("DSpark sidecar random commit m=%zu accepted=%zu consumed=%u pending=%d draw=%llu\n",count,accepted,consumed,
                 take(state.boundary(candidate),"sidecar sampled committed token").pending,static_cast<unsigned long long>(next.draw));std::fflush(stdout);
+            if(fail_observation) {
+              const auto before=work_counts();const auto stats=state.store.stats();
+              const auto output_count=progress.generated.size(),observations=progress.observed_commits();
+              EXPECT_THROW((void)observe(ordinal,from),std::runtime_error);++observer_refusals;
+              EXPECT_EQ(progress.generated.size(),output_count);EXPECT_EQ(progress.observed_commits(),observations);
+              EXPECT_EQ(family_observations,observations);EXPECT_EQ(work_counts(),before);
+              EXPECT_EQ(take(head.current(),"sidecar late observer refusal keeps original Head").identity(),candidate.identity());
+              EXPECT_EQ(take(state.random(candidate),"sidecar late observer refusal keeps actual RNG"),next);
+              EXPECT_EQ(state.store.stats().versions,stats.versions);EXPECT_EQ(state.store.stats().drafts,stats.drafts);
+              EXPECT_EQ(state.store.stats().backing_bytes,stats.backing_bytes);
+            } else {
+              EXPECT_TRUE(observe(ordinal,candidate));
+              const auto projections=record_projections,output_count=progress.generated.size();
+              EXPECT_FALSE(observe(ordinal,from));++duplicate_observations;
+              EXPECT_EQ(record_projections,projections);EXPECT_EQ(progress.generated.size(),output_count);
+              EXPECT_EQ(progress.observed_commits(),committed_records);EXPECT_EQ(family_observations,committed_records);
+            }
+            EXPECT_EQ(progress.generated.data(),output_storage);EXPECT_EQ(progress.generated.capacity(),output_capacity);
             return candidate;
           };
-          auto selected=round(2,2);const auto pending=take(state.boundary(selected),"sidecar first random pending").pending;
+          auto selected=round(2,2,{.output_quota=6,.context_rows=6,.vocabulary=d::vocabulary},true);
+          const auto pending=take(state.boundary(selected),"sidecar first random pending").pending;
+          {
+            const auto before=work_counts();const auto stats=state.store.stats();const auto committed_image=image(state,selected);
+            EXPECT_EQ(committed_records,1u);EXPECT_EQ(progress.observed_commits(),0u);EXPECT_TRUE(progress.generated.empty());
+            EXPECT_THROW((void)round(0,3),std::runtime_error);
+            EXPECT_EQ(work_counts(),before);EXPECT_EQ(take(head.current(),"unobserved sidecar result is not reexecuted").identity(),selected.identity());
+            EXPECT_TRUE(observe(0,selected));++observer_retries;
+            const auto projections=record_projections;
+            EXPECT_FALSE(observe(0,base));++duplicate_observations;
+            EXPECT_EQ(record_projections,projections);EXPECT_EQ(progress.observed_commits(),1u);EXPECT_EQ(family_observations,1u);
+            EXPECT_EQ(progress.generated.size(),records[0].emitted_count);
+            EXPECT_TRUE(std::equal(progress.generated.begin(),progress.generated.end(),records[0].emitted.begin()));
+            EXPECT_EQ(progress.generated.back(),pending);EXPECT_EQ(work_counts(),before);
+            EXPECT_EQ(take(head.current(),"sidecar observe-only retry never republishes Head").identity(),selected.identity());
+            EXPECT_EQ(image(state,selected),committed_image);
+            EXPECT_EQ(take(state.random(selected),"sidecar observe-only retry preserves RNG"),records[0].sampling);
+            EXPECT_EQ(state.store.stats().versions,stats.versions);EXPECT_EQ(state.store.stats().drafts,stats.drafts);
+            EXPECT_EQ(state.store.stats().backing_bytes,stats.backing_bytes);
+            EXPECT_EQ(progress.generated.data(),output_storage);EXPECT_EQ(progress.generated.capacity(),output_capacity);
+          }
           auto continued=round(0,3);++continued_branches;
           EXPECT_EQ(take(state.random(continued),"sidecar complete two-round RNG").draw,6u);
           EXPECT_EQ(take(state.boundary(continued),"sidecar continuation consumed pending once").next_position,
               take(state.boundary(selected),"sidecar selected position").next_position+1);
           EXPECT_EQ(image(state,base),old);
+          EXPECT_EQ(committed_records,2u);EXPECT_EQ(progress.observed_commits(),2u);EXPECT_EQ(family_observations,2u);
+          EXPECT_EQ(record_projections,3u);EXPECT_EQ(observer_refusals,1u);EXPECT_EQ(observer_retries,1u);
+          EXPECT_EQ(duplicate_observations,2u);EXPECT_EQ(records[1].emitted_count,1u);
+          EXPECT_EQ(progress.generated.size(),records[0].emitted_count+records[1].emitted_count);
+          EXPECT_EQ(progress.generated.back(),take(state.boundary(continued),"sidecar observed continuation pending").pending);
           ::testing::Test::RecordProperty("actual_random_pending_consumed_next",pending);
         }
         base={};check(state.store.collect(),"sidecar sampled old/candidate retirement");
@@ -2017,12 +2116,21 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
         ::testing::Test::RecordProperty("random_publications",int(publications));
         ::testing::Test::RecordProperty("random_pending_continuations",int(continued_branches));
         ::testing::Test::RecordProperty("sampled_markov_rows",int(sampled_markov_rows));
+        ::testing::Test::RecordProperty("random_request_committed_records",int(committed_records));
+        ::testing::Test::RecordProperty("random_request_observed_records",int(progress.observed_commits()));
+        ::testing::Test::RecordProperty("random_request_family_observations",int(family_observations));
+        ::testing::Test::RecordProperty("random_request_record_projections",int(record_projections));
+        ::testing::Test::RecordProperty("random_request_first_emitted",int(records[0].emitted_count));
+        ::testing::Test::RecordProperty("random_request_total_emitted",int(progress.generated.size()));
+        ::testing::Test::RecordProperty("random_request_late_observer_refusals",int(observer_refusals));
+        ::testing::Test::RecordProperty("random_request_observe_only_retries",int(observer_retries));
+        ::testing::Test::RecordProperty("random_request_duplicate_observations",int(duplicate_observations));
         ::testing::Test::RecordProperty("state_members",int(state.schema.size()));
         ::testing::Test::RecordProperty("actual_submissions",backend.submissions);
         ::testing::Test::RecordProperty("state_backing_peak",std::to_string(peak_backing));
         ::testing::Test::RecordProperty("state_backing_budget",std::to_string(declared_state_budget));
         ::testing::Test::RecordProperty("head_storage",use_bfloat?"F32 hidden/Markov visible -> BF16 projection input; original BF16 W":"F32 hidden/Markov projection; original BF16 W, F32 product/accum");
-        ::testing::Test::RecordProperty("scope","Actual inventoried sidecar stem/base logits + sampled-predecessor Markov q -> original target40/41/42/head p -> shared stochastic prefix -> complete model/pending/RNG Head and one real pending continuation. Layer39 input/cacheprefix are finite fixtures; no full model, natural acceptance-rate, quality or TPS claim.");
+        ::testing::Test::RecordProperty("scope","Actual inventoried sidecar stem/base logits + sampled-predecessor Markov q -> original target40/41/42/head p -> shared stochastic prefix -> complete model/pending/RNG Head and one real pending continuation. Common original record commit/observation with cold multi-token output storage; actual post-publication observer refusal retries only its committed result, without repeating Graph, Head or RNG. Layer39 input/cacheprefix finite fixtures; no RequestLoop, full model, natural acceptance-rate, quality or TPS claim.");
 #if defined(HYLE_TEST_DSPARK_STATE_CUDA)
         if(proposal.cuda_supply)check(proposal.cuda_supply->close(),"sampled sidecar actual expert upload drain");
         if(cuda)check(trained_target->steps[0].run.cuda_supply->close(),"sampled target actual expert upload drain");

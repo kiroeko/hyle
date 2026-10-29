@@ -3094,26 +3094,15 @@ public:
       const auto length = work.state.frontier;
       const auto extent = take(inference::append_extent(length, ids.size(), capacity, cache::Plan::page_rows));
       next.frontier = extent.after_rows;
-      const auto prefix_pages = extent.prefix_pages, page_count = extent.page_count, dirty_count = extent.dirty_count;
-      bool reuse = inference::tail_compatible(work.tails,
-          work.state.pages.empty() ? 0 : work.state.pages.back().page(), extent, !work.state.pages.empty());
-      next.pages.reserve(page_count);
-      for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
-        guard.execution.dirty[bank].reserve(cache::add(guard.execution.dirty[bank].size(), dirty_count - (reuse ? 1 : 0)));
-      if (reuse && !take(inference::reserve_tail(work.tails, extent))) {
-        reuse = false;
-        for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
-          guard.execution.dirty[bank].reserve(cache::add(guard.execution.dirty[bank].size(), dirty_count));
-      }
-      for (std::size_t i = 0; i < prefix_pages; ++i) next.pages.push_back(work.state.pages.at(i));
-      if (reuse) {
-        next.pages.push_back(work.state.pages.back());
-        for (std::size_t bank = 0; bank < 2; ++bank) guard.execution.tails[draft_bank + bank].push_back(std::move(work.tails[bank]));
-      } else work.tails = {};
-      for (std::size_t i = reuse ? 1 : 0; i < dirty_count; ++i) {
-        auto page = take(draft_inventory.acquire()); next.pages.push_back(std::move(page.reference));
-        guard.execution.dirty[draft_bank].push_back(std::move(page.keys[0])); guard.execution.dirty[draft_bank + 1].push_back(std::move(page.values[0]));
-      }
+      (void)take(inference::prepare_append_pages(extent, std::span<const cache::PageRef>(work.state.pages),
+          next.pages, work.tails, true,
+          std::span(guard.execution.dirty.data() + draft_bank, 2),
+          std::span(guard.execution.tails.data() + draft_bank, 2), [&]() -> hyle::Result<cache::PageRef> {
+            HYLE_ASSIGN_OR_RETURN(auto page, draft_inventory.acquire());
+            guard.execution.dirty[draft_bank].push_back(std::move(page.keys[0]));
+            guard.execution.dirty[draft_bank + 1].push_back(std::move(page.values[0]));
+            return std::move(page.reference);
+          }));
       std::vector<std::int32_t> page_ids, positions;
       for (const auto &page : next.pages) page_ids.push_back(static_cast<std::int32_t>(page.page()));
       for (std::size_t i = 0; i < ids.size(); ++i) positions.push_back(static_cast<std::int32_t>(length + i));
@@ -4296,27 +4285,19 @@ public:
       member.next->draft.emplace(); auto &next = *member.next->draft;
       const auto extent = take(inference::append_extent(old.frontier, rows, capacity, cache::Plan::page_rows));
       next.frontier = extent.after_rows;
-      const auto prefix_pages = extent.prefix_pages, count = extent.page_count, dirty_count = extent.dirty_count;
-      bool reuse = !relay && inference::tail_compatible(session.draft_tails, old.pages.empty() ? 0 : old.pages.back().page(),
-          extent, session.draft_tail_epoch == member.base_epoch && !old.pages.empty());
-      next.pages.reserve(count);
-      for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
-        step.execution.dirty[bank].reserve(cache::add(step.execution.dirty[bank].size(), dirty_count - (reuse ? 1 : 0)));
-      if (reuse && !take(inference::reserve_tail(session.draft_tails, extent))) {
-        reuse = false;
-        for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
-          step.execution.dirty[bank].reserve(cache::add(step.execution.dirty[bank].size(), dirty_count));
-      }
-      for (std::size_t page = 0; page < prefix_pages; ++page) next.pages.push_back(old.pages.at(page));
-      if (reuse) {
-        next.pages.push_back(old.pages.back());
-        for (std::size_t bank = 0; bank < 2; ++bank) step.execution.tails[draft_bank + bank].push_back(std::move(session.draft_tails[bank]));
-      } else if (!relay) session.draft_tails = {};
+      const auto count = extent.page_count;
+      (void)take(inference::prepare_append_pages(extent, std::span<const cache::PageRef>(old.pages), next.pages,
+          relay ? std::span<c::PagedPageAppender>{} : std::span(session.draft_tails),
+          !relay && session.draft_tail_epoch == member.base_epoch,
+          std::span(step.execution.dirty.data() + draft_bank, 2),
+          std::span(step.execution.tails.data() + draft_bank, 2), [&]() -> hyle::Result<cache::PageRef> {
+            if (!relay) session.draft_tail_epoch = 0;
+            HYLE_ASSIGN_OR_RETURN(auto reservation, draft_inventory.acquire());
+            step.execution.dirty[draft_bank].push_back(std::move(reservation.keys[0]));
+            step.execution.dirty[draft_bank + 1].push_back(std::move(reservation.values[0]));
+            return std::move(reservation.reference);
+          }));
       if (!relay) session.draft_tail_epoch = 0;
-      for (std::size_t page = reuse ? 1 : 0; page < dirty_count; ++page) {
-        auto reservation = take(draft_inventory.acquire()); next.pages.push_back(std::move(reservation.reference));
-        step.execution.dirty[draft_bank].push_back(std::move(reservation.keys[0])); step.execution.dirty[draft_bank + 1].push_back(std::move(reservation.values[0]));
-      }
       for (const auto &page : old.pages) old_ids.push_back(static_cast<std::int32_t>(page.page()));
       const auto begin = next_ids.size();
       for (const auto &page : next.pages) next_ids.push_back(static_cast<std::int32_t>(page.page()));
@@ -4820,31 +4801,22 @@ public:
         member.next->length = extent.after_rows;
         member.next->sampling = selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify ? member.base->sampling.advanced(drafts_token(role) ? 3 : 1)
             : member.base->sampling;
-        const auto full_prefix_pages = extent.prefix_pages, page_count = extent.page_count, dirty_count = extent.dirty_count;
-        bool reuse_tail = inference::tail_compatible({session.tails.data(), session.tails.size()},
-            member.base->pages.empty() ? 0 : member.base->pages.back().page(), extent,
-            !relay && session.tail_epoch == member.base_epoch && !member.base->pages.empty());
-        member.next->pages.reserve(page_count);
-        for (auto &bank : step.execution.dirty) bank.reserve(cache::add(bank.size(), dirty_count - (reuse_tail ? 1 : 0)));
-        if (reuse_tail && !take(inference::reserve_tail({session.tails.data(), session.tails.size()}, extent))) {
-          reuse_tail = false;
-          for (auto &bank : step.execution.dirty) bank.reserve(cache::add(bank.size(), dirty_count));
-        }
-        for (std::size_t i = 0; i < full_prefix_pages; ++i) member.next->pages.push_back(member.base->pages.at(i));
-        if (reuse_tail) {
-          member.next->pages.push_back(member.base->pages.back());
-          for (std::size_t bank = 0; bank < session.tails.size(); ++bank)
-            step.execution.tails[bank].push_back(std::move(session.tails[bank]));
-        } else if (!relay) for (auto &tail : session.tails) tail = {};
+        const auto page_count = extent.page_count;
+        (void)take(inference::prepare_append_pages(extent, std::span<const cache::PageRef>(member.base->pages),
+            member.next->pages, relay ? std::span<c::PagedPageAppender>{}
+                : std::span(session.tails.data(), session.tails.size()),
+            !relay && session.tail_epoch == member.base_epoch,
+            std::span(step.execution.dirty.data(), draft_bank),
+            std::span(step.execution.tails.data(), draft_bank), [&]() -> hyle::Result<cache::PageRef> {
+              if (!relay) session.tail_epoch = 0;
+              HYLE_ASSIGN_OR_RETURN(auto reservation, page_inventory.acquire());
+              for (std::size_t layer = 0; layer < reservation.keys.size(); ++layer) {
+                step.execution.dirty[layer * 2].push_back(std::move(reservation.keys[layer]));
+                step.execution.dirty[layer * 2 + 1].push_back(std::move(reservation.values[layer]));
+              }
+              return std::move(reservation.reference);
+            }));
         if (!relay) session.tail_epoch = 0;
-        for (std::size_t page = reuse_tail ? 1 : 0; page < dirty_count; ++page) {
-          auto reservation = take(page_inventory.acquire());
-          member.next->pages.push_back(std::move(reservation.reference));
-          for (std::size_t layer = 0; layer < reservation.keys.size(); ++layer) {
-            step.execution.dirty[layer * 2].push_back(std::move(reservation.keys[layer]));
-            step.execution.dirty[layer * 2 + 1].push_back(std::move(reservation.values[layer]));
-          }
-        }
         if (width != 1 && !ahead) for (const auto &page : member.base->pages) old_ids.push_back(static_cast<std::int32_t>(page.page()));
         const auto begin = new_ids.size();
         for (const auto &page : member.next->pages) new_ids.push_back(static_cast<std::int32_t>(page.page()));
