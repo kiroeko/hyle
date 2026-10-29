@@ -100,6 +100,19 @@ DeepSeek Pro／正式Flash原角色及Q8／BF16压缩侧车组件也复用同一
 已空闲但仍被结果借用的reset拒绝保持原权限与可恢复性，不无条件drain，也不因native退休宣称权限已撤销。
 [有限检查](../evidence/correctness/inference-multimodel-observation-2026-10-29.json)覆盖这两类失败与实际模型组件，不含设备故障注入或新吞吐结论。
 
+Kimi原KDA→MLA组件进一步复用`ProgramCarrier`／`ExecutionEpisode`，第一份选定输出由`SubmissionViews.primary_output`承载，
+元素类型取原tensor描述，不预设生成ID。实际Run作用域同时保活Backend、冷程序、常量、池及carrier的稳定保留节点；
+只保Backend不足以延长嵌入carrier节点的寿命。完整状态Head、模型数学和合法阶段仍归模型适配器。
+消费者用同一未来hidden writer及原cache／cursor／输出地址冷准备捕获，随后只撤回hidden输入，取回同writer交给生产者；
+生产者提交后导出的真实Source重新接入该端口，消费者沿原Queue顺序提交，使用已有捕获，不在中间等待主机结果。
+消费完成先撤回Source绑定，再允许生产者detach；成功复用原Invocation的reset，失败仍走原退休门。
+[有限检查](../evidence/correctness/inference-kimi-source-lifecycle-2026-10-30.json)覆盖生成稀疏权重及原23角色的完整状态检查，
+不包含两层之间的整模型计算、生成token或吞吐结论。
+
+该链的I32 Scan保留原CUB宽前缀及workspace，溢出判断和条件输出改在设备上执行，经原Queue状态报告失败；
+任一前缀溢出时全部输出保持不变。它仍是Managed，具备已实现的非阻塞捕获能力；其它Scan不据此升级。
+Scatter仅原无排序、零私有workspace的0／1索引路径取得固定绑定资格，排序路径仍保原限制。
+
 Graph已有多个StorageDomain／ExecutionTarget／ExecutionLane及QueueBinding的表达，一个Invocation／Completion可覆盖聚合工作，
 物理IO槽数与设备数、分片数无关。当前Backend仍只装配一个主端点及可选CPU辅助；Qwen状态集中放置，
 CUDA跨Context搬运／等待尚未接通，跨机执行也未实现。这些是当前路线限制，不写成共同请求、缓存或退休合同。
@@ -1657,7 +1670,7 @@ GLM／DeepSeek／Kimi的测试消费者用稳定冷对象持有原CompiledGraph�
 
 共同`ExecutionEpisode`承载一个原Graph episode的资源部分：原bank、Completion、Source／incoming、
 Store事务借用及候选额度借用。模型先声明参与者pins，再嵌入该组件，保证资源先于Session pins析构；
-后继以aliasing shared_ptr保留原Step，不新增owner、分配、权限表或执行器。提交始终经过原`ProgramCarrier`。
+Qwen后继以aliasing shared_ptr保留原Step，不新增owner、分配、权限表或执行器。提交始终经过原`ProgramCarrier`。
 回收依次保留前驱门、观察、撤回自身输出Source、真实Append／Store取回、解除输入Source、原载体reset、页尾回滚及页丢弃，
 最后才调用模型的noexcept候选回收并归还额度。未知退休保留原对象和剩余事实，不在析构里自动drain。
 成功收尾也由原episode解除输入Source及caller输入；Source撤销成功立即清除bound事实，后续解绑失败保留剩余owner。
@@ -1666,17 +1679,18 @@ Store事务借用及候选额度借用。模型先声明参与者pins，再嵌�
 普通与NextN共用这一顺序；NextN正常成功保留热carrier，只有失败且事务真实归还后才reset。
 `retire`仅观察原carrier；完整episode回收仍须`recover`。成功路径仍由模型核全体expected-base、
 接受和RNG后联合发布，输出观察结束才归还admission；模型数学、形状、状态和发布没有移入共同资源组件。
-共同结果事务仍待接入：Qwen已有私有ledger见证，GLM请求组件在Head发布和进度观察之间仍有可失败工作。
-每个成员实际发布成功后须立即无失败地标记其已预留见证，后续按原ordinal补观察，不重复推理或推进RNG。
+Qwen、GLM及DeepSeek组件已接共同记录提交见证：每个成员的原Head实际发布成功后，
+立即无失败地标记其已预留记录，后续按原ordinal补观察，不重复推理或推进RNG。
 GLM的单Head发布可因stale／closed拒绝，Qwen则在完整预检后无抛交换；共同层保留逐成员权威结果，
 不把不同用户的多个Head伪装成跨用户原子事务，也不将组件通过当作第二个完整引擎已接入。
-账簿的下一条reserved记录是本次尝试的暂存，不是已提交结果。类型化计算失败在原episode确认退休后，
+账簿的下一条reserved记录是本次尝试的暂存，不是已提交结果。类型化或未知发布失败在原episode确认退休后，
 只撤销与原成员`commit_record`一致的当前未提交槽；已提交前缀或后来的当前槽不变，冷容量保留。
-未知退休及尚在途的私有工作不由这一清理分支冒认完成。该修正不扩展generic异常分支，也不增加成功热路径复制或分配。
+未知退休及尚在途的私有工作不由这一清理分支冒认完成；失败退出撤回本次ledger裸借用，不为以后退休挂回调。
 [本片有限检查](../evidence/correctness/inference-execution-episode-2026-10-28.json)覆盖CPU／CUDA NextN真实失败后重试、
 旧快照、R2取消后的幸存续算和在途前驱下后继拒绝；未注入未知退休故障，没有新的性能结论。
 原StepSources的资源部分由共同`SubmissionViews`承载：在原Invocation上准备Store与Append视图，
-再从同一次提交依次捕获submission、token、Store和Append。模型派生结构只保留Session边界、epoch及发布引用，
+再从同一次提交依次捕获submission、主输出、Store和Append。主输出按真实TensorDesc表达，不限定为token或I32；
+Qwen选择生成ID，跨程序链也可选择hidden。模型派生结构只保留Session边界、epoch及发布引用，
 继续使用原shared_ptr控制块和析构次序；共同组件不新增Completion、执行器或发布权限。
 Completion只以引用传入，只有SubmissionSource创建成功才转移。可选降级仅适用于该创建阶段的非原生
 Unimplemented／Unavailable；后段捕获失败必须保留原submission和已成功的视图，交原episode实际退休后恢复，

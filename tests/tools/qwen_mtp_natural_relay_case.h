@@ -58,7 +58,7 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
     if (!step.execution.sources) return;
     const auto &views = *step.execution.sources;
     require(step.submitted && !step.execution.completion.valid() && step.execution.has_completion() &&
-        views.submission.valid() && views.token.valid() && views.extra_outputs.size() == 1 &&
+        views.submission.valid() && views.primary_output.valid() && views.extra_outputs.size() == 1 &&
         views.extra_outputs.front().valid() && views.mtp_full_candidate &&
         views.states.size() == step.phase->state_sources.size() &&
         views.pages.size() == model.draft_bank + 2,

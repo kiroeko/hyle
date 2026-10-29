@@ -27,7 +27,7 @@ template<class Sources> struct IncomingExecutionSources final {
 
 // The resource part of one real Graph episode. Embed it after the model's
 // participant pins so those pins outlive its resources. Sources is the model's
-// existing submission-view bundle (submission and token); it may also carry
+// existing submission-view bundle (submission and selected outputs); it may carry
 // model-specific boundary facts. No new executor, permission or retirement
 // authority is introduced. The carrier, Store cohort and admission count are
 // borrowed from their original owners.

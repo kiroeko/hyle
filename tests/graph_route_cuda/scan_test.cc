@@ -284,7 +284,7 @@ TEST(CudaDefaultGraph,
   }
   EXPECT_TRUE(stats.balanced());
 }
-void failure_case() {
+void failure_case(graph::ReplayMode mode) {
   auto stats = mem::StatsAllocator::create(mem::system_allocator()).value();
   {
     auto owner =
@@ -319,10 +319,19 @@ void failure_case() {
     const auto bind = [&](auto &slot) {
       EXPECT_TRUE(slot.bind(in, input.view.as_const()).ok());
       EXPECT_TRUE(slot.bind(out, output.view).ok());
-      return graph::cuda::prepare_replay(
+      const auto prepared = graph::cuda::prepare_replay(
           slot, queue,
-          {.mode = graph::ReplayMode::kCommands,
-           .host_wait = graph::HostWaitPolicy::kAllow});
+          {.mode = mode,
+           .host_wait = mode == graph::ReplayMode::kRequireCapture
+                            ? graph::HostWaitPolicy::kReject
+                            : graph::HostWaitPolicy::kAllow});
+      if (prepared.ok() && mode == graph::ReplayMode::kRequireCapture) {
+        EXPECT_EQ(slot.replay_route(), graph::ReplayRoute::kCaptured);
+        const auto report = slot.replay_report();
+        EXPECT_TRUE(report);
+        if (report) EXPECT_GT(report->recorded_capture_range_count, 0u);
+      }
+      return prepared;
     };
     auto slot = compiled.executable.create_invocation().value();
     ASSERT_TRUE(bind(slot).ok());
@@ -347,6 +356,9 @@ void failure_case() {
   EXPECT_TRUE(stats.balanced());
 }
 TEST(CudaDefaultGraph, IntegerScanOverflowPreservesOutputAndRecovers) {
-  failure_case();
+  failure_case(graph::ReplayMode::kCommands);
+}
+TEST(CudaDefaultGraph, CapturedIntegerScanOverflowPreservesOutputAndRecovers) {
+  failure_case(graph::ReplayMode::kRequireCapture);
 }
 } // namespace

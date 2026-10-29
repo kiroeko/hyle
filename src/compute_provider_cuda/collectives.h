@@ -46,9 +46,11 @@ struct Program final {
 
 const char *version() noexcept;
 cudaError_t configure(Program *program) noexcept;
+// Checked I32 Scan and Gather use the original admitted Queue's device status.
+// Scan validates every int64 prefix before any public output write.
 cudaError_t submit(const Program &program, const void *input,
                    const void *index_input, void *values, void *indices,
                    void *workspace, cudaStream_t stream,
-                   bool *validation_failed, unsigned *device_status) noexcept;
+                   unsigned *device_status) noexcept;
 
 } // namespace hyle::compute::cuda_native::collectives

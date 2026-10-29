@@ -233,7 +233,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     q::StepState *b = nullptr; std::weak_ptr<q::StepState> b_lifetime;
     if (kind == q::BackendKind::kCuda) {
       require(a->execution.sources == sources && a->execution.has_completion() && !a->execution.completion.valid() &&
-          sources->submission.valid() && sources->mtp_full_candidate && sources->token.valid() &&
+          sources->submission.valid() && sources->mtp_full_candidate && sources->primary_output.valid() &&
           sources->extra_outputs.size() == 1 && sources->extra_outputs[0].valid() &&
           sources->states.size() == geometry.recurrent_layers() * 2 + 1 &&
           sources->successor_states.size() == geometry.recurrent_layers() * 2 && sources->pages.size() == model.draft_bank + 2,

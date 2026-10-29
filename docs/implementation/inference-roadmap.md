@@ -118,7 +118,12 @@ GLM Flash／Pro、DeepSeek正式Flash／Pro与Kimi的原组件程序已接共同
 随后[预检与原候选发布配对](../evidence/correctness/inference-paired-publication-2026-10-30.json)消除普通／MTP发布时重拼target／draft编辑清单，私有NextN也消费同一预检结果。
 5项分页组件检查及5条CPU／CUDA模型旅程通过，含真实第二bank拒绝后原候选重试、K3状态、私有修复及原权重40输出；普通流水和自然MTP完整报告与前片一致。
 仅刷新受头文件影响的weights编译单元，226个SDK／引擎输入复用；新增测试图的控制依赖遗漏及修正保留，无NVCC、下载或吞吐刷新。
-下一片使用Kimi原KDA→MLA链检查第二家族对共同执行生命周期的完整采用；共同程序IO接入不等于Source链与退休编排已复用，GLM真实host路由屏障及各家族Head差异继续保留。
+随后[Kimi真实Source链](../evidence/correctness/inference-kimi-source-lifecycle-2026-10-30.json)已采用原Carrier／Episode及完整Run保活，
+KDA hidden经真实Source输入MLA，同writer冷捕获后仅替换该端口，零主机等待、零新增录制；原Head、快照、分叉、取消与完整状态检查保留。
+实际MLA暴露的I32 Scan同步溢出检查已改为设备验证和条件输出，仍Managed，溢出时整份输出不变；原无排序Scatter补固定捕获绑定资格。
+17项有限组件检查及普通连续16臂、原权重40输出MTP通过，后两份完整报告与前片一致；集成能力拒绝、旧runtime断言及新测试表达式编译错误均保留。
+仅刷新3个provider C++和1个CUDA单元，223个SDK／引擎输入复用，无下载或吞吐刷新；原23角色不等于完整Kimi生成。
+共同冷选择、完整编排及性能仍未完成；GLM真实host路由屏障与各家族Head差异继续保留。
 共同架构同时审查多模型、复杂阶段及未来多端点的依赖边界，避免将当前Qwen／单卡放置固化为通用合同；
 本轮不据组件通过声明大模型整机、多卡或跨机实现完成。现有硬件上的decode、MTP和含预热／换轮的综合速度仍是投入价值的关键检验，
 架构按实际热点与维护问题调整，不以等待更大硬件或无限整理抽象替代速度改进。

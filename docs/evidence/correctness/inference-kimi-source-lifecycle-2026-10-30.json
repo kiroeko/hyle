@@ -1,0 +1,509 @@
+{
+  "schema": "hyle.correctness.kimi-source-lifecycle.v1",
+  "date": "2026-10-30",
+  "status": "PASS_WITH_PRESERVED_INTEGRATION_AND_STALE_TEST_FAILURES",
+  "base_commit": "f276bc8d4603506fa5897e30facb96eb068eed4c",
+  "change": "Real Kimi KDA->MLA consumes the original ProgramCarrier/ExecutionEpisode/SubmissionViews; asynchronous checked I32 Scan and exact no-sort Scatter qualification close observed native capture gaps.",
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\execution_episode.h",
+      "bytes": 10748,
+      "sha256": "fb79390217c93dc17efc06edf94634399fdaca1e173c1056f146453b0ea6ecab"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\submission_views.h",
+      "bytes": 5446,
+      "sha256": "6ae3b3bb97244f70c78734ed552951e2e009438c67368f148a6aa9188fc1cb22"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 626945,
+      "sha256": "fcb5ceadf7f63c85568d8f77750ab123335f64dc7d185bafaf92bde720e4b08d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\collectives.cu",
+      "bytes": 30633,
+      "sha256": "bb2f5358d8cba86ce6c1f9845f4e93b5129f11750dbf4a4fd2e9a9bb30941497"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\collectives.h",
+      "bytes": 1827,
+      "sha256": "b3fc90ad9597423f2abacc816b3f12932978a9bc8f6ecd97bd73786925b65ff2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\collectives_provider.cc",
+      "bytes": 22369,
+      "sha256": "2335f3060bb97d1018e7568952f412111a3dd727662378f5800936815af2c084"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\cuda_provider.cc",
+      "bytes": 25376,
+      "sha256": "31928e433e9358fcabba7bc96d640924bdb43d55b0be277a07c41786633d6298"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\scatter_provider.cc",
+      "bytes": 15402,
+      "sha256": "489c9f5bef6e03a15bd3848accae6480141875df829b8e3386360e3c7ea4b087"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\scatter_provider.h",
+      "bytes": 800,
+      "sha256": "69480ee638800d682610c7c5df73555f368c69f9611778164728b57b21dab51c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\kimi_heterogeneous_state_consumer_test.cc",
+      "bytes": 65883,
+      "sha256": "42ba3dbe6402b40627310366bde184ec35cb37fb220ee7d47b1aa13a1f1a4ea4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_cuda\\collectives_test_support.h",
+      "bytes": 13736,
+      "sha256": "6b1ab9c69408b4329f3a0c1f1a8116818a069b9c661efeee83d6113adbc44632"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\scan_test.cc",
+      "bytes": 17445,
+      "sha256": "8354d618e520fa12b44ad385eb444d444c4e6ed61664e869a3fcc9fa663479c6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_generation_batch_relay_probe.cc",
+      "bytes": 43481,
+      "sha256": "8ef7f88b8091fa89f2899ff355388ba876e09e70bf9acf4a7f10ca8d2e853043"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_natural_relay_case.h",
+      "bytes": 20308,
+      "sha256": "4cf6c4b723d855737787f06f725fee9db72afef35f7938b3f567d68af6918b48"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_relay_case.h",
+      "bytes": 23487,
+      "sha256": "f12670d23bcd2f8cc2f26f0ef5a0e445352666eb0275aabe5259f19ba3b51d71"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_submission_source_probe.cc",
+      "bytes": 43861,
+      "sha256": "e333365e3ac58267dd69f80ad0520b4178ee37399148050590726bb1ee774b78"
+    }
+  ],
+  "counts": {
+    "compile_attempts": 16,
+    "link_attempts": 14,
+    "native_attempts": 14,
+    "final_passed_processes": 6,
+    "final_gtest_cases": 17,
+    "additional_Qwen_finite_processes": 2,
+    "refreshed_SDK_CXX": 3,
+    "refreshed_SDK_CUDA": 1,
+    "unchanged_SDK_engine_inputs": 223,
+    "downloads": 0,
+    "whole_builds": 0,
+    "throughput_windows": 0
+  },
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "driver": "617.14",
+    "memory_MiB": 12282,
+    "CXX": "MSVC 14.50.35717",
+    "CUDA": "13.3",
+    "target": "sm_89",
+    "system": "Windows x64"
+  },
+  "invariants": [
+    "One original Backend Queue, compiled Graph, Invocation and output pool per real component; no second executor or dummy Scope.",
+    "The actual Run Scope retains Backend, cold program, constants, output pool and stable carrier retention node until original retirement.",
+    "Cold MLA capture borrows the exact initialized future KDA hidden writer, old cache/cursor and future outputs before producer acceptance; no extra Graph submit.",
+    "Only hidden input0 is withdrawn and reclaimed with identical generation/resource/handle/offset/size. Actual pending OutputSource then replaces it.",
+    "Consumer submits before producer host observation; original Source report requires one device dependency, zero host waits, no new capture recording and positive capture reuse.",
+    "Consumer source withdrawal precedes producer detach; successful reuse resets the original Invocation. Original whole Head publication and five-resource state checks remain model-owned.",
+    "I32 Scan retains original CUB widened prefix/min/max/workspace, validates entirely on device and conditionally writes no output on any overflow; original Queue Completion carries OutOfRange.",
+    "I32 Scan remains Managed; only its demonstrated nonblocking capture path qualifies. Non-I32 managed Scan and sorted Scatter retain old restrictions.",
+    "No relaxed permission, imported error, result retention or actual retirement gate."
+  ],
+  "current_runs": [
+    {
+      "case": "scan-cuda",
+      "attempt": "attempt1",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 53268,
+        "started": 1793302417.8794794,
+        "seconds": 0.5490410327911377,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\runs\\scan-cuda\\attempt1\\report.json",
+        "bytes": 397,
+        "sha256": "e6d8af1302e7d68e029226d2f307896f38cd944f68dc1d7bcb735d62763be8c1"
+      },
+      "tests": 2
+    },
+    {
+      "case": "collectives-cuda",
+      "attempt": "attempt2",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 45992,
+        "started": 1793302512.591636,
+        "seconds": 0.6054432392120361,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\runs\\collectives-cuda\\attempt2\\report.json",
+        "bytes": 671,
+        "sha256": "71ea01835e7fdfdbf27ccf82acbf9adf2052f8df5fb653cc12aa780daac22f2c"
+      },
+      "tests": 4
+    },
+    {
+      "case": "scatter-cuda",
+      "attempt": "attempt1",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 26944,
+        "started": 1793302426.9968057,
+        "seconds": 1.0164461135864258,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\runs\\scatter-cuda\\attempt1\\report.json",
+        "bytes": 698,
+        "sha256": "a7e2afda1b97e98b02be25c4a9e4c9b60f5fe9e1149887618613a21e1477f3a3"
+      },
+      "tests": 4
+    },
+    {
+      "case": "kimi-cuda",
+      "attempt": "attempt4",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 48932,
+        "started": 1793302453.539253,
+        "seconds": 18.635226726531982,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\runs\\kimi-cuda\\attempt4\\report.json",
+        "bytes": 7698,
+        "sha256": "447fe735aa86605d7bd1940f8ae03d5fdce319b903a5e25ab5d2225ddb1b6ec4"
+      },
+      "tests": 7
+    },
+    {
+      "case": "natural-cuda",
+      "attempt": "attempt2",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 55944,
+        "started": 1793302488.293506,
+        "seconds": 3.6466023921966553,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\runs\\natural-cuda\\attempt2\\report.json",
+        "bytes": 7117,
+        "sha256": "783435df8c542066c8a5d00b9e5efb96c73ce3179744f702e70a44c33ebf323d"
+      },
+      "tests": null
+    },
+    {
+      "case": "continuous-cuda",
+      "attempt": "attempt2",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 24924,
+        "started": 1793302572.8332064,
+        "seconds": 1.3351314067840576,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\runs\\continuous-cuda\\attempt2\\report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      },
+      "tests": null
+    }
+  ],
+  "Kimi_chain_reports": [
+    {
+      "name": "KimiHeterogeneousState.CudaOriginalGeometrySyntheticKdaMlaPublishesWholeStateAndRestoresForks",
+      "seconds": "1.08",
+      "properties": {
+        "kda_replay_route": "captured",
+        "kda_recorded_capture_ranges": "7",
+        "kda_reused_capture_ranges": "0",
+        "kda_host_waits": "0",
+        "kda_cold_capture_preparations": "0",
+        "kda_cold_recorded_capture_ranges": "0",
+        "kda_cold_reused_capture_ranges": "0",
+        "kda_cold_capture_seconds": "0.000000",
+        "mla0_replay_route": "captured",
+        "mla0_recorded_capture_ranges": "0",
+        "mla0_reused_capture_ranges": "2",
+        "mla0_host_waits": "0",
+        "mla0_cold_capture_preparations": "2",
+        "mla0_cold_recorded_capture_ranges": "2",
+        "mla0_cold_reused_capture_ranges": "0",
+        "mla0_cold_capture_seconds": "0.052716",
+        "mla1_replay_route": "captured",
+        "mla1_recorded_capture_ranges": "0",
+        "mla1_reused_capture_ranges": "3",
+        "mla1_host_waits": "0",
+        "mla1_cold_capture_preparations": "3",
+        "mla1_cold_recorded_capture_ranges": "3",
+        "mla1_cold_reused_capture_ranges": "0",
+        "mla1_cold_capture_seconds": "0.001313",
+        "mla2_replay_route": "captured",
+        "mla2_recorded_capture_ranges": "0",
+        "mla2_reused_capture_ranges": "1",
+        "mla2_host_waits": "0",
+        "mla2_cold_capture_preparations": "1",
+        "mla2_cold_recorded_capture_ranges": "1",
+        "mla2_cold_reused_capture_ranges": "0",
+        "mla2_cold_capture_seconds": "0.003926",
+        "weight_scope": "Generated sparse BF16/F32 weights at fixed Kimi7168/96x128 geometry; NOT original artifact payload or quality",
+        "composition_scope": "Actual KDA hidden OutputSource feeds actual absorbed MLA on the original Queue before producer host observation. Intervening full model layers/residuals and LM head are not executed; no generated token or MTP claim.",
+        "second_graph_submitted_before_producer_host_observation": "6",
+        "second_graph_binding_rejections_same_invocation_retry": "1",
+        "binding_retry_scope": "Actual short cache lease refuses ordinary MLA preparation before producer acceptance; same Invocation retry preserves Head, complete device state and all Epoch fields",
+        "cold_capture_scope": "Before KDA acceptance, initialize its original hidden pool writer, prepare MLA capture with the exact old cache/cursor and future output writers, withdraw only input0 and reclaim that same hidden writer for KDA; no extra Graph submit or pool",
+        "retirement_scope": "Original Run Scope retains Backend, cold program, pool, literals and stable ProgramCarrier node; Source bundle withdrawal precedes producer detach; successful reuse preserves Invocation.reset",
+        "state_scope": "One StateStore, two independent Heads and one immutable restored fork; convolution history, recurrent KDA, full finite MLA cache, actual Graph I32 cursor, actual final feature, Epoch metadata. AttnRes is frame-only and absent.",
+        "ordinary_commits": "6",
+        "cancelled_unpublished_candidates": "1",
+        "stale_publish_rejections": "6",
+        "native_cancellation_scope": "Cancellation is of the unpublished StateDraft after KDA has actually retired; no GPU preemption claim",
+        "state_backing_budget": "105969664"
+      }
+    },
+    {
+      "name": "KimiHeterogeneousState.CudaOriginalParametersKdaMlaKeepCompleteStateAcrossContinuation",
+      "seconds": "16.883",
+      "properties": {
+        "kda_replay_route": "captured",
+        "kda_recorded_capture_ranges": "2",
+        "kda_reused_capture_ranges": "0",
+        "kda_host_waits": "0",
+        "kda_cold_capture_preparations": "0",
+        "kda_cold_recorded_capture_ranges": "0",
+        "kda_cold_reused_capture_ranges": "0",
+        "kda_cold_capture_seconds": "0.000000",
+        "mla0_replay_route": "captured",
+        "mla0_recorded_capture_ranges": "0",
+        "mla0_reused_capture_ranges": "1",
+        "mla0_host_waits": "0",
+        "mla0_cold_capture_preparations": "1",
+        "mla0_cold_recorded_capture_ranges": "1",
+        "mla0_cold_reused_capture_ranges": "0",
+        "mla0_cold_capture_seconds": "0.001096",
+        "mla1_replay_route": "captured",
+        "mla1_recorded_capture_ranges": "0",
+        "mla1_reused_capture_ranges": "1",
+        "mla1_host_waits": "0",
+        "mla1_cold_capture_preparations": "1",
+        "mla1_cold_recorded_capture_ranges": "1",
+        "mla1_cold_reused_capture_ranges": "0",
+        "mla1_cold_capture_seconds": "0.000397",
+        "second_graph_submitted_before_producer_host_observation": "2",
+        "cold_capture_scope": "Each exact physical MLA input/output tuple is captured before KDA acceptance using its initialized original hidden writer; the same writer is reclaimed for KDA and MLA Source admission reuses capture without recording or host wait",
+        "submission_dependency_scope": "Original KDA hidden OutputSource and complete producer verdict feed MLA input0 on the same Backend Queue; both graphs submit before host result observation or oracle reads",
+        "retirement_scope": "Actual original Run Scope pins Backend/cold program/pool/literals/carrier node; consumer Source withdrawal precedes producer detach, and successful Invocation.reset reuse is preserved",
+        "source_scope": "Original fixed-revision KDA0 14 roles + MLA3 9 roles; per-union/per-role SHA checked, original raw KV-b is not uploaded",
+        "upstream_scope": "Supplied normalized KDA0 input; KDA0 output is an explicit upstream fixture for MLA3, not intervening layers or complete model execution",
+        "oracle_scope": "Original raw row/tap/KV-b indexing; no prepared K/V or expanded F32 weight bank. Existing six/nine-output accuracy gates plus selected actual-producer F64 projection certificates",
+        "state_scope": "Two real complete Head commits, actual prior native state feedback, immutable old readers, restored old-version fork, unpublished cancellation, stale expected-base rejection; no native preemption claim"
+      }
+    }
+  ],
+  "comparisons": [
+    {
+      "case": "natural-cuda",
+      "previous": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-publication-20261030\\runs\\natural-cuda\\attempt1\\report.json",
+        "bytes": 7117,
+        "sha256": "783435df8c542066c8a5d00b9e5efb96c73ce3179744f702e70a44c33ebf323d"
+      },
+      "current": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\runs\\natural-cuda\\attempt2\\report.json",
+        "bytes": 7117,
+        "sha256": "783435df8c542066c8a5d00b9e5efb96c73ce3179744f702e70a44c33ebf323d"
+      },
+      "full_report_equal": true
+    },
+    {
+      "case": "continuous-cuda",
+      "previous": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-publication-20261030\\runs\\continuous-cuda\\attempt1\\report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      },
+      "current": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\runs\\continuous-cuda\\attempt2\\report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      },
+      "full_report_equal": true
+    }
+  ],
+  "preserved_findings": [
+    {
+      "run": "kimi-cuda/attempt1",
+      "finding": "Commands producer contains managed command gaps; original output Source capability gate rejects it."
+    },
+    {
+      "run": "kimi-cuda/attempt2",
+      "finding": "Captured producer needs complete existing consumer capture; initial Source preparation correctly rejects."
+    },
+    {
+      "run": "kimi-cuda/attempt3",
+      "finding": "Correct exact-writer cold handoff still rejects: actual MLA contains uncaptured host-blocking I32 Scan and unqualified Scatter capture binding."
+    },
+    {
+      "run": "kimi-diagnostic/attempt1 and attempt2",
+      "finding": "Metadata-only scratch diagnostic using unchanged SDK: step39/node46 is CCCL I32 Scan; first capture range has privateStable=false immediately after cold capture, before any handoff. No Graph gate changed."
+    },
+    {
+      "run": "collectives-cuda/attempt1",
+      "finding": "Only old blocks_host=true I32 runtime expectations fail; all Scan numeric and overflow comparisons plus other three cases pass. Runtime assertions updated to new real contract."
+    },
+    {
+      "run": "compile/collectives-test/attempt2",
+      "finding": "New EXPECT_EQ template comma lacked outer parentheses; fixed test expression only and recompiled successfully."
+    }
+  ],
+  "limits": [
+    "Original payload covers fixed Kimi KDA0 14 roles and MLA3 9 roles only; KDA output is explicit upstream fixture for MLA3, not intervening layers or complete generation.",
+    "Synthetic case uses generated sparse BF16/F32 weights at original Kimi7168/96x128 geometry; distinct from original artifact checks.",
+    "No GPU preemption, simultaneous GPU overlap, full Kimi engine, token quality, full MTP/model support or throughput improvement claim.",
+    "No new CPU, Apple, Vulkan, multi-device, long-context, sorted-Scatter or persistent native fault campaign; complete common engine orchestration and performance remain unfinished.",
+    "Only the two refreshed Qwen regression processes are compared to the prior full reports; the other renamed probe sources were mechanically updated but not separately compiled."
+  ],
+  "cleanup_plan": {
+    "root": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin",
+    "files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\collectives-test.exe",
+        "bytes": 140172800,
+        "sha256": "087cc1fc2c96541445c541a25d797a6b14381fca5fdd9c0b205f253176244f51"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\collectives-test.exp",
+        "bytes": 25006,
+        "sha256": "f088f1fe1556f54eb5738eceff411128658298a54a16be0df077d4d3a87d1247"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\collectives-test.lib",
+        "bytes": 42522,
+        "sha256": "fc68a8d92628acb4ca4a60e7feb8c08cb649b6d63c939daffc14243ddf04a696"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\diagnostic.exe",
+        "bytes": 141598720,
+        "sha256": "ba8f9dd3dc86d8a6a94faca34491709afe4666bff717bd9ebc5094b6cf91e6b9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\diagnostic.exp",
+        "bytes": 24994,
+        "sha256": "91210f49bd8482b2861699d1ac223083542d48e4d567d923732ac91fc100eaec"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\diagnostic.lib",
+        "bytes": 41912,
+        "sha256": "d51e6285e3c49417105d0159dd251ecd6fc0e7ce96e5422ebabe992d5563947c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\kimi.exe",
+        "bytes": 141596160,
+        "sha256": "b47913ad0bada101d9adca3e865bc63d8ab2b10809ff5d75de39ac2210a99b6b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\kimi.exp",
+        "bytes": 24982,
+        "sha256": "2a260d50cb8780543e51cae71b06640a82961db07c766c84862250576438c129"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\kimi.lib",
+        "bytes": 41384,
+        "sha256": "c278f7f560ac076f249b149408e1eff3275e113f242e1fb2dfa50878e338b1f6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\model.exe",
+        "bytes": 143046144,
+        "sha256": "6b32af348566961a2cf6816cc5b6993ff374e047f74a48518ebd8f26ec61304e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\model.exp",
+        "bytes": 24983,
+        "sha256": "1107127c928d062ab8b3469d99a1060d0b6b2eae73a9cc7e82d17e1e9ac3977a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\model.lib",
+        "bytes": 41474,
+        "sha256": "8708bca23d7b84b2d16cdc2661de5a2ed6ea897c29a803a826de5b5f89340d78"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\ordinary.exe",
+        "bytes": 142916608,
+        "sha256": "309994391fb94675f7968824f9782ecb6cc1b7ef12eb6dc288f6f0333dfb9b6e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\ordinary.exp",
+        "bytes": 24990,
+        "sha256": "bbef93ad5a217340ed1eb3769d4cb0f3134a9239b19eff20cb966665e122d7b1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\ordinary.lib",
+        "bytes": 41736,
+        "sha256": "b48e083b9ce39eb6f82dd55dba602a320b716d6c6113e731c1094b8446220b32"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\scan-test.exe",
+        "bytes": 140707840,
+        "sha256": "767dccb7dcaacac4ce91e575e1b30db0247e7e0ce23e3a118efa08a7bc1d7276"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\scan-test.exp",
+        "bytes": 24991,
+        "sha256": "5bef0805b165833dff2c5f43367312e978a42ea909a1c062a9b5b497de2b3fc0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\scan-test.lib",
+        "bytes": 41826,
+        "sha256": "724e6cf45f31cb4a1ebcffe77763e15da70a08216bdc55cc14fd95b2ff5fef10"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\scatter-test.exe",
+        "bytes": 140103168,
+        "sha256": "e33e2c0375d49cc891af61daf0fa405f205d4ba07ec78c5bcbda9669c16eab9a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\scatter-test.exp",
+        "bytes": 24998,
+        "sha256": "3081f0ce7b4b77db4dac0d7481be0ec17bc7ebe6fd710c86335e9c6ec20691e9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\bin\\scatter-test.lib",
+        "bytes": 42166,
+        "sha256": "3158d0a355fe0541769e83c295ec6510b619303b4eed9cc533e3bc2863a31628"
+      }
+    ],
+    "bytes": 991816188
+  },
+  "cleanup": {
+    "status": "COMPLETE",
+    "files": 22,
+    "bytes": 991816188,
+    "scope": "Only this batch native images/link outputs and copied DLL; all current consumer objects, four refreshed SDK inputs and 223 other SDK inputs retained."
+  }
+}

@@ -205,7 +205,7 @@ Arm run_arm(q::Model &model, bool exported) {
       sources = model.prepare_submission_sources();
       source_lifetime = sources;
       require(sources && sources->states.size() == expected_stores && sources->pages.size() == expected_pages &&
-          !sources->submission.valid() && !sources->token.valid(),
+          !sources->submission.valid() && !sources->primary_output.valid(),
           "cold Source preparation omitted a state bank or accepted native work");
       for (const auto &source : sources->states) require(source.prepared(), "Store Source metadata was not prepared");
       for (const auto &source : sources->pages) require(source.prepared(), "KV Source metadata was not prepared");
@@ -220,7 +220,7 @@ Arm run_arm(q::Model &model, bool exported) {
       throw;
     }
     if (exported) {
-      require(!step.execution.completion.valid() && sources->submission.valid() && sources->token.valid(),
+      require(!step.execution.completion.valid() && sources->submission.valid() && sources->primary_output.valid(),
           "exported episode retained a second original Completion or omitted its token Source");
       for (const auto &source : sources->states)
         require(source.valid() && source.destination_count() == 1, "Store Source did not capture the actual K1 destination");

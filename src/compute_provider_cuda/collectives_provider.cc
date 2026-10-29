@@ -26,6 +26,11 @@ struct Invocation final {
   void *workspace = nullptr;
 };
 
+bool checked_integer_scan(const collectives::Program &program) noexcept {
+  return program.kind == collectives::Kind::kScan &&
+      program.type == collectives::Type::kInt32;
+}
+
 ProviderRuntimeProperties
 runtime(const collectives::Program &program) noexcept {
   if (program.count == 0)
@@ -43,12 +48,12 @@ runtime(const collectives::Program &program) noexcept {
           .workspace_owner = ProviderWorkspaceOwner::kCaller,
           .replay_class = prepared ? ProviderReplayClass::kPrepared
                                    : ProviderReplayClass::kManaged,
-          .blocks_host =
-              (program.kind == collectives::Kind::kScan &&
-               program.type == collectives::Type::kInt32),
+          // I32 validation stays on the admitted stream and reports through
+          // its original Queue status. CUB dispatch still has managed costs.
+          .blocks_host = false,
           .uses_private_threads = false,
           .supports_concurrent_invocations = true,
-          .capture_compatible = prepared};
+          .capture_compatible = prepared || checked_integer_scan(program)};
 }
 
 Status describe(Operation operation, std::span<const TensorDesc> inputs,
@@ -296,7 +301,8 @@ detail::EnqueueResult submit(void *value, void *slot, detail::QueueSequence &seq
     return detail::EnqueueResult::rejected(scope.status());
   const bool managed = runtime(prepared.program).replay_class ==
                        ProviderReplayClass::kManaged;
-  if (managed) {
+  const bool integer_scan = checked_integer_scan(prepared.program);
+  if (managed && !integer_scan) {
     cudaStreamCaptureStatus capture;
     auto status = cuda::status(cudaStreamIsCapturing(*stream, &capture));
     if (!status.ok())
@@ -306,24 +312,20 @@ detail::EnqueueResult submit(void *value, void *slot, detail::QueueSequence &seq
           "CCCL managed execution does not accept external capture"));
   }
   unsigned *device_status = nullptr;
-  if (prepared.program.kind == collectives::Kind::kGather &&
-      prepared.program.checked) {
+  if ((prepared.program.kind == collectives::Kind::kGather &&
+       prepared.program.checked) || integer_scan) {
     auto initialized = cuda::detail::acquire_device_status(sequence, &device_status);
     if (!initialized.status.ok())
       return initialized;
   }
-  bool overflow = false;
   auto status = cuda::status(collectives::submit(
       prepared.program, *input, index_input, *values, indices,
-      static_cast<Invocation *>(slot)->workspace, *stream, &overflow, device_status));
+      static_cast<Invocation *>(slot)->workspace, *stream, device_status));
   // Managed CUB dispatch may have enqueued work before a host-side failure.
-  // Prepared kernels use the Queue's accepted-prefix completion and guards,
-  // including failure after the first tiled TopK1 launch.
-  if (!status.ok() && managed)
+  // I32 Scan and prepared kernels instead use the Queue's accepted-prefix
+  // completion and guards, including failure after an earlier kernel launch.
+  if (!status.ok() && managed && !integer_scan)
     (void)cudaStreamSynchronize(*stream);
-  else if (overflow)
-    status = Status::OutOfRange(
-        "CCCL integer scan prefix exceeds int32; output unchanged");
   return detail::EnqueueResult::accepted_command(std::move(status));
 }
 const detail::ProviderPreparedVTable kPrepared{
@@ -377,11 +379,25 @@ Status inspect_capture_bindings(const detail::ProviderPrepared &value,
     return Status::Unimplemented("foreign CCCL prepared implementation");
   const auto &prepared = *static_cast<const Prepared *>(value.state);
   const auto &program = prepared.program;
-  // Only these cold fixed kernels use explicit ports and the original caller
-  // workspace. Scan and other TopK programs enter managed CUB dispatch.
+  const auto within_workspace = [&](std::size_t offset, std::size_t bytes) noexcept {
+    return offset <= program.workspace_bytes &&
+        bytes <= program.workspace_bytes - offset;
+  };
+  // This exact I32 Scan retains its original caller workspace and offsets.
+  // CUB's scan/min/max and the fixed check/output kernels borrow only those
+  // addresses and explicit ports; no invocation-private carrier is replaced.
+  // Other Scan and managed TopK paths retain their original qualification.
+  const bool integer_scan = checked_integer_scan(program) && prepared.primary &&
+      value.runtime.workspace_owner == ProviderWorkspaceOwner::kCaller &&
+      value.workspace.size == program.workspace_bytes && program.count != 0 &&
+      program.count <= INT32_MAX && program.count <= SIZE_MAX / sizeof(std::int64_t) &&
+      program.width != 0 && program.count % program.width == 0 &&
+      within_workspace(program.prefix_offset, program.count * sizeof(std::int64_t)) &&
+      within_workspace(program.bounds_offset, 2 * sizeof(std::int64_t)) &&
+      within_workspace(program.temporary_offset, program.temporary_bytes);
   *preserves = value.runtime.capture_compatible &&
       value.runtime.mode == ProviderRuntimeMode::kSharedQueue &&
-      (program.count == 0 || program.kind == collectives::Kind::kGather ||
+      (program.count == 0 || program.kind == collectives::Kind::kGather || integer_scan ||
        (program.kind == collectives::Kind::kTopK && program.k == 1 &&
         program.arg_tiles != 0));
   return Status::Ok();

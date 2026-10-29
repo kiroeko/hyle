@@ -161,33 +161,35 @@ __global__ void gather_output_kernel(Program program, const void *input,
                     static_cast<T *>(output), status}(logical);
 }
 
-template <class Kernel> cudaError_t configure_gather_kernel(Kernel kernel) {
-  // Resolve runtime function materialization while proposing/preparing, before
-  // any external capture. Gather has no temporary storage or host completion.
+template <class Kernel>
+cudaError_t configure_fixed_kernel(Kernel kernel,
+                                  unsigned threads = kGatherThreads) {
+  // Resolve fixed kernel materialization while proposing/preparing, before
+  // any external capture. These kernels add no temporary storage or host wait.
   cudaFuncAttributes attributes{};
   const auto status = cudaFuncGetAttributes(&attributes, kernel);
   if (status != cudaSuccess)
     return status;
-  return attributes.maxThreadsPerBlock < static_cast<int>(kGatherThreads)
+  return attributes.maxThreadsPerBlock < static_cast<int>(threads)
              ? cudaErrorInvalidConfiguration
              : cudaSuccess;
 }
 
 cudaError_t configure_gather(const Program &program) {
   if (program.checked) {
-    const auto status = configure_gather_kernel(gather_check_kernel);
+    const auto status = configure_fixed_kernel(gather_check_kernel);
     if (status != cudaSuccess)
       return status;
   }
   switch (program.element_bytes) {
   case 1:
-    return configure_gather_kernel(gather_output_kernel<std::uint8_t>);
+    return configure_fixed_kernel(gather_output_kernel<std::uint8_t>);
   case 2:
-    return configure_gather_kernel(gather_output_kernel<std::uint16_t>);
+    return configure_fixed_kernel(gather_output_kernel<std::uint16_t>);
   case 4:
-    return configure_gather_kernel(gather_output_kernel<std::uint32_t>);
+    return configure_fixed_kernel(gather_output_kernel<std::uint32_t>);
   case 8:
-    return configure_gather_kernel(gather_output_kernel<std::uint64_t>);
+    return configure_fixed_kernel(gather_output_kernel<std::uint64_t>);
   default:
     return cudaErrorInvalidValue;
   }
@@ -220,6 +222,27 @@ template <class T> struct ScanOutput {
     return static_cast<T>(prefix[i]);
   }
 };
+
+constexpr unsigned kScanThreads = 256;
+
+__global__ void scan_i32_check_kernel(const std::int64_t *bounds,
+                                     unsigned *status) {
+  if (bounds[0] < INT32_MIN || bounds[1] > INT32_MAX)
+    atomicCAS(status, 0U, static_cast<unsigned>(
+        cuda::detail::DeviceStatusCode::kIntegerOverflow));
+}
+
+__global__ void scan_i32_output_kernel(Program program,
+                                      const std::int64_t *prefix,
+                                      std::int32_t *output,
+                                      const unsigned *status) {
+  const auto logical = static_cast<std::size_t>(blockIdx.x) * blockDim.x +
+                       threadIdx.x;
+  // The preceding whole-prefix validation completes on this same stream.
+  // Any overflowing row or inherited failure preserves every output byte.
+  if (logical < program.count && *status == 0)
+    output[logical] = ScanOutput<std::int32_t>{{program}, prefix}(logical);
+}
 
 template <class Score> struct Key {
   std::uint32_t row;
@@ -507,6 +530,12 @@ template <class T> cudaError_t configure_typed(Program &program) {
           std::max({program.temporary_bytes, min_bytes, max_bytes});
       if (!reserve(program, 2 * sizeof(Acc), program.bounds_offset))
         return cudaErrorInvalidValue;
+      status = configure_fixed_kernel(scan_i32_check_kernel, 1);
+      if (status != cudaSuccess)
+        return status;
+      status = configure_fixed_kernel(scan_i32_output_kernel, kScanThreads);
+      if (status != cudaSuccess)
+        return status;
     }
   } else {
     auto status = cub::DeviceRadixSort::SortPairs(
@@ -535,7 +564,7 @@ template <class T> cudaError_t configure_typed(Program &program) {
 template <class T>
 cudaError_t submit_typed(const Program &program, const void *input,
                          void *output, void *indices, void *workspace,
-                         cudaStream_t stream, bool *overflow) {
+                         cudaStream_t stream, unsigned *device_status) {
   using Acc = Accumulation<T>;
   const Layout layout{program};
   auto *storage = static_cast<char *>(workspace);
@@ -578,6 +607,8 @@ cudaError_t submit_typed(const Program &program, const void *input,
     if (status != cudaSuccess)
       return status;
     if constexpr (std::is_same_v<T, std::int32_t>) {
+      // The provider bounds count by INT32_MAX, so every widened prefix fits
+      // int64. Keep checking all inclusive prefixes for exclusive Scan too.
       auto *bounds = reinterpret_cast<Acc *>(storage + program.bounds_offset);
       bytes = program.temporary_bytes;
       status = cub::DeviceReduce::Min(temporary, bytes, prefix, bounds,
@@ -589,18 +620,15 @@ cudaError_t submit_typed(const Program &program, const void *input,
                                       program.count, stream);
       if (status != cudaSuccess)
         return status;
-      Acc limits[2];
-      status = cudaMemcpyAsync(limits, bounds, sizeof(limits),
-                               cudaMemcpyDeviceToHost, stream);
+      scan_i32_check_kernel<<<1, 1, 0, stream>>>(bounds, device_status);
+      status = cudaGetLastError();
       if (status != cudaSuccess)
         return status;
-      // Only the validation summary reaches the host, never tensor arithmetic.
-      status = cudaStreamSynchronize(stream);
-      if (status != cudaSuccess)
-        return status;
-      *overflow = limits[0] < INT32_MIN || limits[1] > INT32_MAX;
-      if (*overflow)
-        return cudaSuccess;
+      const auto blocks = static_cast<unsigned>(
+          (program.count + kScanThreads - 1) / kScanThreads);
+      scan_i32_output_kernel<<<blocks, kScanThreads, 0, stream>>>(
+          program, prefix, static_cast<std::int32_t *>(output), device_status);
+      return cudaGetLastError();
     }
     return cub::DeviceTransform::Transform(
         Counter(0), static_cast<T *>(output), program.count,
@@ -669,8 +697,10 @@ cudaError_t configure(Program *program) noexcept try {
 cudaError_t submit(const Program &program, const void *input,
                    const void *index_input, void *values, void *indices,
                    void *workspace, cudaStream_t stream,
-                   bool *integer_overflow, unsigned *device_status) noexcept try {
-  *integer_overflow = false;
+                   unsigned *device_status) noexcept try {
+  if (program.kind == Kind::kScan && program.type == Type::kInt32 &&
+      device_status == nullptr)
+    return cudaErrorInvalidValue;
   if (program.kind == Kind::kGather) {
     if (program.checked) {
       if (device_status == nullptr)
@@ -700,16 +730,16 @@ cudaError_t submit(const Program &program, const void *input,
   switch (program.type) {
   case Type::kFloat32:
     return submit_typed<float>(program, input, values, indices, workspace,
-                               stream, integer_overflow);
+                               stream, device_status);
   case Type::kInt32:
     return submit_typed<std::int32_t>(program, input, values, indices,
-                                      workspace, stream, integer_overflow);
+                                      workspace, stream, device_status);
   case Type::kFloat16:
     return submit_typed<__half>(program, input, values, indices, workspace,
-                                stream, integer_overflow);
+                                stream, device_status);
   case Type::kBFloat16:
     return submit_typed<__nv_bfloat16>(program, input, values, indices,
-                                       workspace, stream, integer_overflow);
+                                       workspace, stream, device_status);
   }
   return cudaErrorInvalidValue;
 } catch (const thrust::system_error &error) {

@@ -205,6 +205,23 @@ const detail::ProviderPreparedVTable kPreparedVTable{
     .shared_submit = &submit,
 };
 } // namespace
+
+bool preserves_capture_bindings(const detail::ProviderPrepared &value) noexcept {
+  if (value.vtable != &kPreparedVTable || !value.state || value.workspace.size != 0 ||
+      value.invocation_private_bytes != 0) return false;
+  const auto &prepared = *static_cast<const Prepared *>(value.state);
+  const auto &program = prepared.program;
+  // Only the zero/one-index path has no Invocation allocation or sort graph.
+  // Its data addresses are ports; kernels and by-value layout stay cold. A
+  // checked launch borrows the backend's capture-owned stable status word,
+  // which the original replay seeds and merges, never a Scatter-private word.
+  if (!prepared.primary || program.workspace_bytes || program.array_bytes ||
+      program.sort_bytes || program.layout.indices > 1) return false;
+  return !program.layout.elements ||
+      (program.single && (!program.checked ||
+          (program.layout.indices == 1 && program.pack)));
+}
+
 Status propose(const detail::ProviderOperationRequest &request,
                std::span<detail::ResourceBindingRequirement> inputs,
                std::span<detail::ResourceBindingRequirement> outputs,

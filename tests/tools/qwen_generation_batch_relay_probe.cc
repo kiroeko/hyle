@@ -17,7 +17,7 @@ void check_captured_sources(const q::Model &model, const q::StepState &step) {
   if (!step.execution.sources) return; // The existing legal non-Source route.
   const auto &sources = *step.execution.sources;
   require(step.submitted && !step.execution.completion.valid() && step.execution.has_completion() &&
-      sources.submission.valid() && sources.token.valid() && step.phase &&
+      sources.submission.valid() && sources.primary_output.valid() && step.phase &&
       sources.states.size() == step.phase->state_sources.size() &&
       sources.pages.size() == model.draft_bank,
       "Source cohort lost its sole original completion, token or prepared bank");
@@ -440,7 +440,7 @@ SourceFailureArm source_failure_arm(q::Model &model, bool fail_capture) {
     }
     require(rejected && model.active_step.get() == failed_step && failed_step->submitted &&
         failed_step->execution.sources == sources && !failed_step->execution.completion.valid() &&
-        failed_step->execution.has_completion() && sources->submission.valid() && sources->token.valid(),
+        failed_step->execution.has_completion() && sources->submission.valid() && sources->primary_output.valid(),
         "Optional Source export downgraded or lost an already accepted partial capture");
     ++result.submissions;
     for (std::size_t index = 0; index < stores; ++index)

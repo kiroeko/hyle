@@ -494,6 +494,7 @@ Status inspect_capture_bindings(const detail::ProviderPrepared &value, bool *pre
         causal_conv::preserves_capture_bindings(value) ||
         tensor::preserves_capture_bindings(value) ||
         concatenation::preserves_capture_bindings(value) ||
+        scattering::preserves_capture_bindings(value) ||
         reduction::preserves_capture_bindings(value);
   // Other provider routes (including quantized programs) retain their own
   // contract. Matching runtime labels never establish private-address safety.

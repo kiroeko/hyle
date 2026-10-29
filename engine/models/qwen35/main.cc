@@ -4474,7 +4474,7 @@ public:
         incoming->successor_states.size() == geometry.recurrent_layers() * 2;
     if (relay && (successor_step || scheduler || cache_plan.in_flight_batches < 2 ||
         (!ordinary_relay && !complete_mtp_relay) || completion != TextCompletion::kEmitNext || physical_slot >= execution_slot_count ||
-        incoming->boundaries.size() != requests.size() || !incoming->submission.valid() || !incoming->token.valid() ||
+        incoming->boundaries.size() != requests.size() || !incoming->submission.valid() || !incoming->primary_output.valid() ||
         incoming->states.size() != geometry.recurrent_layers() * 2 + (mtp_relay ? 1u : 0u) ||
         incoming->pages.size() != draft_bank + (mtp_relay ? 2u : 0u) ||
         (predecessor && (predecessor->execution.sources != incoming || predecessor->cancelled || !predecessor->submitted ||
@@ -4792,7 +4792,7 @@ public:
       if (relay) {
         auto &input = *step.execution.incoming; auto &previous = *input.owner;
         input.bindings.reserve(1 + previous.states.size() + previous.pages.size() + (mtp_relay ? 1u : 0u));
-        input.bindings.push_back({phase.token_port, &previous.token});
+        input.bindings.push_back({phase.token_port, &previous.primary_output});
         if (mtp_relay) input.bindings.push_back({phase.catchup_token_port, &previous.extra_outputs[0]});
         const bool ready_states = previous.published_states.size() == previous.states.size() * width + (mtp_relay ? 1u : 0u) &&
             std::ranges::all_of(previous.published_states, [](const auto &lease) { return lease.valid(); });
