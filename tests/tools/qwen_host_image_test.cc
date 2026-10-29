@@ -24,11 +24,13 @@
 #include "qwen_mtp_mixed_lag_case.h"
 #include "qwen_mtp_varlen_verify_case.h"
 #include "qwen_mtp_relay_case.h"
+#include "qwen_mtp_natural_relay_case.h"
 #include "inference_cold_demand_case.h"
 #include <cstdlib>
 
 int main(int argc, char **argv) {
   try {
+    if (argc >= 2 && std::string_view(argv[1]) == "--engine") return qwen35::run(argc - 1, argv + 1);
     const bool lagged = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-lag1";
     const bool state_reuse = argc >= 3 && std::string_view(argv[argc - 1]) == "--state-reuse";
     const bool mtp_batch_state = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-batch-state";
@@ -53,11 +55,12 @@ int main(int argc, char **argv) {
     const bool mtp_group_return = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-group-return";
     const bool mtp_mixed_lag = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-mixed-lag";
     const bool mtp_relay = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-relay";
+    const bool mtp_natural_relay = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-natural-relay";
     const bool mtp_varlen_verify = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-varlen-verify";
     const bool cold_demand = argc >= 3 && std::string_view(argv[argc - 1]) == "--cold-demand";
-    const auto input_argc = argc - static_cast<int>(lagged || state_reuse || mtp_batch_state || packed_prefill || ragged_prefill || mtp_packed_prefill || mtp_ragged_prefill || mtp_chunked_prefill || logits_preflight || mtp_stop || mtp_sampling || mtp_logits || mtp_e4 || program_carrier || mtp_packet || history_logits || history_ordinary || history_replay || history_control || generation_wave || sampling_policies || mtp_group_return || mtp_mixed_lag || mtp_varlen_verify || mtp_relay || cold_demand);
+    const auto input_argc = argc - static_cast<int>(lagged || state_reuse || mtp_batch_state || packed_prefill || ragged_prefill || mtp_packed_prefill || mtp_ragged_prefill || mtp_chunked_prefill || logits_preflight || mtp_stop || mtp_sampling || mtp_logits || mtp_e4 || program_carrier || mtp_packet || history_logits || history_ordinary || history_replay || history_control || generation_wave || sampling_policies || mtp_group_return || mtp_mixed_lag || mtp_varlen_verify || mtp_relay || mtp_natural_relay || cold_demand);
     if (input_argc < 2 || input_argc > 3)
-      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda|--apple|--vulkan [prepared_input_directory] [--mtp-lag1|--state-reuse|--mtp-batch-state|--packed-prefill|--ragged-prefill|--mtp-packed-prefill|--mtp-ragged-prefill|--mtp-chunked-prefill|--logits-preflight|--mtp-stop|--mtp-sampling|--mtp-logits|--mtp-e4|--program-carrier|--mtp-packet|--history-logits|--history-ordinary|--history-replay|--history-control|--generation-wave|--sampling-policies|--mtp-group-return|--mtp-mixed-lag|--mtp-varlen-verify|--mtp-relay|--cold-demand]");
+      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda|--apple|--vulkan [prepared_input_directory] [--mtp-lag1|--state-reuse|--mtp-batch-state|--packed-prefill|--ragged-prefill|--mtp-packed-prefill|--mtp-ragged-prefill|--mtp-chunked-prefill|--logits-preflight|--mtp-stop|--mtp-sampling|--mtp-logits|--mtp-e4|--program-carrier|--mtp-packet|--history-logits|--history-ordinary|--history-replay|--history-control|--generation-wave|--sampling-policies|--mtp-group-return|--mtp-mixed-lag|--mtp-varlen-verify|--mtp-relay|--mtp-natural-relay|--cold-demand]");
     const std::string_view selected(argv[1]);
     auto backend = qwen35::BackendKind::kDefault;
     if (selected == "--cpu") backend = qwen35::BackendKind::kCpu;
@@ -88,7 +91,8 @@ int main(int argc, char **argv) {
     if (input.empty()) {
       std::cerr << "SKIP: pass prepared inputs or set HYLE_QWEN_HOST_IMAGE_INPUTS\n"; return 77;
     }
-    return mtp_relay ? qwen_mtp_relay_case::run(input, backend)
+    return mtp_natural_relay ? qwen_mtp_natural_relay_case::run(input, backend)
+           : mtp_relay ? qwen_mtp_relay_case::run(input, backend)
            : mtp_varlen_verify ? qwen_mtp_varlen_verify_case::run(input, backend)
            : mtp_mixed_lag ? qwen_mtp_mixed_lag_case::run(input, backend)
            : mtp_group_return ? qwen_mtp_group_return_case::run(input, backend)

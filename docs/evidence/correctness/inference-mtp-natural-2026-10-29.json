@@ -1,0 +1,1057 @@
+{
+  "schema": "hyle.inference-mtp-natural.v1",
+  "status": "PASS_FINITE_NATURAL_K1_SOURCE",
+  "product_sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 621649,
+      "sha256": "31657930417f6c2d255c0d21ee32bfe55b63d26a161ebcd61f22d06a20d7cccf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\generation_ledger.h",
+      "bytes": 17158,
+      "sha256": "ae24388f55b345e8cb6742fc51660cf7b3c7360f49d912547f78baeb156be4d2"
+    }
+  ],
+  "fixture": {
+    "weights_manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\weights.tsv",
+      "bytes": 56735,
+      "sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1"
+    },
+    "prompt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\prompt.ids",
+      "bytes": 733,
+      "sha256": "b6a10feefb0af4687ee536285c9666bfbdf093fc9e484ab0461834345a5993a4"
+    },
+    "local_weight_sources": [
+      {
+        "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+        "bytes": 4548221488,
+        "mtime_ns": 1789652326160346900,
+        "file_id": 3096224748050030
+      }
+    ],
+    "scope": "Existing verified local files: manifest SHA, file identity/size/mtime and all referenced extents; no payload rehash or network."
+  },
+  "natural_run": {
+    "directory": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-natural-20261029\\refinement3\\runs\\natural-cuda",
+    "process": {
+      "pid": 61400,
+      "exit": 0,
+      "started": 1793238352.6676602,
+      "seconds": 4.162562847137451,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-natural-20261029\\refinement3\\ready-tiny.json",
+      "bytes": 211157,
+      "sha256": "9d24e1861f9eecedf670e180f956f2fe5ba3b65af80b6bb0a82f7216632ac02d"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-natural-20261029\\refinement3\\bin\\tiny.exe",
+      "bytes": 144857600,
+      "sha256": "e54028a6935f4c27d76f0a877e05f721b1ed4cb1517213b4fe50d30fba0f39c1"
+    },
+    "report": {
+      "status": "PASS",
+      "case": "mtp-natural-relay",
+      "backend": "cuda",
+      "models": 1,
+      "journeys": 2,
+      "prompt_tokens": 154,
+      "capacity": 256,
+      "resident_capacity": 1,
+      "state_slots": 5,
+      "hidden_slots": 6,
+      "output_limit": 40,
+      "outputs": 40,
+      "serial_submissions": 23,
+      "auto_submissions": 24,
+      "source_submissions": 22,
+      "successor_submissions": 3,
+      "successor_publications": 2,
+      "successor_discards": 1,
+      "successor_refusals": 0,
+      "pending_pairs_before_A_publish": 3,
+      "deferred_waves": 2,
+      "reserved_two_grants": 2,
+      "accepted_drafts": 17,
+      "rejected_drafts": 4,
+      "ledger_records": 23,
+      "natural_RequestLoop": true,
+      "controlled_acceptance": false,
+      "original_ledger_equal": true,
+      "generated_ids_equal": true,
+      "greedy_rng_unchanged": true,
+      "all_sources_expired": true,
+      "simultaneous_native_inflight_claim": false,
+      "quality_claim": false,
+      "performance_claim": false,
+      "final_versions": 0,
+      "state_checks": [
+        {
+          "sequence": 0,
+          "prefix": 193,
+          "active_rows": 1,
+          "physical_rows": 1,
+          "prefill": false,
+          "epoch": 0,
+          "exact_next": 14733,
+          "bucket_next": 14733,
+          "boundary_equal": true,
+          "payloads_byte_equal": true,
+          "numerically_equivalent": true,
+          "differences": []
+        }
+      ],
+      "ids": [
+        71093,
+        12305,
+        198,
+        464,
+        19298,
+        198,
+        1445,
+        18904,
+        1120,
+        5586,
+        11,
+        51338,
+        11,
+        36760,
+        11,
+        1697,
+        11,
+        11906,
+        11,
+        3856,
+        3829,
+        271,
+        51,
+        283,
+        3856,
+        3829,
+        482,
+        51,
+        837,
+        198,
+        42,
+        283,
+        3856,
+        3829,
+        482,
+        42,
+        837,
+        271,
+        727,
+        14733
+      ],
+      "batches": [
+        {
+          "ordinal": 0,
+          "quota": 0,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 1,
+          "accepted": 154,
+          "draft_rows": 154,
+          "generation": false,
+          "discarded": false
+        },
+        {
+          "ordinal": 1,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 1,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 2,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 3,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 4,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 5,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 6,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 1,
+          "accepted": 1,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 7,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 1,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 8,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 9,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 10,
+          "quota": 4,
+          "reserved": 2,
+          "additional": 2,
+          "emitted": 1,
+          "accepted": 1,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 11,
+          "quota": 2,
+          "reserved": 2,
+          "additional": 2,
+          "emitted": 0,
+          "accepted": 0,
+          "draft_rows": 0,
+          "generation": true,
+          "discarded": true
+        },
+        {
+          "ordinal": 11,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 1,
+          "accepted": 1,
+          "draft_rows": 1,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 12,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 1,
+          "accepted": 1,
+          "draft_rows": 1,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 13,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 1,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 14,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 15,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 16,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 17,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 18,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 19,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 20,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 21,
+          "quota": 3,
+          "reserved": 2,
+          "additional": 1,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 22,
+          "quota": 1,
+          "reserved": 0,
+          "additional": 1,
+          "emitted": 1,
+          "accepted": 1,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        }
+      ]
+    }
+  },
+  "prior_roomy_resident_boundary": {
+    "scope": "Earlier N=4 boundary; not the final N=1 product proof.",
+    "resident_capacity": 4,
+    "directory": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-natural-20261029\\refinement2\\runs\\natural-cuda",
+    "process": {
+      "pid": 16160,
+      "exit": 0,
+      "started": 1793237682.3654964,
+      "seconds": 3.68298077583313,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-natural-20261029\\refinement2\\ready-tiny.json",
+      "bytes": 211156,
+      "sha256": "48681b89403c53c7db2341d704dadb9c9242750790f1a82e36b872a7874d811c"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-natural-20261029\\refinement2\\bin\\tiny.exe",
+      "bytes": 144859136,
+      "sha256": "661ce5e6d2ce8cf81af5641a66cc8d554eb12874e3c7c2ae2efe93b457d14215"
+    },
+    "consumer_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_natural_relay_case.h",
+      "bytes": 19978,
+      "sha256": "2e5933bb8a33f5daa052d05f712565cf636a4b56eb525863cd43acb767a51966"
+    },
+    "report": {
+      "status": "PASS",
+      "case": "mtp-natural-relay",
+      "backend": "cuda",
+      "models": 1,
+      "journeys": 2,
+      "prompt_tokens": 154,
+      "capacity": 256,
+      "output_limit": 40,
+      "outputs": 40,
+      "serial_submissions": 23,
+      "auto_submissions": 24,
+      "source_submissions": 22,
+      "successor_submissions": 3,
+      "successor_publications": 2,
+      "successor_discards": 1,
+      "successor_refusals": 0,
+      "pending_pairs_before_A_publish": 3,
+      "deferred_waves": 2,
+      "reserved_two_grants": 2,
+      "accepted_drafts": 17,
+      "rejected_drafts": 4,
+      "ledger_records": 23,
+      "natural_RequestLoop": true,
+      "controlled_acceptance": false,
+      "original_ledger_equal": true,
+      "generated_ids_equal": true,
+      "greedy_rng_unchanged": true,
+      "all_sources_expired": true,
+      "simultaneous_native_inflight_claim": false,
+      "quality_claim": false,
+      "performance_claim": false,
+      "final_versions": 0,
+      "state_checks": [
+        {
+          "sequence": 0,
+          "prefix": 193,
+          "active_rows": 1,
+          "physical_rows": 1,
+          "prefill": false,
+          "epoch": 0,
+          "exact_next": 14733,
+          "bucket_next": 14733,
+          "boundary_equal": true,
+          "payloads_byte_equal": true,
+          "numerically_equivalent": true,
+          "differences": []
+        }
+      ],
+      "ids": [
+        71093,
+        12305,
+        198,
+        464,
+        19298,
+        198,
+        1445,
+        18904,
+        1120,
+        5586,
+        11,
+        51338,
+        11,
+        36760,
+        11,
+        1697,
+        11,
+        11906,
+        11,
+        3856,
+        3829,
+        271,
+        51,
+        283,
+        3856,
+        3829,
+        482,
+        51,
+        837,
+        198,
+        42,
+        283,
+        3856,
+        3829,
+        482,
+        42,
+        837,
+        271,
+        727,
+        14733
+      ],
+      "batches": [
+        {
+          "ordinal": 0,
+          "quota": 0,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 1,
+          "accepted": 154,
+          "draft_rows": 154,
+          "generation": false,
+          "discarded": false
+        },
+        {
+          "ordinal": 1,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 1,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 2,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 3,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 4,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 5,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 6,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 1,
+          "accepted": 1,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 7,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 1,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 8,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 9,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 10,
+          "quota": 4,
+          "reserved": 2,
+          "additional": 2,
+          "emitted": 1,
+          "accepted": 1,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 11,
+          "quota": 2,
+          "reserved": 2,
+          "additional": 2,
+          "emitted": 0,
+          "accepted": 0,
+          "draft_rows": 0,
+          "generation": true,
+          "discarded": true
+        },
+        {
+          "ordinal": 11,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 1,
+          "accepted": 1,
+          "draft_rows": 1,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 12,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 1,
+          "accepted": 1,
+          "draft_rows": 1,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 13,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 1,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 14,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 15,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 16,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 17,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 18,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 19,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 20,
+          "quota": 4,
+          "reserved": 0,
+          "additional": 4,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 21,
+          "quota": 3,
+          "reserved": 2,
+          "additional": 1,
+          "emitted": 2,
+          "accepted": 2,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        },
+        {
+          "ordinal": 22,
+          "quota": 1,
+          "reserved": 0,
+          "additional": 1,
+          "emitted": 1,
+          "accepted": 1,
+          "draft_rows": 2,
+          "generation": true,
+          "discarded": false
+        }
+      ]
+    }
+  },
+  "real_engine_entry": {
+    "directory": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-natural-20261029\\refinement3\\runs\\engine-mtp-auto",
+    "process": {
+      "pid": 60256,
+      "exit": 0,
+      "started": 1793238357.4393227,
+      "seconds": 2.9505455493927,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-natural-20261029\\refinement3\\bin\\tiny.exe",
+      "bytes": 144857600,
+      "sha256": "e54028a6935f4c27d76f0a877e05f721b1ed4cb1517213b4fe50d30fba0f39c1"
+    },
+    "report_member": "records/refinement3/runs/engine-mtp-auto/report.json",
+    "facts": {
+      "mtp": true,
+      "backend": "cuda",
+      "generated_tokens": 40,
+      "max_sessions": 1,
+      "active_sequences": 1,
+      "live_committed_versions": 0,
+      "decode_overlap": true,
+      "decode_overlap_available": true,
+      "overlap_successor_submissions": 3,
+      "overlap_successor_publications": 2,
+      "overlap_successor_discards": 1,
+      "overlap_successor_refusals": 0
+    }
+  },
+  "ordinary_engine_entry": {
+    "directory": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-natural-20261029\\refinement3\\runs\\engine-text-auto",
+    "process": {
+      "pid": 52444,
+      "exit": 0,
+      "started": 1793238435.695337,
+      "seconds": 2.3183674812316895,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-natural-20261029\\refinement3\\bin\\tiny.exe",
+      "bytes": 144857600,
+      "sha256": "e54028a6935f4c27d76f0a877e05f721b1ed4cb1517213b4fe50d30fba0f39c1"
+    },
+    "report_member": "records/refinement3/runs/engine-text-auto/report.json",
+    "facts": {
+      "mtp": false,
+      "backend": "cuda",
+      "generated_tokens": 40,
+      "max_sessions": 1,
+      "active_sequences": 1,
+      "live_committed_versions": 0,
+      "decode_overlap": true,
+      "decode_overlap_available": true,
+      "overlap_successor_submissions": 31,
+      "overlap_successor_publications": 31,
+      "overlap_successor_discards": 0,
+      "overlap_successor_refusals": 0
+    }
+  },
+  "source_lifetime_regression": {
+    "directory": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-natural-20261029\\refinement3\\runs\\relay-regression",
+    "process": {
+      "pid": 51028,
+      "exit": 0,
+      "started": 1793238480.7774744,
+      "seconds": 0.858363151550293,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-natural-20261029\\refinement3\\bin\\tiny.exe",
+      "bytes": 144857600,
+      "sha256": "e54028a6935f4c27d76f0a877e05f721b1ed4cb1517213b4fe50d30fba0f39c1"
+    },
+    "audit": {
+      "status": "PASS_OFFLINE_REPORT_AUDIT",
+      "case": "mtp-relay",
+      "backend": "cuda",
+      "process": {
+        "pid": 51028,
+        "exit": 0,
+        "started": 1793238480.7774744,
+        "seconds": 0.858363151550293,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "state_comparisons": 6,
+      "byte_exact_state_comparisons": 6,
+      "actual_counts": {
+        "source_submissions": 4,
+        "successor_submissions": 4,
+        "successor_discards": 3,
+        "cpu_optional_source_declines": 0,
+        "native_submissions": 44,
+        "priming_submissions": 15
+      },
+      "actual_route_facts": {
+        "replay_commands_only": false,
+        "cold_ready_tuple_priming": true
+      },
+      "claims": {
+        "quality_claim": false,
+        "performance_claim": false,
+        "natural_RequestLoop_claim": false,
+        "simultaneous_native_inflight_claim": false,
+        "model_eos_run": false
+      }
+    },
+    "report_member": "records/refinement3/runs/relay-regression/report.json",
+    "auditor": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-k1-source-20261029\\audit_reports.py",
+      "bytes": 4959,
+      "sha256": "4e938004fed0b0662a3d0efa5f32c9382d0a25c0bab35978a45b3fbeb3ed467a"
+    }
+  },
+  "latest_state_comparisons": {
+    "natural": 1,
+    "source_regression": 6,
+    "total": 7,
+    "byte_exact": 7,
+    "earlier_N4_separate": 1
+  },
+  "ledger_host": {
+    "directory": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-natural-20261029\\refinement\\runs\\ledger",
+    "process": {
+      "pid": 1032,
+      "exit": 0,
+      "started": 1793237403.8856208,
+      "seconds": 0.7184329032897949,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "report": {
+      "status": "PASS",
+      "groups": 8,
+      "device_execution": false
+    },
+    "ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-natural-20261029\\refinement\\ready-ledger.json",
+      "bytes": 115028,
+      "sha256": "805aa24cee7992853b5b0c77113f2c419bff5a54bdf916cfedbf88c86488b91b"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-natural-20261029\\refinement\\bin\\ledger.exe",
+      "bytes": 139708928,
+      "sha256": "22ddc05a700cb1e8f9c838a60b5bb6c33b3c04ef0b2cb67a8169d48a03724774"
+    },
+    "product_header": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\generation_ledger.h",
+      "bytes": 17158,
+      "sha256": "ae24388f55b345e8cb6742fc51660cf7b3c7360f49d912547f78baeb156be4d2"
+    }
+  },
+  "actual_process_counts": {
+    "CXX": {
+      "total": 6,
+      "passed": 4,
+      "failed": 2
+    },
+    "link": {
+      "total": 4,
+      "passed": 4,
+      "failed": 0
+    },
+    "native": {
+      "total": 8,
+      "passed": 6,
+      "failed": 2
+    },
+    "tooling": {
+      "total": 0,
+      "passed": 0,
+      "failed": 0
+    }
+  },
+  "preserved_failures": [
+    {
+      "record": "logs/compile-tiny/process.json",
+      "kind": "CXX",
+      "pid": 47980,
+      "exit": 2,
+      "started": 1793237149.731024,
+      "seconds": 7.2513158321380615,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "record": "refinement/logs/compile-tiny/process.json",
+      "kind": "CXX",
+      "pid": 50780,
+      "exit": 2,
+      "started": 1793237381.3990963,
+      "seconds": 17.831203937530518,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "record": "refinement2/runs/engine-mtp-auto/process.json",
+      "kind": "native",
+      "pid": 920,
+      "exit": 1,
+      "started": 1793237701.6455457,
+      "seconds": 2.722001314163208,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "record": "runs/ledger/process.json",
+      "kind": "native",
+      "pid": 16600,
+      "exit": 1,
+      "started": 1793237185.9816186,
+      "seconds": 0.8278584480285645,
+      "state": "TERMINAL",
+      "timed_out": false
+    }
+  ],
+  "sdk": {
+    "retained_inputs": 227,
+    "source_cxx": 0,
+    "nvcc": 0,
+    "identity": "Prior immutable SDK/weights object pins only; consumer source closure is separately content-addressed. No binary payload rehash/copy."
+  },
+  "limits": [
+    "Final CUDA real cached prompt: serial/automatic natural greedy RequestLoop, K1/R1, N=1, state slots=5, hidden slots=6.",
+    "The earlier N=4 success uses its own older product/test image and does not replace final N=1 validation.",
+    "Current real MTP/ordinary CLI and synthetic Source regression are separately identified on the final image.",
+    "One final complete state comparison, with the existing F32 GDN 3e-6 budget; other payloads/metadata exact.",
+    "Eight host ledger groups are independent of device execution. All failed compilation/test attempts remain archived.",
+    "No simultaneous native-inflight, quality, speed, full device acceptance, general pipeline or other-platform conclusion.",
+    "Only small real/tiny weight manifests, prompt IDs and frozen project sources/headers are archived; no referenced tensors, SDK objects/libraries, binary or environment."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-mtp-natural-2026-10-29.zip",
+    "bytes": 1885851,
+    "sha256": "13c2a2a7941ca0bda9364b61edb1ce46e63a8c7a2c4332414fe860cc888fc19b"
+  },
+  "archive_members": 381,
+  "crc_and_member_sha256_readback": true,
+  "cleanup": {
+    "deleted_files": 16,
+    "deleted_logical_bytes": 674850766,
+    "archive_sha256": "13c2a2a7941ca0bda9364b61edb1ce46e63a8c7a2c4332414fe860cc888fc19b",
+    "source_logs_and_model_data_deleted": false,
+    "retained_sdk_inputs": 227,
+    "retained_consumer_objects": 1,
+    "method": "Exact bounded file plan written to repository test.ps1, checked against archived source/log evidence and protected SDK/consumer inputs, then executed.",
+    "physical_free_space_claim": false
+  }
+}

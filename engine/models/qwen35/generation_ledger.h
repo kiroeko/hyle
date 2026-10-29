@@ -34,7 +34,7 @@ struct GenerationCommitRecord final {
   GraphRole role = GraphRole::kMtpPrefill;
   bool generation = false, committed = false, user_output = true;
   bool imported = false, prefill_complete = true;
-  // A reserved ordinary successor has no host input fact until its exact
+  // A reserved successor has no host input fact until its exact
   // predecessor commits and the request owner observes that committed output.
   bool input_deferred = false;
   TextCompletion completion = TextCompletion::kEmitNext;
@@ -101,6 +101,18 @@ private:
       throw std::runtime_error("MTP replay ledger has no uncommitted reserved record");
     return records[committed_count];
   }
+  // A K1 successor needs the original greedy R1 pending boundary. The Model
+  // still proves its sampler/capability; a zero cursor is only a ledger fact.
+  static bool k1_pending_boundary(const GenerationCommitRecord &record) noexcept {
+    return drafts_token(record.role) && record.draft_limit == 1 &&
+        record.requests == 1 && record.member_index == 0 &&
+        record.before.lag == draft_lag(record.role) &&
+        record.before.frontier <= record.before.length &&
+        record.before.length - record.before.frontier == record.before.lag &&
+        record.pending_input >= 0 && record.pending_input == record.before.next_id &&
+        record.before.sampling == hyle::inference::SamplingCursor{};
+  }
+
 public:
   hyle::inference::HistoryCounts &history_counts(std::size_t vocabulary,
       const hyle::compute::ResourceBudget &budget, hyle::mem::AllocatorRef allocator) {
@@ -152,30 +164,34 @@ public:
   }
 
   // The original request owner may renew the budget of an already bound,
-  // still-pending ordinary T1 record when a later pump grants fresh credit.
+  // still-pending T1 or greedy K1 record when a later pump grants fresh credit.
   // It supplies its actual current boundary/observation and RequestLoop grant;
   // this ledger neither owns delivery credit nor creates a new reservation.
   // The caller has checked the same submitted Step/cohort and may not renew
   // cancelled, draining or completed turns. No committed result is changed.
-  GenerationCommitRecord &renew_ordinary_quota(const GenerationBoundary &actual,
+  GenerationCommitRecord &renew_pending_quota(const GenerationBoundary &actual,
       std::size_t observed_commits, std::size_t turn, std::size_t remaining_outputs,
       std::size_t reserved_outputs, std::size_t additional_outputs) {
     auto &record = next();
-    if (successor_ordinal_ || observed_commits != committed_count ||
-        record.role != GraphRole::kText || !record.generation ||
-        record.completion != TextCompletion::kEmitNext || !record.user_output || record.imported ||
-        record.ids().size() != 1 || record.pending_input < 0 || record.pending_input != actual.next_id ||
+    const bool ordinary = record.role == GraphRole::kText && !record.draft_limit;
+    const bool k1 = k1_pending_boundary(record) && record.quota >= 2;
+    const auto width = ordinary ? std::size_t{1} : std::size_t{2};
+    if (successor_ordinal_ || observed_commits != committed_count || (!ordinary && !k1) ||
+        !record.generation || record.completion != TextCompletion::kEmitNext ||
+        !record.user_output || record.imported || record.ids().size() != 1 ||
+        record.pending_input < 0 || record.pending_input != actual.next_id ||
         record.before != actual || record.turn != turn || !record.quota ||
-        record.accepted || record.verified_rows || record.emitted_count || record.stopped || record.draft_limit ||
-        reserved_outputs != 1 || reserved_outputs > remaining_outputs ||
+        record.accepted || record.verified_rows || record.emitted_count || record.stopped ||
+        (k1 && (record.consumed_drafts || record.draft_rows)) ||
+        reserved_outputs != width || reserved_outputs > remaining_outputs ||
         additional_outputs > remaining_outputs - reserved_outputs)
-      throw std::runtime_error("ordinary quota renewal requires its bound pending record and actual owner grant");
+      throw std::runtime_error("quota renewal requires its bound pending record and actual owner grant");
     // Subtraction above proves both the turn bound and addition overflow safety.
     record.quota = reserved_outputs + additional_outputs;
     return record;
   }
 
-  // One unknown-input successor of the current ordinary T1 episode. These
+  // One unknown-input successor of the current T1 or greedy K1 episode. These
   // counters are facts supplied by the serialized request owner, not a second
   // progress/RNG/credit authority. All actual Model capacity, base, epoch,
   // device-Source and output-credit checks remain with their original owners.
@@ -183,17 +199,25 @@ public:
       std::size_t quota, std::size_t turn, std::size_t requests = 1,
       std::size_t member_index = 0) {
     const auto &previous = next();
+    const bool ordinary = previous.role == GraphRole::kText;
+    const bool k1 = k1_pending_boundary(previous) && requests == 1 && member_index == 0 &&
+        !previous.accepted && !previous.verified_rows && !previous.emitted_count &&
+        !previous.stopped && !previous.consumed_drafts && !previous.draft_rows;
     if (successor_ordinal_ || observed_commits != committed_count ||
         records.size() - committed_count < 2 || !quota || !requests || member_index >= requests ||
-        previous.role != GraphRole::kText || !previous.generation ||
+        (!ordinary && !k1) || !previous.generation ||
         previous.completion != TextCompletion::kEmitNext || !previous.user_output || previous.imported ||
         previous.ids().size() != 1 || previous.pending_input < 0 || previous.turn != turn ||
-        quota >= previous.quota || records[committed_count + 1].committed)
-      throw std::runtime_error("generation successor requires one bounded ordinary pending predecessor");
+        (ordinary ? quota >= previous.quota
+                  : previous.quota < 4 || quota < 2 || quota > previous.quota - 2) ||
+        records[committed_count + 1].committed)
+      throw std::runtime_error("generation successor requires one bounded pending predecessor");
     const auto ordinal = committed_count + 1;
     auto &record = records[ordinal];
     reset_record(record);
-    record.role = GraphRole::kText; record.generation = true; record.input_deferred = true;
+    record.role = ordinary ? GraphRole::kText : GraphRole::kMtpCatchupRound;
+    record.draft_limit = ordinary ? 0 : 1;
+    record.generation = true; record.input_deferred = true;
     record.completion = TextCompletion::kEmitNext; record.quota = quota; record.turn = turn;
     record.requests = requests; record.member_index = member_index;
     // Inline capacity is already present, including maximum_width=1. Retain
@@ -215,19 +239,39 @@ public:
       throw std::runtime_error("generation successor requires its committed and observed predecessor");
     const auto &previous = records[committed_count - 1];
     auto &record = records[committed_count];
-    if (!previous.committed || previous.role != GraphRole::kText || !previous.generation ||
+    const bool ordinary = previous.role == GraphRole::kText &&
+        previous.accepted == 1 && previous.verified_rows == 1 &&
+        previous.emitted_count == 1 && !previous.emitted.empty() &&
+        previous.emitted[0] == actual.next_id && record.role == GraphRole::kText;
+    const bool k1 = k1_pending_boundary(previous) &&
+        previous.quota >= 4 && record.quota >= 2 && record.quota <= previous.quota - 2 &&
+        previous.accepted == 2 && previous.verified_rows == 2 && previous.consumed_drafts == 1 &&
+        previous.agreed && previous.accepted_draft && previous.draft >= 0 &&
+        previous.target_first == previous.draft && previous.target_second == actual.next_id &&
+        previous.emitted_count == 2 && previous.emitted.size() >= 2 &&
+        previous.emitted[0] == previous.draft && previous.emitted[1] == actual.next_id &&
+        previous.accepted_inputs.size() >= 2 && previous.accepted_inputs[0] == previous.pending_input &&
+        previous.accepted_inputs[1] == previous.draft && previous.verification_inputs.size() == 2 &&
+        previous.verification_inputs[0] == previous.pending_input && previous.verification_inputs[1] == previous.draft &&
+        actual.length >= previous.before.length && actual.length - previous.before.length == 2 &&
+        actual.frontier >= previous.before.frontier &&
+        actual.frontier - previous.before.frontier == previous.before.lag + 1 &&
+        previous.draft_rows == previous.before.lag + 1 && actual.lag == 1 &&
+        actual.frontier <= actual.length && actual.length - actual.frontier == 1 &&
+        actual.catchup_token == previous.draft && actual.sampling == previous.before.sampling &&
+        record.role == GraphRole::kMtpCatchupRound && record.draft_limit == 1;
+    if (!previous.committed || (!ordinary && !k1) || !previous.generation ||
         previous.completion != TextCompletion::kEmitNext || !previous.user_output || previous.imported ||
-        previous.input_deferred || previous.ids().size() != 1 || previous.accepted != 1 ||
-        previous.verified_rows != 1 || previous.stopped || previous.emitted_count != 1 || previous.emitted.empty() ||
-        previous.after != actual || actual.next_id < 0 || previous.emitted[0] != actual.next_id ||
-        actual_last_token != actual.next_id || previous.turn != turn || record.turn != turn ||
+        previous.input_deferred || previous.ids().size() != 1 || previous.stopped ||
+        previous.after != actual || actual.next_id < 0 || actual_last_token != actual.next_id ||
+        previous.turn != turn || record.turn != turn ||
         previous.requests != record.requests || previous.member_index != record.member_index ||
-        record.committed || !record.input_deferred || record.role != GraphRole::kText || !record.generation ||
+        record.committed || !record.input_deferred || !record.generation ||
         record.completion != TextCompletion::kEmitNext || !record.user_output || record.imported)
-      throw std::runtime_error("generation successor input differs from its actual ordinary predecessor");
+      throw std::runtime_error("generation successor input differs from its actual predecessor");
     record.before = actual; record.pending_input = actual.next_id; record.input_deferred = false;
-    // B is now the ordinary current record; it may reserve C while B is still
-    // pending. Only one unknown input exists beyond the committed prefix.
+    // B is now the known-input current record; it may reserve C while B is
+    // still pending. Only one unknown input exists beyond the committed prefix.
     successor_ordinal_.reset();
     return record;
   }

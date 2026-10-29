@@ -1486,7 +1486,9 @@ K1完整接受投机后继复用同一原Source：bonus和catchup各为独立完
 
 B可先于A主机观察提交，但只有A实际完整接受且Session、epoch、长度、draft frontier和停止边界相符才可发布；部分接受、终止或取消只丢弃B。中止真实关闭原carrier后，下一次使用先在空闲时重新准备。Store的source／destination ID是显式Graph输入：换址仍走原绑定、capture tuple及权限门，不额外删除休眠capture key；隐藏capacity载体变化仍撤销原生命令。
 
-[组件检查](../evidence/correctness/inference-mtp-k1-source-2026-10-29.json)覆盖R1、greedy、K1的完整／部分接受、额度结束及取消，未接自然RequestLoop，也未证明GPU物理并行。自然接入还须由原请求owner保留A／B各最多两个输出额度，A完整提交并观察后绑定B的延迟账簿；不得复制额度或用投机边界冒充已提交结果。
+[组件检查](../evidence/correctness/inference-mtp-k1-source-2026-10-29.json)覆盖R1、greedy、K1的完整／部分接受、额度结束及取消。现有自然RequestLoop通过同一continuation处理普通单输出和K1双输出：原owner保留A／B各最多两个输出额度，A完整提交并观察后才绑定B的延迟账簿；跨pump只保留B的两个额度，下一次扩展仍须真实新grant。部分接受撤回B，不复制额度或用投机边界冒充已提交结果。
+
+A成功提交全部head与账簿后，模型释放未绑定消费者的full GDN／conv publication views；B继续持独立末前缀，hidden两行及原Submission不变。避免旧ready保留多余首前缀，使N1／R1／D2使用原state=5、hidden=6容量。此为模型私有生命周期，不授权清空外部仍被binding引用的SDK Source wrapper。[原权重自然检查](../evidence/correctness/inference-mtp-natural-2026-10-29.json)覆盖40输出、双额度、实际接受／部分丢弃及默认auto入口；当前仅CUDA greedy K1，未证明其它后继模式或GPU物理并行，无新吞吐结论。
 
 共同准备协议现沿原顺序分步表达：`prepare_appends`准备batch metadata并绑定选定Append；
 `bind_consumers`先绑定真实incoming Source、成功才置原bound，再绑定已有Store cohort；

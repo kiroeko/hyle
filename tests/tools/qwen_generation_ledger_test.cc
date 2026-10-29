@@ -46,6 +46,38 @@ q::GenerationBoundary commit(q::GenerationLedger &ledger, std::int32_t token) {
   return record.after;
 }
 
+void prepare_k1(q::GenerationCommitRecord &record, std::size_t quota = 4) {
+  prepare(record, quota, 2, 1, 0);
+  record.role = q::GraphRole::kMtpRound; record.draft_limit = 1;
+  record.before = {.length = 9, .frontier = 9, .next_id = 17};
+}
+
+// As in commit() above, these are only the original owner's published host
+// facts. No graph, acceptance algorithm or device failure is simulated here.
+q::GenerationBoundary commit_k1(q::GenerationLedger &ledger, std::int32_t draft,
+    std::int32_t first, std::int32_t bonus, bool stopped = false) {
+  auto &record = ledger.next();
+  record.draft = draft; record.target_first = first; record.target_second = bonus;
+  record.agreed = first == draft; record.accepted_draft = record.agreed;
+  record.consumed_drafts = record.agreed ? 1 : 0;
+  record.accepted = record.agreed ? 2 : 1; record.verified_rows = 2;
+  record.draft_rows = record.before.lag + 1; record.stopped = stopped;
+  record.accepted_inputs.resize(2, -1);
+  record.accepted_inputs[0] = record.pending_input; record.accepted_inputs[1] = record.agreed ? draft : -1;
+  record.verification_inputs.resize(2, -1);
+  record.verification_inputs[0] = record.pending_input; record.verification_inputs[1] = draft;
+  record.emitted.resize(2, -1);
+  record.emitted[0] = first; record.emitted[1] = record.agreed ? bonus : -1;
+  record.emitted_count = record.accepted;
+  record.after = record.before; record.after.length += record.accepted;
+  record.after.frontier += record.draft_rows;
+  record.after.lag = static_cast<std::uint32_t>(record.after.length - record.after.frontier);
+  record.after.next_id = record.agreed ? bonus : first;
+  record.after.catchup_token = record.after.lag ? draft : -1;
+  record.committed = true; ++ledger.committed_count;
+  return record.after;
+}
+
 void reserve_then_bind_only_actual_observed_input() {
   q::GenerationLedger ledger(4, 8);
   prepare(ledger.next());
@@ -197,24 +229,24 @@ void renewed_owner_grant_extends_only_the_pending_ordinary_record() {
   const auto a_after = commit(ledger, 23);
   const auto committed_a = ledger.records[0];
   // A has published, but B's actual input has not yet been observed/bound.
-  rejects([&] { (void)ledger.renew_ordinary_quota(a_after, 1, 2, 3, 1, 1); });
+  rejects([&] { (void)ledger.renew_pending_quota(a_after, 1, 2, 3, 1, 1); });
   auto &b = ledger.bind_successor(a_after, 1, 2, 23);
   auto expected_b = b;
   rejects([&] { (void)ledger.reserve_successor(1, 1, 2, 2, 1); });
   require(b.quota == 1 && !ledger.successor_ordinal(), "old exhausted grant unexpectedly authorized C");
   expected_b.quota = 2;
-  require(&ledger.renew_ordinary_quota(a_after, 1, 2, 3, 1, 1) == &b &&
+  require(&ledger.renew_pending_quota(a_after, 1, 2, 3, 1, 1) == &b &&
       b.same_result(expected_b) && b.pending_input == 23 && b.before == a_after &&
       ledger.records[0].same_result(committed_a) && ledger.committed_count == 1 &&
       capacities(b) == b_capacity && ledger.records.data() == storage,
       "fresh owner credit changed committed A, pending B input/base or prepared storage");
   auto &c = ledger.reserve_successor(1, 1, 2, 2, 1);
-  rejects([&] { (void)ledger.renew_ordinary_quota(a_after, 1, 2, 3, 1, 1); });
+  rejects([&] { (void)ledger.renew_pending_quota(a_after, 1, 2, 3, 1, 1); });
   const auto b_after = commit(ledger, 31);
   const auto committed_b = ledger.records[1];
   require(&ledger.bind_successor(b_after, 2, 2, 31) == &c && c.quota == 1,
       "renewed pending B did not preserve C's original deferred bind");
-  (void)ledger.renew_ordinary_quota(b_after, 2, 2, 2, 1, 1);
+  (void)ledger.renew_pending_quota(b_after, 2, 2, 2, 1, 1);
   (void)ledger.reserve_successor(2, 1, 2, 2, 1);
   const auto c_after = commit(ledger, 41);
   (void)ledger.bind_successor(c_after, 3, 2, 41);
@@ -240,7 +272,7 @@ void renewed_owner_grant_extends_only_the_pending_ordinary_record() {
           "rejected renewal changed a record, input or prepared capacity");
   };
   const auto renew = [](auto &candidate) {
-    (void)candidate.renew_ordinary_quota(candidate.records[0].before, 0, 2, 2, 1, 1);
+    (void)candidate.renew_pending_quota(candidate.records[0].before, 0, 2, 2, 1, 1);
   };
   invalid([](auto &candidate) { candidate.records[0].role = q::GraphRole::kMtpRound; }, renew);
   invalid([](auto &candidate) { candidate.records[0].generation = false; }, renew);
@@ -258,23 +290,127 @@ void renewed_owner_grant_extends_only_the_pending_ordinary_record() {
   invalid([](auto &candidate) { candidate.records[0].draft_limit = 1; }, renew);
   invalid([](auto &) {}, [](auto &candidate) {
     auto boundary = candidate.records[0].before; ++boundary.sampling.draw;
-    (void)candidate.renew_ordinary_quota(boundary, 0, 2, 2, 1, 1);
+    (void)candidate.renew_pending_quota(boundary, 0, 2, 2, 1, 1);
   });
   invalid([](auto &) {}, [](auto &candidate) {
     auto boundary = candidate.records[0].before; ++boundary.next_id;
-    (void)candidate.renew_ordinary_quota(boundary, 0, 2, 2, 1, 1);
+    (void)candidate.renew_pending_quota(boundary, 0, 2, 2, 1, 1);
   });
-  invalid([](auto &) {}, [](auto &candidate) { (void)candidate.renew_ordinary_quota(candidate.records[0].before, 1, 2, 2, 1, 1); });
-  invalid([](auto &) {}, [](auto &candidate) { (void)candidate.renew_ordinary_quota(candidate.records[0].before, 0, 3, 2, 1, 1); });
-  invalid([](auto &) {}, [](auto &candidate) { (void)candidate.renew_ordinary_quota(candidate.records[0].before, 0, 2, 0, 1, 0); });
-  invalid([](auto &) {}, [](auto &candidate) { (void)candidate.renew_ordinary_quota(candidate.records[0].before, 0, 2, 2, 0, 1); });
-  invalid([](auto &) {}, [](auto &candidate) { (void)candidate.renew_ordinary_quota(candidate.records[0].before, 0, 2, 2, 2, 0); });
-  invalid([](auto &) {}, [](auto &candidate) { (void)candidate.renew_ordinary_quota(candidate.records[0].before, 0, 2, 1, 1, 1); });
+  invalid([](auto &) {}, [](auto &candidate) { (void)candidate.renew_pending_quota(candidate.records[0].before, 1, 2, 2, 1, 1); });
+  invalid([](auto &) {}, [](auto &candidate) { (void)candidate.renew_pending_quota(candidate.records[0].before, 0, 3, 2, 1, 1); });
+  invalid([](auto &) {}, [](auto &candidate) { (void)candidate.renew_pending_quota(candidate.records[0].before, 0, 2, 0, 1, 0); });
+  invalid([](auto &) {}, [](auto &candidate) { (void)candidate.renew_pending_quota(candidate.records[0].before, 0, 2, 2, 0, 1); });
+  invalid([](auto &) {}, [](auto &candidate) { (void)candidate.renew_pending_quota(candidate.records[0].before, 0, 2, 2, 2, 0); });
+  invalid([](auto &) {}, [](auto &candidate) { (void)candidate.renew_pending_quota(candidate.records[0].before, 0, 2, 1, 1, 1); });
   invalid([](auto &) {}, [](auto &candidate) {
-    (void)candidate.renew_ordinary_quota(candidate.records[0].before, 0, 2,
+    (void)candidate.renew_pending_quota(candidate.records[0].before, 0, 2,
         (std::numeric_limits<std::size_t>::max)(), 1, (std::numeric_limits<std::size_t>::max)());
   });
 }
+
+void k1_full_acceptance_continues_with_the_original_owner_grant() {
+  q::GenerationLedger ledger(4, 8); prepare_k1(ledger.next());
+  const auto *storage = ledger.records.data();
+  const auto b_capacity = capacities(ledger.records[1]);
+  auto &b = ledger.reserve_successor(0, 2, 2);
+  require(b.role == q::GraphRole::kMtpCatchupRound && b.draft_limit == 1 &&
+      b.input_deferred && b.ids().empty() && b.before == q::GenerationBoundary{} &&
+      b.pending_input == -1 && b.quota == 2 && !ledger.committed_count,
+      "K1 reservation fabricated a bonus input or retained the wrong successor role");
+  const auto a_after = commit_k1(ledger, 19, 19, 23);
+  const auto committed_a = ledger.records[0];
+  rejects([&] { (void)ledger.renew_pending_quota(a_after, 1, 2, 6, 2, 2); });
+  require(&ledger.bind_successor(a_after, 1, 2, 23) == &b && b.before == a_after &&
+      b.pending_input == 23 && b.ids().size() == 1 && b.ids()[0] == 23 &&
+      !b.input_deferred && !ledger.successor_ordinal(),
+      "full K1 observation did not bind its actual bonus and complete boundary");
+  const auto bound_b = b;
+  // B already has two pending outputs. One-output grants must not authorize
+  // the two-row episode or reuse A's two already observed outputs as credit.
+  rejects([&] { (void)ledger.reserve_successor(1, 2, 2); });
+  rejects([&] { (void)ledger.renew_pending_quota(a_after, 1, 2, 6, 1, 2); });
+  rejects([&] { (void)ledger.renew_pending_quota(a_after, 1, 2, 3, 2, 2); });
+  require(b.same_result(bound_b) && b.pending_input == 23 && !ledger.successor_ordinal(),
+      "an incomplete K1 grant changed its bound pending episode");
+  auto renewed_b = b; renewed_b.quota = 4;
+  require(&ledger.renew_pending_quota(a_after, 1, 2, 6, 2, 2) == &b &&
+      b.same_result(renewed_b) && b.pending_input == 23 && b.before == a_after,
+      "K1 renewal changed anything beyond the original owner's pending quota");
+  auto &c = ledger.reserve_successor(1, 2, 2);
+  require(c.input_deferred && c.ids().empty() && c.role == q::GraphRole::kMtpCatchupRound,
+      "renewed K1 record did not reserve one unknown-input successor");
+  const auto b_after = commit_k1(ledger, 29, 29, 31);
+  const auto committed_b = ledger.records[1];
+  require(&ledger.bind_successor(b_after, 2, 2, 31) == &c && c.before == b_after &&
+      c.ids()[0] == 31 && b_after.length == 13 && b_after.frontier == 12 &&
+      b_after.lag == 1 && b_after.catchup_token == 29 &&
+      b_after.sampling == hyle::inference::SamplingCursor{} &&
+      ledger.records[0].same_result(committed_a) && ledger.records[1].same_result(committed_b) &&
+      ledger.committed_count == 2 && !ledger.successor_ordinal() &&
+      ledger.records.data() == storage && capacities(ledger.records[1]) == b_capacity,
+      "lag-one K1 continuation changed old commits, cursor, frontier or prepared storage");
+}
+
+void k1_partial_and_terminal_results_preserve_only_the_committed_prefix() {
+  for (const bool stopped : {false, true}) {
+    q::GenerationLedger ledger(3, 8); prepare_k1(ledger.next());
+    auto &b = ledger.reserve_successor(0, 2, 2);
+    const auto b_capacity = capacities(b);
+    const auto reserved = b;
+    // A disagreement consumes one input. A stop on the bonus consumes both,
+    // but neither decision can publish the already submitted successor.
+    const auto after = commit_k1(ledger, 19, stopped ? 19 : 21, 23, stopped);
+    const auto committed_a = ledger.records[0];
+    require(committed_a.accepted == (stopped ? 2u : 1u) &&
+        committed_a.stopped == stopped, "K1 host result fixture lost its actual decision");
+    rejects([&] { (void)ledger.bind_successor(after, 1, 2, after.next_id); });
+    require(ledger.successor_ordinal() == 1 && b.input_deferred && b.ids().empty() &&
+        b.same_result(reserved) && b.pending_input == -1 &&
+        ledger.records[0].same_result(committed_a) && ledger.committed_count == 1,
+        "partial or terminal K1 binding changed the original committed decision");
+    ledger.discard_uncommitted();
+    require(!ledger.successor_ordinal() && !b.input_deferred && b.emitted.empty() &&
+        capacities(b) == b_capacity && ledger.committed_count == 1 &&
+        ledger.records[0].committed && ledger.records[0].same_result(committed_a),
+        "discarding a rejected K1 successor lost A or released its prepared record storage");
+  }
+}
+
+void k1_binding_requires_the_whole_greedy_state_boundary() {
+  q::GenerationLedger ledger(3, 8); prepare_k1(ledger.next());
+  const auto initial = ledger.records[0];
+  // A one-output remainder, a different cohort or stochastic cursor cannot
+  // reserve a K1 pair, even when the ordinary positive grant test allows T1.
+  rejects([&] { (void)ledger.reserve_successor(0, 1, 2); });
+  rejects([&] { (void)ledger.reserve_successor(0, 2, 2, 2, 0); });
+  ledger.records[0].before.sampling.draw = 1;
+  rejects([&] { (void)ledger.reserve_successor(0, 2, 2); });
+  ledger.records[0] = initial;
+  require(!ledger.successor_ordinal() && !ledger.committed_count,
+      "rejected K1 eligibility fabricated a reservation");
+  auto &b = ledger.reserve_successor(0, 2, 2);
+  auto after = commit_k1(ledger, 19, 19, 23);
+  const auto original = ledger.records[0];
+  const auto reserved = b;
+  // The same final ID is not sufficient: a different published catch-up
+  // frontier or RNG address must not bind to the queued device episode.
+  ++ledger.records[0].after.frontier;
+  auto wrong = ledger.records[0].after;
+  rejects([&] { (void)ledger.bind_successor(wrong, 1, 2, 23); });
+  ledger.records[0] = original; ++ledger.records[0].after.sampling.draw;
+  wrong = ledger.records[0].after;
+  rejects([&] { (void)ledger.bind_successor(wrong, 1, 2, 23); });
+  ledger.records[0] = original; ledger.records[0].accepted_inputs[1] = 20;
+  rejects([&] { (void)ledger.bind_successor(after, 1, 2, 23); });
+  ledger.records[0] = original;
+  require(b.input_deferred && b.same_result(reserved) && b.pending_input == -1 &&
+      ledger.successor_ordinal() == 1 && ledger.committed_count == 1,
+      "rejected K1 physical boundary changed the reserved input");
+  require(&ledger.bind_successor(after, 1, 2, 23) == &b && b.before == after &&
+      ledger.records[0].same_result(original),
+      "valid K1 boundary could not retry the same original deferred record");
+}
+
 } // namespace
 
 int main() {
@@ -284,7 +420,10 @@ int main() {
     reservation_rejects_without_mutation();
     ordinary_and_mtp_records_keep_their_existing_contract();
     renewed_owner_grant_extends_only_the_pending_ordinary_record();
-    std::puts("{\"status\":\"PASS\",\"groups\":5,\"device_execution\":false}");
+    k1_full_acceptance_continues_with_the_original_owner_grant();
+    k1_partial_and_terminal_results_preserve_only_the_committed_prefix();
+    k1_binding_requires_the_whole_greedy_state_boundary();
+    std::puts("{\"status\":\"PASS\",\"groups\":8,\"device_execution\":false}");
     return 0;
   } catch (const std::exception &error) {
     std::fprintf(stderr, "%s\n", error.what()); return 1;
