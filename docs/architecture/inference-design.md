@@ -1544,11 +1544,18 @@ IO必须属于同一稳定CompiledGraph；Store准备由显式存在决定，空
 共同`ExecutionEpisode`承载一个原Graph episode的资源部分：原bank、Completion、Source／incoming、
 Store事务借用及候选额度借用。模型先声明参与者pins，再嵌入该组件，保证资源先于Session pins析构；
 后继以aliasing shared_ptr保留原Step，不新增owner、分配、权限表或执行器。提交始终经过原`ProgramCarrier`。
-回收依次保留前驱门、观察、Source撤回、真实Append／Store取回、输入解除、原载体reset、页尾回滚及页丢弃，
+回收依次保留前驱门、观察、撤回自身输出Source、真实Append／Store取回、解除输入Source、原载体reset、页尾回滚及页丢弃，
 最后才调用模型的noexcept候选回收并归还额度。未知退休保留原对象和剩余事实，不在析构里自动drain。
+成功收尾也由原episode解除输入Source及caller输入；Source撤销成功立即清除bound事实，后续解绑失败保留剩余owner。
+退休恢复只重试尚存的Source，原caller绑定随Invocation reset归还，不重新借用已关闭载体。
+[四个有限原生检查](../evidence/correctness/inference-episode-release-2026-10-29.json)覆盖真实解绑拒绝、外部owner门及同会话完整状态重试，未重测吞吐。
 普通与NextN共用这一顺序；NextN正常成功保留热carrier，只有失败且事务真实归还后才reset。
 `retire`仅观察原carrier；完整episode回收仍须`recover`。成功路径仍由模型核全体expected-base、
 接受和RNG后联合发布，输出观察结束才归还admission；模型数学、形状、状态和发布没有移入共同资源组件。
+共同结果事务仍待接入：Qwen已有私有ledger见证，GLM请求组件在Head发布和进度观察之间仍有可失败工作。
+每个成员实际发布成功后须立即无失败地标记其已预留见证，后续按原ordinal补观察，不重复推理或推进RNG。
+GLM的单Head发布可因stale／closed拒绝，Qwen则在完整预检后无抛交换；共同层保留逐成员权威结果，
+不把不同用户的多个Head伪装成跨用户原子事务，也不将组件通过当作第二个完整引擎已接入。
 账簿的下一条reserved记录是本次尝试的暂存，不是已提交结果。类型化计算失败在原episode确认退休后，
 只撤销与原成员`commit_record`一致的当前未提交槽；已提交前缀或后来的当前槽不变，冷容量保留。
 未知退休及尚在途的私有工作不由这一清理分支冒认完成。该修正不扩展generic异常分支，也不增加成功热路径复制或分配。

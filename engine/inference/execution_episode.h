@@ -122,6 +122,34 @@ class ExecutionEpisode final {
     return Status::Ok();
   }
 
+  // Withdraw only the original complete Source bundle. Recovery may need
+  // this after close, so it uses Graph's retired-control operation directly,
+  // never a new carrier admission. Record successful withdrawal immediately:
+  // a later ordinary-input failure must not retry an already released bundle.
+  Status release_source_bindings() noexcept {
+    if (!run || !carrier)
+      return Status::FailedPrecondition("execution episode has no original carrier");
+    if (incoming && incoming->bound) {
+      HYLE_RETURN_IF_ERROR(graph::detail::release_outputs(*run, incoming->bindings));
+      incoming->bound = false;
+    }
+    return Status::Ok();
+  }
+
+  // Call only after the original outputs have been retained and Store/Append
+  // transactions taken. Model policy decides when this may precede commit.
+  // Keep the incoming owner and predecessor until both withdrawals succeed;
+  // a failed preparation with no Source binding must not invent one to release.
+  Status release_consumers(std::span<const graph::ValueId> ordinary_inputs) noexcept {
+    if (!run || !carrier)
+      return Status::FailedPrecondition("execution episode has no original carrier");
+    if (!incoming) return carrier->release_inputs(ordinary_inputs);
+    HYLE_RETURN_IF_ERROR(release_source_bindings());
+    HYLE_RETURN_IF_ERROR(carrier->release_inputs(incoming->outside_inputs));
+    incoming.reset(); predecessor_episode.reset();
+    return Status::Ok();
+  }
+
   // This drives only the original Backend/carrier. Its Status and its actual
   // retirement are distinct; neither observation grants publication rights.
   template<class Environment>
@@ -175,8 +203,7 @@ class ExecutionEpisode final {
         HYLE_ASSIGN_OR_RETURN(const bool recovered, state_transactions->recover(*run));
         if (!recovered) return false;
       }
-      if (incoming && incoming->bound)
-        HYLE_RETURN_IF_ERROR(graph::detail::release_outputs(*run, incoming->bindings));
+      HYLE_RETURN_IF_ERROR(release_source_bindings());
       incoming.reset(); predecessor_episode.reset();
       HYLE_RETURN_IF_ERROR(carrier->reset_retired());
     }

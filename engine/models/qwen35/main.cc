@@ -5360,11 +5360,7 @@ public:
             throw std::runtime_error("batch append returned an invalid committed tail");
           member.next_tails[bank] = std::move(tail);
         }
-      if (step.execution.incoming) {
-        check(g::detail::release_outputs(run, step.execution.incoming->bindings));
-        check(phase.slots[step.state_slot].carrier.release_inputs(step.execution.incoming->outside_inputs));
-        step.execution.incoming.reset(); step.execution.predecessor_episode.reset();
-      } else check(phase.slots[step.state_slot].carrier.release_inputs(phase.state_resource_ports));
+      check(step.execution.release_consumers(phase.state_resource_ports));
       for (const auto &member : step.members)
         if (member.session->head.get() != member.base || member.session->head.epoch() != member.base_epoch ||
             member.session->pending != &step ||

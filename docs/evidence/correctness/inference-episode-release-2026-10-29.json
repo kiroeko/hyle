@@ -1,0 +1,238 @@
+{
+  "schema": "hyle.correctness.episode-release.v1",
+  "date": "2026-10-29",
+  "status": "PASS_FOUR_FINITE_NATIVE_CASES",
+  "change": "ExecutionEpisode owns original Source withdrawal and caller-input release. Successful Source withdrawal clears its bound fact immediately; later unbind failure preserves remaining owners. Retired recovery reuses only Source withdrawal, then resets the original Invocation, without reopening carrier admission.",
+  "counts": {
+    "consumer_CXX": 3,
+    "links": 3,
+    "retained_SDK_inputs": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "native_processes": 4,
+    "native_failures": 0,
+    "native_retries": 0,
+    "downloads": 0
+  },
+  "builds": {
+    "tiny": {
+      "compile": {
+        "state": "TERMINAL",
+        "pid": 56780,
+        "started": 1793258865.6950395,
+        "seconds": 98.80719995498657,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link": {
+        "state": "TERMINAL",
+        "pid": 37264,
+        "started": 1793259028.9001944,
+        "seconds": 1.9091050624847412,
+        "exit": 0,
+        "timed_out": false
+      },
+      "object": {
+        "path": ".scratch/inference-episode-release-20261029/compile/tiny/unit.obj",
+        "bytes": 70945208,
+        "sha256": "7b19cd3ddc56a75d1ae06c6c08031bb4a4fc11ce807f8732745d44e38edccb87"
+      },
+      "image": {
+        "path": ".scratch/inference-episode-release-20261029/bin/tiny.exe",
+        "bytes": 145422848,
+        "sha256": "df2c304dfbafb64a2e47bf517ecbbbfa3c784e207bf792f8195200418d6cdbbb"
+      },
+      "source": {
+        "path": "tests/tools/qwen_host_image_test.cc",
+        "bytes": 9709,
+        "sha256": "b7b63bd543c0f80f74a42cf47a5a30758fc5541b76f89a6c2c28e7b509f9f225"
+      },
+      "project_source_inputs": 232
+    },
+    "ordinary": {
+      "compile": {
+        "state": "TERMINAL",
+        "pid": 41584,
+        "started": 1793258979.232645,
+        "seconds": 35.84719729423523,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link": {
+        "state": "TERMINAL",
+        "pid": 20100,
+        "started": 1793259140.4847984,
+        "seconds": 1.8600075244903564,
+        "exit": 0,
+        "timed_out": false
+      },
+      "object": {
+        "path": ".scratch/inference-episode-release-20261029/compile/ordinary/unit.obj",
+        "bytes": 25795397,
+        "sha256": "b69830e12fe0efe510c4192585bb327b1def39a4d1e46e60e4850116be22ec9b"
+      },
+      "image": {
+        "path": ".scratch/inference-episode-release-20261029/bin/ordinary.exe",
+        "bytes": 142906368,
+        "sha256": "0c7cb275878a5632ff23555709567ef7035183eaa60fc1f0a8a822a060e75f6e"
+      },
+      "source": {
+        "path": "tests/tools/qwen_generation_batch_relay_probe.cc",
+        "bytes": 43463,
+        "sha256": "a7cfd0596a5146fc26a42ec945684925e6647070f81e6879d3c5f94f1bfa276b"
+      },
+      "project_source_inputs": 197
+    },
+    "source": {
+      "compile": {
+        "state": "TERMINAL",
+        "pid": 53012,
+        "started": 1793259130.2761996,
+        "seconds": 33.386977195739746,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link": {
+        "state": "TERMINAL",
+        "pid": 60604,
+        "started": 1793259236.0897338,
+        "seconds": 1.7648446559906006,
+        "exit": 0,
+        "timed_out": false
+      },
+      "object": {
+        "path": ".scratch/inference-episode-release-20261029/compile/source/unit.obj",
+        "bytes": 22373348,
+        "sha256": "111341bd87588f8fffb83f2e3dfd1bc089b4c5599fa91b7c056b00b0601041df"
+      },
+      "image": {
+        "path": ".scratch/inference-episode-release-20261029/bin/source.exe",
+        "bytes": 142276096,
+        "sha256": "9ec175c017bc317aa037020225900296738b19677610a49520da9f1dc421fbe2"
+      },
+      "source": {
+        "path": "tests/tools/qwen_submission_source_probe.cc",
+        "bytes": 43805,
+        "sha256": "efa4e0ecaa67d7246e0dc4c5cf104c6d87924fe31efece19c6c2175ea9cb3b4f"
+      },
+      "project_source_inputs": 219
+    }
+  },
+  "cases": {
+    "controls-cpu": {
+      "status": "PASS",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 58564,
+        "started": 1793259031.6260948,
+        "seconds": 0.8391072750091553,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "path": ".scratch/inference-episode-release-20261029/runs/controls-cpu/report.json",
+        "bytes": 2073,
+        "sha256": "413b936db06b39719c3137a79e89ffc669e853d3714b5f95ceef6be7d9a39728"
+      },
+      "summary": {
+        "complete_state_byte_checks": 3,
+        "original_owners_and_ledger_preserved": true
+      }
+    },
+    "mtp-cuda": {
+      "status": "PASS",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 18120,
+        "started": 1793259032.9168994,
+        "seconds": 3.3157718181610107,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "path": ".scratch/inference-episode-release-20261029/runs/mtp-cuda/report.json",
+        "bytes": 7117,
+        "sha256": "783435df8c542066c8a5d00b9e5efb96c73ce3179744f702e70a44c33ebf323d"
+      },
+      "summary": {
+        "complete_state_byte_checks": 1,
+        "original_owners_and_ledger_preserved": true
+      }
+    },
+    "ordinary-cuda": {
+      "status": "PASS",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 13252,
+        "started": 1793259143.2498405,
+        "seconds": 1.5353412628173828,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "path": ".scratch/inference-episode-release-20261029/runs/ordinary-cuda/report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      },
+      "summary": {
+        "control_and_candidate_arms": 16,
+        "complete_prefix_state_epoch_rng_equal": true
+      }
+    },
+    "source-cuda": {
+      "status": "PASS",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 28772,
+        "started": 1793259238.6851552,
+        "seconds": 1.148850440979004,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "path": ".scratch/inference-episode-release-20261029/runs/source-cuda/report.json",
+        "bytes": 1643,
+        "sha256": "7165289f62d9aa5e05d0e3af234015b1b3f42941a58ef5032562017fe04f6cc8"
+      },
+      "summary": {
+        "arms": 4,
+        "native_submissions": 45,
+        "failed_arm_submissions": 12,
+        "serial_complete_state_payload_bytes": 215424,
+        "typed_failure": "InvalidArgument from original Invocation::unbind",
+        "failed_unbind_metadata_kept_during_recovery": true,
+        "same_original_session_retry_matches_serial": true
+      }
+    }
+  },
+  "sources": [
+    {
+      "path": "engine/inference/execution_episode.h",
+      "bytes": 10742,
+      "sha256": "38f6b447631ad634349b6af3addbde938a82305e6328ca4483cde0ced2af1e74"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 636109,
+      "sha256": "dc2cf4bc5d18757574e7684c70b9f52816a0f420bac59981dd4917e04e7ef065"
+    },
+    {
+      "path": "tests/tools/qwen_submission_source_probe.cc",
+      "bytes": 43805,
+      "sha256": "efa4e0ecaa67d7246e0dc4c5cf104c6d87924fe31efece19c6c2175ea9cb3b4f"
+    }
+  ],
+  "boundaries": [
+    "Windows MSVC 14.50 and RTX 4070 driver 617.14; retained original SDK inputs, no full SDK build.",
+    "The original caller-input API rejects an invalid ValueId after real Source withdrawal. This is not a GPU fault or fake Completion.",
+    "The failure arm keeps its external original outgoing Source owner so automatic abort must retain remaining resources before explicit release.",
+    "Original serial, ready relay and controlled pending/cold-tuple rejection arms remain; the added arm retries the same original Session without clearing failed/stopping flags.",
+    "Unknown native failure, Apple/Vulkan, a second full inference model, global architecture completion and new throughput/quality are not established.",
+    "One serial arm has 215424 bytes of complete state payload; three other arms compare IDs, epochs and full state against it. The reported byte field is not a multiplied I/O total."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-episode-release-2026-10-29.zip",
+    "bytes": 119202,
+    "sha256": "d15e3cacf7433f5f75eed7ea886ea910e1e7f37eba529cd3a24757990f7af899"
+  }
+}
