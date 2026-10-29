@@ -41,7 +41,7 @@ int check_packed_head(const std::filesystem::path &component,const std::filesyst
   // fixed. Bind that actual dimension through the normal exact child API.
   const std::array shape{q::g::ShapeBinding{recipe.last_row,1}};
   const std::array variants{q::g::ExactShapeVariant{shape}};
-  auto compiled=q::take(backend.compile(graph,assembly.constants,assembly.options({.shape_policy=q::g::CompileShapePolicy::kFiniteExact,.exact_variants=variants,.constants=assembly.constants})));
+  auto compiled=q::take(backend.compile(graph,assembly.constants(),assembly.options({.shape_policy=q::g::CompileShapePolicy::kFiniteExact,.exact_variants=variants,.constants=assembly.constants()})));
   compiled.executable=q::take(compiled.executable.exact_variant(0));compiled.report=q::take(compiled.report.exact_variant(0));
   for(std::size_t i=0;i<compiled.report.physical_value_count();++i){
     const auto value=q::take(compiled.report.physical_value(i));const auto &d=value.description;
@@ -85,7 +85,7 @@ int check_ct_block128() {
   auto source_read=bank.at(name).tensor.ready;
   const std::array shapes{std::array{q::g::ShapeBinding{recipe.last_row,0}},std::array{q::g::ShapeBinding{recipe.last_row,2}}};
   const std::array variants{q::g::ExactShapeVariant{shapes[0]},q::g::ExactShapeVariant{shapes[1]}};
-  auto compiled=q::take(backend.compile(graph,assembly.constants,assembly.options({.shape_policy=q::g::CompileShapePolicy::kFiniteExact,.exact_variants=variants,.constants=assembly.constants})));
+  auto compiled=q::take(backend.compile(graph,assembly.constants(),assembly.options({.shape_policy=q::g::CompileShapePolicy::kFiniteExact,.exact_variants=variants,.constants=assembly.constants()})));
   q::c::ReadLease previous;std::vector<std::byte> previous_bytes;
   const auto bf16=[](float v){auto bits=std::bit_cast<std::uint32_t>(v);bits+=0x7fffU+((bits>>16)&1U);return static_cast<std::uint16_t>(bits>>16);};
   for(std::size_t index=0;index<2;++index) {
@@ -143,7 +143,7 @@ int main(int argc,char**argv){try{
   const auto y=recipe.linear_absolute(x,name);recipe.publish(y);const auto graph=q::take(std::move(recipe.builder).finish());
   const std::array shapes{std::array{q::g::ShapeBinding{recipe.last_row,0}},std::array{q::g::ShapeBinding{recipe.last_row,2}},std::array{q::g::ShapeBinding{recipe.last_row,4}}};
   const std::array variants{q::g::ExactShapeVariant{shapes[0]},q::g::ExactShapeVariant{shapes[1]},q::g::ExactShapeVariant{shapes[2]}};
-  auto compiled=q::take(backend.compile(graph,assembly.constants,assembly.options({.shape_policy=q::g::CompileShapePolicy::kFiniteExact,.exact_variants=variants,.constants=assembly.constants})));
+  auto compiled=q::take(backend.compile(graph,assembly.constants(),assembly.options({.shape_policy=q::g::CompileShapePolicy::kFiniteExact,.exact_variants=variants,.constants=assembly.constants()})));
   const std::array<std::size_t,3> widths{1,3,5};
   for(std::size_t index=0;index<widths.size();++index){
     const auto rows=widths[index];const auto child=q::take(compiled.executable.exact_variant(index));const auto report=q::take(compiled.report.exact_variant(index));

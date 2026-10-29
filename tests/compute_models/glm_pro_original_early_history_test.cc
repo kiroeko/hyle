@@ -21,6 +21,7 @@
 #include "glm_original_moe_reference.h"
 #include "model_graph_run.h"
 #include "model_resident_fragment.h"
+#include "../../engine/inference/graph_bindings.h"
 #include "hyle/compute/state_versions.h"
 #if defined(HYLE_TEST_GLM_STATE_CUDA)
 #include "hyle/compute/backends/cuda.h"
@@ -224,17 +225,18 @@ struct Run final {
   std::size_t submissions=0;
   static Run prepare(Recipe recipe,c::Context &context,const c::StorageOwner &owner,std::uint32_t generations=4) {
     Run result;result.recipe=std::move(recipe);auto &f=result.recipe.fragment;result.logical=sem::make_graph(f);
-    std::vector<g::ConstantBinding> constants;
+    const std::array<g::StorageDomain,1> domains{{{.resource=owner.ref(),.owner=owner}}};
+    hyle::inference::GraphBindings bindings(domains);
     for(std::size_t i=0;i<f.constants.size();++i) {
       const auto found=std::find_if(result.recipe.constants.begin(),result.recipe.constants.end(),[&](const External &e){return e.value.ordinal()==f.constants[i].ordinal();});
-      if(found!=result.recipe.constants.end())constants.push_back(take(found->role.binding(result.logical.constants[i]),"original ready parameter"));
+      if(found!=result.recipe.constants.end())check(bindings.bind_constant(take(found->role.binding(result.logical.constants[i]),"original ready parameter")),"ordinary original constant binding");
       else {
         result.literals.push_back(upload(owner,f.constant_bytes[i]));
-        constants.push_back({.value=result.logical.constants[i],.tensor=take(result.literals.back().tensor(f.description(f.constants[i])),"cold literal"),.owner=owner,.lease=result.literals.back()});
+        check(bindings.bind_constant({.value=result.logical.constants[i],.tensor=take(result.literals.back().tensor(f.description(f.constants[i])),"cold literal"),.owner=owner,.lease=result.literals.back()}),"ordinary literal binding");
       }
     }
     const c::WorkloadContext workload{take(c::ModelArtifactProfile::create(*f.profile),"ordinary original profile"),f.phase,{0x48594c454d4f444cULL,f.region,1}};
-    result.compiled=take(g::cuda::compile(result.logical.graph,context,owner,{.constants=constants,.workload=workload}),"ordinary74/77 Graph compile");
+    result.compiled=take(g::cuda::compile(result.logical.graph,context,owner,bindings.options({.workload=workload})),"ordinary74/77 Graph compile");
     std::size_t bytes=0;
     for(std::size_t i=0;i<f.inputs.size();++i)result.inputs.push_back({result.logical.inputs[i],f.description(f.inputs[i])});
     for(std::size_t i=0;i<f.outputs.size();++i) {

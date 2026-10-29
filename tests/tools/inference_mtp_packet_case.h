@@ -77,9 +77,9 @@ inline std::size_t check_width(i::Backend &backend, std::size_t m,
   const auto graph = q::take(std::move(r.builder).finish());
   const std::array shape{g::ShapeBinding{r.last_row, 0}};
   const std::array variants{g::ExactShapeVariant{shape}};
-  auto compiled = q::take(backend.compile(graph, assembly.constants,
+  auto compiled = q::take(backend.compile(graph, assembly.constants(),
       assembly.options({.shape_policy = g::CompileShapePolicy::kFiniteExact,
-          .exact_variants = variants, .constants = assembly.constants})));
+          .exact_variants = variants, .constants = assembly.constants()})));
   compiled.executable = q::take(compiled.executable.exact_variant(0));
   compiled.report = q::take(compiled.report.exact_variant(0));
   i::ProgramIo io;

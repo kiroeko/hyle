@@ -1,0 +1,991 @@
+{
+  "schema": "hyle.correctness.cold-bindings.v1",
+  "date": "2026-10-29",
+  "status": "PASS_WITH_PRESERVED_QUALIFICATION_FAILURE",
+  "base_commit": "2c918ae2d04d7baff29ce38a5ebdcfe344512bdd",
+  "change": "Share actual cold constant/domain/placement assembly across Qwen and original GLM early-history components; use immutable physical layout item bytes and per-Invocation batch-planning arrays without keeping extra layout aliases.",
+  "counts": {
+    "CXX_attempts": 7,
+    "consumer_CXX_final": 5,
+    "refreshed_engine_weights_CXX": 1,
+    "links": 6,
+    "unchanged_SDK_inputs": 226,
+    "current_SDK_inputs": 227,
+    "NVCC": 0,
+    "full_SDK_builds": 0,
+    "native_processes": 7,
+    "passed_finite_cases": 6,
+    "preserved_materialization_qualification_failures": 1,
+    "downloads": 0
+  },
+  "builds": {
+    "qwen": {
+      "compiles": [
+        {
+          "state": "TERMINAL",
+          "pid": 39104,
+          "started": 1793265695.4428573,
+          "seconds": 105.16937065124512,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "links": [
+        {
+          "state": "TERMINAL",
+          "pid": 60056,
+          "started": 1793265966.9329762,
+          "seconds": 1.9171998500823975,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-bindings-20261029\\compile\\qwen\\unit.obj",
+        "bytes": 72656482,
+        "sha256": "3197711c5730dcf58aa19b0abad8f6b4f8e24cf97b1f6568777c06ce3dc00563"
+      },
+      "source_inputs": 234
+    },
+    "ordinary": {
+      "compiles": [
+        {
+          "state": "TERMINAL",
+          "pid": 61488,
+          "started": 1793265884.8609447,
+          "seconds": 39.230204343795776,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "links": [
+        {
+          "state": "TERMINAL",
+          "pid": 42788,
+          "started": 1793266000.9597168,
+          "seconds": 1.822561264038086,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-bindings-20261029\\compile\\ordinary\\unit.obj",
+        "bytes": 26069798,
+        "sha256": "1eefc58b31c6e0b8e5daf843b70657ff931a10eb5336ff253d6d9c1f35336ff4"
+      },
+      "source_inputs": 199
+    },
+    "glm": {
+      "compiles": [
+        {
+          "state": "TERMINAL",
+          "pid": 59192,
+          "started": 1793265862.9355547,
+          "seconds": 6.437645196914673,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "links": [
+        {
+          "state": "TERMINAL",
+          "pid": 20576,
+          "started": 1793266014.3084338,
+          "seconds": 1.7188711166381836,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-bindings-20261029\\compile\\glm\\unit.obj",
+        "bytes": 5873744,
+        "sha256": "8506785ee0b19d1a426541079ce657c4078ba5c9ce6e808ea9c46907386ff5fe"
+      },
+      "source_inputs": 112
+    },
+    "slots": {
+      "compiles": [
+        {
+          "state": "TERMINAL",
+          "pid": 16292,
+          "started": 1793265666.0976503,
+          "seconds": 2.5245654582977295,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "links": [
+        {
+          "state": "TERMINAL",
+          "pid": 57092,
+          "started": 1793265955.606247,
+          "seconds": 1.772963285446167,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-bindings-20261029\\compile\\slots\\unit.obj",
+        "bytes": 945417,
+        "sha256": "a0bdff1575f40c4a8c501b3614062b68390be7ae818997e24ebad0a2e4e847ef"
+      },
+      "source_inputs": 50
+    },
+    "bindings": {
+      "compiles": [
+        {
+          "state": "TERMINAL",
+          "pid": 44956,
+          "started": 1793265546.9806855,
+          "seconds": 3.90976619720459,
+          "exit": 0,
+          "timed_out": false
+        },
+        {
+          "state": "TERMINAL",
+          "pid": 1076,
+          "started": 1793265831.488934,
+          "seconds": 3.9364781379699707,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "links": [
+        {
+          "state": "TERMINAL",
+          "pid": 3336,
+          "started": 1793265842.9902937,
+          "seconds": 1.7307155132293701,
+          "exit": 0,
+          "timed_out": false
+        },
+        {
+          "state": "TERMINAL",
+          "pid": 45896,
+          "started": 1793265559.531079,
+          "seconds": 1.7736575603485107,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-bindings-20261029\\compile\\bindings\\unit.obj",
+        "bytes": 1161820,
+        "sha256": "784c77a71cbb6d094b87720f9546c0e07fd5b0c4cca09e93249530dc84aafa14"
+      },
+      "source_inputs": 112
+    },
+    "weights": {
+      "compiles": [
+        {
+          "state": "TERMINAL",
+          "pid": 42320,
+          "started": 1793265533.7189107,
+          "seconds": 5.703495264053345,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "links": [],
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-bindings-20261029\\compile\\weights\\unit.obj",
+        "bytes": 3468174,
+        "sha256": "b4023ed049249d01531699b9e760f31d6fb791121b9e63cdc57dba278cab89be"
+      },
+      "source_inputs": 132
+    }
+  },
+  "cases": {
+    "slots-cpu": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 40832,
+        "started": 1793265965.251589,
+        "seconds": 0.4397299289703369,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "tests": 4,
+        "properties": {}
+      }
+    },
+    "bindings-cpu-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 59520,
+        "started": 1793265852.953369,
+        "seconds": 0.8828763961791992,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "native_submissions": 4,
+        "compared_values": 102,
+        "retired_scopes": 2,
+        "conflicting_external_rejections": 1,
+        "materialized_bytes": 68
+      }
+    },
+    "controls-cpu": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 56112,
+        "started": 1793265982.8561478,
+        "seconds": 0.876084566116333,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "natural-logits-control",
+        "backend": "cpu",
+        "models": 1,
+        "configurations": 1,
+        "original_GenerationRequest": true,
+        "natural_RequestLoop": false,
+        "extra_stop_first_draft": true,
+        "terminated_hypothesis_callbacks": 0,
+        "absorbing_bonus_reuses_last_row": true,
+        "ended_prepare_provider_calls": 0,
+        "stop_provider_calls": 2,
+        "stop_verified_rows": 2,
+        "stop_reserved_draws": 3,
+        "mixed_R2_dynamic_static": true,
+        "successful_R2_Verify_submissions": 1,
+        "cancelled_R2_Verify_submissions": 1,
+        "survivor_R1_Verify_submissions": 1,
+        "real_q_leases_per_R2": 4,
+        "q_conditional_owners_cleared": true,
+        "whole_episode_retired": true,
+        "cancelled_heads_ledger_RNG_unchanged": true,
+        "independent_request_RNG": true,
+        "HostImage_same_key_restore": true,
+        "parked_resident_versions": 0,
+        "old_checkpoints_unchanged": true,
+        "target_submissions": 9,
+        "synthetic_untrained": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0,
+        "state_checks": [
+          {
+            "sequence": 0,
+            "prefix": 3,
+            "active_rows": 3,
+            "physical_rows": 3,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 12,
+            "bucket_next": 12,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 1,
+            "prefix": 3,
+            "active_rows": 3,
+            "physical_rows": 3,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 11,
+            "bucket_next": 11,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 2,
+            "prefix": 6,
+            "active_rows": 3,
+            "physical_rows": 3,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 14,
+            "bucket_next": 14,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          }
+        ]
+      }
+    },
+    "mtp-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 27964,
+        "started": 1793265984.2439425,
+        "seconds": 3.606627941131592,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "mtp-natural-relay",
+        "backend": "cuda",
+        "models": 1,
+        "journeys": 2,
+        "prompt_tokens": 154,
+        "capacity": 256,
+        "resident_capacity": 1,
+        "state_slots": 5,
+        "hidden_slots": 6,
+        "output_limit": 40,
+        "outputs": 40,
+        "serial_submissions": 23,
+        "auto_submissions": 24,
+        "source_submissions": 22,
+        "successor_submissions": 3,
+        "successor_publications": 2,
+        "successor_discards": 1,
+        "successor_refusals": 0,
+        "pending_pairs_before_A_publish": 3,
+        "deferred_waves": 2,
+        "reserved_two_grants": 2,
+        "accepted_drafts": 17,
+        "rejected_drafts": 4,
+        "ledger_records": 23,
+        "natural_RequestLoop": true,
+        "controlled_acceptance": false,
+        "original_ledger_equal": true,
+        "generated_ids_equal": true,
+        "greedy_rng_unchanged": true,
+        "all_sources_expired": true,
+        "simultaneous_native_inflight_claim": false,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0,
+        "state_checks": [
+          {
+            "sequence": 0,
+            "prefix": 193,
+            "active_rows": 1,
+            "physical_rows": 1,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 14733,
+            "bucket_next": 14733,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          }
+        ],
+        "ids": [
+          71093,
+          12305,
+          198,
+          464,
+          19298,
+          198,
+          1445,
+          18904,
+          1120,
+          5586,
+          11,
+          51338,
+          11,
+          36760,
+          11,
+          1697,
+          11,
+          11906,
+          11,
+          3856,
+          3829,
+          271,
+          51,
+          283,
+          3856,
+          3829,
+          482,
+          51,
+          837,
+          198,
+          42,
+          283,
+          3856,
+          3829,
+          482,
+          42,
+          837,
+          271,
+          727,
+          14733
+        ],
+        "batches": [
+          {
+            "ordinal": 0,
+            "quota": 0,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 154,
+            "draft_rows": 154,
+            "generation": false,
+            "discarded": false
+          },
+          {
+            "ordinal": 1,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 2,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 3,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 4,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 5,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 6,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 7,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 8,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 9,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 10,
+            "quota": 4,
+            "reserved": 2,
+            "additional": 2,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 11,
+            "quota": 2,
+            "reserved": 2,
+            "additional": 2,
+            "emitted": 0,
+            "accepted": 0,
+            "draft_rows": 0,
+            "generation": true,
+            "discarded": true
+          },
+          {
+            "ordinal": 11,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 12,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 13,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 14,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 15,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 16,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 17,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 18,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 19,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 20,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 21,
+            "quota": 3,
+            "reserved": 2,
+            "additional": 1,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 22,
+            "quota": 1,
+            "reserved": 0,
+            "additional": 1,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          }
+        ]
+      }
+    },
+    "ordinary-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 17020,
+        "started": 1793266003.727132,
+        "seconds": 1.369149923324585,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "backend": "cuda",
+        "fixture": "untrained_GA_H64",
+        "prompt_tokens": 18,
+        "outputs_per_live_member": 14,
+        "capacity": 32,
+        "in_flight_batches": 2,
+        "control_and_candidate_arms": 16,
+        "same_original_executor": true,
+        "complete_prefix_state_epoch_rng_equal": true,
+        "actual_owner_credit_checked": true,
+        "all_source_session_page_owners_retired": true,
+        "model_eos_run": false,
+        "synthetic_v64_extra_stop_shares_eos_contract": true,
+        "synthetic_fixture_directory": "continuous-extra-stop-v64",
+        "synthetic_role_payload_bytes": 65536,
+        "accepted_work_control_exception": true,
+        "gpu_native_fault_injected": false,
+        "model_quality_claim": false,
+        "performance_claim": false,
+        "candidates": [
+          {
+            "requests": 1,
+            "mode": "normal",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 5,
+            "max_consecutive_pending": 5,
+            "submit_before_observe": 5,
+            "renewals": 4,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "normal",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 5,
+            "max_consecutive_pending": 5,
+            "submit_before_observe": 5,
+            "renewals": 4,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "credit_exhaustion",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 1,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "member_cancel",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 1,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "yield_resume",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 1,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "cancel_then_control_exception",
+            "pumps": 16,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 1,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 3,
+            "control_exceptions": 1,
+            "aborted_actual_submissions": 2
+          },
+          {
+            "requests": 1,
+            "mode": "extra_stop",
+            "pumps": 13,
+            "actual_batches": 13,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 3,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 1,
+            "extra_stop_accepted_successor": true,
+            "discarded_batches": 1,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "extra_stop",
+            "pumps": 15,
+            "actual_batches": 15,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 3,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 1,
+            "extra_stop_accepted_successor": true,
+            "discarded_batches": 1,
+            "survivor_r1_steps": 2,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          }
+        ]
+      }
+    },
+    "glm-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 57512,
+        "started": 1793266016.5846388,
+        "seconds": 42.44472312927246,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "tests": 3,
+        "properties": {
+          "actual_positions": "0,1,2,3",
+          "actual_selected_widths": "1,2,3,4",
+          "index74_original_roles": "7",
+          "index74_original_bytes": "9571008",
+          "stale_publish_rejections": "4",
+          "invalid_shared_index_rejections": "11",
+          "ordinary_persistent_schema": "7 actual resources: index E4 codes/F32 scales, target main F32 cache, separate target/index I32 cursors, target BF16 tap, pending I32; Frontier24 metadata",
+          "shared_index_scope": "Original layer74 real query/key/weights/QAT/score/TopK; same original I32 lease and epoch forwarded across explicit75/76 sharing boundary to target77. No layer75/76 body execution claim. Variable IDs are same-forward Frame data, not padded persistent state.",
+          "upstream_fixture_scope": "Layer74 normalized input/query-rank and layer76 target hidden/residual are finite BF16 fixtures conditioned on actual previous pending ID. Not full78-layer generation, quality, TPS, MTP or a complete prefix2048 warm run.",
+          "state_backing_budget": "39763968"
+        }
+      }
+    }
+  },
+  "source_inputs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\graph_bindings.h",
+      "bytes": 4877,
+      "sha256": "7303fab8bcb8437f8ef95d8cfaaaca2ad52f5510aaefe1191c0dcc52ce2bf12d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\backend.h",
+      "bytes": 28956,
+      "sha256": "657608a287c77aaa146bf5158ddc518a4b4bb01dd4c3ce3cd0a94587b475be63"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\slot_transactions.h",
+      "bytes": 9649,
+      "sha256": "5c5cf6fd25c96583e0749ab4a2404004b8b23ba9281da6e3b02be1719bd36365"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 637066,
+      "sha256": "d0309c278f8727c10f2843de4858ac6c158baf9ec2c2fd0b767f24a156111233"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_original_early_history_test.cc",
+      "bytes": 47602,
+      "sha256": "dc0c952c7f8143589d145699240ba1576cb2a5516e277b84e49c6e9b87f04c76"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_graph_bindings_case.h",
+      "bytes": 15710,
+      "sha256": "e120ae93bd071621cd93a6706726b398adc288cb3a0a6836d9e328fa18beb6c2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_slot_transactions_test.cc",
+      "bytes": 10193,
+      "sha256": "db1bf8d83d0c07a9d67a8ff0c7661a4f9bc45f1ba76902946b8706a4ca75e3d3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_backend_cpu_cuda_test.cc",
+      "bytes": 28137,
+      "sha256": "e3078b03d6636f15360113eebb1d2847a3df9a182f13dcc569f005b032ffb26d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_history_math_case.h",
+      "bytes": 20631,
+      "sha256": "ea5114225840f0a63626a0841372358aa56bdde4555e3d073da1e72cea484803"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_mtp_packet_case.h",
+      "bytes": 11038,
+      "sha256": "0b3fa2448f4912add5fc23638370fbbeaeb7f7d0560d68bbf7e30393aecbd396"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_logits_modifier_case.h",
+      "bytes": 18244,
+      "sha256": "043cf3ee3a544204a5a0c708773365610f01e9e940f6071ef66dc980892ebc56"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_logits_case.h",
+      "bytes": 49218,
+      "sha256": "1fd5f3c4d526917d02ccec1ed39042df7406893a08cf346deca00923644166f7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_projection_width_probe.cc",
+      "bytes": 18126,
+      "sha256": "31e2c12718ba2d39ca26667b9f71ef05674a5b18f35e3e0ae044c83a43e6165b"
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-cold-bindings-2026-10-29.zip",
+    "bytes": 426001,
+    "sha256": "2e338654e8a0dad304d3ecd2b4f1e31e8493b9bd5be3cf2403e0849ba0203a5c"
+  },
+  "correction": "First binding process completed its Borrow phase, then original Graph rejected materializing ordinary CPU memory into CUDA because no configured target qualified both resources. Corrected helper source to original CUDA pinned-host staging owner/lease; no Graph check, source qualification or transfer route was changed. Source snapshot and failure logs are preserved.",
+  "boundaries": [
+    "GraphBindings only assembles original cold metadata. Exact source-resource matches can infer a domain; explicit nomination and nonexact native readonly imports retain original Graph validation.",
+    "Materialize names the destination, not the source domain. Final helper performs 4 explicit Graph submissions plus original Graph cold materialization; cold-copy submission is not included in its Graph counter.",
+    "Native Apple readonly-import capability was source-reviewed at executable.cc and apple_memory.mm, not run on Apple this turn; Vulkan not run.",
+    "Qwen K2 control and ordinary 16 arms use finite untrained GA/H64 fixtures; trained Qwen CUDA natural K1 uses cached 2B weights, P154/O40, full ledger/IDs/state match without throughput measurement.",
+    "GLM actual index74, short target77/MoE and full vocabulary at positions0..3 use fixtures for intervening upstream computation; not complete78-layer GLM, model quality or throughput.",
+    "Existing GTest wrapper and projection-width probe migration are source-reviewed; binding helper body and current Qwen consumer including changed math/packet helpers were compiled. Only the 6 listed finite cases ran.",
+    "No claim that complete model-independent orchestration, MTP member withdrawal, all model combinations, multiple GPUs or distributed execution are finished."
+  ]
+}

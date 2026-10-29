@@ -103,6 +103,8 @@ struct Program final {
     EXPECT_TRUE(transactions.prepare(specs).ok());
     EXPECT_TRUE(transactions.set_layout(0, first.layout).ok());
     EXPECT_TRUE(transactions.set_layout(1, second.layout).ok());
+    EXPECT_EQ(transactions.writer_bytes(0), kBytes);
+    EXPECT_EQ(transactions.writer_bytes(1), kBytes);
   }
   void stage() {
     transactions.sources(0)[0] = first.source;
@@ -141,6 +143,8 @@ TEST(InferenceSlotTransactions, SourceAndStandaloneBanksReuseOriginalCohort) {
     auto ready1 = (*second)[0].publish().value();
     ASSERT_TRUE(p.transactions.clear(1).ok());
     EXPECT_FALSE(p.transactions.bound());
+    EXPECT_EQ(p.transactions.writer_bytes(0), kBytes);
+    EXPECT_EQ(p.transactions.writer_bytes(1), kBytes);
     EXPECT_EQ(bytes(ready0), kSource); EXPECT_EQ(bytes(ready1), kRows);
     EXPECT_EQ(bytes(p.first.sentinel), kSentinel); EXPECT_EQ(bytes(p.second.sentinel), kSentinel);
     if (!round) {
@@ -154,6 +158,12 @@ TEST(InferenceSlotTransactions, FixedColdLayoutAndRejectedStagePreserveOriginalH
   Program p;
   Pool foreign;
   EXPECT_TRUE(p.transactions.set_layout(0, foreign.layout).IsFailedPrecondition());
+  const auto smaller_item = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 1>{2}).value();
+  const auto smaller_layout = c::LeaseSlotLayout::create(foreign.pool, smaller_item, 3, kStride).value();
+  EXPECT_TRUE(p.transactions.set_layout(0, smaller_layout).IsFailedPrecondition());
+  EXPECT_EQ(p.transactions.writer_bytes(0), kBytes);
+  EXPECT_EQ(p.transactions.writer_bytes(1), kBytes);
   p.transactions.sources(0)[0] = p.first.source;
   p.transactions.writers(0)[0] = std::move(foreign.writer);
   const auto generation = p.transactions.writers(0)[0].generation();

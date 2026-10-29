@@ -78,6 +78,16 @@ Graph已有多个StorageDomain／ExecutionTarget／ExecutionLane及QueueBinding�
 CUDA跨Context搬运／等待尚未接通，跨机执行也未实现。这些是当前路线限制，不写成共同请求、缓存或退休合同。
 后续多端点必须报告真实搬运与依赖能力，完成及失败覆盖实际提交范围，继续复用原Graph的聚合退休。
 架构提取须保留热路径静态直接调用及原数值边界，以减少实际耦合和重复工作为准；目录或接口数量不作为完成标准。
+
+冷资源组装使用`GraphBindings`：模型提供原常量／lease／owner及实际放置，集合只组装原Graph合同，不决定权重含义或复制资格。
+域编号取自真实环境，不约定0为GPU、1为CPU。Borrow有显式域时保持原合同；无显式域时仅按精确资源匹配推断，
+非精确的原生只读导入继续由Graph判断。Materialize描述目标域，不把源资源误当目标；实际copy仍须原端点认可两端资源。
+Qwen保留Tensor冻结、literal和精度，GLM保留原角色查找及数学，两者共享原常量／外域／node放置的组装。
+
+准备阶段只冷存不变的物理事实：`SlotTransactions::set_layout`从原池item取得writer字节，避免逐步按模型类型重算；
+NodeLayout原数组归实际Invocation槽，node冷固定，layout仅借到原batch准备返回并立即释放，失败亦释放。
+这些缓存不替代每次head／epoch、lease世代、Source来源或真实退休检查。
+[有限检查](../evidence/correctness/inference-cold-bindings-2026-10-29.json)覆盖实际CPU／CUDA域反转和两个模型消费者；未据此声明完整编排或吞吐完成。
 Qwen特殊token集中在模型自己的`generation_tokens.h`，请求额外停止策略仍由`RequestStopPolicy`管理。
 
 首轮提取的`dispatch_batches`已由自然生成与固定输入两个循环调用。它只遍历原先冷预留的

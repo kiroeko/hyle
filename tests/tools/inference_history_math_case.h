@@ -39,9 +39,9 @@ inline q::g::CompiledGraph compile(q::Model &model, q::GraphAssembly &assembly, 
   const auto graph = q::take(std::move(r.builder).finish());
   const std::array shape{q::g::ShapeBinding{r.last_row, 0}};
   const std::array variants{q::g::ExactShapeVariant{shape}};
-  auto result = q::take(model.execution.compile(graph, assembly.constants,
+  auto result = q::take(model.execution.compile(graph, assembly.constants(),
       assembly.options({.shape_policy = q::g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
-        .constants = assembly.constants, .resource_budget = model.execution_budget})));
+        .constants = assembly.constants(), .resource_budget = model.execution_budget})));
   result.executable = q::take(result.executable.exact_variant(0)); result.report = q::take(result.report.exact_variant(0));
   return result;
 }

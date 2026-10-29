@@ -2,6 +2,7 @@
 #include "../../engine/inference/readback.h"
 #include "qwen_backend_cpu_options_case.h"
 #include "inference_backend_budget_case.h"
+#include "inference_graph_bindings_case.h"
 
 #include <algorithm>
 #include <array>
@@ -62,6 +63,11 @@ TEST(QwenBackendCpuCuda, IdleEndpointsNeedNoBudgetButActualWorkspaceDoes) {
   EXPECT_EQ(checked->missing_resource_rejections, 1U);
   EXPECT_EQ(checked->retired_scopes, 3U);
   EXPECT_GT(checked->cuda_workspace_bytes, 0U);
+}
+
+TEST(QwenBackendCpuCuda, ColdBindingsUseActualDomainsAndPreserveMaterialization) {
+  auto checked = hyle::inference::test::graph_bindings_case();
+  ASSERT_TRUE(checked) << checked.error().message();
 }
 
 TEST(QwenBackendCpuCuda, ExplicitCudaRemainsOneCudaEndpoint) {

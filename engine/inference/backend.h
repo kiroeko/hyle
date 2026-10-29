@@ -460,6 +460,11 @@ public:
     return state_ ? std::span<const graph::QueueBinding>(state_->queues).first(state_->queue_count)
                   : std::span<const graph::QueueBinding>{};
   }
+  // Borrow the actual cold environment. Domain ordinals are topology facts,
+  // not a convention for GPU/CPU; no Context, resource or route is created.
+  std::span<const graph::StorageDomain> storage_domains() const noexcept {
+    return state_ ? domains() : std::span<const graph::StorageDomain>{};
+  }
   Status collect_retired() noexcept {
     if (!state_) return Status::FailedPrecondition("Backend is not initialized");
     return state_->collect(state_->retirement_context);

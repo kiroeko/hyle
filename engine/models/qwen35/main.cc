@@ -53,6 +53,7 @@
 #include "../../inference/program_slots.h"
 #include "../../inference/execution_episode.h"
 #include "../../inference/program_io.h"
+#include "../../inference/graph_bindings.h"
 #include "../../inference/prepared_program_family.h"
 #include "../../inference/cold_shape_plan.h"
 #include "../../inference/cold_demand.h"
@@ -221,10 +222,7 @@ Backend create_execution(const ModelGeometry &geometry, const cache::Plan &plan,
 // Cold graph resources and placement, independent of the model equations.
 // The original prepared graph owns the moved literals; Backend outlives both.
 struct GraphAssembly final {
-  struct Location final {
-    g::ExecutionTargetId target;
-    g::StorageDomainId storage;
-  };
+  using Location = inference::GraphBindings::Location;
   struct Scope final {
     GraphAssembly &assembly;
     Location previous;
@@ -235,14 +233,11 @@ struct GraphAssembly final {
     ~Scope() { assembly.location_ = previous; }
   };
 
-  std::vector<g::ConstantBinding> constants;
   std::vector<Tensor> literals;
-  std::vector<g::NodePlacement> node_placements;
-  std::vector<g::ExternalResourceContract> external_resources;
 
   explicit GraphAssembly(const Backend &environment, PrecisionProfile precision = {},
                          const c::ResourceBudget &budget = {})
-      : backend_(environment), budget_(budget), precision_(precision), mixed_(environment.has_cpu_assist()),
+      : bindings_(environment.storage_domains()), backend_(environment), budget_(budget), precision_(precision), mixed_(environment.has_cpu_assist()),
         predicate_type_(environment.native_generated_storage() ? Type::kFloat32 : Type::kBool) {}
   GraphAssembly(const GraphAssembly &) = delete;
   GraphAssembly &operator=(const GraphAssembly &) = delete;
@@ -259,32 +254,31 @@ struct GraphAssembly final {
   Type predicate_type() const { return predicate_type_; }
   Type activation_type() const noexcept { return precision_.activation_type(); }
   void node(g::NodeId node) {
-    if (mixed_) node_placements.push_back({node, location_.target, g::PlacementStrength::kRequired});
+    if (mixed_) check(bindings_.node(node, location_));
   }
   void external(V value, g::StorageDomainId storage = g::StorageDomainId{0}) {
     if (!mixed_) return;
-    const auto found = std::ranges::find(external_resources, value, &g::ExternalResourceContract::value);
-    if (found == external_resources.end()) external_resources.push_back({value, storage});
-    else if (found->storage != storage) throw std::runtime_error("conflicting external tensor resource contracts");
+    check(bindings_.external(value, storage));
   }
+  std::span<const g::ConstantBinding> constants() const noexcept { return bindings_.constants(); }
   g::CompileOptions options(g::CompileOptions options) const {
-    options.node_placements = node_placements; options.external_resources = external_resources; return options;
+    return bindings_.options(options);
   }
   void bind_constant(V value, Tensor &tensor) {
     tensor.freeze(backend_);
     const auto read = tensor.read();
     const auto owner = take(backend_.storage_owner_for(read.storage().resource()));
-    if (mixed_) external(value, g::StorageDomainId{read.storage().resource() == backend_.device() ? 0u : 1u});
     // Native resources are explicitly borrowed from Model's Backend. The
     // bank/literal owns its lease through every compiled child. A native lease
     // requires its actual StorageOwner; only process-system storage can be
     // retained without one. Graph validates that allocator identity separately.
     const auto retained = owner || read.storage().resource() == mem::system_resource()
         ? tensor.ready : c::ReadLease{};
-    constants.push_back({value, read, g::ConstantPolicy::kBorrow, owner, retained});
+    check(bindings_.bind_constant({value, read, g::ConstantPolicy::kBorrow, owner, retained}));
   }
 
 private:
+  inference::GraphBindings bindings_;
   const Backend &backend_;
   const c::ResourceBudget budget_;
   const PrecisionProfile precision_;
@@ -977,6 +971,9 @@ struct StateBank final {
 // Sharing a finite child/Queue never grants another slot access to these bytes.
 struct PhaseIo final {
   c::BatchLayoutVersion attention_layout;
+  // Original per-Invocation planning storage. Nodes are fixed at cold
+  // preparation; layout aliases exist only during batch::prepare below.
+  std::vector<g::batch::NodeLayout> batch_layouts;
   Tensor tokens, positions, last_ids, logits, final_hidden, history_select, prefix_ids;
   std::vector<std::int32_t> history_select_values, last_id_values, prefix_id_values;
   Tensor sampling_identities, draft_positions, catchup_token;
@@ -2701,7 +2698,7 @@ public:
     variants.reserve(bindings.size());
     for (const auto &point : bindings) variants.push_back({point});
     g::CompileOptions compile_options{.shape_policy = g::CompileShapePolicy::kFiniteExact,
-        .exact_variants = variants, .constants = assembly.constants};
+        .exact_variants = variants, .constants = assembly.constants()};
     // The library's cold operation admission cap covers the whole family.
     // Budget the requested finite children explicitly at the per-graph default;
     // this is host search/storage policy, not device or execution capacity.
@@ -2718,7 +2715,7 @@ public:
               << " max_operation_proposals=" << compile_options.max_operation_proposals
               << " max_placement_attempts=" << compile_options.max_placement_attempts << '\n';
     compile_options.resource_budget = execution_budget;
-    auto compiled = execution.compile(definition.graph, assembly.constants, assembly.options(compile_options));
+    auto compiled = execution.compile(definition.graph, assembly.constants(), assembly.options(compile_options));
     if (!compiled && (packed_target || compact_draft) && compiled.error().IsUnimplemented() && !compiled.error().has_native_error())
       return false; // Cold capability only; no execution/device error is a fallback.
     auto compiled_family = take(std::move(compiled));
@@ -2738,7 +2735,7 @@ public:
         {definition.state_sources, extra_stores}, take(execution_budget.metadata_allocator())));
     for (std::size_t index = 0; index < definition.chunks.size(); ++index) {
       const auto &child = definition.programs.child(index);
-      record_execution_plan(child.compiled.report, assembly.constants);
+      record_execution_plan(child.compiled.report, assembly.constants());
       report_packed_projections(definition.graph, child.compiled.report, r.packed_projection_nodes,
           child.compiled.executable.workspace_bytes());
     }
@@ -2964,13 +2961,13 @@ public:
     const std::array variants{g::ExactShapeVariant{binding}};
     const auto hidden_store = program.hidden_state.store;
     const auto extra_stores = hidden_store.valid() ? std::span(&hidden_store, 1) : std::span<const g::NodeId>{};
-    check(program.programs.prepare(take(execution.compile(program.graph, assembly.constants,
+    check(program.programs.prepare(take(execution.compile(program.graph, assembly.constants(),
         assembly.options({.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
-         .constants = assembly.constants, .resource_budget = execution_budget}))), program.graph, variants,
+         .constants = assembly.constants(), .resource_budget = execution_budget}))), program.graph, variants,
         {{}, extra_stores}, take(execution_budget.metadata_allocator())));
     const auto &compiled_program = program.programs.child(0).compiled;
     check(program.carrier.prepare(compiled_program, execution.queue_bindings()));
-    record_execution_plan(compiled_program.report, assembly.constants);
+    record_execution_plan(compiled_program.report, assembly.constants());
     program.literals = std::move(assembly.literals);
     program.token_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
     program.position_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
@@ -3127,7 +3124,7 @@ public:
       if (head) {
         auto &transactions = program.hidden_transactions;
         std::copy(shifted.begin(), shifted.end(), transactions.sources(0).begin());
-        transactions.writers(0)[0] = take(hidden_pool.allocate(geometry.hidden_bytes(), cache::state_pool_alignment));
+        transactions.writers(0)[0] = take(hidden_pool.allocate(transactions.writer_bytes(0), cache::state_pool_alignment));
         check(transactions.stage(0));
       } else for (std::size_t row = 0; row < ids.size(); ++row)
         check(program.io.bind(run, program.hidden_bindings[row], dense(precision.activation_type(), {1, hidden}), shifted[row]));
@@ -3290,12 +3287,12 @@ public:
     program.graph = take(std::move(r.builder).finish());
     const std::array binding{g::ShapeBinding{r.last_row, 0}};
     const std::array variants{g::ExactShapeVariant{binding}};
-    check(program.programs.prepare(take(execution.compile(program.graph, assembly.constants,
+    check(program.programs.prepare(take(execution.compile(program.graph, assembly.constants(),
         assembly.options({.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
-         .constants = assembly.constants, .resource_budget = execution_budget}))), program.graph, variants));
+         .constants = assembly.constants(), .resource_budget = execution_budget}))), program.graph, variants));
     const auto &compiled_program = program.programs.child(0).compiled;
     check(program.carrier.prepare(compiled_program, execution.queue_bindings()));
-    record_execution_plan(compiled_program.report, assembly.constants);
+    record_execution_plan(compiled_program.report, assembly.constants());
     program.literals = std::move(assembly.literals);
     if (program.identities) {
       program.identity_values = caller_tensor(execution.device(), dense(Type::kUInt32, {static_cast<std::int64_t>(proposals + 1), 4}));
@@ -3537,12 +3534,12 @@ public:
         // The frontier is a fixed [1,H] projection with no symbolic model rows.
         const std::array shape{g::ShapeBinding{r.last_row, 0}};
         const std::array variants{g::ExactShapeVariant{shape}};
-        check(prepared->programs.prepare(take(execution.compile(prepared->graph, assembly.constants,
+        check(prepared->programs.prepare(take(execution.compile(prepared->graph, assembly.constants(),
             assembly.options({.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
-             .constants = assembly.constants, .resource_budget = execution_budget}))), prepared->graph, variants));
+             .constants = assembly.constants(), .resource_budget = execution_budget}))), prepared->graph, variants));
         const auto &compiled_program = prepared->programs.child(0).compiled;
         check(prepared->carrier.prepare(compiled_program, execution.queue_bindings()));
-        record_execution_plan(compiled_program.report, assembly.constants);
+        record_execution_plan(compiled_program.report, assembly.constants());
         prepared->literals = std::move(assembly.literals);
         if (selected_sampler.enabled) prepared->identity = caller_tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
         check(prepared->io.prepare(compiled_program, bool(prepared->identity_port),
@@ -3862,6 +3859,9 @@ public:
     check(phase.slots.prepare(phase.child->compiled, execution.queue_bindings(), physical_slots, transactions,
         [&](std::size_t slot, auto &program_slot) {
       auto &io = program_slot.data;
+      io.batch_layouts.reserve(phase.attention_nodes.size() + drafts_token(role));
+      for (auto node : phase.attention_nodes) io.batch_layouts.push_back({node, {}});
+      if (drafts_token(role)) io.batch_layouts.push_back({phase.draft_attention_node, {}});
       program_slot.planned_uses = planned_slot_uses[slot];
       program_slot.replay_mode = !selected_sampler.modifiers.history.empty() ? g::ReplayMode::kCommands
           : imported_sources ? g::ReplayMode::kPreferCapture : select_replay_mode(
@@ -4893,9 +4893,7 @@ public:
         auto state_sources = transactions.sources(index);
         const bool is_hidden = bank.kind == StateBankKind::kHidden;
         const bool recurrent = bank.kind == StateBankKind::kRecurrent;
-        const auto description = is_hidden ? dense(precision.activation_type(), {1, hidden})
-            : recurrent ? state_schema[bank.layer].recurrent : state_schema[bank.layer].history;
-        const auto bytes = take(description.required_bytes());
+        const auto bytes = transactions.writer_bytes(index);
         if (!relay) for (std::size_t j = 0; j < width; ++j) {
           if (is_hidden) {
             if (has_mtp(role)) {
@@ -4915,15 +4913,18 @@ public:
                   : state_pools[bank.layer].acquire_history(bytes));
         check(transactions.stage(index));
       }
-      std::vector<g::batch::NodeLayout> layouts;
-      layouts.reserve(target_kv_layers + (drafts_token(role) ? 1 : 0));
-      for (std::size_t i = 0; i < phase.attention_nodes.size(); ++i) layouts.push_back({phase.attention_nodes[i], io.attention_layout});
-      if (drafts_token(role)) layouts.push_back({phase.draft_attention_node, step.draft_layout});
       if (preparation) { preparation->slot = slot; preparation->phase_slot_prior_uses = phase.slots[slot].preparation_uses; }
       const auto batch_start = Clock::now();
       const auto append_banks = draft_bank + (has_mtp(role) ? 2u : 0u);
-      check(step.execution.prepare_appends(phase.family->graph, layouts, 0, append_banks,
-          std::span<const V>(phase.append_cache_inputs).first(append_banks), {.host_workspace = execution.staging()}));
+      {
+        hyle::util::ScopeGuard release_layouts{[&]() noexcept {
+          for (auto &entry : io.batch_layouts) entry.layout = {};
+        }};
+        for (std::size_t i = 0; i < phase.attention_nodes.size(); ++i) io.batch_layouts[i].layout = io.attention_layout;
+        if (drafts_token(role)) io.batch_layouts.back().layout = step.draft_layout;
+        check(step.execution.prepare_appends(phase.family->graph, io.batch_layouts, 0, append_banks,
+            std::span<const V>(phase.append_cache_inputs).first(append_banks), {.host_workspace = execution.staging()}));
+      }
       if (relay) {
         auto &input = *step.execution.incoming; auto &previous = *input.owner;
         input.bindings.reserve(1 + previous.states.size() + previous.pages.size() + (mtp_relay ? 1u : 0u));

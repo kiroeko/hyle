@@ -68,6 +68,9 @@ class SlotTransactions final {
   // Indices are caller-checked against size(), as for a span.
   std::span<compute::ReadLease> sources(std::size_t bank) noexcept { return banks_[bank].sources; }
   std::span<compute::WriteLease> writers(std::size_t bank) noexcept { return banks_[bank].writers; }
+  // The caller has selected a configured bank, as for sources()/writers().
+  // This is the original pool item's dense extent, never its padded stride.
+  std::size_t writer_bytes(std::size_t bank) const noexcept { return banks_[bank].item_bytes; }
 
   // Pool storage may be published after the logical graph/counts are cold
   // prepared. Set its original layout exactly once before staging any lease;
@@ -78,7 +81,9 @@ class SlotTransactions final {
     auto &item = banks_[bank];
     if (remaining_ || item.layout.valid())
       return Status::FailedPrecondition("slot transaction layout is already fixed or bound");
+    HYLE_ASSIGN_OR_RETURN(const auto item_bytes, layout.description().required_bytes());
     item.layout = std::move(layout);
+    item.item_bytes = item_bytes;
     return Status::Ok();
   }
 
@@ -174,6 +179,7 @@ class SlotTransactions final {
   struct Bank final {
     graph::NodeId store;
     compute::LeaseSlotLayout layout;
+    std::size_t item_bytes = 0;
     graph::slots::SlotBindingsOptions options{};
     graph::slots::SlotBindings transaction;
     std::vector<compute::ReadLease> sources;

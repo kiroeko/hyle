@@ -58,7 +58,13 @@ TensorRT-LLM `46d9966b54d9`的`_torch/pyexecutor/engine/model_call.py`、`py_exe
 Head成功后立即无失败地记录该成员结果，后续报告／catch-up失败按原ordinal补观察，不能重新采样或重跑推理。
 记录只保留原主机事实，不保活GPU历史版本；[五个有限检查](../evidence/correctness/inference-commit-observation-2026-10-29.json)涵盖普通／MTP、晚失败及原退休断言，
 不能据此声明完整多模型执行编排已抽离，或其它组合已全部检查。
+随后[共同冷资源与固定准备](../evidence/correctness/inference-cold-bindings-2026-10-29.json)让Qwen与真实GLM短历史组件共享常量、实际存储域和放置组装，
+从实际状态池布局冷存writer字节，原物理槽复用batch准备数组并立即释放暂借layout。六项有限检查通过，数学、原lease及Graph权限不变；
+普通CPU内存直接物化到CUDA的测试假设被原Graph拒绝，改用原qualified pinned-host资源，没有放宽复制资格或新增回退。
 逐成员完整状态原子发布已有能力，不要求不同用户的所有Head额外组成跨用户原子事务；必要的模型差异分别表达。
+多成员MTP的撤销目前仍取消整批，幸存者退休后重试；普通成员已有独立保留结果。
+下一片统一原成员撤销事实，仍完整取回原Store／Append，跳过撤销成员的接受选择、repair与发布，避免重跑幸存者；
+不能只放宽stop条件，也不能把本轮proposal耗时写入撤销成员上一条已提交记录。
 本轮工程入口、完整依赖装配、文档导航及许可交付整改已完成，结果见[工程检查记录](../evidence/licensing/dependency-licenses-2026-10-29.json)。
 当前收敛完整执行编排、普通／MTP共同机制及SDK接线，随后集中连续后继、GPU融合及带宽等性能工作。
 共同架构同时审查多模型、复杂阶段及未来多端点的依赖边界，避免将当前Qwen／单卡放置固化为通用合同；

@@ -58,9 +58,9 @@ inline void modifier_domains(q::Model &model) {
   const auto graph = q::take(std::move(r.builder).finish());
   const std::array shape{q::g::ShapeBinding{r.last_row, 0}};
   const std::array variants{q::g::ExactShapeVariant{shape}};
-  auto compiled = q::take(model.execution.compile(graph, assembly.constants,
+  auto compiled = q::take(model.execution.compile(graph, assembly.constants(),
       assembly.options({.shape_policy = q::g::CompileShapePolicy::kFiniteExact,
-        .exact_variants = variants, .constants = assembly.constants, .resource_budget = model.execution_budget})));
+        .exact_variants = variants, .constants = assembly.constants(), .resource_budget = model.execution_budget})));
   compiled.executable = q::take(compiled.executable.exact_variant(0));
   compiled.report = q::take(compiled.report.exact_variant(0));
   const auto queues = q::take(i::prepare_queue_bindings(model.execution.queue_bindings(), compiled.report));
