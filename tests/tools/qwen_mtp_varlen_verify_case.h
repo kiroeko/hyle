@@ -221,6 +221,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   std::array<s::StateImage,2> bytes;
   std::array<std::uint64_t,2> epochs;
   std::array<q::MtpRoundResult,2> expected,actual;
+  std::size_t ledger_storage_checks = 0;
   for (std::size_t member = 0; member < 2; ++member) {
     before[member] = sessions[member]->checkpoint(); bytes[member] = s::image(model,*before[member]);
     epochs[member] = sessions[member]->head.epoch(); proposals[member] = propose(sessions[member],lengths[member]);
@@ -234,14 +235,59 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     model.finish_recursive_mtp(selections,q::model_eos_tokens,outputs,std::span(&expected[member],1),[](auto,const auto &) {});
   }
   {
+    struct RecordStorage final {
+      std::array<const std::int32_t *,3> data;
+      std::array<std::size_t,3> capacity;
+    };
+    const auto storage_of = [](const q::GenerationCommitRecord &record) {
+      return RecordStorage{{record.emitted.data(),record.accepted_inputs.data(),record.verification_inputs.data()},
+          {record.emitted.capacity(),record.accepted_inputs.capacity(),record.verification_inputs.capacity()}};
+    };
+    std::array<std::array<RecordStorage,2>,2> cold_storage{};
     std::vector<q::GenerationRequest> owners; owners.reserve(2);
+    const auto unchanged_storage = [&](std::size_t member) {
+      const auto &ledger = *owners[member].ledger;
+      for (std::size_t ordinal = 0; ordinal < ledger.records.size(); ++ordinal) {
+        const auto actual_storage = storage_of(ledger.records[ordinal]);
+        require(actual_storage.data == cold_storage[member][ordinal].data &&
+            actual_storage.capacity == cold_storage[member][ordinal].capacity,
+            "actual Engine preparation/publication discarded a cold ledger token buffer");
+        ++ledger_storage_checks;
+      }
+    };
     for (std::size_t member = 0; member < 2; ++member) {
       owners.emplace_back("varlen-frontier"+std::to_string(member),std::span<const std::int32_t>{},std::filesystem::path{},4);
       auto &request = owners.back(); request.session = sessions[member]; request.logits = payload.inputs;
-      request.ledger = std::make_unique<q::GenerationLedger>(2,3);
+      request.ledger = std::make_unique<q::GenerationLedger>(2,8);
+      for (std::size_t ordinal = 0; ordinal < request.ledger->records.size(); ++ordinal) {
+        cold_storage[member][ordinal] = storage_of(request.ledger->records[ordinal]);
+        for (const auto capacity : cold_storage[member][ordinal].capacity)
+          require(capacity >= 8,"cold ledger did not reserve all three token buffers beyond inline capacity");
+      }
       request.round_emitted.resize(3); for (auto &emitted : request.round_emitted) emitted.reserve(3);
       request.turn_observations.resize(1); request.progress.initial_sampling = bytes[member].sampling;
       (void)request.progress.begin_turn(); request.progress.apply_outputs(std::span(&bytes[member].pending,1),true,true,false);
+    }
+    // The same pending record may be prepared again after a withdrawn host
+    // admission. Exercise original prepare/discard owners, including a shorter
+    // draft bound, before the actual sampled width-one/width-three batch.
+    for (std::size_t member = 0; member < 2; ++member) {
+      auto &ledger = *owners[member].ledger;
+      for (const auto maximum : {std::size_t{2},std::size_t{0},std::size_t{2}}) {
+        const auto &pending = q::prepare_generation_record(ledger,*sessions[member],q::GraphRole::kVerify,
+            std::span(&bytes[member].pending,1),true,3,0,{},maximum);
+        require(pending.emitted.size() == 2 && pending.accepted_inputs.size() == 2 &&
+            pending.verification_inputs.empty() && pending.emitted[0] == -1 && pending.emitted[1] == -1 &&
+            pending.accepted_inputs[0] == -1 && pending.accepted_inputs[1] == -1 &&
+            pending.draft_limit == maximum && !ledger.committed_count,
+            "reprepared actual pending ledger retained stale token values or published a commit");
+        unchanged_storage(member);
+      }
+      ledger.discard_uncommitted(); unchanged_storage(member);
+      const auto &pending = ledger.next();
+      require(pending.emitted.empty() && pending.accepted_inputs.empty() && pending.verification_inputs.empty() &&
+          !pending.generation && !pending.committed && !ledger.committed_count,
+          "withdrawing the prepared host record retained a previous episode's token facts");
     }
     std::array calls{q::prepare_generation_call(model,owners[0],4,nullptr,owners,3),
         q::prepare_generation_call(model,owners[1],4,nullptr,owners,3)};
@@ -262,6 +308,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
           require(g::identity(calls[member].draft_log_probabilities[row]) == proposals[member].identities[row],
               "Engine replaced a normalized q lease before its actual target submission");
         m::q_rows(model,calls[member].draft_log_probabilities,payload);
+        unchanged_storage(member);
       }
       // The original Call owns q until retirement; inspect borrows metadata.
       inspect(lengths,proposals,true,false); ++submissions; ++target_submissions; ++bounded_submissions;
@@ -271,12 +318,19 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
         "Engine varlen verifier split its batch or regenerated an already supplied real proposal");
     for (std::size_t member = 0; member < 2; ++member) {
       const auto &request = owners[member]; const auto &record = request.ledger->records[0];
+      unchanged_storage(member);
       require(calls[member].disposition == q::EvaluationDisposition::kPublished && calls[member].draft_log_probabilities.empty() &&
           request.ledger->committed_count == 1 && request.progress.observed_commits() == 1 && request.rounds.size() == 1 &&
           record.committed && record.role == q::GraphRole::kVerify && record.requests == 2 && record.member_index == member &&
           record.verified_rows == lengths[member] && record.verification_inputs.size() == lengths[member],
           "Engine varlen publication retained q or charged physical rows to the committed member ledger");
       actual[member] = request.rounds.front(); qwen_mtp_mixed_lag_case::same_round(expected[member],actual[member]);
+      require(record.accepted == actual[member].processed_target && record.accepted <= proposals[member].ids.size() &&
+          std::ranges::equal(record.accepted_inputs,std::span(proposals[member].ids).first(record.accepted)) &&
+          std::ranges::equal(record.verification_inputs,proposals[member].ids) &&
+          record.emitted_count == actual[member].emitted.size() &&
+          std::ranges::equal(record.emitted,actual[member].emitted),
+          "reused ledger storage changed the actual accepted/verified/emitted token values");
       const auto after = s::image(model,*sessions[member]->head);
       const auto retained = actual[member].processed_target == 1 ? 1 : actual[member].processed_target-1;
       const auto proposal_rows = lengths[member]-1 + (lengths[member] > 1 ? bytes[member].lag : 0);
@@ -292,6 +346,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       require(s::image(model,*before[member]) == bytes[member],"sampled verifier changed its retained original checkpoint");
     }
   }
+  require(ledger_storage_checks == 24,"ledger storage checks missed a prepare, withdrawal, submission or publication");
   compare(2,lengths); before = {}; original = {};
   for (auto *group : {&controls,&sessions}) for (auto &session : *group) h::retire(session);
   for (const auto &[key,program] : model.draft_programs) {
@@ -317,7 +372,9 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       << ",\"numerically_equivalent\":" << (equivalent ? "true" : "false")
       << ",\"old_checkpoints_unchanged\":true,\"accepted_prefixes_1_2_3\":true,\"fixed_carrier_reused\":true,"
       "\"engine_unequal_lengths_one_submission\":true,\"original_q_identity_and_release\":true,"
-      "\"natural_R1_results_equal\":true,\"full_request_history_import_coverage\":false,\"synthetic_untrained\":true,"
+      "\"natural_R1_results_equal\":true,\"ledger_reserved_width\":8,\"ledger_record_storage_checks\":"
+      << ledger_storage_checks << ",\"ledger_cold_storage_reused\":true,\"ledger_host_prepare_withdraw_reprepare\":true,"
+      "\"full_request_history_import_coverage\":false,\"synthetic_untrained\":true,"
       "\"quality_claim\":false,\"performance_claim\":false,\"final_versions\":0}\n";
   cleanup.dismiss(); return 0;
 }

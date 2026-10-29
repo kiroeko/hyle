@@ -1,0 +1,276 @@
+{
+  "schema": "hyle.inference-ledger-storage.v1",
+  "status": "PASS_FINITE_LEDGER_STORAGE_REUSE",
+  "product_sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\generation_ledger.h",
+      "bytes": 17158,
+      "sha256": "ae24388f55b345e8cb6742fc51660cf7b3c7360f49d912547f78baeb156be4d2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 622481,
+      "sha256": "b80f6cb3b83f7ab9b1754c95403a345d89a57e12d96e73252b5148aed87e2a7e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_varlen_verify_case.h",
+      "bytes": 26827,
+      "sha256": "54f6d0a1ca03a6b547916e8c9ef025bc0955672a5f9a8cb423e109c6ea769542"
+    }
+  ],
+  "source_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-ledger-storage-20261029\\attempt2\\source-freeze.json",
+    "bytes": 48117,
+    "sha256": "ee8fd315ccedcffbef0d265fc04f5b931f16e190bfb2e221234008d9583e8e1f"
+  },
+  "frozen_project_files": 241,
+  "actual_compiled_project_files": 226,
+  "image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-ledger-storage-20261029\\attempt2\\bin\\tiny.exe",
+    "bytes": 144839168,
+    "sha256": "4ac911489d8876f84324f6f4ba98d3dc7cc75cac4daba7a1b7b82f4e68d866b8"
+  },
+  "object": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-ledger-storage-20261029\\attempt2\\compile\\tiny\\unit.obj",
+    "bytes": 52913182,
+    "sha256": "e0066485978abb7a2037cca3a1b4dee64e62e741284b7210a4f2fcad299a5a87"
+  },
+  "native_processes": {
+    "varlen-cpu": {
+      "process": {
+        "pid": 33100,
+        "exit": 0,
+        "started": 1793241466.4763875,
+        "seconds": 0.8586597442626953,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "ledger_reserved_width": 8,
+        "ledger_record_storage_checks": 24,
+        "ledger_cold_storage_reused": true,
+        "ledger_host_prepare_withdraw_reprepare": true,
+        "target_submissions": 11,
+        "bounded_target_submissions": 3,
+        "natural_rng_draws": [
+          1,
+          5
+        ],
+        "natural_processed_target": [
+          1,
+          3
+        ],
+        "natural_processed_draft": [
+          2,
+          4
+        ]
+      },
+      "report_member": "records/attempt2/runs/varlen-cpu/report.json"
+    },
+    "varlen-cuda": {
+      "process": {
+        "pid": 62308,
+        "exit": 0,
+        "started": 1793241476.8134894,
+        "seconds": 0.8199648857116699,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "ledger_reserved_width": 8,
+        "ledger_record_storage_checks": 24,
+        "ledger_cold_storage_reused": true,
+        "ledger_host_prepare_withdraw_reprepare": true,
+        "target_submissions": 11,
+        "bounded_target_submissions": 3,
+        "natural_rng_draws": [
+          1,
+          5
+        ],
+        "natural_processed_target": [
+          1,
+          3
+        ],
+        "natural_processed_draft": [
+          2,
+          4
+        ]
+      },
+      "report_member": "records/attempt2/runs/varlen-cuda/report.json"
+    },
+    "natural-cuda": {
+      "process": {
+        "pid": 43224,
+        "exit": 0,
+        "started": 1793241558.4957683,
+        "seconds": 3.3177599906921387,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "outputs": 40,
+        "ledger_records": 23,
+        "resident_capacity": 1,
+        "state_slots": 5,
+        "hidden_slots": 6,
+        "successor_submissions": 3,
+        "successor_publications": 2,
+        "successor_discards": 1,
+        "successor_refusals": 0,
+        "accepted_drafts": 17,
+        "rejected_drafts": 4
+      },
+      "report_member": "records/attempt2/runs/natural-cuda/report.json"
+    },
+    "group-return-cpu": {
+      "process": {
+        "pid": 13084,
+        "exit": 0,
+        "started": 1793241548.9692986,
+        "seconds": 0.47438478469848633,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "logical_requests": 3,
+        "actual_active_sequences": 2,
+        "submitted_widths": [
+          2,
+          3
+        ],
+        "actual_q_before_grouping": 5,
+        "actual_q_after_failure": 4,
+        "original_calls_and_q_returned": true,
+        "earlier_group_commit_preserved": true,
+        "failed_heads_ledger_rng_unchanged": true,
+        "actual_retirement": true,
+        "same_key_host_restore_retry": true,
+        "no_proposal_regeneration": true
+      },
+      "report_member": "records/attempt2/runs/group-return-cpu/report.json"
+    }
+  },
+  "CXX": {
+    "pid": 49664,
+    "exit": 0,
+    "started": 1793241323.7963293,
+    "seconds": 72.54549837112427,
+    "state": "TERMINAL",
+    "timed_out": false
+  },
+  "link": {
+    "pid": 50084,
+    "exit": 0,
+    "started": 1793241456.8265772,
+    "seconds": 1.8739728927612305,
+    "state": "TERMINAL",
+    "timed_out": false
+  },
+  "actual_process_counts": {
+    "CXX": 1,
+    "link": 1,
+    "native": 4,
+    "failed_native": 0,
+    "failed_prepare_metadata_only": 1
+  },
+  "SDK": {
+    "retained_inputs": 227,
+    "objects": 202,
+    "libraries": 25,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "ledger_storage": {
+    "vector_buffers_per_record": 3,
+    "reserved_width": 8,
+    "checks_per_backend": 24,
+    "checked_backends": [
+      "cpu",
+      "cuda"
+    ],
+    "scope": "Original record emitted/accepted/verified buffers retain cold capacity and data pointers through host prepare/withdraw/reprepare and actual unequal-width Engine verification."
+  },
+  "explicit_state_comparisons": {
+    "total": 13,
+    "byte_exact": 1,
+    "numerically_equivalent": 13,
+    "F32_GDN_absolute_budget": 3e-06
+  },
+  "failed_tooling_prepare": {
+    "action": "prepare",
+    "exit_code": 1,
+    "native_processes": 0,
+    "reason": "The cached tiny fixture is whitespace-delimited; csv tab-only manifest parser raised IndexError before source freeze or native execution.",
+    "helper_sha256": "14a80f89bd1b5ea42ae915a7081bf7487a249bf98ed04da0140bb5f7d430923a",
+    "local_environment_created": true,
+    "retry_directory": "attempt2"
+  },
+  "fixtures": {
+    "varlen": {
+      "manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input\\weights.tsv",
+        "bytes": 7861,
+        "sha256": "32901e43a5a0644169b433f4d57b38a37f0d9cd6475230427191b5d6d3a18515"
+      },
+      "prompt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input\\prompt.ids",
+        "bytes": 7,
+        "sha256": "d0bd45d1262e6c4df3e45026a6f9852c04a3b806be64f4d614ddd37a8561be0a"
+      },
+      "local_weight_sources": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "bytes": 298628,
+          "mtime_ns": 1792846969164659000,
+          "file_id": 1125899912087899
+        }
+      ]
+    },
+    "natural": {
+      "manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\weights.tsv",
+        "bytes": 56735,
+        "sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1"
+      },
+      "prompt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\prompt.ids",
+        "bytes": 733,
+        "sha256": "b6a10feefb0af4687ee536285c9666bfbdf093fc9e484ab0461834345a5993a4"
+      },
+      "local_weight_sources": [
+        {
+          "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+          "bytes": 4548221488,
+          "mtime_ns": 1789652326160346900,
+          "file_id": 3096224748050030
+        }
+      ]
+    }
+  },
+  "limits": [
+    "Finite CPU/CUDA K2 Verify3 component with controlled prefix tests and one original sampled real-q episode per backend.",
+    "CUDA greedy real cached Qwen K1 RequestLoop is a regression: N1/R1/D2, 40 outputs; it does not extend pipeline applicability.",
+    "CPU mixed-width group failure/host restore/retry is unchanged functional coverage, not a no-allocation claim.",
+    "Three ledger vector buffers retain storage; no whole-process allocation-free or throughput claim.",
+    "No quality/performance comparison, new downloads, arbitrary hardware/model guarantee or full goal completion.",
+    "Archive contains project sources, receipts, logs, commands, small manifests/prompts and helper history; excludes environment values, tensor payloads, binaries, SDK objects/libraries."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-ledger-storage-2026-10-29.zip",
+    "bytes": 1270088,
+    "sha256": "da3afbdecc4cf5184cb5e004b0c77ae446c637ed4c85ed28077d9fcac6315fb7"
+  },
+  "archive_members": 300,
+  "crc_and_member_sha256_readback": true,
+  "cleanup": {
+    "deleted_files": 4,
+    "deleted_logical_bytes": 198175334,
+    "archive_sha256": "da3afbdecc4cf5184cb5e004b0c77ae446c637ed4c85ed28077d9fcac6315fb7",
+    "source_logs_and_model_data_deleted": false,
+    "retained_sdk_inputs": 227,
+    "retained_consumer_objects": 1,
+    "script": "test.ps1 (executed; do not rerun old cleanup script)",
+    "retained_recipe": ".scratch/inference-ledger-storage-20261029/model-link-base.json"
+  }
+}

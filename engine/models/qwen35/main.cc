@@ -850,6 +850,18 @@ sampling::LogitsInputsFor<V> prepare_logits_inputs(Recipe &r, sampling::LogitsPo
   return result;
 }
 
+// Ledger token storage is reserved with the request. Its sources are separate
+// episode/result values; replacement assignment would discard that capacity.
+void write_generation_tokens(hyle::container::SmallVector<std::int32_t, 2> &tokens,
+    std::span<const std::int32_t> values) {
+  if (!tokens.try_resize(values.size())) throw std::bad_alloc{};
+  std::copy(values.begin(), values.end(), tokens.begin());
+}
+void write_generation_tokens(hyle::container::SmallVector<std::int32_t, 2> &tokens,
+    std::initializer_list<std::int32_t> values) {
+  write_generation_tokens(tokens, std::span<const std::int32_t>(values.begin(), values.size()));
+}
+
 GenerationBoundary generation_boundary(const cache::State &head) noexcept {
   return {head.length, head.draft ? head.draft->frontier : 0,
       head.draft ? head.draft->lag : 0, head.next_id,
@@ -5236,14 +5248,13 @@ public:
               member.discarded_draft_rows);
         record->after = generation_boundary(*member.next); record->after.next_id = next_ids[j];
         if (phase.family->role == GraphRole::kVerify)
-          record->accepted_inputs.assign(member.verification_inputs.begin(),
-              member.verification_inputs.begin() + member.accepted_tokens);
-        else record->accepted_inputs = {member.first_input, member.accepted_tokens == 2 ? member.draft_token : -1};
+          write_generation_tokens(record->accepted_inputs,
+              std::span<const std::int32_t>(member.verification_inputs).first(member.accepted_tokens));
+        else write_generation_tokens(record->accepted_inputs, {member.first_input, member.accepted_tokens == 2 ? member.draft_token : -1});
         if (record->generation) {
-          if (phase.family->role == GraphRole::kVerify) record->verification_inputs.assign(
-              member.verification_inputs.begin(), member.verification_inputs.end());
-          else if (drafts_token(phase.family->role)) record->verification_inputs = {member.first_input, member.draft_token};
-          else record->verification_inputs = {member.first_input};
+          if (phase.family->role == GraphRole::kVerify) write_generation_tokens(record->verification_inputs, member.verification_inputs);
+          else if (drafts_token(phase.family->role)) write_generation_tokens(record->verification_inputs, {member.first_input, member.draft_token});
+          else write_generation_tokens(record->verification_inputs, {member.first_input});
         }
         record->verified_rows = member.input_tokens;
         if (!record->generation || phase.family->role == GraphRole::kText) {
@@ -5252,7 +5263,7 @@ public:
           record->stopped = !state_only && inference::request_token_stopped(
               next_ids[j], model_eos_tokens, member.stop_policy);
           if (state_only) { record->emitted.clear(); record->emitted_count = 0; }
-          else { record->emitted = {next_ids[j], -1}; record->emitted_count = 1; }
+          else { write_generation_tokens(record->emitted, {next_ids[j], -1}); record->emitted_count = 1; }
         }
         if (outputs[j].expected_episode && !record->same_result(*outputs[j].expected_episode))
           throw std::runtime_error("MTP replay natural decision or state boundary diverged from its recorded episode");
@@ -5589,7 +5600,7 @@ public:
           record.target_second = result.target_second; record.agreed = result.agreed;
           record.accepted_draft = result.accepted_draft; record.consumed_drafts = result.consumed_drafts;
           record.auxiliary_graph_calls = result.auxiliary_graph_calls;
-          record.stopped = result.stopped; record.emitted.assign(result.emitted.begin(), result.emitted.end());
+          record.stopped = result.stopped; write_generation_tokens(record.emitted, result.emitted);
           record.emitted_count = result.emitted.size();
         }
       }
@@ -5677,7 +5688,7 @@ public:
               record.target_second = result.target_second; record.agreed = result.agreed;
               record.accepted_draft = result.accepted_draft; record.stopped = result.stopped;
               record.consumed_drafts = result.consumed_drafts;
-              record.emitted = {result.emitted[0], result.emitted.size() == 2 ? result.emitted[1] : -1};
+              write_generation_tokens(record.emitted, {result.emitted[0], result.emitted.size() == 2 ? result.emitted[1] : -1});
               record.emitted_count = result.emitted.size();
             }
           }
@@ -5941,7 +5952,7 @@ GenerationCommitRecord &prepare_generation_record(GenerationLedger &ledger, cons
   auto verified = std::move(record.verification_inputs);
   record = {}; record.emitted = std::move(emitted); record.accepted_inputs = std::move(consumed);
   record.verification_inputs = std::move(verified); record.verification_inputs.clear();
-  record.emitted.assign({-1, -1}); record.accepted_inputs.assign({-1, -1});
+  write_generation_tokens(record.emitted, {-1, -1}); write_generation_tokens(record.accepted_inputs, {-1, -1});
   record.role = role; record.generation = generation; record.quota = quota; record.turn = turn;
   record.completion = completion; record.input_begin = input_begin; record.prefill_complete = prefill_complete;
   record.user_output = completion == TextCompletion::kEmitNext;
@@ -5987,7 +5998,7 @@ void import_generation_prompt_ledger(GenerationLedger &ledger, const cache::Repl
     record.completion = part.state_only ? TextCompletion::kStateOnly : TextCompletion::kEmitNext;
     record.prefill_complete = !part.state_only;
     record.input_begin = part.first;
-    record.target_first = part.next_id; record.emitted = {part.next_id, -1}; record.emitted_count = part.state_only ? 0 : 1;
+    record.target_first = part.next_id; write_generation_tokens(record.emitted, {part.next_id, -1}); record.emitted_count = part.state_only ? 0 : 1;
     record.stopped = !part.state_only && inference::request_token_stopped(
         part.next_id, model_eos_tokens, &ledger.stop_policy());
     record.user_output = full_hit && i + 1 == prefix.chunks;
@@ -6662,7 +6673,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
             auto &record = request.ledger->records[i];
             record.before.sampling = sampler.enabled ? request.progress.initial_sampling : cache::SamplingCursor{};
             record.after.sampling = record.before.sampling;
-            record.emitted_count = 0; record.emitted = {-1, -1};
+            record.emitted_count = 0; write_generation_tokens(record.emitted, {-1, -1});
           }
           request.ledger->records[request.ledger->committed_count - 1].after.sampling = adopted->head->sampling;
         }
@@ -6670,7 +6681,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
           auto &last = request.ledger->records[request.ledger->committed_count - 1];
           last.after.sampling = adopted->head->sampling;
           last.after.next_id = adopted->head->next_id;
-          last.target_first = last.after.next_id; last.emitted = {last.after.next_id, -1};
+          last.target_first = last.after.next_id; write_generation_tokens(last.emitted, {last.after.next_id, -1});
           last.emitted_count = 1; last.stopped = inference::request_token_stopped(
               last.after.next_id, model_eos_tokens, &request.stop_policy);
         }

@@ -206,7 +206,12 @@ greedy modifier同步合包，但原精确主机比较保留。CPU／CUDA独立�
 K1完整接受的[投机后继组件](../evidence/correctness/inference-mtp-k1-source-2026-10-29.json)现已接通：四组CUDA后继在A主机完成前提交并复用捕获，部分接受、额度结束和取消时丢弃B，完整状态及原快照保持；CPU仅证明提交前Source不支持时原串行继续。定位并修正显式Store ID换址提前清除capture key，保留原容量、绑定和权限门。
 [自然接入](../evidence/correctness/inference-mtp-natural-2026-10-29.json)已将CUDA greedy K1纳入普通共用continuation与RequestLoop：原权重40输出和23条完整账簿与串行一致，实际提交3个后继、发布2个并因真实部分接受丢弃1个。默认auto／N1入口通过；成功发布后释放模型私有full-prefix票据，使原5个GDN槽足够，不扩池。其它后继配置和任意接受长度的设备续算仍在范围内，无新性能结论。
 
-同时确认多草稿账簿的替换式SmallVector.assign会丢弃冷容量，Verify的range assign随后重新分配；下一片在引擎记录处原位resize／copy，不改容器语义。默认K1使用内联容量，无相同堆分配；该成本尚未测量，不预设为当前decode主因。
+多草稿账簿的替换式SmallVector.assign会丢弃冷容量，现已在13处记录写入原位resize／copy，不改容器语义。
+[冷存储检查](../evidence/correctness/inference-ledger-storage-2026-10-29.json)以预留宽度8覆盖CPU／CUDA实际Verify、撤回重备和完整记录值，
+另通过真实Qwen K1自然流水及CPU实际失败／主机恢复／同键重试。13项完整状态比较保持原F32 GDN预算，未全体逐字节相同；
+1次CXX／链接及4个有限进程，无SDK重编或下载。默认K1使用内联容量，无相同堆分配；该成本尚未测量，不预设为当前decode主因。
+随后复查发现自然入口把异长Verify每成员按批次最大行数统计，[1,3]被算成6而非真实活动4，提交后触发观察错误；
+该缺口仍待按真实逐成员目标行数修正并补实际BatchObserver检查，不能用无观察者的组件通过代签自然入口。
 
 ## 当前实现概况
 
