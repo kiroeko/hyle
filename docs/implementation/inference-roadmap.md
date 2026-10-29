@@ -72,8 +72,10 @@ Head成功后立即无失败地记录该成员结果，后续报告／catch-up�
 随后[GLM共同请求驱动](../evidence/correctness/inference-glm-request-loop-2026-10-29.json)已用既有RequestLoop／wave替换手动FIFO、接纳和turn切换；
 自然K1、缓存新请求采样及两次普通续算实际在wave内执行，原数学片段由旧路径及wave复用。
 一次原权重CUDA组件旅程通过，晚观察失败后仅补观察，37项原输出／RNG／提交事实不变；不等同第二个完整引擎模型或性能结论。
-后续组合审查已定位两项：DeepSeek原组件的真实Head发布需接共同提交见证与晚观察恢复；
-DS／Kimi共享的测试执行路径需保留原Status和独立退休事实，清理错误不能遮蔽首错。
+本次[多模型提交与错误接入](../evidence/correctness/inference-multimodel-observation-2026-10-29.json)已接DeepSeek Pro／正式Flash原角色的真实多token提交与晚观察；
+发布前使用原RequestProgress完整预检，记录不保活历史状态。DS测试消费者删除重复Graph生命周期，复用GLM／Kimi原共同路径，保留Status及独立清理／退休事实。
+四个当前有限进程、六项测试通过，含真实CPU资源拒绝、Gather越界、保留结果时清理拒绝及GLM CUDA回归；一项新夹具资源声明遗漏已修并保留。
+DeepSeek压缩GGUF／BF16侧车的提交观察仍待接入；本次未刷新吞吐，也未将旧Flash四round记录当作当前五round的同版本基线。
 Kimi现有KDA／MLA消费者不产生生成token，不为共用请求接口虚构生成阶段。
 本轮工程入口、完整依赖装配、文档导航及许可交付整改已完成，结果见[工程检查记录](../evidence/licensing/dependency-licenses-2026-10-29.json)。
 当前收敛完整执行编排、普通／MTP共同机制及SDK接线，随后集中连续后继、GPU融合及带宽等性能工作。

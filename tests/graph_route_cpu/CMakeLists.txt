@@ -32,6 +32,10 @@ if(HYLE_GGML_CPU_ENABLED)
 endif()
 hyle_stage_runtime(hyle_graph_route_cpu_test)
 
+hyle_add_test(graph_route_cpu NAME model_graph_run
+  SOURCES ../compute_models/model_graph_run_test.cc DEPS hyle_compute_provider_native)
+hyle_stage_runtime(hyle_graph_route_cpu_model_graph_run_test)
+
 if(HYLE_GGML_CPU_ENABLED)
   hyle_add_test(graph_route_cpu NAME qwen27_original_mtp_input
     SOURCES ../compute_models/qwen27_original_mtp_input_test.cc DEPS hyle_simd)

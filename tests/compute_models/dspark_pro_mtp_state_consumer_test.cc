@@ -37,6 +37,7 @@
 #include "hyle/compute/state_versions.h"
 #include "dspark_stochastic_head.h"
 #include "sampling_fixture.h"
+#include "../../engine/inference/commit_observation.h"
 #include "../../engine/inference/sampling_cursor.h"
 
 namespace {
@@ -612,6 +613,45 @@ void run(std::shared_ptr<own::Data> source,c::Context &context,const c::StorageO
 
   if(setup.stochastic_mtp) {
     using Cursor=hyle::inference::SamplingCursor;
+    // This finite consumer reserves its real result slots before execution.
+    // Records retain only host facts, not a historical StateVersion/Identity.
+    struct Commit final {
+      bool committed=false,stopped=false;
+      std::array<std::int32_t,6> emitted{};
+      std::size_t emitted_count=0;
+      policy::Boundary frontier{};
+      Cursor sampling{};
+    };
+    struct Request final {
+      std::array<Commit,2> records{};
+      std::size_t commits=0,projections=0,family_observations=0;
+      hyle::inference::RequestProgress progress;
+      const std::int32_t *output_storage;
+      std::size_t output_capacity;
+      explicit Request(std::size_t maximum_outputs,Cursor initial)
+          :progress(maximum_outputs),output_storage(progress.generated.data()),
+           output_capacity(progress.generated.capacity()) {
+        progress.initial_sampling=initial;(void)progress.begin_turn();
+      }
+    };
+    const auto observe=[&](Request &request,std::size_t ordinal,const c::StateVersion &actual) {
+      return hyle::inference::observe_record_commit(std::span<const Commit>(request.records),request.commits,
+          ordinal,request.progress,
+          [&](const Commit &record) {
+            ++request.projections;
+            return hyle::inference::CommitObservation{
+                std::span(record.emitted).first(record.emitted_count),true,true,record.stopped};
+          },
+          [&](const Commit &record,const hyle::inference::CommitObservation &) {
+            const auto current=state.frontier(actual);const auto &expected=record.frontier;
+            if(current.session!=expected.session||current.branch!=expected.branch||current.epoch!=expected.epoch||
+                current.next_position!=expected.next_position||current.pending!=expected.pending||
+                current.consumed!=expected.consumed||state.random(actual)!=record.sampling||
+                !record.emitted_count||record.emitted[record.emitted_count-1]!=current.pending)
+              throw std::runtime_error("DSpark observation requires its actual committed pending/RNG result");
+          },
+          [&](const Commit &,const hyle::inference::CommitObservation &) noexcept {++request.family_observations;});
+    };
     const auto identities=[&](const Cursor &cursor,std::size_t count,bool proposal) {
       std::vector<std::uint32_t> keys;
       for(std::size_t row=0;row<(proposal?count:count+1);++row) {
@@ -627,10 +667,19 @@ void run(std::shared_ptr<own::Data> source,c::Context &context,const c::StorageO
     };
     std::size_t publications=0,rejections=0,bonuses=0,target_only=0,markov_rows=0,cancelled=0,invalid=0;
     std::size_t bounded_tails=0,conditional_stops=0;
+    std::size_t observer_refusals=0,observer_retries=0,duplicate_observations=0;
+    std::vector<std::int32_t> emitted;emitted.reserve(6);
+    const auto work_counts=[&] {
+      return std::array<std::size_t,9>{std::size_t(backend.submissions),draft_episodes,target_rows,main_calls,
+          history_calls,head_calls,feedback,markov_rows,publications};
+    };
     std::optional<Cursor> bonus_cursor;std::int32_t bonus_proposal=-1;
-    const auto round=[&](c::StateHead &head,std::size_t maximum,std::uint64_t epoch,bool fail_and_retry,
-        bool high_temperature=false,policy::Block5Limits bounds={.output_quota=6,.context_rows=6,.vocabulary=draft::kVocabulary}) {
+    const auto round=[&](c::StateHead &head,Request &request,std::size_t maximum,std::uint64_t epoch,bool fail_and_retry,
+        bool high_temperature=false,policy::Block5Limits bounds={.output_quota=6,.context_rows=6,.vocabulary=draft::kVocabulary},
+        bool fail_observation=false) {
       const auto from=take(head.current(),"random original complete Head");const auto facts=state.frontier(from);
+      if(request.commits!=request.progress.observed_commits())
+        throw std::runtime_error("DSpark must observe its original committed result before executing another round");
       if(maximum>5)throw std::runtime_error("random DSpark maximum exceeds five trained draft rows");
       if(bounds.draft.max_drafts>5)throw std::runtime_error("random DSpark policy exceeds five trained draft rows");
       if(bounds.vocabulary!=draft::kVocabulary||facts.next_position<0||facts.next_position>setup.capacity)
@@ -640,6 +689,8 @@ void run(std::shared_ptr<own::Data> source,c::Context &context,const c::StorageO
       const auto capacity=take(policy::block5_verification_capacity(bounds),"random DSpark bounded row capacity");
       if(!capacity||std::ranges::find(bounds.eos_tokens,facts.pending)!=bounds.eos_tokens.end())
         throw std::runtime_error("random DSpark round already reached its output/context/EOS boundary");
+      if(request.commits>=request.records.size())
+        throw std::runtime_error("DSpark result exceeds its cold request record reservation");
       auto count=capacity-1;
       const auto cursor=state.random(from);
       std::vector<std::int32_t> ids{facts.pending};std::vector<c::ReadLease> sampled;
@@ -743,7 +794,6 @@ void run(std::shared_ptr<own::Data> source,c::Context &context,const c::StorageO
         final_ids.push_back(id[0]);
       }
       const auto select=[&](std::size_t quota,std::span<const std::int32_t> eos) {
-        std::vector<std::int32_t> emitted;
         return hyle::inference::mtp::select_sampled_prefix(ids,accepts,final_ids,quota,eos,draft::kVocabulary,emitted);
       };
       const auto pending_for=[&](const hyle::inference::mtp::AcceptedPrefix &selection) {
@@ -765,7 +815,20 @@ void run(std::shared_ptr<own::Data> source,c::Context &context,const c::StorageO
         check(abandoned.cancel(),"random pending/cursor cancellation");++cancelled;
         EXPECT_EQ(take(head.current(),"Head after random cancellation").identity(),from.identity());EXPECT_EQ(state.random(from),cursor);
       }
-      check(head.publish(from.identity(),candidate),"random full model/pending/RNG atomic publication");++publications;
+      if(request.commits>=request.records.size()||emitted.empty()||emitted.size()!=choice.consumed||
+          emitted.size()>request.records.front().emitted.size()||emitted.size()>request.progress.remaining_outputs())
+        throw std::runtime_error("DSpark actual emitted prefix exceeds its cold request reservation");
+      const auto ordinal=request.commits;auto &record=request.records[ordinal];
+      record.emitted_count=emitted.size();std::copy(emitted.begin(),emitted.end(),record.emitted.begin());
+      record.stopped=choice.stopped;record.frontier=state.frontier(candidate);record.sampling=state.random(candidate);
+      if(!request.progress.preflight_commit(ordinal,std::span(record.emitted).first(record.emitted_count),
+          true,true,record.stopped))
+        throw std::runtime_error("new DSpark result ordinal was already observed before Head publication");
+      auto commit=take(hyle::inference::prepare_record_commit(std::span<Commit>(request.records),request.commits,record),
+          "prepare original DSpark result commit witness");
+      check(commit.publish([&]() noexcept {return head.publish(from.identity(),candidate);}),
+          "random full model/pending/RNG atomic publication and original record witness");++publications;
+      EXPECT_TRUE(record.committed);EXPECT_EQ(request.commits,ordinal+1);EXPECT_FALSE(commit.valid());
       EXPECT_EQ(state.random(candidate),next_cursor);EXPECT_EQ(state.frontier(candidate).next_position,facts.next_position+consumed);
       same_lease(take(candidate.member(state.entries[kPending]),"random committed pending"),pending);
       for(std::size_t i=0;i<21;++i)same_lease(take(candidate.member(state.entries[8+i]),"random committed target prefix"),rows[selected].state[i]);
@@ -795,20 +858,64 @@ void run(std::shared_ptr<own::Data> source,c::Context &context,const c::StorageO
       EXPECT_TRUE(head.publish(from.identity(),candidate).IsUnavailable());account();
       std::printf("DSpark random committed m=%zu accept=%zu consumed=%u pending=%d draw=%llu\n",count,accepted,consumed,
           state.frontier(candidate).pending,static_cast<unsigned long long>(next_cursor.draw));std::fflush(stdout);
+      if(fail_observation) {
+        const auto before=work_counts();const auto stats=state.store.stats();
+        const auto outputs=request.progress.generated;const auto observations=request.progress.observed_commits();
+        // The head/record is authoritative. A stale family witness must fail
+        // before observing outputs, without undoing or repeating native work.
+        EXPECT_THROW((void)observe(request,ordinal,from),std::runtime_error);++observer_refusals;
+        EXPECT_EQ(request.progress.observed_commits(),observations);EXPECT_EQ(request.progress.generated,outputs);
+        EXPECT_EQ(request.family_observations,observations);EXPECT_EQ(work_counts(),before);
+        EXPECT_EQ(take(head.current(),"DSpark late observer refusal keeps actual Head").identity(),candidate.identity());
+        EXPECT_EQ(state.random(candidate),next_cursor);EXPECT_EQ(state.store.stats().versions,stats.versions);
+        EXPECT_EQ(state.store.stats().drafts,stats.drafts);EXPECT_EQ(state.store.stats().backing_bytes,stats.backing_bytes);
+      } else {
+        EXPECT_TRUE(observe(request,ordinal,candidate));
+        const auto projections=request.projections;const auto outputs=request.progress.generated;
+        EXPECT_FALSE(observe(request,ordinal,from));++duplicate_observations;
+        EXPECT_EQ(request.projections,projections);EXPECT_EQ(request.progress.generated,outputs);
+        EXPECT_EQ(request.progress.observed_commits(),request.commits);EXPECT_EQ(request.family_observations,request.commits);
+      }
+      EXPECT_EQ(request.progress.generated.data(),request.output_storage);
+      EXPECT_EQ(request.progress.generated.capacity(),request.output_capacity);
       return candidate;
     };
     auto head=take(c::StateHead::create(state.store,base),"random complete model/RNG Head");
-    auto first=round(head,2,2,setup.stochastic_branch_witness);
-    auto continued=round(head,2,3,false,false,{.output_quota=1,.context_rows=1,.vocabulary=draft::kVocabulary,
+    Request request(4,initial_random); // at most three actual first-round outputs, then one ordinary output
+    auto first=round(head,request,2,2,setup.stochastic_branch_witness,false,
+        {.output_quota=6,.context_rows=6,.vocabulary=draft::kVocabulary},true);
+    {
+      const auto before=work_counts();const auto stats=state.store.stats();
+      EXPECT_EQ(request.commits,1u);EXPECT_EQ(request.progress.observed_commits(),0u);EXPECT_TRUE(request.progress.generated.empty());
+      EXPECT_THROW((void)round(head,request,2,3,false),std::runtime_error);
+      EXPECT_EQ(work_counts(),before);EXPECT_EQ(take(head.current(),"unobserved DSpark result is not reexecuted").identity(),first.identity());
+      EXPECT_TRUE(observe(request,0,first));++observer_retries;
+      const auto projections=request.projections;const auto outputs=request.progress.generated;
+      EXPECT_FALSE(observe(request,0,base));++duplicate_observations;
+      EXPECT_EQ(request.projections,projections);EXPECT_EQ(request.progress.generated,outputs);
+      EXPECT_EQ(request.progress.generated.size(),request.records[0].emitted_count);
+      EXPECT_TRUE(std::equal(request.progress.generated.begin(),request.progress.generated.end(),request.records[0].emitted.begin()));
+      EXPECT_EQ(request.progress.generated.back(),state.frontier(first).pending);
+      EXPECT_EQ(request.progress.observed_commits(),1u);EXPECT_EQ(request.family_observations,1u);
+      EXPECT_EQ(work_counts(),before);EXPECT_EQ(take(head.current(),"DSpark observe-only retry never republishes Head").identity(),first.identity());
+      EXPECT_EQ(state.random(first),request.records[0].sampling);EXPECT_EQ(state.store.stats().versions,stats.versions);
+      EXPECT_EQ(state.store.stats().drafts,stats.drafts);EXPECT_EQ(state.store.stats().backing_bytes,stats.backing_bytes);
+      EXPECT_EQ(request.progress.generated.data(),request.output_storage);EXPECT_EQ(request.progress.generated.capacity(),request.output_capacity);
+    }
+    auto continued=round(head,request,2,3,false,false,{.output_quota=1,.context_rows=1,.vocabulary=draft::kVocabulary,
         .draft={.max_drafts=0,.minimum_confidence=.9F}});
     EXPECT_EQ(state.frontier(continued).next_position,state.frontier(first).next_position+1);
     EXPECT_EQ(state.random(continued).draw,6u);EXPECT_EQ(state.random(base),initial_random);
+    EXPECT_EQ(request.commits,2u);EXPECT_EQ(request.progress.observed_commits(),2u);EXPECT_EQ(request.family_observations,2u);
+    EXPECT_EQ(request.projections,3u);EXPECT_EQ(observer_refusals,1u);EXPECT_EQ(observer_retries,1u);
+    EXPECT_EQ(request.progress.generated.size(),request.records[0].emitted_count+request.records[1].emitted_count);
+    EXPECT_EQ(request.records[1].emitted_count,1u);EXPECT_EQ(request.progress.generated.back(),state.frontier(continued).pending);
     EXPECT_EQ(read(take(base.member(state.entries[0]),"random old history stays immutable")),initial_ring);
     {
       const auto calls=backend.submissions;const auto before=take(head.current(),"random bounded rejection Head");
-      EXPECT_THROW((void)round(head,2,30,false,false,{.output_quota=0,.context_rows=6,.vocabulary=draft::kVocabulary}),std::runtime_error);
-      EXPECT_THROW((void)round(head,2,30,false,false,{.output_quota=6,.context_rows=0,.vocabulary=draft::kVocabulary}),std::runtime_error);
-      EXPECT_THROW((void)round(head,6,30,false),std::runtime_error);
+      EXPECT_THROW((void)round(head,request,2,30,false,false,{.output_quota=0,.context_rows=6,.vocabulary=draft::kVocabulary}),std::runtime_error);
+      EXPECT_THROW((void)round(head,request,2,30,false,false,{.output_quota=6,.context_rows=0,.vocabulary=draft::kVocabulary}),std::runtime_error);
+      EXPECT_THROW((void)round(head,request,6,30,false),std::runtime_error);
       EXPECT_EQ(backend.submissions,calls);EXPECT_EQ(take(head.current(),"bounded rejection keeps actual Head").identity(),before.identity());
       EXPECT_EQ(state.random(before),state.random(take(head.current(),"bounded rejection keeps RNG")));
     }
@@ -818,19 +925,21 @@ void run(std::shared_ptr<own::Data> source,c::Context &context,const c::StorageO
     check(seeded.replace_metadata(*state.random_entry,std::as_bytes(std::span(&*bonus_cursor,1))),"explicit fixture seed, unchanged model state");
     auto bonus_base=take(seeded.finalize(),"controlled stochastic initial state");
     auto bonus_head=take(c::StateHead::create(state.store,bonus_base),"controlled bonus complete Head");
-    auto bonus=round(bonus_head,1,4,false,true);
+    Request bonus_request(3,*bonus_cursor);
+    auto bonus=round(bonus_head,bonus_request,1,4,false,true);
     EXPECT_EQ(state.frontier(bonus).next_position,setup.position+2);
     EXPECT_EQ(state.random(bonus),bonus_cursor->advanced(3));
     EXPECT_EQ(state.random(bonus_base),*bonus_cursor);
     const auto bonus_pending=state.frontier(bonus).pending;
-    auto bonus_continued=round(bonus_head,0,5,false,true);
+    auto bonus_continued=round(bonus_head,bonus_request,0,5,false,true);
     EXPECT_EQ(state.frontier(bonus_continued).next_position,setup.position+3);
     EXPECT_EQ(state.random(bonus_continued),bonus_cursor->advanced(4));
     ::testing::Test::RecordProperty("actual_bonus_pending_consumed_next",bonus_pending);
     EXPECT_EQ(read(take(base.member(state.entries[0]),"old reader after all-accepted bonus")),initial_ring);
 
     auto threshold_head=take(c::StateHead::create(state.store,base),"actual sampled-confidence threshold Head");
-    auto threshold=round(threshold_head,2,40,false,false,{.output_quota=6,.context_rows=6,.vocabulary=draft::kVocabulary,
+    Request threshold_request(1,initial_random);
+    auto threshold=round(threshold_head,threshold_request,2,40,false,false,{.output_quota=6,.context_rows=6,.vocabulary=draft::kVocabulary,
         .draft={.max_drafts=2,.minimum_confidence=1.F}});
     EXPECT_EQ(state.frontier(threshold).next_position,setup.position+1);
     EXPECT_EQ(state.random(threshold),initial_random.advanced(1));
@@ -842,6 +951,15 @@ void run(std::shared_ptr<own::Data> source,c::Context &context,const c::StorageO
     ::testing::Test::RecordProperty("random_invalid_q_retries",int(invalid));::testing::Test::RecordProperty("random_cancelled_candidates",int(cancelled));
     ::testing::Test::RecordProperty("random_actual_retained_tail_publications",int(bounded_tails));
     ::testing::Test::RecordProperty("random_actual_conditional_threshold_stops",int(conditional_stops));
+    ::testing::Test::RecordProperty("random_request_committed_records",int(request.commits));
+    ::testing::Test::RecordProperty("random_request_observed_records",int(request.progress.observed_commits()));
+    ::testing::Test::RecordProperty("random_request_family_observations",int(request.family_observations));
+    ::testing::Test::RecordProperty("random_request_record_projections",int(request.projections));
+    ::testing::Test::RecordProperty("random_request_first_emitted",int(request.records[0].emitted_count));
+    ::testing::Test::RecordProperty("random_request_total_emitted",int(request.progress.generated.size()));
+    ::testing::Test::RecordProperty("random_request_late_observer_refusals",int(observer_refusals));
+    ::testing::Test::RecordProperty("random_request_observe_only_retries",int(observer_retries));
+    ::testing::Test::RecordProperty("random_request_duplicate_observations",int(duplicate_observations));
   } else
 
   {
@@ -982,7 +1100,7 @@ void run(std::shared_ptr<own::Data> source,c::Context &context,const c::StorageO
   ::testing::Test::RecordProperty("target_resident_slot_bytes",std::to_string(target_supply.layout.slot_bytes));::testing::Test::RecordProperty("draft_resident_slot_bytes",std::to_string(draft_supply.layout.slot_bytes));
   ::testing::Test::RecordProperty("actual_expert_attachments",int(acquisition.attachments));::testing::Test::RecordProperty("actual_missing_frontiers",int(acquisition.requests));
   ::testing::Test::RecordProperty("scope",setup.stochastic_mtp?
-      "Original identified Pro/Flash three-stage/base fullV plus source Markov conditioned on actual sampled predecessor; common stochastic q/p acceptance, residual/bonus and complete31member model/RNG Head. One ordinary continuation, invalid-q retry/cancel and immutable old readers. When enabled, controlled CPU seed/temperature8 bonus witness is explicit; natural-only mode performs no seed search. Neither is complete trained-model quality/TPS.":setup.short_verifier_tails?
+      "Original identified Pro/Flash three-stage/base fullV plus source Markov conditioned on actual sampled predecessor; common stochastic q/p acceptance, residual/bonus and complete31member model/RNG Head. Natural prefix and ordinary continuation use common original commit/observation with cold multi-token output storage; an actual post-publication observer refusal retries only the original result, without Graph, Head or RNG repetition. Invalid-q retry/cancel and immutable old readers retained. When enabled, controlled CPU seed/temperature8 bonus witness is explicit; natural-only mode performs no seed search. No RequestLoop, complete trained-model quality or TPS claim.":setup.short_verifier_tails?
       "Identified original three-stage draft and target-tail, finite synthetic input/cache frontier. One trained five-row draft, actual target verifier widths2/3/4/5, complete30member state, actual first-rejection continuation. EOS/bonusEOS/quota/context use actual verifier IDs/leases with explicitly controlled policies; not natural EOS, a full-model generation, acceptance-rate or TPS claim.":setup.scope);
 }
 TEST(DSparkStochasticHeadSchema,RejectsEmptySourceAndOutOfTrainingCountBeforeLookup) {

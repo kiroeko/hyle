@@ -89,6 +89,13 @@ GLM有限消费者现直接复用`RequestLoop`与`advance_request_wave`：原自
 已提交但观察失败时，下次pump只读原记录，不能重新计算／发布／抽样；退休取原Invocation完成或drain，不能用StateStore回收代替。
 [原权重CUDA组件检查](../evidence/correctness/inference-glm-request-loop-2026-10-29.json)保留初始历史与上游激活fixture，不外推完整GLM生成或多模型引擎已完成。
 
+DeepSeek Pro／正式Flash原角色组件也复用同一提交见证与RequestProgress，保留实际多token输出、Boundary与RNG标量，
+发布前执行原完整主机预检。晚观察失败只补原记录；压缩侧车仍待接入，不将此组件证明扩大为完整模型生成。
+模型测试消费者共用`model_graph_run`原Graph生命周期：原Status通过既有EvaluationFailure保留类别、native信息和上下文，
+清理结果另附真实退休事实，未知绑定器异常仍保持原类型。drain会关闭原Invocation，仅用于真实在途或已接受未成功观察的工作；
+已空闲但仍被结果借用的reset拒绝保持原权限与可恢复性，不无条件drain，也不因native退休宣称权限已撤销。
+[有限检查](../evidence/correctness/inference-multimodel-observation-2026-10-29.json)覆盖这两类失败与实际模型组件，不含设备故障注入或新吞吐结论。
+
 Graph已有多个StorageDomain／ExecutionTarget／ExecutionLane及QueueBinding的表达，一个Invocation／Completion可覆盖聚合工作，
 物理IO槽数与设备数、分片数无关。当前Backend仍只装配一个主端点及可选CPU辅助；Qwen状态集中放置，
 CUDA跨Context搬运／等待尚未接通，跨机执行也未实现。这些是当前路线限制，不写成共同请求、缓存或退休合同。

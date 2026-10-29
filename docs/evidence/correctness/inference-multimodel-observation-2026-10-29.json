@@ -1,0 +1,637 @@
+{
+  "schema": "hyle.correctness.multimodel-observation.v1",
+  "date": "2026-10-29",
+  "status": "PASS_WITH_PRESERVED_FIXTURE_REJECTION",
+  "base_commit": "df1dc67323682f7beb847c01fafc3a668fbb760d",
+  "changes": [
+    "Original formal Pro/Flash stochastic prefix and ordinary continuation share PreparedRecordCommit/RequestProgress observation, cold real multi-token storage, pre-publication complete host preflight and observation-only late failure retry.",
+    "Result records contain only actual emitted tokens, scalar Boundary and SamplingCursor; they do not own StateVersion/StateIdentity or pin historical GPU/CPU states.",
+    "DS ordinary native lifecycle now delegates to the same model_graph_run used by GLM/Kimi. Original cold ports/output facts, caller pool, integral completed counter and expert ownership remain in their original owners.",
+    "Status errors carry EvaluationFailure with existing WithContext preserving status code/native detail. Original exception is rethrown after separate original Invocation cleanup/retirement observation; foreign binder exceptions retain their own type.",
+    "Drain is limited to actual in-flight or accepted-unobserved work. An idle retained-source reset refusal does not close the slot or grant permission release."
+  ],
+  "counts": {
+    "CXX_attempts": 5,
+    "links": 5,
+    "current_consumer_TUs": 3,
+    "retained_SDK_inputs": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "full_builds": 0,
+    "downloads": 0,
+    "native_attempt_processes": 6,
+    "current_passed_processes": 4,
+    "current_passed_GTests": 6,
+    "preserved_failed_fixture_processes": 1,
+    "earlier_passed_runner_revision": 1
+  },
+  "builds": {
+    "ds": {
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-multimodel-observation-20261029\\compile\\ds\\unit.obj",
+        "bytes": 11814931,
+        "sha256": "392ac6067255e5ee91a26f2b7eb9a06ec68f4f1d74b2c64b0a7db4ef036c260f"
+      },
+      "compiles": [
+        {
+          "state": "TERMINAL",
+          "pid": 38252,
+          "started": 1793272401.6400714,
+          "seconds": 15.83333969116211,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "links": [
+        {
+          "state": "TERMINAL",
+          "pid": 28828,
+          "started": 1793272463.2424495,
+          "seconds": 1.8988494873046875,
+          "exit": 0,
+          "timed_out": false
+        }
+      ]
+    },
+    "runner": {
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-multimodel-observation-20261029\\compile\\runner\\unit.obj",
+        "bytes": 1077537,
+        "sha256": "851777022c3647edb8fea40e6666f9985b9b010e80d0d4b7852f9c4285a71463"
+      },
+      "compiles": [
+        {
+          "state": "TERMINAL",
+          "pid": 21700,
+          "started": 1793272520.7237172,
+          "seconds": 2.5176141262054443,
+          "exit": 0,
+          "timed_out": false
+        },
+        {
+          "state": "TERMINAL",
+          "pid": 16952,
+          "started": 1793272592.5810623,
+          "seconds": 2.4346730709075928,
+          "exit": 0,
+          "timed_out": false
+        },
+        {
+          "state": "TERMINAL",
+          "pid": 46512,
+          "started": 1793272918.099416,
+          "seconds": 2.490999698638916,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "links": [
+        {
+          "state": "TERMINAL",
+          "pid": 34632,
+          "started": 1793272531.9796433,
+          "seconds": 1.7930455207824707,
+          "exit": 0,
+          "timed_out": false
+        },
+        {
+          "state": "TERMINAL",
+          "pid": 41272,
+          "started": 1793272596.2309043,
+          "seconds": 1.9258713722229004,
+          "exit": 0,
+          "timed_out": false
+        },
+        {
+          "state": "TERMINAL",
+          "pid": 41720,
+          "started": 1793272921.8746333,
+          "seconds": 1.7067668437957764,
+          "exit": 0,
+          "timed_out": false
+        }
+      ]
+    },
+    "glm": {
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-multimodel-observation-20261029\\compile\\glm\\unit.obj",
+        "bytes": 45306213,
+        "sha256": "faf9b71ab495f2ba7d68566c21448a536355a8df1202d1f4efe98a221e31a7cf"
+      },
+      "compiles": [
+        {
+          "state": "TERMINAL",
+          "pid": 43548,
+          "started": 1793272475.8752136,
+          "seconds": 30.26197648048401,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "links": [
+        {
+          "state": "TERMINAL",
+          "pid": 21700,
+          "started": 1793272535.937436,
+          "seconds": 2.0187559127807617,
+          "exit": 0,
+          "timed_out": false
+        }
+      ]
+    }
+  },
+  "cases": {
+    "runner-cpu": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 13792,
+        "started": 1793272924.214499,
+        "seconds": 0.4693114757537842,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "tests": 3,
+        "failures": 0,
+        "skipped": 0,
+        "properties": {}
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-multimodel-observation-20261029\\bin\\runner.exe",
+        "bytes": 140695040,
+        "sha256": "596140f3f72912137d96b32bd4988c01802a3ce5f52ae4e123e6a82c25073988"
+      }
+    },
+    "ds-pro-cpu": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 56128,
+        "started": 1793272465.8035529,
+        "seconds": 137.5822937488556,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "tests": 1,
+        "failures": 0,
+        "skipped": 0,
+        "properties": {
+          "target_fullV1_provider": "ggml-cpu",
+          "target_fullV2_provider": "ggml-cpu",
+          "target_fullV3_provider": "ggml-cpu",
+          "target_fullV4_provider": "ggml-cpu",
+          "target_fullV5_provider": "ggml-cpu",
+          "target_fullV6_provider": "ggml-cpu",
+          "random_publications": "2",
+          "random_rejection_prefixes": "1",
+          "random_all_accepted_bonus": "0",
+          "random_target_only_continuations": "1",
+          "sampled_markov_rows": "2",
+          "random_invalid_q_retries": "0",
+          "random_cancelled_candidates": "0",
+          "random_actual_retained_tail_publications": "0",
+          "random_actual_conditional_threshold_stops": "0",
+          "random_request_committed_records": "2",
+          "random_request_observed_records": "2",
+          "random_request_family_observations": "2",
+          "random_request_record_projections": "3",
+          "random_request_first_emitted": "1",
+          "random_request_total_emitted": "2",
+          "random_request_late_observer_refusals": "1",
+          "random_request_observe_only_retries": "1",
+          "random_request_duplicate_observations": "2",
+          "actual_submissions": "35",
+          "dense_original_roles": "216",
+          "dense_original_source_bytes": "6504119672",
+          "actual_draft_episodes": "1",
+          "actual_target_rows": "4",
+          "actual_main_projection_submissions": "4",
+          "actual_main_history_submissions": "4",
+          "actual_verifier_submissions": "2",
+          "first_target_fullV_values": "387840",
+          "first_draft_fullV_values": "646400",
+          "actual_pending_feedback": "1",
+          "state_members": "31",
+          "state_backing_budget": "653500160",
+          "state_backing_peak": "116312000",
+          "target_resident_slot_bytes": "247727616",
+          "draft_resident_slot_bytes": "1238631936",
+          "actual_expert_attachments": "134",
+          "actual_missing_frontiers": "0",
+          "scope": "Original identified Pro/Flash three-stage/base fullV plus source Markov conditioned on actual sampled predecessor; common stochastic q/p acceptance, residual/bonus and complete31member model/RNG Head. Natural prefix and ordinary continuation use common original commit/observation with cold multi-token output storage; an actual post-publication observer refusal retries only the original result, without Graph, Head or RNG repetition. Invalid-q retry/cancel and immutable old readers retained. When enabled, controlled CPU seed/temperature8 bonus witness is explicit; natural-only mode performs no seed search. No RequestLoop, complete trained-model quality or TPS claim."
+        }
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-multimodel-observation-20261029\\bin\\ds.exe",
+        "bytes": 141743104,
+        "sha256": "07d1f607c36f49c8baf41a3169c605a8c87423a80d6168181a77b439747d974b"
+      }
+    },
+    "ds-flash-cpu": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 27708,
+        "started": 1793272653.9179723,
+        "seconds": 189.1552758216858,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "tests": 1,
+        "failures": 0,
+        "skipped": 0,
+        "properties": {
+          "target_fullV1_provider": "ggml-cpu",
+          "target_fullV2_provider": "ggml-cpu",
+          "target_fullV3_provider": "ggml-cpu",
+          "target_fullV4_provider": "ggml-cpu",
+          "target_fullV5_provider": "ggml-cpu",
+          "target_fullV6_provider": "ggml-cpu",
+          "actual_bonus_pending_consumed_next": "113328",
+          "random_publications": "5",
+          "random_rejection_prefixes": "1",
+          "random_all_accepted_bonus": "1",
+          "random_target_only_continuations": "3",
+          "sampled_markov_rows": "5",
+          "random_invalid_q_retries": "1",
+          "random_cancelled_candidates": "1",
+          "random_actual_retained_tail_publications": "3",
+          "random_actual_conditional_threshold_stops": "1",
+          "random_request_committed_records": "2",
+          "random_request_observed_records": "2",
+          "random_request_family_observations": "2",
+          "random_request_record_projections": "3",
+          "random_request_first_emitted": "1",
+          "random_request_total_emitted": "2",
+          "random_request_late_observer_refusals": "1",
+          "random_request_observe_only_retries": "1",
+          "random_request_duplicate_observations": "5",
+          "actual_submissions": "77",
+          "dense_original_roles": "216",
+          "dense_original_source_bytes": "3194218552",
+          "actual_draft_episodes": "3",
+          "actual_target_rows": "8",
+          "actual_main_projection_submissions": "8",
+          "actual_main_history_submissions": "8",
+          "actual_verifier_submissions": "5",
+          "first_target_fullV_values": "387840",
+          "first_draft_fullV_values": "646400",
+          "actual_pending_feedback": "3",
+          "state_members": "31",
+          "state_backing_budget": "414452992",
+          "state_backing_peak": "99648160",
+          "target_resident_slot_bytes": "94372864",
+          "draft_resident_slot_bytes": "471860224",
+          "actual_expert_attachments": "54",
+          "actual_missing_frontiers": "0",
+          "scope": "Original identified Pro/Flash three-stage/base fullV plus source Markov conditioned on actual sampled predecessor; common stochastic q/p acceptance, residual/bonus and complete31member model/RNG Head. Natural prefix and ordinary continuation use common original commit/observation with cold multi-token output storage; an actual post-publication observer refusal retries only the original result, without Graph, Head or RNG repetition. Invalid-q retry/cancel and immutable old readers retained. When enabled, controlled CPU seed/temperature8 bonus witness is explicit; natural-only mode performs no seed search. No RequestLoop, complete trained-model quality or TPS claim."
+        }
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-multimodel-observation-20261029\\bin\\ds.exe",
+        "bytes": 141743104,
+        "sha256": "07d1f607c36f49c8baf41a3169c605a8c87423a80d6168181a77b439747d974b"
+      }
+    },
+    "glm-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 23484,
+        "started": 1793272562.4999924,
+        "seconds": 153.34576272964478,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "tests": 1,
+        "failures": 0,
+        "skipped": 0,
+        "properties": {
+          "head_provider": "cublasLt",
+          "request_directory_r0_pending": "28122",
+          "request_directory_r0_committed_draws": "4",
+          "request_progress_output_counts": "2,2",
+          "request_progress_committed_observations": "2,1",
+          "request_progress_duplicate_commit_noops": "3",
+          "request_progress_full_hit_outputs": "1",
+          "request_progress_pending_only_turn_inputs": "2",
+          "request_record_committed_prefixes": "2,1",
+          "request_record_head_publications": "3",
+          "request_record_late_catchup_refusals": "1",
+          "request_record_observer_refusals": "1",
+          "request_record_projected_observations": "4",
+          "request_record_observer_retry_graphs": "0",
+          "request_record_observer_retry_head_publications": "0",
+          "request_record_observer_retry_rng_draws": "0",
+          "request_progress_scope": "Shared RequestProgress on the existing real one-emission natural K1 branch and new-request cache fork, then the two original ordinary continuations. Each finite turn has quota1; actual model selector/EOS facts are preserved. A later empty new-user suffix consumes only its actual historical pending. No extra graph, model publication, RNG address, complete GLM prompt prefill or request server is introduced.",
+          "request_directory_requests": "2",
+          "request_directory_turns": "4",
+          "request_directory_fifo": "0,1,0,1",
+          "request_directory_full_hits": "1",
+          "request_directory_evictions": "1",
+          "request_directory_same_request_restore_graphs": "0",
+          "request_directory_new_request_draws": "2",
+          "request_directory_cancelled_forks": "1",
+          "request_directory_stale_forks": "1",
+          "request_directory_retained_state_versions": "5",
+          "request_directory_current_backing_bytes": "190543788",
+          "request_directory_scope": "Original target77/NextN78 finite suffix driven by shared RequestLoop and advance_request_wave after this exact initial StateVersion and upstream fixture; N1 FIFO limits resident Heads, not all retained StateStore versions. Directory holds real complete lag0 state. New request resamples full-V pending with stream18; same request restores stream17 draw3 without sampling. Each request then consumes its own pending through actual target+NextN ordinary continuation. No arbitrary GLM prompt prefill or complete-model/server claim.",
+          "request_loop_pumps": "5",
+          "request_loop_resident_evictions": "2",
+          "request_wave_late_observer_retry": "1",
+          "original_target_roles": "1559",
+          "original_target_source_bytes": "9872042432",
+          "actual_target_calls": "5",
+          "actual_target_submissions": "10",
+          "actual_target_policy_submissions": "5",
+          "accepted_target_conditioned_repairs": "0",
+          "actual_accepted_kv_repair_submissions": "0",
+          "stochastic_policy": "Actual NextN q samples proposal at draw0; actual target p0/q/p1 consumes accept1/final2. Same complete StateHead publishes pending and Cursor. Cancellation/stale publish advances0, successful K1 advances3; real target-only continuation consumes actual residual/bonus, samples its target pending and atomically advances one additional draw.",
+          "random_accepted": "0",
+          "random_rejected": "1",
+          "random_actual_proposal": "42456",
+          "random_committed_draws": "4",
+          "actual_nextn_steps": "5",
+          "actual_catchups": "0",
+          "actual_target_conditioned_repairs": "0",
+          "state_budget_bytes": "446998016",
+          "peak_state_backing_bytes": "291742452",
+          "scope": "Finite original target77+NextN78 natural K1 plus two-request/two-turn typed directory and FIFO adapter; original request tokens/pending/draw4 unchanged, second request independently resamples and continues actual target+NextN from the complete cached boundary. Previous layer input/residual/upstream74 index selection and initial history remain explicit fixtures. Not arbitrary prompt prefill, full-model generation, task quality, acceptance-rate measurement, TPS or other quantized source coverage."
+        }
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-multimodel-observation-20261029\\bin\\glm.exe",
+        "bytes": 142227968,
+        "sha256": "6b8a59fbd01fce93a9d5b7648b7d39d3a536c7ec496de1f9cb57ca5ce913ba6b"
+      }
+    }
+  },
+  "previous_numeric_comparisons": {
+    "ds-pro-cpu": {
+      "previous_result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-random-mtp-20261024\\pro-natural\\results.xml",
+        "bytes": 3218,
+        "sha256": "5095a1bf9619f5f376e56ba672c1c3b82a9ffc104b18d06a9931c676d25f9e34"
+      },
+      "compared_numeric_fields": 25,
+      "different": {
+        "state_backing_budget": [
+          "606838272",
+          "653500160"
+        ]
+      }
+    },
+    "ds-flash-cpu": {
+      "previous_result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-random-mtp-20261024\\attempt2-source\\results.xml",
+        "bytes": 3235,
+        "sha256": "983cc4199bf5194a0d1f5f3d2e2f84305019063a3bf28859d3ebb98e29ba3889"
+      },
+      "compared_numeric_fields": 26,
+      "different": {
+        "random_publications": [
+          "4",
+          "5"
+        ],
+        "random_target_only_continuations": [
+          "2",
+          "3"
+        ],
+        "sampled_markov_rows": [
+          "3",
+          "5"
+        ],
+        "actual_submissions": [
+          "64",
+          "77"
+        ],
+        "actual_draft_episodes": [
+          "2",
+          "3"
+        ],
+        "actual_target_rows": [
+          "7",
+          "8"
+        ],
+        "actual_main_projection_submissions": [
+          "7",
+          "8"
+        ],
+        "actual_main_history_submissions": [
+          "7",
+          "8"
+        ],
+        "actual_verifier_submissions": [
+          "4",
+          "5"
+        ],
+        "actual_pending_feedback": [
+          "2",
+          "3"
+        ],
+        "state_backing_budget": [
+          "364702464",
+          "414452992"
+        ],
+        "state_backing_peak": [
+          "99648096",
+          "99648160"
+        ]
+      }
+    },
+    "glm-cuda": {
+      "previous_result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-request-loop-20261029\\runs\\glm-cuda\\attempt1\\results.xml",
+        "bytes": 5928,
+        "sha256": "99b012bbcd1fc72234ed584c840b1115ac8b3650298b2ada304890c5074ba5ad"
+      },
+      "compared_numeric_fields": 41,
+      "different": {}
+    }
+  },
+  "attempts": {
+    "runs\\ds-flash-cpu\\attempt1": {
+      "state": "TERMINAL",
+      "pid": 27708,
+      "started": 1793272653.9179723,
+      "seconds": 189.1552758216858,
+      "exit": 0,
+      "timed_out": false
+    },
+    "runs\\ds-pro-cpu\\attempt1": {
+      "state": "TERMINAL",
+      "pid": 56128,
+      "started": 1793272465.8035529,
+      "seconds": 137.5822937488556,
+      "exit": 0,
+      "timed_out": false
+    },
+    "runs\\glm-cuda\\attempt1": {
+      "state": "TERMINAL",
+      "pid": 23484,
+      "started": 1793272562.4999924,
+      "seconds": 153.34576272964478,
+      "exit": 0,
+      "timed_out": false
+    },
+    "runs\\runner-cpu\\attempt1": {
+      "state": "TERMINAL",
+      "pid": 36236,
+      "started": 1793272534.3582656,
+      "seconds": 0.42368030548095703,
+      "exit": 1,
+      "timed_out": false
+    },
+    "runs\\runner-cpu\\resources": {
+      "state": "TERMINAL",
+      "pid": 32684,
+      "started": 1793272598.8371944,
+      "seconds": 0.43833446502685547,
+      "exit": 0,
+      "timed_out": false
+    },
+    "runs\\runner-cpu\\retained": {
+      "state": "TERMINAL",
+      "pid": 13792,
+      "started": 1793272924.214499,
+      "seconds": 0.4693114757537842,
+      "exit": 0,
+      "timed_out": false
+    }
+  },
+  "historical_comparison_note": "The Oct24 records are historical, not a paired fresh baseline. Pro keeps its prior numeric facts except the older state-budget value. The older Flash record ran four rounds; the current parent already includes the threshold round and five publications (parent-model-source.cc preserves it), so its work/counter differences are not attributed to this slice. State-budget/peak differences are retained, not claimed as measured memory changes from this slice. The current state-budget formula and model Graph call sequence are unchanged by this slice. GLM numeric facts match the previous current-SDK RequestLoop run.",
+  "fixture_correction": "First runner process used new test Invocations without the original owned ResourceOptions declaration. All three cases were refused at bind, before their intended scenario. Added the declaration at initial/fresh slot creation only; product Graph and expected failure/recovery checks unchanged. Then enhanced the third existing test with actual retained GraphOutput/Lease/Completion cleanup refusal and reran only that small runner TU.",
+  "boundaries": [
+    "Pro and formal Flash real source roles, finite initial history/upstream fixture and 31-member complete state; no arbitrary prompt, complete large-model generation, task quality, acceptance rate or throughput claim.",
+    "Only the two named CPU DS cases ran. No new CUDA stochastic DS case, compressed GGUF/BF16 sidecar observation journey or multi-GPU implementation is certified.",
+    "CPU checked Gather produces a real task OutOfRange failure; this is not injected CUDA/driver failure. Machine native detail preservation uses existing Status.WithContext, not a new Status representation.",
+    "CPU and CUDA libraries coexist in the reused SDK closure. CPU cases do not prove a pure CPU-only distribution package.",
+    "GLM CUDA repeated the original finite RequestLoop/component case with the current shared runner. Kimi shared-header usage is source-reviewed, not a newly run Kimi consumer.",
+    "Native processes overlapped for correctness verification. Their wall times are not performance measurements.",
+    "Current DS acquisitions report zero missing frontiers. Cached expert subsets are not claimed to cover the complete expert domain; WAIT_FOR_EXPERTS remains0 and no download helper was run.",
+    "CMake test registration is source-reviewed; listed consumers were incrementally compiled/linked, without full CMake reconfigure, full SDK build or CI."
+  ],
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\model_graph_run.h",
+      "bytes": 5285,
+      "sha256": "6642c8d2f20cd5f3427cd7fba1b161e32d168b9d73f36eb94f488193ebcce0ea"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\model_graph_run_test.cc",
+      "bytes": 10896,
+      "sha256": "8e6fc7a0130c78f6efded38078d30a7facd0737ee9deec5b6852999eb7610e0e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_native_consumer.h",
+      "bytes": 12914,
+      "sha256": "f3d1f4a44cbdd08af55c58bc1890a7a490431eee37999f27a900f04ae2b087cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_pro_mtp_state_consumer_test.cc",
+      "bytes": 94342,
+      "sha256": "f203ec7effb35c86cb4bc0205267517b32485eb5e6f89fe200ed5ca2254662da"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_mtp_state_consumer_test.cc",
+      "bytes": 217462,
+      "sha256": "9442b5420b9c85ce72067b919b7aa0f215d6e1302a541e138ba286ae554990d3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\CMakeLists.txt",
+      "bytes": 11982,
+      "sha256": "5d8bf4fc83ef57d17ec3eb31c6996a3a90991c6d75a3f31c5aece1951a1ce91d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\commit_observation.h",
+      "bytes": 7343,
+      "sha256": "ef12a0806138813b728b8307cea925b7aab5568fc35b23d7b87182210e5fe7a2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\request_progress.h",
+      "bytes": 16517,
+      "sha256": "dabf7ab001d5ba473c4447f23cab54ce857c645d2dec0cc1865a1729345dbafb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\evaluation_failure.h",
+      "bytes": 1792,
+      "sha256": "8459a891c80ef1c5bf2fb0c8dd51fc3a1530260a8e2225c15150de808e164841"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\retirement_observation.h",
+      "bytes": 942,
+      "sha256": "984af01e375f8d7f9b2b44862fd341b84928dac43f85b3c53c68d09e57c7fafe"
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-multimodel-observation-2026-10-29.zip",
+    "bytes": 403789,
+    "sha256": "bb2c1aaad484d8cc780f79218977b0452e392e220d995f38a35ead6743f27d45"
+  },
+  "cleanup": {
+    "status": "PASS",
+    "files": 11,
+    "bytes": 471377460.0,
+    "removed": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-multimodel-observation-20261029\\bin\\ds.exe",
+        "bytes": 141743104,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-multimodel-observation-20261029\\bin\\ds.exp",
+        "bytes": 24979,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-multimodel-observation-20261029\\bin\\ds.lib",
+        "bytes": 41208,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-multimodel-observation-20261029\\bin\\glm.exe",
+        "bytes": 142227968,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-multimodel-observation-20261029\\bin\\glm.exp",
+        "bytes": 24980,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-multimodel-observation-20261029\\bin\\glm.lib",
+        "bytes": 41298,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-multimodel-observation-20261029\\bin\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-multimodel-observation-20261029\\bin\\runner.exe",
+        "bytes": 140695040,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-multimodel-observation-20261029\\bin\\runner.exp",
+        "bytes": 24987,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-multimodel-observation-20261029\\bin\\runner.lib",
+        "bytes": 41560,
+        "removed": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-request-loop-20261029\\compile\\glm\\unit.obj",
+        "bytes": 45305552,
+        "removed": true
+      }
+    ]
+  }
+}

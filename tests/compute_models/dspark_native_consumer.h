@@ -14,6 +14,7 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+#include "model_graph_run.h"
 #include "model_resident_fragment.h"
 #include "hyle/graph/weight_binding.h"
 #if defined(HYLE_TEST_DSPARK_STATE_CPU)
@@ -34,11 +35,10 @@ namespace m=hyle::mem;
 namespace sem=d5_qwen38_24t_semantic_fragments;
 using Bytes=std::vector<std::byte>;
 template<class T> T take(hyle::Result<T> value,const char *where) {
-  if(!value) throw std::runtime_error(std::string(where)+": "+std::string(value.error().message()));
-  return std::move(*value);
+  return model_graph_run::detail::take<T>(std::move(value),where);
 }
 inline void check(hyle::Status status,const char *where) {
-  if(!status.ok()) throw std::runtime_error(std::string(where)+": "+std::string(status.message()));
+  model_graph_run::detail::check(std::move(status),where);
 }
 template<class T> Bytes bytes(std::span<const T> value) {
   auto raw=std::as_bytes(value);return {raw.begin(),raw.end()};
@@ -64,9 +64,12 @@ inline c::TensorDesc dense(c::DataType type,std::initializer_list<std::int64_t> 
 struct Run final {
   g::Graph graph;
   std::vector<c::TensorDesc> inputs,outputs;
+  std::vector<model_graph_run::Port> input_ports;
+  std::vector<model_graph_run::OutputPort> output_ports;
   g::CompiledGraph compiled;
   g::Invocation invocation;
   c::LeasePool pool;
+  hyle::inference::RetirementObservation last_failure_retirement{};
 };
 struct Backend final {
   c::Context &context;
@@ -90,8 +93,10 @@ struct Backend final {
   Run prepare(g::Graph graph,std::span<const g::ConstantBinding> constants={},std::uint32_t generations=4,
       std::optional<c::WorkloadContext> actual_workload=std::nullopt) {
     Run result{.graph=std::move(graph)};
-    for(std::size_t i=0;i<result.graph.input_count();++i)
+    for(std::size_t i=0;i<result.graph.input_count();++i) {
       result.inputs.push_back(take(result.graph.input_description(i),"input description"));
+      result.input_ports.push_back({take(result.graph.input_id(i),"input ID"),result.inputs.back()});
+    }
     std::size_t capacity=0;
     for(std::size_t i=0;i<result.graph.output_count();++i) {
       result.outputs.push_back(take(result.graph.output_description(i),"output description"));
@@ -102,8 +107,8 @@ struct Backend final {
     result.compiled=take(compile(result.graph,{.constants=constants,
         .workload=*workload}),"ordinary model compile");
     for(std::size_t i=0;i<result.outputs.size();++i)
-      if(take(result.compiled.executable.output_ownership(i),"persistent component output ownership")!=g::OutputOwnership::kCaller)
-        throw std::runtime_error("component result must explicitly materialize independent caller storage, output "+std::to_string(i));
+      result.output_ports.push_back(model_graph_run::prepare_output(result.compiled,
+          {take(result.graph.output_id(i),"output ID"),result.outputs[i]}));
     result.invocation=take(result.compiled.executable.create_invocation({.resources=g::ResourceOptions{}}),"ordinary model Invocation");
     result.pool=take(c::LeasePool::create(owner.ref(),capacity*generations,
         {.max_blocks=std::uint32_t(result.outputs.size())*generations,.backing_alignment=256}),"independent result generations");
@@ -112,32 +117,8 @@ struct Backend final {
   std::vector<c::ReadLease> execute(Run &run,std::span<const c::ReadLease> inputs,
       std::span<const std::size_t> externally_bound={},
       const std::function<void(g::Invocation&)> &bind_external={}) {
-    if(inputs.size()!=run.inputs.size()) throw std::runtime_error("actual model input count");
-    std::vector<bool> external(inputs.size(),false);
-    for(const auto index:externally_bound) {
-      if(index>=external.size()||external[index])throw std::runtime_error("resident input binding index");
-      external[index]=true;
-    }
-    if(!externally_bound.empty()&&!bind_external)throw std::runtime_error("resident input generation binder missing");
-    // If any binding/preparation fails, withdraw all ordinary and resident
-    // permissions before the caller can recycle a compact weight generation.
-    struct ResetOnFailure {g::Invocation &invocation;bool done=false;~ResetOnFailure(){if(!done)invocation.reset().IgnoreError();}} reset{run.invocation};
-    for(std::size_t i=0;i<inputs.size();++i)if(!external[i])
-      check(run.invocation.bind(take(run.graph.input_id(i),"input ID"),run.inputs[i],inputs[i]),"bind direct producer lease");
-    if(bind_external)bind_external(run.invocation);
-    for(std::size_t i=0;i<run.outputs.size();++i)
-      check(run.invocation.bind(take(run.graph.output_id(i),"output ID"),run.outputs[i],
-          take(run.pool.allocate(take(run.outputs[i].required_bytes(),"result bytes")),"caller result writer")),"bind output writer");
-    const std::array queues{g::QueueBinding{g::ExecutionLaneId{0},&queue}};
-    check(run.invocation.prepare_replay(queues,{.mode=g::ReplayMode::kCommands,.host_wait=g::HostWaitPolicy::kAllow}),"prepare one complete DAG");
-    {auto done=take(run.invocation.submit(queues),"strict model submit");check(done.wait(),"actual terminal retirement");}
-    ++submissions;
-    std::vector<c::ReadLease> result;
-    for(std::size_t i=0;i<run.outputs.size();++i) {
-      auto output=take(run.invocation.result(take(run.graph.output_id(i),"published ID")),"successful model result");
-      result.push_back(take(output.storage_lease(),"independent result lease"));
-    }
-    check(run.invocation.reset(),"withdraw Invocation permissions");reset.done=true;EXPECT_FALSE(run.invocation.submit(queues));return result;
+    return model_graph_run::execute(run.invocation,run.pool,queue,run.input_ports,inputs,
+        run.output_ports,submissions,externally_bound,bind_external,&run.last_failure_retirement);
   }
 };
 
