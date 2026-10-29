@@ -164,8 +164,14 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       requests.push_back({selected[member], std::span(&pending[member], 1)}); outputs.push_back({.session = selected[member]});
     }
     const auto role = selected[0]->head->draft->lag ? q::GraphRole::kMtpCatchupRound : q::GraphRole::kMtpRound;
+    const auto draft_rows_before = model.submitted_draft_rows;
+    const std::array session_rows_before{sessions[0]->submitted_draft_rows, sessions[1]->submitted_draft_rows};
     model.prepare_evaluations(requests, nullptr, role); if (mixed) inspect_mixed();
     model.submit_evaluations(); ++target_submissions; mixed_submissions += mixed;
+    if (mixed) require(model.submitted_draft_rows == draft_rows_before + 3 &&
+        sessions[0]->submitted_draft_rows == session_rows_before[0] + 1 &&
+        sessions[1]->submitted_draft_rows == session_rows_before[1] + 2,
+        "mixed-lag submission counted physical padding or lost an original member's active draft rows");
     require(model.active_step->submitted && model.active_step->members.size() == selected.size(), "controlled K1 lost its actual submitted cohort");
     std::vector<std::int32_t> next(selected.size(), -1);
     model.finish_selected_evaluations(outputs, next,

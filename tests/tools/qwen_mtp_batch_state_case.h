@@ -222,6 +222,8 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   // committed Sessions and this private draft prefix must remain unchanged.
   {
     const std::array epochs{sessions[0]->head.epoch(), sessions[1]->head.epoch()};
+    const auto draft_rows_before = model.submitted_draft_rows;
+    const std::array session_rows_before{sessions[0]->submitted_draft_rows, sessions[1]->submitted_draft_rows};
     q::DraftWork work; work.state = q::Model::fork_draft(*original[0]->draft);
     const auto frontier = work.state.frontier;
     const auto old_key = frame(model, work.state.paged.frames[0], frontier);
@@ -237,6 +239,9 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       rejected = true;
     }
     require(rejected, "NextN checked embedding accepted a negative token ID");
+    require(model.submitted_draft_rows == draft_rows_before + 1 &&
+        session_rows_before == std::array{sessions[0]->submitted_draft_rows, sessions[1]->submitted_draft_rows},
+        "NextN accepted failure lost its submitted row or attributed standalone work to a Session");
     auto &program = *model.draft_programs.at({1, true, 0});
     require(!program.guard.execution.has_completion() && !program.guard.execution.cleanup_pending &&
         !program.hidden_transactions.bound() && !program.carrier.pending(),
@@ -250,6 +255,9 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
           "NextN failure changed a committed Session/checkpoint/epoch/RNG");
     const std::array valid{original[0]->next_id};
     const auto proposal = model.execute_draft(work, valid, shifted, true, identity);
+    require(model.submitted_draft_rows == draft_rows_before + 2 &&
+        session_rows_before == std::array{sessions[0]->submitted_draft_rows, sessions[1]->submitted_draft_rows},
+        "NextN valid retry counted its original failed row twice or attributed standalone work to a Session");
     require(proposal.id >= 0 && proposal.id < model.vocabulary && proposal.hidden.valid() &&
         work.state.frontier == frontier + 1 && !program.guard.execution.has_completion() &&
         !program.guard.execution.cleanup_pending && !program.hidden_transactions.bound() && !program.carrier.pending(),

@@ -1,0 +1,342 @@
+{
+  "schema": "hyle.correctness.draft-work-accounting.v1",
+  "date": "2026-10-30",
+  "status": "ORIGINAL_SUBMIT_ACCOUNTING_IMPLEMENTED_AND_FINITE_CHECKED",
+  "base_commit": "290ec8c69",
+  "contract": {
+    "scope": "admitted_active_input_rows",
+    "definition": "Active draft inputs in original Graph submits that successfully return Completion, counted once at that submit, before wait/capture/observation/publication.",
+    "excluded": [
+      "Physical padding",
+      "Provider-internal preparation/JIT",
+      "Partial submit that does not return Completion",
+      "Hardware kernel FLOPs"
+    ],
+    "shared": "Frozen per-member original Append query_rows, checked against the combined layout before submit.",
+    "private": "Cold exact DraftProgram.rows for proposal/threshold/repair.",
+    "failure": "Later failure, cancellation or successful discard does not erase accepted work; retirement/observation retries do not add it again.",
+    "ownership": "Existing Model/Session monotonic scalars; original Session retirement and restore call scopes attribute request totals. No new owner, executor, allocation or RNG/snapshot payload.",
+    "ledger": "Original draft_rows, acceptance ledger, pending, state and RNG semantics remain unchanged."
+  },
+  "implementation": {
+    "sources": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+        "bytes": 634292,
+        "sha256": "24c944f654545b84b8fea719375fd1af916001a52059a1f96b0fea216cc92084"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_natural_relay_case.h",
+        "bytes": 22697,
+        "sha256": "ad1ef81e322c708f169f88ff4b3bcd117211503ac860981e5b4a1b6c79ed41e1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_batch_state_case.h",
+        "bytes": 23318,
+        "sha256": "a8c84a9a680692e96c8410a609634d2b3395ab1b6e361112b04a758570f10191"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_mixed_lag_case.h",
+        "bytes": 29835,
+        "sha256": "90dc24a2a6b1580c5c67fd02d4009815de19c64bd1c23fed0a0ae0c2a51b5649"
+      }
+    ],
+    "diff": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\product.diff",
+      "bytes": 26616,
+      "sha256": "b1c9f9eb1336851e41761162a3ce15a181ce63503f86f9bf22677458a235da7b"
+    },
+    "sdk_CXX_compiles": 0,
+    "retained_SDK_engine_objects": 227,
+    "current_consumer_TUs": 3,
+    "consumer_CXX_invocations": 4,
+    "note": "Natural wrapper recompiled once after adding finite failure/padding assertions; no first native run used the earlier natural object.",
+    "product_NVCC_compiles": 0,
+    "downloads": 0,
+    "current_link_base": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\model-link-base.json",
+      "bytes": 99156,
+      "sha256": "e366ce6b8f15975595f8be336c2d0976ffda614ca6b1506e5104db94b286f52d"
+    }
+  },
+  "checks": {
+    "analysis": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\analysis.json",
+      "bytes": 8052,
+      "sha256": "630a7e1b95f0a58d68c9d0f4cb1368e3acb165082a046a77f3a41fb19777ae4c"
+    },
+    "native_cases": {
+      "natural": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\runs\\natural\\attempt1\\report.json",
+        "bytes": 7217,
+        "sha256": "d289197cdf833a531d3c2082da5dce6e605028b15d59ee9940db8e6828cd7813"
+      },
+      "ordinary": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\runs\\ordinary\\attempt1\\report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      },
+      "single-auto": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\runs\\single-auto\\attempt1\\report.json",
+        "bytes": 82955,
+        "sha256": "28f90c7823f70cda81405295c148937fc6586b952319eac2b6f35fabbb149bcc"
+      },
+      "single-off": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\runs\\single-off\\attempt1\\report.json",
+        "bytes": 82295,
+        "sha256": "4555b76e3e075f9064f4c1ada245a372b2d566e3fc108ecad0ba171f59faf04a"
+      },
+      "two-turn-auto": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\runs\\two-turn-auto\\attempt1\\report.json",
+        "bytes": 153003,
+        "sha256": "93f861566248e2b30041a0475137562d14a71fe6c2b31ab99457254268fa3f05"
+      },
+      "two-turn-off": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\runs\\two-turn-off\\attempt1\\report.json",
+        "bytes": 152341,
+        "sha256": "b739bfb9534f9d69cbf9a6e08af06e1cd576d5e877ab2437b61be8e3eb3c7684"
+      },
+      "recursive": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\runs\\recursive\\attempt1\\report.json",
+        "bytes": 69104,
+        "sha256": "29b27114157bee4554a95c98e6d2a5225ff4669886a64af48792121ade425a53"
+      },
+      "threshold": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\runs\\threshold\\attempt1\\report.json",
+        "bytes": 114508,
+        "sha256": "ef59c8001022833bfd72f0c582493f0e90a0765156926f915120d040a0fa45be"
+      },
+      "batch": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\runs\\batch\\attempt1\\report.json",
+        "bytes": 1567,
+        "sha256": "f78c48cdff3cac560ab454be7867884897a6933cd7dc1801be73de9123640242"
+      },
+      "mixed": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\runs\\mixed\\attempt1\\report.json",
+        "bytes": 3294,
+        "sha256": "495e82c1d203db30c4b026a3f6da27594fdefd563aec988922bf7129788489f5"
+      },
+      "restore": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\runs\\restore\\attempt1\\report.json",
+        "bytes": 69795,
+        "sha256": "4c0b945f3fdc4785f43da8eb1ae297ea742e762cbcfa4df9fc3d8da2238a7125"
+      }
+    },
+    "rows": {
+      "single-auto": {
+        "generated_tokens": 64,
+        "draft_rounds": 34,
+        "actual_draft_rows": 220,
+        "prefill_draft_rows": 154,
+        "draft_rows": 62,
+        "actual_target_rows": 226,
+        "draft_program_graph_calls": 0,
+        "actual_restored_draft_rows": 0,
+        "restore_count": 0,
+        "overlap_successor_discards": 2
+      },
+      "single-off": {
+        "generated_tokens": 64,
+        "draft_rounds": 34,
+        "actual_draft_rows": 216,
+        "prefill_draft_rows": 154,
+        "draft_rows": 62,
+        "actual_target_rows": 222,
+        "draft_program_graph_calls": 0,
+        "actual_restored_draft_rows": 0,
+        "restore_count": 0,
+        "overlap_successor_discards": 0
+      },
+      "two-turn-auto": {
+        "generated_tokens": 128,
+        "draft_rounds": 66,
+        "actual_draft_rows": 438,
+        "prefill_draft_rows": 310,
+        "draft_rows": 124,
+        "actual_target_rows": 445,
+        "draft_program_graph_calls": 0,
+        "actual_restored_draft_rows": 0,
+        "restore_count": 0,
+        "overlap_successor_discards": 2
+      },
+      "two-turn-off": {
+        "generated_tokens": 128,
+        "draft_rounds": 66,
+        "actual_draft_rows": 434,
+        "prefill_draft_rows": 310,
+        "draft_rows": 124,
+        "actual_target_rows": 441,
+        "draft_program_graph_calls": 0,
+        "actual_restored_draft_rows": 0,
+        "restore_count": 0,
+        "overlap_successor_discards": 0
+      },
+      "recursive": {
+        "generated_tokens": 64,
+        "draft_rounds": 27,
+        "actual_draft_rows": 291,
+        "prefill_draft_rows": 154,
+        "draft_rows": 137,
+        "actual_target_rows": 234,
+        "draft_program_graph_calls": 80,
+        "actual_restored_draft_rows": 0,
+        "restore_count": 0,
+        "overlap_successor_discards": 0
+      },
+      "threshold": {
+        "generated_tokens": 64,
+        "draft_rounds": 50,
+        "actual_draft_rows": 286,
+        "prefill_draft_rows": 154,
+        "draft_rows": 132,
+        "actual_target_rows": 217,
+        "draft_program_graph_calls": 110,
+        "actual_restored_draft_rows": 0,
+        "restore_count": 0,
+        "overlap_successor_discards": 0
+      },
+      "restore": {
+        "generated_tokens": 32,
+        "draft_rounds": 14,
+        "actual_draft_rows": 968,
+        "prefill_draft_rows": 618,
+        "draft_rows": 28,
+        "actual_target_rows": 972,
+        "draft_program_graph_calls": 0,
+        "actual_restored_draft_rows": 322,
+        "restore_count": 2,
+        "overlap_successor_discards": 0
+      }
+    },
+    "request_totals_equal_model": true,
+    "complete_non_timing_comparisons": [
+      {
+        "case": "single-auto",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-source-binding-20261030\\runs\\cli\\abba-2\\report.json",
+          "bytes": 82744,
+          "sha256": "74f3d6af550c5f6670a220b88afa735b1effb852fcf33a2bb6118c2b430d2949"
+        },
+        "differences": []
+      },
+      {
+        "case": "two-turn-auto",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\peer-window\\two-turn-timing\\02-hyle_mtp\\stdout.log",
+          "bytes": 82186,
+          "sha256": "9e8253b24422f1ec99681d4069bcda4448460a0cfb35db59e5005fe72e6fde1b"
+        },
+        "differences": []
+      },
+      {
+        "case": "natural",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-source-binding-20261030\\runs\\natural\\attempt1\\report.json",
+          "bytes": 7117,
+          "sha256": "b64a3319790522ec54f39d16a61d13ef62a81a5c7aa573fe2fe3b27912ef95c8"
+        },
+        "differences": []
+      },
+      {
+        "case": "ordinary",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-source-binding-20261030\\runs\\ordinary\\attempt2\\report.json",
+          "bytes": 5324,
+          "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+        },
+        "differences": []
+      }
+    ],
+    "natural_accounting": {
+      "auto_actual_draft_rows": 195,
+      "discarded_draft_rows": 2,
+      "serial_actual_draft_rows": 193
+    },
+    "failure": "Original checked negative-ID NextN submit counts1; valid retry totals2; standalone work does not increment unrelated Session counters.",
+    "padding": "Original mixed-lag physical4 counts only3active draft rows, attributed1/2 to original Sessions.",
+    "restore": "Two real evictions/rebuilds:968 total=484+484 request rows, including322 restore rows exactly once."
+  },
+  "limits": [
+    "No new peer, throughput ranking or memory window.",
+    "MTP nonzero late observer retry is source-reviewed, not directly exercised by a new native injection.",
+    "K2 and threshold complete consumers passed; this is not exhaustive all-model/platform coverage."
+  ],
+  "performance_claim": false,
+  "prior_report_correction": "Old default-auto single/two-turn216/434 excluded4 discarded draft rows; current observed totals220/438. Old timing still includes that work; this does not change historical throughput.",
+  "analysis_attempt": "First offline comparison selected normalized peer consumer-result with extra adapter keys; corrected to original producer stdout. Native consumers were not rerun and no non-time product checks were relaxed.",
+  "cleanup": {
+    "script": {
+      "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+      "bytes": 1736,
+      "sha256": "b5c4cd5a2d11b07c4894b27126cfb9070a75174e95914fafb6840797e374419e"
+    },
+    "manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\cleanup-targets.json",
+      "bytes": 2853,
+      "sha256": "cce3b300e58f04d91fbec1164f241b682f7f1eb8379a97ee2a005e88bc0500ad"
+    },
+    "result": {
+      "status": "REMOVED_EXACT_FLAT_BATCH_IMAGES",
+      "files": 11,
+      "targets": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\bin\\cli.exe",
+          "bytes": 142989824,
+          "sha256": "099aaa98bb8617e9e47ddd1087e03fe751323b6e5e1542c07d73c1ea003d79cf"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\bin\\cli.exp",
+          "bytes": 24974,
+          "sha256": "1cf36d62f56b950a54dff6486b9e2cf9debccfbc32e765a92e2c5ea2151ff38f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\bin\\cli.lib",
+          "bytes": 41298,
+          "sha256": "b662cefece8100e93e3ba72f5070ea135ed01f8a16f30232a1622f1a69a4e504"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\bin\\hyle_ggml_cpu_gdn_scale_v3.dll",
+          "bytes": 1206784,
+          "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\bin\\natural.exe",
+          "bytes": 143263744,
+          "sha256": "bde9458d9fe5003a9dc71352b7305411829621dbab5b6fea32c24466fb387668"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\bin\\natural.exp",
+          "bytes": 24982,
+          "sha256": "e1721b11d03986ffb1b08d920d0750cd063ae42702246b8dd547c73c7a64e880"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\bin\\natural.lib",
+          "bytes": 41650,
+          "sha256": "58dc8cacc5b9fce9f3b071d7889ad9e8f2fcb6eccb176279b97d0075250b2f5e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\bin\\ordinary.exe",
+          "bytes": 142962688,
+          "sha256": "4285c860b576df42e204ca6da4f412745b1d1dd230ae3b4568814002bb57c082"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\bin\\ordinary.exp",
+          "bytes": 24985,
+          "sha256": "5cc7f04d454ce468a966a79a8b1a8ae7596fec8d7229051916212063b0c86dad"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\bin\\ordinary.lib",
+          "bytes": 41736,
+          "sha256": "b48e083b9ce39eb6f82dd55dba602a320b716d6c6113e731c1094b8446220b32"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-conditional-graph-20261030\\bin\\probe.exe",
+          "bytes": 178176,
+          "sha256": "e18b1865e65f956c09c6cf15e55b36c53b6b53ec09aa523d49b0f3db696aeca6"
+        }
+      ],
+      "bytes": 430800841.0
+    }
+  },
+  "evidence_archive": "inference-draft-accounting-2026-10-30.zip"
+}

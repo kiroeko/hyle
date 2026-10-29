@@ -22,13 +22,14 @@ struct Result final {
   std::vector<Batch> batches;
   std::size_t submits = 0, source_submits = 0, pending_pairs = 0, deferred_waves = 0,
       reserved_two_grants = 0, successors = 0, publications = 0, discards = 0, refusals = 0,
-      accepted_drafts = 0, rejected_drafts = 0;
+      accepted_drafts = 0, rejected_drafts = 0, actual_draft_rows = 0, discarded_draft_rows = 0;
   bool stopped = false;
 };
 
 inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, bool overlap) {
   require(!model.active_step && !model.successor_step && !model.carrier_borrowed && !model.snapshot_versions.live,
       "natural K1 journey started with a retained original episode or state");
+  const auto submitted_draft_begin = model.submitted_draft_rows;
   const std::array turns{i::GenerationTurn{std::vector<std::int32_t>(prompt.begin(), prompt.end()), outputs}};
   std::vector<q::GenerationRequest> requests;
   requests.reserve(1); requests.emplace_back(overlap ? "natural-source" : "natural-serial", prompt,
@@ -45,6 +46,11 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
   i::RequestLoop loop; loop.prepare(1, 1);
   q::GenerationContinuation continuation; continuation.enabled = overlap; continuation.prepare(1);
   Result result; result.batches.reserve(outputs * 2);
+  // Borrow only each accepted Append's immutable geometry, without retaining
+  // an episode or Source. Match it to the existing ordered retirement callback.
+  struct SubmittedDraft final { std::size_t rows; bool successor; };
+  std::vector<SubmittedDraft> submitted_drafts; submitted_drafts.reserve(outputs * 2);
+  std::size_t retired_submissions = 0;
   std::vector<std::weak_ptr<q::StepSources>> sources; sources.reserve(outputs * 2);
   std::size_t observed = 0, emitted = 0, reserved = 0, additional = 0;
   hyle::util::ScopeGuard cleanup{[&]() noexcept {
@@ -71,6 +77,11 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
         "natural K1 submit callback did not observe the original accepted target");
     const bool successor = model.successor_step && model.successor_step->submitted;
     const auto &new_step = successor ? *model.successor_step : *model.active_step;
+    const auto draft_rows = new_step.draft_layout.facts().query_rows;
+    require(new_step.members.size() == 1 && draft_rows > 0 &&
+        new_step.members.front().draft_layout.facts().query_rows == draft_rows,
+        "natural K1 accepted submission lost its original member Append geometry");
+    submitted_drafts.push_back({draft_rows, successor});
     if (new_step.execution.sources) { ++result.source_submits; remember_source(new_step); }
     if (!successor) return;
     const auto &a = *model.active_step; const auto &b = *model.successor_step;
@@ -89,7 +100,13 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
         facts.completion == q::TextCompletion::kEmitNext && facts.active_rows <= facts.physical_rows,
         "natural K1 batch lost its original request, completion or physical work");
     const auto &call = facts.members.front();
+    require(retired_submissions < submitted_drafts.size(),
+        "natural K1 retirement had no original accepted submission");
+    const auto submitted_draft = submitted_drafts[retired_submissions++];
     if (call.disposition == q::EvaluationDisposition::kCancelled) {
+      require(submitted_draft.successor && call.generation && submitted_draft.rows == 2,
+          "natural K1 discarded batch was not an actual two-row successor Append");
+      result.discarded_draft_rows = q::cache::add(result.discarded_draft_rows, submitted_draft.rows);
       result.batches.push_back({observed, call.quota, reserved, additional, 0, 0, 0, call.generation, true});
       return;
     }
@@ -161,8 +178,12 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
   }
   require(request.progress.request_done() && result.final_state && !request.session &&
       observed == request.ledger->committed_count && observed == request.progress.observed_commits() &&
-      emitted == request.progress.generated.size() && delivery.pending(request.progress.generated).empty(),
+      emitted == request.progress.generated.size() && delivery.pending(request.progress.generated).empty() &&
+      retired_submissions == submitted_drafts.size(),
       "natural K1 request finished without its complete observed outputs, ledger or terminal state");
+  result.actual_draft_rows = model.submitted_draft_rows - submitted_draft_begin;
+  require(request.actual_draft_rows() == result.actual_draft_rows,
+      "natural K1 request retirement lost or duplicated its original submitted draft rows");
   result.ids = request.progress.generated;
   result.records.assign(request.ledger->records.begin(), request.ledger->records.begin() + observed);
   result.successors = continuation.successor_submissions; result.publications = continuation.successor_publications;
@@ -239,6 +260,13 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   if (kind == q::BackendKind::kCuda) model.prepare_relay_execution(1, 0, q::GraphRole::kMtpCatchupRound);
   const auto serial = journey(model, prompt, false);
   const auto candidate = journey(model, prompt, true);
+  std::size_t serial_ledger_draft_rows = 0;
+  for (const auto &record : serial.records)
+    serial_ledger_draft_rows = q::cache::add(serial_ledger_draft_rows, record.draft_rows);
+  require(!serial.discarded_draft_rows && serial.actual_draft_rows == serial_ledger_draft_rows,
+      "natural K1 serial submitted draft rows differ from the original complete ledger");
+  require(candidate.actual_draft_rows == q::cache::add(serial.actual_draft_rows, candidate.discarded_draft_rows),
+      "natural K1 Source omitted discarded successor work or counted an original submission twice");
   require(serial.ids == candidate.ids && serial.stopped == candidate.stopped &&
       serial.records.size() == candidate.records.size(), "natural K1 Source changed generated IDs, stop or ledger length");
   for (std::size_t ordinal = 0; ordinal < serial.records.size(); ++ordinal) {
@@ -280,6 +308,9 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       << ",\"deferred_waves\":" << candidate.deferred_waves << ",\"reserved_two_grants\":" << candidate.reserved_two_grants
       << ",\"accepted_drafts\":" << candidate.accepted_drafts << ",\"rejected_drafts\":" << candidate.rejected_drafts
       << ",\"ledger_records\":" << candidate.records.size()
+      << ",\"serial_actual_draft_rows\":" << serial.actual_draft_rows
+      << ",\"auto_actual_draft_rows\":" << candidate.actual_draft_rows
+      << ",\"discarded_draft_rows\":" << candidate.discarded_draft_rows
       << ",\"natural_RequestLoop\":true,\"controlled_acceptance\":false,\"original_ledger_equal\":true,"
          "\"generated_ids_equal\":true,\"greedy_rng_unchanged\":true,\"all_sources_expired\":true,"
          "\"simultaneous_native_inflight_claim\":false,\"quality_claim\":false,\"performance_claim\":false,"

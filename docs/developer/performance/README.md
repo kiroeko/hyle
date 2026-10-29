@@ -49,6 +49,10 @@ GPU dedicated＋shared仅可在同一采样时刻相加，不能相加两项各�
 把 poll/yield 改成 native wait 可能减少唤醒延迟，同时占用一个 scheduler worker；这不是免费 overlap。
 请求取消或对外完成也不等于设备工作已退休，计时和资源释放都要到达真实的终结边界。
 
+推理报告的`draft_rows`保留发布账簿语义；`actual_draft_rows`的范围为`admitted_active_input_rows`：
+原Graph成功返回Completion时计入活跃draft输入，含后续丢弃／失败与私有proposal、repair及恢复。
+`actual_restored_draft_rows`是其中的恢复分类，不再加到总量上。padding、provider内部准备、未返回Completion的部分失败及硬件FLOPs不在此数中。
+
 例如一方提前将 FP8 KV 展开成 BF16，另一方在计时内解码 FP8，这回答的是两种缓存方案的成本。
 比较同输入实现时，应从相同驻留 FP8 数据开始，冷准备另列。不能只把计时器放在同名函数两侧。
 

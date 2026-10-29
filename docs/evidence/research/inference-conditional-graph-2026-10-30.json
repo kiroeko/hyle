@@ -1,0 +1,173 @@
+{
+  "schema": "hyle.research.native-conditional-graph.v1",
+  "date": "2026-10-30",
+  "status": "NATIVE_CAPABILITY_PASS_PRODUCT_NOT_IMPLEMENTED",
+  "device": [
+    "DEVICE index=0 name=NVIDIA GeForce RTX 4070 cc=8.9 driver=13040 runtime=13040 header=13030"
+  ],
+  "cases": [
+    "CASE iteration=0 setter_mode=0 actual=-1000 expected=-1000 default_reset=false status=PASS",
+    "CASE iteration=1 setter_mode=1 actual=305419896 expected=305419896 default_reset=false status=PASS",
+    "CASE iteration=2 setter_mode=-1 actual=-1002 expected=-1002 default_reset=true status=PASS"
+  ],
+  "cuda_errors": 0,
+  "source": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-conditional-graph-20261030\\probe.cu",
+    "bytes": 6091,
+    "sha256": "5389d56172e425a7820177266b4ad8717cb03c595b0af7fbd0cc5d873f97173b"
+  },
+  "compiler_and_image": {
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-conditional-graph-20261030\\bin\\probe.exe",
+      "bytes": 178176,
+      "sha256": "e18b1865e65f956c09c6cf15e55b36c53b6b53ec09aa523d49b0f3db696aeca6"
+    },
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-conditional-graph-20261030\\probe.cu",
+      "bytes": 6091,
+      "sha256": "5389d56172e425a7820177266b4ad8717cb03c595b0af7fbd0cc5d873f97173b"
+    },
+    "nvcc": {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\nvcc.exe",
+      "bytes": 20017264,
+      "sha256": "92d993c6e7025e1597d0d895e65e8658f5f1d41576a477656647a7eece2cd35f"
+    },
+    "sdk_version": {
+      "cuda": {
+        "name": "CUDA SDK",
+        "version": "13.3.1"
+      },
+      "cuda_crt": {
+        "name": "CUDA crt Compiler for CUDA applications",
+        "version": "13.3.73"
+      },
+      "cuda_ctadvisor": {
+        "name": "CUDA Compile Time Advisor",
+        "version": "13.3.33"
+      },
+      "cuda_cudart": {
+        "name": "CUDA Runtime (cudart)",
+        "version": "13.3.29"
+      },
+      "cuda_cuobjdump": {
+        "name": "cuobjdump",
+        "version": "13.3.73"
+      },
+      "cuda_cupti": {
+        "name": "CUPTI",
+        "version": "13.3.75"
+      },
+      "cuda_cuxxfilt": {
+        "name": "CUDA cu++ filt",
+        "version": "13.3.29"
+      },
+      "cuda_nvcc": {
+        "name": "CUDA NVCC",
+        "version": "13.3.73"
+      },
+      "cuda_nvdisasm": {
+        "name": "CUDA nvdisasm",
+        "version": "13.3.73"
+      },
+      "cuda_nvml_dev": {
+        "name": "CUDA NVML Headers",
+        "version": "13.3.29"
+      },
+      "cuda_nvprune": {
+        "name": "CUDA nvprune",
+        "version": "13.3.29"
+      },
+      "cuda_nvrtc": {
+        "name": "CUDA NVRTC",
+        "version": "13.3.33"
+      },
+      "cuda_nvtx": {
+        "name": "CUDA NVTX",
+        "version": "13.3.29"
+      },
+      "cuda_opencl": {
+        "name": "CUDA OpenCL",
+        "version": "13.3.27"
+      },
+      "cuda_profiler_api": {
+        "name": "CUDA Profiler API",
+        "version": "13.3.27"
+      },
+      "cuda_sanitizer_api": {
+        "name": "CUDA Compute Sanitizer API",
+        "version": "13.3.75"
+      },
+      "libcublas": {
+        "name": "CUDA cuBLAS",
+        "version": "13.6.0.2"
+      },
+      "libcufft": {
+        "name": "CUDA cuFFT",
+        "version": "12.3.0.29"
+      },
+      "libcurand": {
+        "name": "CUDA cuRAND",
+        "version": "10.4.3.29"
+      },
+      "libcusolver": {
+        "name": "CUDA cuSOLVER",
+        "version": "12.2.6.9"
+      },
+      "libcusparse": {
+        "name": "CUDA cuSPARSE",
+        "version": "12.8.2.51"
+      },
+      "libnpp": {
+        "name": "CUDA NPP",
+        "version": "13.1.2.81"
+      },
+      "libnvfatbin": {
+        "name": "Fatbin interaction library",
+        "version": "13.3.29"
+      },
+      "libnvjitlink": {
+        "name": "JIT Linker Library",
+        "version": "13.3.33"
+      },
+      "libnvjpeg": {
+        "name": "CUDA nvJPEG",
+        "version": "13.2.1.68"
+      },
+      "libnvptxcompiler": {
+        "name": "CUDA PTX compiler",
+        "version": "13.3.73"
+      },
+      "libnvvm": {
+        "name": "NVVM",
+        "version": "13.3.73"
+      },
+      "nsight_compute": {
+        "name": "Nsight Compute",
+        "version": "2026.2.1.5"
+      },
+      "nsight_vse": {
+        "name": "Nsight Visual Studio Edition (VSE)",
+        "version": "2026.2.0.26084"
+      }
+    }
+  },
+  "result": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-conditional-graph-20261030\\result.json",
+    "bytes": 987,
+    "sha256": "bac1d36508bdbe81bf46931a044dc290334eb5d652318dbe6a4d260db7d0c928"
+  },
+  "scope": "One tiny native graph, same executable false->true->no-set default false; no Hyle model, provider captured body, memory or performance claim.",
+  "source_review": {
+    "capture": "src/compute_backend_cuda/cuda_backend.cc end_capture currently instantiates and destroys raw graph; CapturedCommandsState keeps Exec only.",
+    "topology": "src/graph/submission.cc replays capture ranges and executes uncaptured gaps separately. A guarded range cannot suppress Hybrid gaps.",
+    "output": "retire_invocation sets outputs_ready from terminal.ok(); successful native retirement cannot prove an If body wrote tensor/Store/Append outputs.",
+    "source": "Pending Source currently promises actual producer data. An unresolved guarded B cannot be forwarded as a valid C input without propagating conditional validity.",
+    "minimum": "Keep original Invocation/Completion/owners; distinguish executed versus skipped outcome and gate all outputs, Store and page publication; then add cold whole-graph predicate wrapping.",
+    "conservative_scope": "Only a complete single-Queue captured body with supported node types; checked-status seeds/merges remain outside predicate; no swallowed native error or host recompute.",
+    "lifetime": "Original artifact holds graph/conditional handle as necessary until actual retirement. Native probe does not establish arbitrary provider body compatibility."
+  },
+  "hyle_product_implemented": false,
+  "hyle_source_validity_claim": false,
+  "performance_claim": false,
+  "evidence_archive": "inference-conditional-graph-2026-10-30.zip"
+}

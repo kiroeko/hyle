@@ -1064,7 +1064,8 @@ struct StepMember final {
   std::int32_t first_input = -1, draft_token = -1;
   std::vector<std::int32_t> verification_inputs{};
   std::vector<c::ReadLease> carry_prefix{};
-  std::size_t discarded_draft_rows = 0;
+  // Frozen active inputs of this member's actual draft Append, not accepted rows.
+  std::size_t draft_input_rows = 0, discarded_draft_rows = 0;
   bool sampled_accept = false;
   GenerationCommitRecord *commit_record = nullptr;
   GenerationLedger *commit_ledger = nullptr;
@@ -1129,7 +1130,8 @@ struct StepState final {
   Phase *phase = nullptr;
   Clock::time_point step_start{}, start{};
   double submit_seconds = 0, cold_batch_seconds = 0, shape_admission_seconds = 0;
-  std::size_t input_tokens = 0, active_input_rows = 0, capture_recorded = 0, capture_reused = 0;
+  std::size_t input_tokens = 0, active_input_rows = 0, active_draft_rows = 0,
+      capture_recorded = 0, capture_reused = 0;
   g::ReplayRoute replay_route = g::ReplayRoute::kUnprepared;
   bool prepared = false, submitted = false, cancelled = false;
   std::size_t state_slot = 0;
@@ -1169,6 +1171,8 @@ public:
   hyle::container::SmallVector<c::PagedPageAppender, 32> tails;
   std::array<c::PagedPageAppender, 2> draft_tails;
   std::uint64_t tail_epoch = 0, draft_tail_epoch = 0;
+  // Monotonic accepted-Graph active input rows; never part of a Snapshot or RNG.
+  std::size_t submitted_draft_rows = 0;
   StepState *pending = nullptr; // Borrowed from Model; episode pins this Session.
   bool failed = false, stopping = false;
   hyle::Status retirement_status;
@@ -1321,6 +1325,9 @@ struct DraftProgram final {
 struct DraftWork final {
   cache::DraftState state;
   std::array<c::PagedPageAppender, 2> tails;
+  // Optional attribution to the original Session pinned by this synchronous
+  // proposal/repair call. Standalone private work still counts on the Model.
+  Session *session = nullptr;
 };
 struct DraftProposal final {
   std::int32_t id = -1;
@@ -1568,6 +1575,10 @@ public:
   std::map<std::tuple<std::size_t, bool, std::size_t>, std::unique_ptr<DraftProgram>> &draft_programs;
   std::map<PrefixSamplingKey, std::unique_ptr<PrefixSamplingProgram>> &prefix_sampling_programs;
   std::size_t draft_program_graph_calls = 0, prefix_decision_graph_calls = 0;
+  // Same admission scope as target work: active inputs of original accepted
+  // Graph submissions, including discarded/failed work and private NextN.
+  // Padding, provider-internal preparation and native kernel FLOPs are separate.
+  std::size_t submitted_draft_rows = 0;
   const PreparedSampling &sampling_configuration(std::size_t index = 0) const { return resources_->sampling_configuration(index); }
   std::size_t sampling_configuration_count() const noexcept { return resources_->sampling_configurations.size(); }
   std::size_t sampling_index(const PreparedSampling *value) const { return resources_->sampling_index(value); }
@@ -3127,7 +3138,13 @@ public:
           draft_bank, 2, cache_inputs, {.host_workspace = execution.staging()}));
       check(guard.execution.bind_consumers(program.programs.child(0).resource_graph()));
       check(guard.execution.prepare_replay({.mode = program.replay_mode, .host_wait = g::HostWaitPolicy::kAllow}));
-      check(guard.execution.submit(resources_)); check(guard.execution.wait_success());
+      const auto model_rows_after = cache::add(submitted_draft_rows, program.rows);
+      const auto session_rows_after = work.session
+          ? cache::add(work.session->submitted_draft_rows, program.rows) : 0;
+      check(guard.execution.submit(resources_));
+      submitted_draft_rows = model_rows_after;
+      if (work.session) work.session->submitted_draft_rows = session_rows_after;
+      check(guard.execution.wait_success());
       ++draft_program_graph_calls;
       if (head) {
         if (program.valid) {
@@ -4312,6 +4329,15 @@ public:
          .pending_predecessor = bool(step.execution.predecessor_episode),
          .append_options = {.resource_budget = cache_budget}},
         invalidate_tail, begin_member));
+    // The actual member layouts exclude packed carrier padding and retain
+    // each mixed K1 member's own lag. Freeze them before submit/publication.
+    step.active_draft_rows = 0;
+    for (auto &member : step.members) {
+      member.draft_input_rows = member.draft_layout.facts().query_rows;
+      step.active_draft_rows = cache::add(step.active_draft_rows, member.draft_input_rows);
+    }
+    if (step.active_draft_rows != step.draft_layout.facts().query_rows)
+      throw std::logic_error("draft submission rows differ from the actual Append cohort");
     if (draft_lag(role) && !relay) for (const auto &member : step.members) {
       const auto &old = *member.base->draft;
       catchups.push_back(compact_draft && !old.lag ? member.first_input : old.catchup_token);
@@ -4956,8 +4982,16 @@ public:
     for (const auto &member : step.members)
       if (member.session->stopping || member.session->failed)
         throw std::runtime_error("batch participant stopped before submission");
+    // Validate counter additions before accepting native work. Afterwards only
+    // scalar assignment remains, even if Source capture or observation fails.
+    const auto model_rows_after = cache::add(submitted_draft_rows, step.active_draft_rows);
+    for (const auto &member : step.members)
+      (void)cache::add(member.session->submitted_draft_rows, member.draft_input_rows);
     step.start = Clock::now(); step.submitted = true;
     check(step.execution.submit(resources_));
+    submitted_draft_rows = model_rows_after;
+    for (const auto &member : step.members)
+      member.session->submitted_draft_rows += member.draft_input_rows;
     if (step.execution.sources) {
       auto &phase = *step.phase; auto &program_slot = phase.slots[step.state_slot]; auto &io = program_slot.data;
       auto &sources = *step.execution.sources;
@@ -5454,7 +5488,7 @@ public:
     if (!maximum) return inputs;
     if (inputs.front() < 0 || inputs.front() >= vocabulary || ended(inputs.front()))
       throw std::runtime_error("recursive proposals require a valid nonterminal emitted pending token");
-    DraftWork work; work.state = fork_draft(*session.head->draft);
+    DraftWork work; work.state = fork_draft(*session.head->draft); work.session = &session;
     c::ReadLease approximate;
     auto current_logits = logits;
     const auto resolve = [&]() -> const LogitsInputs & {
@@ -5517,7 +5551,7 @@ public:
       const auto n = member.accepted_tokens;
       if (!n || member.verification_inputs.size() < n || member.carry_prefix.size() != n)
         throw std::runtime_error("draft repair requires every actually consumed target prefix row");
-      DraftWork repaired; repaired.state = fork_draft(*member.base->draft);
+      DraftWork repaired; repaired.state = fork_draft(*member.base->draft); repaired.session = member.session.get();
       std::vector<std::int32_t> ids;
       std::vector<c::ReadLease> shifted;
       if (repaired.state.lag) { ids.push_back(repaired.state.catchup_token); shifted.push_back(member.base->prior_hidden); }
@@ -5916,6 +5950,7 @@ Session::~Session() { (void)drain(); }
 
 struct GenerationRestoreStats final {
   std::size_t graph_calls = 0, target_rows = 0, draft_rows = 0;
+  std::size_t submitted_draft_rows = 0;
   std::size_t normalized_lag_rows = 0;
   struct DecisionChange { std::size_t episode; std::int32_t historical, fresh; };
   std::vector<DecisionChange> decision_changes;
@@ -5962,6 +5997,17 @@ struct GenerationRequest {
   Clock::time_point admission_start{};
   GenerationRestoreStats restored;
   std::size_t restore_count = 0, idle_evictions = 0;
+  // Retired Session submissions plus the live Session delta. Restore submits
+  // have their own original call scope and are excluded from that live delta.
+  std::size_t retired_draft_rows = 0, session_draft_rows_begin = 0;
+  std::size_t actual_draft_rows() const noexcept {
+    return retired_draft_rows + restored.submitted_draft_rows +
+        (session ? session->submitted_draft_rows - session_draft_rows_begin : 0);
+  }
+  void retire_draft_rows() noexcept {
+    if (session) retired_draft_rows += session->submitted_draft_rows - session_draft_rows_begin;
+    session_draft_rows_begin = 0;
+  }
   std::size_t checkpoint_resume_hits = 0, checkpoint_resume_misses = 0;
   std::int32_t fresh_next_id = -1;
 
@@ -6170,6 +6216,10 @@ std::shared_ptr<Session> restore_mtp_session(Model &model, const GenerationLedge
     std::span<const GenerationRequest> requests = {}) {
   const auto sampling_index = model.sampling_index(ledger);
   const auto started = Clock::now();
+  const auto submitted_begin = model.submitted_draft_rows;
+  hyle::util::ScopeGuard record_submitted{[&]() noexcept {
+    if (stats) stats->submitted_draft_rows += model.submitted_draft_rows - submitted_begin;
+  }};
   ledger.stop_policy().validate(model.vocabulary);
   const auto &replay_modifiers = model.sampling_configuration(sampling_index).configuration.modifiers;
   if (!model.cache_plan.draft_cache || replay_modifiers.bias || replay_modifiers.allowed)
@@ -6253,6 +6303,10 @@ std::shared_ptr<Session> rebuild_generation_session(Model &model, const Generati
   const auto sampling_index = model.sampling_index(ledger);
   ledger.stop_policy().validate(model.vocabulary);
   const auto started = Clock::now();
+  const auto submitted_begin = model.submitted_draft_rows;
+  hyle::util::ScopeGuard record_submitted{[&]() noexcept {
+    if (stats) stats->submitted_draft_rows += model.submitted_draft_rows - submitted_begin;
+  }};
   if (!ledger.committed_count || ledger.committed_count > ledger.records.size() ||
       ledger.records[0].generation || ledger.records[0].before.length || model.active_step || model.carrier_borrowed)
     throw std::runtime_error("MTP rebuild requires a complete zero-origin committed history and idle carrier");
@@ -6486,6 +6540,7 @@ void restore_generation_session(Model &model, GenerationRequest &request,
   }
   // All fallible recovery precedes installing the new original Session owner.
   request.session = std::move(restored);
+  request.session_draft_rows_begin = request.session->submitted_draft_rows;
 }
 
 struct PreparedGenerationCall final {
@@ -7762,6 +7817,7 @@ struct GenerationRequestAdapter final {
       request.host_image = model.export_session(*request.session, host_storage);
     const auto retired = retire_generation_request(request);
     if (retired.retired) {
+      request.retire_draft_rows();
       request.session.reset();
       if (reason == inference::RequestRetirement::kEvicted) {
         ++request.idle_evictions;
@@ -7776,6 +7832,7 @@ void print_generation_rebuild(const GenerationRestoreStats &stats, bool draft_ca
   std::cout << ",\"restore_contract\":\"recompute_committed_inputs\",\"restored_graph_calls\":" << stats.graph_calls
       << ",\"restored_target_rows\":" << stats.target_rows;
   if (draft_cache) std::cout << ",\"restored_draft_rows\":" << stats.draft_rows
+      << ",\"actual_restored_draft_rows\":" << stats.submitted_draft_rows
       << ",\"normalized_lag_rows\":" << stats.normalized_lag_rows;
   std::cout << ",\"decision_changes\":[";
   for (std::size_t i = 0; i < stats.decision_changes.size(); ++i) {
@@ -7863,7 +7920,8 @@ void print_generation_request(const Model &model, const GenerationRequest &reque
             << ",\"committed_target_rows\":" << request.visible_tokens
             << ",\"committed_target_decode_rows\":" << request.visible_tokens - logical_prompt;
   if (model.cache_plan.draft_cache) std::cout << ",\"prefill_draft_rows\":" << request.prefill_draft_rows
-      << ",\"actual_draft_rows\":" << request.prefill_draft_rows + draft_rows + request.restored.draft_rows
+      << ",\"actual_draft_rows\":" << request.actual_draft_rows()
+      << ",\"actual_draft_rows_scope\":\"admitted_active_input_rows\""
       << ",\"draft_rows\":" << draft_rows << ",\"draft_rounds\":" << draft_rounds
       << ",\"agreements\":" << agreements << ",\"consumed_drafts\":" << accepts;
   std::cout << ",\"diagnostic\":" << (trace.empty() ? "false" : "true");
@@ -7920,6 +7978,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     bool decode_overlap = false, std::span<const inference::LogitsInputProvider> logits_providers = {},
     BatchObserver &&batch_observer = nullptr) {
   constexpr bool mtp = Mode == GenerationMode::kMtp;
+  const auto submitted_draft_begin = model.submitted_draft_rows;
   if (!max_prefill_rows) throw std::runtime_error("prefill rows require a positive quantum");
   const inference::PrefillPolicy prefill(max_prefill_rows);
   if (!stop_policies.empty() && stop_policies.size() != schedules.size())
@@ -8451,6 +8510,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     restored.graph_calls = cache::add(restored.graph_calls, request.restored.graph_calls);
     restored.target_rows = cache::add(restored.target_rows, request.restored.target_rows);
     restored.draft_rows = cache::add(restored.draft_rows, request.restored.draft_rows);
+    restored.submitted_draft_rows = cache::add(restored.submitted_draft_rows, request.restored.submitted_draft_rows);
     restored.normalized_lag_rows = cache::add(restored.normalized_lag_rows, request.restored.normalized_lag_rows);
     recomputed_changes = cache::add(recomputed_changes, request.restored.decision_changes.size());
     restored.step_seconds += request.restored.step_seconds; restored.seconds += request.restored.seconds;
@@ -8485,9 +8545,12 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       << ",\"restore_step_seconds\":" << restored.step_seconds << ",\"restore_seconds\":" << restored.seconds
       << ",\"restore_contract\":\"recompute_committed_inputs\"";
   if constexpr (mtp) std::cout << ",\"prefill_draft_rows\":" << prefill_draft << ",\"draft_rows\":" << drafted
-      << ",\"actual_draft_rows\":" << cache::add(cache::add(prefill_draft, drafted), restored.draft_rows)
+      << ",\"actual_draft_rows\":" << model.submitted_draft_rows - submitted_draft_begin
+      << ",\"actual_draft_rows_scope\":\"admitted_active_input_rows\""
       << ",\"draft_rounds\":" << draft_rounds << ",\"agreements\":" << agreements << ",\"consumed_drafts\":" << accepts
-      << ",\"restored_draft_rows\":" << restored.draft_rows << ",\"normalized_lag_rows\":" << restored.normalized_lag_rows;
+      << ",\"restored_draft_rows\":" << restored.draft_rows
+      << ",\"actual_restored_draft_rows\":" << restored.submitted_draft_rows
+      << ",\"normalized_lag_rows\":" << restored.normalized_lag_rows;
   std::cout << ",\"recomputed_decision_changes\":" << recomputed_changes
       << ",\"prefill_seconds\":" << prefill_seconds << ",\"decode_seconds\":" << decode_seconds << ",\"session_seconds\":" << session_seconds
       << ",\"step_sum_seconds\":" << actual_step_sum + restored.step_seconds + model.frontier_sampling_seconds

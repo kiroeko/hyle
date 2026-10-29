@@ -17,9 +17,12 @@
 仍核实际权限、完整tuple、原Status和真实退休。29项Source／分页／读回、Kimi7项和真实Qwen消费者通过。
 ABBA122.65→123.00tok/s（＋0.28%，每版两样本），完整非时间报告相同，未证明速度收益，未刷新跨引擎表。
 同批离线核实两次MTP后继丢弃都来自A拒绝草稿，而非额度／turn；提交前尚未知接受结果，不能靠已有额度消除。
-原`actual_draft_rows`仅汇总发布账簿，漏掉两B的4个实际draft行：单／两轮216／434应另加4，
-这是源码与旧报告推导，尚非修复后观测。吞吐时间仍包含这些执行；不能将旧draft计数称为全部原生工作。
-设备条件Graph是待研究候选：本地SDK具备接口，但当前capture及未执行输出／退休合同尚未接入，不宣称收益。
+[实际提交计数](../../evidence/correctness/inference-draft-accounting-2026-10-30.json)现已修正：
+默认auto单／两轮实测220／438，同步对照216／434，差4行来自被丢弃的B。计数在原Graph接纳提交后、等待前记录，
+也覆盖私有proposal／repair与后续失败；排除padding、provider准备、未返回Completion的部分失败和硬件FLOPs。
+11条有限消费者通过，原输出／状态／接受账簿不变，恢复行不重复累计。历史吞吐时间本来就包含这些工作，此次不刷新速度结论。
+[原生条件图实验](../../evidence/research/inference-conditional-graph-2026-10-30.json)已在4070验证If跳过／执行／默认复位；
+Hyle仍需区分“正常执行产出”与“成功退休但未执行”，并处理Source／Store／页发布及完整capture覆盖，尚未接入产品或证明收益。
 
 2026-10-30的[计划冷事实复用](../../evidence/performance/inference-plan-cold-facts-2026-10-30.json)
 把不可变命令资格与计划capture覆盖移到每次冷`build_segments`成功末尾；重排入口先清为保守值。
