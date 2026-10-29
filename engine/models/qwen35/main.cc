@@ -1337,6 +1337,13 @@ struct DraftProposal final {
   float probability = 0;
   c::ReadLease hidden, log_probabilities, next_counts;
 };
+// Call-local linear proposal resolution. Row zero was resolved before request
+// admission; later rows are retained once and frozen for the original verifier.
+struct ConditionalLogitsProposal final {
+  const inference::LogitsInputProvider &provider;
+  std::span<const std::int32_t> committed_outputs;
+  std::vector<LogitsInputs> rows;
+};
 struct PrefixSamplingKey final {
   std::size_t proposals, sampling_index;
   bool conditional = false;
@@ -5515,12 +5522,18 @@ public:
   std::vector<std::int32_t> propose_recursive(Session &session, std::size_t maximum,
       std::span<const std::int32_t> eos = {}, std::vector<c::ReadLease> *q = nullptr,
       const inference::RequestStopPolicy *stop_policy = nullptr, const LogitsInputs &logits = {},
-      std::span<const LogitsInputs> conditional_inputs = {}) {
+      std::span<const LogitsInputs> conditional_inputs = {}, ConditionalLogitsProposal *dynamic = nullptr) {
     if (session.model_ != this)
       throw std::runtime_error("recursive proposal Session belongs to another model");
     const auto &selected_sampling = session.sampling_configuration();
     const auto &selected_sampler = selected_sampling.configuration;
     validate_prefix_logits_inputs(selected_sampler, logits, conditional_inputs, cache::add(maximum, 1), vocabulary);
+    if (dynamic && (!conditional_inputs.empty() || !dynamic->provider || dynamic->rows.size() != 1))
+      throw std::runtime_error("dynamic proposal inputs require one previously resolved first row");
+    if (dynamic) {
+      auto row_policy = selected_sampler; row_policy.modifiers.history = {};
+      validate_logits_inputs(row_policy, dynamic->rows.front(), vocabulary);
+    }
     if (active_step || carrier_borrowed || session.pending || session.stopping || session.failed ||
         !session.head || !session.head->draft || (selected_sampler.enabled && !q) ||
         maximum >= capacity - session.length() || maximum >= cache_plan.candidate_boundaries)
@@ -5536,8 +5549,23 @@ public:
     DraftWork work; work.state = fork_draft(*session.head->draft);
     c::ReadLease approximate;
     auto current_logits = logits;
+    const auto resolve = [&]() -> const LogitsInputs & {
+      const auto row = inputs.size() - 1;
+      if (row < dynamic->rows.size()) return dynamic->rows[row];
+      if (row != dynamic->rows.size()) throw std::logic_error("conditional proposal skipped its linear prefix");
+      auto supplied = dynamic->provider(dynamic->committed_outputs, std::span<const std::int32_t>(inputs).subspan(1));
+      if (!supplied) throw inference::EvaluationFailure(hyle::Status(supplied.error()));
+      auto policy = selected_sampler; policy.modifiers.history = {};
+      auto status = logits_inputs_metadata_status(policy, *supplied, vocabulary);
+      if (!status.ok()) throw inference::EvaluationFailure(std::move(status));
+      validate_logits_input_leases(policy, *supplied);
+      dynamic->rows.push_back(std::move(*supplied)); return dynamic->rows.back();
+    };
+    try {
     for (std::size_t i = 0; i < maximum; ++i) {
-      if (!conditional_inputs.empty()) {
+      if (dynamic) {
+        const auto &row = resolve(); current_logits.bias = row.bias; current_logits.allowed = row.allowed;
+      } else if (!conditional_inputs.empty()) {
         current_logits.bias = conditional_inputs[i].bias; current_logits.allowed = conditional_inputs[i].allowed;
       }
       std::vector<std::int32_t> ids;
@@ -5555,7 +5583,22 @@ public:
       if (q && selected_sampler.enabled) q->push_back(std::move(proposal.log_probabilities));
       if (ended(proposal.id)) break;
     }
+    if (dynamic) {
+      // An accepted stop proposal ends selection before its bonus; rejection
+      // also ends at that proposal. Preserve q and extend the last live policy
+      // for this unreachable row, without querying a terminated grammar.
+      if (ended(inputs.back()) && dynamic->rows.size() < inputs.size())
+        dynamic->rows.push_back(dynamic->rows.back());
+      else (void)resolve(); // A threshold-rejected draft already resolved this bonus.
+    }
     return inputs;
+    } catch (inference::EvaluationFailure &failure) {
+      if (dynamic && !failure.retirement_observed()) failure.observe_retirement(resources_->retire(false));
+      throw;
+    } catch (...) {
+      if (dynamic) (void)resources_->retire(false);
+      throw;
+    }
   }
 
   void repair_recursive_draft(StepState &step) {
@@ -5996,6 +6039,7 @@ struct GenerationRequest {
   std::size_t last_idle = 0;
   const std::size_t sampling_index;
   LogitsInputs logits; // One [1,V] snapshot for every conditional row in an output episode.
+  inference::LogitsInputProvider logits_provider;
   Clock::time_point admission_start{};
   GenerationRestoreStats restored;
   std::size_t restore_count = 0, idle_evictions = 0;
@@ -6512,6 +6556,8 @@ struct PreparedGenerationCall final {
   bool generation = false, full_hit = false, initial_prefix = false, prefill_complete = true;
   EvaluationDisposition disposition = EvaluationDisposition::kNotPublished;
   LogitsInputs logits; // Snapshot the caller's input leases for this prepared episode.
+  inference::LogitsInputProvider logits_provider;
+  inference::ConditionalLogitsInputs conditional_logits;
   TextCompletion completion = TextCompletion::kEmitNext;
   std::size_t input_begin = 0;
   std::string name;
@@ -6528,6 +6574,17 @@ struct PreparedGenerationCall final {
   }
   std::size_t planned_rows() const noexcept { return role == GraphRole::kVerify ? maximum + 1 : drafts_token(role) ? 2 : ids().size(); }
 };
+
+void validate_generation_logits_inputs(const SamplingConfiguration &configuration,
+    const PreparedGenerationCall &call, std::int64_t vocabulary) {
+  if (call.conditional_logits.empty()) {
+    validate_request_logits_inputs(configuration, call.logits, vocabulary, call.request->request_key); return;
+  }
+  const auto rows = call.conditional_logits.rows();
+  check_request_logits_metadata(prefix_logits_inputs_metadata_status(configuration, call.logits, rows,
+      call.ids().size(), vocabulary), call.request->request_key);
+  validate_prefix_logits_input_leases(configuration, call.logits, rows);
+}
 
 std::size_t generation_prefill_capacity(const Model &model, std::span<const PreparedGenerationCall> calls) {
   if (calls.empty() || !calls[0].request || calls[0].generation || calls[0].full_hit ||
@@ -6652,6 +6709,11 @@ struct GenerationContinuation final {
   }
 };
 
+std::span<const std::int32_t> provider_committed_outputs(const GenerationRequest &request) {
+  if (!request.progress.turn_started()) return {};
+  return std::span<const std::int32_t>(request.progress.generated).subspan(request.progress.turn_output_begin);
+}
+
 PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &request, std::size_t steps,
     cache::PrefixCache *prefix, std::span<const GenerationRequest> requests,
     std::size_t output_credit = SIZE_MAX, std::size_t max_prefill_rows = SIZE_MAX) {
@@ -6670,7 +6732,16 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
   if (!output_credit) throw std::runtime_error("generation must wait for output credit before preparation");
   if (steps != request.progress.output_limit())
     throw std::runtime_error("generation call quota differs from its prepared request turn");
+  if (request.progress.turn_started() && request.progress.turn_done)
+    throw std::runtime_error("generation request has already completed its current turn");
+  if (request.logits_provider && request.session && (!request.session->head || request.session->stopping ||
+      request.session->failed || request.session->pending))
+    throw std::runtime_error("dynamic logits preparation requires a live idle Session");
   preflight_generation_sampling(model, request);
+  LogitsInputs episode_logits = request.logits;
+  inference::LogitsInputProvider episode_provider;
+  if (request.logits_provider && !sampler.modifiers.bias && !sampler.modifiers.allowed)
+    check_request_logits_metadata(hyle::Status::InvalidArgument("dynamic logits require configured bias or mask ports"), request.request_key);
   if (!sampler.modifiers.empty()) {
     bool emits = request.progress.prefilled;
     if (!emits) {
@@ -6687,7 +6758,19 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
     if (emits) {
       auto external = sampler;
       external.modifiers.history = {}; // The ledger supplies natural C0 below.
-      validate_request_logits_inputs(external, request.logits, model.vocabulary, request.request_key);
+      if (request.logits_provider) {
+        auto base = external; base.modifiers.bias = false; base.modifiers.allowed = false;
+        validate_request_logits_inputs(base, request.logits, model.vocabulary, request.request_key);
+        episode_provider = request.logits_provider;
+        auto supplied = episode_provider(provider_committed_outputs(request), {});
+        if (!supplied) {
+          auto status = hyle::Status(supplied.error());
+          if (status.IsInvalidArgument()) check_request_logits_metadata(std::move(status), request.request_key);
+          throw inference::EvaluationFailure(std::move(status));
+        }
+        episode_logits = std::move(*supplied);
+      }
+      validate_request_logits_inputs(external, episode_logits, model.vocabulary, request.request_key);
     }
   }
   if (!request.progress.turn_started()) (void)request.progress.begin_turn();
@@ -6695,7 +6778,8 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
   if (request.round_emitted.size() < steps - 1)
     throw std::runtime_error("MTP observer slots must be reserved for every turn before execution");
   request.ledger->bind_stop_policy(request.stop_policy, model.vocabulary);
-  PreparedGenerationCall call; call.request = &request; call.steps = steps; call.logits = request.logits;
+  PreparedGenerationCall call; call.request = &request; call.steps = steps; call.logits = std::move(episode_logits);
+  call.logits_provider = std::move(episode_provider);
   call.generation = request.progress.prefilled;
   if (!call.generation) {
     if (!request.progress.input_admitted()) {
@@ -6830,7 +6914,8 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
     const auto lag = request.session->head->draft ? request.session->head->draft->lag : 0;
     call.role = !model.cache_plan.draft_cache ? GraphRole::kText
         : one ? (lag ? GraphRole::kMtpCatchupSingle : GraphRole::kMtpSingle)
-        : !model.recursive_mtp() ? (lag ? GraphRole::kMtpCatchupRound : GraphRole::kMtpRound) : GraphRole::kVerify;
+        : !model.recursive_mtp() && !call.logits_provider
+            ? (lag ? GraphRole::kMtpCatchupRound : GraphRole::kMtpRound) : GraphRole::kVerify;
     call.name = (request.progress.turn_index ? "round" + std::to_string(request.progress.turn_index + 1) + "_" : "") +
         (model.cache_plan.draft_cache ? "mtp" : "decode") + std::to_string(request.rounds.size() + 1);
   }
@@ -7256,7 +7341,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     if (call.completion == TextCompletion::kEmitNext) {
       auto required = sampling.configuration;
       if (call.full_hit || !call.logits.counts.lease.valid()) required.modifiers.history = {};
-      validate_request_logits_inputs(required, call.logits, model.vocabulary, request.request_key);
+      validate_generation_logits_inputs(required, call, model.vocabulary);
     }
     if (request.ledger->stop_policy() != request.stop_policy)
       throw std::runtime_error("generation ledger stop policy differs from its admitted episode");
@@ -7285,7 +7370,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
       call.logits = model.history_logits_inputs(*request.ledger,
           call.generation ? std::span<const std::int32_t>(&call.pending, 1) : call.prompt,
           call.logits, request.sampling_index);
-    validate_request_logits_inputs(configuration, call.logits, model.vocabulary, request.request_key);
+    validate_generation_logits_inputs(configuration, call, model.vocabulary);
   }
   if (calls.size() == 1 && calls[0].full_hit) {
     if (continuation) continuation->reset();
@@ -7300,22 +7385,46 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
   const auto &eos = model_eos_tokens;
   std::size_t packed_verification_capacity = 0;
   if (calls[0].role == GraphRole::kVerify) {
+    const auto discard_proposals = [&] {
+      for (auto &peer : calls) {
+        if (!peer.conditional_logits.empty()) {
+          const auto &first = peer.conditional_logits.rows().front();
+          peer.logits.bias = first.bias; peer.logits.allowed = first.allowed;
+        }
+        peer.draft_log_probabilities.clear(); peer.conditional_logits = {}; peer.verification_ids.clear();
+      }
+    };
     for (auto &call : calls) {
       if (!call.generation || call.role != GraphRole::kVerify)
         throw std::runtime_error("recursive MTP batch requires generation verifiers only");
       if (call.verification_ids.empty()) {
         const auto begin = Clock::now();
         try {
+          std::optional<ConditionalLogitsProposal> dynamic;
+          if (call.logits_provider) {
+            dynamic.emplace(ConditionalLogitsProposal{call.logits_provider, provider_committed_outputs(*call.request), {}});
+            dynamic->rows.reserve(call.maximum + 1);
+            dynamic->rows.push_back({call.logits.bias, call.logits.allowed});
+          }
           call.verification_ids = model.propose_recursive(*call.request->session, call.maximum, eos,
-              &call.draft_log_probabilities, &call.request->ledger->stop_policy(), call.logits);
+              &call.draft_log_probabilities, &call.request->ledger->stop_policy(), call.logits, {}, dynamic ? &*dynamic : nullptr);
+          if (dynamic) {
+            call.conditional_logits = inference::ConditionalLogitsInputs(dynamic->rows);
+            call.logits.bias = {}; call.logits.allowed = {};
+          }
         } catch (const inference::EvaluationFailure &failure) {
           const auto key = call.request->request_key;
+          if (failure.retirement_observed() && failure.retirement().retired) discard_proposals();
           // The original one-request q validator has no target participant.
           // Preserve unknown/native/unfinished failures without reclassifying.
           if (failure.status().IsInvalidArgument() && !failure.status().has_native_error() && !failure.participant() &&
               failure.retirement_observed() && failure.retirement().retired && !failure.retirement().status.has_native_error() &&
               key.generation && key.slot != (std::numeric_limits<std::size_t>::max)())
             throw inference::RequestExecutionFailure::from_request_evaluation(failure, key);
+          throw;
+        } catch (...) {
+          const auto observed = model.resources_->retire(false);
+          if (observed.retired) discard_proposals();
           throw;
         }
         call.proposal_seconds = std::chrono::duration<double>(Clock::now() - begin).count();
@@ -7367,7 +7476,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     prepare_generation_record(*request.ledger, *request.session, call.role,
         generation ? std::span<const std::int32_t>(&call.pending, 1) : call.ids(), generation,
         call.quota, request.progress.turn_index, generation ? std::shared_ptr<const void>{} : std::shared_ptr<const void>(request.warm_inputs.at(request.progress.turn_index)), call.maximum, call.completion, call.input_begin, call.prefill_complete);
-    inputs.push_back({request.session, call.ids(), &request.ledger->stop_policy(), call.logits});
+    inputs.push_back({request.session, call.ids(), &request.ledger->stop_policy(), call.logits, call.conditional_logits, request.request_key});
     outputs.push_back(evaluation_output(model, request.session, {call.name, &request.trace, trace_states},
         &call.step_seconds, generation ? &request.endpoint : &request.prefill_endpoint,
         nullptr, nullptr, request.ledger.get()));
@@ -7417,7 +7526,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
       double proposal_seconds = 0;
       for (auto &call : calls) {
         call.request->ledger->discard_uncommitted();
-        call.draft_log_probabilities.clear(); call.logits.counts = {};
+        call.draft_log_probabilities.clear(); call.logits.counts = {}; call.conditional_logits = {};
         call.disposition = EvaluationDisposition::kCancelled;
         call.step_seconds = seconds + call.proposal_seconds;
         proposal_seconds += call.proposal_seconds;
@@ -7466,7 +7575,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     // endpoint, so a fully withdrawn batch uses its actual retired call end.
     if (target_seconds == 0) target_seconds = std::chrono::duration<double>(Clock::now() - episode_start).count();
     observe_generation_batch(batch_observer, calls, input_rows, target_seconds + proposal_seconds, active_rows, physical_rows);
-    for (auto &call : calls) finish_generation_call(model, call);
+    for (auto &call : calls) { finish_generation_call(model, call); call.conditional_logits = {}; }
     if (prepared_ahead)
       for (const auto &call : calls)
         if (call.disposition != EvaluationDisposition::kPublished || call.request->progress.turn_done ||
@@ -7828,13 +7937,14 @@ void print_generation_request(const Model &model, const GenerationRequest &reque
   std::cout << "]}";
 }
 
-template<GenerationMode Mode>
+template<GenerationMode Mode, class BatchObserver = std::nullptr_t>
 int run_generation_sessions(Model &model, std::span<const inference::GenerationSessionSchedule> schedules,
     const std::filesystem::path &trace, bool trace_states, Clock::time_point startup,
     Clock::time_point constructed, bool prefix_enabled, std::span<const cache::TokenPlanRef> token_plans,
     std::span<const std::size_t> sampling_indices = {}, std::span<const inference::RequestStopPolicy> stop_policies = {},
     std::size_t max_prefill_rows = SIZE_MAX, bool warmup_planned_shapes = false,
-    bool decode_overlap = false) {
+    bool decode_overlap = false, std::span<const inference::LogitsInputProvider> logits_providers = {},
+    BatchObserver &&batch_observer = nullptr) {
   constexpr bool mtp = Mode == GenerationMode::kMtp;
   if (!max_prefill_rows) throw std::runtime_error("prefill rows require a positive quantum");
   const inference::PrefillPolicy prefill(max_prefill_rows);
@@ -7847,6 +7957,13 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     throw std::runtime_error("one cold sampling choice is required per request");
   for (const auto index : sampling_indices) {
     (void)model.sampling_configuration(index);
+  }
+  if (!logits_providers.empty() && logits_providers.size() != schedules.size())
+    throw std::runtime_error("one optional logits provider is required per request");
+  for (std::size_t i = 0; i < logits_providers.size(); ++i) if (logits_providers[i]) {
+    const auto &policy = model.sampling_configuration(sampling_indices.empty() ? 0 : sampling_indices[i]).configuration.modifiers;
+    if (!policy.bias && !policy.allowed)
+      throw std::runtime_error("dynamic logits require configured bias or mask ports");
   }
   if (schedules.empty() || model.cache_plan.draft_cache != mtp)
     throw std::runtime_error("natural generation mode differs from its complete model/cache plan");
@@ -7876,6 +7993,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
         ("session" + std::to_string(requests.size()) + "_" + schedule.id), outputs, sampling_indices.empty() ? 0 : sampling_indices[requests.size()],
         stop_policies.empty() ? inference::RequestStopPolicy{} : stop_policies[requests.size()]);
     auto &request = requests.back(); request.progress.bind_turns(schedule.turns);
+    if (!logits_providers.empty()) request.logits_provider = logits_providers[requests.size() - 1];
     request.progress.initial_sampling = {model.sampling_seed, static_cast<std::uint64_t>(requests.size() - 1), 0};
     request.turn_observations.resize(schedule.turns.size());
     request.warm_inputs.reserve(schedule.turns.size());
@@ -7977,6 +8095,11 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     const auto policy_decoding_requests = static_cast<std::size_t>(std::count_if(requests.begin(), requests.end(), [&](const auto &request) {
       return request.sampling_index == sampling_index && std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; });
     }));
+    const auto dynamic_decoding_requests = static_cast<std::size_t>(std::count_if(requests.begin(), requests.end(), [&](const auto &request) {
+      return request.sampling_index == sampling_index && request.logits_provider &&
+          std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; });
+    }));
+    const auto recursive_requests = model.recursive_mtp() ? policy_decoding_requests : dynamic_decoding_requests;
   for (std::size_t width = 1; width <= model.cache_plan.active_sequences; ++width) {
     std::map<PromptKey, std::map<std::size_t, std::size_t>> shapes;
     for (const auto &[key, tokens] : prompt_demand.entries()) for (const auto &[count, demand] : tokens) {
@@ -7985,7 +8108,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     }
     if (decode_bound && width <= policy_decoding_requests) {
       if constexpr (mtp) for (auto role : roles) {
-        if (drafts_token(role) && (model.max_drafts() != 1 || model.recursive_mtp())) continue;
+        if (drafts_token(role) && (model.max_drafts() != 1 || model.recursive_mtp() ||
+            width > policy_decoding_requests - dynamic_decoding_requests)) continue;
         auto &uses = shapes[{role, TextCompletion::kEmitNext}][drafts_token(role) ? 2 : 1]; uses = cache::add(uses, decode_bound);
       }
       else {
@@ -7993,7 +8117,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
         uses = cache::add(uses, decode_bound);
       }
     }
-    if (mtp && decode_bound && width <= policy_decoding_requests && model.recursive_mtp())
+    if (mtp && decode_bound && width <= recursive_requests)
       for (std::size_t rows = 1; rows <= model.cache_plan.candidate_boundaries; ++rows)
         shapes[{GraphRole::kVerify, TextCompletion::kEmitNext}][rows] = decode_bound;
     // Committed-token reconstruction normalizes lag while retaining each
@@ -8081,7 +8205,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       }
     }
     if constexpr (mtp) if (decode_bound && width > 1 && width <= policy_decoding_requests &&
-        model.recursive_mtp() && model.target_kv_layers > 0) {
+        width <= recursive_requests && model.target_kv_layers > 0) {
       const auto capacity = static_cast<std::size_t>(model.cache_plan.candidate_boundaries);
       const std::array capacities{capacity};
       if (model.prepare_family(capacities, false, width, GraphRole::kVerify, false, TextCompletion::kEmitNext,
@@ -8092,7 +8216,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
           TextCompletion::kEmitNext, sampling_index, RowPacking::kVerify});
     }
     if constexpr (mtp) if (decode_bound && width > 1 && width <= policy_decoding_requests &&
-        model.max_drafts() == 1 && !model.recursive_mtp()) {
+        model.max_drafts() == 1 && !model.recursive_mtp() && width <= policy_decoding_requests - dynamic_decoding_requests) {
       constexpr auto role = GraphRole::kMtpCatchupRound;
       if (model.prepare_family(pair, false, width, role, false, TextCompletion::kEmitNext,
           sampling_index, RowPacking::kDraft))
@@ -8101,12 +8225,13 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     }
   }
   }
-  if (mtp && decode_bound && model.recursive_mtp())
+  if (mtp && decode_bound)
     for (std::size_t index = 0; index < model.sampling_configuration_count(); ++index)
-      if (std::ranges::any_of(requests, [index](const auto &request) {
-          return request.sampling_index == index && std::ranges::any_of(request.progress.turns(),
-              [](const auto &turn) { return turn.max_outputs > 1; });
-        })) model.prepare_recursive_round_programs(index);
+      for (const bool dynamic : {false, true})
+        if ((dynamic || model.recursive_mtp()) && std::ranges::any_of(requests, [index, dynamic](const auto &request) {
+            return request.sampling_index == index && bool(request.logits_provider) == dynamic &&
+                std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; });
+          })) model.prepare_recursive_round_programs(index, dynamic);
   model.freeze_shape_plan();
   if (warmup_planned_shapes) {
     const auto begin = Clock::now();
@@ -8144,7 +8269,13 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
         }
       }
   }
-  if (mtp && decode_bound && model.max_drafts() == 1 && !model.recursive_mtp()) for (auto role : roles) if (drafts_token(role)) model.prepare_execution(pair, 1, role);
+  if (mtp && decode_bound && model.max_drafts() == 1 && !model.recursive_mtp())
+    for (std::size_t index = 0; index < model.sampling_configuration_count(); ++index)
+      if (std::ranges::any_of(requests, [index](const auto &request) {
+          return request.sampling_index == index && !request.logits_provider &&
+              std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; });
+        })) for (const auto role : roles) if (drafts_token(role))
+          model.prepare_execution(pair, 1, role, TextCompletion::kEmitNext, index);
   if constexpr (mtp) if (decode_overlap && decode_bound && model.cache_plan.in_flight_batches >= 2 &&
       model.max_drafts() == 1 && !model.recursive_mtp())
     for (std::size_t i = 0; i < model.sampling_configuration_count(); ++i) {
@@ -8232,6 +8363,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     const auto seconds = std::chrono::duration<double>(finished - endpoint).count();
     (facts.generation ? decode_seconds : prefill_seconds) += seconds; endpoint = finished;
     observe_capacity();
+    if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<BatchObserver>>) batch_observer(facts);
   };
   const auto execute_ready = [&](inference::RequestWave wave) {
     const auto prepare_call = [&](inference::RequestKey key) {

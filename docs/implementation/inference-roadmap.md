@@ -222,7 +222,12 @@ CPU／CUDA有限检查覆盖接受、拒绝、bonus、history计数、greedy、E
 首片共1次CXX／链接和5个有限进程，无SDK重编或下载；当时条件目标logits为有限合成输入，不代签完整发布。
 随后[真实Verify发布](../evidence/correctness/inference-conditional-verify-2026-10-29.json)已将不可变条件行沿原EvaluationRequest交给StepMember，候选创建前完整检查实际行数、元数据和冷程序，纯输入错误保原RequestKey；租约和原生错误仍由原机制处理。
 原terminal读取成员条件行，完整target／draft及账簿仍沿原提交／发布／失败退休。CPU／CUDA有限R1检查实际接受3／2行，以真实目标F32 logits和原q独立核对决策；真实非首行全mask失败后同key／原q重试，旧检查点不变，全部版本和页归还。当前3项完整状态对照均逐字节相同，仍保留既有GDN数值预算而非推广逐字节保证。
-本片2次CXX（首轮Result错误返回写法失败已修并保留）、1次链接、5个有限进程，无SDK重编或下载。自然请求提供者、条件K1及其控制／恢复边界继续实现；没有新吞吐结论。职责见[架构合同](../architecture/inference-design.md)。
+本片2次CXX（首轮Result错误返回写法失败已修并保留）、1次链接、5个有限进程，无SDK重编或下载；没有新吞吐结论。
+随后[自然条件输入](../evidence/correctness/inference-natural-logits-2026-10-29.json)把请求闭包接进原RequestLoop和条件K1／Verify：当前turn输出含pending，未来假设不重复pending，StateOnly不调用；q_i／p_i保留同一条件行，静态K1及默认路径不变。
+CPU／CUDA有限检查覆盖K1与随机K2的两请求／两轮、N2三请求缓存完整命中使用当前新策略，以及两条真实q产生后提供失败、实际退休与原key重试；head／账簿／RNG／旧检查点保持，最终版本及页归还。
+29项完整状态比较通过；随机两请求先独立核验实际seed／stream／draw，完整状态比较只在期望副本转换已知stream标识，不改实际结果。
+共1次CXX／链接和5个有限进程，无SDK重编或下载。两次离线解析错误（完整JSON分行、缓存目录析构前版本数）保留并修复，原生均成功且未重跑。
+目前未发现还需新增的功能机制；接着做终止前缀、混合R2及取消／恢复的有限交叉检查，再结束功能阶段。架构与性能另计，不等待其完成才结项。职责见[架构合同](../architecture/inference-design.md)。
 
 ## 当前实现概况
 

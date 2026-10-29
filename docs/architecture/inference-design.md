@@ -1315,11 +1315,12 @@ greedy／随机、StateOnly、同key HostImage恢复及新key完整前缀重采�
 符号view的计数更新声明真实逻辑输出规格，交原exact child处理布局；不提前要求物理描述。上述新增结果使用小型合成制品，覆盖原generation入口与RequestWindow，并非新增完整RequestLoop或服务层验证；未知native故障及其它平台未由这些旅程证明。
 以上为接线和资源合同，实际数学／Model检查结果另记，不代签逐步动态语法、全平台、质量或性能。
 
-**逐条件前缀输入已接通原语与显式Verify，自然接入仍在进行。** 上面的真实消费计数不等于随每个
+**逐条件前缀输入已接通原语、显式Verify与自然请求。** 上面的真实消费计数不等于随每个
 假设前缀变化的约束。共同typed输入和原采样原语现可接收已准备的条件行，模型只绑定自己的数学端口；
 Compute／Graph不理解grammar或tokenizer。[有限CPU／CUDA检查](../evidence/correctness/inference-conditional-logits-2026-10-29.json)已核真实递归提案与原terminal，
 [真实Verify检查](../evidence/correctness/inference-conditional-verify-2026-10-29.json)已从实际目标F32 logits核对独立接受数学及完整target／draft发布，
-覆盖后行坏输入的退休／原q重试；这仍是有限R1显式驱动，不代签自然请求提供者。
+覆盖后行坏输入的退休／原q重试。[自然请求检查](../evidence/correctness/inference-natural-logits-2026-10-29.json)
+另核K1／随机K2的两请求、两轮输入、StateOnly、缓存命中及晚期提供失败后的同key重试。
 
 `ConditionalLogitsInputs`只冻结元数据和原ReadLease，私有共享数组不暴露可变别名，prefix保留同一owner。
 默认空值不分配；它沿EvaluationRequest按值交给原StepMember，直到原episode实际退休后释放。
@@ -1328,17 +1329,21 @@ payload权限仍由原租约／StorageOwner证明，不复制词表，不把条�
 
 条件行i在q_i采样前取得一次，保留同一不可变bias／mask给p_i；最后一行用于bonus。
 每行继续调用原process_logits([1,V])，history仍由C0和实际草稿推进；已归一化q不重复施加约束。
-输入提供者只看原请求的已提交输出和借用的假设草稿，不修改Session、账簿或RNG；generated已经包含pending，不能再追加一次。
+`LogitsInputProvider`是请求拥有的输入闭包，只看当前turn的已提交输出和借用的假设草稿，
+不修改Session、账簿或RNG，也不提供counts。当前turn输出已经包含pending，假设草稿不能再追加pending；新turn首行看空输出。
+首行在接纳／状态变更前解析一次，PreparedCall保留该闭包与原租约；之后每个实际假设只解析一次，
+原p_i复用q_i取得的同一条件行，不因分组或Verify重新调用提供者。
 逐行租约只随实际cohort保留，元数据按R×(K+1)预留，复用原ProgramIo、Completion和退休合同；不为排队N个会话分配全部词表载荷。
 
-自然动态K1需要复用递归proposal／Verify1，因为融合K1提交前并不知道draft对应的bonus条件。
-该选择必须按采样配置决定，不拖动其它静态请求；默认共享快照／无modifier路径须保持原图、端口和执行工作。
+自然动态K1复用递归proposal／Verify，因为融合K1提交前并不知道draft对应的bonus条件。
+冷程序按实际动态请求与采样配置准备；静态请求保留原融合K1，默认共享快照／无modifier路径保持原图、端口和执行工作。
 首次prefill和完整前缀命中的抽样也需要首行；StateOnly不调用提供者，KV／HostImage不携带外部modifier，
 恢复后从真实输出求值。缺少历史modifier载荷时仍不宣称严格决策回放。
 
-终止前缀的bonus可能不可达，但当前接受图会验证全部条件；实现须显式表达合法终止行或证明不可达后再处理有效性，
-不能把普通全mask错误静默忽略。后续草稿／第二成员的输入提供失败、取消与拒绝，也须保持原head／RNG，
-退休后释放原q及条件行租约，并以相同输入重试；只有实际发布输出能推进外部策略。这些仍是开发工作，不算已完成。
+终止草稿仍保留原q：接受即止于该token，拒绝也止于该位置，因此末bonus不可达。
+动态提供者不查询终止后的语法，而以最后合法条件行延伸该不可达bonus；原全部行数值检查仍运行，普通全mask错误不能忽略。
+晚期提供失败沿原私有资源实际退休后释放q与条件owner；成功peer若需重备保留首行及C0，不提前推进原head／RNG。
+只有实际发布输出能推进外部策略。终止分支与混合R2的取消／恢复交叉检查尚待完成，未宣称全平台、质量或吞吐通过。
 
 
 CT BF16 block128的[共同冷图片段](../evidence/correctness/ct-block128-supplied-graph-2026-10-25.json)接收实际Value／TensorSpec及原租约绑定，固定形状和symbolic token行共用同体，按真实几何追加既有Graph数学；原fixture复用同体。它不拥有存储、调度或源格式注册表；BF16 block QDQ、channel／token与F32-scale code-dot仍由制品策略明确区分，不能仅按SF形状猜数学。[普通引擎冷入口](../evidence/correctness/ct-block128-model-binding-2026-10-25.json)由源配置选择reader、角色保留原W／SF及local FP4舍入，Recipe将片段生成的真实NodeId交回原GraphAssembly记录placement；后端继续消费同一Graph，不增加运行时路由。

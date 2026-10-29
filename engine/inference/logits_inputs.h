@@ -5,6 +5,8 @@
 #include "hyle/error/result.h"
 
 #include <memory>
+#include <cstdint>
+#include <functional>
 #include <span>
 #include <utility>
 
@@ -27,6 +29,13 @@ struct LogitsInputs final {
   LogitsInput bias, allowed;
   LogitsInput counts{};
 };
+
+// Resolve ready bias/mask for the current turn's committed outputs and its
+// future draft hypotheses. The pending token is already in committed_outputs.
+// This owning callable never receives a Session, RNG or execution authority;
+// it supplies no counts and must not advance policy state before publication.
+using LogitsInputProvider = std::function<Result<LogitsInputs>(
+    std::span<const std::int32_t> committed_outputs, std::span<const std::int32_t> hypotheses)>;
 
 // An explicit caller freezes only typed metadata and the original read leases,
 // never their vocabulary payloads. No mutable metadata alias escapes, and an
