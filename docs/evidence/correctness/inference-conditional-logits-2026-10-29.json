@@ -1,0 +1,431 @@
+{
+  "schema": "hyle.inference-conditional-logits.v1",
+  "status": "PASS_FINITE_CONDITIONAL_LOGITS",
+  "product_sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\logits_inputs.h",
+      "bytes": 927,
+      "sha256": "e064a44a9562c462107aabfc9a47b0e4eff31174b27f9f26dc6794f59f58fdc5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\sampling_graph.h",
+      "bytes": 33462,
+      "sha256": "61ed86f6f537b06635fb0b75fa7a6b8e75405c11933a2f106a091f5c44cd6fd2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 626754,
+      "sha256": "50506f07d87f5c84ea7486439e63125117b813d4a897277f536b2fd9b4eeece4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_conditional_logits_case.h",
+      "bytes": 21977,
+      "sha256": "b657f06281ef5209c215fd7351efc74411e8ddf568da171d356ae7f497cff34b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+      "bytes": 8875,
+      "sha256": "8e902007d0a7f61a3fbce2a7a42ee15d11bdf8990d8a08c878ab7762a93e4d3d"
+    }
+  ],
+  "source_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-conditional-logits-20261029\\source-freeze.json",
+    "bytes": 48312,
+    "sha256": "f817f14855dbbeac45dc90bcbaf889dbdffd79534db12f3d78576e6cfb4241af"
+  },
+  "frozen_project_files": 242,
+  "actual_compiled_project_files": 228,
+  "image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-conditional-logits-20261029\\bin\\tiny.exe",
+    "bytes": 144899072,
+    "sha256": "e5249c5788f6c3def44d177edfdd7261cf083eb7ed5d5479830ca514690f31d6"
+  },
+  "object": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-conditional-logits-20261029\\compile\\tiny\\unit.obj",
+    "bytes": 53260993,
+    "sha256": "c821295d19d6a318a2c6de8290b16b26d25f15d43eca2decb7f18271ec0205bb"
+  },
+  "CXX": {
+    "pid": 23064,
+    "exit": 0,
+    "started": 1793244327.177878,
+    "seconds": 81.19733834266663,
+    "state": "TERMINAL",
+    "timed_out": false
+  },
+  "link": {
+    "pid": 56520,
+    "exit": 0,
+    "started": 1793244422.5839734,
+    "seconds": 1.8894808292388916,
+    "state": "TERMINAL",
+    "timed_out": false
+  },
+  "actual_process_counts": {
+    "CXX": 1,
+    "link": 1,
+    "native": 5,
+    "failed_native": 0
+  },
+  "prior_offline_plan_error": {
+    "facts": {
+      "action": "offline build-plan preparation",
+      "command": [
+        "python",
+        ".scratch/inference-conditional-logits-20261029/build.py",
+        "prepare"
+      ],
+      "tool_session_id": 67592,
+      "exit_code": 1,
+      "result": "AssertionError: sdk_headers engine_consumers was nonempty",
+      "cause": "The initial helper incorrectly required every retained SDK input to be engine independent. Two existing engine objects (weights and reporting) legitimately depend on unchanged engine headers.",
+      "correction": "The helper now compares those retained engine sources and headers with their original compile receipts and rejects a dependency on a changed source/header.",
+      "original_helper": "build-before-sdk-dependency-review.py",
+      "observation": "Root started preparation before the helper correction was announced final. The offline assertion failed before plan/freeze/CXX/link/native consumers. The traceback displayed source lines from the concurrently updated helper; it is not a native build failure.",
+      "CXX": 0,
+      "links": 0,
+      "native_consumers": 0,
+      "downloads": 0
+    },
+    "counts_as_native": false,
+    "counts_as_CXX": false,
+    "archived_helper": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-conditional-logits-20261029\\build-before-sdk-dependency-review.py",
+      "bytes": 11193,
+      "sha256": "ca7750bbb1fa3bf4917a3fc4598e4b64f4f536dab2e7e6ac7e3ef282026126f9"
+    }
+  },
+  "SDK": {
+    "retained_inputs": 227,
+    "objects": 202,
+    "libraries": 25,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "existing_object_receipts_inspected": 122,
+    "unavailable_object_receipts": 80,
+    "existing_engine_consumers": 2,
+    "existing_engine_source_identities_checked_unchanged": true
+  },
+  "native_processes": {
+    "conditional-cpu": {
+      "process": {
+        "pid": 14516,
+        "exit": 0,
+        "started": 1793244430.7112255,
+        "seconds": 0.7953751087188721,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "verified_finite_pass": true,
+      "problems": [],
+      "facts": {
+        "status": "PASS",
+        "case": "conditional-logits",
+        "backend": "cpu",
+        "models": 1,
+        "configurations": 3,
+        "conditional_rows": 3,
+        "finite_accept_reject_residual_bonus": true,
+        "EOS_quota": true,
+        "zero_proposal_bonus": true,
+        "conditional_history_counts": true,
+        "readonly_C0_unchanged": true,
+        "greedy_conditional": true,
+        "actual_conditional_proposer": true,
+        "actual_private_q_rows": 2,
+        "same_q_leases": true,
+        "head_rng_checkpoint_unchanged": true,
+        "proposal_preflight_preserves_q": true,
+        "EOS_shortened_prefix": true,
+        "nonfirst_descriptor_zero_native": true,
+        "conditional_metadata_failures": 4,
+        "nonfirst_numeric_retired": true,
+        "same_terminal_retry": true,
+        "full_target_publication": false,
+        "natural_conditional_supplier": false,
+        "synthetic_untrained": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0
+      },
+      "report_member": "records/runs/conditional-cpu/report.json",
+      "stdout_member": "records/runs/conditional-cpu/stdout.log",
+      "stderr_member": "records/runs/conditional-cpu/stderr.log"
+    },
+    "conditional-cuda": {
+      "process": {
+        "pid": 29752,
+        "exit": 0,
+        "started": 1793244438.6592877,
+        "seconds": 0.820664644241333,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "verified_finite_pass": true,
+      "problems": [],
+      "facts": {
+        "status": "PASS",
+        "case": "conditional-logits",
+        "backend": "cuda",
+        "models": 1,
+        "configurations": 3,
+        "conditional_rows": 3,
+        "finite_accept_reject_residual_bonus": true,
+        "EOS_quota": true,
+        "zero_proposal_bonus": true,
+        "conditional_history_counts": true,
+        "readonly_C0_unchanged": true,
+        "greedy_conditional": true,
+        "actual_conditional_proposer": true,
+        "actual_private_q_rows": 2,
+        "same_q_leases": true,
+        "head_rng_checkpoint_unchanged": true,
+        "proposal_preflight_preserves_q": true,
+        "EOS_shortened_prefix": true,
+        "nonfirst_descriptor_zero_native": true,
+        "conditional_metadata_failures": 4,
+        "nonfirst_numeric_retired": true,
+        "same_terminal_retry": true,
+        "full_target_publication": false,
+        "natural_conditional_supplier": false,
+        "synthetic_untrained": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0
+      },
+      "report_member": "records/runs/conditional-cuda/report.json",
+      "stdout_member": "records/runs/conditional-cuda/stdout.log",
+      "stderr_member": "records/runs/conditional-cuda/stderr.log"
+    },
+    "mtp-logits-cpu": {
+      "process": {
+        "pid": 52468,
+        "exit": 0,
+        "started": 1793244449.1074703,
+        "seconds": 0.5769338607788086,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "verified_finite_pass": true,
+      "problems": [],
+      "facts": {
+        "status": "PASS",
+        "case": "mtp-logits-modifiers",
+        "backend": "cpu",
+        "models": 1,
+        "configurations": 2,
+        "K1_greedy_random": true,
+        "recursive_greedy_random": true,
+        "finite_math_branches": 2,
+        "already_normalized_q_not_reprocessed": true,
+        "original_B2_snapshots": true,
+        "StateOnly_no_input_or_draw": true,
+        "partial_HostImage": true,
+        "prefix_frontier_numeric_failure": true,
+        "new_prefix_policy_payload": true,
+        "strict_modifier_replay_rejected": true,
+        "historical_StateOnly_rebuild": true,
+        "known_key_metadata_zero_native": true,
+        "numeric_q_failures": 2,
+        "target_terminal_numeric_failure": true,
+        "target_terminal_retired_without_publish": true,
+        "target_terminal_resources_returned": true,
+        "same_key_retry": true,
+        "synthetic_untrained": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0,
+        "state_comparisons": {
+          "total": 10,
+          "numerically_equivalent": 10,
+          "byte_equal": 10
+        }
+      },
+      "report_member": "records/runs/mtp-logits-cpu/report.json",
+      "stdout_member": "records/runs/mtp-logits-cpu/stdout.log",
+      "stderr_member": "records/runs/mtp-logits-cpu/stderr.log"
+    },
+    "mtp-logits-cuda": {
+      "process": {
+        "pid": 56848,
+        "exit": 0,
+        "started": 1793244456.1198351,
+        "seconds": 1.0521085262298584,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "verified_finite_pass": true,
+      "problems": [],
+      "facts": {
+        "status": "PASS",
+        "case": "mtp-logits-modifiers",
+        "backend": "cuda",
+        "models": 1,
+        "configurations": 2,
+        "K1_greedy_random": true,
+        "recursive_greedy_random": true,
+        "finite_math_branches": 2,
+        "already_normalized_q_not_reprocessed": true,
+        "original_B2_snapshots": true,
+        "StateOnly_no_input_or_draw": true,
+        "partial_HostImage": true,
+        "prefix_frontier_numeric_failure": true,
+        "new_prefix_policy_payload": true,
+        "strict_modifier_replay_rejected": true,
+        "historical_StateOnly_rebuild": true,
+        "known_key_metadata_zero_native": true,
+        "numeric_q_failures": 2,
+        "target_terminal_numeric_failure": true,
+        "target_terminal_retired_without_publish": true,
+        "target_terminal_resources_returned": true,
+        "same_key_retry": true,
+        "synthetic_untrained": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0,
+        "state_comparisons": {
+          "total": 10,
+          "numerically_equivalent": 10,
+          "byte_equal": 10
+        }
+      },
+      "report_member": "records/runs/mtp-logits-cuda/report.json",
+      "stdout_member": "records/runs/mtp-logits-cuda/stdout.log",
+      "stderr_member": "records/runs/mtp-logits-cuda/stderr.log"
+    },
+    "natural-cuda": {
+      "process": {
+        "pid": 58704,
+        "exit": 0,
+        "started": 1793244464.2883458,
+        "seconds": 3.305192470550537,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "verified_finite_pass": true,
+      "problems": [],
+      "facts": {
+        "status": "PASS",
+        "case": "mtp-natural-relay",
+        "backend": "cuda",
+        "models": 1,
+        "journeys": 2,
+        "prompt_tokens": 154,
+        "capacity": 256,
+        "resident_capacity": 1,
+        "state_slots": 5,
+        "hidden_slots": 6,
+        "output_limit": 40,
+        "outputs": 40,
+        "serial_submissions": 23,
+        "auto_submissions": 24,
+        "source_submissions": 22,
+        "successor_submissions": 3,
+        "successor_publications": 2,
+        "successor_discards": 1,
+        "successor_refusals": 0,
+        "pending_pairs_before_A_publish": 3,
+        "deferred_waves": 2,
+        "reserved_two_grants": 2,
+        "accepted_drafts": 17,
+        "rejected_drafts": 4,
+        "ledger_records": 23,
+        "natural_RequestLoop": true,
+        "controlled_acceptance": false,
+        "original_ledger_equal": true,
+        "generated_ids_equal": true,
+        "greedy_rng_unchanged": true,
+        "all_sources_expired": true,
+        "simultaneous_native_inflight_claim": false,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0,
+        "state_comparisons": {
+          "total": 1,
+          "numerically_equivalent": 1,
+          "byte_equal": 1
+        }
+      },
+      "report_member": "records/runs/natural-cuda/report.json",
+      "stdout_member": "records/runs/natural-cuda/stdout.log",
+      "stderr_member": "records/runs/natural-cuda/stderr.log"
+    }
+  },
+  "unresolved_evidence_issues": [],
+  "explicit_state_comparisons": {
+    "total": 21,
+    "numerically_equivalent": 21,
+    "F32_GDN_absolute_budget": 3e-06
+  },
+  "finite_component_scope": {
+    "conditional_bias_mask_rows": 3,
+    "proposals": 2,
+    "sampling_configurations": 3,
+    "actual_recursive_proposer": true,
+    "original_q_leases": true,
+    "history_C0_and_derived_counts": true,
+    "greedy": true,
+    "EOS_and_quota": true,
+    "EOS_shortened_actual_width": true,
+    "typed_metadata_preflight": true,
+    "nonfirst_numeric_failure_retirement": true,
+    "authoritative_head_rng_checkpoint_preserved": true,
+    "natural_conditional_supplier": false,
+    "full_conditional_target_state_publication": false
+  },
+  "fixtures": {
+    "conditional": {
+      "directory": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input",
+      "manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input\\weights.tsv",
+        "bytes": 7861,
+        "sha256": "32901e43a5a0644169b433f4d57b38a37f0d9cd6475230427191b5d6d3a18515"
+      },
+      "prompt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input\\prompt.ids",
+        "bytes": 7,
+        "sha256": "d0bd45d1262e6c4df3e45026a6f9852c04a3b806be64f4d614ddd37a8561be0a"
+      },
+      "local_weight_source_count": 1,
+      "referenced_extent_count": 42,
+      "full_identity_extent_record": "records/plan.json: fixtures.conditional"
+    },
+    "natural": {
+      "directory": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original",
+      "manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\weights.tsv",
+        "bytes": 56735,
+        "sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1"
+      },
+      "prompt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\prompt.ids",
+        "bytes": 733,
+        "sha256": "b6a10feefb0af4687ee536285c9666bfbdf093fc9e484ab0461834345a5993a4"
+      },
+      "local_weight_source_count": 1,
+      "referenced_extent_count": 335,
+      "full_identity_extent_record": "records/plan.json: fixtures.natural"
+    }
+  },
+  "limits": [
+    "Finite conditional CPU/CUDA components use cached untrained GA/H64/V64 weights; no model-quality claim.",
+    "Conditional target-terminal numerical inputs are finite synthetic logits; actual NextN q comes from the unchanged private proposer and retains its original lease identity.",
+    "History-positive and greedy cases check finite terminal mathematics; they do not establish natural grammar/history supplier or full conditional target-state publication.",
+    "EOS-shortened proposer preflights maximum+1 rows; its terminal borrows only actual_m+1 rows. Every supplied target including bonus must be valid.",
+    "Existing episode-shared modifier and actual natural CUDA K1 RequestLoop cases remain separate regressions, not expanded pipeline applicability.",
+    "Full-state numerical comparisons retain the existing F32 GDN absolute budget 3e-6; byte identity is not required.",
+    "The initial strict SDK prepare assertion was an offline planning failure, not a CXX or native process. Two retained engine consumers have unchanged header identities; missing adjacent receipts remain explicit.",
+    "Source-freeze and actual consumer dependency counts describe different scopes.",
+    "No new throughput comparison, downloads, full SDK rebuild or full-goal completion claim.",
+    "Archive excludes environment values, tensor payloads and binaries. Original failed terminal/log/report facts are retained without being relabeled PASS."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-conditional-logits-2026-10-29.zip",
+    "bytes": 1322814,
+    "sha256": "727ad679494e610be157694a02392bbefbe0714f7439be8f063fac99de4a42c3"
+  },
+  "archive_members": 301,
+  "crc_and_member_sha256_readback": true,
+  "summary_note": "Detailed reports, state differences, output IDs, batch records and cached fixture identities/extents remain in the unchanged evidence ZIP; this JSON summarizes them."
+}

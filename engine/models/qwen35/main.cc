@@ -46,6 +46,7 @@
 #include "../../inference/mtp_acceptance.h"
 #include "../../inference/mtp_acceptance_graph.h"
 #include "../../inference/sampling_graph.h"
+#include "../../inference/logits_inputs.h"
 #include "../../inference/ct_block128_graph.h"
 #include "../../inference/execution_resources.h"
 #include "../../inference/program_carrier.h"
@@ -774,19 +775,16 @@ struct SamplingConfiguration final {
   sampling::Policy policy;
   sampling::LogitsPolicy modifiers;
 };
-// Typed ready inputs for one output episode. Bias/mask share one immutable
-// [1,V] snapshot; counts is C0 for the first conditional and mathematical
+// Typed ready inputs shared by an episode or prepared for each conditional.
+// Bias/mask are immutable [1,V] snapshots; counts is C0 and mathematical
 // prefix updates create later exact I32 counts. Copies retain
 // the original read permission. Use a lease carrying its existing StorageOwner,
 // or keep its borrowed allocator/resource/Context alive through every retained
 // copy and native use. Owners may supply different leases next episode; no
 // modifier payload enters a Snapshot or KV cache; the ledger holds only its
 // own budgeted derived host counts, never external bias/mask payloads.
-struct LogitsInput final {
-  c::TensorDesc description;
-  c::ReadLease lease;
-};
-struct LogitsInputs final { LogitsInput bias, allowed; LogitsInput counts{}; };
+using inference::LogitsInput;
+using inference::LogitsInputs;
 struct PreparedSampling;
 struct ColdResources;
 void validate_sampling_configuration(const SamplingConfiguration &value, std::int64_t vocabulary) {
@@ -830,6 +828,21 @@ void validate_logits_inputs(const SamplingConfiguration &configuration, const Lo
                             std::int64_t vocabulary) {
   check(logits_inputs_metadata_status(configuration, inputs, vocabulary));
   validate_logits_input_leases(configuration, inputs);
+}
+// The base retains the one C0 history. Conditional rows supply only immutable
+// bias/mask snapshots; preflight every descriptor before any native binding.
+void validate_prefix_logits_inputs(const SamplingConfiguration &configuration, const LogitsInputs &inputs,
+    std::span<const LogitsInputs> conditional, std::size_t rows, std::int64_t vocabulary) {
+  if (conditional.empty()) { validate_logits_inputs(configuration, inputs, vocabulary); return; }
+  if (conditional.size() != rows || (!configuration.modifiers.bias && !configuration.modifiers.allowed))
+    throw std::runtime_error("conditional logits require one configured bias/mask row per actual target including bonus");
+  auto base = configuration, per_row = configuration;
+  base.modifiers.bias = false; base.modifiers.allowed = false;
+  per_row.modifiers.history = {};
+  check(logits_inputs_metadata_status(base, inputs, vocabulary));
+  for (const auto &row : conditional) check(logits_inputs_metadata_status(per_row, row, vocabulary));
+  validate_logits_input_leases(base, inputs);
+  for (const auto &row : conditional) validate_logits_input_leases(per_row, row);
 }
 // A registered request has its own complete key before any bucket or native
 // episode exists. Do not manufacture EvaluationFailure.participant from it.
@@ -1306,6 +1319,11 @@ struct DraftProposal final {
   float probability = 0;
   c::ReadLease hidden, log_probabilities, next_counts;
 };
+struct PrefixSamplingKey final {
+  std::size_t proposals, sampling_index;
+  bool conditional = false;
+  friend auto operator<=>(const PrefixSamplingKey &, const PrefixSamplingKey &) = default;
+};
 struct PrefixSamplingProgram final {
   std::size_t proposals = 0, sampling_index = 0;
   std::vector<Tensor> literals;
@@ -1313,6 +1331,11 @@ struct PrefixSamplingProgram final {
   inference::PreparedProgramFamily programs;
   inference::ProgramCarrier<ColdResources> carrier;
   V logits, identities, ids, bias, allowed, counts, continuation, packet;
+  struct ConditionalInput final {
+    V bias, allowed;
+    inference::ProgramIo::Input bias_input, allowed_input;
+  };
+  std::vector<ConditionalInput> conditional_inputs;
   std::vector<V> q, accepted, final_ids, valid;
   Tensor identity_values, id_values, continuation_values;
   std::vector<float> continuation_host;
@@ -1374,7 +1397,7 @@ struct ColdResources final {
   std::map<FamilyKey, std::unique_ptr<Family>> families, probe_families;
   std::map<ExecutionShape, std::unique_ptr<Phase>> phases, probe_phases;
   std::map<std::tuple<std::size_t, bool, std::size_t>, std::unique_ptr<DraftProgram>> draft_programs;
-  std::map<std::pair<std::size_t, std::size_t>, std::unique_ptr<PrefixSamplingProgram>> prefix_sampling_programs;
+  std::map<PrefixSamplingKey, std::unique_ptr<PrefixSamplingProgram>> prefix_sampling_programs;
 
   explicit ColdResources(const ModelGeometry &geometry, std::size_t capacity, PrecisionProfile precision,
       SamplingConfiguration first, std::span<const SamplingConfiguration> additional,
@@ -1528,7 +1551,7 @@ public:
   // its one slot and shared IO through native retirement and all result reads.
   std::map<ExecutionShape, std::unique_ptr<Phase>> &phases, &probe_phases;
   std::map<std::tuple<std::size_t, bool, std::size_t>, std::unique_ptr<DraftProgram>> &draft_programs;
-  std::map<std::pair<std::size_t, std::size_t>, std::unique_ptr<PrefixSamplingProgram>> &prefix_sampling_programs;
+  std::map<PrefixSamplingKey, std::unique_ptr<PrefixSamplingProgram>> &prefix_sampling_programs;
   std::size_t draft_program_graph_calls = 0, prefix_decision_graph_calls = 0;
   const PreparedSampling &sampling_configuration(std::size_t index = 0) const { return resources_->sampling_configuration(index); }
   std::size_t sampling_configuration_count() const noexcept { return resources_->sampling_configurations.size(); }
@@ -3177,12 +3200,14 @@ public:
     }
   }
 
-  void prepare_prefix_sampling(std::size_t proposals, std::size_t sampling_index = 0) {
+  void prepare_prefix_sampling(std::size_t proposals, std::size_t sampling_index = 0, bool conditional = false) {
     preparation_started_ = true;
     const auto &selected_sampler = sampling_configuration(sampling_index).configuration;
     if ((!selected_sampler.enabled && selected_sampler.modifiers.empty()) || state_storage_prepared || proposals >= cache_plan.candidate_boundaries)
       throw std::runtime_error("prepare bounded speculative-sampling widths before cache storage");
-    const auto key = std::pair{proposals, sampling_index};
+    if (conditional && !selected_sampler.modifiers.bias && !selected_sampler.modifiers.allowed)
+      throw std::runtime_error("conditional prefix inputs require configured bias or mask ports");
+    const PrefixSamplingKey key{proposals, sampling_index, conditional};
     if (prefix_sampling_programs.contains(key)) return;
     auto prepared = std::make_unique<PrefixSamplingProgram>(); auto &program = *prepared;
     program.proposals = proposals; program.sampling_index = sampling_index;
@@ -3190,7 +3215,20 @@ public:
     Recipe r(weights, projections, assembly, geometry, 1, 1, &weight_meanings);
     const auto count = f(static_cast<std::int64_t>(proposals + 1));
     program.logits = r.input(r.dense_spec(Type::kFloat32, {count, f(vocabulary)}));
-    const auto inputs = prepare_logits_inputs(r, selected_sampler.modifiers);
+    auto shared_policy = selected_sampler.modifiers;
+    if (conditional) { shared_policy.bias = false; shared_policy.allowed = false; }
+    const auto inputs = prepare_logits_inputs(r, shared_policy);
+    std::vector<sampling::LogitsInputsFor<V>> conditional_ports;
+    if (conditional) {
+      conditional_ports.reserve(proposals + 1); program.conditional_inputs.resize(proposals + 1);
+      const sampling::LogitsPolicy policy{.bias = selected_sampler.modifiers.bias, .allowed = selected_sampler.modifiers.allowed};
+      for (auto &row : program.conditional_inputs) {
+        auto ports = prepare_logits_inputs(r, policy);
+        if (ports.bias) row.bias = *ports.bias;
+        if (ports.allowed) row.allowed = *ports.allowed;
+        conditional_ports.push_back(std::move(ports));
+      }
+    }
     if (inputs.bias) program.bias = *inputs.bias;
     if (inputs.allowed) program.allowed = *inputs.allowed;
     if (inputs.counts) program.counts = *inputs.counts;
@@ -3198,7 +3236,8 @@ public:
       program.identities = r.input(r.dense_spec(Type::kUInt32, {count, f(4)}));
       if (proposals) program.ids = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(proposals)}));
       auto assembled = sampling::speculative_prefix(r, program.logits, program.identities,
-          program.ids, selected_sampler.policy, inputs, selected_sampler.modifiers.history);
+          program.ids, selected_sampler.policy, inputs, selected_sampler.modifiers.history,
+          std::span<const sampling::LogitsInputsFor<V>>(conditional_ports));
       program.q = std::move(assembled.q); program.accepted = std::move(assembled.accepted);
       program.final_ids = std::move(assembled.final_ids); program.valid = std::move(assembled.valid);
     } else {
@@ -3208,6 +3247,9 @@ public:
       // A greedy verifier still needs the exact processed target of every row;
       // no proposal-q or RNG ports belong to this program.
       for (std::size_t row = 0; row <= proposals; ++row) {
+        if (conditional) {
+          row_inputs.bias = conditional_ports[row].bias; row_inputs.allowed = conditional_ports[row].allowed;
+        }
         const auto raw = r.copy(r.slice(program.logits, 0, f(static_cast<std::int64_t>(row)), f(1)));
         const auto selection = sampling::processed_selection(r,
             sampling::process_logits(r, raw, row_inputs, selected_sampler.modifiers.history), std::optional<V>{}, selected_sampler.policy);
@@ -3249,7 +3291,8 @@ public:
     }
     program.packet_host.resize(selected_sampler.enabled ? proposals + 5 : proposals + 2);
     check(program.io.prepare(compiled_program, bool(program.identities) + bool(program.ids) + bool(program.continuation),
-        1 + program.q.size() + bool(program.bias) + bool(program.allowed) + bool(program.counts),
+        cache::add(1 + program.q.size() + bool(program.bias) + bool(program.allowed) + bool(program.counts),
+            cache::multiply(program.conditional_inputs.size(), std::size_t(selected_sampler.modifiers.bias) + std::size_t(selected_sampler.modifiers.allowed))),
         1, 0));
     if (program.identities) check(program.io.add_fixed(program.identities, program.identity_values.read()));
     if (program.ids) check(program.io.add_fixed(program.ids, program.id_values.read()));
@@ -3258,6 +3301,10 @@ public:
     if (program.bias) program.bias_input = take(program.io.add_input(program.bias));
     if (program.allowed) program.allowed_input = take(program.io.add_input(program.allowed));
     if (program.counts) program.counts_input = take(program.io.add_input(program.counts));
+    for (auto &row : program.conditional_inputs) {
+      if (row.bias) row.bias_input = take(program.io.add_input(row.bias));
+      if (row.allowed) row.allowed_input = take(program.io.add_input(row.allowed));
+    }
     program.q_inputs.reserve(program.q.size());
     for (const auto port : program.q) program.q_inputs.push_back(take(program.io.add_input(port)));
     program.logits_input = take(program.io.add_input(program.logits));
@@ -3288,12 +3335,12 @@ public:
 
   // Target family widths and replay counts stay with the finite request plan;
   // every recursive consumer shares this model's actual NextN/sampler programs.
-  void prepare_recursive_round_programs(std::size_t sampling_index = 0) {
+  void prepare_recursive_round_programs(std::size_t sampling_index = 0, bool conditional = false) {
     const auto &selected_sampler = sampling_configuration(sampling_index).configuration;
     for (std::size_t rows = 1; rows <= cache_plan.candidate_boundaries; ++rows) {
       prepare_draft_program(rows, false);
       if (selected_sampler.enabled || !selected_sampler.modifiers.empty())
-        prepare_prefix_sampling(rows - 1, sampling_index);
+        prepare_prefix_sampling(rows - 1, sampling_index, conditional);
     }
     prepare_draft_program(1, true, sampling_index);
     if (capacity > 1) prepare_draft_program(2, true, sampling_index);
@@ -3302,15 +3349,16 @@ public:
   PrefixSamplingResult sample_recursive_prefix(c::ConstTensorView logits,
       std::span<const std::int32_t> proposals, std::span<const c::ReadLease> q,
       cache::SamplingCursor cursor, std::size_t quota, std::span<const std::int32_t> eos,
-      const inference::RequestStopPolicy *stop_policy, std::size_t sampling_index = 0, const LogitsInputs &inputs = {}) {
+      const inference::RequestStopPolicy *stop_policy, std::size_t sampling_index = 0, const LogitsInputs &inputs = {},
+      std::span<const LogitsInputs> conditional_inputs = {}) {
     const auto &selected_sampler = sampling_configuration(sampling_index).configuration;
     if ((selected_sampler.enabled ? proposals.size() != q.size() : !q.empty() || selected_sampler.modifiers.empty()))
       throw std::runtime_error("speculative sampling requires its actual proposal distributions or greedy modifiers");
     if (!quota) throw std::runtime_error("speculative prefix requires a positive output quota");
     inference::mtp::validate_token_ids(proposals, static_cast<std::int32_t>(vocabulary));
     inference::request_stop_policy(stop_policy).validate(vocabulary);
-    validate_logits_inputs(selected_sampler, inputs, vocabulary);
-    auto found = prefix_sampling_programs.find({proposals.size(), sampling_index});
+    validate_prefix_logits_inputs(selected_sampler, inputs, conditional_inputs, cache::add(proposals.size(), 1), vocabulary);
+    auto found = prefix_sampling_programs.find({proposals.size(), sampling_index, !conditional_inputs.empty()});
     if (found == prefix_sampling_programs.end()) throw std::runtime_error("speculative-sampling width was not cold prepared");
     auto &program = *found->second;
     recover_private_carrier(program.carrier);
@@ -3339,6 +3387,11 @@ public:
       if (program.bias_input) check(program.io.bind(run, program.bias_input, inputs.bias.description, inputs.bias.lease));
       if (program.allowed_input) check(program.io.bind(run, program.allowed_input, inputs.allowed.description, inputs.allowed.lease));
       if (program.counts_input) check(program.io.bind(run, program.counts_input, inputs.counts.description, inputs.counts.lease));
+      for (std::size_t row = 0; row < program.conditional_inputs.size(); ++row) {
+        const auto &ports = program.conditional_inputs[row]; const auto &values = conditional_inputs[row];
+        if (ports.bias_input) check(program.io.bind(run, ports.bias_input, values.bias.description, values.bias.lease));
+        if (ports.allowed_input) check(program.io.bind(run, ports.allowed_input, values.allowed.description, values.allowed.lease));
+      }
       for (std::size_t row = 0; row < q.size(); ++row)
         check(program.io.bind(run, program.q_inputs[row], dense(Type::kFloat32, {1, vocabulary}), q[row]));
       const auto queues = program.carrier.queues();
@@ -5431,12 +5484,13 @@ public:
   // private pages; it is never installed in a committed draft cache.
   std::vector<std::int32_t> propose_recursive(Session &session, std::size_t maximum,
       std::span<const std::int32_t> eos = {}, std::vector<c::ReadLease> *q = nullptr,
-      const inference::RequestStopPolicy *stop_policy = nullptr, const LogitsInputs &logits = {}) {
+      const inference::RequestStopPolicy *stop_policy = nullptr, const LogitsInputs &logits = {},
+      std::span<const LogitsInputs> conditional_inputs = {}) {
     if (session.model_ != this)
       throw std::runtime_error("recursive proposal Session belongs to another model");
     const auto &selected_sampling = session.sampling_configuration();
     const auto &selected_sampler = selected_sampling.configuration;
-    validate_logits_inputs(selected_sampler, logits, vocabulary);
+    validate_prefix_logits_inputs(selected_sampler, logits, conditional_inputs, cache::add(maximum, 1), vocabulary);
     if (active_step || carrier_borrowed || session.pending || session.stopping || session.failed ||
         !session.head || !session.head->draft || (selected_sampler.enabled && !q) ||
         maximum >= capacity - session.length() || maximum >= cache_plan.candidate_boundaries)
@@ -5453,6 +5507,9 @@ public:
     c::ReadLease approximate;
     auto current_logits = logits;
     for (std::size_t i = 0; i < maximum; ++i) {
+      if (!conditional_inputs.empty()) {
+        current_logits.bias = conditional_inputs[i].bias; current_logits.allowed = conditional_inputs[i].allowed;
+      }
       std::vector<std::int32_t> ids;
       std::vector<c::ReadLease> shifted;
       if (!i && work.state.lag) { ids.push_back(work.state.catchup_token); shifted.push_back(session.head->prior_hidden); }

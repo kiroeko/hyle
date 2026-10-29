@@ -7,6 +7,7 @@
 #include <initializer_list>
 #include <limits>
 #include <optional>
+#include <span>
 #include <stdexcept>
 #include <vector>
 
@@ -463,12 +464,17 @@ template<class Value> struct PrefixDecisionsFor final {
 // All validity ports must pass before publishing any selected prefix/state.
 // Acceptance preserves these supplied verifier conditionals, not a promise of
 // bit-identical distributions from a different target execution row width.
+// Optional conditional_inputs borrows one bias/mask pair for every target row,
+// including the bonus row. It cannot mix with shared bias/mask ports or own
+// counts: inputs.counts is the sole first history, advanced by each proposal.
+// All conditional rows have the same cold bias/mask presence and port types.
 using PrefixDecisions = PrefixDecisionsFor<g::ValueId>;
 
 template<class R, class Value>
 PrefixDecisionsFor<Value> speculative_prefix(R &r, Value logits, Value identities,
                                   Value proposals, Policy policy = {}, LogitsInputsFor<Value> inputs = {},
-                                  HistoryPolicy history = {}) {
+                                  HistoryPolicy history = {},
+                                  std::span<const LogitsInputsFor<Value>> conditional_inputs = {}) {
   const auto shape = r.spec(logits), keys = r.spec(identities);
   if (shape.data_type() != Type::kFloat32 || shape.rank() != 2 ||
       !shape.dimensions()[0].is_fixed() || shape.dimensions()[0].fixed_value() <= 0 ||
@@ -483,10 +489,38 @@ PrefixDecisionsFor<Value> speculative_prefix(R &r, Value logits, Value identitie
         ids.dimensions()[0] != fixed(static_cast<std::int64_t>(count)))
       throw std::runtime_error("speculative sampling needs one original proposal per q row");
   }
+  if (!conditional_inputs.empty()) {
+    if (conditional_inputs.size() != count + 1)
+      throw std::runtime_error("speculative conditional logits need one bias/mask pair per target row including bonus");
+    if (inputs.bias || inputs.allowed)
+      throw std::runtime_error("speculative conditional logits cannot mix with shared bias/mask ports");
+    const bool bias = conditional_inputs.front().bias.has_value();
+    const bool allowed = conditional_inputs.front().allowed.has_value();
+    const auto require_port = [&](Value value, Type type) {
+      const auto spec = r.spec(value);
+      if (spec.data_type() != type || spec.rank() != 2 || spec.dimensions()[0] != fixed(1) ||
+          spec.dimensions()[1] != shape.dimensions()[1])
+        throw std::runtime_error("speculative conditional logits differ from their cold typed [1,V] ports");
+    };
+    // Validate the complete borrowed port set before appending any nodes.
+    // Histories are derived once from C0, never supplied independently per row.
+    for (const auto &row : conditional_inputs) {
+      if (row.counts)
+        throw std::runtime_error("speculative conditional logits cannot supply per-row history counts");
+      if (row.bias.has_value() != bias || row.allowed.has_value() != allowed)
+        throw std::runtime_error("speculative conditional logits require consistent per-row bias/mask presence");
+      if (row.bias) require_port(*row.bias, Type::kFloat32);
+      if (row.allowed) require_port(*row.allowed, Type::kBool);
+    }
+  }
   PrefixDecisionsFor<Value> result;
   std::vector<DistributionFor<Value>> target;
   auto row_inputs = inputs;
   for (std::size_t row = 0; row <= count; ++row) {
+    if (!conditional_inputs.empty()) {
+      row_inputs.bias = conditional_inputs[row].bias;
+      row_inputs.allowed = conditional_inputs[row].allowed;
+    }
     target.push_back(processed_distribution(r,process_logits(r,r.copy(r.slice(logits,0,
         fixed(static_cast<std::int64_t>(row)),fixed(1))),row_inputs,history),policy));
     if (!history.empty() && row < count)

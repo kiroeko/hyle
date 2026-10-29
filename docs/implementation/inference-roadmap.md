@@ -29,9 +29,11 @@ HYLE 的产品目标是完整推理引擎；Compute、Graph、内存、调度、
 | GPU热点 | GDN a/b小投影并入同输入投影或专用GEMV；qkv/z/a/b、q/k/v、gate/up的整模型融合候选；模型内GEMM实际DRAM带宽；norm、残差、concat等小kernel融合。已关闭候选须有适用边界与重新评价条件，不能用旧叶子结果排除不同工况 |
 | 测量与回归 | 当前版本R1／B2的off／auto及MTP跟踪、capture数量和主机／GPU分解；schedule对steps的交错A/A；原始startup、ready、prefill、decode、每turn与综合端点；显存／内存；长输入、多轮、多会话、跨平台及CPU＋GPU／MoE适用基线。重叠step时长不可相加代替墙时，旧Nsight不代签当前版本 |
 
-推荐实施顺序：固定拓扑attention与MTP首端口诊断 → 跨轮预热、hidden索引与小投影 →
-共同稳态执行和特性组合收敛 → MTP固定形状／设备后继 → 更深GPU融合与带宽。
-独立事项可并行；功能与架构变更先做相关有限检查，再用完整消费者验证性能。
+当前实施顺序：先补完已确认的底层功能尾项（逐条件动态logits的完整Verify发布、自然请求提供者及控制／恢复边界），
+再收敛完整执行编排、普通／MTP共同机制、SDK接线和工程文档，随后集中连续后继、GPU融合及带宽等性能工作。
+必要的正确性及短回归随实现进行；完整性能窗口放在实质改动之后，不以反复性能实验替代功能开发。
+原看板“功能与工程边界95%”已拆为底层功能、工程边界：有效长度prefill按后续已完成实现及有限检查结项；
+CPU路由剩余成本覆盖归性能，已安装Graph Source／Store／Append的detail收敛归共同架构。它们不再作为底层功能的未完比例。
 2026-10-28的[ProgramIo完整窗口](../evidence/performance/inference-program-io-current-window-2026-10-28.json)
 新发现两轮prefill落后；均匀R1也选择packed数学，原indexed-state融合未命中。
 均匀R1的冷选择直接A/B与数值核对已完成，保留真实ragged、padding、有界块及未知suffix能力，
@@ -214,8 +216,10 @@ K1完整接受的[投机后继组件](../evidence/correctness/inference-mtp-k1-s
 PreparedGenerationCall分开规划上界与实际提交行数，报告不按接受前缀缩小已执行工作；CPU／CUDA原生命令行用输出额度3／4自然形成Verify[2,3]，
 5个活动行、6个物理行、顶层与逐请求账簿一致，完整输出7个token。typed BatchObserver另核对[1,3]，
 13项完整状态比较保持原数值预算，真实Qwen K1接力回归通过；共1次CXX／链接和5个有限进程，无SDK重编或下载，无新性能结论。
-继续复查确认逐条件bias／mask尚无真实前缀输入：现有history推进与episode快照不能代签动态约束，原98%估计偏高。
-先补逐行输入和q／p共用，再接可选自然请求提供者及终止／失败／缓存边界；职责与有限范围见[架构中的待实现合同](../architecture/inference-design.md)。
+继续复查确认history推进与episode快照不能代签逐条件动态约束，原98%估计偏高。
+[逐条件输入首片](../evidence/correctness/inference-conditional-logits-2026-10-29.json)已抽出共同typed输入，冷准备独立逐行端口，真实递归提案按行采样，原terminal复用同一bias／mask和原q租约；C0唯一并按实际草稿推进。
+CPU／CUDA有限检查覆盖接受、拒绝、bonus、history计数、greedy、EOS截短、完整元数据预检及非首行全mask失败／重试，head／RNG／旧检查点保持；原共享modifier和真实Qwen K1自然接力回归通过。
+共1次CXX／链接和5个有限进程，无SDK重编或下载。条件目标logits仍是有限合成输入，尚未接完整条件Verify发布或自然请求提供者；下一片复用原Verify、提交、发布及失败退休，不另造执行器。职责见[架构合同](../architecture/inference-design.md)。
 
 ## 当前实现概况
 
