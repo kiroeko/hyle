@@ -120,7 +120,7 @@ Qwen特殊token集中在模型自己的`generation_tokens.h`，请求额外停�
 GLM的StateStore／StateHead不使用这些分页尾，不为接口统一而引入伪Frame或Qwen状态。共同结果见证已经共用，不再叠加纯转发的发布接口。
 
 完整页准备归`prepare_append_pages`：预留原候选引用和dirty-bank容量，保留原完整前缀，尝试真实尾预留，必要时回落COW并逐页取得原Inventory引用。
-普通／验证／后继target、批量draft及私有NextN直接共用这一算法。模型提供真实银行范围、epoch／relay资格及静态页获取适配，仍决定逻辑状态和完整Head发布。
+普通／验证／后继target、批量draft及私有NextN通过整组入口复用这一算法。模型提供真实银行范围、epoch／relay资格及候选准备，仍决定逻辑状态和完整Head发布。
 返回尾的目的容量由原episode预留；晚获取失败保留此前已移入的原引用、writer和尾权限，交原恢复机制处理，不推定退休或另建资源owner。
 [12项真实CPU页权限检查及模型回归](../evidence/correctness/inference-sidecar-pages-2026-10-29.json)覆盖尾复用、跨页、晚bank拒绝后的COW和晚新页获取失败。
 
@@ -136,6 +136,14 @@ Qwen的target、图内draft及私有NextN直接使用同一实现，旧库存与
 库存只是政策引用计数，原Arena的Unavailable仍须真实等待；临时取得的原writer先释放，才允许政策ID复用。
 扫描多个不可用页只在结束时重排一次，保留原页选择顺序，避免逐页搬移数组的平方成本。
 [单银行真实Graph及模型回归](../evidence/correctness/inference-paged-sequence-2026-10-29.json)覆盖完整追加／分叉／COW／尾复用、实际页回收、晚银行拒绝及普通／MTP路径；没有增加载荷复制或第二执行器，也不据此宣称吞吐提升。
+
+完整分页追加组由`prepare_paged_append`承接：先核总容量，再按原成员顺序准备候选、取得页，生成单成员／合批布局，构造原ready或pending Source的Append。
+`prepare_paged_append_commits`与`return_paged_append_tails`分别处理原结果票据和物理尾归属，模型保留它们围绕接受、repair和ledger预检的调用顺序。
+`PagedAppendScratch`只冷预留整数、临时Source与尾ID元数据；Source在同步返回前释放，原Append自行保留真实读权限，嵌套NextN不借用外层scratch。
+R1直接使用成员版本，ahead四组原整数由Schema复制；pending或无银行时不再创建未被使用的旧聚合版本，布局generation不承诺与旧代码同号。
+撤销成员仍参与物理尾回收，部分接受不能倒退已写尾；零银行则执行原空归尾，不为共享政策页强加物理尾唯一性。
+[4项组件检查及7条模型旅程](../evidence/correctness/inference-paged-append-cohort-2026-10-29.json)包含5次真实Graph提交、晚成员取页失败及恢复；模型完整报告与上一片一致。
+本次删除target／draft的两处每步Source数组分配，完整步骤编排及跨家族程序接入仍继续审查；不是新的吞吐结论。
 
 完整前缀命中可在同wave后续请求准备失败前已经采样新frontier，但尚未向原请求交付。
 普通随机预算预检按原输入、导入记录、游标及live head核对这一事实，只扣已执行的一个draw，继续严格核未来输出；

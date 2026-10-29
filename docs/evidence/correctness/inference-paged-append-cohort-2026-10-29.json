@@ -1,0 +1,301 @@
+{
+  "schema": "hyle.correctness.paged-append-cohort.v1",
+  "date": "2026-10-29",
+  "status": "PASS_WITH_PRESERVED_PRE_FIX_FAILURE",
+  "base_commit": "d896ddc419128dc6ac52bbe7139a0a10d347f922",
+  "changes": [
+    "Share whole paged append cohort preparation: original page/tail acquire, member/aggregate layouts and original ready/pending Source Append construction.",
+    "Share original delta/ticket preparation and tail return algorithms; keep their model-specific call order, complete acceptance, Head/ledger/RNG and actual episode retirement.",
+    "Cold scratch reuses source footprint and owner metadata; every synchronous return clears temporary source pins. No per-step source-vector allocation, second owner, executor or retained callback.",
+    "Retain total-reference/schema preflight before any candidate/page acquisition, original per-member begin/acquire order, R1 fast path, ahead borrowed integers, withdrawn members and partial accepted physical tail facts.Zero-bank tail return still validates the original empty transaction cohort, but does not impose physical-tail owner uniqueness on shared policy-only pages."
+  ],
+  "counts": {
+    "consumer_TUs": 5,
+    "CXX_attempts": 14,
+    "successful_CXX": 11,
+    "preserved_compile_failures": 3,
+    "links": 11,
+    "unchanged_SDK_engine_inputs": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "full_builds": 0,
+    "downloads": 0,
+    "native_processes": 15,
+    "current_passed_native_processes": 8,
+    "preserved_failed_native_processes": 1,
+    "current_component_tests": 4,
+    "current_component_Graph_submissions": 5,
+    "current_model_processes": 7
+  },
+  "builds": [
+    {
+      "unit": "budget",
+      "attempt": "attempt1",
+      "native_exit": 0
+    },
+    {
+      "unit": "budget",
+      "attempt": "attempt2",
+      "native_exit": 0
+    },
+    {
+      "unit": "host-image",
+      "attempt": "attempt1",
+      "native_exit": 0
+    },
+    {
+      "unit": "host-image",
+      "attempt": "attempt2",
+      "native_exit": 0
+    },
+    {
+      "unit": "model",
+      "attempt": "attempt1",
+      "native_exit": 2
+    },
+    {
+      "unit": "model",
+      "attempt": "attempt2",
+      "native_exit": 0
+    },
+    {
+      "unit": "model",
+      "attempt": "attempt3",
+      "native_exit": 0
+    },
+    {
+      "unit": "ordinary",
+      "attempt": "attempt1",
+      "native_exit": 2
+    },
+    {
+      "unit": "ordinary",
+      "attempt": "attempt2",
+      "native_exit": 0
+    },
+    {
+      "unit": "ordinary",
+      "attempt": "attempt3",
+      "native_exit": 0
+    },
+    {
+      "unit": "sequence",
+      "attempt": "attempt1",
+      "native_exit": 2
+    },
+    {
+      "unit": "sequence",
+      "attempt": "attempt2",
+      "native_exit": 0
+    },
+    {
+      "unit": "sequence",
+      "attempt": "attempt3",
+      "native_exit": 0
+    },
+    {
+      "unit": "sequence",
+      "attempt": "attempt4",
+      "native_exit": 0
+    }
+  ],
+  "links": [
+    {
+      "unit": "budget",
+      "attempt": "attempt1",
+      "native_exit": 0
+    },
+    {
+      "unit": "budget",
+      "attempt": "attempt2",
+      "native_exit": 0
+    },
+    {
+      "unit": "host-image",
+      "attempt": "attempt1",
+      "native_exit": 0
+    },
+    {
+      "unit": "host-image",
+      "attempt": "attempt2",
+      "native_exit": 0
+    },
+    {
+      "unit": "model",
+      "attempt": "attempt1",
+      "native_exit": 0
+    },
+    {
+      "unit": "model",
+      "attempt": "attempt2",
+      "native_exit": 0
+    },
+    {
+      "unit": "ordinary",
+      "attempt": "attempt1",
+      "native_exit": 0
+    },
+    {
+      "unit": "ordinary",
+      "attempt": "attempt2",
+      "native_exit": 0
+    },
+    {
+      "unit": "sequence",
+      "attempt": "attempt1",
+      "native_exit": 0
+    },
+    {
+      "unit": "sequence",
+      "attempt": "attempt2",
+      "native_exit": 0
+    },
+    {
+      "unit": "sequence",
+      "attempt": "attempt3",
+      "native_exit": 0
+    }
+  ],
+  "results": [
+    {
+      "case": "sequence-cpu",
+      "native_exit": 0,
+      "report": {
+        "status": "PASS",
+        "tests": 4,
+        "failures": 0,
+        "skipped": 0
+      },
+      "details": "batch/runs/sequence-cpu/current/report.json"
+    },
+    {
+      "case": "history-cpu",
+      "native_exit": 0,
+      "report": {
+        "status": "PASS",
+        "case": "history-control",
+        "backend": "cpu",
+        "final_versions": 0
+      },
+      "details": "batch/runs/history-cpu/current/report.json"
+    },
+    {
+      "case": "mixed-lag-cuda",
+      "native_exit": 0,
+      "report": {
+        "status": "PASS",
+        "backend": "cuda",
+        "mode": "mtp_mixed_lag",
+        "requests": 2,
+        "base_lags": [
+          0,
+          1
+        ],
+        "controlled_accepted": [
+          1,
+          2
+        ],
+        "final_versions": 0
+      },
+      "details": "batch/runs/mixed-lag-cuda/current/report.json"
+    },
+    {
+      "case": "mtp-ragged-cuda",
+      "native_exit": 0,
+      "report": {
+        "backend": "cuda",
+        "mode": "mtp_ragged_prefill",
+        "final_versions": 0,
+        "final_images": 0,
+        "status": "PASS"
+      },
+      "details": "batch/runs/mtp-ragged-cuda/current/report.json"
+    },
+    {
+      "case": "mtp-natural-cuda",
+      "native_exit": 0,
+      "report": {
+        "status": "PASS",
+        "case": "mtp-natural-relay",
+        "backend": "cuda",
+        "output_limit": 40,
+        "outputs": 40,
+        "source_submissions": 22,
+        "successor_submissions": 3,
+        "successor_publications": 2,
+        "successor_discards": 1,
+        "original_ledger_equal": true,
+        "generated_ids_equal": true,
+        "final_versions": 0
+      },
+      "details": "batch/runs/mtp-natural-cuda/current/report.json"
+    },
+    {
+      "case": "ordinary-cuda",
+      "native_exit": 0,
+      "report": {
+        "status": "PASS",
+        "backend": "cuda",
+        "control_and_candidate_arms": 16,
+        "complete_prefix_state_epoch_rng_equal": true,
+        "all_source_session_page_owners_retired": true
+      },
+      "details": "batch/runs/ordinary-cuda/current/report.json"
+    },
+    {
+      "case": "host-image-cpu",
+      "native_exit": 0,
+      "report": {
+        "status": "PASS",
+        "N": 1,
+        "idle_evictions": 1,
+        "host_restores": 1,
+        "restore_capacity_status": "ResourceExhausted",
+        "restored_state_byte_equal": true,
+        "request_waves": 5,
+        "target_calls": 6,
+        "ledger_rebuild_graph_calls": 0,
+        "final_versions": 0,
+        "final_images": 0
+      },
+      "details": "batch/runs/host-image-cpu/current/report.json"
+    },
+    {
+      "case": "budget-cpu",
+      "native_exit": 0,
+      "report": {
+        "status": "PASS",
+        "backend": "cpu",
+        "final_versions": 0
+      },
+      "details": "batch/runs/budget-cpu/current/report.json"
+    }
+  ],
+  "preserved_corrections": [
+    "Three first CXX attempts exposed the same move-only Result conditional-expression copy error. Replace selection with explicit branch returns, no permission or identity change.",
+    "Actual four-case component run before the zero-bank fix failed only shared policy-page tail uniqueness; original three cases passed. Empty original cohort handling fixes it without relaxing nonempty-bank permissions."
+  ],
+  "previous_report_comparison": {
+    "cases": 7,
+    "full_reports_equal": 7,
+    "details": "batch/previous-report-comparison.json in accompanying ZIP"
+  },
+  "source_identity_manifest": "batch/product-sources.json in accompanying ZIP",
+  "current_link_base": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-append-cohort-20261029\\model-link-base.json",
+    "bytes": 138357,
+    "sha256": "676dbd521ffa66437b8f3e9d89097564fe7380c6a01b4aac880ad434bc62d35d"
+  },
+  "limitations": [
+    "Finite CPU/CUDA only; no new Apple/Vulkan, multi-device or device-fault claim.",
+    "Original numeric tolerances remain; no universal byte-equality or model-task quality claim.",
+    "No new throughput/full memory window. Full execution orchestration and remaining Source/Store contracts are not complete."
+  ],
+  "cleanup": {
+    "status": "PASS",
+    "files": 21,
+    "bytes": 825101188.0,
+    "details": "batch/cleanup-result.json in accompanying ZIP"
+  },
+  "review": "Independent source review checked R1, ahead borrowed layout, pending versus ready frames, withdrawal, partial acceptance, nested NextN scratch reuse and zero-bank semantics. No substantive issue remained after the recorded fix."
+}

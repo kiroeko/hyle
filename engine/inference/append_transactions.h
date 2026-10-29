@@ -151,6 +151,8 @@ class AppendTransactions final {
       std::span<std::uint8_t> bound) noexcept
       : nodes_(nodes), transactions_(transactions), bound_(bound) {}
 
+  std::size_t size() const noexcept { return transactions_.size(); }
+
   // Same extent preconditions as std::span::subspan on the original arrays.
   AppendTransactions subspan(std::size_t first, std::size_t count) const noexcept {
     return {nodes_.subspan(first, count), transactions_.subspan(first, count), bound_.subspan(first, count)};

@@ -93,7 +93,12 @@ Kimi现有KDA／MLA消费者不产生生成token，不为共用请求接口虚�
 替换Qwen普通、图内draft及私有NextN中的重复资源算法，无兼容别名。模型保留数学、长度／frontier、GDN／conv／hidden及NextN规则，原ExecutionEpisode继续承担提交和退休。
 单银行真实Graph与两银行晚拒绝共2项、14项会话／前缀测试及7个有限模型旅程通过；受session_state头变化影响的weights编译单元刷新，226个SDK输入复用。
 两处新消费者编译接线问题已修，一处期望测试数错误仅重核原XML，没有重跑或放宽原断言；未刷新吞吐或运行新平台。
-下一片继续收拢步骤准备与发布组合，不能把分页生命周期抽离视为完整执行引擎已完成。
+随后[分页追加组共同编排](../evidence/correctness/inference-paged-append-cohort-2026-10-29.json)已贯通target、批量draft及私有NextN的页扩展、布局、原Source构造与成功收尾，
+保原逐成员候选／取页顺序、R1快路、pending来源及接受／repair／ledger前后的归尾时序。Source缓冲冷预留，返回即清读pin，删除两处每步临时数组。
+4项组件检查含5次真实Graph提交，7条CPU／CUDA模型旅程完整报告与上一片一致；零银行共享政策页的物理尾唯一性误拒绝已真实复现并修复。
+五个消费者刷新，227个SDK／引擎输入复用；编译接线失败与修复前真实失败保留，没有吞吐刷新。完整执行引擎仍未完成。
+下一片核GLM／DeepSeek原程序对已有ProgramIo／Carrier的接入；家族数学及完整状态保留，不为缩短Qwen文件新造统一执行器。
+同步消费者可保留原Invocation，不为复用Carrier伪造shared Scope；先用真实端口、原池和退休路径检查ProgramIo是否足够，再收拢仍在Qwen中的跨pump连续wave算法。
 共同架构同时审查多模型、复杂阶段及未来多端点的依赖边界，避免将当前Qwen／单卡放置固化为通用合同；
 本轮不据组件通过声明大模型整机、多卡或跨机实现完成。现有硬件上的decode、MTP和含预热／换轮的综合速度仍是投入价值的关键检验，
 架构按实际热点与维护问题调整，不以等待更大硬件或无限整理抽象替代速度改进。

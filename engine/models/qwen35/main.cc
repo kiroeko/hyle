@@ -71,7 +71,7 @@
 #include "../../inference/request_wave_execution.h"
 #include "../../inference/prefill_plan.h"
 #include "../../inference/packed_rows.h"
-#include "../../inference/paged_layout_scratch.h"
+#include "../../inference/paged_append.h"
 #include "../../inference/version_admission.h"
 #include "../../inference/batch_dispatch.h"
 #include "../../inference/request_batch_execution.h"
@@ -1015,10 +1015,9 @@ struct InputPreparationScratch final {
   std::vector<inference::PackedRowInput> row_inputs;
   std::vector<std::int32_t> query_indptr, last_rows;
   std::vector<std::uint32_t> sampling_identities;
-  // BatchSchema::version synchronously copies these borrowed integer ranges.
-  // Target, draft and private NextN reuse them in their serial preparation;
-  // page readers, immutable versions and NodeLayouts stay with original owners.
-  inference::PagedLayoutScratch old_layout_rows, next_layout_rows;
+  // Shared preparation reuses cold-bounded integers and temporary footprints.
+  // Its source pins never survive a call; Graph retains its original leases.
+  inference::PagedAppendScratch paged_appends;
   void prepare(const Phase &phase) {
     const auto &io = phase.slots[0].data; // All slots share the same cold descriptions.
     const auto reserve = [](auto &values, const Tensor &tensor) {
@@ -2009,8 +2008,7 @@ public:
         cache::add(cache_plan.key_bank_bytes, cache_plan.value_bank_bytes), target_kv_layers),
         cache::add(cache_plan.draft_key_bank_bytes, cache_plan.draft_value_bank_bytes));
     const auto layout_capacity = prepared_schema.capacity();
-    input_scratch.old_layout_rows.prepare(layout_capacity.max_requests, layout_capacity.max_page_refs);
-    input_scratch.next_layout_rows.prepare(layout_capacity.max_requests, layout_capacity.max_page_refs);
+    input_scratch.paged_appends.prepare(layout_capacity.max_requests, layout_capacity.max_page_refs);
     // No PageRef exists until this complete cold source tuple is published.
     // Leave the schema sentinel invalid on failure so released quota can retry.
     static_assert(std::is_nothrow_move_assignable_v<hyle::inference::PagedPageInventory>);
@@ -3064,33 +3062,24 @@ public:
     DraftProposal output;
     try {
       const auto length = work.state.frontier;
-      const auto extent = take(inference::append_extent(length, ids.size(), capacity, cache::Plan::page_rows));
-      next.frontier = extent.after_rows;
+      next.frontier = length + ids.size();
       if (!next.paged.frames.try_resize(work.state.paged.frames.size())) throw std::bad_alloc{};
       std::array<c::PagedArenaCommit, 2> commits;
       inference::PagedSequenceEdit edit(work.state.paged, next.paged, commits);
-      (void)take(inference::prepare_append_pages(extent, std::span<const hyle::inference::PagedPageRef>(work.state.paged.pages),
-          next.paged.pages, work.tails, true,
-          std::span(guard.execution.dirty.data() + draft_bank, 2),
-          std::span(guard.execution.tails.data() + draft_bank, 2), [&]() -> hyle::Result<hyle::inference::PagedPageRef> {
-            return draft_inventory.acquire_into(std::span(guard.execution.dirty.data() + draft_bank, 2));
-          }));
-      auto &layout_rows = input_scratch.next_layout_rows;
-      layout_rows.reset();
-      check(layout_rows.append(ids.size(), next.frontier, cache::Plan::page_rows,
-          std::span<const hyle::inference::PagedPageRef>(next.paged.pages)));
-      const auto layout = take(layout_rows.member_version(attention_schema, 0));
+      c::BatchLayoutVersion layout;
+      const auto member_at = [&](std::size_t) noexcept -> inference::PagedAppendMember {
+        return {work.state.paged, &next.paged, layout, length, ids.size(), work.tails, true};
+      };
+      layout = take(inference::prepare_paged_append(attention_schema, 1,
+          inference::PagedAppendBanks{draft_inventory,
+              std::span(guard.execution.dirty.data() + draft_bank, 2),
+              std::span(guard.execution.tails.data() + draft_bank, 2),
+              std::span(guard.execution.appends.data() + draft_bank, 2)},
+          input_scratch.paged_appends, member_at,
+          {.capacity_rows = capacity, .append_options = {.resource_budget = cache_budget}}));
       auto &positions = input_scratch.draft_positions;
       positions.clear();
       for (std::size_t i = 0; i < ids.size(); ++i) positions.push_back(static_cast<std::int32_t>(length + i));
-      const std::array sources{take(edit.source(0)), take(edit.source(1))};
-      for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank) {
-        auto &arena = bank == draft_bank ? draft_inventory.banks[0] : draft_inventory.banks[1];
-        const auto &source = sources[bank - draft_bank];
-        guard.execution.appends[bank] = take(g::batch::PagedAppendPages::create(arena, layout,
-            source.layout(), std::span(&source, 1), guard.execution.dirty[bank], guard.execution.tails[bank],
-            {.resource_budget = cache_budget}));
-      }
       program.token_values.write<std::int32_t>(ids); program.position_values.write<std::int32_t>(positions);
       if (head) {
         auto &transactions = program.hidden_transactions;
@@ -3141,16 +3130,16 @@ public:
         output.hidden = take(writers[0].publish());
         check(program.hidden_transactions.clear(0));
       }
-      auto key_delta = take(guard.execution.appends[draft_bank].ready_delta(sources[0], layout));
-      auto value_delta = take(guard.execution.appends[draft_bank + 1].ready_delta(sources[1], layout));
-      check(edit.prepare_commit(0, std::move(key_delta)));
-      check(edit.prepare_commit(1, std::move(value_delta)));
       std::array<c::PagedPageAppender, 2> tails;
-      const std::array<inference::AppendTailOwner, 1> owners{{{next.paged.pages.back().page(), 0}}};
-      check(guard.execution.append_transactions().subspan(draft_bank, 2).return_tails(owners,
-          [&](std::size_t bank, std::size_t) noexcept -> inference::AppendTailDestination {
-            return {static_cast<std::uint32_t>(next.frontier % cache::Plan::page_rows), &tails[bank]};
-          }));
+      const auto finish_at = [&](std::size_t) noexcept -> inference::PagedAppendFinishMember {
+        return {work.state.paged, next.paged, commits, layout, next.paged.pages.back().page(),
+            static_cast<std::uint32_t>(next.frontier % cache::Plan::page_rows), tails};
+      };
+      check(inference::prepare_paged_append_commits(
+          std::span(guard.execution.appends.data() + draft_bank, 2), 1, finish_at));
+      check(inference::return_paged_append_tails(
+          guard.execution.append_transactions().subspan(draft_bank, 2), 2, 1,
+          input_scratch.paged_appends, finish_at));
       check(program.io.release_inputs(program.carrier));
       check(edit.preflight());
       edit.publish(&work.state.paged);
@@ -4165,9 +4154,6 @@ public:
     const bool compact_draft = packs_draft(phase.family->packing);
     const auto physical_rows = cache::multiply(width, is_mtp_prefill(role)
         ? cache::add(phase.query_rows, draft_lag(role)) : draft_lag(role) + 1);
-    auto &old_layout_rows = input_scratch.old_layout_rows;
-    auto &next_layout_rows = input_scratch.next_layout_rows;
-    old_layout_rows.reset(); next_layout_rows.reset();
     auto &positions = input_scratch.draft_positions, &catchups = input_scratch.catchups;
     positions.resize(physical_rows); catchups.clear();
     auto &row_inputs = input_scratch.row_inputs;
@@ -4229,49 +4215,37 @@ public:
           io.draft_hidden_indices[destination + row] = static_cast<std::int32_t>(prefix_rows + target_begin + row - 1);
       }
     }
-    for (std::size_t j = 0; j < width; ++j) {
-      auto &member = step.members[j]; auto &session = *member.session;
-      const auto &old = *member.base->draft;
-      const auto rows = row_inputs[j].rows;
+    const auto begin_member = [&](std::size_t j) {
+      auto &member = step.members[j];
       member.next->draft.emplace(); auto &next = *member.next->draft;
       if (!next.paged.frames.try_resize(2)) throw std::bad_alloc{};
-      const auto extent = take(inference::append_extent(old.frontier, rows, capacity, cache::Plan::page_rows));
-      next.frontier = extent.after_rows;
-      (void)take(inference::prepare_append_pages(extent, std::span<const hyle::inference::PagedPageRef>(old.paged.pages), next.paged.pages,
+      next.frontier = member.base->draft->frontier + row_inputs[j].rows;
+    };
+    const auto member_at = [&](std::size_t j) noexcept -> inference::PagedAppendMember {
+      auto &member = step.members[j]; auto &session = *member.session;
+      return {member.base->draft->paged, member.next->draft ? &member.next->draft->paged : nullptr,
+          member.draft_layout, member.base->draft->frontier, row_inputs[j].rows,
           relay ? std::span<c::PagedPageAppender>{} : std::span(session.draft_tails),
-          !relay && session.draft_tail_epoch == member.base_epoch,
-          std::span(step.execution.dirty.data() + draft_bank, 2),
-          std::span(step.execution.tails.data() + draft_bank, 2), [&]() -> hyle::Result<hyle::inference::PagedPageRef> {
-            if (!relay) session.draft_tail_epoch = 0;
-            return draft_inventory.acquire_into(std::span(step.execution.dirty.data() + draft_bank, 2));
-          }));
-      if (!relay) session.draft_tail_epoch = 0;
-      check(next_layout_rows.append(rows, next.frontier, cache::Plan::page_rows,
-          std::span<const hyle::inference::PagedPageRef>(next.paged.pages)));
-      member.draft_layout = take(next_layout_rows.member_version(attention_schema, j));
-      if (width != 1) check(old_layout_rows.append(0, old.frontier, cache::Plan::page_rows,
-          std::span<const hyle::inference::PagedPageRef>(old.paged.pages)));
-      if (draft_lag(role) && !relay) {
-        catchups.push_back(compact_draft && !old.lag ? member.first_input : old.catchup_token);
-      }
-    }
-    const auto layout = width == 1 ? step.members[0].draft_layout : take(attention_schema.version(next_layout_rows.layout()));
-    step.draft_layout = layout;
-    const auto old_layout = width == 1 ? c::BatchLayoutVersion{} : take(attention_schema.version(old_layout_rows.layout()));
-    std::vector<c::PagedArenaFootprint> sources(width);
-    for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank) {
-      auto &arena = bank == draft_bank ? draft_inventory.banks[0] : draft_inventory.banks[1];
-      if (relay) {
-        if (!step.execution.predecessor_episode) for (auto &member : step.members)
-          (void)take(member.draft_edit().source(bank - draft_bank));
-        step.execution.appends[bank] = take(g::batch::detail::make_append_from_source(arena, layout,
-            step.execution.incoming->owner->pages[bank], step.execution.dirty[bank], {.resource_budget = cache_budget}));
-      } else {
-        for (std::size_t j = 0; j < width; ++j) sources[j] = take(step.members[j].draft_edit().source(bank - draft_bank));
-        const auto previous = width == 1 ? sources[0].layout() : old_layout;
-        step.execution.appends[bank] = take(g::batch::PagedAppendPages::create(arena, layout, previous, sources,
-            step.execution.dirty[bank], step.execution.tails[bank], {.resource_budget = cache_budget}));
-      }
+          !relay && session.draft_tail_epoch == member.base_epoch};
+    };
+    const auto invalidate_tail = [&](std::size_t j) noexcept {
+      if (!relay) step.members[j].session->draft_tail_epoch = 0;
+    };
+    step.draft_layout = take(inference::prepare_paged_append(attention_schema, width,
+        inference::PagedAppendBanks{draft_inventory,
+            std::span(step.execution.dirty.data() + draft_bank, 2),
+            std::span(step.execution.tails.data() + draft_bank, 2),
+            std::span(step.execution.appends.data() + draft_bank, 2)},
+        input_scratch.paged_appends, member_at,
+        {.capacity_rows = capacity,
+         .incoming = relay ? std::span(step.execution.incoming->owner->pages).subspan(draft_bank, 2)
+             : std::span<g::batch::detail::PagedAppendSource>{},
+         .pending_predecessor = bool(step.execution.predecessor_episode),
+         .append_options = {.resource_budget = cache_budget}},
+        invalidate_tail, begin_member));
+    if (draft_lag(role) && !relay) for (const auto &member : step.members) {
+      const auto &old = *member.base->draft;
+      catchups.push_back(compact_draft && !old.lag ? member.first_input : old.catchup_token);
     }
     io.draft_positions.write<std::int32_t>(positions);
     if (draft_lag(role) && !relay) io.catchup_token.write<std::int32_t>(catchups);
@@ -4720,76 +4694,47 @@ public:
         io.sampling_identities.write<std::uint32_t>(identities);
       }
       const auto cold_start = Clock::now();
-      auto &old_layout_rows = input_scratch.old_layout_rows;
-      auto &next_layout_rows = input_scratch.next_layout_rows;
-      old_layout_rows.reset(); next_layout_rows.reset();
-      std::size_t new_refs = 0;
-      for (const auto &member : step.members) {
-        new_refs = cache::add(new_refs, (member.base->length + member.input_tokens + cache::Plan::page_rows - 1) / cache::Plan::page_rows);
-      }
-      if (new_refs > next_layout_rows.max_page_refs())
-        throw std::runtime_error("target page-index scratch exceeds prepared schema capacity");
-      for (auto &bank : step.execution.tails) if (!bank.try_reserve(width)) throw std::bad_alloc{};
-      for (std::size_t j = 0; j < width; ++j) {
+      const auto begin_member = [&](std::size_t j) {
+        // The common target cohort already reserved its own tail metadata.
+        // Keep the remaining original banks before the first model candidate.
+        if (!j) for (auto &bank : std::span(step.execution.tails.data(), step.execution.tails.size()).subspan(draft_bank))
+          if (!bank.try_reserve(width)) throw std::bad_alloc{};
         auto &member = step.members[j]; auto &session = *member.session;
-        const auto length = member.base->length;
-        const auto member_tokens = member.input_tokens;
         member.next = reserve_state(session.head);
         if (!member.next_tails.try_resize(draft_bank)) throw std::bad_alloc{};
-        const auto extent = take(inference::append_extent(length, member_tokens, capacity, cache::Plan::page_rows));
-        member.next->length = extent.after_rows;
-        member.next->sampling = selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify ? member.base->sampling.advanced(drafts_token(role) ? 3 : 1)
-            : member.base->sampling;
-        (void)take(inference::prepare_append_pages(extent, std::span<const hyle::inference::PagedPageRef>(member.base->paged.pages),
-            member.next->paged.pages, relay ? std::span<c::PagedPageAppender>{}
-                : std::span(session.tails.data(), session.tails.size()),
-            !relay && session.tail_epoch == member.base_epoch,
-            std::span(step.execution.dirty.data(), draft_bank),
-            std::span(step.execution.tails.data(), draft_bank), [&]() -> hyle::Result<hyle::inference::PagedPageRef> {
-              if (!relay) session.tail_epoch = 0;
-              return page_inventory.acquire_into(std::span(step.execution.dirty.data(), draft_bank));
-            }));
-        if (!relay) session.tail_epoch = 0;
-        check(next_layout_rows.append(member_tokens, member.next->length, cache::Plan::page_rows,
-            std::span<const hyle::inference::PagedPageRef>(member.next->paged.pages)));
-        member.layout = take(next_layout_rows.member_version(attention_schema, j));
-        if (width != 1 && !ahead) check(old_layout_rows.append(0, length, cache::Plan::page_rows,
-            std::span<const hyle::inference::PagedPageRef>(member.base->paged.pages)));
-      }
-      io.attention_layout = width == 1 ? step.members[0].layout
-          : take(attention_schema.version(next_layout_rows.layout()));
-      // Old layouts describe no new queries, but retain each independent history.
-      const auto old_layout = width == 1 ? c::BatchLayoutVersion{}
-          : ahead ? take(attention_schema.version({
-              {decode_ahead->old_query.data(), decode_ahead->old_query.size()},
-              {decode_ahead->old_indptr.data(), decode_ahead->old_indptr.size()},
-              {decode_ahead->old_ids.data(), decode_ahead->old_ids.size()},
-              {decode_ahead->old_last.data(), decode_ahead->old_last.size()}}))
-          : take(attention_schema.version(old_layout_rows.layout()));
-      if (ahead) decode_ahead->clear_output(); // version() copied this group's borrowed integers.
-      std::vector<c::PagedArenaFootprint> sources(width);
-      for (std::size_t layer = 0; layer < page_inventory.banks.size() / 2; ++layer) {
-        // A ready immutable head needs its own mutable frame metadata, just as
-        // on the direct path. A pending predecessor has no ready frame yet;
-        // that original frame is transferred only after its ordered commit.
-        if (relay && !predecessor) for (auto &member : step.members) {
-          (void)take(member.target_edit().source(layer * 2)); (void)take(member.target_edit().source(layer * 2 + 1));
-        }
-        const auto compose = [&](bool key) {
-          for (std::size_t j = 0; j < width; ++j)
-            sources[j] = take(step.members[j].target_edit().source(layer * 2 + (key ? 0 : 1)));
-          return width == 1 ? sources[0].layout() : old_layout;
-        };
-        auto &key_arena = page_inventory.banks[2 * layer]; auto &value_arena = page_inventory.banks[2 * layer + 1];
-        step.execution.appends[layer * 2] = relay ? take(g::batch::detail::make_append_from_source(key_arena, io.attention_layout,
-            step.execution.incoming->owner->pages[layer * 2], step.execution.dirty[layer * 2], {.resource_budget = cache_budget}))
-          : take(g::batch::PagedAppendPages::create(key_arena, io.attention_layout,
-            compose(true), sources, step.execution.dirty[layer * 2], step.execution.tails[layer * 2], {.resource_budget = cache_budget}));
-        step.execution.appends[layer * 2 + 1] = relay ? take(g::batch::detail::make_append_from_source(value_arena, io.attention_layout,
-            step.execution.incoming->owner->pages[layer * 2 + 1], step.execution.dirty[layer * 2 + 1], {.resource_budget = cache_budget}))
-          : take(g::batch::PagedAppendPages::create(value_arena, io.attention_layout,
-            compose(false), sources, step.execution.dirty[layer * 2 + 1], step.execution.tails[layer * 2 + 1], {.resource_budget = cache_budget}));
-      }
+        member.next->length = member.base->length + member.input_tokens;
+        member.next->sampling = selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify
+            ? member.base->sampling.advanced(drafts_token(role) ? 3 : 1) : member.base->sampling;
+      };
+      const auto member_at = [&](std::size_t j) noexcept -> inference::PagedAppendMember {
+        auto &member = step.members[j]; auto &session = *member.session;
+        return {member.base->paged, member.next ? &member.next->paged : nullptr, member.layout,
+            member.base->length, member.input_tokens,
+            relay ? std::span<c::PagedPageAppender>{} : std::span(session.tails.data(), session.tails.size()),
+            !relay && session.tail_epoch == member.base_epoch};
+      };
+      const auto invalidate_tail = [&](std::size_t j) noexcept {
+        if (!relay) step.members[j].session->tail_epoch = 0;
+      };
+      const c::HostBatchLayout previous_layout = ahead ? c::HostBatchLayout{
+          {decode_ahead->old_query.data(), decode_ahead->old_query.size()},
+          {decode_ahead->old_indptr.data(), decode_ahead->old_indptr.size()},
+          {decode_ahead->old_ids.data(), decode_ahead->old_ids.size()},
+          {decode_ahead->old_last.data(), decode_ahead->old_last.size()}} : c::HostBatchLayout{};
+      io.attention_layout = take(inference::prepare_paged_append(attention_schema, width,
+          inference::PagedAppendBanks{page_inventory,
+              std::span(step.execution.dirty.data(), draft_bank),
+              std::span(step.execution.tails.data(), draft_bank),
+              std::span(step.execution.appends.data(), draft_bank)},
+          input_scratch.paged_appends, member_at,
+          {.capacity_rows = capacity,
+           .incoming = relay ? std::span(step.execution.incoming->owner->pages).first(draft_bank)
+               : std::span<g::batch::detail::PagedAppendSource>{},
+           .pending_predecessor = bool(predecessor),
+           .previous_layout = ahead && width != 1 ? &previous_layout : nullptr,
+           .append_options = {.resource_budget = cache_budget}},
+          invalidate_tail, begin_member));
+      if (ahead) decode_ahead->clear_output(); // Schema copied the original borrowed integers.
       if (has_mtp(role)) prepare_draft_append(step, role);
       auto &transactions = phase.slots[slot].transactions;
       for (std::size_t index = 0; index < phase.state_banks.size(); ++index) {
@@ -5105,7 +5050,7 @@ public:
           member.next->length = member.base->length + member.accepted_tokens;
           const auto page_count = (member.next->length + cache::Plan::page_rows - 1) / cache::Plan::page_rows;
           member.next->paged.pages.resize(page_count);
-          auto &layout_rows = input_scratch.next_layout_rows;
+          auto &layout_rows = input_scratch.paged_appends.next_rows;
           layout_rows.reset();
           check(layout_rows.append(member.accepted_tokens, member.next->length, cache::Plan::page_rows,
               std::span<const hyle::inference::PagedPageRef>(member.next->paged.pages)));
@@ -5174,46 +5119,35 @@ public:
         // Unaccepted MTP candidates are discarded, never made visible.
         check(transactions.clear(bank_index));
       }
-      for (std::size_t layer = 0; layer < page_inventory.banks.size() / 2; ++layer) {
-        for (std::size_t j = 0; j < outputs.size(); ++j) {
-          auto &member = step.members[j];
-          if (step.withdrawn(member)) continue;
-          if (!member.target_updates.try_resize(page_inventory.banks.size())) throw std::bad_alloc{};
-          auto key = step.execution.sources ? take(step.execution.sources->pages[layer * 2].ready_delta(
-              step.execution.appends[layer * 2], take(member.target_edit().selected(layer * 2).view()), member.layout))
-              : take(step.execution.appends[layer * 2].ready_delta(take(member.target_edit().selected(layer * 2).view()), member.layout));
-          auto value = step.execution.sources ? take(step.execution.sources->pages[layer * 2 + 1].ready_delta(
-              step.execution.appends[layer * 2 + 1], take(member.target_edit().selected(layer * 2 + 1).view()), member.layout))
-              : take(step.execution.appends[layer * 2 + 1].ready_delta(take(member.target_edit().selected(layer * 2 + 1).view()), member.layout));
-          check(member.target_edit().prepare_commit(layer * 2, std::move(key)));
-          check(member.target_edit().prepare_commit(layer * 2 + 1, std::move(value)));
-        }
-      }
+      for (auto &member : step.members)
+        if (!step.withdrawn(member) && !member.target_updates.try_resize(page_inventory.banks.size()))
+          throw std::bad_alloc{};
+      const auto target_finish_at = [&](std::size_t j) noexcept -> inference::PagedAppendFinishMember {
+        auto &member = step.members[j];
+        return {member.base->paged, member.next->paged,
+            {member.target_updates.data(), member.target_updates.size()}, member.layout,
+            member.verified_last_page, static_cast<std::uint32_t>(member.next->length % cache::Plan::page_rows),
+            {member.next_tails.data(), member.next_tails.size()}, !step.withdrawn(member),
+            member.accepted_tokens == member.input_tokens};
+      };
+      check(inference::prepare_paged_append_commits(
+          std::span(step.execution.appends.data(), draft_bank), outputs.size(), target_finish_at,
+          step.execution.sources ? std::span<const g::batch::detail::PagedAppendSource>(step.execution.sources->pages).first(draft_bank)
+              : std::span<const g::batch::detail::PagedAppendSource>{}));
       if (has_mtp(phase.family->role)) {
-        hyle::container::SmallVector<inference::AppendTailOwner, 2> owners;
-        if (!owners.try_reserve(outputs.size())) throw std::bad_alloc{};
-        for (std::size_t j = 0; j < outputs.size(); ++j) {
+        const auto draft_finish_at = [&](std::size_t j) noexcept -> inference::PagedAppendFinishMember {
           auto &member = step.members[j]; auto &draft = *member.next->draft;
-          owners.emplace_back(draft.paged.pages.back().page(), j);
-          if (step.withdrawn(member)) continue;
-          auto key = step.execution.sources ? take(step.execution.sources->pages[draft_bank].ready_delta(
-              step.execution.appends[draft_bank], take(member.draft_edit().selected(0).view()), member.draft_layout))
-              : take(step.execution.appends[draft_bank].ready_delta(take(member.draft_edit().selected(0).view()), member.draft_layout));
-          auto value = step.execution.sources ? take(step.execution.sources->pages[draft_bank + 1].ready_delta(
-              step.execution.appends[draft_bank + 1], take(member.draft_edit().selected(1).view()), member.draft_layout))
-              : take(step.execution.appends[draft_bank + 1].ready_delta(take(member.draft_edit().selected(1).view()), member.draft_layout));
-          check(member.draft_edit().prepare_commit(0, std::move(key)));
-          check(member.draft_edit().prepare_commit(1, std::move(value)));
-        }
-        std::sort(owners.begin(), owners.end());
-        check(step.execution.append_transactions().subspan(draft_bank, 2).return_tails(
-            {owners.data(), owners.size()},
-            [&](std::size_t bank, std::size_t j) noexcept -> inference::AppendTailDestination {
-              auto &member = step.members[j];
-              if (step.withdrawn(member)) return {};
-              return {static_cast<std::uint32_t>(member.next->draft->frontier % cache::Plan::page_rows),
-                  &member.next_draft_tails[bank]};
-            }));
+          return {member.base->draft->paged, draft.paged, member.draft_updates, member.draft_layout,
+              draft.paged.pages.back().page(), static_cast<std::uint32_t>(draft.frontier % cache::Plan::page_rows),
+              member.next_draft_tails, !step.withdrawn(member)};
+        };
+        check(inference::prepare_paged_append_commits(
+            std::span(step.execution.appends.data() + draft_bank, 2), outputs.size(), draft_finish_at,
+            step.execution.sources ? std::span<const g::batch::detail::PagedAppendSource>(step.execution.sources->pages).subspan(draft_bank, 2)
+                : std::span<const g::batch::detail::PagedAppendSource>{}));
+        check(inference::return_paged_append_tails(
+            step.execution.append_transactions().subspan(draft_bank, 2), 2, outputs.size(),
+            input_scratch.paged_appends, draft_finish_at));
       }
       // Caller-supplied completion is confined to this unpublished episode.
       // In particular, recursive proposals must repair their retained KV from
@@ -5254,20 +5188,11 @@ public:
         if (outputs[j].expected_episode && !record->same_result(*outputs[j].expected_episode))
           throw std::runtime_error("MTP replay natural decision or state boundary diverged from its recorded episode");
       }
-      hyle::container::SmallVector<inference::AppendTailOwner, 2> tail_owners;
-      if (!tail_owners.try_reserve(step.members.size())) throw std::bad_alloc{};
-      for (std::size_t j = 0; j < step.members.size(); ++j)
-        tail_owners.emplace_back(step.members[j].verified_last_page, j);
-      std::sort(tail_owners.begin(), tail_owners.end());
-      check(step.execution.append_transactions().subspan(0, draft_bank).return_tails(
-          {tail_owners.data(), tail_owners.size()},
-          [&](std::size_t bank, std::size_t j) noexcept -> inference::AppendTailDestination {
-            auto &member = step.members[j];
-            // Partial acceptance narrows read authority, never rewinds the
-            // verified physical tail. Its next append uses the original COW.
-            if (step.withdrawn(member) || member.accepted_tokens != member.input_tokens) return {};
-            return {static_cast<std::uint32_t>(member.next->length % cache::Plan::page_rows), &member.next_tails[bank]};
-          }));
+      // Partial acceptance narrows Frame authority without rewinding the
+      // verified physical tail; the next append retains its original COW path.
+      check(inference::return_paged_append_tails(
+          step.execution.append_transactions().subspan(0, draft_bank), draft_bank, step.members.size(),
+          input_scratch.paged_appends, target_finish_at));
       check(step.execution.release_consumers(phase.state_resource_ports));
       for (const auto &member : step.members)
         if (member.session->head.get() != member.base || member.session->head.epoch() != member.base_epoch ||
