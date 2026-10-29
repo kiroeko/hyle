@@ -449,10 +449,8 @@ public:
       std::span<const graph::ConstantBinding> constants, graph::CompileOptions options = {}) const noexcept {
     if (!state_) return std::unexpected(Status::FailedPrecondition("Backend is not initialized"));
     options.constants = constants;
-    if (has_cpu_assist() && options.resource_budget) for (const auto &domain : domains()) {
-      auto usage = options.resource_budget.usage(domain.resource);
-      if (!usage) return std::unexpected(std::move(usage).error());
-    }
+    // Configured endpoints can remain idle for this program. Graph charges
+    // the actual resources it uses; an unused domain needs no budget row.
     return graph::batch::compile(source_graph, {
         .storage_domains = domains(),
         .targets = std::span(state_->targets).first(state_->target_count),

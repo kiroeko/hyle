@@ -1280,6 +1280,9 @@ CPU／CUDA先全量校验再写任一输出，使用者仍须只发布真实接�
 
 Backend 在冷期选择实际编入的端点，编入能力不代表设备可用；失败不暗中回退。
 `has_cpu_assist()` 只表示 GPU 主端点附带 CPU 辅助；纯 CPU 主端点由 `host_only()` 表达。
+已配置端点不等于本次图会使用它。预算按Graph的实际资源收费，闲置GPU或staging不强制占一行；
+实际workspace／输出等资源仍须通过原预算接纳。[CPU＋CUDA预算组合检查](../evidence/correctness/inference-backend-budget-2026-10-29.json)
+确认旧冷预检误拒绝，并检查两个同端点图的真实输出、退休归还及缺少实际GPU预算的拒绝；不代表总显存上限或跨域性能。
 CPU＋GPU 通过冷放置和 Graph 的跨域边表达。模型方程不应决定某平台的搬运、Queue 或执行包装。
 Qwen 的 CPU FFN 放置由参数清单的归属派生一次，加载器、量化辅助角色与目标图共用
 同一不可变事实，已删 loader 的名称解析和第二份层数；默认纯主端点不建立角色表。

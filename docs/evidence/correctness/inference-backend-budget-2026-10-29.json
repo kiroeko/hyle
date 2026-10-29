@@ -1,0 +1,143 @@
+{
+  "schema": "hyle.correctness.backend-budget.v1",
+  "date": "2026-10-29",
+  "status": "CONFIRMED_ORIGINAL_REFUSAL_AND_CORRECTED_NATIVE_BUDGET_COMBINATIONS",
+  "change": "Remove mixed-Backend all-configured-domain usage precheck. Original Graph admission remains responsible for actual compile/workspace/output resource charges; idle domains need no budget row.",
+  "counts": {
+    "helper_CXX": 2,
+    "refreshed_engine_weights_CXX": 1,
+    "links": 2,
+    "original_SDK_inputs": 227,
+    "unchanged_SDK_inputs": 226,
+    "NVCC": 0,
+    "full_SDK_builds": 0,
+    "native_processes": 2,
+    "expected_baseline_refusals": 1,
+    "unexpected_native_failures": 0,
+    "graph_submissions_after_fix": 4,
+    "compared_values": 68,
+    "missing_used_resource_rejections": 1,
+    "retired_budget_scopes": 3,
+    "downloads": 0
+  },
+  "baseline": {
+    "source_commit": "22d6735cf",
+    "process": {
+      "state": "TERMINAL",
+      "pid": 41464,
+      "started": 1793260627.1733196,
+      "seconds": 0.9026694297790527,
+      "exit": 2,
+      "timed_out": false
+    },
+    "graph_submissions": 0,
+    "result": "Original CPU+CUDA Backend rejects a legal required-CPU/host-only graph: resource is absent from budget."
+  },
+  "candidate": {
+    "process": {
+      "state": "TERMINAL",
+      "pid": 16324,
+      "started": 1793260688.1163812,
+      "seconds": 0.9342167377471924,
+      "exit": 0,
+      "timed_out": false
+    },
+    "report": {
+      "status": "PASS",
+      "host_submissions": 2,
+      "cuda_submissions": 2,
+      "compared_values": 68,
+      "missing_resource_rejections": 1,
+      "retired_scopes": 3,
+      "cuda_workspace_bytes": 68
+    },
+    "result": "CPU and CUDA each replay twice with only actual managed resource rows; actual missing GPU workspace still rejects without submission."
+  },
+  "builds": {
+    "baseline": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 13080,
+        "started": 1793260599.3398542,
+        "seconds": 2.9414355754852295,
+        "exit": 0,
+        "timed_out": false
+      },
+      "object": {
+        "path": ".scratch/inference-backend-budget-20261029/compile/baseline/unit.obj",
+        "bytes": 1021143,
+        "sha256": "9e2187c37cca681887bd7c89e5375f7029c36e463dcec769794e7c62eb2bb84c"
+      },
+      "source_inputs": 113
+    },
+    "candidate": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 2108,
+        "started": 1793260658.8513439,
+        "seconds": 2.9247682094573975,
+        "exit": 0,
+        "timed_out": false
+      },
+      "object": {
+        "path": ".scratch/inference-backend-budget-20261029/compile/candidate/unit.obj",
+        "bytes": 1019031,
+        "sha256": "80252770a10a72beb24b5d14a4eb28058cebd73da49182d5d74d662a361a33c4"
+      },
+      "source_inputs": 113
+    },
+    "weights": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 61892,
+        "started": 1793260662.1868794,
+        "seconds": 5.703669548034668,
+        "exit": 0,
+        "timed_out": false
+      },
+      "object": {
+        "path": ".scratch/inference-backend-budget-20261029/compile/weights/unit.obj",
+        "bytes": 3468174,
+        "sha256": "5786843240a947b6335b2917e47414d91e980475fb219889e4f0f035646d1106"
+      },
+      "source_inputs": 132
+    }
+  },
+  "sources": [
+    {
+      "path": "engine/inference/backend.h",
+      "bytes": 28650,
+      "sha256": "97dc020b742cf38ab391fca4c063fb4d41092cac16d87e054fad63668c7fa4aa"
+    },
+    {
+      "path": "tests/tools/inference_backend_budget_case.h",
+      "bytes": 9292,
+      "sha256": "af8938c0d6205a60c58d1f7ec5dadb599ad6e24612d2e61e9b6590f1a01f57da"
+    },
+    {
+      "path": "tests/tools/qwen_backend_cpu_cuda_test.cc",
+      "bytes": 27892,
+      "sha256": "3f3fc1f0b675ebeba8a6a1209a3f8418eca7fcdba6754f8c0d37ef12e1be12a4"
+    }
+  ],
+  "reuse_base": {
+    "path": ".scratch/inference-backend-budget-20261029/model-link-base.json",
+    "bytes": 97948,
+    "sha256": "7668456df3817099c1ecfd874400de25e424e51b85f53ba4fd33277dc6ec3fcd"
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/inference-backend-budget-2026-10-29.zip",
+    "bytes": 138011,
+    "sha256": "83755b426027e161a877ff307510b753212c38d08e145d1dec377e265c7bbd7a"
+  },
+  "boundaries": [
+    "The exact permanent helper body was compiled/run via a small standalone main. Its added GTest wrapper was not separately built/run.",
+    "Actual native CPU/CUDA endpoints and original Graph Invocation/Queue/Completion are used; no model weights or fake completion.",
+    "ResourceBudget has allow_unattributed=true as the existing provider-private contract requires. Known resource rows still reject missing actual GPU workspace.",
+    "The input buffer is caller-owned outside the measured graph budget. This is scoped managed admission, not a total-VRAM guarantee.",
+    "Region selection is disabled to retain a real intermediate workspace. Reported GPU workspace is 68 requested bytes; physical driver allocation size is not inferred.",
+    "Budget rows and opaque counters return to each pre-graph baseline after original retirement.",
+    "Only the engine weights TU whose dependencies contain Backend was refreshed; SDK core objects remain unchanged. No inference throughput/quality conclusion.",
+    "The four Source/MTP/pipeline checks recorded in inference-episode-release preceded this separate cold-budget correction; they were not silently relabeled as rerun."
+  ]
+}

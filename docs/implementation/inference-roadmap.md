@@ -198,6 +198,10 @@ history的独立有限图原先在MLX冷编译时报映射缺失；随后定位�
 退休恢复只撤尚存Source，再由原Invocation销毁归还caller绑定，不重新借用已关闭载体。
 [四个有限原生用例](../evidence/correctness/inference-episode-release-2026-10-29.json)通过：新增真实解绑拒绝、未发布head／epoch／RNG／ledger、
 原会话恢复及完整状态合法重试；普通连续流水16臂、真实MTP后继及CPU控制保持原门。没有新的性能结论。
+联合功能／架构复审又确认混合Backend提前要求所有已配置域预算，会误拒绝未使用GPU或staging的合法图；
+现删该重复冷预检，由原Graph对实际资源收费。[原拒绝及修复检查](../evidence/correctness/inference-backend-budget-2026-10-29.json)
+包含原Backend反例、CPU／CUDA各两次执行、68值、退休归还和缺真实GPU预算的拒绝。
+只刷新包含Backend的一个weights源单元，复用其余226项SDK输入；未重跑前片模型检查，未测吞吐。
 继续抽离共同执行编排并核实剩余边界；不以本轮有限检查代替完整执行核心或性能结论。
 自然请求 wave 的整组准备、兼容分批、缩批与统一发布现已接入共同静态编排；
 实际调用结果在成功、取消及异常后归还原记录，不以副本旧值决定发布。

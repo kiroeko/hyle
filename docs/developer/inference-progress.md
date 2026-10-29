@@ -73,12 +73,12 @@ GNU／LLVM OpenMP精确二进制源版本仍未确认，许可文本齐备不等
 
 | 任务 | 所属 | 估计进度 | 当前内容 |
 |---|---|---:|---|
-| 共同结果提交与观察 | 功能与共同执行架构 | 约10% | 已核实Qwen私有ledger与GLM组件的接入差异；准备共同提交见证，确保状态已提交后可补观察，不重新推理或推进RNG。 |
-| 混合端点预算组合 | 功能与共同执行架构 | 约20% | 正检查仅使用部分端点的图是否被多余预算行预检拒绝；尚待有限原生确认。 |
+| 共同结果提交与观察 | 功能与共同执行架构 | 约15% | 已定调用期借用原记录的最小机制，准备接Qwen及GLM；Head成功即记录见证，后续仅补观察，保留各模型发布语义。 |
 
 本批[执行槽检查](../evidence/correctness/inference-program-slots-2026-10-29.json)覆盖原生命周期、7项完整状态字节比较及普通流水16臂；没有新的吞吐结论。
 随后[程序身份与惰性安装](../evidence/correctness/inference-program-identity-2026-10-29.json)再次通过同六个有限用例；已删模型重复exact参数，暖槽不再求值初始化配方。
 本次[共同Source收尾](../evidence/correctness/inference-episode-release-2026-10-29.json)通过四个有限原生用例，包含真实撤销后解绑拒绝、原会话恢复与合法重试；尚未重测吞吐。
+随后[混合Backend预算组合](../evidence/correctness/inference-backend-budget-2026-10-29.json)确认并修复未用域误拒绝；CPU／CUDA四次原生提交、68值和实际缺预算拒绝通过。
 
 ## 最近完整性能对照
 

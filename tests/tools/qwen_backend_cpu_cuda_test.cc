@@ -1,6 +1,7 @@
 #include "../../engine/inference/backend.h"
 #include "../../engine/inference/readback.h"
 #include "qwen_backend_cpu_options_case.h"
+#include "inference_backend_budget_case.h"
 
 #include <algorithm>
 #include <array>
@@ -50,6 +51,17 @@ Example example(c::TensorDesc desc) {
       g::NodePlacement{graph.node_id(3).value(),mixed::kCpuTarget,g::PlacementStrength::kRequired}};
   return {std::move(graph),x,w,y,placements,
       {g::ExternalResourceContract{x,mixed::kHostStorage},g::ExternalResourceContract{y,mixed::kHostStorage}}};
+}
+
+TEST(QwenBackendCpuCuda, IdleEndpointsNeedNoBudgetButActualWorkspaceDoes) {
+  auto checked = hyle::inference::test::backend_budget_case();
+  ASSERT_TRUE(checked) << checked.error().message();
+  EXPECT_EQ(checked->host_submissions, 2U);
+  EXPECT_EQ(checked->cuda_submissions, 2U);
+  EXPECT_EQ(checked->compared_values, 68U);
+  EXPECT_EQ(checked->missing_resource_rejections, 1U);
+  EXPECT_EQ(checked->retired_scopes, 3U);
+  EXPECT_GT(checked->cuda_workspace_bytes, 0U);
 }
 
 TEST(QwenBackendCpuCuda, ExplicitCudaRemainsOneCudaEndpoint) {
