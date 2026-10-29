@@ -29,7 +29,7 @@ template <class Code> [[noreturn]] void fail(Code code, const char *operation) {
 int device_index(int physical_device);
 // Cold geometry only: cached BF16/MMVF caps and the row-limited paired domain.
 bool supports_bfloat_paired_projection(int device, std::uint64_t inner,
-                                      std::uint64_t rows);
+                                      std::uint64_t rows, std::uint64_t columns);
 // Select the original caching pools. Native streams remain lazy: ordinary
 // submission borrows the admitted stream; standalone packing creates its own.
 void initialize_backend(ggml_backend *backend);

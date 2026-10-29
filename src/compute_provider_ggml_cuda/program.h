@@ -53,6 +53,10 @@ struct Node final {
   // Destination IDs are batch-major [B*K]; only Y is a tensor output. Actual
   // pool permissions belong to the outer Graph effect, never these integers.
   bool indexed_state = false;
+  // Only the cold same-activation, two-output Graph proof sets this marker.
+  // It permits the native two-column BF16 carrier without changing ordinary
+  // matrix MatMul's F32 result and explicit public-boundary Cast.
+  bool bfloat_paired_projection = false;
 };
 struct Recipe final {
   struct Constant final {
@@ -94,7 +98,7 @@ evaluate_constant_recipe(void *context, Recipe recipe,
 
 HYLE_COMPUTE_PROVIDER_GGML_CUDA_API bool
 supports_bfloat_paired_projection(void *context, std::uint64_t inner,
-                                 std::uint64_t rows) noexcept;
+                                 std::uint64_t rows, std::uint64_t columns) noexcept;
 HYLE_COMPUTE_PROVIDER_GGML_CUDA_API bool
 supports(void *context, Operation, std::span<const TensorDesc>,
          std::span<const TensorDesc>) noexcept;

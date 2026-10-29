@@ -751,7 +751,7 @@ Result<bool> matches_bfloat_dual_projection(
 struct BfloatProjection final {
   NodeId node;
   ValueId activation;
-  std::int64_t inner = 0, rows = 0;
+  std::int64_t inner = 0, rows = 0, columns = 0;
 };
 
 // Both original stores survive. Publication, outside readers and output order
@@ -776,24 +776,26 @@ Result<bool> bfloat_projection(void *context, const Graph &graph, NodeId node,
   HYLE_ASSIGN_OR_RETURN(auto w, graph.value_description(weight));
   HYLE_ASSIGN_OR_RETURN(auto y, graph.value_description(result));
   if (!x.is_plain() || !x.is_dense() || x.rank() != 2 ||
-      x.data_type() != compute::DataType::kBFloat16 || x.dimensions()[0] != 1 ||
+      x.data_type() != compute::DataType::kBFloat16 ||
+      (x.dimensions()[0] != 1 && x.dimensions()[0] != 2) ||
       !y.is_plain() || !y.is_dense() || y.rank() != 2 ||
-      y.data_type() != compute::DataType::kBFloat16 || y.dimensions()[0] != 1 ||
+      y.data_type() != compute::DataType::kBFloat16 || y.dimensions()[0] != x.dimensions()[0] ||
       !w.is_plain() || w.rank() != 2 ||
       w.data_type() != compute::DataType::kBFloat16)
     return false;
-  const auto k = x.dimensions()[1], n = y.dimensions()[1];
+  const auto k = x.dimensions()[1], n = y.dimensions()[1], m = x.dimensions()[0];
   if (k <= 0 || k % 2 != 0 || k > std::numeric_limits<int>::max() || n <= 0 ||
       n > std::numeric_limits<int>::max() / k ||
+      m > std::numeric_limits<int>::max() / k || n > std::numeric_limits<int>::max() / m ||
       w.dimensions()[0] != k || w.dimensions()[1] != n)
     return false;
   HYLE_ASSIGN_OR_RETURN(auto physical, w.transposed());
   if (!physical.is_dense() ||
-      !native::supports_bfloat_paired_projection(context, std::uint64_t(k), std::uint64_t(n)))
+      !native::supports_bfloat_paired_projection(context, std::uint64_t(k), std::uint64_t(n), std::uint64_t(m)))
     return false;
   HYLE_ASSIGN_OR_RETURN(auto supported, supported_node(context, graph, node));
   if (!supported) return false;
-  projection = {node, activation, k, n};
+  projection = {node, activation, k, n, m};
   return true;
 }
 
@@ -806,7 +808,8 @@ Result<bool> matches_bfloat_paired_projection(
     if (!supported) return false;
   }
   return projections[0].activation == projections[1].activation &&
-      projections[0].inner == projections[1].inner && projections[0].rows == projections[1].rows;
+      projections[0].inner == projections[1].inner && projections[0].rows == projections[1].rows &&
+      projections[0].columns == projections[1].columns;
 }
 
 // Match an already implemented native numerical chain, following its actual
@@ -1018,12 +1021,13 @@ Status propose(void *context, const RegionDiscoveryRequest &request, mem::Alloca
       return Status::ResourceExhausted("ggml CUDA paired projection metadata failed");
   }
   const auto same_group = [](const BfloatProjection &a, const BfloatProjection &b) noexcept {
-    return a.activation == b.activation && a.inner == b.inner && a.rows == b.rows;
+    return a.activation == b.activation && a.inner == b.inner && a.rows == b.rows && a.columns == b.columns;
   };
   std::ranges::sort(projections, [](const BfloatProjection &a, const BfloatProjection &b) noexcept {
     if (a.activation != b.activation) return a.activation.ordinal() < b.activation.ordinal();
     if (a.inner != b.inner) return a.inner < b.inner;
     if (a.rows != b.rows) return a.rows < b.rows;
+    if (a.columns != b.columns) return a.columns < b.columns;
     return a.node.ordinal() < b.node.ordinal();
   });
   for (std::size_t i = 1; i < projections.size(); ++i) {
@@ -2063,6 +2067,7 @@ compile(void *context, const RegionCompileRequest &request,
       recipe.values.push_back(request.graph->value_description(id).value());
     for (const auto node : request.nodes) {
       native::Node lowered{request.graph->operation(node).value(), {}, {}};
+      lowered.bfloat_paired_projection = request.route == 5;
       for (std::size_t port = 0;
            port < request.graph->node_output_count(node).value(); ++port)
         lowered.outputs.push_back(

@@ -1616,12 +1616,12 @@ Status evaluate_constant_recipe(void *context, Recipe recipe,
 }
 
 bool supports_bfloat_paired_projection(void *value, std::uint64_t inner,
-                                     std::uint64_t rows) noexcept {
+                                     std::uint64_t rows, std::uint64_t columns) noexcept {
   if (!value)
     return false;
   try {
     return bridge::supports_bfloat_paired_projection(
-        static_cast<Context *>(value)->device, inner, rows);
+        static_cast<Context *>(value)->device, inner, rows, columns);
   } catch (...) {
     return false;
   }

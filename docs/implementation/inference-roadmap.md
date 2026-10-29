@@ -188,6 +188,9 @@ target均为两行，draft按每成员`1+lag`消费；末行、位置、hidden�
 也不代签MTP设备后继，接受前缀的Store／KV权限、pending及原RNG地址必须另行证明。
 GDN a/b N32候选已完成[32进程整模型A/B](../evidence/performance/inference-small-projection-model-window-2026-10-28.json)及266导出张量逐bit核对，
 有限样本未证明稳定净收益，不改默认。当前concat形状实验结束，后续原生paired／GEMV需避免额外冷银行与strided物化，不能直接挪用旧叶子收益。
+现已接通[原生M2双输出](../evidence/performance/inference-paired-m2-2026-10-30.json)，保持独立原权重与dense结果；
+有限数值／寿命检查通过，同CLI同步MTP初筛约＋3.37%。[当前默认auto完整窗口](../evidence/performance/inference-current-auto-window-2026-10-30.json)
+同时暴露MTP后继的重录与丢弃工作开销；该整改纳入现goal，先查实际capture失配与状态／端口轮换，再减少准备和重录，不能靠诊断off规避。
 普通／MTP／NextN及采样前沿的有限exact目录与输出事实已统一到共同冷程序准备；
 1次增量CXX、1次链接和CPU／CUDA六个现有消费者检查通过，原数值门不变。
 [本片记录](../evidence/correctness/inference-prepared-program-family-2026-10-28.json)不代签完整编排抽离或性能提升；

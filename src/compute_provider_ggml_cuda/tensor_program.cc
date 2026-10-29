@@ -1162,16 +1162,18 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
         right = ggml_cont(context, right);
     }
     // The native vector carrier can load BF16 directly and round its F32
-    // reduction once at this public MatMul boundary. Preserve the existing
-    // F32-result program for matrices, batches, odd K and every other type.
-    const bool bfloat_vector = node.operation.get_if<MatMul>() &&
+    // reduction once at this public MatMul boundary. Only the cold paired
+    // Graph proof admits its two-column carrier; ordinary matrices retain
+    // the existing F32-result program and explicit boundary Cast.
+    const bool bfloat_projection = node.operation.get_if<MatMul>() &&
         output.data_type() == DataType::kBFloat16 &&
         left->type == GGML_TYPE_BF16 && right->type == GGML_TYPE_BF16 &&
-        left->ne[1] == 1 && left->ne[2] == 1 && left->ne[3] == 1 &&
+        (left->ne[1] == 1 || (node.bfloat_paired_projection && left->ne[1] == 2)) &&
+        left->ne[2] == 1 && left->ne[3] == 1 &&
         right->ne[2] == 1 && right->ne[3] == 1 && right->ne[0] % 2 == 0 &&
         ggml_is_contiguous(left) && ggml_is_contiguous(right);
-    if (bfloat_vector) {
-      result = ggml_new_tensor_2d(context, GGML_TYPE_BF16, right->ne[1], 1);
+    if (bfloat_projection) {
+      result = ggml_new_tensor_2d(context, GGML_TYPE_BF16, right->ne[1], left->ne[1]);
       result->op = GGML_OP_MUL_MAT;
       result->src[0] = right;
       result->src[1] = left;

@@ -1,0 +1,2072 @@
+{
+  "schema": "hyle.performance.current-auto-window.v1",
+  "date": "2026-10-30",
+  "status": "COMPLETE32_FOUR_ARMS_STABLE",
+  "time_window": {
+    "started_china": "2026-10-30T04:42:01+08:00",
+    "finished_china": "2026-10-30T04:43:49+08:00"
+  },
+  "current_candidate": {
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\candidate.exe",
+      "bytes": 142982144,
+      "sha256": "e9760fc3cc0ca3792e1f9be17ff43535bc91550b420e299e15cd78a238a14939"
+    },
+    "instrumented": false,
+    "runtime_environment": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\runtime-environment.json",
+      "bytes": 13030,
+      "sha256": "8cb1ee68ea52d643e36cec68c766787bbcfc61a312481368f5a4f127142e9731"
+    },
+    "compiled_cli_receipt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\compile\\cli\\receipt.json",
+      "bytes": 42309,
+      "sha256": "732d4ac62fddddbac100a1704bfda7a5d1a17d5840fcaf539fa96269d46a2a45"
+    },
+    "sdk_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\plan.json",
+      "bytes": 191281,
+      "sha256": "12cb335f3b409f7c1ffd7c56b03b70b5ff91d6c1e51bdca5568caabcf78f7a05"
+    },
+    "canonical_main": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 627911,
+      "sha256": "643e4cd9d456691e87ba23d2fdc7991d6096ef7398789e2ef57f551ad476a04e"
+    },
+    "scope": "Frozen candidate from this paired-M2 batch; no rebuild for the peer window."
+  },
+  "peer": {
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\peer-link1\\peer.exe",
+      "bytes": 35830272,
+      "sha256": "433e7051f4c36d0d9b2297dc378631546b7e3c44630cda0653cba2d1ec6bbe8e"
+    },
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\source\\peer_multiturn.cc",
+      "bytes": 33292,
+      "sha256": "0a6ce1d98fb66c7e74a5f56ecb26470c83aa043c8cd7814ded0afafb532e9132"
+    },
+    "compiled_identity": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\compile1\\peer\\identity.json",
+      "bytes": 68001,
+      "sha256": "42d1da4148f7c081fed7c28bb8f56e1322f2c96fedcf4bd94c820cad1013c189"
+    },
+    "runtime_environment": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\peer-link1\\runtime-environment.json",
+      "bytes": 5854,
+      "sha256": "551e7e5ded6fd51ce9cd8fff452905a70611608c56fb07e138232a8438ec0ec0"
+    },
+    "link_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\peer-link1\\link-plan.json",
+      "bytes": 4801,
+      "sha256": "f175f3c5480d7eec90d15f86bdc7a99a6ab064cb384e8fb57196c607d917d963"
+    },
+    "original_ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-quality-20261022\\peer-link1\\ready.json",
+      "bytes": 237,
+      "sha256": "782a8ffbdddd00bc59d852ab8e82a457563f6e50d03bf2ac6dde8e4aa1ad05c0"
+    },
+    "current_entry": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\build_turns.py",
+      "bytes": 5041,
+      "sha256": "4fea5b858f0b07eff0eb8a351a7cf1ea38d64d3eb72ce8f8ab26d8b6148532da"
+    },
+    "note": "Same fixed native llama core; one new consumer adds genuine natural turns without clearing/rebuilding contexts."
+  },
+  "counts": {
+    "actual_processes": 32,
+    "timing": 24,
+    "independent_memory": 8,
+    "timing_samples_per_arm_scenario": 3,
+    "memory_samples_per_arm_scenario": 1,
+    "downloads": 0,
+    "automatic_retries": 0
+  },
+  "hyle_configuration": "Current default auto for both ordinary and greedy K1 MTP; N1/R1/C1024; P154 with64 outputs per turn.",
+  "metrics": [
+    {
+      "scenario": "single",
+      "arm": "hyle_auto",
+      "timing": {
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 2156.959415548036,
+          "min": 2100.3303246783357,
+          "max": 2271.567351971986,
+          "samples": [
+            2100.3303246783357,
+            2271.567351971986,
+            2156.959415548036
+          ]
+        },
+        "full_decode_tokens_per_second": {
+          "count": 3,
+          "median": 98.39379163287308,
+          "min": 97.89494784374722,
+          "max": 99.31164419569943,
+          "samples": [
+            97.89494784374722,
+            99.31164419569943,
+            98.39379163287308
+          ]
+        },
+        "session_output_tokens_per_second": {
+          "count": 3,
+          "median": 89.92791855790466,
+          "min": 89.27714527400272,
+          "max": 91.14714809830733,
+          "samples": [
+            89.27714527400272,
+            91.14714809830733,
+            89.92791855790466
+          ]
+        },
+        "session_processed_tokens_per_second": {
+          "count": 3,
+          "median": 304.9118488603955,
+          "min": 302.7053206946655,
+          "max": 309.04579902082327,
+          "samples": [
+            302.7053206946655,
+            309.04579902082327,
+            304.9118488603955
+          ]
+        },
+        "prefill_seconds": {
+          "count": 3,
+          "median": 0.0713968,
+          "min": 0.0677946,
+          "max": 0.0733218,
+          "samples": [
+            0.0733218,
+            0.0677946,
+            0.0713968
+          ]
+        },
+        "decode_seconds": {
+          "count": 3,
+          "median": 0.6402843,
+          "min": 0.6343667,
+          "max": 0.6435470000000001,
+          "samples": [
+            0.6435470000000001,
+            0.6343667,
+            0.6402843
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "median": 0.7116811,
+          "min": 0.7021613,
+          "max": 0.7168688,
+          "samples": [
+            0.7168688,
+            0.7021613,
+            0.7116811
+          ]
+        },
+        "weights_load_seconds": {
+          "count": 3,
+          "median": 0.830957,
+          "min": 0.827484,
+          "max": 0.840944,
+          "samples": [
+            0.840944,
+            0.827484,
+            0.830957
+          ]
+        },
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "median": 1.252942,
+          "min": 1.2470961,
+          "max": 1.2746173,
+          "samples": [
+            1.2746173,
+            1.252942,
+            1.2470961
+          ]
+        },
+        "first_token_elapsed_seconds": {
+          "count": 3,
+          "median": 1.3208027,
+          "min": 1.3185532,
+          "max": 1.3480089,
+          "samples": [
+            1.3480089,
+            1.3208027,
+            1.3185532
+          ]
+        },
+        "startup_to_endpoint_seconds": {
+          "count": 3,
+          "median": 1.9588375,
+          "min": 1.9551694,
+          "max": 1.9915559,
+          "samples": [
+            1.9915559,
+            1.9551694,
+            1.9588375
+          ]
+        },
+        "cold_output_tokens_per_second": {
+          "count": 3,
+          "median": 32.67243964851602,
+          "min": 32.13567844116251,
+          "max": 32.73373652431344,
+          "samples": [
+            32.13567844116251,
+            32.73373652431344,
+            32.67243964851602
+          ]
+        }
+      },
+      "independent_memory": {
+        "sample_count": 238,
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 1230376960,
+          "observed_os_peak_working_set_bytes": 1230434304,
+          "sampled_max_private_commit_bytes": 6254686208,
+          "observed_os_peak_commit_bytes": 6254686208,
+          "sampled_peak_gpu_dedicated_bytes": 4338040832,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4419829760
+        }
+      }
+    },
+    {
+      "scenario": "single",
+      "arm": "hyle_mtp",
+      "timing": {
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 2040.1485334114066,
+          "min": 2029.9536801478441,
+          "max": 2197.156252050917,
+          "samples": [
+            2197.156252050917,
+            2029.9536801478441,
+            2040.1485334114066
+          ]
+        },
+        "full_decode_tokens_per_second": {
+          "count": 3,
+          "median": 105.60315240496092,
+          "min": 104.90256300273097,
+          "max": 106.35571631587851,
+          "samples": [
+            106.35571631587851,
+            105.60315240496092,
+            104.90256300273097
+          ]
+        },
+        "session_output_tokens_per_second": {
+          "count": 3,
+          "median": 95.17621653422053,
+          "min": 94.66867443147024,
+          "max": 96.61217337537573,
+          "samples": [
+            96.61217337537573,
+            95.17621653422053,
+            94.66867443147024
+          ]
+        },
+        "session_processed_tokens_per_second": {
+          "count": 3,
+          "median": 322.7068591863415,
+          "min": 320.98597424420376,
+          "max": 327.57565035088334,
+          "samples": [
+            327.57565035088334,
+            322.7068591863415,
+            320.98597424420376
+          ]
+        },
+        "prefill_seconds": {
+          "count": 3,
+          "median": 0.0754847,
+          "min": 0.0700906,
+          "max": 0.0758638,
+          "samples": [
+            0.0700906,
+            0.0758638,
+            0.0754847
+          ]
+        },
+        "decode_seconds": {
+          "count": 3,
+          "median": 0.5965731000000001,
+          "min": 0.5923518,
+          "max": 0.6005573,
+          "samples": [
+            0.5923518,
+            0.5965731000000001,
+            0.6005573
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "median": 0.6724369,
+          "min": 0.6624424,
+          "max": 0.676042,
+          "samples": [
+            0.6624424,
+            0.6724369,
+            0.676042
+          ]
+        },
+        "weights_load_seconds": {
+          "count": 3,
+          "median": 0.857164,
+          "min": 0.855675,
+          "max": 0.860604,
+          "samples": [
+            0.860604,
+            0.857164,
+            0.855675
+          ]
+        },
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "median": 1.8454304,
+          "min": 1.8436357,
+          "max": 1.8674624,
+          "samples": [
+            1.8454304,
+            1.8674624,
+            1.8436357
+          ]
+        },
+        "first_token_elapsed_seconds": {
+          "count": 3,
+          "median": 1.9191832,
+          "min": 1.9155797,
+          "max": 1.9433868,
+          "samples": [
+            1.9155797,
+            1.9433868,
+            1.9191832
+          ]
+        },
+        "startup_to_endpoint_seconds": {
+          "count": 3,
+          "median": 2.5197405,
+          "min": 2.5079315,
+          "max": 2.5399599,
+          "samples": [
+            2.5079315,
+            2.5399599,
+            2.5197405
+          ]
+        },
+        "cold_output_tokens_per_second": {
+          "count": 3,
+          "median": 25.399440934493054,
+          "min": 25.197248192776588,
+          "max": 25.519038299092298,
+          "samples": [
+            25.519038299092298,
+            25.197248192776588,
+            25.399440934493054
+          ]
+        }
+      },
+      "independent_memory": {
+        "sample_count": 289,
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 1352581120,
+          "observed_os_peak_working_set_bytes": 1352617984,
+          "sampled_max_private_commit_bytes": 6721613824,
+          "observed_os_peak_commit_bytes": 6721613824,
+          "sampled_peak_gpu_dedicated_bytes": 4556144640,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4637933568
+        }
+      }
+    },
+    {
+      "scenario": "single",
+      "arm": "peer_plain",
+      "timing": {
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 1496.2205856634864,
+          "min": 1464.8530390944545,
+          "max": 1666.3330393806434,
+          "samples": [
+            1464.8530390944545,
+            1496.2205856634864,
+            1666.3330393806434
+          ]
+        },
+        "full_decode_tokens_per_second": {
+          "count": 3,
+          "median": 101.78676158147546,
+          "min": 101.52073222553265,
+          "max": 102.02064023295685,
+          "samples": [
+            101.52073222553265,
+            102.02064023295685,
+            101.78676158147546
+          ]
+        },
+        "session_output_tokens_per_second": {
+          "count": 3,
+          "median": 88.83360230945158,
+          "min": 88.19157525173527,
+          "max": 89.96857425816341,
+          "samples": [
+            88.19157525173527,
+            88.83360230945158,
+            89.96857425816341
+          ]
+        },
+        "session_processed_tokens_per_second": {
+          "count": 3,
+          "median": 301.20143283048424,
+          "min": 299.0245598379149,
+          "max": 305.04969709408533,
+          "samples": [
+            299.0245598379149,
+            301.20143283048424,
+            305.04969709408533
+          ]
+        },
+        "prefill_seconds": {
+          "count": 3,
+          "median": 0.102926,
+          "min": 0.0924185,
+          "max": 0.10513,
+          "samples": [
+            0.10513,
+            0.102926,
+            0.0924185
+          ]
+        },
+        "decode_seconds": {
+          "count": 3,
+          "median": 0.618941,
+          "min": 0.6175221,
+          "max": 0.6205629,
+          "samples": [
+            0.6205629,
+            0.6175221,
+            0.618941
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "median": 0.7204481,
+          "min": 0.7113595,
+          "max": 0.7256929,
+          "samples": [
+            0.7256929,
+            0.7204481,
+            0.7113595
+          ]
+        },
+        "weights_load_seconds": {
+          "count": 3,
+          "median": 1.6598269,
+          "min": 1.5705626,
+          "max": 2.1304295,
+          "samples": [
+            2.1304295,
+            1.6598269,
+            1.5705626
+          ]
+        },
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "median": 1.689684,
+          "min": 1.5994936,
+          "max": 2.1611214,
+          "samples": [
+            2.1611214,
+            1.689684,
+            1.5994936
+          ]
+        },
+        "first_token_elapsed_seconds": {
+          "count": 3,
+          "median": 1.7927255,
+          "min": 1.6920107,
+          "max": 2.2663496,
+          "samples": [
+            2.2663496,
+            1.7927255,
+            1.6920107
+          ]
+        },
+        "startup_to_endpoint_seconds": {
+          "count": 3,
+          "median": 2.4102476,
+          "min": 2.3109517,
+          "max": 2.8869125,
+          "samples": [
+            2.8869125,
+            2.4102476,
+            2.3109517
+          ]
+        },
+        "cold_output_tokens_per_second": {
+          "count": 3,
+          "median": 26.55328855010581,
+          "min": 22.16901274285244,
+          "max": 27.694217927618308,
+          "samples": [
+            22.16901274285244,
+            26.55328855010581,
+            27.694217927618308
+          ]
+        }
+      },
+      "independent_memory": {
+        "sample_count": 276,
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 4371914752,
+          "observed_os_peak_working_set_bytes": 4372033536,
+          "sampled_max_private_commit_bytes": 5014622208,
+          "observed_os_peak_commit_bytes": 5014728704,
+          "sampled_peak_gpu_dedicated_bytes": 4002504704,
+          "sampled_peak_gpu_shared_bytes": 85983232,
+          "sampled_peak_gpu_total_bytes": 4088487936
+        }
+      }
+    },
+    {
+      "scenario": "single",
+      "arm": "peer_mtp",
+      "timing": {
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 1435.7849828078733,
+          "min": 1332.3170810836064,
+          "max": 1475.9822230400825,
+          "samples": [
+            1332.3170810836064,
+            1435.7849828078733,
+            1475.9822230400825
+          ]
+        },
+        "full_decode_tokens_per_second": {
+          "count": 3,
+          "median": 135.62395739082757,
+          "min": 134.31947994908654,
+          "max": 136.0780785775305,
+          "samples": [
+            134.31947994908654,
+            135.62395739082757,
+            136.0780785775305
+          ]
+        },
+        "session_output_tokens_per_second": {
+          "count": 3,
+          "median": 111.93153427877004,
+          "min": 109.47298848087586,
+          "max": 112.81373676465715,
+          "samples": [
+            109.47298848087586,
+            111.93153427877004,
+            112.81373676465715
+          ]
+        },
+        "session_processed_tokens_per_second": {
+          "count": 3,
+          "median": 379.5178584139547,
+          "min": 371.18185156796966,
+          "max": 382.50907621766567,
+          "samples": [
+            371.18185156796966,
+            379.5178584139547,
+            382.50907621766567
+          ]
+        },
+        "prefill_seconds": {
+          "count": 3,
+          "median": 0.1072584,
+          "min": 0.1043373,
+          "max": 0.1155881,
+          "samples": [
+            0.1155881,
+            0.1072584,
+            0.1043373
+          ]
+        },
+        "decode_seconds": {
+          "count": 3,
+          "median": 0.4645197,
+          "min": 0.4629695,
+          "max": 0.469031,
+          "samples": [
+            0.469031,
+            0.4645197,
+            0.4629695
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "median": 0.5717781,
+          "min": 0.5673068,
+          "max": 0.5846191,
+          "samples": [
+            0.5846191,
+            0.5717781,
+            0.5673068
+          ]
+        },
+        "weights_load_seconds": {
+          "count": 3,
+          "median": 1.673396,
+          "min": 1.6410657,
+          "max": 2.1036141,
+          "samples": [
+            2.1036141,
+            1.673396,
+            1.6410657
+          ]
+        },
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "median": 1.7073738,
+          "min": 1.6746632,
+          "max": 2.1385752,
+          "samples": [
+            2.1385752,
+            1.7073738,
+            1.6746632
+          ]
+        },
+        "first_token_elapsed_seconds": {
+          "count": 3,
+          "median": 1.8147303,
+          "min": 1.7790994,
+          "max": 2.2542613,
+          "samples": [
+            2.2542613,
+            1.8147303,
+            1.7790994
+          ]
+        },
+        "startup_to_endpoint_seconds": {
+          "count": 3,
+          "median": 2.27925,
+          "min": 2.2420689,
+          "max": 2.7232923,
+          "samples": [
+            2.7232923,
+            2.27925,
+            2.2420689
+          ]
+        },
+        "cold_output_tokens_per_second": {
+          "count": 3,
+          "median": 28.079412087309418,
+          "min": 23.50096609166779,
+          "max": 28.54506389165828,
+          "samples": [
+            23.50096609166779,
+            28.079412087309418,
+            28.54506389165828
+          ]
+        }
+      },
+      "independent_memory": {
+        "sample_count": 272,
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 4531875840,
+          "observed_os_peak_working_set_bytes": 4531879936,
+          "sampled_max_private_commit_bytes": 5456011264,
+          "observed_os_peak_commit_bytes": 5456011264,
+          "sampled_peak_gpu_dedicated_bytes": 4182888448,
+          "sampled_peak_gpu_shared_bytes": 98566144,
+          "sampled_peak_gpu_total_bytes": 4281454592
+        }
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "arm": "hyle_auto",
+      "timing": {
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 2685.8518192082734,
+          "min": 2669.6087079353038,
+          "max": 2763.7379690193025,
+          "samples": [
+            2763.7379690193025,
+            2669.6087079353038,
+            2685.8518192082734
+          ]
+        },
+        "new_user_prefill_tokens_per_second": {
+          "count": 3,
+          "median": 2677.159742123457,
+          "min": 2660.969197553636,
+          "max": 2754.7938331972337,
+          "samples": [
+            2754.7938331972337,
+            2660.969197553636,
+            2677.159742123457
+          ]
+        },
+        "full_decode_tokens_per_second": {
+          "count": 3,
+          "median": 101.37282947497087,
+          "min": 101.04383899225606,
+          "max": 101.40158722455885,
+          "samples": [
+            101.37282947497087,
+            101.40158722455885,
+            101.04383899225606
+          ]
+        },
+        "session_output_tokens_per_second": {
+          "count": 3,
+          "median": 94.23326295777305,
+          "min": 93.9773168125126,
+          "max": 94.48295568077664,
+          "samples": [
+            94.48295568077664,
+            94.23326295777305,
+            93.9773168125126
+          ]
+        },
+        "session_processed_tokens_per_second": {
+          "count": 3,
+          "median": 320.2458545830568,
+          "min": 319.3760376050233,
+          "max": 321.09441969638937,
+          "samples": [
+            321.09441969638937,
+            320.2458545830568,
+            319.3760376050233
+          ]
+        },
+        "prefill_seconds": {
+          "count": 3,
+          "median": 0.1150473,
+          "min": 0.11180509999999999,
+          "max": 0.1157473,
+          "samples": [
+            0.11180509999999999,
+            0.1157473,
+            0.1150473
+          ]
+        },
+        "decode_seconds": {
+          "count": 3,
+          "median": 1.2429365999999993,
+          "min": 1.2425841000000004,
+          "max": 1.2469835000000007,
+          "samples": [
+            1.2429365999999993,
+            1.2425841000000004,
+            1.2469835000000007
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "median": 1.3583314,
+          "min": 1.3547417,
+          "max": 1.3620308,
+          "samples": [
+            1.3547417,
+            1.3583314,
+            1.3620308
+          ]
+        },
+        "weights_load_seconds": {
+          "count": 3,
+          "median": 0.82684,
+          "min": 0.824784,
+          "max": 0.831453,
+          "samples": [
+            0.831453,
+            0.82684,
+            0.824784
+          ]
+        },
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "median": 1.3026863,
+          "min": 1.2827286,
+          "max": 1.3065712,
+          "samples": [
+            1.3065712,
+            1.3026863,
+            1.2827286
+          ]
+        },
+        "first_token_elapsed_seconds": {
+          "count": 3,
+          "median": 1.3700399,
+          "min": 1.3508331,
+          "max": 1.3740329,
+          "samples": [
+            1.3740329,
+            1.3700399,
+            1.3508331
+          ]
+        },
+        "startup_to_endpoint_seconds": {
+          "count": 3,
+          "median": 2.6610804,
+          "min": 2.6448152,
+          "max": 2.6613787,
+          "samples": [
+            2.6613787,
+            2.6610804,
+            2.6448152
+          ]
+        },
+        "cold_output_tokens_per_second": {
+          "count": 3,
+          "median": 48.100763885224964,
+          "min": 48.095372522519995,
+          "max": 48.39657606323497,
+          "samples": [
+            48.095372522519995,
+            48.100763885224964,
+            48.39657606323497
+          ]
+        }
+      },
+      "independent_memory": {
+        "sample_count": 308,
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 1265938432,
+          "observed_os_peak_working_set_bytes": 1265995776,
+          "sampled_max_private_commit_bytes": 6450388992,
+          "observed_os_peak_commit_bytes": 6450388992,
+          "sampled_peak_gpu_dedicated_bytes": 4478550016,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4560338944
+        }
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "arm": "hyle_mtp",
+      "timing": {
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 2570.106089654283,
+          "min": 2567.814399372423,
+          "max": 2627.888444859842,
+          "samples": [
+            2570.106089654283,
+            2567.814399372423,
+            2627.888444859842
+          ]
+        },
+        "new_user_prefill_tokens_per_second": {
+          "count": 3,
+          "median": 2561.788594218509,
+          "min": 2559.5043204100525,
+          "max": 2619.383951510781,
+          "samples": [
+            2561.788594218509,
+            2559.5043204100525,
+            2619.383951510781
+          ]
+        },
+        "full_decode_tokens_per_second": {
+          "count": 3,
+          "median": 123.77502023623354,
+          "min": 123.52243638006323,
+          "max": 125.19707360783084,
+          "samples": [
+            123.77502023623354,
+            125.19707360783084,
+            123.52243638006323
+          ]
+        },
+        "session_output_tokens_per_second": {
+          "count": 3,
+          "median": 112.51337744502338,
+          "min": 112.45782282533587,
+          "max": 113.6011557497583,
+          "samples": [
+            112.45782282533587,
+            113.6011557497583,
+            112.51337744502338
+          ]
+        },
+        "session_processed_tokens_per_second": {
+          "count": 3,
+          "median": 382.36968116082164,
+          "min": 382.1808822579774,
+          "max": 386.06642774331925,
+          "samples": [
+            382.1808822579774,
+            386.06642774331925,
+            382.36968116082164
+          ]
+        },
+        "prefill_seconds": {
+          "count": 3,
+          "median": 0.1202285,
+          "min": 0.11758489999999999,
+          "max": 0.12033579999999999,
+          "samples": [
+            0.1202285,
+            0.12033579999999999,
+            0.11758489999999999
+          ]
+        },
+        "decode_seconds": {
+          "count": 3,
+          "median": 1.0179759999999993,
+          "min": 1.0064133000000004,
+          "max": 1.0200576000000001,
+          "samples": [
+            1.0179759999999993,
+            1.0064133000000004,
+            1.0200576000000001
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "median": 1.1376425,
+          "min": 1.1267491,
+          "max": 1.1382045,
+          "samples": [
+            1.1382045,
+            1.1267491,
+            1.1376425
+          ]
+        },
+        "weights_load_seconds": {
+          "count": 3,
+          "median": 0.859928,
+          "min": 0.859299,
+          "max": 0.869208,
+          "samples": [
+            0.859928,
+            0.859299,
+            0.869208
+          ]
+        },
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "median": 1.9979436,
+          "min": 1.9799334,
+          "max": 2.017412,
+          "samples": [
+            1.9979436,
+            2.017412,
+            1.9799334
+          ]
+        },
+        "first_token_elapsed_seconds": {
+          "count": 3,
+          "median": 2.0715511,
+          "min": 2.0502788,
+          "max": 2.0928706,
+          "samples": [
+            2.0715511,
+            2.0928706,
+            2.0502788
+          ]
+        },
+        "startup_to_endpoint_seconds": {
+          "count": 3,
+          "median": 3.1362028,
+          "min": 3.1176379,
+          "max": 3.1442588,
+          "samples": [
+            3.1362028,
+            3.1442588,
+            3.1176379
+          ]
+        },
+        "cold_output_tokens_per_second": {
+          "count": 3,
+          "median": 40.81368717609716,
+          "min": 40.70911720116678,
+          "max": 41.05672438739598,
+          "samples": [
+            40.81368717609716,
+            40.70911720116678,
+            41.05672438739598
+          ]
+        }
+      },
+      "independent_memory": {
+        "sample_count": 358,
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 1389727744,
+          "observed_os_peak_working_set_bytes": 1389727744,
+          "sampled_max_private_commit_bytes": 6923051008,
+          "observed_os_peak_commit_bytes": 6923051008,
+          "sampled_peak_gpu_dedicated_bytes": 4700848128,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4782637056
+        }
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "arm": "peer_plain",
+      "timing": {
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 2551.574420507722,
+          "min": 2522.867054703759,
+          "max": 2575.8006447003945,
+          "samples": [
+            2551.574420507722,
+            2522.867054703759,
+            2575.8006447003945
+          ]
+        },
+        "new_user_prefill_tokens_per_second": {
+          "count": 3,
+          "median": 2543.316898111257,
+          "min": 2514.702436403747,
+          "max": 2567.4647202838883,
+          "samples": [
+            2543.316898111257,
+            2514.702436403747,
+            2567.4647202838883
+          ]
+        },
+        "full_decode_tokens_per_second": {
+          "count": 3,
+          "median": 101.90587439648066,
+          "min": 101.67750123828672,
+          "max": 103.39386250749811,
+          "samples": [
+            101.90587439648066,
+            103.39386250749811,
+            101.67750123828672
+          ]
+        },
+        "session_output_tokens_per_second": {
+          "count": 3,
+          "median": 94.28842002662469,
+          "min": 94.17478206815032,
+          "max": 95.4425653112356,
+          "samples": [
+            94.28842002662469,
+            95.4425653112356,
+            94.17478206815032
+          ]
+        },
+        "session_processed_tokens_per_second": {
+          "count": 3,
+          "median": 320.4333024342323,
+          "min": 320.0471109347296,
+          "max": 324.3555930499022,
+          "samples": [
+            320.4333024342323,
+            324.3555930499022,
+            320.0471109347296
+          ]
+        },
+        "prefill_seconds": {
+          "count": 3,
+          "median": 0.12110169999999999,
+          "min": 0.11996269999999999,
+          "max": 0.1224797,
+          "samples": [
+            0.12110169999999999,
+            0.1224797,
+            0.11996269999999999
+          ]
+        },
+        "decode_seconds": {
+          "count": 3,
+          "median": 1.2364351,
+          "min": 1.2186409999999999,
+          "max": 1.2392121999999999,
+          "samples": [
+            1.2364351,
+            1.2186409999999999,
+            1.2392121999999999
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "median": 1.3575368,
+          "min": 1.3411207,
+          "max": 1.3591749,
+          "samples": [
+            1.3575368,
+            1.3411207,
+            1.3591749
+          ]
+        },
+        "weights_load_seconds": {
+          "count": 3,
+          "median": 1.6281058,
+          "min": 1.6130785,
+          "max": 1.638762,
+          "samples": [
+            1.6130785,
+            1.638762,
+            1.6281058
+          ]
+        },
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "median": 1.6586322,
+          "min": 1.6418847,
+          "max": 1.6684391,
+          "samples": [
+            1.6418847,
+            1.6684391,
+            1.6586322
+          ]
+        },
+        "first_token_elapsed_seconds": {
+          "count": 3,
+          "median": 1.7537862,
+          "min": 1.7378305,
+          "max": 1.7662561,
+          "samples": [
+            1.7378305,
+            1.7662561,
+            1.7537862
+          ]
+        },
+        "startup_to_endpoint_seconds": {
+          "count": 3,
+          "median": 3.0096604,
+          "min": 2.9995292,
+          "max": 3.0179063,
+          "samples": [
+            2.9995292,
+            3.0096604,
+            3.0179063
+          ]
+        },
+        "cold_output_tokens_per_second": {
+          "count": 3,
+          "median": 42.529715312730964,
+          "min": 42.41351032005202,
+          "max": 42.67336353985152,
+          "samples": [
+            42.67336353985152,
+            42.529715312730964,
+            42.41351032005202
+          ]
+        }
+      },
+      "independent_memory": {
+        "sample_count": 339,
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 4375990272,
+          "observed_os_peak_working_set_bytes": 4376264704,
+          "sampled_max_private_commit_bytes": 4996956160,
+          "observed_os_peak_commit_bytes": 4997230592,
+          "sampled_peak_gpu_dedicated_bytes": 4002504704,
+          "sampled_peak_gpu_shared_bytes": 85983232,
+          "sampled_peak_gpu_total_bytes": 4088487936
+        }
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "arm": "peer_mtp",
+      "timing": {
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 2307.564779840397,
+          "min": 2304.08045938443,
+          "max": 2363.4785202635776,
+          "samples": [
+            2304.08045938443,
+            2363.4785202635776,
+            2307.564779840397
+          ]
+        },
+        "new_user_prefill_tokens_per_second": {
+          "count": 3,
+          "median": 2300.0969326564473,
+          "min": 2296.623888318461,
+          "max": 2355.8297224633716,
+          "samples": [
+            2296.623888318461,
+            2355.8297224633716,
+            2300.0969326564473
+          ]
+        },
+        "full_decode_tokens_per_second": {
+          "count": 3,
+          "median": 139.4004541357017,
+          "min": 139.30243531613027,
+          "max": 139.72235615361652,
+          "samples": [
+            139.4004541357017,
+            139.72235615361652,
+            139.30243531613027
+          ]
+        },
+        "session_output_tokens_per_second": {
+          "count": 3,
+          "median": 123.31635838701047,
+          "min": 123.26487831156392,
+          "max": 123.9675944834033,
+          "samples": [
+            123.31635838701047,
+            123.9675944834033,
+            123.26487831156392
+          ]
+        },
+        "session_processed_tokens_per_second": {
+          "count": 3,
+          "median": 419.08293670585584,
+          "min": 418.9079848869555,
+          "max": 421.2961218771909,
+          "samples": [
+            419.08293670585584,
+            421.2961218771909,
+            418.9079848869555
+          ]
+        },
+        "prefill_seconds": {
+          "count": 3,
+          "median": 0.1339074,
+          "min": 0.1307395,
+          "max": 0.1341099,
+          "samples": [
+            0.1341099,
+            0.1307395,
+            0.1339074
+          ]
+        },
+        "decode_seconds": {
+          "count": 3,
+          "median": 0.9038708,
+          "min": 0.9017884,
+          "max": 0.9045068,
+          "samples": [
+            0.9038708,
+            0.9017884,
+            0.9045068
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "median": 1.0379807,
+          "min": 1.0325279,
+          "max": 1.0384142,
+          "samples": [
+            1.0379807,
+            1.0325279,
+            1.0384142
+          ]
+        },
+        "weights_load_seconds": {
+          "count": 3,
+          "median": 1.651167,
+          "min": 1.6476299,
+          "max": 1.6748559,
+          "samples": [
+            1.651167,
+            1.6476299,
+            1.6748559
+          ]
+        },
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "median": 1.6851755,
+          "min": 1.6819864,
+          "max": 1.7084461,
+          "samples": [
+            1.6851755,
+            1.6819864,
+            1.7084461
+          ]
+        },
+        "first_token_elapsed_seconds": {
+          "count": 3,
+          "median": 1.7915637,
+          "min": 1.7855382,
+          "max": 1.8142676,
+          "samples": [
+            1.7915637,
+            1.7855382,
+            1.8142676
+          ]
+        },
+        "startup_to_endpoint_seconds": {
+          "count": 3,
+          "median": 2.7232548,
+          "min": 2.7146146,
+          "max": 2.7469576,
+          "samples": [
+            2.7232548,
+            2.7146146,
+            2.7469576
+          ]
+        },
+        "cold_output_tokens_per_second": {
+          "count": 3,
+          "median": 47.00257941342837,
+          "min": 46.59700608411284,
+          "max": 47.152181381474925,
+          "samples": [
+            47.00257941342837,
+            47.152181381474925,
+            46.59700608411284
+          ]
+        }
+      },
+      "independent_memory": {
+        "sample_count": 333,
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 4536520704,
+          "observed_os_peak_working_set_bytes": 4536520704,
+          "sampled_max_private_commit_bytes": 5461504000,
+          "observed_os_peak_commit_bytes": 5461504000,
+          "sampled_peak_gpu_dedicated_bytes": 4182888448,
+          "sampled_peak_gpu_shared_bytes": 98566144,
+          "sampled_peak_gpu_total_bytes": 4281454592
+        }
+      }
+    }
+  ],
+  "cross_engine_actual_work": [
+    {
+      "scenario": "single",
+      "role": "ordinary",
+      "common_output_prefix": 18,
+      "first_differing_output_1based": 19,
+      "arms": {
+        "hyle_auto": {
+          "generated_tokens": 64,
+          "actual_graph_calls": 64,
+          "actual_target_rows": 217,
+          "actual_draft_rows": 0,
+          "draft_rounds": null,
+          "agreements": null,
+          "overlap_successor_submissions": 55,
+          "overlap_successor_publications": 55,
+          "overlap_successor_discards": 0,
+          "overlap_successor_refusals": 0
+        },
+        "peer_plain": {
+          "generated_tokens": 64,
+          "actual_graph_calls": null,
+          "actual_target_rows": 217,
+          "actual_draft_rows": 0,
+          "draft_rounds": null,
+          "agreements": 0,
+          "overlap_successor_submissions": null,
+          "overlap_successor_publications": null,
+          "overlap_successor_discards": null,
+          "overlap_successor_refusals": null
+        }
+      }
+    },
+    {
+      "scenario": "single",
+      "role": "mtp",
+      "common_output_prefix": 18,
+      "first_differing_output_1based": 19,
+      "arms": {
+        "hyle_mtp": {
+          "generated_tokens": 64,
+          "actual_graph_calls": 37,
+          "actual_target_rows": 226,
+          "actual_draft_rows": 216,
+          "draft_rounds": 34,
+          "agreements": 29,
+          "overlap_successor_submissions": 9,
+          "overlap_successor_publications": 7,
+          "overlap_successor_discards": 2,
+          "overlap_successor_refusals": 0
+        },
+        "peer_mtp": {
+          "generated_tokens": 64,
+          "actual_graph_calls": null,
+          "actual_target_rows": 220,
+          "actual_draft_rows": 216,
+          "draft_rounds": null,
+          "agreements": 30,
+          "overlap_successor_submissions": null,
+          "overlap_successor_publications": null,
+          "overlap_successor_discards": null,
+          "overlap_successor_refusals": null
+        }
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "role": "ordinary",
+      "common_output_prefix": 18,
+      "first_differing_output_1based": 19,
+      "arms": {
+        "hyle_auto": {
+          "generated_tokens": 128,
+          "actual_graph_calls": 128,
+          "actual_target_rows": 435,
+          "actual_draft_rows": 0,
+          "draft_rounds": null,
+          "agreements": null,
+          "overlap_successor_submissions": 110,
+          "overlap_successor_publications": 110,
+          "overlap_successor_discards": 0,
+          "overlap_successor_refusals": 0
+        },
+        "peer_plain": {
+          "generated_tokens": 128,
+          "actual_graph_calls": null,
+          "actual_target_rows": 435,
+          "actual_draft_rows": 0,
+          "draft_rounds": null,
+          "agreements": 0,
+          "overlap_successor_submissions": null,
+          "overlap_successor_publications": null,
+          "overlap_successor_discards": null,
+          "overlap_successor_refusals": null
+        }
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "role": "mtp",
+      "common_output_prefix": 18,
+      "first_differing_output_1based": 19,
+      "arms": {
+        "hyle_mtp": {
+          "generated_tokens": 128,
+          "actual_graph_calls": 70,
+          "actual_target_rows": 445,
+          "actual_draft_rows": 434,
+          "draft_rounds": 66,
+          "agreements": 60,
+          "overlap_successor_submissions": 32,
+          "overlap_successor_publications": 30,
+          "overlap_successor_discards": 2,
+          "overlap_successor_refusals": 0
+        },
+        "peer_mtp": {
+          "generated_tokens": 128,
+          "actual_graph_calls": null,
+          "actual_target_rows": 438,
+          "actual_draft_rows": 435,
+          "draft_rounds": null,
+          "agreements": 61,
+          "overlap_successor_submissions": null,
+          "overlap_successor_publications": null,
+          "overlap_successor_discards": null,
+          "overlap_successor_refusals": null
+        }
+      }
+    }
+  ],
+  "process_index": [
+    {
+      "scenario": "single",
+      "mode": "timing",
+      "arm": "hyle_auto",
+      "pid": 37344,
+      "started_unix_ns": 1793306521385326400,
+      "finished_unix_ns": 1793306523920033400,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\01-hyle_auto\\result.json",
+        "bytes": 1261,
+        "sha256": "a966a9c7d847f5adaf27393533b4403b5cad7e51c413fde2069c0b75ffefa162"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\01-hyle_auto\\consumer-result.json",
+        "bytes": 129294,
+        "sha256": "6ea2f83e09aabf3b4fd278882efe5e4ba92520ca0aeb8adcdd2593c0b2c5575e"
+      }
+    },
+    {
+      "scenario": "single",
+      "mode": "timing",
+      "arm": "hyle_mtp",
+      "pid": 46316,
+      "started_unix_ns": 1793306524054088500,
+      "finished_unix_ns": 1793306527100639200,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\02-hyle_mtp\\result.json",
+        "bytes": 1294,
+        "sha256": "dff62c3494db5f1631a80171abd7042b9cba17e197976598424ac989d8b10942"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\02-hyle_mtp\\consumer-result.json",
+        "bytes": 97467,
+        "sha256": "3c24db60c7d83680345dc28a50b0cb435ba123e559aef224d012a549e42a74ce"
+      }
+    },
+    {
+      "scenario": "single",
+      "mode": "timing",
+      "arm": "peer_plain",
+      "pid": 40264,
+      "started_unix_ns": 1793306527154539700,
+      "finished_unix_ns": 1793306530848877900,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\03-peer_plain\\result.json",
+        "bytes": 1323,
+        "sha256": "4ccf4ff4441cc5c347d5f4ec4eff43cdafb8a3bbd2801eb81fb008b971187703"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\03-peer_plain\\consumer-result.json",
+        "bytes": 66993,
+        "sha256": "8e28d894f72a58bf2b27ddd56e308389ec3cd726fad37be18dfb32a604e37fef"
+      }
+    },
+    {
+      "scenario": "single",
+      "mode": "timing",
+      "arm": "peer_mtp",
+      "pid": 60700,
+      "started_unix_ns": 1793306530885529900,
+      "finished_unix_ns": 1793306534180515800,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\04-peer_mtp\\result.json",
+        "bytes": 1322,
+        "sha256": "d6a70290c6c08e8c4a736acf4866dcbab01bf37432bde36500c5fa4d800b69d5"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\04-peer_mtp\\consumer-result.json",
+        "bytes": 46422,
+        "sha256": "a216a51ba0f92c11cd6de560f99b52e663162c14cb3f817f7b4e75be99627d4b"
+      }
+    },
+    {
+      "scenario": "single",
+      "mode": "timing",
+      "arm": "hyle_mtp",
+      "pid": 16576,
+      "started_unix_ns": 1793306534286512600,
+      "finished_unix_ns": 1793306537396301800,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\05-hyle_mtp\\result.json",
+        "bytes": 1294,
+        "sha256": "d71de07b9902bfbe73299b3360d0e35754622a9f7f1861929bbdf7dfb49b7e06"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\05-hyle_mtp\\consumer-result.json",
+        "bytes": 97407,
+        "sha256": "2b4e8e77e33886acb88bcf50bb06b13d3e0362c10d6c52be7c49b5dd1376fe80"
+      }
+    },
+    {
+      "scenario": "single",
+      "mode": "timing",
+      "arm": "peer_plain",
+      "pid": 4880,
+      "started_unix_ns": 1793306537452318100,
+      "finished_unix_ns": 1793306540430362900,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\06-peer_plain\\result.json",
+        "bytes": 1322,
+        "sha256": "521df1ec323fbfa71633b8ef261afdb137c0e718740ec273bc614ff9e7551af2"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\06-peer_plain\\consumer-result.json",
+        "bytes": 67008,
+        "sha256": "d691aea63bce370091c12314b5ef20e8b9218fed6e93b23ae913f523ae56f3bf"
+      }
+    },
+    {
+      "scenario": "single",
+      "mode": "timing",
+      "arm": "peer_mtp",
+      "pid": 35532,
+      "started_unix_ns": 1793306540462363200,
+      "finished_unix_ns": 1793306543291039300,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\07-peer_mtp\\result.json",
+        "bytes": 1322,
+        "sha256": "c74d075f34b874f66fc45d50de34865b953e38cd759a01579bb9836c70f8e27a"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\07-peer_mtp\\consumer-result.json",
+        "bytes": 46417,
+        "sha256": "c1435d9b2d7e33f7333089dc1242e921cf829e7220d05db415e797f87674dfa8"
+      }
+    },
+    {
+      "scenario": "single",
+      "mode": "timing",
+      "arm": "hyle_auto",
+      "pid": 33776,
+      "started_unix_ns": 1793306543397246300,
+      "finished_unix_ns": 1793306545896082800,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\08-hyle_auto\\result.json",
+        "bytes": 1261,
+        "sha256": "982515e3c90c677dc3f50c14b7cdd1341690022f655bd61d970c669759ac8103"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\08-hyle_auto\\consumer-result.json",
+        "bytes": 129246,
+        "sha256": "8b459d652091e9939bdf0590688075a3a63a94ac656bf23fa14991836c4aa898"
+      }
+    },
+    {
+      "scenario": "single",
+      "mode": "timing",
+      "arm": "peer_plain",
+      "pid": 30452,
+      "started_unix_ns": 1793306545951712600,
+      "finished_unix_ns": 1793306548810220300,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\09-peer_plain\\result.json",
+        "bytes": 1323,
+        "sha256": "0c4288a82bc7b37db533263adee4fc0236a22a5f0298391d19768ac3b3f777fa"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\09-peer_plain\\consumer-result.json",
+        "bytes": 67010,
+        "sha256": "8dfa810e11a227a9e13d8ba504ad2a2ad679fe7526fb77ea62049b1f9e97dd5e"
+      }
+    },
+    {
+      "scenario": "single",
+      "mode": "timing",
+      "arm": "peer_mtp",
+      "pid": 18784,
+      "started_unix_ns": 1793306548842071000,
+      "finished_unix_ns": 1793306551618612000,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\10-peer_mtp\\result.json",
+        "bytes": 1322,
+        "sha256": "997404c1f96a65c7281b4d2d4357e5715a10b2a597b3f92911f2ab9f784d8150"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\10-peer_mtp\\consumer-result.json",
+        "bytes": 46412,
+        "sha256": "045048a5ba57dc903ce7fa420b1ee72c37a934aea7686f6e21a1d381d1f6e37c"
+      }
+    },
+    {
+      "scenario": "single",
+      "mode": "timing",
+      "arm": "hyle_auto",
+      "pid": 34644,
+      "started_unix_ns": 1793306551720021000,
+      "finished_unix_ns": 1793306554234829100,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\11-hyle_auto\\result.json",
+        "bytes": 1261,
+        "sha256": "cd2cc7de99b61a2c860e819d2b8a59c46a50034227500c5469c0f6b62dd4dc0f"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\11-hyle_auto\\consumer-result.json",
+        "bytes": 129296,
+        "sha256": "aa077ea7c634106717144bba5c3aac6f9494d1391eb75d3175410f2ae5100d3d"
+      }
+    },
+    {
+      "scenario": "single",
+      "mode": "timing",
+      "arm": "hyle_mtp",
+      "pid": 62896,
+      "started_unix_ns": 1793306554372320900,
+      "finished_unix_ns": 1793306557427906500,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\12-hyle_mtp\\result.json",
+        "bytes": 1294,
+        "sha256": "1474840308ccd02a0e52a6c19432dbebee099be8ba021c87ed3407a33733d382"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-timing\\12-hyle_mtp\\consumer-result.json",
+        "bytes": 97458,
+        "sha256": "5e4cd8b5d47b66ddc5b168fe0f435a0395ae7a2baaa25ce0d1a1c386ef33baa1"
+      }
+    },
+    {
+      "scenario": "single",
+      "mode": "memory",
+      "arm": "hyle_auto",
+      "pid": 58888,
+      "started_unix_ns": 1793306558425352700,
+      "finished_unix_ns": 1793306561560433000,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-memory\\01-hyle_auto\\result.json",
+        "bytes": 2161,
+        "sha256": "6eb85c379f1607e192611442ab1f783ff27ce2ebc9f7ce23660ba645d93a4a8d"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-memory\\01-hyle_auto\\consumer-result.json",
+        "bytes": 129344,
+        "sha256": "7e12672f4bb5c62825fde5abdf729e8f73774fc991ef34e949e6c3000594a635"
+      }
+    },
+    {
+      "scenario": "single",
+      "mode": "memory",
+      "arm": "hyle_mtp",
+      "pid": 23268,
+      "started_unix_ns": 1793306561697362000,
+      "finished_unix_ns": 1793306564755436100,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-memory\\02-hyle_mtp\\result.json",
+        "bytes": 2193,
+        "sha256": "51e6ef50399bc71c13abe3acc6468534c2ee1aa47734d02dcd1598b84a15a748"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-memory\\02-hyle_mtp\\consumer-result.json",
+        "bytes": 97432,
+        "sha256": "ef2b79059f8e0505c92a2fd939e2cf692aa0df30b35187a54882540894f00bfd"
+      }
+    },
+    {
+      "scenario": "single",
+      "mode": "memory",
+      "arm": "peer_plain",
+      "pid": 62044,
+      "started_unix_ns": 1793306564812357300,
+      "finished_unix_ns": 1793306567714679700,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-memory\\03-peer_plain\\result.json",
+        "bytes": 2303,
+        "sha256": "aa9b7a1fbab727dd69b72837882a05ce9b57d6b0bf8a54261b89467201a4c9cc"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-memory\\03-peer_plain\\consumer-result.json",
+        "bytes": 67014,
+        "sha256": "3e38bed390159a6f147bb51dc9d60a2d9b5f0ce181c3d1599e42b7317c233a43"
+      }
+    },
+    {
+      "scenario": "single",
+      "mode": "memory",
+      "arm": "peer_mtp",
+      "pid": 54172,
+      "started_unix_ns": 1793306567745909700,
+      "finished_unix_ns": 1793306570611317700,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-memory\\04-peer_mtp\\result.json",
+        "bytes": 2300,
+        "sha256": "3af07180f41dfd5977d783512b926119d766a4d41b5f511880fd847858a56596"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\single-memory\\04-peer_mtp\\consumer-result.json",
+        "bytes": 46399,
+        "sha256": "f72cc57a78443a3c0f239b19b90619cbcc1acc2c7c364e602d5ea94bf96f74df"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "mode": "timing",
+      "arm": "hyle_auto",
+      "pid": 59956,
+      "started_unix_ns": 1793306571384658100,
+      "finished_unix_ns": 1793306574606007600,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\01-hyle_auto\\result.json",
+        "bytes": 1369,
+        "sha256": "8cc6343e933608e348cc184c8f9bffbd9cf44f7c4524fe2bcec4f202da89a40e"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\01-hyle_auto\\consumer-result.json",
+        "bytes": 251116,
+        "sha256": "dccf0efa05d6563ce0c445be1191839cf8f144654b11111f895b13db489b4876"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "mode": "timing",
+      "arm": "hyle_mtp",
+      "pid": 42408,
+      "started_unix_ns": 1793306574738424700,
+      "finished_unix_ns": 1793306578414347300,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\02-hyle_mtp\\result.json",
+        "bytes": 1402,
+        "sha256": "c3faa19413d958d3f24436c79a140f37fbe4d7416da38c123c0ea3b4054d03a7"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\02-hyle_mtp\\consumer-result.json",
+        "bytes": 181083,
+        "sha256": "eed98a6050ccd8e8dab319d62c4205624210ce2aa0f769ff478950935007dee7"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "mode": "timing",
+      "arm": "peer_plain",
+      "pid": 12092,
+      "started_unix_ns": 1793306578476112500,
+      "finished_unix_ns": 1793306582035680000,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\03-peer_plain\\result.json",
+        "bytes": 1433,
+        "sha256": "e8dda816eeb91fe0c12ca811990a4d41f11b25e2f4e6680925676f91829fa72a"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\03-peer_plain\\consumer-result.json",
+        "bytes": 129566,
+        "sha256": "18242e03beb89a3c3516d36ddf0a6f1418c0492f4e92304ff710f5fef04c83a5"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "mode": "timing",
+      "arm": "peer_mtp",
+      "pid": 45956,
+      "started_unix_ns": 1793306582067196000,
+      "finished_unix_ns": 1793306585333013100,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\04-peer_mtp\\result.json",
+        "bytes": 1432,
+        "sha256": "2b7cda375e435ff26ea528f86cbc11a0f7409c198e87f7d019c89927d48d7ef4"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\04-peer_mtp\\consumer-result.json",
+        "bytes": 87090,
+        "sha256": "0866e2596171f5c18cd540239d5f4d953a6fdfa8485f8bc5f45aaca27e2be517"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "mode": "timing",
+      "arm": "hyle_mtp",
+      "pid": 56072,
+      "started_unix_ns": 1793306585438202300,
+      "finished_unix_ns": 1793306589151599800,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\05-hyle_mtp\\result.json",
+        "bytes": 1402,
+        "sha256": "45dcd87a21a4624029e25c1e824054bf3b83f1927aee9b0555993b2365361de8"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\05-hyle_mtp\\consumer-result.json",
+        "bytes": 181119,
+        "sha256": "4c3685e4d0a8026af2fc82042fec7341ca886d02e6ee3b35670f294a478b4bd9"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "mode": "timing",
+      "arm": "peer_plain",
+      "pid": 10192,
+      "started_unix_ns": 1793306589210049600,
+      "finished_unix_ns": 1793306592746423400,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\06-peer_plain\\result.json",
+        "bytes": 1433,
+        "sha256": "5918463b5d6dcb6cc7cde35ec1eb0aeb1f5b0153764aaa92197ff808df81de04"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\06-peer_plain\\consumer-result.json",
+        "bytes": 129547,
+        "sha256": "73979b4ad3b1ab045a1252ffbd4c6f97013fd5678fd824f83a068dad9671f4a8"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "mode": "timing",
+      "arm": "peer_mtp",
+      "pid": 848,
+      "started_unix_ns": 1793306592779421600,
+      "finished_unix_ns": 1793306596060980000,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\07-peer_mtp\\result.json",
+        "bytes": 1429,
+        "sha256": "0df9189e56aa692870ffb8f64ebdedd4a8ae254197f5117229beb887c5b1ff82"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\07-peer_mtp\\consumer-result.json",
+        "bytes": 87104,
+        "sha256": "c4cf38d42f42bb6fce052188462dbe05cea676070ca4ef7de2531a41dcf77bce"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "mode": "timing",
+      "arm": "hyle_auto",
+      "pid": 40536,
+      "started_unix_ns": 1793306596166021000,
+      "finished_unix_ns": 1793306599458924300,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\08-hyle_auto\\result.json",
+        "bytes": 1368,
+        "sha256": "91af83fbad8849a679ad6ae63b82f190226f9aeb483535841dbdddf515af6975"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\08-hyle_auto\\consumer-result.json",
+        "bytes": 251107,
+        "sha256": "b8919ec7263f05bc183d365db066ad7899976f6eda1dbb3d8f7c093a80d0b857"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "mode": "timing",
+      "arm": "peer_plain",
+      "pid": 27656,
+      "started_unix_ns": 1793306599522718700,
+      "finished_unix_ns": 1793306603065715200,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\09-peer_plain\\result.json",
+        "bytes": 1433,
+        "sha256": "0e1103be1b08329ad752a2be2548824a4dcef456a1fdc3a4eab91fb81aebd8ed"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\09-peer_plain\\consumer-result.json",
+        "bytes": 129587,
+        "sha256": "68a432a894eb70c82563f7f3fe50bec2379eb5198ebbf13cd92bf2412cd3f420"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "mode": "timing",
+      "arm": "peer_mtp",
+      "pid": 14980,
+      "started_unix_ns": 1793306603097715000,
+      "finished_unix_ns": 1793306606388468100,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\10-peer_mtp\\result.json",
+        "bytes": 1432,
+        "sha256": "4ef07799eefb91864badfe7ef4f03783c92facd1c53abcd9af8505def2c56a03"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\10-peer_mtp\\consumer-result.json",
+        "bytes": 87086,
+        "sha256": "7d16b1b712235e3dd0e5296c87edfd49265d009df9478e54fcb1ecc94863c604"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "mode": "timing",
+      "arm": "hyle_auto",
+      "pid": 16892,
+      "started_unix_ns": 1793306606489977500,
+      "finished_unix_ns": 1793306609673636300,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\11-hyle_auto\\result.json",
+        "bytes": 1369,
+        "sha256": "354b26c92f2c84fd622a80e02197fee06e33246c3d9b931227e8fc02244446f0"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\11-hyle_auto\\consumer-result.json",
+        "bytes": 251128,
+        "sha256": "739088c7857774771fc1e03fc56cb32eb174e0424debb78572e0af85b4e85187"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "mode": "timing",
+      "arm": "hyle_mtp",
+      "pid": 20464,
+      "started_unix_ns": 1793306609809783100,
+      "finished_unix_ns": 1793306613479782900,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\12-hyle_mtp\\result.json",
+        "bytes": 1402,
+        "sha256": "c00acd5be51591a354525b5754912161da166117d9ec37cd563ef3494a8aa4ed"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-timing\\12-hyle_mtp\\consumer-result.json",
+        "bytes": 181100,
+        "sha256": "e8ef8d5bc58433dc5df419f0b6c9514a6d63bb781d497254bd0afc21fde4d7df"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "mode": "memory",
+      "arm": "hyle_auto",
+      "pid": 62580,
+      "started_unix_ns": 1793306614595968000,
+      "finished_unix_ns": 1793306618031464800,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-memory\\01-hyle_auto\\result.json",
+        "bytes": 2885,
+        "sha256": "34b23ceb48da100e097e19446b2c90cd0b2c0b6881eacd9c09daa984aac59ad6"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-memory\\01-hyle_auto\\consumer-result.json",
+        "bytes": 251110,
+        "sha256": "5cb2d043941348d322b0b72c0c5895abd0dfa5f5abb03f6678b92285081e9b41"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "mode": "memory",
+      "arm": "hyle_mtp",
+      "pid": 46956,
+      "started_unix_ns": 1793306618165988500,
+      "finished_unix_ns": 1793306621921182700,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-memory\\02-hyle_mtp\\result.json",
+        "bytes": 2918,
+        "sha256": "aa61390b4ff7ea9f9ae6c290d1848d86eb60c0d04a96581404f2aaa3351d1bc4"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-memory\\02-hyle_mtp\\consumer-result.json",
+        "bytes": 181125,
+        "sha256": "2bac1f41a3af2f650cf41be228de635def190b8df7e58580a3dcf207a23a5e0e"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "mode": "memory",
+      "arm": "peer_plain",
+      "pid": 37344,
+      "started_unix_ns": 1793306621980476800,
+      "finished_unix_ns": 1793306625526769100,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-memory\\03-peer_plain\\result.json",
+        "bytes": 3133,
+        "sha256": "414860350c069f01c4c59878fb1d9ba9cbee7ef98a76399639346252094dfddc"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-memory\\03-peer_plain\\consumer-result.json",
+        "bytes": 129590,
+        "sha256": "062b4e3ac777dad7be88ec17412a98b96f51ea5c59e998e9a4908f2ecae27bfe"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "mode": "memory",
+      "arm": "peer_mtp",
+      "pid": 60612,
+      "started_unix_ns": 1793306625559278100,
+      "finished_unix_ns": 1793306629069990400,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-memory\\04-peer_mtp\\result.json",
+        "bytes": 3133,
+        "sha256": "da41293fec1073ce3e6b5de9870d645d4531d9d8346ae960f0c7b7c5cccf6b46"
+      },
+      "producer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\two-turn-memory\\04-peer_mtp\\consumer-result.json",
+        "bytes": 87099,
+        "sha256": "5df5c13f573200660a635b745aa74638eebef39ec642fce563840bfb1b0f7060"
+      }
+    }
+  ],
+  "original_protocol": {
+    "plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\plan.json",
+      "bytes": 4127,
+      "sha256": "e1e9b825231fb02db48a22fba2797f0cb0f20966e9f87d172c13ffdfc1e7dc00"
+    },
+    "binding": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\binding.json",
+      "bytes": 7749,
+      "sha256": "03c5af46bdb4df428ca1a29830fb7e0e48f0cdb10129427e1896fd06328f3d7b"
+    },
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\peer-window\\summary.json",
+      "bytes": 1676049,
+      "sha256": "e87d1ac12654f207302d05e480a0db0851e8c1f2d5e3b47630e09ce226d68df1"
+    },
+    "runner": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\window.py",
+      "bytes": 11949,
+      "sha256": "39064c284b2e5264e80612869614e794651f329ef8acd89fda272ba9bc2809cf"
+    }
+  },
+  "limits": [
+    "Three timing samples/one independent memory sample per arm/scenario; no significance claim.",
+    "No ready sample or unsupported OS/GPU counter becomes zero; preserve raw null/unknown and measured sampling gaps.",
+    "Memory sampler times are not TPS samples. Dedicated/shared/WS/commit are separate quantities; sampled maxima are lower bounds.",
+    "Compare this current window internally; no old18:01 sample pooling or causal gain attribution across windows.",
+    "Frozen peer433e is not latest upstream. Different generated IDs/verification rows are retained; no equal-work causal claim.",
+    "Previous2026-10-28 MTP table used overlap off; this table uses default auto. Do not interpret the difference as a paired-M2 regression.",
+    "Current auto MTP is slower than its same-image synchronous diagnostic: capture churn and speculative discarded work remain open."
+  ],
+  "evidence_archive": "inference-paired-m2-2026-10-30.zip"
+}

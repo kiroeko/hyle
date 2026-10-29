@@ -16,8 +16,8 @@ int device_index(int physical_device) {
 }
 
 bool supports_bfloat_paired_projection(int device, std::uint64_t inner,
-                                      std::uint64_t rows) {
-  return ggml_cuda_supports_bf16_paired_projection_geometry(device, inner, rows);
+                                      std::uint64_t rows, std::uint64_t columns) {
+  return ggml_cuda_supports_bf16_paired_projection_geometry(device, inner, rows, columns);
 }
 
 void initialize_backend(ggml_backend *backend) {

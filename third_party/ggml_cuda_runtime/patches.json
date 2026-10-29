@@ -43,7 +43,7 @@
     {
       "path": "src/ggml-cuda/ggml-cuda.cu",
       "before_sha256": "523470d6604755b82d0208414ce40f1378941b10bc1349763bbdf02edaab9634",
-      "after_sha256": "de53fdc3fa41cca0080eb701566fa12d916a8cf9a5c59c3ca070d40fd207e5a5",
+      "after_sha256": "ba03018513d442c562b5ef2a192ad3773729567d088112a33f54d19e3c3ca52d",
       "edits": [
         {
           "before": "    void clear_pool() {\n        ggml_cuda_set_device(device);\n        for (int i = 0; i < MAX_BUFFERS; ++i) {\n            ggml_cuda_buffer & b = buffer_pool[i];\n            if (b.ptr != nullptr) {\n                CUDA_CHECK(cudaFree(b.ptr));\n                pool_size -= b.size;\n                b.ptr  = nullptr;\n                b.size = 0;\n            }\n        }\n    }\n\n",
@@ -708,6 +708,26 @@
         {
           "before": "    if (ggml_cuda_can_fuse(cgraph, i, { GGML_OP_SSM_CONV, GGML_OP_UNARY }, { GGML_UNARY_OP_SILU }) &&",
           "after": "    if (!ggml_cuda_conv_is_indexed(node) && ggml_cuda_can_fuse(cgraph, i, { GGML_OP_SSM_CONV, GGML_OP_UNARY }, { GGML_UNARY_OP_SILU }) &&"
+        },
+        {
+          "before": "bool ggml_cuda_supports_bf16_paired_projection_geometry(int device, uint64_t inner, uint64_t rows) {",
+          "after": "bool ggml_cuda_supports_bf16_paired_projection_geometry(int device, uint64_t inner, uint64_t rows, uint64_t columns) {"
+        },
+        {
+          "before": "    GGML_UNUSED_VARS(device, inner, rows);\n",
+          "after": "    GGML_UNUSED_VARS(device, inner, rows, columns);\n"
+        },
+        {
+          "before": "    if (device < 0 || device >= info.device_count || !inner || (inner & 1) || !rows ||\n            inner > uint64_t(INT_MAX) || rows > uint64_t(INT_MAX) / inner) return false;",
+          "after": "    if (device < 0 || device >= info.device_count || !inner || (inner & 1) || !rows ||\n            (columns != 1 && columns != 2) || inner > uint64_t(INT_MAX) / columns ||\n            rows > uint64_t(INT_MAX) / columns || rows > uint64_t(INT_MAX) / inner) return false;"
+        },
+        {
+          "before": "    return ggml_cuda_should_use_mmvf(GGML_TYPE_BF16, caps.cc, ne, nb, 1);\n",
+          "after": "    // M1 keeps the original native preference. The same small-row carrier\n    // can consume two dense BF16 columns directly; ordinary F32-result M2\n    // dispatch still uses its own original preference and implementation.\n    return ggml_cuda_should_use_mmvf(GGML_TYPE_BF16, caps.cc, ne, nb, 1);\n"
+        },
+        {
+          "before": "        src1->ne[1] == 1 && dst->ne[1] == 1 &&\n",
+          "after": "        src1->ne[1] == dst->ne[1] &&\n        (src1->ne[1] == 1 || (src1->ne[1] == 2 &&\n            ggml_cuda_supports_bf16_paired_projection_geometry(device,\n                uint64_t(src0->ne[0]), uint64_t(src0->ne[1]), 2))) &&\n"
         }
       ]
     },
@@ -764,7 +784,7 @@
     {
       "path": "src/ggml-cuda/unary.cu",
       "before_sha256": "e8340525baecc6d34b6250fb4e588c774ddf22accc49b6526fa15691ae7def9a",
-      "after_sha256": "d096ab57174ef13f45f40d6cb9b8b9a5c6e88553317b56436378198ca0b55130",
+      "after_sha256": "7dbb8d582f5d58c697ccb4047fa5cb78c2281aa547ca01ac83c21fd452f7c7cd",
       "edits": [
         {
           "before": "    GGML_ASSERT(src0->type == GGML_TYPE_F32 || src0->type == GGML_TYPE_F16);\n    GGML_ASSERT( dst->type == GGML_TYPE_F32 ||  dst->type == GGML_TYPE_F16);\n    GGML_ASSERT(src0->type == dst->type);\n\n    if (src0->type == GGML_TYPE_F16) {\n        unary_cuda<op>((const half *)src0_d, (half *)dst_d, ggml_nelements(src0), stream);",
@@ -873,13 +893,21 @@
         {
           "before": "#else\n    GGML_UNUSED_VARS(ctx, gate_mm, up_mm, silu, dst);\n#endif\n}\n",
           "after": "#else\n    GGML_UNUSED_VARS(ctx, gate_mm, up_mm, silu, dst);\n#endif\n}\n\n/* Same-A BF16 projections with two real independent public outputs. */\nbool ggml_cuda_supports_bf16_paired_matvec(const ggml_tensor * first,\n        const ggml_tensor * second, int device) {\n#if defined(GGML_USE_HIP) || defined(GGML_USE_MUSA)\n    GGML_UNUSED_VARS(first, second, device);\n    return false;\n#else\n    if (!first || !second || first == second || first->view_src || second->view_src ||\n            first->op != GGML_OP_MUL_MAT || second->op != GGML_OP_MUL_MAT ||\n            ggml_get_op_params_i32(first, 0) != GGML_PREC_F32 ||\n            ggml_get_op_params_i32(second, 0) != GGML_PREC_F32 ||\n            !first->src[0] || !first->src[1] || !second->src[0] ||\n            first->src[1] != second->src[1]) return false;\n    for (int s = 2; s < GGML_MAX_SRC; ++s) {\n        if (first->src[s] || second->src[s]) return false;\n    }\n    const auto * w0 = first->src[0];\n    const auto * w1 = second->src[0];\n    const auto * x = first->src[1];\n    for (const auto * tensor : {w0, w1, x, first, second}) {\n        if (tensor->type != GGML_TYPE_BF16 || !ggml_is_contiguous(tensor) ||\n                tensor->ne[2] != 1 || tensor->ne[3] != 1) return false;\n    }\n    const auto k = w0->ne[0], n = w0->ne[1];\n    if (k <= 0 || n <= 0 || !ggml_are_same_shape(w0, w1) ||\n            x->ne[0] != k || x->ne[1] != 1 || first->ne[0] != n || first->ne[1] != 1 ||\n            !ggml_are_same_shape(first, second) ||\n            !ggml_cuda_supports_bf16_paired_projection_geometry(device, uint64_t(k), uint64_t(n))) return false;\n    const int cc = ggml_cuda_info().devices[device].cc;\n    return ggml_cuda_should_use_mmvf(w0->type, cc, w0->ne, w0->nb, 1) &&\n           ggml_cuda_should_use_mmvf(w1->type, cc, w1->ne, w1->nb, 1);\n#endif\n}\n\nvoid ggml_cuda_op_bf16_paired_matvec(ggml_backend_cuda_context & ctx,\n        const ggml_tensor * first, ggml_tensor * second) {\n    GGML_ASSERT(ggml_cuda_can_fuse_bf16_paired_matvec(first, second, ctx.device, true));\n#if !defined(GGML_USE_HIP) && !defined(GGML_USE_MUSA)\n    const auto * w0 = first->src[0];\n    const auto * w1 = second->src[0];\n    const auto * x = first->src[1];\n    const auto bytes = sizeof(nv_bfloat16);\n    ggml_cuda_mm_fusion_args_device fusion{};\n    fusion.gate = w1->data;\n    launch_mul_mat_vec_f_cuda<nv_bfloat16, float, 1, false,\n        nv_bfloat16, nv_bfloat16, void, false, true>(\n            static_cast<const nv_bfloat16 *>(w0->data),\n            static_cast<const nv_bfloat16 *>(x->data), nullptr, fusion,\n            static_cast<nv_bfloat16 *>(first->data), w0->ne[0], w0->ne[1],\n            w0->nb[1] / bytes, x->nb[1] / bytes, first->nb[1] / bytes,\n            1, 1, 1, w0->nb[2] / bytes, x->nb[2] / bytes, first->nb[2] / bytes,\n            1, 1, w0->nb[3] / bytes, x->nb[3] / bytes, first->nb[3] / bytes,\n            1, 0, ctx.stream(), static_cast<nv_bfloat16 *>(second->data));\n#else\n    GGML_UNUSED_VARS(ctx, first, second);\n#endif\n}\n"
+        },
+        {
+          "before": "            x->ne[0] != k || x->ne[1] != 1 || first->ne[0] != n || first->ne[1] != 1 ||\n            !ggml_are_same_shape(first, second) ||\n            !ggml_cuda_supports_bf16_paired_projection_geometry(device, uint64_t(k), uint64_t(n))) return false;",
+          "after": "            x->ne[0] != k || first->ne[0] != n || first->ne[1] != x->ne[1] ||\n            !ggml_are_same_shape(first, second) ||\n            !ggml_cuda_supports_bf16_paired_projection_geometry(\n                device, uint64_t(k), uint64_t(n), uint64_t(x->ne[1]))) return false;"
+        },
+        {
+          "before": "void ggml_cuda_op_bf16_paired_matvec(ggml_backend_cuda_context & ctx,\n        const ggml_tensor * first, ggml_tensor * second) {\n    GGML_ASSERT(ggml_cuda_can_fuse_bf16_paired_matvec(first, second, ctx.device, true));\n#if !defined(GGML_USE_HIP) && !defined(GGML_USE_MUSA)\n    const auto * w0 = first->src[0];\n    const auto * w1 = second->src[0];\n    const auto * x = first->src[1];\n    const auto bytes = sizeof(nv_bfloat16);\n    ggml_cuda_mm_fusion_args_device fusion{};\n    fusion.gate = w1->data;\n    launch_mul_mat_vec_f_cuda<nv_bfloat16, float, 1, false,\n        nv_bfloat16, nv_bfloat16, void, false, true>(\n            static_cast<const nv_bfloat16 *>(w0->data),\n            static_cast<const nv_bfloat16 *>(x->data), nullptr, fusion,\n            static_cast<nv_bfloat16 *>(first->data), w0->ne[0], w0->ne[1],\n            w0->nb[1] / bytes, x->nb[1] / bytes, first->nb[1] / bytes,\n            1, 1, 1, w0->nb[2] / bytes, x->nb[2] / bytes, first->nb[2] / bytes,\n            1, 1, w0->nb[3] / bytes, x->nb[3] / bytes, first->nb[3] / bytes,\n            1, 0, ctx.stream(), static_cast<nv_bfloat16 *>(second->data));\n#else\n    GGML_UNUSED_VARS(ctx, first, second);\n#endif\n}\n",
+          "after": "#if !defined(GGML_USE_HIP) && !defined(GGML_USE_MUSA)\ntemplate<int columns>\nstatic void ggml_cuda_launch_bf16_paired_matvec(ggml_backend_cuda_context & ctx,\n        const ggml_tensor * first, ggml_tensor * second) {\n    static_assert(columns == 1 || columns == 2);\n    const auto * w0 = first->src[0];\n    const auto * w1 = second->src[0];\n    const auto * x = first->src[1];\n    const auto bytes = sizeof(nv_bfloat16);\n    ggml_cuda_mm_fusion_args_device fusion{};\n    fusion.gate = w1->data;\n    launch_mul_mat_vec_f_cuda<nv_bfloat16, float, columns, false,\n        nv_bfloat16, nv_bfloat16, void, false, true>(\n            static_cast<const nv_bfloat16 *>(w0->data),\n            static_cast<const nv_bfloat16 *>(x->data), nullptr, fusion,\n            static_cast<nv_bfloat16 *>(first->data), w0->ne[0], w0->ne[1],\n            w0->nb[1] / bytes, x->nb[1] / bytes, first->nb[1] / bytes,\n            1, 1, 1, w0->nb[2] / bytes, x->nb[2] / bytes, first->nb[2] / bytes,\n            1, 1, w0->nb[3] / bytes, x->nb[3] / bytes, first->nb[3] / bytes,\n            1, 0, ctx.stream(), static_cast<nv_bfloat16 *>(second->data));\n}\n#endif\n\nvoid ggml_cuda_op_bf16_paired_matvec(ggml_backend_cuda_context & ctx,\n        const ggml_tensor * first, ggml_tensor * second) {\n    GGML_ASSERT(ggml_cuda_can_fuse_bf16_paired_matvec(first, second, ctx.device, true));\n#if !defined(GGML_USE_HIP) && !defined(GGML_USE_MUSA)\n    if (first->ne[1] == 1) ggml_cuda_launch_bf16_paired_matvec<1>(ctx, first, second);\n    else ggml_cuda_launch_bf16_paired_matvec<2>(ctx, first, second);\n#else\n    GGML_UNUSED_VARS(ctx, first, second);\n#endif\n}\n\n// Native BF16-result M2 nodes remain independently executable if pairing is\n// unavailable. Use this precise TU's original MMVF dot/reduction and BF16 RNE,\n// never the ordinary F32-result matrix dispatch or a temporary output bank.\nvoid ggml_cuda_op_bf16_matvec_m2(ggml_backend_cuda_context & ctx,\n        const ggml_tensor * weight, const ggml_tensor * activation, ggml_tensor * dst) {\n#if !defined(GGML_USE_HIP) && !defined(GGML_USE_MUSA)\n    GGML_ASSERT(weight->type == GGML_TYPE_BF16 && activation->type == GGML_TYPE_BF16 &&\n        dst->type == GGML_TYPE_BF16 && ggml_is_contiguous(weight) &&\n        ggml_is_contiguous(activation) && ggml_is_contiguous(dst));\n    GGML_ASSERT(weight->ne[2] == 1 && weight->ne[3] == 1 && activation->ne[2] == 1 &&\n        activation->ne[3] == 1 && dst->ne[2] == 1 && dst->ne[3] == 1 &&\n        activation->ne[0] == weight->ne[0] && dst->ne[0] == weight->ne[1] &&\n        activation->ne[1] == 2 && dst->ne[1] == 2);\n    GGML_ASSERT(ggml_cuda_supports_bf16_paired_projection_geometry(ctx.device,\n        uint64_t(weight->ne[0]), uint64_t(weight->ne[1]), 2));\n    const auto bytes = sizeof(nv_bfloat16);\n    const ggml_cuda_mm_fusion_args_device fusion{};\n    launch_mul_mat_vec_f_cuda<nv_bfloat16, float, 2, false, nv_bfloat16, nv_bfloat16>(\n        static_cast<const nv_bfloat16 *>(weight->data),\n        static_cast<const nv_bfloat16 *>(activation->data), nullptr, fusion,\n        static_cast<nv_bfloat16 *>(dst->data), weight->ne[0], weight->ne[1],\n        weight->nb[1] / bytes, activation->nb[1] / bytes, dst->nb[1] / bytes,\n        1, 1, 1, weight->nb[2] / bytes, activation->nb[2] / bytes, dst->nb[2] / bytes,\n        1, 1, weight->nb[3] / bytes, activation->nb[3] / bytes, dst->nb[3] / bytes,\n        1, 0, ctx.stream());\n#else\n    GGML_UNUSED_VARS(ctx, weight, activation, dst);\n#endif\n}\n"
         }
       ]
     },
     {
       "path": "src/ggml-cuda/mmvf.cu",
       "before_sha256": "0aca92c9d54cf4a17cf79ee082f243b99c9bf62915e523050ab57c55e30555a1",
-      "after_sha256": "8365995bbf00ae3e7bd670ae4fa01d3508e3cdcf0b1038c27601cbd40698b1e4",
+      "after_sha256": "22adc3fc6fc81e268ac76c5bad88776db2cdc1dd689c0c0bebf530ad90f7f67a",
       "edits": [
         {
           "before": "#include \"common.cuh\"\n#include \"unary.cuh\"\n#include \"mmvf.cuh\"\n#include \"convert.cuh\"\n\ntemplate <typename T, typename type_acc, int ncols_dst, int block_size, bool has_fusion = false, bool is_multi_token_id = false>\nstatic __global__ void mul_mat_vec_f(\n        const T * x_ptr, const float * y_ptr, const int32_t * ids_ptr, const ggml_cuda_mm_fusion_args_device fusion, float * dst_ptr,\n        const int ncols2, const uint3 nchannels_y, const int stride_row, const int stride_col_y2, const int stride_col_dst,\n        const uint3 channel_ratio, const int stride_channel_x, const int stride_channel_y, const int stride_channel_dst,\n        const uint3 sample_ratio, const int stride_sample_x, const int stride_sample_y, const int stride_sample_dst,\n        const int ids_stride) {\n    const T       * GGML_CUDA_RESTRICT x   = x_ptr;\n    const float   * GGML_CUDA_RESTRICT y   = y_ptr;\n    const int32_t * GGML_CUDA_RESTRICT ids = ids_ptr;\n    float         * GGML_CUDA_RESTRICT dst = dst_ptr;\n    const int row         = blockIdx.x;\n    // for MUL_MAT_ID - blockIdx.y = n_expert_used, blockIdx.z = ncols_dst (tokens)\n    const int channel_dst = blockIdx.y;\n    const int tid         = threadIdx.x;\n\n",
@@ -964,6 +992,14 @@
         {
           "before": "    switch (type) {\n        case GGML_TYPE_F32:\n            if (GGML_CUDA_CC_IS_NVIDIA(cc)) {",
           "after": "    // Pair/stride eligibility above uses physical weight storage. The strict\n    // mixed BF16/F32 domain has F32 arithmetic and cannot use BF16 tensor-core\n    // operands, so compare its algorithms with the existing F32 preference.\n    const ggml_type preference = strict_f32_source && type == GGML_TYPE_BF16 && GGML_CUDA_CC_IS_NVIDIA(cc)\n        ? GGML_TYPE_F32 : type;\n    switch (preference) {\n        case GGML_TYPE_F32:\n            if (GGML_CUDA_CC_IS_NVIDIA(cc)) {"
+        },
+        {
+          "before": "        GGML_ASSERT(ne1 == 1 && ne11 == 1 && precision == GGML_PREC_F32);",
+          "after": "        GGML_ASSERT(ne1 == ne11 && (ne1 == 1 || ne1 == 2) && precision == GGML_PREC_F32);"
+        },
+        {
+          "before": "        GGML_ASSERT(ggml_cuda_should_use_mmvf(src0->type, cc, src0->ne, src0->nb, 1));\n",
+          "after": "        if (ne1 == 2) {\n            GGML_ASSERT(ggml_cuda_supports_bf16_paired_projection_geometry(\n                ctx.device, uint64_t(ne00), uint64_t(ne01), 2));\n            ggml_cuda_op_bf16_matvec_m2(ctx, src0, src1, dst);\n            return;\n        }\n        GGML_ASSERT(ggml_cuda_should_use_mmvf(src0->type, cc, src0->ne, src0->nb, 1));\n"
         }
       ]
     },
@@ -1036,7 +1072,7 @@
     {
       "path": "src/ggml-cuda/mmvf.cuh",
       "before_sha256": "bca80856e91767311caf4c8bf62309efe246ff907e167f45aabc2a9eaba00716",
-      "after_sha256": "b579560db787fd1df1b67d9c2b631197670e25d5071be35facc46ccf9c20a604",
+      "after_sha256": "d92752e18797e2c4f427cf4f3e7ad035c03d28738ab37618d7d27b393222aff1",
       "edits": [
         {
           "before": "#include \"common.cuh\"\n\n#define MMVF_MAX_BATCH_SIZE 8 // Max. batch size for which to use MMVF kernels.\n\nvoid ggml_cuda_mul_mat_vec_f(ggml_backend_cuda_context & ctx, const ggml_tensor * src0, const ggml_tensor * src1, const ggml_tensor * ids, ggml_tensor * dst,\n    const ggml_cuda_mm_fusion_args_host * fusion = nullptr);\n\nvoid ggml_cuda_op_mul_mat_vec_f(\n    ggml_backend_cuda_context & ctx,\n    const ggml_tensor * src0, const ggml_tensor * src1, ggml_tensor * dst, const char * src0_dd_i, const float * src1_ddf_i,\n    const char * src1_ddq_i, float * dst_dd_i, const int64_t row_low, const int64_t row_high, const int64_t src1_ncols,\n    const int64_t src1_padded_row_size, cudaStream_t stream);\n\nbool ggml_cuda_should_use_mmvf(enum ggml_type type, int cc, const int64_t * src0_ne, const size_t * src0_nb, int64_t ne11);\n",
@@ -1213,6 +1249,18 @@
         {
           "before": "mul_mat_vec_f_switch_fusion<T, type_acc, ncols_dst, 256, is_multi_token_id, Y, Dst, Epilogue, strict_f32_ids>\n                (x, y, ids, fusion, dst, ncols/2, nchannels_y_fd, stride_row, stride_col_y/2, stride_col_dst,\n                 channel_ratio_fd, stride_channel_x, stride_channel_y, stride_channel_dst,\n                 sample_ratio_fd, stride_sample_x, stride_sample_y, stride_sample_dst, block_dims, block_nums, nbytes_shared, ids_stride, stream);",
           "after": "mul_mat_vec_f_switch_fusion<T, type_acc, ncols_dst, 256, is_multi_token_id, Y, Dst, Epilogue, strict_f32_ids, paired_output>\n                (x, y, ids, fusion, dst, ncols/2, nchannels_y_fd, stride_row, stride_col_y/2, stride_col_dst,\n                 channel_ratio_fd, stride_channel_x, stride_channel_y, stride_channel_dst,\n                 sample_ratio_fd, stride_sample_x, stride_sample_y, stride_sample_dst, block_dims, block_nums, nbytes_shared, ids_stride, stream, peer_dst);"
+        },
+        {
+          "before": "bool ggml_cuda_supports_bf16_paired_projection_geometry(int device, uint64_t inner, uint64_t rows);",
+          "after": "bool ggml_cuda_supports_bf16_paired_projection_geometry(int device, uint64_t inner, uint64_t rows, uint64_t columns);"
+        },
+        {
+          "before": "        static_assert(has_fusion && ncols_dst == 1 && !is_multi_token_id && !strict_f32_ids);",
+          "after": "        static_assert(has_fusion && (ncols_dst == 1 || ncols_dst == 2) && !is_multi_token_id && !strict_f32_ids);"
+        },
+        {
+          "before": "        static_assert(ncols_dst == 1 && !is_multi_token_id && !strict_f32_ids && std::is_void_v<Epilogue>);",
+          "after": "        static_assert((ncols_dst == 1 || ncols_dst == 2) && !is_multi_token_id && !strict_f32_ids && std::is_void_v<Epilogue>);"
         }
       ]
     },
@@ -1629,9 +1677,13 @@
         {
           "before": "void ggml_cuda_op_silu_back(ggml_backend_cuda_context & ctx, ggml_tensor * dst);",
           "after": "// Private mixed-port stable SiLU*Mul; logical Unary and product stay F32.\n// Closed graph/read-root/actual buffer checks belong to cold+encode matching.\nbool ggml_cuda_supports_cast_stable_silu_mul(const ggml_tensor * cast,\n    const ggml_tensor * silu, const ggml_tensor * mul, const ggml_tensor * store);\nvoid ggml_cuda_op_cast_stable_silu_mul(ggml_backend_cuda_context & ctx,\n    const ggml_tensor * cast, const ggml_tensor * silu,\n    const ggml_tensor * mul, ggml_tensor * store);\n\nvoid ggml_cuda_op_silu_back(ggml_backend_cuda_context & ctx, ggml_tensor * dst);"
+        },
+        {
+          "before": "#include \"common.cuh\"\n",
+          "after": "#include \"common.cuh\"\n\n// The BF16-result M2 fallback shares the precise MMVF instantiation,\n// independently of whether two original projections can be paired.\nvoid ggml_cuda_op_bf16_matvec_m2(ggml_backend_cuda_context & ctx,\n    const ggml_tensor * weight, const ggml_tensor * activation, ggml_tensor * dst);\n"
         }
       ],
-      "after_sha256": "886430a33c93304dd60ef0472e731dc3969ac5f1b3004ca83033ae7d42ca7dbc"
+      "after_sha256": "0e16154d5b60548950dcab4042bed7af1edc1c5eef2882ae3d72c1e0699bf4f3"
     },
     {
       "path": "src/ggml-cuda/dequantize.cuh",

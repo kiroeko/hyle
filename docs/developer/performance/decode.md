@@ -9,13 +9,20 @@
 
 当前任务看[推理进度](../inference-progress.md)。本页先列最近批次，再保留先前调查依据；
 旧记录中的“下一步”“本轮不开发”和候选结论只描述当时的实验，不能代替当前计划。
-单会话普通／MTP的最近跨引擎完整表见[目标与当前基线](#目标与当前基线)；
+单会话普通／MTP的最近跨引擎完整表见[推理进度](../inference-progress.md#最近完整性能对照)；
 下面的B2、CPU和局部候选属于不同窗口，各自保留版本与测量边界。
 
-2026-10-30正在调查小投影的原生M2双输出路线。现有same-A paired MMVF并非只受Graph matcher限制：
-tensor lowering、native资格及launcher也限定M1，Ampere／Ada原单叶偏好同样不选择BF16 M2。
-候选应只扩已证明的双MatMul闭合region，保两个原权重与独立dense输出，普通M2单叶保原路线；不能仅放开matcher。
-尚未实现或计时，不把此前concat候选的结论外推到这条原生路线。
+2026-10-30已接通[原生M2双输出小投影](../../evidence/performance/inference-paired-m2-2026-10-30.json)：
+冷图、tensor lowering、native资格与launcher共同扩到双行；保两份原权重、两个独立dense输出及F32累加，普通M2单叶保原F32+Cast。
+6项配对与7项共享投影CUDA检查通过，真实40输出MTP及普通连续16臂的完整报告与前片一致。
+同一CLI对象仅替换6个SDK对象，MTP同步对照的ABBA初筛128.33→132.66tok/s（约＋3.37%），完整非时间报告相同；
+每版仅两样本，不作为稳定收益或当前默认流水模式的最终结论。此前concat候选仍有自己的适用边界。
+
+同日04:42～04:43的[32进程完整窗口](../../evidence/performance/inference-current-auto-window-2026-10-30.json)
+首次同时按当前普通／MTP默认auto测量。MTP单／两轮decode为105.60／123.78tok/s，冻结参考135.62／139.40。
+旧10月28日表的MTP使用off，不能把两表差异归给新融合。当前同图像auto比同步路径慢，64个输出相同；
+指定一对进程中多8次录制、准备经过时长多57.44ms，另多2次丢弃提交／4个target行。后续优先修此默认路径，
+不把改用诊断off作为交付，也不从可重叠的阶段时长直接推出CPU自耗或总差距归因。
 
 2026-10-28 **22:10:38～22:11:20**完成[全幅只读View资格与8进程筛查](../../evidence/correctness/inference-view-spans-2026-10-28.json)
 保留原alias权限表，用冷Plan后裔索引复用原完整tuple证明；普通真实诊断由0/64提升至58/64，MTP仍32/35。

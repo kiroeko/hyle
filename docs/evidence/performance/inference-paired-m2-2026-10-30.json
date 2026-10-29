@@ -1,0 +1,1927 @@
+{
+  "schema": "hyle.performance.paired-m2.v1",
+  "date": "2026-10-30",
+  "status": "IMPLEMENTED_FINITE_NATIVE_CHECKS_AND_ISOLATED_SCREEN_COMPLETE",
+  "source_base_commit": "2f00b9715",
+  "change": "Cold-proven same-A BF16 M1/M2 paired MatMul with two original weights and independent dense outputs; M2 standalone fallback uses original precise MMVF template. Ordinary M2 F32+Cast and M1 remain.",
+  "implementation": {
+    "research": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\research.json",
+      "bytes": 30696,
+      "sha256": "e1e3c03bb5dc7d5c0bab4dc65cfdaf006243b51f64474807888141c2e50add69"
+    },
+    "materialization": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\materialization.json",
+      "bytes": 4681,
+      "sha256": "37e1cac6c1ce42c25d96b514261f2758cec485b1649dbd376087dd71cc85413f"
+    },
+    "native_audit": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\native-replay.json",
+      "bytes": 3854,
+      "sha256": "6a0fccdc43b3ecf1547222880bfd9b482107255b013bbc2cd639b09f76d9f168"
+    },
+    "lock": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\lock-update.json",
+      "bytes": 931,
+      "sha256": "3ca7ef841600219f6552b1c612725e4368ff37778011451112ee6b5e5ffd4d21"
+    },
+    "current_link_base": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\model-link-base.json",
+      "bytes": 96730,
+      "sha256": "b09afa2fea872f3fe6f0c859ac820919bb727df23c3607e47d2d6de73569f84a"
+    },
+    "replaced_sdk_objects": 6,
+    "unchanged_sdk_objects": 221
+  },
+  "finite": {
+    "paired": {
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\runs\\paired\\attempt1\\report.json",
+        "bytes": 1316,
+        "sha256": "7a2452ada638a419f91294326bf75d50b81131465f8521ca75a782ee6134a1a1"
+      },
+      "result": {
+        "status": "PASS",
+        "tests": 6,
+        "cases": [
+          {
+            "name": "GgmlCudaPairedProjection.PublishedReverseOutputsAndOutsideReaderRetainOriginalConstantBanks",
+            "properties": {}
+          },
+          {
+            "name": "GgmlCudaPairedProjection.TwoOwnedSlotsRebindBothOutputsAndRespectOldResultLeases",
+            "properties": {}
+          },
+          {
+            "name": "GgmlCudaPairedProjection.LateM2PhysicalAliasesPreserveOriginalBindingsAndCapture",
+            "properties": {}
+          },
+          {
+            "name": "GgmlCudaPairedProjection.OriginalLeavesAndIndependentMathCoverCancellationSubnormalAndNonfinite",
+            "properties": {
+              "corpus_0_raw_leaf_differences": "0",
+              "corpus_1_raw_leaf_differences": "0",
+              "corpus_2_raw_leaf_differences": "0",
+              "corpus_3_raw_leaf_differences": "0",
+              "m2_corpus_0_raw_leaf_differences": "0",
+              "m2_corpus_1_raw_leaf_differences": "64",
+              "m2_corpus_2_raw_leaf_differences": "0",
+              "m2_corpus_3_raw_leaf_differences": "0"
+            }
+          },
+          {
+            "name": "GgmlCudaPairedProjection.DistinctLogicalActivationGeometryAndControlReentryKeepOrdinaryLeaves",
+            "properties": {}
+          },
+          {
+            "name": "GgmlCudaPairedProjection.CompletePrivateFfnRemainsTheEarlierFullCandidate",
+            "properties": {}
+          }
+        ]
+      }
+    },
+    "grouped": {
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\runs\\grouped\\attempt1\\report.json",
+        "bytes": 1588,
+        "sha256": "cfc8f86bf6ee413e3b14c5d873c391dea72d9c8699a0e47d1f34f30d8f34897a"
+      },
+      "result": {
+        "status": "PASS",
+        "tests": 7,
+        "cases": [
+          {
+            "name": "CudaGroupedShared.DenseAndBroadcastInputsPreserveEveryPlainSlot",
+            "properties": {}
+          },
+          {
+            "name": "CudaGroupedShared.BfloatBanksRetainOriginalStorageAndFloatActivation",
+            "properties": {}
+          },
+          {
+            "name": "CudaGroupedShared.SmallTokenDirectAndGraphKeepFloatActivationAndSubnormalBits",
+            "properties": {}
+          },
+          {
+            "name": "CudaGroupedShared.OriginalBfloatBankHasNoWidenedBankAndDynamicDirectReuses64Submissions",
+            "properties": {
+              "E3_original_bf16_bytes": "13056",
+              "E3_caller_workspace_bytes": "256",
+              "E3_compiled_known_bytes": "0",
+              "E3_compiled_unknown_provider_count": "1",
+              "E17_original_bf16_bytes": "73984",
+              "E17_caller_workspace_bytes": "256",
+              "E17_compiled_known_bytes": "0",
+              "E17_compiled_unknown_provider_count": "1",
+              "direct_submissions": "64",
+              "direct_reused_caller_workspace_bytes": "256",
+              "direct_native_private_bytes_known": "false"
+            }
+          },
+          {
+            "name": "CudaGroupedShared.PackedSharedInputsRetainOriginalQuantizationAndCapture",
+            "properties": {}
+          },
+          {
+            "name": "CudaGroupedShared.SharedCapacityUsesPhysicalRowsRatherThanBroadcastElements",
+            "properties": {}
+          },
+          {
+            "name": "CudaGroupedShared.PrivateGateUpGluRetainsSharedAndPerSlotTopology",
+            "properties": {
+              "max_glu_relative": "0.000002",
+              "max_glu_ulp_vs_standalone": "17"
+            }
+          }
+        ]
+      }
+    },
+    "natural": {
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\runs\\natural\\attempt1\\report.json",
+        "bytes": 7117,
+        "sha256": "783435df8c542066c8a5d00b9e5efb96c73ce3179744f702e70a44c33ebf323d"
+      },
+      "result": {
+        "status": "PASS",
+        "case": "mtp-natural-relay",
+        "backend": "cuda",
+        "models": 1,
+        "journeys": 2,
+        "prompt_tokens": 154,
+        "capacity": 256,
+        "resident_capacity": 1,
+        "state_slots": 5,
+        "hidden_slots": 6,
+        "output_limit": 40,
+        "outputs": 40,
+        "serial_submissions": 23,
+        "auto_submissions": 24,
+        "source_submissions": 22,
+        "successor_submissions": 3,
+        "successor_publications": 2,
+        "successor_discards": 1,
+        "successor_refusals": 0,
+        "pending_pairs_before_A_publish": 3,
+        "deferred_waves": 2,
+        "reserved_two_grants": 2,
+        "accepted_drafts": 17,
+        "rejected_drafts": 4,
+        "ledger_records": 23,
+        "natural_RequestLoop": true,
+        "controlled_acceptance": false,
+        "original_ledger_equal": true,
+        "generated_ids_equal": true,
+        "greedy_rng_unchanged": true,
+        "all_sources_expired": true,
+        "simultaneous_native_inflight_claim": false,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0,
+        "state_checks": [
+          {
+            "sequence": 0,
+            "prefix": 193,
+            "active_rows": 1,
+            "physical_rows": 1,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 14733,
+            "bucket_next": 14733,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          }
+        ],
+        "ids": [
+          71093,
+          12305,
+          198,
+          464,
+          19298,
+          198,
+          1445,
+          18904,
+          1120,
+          5586,
+          11,
+          51338,
+          11,
+          36760,
+          11,
+          1697,
+          11,
+          11906,
+          11,
+          3856,
+          3829,
+          271,
+          51,
+          283,
+          3856,
+          3829,
+          482,
+          51,
+          837,
+          198,
+          42,
+          283,
+          3856,
+          3829,
+          482,
+          42,
+          837,
+          271,
+          727,
+          14733
+        ],
+        "batches": [
+          {
+            "ordinal": 0,
+            "quota": 0,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 154,
+            "draft_rows": 154,
+            "generation": false,
+            "discarded": false
+          },
+          {
+            "ordinal": 1,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 2,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 3,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 4,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 5,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 6,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 7,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 8,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 9,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 10,
+            "quota": 4,
+            "reserved": 2,
+            "additional": 2,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 11,
+            "quota": 2,
+            "reserved": 2,
+            "additional": 2,
+            "emitted": 0,
+            "accepted": 0,
+            "draft_rows": 0,
+            "generation": true,
+            "discarded": true
+          },
+          {
+            "ordinal": 11,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 12,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 13,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 14,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 15,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 16,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 17,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 18,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 19,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 20,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 21,
+            "quota": 3,
+            "reserved": 2,
+            "additional": 1,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 22,
+            "quota": 1,
+            "reserved": 0,
+            "additional": 1,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          }
+        ]
+      }
+    },
+    "continuous": {
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\runs\\continuous\\attempt2\\report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      },
+      "result": {
+        "status": "PASS",
+        "backend": "cuda",
+        "fixture": "untrained_GA_H64",
+        "prompt_tokens": 18,
+        "outputs_per_live_member": 14,
+        "capacity": 32,
+        "in_flight_batches": 2,
+        "control_and_candidate_arms": 16,
+        "same_original_executor": true,
+        "complete_prefix_state_epoch_rng_equal": true,
+        "actual_owner_credit_checked": true,
+        "all_source_session_page_owners_retired": true,
+        "model_eos_run": false,
+        "synthetic_v64_extra_stop_shares_eos_contract": true,
+        "synthetic_fixture_directory": "continuous-extra-stop-v64",
+        "synthetic_role_payload_bytes": 65536,
+        "accepted_work_control_exception": true,
+        "gpu_native_fault_injected": false,
+        "model_quality_claim": false,
+        "performance_claim": false,
+        "candidates": [
+          {
+            "requests": 1,
+            "mode": "normal",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 5,
+            "max_consecutive_pending": 5,
+            "submit_before_observe": 5,
+            "renewals": 4,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "normal",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 5,
+            "max_consecutive_pending": 5,
+            "submit_before_observe": 5,
+            "renewals": 4,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "credit_exhaustion",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 1,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "member_cancel",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 1,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "yield_resume",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 1,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "cancel_then_control_exception",
+            "pumps": 16,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 1,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 3,
+            "control_exceptions": 1,
+            "aborted_actual_submissions": 2
+          },
+          {
+            "requests": 1,
+            "mode": "extra_stop",
+            "pumps": 13,
+            "actual_batches": 13,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 3,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 1,
+            "extra_stop_accepted_successor": true,
+            "discarded_batches": 1,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "extra_stop",
+            "pumps": 15,
+            "actual_batches": 15,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 3,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 1,
+            "extra_stop_accepted_successor": true,
+            "discarded_batches": 1,
+            "survivor_r1_steps": 2,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          }
+        ]
+      }
+    }
+  },
+  "prior_complete_report_comparison": {
+    "natural": {
+      "prior": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-source-preparation-20261030\\runs\\natural-cuda\\attempt1\\report.json",
+        "bytes": 7117,
+        "sha256": "783435df8c542066c8a5d00b9e5efb96c73ce3179744f702e70a44c33ebf323d"
+      },
+      "complete_report_equal": true
+    },
+    "continuous": {
+      "prior": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-source-preparation-20261030\\runs\\continuous-cuda\\attempt1\\report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      },
+      "complete_report_equal": true
+    }
+  },
+  "isolated_screen": {
+    "samples": [
+      {
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\speed\\single-mtp\\candidate\\attempt1\\consumer-result.json",
+          "bytes": 82056,
+          "sha256": "57ad7e44ccb3a71dbd99da80890cf75cb632ba6adac91d8fdb36da6029128600"
+        },
+        "condition": "single-mtp",
+        "arm": "candidate",
+        "attempt": "attempt1",
+        "prefill_seconds": 0.0706058,
+        "decode_seconds": 0.47296009999999994,
+        "session_seconds": 0.5435659,
+        "generated_tokens": 64,
+        "non_time": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\speed\\single-mtp\\candidate\\attempt1\\non-time.json",
+          "bytes": 80612,
+          "sha256": "2ba8c8e0efcef2b67993cb75c598c9ce8b2d7e0975fb20ad4512072b1184836a"
+        }
+      },
+      {
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\speed\\single-mtp\\candidate\\attempt2\\consumer-result.json",
+          "bytes": 82074,
+          "sha256": "11b73c73e47ec609b8c576b71ebee67340e5bedade605c665c8dd1e3a3a0976f"
+        },
+        "condition": "single-mtp",
+        "arm": "candidate",
+        "attempt": "attempt2",
+        "prefill_seconds": 0.0672811,
+        "decode_seconds": 0.47687539999999995,
+        "session_seconds": 0.5441565,
+        "generated_tokens": 64,
+        "non_time": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\speed\\single-mtp\\candidate\\attempt2\\non-time.json",
+          "bytes": 80612,
+          "sha256": "2ba8c8e0efcef2b67993cb75c598c9ce8b2d7e0975fb20ad4512072b1184836a"
+        }
+      },
+      {
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\speed\\single-mtp\\control\\attempt1\\consumer-result.json",
+          "bytes": 82079,
+          "sha256": "18ec1b2bcd4fbf854d10490df02fee7f2ef2e7920ae35239d3c5ea1b1c01ba0b"
+        },
+        "condition": "single-mtp",
+        "arm": "control",
+        "attempt": "attempt1",
+        "prefill_seconds": 0.0758217,
+        "decode_seconds": 0.4923420000000001,
+        "session_seconds": 0.5681637,
+        "generated_tokens": 64,
+        "non_time": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\speed\\single-mtp\\control\\attempt1\\non-time.json",
+          "bytes": 80612,
+          "sha256": "2ba8c8e0efcef2b67993cb75c598c9ce8b2d7e0975fb20ad4512072b1184836a"
+        }
+      },
+      {
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\speed\\single-mtp\\control\\attempt2\\consumer-result.json",
+          "bytes": 82103,
+          "sha256": "7a27b14ddd12642d8a606524e208c3336561fa7a91d59d5eceb478aae2a48b66"
+        },
+        "condition": "single-mtp",
+        "arm": "control",
+        "attempt": "attempt2",
+        "prefill_seconds": 0.0715517,
+        "decode_seconds": 0.48953689999999994,
+        "session_seconds": 0.5610886,
+        "generated_tokens": 64,
+        "non_time": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\speed\\single-mtp\\control\\attempt2\\non-time.json",
+          "bytes": 80612,
+          "sha256": "2ba8c8e0efcef2b67993cb75c598c9ce8b2d7e0975fb20ad4512072b1184836a"
+        }
+      }
+    ],
+    "complete_non_time_reports_equal": true,
+    "samples_per_arm": 2,
+    "mtp_overlap": "off for both arms: isolates this paired-projection change; current default-auto is a separate complete-window measurement."
+  },
+  "processes": [
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\compile\\cli\\attempt1\\process.json",
+        "bytes": 149,
+        "sha256": "1b2d1d1bcc6baae3d4a6bed6b50646e6ef73053a444f9dfc83f477e898b88951"
+      },
+      "state": "TERMINAL",
+      "pid": 36664,
+      "started": 1793306188.9498947,
+      "seconds": 32.6787052154541,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\compile\\grouped\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "3e419652bfc4a5c1a2dfe490adc8786fe3e82f4263d44f2871fdee039b871d54"
+      },
+      "state": "TERMINAL",
+      "pid": 61364,
+      "started": 1793305570.2494204,
+      "seconds": 4.283141374588013,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\compile\\hyle_compute_provider\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "5831a60866843f756097d61400d9f0ec5cb6dd0813fb22561cdcd954bd36a9e5"
+      },
+      "state": "TERMINAL",
+      "pid": 9128,
+      "started": 1793305493.5444832,
+      "seconds": 2.6534340381622314,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\compile\\hyle_compute_provider\\attempt2\\process.json",
+        "bytes": 150,
+        "sha256": "adef8e68ef18ac06022464d4c5f50f9d8d8f04f87cd39f28c3b7fb3c43279b05"
+      },
+      "state": "TERMINAL",
+      "pid": 62700,
+      "started": 1793305567.5482655,
+      "seconds": 2.589031457901001,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\compile\\hyle_graph_region\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "069cf6c0826f81838b41429197f620a1dfd52e4ac720b5b44b2675a80bf53982"
+      },
+      "state": "TERMINAL",
+      "pid": 59492,
+      "started": 1793305496.3668616,
+      "seconds": 4.687382221221924,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\compile\\hyle_tensor_lowering\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "356713b282bd1cddcd7348074f50bc509eb7adb6a3fc0bdb01ec25e5bd255db1"
+      },
+      "state": "TERMINAL",
+      "pid": 3488,
+      "started": 1793305491.6945548,
+      "seconds": 1.6737983226776123,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\compile\\hyle_tensor_lowering\\attempt2\\process.json",
+        "bytes": 150,
+        "sha256": "9614d6e2dd9d4153fd94d79c20700168536dc234c4de02356f72e48033099c17"
+      },
+      "state": "TERMINAL",
+      "pid": 60308,
+      "started": 1793305565.7955067,
+      "seconds": 1.641559362411499,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\compile\\native_dispatcher\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "be1e6c96905043a7a45d61f1b812a132150eedd1b82465e5e5439599ef5b7f0a"
+      },
+      "state": "TERMINAL",
+      "pid": 47376,
+      "started": 1793305520.0067277,
+      "seconds": 5.245909214019775,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\compile\\native_mmvf\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "75ad9a93c93abda37344990b6121185b27fe9638b6bd1db7e9727a34f264e9b5"
+      },
+      "state": "TERMINAL",
+      "pid": 45340,
+      "started": 1793305498.3604748,
+      "seconds": 21.558613538742065,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\compile\\native_precise_unary\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "50f6b36d663b3c81e781718cb09d49a55d8fe3c890a025e0cd402b9fafd354a9"
+      },
+      "state": "TERMINAL",
+      "pid": 36156,
+      "started": 1793305491.6945548,
+      "seconds": 6.577447175979614,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\compile\\paired\\attempt1\\process.json",
+        "bytes": 149,
+        "sha256": "fcb7543f4b564548b1cc32f4987a9639ce888082126f87ab7c15a7ac03464a00"
+      },
+      "state": "TERMINAL",
+      "pid": 51052,
+      "started": 1793305501.186222,
+      "seconds": 1.739288330078125,
+      "exit": 2,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\compile\\paired\\attempt2\\process.json",
+        "bytes": 150,
+        "sha256": "6b03ed88f3465e6c511633b33f84e608d4b03241633c39c43746a84ae68860cc"
+      },
+      "state": "TERMINAL",
+      "pid": 61536,
+      "started": 1793305609.078165,
+      "seconds": 2.5801146030426025,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\link\\candidate\\attempt1\\process.json",
+        "bytes": 149,
+        "sha256": "1edd31ae0699a1497e415c7ef74cde25fe3857a5acd986214282d6f82854dbeb"
+      },
+      "state": "TERMINAL",
+      "pid": 36092,
+      "started": 1793306225.535008,
+      "seconds": 1.764333963394165,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\link\\control\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "65164aaf681e4fc139093549478147fdf83a96e16aba6f4a7c70a10245c6452c"
+      },
+      "state": "TERMINAL",
+      "pid": 32592,
+      "started": 1793306222.523088,
+      "seconds": 1.7912275791168213,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\link\\grouped\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "f15bc5da51603841a46bb39717b59ec7e44d39415a529a6f62dc123a2fea55f1"
+      },
+      "state": "TERMINAL",
+      "pid": 53320,
+      "started": 1793305615.2733042,
+      "seconds": 1.7957429885864258,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\link\\ordinary\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "f030ad1f685d06c8cd80950086c368629eadfc8adf046ef650d30a40cdc405b0"
+      },
+      "state": "TERMINAL",
+      "pid": 55756,
+      "started": 1793305895.122962,
+      "seconds": 1.9101383686065674,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\link\\paired\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "fd6572505fe4346fd33591e62c9dbb098ef2016126c69e97ec993d1507c319ec"
+      },
+      "state": "TERMINAL",
+      "pid": 59184,
+      "started": 1793305612.6123083,
+      "seconds": 1.778534173965454,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\link\\validation\\attempt1\\process.json",
+        "bytes": 149,
+        "sha256": "8bcc1ba560e0260db05b95f38afc27202b0ad1fc728eed5128bf2c7f4227c8b1"
+      },
+      "state": "TERMINAL",
+      "pid": 39768,
+      "started": 1793305888.22404,
+      "seconds": 1.8547964096069336,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\profile\\candidate\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "2dca36cc1955ab5c1b5e596cda5eeb3e2c9629c1be3837b3a62f0272ef390d28"
+      },
+      "state": "TERMINAL",
+      "pid": 42508,
+      "started": 1793306489.5760798,
+      "seconds": 6.031381607055664,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\profile\\control\\attempt1\\process.json",
+        "bytes": 149,
+        "sha256": "1b9fdc57c5cc83e0cdb404b174289598ab796e3692bbdff8c5f9171294330035"
+      },
+      "state": "TERMINAL",
+      "pid": 59388,
+      "started": 1793306482.39817,
+      "seconds": 6.9825286865234375,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\runs\\continuous\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "d281af69a236571d3c63359cee4dcab37fc49f8fff5033e00d592f630588f948"
+      },
+      "state": "TERMINAL",
+      "pid": 42648,
+      "started": 1793305897.6482935,
+      "seconds": 0.7647788524627686,
+      "exit": 1,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\runs\\continuous\\attempt2\\process.json",
+        "bytes": 150,
+        "sha256": "ce26b1c61595cba9069860c911c40aa049fcd82eb6080a7c3d7f5a73d48e9c2e"
+      },
+      "state": "TERMINAL",
+      "pid": 35892,
+      "started": 1793306217.8715496,
+      "seconds": 0.986128568649292,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\runs\\grouped\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "54c14a165978cee95895e52bc9e204e5732dcacb5f69d6dc2db15e304a74e19f"
+      },
+      "state": "TERMINAL",
+      "pid": 35380,
+      "started": 1793305624.6299896,
+      "seconds": 0.8425495624542236,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\runs\\natural\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "dc7e497aea266675a5530dffbdd4d3b162a46eb28d77abc927e94feec3443861"
+      },
+      "state": "TERMINAL",
+      "pid": 40436,
+      "started": 1793305890.6725543,
+      "seconds": 3.6404991149902344,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\runs\\paired\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "c0cafd869ec931eddfdaa4faca816769e3c3cc2add0fb48245f1abd5ed13cf56"
+      },
+      "state": "TERMINAL",
+      "pid": 46708,
+      "started": 1793305623.667235,
+      "seconds": 0.7858741283416748,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\speed\\single-mtp\\candidate\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "671b4f5d7bfe93bf4876f8aaad864bb95e18f930c0987571c5aa8098d69775d0"
+      },
+      "state": "TERMINAL",
+      "pid": 24204,
+      "started": 1793306250.3240535,
+      "seconds": 3.251002073287964,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\speed\\single-mtp\\candidate\\attempt2\\process.json",
+        "bytes": 150,
+        "sha256": "266d7bf35f9ab89f94bdb6ba6e9416dbaccf100bc814e47b91efd2ffc6566b2e"
+      },
+      "state": "TERMINAL",
+      "pid": 39496,
+      "started": 1793306253.7477756,
+      "seconds": 2.901059627532959,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\speed\\single-mtp\\control\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "7e4e491f28a3dfb871277b3a1d293769531855434aa07d311c62c98a0bf291c2"
+      },
+      "state": "TERMINAL",
+      "pid": 46692,
+      "started": 1793306246.9128509,
+      "seconds": 3.244551658630371,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\speed\\single-mtp\\control\\attempt2\\process.json",
+        "bytes": 151,
+        "sha256": "65f8cfdda30868700552749e99f57d4709330c79040fff23eb83fa125ce82732"
+      },
+      "state": "TERMINAL",
+      "pid": 45816,
+      "started": 1793306256.8270514,
+      "seconds": 2.8563928604125977,
+      "exit": 0,
+      "timed_out": false
+    },
+    {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\speed\\single-mtp-auto\\control\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "ddb2dd59d9df2bab07a9343a5c218d49c3fd750e6b11be86cd0a037fa513aa8d"
+      },
+      "state": "TERMINAL",
+      "pid": 48680,
+      "started": 1793306772.1741884,
+      "seconds": 3.0864341259002686,
+      "exit": 0,
+      "timed_out": false
+    }
+  ],
+  "downloads": 0,
+  "limits": [
+    "Two timing samples per arm are screening evidence, not a stable speedup estimate.",
+    "Finite tests do not individually force native single-node M2 fallback or ordinary native M2 F32+Cast lowering.",
+    "Graph route/dispatch reports alone do not establish actual native launch counts.",
+    "No cross-engine same-output or quality equivalence is inferred from the isolated screen."
+  ],
+  "recovery": [
+    {
+      "action": "Paired test compile attempt1",
+      "result": "FAILED: std::bind ADL from the added std::array* argument; helper renamed; attempt2 PASS."
+    },
+    {
+      "action": "Initial generated vendored tree digest",
+      "result": "CMake rejected Windows case-insensitive ordering; regenerated with case-sensitive portable path ordering and verified by owning CMake audit."
+    },
+    {
+      "action": "Continuous test attempt1",
+      "result": "FAILED before checks because the prior fixture already contained generated stop fixtures; attempt2 used only original metadata copied to a new batch-local directory and PASS."
+    }
+  ],
+  "profile": {
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\profile\\analysis-summary.json",
+      "bytes": 8667,
+      "sha256": "6b68562592f1ed087c8fdb4f5b295bc5a2da0985ff0eb53bc8810d15c1f3796b"
+    },
+    "results": {
+      "script": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\analyze_profile.py",
+        "sha256": "a89638e7bfe54eac78b4bd34b8f5179ff6bd27ebd1b7b74f61502a54b5978c9a"
+      },
+      "arms": {
+        "control": {
+          "consumer": {
+            "pid": 51580,
+            "activity_global_pids": [
+              282340345511936
+            ],
+            "device_pids": [
+              51580
+            ],
+            "context_pids": [
+              51580
+            ],
+            "ProcessStreams_global_pids": [
+              281474976710656,
+              282340345511936
+            ]
+          },
+          "full_process": {
+            "all": {
+              "count": 33169,
+              "duration_sum_ns": 688236235,
+              "duration_union_ns": 688155373,
+              "bytes": 3971245684
+            },
+            "by_kind": {
+              "KERNEL": {
+                "count": 28536,
+                "duration_sum_ns": 482575412,
+                "duration_union_ns": 482494550,
+                "bytes": 0
+              },
+              "MEMCPY": {
+                "count": 4541,
+                "duration_sum_ns": 205592279,
+                "duration_union_ns": 205592279,
+                "bytes": 3951697368
+              },
+              "MEMSET": {
+                "count": 92,
+                "duration_sum_ns": 68544,
+                "duration_union_ns": 68544,
+                "bytes": 19548316
+              }
+            }
+          },
+          "kernel_classes": {
+            "mmvf_unclassified": {
+              "count": 6,
+              "duration_sum_ns": 768567,
+              "duration_union_ns": 768567,
+              "bytes": 0
+            },
+            "other": {
+              "count": 28530,
+              "duration_sum_ns": 481806845,
+              "duration_union_ns": 481725983,
+              "bytes": 0
+            },
+            "old_small_Kernel2_grid1_block32": {
+              "count": 1224,
+              "duration_sum_ns": 13868898,
+              "duration_union_ns": 13868898,
+              "bytes": 0
+            }
+          },
+          "memcpy_by_copy_kind": {
+            "1": {
+              "count": 1601,
+              "duration_sum_ns": 203055179,
+              "duration_union_ns": 203055179,
+              "bytes": 3885366824
+            },
+            "2": {
+              "count": 104,
+              "duration_sum_ns": 124924,
+              "duration_union_ns": 124924,
+              "bytes": 552
+            },
+            "8": {
+              "count": 2836,
+              "duration_sum_ns": 2412176,
+              "duration_union_ns": 2412176,
+              "bytes": 66329992
+            }
+          },
+          "graph_launch_api_events": 34,
+          "graph_launch_correlation_buckets": 34,
+          "graph_launch_correlation_buckets_with_gpu": 34,
+          "graph_launch_assigned": {
+            "all": {
+              "count": 28864,
+              "duration_sum_ns": 457305703,
+              "duration_union_ns": 457224841,
+              "bytes": 17453056
+            },
+            "by_kind": {
+              "KERNEL": {
+                "count": 26710,
+                "duration_sum_ns": 455553237,
+                "duration_union_ns": 455472375,
+                "bytes": 0
+              },
+              "MEMCPY": {
+                "count": 2154,
+                "duration_sum_ns": 1752466,
+                "duration_union_ns": 1752466,
+                "bytes": 17453056
+              },
+              "MEMSET": {
+                "count": 0,
+                "duration_sum_ns": 0,
+                "duration_union_ns": 0,
+                "bytes": 0
+              }
+            }
+          },
+          "not_assigned_to_graph_launch": {
+            "all": {
+              "count": 4305,
+              "duration_sum_ns": 230930532,
+              "duration_union_ns": 230930532,
+              "bytes": 3953792628
+            },
+            "by_kind": {
+              "KERNEL": {
+                "count": 1826,
+                "duration_sum_ns": 27022175,
+                "duration_union_ns": 27022175,
+                "bytes": 0
+              },
+              "MEMCPY": {
+                "count": 2387,
+                "duration_sum_ns": 203839813,
+                "duration_union_ns": 203839813,
+                "bytes": 3934244312
+              },
+              "MEMSET": {
+                "count": 92,
+                "duration_sum_ns": 68544,
+                "duration_union_ns": 68544,
+                "bytes": 19548316
+              }
+            }
+          }
+        },
+        "candidate": {
+          "consumer": {
+            "pid": 44184,
+            "activity_global_pids": [
+              282216261222400
+            ],
+            "device_pids": [
+              44184
+            ],
+            "context_pids": [
+              44184
+            ],
+            "ProcessStreams_global_pids": [
+              281474976710656,
+              282216261222400
+            ]
+          },
+          "full_process": {
+            "all": {
+              "count": 32557,
+              "duration_sum_ns": 688365096,
+              "duration_union_ns": 688285448,
+              "bytes": 3971245684
+            },
+            "by_kind": {
+              "KERNEL": {
+                "count": 27924,
+                "duration_sum_ns": 465457563,
+                "duration_union_ns": 465377915,
+                "bytes": 0
+              },
+              "MEMCPY": {
+                "count": 4541,
+                "duration_sum_ns": 222836301,
+                "duration_union_ns": 222836301,
+                "bytes": 3951697368
+              },
+              "MEMSET": {
+                "count": 92,
+                "duration_sum_ns": 71232,
+                "duration_union_ns": 71232,
+                "bytes": 19548316
+              }
+            }
+          },
+          "kernel_classes": {
+            "bf16_paired_true_m2": {
+              "count": 612,
+              "duration_sum_ns": 2238612,
+              "duration_union_ns": 2238612,
+              "bytes": 0
+            },
+            "mmvf_unclassified": {
+              "count": 6,
+              "duration_sum_ns": 756729,
+              "duration_union_ns": 756729,
+              "bytes": 0
+            },
+            "other": {
+              "count": 27306,
+              "duration_sum_ns": 462462222,
+              "duration_union_ns": 462382574,
+              "bytes": 0
+            },
+            "old_small_Kernel2_grid1_block32": {
+              "count": 0,
+              "duration_sum_ns": 0,
+              "duration_union_ns": 0,
+              "bytes": 0
+            }
+          },
+          "memcpy_by_copy_kind": {
+            "1": {
+              "count": 1601,
+              "duration_sum_ns": 219493933,
+              "duration_union_ns": 219493933,
+              "bytes": 3885366824
+            },
+            "2": {
+              "count": 104,
+              "duration_sum_ns": 126240,
+              "duration_union_ns": 126240,
+              "bytes": 552
+            },
+            "8": {
+              "count": 2836,
+              "duration_sum_ns": 3216128,
+              "duration_union_ns": 3216128,
+              "bytes": 66329992
+            }
+          },
+          "graph_launch_api_events": 34,
+          "graph_launch_correlation_buckets": 34,
+          "graph_launch_correlation_buckets_with_gpu": 34,
+          "graph_launch_assigned": {
+            "all": {
+              "count": 28252,
+              "duration_sum_ns": 443286796,
+              "duration_union_ns": 443207148,
+              "bytes": 17453056
+            },
+            "by_kind": {
+              "KERNEL": {
+                "count": 26098,
+                "duration_sum_ns": 440704968,
+                "duration_union_ns": 440625320,
+                "bytes": 0
+              },
+              "MEMCPY": {
+                "count": 2154,
+                "duration_sum_ns": 2581828,
+                "duration_union_ns": 2581828,
+                "bytes": 17453056
+              },
+              "MEMSET": {
+                "count": 0,
+                "duration_sum_ns": 0,
+                "duration_union_ns": 0,
+                "bytes": 0
+              }
+            }
+          },
+          "not_assigned_to_graph_launch": {
+            "all": {
+              "count": 4305,
+              "duration_sum_ns": 245078300,
+              "duration_union_ns": 245078300,
+              "bytes": 3953792628
+            },
+            "by_kind": {
+              "KERNEL": {
+                "count": 1826,
+                "duration_sum_ns": 24752595,
+                "duration_union_ns": 24752595,
+                "bytes": 0
+              },
+              "MEMCPY": {
+                "count": 2387,
+                "duration_sum_ns": 220254473,
+                "duration_union_ns": 220254473,
+                "bytes": 3934244312
+              },
+              "MEMSET": {
+                "count": 92,
+                "duration_sum_ns": 71232,
+                "duration_union_ns": 71232,
+                "bytes": 19548316
+              }
+            }
+          }
+        }
+      },
+      "detail_files": {
+        "control": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\profile\\control\\analysis.json",
+        "candidate": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\profile\\candidate\\analysis.json"
+      },
+      "interpretation": "No logical-episode mapping, no warmup filtering, no speed claim; full templates and all correlation buckets are in arm details."
+    },
+    "interpretation": "34 actual GraphLaunch correlation buckets each replace36 old small grid1/block32 Kernel2 kernels by18 BF16 paired M2 kernels. No logical-episode/NVTX mapping is inferred; native copy counts/bytes remain equal."
+  },
+  "default_auto_window": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-current-auto-window-2026-10-30.json",
+    "bytes": 70253,
+    "sha256": "7f639c193c6bccec384a09078193b1d8bdea875856dfc35a84f600e9fa53f723"
+  },
+  "default_auto_open_issue": {
+    "scope": "Read-only offline comparison of the specified first default-auto and synchronous-off candidate processes. No product edits, builds, native inference, or downloads were performed for this diagnostic.",
+    "sources": {
+      "auto": {
+        "directory": ".scratch/inference-paired-m2-20261030/peer-window/single-timing/02-hyle_mtp",
+        "stdout_sha256": "46a3f0b91fc874a6900f5ec8287d699f28d73c5ebb842c5cafa3d5100279655f",
+        "stderr_sha256": "93295929b7eae7b8f15e6d3ff5db3458912292902fc9efdbd1e9386cbedd7563",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\candidate.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original",
+          "--steps",
+          "64",
+          "--capacity",
+          "1024",
+          "--max-sessions",
+          "1",
+          "--active-sequences",
+          "1",
+          "--prefix-cache",
+          "off",
+          "--progress",
+          "direct",
+          "--replay",
+          "auto",
+          "--mtp",
+          "on",
+          "--backend",
+          "cuda",
+          "--sampling",
+          "greedy",
+          "--mtp-max-drafts",
+          "1",
+          "--decode-overlap",
+          "auto"
+        ],
+        "report": {
+          "decode_seconds": 0.5923518,
+          "decode_output_tokens_per_second": 106.35571631587851,
+          "prefill_seconds": 0.0700906,
+          "session_seconds": 0.6624424,
+          "actual_graph_calls": 37,
+          "decode_graph_calls": 36,
+          "actual_target_rows": 226,
+          "actual_draft_rows": 216,
+          "draft_rounds": 34,
+          "agreements": 29,
+          "verified_target_rows": 68,
+          "consumed_drafts": 29,
+          "overlap_successor_submissions": 9,
+          "overlap_successor_publications": 7,
+          "overlap_successor_discards": 2,
+          "overlap_successor_refusals": 0,
+          "cache_live_requested_bytes": 112853043,
+          "cache_peak_requested_bytes": 112853043,
+          "step_sum_seconds": 0.7452780999999997,
+          "participation_step_sum_seconds": 0.6852972999999999,
+          "post_endpoint_seconds": 0.0001617,
+          "phase_timing": "disjoint_continuous_episode_intervals"
+        },
+        "published_T2_prepare": {
+          "count": 34,
+          "capture_recorded": 10,
+          "capture_reused": 24,
+          "recorded_rounds": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            14,
+            15,
+            17,
+            29,
+            30
+          ],
+          "cold_batch_seconds_sum": 0.0879989,
+          "recorded_cold_batch_seconds_sum": 0.0691321,
+          "reused_cold_batch_seconds_sum": 0.0188668,
+          "recorded_cold_batch_seconds_median": 0.00811535,
+          "reused_cold_batch_seconds_median": 0.00085545,
+          "shape_admission_seconds_sum": 0.0
+        },
+        "published_T154_prepare_cold_batch_seconds_sum": 0.0045427,
+        "published_MTP_observation_sums": {
+          "seconds": 0.5248522,
+          "submit_seconds": 0.0104832,
+          "step_seconds": 0.6193218
+        },
+        "published_pre_submit_outside_cold_batch_seconds": 0.006470699999999982,
+        "generated_ids_count": 64,
+        "generated_ids_sha256": "84fa4804f5288d7697fa96cc8edc7ee2ea85cc0c039457a6a2fd3e7843eabfbc",
+        "rounds_count": 34,
+        "rounds_sha256": "5a241d62df07c411b8b45e6fb83f15e458051e7d68127e33cdeb4bbaeb5f0bd1",
+        "rejected_draft_rounds": [
+          6,
+          10,
+          11,
+          12,
+          26
+        ]
+      },
+      "off": {
+        "directory": ".scratch/inference-paired-m2-20261030/speed/single-mtp/candidate/attempt1",
+        "stdout_sha256": "069aeb281a2e6277094a3b41b03d7d13ec1eb49842486217bc0f189316004316",
+        "stderr_sha256": "91e42aab49d0e3993120f8932d2315e66e5115fa55b091840e6c3dc229129bd9",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\candidate.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original",
+          "--steps",
+          "64",
+          "--capacity",
+          "1024",
+          "--max-sessions",
+          "1",
+          "--active-sequences",
+          "1",
+          "--prefix-cache",
+          "off",
+          "--progress",
+          "direct",
+          "--replay",
+          "auto",
+          "--mtp",
+          "on",
+          "--backend",
+          "cuda",
+          "--sampling",
+          "greedy",
+          "--mtp-max-drafts",
+          "1",
+          "--decode-overlap",
+          "off"
+        ],
+        "report": {
+          "decode_seconds": 0.47296009999999994,
+          "decode_output_tokens_per_second": 133.20362542210222,
+          "prefill_seconds": 0.0706058,
+          "session_seconds": 0.5435659,
+          "actual_graph_calls": 35,
+          "decode_graph_calls": 34,
+          "actual_target_rows": 222,
+          "actual_draft_rows": 216,
+          "draft_rounds": 34,
+          "agreements": 29,
+          "verified_target_rows": 68,
+          "consumed_drafts": 29,
+          "overlap_successor_submissions": 0,
+          "overlap_successor_publications": 0,
+          "overlap_successor_discards": 0,
+          "overlap_successor_refusals": 0,
+          "cache_live_requested_bytes": 73539635,
+          "cache_peak_requested_bytes": 73539635,
+          "step_sum_seconds": 0.5381286999999999,
+          "participation_step_sum_seconds": 0.5381287,
+          "post_endpoint_seconds": 5.98e-05,
+          "phase_timing": "disjoint_continuous_episode_intervals"
+        },
+        "published_T2_prepare": {
+          "count": 34,
+          "capture_recorded": 2,
+          "capture_reused": 32,
+          "recorded_rounds": [
+            1,
+            2
+          ],
+          "cold_batch_seconds_sum": 0.0302874,
+          "recorded_cold_batch_seconds_sum": 0.0176804,
+          "reused_cold_batch_seconds_sum": 0.012607,
+          "recorded_cold_batch_seconds_median": 0.0088402,
+          "reused_cold_batch_seconds_median": 0.0003692,
+          "shape_admission_seconds_sum": 0.0
+        },
+        "published_T154_prepare_cold_batch_seconds_sum": 0.0048107,
+        "published_MTP_observation_sums": {
+          "seconds": 0.4387862,
+          "submit_seconds": 0.002591,
+          "step_seconds": 0.4704514
+        },
+        "published_pre_submit_outside_cold_batch_seconds": 0.0013778000000000054,
+        "generated_ids_count": 64,
+        "generated_ids_sha256": "84fa4804f5288d7697fa96cc8edc7ee2ea85cc0c039457a6a2fd3e7843eabfbc",
+        "rounds_count": 34,
+        "rounds_sha256": "5a241d62df07c411b8b45e6fb83f15e458051e7d68127e33cdeb4bbaeb5f0bd1",
+        "rejected_draft_rounds": [
+          6,
+          10,
+          11,
+          12,
+          26
+        ]
+      }
+    },
+    "facts": {
+      "raw_generated_ids_location": "stdout.log -> sessions[0].result.generated_ids (both arms; not normalized consumer-result schema)",
+      "generated_ids_exactly_equal": true,
+      "all_34_round_records_exactly_equal": true,
+      "decode_seconds_delta_auto_minus_off": 0.11939170000000005,
+      "published_T2_cold_batch_seconds_delta": 0.057711500000000006,
+      "published_T2_cold_batch_delta_fraction_of_decode_gap": 0.4833794979047956,
+      "published_T2_extra_recorded_capture_ranges": 8,
+      "published_MTP_submit_elapsed_seconds_delta": 0.0078922,
+      "published_pre_submit_outside_cold_batch_seconds_delta": 0.005092899999999977,
+      "extra_graph_calls": 2,
+      "extra_target_rows": 4,
+      "extra_live_requested_cache_bytes": 39313408,
+      "parent_reported_original_SDK_auto_control": {
+        "decode_output_tokens_per_second": 103.795,
+        "actual_graph_calls": 37,
+        "overlap_successor_publications": 7,
+        "non_time_report_equal_to_candidate_auto_first_report": true,
+        "provenance": "Parent /root message; control artifact was not independently located/read in this diagnostic."
+      }
+    },
+    "code_findings": [
+      {
+        "finding": "There is no hard two-step relay limit in the CLI wave path. A promoted B can remain pending across pumps and submit C before B is finished.",
+        "locations": [
+          "engine/models/qwen35/main.cc:6915",
+          "engine/models/qwen35/main.cc:7088",
+          "engine/models/qwen35/main.cc:7183",
+          "engine/models/qwen35/main.cc:7611"
+        ],
+        "limits": "Successor admission requires imported Source, at least six ready steps, warm next direction, and quota/remaining/context for four outputs at greedy K1."
+      },
+      {
+        "finding": "MTP Source describes the complete candidate boundary. Partial target acceptance invalidates that full boundary and cancels an already submitted successor; original retirement then discards it.",
+        "locations": [
+          "engine/models/qwen35/main.cc:4102",
+          "engine/models/qwen35/main.cc:6602",
+          "engine/models/qwen35/main.cc:7160"
+        ]
+      },
+      {
+        "finding": "Discard recovery resets continuation warm state and retires/reinstalls affected original Invocation carriers, so their capture state can be lost.",
+        "locations": [
+          "engine/models/qwen35/main.cc:6578",
+          "engine/models/qwen35/main.cc:6955",
+          "engine/models/qwen35/main.cc:6978",
+          "engine/inference/execution_episode.h:209",
+          "engine/inference/program_carrier.h:173"
+        ]
+      },
+      {
+        "finding": "Each Graph range keeps two saved capture variants keyed by actual physical ports; a nonmatching ready-input tuple may record again. Pending Source execution is reuse-only and rejects a missing prepared key.",
+        "locations": [
+          "src/graph/executable.cc:10079",
+          "src/graph/executable.cc:10094",
+          "src/graph/executable.cc:10105"
+        ],
+        "observed_limit": "This auto process reports zero successor refusals, so the explicit missing-key refusal/re-prime branch is not demonstrated as the cause here."
+      },
+      {
+        "finding": "Existing PreparationObservation already separates layout, batch IO binding, and replay preparation. Current stderr only publishes their combined cold_batch_seconds.",
+        "locations": [
+          "engine/inference/execution_observation.h:26",
+          "engine/models/qwen35/main.cc:4835",
+          "engine/models/qwen35/main.cc:4843"
+        ]
+      }
+    ],
+    "inferences_and_limits": [
+      "The first quantified large item is capture/prepare churn: eight extra published capture recordings and +57.7115 ms published T2 cold preparation, about 48.3% of this pair's decode wall-time gap. This measures elapsed preparation, not CPU self time or GPU work.",
+      "Two discarded successors are consistent with the two extra graph calls and four extra target rows, while all generated IDs and acceptance records are identical. The logs do not identify each discarded graph's precise round/slot.",
+      "Capture loss after discard and physical tuple changes are concrete possible causes, but current logs do not identify the first mismatching port/range or attribute all eight extra recordings. Two saved variants alone does not prove eviction occurred in this process.",
+      "Seven published MTP intervals are roughly doubled, consistent with the seven successor publications. Step seconds start at submission and can overlap a preceding graph, so summing them cannot establish seven additional GPU executions.",
+      "The original-SDK auto control supplied by /root reproduces the same work and similar speed. This default-auto overhead predates the M2 paired-projection candidate; it must not be assigned to the fusion.",
+      "Auto and off here came from separate measurement windows; timing differences are an initial diagnostic, not a randomized same-window causal attribution. Capture/work counts and raw-output equality are direct observations.",
+      "Published prepare/step stderr omits cancelled successor observations, so its sums do not include every cost of the two discarded graphs. Compile and weight-load startup times are outside the reported decode interval."
+    ],
+    "minimal_next_step": {
+      "action": "One targeted default-auto diagnostic process using the same CLI image and fixture; no new performance matrix is needed initially.",
+      "record": [
+        "role/imported flag/physical slot and carrier reinitialization at every prepare",
+        "existing PreparationObservation layout_seconds, batch_prepare_seconds, replay_prepare_seconds",
+        "for a replay miss, only the first mismatching capture range/step/port and physical resource generation/handle/offset/size",
+        "successor submit/publish/discard round IDs"
+      ],
+      "question": "Correlate extra recording rounds 3,4,5,14,15,17,29,30 with original carrier resets versus stable-carrier physical-tuple changes. Fix the first measured repeated preparation cause while preserving Source, acceptance, and retirement contracts."
+    }
+  },
+  "cleanup": {
+    "files": 19,
+    "status": "REMOVED_EXACT_FLAT_BATCH_IMAGES",
+    "targets": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\candidate.exe",
+        "bytes": 142982144,
+        "sha256": "e9760fc3cc0ca3792e1f9be17ff43535bc91550b420e299e15cd78a238a14939"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\candidate.exp",
+        "bytes": 24979,
+        "sha256": "c1a1c268f7055a73d9fcb9ad0bb62d9e533b1262f005be88495f4cd863ddb6df"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\candidate.lib",
+        "bytes": 41826,
+        "sha256": "a17fe4c1ccde457403d9126a084aa4f236618e410d072f5513aca0806f2713a6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\control.exe",
+        "bytes": 142944768,
+        "sha256": "131d90ed93c0f6fc73e2052446bfef226bb8455a69e591d72b8d7e8b1c08b337"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\control.exp",
+        "bytes": 24975,
+        "sha256": "6dc18a2c012376de0ad7c958693dcd22cffffc8d08c34c107e61455d7fe96cbc"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\control.lib",
+        "bytes": 41650,
+        "sha256": "6e6021240d599850ba1dccf0341a4d8a81278adfcfef859a93c118a266481a09"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\grouped.exe",
+        "bytes": 140846080,
+        "sha256": "432d71363058d21dcb6db86a53ebd906bc8927cddd54c7c8ee0f56bde08afe5b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\grouped.exp",
+        "bytes": 24975,
+        "sha256": "679426d7b8112db0af051e6608b1e5cfef2c56515ccf0aef7498a3d525fa4b4a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\grouped.lib",
+        "bytes": 41650,
+        "sha256": "2ebb793c0d9835221e7787138b155c350923b4e948c4b194f8fe641795d887d7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\ordinary.exe",
+        "bytes": 142955008,
+        "sha256": "6c114fd9c1487dee89fc58a54fb8192c1204c4b99f7a5bdb3ab737bd2bb62610"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\ordinary.exp",
+        "bytes": 24978,
+        "sha256": "0e615d50452c419107c3cd352f850ca1a4ccd2233874a72f18d04b9df39c4b04"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\ordinary.lib",
+        "bytes": 41736,
+        "sha256": "b48e083b9ce39eb6f82dd55dba602a320b716d6c6113e731c1094b8446220b32"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\paired.exe",
+        "bytes": 140802048,
+        "sha256": "9f9181717f178712cbe40e90839338d210de7dd26afbca7e2bb1eb47de614c11"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\paired.exp",
+        "bytes": 24974,
+        "sha256": "05d7a90294d74b36420a3f67061a57bef70fbcbccbfcfdbd95cdafdf7b80bca5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\paired.lib",
+        "bytes": 41560,
+        "sha256": "6a52f0ea962bbfc0e42c3694784df05da2c8b3a3348f90cd16bf68ca54cb8001"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\validation.exe",
+        "bytes": 143084544,
+        "sha256": "d4ea84a55e47c991342e52e6c1b047f4555084ce8df187ac69e0a2a5bc76d329"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\validation.exp",
+        "bytes": 24982,
+        "sha256": "121976f15f56d0aa1e21ccb52811172afb6483dbe7731433631f0510e93cf0ba"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\bin\\validation.lib",
+        "bytes": 41912,
+        "sha256": "e3e8df2020516d4c73488f59887cba0d3b24f34291f5e38b4b31a8828e7ea291"
+      }
+    ],
+    "bytes": 855221573.0
+  },
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-paired-m2-2026-10-30.zip",
+    "bytes": 6203860,
+    "sha256": "303242a4f9e27c703c5677e567061e2f300f728e12e42df3c3ea645982e9784b",
+    "members": 555,
+    "CRC": "PASS",
+    "all_member_SHA256": "PASS"
+  }
+}
