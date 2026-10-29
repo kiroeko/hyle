@@ -1,0 +1,914 @@
+{
+  "schema": "hyle.correctness.paired-publication.v1",
+  "date": "2026-10-30",
+  "status": "PASS_WITH_PRESERVED_FIXTURE_FAILURE",
+  "base_commit": "b803eb372fb94e20ecc5a708c3b9765d567a7f86",
+  "change": "Whole-cohort frame preflight returns the same borrowed candidate and original commit tickets for one consumption; ordinary/MTP and private draft use it without reconstructing publication edits.",
+  "invariants": [
+    "All surviving members preflight before any original Head swap.",
+    "Original frame commit permissions, snapshots, Source, ledger, RNG and real retirement remain authoritative.",
+    "Borrowed backing addresses stay stable until consumption; original retirement clears handles before candidate reuse.",
+    "No allocation, payload copy, queue, executor or second state owner added."
+  ],
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\paged_sequence.h",
+      "bytes": 15200,
+      "sha256": "dc5fab1c96fa313246f589405995c909179ed742b2e361a7dbab65024d6691ce"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 626927,
+      "sha256": "b477a24ef475fe2633c9306b1765aa59e51db6204c7db4479fed20b06a25a3e1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_paged_sequence_test.cc",
+      "bytes": 29161,
+      "sha256": "c21cf098306cff113442e3b6845a69ddb844e3a1113df0b6c3f61847e8f63bf8"
+    }
+  ],
+  "counts": {
+    "CXX_attempts": 5,
+    "link_attempts": 4,
+    "native_attempts": 7,
+    "current_passed_processes": 6,
+    "current_component_tests": 5,
+    "preserved_fixture_failures": 1,
+    "SDK_engine_CXX": 1,
+    "unchanged_SDK_engine_inputs": 226,
+    "NVCC": 0,
+    "downloads": 0,
+    "whole_builds": 0,
+    "throughput_windows": 0
+  },
+  "current_runs": [
+    {
+      "case": "sequence-cpu",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 59276,
+        "started": 1793299394.8970287,
+        "seconds": 0.4197967052459717,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "tests": 5,
+        "failures": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "case": "publication-cpu",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 52988,
+        "started": 1793299394.937564,
+        "seconds": 0.8192629814147949,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "publication-retirement",
+        "backend": "cpu",
+        "synthetic_untrained": true,
+        "requests": 2,
+        "target_submissions": 4,
+        "unpublished_refusals": 1,
+        "published_observer_refusals": 1,
+        "original_nonstd_exception_preserved": true,
+        "actual_native_retirement": true,
+        "exact_uncommitted_record_discard": true,
+        "same_input_retry": true,
+        "committed_peers_preserved": true,
+        "observation_retry_submissions": 0,
+        "old_snapshots_unchanged": true,
+        "native_fault_injection": false,
+        "quality_claim": false,
+        "performance_claim": false
+      }
+    },
+    {
+      "case": "group-cuda",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 39020,
+        "started": 1793299396.304703,
+        "seconds": 0.8194570541381836,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "mtp-group-return",
+        "backend": "cuda",
+        "models": 1,
+        "actual_active_sequences": 2,
+        "logical_requests": 3,
+        "submitted_widths": [
+          2,
+          3
+        ],
+        "actual_q_before_grouping": 5,
+        "actual_q_after_failure": 4,
+        "original_participant": 2,
+        "successful_peer_repairs": 1,
+        "no_proposal_regeneration": true,
+        "draft_program_calls_before_grouping": 5,
+        "draft_program_calls_after_failure": 6,
+        "original_calls_and_q_returned": true,
+        "earlier_group_commit_preserved": true,
+        "failed_heads_ledger_rng_unchanged": true,
+        "actual_retirement": true,
+        "same_key_host_restore_retry": true,
+        "synthetic_untrained": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0
+      }
+    },
+    {
+      "case": "batch-cuda",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 18308,
+        "started": 1793299407.6081476,
+        "seconds": 0.7370820045471191,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "backend": "cuda",
+        "requests": 2,
+        "verify_rows": 3,
+        "candidate_prefixes": 3,
+        "rounds": 2,
+        "accepted": [
+          [
+            1,
+            3
+          ],
+          [
+            3,
+            1
+          ]
+        ],
+        "checked_selected_bytes": 70144,
+        "reclaimed_unselected_slots": 16,
+        "banks": [
+          {
+            "layer": 0,
+            "role": "conv",
+            "source_slot_ids": [
+              2,
+              3
+            ],
+            "candidate_slot_ids": [
+              0,
+              1,
+              4,
+              5,
+              6,
+              7
+            ]
+          },
+          {
+            "layer": 0,
+            "role": "gdn",
+            "source_slot_ids": [
+              2,
+              3
+            ],
+            "candidate_slot_ids": [
+              0,
+              1,
+              4,
+              5,
+              6,
+              7
+            ]
+          },
+          {
+            "layer": 0,
+            "role": "conv",
+            "source_slot_ids": [
+              0,
+              7
+            ],
+            "candidate_slot_ids": [
+              1,
+              4,
+              5,
+              6,
+              8,
+              9
+            ]
+          },
+          {
+            "layer": 0,
+            "role": "gdn",
+            "source_slot_ids": [
+              0,
+              7
+            ],
+            "candidate_slot_ids": [
+              4,
+              5,
+              8,
+              9,
+              10,
+              1
+            ]
+          }
+        ],
+        "same_width_original_candidates": true,
+        "old_snapshots_unchanged": true,
+        "final_versions": 0,
+        "controlled_prefix_pending": true,
+        "controlled_rng_unchanged": true,
+        "nextn_checked_id_failure_recovered": true,
+        "same_program_valid_retry": true,
+        "natural_acceptance_quality_claim": false,
+        "performance_claim": false
+      }
+    },
+    {
+      "case": "natural-cuda",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 12404,
+        "started": 1793299408.8527942,
+        "seconds": 3.2458651065826416,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "mtp-natural-relay",
+        "backend": "cuda",
+        "models": 1,
+        "journeys": 2,
+        "prompt_tokens": 154,
+        "capacity": 256,
+        "resident_capacity": 1,
+        "state_slots": 5,
+        "hidden_slots": 6,
+        "output_limit": 40,
+        "outputs": 40,
+        "serial_submissions": 23,
+        "auto_submissions": 24,
+        "source_submissions": 22,
+        "successor_submissions": 3,
+        "successor_publications": 2,
+        "successor_discards": 1,
+        "successor_refusals": 0,
+        "pending_pairs_before_A_publish": 3,
+        "deferred_waves": 2,
+        "reserved_two_grants": 2,
+        "accepted_drafts": 17,
+        "rejected_drafts": 4,
+        "ledger_records": 23,
+        "natural_RequestLoop": true,
+        "controlled_acceptance": false,
+        "original_ledger_equal": true,
+        "generated_ids_equal": true,
+        "greedy_rng_unchanged": true,
+        "all_sources_expired": true,
+        "simultaneous_native_inflight_claim": false,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0,
+        "state_checks": [
+          {
+            "sequence": 0,
+            "prefix": 193,
+            "active_rows": 1,
+            "physical_rows": 1,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 14733,
+            "bucket_next": 14733,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          }
+        ],
+        "ids": [
+          71093,
+          12305,
+          198,
+          464,
+          19298,
+          198,
+          1445,
+          18904,
+          1120,
+          5586,
+          11,
+          51338,
+          11,
+          36760,
+          11,
+          1697,
+          11,
+          11906,
+          11,
+          3856,
+          3829,
+          271,
+          51,
+          283,
+          3856,
+          3829,
+          482,
+          51,
+          837,
+          198,
+          42,
+          283,
+          3856,
+          3829,
+          482,
+          42,
+          837,
+          271,
+          727,
+          14733
+        ],
+        "batches": [
+          {
+            "ordinal": 0,
+            "quota": 0,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 154,
+            "draft_rows": 154,
+            "generation": false,
+            "discarded": false
+          },
+          {
+            "ordinal": 1,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 2,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 3,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 4,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 5,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 6,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 7,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 8,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 9,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 10,
+            "quota": 4,
+            "reserved": 2,
+            "additional": 2,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 11,
+            "quota": 2,
+            "reserved": 2,
+            "additional": 2,
+            "emitted": 0,
+            "accepted": 0,
+            "draft_rows": 0,
+            "generation": true,
+            "discarded": true
+          },
+          {
+            "ordinal": 11,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 12,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 13,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 14,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 15,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 16,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 17,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 18,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 19,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 20,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 21,
+            "quota": 3,
+            "reserved": 2,
+            "additional": 1,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 22,
+            "quota": 1,
+            "reserved": 0,
+            "additional": 1,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          }
+        ]
+      }
+    },
+    {
+      "case": "continuous-cuda",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 33820,
+        "started": 1793299380.9449258,
+        "seconds": 1.2807445526123047,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "backend": "cuda",
+        "fixture": "untrained_GA_H64",
+        "prompt_tokens": 18,
+        "outputs_per_live_member": 14,
+        "capacity": 32,
+        "in_flight_batches": 2,
+        "control_and_candidate_arms": 16,
+        "same_original_executor": true,
+        "complete_prefix_state_epoch_rng_equal": true,
+        "actual_owner_credit_checked": true,
+        "all_source_session_page_owners_retired": true,
+        "model_eos_run": false,
+        "synthetic_v64_extra_stop_shares_eos_contract": true,
+        "synthetic_fixture_directory": "continuous-extra-stop-v64",
+        "synthetic_role_payload_bytes": 65536,
+        "accepted_work_control_exception": true,
+        "gpu_native_fault_injected": false,
+        "model_quality_claim": false,
+        "performance_claim": false,
+        "candidates": [
+          {
+            "requests": 1,
+            "mode": "normal",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 5,
+            "max_consecutive_pending": 5,
+            "submit_before_observe": 5,
+            "renewals": 4,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "normal",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 5,
+            "max_consecutive_pending": 5,
+            "submit_before_observe": 5,
+            "renewals": 4,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "credit_exhaustion",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 1,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "member_cancel",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 1,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "yield_resume",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 1,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "cancel_then_control_exception",
+            "pumps": 16,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 1,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 3,
+            "control_exceptions": 1,
+            "aborted_actual_submissions": 2
+          },
+          {
+            "requests": 1,
+            "mode": "extra_stop",
+            "pumps": 13,
+            "actual_batches": 13,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 3,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 1,
+            "extra_stop_accepted_successor": true,
+            "discarded_batches": 1,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "extra_stop",
+            "pumps": 15,
+            "actual_batches": 15,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 3,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 1,
+            "extra_stop_accepted_successor": true,
+            "discarded_batches": 1,
+            "survivor_r1_steps": 2,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          }
+        ]
+      }
+    }
+  ],
+  "comparisons": [
+    {
+      "case": "natural-cuda",
+      "previous": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\runs\\natural-cuda\\reviewed\\report.json",
+        "bytes": 7117,
+        "sha256": "783435df8c542066c8a5d00b9e5efb96c73ce3179744f702e70a44c33ebf323d"
+      },
+      "current": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-publication-20261030\\runs\\natural-cuda\\attempt1\\report.json",
+        "bytes": 7117,
+        "sha256": "783435df8c542066c8a5d00b9e5efb96c73ce3179744f702e70a44c33ebf323d"
+      },
+      "full_report_equal": true
+    },
+    {
+      "case": "continuous-cuda",
+      "previous": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\runs\\continuous-cuda\\final\\report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      },
+      "current": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-publication-20261030\\runs\\continuous-cuda\\attempt1\\report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      },
+      "full_report_equal": true
+    }
+  ],
+  "preserved_failure": {
+    "process": {
+      "state": "TERMINAL",
+      "pid": 53320,
+      "started": 1793299328.9029388,
+      "seconds": 0.48097658157348633,
+      "exit": 1,
+      "timed_out": false
+    },
+    "cause": "The new two-bank test Graph lacked the original dependency edge between append effects; corrected only fixture depends_on, without changing product checks or assertions."
+  },
+  "limits": [
+    "A maintenance/assembly correction, not a demonstrated product numerical failure or throughput improvement.",
+    "No new Apple/Vulkan run, persistent native fault injection, complete second engine model or multi-device implementation.",
+    "Generic whole engine orchestration and performance milestones remain incomplete."
+  ],
+  "cleanup_plan": {
+    "root": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-publication-20261030\\bin",
+    "files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-publication-20261030\\bin\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-publication-20261030\\bin\\model.exe",
+        "bytes": 143046144,
+        "sha256": "c232d6c7f62e99847efd8ec1fb56cced72cbc6f3413d277729136f19ed642dc7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-publication-20261030\\bin\\model.exp",
+        "bytes": 24980,
+        "sha256": "85277b56522674f57317fd749ffc0bb669b45897f60548bf3be2c0e6363eeefb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-publication-20261030\\bin\\model.lib",
+        "bytes": 41474,
+        "sha256": "8708bca23d7b84b2d16cdc2661de5a2ed6ea897c29a803a826de5b5f89340d78"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-publication-20261030\\bin\\ordinary.exe",
+        "bytes": 142916096,
+        "sha256": "ee6d96db713b2955a9f065c9cf39e824b7c756c50acaedfae0beb41e2f7f4164"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-publication-20261030\\bin\\ordinary.exp",
+        "bytes": 24987,
+        "sha256": "c4fdd086c1e19d7c041b0a586bc2e050c207b764db48f9a8043a24481eb3d0c0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-publication-20261030\\bin\\ordinary.lib",
+        "bytes": 41736,
+        "sha256": "b48e083b9ce39eb6f82dd55dba602a320b716d6c6113e731c1094b8446220b32"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-publication-20261030\\bin\\sequence.exe",
+        "bytes": 141238784,
+        "sha256": "a86852c4d34f6f142305950ae2fe41bc1a316e1860668f00dc95bc4a992ec6bc"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-publication-20261030\\bin\\sequence.exp",
+        "bytes": 24987,
+        "sha256": "3d3c5b58acba424994017f38199f2a095c07a430a8cebd9aac21e5b9d4845dea"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-publication-20261030\\bin\\sequence.lib",
+        "bytes": 41736,
+        "sha256": "df63cd4a27bdba2bd7acd7c62f5109c2124e73074a0281a151a162938c3ec95b"
+      }
+    ],
+    "bytes": 428607708
+  },
+  "cleanup": {
+    "status": "COMPLETE",
+    "files": 10,
+    "bytes": 428607708,
+    "scope": "Only this batch native images/link outputs and copied DLL; current consumer objects, refreshed weights TU and 226 other SDK inputs retained."
+  }
+}

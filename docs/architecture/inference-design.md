@@ -136,6 +136,9 @@ packed行偏移、decode-ahead原缓存和真实Source不放进这份整数缓�
 序列保存原页引用与Frame，编辑只借用原base、candidate和提交票据。共同层执行原Frame的source、fork／冻结别名及整束提交预检和提交，
 不固定K／V配对，不保存另一份长度或frontier；独立页空间使用各自库存，模型保留实际银行映射与缓存布局。
 Qwen的target、图内draft及私有NextN直接使用同一实现，旧库存与帧提交算法已删除。原Frame／Append仍决定权限，原episode负责退休，原Head／ledger／RNG发布不变。
+`prepare_publication`整束预检后返回只借用同一base、candidate及原票据的`PagedSequencePublication`；
+普通／MTP保存结果，所有成员预检通过后再由原Head消费，私有草稿直接消费，不在发布时重拼target／draft清单。
+借用期间成员及票据存储地址固定；原Frame提交仍检查真实权限。结果消费或失败退休回收后失效，不拥有快照、提交或另一份发布权。
 库存只是政策引用计数，原Arena的Unavailable仍须真实等待；临时取得的原writer先释放，才允许政策ID复用。
 扫描多个不可用页只在结束时重排一次，保留原页选择顺序，避免逐页搬移数组的平方成本。
 [单银行真实Graph及模型回归](../evidence/correctness/inference-paged-sequence-2026-10-29.json)覆盖完整追加／分叉／COW／尾复用、实际页回收、晚银行拒绝及普通／MTP路径；没有增加载荷复制或第二执行器，也不据此宣称吞吐提升。

@@ -56,23 +56,28 @@ struct Program final {
   g::CompiledGraph compiled;
   g::Invocation run;
   g::ValueId input;
-  std::array<g::NodeId, 1> nodes;
+  std::vector<g::NodeId> nodes;
   c::LeasePool inputs;
   i::PagedAppendScratch scratch;
 
-  explicit Program(std::uint32_t members = 1) {
+  explicit Program(std::uint32_t members = 1, std::size_t bank_count = 1) {
     const std::array providers{c::ProviderBinding{c::ggml_cpu::provider(), 0}};
     context = take(c::Context::create(c::cpu::device(), {.providers = providers}));
     queue = take(context.create_queue());
     layout_schema = schema(4, members);
-    inventory.banks.push_back(take(c::PagedArena::create(layout_schema, c::BatchCacheRole::kKey,
-        m::system_resource(), {.max_backing_bytes = 4096})));
-    check(inventory.prepare(4, 1));
+    const std::array roles{c::BatchCacheRole::kKey, c::BatchCacheRole::kValue};
+    for (const auto role : std::span(roles).first(bank_count))
+      inventory.banks.push_back(take(c::PagedArena::create(layout_schema, role,
+          m::system_resource(), {.max_backing_bytes = 4096})));
+    check(inventory.prepare(4, bank_count));
     rows = take(c::TensorDesc::dense(c::DataType::kBFloat16, std::array<std::int64_t, 3>{members, 1, 64}));
     auto builder = take(g::GraphBuilder::create());
     input = take(builder.input(rows));
-    const auto append = take(b::paged_append(layout_schema, c::BatchCacheRole::kKey));
-    nodes[0] = take(builder.add_node(c::Operation::custom(append), std::array{input}));
+    for (const auto role : std::span(roles).first(bank_count)) {
+      const auto append = take(b::paged_append(layout_schema, role));
+      nodes.push_back(take(builder.add_node(c::Operation::custom(append), std::array{input})));
+      if (nodes.size() > 1) check(builder.depends_on(nodes.back(), nodes[nodes.size() - 2]));
+    }
     graph = take(std::move(builder).finish());
     const std::array domains{g::StorageDomain{m::system_resource()}};
     const std::array targets{g::ExecutionTarget{take(g::ExecutionSource::acquire(context)), g::StorageDomainId{0}}};
@@ -153,8 +158,8 @@ struct Program final {
     check(i::prepare_paged_append_commits(appends, 1, finish));
     EXPECT_EQ(edit.selected(0).layout(), before);
     check(i::return_paged_append_tails(transactions, 1, 1, scratch, finish));
-    check(edit.preflight());
-    edit.publish(&state);
+    auto publication = take(edit.prepare_publication());
+    publication.publish(&state);
     EXPECT_FALSE(source.valid());
     EXPECT_EQ(candidate.frames[0].layout(), after);
     appends[0] = {}; // The original retired transaction must release its COW source.
@@ -212,6 +217,113 @@ TEST(InferencePagedSequence, SingleBankActualAppendForkCowAndTailReuse) {
     auto writer = take(program.inventory.banks[0].acquire(page));
     EXPECT_TRUE(writer.lease().valid()); EXPECT_EQ(writer.initialized_rows(), 0u);
   }
+}
+
+TEST(InferencePagedSequence, LateBankPublicationRefusalKeepsActualGraphTicketsAndOriginalSnapshots) {
+  Program program(1, 2);
+  i::PagedSequenceState base;
+  ASSERT_TRUE(base.frames.try_resize(2));
+  auto seed = take(program.inventory.acquire());
+  const auto old_page = seed.reference.page();
+  base.pages.push_back(std::move(seed.reference));
+  const std::array<std::int32_t, 2> no_queries{0, 0}, one_row{0, 1};
+  const std::array<std::int32_t, 1> pages{static_cast<std::int32_t>(old_page)}, tail{1};
+  const auto initial = take(program.layout_schema.version({no_queries, one_row, pages, tail}));
+  const std::array<std::uint16_t, 2> original_values{0x3e80, 0x3f00}; // BF16 .25 and .5.
+  for (std::size_t bank = 0; bank != 2; ++bank) {
+    std::array<std::uint16_t, 64> prefix; prefix.fill(original_values[bank]);
+    auto writable = take(seed.writers[bank].lease().view());
+    check(take(writable.subview(0, sizeof(prefix))).write(std::as_bytes(std::span(prefix))));
+    auto published = take(seed.writers[bank].publish_appendable(1));
+    const auto ready = take(program.inventory.banks[bank].read(initial, std::array{published.prefix}));
+    base.frames[bank] = take(c::PagedArenaFrame::from_frozen(ready));
+  }
+  seed = {};
+  auto snapshot = take(base.frozen_alias());
+  const std::array original_epochs{base.frames[0].epoch(), base.frames[1].epoch()};
+  i::PagedSequenceState candidate;
+  ASSERT_TRUE(candidate.frames.try_resize(2));
+  std::array<c::PagedArenaCommit, 2> commits;
+  i::PagedSequenceEdit edit(base, candidate, commits);
+  std::array<std::vector<c::PagedPageWriter>, 2> dirty;
+  std::array<std::vector<c::PagedPageAppender>, 2> tails;
+  std::array<b::PagedAppendPages, 2> appends;
+  c::BatchLayoutVersion after;
+  const auto aggregate = take(i::prepare_paged_append(program.layout_schema, 1,
+      i::PagedAppendBanks{program.inventory, std::span<std::vector<c::PagedPageWriter>>(dirty),
+          std::span<std::vector<c::PagedPageAppender>>(tails), std::span<b::PagedAppendPages>(appends)},
+      program.scratch, [&](std::size_t) noexcept -> i::PagedAppendMember {
+        return {base, &candidate, after, 1, 1};
+      }, {.capacity_rows = 4}));
+  ASSERT_EQ(aggregate, after);
+  ASSERT_EQ(candidate.pages.size(), 1u);
+  const auto new_page = candidate.pages[0].page();
+  ASSERT_NE(new_page, old_page); // The retained original snapshot requires real COW.
+  std::array<std::uint8_t, 2> bound{};
+  const std::array<g::ValueId, 2> cache_inputs{};
+  i::AppendTransactions transactions(program.nodes, appends, bound);
+  auto writer = take(program.inputs.allocate(128, 64));
+  std::array<std::uint16_t, 64> incoming; incoming.fill(0x3f40); // BF16 .75.
+  check(take(writer.view()).write(std::as_bytes(std::span(incoming))));
+  auto input_ready = take(writer.publish());
+  check(program.run.bind(program.input, program.rows, input_ready));
+  check(transactions.bind(program.run, program.graph, cache_inputs));
+  check(program.run.prepare_replay(program.queues()));
+  auto completion = take(program.run.submit(program.queues()));
+  check(completion.wait()); completion = {};
+  check(transactions.take(program.run));
+  const auto finish = [&](std::size_t) noexcept -> i::PagedAppendFinishMember {
+    return {base, candidate, commits, after, new_page, 0, {}, true, false};
+  };
+  check(i::prepare_paged_append_commits(appends, 1, finish));
+  check(i::return_paged_append_tails(transactions, 2, 1, program.scratch, finish));
+  const std::array before_epochs{candidate.frames[0].epoch(), candidate.frames[1].epoch()};
+  const auto first_before = take(candidate.frames[0].view());
+  const auto first_proposed = take(commits[0].view());
+  ASSERT_TRUE(commits[0].valid()); ASSERT_TRUE(commits[1].valid());
+  // A valid ticket of the same arena/layout but another original frame must
+  // fail only after the first bank has passed its actual permission check.
+  auto foreign = take(c::PagedArenaFrame::fork(take(candidate.frames[1].view())));
+  auto foreign_delta = take(c::PagedArenaDelta::create(take(foreign.view()), initial, {}));
+  auto original_second = std::move(commits[1]);
+  commits[1] = take(foreign.prepare_commit(std::move(foreign_delta)));
+  const auto refused = edit.prepare_publication();
+  ASSERT_FALSE(refused); EXPECT_TRUE(refused.error().IsInvalidArgument());
+  EXPECT_TRUE(commits[0].valid()); EXPECT_TRUE(commits[1].valid()); EXPECT_TRUE(original_second.valid());
+  EXPECT_TRUE(first_before.valid()); EXPECT_TRUE(first_proposed.valid());
+  EXPECT_EQ(first_proposed.layout(), after);
+  for (std::size_t bank = 0; bank != 2; ++bank) {
+    EXPECT_EQ(candidate.frames[bank].layout(), initial);
+    EXPECT_EQ(candidate.frames[bank].epoch(), before_epochs[bank]);
+    EXPECT_EQ(words(candidate.frames[bank], old_page), std::vector<std::uint16_t>(64, original_values[bank]));
+    EXPECT_EQ(base.frames[bank].epoch(), original_epochs[bank]);
+    EXPECT_EQ(words(snapshot.frames[bank], old_page), std::vector<std::uint16_t>(64, original_values[bank]));
+  }
+  commits[1] = std::move(original_second);
+  i::PagedSequencePublication empty;
+  EXPECT_FALSE(empty.valid()); EXPECT_EQ(empty.candidate(), nullptr);
+  auto prepared = take(edit.prepare_publication());
+  ASSERT_TRUE(prepared.valid()); EXPECT_EQ(prepared.candidate(), &candidate);
+  auto publication = std::move(prepared);
+  EXPECT_FALSE(prepared.valid()); EXPECT_EQ(prepared.candidate(), nullptr);
+  ASSERT_TRUE(publication.valid()); EXPECT_EQ(publication.candidate(), &candidate);
+  publication.publish(); // Consume the very candidate whose whole cohort was checked.
+  EXPECT_FALSE(publication.valid()); EXPECT_EQ(publication.candidate(), nullptr);
+  EXPECT_FALSE(commits[0].valid()); EXPECT_FALSE(commits[1].valid());
+  EXPECT_FALSE(first_before.valid()); EXPECT_FALSE(first_proposed.valid());
+  for (std::size_t bank = 0; bank != 2; ++bank) {
+    EXPECT_EQ(candidate.frames[bank].layout(), after);
+    EXPECT_EQ(candidate.frames[bank].epoch(), before_epochs[bank] + 1);
+    std::vector<std::uint16_t> expected(128, 0x3f40);
+    std::fill_n(expected.begin(), 64, original_values[bank]);
+    EXPECT_EQ(words(candidate.frames[bank], new_page), expected);
+    EXPECT_EQ(base.frames[bank].layout(), initial);
+    EXPECT_EQ(base.frames[bank].epoch(), original_epochs[bank]);
+    EXPECT_EQ(snapshot.frames[bank].layout(), initial);
+    EXPECT_EQ(words(snapshot.frames[bank], old_page), std::vector<std::uint16_t>(64, original_values[bank]));
+  }
+  appends = {};
+  check(program.run.unbind(program.input));
 }
 
 TEST(InferencePagedSequence, LatePhysicalBankRefusalKeepsExistingCohortAndReleasesPartialAcquire) {
@@ -394,10 +506,11 @@ TEST(InferencePagedSequence, LateMemberExhaustionRetainsOriginalEpisodeThenPubli
   };
   check(i::prepare_paged_append_commits(appends, 2, finish));
   check(i::return_paged_append_tails(transactions, 1, 2, program.scratch, finish));
+  std::array<i::PagedSequencePublication, 2> publications;
   for (std::size_t member = 0; member != base.size(); ++member)
-    check(i::PagedSequenceEdit(base[member], candidate[member], commits[member]).preflight());
+    publications[member] = take(i::PagedSequenceEdit(base[member], candidate[member], commits[member]).prepare_publication());
   for (std::size_t member = 0; member != base.size(); ++member) {
-    i::PagedSequenceEdit(base[member], candidate[member], commits[member]).publish(&base[member]);
+    publications[member].publish(&base[member]);
     base[member] = std::move(candidate[member]);
     EXPECT_EQ(base[member].frames[0].layout(), layouts[member]);
     const auto expected = member ? std::uint16_t{0x3f40} : std::uint16_t{0x3e80};

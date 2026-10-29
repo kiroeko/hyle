@@ -240,6 +240,52 @@ struct PagedSequenceState final {
   }
 };
 
+// The serialized owner keeps this original cohort unchanged between whole-
+// collection preflight and publication. This result borrows the same frames
+// and native tickets; it neither owns them nor grants another permission.
+// Base, candidate and commit backing storage keep their addresses until use.
+class PagedSequencePublication final {
+ public:
+  PagedSequencePublication() noexcept = default;
+  PagedSequencePublication(const PagedSequencePublication &) = delete;
+  PagedSequencePublication &operator=(const PagedSequencePublication &) = delete;
+  PagedSequencePublication(PagedSequencePublication &&other) noexcept { *this = std::move(other); }
+  PagedSequencePublication &operator=(PagedSequencePublication &&other) noexcept {
+    if (this != &other) {
+      base_ = std::exchange(other.base_, nullptr);
+      candidate_ = std::exchange(other.candidate_, nullptr);
+      commits_ = std::exchange(other.commits_, std::span<compute::PagedArenaCommit>{});
+    }
+    return *this;
+  }
+  bool valid() const noexcept { return candidate_ != nullptr; }
+  const PagedSequenceState *candidate() const noexcept { return candidate_; }
+
+  void publish(PagedSequenceState *previous = nullptr) noexcept {
+    HYLE_FATAL_ASSERT(valid() && candidate_->frames.size() == base_->frames.size() &&
+        commits_.size() == base_->frames.size());
+    for (std::size_t bank = 0; bank < commits_.size(); ++bank) {
+      auto &destination = candidate_->frames[bank];
+      if (!destination.valid()) {
+        HYLE_FATAL_ASSERT(previous == base_ && previous->frames[bank].valid() && !previous->frames[bank].sealed());
+        destination = std::move(previous->frames[bank]);
+      }
+      const auto status = destination.commit(std::move(commits_[bank]));
+      HYLE_FATAL_ASSERT(status.ok());
+    }
+    base_ = nullptr; candidate_ = nullptr; commits_ = {};
+  }
+
+ private:
+  friend class PagedSequenceEdit;
+  PagedSequencePublication(const PagedSequenceState &base, PagedSequenceState &candidate,
+      std::span<compute::PagedArenaCommit> commits) noexcept
+      : base_(&base), candidate_(&candidate), commits_(commits) {}
+  const PagedSequenceState *base_ = nullptr;
+  PagedSequenceState *candidate_ = nullptr;
+  std::span<compute::PagedArenaCommit> commits_;
+};
+
 // Synchronous borrow of one original candidate's frame cohort and tickets.
 // The episode retains append/native recovery. This edit has no executor,
 // completion, state version, callback or independent publication authority.
@@ -271,27 +317,13 @@ class PagedSequenceEdit final {
     HYLE_ASSIGN_OR_RETURN(commits_[bank], selected(bank).prepare_commit(std::move(delta)));
     return Status::Ok();
   }
-  Status preflight() const noexcept {
+  Result<PagedSequencePublication> prepare_publication() const noexcept {
     if (&base_ == &candidate_ || candidate_.frames.size() != base_.frames.size() ||
         commits_.size() != base_.frames.size())
-      return Status::InvalidArgument("paged publication requires its complete original bank cohort");
+      return std::unexpected(Status::InvalidArgument("paged publication requires its complete original bank cohort"));
     for (std::size_t bank = 0; bank < commits_.size(); ++bank)
       HYLE_RETURN_IF_ERROR(selected(bank).validate_commit(commits_[bank]));
-    return Status::Ok();
-  }
-  // Call immediately after successful whole-cohort preflight, with no frame
-  // control interleaved. Moving a wrapper preserves the original ticket base.
-  void publish(PagedSequenceState *previous = nullptr) noexcept {
-    HYLE_FATAL_ASSERT(candidate_.frames.size() == base_.frames.size() && commits_.size() == base_.frames.size());
-    for (std::size_t bank = 0; bank < commits_.size(); ++bank) {
-      auto &destination = candidate_.frames[bank];
-      if (!destination.valid()) {
-        HYLE_FATAL_ASSERT(previous == &base_ && previous->frames[bank].valid() && !previous->frames[bank].sealed());
-        destination = std::move(previous->frames[bank]);
-      }
-      const auto status = destination.commit(std::move(commits_[bank]));
-      HYLE_FATAL_ASSERT(status.ok());
-    }
+    return PagedSequencePublication(base_, candidate_, commits_);
   }
 
  private:

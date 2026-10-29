@@ -1053,6 +1053,9 @@ struct StepMember final {
   std::unique_ptr<cache::State> next{};
   hyle::container::SmallVector<c::PagedArenaCommit, 32> target_updates{};
   std::array<c::PagedArenaCommit, 2> draft_updates{};
+  // Armed only after members and ticket storage stop moving, then consumed
+  // before publication recycles their original candidate or previous state.
+  inference::PagedSequencePublication target_publication, draft_publication;
   hyle::container::SmallVector<c::PagedPageAppender, 32> next_tails{};
   std::array<c::PagedPageAppender, 2> next_draft_tails{};
   c::BatchLayoutVersion layout{};
@@ -1077,15 +1080,19 @@ struct StepMember final {
     return {base->draft->paged, next->draft->paged, draft_updates};
   }
   void preflight_frames() {
-    check(target_edit().preflight());
-    if (draft_updates[0].valid() || draft_updates[1].valid()) check(draft_edit().preflight());
+    target_publication = {}; draft_publication = {};
+    target_publication = take(target_edit().prepare_publication());
+    if (draft_updates[0].valid() || draft_updates[1].valid())
+      draft_publication = take(draft_edit().prepare_publication());
   }
   void publish_frames(cache::State *previous, cache::State &candidate) noexcept {
-    inference::PagedSequenceEdit{base->paged, candidate.paged,
-        {target_updates.data(), target_updates.size()}}.publish(previous ? &previous->paged : nullptr);
-    if (draft_updates[0].valid() || draft_updates[1].valid())
-      inference::PagedSequenceEdit{base->draft->paged, candidate.draft->paged, draft_updates}
-          .publish(previous ? &previous->draft->paged : nullptr);
+    HYLE_FATAL_ASSERT(target_publication.candidate() == &candidate.paged);
+    target_publication.publish(previous ? &previous->paged : nullptr);
+    if (draft_publication.valid()) {
+      HYLE_FATAL_ASSERT(candidate.draft && draft_publication.candidate() == &candidate.draft->paged &&
+          (!previous || previous->draft));
+      draft_publication.publish(previous ? &previous->draft->paged : nullptr);
+    }
   }
 };
 // Typed views of one original Graph submission. They contain no executor,
@@ -1133,6 +1140,7 @@ struct StepState final {
   hyle::Result<bool> try_abort() noexcept {
     return execution.recover([&]() noexcept {
       for (auto &member : members) {
+        member.target_publication = {}; member.draft_publication = {};
         member.owner_state->recycle_candidate(std::move(member.next)); member.base = nullptr;
       }
       phase = nullptr;
@@ -3151,8 +3159,8 @@ public:
           guard.execution.append_transactions().subspan(draft_bank, 2), 2, 1,
           input_scratch.paged_appends, finish_at));
       check(program.io.release_inputs(program.carrier));
-      check(edit.preflight());
-      edit.publish(&work.state.paged);
+      auto publication = take(edit.prepare_publication());
+      publication.publish(&work.state.paged);
       work.tails = std::move(tails); work.state = std::move(next);
       for (auto &append : guard.execution.appends) append = {};
       for (auto &bank : guard.execution.dirty) bank.clear();
