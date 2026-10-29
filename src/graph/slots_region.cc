@@ -27,14 +27,14 @@ bool same_storage(mem::ConstBufferView a, mem::ConstBufferView b) noexcept {
   return a.resource() == b.resource() && a.native_handle() == b.native_handle() &&
       a.offset() == b.offset() && a.size() == b.size();
 }
+bool same_carrier(c::ConstTensorView a, c::ConstTensorView b) noexcept {
+  return a.valid() == b.valid() && (!a.valid() ||
+      (a.description() == b.description() && same_storage(a.storage(), b.storage())));
+}
 bool same_configuration(const detail::StoreConfiguration &a,
     const detail::StoreConfiguration &b) noexcept {
-  const auto same = [](c::ConstTensorView x, c::ConstTensorView y) noexcept {
-    return x.valid() == y.valid() && (!x.valid() ||
-        (x.description() == y.description() && same_storage(x.storage(), y.storage())));
-  };
-  return same(a.capacity, b.capacity) && same(a.source_indices, b.source_indices) &&
-      same(a.destination_indices, b.destination_indices);
+  return same_carrier(a.capacity, b.capacity) && same_carrier(a.source_indices, b.source_indices) &&
+      same_carrier(a.destination_indices, b.destination_indices);
 }
 
 struct Find final {
@@ -1247,8 +1247,13 @@ Status bind(Invocation &invocation, const Graph &graph,
         HYLE_ASSIGN_OR_RETURN(configuration.source_indices,
             c::ConstTensorView::create(source_description, source_view));
       }
+      // The capacity can be a hidden native Store argument. Both ID carriers
+      // are original Graph input ports: their ordinary rebind gate revokes
+      // launch authority and checks actual capture keys/private contracts.
+      // Do not destroy those keys merely because an imported source comes
+      // from another producer. Full source/ID authority is still validated.
       if (p.permission_changes_preserve_commands &&
-          !same_configuration(configuration, s.last_configuration))
+          !same_carrier(configuration.capacity, s.last_configuration.capacity))
         HYLE_RETURN_IF_ERROR(gd::RegionAccess::invalidate_commands(invocation, candidate.found.proof.step));
       // Mark before calling: a rejecting cold hook may have partially changed
       // borrowed views, so rollback clears it too.

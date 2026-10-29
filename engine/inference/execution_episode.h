@@ -157,7 +157,7 @@ class ExecutionEpisode final {
     }
     if (sources) {
       if (sources->submission.valid() && sources.use_count() != 1) return false;
-      sources->token = {};
+      sources->clear_outputs();
       if (sources->submission.valid()) {
         const auto detached = sources->submission.detach();
         if (detached.IsUnavailable() || detached.IsFailedPrecondition()) return false;

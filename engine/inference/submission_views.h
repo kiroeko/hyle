@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+#include <cstddef>
 #include <expected>
 #include <span>
 #include <utility>
@@ -19,6 +21,14 @@ struct SubmissionViews {
   graph::detail::OutputSource token;
   std::vector<graph::detail::StoreSource> states;
   std::vector<graph::batch::detail::PagedAppendSource> pages;
+  std::vector<graph::detail::OutputSource> extra_outputs;
+
+  // Borrowed only for capture. Each pool proves its own complete original
+  // writer; all outputs share this submission's actual storage owner.
+  struct OutputCapture final {
+    graph::ValueId output;
+    const compute::LeasePool &pool;
+  };
 
   // Cold metadata only. Keep the original reserve and preparation order;
   // allocation exceptions and partially prepared views retain their meaning.
@@ -26,11 +36,12 @@ struct SubmissionViews {
       std::span<const graph::slots::SourceBinding> stores,
       std::span<const graph::NodeId> appends,
       const compute::StorageOwner &storage,
-      const compute::ResourceBudget &budget) {
-    if (submission.valid() || token.valid() || !states.empty() || !pages.empty())
+      const compute::ResourceBudget &budget, std::size_t extra_output_count = 0) {
+    if (submission.valid() || token.valid() || !states.empty() || !pages.empty() || !extra_outputs.empty())
       return Status::FailedPrecondition("submission view preparation requires a fresh original bundle");
     states.reserve(stores.size());
     pages.reserve(appends.size());
+    extra_outputs.resize(extra_output_count);
     for (const auto &store : stores) {
       HYLE_ASSIGN_OR_RETURN(auto view, graph::detail::StoreSource::prepare(
           run, store.store, storage, {.resource_budget = budget}));
@@ -47,8 +58,22 @@ struct SubmissionViews {
   Result<bool> capture(graph::Invocation &run, compute::Completion &completion,
       graph::ValueId token_output, const compute::StorageOwner &storage,
       const compute::LeasePool &token_pool, bool optional = false) noexcept {
+    const std::array outputs{OutputCapture{token_output, token_pool}};
+    return capture_outputs(run, completion, outputs, storage, optional);
+  }
+
+  // The first output occupies token; the rest occupy the fixed cold slots.
+  // Capture never grows the cohort or copies an owner/pool descriptor.
+  Result<bool> capture_outputs(graph::Invocation &run, compute::Completion &completion,
+      std::span<const OutputCapture> outputs, const compute::StorageOwner &storage,
+      bool optional = false) noexcept {
     if (submission.valid() || token.valid())
       return std::unexpected(Status::FailedPrecondition("submission views already captured their original producer"));
+    for (const auto &output : extra_outputs)
+      if (output.valid())
+        return std::unexpected(Status::FailedPrecondition("submission views already captured an extra output"));
+    if (outputs.empty() || outputs.size() - 1 != extra_outputs.size())
+      return std::unexpected(Status::InvalidArgument("output capture count differs from its prepared submission views"));
     auto exported = graph::detail::SubmissionSource::create(run, std::move(completion), storage);
     if (!exported) {
       const auto &error = exported.error();
@@ -60,10 +85,29 @@ struct SubmissionViews {
     }
     submission = std::move(*exported);
     HYLE_ASSIGN_OR_RETURN(token, graph::detail::OutputSource::create(
-        submission, token_output, storage, token_pool));
+        submission, outputs[0].output, storage, outputs[0].pool));
+    for (std::size_t i = 0; i < extra_outputs.size(); ++i) {
+      HYLE_ASSIGN_OR_RETURN(extra_outputs[i], graph::detail::OutputSource::create(
+          submission, outputs[i + 1].output, storage, outputs[i + 1].pool));
+    }
     for (auto &state : states) HYLE_RETURN_IF_ERROR(state.capture(submission));
     for (auto &page : pages) HYLE_RETURN_IF_ERROR(page.capture(submission));
     return true;
+  }
+
+  // Only whole-producer success and actual retirement may publish these
+  // original writers. A partial failure leaves every remaining view intact.
+  Status detach_outputs() noexcept {
+    HYLE_RETURN_IF_ERROR(token.detach());
+    for (auto &output : extra_outputs) HYLE_RETURN_IF_ERROR(output.detach());
+    return Status::Ok();
+  }
+
+  // Recovery drops all tensor borrows before SubmissionSource::detach().
+  // Keep the cold cohort's size and capacity; this does not prove retirement.
+  void clear_outputs() noexcept {
+    token = {};
+    for (auto &output : extra_outputs) output = {};
   }
 };
 

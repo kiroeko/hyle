@@ -1,0 +1,630 @@
+{
+  "schema": "hyle.inference-mtp-k1-source.v1",
+  "status": "PASS_FINITE_SCOPE",
+  "final_run": "refinement3\\runs\\relay-cuda",
+  "final_ready": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-k1-source-20261029\\refinement3\\ready-tiny.json",
+    "bytes": 111937,
+    "sha256": "f31b0d7a6724edbadb5473c44f01fc6cd0c43505f51bac3bf1696edde8f8341b"
+  },
+  "successes": [
+    {
+      "directory": "refinement2\\runs\\relay-cpu",
+      "process": {
+        "pid": 48428,
+        "exit": 0,
+        "started": 1793233382.1613145,
+        "seconds": 0.7266778945922852,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-k1-source-20261029\\refinement2\\ready-tiny.json",
+        "bytes": 111941,
+        "sha256": "1b8ee3df0e198e1ccc13633690916760749eb3b6473a18a32b941ea03b8794f4"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-k1-source-20261029\\refinement2\\bin\\tiny.exe",
+        "bytes": 144600064,
+        "sha256": "59595ce9edbdb8c8136769b42216f84ad6a22d594a068a464a2a2cc6e7ad273e"
+      },
+      "case": "mtp-relay",
+      "backend": "cpu",
+      "state_comparisons": 6,
+      "byte_exact_state_comparisons": 6,
+      "actual_counts": {
+        "arms": 4,
+        "native_submissions": 26,
+        "source_submissions": 0,
+        "successor_submissions": 0,
+        "successor_discards": 0,
+        "priming_submissions": 0,
+        "cpu_optional_source_declines": 4
+      }
+    },
+    {
+      "directory": "refinement2\\runs\\mixed-cuda",
+      "process": {
+        "pid": 53392,
+        "exit": 0,
+        "started": 1793234281.3956957,
+        "seconds": 0.8806891441345215,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-k1-source-20261029\\refinement2\\ready-tiny.json",
+        "bytes": 111941,
+        "sha256": "1b8ee3df0e198e1ccc13633690916760749eb3b6473a18a32b941ea03b8794f4"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-k1-source-20261029\\refinement2\\bin\\tiny.exe",
+        "bytes": 144600064,
+        "sha256": "59595ce9edbdb8c8136769b42216f84ad6a22d594a068a464a2a2cc6e7ad273e"
+      },
+      "case": "mtp_mixed_lag",
+      "backend": "cuda",
+      "state_comparisons": 6,
+      "byte_exact_state_comparisons": 6,
+      "actual_counts": {
+        "target_submissions": 13,
+        "mixed_target_submissions": 2
+      }
+    },
+    {
+      "directory": "refinement3\\runs\\relay-cuda",
+      "process": {
+        "pid": 57920,
+        "exit": 0,
+        "started": 1793235528.1872125,
+        "seconds": 1.1080715656280518,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-k1-source-20261029\\refinement3\\ready-tiny.json",
+        "bytes": 111937,
+        "sha256": "f31b0d7a6724edbadb5473c44f01fc6cd0c43505f51bac3bf1696edde8f8341b"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-k1-source-20261029\\refinement3\\bin\\tiny.exe",
+        "bytes": 144600576,
+        "sha256": "174fb249d53653a4badc05e8b1eaf0c3353bb38e63611270147f5c552739a7d2"
+      },
+      "case": "mtp-relay",
+      "backend": "cuda",
+      "state_comparisons": 6,
+      "byte_exact_state_comparisons": 6,
+      "actual_counts": {
+        "arms": 4,
+        "native_submissions": 44,
+        "source_submissions": 4,
+        "successor_submissions": 4,
+        "successor_discards": 3,
+        "priming_submissions": 15,
+        "cpu_optional_source_declines": 0
+      }
+    }
+  ],
+  "state_comparisons": 18,
+  "byte_exact_state_comparisons": 18,
+  "actual_processes": [
+    {
+      "kind": "CXX",
+      "receipt": "diagnostic\\logs\\executable\\process.json",
+      "process": {
+        "pid": 50988,
+        "exit": 0,
+        "started": 1793233940.316165,
+        "seconds": 6.405147552490234,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "link",
+      "receipt": "diagnostic\\logs\\link\\process.json",
+      "process": {
+        "pid": 60044,
+        "exit": 0,
+        "started": 1793233953.9206269,
+        "seconds": 1.8653404712677002,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "native",
+      "receipt": "diagnostic\\run-cuda\\process.json",
+      "process": {
+        "pid": 36936,
+        "exit": 1,
+        "started": 1793233964.3114526,
+        "seconds": 1.1700961589813232,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "CXX",
+      "receipt": "diagnostic2\\logs\\executable\\process.json",
+      "process": {
+        "pid": 60588,
+        "exit": 0,
+        "started": 1793234325.928733,
+        "seconds": 6.517160892486572,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "link",
+      "receipt": "diagnostic2\\logs\\link\\process.json",
+      "process": {
+        "pid": 49460,
+        "exit": 0,
+        "started": 1793234342.5687144,
+        "seconds": 1.9406752586364746,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "native",
+      "receipt": "diagnostic2\\run-cuda\\process.json",
+      "process": {
+        "pid": 60092,
+        "exit": 1,
+        "started": 1793234357.2204027,
+        "seconds": 1.1654765605926514,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "link",
+      "receipt": "fix\\logs\\link\\process.json",
+      "process": {
+        "pid": 21876,
+        "exit": 0,
+        "started": 1793235077.8057349,
+        "seconds": 1.8806343078613281,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "CXX",
+      "receipt": "fix\\logs\\slots-region\\process.json",
+      "process": {
+        "pid": 17616,
+        "exit": 0,
+        "started": 1793235067.2951052,
+        "seconds": 2.8452041149139404,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "native",
+      "receipt": "fix\\run-cuda\\process.json",
+      "process": {
+        "pid": 44332,
+        "exit": 1,
+        "started": 1793235086.7140813,
+        "seconds": 1.1387577056884766,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "CXX",
+      "receipt": "logs\\compile-tiny\\process.json",
+      "process": {
+        "pid": 44284,
+        "exit": 2,
+        "started": 1793232771.9530756,
+        "seconds": 3.9146294593811035,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "CXX",
+      "receipt": "refinement\\logs\\compile-tiny\\process.json",
+      "process": {
+        "pid": 28236,
+        "exit": 0,
+        "started": 1793232838.9620855,
+        "seconds": 67.18676805496216,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "link",
+      "receipt": "refinement\\logs\\link-tiny\\process.json",
+      "process": {
+        "pid": 56976,
+        "exit": 0,
+        "started": 1793232921.1715002,
+        "seconds": 1.9047009944915771,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "native",
+      "receipt": "refinement\\runs\\relay-cpu\\process.json",
+      "process": {
+        "pid": 56616,
+        "exit": 1,
+        "started": 1793232929.1434884,
+        "seconds": 0.8663148880004883,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "native",
+      "receipt": "refinement\\runs\\relay-cuda\\process.json",
+      "process": {
+        "pid": 7836,
+        "exit": 1,
+        "started": 1793232975.9104068,
+        "seconds": 0.7263388633728027,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "CXX",
+      "receipt": "refinement2\\logs\\compile-tiny\\process.json",
+      "process": {
+        "pid": 47960,
+        "exit": 0,
+        "started": 1793233264.9850101,
+        "seconds": 75.95509362220764,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "link",
+      "receipt": "refinement2\\logs\\link-tiny\\process.json",
+      "process": {
+        "pid": 60232,
+        "exit": 0,
+        "started": 1793233369.7071526,
+        "seconds": 1.9260718822479248,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "native",
+      "receipt": "refinement2\\runs\\mixed-cuda\\process.json",
+      "process": {
+        "pid": 53392,
+        "exit": 0,
+        "started": 1793234281.3956957,
+        "seconds": 0.8806891441345215,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "native",
+      "receipt": "refinement2\\runs\\relay-cpu\\process.json",
+      "process": {
+        "pid": 48428,
+        "exit": 0,
+        "started": 1793233382.1613145,
+        "seconds": 0.7266778945922852,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "native",
+      "receipt": "refinement2\\runs\\relay-cuda\\process.json",
+      "process": {
+        "pid": 38408,
+        "exit": 1,
+        "started": 1793233389.035212,
+        "seconds": 0.77764892578125,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "CXX",
+      "receipt": "refinement3\\logs\\compile-tiny\\process.json",
+      "process": {
+        "pid": 58828,
+        "exit": 0,
+        "started": 1793235440.2164848,
+        "seconds": 66.03056693077087,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "link",
+      "receipt": "refinement3\\logs\\link-tiny\\process.json",
+      "process": {
+        "pid": 32016,
+        "exit": 0,
+        "started": 1793235525.2879944,
+        "seconds": 1.8705692291259766,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "native",
+      "receipt": "refinement3\\runs\\relay-cuda\\process.json",
+      "process": {
+        "pid": 57920,
+        "exit": 0,
+        "started": 1793235528.1872125,
+        "seconds": 1.1080715656280518,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    }
+  ],
+  "counts": {
+    "CXX": 7,
+    "link": 6,
+    "native": 9
+  },
+  "failed_processes": [
+    {
+      "kind": "native",
+      "receipt": "diagnostic\\run-cuda\\process.json",
+      "process": {
+        "pid": 36936,
+        "exit": 1,
+        "started": 1793233964.3114526,
+        "seconds": 1.1700961589813232,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "native",
+      "receipt": "diagnostic2\\run-cuda\\process.json",
+      "process": {
+        "pid": 60092,
+        "exit": 1,
+        "started": 1793234357.2204027,
+        "seconds": 1.1654765605926514,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "native",
+      "receipt": "fix\\run-cuda\\process.json",
+      "process": {
+        "pid": 44332,
+        "exit": 1,
+        "started": 1793235086.7140813,
+        "seconds": 1.1387577056884766,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "CXX",
+      "receipt": "logs\\compile-tiny\\process.json",
+      "process": {
+        "pid": 44284,
+        "exit": 2,
+        "started": 1793232771.9530756,
+        "seconds": 3.9146294593811035,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "native",
+      "receipt": "refinement\\runs\\relay-cpu\\process.json",
+      "process": {
+        "pid": 56616,
+        "exit": 1,
+        "started": 1793232929.1434884,
+        "seconds": 0.8663148880004883,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "native",
+      "receipt": "refinement\\runs\\relay-cuda\\process.json",
+      "process": {
+        "pid": 7836,
+        "exit": 1,
+        "started": 1793232975.9104068,
+        "seconds": 0.7263388633728027,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "kind": "native",
+      "receipt": "refinement2\\runs\\relay-cuda\\process.json",
+      "process": {
+        "pid": 38408,
+        "exit": 1,
+        "started": 1793233389.035212,
+        "seconds": 0.77764892578125,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    }
+  ],
+  "compiled": [
+    {
+      "receipt": "diagnostic\\compile\\executable\\compiled.json",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-k1-source-20261029\\diagnostic\\source\\executable.cc",
+        "bytes": 506301,
+        "sha256": "5247b030444d8fd58701b3b8a23db17265ad72f3b9147803ed15d007b1fbb315"
+      },
+      "project_dependencies": 86,
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-k1-source-20261029\\diagnostic\\compile\\executable\\unit.obj",
+        "bytes": 5283640,
+        "sha256": "9516cd51649732c0d9412c1938a1142912e5858aa332ee97e49a6c2b8630ef99"
+      },
+      "process": {
+        "pid": 50988,
+        "exit": 0,
+        "started": 1793233940.316165,
+        "seconds": 6.405147552490234,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "receipt": "diagnostic2\\compile\\executable\\compiled.json",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-k1-source-20261029\\diagnostic2\\source\\executable.cc",
+        "bytes": 510315,
+        "sha256": "91b0fa58316e0b40413e9df0317576e481e5f47fbce08b780cc04d456790a29d"
+      },
+      "project_dependencies": 86,
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-k1-source-20261029\\diagnostic2\\compile\\executable\\unit.obj",
+        "bytes": 5289034,
+        "sha256": "eea28b3573a9addf26d3a946aa308ae3121d9a847af821d7e2cf4f31c2ea10d3"
+      },
+      "process": {
+        "pid": 60588,
+        "exit": 0,
+        "started": 1793234325.928733,
+        "seconds": 6.517160892486572,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "receipt": "fix\\compile\\slots-region\\compiled.json",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\slots_region.cc",
+        "bytes": 81205,
+        "sha256": "d2e3cb4ff9160ee80c9d5aa926712d02accbc52c008b05c5e3ca39a5db6673fc"
+      },
+      "project_dependencies": 80,
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-k1-source-20261029\\fix\\compile\\slots-region\\unit.obj",
+        "bytes": 1583973,
+        "sha256": "6b75f982922d62c8ed39ea2f74b449ffef82d1c65e17e4f9ebdaf45dbf017e1e"
+      },
+      "process": {
+        "pid": 17616,
+        "exit": 0,
+        "started": 1793235067.2951052,
+        "seconds": 2.8452041149139404,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "receipt": "refinement\\compile\\tiny\\compiled.json",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+        "bytes": 8224,
+        "sha256": "e4da5573c7bca87d60a442a76d72a157c9925024558d61e19f26f4a92303c28b"
+      },
+      "project_dependencies": 225,
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-k1-source-20261029\\refinement\\compile\\tiny\\unit.obj",
+        "bytes": 50218258,
+        "sha256": "802794a6bb2280f19d33fe4200c2162c64baa18ce7908ab3650361ca16aa7546"
+      },
+      "process": {
+        "pid": 28236,
+        "exit": 0,
+        "started": 1793232838.9620855,
+        "seconds": 67.18676805496216,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "receipt": "refinement2\\compile\\tiny\\compiled.json",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+        "bytes": 8224,
+        "sha256": "e4da5573c7bca87d60a442a76d72a157c9925024558d61e19f26f4a92303c28b"
+      },
+      "project_dependencies": 225,
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-k1-source-20261029\\refinement2\\compile\\tiny\\unit.obj",
+        "bytes": 50223902,
+        "sha256": "5083a25c82260713b6b199178ea3253684041da540259f91bebc51b3db9d2e09"
+      },
+      "process": {
+        "pid": 47960,
+        "exit": 0,
+        "started": 1793233264.9850101,
+        "seconds": 75.95509362220764,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "receipt": "refinement3\\compile\\tiny\\compiled.json",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+        "bytes": 8224,
+        "sha256": "e4da5573c7bca87d60a442a76d72a157c9925024558d61e19f26f4a92303c28b"
+      },
+      "project_dependencies": 225,
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-k1-source-20261029\\refinement3\\compile\\tiny\\unit.obj",
+        "bytes": 50228223,
+        "sha256": "e0f315a46dae97e4161bc73a3bf62b4b30261b9d6d00d99fac1d6b204cd10f3c"
+      },
+      "process": {
+        "pid": 58828,
+        "exit": 0,
+        "started": 1793235440.2164848,
+        "seconds": 66.03056693077087,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    }
+  ],
+  "initial_SDK_input_roster_identity_only": 227,
+  "sources": {
+    "version_references": 2631,
+    "unique_content": 276
+  },
+  "limits": [
+    "Finite synthetic GA R1 greedy K1 full/partial/quota/cancel consumers; CPU proves typed Source decline and serial continuation only.",
+    "CUDA priming and submitted successor facts are the actual consumer report; no simultaneous-native-inflight claim.",
+    "Preserve every failed attempt and diagnostic; no natural RequestLoop K1 or continuous MTP pipeline completion claim.",
+    "No sampled K1, model-EOS journey, Apple/Vulkan, quality or performance conclusion; mixed-lag CUDA is a separate finite regression."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-mtp-k1-source-2026-10-29.zip",
+    "bytes": 2402840,
+    "sha256": "7753bfee37e37f68172bf4e415e79243f3bd03508be28455471d520af0981f07",
+    "members": 454,
+    "crc_and_every_member_sha256_readback": true
+  },
+  "cleanup": {
+    "deleted_files": 23,
+    "deleted_logical_bytes": 1027483310,
+    "archive_sha256": "7753bfee37e37f68172bf4e415e79243f3bd03508be28455471d520af0981f07",
+    "source_logs_and_model_data_deleted": false,
+    "retained_sdk_inputs": 227,
+    "retained_consumer_objects": 1,
+    "method": "Exact bounded targets written to repository test.ps1, checked against archived evidence and protected input identities, then executed.",
+    "physical_free_space_claim": false
+  }
+}

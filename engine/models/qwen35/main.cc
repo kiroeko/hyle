@@ -899,6 +899,7 @@ struct FamilyPorts {
   std::vector<g::slots::SourceBinding> state_sources;
   V draft_key_port, draft_value_port, draft_metadata_port, draft_position_port;
   V carry_input_port, prior_input_port, catchup_token_port, draft_id_port;
+  V successor_token_port, successor_catchup_port;
   V draft_hidden_select_port, draft_token_select_port, draft_last_ids_port;
   StatePorts hidden_state;
   g::NodeId draft_attention_node;
@@ -941,6 +942,7 @@ struct PhaseIo final {
   std::vector<std::int32_t> draft_hidden_indices, draft_token_indices;
   inference::ProgramIo bindings;
   inference::ProgramIo::Readback next_id, draft_id, sampling_valid, sampling_accept;
+  inference::ProgramIo::Readback successor_token, successor_catchup;
   std::vector<std::uint8_t> sampling_valid_values, sampling_accept_values;
   std::vector<float> sampling_scratch;
   std::vector<std::int32_t> draft_ids, prefix_candidates;
@@ -1086,9 +1088,14 @@ struct StepSources final : inference::SubmissionViews {
     std::weak_ptr<Session> session;
     const cache::State *candidate = nullptr;
     std::uint64_t epoch = 0;
+    std::size_t length = 0, draft_frontier = 0;
   };
   std::vector<Boundary> boundaries;
   std::vector<c::ReadLease> published_states;
+  // K1 keeps the producer's full two-prefix publication rights in states.
+  // These independent original final-prefix views serve the next Gather.
+  std::vector<g::detail::StoreSource> successor_states;
+  bool mtp_full_candidate = false;
 };
 using IncomingStepSources = inference::IncomingExecutionSources<StepSources>;
 struct StepState final {
@@ -2200,8 +2207,13 @@ public:
       const auto gathered = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
           {port.pool, port.source_ids}, r.dense_spec(precision.activation_type(), {source_rows, f(hidden)}), &port.gather);
       // One fixed pool and private IDs; the original ready leases still prove
-      // exactly these rows. Source order is [all carries, all priors at lag1].
-      definition.carry_input_port = r.slice(gathered, 0, f(0), batch);
+      // exactly these rows. Batched/packed order is [all carries, all priors].
+      const bool chronological = requests == 1 && role == GraphRole::kMtpCatchupRound &&
+          packing == RowPacking::kRectangular;
+      // A K1 producer stores [prior, carry]. The lag1 R1 reader uses that same
+      // real ID order, in ready and imported modes; only the graph interprets
+      // the two chronological rows. No source ticket/ID is manufactured.
+      definition.carry_input_port = r.slice(gathered, 0, chronological ? batch : f(0), batch);
       const auto draft_rows = is_mtp_prefill(role)
           ? (draft_lag(role) ? D(take(r.builder.dimension_sum(t, f(1)))) : t)
           : f(static_cast<std::int64_t>(draft_lag(role) + 1));
@@ -2217,7 +2229,7 @@ public:
       definition.draft_position_port = r.input(requests == 1 ? r.dense_spec(Type::kInt32, {draft_rows})
           : r.dense_spec(Type::kInt32, {batch, draft_rows}));
       if (draft_lag(role)) {
-        definition.prior_input_port = r.slice(gathered, 0, batch, batch);
+        definition.prior_input_port = r.slice(gathered, 0, chronological ? f(0) : batch, batch);
         definition.catchup_token_port = r.input(r.dense_spec(Type::kInt32, {batch}));
       }
       if (drafts_token(role) || !is_mtp_prefill(role)) {
@@ -2605,6 +2617,15 @@ public:
     }
     r.publish(definition.hidden_port);
     if (completion == TextCompletion::kEmitNext) { r.publish(definition.logits_port); r.publish(definition.id_port); }
+    if (drafts_token(role) && requests == 1 && packing == RowPacking::kRectangular &&
+        !selected_sampler.enabled && selected_sampler.modifiers.empty() &&
+        cache_plan.in_flight_batches >= 2 && !scheduler) {
+      // Two complete, independently owned I32[1] outputs. OutputSource cannot
+      // grant a fabricated subview of the two-row target-ID writer to B.
+      definition.successor_token_port = r.copy(r.reshape(r.slice(definition.id_port, 0, f(1), f(1)), {f(1)}));
+      definition.successor_catchup_port = r.copy(r.reshape(definition.draft_id_port, {f(1)}));
+      r.publish(definition.successor_token_port); r.publish(definition.successor_catchup_port);
+    }
     definition.graph = take(std::move(r.builder).finish());
     definition.literals = std::move(assembly.literals);
     definition.specs = std::move(r.specs);
@@ -3707,9 +3728,13 @@ public:
     auto &phase = *result;
     phase.imported_sources = imported_sources;
     if (imported_sources) {
-      if (tokens != 1 || diagnostic || role != GraphRole::kText || completion != TextCompletion::kEmitNext ||
-          cache_plan.draft_cache || cache_plan.in_flight_batches < 2 || scheduler)
-        throw std::runtime_error("imported decode carriers require ordinary T1 and two candidate depths");
+      const bool ordinary = tokens == 1 && role == GraphRole::kText && !cache_plan.draft_cache;
+      const bool mtp = tokens == 2 && requests == 1 && role == GraphRole::kMtpCatchupRound &&
+          cache_plan.draft_cache && definition.successor_token_port &&
+          !selected_sampler.enabled && selected_sampler.modifiers.empty() && packing == RowPacking::kRectangular;
+      if ((!ordinary && !mtp) || diagnostic || completion != TextCompletion::kEmitNext ||
+          cache_plan.in_flight_batches < 2 || scheduler)
+        throw std::runtime_error("imported decode carriers require a complete supported predecessor and two candidate depths");
       phase.slot_count = execution_slot_count;
     }
     phase.query_rows = tokens;
@@ -3839,7 +3864,8 @@ public:
       if (diagnostic) for (const auto *output : phase.probe_facts)
         fixed_count += output && output->caller_owned();
       const auto readback_count = bool(phase.sampling_valid_port) + bool(phase.sampling_accept_port) +
-          (completion == TextCompletion::kEmitNext) + drafts_token(role);
+          (completion == TextCompletion::kEmitNext) + drafts_token(role) +
+          bool(phase.successor_token_port) + bool(phase.successor_catchup_port);
       check(io.bindings.prepare(phase.child->compiled, fixed_count, 0, readback_count, 0));
       // Register once in the original cold installation order. Tensor owners
       // stay here; each readback's only owner moves into the same shared IO.
@@ -3857,6 +3883,10 @@ public:
       if (io.logits.caller_owned()) check(io.bindings.add_fixed_output(phase.logits_port, io.logits.view()));
       if (completion == TextCompletion::kEmitNext)
         io.next_id = take(io.bindings.add_readback(phase.id_port, execution, allocation_budget));
+      if (phase.successor_token_port)
+        io.successor_token = take(io.bindings.add_readback(phase.successor_token_port, execution, allocation_budget));
+      if (phase.successor_catchup_port)
+        io.successor_catchup = take(io.bindings.add_readback(phase.successor_catchup_port, execution, allocation_budget));
       if (io.final_hidden.caller_owned()) check(io.bindings.add_fixed_output(phase.hidden_port, io.final_hidden.view()));
       if (has_mtp(role)) {
         check(io.bindings.add_fixed(phase.draft_position_port, io.draft_positions.read()));
@@ -3958,9 +3988,11 @@ public:
     prepare_execution(capacities, requests, role, completion, sampling_index, RowPacking::kPrefill);
   }
 
-  void prepare_relay_execution(std::size_t requests = 1, std::size_t sampling_index = 0) {
+  void prepare_relay_execution(std::size_t requests = 1, std::size_t sampling_index = 0,
+      GraphRole role = GraphRole::kText) {
     if (active_step || carrier_borrowed) throw std::runtime_error("relay carrier preparation requires an idle model");
-    auto &phase = prepare_child(1, false, requests, GraphRole::kText, TextCompletion::kEmitNext, sampling_index, true);
+    auto &phase = prepare_child(drafts_token(role) ? 2 : 1, false, requests, role,
+        TextCompletion::kEmitNext, sampling_index, true);
     for (std::size_t slot = 0; slot < phase.slot_count; ++slot) initialize_slot(phase, slot);
   }
 
@@ -4002,8 +4034,16 @@ public:
           [&](const auto &next) { return next.session == member.session; }) ? successor_step.get() : nullptr;
     }
     active_step = std::move(successor_step);
-    if (active_step) for (auto &member : active_step->members) {
-      if (member.session->head.get() == member.base && member.session->head.epoch() == member.base_epoch)
+    if (active_step) for (std::size_t j = 0; j < active_step->members.size(); ++j) {
+      auto &member = active_step->members[j];
+      const auto *source = active_step->execution.incoming ? active_step->execution.incoming->owner.get() : nullptr;
+      const auto *boundary = source ? &source->boundaries[j] : nullptr;
+      const bool full_boundary = !boundary || (member.session->head && member.session->head->length == boundary->length &&
+          (!source->mtp_full_candidate || (member.session->head->draft &&
+              member.session->head->draft->frontier == boundary->draft_frontier &&
+              member.session->head->draft->lag == 1 && !inference::request_token_stopped(
+                  member.session->head->next_id, model_eos_tokens, member.stop_policy))));
+      if (member.session->head.get() == member.base && member.session->head.epoch() == member.base_epoch && full_boundary)
         member.first_input = member.session->head->next_id;
       else active_step->cancelled = true;
     }
@@ -4080,6 +4120,7 @@ public:
     auto &phase = *step.phase;
     auto &io = phase.io[step.state_slot];
     const auto width = step.members.size();
+    const bool relay = bool(step.execution.incoming);
     const bool compact_draft = packs_draft(phase.family->packing);
     const auto physical_rows = cache::multiply(width, is_mtp_prefill(role)
         ? cache::add(phase.query_rows, draft_lag(role)) : draft_lag(role) + 1);
@@ -4165,7 +4206,7 @@ public:
       const auto extent = take(inference::append_extent(old.frontier, rows, capacity, cache::Plan::page_rows));
       next.frontier = extent.after_rows;
       const auto prefix_pages = extent.prefix_pages, count = extent.page_count, dirty_count = extent.dirty_count;
-      bool reuse = inference::tail_compatible(session.draft_tails, old.pages.empty() ? 0 : old.pages.back().page(),
+      bool reuse = !relay && inference::tail_compatible(session.draft_tails, old.pages.empty() ? 0 : old.pages.back().page(),
           extent, session.draft_tail_epoch == member.base_epoch && !old.pages.empty());
       next.pages.reserve(count);
       for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
@@ -4179,8 +4220,8 @@ public:
       if (reuse) {
         next.pages.push_back(old.pages.back());
         for (std::size_t bank = 0; bank < 2; ++bank) step.execution.tails[draft_bank + bank].push_back(std::move(session.draft_tails[bank]));
-      } else session.draft_tails = {};
-      session.draft_tail_epoch = 0;
+      } else if (!relay) session.draft_tails = {};
+      if (!relay) session.draft_tail_epoch = 0;
       for (std::size_t page = reuse ? 1 : 0; page < dirty_count; ++page) {
         auto reservation = take(draft_inventory.acquire()); next.pages.push_back(std::move(reservation.reference));
         step.execution.dirty[draft_bank].push_back(std::move(reservation.keys[0])); step.execution.dirty[draft_bank + 1].push_back(std::move(reservation.values[0]));
@@ -4194,7 +4235,7 @@ public:
       next_last.push_back(static_cast<std::int32_t>((next.frontier - 1) % cache::Plan::page_rows + 1));
       const std::array<std::int32_t, 2> one_query{0, static_cast<std::int32_t>(rows)}, one_kv{0, static_cast<std::int32_t>(count)};
       member.draft_layout = take(attention_schema.version({one_query, one_kv, std::span(next_ids).subspan(begin, count), std::span(&next_last.back(), 1)}));
-      if (draft_lag(role)) {
+      if (draft_lag(role) && !relay) {
         catchups.push_back(compact_draft && !old.lag ? member.first_input : old.catchup_token);
       }
     }
@@ -4205,13 +4246,20 @@ public:
     std::vector<c::PagedArenaFootprint> sources(width);
     for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank) {
       auto &arena = bank == draft_bank ? draft_inventory.keys[0] : draft_inventory.values[0];
-      for (std::size_t j = 0; j < width; ++j) sources[j] = step.members[j].draft_source(bank == draft_bank);
-      const auto previous = width == 1 ? sources[0].layout() : old_layout;
-      step.execution.appends[bank] = take(g::batch::PagedAppendPages::create(arena, layout, previous, sources,
-          step.execution.dirty[bank], step.execution.tails[bank], {.resource_budget = cache_budget}));
+      if (relay) {
+        if (!step.execution.predecessor_episode) for (auto &member : step.members)
+          (void)member.draft_source(bank == draft_bank);
+        step.execution.appends[bank] = take(g::batch::detail::make_append_from_source(arena, layout,
+            step.execution.incoming->owner->pages[bank], step.execution.dirty[bank], {.resource_budget = cache_budget}));
+      } else {
+        for (std::size_t j = 0; j < width; ++j) sources[j] = step.members[j].draft_source(bank == draft_bank);
+        const auto previous = width == 1 ? sources[0].layout() : old_layout;
+        step.execution.appends[bank] = take(g::batch::PagedAppendPages::create(arena, layout, previous, sources,
+            step.execution.dirty[bank], step.execution.tails[bank], {.resource_budget = cache_budget}));
+      }
     }
     io.draft_positions.write<std::int32_t>(positions);
-    if (draft_lag(role)) io.catchup_token.write<std::int32_t>(catchups);
+    if (draft_lag(role) && !relay) io.catchup_token.write<std::int32_t>(catchups);
     if (packs_prefill(phase.family->packing) || compact_draft) {
       io.draft_hidden_select.write<std::int32_t>(io.draft_hidden_indices);
       if (draft_lag(role)) io.draft_token_select.write<std::int32_t>(io.draft_token_indices);
@@ -4406,19 +4454,27 @@ public:
                             std::size_t physical_rows = 0, RowPacking packing = RowPacking::kRectangular) {
     const auto predecessor = incoming && active_step ? active_step : std::shared_ptr<StepState>{};
     const bool relay = bool(incoming);
+    const bool mtp_relay = relay && incoming->mtp_full_candidate;
     if (!supports_completion(role, completion))
       throw std::runtime_error("state-only evaluation requires Text or teacher-forced MTP input");
     if (requests.empty() || requests.size() > cache_plan.active_sequences)
       throw std::runtime_error("batch width exceeds the configured active sequence capacity");
     if (!relay && (carrier_borrowed || active_step))
       throw std::runtime_error("the original execution carrier has not retired");
-    if (relay && (successor_step || scheduler || cache_plan.draft_cache || cache_plan.in_flight_batches < 2 ||
-        role != GraphRole::kText || completion != TextCompletion::kEmitNext || physical_slot >= execution_slot_count ||
+    const bool ordinary_relay = relay && !mtp_relay && !cache_plan.draft_cache && role == GraphRole::kText;
+    const bool complete_mtp_relay = mtp_relay && cache_plan.draft_cache && requests.size() == 1 &&
+        role == GraphRole::kMtpCatchupRound && (!predecessor || (predecessor->phase &&
+            drafts_token(predecessor->phase->family->role) && predecessor->input_tokens == 2)) &&
+        incoming->extra_outputs.size() == 1 && incoming->extra_outputs[0].valid() &&
+        incoming->successor_states.size() == geometry.recurrent_layers() * 2;
+    if (relay && (successor_step || scheduler || cache_plan.in_flight_batches < 2 ||
+        (!ordinary_relay && !complete_mtp_relay) || completion != TextCompletion::kEmitNext || physical_slot >= execution_slot_count ||
         incoming->boundaries.size() != requests.size() || !incoming->submission.valid() || !incoming->token.valid() ||
-        incoming->states.size() != geometry.recurrent_layers() * 2 || incoming->pages.size() != draft_bank ||
+        incoming->states.size() != geometry.recurrent_layers() * 2 + (mtp_relay ? 1u : 0u) ||
+        incoming->pages.size() != draft_bank + (mtp_relay ? 2u : 0u) ||
         (predecessor && (predecessor->execution.sources != incoming || predecessor->cancelled || !predecessor->submitted ||
             predecessor->members.size() != requests.size()))))
-      throw std::runtime_error("decode successor requires one exact complete ordinary predecessor and independent carriers");
+      throw std::runtime_error("decode successor requires one exact complete predecessor and independent carriers");
     if (!requests.front().session || requests.front().session->model_ != this)
       throw std::runtime_error("batch session belongs to another model");
     if (!requests.front().session->head)
@@ -4426,6 +4482,8 @@ public:
     const auto &prepared_sampling = requests.front().session->sampling_configuration();
     const auto sampling_index = prepared_sampling.index;
     const auto &selected_sampler = prepared_sampling.configuration;
+    if (mtp_relay && (selected_sampler.enabled || !selected_sampler.modifiers.empty()))
+      throw std::runtime_error("MTP full-candidate successor requires its original greedy sampling configuration");
     const auto supplied_tokens = relay ? std::size_t{1} : requests.front().ids.size();
     const bool packed_prefill = packs_prefill(packing), packed_verify = packs_verify(packing);
     const bool packed_target = packs_target(packing);
@@ -4488,7 +4546,10 @@ public:
         throw std::runtime_error("batch requires valid nonempty chunks within each remaining context");
       validate_mtp_snapshot(*session.head);
       if (has_mtp(role)) {
-        if ((compact_draft ? session.head->draft->lag > 1 : session.head->draft->lag != draft_lag(role)) ||
+        const bool lag_matches = mtp_relay ? base->draft && base->draft->frontier == incoming->boundaries[j].draft_frontier &&
+            base->length == incoming->boundaries[j].length && base->length - base->draft->frontier == 1 :
+            compact_draft ? session.head->draft->lag <= 1 : session.head->draft->lag == draft_lag(role);
+        if (!lag_matches ||
             (!is_mtp_prefill(role) && supplied_tokens != 1))
           throw std::runtime_error("MTP role, pending token or catch-up lag does not match its snapshot");
       }
@@ -4742,8 +4803,9 @@ public:
         if (!relay) for (std::size_t j = 0; j < width; ++j) {
           if (is_hidden) {
             if (has_mtp(role)) {
-              state_sources[j] = step.members[j].base->carry_hidden;
-              if (draft_lag(role)) state_sources[width + j] = compact_draft && !step.members[j].base->draft->lag
+              const bool chronological = width == 1 && role == GraphRole::kMtpCatchupRound && packing == RowPacking::kRectangular;
+              state_sources[chronological ? width + j : j] = step.members[j].base->carry_hidden;
+              if (draft_lag(role)) state_sources[chronological ? j : width + j] = compact_draft && !step.members[j].base->draft->lag
                   ? step.members[j].base->carry_hidden : step.members[j].base->prior_hidden;
             }
           } else {
@@ -4768,14 +4830,19 @@ public:
           std::span<const V>(phase.append_cache_inputs).first(append_banks), {.host_workspace = execution.staging()}));
       if (relay) {
         auto &input = *step.execution.incoming; auto &previous = *input.owner;
-        input.bindings.reserve(1 + previous.states.size() + previous.pages.size());
+        input.bindings.reserve(1 + previous.states.size() + previous.pages.size() + (mtp_relay ? 1u : 0u));
         input.bindings.push_back({phase.token_port, &previous.token});
-        const bool ready_states = previous.published_states.size() == previous.states.size() * width &&
+        if (mtp_relay) input.bindings.push_back({phase.catchup_token_port, &previous.extra_outputs[0]});
+        const bool ready_states = previous.published_states.size() == previous.states.size() * width + (mtp_relay ? 1u : 0u) &&
             std::ranges::all_of(previous.published_states, [](const auto &lease) { return lease.valid(); });
-        for (std::size_t bank = 0; bank < previous.states.size(); ++bank)
-          input.bindings.push_back(take(previous.states[bank].reader_binding(run, phase.state_graph(),
-              phase.state_sources[bank].store, ready_states ? std::span<const c::ReadLease>(previous.published_states).subspan(bank * width, width)
+        for (std::size_t bank = 0; bank < previous.states.size(); ++bank) {
+          const auto &source = mtp_relay && bank < previous.successor_states.size()
+              ? previous.successor_states[bank] : previous.states[bank];
+          const auto count = mtp_relay && bank == previous.successor_states.size() ? 2u : width;
+          input.bindings.push_back(take(source.reader_binding(run, phase.state_graph(),
+              phase.state_sources[bank].store, ready_states ? std::span<const c::ReadLease>(previous.published_states).subspan(bank * width, count)
                   : std::span<const c::ReadLease>{})));
+        }
         for (std::size_t bank = 0; bank < previous.pages.size(); ++bank)
           input.bindings.push_back(take(g::batch::detail::append_binding(run, phase.append_nodes[bank], previous.pages[bank])));
         for (auto value : phase.state_resource_ports) {
@@ -4819,8 +4886,8 @@ public:
   }
 
   StepState &prepare_relay_evaluations(std::span<const EvaluationRequest> requests,
-      std::shared_ptr<StepSources> previous, std::size_t physical_slot) {
-    prepare_evaluations(requests, nullptr, GraphRole::kText, TextCompletion::kEmitNext, std::move(previous), physical_slot);
+      std::shared_ptr<StepSources> previous, std::size_t physical_slot, GraphRole role = GraphRole::kText) {
+    prepare_evaluations(requests, nullptr, role, TextCompletion::kEmitNext, std::move(previous), physical_slot);
     return successor_step ? *successor_step : *active_step;
   }
 
@@ -4828,24 +4895,37 @@ public:
   // the same original views for a successor; no candidate head is exported and
   // the ordinary API remains on its existing direct Completion path.
   std::shared_ptr<StepSources> prepare_submission_sources(StepState &step) {
+    const bool mtp = step.phase && drafts_token(step.phase->family->role) && step.members.size() == 1 &&
+        step.phase->successor_token_port && step.phase->successor_catchup_port;
     if (!step.prepared || step.submitted || step.cancelled || step.execution.sources || !step.phase ||
-        step.phase->family->role != GraphRole::kText || cache_plan.draft_cache ||
+        (!mtp && (step.phase->family->role != GraphRole::kText || cache_plan.draft_cache)) ||
         step.phase->family->completion != TextCompletion::kEmitNext || scheduler)
-      throw std::runtime_error("submission views require one prepared direct ordinary episode");
+      throw std::runtime_error("submission views require one complete supported prepared episode");
     auto &phase = *step.phase;
     const auto storage = execution.storage_owner();
     if (!storage || phase.carriers[step.state_slot].queues().size() != 1 ||
         !take(phase.io[step.state_slot].bindings.readback(phase.io[step.state_slot].next_id))->pool().valid())
-      throw std::runtime_error("submission views require the original owned shared Queue and full token writer");
+      throw inference::EvaluationFailure(hyle::Status::Unimplemented(
+          "submission views require the original owned shared Queue and full token writer"));
     auto sources = std::make_shared<StepSources>();
+    sources->mtp_full_candidate = mtp;
     sources->boundaries.reserve(step.members.size());
-    sources->published_states.resize(phase.state_sources.size() * step.members.size());
+    sources->published_states.resize(phase.state_sources.size() * step.members.size() + (mtp ? 1u : 0u));
     for (const auto &member : step.members) {
       if (member.base_epoch == UINT64_MAX) throw std::overflow_error("source candidate epoch exhausted");
-      sources->boundaries.push_back({member.session, member.next.get(), member.base_epoch + 1});
+      sources->boundaries.push_back({member.session, member.next.get(), member.base_epoch + 1,
+          member.next->length, member.next->draft ? member.next->draft->frontier : 0});
     }
     check(sources->prepare(*step.execution.run, phase.state_sources,
-        std::span<const g::NodeId>(step.execution.nodes.data(), draft_bank), storage, execution_budget));
+        std::span<const g::NodeId>(step.execution.nodes.data(), draft_bank + (mtp ? 2u : 0u)), storage,
+        execution_budget, mtp ? 1u : 0u));
+    if (mtp) {
+      sources->successor_states.reserve(geometry.recurrent_layers() * 2);
+      for (std::size_t bank = 0; bank < geometry.recurrent_layers() * 2; ++bank)
+        sources->successor_states.push_back(take(g::detail::StoreSource::prepare(*step.execution.run,
+            phase.state_sources[bank].store, storage, g::detail::StoreDestinationRange{1, 1},
+            {.resource_budget = execution_budget})));
+    }
     step.execution.sources = sources;
     return sources;
   }
@@ -4865,9 +4945,18 @@ public:
     step.start = Clock::now(); step.submitted = true;
     check(step.execution.submit(resources_));
     if (step.execution.sources) {
-      const auto captured = take(step.execution.sources->capture(*step.execution.run, step.execution.completion,
-          step.phase->id_port, execution.storage_owner(),
-          take(step.phase->io[step.state_slot].bindings.readback(step.phase->io[step.state_slot].next_id))->pool(), optional_sources));
+      auto &phase = *step.phase; auto &io = phase.io[step.state_slot];
+      auto &sources = *step.execution.sources;
+      bool captured = false;
+      if (sources.mtp_full_candidate) {
+        const std::array<inference::SubmissionViews::OutputCapture, 2> outputs{{
+            {phase.successor_token_port, take(io.bindings.readback(io.successor_token))->pool()},
+            {phase.successor_catchup_port, take(io.bindings.readback(io.successor_catchup))->pool()}}};
+        captured = take(sources.capture_outputs(*step.execution.run, step.execution.completion, outputs,
+            execution.storage_owner(), optional_sources));
+        if (captured) for (auto &state : sources.successor_states) check(state.capture(sources.submission));
+      } else captured = take(sources.capture(*step.execution.run, step.execution.completion,
+          phase.id_port, execution.storage_owner(), take(io.bindings.readback(io.next_id))->pool(), optional_sources));
       if (!captured) step.execution.sources.reset();
     }
     step.submit_seconds = std::chrono::duration<double>(Clock::now() - step.start).count();
@@ -4949,7 +5038,7 @@ public:
           throw std::runtime_error("expected episode record requires a fresh commit witness");
       }
       check(step.execution.wait_success());
-      if (step.execution.sources) check(step.execution.sources->token.detach());
+      if (step.execution.sources) check(step.execution.sources->detach_outputs());
       // Trace storage must be pinned before take_append/unbind revoke Graph
       // output observation. Generated arrays keep their actual native owner.
       if (std::ranges::any_of(outputs, [](const auto &output) { return output.capture_tensors; })) {
@@ -5053,7 +5142,12 @@ public:
             for (std::size_t row = 0; row < count; ++row) {
               // Exactly one publication of each accepted canonical row. The
               // final head and draft repair share aliases of that same lease.
-              auto ready = take(writers[j * phase.prefix_rows + row].publish());
+              const auto destination = j * phase.prefix_rows + row;
+              auto ready = step.execution.sources && bank.source_index != SIZE_MAX
+                  ? take(step.execution.sources->states[bank.source_index].publish(destination, writers[destination]))
+                  : take(writers[destination].publish());
+              if (step.execution.sources && step.execution.sources->mtp_full_candidate)
+                step.execution.sources->published_states[bank.source_index + row] = ready;
               if (row + 1 == count) member.next->carry_hidden = ready;
               if (row + 2 == count) member.next->prior_hidden = ready;
               if (repair) member.carry_prefix.push_back(std::move(ready));
@@ -5092,8 +5186,12 @@ public:
         std::vector<std::pair<std::uint32_t, std::size_t>> owners; owners.reserve(outputs.size());
         for (std::size_t j = 0; j < outputs.size(); ++j) {
           auto &member = step.members[j]; auto &draft = *member.next->draft;
-          auto key = take(step.execution.appends[draft_bank].ready_delta(take(member.draft_frame(true).view()), member.draft_layout));
-          auto value = take(step.execution.appends[draft_bank + 1].ready_delta(take(member.draft_frame(false).view()), member.draft_layout));
+          auto key = step.execution.sources ? take(step.execution.sources->pages[draft_bank].ready_delta(
+              step.execution.appends[draft_bank], take(member.draft_frame(true).view()), member.draft_layout))
+              : take(step.execution.appends[draft_bank].ready_delta(take(member.draft_frame(true).view()), member.draft_layout));
+          auto value = step.execution.sources ? take(step.execution.sources->pages[draft_bank + 1].ready_delta(
+              step.execution.appends[draft_bank + 1], take(member.draft_frame(false).view()), member.draft_layout))
+              : take(step.execution.appends[draft_bank + 1].ready_delta(take(member.draft_frame(false).view()), member.draft_layout));
           member.draft_updates[0] = take(member.draft_frame(true).prepare_commit(std::move(key)));
           member.draft_updates[1] = take(member.draft_frame(false).prepare_commit(std::move(value)));
           owners.emplace_back(draft.pages.back().page(), j);

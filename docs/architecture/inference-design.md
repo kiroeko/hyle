@@ -1482,6 +1482,12 @@ Unimplemented／Unavailable；后段捕获失败必须保留原submission和已�
 不能用“流水不可用”抹去已提交事实。视图准备只接受尚未准备或捕获的原bundle，不在持有者存续时重复构造资源。
 [CUDA有限检查](../evidence/correctness/inference-submission-views-2026-10-28.json)覆盖原R2、连续流水及真实提交后的部分Store捕获失败，
 检查外部持有者阻止回收、释放后原事务恢复和同会话重试；这是元数据失败检查，不代表原生GPU故障注入或性能提升。
+K1完整接受投机后继复用同一原Source：bonus和catchup各为独立完整I32输出，conv／GDN保留A的全前缀发布视图，并另借末前缀读视图；hidden按真实时间顺序取两行，target与draft KV都来自原Append。共同`SubmissionViews`只增加冷固定的输出槽，同一个Completion只转移一次；成功分离及失败回收必须覆盖全部输出，不能留下额外读者阻塞原submission退休。
+
+B可先于A主机观察提交，但只有A实际完整接受且Session、epoch、长度、draft frontier和停止边界相符才可发布；部分接受、终止或取消只丢弃B。中止真实关闭原carrier后，下一次使用先在空闲时重新准备。Store的source／destination ID是显式Graph输入：换址仍走原绑定、capture tuple及权限门，不额外删除休眠capture key；隐藏capacity载体变化仍撤销原生命令。
+
+[组件检查](../evidence/correctness/inference-mtp-k1-source-2026-10-29.json)覆盖R1、greedy、K1的完整／部分接受、额度结束及取消，未接自然RequestLoop，也未证明GPU物理并行。自然接入还须由原请求owner保留A／B各最多两个输出额度，A完整提交并观察后绑定B的延迟账簿；不得复制额度或用投机边界冒充已提交结果。
+
 共同准备协议现沿原顺序分步表达：`prepare_appends`准备batch metadata并绑定选定Append；
 `bind_consumers`先绑定真实incoming Source、成功才置原bound，再绑定已有Store cohort；
 `prepare_replay`按实际incoming选择原Source完整tuple门或普通replay，保留原mode／host-wait行为。
