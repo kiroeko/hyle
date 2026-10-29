@@ -23,7 +23,10 @@ from hyle_resources import find_glslang, prepare_resources
 ROOT = Path(__file__).resolve().parents[1]
 CONFIGURATIONS = ("Release", "Debug", "RelWithDebInfo", "MinSizeRel")
 _BOOL_TRUE = {"1", "ON", "YES", "TRUE", "Y"}
-_REMOVED_CAPABILITY_OPTIONS = ("HYLE_WITH_ATEN", "HYLE_IO_TLS", "HYLE_IO_HTTP2")
+_REMOVED_CAPABILITY_OPTIONS = (
+    "HYLE_COMPUTE_CPU", "HYLE_COMPUTE_CUDA", "HYLE_COMPUTE_APPLE", "HYLE_COMPUTE_VULKAN",
+    "HYLE_COMPUTE_ONEDNN", "HYLE_COMPUTE_TORCH_CPU", "HYLE_WITH_ATEN", "HYLE_IO_TLS", "HYLE_IO_HTTP2",
+)
 _VERBOSE = False
 
 

@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-29",
+  "base_commit": "76fc4727c7218dd12def81817f3f1b4dc30d8ab6",
+  "scope": "Initialization/build/test obsolete capability cache migration; product/backend selectors remain authoritative.",
+  "changes": [
+    "Remove six omitted legacy HYLE_COMPUTE_* keys when reinitializing the same tree.",
+    "Reject obsolete cache selections before build/test tool discovery or dispatch; provide same-tree init command.",
+    "Preserve products, routes, configuration, tests and static selection. Never infer a new route from obsolete booleans."
+  ],
+  "checks": [
+    {
+      "command": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests/tooling",
+        "-p",
+        "development_scripts_test.py",
+        "-v"
+      ],
+      "started_utc_epoch": 1793239530.0770264,
+      "seconds": 1.1855978965759277,
+      "exit_code": 0,
+      "log": ".scratch\\init-options-review-20261029\\development_scripts_test.log",
+      "tests": 37
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests/tooling",
+        "-p",
+        "compute_routes_test.py",
+        "-v"
+      ],
+      "started_utc_epoch": 1793239531.2626243,
+      "seconds": 16.442562580108643,
+      "exit_code": 0,
+      "log": ".scratch\\init-options-review-20261029\\compute_routes_test.log",
+      "tests": 15
+    }
+  ],
+  "result": "52 relevant tests passed; command tests mock tool execution, route metadata tests invoke cmake -P. No native compilation, SDK or model download, GPU benchmark or installation.",
+  "sources": [
+    {
+      "path": "scripts/hyle_support.py",
+      "sha256": "1d2d26708cf7c7b5e0d1bed977f6ca2308533c4fbe1c9a3b7761dbe4a71b0973"
+    },
+    {
+      "path": "tests/tooling/development_scripts_test.py",
+      "sha256": "c769be4ef60b174e84ee4c1e96151c307a0f2709c8a6a4e2ba8188f30a3e5ad0"
+    },
+    {
+      "path": "cmake/HyleComputeRoutes.cmake",
+      "sha256": "1851e6e5f611da2aecb48d82ba05bbb3b5147517cdc747bdbcbd6f7cfefcaeee"
+    }
+  ],
+  "remaining": "Invalid product membership may reach Vulkan host-tool preparation before CMake rejects it; early diagnosis remains open without a duplicate product catalog.",
+  "performance": "No new performance claim or update to the latest complete peer window."
+}

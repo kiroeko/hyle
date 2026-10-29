@@ -227,6 +227,52 @@ class DevelopmentCommandsTest(unittest.TestCase):
                 self.assertEqual(cache["HYLE_BUILD_TESTS"], "ON")
                 self.succeeds("build", "--name", name)
 
+    def test_reinitializing_obsolete_route_provider_keys_preserves_current_selectors(self):
+        obsolete = ("HYLE_COMPUTE_CPU", "HYLE_COMPUTE_CUDA", "HYLE_COMPUTE_APPLE",
+                    "HYLE_COMPUTE_VULKAN", "HYLE_COMPUTE_ONEDNN", "HYLE_COMPUTE_TORCH_CPU")
+        cases = [{key: "OFF"} for key in obsolete]
+        cases.append({key: "ON" if index % 2 else "OFF" for index, key in enumerate(obsolete)})
+        for index, old_values in enumerate(cases):
+            with self.subTest(old_values=old_values):
+                name = f"old-route-{index}"
+                directory = self.root / ".scratch/build" / name
+                self.write_cache(directory, HYLE_COMPONENTS="compute;graph", HYLE_COMPUTE_ROUTES="cuda",
+                                 HYLE_STATIC="ON", HYLE_BUILD_TESTS="ON", CMAKE_BUILD_TYPE="Debug", **old_values)
+                before = (directory / "CMakeCache.txt").read_bytes()
+                attempted = len(self.commands)
+                with patch.object(support, "discover_environment", side_effect=AssertionError("stale build discovery")), \
+                        patch.object(support, "discover_test_environment", side_effect=AssertionError("stale test discovery")):
+                    for action in ("build", "test"):
+                        result, _, errors = self.invoke(action, "--name", name)
+                        self.assertNotEqual(result, 0)
+                        self.assertIn("python scripts/init.py --name " + name, errors)
+                        for key in old_values:
+                            self.assertIn(key, errors)
+                self.assertEqual(len(self.commands), attempted)
+                self.assertEqual((directory / "CMakeCache.txt").read_bytes(), before)
+                self.succeeds("init", "--name", name)
+                cache = support.read_cache(directory)
+                for key in obsolete:
+                    self.assertNotIn(key, cache)
+                self.assertEqual(cache["HYLE_COMPONENTS"], "compute;graph")
+                self.assertEqual(cache["HYLE_COMPUTE_ROUTES"], "cuda")
+                self.assertEqual(cache["HYLE_STATIC"], "ON")
+                self.assertEqual(cache["HYLE_BUILD_TESTS"], "ON")
+                self.assertEqual(cache["CMAKE_BUILD_TYPE"], "Debug")
+                self.succeeds("build", "--name", name)
+                self.succeeds("test", "--name", name)
+
+    def test_obsolete_provider_keys_do_not_infer_a_route(self):
+        name = "old-provider-no-route"
+        directory = self.root / ".scratch/build" / name
+        self.write_cache(directory, HYLE_COMPONENTS="compute;graph", HYLE_COMPUTE_CUDA="ON",
+                         HYLE_COMPUTE_CPU="OFF")
+        self.succeeds("init", "--name", name)
+        cache = support.read_cache(directory)
+        self.assertNotIn("HYLE_COMPUTE_CUDA", cache)
+        self.assertNotIn("HYLE_COMPUTE_CPU", cache)
+        self.assertEqual(cache["HYLE_COMPUTE_ROUTES"], "cpu")
+
     def test_engine_prepares_selected_route_and_debug_test_configuration(self):
         self.succeeds("init", "--name", "engine-debug", "--backends", "vulkan",
                       "--config", "Debug", "--tests")

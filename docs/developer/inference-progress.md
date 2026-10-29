@@ -73,6 +73,8 @@
 
 - **多草稿账簿冷容量复用**｜所属：共同执行架构／稳态准备｜约10%。已确认SmallVector的替换式assign会丢掉账簿的冷预留，多草稿Verify随后重新分配；下一步在引擎记录写入处用原位resize／copy，保留原容器语义和接受／失败合同。默认K1的两个内联元素不因此新增堆分配，耗时尚未测。
 
+初始化开关复查已完成：所需依赖继续自动装配，补齐六个遗漏的旧路由／Provider缓存键；52项轻量检查通过，未下载或重编。依据见[本片记录](../evidence/correctness/inference-init-options-review-2026-10-29.json)。错误产品名的提前拒绝仍列入输入诊断，不冒充初始化全部边界已穷尽。
+
 本批[自然请求检查](../evidence/correctness/inference-mtp-natural-2026-10-29.json)使用本地原Qwen权重：同一Model顺序运行串行与流水，各40个输出、23条完整账簿及最终状态逐字节一致。实际3个pending后继中发布2个，真实部分接受时丢弃1个，原RequestLoop保留2个输出额度；无受控接受或暖标记造假。
 
 自然消费者及默认MTP CLI都用N1／R1／D2，通过原state=5、hidden=6容量；普通CLI默认auto也通过。修复成功发布后仍持有未用GDN前缀票据的问题，只撤回模型内部已完成职责的full publication views，保留后继独立末前缀、hidden、token及KV权限，不增加18.63MiB池预算。8组主机账簿检查和四种Source结束分支回归通过；当前镜像7项完整状态比较均逐字节一致，CPU／其它平台的自然流水、随机／多草稿后继及新性能窗口未运行。

@@ -196,6 +196,9 @@ MTP本窗接受与实际工作相同；两版decode变化约0%～2%，仍需后�
 初始化／构建选项复查已按同一产品闭包原则收敛：完整路线的必要Provider自动装配；完整io的协议能力不再另设关闭门。
 多配置生成器的Debug缓存选择已修正，脚本／元数据及无下载依赖边界检查见[本片记录](../evidence/correctness/inference-automatic-io-2026-10-29.json)；
 其范围不代替完整协议库重编或package安装检查。
+随后[初始化旧缓存复查](../evidence/correctness/inference-init-options-review-2026-10-29.json)补齐其余六个旧路由／Provider键：
+旧配置在build/test前提示同名重配，init自动清理并保留产品、后端及其它选择。52项脚本与CMake元数据检查通过，未下载或重编。
+输入诊断另发现错误产品名可能先准备Vulkan宿主工具，仍待复用中央产品目录提前拒绝；不引入第二份硬编码目录。
 
 递归采样前缀新增共同设备折叠与单I32结果包，完整valid、真实quota／stop、pending及RNG规则保留；
 greedy modifier同步合包，但原精确主机比较保留。CPU／CUDA独立输入图与组件状态／失败恢复检查通过，

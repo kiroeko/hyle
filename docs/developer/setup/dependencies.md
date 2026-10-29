@@ -54,9 +54,10 @@ cmake -DHYLE_DEP_ACTION=sync -P cmake/HyleDependencyCacheTool.cmake
 `init.py --offline` 使用已取得的依赖和系统 SDK，缺少时明确失败，不退回联网。
 完整介质准备、宿主工具和测试示例见[离线构建](offline.md)。
 
-旧配置中的 `HYLE_IO_TLS`、`HYLE_IO_HTTP2` 不再是能力选择。
-统一入口对同一配置重新运行 `init.py` 会自动清理；直接维护 CMake 构建树时使用
-`cmake -S <源码目录> -B <原构建目录> -U HYLE_IO_TLS -U HYLE_IO_HTTP2` 清除旧键并按原产品选择重新配置。
+旧版路由／Provider布尔开关、`HYLE_WITH_ATEN`、`HYLE_IO_TLS` 和 `HYLE_IO_HTTP2` 不再是能力选择。
+统一入口对同一配置重新运行 `init.py` 会自动清理，保留现有 `HYLE_COMPONENTS` 和 `HYLE_COMPUTE_ROUTES`。
+直接维护 CMake 构建树时按报错列出的旧变量逐项使用 `-U <旧变量名>`，再按原产品与后端选择重新配置；
+不要用通配清理误删当前产品或后端选择。
 
 组织已有逐项来源审核的源码包时，可保留原生入口 `hyle-offline-deps.cmake`，
 将精确源码放在 `deps/<lock-name>/`。它验证中央 lock、展开内容和许可证后，

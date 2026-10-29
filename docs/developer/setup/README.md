@@ -52,8 +52,9 @@ python scripts/build.py --name inference --install .scratch/install/hyle --jobs 
 不兼容的工具链不会混进原 cache。并行会话应选择不同的 `--name` 或 `--build-dir`。
 同一标签重配测试开关时可用 `--tests` / `--no-tests`。初始化失败不冒充新的可用配置。
 缩小产品集合时，只准备新集合实际需要的依赖；例如从 `all` 切到 `util`，不会继续准备协议依赖。
-TLS 与 HTTP/2 不再有二次开关。旧配置先对同一 `--name` 或 `--build-dir` 运行 `init.py`，
-脚本会清理旧能力开关并保留其它配置，再用 `build.py` 更新产物；build/test 不会暗中重配旧构建。
+ATen、Provider、TLS 与 HTTP/2 不再有二次能力开关。旧配置先对同一 `--name` 或 `--build-dir` 运行 `init.py`，
+脚本会清理已废弃的路由／Provider／协议开关并保留产品、后端及其它配置，再用 `build.py` 更新产物；
+build/test 遇到旧开关会提示重新初始化，不暗中重配或运行旧配置。
 
 ## 选择配置
 
