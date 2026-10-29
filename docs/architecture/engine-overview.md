@@ -37,6 +37,7 @@ src/compute*, src/graph*       算子、设备、资源寿命、图编译与执�
 | MTP 接受 | `mtp_acceptance.h` | 给定验证结果、额度、EOS 和上下文，计算合法接受前缀；Qwen、GLM、DeepSeek 共用 |
 | 采样 | `sampling_graph.h`、`sampling_cursor.h` | 温度、top-k、top-p 的图构造；Philox 随机地址 |
 | 后端装配 | `backend.h` | 冷选择 CPU／CUDA／Apple／Vulkan 端点及可选 CPU 辅助端点，给 Graph 提供存储域和队列 |
+| 程序与执行槽 | `prepared_program_family.h`、`program_slots.h` | 持有有限的已编译程序目录，组合每槽原IO、状态事务和执行载体；模型提供数学、布局和replay政策 |
 | 读回与输出 | `readback.h`、`prepared_output.h` | 按真实 dtype 和存储取回结果 |
 | 状态搬运 | `state_transfer.h`、`host_state_storage.h`、`host_storage.h` | 会话完整状态在设备与主机内存之间换出、换回，等待真实退休后才交还写权限 |
 | 状态写入块复用 | `reusable_output_storage.h` | 回收已退休的旧状态写入块，减少每步分配 |
@@ -87,8 +88,8 @@ MTP 有不同执行形状。单草稿融合路径把提议与验证接在同一�
 
 - **只有一个完整模型家族。** GLM、DeepSeek、Kimi 等目前是 `tests/compute_models/` 里的组件消费者，
   用来检验共同机制，还没有接成引擎入口。新增家族要在 `engine/models/` 下实现自己的 Model 适配。
-- **完整执行编排仍集中在Qwen。** 共同请求、缓存和资源原语已提取，但形状、执行槽及部分事务编排仍在
-  `qwen35::Model`；下一步要把能共用的机制移出，而不是让新模型复制它们。
+- **完整执行编排仍集中在Qwen。** 请求、缓存、程序目录和物理执行槽已共用，但形状资格、状态布局及完整步骤的组合仍在
+  `qwen35::Model`；继续按实际共同机制抽离，新增模型仍需自己的数学与状态适配。
 - **流水只覆盖部分配置。** 当前冷资源有3个物理IO载体，支持的CUDA普通／greedy K1 MTP路径默认auto，
   以至多两步候选重叠主机准备和设备执行；其它配置保留单步路径。物理载体数量、在途候选数与批内成员数是不同概念。
 - **合批有兼容条件。** 有效长度与varlen能力已实现，CPU／CUDA已有相关有限检查；请求仍按阶段、布局和采样政策等分组，

@@ -152,9 +152,9 @@ inline q::PreparedReadback replace_successor_output(q::Model &model,
   const auto slot = (continuation.next_slot + 1) % q::execution_slot_count;
   require(continuation.direction_warm[slot] && (!continuation.ready_slot || *continuation.ready_slot != slot),
       "cold tuple replacement selected a live source or unwarmed direction");
-  auto &run = *q::take(phase.carriers[slot].borrow());
-  auto &io = phase.io[slot]; auto &readback = *q::take(io.bindings.readback(io.next_id));
-  require(phase.preparation_uses[slot] > 0,
+  auto &run = *q::take(phase.slots[slot].carrier.borrow());
+  auto &io = phase.slots[slot].data; auto &readback = *q::take(phase.slots[slot].io.readback(io.next_id));
+  require(phase.slots[slot].preparation_uses > 0,
       "cold tuple fixture did not replace an actually used imported carrier");
   // Model finish has already withdrawn appends, so output observation is no
   // longer available for reclaim(). Ordinary retired unbind returns the

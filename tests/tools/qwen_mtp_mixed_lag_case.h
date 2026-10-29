@@ -127,7 +127,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
         step.active_input_rows == 4 && step.phase->prefix_rows == 2 &&
         step.phase->family->role == q::GraphRole::kMtpCatchupRound && step.phase->family->packing == q::RowPacking::kDraft,
         "different base lags were split or failed to select the one canonical compact draft family");
-    auto &io = step.phase->io[step.state_slot];
+    auto &io = step.phase->slots[step.state_slot].data;
     const std::vector<std::int32_t> hidden{0, 3, 1, 0}, tokens{2, 1, 3, 0};
     require(r::read_indices(model, io.draft_hidden_select) == hidden && r::read_indices(model, io.draft_token_select) == tokens,
         "mixed-lag hidden/catch-up selector differs from its original carry/prior/token order");

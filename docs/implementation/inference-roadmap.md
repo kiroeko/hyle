@@ -160,6 +160,10 @@ history的独立有限图原先在MLX冷编译时报映射缺失；随后定位�
 本片没有新性能结论，不以原生平台的局部通过代替全部组合完成。
 合同和实际边界见[设计说明](../architecture/inference-design.md)及[本轮记录](../evidence/correctness/inference-program-io-native-2026-10-28.json)。
 模型仍负责图数学、状态、Shape、family与采样键、实际layout、接受策略及Session提交；完整执行核心未抽完。
+物理载体集合已迁入共同`ProgramSlots`，将每槽原IO、Store事务、载体及冷使用事实放在同一稳定对象内，
+统一冷准备、安装、pending、真实退休和退出根交接；不新增执行器或权限。部分冷失败不发布，模型保留张量、布局及replay政策。
+[CPU／CUDA六个有限检查](../evidence/correctness/inference-program-slots-2026-10-29.json)通过7项完整状态字节比较与普通连续流水16臂；
+仅重编两个消费者，复用227项SDK输入；未重测吞吐，也不以独立AddGraph消费者代签第二个完整模型。
 继续抽离共同执行编排并核实剩余边界；不以本轮有限检查代替完整执行核心或性能结论。
 自然请求 wave 的整组准备、兼容分批、缩批与统一发布现已接入共同静态编排；
 实际调用结果在成功、取消及异常后归还原记录，不以副本旧值决定发布。

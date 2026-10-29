@@ -111,7 +111,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
         if (candidate) {
           report.draft_active = draft_rows;
           report.draft_physical = prefill ? 4 + q::draft_lag(role) : draft_rows;
-          const auto &io = step.phase->io[step.state_slot];
+          const auto &io = step.phase->slots[step.state_slot].data;
           require(io.draft_positions.description.dimensions().size() == 1 &&
               io.draft_positions.description.dimensions()[0] == static_cast<std::int64_t>(report.draft_physical),
               "MTP draft position carrier no longer has its real cold capacity");

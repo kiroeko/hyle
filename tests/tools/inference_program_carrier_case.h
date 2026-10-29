@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../engine/inference/program_carrier.h"
+#include "../../engine/inference/program_slots.h"
 #include "../../engine/inference/prepared_program_family.h"
 
 // Two public Graph invocations from one concrete program. No Model, synthetic
@@ -12,6 +12,11 @@ namespace g = hyle::graph;
 namespace c = hyle::compute;
 using qwen_host_image_case::require;
 struct Scope final { c::ReadLease first, second; };
+struct IoHandles final {
+  i::ProgramIo::Input first, second;
+  i::ProgramIo::Readback readback;
+};
+using ProgramSlots = i::ProgramSlots<Scope, IoHandles, 2>;
 
 inline std::shared_ptr<Scope> inputs(i::Backend &backend,
     const std::array<float, 4> &first, const std::array<float, 4> &second) {
@@ -61,6 +66,30 @@ inline int run(q::BackendKind kind) {
         family.child(0).output(sum).description == description && finite.executable && finite.report,
         "exact family retry lost its original output facts or invented a resource graph for empty bindings");
   }
+  // Original cold carriers and IO only. An invalid count must not start the
+  // recipe; a later-slot failure must not publish the earlier prepared slot.
+  {
+    ProgramSlots rejected;
+    std::size_t visited = 0;
+    const auto prepare_empty = [&](std::size_t index, ProgramSlots::Slot &slot) noexcept -> hyle::Status {
+      ++visited;
+      if (index == 1) return hyle::Status::InvalidArgument("deliberate second-slot cold IO refusal");
+      HYLE_RETURN_IF_ERROR(slot.io.prepare(compiled, 0, 0, 0, 0));
+      return slot.io.seal();
+    };
+    const auto zero_count = rejected.prepare(compiled, backend.queue_bindings(), 0, {}, prepare_empty);
+    const auto oversized = rejected.prepare(compiled, backend.queue_bindings(), 3, {}, prepare_empty);
+    require(zero_count.IsInvalidArgument() && oversized.IsInvalidArgument() && !visited &&
+        !rejected.size() && rejected.slots().empty() && !rejected.pending(),
+        "invalid slot count began cold preparation or published a carrier");
+    const auto partial_group = rejected.prepare(compiled, backend.queue_bindings(), 2, {}, prepare_empty);
+    const auto partial_initialize = rejected.initialize_all({});
+    const auto partial_retry = rejected.prepare(compiled, backend.queue_bindings(), 2, {}, prepare_empty);
+    require(partial_group.IsInvalidArgument() && partial_initialize.IsFailedPrecondition() &&
+        partial_retry.IsFailedPrecondition() && visited == 2 && !rejected.size() &&
+        rejected.slots().empty() && !rejected.pending(),
+        "partial cold slot group published or retried its original nonmovable inventory");
+  }
   // Same executable/report handles, but a distinct borrowed program object.
   // IO must belong to the exact stable CompiledGraph selected by its carrier.
   const auto foreign_compiled = compiled;
@@ -69,13 +98,24 @@ inline int run(q::BackendKind kind) {
   const auto view = [&](const c::ReadLease &owner, const auto &shape) {
     return q::take(c::ConstTensorView::create(shape, q::take(owner.view())));
   };
-  i::ProgramIo a_io, b_io, partial_io, unsealed_io, foreign_io;
-  q::check(a_io.prepare(compiled, 0, 2, 1, 0));
-  const auto a_first = q::take(a_io.add_input(first)), a_second = q::take(a_io.add_input(second));
-  const auto a_readback = q::take(a_io.add_readback(output, backend)); q::check(a_io.seal());
-  q::check(b_io.prepare(compiled, 0, 2, 1, 0));
-  const auto b_first = q::take(b_io.add_input(first)), b_second = q::take(b_io.add_input(second));
-  const auto b_readback = q::take(b_io.add_readback(output, backend)); q::check(b_io.seal());
+  ProgramSlots programs;
+  q::check(programs.prepare(compiled, backend.queue_bindings(), 2, {},
+      [&](std::size_t, ProgramSlots::Slot &slot) noexcept -> hyle::Status {
+        HYLE_RETURN_IF_ERROR(slot.io.prepare(compiled, 0, 2, 1, 0));
+        HYLE_ASSIGN_OR_RETURN(slot.data.first, slot.io.add_input(first));
+        HYLE_ASSIGN_OR_RETURN(slot.data.second, slot.io.add_input(second));
+        HYLE_ASSIGN_OR_RETURN(slot.data.readback, slot.io.add_readback(output, backend));
+        return slot.io.seal();
+      }));
+  require(programs.size() == 2 && programs.slots().size() == 2 && !programs.pending(),
+      "cold slot group did not publish its complete original carrier inventory");
+  auto &a_slot = programs[0], &b_slot = programs[1];
+  auto &a_io = a_slot.io, &b_io = b_slot.io;
+  auto &a = a_slot.carrier, &b = b_slot.carrier;
+  const auto a_first = a_slot.data.first, a_second = a_slot.data.second, b_first = b_slot.data.first,
+      b_second = b_slot.data.second;
+  const auto a_readback = a_slot.data.readback, b_readback = b_slot.data.readback;
+  i::ProgramIo partial_io, unsealed_io, foreign_io;
   // Install the original readback first, then one valid input and the wrong
   // second shape. Failure must return that actual caller writer, if applicable.
   q::check(partial_io.prepare(compiled, 2, 0, 1, 0));
@@ -90,8 +130,6 @@ inline int run(q::BackendKind kind) {
       "partial-installation readback did not retain its actual output ownership");
   q::check(unsealed_io.prepare(compiled, 0, 0, 0, 0));
   q::check(foreign_io.prepare(foreign_compiled, 0, 0, 0, 0)); q::check(foreign_io.seal());
-  i::ProgramCarrier<Scope> a, b;
-  q::check(a.prepare(compiled, backend.queue_bindings())); q::check(b.prepare(compiled, backend.queue_bindings()));
   const g::InvocationOptions options{.resources = g::ResourceOptions{}};
   const auto unsealed = a.initialize({.io = unsealed_io, .invocation = options});
   const auto foreign = a.initialize({.io = foreign_io, .invocation = options});
@@ -117,9 +155,9 @@ inline int run(q::BackendKind kind) {
       "readback recovery duplicated its pool or lost the original output ownership");
   const auto missing = a.borrow();
   require(!missing && missing.error().IsFailedPrecondition(), "failed cold carrier admitted an original invocation");
-  q::check(b.initialize({.io = b_io, .invocation = options}));
+  q::check(programs.initialize(1, {.invocation = options}));
   require(b.initialized() && !a.initialized(), "initializing B repaired or published failed A");
-  q::check(a.initialize({.io = a_io, .invocation = options}));
+  q::check(programs.initialize(0, {.invocation = options}));
   require(!caller_writer || a_output->pool().stats().live_blocks == 1,
       "valid IO retry did not reacquire the failed installation's original readback writer");
   auto *a_run = q::take(a.borrow()); auto *b_run = q::take(b.borrow());
@@ -133,6 +171,13 @@ inline int run(q::BackendKind kind) {
   const auto duplicate = a.initialize({.io = a_io, .invocation = options});
   require(duplicate.IsFailedPrecondition() && q::take(a.borrow()) == a_run && q::take(b.borrow()) == b_run,
       "already initialized carrier replaced its live original invocation or touched its peer");
+  a_slot.planned_uses = 5; a_slot.preparation_uses = 3;
+  b_slot.planned_uses = 7; b_slot.preparation_uses = 4;
+  q::check(programs.initialize_all({.invocation = options}));
+  require(q::take(a.borrow()) == a_run && q::take(b.borrow()) == b_run &&
+      a_slot.planned_uses == 5 && a_slot.preparation_uses == 3 &&
+      b_slot.planned_uses == 7 && b_slot.preparation_uses == 4,
+      "idempotent slot-group initialization replaced an original invocation or its replay counters");
   q::check(a_run->prepare_replay(a.queues(), {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
   q::check(b_run->prepare_replay(b.queues(), {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
   // A missing scope must reject before native submit, preserving the actual
@@ -142,17 +187,17 @@ inline int run(q::BackendKind kind) {
       "rejected resource reservation submitted work or lost its original prepared run");
   std::weak_ptr<Scope> a_lifetime = a_scope, b_lifetime = b_scope;
   auto a_done = q::take(a.submit(a_scope)); a_scope.reset();
-  bool pending_observed = a.pending();
+  bool pending_observed = a.pending() || programs.pending();
   const auto a_admission = a.borrow();
   require(a_admission ? !a.pending() && !a_run->in_flight() : a_admission.error().IsUnavailable(),
       "carrier admitted reuse before original native retirement");
   auto b_done = q::take(b.submit(b_scope)); b_scope.reset();
-  pending_observed = pending_observed || b.pending();
+  pending_observed = pending_observed || b.pending() || programs.pending();
   const auto b_admission = b.borrow();
   require(b_admission ? !b.pending() && !b_run->in_flight() : b_admission.error().IsUnavailable(),
       "peer carrier admitted reuse before its own original native retirement");
   q::check(a_done.wait()); q::check(b_done.wait()); q::check(backend.collect_retired());
-  require(!a.pending() && !b.pending() && a_lifetime.expired() && b_lifetime.expired(),
+  require(!a.pending() && !b.pending() && !programs.pending() && a_lifetime.expired() && b_lifetime.expired(),
       "successful real Completions did not release their own original retained scopes");
   std::array<float, 4> actual_a{}, actual_b{};
   q::check(a_io.read(backend, *a_run, a_readback, std::as_writable_bytes(std::span(actual_a))));
@@ -172,19 +217,28 @@ inline int run(q::BackendKind kind) {
       "actual A retirement discarded its original handle early or closed independent B");
   const auto closed = a.borrow(); require(!closed && closed.error().IsFailedPrecondition(), "closed truthy carrier was admitted for reuse");
   q::check(a.reset_retired()); require(!a.initialized() && !a.closing(), "actually retired carrier did not reset its original run");
-  const auto retired_b = b.retire(backend); q::check(retired_b.status); require(retired_b.retired, "B did not actually retire");
+  const auto retired_b = programs.retire_all(backend); q::check(retired_b.status);
+  require(retired_b.retired && !programs.pending(), "slot group did not actually retire its original B");
   q::check(b.reset_retired());
-  a.release_invocation_root();
+  programs.release_invocation_roots();
   const auto teardown_prepare = a.prepare(compiled, backend.queue_bindings());
   const auto teardown_initialize = a.initialize({.io = a_io, .invocation = options});
   const auto teardown_reset = a.reset_retired();
   require(teardown_prepare.IsFailedPrecondition() && teardown_initialize.IsFailedPrecondition() &&
       teardown_reset.IsFailedPrecondition() && !a.initialized() && a.closing() && !a.pending(),
       "irreversible teardown handoff admitted cold initialization or reset its original ownership gate");
+  const auto peer_teardown_prepare = b.prepare(compiled, backend.queue_bindings());
+  const auto peer_teardown_initialize = programs.initialize(1, {.invocation = options});
+  const auto peer_teardown_reset = b.reset_retired();
+  require(peer_teardown_prepare.IsFailedPrecondition() && peer_teardown_initialize.IsFailedPrecondition() &&
+      peer_teardown_reset.IsFailedPrecondition() && !b.initialized() && b.closing() && !programs.pending(),
+      "slot-group teardown left its peer eligible for initialization or ownership reset");
   std::cout << "{\"status\":\"PASS\",\"case\":\"program-carrier\",\"backend\":\"" << qwen_host_image_case::backend_name(kind)
       << "\",\"models\":0,\"native_submissions\":2,\"carriers\":2,\"cold_failure_atomic\":true,"
          "\"independent_fixed_bindings\":true,\"real_completion_retirement\":true,\"GraphOutput_pin_preserved\":true,"
-         "\"typed_io_installation\":true,\"unsealed_io_rejected\":true,\"foreign_io_rejected\":true,"
+         "\"typed_io_installation\":true,\"common_slot_inventory\":true,\"group_cold_failure_unpublished\":true,"
+         "\"group_initialization_idempotent\":true,"
+         "\"group_retirement_original\":true,\"unsealed_io_rejected\":true,\"foreign_io_rejected\":true,"
          "\"standalone_exact_rejected\":true,\"partial_installation_failed\":true,\"partial_caller_writer_tested\":"
       << (caller_writer ? "true" : "false") << ",\"partial_caller_writer_recovered\":" << (caller_writer ? "true" : "null")
       << ",\"valid_io_retry_output_checked\":true,"

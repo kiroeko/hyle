@@ -112,7 +112,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
         "varlen verifier split members or replaced the one bounded physical Verify3 carrier");
     if (bounded_carrier) require(bounded_carrier == step.phase,"actual lengths compiled a different bounded verification carrier");
     else bounded_carrier = step.phase;
-    auto &io = step.phase->io[step.state_slot];
+    auto &io = step.phase->slots[step.state_slot].data;
     const auto layout = io.attention_layout.host();
     const std::array<std::int32_t,3> offsets{0,static_cast<std::int32_t>(lengths[0]),4};
     require(std::ranges::equal(layout.query_indptr,offsets) && io.attention_layout.facts().query_rows == 4,

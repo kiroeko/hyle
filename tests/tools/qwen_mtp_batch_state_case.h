@@ -68,7 +68,7 @@ struct Bank final {
 };
 inline Bank inspect(q::Model &model, q::StepState &step, std::size_t layer, bool recurrent,
     bool hidden = false) {
-  require(step.members.size() == 2 && step.phase->prefix_rows == 3 && step.phase->state_transactions[step.state_slot].bound() &&
+  require(step.members.size() == 2 && step.phase->prefix_rows == 3 && step.phase->slots[step.state_slot].transactions.bound() &&
       gd::RegionAccess::successful_outcome(*step.execution.run), "B2 inspection requires its successful original K3 Graph");
   const auto &ports = hidden ? step.phase->hidden_state
       : recurrent ? step.phase->layers[layer].recurrent : step.phase->layers[layer].history;

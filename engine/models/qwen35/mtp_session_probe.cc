@@ -194,7 +194,7 @@ struct Probe final {
     phases = model.phases.size(); slots = 0;
     for (const auto &[key, phase] : model.phases) {
       (void)key;
-      for (std::size_t slot = 0; slot != phase->slot_count; ++slot) slots += phase->carriers[slot].initialized();
+      for (std::size_t slot = 0; slot != phase->slots.size(); ++slot) slots += phase->slots[slot].carrier.initialized();
     }
     std::ofstream out(output / "observation.json"); require(static_cast<bool>(out), "cannot write MTP Session observation");
     out << std::setprecision(17) << "{\"status\":" << quoted(status) << ",\"error\":" << quoted(error)
@@ -270,8 +270,8 @@ void advance(q::Model &model, Probe &probe, Run &run, std::size_t which, bool re
   require(!model.active_step && !model.carrier_borrowed && !run.session->pending &&
           model.snapshot_versions.live <= model.cache_plan.resident_sessions, "MTP episode retained a candidate/carrier after finish");
   auto captured = image(model, *run.session->head);
-  captured.blobs.push_back({"output.logits.f32", false, read(phase->io[q::Model::slot_index].logits)});
-  captured.blobs.push_back({"output.hidden.bf16", true, read(phase->io[q::Model::slot_index].final_hidden)});
+  captured.blobs.push_back({"output.logits.f32", false, read(phase->slots[q::Model::slot_index].data.logits)});
+  captured.blobs.push_back({"output.hidden.bf16", true, read(phase->slots[q::Model::slot_index].data.final_hidden)});
   std::ostringstream meta;
   meta << "{\"head\":" << captured.metadata << ",\"role\":" << static_cast<int>(role)
     << ",\"input_rows\":" << inputs.size() << ",\"generated_ids\":[";
@@ -482,8 +482,8 @@ void prefix_commit(q::Model &model, PrefixObservation &observation, std::size_t 
             "prefix generated output lease differs from its real logical extent");
     return owner;
   };
-  const auto generated_logits = retain_output(phase->logits_port, phase->io[q::Model::slot_index].logits);
-  const auto generated_hidden = retain_output(phase->hidden_port, phase->io[q::Model::slot_index].final_hidden);
+  const auto generated_logits = retain_output(phase->logits_port, phase->slots[q::Model::slot_index].data.logits);
+  const auto generated_hidden = retain_output(phase->hidden_port, phase->slots[q::Model::slot_index].data.final_hidden);
   hyle::inference::StepObservation step_observation;
   q::MtpRoundResult round;
   std::int32_t next = -1;
@@ -497,8 +497,8 @@ void prefix_commit(q::Model &model, PrefixObservation &observation, std::size_t 
   require(!model.active_step && !model.carrier_borrowed && !session->pending && model.snapshot_versions.live <= 2,
           "prefix commit retained a candidate or shared carrier");
   auto captured = image(model, *session->head);
-  captured.blobs.push_back({"output.logits.f32",false,generated_logits ? read(generated_logits) : read(phase->io[q::Model::slot_index].logits)});
-  captured.blobs.push_back({"output.hidden.bf16",true,generated_hidden ? read(generated_hidden) : read(phase->io[q::Model::slot_index].final_hidden)});
+  captured.blobs.push_back({"output.logits.f32",false,generated_logits ? read(generated_logits) : read(phase->slots[q::Model::slot_index].data.logits)});
+  captured.blobs.push_back({"output.hidden.bf16",true,generated_hidden ? read(generated_hidden) : read(phase->slots[q::Model::slot_index].data.final_hidden)});
   std::ostringstream meta;
   meta << "{\"head\":" << captured.metadata << ",\"role\":" << static_cast<int>(role) << ",\"inputs\":[";
   for (std::size_t i = 0; i < inputs.size(); ++i) meta << (i ? "," : "") << inputs[i];
@@ -654,8 +654,8 @@ HeadImage resume_image(q::Model &model, const q::Session &session, const q::Gene
   auto captured = image(model,*session.head);
   const auto tokens = q::drafts_token(record.role) ? std::size_t{2} : record.ids().size();
   auto &phase = *model.phases.at(q::ExecutionShape{1,tokens,record.role});
-  captured.blobs.push_back({"output.logits.f32",false,read(phase.io[q::Model::slot_index].logits)});
-  captured.blobs.push_back({"output.hidden.bf16",true,read(phase.io[q::Model::slot_index].final_hidden)});
+  captured.blobs.push_back({"output.logits.f32",false,read(phase.slots[q::Model::slot_index].data.logits)});
+  captured.blobs.push_back({"output.hidden.bf16",true,read(phase.slots[q::Model::slot_index].data.final_hidden)});
   return captured;
 }
 struct ResumeObservation final {
@@ -886,8 +886,8 @@ HeadImage batch_image(q::Model &model, const q::Session &session, q::Phase &phas
     const auto size = tensor.buffer.size() / width; Bytes result(size);
     q::check(q::take(tensor.buffer.view().subview(member * size,size)).read(result)); return result;
   };
-  captured.blobs.push_back({"output.logits.f32",false,part(phase.io[q::Model::slot_index].logits)});
-  captured.blobs.push_back({"output.hidden.bf16",true,part(phase.io[q::Model::slot_index].final_hidden)}); return captured;
+  captured.blobs.push_back({"output.logits.f32",false,part(phase.slots[q::Model::slot_index].data.logits)});
+  captured.blobs.push_back({"output.hidden.bf16",true,part(phase.slots[q::Model::slot_index].data.final_hidden)}); return captured;
 }
 #if defined(HYLE_COMPUTE_CUDA)
 bool batch_disjoint(const c::ReadLease &a, const c::ReadLease &b) {
@@ -1071,9 +1071,9 @@ void run_batch(const std::filesystem::path &inputs, const std::filesystem::path 
     model.prepare_evaluations(requests,nullptr,q::GraphRole::kMtpRound); observation.observe(model);
     auto *const episode = model.active_step.get(); auto *const phase = episode->phase; auto *const run = episode->execution.run;
     const auto slot = model.slot_index;
-    require(phase->slot_count == 1 && slot == 0 && run == q::take(phase->carriers[slot].borrow()) && run->valid() &&
-            episode->members.size() == 2 && phase->family->requests == 2 && phase->io[slot].attention_layout.facts().requests == 2 &&
-            phase->io[slot].attention_layout.facts().query_rows == 4 && std::count_if(episode->execution.bound.begin(),episode->execution.bound.end(),[](auto value) { return static_cast<bool>(value); }) == 14,
+    require(phase->slots.size() == 1 && slot == 0 && run == q::take(phase->slots[slot].carrier.borrow()) && run->valid() &&
+            episode->members.size() == 2 && phase->family->requests == 2 && phase->slots[slot].data.attention_layout.facts().requests == 2 &&
+            phase->slots[slot].data.attention_layout.facts().query_rows == 4 && std::count_if(episode->execution.bound.begin(),episode->execution.bound.end(),[](auto value) { return static_cast<bool>(value); }) == 14,
             "MTP batch did not prepare one real R2/T2 fourteen-bank Graph");
     const std::array candidate_ids{episode->members[0].next.get(),episode->members[1].next.get()};
     require(candidate_ids[0] && candidate_ids[1],"MTP batch did not retain both unique unpublished candidates");
@@ -1115,7 +1115,7 @@ void run_batch(const std::filesystem::path &inputs, const std::filesystem::path 
       q::prepare_generation_record(ledgers[j],*sessions[j],q::GraphRole::kMtpRound,requests[j].ids,true,j ? 1u : 2u,0);
     model.prepare_evaluations(requests,nullptr,q::GraphRole::kMtpRound); observation.observe(model);
     observation.same_slot_retry = model.active_step->phase == phase && model.active_step->execution.run == run &&
-        run == q::take(phase->carriers[slot].borrow()) && run->valid(); require(observation.same_slot_retry,"MTP retry replaced its original finite R2 carrier slot");
+        run == q::take(phase->slots[slot].carrier.borrow()) && run->valid(); require(observation.same_slot_retry,"MTP retry replaced its original finite R2 carrier slot");
     const std::array selections{q::MtpGenerationSelection{sessions[0],pending[0],2},q::MtpGenerationSelection{sessions[1],pending[1],1}};
     const std::array outputs_io{q::EvaluationIO{.name = "batch_member0", .trace_states = false},
         q::EvaluationIO{.name = "batch_member1", .trace_states = false}};

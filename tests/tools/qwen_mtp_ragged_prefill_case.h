@@ -163,7 +163,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       require(q::packs_prefill(step.phase->family->packing), "ragged MTP prefill silently used an exact tail family");
       if (carriers[lag]) require(carriers[lag] == step.phase, "ragged MTP compiled a new carrier for Li or member order");
       else carriers[lag] = step.phase;
-      auto &carrier_io = step.phase->io[step.state_slot];
+      auto &carrier_io = step.phase->slots[step.state_slot].data;
       require(read_indices(packed, carrier_io.draft_hidden_select) == report.hidden_indices,
           "actual hidden selector does not match the independently fixed per-member shifted rows");
       if (lag) require(read_indices(packed, carrier_io.draft_token_select) == report.token_indices,

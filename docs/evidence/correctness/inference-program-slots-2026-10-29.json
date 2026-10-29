@@ -1,0 +1,254 @@
+{
+  "schema": "hyle.correctness.program-slots.v1",
+  "date": "2026-10-29",
+  "status": "PASS_SIX_FINITE_CURRENT_CONSUMER_CASES",
+  "change": "One nonmovable physical slot inventory combines each original ProgramCarrier, ProgramIo, SlotTransactions and model payload. Qwen keeps math, layout and replay policy. Cold partial failures remain unpublished; original retirement and ownership are preserved.",
+  "counts": {
+    "successful_consumer_CXX": 2,
+    "failed_environment_CXX_attempts": 2,
+    "links": 2,
+    "retained_SDK_inputs": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "native_cases": 6,
+    "downloads": 0,
+    "standalone_complete_state_byte_checks": 7,
+    "ordinary_pipeline_arms": 16
+  },
+  "build": {
+    "tiny": {
+      "compile": {
+        "state": "TERMINAL",
+        "pid": 34244,
+        "started": 1793256669.2959292,
+        "seconds": 99.35820317268372,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link": {
+        "state": "TERMINAL",
+        "pid": 24860,
+        "started": 1793256828.7393057,
+        "seconds": 1.9319734573364258,
+        "exit": 0,
+        "timed_out": false
+      },
+      "source": {
+        "path": "tests/tools/qwen_host_image_test.cc",
+        "bytes": 9709,
+        "sha256": "b7b63bd543c0f80f74a42cf47a5a30758fc5541b76f89a6c2c28e7b509f9f225"
+      },
+      "image": {
+        "path": ".scratch/inference-program-slots-20261029/bin/tiny.exe",
+        "bytes": 145421824,
+        "sha256": "45caf816a988ee5f4fa666b017c3bd9bef04f3c76a2c259e6f77b0a9f08bd8b0"
+      },
+      "object": {
+        "path": ".scratch/inference-program-slots-20261029/compile/tiny/unit.obj",
+        "bytes": 70972385,
+        "sha256": "2055171a5a5042f6366a914020cb1138d327b6e2d6e249a86815aae7ee806d32"
+      },
+      "project_source_inputs": 232
+    },
+    "ordinary": {
+      "compile": {
+        "state": "TERMINAL",
+        "pid": 29764,
+        "started": 1793256836.706129,
+        "seconds": 36.504295349121094,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link": {
+        "state": "TERMINAL",
+        "pid": 27144,
+        "started": 1793256927.2915347,
+        "seconds": 1.8025784492492676,
+        "exit": 0,
+        "timed_out": false
+      },
+      "source": {
+        "path": "tests/tools/qwen_generation_batch_relay_probe.cc",
+        "bytes": 43463,
+        "sha256": "a7cfd0596a5146fc26a42ec945684925e6647070f81e6879d3c5f94f1bfa276b"
+      },
+      "image": {
+        "path": ".scratch/inference-program-slots-20261029/bin/ordinary.exe",
+        "bytes": 142909440,
+        "sha256": "06806316c5f745db4fb0a514750a20ab258bb13ea8e77fcb65903f00bb24eb04"
+      },
+      "object": {
+        "path": ".scratch/inference-program-slots-20261029/compile/ordinary/unit.obj",
+        "bytes": 25792046,
+        "sha256": "fba2fa78173be54d742d42e6b552a5ceb0708a3a4cd24807acdfd7682f1130cf"
+      },
+      "project_source_inputs": 197
+    }
+  },
+  "sources": [
+    {
+      "path": "engine/inference/program_slots.h",
+      "bytes": 6462,
+      "sha256": "9f4b36e6404e24b2643253a13861dc7274d71c3d795b9c34c16593043db4b613"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 637336,
+      "sha256": "f0668ce0d3c6d25493c2d67fa12c6a50121eba1ed43313e9167b38b9eab53f57"
+    },
+    {
+      "path": "tests/tools/inference_program_carrier_case.h",
+      "bytes": 17518,
+      "sha256": "919a7aa95d59b8dc002e31e9e6a63dc06d5cd2592607accfd4ebf2dd435539f1"
+    }
+  ],
+  "cases": {
+    "program-cpu": {
+      "status": "PASS",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 41764,
+        "started": 1793256873.8189898,
+        "seconds": 0.8103024959564209,
+        "exit": 0,
+        "timed_out": false
+      },
+      "summary": {
+        "native_submissions": 2,
+        "models": 0,
+        "complete_original_group_checks": true
+      },
+      "report": {
+        "path": ".scratch/inference-program-slots-20261029/runs/program-cpu/report.json",
+        "bytes": 953,
+        "sha256": "1eb04ad5ca50adc1f6c6ea80c8334c88cf64a4120a0656ca6c79541123d3a2ea"
+      }
+    },
+    "program-cuda": {
+      "status": "PASS",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 33696,
+        "started": 1793256881.178157,
+        "seconds": 0.507645845413208,
+        "exit": 0,
+        "timed_out": false
+      },
+      "summary": {
+        "native_submissions": 2,
+        "models": 0,
+        "complete_original_group_checks": true
+      },
+      "report": {
+        "path": ".scratch/inference-program-slots-20261029/runs/program-cuda/report.json",
+        "bytes": 954,
+        "sha256": "673413eaf5a3ecb711b9c601989b366445c286e2e5a635198583064060de4927"
+      }
+    },
+    "controls-cpu": {
+      "status": "PASS",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 47636,
+        "started": 1793256889.3636284,
+        "seconds": 0.47128844261169434,
+        "exit": 0,
+        "timed_out": false
+      },
+      "summary": {
+        "target_submissions": 9,
+        "complete_state_byte_checks": 3,
+        "scope": "Original K2/R2 GenerationRequest; dynamic/static sampling, stop, cancellation, survivor and HostImage restore."
+      },
+      "report": {
+        "path": ".scratch/inference-program-slots-20261029/runs/controls-cpu/report.json",
+        "bytes": 2073,
+        "sha256": "413b936db06b39719c3137a79e89ffc669e853d3714b5f95ceef6be7d9a39728"
+      }
+    },
+    "controls-cuda": {
+      "status": "PASS",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 59988,
+        "started": 1793256897.9198282,
+        "seconds": 0.8660383224487305,
+        "exit": 0,
+        "timed_out": false
+      },
+      "summary": {
+        "target_submissions": 9,
+        "complete_state_byte_checks": 3,
+        "scope": "Original K2/R2 GenerationRequest; dynamic/static sampling, stop, cancellation, survivor and HostImage restore."
+      },
+      "report": {
+        "path": ".scratch/inference-program-slots-20261029/runs/controls-cuda/report.json",
+        "bytes": 2074,
+        "sha256": "d7b030482b428864a26b48c86c38105a976c936acf2e53f29b2076f5ffb58e75"
+      }
+    },
+    "mtp-cuda": {
+      "status": "PASS",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 60700,
+        "started": 1793256907.0922377,
+        "seconds": 3.3743886947631836,
+        "exit": 0,
+        "timed_out": false
+      },
+      "summary": {
+        "outputs": 40,
+        "serial_submissions": 23,
+        "auto_submissions": 24,
+        "successor_submissions": 3,
+        "successor_publications": 2,
+        "successor_discards": 1,
+        "accepted_drafts": 17,
+        "rejected_drafts": 4,
+        "complete_state_byte_checks": 1
+      },
+      "report": {
+        "path": ".scratch/inference-program-slots-20261029/runs/mtp-cuda/report.json",
+        "bytes": 7117,
+        "sha256": "783435df8c542066c8a5d00b9e5efb96c73ce3179744f702e70a44c33ebf323d"
+      }
+    },
+    "ordinary-cuda": {
+      "status": "PASS",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 7152,
+        "started": 1793256936.0690908,
+        "seconds": 1.3999710083007812,
+        "exit": 0,
+        "timed_out": false
+      },
+      "summary": {
+        "control_and_candidate_arms": 16,
+        "candidates": 8,
+        "original_complete_prefix_state_epoch_rng_equal": true,
+        "scope": "CUDA R1/R2 continuous pipeline, credit, member cancel, yield, stop and post-submit control failure."
+      },
+      "report": {
+        "path": ".scratch/inference-program-slots-20261029/runs/ordinary-cuda/report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      }
+    }
+  },
+  "environment_failure": "Two initial cl attempts failed before parsing source (D8037). The captured toolchain dictionary only had INCLUDE/LIB/LIBPATH/PATH. Inherit Windows process environment, overlay the same toolchain, and use workspace TEMP/TMP. Both failed process receipts are archived; no disk exhaustion or dependency rebuild.",
+  "coverage_boundaries": [
+    "Windows MSVC 14.50, RTX 4070 driver 617.14; current consumers linked to 227 retained SDK objects/libraries. No SDK/NVCC rebuild.",
+    "All six native processes were run once and passed; original result assertions were retained. No weaker tolerance or regenerated trained weights.",
+    "Standalone AddGraph is a second physical-slot consumer, not a second complete inference model family.",
+    "Thirteen probe/case consumers were mechanically migrated; standalone probes not reached by the two translation units were not separately built or run.",
+    "Apple/Vulkan, unknown native failures, full engine orchestration and new throughput/quality measurements were not checked in this batch.",
+    "One/three physical slots and two candidate depths remain distinct. The group invents no queue, Completion, permission or state-publication mechanism."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-program-slots-2026-10-29.zip",
+    "bytes": 101425,
+    "sha256": "d2f648c98662babd98a342f57a7cceff0bd408a9dedba309244844bd5f493dfb"
+  }
+}

@@ -215,8 +215,8 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
   auto *const shared_phase = session->pending->phase;
   auto *const shared_run = session->pending->execution.run;
   require(shared_phase && shared_run && shared_run->valid() &&
-          shared_phase->slot_count == 1 && borrowed_slot == 0 &&
-          shared_run == q::take(shared_phase->carriers[borrowed_slot].borrow()),
+          shared_phase->slots.size() == 1 && borrowed_slot == 0 &&
+          shared_run == q::take(shared_phase->slots[borrowed_slot].carrier.borrow()),
           "prepared candidate did not borrow an actual Model execution slot");
   q::check(idle->stop());
   const auto idle_retirement = idle->try_retire(); q::check(idle_retirement.status);
@@ -364,8 +364,8 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
   const auto after_report_slot = model.slot_index;
   model.prepare_evaluation(*after_report, std::span(&tape[1], 1));
   require(after_report->pending && after_report->pending->phase == shared_phase &&
-          shared_phase->slot_count == 1 && after_report_slot == 0 &&
-          after_report->pending->execution.run == q::take(shared_phase->carriers[after_report_slot].borrow()),
+          shared_phase->slots.size() == 1 && after_report_slot == 0 &&
+          after_report->pending->execution.run == q::take(shared_phase->slots[after_report_slot].carrier.borrow()),
           "a different Session did not recover the original serial Model slot");
   model.submit_evaluation(*after_report);
   (void)q::finish_evaluation(model, *after_report, "retirement_after_report_error");
@@ -466,7 +466,7 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
   model.prepare_evaluation(*session, std::span(&pending, 1), nullptr, catchup_role);
   auto *const phase = session->pending->phase;
   auto *const run = session->pending->execution.run;
-  require(phase && phase->slot_count == 1 && slot == 0 && run == q::take(phase->carriers[slot].borrow()) && run->valid() &&
+  require(phase && phase->slots.size() == 1 && slot == 0 && run == q::take(phase->slots[slot].carrier.borrow()) && run->valid() &&
           session->pending == model.active_step.get() && session->pending->members.size() == 1 &&
           session->pending->members[0].base == old_prefix.get(),
           "MTP catchup did not borrow its original Model carrier and complete base");

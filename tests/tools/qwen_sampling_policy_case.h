@@ -166,7 +166,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind = q::Back
     }
   for (auto &[key, phase] : model.phases)
     if (key.requests == 2 && key.sampling_index == 3) {
-      auto &io = phase->io[q::Model::slot_index];
+      auto &io = phase->slots[q::Model::slot_index].data;
       require(phase->batched_text_sampling && io.sampling_identities.description.rank() == 2 &&
           io.sampling_identities.description.dimensions()[0] == 2 &&
           io.sampling_identities.description.dimensions()[1] == 4,

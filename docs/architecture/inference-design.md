@@ -1472,10 +1472,16 @@ Store／Append事务及Session发布仍归原模型适配。
 关闭和实际退休分别观察：未知退休时保留原handle，target／NextN先恢复原交易才重置；纯采样程序
 没有状态交易，只在实际退休后重置。Graph的关闭handle仍可为truthy，不能据此重新接纳。
 Model最终退出时交接原Backend，再永久放弃应用根以断开作用域环，这不是可复用重置。
-Phase按原计划准备一个或三个固定地址载体，直接使用已选exact child，保留variant与形状核对；
+Phase以共同`ProgramSlots`按原计划准备一个或三个固定地址槽，每槽组合原IO、Store事务和载体，
+直接使用已选exact child，保留variant与形状核对。模型的同步冷配方只提供张量、端口、布局和replay事实；
+全部槽准备成功才发布集合，部分失败销毁未发布的冷对象，不另做原生回滚或重试。
+固定IO与载体一同保持地址稳定；析构先释放原Invocation，再释放事务、IO与模型载荷。
+初始化、pending、真实退休与最终根交接共用原载体，热访问不新增路由、回调或Release边界检查；
 成功步骤不重置载体，原Source及Store／Append交易归还后才释放动态输入。
 非阻塞退休查询只收集完成事实，显式abort／drain才等待设备；结果观察完成后才归还IO。
 完整执行编排仍待继续抽离，不能由程序载体的共用代签完成。
+[执行槽有限检查](../evidence/correctness/inference-program-slots-2026-10-29.json)覆盖独立AddGraph与Qwen消费者，
+保留原CPU／CUDA生命周期、状态、账簿和RNG检查；没有新的吞吐结论。
 普通Family、NextN、prefix sampler和frontier的有限exact目录统一由`PreparedProgramFamily`准备：
 同索引选取Executable与Report，冷存储发布输出事实及O(1)索引，全部成功后才发布目录。
 child地址固定并覆盖载体借用寿命；目录只持原Graph句柄和冷元数据，不增加原生资源owner或热查询。

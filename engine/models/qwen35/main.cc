@@ -50,6 +50,7 @@
 #include "../../inference/ct_block128_graph.h"
 #include "../../inference/execution_resources.h"
 #include "../../inference/program_carrier.h"
+#include "../../inference/program_slots.h"
 #include "../../inference/execution_episode.h"
 #include "../../inference/program_io.h"
 #include "../../inference/prepared_program_family.h"
@@ -980,7 +981,6 @@ struct PhaseIo final {
   Tensor sampling_identities, draft_positions, catchup_token;
   Tensor draft_hidden_select, draft_token_select, draft_last_ids;
   std::vector<std::int32_t> draft_hidden_indices, draft_token_indices;
-  inference::ProgramIo bindings;
   inference::ProgramIo::Readback next_id, draft_id, sampling_valid, sampling_accept;
   inference::ProgramIo::Readback successor_token, successor_catchup;
   std::vector<std::uint8_t> sampling_valid_values, sampling_accept_values;
@@ -995,18 +995,13 @@ struct Phase final : FamilyPorts {
   const inference::PreparedProgram *child = nullptr;
   const Family *family = nullptr;
   std::size_t variant_index = 0;
-  std::size_t slot_count = 1;
   bool imported_sources = false;
-  std::array<inference::ProgramCarrier<ColdResources>, execution_slot_count> carriers;
   std::vector<StateBank> state_banks;
-  std::array<inference::SlotTransactions, execution_slot_count> state_transactions;
+  using ExecutionSlots = inference::ProgramSlots<ColdResources, PhaseIo, execution_slot_count>;
+  ExecutionSlots slots;
   const g::Graph &state_graph() const noexcept {
     return child->resource_graph();
   }
-  std::array<std::size_t, execution_slot_count> planned_slot_uses{};
-  std::array<std::size_t, execution_slot_count> preparation_uses{};
-  std::array<g::ReplayMode, execution_slot_count> replay_modes{};
-  std::array<PhaseIo, execution_slot_count> io;
   const PreparedOutputFacts *logits_facts = nullptr, *hidden_facts = nullptr;
   std::array<const PreparedOutputFacts *, 9> probe_facts{};
 };
@@ -1026,7 +1021,7 @@ struct InputPreparationScratch final {
   // Keep page readers, immutable layout versions and NodeLayouts outside scratch.
   std::vector<std::int32_t> target_page_ids;
   void prepare(const Phase &phase) {
-    const auto &io = phase.io.front(); // All slots share the same cold descriptions.
+    const auto &io = phase.slots[0].data; // All slots share the same cold descriptions.
     const auto reserve = [](auto &values, const Tensor &tensor) {
       using Element = typename std::decay_t<decltype(values)>::value_type;
       values.reserve(take(tensor.description.required_bytes()) / sizeof(Element));
@@ -1455,7 +1450,7 @@ struct ColdResources final {
     for (const auto *cache : {&phases, &probe_phases})
       for (const auto &[shape, phase] : *cache) {
         (void)shape;
-        for (const auto &carrier : phase->carriers) if (carrier.pending()) return true;
+        if (phase->slots.pending()) return true;
       }
     for (const auto &[shape, program] : draft_programs) {
       (void)shape; if (program->carrier.pending()) return true;
@@ -1473,7 +1468,7 @@ struct ColdResources final {
     // Completion still retains its Graph until actual retirement.
     for (auto *cache : {&phases, &probe_phases})
       for (auto &[shape, phase] : *cache) {
-        (void)shape; for (auto &carrier : phase->carriers) carrier.release_invocation_root();
+        (void)shape; phase->slots.release_invocation_roots();
       }
     for (auto &[shape, program] : draft_programs) {
       (void)shape;
@@ -1800,9 +1795,7 @@ public:
     for (auto *cache : {&phases, &probe_phases})
       for (auto &[tokens, phase] : *cache) {
         (void)tokens;
-        for (auto &carrier : phase->carriers) {
-          if (carrier.initialized() || carrier.pending()) (void)carrier.retire(execution);
-        }
+        (void)phase->slots.retire_all(execution);
       }
     if (workers) workers->shutdown();
     if (scheduler) scheduler->drain();
@@ -2118,8 +2111,8 @@ public:
       const auto &layout = facts.kind == StateBankKind::kHidden ? hidden_layout
           : facts.kind == StateBankKind::kRecurrent ? state_pools[facts.layer].recurrent_layout
               : state_pools[facts.layer].history_layout;
-      for (std::size_t slot = 0; slot < phase.slot_count; ++slot)
-        check(phase.state_transactions[slot].set_layout(bank, layout));
+      for (std::size_t slot = 0; slot < phase.slots.size(); ++slot)
+        check(phase.slots[slot].transactions.set_layout(bank, layout));
     }
   }
 
@@ -2845,12 +2838,9 @@ public:
           for (const bool imported : {false, true}) {
             auto physical = old_shape; physical.imported_sources = imported;
             if (auto phase = phases.find(physical); phase != phases.end()) {
-              for (auto &carrier : std::span(phase->second->carriers).first(phase->second->slot_count)) {
-                if (!carrier.initialized() && !carrier.pending()) continue;
-                const auto retired = carrier.retire(execution);
-                check(retired.status);
-                if (!retired.retired) throw std::runtime_error("exact family carrier has not actually retired");
-              }
+              const auto retired = phase->second->slots.retire_all(execution);
+              check(retired.status);
+              if (!retired.retired) throw std::runtime_error("exact family carrier has not actually retired");
               phases.erase(phase);
             }
           }
@@ -3786,24 +3776,29 @@ public:
       throw std::runtime_error("inconsistent MTP frontier, catch-up token or owned target hidden state");
   }
 
-  void initialize_slot(Phase &phase, std::size_t slot) {
-    if (slot >= phase.slot_count) throw std::runtime_error("execution slot is outside its cold carrier plan");
-    auto &carrier = phase.carriers[slot];
-    if (carrier.initialized()) return;
-    auto &io = phase.io[slot];
-    const auto &definition = *phase.family;
-    // Preserve the selected exact child and the original query-row binding.
-    const std::array bindings{g::ShapeBinding{definition.last_row, static_cast<std::int64_t>(phase.query_rows - 1)}};
-    inference::ProgramInitialization initialization{
-        .io = io.bindings,
+  Phase::ExecutionSlots::Initialization slot_initialization(const Phase &phase,
+      std::span<const g::ShapeBinding> bindings) const {
+    Phase::ExecutionSlots::Initialization initialization{
         .invocation = {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
         .progress = {scheduler.get(), workers.get()},
         .exact = inference::ProgramInitialization::Exact{phase.variant_index, bindings}};
-    if (phase.state_transactions[slot].size()) initialization.slots.emplace(inference::ProgramInitialization::Slots{
+    if (!phase.state_banks.empty()) initialization.slots.emplace(inference::ProgramInitialization::Slots{
         phase.state_graph(), phase.state_sources,
         {.host_workspace = execution.staging(), .resource_budget = execution_budget ? execution_budget : cache_budget}});
-    check(carrier.initialize(initialization));
-    phase.preparation_uses[slot] = 0;
+    return initialization;
+  }
+
+  void initialize_slot(Phase &phase, std::size_t slot) {
+    // Warm admission does not construct borrowed installation facts or copy
+    // resource-budget handles. Borrow/submit still check actual retirement.
+    if (slot < phase.slots.size()) {
+      const auto &carrier = phase.slots[slot].carrier;
+      if (carrier.initialized() && !carrier.closing()) return;
+    }
+    // The model supplies its exact/source/resource facts; the common group
+    // installs only this slot's original IO and preserves an existing run.
+    const std::array bindings{g::ShapeBinding{phase.family->last_row, static_cast<std::int64_t>(phase.query_rows - 1)}};
+    check(phase.slots.initialize(slot, slot_initialization(phase, bindings)));
   }
 
   Phase &prepare_child(std::size_t tokens, bool diagnostic, std::size_t requests = 1, GraphRole role = GraphRole::kText,
@@ -3824,6 +3819,7 @@ public:
     const auto index = static_cast<std::size_t>(point - definition.chunks.begin());
     auto result = std::make_unique<Phase>();
     auto &phase = *result;
+    std::size_t physical_slots = 1;
     phase.imported_sources = imported_sources;
     if (imported_sources) {
       const bool ordinary = tokens == 1 && role == GraphRole::kText && !cache_plan.draft_cache;
@@ -3833,21 +3829,14 @@ public:
       if ((!ordinary && !mtp) || diagnostic || completion != TextCompletion::kEmitNext ||
           cache_plan.in_flight_batches < 2 || scheduler)
         throw std::runtime_error("imported decode carriers require a complete supported predecessor and two candidate depths");
-      phase.slot_count = execution_slot_count;
+      physical_slots = execution_slot_count;
     }
     phase.query_rows = tokens;
     static_cast<FamilyPorts &>(phase) = static_cast<const FamilyPorts &>(definition);
     if (imported_sources) for (auto &source : phase.state_sources) source.mode = g::slots::SourceMode::kImported;
-    phase.planned_slot_uses = shape_plan.uses({requests, tokens, role, completion, sampling_index, false, packing});
-    for (std::size_t slot = 0; slot < phase.slot_count; ++slot) {
-      phase.replay_modes[slot] = !selected_sampler.modifiers.history.empty() ? g::ReplayMode::kCommands
-          : imported_sources ? g::ReplayMode::kPreferCapture : select_replay_mode(
-          replay_policy, phase.planned_slot_uses[slot], selected_sampler.enabled);
-    }
+    const auto planned_slot_uses = shape_plan.uses({requests, tokens, role, completion, sampling_index, false, packing});
     phase.attention_schema = definition.attention_schema;
     phase.child = &definition.programs.child(index);
-    for (std::size_t slot = 0; slot < phase.slot_count; ++slot)
-      check(phase.carriers[slot].prepare(phase.child->compiled, execution.queue_bindings()));
     phase.family = &definition; phase.variant_index = index;
     std::vector<inference::SlotTransactionSpec> transactions;
     phase.state_banks.reserve(phase.state_sources.size() + (phase.hidden_state.store.valid() ? 1u : 0u));
@@ -3869,9 +3858,6 @@ public:
     if (phase.hidden_state.store.valid())
       add_bank({.kind = StateBankKind::kHidden}, phase.hidden_state,
           has_mtp(role) ? cache::multiply(requests, draft_lag(role) + 1) : 0);
-    for (std::size_t slot = 0; slot < phase.slot_count; ++slot)
-      check(phase.state_transactions[slot].prepare(transactions));
-    if (state_storage_prepared) prepare_transaction_layouts(phase);
     std::erase_if(phase.state_resource_ports, [&](V value) {
       return value.kind() != g::ValueKind::kInput && !phase.child->output(value).caller_owned();
     });
@@ -3881,7 +3867,13 @@ public:
     phase.hidden_facts = &phase.child->output(phase.hidden_port);
     if (diagnostic) for (std::size_t i = 0; i < phase.probe_ports.size(); ++i)
       phase.probe_facts[i] = &phase.child->output(phase.probe_ports[i]);
-    for (auto &io : std::span(phase.io).first(phase.slot_count)) {
+    check(phase.slots.prepare(phase.child->compiled, execution.queue_bindings(), physical_slots, transactions,
+        [&](std::size_t slot, auto &program_slot) {
+      auto &io = program_slot.data;
+      program_slot.planned_uses = planned_slot_uses[slot];
+      program_slot.replay_mode = !selected_sampler.modifiers.history.empty() ? g::ReplayMode::kCommands
+          : imported_sources ? g::ReplayMode::kPreferCapture : select_replay_mode(
+          replay_policy, program_slot.planned_uses, selected_sampler.enabled);
       const auto token_count = has_mtp(role) && !is_mtp_prefill(role)
           ? static_cast<std::int64_t>(requests) : t * static_cast<std::int64_t>(requests);
       io.tokens = caller_tensor(execution.device(), role == GraphRole::kText
@@ -3964,43 +3956,45 @@ public:
       const auto readback_count = bool(phase.sampling_valid_port) + bool(phase.sampling_accept_port) +
           (completion == TextCompletion::kEmitNext) + drafts_token(role) +
           bool(phase.successor_token_port) + bool(phase.successor_catchup_port);
-      check(io.bindings.prepare(phase.child->compiled, fixed_count, 0, readback_count, 0));
+      check(program_slot.io.prepare(phase.child->compiled, fixed_count, 0, readback_count, 0));
       // Register once in the original cold installation order. Tensor owners
       // stay here; each readback's only owner moves into the same shared IO.
-      check(io.bindings.add_fixed(phase.token_port, io.tokens.read()));
-      check(io.bindings.add_fixed(phase.position_port, io.positions.read()));
-      if (sampling_identity) check(io.bindings.add_fixed(phase.sampling_identity_port, io.sampling_identities.read()));
+      check(program_slot.io.add_fixed(phase.token_port, io.tokens.read()));
+      check(program_slot.io.add_fixed(phase.position_port, io.positions.read()));
+      if (sampling_identity) check(program_slot.io.add_fixed(phase.sampling_identity_port, io.sampling_identities.read()));
       if (phase.sampling_valid_port) {
-        io.sampling_valid = take(io.bindings.add_readback(phase.sampling_valid_port, execution, allocation_budget));
+        io.sampling_valid = take(program_slot.io.add_readback(phase.sampling_valid_port, execution, allocation_budget));
         if (phase.sampling_accept_port)
-          io.sampling_accept = take(io.bindings.add_readback(phase.sampling_accept_port, execution, allocation_budget));
+          io.sampling_accept = take(program_slot.io.add_readback(phase.sampling_accept_port, execution, allocation_budget));
       }
-      if (last_ids) check(io.bindings.add_fixed(phase.last_ids_port, io.last_ids.read()));
-      if (packed_target) check(io.bindings.add_fixed(phase.history_select_port, io.history_select.read()));
-      if (packed_verify) check(io.bindings.add_fixed(phase.prefix_ids_port, io.prefix_ids.read()));
-      if (io.logits.caller_owned()) check(io.bindings.add_fixed_output(phase.logits_port, io.logits.view()));
+      if (last_ids) check(program_slot.io.add_fixed(phase.last_ids_port, io.last_ids.read()));
+      if (packed_target) check(program_slot.io.add_fixed(phase.history_select_port, io.history_select.read()));
+      if (packed_verify) check(program_slot.io.add_fixed(phase.prefix_ids_port, io.prefix_ids.read()));
+      if (io.logits.caller_owned()) check(program_slot.io.add_fixed_output(phase.logits_port, io.logits.view()));
       if (completion == TextCompletion::kEmitNext)
-        io.next_id = take(io.bindings.add_readback(phase.id_port, execution, allocation_budget));
+        io.next_id = take(program_slot.io.add_readback(phase.id_port, execution, allocation_budget));
       if (phase.successor_token_port)
-        io.successor_token = take(io.bindings.add_readback(phase.successor_token_port, execution, allocation_budget));
+        io.successor_token = take(program_slot.io.add_readback(phase.successor_token_port, execution, allocation_budget));
       if (phase.successor_catchup_port)
-        io.successor_catchup = take(io.bindings.add_readback(phase.successor_catchup_port, execution, allocation_budget));
-      if (io.final_hidden.caller_owned()) check(io.bindings.add_fixed_output(phase.hidden_port, io.final_hidden.view()));
+        io.successor_catchup = take(program_slot.io.add_readback(phase.successor_catchup_port, execution, allocation_budget));
+      if (io.final_hidden.caller_owned()) check(program_slot.io.add_fixed_output(phase.hidden_port, io.final_hidden.view()));
       if (has_mtp(role)) {
-        check(io.bindings.add_fixed(phase.draft_position_port, io.draft_positions.read()));
-        if (draft_lag(role)) check(io.bindings.add_fixed(phase.catchup_token_port, io.catchup_token.read()));
+        check(program_slot.io.add_fixed(phase.draft_position_port, io.draft_positions.read()));
+        if (draft_lag(role)) check(program_slot.io.add_fixed(phase.catchup_token_port, io.catchup_token.read()));
         if (packs_prefill(definition.packing) || compact_draft) {
-          check(io.bindings.add_fixed(phase.draft_hidden_select_port, io.draft_hidden_select.read()));
-          if (draft_lag(role)) check(io.bindings.add_fixed(phase.draft_token_select_port, io.draft_token_select.read()));
+          check(program_slot.io.add_fixed(phase.draft_hidden_select_port, io.draft_hidden_select.read()));
+          if (draft_lag(role)) check(program_slot.io.add_fixed(phase.draft_token_select_port, io.draft_token_select.read()));
         }
-        if (compact_draft) check(io.bindings.add_fixed(phase.draft_last_ids_port, io.draft_last_ids.read()));
-        if (drafts_token(role)) io.draft_id = take(io.bindings.add_readback(phase.draft_id_port, execution, allocation_budget));
+        if (compact_draft) check(program_slot.io.add_fixed(phase.draft_last_ids_port, io.draft_last_ids.read()));
+        if (drafts_token(role)) io.draft_id = take(program_slot.io.add_readback(phase.draft_id_port, execution, allocation_budget));
       }
       if (diagnostic) for (std::size_t i = 0; i < phase.probe_ports.size(); ++i)
         if (const auto *output = phase.probe_facts[i]; output && output->caller_owned())
-          check(io.bindings.add_fixed_output(output->value, io.probe_outputs[i].view()));
-      check(io.bindings.seal());
-    }
+          check(program_slot.io.add_fixed_output(output->value, io.probe_outputs[i].view()));
+      check(program_slot.io.seal());
+      return hyle::Status::Ok();
+    }));
+    if (state_storage_prepared) prepare_transaction_layouts(phase);
     const auto &route_directory = layer0_probe.empty() ? trace_routes : layer0_probe;
     if (!route_directory.empty()) {
       std::filesystem::create_directories(route_directory);
@@ -4046,9 +4040,9 @@ public:
     }
     const auto storage = phase.child->compiled.report.compiled_storage();
     std::cerr << "planned_replay T=" << tokens
-              << " slot_count=" << phase.slot_count
-              << " slot0_uses=" << phase.planned_slot_uses[0]
-              << " slot0=" << (phase.replay_modes[0] == g::ReplayMode::kCommands ? "commands" : "prefer-capture") << '\n';
+              << " slot_count=" << phase.slots.size()
+              << " slot0_uses=" << phase.slots[0].planned_uses
+              << " slot0=" << (phase.slots[0].replay_mode == g::ReplayMode::kCommands ? "commands" : "prefer-capture") << '\n';
     std::cerr << "compiled T=" << tokens << " steps=" << phase.child->compiled.report.step_count()
               << " workspace/slot=" << phase.child->compiled.executable.workspace_bytes()
               << " compiled_known_bytes=" << storage.known_bytes()
@@ -4091,7 +4085,8 @@ public:
     if (active_step || carrier_borrowed) throw std::runtime_error("relay carrier preparation requires an idle model");
     auto &phase = prepare_child(drafts_token(role) ? 2 : 1, false, requests, role,
         TextCompletion::kEmitNext, sampling_index, true);
-    for (std::size_t slot = 0; slot < phase.slot_count; ++slot) initialize_slot(phase, slot);
+    const std::array bindings{g::ShapeBinding{phase.family->last_row, static_cast<std::int64_t>(phase.query_rows - 1)}};
+    check(phase.slots.initialize_all(slot_initialization(phase, bindings)));
   }
 
   // Prepare the existing cold plan, not every possible context length. This
@@ -4216,7 +4211,7 @@ public:
   // owns one original Invocation, IO loan, Completion and publication transaction.
   void prepare_draft_append(StepState &step, GraphRole role) {
     auto &phase = *step.phase;
-    auto &io = phase.io[step.state_slot];
+    auto &program_slot = phase.slots[step.state_slot]; auto &io = program_slot.data;
     const auto width = step.members.size();
     const bool relay = bool(step.execution.incoming);
     const bool compact_draft = packs_draft(phase.family->packing);
@@ -4717,19 +4712,19 @@ public:
       if (!layer0_probe.empty()) prepare_child(tokens, false, width, role, completion, sampling_index);
       if (predecessor) {
         const auto found = phases.find({width, tokens, role, completion, sampling_index, true});
-        if (found == phases.end() || !found->second->carriers[slot].initialized())
+        if (found == phases.end() || !found->second->slots[slot].carrier.initialized())
           throw std::runtime_error("successor carrier must be cold-prepared before its predecessor submission");
       }
       auto &phase = prepare_child(physical_tokens, !layer0_probe.empty(), width, role, completion, sampling_index, relay, packing);
-      auto &carrier = phase.carriers[slot];
-      auto &io = phase.io[slot];
+      auto &carrier = phase.slots[slot].carrier;
+      auto &program_slot = phase.slots[slot]; auto &io = program_slot.data;
       // A rejected successor never claims or clears its predecessor's run.
       if (predecessor && predecessor->phase == &phase && predecessor->state_slot == slot)
         throw std::runtime_error("successor cannot reuse its live predecessor carrier");
       initialize_slot(phase, slot);
       auto &run = *take(carrier.borrow());
       step.phase = &phase; step.execution.run = &run; step.execution.carrier = &carrier; step.state_slot = slot;
-      step.execution.state_transactions = &phase.state_transactions[slot];
+      step.execution.state_transactions = &phase.slots[slot].transactions;
       step.execution.nodes.assign(phase.append_nodes.begin(), phase.append_nodes.end());
       if (packed_target) {
         // The prior step has really retired. Release this exact mirror alias
@@ -4901,7 +4896,7 @@ public:
             compose(false), sources, step.execution.dirty[layer * 2 + 1], step.execution.tails[layer * 2 + 1], {.resource_budget = cache_budget}));
       }
       if (has_mtp(role)) prepare_draft_append(step, role);
-      auto &transactions = phase.state_transactions[slot];
+      auto &transactions = phase.slots[slot].transactions;
       for (std::size_t index = 0; index < phase.state_banks.size(); ++index) {
         const auto &bank = phase.state_banks[index];
         auto state_sources = transactions.sources(index);
@@ -4933,7 +4928,7 @@ public:
       layouts.reserve(target_kv_layers + (drafts_token(role) ? 1 : 0));
       for (std::size_t i = 0; i < phase.attention_nodes.size(); ++i) layouts.push_back({phase.attention_nodes[i], io.attention_layout});
       if (drafts_token(role)) layouts.push_back({phase.draft_attention_node, step.draft_layout});
-      if (preparation) { preparation->slot = slot; preparation->phase_slot_prior_uses = phase.preparation_uses[slot]; }
+      if (preparation) { preparation->slot = slot; preparation->phase_slot_prior_uses = phase.slots[slot].preparation_uses; }
       const auto batch_start = Clock::now();
       const auto append_banks = draft_bank + (has_mtp(role) ? 2u : 0u);
       check(step.execution.prepare_appends(phase.family->graph, layouts, 0, append_banks,
@@ -4968,7 +4963,7 @@ public:
         check(run.bind(phase.sequence_offsets_port, dense(Type::kInt32, {static_cast<std::int64_t>(width + 1)}), offsets));
       }
       const auto batch_end = Clock::now();
-      check(step.execution.prepare_replay({.mode = phase.replay_modes[slot], .host_wait = g::HostWaitPolicy::kAllow}));
+      check(step.execution.prepare_replay({.mode = phase.slots[slot].replay_mode, .host_wait = g::HostWaitPolicy::kAllow}));
       const auto replay_end = Clock::now();
       if (preparation) {
         preparation->layout_seconds = std::chrono::duration<double>(batch_start - cold_start).count();
@@ -4980,7 +4975,7 @@ public:
       step.capture_recorded = replay_report.recorded_capture_range_count;
       step.capture_reused = replay_report.reused_capture_range_count;
       step.cold_batch_seconds = std::chrono::duration<double>(Clock::now() - cold_start).count();
-      ++phase.preparation_uses[slot]; step.prepared = true;
+      ++phase.slots[slot].preparation_uses; step.prepared = true;
     } catch (inference::EvaluationFailure &failure) {
       failure.observe_retirement(predecessor ? abort_successor_episode() : abort_episode());
       throw;
@@ -5013,8 +5008,8 @@ public:
       throw std::runtime_error("submission views require one complete supported prepared episode");
     auto &phase = *step.phase;
     const auto storage = execution.storage_owner();
-    if (!storage || phase.carriers[step.state_slot].queues().size() != 1 ||
-        !take(phase.io[step.state_slot].bindings.readback(phase.io[step.state_slot].next_id))->pool().valid())
+    if (!storage || phase.slots[step.state_slot].carrier.queues().size() != 1 ||
+        !take(phase.slots[step.state_slot].io.readback(phase.slots[step.state_slot].data.next_id))->pool().valid())
       throw inference::EvaluationFailure(hyle::Status::Unimplemented(
           "submission views require the original owned shared Queue and full token writer"));
     auto sources = std::make_shared<StepSources>();
@@ -5055,18 +5050,18 @@ public:
     step.start = Clock::now(); step.submitted = true;
     check(step.execution.submit(resources_));
     if (step.execution.sources) {
-      auto &phase = *step.phase; auto &io = phase.io[step.state_slot];
+      auto &phase = *step.phase; auto &program_slot = phase.slots[step.state_slot]; auto &io = program_slot.data;
       auto &sources = *step.execution.sources;
       bool captured = false;
       if (sources.mtp_full_candidate) {
         const std::array<inference::SubmissionViews::OutputCapture, 2> outputs{{
-            {phase.successor_token_port, take(io.bindings.readback(io.successor_token))->pool()},
-            {phase.successor_catchup_port, take(io.bindings.readback(io.successor_catchup))->pool()}}};
+            {phase.successor_token_port, take(program_slot.io.readback(io.successor_token))->pool()},
+            {phase.successor_catchup_port, take(program_slot.io.readback(io.successor_catchup))->pool()}}};
         captured = take(sources.capture_outputs(*step.execution.run, step.execution.completion, outputs,
             execution.storage_owner(), optional_sources));
         if (captured) for (auto &state : sources.successor_states) check(state.capture(sources.submission));
       } else captured = take(sources.capture(*step.execution.run, step.execution.completion,
-          phase.id_port, execution.storage_owner(), take(io.bindings.readback(io.next_id))->pool(), optional_sources));
+          phase.id_port, execution.storage_owner(), take(program_slot.io.readback(io.next_id))->pool(), optional_sources));
       if (!captured) step.execution.sources.reset();
     }
     step.submit_seconds = std::chrono::duration<double>(Clock::now() - step.start).count();
@@ -5096,7 +5091,7 @@ public:
       if (outputs[j].disposition) *outputs[j].disposition = EvaluationDisposition::kNotPublished;
     }
     auto &step = *active_step; auto &phase = *step.phase; auto &run = *step.execution.run;
-    auto &io = phase.io[step.state_slot];
+    auto &program_slot = phase.slots[step.state_slot]; auto &io = program_slot.data;
     const auto step_start = step.step_start, start = step.start;
     hyle::container::SmallVector<std::size_t, 2> member_input_rows;
     const bool state_only = phase.family->completion == TextCompletion::kStateOnly;
@@ -5156,11 +5151,11 @@ public:
         if (!io.final_hidden.caller_owned()) generated_hidden = take(inference::retain_output(run, *phase.hidden_facts, allocation_budget));
       }
       if (drafts_token(phase.family->role)) {
-        check(io.bindings.read(execution, run, io.draft_id, std::as_writable_bytes(std::span(io.draft_ids))));
+        check(program_slot.io.read(execution, run, io.draft_id, std::as_writable_bytes(std::span(io.draft_ids))));
         for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].draft_token = io.draft_ids[j];
       }
       if (phase.sampling_valid_port && !state_only && phase.family->role != GraphRole::kVerify) {
-        check(take(io.bindings.readback(io.sampling_valid))->predicates(execution, run, io.sampling_valid_values, io.sampling_scratch));
+        check(take(program_slot.io.readback(io.sampling_valid))->predicates(execution, run, io.sampling_valid_values, io.sampling_scratch));
         auto bad = std::ranges::find_if(io.sampling_valid_values, [](auto value) { return value != 1; });
         if (step.discard_stopped_members)
           while (bad != io.sampling_valid_values.end() &&
@@ -5180,20 +5175,20 @@ public:
               "sampling distribution or proposal is invalid; no session or RNG cursor was published"), participant);
         }
         if (phase.sampling_accept_port) {
-          check(take(io.bindings.readback(io.sampling_accept))->predicates(execution, run, io.sampling_accept_values, io.sampling_scratch));
+          check(take(program_slot.io.readback(io.sampling_accept))->predicates(execution, run, io.sampling_accept_values, io.sampling_scratch));
           for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].sampled_accept = io.sampling_accept_values[j] != 0;
         }
       }
       // Selection observes only retired original Graph results. No head has
       // been published and all state/append guards still belong to this episode.
       if (verifies_prefix(phase.family->role)) {
-        check(io.bindings.read(execution, run, io.next_id, std::as_writable_bytes(std::span(io.prefix_candidates))));
+        check(program_slot.io.read(execution, run, io.next_id, std::as_writable_bytes(std::span(io.prefix_candidates))));
         select(std::span<const std::int32_t>(io.prefix_candidates), step, next_ids);
       } else if (state_only) {
         std::ranges::fill(next_ids, -1);
         select(std::span<const std::int32_t>(next_ids), step, next_ids);
       } else {
-        check(io.bindings.read(execution, run, io.next_id, std::as_writable_bytes(next_ids)));
+        check(program_slot.io.read(execution, run, io.next_id, std::as_writable_bytes(next_ids)));
         select(std::span<const std::int32_t>(next_ids), step, next_ids);
       }
       for (std::size_t j = 0; j < outputs.size(); ++j) {
@@ -5238,7 +5233,7 @@ public:
       check(step.execution.append_transactions().subspan(0, append_banks).take(run));
       // Slot take proves actual retirement, not success; the original whole
       // Graph completion above remains the success witness for every bank.
-      auto &transactions = phase.state_transactions[step.state_slot];
+      auto &transactions = phase.slots[step.state_slot].transactions;
       check(transactions.take_all(run));
       for (std::size_t bank_index = 0; bank_index < phase.state_banks.size(); ++bank_index) {
         const auto &bank = phase.state_banks[bank_index];
@@ -5380,9 +5375,9 @@ public:
         }
       if (step.execution.incoming) {
         check(g::detail::release_outputs(run, step.execution.incoming->bindings));
-        check(phase.carriers[step.state_slot].release_inputs(step.execution.incoming->outside_inputs));
+        check(phase.slots[step.state_slot].carrier.release_inputs(step.execution.incoming->outside_inputs));
         step.execution.incoming.reset(); step.execution.predecessor_episode.reset();
-      } else check(phase.carriers[step.state_slot].release_inputs(phase.state_resource_ports));
+      } else check(phase.slots[step.state_slot].carrier.release_inputs(phase.state_resource_ports));
       for (const auto &member : step.members)
         if (member.session->head.get() != member.base || member.session->head.epoch() != member.base_epoch ||
             member.session->pending != &step ||
@@ -5653,7 +5648,7 @@ public:
       c::ReadLease logits_owner;
       mem::ConstBufferView logits_storage;
       if (selected_sampler.enabled || !selected_sampler.modifiers.empty()) {
-        auto &logits = step.phase->io[step.state_slot].logits;
+        auto &logits = step.phase->slots[step.state_slot].data.logits;
         if (logits.caller_owned()) logits_storage = logits.storage();
         else {
           logits_owner = take(inference::retain_output(*step.execution.run, *step.phase->logits_facts, allocation_budget));

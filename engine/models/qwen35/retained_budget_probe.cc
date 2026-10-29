@@ -213,7 +213,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &outpu
   auto *const invocation = session->pending->execution.run;
   const auto *const candidate = session->pending->members[0].next.get();
   const auto *const episode = session->pending;
-  require(candidate && model.active_step.get() == episode && phase->slot_count == 1 && slot == 0 && invocation == q::take(phase->carriers[slot].borrow()) && model.snapshot_versions.live == 2 &&
+  require(candidate && model.active_step.get() == episode && phase->slots.size() == 1 && slot == 0 && invocation == q::take(phase->slots[slot].carrier.borrow()) && model.snapshot_versions.live == 2 &&
           std::count_if(session->pending->execution.bound.begin(), session->pending->execution.bound.end(), [](auto value) { return static_cast<bool>(value); }) == 14,
           "pressure episode did not retain its original slot/candidate/all14 append permissions");
   model.submit_evaluation(*session);
