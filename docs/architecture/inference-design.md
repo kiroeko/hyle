@@ -123,6 +123,8 @@ Store／页的描述范围仅在冷准备调用内同步消费，Qwen投影原�
 primary／exact、packing／diagnostic、角色端口及私有draft／prefix／frontier的不同复用政策属于模型事实；
 不再为它们套一层通用Family或单槽包装。K1与递归MTP已共用接受原语和实际资源选择、repair、预检及发布顺序；
 融合结果与递归device packet的观察方式仍不同，不能为减少字段投影而改成另一套执行或状态owner。
+这里的共同化指跨模型的完整阶段事实装配；K1／K>1已共享接受、停止／额度和原资源发布主干，
+融合draft、递归Verify及target-hidden修复保留真实数学与RNG差异。设备后继的配置覆盖另归执行与性能工作。
 
 Graph已有多个StorageDomain／ExecutionTarget／ExecutionLane及QueueBinding的表达，一个Invocation／Completion可覆盖聚合工作，
 物理IO槽数与设备数、分片数无关。当前Backend仍只装配一个主端点及可选CPU辅助；Qwen状态集中放置，

@@ -12,6 +12,13 @@
 单会话普通／MTP的最近跨引擎完整表见[推理进度](../inference-progress.md#最近完整性能对照)；
 下面的B2、CPU和局部候选属于不同窗口，各自保留版本与测量边界。
 
+2026-10-30的[同cohort预热保留](../../evidence/performance/inference-continuation-warmth-2026-10-30.json)
+继续区分失效Source与原carrier预热提示。成功丢弃后保留提示，下一步仍走原完整tuple、权限及capture覆盖门；
+失败／停止、组身份改变和跨turn的原重置保留。64输出ABBA每版两样本，decode117.81→121.37tok/s（＋3.03%）。
+有效后继7→19，实际37图、226target行、216draft行、2次丢弃及5次录图均相同；完整非时间报告只变两个流水计数。
+原权重40输出的完整状态与账簿、普通16组检查通过；两轮单样本不作稳定收益或跨引擎结论。本片没有新显存取样，
+最近完整四项对照仍是下面05:22～05:25窗口，不能把新Hyle初筛和旧peer拼成差距。
+
 2026-10-30 **05:22～05:25**的[成功投机丢弃保留载体](../../evidence/performance/inference-successful-discard-2026-10-30.json)
 修复正常丢弃B误走失败清理、关闭原carrier并丢失capture的问题。诊断确认没有variant淘汰，未扩大图缓存或更改预热策略。
 共同episode先实际观察原Completion成功和真实退休，再回收Source／Store／Append及动态输入，保留原固定IO和capture；

@@ -7020,9 +7020,12 @@ bool execute_generation_continuation(Model &model, std::span<PreparedGenerationC
         failure && failure->retirement_observed() && !failure->retirement().retired);
   };
   const auto release_and_discard = [&]() noexcept {
-    b_source.reset(); a_source.reset(); continuation.reset();
+    // Successful speculative discard withdraws the candidate Source, not the
+    // original carriers' warm hints. Every subsequent tuple is still checked.
+    b_source.reset(); a_source.reset(); continuation.release_ready();
     auto discarded = model.discard_successful_episode();
     if (discarded.retired) return discarded;
+    continuation.reset();
     const auto retired = model.retire_failed_publication();
     inference::record_retirement_status(discarded.status, retired.status);
     return inference::RetirementObservation{retired.retired, discarded.status};

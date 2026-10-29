@@ -1,0 +1,422 @@
+{
+  "schema": "hyle.performance.continuation-warmth.v1",
+  "date": "2026-10-30",
+  "status": "IMPLEMENTED_FINITE_CHECKS_AND_LIMITED_SCREEN",
+  "base_commit": "3938f555f",
+  "implementation": {
+    "product_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 630579,
+      "sha256": "9c9a926fc34f43372b80f76f30ae1948b624c239fefd3e0ab42f6086b4b09231"
+    },
+    "diff": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\product.diff",
+      "bytes": 1069,
+      "sha256": "bdca42263ecf72ecd011270f8ffd297d3684dafa1972b143d8f3b393e4f32dfc"
+    },
+    "code_change": "On normal successful speculative discard, release old Source/ready-slot while preserving same-cohort warm hints. Reset hints before destructive fallback; existing failure, cohort/turn and permission checks remain.",
+    "unchanged_sdk_inputs": 227,
+    "sdk_compiles": 0,
+    "consumer_CXX_compiles": 3,
+    "downloads": 0,
+    "cli_receipt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\compile\\receipt.json",
+      "bytes": 42584,
+      "sha256": "69472f1d08e5ef32e78dbe3450020e3c133142d256ca88520fdb8f1b62b5434a"
+    }
+  },
+  "screen": {
+    "order": [
+      "control",
+      "candidate",
+      "candidate",
+      "control"
+    ],
+    "samples_per_arm": 2,
+    "samples": [
+      {
+        "arm": "control",
+        "attempt": "abba-1",
+        "process": {
+          "state": "TERMINAL",
+          "pid": 58264,
+          "started": 1793309977.4130824,
+          "seconds": 3.3539507389068604,
+          "exit": 0,
+          "timed_out": false
+        },
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\runs\\control\\abba-1\\report.json",
+          "bytes": 82737,
+          "sha256": "280ebfadc068ccb2408cdfc8c09d6222aef831c2c426039845b26274d01c39d6"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\runs\\control\\abba-1\\command.json",
+          "bytes": 573,
+          "sha256": "3ad32438287bf847579d77b20f07d8381649e2ab1454aac761c2df3d955be907"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\runs\\control\\abba-1\\stderr.log",
+          "bytes": 15081,
+          "sha256": "141ef01d148406f8aae4e7598faa1a64a13c302262cca63b212e45587a2ee808"
+        },
+        "prefill_TPS": 2128.382954140258,
+        "decode_TPS": 117.95484276713073,
+        "combined_TPS": 105.53078605100666,
+        "decode_seconds": 0.5341027,
+        "work": {
+          "generated_tokens": 64,
+          "draft_rounds": 34,
+          "actual_graph_calls": 37,
+          "actual_target_rows": 226,
+          "actual_draft_rows": 216,
+          "overlap_successor_submissions": 9,
+          "overlap_successor_publications": 7,
+          "overlap_successor_discards": 2,
+          "overlap_successor_refusals": 0
+        },
+        "capture_recordings": 5
+      },
+      {
+        "arm": "candidate",
+        "attempt": "abba-2",
+        "process": {
+          "state": "TERMINAL",
+          "pid": 45560,
+          "started": 1793309980.8567722,
+          "seconds": 3.3512609004974365,
+          "exit": 0,
+          "timed_out": false
+        },
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\runs\\candidate\\abba-2\\report.json",
+          "bytes": 82734,
+          "sha256": "18aa6aacf4b62085f36ce27d48a6e167838fbbb101665fdd514a414a385799ae"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\runs\\candidate\\abba-2\\command.json",
+          "bytes": 575,
+          "sha256": "6391ffa98cd47bc10cc65b137089df0f7b0f625157d58ede045ac354d01f8493"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\runs\\candidate\\abba-2\\stderr.log",
+          "bytes": 13881,
+          "sha256": "0deef26e3bc8eed43c618a8f76f015a67351ed53742d435d14bccc730105ac12"
+        },
+        "prefill_TPS": 2025.9319286871962,
+        "decode_TPS": 121.01107635510797,
+        "combined_TPS": 107.26953935610453,
+        "decode_seconds": 0.5206135,
+        "work": {
+          "generated_tokens": 64,
+          "draft_rounds": 34,
+          "actual_graph_calls": 37,
+          "actual_target_rows": 226,
+          "actual_draft_rows": 216,
+          "overlap_successor_submissions": 21,
+          "overlap_successor_publications": 19,
+          "overlap_successor_discards": 2,
+          "overlap_successor_refusals": 0
+        },
+        "capture_recordings": 5
+      },
+      {
+        "arm": "candidate",
+        "attempt": "abba-3",
+        "process": {
+          "state": "TERMINAL",
+          "pid": 60384,
+          "started": 1793309984.2931707,
+          "seconds": 2.9855291843414307,
+          "exit": 0,
+          "timed_out": false
+        },
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\runs\\candidate\\abba-3\\report.json",
+          "bytes": 82741,
+          "sha256": "b81e7a2b368279845a03fb4c5d1cb4a0284eadfc63814ec7baa1542c965716e6"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\runs\\candidate\\abba-3\\command.json",
+          "bytes": 575,
+          "sha256": "6391ffa98cd47bc10cc65b137089df0f7b0f625157d58ede045ac354d01f8493"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\runs\\candidate\\abba-3\\stderr.log",
+          "bytes": 13880,
+          "sha256": "3797633a52b38f3be8717eb729119bd09cda71c9a11b7168c57521367c8b3d95"
+        },
+        "prefill_TPS": 2203.6643790531684,
+        "decode_TPS": 121.73237928640478,
+        "combined_TPS": 108.95243426125057,
+        "decode_seconds": 0.5175287000000001,
+        "work": {
+          "generated_tokens": 64,
+          "draft_rounds": 34,
+          "actual_graph_calls": 37,
+          "actual_target_rows": 226,
+          "actual_draft_rows": 216,
+          "overlap_successor_submissions": 21,
+          "overlap_successor_publications": 19,
+          "overlap_successor_discards": 2,
+          "overlap_successor_refusals": 0
+        },
+        "capture_recordings": 5
+      },
+      {
+        "arm": "control",
+        "attempt": "abba-4",
+        "process": {
+          "state": "TERMINAL",
+          "pid": 53800,
+          "started": 1793309987.3629837,
+          "seconds": 3.0061516761779785,
+          "exit": 0,
+          "timed_out": false
+        },
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\runs\\control\\abba-4\\report.json",
+          "bytes": 82748,
+          "sha256": "43e4ae972ba7f97a72fa9ce9f1045a332cd55e604e7dc64e1ac6a64b3cad2ddb"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\runs\\control\\abba-4\\command.json",
+          "bytes": 573,
+          "sha256": "3ad32438287bf847579d77b20f07d8381649e2ab1454aac761c2df3d955be907"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\runs\\control\\abba-4\\stderr.log",
+          "bytes": 15079,
+          "sha256": "fddd961d549bf8c4762fc9ca993875e0fae9b4787c2686e5b2fca529762e9c9a"
+        },
+        "prefill_TPS": 2129.9666950662227,
+        "decode_TPS": 117.65531996270889,
+        "combined_TPS": 105.30403248629403,
+        "decode_seconds": 0.5354623999999999,
+        "work": {
+          "generated_tokens": 64,
+          "draft_rounds": 34,
+          "actual_graph_calls": 37,
+          "actual_target_rows": 226,
+          "actual_draft_rows": 216,
+          "overlap_successor_submissions": 9,
+          "overlap_successor_publications": 7,
+          "overlap_successor_discards": 2,
+          "overlap_successor_refusals": 0
+        },
+        "capture_recordings": 5
+      }
+    ],
+    "medians": {
+      "control": {
+        "prefill_TPS": 2129.1748246032403,
+        "decode_TPS": 117.8050813649198,
+        "combined_TPS": 105.41740926865035,
+        "decode_seconds": 0.53478255
+      },
+      "candidate": {
+        "prefill_TPS": 2114.7981538701824,
+        "decode_TPS": 121.37172782075638,
+        "combined_TPS": 108.11098680867755,
+        "decode_seconds": 0.5190711
+      }
+    },
+    "median_decode_change_percent": 3.02758286358491,
+    "semantic_comparison": {
+      "method": "Original recursive non_time over complete raw JSON, preserving every embedded session/ledger/cache/role field; compare types,keys,list order/length and values. Do not mask overlap differences: list both exact intended counter changes.",
+      "allowed_and_only_differing_paths": [
+        "$.overlap_successor_submissions",
+        "$.overlap_successor_publications"
+      ],
+      "all_other_non_time_fields_equal": true,
+      "generated_ids": 64,
+      "round_records": 34
+    },
+    "original_full_analysis": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\delivery-analysis.json",
+      "bytes": 31372,
+      "sha256": "acbd7362a0182e7ce9ec0884fd31511e858d9902d0978dd0149058dfef028c4d"
+    }
+  },
+  "finite_checks": [
+    {
+      "case": "natural",
+      "status": "PASS",
+      "facts": {
+        "outputs": 40,
+        "ledger_records": 23,
+        "serial_submissions": 23,
+        "auto_submissions": 24,
+        "successor_submissions": 9,
+        "successor_publications": 8,
+        "successor_discards": 1,
+        "successor_refusals": 0,
+        "original_ledger_equal": true,
+        "generated_ids_equal": true,
+        "greedy_rng_unchanged": true,
+        "all_sources_expired": true,
+        "final_versions": 0,
+        "complete_state_payloads_byte_equal": true
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\finite-runs\\natural\\attempt1\\report.json",
+        "bytes": 7117,
+        "sha256": "b64a3319790522ec54f39d16a61d13ef62a81a5c7aa573fe2fe3b27912ef95c8"
+      },
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\finite-runs\\natural\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "08ad90d7c568a4639f21a8c6b41ff38b59365298112340982059644d5308ab3c"
+      }
+    },
+    {
+      "case": "ordinary",
+      "status": "PASS",
+      "facts": {
+        "control_and_candidate_arms": 16,
+        "complete_prefix_state_epoch_rng_equal": true,
+        "actual_owner_credit_checked": true,
+        "all_source_session_page_owners_retired": true
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\finite-runs\\ordinary\\attempt1\\report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      },
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\finite-runs\\ordinary\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "c174172385a6fe4b30dc078da780b967daed119acfbfe0044abac2f64f4e3f2e"
+      }
+    }
+  ],
+  "two_turn_supplement": {
+    "scope": "One process per version,128outputs; not a timing window or net-gain estimate.",
+    "control": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\runs\\control\\two-turn-once\\report.json",
+      "bytes": 152779,
+      "sha256": "df408c097729e01bc609a6f3bf520e896333371547e29ebf65fa42f0e2fccbc2"
+    },
+    "candidate": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\runs\\candidate\\two-turn-once\\report.json",
+      "bytes": 152806,
+      "sha256": "ea6d83375ea67620a9c41a8d29d67973208978991a3a4e078bf70a5376d5f255"
+    },
+    "offline_analysis": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\finite-analysis.json",
+      "bytes": 33205,
+      "sha256": "920df3c0ae756420f01452b1c985cd35b591474c3e515cafe557c2a74e142c45"
+    }
+  },
+  "research": {
+    "warm_gate": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\analysis-initial.json",
+      "bytes": 189506,
+      "sha256": "20fe2e8b936d0d89329f5eb7c3f5ddac1fe86afef77b02b2a510ffe0c2f92e28"
+    },
+    "draft_vocabulary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\draft-vocab-research.json",
+      "bytes": 13854,
+      "sha256": "69afb74839402bfbef8ec07751ba2d8262aa9bb86ea584d68d52a9461748bc6b"
+    },
+    "source_boundary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\source-boundary-audit.json",
+      "bytes": 5495,
+      "sha256": "4f4cdd175c461739d3666b7fdc55c6412bd3d082f394dff266ea5fc1e75ddb73"
+    }
+  },
+  "architecture": "K1/recursive already share accepted-prefix, stop/quota and original state/publication/retirement mechanisms. Keep real fused/recursive math and RNG differences; complete cross-model stage assembly and broader device-successor coverage remain unfinished.",
+  "cleanup": {
+    "script": {
+      "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+      "bytes": 1423,
+      "sha256": "38d1c2e5197f80d5f2302c9adefbbb2251b9b86e0615bef9b86f24bfdd792b54"
+    },
+    "manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\cleanup-targets.json",
+      "bytes": 3283,
+      "sha256": "8432cb700817a4ae8d54de89b8e341dceefa87e5c1663072249b2930f746f5fe"
+    },
+    "result": {
+      "files": 13,
+      "targets": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\bin\\candidate.exe",
+          "bytes": 142985216,
+          "sha256": "3daf8731311a2da2724c92f211d2791c137d0eeb475f61c7fc0ab17ebe3c1101"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\bin\\candidate.exp",
+          "bytes": 24989,
+          "sha256": "dd58a84810d8203e8ffa765745bab5c5774600c9cebeb2bb596e040415a9c4ba"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\bin\\candidate.lib",
+          "bytes": 41826,
+          "sha256": "a17fe4c1ccde457403d9126a084aa4f236618e410d072f5513aca0806f2713a6"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\bin\\control.exe",
+          "bytes": 142985216,
+          "sha256": "609206b97757ce9494f9581ed19a227747f62d2e6c24f116c66e197010f28d81"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\bin\\control.exp",
+          "bytes": 24985,
+          "sha256": "722800c9bb36fbdab26f2e2565354d4a584b6c8e6135f0bbab9527ce4a9fe6b7"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\bin\\control.lib",
+          "bytes": 41650,
+          "sha256": "6e6021240d599850ba1dccf0341a4d8a81278adfcfef859a93c118a266481a09"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\bin\\hyle_ggml_cpu_gdn_scale_v3.dll",
+          "bytes": 1206784,
+          "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\bin\\natural.exe",
+          "bytes": 143088128,
+          "sha256": "08e3cf4a512f134355532f76a407809b90ddf983bfdd837cc884116ddd0f1ccf"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\bin\\natural.exp",
+          "bytes": 24985,
+          "sha256": "0857d0a15f11141de20a76117cb7d1c8e8ef1a9774f6067744b60c72093e0aa2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\bin\\natural.lib",
+          "bytes": 41650,
+          "sha256": "58dc8cacc5b9fce9f3b071d7889ad9e8f2fcb6eccb176279b97d0075250b2f5e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\bin\\ordinary.exe",
+          "bytes": 142959104,
+          "sha256": "9c8c030d4821f814cb0b49a7839221066698de3b803083d1cb0ed76f6a324160"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\bin\\ordinary.exp",
+          "bytes": 24988,
+          "sha256": "24c39ac2ecc01d5d4ef78d3bcfb45bb2ef72d3962d42c8c3bea52a42b88e7bf7"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuation-warmth-20261030\\bin\\ordinary.lib",
+          "bytes": 41736,
+          "sha256": "b48e083b9ce39eb6f82dd55dba602a320b716d6c6113e731c1094b8446220b32"
+        }
+      ],
+      "bytes": 573491257.0,
+      "status": "REMOVED_EXACT_FLAT_BATCH_IMAGES"
+    }
+  },
+  "limits": [
+    "Only a two-sample-per-arm screen; no stable hardware-wide performance claim.",
+    "No new peer, independent memory, profiler or cross-platform processes; do not pool with earlier windows or recompute peer gap.",
+    "Preserved warm hints authorize no Source/tuple/lease reuse. The actual next preparation still checks all original permissions.",
+    "No change to cross-turn reset, warm threshold, numerical route, graph topology, output quota, cache capacity or public options.",
+    "Discarded speculative work, initial captures, cross-turn warmth and the broader architecture/GPU scope remain open.",
+    "Small draft vocabulary requires an independent model-tokenizer map and cold format-aware row import; no such current artifact was found and no download was started."
+  ],
+  "evidence_archive": "inference-continuation-warmth-2026-10-30.zip"
+}
