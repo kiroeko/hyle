@@ -81,6 +81,9 @@ Hyle采用同一职责边界，保留自身head／ledger／RNG原子发布合同
 不能重跑Graph或重新采样。`observe_record_commit`先去重，再借原token／输入span调用一次原`RequestProgress`观察，
 家族统计预检在前，无抛更新在后；共同层不持有另一份ledger、状态、Completion或RNG。
 Qwen的无失败head swap与GLM的可拒绝StateHead发布仍各自保留，不要求不同用户的Head组成跨用户原子事务。
+Qwen的typed及普通C++发布异常共用原owner收尾：只有target、后继及私有验证器均已退休，才清本次精确未提交slot。
+target为空不替代私有退休证明；流水外层和失败退出沿用此门。本次调用结束前撤回ledger裸借用，不给以后的Session退休挂清理回调。
+已提交peer及后续当前slot不被旧attempt清除，原Status或未知异常原样保留；晚观察只补原ordinal。
 纯主机见证保存原结果的必要标量，不能把会保活完整版本的`StateIdentity`当作无所有权ID存入历史；
 [Qwen／GLM有限检查](../evidence/correctness/inference-commit-observation-2026-10-29.json)保留原版本回收断言。
 

@@ -289,6 +289,15 @@ public:
     discard_successor();
     reset_record(record);
   }
+  // Failure recovery borrows this exact slot only for the original finish
+  // call. A committed peer or a later current attempt must remain intact.
+  bool discard_attempt(const GenerationCommitRecord *expected) noexcept {
+    if (committed_count >= records.size() || &records[committed_count] != expected ||
+        records[committed_count].committed) return false;
+    discard_successor();
+    reset_record(records[committed_count]);
+    return true;
+  }
 };
 
 } // namespace qwen35

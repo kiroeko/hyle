@@ -111,6 +111,10 @@ GLM Flash／Pro、DeepSeek正式Flash／Pro与Kimi的原组件程序已接共同
 有限／已接纳exact形状共用family与具体child选择，保留完整前缀接纳、diagnostic／packing隔离及原ColdShapePlan退休／回滚。
 5个CPU／CUDA进程通过，含真实预算拒绝后重试、原Invocation签名、普通连续16臂及原权重40输出MTP；后两份完整报告与上一片一致。
 3个消费者刷新、227个SDK／引擎输入复用，无SDK重编、下载或新吞吐结论。多宽度冷调用并非整调用事务，未强制触发不支持packed路由的返回分支。
+随后[发布失败收尾](../evidence/correctness/inference-publication-retirement-2026-10-30.json)真实复现普通C++异常后未提交记录残留，
+将typed／未知异常、流水外层及失败退出的退休门对齐，只清本次精确current slot；调用返回前撤回裸ledger借用，已提交peer与晚观察保留。
+7个当前CPU／CUDA进程通过，含9组账簿、实际R2拒绝后重试、MTP私有修复及原权重40输出；普通流水与自然MTP完整报告和上一片一致。
+原失败、一次复跑目录拒绝及被后续review替代的编译记录均保留；未注入持续私有native故障，无SDK重编或新吞吐结论。
 共同架构同时审查多模型、复杂阶段及未来多端点的依赖边界，避免将当前Qwen／单卡放置固化为通用合同；
 本轮不据组件通过声明大模型整机、多卡或跨机实现完成。现有硬件上的decode、MTP和含预热／换轮的综合速度仍是投入价值的关键检验，
 架构按实际热点与维护问题调整，不以等待更大硬件或无限整理抽象替代速度改进。

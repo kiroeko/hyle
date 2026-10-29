@@ -4926,6 +4926,41 @@ public:
     submit_evaluations();
   }
 
+  // Private validators can outlive the target's failure. Read only their
+  // original Invocation/retention facts; this failure-only check neither
+  // starts another recovery nor treats a cleanup hint as proof of retirement.
+  bool private_publications_retired() const noexcept {
+    for (const auto &[key, program] : draft_programs) {
+      (void)key;
+      if (program->guard.execution.run || program->guard.execution.cleanup_pending ||
+          !program->carrier.retired()) return false;
+    }
+    for (const auto &[key, program] : prefix_sampling_programs) {
+      (void)key;
+      if (!program->carrier.retired()) return false;
+    }
+    for (const auto &entry : resources_->sampling_configurations)
+      if (entry->frontier && !entry->frontier->carrier.retired()) return false;
+    return true;
+  }
+
+  inference::RetirementObservation retire_failed_publication(bool private_pending = false) noexcept {
+    // The ledger is a call-scoped borrow, not owned by the Step's native pins.
+    // Never retain a cleanup callback for a later Session/Model retirement.
+    const auto failed_step = active_step;
+    if (failed_step) for (auto &member : failed_step->members) member.commit_publication.reset();
+    auto retired = abort_episode();
+    retired.retired = retired.retired && !private_pending && private_publications_retired();
+    if (failed_step) for (auto &member : failed_step->members) {
+      if (retired.retired && member.commit_ledger)
+        (void)member.commit_ledger->discard_attempt(member.commit_record);
+      // An unretired Step may outlive this caller and its ledger. Later native
+      // retirement must never revisit these synchronous publication borrows.
+      member.commit_record = nullptr; member.commit_ledger = nullptr;
+    }
+    return retired;
+  }
+
   template<class Select, class Complete, class Observe>
   void finish_selected_evaluations(std::span<const EvaluationOutput> outputs,
                                   std::span<std::int32_t> next_ids, Select select, Complete complete, Observe observe) {
@@ -5267,26 +5302,10 @@ public:
       // this target episode. Its negative observation cannot be overwritten
       // by retiring only the target; retain it until its original owner drains.
       const bool private_pending = failure.retirement_observed() && !failure.retirement().retired;
-      const auto failed_step = active_step; // Failure-only pin across original abort/detach.
-      if (failed_step) for (auto &member : failed_step->members) member.commit_publication.reset();
-      auto retired = abort_episode();
-      retired.retired = retired.retired && !private_pending;
-      if (retired.retired && failed_step) for (auto &member : failed_step->members) {
-        // A retired failed attempt never authorizes a new ledger result. Only
-        // its exact still-uncommitted slot may be discarded; successful or
-        // partially published peers and any later current slot stay intact.
-        auto *ledger = member.commit_ledger;
-        if (!ledger || ledger->committed_count >= ledger->records.size()) continue;
-        auto &record = ledger->records[ledger->committed_count];
-        if (&record != member.commit_record || record.committed) continue;
-        ledger->discard_uncommitted();
-        member.commit_record = nullptr; member.commit_ledger = nullptr;
-      }
-      failure.observe_retirement(retired);
+      failure.observe_retirement(retire_failed_publication(private_pending));
       throw;
     } catch (...) {
-      if (active_step) for (auto &member : active_step->members) member.commit_publication.reset();
-      (void)abort_episode(); throw;
+      (void)retire_failed_publication(); throw;
     }
     const auto finished = Clock::now();
     for (std::size_t j = 0; j < outputs.size(); ++j) if ((published_members.empty() || published_members[j]) && outputs[j].generation_ledger) {
@@ -5773,9 +5792,10 @@ std::int32_t evaluate(Model &model, Session &session, std::span<const std::int32
   try { model.submit_evaluation(session); return finish_evaluation(model, session, name, trace, trace_states,
       complete_seconds, host_endpoint, observation, preparation, probe_subdirectory); }
   catch (inference::EvaluationFailure &failure) {
-    failure.observe_retirement(model.abort_episode());
+    failure.observe_retirement(model.retire_failed_publication(
+        failure.retirement_observed() && !failure.retirement().retired));
     throw;
-  } catch (...) { (void)model.abort_episode(); throw; }
+  } catch (...) { (void)model.retire_failed_publication(); throw; }
 }
 
 hyle::Status Session::stop() noexcept {
@@ -6879,8 +6899,10 @@ bool execute_generation_continuation(Model &model, std::span<PreparedGenerationC
   const auto successor_role = mtp ? GraphRole::kMtpCatchupRound : GraphRole::kText;
   struct RetiredCalls final {
     Model &model; GenerationContinuation &continuation;
+    int exceptions = std::uncaught_exceptions();
     ~RetiredCalls() {
-      if (!model.active_step && !model.successor_step) {
+      if (!model.active_step && !model.successor_step &&
+          (std::uncaught_exceptions() == exceptions || model.private_publications_retired())) {
         continuation.pending_calls.clear(); continuation.cohort.clear_drain();
       }
     }
@@ -6930,9 +6952,10 @@ bool execute_generation_continuation(Model &model, std::span<PreparedGenerationC
   const auto notify = [&] {
     if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<AfterSubmit>>) after_submit();
   };
-  const auto release_and_abort = [&]() noexcept {
+  const auto release_and_abort = [&](const inference::EvaluationFailure *failure = nullptr) noexcept {
     b_source.reset(); a_source.reset(); continuation.reset();
-    return model.abort_episode();
+    return model.retire_failed_publication(
+        failure && failure->retirement_observed() && !failure->retirement().retired);
   };
   const auto require_retired = [](inference::RetirementObservation observation) {
     if (!observation.retired || (!observation.status.ok() &&
@@ -6949,9 +6972,9 @@ bool execute_generation_continuation(Model &model, std::span<PreparedGenerationC
       if (ledger.committed_count < ledger.records.size()) ledger.discard_uncommitted();
     }
   };
-  const auto recover_records = [&]() noexcept {
+  const auto recover_records = [&](bool retired) noexcept {
     observe_generation_commits_after_failure(calls);
-    if (!model.active_step && !model.successor_step) {
+    if (retired && !model.active_step && !model.successor_step) {
       // Host record recovery is secondary to the original error too. Native
       // retirement still comes only from release_and_abort above this call.
       try { discard_records(); }
@@ -7170,10 +7193,11 @@ bool execute_generation_continuation(Model &model, std::span<PreparedGenerationC
         std::ranges::any_of(calls, [](const auto &call) { return call.quota <= 1; })) continuation.release_ready();
     return true;
   } catch (inference::EvaluationFailure &failure) {
-    failure.observe_retirement(release_and_abort()); recover_records();
+    const auto retired = release_and_abort(&failure);
+    failure.observe_retirement(retired); recover_records(retired.retired);
     throw;
   } catch (...) {
-    (void)release_and_abort(); recover_records();
+    const auto retired = release_and_abort(); recover_records(retired.retired);
     throw;
   }
 }
@@ -7373,9 +7397,10 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<AfterSubmit>>) {
       try { after_submit(); }
       catch (inference::EvaluationFailure &failure) {
-        failure.observe_retirement(model.abort_episode()); throw;
+        failure.observe_retirement(model.retire_failed_publication(
+            failure.retirement_observed() && !failure.retirement().retired)); throw;
       }
-      catch (...) { (void)model.abort_episode(); throw; }
+      catch (...) { (void)model.retire_failed_publication(); throw; }
     }
     if (model.active_step && model.active_step->cancelled) {
       // A single/all-member or pre-submit stop cancels the whole episode.
@@ -7519,15 +7544,17 @@ struct SynchronousGenerationWave final {
   inference::RequestWavePendingMember pending_member(std::size_t) const noexcept { return {}; }
   inference::RequestWaveAdvance advance(inference::RequestWaveAction action, inference::RequestWave wave) const {
     if (action == inference::RequestWaveAction::kDrain)
-      return {.remaining = model.try_retire_episode()};
+      return {.remaining = retire(inference::RequestWaveRetirement::kObserve)};
     execute(wave.keys);
     if (model.active_step || model.successor_step)
       throw std::logic_error("synchronous request wave retained an unfinished episode");
     return {.advanced = true, .remaining = {true, {}}};
   }
   inference::RetirementObservation retire(inference::RequestWaveRetirement action) const noexcept {
-    return action == inference::RequestWaveRetirement::kObserve
-        ? model.try_retire_episode() : model.abort_episode();
+    if (action == inference::RequestWaveRetirement::kAbort) return model.retire_failed_publication();
+    auto retired = model.try_retire_episode();
+    retired.retired = retired.retired && model.private_publications_retired();
+    return retired;
   }
   inference::RequestWaveResult operator()(inference::RequestWave wave,
       std::span<std::size_t> remaining_reserved) const {
@@ -7577,8 +7604,9 @@ inference::RequestWaveResult advance_generation_wave(Model &model, inference::Re
       return {.advanced = true, .remaining = {!pending, {}}};
     }
     inference::RetirementObservation retire(inference::RequestWaveRetirement action) noexcept {
-      const auto retired = action == inference::RequestWaveRetirement::kObserve
-          ? model.try_retire_episode() : model.abort_episode();
+      auto retired = action == inference::RequestWaveRetirement::kObserve
+          ? model.try_retire_episode() : model.retire_failed_publication();
+      retired.retired = retired.retired && model.private_publications_retired();
       if (retired.retired) {
         continuation.pending_calls.clear(); continuation.reset(); continuation.cohort.clear_drain();
       }

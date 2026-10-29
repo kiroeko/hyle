@@ -6,6 +6,7 @@
 #include <limits>
 #include <stdexcept>
 #include <type_traits>
+#include <utility>
 
 namespace {
 namespace q = qwen35;
@@ -163,6 +164,93 @@ void cancellation_preserves_capacity_and_committed_prefix() {
       !ledger.records[1].input_deferred && &ledger.next() == &ledger.records[1] &&
       capacities(ledger.records[1]) == b_capacity,
       "cancelling unbound B erased A's commit or made its ordinary record unusable");
+}
+
+void failed_attempt_discards_only_its_exact_current_slot() {
+  static_assert(noexcept(std::declval<q::GenerationLedger &>().discard_attempt(
+      static_cast<const q::GenerationCommitRecord *>(nullptr))));
+  q::GenerationLedger ledger(5, 16);
+  prepare(ledger.next()); (void)commit(ledger, 23);
+  prepare(ledger.next());
+  (void)ledger.reserve_successor(1, 2, 2, 2, 1);
+  auto &current = ledger.records[1];
+  current.emitted.assign({31, 37, 41});
+  current.accepted_inputs.assign({17, 19, 23});
+  current.verification_inputs.assign({17, 19, 23, 29});
+  current.step_seconds = 0.25;
+  const auto *storage = ledger.records.data();
+  const auto saved = ledger.records;
+  std::array<Capacities, 5> saved_capacities;
+  std::array<std::array<const std::int32_t *, 3>, 5> saved_payloads;
+  for (std::size_t index = 0; index < saved.size(); ++index) {
+    const auto &record = ledger.records[index];
+    saved_capacities[index] = capacities(record);
+    saved_payloads[index] = {record.emitted.data(), record.accepted_inputs.data(), record.verification_inputs.data()};
+  }
+  const auto unchanged = [&](bool current_committed = false) {
+    require(ledger.records.data() == storage && ledger.committed_count == 1 && ledger.successor_ordinal() == 2 &&
+        ledger.records.size() == saved.size(), "foreign failed attempt changed the original ledger prefix or reservation");
+    for (std::size_t index = 0; index < saved.size(); ++index) {
+      const auto &record = ledger.records[index]; const auto &before = saved[index];
+      require(record.same_result(before) && record.pending_input == before.pending_input &&
+          record.committed == (index == 1 ? current_committed : before.committed) &&
+          record.user_output == before.user_output && record.imported == before.imported &&
+          record.input_owner == before.input_owner && record.prompt_ids.data() == before.prompt_ids.data() &&
+          record.prompt_ids.size() == before.prompt_ids.size() && record.step_seconds == before.step_seconds &&
+          record.endpoint == before.endpoint && capacities(record) == saved_capacities[index] &&
+          std::array{record.emitted.data(), record.accepted_inputs.data(), record.verification_inputs.data()} == saved_payloads[index],
+          "foreign failed attempt changed a current, successor or committed record");
+    }
+  };
+  q::GenerationCommitRecord foreign;
+  const std::array<const q::GenerationCommitRecord *, 5> invalid{
+      nullptr, &ledger.records[0], &ledger.records[2], &ledger.records[4], &foreign};
+  for (const auto *expected : invalid) { ledger.discard_attempt(expected); unchanged(); }
+  current.committed = true;
+  ledger.discard_attempt(&current); unchanged(true);
+  current.committed = false;
+
+  ledger.discard_attempt(&current);
+  q::GenerationCommitRecord empty;
+  empty.emitted.clear(); empty.accepted_inputs.clear(); empty.verification_inputs.clear();
+  require(ledger.records.data() == storage && ledger.committed_count == 1 && !ledger.successor_ordinal() &&
+      ledger.records[0].same_result(saved[0]) && ledger.records[0].committed &&
+      current.same_result(empty) && !current.committed && current.pending_input == -1 &&
+      current.step_seconds == 0 && current.endpoint == std::chrono::steady_clock::time_point{} &&
+      ledger.records[2].same_result(empty) && !ledger.records[2].committed && ledger.records[2].pending_input == -1,
+      "exact failed attempt did not clear only its current record and original successor");
+  for (std::size_t index = 0; index < saved.size(); ++index) {
+    const auto &record = ledger.records[index];
+    require(capacities(record) == saved_capacities[index] &&
+        std::array{record.emitted.data(), record.accepted_inputs.data(), record.verification_inputs.data()} == saved_payloads[index],
+        "failed attempt cleanup replaced original cold payload storage");
+    if (index > 2) require(record.same_result(saved[index]), "failed attempt cleanup changed an unrelated future slot");
+  }
+
+  q::GenerationLedger unbound(3, 16);
+  prepare(unbound.next()); (void)unbound.reserve_successor(0, 2, 2, 2, 1);
+  (void)commit(unbound, 31);
+  const auto predecessor = unbound.records[0];
+  const auto unbound_capacity = capacities(unbound.records[1]);
+  require(unbound.records[1].input_deferred && unbound.successor_ordinal() == 1,
+      "failed attempt fixture lost its unknown-input current successor");
+  unbound.discard_attempt(&unbound.records[1]);
+  require(unbound.committed_count == 1 && unbound.records[0].committed &&
+      unbound.records[0].same_result(predecessor) && !unbound.successor_ordinal() &&
+      unbound.records[1].same_result(empty) && capacities(unbound.records[1]) == unbound_capacity &&
+      &unbound.next() == &unbound.records[1],
+      "failed attempt could not discard its exact deferred current record without observing its input");
+
+  q::GenerationLedger full(1, 8);
+  prepare(full.next()); (void)commit(full, 29);
+  const auto committed = full.records[0];
+  full.discard_attempt(&full.records[0]); full.discard_attempt(nullptr); full.discard_attempt(&foreign);
+  require(full.committed_count == 1 && full.records[0].committed && full.records[0].same_result(committed) &&
+      !full.successor_ordinal(), "exhausted failed attempt cleanup changed an authoritative record");
+  q::GenerationLedger absent(0, 8);
+  absent.discard_attempt(nullptr); absent.discard_attempt(&foreign);
+  require(absent.records.empty() && !absent.committed_count && !absent.successor_ordinal(),
+      "empty failed attempt cleanup created a record or reservation");
 }
 
 void reservation_rejects_without_mutation() {
@@ -417,13 +505,14 @@ int main() {
   try {
     reserve_then_bind_only_actual_observed_input();
     cancellation_preserves_capacity_and_committed_prefix();
+    failed_attempt_discards_only_its_exact_current_slot();
     reservation_rejects_without_mutation();
     ordinary_and_mtp_records_keep_their_existing_contract();
     renewed_owner_grant_extends_only_the_pending_ordinary_record();
     k1_full_acceptance_continues_with_the_original_owner_grant();
     k1_partial_and_terminal_results_preserve_only_the_committed_prefix();
     k1_binding_requires_the_whole_greedy_state_boundary();
-    std::puts("{\"status\":\"PASS\",\"groups\":8,\"device_execution\":false}");
+    std::puts("{\"status\":\"PASS\",\"groups\":9,\"device_execution\":false}");
     return 0;
   } catch (const std::exception &error) {
     std::fprintf(stderr, "%s\n", error.what()); return 1;

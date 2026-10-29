@@ -1,0 +1,524 @@
+{
+  "schema": "hyle.correctness.publication-retirement.v1",
+  "date": "2026-10-30",
+  "status": "PASS_WITH_PRESERVED_PRODUCT_FAILURE",
+  "base_commit": "36543a4fa5fbe20eee7b2e66fc963b74da2cae6d",
+  "changes": [
+    "Typed and non-std publication failures share original abort and exact still-uncommitted record cleanup.",
+    "Private NextN, prefix sampler and frontier use original Invocation/retention retirement facts; known negative retirement vetoes cleanup.",
+    "Continuation recovery and request-wave retirement no longer substitute empty target/successor for private retirement.",
+    "Host pending cleanup consults private retirement on unwind; successful continuation avoids an added private-inventory scan.",
+    "All failed Step ledger borrows/tickets are withdrawn before the synchronous caller returns, with no later cleanup callback.",
+    "Original Status, unknown exception, Head/RNG, committed peers, future records and delayed ordinal observation remain intact."
+  ],
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\program_carrier.h",
+      "bytes": 9134,
+      "sha256": "90b22f4755f9dd53c281daa83fd4e819b494bf8b91131ba7f1d2674b7abfc5dd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\generation_ledger.h",
+      "bytes": 17552,
+      "sha256": "1f147d2195878f048eed6573cd033c6a83410551f7a1c3ed29bab1a15579ce5f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 626448,
+      "sha256": "50f49d668ce5a9c4c1dfbe8118f54de5f62341ba8905cd1407713e2f836950ea"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_generation_ledger_test.cc",
+      "bytes": 31053,
+      "sha256": "da9c2bbd8d46a7c15d176273dd574e1eac36436782e9bc2d1c96646546d72880"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+      "bytes": 10780,
+      "sha256": "d89d0de9cc7c751f0370bded940de507439cbdc0836d82bf58f61f5d085c4ae4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_publication_retirement_case.h",
+      "bytes": 16435,
+      "sha256": "7b0ff63e36ab6dd157af263ed36a6e63c6ba824dce62e3b04b4c3da15135b87d"
+    }
+  ],
+  "counts": {
+    "CXX_attempts": 8,
+    "link_attempts": 5,
+    "native_attempts": 10,
+    "current_passed_processes": 7,
+    "current_host_groups": 9,
+    "preserved_product_failures": 1,
+    "preserved_fixture_precondition_failures": 1,
+    "superseded_passed_native_processes": 1,
+    "retained_SDK_engine_inputs": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "whole_builds": 0,
+    "throughput_windows": 0
+  },
+  "current_builds": [
+    {
+      "unit": "model",
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\compile\\model\\unit.obj",
+        "bytes": 91278177,
+        "sha256": "511597340317dd8ac2dae357e0a17cc6518bd2150ede272ad998ea02d416e8ef"
+      },
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\compile\\model\\receipt.json",
+        "bytes": 51106,
+        "sha256": "c96f6cbbb0cd721ecf19341a559efdeae79f8ab72bd81d819282b467bb144f00"
+      }
+    },
+    {
+      "unit": "ordinary",
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\compile\\ordinary\\unit.obj",
+        "bytes": 27141178,
+        "sha256": "4a6c0280354cde05d6b58e41c570cafaf34c600562bf02c9dd37df3291603df8"
+      },
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\compile\\ordinary\\receipt.json",
+        "bytes": 42995,
+        "sha256": "970a9be1495aec8803b0f8b324df13ad688f2fa32468e186550770ab552b4557"
+      }
+    },
+    {
+      "unit": "ledger",
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\compile\\ledger\\unit.obj",
+        "bytes": 1020013,
+        "sha256": "bedd75f0397aa2a8e03b5d8c39a155d65b8d518aa766ce18950e5f3fe41f22a1"
+      },
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\compile\\ledger\\receipt.json",
+        "bytes": 7197,
+        "sha256": "32e1787785647442de74a9288e9f5f4e620febca899c8691e161ebbb316d9197"
+      }
+    }
+  ],
+  "current_runs": [
+    {
+      "case": "publication-cpu",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 55000,
+        "started": 1793298423.2813132,
+        "seconds": 0.7607426643371582,
+        "exit": 0,
+        "timed_out": false
+      },
+      "summary": {
+        "status": "PASS",
+        "case": "publication-retirement",
+        "backend": "cpu",
+        "synthetic_untrained": true,
+        "requests": 2,
+        "target_submissions": 4,
+        "unpublished_refusals": 1,
+        "published_observer_refusals": 1,
+        "original_nonstd_exception_preserved": true,
+        "actual_native_retirement": true,
+        "exact_uncommitted_record_discard": true,
+        "same_input_retry": true,
+        "committed_peers_preserved": true,
+        "observation_retry_submissions": 0,
+        "old_snapshots_unchanged": true,
+        "native_fault_injection": false,
+        "quality_claim": false,
+        "performance_claim": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\runs\\publication-cpu\\reviewed\\report.json",
+        "bytes": 595,
+        "sha256": "54283cb9734b1e2507cc71fccae938fca4d8486e56e737b3f214de050a0bc816"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\bin\\model.exe",
+        "bytes": 145579008,
+        "sha256": "eca9812519d24218341014de7dc77de062749594527f37824eb5bd3a907e2f09"
+      }
+    },
+    {
+      "case": "publication-cuda",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 44380,
+        "started": 1793298423.2813132,
+        "seconds": 1.0729703903198242,
+        "exit": 0,
+        "timed_out": false
+      },
+      "summary": {
+        "status": "PASS",
+        "case": "publication-retirement",
+        "backend": "cuda",
+        "synthetic_untrained": true,
+        "requests": 2,
+        "target_submissions": 4,
+        "unpublished_refusals": 1,
+        "published_observer_refusals": 1,
+        "original_nonstd_exception_preserved": true,
+        "actual_native_retirement": true,
+        "exact_uncommitted_record_discard": true,
+        "same_input_retry": true,
+        "committed_peers_preserved": true,
+        "observation_retry_submissions": 0,
+        "old_snapshots_unchanged": true,
+        "native_fault_injection": false,
+        "quality_claim": false,
+        "performance_claim": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\runs\\publication-cuda\\reviewed\\report.json",
+        "bytes": 596,
+        "sha256": "af3244c623395999725f26a0bc580ae5105cbd560560169d3d3232747a76fe07"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\bin\\model.exe",
+        "bytes": 145579008,
+        "sha256": "eca9812519d24218341014de7dc77de062749594527f37824eb5bd3a907e2f09"
+      }
+    },
+    {
+      "case": "commit-cpu",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 37780,
+        "started": 1793298437.3792472,
+        "seconds": 0.4273848533630371,
+        "exit": 0,
+        "timed_out": false
+      },
+      "summary": {
+        "status": "PASS",
+        "case": "commit-failure",
+        "backend": "cpu",
+        "synthetic_untrained": true,
+        "requests": 2,
+        "target_submissions": 2,
+        "postcommit_refusals": 1,
+        "first_typed_error_preserved": true,
+        "original_participant": 1,
+        "actual_retirement_preserved": true,
+        "secondary_observer_failure": true,
+        "peer_commit_observed": true,
+        "observation_retry_target_submissions": 0,
+        "duplicate_observation_noop": true,
+        "complete_state_unchanged": true,
+        "original_keys_preserved": true,
+        "native_device_fault_injection": false,
+        "continuous_pipeline": false,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\runs\\commit-cpu\\reviewed\\report.json",
+        "bytes": 681,
+        "sha256": "64623c139596ab748ee9f1933256f219fcf0696a6ba516c3893be754a973ad37"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\bin\\model.exe",
+        "bytes": 145579008,
+        "sha256": "eca9812519d24218341014de7dc77de062749594527f37824eb5bd3a907e2f09"
+      }
+    },
+    {
+      "case": "group-cuda",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 53100,
+        "started": 1793298437.4194775,
+        "seconds": 0.7666466236114502,
+        "exit": 0,
+        "timed_out": false
+      },
+      "summary": {
+        "status": "PASS",
+        "case": "mtp-group-return",
+        "backend": "cuda",
+        "models": 1,
+        "actual_active_sequences": 2,
+        "logical_requests": 3,
+        "actual_q_before_grouping": 5,
+        "actual_q_after_failure": 4,
+        "original_participant": 2,
+        "successful_peer_repairs": 1,
+        "no_proposal_regeneration": true,
+        "draft_program_calls_before_grouping": 5,
+        "draft_program_calls_after_failure": 6,
+        "original_calls_and_q_returned": true,
+        "earlier_group_commit_preserved": true,
+        "failed_heads_ledger_rng_unchanged": true,
+        "actual_retirement": true,
+        "same_key_host_restore_retry": true,
+        "synthetic_untrained": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\runs\\group-cuda\\reviewed\\report.json",
+        "bytes": 769,
+        "sha256": "9ecfe819a59ed9add34e78395308427cc91b6f01bcf473e7ca49fe6528ee78aa"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\bin\\model.exe",
+        "bytes": 145579008,
+        "sha256": "eca9812519d24218341014de7dc77de062749594527f37824eb5bd3a907e2f09"
+      }
+    },
+    {
+      "case": "natural-cuda",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 61500,
+        "started": 1793298446.7474933,
+        "seconds": 3.279165029525757,
+        "exit": 0,
+        "timed_out": false
+      },
+      "summary": {
+        "status": "PASS",
+        "case": "mtp-natural-relay",
+        "backend": "cuda",
+        "models": 1,
+        "journeys": 2,
+        "prompt_tokens": 154,
+        "capacity": 256,
+        "resident_capacity": 1,
+        "state_slots": 5,
+        "hidden_slots": 6,
+        "output_limit": 40,
+        "outputs": 40,
+        "serial_submissions": 23,
+        "auto_submissions": 24,
+        "source_submissions": 22,
+        "successor_submissions": 3,
+        "successor_publications": 2,
+        "successor_discards": 1,
+        "successor_refusals": 0,
+        "pending_pairs_before_A_publish": 3,
+        "deferred_waves": 2,
+        "reserved_two_grants": 2,
+        "accepted_drafts": 17,
+        "rejected_drafts": 4,
+        "ledger_records": 23,
+        "natural_RequestLoop": true,
+        "controlled_acceptance": false,
+        "original_ledger_equal": true,
+        "generated_ids_equal": true,
+        "greedy_rng_unchanged": true,
+        "all_sources_expired": true,
+        "simultaneous_native_inflight_claim": false,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\runs\\natural-cuda\\reviewed\\report.json",
+        "bytes": 7117,
+        "sha256": "783435df8c542066c8a5d00b9e5efb96c73ce3179744f702e70a44c33ebf323d"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\bin\\model.exe",
+        "bytes": 145579008,
+        "sha256": "eca9812519d24218341014de7dc77de062749594527f37824eb5bd3a907e2f09"
+      }
+    },
+    {
+      "case": "continuous-cuda",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 45040,
+        "started": 1793298408.9547088,
+        "seconds": 0.9598073959350586,
+        "exit": 0,
+        "timed_out": false
+      },
+      "summary": {
+        "status": "PASS",
+        "backend": "cuda",
+        "fixture": "untrained_GA_H64",
+        "prompt_tokens": 18,
+        "outputs_per_live_member": 14,
+        "capacity": 32,
+        "in_flight_batches": 2,
+        "control_and_candidate_arms": 16,
+        "same_original_executor": true,
+        "complete_prefix_state_epoch_rng_equal": true,
+        "actual_owner_credit_checked": true,
+        "all_source_session_page_owners_retired": true,
+        "model_eos_run": false,
+        "synthetic_v64_extra_stop_shares_eos_contract": true,
+        "synthetic_fixture_directory": "continuous-extra-stop-v64",
+        "synthetic_role_payload_bytes": 65536,
+        "accepted_work_control_exception": true,
+        "gpu_native_fault_injected": false,
+        "model_quality_claim": false,
+        "performance_claim": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\runs\\continuous-cuda\\reviewed2\\report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\bin\\ordinary.exe",
+        "bytes": 142909952,
+        "sha256": "92b7aca066059fa9f9276ed5a70cf39d93b32d9917e116405f3eab6ec26ef4d1"
+      }
+    },
+    {
+      "case": "ledger",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 47720,
+        "started": 1793297714.7754104,
+        "seconds": 0.05420374870300293,
+        "exit": 0,
+        "timed_out": false
+      },
+      "summary": {
+        "status": "PASS",
+        "groups": 9,
+        "device_execution": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\runs\\ledger\\current\\report.json",
+        "bytes": 72,
+        "sha256": "df4995c71830e278fbb86428186262f659e9124faa9622a5d1a4377d998808b2"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\bin\\ledger.exe",
+        "bytes": 221184,
+        "sha256": "e1742f4ace4ef3e2975685a88e43255a1df3f6aa7da14e53623d4316329db586"
+      }
+    }
+  ],
+  "baseline": {
+    "record": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\baseline.json",
+      "bytes": 51949,
+      "sha256": "0446f106959f51e8e698bba35b704a2b8f5d4ed3b252a59193874b131b071db9"
+    },
+    "process": {
+      "state": "TERMINAL",
+      "pid": 16656,
+      "started": 1793297569.2847965,
+      "seconds": 0.7461581230163574,
+      "exit": 1,
+      "timed_out": false
+    },
+    "assertion": "retired refusal did not clear only its exact original uncommitted record",
+    "scope": "Original Model/SDK, minimal case wrapper. Current official test consumer adds an explicit borrowed-pointer withdrawal assertion; no math or thresholds changed."
+  },
+  "previous_reports": [
+    {
+      "case": "continuous-cuda",
+      "original_report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-family-publication-20261030\\runs\\continuous-cuda\\attempt1\\report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      },
+      "current_report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\runs\\continuous-cuda\\reviewed2\\report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      },
+      "complete_report_equal": true
+    },
+    {
+      "case": "natural-cuda",
+      "original_report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-family-publication-20261030\\runs\\natural-cuda\\attempt1\\report.json",
+        "bytes": 7117,
+        "sha256": "783435df8c542066c8a5d00b9e5efb96c73ce3179744f702e70a44c33ebf323d"
+      },
+      "current_report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\runs\\natural-cuda\\reviewed\\report.json",
+        "bytes": 7117,
+        "sha256": "783435df8c542066c8a5d00b9e5efb96c73ce3179744f702e70a44c33ebf323d"
+      },
+      "complete_report_equal": true
+    }
+  ],
+  "fixtures": {
+    "tiny": {
+      "directory": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input",
+      "manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input\\weights.tsv",
+        "bytes": 7861,
+        "sha256": "32901e43a5a0644169b433f4d57b38a37f0d9cd6475230427191b5d6d3a18515"
+      },
+      "prompt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input\\prompt.ids",
+        "bytes": 7,
+        "sha256": "d0bd45d1262e6c4df3e45026a6f9852c04a3b806be64f4d614ddd37a8561be0a"
+      }
+    },
+    "original": {
+      "directory": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original",
+      "manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\weights.tsv",
+        "bytes": 56735,
+        "sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1"
+      },
+      "prompt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\prompt.ids",
+        "bytes": 733,
+        "sha256": "b6a10feefb0af4687ee536285c9666bfbdf093fc9e484ab0461834345a5993a4"
+      }
+    },
+    "continuous": {
+      "directory": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\continuous-input",
+      "manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\continuous-input\\weights.tsv",
+        "bytes": 7816,
+        "sha256": "d35fb3b00d1724b7689190a2526409b6516ca41dfbdab9100710428c92171ab0"
+      },
+      "prompt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\continuous-input\\prompt.ids",
+        "bytes": 7,
+        "sha256": "d0bd45d1262e6c4df3e45026a6f9852c04a3b806be64f4d614ddd37a8561be0a"
+      }
+    },
+    "continuous_reviewed": {
+      "directory": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\continuous-reviewed-input",
+      "manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\continuous-reviewed-input\\weights.tsv",
+        "bytes": 7816,
+        "sha256": "d35fb3b00d1724b7689190a2526409b6516ca41dfbdab9100710428c92171ab0"
+      },
+      "prompt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-retirement-20261030\\continuous-reviewed-input\\prompt.ids",
+        "bytes": 7,
+        "sha256": "d0bd45d1262e6c4df3e45026a6f9852c04a3b806be64f4d614ddd37a8561be0a"
+      }
+    }
+  },
+  "boundaries": [
+    "Baseline and new CPU/CUDA cases use untrained cached GA/H64 weights and real R2 Graph submissions; this is a publication/retirement regression, not model quality or TPS.",
+    "Each repaired publication case performs four R2 submits: prefill, unpublished Complete refusal, same-input successful retry, and post-publication observer refusal. Observation retry submits nothing.",
+    "Private MTP group-return and original BF16 Qwen P154/40-output paths exercise existing accepted/rejected state, ledger, RNG and native retirement contracts.",
+    "Persistent unretired private native failure, hardware faults and a mid-head-swap failure were not injected. Existing original Invocation/retention proof is inspected without adding wait or permission authority.",
+    "Intermediate CXX consumers were superseded when review found outer cleanup gates; one intermediate ordinary CUDA run passed, but current claims use the final reviewed objects.",
+    "The final ordinary rerun first refused an already-generated fixture before Model creation. A new directory copied only weights.tsv/prompt.ids and reused original payloads; the refused attempt is preserved.",
+    "No CMake configure/install, Apple/Vulkan process, complete large model or throughput comparison was run."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-publication-retirement-2026-10-30.zip",
+    "bytes": 675332,
+    "sha256": "7e7203cfd103f4be09ca5a525d02c7a6fc81eb0e0619d62831287b51bd84e1d3"
+  },
+  "cleanup": {
+    "status": "COMPLETE",
+    "files": 8,
+    "bytes": 290050113,
+    "scope": "Only this batch native images/link outputs and copied DLL; current consumer objects and 227 SDK/engine inputs retained."
+  }
+}

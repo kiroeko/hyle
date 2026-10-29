@@ -81,6 +81,9 @@ public:
   bool initialized() const noexcept { return run_.valid(); }
   bool closing() const noexcept { return closing_; }
   bool pending() const noexcept { return retirement_.pending(); }
+  // Original native/retention fact only. Transactions and dynamic IO still
+  // need their owner's take/recovery before the invocation can be reset.
+  bool retired() const noexcept { return !run_.in_flight() && !pending(); }
   std::span<const graph::QueueBinding> queues() const noexcept { return queue_span(queues_); }
 
   // The complete installation order is shared by target, draft and private
@@ -161,7 +164,7 @@ public:
     // terminal outcome and must not hide drain's native failure or success.
     if (status.IsUnavailable() && !status.has_native_error()) status = Status::Ok();
     record_retirement_status(status, environment.drain_retired(run_));
-    return {!run_.in_flight() && !pending(), status};
+    return {retired(), status};
   }
 
   // The caller first takes/recovers any original Graph-owned transactions.
