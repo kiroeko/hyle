@@ -1,0 +1,1162 @@
+{
+  "schema": "hyle.correctness.append-tail-return.v1",
+  "date": "2026-10-29",
+  "status": "PASS_WITH_PRESERVED_FIXTURE_REJECTION",
+  "base_commit": "16e5b363993076d02c1e3c9b77959d187af8d2b8",
+  "changes": [
+    "Reuse one original Append tail handoff algorithm for target, fused draft and private NextN; model supplies true physical frontier, original member identity and whether to retain the capability.",
+    "Keep whole-cohort take and actual native retirement, preserve earlier handoffs and remaining capabilities on a later refusal; no extra executor, state version or permission owner.",
+    "Use existing SmallVector inline capacity two for target/draft owner maps and recursive next IDs; wider actual cohorts retain bounded dynamic capacity.",
+    "Failure-only original-record observation tries each peer independently, preserving the original exception type, Status, participant and retirement; failed observation retains its original ordinal for observation-only retry."
+  ],
+  "counts": {
+    "CXX_attempts": 4,
+    "links": 4,
+    "retained_SDK_inputs": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "full_builds": 0,
+    "native_consumer_processes": 9,
+    "passed_finite_processes": 8,
+    "append_native_tests": 8,
+    "preserved_fixture_rejections": 1,
+    "downloads": 0
+  },
+  "builds": {
+    "append": {
+      "compiles": [
+        {
+          "state": "TERMINAL",
+          "pid": 29832,
+          "started": 1793268907.7474072,
+          "seconds": 2.939547538757324,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "links": [
+        {
+          "state": "TERMINAL",
+          "pid": 40104,
+          "started": 1793268918.8959339,
+          "seconds": 1.7454211711883545,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "final_object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-tail-return-20261029\\compile\\append\\unit.obj",
+        "bytes": 1544395,
+        "sha256": "a0e567b1c2e8f6203c69cd68915911872a33364404551190d9a4b9f14007eb99"
+      }
+    },
+    "qwen": {
+      "compiles": [
+        {
+          "state": "TERMINAL",
+          "pid": 2044,
+          "started": 1793269085.7956955,
+          "seconds": 128.92990732192993,
+          "exit": 0,
+          "timed_out": false
+        },
+        {
+          "state": "TERMINAL",
+          "pid": 49400,
+          "started": 1793269356.7591813,
+          "seconds": 110.49505734443665,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "links": [
+        {
+          "state": "TERMINAL",
+          "pid": 18372,
+          "started": 1793269252.3211358,
+          "seconds": 2.0481927394866943,
+          "exit": 0,
+          "timed_out": false
+        },
+        {
+          "state": "TERMINAL",
+          "pid": 34840,
+          "started": 1793269496.2372427,
+          "seconds": 1.9517557621002197,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "final_object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-tail-return-20261029\\compile\\qwen\\unit.obj",
+        "bytes": 81931699,
+        "sha256": "a333e07a02c95d0681bd5cde5cfed3e6e68421fc6993435611a99f4f69b10577"
+      }
+    },
+    "ordinary": {
+      "compiles": [
+        {
+          "state": "TERMINAL",
+          "pid": 56892,
+          "started": 1793268950.1347165,
+          "seconds": 41.80380940437317,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "links": [
+        {
+          "state": "TERMINAL",
+          "pid": 59988,
+          "started": 1793269117.5096037,
+          "seconds": 1.8285887241363525,
+          "exit": 0,
+          "timed_out": false
+        }
+      ],
+      "final_object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-tail-return-20261029\\compile\\ordinary\\unit.obj",
+        "bytes": 26674345,
+        "sha256": "48b56bdc8be4a660eff830c4ceb19c1a372ef38e5f0e3e009cc5d2b5995695b2"
+      }
+    }
+  },
+  "results": {
+    "append-cpu": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 61812,
+        "started": 1793268921.2214675,
+        "seconds": 0.4711933135986328,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-tail-return-20261029\\bin\\append.exe",
+        "bytes": 141112832,
+        "sha256": "db2fd475b2a08cb3ed75b9018ef20ab56636535351ce6219a002ad1765cab190"
+      }
+    },
+    "failure-cpu": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 62324,
+        "started": 1793269499.2530336,
+        "seconds": 0.7701718807220459,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "commit-failure",
+        "backend": "cpu",
+        "synthetic_untrained": true,
+        "requests": 2,
+        "target_submissions": 2,
+        "postcommit_refusals": 1,
+        "first_typed_error_preserved": true,
+        "original_participant": 1,
+        "actual_retirement_preserved": true,
+        "secondary_observer_failure": true,
+        "peer_commit_observed": true,
+        "observation_retry_target_submissions": 0,
+        "duplicate_observation_noop": true,
+        "complete_state_unchanged": true,
+        "original_keys_preserved": true,
+        "native_device_fault_injection": false,
+        "continuous_pipeline": false,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-tail-return-20261029\\bin\\qwen.exe",
+        "bytes": 145605120,
+        "sha256": "951dfca92d64cc3fb2974cf119417381d6308df4fdde5da461e5d0e0a96c4900"
+      }
+    },
+    "failure-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 47868,
+        "started": 1793269507.841697,
+        "seconds": 0.7476999759674072,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "commit-failure",
+        "backend": "cuda",
+        "synthetic_untrained": true,
+        "requests": 2,
+        "target_submissions": 2,
+        "postcommit_refusals": 1,
+        "first_typed_error_preserved": true,
+        "original_participant": 1,
+        "actual_retirement_preserved": true,
+        "secondary_observer_failure": true,
+        "peer_commit_observed": true,
+        "observation_retry_target_submissions": 0,
+        "duplicate_observation_noop": true,
+        "complete_state_unchanged": true,
+        "original_keys_preserved": true,
+        "native_device_fault_injection": false,
+        "continuous_pipeline": false,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-tail-return-20261029\\bin\\qwen.exe",
+        "bytes": 145605120,
+        "sha256": "951dfca92d64cc3fb2974cf119417381d6308df4fdde5da461e5d0e0a96c4900"
+      }
+    },
+    "history-cpu": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 61224,
+        "started": 1793269322.2833867,
+        "seconds": 0.5209112167358398,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "history-control",
+        "backend": "cpu",
+        "models": 1,
+        "configurations": 1,
+        "history_only": true,
+        "member_cancel_B2_K2": true,
+        "whole_episode_retired": true,
+        "postsubmit_cancel_returned_normally": true,
+        "survivor_same_R2_published": true,
+        "survivor_original_member_index": 1,
+        "cancelled_member_postverify_auxiliary_calls": 0,
+        "postrestore_next_R1_round": true,
+        "committed_counts_only": true,
+        "escaped_readonly_C0": true,
+        "bounded_pool_refusal": true,
+        "release_then_retry": true,
+        "idle_HostImage_restore": true,
+        "idle_resident_versions_zero": true,
+        "old_checkpoints_unchanged": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0,
+        "state_checks": [
+          {
+            "sequence": 0,
+            "prefix": 6,
+            "active_rows": 0,
+            "physical_rows": 0,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 5,
+            "bucket_next": 5,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 0,
+            "prefix": 6,
+            "active_rows": 0,
+            "physical_rows": 0,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 5,
+            "bucket_next": 5,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 0,
+            "prefix": 9,
+            "active_rows": 0,
+            "physical_rows": 0,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 27,
+            "bucket_next": 27,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          }
+        ]
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-tail-return-20261029\\bin\\qwen.exe",
+        "bytes": 145604608,
+        "sha256": "bd6784c68a9f9aa2bdff0ade07f982b7c264aba26f0c73efcc8cbd297eacbb11"
+      }
+    },
+    "mixed-lag-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 33208,
+        "started": 1793269323.3522367,
+        "seconds": 0.8633465766906738,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "backend": "cuda",
+        "mode": "mtp_mixed_lag",
+        "synthetic_untrained": true,
+        "requests": 2,
+        "base_lags": [
+          0,
+          1
+        ],
+        "controlled_accepted": [
+          1,
+          2
+        ],
+        "mixed_target_submissions": 2,
+        "target_submissions": 14,
+        "target_rows_per_member": 2,
+        "actual_draft_rows": 3,
+        "physical_draft_rows": 4,
+        "hidden_indices": [
+          0,
+          3,
+          1,
+          0
+        ],
+        "token_indices": [
+          2,
+          1,
+          3,
+          0
+        ],
+        "natural_processed_target": [
+          1,
+          1
+        ],
+        "natural_processed_draft": [
+          1,
+          2
+        ],
+        "state_checks": [
+          {
+            "sequence": 0,
+            "prefix": 3,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 3,
+            "exact_next": 59,
+            "bucket_next": 59,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 0,
+            "prefix": 5,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 4,
+            "exact_next": 7,
+            "bucket_next": 7,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 1,
+            "prefix": 3,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 2,
+            "exact_next": 22,
+            "bucket_next": 22,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 1,
+            "prefix": 5,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 5,
+            "exact_next": 41,
+            "bucket_next": 41,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 2,
+            "prefix": 3,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 3,
+            "exact_next": -1,
+            "bucket_next": -1,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          },
+          {
+            "sequence": 2,
+            "prefix": 5,
+            "active_rows": 2,
+            "physical_rows": 2,
+            "prefill": false,
+            "epoch": 6,
+            "exact_next": -1,
+            "bucket_next": -1,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          }
+        ],
+        "payloads_byte_equal": true,
+        "numerically_equivalent": true,
+        "old_checkpoints_unchanged": true,
+        "StateOnly_no_pending_or_draw": true,
+        "natural_R1_results_equal": true,
+        "mixed_engine_single_submission": true,
+        "original_member_roles_committed": true,
+        "retired_head_rejected_before_prepare": true,
+        "mixed_cancelled_head_ledger_rng_unchanged": true,
+        "mixed_cancelled_new_outputs": 0,
+        "mixed_survivor_original_submission_published": true,
+        "mixed_survivor_complete_R1_state_equal": true,
+        "full_request_history_import_coverage": false,
+        "final_versions": 0,
+        "natural_acceptance_quality_claim": false,
+        "performance_claim": false
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-tail-return-20261029\\bin\\qwen.exe",
+        "bytes": 145604608,
+        "sha256": "bd6784c68a9f9aa2bdff0ade07f982b7c264aba26f0c73efcc8cbd297eacbb11"
+      }
+    },
+    "e4-cpu": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 56844,
+        "started": 1793269324.7778304,
+        "seconds": 0.5227415561676025,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "mtp-e4-cache",
+        "backend": "cpu",
+        "models": 1,
+        "original_calibration_roles_used": 2,
+        "original_calibration_roles_available": 4,
+        "target_row_bytes": 64,
+        "draft_row_bytes": 128,
+        "target_storage": "E4M3FN",
+        "draft_storage": "BF16",
+        "exact_cache_backing_bytes": 314119,
+        "complete_byte_equal_checks": 11,
+        "K1_K2": true,
+        "StateOnly_no_draw": true,
+        "partial_HostImage": true,
+        "original_request_key": true,
+        "B2_actual_verify": true,
+        "controlled_B2_accepted_prefixes": [
+          1,
+          2
+        ],
+        "controlled_B2_RNG_unchanged": true,
+        "explicit_abort_whole_cohort": true,
+        "B2_withdrawn_member_unchanged": true,
+        "survivor_same_B2_commit": true,
+        "old_checkpoints_unchanged": true,
+        "final_versions": 0,
+        "synthetic_untrained": true,
+        "quality_claim": false,
+        "performance_claim": false
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-tail-return-20261029\\bin\\qwen.exe",
+        "bytes": 145604608,
+        "sha256": "bd6784c68a9f9aa2bdff0ade07f982b7c264aba26f0c73efcc8cbd297eacbb11"
+      }
+    },
+    "mtp-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 57272,
+        "started": 1793269325.8586857,
+        "seconds": 3.460454225540161,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "case": "mtp-natural-relay",
+        "backend": "cuda",
+        "models": 1,
+        "journeys": 2,
+        "prompt_tokens": 154,
+        "capacity": 256,
+        "resident_capacity": 1,
+        "state_slots": 5,
+        "hidden_slots": 6,
+        "output_limit": 40,
+        "outputs": 40,
+        "serial_submissions": 23,
+        "auto_submissions": 24,
+        "source_submissions": 22,
+        "successor_submissions": 3,
+        "successor_publications": 2,
+        "successor_discards": 1,
+        "successor_refusals": 0,
+        "pending_pairs_before_A_publish": 3,
+        "deferred_waves": 2,
+        "reserved_two_grants": 2,
+        "accepted_drafts": 17,
+        "rejected_drafts": 4,
+        "ledger_records": 23,
+        "natural_RequestLoop": true,
+        "controlled_acceptance": false,
+        "original_ledger_equal": true,
+        "generated_ids_equal": true,
+        "greedy_rng_unchanged": true,
+        "all_sources_expired": true,
+        "simultaneous_native_inflight_claim": false,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0,
+        "state_checks": [
+          {
+            "sequence": 0,
+            "prefix": 193,
+            "active_rows": 1,
+            "physical_rows": 1,
+            "prefill": false,
+            "epoch": 0,
+            "exact_next": 14733,
+            "bucket_next": 14733,
+            "boundary_equal": true,
+            "payloads_byte_equal": true,
+            "numerically_equivalent": true,
+            "differences": []
+          }
+        ],
+        "ids": [
+          71093,
+          12305,
+          198,
+          464,
+          19298,
+          198,
+          1445,
+          18904,
+          1120,
+          5586,
+          11,
+          51338,
+          11,
+          36760,
+          11,
+          1697,
+          11,
+          11906,
+          11,
+          3856,
+          3829,
+          271,
+          51,
+          283,
+          3856,
+          3829,
+          482,
+          51,
+          837,
+          198,
+          42,
+          283,
+          3856,
+          3829,
+          482,
+          42,
+          837,
+          271,
+          727,
+          14733
+        ],
+        "batches": [
+          {
+            "ordinal": 0,
+            "quota": 0,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 154,
+            "draft_rows": 154,
+            "generation": false,
+            "discarded": false
+          },
+          {
+            "ordinal": 1,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 2,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 3,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 4,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 5,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 6,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 7,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 8,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 9,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 10,
+            "quota": 4,
+            "reserved": 2,
+            "additional": 2,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 11,
+            "quota": 2,
+            "reserved": 2,
+            "additional": 2,
+            "emitted": 0,
+            "accepted": 0,
+            "draft_rows": 0,
+            "generation": true,
+            "discarded": true
+          },
+          {
+            "ordinal": 11,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 12,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 13,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 1,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 14,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 15,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 16,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 17,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 18,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 19,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 20,
+            "quota": 4,
+            "reserved": 0,
+            "additional": 4,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 21,
+            "quota": 3,
+            "reserved": 2,
+            "additional": 1,
+            "emitted": 2,
+            "accepted": 2,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          },
+          {
+            "ordinal": 22,
+            "quota": 1,
+            "reserved": 0,
+            "additional": 1,
+            "emitted": 1,
+            "accepted": 1,
+            "draft_rows": 2,
+            "generation": true,
+            "discarded": false
+          }
+        ]
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-tail-return-20261029\\bin\\qwen.exe",
+        "bytes": 145604608,
+        "sha256": "bd6784c68a9f9aa2bdff0ade07f982b7c264aba26f0c73efcc8cbd297eacbb11"
+      }
+    },
+    "ordinary-cuda": {
+      "process": {
+        "state": "TERMINAL",
+        "pid": 53916,
+        "started": 1793269120.369498,
+        "seconds": 1.3908672332763672,
+        "exit": 0,
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "backend": "cuda",
+        "fixture": "untrained_GA_H64",
+        "prompt_tokens": 18,
+        "outputs_per_live_member": 14,
+        "capacity": 32,
+        "in_flight_batches": 2,
+        "control_and_candidate_arms": 16,
+        "same_original_executor": true,
+        "complete_prefix_state_epoch_rng_equal": true,
+        "actual_owner_credit_checked": true,
+        "all_source_session_page_owners_retired": true,
+        "model_eos_run": false,
+        "synthetic_v64_extra_stop_shares_eos_contract": true,
+        "synthetic_fixture_directory": "continuous-extra-stop-v64",
+        "synthetic_role_payload_bytes": 65536,
+        "accepted_work_control_exception": true,
+        "gpu_native_fault_injected": false,
+        "model_quality_claim": false,
+        "performance_claim": false,
+        "candidates": [
+          {
+            "requests": 1,
+            "mode": "normal",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 5,
+            "max_consecutive_pending": 5,
+            "submit_before_observe": 5,
+            "renewals": 4,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "normal",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 5,
+            "max_consecutive_pending": 5,
+            "submit_before_observe": 5,
+            "renewals": 4,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "credit_exhaustion",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 1,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "member_cancel",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 1,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "yield_resume",
+            "pumps": 15,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 3,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 1,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "cancel_then_control_exception",
+            "pumps": 16,
+            "actual_batches": 14,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 2,
+            "credit_drains": 0,
+            "cancelled_requests": 1,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 0,
+            "extra_stop_accepted_successor": false,
+            "discarded_batches": 0,
+            "survivor_r1_steps": 3,
+            "control_exceptions": 1,
+            "aborted_actual_submissions": 2
+          },
+          {
+            "requests": 1,
+            "mode": "extra_stop",
+            "pumps": 13,
+            "actual_batches": 13,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 3,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 1,
+            "extra_stop_accepted_successor": true,
+            "discarded_batches": 1,
+            "survivor_r1_steps": 0,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          },
+          {
+            "requests": 2,
+            "mode": "extra_stop",
+            "pumps": 15,
+            "actual_batches": 15,
+            "pending_returns": 3,
+            "max_consecutive_pending": 3,
+            "submit_before_observe": 4,
+            "renewals": 3,
+            "credit_drains": 0,
+            "cancelled_requests": 0,
+            "yield_drains": 0,
+            "pending_length27": true,
+            "extra_stop_outputs": 1,
+            "extra_stop_accepted_successor": true,
+            "discarded_batches": 1,
+            "survivor_r1_steps": 2,
+            "control_exceptions": 0,
+            "aborted_actual_submissions": 0
+          }
+        ]
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-tail-return-20261029\\bin\\ordinary.exe",
+        "bytes": 142925824,
+        "sha256": "0ae4e8ba548474cf11597109aea7d8836c213df67b4f8218de37b45571b5ffd6"
+      }
+    }
+  },
+  "preserved_failure": {
+    "process": {
+      "state": "TERMINAL",
+      "pid": 51760,
+      "started": 1793269255.34872,
+      "seconds": 0.8774421215057373,
+      "exit": 1,
+      "timed_out": false
+    },
+    "cause": "New observer consumer planned P2 maximum query rows but supplied the intended P3 prompt/family; original cold capacity check rejected it before Graph submission. Corrected only that declared input extent to P3, preserving N/R, state slots, output credit and the intended P3 case.",
+    "source_identity": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_commit_failure_case.h",
+      "sha256": "538da6f90c1f929655c6fe3121523e7489eb7b5925392ae9b573fb2852958955",
+      "failure": "New consumer intended P3 but declared maximum query rows P2; original cold capacity gate correctly rejected it before native Graph execution."
+    },
+    "scope": "Fixture setup rejection, not a passing test or an engine failure."
+  },
+  "source_freeze": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\append_transactions.h",
+      "bytes": 11741,
+      "sha256": "7668ad7c691de5dd8026f1017eb49f3f1fa47a587f91d7fe1c0511b7d12f8ce5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 637844,
+      "sha256": "06e78f5961ead6b44ee04c946d7741c1c4b467303c28605c48a1f41b90795c07"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_append_transactions_test.cc",
+      "bytes": 23716,
+      "sha256": "e953a50cce5cbbe741b848fb7808c9ffd941f5ca9f2320e283a06770c510c4e5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+      "bytes": 10094,
+      "sha256": "8b777c857fbe38c1b08767ac5dd5e4557c3e0e4fe20b306ada37a7da529d6c7c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_commit_failure_case.h",
+      "bytes": 12298,
+      "sha256": "4d0c5398cdc7a642ed2b260b4c70299878b2fb3098b359ed4c225aaa32c53950"
+    }
+  ],
+  "boundaries": [
+    "This slice unifies actual resource algorithms; complete model-independent execution orchestration remains unfinished.",
+    "GLM StateStore/StateHead has no paged tail and is not given fake Qwen frames or a forwarding ModelOps interface.",
+    "CPU/CUDA first-error checks use the original synchronous R2 generation entry and an actual post-commit host observer refusal; not a GPU fault injection or a continuous-path version of the same double-failure case.",
+    "Ordinary CUDA continuation retains its separate 16-arm original control regression. Trained Qwen2B CUDA natural MTP is a serial/auto full-state and original-ledger regression, not a new quality or performance claim.",
+    "Unchanged product source and already passed consumers were not rerun after fixture-only and test-help-only correction; original image identities, source receipts and failed snapshots are retained.",
+    "No throughput, all-platform, arbitrary-model, simultaneous-native-inflight or device-fault claim."
+  ],
+  "archive": {
+    "path": "docs\\evidence\\correctness\\inference-append-tail-return-2026-10-29.zip",
+    "bytes": 382260,
+    "sha256": "e82ab1bcf8fe6e916e1f922c7f500164e8cc510a629129af839ee29f0c870823"
+  },
+  "cleanup": {
+    "script": {
+      "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+      "bytes": 3639,
+      "sha256": "cc93c53cb4a0e71ac3bfed0b042fb7398c7c0c4c92c1f29066dd5a1e04f4dbbb"
+    },
+    "result": {
+      "deleted_files": 12,
+      "deleted_bytes": 532041239,
+      "retained_objects": 6,
+      "retained_SDK_inputs": 227,
+      "native_source_and_receipts_deleted": false
+    },
+    "reuse_base": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-tail-return-20261029\\model-link-base.json",
+      "bytes": 96915,
+      "sha256": "ea4dc76f3abff630c8ef472e37f48027332da0e1b94619591bf5bac7da7a1ee4"
+    }
+  }
+}

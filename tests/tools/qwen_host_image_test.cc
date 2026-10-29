@@ -30,6 +30,7 @@
 #include "qwen_natural_logits_case.h"
 #include "qwen_natural_logits_control_case.h"
 #include "inference_cold_demand_case.h"
+#include "qwen_commit_failure_case.h"
 #include <cstdlib>
 
 int main(int argc, char **argv) {
@@ -66,9 +67,10 @@ int main(int argc, char **argv) {
     const bool mtp_natural_relay = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-natural-relay";
     const bool mtp_varlen_verify = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-varlen-verify";
     const bool cold_demand = argc >= 3 && std::string_view(argv[argc - 1]) == "--cold-demand";
-    const auto input_argc = argc - static_cast<int>(lagged || state_reuse || mtp_batch_state || packed_prefill || ragged_prefill || mtp_packed_prefill || mtp_ragged_prefill || mtp_chunked_prefill || logits_preflight || mtp_stop || mtp_sampling || mtp_logits || conditional_logits || conditional_verify || natural_logits || natural_logits_control || mtp_e4 || program_carrier || mtp_packet || history_logits || history_ordinary || history_replay || history_control || generation_wave || sampling_policies || mtp_group_return || mtp_mixed_lag || mtp_varlen_verify || mtp_relay || mtp_natural_relay || cold_demand);
+    const bool commit_failure = argc >= 3 && std::string_view(argv[argc - 1]) == "--commit-failure";
+    const auto input_argc = argc - static_cast<int>(lagged || state_reuse || mtp_batch_state || packed_prefill || ragged_prefill || mtp_packed_prefill || mtp_ragged_prefill || mtp_chunked_prefill || logits_preflight || mtp_stop || mtp_sampling || mtp_logits || conditional_logits || conditional_verify || natural_logits || natural_logits_control || mtp_e4 || program_carrier || mtp_packet || history_logits || history_ordinary || history_replay || history_control || generation_wave || sampling_policies || mtp_group_return || mtp_mixed_lag || mtp_varlen_verify || mtp_relay || mtp_natural_relay || cold_demand || commit_failure);
     if (input_argc < 2 || input_argc > 3)
-      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda|--apple|--vulkan [prepared_input_directory] [--mtp-lag1|--state-reuse|--mtp-batch-state|--packed-prefill|--ragged-prefill|--mtp-packed-prefill|--mtp-ragged-prefill|--mtp-chunked-prefill|--logits-preflight|--mtp-stop|--mtp-sampling|--mtp-logits|--conditional-logits|--conditional-verify|--natural-logits|--natural-logits-control|--mtp-e4|--program-carrier|--mtp-packet|--history-logits|--history-ordinary|--history-replay|--history-control|--generation-wave|--sampling-policies|--mtp-group-return|--mtp-mixed-lag|--mtp-varlen-verify|--mtp-relay|--mtp-natural-relay|--cold-demand]");
+      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda|--apple|--vulkan [prepared_input_directory] [--mtp-lag1|--state-reuse|--mtp-batch-state|--packed-prefill|--ragged-prefill|--mtp-packed-prefill|--mtp-ragged-prefill|--mtp-chunked-prefill|--logits-preflight|--mtp-stop|--mtp-sampling|--mtp-logits|--conditional-logits|--conditional-verify|--natural-logits|--natural-logits-control|--mtp-e4|--program-carrier|--mtp-packet|--history-logits|--history-ordinary|--history-replay|--history-control|--generation-wave|--sampling-policies|--mtp-group-return|--mtp-mixed-lag|--mtp-varlen-verify|--mtp-relay|--mtp-natural-relay|--cold-demand|--commit-failure]");
     const std::string_view selected(argv[1]);
     auto backend = qwen35::BackendKind::kDefault;
     if (selected == "--cpu") backend = qwen35::BackendKind::kCpu;
@@ -99,7 +101,8 @@ int main(int argc, char **argv) {
     if (input.empty()) {
       std::cerr << "SKIP: pass prepared inputs or set HYLE_QWEN_HOST_IMAGE_INPUTS\n"; return 77;
     }
-    return natural_logits_control ? qwen_natural_logits_control_case::run(input, backend)
+    return commit_failure ? qwen_commit_failure_case::run(input, backend)
+           : natural_logits_control ? qwen_natural_logits_control_case::run(input, backend)
            : natural_logits ? qwen_natural_logits_case::run(input, backend)
            : conditional_verify ? qwen_conditional_verify_case::run(input, backend)
            : conditional_logits ? qwen_conditional_logits_case::run(input, backend)

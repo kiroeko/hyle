@@ -1,8 +1,10 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <type_traits>
 #include <utility>
 
 #include "hyle/graph/batch.h"
@@ -12,6 +14,14 @@ namespace hyle::inference {
 struct AppendExtent final {
   std::size_t after_rows = 0, prefix_pages = 0, page_count = 0, dirty_count = 0;
   std::uint32_t tail_rows = 0, tail_append_rows = 0;
+};
+
+// Physical page and original member index. The caller retains the sorted,
+// unique page table throughout return_tails; withdrawn members stay present.
+using AppendTailOwner = std::pair<std::uint32_t, std::size_t>;
+struct AppendTailDestination final {
+  std::uint32_t initialized_rows = 0;
+  compute::PagedPageAppender *tail = nullptr;
 };
 
 // Actual logical input rows only; physical query padding is not an append.
@@ -113,6 +123,46 @@ class AppendTransactions final {
       if (!value) return Status::FailedPrecondition("original append cohort is not fully bound");
     HYLE_RETURN_IF_ERROR(graph::batch::take_appends(run, nodes_, transactions_));
     for (auto &value : bound_) value = 0;
+    return Status::Ok();
+  }
+
+  // Return only capabilities from the original caller-owned Append cohort.
+  // Its whole Graph success and actual take remain the caller's witnesses;
+  // this operation neither observes native work nor publishes a frame/head.
+  // Resolve is a synchronous borrow: bank is relative to this subspan and
+  // member comes from the original page table. A null destination discards
+  // that tail. Earlier moves/discards survive a later refusal; repair the
+  // remaining facts and retry without retaking or recreating the cohort.
+  template<class Resolve>
+  Status return_tails(std::span<const AppendTailOwner> owners, Resolve &&resolve) const noexcept {
+    static_assert(std::is_nothrow_invocable_v<Resolve &, std::size_t, std::size_t> &&
+        std::is_same_v<std::invoke_result_t<Resolve &, std::size_t, std::size_t>, AppendTailDestination>,
+        "tail destinations must resolve directly without throwing");
+    HYLE_RETURN_IF_ERROR(validate());
+    for (std::size_t bank = 0; bank < transactions_.size(); ++bank)
+      if (bound_[bank] || !transactions_[bank].valid())
+        return Status::FailedPrecondition("original append cohort has not all returned to its caller");
+    for (std::size_t at = 1; at < owners.size(); ++at)
+      if (owners[at - 1].first >= owners[at].first)
+        return Status::InvalidArgument("append tail owners must have strictly increasing unique pages");
+    for (std::size_t bank = 0; bank < transactions_.size(); ++bank) {
+      auto &transaction = transactions_[bank];
+      for (std::size_t at = 0; at < transaction.appender_count(); ++at) {
+        HYLE_ASSIGN_OR_RETURN(auto &tail, transaction.appender(at));
+        if (!tail.valid()) continue;
+        auto owner = owners.begin();
+        if (owners.size() != 1)
+          owner = std::lower_bound(owners.begin(), owners.end(), tail.page(),
+              [](const AppendTailOwner &candidate, std::uint32_t page) noexcept { return candidate.first < page; });
+        if (owner == owners.end() || owner->first != tail.page())
+          return Status::FailedPrecondition("returned append tail has no original final-page owner");
+        const auto destination = resolve(bank, owner->second);
+        if (!destination.tail) { tail = {}; continue; }
+        if (tail.reserved_rows() || destination.tail->valid() || tail.initialized_rows() != destination.initialized_rows)
+          return Status::FailedPrecondition("returned append tail differs from its empty destination or committed frontier");
+        *destination.tail = std::move(tail);
+      }
+    }
     return Status::Ok();
   }
 

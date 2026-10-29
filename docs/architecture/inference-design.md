@@ -94,6 +94,17 @@ NodeLayout原数组归实际Invocation槽，node冷固定，layout仅借到原ba
 [有限检查](../evidence/correctness/inference-cold-bindings-2026-10-29.json)覆盖实际CPU／CUDA域反转和两个模型消费者；未据此声明完整编排或吞吐完成。
 Qwen特殊token集中在模型自己的`generation_tokens.h`，请求额外停止策略仍由`RequestStopPolicy`管理。
 
+分页尾收尾归`AppendTransactions::return_tails`：在原整束take后，按原physical page查成员，核真实frontier与空目标，再移动原尾写权。
+撤回或部分接受是否保留该尾由模型提供，原成员索引不重排；晚银行拒绝保留早银行已移动和剩余capability，修正后可继续原收尾。
+普通target、融合MTP draft和私有NextN共用该算法；R1／R2的尾归属与递归结果暂存使用已有SmallVector内联容量，实际更宽批次仍按宽度准备。
+GLM的StateStore／StateHead不使用这些分页尾，不为接口统一而引入伪Frame或Qwen状态。共同结果见证已经共用，不再叠加纯转发的发布接口。
+
+发生执行或完成后的异常时，原head／ledger提交仍是权威事实。补观察逐成员尝试，某个观察器再次拒绝不能遮蔽首个错误的Status、participant与退休事实，
+也不阻断其它已提交成员的观察；未观察的ordinal保留在原账簿，原owner修复观察条件后只重试观察，不能重跑Graph或重新采样。
+这不把第二个观察错误视为成功，也不提供新的退休或输出额度权限。
+[有限检查](../evidence/correctness/inference-append-tail-return-2026-10-29.json)覆盖原Append八测试、CPU／CUDA真实R2晚观察恢复、普通流水及MTP回归；
+观察重试不新增提交或改变完整状态。未执行设备故障注入，也未从消除元数据分配推定吞吐收益。
+
 首轮提取的`dispatch_batches`已由自然生成与固定输入两个循环调用。它只遍历原先冷预留的
 `BatchIndices`，通过静态调用取得资格、数量上限、兼容性及实际完成前缀；缩批后的尾部仍按原
 候选顺序等待，不插队。载荷、接纳、模型执行、提交观察及退休仍归调用者。执行或晚观察抛错时

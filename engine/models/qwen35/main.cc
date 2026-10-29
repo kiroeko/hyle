@@ -3184,13 +3184,11 @@ public:
       auto key_commit = take(work.state.key.prepare_commit(std::move(key_delta)));
       auto value_commit = take(work.state.value.prepare_commit(std::move(value_delta)));
       std::array<c::PagedPageAppender, 2> tails;
-      for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank) for (std::size_t i = 0; i < guard.execution.appends[bank].appender_count(); ++i) {
-        auto &tail = take(guard.execution.appends[bank].appender(i)); if (!tail.valid()) continue;
-        if (tail.page() != next.pages.back().page() || tail.reserved_rows() || tails[bank - draft_bank].valid() ||
-            tail.initialized_rows() != next.frontier % cache::Plan::page_rows)
-          throw std::runtime_error("NextN append returned an invalid private tail");
-        tails[bank - draft_bank] = std::move(tail);
-      }
+      const std::array<inference::AppendTailOwner, 1> owners{{{next.pages.back().page(), 0}}};
+      check(guard.execution.append_transactions().subspan(draft_bank, 2).return_tails(owners,
+          [&](std::size_t bank, std::size_t) noexcept -> inference::AppendTailDestination {
+            return {static_cast<std::uint32_t>(next.frontier % cache::Plan::page_rows), &tails[bank]};
+          }));
       check(program.io.release_inputs(program.carrier));
       check(work.state.key.validate_commit(key_commit));
       check(work.state.value.validate_commit(value_commit));
@@ -5298,7 +5296,8 @@ public:
         }
       }
       if (has_mtp(phase.family->role)) {
-        std::vector<std::pair<std::uint32_t, std::size_t>> owners; owners.reserve(outputs.size());
+        hyle::container::SmallVector<inference::AppendTailOwner, 2> owners;
+        if (!owners.try_reserve(outputs.size())) throw std::bad_alloc{};
         for (std::size_t j = 0; j < outputs.size(); ++j) {
           auto &member = step.members[j]; auto &draft = *member.next->draft;
           owners.emplace_back(draft.pages.back().page(), j);
@@ -5313,20 +5312,14 @@ public:
           member.draft_updates[1] = take(member.draft_frame(false).prepare_commit(std::move(value)));
         }
         std::sort(owners.begin(), owners.end());
-        for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
-          for (std::size_t i = 0; i < step.execution.appends[bank].appender_count(); ++i) {
-            auto &tail = take(step.execution.appends[bank].appender(i)); if (!tail.valid()) continue;
-            const auto found = std::lower_bound(owners.begin(), owners.end(), std::pair{tail.page(), std::size_t{0}});
-            if (found == owners.end() || found->first != tail.page())
-              throw std::runtime_error("draft append returned a tail outside all final pages");
-            auto &member = step.members[found->second];
-            if (step.withdrawn(member)) { tail = {}; continue; }
-            auto &draft = *member.next->draft;
-            if (tail.reserved_rows() || member.next_draft_tails[bank - draft_bank].valid() ||
-                tail.initialized_rows() != draft.frontier % cache::Plan::page_rows)
-              throw std::runtime_error("draft append returned an invalid committed frontier");
-            member.next_draft_tails[bank - draft_bank] = std::move(tail);
-          }
+        check(step.execution.append_transactions().subspan(draft_bank, 2).return_tails(
+            {owners.data(), owners.size()},
+            [&](std::size_t bank, std::size_t j) noexcept -> inference::AppendTailDestination {
+              auto &member = step.members[j];
+              if (step.withdrawn(member)) return {};
+              return {static_cast<std::uint32_t>(member.next->draft->frontier % cache::Plan::page_rows),
+                  &member.next_draft_tails[bank]};
+            }));
       }
       // Caller-supplied completion is confined to this unpublished episode.
       // In particular, recursive proposals must repair their retained KV from
@@ -5367,26 +5360,20 @@ public:
         if (outputs[j].expected_episode && !record->same_result(*outputs[j].expected_episode))
           throw std::runtime_error("MTP replay natural decision or state boundary diverged from its recorded episode");
       }
-      hyle::container::SmallVector<std::pair<std::uint32_t, std::size_t>, 1> tail_owners;
+      hyle::container::SmallVector<inference::AppendTailOwner, 2> tail_owners;
       if (!tail_owners.try_reserve(step.members.size())) throw std::bad_alloc{};
       for (std::size_t j = 0; j < step.members.size(); ++j)
         tail_owners.emplace_back(step.members[j].verified_last_page, j);
       std::sort(tail_owners.begin(), tail_owners.end());
-      for (std::size_t bank = 0; bank < draft_bank; ++bank)
-        for (std::size_t i = 0; i < step.execution.appends[bank].appender_count(); ++i) {
-          auto &tail = take(step.execution.appends[bank].appender(i)); if (!tail.valid()) continue;
-          const auto found = std::lower_bound(tail_owners.begin(), tail_owners.end(), std::pair{tail.page(), std::size_t{0}});
-          if (found == tail_owners.end() || found->first != tail.page())
-            throw std::runtime_error("batch append returned a tail outside all final pages");
-          auto &member = step.members[found->second];
-          // A ready T2 tail already owns the verified physical frontier.
-          // Partial acceptance only narrows read authority; discard its mutable
-          // capability and use the original COW path next, never rewind it.
-          if (step.withdrawn(member) || member.accepted_tokens != member.input_tokens) { tail = {}; continue; }
-          if (tail.reserved_rows() || member.next_tails[bank].valid() || tail.initialized_rows() != member.next->length % cache::Plan::page_rows)
-            throw std::runtime_error("batch append returned an invalid committed tail");
-          member.next_tails[bank] = std::move(tail);
-        }
+      check(step.execution.append_transactions().subspan(0, draft_bank).return_tails(
+          {tail_owners.data(), tail_owners.size()},
+          [&](std::size_t bank, std::size_t j) noexcept -> inference::AppendTailDestination {
+            auto &member = step.members[j];
+            // Partial acceptance narrows read authority, never rewinds the
+            // verified physical tail. Its next append uses the original COW.
+            if (step.withdrawn(member) || member.accepted_tokens != member.input_tokens) return {};
+            return {static_cast<std::uint32_t>(member.next->length % cache::Plan::page_rows), &member.next_tails[bank]};
+          }));
       check(step.execution.release_consumers(phase.state_resource_ports));
       for (const auto &member : step.members)
         if (member.session->head.get() != member.base || member.session->head.epoch() != member.base_epoch ||
@@ -5655,7 +5642,8 @@ public:
       throw std::runtime_error("recursive finish requires the complete original verification batch");
     const auto &selected_sampling = *active_step->phase->family->sampling;
     const auto &selected_sampler = selected_sampling.configuration;
-    std::vector<std::int32_t> next(selections.size(), -1);
+    hyle::container::SmallVector<std::int32_t, 2> next;
+    if (!next.try_resize(selections.size(), -1)) throw std::bad_alloc{};
     for (std::size_t j = 0; j < selections.size(); ++j) {
       const auto &selection = selections[j];
       if (selection.session != active_step->members[j].session || selection.session != outputs[j].session)
@@ -5667,7 +5655,7 @@ public:
         throw std::runtime_error("recursive generation requires its nonterminal pending token and positive quota");
       results[j].emitted.clear(); results[j].emitted.reserve(active_step->input_tokens);
     }
-    finish_selected_evaluations(outputs, next,
+    finish_selected_evaluations(outputs, std::span(next.data(), next.size()),
         [&](std::span<const std::int32_t> candidates, StepState &step, std::span<std::int32_t> selected) {
       c::ReadLease logits_owner;
       mem::ConstBufferView logits_storage;
@@ -6608,6 +6596,17 @@ struct PreparedGenerationCall final {
   std::size_t planned_rows() const noexcept { return role == GraphRole::kVerify ? maximum + 1 : drafts_token(role) ? 2 : ids().size(); }
 };
 
+// Failure recovery may observe already authoritative records, but a second
+// host-observation error must not replace the original Status/participant or
+// retirement facts. Try every original peer independently. A rejected observer
+// leaves its ordinal in the existing ledger for a later observation-only retry.
+void observe_generation_commits_after_failure(std::span<const PreparedGenerationCall> calls) noexcept {
+  for (const auto &call : calls) {
+    try { observe_generation_commits(*call.request); }
+    catch (...) {}
+  }
+}
+
 void validate_generation_logits_inputs(const SamplingConfiguration &configuration,
     const PreparedGenerationCall &call, std::int64_t vocabulary) {
   if (call.conditional_logits.empty()) {
@@ -7116,8 +7115,14 @@ bool execute_generation_continuation(Model &model, std::span<PreparedGenerationC
       if (ledger.committed_count < ledger.records.size()) ledger.discard_uncommitted();
     }
   };
-  const auto observe_commits = [&] {
-    for (const auto &call : calls) observe_generation_commits(*call.request);
+  const auto recover_records = [&]() noexcept {
+    observe_generation_commits_after_failure(calls);
+    if (!model.active_step && !model.successor_step) {
+      // Host record recovery is secondary to the original error too. Native
+      // retirement still comes only from release_and_abort above this call.
+      try { discard_records(); }
+      catch (...) {}
+    }
   };
   const auto finish = [&](std::span<PreparedGenerationCall> current) {
     const auto rows = model.active_step->input_tokens;
@@ -7329,12 +7334,10 @@ bool execute_generation_continuation(Model &model, std::span<PreparedGenerationC
       continuation.release_ready();
     return true;
   } catch (inference::EvaluationFailure &failure) {
-    failure.observe_retirement(release_and_abort()); observe_commits();
-    if (!model.active_step && !model.successor_step) discard_records();
+    failure.observe_retirement(release_and_abort()); recover_records();
     throw;
   } catch (...) {
-    (void)release_and_abort(); observe_commits();
-    if (!model.active_step && !model.successor_step) discard_records();
+    (void)release_and_abort(); recover_records();
     throw;
   }
 }
@@ -7616,7 +7619,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
           model.discard_decode_ahead(call.request->session.get());
         }
   } catch (...) {
-    for (auto &call : calls) observe_generation_commits(*call.request);
+    observe_generation_commits_after_failure(calls);
     throw;
   }
 }

@@ -67,6 +67,9 @@ Head成功后立即无失败地记录该成员结果，后续报告／catch-up�
 单成员、全部停止、提交前停止和owner明确abort仍按原整episode退休；
 [七项有限消费者](../evidence/correctness/inference-mtp-member-withdrawal-2026-10-29.json)通过prefill、混合lag K1、history／动态条件K2及E4状态，
 并保留普通CUDA流水与真实模型MTP回归。三次history测试接线失败如实保留；没有新的吞吐或全平台结论。
+随后[共同尾收尾与首错恢复](../evidence/correctness/inference-append-tail-return-2026-10-29.json)合并普通target、融合draft与私有NextN的原尾归还，
+去掉R1／R2三处固定元数据堆分配，并保留原失败Status、participant、退休事实与逐成员观察重试；八个有限CPU／CUDA进程通过。
+GLM已有提交见证不再套纯转发发布接口；下一片复用现有RequestLoop替换其真实有限旅程的手动FIFO／turn驱动，模型状态与原计算保留。
 本轮工程入口、完整依赖装配、文档导航及许可交付整改已完成，结果见[工程检查记录](../evidence/licensing/dependency-licenses-2026-10-29.json)。
 当前收敛完整执行编排、普通／MTP共同机制及SDK接线，随后集中连续后继、GPU融合及带宽等性能工作。
 共同架构同时审查多模型、复杂阶段及未来多端点的依赖边界，避免将当前Qwen／单卡放置固化为通用合同；

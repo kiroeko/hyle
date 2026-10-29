@@ -29,7 +29,7 @@ void check(hyle::Status status) {
 }
 template<class T> T take(hyle::Result<T> value) {
   if (!value) throw std::runtime_error(std::string(value.error().message()));
-  return std::move(*value);
+  return std::forward<T>(*value);
 }
 
 // A real Graph effect refuses after both original append effects. It does not
@@ -91,8 +91,9 @@ struct Program final {
   c::ReadLease input;
   c::TensorDesc rows;
   std::array<std::uint16_t, 64> original{};
+  const std::uint32_t page_rows;
 
-  explicit Program(bool refuse = false) {
+  explicit Program(bool refuse = false, bool partial_tail = false) : page_rows(partial_tail ? 4u : 2u) {
     auto refusal = take(c::make_custom_provider({{0x48594c45, 0x49415050}, "inference-append-refusal", "1"},
         c::cpu::kBackendId, RefuseFactory{}));
     const std::array providers{c::ProviderBinding{c::ggml_cpu::provider(), 0}, c::ProviderBinding{refusal, 0}};
@@ -100,9 +101,9 @@ struct Program final {
     queue = take(context.create_queue());
     const auto plain = take(c::CacheStorage::plain(c::DataType::kBFloat16));
     schema = take(c::BatchSchema::create({.query_type = c::DataType::kBFloat16, .output_type = c::DataType::kBFloat16,
-        .key_storage = plain, .value_storage = plain, .max_requests = 1, .max_query_rows = 1, .max_kv_rows = 4,
+        .key_storage = plain, .value_storage = plain, .max_requests = 1, .max_query_rows = 1, .max_kv_rows = page_rows * 2,
         .max_pages = 2, .max_page_refs = 2, .query_heads = 1, .kv_heads = 1, .qk_head_dim = 64,
-        .value_head_dim = 64, .page_size = 2}));
+        .value_head_dim = 64, .page_size = page_rows}));
     const std::array<std::int32_t, 2> query{0, 1}, ptr{0, 1};
     const std::array<std::int32_t, 1> old_id{0}, new_id{1}, old_last{1}, new_last{2};
     before = take(schema.version({query, ptr, old_id, old_last}));
@@ -112,13 +113,16 @@ struct Program final {
       arenas[bank] = take(c::PagedArena::create(schema, bank ? c::BatchCacheRole::kValue : c::BatchCacheRole::kKey,
           m::system_resource(), {.max_backing_bytes = 4096}));
       auto initial = take(arenas[bank].acquire(0));
-      std::array<std::uint16_t, 128> bytes; bytes.fill(0x7fc1);
+      std::vector<std::uint16_t> bytes(page_rows * 64, 0x7fc1);
       std::copy(original.begin(), original.end(), bytes.begin());
       check(initial.lease().view()->write(std::as_bytes(std::span(bytes))));
       old_pages[bank] = take(initial.publish(1));
       old_frames[bank] = take(arenas[bank].read(before, std::span(&old_pages[bank], 1)));
       std::array dirty{take(arenas[bank].acquire(1))};
-      appends[bank] = take(b::PagedAppendPages::create(arenas[bank], after, old_frames[bank], dirty));
+      appends[bank] = partial_tail
+          ? take(b::PagedAppendPages::create(arenas[bank], after, old_frames[bank], dirty,
+                std::span<c::PagedPageAppender>{}))
+          : take(b::PagedAppendPages::create(arenas[bank], after, old_frames[bank], dirty));
     }
     rows = take(c::TensorDesc::dense(c::DataType::kBFloat16, std::array<std::int64_t, 3>{1, 1, 64}));
     auto builder = take(g::GraphBuilder::create());
@@ -151,12 +155,54 @@ struct Program final {
   i::AppendTransactions transactions() { return {nodes, appends, bound}; }
   void old_unchanged() {
     for (const auto &page : old_pages) {
-      std::array<std::uint16_t, 128> actual{}, expected{};
-      expected.fill(0x7fc1);
+      std::vector<std::uint16_t> actual(page_rows * 64), expected(page_rows * 64, 0x7fc1);
       std::copy(original.begin(), original.end(), expected.begin());
       check(page.view()->read(std::as_writable_bytes(std::span(actual))));
       EXPECT_EQ(actual, expected);
     }
+  }
+  std::array<c::PagedArenaRead, 2> finish_partial_tails() {
+    check(transactions().bind(run, graph, cache_inputs));
+    check(run.prepare_replay(queues()));
+    auto completion = take(run.submit(queues()));
+    std::size_t premature_destinations = 0;
+    const std::array owners{i::AppendTailOwner{1, 0}};
+    const auto premature_return = transactions().return_tails(owners,
+        [&](std::size_t, std::size_t) noexcept -> i::AppendTailDestination { ++premature_destinations; return {}; });
+    EXPECT_TRUE(premature_return.IsFailedPrecondition()); EXPECT_EQ(premature_destinations, 0u);
+    // A fast CPU kernel does not bypass the original Completion observation.
+    const auto premature = transactions().recover(run);
+    EXPECT_TRUE(premature);
+    if (premature) EXPECT_FALSE(*premature);
+    EXPECT_EQ(bound, (std::array<std::uint8_t, 2>{1, 1}));
+    check(completion.wait()); completion = {};
+    check(transactions().take(run));
+    EXPECT_EQ(bound, (std::array<std::uint8_t, 2>{0, 0}));
+    std::array<c::PagedArenaRead, 2> ready;
+    for (std::size_t bank = 0; bank != ready.size(); ++bank) {
+      ready[bank] = take(appends[bank].ready());
+      EXPECT_EQ(appends[bank].appender_count(), 1u);
+      const auto &tail = take(appends[bank].appender(0));
+      EXPECT_TRUE(tail.valid()); EXPECT_EQ(tail.page(), 1u);
+      EXPECT_EQ(tail.initialized_rows(), 2u); EXPECT_EQ(tail.reserved_rows(), 0u);
+    }
+    return ready;
+  }
+  void ready_unchanged(const std::array<c::PagedArenaRead, 2> &ready) {
+    for (std::size_t bank = 0; bank != ready.size(); ++bank) {
+      auto prefix = take(ready[bank].page_prefix(1));
+      std::array<std::uint16_t, 128> actual{}, expected;
+      expected.fill(0x3f40);
+      std::copy(original.begin(), original.end(), expected.begin());
+      EXPECT_EQ(prefix.size(), sizeof(actual));
+      check(take(prefix.view()).read(std::as_writable_bytes(std::span(actual))));
+      EXPECT_EQ(actual, expected);
+      EXPECT_FALSE(prefix.subview(0, sizeof(actual) + sizeof(original)));
+      auto old_prefix = take(old_frames[bank].page_prefix(0));
+      EXPECT_EQ(old_prefix.size(), sizeof(original));
+      EXPECT_FALSE(old_prefix.subview(0, sizeof(actual)));
+    }
+    old_unchanged();
   }
   void discard_and_reacquire() {
     auto discarded = transactions().discard(); ASSERT_TRUE(discarded) << discarded.error().message();
@@ -202,6 +248,79 @@ TEST(InferenceAppendTransactions, WholeFailureReturnsReservationsWithoutReadyAut
   auto recovered = p.transactions().recover(p.run); ASSERT_TRUE(recovered) << recovered.error().message();
   ASSERT_TRUE(*recovered); EXPECT_EQ(p.bound, (std::array<std::uint8_t, 2>{0, 0}));
   EXPECT_FALSE(p.appends[0].ready()); EXPECT_FALSE(p.appends[1].ready());
+  p.discard_and_reacquire();
+}
+
+TEST(InferenceAppendTransactions, ReturnedTailOwnerAndFrontierRefusalPreservesLateBankForRetry) {
+  Program p(false, true);
+  auto ready = p.finish_partial_tails();
+  std::array<c::PagedPageAppender, 2> returned;
+  std::array<std::uint32_t, 2> frontiers{2, 2};
+  std::array<std::size_t, 2> visits{};
+  bool wrong_destination = false;
+  const auto resolve = [&](std::size_t bank, std::size_t member) noexcept -> i::AppendTailDestination {
+    if (bank >= returned.size() || member != 7) { wrong_destination = true; return {}; }
+    ++visits[bank]; return {frontiers[bank], &returned[bank]};
+  };
+  const std::array wrong_owner{i::AppendTailOwner{0, 7}};
+  EXPECT_TRUE(p.transactions().return_tails(wrong_owner, resolve).IsFailedPrecondition());
+  EXPECT_EQ(visits, (std::array<std::size_t, 2>{0, 0}));
+  for (std::size_t bank = 0; bank != returned.size(); ++bank) {
+    EXPECT_TRUE(take(p.appends[bank].appender(0)).valid()); EXPECT_FALSE(returned[bank].valid());
+  }
+  const std::array owners{i::AppendTailOwner{1, 7}};
+  frontiers[0] = 1;
+  EXPECT_TRUE(p.transactions().return_tails(owners, resolve).IsFailedPrecondition());
+  EXPECT_EQ(visits, (std::array<std::size_t, 2>{1, 0}));
+  for (std::size_t bank = 0; bank != returned.size(); ++bank) {
+    const auto &tail = take(p.appends[bank].appender(0));
+    EXPECT_TRUE(tail.valid()); EXPECT_EQ(tail.initialized_rows(), 2u); EXPECT_EQ(tail.reserved_rows(), 0u);
+    EXPECT_FALSE(returned[bank].valid());
+  }
+  frontiers = {2, 1};
+  EXPECT_TRUE(p.transactions().return_tails(owners, resolve).IsFailedPrecondition());
+  EXPECT_TRUE(returned[0].valid()); EXPECT_FALSE(take(p.appends[0].appender(0)).valid());
+  EXPECT_FALSE(returned[1].valid()); EXPECT_TRUE(take(p.appends[1].appender(0)).valid());
+  EXPECT_EQ(returned[0].page(), 1u); EXPECT_EQ(returned[0].initialized_rows(), 2u);
+  EXPECT_EQ(visits, (std::array<std::size_t, 2>{2, 1}));
+  p.ready_unchanged(ready);
+  frontiers[1] = 2;
+  check(p.transactions().return_tails(owners, resolve));
+  EXPECT_FALSE(wrong_destination);
+  EXPECT_EQ(visits, (std::array<std::size_t, 2>{2, 2}));
+  for (std::size_t bank = 0; bank != returned.size(); ++bank) {
+    EXPECT_FALSE(take(p.appends[bank].appender(0)).valid());
+    EXPECT_TRUE(returned[bank].valid()); EXPECT_EQ(returned[bank].page(), 1u);
+    EXPECT_EQ(returned[bank].initialized_rows(), 2u); EXPECT_EQ(returned[bank].reserved_rows(), 0u);
+  }
+  check(p.transactions().return_tails(owners, resolve));
+  EXPECT_EQ(visits, (std::array<std::size_t, 2>{2, 2})); // No duplicate movement or destination resolution.
+  p.ready_unchanged(ready);
+  returned = {}; ready = {};
+  p.discard_and_reacquire();
+}
+
+TEST(InferenceAppendTransactions, WithdrawnReturnedTailsDropCapabilityWithoutWideningReadyPrefixes) {
+  Program p(false, true);
+  auto ready = p.finish_partial_tails();
+  const std::array owners{i::AppendTailOwner{1, 5}};
+  std::array<std::size_t, 2> visits{};
+  bool wrong_destination = false;
+  const auto withdrawn = [&](std::size_t bank, std::size_t member) noexcept -> i::AppendTailDestination {
+    if (bank >= visits.size() || member != 5) wrong_destination = true;
+    else ++visits[bank];
+    return {}; // The real participant withdrew; no new mutable destination exists.
+  };
+  check(p.transactions().return_tails(owners, withdrawn));
+  EXPECT_FALSE(wrong_destination);
+  EXPECT_EQ(visits, (std::array<std::size_t, 2>{1, 1}));
+  for (auto &transaction : p.appends) EXPECT_FALSE(take(transaction.appender(0)).valid());
+  p.ready_unchanged(ready);
+  check(p.transactions().return_tails(owners, withdrawn));
+  EXPECT_EQ(visits, (std::array<std::size_t, 2>{1, 1}));
+  // Immutable ready readers still prevent reuse after mutable-tail withdrawal.
+  for (auto &arena : p.arenas) EXPECT_FALSE(arena.acquire(1));
+  ready = {};
   p.discard_and_reacquire();
 }
 
