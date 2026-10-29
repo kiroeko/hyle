@@ -64,9 +64,7 @@ inline c::TensorDesc dense(c::DataType type,std::initializer_list<std::int64_t> 
 struct Run final {
   g::Graph graph;
   std::vector<c::TensorDesc> inputs,outputs;
-  std::vector<model_graph_run::Port> input_ports;
-  std::vector<model_graph_run::OutputPort> output_ports;
-  g::CompiledGraph compiled;
+  std::unique_ptr<model_graph_run::ColdProgram> program;
   g::Invocation invocation;
   c::LeasePool pool;
   hyle::inference::RetirementObservation last_failure_retirement{};
@@ -93,9 +91,10 @@ struct Backend final {
   Run prepare(g::Graph graph,std::span<const g::ConstantBinding> constants={},std::uint32_t generations=4,
       std::optional<c::WorkloadContext> actual_workload=std::nullopt) {
     Run result{.graph=std::move(graph)};
+    std::vector<model_graph_run::Port> input_ports,output_ports;
     for(std::size_t i=0;i<result.graph.input_count();++i) {
       result.inputs.push_back(take(result.graph.input_description(i),"input description"));
-      result.input_ports.push_back({take(result.graph.input_id(i),"input ID"),result.inputs.back()});
+      input_ports.push_back({take(result.graph.input_id(i),"input ID"),result.inputs.back()});
     }
     std::size_t capacity=0;
     for(std::size_t i=0;i<result.graph.output_count();++i) {
@@ -104,21 +103,21 @@ struct Backend final {
     }
     const auto workload=actual_workload?actual_workload:default_workload;
     if(!workload)throw std::runtime_error("ordinary model workload was not selected by its caller");
-    result.compiled=take(compile(result.graph,{.constants=constants,
+    auto compiled=take(compile(result.graph,{.constants=constants,
         .workload=*workload}),"ordinary model compile");
     for(std::size_t i=0;i<result.outputs.size();++i)
-      result.output_ports.push_back(model_graph_run::prepare_output(result.compiled,
-          {take(result.graph.output_id(i),"output ID"),result.outputs[i]}));
-    result.invocation=take(result.compiled.executable.create_invocation({.resources=g::ResourceOptions{}}),"ordinary model Invocation");
+      output_ports.push_back({take(result.graph.output_id(i),"output ID"),result.outputs[i]});
+    result.program=model_graph_run::ColdProgram::create(std::move(compiled),input_ports,output_ports);
+    result.invocation=take(result.program->compiled.executable.create_invocation({.resources=g::ResourceOptions{}}),"ordinary model Invocation");
     result.pool=take(c::LeasePool::create(owner.ref(),capacity*generations,
         {.max_blocks=std::uint32_t(result.outputs.size())*generations,.backing_alignment=256}),"independent result generations");
     return result;
   }
   std::vector<c::ReadLease> execute(Run &run,std::span<const c::ReadLease> inputs,
-      std::span<const std::size_t> externally_bound={},
+      const model_graph_run::InputPlan *input_plan=nullptr,
       const std::function<void(g::Invocation&)> &bind_external={}) {
-    return model_graph_run::execute(run.invocation,run.pool,queue,run.input_ports,inputs,
-        run.output_ports,submissions,externally_bound,bind_external,&run.last_failure_retirement);
+    return model_graph_run::execute(*run.program,run.invocation,run.pool,queue,inputs,
+        submissions,input_plan,bind_external,&run.last_failure_retirement);
   }
 };
 
@@ -147,7 +146,36 @@ template<class Source,class CpuSupply,class Boundary,class Selection
   std::size_t semantic_input_count=6,router_value_count=30,resident_capacity=30,
       resident_slot_bytes=0;
   std::array<std::uint64_t,4> bank_ids{10,20,30,40};
+  struct ResidentInputs final {
+    std::optional<model_graph_run::InputPlan> plan;
+#if defined(HYLE_TEST_DSPARK_STATE_CUDA)
+    std::array<g::WeightBinding,4> bindings{};
+#endif
+  };
+  std::vector<ResidentInputs> resident_inputs;
   std::function<void(std::size_t,std::span<const std::int32_t>)> before_upload;
+  void prepare_resident_inputs() {
+    resident_inputs.resize(phases.size());
+    if(!plan)return;
+    if(phases.size()!=plan->phases.size())throw std::runtime_error("resident phase construction count");
+    for(std::size_t index=0;index<phases.size();++index) {
+      const auto &phase=plan->phases[index];
+      if(!phase.resident_stage)continue;
+      const auto &router=plan->routers[*phase.resident_stage];
+      const std::array values{router.banks[0],router.banks[1],router.banks[2],router.map};
+      std::array<std::size_t,4> dynamic{};
+      for(std::size_t bank=0;bank<values.size();++bank) {
+        const auto found=std::find_if(phase.original_inputs.begin(),phase.original_inputs.end(),
+            [&](auto value){return value.ordinal()==values[bank].ordinal();});
+        if(found==phase.original_inputs.end())throw std::runtime_error("resident phase missing one compressed/map input");
+        dynamic[bank]=std::size_t(found-phase.original_inputs.begin());
+#if defined(HYLE_TEST_DSPARK_STATE_CUDA)
+        resident_inputs[index].bindings[bank]={phases[index].program->input_ports[dynamic[bank]].id,bank_ids[bank]};
+#endif
+      }
+      resident_inputs[index].plan=phases[index].program->input_plan(dynamic);
+    }
+  }
   const Run &run(std::size_t output) const{return phases.at(outputs.at(output).phase);}
   std::size_t port(std::size_t output) const{return outputs.at(output).port;}
 };
@@ -168,11 +196,7 @@ template<class Routed> std::vector<c::ReadLease> execute_draft(Backend &backend,
 #if defined(HYLE_TEST_DSPARK_STATE_CUDA)
     std::optional<c::cuda::WeightBatch> cuda_batch;
 #endif
-    std::array<std::size_t,4> dynamic_ports{};
-#if defined(HYLE_TEST_DSPARK_STATE_CUDA)
-    std::array<g::WeightBinding,4> weight_bindings{};
-#endif
-    std::span<const std::size_t> external_ports;
+    const model_graph_run::InputPlan *input_plan=nullptr;
     std::function<void(g::Invocation&)> bind_external;
     if(phase.resident_stage) {
       const auto stage=*phase.resident_stage;const auto &router=draft.plan->routers[stage];
@@ -183,19 +207,13 @@ template<class Routed> std::vector<c::ReadLease> execute_draft(Backend &backend,
       draft.selections[stage]=draft.select(ids);
       if(draft.before_upload)draft.before_upload(stage,draft.selections[stage].globals);
       const std::array bank_values{router.banks[0],router.banks[1],router.banks[2],router.map};
-      for(std::size_t bank=0;bank<4;++bank) {
-        const auto found=std::find_if(phase.original_inputs.begin(),phase.original_inputs.end(),[&](auto value){return value.ordinal()==bank_values[bank].ordinal();});
-        if(found==phase.original_inputs.end())throw std::runtime_error("resident phase missing one compressed/map input");
-        dynamic_ports[bank]=std::size_t(found-phase.original_inputs.begin());
-#if defined(HYLE_TEST_DSPARK_STATE_CUDA)
-        weight_bindings[bank]={take(run.graph.input_id(dynamic_ports[bank]),"resident graph operand"),draft.bank_ids[bank]};
-#endif
-      }
 #if defined(HYLE_TEST_DSPARK_STATE_CUDA)
       if(backend.cuda) {
         cuda_batch.emplace(take(draft.cuda_supply->upload(stage%2,stage,draft.selections[stage],*draft.source,backend.queue),"one original encoded expert/map generation"));
-        external_ports=dynamic_ports;
-        bind_external=[&](g::Invocation &invocation){check(g::cuda::bind(invocation,weight_bindings,*cuda_batch),"atomic original expert/map weight bindings");};
+        const auto &resident=draft.resident_inputs.at(phase_index);
+        if(!resident.plan)throw std::runtime_error("resident phase input plan was not prepared");
+        input_plan=&*resident.plan;
+        bind_external=[&](g::Invocation &invocation){check(g::cuda::bind(invocation,draft.resident_inputs[phase_index].bindings,*cuda_batch),"atomic original expert/map weight bindings");};
       } else
 #endif
       {
@@ -205,7 +223,7 @@ template<class Routed> std::vector<c::ReadLease> execute_draft(Backend &backend,
     }
     std::vector<c::ReadLease> arguments;
     for(auto original:phase.original_inputs)arguments.push_back(live.at(original.ordinal()));
-    completed[phase_index]=backend.execute(run,arguments,external_ports,bind_external);
+    completed[phase_index]=backend.execute(run,arguments,input_plan,bind_external);
     ++draft.completed_phases;
     if(phase.resident_stage) {
       const auto stage=*phase.resident_stage;

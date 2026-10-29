@@ -97,8 +97,13 @@ Kimi现有KDA／MLA消费者不产生生成token，不为共用请求接口虚�
 保原逐成员候选／取页顺序、R1快路、pending来源及接受／repair／ledger前后的归尾时序。Source缓冲冷预留，返回即清读pin，删除两处每步临时数组。
 4项组件检查含5次真实Graph提交，7条CPU／CUDA模型旅程完整报告与上一片一致；零银行共享政策页的物理尾唯一性误拒绝已真实复现并修复。
 五个消费者刷新，227个SDK／引擎输入复用；编译接线失败与修复前真实失败保留，没有吞吐刷新。完整执行引擎仍未完成。
-下一片核GLM／DeepSeek原程序对已有ProgramIo／Carrier的接入；家族数学及完整状态保留，不为缩短Qwen文件新造统一执行器。
-同步消费者可保留原Invocation，不为复用Carrier伪造shared Scope；先用真实端口、原池和退休路径检查ProgramIo是否足够，再收拢仍在Qwen中的跨pump连续wave算法。
+GLM Flash／Pro、DeepSeek正式Flash／Pro与Kimi的原组件程序已接共同ProgramIo：输入计划、驻留银行／map映射及输出事实冷准备，
+继续使用原CompiledGraph、Invocation、池、提交和退休；没有为同步消费者伪造Carrier Scope或加一次多余解绑扫描。
+真实DeepSeek首次压缩检查还发现CUDA索引分数的归约漏填stride；修改前后消费者在同SDK上均失败，独立小回归在旧对象上准确失败。
+已补物理[key,token,head]步长，4项索引检查、真实首次压缩／窗口环绕及GLM回归通过；
+[本批有限检查](../evidence/correctness/inference-program-io-consumers-2026-10-30.json)共18项测试及2个载体进程通过，226个SDK／引擎输入复用、仅刷新1个provider CXX对象，无NVCC或下载。
+下一片收拢跨pump连续cohort的身份、额度与drain决策，复用原RequestLoop／RequestCreditGrant及退休事实；
+实际Source、状态边界、MTP数学、slot轮转及ledger绑定保留模型职责，不为缩短Qwen文件新造统一执行器。
 共同架构同时审查多模型、复杂阶段及未来多端点的依赖边界，避免将当前Qwen／单卡放置固化为通用合同；
 本轮不据组件通过声明大模型整机、多卡或跨机实现完成。现有硬件上的decode、MTP和含预热／换轮的综合速度仍是投入价值的关键检验，
 架构按实际热点与维护问题调整，不以等待更大硬件或无限整理抽象替代速度改进。

@@ -246,6 +246,7 @@ template<class Recipe> Phased<Recipe> prepare_phased(Backend &backend,Recipe rec
     }
     run.phases.push_back(backend.prepare(graph.graph,shared,2,workload(phase.fragment)));
   }
+  run.prepare_resident_inputs();
   return result;
 }
 struct DraftRecipe final {
@@ -310,9 +311,9 @@ void report_head(const Run &run,std::size_t row_count) {
   const auto projected=take(run.graph.producer(take(run.graph.node_input(copied,0),"Pro fullV Copy predecessor")),"Pro actual fullV operation");
   if(!take(run.graph.operation(projected),"Pro original fullV operation").custom_as<c::model_ops::DenseLinearF32>())
     throw std::runtime_error("Pro actual fullV must retain DenseLinearF32");
-  std::size_t selected=0;for(std::size_t i=0;i<run.compiled.report.step_count();++i) {
-    const auto step=take(run.compiled.report.step(i),"Pro fullV selected provider");
-    for(std::size_t j=0;j<step.node_count;++j)if(take(run.compiled.report.step_node(i,j),"Pro fullV actual node")==projected) {
+  std::size_t selected=0;for(std::size_t i=0;i<run.program->compiled.report.step_count();++i) {
+    const auto step=take(run.program->compiled.report.step(i),"Pro fullV selected provider");
+    for(std::size_t j=0;j<step.node_count;++j)if(take(run.program->compiled.report.step_node(i,j),"Pro fullV actual node")==projected) {
       ++selected;::testing::Test::RecordProperty("target_fullV"+std::to_string(row_count)+"_provider",std::string(step.provider.name));
     }
   }

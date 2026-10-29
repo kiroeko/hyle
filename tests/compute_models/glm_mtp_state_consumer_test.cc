@@ -13,6 +13,7 @@
 #include <memory>
 #include <limits>
 #include <numeric>
+#include <optional>
 #include <span>
 #include <set>
 #include <stdexcept>
@@ -1091,11 +1092,19 @@ struct ResidentBatch final {
   std::function<void()> record;
 };
 struct ResidentProgram final {
+  struct PhaseBindings final {
+    std::vector<Value> banks;
+    std::optional<model_graph_run::InputPlan> external_inputs;
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+    std::vector<g::WeightBinding> weights;
+#endif
+  };
   resident_fragment::ResidentDraft<ResidentBoundary,1> plan;
   std::vector<std::uint64_t> bank_ids;
   std::function<ResidentBatch(std::span<const std::int32_t>,c::Queue&)> upload;
   std::function<void()> completed;
   std::vector<std::unique_ptr<Program>> phases;
+  std::vector<PhaseBindings> bindings;
 };
 // Cold diagnostic provenance follows the actual compiled phase. These small
 // located IDs never participate in execution or substitute descriptor equality
@@ -1125,19 +1134,17 @@ struct ReportGraph final {
 struct Program final {
   Recipe recipe;
   sem::GraphCase logical;
-  std::vector<model_graph_run::Port> input_ports;
-  std::vector<model_graph_run::OutputPort> output_ports;
   std::vector<c::ReadLease> parameters;
   std::vector<std::size_t> parameter_slots;
-  g::CompiledGraph compiled;
+  std::unique_ptr<model_graph_run::ColdProgram> cold_program;
   g::Invocation invocation;
   c::LeasePool outputs;
   std::shared_ptr<ResidentProgram> resident;
   std::size_t completed_submissions=0;
   ReportValue published(std::size_t port) const {
-    if(!resident)return {&logical,&compiled,logical.outputs.at(port)};
+    if(!resident)return {&logical,&cold_program->compiled,logical.outputs.at(port)};
     const auto location=resident->plan.full_outputs.at(port);const auto &phase=*resident->phases.at(location.phase);
-    ReportValue result{&phase.logical,&phase.compiled,phase.logical.outputs.at(location.port)};
+    ReportValue result{&phase.logical,&phase.cold_program->compiled,phase.logical.outputs.at(location.port)};
     const auto original=recipe.fragment.outputs.at(port);
     const auto source=std::find_if(recipe.fragment.nodes.begin(),recipe.fragment.nodes.end(),[&](const auto &node){
       return std::any_of(node.outputs.begin(),node.outputs.end(),[&](Value value){return value.ordinal()==original.ordinal();});});
@@ -1154,7 +1161,7 @@ struct Program final {
   ReportValue constant(std::size_t slot,ReportValue consumer) const {
     if(!resident) {
       if(consumer.logical!=&logical)throw std::runtime_error("constant consumer belongs to another Graph");
-      return {&logical,&compiled,logical.constants.at(slot)};
+      return {&logical,&cold_program->compiled,logical.constants.at(slot)};
     }
     const auto original=recipe.fragment.constants.at(slot);
     for(std::size_t index=0;index<resident->phases.size();++index) {
@@ -1162,19 +1169,19 @@ struct Program final {
       const auto &origins=resident->plan.phases[index].original_constants;
       const auto found=std::find_if(origins.begin(),origins.end(),[&](Value value){return value.ordinal()==original.ordinal();});
       if(found==origins.end())throw std::runtime_error("actual consumer phase lost its original readonly constant");
-      return {&phase.logical,&phase.compiled,phase.logical.constants.at(std::size_t(found-origins.begin()))};
+      return {&phase.logical,&phase.cold_program->compiled,phase.logical.constants.at(std::size_t(found-origins.begin()))};
     }
     throw std::runtime_error("constant consumer is not an actual compiled phase");
   }
   ReportValue original_input(std::size_t slot,ReportValue consumer) const {
-    if(!resident)return {&logical,&compiled,logical.inputs.at(slot)};
+    if(!resident)return {&logical,&cold_program->compiled,logical.inputs.at(slot)};
     const auto original=recipe.fragment.inputs.at(slot);
     for(std::size_t index=0;index<resident->phases.size();++index) {
       const auto &phase=*resident->phases[index];if(consumer.logical!=&phase.logical)continue;
       const auto &origins=resident->plan.phases[index].original_inputs;
       const auto found=std::find_if(origins.begin(),origins.end(),[&](Value value){return value.ordinal()==original.ordinal();});
       if(found==origins.end())throw std::runtime_error("actual consumer phase lost its original input");
-      return {&phase.logical,&phase.compiled,phase.logical.inputs.at(std::size_t(found-origins.begin()))};
+      return {&phase.logical,&phase.cold_program->compiled,phase.logical.inputs.at(std::size_t(found-origins.begin()))};
     }
     throw std::runtime_error("input consumer is not an actual compiled phase");
   }
@@ -1185,7 +1192,7 @@ struct Program final {
       const auto &origins=resident->plan.phases[index].original_inputs;
       const auto found=std::find_if(origins.begin(),origins.end(),[&](Value value){return value.ordinal()==original.ordinal();});
       if(found==origins.end())throw std::runtime_error("actual phase lost the direct original producer input");
-      return {&phase.logical,&phase.compiled,phase.logical.inputs.at(std::size_t(found-origins.begin()))};
+      return {&phase.logical,&phase.cold_program->compiled,phase.logical.inputs.at(std::size_t(found-origins.begin()))};
     }
     throw std::runtime_error("producer consumer is not an actual compiled phase");
   }
@@ -1616,22 +1623,40 @@ struct Program final {
           if(found==p.recipe.fragment.constants.end())throw std::runtime_error("compiled phase constant absent from complete original model");
           local.external.push_back({slot,ready.at(std::size_t(found-p.recipe.fragment.constants.begin()))});
         }
-        p.resident->phases.push_back(Program::create(std::move(local),context,owner,cuda,max_generations));
+        auto program=Program::create(std::move(local),context,owner,cuda,max_generations);
+        ResidentProgram::PhaseBindings bindings;
+        if(phase.resident_stage) {
+          const auto &router=p.resident->plan.routers.at(*phase.resident_stage);
+          bindings.banks=router.banks;bindings.banks.push_back(router.map);
+          std::vector<std::size_t> external_ports;
+          for(std::size_t bank=0;bank<bindings.banks.size();++bank) {
+            const auto found=std::find_if(phase.original_inputs.begin(),phase.original_inputs.end(),[&](Value value){return value.ordinal()==bindings.banks[bank].ordinal();});
+            if(found==phase.original_inputs.end())throw std::runtime_error("original plane phase lost a bank or its generation map");
+            external_ports.push_back(std::size_t(found-phase.original_inputs.begin()));
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+            if(cuda)bindings.weights.push_back({program->logical.inputs.at(external_ports.back()),p.resident->bank_ids.at(bank)});
+#endif
+          }
+          if(cuda)bindings.external_inputs.emplace(program->cold_program->input_plan(external_ports));
+        }
+        p.resident->phases.push_back(std::move(program));
+        p.resident->bindings.push_back(std::move(bindings));
       }
       p.report_shared_lm(owner);p.report_original_attention(owner);p.report_original_moe(owner);
       return result;
     }
-    p.compiled = take(compile(), "ordinary connected NextN Graph");
+    std::vector<model_graph_run::Port> input_ports,output_ports;
+    for(std::size_t i=0;i<p.logical.inputs.size();++i)
+      input_ports.push_back({p.logical.inputs[i],p.recipe.fragment.description(p.recipe.fragment.inputs[i])});
+    for(std::size_t i=0;i<p.logical.outputs.size();++i)
+      output_ports.push_back({p.logical.outputs[i],p.recipe.fragment.description(p.recipe.fragment.outputs[i])});
+    p.cold_program=model_graph_run::ColdProgram::create(take(compile(), "ordinary connected NextN Graph"),input_ports,output_ports);
     p.report_shared_lm(owner);
     p.report_original_attention(owner);
-    p.invocation = take(p.compiled.executable.create_invocation({.resources = g::ResourceOptions{}}), "ordinary NextN Invocation");
-    for(std::size_t i=0;i<p.logical.inputs.size();++i)
-      p.input_ports.push_back({p.logical.inputs[i],p.recipe.fragment.description(p.recipe.fragment.inputs[i])});
+    p.invocation = take(p.cold_program->compiled.executable.create_invocation({.resources = g::ResourceOptions{}}), "ordinary NextN Invocation");
     std::size_t footprint = 0;
-    for (std::size_t i = 0; i < p.logical.outputs.size(); ++i) {
-      const auto &description=p.recipe.fragment.description(p.recipe.fragment.outputs[i]);
-      p.output_ports.push_back(model_graph_run::prepare_output(p.compiled,{p.logical.outputs[i],description}));
-      const auto extent = take(description.required_bytes(), "NextN output extent");
+    for (std::size_t i = 0; i < p.cold_program->output_count(); ++i) {
+      const auto extent = take(p.cold_program->output(i).description.required_bytes(), "NextN output extent");
       footprint += (extent + 255u) / 256u * 256u;
     }
     p.outputs = take(c::LeasePool::create(owner.ref(), footprint * max_generations,
@@ -1646,36 +1671,25 @@ struct Program final {
     std::array<std::vector<c::ReadLease>,2> completed;
     for(std::size_t index=0;index<resident->phases.size();++index) {
       const auto &phase=resident->plan.phases[index];auto &program=*resident->phases[index];
-      std::optional<ResidentBatch> batch;std::vector<std::size_t> dynamic_ports;
-#if defined(HYLE_TEST_GLM_STATE_CUDA)
-      std::vector<g::WeightBinding> weight_bindings;
-#endif
-      std::span<const std::size_t> external_ports;std::function<void(g::Invocation&)> bind_external;
+      const auto &bindings=resident->bindings.at(index);
+      std::optional<ResidentBatch> batch;
+      const model_graph_run::InputPlan *input_plan=nullptr;std::function<void(g::Invocation&)> bind_external;
       if(phase.resident_stage) {
         const auto &boundary=resident->plan.routers.at(*phase.resident_stage);
         batch.emplace(resident->upload(typed<std::int32_t>(live.at(boundary.ids.ordinal())),queue));
-        auto bank_values=boundary.banks;bank_values.push_back(boundary.map);
-        for(std::size_t bank=0;bank<bank_values.size();++bank) {
-          const auto found=std::find_if(phase.original_inputs.begin(),phase.original_inputs.end(),[&](Value value){return value.ordinal()==bank_values[bank].ordinal();});
-          if(found==phase.original_inputs.end())throw std::runtime_error("original plane phase lost a bank or its generation map");
-          dynamic_ports.push_back(std::size_t(found-phase.original_inputs.begin()));
-#if defined(HYLE_TEST_GLM_STATE_CUDA)
-          weight_bindings.push_back({program.logical.inputs.at(dynamic_ports.back()),resident->bank_ids.at(bank)});
-#endif
-        }
 #if defined(HYLE_TEST_GLM_STATE_CUDA)
         if(batch->cuda) {
-          external_ports=dynamic_ports;
-          bind_external=[&](g::Invocation &active){check(g::cuda::bind(active,weight_bindings,*batch->cuda),"atomic original plane/map binding");};
+          input_plan=&bindings.external_inputs.value();
+          bind_external=[&](g::Invocation &active){check(g::cuda::bind(active,bindings.weights,*batch->cuda),"atomic original plane/map binding");};
         } else
 #endif
         {
-          if(batch->banks.size()!=bank_values.size())throw std::runtime_error("actual CPU plane bank count differs");
-          for(std::size_t bank=0;bank<bank_values.size();++bank)live.at(bank_values[bank].ordinal())=batch->banks[bank];
+          if(batch->banks.size()!=bindings.banks.size())throw std::runtime_error("actual CPU plane bank count differs");
+          for(std::size_t bank=0;bank<bindings.banks.size();++bank)live.at(bindings.banks[bank].ordinal())=batch->banks[bank];
         }
       }
       std::vector<c::ReadLease> arguments;for(auto original:phase.original_inputs)arguments.push_back(live.at(original.ordinal()));
-      completed[index]=program.execute(queue,arguments,external_ports,bind_external);
+      completed[index]=program.execute(queue,arguments,input_plan,bind_external);
       for(std::size_t port=0;port<phase.original_outputs.size();++port)live.at(phase.original_outputs[port].ordinal())=completed[index][port];
       if(batch) {
 #if defined(HYLE_TEST_GLM_STATE_CUDA)
@@ -1691,13 +1705,13 @@ struct Program final {
     resident->completed();return result;
   }
   std::vector<c::ReadLease> execute(c::Queue &queue,std::span<const c::ReadLease> inputs,
-      std::span<const std::size_t> externally_bound={},const std::function<void(g::Invocation&)> &bind_external={}) {
+      const model_graph_run::InputPlan *input_plan=nullptr,const std::function<void(g::Invocation&)> &bind_external={}) {
     if(resident) {
-      if(!externally_bound.empty()||bind_external)throw std::runtime_error("resident orchestration owns its actual dynamic bindings");
+      if(input_plan||bind_external)throw std::runtime_error("resident orchestration owns its actual dynamic bindings");
       return execute_resident(queue,inputs);
     }
-    return model_graph_run::execute(invocation,outputs,queue,input_ports,inputs,output_ports,
-        completed_submissions,externally_bound,bind_external);
+    return model_graph_run::execute(*cold_program,invocation,outputs,queue,inputs,
+        completed_submissions,input_plan,bind_external);
   }
 
 };
@@ -4054,10 +4068,10 @@ void report_target_verifier(const Program &program,const TargetVerifierPorts &po
         take(graph.value_description(program.logical.outputs[port]),"target row ID shape")!=sem::dense({1},c::DataType::kInt32))
       throw std::runtime_error("selected target pending must be an independently owned I32[1] output");
   std::size_t implementations=0;std::string provider;
-  for(std::size_t step=0;step<program.compiled.report.step_count();++step) {
-    const auto selected=take(program.compiled.report.step(step),"actual target verifier implementation");
+  for(std::size_t step=0;step<program.cold_program->compiled.report.step_count();++step) {
+    const auto selected=take(program.cold_program->compiled.report.step(step),"actual target verifier implementation");
     for(std::size_t node=0;node<selected.node_count;++node)
-      if(take(program.compiled.report.step_node(step,node),"target verifier selected node")==projection) {
+      if(take(program.cold_program->compiled.report.step_node(step,node),"target verifier selected node")==projection) {
         ++implementations;provider=selected.provider.name;
       }
   }
@@ -4102,10 +4116,10 @@ void report_plain_target_verifier(const Program &program,const TargetVerifierPor
         take(graph.value_description(program.logical.outputs[port]),"target row ID shape")!=sem::dense({1},c::DataType::kInt32))
       throw std::runtime_error("selected target pending must be an independently owned I32[1] output");
   std::size_t implementations=0;std::string provider;
-  for(std::size_t step=0;step<program.compiled.report.step_count();++step) {
-    const auto selected=take(program.compiled.report.step(step),"actual target verifier implementation");
+  for(std::size_t step=0;step<program.cold_program->compiled.report.step_count();++step) {
+    const auto selected=take(program.cold_program->compiled.report.step(step),"actual target verifier implementation");
     for(std::size_t node=0;node<selected.node_count;++node)
-      if(take(program.compiled.report.step_node(step,node),"target verifier selected node")==projection) {
+      if(take(program.cold_program->compiled.report.step_node(step,node),"target verifier selected node")==projection) {
         ++implementations;provider=selected.provider.name;
       }
   }

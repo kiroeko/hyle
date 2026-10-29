@@ -135,11 +135,13 @@ struct Native final {
   Recipe recipe;
   sem::GraphCase logical;
   std::vector<c::ReadLease> parameters;
-  g::CompiledGraph compiled;
+  std::unique_ptr<model_graph_run::ColdProgram> program;
   g::Invocation invocation;
   c::LeasePool outputs;
-  std::vector<model_graph_run::Port> input_ports;
-  std::vector<model_graph_run::OutputPort> output_ports;
+  std::optional<model_graph_run::InputPlan> resident_inputs;
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+  std::array<g::WeightBinding,4> resident_bindings{};
+#endif
   std::size_t submissions=0;
   static Native create(Recipe recipe,c::Context &context,const c::StorageOwner &owner,
                        bool cuda,std::uint32_t generations=3) {
@@ -170,13 +172,13 @@ struct Native final {
 #endif
       throw std::runtime_error("original Pro native backend is unavailable");
     };
-    result.compiled=take(compile(),"ordinary original Pro Graph compile");
+    auto compiled=take(compile(),"ordinary original Pro Graph compile");
     // AQ references qualify the actual packed backend, not a model name.
     // Inspect once at cold compilation, never route providers during replay.
-    for(std::size_t step=0;step<result.compiled.report.step_count();++step) {
-      const auto record=take(result.compiled.report.step(step),"actual packed projection certificate");
+    for(std::size_t step=0;step<compiled.report.step_count();++step) {
+      const auto record=take(compiled.report.step(step),"actual packed projection certificate");
       for(std::size_t i=0;i<record.node_count;++i) {
-        const auto node=take(result.compiled.report.step_node(step,i),"actual packed projection node");
+        const auto node=take(compiled.report.step_node(step,i),"actual packed projection node");
         const auto op=take(result.logical.graph.operation(node),"actual packed projection operation");
         std::optional<std::size_t> weight;
         if(op.get_if<c::MatMul>())weight=1;
@@ -188,8 +190,9 @@ struct Native final {
           throw std::runtime_error("actual packed projection provider does not match its AQ certificate");
       }
     }
+    std::vector<model_graph_run::Port> input_ports,output_ports;
     for(std::size_t slot=0;slot<result.logical.inputs.size();++slot)
-      result.input_ports.push_back({result.logical.inputs[slot],result.recipe.fragment.description(result.recipe.fragment.inputs[slot])});
+      input_ports.push_back({result.logical.inputs[slot],result.recipe.fragment.description(result.recipe.fragment.inputs[slot])});
     std::size_t capacity=0;
     for(std::size_t slot=0;slot<result.logical.outputs.size();++slot) {
       const auto &desc=result.recipe.fragment.description(result.recipe.fragment.outputs[slot]);
@@ -197,19 +200,20 @@ struct Native final {
       if(bytes>std::numeric_limits<std::size_t>::max()-255||capacity>std::numeric_limits<std::size_t>::max()-(bytes+255)/256*256)
         throw std::runtime_error("Pro output backing capacity overflow");
       capacity+=(bytes+255)/256*256;
-      result.output_ports.push_back(model_graph_run::prepare_output(result.compiled,{result.logical.outputs[slot],desc}));
+      output_ports.push_back({result.logical.outputs[slot],desc});
     }
     if(!generations||capacity>std::numeric_limits<std::size_t>::max()/generations||
-        result.output_ports.size()>std::numeric_limits<std::uint32_t>::max()/generations)
+        output_ports.size()>std::numeric_limits<std::uint32_t>::max()/generations)
       throw std::runtime_error("Pro result generations exceed representable capacity");
-    result.invocation=take(result.compiled.executable.create_invocation({.resources=g::ResourceOptions{}}),"ordinary Pro Invocation");
+    result.program=model_graph_run::ColdProgram::create(std::move(compiled),input_ports,output_ports);
+    result.invocation=take(result.program->compiled.executable.create_invocation({.resources=g::ResourceOptions{}}),"ordinary Pro Invocation");
     result.outputs=take(c::LeasePool::create(owner.ref(),capacity*generations,
-        {.max_blocks=std::uint32_t(result.output_ports.size())*generations,.backing_alignment=256}),"bounded Pro result generations");
+        {.max_blocks=std::uint32_t(result.program->output_count())*generations,.backing_alignment=256}),"bounded Pro result generations");
     return result;
   }
   std::vector<c::ReadLease> execute(c::Queue &queue,std::span<const c::ReadLease> inputs,
-      std::span<const std::size_t> externally_bound={},const std::function<void(g::Invocation&)> &binder={}) {
-    return model_graph_run::execute(invocation,outputs,queue,input_ports,inputs,output_ports,submissions,externally_bound,binder);
+      const model_graph_run::InputPlan *input_plan=nullptr,const std::function<void(g::Invocation&)> &binder={}) {
+    return model_graph_run::execute(*program,invocation,outputs,queue,inputs,submissions,input_plan,binder);
   }
 };
 
@@ -383,6 +387,22 @@ struct ResidentRun final {
         local.external.push_back({slot,ready.at(index)});
       }
       result.phases.push_back(Native::create(std::move(local),context,owner,cuda,generations));
+      if(phase.resident_stage) {
+        auto &native=result.phases.back();
+        const auto &frontier=result.plan.routers.at(*phase.resident_stage);
+        const std::array banks{frontier.banks[0],frontier.banks[1],frontier.banks[2],frontier.map};
+        std::array<std::size_t,4> dynamic{};
+        for(std::size_t bank=0;bank<banks.size();++bank) {
+          const auto found=std::find_if(phase.original_inputs.begin(),phase.original_inputs.end(),
+              [&](Value value){return value.ordinal()==banks[bank].ordinal();});
+          if(found==phase.original_inputs.end())throw std::runtime_error("Pro cut lost actual compressed bank or map");
+          dynamic[bank]=std::size_t(found-phase.original_inputs.begin());
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+          native.resident_bindings[bank]={native.program->input_ports[dynamic[bank]].id,supply::kBankIds[bank]};
+#endif
+        }
+        native.resident_inputs=native.program->input_plan(dynamic);
+      }
     }
     return result;
   }
@@ -398,10 +418,8 @@ struct ResidentRun final {
       std::optional<expert::Selection> selection;
 #if defined(HYLE_TEST_GLM_STATE_CUDA)
       std::optional<c::cuda::WeightBatch> cuda_batch;
-      std::array<g::WeightBinding,4> bindings;
 #endif
-      std::array<std::size_t,4> dynamic{};
-      std::span<const std::size_t> external_ports;
+      const model_graph_run::InputPlan *input_plan=nullptr;
       std::function<void(g::Invocation&)> binder;
       if(phase.resident_stage) {
         const auto &frontier=plan.routers.at(*phase.resident_stage);
@@ -411,23 +429,14 @@ struct ResidentRun final {
           source->before_upload(selection->globals);
         }
         const std::array banks{frontier.banks[0],frontier.banks[1],frontier.banks[2],frontier.map};
-        for(std::size_t bank=0;bank<banks.size();++bank) {
-          const auto found=std::find_if(phase.original_inputs.begin(),phase.original_inputs.end(),
-              [&](Value value){return value.ordinal()==banks[bank].ordinal();});
-          if(found==phase.original_inputs.end())throw std::runtime_error("Pro cut lost actual compressed bank or map");
-          dynamic[bank]=std::size_t(found-phase.original_inputs.begin());
-#if defined(HYLE_TEST_GLM_STATE_CUDA)
-          bindings[bank]={phases[index].logical.inputs.at(dynamic[bank]),supply::kBankIds[bank]};
-#endif
-        }
 #if defined(HYLE_TEST_GLM_STATE_CUDA)
         if constexpr(!SourceType::kPacked) {
         if(cuda) {
           if(!source->cuda_supply)throw std::runtime_error("Pro needs its actual shared CUDA supply");
           cuda_batch.emplace(take(source->cuda_supply->upload(source->episodes%2,*selection,*source->experts.source,queue),
               "same-generation original Pro experts/map"));
-          external_ports=dynamic;
-          binder=[&](g::Invocation &active){check(g::cuda::bind(active,bindings,*cuda_batch),"bind actual Pro expert generation");};
+          input_plan=&*phases[index].resident_inputs;
+          binder=[&](g::Invocation &active){check(g::cuda::bind(active,phases[index].resident_bindings,*cuda_batch),"bind actual Pro expert generation");};
         }
         }
 #endif
@@ -439,7 +448,7 @@ struct ResidentRun final {
       }
       std::vector<c::ReadLease> arguments;
       for(const auto original:phase.original_inputs)arguments.push_back(live.at(original.ordinal()));
-      completed[index]=phases[index].execute(queue,arguments,external_ports,binder);
+      completed[index]=phases[index].execute(queue,arguments,input_plan,binder);
       for(std::size_t slot=0;slot<phase.original_outputs.size();++slot)
         live.at(phase.original_outputs[slot].ordinal())=completed[index][slot];
       if(selection) {
@@ -1072,10 +1081,10 @@ void report_head(const Native &program,const Source &source,bool cuda) {
       throw std::runtime_error("original Pro head role changed its full vocabulary description");
     same_storage(constant.role.lease,source.words.at(vocabulary::Role::kHead).lease);
     const auto head=program.logical.constants.at(constant.slot);
-    for(std::size_t step=0;step<program.compiled.report.step_count();++step) {
-      const auto selected=take(program.compiled.report.step(step),"original Pro head selected provider");
+    for(std::size_t step=0;step<program.program->compiled.report.step_count();++step) {
+      const auto selected=take(program.program->compiled.report.step(step),"original Pro head selected provider");
       for(std::size_t slot=0;slot<selected.node_count;++slot) {
-        const auto node=take(program.compiled.report.step_node(step,slot),"actual Pro head implementation node");
+        const auto node=take(program.program->compiled.report.step_node(step,slot),"actual Pro head implementation node");
         const auto operation=take(graph.operation(node),"actual Pro head operation");
         if(!operation.custom_as<c::model_ops::DenseLinearF32>())continue;
         if(take(graph.node_input(node,1),"actual Pro head original readonly bank")!=head)continue;
@@ -1374,10 +1383,10 @@ void report_head(const Native &program,const converted_source::Source &source,bo
   const auto &head=source.words.at(vocabulary::Role::kHead);std::size_t count=0;
   for(const auto &entry:program.recipe.external)if(entry.role.name==head.name) {
     same_storage(entry.role.lease,head.lease);const auto w=program.logical.constants.at(entry.slot);
-    for(std::size_t i=0;i<program.compiled.report.step_count();++i) {
-      const auto record=take(program.compiled.report.step(i),"converted original head provider");
+    for(std::size_t i=0;i<program.program->compiled.report.step_count();++i) {
+      const auto record=take(program.program->compiled.report.step(i),"converted original head provider");
       for(std::size_t j=0;j<record.node_count;++j) {
-        const auto node=take(program.compiled.report.step_node(i,j),"converted head original node");
+        const auto node=take(program.program->compiled.report.step_node(i,j),"converted head original node");
         const auto op=take(program.logical.graph.operation(node),"converted head operation");
         if(!op.get_if<c::MatMul>()||take(program.logical.graph.node_input(node,1),"converted head actual W").ordinal()!=w.ordinal())continue;
         if(record.provider.name!=(cuda?"ggml-cuda":"ggml-cpu"))throw std::runtime_error("converted packed head lost its certified backend");

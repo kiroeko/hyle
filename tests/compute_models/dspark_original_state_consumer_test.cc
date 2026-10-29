@@ -390,6 +390,7 @@ DraftRunFor<Source> prepare_draft(Backend &backend,x::Draft &logical,std::shared
       }
       result.phases.push_back(backend.prepare(built.graph,shared_bindings,2));
     }
+    result.prepare_resident_inputs();
 #if defined(HYLE_TEST_DSPARK_STATE_CUDA)
     if(backend.cuda) {
       if(!backend.resident_device)throw std::runtime_error("original CUDA expert residency needs the actual typed compiled IO device resource");
@@ -510,6 +511,7 @@ TargetPrograms prepare_target_programs(Backend &backend,std::shared_ptr<const ta
       }
       run.phases.push_back(backend.prepare(built.graph,constants,2,model_workload(phase.fragment)));
     }
+    run.prepare_resident_inputs();
     // Every cold plan shares original immutable parameters and one bounded
     // E6 upload supply. Only small position constants differ between plans.
     f.constant_bytes.clear();f.constant_bytes.shrink_to_fit();result.steps.push_back(std::move(step));
@@ -732,10 +734,10 @@ void report_original_projection(const Run &run,std::size_t port,const std::strin
         "original HC operand description").data_type()!=c::DataType::kFloat32)
       throw std::runtime_error("original HC projection must preserve original F32 coefficients and widened operands");
   std::size_t steps=0;
-  for(std::size_t index=0;index<run.compiled.report.step_count();++index) {
-    const auto selected=take(run.compiled.report.step(index),"original HC selected step");
+  for(std::size_t index=0;index<run.program->compiled.report.step_count();++index) {
+    const auto selected=take(run.program->compiled.report.step(index),"original HC selected step");
     for(std::size_t logical=0;logical<selected.node_count;++logical)
-      if(take(run.compiled.report.step_node(index,logical),"original HC selected logical node")==node) {
+      if(take(run.program->compiled.report.step_node(index,logical),"original HC selected logical node")==node) {
         ++steps;::testing::Test::RecordProperty(label+"_provider",std::string(selected.provider.name));
       }
   }
@@ -759,10 +761,10 @@ std::string report_shared_projection(const Run &run,std::size_t port,std::size_t
       take(run.graph.value_description(actual),"actual shared result type").data_type()!=c::DataType::kFloat32)
     throw std::runtime_error("original shared projection must retain its complete canonical Q8_0 RHS and F32 accumulation/result");
   std::size_t steps=0;std::string provider;
-  for(std::size_t index=0;index<run.compiled.report.step_count();++index) {
-    const auto selected=take(run.compiled.report.step(index),"original shared selected step");
+  for(std::size_t index=0;index<run.program->compiled.report.step_count();++index) {
+    const auto selected=take(run.program->compiled.report.step(index),"original shared selected step");
     for(std::size_t logical=0;logical<selected.node_count;++logical)
-      if(take(run.compiled.report.step_node(index,logical),"original shared logical node")==node) {
+      if(take(run.program->compiled.report.step_node(index,logical),"original shared logical node")==node) {
         ++steps;provider=selected.provider.name;
       }
   }
@@ -791,10 +793,10 @@ std::string report_packed_vocabulary_head(const Run &run,std::size_t port,g::Val
       take(run.graph.value_description(actual),"packed head result type").data_type()!=c::DataType::kFloat32)
     throw std::runtime_error("packed head must preserve one complete original Q8 RHS and exact BF16-to-F32 activation");
   std::size_t steps=0;std::string provider;
-  for(std::size_t i=0;i<run.compiled.report.step_count();++i) {
-    const auto selected=take(run.compiled.report.step(i),"packed head selected step");
+  for(std::size_t i=0;i<run.program->compiled.report.step_count();++i) {
+    const auto selected=take(run.program->compiled.report.step(i),"packed head selected step");
     for(std::size_t j=0;j<selected.node_count;++j)
-      if(take(run.compiled.report.step_node(i,j),"packed head selected node")==node){++steps;provider=selected.provider.name;}
+      if(take(run.program->compiled.report.step_node(i,j),"packed head selected node")==node){++steps;provider=selected.provider.name;}
   }
   if(steps!=1)throw std::runtime_error("packed full-V head must execute once in one selected native step");
   return provider;
@@ -909,10 +911,10 @@ std::string report_attention_projection(const Run &run,std::size_t port,std::siz
       take(run.graph.node_input(node,2),"actual attention group IDs")!=*expected_ids))
     throw std::runtime_error("original output-a must consume its actual observed group IDs");
   std::size_t steps=0;std::string provider;
-  for(std::size_t index=0;index<run.compiled.report.step_count();++index) {
-    const auto selected=take(run.compiled.report.step(index),"attention selected step");
+  for(std::size_t index=0;index<run.program->compiled.report.step_count();++index) {
+    const auto selected=take(run.program->compiled.report.step(index),"attention selected step");
     for(std::size_t logical=0;logical<selected.node_count;++logical)
-      if(take(run.compiled.report.step_node(index,logical),"attention selected logical node")==node) {
+      if(take(run.program->compiled.report.step_node(index,logical),"attention selected logical node")==node) {
         ++steps;provider=selected.provider.name;
       }
   }
@@ -1081,10 +1083,10 @@ template<class Routed> std::string report_expert_projection(const Routed &draft,
       take(run.graph.node_input(node,2),"actual selected local expert IDs")!=take(run.graph.node_input(ids_copy,0),"actual mapped local ID result"))
     throw std::runtime_error("expert GroupedMatMul must consume the exact observed global-to-local result");
   std::size_t steps=0;std::string provider;
-  for(std::size_t index=0;index<run.compiled.report.step_count();++index) {
-    const auto selected=take(run.compiled.report.step(index),"expert selected step");
+  for(std::size_t index=0;index<run.program->compiled.report.step_count();++index) {
+    const auto selected=take(run.program->compiled.report.step(index),"expert selected step");
     for(std::size_t logical=0;logical<selected.node_count;++logical)
-      if(take(run.compiled.report.step_node(index,logical),"expert selected node")==node){++steps;provider=selected.provider.name;}
+      if(take(run.program->compiled.report.step_node(index,logical),"expert selected node")==node){++steps;provider=selected.provider.name;}
   }
   if(steps!=1)throw std::runtime_error("original expert projection must have exactly one selected implementation");
   ::testing::Test::RecordProperty("expert_stage"+std::to_string(stage)+"_leg"+std::to_string(std::size_t(leg))+"_provider",provider);
@@ -1132,9 +1134,9 @@ void report_bfloat_projection(const Routed &draft,const x::Draft &logical,std::s
   }
   if(!same_original)throw std::runtime_error("S03 projection bank lost original immutable ordinal/owner identity");
   std::size_t selected=0;
-  for(std::size_t i=0;i<run.compiled.report.step_count();++i) {
-    const auto step=take(run.compiled.report.step(i),"S03 actual projection provider");
-    for(std::size_t j=0;j<step.node_count;++j)if(take(run.compiled.report.step_node(i,j),"S03 actual projection node")==node) {
+  for(std::size_t i=0;i<run.program->compiled.report.step_count();++i) {
+    const auto step=take(run.program->compiled.report.step(i),"S03 actual projection provider");
+    for(std::size_t j=0;j<step.node_count;++j)if(take(run.program->compiled.report.step_node(i,j),"S03 actual projection node")==node) {
       ++selected;::testing::Test::RecordProperty(std::string(name)+"_provider",std::string(step.provider.name));
     }
   }
@@ -1523,10 +1525,10 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
               dense(c::DataType::kFloat32,{std::int64_t(verifier.inputs.size()),d::vocabulary}))
         throw std::runtime_error("target verifier must preserve one full-V operation and the actual original head bank");
       std::size_t selected_steps=0;
-      for(std::size_t i=0;i<run.compiled.report.step_count();++i) {
-        const auto selected=take(run.compiled.report.step(i),"actual target head selected step");
+      for(std::size_t i=0;i<run.program->compiled.report.step_count();++i) {
+        const auto selected=take(run.program->compiled.report.step(i),"actual target head selected step");
         for(std::size_t node=0;node<selected.node_count;++node)
-          if(take(run.compiled.report.step_node(i,node),"actual target head selected node")==projected) {
+          if(take(run.program->compiled.report.step_node(i,node),"actual target head selected node")==projected) {
             ++selected_steps;::testing::Test::RecordProperty("target_verifier"+std::to_string(verifier.inputs.size())+"_provider",std::string(selected.provider.name));
           }
       }

@@ -3,7 +3,9 @@
 #include <array>
 #include <concepts>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
+#include <memory>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -12,7 +14,7 @@
 
 #include "hyle/compute/resource_leases.h"
 #include "hyle/graph/executable.h"
-#include "../../engine/inference/prepared_output.h"
+#include "../../engine/inference/program_io.h"
 #include "../../engine/inference/evaluation_failure.h"
 
 // Test-local ordinary Graph lifecycle shared by model consumers. Compilation,
@@ -24,7 +26,6 @@ struct Port final {
   g::ValueId id;
   c::TensorDesc description;
 };
-using OutputPort=hyle::inference::PreparedOutputFacts;
 namespace detail {
 template<class T> T take(hyle::Result<T> result,const char *where) {
   if(!result)throw hyle::inference::EvaluationFailure(result.error().WithContext(where));
@@ -41,41 +42,111 @@ inline hyle::inference::RetirementObservation observe_failure(g::Invocation &act
   return {!active.in_flight(),status};
 }
 } // namespace detail
-// These consumers deliberately keep their original independent caller pools.
-// Capture facts at concrete cold compilation; do not infer ownership from a
-// backend name or broaden this fixture's allocation policy during replay.
-inline OutputPort prepare_output(const g::CompiledGraph &compiled,const Port &logical) {
-  auto facts=detail::take(hyle::inference::prepare_output(compiled,logical.id),
-      "prepare ordinary model Graph output");
-  if(!facts.caller_owned())throw std::runtime_error("ordinary model Graph requires caller-owned result storage");
-  if(facts.description!=logical.description)
-    throw std::runtime_error("ordinary model Graph concrete output description changed");
-  return facts;
-}
+class ColdProgram;
+
+// Cold port policy only. It borrows one exact stable program, never native
+// permissions, a binder, a Completion or per-execution binding state.
+class InputPlan final {
+ public:
+  bool belongs_to(const ColdProgram &program) const noexcept { return program_==&program; }
+  bool needs_external() const noexcept { return external_; }
+  std::span<const std::size_t> ordinary() const noexcept { return ordinary_; }
+ private:
+  friend class ColdProgram;
+  const ColdProgram *program_=nullptr;
+  std::vector<std::size_t> ordinary_;
+  bool external_=false;
+};
+
+// Replaces the original consumer's CompiledGraph holder. This unique cold
+// object keeps that same graph and IO stable while Native/Run moves. The
+// original Invocation, result pool and native retirement stay with callers.
+class ColdProgram final {
+ public:
+  g::CompiledGraph compiled;
+  hyle::inference::ProgramIo io;
+  std::vector<Port> input_ports;
+  ColdProgram(const ColdProgram &)=delete;
+  ColdProgram &operator=(const ColdProgram &)=delete;
+  ColdProgram(ColdProgram &&)=delete;
+  ColdProgram &operator=(ColdProgram &&)=delete;
+
+  static std::unique_ptr<ColdProgram> create(g::CompiledGraph compiled,
+      std::span<const Port> inputs,std::span<const Port> outputs) {
+    return std::unique_ptr<ColdProgram>(new ColdProgram(std::move(compiled),inputs,outputs));
+  }
+  std::size_t input_count() const noexcept { return inputs_.size(); }
+  std::size_t output_count() const noexcept { return outputs_.size(); }
+  const hyle::inference::PreparedOutputFacts &output(std::size_t index) const noexcept {
+    HYLE_FATAL_ASSERT(index<outputs_.size());
+    return io.output_facts(outputs_[index]);
+  }
+  InputPlan input_plan(std::span<const std::size_t> external) const {
+    std::vector<std::uint8_t> excluded(input_count(),0);
+    for(const auto index:external) {
+      if(index>=excluded.size()||excluded[index])
+        throw std::runtime_error("ordinary model Graph resident input index");
+      excluded[index]=1;
+    }
+    InputPlan result;result.program_=this;result.external_=!external.empty();
+    result.ordinary_.reserve(input_count()-external.size());
+    for(std::size_t index=0;index<excluded.size();++index)
+      if(!excluded[index])result.ordinary_.push_back(index);
+    return result;
+  }
+  const InputPlan &all_inputs() const noexcept { return all_; }
+  hyle::Status bind(g::Invocation &run,std::size_t index,const c::ReadLease &lease) const noexcept {
+    HYLE_FATAL_ASSERT(index<inputs_.size());
+    return io.bind(run,inputs_[index],input_ports[index].description,lease);
+  }
+  hyle::Status bind_output(g::Invocation &run,std::size_t index,c::LeasePool &pool) const noexcept {
+    HYLE_FATAL_ASSERT(index<outputs_.size());
+    return io.bind_output(run,outputs_[index],pool);
+  }
+  hyle::Result<c::ReadLease> retain(g::Invocation &run,std::size_t index) const noexcept {
+    HYLE_FATAL_ASSERT(index<outputs_.size());
+    return io.retain(run,outputs_[index]);
+  }
+ private:
+  std::vector<hyle::inference::ProgramIo::Input> inputs_;
+  std::vector<hyle::inference::ProgramIo::Output> outputs_;
+  InputPlan all_;
+  ColdProgram(g::CompiledGraph selected,std::span<const Port> inputs,std::span<const Port> outputs)
+      : compiled(std::move(selected)),input_ports(inputs.begin(),inputs.end()) {
+    detail::check(io.prepare(compiled,0,inputs.size(),0,outputs.size()),"prepare ordinary model Graph IO");
+    inputs_.reserve(inputs.size());outputs_.reserve(outputs.size());
+    for(const auto &port:inputs)
+      inputs_.push_back(detail::take(io.add_input(port.id),"register ordinary model Graph input"));
+    for(const auto &port:outputs) {
+      auto handle=detail::take(io.add_output(port.id),"prepare ordinary model Graph output");
+      const auto &facts=io.output_facts(handle);
+      if(!facts.caller_owned())throw std::runtime_error("ordinary model Graph requires caller-owned result storage");
+      if(facts.description!=port.description)
+        throw std::runtime_error("ordinary model Graph concrete output description changed");
+      outputs_.push_back(handle);
+    }
+    detail::check(io.seal(),"seal ordinary model Graph IO");
+    all_=input_plan({});
+  }
+};
+
 template<std::integral Counter>
-std::vector<c::ReadLease> execute(g::Invocation &invocation,c::LeasePool &outputs,c::Queue &queue,
-    std::span<const Port> input_ports,std::span<const c::ReadLease> inputs,
-    std::span<const OutputPort> output_ports,Counter &completed_submissions,
-    std::span<const std::size_t> externally_bound={},
+std::vector<c::ReadLease> execute(ColdProgram &program,g::Invocation &invocation,
+    c::LeasePool &outputs,c::Queue &queue,std::span<const c::ReadLease> inputs,
+    Counter &completed_submissions,const InputPlan *plan=nullptr,
     const std::function<void(g::Invocation&)> &bind_external={},
     hyle::inference::RetirementObservation *failed_retirement=nullptr) {
-  if(inputs.size()!=input_ports.size())throw std::runtime_error("ordinary model Graph input count");
-  std::vector<bool> external_ports(inputs.size(),false);
-  for(const auto index:externally_bound) {
-    if(index>=external_ports.size()||external_ports[index])throw std::runtime_error("ordinary model Graph resident input index");
-    external_ports[index]=true;
-  }
-  if(!externally_bound.empty()&&!bind_external)throw std::runtime_error("ordinary model Graph resident binder missing");
+  if(inputs.size()!=program.input_count())throw std::runtime_error("ordinary model Graph input count");
+  const auto &selected=plan?*plan:program.all_inputs();
+  if(!selected.belongs_to(program))throw std::runtime_error("ordinary model Graph input plan belongs to another program");
+  if(selected.needs_external()&&!bind_external)throw std::runtime_error("ordinary model Graph resident binder missing");
   bool awaiting_completion=false;
   try {
-    for(std::size_t i=0;i<inputs.size();++i)if(!external_ports[i])
-      detail::check(invocation.bind(input_ports[i].id,input_ports[i].description,inputs[i]),"bind ordinary model Graph input");
+    for(const auto index:selected.ordinary())
+      detail::check(program.bind(invocation,index,inputs[index]),"bind ordinary model Graph input");
     if(bind_external)bind_external(invocation);
-    for(const auto &port:output_ports) {
-      const auto bytes=detail::take(port.description.required_bytes(),"ordinary model Graph output extent");
-      detail::check(invocation.bind(port.value,port.description,
-          detail::take(outputs.allocate(bytes),"ordinary model Graph output writer")),"bind ordinary model Graph output");
-    }
+    for(std::size_t index=0;index<program.output_count();++index)
+      detail::check(program.bind_output(invocation,index,outputs),"bind ordinary model Graph output writer");
     const std::array queues{g::QueueBinding{g::ExecutionLaneId{0},&queue}};
     detail::check(invocation.prepare_replay(queues,{.mode=g::ReplayMode::kCommands,.host_wait=g::HostWaitPolicy::kAllow}),
         "prepare ordinary model Graph");
@@ -87,9 +158,11 @@ std::vector<c::ReadLease> execute(g::Invocation &invocation,c::LeasePool &output
     }
     ++completed_submissions;
     std::vector<c::ReadLease> result;
-    for(const auto &port:output_ports)
-      result.push_back(detail::take(hyle::inference::retain_output(invocation,port),
-          "retain ordinary model Graph result lease"));
+    result.reserve(program.output_count());
+    for(std::size_t index=0;index<program.output_count();++index)
+      result.push_back(detail::take(program.retain(invocation,index),"retain ordinary model Graph result lease"));
+    // This synchronous runner already withdraws through its original reset.
+    // Do not add a preceding unbind scan or require native binding-release.
     detail::check(invocation.reset(),"withdraw ordinary model Graph permissions");
     if(invocation.submit(queues))throw std::runtime_error("reset ordinary model Graph retained stale replay");
     return result;

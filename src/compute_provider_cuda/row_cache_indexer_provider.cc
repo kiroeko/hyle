@@ -239,6 +239,11 @@ Status configure(Part &p, Cold &cold, unsigned tokens, unsigned width,
   reduction.dimensions[0] = width;
   reduction.dimensions[1] = tokens;
   reduction.dimensions[2] = heads;
+  // Sum uses the strided reduction path, including for a dense tile. The
+  // physical GEMM result is [key, token, head]; zero strides repeat dots[0].
+  reduction.input_strides[0] = std::size_t(tokens) * heads * 2;
+  reduction.input_strides[1] = std::size_t(heads) * 2;
+  reduction.input_strides[2] = 2;
   HYLE_RETURN_IF_ERROR(cuda::status(ops::reduction_prepare(
       ops::ElementType::kBFloat16, ops::ReductionKind::kSum,
       ops::ReductionMask::kNone, true, reduction, &p.sum)));

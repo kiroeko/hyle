@@ -218,10 +218,12 @@ struct Recipe final {
   }
 };
 struct Run final {
-  Recipe recipe;sem::GraphCase logical;g::CompiledGraph compiled;g::Invocation invocation;c::LeasePool pool;
+  Recipe recipe;sem::GraphCase logical;
+  std::unique_ptr<model_graph_run::ColdProgram> program;
+  g::Invocation invocation;c::LeasePool pool;
   std::vector<c::ReadLease> literals;
-  std::vector<model_graph_run::Port> inputs;
-  std::vector<model_graph_run::OutputPort> outputs;
+  std::optional<model_graph_run::InputPlan> resident_inputs;
+  std::array<g::WeightBinding,4> resident_bindings{};
   std::size_t submissions=0;
   static Run prepare(Recipe recipe,c::Context &context,const c::StorageOwner &owner,std::uint32_t generations=4) {
     Run result;result.recipe=std::move(recipe);auto &f=result.recipe.fragment;result.logical=sem::make_graph(f);
@@ -236,20 +238,22 @@ struct Run final {
       }
     }
     const c::WorkloadContext workload{take(c::ModelArtifactProfile::create(*f.profile),"ordinary original profile"),f.phase,{0x48594c454d4f444cULL,f.region,1}};
-    result.compiled=take(g::cuda::compile(result.logical.graph,context,owner,bindings.options({.workload=workload})),"ordinary74/77 Graph compile");
+    auto compiled=take(g::cuda::compile(result.logical.graph,context,owner,bindings.options({.workload=workload})),"ordinary74/77 Graph compile");
     std::size_t bytes=0;
-    for(std::size_t i=0;i<f.inputs.size();++i)result.inputs.push_back({result.logical.inputs[i],f.description(f.inputs[i])});
+    std::vector<model_graph_run::Port> inputs,outputs;
+    for(std::size_t i=0;i<f.inputs.size();++i)inputs.push_back({result.logical.inputs[i],f.description(f.inputs[i])});
     for(std::size_t i=0;i<f.outputs.size();++i) {
-      result.outputs.push_back(model_graph_run::prepare_output(result.compiled,{result.logical.outputs[i],f.description(f.outputs[i])}));
+      outputs.push_back({result.logical.outputs[i],f.description(f.outputs[i])});
       bytes+=(take(f.description(f.outputs[i]).required_bytes(),"ordinary output extent")+255)/256*256;
     }
+    result.program=model_graph_run::ColdProgram::create(std::move(compiled),inputs,outputs);
     result.pool=take(c::LeasePool::create(owner.ref(),bytes*generations,
         {.max_blocks=std::uint32_t(f.outputs.size())*generations,.backing_alignment=256}),"finite ordinary result generations");
-    result.invocation=take(result.compiled.executable.create_invocation({.resources=g::ResourceOptions{}}),"ordinary Invocation");return result;
+    result.invocation=take(result.program->compiled.executable.create_invocation({.resources=g::ResourceOptions{}}),"ordinary Invocation");return result;
   }
   std::vector<c::ReadLease> execute(c::Queue &queue,std::span<const c::ReadLease> input,
-      std::span<const std::size_t> external={},const std::function<void(g::Invocation&)> &binder={}) {
-    return model_graph_run::execute(invocation,pool,queue,inputs,input,outputs,submissions,external,binder);
+      const model_graph_run::InputPlan *input_plan=nullptr,const std::function<void(g::Invocation&)> &binder={}) {
+    return model_graph_run::execute(*program,invocation,pool,queue,input,submissions,input_plan,binder);
   }
 };
 c::ReadLease observed(const Recipe &r,std::span<const c::ReadLease> inputs,std::span<const c::ReadLease> outputs,Value value) {
@@ -328,23 +332,18 @@ struct TargetProgram final {
     std::array<std::vector<c::ReadLease>,2> completed;
     for(std::size_t i=0;i<phases.size();++i) {
       const auto &phase=plan.phases[i];auto &run=phases[i];
-      std::optional<c::cuda::WeightBatch> resident;std::array<std::size_t,4> dynamic{};
-      std::array<g::WeightBinding,4> bindings;std::span<const std::size_t> external;
+      std::optional<c::cuda::WeightBatch> resident;
+      const model_graph_run::InputPlan *input_plan=nullptr;
       std::function<void(g::Invocation&)> binder;
       if(phase.resident_stage) {
         const auto &frontier=plan.routers.at(*phase.resident_stage);
         source.selections.push_back(expert::select(values<std::int32_t>(live.at(frontier.ids.ordinal())),kGeometry));
         resident.emplace(take(source.cuda_supply.upload((source.selections.size()-1)%2,source.selections.back(),*source.experts.source,queue),"actual ordinary77 selected expert generation"));
-        const std::array banks{frontier.banks[0],frontier.banks[1],frontier.banks[2],frontier.map};
-        for(std::size_t bank=0;bank<4;++bank) {
-          const auto found=std::find_if(phase.original_inputs.begin(),phase.original_inputs.end(),[&](Value v){return v.ordinal()==banks[bank].ordinal();});
-          if(found==phase.original_inputs.end())throw std::runtime_error("ordinary77 cut lost expert input");
-          dynamic[bank]=std::size_t(found-phase.original_inputs.begin());bindings[bank]={run.logical.inputs.at(dynamic[bank]),supply::kBankIds[bank]};
-        }
-        external=dynamic;binder=[&](g::Invocation &active){check(g::cuda::bind(active,bindings,*resident),"same original expert/map generation");};
+        input_plan=&*run.resident_inputs;
+        binder=[&](g::Invocation &active){check(g::cuda::bind(active,run.resident_bindings,*resident),"same original expert/map generation");};
       }
       std::vector<c::ReadLease> arguments;for(const auto value:phase.original_inputs)arguments.push_back(live[value.ordinal()]);
-      completed[i]=run.execute(queue,arguments,external,binder);
+      completed[i]=run.execute(queue,arguments,input_plan,binder);
       for(std::size_t j=0;j<phase.original_outputs.size();++j)live[phase.original_outputs[j].ordinal()]=completed[i][j];
       if(resident) {
         const auto report=take(resident->report(),"actual expert transfer report");
@@ -391,6 +390,20 @@ TargetProgram prepare_forward(TargetSource &source,c::Context &context,const c::
       local.constants.push_back({local.fragment.constants[i],constants[std::size_t(found-f.constants.begin())]});
     }
     result.phases.push_back(Run::prepare(std::move(local),context,owner));
+    if(phase.resident_stage) {
+      auto &run=result.phases.back();
+      const auto &frontier=result.plan.routers.at(*phase.resident_stage);
+      const std::array banks{frontier.banks[0],frontier.banks[1],frontier.banks[2],frontier.map};
+      std::array<std::size_t,4> dynamic{};
+      for(std::size_t plane=0;plane<banks.size();++plane) {
+        const auto found=std::find_if(phase.original_inputs.begin(),phase.original_inputs.end(),
+            [&](Value v){return v.ordinal()==banks[plane].ordinal();});
+        if(found==phase.original_inputs.end())throw std::runtime_error("ordinary77 cut lost expert input");
+        dynamic[plane]=std::size_t(found-phase.original_inputs.begin());
+        run.resident_bindings[plane]={run.program->input_ports[dynamic[plane]].id,supply::kBankIds[plane]};
+      }
+      run.resident_inputs=run.program->input_plan(dynamic);
+    }
   }
   return result;
 }

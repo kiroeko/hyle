@@ -195,9 +195,8 @@ struct LiteralBank final {
 struct Run final {
   sem::Fragment facts;sem::GraphCase logical;
   std::vector<c::ReadLease> literals;
-  g::CompiledGraph compiled;g::Invocation invocation;c::LeasePool pool;
-  std::vector<model_graph_run::Port> inputs;
-  std::vector<model_graph_run::OutputPort> outputs;
+  std::unique_ptr<model_graph_run::ColdProgram> cold_program;
+  g::Invocation invocation;c::LeasePool pool;
   std::size_t submissions=0;
   static sem::ValueId source_constant(sem::Fragment &f,std::vector<c::ReadLease> &supplied,
       const original_named_role_source::ReadonlyRole &role,const c::StorageOwner &owner) {
@@ -232,21 +231,22 @@ struct Run final {
     }
     f.constant_bytes.clear();
     const c::WorkloadContext workload{take(c::ModelArtifactProfile::create(*f.profile),"Kimi geometry profile"),f.phase,{0x48594c454d4f444cULL,f.region,1}};
-    result.compiled=take(g::cuda::compile(result.logical.graph,context,owner,{.constants=constants,.workload=workload}),"Kimi ordinary Graph compile");
+    std::vector<model_graph_run::Port> inputs,outputs;
+    for(std::size_t i=0;i<f.inputs.size();++i)inputs.push_back({result.logical.inputs[i],f.description(f.inputs[i])});
+    for(std::size_t i=0;i<f.outputs.size();++i)outputs.push_back({result.logical.outputs[i],f.description(f.outputs[i])});
+    result.cold_program=model_graph_run::ColdProgram::create(
+        take(g::cuda::compile(result.logical.graph,context,owner,{.constants=constants,.workload=workload}),"Kimi ordinary Graph compile"),inputs,outputs);
     std::size_t bytes=0;
-    for(std::size_t i=0;i<f.inputs.size();++i)result.inputs.push_back({result.logical.inputs[i],f.description(f.inputs[i])});
-    for(std::size_t i=0;i<f.outputs.size();++i) {
-      result.outputs.push_back(model_graph_run::prepare_output(result.compiled,{result.logical.outputs[i],f.description(f.outputs[i])}));
-      bytes+=(take(f.description(f.outputs[i]).required_bytes(),"Kimi output extent")+255)/256*256;
-    }
+    for(std::size_t i=0;i<result.cold_program->output_count();++i)
+      bytes+=(take(result.cold_program->output(i).description.required_bytes(),"Kimi output extent")+255)/256*256;
     constexpr std::uint32_t generations=8;
     result.pool=take(c::LeasePool::create(owner.ref(),bytes*generations,
         {.max_blocks=std::uint32_t(f.outputs.size())*generations,.backing_alignment=256}),"bounded Kimi output generations");
-    result.invocation=take(result.compiled.executable.create_invocation({.resources=g::ResourceOptions{}}),"Kimi ordinary Invocation");
+    result.invocation=take(result.cold_program->compiled.executable.create_invocation({.resources=g::ResourceOptions{}}),"Kimi ordinary Invocation");
     result.facts=std::move(f);return result;
   }
   std::vector<c::ReadLease> execute(c::Queue &queue,std::span<const c::ReadLease> input) {
-    return model_graph_run::execute(invocation,pool,queue,inputs,input,outputs,submissions);
+    return model_graph_run::execute(*cold_program,invocation,pool,queue,input,submissions);
   }
 };
 

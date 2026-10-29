@@ -132,10 +132,11 @@ class ProgramIo final {
     return Status::Ok();
   }
 
-  // Installation order is the original cold registration order. The caller
-  // invokes this only on ProgramCarrier's unpublished local candidate. If a
-  // later bind fails, destroying that candidate returns earlier writers to
-  // their original pools; PreparedReadback::bind can allocate them on retry.
+  // Installation order is the original cold registration order. First check
+  // this inventory's exact program, then install on its unpublished original
+  // Invocation (a carrier candidate or the caller's synchronous candidate).
+  // If a later bind fails, destroying that candidate returns earlier writers
+  // to their original pools; PreparedReadback::bind can allocate them on retry.
   Status bind_fixed(graph::Invocation &run) noexcept {
     if (!sealed_) return Status::FailedPrecondition("program IO is not sealed");
     for (const auto action : installation_) {

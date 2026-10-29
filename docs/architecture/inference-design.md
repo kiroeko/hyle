@@ -1637,6 +1637,12 @@ exact子集在冷Family选择时核对，模型不再重复保存variant索引�
 IO必须属于同一稳定CompiledGraph；Store准备由显式存在决定，空sources不代表无需准备。
 安装失败由原Graph析构归还已消费writer。prefix成功继续保热、frontier继续fresh，普通／NextN仍先取回原事务再重置；
 该安装流程不接管这些复用政策，也不保存recipe或新增资源owner。
+同步组件也可直接使用`ProgramIo`的冷端口、输出事实及绑定／保留操作，继续由原`Invocation`提交、等待与重置。
+GLM／DeepSeek／Kimi的测试消费者用稳定冷对象持有原CompiledGraph和IO，以适应外层Run的移动；不复制程序，也不为复用Carrier伪造Scope。
+驻留银行／map的输入计划和绑定顺序在冷准备时确定，每步不再重建端口mask或搜索逻辑索引。
+同步成功路径仍只执行原reset；不为共同IO加一次多余unbind扫描或增加原生binding-release要求。
+[跨家族有限检查](../evidence/correctness/inference-program-io-consumers-2026-10-30.json)保留真实权重、状态、错误与退休路径；
+同时修复共享CUDA索引分数的head归约漏填stride，新标量回归和首次压缩／窗口环绕检查均通过。它不代表完整跨模型执行核心已经完成。
 [CPU／CUDA六个有限检查](../evidence/correctness/inference-program-installation-2026-10-28.json)保留原两载体提交与持权断言，
 实际检查部分安装后原caller writer归还及重试；普通多请求和MTP保留原完整状态检查，不代签D2流水或完整编排。
 

@@ -61,6 +61,67 @@ struct Inputs final {
 };
 
 TEST(CudaRowCacheIndexer,
+     ZeroFirstHeadStillReducesDistinctHeadsTokensAndMaskedRows) {
+  auto context = c::cuda::create_context().value();
+  auto memory =
+      c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice)
+          .value();
+  Fixture f(3, 2);
+  std::fill(f.query.begin(), f.query.end(), std::uint16_t{0});
+  std::fill(f.weights.begin(), f.weights.end(), std::uint16_t{0});
+  std::fill(f.bank.begin(), f.bank.end(), std::uint8_t{0});
+  // Three FP4 keys have only channel zero set to 1, 2 and 3. Every scale is
+  // exactly one; the existing scalar oracle decodes the actual packed bytes.
+  constexpr std::array<std::uint8_t, 3> codes{2, 4, 5};
+  for (std::size_t row = 0; row < codes.size(); ++row) {
+    f.bank[row * 68] = codes[row];
+    for (std::size_t group = 0; group < 4; ++group)
+      f.bank[row * 68 + 64 + group] = 127;
+  }
+  const auto head = [&](std::size_t token, std::size_t index, float query,
+                        float weight) {
+    f.query[(token * 64 + index) * 128] = row_cache_test::bfloat(query);
+    f.weights[token * 64 + index] = row_cache_test::bfloat(weight);
+  };
+  // Head zero contributes zero for both tokens. The other heads differ,
+  // including a negative dot removed by ReLU and products which round at the
+  // independent BF16 dot/product/sum boundaries. Repeating dots[0] cannot
+  // reproduce any visible score, even the first token's single visible row.
+  head(0, 0, 0, 1);
+  head(0, 1, 1.0078125f, .333984375f);
+  head(0, 2, -1.5f, 4);
+  head(0, 3, .9921875f, .6640625f);
+  head(1, 0, 0, 1);
+  head(1, 1, 1.5078125f, .50390625f);
+  head(1, 2, -2.5f, 4);
+  head(1, 3, .50390625f, 1.5f);
+  f.ranges = {0, 1, 1, 3};
+  const auto expected = f.expected();
+  const auto masked = -std::numeric_limits<float>::infinity();
+  expect(expected, {.99609375f, masked, masked, masked, 3.03125f, 4.5625f});
+  EXPECT_NE(expected, f.expected(false));
+  Inputs inputs(f, memory.ref());
+  inputs.update(f);
+  const auto operation = c::model_ops::row_cache_indexer_scores();
+  const auto out = c::infer_single_output(operation, f.descriptions).value();
+  auto prepared = c::prepare(context, operation, f.descriptions,
+                             std::array{out}, memory.ref());
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, c::cuda_native::kProviderId);
+  const auto requirement = prepared->workspace_requirement();
+  auto workspace =
+      m::Buffer::create(memory.ref(), requirement.size, requirement.alignment)
+          .value();
+  auto invocation = prepared->create_invocation(workspace.view()).value();
+  Tensor output(out, memory.ref());
+  auto queue = context.create_queue().value();
+  auto done = invocation.submit(queue, inputs.views(), std::array{output.view});
+  ASSERT_TRUE(done) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+  expect(output.read(), expected);
+}
+
+TEST(CudaRowCacheIndexer,
      DefaultDirectKeepsBfloatStagesRangesAndIndependentSlots) {
   auto context = c::cuda::create_context().value();
   auto memory =

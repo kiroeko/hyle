@@ -1,0 +1,123 @@
+{
+  "schema": "hyle.correctness.program-io-consumers.v1",
+  "date": "2026-10-30",
+  "status": "PASS",
+  "base_commit": "71ea7913d7aa902d2b2d0ab6363c85727f23b550",
+  "changes": [
+    "Real GLM Flash/Pro, DSpark formal Flash/Pro and Kimi component programs use existing product ProgramIo for cold input handles, prepared output ownership/bytes, binding and retain.",
+    "A test-local stable ColdProgram replaces the original compiled graph holder; the original CompiledGraph, Invocation, caller LeasePool, Commands replay, counters, Head/state, resident supply and true retirement remain authoritative.",
+    "External resident bank/map port search, input masks and WeightBinding order are prepared once per actual phase. No per-execution output byte arithmetic or runtime port-index search remains in the shared runner.",
+    "Synchronous consumers keep the original reset-only success cleanup. An initially added redundant unbind and unnecessary product overload were removed before final regression; no new binding-release requirement or doubled cleanup scan.",
+    "Cold plans reject duplicate/out-of-range ports, missing binder and foreign program before modifying an original prepared Invocation. Original pool refusal, native checked failure, retained-source refusal and unknown exception type retain their old recovery contracts.",
+    "Real first-compression DSpark history exposed an existing CUDA indexer bug. Exact HEAD consumer/runner/native-header A/B with the same SDK reproduced identical incorrect scores, excluding the IO migration as cause.",
+    "Indexer BF16 head reduction used a strided Sum with zero input_strides, repeating the first dot product. Set physical key/token/head byte strides; shared packed/paged/dense tile math, rounding stages and buffers remain unchanged.",
+    "New exact finite zero-first-head T2/L3 regression fails against old provider object and passes against the single refreshed provider CXX object. Existing three indexer tests also pass; no native kernel recompile."
+  ],
+  "counts": {
+    "current_consumer_TUs": 10,
+    "current_linked_consumers": 9,
+    "retained_SDK_engine_inputs": 226,
+    "CXX_attempts": 18,
+    "link_attempts": 18,
+    "native_attempts": 19,
+    "current_passed_processes": 11,
+    "current_GTests": 18,
+    "current_carrier_processes": 2,
+    "SDK_CXX": 1,
+    "NVCC": 0,
+    "downloads": 0,
+    "full_builds": 0
+  },
+  "preserved_failures": [
+    "GLM Flash initial strict /W4 /WX compile failed C4456: new phase boundary shadowed outer cold ResidentBoundary. Renamed router; no warning suppression.",
+    "GLM early initial strict compile failed C4456: new plane loop index shadowed existing bank lambda. Renamed plane; no warning suppression.",
+    "Current and exact HEAD baseline DSpark early-history CUDA consumers both fail the same independent index-score bounds at position3/layers40 and42 before any resident-bank binding.",
+    "New indexer regression with old provider returns zero for visible scores instead of 0.99609375, 3.03125 and 4.5625; independent oracle and masks unchanged."
+  ],
+  "cases": [
+    {
+      "name": "runner-cpu",
+      "tests": 4,
+      "status": "PASS"
+    },
+    {
+      "name": "ds-pro-cpu",
+      "tests": 1,
+      "status": "PASS"
+    },
+    {
+      "name": "ds-flash-cpu",
+      "tests": 1,
+      "status": "PASS"
+    },
+    {
+      "name": "ds-early-cuda",
+      "tests": 2,
+      "status": "PASS"
+    },
+    {
+      "name": "glm-cuda",
+      "tests": 1,
+      "status": "PASS"
+    },
+    {
+      "name": "glm-early-cuda",
+      "tests": 3,
+      "status": "PASS"
+    },
+    {
+      "name": "glm-flash-cuda",
+      "tests": 1,
+      "status": "PASS"
+    },
+    {
+      "name": "kimi-cuda",
+      "tests": 1,
+      "status": "PASS"
+    },
+    {
+      "name": "carrier-cpu",
+      "tests": null,
+      "status": "PASS"
+    },
+    {
+      "name": "carrier-cuda",
+      "tests": null,
+      "status": "PASS"
+    },
+    {
+      "name": "indexer-all-cuda",
+      "tests": 4,
+      "status": "PASS"
+    }
+  ],
+  "IO_migration_identical_reports": [
+    "ds-pro-cpu",
+    "ds-flash-cpu",
+    "glm-cuda"
+  ],
+  "indexer_provider_refresh": {
+    "old_sha256": "533ec81b54966f8924da251b84fc63ff1cd2dcd6f457b7df0a6475e6cf548349",
+    "new_sha256": "c83bd0a6a56fb3ddae37c8106c736bbd71950cbfbb12c3c68f098879b4176aca"
+  },
+  "reproduction": {
+    "directory": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-io-consumers-20261030",
+    "details": "verification.json, plan.json, build.py and original process/source/dependency receipts in evidence ZIP"
+  },
+  "limitations": [
+    "These are finite real source-role/state consumers, not whole GLM/DeepSeek/Kimi engines or large-model task-quality certification. Their original initial history and upstream fixtures remain.",
+    "DSpark original_state standalone TU was compile-only in this slice. Shared Native/Routed helpers execute in the selected Pro/formal Flash and early-history consumers; this does not certify every standalone runtime variant.",
+    "No new throughput, allocation-peak, kernel-count or cross-platform claim. Latest full performance window remains 2026-10-28.",
+    "Cross-pump continuation and complete multi-model execution orchestration remain unfinished; ProgramIo reuse does not claim the whole common engine is complete."
+  ],
+  "evidence_bundle": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-program-io-consumers-2026-10-30.zip",
+    "bytes": 1686136,
+    "sha256": "53d0565fc602c9d8b8e0e1a819543eec6d2e37340d5ccb494fba6bc9af7be197"
+  },
+  "cleanup": {
+    "files": 32,
+    "bytes": 1422310271,
+    "status": "COMPLETE"
+  }
+}

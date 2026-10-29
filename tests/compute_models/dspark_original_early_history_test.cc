@@ -160,6 +160,7 @@ Programs prepare(n::Backend &backend,std::shared_ptr<const r::Data> source,const
       run.phases.push_back(backend.prepare(graph.graph,shared,2,workload(phase.fragment)));
       result.state_budget+=run.phases.back().pool.stats().capacity_bytes;
     }
+    run.prepare_resident_inputs();
     result.steps.emplace(position,std::move(step));
   }
   return result;
