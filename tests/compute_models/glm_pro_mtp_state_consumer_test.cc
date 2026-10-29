@@ -398,7 +398,7 @@ struct ResidentRun final {
           if(found==phase.original_inputs.end())throw std::runtime_error("Pro cut lost actual compressed bank or map");
           dynamic[bank]=std::size_t(found-phase.original_inputs.begin());
 #if defined(HYLE_TEST_GLM_STATE_CUDA)
-          native.resident_bindings[bank]={native.program->input_ports[dynamic[bank]].id,supply::kBankIds[bank]};
+          native.resident_bindings[bank]={native.program->input(dynamic[bank]).value,supply::kBankIds[bank]};
 #endif
         }
         native.resident_inputs=native.program->input_plan(dynamic);

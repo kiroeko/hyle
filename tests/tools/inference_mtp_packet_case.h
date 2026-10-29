@@ -43,11 +43,10 @@ inline std::size_t check_width(i::Backend &backend, std::size_t m,
   q::Recipe r(no_weights, no_projections, assembly, construction_axes, 1);
   const auto rows = (std::max)(m, std::size_t{1});
   std::vector<q::V> inputs;
-  std::vector<c::TensorDesc> descriptions;
   const auto input = [&](q::Type type, std::size_t count) {
     const auto description = q::dense(type, {static_cast<std::int64_t>(count)});
     const auto value = r.input(description);
-    descriptions.push_back(description); inputs.push_back(value);
+    inputs.push_back(value);
     return value;
   };
   q::V proposals, continuation, accepts;
@@ -125,7 +124,7 @@ inline std::size_t check_width(i::Backend &backend, std::size_t m,
       upload(test.final_ids); upload(test.valid);
       auto *run = q::take(carrier.borrow());
       for (std::size_t port = 0; port < ports.size(); ++port)
-        q::check(io.bind(*run, ports[port], descriptions[port], scope->inputs[port]));
+        q::check(io.bind(*run, ports[port], scope->inputs[port]));
       q::check(run->prepare_replay(carrier.queues(),
           {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
       const std::weak_ptr<Scope> lifetime = scope;

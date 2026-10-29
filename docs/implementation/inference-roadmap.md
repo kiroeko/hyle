@@ -99,6 +99,9 @@ Kimi现有KDA／MLA消费者不产生生成token，不为共用请求接口虚�
 五个消费者刷新，227个SDK／引擎输入复用；编译接线失败与修复前真实失败保留，没有吞吐刷新。完整执行引擎仍未完成。
 GLM Flash／Pro、DeepSeek正式Flash／Pro与Kimi的原组件程序已接共同ProgramIo：输入计划、驻留银行／map映射及输出事实冷准备，
 继续使用原CompiledGraph、Invocation、池、提交和退休；没有为同步消费者伪造Carrier Scope或加一次多余解绑扫描。
+[冷输入schema](../evidence/correctness/inference-input-schema-2026-10-30.json)进一步统一输入事实：
+按选定程序的完整ValueId取得原external根描述，删除组件平行Port库存及Qwen三处热形状重建。
+实际typed metadata仍交原Graph检查；20项测试及12条有限消费者通过，未刷新吞吐，也不代签完整阶段编排完成。
 真实DeepSeek首次压缩检查还发现CUDA索引分数的归约漏填stride；修改前后消费者在同SDK上均失败，独立小回归在旧对象上准确失败。
 已补物理[key,token,head]步长，4项索引检查、真实首次压缩／窗口环绕及GLM回归通过；
 [本批有限检查](../evidence/correctness/inference-program-io-consumers-2026-10-30.json)共18项测试及2个载体进程通过，226个SDK／引擎输入复用、仅刷新1个provider CXX对象，无NVCC或下载。

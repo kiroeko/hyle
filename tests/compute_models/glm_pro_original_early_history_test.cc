@@ -400,7 +400,7 @@ TargetProgram prepare_forward(TargetSource &source,c::Context &context,const c::
             [&](Value v){return v.ordinal()==banks[plane].ordinal();});
         if(found==phase.original_inputs.end())throw std::runtime_error("ordinary77 cut lost expert input");
         dynamic[plane]=std::size_t(found-phase.original_inputs.begin());
-        run.resident_bindings[plane]={run.program->input_ports[dynamic[plane]].id,supply::kBankIds[plane]};
+        run.resident_bindings[plane]={run.program->input(dynamic[plane]).value,supply::kBankIds[plane]};
       }
       run.resident_inputs=run.program->input_plan(dynamic);
     }

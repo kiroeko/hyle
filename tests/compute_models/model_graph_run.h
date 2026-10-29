@@ -65,7 +65,6 @@ class ColdProgram final {
  public:
   g::CompiledGraph compiled;
   hyle::inference::ProgramIo io;
-  std::vector<Port> input_ports;
   ColdProgram(const ColdProgram &)=delete;
   ColdProgram &operator=(const ColdProgram &)=delete;
   ColdProgram(ColdProgram &&)=delete;
@@ -77,6 +76,10 @@ class ColdProgram final {
   }
   std::size_t input_count() const noexcept { return inputs_.size(); }
   std::size_t output_count() const noexcept { return outputs_.size(); }
+  const hyle::inference::ProgramIo::InputFacts &input(std::size_t index) const noexcept {
+    HYLE_FATAL_ASSERT(index<inputs_.size());
+    return io.input_facts(inputs_[index]);
+  }
   const hyle::inference::PreparedOutputFacts &output(std::size_t index) const noexcept {
     HYLE_FATAL_ASSERT(index<outputs_.size());
     return io.output_facts(outputs_[index]);
@@ -97,7 +100,7 @@ class ColdProgram final {
   const InputPlan &all_inputs() const noexcept { return all_; }
   hyle::Status bind(g::Invocation &run,std::size_t index,const c::ReadLease &lease) const noexcept {
     HYLE_FATAL_ASSERT(index<inputs_.size());
-    return io.bind(run,inputs_[index],input_ports[index].description,lease);
+    return io.bind(run,inputs_[index],lease);
   }
   hyle::Status bind_output(g::Invocation &run,std::size_t index,c::LeasePool &pool) const noexcept {
     HYLE_FATAL_ASSERT(index<outputs_.size());
@@ -112,11 +115,15 @@ class ColdProgram final {
   std::vector<hyle::inference::ProgramIo::Output> outputs_;
   InputPlan all_;
   ColdProgram(g::CompiledGraph selected,std::span<const Port> inputs,std::span<const Port> outputs)
-      : compiled(std::move(selected)),input_ports(inputs.begin(),inputs.end()) {
+      : compiled(std::move(selected)) {
     detail::check(io.prepare(compiled,0,inputs.size(),0,outputs.size()),"prepare ordinary model Graph IO");
     inputs_.reserve(inputs.size());outputs_.reserve(outputs.size());
-    for(const auto &port:inputs)
-      inputs_.push_back(detail::take(io.add_input(port.id),"register ordinary model Graph input"));
+    for(const auto &port:inputs) {
+      auto handle=detail::take(io.add_input(port.id),"register ordinary model Graph input");
+      if(io.input_facts(handle).description!=port.description)
+        throw std::runtime_error("ordinary model Graph concrete input description changed");
+      inputs_.push_back(handle);
+    }
     for(const auto &port:outputs) {
       auto handle=detail::take(io.add_output(port.id),"prepare ordinary model Graph output");
       const auto &facts=io.output_facts(handle);

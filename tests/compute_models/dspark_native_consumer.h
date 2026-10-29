@@ -170,7 +170,7 @@ template<class Source,class CpuSupply,class Boundary,class Selection
         if(found==phase.original_inputs.end())throw std::runtime_error("resident phase missing one compressed/map input");
         dynamic[bank]=std::size_t(found-phase.original_inputs.begin());
 #if defined(HYLE_TEST_DSPARK_STATE_CUDA)
-        resident_inputs[index].bindings[bank]={phases[index].program->input_ports[dynamic[bank]].id,bank_ids[bank]};
+        resident_inputs[index].bindings[bank]={phases[index].program->input(dynamic[bank]).value,bank_ids[bank]};
 #endif
       }
       resident_inputs[index].plan=phases[index].program->input_plan(dynamic);

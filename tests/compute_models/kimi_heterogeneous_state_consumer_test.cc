@@ -362,7 +362,7 @@ struct Run final : std::enable_shared_from_this<Run> {
     auto &episode=*prepared.execution;
     const auto start=std::chrono::steady_clock::now();
     try {
-      const auto original=take(hidden_ready.tensor(cold_program->input_ports[0].description),"Kimi cold hidden tensor");
+      const auto original=take(hidden_ready.tensor(cold_program->input(0).description),"Kimi cold hidden tensor");
       const auto generation=hidden_ready.generation();
       check(episode.prepare_replay({.mode=g::ReplayMode::kPreferCapture,.host_wait=g::HostWaitPolicy::kReject}),
           "Kimi complete MLA cold capture");
@@ -374,7 +374,7 @@ struct Run final : std::enable_shared_from_this<Run> {
       cold_reused_ranges+=report.reused_capture_range_count;
       // Preserve every other original input, output writer and captured private
       // address. Only this complete ready input hands its one block to KDA.
-      check(episode.run->unbind(cold_program->input_ports[0].id),"Kimi cold hidden input withdrawal");
+      check(episode.run->unbind(cold_program->input(0).value),"Kimi cold hidden input withdrawal");
       auto writer=take(hidden_ready.try_write(),"Kimi original hidden writer handoff");
       const auto reclaimed=take(writer.view(),"Kimi reclaimed hidden backing");
       const auto storage=original.storage();
@@ -399,7 +399,7 @@ struct Run final : std::enable_shared_from_this<Run> {
           throw std::runtime_error("Kimi MLA requires its unobserved original KDA submission");
         episode.incoming=std::make_unique<inference::IncomingExecutionSources<inference::SubmissionViews>>();
         episode.incoming->owner=previous->execution->sources;
-        episode.incoming->bindings.push_back(episode.incoming->owner->primary_output.reader_binding(cold_program->input_ports[0].id));
+        episode.incoming->bindings.push_back(episode.incoming->owner->primary_output.reader_binding(cold_program->input(0).value));
         episode.predecessor_episode=previous->execution;
       }
       if(capture_hidden) {

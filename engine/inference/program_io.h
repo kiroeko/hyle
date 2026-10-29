@@ -36,6 +36,10 @@ class ProgramIo final {
   using Input = Handle<InputTag>;
   using Readback = Handle<ReadbackTag>;
   using Output = Handle<OutputTag>;
+  struct InputFacts final {
+    graph::ValueId value{};
+    compute::TensorDesc description{};
+  };
 
   ProgramIo() = default;
   ProgramIo(const ProgramIo &) = delete;
@@ -83,13 +87,28 @@ class ProgramIo final {
     return Status::Ok();
   }
 
+  // The selected program's unique external root preserves full dtype,
+  // encoding, shape and strides, including inputs with no executed consumer.
   Result<Input> add_input(graph::ValueId value) noexcept {
     HYLE_RETURN_IF_ERROR(registering());
     if (!value) return std::unexpected(Status::InvalidArgument("program dynamic input is invalid"));
     if (inputs_.size() == inputs_.capacity() || withdrawals_.size() == withdrawals_.capacity())
       return std::unexpected(Status::ResourceExhausted("program input exceeds its cold capacity"));
+    InputFacts facts{.value = value};
+    bool found = false;
+    const auto &report = compiled_->report;
+    for (std::size_t index = 0; index < report.physical_value_count(); ++index) {
+      HYLE_ASSIGN_OR_RETURN(auto physical, report.physical_value(index));
+      if (physical.value != value || !physical.external_input) continue;
+      if (found)
+        return std::unexpected(Status::InvalidArgument("program input has ambiguous physical roots"));
+      facts.description = physical.description;
+      found = true;
+    }
+    if (!found)
+      return std::unexpected(Status::NotFound("value is not a prepared program input"));
     const Input handle(this, inputs_.size());
-    inputs_.push_back(value); withdrawals_.push_back(value);
+    inputs_.push_back(facts); withdrawals_.push_back(value);
     return handle;
   }
 
@@ -154,11 +173,18 @@ class ProgramIo final {
   Status bind(graph::Invocation &run, Input input, const compute::TensorDesc &description,
       const compute::ReadLease &lease) const noexcept {
     HYLE_RETURN_IF_ERROR(check(input, inputs_.size()));
-    return run.bind(inputs_[input.index_], description, lease);
+    return run.bind(inputs_[input.index_].value, description, lease);
+  }
+  // A raw lease carries no tensor metadata. Use this exact cold program's
+  // input description; Graph still checks the actual owner and storage span.
+  Status bind(graph::Invocation &run, Input input, const compute::ReadLease &lease) const noexcept {
+    HYLE_RETURN_IF_ERROR(check(input, inputs_.size()));
+    const auto &facts = inputs_[input.index_];
+    return run.bind(facts.value, facts.description, lease);
   }
   Status bind(graph::Invocation &run, Input input, compute::ConstTensorView tensor) const noexcept {
     HYLE_RETURN_IF_ERROR(check(input, inputs_.size()));
-    return run.bind(inputs_[input.index_], tensor);
+    return run.bind(inputs_[input.index_].value, tensor);
   }
 
   // Caller ownership is a prepared report fact, never inferred from backend.
@@ -203,6 +229,10 @@ class ProgramIo final {
     HYLE_FATAL_ASSERT(output.owner_ == this && output.index_ < outputs_.size());
     return outputs_[output.index_].facts;
   }
+  const InputFacts &input_facts(Input input) const noexcept {
+    HYLE_FATAL_ASSERT(input.owner_ == this && input.index_ < inputs_.size());
+    return inputs_[input.index_];
+  }
 
   // Call only after output observation and any original transaction extraction
   // which must precede withdrawal. The carrier and Graph remain authoritative;
@@ -230,7 +260,8 @@ class ProgramIo final {
   struct RetainedOutput final { PreparedOutputFacts facts; std::size_t bytes; };
   const graph::CompiledGraph *compiled_ = nullptr;
   std::vector<Fixed> fixed_;
-  std::vector<graph::ValueId> inputs_, withdrawals_;
+  std::vector<InputFacts> inputs_;
+  std::vector<graph::ValueId> withdrawals_;
   std::vector<PreparedReadback> readbacks_;
   std::vector<RetainedOutput> outputs_;
   std::vector<Installation> installation_;

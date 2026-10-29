@@ -159,7 +159,7 @@ TEST(ModelGraphRun, ExternalBinderPreservesItsOwnExceptionAndReportsActualCleanu
     // Retain a real completed observation on the same original slot. It is
     // idle, but its result and Completion forbid permission withdrawal.
     for(std::size_t index=0;index<program.inputs.size();++index)
-      ASSERT_TRUE(program.invocation.bind(program.cold->input_ports[index].id,program.cold->input_ports[index].description,
+      ASSERT_TRUE(program.invocation.bind(program.cold->input(index).value,program.cold->input(index).description,
           program.inputs[index]).ok());
     auto writer=program.outputs.allocate(8).value();
     ASSERT_TRUE(program.invocation.bind(program.cold->output(0).value,program.cold->output(0).description,
@@ -202,14 +202,26 @@ TEST(ModelGraphRun, ExternalBinderPreservesItsOwnExceptionAndReportsActualCleanu
 TEST(ModelGraphRun, ColdInputPlansRejectInvalidAndForeignInputsWithoutChangingPreparedInvocation) {
   Program program,foreign;
   ASSERT_EQ(program.cold->input_count(),2u);ASSERT_EQ(program.cold->output_count(),1u);
+  // The recipe is still checked against the selected program's cold schema.
+  // Equal byte extents cannot silently reinterpret a differently shaped input.
+  const auto wrong_shape=c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t,2>{2,3}).value();
+  const std::array mismatched_inputs{
+      run::Port{program.cold->input(0).value,wrong_shape},
+      run::Port{program.cold->input(1).value,program.cold->input(1).description}};
+  const std::array output_ports{
+      run::Port{program.cold->output(0).value,program.cold->output(0).description}};
+  EXPECT_THROW((void)run::ColdProgram::create(program.cold->compiled,mismatched_inputs,output_ports),std::runtime_error);
+  EXPECT_FALSE(program.invocation.in_flight());EXPECT_EQ(program.completed,0);
+  EXPECT_EQ(program.outputs.stats().live_blocks,0u);
   // Keep a genuinely prepared original slot across rejected calls. Its data
   // differs from execute's inputs, so submitting it below also checks that
   // validation neither rebound inputs nor withdrew the existing permissions.
   const auto staged_data=program.input(std::array<float,6>{11,12,13,14,15,16});
   const auto staged_index=program.input(std::array<std::int32_t,1>{0});
-  ASSERT_TRUE(program.invocation.bind(program.cold->input_ports[0].id,program.cold->input_ports[0].description,
+  ASSERT_TRUE(program.invocation.bind(program.cold->input(0).value,program.cold->input(0).description,
       staged_data).ok());
-  ASSERT_TRUE(program.invocation.bind(program.cold->input_ports[1].id,program.cold->input_ports[1].description,
+  ASSERT_TRUE(program.invocation.bind(program.cold->input(1).value,program.cold->input(1).description,
       staged_index).ok());
   const auto &output=program.cold->output(0);
   auto writer=program.outputs.allocate(output.description.required_bytes().value()).value();
@@ -244,10 +256,10 @@ TEST(ModelGraphRun, ColdInputPlansRejectInvalidAndForeignInputsWithoutChangingPr
 
   i::ProgramIo foreign_io;
   ASSERT_TRUE(foreign_io.prepare(foreign.cold->compiled,0,1,0,0).ok());
-  const auto foreign_input=foreign_io.add_input(foreign.cold->input_ports[0].id);
+  const auto foreign_input=foreign_io.add_input(foreign.cold->input(0).value);
   ASSERT_TRUE(foreign_input);ASSERT_TRUE(foreign_io.seal().ok());
   const auto rejected=program.cold->io.bind(program.invocation,*foreign_input,
-      program.cold->input_ports[0].description,program.inputs[0]);
+      program.cold->input(0).description,program.inputs[0]);
   EXPECT_TRUE(rejected.IsInvalidArgument());unchanged();
 
   {

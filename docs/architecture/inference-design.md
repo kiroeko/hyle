@@ -1673,6 +1673,10 @@ exact子集在冷Family选择时核对，模型不再重复保存variant索引�
 IO必须属于同一稳定CompiledGraph；Store准备由显式存在决定，空sources不代表无需准备。
 安装失败由原Graph析构归还已消费writer。prefix成功继续保热、frontier继续fresh，普通／NextN仍先取回原事务再重置；
 该安装流程不接管这些复用政策，也不保存recipe或新增资源owner。
+动态输入在冷登记时按完整ValueId取得选定程序唯一external-input根的完整描述，包括dtype、编码、形状和stride。
+unused输入也保留这份事实，跨存储域副本不替代外部根。裸ReadLease绑定直接借用冷描述；调用方若提供实际描述或typed view，
+则原样交给Graph检查，不能用预期描述覆盖实际metadata。Qwen的hidden／Q输入及GLM／DeepSeek／Kimi组件共用此库存，
+模型recipe在冷装配时仍与编译事实核对，运行时资源权限、Source和退休不在此库存复制。
 同步组件也可直接使用`ProgramIo`的冷端口、输出事实及绑定／保留操作，继续由原`Invocation`提交、等待与重置。
 GLM／DeepSeek／Kimi的测试消费者用稳定冷对象持有原CompiledGraph和IO，以适应外层Run的移动；不复制程序，也不为复用Carrier伪造Scope。
 驻留银行／map的输入计划和绑定顺序在冷准备时确定，每步不再重建端口mask或搜索逻辑索引。

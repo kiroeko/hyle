@@ -32,6 +32,9 @@ inline int run(q::BackendKind kind) {
   auto backend = q::take(i::Backend::create({.primary = kind}));
   const auto description = q::dense(q::Type::kFloat32, {4});
   const auto bad_description = q::dense(q::Type::kFloat32, {2});
+  const std::array<std::int64_t, 1> four{4}, padded_stride{8}, broadcast_stride{0};
+  const auto padded_description = q::take(c::TensorDesc::strided_bytes(q::Type::kFloat32, four, padded_stride));
+  const auto broadcast_description = q::take(c::TensorDesc::strided_bytes(q::Type::kFloat32, four, broadcast_stride));
   auto builder = q::take(g::GraphBuilder::create());
   const auto first = q::take(builder.input(description));
   const auto second = q::take(builder.input(description));
@@ -45,6 +48,7 @@ inline int run(q::BackendKind kind) {
     const auto rows = q::take(exact_builder.dimension({1, 4, 1}));
     const auto spec = q::take(g::TensorSpec::dense(q::Type::kFloat32, std::array{g::Dimension(rows)}));
     const auto input = q::take(exact_builder.input(spec));
+    const auto unused = q::take(exact_builder.input(padded_description));
     const auto sum = q::take(exact_builder.add(c::Binary{.kind = c::BinaryKind::kAdd}, spec, input, input));
     q::check(exact_builder.publish(sum));
     const auto logical = q::take(std::move(exact_builder).finish());
@@ -68,7 +72,17 @@ inline int run(q::BackendKind kind) {
     const auto &child = family.child(0);
     i::ProgramIo child_io;
     i::ProgramCarrier<Scope> child_carrier;
-    q::check(child_io.prepare(child.compiled, 0, 0, 0, 0)); q::check(child_io.seal());
+    q::check(child_io.prepare(child.compiled, 0, 2, 0, 0));
+    const auto non_input = child_io.add_input(sum), foreign_input = child_io.add_input(first);
+    require(first.ordinal() == input.ordinal() && first != input && !non_input && !foreign_input &&
+        non_input.error().IsNotFound() && foreign_input.error().IsNotFound(),
+        "cold input registration accepted a noninput or matched only a foreign ValueId ordinal");
+    const auto child_input = q::take(child_io.add_input(input));
+    const auto unused_input = q::take(child_io.add_input(unused)); q::check(child_io.seal());
+    require(child_io.input_facts(child_input).value == input && child_io.input_facts(child_input).description == description &&
+        child_io.input_facts(unused_input).value == unused &&
+        child_io.input_facts(unused_input).description == padded_description && padded_description != description,
+        "cold exact input facts lost their concrete shape, original unused input or full strided description");
     q::check(child_carrier.prepare(child.compiled, backend.queue_bindings()));
     q::check(child_carrier.initialize({.io = child_io, .invocation = {.resources = g::ResourceOptions{}}}));
     const auto *child_run = q::take(child_carrier.borrow());
@@ -195,10 +209,17 @@ inline int run(q::BackendKind kind) {
       "standalone installation changed its original signature or invented a family variant");
   // Preserve Graph's original checked read owners after the retained Scope
   // retires; these are dynamic bindings, not dangling cold borrowed views.
-  q::check(a_io.bind(*a_run, a_first, description, a_scope->first));
-  q::check(a_io.bind(*a_run, a_second, description, a_scope->second));
-  q::check(b_io.bind(*b_run, b_first, description, b_scope->first));
-  q::check(b_io.bind(*b_run, b_second, description, b_scope->second));
+  q::check(a_io.bind(*a_run, a_first, a_scope->first));
+  q::check(a_io.bind(*a_run, a_second, a_scope->second));
+  q::check(b_io.bind(*b_run, b_first, b_scope->first));
+  q::check(b_io.bind(*b_run, b_second, b_scope->second));
+  // Both views are valid and have the original shape. Their different stride
+  // must reject without replacing the previously bound dense read permission;
+  // the original native submissions below still check every output element.
+  const auto typed_stride = a_io.bind(*a_run, a_first, view(a_scope->first, broadcast_description));
+  const auto explicit_stride = a_io.bind(*a_run, a_first, broadcast_description, a_scope->first);
+  require(typed_stride.IsInvalidArgument() && explicit_stride.IsInvalidArgument(),
+      "program IO replaced actual typed strides with its cold expected description");
   const auto duplicate = a.initialize({.io = a_io, .invocation = options});
   require(duplicate.IsFailedPrecondition() && q::take(a.borrow()) == a_run && q::take(b.borrow()) == b_run,
       "already initialized carrier replaced its live original invocation or touched its peer");
@@ -283,6 +304,8 @@ inline int run(q::BackendKind kind) {
          "\"group_initialization_idempotent\":true,\"group_initialization_recipe_lazy\":true,"
          "\"group_retirement_original\":true,\"unsealed_io_rejected\":true,\"foreign_io_rejected\":true,"
          "\"standalone_signature_preserved\":true,\"finite_child_signature_preserved\":true,"
+         "\"unused_input_cold_registered\":true,\"full_input_description_preserved\":true,\"foreign_input_identity_rejected\":true,"
+         "\"actual_stride_rejected_original_permission_preserved\":true,"
          "\"finite_child_variant_preserved\":true,\"partial_installation_failed\":true,\"partial_caller_writer_tested\":"
       << (caller_writer ? "true" : "false") << ",\"partial_caller_writer_recovered\":" << (caller_writer ? "true" : "null")
       << ",\"valid_io_retry_output_checked\":true,"

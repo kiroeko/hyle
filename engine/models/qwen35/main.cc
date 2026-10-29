@@ -3122,7 +3122,7 @@ public:
         transactions.writers(0)[0] = take(hidden_pool.allocate(transactions.writer_bytes(0), cache::state_pool_alignment));
         check(transactions.stage(0));
       } else for (std::size_t row = 0; row < ids.size(); ++row)
-        check(program.io.bind(run, program.hidden_bindings[row], dense(precision.activation_type(), {1, hidden}), shifted[row]));
+        check(program.io.bind(run, program.hidden_bindings[row], shifted[row]));
       if (program.bias_input) check(program.io.bind(run, program.bias_input, logits.bias.description, logits.bias.lease));
       if (program.allowed_input) check(program.io.bind(run, program.allowed_input, logits.allowed.description, logits.allowed.lease));
       if (program.counts_input) check(program.io.bind(run, program.counts_input, logits.counts.description, logits.counts.lease));
@@ -3403,7 +3403,7 @@ public:
         if (ports.allowed_input) check(program.io.bind(run, ports.allowed_input, values.allowed.description, values.allowed.lease));
       }
       for (std::size_t row = 0; row < q.size(); ++row)
-        check(program.io.bind(run, program.q_inputs[row], dense(Type::kFloat32, {1, vocabulary}), q[row]));
+        check(program.io.bind(run, program.q_inputs[row], q[row]));
       const auto queues = program.carrier.queues();
       check(run.prepare_replay(queues, {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
       auto done = take(program.carrier.submit(resources_)); check(done.wait());
@@ -3562,7 +3562,7 @@ public:
     auto &run = *take(frontier.carrier.borrow());
     try {
       if (selected_sampler.enabled) { const auto identity = cursor.identity(); frontier.identity.write<std::uint32_t>(identity); }
-      check(frontier.io.bind(run, frontier.hidden_input, dense(precision.activation_type(), {1, hidden}), base->carry_hidden));
+      check(frontier.io.bind(run, frontier.hidden_input, base->carry_hidden));
       if (frontier.bias_input) check(frontier.io.bind(run, frontier.bias_input, inputs.bias.description, inputs.bias.lease));
       if (frontier.allowed_input) check(frontier.io.bind(run, frontier.allowed_input, inputs.allowed.description, inputs.allowed.lease));
       if (frontier.counts_input) check(frontier.io.bind(run, frontier.counts_input, inputs.counts.description, inputs.counts.lease));

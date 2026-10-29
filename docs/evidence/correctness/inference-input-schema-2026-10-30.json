@@ -1,0 +1,475 @@
+{
+  "schema": "hyle.correctness.program-input-schema.v1",
+  "date": "2026-10-30",
+  "status": "EXACT_COLD_INPUT_FACTS_IMPLEMENTED_AND_FINITE_CHECKED",
+  "base_commit": "61bb37a51",
+  "contract": {
+    "cold": "Original selected concrete CompiledGraph report, unique external_input root by full ValueId; preserve dtype/encoding/shape/strides, including unused inputs. Cross-domain replicas/aliases are not guessed as roots.",
+    "raw_lease": "ProgramIo::bind(run,handle,ReadLease) uses its cold input description; original Graph checks actual resource, span and read owner.",
+    "typed": "Explicit actual TensorDesc and ConstTensorView overloads still pass actual metadata to Graph; they never substitute expected cold metadata.",
+    "inventory": "Existing cold ProgramIo input vector holds InputFacts instead of ValueId; ColdProgram removes its parallel vector of Port descriptions.",
+    "models": "Qwen hidden/Q/frontier and GLM/DeepSeek/Kimi component inputs use the same facts; recipe descriptors are checked during cold construction.",
+    "authority": "Original CompiledGraph/Invocation, leases/pools, Source/Store/Append, Status and actual retirement unchanged. No owner, executor, dynamic callback or hot allocation added."
+  },
+  "implementation": {
+    "sources": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\program_io.h",
+        "bytes": 12782,
+        "sha256": "dbd39bdaec0c82a985f42bb05bab922133f273105ac487abad7843084ad7d648"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+        "bytes": 634154,
+        "sha256": "15c0500dad8c35f4d9dcc23543aedf1eace18f42d64eefeae931f53ff4b70709"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_native_consumer.h",
+        "bytes": 13848,
+        "sha256": "4de4a92be4b8479d9df65f460cd53ced2ebabacd64f0663c8a0cbe7ab589c7f9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_mtp_state_consumer_test.cc",
+        "bytes": 218019,
+        "sha256": "8a9c39cb56ccf641044d20ce7bc07bf68c87ff38886ef4da39210fdcf79c0d3f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_original_early_history_test.cc",
+        "bytes": 48030,
+        "sha256": "6289f7153e3d962cbc0c65420144092499978f46bfca989717a97316f8503816"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\kimi_heterogeneous_state_consumer_test.cc",
+        "bytes": 65972,
+        "sha256": "79ed90585bd33420c32cf3de4ce547e5cbdcfa0cc77109445ce6d562ad96d0ad"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\model_graph_run.h",
+        "bytes": 8998,
+        "sha256": "07be6a753d87ddf678abc3f3c93c261ba1b2679222570e31630dca5e14e48341"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\model_graph_run_test.cc",
+        "bytes": 15501,
+        "sha256": "3a646f1581dc64aa931e7e13a39c08b3e3f8cc992620b1609dac041c8cb5b3bf"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_mtp_packet_case.h",
+        "bytes": 10938,
+        "sha256": "daa82727c787c3925cd6ddcb2c50cc134d65943419accc6cec5fee30480bb232"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_program_carrier_case.h",
+        "bytes": 22355,
+        "sha256": "7916f511f363dc6f4daf964a3275265aa5f91f59cf8294937f69d6aae52fb6a4"
+      }
+    ],
+    "diff": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\product.diff",
+      "bytes": 25678,
+      "sha256": "c253d7192181ca401ac20fc0d8a99626ed7ca69185466408ca57588e6dae8fa4"
+    },
+    "SDK_CXX_compiles": 0,
+    "retained_SDK_engine_objects": 227,
+    "consumer_CXX_TUs": 11,
+    "NVCC_compiles": 0,
+    "downloads": 0,
+    "current_link_base": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\model-link-base.json",
+      "bytes": 103549,
+      "sha256": "619792f527a5693861804e14770582780dc716d120051ffba6f88f0c8d2e1627"
+    }
+  },
+  "checks": {
+    "analysis": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\analysis.json",
+      "bytes": 87974,
+      "sha256": "3b6d38f27ffbc53ba2bfd7b20081f361eeec6864dcbd8b70cc509b24cc1d95e2"
+    },
+    "gtests": 20,
+    "failures": 0,
+    "skipped": 0,
+    "finite_consumer_processes": 12,
+    "cases": {
+      "single-auto": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\runs\\single-auto\\attempt1\\report.json",
+        "bytes": 82919,
+        "sha256": "4722b9aed27f6908de22a79d3caf4ea8b498c7fbac94ce7099c9c9b5b6cd927d"
+      },
+      "recursive": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\runs\\recursive\\attempt1\\report.json",
+        "bytes": 69096,
+        "sha256": "867123988b0433845d1da2d946dc9b8878db9bff37fbdce14895d8e7b5c929fa"
+      },
+      "threshold": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\runs\\threshold\\attempt1\\report.json",
+        "bytes": 114544,
+        "sha256": "7afc789247b55c90ccf70610bda25bf4c8b3c9c539f11b4ce1c4f613ad242cd2"
+      },
+      "restore": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\runs\\restore\\attempt1\\report.json",
+        "bytes": 69794,
+        "sha256": "a93647fcb9c51878f2d7f44b04e12dedfef0b1234f57a19c0372c4ae6dfc2a68"
+      },
+      "natural": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\runs\\natural\\attempt1\\report.json",
+        "bytes": 7217,
+        "sha256": "d289197cdf833a531d3c2082da5dce6e605028b15d59ee9940db8e6828cd7813"
+      },
+      "batch": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\runs\\batch\\attempt1\\report.json",
+        "bytes": 1567,
+        "sha256": "f78c48cdff3cac560ab454be7867884897a6933cd7dc1801be73de9123640242"
+      },
+      "group": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\runs\\group\\attempt1\\report.json",
+        "bytes": 769,
+        "sha256": "9ecfe819a59ed9add34e78395308427cc91b6f01bcf473e7ca49fe6528ee78aa"
+      },
+      "carrier_cpu": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\runs\\carrier_cpu\\attempt1\\report.json",
+        "bytes": 1286,
+        "sha256": "91749a93f8bec7ae45c542923258d308de0449313f2e3279d4f5cc2c043f119d"
+      },
+      "carrier_cuda": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\runs\\carrier_cuda\\attempt1\\report.json",
+        "bytes": 1287,
+        "sha256": "545e09e5a76a47063c933699b35ba61bad599502f94f657cc6ba414250dfee19"
+      },
+      "packet_cpu": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\runs\\packet_cpu\\attempt1\\report.json",
+        "bytes": 505,
+        "sha256": "ed94fdbe3c43da80e410c4933a91f96609616cc3e2e0a088671a9d48ebc2dec4"
+      },
+      "packet_cuda": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\runs\\packet_cuda\\attempt1\\report.json",
+        "bytes": 506,
+        "sha256": "859bee9862bd074de4d0f20069c9705415063f1a774f54f03c90d138c64445a7"
+      },
+      "ordinary": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\runs\\ordinary\\attempt1\\report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      },
+      "runner-cpu": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\runs\\runner-cpu\\attempt1\\report.json",
+        "bytes": 639,
+        "sha256": "43e38c879c48a089f46fde894e29992313020359134b7463cb299cab34565477"
+      },
+      "ds-pro-cpu": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\runs\\ds-pro-cpu\\attempt1\\report.json",
+        "bytes": 225,
+        "sha256": "a2487ed632ddc9f85ada43becd73b828e837437e6148119ea7d8828ebffb3020"
+      },
+      "ds-flash-cpu": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\runs\\ds-flash-cpu\\attempt1\\report.json",
+        "bytes": 227,
+        "sha256": "8e746e95a721f835971e559ca6416bfcfb50b788c646aff82e3512213a508324"
+      },
+      "ds-early-cuda": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\runs\\ds-early-cuda\\attempt1\\report.json",
+        "bytes": 353,
+        "sha256": "e61981f1087b222a1ef14f4dcfd85918e410b51dc3c815f9741e5bf991d5cb17"
+      },
+      "glm-cuda": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\runs\\glm-cuda\\attempt1\\report.json",
+        "bytes": 240,
+        "sha256": "e4c7a22e0a20afd696e7c80e010aad78f9d822b0ffe1181e60ad3dd67aa21f8b"
+      },
+      "glm-early-cuda": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\runs\\glm-early-cuda\\attempt1\\report.json",
+        "bytes": 495,
+        "sha256": "24ba5d047c2e56300962bff2b036b15d7106bb7532be7b36314ee62955f76aba"
+      },
+      "glm-flash-cuda": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\runs\\glm-flash-cuda\\attempt1\\report.json",
+        "bytes": 241,
+        "sha256": "f261891f232900f8be9a3d830ac4a0ca79d2e0dc477e341f271a133db74066e7"
+      },
+      "kimi-cuda": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\runs\\kimi-cuda\\attempt1\\report.json",
+        "bytes": 1122,
+        "sha256": "a4339b3311de5a2de6bcb7d09b347244cc186847a06c089435c949754f6622be"
+      }
+    },
+    "original_non_timing_comparisons": [
+      {
+        "case": "single-auto",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\runs\\single-auto\\attempt1\\report.json",
+          "bytes": 82955,
+          "sha256": "28f90c7823f70cda81405295c148937fc6586b952319eac2b6f35fabbb149bcc"
+        },
+        "complete_non_timing_equal": true
+      },
+      {
+        "case": "recursive",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\runs\\recursive\\attempt1\\report.json",
+          "bytes": 69104,
+          "sha256": "29b27114157bee4554a95c98e6d2a5225ff4669886a64af48792121ade425a53"
+        },
+        "complete_non_timing_equal": true
+      },
+      {
+        "case": "threshold",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\runs\\threshold\\attempt1\\report.json",
+          "bytes": 114508,
+          "sha256": "ef59c8001022833bfd72f0c582493f0e90a0765156926f915120d040a0fa45be"
+        },
+        "complete_non_timing_equal": true
+      },
+      {
+        "case": "restore",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\runs\\restore\\attempt1\\report.json",
+          "bytes": 69795,
+          "sha256": "4c0b945f3fdc4785f43da8eb1ae297ea742e762cbcfa4df9fc3d8da2238a7125"
+        },
+        "complete_non_timing_equal": true
+      },
+      {
+        "case": "natural",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\runs\\natural\\attempt1\\report.json",
+          "bytes": 7217,
+          "sha256": "d289197cdf833a531d3c2082da5dce6e605028b15d59ee9940db8e6828cd7813"
+        },
+        "complete_non_timing_equal": true
+      },
+      {
+        "case": "ordinary",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\runs\\ordinary\\attempt1\\report.json",
+          "bytes": 5324,
+          "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+        },
+        "complete_non_timing_equal": true
+      },
+      {
+        "case": "batch",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-accounting-20261030\\runs\\batch\\attempt1\\report.json",
+          "bytes": 1567,
+          "sha256": "f78c48cdff3cac560ab454be7867884897a6933cd7dc1801be73de9123640242"
+        },
+        "complete_non_timing_equal": true
+      },
+      {
+        "case": "packet_cpu",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-device-packet-20261029\\refinement\\runs\\packet-cpu\\report.json",
+          "bytes": 505,
+          "sha256": "ed94fdbe3c43da80e410c4933a91f96609616cc3e2e0a088671a9d48ebc2dec4"
+        },
+        "complete_non_timing_equal": true
+      },
+      {
+        "case": "packet_cuda",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-device-packet-20261029\\refinement\\runs\\packet-cuda\\report.json",
+          "bytes": 506,
+          "sha256": "859bee9862bd074de4d0f20069c9705415063f1a774f54f03c90d138c64445a7"
+        },
+        "complete_non_timing_equal": true
+      }
+    ],
+    "schema": "Cold unused strided input and exact-child facts; non-input and foreign same-ordinal ID return NotFound without consuming capacity; actual typed/explicit stride rejection preserves later original output.",
+    "recipe": "Same24 bytes with wrong input shape is rejected during cold assembly before changing the original Invocation or pool.",
+    "components": "Actual cached GLM/DeepSeek/Kimi original parameters and state checks, including Kimi real Source lifecycle; no synthetic replacement of original native execution.",
+    "Qwen": "Natural40 outputs, ordinary16 arms, NextN checked failure/retry, K2, threshold and two-request restore retain complete old non-time reports. Existing grouped recursive failure/recovery also passes its original state/retirement checks; no old-report equality claim for that case."
+  },
+  "SDK_dependency_audit": {
+    "inspected": 122,
+    "unavailable": 105,
+    "program_io_matches": [],
+    "detail": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\analysis.json",
+      "bytes": 87974,
+      "sha256": "3b6d38f27ffbc53ba2bfd7b20081f361eeec6864dcbd8b70cc509b24cc1d95e2"
+    },
+    "limits": "Missing dependency records are not invented. Current src/include have no engine dependency; two engine SDK objects retain source-identical inputs without ProgramIo."
+  },
+  "performance_claim": false,
+  "limits": [
+    "This is cold input schema and real component wiring, not complete model-independent stage assembly.",
+    "Finite CPU/CUDA checks; no new Apple/Vulkan runtime or whole large-model run.",
+    "No peer/full performance or memory window, no SDK/NVCC rebuild and no downloads."
+  ],
+  "cleanup": {
+    "script": {
+      "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+      "bytes": 1416,
+      "sha256": "a0e11fae5bbe4c09bb21f9e6c08d3e93ef2b844f1da0523d607ac06d4bccdcaa"
+    },
+    "manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\cleanup-targets.json",
+      "bytes": 7343,
+      "sha256": "4b06fed97d9c25688cf3df67c982386688b3f61a80ee673ea6b15050967b614b"
+    },
+    "result": {
+      "files": 31,
+      "targets": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\cli.exe",
+          "bytes": 142991360,
+          "sha256": "9d2841de894ee9074e6681cdbeff5ebe9df3b570f5ace19c64779114e2678aa9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\cli.exp",
+          "bytes": 24970,
+          "sha256": "494ef4b375b01329186d89deccf58647b459cd2d336eccac3af1be986ab72130"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\cli.lib",
+          "bytes": 41298,
+          "sha256": "b662cefece8100e93e3ba72f5070ea135ed01f8a16f30232a1622f1a69a4e504"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\ds-early.exe",
+          "bytes": 141318656,
+          "sha256": "d9126c42a38fd42943cd0cccca594deeeca82fdad391806664bb3cfef3129580"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\ds-early.exp",
+          "bytes": 24981,
+          "sha256": "22caf3a0c42812494e9b75a54c8ca9d50a0d4783c39ac69feb6f93dc96026a90"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\ds-early.lib",
+          "bytes": 41736,
+          "sha256": "e52ddffad2c55b2f2614f536e799b83aed66dbd6f24ceda43599e880280b4bd2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\ds.exe",
+          "bytes": 143203328,
+          "sha256": "5d42c3ca0cfce0fd15ae6b9ecc68dfdc03d328803f50f30daff5363a3bbc5e29"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\ds.exp",
+          "bytes": 24969,
+          "sha256": "d2224d55b3f8aefaa41e8567dab1566ef8839138d75112b5e1e855d2124ac2cd"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\ds.lib",
+          "bytes": 41208,
+          "sha256": "a5990ad646d6a4834fd2ab0ea73514687888ecd72713e0b7e0b81a0dc887ae76"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\glm-early.exe",
+          "bytes": 141231616,
+          "sha256": "32152420bbf82fb6c5889f6dfd0199c8917876bdb7de3748d307959bc5276c3f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\glm-early.exp",
+          "bytes": 24982,
+          "sha256": "e9875f7ad1fcded6265c489f2de0bc7385f7b251007f107cf456571cd9c547d0"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\glm-early.lib",
+          "bytes": 41826,
+          "sha256": "0301a18c297f4d880c63ce10b11c23fa2ac1829c7ec25679ee07dfffee70b604"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\glm-flash.exe",
+          "bytes": 143132672,
+          "sha256": "31c9873a733bb3856d4457916ba17da315a1975271e13657bcab0147f4270b6d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\glm-flash.exp",
+          "bytes": 24982,
+          "sha256": "256f4a199c04e09b41b6d4594a3d6cea63406c968a053acc6a3504946454b90a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\glm-flash.lib",
+          "bytes": 41826,
+          "sha256": "d2857fef953b62e391f3f656047392987cec12db3115e5269f2d1b481053b0c7"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\glm.exe",
+          "bytes": 142263808,
+          "sha256": "19ff893f8af00216d51eba859b197e331b893daf717a44c311a3b9f4d38646d4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\glm.exp",
+          "bytes": 24970,
+          "sha256": "ae8adc134d14760a311d9fdfe7175f7435269e056804249504e8926b256734fa"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\glm.lib",
+          "bytes": 41298,
+          "sha256": "e8d4f357813d6eb5a9ce036a93ee2d8946478cf46f55bf15440d6501a46c1790"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\hyle_ggml_cpu_gdn_scale_v3.dll",
+          "bytes": 1206784,
+          "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\kimi.exe",
+          "bytes": 141642240,
+          "sha256": "d5c91e1e4402d55d1253020a2f6bfc1a4ede0cbe6042c445ae5ab68031a40ae7"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\kimi.exp",
+          "bytes": 24973,
+          "sha256": "e913260194beba10dab628f9fcd0f1e60d809f9bd5240521aafba399b38fc41a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\kimi.lib",
+          "bytes": 41384,
+          "sha256": "c278f7f560ac076f249b149408e1eff3275e113f242e1fb2dfa50878e338b1f6"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\natural.exe",
+          "bytes": 143330816,
+          "sha256": "a1f04a73273ee8f09cc906003a3711834fc4d4c35892da2a33e7671d8cd40294"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\natural.exp",
+          "bytes": 24978,
+          "sha256": "275aae26806f58b94c2bf81013bbf7a329fd86094214d1279efb768fa0ec7ef9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\natural.lib",
+          "bytes": 41650,
+          "sha256": "58dc8cacc5b9fce9f3b071d7889ad9e8f2fcb6eccb176279b97d0075250b2f5e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\ordinary.exe",
+          "bytes": 142965248,
+          "sha256": "101b04aa41d1cf4fbfe99e5fe42bc35fcf2b5ef6725809c574133cef537a8380"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\ordinary.exp",
+          "bytes": 24981,
+          "sha256": "c92d11d4a41bd18b25879d74e875aee56b3865cc46d27a53a0bda2c330bde5c3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\ordinary.lib",
+          "bytes": 41736,
+          "sha256": "b48e083b9ce39eb6f82dd55dba602a320b716d6c6113e731c1094b8446220b32"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\runner.exe",
+          "bytes": 140783104,
+          "sha256": "70f5e36f8a54cd73ea5ec0fe125697977f4e79b2be7630d1adc23f648ba6cead"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\runner.exp",
+          "bytes": 24977,
+          "sha256": "32c3adee60a6ad67274c0233d946e55fb6c591419512c66ef8b610be79b37f6f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-input-schema-20261030\\bin\\runner.lib",
+          "bytes": 41560,
+          "sha256": "650230c420cf54eababb3f510ccb20a2435aa1f165b766c7b6e3d42c2aff542a"
+        }
+      ],
+      "status": "REMOVED_EXACT_FLAT_BATCH_IMAGES",
+      "bytes": 1424734917.0
+    }
+  },
+  "evidence_archive": "inference-input-schema-2026-10-30.zip"
+}
