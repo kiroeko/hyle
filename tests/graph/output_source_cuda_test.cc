@@ -373,7 +373,7 @@ TEST(GraphOutputSourceCuda, PendingI32ReusesRealNativeRegionCaptureWithoutRecord
       std::array<std::int64_t, 2>{1, 2}).value();
   auto inputs = c::LeasePool::create(storage.ref(), 4 * 256, {.max_blocks = 4}).value();
   auto token_pool = c::LeasePool::create(storage.ref(), 256, {.max_blocks = 1}).value();
-  auto output_pool = c::LeasePool::create(storage.ref(), 256, {.max_blocks = 1}).value();
+  auto output_pool = c::LeasePool::create(storage.ref(), 2 * 256, {.max_blocks = 2}).value();
   auto table = inputs.allocate(4 * sizeof(std::int32_t), 256).value();
   auto index = inputs.allocate(sizeof(std::int32_t), 256).value();
   auto embedding = inputs.allocate(8 * sizeof(float), 256).value();
@@ -443,6 +443,20 @@ TEST(GraphOutputSourceCuda, PendingI32ReusesRealNativeRegionCaptureWithoutRecord
   auto row_writer = output_pool.allocate(2 * sizeof(float), 256).value();
   ASSERT_TRUE(consumer.bind(selected, row_f32, std::move(row_writer)).ok());
   const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  // The same real Managed artifact is legal ordinary Commands work, but a
+  // second Invocation has never recorded the capture needed for pending input.
+  auto commands_consumer = consumer_plan->executable.create_invocation().value();
+  ASSERT_TRUE(commands_consumer.prepare_resources().ok());
+  ASSERT_TRUE(commands_consumer.bind(second_table, table_f32, embedding_ready).ok());
+  ASSERT_TRUE(commands_consumer.bind(second_index, i32, token_ready).ok());
+  auto commands_writer = output_pool.allocate(2 * sizeof(float), 256).value();
+  ASSERT_TRUE(commands_consumer.bind(selected, row_f32, std::move(commands_writer)).ok());
+  const auto commands = commands_consumer.prepare_replay(queues,
+      {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow});
+  ASSERT_TRUE(commands.ok()) << commands.message();
+  ASSERT_EQ(commands_consumer.replay_route(), g::ReplayRoute::kCommands);
+  EXPECT_EQ(commands_consumer.replay_report()->recorded_capture_range_count, 0u);
+  ASSERT_TRUE(commands_consumer.unbind(second_index).ok());
   const auto warm = consumer.prepare_replay(queues,
       {.mode = g::ReplayMode::kRequireCapture, .host_wait = g::HostWaitPolicy::kReject});
   ASSERT_TRUE(warm.ok()) << warm.message();
@@ -489,6 +503,35 @@ TEST(GraphOutputSourceCuda, PendingI32ReusesRealNativeRegionCaptureWithoutRecord
   const std::array bindings{gd::OutputBinding{second_index, &source}};
   ASSERT_TRUE(source.poll());
   ASSERT_EQ(*source.poll(), c::CompletionPoll::kPending);
+  {
+    // A typed view belongs to one reader bundle. Use another genuine view of
+    // this submission so rejection cannot consume the successful reader's view.
+    auto refused_view = gd::OutputSource::create(submission_source, token, storage, token_pool);
+    if (!refused_view) gate.release();
+    ASSERT_TRUE(refused_view) << refused_view.error().message();
+    const std::array refused_bindings{gd::OutputBinding{second_index, &*refused_view}};
+    const auto attached = gd::bind_outputs(commands_consumer, refused_bindings);
+    if (!attached.ok()) gate.release();
+    ASSERT_TRUE(attached.ok()) << attached.message();
+    const auto refused = gd::prepare_outputs(commands_consumer, refused_bindings, queues);
+    EXPECT_TRUE(refused.IsUnavailable()) << refused.message();
+    auto refused_submission = gd::submit_outputs(commands_consumer, refused_bindings, queues);
+    EXPECT_FALSE(refused_submission);
+    if (refused_submission) {
+      // A regression must still retire an accidentally accepted callback before
+      // either its original resources or the borrowed Gate can be destroyed.
+      gate.release();
+      EXPECT_TRUE(refused_submission->wait().ok());
+    } else {
+      EXPECT_TRUE(refused_submission.error().IsUnavailable()) << refused_submission.error().message();
+    }
+    EXPECT_FALSE(commands_consumer.in_flight());
+    EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
+    const auto still_pending = source.poll();
+    if (!still_pending) gate.release();
+    ASSERT_TRUE(still_pending) << still_pending.error().message();
+    EXPECT_EQ(*still_pending, c::CompletionPoll::kPending);
+  }
   ASSERT_TRUE(consumer.bind(second_table, table_f32, other_embedding_ready).ok());
   const auto bound = gd::bind_outputs(consumer, bindings);
   ASSERT_TRUE(bound.ok()) << bound.message();
@@ -522,6 +565,7 @@ TEST(GraphOutputSourceCuda, PendingI32ReusesRealNativeRegionCaptureWithoutRecord
   const auto finished = consumed->wait();
   ASSERT_TRUE(finished.ok()) << finished.message();
   ASSERT_TRUE(source.wait().ok());
+  commands_consumer = {};
   EXPECT_FALSE(gate.timed_out.load(std::memory_order_acquire));
   std::array<float, 2> actual{};
   ASSERT_TRUE(consumer.output(selected)->storage().read(

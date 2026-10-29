@@ -962,6 +962,11 @@ struct PlanState final : util::RefCounted<PlanState> {
       external_input_consumers;
   container::SmallVector<ExternalInputAliasDescendant, 0, mem::AllocatorRef>
       external_input_alias_descendants;
+  // Final selected-artifact facts, rebuilt with the segments after every cold
+  // reorder. Neither grants Source authority nor certifies an Invocation's
+  // actual Queue, bindings, capture artifacts or native retirement.
+  bool source_commands_prepared = false;
+  ReplayRoute planned_shared_capture_route = ReplayRoute::kUnprepared;
 };
 
 inline void retain(PlanState *state) noexcept {

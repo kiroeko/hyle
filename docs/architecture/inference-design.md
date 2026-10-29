@@ -1734,6 +1734,9 @@ A成功提交全部head与账簿后，模型释放未绑定消费者的full GDN�
 普通输入沿原冷库存释放；导入Phase按真实token／catchup和Store Gather端口冷证明不相交，不再逐episode扫描Source并复制库存。
 先撤Source且记录成功，再释放普通输入；后者拒绝仍保原incoming owner与predecessor，恢复不能重复撤Source。
 单页Append Source直接比较本轮target页号，多页仍用原排序；没有跨episode保存页身份或票据。
+Graph将原计划命令资格和预期capture覆盖保存在最终选定的Plan，冷重排时先清空、成功后重算。
+它们仅描述不可变拓扑，普通／后继共用；实际Invocation的Source、Queue、绑定、capture范围与退休仍逐次核对。
+有限形状子图使用各自的Plan，工作区重排重新计算这两项事实；这不等于整个准备过程已经常数化。
 [有限检查](../evidence/correctness/inference-source-preparation-2026-10-30.json)保留原页／模型及晚拒恢复合同，没有新的吞吐结论。
 模型在Append绑定后构造真实Source，并在Store绑定后取得packed offsets；不能用一个封闭回调抹去这些依赖。
 部分成功事实由同一episode回收；数学、shape、候选帧及全成员原子发布仍由模型负责。

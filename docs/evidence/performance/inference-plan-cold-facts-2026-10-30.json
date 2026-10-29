@@ -1,0 +1,886 @@
+{
+  "schema": "hyle.performance.plan-cold-facts.v1",
+  "date": "2026-10-30",
+  "status": "IMPLEMENTED_FINITE_CHECKS_AND_CURRENT32_WINDOW",
+  "base_commit": "994e06ade",
+  "implementation": {
+    "description": "Recompute two immutable selected-artifact facts on each successful cold build_segments; replace only repeated planned scans. Actual Source authority, Queue/bindings, captured ranges and native retirement remain dynamic.",
+    "sources": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\plan_state.h",
+        "bytes": 60372,
+        "sha256": "848cd9c7078b9fe059ae5cc158af598091c71dcdb8fd2c2a336a4fdb64ec49e1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+        "bytes": 504326,
+        "sha256": "3c4da8e11c627c899b04ce04952a29753e27e36c835191a64179017fe7698ae1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+        "bytes": 259039,
+        "sha256": "a13e62fa1b097cfe7b30eb01d88bbff00ad34fc3449618b1ff1e6d08609dd2dd"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+        "bytes": 111027,
+        "sha256": "3126060f1456be7fcce5941082b29c3fe88e3947b98b0cf0bc39e18472841032"
+      }
+    ],
+    "diff": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\delivery.diff",
+      "bytes": 13406,
+      "sha256": "e5d2f3c41cd04cdc711e872dff0f1e2abfbdbce78ab88239314f90b0e86e0454"
+    },
+    "SDK_CXX_compiles": 9,
+    "unchanged_SDK_objects": 218,
+    "NVCC_compiles": 0,
+    "test_CXX_compiles": 2,
+    "retained_consumer_objects": 3,
+    "downloads": 0,
+    "current_link_base": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\model-link-base.json",
+      "bytes": 98563,
+      "sha256": "a8f0a313e04b3b54bd460b158ad83708114911bb846f8e42dd87de4c6de3018f"
+    },
+    "compiler_dependency_inventory": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\sdk-engine-dependencies.json",
+      "bytes": 103231,
+      "sha256": "1b5905becb157fcafcc597171645d94da5df92c0013cc7f07ef8340727c735e8"
+    }
+  },
+  "checks": {
+    "gtests": {
+      "tests": 20,
+      "failures": 0,
+      "skipped": 0,
+      "groups": [
+        {
+          "name": "source",
+          "process": {
+            "state": "TERMINAL",
+            "pid": 52852,
+            "started": 1793311639.6903214,
+            "seconds": 0.666675329208374,
+            "exit": 0,
+            "timed_out": false
+          },
+          "artifacts": {
+            "results.xml": {
+              "path": ".scratch\\inference-plan-cold-facts-20261030\\test-runs\\source\\attempt1\\results.xml",
+              "bytes": 4805,
+              "sha256": "a0282ea1139baa0ff9a16ca6235e26d3cda63acd20d335f18363ac581f1f97bb"
+            },
+            "report.json": {
+              "path": ".scratch\\inference-plan-cold-facts-20261030\\test-runs\\source\\attempt1\\report.json",
+              "bytes": 2239,
+              "sha256": "0ec4e2736d485a4afc36c7e9124252a0e659a11c4cce4333dc5b8eabe1444a95"
+            },
+            "stdout.log": {
+              "path": ".scratch\\inference-plan-cold-facts-20261030\\test-runs\\source\\attempt1\\stdout.log",
+              "bytes": 3501,
+              "sha256": "4970348fc170e76fd1868b28e735a5e12ce9a2943f6abe43b0b43591b32b9a6e"
+            },
+            "command.json": {
+              "path": ".scratch\\inference-plan-cold-facts-20261030\\test-runs\\source\\attempt1\\command.json",
+              "bytes": 340,
+              "sha256": "17e3f1bf9b6f60420a6262f3e8162bab9f0da5c27079a1fd5853a75d88f70508"
+            },
+            "process.json": {
+              "path": ".scratch\\inference-plan-cold-facts-20261030\\test-runs\\source\\attempt1\\process.json",
+              "bytes": 150,
+              "sha256": "d816faf4b587053d67692b715f787f7d5be21de4750874d3e462d04431363dca"
+            }
+          },
+          "tests": 16,
+          "failures": 0,
+          "skipped": 0,
+          "cases": [
+            "GraphOutputSourceCuda.PendingI32UsesOriginalQueueAndLeasesForCheckedGather",
+            "GraphOutputSourceCuda.PendingI32PreparesRealStoreRegionBindingHooks",
+            "GraphOutputSourceCuda.ProducerCheckedFailureRejectsConsumerPublicationAfterRetirement",
+            "GraphOutputSourceCuda.RetiredSourceDetachesWhileReaderPendingAndProducerReusesNewWriter",
+            "GraphOutputSourceCuda.PendingI32ReusesRealNativeRegionCaptureWithoutRecording",
+            "GraphOutputSourceCuda.CapturedManagedI32ProducerRetainsItsOriginalSubmission",
+            "GraphOutputSourceCuda.TwoOutputsShareOneOriginalSubmissionAndAtomicBundle",
+            "GraphOutputSourceCuda.StoreAndTokenShareOnePendingSubmissionAcrossTakeAndPublication",
+            "GraphOutputSourceCuda.StorePendingReaderPreservesWholeProducerFailure",
+            "GraphOutputSourceCuda.ContinuousStoreRangeReusesExactReadyCaptureAndOriginalOrdinals",
+            "GraphOutputSourceCuda.ContinuousStoreRangePreservesWholeProducerFailure",
+            "GraphOutputSourceCuda.HybridPendingTokenAndStoreReuseOnlyExistingRanges",
+            "GraphOutputSourceCuda.PendingF32FullWriterSharesIntegerSubmission",
+            "GraphOutputSourceCuda.PendingF16FullWriterSharesIntegerSubmission",
+            "GraphOutputSourceCuda.PendingBF16FullWriterSharesIntegerSubmission",
+            "GraphOutputSourceCuda.MixedFullWritersPreserveOriginalProducerFailure"
+          ]
+        },
+        {
+          "name": "executable",
+          "process": {
+            "state": "TERMINAL",
+            "pid": 55232,
+            "started": 1793311640.51847,
+            "seconds": 0.41656494140625,
+            "exit": 0,
+            "timed_out": false
+          },
+          "artifacts": {
+            "results.xml": {
+              "path": ".scratch\\inference-plan-cold-facts-20261030\\test-runs\\executable\\attempt1\\results.xml",
+              "bytes": 1532,
+              "sha256": "7995d7054294c0b69e238714fe22ea3cf09aee60f1b1c83eba10a1fc3f9614d6"
+            },
+            "report.json": {
+              "path": ".scratch\\inference-plan-cold-facts-20261030\\test-runs\\executable\\attempt1\\report.json",
+              "bytes": 584,
+              "sha256": "a91e7d6bd7c25e235fb3f78e30705758b5b8ae9c7c81ee0b05ebeb5a3e9984b0"
+            },
+            "stdout.log": {
+              "path": ".scratch\\inference-plan-cold-facts-20261030\\test-runs\\executable\\attempt1\\stdout.log",
+              "bytes": 1519,
+              "sha256": "7c83165b83add7cdda4a1cb7cac214fed37c8a7fb9100276ff824245fcd91131"
+            },
+            "command.json": {
+              "path": ".scratch\\inference-plan-cold-facts-20261030\\test-runs\\executable\\attempt1\\command.json",
+              "bytes": 582,
+              "sha256": "cd85d7a5d47e4bff94e96795a0a170d282e6a8e2e1aa34f29ff8788ebe8b7753"
+            },
+            "process.json": {
+              "path": ".scratch\\inference-plan-cold-facts-20261030\\test-runs\\executable\\attempt1\\process.json",
+              "bytes": 147,
+              "sha256": "3f89f61c1a88283d8b7888d99defbc8e6b2b2f7c8732a54b211d0e8fbcd6d56b"
+            }
+          },
+          "tests": 4,
+          "failures": 0,
+          "skipped": 0,
+          "cases": [
+            "GraphVariants.FiniteExactFamilyRunsOnlyItsPreparedPoints",
+            "GraphVariants.FiniteExactConstantsAndBudgetsBelongToActualChildren",
+            "GraphCompile.SchedulesInterleavedIndependentBranchesIntoTwoQueuePrefixes",
+            "GraphCompile.MakesWorkspaceSerializationAnExplicitBudgetTradeoff"
+          ]
+        }
+      ]
+    },
+    "finite_consumers": [
+      {
+        "name": "natural",
+        "status": "PASS",
+        "work": {
+          "prompt_tokens": 154,
+          "outputs": 40,
+          "serial_submissions": 23,
+          "auto_submissions": 24,
+          "source_submissions": 22,
+          "successor_submissions": 9,
+          "successor_publications": 8,
+          "successor_discards": 1,
+          "successor_refusals": 0,
+          "ledger_records": 23,
+          "accepted_drafts": 17,
+          "rejected_drafts": 4,
+          "final_versions": 0
+        },
+        "complete_report_equal_to_994e": true,
+        "report": {
+          "path": ".scratch\\inference-plan-cold-facts-20261030\\runs\\natural\\attempt1\\report.json",
+          "bytes": 7117,
+          "sha256": "b64a3319790522ec54f39d16a61d13ef62a81a5c7aa573fe2fe3b27912ef95c8"
+        },
+        "scope": "Internal real consumer asserts compare complete state payloads byte-for-byte with serial. Python verifies report assertions and full non-time equality, not raw tensor payloads independently."
+      },
+      {
+        "name": "ordinary",
+        "status": "PASS",
+        "work": {
+          "fixture": "untrained_GA_H64",
+          "prompt_tokens": 18,
+          "outputs_per_live_member": 14,
+          "in_flight_batches": 2,
+          "control_and_candidate_arms": 16,
+          "synthetic_role_payload_bytes": 65536
+        },
+        "complete_report_equal_to_994e": true,
+        "report": {
+          "path": ".scratch\\inference-plan-cold-facts-20261030\\runs\\ordinary\\attempt1\\report.json",
+          "bytes": 5324,
+          "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+        },
+        "scope": "Untrained GA_H64 synthetic finite continuous-generation fixture, 8 actual cases / 16 control+candidate arms; no trained-model EOS, model-quality or native GPU-fault claim."
+      }
+    ],
+    "complete_non_time_comparison": {
+      "rule": "Recursively drop only dict keys containing any of seconds/per_second/clock_unix/unix_ns/unix_ms; preserve all other fields, lists, embedded sessions, types, counters, cache/source/ledger data. Compare raw stdout JSON with report.json first.",
+      "all_abba_and_correctness_equal_to_current_control_and_994e_warm_anchor": true,
+      "all_finite_equal_to_994e_warm_baselines": true,
+      "allowlisted_differences": []
+    },
+    "original_analysis": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\analysis.json",
+      "bytes": 45087,
+      "sha256": "35e0292d34860c98b7e25d028adebe6b618d0318848242bd57ba5a0187d16e64"
+    },
+    "scope": "16 real CUDA Source cases and4 existing finite/reordered/workspace cases. Extended pending Managed Commands rejection and actual captured reuse; not an exhaustive cross-child cache flag test."
+  },
+  "direct_ABBA": {
+    "order": "A-B-B-A",
+    "samples_per_arm": 2,
+    "summaries": {
+      "decode_output_tokens_per_second": {
+        "control_samples": [
+          122.26362366092222,
+          121.79799358105242
+        ],
+        "candidate_samples": [
+          121.13520996769728,
+          123.03382668595887
+        ],
+        "control_median": 122.03080862098733,
+        "candidate_median": 122.08451832682807,
+        "candidate_vs_control_percent": 0.04401323440177407,
+        "control_range": [
+          121.79799358105242,
+          122.26362366092222
+        ],
+        "candidate_range": [
+          121.13520996769728,
+          123.03382668595887
+        ]
+      },
+      "decode_seconds": {
+        "control_samples": [
+          0.51528,
+          0.5172498999999999
+        ],
+        "candidate_samples": [
+          0.52008,
+          0.5120543000000001
+        ],
+        "control_median": 0.51626495,
+        "candidate_median": 0.51606715,
+        "candidate_vs_control_percent": -0.03831366045669027,
+        "control_range": [
+          0.51528,
+          0.5172498999999999
+        ],
+        "candidate_range": [
+          0.5120543000000001,
+          0.52008
+        ]
+      },
+      "session_seconds": {
+        "control_samples": [
+          0.5882209,
+          0.5880558
+        ],
+        "candidate_samples": [
+          0.5932241,
+          0.5811446
+        ],
+        "control_median": 0.58813835,
+        "candidate_median": 0.58718435,
+        "candidate_vs_control_percent": -0.16220673248055206,
+        "control_range": [
+          0.5880558,
+          0.5882209
+        ],
+        "candidate_range": [
+          0.5811446,
+          0.5932241
+        ]
+      },
+      "startup_to_ready_seconds": {
+        "control_samples": [
+          1.8622,
+          1.8482808
+        ],
+        "candidate_samples": [
+          1.8368711,
+          1.8650864
+        ],
+        "control_median": 1.8552404,
+        "candidate_median": 1.85097875,
+        "candidate_vs_control_percent": -0.2297087752077931,
+        "control_range": [
+          1.8482808,
+          1.8622
+        ],
+        "candidate_range": [
+          1.8368711,
+          1.8650864
+        ]
+      },
+      "prefill_seconds": {
+        "control_samples": [
+          0.0729409,
+          0.0708059
+        ],
+        "candidate_samples": [
+          0.0731441,
+          0.0690903
+        ],
+        "control_median": 0.0718734,
+        "candidate_median": 0.07111719999999999,
+        "candidate_vs_control_percent": -1.0521277691051378,
+        "control_range": [
+          0.0708059,
+          0.0729409
+        ],
+        "candidate_range": [
+          0.0690903,
+          0.0731441
+        ]
+      },
+      "step_sum_seconds": {
+        "control_samples": [
+          0.847392,
+          0.8490678999999999
+        ],
+        "candidate_samples": [
+          0.8545726999999997,
+          0.8407188999999997
+        ],
+        "control_median": 0.8482299499999999,
+        "candidate_median": 0.8476457999999998,
+        "candidate_vs_control_percent": -0.06886693873520144,
+        "control_range": [
+          0.847392,
+          0.8490678999999999
+        ],
+        "candidate_range": [
+          0.8407188999999997,
+          0.8545726999999997
+        ]
+      }
+    },
+    "interpretation": {
+      "samples_per_arm": 2,
+      "decode_tps_change_percent": 0.04401323440177407,
+      "speedup_established": false,
+      "reason": "Approximately0.044% median TPS difference is much smaller than within-arm ranges in this two-sample-per-arm screen. No performance improvement or regression established, no statistical-significance claim, no prior samples or peers pooled."
+    },
+    "original_samples_in_archive": true
+  },
+  "current_peer_window": {
+    "processes": 32,
+    "timing_processes": 24,
+    "independent_memory_processes": 8,
+    "started_unix": 1793311992.856571,
+    "ended_unix": 1793312296.0985992,
+    "table": [
+      {
+        "scenario": "single",
+        "arm": "hyle_auto",
+        "prefill_TPS": {
+          "count": 3,
+          "median": 2297.420474193553,
+          "min": 2182.620107883794,
+          "max": 2304.4095025468214,
+          "samples": [
+            2304.4095025468214,
+            2297.420474193553,
+            2182.620107883794
+          ]
+        },
+        "decode_TPS": {
+          "count": 3,
+          "median": 99.15073461251421,
+          "min": 98.44577559801124,
+          "max": 99.20981742559027,
+          "samples": [
+            99.15073461251421,
+            98.44577559801124,
+            99.20981742559027
+          ]
+        },
+        "combined_output_TPS": {
+          "count": 3,
+          "median": 90.70613592994766,
+          "min": 90.52616779110068,
+          "max": 91.13893190298374,
+          "samples": [
+            91.13893190298374,
+            90.52616779110068,
+            90.70613592994766
+          ]
+        },
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 1233375232,
+          "observed_os_peak_working_set_bytes": 1233498112,
+          "sampled_max_private_commit_bytes": 6244495360,
+          "observed_os_peak_commit_bytes": 6244605952,
+          "sampled_peak_gpu_dedicated_bytes": 4338040832,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4419829760
+        }
+      },
+      {
+        "scenario": "single",
+        "arm": "hyle_mtp",
+        "prefill_TPS": {
+          "count": 3,
+          "median": 2189.8111216809784,
+          "min": 2068.357885010046,
+          "max": 2197.1029628076126,
+          "samples": [
+            2197.1029628076126,
+            2068.357885010046,
+            2189.8111216809784
+          ]
+        },
+        "decode_TPS": {
+          "count": 3,
+          "median": 121.3976453096093,
+          "min": 120.85067364659236,
+          "max": 122.39840252599218,
+          "samples": [
+            121.3976453096093,
+            120.85067364659236,
+            122.39840252599218
+          ]
+        },
+        "combined_output_TPS": {
+          "count": 3,
+          "median": 108.64988931292525,
+          "min": 107.42586314582876,
+          "max": 109.39454733134565,
+          "samples": [
+            108.64988931292525,
+            107.42586314582876,
+            109.39454733134565
+          ]
+        },
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 1331585024,
+          "observed_os_peak_working_set_bytes": 1331630080,
+          "sampled_max_private_commit_bytes": 6614683648,
+          "observed_os_peak_commit_bytes": 6614683648,
+          "sampled_peak_gpu_dedicated_bytes": 4549853184,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4631642112
+        }
+      },
+      {
+        "scenario": "single",
+        "arm": "peer_plain",
+        "prefill_TPS": {
+          "count": 3,
+          "median": 1557.7285081512696,
+          "min": 1528.4874326572258,
+          "max": 1651.4408821696932,
+          "samples": [
+            1557.7285081512696,
+            1528.4874326572258,
+            1651.4408821696932
+          ]
+        },
+        "decode_TPS": {
+          "count": 3,
+          "median": 101.77380432742216,
+          "min": 100.76854409127647,
+          "max": 101.85011543013083,
+          "samples": [
+            101.77380432742216,
+            100.76854409127647,
+            101.85011543013083
+          ]
+        },
+        "combined_output_TPS": {
+          "count": 3,
+          "median": 89.15117908702786,
+          "min": 88.16054807208722,
+          "max": 89.9118989828576,
+          "samples": [
+            89.15117908702786,
+            88.16054807208722,
+            89.9118989828576
+          ]
+        },
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 4372111360,
+          "observed_os_peak_working_set_bytes": 4372316160,
+          "sampled_max_private_commit_bytes": 5014847488,
+          "observed_os_peak_commit_bytes": 5015040000,
+          "sampled_peak_gpu_dedicated_bytes": 4002504704,
+          "sampled_peak_gpu_shared_bytes": 85983232,
+          "sampled_peak_gpu_total_bytes": 4088487936
+        }
+      },
+      {
+        "scenario": "single",
+        "arm": "peer_mtp",
+        "prefill_TPS": {
+          "count": 3,
+          "median": 1501.73137926226,
+          "min": 1478.852410529429,
+          "max": 1525.4411892894218,
+          "samples": [
+            1478.852410529429,
+            1525.4411892894218,
+            1501.73137926226
+          ]
+        },
+        "decode_TPS": {
+          "count": 3,
+          "median": 136.7103836093364,
+          "min": 135.65578915386746,
+          "max": 136.92107108789875,
+          "samples": [
+            136.92107108789875,
+            136.7103836093364,
+            135.65578915386746
+          ]
+        },
+        "combined_output_TPS": {
+          "count": 3,
+          "median": 113.42411634195174,
+          "min": 112.88294215278354,
+          "max": 113.92307273311775,
+          "samples": [
+            113.42411634195174,
+            113.92307273311775,
+            112.88294215278354
+          ]
+        },
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 4531937280,
+          "observed_os_peak_working_set_bytes": 4531978240,
+          "sampled_max_private_commit_bytes": 5456113664,
+          "observed_os_peak_commit_bytes": 5456150528,
+          "sampled_peak_gpu_dedicated_bytes": 4182888448,
+          "sampled_peak_gpu_shared_bytes": 98566144,
+          "sampled_peak_gpu_total_bytes": 4281454592
+        }
+      },
+      {
+        "scenario": "two-turn",
+        "arm": "hyle_auto",
+        "prefill_TPS": {
+          "count": 3,
+          "median": 2673.988838476363,
+          "min": 2658.0645161290327,
+          "max": 2702.0149686382633,
+          "samples": [
+            2702.0149686382633,
+            2658.0645161290327,
+            2673.988838476363
+          ]
+        },
+        "decode_TPS": {
+          "count": 3,
+          "median": 100.96219374500753,
+          "min": 100.54069348661483,
+          "max": 101.07720220550459,
+          "samples": [
+            101.07720220550459,
+            100.54069348661483,
+            100.96219374500753
+          ]
+        },
+        "combined_output_TPS": {
+          "count": 3,
+          "median": 93.87263946980732,
+          "min": 93.46654945377199,
+          "max": 94.0532620683929,
+          "samples": [
+            94.0532620683929,
+            93.46654945377199,
+            93.87263946980732
+          ]
+        },
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 1266130944,
+          "observed_os_peak_working_set_bytes": 1266130944,
+          "sampled_max_private_commit_bytes": 6450262016,
+          "observed_os_peak_commit_bytes": 6450262016,
+          "sampled_peak_gpu_dedicated_bytes": 4478550016,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4560338944
+        }
+      },
+      {
+        "scenario": "two-turn",
+        "arm": "hyle_mtp",
+        "prefill_TPS": {
+          "count": 3,
+          "median": 2499.01535560018,
+          "min": 2451.542369237189,
+          "max": 2531.421577542604,
+          "samples": [
+            2531.421577542604,
+            2451.542369237189,
+            2499.01535560018
+          ]
+        },
+        "decode_TPS": {
+          "count": 3,
+          "median": 133.28360232996664,
+          "min": 131.4963364703211,
+          "max": 134.0023382344511,
+          "samples": [
+            133.28360232996664,
+            131.4963364703211,
+            134.0023382344511
+          ]
+        },
+        "combined_output_TPS": {
+          "count": 3,
+          "median": 119.91548955873348,
+          "min": 118.05453141712384,
+          "max": 120.30857646004796,
+          "samples": [
+            119.91548955873348,
+            118.05453141712384,
+            120.30857646004796
+          ]
+        },
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 1376382976,
+          "observed_os_peak_working_set_bytes": 1376403456,
+          "sampled_max_private_commit_bytes": 6836387840,
+          "observed_os_peak_commit_bytes": 6836387840,
+          "sampled_peak_gpu_dedicated_bytes": 4694556672,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4776345600
+        }
+      },
+      {
+        "scenario": "two-turn",
+        "arm": "peer_plain",
+        "prefill_TPS": {
+          "count": 3,
+          "median": 2408.7688540730414,
+          "min": 2353.8642604943116,
+          "max": 2565.413903381033,
+          "samples": [
+            2353.8642604943116,
+            2565.413903381033,
+            2408.7688540730414
+          ]
+        },
+        "decode_TPS": {
+          "count": 3,
+          "median": 101.89681734186786,
+          "min": 100.98803163586345,
+          "max": 102.25824345496517,
+          "samples": [
+            100.98803163586345,
+            102.25824345496517,
+            101.89681734186786
+          ]
+        },
+        "combined_output_TPS": {
+          "count": 3,
+          "median": 93.78482814992647,
+          "min": 92.82451286529619,
+          "max": 94.63095737917789,
+          "samples": [
+            92.82451286529619,
+            94.63095737917789,
+            93.78482814992647
+          ]
+        },
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 4375482368,
+          "observed_os_peak_working_set_bytes": 4375908352,
+          "sampled_max_private_commit_bytes": 4997402624,
+          "observed_os_peak_commit_bytes": 4997824512,
+          "sampled_peak_gpu_dedicated_bytes": 4002504704,
+          "sampled_peak_gpu_shared_bytes": 85983232,
+          "sampled_peak_gpu_total_bytes": 4088487936
+        }
+      },
+      {
+        "scenario": "two-turn",
+        "arm": "peer_mtp",
+        "prefill_TPS": {
+          "count": 3,
+          "median": 2408.8852785926497,
+          "min": 2272.57850876193,
+          "max": 2423.3412464443936,
+          "samples": [
+            2408.8852785926497,
+            2423.3412464443936,
+            2272.57850876193
+          ]
+        },
+        "decode_TPS": {
+          "count": 3,
+          "median": 139.9660660048864,
+          "min": 139.7810097513895,
+          "max": 140.16739101317884,
+          "samples": [
+            140.16739101317884,
+            139.9660660048864,
+            139.7810097513895
+          ]
+        },
+        "combined_output_TPS": {
+          "count": 3,
+          "median": 124.54656051537367,
+          "min": 123.38789616792862,
+          "max": 124.61055550704181,
+          "samples": [
+            124.61055550704181,
+            124.54656051537367,
+            123.38789616792862
+          ]
+        },
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 4537094144,
+          "observed_os_peak_working_set_bytes": 4537094144,
+          "sampled_max_private_commit_bytes": 5462650880,
+          "observed_os_peak_commit_bytes": 5462650880,
+          "sampled_peak_gpu_dedicated_bytes": 4182888448,
+          "sampled_peak_gpu_shared_bytes": 98566144,
+          "sampled_peak_gpu_total_bytes": 4281454592
+        }
+      }
+    ],
+    "protocol": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\peer-window\\plan.json",
+      "bytes": 4199,
+      "sha256": "aff5d3210d6e8310d083e442f3a4245f807752d275e2e1a3002378b6ef575753"
+    },
+    "binding": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\peer-window\\binding.json",
+      "bytes": 7798,
+      "sha256": "980d7687df841378f550a91317cb749222f1c411fa41ebad394d57132dc0468a"
+    },
+    "full_summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\peer-window\\summary.json",
+      "bytes": 1671161,
+      "sha256": "49db54871c890e4b7f964e7f687df77af4a8fd75462b2f60079c40a2fa33c58b"
+    },
+    "limits": [
+      "Three timing samples/one independent memory sample per arm/scenario; no significance claim.",
+      "No ready sample or unsupported OS/GPU counter becomes zero; preserve raw null/unknown and measured sampling gaps.",
+      "Memory sampler times are not TPS samples. Dedicated/shared/WS/commit are separate quantities; sampled maxima are lower bounds.",
+      "Compare this current window internally; no old18:01 sample pooling or causal gain attribution across windows."
+    ],
+    "independent_offline_review": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\window-analysis.json",
+      "bytes": 76994,
+      "sha256": "ef7d17594ee511adc8843b7de52eeb27f698ec467f14c2d60661f48e91beb1cb"
+    },
+    "frozen_peer_not_latest_upstream": true,
+    "first_cross_engine_output_difference_1based": 19,
+    "actual_work_and_complete_outputs_in_archive": true,
+    "causal_scope": "This refresh includes preceding994e warmth retention. Current SDK-only A/B is approximately+0.044% with overlapping ranges, so no current-slice speedup is established."
+  },
+  "research": {
+    "provider_naming_audit": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\provider-naming-audit.json",
+      "bytes": 8932,
+      "sha256": "e81ac78434050d0b751130e03412649b0e5b8be6701522a638bab0cb06d5b8b7"
+    }
+  },
+  "cleanup": {
+    "script": {
+      "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+      "bytes": 1419,
+      "sha256": "1f2488f76545e13c9f64df27ce9ada585852733a1e4925c804534171382d933d"
+    },
+    "manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\cleanup-targets.json",
+      "bytes": 3930,
+      "sha256": "04e0fa6d30c07856956de0ee14b11495e9bbff5092340ff0cfdd3bdba9b23e56"
+    },
+    "result": {
+      "status": "REMOVED_EXACT_FLAT_BATCH_IMAGES",
+      "bytes": 716168636.0,
+      "files": 16,
+      "targets": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\bin\\candidate.exe",
+          "bytes": 142985216,
+          "sha256": "398f510bad8bc3355c8fbbe8fb4a483ee8fc3802f838c2e0e5c8d74223aaca1a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\bin\\candidate.exp",
+          "bytes": 24985,
+          "sha256": "d06a8c29cb0ad75d600fe95d7a6b950cf361fe8908bfeb56589a924c4a5f1846"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\bin\\candidate.lib",
+          "bytes": 41826,
+          "sha256": "a17fe4c1ccde457403d9126a084aa4f236618e410d072f5513aca0806f2713a6"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\bin\\control.exe",
+          "bytes": 142985216,
+          "sha256": "b5a415801f51d4a5918e0629e36d22cd372c7c6377a64083dc1c3db031d4ad0b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\bin\\control.exp",
+          "bytes": 24981,
+          "sha256": "e1269ec0c865ef7acafc8e235930a7b40247603e075e51ed97e41b2f09f567eb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\bin\\control.lib",
+          "bytes": 41650,
+          "sha256": "6e6021240d599850ba1dccf0341a4d8a81278adfcfef859a93c118a266481a09"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\bin\\gtest.exe",
+          "bytes": 142611968,
+          "sha256": "c2f7e90d43c71ed2650ebf4dc232495fb7d9c7c69d8184d53bf10487b7a52966"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\bin\\gtest.exp",
+          "bytes": 24977,
+          "sha256": "46c3cb370349864ac221dba3e14e67e0d4295ebe1fb66ad2939972e5b87d6321"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\bin\\gtest.lib",
+          "bytes": 41474,
+          "sha256": "10ae5aadb7480c6fe8f6f4f9f7e1a41ca864baac53b79f8cbdaea6e7531d90cb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\bin\\hyle_ggml_cpu_gdn_scale_v3.dll",
+          "bytes": 1206784,
+          "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\bin\\natural.exe",
+          "bytes": 143087616,
+          "sha256": "84f0b9e3885144b445cd803df36b6e8b3ec7f6225ebfead1cb0ea05be633f517"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\bin\\natural.exp",
+          "bytes": 24981,
+          "sha256": "ae4eed95072cff9ea1dd067e1c283890b9037e37c0d0150c433f531b370bb26d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\bin\\natural.lib",
+          "bytes": 41650,
+          "sha256": "58dc8cacc5b9fce9f3b071d7889ad9e8f2fcb6eccb176279b97d0075250b2f5e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\bin\\ordinary.exe",
+          "bytes": 142958592,
+          "sha256": "9e597ba7322440f14a0bafe75c5a42cb4c221d75671a8551471a5f7a26d1b278"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\bin\\ordinary.exp",
+          "bytes": 24984,
+          "sha256": "f0ad66ca0d01e9a624147c7111d7554bed44ecbf2cb440e338d8fc1d10d1fa56"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-plan-cold-facts-20261030\\bin\\ordinary.lib",
+          "bytes": 41736,
+          "sha256": "b48e083b9ce39eb6f82dd55dba602a320b716d6c6113e731c1094b8446220b32"
+        }
+      ]
+    }
+  },
+  "limits": [
+    "Only immutable plan topology is cached; no Source identity, live permission, lease generation or real capture success is cached.",
+    "Not a complete constant-time prepare implementation and not a whole architecture/MTP completion claim.",
+    "Finite natural consumer checks complete serial/auto state and ledger; ordinary fixture is synthetic, not trained-model EOS or injected native GPU failure.",
+    "No new Nsight, CPU/Apple/Vulkan or larger-model native runs; no model/download traffic.",
+    "The vendor provider name denotes implementation provenance. Admission is operation/format/device-based, not a model allowlist; no rename/provider-identity churn was made."
+  ],
+  "evidence_archive": "inference-plan-cold-facts-2026-10-30.zip"
+}

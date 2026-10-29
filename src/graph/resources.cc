@@ -2691,13 +2691,7 @@ Status check_output_consumer(Invocation &invocation, OutputBindingBundle &bundle
   if (state->progress || plan.segments.size() != 1 || plan.required_queue_count != 1 ||
       !shared_lane(plan, plan.segments.front().lane))
     return Status::Unimplemented("output relay consumer requires one original shared segment");
-  bool commands = !plan.segments.front().blocks_host;
-  for (const auto &step : plan.steps) {
-    const auto runtime = step.runtime_properties();
-    if (step.emits_command() && (runtime.mode != compute::ProviderRuntimeMode::kSharedQueue ||
-        runtime.replay_class != compute::ProviderReplayClass::kPrepared || runtime.blocks_host))
-      commands = false;
-  }
+  bool commands = plan.source_commands_prepared;
   if (!bundle.all_ready) {
     const bool retained = std::ranges::any_of(state->captured_ranges,
         [](const auto &range) { return range.commands.valid(); }) ||

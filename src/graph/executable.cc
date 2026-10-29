@@ -6582,8 +6582,51 @@ Status schedule_steps(detail::PlanState &plan, const detail::GraphState &graph,
   return Status::Ok();
 }
 
+template <class Range>
+ReplayRoute shared_replay_coverage(const detail::PlanState &plan,
+    const detail::PlanSegment &segment, std::span<const Range> ranges) noexcept {
+  std::size_t cursor = segment.step_begin;
+  if (cursor > plan.steps.size() || segment.step_count > plan.steps.size() - cursor)
+    return ReplayRoute::kUnprepared;
+  const std::size_t end = cursor + segment.step_count;
+  std::size_t captured_commands = 0, gap_commands = 0;
+  const auto gap = [&](std::size_t stop) noexcept {
+    while (cursor < stop) {
+      const auto &step = plan.steps[cursor++];
+      if (!step.emits_command()) continue;
+      const auto runtime = step.runtime_properties();
+      if (runtime.mode != compute::ProviderRuntimeMode::kSharedQueue ||
+          runtime.replay_class != compute::ProviderReplayClass::kPrepared || runtime.blocks_host)
+        return false;
+      ++gap_commands;
+    }
+    return true;
+  };
+  for (const auto &range : ranges) {
+    if (!range.step_count || range.step_begin < cursor || range.step_begin > end ||
+        range.step_count > end - range.step_begin || !gap(range.step_begin))
+      return ReplayRoute::kUnprepared;
+    const auto before = captured_commands;
+    const std::size_t range_end = std::size_t{range.step_begin} + range.step_count;
+    while (cursor < range_end) {
+      const auto &step = plan.steps[cursor++];
+      if (!step.emits_command()) continue;
+      if (step.runtime_properties().mode != compute::ProviderRuntimeMode::kSharedQueue)
+        return ReplayRoute::kUnprepared;
+      ++captured_commands;
+    }
+    if (captured_commands == before) return ReplayRoute::kUnprepared;
+  }
+  if (!gap(end) || captured_commands + gap_commands != plan.command_count)
+    return ReplayRoute::kUnprepared;
+  return !captured_commands ? ReplayRoute::kCommands
+      : gap_commands ? ReplayRoute::kHybrid : ReplayRoute::kCaptured;
+}
+
 Status build_segments(detail::PlanState &plan,
                       const detail::GraphState &graph) noexcept {
+  plan.source_commands_prepared = false;
+  plan.planned_shared_capture_route = ReplayRoute::kUnprepared;
   using Ordinals = container::SmallVector<std::uint32_t, 16, mem::AllocatorRef>;
   using Edges = container::SmallVector<std::uint64_t, 32, mem::AllocatorRef>;
   if (plan.steps.size() >= detail::kNoNode) {
@@ -6963,6 +7006,20 @@ Status build_segments(detail::PlanState &plan,
         return plan_allocation_failure();
       plan.capture_command_count += commands;
     }
+  }
+  if (plan.segments.size() == 1 && plan.required_queue_count == 1 &&
+      shared_lane(plan, plan.segments.front().lane)) {
+    const auto &segment = plan.segments.front();
+    bool commands = !segment.blocks_host;
+    for (const auto &step : plan.steps) {
+      const auto runtime = step.runtime_properties();
+      if (step.emits_command() && (runtime.mode != compute::ProviderRuntimeMode::kSharedQueue ||
+          runtime.replay_class != compute::ProviderReplayClass::kPrepared || runtime.blocks_host))
+        commands = false;
+    }
+    plan.source_commands_prepared = commands;
+    plan.planned_shared_capture_route = shared_replay_coverage(plan, segment,
+        std::span<const detail::PlanCaptureRange>(plan.capture_ranges.data(), plan.capture_ranges.size()));
   }
   return Status::Ok();
 }
@@ -9613,47 +9670,6 @@ Status detail::RegionAccess::reset_configuration(Invocation &invocation) noexcep
 }
 
 namespace {
-template <class Range>
-ReplayRoute shared_replay_coverage(const detail::PlanState &plan,
-    const detail::PlanSegment &segment, std::span<const Range> ranges) noexcept {
-  std::size_t cursor = segment.step_begin;
-  if (cursor > plan.steps.size() || segment.step_count > plan.steps.size() - cursor)
-    return ReplayRoute::kUnprepared;
-  const std::size_t end = cursor + segment.step_count;
-  std::size_t captured_commands = 0, gap_commands = 0;
-  const auto gap = [&](std::size_t stop) noexcept {
-    while (cursor < stop) {
-      const auto &step = plan.steps[cursor++];
-      if (!step.emits_command()) continue;
-      const auto runtime = step.runtime_properties();
-      if (runtime.mode != compute::ProviderRuntimeMode::kSharedQueue ||
-          runtime.replay_class != compute::ProviderReplayClass::kPrepared || runtime.blocks_host)
-        return false;
-      ++gap_commands;
-    }
-    return true;
-  };
-  for (const auto &range : ranges) {
-    if (!range.step_count || range.step_begin < cursor || range.step_begin > end ||
-        range.step_count > end - range.step_begin || !gap(range.step_begin))
-      return ReplayRoute::kUnprepared;
-    const auto before = captured_commands;
-    const std::size_t range_end = std::size_t{range.step_begin} + range.step_count;
-    while (cursor < range_end) {
-      const auto &step = plan.steps[cursor++];
-      if (!step.emits_command()) continue;
-      if (step.runtime_properties().mode != compute::ProviderRuntimeMode::kSharedQueue)
-        return ReplayRoute::kUnprepared;
-      ++captured_commands;
-    }
-    if (captured_commands == before) return ReplayRoute::kUnprepared;
-  }
-  if (!gap(end) || captured_commands + gap_commands != plan.command_count)
-    return ReplayRoute::kUnprepared;
-  return !captured_commands ? ReplayRoute::kCommands
-      : gap_commands ? ReplayRoute::kHybrid : ReplayRoute::kCaptured;
-}
-
 Result<bool> unchanged_prepared_full_views(
     const detail::InvocationState &state, std::size_t root,
     compute::ConstTensorView replacement) noexcept {
@@ -9702,8 +9718,7 @@ Result<ReplayRoute> reusable_capture_tuple(const detail::InvocationState &state,
   if (!shared_lane(plan, lane) || lane.ordinal() >= state.queues.size() ||
       !state.queues[lane.ordinal()].valid() || !state.queues[lane.ordinal()].is_open())
     return ReplayRoute::kUnprepared;
-  const auto route = shared_replay_coverage(plan, plan.segments.front(),
-      std::span<const detail::PlanCaptureRange>(plan.capture_ranges.data(), plan.capture_ranges.size()));
+  const auto route = plan.planned_shared_capture_route;
   if (route != ReplayRoute::kCaptured && route != ReplayRoute::kHybrid)
     return ReplayRoute::kUnprepared;
   for (const auto &candidate : plan.capture_ranges) {
