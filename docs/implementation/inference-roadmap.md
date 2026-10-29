@@ -210,8 +210,12 @@ K1完整接受的[投机后继组件](../evidence/correctness/inference-mtp-k1-s
 [冷存储检查](../evidence/correctness/inference-ledger-storage-2026-10-29.json)以预留宽度8覆盖CPU／CUDA实际Verify、撤回重备和完整记录值，
 另通过真实Qwen K1自然流水及CPU实际失败／主机恢复／同键重试。13项完整状态比较保持原F32 GDN预算，未全体逐字节相同；
 1次CXX／链接及4个有限进程，无SDK重编或下载。默认K1使用内联容量，无相同堆分配；该成本尚未测量，不预设为当前decode主因。
-随后复查发现自然入口把异长Verify每成员按批次最大行数统计，[1,3]被算成6而非真实活动4，提交后触发观察错误；
-该缺口仍待按真实逐成员目标行数修正并补实际BatchObserver检查，不能用无观察者的组件通过代签自然入口。
+随后[逐成员实际行数](../evidence/correctness/inference-batch-member-rows-2026-10-29.json)已修复自然入口按批次最大宽度逐成员计数的错误。
+PreparedGenerationCall分开规划上界与实际提交行数，报告不按接受前缀缩小已执行工作；CPU／CUDA原生命令行用输出额度3／4自然形成Verify[2,3]，
+5个活动行、6个物理行、顶层与逐请求账簿一致，完整输出7个token。typed BatchObserver另核对[1,3]，
+13项完整状态比较保持原数值预算，真实Qwen K1接力回归通过；共1次CXX／链接和5个有限进程，无SDK重编或下载，无新性能结论。
+继续复查确认逐条件bias／mask尚无真实前缀输入：现有history推进与episode快照不能代签动态约束，原98%估计偏高。
+先补逐行输入和q／p共用，再接可选自然请求提供者及终止／失败／缓存边界；职责与有限范围见[架构中的待实现合同](../architecture/inference-design.md)。
 
 ## 当前实现概况
 

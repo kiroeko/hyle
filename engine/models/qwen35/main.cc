@@ -6433,6 +6433,12 @@ struct PreparedGenerationCall final {
     if (generation && role == GraphRole::kVerify && !verification_ids.empty()) return verification_ids;
     return generation ? std::span(&pending, 1) : prompt;
   }
+  // Actual submitted target rows, independent of the cold proposal bound or
+  // accepted prefix. Verify has no actual rows until its proposals are ready.
+  std::size_t actual_target_rows() const noexcept {
+    if (generation && role == GraphRole::kVerify) return verification_ids.size();
+    return generation && drafts_token(role) ? 2 : ids().size();
+  }
   std::size_t planned_rows() const noexcept { return role == GraphRole::kVerify ? maximum + 1 : drafts_token(role) ? 2 : ids().size(); }
 };
 
@@ -6478,7 +6484,8 @@ template<class Observer>
 void observe_generation_batch(Observer &observer, std::span<const PreparedGenerationCall> members,
     std::size_t rows, double seconds, std::size_t active_rows = 0, std::size_t physical_rows = 0) {
   if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<Observer>>) {
-    if (!active_rows) active_rows = cache::multiply(rows, members.size());
+    if (!active_rows)
+      for (const auto &member : members) active_rows = cache::add(active_rows, member.actual_target_rows());
     if (!physical_rows) physical_rows = cache::multiply(rows, members.size());
     observer(GenerationBatchFacts{members[0].role, members[0].completion, members[0].generation,
         rows, active_rows, physical_rows, members, seconds});
@@ -8114,7 +8121,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       if (!request_loop.matches(key) || key.slot >= requests.size() || &requests[key.slot] != member.request)
         throw std::runtime_error("actual batch fact lost its original request identity");
       batch.members.push_back(key.slot);
-      const auto member_rows = facts.generation ? facts.input_rows : member.ids().size();
+      const auto member_rows = member.actual_target_rows();
       batch.input_rows.push_back(member_rows); rows = cache::add(rows, member_rows);
     }
     if (rows - actual_fresh_target_rows != facts.active_rows || facts.active_rows > facts.physical_rows)

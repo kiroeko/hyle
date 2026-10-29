@@ -297,7 +297,27 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       call.verification_ids = proposals[member].ids;
       call.draft_log_probabilities = std::move(proposals[member].probabilities);
     }
-    std::size_t submissions = 0;
+    std::size_t submissions = 0, batch_observer_calls = 0;
+    std::array<std::size_t,2> batch_member_target_rows{};
+    const auto observe_batch = [&](const q::GenerationBatchFacts &facts) {
+      require(++batch_observer_calls == 1 && submissions == 1 && facts.members.size() == 2 &&
+          facts.role == q::GraphRole::kVerify && facts.completion == q::TextCompletion::kEmitNext &&
+          facts.generation && facts.input_rows == 3 && facts.active_rows == 4 && facts.physical_rows == 6 &&
+          std::isfinite(facts.step_seconds) && facts.step_seconds > 0,
+          "Engine observer did not report the one retired physical Verify3 batch with four actual target rows");
+      for (std::size_t member = 0; member < facts.members.size(); ++member) {
+        const auto &call = facts.members[member]; const auto &record = owners[member].ledger->records[0];
+        batch_member_target_rows[member] = call.actual_target_rows();
+        require(call.request == &owners[member] && call.planned_rows() == 3 &&
+            batch_member_target_rows[member] == lengths[member] && call.verification_ids == proposals[member].ids &&
+            call.disposition == q::EvaluationDisposition::kPublished && call.draft_log_probabilities.empty() &&
+            owners[member].ledger->committed_count == 1 && record.committed && record.requests == 2 &&
+            record.member_index == member && record.verified_rows == lengths[member] &&
+            record.verification_inputs.size() == lengths[member] &&
+            record.after == q::generation_boundary(*sessions[member]->head),
+            "actual batch observer charged the maximum verifier width instead of the member's published target rows");
+      }
+    };
     const auto drafts_before = model.draft_program_graph_calls;
     q::execute_generation_calls(model,calls,false,nullptr,owners,[&] {
       // Borrow the exact original q wrappers for the observation only; their
@@ -313,8 +333,9 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       // The original Call owns q until retirement; inspect borrows metadata.
       inspect(lengths,proposals,true,false); ++submissions; ++target_submissions; ++bounded_submissions;
       require(submissions == 1,"Engine regrouped unequal verifier lengths instead of one bounded B2");
-    });
-    require(submissions == 1 && model.draft_program_graph_calls == drafts_before+2,
+    },nullptr,observe_batch);
+    require(batch_observer_calls == 1 && batch_member_target_rows == lengths && submissions == 1 &&
+        model.draft_program_graph_calls == drafts_before+2,
         "Engine varlen verifier split its batch or regenerated an already supplied real proposal");
     for (std::size_t member = 0; member < 2; ++member) {
       const auto &request = owners[member]; const auto &record = request.ledger->records[0];
@@ -372,6 +393,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       << ",\"numerically_equivalent\":" << (equivalent ? "true" : "false")
       << ",\"old_checkpoints_unchanged\":true,\"accepted_prefixes_1_2_3\":true,\"fixed_carrier_reused\":true,"
       "\"engine_unequal_lengths_one_submission\":true,\"original_q_identity_and_release\":true,"
+      "\"batch_observer_calls\":1,\"batch_member_target_rows\":[1,3],\"batch_active_rows\":4,\"batch_physical_rows\":6,"
       "\"natural_R1_results_equal\":true,\"ledger_reserved_width\":8,\"ledger_record_storage_checks\":"
       << ledger_storage_checks << ",\"ledger_cold_storage_reused\":true,\"ledger_host_prepare_withdraw_reprepare\":true,"
       "\"full_request_history_import_coverage\":false,\"synthetic_untrained\":true,"

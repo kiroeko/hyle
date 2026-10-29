@@ -1,0 +1,384 @@
+{
+  "schema": "hyle.inference-batch-member-rows.v1",
+  "status": "PASS_FINITE_MEMBER_ROW_ACCOUNTING",
+  "product_sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 622865,
+      "sha256": "6d71e9ac4f805270878cf81a2ef65a5ee4322f8c51ab45a9c7e240168475a079"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_varlen_verify_case.h",
+      "bytes": 28725,
+      "sha256": "162b68205f9e9bd7847e3ba72d9e5bb2b562d4b738f7f374a1f51dd6c2c92df6"
+    }
+  ],
+  "source_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-member-rows-20261029\\source-freeze.json",
+    "bytes": 47910,
+    "sha256": "2f3ebaeb754cb5bb6899135494253ebf56bf2631df94af208d35c3b451ac3474"
+  },
+  "frozen_project_files": 240,
+  "actual_compiled_project_files": 226,
+  "image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-member-rows-20261029\\bin\\tiny.exe",
+    "bytes": 144843264,
+    "sha256": "f2f04da6c8095c0771a6df204c753edf92cb25ca4de9b67e02fc18df37304e8d"
+  },
+  "object": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-member-rows-20261029\\compile\\tiny\\unit.obj",
+    "bytes": 52985970,
+    "sha256": "5fdd1e28c9b8297b2d050b64901fb81f5557748e783908c3a63b2c02fbf679fc"
+  },
+  "CXX": {
+    "pid": 14068,
+    "exit": 0,
+    "started": 1793242423.1726196,
+    "seconds": 76.6369411945343,
+    "state": "TERMINAL",
+    "timed_out": false
+  },
+  "link": {
+    "pid": 7792,
+    "exit": 0,
+    "started": 1793242520.8504207,
+    "seconds": 1.8580148220062256,
+    "state": "TERMINAL",
+    "timed_out": false
+  },
+  "native_processes": {
+    "cli-cpu": {
+      "process": {
+        "pid": 7868,
+        "exit": 0,
+        "started": 1793242535.223246,
+        "seconds": 0.752230167388916,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "status": "PASS",
+        "backend": "cpu",
+        "actual_cli": true,
+        "natural_acceptance": true,
+        "session_output_limits": [
+          3,
+          4
+        ],
+        "unequal_verify_batches": [
+          1
+        ],
+        "all_batch_members_match_ledger": true,
+        "all_active_rows_sum": true,
+        "active_target_rows": 15,
+        "verified_target_rows": 9,
+        "prefill_target_rows": 6,
+        "final_versions": 0,
+        "quality_claim": false,
+        "performance_claim": false
+      },
+      "report_member": "records/runs/cli-cpu/report.json"
+    },
+    "cli-cuda": {
+      "process": {
+        "pid": 52132,
+        "exit": 0,
+        "started": 1793242544.4254107,
+        "seconds": 0.8562760353088379,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "status": "PASS",
+        "backend": "cuda",
+        "actual_cli": true,
+        "natural_acceptance": true,
+        "session_output_limits": [
+          3,
+          4
+        ],
+        "unequal_verify_batches": [
+          1
+        ],
+        "all_batch_members_match_ledger": true,
+        "all_active_rows_sum": true,
+        "active_target_rows": 15,
+        "verified_target_rows": 9,
+        "prefill_target_rows": 6,
+        "final_versions": 0,
+        "quality_claim": false,
+        "performance_claim": false
+      },
+      "report_member": "records/runs/cli-cuda/report.json"
+    },
+    "varlen-cpu": {
+      "process": {
+        "pid": 53004,
+        "exit": 0,
+        "started": 1793242552.9878259,
+        "seconds": 0.45754265785217285,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "batch_observer_calls": 1,
+        "batch_member_target_rows": [
+          1,
+          3
+        ],
+        "batch_active_rows": 4,
+        "batch_physical_rows": 6,
+        "target_submissions": 11,
+        "bounded_target_submissions": 3,
+        "ledger_reserved_width": 8,
+        "ledger_record_storage_checks": 24,
+        "ledger_cold_storage_reused": true,
+        "ledger_host_prepare_withdraw_reprepare": true,
+        "natural_rng_draws": [
+          1,
+          5
+        ],
+        "natural_processed_target": [
+          1,
+          3
+        ],
+        "natural_processed_draft": [
+          2,
+          4
+        ],
+        "final_versions": 0
+      },
+      "report_member": "records/runs/varlen-cpu/report.json"
+    },
+    "varlen-cuda": {
+      "process": {
+        "pid": 12528,
+        "exit": 0,
+        "started": 1793242561.087003,
+        "seconds": 0.8428668975830078,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "batch_observer_calls": 1,
+        "batch_member_target_rows": [
+          1,
+          3
+        ],
+        "batch_active_rows": 4,
+        "batch_physical_rows": 6,
+        "target_submissions": 11,
+        "bounded_target_submissions": 3,
+        "ledger_reserved_width": 8,
+        "ledger_record_storage_checks": 24,
+        "ledger_cold_storage_reused": true,
+        "ledger_host_prepare_withdraw_reprepare": true,
+        "natural_rng_draws": [
+          1,
+          5
+        ],
+        "natural_processed_target": [
+          1,
+          3
+        ],
+        "natural_processed_draft": [
+          2,
+          4
+        ],
+        "final_versions": 0
+      },
+      "report_member": "records/runs/varlen-cuda/report.json"
+    },
+    "natural-cuda": {
+      "process": {
+        "pid": 12092,
+        "exit": 0,
+        "started": 1793242590.7807386,
+        "seconds": 3.292484760284424,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "outputs": 40,
+        "ledger_records": 23,
+        "resident_capacity": 1,
+        "state_slots": 5,
+        "hidden_slots": 6,
+        "successor_submissions": 3,
+        "successor_publications": 2,
+        "successor_discards": 1,
+        "successor_refusals": 0,
+        "accepted_drafts": 17,
+        "rejected_drafts": 4,
+        "final_versions": 0
+      },
+      "report_member": "records/runs/natural-cuda/report.json"
+    }
+  },
+  "actual_process_counts": {
+    "CXX": 1,
+    "link": 1,
+    "native": 5,
+    "failed_native": 0
+  },
+  "SDK": {
+    "retained_inputs": 227,
+    "objects": 202,
+    "libraries": 25,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "actual_cli": {
+    "backends": [
+      "cpu",
+      "cuda"
+    ],
+    "session_output_limits": [
+      3,
+      4
+    ],
+    "maximum_drafts": 2,
+    "active_sequences": 2,
+    "resident_sessions": 2,
+    "capacity": 16,
+    "prefix_cache": false,
+    "natural_acceptance": true,
+    "unequal_verify_input_rows": [
+      2,
+      3
+    ],
+    "max_rows": 3,
+    "active_rows": 5,
+    "physical_rows": 6,
+    "all_batch_member_rows_match_original_ledger": true
+  },
+  "typed_batch_observer": {
+    "backends": [
+      "cpu",
+      "cuda"
+    ],
+    "input_rows": [
+      1,
+      3
+    ],
+    "max_rows": 3,
+    "active_rows": 4,
+    "physical_rows": 6
+  },
+  "natural_K1_regression": {
+    "backend": "cuda",
+    "outputs": 40,
+    "resident_sessions": 1,
+    "active_sequences": 1,
+    "in_flight_batches": 2,
+    "state_slots": 5,
+    "hidden_slots": 6,
+    "actual_RequestLoop": true,
+    "controlled_acceptance": false
+  },
+  "explicit_state_comparisons": {
+    "total": 13,
+    "numerically_equivalent": 13,
+    "F32_GDN_absolute_budget": 3e-06
+  },
+  "ledger_storage": {
+    "reserved_width": 8,
+    "checks_per_backend": 24,
+    "total_checks": 48,
+    "cold_buffers_reused": true
+  },
+  "fixtures": {
+    "varlen": {
+      "directory": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input",
+      "manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input\\weights.tsv",
+        "bytes": 7861,
+        "sha256": "32901e43a5a0644169b433f4d57b38a37f0d9cd6475230427191b5d6d3a18515"
+      },
+      "prompt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input\\prompt.ids",
+        "bytes": 7,
+        "sha256": "d0bd45d1262e6c4df3e45026a6f9852c04a3b806be64f4d614ddd37a8561be0a"
+      },
+      "local_weight_sources": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "bytes": 298628,
+          "mtime_ns": 1792846969164659000,
+          "file_id": 1125899912087899
+        }
+      ]
+    },
+    "natural": {
+      "directory": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original",
+      "manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\weights.tsv",
+        "bytes": 56735,
+        "sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1"
+      },
+      "prompt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\prompt.ids",
+        "bytes": 733,
+        "sha256": "b6a10feefb0af4687ee536285c9666bfbdf093fc9e484ab0461834345a5993a4"
+      },
+      "local_weight_sources": [
+        {
+          "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+          "bytes": 4548221488,
+          "mtime_ns": 1789652326160346900,
+          "file_id": 3096224748050030
+        }
+      ]
+    }
+  },
+  "cli_inputs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-member-rows-20261029\\cases\\prompt.ids",
+      "bytes": 6,
+      "sha256": "1def07dbe06eeb097aafec8a40329937cd20c93a83634b8221ea2b41a894310c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-member-rows-20261029\\cases\\short.schedule",
+      "bytes": 31,
+      "sha256": "898533c53ad9337329b1de08924439c7ed6567f0f316e1b5edefbc29feecd2a5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-member-rows-20261029\\cases\\long.schedule",
+      "bytes": 31,
+      "sha256": "e75e2ab525912d8f91e2d57e1eb96e14ef42beb60756181f1d93e33d521b443e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-member-rows-20261029\\cases\\sessions.txt",
+      "bytes": 44,
+      "sha256": "19e16cd3a363fbe10365575691de157835c9cf9d4c2790a27a6d84353dfbbc07"
+    }
+  ],
+  "limits": [
+    "Finite synthetic untrained CPU/CUDA two-member multi-draft consumers; no arbitrary-model quality claim.",
+    "Actual natural CLI acceptance is unchanged; separate controlled prefix tests preserve their stated state semantics.",
+    "Thirteen complete-state numerical comparisons retain the existing F32 GDN absolute budget 3e-6; byte identity is not required.",
+    "The explicitly requested fifth case is a real cached CUDA greedy K1 RequestLoop regression; it does not expand pipeline applicability.",
+    "No new throughput comparison, pipeline applicability expansion, downloads or full-goal completion claim.",
+    "Frozen source closure has 240 files; actual consumer dependencies contain 226 files. These counts describe different scopes.",
+    "Archive contains source, helpers, recipes, receipts, logs, reports and small input manifests. Environment values, tensor payloads and binaries are excluded."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-batch-member-rows-2026-10-29.zip",
+    "bytes": 1281860,
+    "sha256": "5bd10b470ffe91f319546f8e64c2362d1daf1e34a4a7d7d682d565d84ce1c11f"
+  },
+  "archive_members": 301,
+  "crc_and_member_sha256_readback": true,
+  "cleanup": {
+    "deleted_files": 4,
+    "deleted_logical_bytes": 197822808,
+    "archive_sha256": "5bd10b470ffe91f319546f8e64c2362d1daf1e34a4a7d7d682d565d84ce1c11f",
+    "source_logs_and_model_data_deleted": false,
+    "retained_sdk_inputs": 227,
+    "retained_consumer_objects": 1,
+    "script": "test.ps1 (executed; do not rerun stale cleanup)",
+    "retained_recipe": ".scratch/inference-batch-member-rows-20261029/model-link-base.json"
+  },
+  "next_design": "Conditional-prefix bias/mask remains unimplemented. The current episode snapshot/history support is not dynamic grammar support; planned shared conditional rows must preserve q/p identity and original default fast paths."
+}

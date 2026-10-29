@@ -1315,6 +1315,25 @@ greedy／随机、StateOnly、同key HostImage恢复及新key完整前缀重采�
 符号view的计数更新声明真实逻辑输出规格，交原exact child处理布局；不提前要求物理描述。上述新增结果使用小型合成制品，覆盖原generation入口与RequestWindow，并非新增完整RequestLoop或服务层验证；未知native故障及其它平台未由这些旅程证明。
 以上为接线和资源合同，实际数学／Model检查结果另记，不代签逐步动态语法、全平台、质量或性能。
 
+**逐条件前缀输入仍待实现。** 当前bias／mask只是episode快照；上面的真实消费计数不等于随每个
+假设前缀变化的约束。后续在共同推理原语表达借用的逐条件输入，模型只绑定自己的数学端口；
+Compute／Graph不理解grammar或tokenizer。先让显式驱动者提供已准备的行，再接自然请求的可选输入提供者。
+
+条件行i在q_i采样前取得一次，保留同一不可变bias／mask给p_i；最后一行用于bonus。
+每行继续调用原process_logits([1,V])，history仍由C0和实际草稿推进；已归一化q不重复施加约束。
+输入提供者只看原请求的已提交输出和借用的假设草稿，不修改Session、账簿或RNG；generated已经包含pending，不能再追加一次。
+逐行租约只随实际cohort保留，元数据按R×(K+1)预留，复用原ProgramIo、Completion和退休合同；不为排队N个会话分配全部词表载荷。
+
+自然动态K1需要复用递归proposal／Verify1，因为融合K1提交前并不知道draft对应的bonus条件。
+该选择必须按采样配置决定，不拖动其它静态请求；默认共享快照／无modifier路径须保持原图、端口和执行工作。
+首次prefill和完整前缀命中的抽样也需要首行；StateOnly不调用提供者，KV／HostImage不携带外部modifier，
+恢复后从真实输出求值。缺少历史modifier载荷时仍不宣称严格决策回放。
+
+终止前缀的bonus可能不可达，但当前接受图会验证全部条件；实现须显式表达合法终止行或证明不可达后再处理有效性，
+不能把普通全mask错误静默忽略。后续草稿／第二成员的输入提供失败、取消与拒绝，也须保持原head／RNG，
+退休后释放原q及条件行租约，并以相同输入重试；只有实际发布输出能推进外部策略。这些仍是开发工作，不算已完成。
+
+
 CT BF16 block128的[共同冷图片段](../evidence/correctness/ct-block128-supplied-graph-2026-10-25.json)接收实际Value／TensorSpec及原租约绑定，固定形状和symbolic token行共用同体，按真实几何追加既有Graph数学；原fixture复用同体。它不拥有存储、调度或源格式注册表；BF16 block QDQ、channel／token与F32-scale code-dot仍由制品策略明确区分，不能仅按SF形状猜数学。[普通引擎冷入口](../evidence/correctness/ct-block128-model-binding-2026-10-25.json)由源配置选择reader、角色保留原W／SF及local FP4舍入，Recipe将片段生成的真实NodeId交回原GraphAssembly记录placement；后端继续消费同一Graph，不增加运行时路由。
 
 投影的逻辑 `[N,K]` 由已验证的 `ProjectionBinding` 解释一次：冷发图复用
