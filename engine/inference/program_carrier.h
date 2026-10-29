@@ -30,16 +30,11 @@ struct ProgramInitialization final {
     std::span<const hyle::graph::slots::SourceBinding> sources;
     hyle::graph::slots::PrepareOptions options{};
   };
-  struct Exact final {
-    std::size_t variant_index;
-    std::span<const graph::ShapeBinding> bindings;
-  };
 
   ProgramIo &io;
   graph::InvocationOptions invocation{};
   Progress progress{};
   std::optional<Slots> slots{};
-  std::optional<Exact> exact{};
 };
 
 // The original accepted Completion owns the one retention attachment. Submit
@@ -103,25 +98,12 @@ public:
     if ((progress.scheduler == nullptr) != (progress.workers == nullptr))
       return Status::InvalidArgument("program progress requires both original host runtimes");
     HYLE_ASSIGN_OR_RETURN(auto candidate, compiled_->executable.create_invocation(installation.invocation));
-    if (installation.exact) {
-      const auto &expected = *installation.exact;
-      if (candidate.exact_variant_index() != expected.variant_index)
-        return Status::FailedPrecondition("program carrier selected an unexpected exact child");
-      const auto signature = candidate.specialization();
-      for (const auto required : expected.bindings) {
-        bool found = false;
-        for (std::size_t index = 0; index < signature.binding_count(); ++index) {
-          HYLE_ASSIGN_OR_RETURN(const auto actual, signature.binding(index));
-          if (actual.dimension != required.dimension) continue;
-          if (actual.value != required.value)
-            return Status::FailedPrecondition("program carrier exact signature differs from required bindings");
-          found = true;
-          break;
-        }
-        if (!found)
-          return Status::FailedPrecondition("program carrier exact signature is missing a required binding");
-      }
-    }
+    // Selection is already fixed by prepare(). Compare the original complete
+    // canonical identity, including derived dimensions, rather than asking a
+    // model to restate a family ordinal and a subset of its shape bindings.
+    const auto selected = compiled_->executable.specialization();
+    if (candidate.specialization() != selected)
+      return Status::FailedPrecondition("program carrier specialization differs from its selected program");
     if (progress.scheduler)
       HYLE_RETURN_IF_ERROR(graph::prepare_progress(candidate, *progress.scheduler, *progress.workers));
     HYLE_RETURN_IF_ERROR(installation.io.bind_fixed(candidate));

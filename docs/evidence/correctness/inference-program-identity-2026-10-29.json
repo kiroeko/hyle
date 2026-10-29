@@ -1,0 +1,259 @@
+{
+  "schema": "hyle.correctness.program-identity.v1",
+  "date": "2026-10-29",
+  "status": "PASS_SIX_FINITE_CURRENT_CONSUMER_CASES",
+  "change": "Remove duplicated model Exact/index/binding installation facts. The original ProgramCarrier checks actual Invocation identity against its already selected concrete executable, including all canonical bindings. ProgramSlots constructs installation facts only for a new valid original Invocation; warm, out-of-range, closing and teardown calls do not evaluate the static recipe.",
+  "counts": {
+    "successful_consumer_CXX": 2,
+    "failed_environment_CXX_attempts": 0,
+    "links": 2,
+    "retained_SDK_inputs": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "native_cases": 6,
+    "downloads": 0,
+    "standalone_complete_state_byte_checks": 7,
+    "ordinary_pipeline_arms": 16
+  },
+  "build": {
+    "tiny": {
+      "compile": {
+        "state": "TERMINAL",
+        "pid": 34740,
+        "started": 1793257419.5390055,
+        "seconds": 150.7225637435913,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link": {
+        "state": "TERMINAL",
+        "pid": 34720,
+        "started": 1793257596.910007,
+        "seconds": 1.9244685173034668,
+        "exit": 0,
+        "timed_out": false
+      },
+      "source": {
+        "path": "tests/tools/qwen_host_image_test.cc",
+        "bytes": 9709,
+        "sha256": "b7b63bd543c0f80f74a42cf47a5a30758fc5541b76f89a6c2c28e7b509f9f225"
+      },
+      "image": {
+        "path": ".scratch/inference-program-identity-20261029/bin/tiny.exe",
+        "bytes": 145428992,
+        "sha256": "16ec7fa1133cfbc3bad709bfc6296c0d5f39eea9c21f4cf4a6890a7490037049"
+      },
+      "object": {
+        "path": ".scratch/inference-program-identity-20261029/compile/tiny/unit.obj",
+        "bytes": 71016270,
+        "sha256": "d0715f12312d44e5f31e2ca3d9baf13b5ea6e6e4d55e73444607dadb6c9d51c6"
+      },
+      "project_source_inputs": 232
+    },
+    "ordinary": {
+      "compile": {
+        "state": "TERMINAL",
+        "pid": 43704,
+        "started": 1793257607.5312896,
+        "seconds": 62.29777765274048,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link": {
+        "state": "TERMINAL",
+        "pid": 22348,
+        "started": 1793257719.8393703,
+        "seconds": 1.7833521366119385,
+        "exit": 0,
+        "timed_out": false
+      },
+      "source": {
+        "path": "tests/tools/qwen_generation_batch_relay_probe.cc",
+        "bytes": 43463,
+        "sha256": "a7cfd0596a5146fc26a42ec945684925e6647070f81e6879d3c5f94f1bfa276b"
+      },
+      "image": {
+        "path": ".scratch/inference-program-identity-20261029/bin/ordinary.exe",
+        "bytes": 142908416,
+        "sha256": "424c8bb99390d8d0f62fc4f1d165cf9b4ba2a0a1be928dca9c782089b725f2a2"
+      },
+      "object": {
+        "path": ".scratch/inference-program-identity-20261029/compile/ordinary/unit.obj",
+        "bytes": 25797429,
+        "sha256": "e2d7c643bfc66a6607e0aca930aeece7fea6fab623f8549b03ffd5be06661463"
+      },
+      "project_source_inputs": 197
+    }
+  },
+  "sources": [
+    {
+      "path": "engine/inference/program_carrier.h",
+      "bytes": 8930,
+      "sha256": "65730024949336a6dc4b17bc647c7b486e9e82eb6c54b9282c2f5cbfb4d023c8"
+    },
+    {
+      "path": "engine/inference/program_slots.h",
+      "bytes": 7163,
+      "sha256": "ef607ddd4b131935c9e46d7ed0137937cc1dc43132e15caff702eacb81149584"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 636449,
+      "sha256": "81bf0ae0e5b14e6343364f4351dd513035c979812eac811244a64a1da3a71b8b"
+    },
+    {
+      "path": "tests/tools/inference_program_carrier_case.h",
+      "bytes": 20288,
+      "sha256": "79b2bfcaf3355fcb98a4882885dc29ba6dc4ec3e6a42200947b4831e2ac2e84a"
+    }
+  ],
+  "cases": {
+    "program-cpu": {
+      "status": "PASS",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 7732,
+        "started": 1793257625.6150398,
+        "seconds": 0.7682077884674072,
+        "exit": 0,
+        "timed_out": false
+      },
+      "summary": {
+        "native_submissions": 2,
+        "models": 0,
+        "complete_original_group_checks": true
+      },
+      "report": {
+        "path": ".scratch/inference-program-identity-20261029/runs/program-cpu/report.json",
+        "bytes": 1091,
+        "sha256": "91cfb456fdca536cb4dbbdda4192d07694f30b07757868de8aa43402071c9eed"
+      }
+    },
+    "program-cuda": {
+      "status": "PASS",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 26288,
+        "started": 1793257633.1263711,
+        "seconds": 0.5371668338775635,
+        "exit": 0,
+        "timed_out": false
+      },
+      "summary": {
+        "native_submissions": 2,
+        "models": 0,
+        "complete_original_group_checks": true
+      },
+      "report": {
+        "path": ".scratch/inference-program-identity-20261029/runs/program-cuda/report.json",
+        "bytes": 1092,
+        "sha256": "fa81bfac2258e97da07988131326696489fe8c4d16a314c98f286683694adf84"
+      }
+    },
+    "controls-cpu": {
+      "status": "PASS",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 36064,
+        "started": 1793257639.7234292,
+        "seconds": 0.47168421745300293,
+        "exit": 0,
+        "timed_out": false
+      },
+      "summary": {
+        "target_submissions": 9,
+        "complete_state_byte_checks": 3,
+        "scope": "Original K2/R2 GenerationRequest; dynamic/static sampling, stop, cancellation, survivor and HostImage restore."
+      },
+      "report": {
+        "path": ".scratch/inference-program-identity-20261029/runs/controls-cpu/report.json",
+        "bytes": 2073,
+        "sha256": "413b936db06b39719c3137a79e89ffc669e853d3714b5f95ceef6be7d9a39728"
+      }
+    },
+    "controls-cuda": {
+      "status": "PASS",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 1296,
+        "started": 1793257681.5159602,
+        "seconds": 0.8381674289703369,
+        "exit": 0,
+        "timed_out": false
+      },
+      "summary": {
+        "target_submissions": 9,
+        "complete_state_byte_checks": 3,
+        "scope": "Original K2/R2 GenerationRequest; dynamic/static sampling, stop, cancellation, survivor and HostImage restore."
+      },
+      "report": {
+        "path": ".scratch/inference-program-identity-20261029/runs/controls-cuda/report.json",
+        "bytes": 2074,
+        "sha256": "d7b030482b428864a26b48c86c38105a976c936acf2e53f29b2076f5ffb58e75"
+      }
+    },
+    "mtp-cuda": {
+      "status": "PASS",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 42488,
+        "started": 1793257682.7551699,
+        "seconds": 3.3426148891448975,
+        "exit": 0,
+        "timed_out": false
+      },
+      "summary": {
+        "outputs": 40,
+        "serial_submissions": 23,
+        "auto_submissions": 24,
+        "successor_submissions": 3,
+        "successor_publications": 2,
+        "successor_discards": 1,
+        "accepted_drafts": 17,
+        "rejected_drafts": 4,
+        "complete_state_byte_checks": 1
+      },
+      "report": {
+        "path": ".scratch/inference-program-identity-20261029/runs/mtp-cuda/report.json",
+        "bytes": 7117,
+        "sha256": "783435df8c542066c8a5d00b9e5efb96c73ce3179744f702e70a44c33ebf323d"
+      }
+    },
+    "ordinary-cuda": {
+      "status": "PASS",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 57680,
+        "started": 1793257722.4956899,
+        "seconds": 1.3986127376556396,
+        "exit": 0,
+        "timed_out": false
+      },
+      "summary": {
+        "control_and_candidate_arms": 16,
+        "candidates": 8,
+        "original_complete_prefix_state_epoch_rng_equal": true,
+        "scope": "CUDA R1/R2 continuous pipeline, credit, member cancel, yield, stop and post-submit control failure."
+      },
+      "report": {
+        "path": ".scratch/inference-program-identity-20261029/runs/ordinary-cuda/report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      }
+    }
+  },
+  "identity_scope": "The original CompiledGraph remains the execution authority. Signature comparison does not become a provider/weight cache key. Static Graphs retain no family index; exact family rejection remains in original cold preparation.",
+  "coverage_boundaries": [
+    "Windows MSVC 14.50, RTX 4070 driver 617.14; current consumers linked to 227 retained SDK objects/libraries. No SDK/NVCC rebuild.",
+    "All six native processes were run once and passed; original result assertions were retained. No weaker tolerance or regenerated trained weights.",
+    "Standalone AddGraph is a second physical-slot consumer, not a second complete inference model family.",
+    "The ordinary fixture copies only weights.tsv and prompt.ids to this batch folder; all original shared untrained payloads are reused. A separate 64KiB synthetic stop fixture is generated by the existing consumer.",
+    "Apple/Vulkan, unknown native failures, full engine orchestration and new throughput/quality measurements were not checked in this batch.",
+    "One/three physical slots and two candidate depths remain distinct. The group invents no queue, Completion, permission or state-publication mechanism."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-program-identity-2026-10-29.zip",
+    "bytes": 98640,
+    "sha256": "38451927719980f044acc4f22375d6e3cd5cec64de5b203b0304af5d3d4d0f96"
+  }
+}

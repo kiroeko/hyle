@@ -994,7 +994,6 @@ struct Phase final : FamilyPorts {
   // The selected child is shared immutable model data, not copied per session.
   const inference::PreparedProgram *child = nullptr;
   const Family *family = nullptr;
-  std::size_t variant_index = 0;
   bool imported_sources = false;
   std::vector<StateBank> state_banks;
   using ExecutionSlots = inference::ProgramSlots<ColdResources, PhaseIo, execution_slot_count>;
@@ -3776,12 +3775,10 @@ public:
       throw std::runtime_error("inconsistent MTP frontier, catch-up token or owned target hidden state");
   }
 
-  Phase::ExecutionSlots::Initialization slot_initialization(const Phase &phase,
-      std::span<const g::ShapeBinding> bindings) const {
+  Phase::ExecutionSlots::Initialization slot_initialization(const Phase &phase) const {
     Phase::ExecutionSlots::Initialization initialization{
         .invocation = {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
-        .progress = {scheduler.get(), workers.get()},
-        .exact = inference::ProgramInitialization::Exact{phase.variant_index, bindings}};
+        .progress = {scheduler.get(), workers.get()}};
     if (!phase.state_banks.empty()) initialization.slots.emplace(inference::ProgramInitialization::Slots{
         phase.state_graph(), phase.state_sources,
         {.host_workspace = execution.staging(), .resource_budget = execution_budget ? execution_budget : cache_budget}});
@@ -3789,16 +3786,7 @@ public:
   }
 
   void initialize_slot(Phase &phase, std::size_t slot) {
-    // Warm admission does not construct borrowed installation facts or copy
-    // resource-budget handles. Borrow/submit still check actual retirement.
-    if (slot < phase.slots.size()) {
-      const auto &carrier = phase.slots[slot].carrier;
-      if (carrier.initialized() && !carrier.closing()) return;
-    }
-    // The model supplies its exact/source/resource facts; the common group
-    // installs only this slot's original IO and preserves an existing run.
-    const std::array bindings{g::ShapeBinding{phase.family->last_row, static_cast<std::int64_t>(phase.query_rows - 1)}};
-    check(phase.slots.initialize(slot, slot_initialization(phase, bindings)));
+    check(phase.slots.initialize_with(slot, [&] { return slot_initialization(phase); }));
   }
 
   Phase &prepare_child(std::size_t tokens, bool diagnostic, std::size_t requests = 1, GraphRole role = GraphRole::kText,
@@ -3837,7 +3825,7 @@ public:
     const auto planned_slot_uses = shape_plan.uses({requests, tokens, role, completion, sampling_index, false, packing});
     phase.attention_schema = definition.attention_schema;
     phase.child = &definition.programs.child(index);
-    phase.family = &definition; phase.variant_index = index;
+    phase.family = &definition;
     std::vector<inference::SlotTransactionSpec> transactions;
     phase.state_banks.reserve(phase.state_sources.size() + (phase.hidden_state.store.valid() ? 1u : 0u));
     transactions.reserve(phase.state_banks.capacity());
@@ -4085,8 +4073,7 @@ public:
     if (active_step || carrier_borrowed) throw std::runtime_error("relay carrier preparation requires an idle model");
     auto &phase = prepare_child(drafts_token(role) ? 2 : 1, false, requests, role,
         TextCompletion::kEmitNext, sampling_index, true);
-    const std::array bindings{g::ShapeBinding{phase.family->last_row, static_cast<std::int64_t>(phase.query_rows - 1)}};
-    check(phase.slots.initialize_all(slot_initialization(phase, bindings)));
+    check(phase.slots.initialize_all_with([&] { return slot_initialization(phase); }));
   }
 
   // Prepare the existing cold plan, not every possible context length. This

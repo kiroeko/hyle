@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <optional>
 #include <span>
+#include <utility>
 
 #include "hyle/core/assert.h"
 #include "program_carrier.h"
@@ -41,7 +42,6 @@ class ProgramSlots final {
     graph::InvocationOptions invocation{};
     ProgramInitialization::Progress progress{};
     std::optional<ProgramInitialization::Slots> slots{};
-    std::optional<ProgramInitialization::Exact> exact{};
   };
 
   ProgramSlots() = default;
@@ -93,18 +93,26 @@ class ProgramSlots final {
   // borrow or submit permission. A closed truthy run still needs the original
   // retired reset. Failed candidate installation never replaces its peer.
   Status initialize(std::size_t index, const Initialization& options) {
+    return initialize_with(index, [&]() -> const Initialization& { return options; });
+  }
+
+  // Construct model installation facts only for a new original Invocation.
+  // Warm, invalid and closing slots never evaluate the direct cold recipe;
+  // no callback or borrowed result survives this synchronous installation.
+  template<class PrepareInitialization>
+  Status initialize_with(std::size_t index, PrepareInitialization&& prepare_initialization) {
     if (index >= size_)
       return Status::OutOfRange("program slot is outside its cold carrier plan");
     auto& slot = entries_[index];
     if (slot.carrier.closing())
       return Status::FailedPrecondition("program slot needs its original retired reset before initialization");
     if (slot.carrier.initialized()) return Status::Ok();
+    const auto& options = std::forward<PrepareInitialization>(prepare_initialization)();
     HYLE_RETURN_IF_ERROR(slot.carrier.initialize({
         .io = slot.io,
         .invocation = options.invocation,
         .progress = options.progress,
-        .slots = options.slots,
-        .exact = options.exact}));
+        .slots = options.slots}));
     slot.preparation_uses = 0;
     return Status::Ok();
   }
@@ -112,10 +120,15 @@ class ProgramSlots final {
   // A later failure preserves earlier successful original installations.
   // The caller can retry the failed entry without recreating its peers.
   Status initialize_all(const Initialization& options) {
+    return initialize_all_with([&]() -> const Initialization& { return options; });
+  }
+
+  template<class PrepareInitialization>
+  Status initialize_all_with(PrepareInitialization&& prepare_initialization) {
     if (!size_)
       return Status::FailedPrecondition("program slots are not cold prepared");
     for (std::size_t index = 0; index < size_; ++index)
-      HYLE_RETURN_IF_ERROR(initialize(index, options));
+      HYLE_RETURN_IF_ERROR(initialize_with(index, prepare_initialization));
     return Status::Ok();
   }
 

@@ -65,6 +65,16 @@ inline int run(q::BackendKind kind) {
     require(family.size() == 1 && &family.child(0).resource_graph() == &logical &&
         family.child(0).output(sum).description == description && finite.executable && finite.report,
         "exact family retry lost its original output facts or invented a resource graph for empty bindings");
+    const auto &child = family.child(0);
+    i::ProgramIo child_io;
+    i::ProgramCarrier<Scope> child_carrier;
+    q::check(child_io.prepare(child.compiled, 0, 0, 0, 0)); q::check(child_io.seal());
+    q::check(child_carrier.prepare(child.compiled, backend.queue_bindings()));
+    q::check(child_carrier.initialize({.io = child_io, .invocation = {.resources = g::ResourceOptions{}}}));
+    const auto *child_run = q::take(child_carrier.borrow());
+    require(child_run->specialization() == child.compiled.executable.specialization() &&
+        child_run->exact_variant_index() == std::optional<std::size_t>{0},
+        "cold child installation lost its original complete signature or selected family variant");
   }
   // Original cold carriers and IO only. An invalid count must not start the
   // recipe; a later-slot failure must not publish the earlier prepared slot.
@@ -133,11 +143,9 @@ inline int run(q::BackendKind kind) {
   const g::InvocationOptions options{.resources = g::ResourceOptions{}};
   const auto unsealed = a.initialize({.io = unsealed_io, .invocation = options});
   const auto foreign = a.initialize({.io = foreign_io, .invocation = options});
-  const auto wrong_exact = a.initialize({.io = a_io, .invocation = options,
-      .exact = i::ProgramInitialization::Exact{.variant_index = 0, .bindings = {}}});
-  require(unsealed.IsFailedPrecondition() && foreign.IsFailedPrecondition() && wrong_exact.IsFailedPrecondition() &&
+  require(unsealed.IsFailedPrecondition() && foreign.IsFailedPrecondition() &&
       !a.initialized() && !a.pending() && !b.initialized(),
-      "unsealed/foreign IO or a standalone exact selection published a carrier");
+      "unsealed or foreign IO published a carrier");
   const auto partial = a.initialize({.io = partial_io, .invocation = options});
   require(partial.IsInvalidArgument() && !a.initialized() && !a.pending() && !b.initialized(),
       "cold bind failure published a half-initialized carrier or touched its peer");
@@ -155,13 +163,36 @@ inline int run(q::BackendKind kind) {
       "readback recovery duplicated its pool or lost the original output ownership");
   const auto missing = a.borrow();
   require(!missing && missing.error().IsFailedPrecondition(), "failed cold carrier admitted an original invocation");
-  q::check(programs.initialize(1, {.invocation = options}));
-  require(b.initialized() && !a.initialized(), "initializing B repaired or published failed A");
-  q::check(programs.initialize(0, {.invocation = options}));
+  std::array<std::size_t, 2> initialization_calls{};
+  const auto initialize_a = [&] {
+    ++initialization_calls[0];
+    return ProgramSlots::Initialization{.invocation = options};
+  };
+  const auto initialize_b = [&] {
+    ++initialization_calls[1];
+    return ProgramSlots::Initialization{.invocation = options};
+  };
+  std::size_t invalid_initialization_calls = 0;
+  const auto outside = programs.initialize_with(2, [&] {
+    ++invalid_initialization_calls;
+    return ProgramSlots::Initialization{.invocation = options};
+  });
+  require(outside.IsOutOfRange() && !invalid_initialization_calls && !a.initialized() && !b.initialized(),
+      "out-of-range initialization evaluated a recipe or installed an original carrier");
+  q::check(programs.initialize_with(1, initialize_b));
+  require(b.initialized() && !a.initialized() && initialization_calls == std::array<std::size_t, 2>{0, 1},
+      "initializing B repaired failed A or evaluated another slot's installation recipe");
+  q::check(programs.initialize_with(0, initialize_a));
+  require(initialization_calls == std::array<std::size_t, 2>{1, 1},
+      "initial slot installation did not evaluate each original recipe exactly once");
   require(!caller_writer || a_output->pool().stats().live_blocks == 1,
       "valid IO retry did not reacquire the failed installation's original readback writer");
   auto *a_run = q::take(a.borrow()); auto *b_run = q::take(b.borrow());
   require(a_run != b_run && a_run->valid() && b_run->valid(), "independent carriers share one original mutable invocation");
+  require(a_run->specialization() == compiled.executable.specialization() &&
+      b_run->specialization() == compiled.executable.specialization() &&
+      !a_run->exact_variant_index() && !b_run->exact_variant_index(),
+      "standalone installation changed its original signature or invented a family variant");
   // Preserve Graph's original checked read owners after the retained Scope
   // retires; these are dynamic bindings, not dangling cold borrowed views.
   q::check(a_io.bind(*a_run, a_first, description, a_scope->first));
@@ -173,11 +204,18 @@ inline int run(q::BackendKind kind) {
       "already initialized carrier replaced its live original invocation or touched its peer");
   a_slot.planned_uses = 5; a_slot.preparation_uses = 3;
   b_slot.planned_uses = 7; b_slot.preparation_uses = 4;
+  q::check(programs.initialize_with(0, initialize_a));
+  q::check(programs.initialize_with(1, initialize_b));
   q::check(programs.initialize_all({.invocation = options}));
+  q::check(programs.initialize_all_with([&] {
+    ++invalid_initialization_calls;
+    return ProgramSlots::Initialization{.invocation = options};
+  }));
   require(q::take(a.borrow()) == a_run && q::take(b.borrow()) == b_run &&
       a_slot.planned_uses == 5 && a_slot.preparation_uses == 3 &&
-      b_slot.planned_uses == 7 && b_slot.preparation_uses == 4,
-      "idempotent slot-group initialization replaced an original invocation or its replay counters");
+      b_slot.planned_uses == 7 && b_slot.preparation_uses == 4 &&
+      initialization_calls == std::array<std::size_t, 2>{1, 1} && !invalid_initialization_calls,
+      "idempotent slot-group initialization evaluated its recipe or replaced an original run or replay counter");
   q::check(a_run->prepare_replay(a.queues(), {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
   q::check(b_run->prepare_replay(b.queues(), {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
   // A missing scope must reject before native submit, preserving the actual
@@ -216,6 +254,9 @@ inline int run(q::BackendKind kind) {
   require(retired_a.retired && a.initialized() && a.closing() && !b.closing() && q::take(b.borrow()) == b_run,
       "actual A retirement discarded its original handle early or closed independent B");
   const auto closed = a.borrow(); require(!closed && closed.error().IsFailedPrecondition(), "closed truthy carrier was admitted for reuse");
+  const auto closed_initialize = programs.initialize_with(0, initialize_a);
+  require(closed_initialize.IsFailedPrecondition() && initialization_calls == std::array<std::size_t, 2>{1, 1},
+      "closed truthy carrier evaluated its installation recipe or was admitted as an idempotent live run");
   q::check(a.reset_retired()); require(!a.initialized() && !a.closing(), "actually retired carrier did not reset its original run");
   const auto retired_b = programs.retire_all(backend); q::check(retired_b.status);
   require(retired_b.retired && !programs.pending(), "slot group did not actually retire its original B");
@@ -228,18 +269,21 @@ inline int run(q::BackendKind kind) {
       teardown_reset.IsFailedPrecondition() && !a.initialized() && a.closing() && !a.pending(),
       "irreversible teardown handoff admitted cold initialization or reset its original ownership gate");
   const auto peer_teardown_prepare = b.prepare(compiled, backend.queue_bindings());
-  const auto peer_teardown_initialize = programs.initialize(1, {.invocation = options});
+  const auto peer_teardown_initialize = programs.initialize_with(1, initialize_b);
   const auto peer_teardown_reset = b.reset_retired();
   require(peer_teardown_prepare.IsFailedPrecondition() && peer_teardown_initialize.IsFailedPrecondition() &&
       peer_teardown_reset.IsFailedPrecondition() && !b.initialized() && b.closing() && !programs.pending(),
       "slot-group teardown left its peer eligible for initialization or ownership reset");
+  require(initialization_calls == std::array<std::size_t, 2>{1, 1} && !invalid_initialization_calls,
+      "irreversible slot-group handoff evaluated a retired carrier's initialization recipe");
   std::cout << "{\"status\":\"PASS\",\"case\":\"program-carrier\",\"backend\":\"" << qwen_host_image_case::backend_name(kind)
       << "\",\"models\":0,\"native_submissions\":2,\"carriers\":2,\"cold_failure_atomic\":true,"
          "\"independent_fixed_bindings\":true,\"real_completion_retirement\":true,\"GraphOutput_pin_preserved\":true,"
          "\"typed_io_installation\":true,\"common_slot_inventory\":true,\"group_cold_failure_unpublished\":true,"
-         "\"group_initialization_idempotent\":true,"
+         "\"group_initialization_idempotent\":true,\"group_initialization_recipe_lazy\":true,"
          "\"group_retirement_original\":true,\"unsealed_io_rejected\":true,\"foreign_io_rejected\":true,"
-         "\"standalone_exact_rejected\":true,\"partial_installation_failed\":true,\"partial_caller_writer_tested\":"
+         "\"standalone_signature_preserved\":true,\"finite_child_signature_preserved\":true,"
+         "\"finite_child_variant_preserved\":true,\"partial_installation_failed\":true,\"partial_caller_writer_tested\":"
       << (caller_writer ? "true" : "false") << ",\"partial_caller_writer_recovered\":" << (caller_writer ? "true" : "null")
       << ",\"valid_io_retry_output_checked\":true,"
          "\"exact_resource_rejection_atomic\":true,\"exact_resource_original_graph_borrowed\":true,"

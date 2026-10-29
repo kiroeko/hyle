@@ -54,6 +54,18 @@ Source接线及准备／提交／退休编排。本次复审将共同episode寿�
 `engine/inference`；模型适配负责容量事实、实际工作形状、准备／提交／完成事实、完整检查点与恢复。
 优先静态分派和已有类型，不为搬出Qwen循环先造大`ModelOps`接口。组件复用与第二个完整模型接入
 分别记录，不能用前者代签后者。CLI的`run(argc, argv)`也不冒充可安装的引擎服务API。
+本机可验证的模型尺寸不定义共同接口：接口按实际计算、状态、布局、依赖与容量表达，
+大模型通过原权重片段及结构不同的组件检查边界；整模型吞吐、显存峰和服务行为仍保留待验证。
+尚缺共同消费者的家族差异留在模型适配，后续以真实需求决定提取，避免把Qwen或本机限制固化成通用规则。
+模型数学与部署放置分别表达：共同请求不持GPU序号，状态和预算按实际存储域归属；
+模型适配说明完整状态和计算依赖，冷放置决定其使用的端点与资源。普通、MTP、稠密、MoE或递归状态的实际差异保留，
+共同层不要求它们采用Qwen的阶段数、单个KV银行、隐藏状态或单Queue接力方式。
+
+Graph已有多个StorageDomain／ExecutionTarget／ExecutionLane及QueueBinding的表达，一个Invocation／Completion可覆盖聚合工作，
+物理IO槽数与设备数、分片数无关。当前Backend仍只装配一个主端点及可选CPU辅助；Qwen状态集中放置，
+CUDA跨Context搬运／等待尚未接通，跨机执行也未实现。这些是当前路线限制，不写成共同请求、缓存或退休合同。
+后续多端点必须报告真实搬运与依赖能力，完成及失败覆盖实际提交范围，继续复用原Graph的聚合退休。
+架构提取须保留热路径静态直接调用及原数值边界，以减少实际耦合和重复工作为准；目录或接口数量不作为完成标准。
 Qwen特殊token集中在模型自己的`generation_tokens.h`，请求额外停止策略仍由`RequestStopPolicy`管理。
 
 首轮提取的`dispatch_batches`已由自然生成与固定输入两个循环调用。它只遍历原先冷预留的
@@ -1473,7 +1485,7 @@ Store／Append事务及Session发布仍归原模型适配。
 没有状态交易，只在实际退休后重置。Graph的关闭handle仍可为truthy，不能据此重新接纳。
 Model最终退出时交接原Backend，再永久放弃应用根以断开作用域环，这不是可复用重置。
 Phase以共同`ProgramSlots`按原计划准备一个或三个固定地址槽，每槽组合原IO、Store事务和载体，
-直接使用已选exact child，保留variant与形状核对。模型的同步冷配方只提供张量、端口、布局和replay事实；
+直接使用已选exact child，载体核对原程序的完整canonical签名。模型的同步冷配方只提供张量、端口、布局和replay事实；
 全部槽准备成功才发布集合，部分失败销毁未发布的冷对象，不另做原生回滚或重试。
 固定IO与载体一同保持地址稳定；析构先释放原Invocation，再释放事务、IO与模型载荷。
 初始化、pending、真实退休与最终根交接共用原载体，热访问不新增路由、回调或Release边界检查；
@@ -1517,8 +1529,12 @@ Counted 累加、Possible 将下界提高到一，保留原记录顺序；重建
 Store／Append先取回原交易、再撤动态IO的顺序保持。数学、状态、Shape及发布仍归模型，完整核心未抽完。
 普通Phase的四个readback只保留一份原owner，通过校验handle借用原facts／pool；固定可写输出显式登记原`TensorView`，
 不会误作只读输入，也不另建池。冷安装仍按原valid／accept、next-id、draft-id次序，普通路径不新增热withdraw协议。
-`ProgramInitialization`只同步借用这份已封存IO、可选exact要求、进度服务和Store准备事实；共同载体统一执行
-“未发布Invocation→exact子集核对→进度→固定IO→可选Store→成功发布”，不再由四个模型回调重复组合。
+`ProgramInitialization`只同步借用这份已封存IO、进度服务和Store准备事实；共同载体统一执行
+“未发布Invocation→已选程序完整签名核对→进度→固定IO→可选Store→成功发布”，不再由四个模型回调重复组合。
+exact子集在冷Family选择时核对，模型不再重复保存variant索引或拼装形状断言；原具体CompiledGraph仍是唯一执行依据。
+槽集合仅在合法、尚未安装的槽上同步求值初始化配方，暖调用不构造资源预算句柄；原borrow／submit仍核真实退休。
+[安装身份有限检查](../evidence/correctness/inference-program-identity-2026-10-29.json)保留静态图与finite child身份，
+核已安装、越界和关闭时配方不求值；原CPU／CUDA状态与流水门通过，未重测吞吐。
 IO必须属于同一稳定CompiledGraph；Store准备由显式存在决定，空sources不代表无需准备。
 安装失败由原Graph析构归还已消费writer。prefix成功继续保热、frontier继续fresh，普通／NextN仍先取回原事务再重置；
 该安装流程不接管这些复用政策，也不保存recipe或新增资源owner。
