@@ -404,7 +404,7 @@ struct Run final : std::enable_shared_from_this<Run> {
       }
       if(capture_hidden) {
         episode.sources=std::make_shared<inference::SubmissionViews>();
-        check(episode.sources->prepare(run,{},{},backend->storage_owner(),{}),"Kimi original hidden Source preparation");
+        check(episode.sources->prepare(run,std::span<const inference::SubmissionViews::StoreCapture>{},std::span<const inference::SubmissionViews::PageCapture>{},{}),"Kimi original hidden Source preparation");
       }
       check(episode.bind_consumers(logical.graph),"Kimi original consumer bundle");
       check(episode.prepare_replay({.mode=capture_hidden?g::ReplayMode::kPreferCapture:g::ReplayMode::kCommands,

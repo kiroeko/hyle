@@ -113,6 +113,17 @@ Kimi原KDA→MLA组件进一步复用`ProgramCarrier`／`ExecutionEpisode`，第
 任一前缀溢出时全部输出保持不变。它仍是Managed，具备已实现的非阻塞捕获能力；其它Scan不据此升级。
 Scatter仅原无排序、零私有workspace的0／1索引路径取得固定绑定资格，排序路径仍保原限制。
 
+`SubmissionViews`的输出、Store及KV页分别借用各自实际`StorageOwner`，提交metadata owner另行提供。
+同提交不等于同存储域；原Graph仍核每个资源的owner、Context、范围和权限，不能由包装放宽。
+Store／页的描述范围仅在冷准备调用内同步消费，Qwen投影原数组，不保存回调、增加临时容器或复制owner。
+[双存储域CUDA检查](../evidence/correctness/inference-view-storage-2026-10-30.json)覆盖两输出及第二owner拒绝后的原bundle恢复；
+多owner Store／页组合尚未单独运行，不能推定多GPU能力。
+
+冷装配的共同接纳／回滚、child校验及固定IO安装已分别归`ColdShapePlan`、`PreparedProgramFamily`和`ProgramSlots`。
+primary／exact、packing／diagnostic、角色端口及私有draft／prefix／frontier的不同复用政策属于模型事实；
+不再为它们套一层通用Family或单槽包装。K1与递归MTP已共用接受原语和实际资源选择、repair、预检及发布顺序；
+融合结果与递归device packet的观察方式仍不同，不能为减少字段投影而改成另一套执行或状态owner。
+
 Graph已有多个StorageDomain／ExecutionTarget／ExecutionLane及QueueBinding的表达，一个Invocation／Completion可覆盖聚合工作，
 物理IO槽数与设备数、分片数无关。当前Backend仍只装配一个主端点及可选CPU辅助；Qwen状态集中放置，
 CUDA跨Context搬运／等待尚未接通，跨机执行也未实现。这些是当前路线限制，不写成共同请求、缓存或退休合同。

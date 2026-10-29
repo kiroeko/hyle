@@ -1,0 +1,262 @@
+{
+  "schema": "hyle.correctness.view-storage.v1",
+  "date": "2026-10-30",
+  "status": "PASS",
+  "base_commit": "1627fd9009e8471f410fcb504abf499ec16b79de",
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\submission_views.h",
+      "bytes": 6000,
+      "sha256": "2adb26f3d3072deb04dc5a45c7cc43bc9198dc159df24deba69e5f7feaee2256"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 627332,
+      "sha256": "ba4aab5594eb9182266d3f9772a85be7a6dfac2e1e796de374c7f05720a42a69"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\CMakeLists.txt",
+      "bytes": 34158,
+      "sha256": "6d984441bcd23b72da4b7123815c56015b378c6b3c9dda8a072c0535a8a36cf7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\kimi_heterogeneous_state_consumer_test.cc",
+      "bytes": 65971,
+      "sha256": "3978bb4d9127a3990dd132524b10d04a14cda9c39e18852edcc0a21c92abefcb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_submission_views_test.cc",
+      "bytes": 8418,
+      "sha256": "fd54c94f14c04543c4e669bd2193b595161f8013b876a24899265e084b74f184"
+    }
+  ],
+  "change": "SubmissionViews borrows each selected output, Store and page view actual StorageOwner instead of imposing one owner for every resource; original SubmissionSource metadata owner remains separate.",
+  "invariants": [
+    "OutputCapture, StoreCapture and PageCapture borrow their actual owner only during the original synchronous prepare/capture call.",
+    "Qwen projects original Store/append arrays with standard transform views; no transient vector, owner copy, callback storage, new memory pool or executor.",
+    "SubmissionSource success-only Completion transfer, original Queue/Context/owner/extent checks and late partial failure recovery stay authoritative.",
+    "Wrong second output owner leaves the transferred original SubmissionSource and first view alive for original retirement and withdrawal.",
+    "Qwen keeps actual role/state/NextN rules; Kimi uses the same original single-output convenience with empty resource ranges."
+  ],
+  "current_runs": [
+    {
+      "case": "views-cuda",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-storage-20261030\\runs\\views-cuda\\attempt1\\report.json",
+        "bytes": 428,
+        "sha256": "1611fde8bf69bab7c2690581a6b60222af9dc42737dec5d4560b13ee2afe644f"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 36888,
+        "started": 1793303571.7381837,
+        "seconds": 0.5232434272766113,
+        "exit": 0,
+        "timed_out": false
+      },
+      "tests": 2
+    },
+    {
+      "case": "kimi-cuda",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-storage-20261030\\runs\\kimi-cuda\\attempt1\\report.json",
+        "bytes": 7699,
+        "sha256": "9a208a6aacb878bb3f6c8f50cbfe0a2576d58ad3c235e615747bf348464e5593"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 62056,
+        "started": 1793303364.0433116,
+        "seconds": 19.890340089797974,
+        "exit": 0,
+        "timed_out": false
+      },
+      "tests": 7
+    },
+    {
+      "case": "natural-cuda",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-storage-20261030\\runs\\natural-cuda\\attempt1\\report.json",
+        "bytes": 7117,
+        "sha256": "783435df8c542066c8a5d00b9e5efb96c73ce3179744f702e70a44c33ebf323d"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 45512,
+        "started": 1793303438.2495804,
+        "seconds": 3.6525650024414062,
+        "exit": 0,
+        "timed_out": false
+      },
+      "tests": null
+    },
+    {
+      "case": "continuous-cuda",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-storage-20261030\\runs\\continuous-cuda\\attempt1\\report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 45368,
+        "started": 1793303442.402129,
+        "seconds": 1.3180861473083496,
+        "exit": 0,
+        "timed_out": false
+      },
+      "tests": null
+    }
+  ],
+  "comparisons": [
+    {
+      "case": "natural-cuda",
+      "previous": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\runs\\natural-cuda\\attempt2\\report.json",
+        "bytes": 7117,
+        "sha256": "783435df8c542066c8a5d00b9e5efb96c73ce3179744f702e70a44c33ebf323d"
+      },
+      "current": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-storage-20261030\\runs\\natural-cuda\\attempt1\\report.json",
+        "bytes": 7117,
+        "sha256": "783435df8c542066c8a5d00b9e5efb96c73ce3179744f702e70a44c33ebf323d"
+      },
+      "full_report_equal": true
+    },
+    {
+      "case": "continuous-cuda",
+      "previous": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\runs\\continuous-cuda\\attempt2\\report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      },
+      "current": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-storage-20261030\\runs\\continuous-cuda\\attempt1\\report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      },
+      "full_report_equal": true
+    }
+  ],
+  "counts": {
+    "CXX_attempts": 4,
+    "link_attempts": 4,
+    "native_attempts": 4,
+    "retained_SDK_engine_inputs": 227,
+    "SDK_rebuilds": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "whole_builds": 0,
+    "throughput_windows": 0
+  },
+  "reviewed_boundaries": [
+    {
+      "files": [
+        "engine/inference/cold_shape_plan.h",
+        "engine/inference/prepared_program_family.h",
+        "engine/inference/program_slots.h",
+        "engine/models/qwen35/main.cc:find_child/admit_exact_shape/prepare_child"
+      ],
+      "finding": "Existing cold admission, rollback, child validation, IO and stable slot installation already share mechanisms. Remaining role/packing/diagnostic selection and tensor/state mappings are model facts; no additional Family or ModelOps wrapper justified."
+    },
+    {
+      "files": [
+        "engine/models/qwen35/main.cc:prepare_generation_call/finish_recursive_mtp/finish_mtp_rounds/finish_selected_evaluations",
+        "engine/inference/mtp_acceptance.h",
+        "engine/inference/mtp_acceptance_graph.h"
+      ],
+      "finding": "K1 and recursive paths share host acceptance and real resource/repair/ledger/Head publication sequence; random recursive validation keeps its device packet. Result/ledger field projection alone does not justify a new generic algorithm or owner."
+    },
+    {
+      "files": [
+        "src/graph/resources.cc:OutputSource::create/StoreSource::prepare/ResourceSource::prepare",
+        "src/graph_batch/paged_append.cc"
+      ],
+      "finding": "Per-view original owner is valid within actual Graph Context gates; one Queue/source producer and current Backend endpoint assembly remain real capability limits, not removed by this change."
+    }
+  ],
+  "limits": [
+    "Directed test covers two real storage resources in one CUDA Context and one original Graph/Queue; not multi-GPU or distributed execution.",
+    "No new mixed-owner Store/page native fixture; Qwen finite runs exercise their new borrowed descriptors with original same-owner state and pages.",
+    "Kimi original23-role component is not a complete second engine or token generation.",
+    "No new Apple, Vulkan, CPU, simultaneous GPU overlap, complete engine C++ API or throughput claim.",
+    "Common complete-step/state publication boundaries and performance remain unfinished; review findings do not mark the whole architecture complete."
+  ],
+  "cleanup_plan": {
+    "root": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-storage-20261030\\bin",
+    "files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-storage-20261030\\bin\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-storage-20261030\\bin\\kimi.exe",
+        "bytes": 141596160,
+        "sha256": "bff16b503b66c66aec69c894092bccd44902edb9f629ee8fb14f20b2477e58fc"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-storage-20261030\\bin\\kimi.exp",
+        "bytes": 24973,
+        "sha256": "913a5c18786befe325d58a8f4423ce276535eb8ee5b2d6cee744b6c078257398"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-storage-20261030\\bin\\kimi.lib",
+        "bytes": 41384,
+        "sha256": "c278f7f560ac076f249b149408e1eff3275e113f242e1fb2dfa50878e338b1f6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-storage-20261030\\bin\\model.exe",
+        "bytes": 143046144,
+        "sha256": "5179b23973026c324154d3439a69a7d56775eac7dda83f200a2fe954f579819f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-storage-20261030\\bin\\model.exp",
+        "bytes": 24974,
+        "sha256": "ab4f98fd9f5f03dca08abc43a8640c819871921d65ff82bc25916113d11fae92"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-storage-20261030\\bin\\model.lib",
+        "bytes": 41474,
+        "sha256": "8708bca23d7b84b2d16cdc2661de5a2ed6ea897c29a803a826de5b5f89340d78"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-storage-20261030\\bin\\ordinary.exe",
+        "bytes": 142916608,
+        "sha256": "5044bc6ecc49700abdf2311201d65adac97074c8f5315f7bb986b03dcc08c5c0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-storage-20261030\\bin\\ordinary.exp",
+        "bytes": 24981,
+        "sha256": "01d2b59cedfbef2022be76fb50ed120f4f59813f3dd66c1d7f62d199ca149128"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-storage-20261030\\bin\\ordinary.lib",
+        "bytes": 41736,
+        "sha256": "b48e083b9ce39eb6f82dd55dba602a320b716d6c6113e731c1094b8446220b32"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-storage-20261030\\bin\\views.exe",
+        "bytes": 140760576,
+        "sha256": "f13a0f8899acd01b81c104fcc130bc63e787b476dc2edc35a21edf253c230790"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-storage-20261030\\bin\\views.exp",
+        "bytes": 24974,
+        "sha256": "5b407fc4401a1128bdea11acd8ba397a89423be8615d8043a36aae53581c8fcf"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-storage-20261030\\bin\\views.lib",
+        "bytes": 41474,
+        "sha256": "71b82a54eb59c53c4f733cc4e570e7f81cbb2f8cedd69d2230ab05824df2f422"
+      }
+    ],
+    "bytes": 569792242
+  },
+  "cleanup": {
+    "status": "COMPLETE",
+    "files": 13,
+    "bytes": 569792242,
+    "scope": "Only this batch native images/link outputs and copied DLL; four current consumer objects and all 227 SDK/engine inputs retained."
+  }
+}

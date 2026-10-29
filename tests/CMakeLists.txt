@@ -445,6 +445,13 @@ if(TARGET hyle_engine)
 endif()
 
 if(TARGET hyle_engine AND _HYLE_COMPUTE_HAVE_CUDA)
+  hyle_add_test(graph_route_cuda NAME inference_submission_views
+    SOURCES tools/inference_submission_views_test.cc
+    DEPS hyle_graph_batch hyle_compute_backend_cuda)
+  hyle_stage_runtime(hyle_graph_route_cuda_inference_submission_views_test)
+  set_tests_properties(hyle_graph_route_cuda_inference_submission_views_test PROPERTIES
+    LABELS "tooling;inference;submission;cuda" TIMEOUT 60 RUN_SERIAL TRUE)
+
   add_executable(hyle_qwen_generation_batch_relay_probe tools/qwen_generation_batch_relay_probe.cc
     "${HYLE_SOURCE_DIR}/engine/models/qwen35/weights.cc")
   hyle_configure_engine_target(hyle_qwen_generation_batch_relay_probe)

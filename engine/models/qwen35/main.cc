@@ -4863,7 +4863,7 @@ public:
         step.phase->family->completion != TextCompletion::kEmitNext || scheduler)
       throw std::runtime_error("submission views require one complete supported prepared episode");
     auto &phase = *step.phase;
-    const auto storage = execution.storage_owner();
+    const auto &storage = execution.storage_owner();
     if (!storage || phase.slots[step.state_slot].carrier.queues().size() != 1 ||
         !take(phase.slots[step.state_slot].io.readback(phase.slots[step.state_slot].data.next_id))->pool().valid())
       throw inference::EvaluationFailure(hyle::Status::Unimplemented(
@@ -4877,9 +4877,14 @@ public:
       sources->boundaries.push_back({member.session, member.next.get(), member.base_epoch + 1,
           member.next->length, member.next->draft ? member.next->draft->frontier : 0});
     }
-    check(sources->prepare(*step.execution.run, phase.state_sources,
-        std::span<const g::NodeId>(step.execution.nodes.data(), draft_bank + (mtp ? 2u : 0u)), storage,
-        execution_budget, mtp ? 1u : 0u));
+    const auto stores = phase.state_sources | std::views::transform([&storage](const auto &source) {
+      return inference::SubmissionViews::StoreCapture{source.store, storage};
+    });
+    const auto appends = std::span<const g::NodeId>(step.execution.nodes.data(), draft_bank + (mtp ? 2u : 0u)) |
+        std::views::transform([&storage](g::NodeId append) {
+          return inference::SubmissionViews::PageCapture{append, storage};
+        });
+    check(sources->prepare(*step.execution.run, stores, appends, execution_budget, mtp ? 1u : 0u));
     if (mtp) {
       sources->successor_states.reserve(geometry.recurrent_layers() * 2);
       for (std::size_t bank = 0; bank < geometry.recurrent_layers() * 2; ++bank)
@@ -4911,8 +4916,8 @@ public:
       bool captured = false;
       if (sources.mtp_full_candidate) {
         const std::array<inference::SubmissionViews::OutputCapture, 2> outputs{{
-            {phase.successor_token_port, take(program_slot.io.readback(io.successor_token))->pool()},
-            {phase.successor_catchup_port, take(program_slot.io.readback(io.successor_catchup))->pool()}}};
+            {phase.successor_token_port, execution.storage_owner(), take(program_slot.io.readback(io.successor_token))->pool()},
+            {phase.successor_catchup_port, execution.storage_owner(), take(program_slot.io.readback(io.successor_catchup))->pool()}}};
         captured = take(sources.capture_outputs(*step.execution.run, step.execution.completion, outputs,
             execution.storage_owner(), optional_sources));
         if (captured) for (auto &state : sources.successor_states) check(state.capture(sources.submission));
