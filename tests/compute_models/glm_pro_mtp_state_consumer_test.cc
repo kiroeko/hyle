@@ -233,6 +233,11 @@ struct ResidentSource {
   bool moe_full_checked=false;
   std::size_t episodes=0;
   std::vector<expert::Selection> selections;
+  struct UploadObservation final {
+    bool native=false,copied_bytes_unknown=false;
+    std::size_t expected=0,logical=0,staged=0,completed=0,submitted=0;
+  };
+  UploadObservation last_upload;
 };
 struct Source final:ResidentSource {
   own::Bound parameters;
@@ -249,12 +254,17 @@ struct TargetSource final:ResidentSource {
   bool full_checked=false;
   std::size_t cold_submissions=0,checked_steps=0;
 };
+void observe_resident_upload(const ResidentSource::UploadObservation &actual) {
+  if(!actual.native)return;
+  EXPECT_EQ(actual.logical,actual.expected);EXPECT_EQ(actual.staged,actual.expected);
+  EXPECT_EQ(actual.completed,actual.submitted);EXPECT_FALSE(actual.copied_bytes_unknown);
+}
 
-// Insert after Source in glm_pro_mtp_state_consumer_test.cc. This is observer
-// wiring only: every mathematical gate uses its existing independent helper.
+// Scenario observations use the exact resident generation of the completed
+// execution, even when a later repair has already supplied another generation.
 template<class Owner,class ReadValue>
 bool observe_moe(Owner &source,const glm_original_moe_fragment::Result &result,
-                 ReadValue actual) {
+                 ReadValue actual,std::size_t selection_index) {
   namespace ref=glm_original_moe_reference;
   namespace boundary=glm_original_indexer_reference;
   namespace lm=glm_shared_vocabulary_reference;
@@ -277,7 +287,7 @@ bool observe_moe(Owner &source,const glm_original_moe_fragment::Result &result,
   if(!ref::expect_router(logits,input,data.router_bytes(),geometry)||
       !ref::expect_routing({logits,scores,selection,selected,sum,denominator,normalized,weights,global},
           data.bias_bytes(),geometry))return false;
-  const auto &resident=source.selections.back();
+  const auto &resident=source.selections.at(selection_index);
   if(map!=resident.map) {
     ADD_FAILURE()<<"original Pro MoE actual map differs from the same resident generation";
     return false;
@@ -454,14 +464,18 @@ struct ResidentRun final {
         live.at(phase.original_outputs[slot].ordinal())=completed[index][slot];
       if(selection) {
         source->selections.push_back(std::move(*selection));
+        if constexpr(!SourceType::kPacked) {
+          ResidentSource::UploadObservation observation;
 #if defined(HYLE_TEST_GLM_STATE_CUDA)
-        if constexpr(!SourceType::kPacked) if(cuda_batch) {
+        if(cuda_batch) {
           const auto accounting=take(cuda_batch->report(),"actual Pro upload accounting");
           const auto layout=source->cuda_supply->layout();
-          EXPECT_EQ(accounting.logical_bytes,layout.logical_bytes);EXPECT_EQ(accounting.staged_bytes,layout.logical_bytes);
-          EXPECT_EQ(accounting.completed_bytes,accounting.submitted_bytes);EXPECT_FALSE(accounting.copied_bytes_unknown);
+          observation={true,accounting.copied_bytes_unknown,layout.logical_bytes,accounting.logical_bytes,
+              accounting.staged_bytes,accounting.completed_bytes,accounting.submitted_bytes};
         }
 #endif
+          source->last_upload=observation;
+        }
       }
       // The shared ordinary run helper has waited/reset before the compact
       // generation can be dropped and either of the two slots reused.
@@ -707,8 +721,10 @@ Image image(const State &state,const c::StateVersion &version) {
 }
 std::vector<std::uint16_t> fixture_bfloat(std::size_t count,std::size_t salt) {
   std::vector<std::uint16_t> result(count);
-  for(std::size_t i=0;i<count;++i)result[i]=glm_original_indexer_reference::detail::bfloat(
-      float(int((i*37+salt*17)%257)-128)/128.0F);
+  for(std::size_t i=0;i<count;++i) {
+    const auto bits=std::bit_cast<std::uint32_t>(float(int((i*37+salt*17)%257)-128)/128.0F);
+    result[i]=std::uint16_t((bits+0x7fff+((bits>>16)&1))>>16);
+  }
   return result;
 }
 void add_bound(std::size_t &total,std::size_t bytes) {
@@ -844,26 +860,40 @@ TargetStep build_target(const TargetSource &source,const Source &nextn) {
   result.model.ports.visit_values(observe);result.model.feed_forward.ports.visit_values(observe);
   return result;
 }
-struct TargetFrame final {std::vector<c::ReadLease> output;std::array<c::ReadLease,3> state;};
+struct TargetFrame final {
+  std::array<c::ReadLease,5> input;
+  std::vector<c::ReadLease> output;
+  std::array<c::ReadLease,3> state;
+  std::size_t selection=SIZE_MAX;
+  ResidentSource::UploadObservation upload;
+};
 TargetFrame execute_target(const TargetStep &step,ResidentRun<> &program,TargetSource &source,
-    const Source &nextn,const c::StorageOwner &owner,c::Queue &queue,bool cuda,
+    const c::StorageOwner &owner,c::Queue &queue,bool cuda,
     const c::ReadLease &token,const c::ReadLease &main,const c::ReadLease &cursor,
     const c::ReadLease &upstream_ids) {
   const auto position=values<std::int32_t>(cursor).at(0);
   if(position<0||position>=kCapacity)throw std::runtime_error("actual target77 cursor exceeds declared finite history");
-  const std::array input{token,upload(owner,sem::bytes(fixture_bfloat(std::size_t(model::kHidden),std::size_t(position)+41))),
+  TargetFrame result;
+  result.input={token,upload(owner,sem::bytes(fixture_bfloat(std::size_t(model::kHidden),std::size_t(position)+41))),
       main,cursor,upstream_ids};
-  TargetFrame result;result.output=program.execute(queue,input,cuda);
-  const auto actual=[&](Value value){return observed(step.step,input,result.output,value);};
+  result.selection=source.selections.size();
+  result.output=program.execute(queue,result.input,cuda);
+  result.upload=source.last_upload;
+  for(std::size_t i=0;i<result.state.size();++i)result.state[i]=result.output.at(step.state_ports[i]);
+  return result;
+}
+void observe_target(const TargetStep &step,TargetSource &source,const Source &nextn,
+    const TargetFrame &result) {
+  observe_resident_upload(result.upload);
+  const auto actual=[&](Value value){return observed(step.step,result.input,result.output,value);};
   require_observed(glm_pro_target_reference::observe(*source.parameters.source,step.model,actual,!source.full_checked),
       "original77 all actual MLA/residual/finalnorm predecessors");
-  require_observed(observe_moe(source,step.model.feed_forward,actual),"original77 actual selected expert mathematics");
-  const std::array input_token{values<std::int32_t>(token).at(0)};
+  require_observed(observe_moe(source,step.model.feed_forward,actual,result.selection),"original77 actual selected expert mathematics");
+  const std::array input_token{values<std::int32_t>(result.input[0]).at(0)};
   require_observed(glm_shared_vocabulary_reference::expect_embedding(
       glm_pro_mtp_reference::detail::bfloats(actual(step.model.ports.hidden)),
       nextn.words.source->bytes(vocabulary::Role::kEmbedding),input_token,154880,6144),"actual token enters declared layer76 adapter");
-  for(std::size_t i=0;i<result.state.size();++i)result.state[i]=result.output.at(step.state_ports[i]);
-  source.full_checked=true;++source.checked_steps;return result;
+  source.full_checked=true;++source.checked_steps;
 }
 c::StateVersion attach_target(State &state,const c::StateVersion &candidate,const TargetFrame &target) {
   auto draft=take(state.store.begin(candidate),"joint original77/78 candidate");
@@ -958,13 +988,13 @@ void validate_step(State &state,const c::StateVersion &version,const Step &step)
   }
 }
 struct StepUpdates final {Bytes main,index,scales,journal;};
-template<class Actual> StepUpdates observe_step(glm_gguf_runtime_source::Source &,const Step &,Actual,std::int32_t);
+template<class Actual> StepUpdates observe_step(glm_gguf_runtime_source::Source &,const Step &,Actual,std::int32_t,std::size_t);
 template<class Actual>
-StepUpdates observe_step(Source &source,const Step &step,Actual actual,std::int32_t token) {
+StepUpdates observe_step(Source &source,const Step &step,Actual actual,std::int32_t token,std::size_t selection) {
   if(step.model) {
     require_observed(glm_pro_mtp_reference::observe(*source.parameters.source,*step.model,actual,!source.full_checked,token),
         "original complete Pro NextN actual predecessors");
-    require_observed(observe_moe(source,step.model->feed_forward,actual),"original complete Pro MoE");
+    require_observed(observe_moe(source,step.model->feed_forward,actual,selection),"original complete Pro MoE");
     source.full_checked=true;++source.checked_steps;
   } else if(step.catchup) {
     require_observed(glm_pro_mtp_reference::observe_index_history(*source.parameters.source,*step.catchup,actual,false),
@@ -979,26 +1009,43 @@ StepUpdates observe_step(Source &source,const Step &step,Actual actual,std::int3
   } else {r.index=actual(step.catchup->encoded.codes);r.scales=actual(step.catchup->encoded.scale);}
   return r;
 }
+// Only original completed leases and versions, retained until the scenario's
+// next explicit observation. No reference result or second native owner.
+struct StepExecution final {
+  c::StateVersion before,version;
+  std::vector<c::ReadLease> input,output;
+  std::size_t selection=SIZE_MAX;
+  std::uint64_t iteration=0;
+  ResidentSource::UploadObservation upload;
+};
 template<class SourceType,class Execute>
-c::StateVersion execute_step(State &state,const c::StateVersion &before,const Step &step,
+StepExecution execute_step(State &state,const c::StateVersion &before,const Step &step,
     SourceType &source,std::uint64_t iteration,Execute execute,const c::ReadLease &target={},c::ReadLease *retained_logits=nullptr) {
   validate_step(state,before,step);
   if(!step.fresh&&state.epoch(before).epoch!=iteration)
     throw std::runtime_error("Pro skip/catchup must retain its incoming iteration epoch");
-  const auto input=arguments(state,before,step,target);
-  const auto output=execute(input);
+  StepExecution result;result.before=before;result.iteration=iteration;result.input=arguments(state,before,step,target);
+  result.selection=step.has_model()?source.selections.size():SIZE_MAX;
+  result.output=execute(result.input);
+  if constexpr(!SourceType::kPacked)if(step.has_model())result.upload=source.last_upload;
   if(retained_logits) {
     if(!step.has_model())throw std::runtime_error("random Pro proposal requires actual NextN logits");
     const auto logits=step.model?step.model->ports.logits:step.converted_model->ports.logits;
     const auto found=std::find_if(step.observations.begin(),step.observations.end(),
         [&](const auto &entry){return entry.first.ordinal()==logits.ordinal();});
     if(found==step.observations.end())throw std::runtime_error("actual Pro logits were not retained by the ordinary model Graph");
-    *retained_logits=output.at(found->second);
+    *retained_logits=result.output.at(found->second);
   }
-  const auto actual=[&](Value value){return observed(step,input,output,value);};
-  const auto updates=observe_step(source,step,actual,state.scalar(before,kPending));
-  auto after=state.stage(before,step,output,iteration);
-
+  result.version=state.stage(before,step,result.output,iteration);
+  return result;
+}
+template<class SourceType>
+void observe_step_execution(State &state,const Step &step,SourceType &source,const StepExecution &result) {
+  const auto &before=result.before;const auto &after=result.version;const auto &output=result.output;
+  const auto iteration=result.iteration;
+  if(step.has_model())observe_resident_upload(result.upload);
+  const auto actual=[&](Value value){return observed(step,result.input,output,value);};
+  const auto updates=observe_step(source,step,actual,state.scalar(before,kPending),result.selection);
   for(std::size_t i=0;i<state.layout.resources.size();++i) {
     if(step.state_ports.at(i)==kAbsent)same_storage(state.physical_member(after,i),state.physical_member(before,i));
     else same_storage(state.physical_member(after,i),output.at(step.state_ports[i]));
@@ -1030,7 +1077,15 @@ c::StateVersion execute_step(State &state,const c::StateVersion &before,const St
     same_storage(state.member(after,kMain),state.member(before,kMain));
     same_storage(state.member(after,kSelection),state.member(before,kSelection));
   }
-  return after;
+}
+// Scenario-only composition. Model steps call execute_step directly and return
+// its original result leases to their explicit observation point instead.
+template<class SourceType,class Execute>
+c::StateVersion execute_observed_step(State &state,const c::StateVersion &before,const Step &step,
+    SourceType &source,std::uint64_t iteration,Execute execute,const c::ReadLease &target={},c::ReadLease *retained_logits=nullptr) {
+  auto result=execute_step(state,before,step,source,iteration,std::move(execute),target,retained_logits);
+  observe_step_execution(state,step,source,result);
+  return std::move(result.version);
 }
 
 struct Verifier final {
@@ -1272,7 +1327,7 @@ bool observe_converted_model(converted_source::ResidentSource &source,const conv
   return converted_ref::moe(moe,f,p,kMoe,actual,original,experts,full,codec);
 }
 template<class Actual>
-StepUpdates observe_step(converted_source::Source &source,const Step &step,Actual actual,std::int32_t token) {
+StepUpdates observe_step(converted_source::Source &source,const Step &step,Actual actual,std::int32_t token,std::size_t) {
   const auto &f=step.recipe.fragment;const auto p=converted_parameters_for_reference(source,step);
   const auto original=converted_original(source,step);
   const auto codec=source.cuda?converted_ref::base::ActivationCodec::kCudaMmvqQ8_1:converted_ref::base::ActivationCodec::kCpuAvx2;
@@ -1337,33 +1392,37 @@ TargetStep build_target(const converted_source::TargetSource &source,const conve
   (void)nextn;return result;
 }
 TargetFrame execute_target(const TargetStep &step,ResidentRun<converted_source::ResidentSource> &program,
-    converted_source::TargetSource &source,const converted_source::Source &nextn,const c::StorageOwner &owner,
+    converted_source::TargetSource &source,const c::StorageOwner &owner,
     c::Queue &queue,bool cuda,const c::ReadLease &token,const c::ReadLease &main,const c::ReadLease &cursor,const c::ReadLease &ids) {
   const auto position=values<std::int32_t>(cursor).at(0);
   if(position<0||position>=kCapacity)throw std::runtime_error("converted target cursor outside actual main history");
   const auto fixture=converted_fixture(std::size_t(converted_data::kGeometry.hidden),std::size_t(position)+41);
-  const std::array input{token,upload(owner,sem::bytes(fixture)),main,cursor,ids};
-  TargetFrame frame;frame.output=program.execute(queue,input,cuda);
-  const auto actual=[&](Value v){return observed(step.step,input,frame.output,v);};
+  TargetFrame frame;frame.input={token,upload(owner,sem::bytes(fixture)),main,cursor,ids};
+  frame.selection=source.selections.size();frame.output=program.execute(queue,frame.input,cuda);
+  for(std::size_t i=0;i<3;++i)frame.state[i]=frame.output.at(step.state_ports[i]);
+  return frame;
+}
+void observe_target(const TargetStep &step,converted_source::TargetSource &source,
+    const converted_source::Source &nextn,const TargetFrame &frame) {
+  const auto actual=[&](Value v){return observed(step.step,frame.input,frame.output,v);};
   const auto p=converted_parameters_for_reference(source,step.step);const auto original=converted_original(source,step.step);
   const auto &r=*step.converted;const auto &g=converted_data::kGeometry;
-  const auto codec=cuda?converted_ref::base::ActivationCodec::kCudaMmvqQ8_1:converted_ref::base::ActivationCodec::kCpuAvx2;
+  const auto codec=source.cuda?converted_ref::base::ActivationCodec::kCudaMmvqQ8_1:converted_ref::base::ActivationCodec::kCpuAvx2;
   require_observed(converted_ref::norm(r.input_norm,p.block[0].input_norm,g,actual,original)&&
       converted_ref::projection(r.query,step.step.recipe.fragment,actual,original,!source.full_checked,codec)&&
       converted_ref::norm(r.query_norm,p.block[0].query_norm,g,actual,original)&&
       converted_ref::attention(r.attention,r.position,r.main,r.selection,step.step.recipe.fragment,p.block[0],g,actual,original,!source.full_checked,codec)&&
-      observe_converted_model(source,r.feed_forward,step.step.recipe.fragment,p.block[0],actual,original,!source.moe_full_checked,cuda)&&
+      observe_converted_model(source,r.feed_forward,step.step.recipe.fragment,p.block[0],actual,original,!source.moe_full_checked,source.cuda)&&
       converted_ref::norm(r.final_norm,p.target_norm,g,actual,original),"converted distinct77 MLA/MoE/finalnorm");
   require_observed(qwen27_original_nextn_reference::expect_embedding(converted_ref::floats(actual(r.hidden)),
-      nextn.parameters.source->bytes("token_embd.weight"),std::size_t(g.hidden),std::size_t(g.vocabulary),values<std::int32_t>(token).at(0),GGML_TYPE_Q8_0)&&
+      nextn.parameters.source->bytes("token_embd.weight"),std::size_t(g.hidden),std::size_t(g.vocabulary),values<std::int32_t>(frame.input[0]).at(0),GGML_TYPE_Q8_0)&&
       converted_ref::add(converted_ref::floats(actual(r.input_sum)),converted_ref::floats(actual(r.hidden)),
           converted_ref::floats(actual(r.residual)),"B09 target upstream rawsum")&&
       converted_ref::add(converted_ref::floats(actual(r.attention.residual_sum)),converted_ref::floats(actual(r.input_sum)),
           converted_ref::floats(actual(r.attention.output.output.output)),"B09 target O residual")&&
       converted_ref::add(converted_ref::floats(actual(r.post_ffn)),converted_ref::floats(actual(r.attention.residual_sum)),
           converted_ref::floats(actual(r.feed_forward.output)),"B09 target final FFN sum"),"B09 target original row/raw residual sums");
-  for(std::size_t i=0;i<3;++i)frame.state[i]=frame.output.at(step.state_ports[i]);
-  source.full_checked=true;source.moe_full_checked=true;++source.checked_steps;(void)nextn;return frame;
+  source.full_checked=true;source.moe_full_checked=true;++source.checked_steps;
 }
 Verifier build_verifier(const converted_source::Source &source,bool direct_rows=false,bool single_row=false) {
   Verifier r;auto &f=r.recipe.fragment;const auto &g=converted_data::kGeometry;
@@ -1554,12 +1613,20 @@ template<class Runtime> struct GlmStepRuntime final {
     c::ReadLease pending;
     bool sampled_accept=false;
   };
+  struct Advance final {
+    c::StateVersion version;
+    const Step *step=nullptr;
+    StepExecution execution;
+    std::optional<TargetFrame> target;
+  };
   struct Candidate final {
     c::StateVersion second;
     std::vector<c::ReadLease> checked;
     Selection selected;
     c::StateVersion checkpoint;
     c::StateVersion version;
+    std::optional<Advance> advancement;
+    std::optional<StepExecution> repair;
   };
 
   State &state;
@@ -1574,7 +1641,7 @@ template<class Runtime> struct GlmStepRuntime final {
   Native &verifier_program;
   Counters counts;
 
-  c::StateVersion advance(const c::StateVersion &from,Stage stage,std::uint64_t iteration,
+  Advance advance(const c::StateVersion &from,Stage stage,std::uint64_t iteration,
       c::ReadLease target_input={},c::ReadLease *first_logits=nullptr) {
     return advance_impl(from,stage,iteration,target_input,first_logits,false);
   }
@@ -1590,24 +1657,24 @@ template<class Runtime> struct GlmStepRuntime final {
     return {std::move(checkpoint),std::move(random)};
   }
 
-  c::StateVersion ordinary(const c::StateVersion &from,Stage stage,std::uint64_t iteration,
+  Advance ordinary(const c::StateVersion &from,Stage stage,std::uint64_t iteration,
       c::ReadLease target_input,Cursor cursor,std::vector<c::ReadLease> *observed_policy=nullptr) {
     if(sampler&&!target)throw std::runtime_error("random Pro ordinary continuation requires its target program");
     if(sampler)check_cursor(from,cursor);
     const auto next_cursor=sampler?cursor.advanced(1):cursor;
     auto continued=advance(from,stage,iteration,std::move(target_input));
     if(!sampler)return continued;
-    const std::array input{state.member(continued,kTargetTap)};
+    const std::array input{state.member(continued.version,kTargetTap)};
     auto policy=target->policy_program.execute(queue,input);
     const auto sampled=sample(policy.at(target->policy.logits),cursor);
-    auto draft=take(state.store.begin(continued),"real Pro target-only continuation");
+    auto draft=take(state.store.begin(continued.version),"real Pro target-only continuation");
     check(draft.replace(state.entry(kPending),sampled[1]),
         "actual target categorical pending after residual/bonus consumption");
     check(draft.replace_metadata(state.entries[*state.sampling_entry],std::as_bytes(std::span(&next_cursor,1))),
         "target-only draw belongs to its successful full Head");
-    auto result=take(draft.finalize(),"original complete Pro next target pending and RNG");
+    continued.version=take(draft.finalize(),"original complete Pro next target pending and RNG");
     if(observed_policy)*observed_policy=std::move(policy);
-    return result;
+    return continued;
   }
 
   Candidate verify_and_prepare(const c::StateVersion &base,const c::StateVersion &first_checkpoint,
@@ -1616,11 +1683,15 @@ template<class Runtime> struct GlmStepRuntime final {
       std::uint64_t iteration) {
     preflight(base,first_checkpoint,q,cursor,grant,limits);
     auto verified=advance_impl(first_checkpoint,second,iteration,{},nullptr,true);
-    if(!target)return prepare_verified_impl(base,first_checkpoint,verified,external_checked,q,cursor,grant,limits,emitted,iteration);
-    const std::array input{state.member(first_checkpoint,kTargetTap),state.member(verified,kTargetTap)};
-    auto checked=verifier_program.execute(queue,input);
-    auto candidate=prepare_verified_impl(base,first_checkpoint,verified,checked,q,cursor,grant,limits,emitted,iteration);
-    candidate.checked=std::move(checked);
+    Candidate candidate;
+    if(!target)candidate=prepare_verified_impl(base,first_checkpoint,verified.version,external_checked,q,cursor,grant,limits,emitted,iteration);
+    else {
+      const std::array input{state.member(first_checkpoint,kTargetTap),state.member(verified.version,kTargetTap)};
+      auto checked=verifier_program.execute(queue,input);
+      candidate=prepare_verified_impl(base,first_checkpoint,verified.version,checked,q,cursor,grant,limits,emitted,iteration);
+      candidate.checked=std::move(checked);
+    }
+    candidate.advancement=std::move(verified);
     return candidate;
   }
 
@@ -1664,9 +1735,10 @@ template<class Runtime> struct GlmStepRuntime final {
       selected.pending=checked[port];
     }
     auto checkpoint=selected.prefix.consumed_drafts?verified:first_checkpoint;
+    std::optional<StepExecution> repair;
     if(target&&selected.prefix.consumed_drafts) {
       const auto before=target->repair.program.native_submissions();
-      const auto repaired=execute_step(state,first_checkpoint,target->repair.step,source,iteration,
+      repair=execute_step(state,first_checkpoint,target->repair.step,source,iteration,
           [&](std::span<const c::ReadLease> input){return target->repair.program.execute(queue,input,cuda);},
           state.member(first_checkpoint,kTargetTap));
       ++counts.feedback;++counts.skips;++counts.repairs;
@@ -1674,7 +1746,7 @@ template<class Runtime> struct GlmStepRuntime final {
       TargetFrame frame;
       const std::array entries{kTargetMain,kTargetCursor,kTargetTap};
       for(std::size_t index=0;index<entries.size();++index)frame.state[index]=state.member(verified,entries[index]);
-      checkpoint=attach_target(state,repaired,frame);
+      checkpoint=attach_target(state,repair->version,frame);
     }
     auto draft=take(state.store.begin(checkpoint),"all-resource K1 Pro acceptance");
     check(draft.replace(state.entry(kPending),selected.pending),"direct actual target policy result lease");
@@ -1684,20 +1756,22 @@ template<class Runtime> struct GlmStepRuntime final {
           "same complete Pro transaction advances RNG");
     }
     auto version=take(draft.finalize(),"complete K1 Pro accepted checkpoint");
-    return {verified,{},std::move(selected),std::move(checkpoint),std::move(version)};
+    return {verified,{},std::move(selected),std::move(checkpoint),std::move(version),{},std::move(repair)};
   }
 
-  c::StateVersion advance_impl(const c::StateVersion &from,Stage stage,std::uint64_t iteration,
+  Advance advance_impl(const c::StateVersion &from,Stage stage,std::uint64_t iteration,
       const c::ReadLease &target_input,c::ReadLease *first_logits,bool skipped) {
-    auto result=execute_step(state,from,stage.step,source,iteration,
+    Advance result;result.step=&stage.step;
+    result.execution=execute_step(state,from,stage.step,source,iteration,
         [&](std::span<const c::ReadLease> input){return stage.program.execute(queue,input,cuda);},
         target_input,first_logits);
     ++counts.feedback;
     if(skipped)++counts.skips;
+    result.version=result.execution.version;
     if(target) {
-      const auto frame=execute_target(target->step,target->program,target->source,source,owner,queue,cuda,
+      result.target=execute_target(target->step,target->program,target->source,owner,queue,cuda,
           state.member(from,kPending),state.member(from,kTargetMain),state.member(from,kTargetCursor),target->upstream);
-      result=attach_target(state,result,frame);
+      result.version=attach_target(state,result.version,*result.target);
     }
     return result;
   }
@@ -1996,9 +2070,11 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
       std::vector<float> history(std::size_t(kCapacity*model::kCacheDepth),std::numeric_limits<float>::quiet_NaN());
       const auto valid=fixture_bfloat(std::size_t((kBasePosition-1)*model::kCacheDepth),29);
       for(std::size_t i=0;i<valid.size();++i)history[i]=glm_shared_vocabulary_reference::detail::finite_bfloat(valid[i]);
-      warm=execute_target(*target_step,*target_program,*target_source,*source,owner,queue,cuda,
+      warm=execute_target(*target_step,*target_program,*target_source,owner,queue,cuda,
           upload(owner,sem::bytes(std::vector<std::int32_t>{0})),upload(owner,sem::bytes(history)),
           upload(owner,sem::bytes(std::vector<std::int32_t>{std::int32_t(kBasePosition-1)})),upstream_ids);
+      observe_target(*target_step,*target_source,*source,*warm);
+      warm->input={};warm->output.clear();
       members[layout.slot(kHidden)]=warm->state[2];
     }
     report_head(verifier_program,*source,cuda);
@@ -2121,6 +2197,16 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
     ModelSteps model_steps{state,owner,queue,*source,cuda,step_target?&*step_target:nullptr,
         step_sampler?&*step_sampler:nullptr,{second_step,second_program},verifier,verifier_program,
         {feedback,skips,repairs,repair_submissions}};
+    const auto observe_advance=[&](typename ModelSteps::Advance &actual) {
+      observe_step_execution(state,*actual.step,*source,actual.execution);
+      if(actual.target)observe_target(*target_step,*target_source,*source,*actual.target);
+      actual.execution={};actual.target.reset();
+    };
+    const auto observe_candidate=[&](typename ModelSteps::Candidate &actual) {
+      if(actual.advancement)observe_advance(*actual.advancement);
+      if(actual.repair)observe_step_execution(state,*repair_step,*source,*actual.repair);
+      actual.advancement.reset();actual.repair.reset();
+    };
     {
       Epoch initial_epoch{6,std::uint64_t(kBasePosition-1),0};
       std::vector<c::StateMember> initial(state.entries.size());
@@ -2154,7 +2240,8 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
       const auto execute_checked_ordinary=[&](const c::StateVersion &from,typename ModelSteps::Stage stage,
           const c::ReadLease &target_input,SamplingCursor cursor) {
         std::vector<c::ReadLease> policy_observation;
-        auto continued=model_steps.ordinary(from,stage,8,target_input,cursor,&policy_observation);
+        auto actual=model_steps.ordinary(from,stage,8,target_input,cursor,&policy_observation);
+        observe_advance(actual);auto continued=std::move(actual.version);
         if(use_target)EXPECT_EQ(state.scalar(continued,kTargetCursor),state.scalar(continued,kCursor));
         if(stochastic)(void)check_verifier(*policy,policy_observation,values<Tap>(state.member(continued,kTargetTap)),false);
         return continued;
@@ -2376,7 +2463,8 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
               if(stochastic&&std::ranges::find(limits.eos,state.scalar(base,kPending))!=limits.eos.end())
                 throw std::runtime_error("Pro cannot consume an EOS pending token");
               EXPECT_THROW(validate_step(state,base,catchup_step),std::runtime_error);
-              first=model_steps.advance(base,{first_step,first_program},7,target_before,stochastic?&first_logits:nullptr);
+              auto actual=model_steps.advance(base,{first_step,first_program},7,target_before,stochastic?&first_logits:nullptr);
+              observe_advance(actual);first=std::move(actual.version);
               check_current(first);
               std::vector<c::ReadLease> random_draft;
               if(stochastic) {
@@ -2412,6 +2500,7 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
               check_step_admission(first_checkpoint,random_draft,grant);
               auto candidate=model_steps.verify_and_prepare(base,first_checkpoint,random_draft,initial_random,
                   grant,limits,checked,selection_emitted,7);
+              observe_candidate(candidate);
               second=candidate.second;if(use_target)checked=std::move(candidate.checked);check_verified(first_checkpoint,second);
               second_image=image(state,second);
               if(scenario==0) {
@@ -2460,7 +2549,7 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
               if(stochastic&&!exercise_prefix_policies(first_checkpoint,checkpoint,proposal,decision,sampled_accept,pending,random_draft[1]))return;
               caught=published;
               if(decision.consumed_drafts) {
-                caught=execute_step(state,published,catchup_step,*source,7,
+                caught=execute_observed_step(state,published,catchup_step,*source,7,
                     [&](std::span<const c::ReadLease> input){return catchup_program.execute(queue,input);});
                 ++catchups;check(head.publish(published.identity(),caught),"same accepted Head catches up its one journal row");
               } else if(request_directory_demo) {
@@ -2596,7 +2685,7 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
               EXPECT_EQ(state.epoch(seed).reuses,0u);
               auto &step_zero=decision.consumed_drafts?skip_one:skip_zero;
               auto &zero_program=decision.consumed_drafts?skip_one_program:skip_zero_program;
-              const auto skipped=execute_step(state,seed,step_zero,*source,8,
+              const auto skipped=execute_observed_step(state,seed,step_zero,*source,8,
                   [&](std::span<const c::ReadLease> input){return zero_program.execute(queue,input,cuda);});
               ++feedback;++skips;
               same_storage(state.member(skipped,kSelection),state.member(seed,kSelection));
@@ -2712,7 +2801,8 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
         if(stochastic&&std::ranges::find(limits.eos,state.scalar(base,kPending))!=limits.eos.end())
           throw std::runtime_error("Pro cannot consume an EOS pending token");
         EXPECT_THROW(validate_step(state,base,catchup_step),std::runtime_error);
-        auto first=model_steps.advance(base,{first_step,first_program},7,target_before,stochastic?&first_logits:nullptr);
+        auto actual=model_steps.advance(base,{first_step,first_program},7,target_before,stochastic?&first_logits:nullptr);
+        observe_advance(actual);auto first=std::move(actual.version);
         check_current(first);
         if(stochastic&&maximum_drafts==2&&!limits.single_row()) {
           const auto q=sample_logits(first_logits,initial_random);
@@ -2726,11 +2816,12 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
             };
             const auto joint=[&](const c::StateVersion &from,const Step &step,Resident &program,
                 std::uint64_t epoch,c::ReadLease *logits=nullptr) {
-              auto result=execute_step(state,from,step,*source,epoch,
+              auto result=execute_observed_step(state,from,step,*source,epoch,
                   [&](std::span<const c::ReadLease> input){return program.execute(queue,input,cuda);},
                   step.fresh?state.member(from,kTargetTap):c::ReadLease{},logits);
-              const auto target=execute_target(*target_step,*target_program,*target_source,*source,owner,queue,cuda,
+              const auto target=execute_target(*target_step,*target_program,*target_source,owner,queue,cuda,
                   state.member(from,kPending),state.member(from,kTargetMain),state.member(from,kTargetCursor),upstream_ids);
+              observe_target(*target_step,*target_source,*source,target);
               result=attach_target(state,result,target);
               EXPECT_EQ(state.scalar(result,kTargetCursor),state.scalar(result,kCursor));return result;
             };
@@ -2764,7 +2855,7 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
                 const auto from=with_pending(repaired[row-1],row==1?q[1]:q_next[1]);
                 auto &step=row==1?*repair_step:*repair_second_step;
                 auto &program=row==1?*repair_program:*repair_second_program;
-                auto fixed=execute_step(state,from,step,*source,7,
+                auto fixed=execute_observed_step(state,from,step,*source,7,
                     [&](std::span<const c::ReadLease> input){return program.execute(queue,input,cuda);},state.member(row==1?first:second,kTargetTap));
                 const auto &target=row==1?second:third;TargetFrame frame;
                 const std::array entries{kTargetMain,kTargetCursor,kTargetTap};
@@ -2785,7 +2876,7 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
               auto caught=selected;
               for(std::size_t slot=0;slot<consumed;++slot) {
                 auto &step=slot==0?catchup_step:*recursive_catchup_step;auto &program=slot==0?catchup_program:*recursive_catchup;
-                const auto next=execute_step(state,caught,step,*source,7,
+                const auto next=execute_observed_step(state,caught,step,*source,7,
                     [&](std::span<const c::ReadLease> input){return program.execute(queue,input);});
                 check(head.publish(caught.identity(),next),"Pro K2 actual accepted journal row publication");caught=next;
               }
@@ -2850,12 +2941,14 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
             if(!scenario)check_step_admission(first_checkpoint,random_draft,{.additional=2});
             auto candidate=model_steps.verify_and_prepare(base,first_checkpoint,random_draft,initial_random,
                 {.additional=2},limits,checked,selection_emitted,7);
+            observe_candidate(candidate);
             auto second=candidate.second;if(use_target)checked=std::move(candidate.checked);check_verified(first_checkpoint,second);
             if(!stochastic&&scenario==1) {
               const auto before=native_step_counts();
               std::vector<std::int32_t> tokens;
               auto bounded=model_steps.prepare_verified(base,first_checkpoint,second,checked,random_draft,
                   initial_random,{.additional=1},limits,tokens,7);
+              observe_candidate(bounded);
               EXPECT_TRUE(bounded.selected.prefix.first_agrees);
               EXPECT_EQ(bounded.selected.prefix.consumed,1u);EXPECT_EQ(bounded.selected.prefix.consumed_drafts,0u);
               EXPECT_EQ(tokens,(std::vector<std::int32_t>{proposal}));
@@ -2915,7 +3008,7 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
             if(stochastic&&!exercise_prefix_policies(first_checkpoint,checkpoint,proposal,decision,sampled_accept,pending,random_draft[1]))return;
             auto caught=published;
             if(decision.consumed_drafts) {
-              caught=execute_step(state,published,catchup_step,*source,7,
+              caught=execute_observed_step(state,published,catchup_step,*source,7,
                   [&](std::span<const c::ReadLease> input){return catchup_program.execute(queue,input);});
               ++catchups;check(head.publish(published.identity(),caught),"same accepted Head catches up its one journal row");
             } else EXPECT_THROW(validate_step(state,published,catchup_step),std::runtime_error);
@@ -2942,7 +3035,7 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
             EXPECT_EQ(state.epoch(seed).reuses,0u);
             auto &step_zero=decision.consumed_drafts?skip_one:skip_zero;
             auto &zero_program=decision.consumed_drafts?skip_one_program:skip_zero_program;
-            const auto skipped=execute_step(state,seed,step_zero,*source,8,
+            const auto skipped=execute_observed_step(state,seed,step_zero,*source,8,
                 [&](std::span<const c::ReadLease> input){return zero_program.execute(queue,input,cuda);});
             ++feedback;++skips;
             same_storage(state.member(skipped,kSelection),state.member(seed,kSelection));

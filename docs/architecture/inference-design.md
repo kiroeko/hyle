@@ -75,7 +75,10 @@ GLM有限原组件的`GlmStepRuntime`借原State、已选程序、Source与Queue
 原场景与RequestLoop直接调用同一普通／K1计算和未发布候选形成；模型步骤不持Head、请求记录或新的执行owner。
 实际grant只限制已选K1可发布前缀，保留q／accept／final三draw；独立target-only是一draw，不能因grant为1暗换角色。
 GLM接受后先CAS并立即见证提交，再单独维护journal；模型保留已提交版本与维护后current，晚维护／观察失败不重跑已提交数学。
-实际execute_step／execute_target仍附带reference主机oracle与EXPECT检查，尚需将原执行／state.stage与scenario判定分开，再接共同步骤驱动。
+实际execute_step／execute_target现只形成原执行结果与未发布状态，reference、exact-row及EXPECT在scenario显式观察。
+GlmStepRuntime的普通、验证与修复返回实际输入／输出lease及必要状态，观察后立即释放；MoE判定使用各次执行的selection序号，不能读后来repair的最新选择。
+[两个原CUDA组件场景](../evidence/correctness/inference-glm-math-boundary-2026-10-30.json)的107项非计时报告与拆分前一致；原StateStore及resident容量上限未提高。
+这补齐了独立模型步骤的前置边界，完整共同步骤驱动仍未接入；其它制品／平台未据此代签。
 这仍是有限target77／NextN78组件适配，不代表完整GLM prompt前向、异步合批或引擎API已经完成。
 
 读回的caller缓冲按具体编译程序的原存储域表准备，不能用Backend预设的域编号解释另一个程序。

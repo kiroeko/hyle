@@ -1,0 +1,109 @@
+{
+  "schema": "hyle.glm-math-observation-boundary.v1",
+  "date": "2026-10-30",
+  "base_commit": "11f511cd7",
+  "status": "FINITE_CHECKS_PASSED",
+  "source": {
+    "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_mtp_state_consumer_test.cc",
+    "bytes": 233608,
+    "sha256": "658cfd732397e469cc13d216820c41ee4349dce2606068b8a8b864817fb5018b"
+  },
+  "implementation": [
+    "execute_step returns original input/output leases and uncommitted StateVersion; reference/exact-row/EXPECT checks are explicit observers.",
+    "TargetFrame retains original inputs/outputs/state for explicit target observation.",
+    "GlmStepRuntime advance/ordinary/verify/repair form actual results without reference or EXPECT; scenarios observe and release temporary versions/leases.",
+    "MoE observations use each completed execution selection ordinal; original upload report scalars are captured before their WeightBatch expires.",
+    "Original StateStore version/draft limits, resident capacities, graph recipes, publication, RNG and retirement mechanisms retained."
+  ],
+  "cases": [
+    {
+      "name": "greedy-cuda",
+      "test": "GlmProMtpStateConsumer.CudaOriginalTarget77AndNextNFullVocabularyVerifier",
+      "status": "PASS",
+      "skipped": 0,
+      "non_timing_properties": 54,
+      "previous_properties_identical": true,
+      "prior": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-step-20261030\\runs\\greedy-cuda\\attempt1\\report.json",
+        "bytes": 4429,
+        "sha256": "ba259bc032e03417554d6b379d4e9c5b74b581111d7eb7b86269968a4bcd4073"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-math-boundary-20261030\\runs\\greedy-cuda\\attempt1\\report.json",
+        "bytes": 4429,
+        "sha256": "ba259bc032e03417554d6b379d4e9c5b74b581111d7eb7b86269968a4bcd4073"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 55736,
+        "started": 1793336752.5444248,
+        "seconds": 98.51509237289429,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    {
+      "name": "request-cuda",
+      "test": "GlmProMtpStateConsumer.CudaOriginalTarget77AndNextNRandomVerifierContinuesAtomically",
+      "status": "PASS",
+      "skipped": 0,
+      "non_timing_properties": 53,
+      "previous_properties_identical": true,
+      "prior": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-step-20261030\\runs\\request-cuda\\attempt1\\report.json",
+        "bytes": 4571,
+        "sha256": "5685f393cdf9c464dfac8ff8bb5081b95344230ef76f306d25e8aa76f61092b5"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-math-boundary-20261030\\runs\\request-cuda\\attempt1\\report.json",
+        "bytes": 4571,
+        "sha256": "5685f393cdf9c464dfac8ff8bb5081b95344230ef76f306d25e8aa76f61092b5"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 43364,
+        "started": 1793336870.512946,
+        "seconds": 89.48603987693787,
+        "exit": 0,
+        "timed_out": false
+      }
+    }
+  ],
+  "build": {
+    "consumer_cxx": 1,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "retained_sdk_objects": 227,
+    "compile": {
+      "state": "TERMINAL",
+      "pid": 34340,
+      "started": 1793336706.1256351,
+      "seconds": 18.931254148483276,
+      "exit": 0,
+      "timed_out": false
+    },
+    "link": {
+      "state": "TERMINAL",
+      "pid": 13700,
+      "started": 1793336743.9644809,
+      "seconds": 1.8753292560577393,
+      "exit": 0,
+      "timed_out": false
+    }
+  },
+  "cleanup": {
+    "retained": "Same-ABI SDK objects, current GLM consumer object, source dependencies, commands and reports",
+    "files": 4,
+    "status": "REMOVED_EXACT_FLAT_BATCH_IMAGES",
+    "boundary": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-math-boundary-20261030\\bin",
+    "bytes": 143577313
+  },
+  "limits": [
+    "Original target77/NextN78 finite components with explicit upstream activation and initial cache fixtures, not complete GLM prompt generation.",
+    "RequestLoop GLM wave is still synchronous and pending_count is zero; shared complete step driver and second-model continuation remain unfinished.",
+    "Official K2, NextN-only, B09/B10, CPU and Apple/Vulkan variants were not run in this batch.",
+    "No throughput, physical-memory or cross-engine performance conclusion."
+  ],
+  "next": "Implement actual common current/successor and cross-pump control, with static model facts and original Graph execution authority."
+}

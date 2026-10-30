@@ -40,7 +40,8 @@ HYLE 的产品目标是完整推理引擎；Compute、Graph、内存、调度、
 
 Qwen／Kimi的完整资源阶段交接已接入原ExecutionEpisode；Head／ledger／RNG发布、私有修复及reset政策仍由原模型负责。
 GLM已有模型步骤封装及实际额度接线：原场景和RequestLoop调用真实普通／K1计算与未发布候选形成，不再依赖固定base／随机身份的计算闭包。
-但execute_step／execute_target仍内嵌reference主机oracle与EXPECT检查，尚非独立可复用的模型步骤；须将真实执行／state.stage与原scenario检查分开，保留现有检查覆盖。
+随后[实际计算／观察分离](../evidence/correctness/inference-glm-math-boundary-2026-10-30.json)让execute_step／execute_target及GlmStepRuntime只形成实际结果，原reference／EXPECT在scenario显式观察并立即释放临时lease／version。
+两个原CUDA场景通过，107项非计时属性与拆分前一致，未改原提交数或容量上限；这不是完整GLM或第二模型共同驱动完成，后者仍须实现。
 已选K1工作遇输出额度1，仍保原提案／验证及三draw合同，只限制可发布前缀；不能触发另一条target-only单draw政策。
 GLM先发布已接受完整状态、再维护journal的时序区别于Qwen，已提交结果和维护后current要分别表达，晚失败只能补观察，不能重跑原数学。
 普通和relay已共用同一准备入口，Source／Store绑定仍遵守真实Append及packed元数据顺序，不再增设一层总prepare或recipe回调。
