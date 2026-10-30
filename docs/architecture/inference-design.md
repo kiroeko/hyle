@@ -29,7 +29,8 @@ Source接线及准备／提交／退休编排。本次复审将共同episode寿�
 | 平台与缓存 | 冷准备按实际设备、类型和布局选路，不隐式换设备或降精度重算。auto不适用时走原单步执行。pending只消费一次；前缀和HostImage保完整已提交状态，不保存外部动态modifier，新请求按自己的政策采样。 |
 
 具体调用及限制见[引擎指南](../user/inference.md)和[调用安全边界](../user/usage-contract.md)。
-当前已发现的底层功能缺项已补齐并有限检查；完整编排抽离、共同输出接口、SDK接线收敛及性能仍未完成。
+此前已列底层功能缺项已补齐并有限检查；本次完整适配复审又发现GLM实际额度未传入模型步骤，仍需补齐。
+完整编排抽离、共同输出接口、SDK接线收敛及性能仍未完成。
 旧实验的未运行项仅表示该次检查边界，不覆盖后续实现，也不据组件通过推定全部平台或完整模型质量。
 
 ## 职责与依赖
@@ -554,8 +555,10 @@ KV权限按当前贡献的精确bound裁剪，不能继承origin的更宽前缀�
 
 当前Qwen入口默认auto按实际资格与预算选择D1／D2；普通R1／有序R2及CUDA greedy K1的已支持范围可使用D2。完整生产者通过`StepSources`桥，
 将唯一原Completion移交共同Source，导出原token、所有Store及KV来源。
-成功路径仍是wait、token detach、读回／pin普通结果、共同detach、take append、take Store、
-受检发布及原head提交；取消转发到同一原Completion，不能把请求取消当成实际退休。
+Qwen／Kimi现由原`ExecutionEpisode::finish_success`统一成功完成、输出观察、原Append／Store取回及消费者撤回。
+中间阶段同时消费和导出Source时，须先封闭自身SubmissionSource，再撤回incoming；否则自身结果pin会阻止原Graph撤权。
+共同算法只同步调用模型动作，不保存回调或新增owner；模型仍解释和修复原状态，分别负责Head／ledger／RNG发布及reset政策。
+完成计数仍紧随原成功等待，早于可能失败的输出撤回。任意部分失败都交原recover，不重跑完成流程；取消仍转发同一原Completion。
 此桥不是后继调度器，实际提交资格仍由原Graph核本次range／gap决定。
 实际接入保留以下具体约束：
 

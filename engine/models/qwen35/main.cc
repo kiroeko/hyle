@@ -5124,213 +5124,211 @@ public:
         } else if (outputs[j].expected_episode)
           throw std::runtime_error("expected episode record requires a fresh commit witness");
       }
-      check(step.execution.wait_success());
-      if (step.execution.sources) check(step.execution.sources->detach_outputs());
-      // Trace storage must be pinned before take_append/unbind revoke Graph
-      // output observation. Generated arrays keep their actual native owner.
-      if (std::ranges::any_of(outputs, [](const auto &output) { return output.capture_tensors; })) {
-        if (!state_only && !io.logits.caller_owned()) generated_logits = take(inference::retain_output(run, *phase.logits_facts, allocation_budget));
-        if (!io.final_hidden.caller_owned()) generated_hidden = take(inference::retain_output(run, *phase.hidden_facts, allocation_budget));
-      }
-      if (drafts_token(phase.family->role)) {
-        check(program_slot.io.read(run, io.draft_id, std::as_writable_bytes(std::span(io.draft_ids))));
-        for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].draft_token = io.draft_ids[j];
-      }
-      if (phase.sampling_valid_port && !state_only && phase.family->role != GraphRole::kVerify) {
-        check(take(program_slot.io.readback(io.sampling_valid))->predicates(run, io.sampling_valid_values, io.sampling_scratch));
-        auto bad = std::ranges::find_if(io.sampling_valid_values, [](auto value) { return value != 1; });
-        if (step.discard_stopped_members)
-          while (bad != io.sampling_valid_values.end() &&
-              step.withdrawn(step.members[static_cast<std::size_t>(bad - io.sampling_valid_values.begin())]))
-            bad = std::find_if(bad + 1, io.sampling_valid_values.end(), [](auto value) { return value != 1; });
-        if (bad != io.sampling_valid_values.end()) {
-          std::optional<std::size_t> participant;
-          // Everything before the first bad value is already proven 1.
-          // Only the failure path inspects the remainder for a unique 0.
-          bool unique = true;
-          for (auto it = bad + 1; it != io.sampling_valid_values.end(); ++it)
-            if (*it != 1 && !step.withdrawn(
-                step.members[static_cast<std::size_t>(it - io.sampling_valid_values.begin())])) unique = false;
-          if (*bad == 0 && unique)
-            participant = static_cast<std::size_t>(bad - io.sampling_valid_values.begin());
-          throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
-              "sampling distribution or proposal is invalid; no session or RNG cursor was published"), participant);
-        }
-        if (phase.sampling_accept_port) {
-          check(take(program_slot.io.readback(io.sampling_accept))->predicates(run, io.sampling_accept_values, io.sampling_scratch));
-          for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].sampled_accept = io.sampling_accept_values[j] != 0;
-        }
-      }
-      // Selection observes only retired original Graph results. No head has
-      // been published and all state/append guards still belong to this episode.
-      if (verifies_prefix(phase.family->role)) {
-        check(program_slot.io.read(run, io.next_id, std::as_writable_bytes(std::span(io.prefix_candidates))));
-        select(std::span<const std::int32_t>(io.prefix_candidates), step, next_ids);
-      } else if (state_only) {
-        std::ranges::fill(next_ids, -1);
-        select(std::span<const std::int32_t>(next_ids), step, next_ids);
-      } else {
-        check(program_slot.io.read(run, io.next_id, std::as_writable_bytes(next_ids)));
-        select(std::span<const std::int32_t>(next_ids), step, next_ids);
-      }
-      for (std::size_t j = 0; j < outputs.size(); ++j) {
-        auto &member = step.members[j];
-        // Retain every original physical owner for whole-cohort tail return,
-        // even when no accepted prefix will be published for this member.
-        member.verified_last_page = member.next->paged.pages.back().page();
-        if (step.withdrawn(member)) { next_ids[j] = -1; continue; }
-        if (!member.accepted_tokens || member.accepted_tokens > member.input_tokens ||
-            (member.accepted_tokens != member.input_tokens && !verifies_prefix(phase.family->role)) ||
-            (!state_only && (next_ids[j] < 0 || next_ids[j] >= vocabulary)))
-          throw std::runtime_error("invalid accepted target boundary");
-        if (member.accepted_tokens != member.input_tokens) {
-          member.next->length = member.base->length + member.accepted_tokens;
-          const auto page_count = (member.next->length + cache::Plan::page_rows - 1) / cache::Plan::page_rows;
-          member.next->paged.pages.resize(page_count);
-          auto &layout_rows = input_scratch.paged_appends.next_rows;
-          layout_rows.reset();
-          check(layout_rows.append(member.accepted_tokens, member.next->length, cache::Plan::page_rows,
-              std::span<const hyle::inference::PagedPageRef>(member.next->paged.pages)));
-          member.layout = take(layout_rows.member_version(attention_schema, 0));
-        }
-      }
-      if (has_mtp(phase.family->role)) for (auto &member : step.members) {
-        if (step.withdrawn(member)) continue;
-        auto &draft = *member.next->draft;
-        draft.lag = static_cast<std::uint32_t>(member.next->length - draft.frontier);
-        draft.catchup_token = draft.lag ? member.draft_token : -1;
-      }
-      if (std::ranges::any_of(outputs, [](const auto &output) { return output.capture_probes; }))
-        for (std::size_t i = 0; i < probe_views.size(); ++i) {
-          const auto &output = *phase.probe_facts[i];
-          if (output.caller_owned()) probe_views[i] = take(run.output(output.value));
-          else {
-            probe_owners[i] = take(inference::retain_output(run, output, allocation_budget));
-            probe_views[i] = take(probe_owners[i].tensor(output.description));
-          }
-        }
-      // Attest the original append success before any slot withdrawal revokes
-      // Graph output-ready. Every ordinary output has already been retained.
-      if (step.execution.sources) check(step.execution.sources->submission.detach());
       const auto append_banks = draft_bank + (has_mtp(phase.family->role) ? 2u : 0u);
-      check(step.execution.append_transactions().subspan(0, append_banks).take(run));
-      // Slot take proves actual retirement, not success; the original whole
-      // Graph completion above remains the success witness for every bank.
       auto &transactions = phase.slots[step.state_slot].transactions;
-      check(transactions.take_all(run));
-      for (std::size_t bank_index = 0; bank_index < phase.state_banks.size(); ++bank_index) {
-        const auto &bank = phase.state_banks[bank_index];
-        auto writers = take(transactions.returned(bank_index));
-        for (std::size_t j = 0; j < outputs.size(); ++j) {
-          auto &member = step.members[j];
-          if (step.withdrawn(member)) continue;
-          if (bank.kind == StateBankKind::kHidden) {
-            const auto count = verifies_prefix(phase.family->role) ? member.accepted_tokens : 1;
-            const bool repair = phase.family->role == GraphRole::kVerify && cache_plan.draft_cache;
-            if (repair) member.carry_prefix.reserve(count);
-            for (std::size_t row = 0; row < count; ++row) {
-              // Exactly one publication of each accepted canonical row. The
-              // final head and draft repair share aliases of that same lease.
-              const auto destination = j * phase.prefix_rows + row;
-              auto ready = step.execution.sources && bank.source_index != SIZE_MAX
-                  ? take(step.execution.sources->states[bank.source_index].publish(destination, writers[destination]))
-                  : take(writers[destination].publish());
-              if (step.execution.sources && step.execution.sources->mtp_full_candidate)
-                step.execution.sources->published_states[bank.source_index + row] = ready;
-              if (row + 1 == count) member.next->carry_hidden = ready;
-              if (row + 2 == count) member.next->prior_hidden = ready;
-              if (repair) member.carry_prefix.push_back(std::move(ready));
+      check(step.execution.finish_success(0, append_banks, phase.state_resource_ports,
+          []() noexcept {},
+          [&]() -> hyle::Status {
+            // Trace storage must be pinned before take_append/unbind revoke Graph
+            // output observation. Generated arrays keep their actual native owner.
+            if (std::ranges::any_of(outputs, [](const auto &output) { return output.capture_tensors; })) {
+              if (!state_only && !io.logits.caller_owned()) generated_logits = take(inference::retain_output(run, *phase.logits_facts, allocation_budget));
+              if (!io.final_hidden.caller_owned()) generated_hidden = take(inference::retain_output(run, *phase.hidden_facts, allocation_budget));
             }
-            continue;
-          }
-          const auto prefix = verifies_prefix(phase.family->role) ? step.members[j].accepted_tokens - 1 : 0;
-          const auto selected = j * phase.prefix_rows + prefix;
-          auto ready = step.execution.sources ? take(step.execution.sources->states[bank.source_index].publish(
-              selected, writers[selected]))
-              : take(writers[selected].publish());
-          if (step.execution.sources) step.execution.sources->published_states[bank.source_index * outputs.size() + j] = ready;
-          auto &state = step.members[j].next->state[bank.layer];
-          (bank.kind == StateBankKind::kRecurrent ? state.recurrent : state.history) = std::move(ready);
-        }
-        // Release old source guards before the joint head-commit recycle hook.
-        // Unaccepted MTP candidates are discarded, never made visible.
-        check(transactions.clear(bank_index));
-      }
-      for (auto &member : step.members)
-        if (!step.withdrawn(member) && !member.target_updates.try_resize(page_inventory.banks.size()))
-          throw std::bad_alloc{};
-      const auto target_finish_at = [&](std::size_t j) noexcept -> inference::PagedAppendFinishMember {
-        auto &member = step.members[j];
-        return {member.base->paged, member.next->paged,
-            {member.target_updates.data(), member.target_updates.size()}, member.layout,
-            member.verified_last_page, static_cast<std::uint32_t>(member.next->length % cache::Plan::page_rows),
-            {member.next_tails.data(), member.next_tails.size()}, !step.withdrawn(member),
-            member.accepted_tokens == member.input_tokens};
-      };
-      check(inference::prepare_paged_append_commits(
-          std::span(step.execution.appends.data(), draft_bank), outputs.size(), target_finish_at,
-          step.execution.sources ? std::span<const g::batch::PagedAppendSource>(step.execution.sources->pages).first(draft_bank)
-              : std::span<const g::batch::PagedAppendSource>{}));
-      if (has_mtp(phase.family->role)) {
-        const auto draft_finish_at = [&](std::size_t j) noexcept -> inference::PagedAppendFinishMember {
-          auto &member = step.members[j]; auto &draft = *member.next->draft;
-          return {member.base->draft->paged, draft.paged, member.draft_updates, member.draft_layout,
-              draft.paged.pages.back().page(), static_cast<std::uint32_t>(draft.frontier % cache::Plan::page_rows),
-              member.next_draft_tails, !step.withdrawn(member)};
-        };
-        check(inference::prepare_paged_append_commits(
-            std::span(step.execution.appends.data() + draft_bank, 2), outputs.size(), draft_finish_at,
-            step.execution.sources ? std::span<const g::batch::PagedAppendSource>(step.execution.sources->pages).subspan(draft_bank, 2)
-                : std::span<const g::batch::PagedAppendSource>{}));
-        check(inference::return_paged_append_tails(
-            step.execution.append_transactions().subspan(draft_bank, 2), 2, outputs.size(),
-            input_scratch.paged_appends, draft_finish_at));
-      }
-      // Caller-supplied completion is confined to this unpublished episode.
-      // In particular, recursive proposals must repair their retained KV from
-      // actual target hidden rows here, before ledger checks or any head swap.
-      complete(step);
-      if (cache_plan.draft_cache)
-        for (const auto &member : step.members)
-          if (!step.withdrawn(member)) validate_mtp_snapshot(*member.next, &member);
-      for (std::size_t j = 0; j < outputs.size(); ++j) if (auto *record = step.members[j].commit_record) {
-        const auto &member = step.members[j];
-        record->requests = outputs.size(); record->member_index = j;
-        record->accepted = member.accepted_tokens;
-        record->draft_rows = member.next->draft
-            ? member.next->draft->frontier - member.base->draft->frontier : 0;
-        if (phase.family->role == GraphRole::kVerify)
-          record->draft_rows = cache::add(record->draft_rows,
-              member.input_tokens - 1 + (member.input_tokens > 1 ? member.base->draft->lag : 0) +
-              member.discarded_draft_rows);
-        record->after = generation_boundary(*member.next); record->after.next_id = next_ids[j];
-        if (phase.family->role == GraphRole::kVerify)
-          write_generation_tokens(record->accepted_inputs,
-              std::span<const std::int32_t>(member.verification_inputs).first(member.accepted_tokens));
-        else write_generation_tokens(record->accepted_inputs, {member.first_input, member.accepted_tokens == 2 ? member.draft_token : -1});
-        if (record->generation) {
-          if (phase.family->role == GraphRole::kVerify) write_generation_tokens(record->verification_inputs, member.verification_inputs);
-          else if (drafts_token(phase.family->role)) write_generation_tokens(record->verification_inputs, {member.first_input, member.draft_token});
-          else write_generation_tokens(record->verification_inputs, {member.first_input});
-        }
-        record->verified_rows = member.input_tokens;
-        if (!record->generation || phase.family->role == GraphRole::kText) {
-          record->draft = -1; record->target_first = next_ids[j]; record->target_second = -1;
-          record->agreed = false; record->accepted_draft = false;
-          record->stopped = !state_only && inference::request_token_stopped(
-              next_ids[j], model_eos_tokens, member.stop_policy);
-          if (state_only) { record->emitted.clear(); record->emitted_count = 0; }
-          else { write_generation_tokens(record->emitted, {next_ids[j], -1}); record->emitted_count = 1; }
-        }
-        if (outputs[j].expected_episode && !record->same_result(*outputs[j].expected_episode))
-          throw std::runtime_error("MTP replay natural decision or state boundary diverged from its recorded episode");
-      }
-      // Partial acceptance narrows Frame authority without rewinding the
-      // verified physical tail; the next append retains its original COW path.
-      check(inference::return_paged_append_tails(
-          step.execution.append_transactions().subspan(0, draft_bank), draft_bank, step.members.size(),
-          input_scratch.paged_appends, target_finish_at));
-      check(step.execution.release_consumers(phase.state_resource_ports));
+            if (drafts_token(phase.family->role)) {
+              check(program_slot.io.read(run, io.draft_id, std::as_writable_bytes(std::span(io.draft_ids))));
+              for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].draft_token = io.draft_ids[j];
+            }
+            if (phase.sampling_valid_port && !state_only && phase.family->role != GraphRole::kVerify) {
+              check(take(program_slot.io.readback(io.sampling_valid))->predicates(run, io.sampling_valid_values, io.sampling_scratch));
+              auto bad = std::ranges::find_if(io.sampling_valid_values, [](auto value) { return value != 1; });
+              if (step.discard_stopped_members)
+                while (bad != io.sampling_valid_values.end() &&
+                    step.withdrawn(step.members[static_cast<std::size_t>(bad - io.sampling_valid_values.begin())]))
+                  bad = std::find_if(bad + 1, io.sampling_valid_values.end(), [](auto value) { return value != 1; });
+              if (bad != io.sampling_valid_values.end()) {
+                std::optional<std::size_t> participant;
+                // Everything before the first bad value is already proven 1.
+                // Only the failure path inspects the remainder for a unique 0.
+                bool unique = true;
+                for (auto it = bad + 1; it != io.sampling_valid_values.end(); ++it)
+                  if (*it != 1 && !step.withdrawn(
+                      step.members[static_cast<std::size_t>(it - io.sampling_valid_values.begin())])) unique = false;
+                if (*bad == 0 && unique)
+                  participant = static_cast<std::size_t>(bad - io.sampling_valid_values.begin());
+                throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
+                    "sampling distribution or proposal is invalid; no session or RNG cursor was published"), participant);
+              }
+              if (phase.sampling_accept_port) {
+                check(take(program_slot.io.readback(io.sampling_accept))->predicates(run, io.sampling_accept_values, io.sampling_scratch));
+                for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].sampled_accept = io.sampling_accept_values[j] != 0;
+              }
+            }
+            // Selection observes only retired original Graph results. No head has
+            // been published and all state/append guards still belong to this episode.
+            if (verifies_prefix(phase.family->role)) {
+              check(program_slot.io.read(run, io.next_id, std::as_writable_bytes(std::span(io.prefix_candidates))));
+              select(std::span<const std::int32_t>(io.prefix_candidates), step, next_ids);
+            } else if (state_only) {
+              std::ranges::fill(next_ids, -1);
+              select(std::span<const std::int32_t>(next_ids), step, next_ids);
+            } else {
+              check(program_slot.io.read(run, io.next_id, std::as_writable_bytes(next_ids)));
+              select(std::span<const std::int32_t>(next_ids), step, next_ids);
+            }
+            for (std::size_t j = 0; j < outputs.size(); ++j) {
+              auto &member = step.members[j];
+              // Retain every original physical owner for whole-cohort tail return,
+              // even when no accepted prefix will be published for this member.
+              member.verified_last_page = member.next->paged.pages.back().page();
+              if (step.withdrawn(member)) { next_ids[j] = -1; continue; }
+              if (!member.accepted_tokens || member.accepted_tokens > member.input_tokens ||
+                  (member.accepted_tokens != member.input_tokens && !verifies_prefix(phase.family->role)) ||
+                  (!state_only && (next_ids[j] < 0 || next_ids[j] >= vocabulary)))
+                throw std::runtime_error("invalid accepted target boundary");
+              if (member.accepted_tokens != member.input_tokens) {
+                member.next->length = member.base->length + member.accepted_tokens;
+                const auto page_count = (member.next->length + cache::Plan::page_rows - 1) / cache::Plan::page_rows;
+                member.next->paged.pages.resize(page_count);
+                auto &layout_rows = input_scratch.paged_appends.next_rows;
+                layout_rows.reset();
+                check(layout_rows.append(member.accepted_tokens, member.next->length, cache::Plan::page_rows,
+                    std::span<const hyle::inference::PagedPageRef>(member.next->paged.pages)));
+                member.layout = take(layout_rows.member_version(attention_schema, 0));
+              }
+            }
+            if (has_mtp(phase.family->role)) for (auto &member : step.members) {
+              if (step.withdrawn(member)) continue;
+              auto &draft = *member.next->draft;
+              draft.lag = static_cast<std::uint32_t>(member.next->length - draft.frontier);
+              draft.catchup_token = draft.lag ? member.draft_token : -1;
+            }
+            if (std::ranges::any_of(outputs, [](const auto &output) { return output.capture_probes; }))
+              for (std::size_t i = 0; i < probe_views.size(); ++i) {
+                const auto &output = *phase.probe_facts[i];
+                if (output.caller_owned()) probe_views[i] = take(run.output(output.value));
+                else {
+                  probe_owners[i] = take(inference::retain_output(run, output, allocation_budget));
+                  probe_views[i] = take(probe_owners[i].tensor(output.description));
+                }
+              }
+            return hyle::Status::Ok();
+          },
+          [&]() -> hyle::Status {
+            for (std::size_t bank_index = 0; bank_index < phase.state_banks.size(); ++bank_index) {
+              const auto &bank = phase.state_banks[bank_index];
+              auto writers = take(transactions.returned(bank_index));
+              for (std::size_t j = 0; j < outputs.size(); ++j) {
+                auto &member = step.members[j];
+                if (step.withdrawn(member)) continue;
+                if (bank.kind == StateBankKind::kHidden) {
+                  const auto count = verifies_prefix(phase.family->role) ? member.accepted_tokens : 1;
+                  const bool repair = phase.family->role == GraphRole::kVerify && cache_plan.draft_cache;
+                  if (repair) member.carry_prefix.reserve(count);
+                  for (std::size_t row = 0; row < count; ++row) {
+                    // Exactly one publication of each accepted canonical row. The
+                    // final head and draft repair share aliases of that same lease.
+                    const auto destination = j * phase.prefix_rows + row;
+                    auto ready = step.execution.sources && bank.source_index != SIZE_MAX
+                        ? take(step.execution.sources->states[bank.source_index].publish(destination, writers[destination]))
+                        : take(writers[destination].publish());
+                    if (step.execution.sources && step.execution.sources->mtp_full_candidate)
+                      step.execution.sources->published_states[bank.source_index + row] = ready;
+                    if (row + 1 == count) member.next->carry_hidden = ready;
+                    if (row + 2 == count) member.next->prior_hidden = ready;
+                    if (repair) member.carry_prefix.push_back(std::move(ready));
+                  }
+                  continue;
+                }
+                const auto prefix = verifies_prefix(phase.family->role) ? step.members[j].accepted_tokens - 1 : 0;
+                const auto selected = j * phase.prefix_rows + prefix;
+                auto ready = step.execution.sources ? take(step.execution.sources->states[bank.source_index].publish(
+                    selected, writers[selected]))
+                    : take(writers[selected].publish());
+                if (step.execution.sources) step.execution.sources->published_states[bank.source_index * outputs.size() + j] = ready;
+                auto &state = step.members[j].next->state[bank.layer];
+                (bank.kind == StateBankKind::kRecurrent ? state.recurrent : state.history) = std::move(ready);
+              }
+              // Release old source guards before the joint head-commit recycle hook.
+              // Unaccepted MTP candidates are discarded, never made visible.
+              check(transactions.clear(bank_index));
+            }
+            for (auto &member : step.members)
+              if (!step.withdrawn(member) && !member.target_updates.try_resize(page_inventory.banks.size()))
+                throw std::bad_alloc{};
+            const auto target_finish_at = [&](std::size_t j) noexcept -> inference::PagedAppendFinishMember {
+              auto &member = step.members[j];
+              return {member.base->paged, member.next->paged,
+                  {member.target_updates.data(), member.target_updates.size()}, member.layout,
+                  member.verified_last_page, static_cast<std::uint32_t>(member.next->length % cache::Plan::page_rows),
+                  {member.next_tails.data(), member.next_tails.size()}, !step.withdrawn(member),
+                  member.accepted_tokens == member.input_tokens};
+            };
+            check(inference::prepare_paged_append_commits(
+                std::span(step.execution.appends.data(), draft_bank), outputs.size(), target_finish_at,
+                step.execution.sources ? std::span<const g::batch::PagedAppendSource>(step.execution.sources->pages).first(draft_bank)
+                    : std::span<const g::batch::PagedAppendSource>{}));
+            if (has_mtp(phase.family->role)) {
+              const auto draft_finish_at = [&](std::size_t j) noexcept -> inference::PagedAppendFinishMember {
+                auto &member = step.members[j]; auto &draft = *member.next->draft;
+                return {member.base->draft->paged, draft.paged, member.draft_updates, member.draft_layout,
+                    draft.paged.pages.back().page(), static_cast<std::uint32_t>(draft.frontier % cache::Plan::page_rows),
+                    member.next_draft_tails, !step.withdrawn(member)};
+              };
+              check(inference::prepare_paged_append_commits(
+                  std::span(step.execution.appends.data() + draft_bank, 2), outputs.size(), draft_finish_at,
+                  step.execution.sources ? std::span<const g::batch::PagedAppendSource>(step.execution.sources->pages).subspan(draft_bank, 2)
+                      : std::span<const g::batch::PagedAppendSource>{}));
+              check(inference::return_paged_append_tails(
+                  step.execution.append_transactions().subspan(draft_bank, 2), 2, outputs.size(),
+                  input_scratch.paged_appends, draft_finish_at));
+            }
+            // Caller-supplied completion is confined to this unpublished episode.
+            // In particular, recursive proposals must repair their retained KV from
+            // actual target hidden rows here, before ledger checks or any head swap.
+            complete(step);
+            if (cache_plan.draft_cache)
+              for (const auto &member : step.members)
+                if (!step.withdrawn(member)) validate_mtp_snapshot(*member.next, &member);
+            for (std::size_t j = 0; j < outputs.size(); ++j) if (auto *record = step.members[j].commit_record) {
+              const auto &member = step.members[j];
+              record->requests = outputs.size(); record->member_index = j;
+              record->accepted = member.accepted_tokens;
+              record->draft_rows = member.next->draft
+                  ? member.next->draft->frontier - member.base->draft->frontier : 0;
+              if (phase.family->role == GraphRole::kVerify)
+                record->draft_rows = cache::add(record->draft_rows,
+                    member.input_tokens - 1 + (member.input_tokens > 1 ? member.base->draft->lag : 0) +
+                    member.discarded_draft_rows);
+              record->after = generation_boundary(*member.next); record->after.next_id = next_ids[j];
+              if (phase.family->role == GraphRole::kVerify)
+                write_generation_tokens(record->accepted_inputs,
+                    std::span<const std::int32_t>(member.verification_inputs).first(member.accepted_tokens));
+              else write_generation_tokens(record->accepted_inputs, {member.first_input, member.accepted_tokens == 2 ? member.draft_token : -1});
+              if (record->generation) {
+                if (phase.family->role == GraphRole::kVerify) write_generation_tokens(record->verification_inputs, member.verification_inputs);
+                else if (drafts_token(phase.family->role)) write_generation_tokens(record->verification_inputs, {member.first_input, member.draft_token});
+                else write_generation_tokens(record->verification_inputs, {member.first_input});
+              }
+              record->verified_rows = member.input_tokens;
+              if (!record->generation || phase.family->role == GraphRole::kText) {
+                record->draft = -1; record->target_first = next_ids[j]; record->target_second = -1;
+                record->agreed = false; record->accepted_draft = false;
+                record->stopped = !state_only && inference::request_token_stopped(
+                    next_ids[j], model_eos_tokens, member.stop_policy);
+                if (state_only) { record->emitted.clear(); record->emitted_count = 0; }
+                else { write_generation_tokens(record->emitted, {next_ids[j], -1}); record->emitted_count = 1; }
+              }
+              if (outputs[j].expected_episode && !record->same_result(*outputs[j].expected_episode))
+                throw std::runtime_error("MTP replay natural decision or state boundary diverged from its recorded episode");
+            }
+            // Partial acceptance narrows Frame authority without rewinding the
+            // verified physical tail; the next append retains its original COW path.
+            check(inference::return_paged_append_tails(
+                step.execution.append_transactions().subspan(0, draft_bank), draft_bank, step.members.size(),
+                input_scratch.paged_appends, target_finish_at));
+            return hyle::Status::Ok();
+          }));
       for (const auto &member : step.members)
         if (member.session->head.get() != member.base || member.session->head.epoch() != member.base_epoch ||
             member.session->pending != &step ||

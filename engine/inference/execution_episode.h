@@ -124,6 +124,44 @@ class ExecutionEpisode final {
     return Status::Ok();
   }
 
+  // Complete one original successful Graph stage, before any model Head is
+  // published or its Invocation is reset. A nonthrowing completion observer
+  // keeps native-success accounting before any output withdrawal can fail.
+  // The two synchronous model actions then observe/retain actual outputs and
+  // interpret returned transactions. They may allocate or throw as before;
+  // this algorithm stores no callback,
+  // adds no owner and never retries a partially completed stage. A refusal or
+  // exception goes to the caller's existing recover() with every remaining
+  // transaction, Source and predecessor still in its original container.
+  template<class OnCompletion, class Observe, class Complete>
+  Status finish_success(std::size_t first_append, std::size_t append_count,
+      std::span<const graph::ValueId> ordinary_inputs,
+      OnCompletion &&on_completion, Observe &&observe, Complete &&complete) {
+    static_assert(noexcept(std::forward<OnCompletion>(on_completion)()));
+    if (!run || !carrier || !has_completion())
+      return Status::FailedPrecondition("successful stage requires its original carrier and completion");
+    if (first_append > nodes.size() || append_count > nodes.size() - first_append ||
+        first_append > appends.size() || append_count > appends.size() - first_append ||
+        first_append > bound.size() || append_count > bound.size() - first_append)
+      return Status::OutOfRange("successful stage append range exceeds its original cohort");
+    HYLE_RETURN_IF_ERROR(wait_success());
+    std::forward<OnCompletion>(on_completion)();
+    HYLE_ASSIGN_OR_RETURN(auto original, carrier->borrow());
+    if (original != run)
+      return Status::InvalidArgument("successful stage belongs to another original Invocation");
+    if (sources) HYLE_RETURN_IF_ERROR(sources->detach_outputs());
+    HYLE_RETURN_IF_ERROR(std::forward<Observe>(observe)());
+    // An outgoing SubmissionSource pins this Graph's result observation.
+    // Close its export before take/unbind, including a middle stage that also
+    // consumes its predecessor. Keep the bundle itself alive for successors.
+    if (sources) HYLE_RETURN_IF_ERROR(sources->submission.detach());
+    if (append_count)
+      HYLE_RETURN_IF_ERROR(append_transactions().subspan(first_append, append_count).take(*run));
+    if (state_transactions) HYLE_RETURN_IF_ERROR(state_transactions->take_all(*run));
+    HYLE_RETURN_IF_ERROR(std::forward<Complete>(complete)());
+    return release_consumers(ordinary_inputs);
+  }
+
   // Withdraw only the original complete Source bundle. Recovery may need
   // this after close, so it uses Graph's retired-control operation directly,
   // never a new carrier admission. Record successful withdrawal immediately:

@@ -2,9 +2,10 @@
 
 #include "../../engine/inference/program_slots.h"
 #include "../../engine/inference/prepared_program_family.h"
+#include "../../engine/inference/execution_episode.h"
 
-// Two public Graph invocations from one concrete program. No Model, synthetic
-// Completion, replacement resource owner or test-only execution route.
+// Two public Graph carriers and, on CUDA, a three-stage Source chain from the
+// same concrete program. No Model, synthetic Completion or replacement owner.
 namespace inference_program_carrier_case {
 namespace q = qwen35;
 namespace i = hyle::inference;
@@ -17,6 +18,8 @@ struct IoHandles final {
   i::ProgramIo::Readback readback;
 };
 using ProgramSlots = i::ProgramSlots<Scope, IoHandles, 2>;
+using Episode = i::ExecutionEpisode<Scope, i::SubmissionViews, 0>;
+struct FinishException final { int marker; };
 
 inline std::shared_ptr<Scope> inputs(i::Backend &backend,
     const std::array<float, 4> &first, const std::array<float, 4> &second) {
@@ -26,6 +29,162 @@ inline std::shared_ptr<Scope> inputs(i::Backend &backend,
     return q::take(backend.adopt_buffer(std::move(buffer)));
   };
   return std::make_shared<Scope>(Scope{ready(first), ready(second)});
+}
+
+// The middle original Graph is both a Source consumer and producer. Reuse
+// exactly the cold physical tuples; no host result is observed between submits.
+inline std::size_t finish_source_chain(i::Backend &backend, const g::CompiledGraph &compiled,
+    const g::Graph &graph, g::ValueId first, g::ValueId second, g::ValueId output,
+    const c::TensorDesc &description) {
+  if (backend.kind() != i::BackendKind::kCuda) return 0;
+  require(q::take(i::prepare_output(compiled, output)).caller_owned(), "Source chain needs its original caller output");
+  auto scope = inputs(backend, {1, 2, 3, 4}, {10, 20, 30, 40});
+  const auto &storage = backend.storage_owner();
+  const auto bytes = q::take(description.required_bytes());
+  auto pool = q::take(c::LeasePool::create(backend.device(), 3 * 256,
+      {.max_blocks = 3, .backing_alignment = 256}));
+  std::array<c::ReadLease, 3> cold_ready, retained;
+  std::array<q::mem::ConstBufferView, 3> physical;
+  for (std::size_t index = 0; index < 3; ++index) {
+    auto writer = q::take(pool.allocate(bytes, 256));
+    physical[index] = q::take(writer.view());
+    q::check(q::take(writer.view()).fill(std::byte{}));
+    cold_ready[index] = q::take(writer.publish());
+  }
+  std::array<i::ProgramIo, 3> io;
+  std::array<i::ProgramCarrier<Scope>, 3> carriers;
+  std::array<std::array<i::ProgramIo::Input, 2>, 3> ports;
+  std::array<i::ProgramIo::Output, 3> outputs;
+  std::array<std::shared_ptr<Episode>, 3> episodes;
+  struct Cleanup final {
+    i::Backend &backend;
+    std::array<std::shared_ptr<Episode>, 3> &episodes;
+    bool active = true;
+    ~Cleanup() {
+      if (!active) return;
+      for (std::size_t index = episodes.size(); index--;) if (episodes[index] && episodes[index]->run) {
+        (void)episodes[index]->retire(backend);
+        (void)episodes[index]->recover([]() noexcept {});
+      }
+    }
+  } cleanup{backend, episodes};
+  for (std::size_t index = 0; index < 3; ++index) {
+    q::check(io[index].prepare(compiled, 0, 2, 0, 1));
+    ports[index][0] = q::take(io[index].add_input(first));
+    ports[index][1] = q::take(io[index].add_input(second));
+    outputs[index] = q::take(io[index].add_output(output)); q::check(io[index].seal());
+    q::check(carriers[index].prepare(compiled, backend.queue_bindings()));
+    q::check(carriers[index].initialize({.io = io[index], .invocation = {.resources = g::ResourceOptions{}}}));
+    episodes[index] = std::make_shared<Episode>();
+    episodes[index]->run = q::take(carriers[index].borrow()); episodes[index]->carrier = &carriers[index];
+    q::check(io[index].bind(*episodes[index]->run, ports[index][1], scope->second));
+  }
+  const auto reclaim = [&](std::size_t index) {
+    auto writer = q::take(cold_ready[index].try_write());
+    const auto actual = q::take(writer.view());
+    require(actual.resource() == physical[index].resource() && actual.native_handle() == physical[index].native_handle() &&
+        actual.offset() == physical[index].offset() && actual.size() == physical[index].size(),
+        "cold Source handoff replaced its original physical writer");
+    return writer;
+  };
+  for (std::size_t index = 3; index--;) {
+    auto &episode = *episodes[index];
+    q::check(io[index].bind(*episode.run, ports[index][0], index ? cold_ready[index - 1] : scope->first));
+    q::check(episode.run->bind(output, description, reclaim(index)));
+    q::check(episode.prepare_replay({.mode = g::ReplayMode::kRequireCapture, .host_wait = g::HostWaitPolicy::kReject}));
+    const auto report = q::take(episode.run->replay_report());
+    require(report.route == g::ReplayRoute::kCaptured && report.recorded_capture_range_count &&
+        !report.host_wait_dependency_count, "Source chain did not cold-capture its complete tuple");
+    if (index) q::check(episode.run->unbind(first));
+  }
+  for (std::size_t index = 0; index < 3; ++index) {
+    auto &episode = *episodes[index];
+    if (index) {
+      episode.incoming = std::make_unique<i::IncomingExecutionSources<i::SubmissionViews>>();
+      episode.incoming->owner = episodes[index - 1]->sources;
+      episode.incoming->bindings.push_back(episode.incoming->owner->primary_output.reader_binding(first));
+      episode.predecessor_episode = episodes[index - 1];
+      q::check(episode.bind_consumers(graph)); q::check(episode.prepare_replay());
+      const auto report = q::take(episode.run->replay_report());
+      const auto dependency = q::take(episode.run->input_source_report());
+      require(report.route == g::ReplayRoute::kCaptured && !report.recorded_capture_range_count &&
+          report.reused_capture_range_count && !report.host_wait_dependency_count &&
+          dependency.source_count == 1 && !dependency.host_wait_count,
+          "Source chain recorded or host-waited on an accepted predecessor");
+    }
+    if (index != 2) {
+      episode.sources = std::make_shared<i::SubmissionViews>();
+      q::check(episode.sources->prepare(*episode.run, std::span<const i::SubmissionViews::StoreCapture>{},
+          std::span<const i::SubmissionViews::PageCapture>{}, {}));
+    }
+    q::check(episode.submit(scope));
+    if (episode.sources) require(q::take(episode.sources->capture(*episode.run, episode.completion, output, storage, pool)),
+        "Source chain did not capture its actual accepted output");
+  }
+  std::array<std::size_t, 3> completed{}, observed{}, interpreted{};
+  const std::array ordinary_second{second};
+  for (std::size_t index = 3; index-- > 1;) {
+    auto &episode = *episodes[index];
+    q::check(episode.finish_success(0, 0, ordinary_second,
+        [&]() noexcept { ++completed[index]; },
+        [&]() -> hyle::Status {
+          require(completed[index] == 1 && !interpreted[index], "Source output observation preceded completion");
+          retained[index] = q::take(io[index].retain(*episode.run, outputs[index])); ++observed[index];
+          if (index == 1) {
+            const auto refused = episode.release_source_bindings();
+            require(refused.IsUnavailable() &&
+                refused.message() == "source bundle still has native work, results, observations or preparation" &&
+                episode.incoming && episode.incoming->bound && episode.predecessor_episode == episodes[0],
+                "middle stage released incoming Source before its own producer export detached");
+          }
+          return {};
+        },
+        [&]() -> hyle::Status {
+          require(observed[index] == 1 && episode.incoming && episode.incoming->bound,
+              "Source stage interpreted transactions after withdrawing its original incoming bundle");
+          if (index == 1) {
+            const auto closed = g::OutputSource::create(episode.sources->submission, output, storage, pool);
+            require(!closed && closed.error().IsFailedPrecondition() && closed.error().message() == "submission source export is closed",
+                "middle stage interpretation preceded its own producer export detach");
+          }
+          ++interpreted[index]; return {};
+        }));
+    require(!episode.incoming && !episode.predecessor_episode && carriers[index].initialized(),
+        "successful Source stage lost its original carrier or retained incoming readers");
+  }
+  bool original_exception = false;
+  try {
+    (void)episodes[0]->finish_success(0, 0, std::array{first, second},
+        [&]() noexcept { ++completed[0]; },
+        [&]() -> hyle::Status {
+          retained[0] = q::take(io[0].retain(*episodes[0]->run, outputs[0])); ++observed[0];
+          throw FinishException{73};
+        },
+        [&]() -> hyle::Status { ++interpreted[0]; return {}; });
+  } catch (const FinishException &failure) { original_exception = failure.marker == 73; }
+  require(original_exception && completed == std::array<std::size_t, 3>{1, 1, 1} &&
+      observed == std::array<std::size_t, 3>{1, 1, 1} && interpreted == std::array<std::size_t, 3>{0, 1, 1} &&
+      episodes[0]->sources && episodes[0]->sources->submission.valid() && retained[0].valid(),
+      "model exception changed type or consumed the original unfinished Source resources");
+  require(q::take(episodes[0]->recover([]() noexcept {})) && !carriers[0].initialized(),
+      "original recovery could not return a stage after its output observer threw");
+  for (std::size_t index = 0; index < 3; ++index) {
+    std::array<float, 4> actual{}; const auto view = q::take(retained[index].view());
+    q::check(view.read(std::as_writable_bytes(std::span(actual))));
+    for (std::size_t element = 0; element < actual.size(); ++element)
+      require(actual[element] == float(element + 1) * float(11 + 10 * index),
+          "Source chain lost actual output values after stage withdrawal or recovery");
+    require(view.native_handle() == physical[index].native_handle() && view.offset() == physical[index].offset(),
+        "Source chain retained another output backing");
+  }
+  for (std::size_t index = 3; index--;) if (episodes[index]->run) {
+    const auto retired = episodes[index]->retire(backend); q::check(retired.status);
+    require(retired.retired && q::take(episodes[index]->recover([]() noexcept {})),
+        "Source chain did not recover its actual retired carrier");
+  }
+  retained = {}; cleanup.active = false; q::check(backend.collect_retired());
+  require(pool.stats().live_blocks == 0, "Source chain retained an original output block after cleanup");
+  return 3;
 }
 
 inline int run(q::BackendKind kind) {
@@ -244,6 +403,23 @@ inline int run(q::BackendKind kind) {
   const auto no_scope = a.submit({});
   require(!no_scope && no_scope.error().IsUnavailable() && !a.pending() && q::take(a.borrow()) == a_run,
       "rejected resource reservation submitted work or lost its original prepared run");
+  Episode a_episode, b_episode;
+  a_episode.run = a_run; a_episode.carrier = &a;
+  b_episode.run = b_run; b_episode.carrier = &b;
+  const std::array ordinary_inputs{first, second};
+  std::array<std::size_t, 2> completion_callbacks{}, observations{}, completions{};
+  const auto on_a_completion = [&]() noexcept { ++completion_callbacks[0]; };
+  const auto observe_a = [&]() -> hyle::Status {
+    require(completion_callbacks[0] == 1 && !completions[0],
+        "stage observed outputs before original completion or after complete");
+    ++observations[0];
+    return hyle::Status::InvalidArgument("original stage observation refusal");
+  };
+  const auto complete_a = [&]() -> hyle::Status { ++completions[0]; return {}; };
+  const auto no_completion = a_episode.finish_success(0, 0, ordinary_inputs,
+      on_a_completion, observe_a, complete_a);
+  require(no_completion.IsFailedPrecondition() && !completion_callbacks[0] && !observations[0] && !completions[0],
+      "default success without a Completion entered stage callbacks");
   std::weak_ptr<Scope> a_lifetime = a_scope, b_lifetime = b_scope;
   auto a_done = q::take(a.submit(a_scope)); a_scope.reset();
   bool pending_observed = a.pending() || programs.pending();
@@ -255,7 +431,34 @@ inline int run(q::BackendKind kind) {
   const auto b_admission = b.borrow();
   require(b_admission ? !b.pending() && !b_run->in_flight() : b_admission.error().IsUnavailable(),
       "peer carrier admitted reuse before its own original native retirement");
-  q::check(a_done.wait()); q::check(b_done.wait()); q::check(backend.collect_retired());
+  a_episode.completion = std::move(a_done); b_episode.completion = std::move(b_done);
+  const auto outside_appends = a_episode.finish_success(1, 0, ordinary_inputs,
+      on_a_completion, observe_a, complete_a);
+  require(outside_appends.IsOutOfRange() && a_episode.completion.valid() &&
+      !completion_callbacks[0] && !observations[0] && !completions[0],
+      "invalid stage append range waited or entered a model callback");
+  const auto observation_refused = a_episode.finish_success(0, 0, ordinary_inputs,
+      on_a_completion, observe_a, complete_a);
+  const auto completion_refused = b_episode.finish_success(0, 0, ordinary_inputs,
+      [&]() noexcept { ++completion_callbacks[1]; },
+      [&]() -> hyle::Status {
+        require(completion_callbacks[1] == 1 && !completions[1],
+            "stage output observation did not follow original completion");
+        ++observations[1]; return {};
+      },
+      [&]() -> hyle::Status {
+        require(observations[1] == 1 && !completions[1],
+            "stage completion did not follow its successful output observation");
+        ++completions[1];
+        return hyle::Status::Unavailable("original stage completion refusal");
+      });
+  require(observation_refused.IsInvalidArgument() &&
+      observation_refused.message() == "original stage observation refusal" && !observation_refused.has_native_error() &&
+      completion_refused.IsUnavailable() && completion_refused.message() == "original stage completion refusal" &&
+      !completion_refused.has_native_error() && completion_callbacks == std::array<std::size_t, 2>{1, 1} &&
+      observations == std::array<std::size_t, 2>{1, 1} && completions == std::array<std::size_t, 2>{0, 1},
+      "stage completion replaced a callback Status, repeated a callback or continued after refusal");
+  q::check(backend.collect_retired());
   require(!a.pending() && !b.pending() && !programs.pending() && a_lifetime.expired() && b_lifetime.expired(),
       "successful real Completions did not release their own original retained scopes");
   std::array<float, 4> actual_a{}, actual_b{};
@@ -297,8 +500,10 @@ inline int run(q::BackendKind kind) {
       "slot-group teardown left its peer eligible for initialization or ownership reset");
   require(initialization_calls == std::array<std::size_t, 2>{1, 1} && !invalid_initialization_calls,
       "irreversible slot-group handoff evaluated a retired carrier's initialization recipe");
+  const auto source_submissions = finish_source_chain(backend, compiled, graph, first, second, output, description);
   std::cout << "{\"status\":\"PASS\",\"case\":\"program-carrier\",\"backend\":\"" << qwen_host_image_case::backend_name(kind)
-      << "\",\"models\":0,\"native_submissions\":2,\"carriers\":2,\"cold_failure_atomic\":true,"
+      << "\",\"models\":0,\"native_submissions\":" << 2 + source_submissions << ",\"carriers\":" << 2 + source_submissions
+      << ",\"cold_failure_atomic\":true,"
          "\"independent_fixed_bindings\":true,\"real_completion_retirement\":true,\"GraphOutput_pin_preserved\":true,"
          "\"typed_io_installation\":true,\"common_slot_inventory\":true,\"group_cold_failure_unpublished\":true,"
          "\"group_initialization_idempotent\":true,\"group_initialization_recipe_lazy\":true,"
@@ -306,6 +511,13 @@ inline int run(q::BackendKind kind) {
          "\"standalone_signature_preserved\":true,\"finite_child_signature_preserved\":true,"
          "\"unused_input_cold_registered\":true,\"full_input_description_preserved\":true,\"foreign_input_identity_rejected\":true,"
          "\"actual_stride_rejected_original_permission_preserved\":true,"
+         "\"finish_no_completion_rejected_before_callbacks\":true,\"finish_append_range_preflight\":true,"
+         "\"finish_completion_observe_complete_order\":true,\"finish_callback_status_resources_preserved\":true,"
+         "\"finish_source_chain_submissions\":" << source_submissions
+      << ",\"finish_middle_incoming_before_own_detach_rejected\":" << (source_submissions ? "true" : "null")
+      << ",\"finish_middle_detach_then_release_succeeded\":" << (source_submissions ? "true" : "null")
+      << ",\"finish_model_exception_preserved_and_recovered\":" << (source_submissions ? "true" : "null")
+      << ","
          "\"finite_child_variant_preserved\":true,\"partial_installation_failed\":true,\"partial_caller_writer_tested\":"
       << (caller_writer ? "true" : "false") << ",\"partial_caller_writer_recovered\":" << (caller_writer ? "true" : "null")
       << ",\"valid_io_retry_output_checked\":true,"

@@ -437,17 +437,14 @@ struct Run final : std::enable_shared_from_this<Run> {
     auto &episode=*submitted.execution;
     submitted.observed=true;
     try {
-      check(episode.wait_success(),"Kimi original whole Graph retirement");++submissions;
-      if(episode.sources)check(episode.sources->detach_outputs(),"Kimi original hidden writer publication");
-      std::vector<c::ReadLease> result;result.reserve(cold_program->output_count());
-      for(std::size_t i=0;i<cold_program->output_count();++i)
-        result.push_back(take(cold_program->retain(*episode.run,i),"Kimi retained original result"));
-      check(episode.release_source_bindings(),"Kimi original consumer Source withdrawal");
-      episode.incoming.reset();episode.predecessor_episode.reset();
-      if(episode.sources) {
-        check(episode.sources->submission.detach(),"Kimi original producer Source withdrawal");
-        episode.sources.reset();
-      }
+      std::vector<c::ReadLease> result;
+      check(episode.finish_success(0,0,{},[&]() noexcept {++submissions;},[&]() -> hyle::Status {
+        result.reserve(cold_program->output_count());
+        for(std::size_t i=0;i<cold_program->output_count();++i)
+          result.push_back(take(cold_program->retain(*episode.run,i),"Kimi retained original result"));
+        return hyle::Status::Ok();
+      },[]() noexcept -> hyle::Status {return hyle::Status::Ok();}),"Kimi original successful Graph stage");
+      episode.sources.reset();
       // Successful serial reuse keeps the same Invocation. Recovery alone
       // uses reset_retired(), after the original transactions have returned.
       check(episode.run->reset(),"Kimi original Invocation reset");
