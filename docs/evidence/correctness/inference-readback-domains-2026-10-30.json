@@ -1,0 +1,323 @@
+{
+  "schema": "hyle.correctness.readback-domains.v1",
+  "date": "2026-10-30",
+  "status": "ACTUAL_PROGRAM_DOMAINS_AND_RESOURCE_DISPATCH_FINITE_CHECKED",
+  "base_commit": "0b359292a",
+  "contract": {
+    "preparation": "Caller-owned readback takes the actual compiled program StorageDomain span; cold ordinal, properties and optional owner consistency checked. Graph retains exact resource binding authority.",
+    "noncaller": "SourceAlias/Invocation/Executable outputs need no caller domain lookup or caller pool; original result owners retained for synchronous read.",
+    "runtime": "Readback dispatches through actual original output resource view; Backend::read was only a passthrough. No new upload, allocation, executor, permission or retirement path.",
+    "baseline": "Exact original HEAD readback header compiled separately. Real reversed CPU0/CUDA1 graph rejected both old helper bindings with original Graph resource mismatch, before submission."
+  },
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\program_io.h",
+      "bytes": 12739,
+      "sha256": "a0e258a10d77991d14b0ecbf7bf6f0f81e8e8447c989d0f5397368298f167d57"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\readback.h",
+      "bytes": 10336,
+      "sha256": "740d21dd297ebe5d37e4185da64d142d44c8ac9ce1f5428cd3b4c057e7e667a5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 634249,
+      "sha256": "e515588b5cda7b88b81d9bb4385a89fe5b42b62b57770e3d5663ef6409a493c5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_backend_budget_case.h",
+      "bytes": 9301,
+      "sha256": "cbe5171b1cd0dca055db1f1f37f58baf937d5b86ecf240984d7e4e7d94f624bb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_graph_bindings_case.h",
+      "bytes": 17911,
+      "sha256": "be9cbed7bba7e2322582dd7aaf02e13220884c91543e95897af006dc4726ab06"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_history_math_case.h",
+      "bytes": 20431,
+      "sha256": "2c87b54a0ee37c0c3fe6adde641a53ef946ca37dd04e6d3ecc985e01f9bc5d21"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_mtp_packet_case.h",
+      "bytes": 10947,
+      "sha256": "3ae50da06f76139f811776f48d0b620f983848494bbd1311f4221e44a0c0d9e0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_program_carrier_case.h",
+      "bytes": 22373,
+      "sha256": "ce79a9b68a821c9cafad22c80c40c7eacdebfad3408875e7373bb87df39c6b73"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_backend_cpu_cuda_test.cc",
+      "bytes": 33858,
+      "sha256": "b639ad252f8acaa7fbb8cf8b8bc2590eab04b298cf0b711fd49d9e7745af1730"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_backend_cpu_options_case.h",
+      "bytes": 5811,
+      "sha256": "abbc441fb6474b76355ab98b2b572a3153d0962802077a3b86ce15272f4153c0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_generation_state_case.h",
+      "bytes": 10122,
+      "sha256": "19c130e84b374145dc915358b7032cce3d7d5e44e0642b160c6f8e948f67b910"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_logits_modifier_case.h",
+      "bytes": 18211,
+      "sha256": "81b4888243137766cdd76c9dc42c55f248b6028b7e057390fbb902dac53b1c47"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_logits_case.h",
+      "bytes": 49151,
+      "sha256": "11b799c23b9003ad2cd155d770b1959165cc48ed740c2ca1eb2f80ff1c5c1400"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_resource_retirement_test.cc",
+      "bytes": 14018,
+      "sha256": "f1e4d686425964d342fb0a92ddc34138f6dc896fa27069ed038a9489fc2a1f31"
+    }
+  ],
+  "diff": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-readback-domains-20261030\\product.diff",
+    "bytes": 67706,
+    "sha256": "d630f102a4a0c7460ef677988a9e7b75f656201abfba1e9b9bfb838ed4c72bed"
+  },
+  "results": {
+    "status": "PASS_FINITE_READBACK_DOMAIN_CHECKS",
+    "gtests": 12,
+    "finite_consumer_processes": 12,
+    "failures": 0,
+    "skipped": 0,
+    "baseline": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-readback-domains-20261030\\runs\\baseline\\attempt1\\report.json",
+      "bytes": 117,
+      "sha256": "42d7a65099f0f1d3c3a819fcb4410d824278d5856427d493620b99c23e88e0f7"
+    },
+    "cases": {
+      "single-auto": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-readback-domains-20261030\\runs\\single-auto\\attempt1\\report.json",
+        "bytes": 82928,
+        "sha256": "e98caf7197222178fda6e0a8d015aeba8feed48ab8f26fdba99dd1908f3bb5df"
+      },
+      "recursive": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-readback-domains-20261030\\runs\\recursive\\attempt1\\report.json",
+        "bytes": 69105,
+        "sha256": "40d1ed8b6535d0d88a8d773c3a00628dc27419a91fb0ff03797b3294b184481c"
+      },
+      "threshold": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-readback-domains-20261030\\runs\\threshold\\attempt1\\report.json",
+        "bytes": 114552,
+        "sha256": "7baa4d732d818d0ac73749466cdf629f54004d57f0caf7004abc7bff595fd4e6"
+      },
+      "restore": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-readback-domains-20261030\\runs\\restore\\attempt1\\report.json",
+        "bytes": 69775,
+        "sha256": "fa86b758d93753c595ea0b65e532147d2affff0439540b0b5e2456bc1ccf8258"
+      },
+      "natural": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-readback-domains-20261030\\runs\\natural\\attempt1\\report.json",
+        "bytes": 7217,
+        "sha256": "d289197cdf833a531d3c2082da5dce6e605028b15d59ee9940db8e6828cd7813"
+      },
+      "batch": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-readback-domains-20261030\\runs\\batch\\attempt1\\report.json",
+        "bytes": 1567,
+        "sha256": "f78c48cdff3cac560ab454be7867884897a6933cd7dc1801be73de9123640242"
+      },
+      "group": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-readback-domains-20261030\\runs\\group\\attempt1\\report.json",
+        "bytes": 769,
+        "sha256": "9ecfe819a59ed9add34e78395308427cc91b6f01bcf473e7ca49fe6528ee78aa"
+      },
+      "carrier_cpu": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-readback-domains-20261030\\runs\\carrier_cpu\\attempt1\\report.json",
+        "bytes": 1286,
+        "sha256": "91749a93f8bec7ae45c542923258d308de0449313f2e3279d4f5cc2c043f119d"
+      },
+      "carrier_cuda": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-readback-domains-20261030\\runs\\carrier_cuda\\attempt1\\report.json",
+        "bytes": 1287,
+        "sha256": "545e09e5a76a47063c933699b35ba61bad599502f94f657cc6ba414250dfee19"
+      },
+      "packet_cpu": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-readback-domains-20261030\\runs\\packet_cpu\\attempt1\\report.json",
+        "bytes": 505,
+        "sha256": "ed94fdbe3c43da80e410c4933a91f96609616cc3e2e0a088671a9d48ebc2dec4"
+      },
+      "packet_cuda": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-readback-domains-20261030\\runs\\packet_cuda\\attempt1\\report.json",
+        "bytes": 506,
+        "sha256": "859bee9862bd074de4d0f20069c9705415063f1a774f54f03c90d138c64445a7"
+      },
+      "ordinary": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-readback-domains-20261030\\runs\\ordinary\\attempt1\\report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      },
+      "backend": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-readback-domains-20261030\\runs\\backend\\attempt1\\report.json",
+        "bytes": 1598,
+        "sha256": "80318221dd3c36177bc6ea645297e07a83f6778d1131c146eb90239127c319ae"
+      },
+      "baseline": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-readback-domains-20261030\\runs\\baseline\\attempt1\\report.json",
+        "bytes": 117,
+        "sha256": "42d7a65099f0f1d3c3a819fcb4410d824278d5856427d493620b99c23e88e0f7"
+      }
+    },
+    "complete_non_timing_comparisons": [
+      {
+        "case": "single-auto",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stage-resources-20261030\\runs\\single-auto\\attempt1\\report.json",
+          "bytes": 82905,
+          "sha256": "26baa08b72afaedcb6e6609cd77eadc2345362fad078f29e6a7c4617f35891a3"
+        },
+        "complete_non_timing_equal": true
+      },
+      {
+        "case": "recursive",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stage-resources-20261030\\runs\\recursive\\attempt1\\report.json",
+          "bytes": 69064,
+          "sha256": "c6958f592d9119bff1d3f268a4d53bc306bba84fc4e6d56666fe20bc0bd8820b"
+        },
+        "complete_non_timing_equal": true
+      },
+      {
+        "case": "threshold",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stage-resources-20261030\\runs\\threshold\\attempt1\\report.json",
+          "bytes": 114542,
+          "sha256": "779a41f6e82f8ee3b4951031f4ea2d5338fff512c3944dc07882dcffc077ba42"
+        },
+        "complete_non_timing_equal": true
+      },
+      {
+        "case": "restore",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stage-resources-20261030\\runs\\restore\\attempt1\\report.json",
+          "bytes": 69804,
+          "sha256": "e23cdb981a1f9304b7e6a9b64f02720e25c1bc95aea53e04e5762b40f50fea09"
+        },
+        "complete_non_timing_equal": true
+      },
+      {
+        "case": "natural",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stage-resources-20261030\\runs\\natural\\attempt1\\report.json",
+          "bytes": 7217,
+          "sha256": "d289197cdf833a531d3c2082da5dce6e605028b15d59ee9940db8e6828cd7813"
+        },
+        "complete_non_timing_equal": true
+      },
+      {
+        "case": "ordinary",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stage-resources-20261030\\runs\\ordinary\\attempt1\\report.json",
+          "bytes": 5324,
+          "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+        },
+        "complete_non_timing_equal": true
+      },
+      {
+        "case": "batch",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stage-resources-20261030\\runs\\batch\\attempt1\\report.json",
+          "bytes": 1567,
+          "sha256": "f78c48cdff3cac560ab454be7867884897a6933cd7dc1801be73de9123640242"
+        },
+        "complete_non_timing_equal": true
+      },
+      {
+        "case": "carrier_cpu",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stage-resources-20261030\\runs\\carrier_cpu\\attempt1\\report.json",
+          "bytes": 1286,
+          "sha256": "91749a93f8bec7ae45c542923258d308de0449313f2e3279d4f5cc2c043f119d"
+        },
+        "complete_non_timing_equal": true
+      },
+      {
+        "case": "carrier_cuda",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stage-resources-20261030\\runs\\carrier_cuda\\attempt1\\report.json",
+          "bytes": 1287,
+          "sha256": "545e09e5a76a47063c933699b35ba61bad599502f94f657cc6ba414250dfee19"
+        },
+        "complete_non_timing_equal": true
+      },
+      {
+        "case": "packet_cpu",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stage-resources-20261030\\runs\\packet_cpu\\attempt1\\report.json",
+          "bytes": 505,
+          "sha256": "ed94fdbe3c43da80e410c4933a91f96609616cc3e2e0a088671a9d48ebc2dec4"
+        },
+        "complete_non_timing_equal": true
+      },
+      {
+        "case": "packet_cuda",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stage-resources-20261030\\runs\\packet_cuda\\attempt1\\report.json",
+          "bytes": 506,
+          "sha256": "859bee9862bd074de4d0f20069c9705415063f1a774f54f03c90d138c64445a7"
+        },
+        "complete_non_timing_equal": true
+      }
+    ],
+    "successful_CXX_TUs": 5,
+    "current_consumers": 4,
+    "original_header_probe": 1,
+    "corrected_compile_failure": "First cli/natural/ordinary attempt failed at the same two arrow-style predicates calls still passing Backend; both calls corrected, attempt2 compiled. No SDK or numerical failure.",
+    "retained_SDK_engine_objects": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "SDK_dependency_records": 122,
+    "unavailable_dependency_records": 105,
+    "performance_experiments": 0,
+    "performance_claim": false,
+    "limits": [
+      "Full shared execution architecture remains incomplete; this fixes one actual resource-domain dependency.",
+      "Only property mismatch and owner mismatch negatives checked here, not two different equal-property resources. Original Graph binding remains exact resource authority.",
+      "Original Vulkan Bool/F32 SourceAlias tests mechanically migrated but not built or run with this CPU+CUDA SDK.",
+      "No new Apple/Vulkan execution, full GLM/DeepSeek/Kimi run, throughput, peer profile, memory measurement or fault injection.",
+      "Compiled reports retain domain properties, not original resource identity; caller must supply this program original domain table."
+    ]
+  },
+  "current_link_base": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-readback-domains-20261030\\model-link-base.json",
+    "bytes": 100140,
+    "sha256": "ec1ab90705e0ee22226ca98c1d27cb0157af914319df956755b300783d073b56"
+  },
+  "cleanup": {
+    "script": {
+      "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+      "bytes": 1721,
+      "sha256": "04c0d2984ff6ad09fd726905fe8a6912b566f608bb46b48334d0de612a2819a1"
+    },
+    "archived_script": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-readback-domains-20261030\\cleanup.ps1",
+      "bytes": 1721,
+      "sha256": "04c0d2984ff6ad09fd726905fe8a6912b566f608bb46b48334d0de612a2819a1"
+    },
+    "manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-readback-domains-20261030\\cleanup-targets.json",
+      "bytes": 3956,
+      "sha256": "6e2adc0c8c9d573e7f9b41e26243ecb9de8e6d3bb2d59d93d5eee5129cf85e30"
+    },
+    "result": {
+      "files": 16,
+      "status": "REMOVED_EXACT_FLAT_BATCH_IMAGES",
+      "retained": "Original SDK objects, current consumer objects, source inputs, commands and reports",
+      "boundary": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-readback-domains-20261030\\bin",
+      "bytes": 712455964
+    }
+  },
+  "evidence_archive": "inference-readback-domains-2026-10-30.zip"
+}

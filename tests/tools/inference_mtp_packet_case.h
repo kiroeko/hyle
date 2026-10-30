@@ -85,7 +85,7 @@ inline std::size_t check_width(i::Backend &backend, std::size_t m,
   q::check(io.prepare(compiled, 0, inputs.size(), 1, 0));
   std::vector<i::ProgramIo::Input> ports;
   for (const auto value : inputs) ports.push_back(q::take(io.add_input(value)));
-  const auto readback = q::take(io.add_readback(output, backend)); q::check(io.seal());
+  const auto readback = q::take(io.add_readback(output, backend.storage_domains())); q::check(io.seal());
   i::ProgramCarrier<Scope> carrier;
   q::check(carrier.prepare(compiled, backend.queue_bindings()));
   q::check(carrier.initialize({.io = io, .invocation = g::InvocationOptions{.resources = g::ResourceOptions{}}}));
@@ -133,7 +133,7 @@ inline std::size_t check_width(i::Backend &backend, std::size_t m,
       require(!carrier.pending() && !run->in_flight() && lifetime.expired(),
           "packet completion did not actually retire its retained original input scope");
       std::vector<std::int32_t> actual(total_size);
-      q::check(io.read(backend, *run, readback, std::as_writable_bytes(std::span(actual))));
+      q::check(io.read(*run, readback, std::as_writable_bytes(std::span(actual))));
       if (actual != expected)
         throw std::runtime_error("device MTP packet differs from exact fields/host oracle: " + test.name);
       require(std::equal(emitted.begin(), emitted.end(), actual.begin() + 4) &&

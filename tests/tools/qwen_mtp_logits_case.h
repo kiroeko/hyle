@@ -216,7 +216,7 @@ inline void finite_math(q::Model &model, q::BackendKind kind) {
   compiled.executable = q::take(compiled.executable.exact_variant(0)); compiled.report = q::take(compiled.report.exact_variant(0));
   const auto queues = q::take(i::prepare_queue_bindings(model.execution.queue_bindings(), compiled.report));
   std::array<q::PreparedReadback, 9> outputs;
-  for (std::size_t at = 0; at != outputs.size(); ++at) outputs[at] = q::take(q::PreparedReadback::prepare(compiled, ports[at], model.execution, model.allocation_budget));
+  for (std::size_t at = 0; at != outputs.size(); ++at) outputs[at] = q::take(q::PreparedReadback::prepare(compiled, ports[at], model.execution.storage_domains(), model.allocation_budget));
   auto target_values = model.caller_tensor(model.execution.device(), q::dense(q::Type::kFloat32, {2, model.vocabulary}));
   auto draft_values = model.caller_tensor(model.execution.device(), q::dense(q::Type::kFloat32, {1, model.vocabulary}));
   auto q_values = model.caller_tensor(model.execution.device(), q::dense(q::Type::kFloat32, {1, model.vocabulary}));
@@ -239,15 +239,15 @@ inline void finite_math(q::Model &model, q::BackendKind kind) {
     q::check(run.prepare_replay(i::queue_span(queues), {.mode = q::g::ReplayMode::kCommands, .host_wait = q::g::HostWaitPolicy::kAllow}));
     auto done = q::take(run.submit(i::queue_span(queues))); q::check(done.wait());
     for (std::size_t row = 0; row != 3; ++row) {
-      require(q::take(outputs[row + 3].predicate(model.execution, run)) == 1, "finite modified p/q/bonus was invalid");
-      std::vector<float> actual(width); q::check(outputs[row].read(model.execution, run, std::as_writable_bytes(std::span(actual))));
+      require(q::take(outputs[row + 3].predicate(run)) == 1, "finite modified p/q/bonus was invalid");
+      std::vector<float> actual(width); q::check(outputs[row].read(run, std::as_writable_bytes(std::span(actual))));
       for (std::size_t at = 0; at != width; ++at)
         require(expected[row][at] ? std::isfinite(actual[at]) && std::abs(std::exp(double(actual[at])) - expected[row][at]) < 0.00003
                                  : actual[at] == -(std::numeric_limits<float>::infinity)(),
             "native modified p/q/bonus differs from the independent finite distribution");
     }
-    std::int32_t final_id = -1; q::check(outputs[8].read(model.execution, run, std::as_writable_bytes(std::span(&final_id, 1))));
-    require(q::take(outputs[6].predicate(model.execution, run)) == branch && q::take(outputs[7].predicate(model.execution, run)) == 1 &&
+    std::int32_t final_id = -1; q::check(outputs[8].read(run, std::as_writable_bytes(std::span(&final_id, 1))));
+    require(q::take(outputs[6].predicate(run)) == branch && q::take(outputs[7].predicate(run)) == 1 &&
         final_id == draw(branch ? expected[2] : residual, finals[branch], kind),
         "modified speculative residual/bonus changed q twice or lost its independent original final draw");
   }

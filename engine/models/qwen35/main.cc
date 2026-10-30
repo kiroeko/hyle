@@ -3024,11 +3024,11 @@ public:
     check(program.io.add_fixed(program.tokens, program.token_values.read()));
     check(program.io.add_fixed(program.positions, program.position_values.read()));
     if (head) {
-      program.id_value = take(program.io.add_readback(program.id, execution, allocation_budget));
+      program.id_value = take(program.io.add_readback(program.id, execution.storage_domains(), allocation_budget));
       if (selected_sampler.enabled) check(program.io.add_fixed(program.identity, program.identity_values.read()));
-      if (program.valid) program.valid_value = take(program.io.add_readback(program.valid, execution, allocation_budget));
+      if (program.valid) program.valid_value = take(program.io.add_readback(program.valid, execution.storage_domains(), allocation_budget));
       if (min_draft_probability() > 0)
-        program.probability_value = take(program.io.add_readback(program.probability, execution, allocation_budget));
+        program.probability_value = take(program.io.add_readback(program.probability, execution.storage_domains(), allocation_budget));
     }
     check(program.io.seal());
     if (head) {
@@ -3148,19 +3148,19 @@ public:
       ++draft_program_graph_calls;
       if (head) {
         if (program.valid) {
-          const auto flag = take(program.io.predicate(execution, run, program.valid_value));
+          const auto flag = take(program.io.predicate(run, program.valid_value));
           if (flag == 0) throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
               "recursive draft distribution is invalid; no head or RNG was published"));
           if (flag != 1) throw std::runtime_error("recursive draft validity is outside its predicate encoding");
           if (selected_sampler.enabled) output.log_probabilities =
               take(program.io.retain(run, program.probabilities_output, execution_budget));
           if (min_draft_probability() > 0) {
-            check(program.io.read(execution, run, program.probability_value, std::as_writable_bytes(std::span(&output.probability, 1))));
+            check(program.io.read(run, program.probability_value, std::as_writable_bytes(std::span(&output.probability, 1))));
             if (!std::isfinite(output.probability) || output.probability < 0 || output.probability > 1)
               throw std::runtime_error("draft maximum probability is outside its declared probability domain");
           }
         }
-        check(program.io.read(execution, run, program.id_value, std::as_writable_bytes(std::span(&output.id, 1))));
+        check(program.io.read(run, program.id_value, std::as_writable_bytes(std::span(&output.id, 1))));
         if (output.id < 0 || output.id >= vocabulary) throw std::runtime_error("NextN proposal is outside vocabulary");
         if (program.next_counts) output.next_counts =
             take(program.io.retain(run, program.next_counts_output, execution_budget));
@@ -3307,7 +3307,7 @@ public:
     if (program.identities) check(program.io.add_fixed(program.identities, program.identity_values.read()));
     if (program.ids) check(program.io.add_fixed(program.ids, program.id_values.read()));
     if (program.continuation) check(program.io.add_fixed(program.continuation, program.continuation_values.read()));
-    program.packet_value = take(program.io.add_readback(program.packet, execution, allocation_budget));
+    program.packet_value = take(program.io.add_readback(program.packet, execution.storage_domains(), allocation_budget));
     if (program.bias) program.bias_input = take(program.io.add_input(program.bias));
     if (program.allowed) program.allowed_input = take(program.io.add_input(program.allowed));
     if (program.counts) program.counts_input = take(program.io.add_input(program.counts));
@@ -3408,7 +3408,7 @@ public:
       check(run.prepare_replay(queues, {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
       auto done = take(program.carrier.submit(resources_)); check(done.wait());
       ++prefix_decision_graph_calls;
-      check(program.io.read(execution, run, program.packet_value,
+      check(program.io.read(run, program.packet_value,
           std::as_writable_bytes(std::span(program.packet_host))));
       const auto words = std::span<const std::int32_t>(program.packet_host);
       if (words[0] == 0) throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
@@ -3530,8 +3530,8 @@ public:
             1 + bool(prepared->bias_port) + bool(prepared->allowed_port) + bool(prepared->counts_port),
             1 + bool(prepared->valid_port), 0));
         if (prepared->identity_port) check(prepared->io.add_fixed(prepared->identity_port, prepared->identity.read()));
-        prepared->id = take(prepared->io.add_readback(prepared->id_port, execution, allocation_budget));
-        if (prepared->valid_port) prepared->valid = take(prepared->io.add_readback(prepared->valid_port, execution, allocation_budget));
+        prepared->id = take(prepared->io.add_readback(prepared->id_port, execution.storage_domains(), allocation_budget));
+        if (prepared->valid_port) prepared->valid = take(prepared->io.add_readback(prepared->valid_port, execution.storage_domains(), allocation_budget));
         prepared->hidden_input = take(prepared->io.add_input(prepared->hidden_port));
         if (prepared->bias_port) prepared->bias_input = take(prepared->io.add_input(prepared->bias_port));
         if (prepared->allowed_port) prepared->allowed_input = take(prepared->io.add_input(prepared->allowed_port));
@@ -3570,9 +3570,9 @@ public:
       check(run.prepare_replay(queues, {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
       auto done = take(frontier.carrier.submit(resources_)); check(done.wait());
       ++frontier_sampling_graph_calls;
-      const auto valid = frontier.valid_port ? take(frontier.io.predicate(execution, run, frontier.valid)) : std::uint8_t{1};
+      const auto valid = frontier.valid_port ? take(frontier.io.predicate(run, frontier.valid)) : std::uint8_t{1};
       std::int32_t pending = -1;
-      check(frontier.io.read(execution, run, frontier.id, std::as_writable_bytes(std::span(&pending, 1))));
+      check(frontier.io.read(run, frontier.id, std::as_writable_bytes(std::span(&pending, 1))));
       if (valid == 0) throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
           "cached frontier sampling is invalid; no request RNG cursor was published"));
       if (valid != 1 || pending < 0 || pending >= vocabulary)
@@ -3955,20 +3955,20 @@ public:
       check(program_slot.io.add_fixed(phase.position_port, io.positions.read()));
       if (sampling_identity) check(program_slot.io.add_fixed(phase.sampling_identity_port, io.sampling_identities.read()));
       if (phase.sampling_valid_port) {
-        io.sampling_valid = take(program_slot.io.add_readback(phase.sampling_valid_port, execution, allocation_budget));
+        io.sampling_valid = take(program_slot.io.add_readback(phase.sampling_valid_port, execution.storage_domains(), allocation_budget));
         if (phase.sampling_accept_port)
-          io.sampling_accept = take(program_slot.io.add_readback(phase.sampling_accept_port, execution, allocation_budget));
+          io.sampling_accept = take(program_slot.io.add_readback(phase.sampling_accept_port, execution.storage_domains(), allocation_budget));
       }
       if (last_ids) check(program_slot.io.add_fixed(phase.last_ids_port, io.last_ids.read()));
       if (packed_target) check(program_slot.io.add_fixed(phase.history_select_port, io.history_select.read()));
       if (packed_verify) check(program_slot.io.add_fixed(phase.prefix_ids_port, io.prefix_ids.read()));
       if (io.logits.caller_owned()) check(program_slot.io.add_fixed_output(phase.logits_port, io.logits.view()));
       if (completion == TextCompletion::kEmitNext)
-        io.next_id = take(program_slot.io.add_readback(phase.id_port, execution, allocation_budget));
+        io.next_id = take(program_slot.io.add_readback(phase.id_port, execution.storage_domains(), allocation_budget));
       if (phase.successor_token_port)
-        io.successor_token = take(program_slot.io.add_readback(phase.successor_token_port, execution, allocation_budget));
+        io.successor_token = take(program_slot.io.add_readback(phase.successor_token_port, execution.storage_domains(), allocation_budget));
       if (phase.successor_catchup_port)
-        io.successor_catchup = take(program_slot.io.add_readback(phase.successor_catchup_port, execution, allocation_budget));
+        io.successor_catchup = take(program_slot.io.add_readback(phase.successor_catchup_port, execution.storage_domains(), allocation_budget));
       if (io.final_hidden.caller_owned()) check(program_slot.io.add_fixed_output(phase.hidden_port, io.final_hidden.view()));
       if (has_mtp(role)) {
         check(program_slot.io.add_fixed(phase.draft_position_port, io.draft_positions.read()));
@@ -3978,7 +3978,7 @@ public:
           if (draft_lag(role)) check(program_slot.io.add_fixed(phase.draft_token_select_port, io.draft_token_select.read()));
         }
         if (compact_draft) check(program_slot.io.add_fixed(phase.draft_last_ids_port, io.draft_last_ids.read()));
-        if (drafts_token(role)) io.draft_id = take(program_slot.io.add_readback(phase.draft_id_port, execution, allocation_budget));
+        if (drafts_token(role)) io.draft_id = take(program_slot.io.add_readback(phase.draft_id_port, execution.storage_domains(), allocation_budget));
       }
       if (diagnostic) for (std::size_t i = 0; i < phase.probe_ports.size(); ++i)
         if (const auto *output = phase.probe_facts[i]; output && output->caller_owned())
@@ -5133,11 +5133,11 @@ public:
         if (!io.final_hidden.caller_owned()) generated_hidden = take(inference::retain_output(run, *phase.hidden_facts, allocation_budget));
       }
       if (drafts_token(phase.family->role)) {
-        check(program_slot.io.read(execution, run, io.draft_id, std::as_writable_bytes(std::span(io.draft_ids))));
+        check(program_slot.io.read(run, io.draft_id, std::as_writable_bytes(std::span(io.draft_ids))));
         for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].draft_token = io.draft_ids[j];
       }
       if (phase.sampling_valid_port && !state_only && phase.family->role != GraphRole::kVerify) {
-        check(take(program_slot.io.readback(io.sampling_valid))->predicates(execution, run, io.sampling_valid_values, io.sampling_scratch));
+        check(take(program_slot.io.readback(io.sampling_valid))->predicates(run, io.sampling_valid_values, io.sampling_scratch));
         auto bad = std::ranges::find_if(io.sampling_valid_values, [](auto value) { return value != 1; });
         if (step.discard_stopped_members)
           while (bad != io.sampling_valid_values.end() &&
@@ -5157,20 +5157,20 @@ public:
               "sampling distribution or proposal is invalid; no session or RNG cursor was published"), participant);
         }
         if (phase.sampling_accept_port) {
-          check(take(program_slot.io.readback(io.sampling_accept))->predicates(execution, run, io.sampling_accept_values, io.sampling_scratch));
+          check(take(program_slot.io.readback(io.sampling_accept))->predicates(run, io.sampling_accept_values, io.sampling_scratch));
           for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].sampled_accept = io.sampling_accept_values[j] != 0;
         }
       }
       // Selection observes only retired original Graph results. No head has
       // been published and all state/append guards still belong to this episode.
       if (verifies_prefix(phase.family->role)) {
-        check(program_slot.io.read(execution, run, io.next_id, std::as_writable_bytes(std::span(io.prefix_candidates))));
+        check(program_slot.io.read(run, io.next_id, std::as_writable_bytes(std::span(io.prefix_candidates))));
         select(std::span<const std::int32_t>(io.prefix_candidates), step, next_ids);
       } else if (state_only) {
         std::ranges::fill(next_ids, -1);
         select(std::span<const std::int32_t>(next_ids), step, next_ids);
       } else {
-        check(program_slot.io.read(execution, run, io.next_id, std::as_writable_bytes(next_ids)));
+        check(program_slot.io.read(run, io.next_id, std::as_writable_bytes(next_ids)));
         select(std::span<const std::int32_t>(next_ids), step, next_ids);
       }
       for (std::size_t j = 0; j < outputs.size(); ++j) {

@@ -46,9 +46,9 @@ inline q::g::CompiledGraph compile(q::Model &model, q::GraphAssembly &assembly, 
   return result;
 }
 template<class T, std::size_t N>
-inline std::array<T, N> read(q::Model &model, q::PreparedReadback &output, q::g::Invocation &run) {
+inline std::array<T, N> read(q::PreparedReadback &output, q::g::Invocation &run) {
   std::array<T, N> result{};
-  q::check(output.read(model.execution, run, std::as_writable_bytes(std::span(result)))); return result;
+  q::check(output.read(run, std::as_writable_bytes(std::span(result)))); return result;
 }
 
 inline void neutral(q::Model &model) {
@@ -166,7 +166,7 @@ inline void conditional_math(q::Model &model, q::BackendKind kind) {
   auto compiled = compile(model, assembly, r);
   const auto queues = q::take(i::prepare_queue_bindings(model.execution.queue_bindings(), compiled.report));
   std::vector<q::PreparedReadback> outputs;
-  for (auto value : ports) outputs.push_back(q::take(q::PreparedReadback::prepare(compiled, value, model.execution, model.allocation_budget)));
+  for (auto value : ports) outputs.push_back(q::take(q::PreparedReadback::prepare(compiled, value, model.execution.storage_domains(), model.allocation_budget)));
   auto raw_values = model.caller_tensor(model.execution.device(), q::dense(q::Type::kFloat32, {1, 4}));
   auto target_values = model.caller_tensor(model.execution.device(), q::dense(q::Type::kFloat32, {3, 4}));
   auto q0_values = model.caller_tensor(model.execution.device(), q::dense(q::Type::kFloat32, {1, 4}));
@@ -212,36 +212,36 @@ inline void conditional_math(q::Model &model, q::BackendKind kind) {
     Counts original{}; q::check(model.execution.read(counter_values.read().storage(), std::as_writable_bytes(std::span(original))));
     require(original == current_counts, "hypothesis updates changed the caller's original readonly counts");
     if (arm >= 2) {
-      require(q::take(outputs[1].predicate(model.execution, run)) == 0 && q::take(outputs[18].predicate(model.execution, run)) == 0,
+      require(q::take(outputs[1].predicate(run)) == 0 && q::take(outputs[18].predicate(run)) == 0,
           "negative counts, nonfinite raw logits or bias NaN disappeared behind the allowed mask");
       continue;
     }
     for (std::size_t row = 0; row != 4; ++row) {
-      require(read<float, 4>(model, outputs[row * 3], run) == hand[row] &&
-          q::take(outputs[row * 3 + 1].predicate(model.execution, run)) == 1 &&
-          read<std::int32_t, 4>(model, outputs[row * 3 + 2], run) == counts[row],
+      require(read<float, 4>(outputs[row * 3], run) == hand[row] &&
+          q::take(outputs[row * 3 + 1].predicate(run)) == 1 &&
+          read<std::int32_t, 4>(outputs[row * 3 + 2], run) == counts[row],
           "history hand logits, duplicate ID counts or complete validity changed");
     }
     for (std::size_t row = 0; row != 2; ++row) {
-      const auto actual = read<float, 4>(model, outputs[12 + row * 2], run);
-      require(q::take(outputs[13 + row * 2].predicate(model.execution, run)) == 1, "history proposal distribution is invalid");
+      const auto actual = read<float, 4>(outputs[12 + row * 2], run);
+      require(q::take(outputs[13 + row * 2].predicate(run)) == 1, "history proposal distribution is invalid");
       for (std::size_t at = 0; at != 4; ++at)
         require(std::abs(std::exp(double(actual[at])) - draft[row][at]) < .00003,
             "history-conditioned q differs from the independent F64 normalizer");
     }
     for (std::size_t row = 0; row != 3; ++row) {
-      const auto actual = read<float, 4>(model, outputs[22 + row * 2], run);
-      require(q::take(outputs[23 + row * 2].predicate(model.execution, run)) == 1, "history target or bonus distribution is invalid");
+      const auto actual = read<float, 4>(outputs[22 + row * 2], run);
+      require(q::take(outputs[23 + row * 2].predicate(run)) == 1, "history target or bonus distribution is invalid");
       for (std::size_t at = 0; at != 4; ++at)
         require(std::abs(std::exp(double(actual[at])) - target[row][at]) < .00003,
             "history-conditioned p/bonus differs from the independent F64 normalizer");
     }
-    require(q::take(outputs[16].predicate(model.execution, run)) == branch &&
-        q::take(outputs[18].predicate(model.execution, run)) == 1 &&
-        q::take(outputs[19].predicate(model.execution, run)) == 1 && q::take(outputs[21].predicate(model.execution, run)) == 1,
+    require(q::take(outputs[16].predicate(run)) == branch &&
+        q::take(outputs[18].predicate(run)) == 1 &&
+        q::take(outputs[19].predicate(run)) == 1 && q::take(outputs[21].predicate(run)) == 1,
         "history conditional acceptance changed or lost its complete validity proof");
-    require(read<std::int32_t, 1>(model, outputs[17], run)[0] == m::draw(branch ? target[1] : residual, finals[branch], kind) &&
-        read<std::int32_t, 1>(model, outputs[20], run)[0] == m::draw(target[2], finals[branch], kind),
+    require(read<std::int32_t, 1>(outputs[17], run)[0] == m::draw(branch ? target[1] : residual, finals[branch], kind) &&
+        read<std::int32_t, 1>(outputs[20], run)[0] == m::draw(target[2], finals[branch], kind),
         "history verifier transformed external q again or used the wrong residual/bonus history");
     Row original_q{}; q::check(model.execution.read(normalized0.read().storage(), std::as_writable_bytes(std::span(original_q))));
     require(original_q == normalized_q[0], "verifier rewrote its original normalized q input");
@@ -264,7 +264,7 @@ inline void integer_boundaries(q::Model &model) {
   const Counts original{16777217, (std::numeric_limits<std::int32_t>::max)() - 1, 0, 0};
   for (std::int32_t arm = 0; arm != 2; ++arm) {
     values.write<std::int32_t>(original); id.write<std::int32_t>(std::span(&arm, 1));
-    auto output = q::take(q::PreparedReadback::prepare(compiled, next, model.execution, model.allocation_budget));
+    auto output = q::take(q::PreparedReadback::prepare(compiled, next, model.execution.storage_domains(), model.allocation_budget));
     auto run = q::take(compiled.executable.create_invocation({.resources = q::g::ResourceOptions{}}));
     q::check(run.bind(counts, values.read())); q::check(run.bind(token, id.read())); q::check(output.bind(run));
     q::check(run.prepare_replay(i::queue_span(queues), {.mode = q::g::ReplayMode::kCommands, .host_wait = q::g::HostWaitPolicy::kAllow}));
@@ -276,7 +276,7 @@ inline void integer_boundaries(q::Model &model) {
     else status = submitted.error();
     if (!arm) {
       q::check(status); auto expected = original; expected[0] += 3;
-      require(read<std::int32_t, 4>(model, output, run) == expected,
+      require(read<std::int32_t, 4>(output, run) == expected,
           "history counters were rounded through F32 or artificially capped at 2^24");
     } else {
       require(status.IsOutOfRange() && !run.result(next), "INT32_MAX history overflow published a usable counter row");

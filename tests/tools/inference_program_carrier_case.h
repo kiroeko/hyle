@@ -128,7 +128,7 @@ inline int run(q::BackendKind kind) {
         HYLE_RETURN_IF_ERROR(slot.io.prepare(compiled, 0, 2, 1, 0));
         HYLE_ASSIGN_OR_RETURN(slot.data.first, slot.io.add_input(first));
         HYLE_ASSIGN_OR_RETURN(slot.data.second, slot.io.add_input(second));
-        HYLE_ASSIGN_OR_RETURN(slot.data.readback, slot.io.add_readback(output, backend));
+        HYLE_ASSIGN_OR_RETURN(slot.data.readback, slot.io.add_readback(output, backend.storage_domains()));
         return slot.io.seal();
       }));
   require(programs.size() == 2 && programs.slots().size() == 2 && !programs.pending(),
@@ -143,7 +143,7 @@ inline int run(q::BackendKind kind) {
   // Install the original readback first, then one valid input and the wrong
   // second shape. Failure must return that actual caller writer, if applicable.
   q::check(partial_io.prepare(compiled, 2, 0, 1, 0));
-  const auto partial_readback = q::take(partial_io.add_readback(output, backend));
+  const auto partial_readback = q::take(partial_io.add_readback(output, backend.storage_domains()));
   q::check(partial_io.add_fixed(first, view(a_scope->first, description)));
   q::check(partial_io.add_fixed(second, view(a_scope->second, bad_description)));
   q::check(partial_io.seal());
@@ -259,8 +259,8 @@ inline int run(q::BackendKind kind) {
   require(!a.pending() && !b.pending() && !programs.pending() && a_lifetime.expired() && b_lifetime.expired(),
       "successful real Completions did not release their own original retained scopes");
   std::array<float, 4> actual_a{}, actual_b{};
-  q::check(a_io.read(backend, *a_run, a_readback, std::as_writable_bytes(std::span(actual_a))));
-  q::check(b_io.read(backend, *b_run, b_readback, std::as_writable_bytes(std::span(actual_b))));
+  q::check(a_io.read(*a_run, a_readback, std::as_writable_bytes(std::span(actual_a))));
+  q::check(b_io.read(*b_run, b_readback, std::as_writable_bytes(std::span(actual_b))));
   require(actual_a == std::array<float, 4>{11, 22, 33, 44} && actual_b == std::array<float, 4>{6, 9, 14, 19},
       "two native carriers mixed fixed inputs or their prepared readbacks");
   a_done = {}; b_done = {};

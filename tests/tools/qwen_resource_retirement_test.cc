@@ -196,9 +196,11 @@ TEST(QwenResourceRetirement, SharedReadbackReadsExactBoolAliasAndRejectsNonbinar
   auto storage = q::take(q::mem::Buffer::create(backend.device(), 4, 256));
   const auto alias = predicate_alias(description);
   auto compiled = q::take(backend.compile(alias.graph, {}));
-  auto port = q::take(PreparedReadback::prepare(compiled, alias.input, backend));
+  // This noncaller result must not need any caller allocation domain.
+  auto port = q::take(PreparedReadback::prepare(compiled, alias.input, {}));
   ASSERT_EQ(port.facts.ownership, q::g::OutputOwnership::kSourceAlias);
   ASSERT_EQ(port.facts.description, description);
+  ASSERT_FALSE(port.pool().valid());
   auto run = q::take(compiled.executable.create_invocation());
   ASSERT_TRUE(port.bind(run).ok());
   constexpr std::uint8_t canary = 0xa5;
@@ -208,7 +210,7 @@ TEST(QwenResourceRetirement, SharedReadbackReadsExactBoolAliasAndRejectsNonbinar
                            std::array<std::uint8_t, 4>{1, 0, 0, 1}}) {
     output.fill(canary); scratch.fill(13.5F);
     replay_predicate_input(backend, run, alias.input, description, storage, std::as_bytes(std::span(input)));
-    const auto status = port.predicates(backend, run, std::span(output).subspan(1, 4), scratch);
+    const auto status = port.predicates(run, std::span(output).subspan(1, 4), scratch);
     ASSERT_TRUE(status.ok()) << status.message();
     EXPECT_EQ(output.front(), canary); EXPECT_EQ(output.back(), canary);
     for (std::size_t i = 0; i < input.size(); ++i) EXPECT_EQ(output[i+1], input[i]);
@@ -217,7 +219,7 @@ TEST(QwenResourceRetirement, SharedReadbackReadsExactBoolAliasAndRejectsNonbinar
   const std::array<std::uint8_t, 4> nonbinary{0, 1, 2, 0};
   replay_predicate_input(backend, run, alias.input, description, storage, std::as_bytes(std::span(nonbinary)));
   output.fill(canary); scratch.fill(13.5F);
-  EXPECT_TRUE(port.predicates(backend, run, std::span(output).subspan(1, 4), scratch).IsInvalidArgument());
+  EXPECT_TRUE(port.predicates(run, std::span(output).subspan(1, 4), scratch).IsInvalidArgument());
   // Bool is read directly before validation; only the exact output range may change.
   EXPECT_EQ(output.front(), canary); EXPECT_EQ(output.back(), canary);
   for (const auto value : scratch) EXPECT_EQ(value, 13.5F);
@@ -229,9 +231,11 @@ TEST(QwenResourceRetirement, SharedReadbackReadsExactFloatAliasWithBoundedCaller
   auto storage = q::take(q::mem::Buffer::create(backend.device(), 4*sizeof(float), 256));
   const auto alias = predicate_alias(description);
   auto compiled = q::take(backend.compile(alias.graph, {}));
-  auto port = q::take(PreparedReadback::prepare(compiled, alias.input, backend));
+  // Its original Graph result supplies the actual backing at observation.
+  auto port = q::take(PreparedReadback::prepare(compiled, alias.input, {}));
   ASSERT_EQ(port.facts.ownership, q::g::OutputOwnership::kSourceAlias);
   ASSERT_EQ(port.facts.description, description);
+  ASSERT_FALSE(port.pool().valid());
   auto run = q::take(compiled.executable.create_invocation());
   ASSERT_TRUE(port.bind(run).ok());
   constexpr std::uint8_t canary = 0xa5;
@@ -241,15 +245,15 @@ TEST(QwenResourceRetirement, SharedReadbackReadsExactFloatAliasWithBoundedCaller
                            std::array<float, 4>{1, 0, 1, 0}}) {
     replay_predicate_input(backend, run, alias.input, description, storage, std::as_bytes(std::span(input)));
     output.fill(canary); scratch.fill(13.5F);
-    auto status = port.predicates(backend, run, std::span(output).subspan(1, 4), std::span(scratch).first(3));
+    auto status = port.predicates(run, std::span(output).subspan(1, 4), std::span(scratch).first(3));
     EXPECT_TRUE(status.IsInvalidArgument());
     for (const auto value : output) EXPECT_EQ(value, canary);
     for (const auto value : scratch) EXPECT_EQ(value, 13.5F);
-    status = port.predicates(backend, run, std::span(output).subspan(1, 3), scratch);
+    status = port.predicates(run, std::span(output).subspan(1, 3), scratch);
     EXPECT_TRUE(status.IsInvalidArgument());
     for (const auto value : output) EXPECT_EQ(value, canary);
     for (const auto value : scratch) EXPECT_EQ(value, 13.5F);
-    status = port.predicates(backend, run, std::span(output).subspan(1, 4), scratch);
+    status = port.predicates(run, std::span(output).subspan(1, 4), scratch);
     ASSERT_TRUE(status.ok()) << status.message();
     EXPECT_EQ(output.front(), canary); EXPECT_EQ(output.back(), canary);
     for (std::size_t i = 0; i < input.size(); ++i)
@@ -261,7 +265,7 @@ TEST(QwenResourceRetirement, SharedReadbackReadsExactFloatAliasWithBoundedCaller
     const std::array<float, 4> input{0, 1, invalid, 0};
     replay_predicate_input(backend, run, alias.input, description, storage, std::as_bytes(std::span(input)));
     output.fill(canary); scratch.fill(13.5F);
-    EXPECT_TRUE(port.predicates(backend, run, std::span(output).subspan(1, 4), scratch).IsInvalidArgument());
+    EXPECT_TRUE(port.predicates(run, std::span(output).subspan(1, 4), scratch).IsInvalidArgument());
     EXPECT_EQ(output.front(), canary); EXPECT_EQ(output.back(), canary);
     EXPECT_EQ(scratch[4], 13.5F); EXPECT_EQ(scratch[5], 13.5F);
   }

@@ -8,6 +8,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <string>
 #include <gtest/gtest.h>
 #include "hyle/graph/progress.h"
@@ -68,6 +69,15 @@ TEST(QwenBackendCpuCuda, IdleEndpointsNeedNoBudgetButActualWorkspaceDoes) {
 TEST(QwenBackendCpuCuda, ColdBindingsUseActualDomainsAndPreserveMaterialization) {
   auto checked = hyle::inference::test::graph_bindings_case();
   ASSERT_TRUE(checked) << checked.error().message();
+  EXPECT_EQ(checked->native_submissions, 4U);
+  EXPECT_EQ(checked->compared_values, 102U);
+  EXPECT_EQ(checked->readback_values, 102U);
+  EXPECT_EQ(checked->retired_scopes, 2U);
+  EXPECT_EQ(checked->conflicting_external_rejections, 1U);
+  EXPECT_EQ(checked->readback_domain_rejections, 2U);
+  EXPECT_EQ(checked->readback_owner_rejections, 1U);
+  EXPECT_EQ(checked->readback_missing_domain_rejections, 1U);
+  EXPECT_EQ(checked->materialized_bytes, 17U * sizeof(float));
 }
 
 TEST(QwenBackendCpuCuda, ExplicitCudaRemainsOneCudaEndpoint) {
@@ -126,7 +136,7 @@ TEST(QwenBackendCpuCuda, ExplicitCpuExecutesOriginalQueueAfterMove) {
   auto compiled=backend.compile(graph,{});ASSERT_TRUE(compiled)<<compiled.error().message();
   EXPECT_EQ(compiled->report.target_count(),1U);EXPECT_EQ(compiled->report.storage_domain_count(),1U);
   EXPECT_EQ(compiled->report.lane_count(),1U);
-  auto readback=hyle::inference::PreparedReadback::prepare(*compiled,y,backend);
+  auto readback=hyle::inference::PreparedReadback::prepare(*compiled,y,backend.storage_domains());
   ASSERT_TRUE(readback)<<readback.error().message();
   std::array<float,17> input{},actual{};
   for(std::size_t i=0;i<input.size();++i)input[i]=float(int(i)-8)/8.F;
@@ -139,9 +149,95 @@ TEST(QwenBackendCpuCuda, ExplicitCpuExecutesOriginalQueueAfterMove) {
   ASSERT_TRUE(run->prepare_replay(backend.queue_bindings(),{.mode=g::ReplayMode::kCommands}).ok());
   auto done=run->submit(backend.queue_bindings());ASSERT_TRUE(done)<<done.error().message();
   ASSERT_TRUE(done->wait().ok());
-  ASSERT_TRUE(readback->read(backend,*run,std::as_writable_bytes(std::span(actual))).ok());
+  ASSERT_TRUE(readback->read(*run,std::as_writable_bytes(std::span(actual))).ok());
   for(std::size_t i=0;i<input.size();++i)EXPECT_EQ(actual[i],-input[i]);
   ASSERT_TRUE(run->drain().ok());ASSERT_TRUE(backend.collect_retired().ok());
+}
+
+TEST(QwenBackendCpuCuda, NoncallerReadbackNeedsNoCallerDomainTable) {
+  for (const auto kind : {BackendKind::kCpu, BackendKind::kCuda}) {
+    SCOPED_TRACE(static_cast<int>(kind));
+    auto created = Backend::create({.primary = kind});
+    ASSERT_TRUE(created) << created.error().message();
+    auto backend = std::move(*created);
+    for (const auto type : {c::DataType::kBool, c::DataType::kFloat32}) {
+      SCOPED_TRACE(static_cast<int>(type));
+      const auto description = c::TensorDesc::dense(type, std::array<std::int64_t, 1>{4}).value();
+      auto builder = g::GraphBuilder::create().value();
+      const auto input = builder.input(description).value();
+      ASSERT_TRUE(builder.publish(input).ok());
+      const auto graph = std::move(builder).finish().value();
+      auto compiled = backend.compile(graph, {});
+      ASSERT_TRUE(compiled) << compiled.error().message();
+      auto prepared = hyle::inference::PreparedReadback::prepare(*compiled, input, {});
+      ASSERT_TRUE(prepared) << prepared.error().message();
+      auto readback = std::move(*prepared);
+      ASSERT_EQ(readback.facts.ownership, g::OutputOwnership::kSourceAlias);
+      ASSERT_EQ(readback.facts.description, description);
+      ASSERT_FALSE(readback.pool().valid());
+      auto queues = hyle::inference::prepare_queue_bindings(backend.queue_bindings(), compiled->report);
+      ASSERT_TRUE(queues) << queues.error().message();
+      EXPECT_EQ(queues->size(), compiled->executable.required_queue_count());
+      // The actual borrowed source backing precedes its Invocation. A
+      // published-input-only Graph need not require any Compute Queue.
+      auto storage = m::Buffer::create(backend.device(), description.required_bytes().value(), 256).value();
+      auto run = compiled->executable.create_invocation().value();
+      ASSERT_TRUE(readback.bind(run).ok());
+      const auto replay = [&](std::span<const std::byte> bytes) -> hyle::Status {
+        HYLE_RETURN_IF_ERROR(backend.write(storage.view(), bytes));
+        HYLE_ASSIGN_OR_RETURN(auto tensor, c::ConstTensorView::create(description, storage.view()));
+        HYLE_RETURN_IF_ERROR(run.bind(input, tensor));
+        HYLE_RETURN_IF_ERROR(run.prepare_replay(hyle::inference::queue_span(*queues), {.mode = g::ReplayMode::kCommands}));
+        HYLE_ASSIGN_OR_RETURN(auto completion, run.submit(hyle::inference::queue_span(*queues)));
+        return completion.wait();
+      };
+      constexpr std::uint8_t canary = 0xa5;
+      std::array<std::uint8_t, 6> output{};
+      std::array<float, 6> scratch{};
+      const auto check_edges = [&] {
+        EXPECT_EQ(output.front(), canary); EXPECT_EQ(output.back(), canary);
+        EXPECT_EQ(scratch[4], 13.5F); EXPECT_EQ(scratch[5], 13.5F);
+      };
+      for (unsigned round = 0; round < 2; ++round) {
+        const std::array<std::uint8_t, 4> bits = round ? std::array<std::uint8_t, 4>{1, 0, 0, 1}
+                                                     : std::array<std::uint8_t, 4>{0, 1, 1, 0};
+        const std::array<float, 4> floats{float(bits[0]), float(bits[1]), float(bits[2]), float(bits[3])};
+        const auto replayed = type == c::DataType::kBool ? replay(std::as_bytes(std::span(bits)))
+                                                        : replay(std::as_bytes(std::span(floats)));
+        ASSERT_TRUE(replayed.ok()) << replayed.message();
+        output.fill(canary); scratch.fill(13.5F);
+        if (type == c::DataType::kFloat32) {
+          EXPECT_TRUE(readback.predicates(run, std::span(output).subspan(1, 4),
+              std::span(scratch).first(3)).IsInvalidArgument());
+          EXPECT_TRUE(readback.predicates(run, std::span(output).subspan(1, 3), scratch).IsInvalidArgument());
+          for (const auto value : output) EXPECT_EQ(value, canary);
+          for (const auto value : scratch) EXPECT_EQ(value, 13.5F);
+        }
+        const auto status = readback.predicates(run, std::span(output).subspan(1, 4), scratch);
+        ASSERT_TRUE(status.ok()) << status.message();
+        check_edges();
+        for (std::size_t index = 0; index < bits.size(); ++index) EXPECT_EQ(output[index + 1], bits[index]);
+        if (type == c::DataType::kBool) for (const auto value : scratch) EXPECT_EQ(value, 13.5F);
+      }
+      if (type == c::DataType::kBool) {
+        const std::array<std::uint8_t, 4> invalid{0, 1, 2, 0};
+        ASSERT_TRUE(replay(std::as_bytes(std::span(invalid))).ok());
+        output.fill(canary); scratch.fill(13.5F);
+        EXPECT_TRUE(readback.predicates(run, std::span(output).subspan(1, 4), scratch).IsInvalidArgument());
+        check_edges();
+        for (const auto value : scratch) EXPECT_EQ(value, 13.5F);
+      } else for (const auto invalid : {0.5F, std::numeric_limits<float>::infinity(),
+                                      std::numeric_limits<float>::quiet_NaN()}) {
+        const std::array<float, 4> values{0, 1, invalid, 0};
+        ASSERT_TRUE(replay(std::as_bytes(std::span(values))).ok());
+        output.fill(canary); scratch.fill(13.5F);
+        EXPECT_TRUE(readback.predicates(run, std::span(output).subspan(1, 4), scratch).IsInvalidArgument());
+        check_edges();
+      }
+      ASSERT_TRUE(run.drain().ok());
+      ASSERT_TRUE(backend.collect_retired().ok());
+    }
+  }
 }
 
 TEST(QwenBackendCpuCuda, ReadbackKeepsTheOriginalLeasedOutputAcrossReplayAndReclaim) {
@@ -157,7 +253,7 @@ TEST(QwenBackendCpuCuda, ReadbackKeepsTheOriginalLeasedOutputAcrossReplayAndRecl
   auto graph = std::move(builder).finish().value();
   auto compiled = backend.compile(graph, {});
   ASSERT_TRUE(compiled) << compiled.error().message();
-  auto prepared = hyle::inference::PreparedReadback::prepare(*compiled, output, backend);
+  auto prepared = hyle::inference::PreparedReadback::prepare(*compiled, output, backend.storage_domains());
   ASSERT_TRUE(prepared) << prepared.error().message();
   auto readback = std::move(*prepared);
   ASSERT_TRUE(readback.facts.caller_owned());
@@ -177,7 +273,7 @@ TEST(QwenBackendCpuCuda, ReadbackKeepsTheOriginalLeasedOutputAcrossReplayAndRecl
     ASSERT_TRUE(submitted->wait().ok());
     *submitted = {};
     std::array<float, 4> actual{};
-    ASSERT_TRUE(readback.read(backend, run, std::as_writable_bytes(std::span(actual))).ok());
+    ASSERT_TRUE(readback.read(run, std::as_writable_bytes(std::span(actual))).ok());
     for (std::size_t i = 0; i < values.size(); ++i) EXPECT_EQ(actual[i], -values[i]);
     auto result = run.result(output).value();
     auto lease = result.storage_lease();
@@ -228,7 +324,7 @@ TEST(QwenBackendCpuCuda, ReadbackI32WriterSupportsTheOriginalSubmissionSource) {
   auto graph = std::move(builder).finish().value();
   auto compiled = backend.compile(graph, {});
   ASSERT_TRUE(compiled) << compiled.error().message();
-  auto prepared = hyle::inference::PreparedReadback::prepare(*compiled, output, backend);
+  auto prepared = hyle::inference::PreparedReadback::prepare(*compiled, output, backend.storage_domains());
   ASSERT_TRUE(prepared) << prepared.error().message();
   auto readback = std::move(*prepared);
   ASSERT_TRUE(readback.facts.caller_owned());
@@ -254,7 +350,7 @@ TEST(QwenBackendCpuCuda, ReadbackI32WriterSupportsTheOriginalSubmissionSource) {
   ASSERT_TRUE(source->detach().ok());
   ASSERT_TRUE(common->detach().ok());
   std::int32_t actual = -1;
-  ASSERT_TRUE(readback.read(backend, run, std::as_writable_bytes(std::span(&actual, 1))).ok());
+  ASSERT_TRUE(readback.read(run, std::as_writable_bytes(std::span(&actual, 1))).ok());
   EXPECT_EQ(actual, 30);
   EXPECT_TRUE(readback.reclaim(run).IsUnavailable()); // Detached view still owns its read.
   *source = {};
@@ -265,7 +361,7 @@ TEST(QwenBackendCpuCuda, ReadbackI32WriterSupportsTheOriginalSubmissionSource) {
   ASSERT_TRUE(replay) << replay.error().message();
   ASSERT_TRUE(replay->wait().ok());
   *replay = {};
-  ASSERT_TRUE(readback.read(backend, run, std::as_writable_bytes(std::span(&actual, 1))).ok());
+  ASSERT_TRUE(readback.read(run, std::as_writable_bytes(std::span(&actual, 1))).ok());
   EXPECT_EQ(actual, 30);
 }
 

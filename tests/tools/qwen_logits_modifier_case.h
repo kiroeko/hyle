@@ -66,7 +66,7 @@ inline void modifier_domains(q::Model &model) {
   const auto queues = q::take(i::prepare_queue_bindings(model.execution.queue_bindings(), compiled.report));
   std::array<q::PreparedReadback, 4> outputs;
   for (std::size_t at = 0; at < outputs.size(); ++at)
-    outputs[at] = q::take(q::PreparedReadback::prepare(compiled, ports[at], model.execution, model.allocation_budget));
+    outputs[at] = q::take(q::PreparedReadback::prepare(compiled, ports[at], model.execution.storage_domains(), model.allocation_budget));
   auto identity = model.caller_tensor(model.execution.device(), q::dense(q::Type::kUInt32, {1, 4}));
   const auto words = q::cache::SamplingCursor{123, 7, 0}.identity(); identity.write<std::uint32_t>(words);
   auto invocation = q::take(compiled.executable.create_invocation({.resources = q::g::ResourceOptions{}}));
@@ -96,12 +96,12 @@ inline void modifier_domains(q::Model &model) {
         {.mode = q::g::ReplayMode::kCommands, .host_wait = q::g::HostWaitPolicy::kAllow}));
     auto done = q::take(invocation.submit(i::queue_span(queues))); q::check(done.wait());
     const auto expected = std::uint8_t(sample == 0 || sample == 8);
-    require(q::take(outputs[1].predicate(model.execution, invocation)) == expected &&
-        q::take(outputs[3].predicate(model.execution, invocation)) == expected,
+    require(q::take(outputs[1].predicate(invocation)) == expected &&
+        q::take(outputs[3].predicate(invocation)) == expected,
         "modifier validity hid an invalid column or rejected ordinary negative-infinite zero mass");
     if (expected) for (const auto port : {std::size_t{0}, std::size_t{2}}) {
       std::int32_t id = -1;
-      q::check(outputs[port].read(model.execution, invocation, std::as_writable_bytes(std::span(&id, 1))));
+      q::check(outputs[port].read(invocation, std::as_writable_bytes(std::span(&id, 1))));
       require(id == 3, "single allowed token was not selected by the original greedy/categorical endpoint");
     }
   }

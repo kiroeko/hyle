@@ -112,12 +112,12 @@ class ProgramIo final {
     return handle;
   }
 
-  Result<Readback> add_readback(graph::ValueId value, const Backend &backend,
+  Result<Readback> add_readback(graph::ValueId value, std::span<const graph::StorageDomain> domains,
       const compute::ResourceBudget &budget = {}) noexcept {
     HYLE_RETURN_IF_ERROR(registering());
     if (readbacks_.size() == readbacks_.capacity() || installation_.size() == installation_.capacity())
       return std::unexpected(Status::ResourceExhausted("program readback exceeds its cold capacity"));
-    HYLE_ASSIGN_OR_RETURN(auto prepared, PreparedReadback::prepare(*compiled_, value, backend, budget));
+    HYLE_ASSIGN_OR_RETURN(auto prepared, PreparedReadback::prepare(*compiled_, value, domains, budget));
     const Readback handle(this, readbacks_.size());
     installation_.push_back({true, readbacks_.size()});
     readbacks_.push_back(std::move(prepared));
@@ -197,15 +197,15 @@ class ProgramIo final {
     return run.bind(item.facts.value, item.facts.description, std::move(writer));
   }
 
-  Status read(const Backend &backend, graph::Invocation &run, Readback output,
+  Status read(graph::Invocation &run, Readback output,
       std::span<std::byte> bytes) const noexcept {
     HYLE_RETURN_IF_ERROR(check(output, readbacks_.size()));
-    return readbacks_[output.index_].read(backend, run, bytes);
+    return readbacks_[output.index_].read(run, bytes);
   }
-  Result<std::uint8_t> predicate(const Backend &backend, graph::Invocation &run,
+  Result<std::uint8_t> predicate(graph::Invocation &run,
       Readback output) const noexcept {
     HYLE_RETURN_IF_ERROR(check(output, readbacks_.size()));
-    return readbacks_[output.index_].predicate(backend, run);
+    return readbacks_[output.index_].predicate(run);
   }
 
   // Borrow the sole original owner for its facts, Source pool proof or explicit

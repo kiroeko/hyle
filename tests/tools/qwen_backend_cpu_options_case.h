@@ -61,7 +61,7 @@ inline Result<CpuOptionsFacts> cpu_options_case() {
     HYLE_ASSIGN_OR_RETURN(auto queue, backend.common_queue());
     HYLE_ASSIGN_OR_RETURN(auto compiled, backend.compile(graph, {}));
     provider = compiled.report.provider().name;
-    HYLE_ASSIGN_OR_RETURN(auto readback, PreparedReadback::prepare(compiled, output, backend));
+    HYLE_ASSIGN_OR_RETURN(auto readback, PreparedReadback::prepare(compiled, output, backend.storage_domains()));
     HYLE_ASSIGN_OR_RETURN(auto storage, mem::Buffer::create(backend.device(), sizeof(expected[0]), 256));
     HYLE_ASSIGN_OR_RETURN(auto run, compiled.executable.create_invocation());
     HYLE_RETURN_IF_ERROR(run.prepare_resources());
@@ -75,7 +75,7 @@ inline Result<CpuOptionsFacts> cpu_options_case() {
       HYLE_RETURN_IF_ERROR(run.prepare_replay(backend.queue_bindings(), {.mode = g::ReplayMode::kCommands}));
       HYLE_ASSIGN_OR_RETURN(auto done, run.submit(backend.queue_bindings()));
       HYLE_RETURN_IF_ERROR(done.wait());
-      HYLE_RETURN_IF_ERROR(readback.read(backend, run, std::as_writable_bytes(std::span(actual))));
+      HYLE_RETURN_IF_ERROR(readback.read(run, std::as_writable_bytes(std::span(actual))));
       if (actual != expected[replay])
         return Status::Internal("CPU configured/default Graph values differ from the exact negation");
       facts.compared_values += actual.size();

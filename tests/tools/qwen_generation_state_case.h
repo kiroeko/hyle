@@ -162,7 +162,7 @@ inline q::PreparedReadback replace_successor_output(q::Model &model,
   q::check(run.unbind(phase.id_port));
   auto retained = std::move(readback);
   readback = q::take(q::PreparedReadback::prepare(phase.child->compiled, phase.id_port,
-      model.execution, model.execution_budget));
+      model.execution.storage_domains(), model.execution_budget));
   q::check(readback.bind(run));
   return retained;
 }

@@ -6,14 +6,14 @@
 #include <span>
 #include <utility>
 
-#include "backend.h"
 #include "prepared_output.h"
 
 namespace hyle::inference {
 
 // Prepare only the caller-owned backing. Native-owned results are obtained
 // from the original Invocation after successful completion, never cached.
-// The Backend resource owners must outlive this buffer and its native uses.
+// The original compile environment's resource owners must outlive this buffer
+// and its native uses.
 struct PreparedReadback final {
   PreparedOutputFacts facts;
 
@@ -34,12 +34,28 @@ struct PreparedReadback final {
 
   static Result<PreparedReadback> prepare(const graph::CompiledGraph &compiled,
                                         graph::ValueId value,
-                                        const Backend &backend,
+                                        std::span<const graph::StorageDomain> domains,
                                         const compute::ResourceBudget &budget = {}) noexcept {
     PreparedReadback result;
     HYLE_ASSIGN_OR_RETURN(result.facts, prepare_output(compiled, value));
-    HYLE_ASSIGN_OR_RETURN(auto resource, backend.resource_for(result.facts.storage));
     if (result.facts.caller_owned()) {
+      const auto storage = result.facts.storage;
+      if (!storage.valid() || storage.ordinal() >= domains.size())
+        return std::unexpected(Status::OutOfRange("readback storage domain is not configured"));
+      const auto &domain = domains[storage.ordinal()];
+      const auto resource = domain.resource;
+      if (!resource.valid() || (domain.owner && domain.owner.ref() != resource))
+        return std::unexpected(Status::InvalidArgument("readback storage resource and owner differ"));
+      HYLE_ASSIGN_OR_RETURN(auto reported, compiled.report.storage_domain(storage.ordinal()));
+      const auto properties = resource.properties();
+      // The report retains domain properties, not the resource object identity.
+      // The caller supplies this program's original environment; Graph still
+      // validates the actual backing when the output is bound.
+      if (reported.storage != storage || properties.domain != reported.properties.domain ||
+          properties.flags != reported.properties.flags ||
+          properties.minimum_alignment != reported.properties.minimum_alignment ||
+          properties.maximum_allocation != reported.properties.maximum_allocation)
+        return std::unexpected(Status::InvalidArgument("readback storage differs from its compiled domain"));
       HYLE_ASSIGN_OR_RETURN(auto bytes, result.facts.description.required_bytes());
       if (bytes) {
         HYLE_ASSIGN_OR_RETURN(result.pool_, compute::LeasePool::create(resource, bytes,
@@ -84,21 +100,21 @@ struct PreparedReadback final {
   // published lease; temporary owners end with this synchronous read. When a
   // pending OutputSource has admitted readers, detach that view first so its
   // checked publication can precede the ordinary Graph result publication.
-  Status read(const Backend &backend, graph::Invocation &run,
+  Status read(graph::Invocation &run,
               std::span<std::byte> bytes) const noexcept {
     HYLE_ASSIGN_OR_RETURN(auto output, run.result(facts.value));
     if (facts.caller_owned()) {
-      if (caller_) return backend.read(caller_.view(), bytes);
+      if (caller_) return caller_.view().read(bytes);
       HYLE_ASSIGN_OR_RETURN(auto owner, output.storage_lease());
       HYLE_ASSIGN_OR_RETURN(auto storage, owner.view());
       HYLE_RETURN_IF_ERROR(check_storage(storage));
-      return backend.read(storage, bytes);
+      return storage.read(bytes);
     }
     if (auto tensor = output.tensor(); tensor)
-      return backend.read(tensor->storage(), bytes);
+      return tensor->storage().read(bytes);
     HYLE_ASSIGN_OR_RETURN(auto owner, output.storage_lease());
     HYLE_ASSIGN_OR_RETURN(auto storage, owner.view());
-    return backend.read(storage, bytes);
+    return storage.read(bytes);
   }
 
   // Optional retired withdrawal before changing Invocation. Call before other
@@ -124,13 +140,13 @@ struct PreparedReadback final {
   }
 
   // The full writer's original domain proof for OutputSource::create. The
-  // Backend/compiled StorageDomain must retain the actual resource owner.
+  // Original compiled StorageDomain must retain the actual resource owner.
   const compute::LeasePool &pool() const noexcept { return pool_; }
 
   // Scratch belongs to the already prepared caller and is used only for F32
   // publication. Read exactly this dense port; never widen a native subrange
   // into neighboring bytes or flatten a padded/encoded description.
-  Status predicates(const Backend &backend, graph::Invocation &run,
+  Status predicates(graph::Invocation &run,
                     std::span<std::uint8_t> output,
                     std::span<float> scratch) const noexcept {
     HYLE_ASSIGN_OR_RETURN(auto bytes, facts.description.required_bytes());
@@ -148,13 +164,13 @@ struct PreparedReadback final {
       return Status::InvalidArgument("prepared F32 predicate scratch is too small");
     if (output.empty()) return Status::Ok();
     if (type == compute::DataType::kBool) {
-      HYLE_RETURN_IF_ERROR(read(backend, run, std::as_writable_bytes(output)));
+      HYLE_RETURN_IF_ERROR(read(run, std::as_writable_bytes(output)));
       for (const auto value : output)
         if (value > 1)
           return Status::InvalidArgument("host predicate is not exact Bool zero or one");
     } else {
       const auto values = scratch.first(output.size());
-      HYLE_RETURN_IF_ERROR(read(backend, run, std::as_writable_bytes(values)));
+      HYLE_RETURN_IF_ERROR(read(run, std::as_writable_bytes(values)));
       for (std::size_t i = 0; i < output.size(); ++i) {
         const auto value = values[i];
         if (value != 0 && value != 1)
@@ -165,11 +181,10 @@ struct PreparedReadback final {
     return Status::Ok();
   }
 
-  Result<std::uint8_t> predicate(const Backend &backend,
-                                 graph::Invocation &run) const noexcept {
+  Result<std::uint8_t> predicate(graph::Invocation &run) const noexcept {
     std::uint8_t value = 0;
     float scratch = 0;
-    HYLE_RETURN_IF_ERROR(predicates(backend, run, std::span(&value, 1), std::span(&scratch, 1)));
+    HYLE_RETURN_IF_ERROR(predicates(run, std::span(&value, 1), std::span(&scratch, 1)));
     return value;
   }
 

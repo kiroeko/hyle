@@ -3,6 +3,7 @@
 #include "../../engine/inference/backend.h"
 #include "../../engine/inference/execution_resources.h"
 #include "../../engine/inference/graph_bindings.h"
+#include "../../engine/inference/program_io.h"
 
 #include <array>
 #include <cstddef>
@@ -15,6 +16,8 @@ namespace hyle::inference::test {
 struct GraphBindingsFacts final {
   std::size_t native_submissions = 0, compared_values = 0, retired_scopes = 0;
   std::size_t conflicting_external_rejections = 0, materialized_bytes = 0;
+  std::size_t readback_values = 0, readback_domain_rejections = 0;
+  std::size_t readback_owner_rejections = 0, readback_missing_domain_rejections = 0;
 };
 
 // Original CPU/CUDA endpoints, with CPU at storage zero and CUDA at one.
@@ -49,13 +52,18 @@ inline Result<GraphBindingsFacts> graph_bindings_case() {
   std::array<float, count> weight{};
   for (std::size_t index = 0; index < count; ++index) weight[index] = static_cast<float>(index + 1) / 8.F;
   GraphBindingsFacts facts;
-  const auto read_result = [&](g::Invocation &run, g::ValueId value,
+  const auto read_result = [&](ProgramIo &io, ProgramIo::Readback port, g::Invocation &run,
       mem::MemoryResourceRef resource, std::span<float> values) -> Status {
-    HYLE_ASSIGN_OR_RETURN(auto result, run.result(value));
+    HYLE_ASSIGN_OR_RETURN(auto prepared, io.readback(port));
+    HYLE_ASSIGN_OR_RETURN(auto result, run.result(prepared->facts.value));
     HYLE_ASSIGN_OR_RETURN(auto tensor, result.tensor());
-    if (tensor.storage().resource() != resource)
+    if (prepared->facts.storage.ordinal() >= domains.size() ||
+        domains[prepared->facts.storage.ordinal()].resource != resource ||
+        tensor.storage().resource() != resource)
       return Status::Internal("Graph binding output used the wrong actual storage resource");
-    return backend.read(tensor.storage(), std::as_writable_bytes(values));
+    HYLE_RETURN_IF_ERROR(io.read(run, port, std::as_writable_bytes(values)));
+    facts.readback_values += values.size();
+    return Status::Ok();
   };
   {
     HYLE_ASSIGN_OR_RETURN(auto builder, g::GraphBuilder::create());
@@ -125,19 +133,48 @@ inline Result<GraphBindingsFacts> graph_bindings_case() {
     if (queues.size() != 2)
       return std::unexpected(Status::Internal("CPU/CUDA Graph did not retain both original execution lanes"));
     HYLE_ASSIGN_OR_RETURN(auto host_in, mem::Buffer::create(domains[0].resource, bytes, 256));
-    HYLE_ASSIGN_OR_RETURN(auto host_out, mem::Buffer::create(domains[0].resource, bytes, 256));
     HYLE_ASSIGN_OR_RETURN(auto device_in, mem::Buffer::create(domains[1].resource, bytes, 256));
-    HYLE_ASSIGN_OR_RETURN(auto device_out, mem::Buffer::create(domains[1].resource, bytes, 256));
+    {
+      ProgramIo refused;
+      HYLE_RETURN_IF_ERROR(refused.prepare(compiled, 0, 0, 1, 0));
+      const auto missing = refused.add_readback(host_output, {});
+      if (missing || !missing.error().IsOutOfRange())
+        return std::unexpected(Status::Internal("caller readback accepted a missing actual storage domain"));
+      ++facts.readback_missing_domain_rejections;
+      for (const auto output : {host_output, device_output}) {
+        const auto wrong_order = refused.add_readback(output, backend.storage_domains());
+        if (wrong_order || !wrong_order.error().IsInvalidArgument() ||
+            wrong_order.error().message() != "readback storage differs from its compiled domain")
+          return std::unexpected(Status::Internal("readback accepted the Backend's unrelated domain ordinals"));
+        ++facts.readback_domain_rejections;
+      }
+      auto wrong_owner = domains;
+      wrong_owner[0].owner = domains[1].owner;
+      const auto mismatched = refused.add_readback(host_output, wrong_owner);
+      if (mismatched || !mismatched.error().IsInvalidArgument() ||
+          mismatched.error().message() != "readback storage resource and owner differ")
+        return std::unexpected(Status::Internal("readback accepted an owner of a different actual resource"));
+      ++facts.readback_owner_rejections;
+      // All cold refusals leave the same inventory available for its actual
+      // domain. No Invocation, payload writer or partial IO entry was installed.
+      HYLE_ASSIGN_OR_RETURN(auto recovered, refused.add_readback(host_output, domains));
+      HYLE_RETURN_IF_ERROR(refused.seal());
+      HYLE_ASSIGN_OR_RETURN(auto recovered_port, refused.readback(recovered));
+      if (recovered_port->facts.storage != cpu_storage)
+        return std::unexpected(Status::Internal("refused readback registration changed its original output facts"));
+    }
+    ProgramIo io;
+    HYLE_RETURN_IF_ERROR(io.prepare(compiled, 0, 0, 2, 0));
+    HYLE_ASSIGN_OR_RETURN(auto host_readback, io.add_readback(host_output, domains));
+    HYLE_ASSIGN_OR_RETURN(auto device_readback, io.add_readback(device_output, domains));
+    HYLE_RETURN_IF_ERROR(io.seal());
     HYLE_ASSIGN_OR_RETURN(auto run, compiled.executable.create_invocation());
     HYLE_RETURN_IF_ERROR(run.prepare_resources());
     HYLE_ASSIGN_OR_RETURN(auto host_in_view, c::ConstTensorView::create(description, host_in.view()));
     HYLE_ASSIGN_OR_RETURN(auto device_in_view, c::ConstTensorView::create(description, device_in.view()));
-    HYLE_ASSIGN_OR_RETURN(auto host_out_view, c::TensorView::create(description, host_out.view()));
-    HYLE_ASSIGN_OR_RETURN(auto device_out_view, c::TensorView::create(description, device_out.view()));
     HYLE_RETURN_IF_ERROR(run.bind(host_input, host_in_view));
     HYLE_RETURN_IF_ERROR(run.bind(device_input, device_in_view));
-    HYLE_RETURN_IF_ERROR(run.bind(host_output, host_out_view));
-    HYLE_RETURN_IF_ERROR(run.bind(device_output, device_out_view));
+    HYLE_RETURN_IF_ERROR(io.bind_fixed(run));
     for (std::size_t replay = 0; replay < 2; ++replay) {
       std::array<float, count> values{}, expected_host{}, expected_device{}, actual_host{}, actual_device{};
       for (std::size_t index = 0; index < count; ++index) {
@@ -149,8 +186,8 @@ inline Result<GraphBindingsFacts> graph_bindings_case() {
       HYLE_RETURN_IF_ERROR(run.prepare_replay(queue_span(queues), {.mode = g::ReplayMode::kCommands}));
       HYLE_ASSIGN_OR_RETURN(auto done, run.submit(queue_span(queues))); ++facts.native_submissions;
       HYLE_RETURN_IF_ERROR(done.wait());
-      HYLE_RETURN_IF_ERROR(read_result(run, host_output, domains[0].resource, actual_host));
-      HYLE_RETURN_IF_ERROR(read_result(run, device_output, domains[1].resource, actual_device));
+      HYLE_RETURN_IF_ERROR(read_result(io, host_readback, run, domains[0].resource, actual_host));
+      HYLE_RETURN_IF_ERROR(read_result(io, device_readback, run, domains[1].resource, actual_device));
       if (actual_host != expected_host || actual_device != expected_device)
         return std::unexpected(Status::Internal("reversed-domain borrowed replay changed exact CPU/CUDA outputs"));
       facts.compared_values += 2 * count;
@@ -197,12 +234,14 @@ inline Result<GraphBindingsFacts> graph_bindings_case() {
     if (queues.size() != 1 || queues[0].lane != g::ExecutionLaneId{0})
       return std::unexpected(Status::Internal("materialized CUDA route changed its original execution lane"));
     HYLE_ASSIGN_OR_RETURN(auto storage, mem::Buffer::create(domains[1].resource, bytes, 256));
-    HYLE_ASSIGN_OR_RETURN(auto destination, mem::Buffer::create(domains[1].resource, bytes, 256));
+    ProgramIo io;
+    HYLE_RETURN_IF_ERROR(io.prepare(compiled, 0, 0, 1, 0));
+    HYLE_ASSIGN_OR_RETURN(auto readback, io.add_readback(output, domains));
+    HYLE_RETURN_IF_ERROR(io.seal());
     HYLE_ASSIGN_OR_RETURN(auto run, compiled.executable.create_invocation());
     HYLE_RETURN_IF_ERROR(run.prepare_resources());
     HYLE_ASSIGN_OR_RETURN(auto in_view, c::ConstTensorView::create(description, storage.view()));
-    HYLE_ASSIGN_OR_RETURN(auto out_view, c::TensorView::create(description, destination.view()));
-    HYLE_RETURN_IF_ERROR(run.bind(input, in_view)); HYLE_RETURN_IF_ERROR(run.bind(output, out_view));
+    HYLE_RETURN_IF_ERROR(run.bind(input, in_view)); HYLE_RETURN_IF_ERROR(io.bind_fixed(run));
     for (std::size_t replay = 0; replay < 2; ++replay) {
       std::array<float, count> values{}, expected{}, actual{};
       for (std::size_t index = 0; index < count; ++index) {
@@ -213,7 +252,7 @@ inline Result<GraphBindingsFacts> graph_bindings_case() {
       HYLE_RETURN_IF_ERROR(run.prepare_replay(queue_span(queues), {.mode = g::ReplayMode::kCommands}));
       HYLE_ASSIGN_OR_RETURN(auto done, run.submit(queue_span(queues))); ++facts.native_submissions;
       HYLE_RETURN_IF_ERROR(done.wait());
-      HYLE_RETURN_IF_ERROR(read_result(run, output, domains[1].resource, actual));
+      HYLE_RETURN_IF_ERROR(read_result(io, readback, run, domains[1].resource, actual));
       if (actual != expected)
         return std::unexpected(Status::Internal("materialized pinned-host-to-CUDA replay changed exact output"));
       facts.compared_values += count;

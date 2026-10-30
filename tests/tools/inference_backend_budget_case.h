@@ -84,7 +84,7 @@ inline Result<BackendBudgetFacts> backend_budget_case() {
       HYLE_ASSIGN_OR_RETURN(auto queues, prepare_queue_bindings(backend.queue_bindings(), compiled.report));
       if (queues.size() != 1 || queues[0].lane != g::ExecutionLaneId{cuda ? 0u : 1u})
         return Status::Internal("single-endpoint graph did not select its original required Queue");
-      HYLE_ASSIGN_OR_RETURN(auto readback, PreparedReadback::prepare(compiled, output, backend, budget));
+      HYLE_ASSIGN_OR_RETURN(auto readback, PreparedReadback::prepare(compiled, output, backend.storage_domains(), budget));
       // The caller owns this input before admission; Graph's private workspace
       // and complete caller-output writer use the actual budget below.
       HYLE_ASSIGN_OR_RETURN(auto storage, mem::Buffer::create(resource, 17 * sizeof(float), 256));
@@ -105,7 +105,7 @@ inline Result<BackendBudgetFacts> backend_budget_case() {
         HYLE_ASSIGN_OR_RETURN(auto done, run.submit(queue_span(queues)));
         if (cuda) ++facts.cuda_submissions; else ++facts.host_submissions;
         HYLE_RETURN_IF_ERROR(done.wait());
-        HYLE_RETURN_IF_ERROR(readback.read(backend, run, std::as_writable_bytes(std::span(actual))));
+        HYLE_RETURN_IF_ERROR(readback.read(run, std::as_writable_bytes(std::span(actual))));
         if (actual != expected)
           return Status::Internal("single-endpoint budget graph changed exact Abs/Neg values");
         facts.compared_values += actual.size();

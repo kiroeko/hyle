@@ -38,6 +38,9 @@ HYLE 的产品目标是完整推理引擎；Compute、Graph、内存、调度、
 | 多模型与拓扑边界 | 用结构不同的原模型组件检查适配边界；区分Graph的多端点表达、当前Backend装配与模型放置，状态按实际存储域归属 |
 | 输出与性能检验 | 收敛共同输出事实；相关组件检查后，以当前4070上的decode、MTP和含预热／换轮的综合速度检验热路径，完整大模型与多卡验证如实留待后续 |
 
+下一片共同架构收敛Qwen／Kimi成功阶段的完整资源交接：原成功等待、输出观察、Source封闭、Append／Store取回、模型解释及消费者撤依赖，复用现有ExecutionEpisode。
+Head／ledger／RNG发布、私有修复及reset政策仍由原模型负责。GLM现有请求演示仅限定自然单发分支，实际credit仍需进入独立可调用的模型步骤；不能只给场景闭包改名就计为完成。
+
 多模型形状同时参考本地成熟引擎的实际实现：vLLM `276fbcff2717`的`v1/engine/core.py`、`v1/core/sched/scheduler.py`和`model_executor/models/qwen3_5.py`，
 TensorRT-LLM `46d9966b54d9`的`_torch/pyexecutor/engine/model_call.py`、`py_executor.py`及`model_engine.py`。
 重点借鉴模型数学／状态事实、共同调度、原资源和结果观察之间的边界，不引入其大型动态ModelEngine或第二资源管理器。
@@ -108,7 +111,11 @@ GLM Flash／Pro、DeepSeek正式Flash／Pro与Kimi的原组件程序已接共同
 按原冷阶段输入ID借用live表；保留真实专家选择／上传、全部观察输出及原提交退休。旧SlotTransactions串取另一Invocation的事务已真实复现，
 现按原state身份拒绝，移动及合法重绑定仍成立。Source与分页追加复用既有容器，减少小型子分配，但不保证host元数据字节下降。
 61项测试与12条有限消费者通过，11份完整非计时报告保持；同窗ABBA初筛121.87→122.67tok/s，未证明提速。
-这一片不完成完整执行架构；剩余模型状态／发布差异不靠包装循环消除，继续处理真实完整接线与性能问题。
+这一片不完成完整执行架构；剩余模型状态／发布差异不靠包装循环消除，先继续处理真实完整接线。
+随后[实际程序域读回](../evidence/correctness/inference-readback-domains-2026-10-30.json)修复冷readback按Backend预设域编号取资源的问题，
+具体程序传入原存储域，非caller无需caller域表，运行时按原输出资源读取。独立编译旧helper已复现两项原Graph绑定拒绝。
+12项CPU／CUDA检查及12条有限消费者通过，11份完整非计时报告保持；227个SDK／引擎对象复用，无SDK重编、下载或性能实验。
+Vulkan原测试仅迁移未运行；此片只完成实际域边界整改，不代签完整共同执行编排。
 真实DeepSeek首次压缩检查还发现CUDA索引分数的归约漏填stride；修改前后消费者在同SDK上均失败，独立小回归在旧对象上准确失败。
 已补物理[key,token,head]步长，4项索引检查、真实首次压缩／窗口环绕及GLM回归通过；
 [本批有限检查](../evidence/correctness/inference-program-io-consumers-2026-10-30.json)共18项测试及2个载体进程通过，226个SDK／引擎输入复用、仅刷新1个provider CXX对象，无NVCC或下载。
