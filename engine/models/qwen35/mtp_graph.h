@@ -286,14 +286,15 @@ AppendNodes append_kv(R &r, const compute::BatchSchema &schema, const KeyValue &
   return nodes;
 }
 
-// Run the trained block and shared LM head for one local row per request.
+// Run the trained block and the caller's cold-selected draft head for one
+// local row per request. Target scoring is independent of this projection.
 // Calling this consumes all 15 original MTP parameters in the same Recipe.
 // It does not publish outputs, transfer leases, submit, sample on host or commit
 // state. Root owns those original Model/StepState transaction responsibilities.
-template<class R>
+template<class R, class Scores>
 Head full_head(R &r, const Projection &projection, const KeyValue &kv,
                Value positions, Value frequencies, const PagedInputs &paged,
-               Dimension last_row, const Geometry &shape, Value last_indices = {}) {
+               Dimension last_row, const Geometry &shape, Scores &&scores, Value last_indices = {}) {
   detail::coordinates(r, shape, positions, frequencies);
   if (projection.rows != shape.packed_rows || kv.rows != projection.rows || (!last_indices && last_row.is_fixed() &&
       (last_row.fixed_value() < 0 || (shape.sequence_rows.is_fixed() &&
@@ -339,7 +340,7 @@ Head full_head(R &r, const Projection &projection, const KeyValue &kv,
       ? r.copy(r.slice(hidden_rows, 0, last_row, fixed(1)))
       : r.reshape(r.copy(r.slice(r.reshape(hidden_rows, {batch, shape.sequence_rows, fixed(r.geometry.hidden)}),
           1, last_row, fixed(1))), {batch, fixed(r.geometry.hidden)});
-  const auto logits = r.scores(selected, std::string(r.geometry.head_role()));
+  const auto logits = scores(r, selected);
   // Token selection belongs to the caller. Building a greedy TopK here would
   // leave a dead operation when the caller chooses categorical sampling.
   return {hidden_rows, selected, logits, nodes, attention_node};

@@ -73,6 +73,9 @@ Store／Append按原端点可访问域冷装配，源合同与银行选择分离
 [代码域词表](../evidence/research/inference-code-vocabulary-map-2026-10-30.json)已由本地原tokenizer和独立参考源码得到32K映射，
 未使用测试prompt／输出，零下载；它不是接受率证据。词表接线尚未编译，已隔离保存并撤出产品源码；
 冷导入、原ID映射、真实接受率及净收益检查均待共同执行架构收敛后继续。随机q／p／拒绝残差须保原合同。
+随后[显式草稿词表](../evidence/performance/inference-draft-vocabulary-2026-10-30.json)已按当前架构实现：显式原source-bound ID文件、一次冷导入、原ID映射及预算寿命；原target／embedding保留。
+CPU／CUDA原行检查、K1／双轮／K2真实消费者和23个共同前缀导出张量检查通过；仅支持无modifier的greedy／零阈值稠密head，默认全词表与随机路径保持。
+完整32进程窗采用显式32K，不代替默认全词表MTP差距；同输入同64输出的K1／K2小样本复测中K2有正向信号，实际工作差异保留，未改默认K1。长输入、默认路径和其它GPU热点继续。
 条件图仍未接入产品，Executed／Skipped必须先于任何结果发布表达。
 
 以下架构工作已按实际调用链及有限检查完成；保留交付定义供后续改动核对，当前接续集中性能：

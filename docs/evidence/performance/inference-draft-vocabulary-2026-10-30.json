@@ -1,0 +1,4268 @@
+{
+  "schema": "hyle.inference-draft-vocabulary.v1",
+  "date": "2026-10-30",
+  "status": "FINITE_SCREEN_AND_FULL32_WINDOW_COMPLETE",
+  "full_goal_complete": false,
+  "base_commit": "f578049c546b55f1f05fbb72ff7036752b38e8a7",
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 637965,
+      "sha256": "aa96c3fd3e9890ab198c00e4b6c7c5ab2c41663346f6ca564fdfc9a485b1a7bd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_graph.h",
+      "bytes": 21017,
+      "sha256": "2f5549ab27ca6bc63b1e7db59549706573ebbd3972ce66dbb3894ff410aa2ef5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\weights.cc",
+      "bytes": 57639,
+      "sha256": "10f5c227a7954b83b16a8b84271307a85b287e296737c9bdcde15337836d158b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\weights.h",
+      "bytes": 6747,
+      "sha256": "fce73651366aaff00e6aad58c053f133d3f36b0623785be953b8e0787f8ff930"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\draft_vocabulary.h",
+      "bytes": 2282,
+      "sha256": "2d7cc67f0fadeae1962e0df5b35dfd96e3592e5793bb8ecbc612f85dd5fefdb7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_draft_vocabulary_test.cc",
+      "bytes": 5907,
+      "sha256": "43876b43b67c37d427d24919968dbb02f7fb2568162c54088f5e45d01fcf593f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_draft_vocabulary_probe.cc",
+      "bytes": 14584,
+      "sha256": "9ee43561838de6ba15bbd90f447f6389ecf1ac12dad7663f36d68d005a6d76f8"
+    }
+  ],
+  "source_snapshots": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\source-current-pins.json",
+    "bytes": 108132,
+    "sha256": "8eff94e8155c48a60ca8db91696695141104ae76c2fa869c8b72bb2e8882a2f6"
+  },
+  "baseline_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\baseline-plan.json",
+    "bytes": 190991,
+    "sha256": "931a5f024e8851adb2e0bc13e2d7703dd0c071d52776640976b2bed17248e460"
+  },
+  "baseline_ABI_scope": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-candidate-failure-20261030\\model-link-base.json",
+    "bytes": 108017,
+    "sha256": "1b204a4d04c82486c314309e3317687f59ab2dfb59af1443ad983e49f4c1918e"
+  },
+  "candidate_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\plan.json",
+    "bytes": 256057,
+    "sha256": "2d5b034f33a0249d3843e38ab0298f6cf93ade071bc24d3eba8d4acef19d00f5"
+  },
+  "model_link_base": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\model-link-base.json",
+    "bytes": 111632,
+    "sha256": "6b701fb576894b73cda17516fdc1f91d10b89d5b0ceba52c2a5497bbcfbdaffe"
+  },
+  "current_consumer_receipts": {
+    "sdk-engine__models__qwen35__weights_cc": {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\sdk-engine__models__qwen35__weights_cc\\receipt.json",
+        "bytes": 29041,
+        "sha256": "ed5513d4d1b195550f057fd280aced1134414c60509be0568b4e7f273a23e2b3"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\sdk-engine__models__qwen35__weights_cc\\unit.obj",
+        "bytes": 4346111,
+        "sha256": "bbe79b901b261da235e0eef59b7d5a03c999ef6acc4a814f58595086f5fea55e"
+      }
+    },
+    "cli": {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\cli\\receipt.json",
+        "bytes": 43410,
+        "sha256": "f7f8d9886e25012c3feca631b86d281be4b7ad86182ea96b5a9d0bb7db2269cd"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\cli\\unit.obj",
+        "bytes": 26090139,
+        "sha256": "d801ad43c6eec1f0d8c2f439411f81ddc278c147611fd5f5fa348045ae7edd72"
+      }
+    },
+    "rows": {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\rows\\receipt.json",
+        "bytes": 43396,
+        "sha256": "7144ec3046508a4311bf28c12a6494dfbc78e364d3640758f1ccbb5027c845db"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\rows\\unit.obj",
+        "bytes": 26456675,
+        "sha256": "80e286af733224aafba533409d5b6846d0c54369642a94f69304cb3a4e4aedf5"
+      }
+    },
+    "ids": {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\ids\\receipt.json",
+        "bytes": 2873,
+        "sha256": "0f14e2ef54d3037e15a02b46cca353096fdea846f9bacebc58832a22e7e5fad3"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\ids\\unit.obj",
+        "bytes": 163574,
+        "sha256": "647ae2d7da525be382c25c3f4f896bb191ae238104f3005ab4ee2dcc452eadde"
+      }
+    }
+  },
+  "retained_sdk_inputs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_stream_cpu--file_stream_cc\\unit.obj",
+      "bytes": 353293,
+      "sha256": "50e4d3367bca2de5b54c2bff636621665c3638be034443fcf20dcd7666005290"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-copy-public-retention-20261026\\compile2\\common-copy\\unit.obj",
+      "bytes": 830633,
+      "sha256": "b4aba98b3c94d79b80343f771bb79ba3117a0bbe156770503cfb020c6520c769"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\compute--command_capture.obj",
+      "bytes": 67007,
+      "sha256": "b5c903c52f10993d55aeccc636b45a187329d8f8664d90741b1d8f40cfdb25f0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-transfer-retirement-20261026\\compile\\core\\unit.obj",
+      "bytes": 62417,
+      "sha256": "1a22d90c3cb842fa7da8621ed0ea0e977ad4e931ba0bd43508dd1094c6098e5d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute--copy_control_cc\\unit.obj",
+      "bytes": 206721,
+      "sha256": "714f24b2a62422489f0ff00261643adb2dc9de143ec8ed41ef8d6c0344b0df5a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute--copy_ranges_cc\\unit.obj",
+      "bytes": 212146,
+      "sha256": "38db75e51f30c9403dbd17e13aaba399770224d02dc597a76a472f2c7ac64dc6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\compute--custom_kernel.obj",
+      "bytes": 574408,
+      "sha256": "237a76e8ac1f8a52de1b2f89063b134151b2886e66dd645583ae65abdf7339de"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-copy-public-retention-20261026\\compile2\\device\\unit.obj",
+      "bytes": 296036,
+      "sha256": "e85d55ce264bc09af0bfd2078e4f31bcd20128b8f3c5b1bfa7db1b48e70c4587"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute--leased_operation_cc\\unit.obj",
+      "bytes": 174426,
+      "sha256": "4b2f9823c66667a406ba0092ef90d568009ad6e93b937851ca45d6c288fc5905"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\compute--operation.obj",
+      "bytes": 1330915,
+      "sha256": "55c739f98d7a7a6ccde965f7834cf50d85a96b11a0115ee23f2a10397c3a97f3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\compute--provider.obj",
+      "bytes": 15708,
+      "sha256": "9479ee7f51901454108213422f3e978b769ed64b51645c02b0290dc2fe4ae441"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cache-shared-source-20261025\\attempt1\\budget\\unit.obj",
+      "bytes": 245205,
+      "sha256": "c7895c54bd0ddc99b9badd0acaabd026af318658056c37fa6465c81719b68f69"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-source-20261027\\compile\\leases\\unit.obj",
+      "bytes": 585345,
+      "sha256": "764e22ccc943e1067e4504baf9309a52da2f48acf3080e98d2c0c207984f0834"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\compute--result.obj",
+      "bytes": 66565,
+      "sha256": "e60bbaf319d30201159e49aa7e771a5f0c9021bfd6e63255da663322952dab0b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-source-20261027\\compile\\retained\\unit.obj",
+      "bytes": 242081,
+      "sha256": "b819183395a68eea40b1c46772fd949a2f3e34bbdb983b135250c31c9c3067b8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\compute--route_policy.obj",
+      "bytes": 45648,
+      "sha256": "4cae99ead65968dae7a64cebda528bd0058ff99931296ea2ec9e0cb4899931f5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\compute--shape_domain.obj",
+      "bytes": 72631,
+      "sha256": "9f81ceed0bf129fda642f39e23ee506c69e294019594eeff78f2ae1d4f5547fc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\compute--shape_program.obj",
+      "bytes": 61119,
+      "sha256": "4bf53df0e0b8fe1266fbec14e1471cdc93963ef6667d0f03db142123a4d4859d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\compile\\tensor-view\\unit.obj",
+      "bytes": 57751,
+      "sha256": "44901cae7e42754d05b28dd09306125235c7a9a9997ef71ec72bbf9fcb867d33"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\compute--transfer.obj",
+      "bytes": 50395,
+      "sha256": "8cd89f59bec0c026d33f40b5f6d3d4dbd372718ffb43539e40641aaf2e7be99d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute--weight_import_cc\\unit.obj",
+      "bytes": 142809,
+      "sha256": "749d202292b900c23bece5fa882dc8a8c664d68a6e17b0694062c49eb370ae93"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\compute--workload.obj",
+      "bytes": 63049,
+      "sha256": "7c8b7d734e2575e9af89bdbe8707b1031f16c8186123c04303fda58d5abe6a92"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\compute_backend_cpu--cpu_backend.obj",
+      "bytes": 64122,
+      "sha256": "6bbe5b731120ddc8a8577a4900e1993125c73b9d2753b89775b56466454a5708"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\cuda-backend\\unit.obj",
+      "bytes": 316617,
+      "sha256": "d23e5a74ac6c78d45d9d0af46cdaa030dc568434fbd19e4e75d45ea162aa289e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_backend_cuda--cuda_batch_transfer_cc\\unit.obj",
+      "bytes": 143574,
+      "sha256": "6c190a1879760f0198e3de0b5dedd0338ab259abef291c7b9b73029bc73867ae"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-sequence-20261028\\compile\\cuda-status\\unit.obj",
+      "bytes": 63383,
+      "sha256": "379f00d9dc9c550c21ad8db07af0546492b9999b96e520c1b72ab9fd20d8005e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_backend_cuda--cuda_memory_cc\\unit.obj",
+      "bytes": 177665,
+      "sha256": "0492d6167e437706c2f770570b73b108373059de9d01436c4fbe3e4dbe37812b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_backend_cuda--cuda_paged_append_cc\\unit.obj",
+      "bytes": 57029,
+      "sha256": "4194f001e698021515d41fe2e51edecfbc7674266e9923d8f348d8650a392cdf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\compute_backend_cuda--driver_release.obj",
+      "bytes": 51369,
+      "sha256": "ed5fc0f4da79ad08fa66869b65500e4549b05bd69f562cad74389ea17cc20c2b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\compute_ggml_runtime--cpu_program.obj",
+      "bytes": 40556,
+      "sha256": "b92308633ebd76ea3d291f2b8a1189fb379878a9c82e78a39f3db1c3b3cd64b1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_ops--blockwise_w4a8_cc\\unit.obj",
+      "bytes": 45603,
+      "sha256": "dd007807ac8f535d711c7fd803020ae8b4a511c76eb5eb59011320ea2da80ade"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-full-quant-20261024\\f32-paged-check\\attempt2\\low-precision\\low-precision.obj",
+      "bytes": 94385,
+      "sha256": "3e437fab650ed7223ecd92bbc41462d57951174c2389650b07fea7be4e40b32e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\compute_ops--operation.obj",
+      "bytes": 313078,
+      "sha256": "7040ac2a412cdf97c30ffd0f344794fe939f5d0410def5ba0f76f704a926e669"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\compute_ops--sampling_ops.obj",
+      "bytes": 53610,
+      "sha256": "8642ef74376dd6d525eb767fdabbc00e32cf4f89b55e1d91a71c3cc4bc8d6326"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\compute_ops--tensor_desc.obj",
+      "bytes": 95883,
+      "sha256": "5d52f653688ae78a4e66eb340dd05dee3e766481e67afcff64f016a6e9e88bf9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_ops--weight_decode_cc\\unit.obj",
+      "bytes": 104571,
+      "sha256": "6422448a05b6c351e0e36094cdf61924cffbe0b2a5ed3ec953b5a2ce38872992"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\cuda-plan\\attempt1\\cpu-native-batch\\unit.obj",
+      "bytes": 1239245,
+      "sha256": "e3943833d681e8f3edf1c608be2c870ce0019161d84ed25b917d7fc7452b2b29"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\compute_provider_ggml--standard_index.obj",
+      "bytes": 682890,
+      "sha256": "0222a816aa931d24d16dd6d1c9a2b51f10d5e4373bee6b8673242eeeacd8603e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\compile\\hyle_compute_provider\\unit.obj",
+      "bytes": 2450466,
+      "sha256": "b531cddd3f06586f09488fbc70eba670e07c9b076c5133368ad659d96cefc077"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\compile\\layout\\unit.obj",
+      "bytes": 379280,
+      "sha256": "2193230035ab163d1cc92b21c99311b1de6d272f4f6f452c5ae428782a115d04"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\foundation1\\cpu-execution.obj",
+      "bytes": 51111,
+      "sha256": "b8b0d53c24ab7a63ce34312d41a44ed9a5a6a343b8a0d2d2a872e2b2e23932b6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\foundation1\\cpu-hadamard.obj",
+      "bytes": 8715,
+      "sha256": "9cec3957a17e962ae681c346e25ad6b4da61b81fb9055ec9e8ab48cb89baebe5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\foundation1\\metadata-arena.obj",
+      "bytes": 46108,
+      "sha256": "d682a873fac8a46c4f9e4040a414340ed69c84f5ae4ad06cdb7a742be096977f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_provider_ggml--ggml_cpu_provider_cc\\unit.obj",
+      "bytes": 1985278,
+      "sha256": "81d8ecb34998b9127b1b0a746daeb4e77d8a721cf3d67b32294e0f3a926ecc98"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\compile\\hyle_tensor_lowering\\unit.obj",
+      "bytes": 817828,
+      "sha256": "42f764844a28575913a514afe6ede77cc0e48ed374b23188a56285f2c60a3b31"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\graph--graph.obj",
+      "bytes": 1494659,
+      "sha256": "31642bb908cc4a4dd1f5000aee1273129113772ee79e6e57ed5c9c8a972b576c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\graph--effect_order.obj",
+      "bytes": 218930,
+      "sha256": "850de03d21caf4676eaf0951a3b0382d34f85587824807a1bf39c3a6616ef980"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph__executable_cc\\unit.obj",
+      "bytes": 5276171,
+      "sha256": "f9005f9164e398858003208e6a492a29ddbba53fdc15134addde7c6a219374a2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph__submission_cc\\unit.obj",
+      "bytes": 648084,
+      "sha256": "40ab99d19c3574526bd1e749ac457ddca9d9f3bef643618d6d6560dcb90cd685"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph__execution_source_cc\\unit.obj",
+      "bytes": 175968,
+      "sha256": "35f03539305d83dcf26de887790a1e5dc46818dab581bdf5ca64721ec9585ac5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\graph--view_domain.obj",
+      "bytes": 689720,
+      "sha256": "f978776de7d7c84dc781cfcd8ec77ba676c787ff36d4d5f5401ea3b5e56eb8d8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph__constant_artifact_cc\\unit.obj",
+      "bytes": 780727,
+      "sha256": "77909a17d1879afec8be8e446891214baa880577656853b34587f0b738764df5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph__resources_cc\\unit.obj",
+      "bytes": 3107586,
+      "sha256": "2cb3dcc84b53d4a23db356c76d1cc1d3156bd9888c5d92f04c707a7aea8c0802"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph__lease_submission_cc\\unit.obj",
+      "bytes": 315098,
+      "sha256": "03e928273ddece79be9d2cf1a94e06a8c5037abf35278b3165cd4c99d7a909a7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph__region_access_cc\\unit.obj",
+      "bytes": 101772,
+      "sha256": "fd93aa2eda6e3536bd851c5b0a4d800a697b189c884ada68c1e3bd383701db6f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph__input_sources_cc\\unit.obj",
+      "bytes": 950580,
+      "sha256": "e7c4d60b2801eb260a14e62cae8815648f3d2d00f73b87b6e2fac833bb686d80"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph__resource_report_cc\\unit.obj",
+      "bytes": 174123,
+      "sha256": "245f5bf0ce207f548618af2daae2a48cf82c4419278ac8d9f1f551a6772597b1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph_batch__batch_cc\\unit.obj",
+      "bytes": 2439757,
+      "sha256": "45bff4fd6d16f116f25933e5a25683bcfb436aae60e8bab9ce6e5c48513b4d3a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph_batch__materialized_invocation_cc\\unit.obj",
+      "bytes": 714027,
+      "sha256": "83600fd00657c29fb18471a23b01a6b15f34a086aad1011d50ee40c71ae29a4b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph_batch__native_paged_node_cc\\unit.obj",
+      "bytes": 74729,
+      "sha256": "ddf9184c0bf29f35f5ae979e81c225982d774f665862f153ca8e06b5d837dad6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph_batch__native_batch_regions_cc\\unit.obj",
+      "bytes": 241650,
+      "sha256": "6f3b8c1b4cbcf7683dbc185779b2e1f3c125706f78f061a5806c89ded563a99c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph_batch__native_pending_regions_cc\\unit.obj",
+      "bytes": 176549,
+      "sha256": "30396b44dc2089282cff249188717ff86eb998c4eae3cc568bc164be387aa566"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph_batch__row_cache_node_cc\\unit.obj",
+      "bytes": 783141,
+      "sha256": "4fa807a553447c43c3eebcc0db0ac4782109573133746ed0036ba5ef3d9f37e0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph_batch__paged_append_cc\\unit.obj",
+      "bytes": 2437456,
+      "sha256": "3db8dbfed59642d6a1d2bc3b55b6e57b048ab92db989090e6c490aca525bde0a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stable-attention-20261027\\compile\\batch\\unit.obj",
+      "bytes": 672368,
+      "sha256": "9d67a401cd5d08e6bed3cc54276bef403ae0cad7607ef2712a0ba9c41411415b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_batch--batch_materialize_cc\\unit.obj",
+      "bytes": 1193251,
+      "sha256": "e61f272ab3417e21944d0d13f5f44c0e043147f7ce146bbb303d071667cba533"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_batch--batch_paged_native_cc\\unit.obj",
+      "bytes": 172417,
+      "sha256": "3559ca649f26071cd71fcbf46a121406597d141b10f929682a043b86f3dbba1a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_batch--materialized_invocation_cc\\unit.obj",
+      "bytes": 706236,
+      "sha256": "ba522a6a670ad3500fc6dbf6d6ac90bbf2015989596c424d30005bf6aaf4f81c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-public-arena-identity-20261028\\compile\\arena\\unit.obj",
+      "bytes": 1421297,
+      "sha256": "92ab9c69e57b67b928a87d9b4eb2482ea25f00a493723d475daa8e80b46c6bae"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_batch--paged_append_program_cc\\unit.obj",
+      "bytes": 124913,
+      "sha256": "7de5a3e23d4de9eb08b6d5a7d80bf3453417f235ac7d7d52c4746e64f16543b9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_batch--row_cache_paged_reader_cc\\unit.obj",
+      "bytes": 399298,
+      "sha256": "9048e6d8356425816f4c184fda3fe719ff6221b8f71b049a0596935d069ab27e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-routing-20261028\\validation\\compile\\compute-context\\unit.obj",
+      "bytes": 29390,
+      "sha256": "d51324b72a06ce5492a97c406e822adaa217fdb08987862c977b768b314f8193"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-routing-20261028\\validation\\compile\\policy\\unit.obj",
+      "bytes": 642001,
+      "sha256": "2bffdc511019bfd51f3e45959bd2ad122979efef7751e0dd0fbbb807e3ee5b04"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_route_cuda--cuda_context_cc\\unit.obj",
+      "bytes": 15810,
+      "sha256": "f599d122564faf5230db5184c33e5378036619b911faee2fb489523d98a7a065"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\cuda-policy\\unit.obj",
+      "bytes": 645307,
+      "sha256": "71b107ddeca47bcb9aeb30c180ce7bc71ca6d0f1238ae1dba089becaa824d21e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_route_cuda--weights_cc\\unit.obj",
+      "bytes": 348121,
+      "sha256": "c295588e914d5e8b664050a6b3f4e9d8ed8d428acabcf11a6c4671733541aefb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph_route_cpu__cpu_context_cc\\unit.obj",
+      "bytes": 11940,
+      "sha256": "13f680aa823d452ff72a3f3013297cf474da6a7b02a79599a64e7fc3fc7ff884"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph_route_cpu__compile_cc\\unit.obj",
+      "bytes": 59692,
+      "sha256": "d0c39192ff03f5d7f41f77357845bdca21d792d291057391b86999b4bffa685e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph_route_cpu__ct_packed_linear_region_cc\\unit.obj",
+      "bytes": 1136093,
+      "sha256": "6dc850486e10738bad5a5a931df5325152e6e769b5b67575c7b93eb350eef2be"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph_route_cpu__ggml_region_cc\\unit.obj",
+      "bytes": 1519777,
+      "sha256": "6358d928863fb9bd98674764de180dffb788236bbccbccf9d898ff2b43b67422"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph_route_cuda__cuda_context_cc\\unit.obj",
+      "bytes": 73970,
+      "sha256": "44f457e5586754fb97ba575b08372ce764f711ceb60d2b19dd5eb21f446877e5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph_route_cuda__weight_binding_cc\\unit.obj",
+      "bytes": 95386,
+      "sha256": "a871fe5bab05debc5851ac20fc50a856161e5e6299ad9063ff6bb344180148ce"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph_route_cuda__dense_bfloat_scores_region_cc\\unit.obj",
+      "bytes": 954116,
+      "sha256": "57955ff6adce58d32b069f4b182195b3f8e821999779b2ee1f6718aab3526819"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph_route_cuda__ct_packed_linear_region_cc\\unit.obj",
+      "bytes": 1126449,
+      "sha256": "a800b45caa421db791b2b45532611e4bc28250bab0578673b9f7d0abb7acafc6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph_route_cuda__fp8_shared_prologue_region_cc\\unit.obj",
+      "bytes": 989316,
+      "sha256": "8a1a5b79c419125dc5257839273e3ea32bb590ef7574c00ece6c69ddc7dd3496"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph_provider_ggml_cuda__ggml_cuda_region_cc\\unit.obj",
+      "bytes": 2919148,
+      "sha256": "37745e198d6678b74a1b5c0793977fea9fb2babdf3ce54ebb1c1f380a4229721"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph_provider_onednn__onednn_region_provider_cc\\unit.obj",
+      "bytes": 1224767,
+      "sha256": "ef77d24f04c7d4683bd2359f68b0b6073cb9910b89ecf497659d909547d86aef"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-routing-20261028\\validation\\compile\\aten\\unit.obj",
+      "bytes": 1973704,
+      "sha256": "202d3e71e7d9dd94fb4e2ecd290a132ed7c203236b4b8c492fb36fc692b73cfd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_provider_native--blockwise_w4a8_cc\\unit.obj",
+      "bytes": 216486,
+      "sha256": "24300ae1354390fbc5aeeb6dee451eb9a2e02944d6b3fe9cab65c0311ed08a71"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\compute_provider_native--cast.obj",
+      "bytes": 227735,
+      "sha256": "456a7c8a732e9b6688f71989b7dd456de797114f6759f70f330cbf67d8954653"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\drift8\\compute_provider_native--ct_packed_cc\\unit.obj",
+      "bytes": 977081,
+      "sha256": "841a6fd50af031cf08e96eef6946a5bd0e73954b3ad51221b997ab68d954d11d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_provider_native--static_fp8_cc\\unit.obj",
+      "bytes": 421741,
+      "sha256": "c14e44912be4034b99232a121afb14a3e71825d4d4206f68486e5a5737c08436"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_provider_native--ds4_quantization_cc\\unit.obj",
+      "bytes": 214912,
+      "sha256": "06d1b6fe4a9824ba6eb178e30871f04618a6ae69465ae5daf65012d1c57187ce"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\compute_provider_native--elementwise.obj",
+      "bytes": 292443,
+      "sha256": "6624d987db082434bd90eb253320efadd2f63cd89a0658d79e42a0c1a713a001"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\compile\\indexing\\unit.obj",
+      "bytes": 211780,
+      "sha256": "9b0d32c94b5f65218bf92d2cbbf1840958c4962aa8a2e6a980ec575a81d4cde6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-gdn-prefixes-20261029\\compile\\native-provider\\unit.obj",
+      "bytes": 754566,
+      "sha256": "f820712ae927e1a05f468ac58d5875ef853e065def1f58097d645033e8c79966"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_provider_native--nvfp4_cc\\unit.obj",
+      "bytes": 310578,
+      "sha256": "7a68ddd257fe41ade1757e9e0169f8b937c200fb3bc7f28e55533ce8ab5833fe"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\compute_provider_native--normalization.obj",
+      "bytes": 214546,
+      "sha256": "f2c6d7b1fe3a6ebb01f384b37e194423354303aff319035acedd709e8ff55681"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\compute_provider_native--reduction.obj",
+      "bytes": 212197,
+      "sha256": "73525f3f448c9b3ca3804e24a39519e732dc562145c155cc69d69261db560ad6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_provider_native--row_cache_cc\\unit.obj",
+      "bytes": 314631,
+      "sha256": "f111af18536afd464ad1ab2c4c9814d2dd62027a8b208d867e11653214f2cde4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\compute_provider_native--sampling.obj",
+      "bytes": 267950,
+      "sha256": "5c7cf6e0a912cd687d163feae19aa6a66e67a7cfaf3afc360453a8ba90464b2d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\compile\\native-transform\\unit.obj",
+      "bytes": 210125,
+      "sha256": "a3ecc455b3fba606a6d1d4fefa8a2458231f853c580caec907064fcdffa4c7f6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\compute_provider_native--transformer.obj",
+      "bytes": 208441,
+      "sha256": "1b5dfde7640b6115d1e58ccd613a3c8abe9b7f455cf69eeb26b30cadbc55dede"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_provider_native--torch_cpu_program_cc\\unit.obj",
+      "bytes": 1932042,
+      "sha256": "25fde4e43c412a04e6527a58a361240d67165efa3852ebb8e8688258f80ddcc3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\compile\\collectives-provider\\unit.obj",
+      "bytes": 626630,
+      "sha256": "4ec4c01d0746f4d6583fc3cef5516cf2303c4b2249873aa121b87d8e7419ae72"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_provider_cuda--sampling_provider_cc\\unit.obj",
+      "bytes": 119959,
+      "sha256": "9df6ee1e66cdb3a8de50101d9f2125a756a8db6c47905eaa4217e88367eda8d0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\compile\\registration\\unit.obj",
+      "bytes": 728351,
+      "sha256": "7086fce2f82d82d1ef04fe2a0c2e4b130a28cbaa0ef00ffa9731b3afcd2ea735"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_provider_cuda--router_provider_cc\\unit.obj",
+      "bytes": 622544,
+      "sha256": "fd2938bf87e6b7d40f92b20116a4f2a68901cd3ddb009e504c9fd449399b0861"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\drift8\\compute_provider_cuda--fp8_provider_cc\\unit.obj",
+      "bytes": 1556269,
+      "sha256": "ed84c6617def52c64ce34486845275cc462962b08cedd208f4212deb982ac897"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_provider_cuda--grouped_fp8_provider_cc\\unit.obj",
+      "bytes": 1662285,
+      "sha256": "337ec27bc4624f403c9a2ae264cad7585e8180e03b9061a296d58a1d5135e8e8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_provider_cuda--deepseek_fp8_provider_cc\\unit.obj",
+      "bytes": 918872,
+      "sha256": "b49930cb87d806631f922c156f36a315beb329741002472769f861b6ad37b4bb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\drift8\\compute_provider_cuda--deepseek_grouped_fp4_provider_cc\\unit.obj",
+      "bytes": 627118,
+      "sha256": "45d3d38a9ff92ee862dd8bc3fff861ed4513d8c4ceb39894ad0d05bcc847f97d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-capture-bindings-20261027\\compile\\tensor\\unit.obj",
+      "bytes": 606934,
+      "sha256": "e305ac08c285905fe1b747dcae2745132957be91e303a9fe788477c97a39e354"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-capture-bindings-20261027\\compile\\norm\\unit.obj",
+      "bytes": 612536,
+      "sha256": "2372bec8637e9890045e847e6dd58244418df545b2f941362fff1baa76bf12c1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_provider_cuda--nvfp4_provider_cc\\unit.obj",
+      "bytes": 127784,
+      "sha256": "284eaa9974c88140e2ff88311b77f2ecd5823170d27a9a82dabdca832a53ff2d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_provider_cuda--blockwise_w4a8_provider_cc\\unit.obj",
+      "bytes": 114874,
+      "sha256": "3d9dffd0afb5acb6e6fd6a9bc3536a2f93a3971836d85b9348cde649572cf594"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-capture-bindings-20261027\\compile\\reduction\\unit.obj",
+      "bytes": 593658,
+      "sha256": "9fe0c7a151ec09298f36b8be592d08214738cf23c2cb6c8cfb9149e23d85defe"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-capture-bindings-20261027\\compile\\concat\\unit.obj",
+      "bytes": 595222,
+      "sha256": "6232b57d37d5f45347da4c6fb7a99445c7d2841c7f52bf448a72b448f5f90b92"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\compile\\scatter-provider\\unit.obj",
+      "bytes": 598312,
+      "sha256": "35288be30905dc26e02c40faa936e18955bca96e77d971f9807328ef63352f0c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_provider_cuda--row_cache_provider_cc\\unit.obj",
+      "bytes": 650194,
+      "sha256": "1e07dc8358f889e4320c466233de09fb6bcfc546c3213c50fa8c9788fb4867d6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_provider_cuda--float8_quantize_provider_cc\\unit.obj",
+      "bytes": 613530,
+      "sha256": "0e46a5bc798af11fbfa4a9a0853754710b3806df038f3a3c3f723b854c110580"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-io-consumers-20261030\\compile\\indexer-provider\\unit.obj",
+      "bytes": 758808,
+      "sha256": "c83bd0a6a56fb3ddae37c8106c736bbd71950cbfbb12c3c68f098879b4176aca"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dense-linear-f32-20261024\\cublas\\cublas.obj",
+      "bytes": 708384,
+      "sha256": "7da003ad094e749d749d196def0f6e47f6fa238c5f98863e14ab1762815e6c15"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\torch-artifact\\unit.obj",
+      "bytes": 1346875,
+      "sha256": "0a5ea633c721109033e1595875b7b6c48c348210fb41b5b8c0586a22a3c35b9d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stable-attention-20261027\\followup-budget\\compile\\provider\\unit.obj",
+      "bytes": 820099,
+      "sha256": "caefea20ae2997a20b7a34b5d93794974ade48c21ac2c698ae30ac88a9bf155b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\compute_provider_onednn--brgemm_internal.obj",
+      "bytes": 58709,
+      "sha256": "3aacb825cb70f4102328b446d5d1231737302201b5e21f0308964fd569ebe984"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\compute_provider_onednn--normalization_internal.obj",
+      "bytes": 261035,
+      "sha256": "6c0cc86e5763e8bc9e763bb3dde081470d44d499c62178c20ff3b4018eb512b6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\compute_provider_onednn--onednn_provider.obj",
+      "bytes": 633543,
+      "sha256": "f494c8d32481d664f025a13621455867e981974a5df4dd4c2b57b46bcb7ee2ec"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph_progress__progress_cc\\unit.obj",
+      "bytes": 551508,
+      "sha256": "e8ceb123b9fd5692086374f9cb9c5161b1616aab0f42522a5160c7071c112c33"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph_route_cpu_cuda__compile_cc\\unit.obj",
+      "bytes": 65747,
+      "sha256": "de11699902249c0f91af897727d3b3ec0dd5941d43c6875e3cc8bd9cb8fb286e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_state--state_versions_cc\\unit.obj",
+      "bytes": 711854,
+      "sha256": "9cb00f50f635d9dda76867a7b8a111feeb69dbf5476d15e4804890039eb6dfa6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\native1\\cpu-baseline.obj",
+      "bytes": 846898,
+      "sha256": "079f120673f3948d4efe5ac16c4794b0f99dafe1a0c2dda30766a2322979348a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\compile\\gdn\\unit.obj",
+      "bytes": 1518528,
+      "sha256": "814c6e2e34a5b7ebdde14aa712ed3c26cb8bb70e799335cdb4b77b4d2a0b72bf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-target-tail-20261023\\compile4\\fp4-kernel\\fp4-kernel.obj",
+      "bytes": 38657,
+      "sha256": "9b5e08c9f593c0fbd36d8febbd7ff501508e3f3a52a34871ad036d5b0935b3fb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\compile3\\mapping-view\\mapping-view.obj",
+      "bytes": 74881,
+      "sha256": "d358aa12e1d24c3270360ba30051295d1782c2265bb773e55c65a906078d44e5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\compile4\\tensor-kernel\\tensor-kernel.obj",
+      "bytes": 2489677,
+      "sha256": "773bce8801df7bdc41cbd7bf3c1745139e874060e3a18ac920cd309c9f1688eb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\compile1\\quant-kernel\\quant-kernel.obj",
+      "bytes": 64928,
+      "sha256": "fd7cfd34c9bdb47106a4b9f82bcf59ee911668182ca634f12a2c4fba5175f137"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\orin-proposal\\mmq-query-proposal\\native2\\mmq.obj",
+      "bytes": 397916,
+      "sha256": "cb96e88b290936f4a18a2f0a26121484e3220cc009e5faffc68cfc5479c9c58f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\unresolved-host\\compile\\compute_stream_cuda--file_stream_cc\\unit.obj",
+      "bytes": 356007,
+      "sha256": "0fd5bf27f3ecf39b0ae8dcb6b3bc605d182f44f06c96894e69e24ba6bfe0e702"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\unresolved-host\\compile\\io_core--dns_cc\\unit.obj",
+      "bytes": 117664,
+      "sha256": "0c8037859c4e23cec1fb3f169cf53d5451f761cb9edc2281cb72cc19e173abd2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-endpoint.obj",
+      "bytes": 59523,
+      "sha256": "3b379f6907a8aab89ef6e12b50838f8376b5e0b0d4fd749de43d434937d8fd70"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\unresolved-host\\compile\\io_core--file_cc\\unit.obj",
+      "bytes": 516369,
+      "sha256": "c4f70d20586d1dae42f5912935c6856c98008800dfbd239c53cd26ea9ba25952"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\unresolved-host\\compile\\io_core--file_region_cc\\unit.obj",
+      "bytes": 129171,
+      "sha256": "a0e846274cc0a090f7d78c2572e6b93fcd51ec71bd502d1ee527263d65036800"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\unresolved-host\\compile\\io_core--io_context_cc\\unit.obj",
+      "bytes": 57339,
+      "sha256": "7a6b54bcb385da7bbe1850fb12102d8c741bb2ab7131b297f7509ff916adf322"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-io_uring.obj",
+      "bytes": 1021,
+      "sha256": "6a13a95478c312308da094ab109eafaebbcee2650a2edd701884b07520346de2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\unresolved-host\\compile\\io_core--local_cc\\unit.obj",
+      "bytes": 351383,
+      "sha256": "481332840e55169c0ccf447a337bd04ec91816aa94120fbbafdc040644babe69"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\unresolved-host\\compile\\io_core--operation_cc\\unit.obj",
+      "bytes": 17695,
+      "sha256": "6c52626dbef9da09b2bddb987406cda2cb31c943df76e1816e0ad44b6645f31b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\unresolved-host\\compile\\io_core--proactor_cc\\unit.obj",
+      "bytes": 52588,
+      "sha256": "269a14998713dd3310ed88ca967d7f76917140a9ca14dd5bdc0830dfce3bf350"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\unresolved-host\\compile\\io_core--signal_cc\\unit.obj",
+      "bytes": 75744,
+      "sha256": "aba5154ae8ea3a814dc8e4008e2a116d9298b264579d476d1a9981c89ce4957f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\unresolved-host\\compile\\io_core--tcp_cc\\unit.obj",
+      "bytes": 547550,
+      "sha256": "a21a64dfe47952455bf5a2c1bbb1246b0f6797a116485d03b5321d9174feec49"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\unresolved-host\\compile\\io_core--udp_cc\\unit.obj",
+      "bytes": 102623,
+      "sha256": "c9b0509b172d10f9048b541c8dd95359921aabc15908f414396390035c8a5ce6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\compile\\file-stream\\unit.obj",
+      "bytes": 822182,
+      "sha256": "9d0b5f2f0d17585750636f96737bf747ec8ae9c86440094d02e44509c741f97c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\unresolved-host\\compile\\compute_stream--stream_sources_cc\\unit.obj",
+      "bytes": 86322,
+      "sha256": "66cfa1338cb6b21625cacab5a25085037bd33a4b338406f26a7dd054586b80f7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-final-mixed-probe\\ggml\\src\\ggml-cpu.lib",
+      "bytes": 3036828,
+      "sha256": "dd20dd3c7604e5c4dad8758ae5e659d64944491ae7dae03e43286dbbcb7fed12"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\dnnl.lib",
+      "bytes": 835138242,
+      "sha256": "450497125afdf2112508569950e2d506ef465b31a0e214adead83f749869bd11"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cuda\\checks\\attempt3\\blockwise-kernel\\blockwise-kernel.obj",
+      "bytes": 122758,
+      "sha256": "943fa546b6c8f31ae8e445cd42869d4cb4b1a6ca121386c907b9cef2d4c511f2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\native--mmid.obj",
+      "bytes": 140348,
+      "sha256": "436759039764b12c715854a70d7cc673f4479070602c82ff4cf0aea15f26d5f9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\cpu-cuda\\checks\\20261019T201144\\native-getrows.obj",
+      "bytes": 1586734,
+      "sha256": "de5e854072b8a1dbd373fdde60b96803b778095bbad77af10f89910d04d6a315"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\cpu-cuda\\checks\\20261019T201144\\native-convert.obj",
+      "bytes": 670522,
+      "sha256": "e10107249fde94d4bd40d751e6117513b0a87486fbfa4f6024992617af340b20"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\compile\\conv\\unit.obj",
+      "bytes": 986918,
+      "sha256": "336cb690107782c5cb875bf70c7bebcc82ca339db7d211278a68af2f62e06a32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\native-kernel\\unit.obj",
+      "bytes": 1019913,
+      "sha256": "322a97740cb33d38f1bfe1d4b9087d829891f30dd683b6f223d1e8900a4b397c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\native1\\mmvq.obj",
+      "bytes": 4632463,
+      "sha256": "602b4938b5a2d5cb2bbaa67f156d35ecc3d8fc6c41a6dffce591d5c322363cf4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\unresolved-host\\compile\\mem--resource_cc\\unit.obj",
+      "bytes": 68858,
+      "sha256": "920a226a17f50b0415f3d099e7ac3754438cf1740563a496757479cde4a48d7e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-gdn-l2-epilogue\\checks\\20261019T102437\\norm.obj",
+      "bytes": 477496,
+      "sha256": "f285764a7350059eee68ceab6b0861d9a10f540f36483f69bd02a1cf1f19e7aa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-bf16-block128-reference\\cuda-bfloat-binary\\checks\\attempt1\\binbcast.obj",
+      "bytes": 3446016,
+      "sha256": "0a9fb71f7e62efde9d15e491370098cb54e3c79d9ad02cf8e297e22b1cb0c931"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\compile\\native_precise_unary\\unit.obj",
+      "bytes": 1457424,
+      "sha256": "4c7d8c374705ee6f871cc4291b131b791332e308a6601d6dd6ae441cbe00eb60"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stable-attention-20261027\\followup-budget\\compile\\native\\unit.obj",
+      "bytes": 9303940,
+      "sha256": "2d2fe4690d810c8c834a05322544a94cb14a75e4bfa539bf3f6c22a790313f01"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\native-cache-portable-llp64-posenc.obj",
+      "bytes": 59742161,
+      "sha256": "1b31146f19285b62a7be78d3b4261edd833bb3e859a132764ef465382176ff3f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\native-attention-portable-llp64-posenc-decode.obj",
+      "bytes": 2757335,
+      "sha256": "ac1a037a48887ad30400c9a14204d5379b26b3b94a01bf4ff3aa834c29201af3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\native_cache_encoder.current.obj",
+      "bytes": 78620,
+      "sha256": "2a3a5b496bd3f36f0ad2d37f4d385303fd97ef95a19f129803ddff8afe6c8a26"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-source-lifecycle-20261030\\compile\\collectives-kernel\\unit.obj",
+      "bytes": 15382848,
+      "sha256": "ea644d873e1cd90d2f27e3a8089ca0e211cdc6fb5cab2b84c6a4d3c9c2d7cc1d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\native-current\\native_kernel\\unit.obj",
+      "bytes": 220864,
+      "sha256": "ebbd87b8f885a52016662a9a9540a444aaeb83f833ed0a9fc4b52ebde306893b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\native-current\\norm_kernel\\unit.obj",
+      "bytes": 400927,
+      "sha256": "150920d619d88ba796aa291638c7ccc152a8a3623192b52b38f75ab4cb422b21"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\native-current\\reduction_kernel\\unit.obj",
+      "bytes": 2524093,
+      "sha256": "e5e7e638b92c83381f391037a5be7f3b3c5f81b0889864176406c020dc6b274f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\native-current\\scatter_kernel\\unit.obj",
+      "bytes": 3076726,
+      "sha256": "b521a245f927dc18edbd4f651b96f7a0cb086ef47958db973f6b7238b3886614"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\native-current\\sglang_kernel\\unit.obj",
+      "bytes": 278509,
+      "sha256": "8368fe6ff7454240a2d8846af0b94a81070d7e76145212cb37a3a2a4b9ccd460"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\native-current\\sglang_norm_kernel\\unit.obj",
+      "bytes": 1426252,
+      "sha256": "e88135cc02c2c4085b79b6358a68aefb81a2854ea5a6ccc25fec079f052f45a8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-next-cold\\checks\\20261019T155819\\native-router.obj",
+      "bytes": 97706,
+      "sha256": "2d18543aed0bdf07b37b589dba24edbf659731261956f8f46ca85b7417fc29c3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\concat_kernel.current.obj",
+      "bytes": 287427,
+      "sha256": "0a735b1551fb38c481b3be00434604f8147efc5ffd03ae9ea3464705871ff850"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\sampling_kernel.current.obj",
+      "bytes": 390228,
+      "sha256": "ac39262d1fa186b763807c41918fabad5db2a12d310303f1664e20955eb069c3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-fusion-quantization-2026-10-18\\cuda-device-indices\\guard.obj",
+      "bytes": 38014,
+      "sha256": "11fad538d7496ffded4968db31d2b8bb4ec3554119e75499f67ed80edbcd9da9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-reference\\cuda\\checks\\attempt1\\native-mla\\native-mla.obj",
+      "bytes": 5666602,
+      "sha256": "727cb1ae92d82efd05fd16ac1a9be48c5250cddb5788f9ad6ceb4abb704304f9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\highdim-review\\native_highdim.obj",
+      "bytes": 7361496,
+      "sha256": "d68eb7e4bfd374b173fcc22f8376cd9c078e1a0688bf6661629e5ae7f5f9c24c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-foundation-review-2026-10-18\\cuda-paged-indexer\\row-codec.obj",
+      "bytes": 250371,
+      "sha256": "7aff63eca9b623399245100c2a79f6a2c146359baecad777cb515dc9649724b8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-dense-indexer\\checks\\20261019T182917\\indexer-kernel.obj",
+      "bytes": 124356,
+      "sha256": "ad0fb70425dda47e0f6caa1a60bb9935a5cbf4c2309adeb33e9bd003905474f4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\compile\\native_dispatcher\\unit.obj",
+      "bytes": 1652376,
+      "sha256": "c804b4656332212de34dcde6f973ab59420a9c73ad32643455f9b99d8d433931"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\generic-progress\\ggml-cache\\ggml-alloc.obj",
+      "bytes": 54588,
+      "sha256": "c05efaa641a646d50e902da6e45e3a1297b74ffed49a364097359a081206b615"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_container.lib",
+      "bytes": 300918,
+      "sha256": "5f014b65f203f823e02c91c4b368b31bb4e8cadb25110771d5e6c6415bcb4d6b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_mem.lib",
+      "bytes": 1280686,
+      "sha256": "10fe859d66dcd68d391c65d1a933e1a4de902d8bb49003f8dca768d65b19dbe4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\mimalloc_static.lib",
+      "bytes": 989658,
+      "sha256": "6e92620e93dddd66497fb57f6bb43ad36b525e050812c4f1df7e04b66c439858"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform.lib",
+      "bytes": 764086,
+      "sha256": "4b88eede9ed8ef3813059bc6db5c87baefbae7266a4a7304ec24ede1904f1b6f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_error.lib",
+      "bytes": 136936,
+      "sha256": "1da55ee1495b45e4b32f14cdf6b374487e538f01899e0902446742ef24c25326"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform_thread.lib",
+      "bytes": 119700,
+      "sha256": "2d0008331fc5cad2cc2e310788a4e9dba2c911ecf334498ac8b3af7861d736f7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_time.lib",
+      "bytes": 113586,
+      "sha256": "275bc429d61d97153acf50f126151f73581a1a4823a5faf2b01536bf7e52535d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_simd.lib",
+      "bytes": 27179832,
+      "sha256": "7ef184c55086e5bf3fffa1df8730ab33df4b7e54e2f9366d7e9f29460d5b1645"
+    },
+    {
+      "path": "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib\\torch.lib",
+      "bytes": 1832,
+      "sha256": "a31e4708d2727f3fd81be6957fe8fa6158719d3a03a22cb38c9fa1ad68766daa"
+    },
+    {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cuda-leaf\\Windows-2bc729898e422b9f3da54349eed98f2f0b5dd415434508ee2ab2a13fb021815d\\torch\\lib\\c10_cuda.lib",
+      "bytes": 65860,
+      "sha256": "deece15705cbade7f41d14736283de25150ea20cbb398c726a959ee00aa609e1"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cudart.lib",
+      "bytes": 2080530,
+      "sha256": "36a9ddcb459d2a79555282da3bb19e9720b7eb6dc78d3d0694c701b5b73807cb"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cuda.lib",
+      "bytes": 843708,
+      "sha256": "feb684bc4d9460c0777c5eb1e7d3a04332c426f1703a2fbfdc771dea5ad81146"
+    },
+    {
+      "path": "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib\\torch_cpu.lib",
+      "bytes": 29046564,
+      "sha256": "5c2c703cf2f71e0124228a19cedc7a1a334dd1260b6494d01bbbb5a58b33b3a1"
+    },
+    {
+      "path": "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib\\c10.lib",
+      "bytes": 778152,
+      "sha256": "3b9653f65f59c09915aa425fb1ebc9abbf5f1f524b94e98e607c2301183724ba"
+    },
+    {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cuda-leaf\\Windows-2bc729898e422b9f3da54349eed98f2f0b5dd415434508ee2ab2a13fb021815d\\torch\\lib\\torch_cuda.lib",
+      "bytes": 1774574,
+      "sha256": "bf0759f648f84b2ffd1ca75842249b0d8b1dea469bc92167434c5e1af9fea3f4"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cublas.lib",
+      "bytes": 159250,
+      "sha256": "e6a7e1cb87932e28bc000c0d364b354759c6c29c92b6db38140cca816f5acbff"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cublasLt.lib",
+      "bytes": 877282,
+      "sha256": "992ef03e8204464231c5292ed046e21d1f67a178b24ae1d1fdb248a4e4393171"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\lib\\ggml.lib",
+      "bytes": 650112,
+      "sha256": "9a8af56da187a861642b9cf78f53bdf597721ab04521216f38e2662b4a9bc685"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-sdpa-mask\\diagmask-current.obj",
+      "bytes": 77406,
+      "sha256": "5468161c6b9fea7ab595096f68c7d736fb236aa7613268e2d05db5eab63fc071"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\lib\\ggml-cuda.lib",
+      "bytes": 108378918,
+      "sha256": "ebc36f3034c307facbbbb2b7e75643551bb6324f23cceceae08901999c88aa11"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\lib\\ggml-base.lib",
+      "bytes": 5591196,
+      "sha256": "c17aa8b55587caf8ad1aa07dc8c11dcad703a5e4335fc2471bef3c7615e7f20f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_sched.lib",
+      "bytes": 1643842,
+      "sha256": "d1987955f9b36b60d2bdd1bcea7b821b4fe880f409cafd1823dfe16b8972ac65"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_mem_vm.lib",
+      "bytes": 332730,
+      "sha256": "7b67c790b1ba298f6e76c0d59df03fdfbf0ec521bcc82f8973239699b8090d90"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paired-m2-20261030\\compile\\native_mmvf\\unit.obj",
+      "bytes": 4351705,
+      "sha256": "24c83a3483117e8e965d6c8d9fafbeb1661e0040456dd2a3ff80d71eae5c9e93"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform_fs.lib",
+      "bytes": 286796,
+      "sha256": "3c750d5908efe3fc60570ed87ea469c6e907d236dd72a42f14fbd25c6ea0eafb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mxfp4-weight-only-reference\\cuda\\checks\\attempt1\\nvfp4-kernel.obj",
+      "bytes": 609683,
+      "sha256": "821764810fc3bd9b5e13d8bdd5466d54d3bd4b27db9bb9ddefbfe6d329c43448"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda\\checks1\\kernel\\kernel.obj",
+      "bytes": 31784,
+      "sha256": "fd1a941b77b16b4ad1dab117b12c049d2cc0f2e762e81a8161cbd200b10e607c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\native-current\\device_status_kernel\\unit.obj",
+      "bytes": 27496,
+      "sha256": "1e2e29b97e1a2b9bffcb5662b8779b61f744e59ac4135517d2f640bff28aeade"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-capture-bindings-20261027\\compile\\causal_conv\\unit.obj",
+      "bytes": 600652,
+      "sha256": "42bc1e1f04bde1bf14ab8d47a19d91f9ed4f98f2e5a2986ada1e62b05961cc72"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-causal-conv-20261026\\compile\\kernel\\unit.obj",
+      "bytes": 38951,
+      "sha256": "ecca25720f12b0212ea0991d4fdbcd11cc4c46ed1b0363fe3121ce198110ed76"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph__slots_cc\\unit.obj",
+      "bytes": 224577,
+      "sha256": "55db46094f7dcc33b4bd5facb159703bbeb2bad3c00b85e52a2a4ac86bd8020d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-src__graph__slots_region_cc\\unit.obj",
+      "bytes": 1594175,
+      "sha256": "f5cb45e44408dc17f1c88f0a0c62d6c6fb28a415f27418b812af1c563861316d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\compile\\sdk-engine__reporting__execution_report_cc\\unit.obj",
+      "bytes": 106304,
+      "sha256": "955e8a608ef9697bae20874a48af53cc346d64eacab5375106a47a5bcfacbad4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\indexed-host\\unit.obj",
+      "bytes": 58986,
+      "sha256": "781c02f91decac1ee72d7ad44314ec0e2bff8da03bf49fbe0981b717e1092d5d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\indexed-kernel\\unit.obj",
+      "bytes": 39617,
+      "sha256": "dcc0218166063a4fe3952067376c8b1ebe8c16773be8084fd6e8dc92d5b2d94f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-gdn-prefixes-20261029\\compile\\native-sequence\\unit.obj",
+      "bytes": 272463,
+      "sha256": "8c1b511ba659e50f08b12e23631091778b8bbdd528ba5e58c14b9e7c3d54b9c7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-gdn-prefixes-20261029\\compile\\cuda-sequence\\unit.obj",
+      "bytes": 634657,
+      "sha256": "6acaa4106bd579375f35fc6ca2d93a83918037af184df4f4ce7181cceb2c1918"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-gdn-prefixes-20261029\\compile\\sequence-kernel\\unit.obj",
+      "bytes": 310444,
+      "sha256": "98c5a85b5fdc78a392673cef16635bdf6856114cc0d8453b9e6495d415bd1819"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\native-artifact\\unit.obj",
+      "bytes": 629490,
+      "sha256": "0ad36f4c537bfd5424fda2f7a45d60079e472d8d7de08978655fbb95796142bb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\sdk-engine__models__qwen35__weights_cc\\unit.obj",
+      "bytes": 4346111,
+      "sha256": "bbe79b901b261da235e0eef59b7d5a03c999ef6acc4a814f58595086f5fea55e"
+    }
+  ],
+  "stale_previous_consumers": {
+    "cli": {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\compile\\cli\\receipt.json",
+        "bytes": 42979,
+        "sha256": "96904dbd227b985f10ef00de3dbe5cbd07883a062ecd9744f5641b04f81ca4d9"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\compile\\cli\\unit.obj",
+        "bytes": 26010275,
+        "sha256": "afbf83777ceaf0874a258d2344ddece280342c600fd1edf0594b3302f349185d"
+      },
+      "status": "HISTORICAL_NOT_CURRENT",
+      "reason": "Replaced by current consumer",
+      "mismatched_source_pins": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+          "bytes": 632263,
+          "sha256": "26d19c688110b53662ade686f79a6937810b7c8f38ed55a653ad93d9f7fb1360"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_graph.h",
+          "bytes": 20945,
+          "sha256": "e32b90099c0dad232aa01446bc7b3b1b0e83b49ad86cac923f9a2f74a75e930d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\weights.h",
+          "bytes": 6085,
+          "sha256": "fbf450cd942cce0874016efb7d2cf27920961dc8fba1eeadf1c3ec5b09a3afac"
+        }
+      ]
+    },
+    "tiny": {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\compile\\tiny\\receipt.json",
+        "bytes": 51944,
+        "sha256": "8a75b83aea55e6c2b388e87ce1565411a9e313baa74d90ec6ba95e10d01769e5"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\compile\\tiny\\unit.obj",
+        "bytes": 159004916,
+        "sha256": "7442f24c48252ab2fb25214e090c684c5eb8dc75f78afcd6e513dff9fe23f42f"
+      },
+      "status": "HISTORICAL_NOT_CURRENT",
+      "reason": "Exact source pins differ from current source",
+      "mismatched_source_pins": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+          "bytes": 632263,
+          "sha256": "26d19c688110b53662ade686f79a6937810b7c8f38ed55a653ad93d9f7fb1360"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_graph.h",
+          "bytes": 20945,
+          "sha256": "e32b90099c0dad232aa01446bc7b3b1b0e83b49ad86cac923f9a2f74a75e930d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\weights.h",
+          "bytes": 6085,
+          "sha256": "fbf450cd942cce0874016efb7d2cf27920961dc8fba1eeadf1c3ec5b09a3afac"
+        }
+      ]
+    }
+  },
+  "source_dependency_inventory": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\sdk-engine-dependencies.json",
+    "bytes": 130859,
+    "sha256": "022b9f4d63484b94a70862fd2e97f86b30e6289a7e19079e859a25a87d7d1b91"
+  },
+  "unavailable_sdk_dependency_records": 69,
+  "unavailable_dependency_scope": "Unchanged native kernel/library inputs; no complete source-dependency claim for their69 missing cached records.",
+  "map": {
+    "file": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\code-32768.ids",
+      "bytes": 188740,
+      "sha256": "753e4e7a0299389e6cdfe60bf82ada6b54c7c059f7e55648e876b990ffef6d35"
+    },
+    "prior": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocab-map-20261030\\attempt1\\map_32768.json",
+      "bytes": 616281,
+      "sha256": "5a6c9860e8ab79b2dfd9627d557ed3db0154c829841cc342fd30325ebbe88d3d"
+    },
+    "research_evidence": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\research\\inference-code-vocabulary-map-2026-10-30.json",
+      "bytes": 5436,
+      "sha256": "cdf554177a7d693b0f5d7bf914f873e671a8cb48e0da0886a451ce02eff4b5ef"
+    },
+    "scope": "Independent offline local reference-engine source corpus; no test prompt/output selected this map; not a general-language or universal acceptance claim."
+  },
+  "checks": [
+    {
+      "name": "probe-runs/ids/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\probe-runs\\ids\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "afbbec2f8ad0c149ed6e9f66803cec479682946aa0e3853c3ea06ac5d0642f07"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 33544,
+        "started": 1793344909.130238,
+        "seconds": 0.7879922389984131,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\probe-runs\\ids\\attempt1\\command.json",
+        "bytes": 103,
+        "sha256": "baec5c018ef18b293861c3455711c7a6e4f7dfbcd1ada3e821a5901effcdb054"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\probe-runs\\ids\\attempt1\\report.json",
+        "bytes": 72,
+        "sha256": "bc3ea27e8a1c06c779aec9ec7ad5c2f0d5e2f60032c7f5ed7eb9d4237194a8e0"
+      }
+    },
+    {
+      "name": "probe-runs/rows-cpu/attempt2",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\probe-runs\\rows-cpu\\attempt2\\process.json",
+        "bytes": 150,
+        "sha256": "41bac5f0714c79a1ef6614cc5f768f1c026e4d4a550147983cffe5bf105166d1"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 34928,
+        "started": 1793344996.417086,
+        "seconds": 0.7313575744628906,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\probe-runs\\rows-cpu\\attempt2\\command.json",
+        "bytes": 331,
+        "sha256": "a1ca925769da800d59d4e9b008b45f57da30ed2b1c3d29502025652d23b672de"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\probe-runs\\rows-cpu\\attempt2\\report.json",
+        "bytes": 325,
+        "sha256": "ef99ad51367f91ba8f4f909debcc86f0fd0b706cbe1f23f6a682b77e9e836e58"
+      }
+    },
+    {
+      "name": "probe-runs/rows-cuda/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\probe-runs\\rows-cuda\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "fe3941add89842d0d2c77ead51110eccbe9f26924b78d7d168ac2d4362556ec9"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 62768,
+        "started": 1793345004.0915759,
+        "seconds": 0.6166164875030518,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\probe-runs\\rows-cuda\\attempt1\\command.json",
+        "bytes": 333,
+        "sha256": "51bd012bb423c215dc052e96c01d1be2cb7dce43254d40719259ea4bf6489598"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\probe-runs\\rows-cuda\\attempt1\\report.json",
+        "bytes": 326,
+        "sha256": "63d87050f75927dd8942cd1e704e39e379db50c36d013817c240ef77ee4eef0a"
+      }
+    },
+    {
+      "name": "measure-runs/k2/full/correctness1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\k2\\full\\correctness1\\process.json",
+        "bytes": 150,
+        "sha256": "9f096f177fabf716794a3f46a03fb3ab471bf983e4f619f7bf0d61584f41970a"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 32736,
+        "started": 1793345085.2960818,
+        "seconds": 2.821240186691284,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\k2\\full\\correctness1\\command.json",
+        "bytes": 566,
+        "sha256": "62eadeef2216cee15d4e0d2ac8f4b0dec35111531f7fb2f4fdab1cc00cc01420"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\k2\\full\\correctness1\\report.json",
+        "bytes": 50986,
+        "sha256": "445a93cc64faaeae3fe693cad91713dd8931bb2005a325984a68bcaccd10c59c"
+      }
+    },
+    {
+      "name": "measure-runs/k2/subset/correctness1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\k2\\subset\\correctness1\\process.json",
+        "bytes": 151,
+        "sha256": "c597319cc261a3ddf629b985b5d028b4ed43ad1c91550ef83389f5ea93184566"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 62908,
+        "started": 1793345088.2730007,
+        "seconds": 2.9122700691223145,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\k2\\subset\\correctness1\\command.json",
+        "bytes": 695,
+        "sha256": "d4aa99474703aa0a48c20616067b7edabdb0bffea2df85913f19958fa3c8b4c2"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\k2\\subset\\correctness1\\report.json",
+        "bytes": 51153,
+        "sha256": "ebecfd0e14981e68444e332fbdf1e9097a48812cd11735061bb463a3255a5353"
+      }
+    },
+    {
+      "name": "measure-runs/single/full/abba-1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\full\\abba-1\\process.json",
+        "bytes": 151,
+        "sha256": "4dc04b23343130ada4e301f2c106c1fb3fbf5e3fb4aaa6fa771c0d4dffcc923b"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 39756,
+        "started": 1793345107.7482994,
+        "seconds": 3.0382535457611084,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\full\\abba-1\\command.json",
+        "bytes": 566,
+        "sha256": "0337c589d0ef9e3c23208297c36fa8e7ab0e881045a8cfc815261a9723853394"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\full\\abba-1\\report.json",
+        "bytes": 83449,
+        "sha256": "9c15328fcb23da29d372504be5e2be8e565c24fe033107086e83051849168e6d"
+      }
+    },
+    {
+      "name": "measure-runs/single/full/abba-4",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\full\\abba-4\\process.json",
+        "bytes": 150,
+        "sha256": "68d2d34ec77f3b9ea61be424caa8c367334493e1ccc5c9f01a7fc8e4ef22f5eb"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 61712,
+        "started": 1793345117.779834,
+        "seconds": 3.1871349811553955,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\full\\abba-4\\command.json",
+        "bytes": 566,
+        "sha256": "0337c589d0ef9e3c23208297c36fa8e7ab0e881045a8cfc815261a9723853394"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\full\\abba-4\\report.json",
+        "bytes": 83438,
+        "sha256": "6082f6cf157f60455271e7e717f807b0294c197f8cef53e77b5c052d98fca0d6"
+      }
+    },
+    {
+      "name": "measure-runs/single/full/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\full\\attempt1\\process.json",
+        "bytes": 148,
+        "sha256": "f9ae86e7dd54e1519c3926a9696f6fa5fc7df1c47aae71069bdb5fd4ca6791ed"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 17248,
+        "started": 1793345007.147509,
+        "seconds": 3.41267991065979,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\full\\attempt1\\command.json",
+        "bytes": 566,
+        "sha256": "0337c589d0ef9e3c23208297c36fa8e7ab0e881045a8cfc815261a9723853394"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\full\\attempt1\\report.json",
+        "bytes": 83501,
+        "sha256": "99f30653d57ea75994094e9f21bb79d6abcd41e36b2caa8b29a6df5344a3ac13"
+      }
+    },
+    {
+      "name": "measure-runs/single/subset/abba-2",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\subset\\abba-2\\process.json",
+        "bytes": 149,
+        "sha256": "b3cb461a6171cda4de34a66c178086e23a67bce5f5056d9e95d8f8cd75872745"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 8444,
+        "started": 1793345110.946757,
+        "seconds": 3.2059528827667236,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\subset\\abba-2\\command.json",
+        "bytes": 695,
+        "sha256": "783c5c12da1a8efedeb914d39817638a2e27c7d93f1117625943f0fa4d14c9e1"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\subset\\abba-2\\report.json",
+        "bytes": 83624,
+        "sha256": "0a3d1cd7e4dab19eef754d3d9db4e874a2bfb29815260bd6ce2c537a89658a9a"
+      }
+    },
+    {
+      "name": "measure-runs/single/subset/abba-3",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\subset\\abba-3\\process.json",
+        "bytes": 150,
+        "sha256": "89d2aef92705191a9bdeacf5dfc62ca4442d5c1e5013a62af3f7b07099093e15"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 35244,
+        "started": 1793345114.3252063,
+        "seconds": 3.282090187072754,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\subset\\abba-3\\command.json",
+        "bytes": 695,
+        "sha256": "783c5c12da1a8efedeb914d39817638a2e27c7d93f1117625943f0fa4d14c9e1"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\subset\\abba-3\\report.json",
+        "bytes": 83615,
+        "sha256": "94fd9b2ff73d9b0cd7927c22eecdf41fea3c96fb404936d7d85711efd1e331bf"
+      }
+    },
+    {
+      "name": "measure-runs/single/subset/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\subset\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "b5e78a3887488db3d149bd9c1626dbc8a86b5fd544c861ee366bf849c66f4d84"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 56240,
+        "started": 1793345016.0231504,
+        "seconds": 3.036001682281494,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\subset\\attempt1\\command.json",
+        "bytes": 695,
+        "sha256": "783c5c12da1a8efedeb914d39817638a2e27c7d93f1117625943f0fa4d14c9e1"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\subset\\attempt1\\report.json",
+        "bytes": 83630,
+        "sha256": "520ed5ff7e92ba730c984d852809e961e41ae8625c8f78a8b632129f97052eda"
+      }
+    },
+    {
+      "name": "measure-runs/state40/full/trace1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\state40\\full\\trace1\\process.json",
+        "bytes": 151,
+        "sha256": "fe287ef889be52175e214c39d63c8bbabcf7a1ad2dd1f90c116a0c3f953b04f8"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 23264,
+        "started": 1793345094.6229138,
+        "seconds": 3.3890810012817383,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\state40\\full\\trace1\\command.json",
+        "bytes": 739,
+        "sha256": "865202608579afa6ee1df049f13f2c3faf579b743273594fede7a6e9a082bf6a"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\state40\\full\\trace1\\report.json",
+        "bytes": 58501,
+        "sha256": "96197b5fa9ecce5ae76d0bf45c11a26e993cdc29d73272c77043ecf7dfd22fe5"
+      }
+    },
+    {
+      "name": "measure-runs/state40/subset/trace1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\state40\\subset\\trace1\\process.json",
+        "bytes": 151,
+        "sha256": "3907047821aef6b34493f392227f35e7e6426249a54104abfbcbf647f9659848"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 60376,
+        "started": 1793345098.1641529,
+        "seconds": 3.6113128662109375,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\state40\\subset\\trace1\\command.json",
+        "bytes": 870,
+        "sha256": "fb6b0ce52332a5c8a77e451df1540df84810f383c1d3e5627ded41b365001f30"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\state40\\subset\\trace1\\report.json",
+        "bytes": 58603,
+        "sha256": "23826f2c45ef304a32965d7d657cd630bce5dc4307cc56c0e77ff954ba87ae23"
+      }
+    },
+    {
+      "name": "measure-runs/two/full/abba-1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\full\\abba-1\\process.json",
+        "bytes": 150,
+        "sha256": "b025b917d4f1821f87f60c86ec41b885c4b191a733bc31999cf62a882f8d3c69"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 41784,
+        "started": 1793345121.1370602,
+        "seconds": 3.669168710708618,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\full\\abba-1\\command.json",
+        "bytes": 674,
+        "sha256": "3b74c452719e6487eeb7a58e61ae42b02c0919714cddb1ea271a665d99d8761e"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\full\\abba-1\\report.json",
+        "bytes": 153554,
+        "sha256": "772f7196a967b3342126b2f7cd582c498ebcf219260a5bbf4bac53e495925470"
+      }
+    },
+    {
+      "name": "measure-runs/two/full/abba-4",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\full\\abba-4\\process.json",
+        "bytes": 150,
+        "sha256": "1362434b1d3f6a53e29942814f298801a20192d60c016623c3edfe707e69f9e6"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 62620,
+        "started": 1793345132.7445874,
+        "seconds": 3.833336591720581,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\full\\abba-4\\command.json",
+        "bytes": 674,
+        "sha256": "3b74c452719e6487eeb7a58e61ae42b02c0919714cddb1ea271a665d99d8761e"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\full\\abba-4\\report.json",
+        "bytes": 153545,
+        "sha256": "39d2f4e01f4d757f8bb349f3c6c8ed07ece6c1822d2fef632c217508f226d9fe"
+      }
+    },
+    {
+      "name": "measure-runs/two/full/correctness1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\full\\correctness1\\process.json",
+        "bytes": 149,
+        "sha256": "19bde2cb716060dd77f3d4ea32889468cd954c6d34efd908697f3d91422096fd"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 63344,
+        "started": 1793345077.652191,
+        "seconds": 3.547009229660034,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\full\\correctness1\\command.json",
+        "bytes": 674,
+        "sha256": "3b74c452719e6487eeb7a58e61ae42b02c0919714cddb1ea271a665d99d8761e"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\full\\correctness1\\report.json",
+        "bytes": 153543,
+        "sha256": "e5416d3b3b18e51cfb61733325d86b95cbffac56b16746eba817088633668935"
+      }
+    },
+    {
+      "name": "measure-runs/two/subset/abba-2",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\subset\\abba-2\\process.json",
+        "bytes": 149,
+        "sha256": "b4366a6dafad7f4dc86cea24557a4a811bd49f7c3a4f31477da3e94d6849d33e"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 41152,
+        "started": 1793345124.965637,
+        "seconds": 3.663011074066162,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\subset\\abba-2\\command.json",
+        "bytes": 803,
+        "sha256": "a211aec7395b2d45ed0a3494d9cb2ec35caa79875e96f7991185d54fd85d235b"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\subset\\abba-2\\report.json",
+        "bytes": 153702,
+        "sha256": "cd0092bb98020a6a52736e75fa93f9e35942365bf4a513748a74bf1be15fbbbd"
+      }
+    },
+    {
+      "name": "measure-runs/two/subset/abba-3",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\subset\\abba-3\\process.json",
+        "bytes": 151,
+        "sha256": "9ca82b8ac6cf1a1bb083f4987dc2abdb2d761fb6b834615979af5e541e08191b"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 46688,
+        "started": 1793345128.7856467,
+        "seconds": 3.7881786823272705,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\subset\\abba-3\\command.json",
+        "bytes": 803,
+        "sha256": "a211aec7395b2d45ed0a3494d9cb2ec35caa79875e96f7991185d54fd85d235b"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\subset\\abba-3\\report.json",
+        "bytes": 153714,
+        "sha256": "23abf7518127a59be4711626e57006506af314ecba8411020876e68f84e19f27"
+      }
+    },
+    {
+      "name": "measure-runs/two/subset/correctness1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\subset\\correctness1\\process.json",
+        "bytes": 150,
+        "sha256": "95cb49b65cda38a210d656e41f29573c0d11e4cb9bb3b2f104540585886c0496"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 44496,
+        "started": 1793345081.3545315,
+        "seconds": 3.709533214569092,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\subset\\correctness1\\command.json",
+        "bytes": 803,
+        "sha256": "a211aec7395b2d45ed0a3494d9cb2ec35caa79875e96f7991185d54fd85d235b"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\subset\\correctness1\\report.json",
+        "bytes": 153701,
+        "sha256": "2fed33674de9a45acd68b6f7d97076c48b1832c9a9100cd2773164922f634aef"
+      }
+    },
+    {
+      "name": "baseline-runs/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\baseline-runs\\attempt1\\process.json",
+        "bytes": 149,
+        "sha256": "8c843179f0d221fbf6e004c3a6df97732dfc6bd56936a5340629d63cb80d5ad5"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 33264,
+        "started": 1793344651.794253,
+        "seconds": 3.392381429672241,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\baseline-runs\\attempt1\\command.json",
+        "bytes": 579,
+        "sha256": "8516599fa22c47c6c87ec6b424d4a3e239c0a28a65f05f787f8b0935e151d1d7"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\baseline-runs\\attempt1\\report.json",
+        "bytes": 82951,
+        "sha256": "f9ea2698c49550e2ce4b3ba5fc2ab89ee799e13908fe0301fa1ec90b4e381b40"
+      }
+    },
+    {
+      "name": "k-width-runs/01-k1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\01-k1\\process.json",
+        "bytes": 151,
+        "sha256": "88b3da6c62b99eb4837244b7ae42f906b118e874020e8acc61f8443ef4ff3893"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 11712,
+        "started": 1793345455.1687446,
+        "seconds": 3.0578718185424805,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\01-k1\\command.json",
+        "bytes": 695,
+        "sha256": "783c5c12da1a8efedeb914d39817638a2e27c7d93f1117625943f0fa4d14c9e1"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\01-k1\\report.json",
+        "bytes": 83642,
+        "sha256": "c74e807e9afe2ad4a3ee44f078ecac7a10dcfb90f17d11c43b80203010a49786"
+      }
+    },
+    {
+      "name": "k-width-runs/02-k2",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\02-k2\\process.json",
+        "bytes": 150,
+        "sha256": "14d94ec3b6e8347ad9cbb91541ce17b1771ebbf254f65949e14376c850b3dbdb"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 22668,
+        "started": 1793345458.2386162,
+        "seconds": 3.011009931564331,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\02-k2\\command.json",
+        "bytes": 695,
+        "sha256": "411f9fe1d6e6e7249b7e9fd71ef1c9b6f8f2394af2bda2bc14fae2854b0dac15"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\02-k2\\report.json",
+        "bytes": 69808,
+        "sha256": "50e7eed72e2dd399bc8ec3214c4f9ea0fe68121977bae02e3be5e8491acee4f2"
+      }
+    },
+    {
+      "name": "k-width-runs/03-k2",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\03-k2\\process.json",
+        "bytes": 149,
+        "sha256": "477dfdac86d79fcc0f9c76f8246f9d843283e16d0b7095ed5848d265010932e8"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 61008,
+        "started": 1793345461.259632,
+        "seconds": 3.041862964630127,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\03-k2\\command.json",
+        "bytes": 695,
+        "sha256": "411f9fe1d6e6e7249b7e9fd71ef1c9b6f8f2394af2bda2bc14fae2854b0dac15"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\03-k2\\report.json",
+        "bytes": 69781,
+        "sha256": "7574629a241065b29a9eb872d0ef9c11ed9dcf1a462aea71940c17cdb5d1ce72"
+      }
+    },
+    {
+      "name": "k-width-runs/04-k1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\04-k1\\process.json",
+        "bytes": 151,
+        "sha256": "3b9372f9c360c0baa3efe34cde4dd30a21ec4f06a7518dfac1682065671322ea"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 63164,
+        "started": 1793345464.3244088,
+        "seconds": 3.0780043601989746,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\04-k1\\command.json",
+        "bytes": 695,
+        "sha256": "783c5c12da1a8efedeb914d39817638a2e27c7d93f1117625943f0fa4d14c9e1"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\04-k1\\report.json",
+        "bytes": 83629,
+        "sha256": "b6764e006e6f584722d7ae2bee9dfea5732df8df9327112041b63761f0f82227"
+      }
+    }
+  ],
+  "comparisons": {
+    "default-compare.json": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\default-compare.json",
+      "bytes": 642,
+      "sha256": "dcdc7e06c79ff33d69071b33e53f89f3a0fa1a950538d443d84d2444a7115353"
+    },
+    "subset-compare.json": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\subset-compare.json",
+      "bytes": 3707,
+      "sha256": "0b06b643729f871565ab5525fb9a17f50e3e17767962520048d1ca4b328f47ef"
+    },
+    "two-correctness1-compare.json": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\two-correctness1-compare.json",
+      "bytes": 4638,
+      "sha256": "728245c7c988549812a4a4f53ab80a1dd724500af897060df01d356045be7680"
+    },
+    "k2-correctness1-compare.json": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k2-correctness1-compare.json",
+      "bytes": 3701,
+      "sha256": "033a10636114950bfd6a97b6d907c5d04b7cab006294222a7dacab19cf38931e"
+    },
+    "state40-trace1-compare.json": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\state40-trace1-compare.json",
+      "bytes": 3348,
+      "sha256": "ef3c50ea51669c4db07130a66cfc657c7f8698d1330c6403781b67e774c8e1bb"
+    },
+    "state40-trace-compare.json": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\state40-trace-compare.json",
+      "bytes": 334813,
+      "sha256": "7359dbb3a451b082e664d32e087a0adda3d816f35eb430041c8cc201b5f4c9ec"
+    }
+  },
+  "expected_CLI_rejections": {
+    "status": "PASS",
+    "cases": [
+      {
+        "name": "mtp-off",
+        "status": "PASS_EXPECTED_REJECTION",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\bin\\cli.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\intentionally-missing-input",
+          "--mtp-draft-vocabulary",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\intentionally-missing-map",
+          "--mtp",
+          "off"
+        ],
+        "exit": 1,
+        "seconds": 0.38582730293273926,
+        "before_input_or_map_open": true,
+        "no_backend_initializer_output": true,
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\bin\\cli.exe",
+          "bytes": 143005184,
+          "sha256": "239271f8e47fc29ce32cb808138312376d0b41083cd80bb34d976e8073e47153"
+        }
+      },
+      {
+        "name": "zero-drafts",
+        "status": "PASS_EXPECTED_REJECTION",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\bin\\cli.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\intentionally-missing-input",
+          "--mtp-draft-vocabulary",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\intentionally-missing-map",
+          "--mtp",
+          "on",
+          "--mtp-max-drafts",
+          "0"
+        ],
+        "exit": 1,
+        "seconds": 0.38767123222351074,
+        "before_input_or_map_open": true,
+        "no_backend_initializer_output": true,
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\bin\\cli.exe",
+          "bytes": 143005184,
+          "sha256": "239271f8e47fc29ce32cb808138312376d0b41083cd80bb34d976e8073e47153"
+        }
+      },
+      {
+        "name": "random",
+        "status": "PASS_EXPECTED_REJECTION",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\bin\\cli.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\intentionally-missing-input",
+          "--mtp-draft-vocabulary",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\intentionally-missing-map",
+          "--mtp",
+          "on",
+          "--sampling",
+          "random"
+        ],
+        "exit": 1,
+        "seconds": 0.3617579936981201,
+        "before_input_or_map_open": true,
+        "no_backend_initializer_output": true,
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\bin\\cli.exe",
+          "bytes": 143005184,
+          "sha256": "239271f8e47fc29ce32cb808138312376d0b41083cd80bb34d976e8073e47153"
+        }
+      },
+      {
+        "name": "threshold",
+        "status": "PASS_EXPECTED_REJECTION",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\bin\\cli.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\intentionally-missing-input",
+          "--mtp-draft-vocabulary",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\intentionally-missing-map",
+          "--mtp",
+          "on",
+          "--mtp-min-probability",
+          "0.1"
+        ],
+        "exit": 1,
+        "seconds": 0.3721301555633545,
+        "before_input_or_map_open": true,
+        "no_backend_initializer_output": true,
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\bin\\cli.exe",
+          "bytes": 143005184,
+          "sha256": "239271f8e47fc29ce32cb808138312376d0b41083cd80bb34d976e8073e47153"
+        }
+      }
+    ]
+  },
+  "trace_export_manifest": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\trace-payload-pins.json",
+    "bytes": 864991,
+    "sha256": "210c1f4aa6dae7ddda4305f8cbd63ffe88286c2db7b51be1e8f1e16e3303b17d"
+  },
+  "all_build_and_finite_native_attempts": [
+    {
+      "name": "compile/cli/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\cli\\attempt1\\process.json",
+        "bytes": 149,
+        "sha256": "d642472123aef94a22aab4c402865dbe4b1a6807a1ed780242a1f0902d92106b"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 26916,
+        "started": 1793344760.10775,
+        "seconds": 11.169784307479858,
+        "exit": 2,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\cli\\attempt1\\command.json",
+        "bytes": 3388,
+        "sha256": "34bcdad50e599ff916071d5b18ed39e462cf4081740337bc43b273f01a190e25"
+      }
+    },
+    {
+      "name": "compile/cli/attempt2",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\cli\\attempt2\\process.json",
+        "bytes": 150,
+        "sha256": "4e0d20c9b3113d0df6446b4e45734043b37d0c6966307c33a82f031291d65cdf"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 62264,
+        "started": 1793344843.248232,
+        "seconds": 35.864893198013306,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\cli\\attempt2\\command.json",
+        "bytes": 3388,
+        "sha256": "34bcdad50e599ff916071d5b18ed39e462cf4081740337bc43b273f01a190e25"
+      }
+    },
+    {
+      "name": "compile/ids/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\ids\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "617fe6c41a67f147ac502d67fcc0090e765a7d3f2b985c9133617b560ed5331e"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 61696,
+        "started": 1793344775.7354426,
+        "seconds": 0.6357467174530029,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\ids\\attempt1\\command.json",
+        "bytes": 3373,
+        "sha256": "2f08708241fa1510428e45f7bc4f83f692b4d1c888b5dac42121e0382880383b"
+      }
+    },
+    {
+      "name": "compile/rows/attempt2",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\rows\\attempt2\\process.json",
+        "bytes": 149,
+        "sha256": "81fdb968c54514d4b56aa4fb2a7f6e0a6ddc8d86fbaf449e197b4d137b06db4e"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 63080,
+        "started": 1793344843.248232,
+        "seconds": 35.90369462966919,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\rows\\attempt2\\command.json",
+        "bytes": 3372,
+        "sha256": "0c003b88c37f1b1c9d809ef0a474d5186927423a7b29f1c6e4176859cee40e99"
+      }
+    },
+    {
+      "name": "compile/rows/attempt3",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\rows\\attempt3\\process.json",
+        "bytes": 150,
+        "sha256": "db3ec8dc1343cdaea2e362bae70e8f0f7b518bb6aee90056a500f9e4ab456e23"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 47116,
+        "started": 1793344958.2344918,
+        "seconds": 31.60974955558777,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\rows\\attempt3\\command.json",
+        "bytes": 3372,
+        "sha256": "0c003b88c37f1b1c9d809ef0a474d5186927423a7b29f1c6e4176859cee40e99"
+      }
+    },
+    {
+      "name": "compile/sdk-engine__models__qwen35__weights_cc/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\sdk-engine__models__qwen35__weights_cc\\attempt1\\process.json",
+        "bytes": 146,
+        "sha256": "6baaf0dab0f38f210058e9eff6efcc83260524e48e45511d2bcbdd7c324a5375"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 904,
+        "started": 1793344760.10775,
+        "seconds": 5.981229782104492,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\sdk-engine__models__qwen35__weights_cc\\attempt1\\command.json",
+        "bytes": 3356,
+        "sha256": "f44a0f7437646aaab4454c55c1f28bdf5479e971faa6f352602306997ef678c7"
+      }
+    },
+    {
+      "name": "link/cli/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\link\\cli\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "0221c318cad1cc45ad40476a1ed5712ce1c56d7caf020ae23127b184bd9c71f6"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 47664,
+        "started": 1793344884.0832725,
+        "seconds": 1.844698429107666,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\link\\cli\\attempt1\\command.json",
+        "bytes": 31226,
+        "sha256": "5876fd3cbf5f2514396d97afc94a6f93518d889d8ca69dc20578f16b76fd1686"
+      }
+    },
+    {
+      "name": "link/ids/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\link\\ids\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "4d914d2a0f4a5c5115347b8e453003401f377de56b08911b0709634652323025"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 45000,
+        "started": 1793344890.2807162,
+        "seconds": 1.709273099899292,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\link\\ids\\attempt1\\command.json",
+        "bytes": 31226,
+        "sha256": "0d2e29b434ea48d0a5fa8c804d7e7acba6aa893479cacd0217f02990a85b4395"
+      }
+    },
+    {
+      "name": "link/rows/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\link\\rows\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "cc4b64781dce4f7735be246f14456acb8855f33368be03ed84282e384bb0edc0"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 20072,
+        "started": 1793344887.184075,
+        "seconds": 1.8490726947784424,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\link\\rows\\attempt1\\command.json",
+        "bytes": 31230,
+        "sha256": "4c171dbbadd61a4f8c33f12e72fc6d9997a701a5283b58a72f23fedc3398bb59"
+      }
+    },
+    {
+      "name": "link/rows/attempt2",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\link\\rows\\attempt2\\process.json",
+        "bytes": 151,
+        "sha256": "fb787459838bfc30f684dfe281cab87f8d9856f2cb78f8346c71f44cacc6b04f"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 14148,
+        "started": 1793344994.0052893,
+        "seconds": 1.8086891174316406,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\link\\rows\\attempt2\\command.json",
+        "bytes": 31230,
+        "sha256": "4c171dbbadd61a4f8c33f12e72fc6d9997a701a5283b58a72f23fedc3398bb59"
+      }
+    },
+    {
+      "name": "baseline-link/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\baseline-link\\attempt1\\process.json",
+        "bytes": 78,
+        "sha256": "a8d24813aecb2518fbd90c13064550cb2ba0ab99e35fa9ec5f05d0fd8c8313d2"
+      },
+      "status": "TERMINAL_EXIT_UNOBSERVED_NOT_PASS",
+      "actual": {
+        "state": "RUNNING",
+        "pid": 43468,
+        "started": 1793344629.005796
+      }
+    },
+    {
+      "name": "baseline-link/attempt2",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\baseline-link\\attempt2\\process.json",
+        "bytes": 151,
+        "sha256": "bb592df5c5de8ddde017aea2a4af4eafbebdcd11874e460d0d46bed4be6c8ed3"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 54580,
+        "started": 1793344639.9569864,
+        "seconds": 1.8397557735443115,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\baseline-link\\attempt2\\command.json",
+        "bytes": 31262,
+        "sha256": "bcbd0d98e3841fadc3da36cfe2e348e32ff38fe63b256cd1416d4c02a78610ff"
+      }
+    },
+    {
+      "name": "probe-runs/ids/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\probe-runs\\ids\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "afbbec2f8ad0c149ed6e9f66803cec479682946aa0e3853c3ea06ac5d0642f07"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 33544,
+        "started": 1793344909.130238,
+        "seconds": 0.7879922389984131,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\probe-runs\\ids\\attempt1\\command.json",
+        "bytes": 103,
+        "sha256": "baec5c018ef18b293861c3455711c7a6e4f7dfbcd1ada3e821a5901effcdb054"
+      }
+    },
+    {
+      "name": "probe-runs/rows-cpu/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\probe-runs\\rows-cpu\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "780e8681ae0d93543705060af5a9af2c75793eb97117a53e254d81b4f88366bf"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 58540,
+        "started": 1793344910.0860434,
+        "seconds": 0.7862131595611572,
+        "exit": 1,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\probe-runs\\rows-cpu\\attempt1\\command.json",
+        "bytes": 331,
+        "sha256": "a1ca925769da800d59d4e9b008b45f57da30ed2b1c3d29502025652d23b672de"
+      }
+    },
+    {
+      "name": "probe-runs/rows-cpu/attempt2",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\probe-runs\\rows-cpu\\attempt2\\process.json",
+        "bytes": 150,
+        "sha256": "41bac5f0714c79a1ef6614cc5f768f1c026e4d4a550147983cffe5bf105166d1"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 34928,
+        "started": 1793344996.417086,
+        "seconds": 0.7313575744628906,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\probe-runs\\rows-cpu\\attempt2\\command.json",
+        "bytes": 331,
+        "sha256": "a1ca925769da800d59d4e9b008b45f57da30ed2b1c3d29502025652d23b672de"
+      }
+    },
+    {
+      "name": "probe-runs/rows-cuda/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\probe-runs\\rows-cuda\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "fe3941add89842d0d2c77ead51110eccbe9f26924b78d7d168ac2d4362556ec9"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 62768,
+        "started": 1793345004.0915759,
+        "seconds": 0.6166164875030518,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\probe-runs\\rows-cuda\\attempt1\\command.json",
+        "bytes": 333,
+        "sha256": "51bd012bb423c215dc052e96c01d1be2cb7dce43254d40719259ea4bf6489598"
+      }
+    },
+    {
+      "name": "measure-runs/k2/full/correctness1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\k2\\full\\correctness1\\process.json",
+        "bytes": 150,
+        "sha256": "9f096f177fabf716794a3f46a03fb3ab471bf983e4f619f7bf0d61584f41970a"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 32736,
+        "started": 1793345085.2960818,
+        "seconds": 2.821240186691284,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\k2\\full\\correctness1\\command.json",
+        "bytes": 566,
+        "sha256": "62eadeef2216cee15d4e0d2ac8f4b0dec35111531f7fb2f4fdab1cc00cc01420"
+      }
+    },
+    {
+      "name": "measure-runs/k2/subset/correctness1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\k2\\subset\\correctness1\\process.json",
+        "bytes": 151,
+        "sha256": "c597319cc261a3ddf629b985b5d028b4ed43ad1c91550ef83389f5ea93184566"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 62908,
+        "started": 1793345088.2730007,
+        "seconds": 2.9122700691223145,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\k2\\subset\\correctness1\\command.json",
+        "bytes": 695,
+        "sha256": "d4aa99474703aa0a48c20616067b7edabdb0bffea2df85913f19958fa3c8b4c2"
+      }
+    },
+    {
+      "name": "measure-runs/single/full/abba-1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\full\\abba-1\\process.json",
+        "bytes": 151,
+        "sha256": "4dc04b23343130ada4e301f2c106c1fb3fbf5e3fb4aaa6fa771c0d4dffcc923b"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 39756,
+        "started": 1793345107.7482994,
+        "seconds": 3.0382535457611084,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\full\\abba-1\\command.json",
+        "bytes": 566,
+        "sha256": "0337c589d0ef9e3c23208297c36fa8e7ab0e881045a8cfc815261a9723853394"
+      }
+    },
+    {
+      "name": "measure-runs/single/full/abba-4",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\full\\abba-4\\process.json",
+        "bytes": 150,
+        "sha256": "68d2d34ec77f3b9ea61be424caa8c367334493e1ccc5c9f01a7fc8e4ef22f5eb"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 61712,
+        "started": 1793345117.779834,
+        "seconds": 3.1871349811553955,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\full\\abba-4\\command.json",
+        "bytes": 566,
+        "sha256": "0337c589d0ef9e3c23208297c36fa8e7ab0e881045a8cfc815261a9723853394"
+      }
+    },
+    {
+      "name": "measure-runs/single/full/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\full\\attempt1\\process.json",
+        "bytes": 148,
+        "sha256": "f9ae86e7dd54e1519c3926a9696f6fa5fc7df1c47aae71069bdb5fd4ca6791ed"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 17248,
+        "started": 1793345007.147509,
+        "seconds": 3.41267991065979,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\full\\attempt1\\command.json",
+        "bytes": 566,
+        "sha256": "0337c589d0ef9e3c23208297c36fa8e7ab0e881045a8cfc815261a9723853394"
+      }
+    },
+    {
+      "name": "measure-runs/single/subset/abba-2",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\subset\\abba-2\\process.json",
+        "bytes": 149,
+        "sha256": "b3cb461a6171cda4de34a66c178086e23a67bce5f5056d9e95d8f8cd75872745"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 8444,
+        "started": 1793345110.946757,
+        "seconds": 3.2059528827667236,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\subset\\abba-2\\command.json",
+        "bytes": 695,
+        "sha256": "783c5c12da1a8efedeb914d39817638a2e27c7d93f1117625943f0fa4d14c9e1"
+      }
+    },
+    {
+      "name": "measure-runs/single/subset/abba-3",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\subset\\abba-3\\process.json",
+        "bytes": 150,
+        "sha256": "89d2aef92705191a9bdeacf5dfc62ca4442d5c1e5013a62af3f7b07099093e15"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 35244,
+        "started": 1793345114.3252063,
+        "seconds": 3.282090187072754,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\subset\\abba-3\\command.json",
+        "bytes": 695,
+        "sha256": "783c5c12da1a8efedeb914d39817638a2e27c7d93f1117625943f0fa4d14c9e1"
+      }
+    },
+    {
+      "name": "measure-runs/single/subset/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\subset\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "b5e78a3887488db3d149bd9c1626dbc8a86b5fd544c861ee366bf849c66f4d84"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 56240,
+        "started": 1793345016.0231504,
+        "seconds": 3.036001682281494,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\subset\\attempt1\\command.json",
+        "bytes": 695,
+        "sha256": "783c5c12da1a8efedeb914d39817638a2e27c7d93f1117625943f0fa4d14c9e1"
+      }
+    },
+    {
+      "name": "measure-runs/state40/full/trace1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\state40\\full\\trace1\\process.json",
+        "bytes": 151,
+        "sha256": "fe287ef889be52175e214c39d63c8bbabcf7a1ad2dd1f90c116a0c3f953b04f8"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 23264,
+        "started": 1793345094.6229138,
+        "seconds": 3.3890810012817383,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\state40\\full\\trace1\\command.json",
+        "bytes": 739,
+        "sha256": "865202608579afa6ee1df049f13f2c3faf579b743273594fede7a6e9a082bf6a"
+      }
+    },
+    {
+      "name": "measure-runs/state40/subset/trace1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\state40\\subset\\trace1\\process.json",
+        "bytes": 151,
+        "sha256": "3907047821aef6b34493f392227f35e7e6426249a54104abfbcbf647f9659848"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 60376,
+        "started": 1793345098.1641529,
+        "seconds": 3.6113128662109375,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\state40\\subset\\trace1\\command.json",
+        "bytes": 870,
+        "sha256": "fb6b0ce52332a5c8a77e451df1540df84810f383c1d3e5627ded41b365001f30"
+      }
+    },
+    {
+      "name": "measure-runs/two/full/abba-1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\full\\abba-1\\process.json",
+        "bytes": 150,
+        "sha256": "b025b917d4f1821f87f60c86ec41b885c4b191a733bc31999cf62a882f8d3c69"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 41784,
+        "started": 1793345121.1370602,
+        "seconds": 3.669168710708618,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\full\\abba-1\\command.json",
+        "bytes": 674,
+        "sha256": "3b74c452719e6487eeb7a58e61ae42b02c0919714cddb1ea271a665d99d8761e"
+      }
+    },
+    {
+      "name": "measure-runs/two/full/abba-4",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\full\\abba-4\\process.json",
+        "bytes": 150,
+        "sha256": "1362434b1d3f6a53e29942814f298801a20192d60c016623c3edfe707e69f9e6"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 62620,
+        "started": 1793345132.7445874,
+        "seconds": 3.833336591720581,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\full\\abba-4\\command.json",
+        "bytes": 674,
+        "sha256": "3b74c452719e6487eeb7a58e61ae42b02c0919714cddb1ea271a665d99d8761e"
+      }
+    },
+    {
+      "name": "measure-runs/two/full/correctness1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\full\\correctness1\\process.json",
+        "bytes": 149,
+        "sha256": "19bde2cb716060dd77f3d4ea32889468cd954c6d34efd908697f3d91422096fd"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 63344,
+        "started": 1793345077.652191,
+        "seconds": 3.547009229660034,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\full\\correctness1\\command.json",
+        "bytes": 674,
+        "sha256": "3b74c452719e6487eeb7a58e61ae42b02c0919714cddb1ea271a665d99d8761e"
+      }
+    },
+    {
+      "name": "measure-runs/two/subset/abba-2",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\subset\\abba-2\\process.json",
+        "bytes": 149,
+        "sha256": "b4366a6dafad7f4dc86cea24557a4a811bd49f7c3a4f31477da3e94d6849d33e"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 41152,
+        "started": 1793345124.965637,
+        "seconds": 3.663011074066162,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\subset\\abba-2\\command.json",
+        "bytes": 803,
+        "sha256": "a211aec7395b2d45ed0a3494d9cb2ec35caa79875e96f7991185d54fd85d235b"
+      }
+    },
+    {
+      "name": "measure-runs/two/subset/abba-3",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\subset\\abba-3\\process.json",
+        "bytes": 151,
+        "sha256": "9ca82b8ac6cf1a1bb083f4987dc2abdb2d761fb6b834615979af5e541e08191b"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 46688,
+        "started": 1793345128.7856467,
+        "seconds": 3.7881786823272705,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\subset\\abba-3\\command.json",
+        "bytes": 803,
+        "sha256": "a211aec7395b2d45ed0a3494d9cb2ec35caa79875e96f7991185d54fd85d235b"
+      }
+    },
+    {
+      "name": "measure-runs/two/subset/correctness1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\subset\\correctness1\\process.json",
+        "bytes": 150,
+        "sha256": "95cb49b65cda38a210d656e41f29573c0d11e4cb9bb3b2f104540585886c0496"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 44496,
+        "started": 1793345081.3545315,
+        "seconds": 3.709533214569092,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\subset\\correctness1\\command.json",
+        "bytes": 803,
+        "sha256": "a211aec7395b2d45ed0a3494d9cb2ec35caa79875e96f7991185d54fd85d235b"
+      }
+    },
+    {
+      "name": "baseline-runs/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\baseline-runs\\attempt1\\process.json",
+        "bytes": 149,
+        "sha256": "8c843179f0d221fbf6e004c3a6df97732dfc6bd56936a5340629d63cb80d5ad5"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 33264,
+        "started": 1793344651.794253,
+        "seconds": 3.392381429672241,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\baseline-runs\\attempt1\\command.json",
+        "bytes": 579,
+        "sha256": "8516599fa22c47c6c87ec6b424d4a3e239c0a28a65f05f787f8b0935e151d1d7"
+      }
+    },
+    {
+      "name": "k-width-runs/01-k1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\01-k1\\process.json",
+        "bytes": 151,
+        "sha256": "88b3da6c62b99eb4837244b7ae42f906b118e874020e8acc61f8443ef4ff3893"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 11712,
+        "started": 1793345455.1687446,
+        "seconds": 3.0578718185424805,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\01-k1\\command.json",
+        "bytes": 695,
+        "sha256": "783c5c12da1a8efedeb914d39817638a2e27c7d93f1117625943f0fa4d14c9e1"
+      }
+    },
+    {
+      "name": "k-width-runs/02-k2",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\02-k2\\process.json",
+        "bytes": 150,
+        "sha256": "14d94ec3b6e8347ad9cbb91541ce17b1771ebbf254f65949e14376c850b3dbdb"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 22668,
+        "started": 1793345458.2386162,
+        "seconds": 3.011009931564331,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\02-k2\\command.json",
+        "bytes": 695,
+        "sha256": "411f9fe1d6e6e7249b7e9fd71ef1c9b6f8f2394af2bda2bc14fae2854b0dac15"
+      }
+    },
+    {
+      "name": "k-width-runs/03-k2",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\03-k2\\process.json",
+        "bytes": 149,
+        "sha256": "477dfdac86d79fcc0f9c76f8246f9d843283e16d0b7095ed5848d265010932e8"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 61008,
+        "started": 1793345461.259632,
+        "seconds": 3.041862964630127,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\03-k2\\command.json",
+        "bytes": 695,
+        "sha256": "411f9fe1d6e6e7249b7e9fd71ef1c9b6f8f2394af2bda2bc14fae2854b0dac15"
+      }
+    },
+    {
+      "name": "k-width-runs/04-k1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\04-k1\\process.json",
+        "bytes": 151,
+        "sha256": "3b9372f9c360c0baa3efe34cde4dd30a21ec4f06a7518dfac1682065671322ea"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 63164,
+        "started": 1793345464.3244088,
+        "seconds": 3.0780043601989746,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\04-k1\\command.json",
+        "bytes": 695,
+        "sha256": "783c5c12da1a8efedeb914d39817638a2e27c7d93f1117625943f0fa4d14c9e1"
+      }
+    }
+  ],
+  "failed_observed_attempts": [
+    {
+      "name": "compile/cli/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\cli\\attempt1\\process.json",
+        "bytes": 149,
+        "sha256": "d642472123aef94a22aab4c402865dbe4b1a6807a1ed780242a1f0902d92106b"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 26916,
+        "started": 1793344760.10775,
+        "seconds": 11.169784307479858,
+        "exit": 2,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\cli\\attempt1\\command.json",
+        "bytes": 3388,
+        "sha256": "34bcdad50e599ff916071d5b18ed39e462cf4081740337bc43b273f01a190e25"
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\cli\\attempt1\\stdout.log",
+        "bytes": 484,
+        "sha256": "25ed727cb9c184cd3cff571858e02537bed4236b451e49a9d4d45f2d5b92bed2"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\compile\\cli\\attempt1\\stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "probe-runs/rows-cpu/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\probe-runs\\rows-cpu\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "780e8681ae0d93543705060af5a9af2c75793eb97117a53e254d81b4f88366bf"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 58540,
+        "started": 1793344910.0860434,
+        "seconds": 0.7862131595611572,
+        "exit": 1,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\probe-runs\\rows-cpu\\attempt1\\command.json",
+        "bytes": 331,
+        "sha256": "a1ca925769da800d59d4e9b008b45f57da30ed2b1c3d29502025652d23b672de"
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\probe-runs\\rows-cpu\\attempt1\\stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\probe-runs\\rows-cpu\\attempt1\\stderr.log",
+        "bytes": 98,
+        "sha256": "27f6cc743080e180a799807975657de78f0916561d89fe1ea3f57197cbc54539"
+      }
+    }
+  ],
+  "corrected_attempts": [
+    {
+      "kind": "baseline-link-wrapper",
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\baseline-link-attempt1-orchestrator-failure.json",
+        "bytes": 559,
+        "sha256": "7e65619adac4d53b53c33430a7e85106df3f016177833eb444421892d2ce14e4"
+      },
+      "scope": "Linkattempt1 started but wrapper failed before terminal observation. Running process metadata is historical, not live proof; terminal exit unobserved, never counted PASS. Separate attempt2 exit0 observed."
+    },
+    {
+      "kind": "CLI-compile",
+      "attempt": "attempt1",
+      "scope": "MSVC/WX C4458: draft_scores hidden parameter shadowed Model::hidden; renamed selected_hidden; new attempt2 exit0."
+    },
+    {
+      "kind": "rows-CPU-native",
+      "attempt": "attempt1",
+      "scope": "Probe Recipe missed independent last_row binding. Probeonly bound actual last_row=1 for fixed2 rows; new rowscompileattempt3, CPUattempt2 and CUDAattempt1 passed without weakening assertions."
+    },
+    {
+      "kind": "CLI-native-loader-setup",
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\preflight-runs\\setup-failure.json",
+        "bytes": 289,
+        "sha256": "24dc9de761ccdcd876f53c4be12d1ae6e651514b39fd6cc751b8b447addf6bee"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "exit": 3221225781,
+        "kind": "NATIVE_LOADER_SETUP_FAILURE",
+        "case": "mtp-off",
+        "meaning": "Windows DLL-not-found exit before entrypoint; root standalone subprocess omitted cached runtime PATH. Original stdout/stderr retained; not a CLI-policy test pass."
+      },
+      "scope": "Missing cached runtime PATH caused Windows DLL-not-found before entrypoint. Not a CLI policy pass. Four explicit incompatible requests separately passed expected rejection with correct environment."
+    }
+  ],
+  "build": {
+    "SDK_CXX": 1,
+    "SDK_unchanged_retained": 226,
+    "total_SDK_inputs": 227,
+    "current_consumers": 3,
+    "CXX_actual_attempts": 6,
+    "NVCC": 0,
+    "downloads": 0,
+    "baseline_CXX": 0,
+    "max_compiler_concurrency": 2,
+    "ABI": "Old-layout baseline remains separately pinned. Every retained CXX include consumer affected by weights.h is recompiled before candidate link; no mixed PreparedWeightSource layout."
+  },
+  "screening": {
+    "status": "SCREEN_FINISHED",
+    "scope": "Fresh same-image ABBA full/subset/subset/full, two samples per arm/scenario; initial correctness samples and other windows not pooled.",
+    "scenarios": {
+      "single": {
+        "arms": {
+          "full": {
+            "reports": [
+              {
+                "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\full\\abba-1\\report.json",
+                "bytes": 83449,
+                "sha256": "9c15328fcb23da29d372504be5e2be8e565c24fe033107086e83051849168e6d"
+              },
+              {
+                "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\full\\abba-4\\report.json",
+                "bytes": 83438,
+                "sha256": "6082f6cf157f60455271e7e717f807b0294c197f8cef53e77b5c052d98fca0d6"
+              }
+            ],
+            "metrics": {
+              "prefill_tokens_per_second": {
+                "samples": [
+                  2001.5700627505212,
+                  2080.6508924506147
+                ],
+                "median": 2041.110477600568,
+                "minimum": 2001.5700627505212,
+                "maximum": 2080.6508924506147
+              },
+              "decode_output_tokens_per_second": {
+                "samples": [
+                  113.98873357069529,
+                  101.78023321244103
+                ],
+                "median": 107.88448339156815,
+                "minimum": 101.78023321244103,
+                "maximum": 113.98873357069529
+              },
+              "output_tokens_per_second": {
+                "samples": [
+                  101.64767708057707,
+                  92.3526254119793
+                ],
+                "median": 97.0001512462782,
+                "minimum": 92.3526254119793,
+                "maximum": 101.64767708057707
+              }
+            },
+            "full_non_timing_fields_stable": true,
+            "work": {
+              "draft_rounds": 34,
+              "agreements": 29,
+              "consumed_drafts": 29,
+              "actual_draft_rows": 220,
+              "actual_target_rows": 226
+            }
+          },
+          "subset": {
+            "reports": [
+              {
+                "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\subset\\abba-2\\report.json",
+                "bytes": 83624,
+                "sha256": "0a3d1cd7e4dab19eef754d3d9db4e874a2bfb29815260bd6ce2c537a89658a9a"
+              },
+              {
+                "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\single\\subset\\abba-3\\report.json",
+                "bytes": 83615,
+                "sha256": "94fd9b2ff73d9b0cd7927c22eecdf41fea3c96fb404936d7d85711efd1e331bf"
+              }
+            ],
+            "metrics": {
+              "prefill_tokens_per_second": {
+                "samples": [
+                  2132.125313588561,
+                  1905.4288637828704
+                ],
+                "median": 2018.7770886857156,
+                "minimum": 1905.4288637828704,
+                "maximum": 2132.125313588561
+              },
+              "decode_output_tokens_per_second": {
+                "samples": [
+                  111.4878495940427,
+                  118.01974114336777
+                ],
+                "median": 114.75379536870523,
+                "minimum": 111.4878495940427,
+                "maximum": 118.01974114336777
+              },
+              "output_tokens_per_second": {
+                "samples": [
+                  100.42170841176164,
+                  104.1275679851332
+                ],
+                "median": 102.27463819844742,
+                "minimum": 100.42170841176164,
+                "maximum": 104.1275679851332
+              }
+            },
+            "full_non_timing_fields_stable": true,
+            "work": {
+              "draft_rounds": 34,
+              "agreements": 29,
+              "consumed_drafts": 29,
+              "actual_draft_rows": 220,
+              "actual_target_rows": 226
+            }
+          }
+        },
+        "delta_percent": {
+          "prefill_tokens_per_second": -1.0941783484991197,
+          "decode_output_tokens_per_second": 6.367284489100089,
+          "output_tokens_per_second": 5.437606936073314
+        },
+        "extra_cold_weight_bytes": 134217728,
+        "extra_map_bytes": 131072,
+        "physical_memory": "Not measured in screening; old budget/report equality is not a no-memory-delta claim."
+      },
+      "two": {
+        "arms": {
+          "full": {
+            "reports": [
+              {
+                "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\full\\abba-1\\report.json",
+                "bytes": 153554,
+                "sha256": "772f7196a967b3342126b2f7cd582c498ebcf219260a5bbf4bac53e495925470"
+              },
+              {
+                "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\full\\abba-4\\report.json",
+                "bytes": 153545,
+                "sha256": "39d2f4e01f4d757f8bb349f3c6c8ed07ece6c1822d2fef632c217508f226d9fe"
+              }
+            ],
+            "metrics": {
+              "prefill_tokens_per_second": {
+                "samples": [
+                  2528.3291508168795,
+                  2364.6577789205676
+                ],
+                "median": 2446.4934648687235,
+                "minimum": 2364.6577789205676,
+                "maximum": 2528.3291508168795
+              },
+              "decode_output_tokens_per_second": {
+                "samples": [
+                  129.86976845147925,
+                  121.76075326227014
+                ],
+                "median": 125.81526085687469,
+                "minimum": 121.76075326227014,
+                "maximum": 129.86976845147925
+              },
+              "output_tokens_per_second": {
+                "samples": [
+                  117.17128739571984,
+                  109.82500500862083
+                ],
+                "median": 113.49814620217035,
+                "minimum": 109.82500500862083,
+                "maximum": 117.17128739571984
+              }
+            },
+            "full_non_timing_fields_stable": true,
+            "work": {
+              "draft_rounds": 66,
+              "agreements": 60,
+              "consumed_drafts": 60,
+              "actual_draft_rows": 438,
+              "actual_target_rows": 445
+            }
+          },
+          "subset": {
+            "reports": [
+              {
+                "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\subset\\abba-2\\report.json",
+                "bytes": 153702,
+                "sha256": "cd0092bb98020a6a52736e75fa93f9e35942365bf4a513748a74bf1be15fbbbd"
+              },
+              {
+                "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\measure-runs\\two\\subset\\abba-3\\report.json",
+                "bytes": 153714,
+                "sha256": "23abf7518127a59be4711626e57006506af314ecba8411020876e68f84e19f27"
+              }
+            ],
+            "metrics": {
+              "prefill_tokens_per_second": {
+                "samples": [
+                  2590.74742644038,
+                  2306.453816061428
+                ],
+                "median": 2448.6006212509037,
+                "minimum": 2306.453816061428,
+                "maximum": 2590.74742644038
+              },
+              "decode_output_tokens_per_second": {
+                "samples": [
+                  152.37382087151295,
+                  133.27161940671704
+                ],
+                "median": 142.822720139115,
+                "minimum": 133.27161940671704,
+                "maximum": 152.37382087151295
+              },
+              "output_tokens_per_second": {
+                "samples": [
+                  135.28019858287652,
+                  118.58335506589484
+                ],
+                "median": 126.93177682438568,
+                "minimum": 118.58335506589484,
+                "maximum": 135.28019858287652
+              }
+            },
+            "full_non_timing_fields_stable": true,
+            "work": {
+              "draft_rounds": 66,
+              "agreements": 60,
+              "consumed_drafts": 60,
+              "actual_draft_rows": 438,
+              "actual_target_rows": 445
+            }
+          }
+        },
+        "delta_percent": {
+          "prefill_tokens_per_second": 0.08612965505276904,
+          "decode_output_tokens_per_second": 13.51780313962685,
+          "output_tokens_per_second": 11.835991222523123
+        },
+        "extra_cold_weight_bytes": 134217728,
+        "extra_map_bytes": 131072,
+        "physical_memory": "Not measured in screening; old budget/report equality is not a no-memory-delta claim."
+      }
+    }
+  },
+  "fair64_width_screen": {
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-summary.json",
+      "bytes": 9651,
+      "sha256": "6f3f15d8b566c4eab27f0d9054f3fbd91b802e00b178f57e656c9652bb8e2a5e"
+    },
+    "data": {
+      "status": "PASS_EXACT4_K1_K2_SCREEN",
+      "processes": 4,
+      "order": [
+        1,
+        2,
+        2,
+        1
+      ],
+      "outputs64_and_rng_scalars_equal": true,
+      "arms": {
+        "1": {
+          "metrics": {
+            "prefill_tokens_per_second": {
+              "samples": [
+                2207.7776853888126,
+                2077.263407791087
+              ],
+              "median": 2142.52054658995,
+              "minimum": 2077.263407791087,
+              "maximum": 2207.7776853888126
+            },
+            "decode_output_tokens_per_second": {
+              "samples": [
+                139.03350089444882,
+                134.20514129245092
+              ],
+              "median": 136.61932109344986,
+              "minimum": 134.20514129245092,
+              "maximum": 139.03350089444882
+            },
+            "output_tokens_per_second": {
+              "samples": [
+                122.39864627097225,
+                117.74086192933855
+              ],
+              "median": 120.0697541001554,
+              "minimum": 117.74086192933855,
+              "maximum": 122.39864627097225
+            }
+          },
+          "work": {
+            "actual_graph_calls": 37,
+            "actual_target_rows": 226,
+            "verified_target_rows": 68,
+            "actual_draft_rows": 220,
+            "draft_rounds": 34,
+            "agreements": 29,
+            "consumed_drafts": 29,
+            "overlap_successor_submissions": 21,
+            "overlap_successor_publications": 19,
+            "overlap_successor_discards": 2,
+            "overlap_successor_refusals": 0
+          },
+          "full_non_timing_fields_stable": true,
+          "reports": [
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\01-k1\\report.json",
+              "bytes": 83642,
+              "sha256": "c74e807e9afe2ad4a3ee44f078ecac7a10dcfb90f17d11c43b80203010a49786"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\04-k1\\report.json",
+              "bytes": 83629,
+              "sha256": "b6764e006e6f584722d7ae2bee9dfea5732df8df9327112041b63761f0f82227"
+            }
+          ]
+        },
+        "2": {
+          "metrics": {
+            "prefill_tokens_per_second": {
+              "samples": [
+                2164.9281637472936,
+                2106.579229949538
+              ],
+              "median": 2135.7536968484155,
+              "minimum": 2106.579229949538,
+              "maximum": 2164.9281637472936
+            },
+            "decode_output_tokens_per_second": {
+              "samples": [
+                150.96213198786933,
+                142.6597160437608
+              ],
+              "median": 146.81092401581506,
+              "minimum": 142.6597160437608,
+              "maximum": 150.96213198786933
+            },
+            "output_tokens_per_second": {
+              "samples": [
+                131.02478579494786,
+                124.34075116579167
+              ],
+              "median": 127.68276848036976,
+              "minimum": 124.34075116579167,
+              "maximum": 131.02478579494786
+            }
+          },
+          "work": {
+            "actual_graph_calls": 108,
+            "actual_target_rows": 234,
+            "verified_target_rows": 80,
+            "actual_draft_rows": 291,
+            "draft_rounds": 27,
+            "agreements": 23,
+            "consumed_drafts": 36,
+            "overlap_successor_submissions": 0,
+            "overlap_successor_publications": 0,
+            "overlap_successor_discards": 0,
+            "overlap_successor_refusals": 0
+          },
+          "full_non_timing_fields_stable": true,
+          "reports": [
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\02-k2\\report.json",
+              "bytes": 69808,
+              "sha256": "50e7eed72e2dd399bc8ec3214c4f9ea0fe68121977bae02e3be5e8491acee4f2"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\k-width-runs\\03-k2\\report.json",
+              "bytes": 69781,
+              "sha256": "7574629a241065b29a9eb872d0ef9c11ed9dcf1a462aea71940c17cdb5d1ce72"
+            }
+          ]
+        }
+      },
+      "delta_K2_over_K1_percent": {
+        "prefill_tokens_per_second": -0.3158359322296578,
+        "decode_output_tokens_per_second": 7.4598547561175454,
+        "output_tokens_per_second": 6.340493021967908
+      },
+      "all_non_timing_differences": [
+        {
+          "path": "/actual_draft_rows",
+          "previous": 220,
+          "current": 291
+        },
+        {
+          "path": "/actual_graph_calls",
+          "previous": 37,
+          "current": 108
+        },
+        {
+          "path": "/actual_target_rows",
+          "previous": 226,
+          "current": 234
+        },
+        {
+          "path": "/agreements",
+          "previous": 29,
+          "current": 23
+        },
+        {
+          "path": "/batches",
+          "previous_length": 37,
+          "current_length": 28
+        },
+        {
+          "path": "/cache_live_requested_bytes",
+          "previous": 112853043,
+          "current": 93081651
+        },
+        {
+          "path": "/cache_peak_requested_bytes",
+          "previous": 112853043,
+          "current": 93081651
+        },
+        {
+          "path": "/cache_requested_byte_limit",
+          "previous": 112853043,
+          "current": 93081651
+        },
+        {
+          "path": "/cache_shared_backing_bytes",
+          "previous": 112853043,
+          "current": 93081651
+        },
+        {
+          "path": "/consumed_drafts",
+          "previous": 29,
+          "current": 36
+        },
+        {
+          "path": "/cpu_ahead_discarded",
+          "previous": 0,
+          "current": 1
+        },
+        {
+          "path": "/cpu_ahead_hits",
+          "previous": 0,
+          "current": 26
+        },
+        {
+          "path": "/cpu_ahead_prepared",
+          "previous": 0,
+          "current": 27
+        },
+        {
+          "path": "/decode_graph_calls",
+          "previous": 36,
+          "current": 27
+        },
+        {
+          "path": "/decode_overlap",
+          "previous": true,
+          "current": false
+        },
+        {
+          "path": "/decode_overlap_available",
+          "previous": true,
+          "current": false
+        },
+        {
+          "path": "/dispatch",
+          "previous_length": 37,
+          "current_length": 28
+        },
+        {
+          "path": "/draft_program_graph_calls",
+          "previous": 0,
+          "current": 80
+        },
+        {
+          "path": "/draft_rounds",
+          "previous": 34,
+          "current": 27
+        },
+        {
+          "path": "/draft_rows",
+          "previous": 62,
+          "current": 137
+        },
+        {
+          "path": "/graph_participations",
+          "previous": 37,
+          "current": 108
+        },
+        {
+          "path": "/logical_dispatches",
+          "previous": 37,
+          "current": 28
+        },
+        {
+          "path": "/mtp_max_drafts",
+          "previous": 1,
+          "current": 2
+        },
+        {
+          "path": "/overlap_successor_discards",
+          "previous": 2,
+          "current": 0
+        },
+        {
+          "path": "/overlap_successor_publications",
+          "previous": 19,
+          "current": 0
+        },
+        {
+          "path": "/overlap_successor_submissions",
+          "previous": 21,
+          "current": 0
+        },
+        {
+          "path": "/sessions/0/ledger",
+          "previous_length": 35,
+          "current_length": 28
+        },
+        {
+          "path": "/sessions/0/result/actual_draft_rows",
+          "previous": 220,
+          "current": 291
+        },
+        {
+          "path": "/sessions/0/result/actual_target_rows",
+          "previous": 222,
+          "current": 234
+        },
+        {
+          "path": "/sessions/0/result/agreements",
+          "previous": 29,
+          "current": 23
+        },
+        {
+          "path": "/sessions/0/result/cache_live_requested_bytes",
+          "previous": 112853043,
+          "current": 93081651
+        },
+        {
+          "path": "/sessions/0/result/cache_peak_requested_bytes",
+          "previous": 112853043,
+          "current": 93081651
+        },
+        {
+          "path": "/sessions/0/result/cache_requested_byte_limit",
+          "previous": 112853043,
+          "current": 93081651
+        },
+        {
+          "path": "/sessions/0/result/cache_shared_backing_bytes",
+          "previous": 112853043,
+          "current": 93081651
+        },
+        {
+          "path": "/sessions/0/result/consumed_drafts",
+          "previous": 29,
+          "current": 36
+        },
+        {
+          "path": "/sessions/0/result/cpu_ahead_discarded",
+          "previous": 0,
+          "current": 1
+        },
+        {
+          "path": "/sessions/0/result/cpu_ahead_hits",
+          "previous": 0,
+          "current": 26
+        },
+        {
+          "path": "/sessions/0/result/cpu_ahead_prepared",
+          "previous": 0,
+          "current": 27
+        },
+        {
+          "path": "/sessions/0/result/decode_graph_calls",
+          "previous": 34,
+          "current": 27
+        },
+        {
+          "path": "/sessions/0/result/draft_program_graph_calls",
+          "previous": 0,
+          "current": 80
+        },
+        {
+          "path": "/sessions/0/result/draft_rounds",
+          "previous": 34,
+          "current": 27
+        },
+        {
+          "path": "/sessions/0/result/draft_rows",
+          "previous": 62,
+          "current": 137
+        },
+        {
+          "path": "/sessions/0/result/graph_participations",
+          "previous": 35,
+          "current": 108
+        },
+        {
+          "path": "/sessions/0/result/mtp_max_drafts",
+          "previous": 1,
+          "current": 2
+        },
+        {
+          "path": "/sessions/0/result/rounds",
+          "previous_length": 34,
+          "current_length": 27
+        },
+        {
+          "path": "/sessions/0/result/verified_target_rows",
+          "previous": 68,
+          "current": 80
+        },
+        {
+          "path": "/verified_target_rows",
+          "previous": 68,
+          "current": 80
+        }
+      ],
+      "scope": "Fresh fair64-output explicit32K comparison,2samples per width only. Actual graph/draft/target/acceptance and every other non-timing delta retained; no prior40-output or other-window pooling. Physical memory not separately sampled in this width screen."
+    },
+    "scope": "Exactly4 new K1/K2/K2/K1 processes,64outputs each; not pooled with previous40output K2 correctness or32process peerwindow. No independent memory sampling for this screen."
+  },
+  "full_window": {
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\summary.json",
+      "bytes": 1686807,
+      "sha256": "9a2e818baa786be5d311c54e28520c955c069c2e1a2f86107ef9e9a7198667fd"
+    },
+    "processes": [
+      {
+        "arm": "hyle_auto",
+        "scenario": "single",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\01-hyle_auto\\result.json",
+          "bytes": 1263,
+          "sha256": "bdbcd56007489ade2c347eecc26ac320d5592b72cdf255338d9ccb9802ff8403"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\01-hyle_auto\\command.json",
+          "bytes": 1049,
+          "sha256": "aa4740f272293b0307693f589c040e4017e0adcf4d75a42c44b854bbdc71d0a9"
+        }
+      },
+      {
+        "arm": "hyle_mtp",
+        "scenario": "single",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\02-hyle_mtp\\result.json",
+          "bytes": 1429,
+          "sha256": "c6d6290c5b1618691cd8413cd295dcf959d02036c5461c3cd78bf93784bf7784"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\02-hyle_mtp\\command.json",
+          "bytes": 1215,
+          "sha256": "bef2ed074464252c504c588f8408000fe733a5b0751db50d88853b2d8e2ee045"
+        }
+      },
+      {
+        "arm": "peer_plain",
+        "scenario": "single",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\03-peer_plain\\result.json",
+          "bytes": 1330,
+          "sha256": "208bd02fc8c8eda75f2ad80b636a7d1ef9485c5606446b95540fe0736abadb64"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\03-peer_plain\\command.json",
+          "bytes": 1116,
+          "sha256": "de957c40e984fb003e6ae5afd810c9bf530457652b76f238015b7efc9f304cf7"
+        }
+      },
+      {
+        "arm": "peer_mtp",
+        "scenario": "single",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\04-peer_mtp\\result.json",
+          "bytes": 1329,
+          "sha256": "595427b3173155b86f5d2f1914a85c1f5de1f84f72458d92ec70ab073a0b0382"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\04-peer_mtp\\command.json",
+          "bytes": 1115,
+          "sha256": "06045d9dcd4cf7f55db0c350dfccde3d4ee9dd79e85577f0cb08000815480fb4"
+        }
+      },
+      {
+        "arm": "hyle_mtp",
+        "scenario": "single",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\05-hyle_mtp\\result.json",
+          "bytes": 1429,
+          "sha256": "d0158f30a8cc72d6850a4c28b959cd647fc12b5ad7c0cb40c90fef9c2a7b47fd"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\05-hyle_mtp\\command.json",
+          "bytes": 1215,
+          "sha256": "1551d649d62dc719cca713641dc000556b10bf2bdfb46aec4d2e5eddba43494a"
+        }
+      },
+      {
+        "arm": "peer_plain",
+        "scenario": "single",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\06-peer_plain\\result.json",
+          "bytes": 1330,
+          "sha256": "9d36353b85faa266c21d3cf4284dd99f600919200787ba5327c544bae2953727"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\06-peer_plain\\command.json",
+          "bytes": 1116,
+          "sha256": "0d42e23acce74bfc4443f910be2e2f5c2b07b28984b87962e0f5c999ace44232"
+        }
+      },
+      {
+        "arm": "peer_mtp",
+        "scenario": "single",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\07-peer_mtp\\result.json",
+          "bytes": 1329,
+          "sha256": "46bc94f00e0e6261a4fb82a5c4c7d32f131c96edd5a5a7397ddfd20bdc12bfe1"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\07-peer_mtp\\command.json",
+          "bytes": 1115,
+          "sha256": "1bb84f3ec106603c9ff3f75f21895df36fb053b6eb765b7cb25369c40eca26ee"
+        }
+      },
+      {
+        "arm": "hyle_auto",
+        "scenario": "single",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\08-hyle_auto\\result.json",
+          "bytes": 1263,
+          "sha256": "aa0621503e893dd7bdb687a779e9a110a9bafcfc3538f170abe42e705bf8ee29"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\08-hyle_auto\\command.json",
+          "bytes": 1049,
+          "sha256": "fc01bb62a6bd63e2feb2caab32fbe0317c1202c95333055cc12cb6389c407f3c"
+        }
+      },
+      {
+        "arm": "peer_plain",
+        "scenario": "single",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\09-peer_plain\\result.json",
+          "bytes": 1330,
+          "sha256": "9d5694f859cd3016a6a00a452c594f05be1c152b9e00d4ac74b8af7a6c6d1759"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\09-peer_plain\\command.json",
+          "bytes": 1116,
+          "sha256": "be90f99872c938c2d5bf4fc6d905eeb979bc6eb446c72a8e04483ea77ad02420"
+        }
+      },
+      {
+        "arm": "peer_mtp",
+        "scenario": "single",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\10-peer_mtp\\result.json",
+          "bytes": 1329,
+          "sha256": "821ca1d3ded3cacf7dc83e3cb2870228f87152b28b6a64667e4175af91d1b9e3"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\10-peer_mtp\\command.json",
+          "bytes": 1115,
+          "sha256": "7fbc726f36315f3664ec5ae60d9f50b29b55f32d410f78dc5e9b7edf7c55d777"
+        }
+      },
+      {
+        "arm": "hyle_auto",
+        "scenario": "single",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\11-hyle_auto\\result.json",
+          "bytes": 1263,
+          "sha256": "0e20ebc17700aaeacdcc443deb747e34f916caaff8c902d9840351981abaa409"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\11-hyle_auto\\command.json",
+          "bytes": 1049,
+          "sha256": "d204337438ee7fab5a5c8150e3c360765de3b1e1b4b220528426d9cd0a45d5c6"
+        }
+      },
+      {
+        "arm": "hyle_mtp",
+        "scenario": "single",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\12-hyle_mtp\\result.json",
+          "bytes": 1429,
+          "sha256": "6c9dc2e1d44acdbea0dedc27752d98614f3d6d7708bf9c505eae79e5dab60209"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-timing\\12-hyle_mtp\\command.json",
+          "bytes": 1215,
+          "sha256": "362750eea9708a0ead91289a758471b41724fc1a32748e965aa10da63e9128a4"
+        }
+      },
+      {
+        "arm": "hyle_auto",
+        "scenario": "single",
+        "mode": "memory",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-memory\\01-hyle_auto\\result.json",
+          "bytes": 2163,
+          "sha256": "a77534209432e40121dd53a3d1e79684949dfe3de30b0487776b48675b57f0a0"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-memory\\01-hyle_auto\\command.json",
+          "bytes": 1049,
+          "sha256": "5bdfdd3220dbfdcbe91784bafe2f6ea2d3ce99052baac9edfdac6e64490c082d"
+        }
+      },
+      {
+        "arm": "hyle_mtp",
+        "scenario": "single",
+        "mode": "memory",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-memory\\02-hyle_mtp\\result.json",
+          "bytes": 2329,
+          "sha256": "7dbe75ebafc63196dce3f281182034d0113cd857747918d3f2f59db058365ea4"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-memory\\02-hyle_mtp\\command.json",
+          "bytes": 1215,
+          "sha256": "0c2a643ce64bb29b9f07a42a85c3306b311ea1d06db6333bed00bc9a65299a9b"
+        }
+      },
+      {
+        "arm": "peer_plain",
+        "scenario": "single",
+        "mode": "memory",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-memory\\03-peer_plain\\result.json",
+          "bytes": 2311,
+          "sha256": "a256a78720fca4aae85fce0a2c0390074cdf284a49ecafccac1b0282bec10d6f"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-memory\\03-peer_plain\\command.json",
+          "bytes": 1116,
+          "sha256": "689bf08127b4b098763b104624e383674d37fa248be06a3b0feecd3e146dfe0d"
+        }
+      },
+      {
+        "arm": "peer_mtp",
+        "scenario": "single",
+        "mode": "memory",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-memory\\04-peer_mtp\\result.json",
+          "bytes": 2310,
+          "sha256": "6983c0ecb36a32b928050d62bcf148b159b42dd326075c2c4ba335e9e3676aa9"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\single-memory\\04-peer_mtp\\command.json",
+          "bytes": 1115,
+          "sha256": "cd892513f52a4eaf942c4685cf47168ffab617da369a093b7b7cda16b7a8e1db"
+        }
+      },
+      {
+        "arm": "hyle_auto",
+        "scenario": "two-turn",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\01-hyle_auto\\result.json",
+          "bytes": 1371,
+          "sha256": "6f72078a97efcc8f7892fe075e5d9496c833af2376a004d155ccf94acff4e140"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\01-hyle_auto\\command.json",
+          "bytes": 1157,
+          "sha256": "03fde68a2ae9c32a395be1e6c3febe35ed2c2082b2da520f274cf54cc43ea170"
+        }
+      },
+      {
+        "arm": "hyle_mtp",
+        "scenario": "two-turn",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\02-hyle_mtp\\result.json",
+          "bytes": 1536,
+          "sha256": "c9ad7282e490598a21e0f9bdddd9a48b2e5d7e65df380009c416599b326c93b6"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\02-hyle_mtp\\command.json",
+          "bytes": 1323,
+          "sha256": "67f72bd9dbe1fe0245d4264ffc6c2b3743e224d988e91de2c263fd5cd231b249"
+        }
+      },
+      {
+        "arm": "peer_plain",
+        "scenario": "two-turn",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\03-peer_plain\\result.json",
+          "bytes": 1440,
+          "sha256": "8d4db79eab7ce671e4fafdcb3f218a31125269d0b9acb9ee9a43389a1b7ffc30"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\03-peer_plain\\command.json",
+          "bytes": 1226,
+          "sha256": "61fae022e52b437184de9d16a8d95fd23836c04d59e957c69782ce39893ba1c5"
+        }
+      },
+      {
+        "arm": "peer_mtp",
+        "scenario": "two-turn",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\04-peer_mtp\\result.json",
+          "bytes": 1439,
+          "sha256": "06106fb3ea94a2e52a5d2a2a74bd0742068cbe7fddbb41c4a1972d8017d9c661"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\04-peer_mtp\\command.json",
+          "bytes": 1225,
+          "sha256": "a1f2a6fbe98da29e259d3da7725ad021958d63d37911b81a137b756b8350b733"
+        }
+      },
+      {
+        "arm": "hyle_mtp",
+        "scenario": "two-turn",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\05-hyle_mtp\\result.json",
+          "bytes": 1537,
+          "sha256": "15e58c1b7226635dfba2acdf7b998736c2f9b21813b3c34cab9f78cd77bd4045"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\05-hyle_mtp\\command.json",
+          "bytes": 1323,
+          "sha256": "8e6b8cc69a911294f33610b46214678ace532f5ce7a9a4b2f3d821702af11bad"
+        }
+      },
+      {
+        "arm": "peer_plain",
+        "scenario": "two-turn",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\06-peer_plain\\result.json",
+          "bytes": 1439,
+          "sha256": "bef6325b23ed7b9383aacca07a7a294a806a59a7ecec5c7f26e2afe2c7c1696a"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\06-peer_plain\\command.json",
+          "bytes": 1226,
+          "sha256": "39536f7130f61f65e870f22b88b894b03579017a339cae73be4c7b1150e98449"
+        }
+      },
+      {
+        "arm": "peer_mtp",
+        "scenario": "two-turn",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\07-peer_mtp\\result.json",
+          "bytes": 1439,
+          "sha256": "ea73a7a77c164bf0af93be660a3f549d2c206ee6cb52c70336f91c69ac95bd6f"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\07-peer_mtp\\command.json",
+          "bytes": 1225,
+          "sha256": "c6e80c56c413e540642a98e8d7b0d8e428e13c5c73882ed175903dff93fbd32c"
+        }
+      },
+      {
+        "arm": "hyle_auto",
+        "scenario": "two-turn",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\08-hyle_auto\\result.json",
+          "bytes": 1371,
+          "sha256": "721fa43d4898ab0e8cf79349abca21edb4b052f03e3ef8fa94fd1d45a1db6b5a"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\08-hyle_auto\\command.json",
+          "bytes": 1157,
+          "sha256": "a57d3104ce66e872e4dc1f98b0e7cba6486dae1f4800394b53e7c52d12a9957e"
+        }
+      },
+      {
+        "arm": "peer_plain",
+        "scenario": "two-turn",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\09-peer_plain\\result.json",
+          "bytes": 1440,
+          "sha256": "f1252846efb307434b46693cc102edc336b8332b52ff0363c5fc77386c58efa0"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\09-peer_plain\\command.json",
+          "bytes": 1226,
+          "sha256": "65014a9bedd6f718be9c1c65b267356bfe361c2cfa0a9b404a0a354fc322d589"
+        }
+      },
+      {
+        "arm": "peer_mtp",
+        "scenario": "two-turn",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\10-peer_mtp\\result.json",
+          "bytes": 1439,
+          "sha256": "8b7bcb4a668fb360cbee513a1734ad888a83708554a4f79ae40a129ebc09f43c"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\10-peer_mtp\\command.json",
+          "bytes": 1225,
+          "sha256": "8584fb87846b1f0549426756458f93c2f74329e2841caa0db6b49ad4f0b5ec25"
+        }
+      },
+      {
+        "arm": "hyle_auto",
+        "scenario": "two-turn",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\11-hyle_auto\\result.json",
+          "bytes": 1371,
+          "sha256": "7010da79333e807b82e15929aa111dfa9c2da029fa7d5349f6c0ef9bcbeb44ab"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\11-hyle_auto\\command.json",
+          "bytes": 1157,
+          "sha256": "471de3667043ce23140a88f7970886f760823cdb1ff60d2f824346968328149c"
+        }
+      },
+      {
+        "arm": "hyle_mtp",
+        "scenario": "two-turn",
+        "mode": "timing",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\12-hyle_mtp\\result.json",
+          "bytes": 1535,
+          "sha256": "c40cfb1e53de4c47c9102526295ee91c917b30c7a45bba4f7e23015c8e6d81a4"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-timing\\12-hyle_mtp\\command.json",
+          "bytes": 1323,
+          "sha256": "c979f071fe6c0a41f531daec8dc3be0cd083e6e1ae4f56430fda35f38ff418cb"
+        }
+      },
+      {
+        "arm": "hyle_auto",
+        "scenario": "two-turn",
+        "mode": "memory",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-memory\\01-hyle_auto\\result.json",
+          "bytes": 2886,
+          "sha256": "42e6ecb907edfde3ddb53c7403831ec2cab48af0454a58c7b57022b60770c973"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-memory\\01-hyle_auto\\command.json",
+          "bytes": 1157,
+          "sha256": "cbf453980026fd459bda2967d483755ee9214887e7bf3d3bfbfc41904c8c994a"
+        }
+      },
+      {
+        "arm": "hyle_mtp",
+        "scenario": "two-turn",
+        "mode": "memory",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-memory\\02-hyle_mtp\\result.json",
+          "bytes": 3052,
+          "sha256": "161a63b2f7609ca387db836cb1199e5fd85f6c74a51eb8b3beb6576c93a76c64"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-memory\\02-hyle_mtp\\command.json",
+          "bytes": 1323,
+          "sha256": "c4a39e99afb72ec7934c5044ddafe88979a261148e5f008c0f4f9a8b9c4f853d"
+        }
+      },
+      {
+        "arm": "peer_plain",
+        "scenario": "two-turn",
+        "mode": "memory",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-memory\\03-peer_plain\\result.json",
+          "bytes": 3139,
+          "sha256": "a7a3bf802bd770dce939e2f7cc4a248e96b9cf18f5917066f45dce18a7aa5e21"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-memory\\03-peer_plain\\command.json",
+          "bytes": 1226,
+          "sha256": "51a4fce41309e71c1599dc0f16ef4ff84e1adc3fe47a398546a024c30fd06643"
+        }
+      },
+      {
+        "arm": "peer_mtp",
+        "scenario": "two-turn",
+        "mode": "memory",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-memory\\04-peer_mtp\\result.json",
+          "bytes": 3135,
+          "sha256": "a9fad7bcf0062f4e41fb2523e5d2d7eeebad55f47293914fe1f3253835bb1e69"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\two-turn-memory\\04-peer_mtp\\command.json",
+          "bytes": 1225,
+          "sha256": "f2acd079b2852ca34f84bb441d50d7449539f27a7fb9b1405d6df153667568bf"
+        }
+      }
+    ],
+    "hardware_snapshots": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\group-hardware\\single-memory-after.json",
+        "bytes": 511,
+        "sha256": "92a99c82b0383c9280dd4022941a3f77fec3ef766591b739c4e52267f9249092"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\group-hardware\\single-memory-before.json",
+        "bytes": 511,
+        "sha256": "7ee211e9558411bb7fb150d2b8a03539da156337534483529af2367ead39b306"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\group-hardware\\single-timing-after.json",
+        "bytes": 511,
+        "sha256": "6a36640e885b65039335250a539a48e2fe259395a18a5cc68b9b780032d11914"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\group-hardware\\single-timing-before.json",
+        "bytes": 511,
+        "sha256": "d1a26fd9f1d8183a65e3da8cc80291b7f17d9779ca039c23fa6eb95c52934b3f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\group-hardware\\two-turn-memory-after.json",
+        "bytes": 512,
+        "sha256": "5f37a46e9a1df5d2ac95b8f2d28e5a48e73c582e1da4316b6247bba9d2d8ddad"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\group-hardware\\two-turn-memory-before.json",
+        "bytes": 512,
+        "sha256": "ddd0f9c6d548d5a3efffcfab507fe492f98587bc51b186b07bd51288310e1942"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\group-hardware\\two-turn-timing-after.json",
+        "bytes": 512,
+        "sha256": "f77442d0a8d58d099ce0bd1361cf2a034610fb933b0c6226e23a901322691bf9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocabulary-20261030\\peer-window\\group-hardware\\two-turn-timing-before.json",
+        "bytes": 511,
+        "sha256": "ffd59811e747c332553270df9f5e9b9794fe7c86d29f2c27452ff961132e88cc"
+      }
+    ],
+    "compact_table": [
+      {
+        "scenario": "single",
+        "role": "ordinary",
+        "prefill": [
+          2097.144071074119,
+          1507.1118061658487
+        ],
+        "decode": [
+          94.27548763995982,
+          98.52959438024729
+        ],
+        "composite": [
+          85.93614675745462,
+          86.30175408315174
+        ],
+        "dedicated_peak_GiB": [
+          4.0401153564453125,
+          3.7276229858398438
+        ],
+        "ready_unknown": [
+          true,
+          true
+        ],
+        "decode_relative_percent": -4.317592868463393
+      },
+      {
+        "scenario": "single",
+        "role": "explicit32K MTP",
+        "prefill": [
+          2068.774667451189,
+          1375.2713705115027
+        ],
+        "decode": [
+          136.675682922829,
+          131.16089256861122
+        ],
+        "composite": [
+          119.54005469704627,
+          107.51602534757495
+        ],
+        "dedicated_peak_GiB": [
+          4.3584747314453125,
+          3.895618438720703
+        ],
+        "ready_unknown": [
+          true,
+          true
+        ],
+        "decode_relative_percent": 4.2045995923159385
+      },
+      {
+        "scenario": "two-turn",
+        "role": "ordinary",
+        "prefill": [
+          2526.249696482136,
+          2454.3658720822636
+        ],
+        "decode": [
+          94.43425487175831,
+          99.2001710651839
+        ],
+        "composite": [
+          87.87724482593543,
+          91.75939682533993
+        ],
+        "dedicated_peak_GiB": [
+          4.1709747314453125,
+          3.7276229858398438
+        ],
+        "ready_unknown": [
+          true,
+          true
+        ],
+        "decode_relative_percent": -4.804342716600685
+      },
+      {
+        "scenario": "two-turn",
+        "role": "explicit32K MTP",
+        "prefill": [
+          2513.7094786371304,
+          2280.6195314028027
+        ],
+        "decode": [
+          152.00831943945118,
+          130.45286505034187
+        ],
+        "composite": [
+          134.47809210047322,
+          116.22041055586406
+        ],
+        "dedicated_peak_GiB": [
+          4.4932403564453125,
+          3.895618438720703
+        ],
+        "ready_unknown": [
+          true,
+          true
+        ],
+        "decode_relative_percent": 16.523557670267387
+      }
+    ],
+    "complete_raw_reports": "Included in the evidence archive and source-pinned full_window.summary; no sample or field is omitted from retained evidence."
+  },
+  "explicit_memory_cost": {
+    "cold_weight_bytes": 134217728,
+    "cold_weight_MiB": 128,
+    "map_bytes": 131072,
+    "map_KiB": 128,
+    "original_weight_fields": "Source-only original host/device/canonical weights; selected head/map are separately reported additional pools.",
+    "physical_memory": "Independent PSAPI/PDH samples in full window; peaks are sampling lower bounds, ready unavailable for all8 memory processes; no precise phase increment claim."
+  },
+  "limits": [
+    "Explicit opt-in dense BF16/F16/F32 draft head, unmodified greedy only. No-option default including stochastic/history/dynamic logits remains original; incompatible explicit random/modifier/threshold mode rejects.",
+    "Default candidate versus exact cached baseline compares all non-timing fields with exactly6 new diagnostics excluded and defaults checked. Subset checks every output ID and committed RNG/scalars, with all other deltas retained.",
+    "Real64 K1 single,128 two-turn and40 K2 outputs checked. K2 rejected proposal/verification IDs may differ; those differences remain in comparison reports.",
+    "23 common state40 prefixes have exact exported tensor bytes/logical KV layouts; exports omit KV tensor payload and complete draft state, so not complete-state equality.",
+    "Screening ABBA has2samples perarm/scenario and desktop variation; no pooling with correctness samples, prior windows or new peer window.",
+    "Fresh32process window uses frozen peer executable SHA433e7051f4c36d0d9b2297dc378631546b7e3c44630cda0653cba2d1ec6bbe8e; native core git revision unestablished, not latest upstream. Exact reference source/dependency and GGUF metadata receipts retained by linked provenance.",
+    "Cross-engine outputs diverge from19th output and actual work differs. Explicit32K results do not close default full-vocabulary gap or generalize to other models/prompts.",
+    "No new Apple/Vulkan/hybrid/multiGPU/multiMachine or model-quality claim; complete overall goal remains active.",
+    "Raw trace payload was removed only after all1810 hashes, exact23prefix comparisons and46layout metadata were verified in archive. It is no longer available for re-reading, but original commands/source/input identities reproduce it."
+  ],
+  "cleanup": {
+    "status": "REMOVED_EXACT_RECREATABLE_IMAGES_AND_TRACE",
+    "retained": "Verified archive, trace digests and KV metadata; SDK/current consumer objects, cached weights, sources, commands, reports and samplers",
+    "files": 1824,
+    "bytes": 1555957908
+  },
+  "steering": {
+    "priority": "General/default full-vocabulary ordinary and MTP performance; optional vocabulary result does not replace this requirement.",
+    "K2_peer_supplement": "Not started or prepared; user steering prioritized default configuration. Existing4process width screen is retained, no cross-window >10percent singledecode claim.",
+    "next": "Profile current default full-vocabulary ordinary/MTP complete consumers and existing acceleration reuse; preserve original numerical/resource/retirement contracts."
+  }
+}

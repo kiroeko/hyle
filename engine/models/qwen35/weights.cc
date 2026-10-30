@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <charconv>
+#include <cctype>
 #include <chrono>
 #include <cmath>
 #include <iostream>
@@ -17,6 +19,10 @@
 #include <type_traits>
 
 #include "../../inference/backend.h"
+#include "../../inference/artifact_digest.h"
+#include "../../inference/execution_resources.h"
+#include "../../inference/graph_bindings.h"
+#include "../../inference/prepared_output.h"
 #include "fp8_weight_import.h"
 #include "nf4_weight_import.h"
 #include "hyle/io/file.h"
@@ -436,8 +442,77 @@ ModelGeometry read_weight_geometry(const std::filesystem::path &manifest) {
 prepared::Roles read_weight_roles(const std::filesystem::path &manifest, bool include_mtp) {
   return prepared::read_roles(manifest, include_mtp);
 }
-PreparedWeightSource prepare_weight_source(const std::filesystem::path &manifest, bool include_mtp) {
+namespace {
+std::optional<hyle::inference::DraftVocabulary> read_draft_vocabulary(
+    const std::filesystem::path &path, const prepared::Roles &roles) {
+  if (path.empty()) return {};
+  const auto head = std::ranges::find(roles.selected, roles.geometry.head_role(), &prepared::Role::name);
+  if (head == roles.selected.end() ||
+      (head->dtype != "BF16" && head->dtype != "F16" && head->dtype != "F32") ||
+      (head->projection_codec != prepared::ProjectionCodec::kDense &&
+       head->projection_codec != prepared::ProjectionCodec::kUnspecified) || head->projection_group_size ||
+      head->shape != std::vector<std::int64_t>{roles.geometry.vocabulary, roles.geometry.hidden})
+    throw std::runtime_error("draft vocabulary requires the original dense BF16/F16/F32 full-vocabulary head");
+  std::error_code error;
+  const auto exists = std::filesystem::exists(path, error);
+  if (error) throw std::runtime_error("cannot inspect draft vocabulary: " + path.string() + ": " + error.message());
+  if (!exists) throw std::runtime_error("draft vocabulary file does not exist: " + path.string());
+  const auto bytes = std::filesystem::file_size(path, error);
+  if (error) throw std::runtime_error("cannot size draft vocabulary: " + path.string() + ": " + error.message());
+  const auto full_vocab = static_cast<std::size_t>(roles.geometry.vocabulary);
+  // Bound both payload and whitespace before reading, independently of token
+  // validity. Normal I32 text plus CRLF fits well within this cold file bound.
+  if (bytes > cache::add(256, cache::multiply(full_vocab, 32)))
+    throw std::runtime_error("draft vocabulary text exceeds its full-vocabulary byte bound");
+  std::ifstream input(path, std::ios::binary);
+  if (!input) throw std::runtime_error("cannot open draft vocabulary: " + path.string());
+  const auto line = [&](std::size_t limit) {
+    std::string value;
+    if (!prepared::read_manifest_line(input, value, limit))
+      throw std::runtime_error("draft vocabulary header is incomplete");
+    if (value.ends_with('\r')) value.pop_back();
+    return value;
+  };
+  if (line(32) != "hyle-draft-vocabulary-v1")
+    throw std::runtime_error("draft vocabulary signature differs from hyle-draft-vocabulary-v1");
+  const auto identity = line(65);
+  prepared::validate_identity(identity);
+  if (identity != roles.identity) throw std::runtime_error("draft vocabulary source identity differs from selected weights");
+  const auto vocabulary_text = line(21);
+  std::int64_t vocabulary = 0;
+  const auto parsed = std::from_chars(vocabulary_text.data(), vocabulary_text.data() + vocabulary_text.size(), vocabulary);
+  if (parsed.ec != std::errc{} || parsed.ptr != vocabulary_text.data() + vocabulary_text.size() ||
+      vocabulary != roles.geometry.vocabulary)
+    throw std::runtime_error("draft vocabulary full size differs from selected model vocabulary");
+  std::vector<std::int32_t> ids;
+  ids.reserve((std::min)(full_vocab, static_cast<std::size_t>(bytes)));
+  for (;;) {
+    input >> std::ws;
+    if (input.peek() == std::char_traits<char>::eof()) break;
+    if (ids.size() == full_vocab)
+      throw std::runtime_error("draft vocabulary contains more IDs than the full vocabulary");
+    std::array<char, 16> word;
+    std::size_t count = 0;
+    for (auto ch = input.peek(); ch != std::char_traits<char>::eof() &&
+        !std::isspace(static_cast<unsigned char>(ch)); ch = input.peek()) {
+      if (count == word.size()) throw std::runtime_error("draft vocabulary token exceeds an I32 text field");
+      word[count++] = static_cast<char>(input.get());
+    }
+    std::int32_t id = 0;
+    const auto token = std::from_chars(word.data(), word.data() + count, id);
+    if (token.ec != std::errc{} || token.ptr != word.data() + count)
+      throw std::runtime_error("draft vocabulary contains an invalid or overflowing I32 token ID");
+    ids.push_back(id);
+  }
+  if (input.bad()) throw std::runtime_error("failed reading draft vocabulary: " + path.string());
+  return take(hyle::inference::DraftVocabulary::create(vocabulary, ids));
+}
+} // namespace
+PreparedWeightSource prepare_weight_source(const std::filesystem::path &manifest, bool include_mtp,
+    const std::filesystem::path &draft_vocabulary) {
   const auto start = Clock::now();
+  if (!include_mtp && !draft_vocabulary.empty())
+    throw std::runtime_error("draft vocabulary requires MTP weights");
   auto roles = read_weight_roles(manifest, include_mtp);
   auto storage = read_cache_calibration(roles);
   const auto plain = take(c::CacheStorage::plain(PrecisionProfile::from_roles(roles).activation_type()));
@@ -450,8 +525,80 @@ PreparedWeightSource prepare_weight_source(const std::filesystem::path &manifest
   // activation's actual plain carrier, independently of target E4 byte size.
   cache::CacheRowBytes rows{{target_rows[0], target_rows[1]}, {}};
   if (include_mtp) rows.draft = {plain_rows[0], plain_rows[1]};
+  auto vocabulary = include_mtp ? read_draft_vocabulary(draft_vocabulary, roles)
+                                : std::optional<hyle::inference::DraftVocabulary>{};
+  std::string vocabulary_identity;
+  if (vocabulary)
+    vocabulary_identity = hyle::inference::artifact::sha256(std::as_bytes(vocabulary->ids()));
   return {std::move(roles), std::move(storage), rows,
-      std::chrono::duration<double>(Clock::now() - start).count()};
+      std::chrono::duration<double>(Clock::now() - start).count(),
+      std::move(vocabulary), std::move(vocabulary_identity)};
+}
+LoadedWeight select_dense_weight_rows(Backend &backend, const LoadedWeight &weight,
+    std::span<const std::int32_t> ids, const c::ResourceBudget &budget) {
+  const auto &description = weight.tensor.description;
+  if (!description.valid() || description.rank() != 2 || description.dimensions()[0] <= 0 ||
+      description.dimensions()[1] <= 0 || ids.empty() || ids.size() > INT32_MAX)
+    check(hyle::Status::InvalidArgument("dense weight row selection requires a positive matrix and bounded nonempty I32 rows"));
+  if (!description.is_plain() || !description.is_dense() ||
+      (description.data_type() != Type::kBFloat16 && description.data_type() != Type::kFloat16 &&
+       description.data_type() != Type::kFloat32) ||
+      (weight.codec != prepared::ProjectionCodec::kDense && weight.codec != prepared::ProjectionCodec::kUnspecified) ||
+      weight.group_size)
+    check(hyle::Status::Unimplemented("weight row selection supports only original dense BF16/F16/F32 storage"));
+  if (!weight.tensor.ready.valid())
+    check(hyle::Status::FailedPrecondition("dense weight row selection requires its original loaded ready lease"));
+  const auto original = take(weight.tensor.ready.tensor(description));
+  const auto resource = original.storage().resource();
+  hyle::inference::GraphBindings bindings(backend.storage_domains());
+  const auto storage = take(bindings.storage_for(resource));
+  const auto index_description = dense(Type::kInt32, {static_cast<std::int64_t>(ids.size())});
+  Tensor indices(resource, index_description, true, budget);
+  check(backend.write(indices.storage(), std::as_bytes(ids)));
+  indices.freeze(backend);
+  LoadedWeight result;
+  result.tensor.description = dense(description.data_type(),
+      {static_cast<std::int64_t>(ids.size()), description.dimensions()[1]});
+  result.codec = prepared::ProjectionCodec::kDense;
+  auto builder = take(g::GraphBuilder::create());
+  const auto input = take(builder.input(description));
+  const auto index = take(builder.input(index_description));
+  const auto output = take(builder.add(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked}, input, index));
+  check(builder.publish(output));
+  const auto graph = take(std::move(builder).finish());
+  for (const auto value : {input, index, output}) check(bindings.external(value, storage));
+  const std::array placement{g::ValuePlacement{output, storage, g::PlacementStrength::kRequired}};
+  const auto compiled = take(backend.compile(graph, {}, bindings.options(
+      {.resource_budget = budget, .value_placements = placement})));
+  const auto facts = take(hyle::inference::prepare_output(compiled, output));
+  if (facts.description != result.tensor.description || facts.storage != storage)
+    check(hyle::Status::Internal("selected weight output differs from its original dense row contract"));
+  if (facts.caller_owned()) {
+    const auto bytes = take(result.tensor.description.required_bytes());
+    result.tensor.pool = take(c::LeasePool::create(resource, bytes, {.max_blocks = 1, .resource_budget = budget}));
+    result.tensor.writer = take(result.tensor.pool.allocate(bytes));
+  }
+  auto run = take(compiled.executable.create_invocation());
+  // The original Invocation retains admitted input/output leases. Retire it
+  // before either cold tensor can unwind, preserving the first thrown error.
+  hyle::util::ScopeGuard retire{[&]() noexcept {
+    run.close().IgnoreError();
+    backend.drain_retired(run).IgnoreError();
+    run.drain().IgnoreError();
+  }};
+  check(run.prepare_resources({.resource_budget = budget}));
+  check(run.bind(input, description, weight.tensor.ready));
+  check(run.bind(index, index_description, indices.ready));
+  if (facts.caller_owned()) check(run.bind(output, facts.description, std::move(result.tensor.writer)));
+  const auto queues = take(hyle::inference::prepare_queue_bindings(backend.queue_bindings(), compiled.report));
+  const auto selected_queues = hyle::inference::queue_span(queues);
+  check(run.prepare_replay(selected_queues, {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
+  auto done = take(run.submit(selected_queues));
+  check(done.wait()); done = {};
+  result.tensor.ready = take(hyle::inference::retain_output(run, facts, budget));
+  check(run.reset());
+  retire.dismiss();
+  return result;
 }
 Type role_type(std::string_view dtype) {
   if (dtype == "BF16") return Type::kBFloat16;

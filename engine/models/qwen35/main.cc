@@ -46,6 +46,7 @@
 #include "../../inference/mtp_acceptance.h"
 #include "../../inference/mtp_acceptance_graph.h"
 #include "../../inference/sampling_graph.h"
+#include "../../inference/artifact_digest.h"
 #include "../../inference/logits_inputs.h"
 #include "../../inference/ct_block128_graph.h"
 #include "../../inference/execution_resources.h"
@@ -1376,6 +1377,14 @@ struct PreparedSampling final {
   PreparedSampling(std::size_t ordinal, SamplingConfiguration value) : index(ordinal), configuration(value) {}
 };
 
+// Extra cold draft projection only. Original target/embedding weights and
+// their source meanings are never replaced by this selected-row bank.
+struct PreparedDraftHead final {
+  LoadedWeight weight;
+  Tensor original_ids;
+  std::string identity;
+};
+
 // Actual cold storage and policy addresses borrowed by submitted Graphs. The
 // application Model and Session links are absent: a failed native prefix must
 // never retain or later dereference a destroyed host application object.
@@ -1386,6 +1395,8 @@ struct ColdResources final {
   std::vector<c::LeasePool> weight_pools;
   std::map<std::string, LoadedWeight> weights;
   ProjectionBindings projections;
+  std::optional<inference::DraftVocabulary> draft_vocabulary;
+  std::optional<PreparedDraftHead> draft_head;
   WeightMeanings weight_meanings;
   std::string source_identity;
   std::vector<StateSchema> state_schema;
@@ -1504,9 +1515,46 @@ public:
     if (policy.max_drafts >= capacity ||
         (cache_plan.draft_cache && policy.max_drafts >= cache_plan.candidate_boundaries))
       throw std::runtime_error("MTP maximum drafts exceed the original context or candidate capacity");
+    if (resources_->draft_vocabulary && (!policy.max_drafts || policy.minimum_probability != 0))
+      throw std::runtime_error("draft vocabulary requires active drafting with zero minimum probability");
     draft_policy_ = policy;
   }
   bool recursive_mtp() const noexcept { return max_drafts() && (max_drafts() > 1 || min_draft_probability() > 0); }
+
+  bool prepare_draft_vocabulary(const SamplingConfiguration &sampling) {
+    if (!resources_->draft_vocabulary) return false;
+    if (sampling.enabled || !sampling.modifiers.empty() || min_draft_probability() != 0)
+      throw std::runtime_error("draft vocabulary requires unmodified greedy sampling and zero minimum probability");
+    if (resources_->draft_head) return true;
+    if (active_step || successor_step || carrier_borrowed)
+      throw std::logic_error("draft vocabulary preparation requires the original idle model");
+    const auto &projection = projections.at(std::string(geometry.head_role()));
+    const auto *stored = std::get_if<StoredProjection>(&projection);
+    if (!stored || !stored->weight || !stored->weight->description.is_plain())
+      throw std::runtime_error("draft vocabulary requires the original dense stored head");
+    const auto type = stored->weight->description.data_type();
+    if (type != Type::kBFloat16 && type != Type::kFloat16 && type != Type::kFloat32)
+      throw std::runtime_error("draft vocabulary requires a BF16/F16/F32 head");
+    const auto &mapping = *resources_->draft_vocabulary;
+    auto &original = weights.at(std::string(geometry.head_role()));
+    auto selected = select_dense_weight_rows(execution, original, mapping.ids(), allocation_budget);
+    Tensor ids(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(mapping.size())}),
+        true, allocation_budget);
+    check(execution.write(ids.storage(), std::as_bytes(mapping.ids()))); ids.freeze(execution);
+    auto identity = inference::artifact::sha256(std::as_bytes(mapping.ids()));
+    resources_->draft_head.emplace(PreparedDraftHead{std::move(selected), std::move(ids), std::move(identity)});
+    return true;
+  }
+
+  V draft_scores(Recipe &recipe, V selected_hidden, bool subset) {
+    if (!subset) return recipe.scores(selected_hidden, std::string(geometry.head_role()));
+    return recipe.emit_projection(selected_hidden, StoredProjection{&resources_->draft_head->weight.tensor}, true);
+  }
+  V original_draft_id(Recipe &recipe, V compact_id, bool subset) {
+    if (!subset) return compact_id;
+    return recipe.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
+        {recipe.constant(resources_->draft_head->original_ids), compact_id}, recipe.spec(compact_id));
+  }
   const FfnPlacement ffn_placement;
   std::size_t host_weight_bytes = 0, device_weight_bytes = 0;
   std::size_t physical_text_roles = 0, physical_mtp_roles = 0, canonical_weight_bytes = 0;
@@ -1655,6 +1703,16 @@ public:
     }
     const auto &source_roles = source.roles;
     if (source_roles.geometry != geometry) throw std::runtime_error("source geometry changed before weight loading");
+    if (source.draft_vocabulary) {
+      if (!cache_plan.draft_cache || source.draft_vocabulary->full_size() != vocabulary)
+        throw std::runtime_error("draft vocabulary differs from the original complete model");
+      if (std::ranges::any_of(resources_->sampling_configurations, [](const auto &prepared) {
+            return prepared->configuration.enabled || !prepared->configuration.modifiers.empty();
+          }))
+        throw std::runtime_error("draft vocabulary requires unmodified greedy sampling for every request");
+      if (source.draft_vocabulary_identity != inference::artifact::sha256(std::as_bytes(source.draft_vocabulary->ids())))
+        throw std::runtime_error("draft vocabulary identity changed before weight loading");
+    }
     const bool calibrated = resources_->cache_policy == prepared::CachePolicy::kFloat8OriginalCalibration;
     if ((calibrated && (!target_kv_layers || resources_->attention_storage.size() != target_kv_layers)) ||
         (!calibrated && !resources_->attention_storage.empty()))
@@ -1736,6 +1794,10 @@ public:
     source_identity = loading.identity;
     weight_meanings = std::move(loading.meanings);
     projections = prepare_projection_bindings(weights, cache_plan.draft_cache, geometry);
+    if (source.draft_vocabulary) {
+      resources_->draft_vocabulary = std::move(source.draft_vocabulary);
+      (void)prepare_draft_vocabulary(default_sampler);
+    }
     host_weight_bytes = loading.host_bytes; device_weight_bytes = loading.device_bytes;
     physical_text_roles = loading.physical_text_roles; physical_mtp_roles = loading.physical_mtp_roles;
     canonical_weight_bytes = loading.canonical_bytes; fp8_weight_groups = loading.fp8_groups;
@@ -1868,6 +1930,12 @@ public:
         << ",\"frontier_sampling_graph_calls\":" << frontier_sampling_graph_calls
         << ",\"mtp_max_drafts\":" << (cache_plan.draft_cache ? max_drafts() : 0)
         << ",\"mtp_min_draft_probability\":" << (cache_plan.draft_cache ? min_draft_probability() : 0)
+        << ",\"draft_vocabulary_requested_rows\":" << (resources_->draft_vocabulary ? resources_->draft_vocabulary->size() : 0)
+        << ",\"draft_vocabulary_rows\":" << (resources_->draft_head ? resources_->draft_head->original_ids.description.dimensions()[0] : 0)
+        << ",\"draft_vocabulary_identity\":\"" << (resources_->draft_head ? resources_->draft_head->identity : std::string{}) << '"'
+        << ",\"draft_vocabulary_weight_bytes\":" << (resources_->draft_head ? take(resources_->draft_head->weight.tensor.description.required_bytes()) : 0)
+        << ",\"draft_vocabulary_map_bytes\":" << (resources_->draft_head ? take(resources_->draft_head->original_ids.description.required_bytes()) : 0)
+        << ",\"draft_vocabulary_policy\":\"greedy_unmodified_no_threshold\""
         << ",\"draft_program_graph_calls\":" << draft_program_graph_calls
         << ",\"prefix_decision_graph_calls\":" << prefix_decision_graph_calls
         << ",\"packed_prefill_calls\":" << packed_prefill_calls
@@ -2294,13 +2362,15 @@ public:
           definition.draft_metadata_port = r.input(take(attention_schema.metadata_description()));
           definition.append_cache_inputs[draft_bank] = definition.draft_key_port;
           definition.append_cache_inputs[draft_bank + 1] = definition.draft_value_port;
+          const bool subset = prepare_draft_vocabulary(selected_sampler);
           const auto head = mtp::full_head(r, projection, kv, definition.draft_position_port, frequencies,
               {attention_schema, definition.draft_key_port, definition.draft_value_port, definition.draft_metadata_port},
-              f(static_cast<std::int64_t>(draft_lag(role))), row_geometry, definition.draft_last_ids_port);
+              f(static_cast<std::int64_t>(draft_lag(role))), row_geometry,
+              [&](Recipe &recipe, V selected) { return draft_scores(recipe, selected, subset); }, definition.draft_last_ids_port);
           append = head.append_nodes; definition.draft_attention_node = head.attention_node;
           if (!selected_sampler.enabled && selected_sampler.modifiers.empty())
-            definition.draft_id_port = r.op(c::Operation(c::TopK{.count = 1}), {head.logits},
-                {r.dense_spec(Type::kFloat32, {batch, f(1)}), r.dense_spec(Type::kInt32, {batch, f(1)})})[1];
+            definition.draft_id_port = original_draft_id(r, r.op(c::Operation(c::TopK{.count = 1}), {head.logits},
+                {r.dense_spec(Type::kFloat32, {batch, f(1)}), r.dense_spec(Type::kInt32, {batch, f(1)})})[1], subset);
           else {
             for (std::size_t request = 0; request < requests; ++request) {
               const auto processed = sampling::process_logits(r, sampling_row(head.logits, request), logits_inputs[request], selected_sampler.modifiers.history);
@@ -2880,8 +2950,10 @@ public:
       program.key = r.input(take(c::batch_cache_description(attention_schema, c::BatchCacheRole::kKey)));
       program.value = r.input(take(c::batch_cache_description(attention_schema, c::BatchCacheRole::kValue)));
       program.metadata = r.input(take(attention_schema.metadata_description()));
+      const bool subset = prepare_draft_vocabulary(selected_sampler);
       const auto result = mtp::full_head(r, projection, kv, program.positions, frequencies,
-          {attention_schema, program.key, program.value, program.metadata}, f(static_cast<std::int64_t>(rows - 1)), row_geometry);
+          {attention_schema, program.key, program.value, program.metadata}, f(static_cast<std::int64_t>(rows - 1)), row_geometry,
+          [&](Recipe &recipe, V selected) { return draft_scores(recipe, selected, subset); });
       program.append = result.append_nodes; program.attention = result.attention_node;
       program.hidden = result.selected_hidden;
       const auto inputs = prepare_logits_inputs(r, selected_sampler.modifiers);
@@ -2890,8 +2962,9 @@ public:
       if (inputs.counts) program.counts = *inputs.counts;
       const auto processed = sampling::process_logits(r, result.logits, inputs, selected_sampler.modifiers.history);
       if (!selected_sampler.enabled) {
-        if (selected_sampler.modifiers.empty()) program.id = r.op(c::Operation(c::TopK{.count = 1}), {result.logits},
-            {r.dense_spec(Type::kFloat32, {f(1), f(1)}), r.dense_spec(Type::kInt32, {f(1), f(1)})})[1];
+        if (selected_sampler.modifiers.empty()) program.id = original_draft_id(r,
+            r.op(c::Operation(c::TopK{.count = 1}), {result.logits},
+                {r.dense_spec(Type::kFloat32, {f(1), f(1)}), r.dense_spec(Type::kInt32, {f(1), f(1)})})[1], subset);
         else if (min_draft_probability() == 0) {
           const auto selection = sampling::processed_selection(r, processed, std::optional<V>{}, selected_sampler.policy);
           program.id = selection.id; program.valid = r.host_predicate(*selection.valid);
@@ -8602,6 +8675,7 @@ int qwen35::run(int argc, char **argv) {
         "  --mtp off|on                Multi-token prediction (default: off)\n"
         "  --mtp-max-drafts N          Maximum proposals; 0 disables drafting (default: 1)\n"
         "  --mtp-min-probability FLOAT  Stop below max draft probability, [0,1] (default: 0)\n"
+        "  --mtp-draft-vocabulary FILE  Explicit source-bound draft IDs; unmodified greedy only\n"
         "  --sampling greedy|random    Token selection (default: greedy)\n"
         "  --temperature FLOAT         Random policy temperature > 0 (default: 1)\n"
         "  --top-k N                    Random policy top-k; 0 disables (default: 0)\n"
@@ -8624,7 +8698,7 @@ int qwen35::run(int argc, char **argv) {
   }
   const auto startup = qwen35::Clock::now();
   try {
-    std::filesystem::path input, continuation, trace, layer0_probe, decode_ids, schedule_file, session_file;
+    std::filesystem::path input, continuation, trace, layer0_probe, decode_ids, schedule_file, session_file, draft_vocabulary;
     std::size_t steps = 4, capacity = 128, max_sessions = 0, active_sequences = 0, cache_bytes = 0, max_drafts = 1, cpu_ffn_layers = 0;
     std::size_t max_prefill_rows = SIZE_MAX;
     bool warmup_planned_shapes = false, decode_overlap = true;
@@ -8711,6 +8785,10 @@ int qwen35::run(int argc, char **argv) {
           throw std::runtime_error("--mtp-max-drafts requires a nonnegative integer within the supported size range");
         explicit_mtp_drafts = true;
       }
+      else if (option == "--mtp-draft-vocabulary") {
+        if (value.empty()) throw std::runtime_error("--mtp-draft-vocabulary requires a nonempty file path");
+        draft_vocabulary = value;
+      }
       else if (option == "--cpu-ffn-layers") {
         const auto parsed = std::from_chars(value.data(), value.data() + value.size(), cpu_ffn_layers);
         if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size())
@@ -8756,8 +8834,11 @@ int qwen35::run(int argc, char **argv) {
     }
     const bool scheduled = single_schedule || multiple_schedules;
     if (input.empty()) throw std::runtime_error("--inputs DIR is required");
+    if (!draft_vocabulary.empty() && (!mtp_enabled || !max_drafts ||
+        sampler.enabled || !sampler.modifiers.empty() || min_draft_probability != 0))
+      throw std::runtime_error("--mtp-draft-vocabulary requires --mtp on, active drafting, unmodified greedy sampling and zero minimum probability");
     backend_selection = qwen35::select_execution(backend_selection, cpu_ffn_layers);
-    auto weight_source = qwen35::prepare_weight_source(input / "weights.tsv", mtp_enabled);
+    auto weight_source = qwen35::prepare_weight_source(input / "weights.tsv", mtp_enabled, draft_vocabulary);
     const auto geometry = weight_source.roles.geometry;
     qwen35::validate_mtp_source(geometry, mtp_enabled);
     qwen35::FfnPlacement::validate(cpu_ffn_layers, geometry.layers.size());

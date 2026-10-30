@@ -126,6 +126,24 @@ CPU／CUDA小型制品的多轮、缓存命中及失败重试见[自然条件输
 [多草稿与检查点记录](../evidence/correctness/qwen35-mtp-multidraft-checkpoint-controls-2026-10-24.json)。
 Apple／Vulkan 另已运行 K4 随机和双用户 K2 随机完整短旅程；具体制品和新增配置的完成范围以看板为准。
 
+可用 `--mtp-draft-vocabulary FILE` 显式缩小草稿head，完整target head与embedding继续保留。
+当前支持原BF16／F16／F32稠密head、无logits modifier的greedy及零概率阈值；可用于K1与递归多草稿。
+显式选项遇到随机、modifier、非零阈值或不支持的权重会报错；未指定该选项仍使用原完整词表。
+文件绑定准备清单的原source identity及实际词表大小，格式为：
+
+```text
+hyle-draft-vocabulary-v1
+<weights.tsv第二行的64位source identity>
+<模型实际词表大小>
+<以空白分隔的原token IDs>
+```
+
+IDs必须非空、互异且在原词表范围内；冷期按原ID排序，保持greedy平局顺序，图内输出仍还原为原token ID。
+选中行只导入一次，额外保留在原资源作用域；例如2B BF16模型的32K行需要128 MiB权重及128 KiB映射。
+JSON的 `original_*_weight_bytes` 仍只统计原角色，额外payload见 `draft_vocabulary_weight_bytes`／`draft_vocabulary_map_bytes`；
+这些权重都不属于 `--cache-bytes`，payload字节数也不是物理显存峰。
+子集会改变提案和接受率，需按实际输入检查速度；代码语料先验不代表通用语言覆盖或质量保证。
+
 需要明确的 CPU＋GPU 分置时，用 `scripts/init.py` 的 `--backends cpu,cuda`、`cpu,metal` 或
 `cpu,vulkan` 分别准备对应构建，运行时选择 GPU 主后端并添加 `--cpu-ffn-layers 2`，将前两层 target FFN 及其
 原始权重放到 CPU；注意力、缓存和 MTP 留在所选 GPU。默认值 0 保持 GPU 放置。

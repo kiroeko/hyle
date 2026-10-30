@@ -9,6 +9,7 @@
 #include <fstream>
 #include <initializer_list>
 #include <map>
+#include <optional>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -16,6 +17,7 @@
 #include <vector>
 
 #include "../../inference/evaluation_failure.h"
+#include "../../inference/draft_vocabulary.h"
 #include "hyle/compute/file_stream.h"
 #include "hyle/compute/resource_leases.h"
 #include "hyle/mem/buffer.h"
@@ -116,6 +118,8 @@ struct PreparedWeightSource {
   std::vector<CacheStoragePair> cache_storage;
   cache::CacheRowBytes cache_row_bytes;
   double metadata_prepare_seconds = 0;
+  std::optional<hyle::inference::DraftVocabulary> draft_vocabulary;
+  std::string draft_vocabulary_identity;
 };
 namespace projection_detail {
 std::array<std::int64_t, 2> logical_shape(const ProjectionBinding &binding);
@@ -123,7 +127,14 @@ std::array<std::int64_t, 2> logical_shape(const ProjectionBinding &binding);
 
 ModelGeometry read_weight_geometry(const std::filesystem::path &manifest);
 prepared::Roles read_weight_roles(const std::filesystem::path &manifest, bool include_mtp);
-PreparedWeightSource prepare_weight_source(const std::filesystem::path &manifest, bool include_mtp);
+PreparedWeightSource prepare_weight_source(const std::filesystem::path &manifest, bool include_mtp,
+    const std::filesystem::path &draft_vocabulary = {});
+// One cold checked Gather over an already loaded plain dense weight. Preserve
+// the caller's row order, including repeats; mapping policy belongs to the
+// independently validated DraftVocabulary. The original Backend owns execution.
+LoadedWeight select_dense_weight_rows(hyle::inference::Backend &backend,
+    const LoadedWeight &weight, std::span<const std::int32_t> ids,
+    const hyle::compute::ResourceBudget &budget = {});
 hyle::mem::MemoryResourceRef weight_resource(const hyle::inference::Backend &backend, bool host);
 WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
     hyle::inference::Backend &backend, std::map<std::string, LoadedWeight> &weights,
