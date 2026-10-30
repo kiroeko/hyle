@@ -211,7 +211,8 @@ struct Native final {
         {.max_blocks=std::uint32_t(result.program->output_count())*generations,.backing_alignment=256}),"bounded Pro result generations");
     return result;
   }
-  std::vector<c::ReadLease> execute(c::Queue &queue,std::span<const c::ReadLease> inputs,
+  template<model_graph_run::LeaseInputRange Inputs=std::span<const c::ReadLease>>
+  std::vector<c::ReadLease> execute(c::Queue &queue,const Inputs &inputs,
       const model_graph_run::InputPlan *input_plan=nullptr,const std::function<void(g::Invocation&)> &binder={}) {
     return model_graph_run::execute(*program,invocation,outputs,queue,inputs,submissions,input_plan,binder);
   }
@@ -446,8 +447,7 @@ struct ResidentRun final {
           for(std::size_t bank=0;bank<banks.size();++bank)live.at(banks[bank].ordinal())=cpu_batch->banks[bank];
         }
       }
-      std::vector<c::ReadLease> arguments;
-      for(const auto original:phase.original_inputs)arguments.push_back(live.at(original.ordinal()));
+      const auto arguments=model_graph_run::project_inputs(phase.original_inputs,live);
       completed[index]=phases[index].execute(queue,arguments,input_plan,binder);
       for(std::size_t slot=0;slot<phase.original_outputs.size();++slot)
         live.at(phase.original_outputs[slot].ordinal())=completed[index][slot];

@@ -214,4 +214,69 @@ TEST(InferenceSlotTransactions, RecoveryRemembersAlreadyReturnedBank) {
   EXPECT_EQ(bytes(committed), kSource);
   EXPECT_EQ(bytes(p.second.sentinel), kSentinel);
 }
+
+TEST(InferenceSlotTransactions, OriginalInvocationIdentitySurvivesMoveAndRebind) {
+  Program p;
+  Pool peer_first, peer_second;
+  auto peer_output = m::Buffer::create(m::system_resource(), kBytes, kStride).value();
+  auto peer = p.compiled.executable.create_invocation().value();
+  i::SlotTransactions peer_transactions;
+  const auto gathered_description = p.graph.value_description(p.gathered).value();
+  ASSERT_TRUE(peer.bind(p.gathered, c::TensorView::create(gathered_description, peer_output.view()).value()).ok());
+  const auto rows_input = p.graph.node_input(p.stores[1], 0).value();
+  ASSERT_TRUE(peer.bind(rows_input,
+      c::ConstTensorView::create(p.graph.value_description(rows_input).value(), p.rows.view()).value()).ok());
+  const std::array associations{s::SourceBinding{p.stores[0], p.gather}};
+  ASSERT_TRUE(s::prepare(peer, p.graph, p.queues, associations).ok());
+  const std::array specs{i::SlotTransactionSpec{p.stores[0], 1, 1}, i::SlotTransactionSpec{p.stores[1], 0, 1}};
+  ASSERT_TRUE(peer_transactions.prepare(specs).ok());
+  ASSERT_TRUE(peer_transactions.set_layout(0, peer_first.layout).ok());
+  ASSERT_TRUE(peer_transactions.set_layout(1, peer_second.layout).ok());
+  peer_transactions.sources(0)[0] = peer_first.source;
+  peer_transactions.writers(0)[0] = std::move(peer_first.writer);
+  peer_transactions.writers(1)[0] = std::move(peer_second.writer);
+  ASSERT_TRUE(peer_transactions.stage(0).ok()); ASSERT_TRUE(peer_transactions.stage(1).ok());
+  ASSERT_TRUE(peer_transactions.bind(peer, p.graph).ok());
+  ASSERT_TRUE(peer.prepare_replay(p.queues).ok());
+  auto peer_done = peer.submit(p.queues).value(); ASSERT_TRUE(peer_done.wait().ok()); peer_done = {};
+  p.stage(); auto done = p.submit(); ASSERT_TRUE(done.wait().ok()); done = {};
+  const auto first_stats = p.first.pool.stats(), peer_stats = peer_first.pool.stats();
+
+  // Both invocations have the same compiled NodeIds and retired native work.
+  // Only the original binding identity distinguishes these real transactions.
+  auto wrong_take = p.transactions.take(peer, 0);
+  ASSERT_FALSE(wrong_take) << "a foreign Invocation returned its transaction into the original cohort";
+  EXPECT_TRUE(wrong_take.error().IsInvalidArgument());
+  EXPECT_TRUE(p.transactions.take_all(peer).IsInvalidArgument());
+  auto wrong_recovery = p.transactions.recover(peer);
+  ASSERT_FALSE(wrong_recovery); EXPECT_TRUE(wrong_recovery.error().IsInvalidArgument());
+  EXPECT_TRUE(p.transactions.bound()); EXPECT_TRUE(peer_transactions.bound());
+  EXPECT_EQ(p.first.pool.stats().live_blocks, first_stats.live_blocks);
+  EXPECT_EQ(p.first.pool.stats().active_uses, first_stats.active_uses);
+  EXPECT_EQ(peer_first.pool.stats().live_blocks, peer_stats.live_blocks);
+  EXPECT_EQ(peer_first.pool.stats().active_uses, peer_stats.active_uses);
+  EXPECT_EQ(bytes(p.first.sentinel), kSentinel); EXPECT_EQ(bytes(peer_first.sentinel), kSentinel);
+
+  auto moved = std::move(p.run);
+  ASSERT_TRUE(p.transactions.take_all(moved).ok());
+  auto first = p.transactions.returned(0).value()[0].publish().value();
+  auto second = p.transactions.returned(1).value()[0].publish().value();
+  ASSERT_TRUE(p.transactions.clear(0).ok()); ASSERT_TRUE(p.transactions.clear(1).ok());
+  ASSERT_TRUE(peer_transactions.take_all(peer).ok());
+  auto peer_result0 = peer_transactions.returned(0).value()[0].publish().value();
+  auto peer_result1 = peer_transactions.returned(1).value()[0].publish().value();
+  ASSERT_TRUE(peer_transactions.clear(0).ok()); ASSERT_TRUE(peer_transactions.clear(1).ok());
+  EXPECT_EQ(bytes(first), kSource); EXPECT_EQ(bytes(second), kRows);
+  EXPECT_EQ(bytes(peer_result0), kSource); EXPECT_EQ(bytes(peer_result1), kRows);
+  EXPECT_EQ(bytes(p.second.sentinel), kSentinel); EXPECT_EQ(bytes(peer_second.sentinel), kSentinel);
+
+  // A fully returned cohort may bind another original Invocation. This one is
+  // deliberately not submitted: retired recovery must return its actual loans.
+  p.first.writer = first.try_write().value(); p.second.writer = second.try_write().value();
+  p.stage(); ASSERT_TRUE(p.transactions.bind(peer, p.graph).ok());
+  auto rebound = p.transactions.recover(peer);
+  ASSERT_TRUE(rebound); EXPECT_TRUE(*rebound); EXPECT_FALSE(p.transactions.bound());
+  EXPECT_FALSE(peer_transactions.bound());
+  EXPECT_EQ(bytes(p.first.source), kSource); EXPECT_EQ(bytes(p.first.sentinel), kSentinel);
+}
 } // namespace

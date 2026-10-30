@@ -251,7 +251,8 @@ struct Run final {
         {.max_blocks=std::uint32_t(f.outputs.size())*generations,.backing_alignment=256}),"finite ordinary result generations");
     result.invocation=take(result.program->compiled.executable.create_invocation({.resources=g::ResourceOptions{}}),"ordinary Invocation");return result;
   }
-  std::vector<c::ReadLease> execute(c::Queue &queue,std::span<const c::ReadLease> input,
+  template<model_graph_run::LeaseInputRange Inputs=std::span<const c::ReadLease>>
+  std::vector<c::ReadLease> execute(c::Queue &queue,const Inputs &input,
       const model_graph_run::InputPlan *input_plan=nullptr,const std::function<void(g::Invocation&)> &binder={}) {
     return model_graph_run::execute(*program,invocation,pool,queue,input,submissions,input_plan,binder);
   }
@@ -342,7 +343,7 @@ struct TargetProgram final {
         input_plan=&*run.resident_inputs;
         binder=[&](g::Invocation &active){check(g::cuda::bind(active,run.resident_bindings,*resident),"same original expert/map generation");};
       }
-      std::vector<c::ReadLease> arguments;for(const auto value:phase.original_inputs)arguments.push_back(live[value.ordinal()]);
+      const auto arguments=model_graph_run::project_inputs(phase.original_inputs,live);
       completed[i]=run.execute(queue,arguments,input_plan,binder);
       for(std::size_t j=0;j<phase.original_outputs.size();++j)live[phase.original_outputs[j].ordinal()]=completed[i][j];
       if(resident) {

@@ -102,6 +102,11 @@ GLM Flash／Pro、DeepSeek正式Flash／Pro与Kimi的原组件程序已接共同
 [冷输入schema](../evidence/correctness/inference-input-schema-2026-10-30.json)进一步统一输入事实：
 按选定程序的完整ValueId取得原external根描述，删除组件平行Port库存及Qwen三处热形状重建。
 实际typed metadata仍交原Graph检查；20项测试及12条有限消费者通过，未刷新吞吐，也不代签完整阶段编排完成。
+[阶段参数与事务归属](../evidence/correctness/inference-stage-resources-2026-10-30.json)进一步删除GLM／DeepSeek四处热参数数组，
+按原冷阶段输入ID借用live表；保留真实专家选择／上传、全部观察输出及原提交退休。旧SlotTransactions串取另一Invocation的事务已真实复现，
+现按原state身份拒绝，移动及合法重绑定仍成立。Source与分页追加复用既有容器，减少小型子分配，但不保证host元数据字节下降。
+61项测试与12条有限消费者通过，11份完整非计时报告保持；同窗ABBA初筛121.87→122.67tok/s，未证明提速。
+这一片不完成完整执行架构；剩余模型状态／发布差异不靠包装循环消除，继续处理真实完整接线与性能问题。
 真实DeepSeek首次压缩检查还发现CUDA索引分数的归约漏填stride；修改前后消费者在同SDK上均失败，独立小回归在旧对象上准确失败。
 已补物理[key,token,head]步长，4项索引检查、真实首次压缩／窗口环绕及GLM回归通过；
 [本批有限检查](../evidence/correctness/inference-program-io-consumers-2026-10-30.json)共18项测试及2个载体进程通过，226个SDK／引擎输入复用、仅刷新1个provider CXX对象，无NVCC或下载。

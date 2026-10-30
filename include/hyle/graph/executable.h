@@ -1013,6 +1013,9 @@ public:
 
   bool valid() const noexcept { return state_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
+  // Borrowed identity of this original invocation state, preserved by move.
+  // Valid only while that state lives; it grants no resource permission.
+  const void *object_identity() const noexcept { return state_; }
   // Exact values fixed at creation, including derived dimensions. reset()
   // clears tensor bindings, not this signature; another shape needs a new run.
   HYLE_GRAPH_API SpecializationSignature specialization() const noexcept;

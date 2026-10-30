@@ -6,6 +6,7 @@
 #include "hyle/compute/detail/lease_access.h"
 #include "hyle/compute/detail/queue_ref.h"
 #include "hyle/compute/transfer.h"
+#include "hyle/container/small_vector.h"
 #include "hyle/mem/std_allocator.h"
 #include "hyle/util/ref_counted.h"
 #include <algorithm>
@@ -753,8 +754,8 @@ Status prepare_native(Invocation&invocation,Find&f,PagedAppendData&p,c::ConstTen
   auto allocator=options.allocator;
   if(options.resource_budget.valid()){HYLE_ASSIGN_OR_RETURN(allocator,options.resource_budget.metadata_allocator());}
   try{
-    std::vector<cd::PagedAppendInstruction,mem::StdAllocator<cd::PagedAppendInstruction>>words{mem::StdAllocator<cd::PagedAppendInstruction>(allocator)};
-    words.reserve(p.ranges.size());
+    container::SmallVector<cd::PagedAppendInstruction,4,mem::AllocatorRef>words{allocator};
+    if(!words.try_reserve(p.ranges.size()))return Status::ResourceExhausted("paged append native descriptor metadata");
     HYLE_ASSIGN_OR_RETURN(auto old_ids,cd::BatchLayoutAccess::page_footprint(p.previous_layout));
     std::uint64_t new_rows=0,prefix_rows=0;
     for(const auto&range:p.ranges){
@@ -774,7 +775,7 @@ Status prepare_native(Invocation&invocation,Find&f,PagedAppendData&p,c::ConstTen
           return Status::OutOfRange("paged append native source exceeds active rows");
         word.source_row=std::uint32_t(source);new_rows+=count;
       }
-      words.push_back(word);
+      if(!words.try_push_back(word))return Status::ResourceExhausted("paged append native descriptor metadata");
     }
     if(new_rows!=p.layout.facts().query_rows || new_rows>spec.input_rows || words.size()>spec.instruction_capacity ||
         prefix_rows>std::uint64_t(p.layout.facts().requests)*(spec.page_rows-1))
@@ -809,11 +810,16 @@ Status prepare_native(Invocation&invocation,Find&f,PagedAppendData&p,c::ConstTen
         group->resource=match.resource;group->host=host;group->capacity=spec.instruction_capacity;
         HYLE_ASSIGN_OR_RETURN(group->mirror,cd::PagedAppendMirror::create(group->resource,host,group->capacity,allocator,options.resource_budget));
       }
+      // Reserve before upload: committing these trivial records afterwards
+      // cannot allocate, and an idle group keeps its capacity across episodes.
+      group->words.reserve(words.size());
       // Device data may change without changing recorded addresses, but no
       // old prepared route may remain callable after a partial upload failure.
       HYLE_RETURN_IF_ERROR(gd::RegionAccess::revoke_preparation(invocation));s.sealed=false;
       HYLE_RETURN_IF_ERROR(group->mirror.upload(upload,words));
-      group->layout=p.layout;group->words=std::move(words);
+      group->words.resize(words.size());
+      std::copy(words.begin(),words.end(),group->words.begin());
+      group->layout=p.layout;
     }
     control=group->mirror.ready();HYLE_ASSIGN_OR_RETURN(auto metadata,control.view());
     if(!same_storage(s.bindings.arena,capacity.storage()) || !same_storage(s.bindings.metadata,metadata))

@@ -113,7 +113,8 @@ struct Backend final {
         {.max_blocks=std::uint32_t(result.outputs.size())*generations,.backing_alignment=256}),"independent result generations");
     return result;
   }
-  std::vector<c::ReadLease> execute(Run &run,std::span<const c::ReadLease> inputs,
+  template<model_graph_run::LeaseInputRange Inputs=std::span<const c::ReadLease>>
+  std::vector<c::ReadLease> execute(Run &run,const Inputs &inputs,
       const model_graph_run::InputPlan *input_plan=nullptr,
       const std::function<void(g::Invocation&)> &bind_external={}) {
     return model_graph_run::execute(*run.program,run.invocation,run.pool,queue,inputs,
@@ -221,8 +222,7 @@ template<class Routed> std::vector<c::ReadLease> execute_draft(Backend &backend,
         for(std::size_t bank=0;bank<4;++bank)live.at(bank_values[bank].ordinal())=cpu_batch->banks[bank];
       }
     }
-    std::vector<c::ReadLease> arguments;
-    for(auto original:phase.original_inputs)arguments.push_back(live.at(original.ordinal()));
+    const auto arguments=model_graph_run::project_inputs(phase.original_inputs,live);
     completed[phase_index]=backend.execute(run,arguments,input_plan,bind_external);
     ++draft.completed_phases;
     if(phase.resident_stage) {

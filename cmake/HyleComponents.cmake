@@ -575,7 +575,7 @@ _hyle_declare_component(compute_state
         hyle/compute/detail/paged_append_program.h
         hyle/compute/detail/materialized_native_controller.h)
   _hyle_declare_component(graph_batch
-    PRIVATE_DEPS core util_core compute_ops
+    PRIVATE_DEPS core container util_core compute_ops
     PUBLIC_DEPS graph compute_batch compute error mem
     PUBLIC_TYPE_DEPS graph compute_batch compute error mem
   SPLIT_PUBLIC_HEADERS hyle/graph/batch.h hyle/graph/paged_append_source.h)

@@ -1663,11 +1663,12 @@ struct Program final {
         {.max_blocks = std::uint32_t(p.logical.outputs.size() * max_generations), .backing_alignment = 256}), "bounded ordinary Graph output generations");
     return result;
   }
-  std::vector<c::ReadLease> execute_resident(c::Queue &queue,std::span<const c::ReadLease> inputs) {
-    if(!resident||!resident->upload||!resident->completed||inputs.size()+resident->bank_ids.size()!=recipe.fragment.inputs.size())
+  template<model_graph_run::LeaseInputRange Inputs=std::span<const c::ReadLease>>
+  std::vector<c::ReadLease> execute_resident(c::Queue &queue,const Inputs &inputs) {
+    if(!resident||!resident->upload||!resident->completed||std::ranges::size(inputs)+resident->bank_ids.size()!=recipe.fragment.inputs.size())
       throw std::runtime_error("complete original model ordinary input contract");
     std::vector<c::ReadLease> live(recipe.fragment.descriptions.size());
-    for(std::size_t i=0;i<inputs.size();++i)live.at(recipe.fragment.inputs[i].ordinal())=inputs[i];
+    for(std::size_t i=0;i<std::ranges::size(inputs);++i)live.at(recipe.fragment.inputs[i].ordinal())=std::ranges::begin(inputs)[i];
     std::array<std::vector<c::ReadLease>,2> completed;
     for(std::size_t index=0;index<resident->phases.size();++index) {
       const auto &phase=resident->plan.phases[index];auto &program=*resident->phases[index];
@@ -1688,7 +1689,7 @@ struct Program final {
           for(std::size_t bank=0;bank<bindings.banks.size();++bank)live.at(bindings.banks[bank].ordinal())=batch->banks[bank];
         }
       }
-      std::vector<c::ReadLease> arguments;for(auto original:phase.original_inputs)arguments.push_back(live.at(original.ordinal()));
+      const auto arguments=model_graph_run::project_inputs(phase.original_inputs,live);
       completed[index]=program.execute(queue,arguments,input_plan,bind_external);
       for(std::size_t port=0;port<phase.original_outputs.size();++port)live.at(phase.original_outputs[port].ordinal())=completed[index][port];
       if(batch) {
@@ -1704,7 +1705,8 @@ struct Program final {
     std::vector<c::ReadLease> result;for(const auto location:resident->plan.full_outputs)result.push_back(completed.at(location.phase).at(location.port));
     resident->completed();return result;
   }
-  std::vector<c::ReadLease> execute(c::Queue &queue,std::span<const c::ReadLease> inputs,
+  template<model_graph_run::LeaseInputRange Inputs=std::span<const c::ReadLease>>
+  std::vector<c::ReadLease> execute(c::Queue &queue,const Inputs &inputs,
       const model_graph_run::InputPlan *input_plan=nullptr,const std::function<void(g::Invocation&)> &bind_external={}) {
     if(resident) {
       if(input_plan||bind_external)throw std::runtime_error("resident orchestration owns its actual dynamic bindings");

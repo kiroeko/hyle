@@ -746,6 +746,8 @@ history接线保留CastF32之前原精度samples的逐前缀窗口；它与F32 G
 状态bank的交接由`engine/inference/SlotTransactions`复用原`SlotBindings`：冷期固定Store、源／目的数量，
 实际池发布后只设置一次布局；热期填原租约并stage，沿同一Graph整批bind，正常完成后整批take再逐bank选择发布。
 它不拥有Invocation、Queue、Completion、池或发布策略；模型保留bank类型、层号和接受前缀选择。
+Graph持有cohort期间，交接器借用原Invocation的state身份；另一Invocation的take／take_all／recover在取回事务前拒绝。
+移动原Invocation保留该身份，全部归还后才可合法重绑定；此身份不是资源权限，也不延长原Invocation寿命。
 未退休时不能清Graph拥有的事务，已取回部分不重复take。NextN复用冷期准备的原Step，失败后保留
 原run和Completion至真实回收；作用域移交同时释放应用Completion根，避免资源环。
 [有限检查](../evidence/correctness/inference-slot-cohort-2026-10-28.json)包含CPU／CUDA受检非法token失败后，
@@ -1680,6 +1682,9 @@ unused输入也保留这份事实，跨存储域副本不替代外部根。裸Re
 同步组件也可直接使用`ProgramIo`的冷端口、输出事实及绑定／保留操作，继续由原`Invocation`提交、等待与重置。
 GLM／DeepSeek／Kimi的测试消费者用稳定冷对象持有原CompiledGraph和IO，以适应外层Run的移动；不复制程序，也不为复用Carrier伪造Scope。
 驻留银行／map的输入计划和绑定顺序在冷准备时确定，每步不再重建端口mask或搜索逻辑索引。
+GLM／DeepSeek的阶段参数按原冷阶段输入ID借用live表，不再复制临时ReadLease数组；全部origin先检查，才进入同一个执行体。
+live／completed及所有观察输出仍保留至原episode结束。路由结果出来后选择、上传原专家bank的主机阶段仍是必要边界，
+不为共享参数装配再建def-use计划或把模型供权重的动作塞进Graph；Qwen全驻留与Kimi Source链也不被强制拆成相同阶段。
 同步成功路径仍只执行原reset；不为共同IO加一次多余unbind扫描或增加原生binding-release要求。
 [跨家族有限检查](../evidence/correctness/inference-program-io-consumers-2026-10-30.json)保留真实权重、状态、错误与退休路径；
 同时修复共享CUDA索引分数的head归约漏填stride，新标量回归和首次压缩／窗口环绕检查均通过。它不代表完整跨模型执行核心已经完成。

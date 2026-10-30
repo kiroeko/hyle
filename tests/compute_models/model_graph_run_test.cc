@@ -4,10 +4,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <ranges>
 #include <span>
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "model_graph_run.h"
 #include "hyle/compute/providers/native.h"
@@ -77,7 +79,7 @@ TEST(ModelGraphRun, PoolRefusalRetainsTypedStatusAndSameInvocationCanRecover) {
   i::RetirementObservation cleanup;
   bool caught=false;
   try {
-    (void)run::execute(*program.cold,program.invocation,program.outputs,program.queue,program.inputs,
+    (void)run::execute(*program.cold,program.invocation,program.outputs,program.queue,std::span<const c::ReadLease>(program.inputs),
         program.completed,nullptr,{},&cleanup);
     FAIL()<<"the actual output pool is occupied";
   } catch(const i::EvaluationFailure &failure) {
@@ -94,7 +96,7 @@ TEST(ModelGraphRun, PoolRefusalRetainsTypedStatusAndSameInvocationCanRecover) {
   EXPECT_EQ(program.outputs.stats().active_uses,0u);
   occupied.reset();
   const auto result=run::execute(*program.cold,program.invocation,program.outputs,program.queue,
-      program.inputs,program.completed);
+      std::span<const c::ReadLease>(program.inputs),program.completed);
   ASSERT_EQ(result.size(),1u);EXPECT_EQ(program.completed,1);
   EXPECT_EQ(program.values(result[0]),(std::array<float,2>{3,4}));
 }
@@ -104,7 +106,7 @@ TEST(ModelGraphRun, CheckedGatherErrorKeepsFailedSlotTerminalAndFreshInvocationS
   i::RetirementObservation cleanup;
   bool caught=false;
   try {
-    (void)run::execute(*program.cold,program.invocation,program.outputs,program.queue,program.inputs,
+    (void)run::execute(*program.cold,program.invocation,program.outputs,program.queue,std::span<const c::ReadLease>(program.inputs),
         program.completed,nullptr,{},&cleanup);
     FAIL()<<"checked Gather must reject the actual out-of-range index";
   } catch(const i::EvaluationFailure &failure) {
@@ -126,7 +128,7 @@ TEST(ModelGraphRun, CheckedGatherErrorKeepsFailedSlotTerminalAndFreshInvocationS
   program.invocation={};
   auto fresh=program.cold->compiled.executable.create_invocation({.resources=g::ResourceOptions{}}).value();
   program.inputs[1]=program.input(std::array<std::int32_t,1>{1});
-  const auto result=run::execute(*program.cold,fresh,program.outputs,program.queue,program.inputs,
+  const auto result=run::execute(*program.cold,fresh,program.outputs,program.queue,std::span<const c::ReadLease>(program.inputs),
       program.completed);
   ASSERT_EQ(result.size(),1u);EXPECT_EQ(program.completed,1);
   EXPECT_EQ(program.values(result[0]),(std::array<float,2>{3,4}));
@@ -139,7 +141,7 @@ TEST(ModelGraphRun, ExternalBinderPreservesItsOwnExceptionAndReportsActualCleanu
   const auto external_plan=program.cold->input_plan(external);
   bool caught=false;
   try {
-    (void)run::execute(*program.cold,program.invocation,program.outputs,program.queue,program.inputs,
+    (void)run::execute(*program.cold,program.invocation,program.outputs,program.queue,std::span<const c::ReadLease>(program.inputs),
         program.completed,&external_plan,[&](g::Invocation &original) {
           EXPECT_EQ(&original,&program.invocation);++calls;throw BinderFailure{19};
         },&cleanup);
@@ -151,7 +153,7 @@ TEST(ModelGraphRun, ExternalBinderPreservesItsOwnExceptionAndReportsActualCleanu
   EXPECT_EQ(program.outputs.stats().live_blocks,0u);
   {
     const auto result=run::execute(*program.cold,program.invocation,program.outputs,program.queue,
-        program.inputs,program.completed);
+        std::span<const c::ReadLease>(program.inputs),program.completed);
     ASSERT_EQ(result.size(),1u);EXPECT_EQ(program.completed,1);
     EXPECT_EQ(program.values(result[0]),(std::array<float,2>{3,4}));
   }
@@ -177,7 +179,7 @@ TEST(ModelGraphRun, ExternalBinderPreservesItsOwnExceptionAndReportsActualCleanu
     i::RetirementObservation retained_cleanup;
     caught=false;
     try {
-      (void)run::execute(*program.cold,program.invocation,program.outputs,program.queue,program.inputs,
+      (void)run::execute(*program.cold,program.invocation,program.outputs,program.queue,std::span<const c::ReadLease>(program.inputs),
           program.completed,&all_external_plan,[&](g::Invocation &original) {
             EXPECT_EQ(&original,&program.invocation);++calls;throw BinderFailure{23};
           },&retained_cleanup);
@@ -194,7 +196,7 @@ TEST(ModelGraphRun, ExternalBinderPreservesItsOwnExceptionAndReportsActualCleanu
   ASSERT_TRUE(program.invocation.reset().ok());
   EXPECT_EQ(program.outputs.stats().live_blocks,0u);
   const auto recovered=run::execute(*program.cold,program.invocation,program.outputs,program.queue,
-      program.inputs,program.completed);
+      std::span<const c::ReadLease>(program.inputs),program.completed);
   ASSERT_EQ(recovered.size(),1u);EXPECT_EQ(program.completed,2);
   EXPECT_EQ(program.values(recovered[0]),(std::array<float,2>{3,4}));
 }
@@ -246,12 +248,12 @@ TEST(ModelGraphRun, ColdInputPlansRejectInvalidAndForeignInputsWithoutChangingPr
   const std::array external{std::size_t{1}};
   const auto plan=program.cold->input_plan(external);
   EXPECT_THROW((void)run::execute(*program.cold,program.invocation,program.outputs,program.queue,
-      program.inputs,program.completed,&plan),std::runtime_error);
+      std::span<const c::ReadLease>(program.inputs),program.completed,&plan),std::runtime_error);
   unchanged();
   const auto foreign_plan=foreign.cold->input_plan(external);
   std::size_t binder_calls=0;
   EXPECT_THROW((void)run::execute(*program.cold,program.invocation,program.outputs,program.queue,
-      program.inputs,program.completed,&foreign_plan,[&](g::Invocation &) {++binder_calls;}),std::runtime_error);
+      std::span<const c::ReadLease>(program.inputs),program.completed,&foreign_plan,[&](g::Invocation &) {++binder_calls;}),std::runtime_error);
   EXPECT_EQ(binder_calls,0u);unchanged();
 
   i::ProgramIo foreign_io;
@@ -270,8 +272,70 @@ TEST(ModelGraphRun, ColdInputPlansRejectInvalidAndForeignInputsWithoutChangingPr
   }
   ASSERT_TRUE(program.invocation.reset().ok());
   const auto result=run::execute(*program.cold,program.invocation,program.outputs,program.queue,
-      program.inputs,program.completed);
+      std::span<const c::ReadLease>(program.inputs),program.completed);
   ASSERT_EQ(result.size(),1u);EXPECT_EQ(program.completed,1);
   EXPECT_EQ(program.values(result[0]),(std::array<float,2>{3,4}));
+}
+
+TEST(ModelGraphRun, ProjectedInputsBorrowOriginalLeasesAndRecoverTheSameInvocation) {
+  struct Origin final {
+    std::size_t index;
+    std::size_t ordinal() const noexcept { return index; }
+  };
+  struct BinderFailure final {int marker;};
+  Program program;
+  // A single bounded fixture writer permits a real uniqueness check; adopted
+  // readonly buffers intentionally cannot be promoted even without a view.
+  auto input_pool=c::LeasePool::create(program.owner.ref(),256,{.max_blocks=1}).value();
+  auto input_writer=input_pool.allocate(6*sizeof(float)).value();
+  const std::array<float,6> values{1,2,3,4,5,6};
+  ASSERT_TRUE(input_writer.view()->write(std::as_bytes(std::span(values))).ok());
+  program.inputs[0].reset();
+  // Original values occupy noncontiguous slots, in a different logical order.
+  // The same live table remains the only owner of these two input handles.
+  std::vector<c::ReadLease> live(6);
+  live[4]=input_writer.publish().value();live[1]=std::move(program.inputs[1]);
+  const std::array origins{Origin{4},Origin{1}};
+  const auto inputs=run::project_inputs(origins,live);
+  static_assert(run::LeaseInputRange<decltype(inputs)>);
+  static_assert(run::LeaseInputRange<std::span<c::ReadLease>>);
+  const auto copying=origins|std::views::transform([&live](Origin value) {return live[value.ordinal()];});
+  static_assert(!run::LeaseInputRange<decltype(copying)>);
+  EXPECT_EQ(&inputs[0],&live[4]);EXPECT_EQ(&inputs[1],&live[1]);
+  const auto generation=live[4].generation();
+  const auto original_storage=live[4].view().value();
+  // A view must not create a hidden ReadLease pin. The actual original block
+  // can still become a writer while the named view exists, then return ready.
+  auto writer=live[4].try_write();ASSERT_TRUE(writer)<<writer.error().message();
+  const auto storage=writer->view().value();
+  EXPECT_EQ(storage.resource(),original_storage.resource());
+  EXPECT_EQ(storage.native_handle(),original_storage.native_handle());
+  EXPECT_EQ(storage.offset(),original_storage.offset());EXPECT_EQ(storage.size(),original_storage.size());
+  live[4]=writer->publish().value();
+  EXPECT_EQ(inputs[0].generation(),generation);EXPECT_EQ(&inputs[0],&live[4]);
+
+  // Eager mapping checks still happen before any original Invocation binding.
+  const std::array invalid_origins{Origin{4},Origin{live.size()}};
+  EXPECT_THROW((void)run::project_inputs(invalid_origins,live),std::out_of_range);
+  EXPECT_FALSE(program.invocation.in_flight());EXPECT_EQ(program.completed,0);
+  EXPECT_EQ(program.outputs.stats().live_blocks,0u);
+  const std::array external{std::size_t{1}};
+  const auto plan=program.cold->input_plan(external);
+  i::RetirementObservation cleanup;std::size_t calls=0;bool caught=false;
+  try {
+    (void)run::execute(*program.cold,program.invocation,program.outputs,program.queue,inputs,
+        program.completed,&plan,[&](g::Invocation &original) {
+          EXPECT_EQ(&original,&program.invocation);++calls;throw BinderFailure{41};
+        },&cleanup);
+    FAIL()<<"projected input binder exception must retain its original identity";
+  } catch(const BinderFailure &failure) {caught=true;EXPECT_EQ(failure.marker,41);}
+  ASSERT_TRUE(caught);EXPECT_EQ(calls,1u);EXPECT_TRUE(cleanup.retired);EXPECT_TRUE(cleanup.status.ok());
+  EXPECT_FALSE(program.invocation.in_flight());EXPECT_EQ(program.completed,0);
+  EXPECT_EQ(program.outputs.stats().live_blocks,0u);EXPECT_EQ(inputs[0].generation(),generation);
+  const auto result=run::execute(*program.cold,program.invocation,program.outputs,program.queue,inputs,
+      program.completed);
+  ASSERT_EQ(result.size(),1u);EXPECT_EQ(program.completed,1);
+  EXPECT_EQ(program.values(result[0]),(std::array<float,2>{3,4}));
+  EXPECT_EQ(&inputs[0],&live[4]);EXPECT_EQ(&inputs[1],&live[1]);
 }
 } // namespace

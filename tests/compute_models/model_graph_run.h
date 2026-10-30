@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <ranges>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -137,20 +138,44 @@ class ColdProgram final {
   }
 };
 
-template<std::integral Counter>
+// Named views borrow the original live table and immutable port ordering only.
+// Requiring references rejects projections which would copy leases per access.
+template<class Inputs>
+concept LeaseInputRange=std::ranges::sized_range<const Inputs> &&
+    std::ranges::random_access_range<const Inputs> &&
+    (std::same_as<std::ranges::range_reference_t<const Inputs>,const c::ReadLease&> ||
+     std::same_as<std::ranges::range_reference_t<const Inputs>,c::ReadLease&>);
+
+// Preserve the original eager origin check before any Graph binding. The view
+// itself holds spans only; live/completed and their release points stay with the
+// caller. Neither original port metadata nor lease owners may change during
+// the synchronous execute call. Rvalue tables/port containers cannot bind here.
+template<std::ranges::contiguous_range Values>
+requires std::ranges::sized_range<Values>
+auto project_inputs(Values &values,std::vector<c::ReadLease> &live) {
+  using Value=std::ranges::range_value_t<Values>;
+  const std::span<const Value> originals{std::ranges::data(values),std::ranges::size(values)};
+  for(const auto value:originals)(void)live.at(value.ordinal());
+  const std::span<const c::ReadLease> leases{live};
+  return originals|std::views::transform([leases](const Value &value)->const c::ReadLease& {
+    return leases[value.ordinal()];
+  });
+}
+
+template<std::integral Counter,LeaseInputRange Inputs=std::span<const c::ReadLease>>
 std::vector<c::ReadLease> execute(ColdProgram &program,g::Invocation &invocation,
-    c::LeasePool &outputs,c::Queue &queue,std::span<const c::ReadLease> inputs,
+    c::LeasePool &outputs,c::Queue &queue,const Inputs &inputs,
     Counter &completed_submissions,const InputPlan *plan=nullptr,
     const std::function<void(g::Invocation&)> &bind_external={},
     hyle::inference::RetirementObservation *failed_retirement=nullptr) {
-  if(inputs.size()!=program.input_count())throw std::runtime_error("ordinary model Graph input count");
+  if(std::ranges::size(inputs)!=program.input_count())throw std::runtime_error("ordinary model Graph input count");
   const auto &selected=plan?*plan:program.all_inputs();
   if(!selected.belongs_to(program))throw std::runtime_error("ordinary model Graph input plan belongs to another program");
   if(selected.needs_external()&&!bind_external)throw std::runtime_error("ordinary model Graph resident binder missing");
   bool awaiting_completion=false;
   try {
     for(const auto index:selected.ordinary())
-      detail::check(program.bind(invocation,index,inputs[index]),"bind ordinary model Graph input");
+      detail::check(program.bind(invocation,index,std::ranges::begin(inputs)[index]),"bind ordinary model Graph input");
     if(bind_external)bind_external(invocation);
     for(std::size_t index=0;index<program.output_count();++index)
       detail::check(program.bind_output(invocation,index,outputs),"bind ordinary model Graph output writer");

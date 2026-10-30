@@ -112,6 +112,7 @@ class SlotTransactions final {
     if (remaining_) return Status::FailedPrecondition("original slot transactions are already bound");
     HYLE_RETURN_IF_ERROR(graph::slots::bind(run, logical, requests_));
     remaining_ = banks_.size();
+    original_invocation_ = remaining_ ? run.object_identity() : nullptr;
     return Status::Ok();
   }
 
@@ -120,21 +121,26 @@ class SlotTransactions final {
   // No native work or observation is fabricated by a successful take.
   Result<std::span<compute::WriteLease>> take(graph::Invocation &run, std::size_t bank) noexcept {
     if (bank >= banks_.size()) return std::unexpected(Status::OutOfRange("slot transaction bank is out of range"));
+    if (remaining_ && original_invocation_ != run.object_identity())
+      return std::unexpected(Status::InvalidArgument("slot transactions belong to another original Invocation"));
     auto &item = banks_[bank];
     if (!remaining_ || item.transaction.valid())
       return std::unexpected(Status::FailedPrecondition("slot transaction is not owned by this Graph"));
     HYLE_ASSIGN_OR_RETURN(item.transaction, graph::slots::take(run, item.store));
-    --remaining_;
+    if (!--remaining_) original_invocation_ = nullptr;
     return item.transaction.destinations();
   }
 
   // Normal completion returns the whole original cohort once. Publication is
   // still caller policy after observing the original Graph success witness.
   Status take_all(graph::Invocation &run) noexcept {
+    if (remaining_ && original_invocation_ != run.object_identity())
+      return Status::InvalidArgument("slot transactions belong to another original Invocation");
     if (remaining_ != banks_.size())
       return Status::FailedPrecondition("original slot cohort is not fully Graph-owned");
     HYLE_RETURN_IF_ERROR(graph::slots::take(run, returns_));
     remaining_ = 0;
+    original_invocation_ = nullptr;
     return Status::Ok();
   }
   Result<std::span<compute::WriteLease>> returned(std::size_t bank) noexcept {
@@ -162,6 +168,8 @@ class SlotTransactions final {
   // not retake or erase them. Graph's original failure status remains owned by
   // its sole Completion/Step, separately from this cleanup observation.
   Result<bool> recover(graph::Invocation &run) noexcept {
+    if (remaining_ && original_invocation_ != run.object_identity())
+      return std::unexpected(Status::InvalidArgument("slot transactions belong to another original Invocation"));
     for (std::size_t bank = 0; bank < banks_.size(); ++bank) {
       if (remaining_ && !banks_[bank].transaction.valid()) {
         auto returned = take(run, bank);
@@ -192,6 +200,9 @@ class SlotTransactions final {
   // SlotBindings.valid already remembers partial returns, without per-bank
   // booleans, a second permission ledger or a scan after every take.
   std::size_t remaining_ = 0;
+  // Borrowed identity only while Graph owns this cohort. Invocation moves keep
+  // its original state alive; no resource owner or release authority is added.
+  const void *original_invocation_ = nullptr;
 };
 
 } // namespace hyle::inference

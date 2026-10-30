@@ -20,6 +20,7 @@
 #include "hyle/compute/detail/lease_access.h"
 #include "hyle/compute/detail/resource_budget_access.h"
 #include "hyle/compute/detail/append_lease.h"
+#include "hyle/container/small_vector.h"
 #include "hyle/core/assert.h"
 #include "hyle/mem/std_allocator.h"
 #include "hyle/util/spin_lock.h"
@@ -2099,8 +2100,7 @@ struct StoreSourceState final : util::RefCounted<StoreSourceState> {
   StoreSourceState(compute::StorageOwner storage, compute::ResourceBudget budget,
       mem::AllocatorRef selected) noexcept
       : storage_owner(std::move(storage)), metadata_budget(std::move(budget)), allocator(selected),
-        tickets(mem::StdAllocator<compute::detail::PendingReadTicket>(selected)),
-        addresses(mem::StdAllocator<compute::LeaseSlotAddress>(selected)) {}
+        tickets(selected), addresses(selected) {}
   void destroy() noexcept {
     const auto storage = storage_owner;
     const auto budget = metadata_budget;
@@ -2131,9 +2131,8 @@ struct StoreSourceState final : util::RefCounted<StoreSourceState> {
   compute::LeaseSlotLayout layout;
   compute::ConstTensorView capacity{}, indices{};
   compute::ReadLease indices_guard;
-  std::vector<compute::detail::PendingReadTicket,
-      mem::StdAllocator<compute::detail::PendingReadTicket>> tickets;
-  std::vector<compute::LeaseSlotAddress, mem::StdAllocator<compute::LeaseSlotAddress>> addresses;
+  container::SmallVector<compute::detail::PendingReadTicket, 2, mem::AllocatorRef> tickets;
+  container::SmallVector<compute::LeaseSlotAddress, 2, mem::AllocatorRef> addresses;
   OutputBindingBundle *bundle = nullptr;
   bool bound_once = false;
 };
@@ -3488,10 +3487,8 @@ Result<StoreSourceState *> prepare_store_source(Invocation &invocation, NodeId n
   owner->prepared_parent = parent; retain(parent);
   owner->prepared_binding = call.binding; owner->node = node; owner->schema = call.schema;
   owner->original_destination_count = call.count; owner->first_destination = first;
-  try { owner->tickets.resize(count); owner->addresses.resize(count); }
-  catch (const std::bad_alloc &) {
+  if (!owner->tickets.try_resize(count) || !owner->addresses.try_resize(count))
     return std::unexpected(Status::ResourceExhausted("Store source fixed ticket/coordinate metadata"));
-  }
   return owner.release();
 }
 } // namespace
