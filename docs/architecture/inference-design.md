@@ -101,6 +101,16 @@ HYLE保留原冷形状接纳，实际数值、端口、所有权和费用仍通�
 [本片有限检查](../evidence/correctness/inference-cold-cache-facts-2026-10-30.json)覆盖实际编译依赖、既有24组主机合同、
 默认完整词表普通／MTP四对及完整Session向量；只重编两个既有链接输入，226个复用，未运行完整默认CMake构建或独立性能候选。
 
+目标主干数学随后独立到`target_graph.h/.cc`：embedding、GDN／self-attention和FFN只向同一Recipe追加节点，
+借原geometry／activation profile、frequencies、冷schema、target端口span及原前驱append；不借Model／Session或完整Family。
+三个原描述类型保持布局，Graph／spec／常量与literal仍归原Recipe／Family；目标银行span不包含draft槽。
+原Model继续准备cache／draft，保留final norm、采样、有限compile、准入与完整成功后发布；新函数调用只发生在冷构图。
+[本片有限检查](../evidence/correctness/inference-target-graph-boundary-2026-10-30.json)复用原228输入、只新增一个模型冷对象；
+5次CXX／6次链接成功，16个原生进程成功，另两次H64混合基线／候选在同一别名对齐处拒绝，失败没有写成通过。
+默认完整词表四对、完整Session向量及真实H2048 CPU FFN两层对照一致；packed、变长Verify、E4保其原检查与数值合同。
+本地llama.cpp `23b0202a`的模型具体graph与独立helpers支持数学实现分责；其运行期图复用／重建仍不能照搬成HYLE的纯启动期承诺。
+完整Family冷工厂与Phase物理准备尚未迁出；新发现的H64接纳问题进入共同Graph别名／物化整改，不在模型中用额外Copy掩盖。
+
 当前异构消费者的接入面也已沿实际源码核对：
 
 | 消费者 | 已复用的共同机制 | 仍保留的模型事实及验证边界 |
@@ -111,8 +121,9 @@ HYLE保留原冷形状接纳，实际数值、端口、所有权和费用仍通�
 | DeepSeek原组件及压缩侧车 | ProgramIo、普通Graph生命周期、接受与提交见证 | 具体router分段与压缩状态／sidecar；没有完整请求驱动证明 |
 
 后三者当前使用有限具体图，未消费ColdShapePlan／PreparedProgramFamily；不为接口外观伪造Qwen程序族，也不把IO复用扩大为完整冷工厂／调度复用。
-下一步隔离Family模型数学和Phase物理准备，保留原Model的准入、状态准备、诊断及完整成功后发布；
-特别保持prepare_cache与draft行银行准备的原失败顺序、literal／采样配置的原寿命，不机械搬整个函数或新增大ModelOps。
+下一步在处理共同别名接纳后，建立一个完整Family冷工厂，再分清Phase物理准备。
+Model保留原准入、cache／可选head准备与成功发布；工厂消费已准备事实，保Graph稳定地址、预算、literal／采样寿命、失败不发布及可重试合同。
+局部host emit与冷准备的偶然交错不必永久固定；不为保持它而拆成多段难懂stage，也不新增大ModelOps。
 
 
 共同调度按真实调用分工：请求窗口、兼容分组、接纳／淘汰、输出额度和停止属于

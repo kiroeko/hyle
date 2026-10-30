@@ -1,0 +1,1330 @@
+{
+  "schema": "hyle-inference-target-graph-boundary-v1",
+  "status": "FINITE_TARGET_CHECKS_PASS_TWO_ATTRIBUTED_TINY_REFUSALS_RETAINED",
+  "base_commit": "e41c31cd83603b951d074f5b2fc0ac0cf8e038ce",
+  "HEAD_at_collection": "e41c31cd83603b951d074f5b2fc0ac0cf8e038ce",
+  "full_goal_complete": false,
+  "implementation": {
+    "changed_product_files": 4,
+    "original_target_body_lines": 204,
+    "three_existing_description_types_moved_unchanged": true,
+    "original_equation_tokens": 4135,
+    "only_same_recipe_cold_emit_and_borrowed_ports": true,
+    "Family_Phase_and_runtime_owners_not_moved": true,
+    "original_preparation_compile_fallback_and_publish_order_preserved": true,
+    "one_existing_cold_inventory_source_added": true,
+    "existing_module_backend_guards_unchanged": true
+  },
+  "compile": {
+    "actual_CXX_processes": 5,
+    "new_target_CXX": 1,
+    "compile_only_leaf_CXX": 1,
+    "affected_consumer_CXX": 3,
+    "changed_original228_inputs": 0,
+    "unchanged_original_inputs_reused": 228,
+    "candidate_retained_inputs": 229,
+    "baseline_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "scope": "One target source TU compiled in this harness; normal CMake still compiles cold inventory per actual target."
+  },
+  "attempts": {
+    "total": 29,
+    "CXX": 5,
+    "links": 6,
+    "native": 18,
+    "native_pass": 16,
+    "native_failed": 2,
+    "scratch_parser_exceptions": 1,
+    "downloads": 0,
+    "NVCC": 0
+  },
+  "failure_attempt_names": [
+    "runs/baseline/cpu-ffn-tiny-cuda/attempt1",
+    "runs/candidate/cpu-ffn-tiny-cuda/attempt1"
+  ],
+  "all_attempts_terminal": true,
+  "tiny_hybrid_actual_failed_native_attempts": [
+    {
+      "arm": "baseline",
+      "exit": 1,
+      "same_cold_alias_alignment_rejection_category": true,
+      "hybrid_plan_or_execution_success_observed": false,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\cpu-ffn-tiny-cuda\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "24ee3f0d052a1fa514489c89c3a643a09aa54cb12112c7839b6f884ded64edc4"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\cpu-ffn-tiny-cuda\\attempt1\\stderr.log",
+        "bytes": 1070,
+        "sha256": "f591caf6e46cd12144aee8cc860b51ce0a90f0efb2b6d35014b2174287fa05c3"
+      }
+    },
+    {
+      "arm": "candidate",
+      "exit": 1,
+      "same_cold_alias_alignment_rejection_category": true,
+      "hybrid_plan_or_execution_success_observed": false,
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\cpu-ffn-tiny-cuda\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "6ca37eab7ab18733cc4b4decfeb23edf89f5d67262d43939c06f0ad868750acd"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\cpu-ffn-tiny-cuda\\attempt1\\stderr.log",
+        "bytes": 1070,
+        "sha256": "399d13e9e126054067e09ea4249b32341a3ed278dcffe25f612236276ce5f1ae"
+      }
+    }
+  ],
+  "scratch_postprocess_exception": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\finite-attempt1-parser-failure.json",
+    "bytes": 903,
+    "sha256": "372e13f3648c86a87dd04a51f45ca1d119387ed2a1207d3d077008706c210c84"
+  },
+  "checks": {
+    "schema": "hyle.target-graph-finite-verification.v1",
+    "status": "FINITE_TARGET_CHECKS_PASS_TWO_ATTRIBUTED_TINY_REFUSALS_RETAINED",
+    "base_commit": "e41c31cd83603b951d074f5b2fc0ac0cf8e038ce",
+    "full_goal_complete": false,
+    "attempts": {
+      "total": 29,
+      "CXX": 5,
+      "links": 6,
+      "native": 18,
+      "native_pass": 16,
+      "native_failed": 2,
+      "scratch_parser_exceptions": 1,
+      "downloads": 0,
+      "NVCC": 0
+    },
+    "closure": {
+      "original_inputs_reused_byte_exact": 228,
+      "new_target_model_cold": 1,
+      "total": 229,
+      "SDK_CXX": 0,
+      "existing_graph_builder_CXX": 0,
+      "current_consumers_CXX": 3,
+      "new_header_compile_only_CXX": 1,
+      "rows_and_math_recompiled": false
+    },
+    "deps": {
+      "target_repository_pins": 115,
+      "leaf_repository_pins": 44,
+      "no_Qwen_main_or_state_owner_headers": true,
+      "available_dependency_rows": 160,
+      "unavailable_old_native_library_metadata": 69
+    },
+    "default_fullV": {
+      "scenarios": 4,
+      "processes": 8,
+      "all_non_timing_exact": true,
+      "differences": [],
+      "timing_diagnostic": [
+        {
+          "case": "ordinary-single",
+          "prefill_seconds": {
+            "baseline": 0.0746534,
+            "candidate": 0.0716464
+          },
+          "decode_seconds": {
+            "baseline": 0.6710675,
+            "candidate": 0.6720941
+          },
+          "session_seconds": {
+            "baseline": 0.7457209,
+            "candidate": 0.7437405
+          },
+          "startup_to_ready_seconds": {
+            "baseline": 1.3122221,
+            "candidate": 1.2702832
+          }
+        },
+        {
+          "case": "mtp-single",
+          "prefill_seconds": {
+            "baseline": 0.077385,
+            "candidate": 0.073218
+          },
+          "decode_seconds": {
+            "baseline": 0.6077760999999999,
+            "candidate": 0.5689169999999998
+          },
+          "session_seconds": {
+            "baseline": 0.6851611,
+            "candidate": 0.642135
+          },
+          "startup_to_ready_seconds": {
+            "baseline": 1.8595839,
+            "candidate": 1.8747315
+          }
+        },
+        {
+          "case": "ordinary-two",
+          "prefill_seconds": {
+            "baseline": 0.1185077,
+            "candidate": 0.1252211
+          },
+          "decode_seconds": {
+            "baseline": 1.2684918,
+            "candidate": 1.3081143
+          },
+          "session_seconds": {
+            "baseline": 1.3869995,
+            "candidate": 1.4333354
+          },
+          "startup_to_ready_seconds": {
+            "baseline": 1.2519833,
+            "candidate": 1.2978506
+          }
+        },
+        {
+          "case": "mtp-two",
+          "prefill_seconds": {
+            "baseline": 0.1386547,
+            "candidate": 0.1261546
+          },
+          "decode_seconds": {
+            "baseline": 1.0001568999999997,
+            "candidate": 0.9782426999999997
+          },
+          "session_seconds": {
+            "baseline": 1.1388116,
+            "candidate": 1.1043973
+          },
+          "startup_to_ready_seconds": {
+            "baseline": 1.9898603,
+            "candidate": 2.0405537
+          }
+        }
+      ],
+      "scope": "One process pair per case only; obvious regression observation, no stable timing/performance lead claim."
+    },
+    "Session": {
+      "processes": 2,
+      "payload_files_per_arm": 378,
+      "payload_bytes_per_arm": 150761472,
+      "byte_equal": true,
+      "all_metadata_exact_except_absolute_output_root": true,
+      "differences": [],
+      "idle_complete_head_checks": 4,
+      "A_calls_after_B_stop": 3,
+      "final_live_versions": 0,
+      "payload_known_plan_bytes": 80240691,
+      "metadata_requested_bytes": 0
+    },
+    "successful_tiny_checks": [
+      "history-control CPU",
+      "MTP packed-prefill CUDA",
+      "MTP varlen-verify CUDA",
+      "MTP E4 cache CUDA"
+    ],
+    "inherited_packed_numerics": "Original3e-6 newly computedF32 GDN component bound unchanged; other within-case payload contracts unchanged. Varlen internal packed-v-exact payloads are not all byteequal; same-implementation Session before/after is byteexact.",
+    "CPU_FFN_real": {
+      "status": "PASS",
+      "case": "cpu-ffn-real-cuda",
+      "processes": 2,
+      "generated_tokens": 4,
+      "source_identity": "4a76decdfa58a5fd6e15acea7ff410e84fd3e81cb6c39db8a658eeb23d869fbe",
+      "capacity": 1024,
+      "replay": "auto",
+      "cpu_layers": 2,
+      "all_non_timing_exact": true,
+      "differences": [],
+      "host_constants_per_plan": [
+        10,
+        10
+      ],
+      "original_3_domain_2_target_host_Domain1_assertions_executed": true,
+      "scope": "Current BF16 H2048/154-ID fullV source;2target FFNs CPU then primaryGPU. Original capacity1024/auto run had already finished before root suggested256/commands; not rerun. This is finite placement coverage."
+    },
+    "CPU_FFN_tiny": {
+      "status": "FAILED_BOTH_ARMS",
+      "processes": 2,
+      "cpu_layers": 1,
+      "refusal": "finite variant0 graph input alias port alignment/resource search exhausted",
+      "candidate_regression": false,
+      "hardware_unsupported": false,
+      "hybrid_plan_successfully_reported": false,
+      "next": "Original common Graph alias/materialization fallback capability remains in the active goal; this fixture is not successful native mixed coverage."
+    },
+    "scratch_parser_exception": {
+      "count": 1,
+      "record": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\finite-attempt1-parser-failure.json",
+        "bytes": 903,
+        "sha256": "372e13f3648c86a87dd04a51f45ca1d119387ed2a1207d3d077008706c210c84"
+      },
+      "correction": "Preserve all completeJSON values and assert every statusPASS; select exactly one branch by its expected mode/case schema. Accepted native processes were not rerun."
+    },
+    "artifacts": {
+      "model-link-base.json": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\model-link-base.json",
+        "bytes": 123822,
+        "sha256": "bfd455065fcdb448b733e44eefeadbe1e85a2af94896f6d0a9cd671817ed7bad"
+      },
+      "process-inventory.json": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\process-inventory.json",
+        "bytes": 22004,
+        "sha256": "2d7595ae6b6643f7d53828999b44d3bb59374f12a54e8fdfbda8ccff9b93567f"
+      },
+      "session-compare.json": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\session-compare.json",
+        "bytes": 118756,
+        "sha256": "6679597be8cf3dcc405279e2fbcfa41ac73b25dac5f7e5309bc34f636105c2c0"
+      },
+      "session-vector-manifest.json": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\session-vector-manifest.json",
+        "bytes": 269862,
+        "sha256": "8d7ae43a353fae1cf941042be941858c74cfe59653419b2c4436000a46854d6e"
+      },
+      "whole-cli-summary.json": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\whole-cli-summary.json",
+        "bytes": 5884,
+        "sha256": "b23ba181962545744983fd00a6e8c1d2d21d48fa9d23818cb6bd604b4c901d39"
+      },
+      "finite-branch-summary.json": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\finite-branch-summary.json",
+        "bytes": 1541,
+        "sha256": "dfb880cf1c15cbc72bf44f7d1ed9b83b3ab334e33ec1c7851ae5aac9758e525c"
+      },
+      "compare-cpu-ffn-real-cuda.json": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compare-cpu-ffn-real-cuda.json",
+        "bytes": 3294,
+        "sha256": "de8c9e959755c5f83acff05eba5b2aa3569ea5767f4d4fa9a39c2e5bfb721ccb"
+      },
+      "cpu-ffn-tiny-attribution.json": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\cpu-ffn-tiny-attribution.json",
+        "bytes": 1866,
+        "sha256": "6c95a308471d72eca266d84a070925b58d56995a99bfc8a7d91f8a91dd85a6cd"
+      },
+      "cold-dependency-proof.json": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\cold-dependency-proof.json",
+        "bytes": 8247,
+        "sha256": "0817106841d53f3e9df055e0a239d33be769268110e975a5d2479f4111ac3c3e"
+      },
+      "cmake-inventory-proof.json": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\cmake-inventory-proof.json",
+        "bytes": 1796,
+        "sha256": "61fd13662f539a22b8aa6a89f991de4a2dfdb4038bc4bac4d25dd7452084f524"
+      },
+      "hardware-toolchain.json": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\hardware-toolchain.json",
+        "bytes": 5569,
+        "sha256": "b7ccec0b02bd5529457a677f3ec04505e80558e9bb507f5c05c7b2b1185b2c5f"
+      }
+    },
+    "boundaries": [
+      "Manual actualCXX/link with exact cache; inventory3files and existingCMake guards exact, full defaultCMake build not run.",
+      "No source edits by evidence runner, no download/NVCC/profile/independent performance candidate.",
+      "Finite Qwen targetcold extraction check only, not whole architecture/feature/quality completion."
+    ]
+  },
+  "paired_non_timing_reports_independently_equal": [
+    {
+      "case": "ordinary-single",
+      "complete_non_timing_report_equal": true
+    },
+    {
+      "case": "mtp-single",
+      "complete_non_timing_report_equal": true
+    },
+    {
+      "case": "ordinary-two",
+      "complete_non_timing_report_equal": true
+    },
+    {
+      "case": "mtp-two",
+      "complete_non_timing_report_equal": true
+    },
+    {
+      "case": "cpu-ffn-real-cuda",
+      "complete_non_timing_report_equal": true
+    }
+  ],
+  "native_count_scope": "8 default fullV CLI + 2 complete Session + 4 finite branches (historyCPU/packed/varlen/E4) + 2 rejected tiny CPU-FFN processes + 2 complete real2B CPU-FFN paired processes; actual attempts above include any retries. The scratch postprocess exception is not a native attempt.",
+  "source_receipts": {
+    "cli": {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compile\\cli\\receipt.json",
+        "bytes": 43436,
+        "sha256": "2098efb47cb7abf7980a4e219a010fbf9c68151d23eb2e8d5da46174b7b9c3c1"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compile\\cli\\unit.obj",
+        "bytes": 24685795,
+        "sha256": "97eeeac7ea6efcd0588e1a786d63a324981329592c6ab85390a394f943e671f4"
+      },
+      "source_pin_count": 204,
+      "all_source_pins_current_exact": true
+    },
+    "leaf": {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compile\\leaf\\receipt.json",
+        "bytes": 10017,
+        "sha256": "5fbc3585bdb253a22dd4ae0201daebf879d70aef3bec3654f07f08085a05bc97"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compile\\leaf\\unit.obj",
+        "bytes": 5246,
+        "sha256": "3f276b05dde0d491c4c267c0078e51cb459313122269ca64ef33b94046246b2f"
+      },
+      "source_pin_count": 44,
+      "all_source_pins_current_exact": true
+    },
+    "session": {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compile\\session\\receipt.json",
+        "bytes": 43649,
+        "sha256": "cc5b0191fd3a4e94ef8eb9f1ab870b6384495f6f105c5e48e8ef190ae796cf0d"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compile\\session\\unit.obj",
+        "bytes": 26949368,
+        "sha256": "4cfc7025f672024bcf37d29123029769acfabaca85e174e576005fa443b50b44"
+      },
+      "source_pin_count": 205,
+      "all_source_pins_current_exact": true
+    },
+    "target": {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compile\\target\\receipt.json",
+        "bytes": 24765,
+        "sha256": "06f5c5c07a9ae0f917bbfd82c9db8cd0a146afedf7857870ffaed56f3f9741e0"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compile\\target\\unit.obj",
+        "bytes": 1345777,
+        "sha256": "cd420d60e5e1d0a2e616f0551ccb31aeb403c94fb16122cb983a2dfff9b6a96c"
+      },
+      "source_pin_count": 115,
+      "all_source_pins_current_exact": true
+    },
+    "tiny": {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compile\\tiny\\receipt.json",
+        "bytes": 52395,
+        "sha256": "1e49de6cc7753ebecf3d637f27689c25922dec98bbd1b4f6df9405374cdaf05d"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compile\\tiny\\unit.obj",
+        "bytes": 157715940,
+        "sha256": "9a92f3c851de43694dac5f5ad027904bc90b35519af0d902d09eaafcbb01d023"
+      },
+      "source_pin_count": 246,
+      "all_source_pins_current_exact": true
+    }
+  },
+  "attempt_records": [
+    {
+      "name": "compile/cli/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compile\\cli\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "68ce968e24c09959a78a62b511933fc9ba854b241764cf926b72f6a1abcad45c"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 54308,
+        "started": 1793350319.0852096,
+        "seconds": 22.286620140075684,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compile\\cli\\attempt1\\command.json",
+        "bytes": 3398,
+        "sha256": "f6094027f9b2afae50b0b375c0c07ffa989fb973835f820b1ebf0ea9182897d0"
+      }
+    },
+    {
+      "name": "compile/leaf/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compile\\leaf\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "19ccdbfb2b7e78124891ee5062f671b2faa0c108cfbac4cdfa16c01bf4ef1d5d"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 23000,
+        "started": 1793350311.1761816,
+        "seconds": 1.0784039497375488,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compile\\leaf\\attempt1\\command.json",
+        "bytes": 3417,
+        "sha256": "6db2286745c043682cf2acf1d309d818a043f0f87a9f45be0a786583df63178f"
+      }
+    },
+    {
+      "name": "compile/session/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compile\\session\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "41fc1e725c266b488c7ec8ef1923ed8ba1f99a71df93d7922b958b7a8c708d73"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 35536,
+        "started": 1793350381.9693887,
+        "seconds": 27.596718072891235,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compile\\session\\attempt1\\command.json",
+        "bytes": 3396,
+        "sha256": "2b5311d4caaa56f1688e454978d8440135c63d27f0e63d906aea38fdcdb9a3c1"
+      }
+    },
+    {
+      "name": "compile/target/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compile\\target\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "0c1dc0b24f5c6551b1ae01165e131ec03825cd11ae18e2a56f192ac0e50ac988"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 12320,
+        "started": 1793350311.1761816,
+        "seconds": 3.587470531463623,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compile\\target\\attempt1\\command.json",
+        "bytes": 3388,
+        "sha256": "558e3ff0672f6a888d122117cae0ca80d962148acf722cd5d6699067977f549f"
+      }
+    },
+    {
+      "name": "compile/tiny/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compile\\tiny\\attempt1\\process.json",
+        "bytes": 149,
+        "sha256": "72008c9ad2e19dbbc5b0829ccdc9049dbc4bb6eaec486f03e946c3dc58df5f87"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 6428,
+        "started": 1793350319.0852096,
+        "seconds": 87.82824325561523,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compile\\tiny\\attempt1\\command.json",
+        "bytes": 3380,
+        "sha256": "007983f4da4437a8a1436884ba1b2d219fb7636d00bcdb3065f43dbf72573ca9"
+      }
+    },
+    {
+      "name": "link/baseline/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\link\\baseline\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "c21b2870e773a9acc319891475de301e2023f1debfbe3db5aade2844047614b9"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 56732,
+        "started": 1793350055.3080208,
+        "seconds": 1.852849006652832,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\link\\baseline\\attempt1\\command.json",
+        "bytes": 31334,
+        "sha256": "3d058b13d48769ef952496df606ba6b42944b88b123635ee3f817260dbcceb2d"
+      }
+    },
+    {
+      "name": "link/baseline-session/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\link\\baseline-session\\attempt1\\process.json",
+        "bytes": 149,
+        "sha256": "f97e5a789c65eb698eae5774ce24fb6d0b245e82d5eb602871fd278bb11c987b"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 46352,
+        "started": 1793350058.470728,
+        "seconds": 1.796912670135498,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\link\\baseline-session\\attempt1\\command.json",
+        "bytes": 31362,
+        "sha256": "37b24da5c175075b4eccecc38f1900990a2ed6bdcf22522d80794f933df81102"
+      }
+    },
+    {
+      "name": "link/baseline-tiny/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\link\\baseline-tiny\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "8988a4c74edc45146d4040e46c80be348f2564bb74818ebaa6f7d6f2aa66b4f6"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 54816,
+        "started": 1793350061.6278017,
+        "seconds": 2.1549642086029053,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\link\\baseline-tiny\\attempt1\\command.json",
+        "bytes": 31350,
+        "sha256": "40d7007cf0af17e08c2c3df5bc1521674d69ccdae390e4f77c8b6c661c28da9b"
+      }
+    },
+    {
+      "name": "link/cli/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\link\\cli\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "b2c8e6473e1d1c578b7776f3b8692acbd4308a7d1f2b90fc7abbf9a32932660c"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 49640,
+        "started": 1793350392.9883018,
+        "seconds": 2.0361239910125732,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\link\\cli\\attempt1\\command.json",
+        "bytes": 31440,
+        "sha256": "60c0cd1722d666104f05e9a24f89fe8508062c39c36e5c316feb4a1073011f91"
+      }
+    },
+    {
+      "name": "link/session/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\link\\session\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "3fe114440380e9f633f6d150b17a85c5828201e12e32f199dfc233ec37ad4eb2"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 43644,
+        "started": 1793350441.5885153,
+        "seconds": 1.7961549758911133,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\link\\session\\attempt1\\command.json",
+        "bytes": 31456,
+        "sha256": "97821524edd35556ab1e21ad5671262ab8a1231b271a221c444f9ea36e4ece67"
+      }
+    },
+    {
+      "name": "link/tiny/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\link\\tiny\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "5691718d148c6104f2f8e59ee25c72289f20c93f3f1d3e23e8b6c804ce199d92"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 56760,
+        "started": 1793350438.0443394,
+        "seconds": 2.142886161804199,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\link\\tiny\\attempt1\\command.json",
+        "bytes": 31444,
+        "sha256": "d29552cd54d9295ca8f7df6a968c97d53b67d23c47641195f84baed18bbc6b2c"
+      }
+    },
+    {
+      "name": "runs/baseline/cpu-ffn-real-cuda/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\cpu-ffn-real-cuda\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "e3362a7813565afca300135885b0e6f74c7c5109e6c94b0781568dfa8550cdf2"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 32436,
+        "started": 1793350766.5828762,
+        "seconds": 2.570236921310425,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\cpu-ffn-real-cuda\\attempt1\\command.json",
+        "bytes": 576,
+        "sha256": "9bbb5e3b7ffa8667d717fbc7ac318741d4ef8d267d1b9b0f43323e651a233bca"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\cpu-ffn-real-cuda\\attempt1\\report.json",
+        "bytes": 19410,
+        "sha256": "ae5c085ce80c30bf9b98d20b532abaed6ae95ea6bd9caf66af4d8299368cb6ef"
+      }
+    },
+    {
+      "name": "runs/baseline/cpu-ffn-tiny-cuda/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\cpu-ffn-tiny-cuda\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "24ee3f0d052a1fa514489c89c3a643a09aa54cb12112c7839b6f884ded64edc4"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 48264,
+        "started": 1793350479.1507843,
+        "seconds": 1.4372284412384033,
+        "exit": 1,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\cpu-ffn-tiny-cuda\\attempt1\\command.json",
+        "bytes": 594,
+        "sha256": "4bd048139b5ff66b58ad37e2432f2faecf20b7d4fb05c9564983a72a88fada9f"
+      }
+    },
+    {
+      "name": "runs/baseline/mtp-single/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\mtp-single\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "65854dd2f880a4ef3f72b94fd880c6cf3ddc75c6ebafcdc4a247755689c767dc"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 60140,
+        "started": 1793350582.4105306,
+        "seconds": 3.126091957092285,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\mtp-single\\attempt1\\command.json",
+        "bytes": 576,
+        "sha256": "bb048cba698a5a77ae425593a04d596b6676d475ef637ce9a853d8b78663b2ea"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\mtp-single\\attempt1\\report.json",
+        "bytes": 83483,
+        "sha256": "fbfbeaf69fdc78a1ea58d36b4bf59a1d99cdce510d53f40671544e6def4b89ab"
+      }
+    },
+    {
+      "name": "runs/baseline/mtp-two/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\mtp-two\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "aa6bdd09201a86b0521e980701e49d1456aa7c37bdb934622cf5609bee59c3ee"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 11472,
+        "started": 1793350595.7601833,
+        "seconds": 3.6862285137176514,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\mtp-two\\attempt1\\command.json",
+        "bytes": 684,
+        "sha256": "13c9c844d6092005b73f9ba6346758b19b2b8abe0272c582666a45bfa467812e"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\mtp-two\\attempt1\\report.json",
+        "bytes": 153538,
+        "sha256": "329c634506605fca56d5291f26f5542721542e6f11ab69116ceb0d1fe1b37402"
+      }
+    },
+    {
+      "name": "runs/baseline/ordinary-single/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\ordinary-single\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "d66d0cd2fab98a21d4863ed784cdfaa292b08ca58556337c11309c1b6345f881"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 11004,
+        "started": 1793350576.2792118,
+        "seconds": 2.8690552711486816,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\ordinary-single\\attempt1\\command.json",
+        "bytes": 546,
+        "sha256": "d6b193dd8de39778592c4b999223186df71a965c4e26c166520f16daf6cf963a"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\ordinary-single\\attempt1\\report.json",
+        "bytes": 119965,
+        "sha256": "6c05a1f5a2b2200a0c77836404acf14456105e02b4c528a421cfc5d259bf9f96"
+      }
+    },
+    {
+      "name": "runs/baseline/ordinary-two/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\ordinary-two\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "eb91f2ce1dd381f7003b4beffb4f9b82fb920cc9cc2c6d5ce4ce45d3eae0939c"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 57844,
+        "started": 1793350588.9557915,
+        "seconds": 3.1657135486602783,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\ordinary-two\\attempt1\\command.json",
+        "bytes": 654,
+        "sha256": "a2a5c567c29972097f5168315b9601490dff651b81a02b99714192ece92db30e"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\ordinary-two\\attempt1\\report.json",
+        "bytes": 232328,
+        "sha256": "74f97bab667c41045e1057aa03b2914d09ba2724211b39e8ebf04917b3835fa1"
+      }
+    },
+    {
+      "name": "runs/baseline/session-cuda/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\session-cuda\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "72bb9e4e32127854aa0098cd1d702ab243e23183dd240e321c41d3b4ea0a30c7"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 20288,
+        "started": 1793350622.8050866,
+        "seconds": 4.348670244216919,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\session-cuda\\attempt1\\command.json",
+        "bytes": 452,
+        "sha256": "749363603a5655a11b17e35f1f9af754c8e778bdec2bf7867aa4e7c9727390d1"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\baseline\\session-cuda\\attempt1\\report.json",
+        "bytes": 186,
+        "sha256": "ebf9803b7e488ce86d03ae348fdb45940c354045a46a96dea40b1bdbf1bfcdab"
+      }
+    },
+    {
+      "name": "runs/candidate/cpu-ffn-real-cuda/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\cpu-ffn-real-cuda\\attempt1\\process.json",
+        "bytes": 149,
+        "sha256": "584972283ea87f006b6607002cafa9f2c8313bfd771540f6f0e1fd8e9daf6c96"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 45780,
+        "started": 1793350769.24694,
+        "seconds": 2.6528544425964355,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\cpu-ffn-real-cuda\\attempt1\\command.json",
+        "bytes": 571,
+        "sha256": "2c587a25699a8238e2d4d96687d7622818da55c689ded7ec285998358f263ea5"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\cpu-ffn-real-cuda\\attempt1\\report.json",
+        "bytes": 19435,
+        "sha256": "5f7b3540308e543b691fb7007467dc964dd213615a99815e784bf7adae6be395"
+      }
+    },
+    {
+      "name": "runs/candidate/cpu-ffn-tiny-cuda/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\cpu-ffn-tiny-cuda\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "6ca37eab7ab18733cc4b4decfeb23edf89f5d67262d43939c06f0ad868750acd"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 58852,
+        "started": 1793350765.450595,
+        "seconds": 1.0403451919555664,
+        "exit": 1,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\cpu-ffn-tiny-cuda\\attempt1\\command.json",
+        "bytes": 585,
+        "sha256": "aa8b43e8105d3c33a9ebd1e8eb5755e69f3e158828960ea5af7ddf48fcdd2088"
+      }
+    },
+    {
+      "name": "runs/candidate/history-cpu/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\history-cpu\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "ccc08838e7cee3028d3a167608ed09d71ab7bda959570243321580d46555da23"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 42160,
+        "started": 1793350443.9585724,
+        "seconds": 0.8898992538452148,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\history-cpu\\attempt1\\command.json",
+        "bytes": 246,
+        "sha256": "85e86c519becb071b761235091a9d530465da1a5f34e77bd6b75e6ea8073d1b7"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\history-cpu\\attempt1\\report.json",
+        "bytes": 1778,
+        "sha256": "04e746db61aa664d172911b8dcc20e76553ba3467971fde22107a672c128ffbf"
+      }
+    },
+    {
+      "name": "runs/candidate/mtp-e4-cuda/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\mtp-e4-cuda\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "2fd9241b3288763d36ef14b8cba69ac14b39d02317463e448f249aabee4f624d"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 13864,
+        "started": 1793350477.9171553,
+        "seconds": 1.0424811840057373,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\mtp-e4-cuda\\attempt1\\command.json",
+        "bytes": 220,
+        "sha256": "42c4e99dcf9a91555fe3ea93ed2caab878bbdae062eaae8f9d02968bebadffc7"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\mtp-e4-cuda\\attempt1\\report.json",
+        "bytes": 879,
+        "sha256": "4a0bb001fdb5610d454ecf28a6655036c738b9fcedbefeeb008d66b0272e2a79"
+      }
+    },
+    {
+      "name": "runs/candidate/mtp-packed-prefill-cuda/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\mtp-packed-prefill-cuda\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "0731c1135787d569a1690c56e2a6c3bda3b5aa9ef170216c729835ec0d77e48e"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 16516,
+        "started": 1793350445.0935125,
+        "seconds": 0.8300056457519531,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\mtp-packed-prefill-cuda\\attempt1\\command.json",
+        "bytes": 250,
+        "sha256": "3f87bd24fc24853591d8266ea8924f20aae6932c96d6fb5b58ead78204ac3161"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\mtp-packed-prefill-cuda\\attempt1\\report.json",
+        "bytes": 7390,
+        "sha256": "d85ca7a1a9e1fe53856f717da3abf824246651b44f45465042aa6f7586ab150f"
+      }
+    },
+    {
+      "name": "runs/candidate/mtp-single/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\mtp-single\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "e89215223cc7a84f13b797942a74289da594e054be0aaf7b3f3c061b6db30af0"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 50240,
+        "started": 1793350585.7125804,
+        "seconds": 3.0641214847564697,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\mtp-single\\attempt1\\command.json",
+        "bytes": 571,
+        "sha256": "cf7805232a838c2aba908cb524a1266c28fb80e670309209167715db1d05f45b"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\mtp-single\\attempt1\\report.json",
+        "bytes": 83479,
+        "sha256": "60d16e0dafe21b5bcca35e9054d8fc698a4f48964303623e7721393e19ec1de7"
+      }
+    },
+    {
+      "name": "runs/candidate/mtp-two/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\mtp-two\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "5b51fcb83e4cd4f159ad1155c1b59325eb9cb35ac657bf5763a9a48b6063cdeb"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 44280,
+        "started": 1793350599.6399355,
+        "seconds": 3.7182624340057373,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\mtp-two\\attempt1\\command.json",
+        "bytes": 679,
+        "sha256": "c4e6d4708c3078bba26d323192845cee6d4312cd901584dbc1ac997c3e2a3b39"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\mtp-two\\attempt1\\report.json",
+        "bytes": 153544,
+        "sha256": "51cbc9845f2712e5866db0c5db48b24ea6f50a4e778e0479d10a808254591bd5"
+      }
+    },
+    {
+      "name": "runs/candidate/mtp-varlen-verify-cuda/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\mtp-varlen-verify-cuda\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "e0a9d3567ad08b0660f4b3a09f20825cf842dc89d531b455e453aa331bd97205"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 61852,
+        "started": 1793350446.1173596,
+        "seconds": 0.8104276657104492,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\mtp-varlen-verify-cuda\\attempt1\\command.json",
+        "bytes": 249,
+        "sha256": "0416c907e5be467d1e8ef08774369bd0d3d858f26444df2be2c75e23eab7fbc9"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\mtp-varlen-verify-cuda\\attempt1\\report.json",
+        "bytes": 6648,
+        "sha256": "c76cc472cd89d4d44e7cc717c158c7e5dc80a1104da9ee857d5a6d3585150e4f"
+      }
+    },
+    {
+      "name": "runs/candidate/ordinary-single/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\ordinary-single\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "735caaaa458a350b15a8d89199b987b813c9eb7d3cf2e0cae04c532e857e1ed4"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 62824,
+        "started": 1793350579.3284357,
+        "seconds": 2.887195587158203,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\ordinary-single\\attempt1\\command.json",
+        "bytes": 541,
+        "sha256": "0f8fd21030dbc20ff3186d11a75b52b98c781e16c7ba2d586203b6b04cffb179"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\ordinary-single\\attempt1\\report.json",
+        "bytes": 119959,
+        "sha256": "373023faa6af9166a33a12c11bef5f3c224bfe0e8fa524270d83adf3e9153916"
+      }
+    },
+    {
+      "name": "runs/candidate/ordinary-two/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\ordinary-two\\attempt1\\process.json",
+        "bytes": 151,
+        "sha256": "ab57e12279a3ebd00d9d1753ee8573fb073e0992e2e31abeab53789473a1f997"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 34984,
+        "started": 1793350592.2989974,
+        "seconds": 3.2687830924987793,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\ordinary-two\\attempt1\\command.json",
+        "bytes": 649,
+        "sha256": "4e4647462585f66d71bda6d70a8785bd93e307afae604bf6cbafd942f15ac1da"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\ordinary-two\\attempt1\\report.json",
+        "bytes": 232348,
+        "sha256": "93b7e7247ac8b03cccddc6a9afe45fa796aa7e02eb69347a410da1c53a95d360"
+      }
+    },
+    {
+      "name": "runs/candidate/session-cuda/attempt1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\session-cuda\\attempt1\\process.json",
+        "bytes": 150,
+        "sha256": "411b29e82d50730550df533db4de54e0a9bdfab2de0a72ff47a120db876249b2"
+      },
+      "actual": {
+        "state": "TERMINAL",
+        "pid": 35256,
+        "started": 1793350627.3257985,
+        "seconds": 4.381232023239136,
+        "exit": 0,
+        "timed_out": false
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\session-cuda\\attempt1\\command.json",
+        "bytes": 444,
+        "sha256": "8bee18d4d307ec8d4fc352b249dbb7b30a8370a89ef87e2f516b9539fb719c22"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\runs\\candidate\\session-cuda\\attempt1\\report.json",
+        "bytes": 186,
+        "sha256": "ebf9803b7e488ce86d03ae348fdb45940c354045a46a96dea40b1bdbf1bfcdab"
+      }
+    }
+  ],
+  "candidate_model_link_base": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\model-link-base.json",
+    "bytes": 123822,
+    "sha256": "bfd455065fcdb448b733e44eefeadbe1e85a2af94896f6d0a9cd671817ed7bad"
+  },
+  "baseline_source_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\baseline-plan.json",
+    "bytes": 155365,
+    "sha256": "749b63f722d2ad9a9c212d48b411a2fdfd48291132a8d7edde31bd451e73885c"
+  },
+  "source_snapshots": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\source-snapshots.json",
+    "bytes": 11844,
+    "sha256": "7d787f8ea2caaaced5f613cb2d6866e350287f4d00e98596a9cc685cef27272b"
+  },
+  "baseline_source_readback": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\collector-baseline-source-readback.json",
+    "bytes": 614,
+    "sha256": "0a289737390a5ed19a9793f6ebab403b66e142a3be9a380afe1ad43235c59fe8"
+  },
+  "all_receipt_source_pins_current_exact": true,
+  "dependency_proof": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\cold-dependency-proof.json",
+    "bytes": 8247,
+    "sha256": "0817106841d53f3e9df055e0a239d33be769268110e975a5d2479f4111ac3c3e"
+  },
+  "cmake_inventory_proof": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\cmake-inventory-proof.json",
+    "bytes": 1796,
+    "sha256": "61fd13662f539a22b8aa6a89f991de4a2dfdb4038bc4bac4d25dd7452084f524"
+  },
+  "author_static": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-extract-20261030\\operation-token-report.json",
+    "bytes": 14291,
+    "sha256": "5a96f5cea6b67f3b94242aca5571f5de1dc0c808bdceb3446cdc217ecf8c6bc5"
+  },
+  "independent_static": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-review-20261030\\static-review.json",
+    "bytes": 13301,
+    "sha256": "18a00a2c1c9523dc34d1891dcd43164a93e4ebe6ae8adba38831ddef200f0624"
+  },
+  "reference": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-review-20261030\\llama-family-boundary-reference.json",
+    "bytes": 13583,
+    "sha256": "77b605a00f8b8fd9e5ffaa27f7f6c4f8b64dd64cb6b33c0e88a9fd17cb13f57d"
+  },
+  "reference_readback": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\collector-reference-readback.json",
+    "bytes": 2046,
+    "sha256": "234104c52054bf0674d765974b31c0029978f00735b2e67fdb4bf6a8a430e870"
+  },
+  "hardware_toolchain": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\hardware-toolchain.json",
+    "bytes": 5569,
+    "sha256": "b7ccec0b02bd5529457a677f3ec04505e80558e9bb507f5c05c7b2b1185b2c5f"
+  },
+  "whole_cli_comparison": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\whole-cli-summary.json",
+    "bytes": 5884,
+    "sha256": "b23ba181962545744983fd00a6e8c1d2d21d48fa9d23818cb6bd604b4c901d39"
+  },
+  "branch_summary": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\finite-branch-summary.json",
+    "bytes": 1541,
+    "sha256": "dfb880cf1c15cbc72bf44f7d1ed9b83b3ab334e33ec1c7851ae5aac9758e525c"
+  },
+  "cpu_ffn_pair": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\compare-cpu-ffn-real-cuda.json",
+    "bytes": 3294,
+    "sha256": "de8c9e959755c5f83acff05eba5b2aa3569ea5767f4d4fa9a39c2e5bfb721ccb"
+  },
+  "session_comparison": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\session-compare.json",
+    "bytes": 118756,
+    "sha256": "6679597be8cf3dcc405279e2fbcfa41ac73b25dac5f7e5309bc34f636105c2c0"
+  },
+  "session_vector_manifest": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\session-vector-manifest.json",
+    "bytes": 269862,
+    "sha256": "8d7ae43a353fae1cf941042be941858c74cfe59653419b2c4436000a46854d6e"
+  },
+  "independent_vector_recheck": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\collector-vector-readback.json",
+    "bytes": 586,
+    "sha256": "62b96413496297094abe05a7516c9b432882c7313071dba40d526c4d34d75332"
+  },
+  "external_evidence": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\external-evidence\\inference-target-graph-review-20261030\\llama-family-boundary-reference.json",
+      "bytes": 13583,
+      "sha256": "77b605a00f8b8fd9e5ffaa27f7f6c4f8b64dd64cb6b33c0e88a9fd17cb13f57d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\external-evidence\\inference-target-graph-review-20261030\\review.py",
+      "bytes": 14832,
+      "sha256": "39e19c6a1483244d6e42b18daeb3586e4e6c0d8f80c2ab563ce850025dc2cbc1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\external-evidence\\inference-target-graph-review-20261030\\static-review.json",
+      "bytes": 13301,
+      "sha256": "18a00a2c1c9523dc34d1891dcd43164a93e4ebe6ae8adba38831ddef200f0624"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\external-evidence\\inference-target-graph-extract-20261030\\applied.json",
+      "bytes": 1003,
+      "sha256": "27fc5f55d56302e44fddb1ac52214656be5dc2a0e49febd161249b7acfae2508"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\external-evidence\\inference-target-graph-extract-20261030\\base\\engine\\models\\qwen35\\cold_sources.cmake",
+      "bytes": 340,
+      "sha256": "c67ab2a547e384d06b1ed03b2717a048e85c98756981c79cca1fa63fad056efb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\external-evidence\\inference-target-graph-extract-20261030\\base\\engine\\models\\qwen35\\main.cc",
+      "bytes": 607187,
+      "sha256": "5c151959db5fae16a2bf0b116c3fe66d49a10d789df594da854973edeb760323"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\external-evidence\\inference-target-graph-extract-20261030\\candidate\\engine\\models\\qwen35\\cold_sources.cmake",
+      "bytes": 386,
+      "sha256": "f6356cbd6bbc3bc9172b3bb09b2107d06f3dea173976dee6f2d858fca845a508"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\external-evidence\\inference-target-graph-extract-20261030\\candidate\\engine\\models\\qwen35\\main.cc",
+      "bytes": 591292,
+      "sha256": "0978bf27d998bf6a5de76516cbeac50d1bb17031f43149799bc159b5bef11270"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\external-evidence\\inference-target-graph-extract-20261030\\candidate\\engine\\models\\qwen35\\target_graph.cc",
+      "bytes": 18348,
+      "sha256": "ed38ae4267d7cdb6322287813245d4b3f10b929cc85f5ce2927506e392b5d777"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\external-evidence\\inference-target-graph-extract-20261030\\candidate\\engine\\models\\qwen35\\target_graph.h",
+      "bytes": 1880,
+      "sha256": "122ba893a7b277587ffc264cfd69077055e687355cdbdda5ccba29cac5de6b55"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\external-evidence\\inference-target-graph-extract-20261030\\finalize_candidate.py",
+      "bytes": 1878,
+      "sha256": "bbcbb84a85c1e540bf8540bbcf02093e7ad1bc1c6d2d8fc657a0cec83c8cd6d1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\external-evidence\\inference-target-graph-extract-20261030\\operation-mappings.json",
+      "bytes": 1586,
+      "sha256": "f9fb902dc4fdde22ec7fb191c6707352e37c7c1bf3be97b4eb5bfa27f9a99db3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\external-evidence\\inference-target-graph-extract-20261030\\operation-token-check.py",
+      "bytes": 9781,
+      "sha256": "792035b0f1c3c5e9aab1b6e8ab9e2e08df1d6c0a1f78bae0c56a6b9a4aebaf9f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\external-evidence\\inference-target-graph-extract-20261030\\operation-token-report.json",
+      "bytes": 14291,
+      "sha256": "5a96f5cea6b67f3b94242aca5571f5de1dc0c808bdceb3446cdc217ecf8c6bc5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\external-evidence\\inference-target-graph-extract-20261030\\original-moved-types.txt",
+      "bytes": 234,
+      "sha256": "612bbc9064ce8891127f6405512edd2a436511a2dfc4b16fb08d84b6c1421f6c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\external-evidence\\inference-target-graph-extract-20261030\\original-target-body.txt",
+      "bytes": 17071,
+      "sha256": "21edf23d2dc7e14f95962da9228d5aaa294d012f34026299cbc8e7da44b4daba"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\external-evidence\\inference-target-graph-extract-20261030\\plan.json",
+      "bytes": 8702,
+      "sha256": "24301e4a7d56b43685558c6ee3e02d56cdc17c4d9fc09e459a059a7ae5fc6d21"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\external-evidence\\inference-target-graph-extract-20261030\\prepare.py",
+      "bytes": 11702,
+      "sha256": "00aedf52899b905d58f6e64a6a039de45863acb9e70d6996980ecdc150a6ccb9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\external-evidence\\inference-target-graph-extract-20261030\\README.md",
+      "bytes": 2813,
+      "sha256": "67a8c0ea1c086513f37eff88173d7dcd139c93b28a6f9c128157f212ff9b8df1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-target-graph-boundary-20261030\\external-evidence\\inference-target-graph-extract-20261030\\target-graph.patch",
+      "bytes": 41579,
+      "sha256": "0ff27fdc4c5d5766359bfa371302e34f2a5fb9627162e02184142f3d999183a0"
+    }
+  ],
+  "limits": [
+    "Only this model-private target cold emit seam is verified. Full Family/Phase cold separation and cross-model integration remain future work.",
+    "New header/source actual compiler closures exclude Qwen runtime owners; legitimate generic Graph/Compute/read-lease declarations remain.",
+    "Manual exact CXX/link reused original228. Full normal default CMake build/install was not run; its existing module/backend guards are byte-identical.",
+    "Current actual finite default fullV pairs, branches and Session checks establish this extraction only, not exhaustive feature completion or speed improvement.",
+    "Both tiny BF16 hybrid arms actually fail cold region-port alias alignment/search before hybrid_plan; real2B paired validation does not mark the tiny configuration supported or fix this independent generic planner gap.",
+    "Single finite timings diagnose obvious regressions only; no profiler, sustained performance window, GPU candidate or download.",
+    "Local llama.cpp actual23b0202a six-file responsibility evidence does not require virtual dispatch, runtime graph rebuild, or a universal model layer in Hyle.",
+    "No model payload, SDK/vendor copy, binary/object/debug artifact, or raw vector bytes is retained in the archive."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-target-graph-boundary-2026-10-30.zip",
+    "bytes": 1370707,
+    "sha256": "ba9ae1281eba9c37cde8017e7362d97379cca85c7d2469d4d696027ba9ff9ca7",
+    "members": 278,
+    "all_members_readback_verified": true
+  },
+  "retention": {
+    "kept": "Source snapshots, exact commands, compiler dependency receipts, actual terminal reports, complete vector hashes/metadata, native objects and current229 reproduction cache.",
+    "rebuildable_cleanup": "Only batch-local linked EXE/EXP/LIB and Session raw vector payloads; root test.ps1 verifies exact paths/bytes/SHA before deletion. Raw payloads are not in the archive.",
+    "raw_vectors_available_after_cleanup": false,
+    "vector_equality_evidence": "Complete hashes and exact cross-arm comparison retained; original complete byte arrays were read before exact batch cleanup."
+  },
+  "cleanup": {
+    "status": "CLEANED_EXACT_BATCH_FILES",
+    "count": 774,
+    "bytes": 1163433877,
+    "archive_verified": true,
+    "SDK_objects_preserved": true,
+    "model_objects_preserved": true,
+    "runtime_DLL_preserved": true
+  }
+}
