@@ -99,6 +99,19 @@ struct LoadedWeight final {
   std::uint32_t group_size = 0;
 };
 
+// Extra cold draft projection only. Original target/embedding weights and
+// their source meanings are never replaced by this selected-row bank.
+struct PreparedDraftHead final {
+  LoadedWeight weight;
+  Tensor original_ids;
+  std::string identity;
+};
+
+// Transform only; policy/idle checks and optional publication belong to Model.
+PreparedDraftHead prepare_draft_head(hyle::inference::Backend &backend,
+    const LoadedWeight &original, const hyle::inference::DraftVocabulary &mapping,
+    const hyle::compute::ResourceBudget &budget = {});
+
 using WeightMeanings = std::map<std::string, prepared::ParameterMeaning>;
 struct WeightLoadReport final {
   std::size_t bytes = 0;

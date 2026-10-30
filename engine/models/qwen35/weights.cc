@@ -943,4 +943,14 @@ WeightLoadReport load_weight_bank(const std::filesystem::path &manifest,
   return load_selected_weight_roles(roles, backend, weights, weight_pools, placement);
 }
 
+PreparedDraftHead prepare_draft_head(Backend &execution, const LoadedWeight &original,
+    const hyle::inference::DraftVocabulary &mapping, const c::ResourceBudget &allocation_budget) {
+  auto selected = select_dense_weight_rows(execution, original, mapping.ids(), allocation_budget);
+  Tensor ids(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(mapping.size())}),
+      true, allocation_budget);
+  check(execution.write(ids.storage(), std::as_bytes(mapping.ids()))); ids.freeze(execution);
+  auto identity = hyle::inference::artifact::sha256(std::as_bytes(mapping.ids()));
+  return {std::move(selected), std::move(ids), std::move(identity)};
+}
+
 } // namespace qwen35

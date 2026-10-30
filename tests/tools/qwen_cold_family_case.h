@@ -50,7 +50,56 @@ inline int run(const std::filesystem::path &input) {
   q::Model model(std::move(source), geometry, 16, plan, {}, false, q::ReplayPolicy::kCommands,
       16u << 20, {.enabled = false}, 0, {.primary = q::BackendKind::kCpu});
   const std::array finite_rows{std::size_t{1}, std::size_t{2}};
-  require(model.prepare_family(finite_rows), "original finite cold family was unavailable");
+  // The first real Family compile fails after its original KV tuple is ready.
+  // This is still KV-only storage: no state/hidden pool has been prepared.
+  const auto resource = q::mem::system_resource();
+  const auto fresh_execution = q::take(model.execution_budget.usage(resource));
+  const auto fresh_cache = model.cache_usage();
+  const auto fresh_peaks = model.known_workspace_peak, fresh_limits = model.known_workspace_limits;
+  require(!model.attention_schema.valid() && model.families.empty() &&
+      !model.known_cache_backing_bytes && !model.state_storage_prepared &&
+      model.attention_schemas.empty() && model.page_inventory.banks.empty() &&
+      model.draft_inventory.banks.empty() && !model.hidden_pool.valid() &&
+      std::ranges::all_of(model.state_pools, [](const auto &pools) {
+        return !pools.history.valid() && !pools.recurrent.valid();
+      }) && !model.snapshot_versions.capacity && !model.snapshot_versions.live &&
+      fresh_cache.live_bytes == fresh_cache.live_by_category[
+          static_cast<std::size_t>(q::c::ResourceBudgetCategory::kMetadata)] &&
+      fresh_execution.live_bytes < fresh_execution.limit_bytes,
+      "cold-first failure fixture was already prepared or had no metadata allowance");
+  const auto expected_kv_bytes = q::cache::add(q::cache::multiply(
+      q::cache::add(plan.key_bank_bytes, plan.value_bank_bytes), geometry.attention_layers()),
+      q::cache::add(plan.draft_key_bank_bytes, plan.draft_value_bank_bytes));
+  {
+    auto pressure = q::take(model.execution_budget.reserve(resource,
+        fresh_execution.limit_bytes - fresh_execution.live_bytes));
+    bool exhausted = false;
+    try { (void)model.prepare_family(finite_rows); }
+    catch (const i::EvaluationFailure &failure) {
+      exhausted = failure.status().IsResourceExhausted() && !failure.status().has_native_error();
+    }
+    require(exhausted && model.attention_schema.valid() && model.families.empty() &&
+        model.probe_families.empty() && model.phases.empty() && !model.active_step &&
+        !model.carrier_borrowed && !model.snapshot_versions.live && !model.state_storage_prepared &&
+        !model.hidden_pool.valid() && model.known_workspace_peak == fresh_peaks &&
+        model.known_workspace_limits == fresh_limits,
+        "cold-first budget refusal lost its KV tuple or published Family/state/execution/diagnostics");
+    const auto kv_usage = model.cache_usage();
+    const auto kv_metadata = kv_usage.live_by_category[
+        static_cast<std::size_t>(q::c::ResourceBudgetCategory::kMetadata)];
+    require(kv_usage.live_bytes - kv_metadata == expected_kv_bytes &&
+        model.known_cache_backing_bytes == expected_kv_bytes &&
+        kv_usage.live_bytes <= kv_usage.limit_bytes &&
+        model.page_inventory.banks.size() == geometry.attention_layers() * 2 &&
+        model.snapshot_versions.capacity == plan.snapshot_slots &&
+        q::take(model.execution_budget.usage(resource)).live_bytes == fresh_execution.limit_bytes,
+        "cold-first refusal lost exact KV-only payload/accounting or leaked execution metadata");
+  }
+  require(q::take(model.execution_budget.usage(resource)).live_bytes == fresh_execution.live_bytes,
+      "cold-first refusal retained execution metadata after pressure release");
+  require(model.prepare_family(finite_rows), "same first Family could not retry with its retained KV tuple");
+  require(model.known_cache_backing_bytes == expected_kv_bytes && !model.state_storage_prepared,
+      "same first Family retry duplicated KV backing or prepared unrelated state pools");
   const auto first = model.find_child(1, 1, q::GraphRole::kText);
   const auto second = model.find_child(1, 2, q::GraphRole::kText);
   require(first && second && &first->family == &second->family &&
@@ -59,11 +108,16 @@ inline int run(const std::filesystem::path &input) {
   auto *const original_family = &first->family;
   const auto *const original_first = &first->program;
   const auto *const original_second = &second->program;
+  const auto *const original_graph = &original_family->graph;
+  const auto *const original_sampling = &model.sampling_configuration();
   const auto original_unchanged = [&] {
     const auto a = model.find_child(1, 1, q::GraphRole::kText);
     const auto b = model.find_child(1, 2, q::GraphRole::kText);
     require(a && b && &a->family == original_family && &b->family == original_family &&
         &a->program == original_first && &b->program == original_second &&
+        &a->family.graph == original_graph && &b->family.graph == original_graph &&
+        &a->program.resource_graph() == original_graph && &b->program.resource_graph() == original_graph &&
+        a->family.sampling == original_sampling && b->family.sampling == original_sampling &&
         original_family->programs.size() == 2 && original_family->chunks == std::vector<std::size_t>{1, 2} &&
         std::ranges::all_of(model.families, [](const auto &entry) { return bool(entry.second); }),
         "failed/retried cold preparation changed an original complete family or left a null inventory entry");
@@ -85,7 +139,6 @@ inline int run(const std::filesystem::path &input) {
   original_unchanged();
 
   const q::FamilyKey state_key(1, q::GraphRole::kText, 0, q::TextCompletion::kStateOnly);
-  const auto resource = q::mem::system_resource();
   const auto before = q::take(model.execution_budget.usage(resource));
   require(before.live_bytes < before.limit_bytes, "original execution budget has no free cold metadata allowance");
   {
@@ -180,6 +233,7 @@ inline int run(const std::filesystem::path &input) {
       !model.snapshot_versions.live, "cold selection leaked budget or created a Session version");
   std::cout << "{\"status\":\"PASS\",\"backend\":\"cpu\",\"finite_children\":2,\"admitted_exact_children\":1,"
       "\"typed_budget_refusal_retry\":true,\"failed_candidate_unpublished\":true,\"stable_original_family\":true,"
+      "\"first_compile_refusal_kept_kv_only\":true,\"stable_graph_and_sampling_identity\":true,"
       "\"plan_prepare_selection_equal\":true,\"unlisted_warm_rejected\":true,\"submitted_graphs\":0,\"HTTP\":0}\n";
   return 0;
 }

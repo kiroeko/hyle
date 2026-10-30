@@ -41,7 +41,10 @@ Qwen／GLM／Kimi／DeepSeek的实际接入面已经核对：有限具体图不�
 目标主干数学已沿显式冷事实与端口span隔离到target_graph，原Recipe／schema／常量、准备／发布合同及默认有限消费者保持，见[本片记录](../evidence/correctness/inference-target-graph-boundary-2026-10-30.json)。
 本片发现H64混合CPU FFN的T1子程序在新旧基线均因Graph内部按值Tensor偏移128B／声明256B而拒绝；已由共同输入接纳沿原Copy／预算／寿命机制按需物化修复，见[本片记录](../evidence/correctness/inference-graph-alias-alignment-2026-10-30.json)。
 7项新合同、18项相关回归、原H64及真实2B默认／混合／Session有限对照通过；历史编译／测试失败与合法预算回溯分别保留。新发现继续纳入，不能以较大模型成功或旧清单完成排除小形状。
-随后继续完整Family冷工厂、Phase物理准备和请求恢复；保原owner／预算／稳定地址与可重试／失败不发布合同，不机械固定偶然host emit顺序，已完成共同IO／退休机制不重复。
+完整Family冷工厂现已隔离：一次消费已准备冷事实，完成原整图、有限compile、程序与逐child检查，Model保准入、原cache／head、采样身份与成功发布。新调用只在冷准备／原idle接纳链，逐步执行未新增分派或资源权威；cache／head准备顺序、失败诊断合并及冷计时范围变化单列验证。
+[本片有限检查](../evidence/correctness/inference-family-factory-boundary-2026-10-30.json)17对／34个原生进程通过；默认四对及真实CPU2的全部非时间汇总一致，完整Session向量逐字节相同，首次预算拒绝与同key重试通过。历史工厂C4457编译失败及两次解析准备事件保留，未把晚期child检查失败、完整默认CMake或独立性能窗口写成已验证。
+随后继续Phase物理准备和请求恢复；保原owner／预算／稳定地址与可重试／失败不发布合同，不机械固定偶然host emit顺序，已完成共同IO／退休机制不重复。
+跨模型复审另发现caller输出池容量的对齐／溢出计算重复：GLM已有checked路径，DeepSeek／Kimi等仍有缺项，Qwen非对齐词表的q池有源码可推导的容量风险，尚未运行该形状。后续共享显式份数／alignment下的checked容量事实，保模型保留政策、域、原LeasePool与owner；不将256或Qwen程序族升级成共同形状，也不为算术共用新增执行器或公共ABI。
 较强设备用于底座成熟后的更广整模型验证，当前工作不以租设备、完整大模型或通用loader／server为前置。
 新profile和优化尚未启动，原工具／命令准备保留；相关架构费用验证按实际改动安排。正在做和估计进度只在[看板](../developer/inference-progress.md)维护。
 

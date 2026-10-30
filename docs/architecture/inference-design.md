@@ -109,20 +109,32 @@ HYLE保留原冷形状接纳，实际数值、端口、所有权和费用仍通�
 5次CXX／6次链接成功，16个原生进程成功，另两次H64混合基线／候选在同一别名对齐处拒绝，失败没有写成通过。
 默认完整词表四对、完整Session向量及真实H2048 CPU FFN两层对照一致；packed、变长Verify、E4保其原检查与数值合同。
 本地llama.cpp `23b0202a`的模型具体graph与独立helpers支持数学实现分责；其运行期图复用／重建仍不能照搬成HYLE的纯启动期承诺。
-完整Family冷工厂与Phase物理准备尚未迁出；本片发现的H64接纳问题随后已由下述共同Graph按需物化修复，模型继续发出原数学图。
+该片当时尚未迁出完整Family工厂与Phase物理准备；H64接纳问题随后已由下述共同Graph按需物化修复，模型继续发出原数学图。
+
+完整Family冷构图、有限编译、`PreparedProgramFamily`准备及逐child检查现已隔离到模型私有`family_factory.h/.cc`。
+工厂同步借用请求形状、模型权重／精度、已准备schema／可选draft投影及原Backend／预算，
+返回原稳定`unique_ptr<Family>`和固定三域诊断事实；不接收Model、Session或完整ColdResources。
+原Family／端口布局、Graph地址、literal寿命、权限与执行权威保持；Model保准入、cache／head准备、原采样身份和完整成功后的map发布。
+cache／head准备前移到工厂调用之前，合法形状先验拒绝更早；失败候选不再合并部分workspace诊断，
+`cold_seconds`仅计工厂内部准备。这些冷期与诊断变化明确保留，不能称完全原样。
+实际成熟源码支持专用模型数学与共享准备／执行职责分离；本片不复制llama的virtual或TRT的运行时runner状态。
+原`find_child`及`prepare_child`至文件末尾逐字节未改，未新增逐token分派、查找或分配算法；实际速度仍须由完整消费者判断。
+[本片有限检查](../evidence/correctness/inference-family-factory-boundary-2026-10-30.json)覆盖17对默认／相关消费者，
+首次真实冷预算拒绝、原KV-only留存与同key重试、Graph／采样身份均通过；未注入晚期child检查失败。
+Session两臂各378份完整向量逐字节一致，默认四对仅作明显退化观察，不能据此宣称稳定提速或任意模型无开销。
 
 当前异构消费者的接入面也已沿实际源码核对：
 
 | 消费者 | 已复用的共同机制 | 仍保留的模型事实及验证边界 |
 |---|---|---|
-| Qwen实际文本路径 | ColdShapePlan、PreparedProgramFamily、ProgramIo、ExecutionEpisode、drive_steps | 模型私有shape／端口、分页KV、conv／GDN、hidden与完整Snapshot；Family／Phase及请求恢复仍需分责 |
+| Qwen实际文本路径 | ColdShapePlan、PreparedProgramFamily、ProgramIo、ExecutionEpisode、drive_steps | 模型私有shape／端口、分页KV、conv／GDN、hidden与完整Snapshot；Family冷工厂已隔离，Phase及请求恢复仍需分责 |
 | GLM ordinary／K1原组件 | ProgramIo、实际drive_steps同步分支、RequestLoop与提交见证 | 单router具体图、压缩状态／lag／journal及原StateVersion；非第二完整引擎 |
 | Kimi KDA→MLA原组件 | ProgramIo、ProgramCarrier、ExecutionEpisode及真实Source接力 | 异构递归／MLA状态与feature输出；没有生成token或请求驱动证明 |
 | DeepSeek原组件及压缩侧车 | ProgramIo、普通Graph生命周期、接受与提交见证 | 具体router分段与压缩状态／sidecar；没有完整请求驱动证明 |
 
 后三者当前使用有限具体图，未消费ColdShapePlan／PreparedProgramFamily；不为接口外观伪造Qwen程序族，也不把IO复用扩大为完整冷工厂／调度复用。
-下一步建立一个完整Family冷工厂，再分清Phase物理准备。
-Model保留原准入、cache／可选head准备与成功发布；工厂消费已准备事实，保Graph稳定地址、预算、literal／采样寿命、失败不发布及可重试合同。
+完整Family冷工厂之后继续分清Phase物理准备。
+Model保留原准入、cache／可选head准备与成功发布；Phase拆分仍须保原Graph稳定地址、预算、literal／采样寿命、失败不发布及可重试合同。
 局部host emit与冷准备的偶然交错不必永久固定；不为保持它而拆成多段难懂stage，也不新增大ModelOps。
 
 
