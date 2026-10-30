@@ -1,4 +1,5 @@
-target_sources(hyle_engine PRIVATE main.cc weights.cc)
+include("${CMAKE_CURRENT_LIST_DIR}/cold_sources.cmake")
+target_sources(hyle_engine PRIVATE main.cc ${_hyle_qwen35_cold_sources})
 
 # Real-weight diagnostics remain explicit targets, separate from the application.
 set(_qwen35_probes mtp_session)
@@ -19,7 +20,7 @@ elseif(_qwen35_cuda)
   list(APPEND _qwen35_probes batch)
 endif()
 foreach(probe IN LISTS _qwen35_probes)
-  add_executable(hyle_qwen35_${probe}_probe EXCLUDE_FROM_ALL ${probe}_probe.cc weights.cc)
+  add_executable(hyle_qwen35_${probe}_probe EXCLUDE_FROM_ALL ${probe}_probe.cc ${_hyle_qwen35_cold_sources})
   hyle_configure_engine_target(hyle_qwen35_${probe}_probe)
   if(probe STREQUAL "retirement")
     if(_qwen35_apple)

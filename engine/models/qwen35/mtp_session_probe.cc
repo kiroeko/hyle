@@ -158,13 +158,18 @@ struct Probe final {
   std::vector<Metric> metrics;
   std::vector<std::string> episodes;
   std::size_t peak_versions = 0, idle_checks = 0, after_stop_calls = 0;
-  std::size_t actual_backing = 0, phases = 0, slots = 0;
+  std::size_t actual_backing = 0, actual_metadata = 0, actual_requested = 0, phases = 0, slots = 0;
   bool all_bytes = true, all_finite = true, stopped_b = false;
   void observe(q::Model &model) {
     peak_versions = (std::max)(peak_versions, std::size_t(model.snapshot_versions.live));
     require(model.snapshot_versions.live <= model.cache_plan.snapshot_slots, "MTP Session probe exceeded finite snapshot capacity");
-    actual_backing = q::take(model.cache_budget.usage(model.execution.device())).live_bytes;
-    require(actual_backing == model.cache_plan.backing_bytes, "MTP state backing is not charged exactly once");
+    const auto usage = model.cache_usage();
+    actual_metadata = usage.live_by_category[static_cast<std::size_t>(c::ResourceBudgetCategory::kMetadata)];
+    actual_requested = usage.live_bytes;
+    actual_backing = actual_requested - actual_metadata;
+    require(actual_backing == model.known_cache_backing_bytes && actual_backing == model.cache_plan.backing_bytes,
+            "MTP state backing is not charged exactly once");
+    require(actual_requested <= usage.limit_bytes, "MTP Session probe exceeded its actual cache budget");
   }
   void save_or_compare(std::size_t which, Run &run, HeadImage captured, bool reference) {
     auto &saved = baseline[which];
@@ -205,6 +210,8 @@ struct Probe final {
       << ",\"peak_live_snapshot_versions\":" << peak_versions << ",\"snapshot_slots\":" << model.cache_plan.snapshot_slots
       << ",\"state_slots\":" << model.cache_plan.state_slots << ",\"hidden_slots\":" << model.cache_plan.hidden_slots
       << ",\"managed_backing_bytes\":" << actual_backing << ",\"planned_backing_bytes\":" << model.cache_plan.backing_bytes
+      << ",\"managed_backing_scope\":\"cache_pool_payload_excluding_metadata\""
+      << ",\"cache_metadata_requested_bytes\":" << actual_metadata << ",\"cache_live_requested_bytes\":" << actual_requested
       << ",\"final_live_snapshot_versions\":" << model.snapshot_versions.live << ",\"actual_phases\":" << phases << ",\"actual_slots\":" << slots
       << ",\"fingerprint\":\"FNV1a64 diagnostic identity; byte equality uses complete arrays\",\"timing_comparison\":false,\"numerical_tolerance_policy\":null"
       << ",\"scope\":\"Same Model/GraphRole/partitions/N2 plan/native math and auto capture policy. Serial active R1; no MTP simultaneous R2, server isolation, or cross-engine quality claim. Physical page IDs may differ between sequential baselines and interleaved allocations; KV vectors contain exact logical committed rows. Equal actual payloads reference one saved baseline raw file.\""
@@ -310,6 +317,10 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &outpu
       model.prepare_family(q::drafts_token(role) ? std::span(pair) : std::span(single), false, 1, role);
       model.plan_replay_uses(q::drafts_token(role) ? 2u : 1u, 1, 48, role);
     }
+    // Family construction prepares graph/schema facts and KV banks. Materialize
+    // the canonical state/hidden pools before requiring the complete cold plan;
+    // subsequent session creation reuses these same original pools.
+    model.prepare_state_storage();
     probe.observe(model);
     const auto make_run = [&](std::size_t which) {
       const auto size = prefills[which]; const std::array calls{size};

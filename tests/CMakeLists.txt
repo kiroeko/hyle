@@ -393,6 +393,14 @@ if(_HYLE_COMPUTE_HAVE_CUDA AND _HYLE_COMPUTE_REQUEST_CPU
   hyle_stage_runtime(hyle_graph_route_cpu_cuda_qwen_backend_test)
 endif()
 
+# Only selected Qwen consumers depend on the model-owned cold inventory.
+# The Vulkan-only consumer can be selected without the application target.
+if(TARGET hyle_engine OR
+   (_HYLE_COMPUTE_HAVE_VULKAN AND TARGET hyle_graph_route_vulkan
+    AND TARGET hyle_compute_stream_vulkan AND TARGET hyle_graph_progress))
+  include("${HYLE_SOURCE_DIR}/engine/models/qwen35/cold_sources.cmake")
+endif()
+
 if(TARGET hyle_engine)
   add_executable(hyle_inference_state_transfer_test tools/inference_state_transfer_test.cc)
   hyle_configure_engine_target(hyle_inference_state_transfer_test)
@@ -414,7 +422,7 @@ endif()
 if(TARGET hyle_engine)
   # The complete-state consumer is available on CPU-only builds as well.
   add_executable(hyle_qwen_host_image_test tools/qwen_host_image_test.cc
-    "${HYLE_SOURCE_DIR}/engine/models/qwen35/weights.cc")
+    ${_hyle_qwen35_cold_sources})
   hyle_configure_engine_target(hyle_qwen_host_image_test)
   set_target_properties(hyle_qwen_host_image_test PROPERTIES
     FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
@@ -436,7 +444,7 @@ endif()
 
 if(TARGET hyle_engine)
   add_executable(hyle_qwen_mtp_ahead_test tools/qwen_mtp_ahead_test.cc
-    "${HYLE_SOURCE_DIR}/engine/models/qwen35/weights.cc")
+    ${_hyle_qwen35_cold_sources})
   hyle_configure_engine_target(hyle_qwen_mtp_ahead_test)
   set_target_properties(hyle_qwen_mtp_ahead_test PROPERTIES
     FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
@@ -446,7 +454,7 @@ if(TARGET hyle_engine)
     LABELS "tooling;generation;cache;local-model" TIMEOUT 180 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
 
   add_executable(hyle_qwen_generation_batch_facts_probe tools/qwen_generation_batch_facts_probe.cc
-    "${HYLE_SOURCE_DIR}/engine/models/qwen35/weights.cc")
+    ${_hyle_qwen35_cold_sources})
   hyle_configure_engine_target(hyle_qwen_generation_batch_facts_probe)
   set_target_properties(hyle_qwen_generation_batch_facts_probe PROPERTIES
     FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
@@ -465,7 +473,7 @@ if(TARGET hyle_engine AND _HYLE_COMPUTE_HAVE_CUDA)
     LABELS "tooling;inference;submission;cuda" TIMEOUT 60 RUN_SERIAL TRUE)
 
   add_executable(hyle_qwen_generation_batch_relay_probe tools/qwen_generation_batch_relay_probe.cc
-    "${HYLE_SOURCE_DIR}/engine/models/qwen35/weights.cc")
+    ${_hyle_qwen35_cold_sources})
   hyle_configure_engine_target(hyle_qwen_generation_batch_relay_probe)
   set_target_properties(hyle_qwen_generation_batch_relay_probe PROPERTIES
     FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
@@ -479,7 +487,7 @@ if(TARGET hyle_engine AND _HYLE_COMPUTE_HAVE_CUDA)
     LABELS "tooling;generation;cache;cuda;local-model" TIMEOUT 180 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
 
   add_executable(hyle_qwen_generation_relay_probe tools/qwen_generation_relay_probe.cc
-    "${HYLE_SOURCE_DIR}/engine/models/qwen35/weights.cc")
+    ${_hyle_qwen35_cold_sources})
   hyle_configure_engine_target(hyle_qwen_generation_relay_probe)
   set_target_properties(hyle_qwen_generation_relay_probe PROPERTIES
     FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
@@ -488,7 +496,7 @@ if(TARGET hyle_engine AND _HYLE_COMPUTE_HAVE_CUDA)
   set_tests_properties(hyle_qwen_generation_relay_probe PROPERTIES
     LABELS "tooling;generation;cache;cuda;local-model" TIMEOUT 180 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
   add_executable(hyle_qwen_submission_source_probe tools/qwen_submission_source_probe.cc
-    "${HYLE_SOURCE_DIR}/engine/models/qwen35/weights.cc")
+    ${_hyle_qwen35_cold_sources})
   hyle_configure_engine_target(hyle_qwen_submission_source_probe)
   set_target_properties(hyle_qwen_submission_source_probe PROPERTIES
     FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
@@ -497,7 +505,7 @@ if(TARGET hyle_engine AND _HYLE_COMPUTE_HAVE_CUDA)
   set_tests_properties(hyle_qwen_submission_source_probe PROPERTIES
     LABELS "tooling;generation;cache;cuda;local-model" TIMEOUT 180 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
   add_executable(hyle_qwen_cpu_ahead_test tools/qwen_cpu_ahead_test.cc
-    "${HYLE_SOURCE_DIR}/engine/models/qwen35/weights.cc")
+    ${_hyle_qwen35_cold_sources})
   hyle_configure_engine_target(hyle_qwen_cpu_ahead_test)
   set_target_properties(hyle_qwen_cpu_ahead_test PROPERTIES
     FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
@@ -508,7 +516,7 @@ if(TARGET hyle_engine AND _HYLE_COMPUTE_HAVE_CUDA)
   # Actual Model/Session regression, reusing the application's SDK contract.
   # Missing local model input is a skip; an explicitly invalid input is an error.
   add_executable(hyle_qwen_request_lifecycle_test tools/qwen_request_lifecycle_test.cc
-    "${HYLE_SOURCE_DIR}/engine/models/qwen35/weights.cc")
+    ${_hyle_qwen35_cold_sources})
   hyle_configure_engine_target(hyle_qwen_request_lifecycle_test)
   set_target_properties(hyle_qwen_request_lifecycle_test PROPERTIES
     FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
@@ -570,7 +578,7 @@ if(_HYLE_COMPUTE_HAVE_VULKAN AND TARGET hyle_graph_route_vulkan
    AND TARGET hyle_compute_stream_vulkan AND TARGET hyle_graph_progress)
   hyle_add_test(graph_route_vulkan NAME qwen_resource_retirement
     SOURCES tools/qwen_resource_retirement_test.cc
-      "${HYLE_SOURCE_DIR}/engine/models/qwen35/weights.cc"
+      ${_hyle_qwen35_cold_sources}
       "${HYLE_SOURCE_DIR}/engine/reporting/execution_report.cc"
     DEPS hyle_compute_stream_vulkan hyle_graph_progress hyle_graph_batch
       hyle_compute_provider_ggml_vulkan hyle_compute_ggml_runtime ggml)

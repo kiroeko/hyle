@@ -83,6 +83,21 @@ GLM K1候选也已消费同一同步驱动，prepare预检、submit执行原veri
 已有共同程序族、IO、提交及退休机制继续复用；同步GLM不伪造后继接口，不同模型的修复／发布顺序继续保留。完整GLM、第二完整引擎、多卡／跨机及全平台验证仍分别保留边界。
 不按文件长度机械搬代码；以实际控制逻辑能由不同状态形状消费为准，不新增热回调表或通用大ModelOps。
 
+模型冷构图的第一片把Qwen私有`GraphAssembly`／`Recipe`的非模板实现放入独立`graph_builder.cc`，头文件保留数据合同和三个小模板。
+它只借原geometry、precision、weights和Backend，不借Model、Session、请求ledger或活跃Invocation；原literal、Graph及prepared程序的寿命继续保留。
+应用与原探针／测试通过模型所属的`cold_sources.cmake`声明实际冷源码；不选Qwen消费者的模块测试不读取该清单。
+一个原生行／投影探针现在直接使用冷接口，脱离`main.cc`；私有cc实现变化可独立编译，头布局变化仍会传播，各target仍按各自能力编译冷源，未声称共享一个全局预编译对象。
+
+这条边界有实际成熟实现依据：本地llama.cpp `23b0202a`将`llama-graph.h/.cpp`构图辅助、模型家族`build_arch_graph`与`llama-context.cpp`的图复用／调用分责；
+TensorRT-LLM `46d9966b`区分`ModelEngine`、`ModelCaller`及decoder runner的输入／缓冲／图调用。
+所引文件按实际HEAD字节核对；它们也有运行期图复用和必要的新图构建，不能据此宣称所有构图都只在启动期，或照搬其virtual／动态接口。
+HYLE保留原冷形状接纳，实际数值、端口、所有权和费用仍通过本片[有限检查](../evidence/correctness/inference-cold-model-boundary-2026-10-30.json)判断。
+
+本片不等于完整模型模块化：Family／Phase构图工厂、热Model与请求恢复仍在`main.cc`；
+冷接口还经`weights.h`间接包含`session_state.h`以取得cache计划／row字节事实。
+后续优先拆清这些冷事实与完整Snapshot状态的依赖，再处理家族工厂和真实跨模型复用；不把Qwen私有Recipe改名为通用模型接口。
+
+
 共同调度按真实调用分工：请求窗口、兼容分组、接纳／淘汰、输出额度和停止属于
 `engine/inference`；模型适配负责容量事实、实际工作形状、准备／提交／完成事实、完整检查点与恢复。
 优先静态分派和已有类型，不为搬出Qwen循环先造大`ModelOps`接口。组件复用与第二个完整模型接入

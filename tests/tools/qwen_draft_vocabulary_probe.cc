@@ -1,8 +1,26 @@
 // Finite original Backend/Graph consumer; no Model, tokenizer or weight load.
-#include "../../engine/models/qwen35/main.cc"
+#include "../../engine/models/qwen35/graph_builder.h"
+#include "../../engine/inference/backend.h"
+#include "../../engine/inference/draft_vocabulary.h"
+#include "../../engine/inference/execution_resources.h"
+#include "../../engine/inference/prepared_output.h"
+#include "hyle/simd/dtype.h"
+#include "hyle/util/scope_guard.h"
 
+#include <algorithm>
+#include <array>
 #include <bit>
+#include <cstdint>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <span>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <vector>
 
 namespace {
 namespace q = qwen35;

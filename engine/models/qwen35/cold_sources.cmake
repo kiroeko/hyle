@@ -1,0 +1,6 @@
+# Model-owned cold implementation inventory. Each consumer compiles these
+# sources with its existing Backend capability contract; this is not a shared
+# precompiled object library or a registry of model implementations.
+set(_hyle_qwen35_cold_sources
+  "${CMAKE_CURRENT_LIST_DIR}/weights.cc"
+  "${CMAKE_CURRENT_LIST_DIR}/graph_builder.cc")
