@@ -1,0 +1,113 @@
+{
+  "schema": "hyle.correctness.glm-step.v1",
+  "date": "2026-10-30",
+  "status": "BORROWED_REAL_GLM_STEPS_AND_ACTUAL_GRANT_FINITE_CHECKED",
+  "base_commit": "5c39dfda4",
+  "contract": {
+    "model": "Borrow original State/Step/programs, Source, Queue, actual target inputs and cursor. Both scenario and RequestLoop directly use ordinary or K1 model computation; no fixed base/random identity is captured in the runtime.",
+    "grant": "Actual RequestWave credit reaches K1 selection. Effective quota=min(original policy quota,actual grant). Zero/cancelled/reserved credit and inconsistent actual cursor reject before verification submission.",
+    "rng": "Selected K1 retains q0/accept1/final2 and complete-state cursor+3; standalone target-only remains cursor+1. A grant1 accepted proposal stays pending, no accepted-row repair or journal catchup.",
+    "boundaries": "Candidate formation is separate from Head/CAS/record publication and postcommit journal maintenance; late failures only observe original committed record. No new owner, executor, callback table or Graph path.",
+    "observation": "Cold real verifier outputs move to the caller; external verifier outputs stay borrowed. The original ordinary full-V oracle uses the same executed policy outputs without another Graph."
+  },
+  "source": {
+    "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_mtp_state_consumer_test.cc",
+    "bytes": 228956,
+    "sha256": "7ed787d6d340ef41d25d22eeab0fc3bdf031d554ae3d70d7218c15245f65f9a2"
+  },
+  "diff": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-step-20261030\\product.diff",
+    "bytes": 43648,
+    "sha256": "368eb69fd32bd22e2357f0cc6461e3f20913501d792b03edeb96c71a248b0ae8"
+  },
+  "results": {
+    "status": "PASS_FINITE_GLM_STEP_AND_ACTUAL_GRANT_CHECKS",
+    "gtests": 2,
+    "failures": 0,
+    "skipped": 0,
+    "reports": {
+      "request-cuda": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-step-20261030\\runs\\request-cuda\\attempt1\\report.json",
+        "bytes": 4571,
+        "sha256": "5685f393cdf9c464dfac8ff8bb5081b95344230ef76f306d25e8aa76f61092b5"
+      },
+      "greedy-cuda": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-step-20261030\\runs\\greedy-cuda\\attempt1\\report.json",
+        "bytes": 4429,
+        "sha256": "ba259bc032e03417554d6b379d4e9c5b74b581111d7eb7b86269968a4bcd4073"
+      }
+    },
+    "request_original_properties": {
+      "anchor": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stage-resources-20261030\\runs\\glm-cuda\\attempt1\\results.xml",
+        "bytes": 5925,
+        "sha256": "aa7585c0d1a5cae8354fce3f5d3ace0e4774d85a9538b7c9e6e8891cf931cee8"
+      },
+      "compared": 49,
+      "differences": {},
+      "excluded_prose": "request_progress_scope",
+      "added": {
+        "model_step_credit_preflight_rejections": "3",
+        "model_step_preflight_native_submissions": "0",
+        "model_step_stale_cursor_rejected": "1"
+      }
+    },
+    "greedy_actual_grant1": {
+      "model_step_credit_preflight_rejections": "3",
+      "model_step_preflight_native_submissions": "0",
+      "model_step_stale_cursor_rejected": "0",
+      "model_step_grant1_matched_proposal_pending": "62398",
+      "model_step_grant1_matched_consumed": "1",
+      "model_step_grant1_matched_consumed_drafts": "0",
+      "model_step_grant1_extra_graphs": "0"
+    },
+    "implementation": {
+      "current_consumer_CXX_TUs": 1,
+      "successful_compile_invocations": 3,
+      "superseded": "First succeeded with LF, second preserved original CRLF, final also restored original ordinary policy-logits oracle via borrowed observation; only final object linked and run.",
+      "retained_SDK_engine_objects": 227,
+      "SDK_CXX": 0,
+      "NVCC": 0,
+      "downloads": 0,
+      "performance_experiments": 0
+    },
+    "limits": [
+      "Actual finite target77/NextN78 suffix and original RequestLoop, not complete GLM prompt prefill, all78layers, asynchronous GLM batches or server.",
+      "Request demo remains synchronous N1 with record output capacity1; actual grant wiring does not claim request grants2.",
+      "Greedy matched Top1 controls prove grant1 pending semantics; no natural stochastic accepted=true claim.",
+      "CPU/converted variants compile in this TU but are not natively run in this batch. K2 body preserved except initial shared advance, not rerun here.",
+      "No new performance, peer, VRAM or native-failure injection window.",
+      "Full shared execution architecture and other model adaptation remain incomplete."
+    ]
+  },
+  "current_link_base": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-step-20261030\\model-link-base.json",
+    "bytes": 100601,
+    "sha256": "1d8ee20a4772d4f9298aae2670e26452267a30ac70d85d678f8459c330daee41"
+  },
+  "cleanup": {
+    "script": {
+      "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+      "bytes": 1712,
+      "sha256": "5d10206d102436d7f60d02d01d9e69209564f793f628c967ccc381244b8126a4"
+    },
+    "archived_script": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-step-20261030\\cleanup.ps1",
+      "bytes": 1712,
+      "sha256": "5d10206d102436d7f60d02d01d9e69209564f793f628c967ccc381244b8126a4"
+    },
+    "manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-step-20261030\\cleanup-targets.json",
+      "bytes": 1044,
+      "sha256": "04e0f49ae736dbd7e1416c3c6feca1840d414123353fd93b1de03e99bc852429"
+    },
+    "result": {
+      "status": "REMOVED_EXACT_FLAT_BATCH_IMAGES",
+      "files": 4,
+      "bytes": 143608024,
+      "boundary": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-step-20261030\\bin",
+      "retained": "Original SDK objects, current consumer objects, source inputs, commands and reports"
+    }
+  },
+  "evidence_archive": "inference-glm-step-2026-10-30.zip"
+}

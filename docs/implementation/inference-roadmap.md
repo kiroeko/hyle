@@ -39,9 +39,11 @@ HYLE 的产品目标是完整推理引擎；Compute、Graph、内存、调度、
 | 输出与性能检验 | 收敛共同输出事实；相关组件检查后，以当前4070上的decode、MTP和含预热／换轮的综合速度检验热路径，完整大模型与多卡验证如实留待后续 |
 
 Qwen／Kimi的完整资源阶段交接已接入原ExecutionEpisode；Head／ledger／RNG发布、私有修复及reset政策仍由原模型负责。
-下一片处理GLM独立模型步骤及实际额度接线：现有请求演示仅限定自然单发分支，实际credit尚未进入模型前缀选择，不能只给场景闭包改名就计为完成。
+GLM独立模型步骤及实际额度接线已实现：原场景和RequestLoop直接调用真实普通／K1计算与未发布候选形成，不再依赖固定base／随机身份的计算闭包。
 已选K1工作遇输出额度1，仍保原提案／验证及三draw合同，只限制可发布前缀；不能触发另一条target-only单draw政策。
 GLM先发布已接受完整状态、再维护journal的时序区别于Qwen，已提交结果和维护后current要分别表达，晚失败只能补观察，不能重跑原数学。
+普通和relay已共用同一准备入口，Source／Store绑定仍遵守真实Append及packed元数据顺序，不再增设一层总prepare或recipe回调。
+接下来清除私有draft阶段尚存的资源交接重复，并核对剩余共同执行边界；独立性能工作仍后置。
 
 多模型形状同时参考本地成熟引擎的实际实现：vLLM `276fbcff2717`的`v1/engine/core.py`、`v1/core/sched/scheduler.py`和`model_executor/models/qwen3_5.py`，
 TensorRT-LLM `46d9966b54d9`的`_torch/pyexecutor/engine/model_call.py`、`py_executor.py`及`model_engine.py`。
@@ -122,7 +124,12 @@ Vulkan原测试仅迁移未运行；此片只完成实际域边界整改，不�
 保模型状态／发布差异及原Status、异常、退休机制。CUDA三阶段Source链已实际复现旧顺序拒绝，再验证自身导出先封闭、incoming后撤回；原Status拒绝和非std异常后仍可恢复。
 7项Kimi组件测试和12条有限消费者通过，9份完整非计时报告保持，2份carrier报告增加明确检查及CUDA的3次原Graph提交。
 Qwen两段模型动作和其余main逻辑均作原文核对；仅刷新4个消费者，227个SDK／引擎输入复用，无SDK重编、下载或性能实验。
-这只完成一个完整资源阶段，不代签完整模型适配；GLM实际credit接线缺项已纳入下一片。
+这只完成一个完整资源阶段，不代签完整模型适配；随后继续补GLM真实步骤及credit接线。
+本次[GLM独立模型步骤](../evidence/correctness/inference-glm-step-2026-10-30.json)分离真实NextN／target、proposal、验证、接受前缀及完整StateDraft；
+普通场景与RequestLoop共用静态借用runtime，原取消、数值oracle、CAS／提交记录与发布后journal维护留在外层，没有新owner或执行器。
+实际grant进入前缀选择，无效credit和不一致RNG在验证图之前拒绝；greedy真实匹配proposal62398在grant1下只消费一行、保持pending，没有额外图。
+两个原权重CUDA消费者通过，49项旧请求事实逐项保持；原ordinary full-V检查观察同一次policy输出，未减少数值门或重跑图。
+只刷新一个组件TU、复用227个SDK／引擎对象，无SDK重编、下载或性能实验。CPU／量化模板有编译检查，本片未原生运行；随机自然接受true、异步GLM与整模型仍未据此证明。
 真实DeepSeek首次压缩检查还发现CUDA索引分数的归约漏填stride；修改前后消费者在同SDK上均失败，独立小回归在旧对象上准确失败。
 已补物理[key,token,head]步长，4项索引检查、真实首次压缩／窗口环绕及GLM回归通过；
 [本批有限检查](../evidence/correctness/inference-program-io-consumers-2026-10-30.json)共18项测试及2个载体进程通过，226个SDK／引擎输入复用、仅刷新1个provider CXX对象，无NVCC或下载。
