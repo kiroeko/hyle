@@ -29,6 +29,8 @@ struct CanonicalConstantKey final {
   compute::TensorDesc description{};
   mem::MemoryResourceRef resource{};
   std::size_t alignment = 1;
+  std::uint32_t source_root = 0;
+  std::size_t source_offset = 0;
   friend bool operator==(const CanonicalConstantKey &,
                          const CanonicalConstantKey &) noexcept = default;
 };
@@ -148,8 +150,9 @@ class ConstantArtifactCache final {
 public:
   HYLE_GRAPH_API Status begin_candidate() noexcept;
   HYLE_GRAPH_API void commit_plan() noexcept;
-  // The slot's original binding supplies its immutable logical description;
-  // physical_instance selects exactly one primary or replica owner mapping.
+  // The slot retains the original immutable root binding. physical_instance
+  // selects one root or derived-view representation; source_offset is checked
+  // against that root's initialized mathematical extent before allocation.
   // A miss reserves metadata/bytes and returns an unready allocation. The
   // caller marks it ready only after the complete copy batch terminates
   // successfully. Cache hits never expose unfinished bytes.
@@ -158,6 +161,12 @@ public:
                     std::uint32_t physical_instance,
                     mem::MemoryResourceRef destination,
                     std::size_t minimum_alignment) noexcept;
+  HYLE_GRAPH_API Result<CanonicalConstantAcquisition>
+  acquire_canonical(PlanState &plan, std::size_t slot,
+                    std::uint32_t physical_instance,
+                    mem::MemoryResourceRef destination,
+                    std::size_t minimum_alignment,
+                    std::size_t source_offset) noexcept;
   compute::ProviderPrepareOutcome
   acquire(PlanState &plan,
           const GraphRegionSource &source,

@@ -25,6 +25,7 @@
 
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/resource_leases.h"
+#include "../../engine/inference/output_pool_capacity.h"
 #include "hyle/compute/storage_owner.h"
 #include "hyle/compute/state_versions.h"
 #if defined(HYLE_TEST_GLM_STATE_CPU)
@@ -195,22 +196,21 @@ struct Native final {
     std::vector<model_graph_run::Port> input_ports,output_ports;
     for(std::size_t slot=0;slot<result.logical.inputs.size();++slot)
       input_ports.push_back({result.logical.inputs[slot],result.recipe.fragment.description(result.recipe.fragment.inputs[slot])});
-    std::size_t capacity=0;
+    std::vector<std::size_t> output_sizes;
+    output_sizes.reserve(result.logical.outputs.size());
     for(std::size_t slot=0;slot<result.logical.outputs.size();++slot) {
       const auto &desc=result.recipe.fragment.description(result.recipe.fragment.outputs[slot]);
       const auto bytes=take(desc.required_bytes(),"Pro output extent");
-      if(bytes>std::numeric_limits<std::size_t>::max()-255||capacity>std::numeric_limits<std::size_t>::max()-(bytes+255)/256*256)
-        throw std::runtime_error("Pro output backing capacity overflow");
-      capacity+=(bytes+255)/256*256;
+      output_sizes.push_back(bytes);
       output_ports.push_back({result.logical.outputs[slot],desc});
     }
-    if(!generations||capacity>std::numeric_limits<std::size_t>::max()/generations||
-        output_ports.size()>std::numeric_limits<std::uint32_t>::max()/generations)
-      throw std::runtime_error("Pro result generations exceed representable capacity");
+    if (output_sizes.empty()) throw std::runtime_error("caller output inventory must be nonempty");
+    const auto output_capacity=take(hyle::inference::checked_output_pool_capacity(output_sizes,generations,256),
+        "Pro result pool capacity");
     result.program=model_graph_run::ColdProgram::create(std::move(compiled),input_ports,output_ports);
     result.invocation=take(result.program->compiled.executable.create_invocation({.resources=g::ResourceOptions{}}),"ordinary Pro Invocation");
-    result.outputs=take(c::LeasePool::create(owner.ref(),capacity*generations,
-        {.max_blocks=std::uint32_t(result.program->output_count())*generations,.backing_alignment=256}),"bounded Pro result generations");
+    result.outputs=take(c::LeasePool::create(owner.ref(),output_capacity.backing_bytes,
+        {.max_blocks=output_capacity.max_blocks,.backing_alignment=256}),"bounded Pro result generations");
     return result;
   }
   template<model_graph_run::LeaseInputRange Inputs=std::span<const c::ReadLease>>

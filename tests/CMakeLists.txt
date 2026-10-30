@@ -402,6 +402,17 @@ if(TARGET hyle_engine OR
 endif()
 
 if(TARGET hyle_engine)
+  add_executable(hyle_inference_output_pool_capacity_test tools/inference_output_pool_capacity_test.cc)
+  hyle_configure_engine_target(hyle_inference_output_pool_capacity_test)
+  set_target_properties(hyle_inference_output_pool_capacity_test PROPERTIES
+    FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+  add_dependencies(hyle_tests hyle_inference_output_pool_capacity_test)
+  add_test(NAME hyle_inference_output_pool_capacity_test COMMAND hyle_inference_output_pool_capacity_test)
+  set_tests_properties(hyle_inference_output_pool_capacity_test PROPERTIES
+    LABELS "tooling;inference;capacity;cpu" TIMEOUT 60)
+endif()
+
+if(TARGET hyle_engine)
   add_executable(hyle_inference_state_transfer_test tools/inference_state_transfer_test.cc)
   hyle_configure_engine_target(hyle_inference_state_transfer_test)
   set_target_properties(hyle_inference_state_transfer_test PROPERTIES

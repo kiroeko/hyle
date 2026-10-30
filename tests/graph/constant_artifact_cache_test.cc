@@ -111,6 +111,8 @@ void initialize(d::PlanState &plan, const LogicalConstant &constant,
     ASSERT_TRUE(plan.instance_values.try_push_back(constant.value.ordinal()));
     ASSERT_TRUE(plan.instance_descriptions.try_push_back(constant.description));
     ASSERT_TRUE(plan.instance_storage.try_push_back(storage));
+    ASSERT_TRUE(plan.instance_roles.try_push_back(d::kConstant));
+    ASSERT_TRUE(plan.alias_sources.try_push_back(d::kNoInPlaceSource));
     ASSERT_TRUE(plan.instance_constant_owners.try_push_back(d::kNoWorkspaceRequest));
   }
 }
@@ -336,6 +338,8 @@ TEST(CanonicalConstantCache, PhysicalReplicasKeepPrimaryAndShareEachOwnerOnce) {
     ASSERT_TRUE(plan->instance_values.try_push_back(constant.value.ordinal()));
     ASSERT_TRUE(plan->instance_descriptions.try_push_back(constant.description));
     ASSERT_TRUE(plan->instance_storage.try_push_back(0));
+    ASSERT_TRUE(plan->instance_roles.try_push_back(d::kConstant));
+    ASSERT_TRUE(plan->alias_sources.try_push_back(d::kNoInPlaceSource));
     ASSERT_TRUE(plan->instance_constant_owners.try_push_back(d::kNoWorkspaceRequest));
   }
   d::ConstantArtifactCache cache;
@@ -355,7 +359,7 @@ TEST(CanonicalConstantCache, PhysicalReplicasKeepPrimaryAndShareEachOwnerOnce) {
   EXPECT_TRUE(unready.error().IsFailedPrecondition());
   copy_and_ready(*replica->owner, constant);
   auto repeated = cache.acquire_canonical(original, 0, 2, resources[0], 16);
-  ASSERT_TRUE(repeated);
+  ASSERT_TRUE(repeated) << repeated.error().message();
   EXPECT_FALSE(repeated->created);
   EXPECT_EQ(repeated->owner.get(), primary->owner.get());
   EXPECT_EQ(original.canonical_constants.size(), 2U);

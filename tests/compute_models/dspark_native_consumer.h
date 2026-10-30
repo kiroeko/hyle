@@ -15,6 +15,7 @@
 #include <type_traits>
 #include <vector>
 #include "model_graph_run.h"
+#include "../../engine/inference/output_pool_capacity.h"
 #include "model_resident_fragment.h"
 #include "hyle/graph/weight_binding.h"
 #if defined(HYLE_TEST_DSPARK_STATE_CPU)
@@ -96,10 +97,11 @@ struct Backend final {
       result.inputs.push_back(take(result.graph.input_description(i),"input description"));
       input_ports.push_back({take(result.graph.input_id(i),"input ID"),result.inputs.back()});
     }
-    std::size_t capacity=0;
+    std::vector<std::size_t> output_sizes;
+    output_sizes.reserve(result.graph.output_count());
     for(std::size_t i=0;i<result.graph.output_count();++i) {
       result.outputs.push_back(take(result.graph.output_description(i),"output description"));
-      capacity+=(take(result.outputs.back().required_bytes(),"output bytes")+255u)/256u*256u;
+      output_sizes.push_back(take(result.outputs.back().required_bytes(),"output bytes"));
     }
     const auto workload=actual_workload?actual_workload:default_workload;
     if(!workload)throw std::runtime_error("ordinary model workload was not selected by its caller");
@@ -109,8 +111,11 @@ struct Backend final {
       output_ports.push_back({take(result.graph.output_id(i),"output ID"),result.outputs[i]});
     result.program=model_graph_run::ColdProgram::create(std::move(compiled),input_ports,output_ports);
     result.invocation=take(result.program->compiled.executable.create_invocation({.resources=g::ResourceOptions{}}),"ordinary model Invocation");
-    result.pool=take(c::LeasePool::create(owner.ref(),capacity*generations,
-        {.max_blocks=std::uint32_t(result.outputs.size())*generations,.backing_alignment=256}),"independent result generations");
+    if (output_sizes.empty()) throw std::runtime_error("caller output inventory must be nonempty");
+    const auto output_capacity=take(hyle::inference::checked_output_pool_capacity(output_sizes,generations,256),
+        "ordinary result pool capacity");
+    result.pool=take(c::LeasePool::create(owner.ref(),output_capacity.backing_bytes,
+        {.max_blocks=output_capacity.max_blocks,.backing_alignment=256}),"independent result generations");
     return result;
   }
   template<model_graph_run::LeaseInputRange Inputs=std::span<const c::ReadLease>>

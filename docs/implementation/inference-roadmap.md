@@ -44,7 +44,8 @@ Qwen／GLM／Kimi／DeepSeek的实际接入面已经核对：有限具体图不�
 完整Family冷工厂现已隔离：一次消费已准备冷事实，完成原整图、有限compile、程序与逐child检查，Model保准入、原cache／head、采样身份与成功发布。新调用只在冷准备／原idle接纳链，逐步执行未新增分派或资源权威；cache／head准备顺序、失败诊断合并及冷计时范围变化单列验证。
 [本片有限检查](../evidence/correctness/inference-family-factory-boundary-2026-10-30.json)17对／34个原生进程通过；默认四对及真实CPU2的全部非时间汇总一致，完整Session向量逐字节相同，首次预算拒绝与同key重试通过。历史工厂C4457编译失败及两次解析准备事件保留，未把晚期child检查失败、完整默认CMake或独立性能窗口写成已验证。
 Phase物理准备已独立，原IO注册／slots／owner保留；Model仍负责政策、可晚挂接的state layout、共享scratch、初始化与真实退休。[本片26个有限原生进程](../evidence/correctness/inference-phase-preparation-boundary-2026-10-30.json)全部通过，包括首次真实allocation预算拒绝与重建、早／晚布局、warm原Invocation、默认四对、完整Session向量和9个diagnostic probe。230旧输入全复用，仅新增一个phase对象；无SDK／NVCC／下载或新性能窗。其余冷程序、请求恢复和稳态事实接线继续复审，不机械固定偶然host emit顺序，已完成共同IO／退休机制不重复。
-跨模型复审另发现caller输出池容量的对齐／溢出计算重复：GLM已有checked路径，DeepSeek／Kimi等仍有缺项，Qwen非对齐词表的q池有源码可推导的容量风险，尚未运行该形状。后续共享显式份数／alignment下的checked容量事实，保模型保留政策、域、原LeasePool与owner；不将256或Qwen程序族升级成共同形状，也不为算术共用新增执行器或公共ABI。
+跨模型caller输出池现共享显式份数／alignment下的checked容量事实，保模型保留政策、域、原LeasePool与owner；实际LeasePool用例复现非对齐V65两块旧容量拒绝并验证修复，未运行真实V65模型。GLM NextN暴露的常量View对齐缺口也已由Graph冷canonical表示修复，保原borrow／发布别名及预算／真实退休，无逐token Copy。
+[本片有限检查](../evidence/correctness/inference-output-pool-and-constant-view-2026-10-30.json)的11个输出池相关用例、42项Graph／缓存检查、新旧ordinary GLM、默认完整词表四对及完整Session通过；102个实际进程中的9次历史原生失败及两次scratch处理错误保留。新旧ordinary的24项属性exact，Session两臂各378份状态／150,761,472B逐字节一致。仅9个私有布局受影响SDK对象重编、222复用；无NVCC／下载或新完整性能窗。
 较强设备用于底座成熟后的更广整模型验证，当前工作不以租设备、完整大模型或通用loader／server为前置。
 新profile和优化尚未启动，原工具／命令准备保留；相关架构费用验证按实际改动安排。正在做和估计进度只在[看板](../developer/inference-progress.md)维护。
 

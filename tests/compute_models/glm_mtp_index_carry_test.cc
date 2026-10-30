@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "hyle/compute/resource_leases.h"
+#include "../../engine/inference/output_pool_capacity.h"
 #include "hyle/compute/state_versions.h"
 #include "hyle/compute/storage_owner.h"
 #if defined(HYLE_TEST_GLM_CARRY_CUDA)
@@ -105,15 +106,18 @@ struct Program final {
     result.compiled=take(compile(),"ordinary index carry compile");
     result.invocation=take(result.compiled.executable.create_invocation(
         {.resources=g::ResourceOptions{}}),"one original Invocation");
-    std::size_t footprint=0;
+    std::vector<std::size_t> output_sizes;
+    output_sizes.reserve(result.fragment.outputs.size());
     for(std::size_t i=0;i<result.fragment.outputs.size();++i) {
       if(take(result.compiled.executable.output_ownership(i),"output ownership")!=g::OutputOwnership::kCaller)
         throw std::runtime_error("carry fixture requires original caller outputs");
-      const auto bytes=take(result.fragment.description(result.fragment.outputs[i]).required_bytes(),"actual output extent");
-      footprint+=(bytes+255u)/256u*256u;
+      output_sizes.push_back(take(result.fragment.description(result.fragment.outputs[i]).required_bytes(),"actual output extent"));
     }
-    result.outputs=take(c::LeasePool::create(owner.ref(),footprint*generations,
-        {.max_blocks=std::uint32_t(result.fragment.outputs.size())*generations,.backing_alignment=256}),"bounded original output generations");
+    if (output_sizes.empty()) throw std::runtime_error("caller output inventory must be nonempty");
+    const auto output_capacity=take(hyle::inference::checked_output_pool_capacity(output_sizes,generations,256),
+        "carry output pool capacity");
+    result.outputs=take(c::LeasePool::create(owner.ref(),output_capacity.backing_bytes,
+        {.max_blocks=output_capacity.max_blocks,.backing_alignment=256}),"bounded original output generations");
     return result;
   }
   std::vector<c::ReadLease> execute(c::Queue &queue,std::span<const c::ReadLease> inputs) {

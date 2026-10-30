@@ -2028,9 +2028,16 @@ Status initialize_plan_lanes(detail::PlanState &plan,
 // Immutable original sources, borrowed only during this compilation. Each
 // candidate publishes its own ready destination views into PlanState.
 struct ConstantPreparation final {
+  struct ViewOrigin final {
+    std::uint32_t instance;
+    std::size_t root_slot;
+    std::size_t source_offset;
+  };
   explicit ConstantPreparation(mem::AllocatorRef allocator) noexcept
-      : bindings(allocator) {}
+      : bindings(allocator), views(allocator) {}
   container::SmallVector<ConstantBinding, 0, mem::AllocatorRef> bindings;
+  // Candidate-local provenance only; ready payload owners remain canonical.
+  container::SmallVector<ViewOrigin, 0, mem::AllocatorRef> views;
 };
 
 std::size_t constant_slot(const detail::PlanState &plan,
@@ -2290,16 +2297,35 @@ Status bind_constants(detail::PlanState &plan, const detail::GraphState &graph,
   return Status::Ok();
 }
 
+struct CanonicalConstantSource final {
+  std::size_t root_slot;
+  std::size_t source_offset;
+};
+
+std::optional<CanonicalConstantSource> canonical_constant_source(
+    const detail::PlanState &plan, const ConstantPreparation &constants,
+    std::size_t instance) noexcept {
+  for (const auto &view : constants.views)
+    if (view.instance == instance)
+      return CanonicalConstantSource{view.root_slot, view.source_offset};
+  const auto slot = constant_slot(plan, plan.instance_values[instance]);
+  if (slot == SIZE_MAX)
+    return std::nullopt;
+  return CanonicalConstantSource{slot, 0};
+}
+
 bool needs_canonical_constant(const detail::PlanState &plan,
                               const ConstantPreparation &constants,
                               std::size_t instance) noexcept {
   if ((plan.instance_roles[instance] & detail::kConstant) == 0 ||
       plan.alias_sources[instance] != detail::kNoInPlaceSource)
     return false;
-  const auto slot = constant_slot(plan, plan.instance_values[instance]);
-  return slot != SIZE_MAX &&
-      (plan.external_instances[plan.instance_values[instance]] != instance ||
-       constants.bindings[slot].policy == ConstantPolicy::kMaterialize);
+  const auto source = canonical_constant_source(plan, constants, instance);
+  return source &&
+      (plan.instance_values[instance] != plan.constant_ids[source->root_slot].ordinal() ||
+       source->source_offset != 0 ||
+       plan.external_instances[plan.instance_values[instance]] != instance ||
+       constants.bindings[source->root_slot].policy == ConstantPolicy::kMaterialize);
 }
 
 // A retry numbers physical instances anew. Retain ready owners by their real
@@ -2322,6 +2348,10 @@ Status retain_constant_owners(detail::PlanState &plan,
                        const detail::CanonicalConstantKey &right) noexcept {
     if (left.constant != right.constant)
       return left.constant < right.constant;
+    if (left.source_root != right.source_root)
+      return left.source_root < right.source_root;
+    if (left.source_offset != right.source_offset)
+      return left.source_offset < right.source_offset;
     const auto *l = &left.resource.resource(), *r = &right.resource.resource();
     if (l != r)
       return std::less<const mem::MemoryResource *>{}(l, r);
@@ -2336,21 +2366,32 @@ Status retain_constant_owners(detail::PlanState &plan,
     const auto logical = plan.instance_values[instance];
     const auto resource = plan.storage_domains[plan.instance_storage[instance]].resource;
     const auto &description = plan.instance_descriptions[instance];
+    const auto source = canonical_constant_source(plan, constants, instance);
+    if (!source)
+      return Status::Internal("canonical constant origin is absent");
     const detail::CanonicalConstantKey key{logical, description, resource,
         (std::max)({description.required_alignment(), plan.instance_alignments[instance],
-                    resource.properties().minimum_alignment})};
-    const auto found = std::lower_bound(order.begin(), order.end(), key,
+                    resource.properties().minimum_alignment}),
+        plan.constant_ids[source->root_slot].ordinal(), source->source_offset};
+    auto found = std::lower_bound(order.begin(), order.end(), key,
         [&](auto index, const auto &wanted) noexcept {
           return less(plan.canonical_constants[index]->key, wanted);
         });
-    if (found == order.end())
-      continue;
-    const auto &owner = plan.canonical_constants[*found];
-    if (owner->key.constant != logical || owner->key.description != description ||
-        owner->buffer.resource() != resource || owner->buffer.alignment() < key.alignment)
-      continue;
-    plan.instance_constant_owners[instance] = *found;
-    remap[*found] = 0; // Mark before compacting the unique owner arena.
+    for (; found != order.end(); ++found) {
+      const auto &owner = plan.canonical_constants[*found];
+      if (owner->key.constant != logical ||
+          owner->key.source_root != key.source_root ||
+          owner->key.source_offset != key.source_offset ||
+          owner->buffer.resource() != resource)
+        break;
+      // Variants may give one logical View different concrete descriptions.
+      // Equal ordering keys still require exact description equality.
+      if (owner->key.description != description || owner->buffer.alignment() < key.alignment)
+        continue;
+      plan.instance_constant_owners[instance] = *found;
+      remap[*found] = 0; // Mark before compacting the unique owner arena.
+      break;
+    }
   }
   std::uint32_t retained = 0;
   for (std::size_t index = 0; index < plan.canonical_constants.size(); ++index) {
@@ -2444,7 +2485,7 @@ Status materialize_constants(detail::PlanState &plan,
         const auto &source = plan.targets[target].source;
         auto retained = detail::ExecutionSourceAccess::compute(source);
         if (!retained) {
-          if (!retained.error().IsUnimplemented())
+          if (!retained.error().IsUnimplemented() || retained.error().has_native_error())
             return std::unexpected(std::move(retained).error());
           HYLE_ASSIGN_OR_RETURN(const bool supported,
               detail::ExecutionSourceAccess::can_copy_constant(source, transfer));
@@ -2458,7 +2499,8 @@ Status materialize_constants(detail::PlanState &plan,
           auto status = source.validate_resource(resource);
           if (status.ok())
             continue;
-          if (!status.IsFailedPrecondition() && !status.IsUnimplemented())
+          if (status.has_native_error() ||
+              (!status.IsFailedPrecondition() && !status.IsUnimplemented()))
             return std::unexpected(std::move(status));
           compatible = false;
           break;
@@ -2483,7 +2525,7 @@ Status materialize_constants(detail::PlanState &plan,
             destination_storage, source_storage);
         if (!properties) {
           auto status = std::move(properties).error();
-          if (status.IsUnimplemented())
+          if (status.IsUnimplemented() && !status.has_native_error())
             continue;
           return std::unexpected(std::move(status));
         }
@@ -2501,22 +2543,31 @@ Status materialize_constants(detail::PlanState &plan,
   for (std::size_t instance = 0; instance < plan.instance_values.size(); ++instance) {
     if (!needs_canonical_constant(plan, constants, instance))
       continue;
-    const auto slot = constant_slot(plan, plan.instance_values[instance]);
+    const auto source = canonical_constant_source(plan, constants, instance);
+    if (!source)
+      return Status::Internal("canonical constant origin is absent");
+    const auto slot = source->root_slot;
     const auto &binding = constants.bindings[slot];
     const auto storage = plan.instance_storage[instance];
     if (storage >= plan.storage_domains.size())
       return Status::Internal("constant has no selected storage domain");
-    const auto &description = binding.tensor.description();
+    const auto &description = plan.instance_descriptions[instance];
     if (instance >= plan.instance_alignments.size())
       return Status::Internal("constant has no physical alignment contract");
     HYLE_ASSIGN_OR_RETURN(auto acquired, packing.acquire_canonical(
         plan, slot, static_cast<std::uint32_t>(instance), plan.storage_domains[storage].resource,
-        (std::max)(description.required_alignment(), plan.instance_alignments[instance])));
+        (std::max)(description.required_alignment(), plan.instance_alignments[instance]),
+        source->source_offset));
     HYLE_ASSIGN_OR_RETURN(auto destination, compute::TensorView::create(
         description, acquired.owner->buffer.view()));
     if (acquired.created && !destination.storage().empty()) {
+      HYLE_ASSIGN_OR_RETURN(const auto root_storage,
+          binding.tensor.storage().subview(source->source_offset,
+              binding.tensor.storage().size() - source->source_offset));
+      HYLE_ASSIGN_OR_RETURN(const auto source_view,
+          compute::ConstTensorView::from_initialized_storage(description, root_storage));
       HYLE_ASSIGN_OR_RETURN(auto selected,
-          select_copy({destination, binding.tensor}, storage));
+          select_copy({destination, source_view}, storage));
       selected.slot = slot;
       selected.canonical = acquired.owner;
       if (selected.mode == compute::TransferMode::kQueuedDirect) {
@@ -5087,6 +5138,33 @@ Status prepare_placed_steps_attempt(
           -> Result<InputInstanceAdmission> {
     HYLE_ASSIGN_OR_RETURN(const auto instance,
         ensure_local_instance(ensure_local_instance, value, storage, tensor_required));
+    // Immutable Views may need a distinct aligned representation even in
+    // their original domain. Keep the Borrow root and producer alias intact;
+    // the existing cold constant batch materializes only this selected reader.
+    const auto instance_roles = plan.instance_roles[instance];
+    if (tensor_required && !plan.domain_graph.valid() && alignment > 1 &&
+        (instance_roles & detail::kConstant) != 0 &&
+        (instance_roles & (detail::kExternalInput | detail::kGeneratedOutput)) == 0 &&
+        plan.alias_sources[instance] != detail::kNoInPlaceSource) {
+      auto root = instance;
+      std::size_t offset = 0;
+      while (plan.alias_sources[root] != detail::kNoInPlaceSource) {
+        const auto parent = plan.alias_sources[root];
+        if (parent >= root || plan.alias_offsets[root] > SIZE_MAX - offset)
+          return std::unexpected(Status::Internal("constant input alias chain is invalid"));
+        offset += plan.alias_offsets[root];
+        root = parent;
+      }
+      const auto origin = canonical_constant_source(plan, constants, root);
+      if (offset % alignment != 0 && origin) {
+        if (origin->source_offset > SIZE_MAX - offset)
+          return std::unexpected(Status::OutOfRange("constant input origin offset overflows"));
+        HYLE_ASSIGN_OR_RETURN(const auto created, add_instance(value, storage, detail::kConstant));
+        if (!constants.views.try_push_back({created, origin->root_slot, origin->source_offset + offset}))
+          return std::unexpected(plan_allocation_failure());
+        return InputInstanceAdmission{created, true};
+      }
+    }
     HYLE_ASSIGN_OR_RETURN(const bool aligned,
         accepts_input_alias_alignment(plan, instance, alignment));
     if (aligned)
@@ -5740,13 +5818,25 @@ Status prepare_placed_steps_attempt(
             instance >= plan.instance_storage.size() ||
             plan.instance_storage[root] != plan.instance_storage[instance])
           return Status::Internal("region constant physical root is invalid");
-        const auto logical_root = plan.instance_values[root];
+        const auto *owned = plan.owned_instance_constant(root);
+        const detail::CanonicalConstantKey *canonical_key = nullptr;
+        if (owned != nullptr) {
+          const auto owner_index = plan.instance_constant_owners[root];
+          if (owner_index >= plan.canonical_constants.size() ||
+              !plan.canonical_constants[owner_index] ||
+              !plan.canonical_constants[owner_index]->ready)
+            return Status::Internal("region constant canonical owner is invalid");
+          canonical_key = &plan.canonical_constants[owner_index]->key;
+        }
+        const auto logical_root = canonical_key ? canonical_key->source_root : plan.instance_values[root];
         const auto slot = constant_slot(plan, logical_root);
-        // Prepared region outputs have their own artifact provenance. This
-        // interface currently exposes only original logical constant roots.
+        // Prepared region outputs have their own artifact provenance. An
+        // aligned immutable representation retains its original root/offset.
         if (slot == SIZE_MAX)
           continue;
-        const auto *owned = plan.owned_instance_constant(root);
+        const auto origin_offset = canonical_key ? canonical_key->source_offset : 0;
+        if (origin_offset > SIZE_MAX - offset)
+          return Status::OutOfRange("region constant origin offset overflows");
         auto binding = plan.constant_bindings[slot];
         if (owned != nullptr) {
           HYLE_ASSIGN_OR_RETURN(binding, compute::ConstTensorView::from_initialized_storage(
@@ -5766,7 +5856,7 @@ Status prepare_placed_steps_attempt(
                       : plan.constant_owners[slot],
                 owned ? compute::ReadLease{} : plan.constant_leases[slot]}) ||
             !region_constant_origins.try_push_back(
-                {value, plan.constant_ids[slot], offset}))
+                {value, plan.constant_ids[slot], origin_offset + offset}))
           return plan_allocation_failure();
       }
       RegionCompileRequest request{
@@ -5977,6 +6067,7 @@ Status prepare_placed_steps(
     }
     plan.shared_artifact_storage = {};
     plan.region_count = 0;
+    constants.views.clear();
     if (attempted) {
       while (plan.lanes.size() > configured_lane_count)
         plan.lanes.pop_back();
@@ -8265,7 +8356,7 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
   for (const auto &owner : plan.canonical_constants) {
     if (!owner || !owner->ready)
       continue;
-    const auto slot = constant_slot(plan, owner->key.constant);
+    const auto slot = constant_slot(plan, owner->key.source_root);
     if (slot == SIZE_MAX) {
       detail::release(state);
       return std::unexpected(Status::Internal("canonical owner has no logical constant"));

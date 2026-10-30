@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "hyle/compute/resource_leases.h"
+#include "../../engine/inference/output_pool_capacity.h"
 #include "hyle/compute/state_versions.h"
 #include "hyle/compute/storage_owner.h"
 #include "hyle/graph/weight_binding.h"
@@ -1654,13 +1655,15 @@ struct Program final {
     p.report_shared_lm(owner);
     p.report_original_attention(owner);
     p.invocation = take(p.cold_program->compiled.executable.create_invocation({.resources = g::ResourceOptions{}}), "ordinary NextN Invocation");
-    std::size_t footprint = 0;
-    for (std::size_t i = 0; i < p.cold_program->output_count(); ++i) {
-      const auto extent = take(p.cold_program->output(i).description.required_bytes(), "NextN output extent");
-      footprint += (extent + 255u) / 256u * 256u;
-    }
-    p.outputs = take(c::LeasePool::create(owner.ref(), footprint * max_generations,
-        {.max_blocks = std::uint32_t(p.logical.outputs.size() * max_generations), .backing_alignment = 256}), "bounded ordinary Graph output generations");
+    std::vector<std::size_t> output_sizes;
+    output_sizes.reserve(p.cold_program->output_count());
+    for (std::size_t i = 0; i < p.cold_program->output_count(); ++i)
+      output_sizes.push_back(take(p.cold_program->output(i).description.required_bytes(), "NextN output extent"));
+    if (output_sizes.empty()) throw std::runtime_error("caller output inventory must be nonempty");
+    const auto output_capacity = take(hyle::inference::checked_output_pool_capacity(output_sizes, max_generations, 256),
+        "NextN output pool capacity");
+    p.outputs = take(c::LeasePool::create(owner.ref(), output_capacity.backing_bytes,
+        {.max_blocks = output_capacity.max_blocks, .backing_alignment = 256}), "bounded ordinary Graph output generations");
     return result;
   }
   template<model_graph_run::LeaseInputRange Inputs=std::span<const c::ReadLease>>

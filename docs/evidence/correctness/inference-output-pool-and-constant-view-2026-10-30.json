@@ -1,0 +1,614 @@
+{
+  "schema": "hyle-inference-output-pool-and-constant-view-v1",
+  "status": "CURRENT_FINITE_CHECKS_PASS_HISTORICAL_FAILURES_RETAINED",
+  "base_commit": "74a6e8ee6af8a04d1e5238810ac47723f4b84665",
+  "full_goal_complete": false,
+  "implementation": {
+    "output_capacity": "Pure checked per-output alignment/add/multiply/block-count arithmetic; model copies, storage, budgets, alignment and LeasePool ownership remain at each caller. Arithmetic success does not certify allocator metadata/resource admission.",
+    "odd_vocabulary": "Actual LeasePool unit reproduces V65 F32 two-block old521-byte refusal and aligned1024-byte success. Qwen uses actual prepared output descriptor and retains its +1 tail; no real V65 model run.",
+    "constant_view": "Only a by-value reader of an unaligned static immutable constant View gets an independent cold canonical representation. Original borrow/root/published alias stays intact; cache keys include root/offset/exact description/resource/alignment. Existing CopyBatch ready gate and retained source lifetime are reused, no per-token Copy.",
+    "qualification": "Native-bearing resource/transfer qualification errors retain original code/native/message. Budget refusal/retry and finite variants use original ownership.",
+    "fixture_repairs": "Three old observer/factory reads now explicitly narrow initialized storage to logical description; old baseline independently fails both affected tests. Private cache fixture now fills required roles/alias arrays. Production Tensor/Buffer contracts and assertion values remain unchanged."
+  },
+  "build": {
+    "totals": {
+      "inference-output-pool-capacity-harness-20261030": {
+        "CXX": {
+          "total": 14,
+          "passed": 14,
+          "failed": 0
+        },
+        "link": {
+          "total": 14,
+          "passed": 14,
+          "failed": 0
+        },
+        "native": {
+          "total": 5,
+          "passed": 3,
+          "failed": 2
+        }
+      },
+      "inference-glm-ordinary-alias-harness-20261030": {
+        "CXX": {
+          "total": 1,
+          "passed": 1,
+          "failed": 0
+        },
+        "link": {
+          "total": 1,
+          "passed": 1,
+          "failed": 0
+        },
+        "native": {
+          "total": 1,
+          "passed": 0,
+          "failed": 1
+        }
+      },
+      "inference-constant-view-alignment-harness-20261030": {
+        "CXX": {
+          "total": 15,
+          "passed": 15,
+          "failed": 0
+        },
+        "link": {
+          "total": 21,
+          "passed": 21,
+          "failed": 0
+        },
+        "native": {
+          "total": 30,
+          "passed": 24,
+          "failed": 6
+        }
+      }
+    },
+    "retained_inputs": 231,
+    "reused": 222,
+    "recompiled_SDK": 9,
+    "private_layout": "CanonicalConstantKey changes private cache state layout: all9 reachable SDK translation units rebuilt; no mixing of old/new private layouts.",
+    "dependency_boundary": "162 actual SDK dep receipts plus repository include reachability;69 unchanged native/lib inputs have no full source-dependency metadata.",
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "current_checks": {
+    "graph_new": 3,
+    "graph_cache": 20,
+    "graph_related": 19,
+    "graph_skipped": 0,
+    "pool_cases": 11,
+    "components": 8,
+    "component_GTest_skipped": 0,
+    "qwen_tool_cases": 2,
+    "actual_LeasePool_unit": true,
+    "ordinary_control_properties_per_arm": 24,
+    "ordinary_control_all_exact": true,
+    "default_full_vocabulary_pairs": 4,
+    "default_non_timing_fields_exact": true,
+    "session_files_per_arm": 378,
+    "session_bytes_per_arm": 150761472,
+    "session_all_bytes_exact": true,
+    "session_final_live_versions": 0,
+    "observed_cold_summary": {
+      "status": "ALL_RECORDED_COLD_SUMMARIES_EQUAL",
+      "checks": [
+        {
+          "case": "ordinary-single",
+          "equal": true,
+          "line_counts": {
+            "baseline": 8,
+            "candidate": 8
+          },
+          "existing_plan_lines": {
+            "baseline": [
+              "compile full text finite family requests=1 variants=2 max_query_rows=154 nodes=2015 max_operation_proposals=32768 max_placement_attempts=8192",
+              "compiled text finite family variants=2 compiled_known_bytes=2235472 compiled_unknown_providers=1135 max_operation_proposals=32768 operation_proposals=5566 max_placement_attempts=8192 placement_attempts=1122",
+              "planned_replay T=154 slot_count=1 slot0_uses=1 slot0=commands",
+              "compiled T=154 steps=1088 workspace/slot=30056192 compiled_known_bytes=2210472 compiled_unknown_providers=646",
+              "planned_replay T=1 slot_count=1 slot0_uses=63 slot0=prefer-capture",
+              "compiled T=1 steps=1022 workspace/slot=222208 compiled_known_bytes=2210472 compiled_unknown_providers=580",
+              "planned_replay T=1 slot_count=3 slot0_uses=63 slot0=prefer-capture",
+              "compiled T=1 steps=1022 workspace/slot=222208 compiled_known_bytes=2210472 compiled_unknown_providers=580"
+            ],
+            "candidate": [
+              "compile full text finite family requests=1 variants=2 max_query_rows=154 nodes=2015 max_operation_proposals=32768 max_placement_attempts=8192",
+              "compiled text finite family variants=2 compiled_known_bytes=2235472 compiled_unknown_providers=1135 max_operation_proposals=32768 operation_proposals=5566 max_placement_attempts=8192 placement_attempts=1122",
+              "planned_replay T=154 slot_count=1 slot0_uses=1 slot0=commands",
+              "compiled T=154 steps=1088 workspace/slot=30056192 compiled_known_bytes=2210472 compiled_unknown_providers=646",
+              "planned_replay T=1 slot_count=1 slot0_uses=63 slot0=prefer-capture",
+              "compiled T=1 steps=1022 workspace/slot=222208 compiled_known_bytes=2210472 compiled_unknown_providers=580",
+              "planned_replay T=1 slot_count=3 slot0_uses=63 slot0=prefer-capture",
+              "compiled T=1 steps=1022 workspace/slot=222208 compiled_known_bytes=2210472 compiled_unknown_providers=580"
+            ]
+          },
+          "differences": []
+        },
+        {
+          "case": "mtp-single",
+          "equal": true,
+          "line_counts": {
+            "baseline": 18,
+            "candidate": 18
+          },
+          "existing_plan_lines": {
+            "baseline": [
+              "compile full text finite family requests=1 variants=2 max_query_rows=154 nodes=2053 max_operation_proposals=32768 max_placement_attempts=8192",
+              "compiled text finite family variants=2 compiled_known_bytes=2256176 compiled_unknown_providers=1213 max_operation_proposals=32768 operation_proposals=5676 max_placement_attempts=8192 placement_attempts=1208",
+              "compile full text finite family requests=1 variants=1 max_query_rows=2 nodes=2155 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2246976 compiled_unknown_providers=660 max_operation_proposals=16384 operation_proposals=2901 max_placement_attempts=4096 placement_attempts=613",
+              "compile full text finite family requests=1 variants=1 max_query_rows=2 nodes=2158 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2246072 compiled_unknown_providers=664 max_operation_proposals=16384 operation_proposals=2905 max_placement_attempts=4096 placement_attempts=616",
+              "compile full text finite family requests=1 variants=1 max_query_rows=1 nodes=2051 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2220824 compiled_unknown_providers=596 max_operation_proposals=16384 operation_proposals=2836 max_placement_attempts=4096 placement_attempts=548",
+              "compile full text finite family requests=1 variants=1 max_query_rows=1 nodes=2054 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2219920 compiled_unknown_providers=598 max_operation_proposals=16384 operation_proposals=2840 max_placement_attempts=4096 placement_attempts=549",
+              "planned_replay T=154 slot_count=1 slot0_uses=1 slot0=commands",
+              "compiled T=154 steps=1114 workspace/slot=30848768 compiled_known_bytes=2229016 compiled_unknown_providers=662",
+              "planned_replay T=2 slot_count=1 slot0_uses=63 slot0=prefer-capture",
+              "compiled T=2 steps=1128 workspace/slot=1503488 compiled_known_bytes=2246976 compiled_unknown_providers=660",
+              "planned_replay T=2 slot_count=1 slot0_uses=63 slot0=prefer-capture",
+              "compiled T=2 steps=1132 workspace/slot=1448448 compiled_known_bytes=2246072 compiled_unknown_providers=664",
+              "planned_replay T=2 slot_count=3 slot0_uses=63 slot0=prefer-capture",
+              "compiled T=2 steps=1132 workspace/slot=1448448 compiled_known_bytes=2246072 compiled_unknown_providers=664"
+            ],
+            "candidate": [
+              "compile full text finite family requests=1 variants=2 max_query_rows=154 nodes=2053 max_operation_proposals=32768 max_placement_attempts=8192",
+              "compiled text finite family variants=2 compiled_known_bytes=2256176 compiled_unknown_providers=1213 max_operation_proposals=32768 operation_proposals=5676 max_placement_attempts=8192 placement_attempts=1208",
+              "compile full text finite family requests=1 variants=1 max_query_rows=2 nodes=2155 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2246976 compiled_unknown_providers=660 max_operation_proposals=16384 operation_proposals=2901 max_placement_attempts=4096 placement_attempts=613",
+              "compile full text finite family requests=1 variants=1 max_query_rows=2 nodes=2158 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2246072 compiled_unknown_providers=664 max_operation_proposals=16384 operation_proposals=2905 max_placement_attempts=4096 placement_attempts=616",
+              "compile full text finite family requests=1 variants=1 max_query_rows=1 nodes=2051 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2220824 compiled_unknown_providers=596 max_operation_proposals=16384 operation_proposals=2836 max_placement_attempts=4096 placement_attempts=548",
+              "compile full text finite family requests=1 variants=1 max_query_rows=1 nodes=2054 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2219920 compiled_unknown_providers=598 max_operation_proposals=16384 operation_proposals=2840 max_placement_attempts=4096 placement_attempts=549",
+              "planned_replay T=154 slot_count=1 slot0_uses=1 slot0=commands",
+              "compiled T=154 steps=1114 workspace/slot=30848768 compiled_known_bytes=2229016 compiled_unknown_providers=662",
+              "planned_replay T=2 slot_count=1 slot0_uses=63 slot0=prefer-capture",
+              "compiled T=2 steps=1128 workspace/slot=1503488 compiled_known_bytes=2246976 compiled_unknown_providers=660",
+              "planned_replay T=2 slot_count=1 slot0_uses=63 slot0=prefer-capture",
+              "compiled T=2 steps=1132 workspace/slot=1448448 compiled_known_bytes=2246072 compiled_unknown_providers=664",
+              "planned_replay T=2 slot_count=3 slot0_uses=63 slot0=prefer-capture",
+              "compiled T=2 steps=1132 workspace/slot=1448448 compiled_known_bytes=2246072 compiled_unknown_providers=664"
+            ]
+          },
+          "differences": []
+        },
+        {
+          "case": "ordinary-two",
+          "equal": true,
+          "line_counts": {
+            "baseline": 10,
+            "candidate": 10
+          },
+          "existing_plan_lines": {
+            "baseline": [
+              "compile full text finite family requests=1 variants=3 max_query_rows=155 nodes=2015 max_operation_proposals=49152 max_placement_attempts=12288",
+              "compiled text finite family variants=3 compiled_known_bytes=2260472 compiled_unknown_providers=1690 max_operation_proposals=49152 operation_proposals=8349 max_placement_attempts=12288 placement_attempts=1716",
+              "planned_replay T=154 slot_count=1 slot0_uses=1 slot0=commands",
+              "compiled T=154 steps=1088 workspace/slot=30056192 compiled_known_bytes=2210472 compiled_unknown_providers=646",
+              "planned_replay T=1 slot_count=1 slot0_uses=126 slot0=prefer-capture",
+              "compiled T=1 steps=1022 workspace/slot=222208 compiled_known_bytes=2210472 compiled_unknown_providers=580",
+              "planned_replay T=1 slot_count=3 slot0_uses=126 slot0=prefer-capture",
+              "compiled T=1 steps=1022 workspace/slot=222208 compiled_known_bytes=2210472 compiled_unknown_providers=580",
+              "planned_replay T=155 slot_count=1 slot0_uses=1 slot0=commands",
+              "compiled T=155 steps=1088 workspace/slot=30251264 compiled_known_bytes=2210472 compiled_unknown_providers=646"
+            ],
+            "candidate": [
+              "compile full text finite family requests=1 variants=3 max_query_rows=155 nodes=2015 max_operation_proposals=49152 max_placement_attempts=12288",
+              "compiled text finite family variants=3 compiled_known_bytes=2260472 compiled_unknown_providers=1690 max_operation_proposals=49152 operation_proposals=8349 max_placement_attempts=12288 placement_attempts=1716",
+              "planned_replay T=154 slot_count=1 slot0_uses=1 slot0=commands",
+              "compiled T=154 steps=1088 workspace/slot=30056192 compiled_known_bytes=2210472 compiled_unknown_providers=646",
+              "planned_replay T=1 slot_count=1 slot0_uses=126 slot0=prefer-capture",
+              "compiled T=1 steps=1022 workspace/slot=222208 compiled_known_bytes=2210472 compiled_unknown_providers=580",
+              "planned_replay T=1 slot_count=3 slot0_uses=126 slot0=prefer-capture",
+              "compiled T=1 steps=1022 workspace/slot=222208 compiled_known_bytes=2210472 compiled_unknown_providers=580",
+              "planned_replay T=155 slot_count=1 slot0_uses=1 slot0=commands",
+              "compiled T=155 steps=1088 workspace/slot=30251264 compiled_known_bytes=2210472 compiled_unknown_providers=646"
+            ]
+          },
+          "differences": []
+        },
+        {
+          "case": "mtp-two",
+          "equal": true,
+          "line_counts": {
+            "baseline": 22,
+            "candidate": 22
+          },
+          "existing_plan_lines": {
+            "baseline": [
+              "compile full text finite family requests=1 variants=3 max_query_rows=155 nodes=2053 max_operation_proposals=49152 max_placement_attempts=12288",
+              "compiled text finite family variants=3 compiled_known_bytes=2283336 compiled_unknown_providers=1782 max_operation_proposals=49152 operation_proposals=8514 max_placement_attempts=12288 placement_attempts=1821",
+              "compile full text finite family requests=1 variants=1 max_query_rows=2 nodes=2155 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2246976 compiled_unknown_providers=660 max_operation_proposals=16384 operation_proposals=2901 max_placement_attempts=4096 placement_attempts=613",
+              "compile full text finite family requests=1 variants=1 max_query_rows=2 nodes=2158 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2246072 compiled_unknown_providers=664 max_operation_proposals=16384 operation_proposals=2905 max_placement_attempts=4096 placement_attempts=616",
+              "compile full text finite family requests=1 variants=1 max_query_rows=1 nodes=2051 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2220824 compiled_unknown_providers=596 max_operation_proposals=16384 operation_proposals=2836 max_placement_attempts=4096 placement_attempts=548",
+              "compile full text finite family requests=1 variants=1 max_query_rows=1 nodes=2054 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2219920 compiled_unknown_providers=598 max_operation_proposals=16384 operation_proposals=2840 max_placement_attempts=4096 placement_attempts=549",
+              "compile full text finite family requests=1 variants=1 max_query_rows=155 nodes=2055 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2229016 compiled_unknown_providers=662 max_operation_proposals=16384 operation_proposals=2840 max_placement_attempts=4096 placement_attempts=613",
+              "planned_replay T=154 slot_count=1 slot0_uses=1 slot0=commands",
+              "compiled T=154 steps=1114 workspace/slot=30848768 compiled_known_bytes=2229016 compiled_unknown_providers=662",
+              "planned_replay T=2 slot_count=1 slot0_uses=126 slot0=prefer-capture",
+              "compiled T=2 steps=1128 workspace/slot=1503488 compiled_known_bytes=2246976 compiled_unknown_providers=660",
+              "planned_replay T=2 slot_count=1 slot0_uses=126 slot0=prefer-capture",
+              "compiled T=2 steps=1132 workspace/slot=1448448 compiled_known_bytes=2246072 compiled_unknown_providers=664",
+              "planned_replay T=2 slot_count=3 slot0_uses=126 slot0=prefer-capture",
+              "compiled T=2 steps=1132 workspace/slot=1448448 compiled_known_bytes=2246072 compiled_unknown_providers=664",
+              "planned_replay T=155 slot_count=1 slot0_uses=1 slot0=commands",
+              "compiled T=155 steps=1115 workspace/slot=32336128 compiled_known_bytes=2229016 compiled_unknown_providers=662"
+            ],
+            "candidate": [
+              "compile full text finite family requests=1 variants=3 max_query_rows=155 nodes=2053 max_operation_proposals=49152 max_placement_attempts=12288",
+              "compiled text finite family variants=3 compiled_known_bytes=2283336 compiled_unknown_providers=1782 max_operation_proposals=49152 operation_proposals=8514 max_placement_attempts=12288 placement_attempts=1821",
+              "compile full text finite family requests=1 variants=1 max_query_rows=2 nodes=2155 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2246976 compiled_unknown_providers=660 max_operation_proposals=16384 operation_proposals=2901 max_placement_attempts=4096 placement_attempts=613",
+              "compile full text finite family requests=1 variants=1 max_query_rows=2 nodes=2158 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2246072 compiled_unknown_providers=664 max_operation_proposals=16384 operation_proposals=2905 max_placement_attempts=4096 placement_attempts=616",
+              "compile full text finite family requests=1 variants=1 max_query_rows=1 nodes=2051 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2220824 compiled_unknown_providers=596 max_operation_proposals=16384 operation_proposals=2836 max_placement_attempts=4096 placement_attempts=548",
+              "compile full text finite family requests=1 variants=1 max_query_rows=1 nodes=2054 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2219920 compiled_unknown_providers=598 max_operation_proposals=16384 operation_proposals=2840 max_placement_attempts=4096 placement_attempts=549",
+              "compile full text finite family requests=1 variants=1 max_query_rows=155 nodes=2055 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2229016 compiled_unknown_providers=662 max_operation_proposals=16384 operation_proposals=2840 max_placement_attempts=4096 placement_attempts=613",
+              "planned_replay T=154 slot_count=1 slot0_uses=1 slot0=commands",
+              "compiled T=154 steps=1114 workspace/slot=30848768 compiled_known_bytes=2229016 compiled_unknown_providers=662",
+              "planned_replay T=2 slot_count=1 slot0_uses=126 slot0=prefer-capture",
+              "compiled T=2 steps=1128 workspace/slot=1503488 compiled_known_bytes=2246976 compiled_unknown_providers=660",
+              "planned_replay T=2 slot_count=1 slot0_uses=126 slot0=prefer-capture",
+              "compiled T=2 steps=1132 workspace/slot=1448448 compiled_known_bytes=2246072 compiled_unknown_providers=664",
+              "planned_replay T=2 slot_count=3 slot0_uses=126 slot0=prefer-capture",
+              "compiled T=2 steps=1132 workspace/slot=1448448 compiled_known_bytes=2246072 compiled_unknown_providers=664",
+              "planned_replay T=155 slot_count=1 slot0_uses=1 slot0=commands",
+              "compiled T=155 steps=1115 workspace/slot=32336128 compiled_known_bytes=2229016 compiled_unknown_providers=662"
+            ]
+          },
+          "differences": []
+        },
+        {
+          "case": "session-cuda",
+          "equal": true,
+          "line_counts": {
+            "baseline": 18,
+            "candidate": 18
+          },
+          "existing_plan_lines": {
+            "baseline": [
+              "compile full text finite family requests=1 variants=2 max_query_rows=23 nodes=2053 max_operation_proposals=32768 max_placement_attempts=8192",
+              "compiled text finite family variants=2 compiled_known_bytes=2256176 compiled_unknown_providers=1231 max_operation_proposals=32768 operation_proposals=5676 max_placement_attempts=8192 placement_attempts=1226",
+              "compile full text finite family requests=1 variants=1 max_query_rows=2 nodes=2150 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2246272 compiled_unknown_providers=660 max_operation_proposals=16384 operation_proposals=2899 max_placement_attempts=4096 placement_attempts=611",
+              "compile full text finite family requests=1 variants=1 max_query_rows=2 nodes=2153 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2245368 compiled_unknown_providers=664 max_operation_proposals=16384 operation_proposals=2903 max_placement_attempts=4096 placement_attempts=614",
+              "compile full text finite family requests=1 variants=1 max_query_rows=1 nodes=2051 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2220824 compiled_unknown_providers=596 max_operation_proposals=16384 operation_proposals=2836 max_placement_attempts=4096 placement_attempts=548",
+              "compile full text finite family requests=1 variants=1 max_query_rows=1 nodes=2054 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2219920 compiled_unknown_providers=598 max_operation_proposals=16384 operation_proposals=2840 max_placement_attempts=4096 placement_attempts=549",
+              "planned_replay T=15 slot_count=1 slot0_uses=4 slot0=prefer-capture",
+              "compiled T=15 steps=1114 workspace/slot=3648000 compiled_known_bytes=2229016 compiled_unknown_providers=662",
+              "planned_replay T=2 slot_count=1 slot0_uses=48 slot0=prefer-capture",
+              "compiled T=2 steps=1123 workspace/slot=1503488 compiled_known_bytes=2246272 compiled_unknown_providers=660",
+              "planned_replay T=2 slot_count=1 slot0_uses=48 slot0=prefer-capture",
+              "compiled T=2 steps=1127 workspace/slot=1448448 compiled_known_bytes=2245368 compiled_unknown_providers=664",
+              "planned_replay T=23 slot_count=1 slot0_uses=4 slot0=prefer-capture",
+              "compiled T=23 steps=1114 workspace/slot=4975872 compiled_known_bytes=2229016 compiled_unknown_providers=662"
+            ],
+            "candidate": [
+              "compile full text finite family requests=1 variants=2 max_query_rows=23 nodes=2053 max_operation_proposals=32768 max_placement_attempts=8192",
+              "compiled text finite family variants=2 compiled_known_bytes=2256176 compiled_unknown_providers=1231 max_operation_proposals=32768 operation_proposals=5676 max_placement_attempts=8192 placement_attempts=1226",
+              "compile full text finite family requests=1 variants=1 max_query_rows=2 nodes=2150 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2246272 compiled_unknown_providers=660 max_operation_proposals=16384 operation_proposals=2899 max_placement_attempts=4096 placement_attempts=611",
+              "compile full text finite family requests=1 variants=1 max_query_rows=2 nodes=2153 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2245368 compiled_unknown_providers=664 max_operation_proposals=16384 operation_proposals=2903 max_placement_attempts=4096 placement_attempts=614",
+              "compile full text finite family requests=1 variants=1 max_query_rows=1 nodes=2051 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2220824 compiled_unknown_providers=596 max_operation_proposals=16384 operation_proposals=2836 max_placement_attempts=4096 placement_attempts=548",
+              "compile full text finite family requests=1 variants=1 max_query_rows=1 nodes=2054 max_operation_proposals=16384 max_placement_attempts=4096",
+              "compiled text finite family variants=1 compiled_known_bytes=2219920 compiled_unknown_providers=598 max_operation_proposals=16384 operation_proposals=2840 max_placement_attempts=4096 placement_attempts=549",
+              "planned_replay T=15 slot_count=1 slot0_uses=4 slot0=prefer-capture",
+              "compiled T=15 steps=1114 workspace/slot=3648000 compiled_known_bytes=2229016 compiled_unknown_providers=662",
+              "planned_replay T=2 slot_count=1 slot0_uses=48 slot0=prefer-capture",
+              "compiled T=2 steps=1123 workspace/slot=1503488 compiled_known_bytes=2246272 compiled_unknown_providers=660",
+              "planned_replay T=2 slot_count=1 slot0_uses=48 slot0=prefer-capture",
+              "compiled T=2 steps=1127 workspace/slot=1448448 compiled_known_bytes=2245368 compiled_unknown_providers=664",
+              "planned_replay T=23 slot_count=1 slot0_uses=4 slot0=prefer-capture",
+              "compiled T=23 steps=1114 workspace/slot=4975872 compiled_known_bytes=2229016 compiled_unknown_providers=662"
+            ]
+          },
+          "differences": []
+        }
+      ],
+      "selected_prefixes": [
+        "compile full text finite family ",
+        "compiled text finite family ",
+        "planned_replay T=",
+        "compiled T=",
+        "hybrid_plan "
+      ],
+      "excluded_fields": "Only *_seconds tokens on selected existing lines; preserve all known/unknown resource and work fields.",
+      "scope": "Existing cold summaries only, not every exact child/provider/copy route. Zero matching lines explicitly means unavailable summary, not proof."
+    }
+  },
+  "diagnostic": {
+    "original_Graph_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+      "bytes": 513931,
+      "sha256": "9f4fb5bcae0d826af44f9f6042253e2d0673cab9532493d45f84a0ddb05024cc"
+    },
+    "actual_message": [
+      "unknown file\nC++ exception with description \"ordinary connected NextN Graph: graph search exhausted after a rejected candidate: alias_propagation phase=pre_constants ordinal=57 value=60 source=5 root=5 edge_offset=4 root_offset=4 input_alignment=256 instance={instance=57 value=60 alignment=256 storage=0 roles=4 kind=0 projection=0 producer_target=4294967295} source={instance=5 value=5 alignment=256 storage=0 roles=4 kind=0 projection=0 producer_target=4294967295} root={instance=5 value=5 alignment=256 storage=0 roles=4 kind=0 projection=0 producer_target=4294967295} producer={step=14 kind=3 node=21 node_count=1 port=0 target=0 provider=unprepared provider_ns=0 provider_id=0 provider_instance=0} source_producer=external_or_constant_root root_producer=external_or_constant_root reader0={step=17 kind=0 node=23 node_count=1 port=1 target=0 provider=unprepared provider_ns=0 provider_id=0 provider_instance=0} readers_reported=1 domain=0 variant=unassigned: graph alias offset cannot satisfy provider port alignment: graph route search state budget is exhausted\" thrown in the test body.\n"
+    ],
+    "M2_applied": false
+  },
+  "history": {
+    "native_failures": 9,
+    "failed_processes": [
+      {
+        "kind": "native",
+        "exit": 1,
+        "seconds": 76.92566275596619,
+        "receipt": {
+          "path": ".scratch/inference-output-pool-capacity-harness-20261030/runs/candidate/baseline-glm-ordinary-cuda/attempt1/process.json",
+          "bytes": 150,
+          "sha256": "78d1966d2529291eaa377844fc1255c5f2d68d5f475aaac6c9352f3cdd2136cb"
+        }
+      },
+      {
+        "kind": "native",
+        "exit": 1,
+        "seconds": 86.4778151512146,
+        "receipt": {
+          "path": ".scratch/inference-output-pool-capacity-harness-20261030/runs/candidate/glm-ordinary-cuda/attempt1/process.json",
+          "bytes": 149,
+          "sha256": "730126d7b594aba3a5545bedde8a06cbeb3757ec858af7e6cad0ddf53d588a4a"
+        }
+      },
+      {
+        "kind": "native",
+        "exit": 1,
+        "seconds": 76.10076713562012,
+        "receipt": {
+          "path": ".scratch/inference-glm-ordinary-alias-harness-20261030/runs/ordinary/diagnosticattempt1/process.json",
+          "bytes": 149,
+          "sha256": "ebe48ed394f0229221d4e553f6f513f28a81bece13382f62f529da4a96eaa19f"
+        }
+      },
+      {
+        "kind": "native",
+        "exit": 1,
+        "seconds": 0.4103553295135498,
+        "receipt": {
+          "path": ".scratch/inference-constant-view-alignment-harness-20261030/runs/baseline-old-borrowed/attempt1/process.json",
+          "bytes": 151,
+          "sha256": "17eb9b5a184574d76c22d800408d736e611d3cdbf3e5a6c7e1dbe71fcc161059"
+        }
+      },
+      {
+        "kind": "native",
+        "exit": 1,
+        "seconds": 0.4422738552093506,
+        "receipt": {
+          "path": ".scratch/inference-constant-view-alignment-harness-20261030/runs/baseline-old-immutable/attempt1/process.json",
+          "bytes": 151,
+          "sha256": "f8bf285c3d8e6263e054e86639e08d4fd740f42d2c26dc2d277dac448de53d1e"
+        }
+      },
+      {
+        "kind": "native",
+        "exit": 1,
+        "seconds": 0.43704915046691895,
+        "receipt": {
+          "path": ".scratch/inference-constant-view-alignment-harness-20261030/runs/cache-all/attempt1/process.json",
+          "bytes": 152,
+          "sha256": "ae26e2408666a9e83cba969fbee42eb5ad0411f19272e80f1847025cc825adde"
+        }
+      },
+      {
+        "kind": "native",
+        "exit": 1,
+        "seconds": 0.4401066303253174,
+        "receipt": {
+          "path": ".scratch/inference-constant-view-alignment-harness-20261030/runs/new3/attempt1/process.json",
+          "bytes": 151,
+          "sha256": "9f97bd7d204ef9a0d300f582cf225fab0c27ea2f0c31a9e34b8a9c8c372d586f"
+        }
+      },
+      {
+        "kind": "native",
+        "exit": 1,
+        "seconds": 0.44518613815307617,
+        "receipt": {
+          "path": ".scratch/inference-constant-view-alignment-harness-20261030/runs/related19/attempt1/process.json",
+          "bytes": 151,
+          "sha256": "3f5dc4d1a67f969b6366ecd25f1594a5e918fe4724cf2b22916839b8c863ea36"
+        }
+      },
+      {
+        "kind": "native",
+        "exit": 1,
+        "seconds": 0.5166604518890381,
+        "receipt": {
+          "path": ".scratch/inference-constant-view-alignment-harness-20261030/runs/related19/attempt2/process.json",
+          "bytes": 151,
+          "sha256": "41f8ab6f6198ef0023f771aaaa78c99ae4c70cda87bf29b59baa9c3e415e98df"
+        }
+      }
+    ],
+    "scratch_errors": [
+      "Pre-dispatch Python quoting syntax, corrected before native dispatch.",
+      "Offline Qwen history JSON schema parser; native exit0 preserved and postprocessed without rerun."
+    ],
+    "attempts": "All102 actual processes preserved;30CXX/36links pass,27native pass/9historical native fail. Current selected logical checks pass; historical skip/fail XML is kept."
+  },
+  "default_timing_diagnostic": [
+    {
+      "case": "ordinary-single",
+      "prefill_seconds": {
+        "baseline": 0.0742329,
+        "candidate": 0.074753
+      },
+      "decode_seconds": {
+        "baseline": 0.6647272999999999,
+        "candidate": 0.6665295999999998
+      },
+      "session_seconds": {
+        "baseline": 0.7389602,
+        "candidate": 0.7412826
+      },
+      "startup_to_ready_seconds": {
+        "baseline": 1.3586674,
+        "candidate": 1.1633991
+      }
+    },
+    {
+      "case": "mtp-single",
+      "prefill_seconds": {
+        "baseline": 0.0733816,
+        "candidate": 0.0750131
+      },
+      "decode_seconds": {
+        "baseline": 0.5418594,
+        "candidate": 0.5353203000000001
+      },
+      "session_seconds": {
+        "baseline": 0.615241,
+        "candidate": 0.6103334
+      },
+      "startup_to_ready_seconds": {
+        "baseline": 1.7812657,
+        "candidate": 1.7704708
+      }
+    },
+    {
+      "case": "ordinary-two",
+      "prefill_seconds": {
+        "baseline": 0.1240919,
+        "candidate": 0.1199047
+      },
+      "decode_seconds": {
+        "baseline": 1.3046200000000003,
+        "candidate": 1.2997775999999999
+      },
+      "session_seconds": {
+        "baseline": 1.4287119,
+        "candidate": 1.4196823
+      },
+      "startup_to_ready_seconds": {
+        "baseline": 1.1939543,
+        "candidate": 1.2031659
+      }
+    },
+    {
+      "case": "mtp-two",
+      "prefill_seconds": {
+        "baseline": 0.1262364,
+        "candidate": 0.1238773
+      },
+      "decode_seconds": {
+        "baseline": 0.984763,
+        "candidate": 0.9814923000000001
+      },
+      "session_seconds": {
+        "baseline": 1.1109994,
+        "candidate": 1.1053696
+      },
+      "startup_to_ready_seconds": {
+        "baseline": 1.9229883,
+        "candidate": 1.9183532
+      }
+    }
+  ],
+  "scope": "Finite CPU/single-GPU components and current Qwen full consumer checks. Single fresh timing pair per default case is only a gross-regression observation, no speedup or full performance window claim. No second complete engine model, multi-card, Mac, whole default CMake build, full-model V65 or M2 validation.",
+  "source_pins": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 541319,
+      "sha256": "d76e2b006256d440b6f7682d291787fff7f97f9487b18ea7179696f4cb792336"
+    },
+    {
+      "path": "src/graph/constant_artifact.cc",
+      "bytes": 31244,
+      "sha256": "577ca468c56281cd5206c7ad3f73a7be1eaa58a677767b11d8024467fbb5f1b9"
+    },
+    {
+      "path": "src/graph/constant_artifact.h",
+      "bytes": 9630,
+      "sha256": "68e2cb77aa86ddafc0f7df8842f6a66b56b222e9ee60bd56b3058de192cd3cb7"
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "bytes": 518742,
+      "sha256": "b8e23a2d8219a787ce6338cb602b4a1543c3cc73ef5f0ec17c62884accdd51ac"
+    },
+    {
+      "path": "tests/CMakeLists.txt",
+      "bytes": 35802,
+      "sha256": "04a586012aac9277c398c166579ed272b0da314288a8d378efc7b4f7e5a2ba4b"
+    },
+    {
+      "path": "tests/compute_models/dspark_main_history_test.cc",
+      "bytes": 34627,
+      "sha256": "dfb558e8774d20149bf55f86cc36b4748a29d4c83ec3f9fb6a46daa10634e2e0"
+    },
+    {
+      "path": "tests/compute_models/dspark_native_consumer.h",
+      "bytes": 14236,
+      "sha256": "c8eef97611adaf9c652cf21ccbe30fd061b3d452192277d4b2321e5530ba26cd"
+    },
+    {
+      "path": "tests/compute_models/dspark_target_binding_test.cc",
+      "bytes": 21801,
+      "sha256": "f5d902f2bb262b7e6bc2607f9fe128ac500585d00530e4b3539dbdc831cead95"
+    },
+    {
+      "path": "tests/compute_models/glm_mtp_index_carry_test.cc",
+      "bytes": 23471,
+      "sha256": "64f596082ce64ad6e7194fb15dd772349e2544a2a2fa07a06c085b35437f153f"
+    },
+    {
+      "path": "tests/compute_models/glm_mtp_state_consumer_test.cc",
+      "bytes": 420151,
+      "sha256": "da7bf07ec488eac861ab680dfb5835054470f366fb6dc04a426a5f4ca9e4165e"
+    },
+    {
+      "path": "tests/compute_models/glm_pro_mtp_state_consumer_test.cc",
+      "bytes": 247472,
+      "sha256": "c64fa504027de419248eb26cd7b07be041bcc715312443954a00d979b556f19f"
+    },
+    {
+      "path": "tests/compute_models/kimi_heterogeneous_state_consumer_test.cc",
+      "bytes": 66117,
+      "sha256": "b1628523140ca47f0aa31a645407845e2234ea68cc9f69c51b615eba5b999c0f"
+    },
+    {
+      "path": "tests/graph/constant_artifact_cache_test.cc",
+      "bytes": 65663,
+      "sha256": "cb7d82f068a9ebc9a58b65428d1ffb068f456e7338023fcb1ab6dd096e79d77e"
+    },
+    {
+      "path": "tests/graph/region_provider_test.cc",
+      "bytes": 706123,
+      "sha256": "8d8992f4685a7fbcaad41f4b8595beb5af9ba485683ca84b13bb526b5cefcb14"
+    },
+    {
+      "path": "engine/inference/output_pool_capacity.h",
+      "bytes": 2361,
+      "sha256": "b9e981036a1b3a6a4c45e81f33d120c78cf1e7c12dbd799c19f714584bc67536"
+    },
+    {
+      "path": "tests/tools/inference_output_pool_capacity_test.cc",
+      "bytes": 8358,
+      "sha256": "88d43d7f04e11416440f4435a33d36b271086e64cd5ee50088c5f368f4fb7e47"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-output-pool-and-constant-view-2026-10-30.zip",
+    "bytes": 1943887,
+    "sha256": "0a5e15fe5a4a60922c0d9ba0d1a8104c1e64b054c2e70310afdbdf7e8a838465",
+    "members": 661,
+    "full_readback_verified": true
+  }
+}

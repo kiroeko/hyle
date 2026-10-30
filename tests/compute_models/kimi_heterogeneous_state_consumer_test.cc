@@ -19,6 +19,7 @@
 #include "kimi_original_attention_reference.h"
 #include "model_graph_run.h"
 #include "../../engine/inference/backend.h"
+#include "../../engine/inference/output_pool_capacity.h"
 #include "../../engine/inference/execution_episode.h"
 #include "hyle/compute/state_versions.h"
 #if defined(HYLE_TEST_KIMI_STATE_CUDA)
@@ -272,12 +273,16 @@ struct Run final : std::enable_shared_from_this<Run> {
     for(std::size_t i=0;i<f.outputs.size();++i)outputs.push_back({result->logical.outputs[i],f.description(f.outputs[i])});
     result->cold_program=model_graph_run::ColdProgram::create(
         take(g::cuda::compile(result->logical.graph,context,owner,{.constants=constants,.workload=workload}),"Kimi ordinary Graph compile"),inputs,outputs);
-    std::size_t bytes=0;
+    std::vector<std::size_t> output_sizes;
+    output_sizes.reserve(result->cold_program->output_count());
     for(std::size_t i=0;i<result->cold_program->output_count();++i)
-      bytes+=(take(result->cold_program->output(i).description.required_bytes(),"Kimi output extent")+255)/256*256;
+      output_sizes.push_back(take(result->cold_program->output(i).description.required_bytes(),"Kimi output extent"));
     constexpr std::uint32_t generations=8;
-    result->pool=take(c::LeasePool::create(owner.ref(),bytes*generations,
-        {.max_blocks=std::uint32_t(f.outputs.size())*generations,.backing_alignment=256}),"bounded Kimi output generations");
+    if (output_sizes.empty()) throw std::runtime_error("caller output inventory must be nonempty");
+    const auto output_capacity=take(inference::checked_output_pool_capacity(output_sizes,generations,256),
+        "Kimi output pool capacity");
+    result->pool=take(c::LeasePool::create(owner.ref(),output_capacity.backing_bytes,
+        {.max_blocks=output_capacity.max_blocks,.backing_alignment=256}),"bounded Kimi output generations");
     check(result->carrier.prepare(result->cold_program->compiled,result->backend->queue_bindings()),"Kimi original carrier preparation");
     check(result->carrier.initialize({.io=result->cold_program->io,.invocation={.resources=g::ResourceOptions{}}}),"Kimi original Invocation installation");
     result->facts=std::move(f);return result;

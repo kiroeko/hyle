@@ -15,6 +15,7 @@
 #include "dspark_main_history.h"
 #include "cpu_c4_flash_sidecars.h"
 #include "original_role_input.h"
+#include "../../engine/inference/output_pool_capacity.h"
 #include "row_cache_fixture.h"
 #if defined(HYLE_TEST_DSPARK_HISTORY_CPU)
 #include "hyle/graph/cpu.h"
@@ -125,14 +126,18 @@ Run prepare(g::Graph graph, std::vector<c::TensorDesc> inputs, std::vector<c::Te
   };
   result.compiled = take(compile(), "ordinary history compile");
   result.invocation = take(result.compiled.executable.create_invocation({.resources = g::ResourceOptions{}}), "ordinary Invocation");
-  std::size_t capacity = 0;
+  std::vector<std::size_t> output_sizes;
+  output_sizes.reserve(result.outputs.size());
   for (std::size_t i = 0; i < result.outputs.size(); ++i) {
     if (take(result.compiled.executable.output_ownership(i), "history ownership") != g::OutputOwnership::kCaller)
       throw std::runtime_error("history caller outputs required");
-    const auto size = take(result.outputs[i].required_bytes(), "history output bytes"); capacity += (size + 255) / 256 * 256;
+    output_sizes.push_back(take(result.outputs[i].required_bytes(), "history output bytes"));
   }
-  result.pool = take(c::LeasePool::create(owner.ref(), capacity * generations,
-      {.max_blocks = std::uint32_t(result.outputs.size()) * generations, .backing_alignment = 256}), "finite history output pool");
+  if (output_sizes.empty()) throw std::runtime_error("caller output inventory must be nonempty");
+  const auto output_capacity = take(hyle::inference::checked_output_pool_capacity(output_sizes, generations, 256),
+      "history output pool capacity");
+  result.pool = take(c::LeasePool::create(owner.ref(), output_capacity.backing_bytes,
+      {.max_blocks = output_capacity.max_blocks, .backing_alignment = 256}), "finite history output pool");
   return result;
 }
 std::vector<c::ReadLease> execute(Run &run, c::Queue &queue, std::span<const c::ReadLease> input) {

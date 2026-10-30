@@ -53,6 +53,7 @@
 #include "../../inference/program_slots.h"
 #include "../../inference/execution_episode.h"
 #include "../../inference/program_io.h"
+#include "../../inference/output_pool_capacity.h"
 #include "../../inference/graph_bindings.h"
 #include "../../inference/prepared_program_family.h"
 #include "../../inference/cold_shape_plan.h"
@@ -1105,9 +1106,11 @@ public:
       const auto blocks = cache_plan.active_sequences;
       if (!blocks || blocks >= UINT32_MAX) throw std::overflow_error("history snapshot block capacity exceeds lease indexing");
       const auto bytes = cache::multiply(static_cast<std::size_t>(vocabulary), sizeof(std::int32_t));
+      const auto pool_capacity = take(inference::checked_output_pool_capacity(
+          std::array{bytes}, blocks, cache::state_pool_alignment));
       resources_->history_counts_pool = take(c::LeasePool::create(execution.device(),
-          cache::add(cache::multiply(cache::add(bytes, cache::state_pool_padding(bytes)), blocks), 1),
-          {.max_blocks = static_cast<std::uint32_t>(blocks), .resource_budget = execution_budget}));
+          cache::add(pool_capacity.backing_bytes, 1),
+          {.max_blocks = pool_capacity.max_blocks, .resource_budget = execution_budget}));
     }
     if (progress) {
       auto status = hyle::Status::Ok();
@@ -1778,19 +1781,22 @@ public:
       if (port == program.next_counts) {
         const auto &facts = program.io.output_facts(program.next_counts_output);
         const auto bytes = take(facts.description.required_bytes());
+        const auto pool_capacity = take(inference::checked_output_pool_capacity(
+            std::array{bytes}, 2, cache::state_pool_alignment));
         program.next_counts_pool = take(c::LeasePool::create(
-            take(execution.resource_for(facts.storage)),
-            cache::add(cache::multiply(cache::add(bytes, cache::state_pool_padding(bytes)), 2), 1),
-            {.max_blocks = 2, .resource_budget = execution_budget}));
+            take(execution.resource_for(facts.storage)), cache::add(pool_capacity.backing_bytes, 1),
+            {.max_blocks = pool_capacity.max_blocks, .resource_budget = execution_budget}));
       } else if (port == program.log_probabilities) {
         // One verifier cohort retains every member's q until target selection.
         // Keep the original per-member allowance within the existing budget.
         const auto blocks = cache::multiply(cache_plan.active_sequences, cache_plan.candidate_boundaries);
-        if (blocks >= UINT32_MAX) throw std::overflow_error("NextN probability block capacity exceeds lease indexing");
-        const auto bytes = cache::multiply(cache::multiply(static_cast<std::size_t>(vocabulary), sizeof(float)), blocks);
+        const auto &facts = program.io.output_facts(program.probabilities_output);
+        const auto bytes = take(facts.description.required_bytes());
+        const auto pool_capacity = take(inference::checked_output_pool_capacity(
+            std::array{bytes}, blocks, cache::state_pool_alignment));
         program.probability_pool = take(c::LeasePool::create(
-            take(execution.resource_for(program.io.output_facts(program.probabilities_output).storage)), cache::add(bytes, 1),
-            {.max_blocks = static_cast<std::uint32_t>(blocks), .resource_budget = execution_budget}));
+            take(execution.resource_for(facts.storage)), cache::add(pool_capacity.backing_bytes, 1),
+            {.max_blocks = pool_capacity.max_blocks, .resource_budget = execution_budget}));
       }
     }
     check(program.io.add_fixed(program.tokens, program.token_values.read()));

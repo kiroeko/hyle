@@ -191,6 +191,7 @@ struct RegionProbe final {
       void *, const hyle::graph::RegionValue &) noexcept = nullptr;
   void *deferred_binding_observer_context = nullptr;
   bool transfer_supported = true;
+  Status transfer_query_failure{};
   bool queued_transfers = false;
   bool dependency_wait_supported = true;
   bool capture_supported = false;
@@ -1316,7 +1317,11 @@ ProviderPrepareOutcome compile_ready_constant_region(
     HYLE_ASSIGN_OR_RETURN(data->buffer, Buffer::create(prepare.destination,
         context.output_count * 4 * sizeof(float), 64));
     std::array<float, 4> values{};
-    HYLE_RETURN_IF_ERROR(prepare.source.storage().read(
+    // Artifact sources may retain initialized bytes beyond the logical View.
+    HYLE_ASSIGN_OR_RETURN(const auto logical_source,
+        hyle::compute::ConstTensorView::create(
+            prepare.source.description(), prepare.source.storage()));
+    HYLE_RETURN_IF_ERROR(logical_source.storage().read(
         std::as_writable_bytes(std::span(values))));
     context.probe->source_values.push_back(values);
     for (float &value : values)
@@ -1398,8 +1403,10 @@ Status pack_weights(void *context,
         Buffer::create(resource, probe.extra_private_bytes, 64));
   }
   std::array<float, 4> values{};
+  HYLE_ASSIGN_OR_RETURN(const auto logical_source,
+      hyle::compute::ConstTensorView::create(source.description(), source.storage()));
   HYLE_RETURN_IF_ERROR(
-      source.storage().read(std::as_writable_bytes(std::span(values))));
+      logical_source.storage().read(std::as_writable_bytes(std::span(values))));
   if (probe.expected_source_values && values != *probe.expected_source_values)
     return Status::Internal("packing received incorrect local constant bytes");
   std::reverse(values.begin(), values.end());
@@ -2483,6 +2490,8 @@ async_transfer_properties(void *context, hyle::mem::BufferView,
   auto *probe = static_cast<RegionProbe *>(context);
   if (probe != nullptr)
     ++probe->transfer_query_count;
+  if (probe != nullptr && !probe->transfer_query_failure.ok())
+    return std::unexpected(probe->transfer_query_failure);
   if (probe == nullptr || !probe->transfer_supported) {
     return std::unexpected(
         Status::Unimplemented("test graph transfer route is unavailable"));
@@ -13003,6 +13012,318 @@ TEST(GraphRegions, DiscoveryPreservesTheExistingExternalEntryFrontier) {
   }
 }
 
+TEST(GraphConstants, BorrowedUnalignedViewGetsOneColdReplicaWithoutReplacingItsPublishedAlias) {
+  for (const bool leaf : {false, true}) {
+    for (const std::int64_t offset : {1, 64}) {
+      SCOPED_TRACE(leaf);
+      SCOPED_TRACE(offset);
+      RegionProbe probe{.mode = ProposalMode::kSingleton, .singleton_node = 1};
+      probe.asynchronous_backend = true;
+      probe.bounded_unary_domain = true;
+      probe.required_resource = probe.region_input_resource = probe.region_output_resource =
+          hyle::mem::system_resource();
+      probe.requirement_override = hyle::compute::ResourceRequirement{.minimum_alignment = 256};
+      auto context = make_context(probe);
+      auto builder = GraphBuilder::create().value();
+      const auto root = builder.constant(row(85)).value();
+      const auto selected = builder.add(hyle::compute::View::slice(0, offset, 4).value(), root).value();
+      const auto output = builder.add(Unary{UnaryKind::kNeg}, selected).value();
+      ASSERT_TRUE(builder.publish(output).ok());
+      ASSERT_TRUE(builder.publish(selected).ok());
+      const auto graph = std::move(builder).finish().value();
+      auto pool = hyle::compute::LeasePool::create(hyle::mem::system_resource(), 512).value();
+      auto writer = pool.allocate(85 * sizeof(float), 256).value();
+      std::array<float, 85> values{};
+      for (std::size_t i = 0; i < values.size(); ++i) values[i] = static_cast<float>(i + 1);
+      ASSERT_TRUE(writer.view()->write(std::as_bytes(std::span(values))).ok());
+      auto ready = writer.publish().value();
+      const auto original = ready.view().value();
+      const std::array constants{hyle::graph::ConstantBinding{
+          .value = root, .tensor = ready.tensor(row(85)).value(), .lease = ready}};
+      const std::array required{hyle::graph::NodeProviderConstraint{
+          graph.node_id(1).value(), kRegionProviderId, context.provider_instance_id(0).value()}};
+      const CompileOptions options{.constants = constants, .node_providers = required,
+          .region_selection = leaf ? RegionSelectionPolicy::kDisabled : RegionSelectionPolicy::kAllowProviderRegions,
+          .operation_fallback = leaf ? OperationFallbackPolicy::kAllow : OperationFallbackPolicy::kReject};
+      // A required reader cannot quietly consume the original unaligned alias
+      // when the real cold transfer route is unavailable. Retry uses the same
+      // borrowed immutable permission, not a new source or replay Copy.
+      if (leaf && offset == 1) {
+        probe.transfer_supported = false;
+        auto denied = hyle::graph::compile(graph, context, options);
+        ASSERT_FALSE(denied);
+        EXPECT_TRUE(denied.error().IsUnimplemented()) << denied.error().message();
+        EXPECT_EQ(probe.copy_count, 0u);
+        EXPECT_EQ(probe.submit_count, 0u);
+        probe.transfer_supported = true;
+      }
+      auto compiled = hyle::graph::compile(graph, context, options);
+      ASSERT_TRUE(compiled) << compiled.error().message();
+      const auto copies = offset == 1 ? 1u : 0u;
+      EXPECT_EQ(probe.copy_count, copies);
+      EXPECT_EQ(compiled->report.copy_bytes(), 0u);
+      EXPECT_EQ(compiled->report.materialized_constant_bytes(), copies * 4 * sizeof(float));
+      EXPECT_EQ(compiled->report.region_count(), leaf ? 0u : 1u);
+      const auto *plan = hyle::graph::detail::ExecutableAccess::state(compiled->executable);
+      ASSERT_NE(plan, nullptr);
+      ASSERT_EQ(plan->constant_bindings.size(), 1u);
+      ASSERT_EQ(plan->constant_leases.size(), 1u);
+      EXPECT_EQ(plan->constant_leases[0].generation(), ready.generation());
+      EXPECT_EQ(plan->constant_bindings[0].storage().native_handle(), original.native_handle());
+      EXPECT_EQ(plan->constant_bindings[0].storage().offset(), original.offset());
+      EXPECT_EQ(plan->owned_constant(0), nullptr);
+      const auto original_view = plan->external_instances[selected.ordinal()];
+      ASSERT_LT(original_view, plan->instance_values.size());
+      EXPECT_NE(plan->alias_sources[original_view], hyle::graph::detail::kNoInPlaceSource);
+      EXPECT_EQ(plan->alias_offsets[original_view], static_cast<std::size_t>(offset) * sizeof(float));
+      std::optional<std::uint32_t> reader;
+      for (const auto &step : plan->steps) {
+        EXPECT_NE(step.kind, hyle::graph::detail::PlanStepKind::kCopy);
+        if (step.node_begin == 1) {
+          EXPECT_EQ(step.provider_instance_id(), context.provider_instance_id(0).value());
+          reader = plan->node_inputs[step.input_begin];
+        }
+      }
+      ASSERT_TRUE(reader);
+      EXPECT_EQ(plan->instance_values[*reader], selected.ordinal());
+      if (offset == 1) {
+        EXPECT_NE(*reader, original_view);
+        EXPECT_EQ(plan->alias_sources[*reader], hyle::graph::detail::kNoInPlaceSource);
+        const auto *buffer = plan->owned_instance_constant(*reader);
+        ASSERT_NE(buffer, nullptr);
+        EXPECT_GE(buffer->alignment(), 256u);
+        EXPECT_EQ(buffer->size(), 4 * sizeof(float));
+        EXPECT_NE(buffer->view().native_handle(), original.native_handle());
+        const auto owner_index = plan->instance_constant_owners[*reader];
+        ASSERT_LT(owner_index, plan->canonical_constants.size());
+        const auto &owner = plan->canonical_constants[owner_index];
+        ASSERT_TRUE(owner && owner->ready);
+        EXPECT_EQ(owner->key.constant, selected.ordinal());
+        EXPECT_EQ(owner->key.source_root, root.ordinal());
+        EXPECT_EQ(owner->key.source_offset, sizeof(float));
+      } else {
+        EXPECT_EQ(*reader, original_view);
+        EXPECT_EQ(plan->owned_instance_constant(*reader), nullptr);
+      }
+      auto queue = context.create_queue().value();
+      std::array outputs{make_tensor(row(4)), make_tensor(row(4))};
+      std::array slots{compiled->executable.create_invocation().value(),
+                       compiled->executable.create_invocation().value()};
+      for (int phase = 0; phase != 3; ++phase) {
+        for (std::size_t slot = 0; slot < slots.size(); ++slot) {
+          SCOPED_TRACE(phase);
+          SCOPED_TRACE(slot);
+          if (phase == 2) ASSERT_TRUE(slots[slot].reset().ok());
+          if (phase != 1) ASSERT_TRUE(slots[slot].bind(output, outputs[slot].view).ok());
+          auto completed = slots[slot].submit(queue);
+          ASSERT_TRUE(completed) << completed.error().message();
+          ASSERT_TRUE(completed->wait().ok());
+          std::vector<float> expected(4);
+          for (std::size_t i = 0; i < expected.size(); ++i) expected[i] = -values[i + offset];
+          EXPECT_EQ(read(outputs[slot], 4), expected);
+          auto result = slots[slot].result(selected);
+          ASSERT_TRUE(result) << result.error().message();
+          const auto tensor = result->tensor();
+          ASSERT_TRUE(tensor) << tensor.error().message();
+          EXPECT_EQ(tensor->storage().native_handle(), original.native_handle());
+          EXPECT_EQ(tensor->storage().offset(), original.offset() + static_cast<std::size_t>(offset) * sizeof(float));
+          EXPECT_EQ(probe.copy_count, copies);
+        }
+      }
+      std::array<float, 85> unchanged{};
+      ASSERT_TRUE(ready.view()->read(std::as_writable_bytes(std::span(unchanged))).ok());
+      EXPECT_EQ(unchanged, values);
+    }
+  }
+}
+
+TEST(GraphConstants, DerivedViewCanonicalKeysSeparateFiniteOffsetsAndDescriptions) {
+  RegionProbe probe{.mode = ProposalMode::kSingleton, .singleton_node = 1};
+  probe.asynchronous_backend = true;
+  probe.bounded_unary_domain = true;
+  probe.required_resource = hyle::mem::system_resource();
+  probe.requirement_override = hyle::compute::ResourceRequirement{.minimum_alignment = 256};
+  auto context = make_context(probe);
+  auto builder = GraphBuilder::create().value();
+  const auto start = builder.dimension({1, 2, 1}).value();
+  const auto length = builder.dimension({3, 4, 1}).value();
+  const auto root = builder.constant(row(8)).value();
+  const auto selected = builder.add(hyle::graph::ViewSpec::slice(0,
+      hyle::graph::Dimension(start), hyle::graph::Dimension(length)).value(), root).value();
+  const auto spec = hyle::graph::TensorSpec::dense(DataType::kFloat32,
+      std::array{hyle::graph::Dimension(length)}).value();
+  const auto output = builder.add(Unary{UnaryKind::kNeg}, spec, selected).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  const auto graph = std::move(builder).finish().value();
+  auto pool = hyle::compute::LeasePool::create(hyle::mem::system_resource(), 256).value();
+  auto writer = pool.allocate(8 * sizeof(float), 256).value();
+  const std::array values{1.F, 2.F, 3.F, 4.F, -5.F, -6.F, -7.F, -8.F};
+  ASSERT_TRUE(writer.view()->write(std::as_bytes(std::span(values))).ok());
+  auto ready = writer.publish().value();
+  std::array constants{hyle::graph::ConstantBinding{
+      .value = root, .tensor = ready.tensor(row(8)).value(), .lease = ready}};
+  const std::array first{hyle::graph::ShapeBinding{start, 1}, hyle::graph::ShapeBinding{length, 4}};
+  const std::array second{hyle::graph::ShapeBinding{start, 2}, hyle::graph::ShapeBinding{length, 4}};
+  const std::array third{hyle::graph::ShapeBinding{start, 1}, hyle::graph::ShapeBinding{length, 3}};
+  const std::array variants{hyle::graph::ExactShapeVariant{first},
+      hyle::graph::ExactShapeVariant{second}, hyle::graph::ExactShapeVariant{third}};
+  const std::array required{hyle::graph::NodeProviderConstraint{
+      graph.node_id(1).value(), kRegionProviderId, context.provider_instance_id(0).value()}};
+  CompileOptions options{.shape_policy = hyle::graph::CompileShapePolicy::kFiniteExact,
+      .exact_variants = variants, .constants = constants, .node_providers = required,
+      .region_selection = RegionSelectionPolicy::kDisabled};
+  auto compiled = hyle::graph::compile(graph, context, options);
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(probe.copy_count, 3u);
+  EXPECT_EQ(compiled->report.total_compiled_storage().materialized_constant_bytes, 44u);
+  std::array children{compiled->executable.exact_variant(0).value(),
+      compiled->executable.exact_variant(1).value(), compiled->executable.exact_variant(2).value()};
+  std::array<const void *, 3> handles{};
+  for (std::size_t variant = 0; variant < variants.size(); ++variant) {
+    SCOPED_TRACE(variant);
+    const auto count = variant == 2 ? 3 : 4;
+    const auto offset = variant == 1 ? 2 : 1;
+    const auto *plan = hyle::graph::detail::ExecutableAccess::state(children[variant]);
+    ASSERT_NE(plan, nullptr);
+    ASSERT_EQ(plan->constant_ids.size(), 1u);
+    EXPECT_EQ(plan->owned_constant(0), nullptr);
+    const auto report = compiled->report.exact_variant(variant).value();
+    EXPECT_EQ(report.copy_bytes(), 0u);
+    const auto &step = plan->steps[plan->node_steps[1]];
+    const auto instance = plan->node_inputs[step.input_begin];
+    const auto owner_index = plan->instance_constant_owners[instance];
+    ASSERT_LT(owner_index, plan->canonical_constants.size());
+    const auto &owner = plan->canonical_constants[owner_index];
+    ASSERT_TRUE(owner && owner->ready);
+    EXPECT_EQ(owner->key.constant, selected.ordinal());
+    EXPECT_EQ(owner->key.source_root, root.ordinal());
+    EXPECT_EQ(owner->key.source_offset, static_cast<std::size_t>(offset) * sizeof(float));
+    EXPECT_EQ(owner->key.description, row(count));
+    handles[variant] = owner->buffer.view().native_handle();
+    for (const auto &physical_step : plan->steps)
+      EXPECT_NE(physical_step.kind, hyle::graph::detail::PlanStepKind::kCopy);
+  }
+  EXPECT_NE(handles[0], handles[1]); // identical description, different offset
+  EXPECT_NE(handles[0], handles[2]); // identical offset, different description
+  // Each retained exact child keeps its selected immutable root lease and
+  // derived owner after the parent/report/caller source handles disappear.
+  const auto known_bytes = compiled->report.total_compiled_storage().known_bytes();
+  ASSERT_GT(known_bytes, 0u);
+  ASSERT_GT(compiled->report.total_compiled_storage().unknown_provider_count, 0u);
+  *compiled = hyle::graph::CompiledGraph{};
+  constants[0].lease.reset();
+  ready.reset();
+  pool = hyle::compute::LeasePool{};
+  auto queue = context.create_queue().value();
+  for (std::size_t variant = 0; variant < children.size(); ++variant) {
+    const auto count = variant == 2 ? 3 : 4;
+    const auto offset = variant == 1 ? 2 : 1;
+    auto run = children[variant].create_invocation().value();
+    auto destination = make_tensor(row(count));
+    for (int replay = 0; replay != 2; ++replay) {
+      if (replay != 0) ASSERT_TRUE(run.reset().ok());
+      ASSERT_TRUE(run.bind(output, destination.view).ok());
+      auto completed = run.submit(queue);
+      ASSERT_TRUE(completed) << completed.error().message();
+      ASSERT_TRUE(completed->wait().ok());
+      std::vector<float> expected(static_cast<std::size_t>(count));
+      for (std::size_t i = 0; i < expected.size(); ++i) expected[i] = -values[i + offset];
+      EXPECT_EQ(read(destination, static_cast<std::size_t>(count)), expected);
+      EXPECT_EQ(probe.copy_count, 3u);
+    }
+  }
+  const auto *retained = hyle::graph::detail::ExecutableAccess::state(children[0]);
+  ASSERT_NE(retained, nullptr);
+  ASSERT_EQ(retained->constant_leases.size(), 1u);
+  constants[0].lease = retained->constant_leases[0];
+  // This bound covers known Graph storage. The native provider's private
+  // storage remains explicitly unknown, so it cannot be a total physical cap.
+  options.compiled_storage.unknown = hyle::graph::UnknownStoragePolicy::kAllow;
+  options.compiled_storage.max_bytes = known_bytes - 1;
+  auto denied = hyle::graph::compile(graph, context, options);
+  ASSERT_FALSE(denied);
+  EXPECT_TRUE(denied.error().IsResourceExhausted()) << denied.error().message();
+  options.compiled_storage.max_bytes = known_bytes;
+  const auto before_retry = probe.copy_count;
+  auto recovered = hyle::graph::compile(graph, context, options);
+  ASSERT_TRUE(recovered) << recovered.error().message();
+  EXPECT_EQ(probe.copy_count, before_retry + 3);
+  EXPECT_EQ(recovered->report.total_compiled_storage().materialized_constant_bytes, 44u);
+}
+
+TEST(GraphConstants, DerivedConstantCopyQualificationKeepsNativeErrorsAndRetries) {
+  for (const bool transfer_query : {false, true}) {
+    SCOPED_TRACE(transfer_query);
+    RegionProbe strict{.mode = ProposalMode::kSingleton, .singleton_node = 1};
+    strict.asynchronous_backend = true;
+    strict.bounded_unary_domain = true;
+    strict.required_resource = hyle::mem::system_resource();
+    strict.requirement_override = hyle::compute::ResourceRequirement{.minimum_alignment = 256};
+    strict.transfer_supported = false; // The next target is the only cold Copy route.
+    auto context = make_context(strict);
+    RegionProbe copy_probe;
+    auto copy_context = Context::create(async_device(copy_probe), hyle::compute::native::provider()).value();
+    HostResource copy_default;
+    const std::array storage{hyle::graph::StorageDomain{hyle::mem::system_resource()},
+        hyle::graph::StorageDomain{hyle::mem::MemoryResourceRef(copy_default)}};
+    const std::array targets{
+        hyle::graph::ExecutionTarget{hyle::graph::ExecutionSource::acquire(context).value(), hyle::graph::StorageDomainId{0}},
+        hyle::graph::ExecutionTarget{hyle::graph::ExecutionSource::acquire(copy_context).value(), hyle::graph::StorageDomainId{1}}};
+    auto builder = GraphBuilder::create().value();
+    const auto root = builder.constant(row(8)).value();
+    const auto selected = builder.add(hyle::compute::View::slice(0, 1, 4).value(), root).value();
+    const auto output = builder.add(Unary{UnaryKind::kNeg}, selected).value();
+    ASSERT_TRUE(builder.publish(output).ok());
+    const auto graph = std::move(builder).finish().value();
+    auto buffer = Buffer::create(hyle::mem::system_resource(), 8 * sizeof(float), 256).value();
+    const std::array values{1.F, 2.F, 3.F, 4.F, -5.F, -6.F, -7.F, -8.F};
+    ASSERT_TRUE(buffer.write(0, std::as_bytes(std::span(values))).ok());
+    auto ready = hyle::compute::ReadLease::adopt(std::move(buffer)).value();
+    const std::array constants{hyle::graph::ConstantBinding{
+        .value = root, .tensor = ready.tensor(row(8)).value(), .lease = ready}};
+    const std::array placements{
+        hyle::graph::NodePlacement{graph.node_id(0).value(), hyle::graph::ExecutionTargetId{0}, hyle::graph::PlacementStrength::kRequired},
+        hyle::graph::NodePlacement{graph.node_id(1).value(), hyle::graph::ExecutionTargetId{0}, hyle::graph::PlacementStrength::kRequired}};
+    const std::array required{hyle::graph::NodeProviderConstraint{
+        graph.node_id(1).value(), kRegionProviderId, context.provider_instance_id(0).value()}};
+    const CompileOptions options{.constants = constants, .node_placements = placements,
+        .node_providers = required, .region_selection = RegionSelectionPolicy::kDisabled};
+    // Target1's own default is legal. Its system-resource validation and real
+    // transfer query are reached only by the derived constant's cold Copy.
+    const auto injected = Status::FromNative(hyle::StatusCode::Unimplemented,
+        {.domain = hyle::NativeErrorDomain::PosixErrno, .code = 5}, "derived constant cold query failed");
+    if (transfer_query) {
+      copy_probe.transfer_query_failure = injected;
+    } else {
+      copy_probe.validation_failure_resource = hyle::mem::system_resource();
+      copy_probe.validation_failure = injected;
+    }
+    auto failed = hyle::graph::compile(graph, {.storage_domains = storage, .targets = targets}, options);
+    ASSERT_FALSE(failed);
+    EXPECT_EQ(failed.error().code(), injected.code());
+    EXPECT_EQ(failed.error().native_error(), injected.native_error());
+    EXPECT_NE(failed.error().message().find(injected.message()), std::string_view::npos);
+    EXPECT_EQ(strict.copy_count + copy_probe.copy_count, 0u);
+    EXPECT_EQ(strict.submit_count + copy_probe.submit_count, 0u);
+    copy_probe.transfer_query_failure = {};
+    copy_probe.validation_failure_resource = {};
+    auto recovered = hyle::graph::compile(graph, {.storage_domains = storage, .targets = targets}, options);
+    ASSERT_TRUE(recovered) << recovered.error().message();
+    EXPECT_EQ(strict.copy_count, 0u);
+    EXPECT_EQ(copy_probe.copy_count, 1u);
+    EXPECT_EQ(recovered->report.copy_bytes(), 0u);
+    auto run = recovered->executable.create_invocation().value();
+    auto destination = make_tensor(row(4));
+    ASSERT_TRUE(run.bind(output, destination.view).ok());
+    auto queue = context.create_queue().value();
+    auto completed = run.submit(queue);
+    ASSERT_TRUE(completed) << completed.error().message();
+    ASSERT_TRUE(completed->wait().ok());
+    EXPECT_EQ(read(destination, 4), (std::vector<float>{-2.F, -3.F, -4.F, 5.F}));
+    EXPECT_EQ(copy_probe.copy_count, 1u);
+  }
+}
+
 TEST(GraphConstants, BorrowedReplicasKeepViewOffsetsAndNeverCopyAtReplay) {
   HostResource primary_storage, replica_storage;
   const hyle::mem::MemoryResourceRef primary(primary_storage), replica(replica_storage);
@@ -13123,8 +13444,11 @@ TEST(GraphConstants, BorrowedReplicasKeepViewOffsetsAndNeverCopyAtReplay) {
       ASSERT_TRUE(tensor) << tensor.error().message();
       EXPECT_EQ(tensor->storage().resource(), replica);
       EXPECT_EQ(tensor->storage().offset(), 5 * sizeof(float));
+      const auto logical = hyle::compute::ConstTensorView::create(
+          tensor->description(), tensor->storage());
+      ASSERT_TRUE(logical) << logical.error().message();
       std::array<float, 4> selected{};
-      ASSERT_TRUE(tensor->storage().read(std::as_writable_bytes(std::span(selected))).ok());
+      ASSERT_TRUE(logical->storage().read(std::as_writable_bytes(std::span(selected))).ok());
       EXPECT_EQ(selected, (std::array{-6.F, 7.F, -8.F, 9.F}));
       EXPECT_EQ(first.copy_count + second.copy_count, 1U);
     }

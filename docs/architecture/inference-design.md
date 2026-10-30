@@ -132,6 +132,15 @@ Model保imported／replay政策、state layout挂接、共享scratch、成功发
 真实allocation预算拒绝不发布、释放后同key重建、晚／早state layout及warm原Invocation复用通过；
 默认四对、完整Session向量及9个diagnostic probe与route／boundaries一致。未注入晚期readback失败，未声明全heap或native-private无泄漏。
 
+跨模型caller输出池现共享`checked_output_pool_capacity`：调用方明确给每个输出的实际字节、同时保留份数与alignment，
+共同层只检查逐块对齐、加乘及字段溢出。份数、256等具体alignment、存储域、预算和原LeasePool／reader寿命仍归原调用方；
+算术成功不替代RangeAllocator元数据与实际资源接纳。Qwen的q池使用实际prepared描述并保留原尾字节。
+GLM实际NextN同时暴露不可变常量View的对齐缺口：Graph只为需要按值Tensor的读者准备一次冷canonical表示，
+原borrow root及对外发布View的身份／offset保持；完整root／offset／desc进入原cache身份，仍用原CopyBatch与ready／保活门。
+没有新增逐token Copy或模型专用搬运；原native错误、预算拒绝和同候选重试保持。
+[有限检查](../evidence/correctness/inference-output-pool-and-constant-view-2026-10-30.json)覆盖真实LeasePool、四类模型组件、
+42项Graph／缓存检查、默认完整词表四对及完整Session状态；旧失败和测试初始化span假设的修正分别保留。
+
 当前异构消费者的接入面也已沿实际源码核对：
 
 | 消费者 | 已复用的共同机制 | 仍保留的模型事实及验证边界 |

@@ -123,8 +123,10 @@ std::uint64_t CanonicalConstantKeyHash::operator()(
       hash, static_cast<std::uint64_t>(reinterpret_cast<std::uintptr_t>(
                 &key->resource.resource())));
   hash = container::hash_combine(hash, key->alignment);
-  // One immutable family fixes each logical constant's description. Equality
-  // still compares the exact descriptor; no caller source contents are hashed.
+  hash = container::hash_combine(hash, key->source_root);
+  hash = container::hash_combine(hash, key->source_offset);
+  // Derived descriptions can differ across exact variants. Equality still
+  // compares the complete descriptor and origin; source contents are not hashed.
   return hash;
 }
 
@@ -224,6 +226,15 @@ ConstantArtifactCache::acquire_canonical(
     PlanState &plan, std::size_t slot, std::uint32_t physical_instance,
     mem::MemoryResourceRef destination,
     std::size_t minimum_alignment) noexcept {
+  return acquire_canonical(plan, slot, physical_instance, destination,
+                           minimum_alignment, 0);
+}
+
+Result<CanonicalConstantAcquisition>
+ConstantArtifactCache::acquire_canonical(
+    PlanState &plan, std::size_t slot, std::uint32_t physical_instance,
+    mem::MemoryResourceRef destination,
+    std::size_t minimum_alignment, std::size_t source_offset) noexcept {
   if (candidate_ == 0)
     return std::unexpected(Status::FailedPrecondition(
         "canonical constants require an active cold candidate"));
@@ -243,17 +254,31 @@ ConstantArtifactCache::acquire_canonical(
       binding.description() != plan.descriptions[value.ordinal()])
     return std::unexpected(Status::InvalidArgument(
         "graph canonical constant description is invalid"));
-  if (plan.instance_values[physical_instance] != value.ordinal() ||
-      plan.instance_descriptions[physical_instance] != binding.description() ||
+  const auto logical = plan.instance_values[physical_instance];
+  const auto &description = plan.instance_descriptions[physical_instance];
+  if (logical >= plan.descriptions.size() ||
+      description != plan.descriptions[logical] ||
+      physical_instance >= plan.instance_roles.size() ||
+      physical_instance >= plan.alias_sources.size() ||
+      (plan.instance_roles[physical_instance] & kConstant) == 0 ||
+      plan.alias_sources[physical_instance] != kNoInPlaceSource ||
+      (logical == value.ordinal() &&
+       (description != binding.description() || source_offset != 0)) ||
       plan.instance_storage[physical_instance] >= plan.storage_domains.size() ||
       plan.storage_domains[plan.instance_storage[physical_instance]].resource != destination)
     return std::unexpected(Status::InvalidArgument(
         "graph canonical constant physical binding is invalid"));
+  HYLE_ASSIGN_OR_RETURN(const auto root_bytes, binding.description().required_bytes());
+  HYLE_ASSIGN_OR_RETURN(const auto view_bytes, description.required_bytes());
+  if (source_offset > root_bytes || view_bytes > root_bytes - source_offset ||
+      source_offset > binding.storage().size() ||
+      view_bytes > binding.storage().size() - source_offset)
+    return std::unexpected(Status::OutOfRange(
+        "graph canonical constant view exceeds its original root"));
   const auto properties = destination.properties();
   if (!std::has_single_bit(properties.minimum_alignment))
     return std::unexpected(Status::Internal(
         "constant memory resource reports an invalid minimum alignment"));
-  const auto &description = binding.description();
   const auto alignment = (std::max)({minimum_alignment,
                                      description.required_alignment(),
                                      properties.minimum_alignment});
@@ -267,7 +292,9 @@ ConstantArtifactCache::acquire_canonical(
     if (!selected->ready)
       return std::unexpected(Status::FailedPrecondition(
           "canonical constant copy has not completed"));
-    if (selected->key.constant != value.ordinal() ||
+    if (selected->key.constant != logical ||
+        selected->key.source_root != value.ordinal() ||
+        selected->key.source_offset != source_offset ||
         selected->key.description != description ||
         selected->buffer.resource() != destination ||
         selected->buffer.alignment() < alignment)
@@ -277,7 +304,8 @@ ConstantArtifactCache::acquire_canonical(
     return CanonicalConstantAcquisition{selected, false};
   }
 
-  CanonicalConstantKey key{value.ordinal(), description, destination, alignment};
+  CanonicalConstantKey key{logical, description, destination, alignment,
+                           value.ordinal(), source_offset};
   if (canonical_entries_) {
     // Allocations are power-of-two aligned. Prefer the smallest existing
     // sufficient owner without scanning unrelated constants or mutating any

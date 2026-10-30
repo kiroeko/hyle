@@ -8,9 +8,9 @@ HYLE的目标是完整推理引擎，基础模块仍可独立使用。长期取�
 性能愿景进一步明确：每个受支持模型都应尽量达到专用引擎的执行效率，尽量不因架构降低性能。当前据此核冷期模型专化与热路径实际成本；须结合模型需求、成熟源码及相应完整消费者验证，尚未宣称所有模型达到此目标，不因此提高进度。
 
 - **已完成：** 前批已列单机功能与模型／请求组合整改；工程入口与许可整改。
-- **本次完成：** Phase物理IO／slot准备已隔离，26个有限原生进程通过；真实allocation拒绝重建、早／晚layout及warm复用通过，默认／Session／9probe对照一致。整体架构仍未完成。
+- **本次完成：** 四类模型caller输出池共享checked容量事实；Graph冷常量View对齐已修复，42项Graph／缓存及11个输出池相关用例通过，默认四对和完整Session状态一致。整体架构仍未完成。
 - **当前位置：** Qwen连续／同步／packed／递归目标及GLM ordinary／K1候选共用实际步骤驱动，结果与请求见证分开；模型保留数学、完整状态及发布差异。第二完整模型、多卡／多机仍未验证或实现。
-- **现在做：** 跨模型输出池冷容量检查与稳态冷热事实接线，以原owner已准备事实和稳定Graph地址解耦；默认性能专项仍后置。
+- **现在做：** 可选原地别名的下游对齐检查、稳态冷热事实接线及其余模型冷程序边界；默认性能专项仍后置。
 - **仍未交付：** 多模态图片、通用模型加载／tokenizer及服务器API。本阶段不以这些应用能力为前置。
 
 当前顺序：**保留已完成共同驱动 → 跨模型需求、模块边界、独立编译及冷热职责 → 默认构建／正常默认用法的性能收敛**。相关架构改动保留正确性和明显退化检查，后续decode以纯GPU普通／MTP为重点。
@@ -22,8 +22,10 @@ HYLE的目标是完整推理引擎，基础模块仍可独立使用。长期取�
 
 ## 任务树
 
-- 底层功能与组合复审：约99%（旧已列缺项通过，新输出池容量边界待补）
-  - 调用方输出池容量与溢出边界：约30%（共同容量候选及原LeasePool边界检查已写，未应用／运行）
+- 底层功能与组合复审：约99%（已列缺项通过，可选原地别名的下游对齐边界待核）
+  - 调用方输出池容量与溢出边界：100%（真实LeasePool及四类模型相关消费者有限检查通过）
+  - GLM连接NextN图的别名接纳：100%（冷常量View修复、42项Graph／缓存及实际消费者有限检查通过）
+  - 可选原地别名的下游对齐：约10%（真实native用例已准备，尚未应用与运行）
   - 混合小形状别名对齐接纳：100%（共同物化、错误／预算合同及有限消费者检查完成）
   - 冷形状、取消、背压及会话换出换入：100%（已实现并有限检查）
   - 有效长度、varlen及普通／MTP组合：100%（已实现并有限检查）
@@ -131,18 +133,19 @@ GNU／LLVM OpenMP精确二进制源版本仍未确认，许可文本齐备不等
 | 任务 | 所属 | 估计进度 | 当前内容 |
 |---|---|---:|---|
 | 跨模型需求与模块接入面 | 共同执行架构 | 约25% | 四类实际接入面已核对，按真实状态、输出与owner差异调整；有限具体图不伪造Qwen程序族。 |
-| 调用方输出池冷容量检查 | 底层功能／跨模型接入 | 约30% | 已写显式份数／alignment的共同checked容量及真实LeasePool边界候选，保原域／owner；Qwen非对齐词表风险尚未实测，候选未应用／运行。 |
+| 可选原地别名的下游对齐 | 底层功能／Graph | 约10% | 已准备真实native Unary的未对齐／对齐及非alias三个对照，保下游256B要求；仅scratch窄重基，未应用与运行。 |
+| 其余辅助冷程序边界 | 共同执行架构／独立编译 | 约15% | draft／prefix／frontier仍耦合Model，正核原StepState与program布局的私有边界；共同ProgramIo已支持concrete程序，不重复造接纳API。 |
 | 稳态冷热事实接线 | 共同执行架构／测量 | 约35% | 已核重复选择与既有优化，同次prepare复用warm Phase事实的窄候选已写；不缓存跨call权限／裸指针，尚未应用验证。 |
 
 此前顺序纠正时停止了词表探针、编译和性能实验；6个未编译源码文件已按哈希保存到`.scratch/inference-architecture-priority-20261030/`，经根目录`test.ps1`恢复产品原源码，没有丢弃候选，也不计为已交付。完整goal现已恢复，目标和先架构后性能的顺序未变。
 
-最近交付：[Phase物理准备](../evidence/correctness/inference-phase-preparation-boundary-2026-10-30.json)。
-原StateBank／PhaseIo／Phase与物理构造独立编译，复用原ProgramSlots／owner／IO；Model保政策、state layout、共享scratch、初始化和真实退休。没有新增逐token分派或提前强制准备状态池。
-5次CXX、6次link及26个有限native全部成功，230旧输入全复用，新增phase后231；零SDK重编／NVCC／下载，未跑完整默认CMake。新预算用例首次运行通过：真实physical allocation拒绝不发布、同key重建、早／晚layout与满预算warm原Invocation复用；仅证明tracked live恢复，未注入晚期readback失败。
-默认完整词表普通／MTP四对、完整Session及相关packed／varlen／采样／混合／Source接力／退休对照非计时一致；七项仅跑新臂、复用前片已验证参考，未重复旧baseline。Session两臂各378份／150,761,472B重算哈希并逐字节一致，完整observation只归一outputRoot。
-诊断图两臂各9份probe raw及完整route／boundaries逐字节一致，单列为CPU诊断路径。四个默认单配decode耗时约－0.38%、＋0.74%、＋0.03%、－0.17%，仅明显退化观察，无稳定提速或新完整性能窗。整体架构及默认性能仍未完成。
+最近交付：[输出池冷容量与常量View对齐](../evidence/correctness/inference-output-pool-and-constant-view-2026-10-30.json)。
+共同helper只做显式份数／alignment下的checked容量数学；模型保策略、原LeasePool／owner和预算。Graph为需要按值Tensor的常量View读者准备冷canonical表示，原borrow root／对外View保持，无逐token Copy。
+42项Graph／缓存、11个输出池相关用例、新旧ordinary GLM及默认完整词表四对通过；ordinary的24项属性exact，完整Session两臂各378份／150,761,472B重hash及逐字节一致。
+102个实际进程全部终态：30次CXX、36次link全通过；36次native中27通过、9次历史失败保留，当前选定检查均通过且无跳过。另保留预dispatch语法与history离线parser两项scratch错误，未为parser重跑native。
+231个输入中222复用，9个因私有cache布局受影响的SDK对象重编；零NVCC／下载，未跑完整默认CMake。默认单配decode耗时变化约＋0.27%、－1.21%、－0.37%、－0.33%，只作明显退化观察，不宣称稳定提速或新完整性能窗。
 
-前片的[完整Family冷工厂](../evidence/correctness/inference-family-factory-boundary-2026-10-30.json)、[内部Tensor别名对齐](../evidence/correctness/inference-graph-alias-alignment-2026-10-30.json)、[目标冷数学](../evidence/correctness/inference-target-graph-boundary-2026-10-30.json)、[冷cache事实](../evidence/correctness/inference-cold-cache-facts-2026-10-30.json)及共同驱动结果保留在[工程计划](../implementation/inference-roadmap.md)与所属证据，不重开已完成机制。
+此前[Phase物理准备](../evidence/correctness/inference-phase-preparation-boundary-2026-10-30.json)、[完整Family冷工厂](../evidence/correctness/inference-family-factory-boundary-2026-10-30.json)、[内部Tensor别名对齐](../evidence/correctness/inference-graph-alias-alignment-2026-10-30.json)、[目标冷数学](../evidence/correctness/inference-target-graph-boundary-2026-10-30.json)、[冷cache事实](../evidence/correctness/inference-cold-cache-facts-2026-10-30.json)及共同驱动结果保留在[工程计划](../implementation/inference-roadmap.md)与所属证据，不重开已完成机制。
 
 ## 最近完整性能对照
 
