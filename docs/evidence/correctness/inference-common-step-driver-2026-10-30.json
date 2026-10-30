@@ -1,0 +1,341 @@
+{
+  "schema": "hyle.common-step-driver.v1",
+  "date": "2026-10-30",
+  "base_commit": "0c2872914",
+  "status": "FINITE_CHECKS_PASSED",
+  "implementation": [
+    "drive_steps controls prepare/submit current, cancellation checkpoints, optional successor prepare/submit, current completion, refusal/discard/bind, deferred/synchronous successor completion and exception recovery.",
+    "Qwen continuation adapter retains actual model mathematics, legality, Head/ledger publication, original Source pins, scratch and physical facts. No new executor, Completion, credit ledger or retirement owner.",
+    "GLM ordinary preflight, actual model execution and explicit observation use the synchronous branch with no successor interface.",
+    "Standalone six-group host control test registered with CMake when hyle_error exists; CMake offline error-only configuration and CTest discovery passed."
+  ],
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\step_execution.h",
+      "bytes": 3045,
+      "sha256": "be8863ebbfac815a6c3e6b2c37e33543195e10ad2526d2e18a7db9bce3328c75"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 635537,
+      "sha256": "597c7520177333933d454f8da933abdd60bfd61ba0b2512a748edb88444adad7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_mtp_state_consumer_test.cc",
+      "bytes": 236719,
+      "sha256": "a41e7c77a934edd3e5832e2fea5ff33c93654d5b74a5ebb349d96f933d984420"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_step_execution_test.cc",
+      "bytes": 14143,
+      "sha256": "016ba167bdd45359da8b47f5cf9895ff1d250d02f5e0886b9d697c72166987a4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_generation_batch_relay_probe.cc",
+      "bytes": 49507,
+      "sha256": "718d6293bca8e2db86ff3899d1246d495d0029106f5d037b4513457e27c5f9e4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\CMakeLists.txt",
+      "bytes": 34971,
+      "sha256": "8f41c862dddc720fcce4760aa1972b2212e97924d2ddd8beb05aeba707054a89"
+    }
+  ],
+  "checks": [
+    {
+      "name": "host",
+      "attempt": "attempt2",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-step-driver-20261030\\runs\\host\\attempt2\\report.json",
+        "bytes": 72,
+        "sha256": "7a6d7c76fa8387e707768c8297adcf34adf05bbe3fc72766c162d7f409eac0e8"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 51104,
+        "started": 1793338063.8510184,
+        "seconds": 0.7834205627441406,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    {
+      "name": "ordinary",
+      "attempt": "attempt2",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-step-driver-20261030\\runs\\ordinary\\attempt2\\report.json",
+        "bytes": 5324,
+        "sha256": "cee8a8bb32d0ddc8c6de0f8a68d87adeed71c0e5cd1cae820a2d55a4c2dfe96b"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 56892,
+        "started": 1793338117.8749957,
+        "seconds": 1.0340173244476318,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    {
+      "name": "source-failure",
+      "attempt": "attempt1",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-step-driver-20261030\\runs\\source-failure\\attempt1\\report.json",
+        "bytes": 869,
+        "sha256": "60bbc30dc625c7cda3cc651fbf0f4f146c920e723848e39efb6841893a24952e"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 46408,
+        "started": 1793338136.0724525,
+        "seconds": 0.7428817749023438,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    {
+      "name": "warm-cohort",
+      "attempt": "attempt1",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-step-driver-20261030\\runs\\warm-cohort\\attempt1\\report.json",
+        "bytes": 747,
+        "sha256": "f5afed382cee7e1bd1802283d61ebe31518245d99372ee7232ad6efcadb43905"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 52116,
+        "started": 1793338137.2104268,
+        "seconds": 0.8074462413787842,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    {
+      "name": "boundaries",
+      "attempt": "attempt2",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-step-driver-20261030\\runs\\boundaries\\attempt2\\report.json",
+        "bytes": 682,
+        "sha256": "1869f60ad2cdc197264cb18fe00e6176e64d83ffb5087bf23dc95f736bc06678"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 50496,
+        "started": 1793338680.7392406,
+        "seconds": 1.1907827854156494,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    {
+      "name": "mtp",
+      "attempt": "attempt1",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-step-driver-20261030\\runs\\mtp\\attempt1\\report.json",
+        "bytes": 82948,
+        "sha256": "dd21654c14affbdb46fb7938f644fa7b5d5073cb71d25f07265d8535712f5a7a"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 60068,
+        "started": 1793338138.4140737,
+        "seconds": 3.609015464782715,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    {
+      "name": "greedy-cuda",
+      "attempt": "attempt1",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-step-driver-20261030\\runs\\greedy-cuda\\attempt1\\report.json",
+        "bytes": 4411,
+        "sha256": "39cab99d9add08c32a4b36bdf007c3ccc635978bda49eff73c0a433d15f0b6a0"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 61836,
+        "started": 1793338165.0119693,
+        "seconds": 97.95411539077759,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    {
+      "name": "request-cuda",
+      "attempt": "attempt1",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-step-driver-20261030\\runs\\request-cuda\\attempt1\\report.json",
+        "bytes": 4553,
+        "sha256": "a303530749d0578a7c5744417b40c28dde5e4d2194973ee26f7fafd00bef4cc0"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 21456,
+        "started": 1793338305.094879,
+        "seconds": 90.09538340568542,
+        "exit": 0,
+        "timed_out": false
+      }
+    }
+  ],
+  "glm_non_timing_comparison": [
+    {
+      "name": "greedy-cuda",
+      "properties": 54,
+      "all_equal": true,
+      "previous": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-math-boundary-20261030\\runs\\greedy-cuda\\attempt1\\report.json",
+        "bytes": 4429,
+        "sha256": "ba259bc032e03417554d6b379d4e9c5b74b581111d7eb7b86269968a4bcd4073"
+      }
+    },
+    {
+      "name": "request-cuda",
+      "properties": 53,
+      "all_equal": true,
+      "previous": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-math-boundary-20261030\\runs\\request-cuda\\attempt1\\report.json",
+        "bytes": 4571,
+        "sha256": "5685f393cdf9c464dfac8ff8bb5081b95344230ef76f306d25e8aa76f61092b5"
+      }
+    }
+  ],
+  "real_qwen_mtp": {
+    "generated_tokens": 64,
+    "all_non_timing_fields_equal": true,
+    "previous": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\runs\\single\\control\\aa-mtp-6\\report.json",
+      "bytes": 82935,
+      "sha256": "bc9e30827c87619a39e40d979b34246e2da998b4cb0c07b3ea67377402866912"
+    },
+    "successor_submissions": 21,
+    "publications": 19,
+    "discards": 2
+  },
+  "obvious_regression_check": {
+    "order": [
+      {
+        "arm": "control",
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-step-driver-20261030\\runs\\mtp-control\\guard1\\report.json",
+          "bytes": 82928,
+          "sha256": "12b0bbce60170d58a0a89c3eadb450d58128c670e22cbda2de59807eaa8554c6"
+        },
+        "prefill": 2067.6747252275113,
+        "decode": 119.52284204828761,
+        "combined": 106.38727594881242
+      },
+      {
+        "arm": "candidate",
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-step-driver-20261030\\runs\\mtp\\guard2\\report.json",
+          "bytes": 82955,
+          "sha256": "7d396459f2512d2e8976390aa5e46e1f12fa9fd66fdcd296a7b6e0431dd4712b"
+        },
+        "prefill": 2143.6048194917707,
+        "decode": 121.49515407899729,
+        "combined": 108.40460936399015
+      },
+      {
+        "arm": "control",
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-step-driver-20261030\\runs\\mtp-control\\guard3\\report.json",
+          "bytes": 82954,
+          "sha256": "f180162ac950e45bf13ba52178dfada0b1e16f7369ce38509da226e3126e44e7"
+        },
+        "prefill": 2108.6415966524632,
+        "decode": 120.53125585915825,
+        "combined": 107.43323863540986
+      }
+    ],
+    "all_non_timing_fields_equal": true,
+    "conclusion": "No obvious degradation in this adjacent control/candidate/control check; not a throughput improvement or cross-engine result. Earlier unpaired process is retained separately."
+  },
+  "corrected_checks": [
+    {
+      "name": "host",
+      "attempt": "attempt1",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 60308,
+        "started": 1793337960.929233,
+        "seconds": 0.8011140823364258,
+        "exit": 1,
+        "timed_out": false
+      },
+      "reason": "Initial exception_ptr identity test was not portable on this MSVC runtime; corrected to compare the active rethrown original exception address and payload, retaining committed-record checks."
+    },
+    {
+      "name": "ordinary",
+      "attempt": "attempt1",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 14828,
+        "started": 1793338070.9882414,
+        "seconds": 0.7837123870849609,
+        "exit": 1,
+        "timed_out": false
+      },
+      "reason": "The original fixture already contained generated stop-fixture output. Only manifests were copied into a fresh batch input; no product change."
+    },
+    {
+      "name": "boundaries",
+      "attempt": "attempt1",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 5560,
+        "started": 1793338459.644288,
+        "seconds": 0.8098037242889404,
+        "exit": 1,
+        "timed_out": false
+      },
+      "reason": "Old cold-tuple test expected permanent continuation disable after a temporary capture miss."
+    },
+    {
+      "name": "boundaries-control",
+      "attempt": "attempt1",
+      "process": {
+        "state": "TERMINAL",
+        "pid": 9912,
+        "started": 1793338539.8212461,
+        "seconds": 1.1616923809051514,
+        "exit": 1,
+        "timed_out": false
+      },
+      "reason": "The unchanged retained baseline probe fails the exact same stale permanent-disable assertion; product failure was not attributed to the new driver."
+    }
+  ],
+  "cmake": {
+    "status": "REGISTERED_ONLY",
+    "test": "hyle_inference_step_execution_test",
+    "component": "error",
+    "offline": true,
+    "build_performed": false
+  },
+  "build": {
+    "consumer_translation_units": 4,
+    "consumer_compiler_processes": 6,
+    "max_compiler_concurrency": 2,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "retained_sdk_inputs": 227,
+    "missing_cached_dependency_records": 69,
+    "missing_dependency_scope": "Unchanged native-kernel objects and library inputs; changed engine CXX consumer dependencies were checked separately.",
+    "downloads": 0
+  },
+  "cleanup": {
+    "bytes": 1046127763,
+    "status": "REMOVED_EXACT_RECREATABLE_IMAGES_AND_SYNTHETIC_PAYLOADS",
+    "retained": "SDK and current consumer objects, original cached weights, source and fixture metadata, commands, failed attempts and reports",
+    "boundary": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-step-driver-20261030",
+    "files": 23
+  },
+  "limits": [
+    "Qwen serial/packed/recursive preparation and publication paths still require common-drive migration; mathematical differences and request-record boundary remain under review.",
+    "GLM uses real finite target77/NextN78 with explicit upstream/initial-state fixtures, not complete GLM prompt inference. Its shared step consumer is synchronous, not cross-pump.",
+    "Source-failure native check validates the underlying original Source lifecycle, not every driver error branch. Host retirement reports are scripted, not device evidence.",
+    "This batch did not run other model artifacts/platforms, full CPU+GPU, multi-GPU or multi-machine execution.",
+    "The previous full llama.cpp comparison remains authoritative for its recorded version; no new complete performance or memory window."
+  ]
+}

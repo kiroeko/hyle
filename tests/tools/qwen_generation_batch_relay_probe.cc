@@ -260,9 +260,12 @@ ArmResult run_arm(q::Model &model, const std::array<std::vector<std::int32_t>, 2
     result.maximum_ready_steps = (std::max)(result.maximum_ready_steps, continuation.ready_steps);
     if (continuation.successor_refusals != refused_before) {
       require(mode == Mode::kColdTuple && result.cold_tuple_changed &&
-          continuation.successor_refusals == refused_before + 1 && continuation.unavailable &&
+          continuation.successor_refusals == refused_before + 1 && !continuation.unavailable &&
           !continuation.successor_submissions && active.size() == 2,
           "natural R2 cold tuple refusal recorded or accepted B instead of retaining A");
+      require(!model.active_step && !model.successor_step && !model.carrier_borrowed &&
+          !continuation.ready && continuation.pending_calls.empty() && !continuation.ready_steps,
+          "cold tuple refusal must retire A and release reuse hints before re-priming");
       for (const auto &call : calls)
         require(call.disposition == q::EvaluationDisposition::kPublished &&
             call.request->progress.generated.size() == before[call.request->request_key.slot] + 1,
@@ -357,9 +360,9 @@ ArmResult run_arm(q::Model &model, const std::array<std::vector<std::int32_t>, 2
         continuation.successor_publications == 0 && continuation.successor_discards == 1)),
         "R2 EOS failed to retire accepted B as a whole and continue the surviving R1 peer");
   if (relay && mode == Mode::kColdTuple) {
-    require(result.cold_tuple_changed && result.cold_refusal_observed && continuation.unavailable &&
+    require(result.cold_tuple_changed && result.cold_refusal_observed && !continuation.unavailable &&
         continuation.successor_refusals == 1 && !continuation.successor_submissions && !continuation.successor_discards,
-        "R2 cold tuple was silently recorded, downgraded, retried or accepted");
+        "R2 cold tuple lost its refusal, disabled later reuse or accepted the refused B");
   } else if (relay) {
     require(!continuation.unavailable && continuation.successor_refusals == 0 &&
         continuation.successor_publications + continuation.successor_discards == continuation.successor_submissions,

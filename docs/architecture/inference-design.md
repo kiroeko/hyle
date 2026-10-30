@@ -13,9 +13,10 @@ CLI formatter 已独立编译。Qwen 与真实 GLM StateHead 组件已消费共�
 兼容分组与请求循环已共用，Qwen适配器提供真实工作形状、兼容条件、完整恢复算法和数学阶段；GLM／DeepSeek／Kimi仍为组件消费者，
 尚无第二个完整引擎模型验证整套编排复用。
 共同部分现包括程序／IO／物理槽、分页准备、普通及后继准备入口、完整阶段交接和跨pump请求控制。
-Qwen的`Model`仍承担实际前后继推进、跨pump pending和部分失败收尾，完整步骤驱动尚未抽离；不能把共同请求／资源原语完成称为共同执行架构完成。
-模型形状、状态银行布局、数学阶段与Head发布政策应留在模型；共同资源交接继续使用原`ExecutionEpisode`，
-不要求不同家族采用相同的阶段或状态结构。当前先分清并落实完整驱动与静态模型适配，再集中优化性能；第二完整模型仍未验证。
+共同`drive_steps`现控制Qwen连续普通／K1的前后继推进、跨pump保留和异常恢复，静态模型适配保留实际数学、状态和Head发布。
+GLM实际普通续算消费同一驱动的同步分支，不需要实现空的后继接口。共同资源交接继续使用原`ExecutionEpisode`，
+不要求不同家族采用相同的阶段或状态结构。Qwen同步／packed／递归步骤及请求提交见证边界仍待迁移，不能据此宣称完整共同执行架构完成。
+当前先继续架构收敛，再集中优化性能；第二完整模型仍未验证。
 实施状态只在 [进度看板](../developer/inference-progress.md)更新，功能和硬件边界见[实现范围](../implementation/inference-roadmap.md)。
 
 ## 简明执行合同
@@ -53,12 +54,13 @@ Qwen的`Model`仍承担实际前后继推进、跨pump pending和部分失败收
 
 ## 当前调整的边界
 
-`advance_request_wave`目前只核请求key、credit及退休，再调用模型的`Stage.advance`。
-Qwen的`execute_generation_continuation`仍驱动前后继准备／提交／观察、pending跨pump保留和失败收尾；
-因此共享wave入口不是完整执行核心。下一步共同层承接这些控制转换，同步与连续路径使用同一阶段结果事实；
-模型适配只提供实际数学／状态准备、Source合法边界、接受／修复和Head发布。Graph仍是唯一原生执行与退休权威。
-GLM的同步wave和Kimi的资源阶段复用是已有依据，尚不代替它们消费同一完整步骤驱动。
-不按文件长度机械搬代码，也不以新模板把整个Qwen循环包成一个回调；以实际控制逻辑能由不同状态形状消费为准。
+`advance_request_wave`继续核请求key、credit及退休；其下的`drive_steps`实际控制准备、提交、两次取消检查、完成和后继去留，
+不把整段循环委托给一个`advance`回调。Qwen的`GenerationStepAdapter`只借原Model、continuation、calls和Source，提供实际资格、数学、Head／ledger发布与原退休操作。
+后继的纯Unavailable先完成A、再核真实退休并释放复用提示；不接受B，也不永久禁用后来合法的复用。defer只保留原pending calls，已提交的active_step仍由原Model持有。
+GLM的`GlmOrdinaryStepDriver`将实际预检、ordinary数学和显式观察分成三个动作，使用同一驱动的同步分支；没有空的successor方法或另一份执行状态owner。
+[有限检查](../evidence/correctness/inference-common-step-driver-2026-10-30.json)覆盖host控制、原Qwen连续／失败／冷拒绝及EOS、真实K1和两个GLM组件；不代表GLM跨pump。
+Qwen同步／packed／递归目标步骤仍需迁入，实际结果与请求提交见证的借用边界继续收敛。Graph仍是唯一原生执行与退休权威。
+不按文件长度机械搬代码；以实际控制逻辑能由不同状态形状消费为准，不新增热回调表或通用大ModelOps。
 
 共同调度按真实调用分工：请求窗口、兼容分组、接纳／淘汰、输出额度和停止属于
 `engine/inference`；模型适配负责容量事实、实际工作形状、准备／提交／完成事实、完整检查点与恢复。
@@ -78,7 +80,7 @@ GLM接受后先CAS并立即见证提交，再单独维护journal；模型保留�
 实际execute_step／execute_target现只形成原执行结果与未发布状态，reference、exact-row及EXPECT在scenario显式观察。
 GlmStepRuntime的普通、验证与修复返回实际输入／输出lease及必要状态，观察后立即释放；MoE判定使用各次执行的selection序号，不能读后来repair的最新选择。
 [两个原CUDA组件场景](../evidence/correctness/inference-glm-math-boundary-2026-10-30.json)的107项非计时报告与拆分前一致；原StateStore及resident容量上限未提高。
-这补齐了独立模型步骤的前置边界，完整共同步骤驱动仍未接入；其它制品／平台未据此代签。
+这补齐了独立模型步骤的前置边界；随后实际ordinary步骤已接共同drive_steps的同步分支，其它制品／平台及完整步骤仍未据此代签。
 这仍是有限target77／NextN78组件适配，不代表完整GLM prompt前向、异步合批或引擎API已经完成。
 
 读回的caller缓冲按具体编译程序的原存储域表准备，不能用Backend预设的域编号解释另一个程序。

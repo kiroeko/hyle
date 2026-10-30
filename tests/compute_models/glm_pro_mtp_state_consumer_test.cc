@@ -53,6 +53,7 @@
 #include "../../engine/inference/request_progress.h"
 #include "../../engine/inference/request_loop.h"
 #include "../../engine/inference/request_wave_execution.h"
+#include "../../engine/inference/step_execution.h"
 #include "../../engine/inference/commit_observation.h"
 #include "model_graph_run.h"
 #include "model_resident_fragment.h"
@@ -1657,11 +1658,15 @@ template<class Runtime> struct GlmStepRuntime final {
     return {std::move(checkpoint),std::move(random)};
   }
 
-  Advance ordinary(const c::StateVersion &from,Stage stage,std::uint64_t iteration,
-      c::ReadLease target_input,Cursor cursor,std::vector<c::ReadLease> *observed_policy=nullptr) {
+  Cursor prepare_ordinary(const c::StateVersion &from,Cursor cursor) const {
     if(sampler&&!target)throw std::runtime_error("random Pro ordinary continuation requires its target program");
     if(sampler)check_cursor(from,cursor);
-    const auto next_cursor=sampler?cursor.advanced(1):cursor;
+    return sampler?cursor.advanced(1):cursor;
+  }
+
+  Advance ordinary(const c::StateVersion &from,Stage stage,std::uint64_t iteration,
+      c::ReadLease target_input,Cursor cursor,Cursor next_cursor,
+      std::vector<c::ReadLease> *observed_policy=nullptr) {
     auto continued=advance(from,stage,iteration,std::move(target_input));
     if(!sampler)return continued;
     const std::array input{state.member(continued.version,kTargetTap)};
@@ -1814,6 +1819,64 @@ template<class Runtime> struct GlmStepRuntime final {
       (void)cursor.advanced(3);
       if(q.size()!=3)throw std::runtime_error("GLM K1 proposal needs its actual q outputs");
     }
+  }
+};
+
+// A synchronous mathematical consumer of the common complete-step ordering.
+// All resources remain in the original Runtime/programs; only completed result
+// leases live here until the scenario explicitly observes them. There is no
+// pending successor, deferred cancellation or model Head publication.
+template<class Runtime,class ObserveAdvance,class ObservePolicy>
+struct GlmOrdinaryStepDriver final {
+  using Steps=GlmStepRuntime<Runtime>;
+  using Position=hyle::inference::StepPosition;
+  using Cursor=hyle::inference::SamplingCursor;
+  static constexpr bool kSupportsSuccessor=false;
+
+  Steps &steps;
+  const c::StateVersion &from;
+  typename Steps::Stage stage;
+  const c::ReadLease &target_input;
+  Cursor cursor;
+  ObserveAdvance &observe_advance;
+  ObservePolicy &observe_policy;
+  Cursor next_cursor{};
+  std::optional<typename Steps::Advance> actual;
+  std::vector<c::ReadLease> policy;
+  c::StateVersion result;
+
+  void prepare(Position) {next_cursor=steps.prepare_ordinary(from,cursor);}
+  void submit(Position) {actual=steps.ordinary(from,stage,8,target_input,cursor,next_cursor,&policy);}
+  bool cancelled() const noexcept {return false;}
+  void cancel(bool) {throw std::logic_error("synchronous GLM ordinary steps have no deferred cancellation");}
+  void finish(Position) {
+    observe_advance(*actual);
+    observe_policy(actual->version,policy);
+    result=std::move(actual->version);
+    actual.reset();policy.clear();
+  }
+  hyle::inference::RetirementObservation retire_failure(hyle::inference::EvaluationFailure *failure) noexcept {
+    hyle::inference::RetirementObservation observed{true,{}};
+    if(failure&&failure->retirement_observed())observed.status=failure->retirement().status;
+    const auto retire=[&](Native &program) noexcept {
+      // Match the original finite GLM retirement: only unfinished original
+      // native work is drained; successful idle Invocations remain reusable.
+      if(program.invocation.in_flight())
+        hyle::inference::record_retirement_status(observed.status,program.invocation.drain());
+      observed.retired=observed.retired&&!program.invocation.in_flight();
+    };
+    for(auto &phase:stage.program.phases)retire(phase);
+    if(steps.target)for(auto &phase:steps.target->program.phases)retire(phase);
+    if(steps.sampler) {
+      if(steps.target)retire(steps.target->policy_program);
+      retire(steps.sampler->proposal);
+    }
+    return observed;
+  }
+  void recover_records(bool retired) noexcept {
+    // These are unpublished mathematical results, not request commit records.
+    // The original caller still owns every Head and authoritative record.
+    if(retired) {actual.reset();policy.clear();}
   }
 };
 
@@ -2239,12 +2302,14 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
       };
       const auto execute_checked_ordinary=[&](const c::StateVersion &from,typename ModelSteps::Stage stage,
           const c::ReadLease &target_input,SamplingCursor cursor) {
-        std::vector<c::ReadLease> policy_observation;
-        auto actual=model_steps.ordinary(from,stage,8,target_input,cursor,&policy_observation);
-        observe_advance(actual);auto continued=std::move(actual.version);
-        if(use_target)EXPECT_EQ(state.scalar(continued,kTargetCursor),state.scalar(continued,kCursor));
-        if(stochastic)(void)check_verifier(*policy,policy_observation,values<Tap>(state.member(continued,kTargetTap)),false);
-        return continued;
+        const auto observe_policy=[&](const c::StateVersion &continued,std::span<const c::ReadLease> policy_observation) {
+          if(use_target)EXPECT_EQ(state.scalar(continued,kTargetCursor),state.scalar(continued,kCursor));
+          if(stochastic)(void)check_verifier(*policy,policy_observation,values<Tap>(state.member(continued,kTargetTap)),false);
+        };
+        GlmOrdinaryStepDriver<Runtime,decltype(observe_advance),decltype(observe_policy)> driver{
+            model_steps,from,stage,target_input,cursor,observe_advance,observe_policy};
+        EXPECT_EQ(hyle::inference::drive_steps(driver),hyle::inference::StepDriveResult::kCompleted);
+        return std::move(driver.result);
       };
       const auto native_step_counts=[&] {
         return std::array{source->checked_steps,second_program.native_submissions(),

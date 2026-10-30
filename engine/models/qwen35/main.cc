@@ -69,6 +69,7 @@
 #include "../../inference/request_window.h"
 #include "../../inference/request_loop.h"
 #include "../../inference/request_wave_execution.h"
+#include "../../inference/step_execution.h"
 #include "../../inference/continuation.h"
 #include "../../inference/prefill_plan.h"
 #include "../../inference/packed_rows.h"
@@ -7006,6 +7007,292 @@ void finish_generation_call(Model &model, PreparedGenerationCall &call) {
   (void)model;
 }
 
+// A borrowed model adapter for the common serialized step driver. It holds
+// only this call's original scratch and Source pins; Model/Graph own execution.
+template<class AfterSubmit, class BatchObserver>
+struct GenerationStepAdapter final {
+  static constexpr bool kSupportsSuccessor = true;
+  using Position = inference::StepPosition;
+  Model &model;
+  std::span<PreparedGenerationCall> calls;
+  bool trace_states;
+  GenerationContinuation &continuation;
+  AfterSubmit &after_submit;
+  BatchObserver &batch_observer;
+  std::span<const inference::RequestCreditGrant> credits;
+  bool drain_requested, resumed, mtp, imported;
+  std::size_t maximum_outputs, slot, next_slot;
+  GraphRole successor_role;
+  std::optional<std::size_t> prior_slot;
+  hyle::container::SmallVector<PreparedGenerationCall, 2> second;
+  hyle::container::SmallVector<EvaluationRequest, 2> direct, relay;
+  hyle::container::SmallVector<EvaluationOutput, 2> outputs;
+  hyle::container::SmallVector<MtpGenerationSelection, 2> selections;
+  hyle::container::SmallVector<MtpRoundResult, 2> results;
+  hyle::container::SmallVector<std::int32_t, 2> next;
+  std::shared_ptr<StepSources> a_source, b_source;
+  StepState *a = nullptr, *b = nullptr;
+  Clock::time_point first_start{}, second_start{};
+  std::optional<inference::EvaluationFailure> refused_failure;
+  bool draining = false;
+
+  GenerationStepAdapter(Model &selected, std::span<PreparedGenerationCall> original, bool trace,
+      GenerationContinuation &pending, AfterSubmit &submitted, BatchObserver &observer,
+      std::span<const inference::RequestCreditGrant> granted, bool drain, bool resume)
+      : model(selected), calls(original), trace_states(trace), continuation(pending), after_submit(submitted),
+        batch_observer(observer), credits(granted), drain_requested(drain), resumed(resume),
+        mtp(model.cache_plan.draft_cache), imported(resumed || continuation.matches(calls)),
+        maximum_outputs(mtp ? 2 : 1), slot(resumed ? model.active_step->state_slot : continuation.next_slot),
+        next_slot((slot + 1) % execution_slot_count),
+        successor_role(mtp ? GraphRole::kMtpCatchupRound : GraphRole::kText), prior_slot(continuation.ready_slot) {
+    if (!second.try_reserve(calls.size()) || !direct.try_reserve(calls.size()) ||
+        !relay.try_reserve(calls.size()) || !outputs.try_reserve(calls.size()) ||
+        !next.try_resize(calls.size(), -1) || (mtp &&
+            (!selections.try_reserve(calls.size()) || !results.try_resize(calls.size())))) throw std::bad_alloc{};
+  }
+
+  void notify() {
+    if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<AfterSubmit>>) after_submit();
+  }
+  void prepare(Position) {
+    for (auto &call : calls) {
+      auto &request = *call.request;
+      if (!resumed)
+        prepare_generation_record(*request.ledger, *request.session, call.role, call.ids(), call.generation,
+            call.quota, request.progress.turn_index, {}, call.maximum, call.completion,
+            call.input_begin, call.prefill_complete);
+      direct.push_back({request.session, call.ids(), &request.ledger->stop_policy(), call.logits});
+      relay.push_back({request.session, {}, &request.ledger->stop_policy(), call.logits});
+    }
+    a = resumed ? model.active_step.get()
+        : imported ? &model.prepare_relay_evaluations(std::span(relay.data(), relay.size()), continuation.ready, slot, successor_role)
+        : (model.prepare_evaluations(std::span(direct.data(), direct.size()), nullptr, calls[0].role), model.active_step.get());
+    first_start = a->step_start;
+    if (resumed) a_source = a->execution.sources;
+  }
+  void submit(Position position) {
+    if (position == Position::kCurrent) {
+      a_source = model.prepare_submission_sources(*a);
+      model.submit_evaluations(*a, true);
+      if (!a->execution.sources) a_source.reset();
+    } else {
+      second_start = b->step_start;
+      b_source = model.prepare_submission_sources(*b);
+      model.submit_evaluations(*b);
+      ++continuation.successor_submissions;
+    }
+    notify();
+  }
+  bool cancelled() const {
+    // One stopped member can leave A's other members publishable. Only actual
+    // whole-episode cancellation/failure takes the common abort branch.
+    return a->cancelled || std::ranges::any_of(calls, [](const auto &call) { return call.request->session->failed; });
+  }
+  inference::StepSuccessor prepare_successor() {
+    if (!a_source) return inference::StepSuccessor::kUnavailable;
+    draining = continuation.cohort.draining(drain_requested, credits);
+    if (resumed && !draining) {
+      if (credits.size() != calls.size()) throw std::logic_error("pending batch lost its original request grants");
+      for (std::size_t j = 0; j < calls.size(); ++j) {
+        auto &call = calls[j]; auto &request = *call.request;
+        if (credits[j].cancelled || request.session->stopping || request.progress.turn_done) continue;
+        call.quota = request.ledger->renew_pending_quota(generation_boundary(*request.session->head),
+            request.progress.observed_commits(), request.progress.turn_index, request.progress.remaining_outputs(),
+            credits[j].reserved, credits[j].additional).quota;
+      }
+    }
+    // Eligibility is a model fact. Original B prepare/submit still checks the
+    // complete tuple and Source; warm flags never grant execution authority.
+    if (draining || !imported || continuation.ready_steps < 6 || !continuation.direction_warm[next_slot] ||
+        !std::ranges::all_of(calls, [&](const auto &call) {
+          const auto &request = *call.request; const auto &ledger = *request.ledger;
+          return !request.session->stopping && !request.session->failed && call.quota >= 2 * maximum_outputs &&
+              request.progress.remaining_outputs() >= 2 * maximum_outputs &&
+              model.capacity - request.session->length() >= 2 * maximum_outputs &&
+              request.round_emitted.size() - request.rounds.size() >= 2 &&
+              request.rounds.capacity() - request.rounds.size() >= 2 &&
+              ledger.records.size() - ledger.committed_count >= 2;
+        })) return inference::StepSuccessor::kNone;
+    for (std::size_t j = 0; j < calls.size(); ++j) {
+      const auto &call = calls[j]; auto &request = *call.request;
+      second.push_back(call); auto &following = second.back();
+      following.pending = -1; following.quota = call.quota - maximum_outputs;
+      following.role = successor_role;
+      following.step_seconds = following.proposal_seconds = 0;
+      following.disposition = EvaluationDisposition::kNotPublished;
+      following.name = (request.progress.turn_index ? "round" + std::to_string(request.progress.turn_index + 1) + "_" : "") +
+          (mtp ? "mtp" : "decode") + std::to_string(request.rounds.size() + 2);
+      request.ledger->reserve_successor(request.progress.observed_commits(), following.quota,
+          request.progress.turn_index, calls.size(), j);
+    }
+    try { b = &model.prepare_relay_evaluations(std::span(relay.data(), relay.size()), a_source, next_slot, successor_role); }
+    catch (const inference::EvaluationFailure &failure) {
+      if (!failure.status().IsUnavailable() || failure.status().has_native_error() ||
+          (failure.retirement_observed() && !failure.retirement().status.ok()) ||
+          (model.successor_step && model.successor_step->submitted)) throw;
+      refused_failure = failure; ++continuation.successor_refusals;
+      std::cerr << "decode_overlap_refused code=" << hyle::status_code_name(failure.status().code())
+          << " native=" << failure.status().has_native_error() << " predecessor_slot=" << slot
+          << " successor_slot=" << next_slot << " members=" << calls.size()
+          << " committed_length=" << calls.front().request->session->length()
+          << " candidate_length=" << a->members.front().next->length
+          << " reason=" << failure.status().message() << '\n';
+      return inference::StepSuccessor::kRefused;
+    }
+    return inference::StepSuccessor::kPrepared;
+  }
+  void finish(Position position) {
+    const auto current = position == Position::kCurrent ? calls : std::span(second.data(), second.size());
+    const auto rows = model.active_step->input_tokens;
+    const auto started = model.active_step->step_start;
+    outputs.clear(); selections.clear();
+    for (auto &call : current) {
+      auto &request = *call.request;
+      outputs.push_back(evaluation_output(model, request.session, {call.name, &request.trace, trace_states},
+          &call.step_seconds, &request.endpoint, nullptr, nullptr, request.ledger.get()));
+      outputs.back().disposition = &call.disposition;
+      if (mtp) selections.push_back({request.session, call.pending, call.quota, {}, call.maximum});
+    }
+    const auto observe = [&](std::size_t j, const CompletedEvaluationView &view) {
+      auto &call = current[j]; auto &request = *call.request;
+      observe_completed_evaluation(model, outputs[j], {call.name, &request.trace, trace_states}, view);
+    };
+    if (mtp) model.finish_mtp_rounds(std::span(selections.data(), selections.size()), model_eos_tokens,
+        std::span(outputs.data(), outputs.size()), std::span(results.data(), results.size()), observe);
+    else model.finish_evaluations(std::span(outputs.data(), outputs.size()), std::span(next.data(), next.size()), observe);
+    double seconds = 0;
+    for (const auto &call : current) seconds = (std::max)(seconds, call.step_seconds);
+    if (!seconds) seconds = std::chrono::duration<double>(Clock::now() - started).count();
+    observe_generation_batch(batch_observer, current, rows, seconds);
+    for (auto &call : current) finish_generation_call(model, call);
+    ++continuation.completed_steps;
+    if (position == Position::kSuccessor || (resumed && a_source)) ++continuation.successor_publications;
+    if (position == Position::kCurrent && a_source) continuation.ready.reset();
+  }
+  void observe_cancelled(std::span<PreparedGenerationCall> current, Clock::time_point started,
+      Clock::time_point retired_at) {
+    const auto seconds = std::chrono::duration<double>(retired_at - started).count();
+    for (auto &call : current) { call.disposition = EvaluationDisposition::kCancelled; call.step_seconds = seconds; }
+    observe_generation_batch(batch_observer, current, maximum_outputs, seconds);
+  }
+  static void require_retired(inference::RetirementObservation observation) {
+    if (!observation.retired || (!observation.status.ok() &&
+        (!observation.status.IsCancelled() || observation.status.has_native_error()))) {
+      inference::EvaluationFailure failure(observation.status.ok()
+          ? hyle::Status::Unavailable("generation continuation still retains its original episode") : observation.status);
+      failure.observe_retirement(observation); throw failure;
+    }
+  }
+  inference::RetirementObservation retire_failure(inference::EvaluationFailure *failure) noexcept {
+    b_source.reset(); a_source.reset(); continuation.reset();
+    return model.retire_failed_publication(
+        failure && failure->retirement_observed() && !failure->retirement().retired);
+  }
+  void discard_records() {
+    for (const auto &call : calls) {
+      auto &ledger = *call.request->ledger;
+      if (ledger.committed_count < ledger.records.size()) ledger.discard_uncommitted();
+    }
+  }
+  void recover_records(bool retired) noexcept {
+    observe_generation_commits_after_failure(calls);
+    if (retired && !model.active_step && !model.successor_step) {
+      try { discard_records(); } catch (...) {}
+    }
+  }
+  void cancel(bool submitted_successor) {
+    if (submitted_successor) ++continuation.successor_discards;
+    if (resumed) ++continuation.successor_discards;
+    require_retired(retire_failure(nullptr)); discard_records();
+    const auto retired_at = Clock::now();
+    observe_cancelled(calls, first_start, retired_at);
+    if (submitted_successor) observe_cancelled(std::span(second.data(), second.size()), second_start, retired_at);
+  }
+  void finish_refusal() {
+    inference::RetirementObservation retired{!model.active_step && !model.successor_step, {}};
+    for (const auto &call : calls) {
+      retired.retired = retired.retired && !call.request->session->pending;
+      inference::record_retirement_status(retired.status, call.request->session->retirement_status);
+    }
+    refused_failure->observe_retirement(retired);
+    if (!retired.retired || !refused_failure->retirement().status.ok()) throw *refused_failure;
+    // A retired; B was not submitted. Re-prime the original ready-input route,
+    // without permanently disabling later continuations for a coverage miss.
+    discard_records(); a_source.reset(); continuation.reset();
+  }
+  bool keep_successor() const {
+    return inference::continuation_retention(calls, [](const auto &call) {
+      const auto &request = *call.request;
+      return inference::ContinuationProgress{call.disposition == EvaluationDisposition::kPublished,
+          request.progress.turn_done, request.session->stopping, request.session->failed,
+          request.progress.remaining_outputs()};
+    }, true, model.active_step && model.active_step->cancelled, continuation.unavailable, draining) !=
+        inference::ContinuationRetention::kRetirePending;
+  }
+  void discard_successor() {
+    ++continuation.successor_discards;
+    b_source.reset(); a_source.reset(); continuation.release_ready();
+    auto discarded = model.discard_successful_episode();
+    if (!discarded.retired) {
+      continuation.reset();
+      const auto retired = model.retire_failed_publication();
+      inference::record_retirement_status(discarded.status, retired.status);
+      discarded.retired = retired.retired;
+    }
+    require_retired(discarded); discard_records();
+    const auto retired_at = Clock::now();
+    observe_cancelled(std::span(second.data(), second.size()), second_start, retired_at);
+    for (const auto &call : calls) {
+      auto &request = *call.request; request.endpoint = retired_at;
+      if (!request.turn_observations.empty()) request.turn_observations[request.progress.turn_index].endpoint = retired_at;
+    }
+  }
+  void bind_successor() {
+    for (std::size_t j = 0; j < calls.size(); ++j) {
+      auto &request = *calls[j].request;
+      auto &record = request.ledger->bind_successor(generation_boundary(*request.session->head),
+          request.progress.observed_commits(), request.progress.turn_index, request.progress.generated.back());
+      second[j].pending = record.pending_input;
+    }
+  }
+  void carry(inference::StepCarry disposition) {
+    if (disposition == inference::StepCarry::kUnavailable) {
+      discard_records(); continuation.reset(); continuation.unavailable = true;
+    } else if (disposition == inference::StepCarry::kDeferred) {
+      // Only host metadata crosses pumps; the promoted active_step remains
+      // the original sole native owner of the submitted successor.
+      continuation.pending_calls.clear();
+      for (auto &call : second) continuation.pending_calls.push_back(std::move(call));
+      continuation.cohort.clear_drain();
+      continuation.next_slot = (next_slot + 1) % execution_slot_count;
+    } else if (disposition == inference::StepCarry::kSuccessor) {
+      a_source.reset(); continuation.ready = std::move(b_source); continuation.ready_slot = next_slot;
+      continuation.next_slot = (next_slot + 1) % execution_slot_count;
+    } else {
+      continuation.ready = std::move(a_source);
+      if (imported) {
+        ++continuation.ready_steps;
+        if (prior_slot && (*prior_slot + 1) % execution_slot_count == slot) continuation.direction_warm[slot] = true;
+        continuation.ready_slot = slot; continuation.next_slot = next_slot;
+      } else { continuation.ready_slot.reset(); continuation.next_slot = 0; }
+      // Partial K1 acceptance cannot seed another full-candidate Source.
+      if (mtp && !continuation.matches(calls)) continuation.release_ready();
+      discard_records();
+    }
+  }
+  void finish_reuse() {
+    const auto retention = inference::continuation_retention(calls, [](const auto &call) {
+      const auto &request = *call.request;
+      return inference::ContinuationProgress{call.disposition == EvaluationDisposition::kPublished,
+          request.progress.turn_done, request.session->stopping, request.session->failed,
+          request.progress.remaining_outputs()};
+    }, false, false, continuation.unavailable, draining);
+    if (retention == inference::ContinuationRetention::kResetReady) continuation.reset();
+    else if (retention == inference::ContinuationRetention::kReleaseReady ||
+        std::ranges::any_of(calls, [](const auto &call) { return call.quota <= 1; })) continuation.release_ready();
+  }
+};
+
 template<class AfterSubmit, class BatchObserver>
 bool execute_generation_continuation(Model &model, std::span<PreparedGenerationCall> calls, bool trace_states,
     GenerationContinuation &continuation, AfterSubmit &after_submit, BatchObserver &batch_observer,
@@ -7013,7 +7300,6 @@ bool execute_generation_continuation(Model &model, std::span<PreparedGenerationC
     bool drain_requested = false) {
   const bool resumed = !continuation.pending_calls.empty();
   const bool mtp = model.cache_plan.draft_cache;
-  const auto maximum_outputs = mtp ? std::size_t{2} : std::size_t{1};
   const auto successor_role = mtp ? GraphRole::kMtpCatchupRound : GraphRole::kText;
   struct RetiredCalls final {
     Model &model; GenerationContinuation &continuation;
@@ -7050,285 +7336,10 @@ bool execute_generation_continuation(Model &model, std::span<PreparedGenerationC
   // A discarded successor really closed its original Invocation. Reinstall
   // missing carriers only while idle, before admitting this new predecessor.
   if (!resumed) model.prepare_relay_execution(calls.size(), calls[0].request->sampling_index, successor_role);
-  const auto slot = resumed ? model.active_step->state_slot : continuation.next_slot;
-  const auto prior_slot = continuation.ready_slot;
-  const bool imported = resumed || continuation.matches(calls);
-  hyle::container::SmallVector<PreparedGenerationCall, 2> second;
-  hyle::container::SmallVector<EvaluationRequest, 2> direct, relay;
-  hyle::container::SmallVector<EvaluationOutput, 2> outputs;
-  hyle::container::SmallVector<MtpGenerationSelection, 2> selections;
-  hyle::container::SmallVector<MtpRoundResult, 2> results;
-  hyle::container::SmallVector<std::int32_t, 2> next;
-  if (!second.try_reserve(calls.size()) || !direct.try_reserve(calls.size()) ||
-      !relay.try_reserve(calls.size()) || !outputs.try_reserve(calls.size()) ||
-      !next.try_resize(calls.size(), -1) || (mtp &&
-          (!selections.try_reserve(calls.size()) || !results.try_resize(calls.size())))) throw std::bad_alloc{};
-  std::shared_ptr<StepSources> a_source, b_source;
-  bool submitted_second = false, refused_second = false;
-  Clock::time_point first_start{}, second_start{};
-  std::optional<inference::EvaluationFailure> refused_failure;
-  const auto notify = [&] {
-    if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<AfterSubmit>>) after_submit();
-  };
-  const auto release_and_abort = [&](const inference::EvaluationFailure *failure = nullptr) noexcept {
-    b_source.reset(); a_source.reset(); continuation.reset();
-    return model.retire_failed_publication(
-        failure && failure->retirement_observed() && !failure->retirement().retired);
-  };
-  const auto release_and_discard = [&]() noexcept {
-    // Successful speculative discard withdraws the candidate Source, not the
-    // original carriers' warm hints. Every subsequent tuple is still checked.
-    b_source.reset(); a_source.reset(); continuation.release_ready();
-    auto discarded = model.discard_successful_episode();
-    if (discarded.retired) return discarded;
-    continuation.reset();
-    const auto retired = model.retire_failed_publication();
-    inference::record_retirement_status(discarded.status, retired.status);
-    return inference::RetirementObservation{retired.retired, discarded.status};
-  };
-  const auto require_retired = [](inference::RetirementObservation observation) {
-    if (!observation.retired || (!observation.status.ok() &&
-        (!observation.status.IsCancelled() || observation.status.has_native_error()))) {
-      inference::EvaluationFailure failure(observation.status.ok()
-          ? hyle::Status::Unavailable("generation continuation still retains its original episode")
-          : observation.status);
-      failure.observe_retirement(observation); throw failure;
-    }
-  };
-  const auto discard_records = [&] {
-    for (const auto &call : calls) {
-      auto &ledger = *call.request->ledger;
-      if (ledger.committed_count < ledger.records.size()) ledger.discard_uncommitted();
-    }
-  };
-  const auto recover_records = [&](bool retired) noexcept {
-    observe_generation_commits_after_failure(calls);
-    if (retired && !model.active_step && !model.successor_step) {
-      // Host record recovery is secondary to the original error too. Native
-      // retirement still comes only from release_and_abort above this call.
-      try { discard_records(); }
-      catch (...) {}
-    }
-  };
-  const auto finish = [&](std::span<PreparedGenerationCall> current) {
-    const auto rows = model.active_step->input_tokens;
-    const auto started = model.active_step->step_start;
-    outputs.clear(); selections.clear();
-    for (auto &call : current) {
-      auto &request = *call.request;
-      outputs.push_back(evaluation_output(model, request.session, {call.name, &request.trace, trace_states},
-          &call.step_seconds, &request.endpoint, nullptr, nullptr, request.ledger.get()));
-      outputs.back().disposition = &call.disposition;
-      if (mtp) selections.push_back({request.session, call.pending, call.quota, {}, call.maximum});
-    }
-    const auto observe = [&](std::size_t j, const CompletedEvaluationView &view) {
-          auto &call = current[j]; auto &request = *call.request;
-          observe_completed_evaluation(model, outputs[j], {call.name, &request.trace, trace_states}, view);
-        };
-    if (mtp) model.finish_mtp_rounds(std::span(selections.data(), selections.size()), model_eos_tokens,
-        std::span(outputs.data(), outputs.size()), std::span(results.data(), results.size()), observe);
-    else model.finish_evaluations(std::span(outputs.data(), outputs.size()), std::span(next.data(), next.size()), observe);
-    double seconds = 0;
-    for (const auto &call : current) seconds = (std::max)(seconds, call.step_seconds);
-    if (!seconds) seconds = std::chrono::duration<double>(Clock::now() - started).count();
-    observe_generation_batch(batch_observer, current, rows, seconds);
-    for (auto &call : current) finish_generation_call(model, call);
-  };
-  const auto observe_cancelled = [&](std::span<PreparedGenerationCall> current,
-      Clock::time_point started, Clock::time_point retired_at) {
-    const auto seconds = std::chrono::duration<double>(retired_at - started).count();
-    for (auto &call : current) {
-      call.disposition = EvaluationDisposition::kCancelled; call.step_seconds = seconds;
-    }
-    observe_generation_batch(batch_observer, current, maximum_outputs, seconds);
-  };
-  try {
-    for (auto &call : calls) {
-      auto &request = *call.request;
-      if (!resumed)
-        prepare_generation_record(*request.ledger, *request.session, call.role, call.ids(), call.generation,
-            call.quota, request.progress.turn_index, {}, call.maximum, call.completion,
-            call.input_begin, call.prefill_complete);
-      direct.push_back({request.session, call.ids(), &request.ledger->stop_policy(), call.logits});
-      relay.push_back({request.session, {}, &request.ledger->stop_policy(), call.logits});
-    }
-    auto &a = resumed ? *model.active_step
-        : imported ? model.prepare_relay_evaluations(std::span(relay.data(), relay.size()), continuation.ready, slot, successor_role)
-        : (model.prepare_evaluations(std::span(direct.data(), direct.size()), nullptr, calls[0].role), *model.active_step);
-    first_start = a.step_start;
-    if (resumed) a_source = a.execution.sources;
-    else {
-      a_source = model.prepare_submission_sources(a);
-      model.submit_evaluations(a, true);
-      if (!a.execution.sources) a_source.reset();
-      notify();
-    }
-    const auto abort_a = [&] {
-      // Ordinary withdrawal can leave A's other members publishable. Only a
-      // real whole-episode cancellation/failure takes this abort branch.
-      return a.cancelled || std::ranges::any_of(calls, [](const auto &call) { return call.request->session->failed; });
-    };
-    if (abort_a()) {
-      if (resumed) ++continuation.successor_discards;
-      require_retired(release_and_abort()); discard_records();
-      observe_cancelled(calls, first_start, Clock::now()); return true;
-    }
-    if (!a_source) {
-      finish(calls); ++continuation.completed_steps; discard_records();
-      continuation.reset(); continuation.unavailable = true; return true;
-    }
-    const bool draining = continuation.cohort.draining(drain_requested, credits);
-    if (resumed && !draining) {
-      if (credits.size() != calls.size()) throw std::logic_error("pending batch lost its original request grants");
-      for (std::size_t j = 0; j < calls.size(); ++j) {
-        auto &call = calls[j]; auto &request = *call.request;
-        if (credits[j].cancelled || request.session->stopping || request.progress.turn_done) continue;
-        call.quota = request.ledger->renew_pending_quota(generation_boundary(*request.session->head),
-            request.progress.observed_commits(), request.progress.turn_index, request.progress.remaining_outputs(),
-            credits[j].reserved, credits[j].additional).quota;
-      }
-    }
-    const auto next_slot = (slot + 1) % execution_slot_count;
-    // Original B prepare/submit checks its complete tuple and Source. A's
-    // possible future replay is not authority for B; warm flags are hints.
-    if (!draining && imported && continuation.ready_steps >= 6 && continuation.direction_warm[next_slot] &&
-        std::ranges::all_of(calls, [&](const auto &call) {
-          const auto &request = *call.request; const auto &ledger = *request.ledger;
-          return !request.session->stopping && !request.session->failed && call.quota >= 2 * maximum_outputs &&
-              request.progress.remaining_outputs() >= 2 * maximum_outputs &&
-              model.capacity - request.session->length() >= 2 * maximum_outputs &&
-              request.round_emitted.size() - request.rounds.size() >= 2 &&
-              request.rounds.capacity() - request.rounds.size() >= 2 &&
-              ledger.records.size() - ledger.committed_count >= 2;
-        })) {
-      for (std::size_t j = 0; j < calls.size(); ++j) {
-        const auto &call = calls[j]; auto &request = *call.request;
-        second.push_back(call); auto &following = second.back();
-        following.pending = -1; following.quota = call.quota - maximum_outputs;
-        following.role = successor_role;
-        following.step_seconds = following.proposal_seconds = 0;
-        following.disposition = EvaluationDisposition::kNotPublished;
-        following.name = (request.progress.turn_index ? "round" + std::to_string(request.progress.turn_index + 1) + "_" : "") +
-            (mtp ? "mtp" : "decode") + std::to_string(request.rounds.size() + 2);
-        request.ledger->reserve_successor(request.progress.observed_commits(), following.quota,
-            request.progress.turn_index, calls.size(), j);
-      }
-      StepState *b = nullptr;
-      try { b = &model.prepare_relay_evaluations(std::span(relay.data(), relay.size()), a_source, next_slot, successor_role); }
-      catch (const inference::EvaluationFailure &failure) {
-        if (!failure.status().IsUnavailable() || failure.status().has_native_error() ||
-            (failure.retirement_observed() && !failure.retirement().status.ok()) ||
-            (model.successor_step && model.successor_step->submitted)) throw;
-        refused_failure = failure; refused_second = true; ++continuation.successor_refusals;
-        std::cerr << "decode_overlap_refused code=" << hyle::status_code_name(failure.status().code())
-            << " native=" << failure.status().has_native_error() << " predecessor_slot=" << slot
-            << " successor_slot=" << next_slot << " members=" << calls.size()
-            << " committed_length=" << calls.front().request->session->length()
-            << " candidate_length=" << a.members.front().next->length
-            << " reason=" << failure.status().message() << '\n';
-      }
-      if (b) {
-        second_start = b->step_start; b_source = model.prepare_submission_sources(*b);
-        model.submit_evaluations(*b); submitted_second = true; ++continuation.successor_submissions;
-        notify();
-      }
-    }
-    if (abort_a()) {
-      if (submitted_second) ++continuation.successor_discards;
-      if (resumed) ++continuation.successor_discards;
-      require_retired(release_and_abort()); discard_records();
-      const auto retired_at = Clock::now(); observe_cancelled(calls, first_start, retired_at);
-      if (submitted_second) observe_cancelled(std::span(second.data(), second.size()), second_start, retired_at);
-      return true;
-    }
-    finish(calls); ++continuation.completed_steps;
-    if (resumed) ++continuation.successor_publications;
-    continuation.ready.reset();
-    if (refused_second) {
-      inference::RetirementObservation retired{!model.active_step && !model.successor_step, {}};
-      for (const auto &call : calls) {
-        retired.retired = retired.retired && !call.request->session->pending;
-        inference::record_retirement_status(retired.status, call.request->session->retirement_status);
-      }
-      refused_failure->observe_retirement(retired);
-      if (!retired.retired || !refused_failure->retirement().status.ok()) throw *refused_failure;
-      // Optional device-ordered reuse was unavailable for this physical tuple.
-      // A is now actually retired and B was never submitted. Re-prime through
-      // the original ready-input route so it can capture the new layout; a
-      // temporary coverage miss does not disable every later continuation.
-      discard_records(); a_source.reset(); continuation.reset();
-      return true;
-    }
-    if (submitted_second) {
-      // Pending sources are a complete same-order cohort. A partial A result
-      // cannot be projected into B. Retire all B, preserve every successful A,
-      // and let the original owner choose the next runnable subset.
-      if (inference::continuation_retention(calls, [](const auto &call) {
-            const auto &request = *call.request;
-            return inference::ContinuationProgress{call.disposition == EvaluationDisposition::kPublished,
-                request.progress.turn_done, request.session->stopping, request.session->failed,
-                request.progress.remaining_outputs()};
-          }, true, model.active_step && model.active_step->cancelled, continuation.unavailable, draining) ==
-          inference::ContinuationRetention::kRetirePending) {
-        ++continuation.successor_discards;
-        require_retired(release_and_discard()); discard_records();
-        const auto retired_at = Clock::now();
-        observe_cancelled(std::span(second.data(), second.size()), second_start, retired_at);
-        for (const auto &call : calls) {
-          auto &request = *call.request; request.endpoint = retired_at;
-          if (!request.turn_observations.empty()) request.turn_observations[request.progress.turn_index].endpoint = retired_at;
-        }
-        return true;
-      }
-      for (std::size_t j = 0; j < calls.size(); ++j) {
-        auto &request = *calls[j].request;
-        auto &record = request.ledger->bind_successor(generation_boundary(*request.session->head),
-            request.progress.observed_commits(), request.progress.turn_index, request.progress.generated.back());
-        second[j].pending = record.pending_input;
-      }
-      if (defer_successor) {
-        // All borrowed A metadata has been observed. B's native owner remains
-        // the original promoted active_step; only its host call crosses pumps.
-        continuation.pending_calls.clear();
-        for (auto &call : second) continuation.pending_calls.push_back(std::move(call));
-        continuation.cohort.clear_drain();
-        continuation.next_slot = (next_slot + 1) % execution_slot_count;
-        return true;
-      }
-      finish(std::span(second.data(), second.size())); ++continuation.completed_steps; ++continuation.successor_publications;
-      a_source.reset(); continuation.ready = std::move(b_source); continuation.ready_slot = next_slot;
-      continuation.next_slot = (next_slot + 1) % execution_slot_count;
-    } else {
-      continuation.ready = std::move(a_source);
-      if (imported) {
-        ++continuation.ready_steps;
-        if (prior_slot && (*prior_slot + 1) % execution_slot_count == slot) continuation.direction_warm[slot] = true;
-        continuation.ready_slot = slot; continuation.next_slot = next_slot;
-      } else { continuation.ready_slot.reset(); continuation.next_slot = 0; }
-      // A K1 full Source is no longer an input fact after partial acceptance.
-      // It cannot seed B, even when the head address and epoch still match.
-      if (mtp && !continuation.matches(calls)) continuation.release_ready();
-      // Withdrawn A records have no commit; clear only their unpublished work.
-      discard_records();
-    }
-    const auto retention = inference::continuation_retention(calls, [](const auto &call) {
-          const auto &request = *call.request;
-          return inference::ContinuationProgress{call.disposition == EvaluationDisposition::kPublished,
-              request.progress.turn_done, request.session->stopping, request.session->failed,
-              request.progress.remaining_outputs()};
-        }, false, false, continuation.unavailable, draining);
-    if (retention == inference::ContinuationRetention::kResetReady) continuation.reset();
-    else if (retention == inference::ContinuationRetention::kReleaseReady ||
-        std::ranges::any_of(calls, [](const auto &call) { return call.quota <= 1; })) continuation.release_ready();
-    return true;
-  } catch (inference::EvaluationFailure &failure) {
-    const auto retired = release_and_abort(&failure);
-    failure.observe_retirement(retired); recover_records(retired.retired);
-    throw;
-  } catch (...) {
-    const auto retired = release_and_abort(); recover_records(retired.retired);
-    throw;
-  }
+  GenerationStepAdapter<AfterSubmit, BatchObserver> adapter(model, calls, trace_states, continuation,
+      after_submit, batch_observer, credits, drain_requested, resumed);
+  (void)inference::drive_steps(adapter, {.resume = resumed, .defer_successor = defer_successor});
+  return true;
 }
 
 // The serialized owner may process controls after the original native submit
