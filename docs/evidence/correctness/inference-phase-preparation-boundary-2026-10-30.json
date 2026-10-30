@@ -1,0 +1,292 @@
+{
+  "schema": "hyle.inference-phase-preparation-boundary.v1",
+  "status": "FINITE_PHASE_IO_CHECKS_PASS",
+  "full_goal_complete": false,
+  "base_commit": "910a094b75286fa57258c84e49be90015aea174e",
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 541043,
+      "sha256": "2b227de1c0211c64a4a0ce701144a6908bd68be95aa80b4f6235a3f1a1acdca1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\cold_sources.cmake",
+      "bytes": 485,
+      "sha256": "935b9c75b5ddb88bbcb4c9f2d09c2d3ba32a90299b60df4b241226b6616c25d5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\phase.h",
+      "bytes": 3977,
+      "sha256": "eddffae6e22ab4851bdc12ef7746952d032c996a6f9391853e331d95c36a9a8d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\phase_preparation.cc",
+      "bytes": 15115,
+      "sha256": "cc0f12ca43af629eafe1314388359c4d98e68e46bebf8df499d5382dcf926667"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+      "bytes": 11205,
+      "sha256": "e0c0a6bcb1b3acad6b8c3cc4c9ac0aa1578954fd12902eff55d1cdc88fab8a28"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_phase_preparation_case.h",
+      "bytes": 7365,
+      "sha256": "10b017568fb83a61913703922ab2a90abaf7020a6cf7eafd95c8659ef92d6f5f"
+    }
+  ],
+  "attempts": {
+    "total": 37,
+    "CXX": 5,
+    "links": 6,
+    "native": 26
+  },
+  "failed_build_or_native": 0,
+  "closure": {
+    "original_inputs": 230,
+    "old_reused": 230,
+    "new_phase": 1,
+    "current_inputs": 231,
+    "SDK_CXX": 0,
+    "old_cold_CXX": 0,
+    "consumer_CXX": 3,
+    "phase_CXX": 1,
+    "leaf_CXX": 1,
+    "rows_rebuilt": false
+  },
+  "native": {
+    "root_CPU": 1,
+    "bridge": 25,
+    "total": 26,
+    "fresh_pairs": 9,
+    "retained_reference_candidates": 7,
+    "all_non_time_comparisons_exact": true,
+    "phase_CPU": {
+      "status": "PASS",
+      "case": "phase-preparation",
+      "backend": "cpu",
+      "allocation_budget_refusal_retry": true,
+      "failed_phase_unpublished": true,
+      "original_family_unchanged": true,
+      "phase_before_state_layout": true,
+      "state_before_phase_layout": true,
+      "warm_original_invocation": true,
+      "tracked_budget_live_restored": true,
+      "submitted_graphs": 0,
+      "final_versions": 0
+    }
+  },
+  "Session": {
+    "files_per_arm": 378,
+    "bytes_per_arm": 150761472,
+    "all_rehashed_and_direct_byte_equal": true,
+    "observation_equal_only_outputroot_normalized": true,
+    "final_versions": 0
+  },
+  "diagnostic_probe": {
+    "raw_count_per_arm": 9,
+    "raw_bytes_per_arm": 4608,
+    "all_raw_and_complete_route_boundaries_exact": true,
+    "only_explicit_output_root_normalized": true,
+    "default_performance": false
+  },
+  "default_decode": [
+    {
+      "case": "ordinary-single",
+      "baseline": 0.6678173,
+      "candidate": 0.6652472999999998
+    },
+    {
+      "case": "mtp-single",
+      "baseline": 0.5429645000000002,
+      "candidate": 0.546986
+    },
+    {
+      "case": "ordinary-two",
+      "baseline": 1.2989009000000005,
+      "candidate": 1.2993503000000004
+    },
+    {
+      "case": "mtp-two",
+      "baseline": 0.9939799000000002,
+      "candidate": 0.992329
+    }
+  ],
+  "actual_hardware": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\hardware-toolchain.json",
+    "bytes": 5529,
+    "sha256": "301f6d389ef5c7128b2529c007f711c10bf4d1b37eb1bf1b22d36c69e67b149c"
+  },
+  "model_link_base": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\model-link-base.json",
+    "bytes": 135368,
+    "sha256": "6c701cbdc2fb0324cecb3b2945dee637b389846647270e4608d31cd81215f4c0"
+  },
+  "process_inventory": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\process-inventory.json",
+    "bytes": 30712,
+    "sha256": "8604c2049d8c72a49f99ff4660c2a6504cd3d9a36b104d65bcc00ff7004820a8"
+  },
+  "final_six_source_bundle": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-extract-20261030\\pending-six-source.json",
+    "bytes": 395,
+    "sha256": "a8e59f361021ace82923594d3d1987013e9802ede010691c45b428b7420f0c28"
+  },
+  "limits": [
+    "Default four-pair timings are limited regression observations, not a stable performance window.",
+    "Seven unchanged Factory candidate reports remain exact historical references; those baselines were not rerun.",
+    "Phase CPU refusal occurs at the first charged physical allocation after cold slot/transaction preparation, not at a deliberately injected late readback failure.",
+    "The budget test proves tracked live restoration, not whole-heap or native-private leak freedom. It submits no Graph.",
+    "Default JSON covers aggregates; diagnostic route exports do not describe every provider instance and physical copy.",
+    "Manual Windows CPU/CUDA CXX/link checks do not prove full default CMake or all-platform behavior. No new profiling, performance window, NVCC or model download."
+  ],
+  "external_evidence": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-preparation-extract-20261030\\applied-receipt.json",
+      "bytes": 1518,
+      "sha256": "6c1f2c245fbaac9ae176e9c7322d2c76fc0452f0fb4f5bdf0083df980308b2f5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-preparation-extract-20261030\\check.py",
+      "bytes": 7937,
+      "sha256": "991bb79dac4a5c7b15c8cd4ec85c9a41b2cfcb29956c1359c1bc26e1657af43e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-preparation-extract-20261030\\pending-six-source.json",
+      "bytes": 395,
+      "sha256": "a8e59f361021ace82923594d3d1987013e9802ede010691c45b428b7420f0c28"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-preparation-extract-20261030\\pending-six-source.patch",
+      "bytes": 51261,
+      "sha256": "409a102e70bde5380c7efd0945169cacde1b65717715d71b1a2246720aae5d10"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-preparation-extract-20261030\\phase-preparation.patch",
+      "bytes": 38899,
+      "sha256": "b2e78299691dc19f65d0c9c40c234ee3cec8ad5bf6e7ec257f237f9f7ff4f9a4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-preparation-extract-20261030\\plan.json",
+      "bytes": 5015,
+      "sha256": "321274248907ad832a6b8bdfa76a77151559c216dc313771e41ba35e288e81c2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-preparation-extract-20261030\\prepare.py",
+      "bytes": 9519,
+      "sha256": "61d3c79846908becd1e441a9bf1def774404d1ed25c7b6943ada62416591dbb5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-preparation-extract-20261030\\README.md",
+      "bytes": 5236,
+      "sha256": "3a057a6fb043609e3246ba438a4304f727e972e4a34a4a443bd3c262e69f2bed"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-preparation-extract-20261030\\seal.py",
+      "bytes": 2196,
+      "sha256": "36ad8fa7475ab117cd53de07d2fd5f527f7a6c555270582e0b929a2b7b743edd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-preparation-extract-20261030\\source-input-pins.json",
+      "bytes": 42919,
+      "sha256": "4bdf2c48428d61eb050a98327e58c7d31c0aa3786493c802b7c2ee0df8b4f98f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-preparation-extract-20261030\\static-report.json",
+      "bytes": 69412,
+      "sha256": "5eca826772eb4917d1f9019b2623af50658b366073c30b23613c2f5204a51664"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-preparation-review-20261030\\capture.py",
+      "bytes": 993,
+      "sha256": "3d73e20745c981289918a3f9cb15e1c0c71c34e792d53e5fb54473727f8ef073"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-preparation-review-20261030\\independent-candidate-review.json",
+      "bytes": 1025,
+      "sha256": "c05fca02af8d6aa095597f9368c91a36ec29c997945bcac395201d12d1a91984"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-preparation-review-20261030\\permission-boundary-audit.md",
+      "bytes": 3029,
+      "sha256": "0ac799d4c41fb779f7c65e5aaccd95974e7f8ac365b104a3b5356cb8a47f978c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-preparation-review-20261030\\permission-source-pins.json",
+      "bytes": 1266,
+      "sha256": "83b0017cb12347a3d5b19dda3fba04c8bd5e9681c858d79135866e01347a1d2a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-preparation-review-20261030\\README.md",
+      "bytes": 3670,
+      "sha256": "9bce491eebd2dc242a1b022196cafca7050c0614a4f9d60e5201546d5bcd75b9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-preparation-review-20261030\\review-candidate.py",
+      "bytes": 4430,
+      "sha256": "985b9900da8a067e81053f55080de7d0baafeca18d50c23e67f29d7b4392532d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-preparation-review-20261030\\source-pins.json",
+      "bytes": 1939,
+      "sha256": "9e88565d4f18c3ec45fe8744cdf5170221a487619eaa0e728f4b7f4c7146fb93"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-test-20261030\\applied-receipt.json",
+      "bytes": 887,
+      "sha256": "b2f76900b3aa161f4f293444a76558bd2abd08050485986851be86ae800a5e13"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-test-20261030\\independent-review.json",
+      "bytes": 2780,
+      "sha256": "724975e95426046cf136c773fe3ed3c1babd0174c4f30091e47f11049b61f6f0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-test-20261030\\independent-review.py",
+      "bytes": 3641,
+      "sha256": "70e82226071d95ebb0069413979409d2677f00d619afd578374afa6c66cfe48e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-test-20261030\\phase-test.patch",
+      "bytes": 12362,
+      "sha256": "eab60fa9b2006742558ec82385c43bc098b7c0c756af26aeddf875b4cbf8efcf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-test-20261030\\plan.json",
+      "bytes": 1437,
+      "sha256": "66f5a475571bbb2364050f0c941f54a1a46ea3f1490544b9d89de5547a4cdf94"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-test-20261030\\prepare.py",
+      "bytes": 3831,
+      "sha256": "cfb4d260b7fa785cb9f72bb8ac1fc05efbaa0e760f1c8008dc145e3537155054"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-test-20261030\\root-summary-static.json",
+      "bytes": 3508,
+      "sha256": "25b1ef79210cf28cf2250d7a377df46f9cdd274c9594c1da933f189c7a9265cf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-preparation-harness-20261030\\external-evidence\\inference-phase-test-20261030\\seal.py",
+      "bytes": 3548,
+      "sha256": "353d4da12ac86de18d486aac30a47d58e3a26253e480f163a4836591ae2d7539"
+    }
+  ],
+  "archive": {
+    "file": "inference-phase-preparation-boundary-2026-10-30.zip",
+    "bytes": 1077621,
+    "sha256": "ebb12d6b73042a63242e61e9c51eb9f66e54ed86a705619ec55d415372494f20",
+    "members": 346,
+    "all_members_readback_byte_equal": true
+  },
+  "cleanup": {
+    "status": "completed",
+    "count": 793,
+    "bytes": 1164745059,
+    "bin_files": 19,
+    "raw_vectors": 774,
+    "source_objects_receipts_retained": true,
+    "published_archive_sha256": "ebb12d6b73042a63242e61e9c51eb9f66e54ed86a705619ec55d415372494f20",
+    "raw_vectors_now_removed": true
+  }
+}

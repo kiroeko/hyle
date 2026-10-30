@@ -90,6 +90,7 @@
 #include "graph_builder.h"
 #include "target_graph.h"
 #include "family_factory.h"
+#include "phase.h"
 #include "hyle/compute/batch_transfer.h"
 #include "hyle/core/assert.h"
 #include "precision_profile.h"
@@ -338,51 +339,6 @@ struct FamilyChild final {
   Family &family;
   const inference::PreparedProgram &program;
 };
-// Physical IO/control carriers are independent of candidate depth. A reader
-// may still retain the preceding carrier after its producer publishes.
-constexpr std::size_t execution_slot_count = 3;
-enum class StateBankKind { kHistory, kRecurrent, kHidden };
-struct StateBank final {
-  std::size_t layer = 0;
-  StateBankKind kind = StateBankKind::kHistory;
-  std::size_t source_index = SIZE_MAX; // Only a real paired Gather has a Source.
-};
-// Mutable input, result and layout carriers belong to one actual Invocation.
-// Sharing a finite child/Queue never grants another slot access to these bytes.
-struct PhaseIo final {
-  c::BatchLayoutVersion attention_layout;
-  // Original per-Invocation planning storage. Nodes are fixed at cold
-  // preparation; layout aliases exist only during batch::prepare below.
-  std::vector<g::batch::NodeLayout> batch_layouts;
-  Tensor tokens, positions, last_ids, logits, final_hidden, history_select, prefix_ids;
-  std::vector<std::int32_t> history_select_values, last_id_values, prefix_id_values;
-  Tensor sampling_identities, draft_positions, catchup_token;
-  Tensor draft_hidden_select, draft_token_select, draft_last_ids;
-  std::vector<std::int32_t> draft_hidden_indices, draft_token_indices;
-  inference::ProgramIo::Readback next_id, draft_id, sampling_valid, sampling_accept;
-  inference::ProgramIo::Readback successor_token, successor_catchup;
-  std::vector<std::uint8_t> sampling_valid_values, sampling_accept_values;
-  std::vector<float> sampling_scratch;
-  std::vector<std::int32_t> draft_ids, prefix_candidates;
-  std::array<Tensor, 9> probe_outputs;
-};
-struct Phase final : FamilyPorts {
-  std::size_t query_rows = 0;
-  c::BatchSchema attention_schema;
-  // The selected child is shared immutable model data, not copied per session.
-  const inference::PreparedProgram *child = nullptr;
-  const Family *family = nullptr;
-  bool imported_sources = false;
-  std::vector<StateBank> state_banks;
-  using ExecutionSlots = inference::ProgramSlots<ColdResources, PhaseIo, execution_slot_count>;
-  ExecutionSlots slots;
-  const g::Graph &state_graph() const noexcept {
-    return child->resource_graph();
-  }
-  const PreparedOutputFacts *logits_facts = nullptr, *hidden_facts = nullptr;
-  std::array<const PreparedOutputFacts *, 9> probe_facts{};
-};
-
 // One original Graph episode owns all dirty pages and candidate state. Until
 // finish replaces the Session head, neither a ready layer nor an error changes
 // the committed snapshot. Failure recovery remains attached to that Session.
@@ -2600,8 +2556,6 @@ public:
   Phase &prepare_child(std::size_t tokens, bool diagnostic, std::size_t requests = 1, GraphRole role = GraphRole::kText,
                        TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0,
                        bool imported_sources = false, RowPacking packing = RowPacking::kRectangular) {
-    const bool compact_draft = packs_draft(packing);
-    const bool packed_verify = packs_verify(packing), packed_target = packs_target(packing);
     auto &cache = diagnostic ? probe_phases : phases;
     const auto found = cache.find({requests, tokens, role, completion, sampling_index, imported_sources, packing});
     if (found != cache.end()) return *found->second;
@@ -2610,10 +2564,7 @@ public:
     auto &definition = selected->family;
     const auto &selected_sampler = definition.sampling->configuration;
     const auto start = Clock::now();
-    auto result = std::make_unique<Phase>();
-    auto &phase = *result;
     std::size_t physical_slots = 1;
-    phase.imported_sources = imported_sources;
     if (imported_sources) {
       const bool ordinary = tokens == 1 && role == GraphRole::kText && !cache_plan.draft_cache;
       const bool mtp = tokens == 2 && requests == 1 && role == GraphRole::kMtpCatchupRound &&
@@ -2624,188 +2575,16 @@ public:
         throw std::runtime_error("imported decode carriers require a complete supported predecessor and two candidate depths");
       physical_slots = execution_slot_count;
     }
-    phase.query_rows = tokens;
-    static_cast<FamilyPorts &>(phase) = static_cast<const FamilyPorts &>(definition);
-    if (imported_sources) for (auto &source : phase.state_sources) source.mode = g::slots::SourceMode::kImported;
     const auto planned_slot_uses = shape_plan.uses({requests, tokens, role, completion, sampling_index, false, packing});
-    phase.attention_schema = definition.attention_schema;
-    phase.child = &selected->program;
-    phase.family = &definition;
-    std::vector<inference::SlotTransactionSpec> transactions;
-    phase.state_banks.reserve(phase.state_sources.size() + (phase.hidden_state.store.valid() ? 1u : 0u));
-    transactions.reserve(phase.state_banks.capacity());
-    const auto add_bank = [&](StateBank bank, const StatePorts &port, std::size_t sources) {
-      const auto paired = std::ranges::find(phase.state_sources, port.store, &g::slots::SourceBinding::store);
-      if (paired != phase.state_sources.end())
-        bank.source_index = static_cast<std::size_t>(paired - phase.state_sources.begin());
-      phase.state_banks.push_back(bank);
-      transactions.push_back({port.store, imported_sources ? 0 : sources,
-          cache::multiply(requests, phase.prefix_rows), {.resource_budget = cache_budget}});
-    };
-    for (std::size_t layer = 0; layer < state_schema.size(); ++layer) if (geometry.is_gdn(layer))
-      for (const bool recurrent : {false, true}) {
-        const auto &port = recurrent ? phase.layers[layer].recurrent : phase.layers[layer].history;
-        add_bank({.layer = layer, .kind = recurrent ? StateBankKind::kRecurrent : StateBankKind::kHistory},
-            port, requests);
-      }
-    if (phase.hidden_state.store.valid())
-      add_bank({.kind = StateBankKind::kHidden}, phase.hidden_state,
-          has_mtp(role) ? cache::multiply(requests, draft_lag(role) + 1) : 0);
-    std::erase_if(phase.state_resource_ports, [&](V value) {
-      return value.kind() != g::ValueKind::kInput && !phase.child->output(value).caller_owned();
-    });
-    if (imported_sources) {
-      // This same ordinary-input inventory serves every episode of the Phase.
-      // Prove its separation from the actual cold Source ports once; pending
-      // Source permissions and selected reader access are still checked by
-      // reader_binding/bind_sources for each original invocation below.
-      const auto check_source_input = [&](V value) {
-        if (std::ranges::find(phase.state_resource_ports, value) != phase.state_resource_ports.end())
-          throw std::runtime_error("ordinary caller input overlaps its imported Source projection");
-      };
-      check_source_input(phase.token_port);
-      if (phase.catchup_token_port) check_source_input(phase.catchup_token_port);
-      for (const auto &source : phase.state_sources) {
-        check_source_input(take(phase.state_graph().node_input(source.gather, 0)));
-        check_source_input(take(phase.state_graph().node_input(source.gather, 1)));
-      }
-    }
-    const auto t = static_cast<std::int64_t>(tokens);
-    if (completion == TextCompletion::kEmitNext)
-      phase.logits_facts = &phase.child->output(phase.logits_port);
-    phase.hidden_facts = &phase.child->output(phase.hidden_port);
-    if (diagnostic) for (std::size_t i = 0; i < phase.probe_ports.size(); ++i)
-      phase.probe_facts[i] = &phase.child->output(phase.probe_ports[i]);
-    check(phase.slots.prepare(phase.child->compiled, execution.queue_bindings(), physical_slots, transactions,
-        [&](std::size_t slot, auto &program_slot) {
-      auto &io = program_slot.data;
-      io.batch_layouts.reserve(phase.attention_nodes.size() + drafts_token(role));
-      for (auto node : phase.attention_nodes) io.batch_layouts.push_back({node, {}});
-      if (drafts_token(role)) io.batch_layouts.push_back({phase.draft_attention_node, {}});
-      program_slot.planned_uses = planned_slot_uses[slot];
-      program_slot.replay_mode = !selected_sampler.modifiers.history.empty() ? g::ReplayMode::kCommands
+    std::array<g::ReplayMode, execution_slot_count> replay_modes{};
+    for (std::size_t slot = 0; slot < physical_slots; ++slot)
+      replay_modes[slot] = !selected_sampler.modifiers.history.empty() ? g::ReplayMode::kCommands
           : imported_sources ? g::ReplayMode::kPreferCapture : select_replay_mode(
-          replay_policy, program_slot.planned_uses, selected_sampler.enabled);
-      const auto token_count = has_mtp(role) && !is_mtp_prefill(role)
-          ? static_cast<std::int64_t>(requests) : t * static_cast<std::int64_t>(requests);
-      io.tokens = caller_tensor(execution.device(), role == GraphRole::kText
-          ? dense(Type::kInt32, {token_count, 1}) : dense(Type::kInt32, {token_count}));
-      io.positions = caller_tensor(execution.device(), requests == 1 ? dense(Type::kInt32, {t})
-          : dense(Type::kInt32, {static_cast<std::int64_t>(requests), t}));
-      if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
-        io.sampling_identities = caller_tensor(execution.device(), phase.batched_text_sampling
-            ? dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 4})
-            : dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 3, 4}));
-      }
-      if (phase.sampling_valid_port) {
-        io.sampling_valid_values.resize(requests);
-        bool float_predicates = phase.child->output(phase.sampling_valid_port).description.data_type() == Type::kFloat32;
-        if (phase.sampling_accept_port) {
-          io.sampling_accept_values.resize(requests);
-          float_predicates = float_predicates || phase.child->output(phase.sampling_accept_port).description.data_type() == Type::kFloat32;
-        }
-        if (float_predicates) io.sampling_scratch.resize(requests);
-      }
-      if (has_mtp(role)) {
-        const auto draft_rows = is_mtp_prefill(role) ? t + static_cast<std::int64_t>(draft_lag(role)) : static_cast<std::int64_t>(draft_lag(role) + 1);
-        io.draft_positions = caller_tensor(execution.device(), requests == 1 ? dense(Type::kInt32, {draft_rows})
-            : dense(Type::kInt32, {static_cast<std::int64_t>(requests), draft_rows}));
-        if (draft_lag(role)) io.catchup_token = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
-        if (packs_prefill(definition.packing) || compact_draft) {
-          const auto count = cache::multiply(requests, static_cast<std::size_t>(draft_rows));
-          const auto description = dense(Type::kInt32, {static_cast<std::int64_t>(count)});
-          io.draft_hidden_select = caller_tensor(execution.device(), description);
-          io.draft_hidden_indices.resize(count);
-          io.draft_hidden_select.write<std::int32_t>(io.draft_hidden_indices);
-          if (draft_lag(role)) {
-            io.draft_token_select = caller_tensor(execution.device(), description);
-            io.draft_token_indices.resize(count);
-            io.draft_token_select.write<std::int32_t>(io.draft_token_indices);
-          }
-        }
-        if (compact_draft) io.draft_last_ids = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
-        if (drafts_token(role)) {
-          io.draft_ids.resize(requests);
-        }
-      }
-      if ((requests != 1 || packs_prefill(definition.packing)) && !verifies_prefix(role)) {
-        io.last_ids = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
-        std::vector<std::int32_t> last_ids(requests);
-        for (std::size_t j = 0; j < requests; ++j) last_ids[j] = static_cast<std::int32_t>((j + 1) * tokens - 1);
-        io.last_ids.write<std::int32_t>(last_ids);
-        if (packs_prefill(definition.packing)) io.last_id_values.resize(requests);
-      }
-      if (packed_target) {
-        const auto count = cache::multiply(cache::multiply(requests, phase.prefix_rows), geometry.conv_kernel - 1);
-        io.history_select = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(count)}));
-        io.history_select_values.resize(count);
-        if (packed_verify) {
-          io.last_id_values.resize(requests);
-          const auto prefixes = cache::multiply(requests, phase.prefix_rows);
-          io.prefix_ids = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(prefixes)}));
-          io.prefix_id_values.resize(prefixes);
-        }
-      }
-      if (completion == TextCompletion::kEmitNext) {
-        io.logits = caller_tensor(take(execution.resource_for(phase.logits_facts->storage)),
-            phase.logits_facts->description, phase.logits_facts->caller_owned());
-      }
-      if (verifies_prefix(role)) io.prefix_candidates.resize(cache::multiply(requests, phase.prefix_rows));
-      io.final_hidden = caller_tensor(take(execution.resource_for(phase.hidden_facts->storage)),
-          phase.hidden_facts->description, phase.hidden_facts->caller_owned());
-      if (diagnostic) for (std::size_t i = 0; i < phase.probe_ports.size(); ++i) {
-        const auto &output = *phase.probe_facts[i];
-        io.probe_outputs[i] = caller_tensor(take(execution.resource_for(output.storage)), output.description, output.caller_owned());
-      }
-      const bool sampling_identity = selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify;
-      const bool last_ids = (requests != 1 || packs_prefill(definition.packing)) && !verifies_prefix(role);
-      std::size_t fixed_count = 2 + sampling_identity + last_ids + packed_target + packed_verify +
-          io.logits.caller_owned() + io.final_hidden.caller_owned();
-      if (has_mtp(role)) fixed_count += 1 + bool(draft_lag(role)) +
-          ((packs_prefill(definition.packing) || compact_draft) ? 1 + bool(draft_lag(role)) : 0) + compact_draft;
-      if (diagnostic) for (const auto *output : phase.probe_facts)
-        fixed_count += output && output->caller_owned();
-      const auto readback_count = bool(phase.sampling_valid_port) + bool(phase.sampling_accept_port) +
-          (completion == TextCompletion::kEmitNext) + drafts_token(role) +
-          bool(phase.successor_token_port) + bool(phase.successor_catchup_port);
-      check(program_slot.io.prepare(phase.child->compiled, fixed_count, 0, readback_count, 0));
-      // Register once in the original cold installation order. Tensor owners
-      // stay here; each readback's only owner moves into the same shared IO.
-      check(program_slot.io.add_fixed(phase.token_port, io.tokens.read()));
-      check(program_slot.io.add_fixed(phase.position_port, io.positions.read()));
-      if (sampling_identity) check(program_slot.io.add_fixed(phase.sampling_identity_port, io.sampling_identities.read()));
-      if (phase.sampling_valid_port) {
-        io.sampling_valid = take(program_slot.io.add_readback(phase.sampling_valid_port, execution.storage_domains(), allocation_budget));
-        if (phase.sampling_accept_port)
-          io.sampling_accept = take(program_slot.io.add_readback(phase.sampling_accept_port, execution.storage_domains(), allocation_budget));
-      }
-      if (last_ids) check(program_slot.io.add_fixed(phase.last_ids_port, io.last_ids.read()));
-      if (packed_target) check(program_slot.io.add_fixed(phase.history_select_port, io.history_select.read()));
-      if (packed_verify) check(program_slot.io.add_fixed(phase.prefix_ids_port, io.prefix_ids.read()));
-      if (io.logits.caller_owned()) check(program_slot.io.add_fixed_output(phase.logits_port, io.logits.view()));
-      if (completion == TextCompletion::kEmitNext)
-        io.next_id = take(program_slot.io.add_readback(phase.id_port, execution.storage_domains(), allocation_budget));
-      if (phase.successor_token_port)
-        io.successor_token = take(program_slot.io.add_readback(phase.successor_token_port, execution.storage_domains(), allocation_budget));
-      if (phase.successor_catchup_port)
-        io.successor_catchup = take(program_slot.io.add_readback(phase.successor_catchup_port, execution.storage_domains(), allocation_budget));
-      if (io.final_hidden.caller_owned()) check(program_slot.io.add_fixed_output(phase.hidden_port, io.final_hidden.view()));
-      if (has_mtp(role)) {
-        check(program_slot.io.add_fixed(phase.draft_position_port, io.draft_positions.read()));
-        if (draft_lag(role)) check(program_slot.io.add_fixed(phase.catchup_token_port, io.catchup_token.read()));
-        if (packs_prefill(definition.packing) || compact_draft) {
-          check(program_slot.io.add_fixed(phase.draft_hidden_select_port, io.draft_hidden_select.read()));
-          if (draft_lag(role)) check(program_slot.io.add_fixed(phase.draft_token_select_port, io.draft_token_select.read()));
-        }
-        if (compact_draft) check(program_slot.io.add_fixed(phase.draft_last_ids_port, io.draft_last_ids.read()));
-        if (drafts_token(role)) io.draft_id = take(program_slot.io.add_readback(phase.draft_id_port, execution.storage_domains(), allocation_budget));
-      }
-      if (diagnostic) for (std::size_t i = 0; i < phase.probe_ports.size(); ++i)
-        if (const auto *output = phase.probe_facts[i]; output && output->caller_owned())
-          check(program_slot.io.add_fixed_output(output->value, io.probe_outputs[i].view()));
-      check(program_slot.io.seal());
-      return hyle::Status::Ok();
-    }));
+          replay_policy, planned_slot_uses[slot], selected_sampler.enabled);
+    auto result = prepare_phase({definition, selected->program, selected_sampler},
+        {tokens, physical_slots, diagnostic, imported_sources, planned_slot_uses, replay_modes},
+        {execution, geometry, state_schema, allocation_budget, cache_budget});
+    auto &phase = *result;
     if (state_storage_prepared) prepare_transaction_layouts(phase);
     const auto &route_directory = layer0_probe.empty() ? trace_routes : layer0_probe;
     if (!route_directory.empty()) {
