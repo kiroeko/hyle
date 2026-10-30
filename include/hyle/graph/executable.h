@@ -139,6 +139,11 @@ struct NodePlacement final {
   NodeId node{};
   ExecutionTargetId target{};
   PlacementStrength strength = PlacementStrength::kPreferred;
+  // Optional allocation/effect-bank default when this placement's target is
+  // selected. Unspecified inherits the target's default. Explicit value and
+  // external-resource contracts and aliasing retain their original meaning.
+  // An inaccessible preferred storage hint may use that target's default.
+  StorageDomainId default_storage{};
 };
 
 // Hard constraint on the provider preparing a logical node, including any

@@ -12,8 +12,9 @@ CLI formatter 已独立编译。Qwen 与真实 GLM StateHead 组件已消费共�
 `RequestLoop`现承载自然请求的FIFO、驻留腾位、turn切换和待退休身份；Qwen的静态适配器提供实际状态与执行。
 兼容分组与请求循环已共用，Qwen适配器提供真实工作形状、兼容条件、完整恢复算法和数学阶段；GLM／DeepSeek／Kimi仍为组件消费者，
 尚无第二个完整引擎模型验证整套编排复用。
-请求原语的提取不代表共同执行核心已经完成：Qwen的`Model`仍持有形状族、载体环、候选状态、
-Source接线及准备／提交／退休编排。本次复审将共同episode寿命与模型数学分开核算，先明确跨pump所有权，再移动实现。
+共同部分现包括程序／IO／物理槽、分页准备、普通及后继准备入口、完整阶段交接和跨pump请求控制。
+Qwen的`Model`保留模型形状、状态银行布局、数学阶段与Head发布政策；共同资源交接使用原`ExecutionEpisode`，
+不要求不同家族采用相同的阶段或状态结构。本轮明确的共同机制整改及有限复审已完成，第二完整模型仍未验证。
 实施状态只在 [进度看板](../developer/inference-progress.md)更新，功能和硬件边界见[实现范围](../implementation/inference-roadmap.md)。
 
 ## 简明执行合同
@@ -30,7 +31,7 @@ Source接线及准备／提交／退休编排。本次复审将共同episode寿�
 
 具体调用及限制见[引擎指南](../user/inference.md)和[调用安全边界](../user/usage-contract.md)。
 此前已列底层功能缺项已补齐并有限检查；完整适配复审发现的GLM实际额度接线也已补齐。
-完整编排抽离、共同输出接口、SDK接线收敛及性能仍未完成。
+本轮共同交接、输出事实及实际存储域接线已完成有限检查；性能工作继续单列，稳定引擎C++ API尚未交付。
 旧实验的未运行项仅表示该次检查边界，不覆盖后续实现，也不据组件通过推定全部平台或完整模型质量。
 
 ## 职责与依赖
@@ -71,6 +72,13 @@ GLM接受后先CAS并立即见证提交，再单独维护journal；模型保留�
 读回的caller缓冲按具体编译程序的原存储域表准备，不能用Backend预设的域编号解释另一个程序。
 冷期核域范围、属性和可选owner一致性，原Graph绑定仍负责精确资源身份；编译报告中的属性不是资源身份。
 非caller输出直接借原Invocation结果，不要求caller域表或新建缓冲；运行时读取实际输出资源，不由Backend再次选资源。
+
+`NodePlacement.default_storage`明确该节点在所选target上的分配／effect银行默认域，未指定时继承target默认。
+`GraphBindings::node(Location)`同时传递target和storage；源张量的External合同不表示目的银行，跨域输入仍由原Graph插入Copy。
+显式Value合同与View／MustAlias保留原含义。Store／Append冷候选覆盖原执行端点可访问的实际资源，
+Required银行严格匹配，Preferred可回落；不新增Context、Queue、资源owner或权限系统。
+融合输出分别使用真实producer的默认域，成员默认域不一致时workspace用target默认，不因域不同禁止融合。
+公开结构布局变化要求相关SDK与消费者同头重编，不能把新结构与旧二进制混用。
 
 多模型边界参考本地vLLM `276fbcff2717`、SGLang `234ccba7f625`和TensorRT-LLM `46d9966b54d9`。
 沿用职责分离，以实际消费者和静态直接调用落实，不照搬其大型动态接口。具体保留三条边界：

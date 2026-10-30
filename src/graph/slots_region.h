@@ -4,6 +4,7 @@
 #include "hyle/graph/slots.h"
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/compute/detail/backend_extension.h"
+#include "effect_storage.h"
 
 namespace hyle::graph::slots::detail {
 // Exact selected-artifact cold bridge. This is not a native provider ABI or a
@@ -96,6 +97,7 @@ struct StoreAdapter final {
   mem::MemoryResourceRef resource;
   compute::DeviceClass device_class = compute::DeviceClass::kCpu;
   compute::detail::BackendExtensionRef indexed_copy;
+  graph::detail::EffectStoragePlacement storage_placement{};
 };
 // Same-build module assembly, not a public provider selection API.
 HYLE_GRAPH_API const RegionProviderVTable *store_provider() noexcept;

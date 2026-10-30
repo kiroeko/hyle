@@ -28,15 +28,15 @@ HYLE 的产品目标是完整推理引擎；Compute、Graph、内存、调度、
 不凭接口外观声明任意模型可接入，也不以缺少大显卡将Qwen的形状升级为通用合同。
 多卡／多机本轮检查设计边界与单设备假设，实际分片、通信及跨端点执行仍是未来路线，未计入当前功能完成。
 
-剩余架构交付按以下工作分解，逐项百分比统一在看板维护：
+本轮架构交付按以下边界分解，逐项百分比统一在看板维护；下表说明职责，不表示每行仍有未实现机制：
 
-| 交付 | 剩余内容 |
+| 交付 | 职责与边界 |
 |---|---|
-| 完整步骤与模型适配 | 从Qwen中分离真正共同的冷选择、准备／提交／观察与状态发布组合；模型保留数学、完整状态和合法阶段约束，避免复制完整编排接入新家族 |
-| 稳态与后继 | Source／Store／Append公开typed接线与一次绑定已实现；继续统一完整步骤及准备成本，减少普通／后继重复工作，保留实际权限与失败收尾 |
-| MTP阶段事实与装配 | 接受、停止／额度及退休已共享；继续收敛跨模型的提案、验证、接受和续算事实装配，保留融合与递归的数学／RNG差异，不为字段投影增加控制器 |
-| 多模型与拓扑边界 | 用结构不同的原模型组件检查适配边界；区分Graph的多端点表达、当前Backend装配与模型放置，状态按实际存储域归属 |
-| 输出与性能检验 | 收敛共同输出事实；相关组件检查后，以当前4070上的decode、MTP和含预热／换轮的综合速度检验热路径，完整大模型与多卡验证如实留待后续 |
+| 完整步骤与模型适配 | 共同冷选择、准备／提交／观察和完整阶段交接已共享；模型保留数学、完整状态、Head发布和合法阶段约束 |
+| 稳态与后继 | 普通／relay共用准备入口和原Source／Store／Append权限与失败收尾；稳态成本及连续性优化归后续性能工作 |
+| MTP阶段事实与装配 | 接受、停止／额度、提交见证与退休已共享；融合及递归的提案、验证和续算数学／RNG差异保留在适配层 |
+| 多模型与拓扑边界 | 原模型组件检查适配边界；Graph多端点表达、Backend装配与模型放置分开，状态归实际存储域；不代签多卡实现 |
+| 输出与性能检验 | 共同输出事实已接线；后续用当前4070上的decode、MTP和含预热／换轮的综合速度检验热路径，完整大模型与多卡验证另记 |
 
 Qwen／Kimi的完整资源阶段交接已接入原ExecutionEpisode；Head／ledger／RNG发布、私有修复及reset政策仍由原模型负责。
 GLM独立模型步骤及实际额度接线已实现：原场景和RequestLoop直接调用真实普通／K1计算与未发布候选形成，不再依赖固定base／随机身份的计算闭包。
@@ -48,7 +48,12 @@ GLM先发布已接受完整状态、再维护journal的时序区别于Qwen，已
 普通／relay已共用同一prepare_evaluations，Source／Store／Append及replay权限按原实际执行核验；复审未发现另一份应抽取的共同准备或状态发布算法，不新增总prepare／recipe包装。
 [零张量阶段结果束](../evidence/correctness/inference-effect-views-2026-10-30.json)已补齐原SubmissionSource的纯页／提交结果接线；11项测试及真实递归MTP通过，原partial捕获与错误恢复保留，没有性能实验。
 入口／输出及跨模型组件共同机制复审完成，不将稳定引擎C++ API或第二完整模型的产品交付虚挂在本轮抽象任务中；对应未交付和验证边界仍明确保留。
-后续多owner检查发现原Graph冷Store adapter仅按target.default_storage装配，同Context其它真实存储域没有候选。接下来修实际域装配并检查Store／Page原束恢复，独立性能工作仍后置。
+后续多owner检查发现原Graph冷Store adapter仅按target.default_storage装配，同Context其它真实存储域没有候选。
+[显式节点域与银行装配](../evidence/correctness/inference-node-storage-2026-10-30.json)现已修复：GraphBindings传递实际节点域，
+Store／Append按原端点可访问域冷装配，源合同与银行选择分离，保留原Copy、owner及失败恢复。
+17项测试、真实递归K2及CPU＋CUDA普通短旅程通过；33个受影响SDK对象与三个消费者按新公开结构布局同头重编，未混旧ABI。
+最终有限复审核对共同冷选择、ordinary／relay准备、阶段交接、continuation与输出观察，未发现本轮仍应提取而遗漏的共同执行算法；
+模型数学、状态布局及Head发布差异保留。相应旧未完成总述已修正，第二完整引擎模型仍未验证，没有新的速度结论。
 
 多模型形状同时参考本地成熟引擎的实际实现：vLLM `276fbcff2717`的`v1/engine/core.py`、`v1/core/sched/scheduler.py`和`model_executor/models/qwen3_5.py`，
 TensorRT-LLM `46d9966b54d9`的`_torch/pyexecutor/engine/model_call.py`、`py_executor.py`及`model_engine.py`。

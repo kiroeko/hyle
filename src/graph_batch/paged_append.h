@@ -7,6 +7,7 @@
 #include <memory>
 #include "hyle/graph/paged_append_source.h"
 #include "hyle/graph/detail/resource_source.h"
+#include "../graph/effect_storage.h"
 
 namespace hyle::graph::batch::detail {
 // Exact original carrier -> logical token rows; no storage/content conversion.
@@ -17,6 +18,7 @@ struct AppendAdapter final {
   compute::DeviceClass device_class=compute::DeviceClass::kCpu;
   compute::detail::BackendExtensionRef native;
   bool native_capture=false;
+  graph::detail::EffectStoragePlacement storage_placement{};
 };
 struct AppendFacts final {
   compute::BatchLayoutVersion layout;

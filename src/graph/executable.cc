@@ -3360,11 +3360,14 @@ struct PlacementFacts final {
 
   explicit PlacementFacts(mem::AllocatorRef allocator) noexcept
       : node_required(allocator), node_preferred(allocator),
+        node_required_storage(allocator), node_preferred_storage(allocator),
         value_required(allocator), value_preferred(allocator),
         external_seen(allocator) {}
 
   Ordinals node_required;
   Ordinals node_preferred;
+  Ordinals node_required_storage;
+  Ordinals node_preferred_storage;
   Ordinals value_required;
   Ordinals value_preferred;
   Flags external_seen;
@@ -4159,11 +4162,15 @@ Status initialize_placement_facts(const detail::PlanState &plan,
 
   auto &node_required = facts.node_required;
   auto &node_preferred = facts.node_preferred;
+  auto &node_required_storage = facts.node_required_storage;
+  auto &node_preferred_storage = facts.node_preferred_storage;
   auto &value_required = facts.value_required;
   auto &value_preferred = facts.value_preferred;
   auto &external_seen = facts.external_seen;
   if (!node_required.try_resize(node_count) ||
       !node_preferred.try_resize(node_count) ||
+      !node_required_storage.try_resize(node_count) ||
+      !node_preferred_storage.try_resize(node_count) ||
       !value_required.try_resize(value_count) ||
       !value_preferred.try_resize(value_count) ||
       !external_seen.try_resize(value_count)) {
@@ -4172,6 +4179,8 @@ Status initialize_placement_facts(const detail::PlanState &plan,
   for (std::size_t index = 0; index < node_count; ++index) {
     node_required[index] = kNone;
     node_preferred[index] = kNone;
+    node_required_storage[index] = kNone;
+    node_preferred_storage[index] = kNone;
   }
   for (std::size_t index = 0; index < value_count; ++index) {
     value_required[index] = kNone;
@@ -4182,6 +4191,8 @@ Status initialize_placement_facts(const detail::PlanState &plan,
   for (const NodePlacement placement : options.node_placements) {
     if (!detail::owns(graph, placement.node) || !placement.target.valid() ||
         placement.target.ordinal() >= target_count ||
+        (placement.default_storage.valid() &&
+         placement.default_storage.ordinal() >= storage_count) ||
         !valid_strength(placement.strength)) {
       return Status::InvalidArgument("graph node placement is invalid");
     }
@@ -4190,7 +4201,23 @@ Status initialize_placement_facts(const detail::PlanState &plan,
                               : node_preferred[placement.node.ordinal()];
     if (slot != kNone)
       return Status::InvalidArgument("graph node placement is duplicated");
+    std::uint32_t storage = kNone;
+    if (placement.default_storage.valid()) {
+      const auto ordinal = placement.default_storage.ordinal();
+      const auto accessible =
+          plan.targets[placement.target.ordinal()].source.validate_resource(
+              plan.storage_domains[ordinal].resource);
+      if (accessible.ok()) storage = ordinal;
+      else if (placement.strength == PlacementStrength::kRequired ||
+               accessible.has_native_error() ||
+               (!accessible.IsFailedPrecondition() && !accessible.IsUnimplemented()))
+        return accessible;
+    }
     slot = placement.target.ordinal();
+    auto &storage_slot = placement.strength == PlacementStrength::kRequired
+                             ? node_required_storage[placement.node.ordinal()]
+                             : node_preferred_storage[placement.node.ordinal()];
+    storage_slot = storage;
   }
   for (const ValuePlacement placement : options.value_placements) {
     if (!detail::owns(graph, placement.value) || !placement.storage.valid() ||
@@ -4245,9 +4272,24 @@ Status prepare_placed_steps_attempt(
   const std::size_t node_count = graph.nodes.size();
   const auto &node_required = discovery.placement.node_required;
   const auto &node_preferred = discovery.placement.node_preferred;
+  const auto &node_required_storage = discovery.placement.node_required_storage;
+  const auto &node_preferred_storage = discovery.placement.node_preferred_storage;
   const auto &value_required = discovery.placement.value_required;
   const auto &value_preferred = discovery.placement.value_preferred;
   const auto &external_seen = discovery.placement.external_seen;
+
+  // These are defaults of an actually selected node/target, not source
+  // contracts or a requirement to relocate aliases and every input.
+  const auto node_default_storage =
+      [&](std::size_t node, std::uint32_t target) noexcept {
+    if (node < node_count) {
+      if (node_required[node] == target && node_required_storage[node] != kNone)
+        return node_required_storage[node];
+      if (node_preferred[node] == target && node_preferred_storage[node] != kNone)
+        return node_preferred_storage[node];
+    }
+    return plan.targets[target].default_storage.ordinal();
+  };
 
   // Output locality can change with the next complete candidate. Restore the
   // original contracts without reparsing or retaining a second baseline array.
@@ -4509,8 +4551,7 @@ Status prepare_placed_steps_attempt(
           const OperationCandidate &route) noexcept
       -> Result<OperationPlacement> {
     const detail::NodeRecord &node = graph.nodes[node_index];
-    const std::uint32_t default_storage =
-        plan.targets[candidate].default_storage.ordinal();
+    const std::uint32_t default_storage = node_default_storage(node_index, candidate);
     if (!selected_inputs.try_resize(node.input_count) ||
         !selected_outputs.try_resize(node.output_count)) {
       return std::unexpected(plan_allocation_failure());
@@ -4612,12 +4653,11 @@ Status prepare_placed_steps_attempt(
   RegionCandidates selected_regions(plan.allocator);
   for (const auto &frame : discovery.routes.frames()) {
     const auto &route = discovery.routes.route(frame.chosen);
-    const auto default_storage =
-        plan.targets[route.target].default_storage.ordinal();
     discovery.routes.for_each_node(
         route, [&](std::uint32_t node_index) noexcept {
           node_targets[node_index] = route.target;
           const auto &node = graph.nodes[node_index];
+          const auto default_storage = node_default_storage(node_index, route.target);
           for (std::size_t index = 0; index < node.output_count; ++index) {
             const auto value = node.output_begin + index;
             producer_storage[value] =
@@ -5018,8 +5058,15 @@ Status prepare_placed_steps_attempt(
       const std::span<const NodeId> region_nodes =
           candidate_nodes(candidate, all_region_nodes);
       const std::uint32_t target = candidate.target.ordinal();
-      const std::uint32_t default_storage =
-          plan.targets[target].default_storage.ordinal();
+      auto default_storage = node_default_storage(region_nodes.front().ordinal(), target);
+      for (const auto node : region_nodes) {
+        if (node_default_storage(node.ordinal(), target) != default_storage) {
+          // A fused region may span different node defaults. Its independent
+          // output ports keep those defaults; workspace falls back to target.
+          default_storage = plan.targets[target].default_storage.ordinal();
+          break;
+        }
+      }
       const auto &skeleton = discovery.resources[candidate.proposal_order];
       const auto values =
           std::span<const ValueId>(discovery.values)
@@ -5062,12 +5109,14 @@ Status prepare_placed_steps_attempt(
       for (std::size_t index = 0;
            route_supported && index < logical_outputs.size(); ++index) {
         const std::uint32_t value = logical_outputs[index].ordinal();
+        const auto output_default_storage =
+            node_default_storage(graph.values[value].producer, target);
         const std::uint32_t preferred = value_preferred[value] != kNone
                                             ? value_preferred[value]
-                                            : default_storage;
+                                            : output_default_storage;
         auto storage =
             select_storage(target, output_requirements[index],
-                           value_required[value], preferred, default_storage);
+                           value_required[value], preferred, output_default_storage);
         if (!storage) {
           region_status = std::move(storage).error();
           if (!region_status.IsUnimplemented())

@@ -666,8 +666,9 @@ c::ProviderRuntimeProperties runtime(const detail::StoreAdapter &adapter) noexce
       .uses_private_threads = false, .supports_concurrent_invocations = true,
       .capture_compatible = adapter.indexed_copy.valid()};
 }
-Status propose(void *, const RegionDiscoveryRequest &request, mem::AllocatorRef,
+Status propose(void *opaque, const RegionDiscoveryRequest &request, mem::AllocatorRef,
     RegionProposalWriter &writer) noexcept {
+  const auto &adapter = *static_cast<detail::StoreAdapter *>(opaque);
   for (std::size_t i = 0; i < request.graph.node_count(); ++i) {
     if (!request.allowed_nodes.empty() && !request.allowed_nodes[i]) continue;
     HYLE_ASSIGN_OR_RETURN(auto node, request.graph.node_id(i));
@@ -675,10 +676,16 @@ Status propose(void *, const RegionDiscoveryRequest &request, mem::AllocatorRef,
     if (kind != c::OperationKind::kCustom) continue;
     HYLE_ASSIGN_OR_RETURN(auto operation, request.graph.operation(node));
     if (!operation.custom_as<Store>()) continue;
+    const auto preference = adapter.storage_placement.preference(node, adapter.resource);
+    if (!preference) {
+      if (preference.error().IsUnimplemented()) continue;
+      return preference.error();
+    }
     const std::array nodes{node};
     HYLE_ASSIGN_OR_RETURN(auto added, writer.try_add({.nodes = nodes, .route = 1,
         .replay_class = c::ProviderReplayClass::kPrepared,
-        .implementation = c::ProviderImplementationId{0x534c4f5453544f52ULL}}));
+        .implementation = c::ProviderImplementationId{0x534c4f5453544f52ULL},
+        .preference = *preference}));
     if (!added) break;
   }
   return Status::Ok();
@@ -690,10 +697,13 @@ Status resources(void *opaque, const RegionCompileRequest &request, mem::Allocat
   (void)description;
   if (inputs.size() != 2 || !outputs.empty()) return Status::Unimplemented("slot store resource boundary changed");
   const auto &adapter = *static_cast<detail::StoreAdapter *>(opaque);
+  const auto selected = adapter.storage_placement.preference(request.nodes[0], adapter.resource);
+  if (!selected) return selected.error();
   for (auto &input : inputs) {
     input.resource.required_properties = adapter.device_class == c::DeviceClass::kCpu
         ? mem::MemoryProperty::kHostAccessible : mem::MemoryProperty::kDeviceAccessible;
     input.resource.minimum_alignment = 1;
+    input.resource.exact_resource = adapter.resource;
   }
   *out = {.runtime = runtime(adapter), .preserves_effects = true};
   return Status::Ok();

@@ -331,8 +331,14 @@ Result<CompiledGraph> compile(const Graph&graph,CompileEnvironment environment,C
     HYLE_ASSIGN_OR_RETURN(auto operation,graph.operation(node));has_append|=operation.custom_as<PagedAppend>().has_value();
     has_store|=operation.custom_as<gs::Store>().has_value();}
   try{
-    std::size_t maximum=has_append?environment.targets.size():0;
-    if(has_store){if(maximum>SIZE_MAX-environment.targets.size())return std::unexpected(Status::OutOfRange("slot capability count overflows"));maximum+=environment.targets.size();}
+    const auto effects=std::size_t(has_append)+std::size_t(has_store);
+    if(effects && environment.targets.size() &&
+        environment.storage_domains.size()>SIZE_MAX/environment.targets.size())
+      return std::unexpected(Status::OutOfRange("effect capability target/storage count overflows"));
+    const auto resource_pairs=effects?environment.targets.size()*environment.storage_domains.size():0;
+    if(effects && resource_pairs>SIZE_MAX/effects)
+      return std::unexpected(Status::OutOfRange("effect capability count overflows"));
+    std::size_t maximum=resource_pairs*effects;
     for(const auto&target:environment.targets){
       if(!target.source)return std::unexpected(Status::InvalidArgument("native capability target has no execution source"));
       auto context=gd::ExecutionSourceAccess::compute(target.source);
@@ -346,8 +352,10 @@ Result<CompiledGraph> compile(const Graph&graph,CompileEnvironment environment,C
     std::vector<detail::AppendAdapter,mem::StdAllocator<detail::AppendAdapter>>append_contexts{mem::StdAllocator<detail::AppendAdapter>(allocator)};
     std::vector<gs::detail::StoreAdapter,mem::StdAllocator<gs::detail::StoreAdapter>>store_contexts{mem::StdAllocator<gs::detail::StoreAdapter>(allocator)};
     contexts.reserve(maximum);adapters.reserve(maximum);
-    append_contexts.reserve(environment.targets.size());
-    if(has_store)store_contexts.reserve(environment.targets.size());
+    // Adapter pointers remain stable until the original cold compilation has
+    // copied them. One execution target may access several actual resources.
+    if(has_append)append_contexts.reserve(resource_pairs);
+    if(has_store)store_contexts.reserve(resource_pairs);
     for(std::size_t target=0;target<environment.targets.size();++target){
       const auto&endpoint=environment.targets[target].source;
       auto retained=gd::ExecutionSourceAccess::compute(endpoint);
@@ -355,38 +363,57 @@ Result<CompiledGraph> compile(const Graph&graph,CompileEnvironment environment,C
       const auto&context=**retained;
       const auto storage=environment.targets[target].default_storage;
       if(!storage.valid() || storage.ordinal()>=environment.storage_domains.size())return std::unexpected(Status::InvalidArgument("native capability target storage is invalid"));
-      if(has_store){
-        const auto*provider=gs::detail::store_provider();
-        HYLE_ASSIGN_OR_RETURN(auto source,gd::GraphRegionSource::shared_queue(endpoint,provider));
-        gs::detail::StoreAdapter store_adapter{environment.storage_domains[storage.ordinal()].resource,context.device().device_class(),{}};
-        auto indexed=cd::BackendExtensionAccess::query(context,cd::kIndexedCopyExtensionId);
-        if(indexed){
-          bool capture=false;
-          HYLE_RETURN_IF_ERROR(cd::BackendExtensionAccess::call(*indexed,[](void*,const void*table,void*user)noexcept->Status{
-            const auto*t=static_cast<const cd::IndexedCopyBackendVTable*>(table);
-            *static_cast<bool*>(user)=t && t->prepare && t->destroy && t->enqueue && t->supports_command_capture;
-            return Status::Ok();
-          },&capture));
-          if(capture)store_adapter.indexed_copy=std::move(*indexed);
-        }else if(!indexed.error().IsUnimplemented())return std::unexpected(indexed.error());
-        store_contexts.push_back(std::move(store_adapter));
-        adapters.push_back({std::move(source),UINT32_MAX,ExecutionTargetId{static_cast<std::uint32_t>(target)},provider,&store_contexts.back()});
-      }
-      if(has_append){
-        HYLE_ASSIGN_OR_RETURN(auto append_source,gd::GraphRegionSource::shared_queue(endpoint,detail::PagedAppendAccess::provider()));
-        detail::AppendAdapter append_adapter{environment.storage_domains[storage.ordinal()].resource,context.device().device_class(),{}};
-        auto native=cd::BackendExtensionAccess::query(context,cd::kPagedAppendExtensionId);
-        if(native){
-          HYLE_RETURN_IF_ERROR(cd::BackendExtensionAccess::call(*native,[](void*,const void*table,void*user)noexcept->Status{
-            const auto*t=static_cast<const cd::PagedAppendBackendVTable*>(table);
-            *static_cast<bool*>(user)=t && t->prepare && t->destroy && t->enqueue && t->supports_command_capture;
-            return Status::Ok();
-          },&append_adapter.native_capture));
-          if(append_adapter.native_capture)append_adapter.native=std::move(*native);
-        }else if(!native.error().IsUnimplemented())return std::unexpected(native.error());
-        append_contexts.push_back(std::move(append_adapter));
-        adapters.push_back({std::move(append_source),UINT32_MAX,ExecutionTargetId{static_cast<std::uint32_t>(target)},
-            detail::PagedAppendAccess::provider(),&append_contexts.back()});
+      // Preserve the default candidate first; add only resources accepted by
+      // this same original execution source, without inventing another target.
+      if(effects)for(std::size_t index=0;index<environment.storage_domains.size();++index){
+        std::size_t domain_index=storage.ordinal();
+        if(index){domain_index=index-1;if(domain_index>=storage.ordinal())++domain_index;}
+        const auto&domain=environment.storage_domains[domain_index];
+        if(domain_index!=storage.ordinal()){
+          const auto compatible=endpoint.validate_resource(domain.resource);
+          if(!compatible.ok()){
+            if(!compatible.has_native_error() &&
+                (compatible.IsFailedPrecondition() || compatible.IsInvalidArgument() || compatible.IsUnimplemented()))continue;
+            return std::unexpected(compatible);
+          }
+        }
+        if(has_store){
+          const auto*provider=gs::detail::store_provider();
+          HYLE_ASSIGN_OR_RETURN(auto source,gd::GraphRegionSource::shared_queue(endpoint,provider));
+          gs::detail::StoreAdapter store_adapter{domain.resource,context.device().device_class(),{}};
+          store_adapter.storage_placement={options.node_placements,environment.storage_domains,
+              ExecutionTargetId{static_cast<std::uint32_t>(target)},environment.storage_domains[storage.ordinal()].resource};
+          auto indexed=cd::BackendExtensionAccess::query(context,cd::kIndexedCopyExtensionId);
+          if(indexed){
+            bool capture=false;
+            HYLE_RETURN_IF_ERROR(cd::BackendExtensionAccess::call(*indexed,[](void*,const void*table,void*user)noexcept->Status{
+              const auto*t=static_cast<const cd::IndexedCopyBackendVTable*>(table);
+              *static_cast<bool*>(user)=t && t->prepare && t->destroy && t->enqueue && t->supports_command_capture;
+              return Status::Ok();
+            },&capture));
+            if(capture)store_adapter.indexed_copy=std::move(*indexed);
+          }else if(!indexed.error().IsUnimplemented())return std::unexpected(indexed.error());
+          store_contexts.push_back(std::move(store_adapter));
+          adapters.push_back({std::move(source),UINT32_MAX,ExecutionTargetId{static_cast<std::uint32_t>(target)},provider,&store_contexts.back()});
+        }
+        if(has_append){
+          HYLE_ASSIGN_OR_RETURN(auto append_source,gd::GraphRegionSource::shared_queue(endpoint,detail::PagedAppendAccess::provider()));
+          detail::AppendAdapter append_adapter{domain.resource,context.device().device_class(),{}};
+          append_adapter.storage_placement={options.node_placements,environment.storage_domains,
+              ExecutionTargetId{static_cast<std::uint32_t>(target)},environment.storage_domains[storage.ordinal()].resource};
+          auto native=cd::BackendExtensionAccess::query(context,cd::kPagedAppendExtensionId);
+          if(native){
+            HYLE_RETURN_IF_ERROR(cd::BackendExtensionAccess::call(*native,[](void*,const void*table,void*user)noexcept->Status{
+              const auto*t=static_cast<const cd::PagedAppendBackendVTable*>(table);
+              *static_cast<bool*>(user)=t && t->prepare && t->destroy && t->enqueue && t->supports_command_capture;
+              return Status::Ok();
+            },&append_adapter.native_capture));
+            if(append_adapter.native_capture)append_adapter.native=std::move(*native);
+          }else if(!native.error().IsUnimplemented())return std::unexpected(native.error());
+          append_contexts.push_back(std::move(append_adapter));
+          adapters.push_back({std::move(append_source),UINT32_MAX,ExecutionTargetId{static_cast<std::uint32_t>(target)},
+              detail::PagedAppendAccess::provider(),&append_contexts.back()});
+        }
       }
       for(std::size_t provider=0;provider<context.provider_count();++provider){
         for(const auto capability:{cd::kBatchPlanningExtensionId,cd::kMlaBatchPlanningExtensionId}){

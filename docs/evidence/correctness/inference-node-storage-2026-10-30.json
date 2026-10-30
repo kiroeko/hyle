@@ -1,0 +1,323 @@
+{
+  "schema": "hyle.correctness.node-storage.v1",
+  "date": "2026-10-30",
+  "base_commit": "c81aa4ef7",
+  "status": "EXPLICIT_NODE_STORAGE_AND_NATIVE_EFFECT_BANKS",
+  "contract": {
+    "node": "NodePlacement.default_storage defaults selected-node allocation and effect bank; only applies on that actual target. Value/External/alias contracts retain precedence.",
+    "effects": "Cold Store/Append candidates cover resources accessible by the original execution source. Required effect bank filters; preferred bank ranks with fallback. No inference from tensor source locality.",
+    "fusion": "Each fused logical output uses its producer default; mixed-node workspace uses target default. No artificial fusion barrier.",
+    "authority": "Original Context, Queue, Source, Store, Append, leases and retirement remain authoritative; cold placement spans are not retained by artifacts.",
+    "errors": "Skip only non-native unsupported/inaccessible optional resource candidates; original errors and typed owner rejection/recovery remain."
+  },
+  "checks": {
+    "status": "PASS_FINITE_NODE_STORAGE_AND_EFFECT_OWNER_CHECKS",
+    "tests": 17,
+    "finite_model_processes": 2,
+    "failures": 0,
+    "skipped": 0,
+    "recursive_original_all_non_timing_fields_equal": true,
+    "recursive_baseline": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-views-20261030\\runs\\recursive\\attempt1\\report.json",
+      "bytes": 69107,
+      "sha256": "053dbf99d1a574b3e10a328b22f652eb0d461097af0e843095ae9652c32247e8"
+    },
+    "reports": {
+      "tests": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\runs\\domains\\node-storage-v2\\report.json",
+        "bytes": 2434,
+        "sha256": "f2e595c83ea5c8291c584013fcc3800dfa816dc078b1f1446b9aefd193fde3f7"
+      },
+      "recursive": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\runs\\cli\\node-storage-v2\\report.json",
+        "bytes": 69112,
+        "sha256": "6a69209be2f59b0e83d5cded3626fc517d5b2d844b53395c365015c0353290b7"
+      },
+      "hybrid": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\runs\\hybrid\\node-storage-v2\\report.json",
+        "bytes": 18915,
+        "sha256": "576c0fb19da684f93083a631211015b7fbc6497745cdfc02e3a4aa7a52874fc8"
+      }
+    },
+    "historical_failures": [
+      {
+        "path": "runs/baseline/attempt1",
+        "tests": 2,
+        "failures": 2,
+        "errors": 0,
+        "cases": [
+          {
+            "name": "InferenceSubmissionViewsCuda.EachStoreCapturesItsActualOwnerOnOneOriginalQueue",
+            "failures": [
+              "unknown file\nC++ exception with description \"slot pool differs from its selected execution resource\" thrown in the test body.\n"
+            ]
+          },
+          {
+            "name": "GraphPagedAppendSourceCuda.SeparateOwnersPublishBothPageBanksWhileAttentionReads",
+            "failures": [
+              "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc:211\nValue of: gb::bind_append(producer, first_graph, append_value, std::move(value_pages)).ok()\n  Actual: false\nExpected: true\nGoogle Test trace:\nC:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc(74): separate key/value owners\nC:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc(73): owned layout\n"
+            ]
+          }
+        ]
+      },
+      {
+        "path": "runs/domains/attempt1",
+        "tests": 14,
+        "failures": 3,
+        "errors": 0,
+        "cases": [
+          {
+            "name": "InferenceSubmissionViewsCuda.EachOutputCapturesItsActualOwnerInOneContextAndQueue",
+            "failures": []
+          },
+          {
+            "name": "InferenceSubmissionViewsCuda.LateWrongOwnerRetainsOriginalPartialBundleForRecovery",
+            "failures": []
+          },
+          {
+            "name": "InferenceSubmissionViewsCuda.FirstWrongOwnerDoesNotBecomeEffectOnlyCapture",
+            "failures": []
+          },
+          {
+            "name": "InferenceSubmissionViewsCuda.OriginalCompletionWithoutTypedExportsStillRequiresSuccessfulCapture",
+            "failures": []
+          },
+          {
+            "name": "InferenceSubmissionViewsCuda.EachStoreCapturesItsActualOwnerOnOneOriginalQueue",
+            "failures": [
+              "unknown file\nC++ exception with description \"slot pool differs from its selected execution resource\" thrown in the test body.\n"
+            ]
+          },
+          {
+            "name": "InferenceSubmissionViewsCuda.WrongStoreOwnerPreservesPartialColdBundleAndOriginalWriterRetry",
+            "failures": [
+              "unknown file\nC++ exception with description \"slot pool differs from its selected execution resource\" thrown in the test body.\n"
+            ]
+          },
+          {
+            "name": "GraphPagedAppendSourceCuda.PendingOriginalPagesPublishWhileAttentionReads",
+            "failures": []
+          },
+          {
+            "name": "GraphPagedAppendSourceCuda.OwnedLayoutMirrorPreservesPendingPageSource",
+            "failures": []
+          },
+          {
+            "name": "GraphPagedAppendSourceCuda.SeparateOwnersPublishBothPageBanksWhileAttentionReads",
+            "failures": [
+              "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc:211\nValue of: gb::bind_append(producer, first_graph, append_value, std::move(value_pages)).ok()\n  Actual: false\nExpected: true\nGoogle Test trace:\nC:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc(74): separate key/value owners\nC:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc(73): owned layout\n"
+            ]
+          },
+          {
+            "name": "GraphPagedAppendSourceCuda.PendingAppendCopiesOriginalTailAndInheritsPublishedPages",
+            "failures": []
+          },
+          {
+            "name": "GraphPagedAppendSourceCuda.PageBoundaryAppendRetainsSourceWithoutCowReads",
+            "failures": []
+          },
+          {
+            "name": "GraphPagedAppendSourceCuda.ChainedAppendSourceReadsPublishedOriginAndPendingFreshPages",
+            "failures": []
+          },
+          {
+            "name": "GraphPagedAppendSourceCuda.ChainedCowSourceReleasesUnrelatedPublishedPage",
+            "failures": []
+          },
+          {
+            "name": "GraphPagedAppendSourceCuda.PendingPreviousAppendAndAttentionAdmitEveryInheritedPrefix",
+            "failures": []
+          }
+        ]
+      },
+      {
+        "path": "runs/domains/attempt2",
+        "tests": 14,
+        "failures": 3,
+        "errors": 0,
+        "cases": [
+          {
+            "name": "InferenceSubmissionViewsCuda.EachOutputCapturesItsActualOwnerInOneContextAndQueue",
+            "failures": []
+          },
+          {
+            "name": "InferenceSubmissionViewsCuda.LateWrongOwnerRetainsOriginalPartialBundleForRecovery",
+            "failures": []
+          },
+          {
+            "name": "InferenceSubmissionViewsCuda.FirstWrongOwnerDoesNotBecomeEffectOnlyCapture",
+            "failures": []
+          },
+          {
+            "name": "InferenceSubmissionViewsCuda.OriginalCompletionWithoutTypedExportsStillRequiresSuccessfulCapture",
+            "failures": []
+          },
+          {
+            "name": "InferenceSubmissionViewsCuda.EachStoreCapturesItsActualOwnerOnOneOriginalQueue",
+            "failures": [
+              "unknown file\nC++ exception with description \"slot pool differs from its selected execution resource\" thrown in the test body.\n"
+            ]
+          },
+          {
+            "name": "InferenceSubmissionViewsCuda.WrongStoreOwnerPreservesPartialColdBundleAndOriginalWriterRetry",
+            "failures": [
+              "unknown file\nC++ exception with description \"slot pool differs from its selected execution resource\" thrown in the test body.\n"
+            ]
+          },
+          {
+            "name": "GraphPagedAppendSourceCuda.PendingOriginalPagesPublishWhileAttentionReads",
+            "failures": []
+          },
+          {
+            "name": "GraphPagedAppendSourceCuda.OwnedLayoutMirrorPreservesPendingPageSource",
+            "failures": []
+          },
+          {
+            "name": "GraphPagedAppendSourceCuda.SeparateOwnersPublishBothPageBanksWhileAttentionReads",
+            "failures": [
+              "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc:211\nValue of: gb::bind_append(producer, first_graph, append_value, std::move(value_pages)).ok()\n  Actual: false\nExpected: true\nGoogle Test trace:\nC:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc(74): separate key/value owners\nC:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc(73): owned layout\n"
+            ]
+          },
+          {
+            "name": "GraphPagedAppendSourceCuda.PendingAppendCopiesOriginalTailAndInheritsPublishedPages",
+            "failures": []
+          },
+          {
+            "name": "GraphPagedAppendSourceCuda.PageBoundaryAppendRetainsSourceWithoutCowReads",
+            "failures": []
+          },
+          {
+            "name": "GraphPagedAppendSourceCuda.ChainedAppendSourceReadsPublishedOriginAndPendingFreshPages",
+            "failures": []
+          },
+          {
+            "name": "GraphPagedAppendSourceCuda.ChainedCowSourceReleasesUnrelatedPublishedPage",
+            "failures": []
+          },
+          {
+            "name": "GraphPagedAppendSourceCuda.PendingPreviousAppendAndAttentionAdmitEveryInheritedPrefix",
+            "failures": []
+          }
+        ]
+      }
+    ],
+    "refinement_failure": {
+      "path": "runs/domains/node-storage-v1",
+      "reason": "Pinned H2D fixture used Commands despite original raw Copy lacking prepared-gap proof; Source refused, then early assertion unwind hit live-allocation guard.",
+      "fix": "Only pinned-row producer uses original RequireCapture; no Source permission/runtime promise weakened."
+    },
+    "affected_SDK_CXX_units": 33,
+    "affected_consumer_CXX_units": 3,
+    "retained_SDK_inputs": 194,
+    "actual_dependency_records": 158,
+    "unavailable_dependency_records": 69,
+    "Graph_objects_without_dependency_record": 0,
+    "public_NodePlacement_layout_changed": true,
+    "ABI": "Every affected SDK and current consumer rebuilt with the same NodePlacement definition. Historical baseline never relinked with new consumers.",
+    "NVCC": 0,
+    "downloads": 0,
+    "performance_experiments": 0,
+    "performance_claim": false,
+    "checks": [
+      "Two actual Store banks and Page banks on one original CUDA Context/target/Queue.",
+      "Wrong Store owner preserves partial cold metadata and original writer retry.",
+      "Host rows retain exactly one original Graph Copy into the requested device bank.",
+      "Preferred inaccessible pinned bank falls back to the original device bank.",
+      "GraphBindings forwards actual node domain; two numerical Copy outputs need no inserted domain detour.",
+      "Original Source pending/device_wait=1/host_wait=0, exact values, NaN/COW and old snapshots remain.",
+      "Full P154+64 recursive K2 non-timing report unchanged; finite ordinary CPU+CUDA FFN2 generates four tokens and retires all versions."
+    ],
+    "limits": [
+      "Not multi-GPU/cross-context support or a complete second engine model.",
+      "No Apple/Vulkan native run or native fault injection in this batch.",
+      "No throughput, peer or physical-memory benchmark; latest full performance window is unchanged."
+    ]
+  },
+  "final_common_review": {
+    "method": "Finite source review by root and an independent agent; no additional native or performance experiment.",
+    "scope": "The current goal's common execution mechanisms; not proof that every model, platform or future topology is supported.",
+    "findings": [
+      "ProgramSlots, ProgramCarrier, PreparedProgramFamily and ProgramIo retain original cold program/IO/physical slot facts. Ordinary and relay use the same prepare_evaluations entry.",
+      "Ordinary, K1 and recursive K>1 share finish_selected_evaluations and ExecutionEpisode::finish_success. Private draft uses that same resource handoff. Original completion, output detachment, Append/Store return and input withdrawal remain authoritative.",
+      "ContinuationCohort and advance_request_wave share ordered request/credit/retirement policy. CompletedEvaluationView exposes borrowed output facts to independently compiled reporting.",
+      "Actual model packing, token/hidden mapping, complete state layout, Source dependency facts, mathematical role legality and Head publication remain model-specific. No second executor or generic callback forwarding shell is required.",
+      "The confirmed actual-bank cold assembly gap is fixed by this batch. No additional clearly duplicated common execution algorithm was identified in the finite review.",
+      "Architecture document opening statements that all full handoff/common output mechanisms remain unimplemented were stale and are corrected."
+    ],
+    "limits": [
+      "There is still only one complete real engine model; other families are actual component consumers with separately documented fixture and hardware limits.",
+      "Stable public engine C++ API, generic loader/tokenizer/server and multi-GPU/multi-machine implementation remain undelivered or outside this batch.",
+      "The goal remains active: ordinary continuity, MTP performance, GPU hotspots and measurement work are not marked complete. New concrete architecture gaps are added when discovered."
+    ]
+  },
+  "cleanup": {
+    "files": 10,
+    "boundary": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\bin",
+    "retained": "Original SDK objects, current consumer objects, source inputs, commands and reports",
+    "bytes": 427762627,
+    "status": "REMOVED_EXACT_FLAT_BATCH_IMAGES"
+  },
+  "retained_build_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-domains-20261030\\model-link-base.json",
+    "bytes": 99409,
+    "sha256": "97cc6fb06603659f7f20bc63ac95ec7481bdf51e257cded5811129495cf440eb"
+  },
+  "source_files": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\executable.h",
+      "bytes": 51452,
+      "sha256": "c0c7f04cc4c4c90dbb8fe5e9be45f0f08ab801bc89cf55fb6fc96ac8d3a9f4b8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\graph_bindings.h",
+      "bytes": 4919,
+      "sha256": "01d71e5ecb18225223cfb473ec6b01c437678e73f96ea68bf99a1fb6e4acc2b6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+      "bytes": 507000,
+      "sha256": "8d584ddedcb580622410e57acd600a58cdbcb092095e5ab603f474271d267e53"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\effect_storage.h",
+      "bytes": 1519,
+      "sha256": "d569261abbc34c8eabf4f2e2f46dd706c9a44957a24181fe90881c53936871ee"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\slots_region.h",
+      "bytes": 5448,
+      "sha256": "b93656431aef02dbcb76f416793766812b8fec2f5c4457506fc87e579f15cb90"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\slots_region.cc",
+      "bytes": 81720,
+      "sha256": "ca1c1213dacbfcb24370b3a55bf1a0e84e0def06be39b0bea267866d20fa7e47"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\batch.cc",
+      "bytes": 107544,
+      "sha256": "08598e8edcb6fec077ea38eae725f437b690251541972c48b678d6bd778ae5fd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.h",
+      "bytes": 3147,
+      "sha256": "fb852b7551ebb2ab4cbf369477013c7d45cccee8adf00c73230c10e0778cba2f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.cc",
+      "bytes": 94633,
+      "sha256": "d898202d6a803b68d4ce7ac0cc58f0deeade21cb71192974f27b0415fb6d358d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_submission_views_test.cc",
+      "bytes": 21339,
+      "sha256": "1c1d3ba5cea5b0a94b361a1b5f4006047f66255b91cfc583a197500437648c91"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc",
+      "bytes": 54397,
+      "sha256": "f706232b7820eb4b146c9adae8b5e8c465270af79f758f8275f786944a1de510"
+    }
+  ],
+  "archive": "inference-node-storage-2026-10-30.zip"
+}

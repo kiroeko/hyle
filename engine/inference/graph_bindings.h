@@ -82,9 +82,10 @@ class GraphBindings final {
   }
 
   // The caller chooses the location from its real topology. Graph interprets
-  // the target and its default storage; no queue or provider is selected here.
+  // this node's target and allocation/effect default, without selecting a queue
+  // or provider here.
   Status node(graph::NodeId node, Location location) noexcept {
-    try { node_placements_.push_back({node, location.target, graph::PlacementStrength::kRequired}); }
+    try { node_placements_.push_back({node, location.target, graph::PlacementStrength::kRequired, location.storage}); }
     catch (...) { return Status::ResourceExhausted("graph node placement cold metadata"); }
     return Status::Ok();
   }

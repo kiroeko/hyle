@@ -69,8 +69,14 @@ std::uint16_t bf16(float value) {
   return static_cast<std::uint16_t>(std::bit_cast<std::uint32_t>(value) >> 16);
 }
 
-void pending_original_pages_publish_while_attention_reads(bool owned_layout) {
+void pending_original_pages_publish_while_attention_reads(bool owned_layout, bool multi_owner = false,
+    bool host_rows = false, bool preferred_bank = false) {
   SCOPED_TRACE(owned_layout ? "owned layout" : "explicit metadata input");
+  SCOPED_TRACE(multi_owner ? "separate key/value owners" : "one key/value owner");
+  SCOPED_TRACE(host_rows ? "pinned value rows" : "device value rows");
+  SCOPED_TRACE(preferred_bank ? "preferred pinned bank" : "required arena bank");
+  ASSERT_FALSE(multi_owner && host_rows);
+  ASSERT_FALSE(preferred_bank && !host_rows);
   auto context_result = g::cuda::create_context();
   ASSERT_TRUE(context_result) << context_result.error().message();
   auto context = std::move(*context_result);
@@ -78,7 +84,29 @@ void pending_original_pages_publish_while_attention_reads(bool owned_layout) {
   ASSERT_TRUE(queue.reserve_completions(8).ok());
   auto device = c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value();
   auto storage = c::StorageOwner::adopt(context, std::move(device)).value();
+  auto value_storage = storage;
+  if (multi_owner) {
+    auto value_device = c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value();
+    value_storage = c::StorageOwner::adopt(context, std::move(value_device)).value();
+    ASSERT_NE(value_storage.ref(), storage.ref());
+    ASSERT_EQ(value_storage.context_identity(), storage.context_identity());
+  }
   auto staging = c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kPinnedHost).value();
+  const auto value_domain = g::StorageDomainId{multi_owner ? 1u : 0u};
+  const auto rows_domain = host_rows ? g::StorageDomainId{1} : value_domain;
+  const auto compile = [&](const g::Graph &graph,
+      std::span<const g::ExternalResourceContract> external,
+      std::span<const g::NodePlacement> placements) -> hyle::Result<g::CompiledGraph> {
+    if (!multi_owner && !host_rows) return g::cuda::compile(graph, context, storage);
+    const std::array domains{
+        g::StorageDomain{.resource = storage.ref(), .owner = storage},
+        host_rows ? g::StorageDomain{.resource = staging.ref()}
+                  : g::StorageDomain{.resource = value_storage.ref(), .owner = value_storage}};
+    const std::array targets{g::ExecutionTarget{g::ExecutionSource::acquire(context).value(),
+        g::StorageDomainId{0}}};
+    return g::cuda::compile(graph, {.storage_domains = domains, .targets = targets},
+        {.node_placements = placements, .external_resources = external});
+  };
   const auto plain = c::CacheStorage::plain(c::DataType::kBFloat16).value();
   const c::BatchCapacity capacity{
       .storage = c::BatchStorage::kPaged,
@@ -102,7 +130,7 @@ void pending_original_pages_publish_while_attention_reads(bool owned_layout) {
   auto keys = c::PagedArena::create(schema, c::BatchCacheRole::kKey,
       storage.ref(), {.max_backing_bytes = 8192}).value();
   auto values = c::PagedArena::create(schema, c::BatchCacheRole::kValue,
-      storage.ref(), {.max_backing_bytes = 8192}).value();
+      value_storage.ref(), {.max_backing_bytes = 8192}).value();
   std::array<c::ReadLease, 4> old_keys, old_values;
   std::array<c::PagedPageAppender, 1> key_tail, value_tail;
   std::array<std::array<std::uint16_t, 128>, 4> old_value_bytes{};
@@ -153,8 +181,12 @@ void pending_original_pages_publish_while_attention_reads(bool owned_layout) {
   const auto key_desc = c::batch_cache_description(schema, c::BatchCacheRole::kKey).value();
   const auto value_desc = c::batch_cache_description(schema, c::BatchCacheRole::kValue).value();
   auto payload = c::LeasePool::create(storage.ref(), 8192, {.max_blocks = 4}).value();
+  c::LeasePool value_payload;
+  if (multi_owner || host_rows)
+    value_payload = c::LeasePool::create(host_rows ? staging.ref() : value_storage.ref(),
+        8192, {.max_blocks = 1}).value();
   auto new_key = payload.allocate(rows.required_bytes().value(), 256).value();
-  auto new_value = payload.allocate(rows.required_bytes().value(), 256).value();
+  auto new_value = (multi_owner || host_rows ? value_payload : payload).allocate(rows.required_bytes().value(), 256).value();
   auto query = payload.allocate(query_desc.required_bytes().value(), 256).value();
   auto destination = payload.allocate(output_desc.required_bytes().value(), 256).value();
   ASSERT_TRUE(new_key.view()->fill(std::byte{0}).ok());
@@ -175,7 +207,28 @@ void pending_original_pages_publish_while_attention_reads(bool owned_layout) {
       gb::paged_append(schema, c::BatchCacheRole::kValue).value()), std::array{first_value}).value();
   ASSERT_TRUE(first.depends_on(append_value, append_key).ok());
   const auto first_graph = std::move(first).finish().value();
-  auto first_plan = g::cuda::compile(first_graph, context, storage).value();
+  const std::array first_external{
+      g::ExternalResourceContract{first_key, g::StorageDomainId{0}},
+      g::ExternalResourceContract{first_value, rows_domain}};
+  // The caller's rows source may differ from the selected arena. Place each
+  // effect bank independently, preserving the original host-to-device Copy.
+  const std::array first_placements{
+      g::NodePlacement{append_key, g::ExecutionTargetId{0}, g::PlacementStrength::kRequired,
+          g::StorageDomainId{0}},
+      g::NodePlacement{append_value, g::ExecutionTargetId{0},
+          preferred_bank ? g::PlacementStrength::kPreferred : g::PlacementStrength::kRequired,
+          preferred_bank ? rows_domain : value_domain}};
+  auto first_plan = compile(first_graph, first_external, first_placements).value();
+  if (host_rows) {
+    std::size_t uploads = 0;
+    for (std::size_t index = 0; index < first_plan.report.step_count(); ++index) {
+      const auto step = first_plan.report.step(index);
+      ASSERT_TRUE(step) << step.error().message();
+      if (step->kind == g::CompileStepKind::kCopy && step->source_storage == rows_domain &&
+          step->destination_storage == value_domain) ++uploads;
+    }
+    EXPECT_EQ(uploads, 1u);
+  }
   auto producer = first_plan.executable.create_invocation().value();
   const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
   const gb::PrepareOptions options{.host_workspace = staging.ref(),
@@ -187,7 +240,7 @@ void pending_original_pages_publish_while_attention_reads(bool owned_layout) {
   ASSERT_TRUE(producer.bind(first_value, rows, value_input).ok());
   i::SubmissionViews views;
   const std::array page_captures{i::SubmissionViews::PageCapture{append_key, storage},
-      i::SubmissionViews::PageCapture{append_value, storage}};
+      i::SubmissionViews::PageCapture{append_value, value_storage}};
   const auto prepared_views = views.prepare(producer,
       std::span<const i::SubmissionViews::StoreCapture>{}, page_captures, {});
   ASSERT_TRUE(prepared_views.ok()) << prepared_views.message();
@@ -212,7 +265,12 @@ void pending_original_pages_publish_while_attention_reads(bool owned_layout) {
   const auto output = second.result(attention).value();
   ASSERT_TRUE(second.publish(output).ok());
   const auto second_graph = std::move(second).finish().value();
-  auto second_plan_result = g::cuda::compile(second_graph, context, storage);
+  const std::array second_external{
+      g::ExternalResourceContract{second_query, g::StorageDomainId{0}},
+      g::ExternalResourceContract{second_key, g::StorageDomainId{0}},
+      g::ExternalResourceContract{second_value, value_domain},
+      g::ExternalResourceContract{output, g::StorageDomainId{0}}};
+  auto second_plan_result = compile(second_graph, second_external, {});
   ASSERT_TRUE(second_plan_result) << second_plan_result.error().message();
   auto second_plan = std::move(*second_plan_result);
   ASSERT_EQ(second_plan.report.region_count(), 1u);
@@ -252,8 +310,15 @@ void pending_original_pages_publish_while_attention_reads(bool owned_layout) {
     EXPECT_EQ(control.tensor.description(), schema.metadata_description().value());
   }
   const std::array bindings{*key_binding, *value_binding};
+  // An inserted raw Copy has no prepared-command-gap proof. Capture this
+  // original H2D producer rather than weakening Source's in-flight contract.
   ASSERT_TRUE(producer.prepare_replay(queues,
-      {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kReject}).ok());
+      {.mode = host_rows ? g::ReplayMode::kRequireCapture : g::ReplayMode::kCommands,
+       .host_wait = g::HostWaitPolicy::kReject}).ok());
+  if (host_rows) {
+    EXPECT_EQ(producer.replay_route(), g::ReplayRoute::kCaptured);
+    EXPECT_GT(producer.replay_report()->recorded_capture_range_count, 0u);
+  }
 
   PageSourceGate gate, reader_gate;
   gate.arm(c::cuda::stream(queue).value());
@@ -387,6 +452,18 @@ TEST(GraphPagedAppendSourceCuda, PendingOriginalPagesPublishWhileAttentionReads)
 
 TEST(GraphPagedAppendSourceCuda, OwnedLayoutMirrorPreservesPendingPageSource) {
   pending_original_pages_publish_while_attention_reads(true);
+}
+
+TEST(GraphPagedAppendSourceCuda, SeparateOwnersPublishBothPageBanksWhileAttentionReads) {
+  pending_original_pages_publish_while_attention_reads(true, true);
+}
+
+TEST(GraphPagedAppendSourceCuda, PinnedRowsCopyIntoOriginalDeviceArenaWhileAttentionReads) {
+  pending_original_pages_publish_while_attention_reads(true, false, true);
+}
+
+TEST(GraphPagedAppendSourceCuda, PreferredPinnedBankFallsBackToOriginalDeviceArenaWhileAttentionReads) {
+  pending_original_pages_publish_while_attention_reads(true, false, true, true);
 }
 
 void pending_append_inherits_published_pages(bool full_page_boundary, bool relay_to_attention = false,

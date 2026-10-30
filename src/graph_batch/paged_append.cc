@@ -634,16 +634,19 @@ const ProviderRegionPreparedVTable table{
    if(id==gd::kRegionProjectedWriteExtensionId)return &projected_write;
    return nullptr;
  }};
-Status propose(void*,const RegionDiscoveryRequest&r,mem::AllocatorRef,RegionProposalWriter&w)noexcept{
+Status propose(void*opaque,const RegionDiscoveryRequest&r,mem::AllocatorRef,RegionProposalWriter&w)noexcept{
+  const auto&a=*static_cast<AppendAdapter*>(opaque);
   for(std::size_t i=0;i<r.graph.node_count();++i){if(!r.allowed_nodes.empty() && !r.allowed_nodes[i])continue;
     HYLE_ASSIGN_OR_RETURN(auto node,r.graph.node_id(i));
     HYLE_ASSIGN_OR_RETURN(auto kind,r.graph.operation_kind(node));
     if(kind!=c::OperationKind::kCustom)continue;
     HYLE_ASSIGN_OR_RETURN(auto operation,r.graph.operation(node));
     if(!operation.custom_as<PagedAppend>())continue;
+    const auto preference=a.storage_placement.preference(node,a.resource);
+    if(!preference){if(preference.error().IsUnimplemented())continue;return preference.error();}
     const std::array nodes{node};
     HYLE_ASSIGN_OR_RETURN(auto added,w.try_add({.nodes=nodes,.route=1,.replay_class=c::ProviderReplayClass::kPrepared,
-        .implementation=c::ProviderImplementationId{0x5041474544415050ULL}}));if(!added)break;
+        .implementation=c::ProviderImplementationId{0x5041474544415050ULL},.preference=*preference}));if(!added)break;
   }return Status::Ok();
 }
 Status resources(void*opaque,const RegionCompileRequest&r,mem::AllocatorRef,std::span<RegionInputRequirement>inputs,
@@ -655,8 +658,11 @@ Status resources(void*opaque,const RegionCompileRequest&r,mem::AllocatorRef,std:
   HYLE_ASSIGN_OR_RETURN(auto rows,r.graph->value_description(r.inputs[0]));
   HYLE_RETURN_IF_ERROR(append->infer_output_descriptions(std::span(&rows,1),{}));
   const auto&a=*static_cast<AppendAdapter*>(opaque);
+  const auto selected=a.storage_placement.preference(r.nodes[0],a.resource);
+  if(!selected)return selected.error();
   inputs[0].resource.required_properties=a.device_class==c::DeviceClass::kCpu?mem::MemoryProperty::kHostAccessible:mem::MemoryProperty::kDeviceAccessible;
   inputs[0].resource.minimum_alignment=1;
+  inputs[0].resource.exact_resource=a.resource;
   *out={.runtime=runtime(a),.preserves_effects=true};return Status::Ok();
 }
 c::ProviderPrepareOutcome compile(void*opaque,const RegionCompileRequest&r,mem::AllocatorRef a,ProviderRegionPrepared*out)noexcept{
