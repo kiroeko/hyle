@@ -1,0 +1,172 @@
+{
+  "schema": "hyle.inference-glm-candidate-failure.v1",
+  "date": "2026-10-30",
+  "base_commit": "c6bcaefe379be8c67f1ae600bd18b21e50e048cf",
+  "status": "FINITE_CHECKS_PASSED",
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_mtp_state_consumer_test.cc",
+      "bytes": 247574,
+      "sha256": "2639a8d37fbccc36e9841e6f7eadd64873690eca7fb0a15037ddaa5a3b00667a"
+    }
+  ],
+  "checks": [
+    {
+      "name": "request-cuda",
+      "attempt": "attempt1",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-candidate-failure-20261030\\runs\\request-cuda\\attempt1\\report.json",
+        "bytes": 5064,
+        "sha256": "7e5a6dec603367fb90705467cf3a36f6ec0e75a5067a2cf5ea6389d7daacd48b"
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-candidate-failure-20261030\\runs\\request-cuda\\attempt1\\command.json",
+        "bytes": 412,
+        "sha256": "8068e8049dc52961837154af5c19c956dedcf502b987f7ee8638f84b48d95068"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-candidate-failure-20261030\\bin\\glm.exe",
+        "bytes": 142338048,
+        "sha256": "095531e303a3e9f959ad0fcdda7f719229465cbc7f7c5bbaacf9f161badc2b90"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 42468,
+        "started": 1793344292.212327,
+        "seconds": 89.14979410171509,
+        "exit": 0,
+        "timed_out": false
+      }
+    }
+  ],
+  "comparisons": {
+    "previous": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\runs\\request-cuda\\attempt1\\report.json",
+      "bytes": 4521,
+      "sha256": "1d411013e61781687e0fcfe326fea81504c9584e3b2c7c54166f70bf26fb597b"
+    },
+    "previous_properties": 53,
+    "expected_current_properties": 59,
+    "added": {
+      "request_candidate_observer_refusals": "1",
+      "request_candidate_retired_unpublished_cleanup": "1",
+      "request_candidate_refusal_native_submissions": "6",
+      "request_candidate_refusal_reproposal_submissions": "0",
+      "request_candidate_refusal_head_publications": "0",
+      "request_candidate_refusal_committed_rng_draws": "0"
+    },
+    "expected_changes": {
+      "actual_nextn_steps": {
+        "previous": "5",
+        "current": "6"
+      },
+      "actual_target_calls": {
+        "previous": "5",
+        "current": "6"
+      },
+      "actual_target_submissions": {
+        "previous": "10",
+        "current": "12"
+      },
+      "request_progress_scope": {
+        "previous": "Shared RequestProgress with the actual grant applied to the selected K1 prefix and new-request cache fork, then the two original ordinary continuations. Each finite turn has quota1; actual model selector/EOS facts are preserved. A later empty new-user suffix consumes only its actual historical pending. No extra graph, model publication, RNG address, complete GLM prompt prefill or request server is introduced.",
+        "current": "Shared RequestProgress with the actual grant applied to the selected K1 prefix and new-request cache fork, then the two original ordinary continuations. Each finite turn has quota1; actual model selector/EOS facts are preserved. A later empty new-user suffix consumes only its actual historical pending. The injected unpublished-candidate observer refusal executes verification once more with the original proposal and RNG identities; it adds no Head publication, committed RNG draw, complete GLM prompt prefill or request server."
+      },
+      "scope": {
+        "previous": "Finite original target77+NextN78 natural K1 plus two-request/two-turn typed directory and FIFO adapter; original request tokens/pending/draw4 unchanged, second request independently resamples and continues actual target+NextN from the complete cached boundary. Previous layer input/residual/upstream74 index selection and initial history remain explicit fixtures. Not arbitrary prompt prefill, full-model generation, task quality, acceptance-rate measurement, TPS or other quantized source coverage.",
+        "current": "Finite original target77+NextN78 natural K1 plus one unpublished-candidate observer refusal/retry and the two-request/two-turn typed directory and FIFO adapter; original request tokens/pending/draw4 unchanged, second request independently resamples and continues actual target+NextN from the complete cached boundary. Previous layer input/residual/upstream74 index selection and initial history remain explicit fixtures. Not arbitrary prompt prefill, full-model generation, task quality, acceptance-rate measurement, TPS or other quantized source coverage."
+      }
+    },
+    "matching_unchanged_properties": 48,
+    "normalization": "None; exact comparison of every original53 property plus precisely6 named additions.",
+    "actual_properties": 59,
+    "exact_match": true,
+    "unexpected_differences": {}
+  },
+  "implementation": [
+    "The original stochastic target77/NextN78 RequestLoop K1 branch injects one typed observer failure after its original native work has completed and temporary observation leases have been released.",
+    "Existing drive_steps preserves the original typed first error, records actual original Invocation retirement and drops only the unpublished candidate/emitted prefix after retirement.",
+    "The native fixture checks original Head identity, complete state image, committed RNG, records and request progress unchanged; StateStore versions/drafts/retained blocks/backing bytes return to their pre-attempt values.",
+    "The retry reuses original proposal q and RNG identities, verifies the complete candidate image, emitted IDs, selected prefix and sampled acceptance, then publishes only the original successful result.",
+    "The injected verification adds exactly6 native submissions:2 NextN phases,2 target phases,1 verifier and1 decision. It adds no proposal submission, Head publication, repair or committed RNG draw."
+  ],
+  "model_link_base": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-candidate-failure-20261030\\model-link-base.json",
+    "bytes": 108017,
+    "sha256": "1b204a4d04c82486c314309e3317687f59ab2dfb59af1443ad983e49f4c1918e"
+  },
+  "consumer": {
+    "receipt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-candidate-failure-20261030\\compile\\glm\\receipt.json",
+      "bytes": 34515,
+      "sha256": "016d0b4d247c5168f509b68d57af58a332ecafd202831344498576c3d894d569"
+    },
+    "object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-candidate-failure-20261030\\compile\\glm\\unit.obj",
+      "bytes": 17673180,
+      "sha256": "d18bb78cf5b14e410726dc98dd280a24ba9643043760bba7f7560728abbc4f1a"
+    },
+    "dependencies": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-candidate-failure-20261030\\compile\\glm\\dependencies.json",
+      "bytes": 63863,
+      "sha256": "4c71a3633f5ce70505c62c7f5618460ea7076d3e645ca5bd259eebaa2715199b"
+    },
+    "compile_process": {
+      "state": "TERMINAL",
+      "pid": 50608,
+      "started": 1793344270.580793,
+      "seconds": 14.168704986572266,
+      "exit": 0,
+      "timed_out": false
+    },
+    "link_process": {
+      "state": "TERMINAL",
+      "pid": 53916,
+      "started": 1793344290.1167147,
+      "seconds": 1.8114688396453857,
+      "exit": 0,
+      "timed_out": false
+    }
+  },
+  "build": {
+    "consumer_translation_units": 1,
+    "retained_sdk_inputs": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "max_compiler_concurrency": 1,
+    "implementation_sources_changed": false,
+    "prior_environment": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\hardware.json",
+      "bytes": 592,
+      "sha256": "ebba346c393c79a6dd8cb8d8bb15a0032456a57a2c8398cbfda49bb14ae1b481"
+    }
+  },
+  "limits": [
+    "This is an already-idle original-native observer failure; it does not demonstrate blocked-native cancellation, a failing drain, or unretired-candidate retry.",
+    "One finite original target77/NextN78 request component is checked, not complete GLM prompt inference, cross-pump GLM, another complete engine model, or model quality.",
+    "No independent performance candidate, new profiler or complete cross-engine speed/memory window; the full goal remains active. Joint architecture review is recorded separately; this finite check does not alone prove complete common architecture.",
+    "Other platforms/artifacts, Apple/Vulkan, complete hybrid, multi-GPU and multi-machine were not run."
+  ],
+  "joint_architecture_review": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-architecture-audit-20261030\\README.md",
+      "bytes": 6556,
+      "sha256": "58099b5ee846b8a0594d4fb080a469cd199b467a8714d145f46de063a95ea225"
+    }
+  ],
+  "cleanup": {
+    "status": "REMOVED_EXACT_RECREATABLE_IMAGES",
+    "retained": "SDK and current consumer objects, original cached weights, source, commands and reports",
+    "files": 4,
+    "bytes": 143611109,
+    "boundary": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-candidate-failure-20261030"
+  },
+  "architecture_conclusion": {
+    "status": "DEFINED_COMMON_ARCHITECTURE_RESPONSIBILITIES_COMPLETED",
+    "basis": "Joint actual-call-path review, original common-step/cross-pump/synchronous/publication evidence, six bridge checks and the real unpublished-candidate observer failure regression.",
+    "scope": "Current single-machine shared execution contracts and runnable original components. Not a second complete engine, GLM cross-pump, arbitrary models/platforms or multi-device implementation.",
+    "full_goal_status": "active",
+    "next": "Ordinary/MTP performance causes and improvements, GPU hotspots and complete consumer comparisons; no new full performance window in these two slices."
+  }
+}

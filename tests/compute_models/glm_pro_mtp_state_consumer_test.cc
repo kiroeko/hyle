@@ -2631,11 +2631,95 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
               proposal=state.scalar(first_checkpoint,kPending);
               first_checkpoint_image=image(state,first_checkpoint);
               check_step_admission(first_checkpoint,random_draft,grant);
+              // A refused observer of a completed but unpublished candidate
+              // must release only after the original native programs retire.
+              // The retry reuses the original q and RNG identities; no Head,
+              // record, proposal sample or output credit has been committed.
+              check(state.store.collect(),"collect before unpublished GLM observer refusal");
+              const auto before_failed_state=state.store.stats();
+              const auto before_failed_counts=request_submission_counts();
+              const auto before_failed_commits=request_commits;
+              const auto before_failed_publications=request_publications;
+              const auto before_failed_projections=record_projections;
+              Image refused_candidate_image;
+              std::vector<std::int32_t> refused_candidate_emitted;
+              hyle::inference::mtp::AcceptedPrefix refused_candidate_prefix{};
+              bool refused_sampled_accept=false,refusal_seen=false;
+              const auto refuse_candidate=[&](typename ModelSteps::Candidate &actual) {
+                observe_candidate(actual);
+                require_observed(!actual.advancement&&!actual.repair&&actual.version.valid(),
+                    "GLM observer refuses after releasing original temporary observations");
+                require_observed(driver.native_retirement(false).retired,
+                    "unpublished GLM observer refusal follows actual native retirement");
+                refused_candidate_image=image(state,actual.version);
+                refused_candidate_emitted=selection_emitted;
+                refused_candidate_prefix=actual.selected.prefix;
+                refused_sampled_accept=actual.selected.sampled_accept;
+                throw hyle::inference::EvaluationFailure(hyle::Status::Internal("GLM unpublished candidate observer refused"));
+              };
+              {
+                GlmK1StepDriver<Runtime,decltype(refuse_candidate)> refused_driver{
+                    model_steps,base,first_checkpoint,random_draft,initial_random,grant,limits,
+                    checked,selection_emitted,refuse_candidate};
+                try {(void)hyle::inference::drive_steps(refused_driver);}
+                catch(const hyle::inference::EvaluationFailure &failure) {
+                  require_observed(failure.status().IsInternal()&&
+                      failure.status().message()=="GLM unpublished candidate observer refused",
+                      "GLM candidate refusal preserves the original first error");
+                  require_observed(failure.retirement_observed()&&failure.retirement().retired,
+                      "GLM candidate cleanup requires observed original native retirement");
+                  refusal_seen=true;
+                }
+                require_observed(refusal_seen&&!refused_driver.actual&&
+                    !refused_driver.result.version.valid()&&selection_emitted.empty(),
+                    "retired unpublished GLM candidate is discarded without a result or emitted prefix");
+              }
+              require_observed(driver.native_retirement(false).retired,
+                  "GLM candidate retry has no unfinished original native work");
+              EXPECT_EQ(take(head.current(),"candidate observer refusal keeps the original Head").identity(),base.identity());
+              EXPECT_EQ(image(state,take(head.current(),"candidate refusal retains complete original state")),base_image);
+              EXPECT_EQ(random_cursor(take(head.current(),"candidate refusal retains committed RNG")),initial_random);
+              EXPECT_EQ(request_commits,before_failed_commits);
+              EXPECT_EQ(request_publications,before_failed_publications);
+              EXPECT_EQ(record_projections,before_failed_projections);
+              EXPECT_FALSE(request0_records[0].committed);EXPECT_EQ(progress.observed_commits(),0u);
+              EXPECT_TRUE(progress.generated.empty());EXPECT_EQ(family_observations[0],0u);
+              check(state.store.collect(),"collect retired unpublished GLM candidate");
+              EXPECT_EQ(state.store.stats().versions,before_failed_state.versions);
+              EXPECT_EQ(state.store.stats().drafts,before_failed_state.drafts);
+              EXPECT_EQ(state.store.stats().retained_blocks,before_failed_state.retained_blocks);
+              EXPECT_EQ(state.store.stats().backing_bytes,before_failed_state.backing_bytes);
+              const auto after_failed_counts=request_submission_counts();
+              for(const auto at:{0u,1u,3u,4u,5u,6u,7u,11u,12u})
+                EXPECT_EQ(after_failed_counts[at],before_failed_counts[at]);
+              EXPECT_EQ(after_failed_counts[2]-before_failed_counts[2],second_program.phases.size());
+              EXPECT_EQ(after_failed_counts[8]-before_failed_counts[8],1u);
+              EXPECT_EQ(after_failed_counts[9]-before_failed_counts[9],
+                  refused_candidate_prefix.consumed_drafts?repair_program->phases.size():0u);
+              EXPECT_EQ(after_failed_counts[10]-before_failed_counts[10],target_program->phases.size());
+              EXPECT_EQ(after_failed_counts[13]-before_failed_counts[13],1u);
+              std::size_t refused_native_submissions=0;
+              for(std::size_t at=0;at<after_failed_counts.size();++at)
+                add_bound(refused_native_submissions,after_failed_counts[at]-before_failed_counts[at]);
+              ::testing::Test::RecordProperty("request_candidate_observer_refusals",1);
+              ::testing::Test::RecordProperty("request_candidate_retired_unpublished_cleanup",1);
+              ::testing::Test::RecordProperty("request_candidate_refusal_native_submissions",std::to_string(refused_native_submissions));
+              ::testing::Test::RecordProperty("request_candidate_refusal_reproposal_submissions",0);
+              ::testing::Test::RecordProperty("request_candidate_refusal_head_publications",0);
+              ::testing::Test::RecordProperty("request_candidate_refusal_committed_rng_draws",0);
               GlmK1StepDriver<Runtime,decltype(observe_candidate)> candidate_driver{
                   model_steps,base,first_checkpoint,random_draft,initial_random,grant,limits,
                   checked,selection_emitted,observe_candidate};
               EXPECT_EQ(hyle::inference::drive_steps(candidate_driver),hyle::inference::StepDriveResult::kCompleted);
               auto candidate=std::move(candidate_driver.result);
+              EXPECT_EQ(image(state,candidate.version),refused_candidate_image);
+              EXPECT_EQ(selection_emitted,refused_candidate_emitted);
+              EXPECT_EQ(candidate.selected.prefix.consumed,refused_candidate_prefix.consumed);
+              EXPECT_EQ(candidate.selected.prefix.consumed_drafts,refused_candidate_prefix.consumed_drafts);
+              EXPECT_EQ(candidate.selected.prefix.next_id,refused_candidate_prefix.next_id);
+              EXPECT_EQ(candidate.selected.prefix.stopped,refused_candidate_prefix.stopped);
+              EXPECT_EQ(candidate.selected.sampled_accept,refused_sampled_accept);
+              EXPECT_EQ(random_cursor(candidate.version),initial_random.advanced(3));
               second=candidate.second;if(use_target)checked=std::move(candidate.checked);check_verified(first_checkpoint,second);
               second_image=image(state,second);
               if(scenario==0) {
@@ -2909,7 +2993,7 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
           ::testing::Test::RecordProperty("request_record_observer_retry_graphs",0);
           ::testing::Test::RecordProperty("request_record_observer_retry_head_publications",0);
           ::testing::Test::RecordProperty("request_record_observer_retry_rng_draws",0);
-          ::testing::Test::RecordProperty("request_progress_scope","Shared RequestProgress with the actual grant applied to the selected K1 prefix and new-request cache fork, then the two original ordinary continuations. Each finite turn has quota1; actual model selector/EOS facts are preserved. A later empty new-user suffix consumes only its actual historical pending. No extra graph, model publication, RNG address, complete GLM prompt prefill or request server is introduced.");
+          ::testing::Test::RecordProperty("request_progress_scope","Shared RequestProgress with the actual grant applied to the selected K1 prefix and new-request cache fork, then the two original ordinary continuations. Each finite turn has quota1; actual model selector/EOS facts are preserved. A later empty new-user suffix consumes only its actual historical pending. The injected unpublished-candidate observer refusal executes verification once more with the original proposal and RNG identities; it adds no Head publication, committed RNG draw, complete GLM prompt prefill or request server.");
           ::testing::Test::RecordProperty("request_directory_requests",2);
           ::testing::Test::RecordProperty("request_directory_turns",int(request_turns));
           ::testing::Test::RecordProperty("request_directory_fifo","0,1,0,1");
@@ -3237,7 +3321,7 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
       ::testing::Test::RecordProperty("state_budget_bytes",std::to_string(budget));
       ::testing::Test::RecordProperty("peak_state_backing_bytes",std::to_string(state.peak_backing));
       ::testing::Test::RecordProperty("scope",request_directory_demo?
-          "Finite original target77+NextN78 natural K1 plus two-request/two-turn typed directory and FIFO adapter; original request tokens/pending/draw4 unchanged, second request independently resamples and continues actual target+NextN from the complete cached boundary. Previous layer input/residual/upstream74 index selection and initial history remain explicit fixtures. Not arbitrary prompt prefill, full-model generation, task quality, acceptance-rate measurement, TPS or other quantized source coverage.":
+          "Finite original target77+NextN78 natural K1 plus one unpublished-candidate observer refusal/retry and the two-request/two-turn typed directory and FIFO adapter; original request tokens/pending/draw4 unchanged, second request independently resamples and continues actual target+NextN from the complete cached boundary. Previous layer input/residual/upstream74 index selection and initial history remain explicit fixtures. Not arbitrary prompt prefill, full-model generation, task quality, acceptance-rate measurement, TPS or other quantized source coverage.":
           "Finite original target77+NextN78 stochastic consumer and actual untied full vocabulary, ordinary existing two-phase Graphs/StateHead/supplier. Natural single trial only; no forced proposal, logits, p/q or branch. Previous layer input/residual/upstream74 index selection and initial history remain explicit fixtures. Not full-model generation, task quality, natural acceptance-rate measurement or other quantized source coverage.");
       return;
     }

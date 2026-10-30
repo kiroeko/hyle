@@ -15,8 +15,8 @@ CLI formatter 已独立编译。Qwen 与真实 GLM StateHead 组件已消费共�
 共同部分现包括程序／IO／物理槽、分页准备、普通及后继准备入口、完整阶段交接和跨pump请求控制。
 共同`drive_steps`现控制Qwen连续普通／K1的前后继推进、同步／packed／递归目标步骤、跨pump保留和异常恢复，静态模型适配保留实际数学、状态和Head发布。
 GLM实际普通续算与K1未发布候选消费同一驱动的同步分支，不需要实现空的后继接口。共同资源交接继续使用原`ExecutionEpisode`，
-不要求不同家族采用相同的阶段或状态结构。结果／提交见证已分离；采样身份与历史输入桥接已移到请求侧。完整共同执行架构继续联合复审，不能仅据两个迁移节点宣称完成。
-当前先继续架构收敛，再集中优化性能；第二完整模型仍未验证。
+不要求不同家族采用相同的阶段或状态结构。结果／提交见证已分离；采样身份与历史输入桥接已移到请求侧。共同驱动、跨pump政策及模型阶段边界已按实际调用链完成联合复审，候选观察首错有限检查通过。
+本轮定义的共同执行架构职责已完成，接续集中性能；第二完整模型仍未验证。
 实施状态只在 [进度看板](../developer/inference-progress.md)更新，功能和硬件边界见[实现范围](../implementation/inference-roadmap.md)。
 
 ## 简明执行合同
@@ -33,7 +33,7 @@ GLM实际普通续算与K1未发布候选消费同一驱动的同步分支，不
 
 具体调用及限制见[引擎指南](../user/inference.md)和[调用安全边界](../user/usage-contract.md)。
 此前已列底层功能缺项已补齐并有限检查；完整适配复审发现的GLM实际额度接线也已补齐。
-共同资源交接、输出事实及实际存储域接线已有有限检查；完整步骤控制的共同化仍未完成，独立性能候选暂缓。稳定引擎C++ API尚未交付。
+共同资源、输出及实际步骤控制已共享并完成本轮联合有限复审，随后继续性能。稳定引擎C++ API尚未交付。
 旧实验的未运行项仅表示该次检查边界，不覆盖后续实现，也不据组件通过推定全部平台或完整模型质量。
 
 ## 职责与依赖
@@ -66,7 +66,17 @@ Qwen同步／packed prefill／递归验证目标步骤现通过`SynchronousGener
 采样身份与历史输入的两个桥接现为请求侧free helpers，保留原模型身份检查、HistoryCounts临时条件恢复及分配→write→publish顺序；Model不再借用请求ledger。
 GLM K1候选也已消费同一同步驱动，prepare预检、submit执行原verify数学、finish显式观察并交回未发布候选；Head发布与接受后journal维护仍由原请求按原时序完成。
 [请求桥接与K1步骤检查](../evidence/correctness/inference-request-bridges-2026-10-30.json)保留实际输出、完整状态与RNG。Graph仍是唯一原生执行与退休权威。
-联合复审仍须补候选观察失败时的原Invocation退休与未发布清理检查，不将本片当作完整执行架构完成。
+[候选首错检查与联合复审](../evidence/correctness/inference-glm-candidate-failure-2026-10-30.json)随后验证：真实GLM候选观察抛错保原Status，原Invocation已退休后才清未发布候选与emitted；Head／ledger／RNG不变，同提案重试的完整状态与输出相同。
+该故障发生在原生已退休之后，不外推在途故障、drain失败或设备故障。联合复审按下表核销原迁移中节点，未发现仍须抽取的共同控制算法；本轮架构职责完成不等于完整goal完成。
+
+| 核对职责 | 当前共同实现与实际消费者 |
+|---|---|
+| 完整步骤推进 | `drive_steps`控制准备、提交、取消、前后继去留及异常恢复；Qwen连续／同步／packed／递归目标、GLM ordinary／K1候选实际消费。 |
+| 跨pump身份与额度 | `ContinuationCohort`、`continuation_quota`、`continuation_retention`及`advance_request_wave`共用原pending身份、grant和drain政策；原Qwen连续16臂证据已复核。 |
+| 模型结果与请求提交 | Model不借请求ledger；调用期publication投影及原提交票据见证Head发布，失败只依真实退休清精确槽。 |
+| MTP阶段与资源装配 | 共同接受／停止／额度、原程序IO、成功交接与退休已共享；Qwen递归q／hidden修复、GLM CAS后journal维护保真实数学及状态顺序。 |
+
+复审没有要求同步GLM伪造后继接口，也没有要求把不同模型的修复／发布顺序强行统一。完整GLM、第二完整引擎、多卡／跨机及全平台验证仍分别保留边界。
 不按文件长度机械搬代码；以实际控制逻辑能由不同状态形状消费为准，不新增热回调表或通用大ModelOps。
 
 共同调度按真实调用分工：请求窗口、兼容分组、接纳／淘汰、输出额度和停止属于
