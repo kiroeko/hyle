@@ -13,8 +13,9 @@ CLI formatter 已独立编译。Qwen 与真实 GLM StateHead 组件已消费共�
 兼容分组与请求循环已共用，Qwen适配器提供真实工作形状、兼容条件、完整恢复算法和数学阶段；GLM／DeepSeek／Kimi仍为组件消费者，
 尚无第二个完整引擎模型验证整套编排复用。
 共同部分现包括程序／IO／物理槽、分页准备、普通及后继准备入口、完整阶段交接和跨pump请求控制。
-Qwen的`Model`保留模型形状、状态银行布局、数学阶段与Head发布政策；共同资源交接使用原`ExecutionEpisode`，
-不要求不同家族采用相同的阶段或状态结构。本轮明确的共同机制整改及有限复审已完成，第二完整模型仍未验证。
+Qwen的`Model`仍承担实际前后继推进、跨pump pending和部分失败收尾，完整步骤驱动尚未抽离；不能把共同请求／资源原语完成称为共同执行架构完成。
+模型形状、状态银行布局、数学阶段与Head发布政策应留在模型；共同资源交接继续使用原`ExecutionEpisode`，
+不要求不同家族采用相同的阶段或状态结构。当前先分清并落实完整驱动与静态模型适配，再集中优化性能；第二完整模型仍未验证。
 实施状态只在 [进度看板](../developer/inference-progress.md)更新，功能和硬件边界见[实现范围](../implementation/inference-roadmap.md)。
 
 ## 简明执行合同
@@ -31,7 +32,7 @@ Qwen的`Model`保留模型形状、状态银行布局、数学阶段与Head发�
 
 具体调用及限制见[引擎指南](../user/inference.md)和[调用安全边界](../user/usage-contract.md)。
 此前已列底层功能缺项已补齐并有限检查；完整适配复审发现的GLM实际额度接线也已补齐。
-本轮共同交接、输出事实及实际存储域接线已完成有限检查；性能工作继续单列，稳定引擎C++ API尚未交付。
+共同资源交接、输出事实及实际存储域接线已有有限检查；完整步骤控制的共同化仍未完成，独立性能候选暂缓。稳定引擎C++ API尚未交付。
 旧实验的未运行项仅表示该次检查边界，不覆盖后续实现，也不据组件通过推定全部平台或完整模型质量。
 
 ## 职责与依赖
@@ -52,6 +53,13 @@ Qwen的`Model`保留模型形状、状态银行布局、数学阶段与Head发�
 
 ## 当前调整的边界
 
+`advance_request_wave`目前只核请求key、credit及退休，再调用模型的`Stage.advance`。
+Qwen的`execute_generation_continuation`仍驱动前后继准备／提交／观察、pending跨pump保留和失败收尾；
+因此共享wave入口不是完整执行核心。下一步共同层承接这些控制转换，同步与连续路径使用同一阶段结果事实；
+模型适配只提供实际数学／状态准备、Source合法边界、接受／修复和Head发布。Graph仍是唯一原生执行与退休权威。
+GLM的同步wave和Kimi的资源阶段复用是已有依据，尚不代替它们消费同一完整步骤驱动。
+不按文件长度机械搬代码，也不以新模板把整个Qwen循环包成一个回调；以实际控制逻辑能由不同状态形状消费为准。
+
 共同调度按真实调用分工：请求窗口、兼容分组、接纳／淘汰、输出额度和停止属于
 `engine/inference`；模型适配负责容量事实、实际工作形状、准备／提交／完成事实、完整检查点与恢复。
 优先静态分派和已有类型，不为搬出Qwen循环先造大`ModelOps`接口。组件复用与第二个完整模型接入
@@ -67,6 +75,7 @@ GLM有限原组件的`GlmStepRuntime`借原State、已选程序、Source与Queue
 原场景与RequestLoop直接调用同一普通／K1计算和未发布候选形成；模型步骤不持Head、请求记录或新的执行owner。
 实际grant只限制已选K1可发布前缀，保留q／accept／final三draw；独立target-only是一draw，不能因grant为1暗换角色。
 GLM接受后先CAS并立即见证提交，再单独维护journal；模型保留已提交版本与维护后current，晚维护／观察失败不重跑已提交数学。
+实际execute_step／execute_target仍附带reference主机oracle与EXPECT检查，尚需将原执行／state.stage与scenario判定分开，再接共同步骤驱动。
 这仍是有限target77／NextN78组件适配，不代表完整GLM prompt前向、异步合批或引擎API已经完成。
 
 读回的caller缓冲按具体编译程序的原存储域表准备，不能用Backend预设的域编号解释另一个程序。

@@ -32,35 +32,45 @@ HYLE 的产品目标是完整推理引擎；Compute、Graph、内存、调度、
 
 | 交付 | 职责与边界 |
 |---|---|
-| 完整步骤与模型适配 | 共同冷选择、准备／提交／观察和完整阶段交接已共享；模型保留数学、完整状态、Head发布和合法阶段约束 |
-| 稳态与后继 | 普通／relay共用准备入口和原Source／Store／Append权限与失败收尾；稳态成本及连续性优化归后续性能工作 |
+| 完整步骤与模型适配 | 冷选择、程序IO及资源阶段交接已有共享实现；实际前后继准备／提交／观察和跨pump驱动仍在Qwen，需抽离；数学、完整状态、Head发布和合法阶段约束留在模型 |
+| 稳态与后继 | 普通／relay共用原Source／Store／Append权限；pending生命周期、前后继推进和取消／失败收尾的共同控制先收敛，再优化稳态成本与连续性 |
 | MTP阶段事实与装配 | 接受、停止／额度、提交见证与退休已共享；融合及递归的提案、验证和续算数学／RNG差异保留在适配层 |
 | 多模型与拓扑边界 | 原模型组件检查适配边界；Graph多端点表达、Backend装配与模型放置分开，状态归实际存储域；不代签多卡实现 |
 | 输出与性能检验 | 共同输出事实已接线；后续用当前4070上的decode、MTP和含预热／换轮的综合速度检验热路径，完整大模型与多卡验证另记 |
 
 Qwen／Kimi的完整资源阶段交接已接入原ExecutionEpisode；Head／ledger／RNG发布、私有修复及reset政策仍由原模型负责。
-GLM独立模型步骤及实际额度接线已实现：原场景和RequestLoop直接调用真实普通／K1计算与未发布候选形成，不再依赖固定base／随机身份的计算闭包。
+GLM已有模型步骤封装及实际额度接线：原场景和RequestLoop调用真实普通／K1计算与未发布候选形成，不再依赖固定base／随机身份的计算闭包。
+但execute_step／execute_target仍内嵌reference主机oracle与EXPECT检查，尚非独立可复用的模型步骤；须将真实执行／state.stage与原scenario检查分开，保留现有检查覆盖。
 已选K1工作遇输出额度1，仍保原提案／验证及三draw合同，只限制可发布前缀；不能触发另一条target-only单draw政策。
 GLM先发布已接受完整状态、再维护journal的时序区别于Qwen，已提交结果和维护后current要分别表达，晚失败只能补观察，不能重跑原数学。
 普通和relay已共用同一准备入口，Source／Store绑定仍遵守真实Append及packed元数据顺序，不再增设一层总prepare或recipe回调。
 私有draft阶段已接入原成功交接：原等待计数、输出观察、Append／Store取回、一次动态IO撤回及页发布顺序保持。
 [四个相关CUDA消费者](../evidence/correctness/inference-private-handoff-2026-10-30.json)覆盖递归K2、低概率截断、私有失败重试及动态probability／next_counts连续执行；三份完整非计时报告保持，无性能实验。
-普通／relay已共用同一prepare_evaluations，Source／Store／Append及replay权限按原实际执行核验；复审未发现另一份应抽取的共同准备或状态发布算法，不新增总prepare／recipe包装。
+普通／relay已共用Qwen内的同一prepare_evaluations，Source／Store／Append及replay权限按原实际执行核验；这消除了模型内部两条准备入口的重复，尚不证明实际共同步骤驱动已从Qwen抽离。不能仅包一层总prepare／recipe调用冒充完成。
 [零张量阶段结果束](../evidence/correctness/inference-effect-views-2026-10-30.json)已补齐原SubmissionSource的纯页／提交结果接线；11项测试及真实递归MTP通过，原partial捕获与错误恢复保留，没有性能实验。
-入口／输出及跨模型组件共同机制复审完成，不将稳定引擎C++ API或第二完整模型的产品交付虚挂在本轮抽象任务中；对应未交付和验证边界仍明确保留。
+入口／输出及跨模型组件的资源机制已有有限复审；完整步骤驱动仍须由结构不同的原组件实际消费。稳定引擎C++ API或第二完整模型的产品交付不是此项前置，对应未交付和验证边界仍明确保留。
 后续多owner检查发现原Graph冷Store adapter仅按target.default_storage装配，同Context其它真实存储域没有候选。
 [显式节点域与银行装配](../evidence/correctness/inference-node-storage-2026-10-30.json)现已修复：GraphBindings传递实际节点域，
 Store／Append按原端点可访问域冷装配，源合同与银行选择分离，保留原Copy、owner及失败恢复。
 17项测试、真实递归K2及CPU＋CUDA普通短旅程通过；33个受影响SDK对象与三个消费者按新公开结构布局同头重编，未混旧ABI。
-最终有限复审核对共同冷选择、ordinary／relay准备、阶段交接、continuation与输出观察，未发现本轮仍应提取而遗漏的共同执行算法；
-模型数学、状态布局及Head发布差异保留。相应旧未完成总述已修正，第二完整引擎模型仍未验证，没有新的速度结论。
+此前有限复审把共同原语与局部资源阶段交接误记为完整执行架构完成，2026-10-30撤销该结论。
+advance_request_wave仍把整段步骤交给Stage.advance；Qwen的execute_generation_continuation仍负责前后继推进、跨pump pending与失败收尾。
+模型数学、状态布局及Head发布差异应保留，但这些共同控制尚需分离。已有检查有效，第二完整引擎模型仍未验证，没有新的速度结论。
 
 后续[预热候选与A/A](../evidence/performance/inference-warm-boundary-aa-2026-10-30.json)未证明跨cohort保提示有净收益，
 并实际复现已暖R2转入新R1的未准备Queue拒绝；候选撤回，原策略及新完整状态回归保留。
 单轮schedule／steps的普通、MTP各四对进程全部非计时报告一致；双轮额外形状／workspace的分配假设仍未排除。
 [代码域词表](../evidence/research/inference-code-vocabulary-map-2026-10-30.json)已由本地原tokenizer和独立参考源码得到32K映射，
-未使用测试prompt／输出，零下载；它不是接受率证据。接下来冷期导入draft所选head行并映回完整词表ID，保留原target／embedding，
-再检查真实接受率及净收益；随机q／p／拒绝残差须保原合同。条件图仍未接入产品，Executed／Skipped必须先于任何结果发布表达。
+未使用测试prompt／输出，零下载；它不是接受率证据。词表接线尚未编译，已隔离保存并撤出产品源码；
+冷导入、原ID映射、真实接受率及净收益检查均待共同执行架构收敛后继续。随机q／p／拒绝残差须保原合同。
+条件图仍未接入产品，Executed／Skipped必须先于任何结果发布表达。
+
+当前先完成以下架构工作，不并行启动独立性能候选：
+
+1. **落实共同步骤驱动。** 将前驱提交、可选后继准备／提交、前驱完成、后继保留／撤回及跨pump恢复的共同顺序归入`engine/inference`；同步路径也消费同一阶段与结果事实。继续借原episode、Invocation和退休事实，不新增执行owner。
+2. **缩小静态模型适配。** 模型提供实际阶段／形状、输入与状态绑定、合法Source边界、接受／修复及Head发布；共同层处理推进、pending身份及失败收尾。不同家族的状态和数学阶段自然保留，不强制Qwen两步、K1或单KV银行，也不把整个执行循环塞进一个回调。模型结果与请求ledger的借用边界一并分清，继续复用原提交见证，不另存一份状态或账簿。
+3. **接入结构不同的现有组件。** Qwen真实普通／MTP路径和至少一个已有异构状态组件消费同一实际驱动；检查停止、额度、取消、晚观察及真实退休。只检查实际可运行范围，不下载整模型、不等待更大硬件，也不把仅调用相同请求窗口算成完整驱动复用。
+4. **有限检查后再恢复性能。** 核对原输出／状态／RNG和资源寿命，确认没有明显退化；再继续词表、投影融合、带宽和完整跨引擎性能对照。架构变化导致的正确性或明显退化可当场处理，独立吞吐优化后置。
 
 多模型形状同时参考本地成熟引擎的实际实现：vLLM `276fbcff2717`的`v1/engine/core.py`、`v1/core/sched/scheduler.py`和`model_executor/models/qwen3_5.py`，
 TensorRT-LLM `46d9966b54d9`的`_torch/pyexecutor/engine/model_call.py`、`py_executor.py`及`model_engine.py`。
