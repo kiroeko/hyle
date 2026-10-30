@@ -32,8 +32,8 @@ q::MtpRoundResult round(q::Model &model, const std::shared_ptr<q::Session> &sess
   q::prepare_generation_record(ledger, *session, role, std::span(&pending, 1), true, 2, 0);
   model.prepare_evaluation(*session, std::span(&pending, 1), nullptr, role); model.submit_evaluation(*session);
   const q::EvaluationIO output_io{.name = "random_round", .trace_states = false};
-  const auto output = q::evaluation_output(model, session, output_io, nullptr, nullptr, nullptr, nullptr, &ledger, expected);
-  return q::finish_mtp_round(model, *session, pending, 2, q::model_eos_tokens, &output, output_io);
+  const auto output = q::evaluation_output(model, session, output_io);
+  return q::finish_mtp_round(model, *session, pending, 2, q::model_eos_tokens, &output, output_io, {&ledger,expected});
 }
 void run(const std::filesystem::path &input) {
   const auto source = q::read_ids(input / "prompt.ids");

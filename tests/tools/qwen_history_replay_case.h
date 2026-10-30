@@ -46,10 +46,10 @@ inline void teacher(q::Model &model, const std::shared_ptr<q::Session> &session,
   model.prepare_evaluation(*session, ids, nullptr, role, completion, &ledger.stop_policy(), inputs);
   if (!emits) qwen_mtp_chunked_prefill_case::state_only_ports(*model.active_step->phase);
   model.submit_evaluation(*session);
-  const auto output = q::evaluation_output(model, session, {.name = "history-replay-teacher", .trace_states = false},
-      nullptr, nullptr, nullptr, nullptr, &ledger);
+  const auto output = q::evaluation_output(model, session, {.name = "history-replay-teacher", .trace_states = false});
+  q::GenerationPublicationBatch publication({{&ledger,nullptr}});
   const std::array outputs{output}; std::array<std::int32_t, 1> next{-1};
-  model.finish_evaluations(outputs, next, [](auto, const auto &) {});
+  model.finish_evaluations(outputs, next, [](auto, const auto &) {}, publication);
   const bool random = session->sampling_configuration().configuration.enabled;
   const auto expected = random && emits ? cursor.advanced(1) : cursor;
   require(ledger.committed_count == ordinal + 1 && session->head.epoch() == epoch + 1 &&
@@ -85,13 +85,13 @@ inline q::MtpRoundResult commit_round(q::Model &model, const std::shared_ptr<q::
   require(model.active_step->phase->family->sampling == &configuration,
       "history replay selected another cold policy");
   model.submit_evaluation(*session);
-  const auto output = q::evaluation_output(model, session, {.name = "history-replay-round", .trace_states = false},
-      nullptr, nullptr, nullptr, nullptr, &ledger);
+  const auto output = q::evaluation_output(model, session, {.name = "history-replay-round", .trace_states = false});
+  q::GenerationPublicationBatch publication({{&ledger,nullptr}});
   const std::array outputs{output};
   const std::array selections{q::MtpGenerationSelection{session, pending, 3, probabilities, recursive ? 2u : 1u}};
   std::array<q::MtpRoundResult, 1> results;
-  if (recursive) model.finish_recursive_mtp(selections, q::model_eos_tokens, outputs, results, [](auto, const auto &) {});
-  else model.finish_mtp_rounds(selections, q::model_eos_tokens, outputs, results, [](auto, const auto &) {});
+  if (recursive) model.finish_recursive_mtp(selections, q::model_eos_tokens, outputs, results, [](auto, const auto &) {}, publication);
+  else model.finish_mtp_rounds(selections, q::model_eos_tokens, outputs, results, [](auto, const auto &) {}, publication);
   const auto expected = configuration.configuration.enabled ? cursor.advanced(recursive ? 5 : 3) : cursor;
   require(ledger.committed_count == ordinal + 1 && session->head.epoch() == epoch + 1 &&
       session->head->sampling == expected && session->length() == before.length + results[0].processed_target &&

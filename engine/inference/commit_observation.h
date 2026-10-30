@@ -23,9 +23,9 @@ struct CommitObservation final {
   std::optional<RequestInputCommit> consumed_input{};
 };
 
-template<class Record> class PreparedRecordCommit;
+class PreparedRecordCommit;
 template<class Record>
-Result<PreparedRecordCommit<Record>> prepare_record_commit(
+Result<PreparedRecordCommit> prepare_record_commit(
     std::span<Record>, std::size_t &, Record &) noexcept;
 
 // A synchronous borrow of the actual cold-reserved current record/count, not
@@ -33,28 +33,26 @@ Result<PreparedRecordCommit<Record>> prepare_record_commit(
 // nor its count may move/reset while this ticket exists. One serialized owner
 // prepares all participant tickets before publishing its cohort. Independent
 // requests keep their own publication outcomes; no cross-head CAS is implied.
-template<class Record>
+// The factory checks the concrete record; this ticket borrows only its bool
+// witness and original count, and cannot inspect or mutate the record payload.
 class PreparedRecordCommit final {
-  static_assert(std::is_same_v<decltype(Record::committed), bool>,
-      "an original commit record must expose its bool committed witness");
-
  public:
   PreparedRecordCommit() noexcept = default;
   PreparedRecordCommit(const PreparedRecordCommit &) = delete;
   PreparedRecordCommit &operator=(const PreparedRecordCommit &) = delete;
   PreparedRecordCommit(PreparedRecordCommit &&other) noexcept
-      : record_(std::exchange(other.record_, nullptr)),
+      : committed_(std::exchange(other.committed_, nullptr)),
         count_(std::exchange(other.count_, nullptr)), ordinal_(other.ordinal_) {}
   PreparedRecordCommit &operator=(PreparedRecordCommit &&other) noexcept {
     if (this != &other) {
-      record_ = std::exchange(other.record_, nullptr);
+      committed_ = std::exchange(other.committed_, nullptr);
       count_ = std::exchange(other.count_, nullptr);
       ordinal_ = other.ordinal_;
     }
     return *this;
   }
 
-  bool valid() const noexcept { return record_ && count_; }
+  bool valid() const noexcept { return committed_ && count_; }
 
   // Publish is the original model head operation, called directly and never
   // stored. A refusal preserves this ticket and the already computed result;
@@ -70,26 +68,26 @@ class PreparedRecordCommit final {
       return Status::FailedPrecondition("record commit ticket is not prepared");
     // A second ticket or an intervening original commit may have consumed this
     // slot. Reject before touching the head; do not rescan the cohort or IO.
-    if (*count_ != ordinal_ || record_->committed)
+    if (*count_ != ordinal_ || *committed_)
       return Status::FailedPrecondition("record commit no longer names its original current slot");
     auto accepted = std::forward<Publish>(publish_head)();
     if (!accepted.ok()) return accepted;
     // The head operation owns model state only. It must not independently
     // mutate the very ledger witness this success is about to publish.
-    HYLE_FATAL_ASSERT(*count_ == ordinal_ && !record_->committed);
-    record_->committed = true;
+    HYLE_FATAL_ASSERT(*count_ == ordinal_ && !*committed_);
+    *committed_ = true;
     ++*count_;
-    record_ = nullptr; count_ = nullptr;
+    committed_ = nullptr; count_ = nullptr;
     return Status::Ok();
   }
 
  private:
   template<class R>
-  friend Result<PreparedRecordCommit<R>> prepare_record_commit(
+  friend Result<PreparedRecordCommit> prepare_record_commit(
       std::span<R>, std::size_t &, R &) noexcept;
-  PreparedRecordCommit(Record &record, std::size_t &count) noexcept
-      : record_(&record), count_(&count), ordinal_(count) {}
-  Record *record_ = nullptr;
+  PreparedRecordCommit(bool &committed, std::size_t &count) noexcept
+      : committed_(&committed), count_(&count), ordinal_(count) {}
+  bool *committed_ = nullptr;
   std::size_t *count_ = nullptr;
   std::size_t ordinal_ = 0;
 };
@@ -98,15 +96,17 @@ class PreparedRecordCommit final {
 // record completeness, expected-base/epoch and resource preflight stay with the
 // original owner. count < records.size() also proves increment cannot overflow.
 template<class Record>
-Result<PreparedRecordCommit<Record>> prepare_record_commit(
+Result<PreparedRecordCommit> prepare_record_commit(
     std::span<Record> records, std::size_t &count, Record &record) noexcept {
+  static_assert(std::is_same_v<decltype(Record::committed), bool>,
+      "an original commit record must expose its bool committed witness");
   if (count >= records.size())
     return std::unexpected(Status::OutOfRange("record commit exceeds its original reserved prefix"));
   if (&records[count] != &record)
     return std::unexpected(Status::InvalidArgument("record commit is not the original current slot"));
   if (record.committed)
     return std::unexpected(Status::FailedPrecondition("record commit slot is already authoritative"));
-  return PreparedRecordCommit<Record>(record, count);
+  return PreparedRecordCommit(record.committed, count);
 }
 
 // Observe only an authoritative original record. A duplicate returns before

@@ -58,7 +58,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     request.request_key = window.enqueue(member); window.admitted(request.request_key);
   }
   const std::array keys{requests[0].request_key, requests[1].request_key};
-  std::size_t submissions = 0, completion_refusals = 0, observer_refusals = 0;
+  std::size_t submissions = 0, completion_refusals = 0, observer_refusals = 0, cleared_publication_batches = 0;
   const auto prepare = [&](std::size_t member) {
     return q::prepare_generation_call(model, requests[member], 3, nullptr, requests);
   };
@@ -93,37 +93,50 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       inputs[member] = {request.session, call.ids(), &request.ledger->stop_policy(), call.logits,
           call.conditional_logits, request.request_key};
       outputs[member] = q::evaluation_output(model, request.session, {call.name, &request.trace, false},
-          &call.step_seconds, &request.endpoint, nullptr, nullptr, request.ledger.get());
+          &call.step_seconds, &request.endpoint);
       outputs[member].disposition = &call.disposition;
     }
     model.prepare_evaluations(inputs, nullptr, q::GraphRole::kText);
     model.submit_evaluations(); submitted();
+    q::GenerationPublicationBatch publication({{requests[0].ledger.get(),nullptr},{requests[1].ledger.get(),nullptr}});
     std::array<std::int32_t, 2> next{};
-    model.finish_selected_evaluations(outputs, next,
-        [](std::span<const std::int32_t> ids, q::StepState &step, std::span<std::int32_t> selected) {
-          for (std::size_t member = 0; member != step.members.size(); ++member) {
-            step.members[member].accepted_tokens = step.members[member].input_tokens;
-            selected[member] = ids[member];
-          }
-        }, std::move(complete), std::move(observe));
+    bool completed = false;
+    try {
+      model.finish_selected_evaluations(outputs, next,
+          [](std::span<const std::int32_t> ids, q::StepState &step, std::span<std::int32_t> selected) {
+            for (std::size_t member = 0; member != step.members.size(); ++member) {
+              step.members[member].accepted_tokens = step.members[member].input_tokens;
+              selected[member] = ids[member];
+            }
+          }, [&](q::StepState &step) { complete(step,publication); completed = true; }, std::move(observe), publication);
+    } catch (...) {
+      if (!completed) {
+        for (std::size_t member = 0; member != requests.size(); ++member)
+          require(!publication.record(member) && !publication.ticket(member),
+              "retired failed finish retained a call-scoped record borrow or publication ticket");
+        ++cleared_publication_batches;
+      }
+      throw;
+    }
   };
   const int identity = 19;
   const Refusal refusal{&identity};
   std::shared_ptr<q::StepState> failed_step;
   bool caught = false;
   try {
-    finish_direct([&](q::StepState &step) {
+    finish_direct([&](q::StepState &step,q::GenerationPublicationBatch &publication) {
       ++completion_refusals;
       require(model.active_step.get() == &step && step.submitted && step.members.size() == 2 &&
           !step.execution.run->in_flight(), "Complete refusal must follow actual original Graph retirement");
       failed_step = model.active_step;
       for (std::size_t member = 0; member != step.members.size(); ++member) {
         const auto &original = step.members[member]; const auto &saved = before[member];
+        const auto *record = publication.record(member); const auto *ticket = publication.ticket(member);
         require(original.session == requests[member].session && original.base == saved.head &&
             original.base_epoch == saved.epoch && original.next && original.accepted_tokens == 1 &&
-            original.next->length == saved.checkpoint->length + 1 && original.commit_publication &&
-            original.commit_publication->valid() && original.commit_record == &requests[member].ledger->records[saved.commits] &&
-            !original.commit_record->committed && requests[member].ledger->committed_count == saved.commits,
+            original.next->length == saved.checkpoint->length + 1 && ticket && ticket->valid() &&
+            record == &requests[member].ledger->records[saved.commits] &&
+            !record->committed && requests[member].ledger->committed_count == saved.commits,
             "Complete refusal did not retain the exact unpublished original state and record");
       }
       throw refusal;
@@ -135,9 +148,8 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       "unpublished refusal changed its original non-std exception or repeated native work");
   require(failed_step && failed_step->members.size() == 2,
       "unpublished refusal lost its original call-scoped Step alias");
-  for (const auto &member : failed_step->members)
-    require(!member.commit_record && !member.commit_ledger && !member.commit_publication,
-        "failed finish retained borrowed ledger fields or a publication ticket beyond its original call");
+  require(cleared_publication_batches == 1,
+      "failed finish did not release its original call-scoped record borrows and publication tickets");
   failed_step.reset();
   const auto retired = model.try_retire_episode(); q::check(retired.status);
   require(retired.retired && !model.active_step && !model.successor_step && !model.carrier_borrowed,
@@ -180,7 +192,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   }
   caught = false;
   try {
-    finish_direct([](q::StepState &) {}, [&](std::size_t member, const q::CompletedEvaluationView &completed) {
+    finish_direct([](q::StepState &,q::GenerationPublicationBatch &) {}, [&](std::size_t member, const q::CompletedEvaluationView &completed) {
       ++observer_refusals;
       require(member == 0 && completed.requests == 2 && !model.active_step && !model.successor_step,
           "late refusal did not observe the original fully published R2 result");

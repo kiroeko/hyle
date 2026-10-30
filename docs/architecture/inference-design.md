@@ -13,9 +13,9 @@ CLI formatter 已独立编译。Qwen 与真实 GLM StateHead 组件已消费共�
 兼容分组与请求循环已共用，Qwen适配器提供真实工作形状、兼容条件、完整恢复算法和数学阶段；GLM／DeepSeek／Kimi仍为组件消费者，
 尚无第二个完整引擎模型验证整套编排复用。
 共同部分现包括程序／IO／物理槽、分页准备、普通及后继准备入口、完整阶段交接和跨pump请求控制。
-共同`drive_steps`现控制Qwen连续普通／K1的前后继推进、跨pump保留和异常恢复，静态模型适配保留实际数学、状态和Head发布。
+共同`drive_steps`现控制Qwen连续普通／K1的前后继推进、同步／packed／递归目标步骤、跨pump保留和异常恢复，静态模型适配保留实际数学、状态和Head发布。
 GLM实际普通续算消费同一驱动的同步分支，不需要实现空的后继接口。共同资源交接继续使用原`ExecutionEpisode`，
-不要求不同家族采用相同的阶段或状态结构。Qwen同步／packed／递归步骤及请求提交见证边界仍待迁移，不能据此宣称完整共同执行架构完成。
+不要求不同家族采用相同的阶段或状态结构。结果／提交见证已分离；采样／历史输入的请求桥接与GLM K1候选驱动仍待收敛，不能据此宣称完整共同执行架构完成。
 当前先继续架构收敛，再集中优化性能；第二完整模型仍未验证。
 实施状态只在 [进度看板](../developer/inference-progress.md)更新，功能和硬件边界见[实现范围](../implementation/inference-roadmap.md)。
 
@@ -55,13 +55,15 @@ GLM实际普通续算消费同一驱动的同步分支，不需要实现空的�
 ## 当前调整的边界
 
 `advance_request_wave`继续核请求key、credit及退休；其下的`drive_steps`实际控制准备、提交、两次取消检查、完成和后继去留，
-不把整段循环委托给一个`advance`回调。Qwen的`GenerationStepAdapter`只借原Model、continuation、calls和Source，提供实际资格、数学、Head／ledger发布与原退休操作。
+不把整段循环委托给一个`advance`回调。Qwen的`GenerationStepAdapter`只借原Model、continuation、calls和Source，提供实际资格、数学、Head发布与原退休操作；请求记录由调用期投影填写。
 后继的纯Unavailable先完成A、再核真实退休并释放复用提示；不接受B，也不永久禁用后来合法的复用。defer只保留原pending calls，已提交的active_step仍由原Model持有。
 GLM的`GlmOrdinaryStepDriver`将实际预检、ordinary数学和显式观察分成三个动作，使用同一驱动的同步分支；没有空的successor方法或另一份执行状态owner。
 [有限检查](../evidence/correctness/inference-common-step-driver-2026-10-30.json)覆盖host控制、原Qwen连续／失败／冷拒绝及EOS、真实K1和两个GLM组件；不代表GLM跨pump。
 Qwen同步／packed prefill／递归验证目标步骤现通过`SynchronousGenerationStepAdapter`消费同一同步分支；原提案数学、合法形状分组、Head发布及CPU ahead政策仍留在模型适配。
 [本片有限检查](../evidence/correctness/inference-synchronous-step-driver-2026-10-30.json)覆盖实际packed路径、递归变长验证、取消、晚观察失败、退休及真实K1，未做独立性能实验。
-实际结果与请求提交见证的借用边界继续收敛，模型仍含部分请求账簿操作；不能将本片当作完整执行架构完成。Graph仍是唯一原生执行与退休权威。
+结果／提交见证已通过[调用期publication投影](../evidence/correctness/inference-publication-boundary-2026-10-30.json)分离：预检与记录填写归请求侧，模型只同步消费原通用票据完成Head发布；Step不保留账簿、记录、票据或清理回调。
+全组预检、递归修复、结果核对、逐Head立即见证、所有已提交记录统一计时、最后观察的顺序保留。失败仍由原Model／Graph判定真实退休，投影只在已退休时丢弃其捕获的精确未提交槽。
+Model内仍有采样／历史输入的两个请求桥接，GLM K1候选步骤也仍需消费共同驱动；不能将本片当作完整执行架构完成。Graph仍是唯一原生执行与退休权威。
 不按文件长度机械搬代码；以实际控制逻辑能由不同状态形状消费为准，不新增热回调表或通用大ModelOps。
 
 共同调度按真实调用分工：请求窗口、兼容分组、接纳／淘汰、输出额度和停止属于

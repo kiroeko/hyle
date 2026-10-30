@@ -150,9 +150,10 @@ inline int run(const std::filesystem::path &input) {
   };
   const auto finish_raw=[&] {
     const q::EvaluationIO io{.name="direct-stop-policy"};
-    const std::array outputs{q::evaluation_output(model,raw,io,nullptr,nullptr,nullptr,nullptr,&ledger)};
+    const std::array outputs{q::evaluation_output(model,raw,io)};
+    q::GenerationPublicationBatch publication({{&ledger,nullptr}});
     std::array<std::int32_t,1> next{};
-    model.finish_evaluations(outputs,next,[](std::size_t,const q::CompletedEvaluationView &){});return next[0];
+    model.finish_evaluations(outputs,next,[](std::size_t,const q::CompletedEvaluationView &){},publication);return next[0];
   };
   prepare_raw();bool unbound_rejected=false;
   try{(void)finish_raw();}catch(const std::runtime_error &error) {

@@ -55,7 +55,8 @@ inline void stage(q::GenerationLedger &ledger, const std::shared_ptr<q::Session>
 inline std::int32_t finish(q::Model &model, const std::shared_ptr<q::Session> &session,
     q::GenerationLedger &ledger, std::size_t accepted, std::size_t quota) {
   const auto before = q::generation_boundary(*session->head); const auto epoch = session->head.epoch();
-  const std::array outputs{q::EvaluationOutput{.session = session, .generation_ledger = &ledger}};
+  const std::array outputs{q::EvaluationOutput{.session = session}};
+  q::GenerationPublicationBatch publication({{&ledger,nullptr}});
   std::array<std::int32_t, 1> next{-1};
   model.finish_selected_evaluations(outputs, next,
       [&](std::span<const std::int32_t> ids, q::StepState &step, std::span<std::int32_t> selected) {
@@ -69,7 +70,7 @@ inline std::int32_t finish(q::Model &model, const std::shared_ptr<q::Session> &s
         record.consumed_drafts = accepted - 1; record.stopped = false;
         record.emitted = {accepted == 2 ? member.draft_token : selected[0], accepted == 2 ? selected[0] : -1};
         record.emitted_count = accepted;
-      }, [](auto, const auto &) {});
+      }, [](auto, const auto &) {}, publication);
   const auto after = q::generation_boundary(*session->head);
   require(session->head.epoch() == epoch + 1 && after.length == before.length + accepted &&
       after.frontier == before.frontier + before.lag + 1 && after.lag == accepted - 1 &&

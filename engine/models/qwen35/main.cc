@@ -82,6 +82,7 @@
 #include "generation_schedule.h"
 #include "generation_tokens.h"
 #include "generation_ledger.h"
+#include "generation_publication.h"
 #include "prepared_roles.h"
 #include "ffn_placement.h"
 #include "projection_binding.h"
@@ -876,18 +877,6 @@ sampling::LogitsInputsFor<V> prepare_logits_inputs(Recipe &r, sampling::LogitsPo
   return result;
 }
 
-// Ledger token storage is reserved with the request. Its sources are separate
-// episode/result values; replacement assignment would discard that capacity.
-void write_generation_tokens(hyle::container::SmallVector<std::int32_t, 2> &tokens,
-    std::span<const std::int32_t> values) {
-  if (!tokens.try_resize(values.size())) throw std::bad_alloc{};
-  std::copy(values.begin(), values.end(), tokens.begin());
-}
-void write_generation_tokens(hyle::container::SmallVector<std::int32_t, 2> &tokens,
-    std::initializer_list<std::int32_t> values) {
-  write_generation_tokens(tokens, std::span<const std::int32_t>(values.begin(), values.size()));
-}
-
 GenerationBoundary generation_boundary(const cache::State &head) noexcept {
   return {head.length, head.draft ? head.draft->frontier : 0,
       head.draft ? head.draft->lag : 0, head.next_id,
@@ -1068,11 +1057,7 @@ struct StepMember final {
   // Frozen active inputs of this member's actual draft Append, not accepted rows.
   std::size_t draft_input_rows = 0, discarded_draft_rows = 0;
   bool sampled_accept = false;
-  GenerationCommitRecord *commit_record = nullptr;
-  GenerationLedger *commit_ledger = nullptr;
-  // Borrowed only by finish, after the original ledger slot is checked. No
-  // native work or successor reads this host publication ticket.
-  std::optional<inference::PreparedRecordCommit<GenerationCommitRecord>> commit_publication;
+
 
   inference::PagedSequenceEdit target_edit() noexcept {
     return {base->paged, next->paged, {target_updates.data(), target_updates.size()}};
@@ -1250,8 +1235,6 @@ struct EvaluationOutput final {
   Clock::time_point *host_endpoint = nullptr;
   inference::StepObservation *observation = nullptr;
   inference::PreparationObservation *preparation = nullptr;
-  GenerationLedger *generation_ledger = nullptr;
-  const GenerationCommitRecord *expected_episode = nullptr;
   // Optional actual publication fact. A stopped member's raw next_ids element
   // is not a delivered result; kCancelled has no observer/head/ledger commit.
   EvaluationDisposition *disposition = nullptr;
@@ -5045,25 +5028,16 @@ public:
   }
 
   inference::RetirementObservation retire_failed_publication(bool private_pending = false) noexcept {
-    // The ledger is a call-scoped borrow, not owned by the Step's native pins.
-    // Never retain a cleanup callback for a later Session/Model retirement.
-    const auto failed_step = active_step;
-    if (failed_step) for (auto &member : failed_step->members) member.commit_publication.reset();
     auto retired = abort_episode();
     retired.retired = retired.retired && !private_pending && private_publications_retired();
-    if (failed_step) for (auto &member : failed_step->members) {
-      if (retired.retired && member.commit_ledger)
-        (void)member.commit_ledger->discard_attempt(member.commit_record);
-      // An unretired Step may outlive this caller and its ledger. Later native
-      // retirement must never revisit these synchronous publication borrows.
-      member.commit_record = nullptr; member.commit_ledger = nullptr;
-    }
     return retired;
   }
 
-  template<class Select, class Complete, class Observe>
+  template<class Select, class Complete, class Observe, class Publication = NoEvaluationPublication>
+    requires std::is_invocable_v<Complete &, StepState &>
   void finish_selected_evaluations(std::span<const EvaluationOutput> outputs,
-                                  std::span<std::int32_t> next_ids, Select select, Complete complete, Observe observe) {
+                                  std::span<std::int32_t> next_ids, Select select, Complete complete, Observe observe,
+                                  Publication &&publication = {}) {
     if (!active_step || outputs.size() != active_step->members.size() || next_ids.size() != outputs.size() ||
         active_step->cancelled || !active_step->submitted || !active_step->execution.has_completion())
       throw std::runtime_error("finish requires its original complete noncancelled batch");
@@ -5076,7 +5050,11 @@ public:
     auto &step = *active_step; auto &phase = *step.phase; auto &run = *step.execution.run;
     auto &program_slot = phase.slots[step.state_slot]; auto &io = program_slot.data;
     const auto step_start = step.step_start, start = step.start;
-    hyle::container::SmallVector<std::size_t, 2> member_input_rows;
+    struct FinishedMember final {
+      std::size_t input_rows;
+      inference::PreparedRecordCommit *publication = nullptr;
+    };
+    hyle::container::SmallVector<FinishedMember, 2> finished_members;
     const bool state_only = phase.family->completion == TextCompletion::kStateOnly;
     const auto submit_seconds = step.submit_seconds, cold_batch_seconds = step.cold_batch_seconds;
     const auto shape_admission_seconds = step.shape_admission_seconds;
@@ -5094,40 +5072,20 @@ public:
       ~ReturnReadback() { if (admission) { HYLE_FATAL_ASSERT(*admission); --*admission; } }
     } return_readback;
     try {
-      if (!member_input_rows.try_reserve(outputs.size())) throw std::bad_alloc{};
-      for (const auto &member : step.members) member_input_rows.push_back(member.input_tokens);
+      if (!finished_members.try_reserve(outputs.size())) throw std::bad_alloc{};
+      for (const auto &member : step.members) finished_members.push_back({member.input_tokens, nullptr});
       if (step.discard_stopped_members &&
           !published_members.try_resize(outputs.size(), std::uint8_t{1})) throw std::bad_alloc{};
       for (std::size_t j = 0; j < outputs.size(); ++j) {
-        if (outputs[j].generation_ledger) {
-          if (cache_plan.draft_cache != (phase.family->role != GraphRole::kText) ||
-              step.members[j].base->draft.has_value() != cache_plan.draft_cache)
-            throw std::runtime_error("generation role differs from its complete target/draft participant");
-          for (std::size_t k = 0; k < j; ++k) if (outputs[k].generation_ledger == outputs[j].generation_ledger)
-            throw std::runtime_error("batch participants cannot share a mutable generation ledger");
-          if (outputs[j].generation_ledger->stop_policy() !=
-              inference::request_stop_policy(step.members[j].stop_policy))
-            throw std::runtime_error("generation ledger stop policy differs from its admitted episode");
-          auto &record = outputs[j].generation_ledger->next();
-          step.members[j].commit_ledger = outputs[j].generation_ledger; step.members[j].commit_record = &record;
-          const auto member_role = packs_draft(phase.family->packing)
-              ? (step.members[j].base->draft->lag ? GraphRole::kMtpCatchupRound : GraphRole::kMtpRound) : phase.family->role;
-          if (record.role != member_role || record.completion != phase.family->completion || record.before != generation_boundary(*step.members[j].base) ||
-              record.ids().size() != (record.generation ? 1u : step.members[j].input_tokens) ||
-              record.ids().empty() || record.ids().front() != step.members[j].first_input)
-            throw std::runtime_error("generation ledger entry differs from its actual episode");
-          if (outputs[j].expected_episode && !outputs[j].expected_episode->committed)
-            throw std::runtime_error("expected episode record is not committed");
-          if (step.withdrawn(step.members[j])) {
-            step.members[j].commit_ledger = nullptr; step.members[j].commit_record = nullptr;
-            outputs[j].generation_ledger->discard_uncommitted();
-          } else {
-            auto &ledger = *outputs[j].generation_ledger;
-            step.members[j].commit_publication.emplace(take(inference::prepare_record_commit(
-                std::span(ledger.records), ledger.committed_count, record)));
-          }
-        } else if (outputs[j].expected_episode)
-          throw std::runtime_error("expected episode record requires a fresh commit witness");
+        const auto &member = step.members[j];
+        const auto member_role = packs_draft(phase.family->packing)
+            ? (member.base->draft->lag ? GraphRole::kMtpCatchupRound : GraphRole::kMtpRound) : phase.family->role;
+        finished_members[j].publication = publication.prepare(j, EvaluationAttemptFacts{
+            member_role, phase.family->completion, generation_boundary(*member.base),
+            inference::request_stop_policy(member.stop_policy), member.input_tokens, member.first_input,
+            cache_plan.draft_cache == (phase.family->role != GraphRole::kText) &&
+                member.base->draft.has_value() == cache_plan.draft_cache,
+            step.withdrawn(member)});
       }
       const auto append_banks = draft_bank + (has_mtp(phase.family->role) ? 2u : 0u);
       auto &transactions = phase.slots[step.state_slot].transactions;
@@ -5295,37 +5253,25 @@ public:
             if (cache_plan.draft_cache)
               for (const auto &member : step.members)
                 if (!step.withdrawn(member)) validate_mtp_snapshot(*member.next, &member);
-            for (std::size_t j = 0; j < outputs.size(); ++j) if (auto *record = step.members[j].commit_record) {
+            for (std::size_t j = 0; j < outputs.size(); ++j) if (finished_members[j].publication) {
               const auto &member = step.members[j];
-              record->requests = outputs.size(); record->member_index = j;
-              record->accepted = member.accepted_tokens;
-              record->draft_rows = member.next->draft
+              auto draft_rows = member.next->draft
                   ? member.next->draft->frontier - member.base->draft->frontier : 0;
-              if (phase.family->role == GraphRole::kVerify)
-                record->draft_rows = cache::add(record->draft_rows,
-                    member.input_tokens - 1 + (member.input_tokens > 1 ? member.base->draft->lag : 0) +
-                    member.discarded_draft_rows);
-              record->after = generation_boundary(*member.next); record->after.next_id = next_ids[j];
-              if (phase.family->role == GraphRole::kVerify)
-                write_generation_tokens(record->accepted_inputs,
-                    std::span<const std::int32_t>(member.verification_inputs).first(member.accepted_tokens));
-              else write_generation_tokens(record->accepted_inputs, {member.first_input, member.accepted_tokens == 2 ? member.draft_token : -1});
-              if (record->generation) {
-                if (phase.family->role == GraphRole::kVerify) write_generation_tokens(record->verification_inputs, member.verification_inputs);
-                else if (drafts_token(phase.family->role)) write_generation_tokens(record->verification_inputs, {member.first_input, member.draft_token});
-                else write_generation_tokens(record->verification_inputs, {member.first_input});
-              }
-              record->verified_rows = member.input_tokens;
-              if (!record->generation || phase.family->role == GraphRole::kText) {
-                record->draft = -1; record->target_first = next_ids[j]; record->target_second = -1;
-                record->agreed = false; record->accepted_draft = false;
-                record->stopped = !state_only && inference::request_token_stopped(
-                    next_ids[j], model_eos_tokens, member.stop_policy);
-                if (state_only) { record->emitted.clear(); record->emitted_count = 0; }
-                else { write_generation_tokens(record->emitted, {next_ids[j], -1}); record->emitted_count = 1; }
-              }
-              if (outputs[j].expected_episode && !record->same_result(*outputs[j].expected_episode))
-                throw std::runtime_error("MTP replay natural decision or state boundary diverged from its recorded episode");
+              const bool recursive = phase.family->role == GraphRole::kVerify;
+              if (recursive) draft_rows = cache::add(draft_rows,
+                  member.input_tokens - 1 + (member.input_tokens > 1 ? member.base->draft->lag : 0) +
+                  member.discarded_draft_rows);
+              auto after = generation_boundary(*member.next); after.next_id = next_ids[j];
+              const std::array accepted{member.first_input, member.accepted_tokens == 2 ? member.draft_token : -1};
+              const std::array verified{member.first_input, member.draft_token};
+              publication.complete(j, EvaluationResultFacts{
+                  phase.family->role, after, outputs.size(), j, member.accepted_tokens, draft_rows, member.input_tokens,
+                  recursive ? std::span<const std::int32_t>(member.verification_inputs).first(member.accepted_tokens)
+                      : std::span<const std::int32_t>(accepted),
+                  recursive ? std::span<const std::int32_t>(member.verification_inputs)
+                      : std::span<const std::int32_t>(verified).first(drafts_token(phase.family->role) ? 2u : 1u),
+                  next_ids[j], state_only,
+                  !state_only && inference::request_token_stopped(next_ids[j], model_eos_tokens, member.stop_policy)});
             }
             // Partial acceptance narrows Frame authority without rewinding the
             // verified physical tail; the next append retains its original COW path.
@@ -5376,10 +5322,9 @@ public:
         };
         // Mark each original record immediately after its own no-fail head
         // swap, before any subsequent reporting or observation can fail.
-        if (member.commit_publication) {
-          const auto status = member.commit_publication->publish(publish);
+        if (auto *ticket = finished_members[j].publication) {
+          const auto status = ticket->publish(publish);
           HYLE_FATAL_ASSERT(status.ok());
-          member.commit_publication.reset();
         } else {
           (void)publish();
         }
@@ -5400,22 +5345,18 @@ public:
       // this target episode. Its negative observation cannot be overwritten
       // by retiring only the target; retain it until its original owner drains.
       const bool private_pending = failure.retirement_observed() && !failure.retirement().retired;
-      failure.observe_retirement(retire_failed_publication(private_pending));
+      const auto retired = retire_failed_publication(private_pending);
+      publication.retired(retired); failure.observe_retirement(retired);
       throw;
     } catch (...) {
-      (void)retire_failed_publication(); throw;
+      publication.retired(retire_failed_publication()); throw;
     }
     const auto finished = Clock::now();
-    for (std::size_t j = 0; j < outputs.size(); ++j) if ((published_members.empty() || published_members[j]) && outputs[j].generation_ledger) {
-      const auto &output = outputs[j];
-      auto &record = output.generation_ledger->records[output.generation_ledger->committed_count - 1];
-      record.endpoint = finished;
-      record.step_seconds = std::chrono::duration<double>(finished - step_start).count();
-    }
+    publication.finished(finished, std::chrono::duration<double>(finished - step_start).count());
     std::size_t compact_input_begin = 0;
     for (std::size_t j = 0; j < outputs.size(); ++j) {
       const auto member_input_begin = compact_input_begin;
-      compact_input_begin = cache::add(compact_input_begin, member_input_rows[j]);
+      compact_input_begin = cache::add(compact_input_begin, finished_members[j].input_rows);
       if (!published_members.empty() && !published_members[j]) continue;
       const auto &output = outputs[j]; const auto &session = *output.session; const auto next = next_ids[j];
       if (output.complete_seconds) *output.complete_seconds = std::chrono::duration<double>(finished - step_start).count();
@@ -5432,8 +5373,8 @@ public:
       }
       inference::StepObservation observed;
       auto &observation = output.observation ? *output.observation : observed;
-      observation.input_tokens = member_input_rows[j]; observation.visible = session.length(); observation.next = next;
-      observation.graph_executed = true; observation.graph_input_tokens = member_input_rows[j];
+      observation.input_tokens = finished_members[j].input_rows; observation.visible = session.length(); observation.next = next;
+      observation.graph_executed = true; observation.graph_input_tokens = finished_members[j].input_rows;
       observation.seconds = std::chrono::duration<double>(finished - start).count();
       observation.submit_seconds = submit_seconds; observation.step_seconds = std::chrono::duration<double>(finished - step_start).count();
       observation.cold_batch_seconds = cold_batch_seconds; observation.replay_route = replay_route;
@@ -5443,7 +5384,7 @@ public:
       CompletedEvaluationView completed{.observation = observation, .head = *session.head,
           .member_index = j, .requests = outputs.size(),
           .packed_input_begin = packs_verify(phase.family->packing) ? member_input_begin : 0,
-          .packed_input_rows = packs_verify(phase.family->packing) ? member_input_rows[j] : 0};
+          .packed_input_rows = packs_verify(phase.family->packing) ? finished_members[j].input_rows : 0};
       if (output.capture_tensors) {
         if (!state_only) completed.logits = io.logits.caller_owned() ? io.logits.view().as_const()
             : take(generated_logits.tensor(io.logits.description));
@@ -5455,10 +5396,11 @@ public:
     }
   }
 
-  template<class Select, class Observe>
+  template<class Select, class Observe, class Publication = NoEvaluationPublication>
+    requires std::is_invocable_v<Observe &, std::size_t, const CompletedEvaluationView &>
   void finish_selected_evaluations(std::span<const EvaluationOutput> outputs,
-                                  std::span<std::int32_t> next_ids, Select select, Observe observe) {
-    finish_selected_evaluations(outputs, next_ids, std::move(select), [](StepState &) {}, std::move(observe));
+                                  std::span<std::int32_t> next_ids, Select select, Observe observe, Publication &&publication = {}) {
+    finish_selected_evaluations(outputs, next_ids, std::move(select), [](StepState &) {}, std::move(observe), publication);
   }
 
   // Returns the actual verifier input [pending, proposal0, ...]. Approximate
@@ -5575,10 +5517,10 @@ public:
     }
   }
 
-  template<class Observe>
+  template<class Observe, class Publication = NoEvaluationPublication>
   void finish_recursive_mtp(std::span<const MtpGenerationSelection> selections,
       std::span<const std::int32_t> eos, std::span<const EvaluationOutput> outputs,
-      std::span<MtpRoundResult> results, Observe observe) {
+      std::span<MtpRoundResult> results, Observe observe, Publication &&publication = {}) {
     if (!active_step || selections.empty() || !active_step->phase || active_step->phase->family->role != GraphRole::kVerify ||
         !cache_plan.draft_cache || selections.size() != active_step->members.size() ||
         outputs.size() != selections.size() || results.size() != selections.size())
@@ -5673,24 +5615,14 @@ public:
             member.base->draft->lag + (member.accepted_tokens == 1 ? 1 : member.accepted_tokens - 1) +
             member.discarded_draft_rows;
         result.stopped = accepted.stopped;
-        if (outputs[j].generation_ledger) {
-          auto &record = outputs[j].generation_ledger->next();
-          if (!record.generation || record.quota != selection.output_quota)
-            throw std::runtime_error("recursive MTP ledger differs from its original output quota");
-          record.draft = result.draft; record.target_first = result.target_first;
-          record.target_second = result.target_second; record.agreed = result.agreed;
-          record.accepted_draft = result.accepted_draft; record.consumed_drafts = result.consumed_drafts;
-          record.auxiliary_graph_calls = result.auxiliary_graph_calls;
-          record.stopped = result.stopped; write_generation_tokens(record.emitted, result.emitted);
-          record.emitted_count = result.emitted.size();
-        }
+        publication.selected(j, result, selection.output_quota);
       }
-    }, [&](StepState &step) { repair_recursive_draft(step); }, std::move(observe));
+    }, [&](StepState &step) { repair_recursive_draft(step); }, std::move(observe), publication);
   }
 
-  template<class Observe>
+  template<class Observe, class Publication = NoEvaluationPublication>
   void finish_evaluations(std::span<const EvaluationOutput> outputs,
-                         std::span<std::int32_t> next_ids, Observe observe) {
+                         std::span<std::int32_t> next_ids, Observe observe, Publication &&publication = {}) {
     if (active_step && active_step->phase && verifies_prefix(active_step->phase->family->role))
       throw std::runtime_error("verification requires explicit accepted-boundary selection");
     finish_selected_evaluations(outputs, next_ids,
@@ -5699,15 +5631,15 @@ public:
             if (step.withdrawn(step.members[j])) { next[j] = -1; continue; }
             step.members[j].accepted_tokens = step.members[j].input_tokens; next[j] = ids[j];
           }
-        }, std::move(observe));
+        }, std::move(observe), publication);
   }
 
   // Generation policy observes only the original terminal graph. Pending has
   // already been emitted; an accepted draft and its bonus are new outputs.
-  template<class Observe>
+  template<class Observe, class Publication = NoEvaluationPublication>
   void finish_mtp_rounds(std::span<const MtpGenerationSelection> selections,
       std::span<const std::int32_t> eos, std::span<const EvaluationOutput> outputs,
-      std::span<MtpRoundResult> results, Observe observe) {
+      std::span<MtpRoundResult> results, Observe observe, Publication &&publication = {}) {
     if (!active_step || selections.empty() || selections.size() != active_step->members.size() ||
         outputs.size() != selections.size() || results.size() != selections.size() || !active_step->phase ||
         !has_mtp(active_step->phase->family->role) || is_mtp_prefill(active_step->phase->family->role))
@@ -5766,19 +5698,9 @@ public:
             result.proposal_count = drafts_token(role) ? 1 : 0;
             result.consumed_drafts = accepted.consumed_drafts; result.verified_rows = step.input_tokens;
             result.stopped = accepted.stopped;
-            if (outputs[j].generation_ledger) {
-              auto &record = outputs[j].generation_ledger->next();
-              if (!record.generation || record.quota != selection.output_quota)
-                throw std::runtime_error("MTP ledger quota differs from its original selection");
-              record.draft = result.draft; record.target_first = result.target_first;
-              record.target_second = result.target_second; record.agreed = result.agreed;
-              record.accepted_draft = result.accepted_draft; record.stopped = result.stopped;
-              record.consumed_drafts = result.consumed_drafts;
-              write_generation_tokens(record.emitted, {result.emitted[0], result.emitted.size() == 2 ? result.emitted[1] : -1});
-              record.emitted_count = result.emitted.size();
-            }
+            publication.selected(j, result, selection.output_quota);
           }
-        }, std::move(observe));
+        }, std::move(observe), publication);
   }
 
 };
@@ -5844,23 +5766,23 @@ void observe_completed_evaluation(Model &model, const EvaluationOutput &output,
 
 EvaluationOutput evaluation_output(Model &model, const std::shared_ptr<Session> &session,
     const EvaluationIO &io, double *complete_seconds = nullptr, Clock::time_point *host_endpoint = nullptr,
-    inference::StepObservation *observation = nullptr, inference::PreparationObservation *preparation = nullptr,
-    GenerationLedger *ledger = nullptr, const GenerationCommitRecord *expected = nullptr) {
+    inference::StepObservation *observation = nullptr, inference::PreparationObservation *preparation = nullptr) {
   return {.session = session, .capture_tensors = io.trace && !io.trace->empty(),
       .capture_probes = !model.layer0_probe.empty(), .complete_seconds = complete_seconds,
-      .host_endpoint = host_endpoint, .observation = observation, .preparation = preparation,
-      .generation_ledger = ledger, .expected_episode = expected};
+      .host_endpoint = host_endpoint, .observation = observation, .preparation = preparation};
 }
 
 MtpRoundResult finish_mtp_round(Model &model, Session &session, std::int32_t expected_pending,
     std::size_t output_quota, std::span<const std::int32_t> eos = {},
-    const EvaluationOutput *output = nullptr, const EvaluationIO &io = {.name = "mtp"}) {
+    const EvaluationOutput *output = nullptr, const EvaluationIO &io = {.name = "mtp"},
+    GenerationPublicationInput request_publication = {}) {
   const std::array selections{MtpGenerationSelection{session.shared_from_this(), expected_pending, output_quota}};
   const std::array outputs{output ? *output : evaluation_output(model, session.shared_from_this(), io)};
   std::array<MtpRoundResult, 1> results;
+  GenerationPublicationBatch publication({request_publication});
   model.finish_mtp_rounds(selections, eos, outputs, results, [&](std::size_t j, const CompletedEvaluationView &view) {
     observe_completed_evaluation(model, outputs[j], io, view);
-  });
+  }, publication);
   return std::move(results[0]);
 }
 
@@ -5872,11 +5794,12 @@ std::int32_t finish_evaluation(Model &model, Session &session, const std::string
     GenerationLedger *generation_ledger = nullptr, const GenerationCommitRecord *expected_episode = nullptr) {
   const EvaluationIO io{name, &trace, trace_states, probe_subdirectory};
   const std::array outputs{evaluation_output(model, session.shared_from_this(), io,
-      complete_seconds, host_endpoint, observation, preparation, generation_ledger, expected_episode)};
+      complete_seconds, host_endpoint, observation, preparation)};
+  GenerationPublicationBatch publication({{generation_ledger, expected_episode}});
   std::int32_t next = -1;
   model.finish_evaluations(outputs, std::span(&next, 1), [&](std::size_t j, const CompletedEvaluationView &view) {
     observe_completed_evaluation(model, outputs[j], io, view);
-  });
+  }, publication);
   return next;
 }
 
@@ -6273,14 +6196,14 @@ std::shared_ptr<Session> restore_mtp_session(Model &model, const GenerationLedge
       double step_seconds = 0;
       if (expected.generation) {
         const EvaluationIO io{name, &trace, trace_states};
-        const auto output = evaluation_output(model, session, io, &step_seconds,
-            nullptr, nullptr, nullptr, &actual, &expected);
+        const auto output = evaluation_output(model, session, io, &step_seconds);
         if (expected.role == GraphRole::kVerify) {
           const std::array selections{MtpGenerationSelection{session, pending, expected.quota, q, expected.draft_limit}};
           const std::array outputs{output}; std::array<MtpRoundResult, 1> results;
+          GenerationPublicationBatch publication({{&actual, &expected}});
           model.finish_recursive_mtp(selections, eos, outputs, results,
-              [&](std::size_t j, const CompletedEvaluationView &view) { observe_completed_evaluation(model, outputs[j], io, view); });
-        } else (void)qwen35::finish_mtp_round(model, *session, pending, expected.quota, eos, &output, io);
+              [&](std::size_t j, const CompletedEvaluationView &view) { observe_completed_evaluation(model, outputs[j], io, view); }, publication);
+        } else (void)qwen35::finish_mtp_round(model, *session, pending, expected.quota, eos, &output, io, {&actual, &expected});
       } else {
         (void)qwen35::finish_evaluation(model, *session, name, trace, trace_states, &step_seconds,
             nullptr, nullptr, nullptr, {}, &actual, &expected);
@@ -7149,17 +7072,20 @@ struct GenerationStepAdapter final {
     for (auto &call : current) {
       auto &request = *call.request;
       outputs.push_back(evaluation_output(model, request.session, {call.name, &request.trace, trace_states},
-          &call.step_seconds, &request.endpoint, nullptr, nullptr, request.ledger.get()));
+          &call.step_seconds, &request.endpoint, nullptr, nullptr));
       outputs.back().disposition = &call.disposition;
       if (mtp) selections.push_back({request.session, call.pending, call.quota, {}, call.maximum});
     }
+    GenerationPublicationBatch publication(current.size(), [&](std::size_t index) {
+      return GenerationPublicationInput{current[index].request->ledger.get(), nullptr};
+    });
     const auto observe = [&](std::size_t j, const CompletedEvaluationView &view) {
       auto &call = current[j]; auto &request = *call.request;
       observe_completed_evaluation(model, outputs[j], {call.name, &request.trace, trace_states}, view);
     };
     if (mtp) model.finish_mtp_rounds(std::span(selections.data(), selections.size()), model_eos_tokens,
-        std::span(outputs.data(), outputs.size()), std::span(results.data(), results.size()), observe);
-    else model.finish_evaluations(std::span(outputs.data(), outputs.size()), std::span(next.data(), next.size()), observe);
+        std::span(outputs.data(), outputs.size()), std::span(results.data(), results.size()), observe, publication);
+    else model.finish_evaluations(std::span(outputs.data(), outputs.size()), std::span(next.data(), next.size()), observe, publication);
     double seconds = 0;
     for (const auto &call : current) seconds = (std::max)(seconds, call.step_seconds);
     if (!seconds) seconds = std::chrono::duration<double>(Clock::now() - started).count();
@@ -7387,7 +7313,7 @@ struct SynchronousGenerationStepAdapter final {
       inputs.push_back({request.session, call.ids(), &request.ledger->stop_policy(), call.logits, call.conditional_logits, request.request_key});
       outputs.push_back(evaluation_output(model, request.session, {call.name, &request.trace, trace_states},
           &call.step_seconds, generation ? &request.endpoint : &request.prefill_endpoint,
-          nullptr, nullptr, request.ledger.get()));
+          nullptr, nullptr));
       outputs.back().disposition = &call.disposition;
       if (generation && role != GraphRole::kText) selections.push_back({request.session, call.pending, call.quota, call.draft_log_probabilities, call.maximum});
     }
@@ -7436,6 +7362,9 @@ struct SynchronousGenerationStepAdapter final {
   void finish(Position) {
     bool prepared_ahead = false;
     const auto &eos = model_eos_tokens;
+    GenerationPublicationBatch publication(calls.size(), [&](std::size_t index) {
+      return GenerationPublicationInput{calls[index].request->ledger.get(), nullptr};
+    });
     const auto observe = [&](std::size_t j, const CompletedEvaluationView &view) {
       const auto &call = calls[j];
       observe_completed_evaluation(model, outputs[j], {call.name, &call.request->trace, trace_states}, view);
@@ -7457,15 +7386,15 @@ struct SynchronousGenerationStepAdapter final {
     }
     if (generation && role == GraphRole::kVerify) {
       model.finish_recursive_mtp(std::span(selections.data(), selections.size()), eos,
-          std::span(outputs.data(), outputs.size()), std::span(results.data(), results.size()), observe);
+          std::span(outputs.data(), outputs.size()), std::span(results.data(), results.size()), observe, publication);
       // The original verifier and prefix decision have retired and released
       // their reads. Completed call records no longer need these private q
       // leases; retaining them would charge the next episode's bounded pool.
       for (auto &call : calls) call.draft_log_probabilities.clear();
     }
     else if (generation && role != GraphRole::kText) model.finish_mtp_rounds(std::span(selections.data(), selections.size()), eos,
-        std::span(outputs.data(), outputs.size()), std::span(results.data(), results.size()), observe);
-    else model.finish_evaluations(std::span(outputs.data(), outputs.size()), std::span(next.data(), next.size()), observe);
+        std::span(outputs.data(), outputs.size()), std::span(results.data(), results.size()), observe, publication);
+    else model.finish_evaluations(std::span(outputs.data(), outputs.size()), std::span(next.data(), next.size()), observe, publication);
     double target_seconds = 0, proposal_seconds = 0;
     for (std::size_t j = 0; j < calls.size(); ++j) {
       target_seconds = (std::max)(target_seconds, calls[j].step_seconds);

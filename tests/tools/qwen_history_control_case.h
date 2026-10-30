@@ -82,11 +82,11 @@ inline q::MtpRoundResult control_round(q::Model &model, const std::shared_ptr<q:
   q::prepare_generation_record(ledger, *session, q::GraphRole::kVerify, std::span(&pending, 1), true, 3, 0, {}, 2);
   model.prepare_evaluation(*session, ids, nullptr, q::GraphRole::kVerify, q::TextCompletion::kEmitNext, nullptr, inputs);
   model.submit_evaluation(*session);
-  const std::array outputs{q::evaluation_output(model, session, {.name = "history-survivor-control", .trace_states = false},
-      nullptr, nullptr, nullptr, nullptr, &ledger)};
+  const std::array outputs{q::evaluation_output(model, session, {.name = "history-survivor-control", .trace_states = false})};
+  q::GenerationPublicationBatch publication({{&ledger,nullptr}});
   const std::array selections{q::MtpGenerationSelection{session, pending, 3, probabilities, 2}};
   std::array<q::MtpRoundResult, 1> result;
-  model.finish_recursive_mtp(selections, q::model_eos_tokens, outputs, result, [](auto, const auto &) {});
+  model.finish_recursive_mtp(selections, q::model_eos_tokens, outputs, result, [](auto, const auto &) {}, publication);
   require(session->head.epoch() == epoch + 1 && session->head->sampling == cursor.advanced(5) && ledger.committed_count == 1,
       "history survivor control changed its original epoch or RNG reservation");
   probabilities.clear(); t::idle(model); return std::move(result[0]);

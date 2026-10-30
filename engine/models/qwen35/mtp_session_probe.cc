@@ -755,8 +755,8 @@ void resume_commit(q::Model &model, ResumeObservation &observation, const std::s
   model.submit_evaluation(*session); ++observation.graph_calls; ++observation.positive_graph_calls;
   hyle::inference::StepObservation step;
   const q::EvaluationIO selected_io{.name = name, .trace = &trace, .trace_states = false};
-  const auto selected = q::evaluation_output(model, session, selected_io, nullptr, nullptr, &step, nullptr, &ledger);
-  if (generation) (void)q::finish_mtp_round(model, *session,inputs.front(),quota,q::model_eos_tokens,&selected, selected_io);
+  const auto selected = q::evaluation_output(model, session, selected_io, nullptr, nullptr, &step, nullptr);
+  if (generation) (void)q::finish_mtp_round(model, *session,inputs.front(),quota,q::model_eos_tokens,&selected, selected_io, {&ledger});
   else (void)q::finish_evaluation(model, *session,name,trace,false,nullptr,nullptr,&step,nullptr,{},&ledger);
   observation.observe(model);
   require(!model.active_step && !model.carrier_borrowed && !session->pending && ledger.committed_count &&
@@ -1015,8 +1015,8 @@ void batch_single_commit(q::Model &model, MtpBatchObservation &observation, cons
   q::prepare_generation_record(ledger,*session,role,inputs,generation,quota,turn);
   model.prepare_evaluation(*session,inputs,nullptr,role); observation.observe(model); model.submit_evaluation(*session); ++observation.graph_calls;
   const q::EvaluationIO output_io{.name = name, .trace_states = false};
-  const auto output = q::evaluation_output(model, session, output_io, nullptr, nullptr, nullptr, nullptr, &ledger);
-  if (generation) (void)q::finish_mtp_round(model, *session,expected_pending,quota,q::model_eos_tokens,&output, output_io);
+  const auto output = q::evaluation_output(model, session, output_io, nullptr, nullptr, nullptr, nullptr);
+  if (generation) (void)q::finish_mtp_round(model, *session,expected_pending,quota,q::model_eos_tokens,&output, output_io, {&ledger});
   else (void)q::finish_evaluation(model, *session,name,{},false,nullptr,nullptr,nullptr,nullptr,{},&ledger);
   observation.observe(model); observation.episode(name,ledger.records[ledger.committed_count - 1]);
 }
@@ -1119,13 +1119,14 @@ void run_batch(const std::filesystem::path &inputs, const std::filesystem::path 
     const std::array selections{q::MtpGenerationSelection{sessions[0],pending[0],2},q::MtpGenerationSelection{sessions[1],pending[1],1}};
     const std::array outputs_io{q::EvaluationIO{.name = "batch_member0", .trace_states = false},
         q::EvaluationIO{.name = "batch_member1", .trace_states = false}};
-    const std::array outputs{q::evaluation_output(model, sessions[0], outputs_io[0], nullptr, nullptr, nullptr, nullptr, &ledgers[0]),
-        q::evaluation_output(model, sessions[1], outputs_io[1], nullptr, nullptr, nullptr, nullptr, &ledgers[1])};
+    const std::array outputs{q::evaluation_output(model, sessions[0], outputs_io[0], nullptr, nullptr, nullptr, nullptr),
+        q::evaluation_output(model, sessions[1], outputs_io[1], nullptr, nullptr, nullptr, nullptr)};
+    q::GenerationPublicationBatch publication({{&ledgers[0]}, {&ledgers[1]}});
     std::array<q::MtpRoundResult,2> results;
     model.submit_evaluations(); ++observation.graph_calls;
     model.finish_mtp_rounds(selections,q::model_eos_tokens,outputs,results, [&](std::size_t j, const q::CompletedEvaluationView &view) {
           q::observe_completed_evaluation(model, outputs[j], outputs_io[j], view);
-        }); observation.observe(model);
+        }, publication); observation.observe(model);
     for (std::size_t j = 0; j < 2; ++j) {
       const auto &record = ledgers[j].records[1]; observation.accepted[j] = record.accepted;
       require(record.committed && record.requests == 2 && record.member_index == j && record.accepted >= 1 && record.accepted <= 2 &&
@@ -1224,9 +1225,9 @@ void run_batch(const std::filesystem::path &inputs, const std::filesystem::path 
             observation.external_pending != observation.external_original_prediction,"expected pending overwrote the real head prediction");
     auto *const policy_phase = sessions[0]->pending->phase;
     const q::EvaluationIO policy_output_io{.name = "external_sampled_pending", .trace_states = false};
-    const auto policy_output = q::evaluation_output(model, sessions[0], policy_output_io, nullptr, nullptr, nullptr, nullptr, &ledgers[0]);
+    const auto policy_output = q::evaluation_output(model, sessions[0], policy_output_io, nullptr, nullptr, nullptr, nullptr);
     model.submit_evaluation(*sessions[0]); ++observation.graph_calls;
-    const auto policy_result = q::finish_mtp_round(model, *sessions[0],observation.external_pending,2,q::model_eos_tokens,&policy_output, policy_output_io);
+    const auto policy_result = q::finish_mtp_round(model, *sessions[0],observation.external_pending,2,q::model_eos_tokens,&policy_output, policy_output_io, {&ledgers[0]});
     observation.pending_policy = policy_result.pending == observation.external_pending && ledgers[0].records[3].pending_input == observation.external_pending;
     require(observation.pending_policy,"generation ignored its original explicit external pending token");
     observation.episode("external_sampled_pending",ledgers[0].records[3]);
@@ -1322,12 +1323,13 @@ void run_numerics(const std::filesystem::path &inputs, const std::filesystem::pa
     auto *const prefill2 = model.active_step->phase;
     const std::array seed_outputs_io{q::EvaluationIO{.name = "seed_R2_0", .trace_states = false},
         q::EvaluationIO{.name = "seed_R2_1", .trace_states = false}};
-    const std::array seed_outputs{q::evaluation_output(model, seed_sessions[0], seed_outputs_io[0], nullptr, nullptr, nullptr, nullptr, &seed_ledgers[0]),
-        q::evaluation_output(model, seed_sessions[1], seed_outputs_io[1], nullptr, nullptr, nullptr, nullptr, &seed_ledgers[1])};
+    const std::array seed_outputs{q::evaluation_output(model, seed_sessions[0], seed_outputs_io[0], nullptr, nullptr, nullptr, nullptr),
+        q::evaluation_output(model, seed_sessions[1], seed_outputs_io[1], nullptr, nullptr, nullptr, nullptr)};
+    q::GenerationPublicationBatch seed_publication({{&seed_ledgers[0]}, {&seed_ledgers[1]}});
     std::array<std::int32_t,2> seed_ids{-1,-1}; model.submit_evaluations(); ++observation.data.graph_calls;
     model.finish_evaluations(seed_outputs,seed_ids, [&](std::size_t j, const q::CompletedEvaluationView &view) {
           q::observe_completed_evaluation(model, seed_outputs[j], seed_outputs_io[j], view);
-        }); observation.data.observe(model);
+        }, seed_publication); observation.data.observe(model);
     const auto seed_r2 = observation.data.record("seed_R2_0",batch_image(model,*seed_sessions[0],*prefill2,0,2),&seed_r1);
     (void)observation.data.record("seed_R2_1",batch_image(model,*seed_sessions[1],*prefill2,1,2),&seed_r2);
     for (std::size_t j = 0; j < 2; ++j) observation.data.episode("seed_R2_" + std::to_string(j),seed_ledgers[j].records[0]);
@@ -1386,12 +1388,13 @@ void run_numerics(const std::filesystem::path &inputs, const std::filesystem::pa
       const std::array selections{q::MtpGenerationSelection{twins[0],pending,2},q::MtpGenerationSelection{twins[1],pending,2}};
       const std::array outputs_io{q::EvaluationIO{.name = label, .trace_states = false},
           q::EvaluationIO{.name = label, .trace_states = false}};
-      const std::array outputs{q::evaluation_output(model, twins[0], outputs_io[0], nullptr, nullptr, nullptr, nullptr, &twin_ledgers[0]),
-          q::evaluation_output(model, twins[1], outputs_io[1], nullptr, nullptr, nullptr, nullptr, &twin_ledgers[1])};
+      const std::array outputs{q::evaluation_output(model, twins[0], outputs_io[0], nullptr, nullptr, nullptr, nullptr),
+          q::evaluation_output(model, twins[1], outputs_io[1], nullptr, nullptr, nullptr, nullptr)};
+      q::GenerationPublicationBatch twin_publication({{&twin_ledgers[0]}, {&twin_ledgers[1]}});
       std::array<q::MtpRoundResult,2> results; model.submit_evaluations(); ++observation.data.graph_calls;
       model.finish_mtp_rounds(selections,q::model_eos_tokens,outputs,results, [&](std::size_t j, const q::CompletedEvaluationView &view) {
             q::observe_completed_evaluation(model, outputs[j], outputs_io[j], view);
-          }); observation.data.observe(model);
+          }, twin_publication); observation.data.observe(model);
       const auto member0 = observation.data.record(label + "_R2_member0",batch_image(model,*twins[0],*phase,0,2),&reference);
       (void)observation.data.record(label + "_R2_member1",batch_image(model,*twins[1],*phase,1,2),&member0);
       for (std::size_t j = 0; j < 2; ++j) observation.data.episode(label + "_R2_member" + std::to_string(j),twin_ledgers[j].records[0]);

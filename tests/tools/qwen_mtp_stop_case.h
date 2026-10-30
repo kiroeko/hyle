@@ -99,13 +99,13 @@ inline Selected select(q::Model &model, const std::shared_ptr<q::Session> &sessi
   q::prepare_generation_record(ledger,*session,role,std::span(&pending,1),true,quota,0,{},ids.size()-1);
   const std::array input{q::EvaluationRequest{session,ids,&ledger.stop_policy()}};
   model.prepare_evaluations(input,nullptr,role); model.submit_evaluations();
-  const auto output=q::evaluation_output(model,session,{.name="mtp-stop-raw",.trace_states=false},
-      nullptr,nullptr,nullptr,nullptr,&ledger);
+  const auto output=q::evaluation_output(model,session,{.name="mtp-stop-raw",.trace_states=false});
+  q::GenerationPublicationBatch publication({{&ledger,nullptr}});
   const std::array outputs{output}; const std::array selections{q::MtpGenerationSelection{session,pending,quota}};
   std::array<q::MtpRoundResult,1> results;
   if (role==q::GraphRole::kVerify)
-    model.finish_recursive_mtp(selections,q::model_eos_tokens,outputs,results,[](auto,const auto &){});
-  else model.finish_mtp_rounds(selections,q::model_eos_tokens,outputs,results,[](auto,const auto &){});
+    model.finish_recursive_mtp(selections,q::model_eos_tokens,outputs,results,[](auto,const auto &){},publication);
+  else model.finish_mtp_rounds(selections,q::model_eos_tokens,outputs,results,[](auto,const auto &){},publication);
   idle(model); require(ledger.committed_count==1,"MTP stop raw episode did not commit its original ledger");
   return {std::move(results[0]),ledger.records[0]};
 }

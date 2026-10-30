@@ -12,6 +12,9 @@
 #include <vector>
 
 #include "execution_mode.h"
+#include "state_boundary.h"
+#include <algorithm>
+#include <initializer_list>
 #include "../../inference/request_stop_policy.h"
 #include "../../inference/sampling_cursor.h"
 #include "../../inference/history_counts.h"
@@ -23,13 +26,19 @@ namespace qwen35 {
 struct PreparedSampling;
 struct ColdResources;
 
-struct GenerationBoundary final {
-  std::size_t length = 0, frontier = 0;
-  std::uint32_t lag = 0;
-  std::int32_t next_id = -1, catchup_token = -1;
-  hyle::inference::SamplingCursor sampling{};
-  friend bool operator==(const GenerationBoundary &, const GenerationBoundary &) = default;
-};
+
+
+// Ledger token storage is reserved with the request. Its sources are separate
+// episode/result values; replacement assignment would discard that capacity.
+inline void write_generation_tokens(hyle::container::SmallVector<std::int32_t, 2> &tokens,
+    std::span<const std::int32_t> values) {
+  if (!tokens.try_resize(values.size())) throw std::bad_alloc{};
+  std::copy(values.begin(), values.end(), tokens.begin());
+}
+inline void write_generation_tokens(hyle::container::SmallVector<std::int32_t, 2> &tokens,
+    std::initializer_list<std::int32_t> values) {
+  write_generation_tokens(tokens, std::span<const std::int32_t>(values.begin(), values.size()));
+}
 
 struct GenerationCommitRecord final {
   GraphRole role = GraphRole::kMtpPrefill;

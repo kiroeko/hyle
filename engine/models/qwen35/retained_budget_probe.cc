@@ -122,9 +122,9 @@ q::MtpRoundResult finish(q::Model &model, const std::shared_ptr<q::Session> &ses
                        std::int32_t pending, q::GenerationLedger &ledger,
                        std::string_view name, const q::GenerationCommitRecord *expected = nullptr) {
   const q::EvaluationIO output_io{.name = name, .trace_states = false};
-  const auto output = q::evaluation_output(model, session, output_io, nullptr, nullptr, nullptr, nullptr, &ledger, expected);
+  const auto output = q::evaluation_output(model, session, output_io, nullptr, nullptr, nullptr, nullptr);
   return q::finish_mtp_round(model, *session, pending, 2,
-      q::model_eos_tokens, &output, output_io);
+      q::model_eos_tokens, &output, output_io, {&ledger, expected});
 }
 
 void run(const std::filesystem::path &inputs, const std::filesystem::path &output) {

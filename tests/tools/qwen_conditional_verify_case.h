@@ -126,8 +126,8 @@ inline int run(const std::filesystem::path &input,q::BackendKind kind) {
   };
   const auto finish = [&](const std::shared_ptr<q::Session> &session,q::GenerationLedger &ledger,
       const Proposal &proposal,q::MtpRoundResult &result) {
-    auto output = q::evaluation_output(model,session,{.name = "conditional-verify",.trace_states = false},
-        nullptr,nullptr,nullptr,nullptr,&ledger);
+    auto output = q::evaluation_output(model,session,{.name = "conditional-verify",.trace_states = false});
+    q::GenerationPublicationBatch publication({{&ledger,nullptr}});
     output.capture_tensors = true;
     const std::array outputs{output};
     const std::array selections{q::MtpGenerationSelection{session,proposal.ids.front(),3,proposal.q,2}};
@@ -148,7 +148,7 @@ inline int run(const std::filesystem::path &input,q::BackendKind kind) {
           result.agreed == reference.first_agrees && result.stopped == reference.stopped,
           "actual conditional Verify differs from independent real-logit p/q acceptance/residual/bonus mathematics");
       ++independent_decisions;
-    });
+    },publication);
     t::idle(model);
   };
   q::GenerationLedger control_ledger(1,3); control_ledger.bind_stop_policy({},model.vocabulary);

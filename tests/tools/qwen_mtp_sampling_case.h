@@ -41,13 +41,13 @@ inline q::MtpRoundResult round(q::Model &model, const std::shared_ptr<q::Session
   require(model.active_step->phase->family->sampling == &selected,
       "MTP phase used another request's prepared sampler");
   model.submit_evaluation(*session);
-  const auto output = q::evaluation_output(model, session, {.name = "sampling-round", .trace_states = false},
-      nullptr, nullptr, nullptr, nullptr, &ledger);
+  const auto output = q::evaluation_output(model, session, {.name = "sampling-round", .trace_states = false});
+  q::GenerationPublicationBatch publication({{&ledger,nullptr}});
   const std::array outputs{output};
   const std::array selections{q::MtpGenerationSelection{session, pending, 3, probabilities, recursive ? 2u : 1u}};
   std::array<q::MtpRoundResult, 1> result;
-  if (recursive) model.finish_recursive_mtp(selections, q::model_eos_tokens, outputs, result, [](auto, const auto &) {});
-  else model.finish_mtp_rounds(selections, q::model_eos_tokens, outputs, result, [](auto, const auto &) {});
+  if (recursive) model.finish_recursive_mtp(selections, q::model_eos_tokens, outputs, result, [](auto, const auto &) {}, publication);
+  else model.finish_mtp_rounds(selections, q::model_eos_tokens, outputs, result, [](auto, const auto &) {}, publication);
   const auto expected_cursor = selected.configuration.enabled ? cursor.advanced(recursive ? 5 : 3) : q::cache::SamplingCursor{};
   require(session->head.epoch() == epoch + 1 && session->head->sampling == expected_cursor &&
       session->length() == old.length + result[0].processed_target && ledger.committed_count == 1 &&

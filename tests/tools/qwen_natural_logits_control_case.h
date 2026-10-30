@@ -47,11 +47,11 @@ inline q::MtpRoundResult control_round(q::Model &model,const std::shared_ptr<q::
   const i::ConditionalLogitsInputs conditional{rows};
   const std::array inputs{q::EvaluationRequest{session,ids,&ledger.stop_policy(),shared,conditional}};
   model.prepare_evaluations(inputs,nullptr,q::GraphRole::kVerify); model.submit_evaluations(); ++submissions;
-  const std::array outputs{q::evaluation_output(model,session,{.name = "conditional-control-R1",.trace_states = false},
-      nullptr,nullptr,nullptr,nullptr,&ledger)};
+  const std::array outputs{q::evaluation_output(model,session,{.name = "conditional-control-R1",.trace_states = false})};
+  q::GenerationPublicationBatch publication({{&ledger,nullptr}});
   const std::array selections{q::MtpGenerationSelection{session,pending,3,probabilities,2}};
   std::array<q::MtpRoundResult,1> result;
-  model.finish_recursive_mtp(selections,q::model_eos_tokens,outputs,result,[](auto,const auto &) {});
+  model.finish_recursive_mtp(selections,q::model_eos_tokens,outputs,result,[](auto,const auto &) {},publication);
   require(ledger.committed_count == 1 && session->head->sampling == cursor.advanced(5),
       "conditional R1 control changed the original reserved draw interval");
   probabilities.clear(); t::idle(model); return std::move(result[0]);

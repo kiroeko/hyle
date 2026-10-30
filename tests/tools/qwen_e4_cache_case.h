@@ -57,15 +57,16 @@ inline void partial_cancel(q::Model &model) {
         "member retirement aborted or published its still-shared original episode");
     std::array disposition{q::EvaluationDisposition::kNotPublished, q::EvaluationDisposition::kNotPublished};
     const std::array outputs{
-      q::EvaluationOutput{.session=a, .generation_ledger=&ledger_a, .disposition=&disposition[0]},
-      q::EvaluationOutput{.session=b, .generation_ledger=&ledger_b, .disposition=&disposition[1]}};
+      q::EvaluationOutput{.session=a, .disposition=&disposition[0]},
+      q::EvaluationOutput{.session=b, .disposition=&disposition[1]}};
+    q::GenerationPublicationBatch publication({{&ledger_a,nullptr},{&ledger_b,nullptr}});
     std::array<std::int32_t, 2> next{};
     std::size_t observers = 0;
     model.finish_evaluations(outputs, next, [&](std::size_t member, const q::CompletedEvaluationView &view) {
       require(member == 1 && view.member_index == 1 && view.requests == 2,
           "cancelled output reached the successful publication observer");
       ++observers;
-    });
+    },publication);
     require(disposition[0] == q::EvaluationDisposition::kCancelled &&
         disposition[1] == q::EvaluationDisposition::kPublished && observers == 1,
         "member result disposition did not distinguish cancelled and published output");
