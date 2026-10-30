@@ -206,7 +206,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   const auto next_counts = hc::counts(model, hc::consumed(*owners[1].ledger), std::span(&pending, 1));
   auto committed_survivor = e::save(model, owners[1], storage);
   bool refused = false;
-  try { (void)model.history_logits_inputs(*owners[1].ledger, std::span(&pending, 1)); }
+  try { (void)q::history_logits_inputs(model, *owners[1].ledger, std::span(&pending, 1)); }
   catch (const std::runtime_error &failure) { refused = std::string_view(failure.what()) == "lease block capacity"; }
   const auto denied = pool.allocate(static_cast<std::size_t>(model.vocabulary) * sizeof(std::int32_t));
   require(refused && !denied && denied.error().IsResourceExhausted() && pool.stats().live_blocks == 2,
@@ -218,7 +218,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   committed_survivor.checkpoint.reset();
   escaped = {}; require(pool.stats().live_blocks == 0, "retired escaped C0 still retained original pool blocks");
   {
-    auto retry = model.history_logits_inputs(*owners[1].ledger, std::span(&pending, 1));
+    auto retry = q::history_logits_inputs(model, *owners[1].ledger, std::span(&pending, 1));
     hc::same_counts(model, retry.counts, next_counts); cache_is_committed(model, *owners[1].ledger);
     require(pool.stats().max_blocks == plan.active_sequences && pool.stats().live_blocks == 1,
         "same-key C0 retry used a larger or second snapshot pool");
@@ -277,7 +277,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   {
     const auto next = owners[1].session->head->next_id;
     const auto expected_next = hc::counts(model, hc::consumed(*owners[1].ledger), std::span(&next, 1));
-    auto next_c0 = model.history_logits_inputs(*owners[1].ledger, std::span(&next, 1));
+    auto next_c0 = q::history_logits_inputs(model, *owners[1].ledger, std::span(&next, 1));
     hc::same_counts(model, next_c0.counts, expected_next); cache_is_committed(model, *owners[1].ledger);
   }
   qwen_history_control_case::check_old(model, restored_checkpoint, parked, storage);

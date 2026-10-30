@@ -14,8 +14,8 @@ CLI formatter 已独立编译。Qwen 与真实 GLM StateHead 组件已消费共�
 尚无第二个完整引擎模型验证整套编排复用。
 共同部分现包括程序／IO／物理槽、分页准备、普通及后继准备入口、完整阶段交接和跨pump请求控制。
 共同`drive_steps`现控制Qwen连续普通／K1的前后继推进、同步／packed／递归目标步骤、跨pump保留和异常恢复，静态模型适配保留实际数学、状态和Head发布。
-GLM实际普通续算消费同一驱动的同步分支，不需要实现空的后继接口。共同资源交接继续使用原`ExecutionEpisode`，
-不要求不同家族采用相同的阶段或状态结构。结果／提交见证已分离；采样／历史输入的请求桥接与GLM K1候选驱动仍待收敛，不能据此宣称完整共同执行架构完成。
+GLM实际普通续算与K1未发布候选消费同一驱动的同步分支，不需要实现空的后继接口。共同资源交接继续使用原`ExecutionEpisode`，
+不要求不同家族采用相同的阶段或状态结构。结果／提交见证已分离；采样身份与历史输入桥接已移到请求侧。完整共同执行架构继续联合复审，不能仅据两个迁移节点宣称完成。
 当前先继续架构收敛，再集中优化性能；第二完整模型仍未验证。
 实施状态只在 [进度看板](../developer/inference-progress.md)更新，功能和硬件边界见[实现范围](../implementation/inference-roadmap.md)。
 
@@ -63,7 +63,10 @@ Qwen同步／packed prefill／递归验证目标步骤现通过`SynchronousGener
 [本片有限检查](../evidence/correctness/inference-synchronous-step-driver-2026-10-30.json)覆盖实际packed路径、递归变长验证、取消、晚观察失败、退休及真实K1，未做独立性能实验。
 结果／提交见证已通过[调用期publication投影](../evidence/correctness/inference-publication-boundary-2026-10-30.json)分离：预检与记录填写归请求侧，模型只同步消费原通用票据完成Head发布；Step不保留账簿、记录、票据或清理回调。
 全组预检、递归修复、结果核对、逐Head立即见证、所有已提交记录统一计时、最后观察的顺序保留。失败仍由原Model／Graph判定真实退休，投影只在已退休时丢弃其捕获的精确未提交槽。
-Model内仍有采样／历史输入的两个请求桥接，GLM K1候选步骤也仍需消费共同驱动；不能将本片当作完整执行架构完成。Graph仍是唯一原生执行与退休权威。
+采样身份与历史输入的两个桥接现为请求侧free helpers，保留原模型身份检查、HistoryCounts临时条件恢复及分配→write→publish顺序；Model不再借用请求ledger。
+GLM K1候选也已消费同一同步驱动，prepare预检、submit执行原verify数学、finish显式观察并交回未发布候选；Head发布与接受后journal维护仍由原请求按原时序完成。
+[请求桥接与K1步骤检查](../evidence/correctness/inference-request-bridges-2026-10-30.json)保留实际输出、完整状态与RNG。Graph仍是唯一原生执行与退休权威。
+联合复审仍须补候选观察失败时的原Invocation退休与未发布清理检查，不将本片当作完整执行架构完成。
 不按文件长度机械搬代码；以实际控制逻辑能由不同状态形状消费为准，不新增热回调表或通用大ModelOps。
 
 共同调度按真实调用分工：请求窗口、兼容分组、接纳／淘汰、输出额度和停止属于
@@ -84,7 +87,7 @@ GLM接受后先CAS并立即见证提交，再单独维护journal；模型保留�
 实际execute_step／execute_target现只形成原执行结果与未发布状态，reference、exact-row及EXPECT在scenario显式观察。
 GlmStepRuntime的普通、验证与修复返回实际输入／输出lease及必要状态，观察后立即释放；MoE判定使用各次执行的selection序号，不能读后来repair的最新选择。
 [两个原CUDA组件场景](../evidence/correctness/inference-glm-math-boundary-2026-10-30.json)的107项非计时报告与拆分前一致；原StateStore及resident容量上限未提高。
-这补齐了独立模型步骤的前置边界；随后实际ordinary步骤已接共同drive_steps的同步分支，其它制品／平台及完整步骤仍未据此代签。
+这补齐了独立模型步骤的前置边界；随后实际ordinary及K1候选步骤已接共同drive_steps的同步分支，其它制品／平台及完整模型仍未据此代签。
 这仍是有限target77／NextN78组件适配，不代表完整GLM prompt前向、异步合批或引擎API已经完成。
 
 读回的caller缓冲按具体编译程序的原存储域表准备，不能用Backend预设的域编号解释另一个程序。

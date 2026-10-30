@@ -1,0 +1,409 @@
+{
+  "schema": "hyle.inference-request-bridges.v1",
+  "date": "2026-10-30",
+  "base_commit": "ed92cd602",
+  "status": "FINITE_CHECKS_PASSED",
+  "pending": [],
+  "implementation": [
+    "Sampling identity and authoritative history-count input assembly are request-side free helpers; original ownership checks, condition RAII, pool allocation/write/publication order are retained.",
+    "Actual GLM RequestLoop K1 candidate uses the same static drive_steps synchronous branch: preflight in prepare, original verification mathematics in submit, scenario observation in finish. Original Head/publication, acceptance, repair, StateVersion and RNG remain with their existing owners.",
+    "Failure recovery drains only actual original in-flight GLM programs and clears unpublished candidate/emitted data only after actual retirement. No new execution owner, resource ledger, callback table or public structure layout."
+  ],
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 632263,
+      "sha256": "26d19c688110b53662ade686f79a6937810b7c8f38ed55a653ad93d9f7fb1360"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_history_control_case.h",
+      "bytes": 22258,
+      "sha256": "1cddd244dcf96fbfdd689dc77d7d3decbd1625ebe8dd22e900dbc380dac51a3b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_history_replay_case.h",
+      "bytes": 13261,
+      "sha256": "2a85d321e08aaf4a4901991099000d51ab30a12402ef9a8c0b3e1820ab64154d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_mtp_state_consumer_test.cc",
+      "bytes": 240557,
+      "sha256": "978970f8202bb3254e9752406ca0f2a159769d872de0d0e15d1a433dbb8af5e4"
+    }
+  ],
+  "checks": [
+    {
+      "name": "control-cpu",
+      "attempt": "attempt1",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\runs\\control-cpu\\attempt1\\report.json",
+        "bytes": 1778,
+        "sha256": "04e746db61aa664d172911b8dcc20e76553ba3467971fde22107a672c128ffbf"
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\runs\\control-cpu\\attempt1\\command.json",
+        "bytes": 240,
+        "sha256": "71ffc3db6b78a48f523f43c3206fbbd050b3a7d838a128ae7d2d8f9820efcbbf"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\bin\\tiny.exe",
+        "bytes": 145073152,
+        "sha256": "d0dadf0d162f35b94d8968a92f41fbcb4dd1af950036b0cb72e70e58b9a46a57"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 17192,
+        "started": 1793344015.1504793,
+        "seconds": 0.8946704864501953,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    {
+      "name": "history-cuda",
+      "attempt": "attempt1",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\runs\\history-cuda\\attempt1\\report.json",
+        "bytes": 3461,
+        "sha256": "73b9d34a8cefdf3ca5c8154ab5dba458a450626b7dd4e74585ed0337e0528964"
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\runs\\history-cuda\\attempt1\\command.json",
+        "bytes": 240,
+        "sha256": "f0bd870a84770df25ce9de5e8b63f8080ce96890722255062f2505e7b3ffec91"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\bin\\tiny.exe",
+        "bytes": 145073152,
+        "sha256": "d0dadf0d162f35b94d8968a92f41fbcb4dd1af950036b0cb72e70e58b9a46a57"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 41232,
+        "started": 1793344016.2226615,
+        "seconds": 1.1452796459197998,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    {
+      "name": "natural-cuda",
+      "attempt": "attempt1",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\runs\\natural-cuda\\attempt1\\report.json",
+        "bytes": 125095,
+        "sha256": "f21abd313dd7a032f1a25d623e41bce471991b599f7d6f52d5804d3065adb20b"
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\runs\\natural-cuda\\attempt1\\command.json",
+        "bytes": 240,
+        "sha256": "fb224d7bb89280b82ff0a3718c01d28b8d755c7499cfba9d7e85c349c1a83fbb"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\bin\\tiny.exe",
+        "bytes": 145073152,
+        "sha256": "d0dadf0d162f35b94d8968a92f41fbcb4dd1af950036b0cb72e70e58b9a46a57"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 61236,
+        "started": 1793344021.8303132,
+        "seconds": 1.1191043853759766,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    {
+      "name": "mtp",
+      "attempt": "attempt1",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\runs\\mtp\\attempt1\\report.json",
+        "bytes": 82946,
+        "sha256": "b0fd1142fc0300c16a35869cebac8223776397dbe34d1f44ee9c2179a5a0e033"
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\runs\\mtp\\attempt1\\command.json",
+        "bytes": 565,
+        "sha256": "5f96d24a096fef5429b2794d5339cc79ed3331f68c1f0d0e6249800911f91d87"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\bin\\cli.exe",
+        "bytes": 142976512,
+        "sha256": "99704eb3acfcf7beaddab6390539f2cbfd8032379ec4b92cf7297672da053082"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 39412,
+        "started": 1793344023.1276217,
+        "seconds": 3.627453565597534,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    {
+      "name": "greedy-cuda",
+      "attempt": "attempt1",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\runs\\greedy-cuda\\attempt1\\report.json",
+        "bytes": 4379,
+        "sha256": "a18ee623e16c10aa0a9151a56bdeee668eede331a54071cd08bc843f347ffb87"
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\runs\\greedy-cuda\\attempt1\\command.json",
+        "bytes": 388,
+        "sha256": "8de6307940c76d0de0eec4adbd578c8c23cde754a45c5fe852892aa7da20691d"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\bin\\glm.exe",
+        "bytes": 142313472,
+        "sha256": "9abc14bc90d8fba0ccf108dba9a7991323737ff0c26eaa3e2eb49cc977c006ad"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 25700,
+        "started": 1793344044.0188131,
+        "seconds": 89.444420337677,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    {
+      "name": "request-cuda",
+      "attempt": "attempt1",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\runs\\request-cuda\\attempt1\\report.json",
+        "bytes": 4521,
+        "sha256": "1d411013e61781687e0fcfe326fea81504c9584e3b2c7c54166f70bf26fb597b"
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\runs\\request-cuda\\attempt1\\command.json",
+        "bytes": 400,
+        "sha256": "9686af5cb84b2b20a53a1ebfb668c96861cf3270a28d423f84e32e24364848ed"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\bin\\glm.exe",
+        "bytes": 142313472,
+        "sha256": "9abc14bc90d8fba0ccf108dba9a7991323737ff0c26eaa3e2eb49cc977c006ad"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 63200,
+        "started": 1793344133.628776,
+        "seconds": 86.78078722953796,
+        "exit": 0,
+        "timed_out": false
+      }
+    }
+  ],
+  "comparisons": {
+    "real_K1_all_non_timing_fields_equal": true,
+    "real_K1_previous": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-boundary-20261030\\runs\\mtp\\attempt1\\report.json",
+      "bytes": 82951,
+      "sha256": "e20172831a2573c4fbf7df125affbd41b8563b614aba742168a499a8f63f28d4"
+    },
+    "normalization": "Recursive exclusion of keys ending _seconds or _per_second, identical to prior finish.py; no other omissions.",
+    "glm": {
+      "greedy-cuda": {
+        "equal": true,
+        "properties": 54,
+        "previous": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-publication-boundary-20261030\\runs\\greedy-cuda\\attempt1\\report.json",
+          "bytes": 4379,
+          "sha256": "a18ee623e16c10aa0a9151a56bdeee668eede331a54071cd08bc843f347ffb87"
+        }
+      },
+      "request-cuda": {
+        "equal": true,
+        "properties": 53,
+        "previous": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-glm-math-boundary-20261030\\runs\\request-cuda\\attempt1\\report.json",
+          "bytes": 4571,
+          "sha256": "5685f393cdf9c464dfac8ff8bb5081b95344230ef76f306d25e8aa76f61092b5"
+        }
+      }
+    }
+  },
+  "timing_diagnostic": {
+    "prefill_seconds": {
+      "previous": 0.0769281,
+      "current": 0.0711593
+    },
+    "decode_seconds": {
+      "previous": 0.6287982000000001,
+      "current": 0.64582
+    },
+    "decode_output_tokens_per_second": {
+      "previous": 100.1911265013163,
+      "current": 97.55040104053762
+    },
+    "output_tokens_per_second": {
+      "previous": 90.68671523223664,
+      "current": 89.2633859861784
+    },
+    "scope": "Single nonconcurrent diagnostic process against preceding finite check; no performance window, regression causality, or speedup claim."
+  },
+  "consumers": {
+    "cli": {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\compile\\cli\\receipt.json",
+        "bytes": 42979,
+        "sha256": "96904dbd227b985f10ef00de3dbe5cbd07883a062ecd9744f5641b04f81ca4d9"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\compile\\cli\\unit.obj",
+        "bytes": 26010275,
+        "sha256": "afbf83777ceaf0874a258d2344ddece280342c600fd1edf0594b3302f349185d"
+      },
+      "dependencies": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\compile\\cli\\dependencies.json",
+        "bytes": 41837,
+        "sha256": "9a13d40c3ddce509e35c5301eaa767592437ed0578b06fd369d36d2f941f2f9b"
+      },
+      "compile_process": {
+        "state": "TERMINAL",
+        "pid": 45948,
+        "started": 1793343497.659233,
+        "seconds": 31.9976327419281,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link_process": {
+        "state": "TERMINAL",
+        "pid": 2316,
+        "started": 1793344003.9470265,
+        "seconds": 1.8279368877410889,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    "tiny": {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\compile\\tiny\\receipt.json",
+        "bytes": 51944,
+        "sha256": "8a75b83aea55e6c2b388e87ce1565411a9e313baa74d90ec6ba95e10d01769e5"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\compile\\tiny\\unit.obj",
+        "bytes": 159004916,
+        "sha256": "7442f24c48252ab2fb25214e090c684c5eb8dc75f78afcd6e513dff9fe23f42f"
+      },
+      "dependencies": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\compile\\tiny\\dependencies.json",
+        "bytes": 45597,
+        "sha256": "b30228c555ccd02b1af951fd4100c8e622583a42152dc621e9f608172a16d344"
+      },
+      "compile_process": {
+        "state": "TERMINAL",
+        "pid": 59728,
+        "started": 1793343497.659233,
+        "seconds": 95.37533760070801,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link_process": {
+        "state": "TERMINAL",
+        "pid": 19388,
+        "started": 1793344007.1285245,
+        "seconds": 2.1892952919006348,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    "glm": {
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\compile\\glm\\receipt.json",
+        "bytes": 34497,
+        "sha256": "6db945bbcef14deb1bdc45fefb66e25de452370ef9e9072d55be148d39965049"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\compile\\glm\\unit.obj",
+        "bytes": 17436104,
+        "sha256": "c7916e8830daa70769ee81c3e645d888c4bcb5394b5ad5f5b6fd0a36111be30d"
+      },
+      "dependencies": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\compile\\glm\\dependencies.json",
+        "bytes": 63863,
+        "sha256": "4c71a3633f5ce70505c62c7f5618460ea7076d3e645ca5bd259eebaa2715199b"
+      },
+      "compile_process": {
+        "state": "TERMINAL",
+        "pid": 39624,
+        "started": 1793344010.6355004,
+        "seconds": 15.879029989242554,
+        "exit": 0,
+        "timed_out": false
+      },
+      "link_process": {
+        "state": "TERMINAL",
+        "pid": 59268,
+        "started": 1793344031.5747018,
+        "seconds": 1.8292665481567383,
+        "exit": 0,
+        "timed_out": false
+      }
+    }
+  },
+  "model_link_base": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\model-link-base.json",
+    "bytes": 107421,
+    "sha256": "c9d1b8a156d9cd7e8df6ae9136fbe37726d274b15c871006347d7c670cc5c9e0"
+  },
+  "source_audit": {
+    "Model_request_ledger_terms": 0
+  },
+  "build": {
+    "consumer_translation_units": 3,
+    "retained_sdk_inputs": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "max_compiler_concurrency": 2,
+    "compiled_previous_session": [
+      "cli",
+      "tiny"
+    ],
+    "compiled_resumed_session": [
+      "glm"
+    ],
+    "missing_cached_dependency_records": 69,
+    "missing_dependency_scope": "Unchanged native kernel/library inputs; affected engine CXX consumer includes checked separately."
+  },
+  "corrected_attempts": [
+    {
+      "kind": "postprocess",
+      "case": "natural-cuda",
+      "attempt": "attempt1",
+      "native_exit": 0,
+      "native_rerun": false,
+      "reason": "Original line-wise JSON parser rejected multiline output; separately parsed original complete JSON and applied original PASS checks.",
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030\\runs\\natural-cuda\\attempt1\\postprocess.json",
+        "bytes": 1032,
+        "sha256": "60b41d2ac3e3a79c7993fcbf2f7cf2e4a4180d9382b1552c46d811f71cfb4664"
+      }
+    }
+  ],
+  "limits": [
+    "These six finite checks validate this pending slice only; common execution architecture still requires joint review, and the complete goal remains active.",
+    "No independent performance candidate, profiler or complete cross-engine speed/memory window was run. Timings are diagnostic observations only.",
+    "GLM remains a finite target77/NextN78 original component, not complete GLM inference, cross-pump GLM or a second complete engine model.",
+    "Other artifacts/platforms, Apple/Vulkan, complete hybrid, multi-GPU and multi-machine were not run; no model quality claim.",
+    "Joint review identified a separate missing finite check for GLM K1 observer failure inside the common driver; follow-up keeps original native owners and unpublished candidate only."
+  ],
+  "environment": {
+    "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 12282 MiB",
+    "cpu": "13th Gen Intel(R) Core(TM) i9-13900K / 24 cores / 32 logical processors",
+    "os": "Windows 11 Pro for Workstations / 10.0.26200 / build 26200",
+    "compiler": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+    "compiler_file_version": "19.50.35728.0",
+    "source": "Actual nvidia-smi and Win32 CIM inspected in resumed session; compile command and installed compiler FileVersion read from cached recipe."
+  },
+  "cleanup": {
+    "status": "REMOVED_EXACT_RECREATABLE_IMAGES",
+    "retained": "SDK and current consumer objects, original cached weights, source, commands and reports",
+    "files": 10,
+    "bytes": 431768822,
+    "boundary": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-bridges-20261030"
+  }
+}

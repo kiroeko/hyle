@@ -27,7 +27,7 @@ inline q::LogitsInputs conditional(q::Model &model, q::GenerationLedger &ledger,
     std::span<const std::int32_t> ids, std::size_t index) {
   const auto committed = z::consumed(ledger);
   const auto expected = z::counts(model, committed, ids);
-  auto result = model.history_logits_inputs(ledger, ids, {}, index);
+  auto result = q::history_logits_inputs(model, ledger, ids, {}, index);
   z::same_counts(model, result.counts, expected);
   return result;
 }

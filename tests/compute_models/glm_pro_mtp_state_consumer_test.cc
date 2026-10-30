@@ -1682,11 +1682,17 @@ template<class Runtime> struct GlmStepRuntime final {
     return continued;
   }
 
-  Candidate verify_and_prepare(const c::StateVersion &base,const c::StateVersion &first_checkpoint,
+  void preflight_verification(const c::StateVersion &base,const c::StateVersion &first_checkpoint,
+      std::span<const c::ReadLease> q,Cursor cursor,Grant grant,Limits limits) const {
+    preflight(base,first_checkpoint,q,cursor,grant,limits);
+  }
+
+  // Called immediately after the same serialized caller's preflight. This is
+  // mathematical work over original programs, not another admission owner.
+  Candidate verify_prepared(const c::StateVersion &base,const c::StateVersion &first_checkpoint,
       std::span<const c::ReadLease> q,Cursor cursor,Grant grant,Limits limits,
       std::span<const c::ReadLease> external_checked,std::vector<std::int32_t> &emitted,
       std::uint64_t iteration) {
-    preflight(base,first_checkpoint,q,cursor,grant,limits);
     auto verified=advance_impl(first_checkpoint,second,iteration,{},nullptr,true);
     Candidate candidate;
     if(!target)candidate=prepare_verified_impl(base,first_checkpoint,verified.version,external_checked,q,cursor,grant,limits,emitted,iteration);
@@ -1698,6 +1704,14 @@ template<class Runtime> struct GlmStepRuntime final {
     }
     candidate.advancement=std::move(verified);
     return candidate;
+  }
+
+  Candidate verify_and_prepare(const c::StateVersion &base,const c::StateVersion &first_checkpoint,
+      std::span<const c::ReadLease> q,Cursor cursor,Grant grant,Limits limits,
+      std::span<const c::ReadLease> external_checked,std::vector<std::int32_t> &emitted,
+      std::uint64_t iteration) {
+    preflight_verification(base,first_checkpoint,q,cursor,grant,limits);
+    return verify_prepared(base,first_checkpoint,q,cursor,grant,limits,external_checked,emitted,iteration);
   }
 
   Candidate prepare_verified(const c::StateVersion &base,const c::StateVersion &first_checkpoint,
@@ -1822,6 +1836,15 @@ template<class Runtime> struct GlmStepRuntime final {
   }
 };
 
+// Failure-only observation of one original native owner. Draining an actual
+// unfinished Invocation is independent of its first error; successful idle
+// programs stay open for their next mathematical use.
+void retire_glm_program(Native &program,hyle::inference::RetirementObservation &observed) noexcept {
+  if(program.invocation.in_flight())
+    hyle::inference::record_retirement_status(observed.status,program.invocation.drain());
+  observed.retired=observed.retired&&!program.invocation.in_flight();
+}
+
 // A synchronous mathematical consumer of the common complete-step ordering.
 // All resources remain in the original Runtime/programs; only completed result
 // leases live here until the scenario explicitly observes them. There is no
@@ -1859,11 +1882,7 @@ struct GlmOrdinaryStepDriver final {
     hyle::inference::RetirementObservation observed{true,{}};
     if(failure&&failure->retirement_observed())observed.status=failure->retirement().status;
     const auto retire=[&](Native &program) noexcept {
-      // Match the original finite GLM retirement: only unfinished original
-      // native work is drained; successful idle Invocations remain reusable.
-      if(program.invocation.in_flight())
-        hyle::inference::record_retirement_status(observed.status,program.invocation.drain());
-      observed.retired=observed.retired&&!program.invocation.in_flight();
+      retire_glm_program(program,observed);
     };
     for(auto &phase:stage.program.phases)retire(phase);
     if(steps.target)for(auto &phase:steps.target->program.phases)retire(phase);
@@ -1877,6 +1896,55 @@ struct GlmOrdinaryStepDriver final {
     // These are unpublished mathematical results, not request commit records.
     // The original caller still owns every Head and authoritative record.
     if(retired) {actual.reset();policy.clear();}
+  }
+};
+
+// Only the actual request's unpublished K1 candidate consumes this protocol.
+// The same Runtime still owns acceptance mathematics, repair and complete
+// StateVersions; Head/record publication follows in the original request.
+template<class Runtime,class ObserveCandidate>
+struct GlmK1StepDriver final {
+  using Steps=GlmStepRuntime<Runtime>;
+  using Position=hyle::inference::StepPosition;
+  static constexpr bool kSupportsSuccessor=false;
+
+  Steps &steps;
+  const c::StateVersion &base,&first_checkpoint;
+  std::span<const c::ReadLease> q;
+  typename Steps::Cursor cursor;
+  typename Steps::Grant grant;
+  typename Steps::Limits limits;
+  std::span<const c::ReadLease> checked;
+  std::vector<std::int32_t> &emitted;
+  ObserveCandidate &observe_candidate;
+  std::optional<typename Steps::Candidate> actual;
+  typename Steps::Candidate result;
+
+  void prepare(Position) {steps.preflight_verification(base,first_checkpoint,q,cursor,grant,limits);}
+  void submit(Position) {actual=steps.verify_prepared(base,first_checkpoint,q,cursor,grant,limits,checked,emitted,7);}
+  bool cancelled() const noexcept {return false;}
+  void cancel(bool) {throw std::logic_error("synchronous GLM K1 candidate has no deferred cancellation");}
+  void finish(Position) {
+    observe_candidate(*actual);
+    result=std::move(*actual);actual.reset();
+  }
+  hyle::inference::RetirementObservation retire_failure(hyle::inference::EvaluationFailure *failure) noexcept {
+    hyle::inference::RetirementObservation observed{true,{}};
+    if(failure&&failure->retirement_observed())observed.status=failure->retirement().status;
+    const auto retire=[&](Native &program) noexcept {retire_glm_program(program,observed);};
+    for(auto &phase:steps.second.program.phases)retire(phase);
+    if(steps.target) {
+      for(auto &phase:steps.target->program.phases)retire(phase);
+      for(auto &phase:steps.target->repair.program.phases)retire(phase);
+      retire(steps.verifier_program);
+    }
+    if(steps.sampler)retire(steps.sampler->decision);
+    return observed;
+  }
+  void recover_records(bool retired) noexcept {
+    // No request record has been written. Drop only this unpublished result
+    // after the original programs actually retire, never publish or retry it.
+    if(retired) {actual.reset();emitted.clear();}
   }
 };
 
@@ -2563,9 +2631,11 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
               proposal=state.scalar(first_checkpoint,kPending);
               first_checkpoint_image=image(state,first_checkpoint);
               check_step_admission(first_checkpoint,random_draft,grant);
-              auto candidate=model_steps.verify_and_prepare(base,first_checkpoint,random_draft,initial_random,
-                  grant,limits,checked,selection_emitted,7);
-              observe_candidate(candidate);
+              GlmK1StepDriver<Runtime,decltype(observe_candidate)> candidate_driver{
+                  model_steps,base,first_checkpoint,random_draft,initial_random,grant,limits,
+                  checked,selection_emitted,observe_candidate};
+              EXPECT_EQ(hyle::inference::drive_steps(candidate_driver),hyle::inference::StepDriveResult::kCompleted);
+              auto candidate=std::move(candidate_driver.result);
               second=candidate.second;if(use_target)checked=std::move(candidate.checked);check_verified(first_checkpoint,second);
               second_image=image(state,second);
               if(scenario==0) {
@@ -2988,6 +3058,9 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
               wrong_skip_submitted=true;return std::vector<c::ReadLease>{};
             }),std::runtime_error);
         EXPECT_FALSE(wrong_skip_submitted);
+        // Independent mathematical trials, not another request advancement:
+        // their direct helper retains its own preflight and can also exercise
+        // prepare_verified over the already completed original target rows.
         // One natural trial and two separately labelled controls. Matching uses
         // the actual full-V Top1 lease; rejection uses the actual distinct Top2
         // lease. The second real Graph consumes precisely that proposal lease.

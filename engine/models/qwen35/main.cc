@@ -1566,11 +1566,6 @@ public:
   const PreparedSampling &sampling_configuration(std::size_t index = 0) const { return resources_->sampling_configuration(index); }
   std::size_t sampling_configuration_count() const noexcept { return resources_->sampling_configurations.size(); }
   std::size_t sampling_index(const PreparedSampling *value) const { return resources_->sampling_index(value); }
-  std::size_t sampling_index(const GenerationLedger &ledger) const {
-    if (ledger.sampling && (ledger.sampling_owner.expired() || ledger.sampling_owner.owner_before(resources_) || resources_.owner_before(ledger.sampling_owner)))
-      throw std::runtime_error("generation ledger belongs to another or destroyed model");
-    return sampling_index(ledger.sampling);
-  }
   bool retains_sampling_frontier() const noexcept {
     return resources_->retain_sampling_frontier;
   }
@@ -1962,26 +1957,6 @@ public:
         << " known_workspace_host=" << take(report.storage_domain(1)).workspace_bytes
         << " known_workspace_staging=" << take(report.storage_domain(2)).workspace_bytes
         << " native_private_unknown=1 shared_requested_byte_limit=unlimited physical_vram_cap=0\n";
-  }
-
-  // C0 includes only authoritative committed IDs and this first conditional's
-  // actual input. It is never an alternative history, Session or RNG owner.
-  // Raw EvaluationRequest callers can instead supply their own exact C0 lease.
-  LogitsInputs history_logits_inputs(GenerationLedger &ledger, std::span<const std::int32_t> first_condition_ids,
-      LogitsInputs inputs = {}, std::size_t sampling_index = 0) {
-    const auto &prepared = sampling_configuration(sampling_index);
-    ledger.validate_sampling(prepared, resources_);
-    if (prepared.configuration.modifiers.history.empty()) return inputs;
-    if (inputs.counts.lease.valid() || inputs.counts.description.valid())
-      throw std::invalid_argument("derived history C0 cannot replace an externally supplied counts input");
-    auto &cache = ledger.history_counts(static_cast<std::size_t>(vocabulary), execution_budget,
-        take(execution_budget.metadata_allocator()));
-    const auto conditional = cache.condition(first_condition_ids);
-    const auto bytes = std::as_bytes(cache.values());
-    auto writer = take(resources_->history_counts_pool.allocate(bytes.size()));
-    check(execution.write(take(writer.view()), bytes));
-    inputs.counts = {dense(Type::kInt32, {1, vocabulary}), take(writer.publish())};
-    return inputs;
   }
 
   void prepare_cache() {
@@ -5709,6 +5684,32 @@ public:
 #include "session_transfer.h"
 namespace qwen35 {
 
+std::size_t generation_sampling_index(const Model &model, const GenerationLedger &ledger) {
+  if (ledger.sampling && (ledger.sampling_owner.expired() || ledger.sampling_owner.owner_before(model.resources_) || model.resources_.owner_before(ledger.sampling_owner)))
+    throw std::runtime_error("generation ledger belongs to another or destroyed model");
+  return model.sampling_index(ledger.sampling);
+}
+
+// C0 includes only authoritative committed IDs and this first conditional's
+// actual input. It is never an alternative history, Session or RNG owner.
+// Raw EvaluationRequest callers can instead supply their own exact C0 lease.
+LogitsInputs history_logits_inputs(Model &model, GenerationLedger &ledger,
+    std::span<const std::int32_t> first_condition_ids, LogitsInputs inputs = {}, std::size_t sampling_index = 0) {
+  const auto &prepared = model.sampling_configuration(sampling_index);
+  ledger.validate_sampling(prepared, model.resources_);
+  if (prepared.configuration.modifiers.history.empty()) return inputs;
+  if (inputs.counts.lease.valid() || inputs.counts.description.valid())
+    throw std::invalid_argument("derived history C0 cannot replace an externally supplied counts input");
+  auto &cache = ledger.history_counts(static_cast<std::size_t>(model.vocabulary), model.execution_budget,
+      take(model.execution_budget.metadata_allocator()));
+  const auto conditional = cache.condition(first_condition_ids);
+  const auto bytes = std::as_bytes(cache.values());
+  auto writer = take(model.resources_->history_counts_pool.allocate(bytes.size()));
+  check(model.execution.write(take(writer.view()), bytes));
+  inputs.counts = {dense(Type::kInt32, {1, model.vocabulary}), take(writer.publish())};
+  return inputs;
+}
+
 // Entry IO runs synchronously inside Model's original completed-output scope.
 // Neither this view nor its borrowed storage may escape or reenter preparation.
 void observe_completed_evaluation(Model &model, const EvaluationOutput &output,
@@ -6140,7 +6141,7 @@ std::shared_ptr<Session> restore_mtp_session(Model &model, const GenerationLedge
     const std::filesystem::path &trace = {}, bool trace_states = true,
     GenerationRestoreStats *stats = nullptr, cache::PrefixCache *prefix = nullptr,
     std::span<const GenerationRequest> requests = {}) {
-  const auto sampling_index = model.sampling_index(ledger);
+  const auto sampling_index = generation_sampling_index(model, ledger);
   const auto started = Clock::now();
   const auto submitted_begin = model.submitted_draft_rows;
   hyle::util::ScopeGuard record_submitted{[&]() noexcept {
@@ -6177,7 +6178,7 @@ std::shared_ptr<Session> restore_mtp_session(Model &model, const GenerationLedge
       make_generation_room(model, prefix, session.get(), requests);
       LogitsInputs replay_logits;
       if (expected.completion == TextCompletion::kEmitNext)
-        replay_logits = model.history_logits_inputs(actual, ids, {}, sampling_index);
+        replay_logits = history_logits_inputs(model, actual, ids, {}, sampling_index);
       std::vector<c::ReadLease> q;
       const auto verification = expected.role == GraphRole::kVerify
           ? model.propose_recursive(*session, expected.draft_limit, eos, &q, &actual.stop_policy(), replay_logits) : std::vector<std::int32_t>{};
@@ -6226,7 +6227,7 @@ std::shared_ptr<Session> rebuild_generation_session(Model &model, const Generati
     const std::filesystem::path &trace = {}, bool trace_states = true,
     GenerationRestoreStats *stats = nullptr, cache::PrefixCache *prefix = nullptr,
     std::span<const GenerationRequest> requests = {}) {
-  const auto sampling_index = model.sampling_index(ledger);
+  const auto sampling_index = generation_sampling_index(model, ledger);
   ledger.stop_policy().validate(model.vocabulary);
   const auto started = Clock::now();
   const auto submitted_begin = model.submitted_draft_rows;
@@ -6426,7 +6427,7 @@ void restore_generation_session(Model &model, GenerationRequest &request,
   }
   if (!request.ledger->committed_count) return;
   request.ledger->validate_sampling(prepared_sampling, model.resources_);
-  if (model.sampling_index(*request.ledger) != request.sampling_index)
+  if (generation_sampling_index(model, *request.ledger) != request.sampling_index)
     throw std::runtime_error("request recovery sampling differs from its committed ledger");
   preflight_generation_sampling(model, request);
   if (model.active_step || model.carrier_borrowed)
@@ -6755,7 +6756,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
         const auto admission_role = !model.cache_plan.draft_cache ? GraphRole::kText
             : suffix ? suffix_role : request.prompt.size() == 1 ? GraphRole::kMtpSingle : GraphRole::kMtpPrefill;
         if (full_hit && !sampler.modifiers.history.empty())
-          call.logits = model.history_logits_inputs(*request.ledger,
+          call.logits = history_logits_inputs(model, *request.ledger,
               std::span<const std::int32_t>(request.input->ids).first(reused_tokens), call.logits, request.sampling_index);
         std::shared_ptr<Session> adopted;
         try {
@@ -7486,7 +7487,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     auto &request = *call.request;
     const auto &configuration = model.sampling_configuration(request.sampling_index).configuration;
     if (!configuration.modifiers.history.empty() && !call.logits.counts.lease.valid())
-      call.logits = model.history_logits_inputs(*request.ledger,
+      call.logits = history_logits_inputs(model, *request.ledger,
           call.generation ? std::span<const std::int32_t>(&call.pending, 1) : call.prompt,
           call.logits, request.sampling_index);
     validate_generation_logits_inputs(configuration, call, model.vocabulary);
