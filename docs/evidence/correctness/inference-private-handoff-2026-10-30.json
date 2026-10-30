@@ -1,0 +1,128 @@
+{
+  "schema": "hyle.correctness.private-handoff.v1",
+  "date": "2026-10-30",
+  "base_commit": "9f66889ce",
+  "status": "PRIVATE_NEXTN_USES_ORIGINAL_SHARED_SUCCESS_HANDOFF",
+  "changes": [
+    "Private NextN uses existing ExecutionEpisode::finish_success, including actual wait, selected Append and original Store return, and one bulk withdrawal.",
+    "ProgramIo borrows its original sealed dynamic input and caller-owned output inventory; no second port list or permission owner.",
+    "Original output observation, hidden publication, page-tail return, page publication, work replacement and all failure retirement remain in their original order."
+  ],
+  "checks": {
+    "status": "PASS_FINITE_PRIVATE_STAGE_HANDOFF_CHECKS",
+    "cases": {
+      "recursive": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-private-handoff-20261030\\runs\\recursive\\attempt1\\report.json",
+        "bytes": 69124,
+        "sha256": "d44b91347da7eefe15ea60f000834c47c073ec165eaa45fd5058ceac314eb5fd"
+      },
+      "threshold": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-private-handoff-20261030\\runs\\threshold\\attempt1\\report.json",
+        "bytes": 114510,
+        "sha256": "870bbed7622ad4b5eb05f2033a09948742d4fb89982c177d18224e648696e5db"
+      },
+      "batch": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-private-handoff-20261030\\runs\\batch\\attempt1\\report.json",
+        "bytes": 1567,
+        "sha256": "f78c48cdff3cac560ab454be7867884897a6933cd7dc1801be73de9123640242"
+      },
+      "history": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-private-handoff-20261030\\runs\\history\\attempt1\\report.json",
+        "bytes": 1781,
+        "sha256": "819a0885e2d58d8c4676dbe9e4374ff01049836537acc1f4c07610c50a36c14c"
+      }
+    },
+    "original_non_timing_comparisons": [
+      {
+        "case": "batch",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stage-handoff-20261030\\runs\\batch\\attempt1\\report.json",
+          "bytes": 1567,
+          "sha256": "f78c48cdff3cac560ab454be7867884897a6933cd7dc1801be73de9123640242"
+        },
+        "all_non_timing_fields_equal": true
+      },
+      {
+        "case": "recursive",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stage-handoff-20261030\\runs\\recursive\\attempt1\\report.json",
+          "bytes": 69079,
+          "sha256": "ff5b8ded16828e770777a6dcc4ae8694d238be813e820b02a50298631f025370"
+        },
+        "all_non_timing_fields_equal": true
+      },
+      {
+        "case": "threshold",
+        "anchor": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stage-handoff-20261030\\runs\\threshold\\attempt1\\report.json",
+          "bytes": 114534,
+          "sha256": "3362c867014c2550653aaa4359d798000ae97b9ecd6b13d746e439afe0dee635"
+        },
+        "all_non_timing_fields_equal": true
+      }
+    ],
+    "mechanical_audit": {
+      "original_observe_exact": true,
+      "original_complete_exact_except_common_Store_take": true,
+      "original_prepare_submit_accounting_publication_and_catches_exact": true,
+      "output_observe_lines": 19,
+      "original_bulk_dynamic_IO_withdrawal_once": true,
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+        "bytes": 635287,
+        "sha256": "57eae6bc3a11b689b090579dacb4d54c8f6fba14fd71a1dd299598a0438e8686"
+      },
+      "baseline": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-private-handoff-20261030\\baseline\\engine\\models\\qwen35\\main.cc",
+        "bytes": 634983,
+        "sha256": "c66e373c151e51b0c1e1ebb447cab3bd6d9289b30bfb5b5a0c4f76e86a82b235"
+      }
+    },
+    "finite_processes": 4,
+    "affected_consumer_CXX_TUs": 2,
+    "retained_SDK_engine_objects": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "performance_experiments": 0,
+    "performance_claim": false,
+    "history": {
+      "real_random_K2_R2": true,
+      "probability_and_next_counts_outputs": true,
+      "continuous_proposals_recovery_and_restore": true,
+      "direct_per_output_unbind_assertion": false,
+      "current_CUDA_same_schema_baseline": false
+    },
+    "limits": [
+      "Finite Windows CUDA checks, not all platforms or complete GLM/DeepSeek/Kimi engines.",
+      "History uses the existing synthetic component fixture; no model quality claim.",
+      "No new native fault injection, throughput/peer/memory benchmark or speed claim.",
+      "Head/RNG/ledger and page publication stay in their original model policy."
+    ]
+  },
+  "cleanup": {
+    "files": 7,
+    "boundary": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-private-handoff-20261030\\bin",
+    "retained": "Original SDK objects, current consumer objects, source inputs, commands and reports",
+    "bytes": 287736102,
+    "status": "REMOVED_EXACT_FLAT_BATCH_IMAGES"
+  },
+  "retained_build_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-private-handoff-20261030\\model-link-base.json",
+    "bytes": 100621,
+    "sha256": "aeddf01270dd2f2d3b4458d05410ec73f05e759d9cc19a2cf2935b62e879c074"
+  },
+  "source_files": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\program_io.h",
+      "bytes": 12952,
+      "sha256": "229dc4de103c17abb556e9f32f27f9a7a32bf821220cec531a0b3817057910af"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 635287,
+      "sha256": "57eae6bc3a11b689b090579dacb4d54c8f6fba14fd71a1dd299598a0438e8686"
+    }
+  ],
+  "archive": "inference-private-handoff-2026-10-30.zip"
+}

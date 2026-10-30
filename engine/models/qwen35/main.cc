@@ -3144,44 +3144,48 @@ public:
       check(guard.execution.submit(resources_));
       submitted_draft_rows = model_rows_after;
       if (work.session) work.session->submitted_draft_rows = session_rows_after;
-      check(guard.execution.wait_success());
-      ++draft_program_graph_calls;
-      if (head) {
-        if (program.valid) {
-          const auto flag = take(program.io.predicate(run, program.valid_value));
-          if (flag == 0) throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
-              "recursive draft distribution is invalid; no head or RNG was published"));
-          if (flag != 1) throw std::runtime_error("recursive draft validity is outside its predicate encoding");
-          if (selected_sampler.enabled) output.log_probabilities =
-              take(program.io.retain(run, program.probabilities_output, execution_budget));
-          if (min_draft_probability() > 0) {
-            check(program.io.read(run, program.probability_value, std::as_writable_bytes(std::span(&output.probability, 1))));
-            if (!std::isfinite(output.probability) || output.probability < 0 || output.probability > 1)
-              throw std::runtime_error("draft maximum probability is outside its declared probability domain");
-          }
-        }
-        check(program.io.read(run, program.id_value, std::as_writable_bytes(std::span(&output.id, 1))));
-        if (output.id < 0 || output.id >= vocabulary) throw std::runtime_error("NextN proposal is outside vocabulary");
-        if (program.next_counts) output.next_counts =
-            take(program.io.retain(run, program.next_counts_output, execution_budget));
-      }
-      check(guard.execution.append_transactions().subspan(draft_bank, 2).take(run));
-      if (head) {
-        auto writers = take(program.hidden_transactions.take(run, 0));
-        output.hidden = take(writers[0].publish());
-        check(program.hidden_transactions.clear(0));
-      }
       std::array<c::PagedPageAppender, 2> tails;
-      const auto finish_at = [&](std::size_t) noexcept -> inference::PagedAppendFinishMember {
-        return {work.state.paged, next.paged, commits, layout, next.paged.pages.back().page(),
-            static_cast<std::uint32_t>(next.frontier % cache::Plan::page_rows), tails};
-      };
-      check(inference::prepare_paged_append_commits(
-          std::span(guard.execution.appends.data() + draft_bank, 2), 1, finish_at));
-      check(inference::return_paged_append_tails(
-          guard.execution.append_transactions().subspan(draft_bank, 2), 2, 1,
-          input_scratch.paged_appends, finish_at));
-      check(program.io.release_inputs(program.carrier));
+      check(guard.execution.finish_success(draft_bank, 2, take(program.io.withdrawal_values()),
+          [&]() noexcept { ++draft_program_graph_calls; },
+          [&]() -> hyle::Status {
+            if (head) {
+              if (program.valid) {
+                const auto flag = take(program.io.predicate(run, program.valid_value));
+                if (flag == 0) throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
+                    "recursive draft distribution is invalid; no head or RNG was published"));
+                if (flag != 1) throw std::runtime_error("recursive draft validity is outside its predicate encoding");
+                if (selected_sampler.enabled) output.log_probabilities =
+                    take(program.io.retain(run, program.probabilities_output, execution_budget));
+                if (min_draft_probability() > 0) {
+                  check(program.io.read(run, program.probability_value, std::as_writable_bytes(std::span(&output.probability, 1))));
+                  if (!std::isfinite(output.probability) || output.probability < 0 || output.probability > 1)
+                    throw std::runtime_error("draft maximum probability is outside its declared probability domain");
+                }
+              }
+              check(program.io.read(run, program.id_value, std::as_writable_bytes(std::span(&output.id, 1))));
+              if (output.id < 0 || output.id >= vocabulary) throw std::runtime_error("NextN proposal is outside vocabulary");
+              if (program.next_counts) output.next_counts =
+                  take(program.io.retain(run, program.next_counts_output, execution_budget));
+            }
+            return hyle::Status::Ok();
+          },
+          [&]() -> hyle::Status {
+            if (head) {
+              auto writers = take(program.hidden_transactions.returned(0));
+              output.hidden = take(writers[0].publish());
+              check(program.hidden_transactions.clear(0));
+            }
+            const auto finish_at = [&](std::size_t) noexcept -> inference::PagedAppendFinishMember {
+              return {work.state.paged, next.paged, commits, layout, next.paged.pages.back().page(),
+                  static_cast<std::uint32_t>(next.frontier % cache::Plan::page_rows), tails};
+            };
+            check(inference::prepare_paged_append_commits(
+                std::span(guard.execution.appends.data() + draft_bank, 2), 1, finish_at));
+            check(inference::return_paged_append_tails(
+                guard.execution.append_transactions().subspan(draft_bank, 2), 2, 1,
+                input_scratch.paged_appends, finish_at));
+            return hyle::Status::Ok();
+          }));
       auto publication = take(edit.prepare_publication());
       publication.publish(&work.state.paged);
       work.tails = std::move(tails); work.state = std::move(next);

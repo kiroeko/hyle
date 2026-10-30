@@ -159,6 +159,12 @@ Qwen特殊token集中在模型自己的`generation_tokens.h`，请求额外停�
 普通target、融合MTP draft和私有NextN共用该算法；R1／R2的尾归属与递归结果暂存使用已有SmallVector内联容量，实际更宽批次仍按宽度准备。
 GLM的StateStore／StateHead不使用这些分页尾，不为接口统一而引入伪Frame或Qwen状态。共同结果见证已经共用，不再叠加纯转发的发布接口。
 
+私有NextN与target阶段共用`ExecutionEpisode::finish_success`：成功等待与计数、原输出观察、实际Append／Store取回、模型收尾及一次IO撤回。
+`ProgramIo::withdrawal_values`只借原sealed清单，含动态输入和caller-owned输出，不复制端口或权限；固定输入及readback保持原安装。
+私有hidden从已取回的原Store中publish，页预检／发布及work替换继续归模型；失败仍退休同一个原guard，不重试部分成功交接。
+[有限检查](../evidence/correctness/inference-private-handoff-2026-10-30.json)不扩大为全平台或吞吐结论。
+共同结果束目前仍要求至少一个tensor输出；纯Store／PagedAppend阶段虽有原Graph能力，尚未接入该共同束，列为当前架构缺项。
+
 完整页准备归`prepare_append_pages`：预留原候选引用和dirty-bank容量，保留原完整前缀，尝试真实尾预留，必要时回落COW并逐页取得原Inventory引用。
 普通／验证／后继target、批量draft及私有NextN通过整组入口复用这一算法。模型提供真实银行范围、epoch／relay资格及候选准备，仍决定逻辑状态和完整Head发布。
 返回尾的目的容量由原episode预留；晚获取失败保留此前已移入的原引用、writer和尾权限，交原恢复机制处理，不推定退休或另建资源owner。

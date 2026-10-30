@@ -237,9 +237,13 @@ class ProgramIo final {
   // Call only after output observation and any original transaction extraction
   // which must precede withdrawal. The carrier and Graph remain authoritative;
   // this list is immutable schema, not a mirror of currently bound permission.
+  Result<std::span<const graph::ValueId>> withdrawal_values() const noexcept {
+    if (!sealed_) return std::unexpected(Status::FailedPrecondition("program IO is not sealed"));
+    return std::span<const graph::ValueId>(withdrawals_);
+  }
   template<class Scope> Status release_inputs(ProgramCarrier<Scope> &carrier) const noexcept {
-    if (!sealed_) return Status::FailedPrecondition("program IO is not sealed");
-    return carrier.release_inputs(withdrawals_);
+    HYLE_ASSIGN_OR_RETURN(auto values, withdrawal_values());
+    return carrier.release_inputs(values);
   }
 
  private:

@@ -43,7 +43,10 @@ GLM独立模型步骤及实际额度接线已实现：原场景和RequestLoop直
 已选K1工作遇输出额度1，仍保原提案／验证及三draw合同，只限制可发布前缀；不能触发另一条target-only单draw政策。
 GLM先发布已接受完整状态、再维护journal的时序区别于Qwen，已提交结果和维护后current要分别表达，晚失败只能补观察，不能重跑原数学。
 普通和relay已共用同一准备入口，Source／Store绑定仍遵守真实Append及packed元数据顺序，不再增设一层总prepare或recipe回调。
-接下来清除私有draft阶段尚存的资源交接重复，并核对剩余共同执行边界；独立性能工作仍后置。
+私有draft阶段已接入原成功交接：原等待计数、输出观察、Append／Store取回、一次动态IO撤回及页发布顺序保持。
+[四个相关CUDA消费者](../evidence/correctness/inference-private-handoff-2026-10-30.json)覆盖递归K2、低概率截断、私有失败重试及动态probability／next_counts连续执行；三份完整非计时报告保持，无性能实验。
+普通／relay已共用同一prepare_evaluations，Source／Store／Append及replay权限按原实际执行核验；复审未发现另一份应抽取的共同准备或状态发布算法，不新增总prepare／recipe包装。
+新发现的共同结果束仍强制至少一个tensor输出，不能承载原Graph已支持的纯Store／PagedAppend阶段。接下来补该接线并核对跨模型及存储域边界；独立性能工作仍后置。
 
 多模型形状同时参考本地成熟引擎的实际实现：vLLM `276fbcff2717`的`v1/engine/core.py`、`v1/core/sched/scheduler.py`和`model_executor/models/qwen3_5.py`，
 TensorRT-LLM `46d9966b54d9`的`_torch/pyexecutor/engine/model_call.py`、`py_executor.py`及`model_engine.py`。
