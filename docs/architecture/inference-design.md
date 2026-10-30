@@ -109,7 +109,7 @@ HYLE保留原冷形状接纳，实际数值、端口、所有权和费用仍通�
 5次CXX／6次链接成功，16个原生进程成功，另两次H64混合基线／候选在同一别名对齐处拒绝，失败没有写成通过。
 默认完整词表四对、完整Session向量及真实H2048 CPU FFN两层对照一致；packed、变长Verify、E4保其原检查与数值合同。
 本地llama.cpp `23b0202a`的模型具体graph与独立helpers支持数学实现分责；其运行期图复用／重建仍不能照搬成HYLE的纯启动期承诺。
-完整Family冷工厂与Phase物理准备尚未迁出；新发现的H64接纳问题进入共同Graph别名／物化整改，不在模型中用额外Copy掩盖。
+完整Family冷工厂与Phase物理准备尚未迁出；本片发现的H64接纳问题随后已由下述共同Graph按需物化修复，模型继续发出原数学图。
 
 当前异构消费者的接入面也已沿实际源码核对：
 
@@ -121,7 +121,7 @@ HYLE保留原冷形状接纳，实际数值、端口、所有权和费用仍通�
 | DeepSeek原组件及压缩侧车 | ProgramIo、普通Graph生命周期、接受与提交见证 | 具体router分段与压缩状态／sidecar；没有完整请求驱动证明 |
 
 后三者当前使用有限具体图，未消费ColdShapePlan／PreparedProgramFamily；不为接口外观伪造Qwen程序族，也不把IO复用扩大为完整冷工厂／调度复用。
-下一步在处理共同别名接纳后，建立一个完整Family冷工厂，再分清Phase物理准备。
+下一步建立一个完整Family冷工厂，再分清Phase物理准备。
 Model保留原准入、cache／可选head准备与成功发布；工厂消费已准备事实，保Graph稳定地址、预算、literal／采样寿命、失败不发布及可重试合同。
 局部host emit与冷准备的偶然交错不必永久固定；不为保持它而拆成多段难懂stage，也不新增大ModelOps。
 
@@ -233,6 +233,24 @@ CUDA跨Context搬运／等待尚未接通，跨机执行也未实现。这些是
 域编号取自真实环境，不约定0为GPU、1为CPU。Borrow有显式域时保持原合同；无显式域时仅按精确资源匹配推断，
 非精确的原生只读导入继续由Graph判断。Materialize描述目标域，不把源资源误当目标；实际copy仍须原端点认可两端资源。
 Qwen保留Tensor冻结、literal和精度，GLM保留原角色查找及数学，两者共享原常量／外域／node放置的组装。
+
+Graph在冷规划中按实际reader的端口合同接纳Tensor View。静态offset不满足声明alignment，且是Graph自有Caller／TensorView、按值读取时，
+共同输入接纳可用原Copy能力创建同描述、同实际存储域的独立副本；对齐已满足时复用原实例，保原dtype／strides。
+原producer、reference快路、external／constant／generated及effect／Source身份保持，模型无需为此添加算子或猜固定对齐值。
+新副本沿原调度、生命周期、workspace／artifact预算及整候选回滚；源与目的在Copy时的寿命重叠，实例上界仍为原`V*S+V`。
+
+复制资格明确耗尽时返回typed无路线：必要的locality copy保原计划回溯，可选的alignment repair只拒当前region／leaf reader。
+真实query、native、分配及搜索错误保原Status；malformed transfer artifact先验所有权再设置回溯标志，带native信息的错误保持fatal。
+晚期transfer能力拒绝仍沿原physical choice、再route choice推进，没有增加另一套owner或重试账簿。
+strict优先路线加Copy可能替代过去低alignment的零Copy路线；现排序不承诺最终Copy成本全局最优，费用进入原report／预算，后续按实际完整消费者评估。
+
+[有限检查](../evidence/correctness/inference-graph-alias-alignment-2026-10-30.json)覆盖7项新合同、18项原Source／预算／寿命回归，
+以及原H64／CPU FFN1的T1拒绝配置、默认完整词表普通／MTP四对、真实2B混合放置和完整Session向量。
+原预算测试把首选计划408B误作所有路线下界；实际限407B可合法选择340B零Copy路线，失败照录。
+修正测试以两个硬约束Caller根的340B＋68B同时存活为下界，407B真实拒绝，恢复同一约束后执行通过；没有放宽预算实现。
+本地TRT-LLM `46d9966b`按指针对齐条件clone只读投影／indices、同时保mutable pool身份，支持这一职责边界；不照搬其runtime决策到热路径。
+HYLE当前GGML wrapper的256B声明与bind检查有效，但失败provider／kernel未记录；锁定GGML／llama的128B分配约定不能证明reader硬需。
+本片未降低provider声明，也不把TRT的32B阈值当HYLE依据。Windows CPU／CUDA有限通过不扩大成所有后端／形状验证或稳定提速。
 
 准备阶段只冷存不变的物理事实：`SlotTransactions::set_layout`从原池item取得writer字节，避免逐步按模型类型重算；
 NodeLayout原数组归实际Invocation槽，node冷固定，layout仅借到原batch准备返回并立即释放，失败亦释放。

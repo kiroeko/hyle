@@ -39,7 +39,8 @@ HYLE 的产品目标是完整推理引擎；Compute、Graph、内存、调度、
 冷cache事实现已独立为模型私有cache_plan.h，weights／构图头不再间接解析完整会话状态；原容量公式、布局与数值保持，实际依赖及有限默认消费者检查见[本片记录](../evidence/correctness/inference-cold-cache-facts-2026-10-30.json)。
 Qwen／GLM／Kimi／DeepSeek的实际接入面已经核对：有限具体图不需要人为套入Qwen的程序族，IO／资源交接复用也不等于完整引擎接入。
 目标主干数学已沿显式冷事实与端口span隔离到target_graph，原Recipe／schema／常量、准备／发布合同及默认有限消费者保持，见[本片记录](../evidence/correctness/inference-target-graph-boundary-2026-10-30.json)。
-本片发现H64混合CPU FFN在新旧基线都因Graph输入别名对齐被拒绝，纳入共同规划／物化接纳整改，不以更大模型成功或旧功能完成排除它。
+本片发现H64混合CPU FFN的T1子程序在新旧基线均因Graph内部按值Tensor偏移128B／声明256B而拒绝；已由共同输入接纳沿原Copy／预算／寿命机制按需物化修复，见[本片记录](../evidence/correctness/inference-graph-alias-alignment-2026-10-30.json)。
+7项新合同、18项相关回归、原H64及真实2B默认／混合／Session有限对照通过；历史编译／测试失败与合法预算回溯分别保留。新发现继续纳入，不能以较大模型成功或旧清单完成排除小形状。
 随后继续完整Family冷工厂、Phase物理准备和请求恢复；保原owner／预算／稳定地址与可重试／失败不发布合同，不机械固定偶然host emit顺序，已完成共同IO／退休机制不重复。
 较强设备用于底座成熟后的更广整模型验证，当前工作不以租设备、完整大模型或通用loader／server为前置。
 新profile和优化尚未启动，原工具／命令准备保留；相关架构费用验证按实际改动安排。正在做和估计进度只在[看板](../developer/inference-progress.md)维护。

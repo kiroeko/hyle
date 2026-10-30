@@ -2104,6 +2104,84 @@ Result<bool> accepts_input_alias_alignment(const detail::PlanState &plan,
   return false;
 }
 
+// Cold rejection context only. Preserve the original Status classification and
+// route decision; success and Invocation paths never format this diagnostic.
+Status describe_input_alias_alignment_rejection(Status reason,
+    const detail::PlanState &plan, std::span<const ShapeBinding> shape,
+    std::uint32_t node_first, std::size_t node_count, std::size_t port,
+    std::uint32_t value, std::uint32_t instance, std::uint32_t target,
+    std::size_t alignment, bool accepts_reference, bool tensor_required) noexcept {
+  auto root = instance;
+  std::size_t offset = 0;
+  bool valid_chain = true;
+  for (;;) {
+    if (root >= plan.alias_sources.size()) {
+      valid_chain = false;
+      break;
+    }
+    const auto parent = plan.alias_sources[root];
+    if (parent == detail::kNoInPlaceSource)
+      break;
+    if (parent >= root || plan.alias_offsets[root] > SIZE_MAX - offset) {
+      valid_chain = false;
+      break;
+    }
+    offset += plan.alias_offsets[root];
+    root = parent;
+  }
+  std::array<char, 1024> context{};
+  std::size_t used = 0;
+  auto append = [&](std::string_view text) noexcept {
+    const auto count = (std::min)(text.size(), context.size() - used);
+    std::copy_n(text.data(), count, context.data() + used);
+    used += count;
+  };
+  auto number = [&](auto numeric_value) noexcept {
+    std::array<char, 32> digits{};
+    const auto encoded = std::to_chars(digits.data(), digits.data() + digits.size(), numeric_value);
+    if (encoded.ec == std::errc{})
+      append(std::string_view(digits.data(), encoded.ptr - digits.data()));
+    else
+      append("?");
+  };
+  append("alias_input node_first="); number(node_first);
+  append(" node_count="); number(node_count);
+  append(" port="); number(port);
+  append(" value="); number(value);
+  append(" instance="); number(instance);
+  append(" storage="); number(plan.instance_storage[instance]);
+  append(" target="); number(target);
+  append(" root="); number(root);
+  append(" root_offset="); number(offset);
+  append(" alignment="); number(alignment);
+  append(" chain_valid="); number(static_cast<unsigned>(valid_chain));
+  append(" accepts_ref="); number(static_cast<unsigned>(accepts_reference));
+  append(" needs_tensor="); number(static_cast<unsigned>(tensor_required));
+  append(" instance_roles="); number(static_cast<unsigned>(plan.instance_roles[instance]));
+  append(" instance_kind="); number(static_cast<unsigned>(plan.instance_output_contracts[instance].kind));
+  append(" instance_projection="); number(static_cast<unsigned>(plan.instance_output_contracts[instance].projection));
+  if (valid_chain) {
+    append(" root_roles="); number(static_cast<unsigned>(plan.instance_roles[root]));
+    append(" root_kind="); number(static_cast<unsigned>(plan.instance_output_contracts[root].kind));
+    append(" root_projection="); number(static_cast<unsigned>(plan.instance_output_contracts[root].projection));
+  }
+  append(" variant=");
+  if (plan.exact_variant_index)
+    number(*plan.exact_variant_index);
+  else
+    append("unassigned"); // The child index is assigned only after successful compile.
+  append(" domain="); number(static_cast<unsigned>(plan.domain_graph.valid()));
+  append(" shape_count="); number(shape.size());
+  append(" shape_first8=[");
+  for (std::size_t index = 0; index < (std::min)(shape.size(), std::size_t{8}); ++index) {
+    if (index)
+      append(",");
+    number(shape[index].dimension.ordinal()); append("="); number(shape[index].value);
+  }
+  append("]");
+  return std::move(reason).WithContext(std::string_view(context.data(), used));
+}
+
 Status prepare_constant_alignments(detail::PlanState &plan) noexcept {
   if (plan.constant_ids.empty())
     return Status::Ok();
@@ -4689,8 +4767,11 @@ Status prepare_placed_steps_attempt(
   }
 
   const std::size_t matrix_instances = value_count * storage_count;
-  // One original generated carrier may coexist with its concrete caller
-  // replica in the same storage domain. The matrix caches the latter.
+  // One original generated carrier or caller View may coexist with its
+  // concrete aligned caller replica in the same storage domain. Each value
+  // keeps one producer plus at most one concrete replica per storage; raising
+  // that replica's alignment does not create another instance. The matrix
+  // caches the concrete replica, while producer_instances keeps the producer.
   if (value_count > SIZE_MAX - matrix_instances)
     return Status::ResourceExhausted("graph carrier-instance capacity overflows");
   const std::size_t maximum_instances = matrix_instances + value_count;
@@ -4820,7 +4901,7 @@ Status prepare_placed_steps_attempt(
     auto retained = detail::ExecutionSourceAccess::compute(
         plan.targets[target].source);
     if (!retained) {
-      if (retained.error().IsUnimplemented())
+      if (retained.error().IsUnimplemented() && !retained.error().has_native_error())
         return detail::ExecutionSourceAccess::can_copy(
             plan.targets[target].source, source,
             plan.storage_domains[destination].resource);
@@ -4834,7 +4915,8 @@ Status prepare_placed_steps_attempt(
           resource);
       if (status.ok())
         continue;
-      if (status.IsFailedPrecondition() || status.IsUnimplemented())
+      if ((status.IsFailedPrecondition() || status.IsUnimplemented()) &&
+          !status.has_native_error())
         return false;
       return std::unexpected(std::move(status));
     }
@@ -4869,15 +4951,16 @@ Status prepare_placed_steps_attempt(
                                      plan.search, outcome.search_limit);
   };
 
-  auto append_copy = [&](std::uint32_t source,
-                         std::uint32_t destination) noexcept -> Status {
+  auto try_append_copy = [&](std::uint32_t source,
+                             std::uint32_t destination) noexcept -> Result<bool> {
     const auto source_storage = plan.instance_storage[source];
     const auto destination_storage = plan.instance_storage[destination];
     const auto description = copy_source(source);
     HYLE_RETURN_IF_ERROR(copy_targets(description, destination_storage));
     if (!resource_choices.empty()) {
       HYLE_ASSIGN_OR_RETURN(const auto target, select_copy_target());
-      return append_copy_step(source, destination, target);
+      HYLE_RETURN_IF_ERROR(append_copy_step(source, destination, target));
+      return true;
     }
 
     // Search the configured host-visible intermediates using both actual
@@ -4900,12 +4983,13 @@ Status prepare_placed_steps_attempt(
         to |= accepts_destination;
       }
       if (from && to && !resource_choices.try_push_back(storage))
-        return plan_allocation_failure();
+        return std::unexpected(plan_allocation_failure());
     }
-    if (resource_choices.empty()) {
-      outcome.rejected_plan = true;
-      return Status::Unimplemented("storage boundary has no configured transfer bridge");
-    }
+    // Explicit capability exhaustion, not an error-code classification.
+    // The caller owns whether this copy is a required locality boundary or
+    // only an optional aligned representation for one selected reader.
+    if (resource_choices.empty())
+      return false;
     HYLE_ASSIGN_OR_RETURN(const auto storage, select_copy_target());
     const auto value = plan.instance_values[source];
     auto staged = instances[static_cast<std::size_t>(value) * storage_count + storage];
@@ -4919,7 +5003,18 @@ Status prepare_placed_steps_attempt(
     }
     HYLE_RETURN_IF_ERROR(copy_targets(copy_source(staged), destination_storage));
     HYLE_ASSIGN_OR_RETURN(const auto to, select_copy_target());
-    return append_copy_step(staged, destination, to);
+    HYLE_RETURN_IF_ERROR(append_copy_step(staged, destination, to));
+    return true;
+  };
+
+  auto append_copy = [&](std::uint32_t source,
+                         std::uint32_t destination) noexcept -> Status {
+    HYLE_ASSIGN_OR_RETURN(const bool copied, try_append_copy(source, destination));
+    if (!copied) {
+      outcome.rejected_plan = true;
+      return Status::Unimplemented("storage boundary has no configured transfer bridge");
+    }
+    return Status::Ok();
   };
 
   auto ensure_local_instance =
@@ -4975,6 +5070,43 @@ Status prepare_placed_steps_attempt(
     const auto producer = plan.instance_producer_targets[instance];
     return producer >= plan.targets.size() ||
         !plan.targets[producer].source.same_owner(plan.targets[target].source);
+  };
+
+  struct InputInstanceAdmission final {
+    std::uint32_t instance;
+    bool accepted;
+  };
+
+  // Only a proved Graph-owned caller alias may acquire an aligned by-value
+  // representation. Reference readers, external bindings and native output
+  // identities keep the original admission path. A missing copy capability
+  // declines only this reader; genuine errors preserve their original Status.
+  auto ensure_input_instance =
+      [&](std::uint32_t value, std::uint32_t storage, bool tensor_required,
+          std::size_t alignment) noexcept
+          -> Result<InputInstanceAdmission> {
+    HYLE_ASSIGN_OR_RETURN(const auto instance,
+        ensure_local_instance(ensure_local_instance, value, storage, tensor_required));
+    HYLE_ASSIGN_OR_RETURN(const bool aligned,
+        accepts_input_alias_alignment(plan, instance, alignment));
+    if (aligned)
+      return InputInstanceAdmission{instance, true};
+    const auto contract = plan.instance_output_contracts[instance];
+    const auto roles = plan.instance_roles[instance];
+    if (!tensor_required || contract.kind != RegionOutputKind::kCaller ||
+        contract.projection != RegionOutputProjection::kTensorView ||
+        (roles & (detail::kExternalInput | detail::kExternalOutput |
+                  detail::kConstant | detail::kGeneratedOutput)) != 0)
+      return InputInstanceAdmission{instance, false};
+    // accepts_input_alias_alignment returned false only for a static offset
+    // under an internal Caller root. Never change that View's offset or its
+    // producer identity. add_instance initializes every parallel plan array,
+    // and its zero-offset caller replica is reused for stronger later readers.
+    HYLE_ASSIGN_OR_RETURN(const auto created, add_instance(value, storage, 0));
+    HYLE_ASSIGN_OR_RETURN(const bool copied, try_append_copy(instance, created));
+    if (!copied)
+      return InputInstanceAdmission{instance, false};
+    return InputInstanceAdmission{created, true};
   };
 
   for (std::uint32_t value : graph.inputs) {
@@ -5159,26 +5291,31 @@ Status prepare_placed_steps_attempt(
       if (!physical_inputs.try_reserve(logical_inputs.size()))
         return plan_allocation_failure();
       for (std::size_t index = 0; index < logical_inputs.size(); ++index) {
-        auto instance = ensure_local_instance(ensure_local_instance, logical_inputs[index].ordinal(),
-                                              selected_inputs[index],
-                                              needs_tensor(logical_inputs[index].ordinal(), target,
-                                                  input_references[index] != 0));
-        if (!instance)
-          return std::move(instance).error();
-        HYLE_ASSIGN_OR_RETURN(const bool aligned,
-            accepts_input_alias_alignment(plan, *instance,
-                input_requirements[index].minimum_alignment));
-        if (!aligned) {
+        auto admitted = ensure_input_instance(logical_inputs[index].ordinal(),
+            selected_inputs[index],
+            needs_tensor(logical_inputs[index].ordinal(), target, input_references[index] != 0),
+            input_requirements[index].minimum_alignment);
+        if (!admitted)
+          return std::move(admitted).error();
+        if (!admitted->accepted) {
           discovery.physical.reject_suffix(
               preparation_prefix[region_nodes.front().ordinal()]);
           outcome.rejected_region = candidate.proposal_order;
-          return Status::Unimplemented(
-              "graph input alias offset cannot satisfy region port alignment");
+          return describe_input_alias_alignment_rejection(
+              Status::Unimplemented(
+                  "graph input alias offset cannot satisfy region port alignment"),
+              plan, options.shape, region_nodes.front().ordinal(), region_nodes.size(),
+              index, logical_inputs[index].ordinal(),
+              admitted->instance, target,
+              input_requirements[index].minimum_alignment,
+              input_references[index] != 0,
+              needs_tensor(logical_inputs[index].ordinal(), target, input_references[index] != 0));
         }
-        plan.instance_alignments[*instance] =
-            (std::max)(plan.instance_alignments[*instance],
+        const auto instance = admitted->instance;
+        plan.instance_alignments[instance] =
+            (std::max)(plan.instance_alignments[instance],
                        input_requirements[index].minimum_alignment);
-        if (!physical_inputs.try_push_back(*instance))
+        if (!physical_inputs.try_push_back(instance))
           return plan_allocation_failure();
       }
       const std::uint32_t input_begin =
@@ -5275,26 +5412,26 @@ Status prepare_placed_steps_attempt(
           selected_edge_storage[node.input_begin + input_index];
       if (input_storage == kNone)
         return Status::Internal("prepared graph input has no selected storage");
-      auto instance = ensure_local_instance(ensure_local_instance, value, input_storage, true);
-      if (!instance)
-        return std::move(instance).error();
-      if (!port_requirements.empty()) {
-        HYLE_ASSIGN_OR_RETURN(const bool aligned,
-            accepts_input_alias_alignment(plan, *instance,
-                port_requirements[input_index].minimum_alignment));
-        if (!aligned) {
-          discovery.physical.reject_suffix(preparation_prefix[node_index]);
-          outcome.rejected_operation = static_cast<std::size_t>(
-              placement->route - discovery.operations.candidates.data());
-          return Status::Unimplemented(
-              "graph input alias offset cannot satisfy operation port alignment");
-        }
+      const auto alignment = port_requirements.empty()
+          ? std::size_t{1} : port_requirements[input_index].minimum_alignment;
+      auto admitted = ensure_input_instance(value, input_storage, true, alignment);
+      if (!admitted)
+        return std::move(admitted).error();
+      if (!admitted->accepted) {
+        discovery.physical.reject_suffix(preparation_prefix[node_index]);
+        outcome.rejected_operation = static_cast<std::size_t>(
+            placement->route - discovery.operations.candidates.data());
+        return describe_input_alias_alignment_rejection(
+            Status::Unimplemented(
+                "graph input alias offset cannot satisfy operation port alignment"),
+            plan, options.shape, node_index, 1, input_index, value,
+            admitted->instance, target, alignment, false, true);
       }
+      const auto instance = admitted->instance;
       if (!port_requirements.empty())
-        plan.instance_alignments[*instance] =
-            (std::max)(plan.instance_alignments[*instance],
-                       port_requirements[input_index].minimum_alignment);
-      if (!physical_inputs.try_push_back(*instance))
+        plan.instance_alignments[instance] =
+            (std::max)(plan.instance_alignments[instance], alignment);
+      if (!physical_inputs.try_push_back(instance))
         return plan_allocation_failure();
     }
     const std::uint32_t input_begin =
@@ -5453,18 +5590,19 @@ Status prepare_placed_steps_attempt(
           copy_source(input),
           plan.storage_domains[plan.instance_storage[output]].resource,
           plan.allocator, &prepared);
-      // Unsupported geometry is a cold route decline, including when no
-      // artifact was created. Actual preparation errors remain fatal.
-      if (!status.ok())
-        outcome.rejected_plan = status.IsUnimplemented();
+      // Validate artifact ownership before classifying a pure capability
+      // decline. A malformed artifact or native-bearing error is fatal and
+      // must not leave rejected_plan set while returning Internal/error.
       const auto *table = prepared.vtable;
       if (table == nullptr || table->destroy_prepared == nullptr) {
         if (prepared.state != nullptr || status.ok())
           return Status::Internal("native transfer returned an unowned artifact");
+        outcome.rejected_plan = status.IsUnimplemented() && !status.has_native_error();
         return status;
       }
       detail::PreparedRegion artifact(std::move(capability), prepared, plan.allocator);
       if (!status.ok()) {
+        outcome.rejected_plan = status.IsUnimplemented() && !status.has_native_error();
         return status;
       }
       const auto runtime = prepared.properties.runtime;

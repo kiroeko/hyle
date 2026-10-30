@@ -36,6 +36,7 @@
 #include "hyle/mem/stats.h"
 #include "provider_internal.h"
 #include "plan_state.h"
+#include "../../src/graph/execution_source_internal.h"
 #include "region_discovery.h"
 #include "submission_internal.h"
 #include "submission_lifetime.h"
@@ -4422,81 +4423,507 @@ TEST(GraphRegions, UnsupportedResourceQueryRejectsOnlyThatCandidate) {
 
 struct SliceAlignmentGraph final {
   Graph graph;
-  ValueId input, output;
+  ValueId input, output, root, selected;
 };
 
-SliceAlignmentGraph make_slice_alignment_graph() {
+SliceAlignmentGraph make_slice_alignment_graph(std::int64_t offset = 17,
+                                               bool unary_root = false) {
   auto builder = GraphBuilder::create().value();
   const auto input = builder.input(row(85)).value();
-  const auto root = builder.add(hyle::compute::Binary{}, input, input).value();
-  // A real materialized F32 root with the 68-byte row offset of [5,17].
+  const auto root = unary_root
+      ? builder.add(Unary{UnaryKind::kNeg}, input).value()
+      : builder.add(hyle::compute::Binary{}, input, input).value();
+  // Offset17 is68 bytes into a real materialized root; offset64 is256 bytes.
   const auto selected = builder.add(
-      hyle::compute::View::slice(0, 17, 17).value(), root).value();
+      hyle::compute::View::slice(0, offset, 17).value(), root).value();
   const auto output = builder.add(Unary{UnaryKind::kNeg}, selected).value();
   EXPECT_TRUE(builder.publish(output).ok());
-  return {std::move(builder).finish().value(), input, output};
+  return {std::move(builder).finish().value(), input, output, root, selected};
 }
 
-TEST(GraphRegions, InputSliceAlignmentDeclinesRegionAndLeafBeforePreparation) {
-  const auto logical = make_slice_alignment_graph();
-  for (const bool leaf : {false, true}) {
-    SCOPED_TRACE(leaf);
-    RegionProbe strict{.mode = ProposalMode::kSingleton, .singleton_node = 2};
-    RegionProbe compatible{.mode = ProposalMode::kSingleton, .singleton_node = 2};
-    for (auto *probe : {&strict, &compatible}) {
-      probe->required_resource = hyle::mem::system_resource();
-      probe->bounded_unary_domain = true;
-    }
-    strict.requirement_override = hyle::compute::ResourceRequirement{
-        .minimum_alignment = 256};
-    compatible.requirement_override = hyle::compute::ResourceRequirement{
-        .minimum_alignment = alignof(float)};
-    auto context = make_context(strict, compatible);
-    CompileOptions options{.region_selection = leaf
-        ? RegionSelectionPolicy::kDisabled
-        : RegionSelectionPolicy::kAllowProviderRegions};
-    auto compiled = hyle::graph::compile(logical.graph, context, options);
-    ASSERT_TRUE(compiled) << compiled.error().message();
-    EXPECT_EQ(strict.compile_count, 0u);
-    EXPECT_EQ(strict.single_artifact_count, 0u);
-    EXPECT_EQ(compiled->report.region_count(), leaf ? 0u : 1u);
-    EXPECT_GT(leaf ? compiled->report.search().operation_route_rejections
-                   : compiled->report.search().region_route_rejections, 0u);
-    bool selected_compatible = false;
-    for (std::size_t i = 0; i < compiled->report.step_count(); ++i) {
-      const auto step = compiled->report.step(i).value();
-      if (step.node_begin == 2) {
-        EXPECT_EQ(step.provider_instance, context.provider_instance_id(1).value());
-        selected_compatible = true;
-      }
-    }
-    EXPECT_TRUE(selected_compatible);
-    auto input = make_tensor(row(85)), output = make_tensor(row(17));
+void expect_slice_alignment_replay(const hyle::graph::Executable &executable,
+    const SliceAlignmentGraph &logical, std::size_t offset = 17,
+    float multiplier = -2.F, const Context *context = nullptr) {
+  auto input = make_tensor(row(85)), output = make_tensor(row(17));
+  auto run = executable.create_invocation().value();
+  ASSERT_TRUE(run.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(run.bind(logical.output, output.view).ok());
+  std::optional<Queue> queue;
+  if (context) queue.emplace(context->create_queue().value());
+  for (std::size_t round = 0; round < 2; ++round) {
     std::vector<float> values(85), expected(17);
-    for (std::size_t i = 0; i < values.size(); ++i) values[i] = float(i + 1);
+    for (std::size_t i = 0; i < values.size(); ++i)
+      values[i] = static_cast<float>(i + 1 + round * 100);
     for (std::size_t i = 0; i < expected.size(); ++i)
-      expected[i] = -2 * values[i + 17];
+      expected[i] = multiplier * values[i + offset];
     write(input, values);
-    auto run = compiled->executable.create_invocation().value();
-    ASSERT_TRUE(run.bind(logical.input, input.view).ok());
-    ASSERT_TRUE(run.bind(logical.output, output.view).ok());
-    auto queue = context.create_queue().value();
-    auto done = run.submit(queue);
+    auto done = queue ? run.submit(*queue) : run.submit();
     ASSERT_TRUE(done) << done.error().message();
     ASSERT_TRUE(done->wait().ok());
     EXPECT_EQ(read(output, 17), expected);
+    EXPECT_EQ(read(input, 85), values); // Repair never donates caller input.
+  }
+}
 
-    // A required instance is a hard constraint, not permission to use the
-    // lower-alignment alternate after the selected candidate is declined.
-    const std::array required{hyle::graph::NodeProviderConstraint{
-        logical.graph.node_id(2).value(), kRegionProviderId,
-        context.provider_instance_id(0).value()}};
-    options.node_providers = required;
-    auto rejected = hyle::graph::compile(logical.graph, context, options);
-    ASSERT_FALSE(rejected);
-    EXPECT_TRUE(rejected.error().IsUnimplemented()) << rejected.error().message();
-    EXPECT_EQ(strict.compile_count, 0u);
-    EXPECT_EQ(strict.single_artifact_count, 0u);
+TEST(GraphRegions, InputSliceAlignmentMaterializesOnlyUnalignedRegionAndLeafInputs) {
+  for (const bool leaf : {false, true}) {
+    for (const std::int64_t offset : {17, 64}) {
+      SCOPED_TRACE(leaf);
+      SCOPED_TRACE(offset);
+      const auto logical = make_slice_alignment_graph(offset);
+      RegionProbe strict{.mode = ProposalMode::kSingleton, .singleton_node = 2};
+      RegionProbe compatible{.mode = ProposalMode::kSingleton, .singleton_node = 2};
+      for (auto *probe : {&strict, &compatible}) {
+        probe->required_resource = hyle::mem::system_resource();
+        probe->bounded_unary_domain = true;
+      }
+      strict.requirement_override = hyle::compute::ResourceRequirement{.minimum_alignment = 256};
+      compatible.requirement_override = hyle::compute::ResourceRequirement{.minimum_alignment = alignof(float)};
+      auto context = make_context(strict, compatible);
+      CompileOptions options{.region_selection = leaf ? RegionSelectionPolicy::kDisabled
+          : RegionSelectionPolicy::kAllowProviderRegions};
+      const auto check = [&](const hyle::graph::CompiledGraph &compiled) {
+        EXPECT_EQ(compiled.report.copy_bytes(), offset == 17 ? 17 * sizeof(float) : 0u);
+        EXPECT_EQ(compiled.report.region_count(), leaf ? 0u : 1u);
+        bool selected_strict = false;
+        for (std::size_t i = 0; i < compiled.report.step_count(); ++i) {
+          const auto step = compiled.report.step(i).value();
+          if (step.kind != CompileStepKind::kCopy && step.node_begin == 2) {
+            EXPECT_EQ(step.provider_instance, context.provider_instance_id(0).value());
+            selected_strict = true;
+          }
+        }
+        EXPECT_TRUE(selected_strict);
+        expect_slice_alignment_replay(compiled.executable, logical,
+            static_cast<std::size_t>(offset), -2.F, &context);
+      };
+      auto compiled = hyle::graph::compile(logical.graph, context, options);
+      ASSERT_TRUE(compiled) << compiled.error().message();
+      check(*compiled);
+      EXPECT_EQ(compatible.compile_count + compatible.single_artifact_count, 0u);
+      // A legal repair satisfies the original strict provider; it cannot be
+      // replaced by the compatible provider when the constraint is hard.
+      const std::array required{hyle::graph::NodeProviderConstraint{
+          logical.graph.node_id(2).value(), kRegionProviderId, context.provider_instance_id(0).value()}};
+      options.node_providers = required;
+      auto required_compiled = hyle::graph::compile(logical.graph, context, options);
+      ASSERT_TRUE(required_compiled) << required_compiled.error().message();
+      check(*required_compiled);
+    }
+  }
+}
+
+TEST(GraphRegions, AlignedReplicaServesMultipleReadersWithoutReplacingOriginalAlias) {
+  auto builder = GraphBuilder::create().value();
+  const auto input_id = builder.input(row(85)).value();
+  const auto root = builder.add(hyle::compute::Binary{}, input_id, input_id).value();
+  const auto selected = builder.add(hyle::compute::View::slice(0, 17, 17).value(), root).value();
+  const auto first = builder.add(Unary{UnaryKind::kNeg}, selected).value();
+  const auto second = builder.add(Unary{UnaryKind::kNeg}, selected).value();
+  // A separate logical View still reads the original root, after the repaired
+  // value's two strict readers. It cannot hit selected's replica cache entry.
+  const auto original_selected = builder.add(hyle::compute::View::slice(0, 17, 17).value(), root).value();
+  const auto original_read = builder.add(Unary{UnaryKind::kNeg}, original_selected).value();
+  for (const auto value : {first, second, original_read}) ASSERT_TRUE(builder.publish(value).ok());
+  const auto graph = std::move(builder).finish().value();
+  RegionProbe strict{.mode = ProposalMode::kSingleton, .singleton_node = 2};
+  strict.required_resource = hyle::mem::system_resource();
+  strict.bounded_unary_domain = true;
+  strict.requirement_override = hyle::compute::ResourceRequirement{.minimum_alignment = 256};
+  RegionProbe compatible{.mode = ProposalMode::kSingleton, .singleton_node = 5};
+  compatible.required_resource = hyle::mem::system_resource();
+  compatible.bounded_unary_domain = true;
+  compatible.requirement_override = hyle::compute::ResourceRequirement{.minimum_alignment = alignof(float)};
+  auto context = make_context(strict, compatible);
+  const std::array required{
+      hyle::graph::NodeProviderConstraint{graph.node_id(2).value(), kRegionProviderId, context.provider_instance_id(0).value()},
+      hyle::graph::NodeProviderConstraint{graph.node_id(3).value(), kRegionProviderId, context.provider_instance_id(0).value()},
+      hyle::graph::NodeProviderConstraint{graph.node_id(5).value(), kRegionProviderId, context.provider_instance_id(1).value()}};
+  auto compiled = hyle::graph::compile(graph, context, {.node_providers = required});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(compiled->report.copy_bytes(), 17 * sizeof(float));
+  const auto *plan = hyle::graph::detail::ExecutableAccess::state(compiled->executable);
+  ASSERT_NE(plan, nullptr);
+  std::optional<std::uint32_t> alias, replica;
+  for (const auto &step : plan->steps) {
+    if (step.kind != hyle::graph::detail::PlanStepKind::kCopy) continue;
+    ASSERT_FALSE(replica.has_value());
+    alias = plan->node_inputs[step.input_begin];
+    replica = plan->node_outputs[step.output_begin];
+  }
+  ASSERT_TRUE(alias && replica);
+  EXPECT_EQ(plan->instance_values[*alias], selected.ordinal());
+  EXPECT_EQ(plan->instance_values[*replica], selected.ordinal());
+  EXPECT_NE(plan->alias_sources[*alias], hyle::graph::detail::kNoInPlaceSource);
+  EXPECT_EQ(plan->alias_sources[*replica], hyle::graph::detail::kNoInPlaceSource);
+  EXPECT_EQ(plan->alias_offsets[*alias], 17 * sizeof(float));
+  EXPECT_GE(plan->instance_alignments[*replica], 256u);
+  for (const std::size_t node : {2, 3}) {
+    const auto &step = plan->steps[plan->node_steps[node]];
+    EXPECT_EQ(plan->node_inputs[step.input_begin], *replica);
+  }
+  const auto &original_step = plan->steps[plan->node_steps[5]];
+  const auto original_alias = plan->node_inputs[original_step.input_begin];
+  EXPECT_NE(original_alias, *replica);
+  EXPECT_EQ(plan->instance_values[original_alias], original_selected.ordinal());
+  EXPECT_EQ(plan->alias_sources[original_alias], plan->alias_sources[*alias]);
+  EXPECT_EQ(plan->alias_offsets[original_alias], 17 * sizeof(float));
+  auto input = make_tensor(row(85));
+  std::array outputs{make_tensor(row(17)), make_tensor(row(17)), make_tensor(row(17))};
+  auto run = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(run.bind(input_id, input.view).ok());
+  const std::array output_ids{first, second, original_read};
+  for (std::size_t i = 0; i < outputs.size(); ++i) ASSERT_TRUE(run.bind(output_ids[i], outputs[i].view).ok());
+  auto queue = context.create_queue().value();
+  for (std::size_t round = 0; round < 2; ++round) {
+    std::vector<float> values(85), expected(17);
+    for (std::size_t i = 0; i < values.size(); ++i) values[i] = static_cast<float>(i + 1 + round * 100);
+    for (std::size_t i = 0; i < expected.size(); ++i) expected[i] = -2 * values[i + 17];
+    write(input, values);
+    auto done = run.submit(queue); ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    EXPECT_EQ(read(outputs[0], 17), expected); EXPECT_EQ(read(outputs[1], 17), expected);
+    EXPECT_EQ(read(outputs[2], 17), expected); EXPECT_EQ(read(input, 85), values);
+  }
+}
+
+TEST(GraphRegions, AlignmentRepairKeepsWorkspaceLimitsAndRecoversAfterRefusal) {
+  // Two fixed ordinary Caller producers make the source+replica lower bound
+  // meaningful. An arbitrary first-feasible plan is not a global minimum.
+  const auto logical = make_slice_alignment_graph(17, true);
+  RegionProbe producer{.mode = ProposalMode::kSingleton, .singleton_node = 0};
+  RegionProbe strict{.mode = ProposalMode::kSingleton, .singleton_node = 2};
+  for (auto *probe : {&producer, &strict}) {
+    probe->required_resource = hyle::mem::system_resource();
+    probe->bounded_unary_domain = true;
+  }
+  producer.requirement_override = hyle::compute::ResourceRequirement{.minimum_alignment = alignof(float)};
+  strict.requirement_override = hyle::compute::ResourceRequirement{.minimum_alignment = 256};
+  auto context = make_context(producer, strict);
+  const std::array required{
+      hyle::graph::NodeProviderConstraint{logical.graph.node_id(0).value(), kRegionProviderId, context.provider_instance_id(0).value()},
+      hyle::graph::NodeProviderConstraint{logical.graph.node_id(2).value(), kRegionProviderId, context.provider_instance_id(1).value()}};
+  const CompileOptions options{.node_providers = required, .region_selection = RegionSelectionPolicy::kDisabled};
+  std::array storage{hyle::graph::StorageDomain{.resource = hyle::mem::system_resource()}};
+  const std::array target{hyle::graph::ExecutionTarget{
+      .source = hyle::graph::ExecutionSource::acquire(context).value(), .default_storage = hyle::graph::StorageDomainId{0}}};
+  const auto root_bytes = logical.graph.value_description(logical.root).value().required_bytes().value();
+  const auto replica_bytes = logical.graph.value_description(logical.selected).value().required_bytes().value();
+  ASSERT_EQ(root_bytes, 340u); ASSERT_EQ(replica_bytes, 68u);
+  const auto required_lower_bound = root_bytes + replica_bytes;
+  const auto check_control = [&](const hyle::graph::CompiledGraph &compiled) {
+    ASSERT_EQ(compiled.report.storage_domain_count(), 1u);
+    const auto domain = compiled.report.storage_domain(0).value();
+    EXPECT_GE(domain.workspace_bytes, required_lower_bound);
+    EXPECT_LE(domain.workspace_bytes, domain.workspace_budget_bytes);
+    EXPECT_EQ(compiled.report.copy_bytes(), replica_bytes);
+    const auto *plan = hyle::graph::detail::ExecutableAccess::state(compiled.executable);
+    ASSERT_NE(plan, nullptr);
+    const auto &root_step = plan->steps[plan->node_steps[0]];
+    const auto root_instance = plan->node_outputs[root_step.output_begin];
+    std::optional<std::uint32_t> copied_from, replica;
+    bool root_provider_seen = false, reader_provider_seen = false;
+    for (std::size_t i = 0; i < compiled.report.step_count(); ++i) {
+      const auto step = compiled.report.step(i).value();
+      if (step.kind == CompileStepKind::kCopy) {
+        ASSERT_FALSE(replica.has_value());
+        copied_from = plan->node_inputs[plan->steps[i].input_begin];
+        replica = plan->node_outputs[plan->steps[i].output_begin];
+      } else if (step.kind == CompileStepKind::kOperationFallback && step.node_begin == 0) {
+        EXPECT_EQ(step.provider_instance, context.provider_instance_id(0).value()); root_provider_seen = true;
+      } else if (step.kind == CompileStepKind::kOperationFallback && step.node_begin == 2) {
+        EXPECT_EQ(step.provider_instance, context.provider_instance_id(1).value()); reader_provider_seen = true;
+      }
+    }
+    EXPECT_TRUE(root_provider_seen); EXPECT_TRUE(reader_provider_seen);
+    ASSERT_TRUE(copied_from && replica);
+    EXPECT_EQ(plan->instance_values[root_instance], logical.root.ordinal());
+    EXPECT_EQ(plan->instance_values[*copied_from], logical.selected.ordinal());
+    EXPECT_EQ(plan->instance_values[*replica], logical.selected.ordinal());
+    EXPECT_EQ(plan->alias_sources[*copied_from], root_instance);
+    EXPECT_EQ(plan->alias_offsets[*copied_from], 17 * sizeof(float));
+    for (const auto instance : {root_instance, *replica}) {
+      EXPECT_EQ(plan->instance_output_contracts[instance].kind, hyle::graph::RegionOutputKind::kCaller);
+      EXPECT_EQ(plan->instance_output_contracts[instance].projection, hyle::graph::RegionOutputProjection::kTensorView);
+      EXPECT_EQ(plan->alias_sources[instance], hyle::graph::detail::kNoInPlaceSource);
+      EXPECT_EQ(plan->instance_storage[instance], 0u);
+      EXPECT_EQ(plan->instance_roles[instance] & (hyle::graph::detail::kExternalInput |
+          hyle::graph::detail::kExternalOutput | hyle::graph::detail::kConstant | hyle::graph::detail::kGeneratedOutput), 0u);
+      EXPECT_TRUE(compiled.report.physical_value(instance)->workspace_backed);
+    }
+    const auto support = root_step.operation.alias_support(0, 0);
+    ASSERT_TRUE(support); EXPECT_FALSE(support->supported);
+    const auto root_placement = plan->workspace_plan.placement(plan->workspace_requests[root_instance]).value();
+    const auto replica_placement = plan->workspace_plan.placement(plan->workspace_requests[*replica]).value();
+    EXPECT_EQ(root_placement.size, root_bytes); EXPECT_EQ(replica_placement.size, replica_bytes);
+    // Copy reads the View through step s+1 while its destination starts at s.
+    // The complete340B root and68B replica therefore require disjoint ranges.
+    EXPECT_TRUE(root_placement.resource_slot != replica_placement.resource_slot ||
+        root_placement.backing_index != replica_placement.backing_index ||
+        root_placement.offset + root_placement.size <= replica_placement.offset ||
+        replica_placement.offset + replica_placement.size <= root_placement.offset);
+  };
+  auto original = hyle::graph::compile(logical.graph, {.storage_domains = storage, .targets = target}, options);
+  ASSERT_TRUE(original) << original.error().message();
+  check_control(*original);
+  storage[0].workspace_budget_bytes = required_lower_bound - 1; //407, below the two live Caller roots.
+  auto refused = hyle::graph::compile(logical.graph, {.storage_domains = storage, .targets = target}, options);
+  if (refused) {
+    // Failure-only bounded facts: preserve the original budget and assertion
+    // while identifying which complete route legally or incorrectly won.
+    const auto record_plan = [](const char *label, const CompileReport &report) {
+      ::testing::Message facts;
+      facts << "workspace=" << report.workspace_bytes() << " copy=" << report.copy_bytes()
+          << " materialized_constants=" << report.materialized_constant_bytes()
+          << " regions=" << report.region_count() << " leaf=" << report.fallback_operation_count();
+      const auto search = report.search();
+      facts << " plan_rejections=" << search.route_plan_rejections
+          << " operation_rejections=" << search.operation_route_rejections
+          << " region_rejections=" << search.region_route_rejections
+          << " search_states=" << search.route_search_states
+          << " placement_attempts=" << search.placement_attempts;
+      facts << " domain_count=" << report.storage_domain_count();
+      for (std::size_t i = 0; i < (std::min)(report.storage_domain_count(), std::size_t{2}); ++i) {
+        const auto domain = report.storage_domain(i).value();
+        facts << " domain[" << i << "]bytes=" << domain.workspace_bytes
+            << "/limit=" << domain.workspace_budget_bytes << "/backings=" << domain.workspace_backing_count;
+      }
+      facts << " step_count=" << report.step_count();
+      for (std::size_t i = 0; i < (std::min)(report.step_count(), std::size_t{8}); ++i) {
+        const auto step = report.step(i).value();
+        facts << " step[" << i << "]kind=" << static_cast<unsigned>(step.kind)
+            << "/node=" << step.node_begin << "/nodes=" << step.node_count
+            << "/provider=" << step.provider.name << "/iid=" << step.provider_instance.value()
+            << "/impl=" << step.implementation.value() << "/target=" << step.target.ordinal()
+            << "/copy=" << step.copy_bytes;
+      }
+      ::testing::Test::RecordProperty(label, facts.GetString());
+    };
+    record_plan("budget_original_plan", original->report);
+    record_plan("budget_limited_plan", refused->report);
+  }
+  ASSERT_FALSE(refused); EXPECT_TRUE(refused.error().IsResourceExhausted()) << refused.error().message();
+  EXPECT_EQ(producer.submit_count + strict.submit_count, 0u);
+  storage[0].workspace_budget_bytes = SIZE_MAX;
+  auto recovered = hyle::graph::compile(logical.graph, {.storage_domains = storage, .targets = target}, options);
+  ASSERT_TRUE(recovered) << recovered.error().message();
+  check_control(*recovered);
+  expect_slice_alignment_replay(recovered->executable, logical, 17, 1.F, &context);
+}
+
+TEST(GraphRegions, AlignmentCopyDoesNotTurnRealProviderErrorsIntoFallback) {
+  const auto logical = make_slice_alignment_graph();
+  for (const bool leaf : {false, true}) {
+    for (const auto &error : {Status::Unimplemented("real aligned provider failure"),
+                             Status::ResourceExhausted("real aligned provider allocation failure")}) {
+      SCOPED_TRACE(leaf);
+      SCOPED_TRACE(error.message());
+      RegionProbe strict{.mode = ProposalMode::kSingleton, .singleton_node = 2};
+      RegionProbe compatible{.mode = ProposalMode::kSingleton, .singleton_node = 2};
+      for (auto *probe : {&strict, &compatible}) {
+        probe->required_resource = hyle::mem::system_resource(); probe->bounded_unary_domain = true;
+      }
+      strict.requirement_override = hyle::compute::ResourceRequirement{.minimum_alignment = 256};
+      compatible.requirement_override = hyle::compute::ResourceRequirement{.minimum_alignment = alignof(float)};
+      if (leaf) strict.single_outcome_override = ProviderPrepareOutcome::error(error);
+      else strict.region_outcome_override = ProviderPrepareOutcome::error(error);
+      auto context = make_context(strict, compatible);
+      const CompileOptions options{.region_selection = leaf ? RegionSelectionPolicy::kDisabled
+          : RegionSelectionPolicy::kAllowProviderRegions};
+      auto failed = hyle::graph::compile(logical.graph, context, options);
+      ASSERT_FALSE(failed); EXPECT_EQ(failed.error().code(), error.code());
+      EXPECT_NE(failed.error().message().find(error.message()), std::string_view::npos);
+      EXPECT_EQ(compatible.compile_count + compatible.single_artifact_count, 0u);
+      strict.single_outcome_override.reset(); strict.region_outcome_override.reset();
+      auto recovered = hyle::graph::compile(logical.graph, context, options);
+      ASSERT_TRUE(recovered) << recovered.error().message();
+      EXPECT_EQ(recovered->report.copy_bytes(), 17 * sizeof(float));
+      expect_slice_alignment_replay(recovered->executable, logical, 17, -2.F, &context);
+    }
+  }
+}
+
+TEST(GraphRegions, AlignmentCopyResourceQualificationDoesNotHideNativeError) {
+  const auto logical = make_slice_alignment_graph();
+  RegionProbe strict{.mode = ProposalMode::kSingleton, .singleton_node = 2};
+  strict.required_resource = hyle::mem::system_resource(); strict.bounded_unary_domain = true;
+  strict.requirement_override = hyle::compute::ResourceRequirement{.minimum_alignment = 256};
+  auto context = make_context(strict);
+  RegionProbe copy_probe;
+  auto copy_context = Context::create(async_device(copy_probe), hyle::compute::native::provider()).value();
+  HostResource copy_default;
+  const std::array storage{hyle::graph::StorageDomain{hyle::mem::system_resource()},
+      hyle::graph::StorageDomain{hyle::mem::MemoryResourceRef(copy_default)}};
+  const std::array targets{
+      hyle::graph::ExecutionTarget{hyle::graph::ExecutionSource::acquire(context).value(), hyle::graph::StorageDomainId{0}},
+      hyle::graph::ExecutionTarget{hyle::graph::ExecutionSource::acquire(copy_context).value(), hyle::graph::StorageDomainId{1}}};
+  // Target1's own default is legal. All logical nodes belong to target0, so
+  // target1 sees system_resource only as an actual Copy capability candidate.
+  const std::array placements{
+      hyle::graph::NodePlacement{logical.graph.node_id(0).value(), hyle::graph::ExecutionTargetId{0}, hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{logical.graph.node_id(1).value(), hyle::graph::ExecutionTargetId{0}, hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{logical.graph.node_id(2).value(), hyle::graph::ExecutionTargetId{0}, hyle::graph::PlacementStrength::kRequired}};
+  const CompileOptions options{.node_placements = placements, .region_selection = RegionSelectionPolicy::kDisabled};
+  copy_probe.validation_failure_resource = hyle::mem::system_resource();
+  copy_probe.validation_failure = Status::Unimplemented("copy target resource not supported");
+  auto safe = hyle::graph::compile(logical.graph, {.storage_domains = storage, .targets = targets}, options);
+  ASSERT_TRUE(safe) << safe.error().message();
+  EXPECT_EQ(safe->report.copy_bytes(), 17 * sizeof(float));
+  copy_probe.validation_failure = Status::FromNative(hyle::StatusCode::Unimplemented,
+      {.domain = hyle::NativeErrorDomain::PosixErrno, .code = 5}, "actual copy resource query error");
+  auto failed = hyle::graph::compile(logical.graph, {.storage_domains = storage, .targets = targets}, options);
+  ASSERT_FALSE(failed); EXPECT_EQ(failed.error(), copy_probe.validation_failure);
+  copy_probe.validation_failure_resource = {};
+  auto recovered = hyle::graph::compile(logical.graph, {.storage_domains = storage, .targets = targets}, options);
+  ASSERT_TRUE(recovered) << recovered.error().message();
+  expect_slice_alignment_replay(recovered->executable, logical, 17, -2.F, &context);
+}
+
+// A narrow native capability endpoint reuses the existing delegated unary
+// artifact/runner. It supplies no successful Copy executor: only a real cold
+// bool/query/prepare protocol boundary which shared Compute cannot express.
+struct AlignmentCopyEndpoint final {
+  RegionProbe &region;
+  bool can_copy = false, malformed = false;
+  Status query_error{}, prepare_error = Status::Unimplemented("native copy geometry declined");
+  std::size_t queries = 0, preparations = 0;
+};
+extern const hyle::graph::detail::ExecutionSourceVTable kAlignmentCopySource;
+struct AlignmentCopySource final : hyle::graph::detail::ExecutionSourceState {
+  AlignmentCopyEndpoint &endpoint;
+  AlignmentCopySource(AlignmentCopyEndpoint &selected, AllocatorRef allocator_value)
+      : ExecutionSourceState(&kAlignmentCopySource, allocator_value, &selected), endpoint(selected) {}
+};
+const hyle::graph::detail::ExecutionSourceVTable kAlignmentCopySource{
+    .destroy = +[](hyle::graph::detail::ExecutionSourceState *state) noexcept {
+      const auto allocator = state->allocator; allocator.destroy(static_cast<AlignmentCopySource *>(state));
+    },
+    .is_open = +[](const hyle::graph::detail::ExecutionSourceState &) noexcept { return true; },
+    .same_device = +[](const hyle::graph::detail::ExecutionSourceState &,
+                       const hyle::graph::detail::ExecutionSourceState &) noexcept { return true; },
+    .backend_id = +[](const hyle::graph::detail::ExecutionSourceState &) noexcept { return kAsyncBackendId; },
+    .device_class = +[](const hyle::graph::detail::ExecutionSourceState &) noexcept { return hyle::compute::DeviceClass::kCpu; },
+    .device_properties = +[](const hyle::graph::detail::ExecutionSourceState &) noexcept -> Result<hyle::compute::DeviceProperties> {
+      return hyle::compute::DeviceProperties{.backend = kAsyncBackendId, .device_class = hyle::compute::DeviceClass::kCpu,
+          .backend_name = "test-native-alignment", .name = "existing delegated unary test endpoint", .unified_memory = true};
+    },
+    .validate_resource = +[](const hyle::graph::detail::ExecutionSourceState &, hyle::mem::MemoryResourceRef resource) noexcept {
+      return resource.valid() && resource.properties().has(hyle::mem::MemoryProperty::kHostAccessible)
+          ? Status::Ok() : Status::FailedPrecondition("native unary test requires host memory");
+    },
+    .call = +[](const hyle::graph::detail::ExecutionSourceState &, hyle::graph::detail::SourceCall function, void *opaque) noexcept {
+      return function(opaque);
+    },
+    .native_context = +[](const hyle::graph::detail::ExecutionSourceState &state) noexcept -> void * {
+      return &static_cast<const AlignmentCopySource &>(state).endpoint.region;
+    },
+    .region_provider = +[](const hyle::graph::detail::ExecutionSourceState &) noexcept { return &kRegionVTable; },
+    .can_copy = +[](const hyle::graph::detail::ExecutionSourceState &state,
+        const hyle::graph::detail::CopySourceDescription &, hyle::mem::MemoryResourceRef) noexcept -> Result<bool> {
+      auto &endpoint = static_cast<const AlignmentCopySource &>(state).endpoint; ++endpoint.queries;
+      if (!endpoint.query_error.ok()) return std::unexpected(endpoint.query_error);
+      return endpoint.can_copy;
+    },
+    .prepare_copy = +[](const hyle::graph::detail::ExecutionSourceState &state,
+        const hyle::graph::detail::CopySourceDescription &, hyle::mem::MemoryResourceRef,
+        AllocatorRef, ProviderRegionPrepared *output) noexcept {
+      auto &endpoint = static_cast<const AlignmentCopySource &>(state).endpoint; ++endpoint.preparations;
+      *output = {};
+      if (endpoint.malformed) output->state = &endpoint; // Deliberately unowned; never an allocation to leak.
+      return endpoint.prepare_error;
+    }};
+
+hyle::graph::ExecutionSource alignment_copy_source(AlignmentCopyEndpoint &endpoint) {
+  const auto allocator = hyle::mem::system_allocator();
+  auto *state = allocator.construct<AlignmentCopySource>(endpoint, allocator);
+  EXPECT_NE(state, nullptr);
+  return state ? hyle::graph::detail::ExecutionSourceAccess::adopt(state) : hyle::graph::ExecutionSource{};
+}
+
+TEST(GraphRegions, AlignmentCopyCapabilityDeclineKeepsCompatibleRouteAndHardTarget) {
+  const auto logical = make_slice_alignment_graph(17, true);
+  RegionProbe prefix{.mode = ProposalMode::kSingleton, .singleton_node = 0};
+  RegionProbe strict{.mode = ProposalMode::kSingleton, .singleton_node = 2};
+  RegionProbe compatible{.mode = ProposalMode::kSingleton, .singleton_node = 2};
+  for (auto *probe : {&prefix, &strict, &compatible}) {
+    use_delegated_runtime(*probe); probe->required_resource = hyle::mem::system_resource();
+  }
+  strict.requirement_override = hyle::compute::ResourceRequirement{.minimum_alignment = 256};
+  compatible.requirement_override = hyle::compute::ResourceRequirement{.minimum_alignment = alignof(float)};
+  AlignmentCopyEndpoint first{prefix}, second{strict}, third{compatible};
+  const std::array storage{hyle::graph::StorageDomain{hyle::mem::system_resource()}};
+  const std::array targets{
+      hyle::graph::ExecutionTarget{alignment_copy_source(first), hyle::graph::StorageDomainId{0}},
+      hyle::graph::ExecutionTarget{alignment_copy_source(second), hyle::graph::StorageDomainId{0}},
+      hyle::graph::ExecutionTarget{alignment_copy_source(third), hyle::graph::StorageDomainId{0}}};
+  const CompileOptions options{.max_route_search_states = 32, .operation_fallback = OperationFallbackPolicy::kReject};
+  auto compiled = hyle::graph::compile(logical.graph, {.storage_domains = storage, .targets = targets}, options);
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_GT(first.queries + second.queries + third.queries, 0u);
+  EXPECT_EQ(first.preparations + second.preparations + third.preparations, 0u);
+  EXPECT_EQ(strict.compile_count, 0u); EXPECT_EQ(compatible.compile_count, 1u);
+  EXPECT_EQ(compiled->report.copy_bytes(), 0u);
+  EXPECT_GT(compiled->report.search().region_route_rejections, 0u);
+  expect_slice_alignment_replay(compiled->executable, logical, 17, 1.F);
+  const auto submitted = prefix.submit_count + compatible.submit_count;
+  auto hard_options = options;
+  const std::array required{hyle::graph::NodePlacement{logical.graph.node_id(2).value(),
+      hyle::graph::ExecutionTargetId{1}, hyle::graph::PlacementStrength::kRequired}};
+  hard_options.node_placements = required;
+  auto refused = hyle::graph::compile(logical.graph, {.storage_domains = storage, .targets = targets}, hard_options);
+  ASSERT_FALSE(refused); EXPECT_TRUE(refused.error().IsUnimplemented()) << refused.error().message();
+  EXPECT_EQ(strict.compile_count, 0u);
+  EXPECT_EQ(prefix.submit_count + compatible.submit_count, submitted);
+}
+
+TEST(GraphRegions, AlignmentCopyQueryAndNativePrepareErrorsKeepTheirOriginalMeaning) {
+  const auto logical = make_slice_alignment_graph(17, true);
+  for (const unsigned failure : {0u, 1u, 2u, 3u, 4u}) {
+    SCOPED_TRACE(failure);
+    RegionProbe prefix{.mode = ProposalMode::kSingleton, .singleton_node = 0};
+    RegionProbe strict{.mode = ProposalMode::kSingleton, .singleton_node = 2};
+    RegionProbe compatible{.mode = ProposalMode::kSingleton, .singleton_node = 2};
+    for (auto *probe : {&prefix, &strict, &compatible}) {
+      use_delegated_runtime(*probe); probe->required_resource = hyle::mem::system_resource();
+    }
+    strict.requirement_override = hyle::compute::ResourceRequirement{.minimum_alignment = 256};
+    compatible.requirement_override = hyle::compute::ResourceRequirement{.minimum_alignment = alignof(float)};
+    AlignmentCopyEndpoint first{prefix}, second{strict}, third{compatible};
+    second.can_copy = true;
+    if (failure == 0) second.query_error = Status::Unimplemented("actual native copy qualification error");
+    if (failure == 2) second.prepare_error = Status::FromNative(hyle::StatusCode::Unimplemented,
+        {.domain = hyle::NativeErrorDomain::PosixErrno, .code = 5}, "actual native copy failure");
+    if (failure == 3) second.malformed = true;
+    if (failure == 4) second.prepare_error = Status::ResourceExhausted("actual native copy metadata failure");
+    const std::array storage{hyle::graph::StorageDomain{hyle::mem::system_resource()}};
+    const std::array targets{
+        hyle::graph::ExecutionTarget{alignment_copy_source(first), hyle::graph::StorageDomainId{0}},
+        hyle::graph::ExecutionTarget{alignment_copy_source(second), hyle::graph::StorageDomainId{0}},
+        hyle::graph::ExecutionTarget{alignment_copy_source(third), hyle::graph::StorageDomainId{0}}};
+    const CompileOptions options{.max_route_search_states = 32, .operation_fallback = OperationFallbackPolicy::kReject};
+    const auto compile = [&] { return hyle::graph::compile(logical.graph, {.storage_domains = storage, .targets = targets}, options); };
+    auto result = compile();
+    if (failure == 1) {
+      // A genuine pure prepare decline follows original physical/route search.
+      ASSERT_TRUE(result) << result.error().message();
+      EXPECT_GT(second.preparations, 0u); EXPECT_EQ(strict.compile_count, 0u);
+      EXPECT_EQ(compatible.compile_count, 1u); EXPECT_EQ(result->report.copy_bytes(), 0u);
+      expect_slice_alignment_replay(result->executable, logical, 17, 1.F);
+    } else {
+      ASSERT_FALSE(result);
+      if (failure == 3) EXPECT_TRUE(result.error().IsInternal()) << result.error().message();
+      else {
+        const auto &expected = failure == 0 ? second.query_error : second.prepare_error;
+        EXPECT_EQ(result.error().code(), expected.code()); EXPECT_EQ(result.error().native_error(), expected.native_error());
+        EXPECT_NE(result.error().message().find(expected.message()), std::string_view::npos);
+      }
+      EXPECT_EQ(compatible.compile_count, 0u);
+      EXPECT_EQ(prefix.submit_count + strict.submit_count + compatible.submit_count, 0u);
+      second.query_error = Status::Ok(); second.can_copy = false; second.malformed = false;
+      auto recovered = compile(); ASSERT_TRUE(recovered) << recovered.error().message();
+      EXPECT_EQ(recovered->report.copy_bytes(), 0u);
+      expect_slice_alignment_replay(recovered->executable, logical, 17, 1.F);
+    }
   }
 }
 

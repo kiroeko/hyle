@@ -1,0 +1,232 @@
+{
+  "schema": "hyle-inference-graph-alias-alignment-v1",
+  "status": "CURRENT_FINITE_GATES_PASS_HISTORICAL_FAILURES_RETAINED",
+  "base_commit": "ec4b30b4dd58e09594822882e4689d78835dc4d7",
+  "full_goal_complete": false,
+  "implementation": {
+    "product_files": 2,
+    "actual_diagnosis": "ordinary internal Caller/TensorView root65+128B, input alignment256, accepts_ref0/needs_tensor1; dim0=last_row0 -> T1 from original Recipe dimension definitions",
+    "repair": "Only a qualified by-value internal caller alias gets a same-description physical copy when its static offset fails alignment. Producer/reference/external/effect identities stay original.",
+    "NoQualifiedCopy": "Typed false only for explicit exhausted qualified copy routes; required locality keeps plan decline, optional alignment keeps current reader decline. Query/native/allocation/search errors retain their actual status.",
+    "late_transfer": "Original physical-next then routes-next preserved. Malformed unowned artifact is Internal before retry flag; native-bearing errors are not softened.",
+    "capacity_lifetime": "Original V*S+V instance bound and all arrays retained; Copy uses original plan scheduling, overlapping source/destination lifetime, budget and retirement.",
+    "not_claimed": "No model-specific Copy, budget increase, changed provider declaration, general kernel alignment attribution, or final-copy-cost global optimizer."
+  },
+  "attempts": {
+    "total": 30,
+    "CXX": 5,
+    "Graph_SDK_CXX": 1,
+    "test_CXX": 4,
+    "CXX_failed": 1,
+    "links": 8,
+    "links_failed": 0,
+    "native": 17,
+    "native_pass": 15,
+    "native_failed": 2,
+    "consumer_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "failed_attempts": [
+    "compile/region/attempt1",
+    "runs/budget-diagnostic/attempt1",
+    "runs/first-tests/attempt1"
+  ],
+  "compile": {
+    "unchanged_retained": 228,
+    "replaced_Graph": 1,
+    "candidate_inputs": 229,
+    "cached_consumer_CXX": 0,
+    "final_Graph_source_sha256": "9f4fb5bcae0d826af44f9f6042253e2d0673cab9532493d45f84a0ddb05024cc",
+    "final_test_source_sha256": "6940e11eab659c5eb485aa952029cff610ce2ae324457af4c4332b4f70f86c00"
+  },
+  "current_tests": {
+    "new": 7,
+    "related": 18,
+    "passed": 25,
+    "failed": 0,
+    "skipped": 0
+  },
+  "historical_tests": {
+    "first7": {
+      "passed": 6,
+      "failed": 1
+    },
+    "budget_diagnostic": {
+      "executed": 1,
+      "failed": 1,
+      "expected_for_fact_collection": true
+    },
+    "SCOPED_TRACE_CXX": {
+      "exit": 2,
+      "cause": "Two same-line macros generated duplicate __LINE__ symbols; whitespace-only correction retained."
+    }
+  },
+  "budget_scopes": {
+    "old407": "Actual legal fallback408/Copy68 ->340/Copy0 under407; old assertion failed.",
+    "strong407": "Two hard-locked Caller unary providers require340+68 live bytes>=408. Current test asserts407 refusal, no submit, original roles/independent placement and restored replay."
+  },
+  "H64": {
+    "status": "PASS_ORIGINAL_H64_CONFIG_NOW_COMPLETES",
+    "generated_tokens": 4,
+    "cpu_ffn_layers": 1,
+    "final_versions": 0,
+    "hybrid_plan_facts": [
+      {
+        "host_constants": 5,
+        "materialized_constant_bytes": 0,
+        "activation_copy_bytes": 640,
+        "known_workspace_device": 12292,
+        "known_workspace_host": 1152,
+        "known_workspace_staging": 128
+      },
+      {
+        "host_constants": 5,
+        "materialized_constant_bytes": 0,
+        "activation_copy_bytes": 2432,
+        "known_workspace_device": 24460,
+        "known_workspace_host": 3328,
+        "known_workspace_staging": 384
+      }
+    ],
+    "scope": "These are actual per-child hybrid totalcopy/workspace facts, including oldCPU transfers. Specific newaliascopy properties are independently checked by the approved unitCompileReports; defaultJSON has no perprovider details.",
+    "full_result": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-alias-repair-harness-20261030\\tiny-repair-result.json",
+      "bytes": 2224,
+      "sha256": "11a8d6a3d5caf935b3916305df4de27932860fa5832ab2c312a9896a956209a8"
+    }
+  },
+  "paired_non_timing_reports_independently_equal": [
+    {
+      "case": "ordinary-single",
+      "all_non_timing_fields_exact": true
+    },
+    {
+      "case": "mtp-single",
+      "all_non_timing_fields_exact": true
+    },
+    {
+      "case": "ordinary-two",
+      "all_non_timing_fields_exact": true
+    },
+    {
+      "case": "mtp-two",
+      "all_non_timing_fields_exact": true
+    },
+    {
+      "case": "cpu-ffn-real-cuda",
+      "all_non_timing_fields_exact": true
+    }
+  ],
+  "Session": {
+    "files_per_arm": 378,
+    "bytes_per_arm": 150761472,
+    "all_hashes_and_direct_bytes_equal": true,
+    "only_output_root_metadata_normalized": true,
+    "finite_zero_error_retirement_checks": true
+  },
+  "checks": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-alias-repair-harness-20261030\\verification-summary.json",
+    "bytes": 13173,
+    "sha256": "de8e0b9bdf2bb2f4bef833fdfe2c68f36d4e1e582b4a359e27ab373e151957fc"
+  },
+  "scratch_preparation_issue": {
+    "record": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-alias-repair-harness-20261030\\inventory-preparation-note.json",
+      "bytes": 516,
+      "sha256": "987d0e33a6f8e11ef4f8b552f2fb7b51d437dd0bdb420da28c06c72a44f46079"
+    },
+    "scope": "A preserved script-preparation escaping error with no build/native effect; not a model test or one of the30 processes."
+  },
+  "source_receipts": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-alias-repair-harness-20261030\\collector-source-receipt-proofs.json",
+    "bytes": 41761,
+    "sha256": "e4ddef2b31606faa0693e6efe7a34c4ad10b219d90d670a0f9364652240f5e99"
+  },
+  "source_final": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-alias-repair-harness-20261030\\collector-final-source-readback.json",
+    "bytes": 1829,
+    "sha256": "8d087661c018e2c86f7a6d0a28600685dd64bd8ce7ef10516f1c829f296b6e26"
+  },
+  "attempt_readback": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-alias-repair-harness-20261030\\collector-attempt-readback.json",
+    "bytes": 30832,
+    "sha256": "96693e382cb1993f9e5010d33c47a3c38fcb67c4d7708f1f4022063b4baab471"
+  },
+  "gtest_budget_readback": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-alias-repair-harness-20261030\\collector-gtest-and-budget-readback.json",
+    "bytes": 5413,
+    "sha256": "f4eb0c0f1d5afa9c0f21ff57144be3b9294252e0834cb0c688b205903cd94c6e"
+  },
+  "vector_readback": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-alias-repair-harness-20261030\\collector-vector-readback.json",
+    "bytes": 617,
+    "sha256": "71c2117c86622466b1446beb3be02475f1919a418049f333557049b4bf3984b5"
+  },
+  "reference_readback": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-alias-repair-harness-20261030\\collector-reference-and-history-readback.json",
+    "bytes": 152589,
+    "sha256": "35feddd6b610106541534f95a2a21a22819593fab94c21b538d6be6d67f121e7"
+  },
+  "model_link_base": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-alias-repair-harness-20261030\\model-link-base.json",
+    "bytes": 125048,
+    "sha256": "b1373f994cb258003a47acb3fa45f999c52bfb832307a38bcd729ad2e326504f"
+  },
+  "dependency_proof": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-alias-repair-harness-20261030\\sdk-engine-dependencies.json",
+    "bytes": 191402,
+    "sha256": "19b3de05e534476047881bdb0fd9dd51cda49083b669a65d1e10759a8ca7b4ed"
+  },
+  "hardware_toolchain": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-alias-repair-harness-20261030\\hardware-toolchain.json",
+    "bytes": 5529,
+    "sha256": "d786d6ffb16a236fb5aabccf257d6978ff68e31767aabc82a914784f1b58b2bb"
+  },
+  "external_evidence_manifest": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-alias-repair-harness-20261030\\collector-external-evidence-manifest.json",
+    "bytes": 26367,
+    "sha256": "2cf27144bbc80f79b85121122037e9fd50767757a285209078053829357c17ff"
+  },
+  "limits": [
+    "Finite Graph capability and original consumers only; not whole inference goal completion or all backend/model/shape exhaustion.",
+    "Current25 gtests are test-case counts, not loop subcases, implementations, GPU dispatches or a complete suite.",
+    "H64 had no old successful complete plan; its reported hybrid copy totals include original CPU transfers and are not an old0/newdelta claim.",
+    "Default/CPU2 JSON and logged resource totals are exact where compared. Default JSON lacks a full per-provider/all-child copy inventory; no trace/tensor-readback run was added.",
+    "Wrapper256 and peer allocation128 do not identify the failed selected kernel; selected failed provider remains unrecorded. No declaration was lowered.",
+    "Single finite same-argument timings diagnose obvious regressions only; no sustained speed claim, profiler, download or new performance candidate.",
+    "Manual exact cached CXX/link, no normal full CMake build/install. Old unavailable native-library dependency metadata remains explicitly unavailable.",
+    "Archive omits binary, model/SDK/vendor copies and raw vectors, retaining complete hashes/source versions/commands/reports and original failed attempts."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-graph-alias-alignment-2026-10-30.zip",
+    "bytes": 3084239,
+    "sha256": "e4ae65c48f9e53e6dcb2e76f6c59063ad3c0c77511d929d1757d6e1aa5a8625d",
+    "members": 341,
+    "all_members_readback_verified": true
+  },
+  "retention": {
+    "kept": "Source snapshots, exact commands, compiler dependency receipts, actual terminal reports, complete vector hashes/metadata, native objects and current229 reproduction cache.",
+    "rebuildable_cleanup": "Only batch-local linked EXE/EXP/LIB and Session raw vector payloads; root test.ps1 verifies exact paths/bytes/SHA before deletion. Raw payloads are not in the archive.",
+    "raw_vectors_available_after_cleanup": false,
+    "vector_equality_evidence": "All complete source arrays were read and directly compared before exact scoped cleanup; full hashes, observations and commands remain in the verified archive."
+  },
+  "cleanup": {
+    "status": "CLEANED_EXACT_BATCH_FILES",
+    "count": 780,
+    "bytes": 1449196424,
+    "archive_verified": true,
+    "SDK_objects_preserved": true,
+    "model_objects_preserved": true,
+    "runtime_DLL_preserved": true
+  },
+  "diagnostic_cleanup": {
+    "status": "CLEANED_EXACT_BATCH_FILES",
+    "count": 3,
+    "bytes": 145172796,
+    "archive_verified": true,
+    "SDK_objects_preserved": true,
+    "model_objects_preserved": true,
+    "runtime_DLL_preserved": true
+  }
+}

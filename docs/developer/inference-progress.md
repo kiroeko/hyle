@@ -7,9 +7,9 @@
 HYLE的目标是完整推理引擎，基础模块仍可独立使用。长期取舍以[两项核心期许](../architecture/inference-principles.md)为准；当前真实Qwen路径用于检验底层，不能定义共同形状。
 
 - **已完成：** 前批已列单机功能与模型／请求组合整改；工程入口与许可整改。
-- **本次完成：** 目标主干冷数学已独立编译；5次CXX／6次链接成功，18个有限原生进程中16成功、2次H64混合拒绝保留。默认四对及两臂各378份状态向量一致，真实2B混合放置对照通过。整体架构仍未完成。
+- **本次完成：** Graph内部Tensor别名按需物化已修复H64／CPU FFN1的T1拒绝；7项新检查、18项相关回归、默认四对及真实CPU2通过，Session两臂各378份向量逐字节一致。历史失败保留，整体架构仍未完成。
 - **当前位置：** Qwen连续／同步／packed／递归目标及GLM ordinary／K1候选共用实际步骤驱动，结果与请求见证分开；模型保留数学、完整状态及发布差异。第二完整模型、多卡／多机仍未验证或实现。
-- **现在做：** 定位并整改H64混合小形状的Graph输入别名对齐接纳；随后继续完整Family冷工厂与Phase物理准备。
+- **现在做：** 继续完整Family冷工厂及Phase物理准备边界，以原owner已准备事实和稳定Graph地址解耦；默认性能专项仍后置。
 - **仍未交付：** 多模态图片、通用模型加载／tokenizer及服务器API。本阶段不以这些应用能力为前置。
 
 当前顺序：**保留已完成共同驱动 → 跨模型需求、模块边界、独立编译及冷热职责 → 默认构建／正常默认用法的性能收敛**。相关架构改动保留正确性和明显退化检查，后续decode以纯GPU普通／MTP为重点。
@@ -21,8 +21,8 @@ HYLE的目标是完整推理引擎，基础模块仍可独立使用。长期取�
 
 ## 任务树
 
-- 底层功能与组合复审：约99%（既有已列项保持，新发现混合接纳问题待核）
-  - 混合小形状别名对齐接纳：约10%（旧基线冷编译拒绝已复现，根因与整改待核）
+- 底层功能与组合复审：100%（本轮当前已列缺项已整改并有限检查）
+  - 混合小形状别名对齐接纳：100%（共同物化、错误／预算合同及有限消费者检查完成）
   - 冷形状、取消、背压及会话换出换入：100%（已实现并有限检查）
   - 有效长度、varlen及普通／MTP组合：100%（已实现并有限检查）
   - 逐请求策略、动态logits及失败发布：100%（已实现并有限检查）
@@ -127,18 +127,25 @@ GNU／LLVM OpenMP精确二进制源版本仍未确认，许可文本齐备不等
 | 任务 | 所属 | 估计进度 | 当前内容 |
 |---|---|---:|---|
 | 跨模型需求与模块接入面 | 共同执行架构 | 约25% | 四类实际接入面已核对，按真实状态、输出与owner差异调整；有限具体图不伪造Qwen程序族。 |
-| 混合小形状别名对齐接纳 | 底层功能／Graph资源装配 | 约10% | H64新旧两臂同一冷拒绝，真实H2048／CPU2成功；核共同View别名复用与消费端对齐，复用原物化／Copy及预算寿命机制。 |
+| 完整Family冷工厂与Phase准备 | 共同执行架构／冷构图边界 | 约15% | 已核原cache／head、Graph稳定地址、失败不发布及重试合同；一次冷工厂消费prepared facts，原Model保准入与发布。 |
 | 默认性能与冷热成本接线 | 共同执行架构／测量 | 约30% | 核冷计划应准备的事实与每步动态检查／装配，后续以默认完整词表普通／MTP验证相关改动，不以可选词表领先替代。 |
 
 此前顺序纠正时停止了词表探针、编译和性能实验；6个未编译源码文件已按哈希保存到`.scratch/inference-architecture-priority-20261030/`，经根目录`test.ps1`恢复产品原源码，没有丢弃候选，也不计为已交付。完整goal现已恢复，目标和先架构后性能的顺序未变。
 
-最近交付：[目标主干冷数学](../evidence/correctness/inference-target-graph-boundary-2026-10-30.json)。
+最近交付：[内部Tensor别名的对齐接纳](../evidence/correctness/inference-graph-alias-alignment-2026-10-30.json)。
+只在Graph自有Caller／TensorView按值输入的静态offset不满足reader声明时沿原Copy物化；保原producer／Source／引用身份、dtype／strides、预算和寿命，无模型改动／新开关。
+当前7项新合同与18项相关CPU回归全部通过、skip0；原H64／CPU FFN1的T1配置首次完整4输出、最终版本0。真实BF16 2B默认完整词表普通／MTP四对及CPU2两臂全部非计时汇总／现有coldplan日志一致，不能扩大为逐provider完全相同。
+Session两臂各378份／150,761,472字节完整向量逐字节一致，完整observation仅归一输出路径。单配decode变动约－0.95%、＋1.00%、＋0.47%、－1.44%，仅退化诊断，无稳定提速结论。
+30个实际验证进程含5 CXX、8 link、17 native；历史1次测试宏编译错误、2次测试断言失败均保留，当前成功路径通过。原407B预算断言忽略了340B合法回溯，已改为硬锁340B＋68B Caller寿命下界，407B拒绝及恢复重放通过；没有提高预算。
+只替换229输入中的Graph一项，228复用、消费者零重编，零NVCC／下载，无完整默认CMake构建。对齐已满足路径复用原实例；strict优先＋Copy可能替代旧低alignment路线，实际成本仍按report与完整消费者评估。Family／Phase及整体跨模型架构继续。
+
+前片：[目标主干冷数学](../evidence/correctness/inference-target-graph-boundary-2026-10-30.json)。
 原204行embedding／GDN／attention／FFN移到模型私有target_graph.cc；原4135个token在显式事实投影下相同，三个描述布局、端口／节点顺序和literal／Graph所有者保留。
 同一Recipe消费原frequency、schema、target-only端口span和前驱append；不传Model／Session／完整Family，不新增热分派。原228输入全复用，新增target冷对象组成229；5次CXX／6次链接成功，无NVCC／下载，未跑完整默认CMake。
 18个原生进程中16成功；默认完整词表普通／MTP四对全部非计时字段exact，Session两臂各378份／150,761,472字节向量逐字节相同，完整观察只归一输出路径，旧Head／版本归零／缓存计划等合同保持。
 packed prefill、变长Verify及原E4独立校准检查通过；真实BF16 H2048／CPU FFN2两臂4输出全部非计时exact，host常量10／10、零权重复制及原三域断言经过。该混合检查实际capacity1024／auto，未冒充旧256／commands。
 H64 tiny CPU FFN1在两臂均冷编译拒绝alias alignment/search，两次失败保留并新增底层整改节点，未声明该形状通过；另一次多JSON汇总异常仅修解析，未重跑已过native。
-四个单配decode变动为＋0.15%、－6.39%、＋3.12%、－2.19%，只作诊断，不声明稳定收益；无新性能窗口。完整Family／Phase与新对齐缺项继续。
+四个单配decode变动为＋0.15%、－6.39%、＋3.12%、－2.19%，只作诊断，不声明稳定收益；无新性能窗口。当时发现的对齐缺项已由上述共同修复关闭，完整Family／Phase继续。
 
 前片：[冷cache事实与完整状态依赖](../evidence/correctness/inference-cold-cache-facts-2026-10-30.json)。
 Qwen私有cache_plan.h只含容量、物理row字节及原checked数学，不持状态／lease／owner；实际叶头编译不引入Compute／Graph，weights与构图实现不再引入Qwen session_state／paged_sequence。
