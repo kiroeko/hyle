@@ -163,7 +163,10 @@ GLM的StateStore／StateHead不使用这些分页尾，不为接口统一而引�
 `ProgramIo::withdrawal_values`只借原sealed清单，含动态输入和caller-owned输出，不复制端口或权限；固定输入及readback保持原安装。
 私有hidden从已取回的原Store中publish，页预检／发布及work替换继续归模型；失败仍退休同一个原guard，不重试部分成功交接。
 [有限检查](../evidence/correctness/inference-private-handoff-2026-10-30.json)不扩大为全平台或吞吐结论。
-共同结果束目前仍要求至少一个tensor输出；纯Store／PagedAppend阶段虽有原Graph能力，尚未接入该共同束，列为当前架构缺项。
+共同结果束允许零tensor：可只捕获Store／Page，也可仅保原提交结果。只有全部选定view捕获成功，才记录零tensor选择；
+非空首输出失败仍保原empty-output错误和partial bundle。这个事实不证明计算成功或退休，原wait／detach及typed权限继续作准。
+[有限检查](../evidence/correctness/inference-effect-views-2026-10-30.json)保留真实双Append→Attention、零hostwait及原页数值／snapshot。
+多owner检查另发现原Graph冷Store adapter只覆盖target默认存储域，同Context其它实际域没有候选；此产品缺项仍待修复，不宣称多域Store已完成。
 
 完整页准备归`prepare_append_pages`：预留原候选引用和dirty-bank容量，保留原完整前缀，尝试真实尾预留，必要时回落COW并逐页取得原Inventory引用。
 普通／验证／后继target、批量draft及私有NextN通过整组入口复用这一算法。模型提供真实银行范围、epoch／relay资格及候选准备，仍决定逻辑状态和完整Head发布。

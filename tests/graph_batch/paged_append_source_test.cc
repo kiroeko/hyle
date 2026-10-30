@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include "../../engine/inference/submission_views.h"
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/detail/paged_arena_access.h"
 #include "hyle/compute/paged_frame.h"
@@ -27,6 +28,7 @@ namespace cd = c::detail;
 namespace g = hyle::graph;
 namespace gd = g::detail;
 namespace gb = g::batch;
+namespace i = hyle::inference;
 
 // A bounded original-Queue host gate. Every assertion exit releases it before
 // the Invocation/resource owners unwind; no device spin kernel is involved.
@@ -183,11 +185,14 @@ void pending_original_pages_publish_while_attention_reads(bool owned_layout) {
   ASSERT_TRUE(gb::bind_append(producer, first_graph, append_value, std::move(value_pages)).ok());
   ASSERT_TRUE(producer.bind(first_key, rows, key_input).ok());
   ASSERT_TRUE(producer.bind(first_value, rows, value_input).ok());
-  auto key_source_result = gb::PagedAppendSource::prepare(producer, append_key, storage);
-  ASSERT_TRUE(key_source_result) << key_source_result.error().message();
-  auto value_source_result = gb::PagedAppendSource::prepare(producer, append_value, storage);
-  ASSERT_TRUE(value_source_result) << value_source_result.error().message();
-  auto key_source = std::move(*key_source_result), value_source = std::move(*value_source_result);
+  i::SubmissionViews views;
+  const std::array page_captures{i::SubmissionViews::PageCapture{append_key, storage},
+      i::SubmissionViews::PageCapture{append_value, storage}};
+  const auto prepared_views = views.prepare(producer,
+      std::span<const i::SubmissionViews::StoreCapture>{}, page_captures, {});
+  ASSERT_TRUE(prepared_views.ok()) << prepared_views.message();
+  ASSERT_EQ(views.pages.size(), 2u);
+  auto &key_source = views.pages[0], &value_source = views.pages[1];
 
   auto second = g::GraphBuilder::create().value();
   const auto second_query = second.input(query_desc).value();
@@ -255,14 +260,15 @@ void pending_original_pages_publish_while_attention_reads(bool owned_layout) {
   ASSERT_EQ(cudaLaunchHostFunc(gate.stream, &PageSourceGate::wait, &gate), cudaSuccess);
   auto submitted = producer.submit(queues);
   ASSERT_TRUE(submitted) << submitted.error().message();
-  auto common_result = g::SubmissionSource::create(producer, std::move(*submitted), storage);
-  ASSERT_TRUE(common_result) << common_result.error().message();
-  auto common = std::move(*common_result);
+  const auto captured = views.capture_outputs(producer, *submitted,
+      std::span<const i::SubmissionViews::OutputCapture>{}, storage);
+  ASSERT_TRUE(captured) << captured.error().message();
+  EXPECT_TRUE(*captured);
+  EXPECT_FALSE(submitted->valid());
+  EXPECT_FALSE(views.primary_output.valid());
+  EXPECT_TRUE(views.extra_outputs.empty());
+  auto &common = views.submission;
   EXPECT_EQ(*common.poll(), c::CompletionPoll::kPending);
-  const auto captured_keys = key_source.capture(common);
-  ASSERT_TRUE(captured_keys.ok()) << captured_keys.message();
-  const auto captured_values = value_source.capture(common);
-  ASSERT_TRUE(captured_values.ok()) << captured_values.message();
   if (owned_layout) {
     auto invalid_control = gd::SourceBindingAccess::get(*value_binding).ready_inputs.front();
     invalid_control.ordinal = UINT32_MAX;
@@ -293,6 +299,7 @@ void pending_original_pages_publish_while_attention_reads(bool owned_layout) {
   gate.release();
   ASSERT_TRUE(common.wait().ok());
   EXPECT_EQ(*consumed->poll(), c::CompletionPoll::kPending);
+  ASSERT_TRUE(views.detach_outputs().ok());
   ASSERT_TRUE(common.detach().ok());
   std::array<gb::PagedAppendPages, 2> returned;
   const auto taken = gb::take_appends(producer, std::array{append_key, append_value}, returned);

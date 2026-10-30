@@ -119,6 +119,12 @@ TEST(InferenceSubmissionViewsCuda, EachOutputCapturesItsActualOwnerInOneContextA
   i::SubmissionViews views;
   fixture.prepare(views);
   auto completion = take(fixture.run.submit(fixture.queues()));
+  const auto missing_outputs = views.capture_outputs(fixture.run, completion,
+      std::span<const i::SubmissionViews::OutputCapture>{}, fixture.owners[0]);
+  ASSERT_FALSE(missing_outputs);
+  EXPECT_TRUE(missing_outputs.error().IsInvalidArgument());
+  EXPECT_TRUE(completion.valid());
+  EXPECT_FALSE(views.submission.valid());
   const std::array captures{
       i::SubmissionViews::OutputCapture{fixture.output_ids[0], fixture.owners[0], fixture.outputs[0]},
       i::SubmissionViews::OutputCapture{fixture.output_ids[1], fixture.owners[1], fixture.outputs[1]}};
@@ -128,6 +134,11 @@ TEST(InferenceSubmissionViewsCuda, EachOutputCapturesItsActualOwnerInOneContextA
   EXPECT_FALSE(completion.valid());
   ASSERT_TRUE(views.submission.valid()); ASSERT_TRUE(views.primary_output.valid());
   ASSERT_EQ(views.extra_outputs.size(), 1u); ASSERT_TRUE(views.extra_outputs[0].valid());
+  const auto duplicate = views.capture_outputs(fixture.run, completion, captures, fixture.owners[0]);
+  ASSERT_FALSE(duplicate);
+  EXPECT_TRUE(duplicate.error().IsFailedPrecondition());
+  EXPECT_TRUE(views.submission.valid());
+  EXPECT_FALSE(completion.valid());
   EXPECT_FALSE(fixture.run.reset().ok());
   check(views.submission.wait());
   check(views.detach_outputs());
@@ -141,31 +152,78 @@ TEST(InferenceSubmissionViewsCuda, EachOutputCapturesItsActualOwnerInOneContextA
   for (const auto &pool : fixture.outputs) EXPECT_EQ(pool.stats().live_blocks, 0u);
 }
 
-TEST(InferenceSubmissionViewsCuda, LateWrongOwnerRetainsOriginalPartialBundleForRecovery) {
+void wrong_owner_retains_original_partial_bundle_for_recovery(std::size_t wrong_output) {
+  SCOPED_TRACE(wrong_output);
   TwoDomains fixture;
   i::SubmissionViews views;
   fixture.prepare(views);
   auto completion = take(fixture.run.submit(fixture.queues()));
   const std::array captures{
-      i::SubmissionViews::OutputCapture{fixture.output_ids[0], fixture.owners[0], fixture.outputs[0]},
-      i::SubmissionViews::OutputCapture{fixture.output_ids[1], fixture.owners[0], fixture.outputs[1]}};
+      i::SubmissionViews::OutputCapture{fixture.output_ids[0], fixture.owners[wrong_output ? 0 : 1], fixture.outputs[0]},
+      i::SubmissionViews::OutputCapture{fixture.output_ids[1], fixture.owners[wrong_output ? 0 : 1], fixture.outputs[1]}};
   const auto rejected = views.capture_outputs(fixture.run, completion, captures, fixture.owners[0]);
   ASSERT_FALSE(rejected);
   EXPECT_TRUE(rejected.error().IsFailedPrecondition());
   // SubmissionSource already owns the accepted original Completion. This is
   // a partial view failure, so recovery uses that bundle without recapture.
   EXPECT_FALSE(completion.valid());
-  ASSERT_TRUE(views.submission.valid()); ASSERT_TRUE(views.primary_output.valid());
+  ASSERT_TRUE(views.submission.valid()); EXPECT_EQ(views.primary_output.valid(), wrong_output != 0);
   ASSERT_EQ(views.extra_outputs.size(), 1u); EXPECT_FALSE(views.extra_outputs[0].valid());
-  EXPECT_TRUE(views.submission.detach().IsFailedPrecondition());
+  if (wrong_output) EXPECT_TRUE(views.submission.detach().IsFailedPrecondition());
+  else {
+    const auto detached = views.detach_outputs();
+    EXPECT_TRUE(detached.IsFailedPrecondition());
+    EXPECT_EQ(detached.message(), "output source is empty");
+  }
   EXPECT_FALSE(fixture.run.reset().ok());
   for (const auto &pool : fixture.outputs) EXPECT_EQ(pool.stats().live_blocks, 1u);
   check(views.submission.wait());
-  check(views.primary_output.detach());
+  if (wrong_output) check(views.primary_output.detach());
   auto ready = fixture.retain();
   fixture.verify(ready);
   views.clear_outputs();
   check(views.submission.detach()); views.submission = {};
+  check(fixture.run.reset());
+  fixture.verify(ready);
+  ready = {};
+  for (const auto &pool : fixture.outputs) EXPECT_EQ(pool.stats().live_blocks, 0u);
+}
+
+TEST(InferenceSubmissionViewsCuda, LateWrongOwnerRetainsOriginalPartialBundleForRecovery) {
+  wrong_owner_retains_original_partial_bundle_for_recovery(1);
+}
+
+TEST(InferenceSubmissionViewsCuda, FirstWrongOwnerDoesNotBecomeEffectOnlyCapture) {
+  wrong_owner_retains_original_partial_bundle_for_recovery(0);
+}
+
+TEST(InferenceSubmissionViewsCuda, OriginalCompletionWithoutTypedExportsStillRequiresSuccessfulCapture) {
+  TwoDomains fixture;
+  i::SubmissionViews views;
+  EXPECT_TRUE(views.detach_outputs().IsFailedPrecondition());
+  check(views.prepare(fixture.run, std::span<const i::SubmissionViews::StoreCapture>{},
+      std::span<const i::SubmissionViews::PageCapture>{}, {}));
+  auto completion = take(fixture.run.submit(fixture.queues()));
+  const auto captured = views.capture_outputs(fixture.run, completion,
+      std::span<const i::SubmissionViews::OutputCapture>{}, fixture.owners[0]);
+  ASSERT_TRUE(captured) << captured.error().message();
+  EXPECT_TRUE(*captured);
+  EXPECT_FALSE(completion.valid());
+  ASSERT_TRUE(views.submission.valid());
+  EXPECT_FALSE(views.primary_output.valid());
+  EXPECT_TRUE(views.states.empty() && views.pages.empty() && views.extra_outputs.empty());
+  const auto duplicate = views.capture_outputs(fixture.run, completion,
+      std::span<const i::SubmissionViews::OutputCapture>{}, fixture.owners[0]);
+  ASSERT_FALSE(duplicate);
+  EXPECT_TRUE(duplicate.error().IsFailedPrecondition());
+  check(views.submission.wait());
+  check(views.detach_outputs());
+  auto ready = fixture.retain();
+  fixture.verify(ready);
+  check(views.submission.detach());
+  views.clear_outputs();
+  EXPECT_TRUE(views.detach_outputs().IsFailedPrecondition());
+  views.submission = {};
   check(fixture.run.reset());
   fixture.verify(ready);
   ready = {};

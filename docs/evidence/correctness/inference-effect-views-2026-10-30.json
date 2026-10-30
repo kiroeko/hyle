@@ -1,0 +1,92 @@
+{
+  "schema": "hyle.correctness.effect-views.v1",
+  "date": "2026-10-30",
+  "base_commit": "22bc2a555",
+  "status": "EFFECT_ONLY_STAGES_USE_ORIGINAL_SUBMISSION_BUNDLE",
+  "contract": {
+    "zero_tensor": "A successful capture may select no tensor outputs, including Store/Page-only or completion-only stages.",
+    "failure": "Record zero-tensor capture only after all selected views capture. A nonempty first-output failure remains distinct and keeps its exact original Status and recovery.",
+    "authority": "No new executor, owner, submission, retirement or resource permission; the one boolean records selection success only. Original whole-Graph wait, Source detach and typed view permissions remain authoritative."
+  },
+  "checks": {
+    "status": "PASS_FINITE_EFFECT_ONLY_SUBMISSION_VIEWS_CHECKS",
+    "gtests": 11,
+    "finite_full_model_processes": 1,
+    "failures": 0,
+    "skipped": 0,
+    "cases": {
+      "views": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-views-20261030\\runs\\views\\attempt1\\report.json",
+        "bytes": 660,
+        "sha256": "e9349935ffa284ab9af741123c6892ea21ae8e41dd6cf31457f03af77c33adb1"
+      },
+      "paged": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-views-20261030\\runs\\paged\\attempt1\\report.json",
+        "bytes": 1044,
+        "sha256": "6dc85d09a825fe4bede7fc83a23a2817863cbe09d2e1fe674445fcadb98d7b53"
+      },
+      "recursive": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-views-20261030\\runs\\recursive\\attempt1\\report.json",
+        "bytes": 69107,
+        "sha256": "053dbf99d1a574b3e10a328b22f652eb0d461097af0e843095ae9652c32247e8"
+      }
+    },
+    "recursive_original_all_non_timing_fields_equal": true,
+    "recursive_baseline": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-private-handoff-20261030\\runs\\recursive\\attempt1\\report.json",
+      "bytes": 69124,
+      "sha256": "d44b91347da7eefe15ea60f000834c47c073ec165eaa45fd5058ceac314eb5fd"
+    },
+    "affected_consumer_CXX_TUs": 3,
+    "retained_SDK_engine_objects": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "performance_experiments": 0,
+    "performance_claim": false,
+    "original_fixture_checks": [
+      "Both existing zero-tensor dual-Append producers feed Attention through the common bundle.",
+      "Original producer/consumer submits, bounded pending gates, device_wait=1 and host_wait=0 remain.",
+      "Original exact page values, NaN sentinel and old snapshots remain.",
+      "Actual pure SubmissionSource without selected tensor/Store/Page exports transfers only its original completion.",
+      "Count mismatch preserves the original completion; duplicate capture refuses.",
+      "First and second wrong tensor owners preserve the original partial bundle and recovery.",
+      "Default and cleared bundles still return the original empty-output FailedPrecondition."
+    ],
+    "limits": [
+      "Windows single-CUDA-context checks; not multi-GPU or cross-context support.",
+      "Multiowner Store/Page combinations and complete second engine model remain separately unverified.",
+      "No native fault injection, Apple/Vulkan run or throughput/peer/memory benchmark this batch."
+    ]
+  },
+  "cleanup": {
+    "retained": "Original SDK objects, current consumer objects, source inputs, commands and reports",
+    "status": "REMOVED_EXACT_FLAT_BATCH_IMAGES",
+    "files": 10,
+    "boundary": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-views-20261030\\bin",
+    "bytes": 426690044
+  },
+  "retained_build_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-effect-views-20261030\\model-link-base.json",
+    "bytes": 101704,
+    "sha256": "81be6e0c5e26f5535e2e1e5b0eb65c2614f9e934452e45c72397cffd25cf7d7e"
+  },
+  "source_files": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\submission_views.h",
+      "bytes": 6514,
+      "sha256": "b521480dbd76f138c6bcd9e8b7416ca38a41ada072d9a560c6742f609b5e7793"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_submission_views_test.cc",
+      "bytes": 11155,
+      "sha256": "f11876941e0e2196a9bc92b6476b0c264db500b13d2e5c301c37fb956e9acd69"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc",
+      "bytes": 50051,
+      "sha256": "ec76cd41a73bbaa79e6f83c150c0952fdb37283e83f395768747dc9c1de8e6c6"
+    }
+  ],
+  "archive": "inference-effect-views-2026-10-30.zip"
+}

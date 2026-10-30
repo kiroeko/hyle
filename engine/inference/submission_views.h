@@ -75,7 +75,8 @@ struct SubmissionViews {
     return capture_outputs(run, completion, outputs, storage, optional);
   }
 
-  // The first output occupies primary_output; the rest occupy fixed cold slots.
+  // The first selected tensor occupies primary_output; the rest occupy fixed
+  // cold slots. A stage may export only Store/pages or the original completion.
   // Capture never grows the cohort or copies an owner/pool descriptor.
   Result<bool> capture_outputs(graph::Invocation &run, compute::Completion &completion,
       std::span<const OutputCapture> outputs, const compute::StorageOwner &metadata_owner,
@@ -85,8 +86,9 @@ struct SubmissionViews {
     for (const auto &output : extra_outputs)
       if (output.valid())
         return std::unexpected(Status::FailedPrecondition("submission views already captured an extra output"));
-    if (outputs.empty() || outputs.size() - 1 != extra_outputs.size())
+    if ((outputs.empty() ? 0 : outputs.size() - 1) != extra_outputs.size())
       return std::unexpected(Status::InvalidArgument("output capture count differs from its prepared submission views"));
+    captured_without_outputs_ = false;
     auto exported = graph::SubmissionSource::create(run, std::move(completion), metadata_owner);
     if (!exported) {
       const auto &error = exported.error();
@@ -97,20 +99,24 @@ struct SubmissionViews {
       return std::unexpected(error);
     }
     submission = std::move(*exported);
-    HYLE_ASSIGN_OR_RETURN(primary_output, graph::OutputSource::create(
-        submission, outputs[0].output, outputs[0].storage, outputs[0].pool));
+    if (!outputs.empty()) {
+      HYLE_ASSIGN_OR_RETURN(primary_output, graph::OutputSource::create(
+          submission, outputs[0].output, outputs[0].storage, outputs[0].pool));
+    }
     for (std::size_t i = 0; i < extra_outputs.size(); ++i) {
       HYLE_ASSIGN_OR_RETURN(extra_outputs[i], graph::OutputSource::create(
           submission, outputs[i + 1].output, outputs[i + 1].storage, outputs[i + 1].pool));
     }
     for (auto &state : states) HYLE_RETURN_IF_ERROR(state.capture(submission));
     for (auto &page : pages) HYLE_RETURN_IF_ERROR(page.capture(submission));
+    captured_without_outputs_ = outputs.empty();
     return true;
   }
 
   // Only whole-producer success and actual retirement may publish these
   // original writers. A partial failure leaves every remaining view intact.
   Status detach_outputs() noexcept {
+    if (captured_without_outputs_ && submission.valid()) return Status::Ok();
     HYLE_RETURN_IF_ERROR(primary_output.detach());
     for (auto &output : extra_outputs) HYLE_RETURN_IF_ERROR(output.detach());
     return Status::Ok();
@@ -119,9 +125,16 @@ struct SubmissionViews {
   // Recovery drops all tensor borrows before SubmissionSource::detach().
   // Keep the cold cohort's size and capacity; this does not prove retirement.
   void clear_outputs() noexcept {
+    captured_without_outputs_ = false;
     primary_output = {};
     for (auto &output : extra_outputs) output = {};
   }
+
+ private:
+  // An absent primary_output also occurs when a nonempty capture fails. Only
+  // a fully captured zero-tensor stage may skip tensor withdrawal; this fact
+  // grants no Store/page permission or retirement beyond its original source.
+  bool captured_without_outputs_ = false;
 };
 
 } // namespace hyle::inference

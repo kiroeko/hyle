@@ -46,7 +46,9 @@ GLM先发布已接受完整状态、再维护journal的时序区别于Qwen，已
 私有draft阶段已接入原成功交接：原等待计数、输出观察、Append／Store取回、一次动态IO撤回及页发布顺序保持。
 [四个相关CUDA消费者](../evidence/correctness/inference-private-handoff-2026-10-30.json)覆盖递归K2、低概率截断、私有失败重试及动态probability／next_counts连续执行；三份完整非计时报告保持，无性能实验。
 普通／relay已共用同一prepare_evaluations，Source／Store／Append及replay权限按原实际执行核验；复审未发现另一份应抽取的共同准备或状态发布算法，不新增总prepare／recipe包装。
-新发现的共同结果束仍强制至少一个tensor输出，不能承载原Graph已支持的纯Store／PagedAppend阶段。接下来补该接线并核对跨模型及存储域边界；独立性能工作仍后置。
+[零张量阶段结果束](../evidence/correctness/inference-effect-views-2026-10-30.json)已补齐原SubmissionSource的纯页／提交结果接线；11项测试及真实递归MTP通过，原partial捕获与错误恢复保留，没有性能实验。
+入口／输出及跨模型组件共同机制复审完成，不将稳定引擎C++ API或第二完整模型的产品交付虚挂在本轮抽象任务中；对应未交付和验证边界仍明确保留。
+后续多owner检查发现原Graph冷Store adapter仅按target.default_storage装配，同Context其它真实存储域没有候选。接下来修实际域装配并检查Store／Page原束恢复，独立性能工作仍后置。
 
 多模型形状同时参考本地成熟引擎的实际实现：vLLM `276fbcff2717`的`v1/engine/core.py`、`v1/core/sched/scheduler.py`和`model_executor/models/qwen3_5.py`，
 TensorRT-LLM `46d9966b54d9`的`_torch/pyexecutor/engine/model_call.py`、`py_executor.py`及`model_engine.py`。
