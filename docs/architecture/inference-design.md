@@ -614,6 +614,12 @@ A完整候选的target为L+2，draft实际前沿为L+1，B的两份布局可在�
 须接独立bonus与draft-token完整输出、两份hidden及draft的两个AppendSource；A仍保留所有实际前缀的发布权。
 任意接受长度均不经主机选择而继续，是更强的后续范围，才需要有界设备KV控制，不能将两者混为一项。
 
+下一片条件后继尚未实现，先限定完整单Queue捕获，不包含Hybrid空隙；条件是原绑定及依赖中的真实设备输入。
+原提交必须在真实退休链保留不可变的Executed／Skipped事实，与原Status分开：成功退休不意味着分支执行，Skipped也不是设备错误或取消。
+Store／页输出发布在Source关闭并清除producer后仍须核该事实；可变的outputs_ready不能充当不可变执行证明。
+首片不允许尚未确认的条件Source继续前送，不为它新增权限owner；原take、回收、尾页rollback及实际租约能力保持。
+先用实际组件串通捕获、结果与发布门，再接完整Qwen后继；原生条件图可用不代表该合同或性能已经完成。
+
 递归随机前缀的首拒／quota／已知proposal停止边界现由共同`mtp_acceptance_graph`在原私有图内静态Select折叠。
 所有真实条件行的valid仍完整合取；最后输出保持pending，RNG仍按实际草稿数推进，而非按接受数推进。
 图只接收由请求政策形成的精确0/1继续门，不持有Session、额度、状态或执行器。token及结果包保持I32，不借浮点比较ID。
