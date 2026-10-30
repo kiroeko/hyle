@@ -24,7 +24,7 @@
 #include "cache_precision.h"
 #include "ffn_placement.h"
 #include "projection_binding.h"
-#include "session_state.h"
+#include "cache_plan.h"
 
 namespace hyle::inference { class Backend; }
 

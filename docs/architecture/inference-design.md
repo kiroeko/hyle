@@ -93,9 +93,26 @@ TensorRT-LLM `46d9966b`区分`ModelEngine`、`ModelCaller`及decoder runner的�
 所引文件按实际HEAD字节核对；它们也有运行期图复用和必要的新图构建，不能据此宣称所有构图都只在启动期，或照搬其virtual／动态接口。
 HYLE保留原冷形状接纳，实际数值、端口、所有权和费用仍通过本片[有限检查](../evidence/correctness/inference-cold-model-boundary-2026-10-30.json)判断。
 
-本片不等于完整模型模块化：Family／Phase构图工厂、热Model与请求恢复仍在`main.cc`；
-冷接口还经`weights.h`间接包含`session_state.h`以取得cache计划／row字节事实。
-后续优先拆清这些冷事实与完整Snapshot状态的依赖，再处理家族工厂和真实跨模型复用；不把Qwen私有Recipe改名为通用模型接口。
+随后把Qwen私有容量、row字节、对齐及checked数学移入`cache_plan.h`；原命名、布局、默认值和公式保持，
+`session_state.h`继续拥有Recurrent／StatePools／Version／Snapshot，`weights.h`不再为这些冷事实解析完整运行状态。
+独立叶头的实际编译闭包只有自身与`model_geometry.h`；权重与构图实现仍保留真实Compute／Graph及ReadLease依赖。
+本地llama.cpp `23b0202a`的hparams／cparams与memory边界、vLLM `276fbcff`的KVCacheSpec／Config与manager分责支持事实与运行所有者分离；
+它们不证明Qwen的target／draft容量是通用缓存形状，也不要求所有动态缓存工作都在启动期结束。
+[本片有限检查](../evidence/correctness/inference-cold-cache-facts-2026-10-30.json)覆盖实际编译依赖、既有24组主机合同、
+默认完整词表普通／MTP四对及完整Session向量；只重编两个既有链接输入，226个复用，未运行完整默认CMake构建或独立性能候选。
+
+当前异构消费者的接入面也已沿实际源码核对：
+
+| 消费者 | 已复用的共同机制 | 仍保留的模型事实及验证边界 |
+|---|---|---|
+| Qwen实际文本路径 | ColdShapePlan、PreparedProgramFamily、ProgramIo、ExecutionEpisode、drive_steps | 模型私有shape／端口、分页KV、conv／GDN、hidden与完整Snapshot；Family／Phase及请求恢复仍需分责 |
+| GLM ordinary／K1原组件 | ProgramIo、实际drive_steps同步分支、RequestLoop与提交见证 | 单router具体图、压缩状态／lag／journal及原StateVersion；非第二完整引擎 |
+| Kimi KDA→MLA原组件 | ProgramIo、ProgramCarrier、ExecutionEpisode及真实Source接力 | 异构递归／MLA状态与feature输出；没有生成token或请求驱动证明 |
+| DeepSeek原组件及压缩侧车 | ProgramIo、普通Graph生命周期、接受与提交见证 | 具体router分段与压缩状态／sidecar；没有完整请求驱动证明 |
+
+后三者当前使用有限具体图，未消费ColdShapePlan／PreparedProgramFamily；不为接口外观伪造Qwen程序族，也不把IO复用扩大为完整冷工厂／调度复用。
+下一步隔离Family模型数学和Phase物理准备，保留原Model的准入、状态准备、诊断及完整成功后发布；
+特别保持prepare_cache与draft行银行准备的原失败顺序、literal／采样配置的原寿命，不机械搬整个函数或新增大ModelOps。
 
 
 共同调度按真实调用分工：请求窗口、兼容分组、接纳／淘汰、输出额度和停止属于

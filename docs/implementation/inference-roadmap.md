@@ -36,7 +36,9 @@ HYLE 的产品目标是完整推理引擎；Compute、Graph、内存、调度、
 第一片从模型冷构图、热运行和请求控制的编译依赖着手，并用现有异构状态组件核对接入事实；不新增大ModelOps、第二执行器或账簿。
 当前第一片已将Qwen冷构图辅助的非模板实现隔离到独立cc，并使一个只需冷接口的原生消费者脱离main；这是编译依赖接缝，不是完整家族工厂或跨模型模块化完成。
 成熟实践依据来自实际版本的llama.cpp构图／模型／上下文分工及TensorRT-LLM调用／输入准备／runner分工，接口和数值仍按HYLE原合同核验。
-剩余的weights.h→session_state.h冷计划事实依赖、Family／Phase工厂和请求恢复继续处理，已完成共同owner／IO／退休机制不重复。
+冷cache事实现已独立为模型私有cache_plan.h，weights／构图头不再间接解析完整会话状态；原容量公式、布局与数值保持，实际依赖及有限默认消费者检查见[本片记录](../evidence/correctness/inference-cold-cache-facts-2026-10-30.json)。
+Qwen／GLM／Kimi／DeepSeek的实际接入面已经核对：有限具体图不需要人为套入Qwen的程序族，IO／资源交接复用也不等于完整引擎接入。
+Family数学／冷工厂、Phase物理准备和请求恢复继续处理；保原准备与失败发布时序，已完成共同owner／IO／退休机制不重复。
 较强设备用于底座成熟后的更广整模型验证，当前工作不以租设备、完整大模型或通用loader／server为前置。
 新profile和优化尚未启动，原工具／命令准备保留；相关架构费用验证按实际改动安排。正在做和估计进度只在[看板](../developer/inference-progress.md)维护。
 
