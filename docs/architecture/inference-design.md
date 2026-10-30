@@ -59,7 +59,9 @@ GLM实际普通续算消费同一驱动的同步分支，不需要实现空的�
 后继的纯Unavailable先完成A、再核真实退休并释放复用提示；不接受B，也不永久禁用后来合法的复用。defer只保留原pending calls，已提交的active_step仍由原Model持有。
 GLM的`GlmOrdinaryStepDriver`将实际预检、ordinary数学和显式观察分成三个动作，使用同一驱动的同步分支；没有空的successor方法或另一份执行状态owner。
 [有限检查](../evidence/correctness/inference-common-step-driver-2026-10-30.json)覆盖host控制、原Qwen连续／失败／冷拒绝及EOS、真实K1和两个GLM组件；不代表GLM跨pump。
-Qwen同步／packed／递归目标步骤仍需迁入，实际结果与请求提交见证的借用边界继续收敛。Graph仍是唯一原生执行与退休权威。
+Qwen同步／packed prefill／递归验证目标步骤现通过`SynchronousGenerationStepAdapter`消费同一同步分支；原提案数学、合法形状分组、Head发布及CPU ahead政策仍留在模型适配。
+[本片有限检查](../evidence/correctness/inference-synchronous-step-driver-2026-10-30.json)覆盖实际packed路径、递归变长验证、取消、晚观察失败、退休及真实K1，未做独立性能实验。
+实际结果与请求提交见证的借用边界继续收敛，模型仍含部分请求账簿操作；不能将本片当作完整执行架构完成。Graph仍是唯一原生执行与退休权威。
 不按文件长度机械搬代码；以实际控制逻辑能由不同状态形状消费为准，不新增热回调表或通用大ModelOps。
 
 共同调度按真实调用分工：请求窗口、兼容分组、接纳／淘汰、输出额度和停止属于

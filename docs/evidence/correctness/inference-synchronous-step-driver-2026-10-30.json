@@ -1,0 +1,220 @@
+{
+  "schema": "hyle.synchronous-step-driver.v1",
+  "date": "2026-10-30",
+  "base_commit": "34721e391",
+  "status": "FINITE_CHECKS_PASSED",
+  "implementation": [
+    "SynchronousGenerationStepAdapter uses the same drive_steps synchronous branch as real GLM ordinary execution, alongside the existing Qwen continuous adapter.",
+    "Actual packed prefill, exact target and varlen recursive target preparation remain static model actions; proposal mathematics, grouping, selection, Head publication and optional CPU ahead remain model-specific.",
+    "The common driver owns prepare/submit/control/cancel/finish and failure recovery, not an opaque whole-loop callback. No new executor, Completion, resource authority, ledger or persistent callback.",
+    "Prepare/submit and later failure cleanup now use original retire_failed_publication. Original first error, actual retirement and published peers are retained; late observer failure additionally releases CPU ahead cache hints."
+  ],
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 637062,
+      "sha256": "e8970ec7bdd8cc914aeef4b4a7367dc20890c69716e9c0331318d5fad9758544"
+    }
+  ],
+  "checks": [
+    {
+      "name": "logits-cpu",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-driver-20261030\\runs\\logits-cpu\\attempt1\\report.json",
+        "bytes": 128516,
+        "sha256": "5c636fe1ccbd13db29038aa0d04022573b5bf6500a194d43883ee3199e3e5231"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 61936,
+        "started": 1793339962.3033023,
+        "seconds": 1.5462934970855713,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    {
+      "name": "logits-cuda",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-driver-20261030\\runs\\logits-cuda\\attempt1\\report.json",
+        "bytes": 125102,
+        "sha256": "a48069adc71801225f4a0c4d7abf5e3f7b7e8c2eb6d274954d5a552dfe617dc4"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 62080,
+        "started": 1793339964.0601766,
+        "seconds": 0.9911274909973145,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    {
+      "name": "varlen-cuda",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-driver-20261030\\runs\\varlen-cuda\\attempt1\\report.json",
+        "bytes": 6648,
+        "sha256": "c76cc472cd89d4d44e7cc717c158c7e5dc80a1104da9ee857d5a6d3585150e4f"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 61968,
+        "started": 1793339965.2169678,
+        "seconds": 0.9120209217071533,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    {
+      "name": "wave-cpu",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-driver-20261030\\runs\\wave-cpu\\attempt1\\report.json",
+        "bytes": 566,
+        "sha256": "4420f34f6c0776e25ea280088343d960fd5df4fa8525a5a405616359b7cc7673"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 720,
+        "started": 1793339966.3248615,
+        "seconds": 0.43587327003479004,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    {
+      "name": "commit-cpu",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-driver-20261030\\runs\\commit-cpu\\attempt1\\report.json",
+        "bytes": 681,
+        "sha256": "64623c139596ab748ee9f1933256f219fcf0696a6ba516c3893be754a973ad37"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 2108,
+        "started": 1793339966.9223785,
+        "seconds": 0.4346332550048828,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    {
+      "name": "publication-cpu",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-driver-20261030\\runs\\publication-cpu\\attempt1\\report.json",
+        "bytes": 595,
+        "sha256": "54283cb9734b1e2507cc71fccae938fca4d8486e56e737b3f214de050a0bc816"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 63204,
+        "started": 1793339967.51926,
+        "seconds": 0.45245981216430664,
+        "exit": 0,
+        "timed_out": false
+      }
+    },
+    {
+      "name": "mtp",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-driver-20261030\\runs\\mtp\\attempt1\\report.json",
+        "bytes": 82941,
+        "sha256": "750562f1e118d6506bbf53851dd0a54191ec8a8d583ccb1ad1fe11dc108a0c38"
+      },
+      "process": {
+        "state": "TERMINAL",
+        "pid": 49272,
+        "started": 1793339968.1354783,
+        "seconds": 3.3031232357025146,
+        "exit": 0,
+        "timed_out": false
+      }
+    }
+  ],
+  "natural_packed_paths": [
+    {
+      "name": "logits-cpu",
+      "journeys": [
+        {
+          "StateOnly": 4,
+          "Verify": 4,
+          "packed_prefill": 6
+        },
+        {
+          "StateOnly": 4,
+          "Verify": 4,
+          "packed_prefill": 6
+        },
+        {
+          "StateOnly": 2,
+          "Verify": 0,
+          "packed_prefill": 4
+        }
+      ]
+    },
+    {
+      "name": "logits-cuda",
+      "journeys": [
+        {
+          "StateOnly": 4,
+          "Verify": 4,
+          "packed_prefill": 6
+        },
+        {
+          "StateOnly": 4,
+          "Verify": 4,
+          "packed_prefill": 6
+        },
+        {
+          "StateOnly": 2,
+          "Verify": 0,
+          "packed_prefill": 4
+        }
+      ]
+    }
+  ],
+  "varlen_target": {
+    "active_rows": 4,
+    "physical_rows": 6,
+    "one_engine_submission": true,
+    "q_identity_and_release": true,
+    "numerically_equivalent": true,
+    "payloads_byte_equal": false
+  },
+  "real_qwen_K1": {
+    "previous": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-step-driver-20261030\\runs\\mtp\\attempt1\\report.json",
+      "bytes": 82948,
+      "sha256": "dd21654c14affbdb46fb7938f644fa7b5d5073cb71d25f07265d8535712f5a7a"
+    },
+    "all_non_timing_fields_equal": true,
+    "generated_tokens": 64
+  },
+  "build": {
+    "consumer_translation_units": 2,
+    "compiler_processes": 2,
+    "max_compiler_concurrency": 2,
+    "retained_sdk_inputs": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "missing_cached_dependency_records": 69,
+    "missing_dependency_scope": "Unchanged native-kernel objects and library inputs; changed engine consumer CXX source dependencies were checked."
+  },
+  "harness_note": "The successful varlen native process prints two PASS JSON lines. The initial post-process parser expected one document; report reconstructed from the same original stdout after fixing parser, without native rerun.",
+  "cleanup": {
+    "files": 7,
+    "boundary": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-driver-20261030",
+    "bytes": 289337895,
+    "status": "REMOVED_EXACT_RECREATABLE_IMAGES",
+    "retained": "SDK and current consumer objects, original cached weights, source, commands and reports"
+  },
+  "remaining_architecture": [
+    "Model-result/request-publication boundary: model still performs some ledger preflight/result projection/replay checks and borrows request records.",
+    "Re-review actual differing model phases and shared failure/publication semantics; no claim of GLM cross-pump, complete second engine, arbitrary model support or multiple devices."
+  ],
+  "limits": [
+    "No independent performance candidate, profiler run or complete peer performance/memory window. Existing full table unchanged.",
+    "Finite synthetic cases are untrained; varlen comparisons retain existing numerical tolerance and are not byte-equal or model-quality claims.",
+    "No new test on Apple/Vulkan, hybrid full model, multi-GPU/multi-machine or other full artifacts."
+  ]
+}

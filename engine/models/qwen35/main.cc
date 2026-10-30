@@ -7342,6 +7342,160 @@ bool execute_generation_continuation(Model &model, std::span<PreparedGenerationC
   return true;
 }
 
+// The synchronous member of the same step protocol: packed prefill and
+// recursive target verification supply their actual geometry and mathematics,
+// while drive_steps owns prepare/submit/cancel/finish and failure recovery.
+// All scratch and request borrows are call-scoped; Model/Graph retain execution.
+template<class AfterSubmit, class BatchObserver>
+struct SynchronousGenerationStepAdapter final {
+  static constexpr bool kSupportsSuccessor = false;
+  using Position = inference::StepPosition;
+  Model &model;
+  std::span<PreparedGenerationCall> calls;
+  bool trace_states, packed_prefill;
+  std::size_t packed_verification_capacity;
+  AfterSubmit &after_submit;
+  BatchObserver &batch_observer;
+  GraphRole role;
+  bool generation;
+  hyle::container::SmallVector<EvaluationRequest, 2> inputs;
+  hyle::container::SmallVector<EvaluationOutput, 2> outputs;
+  hyle::container::SmallVector<MtpGenerationSelection, 2> selections;
+  hyle::container::SmallVector<MtpRoundResult, 2> results;
+  hyle::container::SmallVector<std::int32_t, 2> next;
+  std::size_t input_rows = 0, active_rows = 0, physical_rows = 0;
+  Clock::time_point episode_start{};
+
+  SynchronousGenerationStepAdapter(Model &selected, std::span<PreparedGenerationCall> original,
+      bool trace, bool packed, std::size_t verification_capacity, AfterSubmit &submitted, BatchObserver &observer)
+      : model(selected), calls(original), trace_states(trace), packed_prefill(packed),
+        packed_verification_capacity(verification_capacity), after_submit(submitted), batch_observer(observer),
+        role(calls[0].role), generation(calls[0].generation) {
+    if (!inputs.try_reserve(calls.size()) || !outputs.try_reserve(calls.size()) ||
+        !selections.try_reserve(calls.size()) || !results.try_resize(generation && role != GraphRole::kText ? calls.size() : 0) || !next.try_resize(calls.size()))
+      throw std::bad_alloc{};
+  }
+  void prepare(Position) {
+    for (auto &call : calls) {
+      auto &request = *call.request;
+      // Recursive proposals may have shortened since the initial metadata pass.
+      if (role == GraphRole::kVerify && !packed_verification_capacity && call.ids().size() != calls[0].ids().size())
+        throw std::runtime_error("MTP batch requires equal role, kind and input rows without padding");
+      prepare_generation_record(*request.ledger, *request.session, call.role,
+          generation ? std::span<const std::int32_t>(&call.pending, 1) : call.ids(), generation,
+          call.quota, request.progress.turn_index, generation ? std::shared_ptr<const void>{} : std::shared_ptr<const void>(request.warm_inputs.at(request.progress.turn_index)), call.maximum, call.completion, call.input_begin, call.prefill_complete);
+      inputs.push_back({request.session, call.ids(), &request.ledger->stop_policy(), call.logits, call.conditional_logits, request.request_key});
+      outputs.push_back(evaluation_output(model, request.session, {call.name, &request.trace, trace_states},
+          &call.step_seconds, generation ? &request.endpoint : &request.prefill_endpoint,
+          nullptr, nullptr, request.ledger.get()));
+      outputs.back().disposition = &call.disposition;
+      if (generation && role != GraphRole::kText) selections.push_back({request.session, call.pending, call.quota, call.draft_log_probabilities, call.maximum});
+    }
+    if (!generation && packed_prefill) model.prepare_prefill_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion);
+    else if (packed_verification_capacity)
+      model.prepare_verification_evaluations(std::span(inputs.data(), inputs.size()), packed_verification_capacity);
+    else model.prepare_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion);
+  }
+  void submit(Position) {
+    model.submit_evaluations();
+    input_rows = model.active_step->input_tokens;
+    active_rows = model.active_step->active_input_rows;
+    physical_rows = cache::multiply(model.active_step->phase->query_rows, calls.size());
+    episode_start = model.active_step->step_start;
+    if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<AfterSubmit>>) after_submit();
+  }
+  bool cancelled() const { return model.active_step && model.active_step->cancelled; }
+  void cancel(bool) {
+    // A single/all-member or pre-submit stop cancels the whole episode.
+    // Its original transactions still require actual native retirement.
+    const bool requested = std::ranges::any_of(model.active_step->members,
+        [](const auto &member) { return member.session->stopping; });
+    auto retired = model.abort_episode();
+    for (const auto &call : calls) if (call.request->session->stopping)
+      inference::record_retirement_status(retired.status, call.request->session->retirement_status);
+    if (!requested || !retired.retired || (!retired.status.ok() &&
+        (!retired.status.IsCancelled() || retired.status.has_native_error()))) {
+      auto status = retired.status;
+      if (status.ok()) status = retired.retired
+          ? hyle::Status::FailedPrecondition("cancelled generation episode has no stopped member")
+          : hyle::Status::Unavailable("cancelled generation episode is still retiring");
+      inference::EvaluationFailure failure(std::move(status));
+      failure.observe_retirement(retired); throw failure;
+    }
+    const auto seconds = std::chrono::duration<double>(Clock::now() - episode_start).count();
+    double proposal_seconds = 0;
+    for (auto &call : calls) {
+      call.request->ledger->discard_uncommitted();
+      call.draft_log_probabilities.clear(); call.logits.counts = {}; call.conditional_logits = {};
+      call.disposition = EvaluationDisposition::kCancelled;
+      call.step_seconds = seconds + call.proposal_seconds;
+      proposal_seconds += call.proposal_seconds;
+    }
+    observe_generation_batch(batch_observer, calls, input_rows, seconds + proposal_seconds, active_rows, physical_rows);
+  }
+  void finish(Position) {
+    bool prepared_ahead = false;
+    const auto &eos = model_eos_tokens;
+    const auto observe = [&](std::size_t j, const CompletedEvaluationView &view) {
+      const auto &call = calls[j];
+      observe_completed_evaluation(model, outputs[j], {call.name, &call.request->trace, trace_states}, view);
+    };
+    // Controls retain their original post-submit ordering. Optional CPU-only
+    // work follows them, and never turns its own allocation failure into a
+    // failure or publication of this already submitted episode.
+    if (generation && ((calls.size() > 1 && role == GraphRole::kText) || verifies_prefix(role) || has_mtp(role)) &&
+        calls[0].completion == TextCompletion::kEmitNext) {
+      const bool continues = std::ranges::all_of(calls, [](const auto &call) {
+        const auto &request = *call.request;
+        return call.quota > 1 && request.progress.remaining_outputs() > 1 && request.session &&
+            !request.session->stopping && !request.session->failed;
+      });
+      if (continues) {
+        (void)model.prepare_decode_ahead();
+        prepared_ahead = model.decode_ahead && model.decode_ahead->ready;
+      }
+    }
+    if (generation && role == GraphRole::kVerify) {
+      model.finish_recursive_mtp(std::span(selections.data(), selections.size()), eos,
+          std::span(outputs.data(), outputs.size()), std::span(results.data(), results.size()), observe);
+      // The original verifier and prefix decision have retired and released
+      // their reads. Completed call records no longer need these private q
+      // leases; retaining them would charge the next episode's bounded pool.
+      for (auto &call : calls) call.draft_log_probabilities.clear();
+    }
+    else if (generation && role != GraphRole::kText) model.finish_mtp_rounds(std::span(selections.data(), selections.size()), eos,
+        std::span(outputs.data(), outputs.size()), std::span(results.data(), results.size()), observe);
+    else model.finish_evaluations(std::span(outputs.data(), outputs.size()), std::span(next.data(), next.size()), observe);
+    double target_seconds = 0, proposal_seconds = 0;
+    for (std::size_t j = 0; j < calls.size(); ++j) {
+      target_seconds = (std::max)(target_seconds, calls[j].step_seconds);
+      proposal_seconds += calls[j].proposal_seconds;
+      calls[j].step_seconds += calls[j].proposal_seconds;
+      if (calls[j].proposal_seconds && calls[j].disposition == EvaluationDisposition::kPublished) {
+        auto &ledger = *calls[j].request->ledger;
+        ledger.records[ledger.committed_count - 1].step_seconds += calls[j].proposal_seconds;
+      }
+    }
+    // Shared target work is counted once; recursive proposals were serial
+    // per member and are all retained. Cancelled members may have no output
+    // endpoint, so a fully withdrawn batch uses its actual retired call end.
+    if (target_seconds == 0) target_seconds = std::chrono::duration<double>(Clock::now() - episode_start).count();
+    observe_generation_batch(batch_observer, calls, input_rows, target_seconds + proposal_seconds, active_rows, physical_rows);
+    for (auto &call : calls) { finish_generation_call(model, call); call.conditional_logits = {}; }
+    if (prepared_ahead)
+      for (const auto &call : calls)
+        if (call.disposition != EvaluationDisposition::kPublished || call.request->progress.turn_done ||
+            !call.request->session || call.request->session->stopping) {
+          model.discard_decode_ahead(call.request->session.get());
+        }
+  }
+  inference::RetirementObservation retire_failure(inference::EvaluationFailure *failure) noexcept {
+    return model.retire_failed_publication(
+        failure && failure->retirement_observed() && !failure->retirement().retired);
+  }
+  void recover_records(bool) noexcept { observe_generation_commits_after_failure(calls); }
+};
+
 // The serialized owner may process controls after the original native submit
 // and before completion. Static optional dispatch adds no callback table, native
 // executor or cost for the ordinary synchronous caller. A throwing control
@@ -7495,134 +7649,9 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
       return;
     }
   }
-  const auto role = calls[0].role; const auto generation = calls[0].generation;
-  hyle::container::SmallVector<EvaluationRequest, 2> inputs;
-  hyle::container::SmallVector<EvaluationOutput, 2> outputs;
-  hyle::container::SmallVector<MtpGenerationSelection, 2> selections;
-  hyle::container::SmallVector<MtpRoundResult, 2> results;
-  hyle::container::SmallVector<std::int32_t, 2> next;
-  if (!inputs.try_reserve(calls.size()) || !outputs.try_reserve(calls.size()) ||
-      !selections.try_reserve(calls.size()) || !results.try_resize(generation && role != GraphRole::kText ? calls.size() : 0) || !next.try_resize(calls.size()))
-    throw std::bad_alloc{};
-  for (auto &call : calls) {
-    auto &request = *call.request;
-    // Recursive proposals may have shortened since the initial metadata pass.
-    if (role == GraphRole::kVerify && !packed_verification_capacity && call.ids().size() != calls[0].ids().size())
-      throw std::runtime_error("MTP batch requires equal role, kind and input rows without padding");
-    prepare_generation_record(*request.ledger, *request.session, call.role,
-        generation ? std::span<const std::int32_t>(&call.pending, 1) : call.ids(), generation,
-        call.quota, request.progress.turn_index, generation ? std::shared_ptr<const void>{} : std::shared_ptr<const void>(request.warm_inputs.at(request.progress.turn_index)), call.maximum, call.completion, call.input_begin, call.prefill_complete);
-    inputs.push_back({request.session, call.ids(), &request.ledger->stop_policy(), call.logits, call.conditional_logits, request.request_key});
-    outputs.push_back(evaluation_output(model, request.session, {call.name, &request.trace, trace_states},
-        &call.step_seconds, generation ? &request.endpoint : &request.prefill_endpoint,
-        nullptr, nullptr, request.ledger.get()));
-    outputs.back().disposition = &call.disposition;
-    if (generation && role != GraphRole::kText) selections.push_back({request.session, call.pending, call.quota, call.draft_log_probabilities, call.maximum});
-  }
-  const auto observe = [&](std::size_t j, const CompletedEvaluationView &view) {
-    const auto &call = calls[j];
-    observe_completed_evaluation(model, outputs[j], {call.name, &call.request->trace, trace_states}, view);
-  };
-  if (!generation && packed_prefill) model.prepare_prefill_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion);
-  else if (packed_verification_capacity)
-    model.prepare_verification_evaluations(std::span(inputs.data(), inputs.size()), packed_verification_capacity);
-  else model.prepare_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion);
-  model.submit_evaluations();
-  const auto input_rows = model.active_step->input_tokens;
-  const auto active_rows = model.active_step->active_input_rows;
-  const auto physical_rows = cache::multiply(model.active_step->phase->query_rows, calls.size());
-  const auto episode_start = model.active_step->step_start;
-  bool prepared_ahead = false;
-  try {
-    if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<AfterSubmit>>) {
-      try { after_submit(); }
-      catch (inference::EvaluationFailure &failure) {
-        failure.observe_retirement(model.retire_failed_publication(
-            failure.retirement_observed() && !failure.retirement().retired)); throw;
-      }
-      catch (...) { (void)model.retire_failed_publication(); throw; }
-    }
-    if (model.active_step && model.active_step->cancelled) {
-      // A single/all-member or pre-submit stop cancels the whole episode.
-      // Its original transactions still require actual native retirement.
-      const bool requested = std::ranges::any_of(model.active_step->members,
-          [](const auto &member) { return member.session->stopping; });
-      auto retired = model.abort_episode();
-      for (const auto &call : calls) if (call.request->session->stopping)
-        inference::record_retirement_status(retired.status, call.request->session->retirement_status);
-      if (!requested || !retired.retired || (!retired.status.ok() &&
-          (!retired.status.IsCancelled() || retired.status.has_native_error()))) {
-        auto status = retired.status;
-        if (status.ok()) status = retired.retired
-            ? hyle::Status::FailedPrecondition("cancelled generation episode has no stopped member")
-            : hyle::Status::Unavailable("cancelled generation episode is still retiring");
-        inference::EvaluationFailure failure(std::move(status));
-        failure.observe_retirement(retired); throw failure;
-      }
-      const auto seconds = std::chrono::duration<double>(Clock::now() - episode_start).count();
-      double proposal_seconds = 0;
-      for (auto &call : calls) {
-        call.request->ledger->discard_uncommitted();
-        call.draft_log_probabilities.clear(); call.logits.counts = {}; call.conditional_logits = {};
-        call.disposition = EvaluationDisposition::kCancelled;
-        call.step_seconds = seconds + call.proposal_seconds;
-        proposal_seconds += call.proposal_seconds;
-      }
-      observe_generation_batch(batch_observer, calls, input_rows, seconds + proposal_seconds, active_rows, physical_rows);
-      return;
-    }
-    // Controls retain their original post-submit ordering. Optional CPU-only
-    // work follows them, and never turns its own allocation failure into a
-    // failure or publication of this already submitted episode.
-    if (generation && ((calls.size() > 1 && role == GraphRole::kText) || verifies_prefix(role) || has_mtp(role)) &&
-        calls[0].completion == TextCompletion::kEmitNext) {
-      const bool continues = std::ranges::all_of(calls, [](const auto &call) {
-        const auto &request = *call.request;
-        return call.quota > 1 && request.progress.remaining_outputs() > 1 && request.session &&
-            !request.session->stopping && !request.session->failed;
-      });
-      if (continues) {
-        (void)model.prepare_decode_ahead();
-        prepared_ahead = model.decode_ahead && model.decode_ahead->ready;
-      }
-    }
-    if (generation && role == GraphRole::kVerify) {
-      model.finish_recursive_mtp(std::span(selections.data(), selections.size()), eos,
-          std::span(outputs.data(), outputs.size()), std::span(results.data(), results.size()), observe);
-      // The original verifier and prefix decision have retired and released
-      // their reads. Completed call records no longer need these private q
-      // leases; retaining them would charge the next episode's bounded pool.
-      for (auto &call : calls) call.draft_log_probabilities.clear();
-    }
-    else if (generation && role != GraphRole::kText) model.finish_mtp_rounds(std::span(selections.data(), selections.size()), eos,
-        std::span(outputs.data(), outputs.size()), std::span(results.data(), results.size()), observe);
-    else model.finish_evaluations(std::span(outputs.data(), outputs.size()), std::span(next.data(), next.size()), observe);
-    double target_seconds = 0, proposal_seconds = 0;
-    for (std::size_t j = 0; j < calls.size(); ++j) {
-      target_seconds = (std::max)(target_seconds, calls[j].step_seconds);
-      proposal_seconds += calls[j].proposal_seconds;
-      calls[j].step_seconds += calls[j].proposal_seconds;
-      if (calls[j].proposal_seconds && calls[j].disposition == EvaluationDisposition::kPublished) {
-        auto &ledger = *calls[j].request->ledger;
-        ledger.records[ledger.committed_count - 1].step_seconds += calls[j].proposal_seconds;
-      }
-    }
-    // Shared target work is counted once; recursive proposals were serial
-    // per member and are all retained. Cancelled members may have no output
-    // endpoint, so a fully withdrawn batch uses its actual retired call end.
-    if (target_seconds == 0) target_seconds = std::chrono::duration<double>(Clock::now() - episode_start).count();
-    observe_generation_batch(batch_observer, calls, input_rows, target_seconds + proposal_seconds, active_rows, physical_rows);
-    for (auto &call : calls) { finish_generation_call(model, call); call.conditional_logits = {}; }
-    if (prepared_ahead)
-      for (const auto &call : calls)
-        if (call.disposition != EvaluationDisposition::kPublished || call.request->progress.turn_done ||
-            !call.request->session || call.request->session->stopping) {
-          model.discard_decode_ahead(call.request->session.get());
-        }
-  } catch (...) {
-    observe_generation_commits_after_failure(calls);
-    throw;
-  }
+  SynchronousGenerationStepAdapter<AfterSubmit, BatchObserver> adapter(model, calls, trace_states,
+      packed_prefill, packed_verification_capacity, after_submit, batch_observer);
+  (void)inference::drive_steps(adapter);
 }
 
 void publish_generation_prompt(Model &model, PreparedGenerationCall &call, cache::PrefixCache *prefix) {
