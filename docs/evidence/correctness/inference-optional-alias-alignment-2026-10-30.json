@@ -1,0 +1,306 @@
+{
+  "schema": "hyle-optional-alias-alignment-v1",
+  "status": "CURRENT_FINITE_CHECKS_PASS_HISTORICAL_FAILURES_RETAINED",
+  "base_commit": "bc6556f8b1d4248df0dc0b47b11719b9b7341748",
+  "full_goal_complete": false,
+  "source_pins": [
+    {
+      "path": "src/graph/executable.cc",
+      "bytes": 522674,
+      "sha256": "8387c86edd64fcc2c5257664ce028d344a5133d8c6a1c2b8628adbdf375aec40"
+    },
+    {
+      "path": "tests/graph/region_provider_test.cc",
+      "bytes": 720048,
+      "sha256": "d9e49d1d518e5851205795e3a94ea02b6bae16e298e2dfca52133f7b4d2a70dd"
+    }
+  ],
+  "implementation": "Cold required-group power-of-two congruences preserve intrinsic per-instance requirements. A static internal optional donation must satisfy the whole output group at its complete input-root offset; otherwise the original independent output remains. Original final propagation, liveness/DAG/effect checks, errors, resource ownership and Invocation code remain; no Copy, new owner/API or hot dispatch.",
+  "observed": {
+    "old_core_red": {
+      "status": "EXPECTED_RED2",
+      "tests": 2,
+      "failures": 2,
+      "skipped": 0,
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-m2-borrowed-alias-harness-20261030\\runs\\baseline-red2\\attempt1\\results.xml",
+        "bytes": 2617,
+        "sha256": "7fdc2c0e82df247fd1fcfeb294dd3ad2f3a64312cb826e986c080d61f8f00dd9"
+      },
+      "actual_names": [
+        "GraphRegions.LateOptionalAliasPreservesDownstreamAlignment",
+        "GraphRegions.LateOptionalAliasChainKeepsWeakIntermediateAndStrictFinalAlignment"
+      ]
+    },
+    "current_CPU": {
+      "status": "PASS",
+      "tests": 78,
+      "failures": 0,
+      "skipped": 0,
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-m2-borrowed-alias-harness-20261030\\runs\\candidate-combined\\attempt1\\results.xml",
+        "bytes": 23577,
+        "sha256": "b2b5aedfcba49c49a32abafe15a7dd20c226639193d77c375ea0aeeb5ed0a277"
+      },
+      "actual_names": [
+        "GraphRegions.LateOptionalAliasPreservesDownstreamAlignment",
+        "GraphRegions.LateOptionalAliasChainKeepsWeakIntermediateAndStrictFinalAlignment",
+        "GraphRegions.ImmutableConstantViewsPreserveDenseReshapeAndSliceBindings",
+        "GraphRegions.ConstantViewOffsetsSeparateFiniteVariantArtifacts",
+        "GraphRegions.ConstantViewPreparationKeepsEachPhysicalRootOwner",
+        "GraphRegions.DynamicAndUnownedViewsDoNotAcquireQueuedArtifacts",
+        "GraphRegions.UnknownMaterializationObservationRetainsOwnersUntilNativeRetirement",
+        "GraphRegions.OwnerlessSystemMaterializationRetainsLeaseUntilNativeRetirement",
+        "GraphRegions.QueuedMaterializationRejectsRawSourceBeforeCopy",
+        "GraphRegions.DomainConstantViewChecksActualPortAlignmentBeforeEnqueue",
+        "GraphPacking.UnknownPreparationObservationRetainsOwnersUntilNativeRetirement",
+        "GraphPacking.ExactVariantsShareWeightsAndSurviveParentAndSource",
+        "GraphPacking.IdentitySeparatesFormatStorageAndProviderInstances",
+        "GraphPacking.NoGlobalCacheAcrossContentsOrPackingConfigurations",
+        "GraphPacking.BoundsAndPartialFactoryFailuresAreTransactional",
+        "GraphPacking.RejectedPackingDiesBeforeFallbackAndSelectedPackingSurvives",
+        "GraphPacking.OpaqueMetadataCannotDisappearFromCompiledStorage",
+        "GraphPacking.FamilyCapsChargeSharedOpaqueAndPackedStorageOnlyOnce",
+        "GraphPacking.EveryMetadataAllocationFailureReleasesPackingAndCanRetry",
+        "GraphConstants.BorrowedReplicasKeepViewOffsetsAndNeverCopyAtReplay",
+        "GraphPacking.FiniteReplicasPackLocalWeightsAndChargeEachStorageOnce",
+        "GraphConstants.BorrowedUnalignedViewGetsOneColdReplicaWithoutReplacingItsPublishedAlias",
+        "GraphConstants.DerivedViewCanonicalKeysSeparateFiniteOffsetsAndDescriptions",
+        "GraphConstants.DerivedConstantCopyQualificationKeepsNativeErrorsAndRetries",
+        "GraphRegions.InputSliceAlignmentMaterializesOnlyUnalignedRegionAndLeafInputs",
+        "GraphRegions.AlignedReplicaServesMultipleReadersWithoutReplacingOriginalAlias",
+        "GraphRegions.AlignmentRepairKeepsWorkspaceLimitsAndRecoversAfterRefusal",
+        "GraphRegions.AlignmentCopyDoesNotTurnRealProviderErrorsIntoFallback",
+        "GraphRegions.AlignmentCopyResourceQualificationDoesNotHideNativeError",
+        "GraphRegions.AlignmentCopyCapabilityDeclineKeepsCompatibleRouteAndHardTarget",
+        "GraphRegions.AlignmentCopyQueryAndNativePrepareErrorsKeepTheirOriginalMeaning",
+        "GraphRegions.CopiedSliceGetsItsOwnAlignedInputBeforeCandidateQualification",
+        "GraphRegions.UnavailableFinalOutputCopyFailsBeforeAnyArtifact",
+        "GraphRegions.PhysicalCopyFailureBacktracksWithoutPreparingArtifacts",
+        "GraphRegions.SearchBudgetIsCumulativeAcrossTransactionalDeclines",
+        "GraphRegions.RegionErrorCodesDoNotGrantPermissionToRetry",
+        "GraphRegions.LeafErrorDoesNotBecomeARetryAcrossProvidersOrTargets",
+        "GraphRegions.LeafErrorsRemainFatalDuringBothRegionFallbackStages",
+        "GraphRegions.RetryRebuildsPhysicalInstanceAlignmentsWithoutRejectedRequirements",
+        "GraphRegions.FinalWorkspaceRetryKeepsHardConstraintsAndBudgets",
+        "GraphRegions.FinalWorkspaceRetryDoesNotHideRealProviderError",
+        "GraphRegions.RejectsAnUnavailableTransferBeforeAnySegmentIsSubmitted",
+        "GraphRegions.DeferredPortsBindOriginalSourcesAndProjectOnlyAfterSuccess",
+        "GraphRegions.OwnedNativeInputsKeepFirstCoveringPermissionAcrossRetryAndRebind",
+        "GraphRegions.EmptyOwnedNativeInputKeepsItsValidZeroBytePermission",
+        "GraphRouteBoundary.ProjectedInputRetainsAllReadersAndLivePageGuards",
+        "GraphRouteBoundary.ProjectedReadReleaseClearsTransparentAliasViews",
+        "GraphRules.RequiredProviderKeepsItsOwnLaneAndWorkspaceMetadata",
+        "GraphRules.ConcurrencyAndRequiredProviderRemainHardConstraints",
+        "GraphResources.WorkspaceBudgetSelectsFeasibleStorageAndLane",
+        "GraphResources.LaneSearchSharesStateAndPrepareLimitsWithNodeCover",
+        "GraphResources.MatureIntermediateMovesToFeasibleStorageAndPreservesAliasRules",
+        "GraphRegions.MissingLaneSelectsAnotherTargetWithoutWaivingPlacement",
+        "GraphRegions.ColdRegionAccessUsesActualLaneAndExactContextQueue",
+        "CanonicalConstantCache.CommonMaterializationCopiesDescriptionWithoutInitializedPadding",
+        "CanonicalConstantCache.NativeDenseCopyExcludesInitializedInputPadding",
+        "CanonicalConstantCache.BorrowedViewRetainsOnlyItsInitializedParentSuffixAcrossReplay",
+        "CanonicalConstantCache.ReadyInputLeasePreservesItsDeclaredInitializedRange",
+        "CanonicalConstantCache.ReadyOwnersKeepExactResourcesAndDescriptions",
+        "CanonicalConstantCache.PhysicalReplicasKeepPrimaryAndShareEachOwnerOnce",
+        "CanonicalConstantCache.RejectedAlignmentOwnerReleasesOnlyItsOwnBytes",
+        "CanonicalConstantCache.ChargesAreSharedAndFailedAllocationsRollBack",
+        "ConstantArtifactCache.OpaqueKeyOwnsTemporaryBytesAndComparesExactContents",
+        "ConstantArtifactCache.AliasOriginsSeparateEqualDescriptionsByRootAndOffset",
+        "StorageOwner.ReadyLeaseRetainsMovedResourceAfterOriginalHandlesDie",
+        "StorageOwner.FreezePoolIsZeroCopyAndLastReadonlyAliasRetainsResource",
+        "StorageOwner.FreezeBudgetedPoolRetainsActualAllocatorThroughFinalMetadataFree",
+        "StorageOwner.FreezeRejectsForeignResourceAllocatorAndExistingOwnerWithoutConsumption",
+        "StorageOwner.CustomAllocatorOutlivesResourceContextAndLastLeaseMetadataFree",
+        "StorageOwner.ExactAllocatorIdentityAndForeignBufferRejectBeforeTransfer",
+        "StorageOwner.BudgetBackingRequiresActualAllocatorOwnerBeforeBufferTransfer",
+        "StorageOwner.SoleAllocatorOwnerOutlivesRetainedSpillAndBothDeferredScopes",
+        "ConstantArtifactCache.QueuedPreparationReusesTwoInterleavedComputeEndpoints",
+        "ConstantArtifactCache.QueuedFailureDiscardsOnlyItsOriginalEndpointQueue",
+        "GraphAliasLiveness.LaterOverlappingViewKeepsItsOriginalValues",
+        "GraphAliasLiveness.PublishedPrivateViewSurvivesLaterDestructiveCandidates",
+        "GraphAliasLiveness.LastReaderStillAllowsInternalInPlaceReuse",
+        "GraphAliasLiveness.UnorderedEarlierLaneReaderPreventsDestructiveAlias"
+      ]
+    },
+    "retained_inputs": 231,
+    "reused": 230,
+    "new_SDK_CXX": 1,
+    "new_test_TUs": 2,
+    "default_pairs": 4,
+    "default_non_timing_equal": true,
+    "Session_files_per_arm": 378,
+    "Session_bytes_per_arm": 150761472,
+    "Session_bytes_exact": true,
+    "actual_native_controls": "Direct128 fresh and256 alias; chain128 weak intermediate alias/final fresh and256 two aliases. Each runs twice with zero Copy. CPU Exp-only mechanism tolerances1e-6/3e-6 are explicit; original model/Session comparisons remain exact."
+  },
+  "history": "Original F32 NativeNeg fixture was unsupported by the actual retained capability. The direct API probe preserves one diagnostic CXX syntax failure and its corrected diagnostic. Retained F32 NativeExp reproduces the real late-alias refusal; old b8 with the exact final test TU fails both tests. All commands/process/XML and failures are archived.",
+  "process_totals": {
+    "inference-optional-alias-alignment-harness-20261030": {
+      "CXX": {
+        "passed": 2,
+        "failed": 0
+      },
+      "link": {
+        "passed": 2,
+        "failed": 0
+      },
+      "native": {
+        "passed": 0,
+        "failed": 2
+      }
+    },
+    "inference-optional-alias-native-probe-20261030": {
+      "CXX": {
+        "passed": 1,
+        "failed": 1
+      },
+      "link": {
+        "passed": 1,
+        "failed": 0
+      },
+      "native": {
+        "passed": 1,
+        "failed": 0
+      }
+    },
+    "inference-m2-borrowed-alias-harness-20261030": {
+      "CXX": {
+        "passed": 3,
+        "failed": 0
+      },
+      "link": {
+        "passed": 8,
+        "failed": 0
+      },
+      "native": {
+        "passed": 13,
+        "failed": 1
+      }
+    }
+  },
+  "failed_processes": [
+    {
+      "kind": "native",
+      "exit": 1,
+      "receipt": {
+        "path": ".scratch/inference-optional-alias-alignment-harness-20261030/runs/cpu/attempt1/process.json",
+        "bytes": 151,
+        "sha256": "c98acfd0b246bd752c650622db1394b3e9b4be47f5742e361f42254d536d2f3c"
+      }
+    },
+    {
+      "kind": "native",
+      "exit": 1,
+      "receipt": {
+        "path": ".scratch/inference-optional-alias-alignment-harness-20261030/runs/cpu/attempt2/process.json",
+        "bytes": 151,
+        "sha256": "105d3eddd2c8528f29de8da01f52382778d43b714a8a46d436172f3e1815382f"
+      }
+    },
+    {
+      "kind": "CXX",
+      "exit": 2,
+      "receipt": {
+        "path": ".scratch/inference-optional-alias-native-probe-20261030/compile/attempt1/process.json",
+        "bytes": 150,
+        "sha256": "8c6be9bc0b5b9a17f114a9963190d1c18db7f8cc3eafc8c0166868bf380777ea"
+      }
+    },
+    {
+      "kind": "native",
+      "exit": 1,
+      "receipt": {
+        "path": ".scratch/inference-m2-borrowed-alias-harness-20261030/runs/baseline-red2/attempt1/process.json",
+        "bytes": 150,
+        "sha256": "3d897cf0212a536774b2c6ec707642865f2765dc1f74fe01e236f694640e66cb"
+      }
+    }
+  ],
+  "default_timing_diagnostic": [
+    {
+      "case": "ordinary-single",
+      "prefill_seconds": {
+        "baseline": 0.0740401,
+        "candidate": 0.0714704
+      },
+      "decode_seconds": {
+        "baseline": 0.693437,
+        "candidate": 0.6797428999999998
+      },
+      "session_seconds": {
+        "baseline": 0.7674771,
+        "candidate": 0.7512133
+      },
+      "startup_to_ready_seconds": {
+        "baseline": 1.2586197,
+        "candidate": 1.1610724
+      }
+    },
+    {
+      "case": "mtp-single",
+      "prefill_seconds": {
+        "baseline": 0.0726716,
+        "candidate": 0.0790891
+      },
+      "decode_seconds": {
+        "baseline": 0.5572240000000002,
+        "candidate": 0.5434948000000001
+      },
+      "session_seconds": {
+        "baseline": 0.6298956,
+        "candidate": 0.6225839
+      },
+      "startup_to_ready_seconds": {
+        "baseline": 1.7982179,
+        "candidate": 1.8184621
+      }
+    },
+    {
+      "case": "ordinary-two",
+      "prefill_seconds": {
+        "baseline": 0.1231526,
+        "candidate": 0.1250702
+      },
+      "decode_seconds": {
+        "baseline": 1.3749611000000002,
+        "candidate": 1.3878036000000002
+      },
+      "session_seconds": {
+        "baseline": 1.4981137,
+        "candidate": 1.5128738
+      },
+      "startup_to_ready_seconds": {
+        "baseline": 1.2390884,
+        "candidate": 1.2273929
+      }
+    },
+    {
+      "case": "mtp-two",
+      "prefill_seconds": {
+        "baseline": 0.1307568,
+        "candidate": 0.1269694
+      },
+      "decode_seconds": {
+        "baseline": 1.0502127,
+        "candidate": 1.0062151999999998
+      },
+      "session_seconds": {
+        "baseline": 1.1809695,
+        "candidate": 1.1331846
+      },
+      "startup_to_ready_seconds": {
+        "baseline": 1.9287661,
+        "candidate": 1.9231748
+      }
+    }
+  ],
+  "scope": "Finite CPU/single-GPU consumers. Domain/external/generated/native address contracts retain prior behavior; pre-constant propagation is unchanged. Required-View compensation is mathematical support, without a claimed newly reachable consumer. No stable performance gain, complete performance window, full default CMake build, second complete model, Mac or multi-card proof.",
+  "archive": {
+    "path": "docs/evidence/correctness/inference-optional-alias-alignment-2026-10-30.zip",
+    "bytes": 849937,
+    "sha256": "3c32f0b54e791f14ffa2dc677e8eabe3f280fdbf6b4acab94eeaa21b535a64ca",
+    "members": 254,
+    "full_member_readback": true
+  }
+}

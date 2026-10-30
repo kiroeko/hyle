@@ -46,6 +46,8 @@ Qwen／GLM／Kimi／DeepSeek的实际接入面已经核对：有限具体图不�
 Phase物理准备已独立，原IO注册／slots／owner保留；Model仍负责政策、可晚挂接的state layout、共享scratch、初始化与真实退休。[本片26个有限原生进程](../evidence/correctness/inference-phase-preparation-boundary-2026-10-30.json)全部通过，包括首次真实allocation预算拒绝与重建、早／晚布局、warm原Invocation、默认四对、完整Session向量和9个diagnostic probe。230旧输入全复用，仅新增一个phase对象；无SDK／NVCC／下载或新性能窗。其余冷程序、请求恢复和稳态事实接线继续复审，不机械固定偶然host emit顺序，已完成共同IO／退休机制不重复。
 跨模型caller输出池现共享显式份数／alignment下的checked容量事实，保模型保留政策、域、原LeasePool与owner；实际LeasePool用例复现非对齐V65两块旧容量拒绝并验证修复，未运行真实V65模型。GLM NextN暴露的常量View对齐缺口也已由Graph冷canonical表示修复，保原borrow／发布别名及预算／真实退休，无逐token Copy。
 [本片有限检查](../evidence/correctness/inference-output-pool-and-constant-view-2026-10-30.json)的11个输出池相关用例、42项Graph／缓存检查、新旧ordinary GLM、默认完整词表四对及完整Session通过；102个实际进程中的9次历史原生失败及两次scratch处理错误保留。新旧ordinary的24项属性exact，Session两臂各378份状态／150,761,472B逐字节一致。仅9个私有布局受影响SDK对象重编、222复用；无NVCC／下载或新完整性能窗。
+Graph可选原地复用已按完整根offset与required组模同余修复，保合法alias与原独立输出，无额外Copy／运行时分派。
+[本片检查](../evidence/correctness/inference-optional-alias-alignment-2026-10-30.json)以同新TU验证旧b8两项真实失败、新图78项通过／零跳过；默认四对非时间字段、完整Session状态一致，GLM Pro与tiny CPU batch-state通过。仅1Graph与2测试TU重编，230旧输入复用；最初NativeNeg/F32能力误选和诊断语法失败保留，单配耗时不冒称稳定性能收益。
 较强设备用于底座成熟后的更广整模型验证，当前工作不以租设备、完整大模型或通用loader／server为前置。
 新profile和优化尚未启动，原工具／命令准备保留；相关架构费用验证按实际改动安排。正在做和估计进度只在[看板](../developer/inference-progress.md)维护。
 

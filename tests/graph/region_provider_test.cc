@@ -4474,6 +4474,231 @@ void expect_slice_alignment_replay(const hyle::graph::Executable &executable,
   }
 }
 
+// An independent Y can satisfy a later strict input before optional in-place
+// selection. Donating a low-alignment slice to Y must preserve that requirement.
+// Use retained F32 native Exp for the destructive candidate. The nonalias
+// RegionProbe control retains Neg; it does not pretend to implement Exp.
+TEST(GraphRegions, LateOptionalAliasPreservesDownstreamAlignment) {
+  struct Case final { std::int64_t offset; bool optional_alias; };
+  // Controls precede the unaligned optional case so a baseline rejection does
+  // not prevent their successful compilation and real two-replay checks.
+  constexpr std::array cases{Case{32, false}, Case{64, true}, Case{32, true}};
+  for (const auto test_case : cases) {
+    SCOPED_TRACE(test_case.offset);
+    SCOPED_TRACE(test_case.optional_alias);
+    auto builder = GraphBuilder::create().value();
+    const auto input = builder.input(row(85)).value();
+    const auto root = builder.add(Unary{UnaryKind::kNeg}, input).value();
+    const auto selected = builder.add(
+        hyle::compute::View::slice(0, test_case.offset, 17).value(), root).value();
+    const auto changed = builder.add(Unary{test_case.optional_alias
+        ? UnaryKind::kExp : UnaryKind::kNeg}, selected).value();
+    const auto output = builder.add(Unary{UnaryKind::kNeg}, changed).value();
+    ASSERT_TRUE(builder.publish(output).ok());
+    const SliceAlignmentGraph logical{
+        std::move(builder).finish().value(), input, output, root, selected};
+    RegionProbe producer{.mode = ProposalMode::kSingleton, .singleton_node = 0};
+    RegionProbe strict{.mode = ProposalMode::kSingleton, .singleton_node = 3};
+    for (auto *probe : {&producer, &strict}) {
+      probe->required_resource = hyle::mem::system_resource();
+      probe->bounded_unary_domain = true;
+    }
+    producer.requirement_override = hyle::compute::ResourceRequirement{
+        .minimum_alignment = alignof(float)};
+    strict.requirement_override = hyle::compute::ResourceRequirement{
+        .minimum_alignment = 256};
+    const std::array providers{
+        hyle::compute::ProviderBinding{region_provider(producer), 100},
+        hyle::compute::ProviderBinding{region_provider(strict), 200},
+        hyle::compute::ProviderBinding{hyle::compute::native::provider(), 300}};
+    auto context = Context::create(hyle::compute::cpu::device(), {.providers = providers}).value();
+    const auto middle_provider = test_case.optional_alias
+        ? hyle::compute::native::kProviderId : kRegionProviderId;
+    const auto middle_instance = context.provider_instance_id(test_case.optional_alias ? 2 : 0).value();
+    const std::array required{
+        hyle::graph::NodeProviderConstraint{logical.graph.node_id(0).value(), kRegionProviderId,
+            context.provider_instance_id(0).value()},
+        hyle::graph::NodeProviderConstraint{logical.graph.node_id(2).value(), middle_provider, middle_instance},
+        hyle::graph::NodeProviderConstraint{logical.graph.node_id(3).value(), kRegionProviderId,
+            context.provider_instance_id(1).value()}};
+    auto compiled = hyle::graph::compile(logical.graph, context,
+        {.node_providers = required, .region_selection = RegionSelectionPolicy::kDisabled});
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    EXPECT_EQ(compiled->report.copy_bytes(), 0u);
+    EXPECT_EQ(compiled->report.region_count(), 0u);
+    const auto *plan = hyle::graph::detail::ExecutableAccess::state(compiled->executable);
+    ASSERT_NE(plan, nullptr);
+    ASSERT_LT(plan->node_steps[2], plan->steps.size());
+    ASSERT_LT(plan->node_steps[3], plan->steps.size());
+    const auto &middle_step = plan->steps[plan->node_steps[2]];
+    const auto &reader_step = plan->steps[plan->node_steps[3]];
+    const auto selected_instance = plan->node_inputs[middle_step.input_begin];
+    const auto changed_instance = plan->node_outputs[middle_step.output_begin];
+    EXPECT_EQ(plan->instance_values[selected_instance], selected.ordinal());
+    EXPECT_EQ(plan->instance_values[changed_instance], changed.ordinal());
+    EXPECT_EQ(plan->node_inputs[reader_step.input_begin], changed_instance);
+    EXPECT_GE(plan->instance_alignments[changed_instance], 256u);
+    EXPECT_EQ(plan->instance_output_contracts[changed_instance].kind,
+        hyle::graph::RegionOutputKind::kCaller);
+    EXPECT_EQ(plan->instance_output_contracts[changed_instance].projection,
+        hyle::graph::RegionOutputProjection::kTensorView);
+    const auto support = middle_step.operation.alias_support(0, 0);
+    ASSERT_TRUE(support) << support.error().message();
+    EXPECT_EQ(support->supported, test_case.optional_alias);
+    if (test_case.optional_alias && test_case.offset == 64) {
+      EXPECT_EQ(plan->alias_sources[changed_instance], selected_instance);
+      EXPECT_EQ(plan->alias_offsets[changed_instance], 0u);
+    } else {
+      // The incompatible 128B slice cannot meet a downstream 256B requirement.
+      // Y remains the original independent Caller result; no Copy is needed.
+      EXPECT_EQ(plan->alias_sources[changed_instance], hyle::graph::detail::kNoInPlaceSource);
+      const auto physical = compiled->report.physical_value(changed_instance);
+      ASSERT_TRUE(physical) << physical.error().message();
+      EXPECT_TRUE(physical->workspace_backed);
+    }
+    if (!test_case.optional_alias) {
+      expect_slice_alignment_replay(compiled->executable, logical,
+          static_cast<std::size_t>(test_case.offset), -1.F, &context);
+    } else {
+      auto input_values = make_tensor(row(85)), output_values = make_tensor(row(17));
+      auto run = compiled->executable.create_invocation().value();
+      ASSERT_TRUE(run.bind(logical.input, input_values.view).ok());
+      ASSERT_TRUE(run.bind(logical.output, output_values.view).ok());
+      auto queue = context.create_queue().value();
+      for (std::size_t round = 0; round < 2; ++round) {
+        std::vector<float> values(85);
+        for (std::size_t i = 0; i < values.size(); ++i)
+          values[i] = static_cast<float>(i + 1) / 128.F + static_cast<float>(round) / 8.F;
+        write(input_values, values);
+        auto completed = run.submit(queue);
+        ASSERT_TRUE(completed) << completed.error().message();
+        ASSERT_TRUE(completed->wait().ok());
+        const auto actual = read(output_values, 17);
+        ASSERT_EQ(actual.size(), 17u);
+        for (std::size_t i = 0; i < actual.size(); ++i) {
+          // Bounded F32 Exp: compare native SIMD with the scalar reference.
+          // This new mechanism check allows 1e-6 absolute error below unit scale.
+          const auto expected = -std::exp(-values[i + static_cast<std::size_t>(test_case.offset)]);
+          EXPECT_NEAR(actual[i], expected, 1e-6F);
+        }
+        EXPECT_EQ(read(input_values, 85), values);
+      }
+    }
+    ::testing::Test::RecordProperty("control_" + std::to_string(test_case.offset) +
+        (test_case.optional_alias ? "_native_exp" : "_probe_neg"),
+        "completed-two-replays; copy_bytes=0; changed_alias=" +
+            std::to_string(plan->alias_sources[changed_instance]));
+  }
+}
+
+// A weak optional intermediate must not inherit a later optional result's
+// strict requirement before that later donation has actually been admitted.
+TEST(GraphRegions, LateOptionalAliasChainKeepsWeakIntermediateAndStrictFinalAlignment) {
+  for (const std::int64_t offset : {32, 64}) {
+    SCOPED_TRACE(offset);
+    auto builder = GraphBuilder::create().value();
+    const auto input = builder.input(row(85)).value();
+    const auto root = builder.add(Unary{UnaryKind::kNeg}, input).value();
+    const auto selected = builder.add(hyle::compute::View::slice(0, offset, 17).value(), root).value();
+    const auto first = builder.add(Unary{UnaryKind::kExp}, selected).value();
+    const auto second = builder.add(Unary{UnaryKind::kExp}, first).value();
+    const auto output = builder.add(Unary{UnaryKind::kNeg}, second).value();
+    ASSERT_TRUE(builder.publish(output).ok());
+    const auto graph = std::move(builder).finish().value();
+    RegionProbe producer{.mode = ProposalMode::kSingleton, .singleton_node = 0};
+    RegionProbe strict{.mode = ProposalMode::kSingleton, .singleton_node = 4};
+    for (auto *endpoint : {&producer, &strict}) {
+      endpoint->required_resource = hyle::mem::system_resource();
+      endpoint->bounded_unary_domain = true;
+    }
+    producer.requirement_override = hyle::compute::ResourceRequirement{.minimum_alignment = alignof(float)};
+    strict.requirement_override = hyle::compute::ResourceRequirement{.minimum_alignment = 256};
+    const std::array providers{
+        hyle::compute::ProviderBinding{region_provider(producer), 100},
+        hyle::compute::ProviderBinding{region_provider(strict), 200},
+        hyle::compute::ProviderBinding{hyle::compute::native::provider(), 300}};
+    auto context = Context::create(hyle::compute::cpu::device(), {.providers = providers}).value();
+    const auto native_instance = context.provider_instance_id(2).value();
+    const std::array required{
+        hyle::graph::NodeProviderConstraint{graph.node_id(0).value(), kRegionProviderId,
+            context.provider_instance_id(0).value()},
+        hyle::graph::NodeProviderConstraint{graph.node_id(2).value(), hyle::compute::native::kProviderId, native_instance},
+        hyle::graph::NodeProviderConstraint{graph.node_id(3).value(), hyle::compute::native::kProviderId, native_instance},
+        hyle::graph::NodeProviderConstraint{graph.node_id(4).value(), kRegionProviderId,
+            context.provider_instance_id(1).value()}};
+    auto compiled = hyle::graph::compile(graph, context,
+        {.node_providers = required, .region_selection = RegionSelectionPolicy::kDisabled});
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    EXPECT_EQ(compiled->report.copy_bytes(), 0u);
+    EXPECT_EQ(compiled->report.region_count(), 0u);
+    const auto *plan = hyle::graph::detail::ExecutableAccess::state(compiled->executable);
+    ASSERT_NE(plan, nullptr);
+    ASSERT_LT(plan->node_steps[2], plan->steps.size());
+    ASSERT_LT(plan->node_steps[3], plan->steps.size());
+    ASSERT_LT(plan->node_steps[4], plan->steps.size());
+    const auto &first_step = plan->steps[plan->node_steps[2]];
+    const auto &second_step = plan->steps[plan->node_steps[3]];
+    const auto &reader_step = plan->steps[plan->node_steps[4]];
+    EXPECT_EQ(first_step.provider_instance_id(), native_instance);
+    EXPECT_EQ(second_step.provider_instance_id(), native_instance);
+    const auto selected_instance = plan->node_inputs[first_step.input_begin];
+    const auto first_instance = plan->node_outputs[first_step.output_begin];
+    const auto second_instance = plan->node_outputs[second_step.output_begin];
+    EXPECT_EQ(plan->instance_values[selected_instance], selected.ordinal());
+    EXPECT_EQ(plan->instance_values[first_instance], first.ordinal());
+    EXPECT_EQ(plan->instance_values[second_instance], second.ordinal());
+    EXPECT_EQ(plan->node_inputs[second_step.input_begin], first_instance);
+    EXPECT_EQ(plan->node_inputs[reader_step.input_begin], second_instance);
+    EXPECT_GE(plan->instance_alignments[second_instance], 256u);
+    const auto first_support = first_step.operation.alias_support(0, 0);
+    const auto second_support = second_step.operation.alias_support(0, 0);
+    ASSERT_TRUE(first_support) << first_support.error().message();
+    ASSERT_TRUE(second_support) << second_support.error().message();
+    EXPECT_TRUE(first_support->supported);
+    EXPECT_TRUE(second_support->supported);
+    EXPECT_EQ(plan->alias_sources[first_instance], selected_instance);
+    EXPECT_EQ(plan->alias_offsets[first_instance], 0u);
+    if (offset == 64) {
+      EXPECT_EQ(plan->alias_sources[second_instance], first_instance);
+      EXPECT_EQ(plan->alias_offsets[second_instance], 0u);
+    } else {
+      EXPECT_EQ(plan->alias_sources[second_instance], hyle::graph::detail::kNoInPlaceSource);
+      const auto physical = compiled->report.physical_value(second_instance);
+      ASSERT_TRUE(physical) << physical.error().message();
+      EXPECT_TRUE(physical->workspace_backed);
+    }
+    for (const auto &step : plan->steps)
+      EXPECT_NE(step.kind, hyle::graph::detail::PlanStepKind::kCopy);
+    auto input_values = make_tensor(row(85)), output_values = make_tensor(row(17));
+    auto run = compiled->executable.create_invocation().value();
+    ASSERT_TRUE(run.bind(input, input_values.view).ok());
+    ASSERT_TRUE(run.bind(output, output_values.view).ok());
+    auto queue = context.create_queue().value();
+    for (std::size_t round = 0; round < 2; ++round) {
+      std::vector<float> values(85);
+      for (std::size_t i = 0; i < values.size(); ++i)
+        values[i] = static_cast<float>(i + 1) / 128.F + static_cast<float>(round) / 8.F;
+      write(input_values, values);
+      auto completed = run.submit(queue);
+      ASSERT_TRUE(completed) << completed.error().message();
+      ASSERT_TRUE(completed->wait().ok());
+      const auto actual = read(output_values, 17);
+      ASSERT_EQ(actual.size(), 17u);
+      for (std::size_t i = 0; i < actual.size(); ++i) {
+        // Two stored F32 Exp results, bounded below3: allow3e-6 absolute
+        // error against scalar float exp for SIMD approximation/rounding.
+        const auto expected = -std::exp(std::exp(-values[i + static_cast<std::size_t>(offset)]));
+        EXPECT_NEAR(actual[i], expected, 3e-6F);
+      }
+      EXPECT_EQ(read(input_values, 85), values);
+    }
+    ::testing::Test::RecordProperty("chain_" + std::to_string(offset),
+        "completed-two-replays; copy_bytes=0; first_alias=" +
+            std::to_string(plan->alias_sources[first_instance]) + "; second_alias=" +
+            std::to_string(plan->alias_sources[second_instance]));
+  }
+}
+
 TEST(GraphRegions, InputSliceAlignmentMaterializesOnlyUnalignedRegionAndLeafInputs) {
   for (const bool leaf : {false, true}) {
     for (const std::int64_t offset : {17, 64}) {

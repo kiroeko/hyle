@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
@@ -7514,7 +7515,17 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
   // as they are selected. Path compression keeps the cold scratch near-linear
   // without changing the plan's immediate parent/offset or warm path.
   detail::ValueOrdinals alias_groups(plan.allocator);
-  if (!alias_groups.try_resize(plan.instance_values.size()))
+  // Keep requirements relative to each group's origin without promoting a
+  // descendant's requirement onto an intermediate value. A group can require
+  // a nonzero origin: Y needs4, while a View at Y+128 needs256. Moving Y to an
+  // input at root+128 satisfies both; pre-propagating256 onto Y would reject it.
+  struct AliasAlignment final {
+    std::size_t alignment = 1, residue = 0, root_offset = 0;
+    bool consistent = true;
+  };
+  container::SmallVector<AliasAlignment, 0, mem::AllocatorRef> alias_alignments(plan.allocator);
+  if (!alias_groups.try_resize(plan.instance_values.size()) ||
+      !alias_alignments.try_resize(plan.instance_values.size()))
     return plan_allocation_failure();
   for (std::uint32_t instance = 0; instance < plan.instance_values.size(); ++instance) {
     const auto source = plan.alias_sources[instance];
@@ -7523,6 +7534,27 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
     const auto root = source == detail::kNoInPlaceSource
         ? instance : alias_groups[source];
     alias_groups[instance] = root;
+    auto &entry = alias_alignments[instance];
+    if (source != detail::kNoInPlaceSource) {
+      const auto parent_offset = alias_alignments[source].root_offset;
+      if (plan.alias_offsets[instance] > SIZE_MAX - parent_offset)
+        return Status::Internal("graph physical alias chain is invalid");
+      entry.root_offset = parent_offset + plan.alias_offsets[instance];
+    }
+    const auto alignment = plan.instance_alignments[instance];
+    if (!std::has_single_bit(alignment))
+      return Status::Internal("graph physical alias alignment is invalid");
+    const auto mask = alignment - 1;
+    const auto residue = (alignment - (entry.root_offset & mask)) & mask;
+    auto &group_alignment = alias_alignments[root];
+    if (alignment > group_alignment.alignment) {
+      group_alignment.consistent &=
+          (residue & (group_alignment.alignment - 1)) == group_alignment.residue;
+      group_alignment.alignment = alignment;
+      group_alignment.residue = residue;
+    } else {
+      group_alignment.consistent &= (group_alignment.residue & mask) == residue;
+    }
     // A published value is read after commands finish, including when only a
     // View of a private workspace root is published.
     if ((plan.instance_roles[instance] & detail::kExternalOutput) != 0)
@@ -7539,6 +7571,33 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
       instance = parent;
     }
     return root;
+  };
+
+  // Producer-first optional selection never moves an already consumed
+  // internal input root again: only the current step's new SSA outputs can
+  // acquire a parent. Required descendants retain their offsets as a group.
+  const auto accepts_optional_alignment = [&](std::uint32_t input,
+      std::uint32_t input_root, std::uint32_t output_root) noexcept -> Result<bool> {
+    const auto &source_group = alias_alignments[input_root];
+    const auto &output_group = alias_alignments[output_root];
+    if (!source_group.consistent || source_group.residue != 0 || !output_group.consistent)
+      return false;
+    std::size_t offset = 0;
+    auto root = input;
+    for (;;) {
+      if (root >= plan.alias_sources.size())
+        return std::unexpected(Status::Internal("graph optional alias input is invalid"));
+      const auto parent = plan.alias_sources[root];
+      if (parent == detail::kNoInPlaceSource)
+        break;
+      if (parent >= root || plan.alias_offsets[root] > SIZE_MAX - offset)
+        return std::unexpected(Status::Internal("graph optional alias chain is invalid"));
+      offset += plan.alias_offsets[root];
+      root = parent;
+    }
+    if (root != input_root)
+      return std::unexpected(Status::Internal("graph optional alias group differs from its physical root"));
+    return (offset & (output_group.alignment - 1)) == output_group.residue;
   };
 
   // A scalar last use is sufficient on one ordered lane. With several
@@ -7627,9 +7686,25 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
         if ((internal_pair || external_pair) &&
             plan.instance_descriptions[input] == plan.instance_descriptions[output] &&
             readers_before_write(input_root, step_index)) {
+          // Symbolic offsets and external address contracts keep their original
+          // Invocation checks. Only a static Graph-owned allocation has a cold
+          // zero origin which can prove this whole output group's translation.
+          const bool static_internal = internal_pair && !plan.domain_graph.valid();
+          if (static_internal) {
+            HYLE_ASSIGN_OR_RETURN(const bool aligned,
+                accepts_optional_alignment(input, input_root, output_root));
+            if (!aligned)
+              continue;
+          }
           plan.alias_sources[output] = input;
           plan.alias_offsets[output] = 0;
           alias_groups[output_root] = input_root;
+          if (static_internal) {
+            auto &source_group = alias_alignments[input_root];
+            source_group.alignment = (std::max)(source_group.alignment, alias_alignments[output_root].alignment);
+            source_group.residue = 0;
+            source_group.consistent = true;
+          }
           last_uses[input_root] = (std::max)(last_uses[input_root], last_uses[output_root]);
           if (lane_count > 1) {
             alias_read_heads[input_root] = alias_read_heads[output_root];

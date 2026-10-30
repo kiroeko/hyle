@@ -141,6 +141,13 @@ GLM实际NextN同时暴露不可变常量View的对齐缺口：Graph只为需要
 [有限检查](../evidence/correctness/inference-output-pool-and-constant-view-2026-10-30.json)覆盖真实LeasePool、四类模型组件、
 42项Graph／缓存检查、默认完整词表四对及完整Session状态；旧失败和测试初始化span假设的修正分别保留。
 
+Graph的可选原地复用另按required别名组的模同余约束检查完整根偏移：不把后代的强对齐要求提前写进中间值，
+只在static internal候选不能满足整组约束时保留原独立输出；合法别名、原liveness／DAG及最终alignment传播保留。
+新数据只属于冷scratch，不加Copy或热分派；domain／external／generated及pre-constants保持原合同。
+[有限检查](../evidence/correctness/inference-optional-alias-alignment-2026-10-30.json)在同一新TU上得到旧图2红／新图78过，
+含真实F32 Exp两级链、4项专门liveness与现常量／预算／原错误合同；默认四对、完整Session及GLM Pro组件通过。
+非零origin的required-View补偿仅有精确算术支持，不据此声称新增可达消费者或所有组合已证明。
+
 当前异构消费者的接入面也已沿实际源码核对：
 
 | 消费者 | 已复用的共同机制 | 仍保留的模型事实及验证边界 |
