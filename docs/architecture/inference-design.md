@@ -174,7 +174,15 @@ GLM的StateStore／StateHead不使用这些分页尾，不为接口统一而引�
 共同结果束允许零tensor：可只捕获Store／Page，也可仅保原提交结果。只有全部选定view捕获成功，才记录零tensor选择；
 非空首输出失败仍保原empty-output错误和partial bundle。这个事实不证明计算成功或退休，原wait／detach及typed权限继续作准。
 [有限检查](../evidence/correctness/inference-effect-views-2026-10-30.json)保留真实双Append→Attention、零hostwait及原页数值／snapshot。
-多owner检查另发现原Graph冷Store adapter只覆盖target默认存储域，同Context其它实际域没有候选；此产品缺项仍待修复，不宣称多域Store已完成。
+多owner检查发现的默认域冷装配缺项已由[显式节点域与银行装配](../evidence/correctness/inference-node-storage-2026-10-30.json)修复；
+同Context多个实际Store／Append银行已有限检查，跨Context／多卡仍不据此宣称可用。
+
+预热计数及方向提示不授予权限，也不能替代具体载体的真实准备：跨批宽或重建Invocation后，原Queue／capture可能尚未安装。
+本轮实验证明只保留跨cohort提示会在已暖R2转入新R1时触发真实Queue绑定错误，原reset策略保留；
+后续减少预热须依据具体原载体的准备事实，不能把任意InvalidArgument吞成自动回落。
+条件后继目前仍为研究：Completion成功只证明提交成功退休，若设备跳过整个图体，还须独立表达Executed／Skipped。
+Skipped只能回收未发布候选，不得进入输出观察、Store／页发布或Head提交；未决条件Source不能直接接力下一图。
+这些合同尚未在产品接入，不能把已验证的小型CUDA If实验写成MTP条件执行已完成。
 
 完整页准备归`prepare_append_pages`：预留原候选引用和dirty-bank容量，保留原完整前缀，尝试真实尾预留，必要时回落COW并逐页取得原Inventory引用。
 普通／验证／后继target、批量draft及私有NextN通过整组入口复用这一算法。模型提供真实银行范围、epoch／relay资格及候选准备，仍决定逻辑状态和完整Head发布。

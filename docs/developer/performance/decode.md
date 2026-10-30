@@ -12,6 +12,21 @@
 单会话普通／MTP的最近跨引擎完整表见[推理进度](../inference-progress.md#最近完整性能对照)；
 下面的B2、CPU和局部候选属于不同窗口，各自保留版本与测量边界。
 
+2026-10-30的[预热边界与有限A/A](../../evidence/performance/inference-warm-boundary-aa-2026-10-30.json)
+检查跨cohort保留预热提示：两轮ABBA中位133.60→133.68tok/s（＋0.062%，每版两样本，范围重叠），
+同时废弃后继2→3、实际draft行438→440，未证明收益。已暖R2转入fresh R1时真实复现原Queue绑定拒绝，
+因为新Invocation尚未完成replay准备；候选已撤回，原reset策略通过完整状态／epoch／RNG／ledger回归。
+warm hint不授予权限，也不能替代具体槽的实际准备；不吞InvalidArgument规避该边界。
+同一当前CLI、相同P154＋64的schedule／steps交错A/A，普通与MTP各四对进程，全部非计时报告一致。
+decode中位steps／schedule分别98.90／98.67和121.89／122.52tok/s，成对方向不一致；本次未复现旧3%偏差，
+不声明统计等价，也不能排除双轮进程额外形状／workspace造成的独立分配影响。没有新peer或显存测量，完整表不变。
+
+[独立代码域32K词表](../../evidence/research/inference-code-vocabulary-map-2026-10-30.json)
+由原Qwen tokenizer对四个参考引擎的固定源码片段构造，排除测试、benchmark、生成文件、Hyle及性能输入／输出。
+约64MiB、2,009万token中有37,610个非零ID，32K覆盖构造语料99.97%；64K不足，未补零。
+这只准备了代码域先验，不是MTP接受率或性能证据。原完整target head／embedding保留，
+draft冷选行导入、ID映射及完整消费者尚未接线；随机路径还须保真实q、p及拒绝残差，不能套greedy结果。
+
 2026-10-30的[公开Source与一次绑定](../../evidence/correctness/inference-source-binding-2026-10-30.json)
 删除调用方在prepare／submit／release时重复传递和比较整束描述；Graph从当前tensor／effect附件保留原绑定束，
 仍核实际权限、完整tuple、原Status和真实退休。29项Source／分页／读回、Kimi7项和真实Qwen消费者通过。

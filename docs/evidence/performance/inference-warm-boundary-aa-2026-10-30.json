@@ -1,0 +1,764 @@
+{
+  "schema": "hyle.performance.warm-boundary-aa.v1",
+  "date": "2026-10-30",
+  "base_commit": "04cf45eb7",
+  "status": "CANDIDATE_REJECTED_NATIVE_REGRESSION_RETAINED_AND_FINITE_AA_COMPLETED",
+  "decision": "Keep original product reset strategy; no demonstrated gain and a reproduced fresh-slot Queue failure.",
+  "checks": {
+    "status": "REJECT_UNGUARDED_WARM_HINT_CANDIDATE_AND_COMPLETE_FINITE_AA",
+    "aa": {
+      "ordinary": {
+        "mode": "ordinary",
+        "samples_per_arm": 4,
+        "all_non_timing_fields_identical": true,
+        "order": [
+          "steps",
+          "schedule",
+          "schedule",
+          "steps",
+          "schedule",
+          "steps",
+          "steps",
+          "schedule"
+        ],
+        "summary": {
+          "steps": {
+            "prefill_tokens_per_second": {
+              "median": 2156.8658777564933,
+              "minimum": 2148.5244241187215,
+              "maximum": 2165.12296211316
+            },
+            "decode_output_tokens_per_second": {
+              "median": 98.90014090148686,
+              "minimum": 98.59355511144979,
+              "maximum": 99.32692606340115
+            },
+            "output_tokens_per_second": {
+              "median": 90.34366343660739,
+              "minimum": 90.12629792430685,
+              "maximum": 90.65846660836195
+            },
+            "decode_seconds": {
+              "median": 0.6370072999999998,
+              "minimum": 0.6342691000000001,
+              "maximum": 0.6389870000000003
+            }
+          },
+          "schedule": {
+            "prefill_tokens_per_second": {
+              "median": 2202.927495578061,
+              "minimum": 2169.3715724985664,
+              "maximum": 2226.991132526218
+            },
+            "decode_output_tokens_per_second": {
+              "median": 98.67142212565798,
+              "minimum": 98.16181866738631,
+              "maximum": 98.81343881589504
+            },
+            "output_tokens_per_second": {
+              "median": 90.34570027731968,
+              "minimum": 89.78855776708203,
+              "maximum": 90.55962594346505
+            },
+            "decode_seconds": {
+              "median": 0.6384829,
+              "minimum": 0.6375651,
+              "maximum": 0.6417974
+            }
+          }
+        },
+        "adjacent_decode_schedule_over_steps": [
+          0.9929039056070731,
+          1.001290107851638,
+          1.000455639745651,
+          0.9912146730416792
+        ],
+        "samples": [
+          {
+            "index": 1,
+            "kind": "steps",
+            "report": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\runs\\ordinary-single\\control\\aa-ordinary-1\\report.json",
+              "bytes": 119421,
+              "sha256": "d14bb847a0b804214c95899914b4dde13607ea6a9d87292e84090b7df1b3c3a0"
+            },
+            "process": {
+              "state": "TERMINAL",
+              "pid": 19560,
+              "started": 1793333838.183486,
+              "seconds": 2.4965314865112305,
+              "exit": 0,
+              "timed_out": false
+            }
+          },
+          {
+            "index": 2,
+            "kind": "schedule",
+            "report": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\runs\\ordinary-single-schedule\\control\\aa-ordinary-2\\report.json",
+              "bytes": 119405,
+              "sha256": "81b1d33431e2cd6cfb5f5b3b3a2ea909657cf06a65f7f26d5e1b2765e5b3fa40"
+            },
+            "process": {
+              "state": "TERMINAL",
+              "pid": 60812,
+              "started": 1793333840.7680943,
+              "seconds": 2.509000301361084,
+              "exit": 0,
+              "timed_out": false
+            }
+          },
+          {
+            "index": 3,
+            "kind": "schedule",
+            "report": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\runs\\ordinary-single-schedule\\control\\aa-ordinary-3\\report.json",
+              "bytes": 119438,
+              "sha256": "dc79ad325fcf7f3dd2963516df08cdf77c87e06c5833b2dd9d83013ead10213c"
+            },
+            "process": {
+              "state": "TERMINAL",
+              "pid": 22292,
+              "started": 1793333843.3642175,
+              "seconds": 2.487319231033325,
+              "exit": 0,
+              "timed_out": false
+            }
+          },
+          {
+            "index": 4,
+            "kind": "steps",
+            "report": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\runs\\ordinary-single\\control\\aa-ordinary-4\\report.json",
+              "bytes": 119459,
+              "sha256": "c68deba1c87228659127a7e2e6b7056a4623fd91af7465ea947f56dae72b911f"
+            },
+            "process": {
+              "state": "TERMINAL",
+              "pid": 59340,
+              "started": 1793333845.93988,
+              "seconds": 2.511662721633911,
+              "exit": 0,
+              "timed_out": false
+            }
+          },
+          {
+            "index": 5,
+            "kind": "schedule",
+            "report": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\runs\\ordinary-single-schedule\\control\\aa-ordinary-5\\report.json",
+              "bytes": 119404,
+              "sha256": "90fb3654d6d492d2abcbac17df0f63f127c414f071daabc47d31f988cfb9d9b7"
+            },
+            "process": {
+              "state": "TERMINAL",
+              "pid": 18644,
+              "started": 1793333848.5392175,
+              "seconds": 2.511162042617798,
+              "exit": 0,
+              "timed_out": false
+            }
+          },
+          {
+            "index": 6,
+            "kind": "steps",
+            "report": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\runs\\ordinary-single\\control\\aa-ordinary-6\\report.json",
+              "bytes": 119422,
+              "sha256": "f07864314abe8e63b394ac9642990596f662421a3377d24631172f901dd8c0dc"
+            },
+            "process": {
+              "state": "TERMINAL",
+              "pid": 33824,
+              "started": 1793333851.1402285,
+              "seconds": 2.527043581008911,
+              "exit": 0,
+              "timed_out": false
+            }
+          },
+          {
+            "index": 7,
+            "kind": "steps",
+            "report": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\runs\\ordinary-single\\control\\aa-ordinary-7\\report.json",
+              "bytes": 119420,
+              "sha256": "379a7e6b77b25468021867645814ee852c0ad3d116f03cd81e08697ead2ba2be"
+            },
+            "process": {
+              "state": "TERMINAL",
+              "pid": 53780,
+              "started": 1793333853.75717,
+              "seconds": 2.4831275939941406,
+              "exit": 0,
+              "timed_out": false
+            }
+          },
+          {
+            "index": 8,
+            "kind": "schedule",
+            "report": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\runs\\ordinary-single-schedule\\control\\aa-ordinary-8\\report.json",
+              "bytes": 119405,
+              "sha256": "8a4ddfe8aa5c7bb59f96e160451007bdcef541e04fafdd5439d992fbf49acbe4"
+            },
+            "process": {
+              "state": "TERMINAL",
+              "pid": 63476,
+              "started": 1793333856.3261526,
+              "seconds": 2.4860777854919434,
+              "exit": 0,
+              "timed_out": false
+            }
+          }
+        ],
+        "limits": [
+          "One frozen current Hyle CLI and one-turn P154+64; no llama.cpp, GPU trace or physical memory sample.",
+          "Four processes per spelling diagnose this current workload; no statistical equivalence or sub-percent speed claim.",
+          "Does not reproduce the additional shape/workspace of the two-turn process; cannot exclude that separate memory-placement hypothesis."
+        ]
+      },
+      "mtp": {
+        "mode": "mtp",
+        "samples_per_arm": 4,
+        "all_non_timing_fields_identical": true,
+        "order": [
+          "steps",
+          "schedule",
+          "schedule",
+          "steps",
+          "schedule",
+          "steps",
+          "steps",
+          "schedule"
+        ],
+        "summary": {
+          "steps": {
+            "prefill_tokens_per_second": {
+              "median": 2172.9030775231067,
+              "minimum": 2099.039212505912,
+              "maximum": 2243.191041219364
+            },
+            "decode_output_tokens_per_second": {
+              "median": 121.89135619149644,
+              "minimum": 121.83339534588694,
+              "maximum": 122.79478593847666
+            },
+            "output_tokens_per_second": {
+              "median": 108.88398508620233,
+              "minimum": 108.40853893407981,
+              "maximum": 110.02172413324799
+            },
+            "decode_seconds": {
+              "median": 0.51685375,
+              "minimum": 0.5130511000000001,
+              "maximum": 0.5170996
+            }
+          },
+          "schedule": {
+            "prefill_tokens_per_second": {
+              "median": 2159.002068504425,
+              "minimum": 2102.7479091995224,
+              "maximum": 2206.9993407664306
+            },
+            "decode_output_tokens_per_second": {
+              "median": 122.5166072089367,
+              "minimum": 121.32066206418438,
+              "maximum": 122.69754645806266
+            },
+            "output_tokens_per_second": {
+              "median": 109.02916190794275,
+              "minimum": 108.5406020713278,
+              "maximum": 109.73265182498258
+            },
+            "decode_seconds": {
+              "median": 0.5142161000000001,
+              "minimum": 0.5134577,
+              "maximum": 0.5192850000000001
+            }
+          }
+        },
+        "adjacent_decode_schedule_over_steps": [
+          1.0049617059326643,
+          1.0060456170346554,
+          0.9992081139303202,
+          0.995050887277699
+        ],
+        "samples": [
+          {
+            "index": 1,
+            "kind": "steps",
+            "report": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\runs\\single\\control\\aa-mtp-1\\report.json",
+              "bytes": 82935,
+              "sha256": "2475603dec277fbff1a1a0de007dd66ba12781a8aac53c9fdadf4f3a6eef1f31"
+            },
+            "process": {
+              "state": "TERMINAL",
+              "pid": 17584,
+              "started": 1793333774.6184893,
+              "seconds": 2.987596035003662,
+              "exit": 0,
+              "timed_out": false
+            }
+          },
+          {
+            "index": 2,
+            "kind": "schedule",
+            "report": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\runs\\single-schedule\\control\\aa-mtp-2\\report.json",
+              "bytes": 82911,
+              "sha256": "ab1fe0ef70457a5bdf20afcfcde93f300e843c35539ed4fe3b5eea2f0eee9f58"
+            },
+            "process": {
+              "state": "TERMINAL",
+              "pid": 4228,
+              "started": 1793333777.6918492,
+              "seconds": 2.978773832321167,
+              "exit": 0,
+              "timed_out": false
+            }
+          },
+          {
+            "index": 3,
+            "kind": "schedule",
+            "report": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\runs\\single-schedule\\control\\aa-mtp-3\\report.json",
+              "bytes": 82936,
+              "sha256": "bb12644c7af50289e7a1665b47386f567d399c6326c0a995df05fdabc47ce954"
+            },
+            "process": {
+              "state": "TERMINAL",
+              "pid": 42612,
+              "started": 1793333780.7573814,
+              "seconds": 2.975513458251953,
+              "exit": 0,
+              "timed_out": false
+            }
+          },
+          {
+            "index": 4,
+            "kind": "steps",
+            "report": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\runs\\single\\control\\aa-mtp-4\\report.json",
+              "bytes": 82937,
+              "sha256": "b9e72e8dab0e2e8b5f917c6c7382e32f322f2b87b28020043be9bcd88034c3c6"
+            },
+            "process": {
+              "state": "TERMINAL",
+              "pid": 20080,
+              "started": 1793333783.8201602,
+              "seconds": 2.994036912918091,
+              "exit": 0,
+              "timed_out": false
+            }
+          },
+          {
+            "index": 5,
+            "kind": "schedule",
+            "report": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\runs\\single-schedule\\control\\aa-mtp-5\\report.json",
+              "bytes": 82928,
+              "sha256": "e6692c504a67ba429f5ea96523f2c3f201f64ee15c5508bfb68ab9bf2e6b6155"
+            },
+            "process": {
+              "state": "TERMINAL",
+              "pid": 44808,
+              "started": 1793333786.9063535,
+              "seconds": 3.03393816947937,
+              "exit": 0,
+              "timed_out": false
+            }
+          },
+          {
+            "index": 6,
+            "kind": "steps",
+            "report": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\runs\\single\\control\\aa-mtp-6\\report.json",
+              "bytes": 82935,
+              "sha256": "bc9e30827c87619a39e40d979b34246e2da998b4cb0c07b3ea67377402866912"
+            },
+            "process": {
+              "state": "TERMINAL",
+              "pid": 26200,
+              "started": 1793333790.0302465,
+              "seconds": 2.9668498039245605,
+              "exit": 0,
+              "timed_out": false
+            }
+          },
+          {
+            "index": 7,
+            "kind": "steps",
+            "report": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\runs\\single\\control\\aa-mtp-7\\report.json",
+              "bytes": 82895,
+              "sha256": "353e69d360d8ce4303e79200cd0ff966ddfb1783365c7714af49736e99150478"
+            },
+            "process": {
+              "state": "TERMINAL",
+              "pid": 51540,
+              "started": 1793333793.0842106,
+              "seconds": 2.970656633377075,
+              "exit": 0,
+              "timed_out": false
+            }
+          },
+          {
+            "index": 8,
+            "kind": "schedule",
+            "report": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\runs\\single-schedule\\control\\aa-mtp-8\\report.json",
+              "bytes": 82950,
+              "sha256": "2fc779e514641048e8d0401c114ada3283fd2d5fc8af756954b0d180f94a7a19"
+            },
+            "process": {
+              "state": "TERMINAL",
+              "pid": 59024,
+              "started": 1793333796.1428695,
+              "seconds": 2.9855542182922363,
+              "exit": 0,
+              "timed_out": false
+            }
+          }
+        ],
+        "limits": [
+          "One frozen current Hyle CLI and one-turn P154+64; no llama.cpp, GPU trace or physical memory sample.",
+          "Four processes per spelling diagnose this current workload; no statistical equivalence or sub-percent speed claim.",
+          "Does not reproduce the additional shape/workspace of the two-turn process; cannot exclude that separate memory-placement hypothesis."
+        ]
+      }
+    },
+    "unguarded_candidate": {
+      "order": [
+        "control",
+        "candidate",
+        "candidate",
+        "control"
+      ],
+      "samples": [
+        {
+          "arm": "control",
+          "sample": 1,
+          "decode_tps": 133.21037099828376,
+          "decode_seconds": 0.9458723000000003,
+          "successor_submissions": 44,
+          "discards": 2,
+          "actual_draft_rows": 438,
+          "decode_graph_calls": 68
+        },
+        {
+          "arm": "candidate",
+          "sample": 2,
+          "decode_tps": 133.31864712046004,
+          "decode_seconds": 0.9451041000000002,
+          "successor_submissions": 50,
+          "discards": 3,
+          "actual_draft_rows": 440,
+          "decode_graph_calls": 69
+        },
+        {
+          "arm": "candidate",
+          "sample": 3,
+          "decode_tps": 134.05116669198742,
+          "decode_seconds": 0.9399396000000002,
+          "successor_submissions": 50,
+          "discards": 3,
+          "actual_draft_rows": 440,
+          "decode_graph_calls": 69
+        },
+        {
+          "arm": "control",
+          "sample": 4,
+          "decode_tps": 133.9939447498301,
+          "decode_seconds": 0.9403410000000001,
+          "successor_submissions": 44,
+          "discards": 2,
+          "actual_draft_rows": 438,
+          "decode_graph_calls": 68
+        }
+      ],
+      "median_decode_tps": {
+        "control": 133.60215787405693,
+        "candidate": 133.68490690622372
+      },
+      "relative_change": 0.0006193689793903001,
+      "decision": "Not retained: no demonstrated speed gain, one additional discarded successor and two additional target/draft rows; fresh-slot Queue correctness hazard.",
+      "original_non_timing_differences": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\unguarded-non-timing-differences.json",
+        "bytes": 1066,
+        "sha256": "530635db0c249d28edc03cd1ee92322b541555194a852679f0102bc703348a3a"
+      }
+    },
+    "latest_complete_peer_window_unchanged": true,
+    "performance_improvement_claim": false,
+    "downloads": 0,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "regression": {
+      "unsafe_candidate": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\runs\\warm-cohort\\unguarded\\report.json",
+        "bytes": 144,
+        "sha256": "2abd806ef31b7710c2969c5b85250cbf29902a3f60d131a8f3977c669581a729"
+      },
+      "restored_strategy": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\runs\\warm-cohort\\restored\\report.json",
+        "bytes": 747,
+        "sha256": "f5afed382cee7e1bd1802283d61ebe31518245d99372ee7232ad6efcadb43905"
+      },
+      "original_product_strategy_restored_exactly": true
+    },
+    "processes": [
+      {
+        "folder": "runs/ordinary-single/control/aa-ordinary-1",
+        "state": "TERMINAL",
+        "pid": 19560,
+        "started": 1793333838.183486,
+        "seconds": 2.4965314865112305,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/ordinary-single/control/aa-ordinary-4",
+        "state": "TERMINAL",
+        "pid": 59340,
+        "started": 1793333845.93988,
+        "seconds": 2.511662721633911,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/ordinary-single/control/aa-ordinary-6",
+        "state": "TERMINAL",
+        "pid": 33824,
+        "started": 1793333851.1402285,
+        "seconds": 2.527043581008911,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/ordinary-single/control/aa-ordinary-7",
+        "state": "TERMINAL",
+        "pid": 53780,
+        "started": 1793333853.75717,
+        "seconds": 2.4831275939941406,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/ordinary-single-schedule/control/aa-ordinary-2",
+        "state": "TERMINAL",
+        "pid": 60812,
+        "started": 1793333840.7680943,
+        "seconds": 2.509000301361084,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/ordinary-single-schedule/control/aa-ordinary-3",
+        "state": "TERMINAL",
+        "pid": 22292,
+        "started": 1793333843.3642175,
+        "seconds": 2.487319231033325,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/ordinary-single-schedule/control/aa-ordinary-5",
+        "state": "TERMINAL",
+        "pid": 18644,
+        "started": 1793333848.5392175,
+        "seconds": 2.511162042617798,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/ordinary-single-schedule/control/aa-ordinary-8",
+        "state": "TERMINAL",
+        "pid": 63476,
+        "started": 1793333856.3261526,
+        "seconds": 2.4860777854919434,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/single/control/aa-mtp-1",
+        "state": "TERMINAL",
+        "pid": 17584,
+        "started": 1793333774.6184893,
+        "seconds": 2.987596035003662,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/single/control/aa-mtp-4",
+        "state": "TERMINAL",
+        "pid": 20080,
+        "started": 1793333783.8201602,
+        "seconds": 2.994036912918091,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/single/control/aa-mtp-6",
+        "state": "TERMINAL",
+        "pid": 26200,
+        "started": 1793333790.0302465,
+        "seconds": 2.9668498039245605,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/single/control/aa-mtp-7",
+        "state": "TERMINAL",
+        "pid": 51540,
+        "started": 1793333793.0842106,
+        "seconds": 2.970656633377075,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/single-schedule/control/aa-mtp-2",
+        "state": "TERMINAL",
+        "pid": 4228,
+        "started": 1793333777.6918492,
+        "seconds": 2.978773832321167,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/single-schedule/control/aa-mtp-3",
+        "state": "TERMINAL",
+        "pid": 42612,
+        "started": 1793333780.7573814,
+        "seconds": 2.975513458251953,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/single-schedule/control/aa-mtp-5",
+        "state": "TERMINAL",
+        "pid": 44808,
+        "started": 1793333786.9063535,
+        "seconds": 3.03393816947937,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/single-schedule/control/aa-mtp-8",
+        "state": "TERMINAL",
+        "pid": 59024,
+        "started": 1793333796.1428695,
+        "seconds": 2.9855542182922363,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/two-turn/candidate/abba-2",
+        "state": "TERMINAL",
+        "pid": 57888,
+        "started": 1793333512.1115377,
+        "seconds": 3.6305692195892334,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/two-turn/candidate/abba-3",
+        "state": "TERMINAL",
+        "pid": 63244,
+        "started": 1793333515.8314002,
+        "seconds": 3.5797853469848633,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/two-turn/candidate/first",
+        "state": "TERMINAL",
+        "pid": 62116,
+        "started": 1793333448.6174011,
+        "seconds": 4.009147882461548,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/two-turn/control/abba-1",
+        "state": "TERMINAL",
+        "pid": 18016,
+        "started": 1793333508.377094,
+        "seconds": 3.647426128387451,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/two-turn/control/abba-4",
+        "state": "TERMINAL",
+        "pid": 46324,
+        "started": 1793333519.5004404,
+        "seconds": 3.6464874744415283,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/two-turn/control/baseline",
+        "state": "TERMINAL",
+        "pid": 22932,
+        "started": 1793333231.0198872,
+        "seconds": 4.035486221313477,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/warm-cohort/restored",
+        "state": "TERMINAL",
+        "pid": 54560,
+        "started": 1793334222.9417198,
+        "seconds": 1.1057848930358887,
+        "exit": 0,
+        "timed_out": false
+      },
+      {
+        "folder": "runs/warm-cohort/unguarded",
+        "state": "TERMINAL",
+        "pid": 18772,
+        "started": 1793334143.8119507,
+        "seconds": 1.1252882480621338,
+        "exit": 1,
+        "timed_out": false
+      }
+    ],
+    "native_processes": 24,
+    "expected_failed_candidate_processes": 1,
+    "consumer_CXX_invocations": 3,
+    "retained_SDK_engine_objects": 227
+  },
+  "contract": {
+    "warm": "Direction/count hints do not grant authority, but their reset currently prevents premature pending-source binding on fresh Graph Queue state.",
+    "regression": "One actual warmed R2 cohort, serial cancellation oracle, then same-continuation cancellation into fresh R1; all original Sources/leases/retirement remain real.",
+    "future": "Any reduced warm-up must prove concrete selected-slot preparation and retain original full tuple/capture/Queue checks; do not swallow InvalidArgument.",
+    "conditional": "Native If probe is not MTP support. Executed/Skipped outcome must be checked before observer/publication; skipped Store writer recovery is not permission to publish; undecided conditional Source cannot feed C."
+  },
+  "source_files": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_generation_batch_relay_probe.cc",
+      "bytes": 49220,
+      "sha256": "06b17875cf9a54cd1a12e486a08519bb7d5c3ef868e787ced400c69487862e83"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 635287,
+      "sha256": "57eae6bc3a11b689b090579dacb4d54c8f6fba14fd71a1dd299598a0438e8686"
+    }
+  ],
+  "cleanup": {
+    "bytes": 430278875,
+    "retained": "Original SDK objects, current consumer objects, source inputs, commands and reports",
+    "boundary": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\bin",
+    "files": 10,
+    "status": "REMOVED_EXACT_FLAT_BATCH_IMAGES"
+  },
+  "retained_build_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warmth-20261030\\model-link-base.json",
+    "bytes": 100002,
+    "sha256": "9d52f32b1e329966d68667def5af4bb81884b64e20195cdfa9c1e75389711d7f"
+  },
+  "archive": "inference-warm-boundary-aa-2026-10-30.zip"
+}

@@ -1,0 +1,144 @@
+{
+  "schema": "hyle.research.code-vocabulary-prior.v1",
+  "date": "2026-10-30",
+  "status": "OFFLINE_CODE_DOMAIN_32K_MAP_PREPARED_ENGINE_NOT_CONNECTED",
+  "summary": {
+    "general_language_coverage_claim": false,
+    "maps": [
+      {
+        "code_corpus_token_coverage": 0.9997258927229944,
+        "file": "map_32768.json",
+        "rank": 32768,
+        "sha256": "5a6c9860e8ab79b2dfd9627d557ed3db0154c829841cc342fd30325ebbe88d3d",
+        "status": "CREATED"
+      },
+      {
+        "available_ranked": 37610,
+        "rank": 65536,
+        "status": "INSUFFICIENT_NONZERO_FREQUENCY",
+        "zero_frequency_filled": false
+      }
+    ],
+    "network_or_model_execution": false,
+    "nonzero_frequency_ids": 37610,
+    "performance_claim": false,
+    "scope": "independent local reference-engine source code",
+    "selected_files": 4335,
+    "source_bytes": 66880509,
+    "source_manifest_sha256": "e91416e50c72bb910cabdf61bc527f374a2b672b1acefebfe4f6a51aea6bc953",
+    "status": "COMPLETE",
+    "tokens": 20087026,
+    "truncated": true
+  },
+  "tokenizer": {
+    "add_special_tokens": false,
+    "chat_template_applied": false,
+    "files": {
+      "config.json": {
+        "bytes": 2908,
+        "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\config.json",
+        "sha256": "ed1c1723241f23f7f4e23430759cbd7dcfb4103cbdfe052bfe7626b57c2615b4"
+      },
+      "tokenizer.json": {
+        "bytes": 12807982,
+        "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\tokenizer.json",
+        "sha256": "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42"
+      },
+      "tokenizer_config.json": {
+        "bytes": 16709,
+        "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\tokenizer_config.json",
+        "sha256": "49e2b6e395f959f077f1e992b338919c0d4a9732fc6e613995e06557f843500c"
+      }
+    },
+    "model_vocabulary": 248320,
+    "package_origin": "C:\\Program Files\\Python312\\Lib\\site-packages\\tokenizers\\__init__.py",
+    "package_version": "0.22.2",
+    "tokenizer_distinct_ids": 248070
+  },
+  "repositories": [
+    {
+      "name": "sglang",
+      "head": "234ccba7f625e12639e621044496bcc6197c3758",
+      "files": 1395,
+      "bytes": 16776947,
+      "tokens": 5053612,
+      "truncated": true
+    },
+    {
+      "name": "vllm",
+      "head": "276fbcff2717bd934cfa37c8a2e4c391f3e7237b",
+      "files": 1186,
+      "bytes": 16773775,
+      "tokens": 4456051,
+      "truncated": true
+    },
+    {
+      "name": "TensorRT-LLM",
+      "head": "46d9966b54d9d11998b712e732fb20f64d4d35c0",
+      "files": 1053,
+      "bytes": 16556642,
+      "tokens": 4797314,
+      "truncated": true
+    },
+    {
+      "name": "llama.cpp",
+      "head": "23b0202a189c44a54625aadcb37a946dd1d6278d",
+      "files": 701,
+      "bytes": 16773145,
+      "tokens": 5780049,
+      "truncated": true
+    }
+  ],
+  "output_checks": {
+    "map_unique_in_range_positive_frequencies": true,
+    "rank_matches_full_nonzero_ranked": true,
+    "source_manifest_hash_matches": true,
+    "token_frequency_sum_matches": true
+  },
+  "limits": [
+    "Source-code-domain empirical prior; no model acceptance/quality/performance measurement.",
+    "No test prompts, Hyle source or generated outputs were used to rank IDs; source manifests pin actual worktree bytes, not latest/clean upstream claims.",
+    "Original full target embedding/head stays; cold draft row import and target-ID remap are not implemented.",
+    "Reduced random sampling must preserve real q, target p and rejection residual; no random correctness is claimed."
+  ],
+  "downloads": 0,
+  "model_execution": false,
+  "archive": "inference-code-vocabulary-map-2026-10-30.zip",
+  "files": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocab-map-20261030\\build_map.py",
+      "bytes": 17603,
+      "sha256": "3150000f6c66352aeeea7aaf5242a26d28bdb9be870463d644cee4a0c962e73d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocab-map-20261030\\stdout.log",
+      "bytes": 727,
+      "sha256": "e079eaaef10a5627efaaf3cd54c13bf01641f856649394e4b941efeef175223c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocab-map-20261030\\stderr.log",
+      "bytes": 3826,
+      "sha256": "c39816aebcf2d13277dece3e76386330978e9f6aedfcd79ceb143d3adee81f9c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocab-map-20261030\\attempt1\\available_ranked.json",
+      "bytes": 703308,
+      "sha256": "53ffdef6007397da396670bac789e1f88b5b0dc4f3ec9c316e3f554973caab9e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocab-map-20261030\\attempt1\\map_32768.json",
+      "bytes": 616281,
+      "sha256": "5a6c9860e8ab79b2dfd9627d557ed3db0154c829841cc342fd30325ebbe88d3d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocab-map-20261030\\attempt1\\source-manifest.json",
+      "bytes": 1023875,
+      "sha256": "e91416e50c72bb910cabdf61bc527f374a2b672b1acefebfe4f6a51aea6bc953"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-draft-vocab-map-20261030\\attempt1\\summary.json",
+      "bytes": 830,
+      "sha256": "bb9055a0cd7db2fc66a80ab70be7775324013dfdee5cdcd559c547011caef75e"
+    }
+  ]
+}

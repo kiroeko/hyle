@@ -55,6 +55,13 @@ Store／Append按原端点可访问域冷装配，源合同与银行选择分离
 最终有限复审核对共同冷选择、ordinary／relay准备、阶段交接、continuation与输出观察，未发现本轮仍应提取而遗漏的共同执行算法；
 模型数学、状态布局及Head发布差异保留。相应旧未完成总述已修正，第二完整引擎模型仍未验证，没有新的速度结论。
 
+后续[预热候选与A/A](../evidence/performance/inference-warm-boundary-aa-2026-10-30.json)未证明跨cohort保提示有净收益，
+并实际复现已暖R2转入新R1的未准备Queue拒绝；候选撤回，原策略及新完整状态回归保留。
+单轮schedule／steps的普通、MTP各四对进程全部非计时报告一致；双轮额外形状／workspace的分配假设仍未排除。
+[代码域词表](../evidence/research/inference-code-vocabulary-map-2026-10-30.json)已由本地原tokenizer和独立参考源码得到32K映射，
+未使用测试prompt／输出，零下载；它不是接受率证据。接下来冷期导入draft所选head行并映回完整词表ID，保留原target／embedding，
+再检查真实接受率及净收益；随机q／p／拒绝残差须保原合同。条件图仍未接入产品，Executed／Skipped必须先于任何结果发布表达。
+
 多模型形状同时参考本地成熟引擎的实际实现：vLLM `276fbcff2717`的`v1/engine/core.py`、`v1/core/sched/scheduler.py`和`model_executor/models/qwen3_5.py`，
 TensorRT-LLM `46d9966b54d9`的`_torch/pyexecutor/engine/model_call.py`、`py_executor.py`及`model_engine.py`。
 重点借鉴模型数学／状态事实、共同调度、原资源和结果观察之间的边界，不引入其大型动态ModelEngine或第二资源管理器。
