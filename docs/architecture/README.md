@@ -21,7 +21,7 @@ C++ 程序中使用；两者都不解释模型文件或生成策略。具体模�
 本目录解释这些边界为什么存在、关键决策及取舍。第一次阅读可以按自己的目标选一条：
 
 1. **了解项目**：[项目动机](motivation.md) → [产品范围](hyle-scope.md)。
-2. **理解推理路径**：[引擎概览](engine-overview.md) → [推理系统整体架构](inference-design.md)，
+2. **理解推理路径**：[两项核心期许](inference-principles.md) → [引擎概览](engine-overview.md) → [推理系统整体架构](inference-design.md)，
    涉及计算图和设备执行时再看 [Graph](graph-design.md) 与 [Compute](compute-design.md)。
 3. **修改某个基础模块**：先看下面对应的设计；涉及所有权、失败或关闭时查
    [基础机制](foundation-design.md)与[运行时](runtime-design.md)的共同原则。
@@ -33,6 +33,7 @@ API 与用法见[用户文档](../user/README.md)，构建、测试与测量方�
 
 | 文档 | 要回答的问题 |
 |---|---|
+| [推理引擎的两项核心期许](inference-principles.md) | 跨模型模块化、冷热职责与默认推理性能如何指导开发取舍 |
 | [项目动机](motivation.md) | 为什么做 HYLE，为什么需要真实消费者，为什么先做本地推理引擎 |
 | [产品范围](hyle-scope.md) | 做什么、不做什么，模块与引擎的分工 |
 | [构建与交付](build-system.md) | 用户意图如何变成 target、依赖、宏和可迁移 SDK |

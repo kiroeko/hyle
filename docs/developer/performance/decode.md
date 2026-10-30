@@ -13,7 +13,7 @@
 下面的B2、CPU和局部候选属于不同窗口，各自保留版本与测量边界。
 
 2026-10-30的[显式草稿词表与完整消费者](../../evidence/performance/inference-draft-vocabulary-2026-10-30.json)
-在共同执行架构复审完成后恢复隔离候选；使用显式source-bound原ID文件，只冷导入草稿head行，完整target／embedding保留。
+在已列共同步骤驱动复审完成后恢复隔离候选；使用显式source-bound原ID文件，只冷导入草稿head行，完整target／embedding保留。
 CPU／CUDA原BF16／F16／F32行、原ID映射、budget拒绝重试及lease寿命通过；真实K1、双轮、K2输出和RNG保持，23个共同前缀的全部导出张量逐字节相同。
 K2有一个被拒绝的草稿改变，差异如实保留；这些导出不含KV载荷和完整draft状态，不扩大为完整模型状态逐位证明。
 同镜像full／32K的ABBA单／双轮decode中位＋6.37%／＋13.52%，每臂两样本，单轮区间重叠，不称稳定收益。

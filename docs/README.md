@@ -11,6 +11,7 @@ HYLE 的产品目标是完整的单机推理引擎，基础库也可独立使用
 |---|---|
 | 运行推理引擎 | [推理引擎指南](user/inference.md) |
 | 在自己的 C++ 程序中使用基础库 | [使用指南](user/usage-guide.md)，再按模块查[用户手册](user/README.md) |
+| 理解推理引擎的长期开发目标 | [两项核心期许](architecture/inference-principles.md) |
 | 看目前在哪、接下来做什么 | [推理进度](developer/inference-progress.md) |
 | 理解项目和模块分工 | [架构入口](architecture/README.md)，按其中的阅读顺序深入 |
 | 了解推理引擎的结构 | [推理引擎概览](architecture/engine-overview.md) |

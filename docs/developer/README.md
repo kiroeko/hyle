@@ -7,6 +7,7 @@
 | 要做的事 | 说明 |
 |---|---|
 | 初始化、切换配置、构建、测试、安装 | [环境与构建](setup/README.md) |
+| 判断推理引擎开发方向与取舍 | [两项核心期许](../architecture/inference-principles.md) |
 | 查看当前普通推理、多会话、多任务进度 | [推理进度](inference-progress.md) |
 | 查看引擎现状与后续工作 | [推理工程计划](../implementation/inference-roadmap.md) |
 | 维护依赖、共享缓存或离线介质 | [依赖](setup/dependencies.md)、[离线构建](setup/offline.md) |
