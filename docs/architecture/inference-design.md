@@ -614,7 +614,7 @@ A完整候选的target为L+2，draft实际前沿为L+1，B的两份布局可在�
 须接独立bonus与draft-token完整输出、两份hidden及draft的两个AppendSource；A仍保留所有实际前缀的发布权。
 任意接受长度均不经主机选择而继续，是更强的后续范围，才需要有界设备KV控制，不能将两者混为一项。
 
-下一片条件后继尚未实现，先限定完整单Queue捕获，不包含Hybrid空隙；条件是原绑定及依赖中的真实设备输入。
+后续性能阶段的条件后继尚未交付，未验证原型已保存撤出产品；先限定完整单Queue捕获，不包含Hybrid空隙，条件是原绑定及依赖中的真实设备输入。
 原提交必须在真实退休链保留不可变的Executed／Skipped事实，与原Status分开：成功退休不意味着分支执行，Skipped也不是设备错误或取消。
 Store／页输出发布在Source关闭并清除producer后仍须核该事实；可变的outputs_ready不能充当不可变执行证明。
 首片不允许尚未确认的条件Source继续前送，不为它新增权限owner；原take、回收、尾页rollback及实际租约能力保持。
