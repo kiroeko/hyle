@@ -1,0 +1,102 @@
+{
+  "schema": "hyle.inference.input-packet.v1",
+  "status": "CURRENT_FINITE_CHECKS_PASS",
+  "base_commit": "f3173816059d6023af3958d276b8521a77ed4b3e",
+  "full_goal_complete": false,
+  "source_pins": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 513930,
+      "sha256": "51a6ade0f83e0b4092e8776adaff435a1e1b47b939616cb1005405ebf81b249a"
+    },
+    {
+      "path": "engine/models/qwen35/phase.h",
+      "bytes": 4283,
+      "sha256": "02a3f8d962c19d5d94d59e67282264d39b91040e3647670d89595700fda7165e"
+    },
+    {
+      "path": "engine/models/qwen35/phase_preparation.cc",
+      "bytes": 16341,
+      "sha256": "6f2d6167f01c37595cf099a39529eaefb16f08353d8b1d073c68303d7ef45628"
+    },
+    {
+      "path": "engine/models/qwen35/input_packet.h",
+      "bytes": 6234,
+      "sha256": "14970806ec1dc100e3d61c233298f31924d1d837e4396dad1c6235ecbb4abc13"
+    },
+    {
+      "path": "tests/tools/qwen_host_image_test.cc",
+      "bytes": 11903,
+      "sha256": "1c18420dbeaa38278c0cb179f858939ac483d52e34e2201159ae9219b96055c6"
+    },
+    {
+      "path": "tests/tools/qwen_input_packet_case.h",
+      "bytes": 18292,
+      "sha256": "7bd3f35d19081f530a56b0efa2d121f32d3453dc77f94160fe81ec85a56728fe"
+    },
+    {
+      "path": "tests/CMakeLists.txt",
+      "bytes": 36456,
+      "sha256": "7238a385fdbb22dc1a3cd49339f8e83d9b0657ddc2dd22cd45774c06933f7ddc"
+    }
+  ],
+  "change": "One original per-Phase/slot Tensor packet with exact token/position views and one synchronous write; private non-imported ordinary dense CPU/CUDA path only.",
+  "ownership": "Original carrier borrow, Source, transactions and actual retirement remain authoritative. No second execution/retirement authority, SDK contract or public engine option added.",
+  "memory": "Padding and system-resource host staging are real charges: R1/T1 packet requests 260 bytes instead of two payloads totaling 8 bytes, plus 260 host-staging bytes. Physical allocation rounding/VRAM is not established.",
+  "fallback": "Only nonnative cold allocation ResourceExhausted can select the original independent Tensor path; runtime/native/map errors propagate. Candidate charges are released before mandatory allocations.",
+  "checks": {
+    "tiny_current_passes": 7,
+    "tiny_historical_failures": 2,
+    "normal_2B_CLI_passes": 2,
+    "normal_2B_outputs_per_arm": 128,
+    "non_time_differences": 0,
+    "trace_files_per_arm": 4998,
+    "trace_bytes_per_arm": 2628644941,
+    "all_exported_trace_bytes_equal": true,
+    "independent_root_readback": {
+      "path": ".scratch/inference-input-packet-20261031/root-readback.json",
+      "bytes": 440,
+      "sha256": "a8b22dee0a9e05a1c336367b454754c6339d34a76b8c35031dc78a3eb8b0fec6"
+    },
+    "finite_results": {
+      "path": ".scratch/inference-input-packet-20261031/finite-results.json",
+      "bytes": 9729,
+      "sha256": "8028242fba8a7b841d13a0deeb08e25f602c90d8031b3208b8abb08cb62dd55d"
+    },
+    "normal_product_SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "history": [
+    "First normal CXX failed on two unqualified BackendKind enumerators; exact narrow qualification fixed them.",
+    "First large host-test CXX exceeded COFF sections; MSVC /bigobj now belongs to the formal test target and passed in the real fixture.",
+    "First CPU native failed on relocated fixture runtime lookup; the same EXE was staged beside existing runtime DLLs without copying the SDK.",
+    "Second CPU native exposed missing original cold-use plans in the new fixture; plans were added before any Phase. Core behavior and assertions were retained.",
+    "Phony Ninja dry-run prediction, unsupported debug-option attempt and pre-link wrapper guard incidents remain in archived receipts."
+  ],
+  "limits": [
+    "The new packet case submits no Graph; actual ordinary/packed/HostImage consumers are separate finite checks.",
+    "Injected partial writes and native-bearing statuses use a CPU MemoryResource seam, not a real CUDA driver-fault injection.",
+    "System map/flush/close faults were not injected.",
+    "CLI full trace omits complete logical KV, carry/prior and raw RNG Session blobs; full 2B Session-byte equality is not claimed.",
+    "Tiny complete HostImage/RNG checks do not extend the complete-state claim to the full 2B model.",
+    "MSVC target option and CPU/CUDA CTest registration were statically reviewed; the normal cache keeps tests OFF, so formal CTest configuration was not rerun.",
+    "Live module snapshots retain EnumProcessModulesEx errors; post-exit file hashes are not loader-event or mapped-byte tracing.",
+    "Default R1 steady relay already uploads positions once; this slice proves no steady relay speedup. Other metadata/readback and cross-turn capture remain open."
+  ],
+  "performance_claim": false,
+  "measurement_scope": "Two traced normal CLI correctness runs and coarse regression observation; no uninstrumented throughput or peer window.",
+  "patch": {
+    "path": ".scratch/inference-input-packet-20261031/verified-source.patch",
+    "bytes": 41799,
+    "sha256": "e87b77d473e1b610dc3f124aa09a8ec638e83e213b7ea8e1858a3dbe29fc14da"
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/inference-input-packet-2026-10-31.zip",
+    "bytes": 559167,
+    "sha256": "4ab4d7cceb971e1935c4acb6883f29bdc66bff79645b3464593e1fc8b5dcd5f6",
+    "members": 165,
+    "raw_trace_payloads_included": false,
+    "all_members_independently_verified_bytes_sha256_crc": true
+  }
+}

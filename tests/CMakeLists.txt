@@ -435,6 +435,10 @@ if(TARGET hyle_engine)
   add_executable(hyle_qwen_host_image_test tools/qwen_host_image_test.cc
     ${_hyle_qwen35_cold_sources})
   hyle_configure_engine_target(hyle_qwen_host_image_test)
+  if(MSVC)
+    # The complete model and its finite cases exceed the ordinary COFF limit.
+    target_compile_options(hyle_qwen_host_image_test PRIVATE /bigobj)
+  endif()
   set_target_properties(hyle_qwen_host_image_test PROPERTIES
     FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
   add_dependencies(hyle_tests hyle_qwen_host_image_test)
@@ -448,6 +452,13 @@ if(TARGET hyle_engine)
         hyle_qwen_host_image_${_host_image_backend}_lag1_test PROPERTIES
         LABELS "tooling;generation;cache;transfer;${_host_image_backend};local-model"
         TIMEOUT 180 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
+      if(_host_image_backend STREQUAL "cpu" OR _host_image_backend STREQUAL "cuda")
+        add_test(NAME hyle_qwen_input_packet_${_host_image_backend}_test
+          COMMAND hyle_qwen_host_image_test --${_host_image_backend} --input-packet)
+        set_tests_properties(hyle_qwen_input_packet_${_host_image_backend}_test PROPERTIES
+          LABELS "tooling;generation;cache;${_host_image_backend};local-model"
+          TIMEOUT 180 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
+      endif()
     endif()
   endforeach()
   unset(_host_image_backend)

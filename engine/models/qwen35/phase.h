@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "family_factory.h"
+#include "input_packet.h"
 #include "../../inference/program_slots.h"
 #include "hyle/graph/batch.h"
 
@@ -33,6 +34,10 @@ struct PhaseIo final {
   // Original per-Invocation planning storage. Nodes are fixed at cold
   // preparation; layout aliases exist only during batch::prepare below.
   std::vector<g::batch::NodeLayout> batch_layouts;
+  InputPacket input_packet;
+  // A nonnative cold capacity refusal keeps its original fact while selecting
+  // the existing independent Tensor path. It never authorizes runtime fallback.
+  hyle::Status input_packet_preparation;
   Tensor tokens, positions, last_ids, logits, final_hidden, history_select, prefix_ids;
   std::vector<std::int32_t> history_select_values, last_id_values, prefix_id_values;
   Tensor sampling_identities, draft_positions, catchup_token;
@@ -78,6 +83,7 @@ struct PhaseEnvironment final {
   const ModelGeometry &geometry;
   std::span<const StateSchema> recurrent_descriptions;
   const c::ResourceBudget &allocation_budget;
+  const c::ResourceBudget &execution_budget;
   // Original options for later SlotBindings::create; ordinary vector metadata
   // inside SlotTransactions::prepare is not newly charged by this handle.
   const c::ResourceBudget &cache_budget;

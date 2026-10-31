@@ -52,6 +52,7 @@ Graph可选原地复用已按完整根offset与required组模同余修复，保�
 [本片检查](../evidence/correctness/inference-auxiliary-warm-boundary-2026-10-31.json)19进程全通过（4CXX、3link、12native），231旧输入全复用、仅新增aux对象；三真实tracked预算拒绝／重试和warm原身份通过。默认四项对保留M2结果非时间字段一致，Session各378份／150,761,472B完整字节一致；仅两个single有近窗粗退化观察，不宣称新完整性能窗。
 联合复审按五项正面要求核入口、四类消费者与成熟源码，当前未确认须先新增的共同实现缺项。正常Release shared GPU产品已[构建并有限检查](../evidence/correctness/inference-shared-graph-batch-2026-10-31.json)：修复三处friend首次声明缺导出宏导致的MSVC冲突，同cache增量成功，CPU ordinary／CUDA K1各4输出和三函数外部导入通过。公开GPU route、非维护factor、离线依赖仍保；旧手工缓存闭包不代签该产品。
 [默认full-V32进程对照](../evidence/performance/inference-default-product-2026-10-31.json)全部exit0／同臂非计时稳定；普通单／双轮decode落后约2.83%／0.73%，MTP仍落后约10.51%／4.97%。actual rows、两次后继丢弃、8ready显存未知和2次有限模块枚举缺口保留；不签稳定提速或相同续算工作。该基线保留为后续依据；先补普通流水的上传／读回和跨turn捕获复用、继续跨模型接入验收，独立比较后置，不缩小完整goal。
+普通dense确定输入的首组合并已[实现并有限检查](../evidence/correctness/inference-input-packet-2026-10-31.json)：原Phase／slot持有对齐packet和精确端口视图，token／position一次同步写；保原carrier／Source退休与冷预算回落，无新用户开关。正常shared增量、7项CPU／CUDA和真实2B两轮旧／新检查通过；可导出trace逐字节相同，未导出的完整KV／carry／RNG blob不作证明。默认R1稳态relay原本只传position一次，不能据本片签稳态提速；其它metadata／读回和真实跨turn捕获复用继续。
 较强设备用于底座成熟后的更广整模型验证，当前工作不以租设备、完整大模型或通用loader／server为前置。
 按10/31用户顺序调整，已启动的一次ordinary跟踪已自然结束，完整非计时报告一致；首轮离线提取失败从原SQLite补齐，无模型重跑。其余三臂未启动，独立优化暂缓。工程入口复审保留现有产品／后端选择：修复空内部factor缓存检测，68项脚本检查及真实离线util初始化／重复初始化／构建安装／独立消费者通过；入门文档合并重复说明。正在做和估计进度只在[看板](../developer/inference-progress.md)维护。
 

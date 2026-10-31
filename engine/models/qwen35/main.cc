@@ -356,18 +356,19 @@ struct InputPreparationScratch final {
   inference::PagedAppendScratch paged_appends;
   void prepare(const Phase &phase) {
     const auto &io = phase.slots[0].data; // All slots share the same cold descriptions.
-    const auto reserve = [](auto &values, const Tensor &tensor) {
+    const auto reserve = [](auto &values, const c::TensorDesc &description) {
       using Element = typename std::decay_t<decltype(values)>::value_type;
-      values.reserve(take(tensor.description.required_bytes()) / sizeof(Element));
+      values.reserve(take(description.required_bytes()) / sizeof(Element));
     };
     row_inputs.reserve(phase.family->requests);
     query_indptr.reserve(phase.family->requests + 1);
     last_rows.reserve(phase.family->requests);
-    if (phase.family->requests > 1 || packs_target(phase.family->packing)) reserve(packed_ids, io.tokens);
-    reserve(positions, io.positions);
-    if (io.sampling_identities.caller_owned()) reserve(sampling_identities, io.sampling_identities);
-    if (io.draft_positions.caller_owned()) reserve(draft_positions, io.draft_positions);
-    if (io.catchup_token.caller_owned()) reserve(catchups, io.catchup_token);
+    if (phase.family->requests > 1 || packs_target(phase.family->packing))
+      reserve(packed_ids, io.input_packet.prepared() ? io.input_packet.tokens().description() : io.tokens.description);
+    reserve(positions, io.input_packet.prepared() ? io.input_packet.positions().description() : io.positions.description);
+    if (io.sampling_identities.caller_owned()) reserve(sampling_identities, io.sampling_identities.description);
+    if (io.draft_positions.caller_owned()) reserve(draft_positions, io.draft_positions.description);
+    if (io.catchup_token.caller_owned()) reserve(catchups, io.catchup_token.description);
   }
 };
 
@@ -2135,7 +2136,7 @@ public:
           replay_policy, planned_slot_uses[slot], selected_sampler.enabled);
     auto result = prepare_phase({definition, selected->program, selected_sampler},
         {tokens, physical_slots, diagnostic, imported_sources, planned_slot_uses, replay_modes},
-        {execution, geometry, state_schema, allocation_budget, cache_budget});
+        {execution, geometry, state_schema, allocation_budget, execution_budget, cache_budget});
     auto &phase = *result;
     if (state_storage_prepared) prepare_transaction_layouts(phase);
     const auto &route_directory = layer0_probe.empty() ? trace_routes : layer0_probe;
@@ -2932,12 +2933,19 @@ public:
         if (packed_prefill) io.last_ids.write<std::int32_t>(io.last_id_values);
         io.history_select.write<std::int32_t>(io.history_select_values);
       }
-      if (!relay) io.tokens.write<std::int32_t>(packed_target || width != 1
-          ? std::span<const std::int32_t>(packed_ids) : requests[0].ids);
-      if (ahead) {
-        io.positions.write<std::int32_t>({decode_ahead->positions.data(), decode_ahead->positions.size()});
-        decode_ahead->positions.clear();
-      } else io.positions.write<std::int32_t>(positions);
+      const auto token_values = packed_target || width != 1
+          ? std::span<const std::int32_t>(packed_ids) : requests[0].ids;
+      const auto position_values = ahead
+          ? std::span<const std::int32_t>(decode_ahead->positions.data(), decode_ahead->positions.size())
+          : std::span<const std::int32_t>(positions);
+      if (io.input_packet.prepared()) {
+        if (relay) throw std::logic_error("host input packet cannot replace a device relay token");
+        check(io.input_packet.write(token_values, position_values));
+      } else {
+        if (!relay) io.tokens.write<std::int32_t>(token_values);
+        io.positions.write<std::int32_t>(position_values);
+      }
+      if (ahead) decode_ahead->positions.clear();
       if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
         auto &identities = input_scratch.sampling_identities;
         identities.clear();

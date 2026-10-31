@@ -26,6 +26,7 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
   const auto &geometry = environment.geometry;
   const auto state_schema = environment.recurrent_descriptions;
   const auto &allocation_budget = environment.allocation_budget;
+  const auto &execution_budget = environment.execution_budget;
   const auto &cache_budget = environment.cache_budget;
   const auto tokens = preparation.tokens, physical_slots = preparation.physical_slots;
   const auto requests = definition.requests;
@@ -100,10 +101,26 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
       program_slot.replay_mode = preparation.replay_modes[slot];
       const auto token_count = has_mtp(role) && !is_mtp_prefill(role)
           ? static_cast<std::int64_t>(requests) : t * static_cast<std::int64_t>(requests);
-      io.tokens = phase_tensor(allocation_budget, execution.device(), role == GraphRole::kText
-          ? dense(Type::kInt32, {token_count, 1}) : dense(Type::kInt32, {token_count}));
-      io.positions = phase_tensor(allocation_budget, execution.device(), requests == 1 ? dense(Type::kInt32, {t})
-          : dense(Type::kInt32, {static_cast<std::int64_t>(requests), t}));
+      const auto token_description = role == GraphRole::kText
+          ? dense(Type::kInt32, {token_count, 1}) : dense(Type::kInt32, {token_count});
+      const auto position_description = requests == 1 ? dense(Type::kInt32, {t})
+          : dense(Type::kInt32, {static_cast<std::int64_t>(requests), t});
+      const bool packet_inputs = role == GraphRole::kText && packing == RowPacking::kRectangular &&
+          !imported_sources && !diagnostic &&
+          (execution.kind() == inference::BackendKind::kCpu || execution.kind() == inference::BackendKind::kCuda);
+      if (packet_inputs) {
+        io.input_packet_preparation = io.input_packet.prepare(token_description, position_description,
+            execution.device(), allocation_budget, execution_budget);
+        // Packing is optional under a finite requested-byte cap. Release the
+        // complete unpublished candidate before the old allocation path; keep
+        // its typed refusal, and never mask a native or runtime write error.
+        if (!io.input_packet_preparation.ok() && !io.input_packet.allocation_refused())
+          return io.input_packet_preparation;
+      }
+      if (!io.input_packet.prepared()) {
+        io.tokens = phase_tensor(allocation_budget, execution.device(), token_description);
+        io.positions = phase_tensor(allocation_budget, execution.device(), position_description);
+      }
       if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
         io.sampling_identities = phase_tensor(allocation_budget, execution.device(), phase.batched_text_sampling
             ? dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 4})
@@ -183,8 +200,10 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
       check(program_slot.io.prepare(phase.child->compiled, fixed_count, 0, readback_count, 0));
       // Register once in the original cold installation order. Tensor owners
       // stay here; each readback's only owner moves into the same shared IO.
-      check(program_slot.io.add_fixed(phase.token_port, io.tokens.read()));
-      check(program_slot.io.add_fixed(phase.position_port, io.positions.read()));
+      check(program_slot.io.add_fixed(phase.token_port,
+          io.input_packet.prepared() ? io.input_packet.tokens() : io.tokens.read()));
+      check(program_slot.io.add_fixed(phase.position_port,
+          io.input_packet.prepared() ? io.input_packet.positions() : io.positions.read()));
       if (sampling_identity) check(program_slot.io.add_fixed(phase.sampling_identity_port, io.sampling_identities.read()));
       if (phase.sampling_valid_port) {
         io.sampling_valid = take(program_slot.io.add_readback(phase.sampling_valid_port, execution.storage_domains(), allocation_budget));
