@@ -22,8 +22,8 @@ nghttp2 按 lock 准备。依赖细节见[依赖说明](dependencies.md)和[离�
 ## 常见用法
 
 ```text
-# CUDA 引擎，启用测试环境
-python scripts/init.py --name inference --components engine --backends cuda --tests
+# CUDA 引擎
+python scripts/init.py --name inference --components engine --backends cuda
 python scripts/build.py --name inference --target hyle_engine --jobs 2
 
 # 只构建工具模块，不准备 Compute/GPU 依赖
@@ -33,19 +33,21 @@ python scripts/build.py --name utility --jobs 2
 
 CPU＋CUDA 能力将上例的 `--backends cuda` 改为 `--backends cpu,cuda`；Apple Silicon 用 `metal`，
 Vulkan 用 `vulkan`，混合能力用 `cpu,metal` 或 `cpu,vulkan`。这些选择表示编译能力，
-实际设备与 CPU/GPU 分置仍由应用决定。只构建基础库也可用 `--components mem,container` 或 `compute,graph`。
+实际设备与 CPU/GPU 分置仍由应用决定。只构建或安装基础库 SDK 时，可选择 `--components mem,container`
+或 `compute,graph`；C++ 链接方式见[使用指南](../../user/usage-guide.md)。
 
 ## 测试与安装
 
-对上面已启用测试的 `inference` 配置，先构建再运行 CTest：
+对上面的 `inference` 配置显式启用测试，再构建并运行 CTest：
 
 ```text
+python scripts/init.py --name inference --tests
 python scripts/build.py --name inference --target hyle_tests --jobs 2
 python scripts/test.py --name inference --filter compute --jobs 2
 python scripts/build.py --name inference --install .scratch/install/hyle --jobs 2
 ```
 
-`test.py` 不隐式构建；未启用测试时会给出重新初始化的命令。
+这次初始化保留该配置的组件和后端。`test.py` 不隐式构建；未启用测试时会给出重新初始化的命令。
 安装会构建完整的所选产品，不能与 `--target` 混用；选择引擎时还安装 `bin/hyle`（Windows为`hyle.exe`）。
 
 ## 切换与恢复

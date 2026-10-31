@@ -103,17 +103,19 @@ cmake --build .scratch/qwen35-build --config Release --target hyle_engine
 ```
 
 该 SDK 须有 `compute;graph;graph_progress;compute_stream;mem` 及所需后端，应用只查包、链接与暂存运行资源。
-`--backend cpu|cuda|apple|vulkan` 选择主后端，初始化参数 `metal` 对应运行时 `apple`。
-默认选唯一 GPU，无 GPU 时选 CPU，多 GPU 路线并存时须明确选择；失败不自动换设备。
-CUDA 使用原 Context／Queue／device 与 pinned 资源；Apple／Vulkan使用各自原生 Runtime／资源／ExecutionSource。
+后端选择、默认普通生成、采样、MTP 和 CPU／GPU 分置的常用参数统一见
+[引擎指南](../../../docs/user/inference.md#常用选项)；构建后端与运行时名称的对应见
+[构建说明](../../../docs/user/inference.md#构建)。Model／Session 属于引擎私有实现；
+基础库 SDK 不包含 Model／Session 等引擎应用接口。
 
-`--inputs DIR`指向准备后的输入；可用选项：
+普通与 MTP 都在执行前校验完整旅程：prompt、可选 continuation 和后续最多 `steps−1` 行输入
+须容纳于 `--capacity`；`--steps` 包含 prefill 首 token，自然生成遇 EOS 提前停止。
+
+### 输入、会话与诊断参数
+
+常用参数可运行 `hyle --help` 查看；以下补充模型特有的文件、资源与诊断合同。
 
 - `--continuation IDS`：普通非schedule模式在prefill后追加给定token IDs；不适用于MTP。`--steps N`是最多输出数，包含prefill首token。
-- `--mtp on|off`：默认off；on需要`prepare.py --mtp`的清单。`--steps`仍为最多输出token数，包含prefill首token；每轮可输出接受的草稿和一枚目标token，不重复输出已返回的pending token。普通版和MTP均按完整旅程校验：prompt、continuation与后续最多`steps−1`行输入须放得进`--capacity`，不另设128枚输出上限；自然生成遇EOS提前停止。stdout分列实际验证行数、草拟写入行数、提交行数及自然agreement／accept数；短样例不代表普遍接受率或提速。
-- `--mtp-max-drafts N`：须配合 `--mtp on`，默认1，0禁用草稿。实际草稿数还受上下文、输出额度和置信阈值约束；冷图按需要的验证宽度准备。
-- `--mtp-min-probability P`：须配合 `--mtp on`，范围[0,1]、默认0。用实际草稿分布的最大概率决定是否继续，不另造置信度头；截短或无草稿时保留正确的目标续算和 RNG 位置。
-- `--cpu-ffn-layers N`：分别选择 `--backends cpu,cuda`、`cpu,metal` 或 `cpu,vulkan` 构建，将前 N 层 target FFN 放在 CPU，其原权重直接加载到 host，不在 GPU 保留副本；注意力、缓存与 MTP 留在所选 GPU。默认0。CUDA 普通／MTP、多 K、随机、多会话和恢复见[CUDA 分置记录](../../../docs/evidence/correctness/qwen35-cpu-ffn-cuda-placement-2026-10-24.json)，Apple／Vulkan 随机 K1 见[原生混合记录](../../../docs/evidence/correctness/mtp-qwen35-cpu-native-placement-2026-10-24.json)。JSON 分列真实权重域、共享执行预算范围与每次执行的已知 workspace；原生私有开销未知，不能据此推定全进程或物理显存上限。
 - `--schedule FILE`：普通／MTP均支持prompt／generate自然多轮；一行prompt可配合`--steps`，显式generate与显式steps互斥。普通模式另支持prompt／decode固定重放，与显式steps互斥；MTP拒绝固定重放。schedule与continuation／decode-ids互斥。先检查完整语法，再读取所有ID并校验会话容量，最后创建Model。
 - `--session-schedules FILE`：执行多会话manifest，与`--schedule`互斥；普通／MTP的prompt-only自然请求可配合`--steps`。同一manifest的所有会话必须使用一致的自然生成或固定重放语法，在读取token文件前检查。每行`SESSION_ID SCHEDULE_FILE`，路径相对manifest，支持双引号和整行`#`注释；Windows清单中的路径使用`/`，例如`user1 "C:/inputs/user one.txt"`，避免双引号中的反斜杠被当成转义。ID为ASCII字母／数字开头，后续可含`_`／`-`且不能重复。`--capacity`是每会话上下文上限，所有会话和ID均先校验再加载模型。
 - `--max-sessions auto|N`：保留的设备缓存会话上限；默认auto取本次输入会话数。普通文本和MTP都可淘汰空闲head；MTP生成中的head不淘汰，轮次间可淘汰并在下轮恢复。共享backing按解析后的容量预留，不为各会话复制权重或执行载体。
@@ -125,7 +127,7 @@ CUDA 使用原 Context／Queue／device 与 pinned 资源；Apple／Vulkan使用
 - `--decode-ids FILE`：固定单token输入带，允许跨过预测EOS；若同时给steps，须等于输入数加一。正常生成遇到endoftext或im_end停止。
 - `--trace DIR --trace-level decisions`：仅导出logits与最后hidden；默认full还导出conv/GDN状态与`kv-layout.json`。分页帧不公开原始bank载荷，后者记录实际页布局，不再导出dense KV文件。路由写入DIR/routes，不增加图输出。
 - `--layer0-probe DIR`：诊断时另行发布layer0边界并比较实际路由；诊断图会影响合法融合，因此与普通图分别冷准备，均计入启动时间。多会话的边界输出按`session<序号>_<ID>`子目录隔离，不覆盖其他会话；共享图的路由说明仍在DIR。
-- `--preparation-diagnostics 1`：仅schedule模式；分开记录layout、batch和replay准备时间，注明实际槽及其首用，并读取六份公开BatchPlanReport。记录冷预分配，报告在原host输出端点后读取、最终端点后打印；标记为diagnostic，不用于吞吐对比。默认关闭，不增加这些报告查询。
+- `--preparation-diagnostics 1`：仅普通greedy的固定 `prompt/decode` schedule，不支持自然生成或MTP；分开记录layout、batch和replay准备时间，注明实际槽及其首用，并读取六份公开BatchPlanReport。记录冷预分配，报告在原host输出端点后读取、最终端点后打印；标记为diagnostic，不用于吞吐对比。默认关闭，不增加这些报告查询。
 
 各执行模式的JSON均报告同一`cache_budget_scope`、固定池`cache_shared_backing_bytes`、当前额外保留结果`cache_retained_output_backing_bytes`及额度内live／peak；未设字节额度时`cache_requested_byte_limit`为null。它们是同一个Model的全局统计，多会话子结果中的值不能相加。`native_execution_private_bytes_unknown`单列原生执行私有成本未知，`physical_vram_limit_known=false`；这些预算统计不能替代实际内存／显存旁采。
 
@@ -210,7 +212,7 @@ CUDA 测试目标 `hyle_qwen_request_lifecycle_test INPUT_DIR` 使用原 P154 BF
 该目标另可用`--inputs MTP_DIR --mtp on [--verify-rows 1|2]`检查真实MTP取消，和`--decode-ids`互斥。默认2行验证；1行分支实际覆盖没有attention读者的草拟KV写effect。两种分支均已实跑：使用自然接受后的lag1前缀，取消并丢弃Completion后保留全部14份KV写事务、状态、候选和执行借用；真实退休后核旧字节及同槽重建。另核成功terminal后的接受策略异常不会发布head，回收后原完整前缀仍可续算。这是有限取消／host异常检查，没有注入GPU设备错误，也不用于测速。
 
 请求backing按实际geometry、target／draft各自的K/V行字节、上下文C、驻留版本N、活动序列R、
-验证边界K和在途深度D计算，见[当前容量实现](session_state.h)。页容量包括每个在途序列的COW尾页，
+验证边界K和在途深度D计算，见[当前容量实现](cache_plan.h)。页容量包括每个在途序列的COW尾页，
 各候选前缀保留独立递归／hidden材料；N份完整版本额度不因候选空间增加而扩大。
 真正能释放的旧base才可抵扣，目录别名或旧读者仍pin住的版本继续计费，无法容纳时在提交前拒绝。
 CPU元数据、Apple原生生成backing及后端私有执行占用另有实际计费／未知边界，不能把旧CUDA公式当作总显存上限。

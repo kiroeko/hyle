@@ -103,8 +103,9 @@ MTP 需要额外原权重，准备时加 `--mtp`，运行时用 `--mtp on`；后
 AppleClang 18+。CUDA 需要 CUDA Toolkit 13.3+。Linux AArch64 可以构建部分基础模块。
 各平台细节见[环境准备](docs/developer/setup/README.md)。
 
-交付形式有完整源码、头文件＋静态库、头文件＋动态库三种，API 相同；不承诺跨编译器或
-跨标准库的 C++ 二进制兼容，详见[交付与集成](docs/user/distribution.md)。
+基础库提供完整源码、头文件＋静态库、头文件＋动态库三种交付形式，使用相同的 C++ API；
+不承诺跨编译器或跨标准库的二进制兼容，详见[交付与集成](docs/user/distribution.md)。
+当前引擎交付入口是 `hyle` 命令行程序，引擎应用 API 尚未交付。
 
 ## 文档
 

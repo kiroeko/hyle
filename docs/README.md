@@ -2,6 +2,7 @@
 
 HYLE 的产品目标是完整的单机推理引擎，基础库也可独立使用。当前开发重点仍是底层推理支持，
 项目内的 Qwen 引擎用于执行真实模型、发现接口与性能问题；通用加载、tokenizer 和服务接口尚未完成。
+`engine` 构建 `hyle` 命令行应用；基础库可以按产品独立构建、安装，并由 C++ 程序链接 `hyle::<product>`。
 
 ## 从哪里开始
 
@@ -9,13 +10,14 @@ HYLE 的产品目标是完整的单机推理引擎，基础库也可独立使用
 
 | 你想做的事 | 先读 |
 |---|---|
+| 初始化、构建、测试和安装 | [构建指南](developer/setup/README.md) |
 | 运行推理引擎 | [推理引擎指南](user/inference.md) |
 | 在自己的 C++ 程序中使用基础库 | [使用指南](user/usage-guide.md)，再按模块查[用户手册](user/README.md) |
 | 理解推理引擎的长期开发目标 | [两项核心期许](architecture/inference-principles.md) |
 | 看目前在哪、接下来做什么 | [推理进度](developer/inference-progress.md) |
 | 理解项目和模块分工 | [架构入口](architecture/README.md)，按其中的阅读顺序深入 |
 | 了解推理引擎的结构 | [推理引擎概览](architecture/engine-overview.md) |
-| 修改代码、构建、测试、排障 | [开发与维护](developer/README.md) |
+| 修改代码与排障 | [开发与维护](developer/README.md) |
 | 查性能数据 | 推理看 [decode 性能资料](developer/performance/decode.md)，基础模块看[模块性能数据](developer/performance/modules.md) |
 
 文档里的缩写和固定说法（B2、N2／R2、pending、episode 等）见[术语表](glossary.md)。
