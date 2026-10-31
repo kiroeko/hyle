@@ -33,6 +33,16 @@
 每进程先计算会话吞吐，再汇总独立进程的中位数、范围和样本数；`sum(step_seconds)`只称计算阶段耗时之和，不能冒充包含阶段间开销的会话wall time。
 GPU dedicated＋shared仅可在同一采样时刻相加，不能相加两项各自峰值；CPU驻留集和private commit另列。
 
+普通 Qwen3.5 的按轮对照使用 [inference-compare.py](../../../scripts/inference-compare.py)，参数见 `python scripts/inference-compare.py --help`。
+提供双方程序、已有权重／输入、版本和新的 `.scratch` 输出目录；参考端须支持匹配输入 consumer 协议，不能直接传 `llama-cli`。
+默认每臂3个独立进程交错运行。`--schedule` 接受任意轮数，`--scenario schedule` 只跑连续会话；
+`--scenario single --steps 512` 放大单轮工作量。`--old-hyle` 配合 `--old-version` 加入同窗旧版锚点，并检查新旧 Hyle 的完整输出 ID 一致。
+工具输出原始日志和 `endpoints.txt`，分别列各轮 prefill／decode、录图次数与关联准备时间，以及 ready、启动到完成和父进程完整耗时；不采样内存，也不运行 MTP。
+
+启动期预热的额外模型调用和输入行数须单列，成本保留在完整进程指标内。
+`capture-associated cold prep` 是发生录图那步的准备区间，不能当作纯录图耗时直接从 decode 扣除。
+把准备前移使 decode 变快，仍须检查启动到完成和首 token；增加私有模型计算可能使这两项退步。
+
 ## 对齐工作量
 
 先确定比较的是用户自然使用的完整路线、相同语义下的实现，还是一个内部机制。
