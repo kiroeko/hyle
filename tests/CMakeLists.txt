@@ -450,6 +450,8 @@ if(TARGET hyle_engine)
   add_executable(hyle_qwen_host_image_test tools/qwen_host_image_test.cc
     ${_hyle_qwen35_cold_sources})
   hyle_configure_engine_target(hyle_qwen_host_image_test)
+  # Private measurement only; production engine sources compile without hooks.
+  target_compile_definitions(hyle_qwen_host_image_test PRIVATE HYLE_TEST_INFERENCE_WARM_COST=1)
   if(MSVC)
     # The complete model and its finite cases exceed the ordinary COFF limit.
     target_compile_options(hyle_qwen_host_image_test PRIVATE /bigobj)
@@ -476,6 +478,11 @@ if(TARGET hyle_engine)
         add_test(NAME hyle_qwen_cold_shape_fifo_${_host_image_backend}_test
           COMMAND hyle_qwen_host_image_test --${_host_image_backend} --cold-shape-fifo)
         set_tests_properties(hyle_qwen_cold_shape_fifo_${_host_image_backend}_test PROPERTIES
+          LABELS "tooling;generation;cache;${_host_image_backend};local-model"
+          TIMEOUT 180 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
+        add_test(NAME hyle_qwen_warm_cost_${_host_image_backend}_test
+          COMMAND hyle_qwen_host_image_test --${_host_image_backend} --warm-cost)
+        set_tests_properties(hyle_qwen_warm_cost_${_host_image_backend}_test PROPERTIES
           LABELS "tooling;generation;cache;${_host_image_backend};local-model"
           TIMEOUT 180 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
       endif()

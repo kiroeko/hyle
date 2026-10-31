@@ -15,6 +15,10 @@
 #include "mtp_graph.h"
 #include "../../inference/backend.h"
 
+#if defined(HYLE_TEST_INFERENCE_WARM_COST) && HYLE_TEST_INFERENCE_WARM_COST
+#include "../../../tests/tools/inference_warm_cost_probe.h"
+#endif
+
 namespace qwen35 {
 using Clock = std::chrono::steady_clock;
 namespace {
@@ -141,6 +145,9 @@ ExecutionPlanFacts inspect_execution_plan(const inference::Backend &execution,
 FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     const FamilyModelFacts &model, const FamilyPreparedFacts &prepared,
     const SamplingConfiguration &configuration, const FamilyCompileContext &context) {
+#if defined(HYLE_TEST_INFERENCE_WARM_COST) && HYLE_TEST_INFERENCE_WARM_COST
+  inference::testing::record_family_build();
+#endif
   if (build_request.chunks.empty()) throw std::runtime_error("text finite family requires known nonempty chunks");
   const auto &geometry = model.geometry;
   const auto precision = model.precision;
@@ -518,6 +525,9 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
               << " max_operation_proposals=" << compile_options.max_operation_proposals
               << " max_placement_attempts=" << compile_options.max_placement_attempts << '\n';
     compile_options.resource_budget = execution_budget;
+#if defined(HYLE_TEST_INFERENCE_WARM_COST) && HYLE_TEST_INFERENCE_WARM_COST
+    inference::testing::record_compile();
+#endif
     auto compiled = execution.compile(definition.graph, assembly.constants(), assembly.options(compile_options));
     if (!compiled && (packed_target || compact_draft) && compiled.error().IsUnimplemented() && !compiled.error().has_native_error())
       return {}; // Cold capability only; no execution/device error is a fallback.

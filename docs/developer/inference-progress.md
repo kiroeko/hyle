@@ -1,25 +1,24 @@
 # 推理开发看板
 
-**整体粗估：约85%　`█████████████████░░░`**　更新：2026-10-31。范围为[当前推理底座工程](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)，不代表全部未来产品。
+**整体粗估：约86%　`█████████████████████▌░░░`**　更新：2026-10-31。范围为[当前推理底座工程](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)，不代表全部未来产品。
 
-**当前：共同执行架构，4/5项实现／有限检查完成　`■■■■□`。** 1.D已结，还差1.E warm费用。
+**共同执行架构：5/5项已结　`■■■■■`。** 完成当前约定范围及有限检查；阶段2普通连续流水尚未启动。
 
-1.D goal已完成；按范围停止，1.E及后续任务未启动。
+1.E goal已完成；按范围停止，后续普通流水／性能任务未启动。
 
 ## 当前待办与负责人
 
-当前没有正在做的推理任务；下一项需按用户指令启动。
+当前没有正在做的推理任务；下一阶段需按用户指令启动。
 
 | 任务 | 负责人 | 估计进度 | 状态／下一步 |
 |---|---|---:|---|
-| 1.E warm费用 | 主代理，拟分派费用验证 | 约10% | 待启动；记录实际冷入口和分配调用 |
 
 ## 阶段顺序
 
 | 阶段 | 实现工作量粗估 | 状态／结束条件 |
 |---|---:|---|
 | 0 已交付基线 | 100% | 已结，限原证据范围；不重开 |
-| 1 共同执行架构 | 约98% | 1.A～1.E及各自提交完成，不等待阶段2～4 |
+| 1 共同执行架构 | 100% | 已结：1.A～1.E及对应有限检查和提交完成；全模型／全平台／性能结论仍按各自范围 |
 | 2 普通连续流水 | 约85% | 2.A～2.C完成 |
 | 3 默认普通／MTP性能 | 约55% | 3.A～3.D完成 |
 | 4 完整性能与兼容 | 约93% | 4.A～4.C完成 |
@@ -44,7 +43,7 @@
 | 1.B | 跨模型适配与编译面 | 0.B、1.A | 100% | 组件范围已结：Qwen／GLM／Kimi／DeepSeek接入与私有修改影响；不等于第二完整模型 |
 | 1.C | 共同职责与缺项清单 | 1.B | 100% | 复审已结：职责映射与具名缺项；原生FIFO及费用结果归D／E，未冒称通过 |
 | 1.D | 原生冷形状FIFO寿命 | 1.C | 100% | 已结：CPU／CUDA各5次真实提交、两次FIFO逐出及重建，完整状态／epoch／账簿一致，最终owner／loan归零；CUDA外Source保活拒绝与释放恢复通过 |
-| 1.E | warm冷入口与动态费用 | 1.C | 约10% | 待启动：实际冷入口／资源分配计数和owner／元数据费用，修掉意外重复冷工作 |
+| 1.E | warm冷入口与动态费用 | 1.C | 100% | 已结：CPU／CUDA各27次R1／R2／K1提交无重复冷入口；CPU被测委托资源warm allocate为0；owner／Source／状态池费用分列，GPU／CRT私有分配未计 |
 
 ### 2．普通连续流水
 
@@ -80,8 +79,8 @@
 <details>
 <summary>估计口径与按需查证</summary>
 
-百分比估计实现工作量，任务计数描述阶段实现／检查完成，不是测试通过率或未来工时承诺。沿用功能15%×100%、工程5%×100%、架构30%×98%、普通15%×85%、MTP15%×66%、GPU10%×38%、测量10%×93%，约85%；重分组和删归档任务不增加技术进度。阶段3合并MTP与GPU约55%，已交付基线不重复加权。
+百分比估计实现工作量，任务计数描述阶段实现／检查完成，不是测试通过率或未来工时承诺。沿用功能15%×100%、工程5%×100%、架构30%×100%、普通15%×85%、MTP15%×66%、GPU10%×38%、测量10%×93%，约86%；重分组和删归档任务不增加技术进度。阶段3合并MTP与GPU约55%，已交付基线不重复加权。
 
-当前结果可按需查[工程边界](../evidence/correctness/inference-engineering-boundaries-2026-10-31.json)、[普通输入](../evidence/correctness/inference-input-packet-2026-10-31.json)、[跨turn有限结果](../../.scratch/inference-full-zero-view-20261031/finite-results.json)、[1.A收尾命令与运行日志](../../.scratch/inference-1a-close-20261031/)、[真实2B](../../.scratch/inference-cross-turn-normal-2b-plan-20261031/summary.json)、[跨模型复审](../../.scratch/inference-cross-model-access-audit-20261031/review.json)、[职责复审](../../.scratch/inference-complete-architecture-audit-20261031/README.md)、[FIFO验证命令与日志](../../.scratch/inference-native-shape-fifo-20261031/validation/)及[warm费用审查](../../.scratch/inference-cold-hot-cost-review-20261031/review.md)。方案／审查不等于原生通过，工作区补丁不等于已提交。
+当前结果可按需查[工程边界](../evidence/correctness/inference-engineering-boundaries-2026-10-31.json)、[普通输入](../evidence/correctness/inference-input-packet-2026-10-31.json)、[跨turn有限结果](../../.scratch/inference-full-zero-view-20261031/finite-results.json)、[1.A收尾命令与运行日志](../../.scratch/inference-1a-close-20261031/)、[真实2B](../../.scratch/inference-cross-turn-normal-2b-plan-20261031/summary.json)、[跨模型复审](../../.scratch/inference-cross-model-access-audit-20261031/review.json)、[职责复审](../../.scratch/inference-complete-architecture-audit-20261031/README.md)、[FIFO验证命令与日志](../../.scratch/inference-native-shape-fifo-20261031/validation/)及[warm费用测量命令与日志](../../.scratch/inference-warm-cost-20261031/)。方案／审查不等于原生通过，工作区补丁不等于已提交。
 
 </details>

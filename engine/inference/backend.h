@@ -16,6 +16,10 @@
 #include "hyle/graph/batch.h"
 #include "hyle/mem/buffer.h"
 
+#if defined(HYLE_TEST_INFERENCE_WARM_COST) && HYLE_TEST_INFERENCE_WARM_COST
+#include "../../tests/tools/inference_warm_cost_probe.h"
+#endif
+
 #if defined(HYLE_COMPUTE_CPU)
 #include "hyle/compute/cpu_file_stream.h"
 #include "hyle/graph/cpu.h"
@@ -590,6 +594,9 @@ private:
       HYLE_ASSIGN_OR_RETURN(endpoint.context, graph::cpu::create_context());
     }
     HYLE_ASSIGN_OR_RETURN(endpoint.memory, compute::cpu::memory_resource(compute::cpu::device()));
+#if defined(HYLE_TEST_INFERENCE_WARM_COST) && HYLE_TEST_INFERENCE_WARM_COST
+    endpoint.memory = testing::decorate_cpu_resource(endpoint.memory);
+#endif
     HYLE_ASSIGN_OR_RETURN(endpoint.queue, endpoint.context.create_queue());
     HYLE_ASSIGN_OR_RETURN(endpoint.source, graph::ExecutionSource::acquire(endpoint.context));
     return Status::Ok();

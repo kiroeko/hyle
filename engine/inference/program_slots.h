@@ -10,6 +10,10 @@
 #include "program_carrier.h"
 #include "slot_transactions.h"
 
+#if defined(HYLE_TEST_INFERENCE_WARM_COST) && HYLE_TEST_INFERENCE_WARM_COST
+#include "../../tests/tools/inference_warm_cost_probe.h"
+#endif
+
 namespace hyle::inference {
 
 // Stable physical carriers for one already selected concrete program. The
@@ -107,6 +111,9 @@ class ProgramSlots final {
     if (slot.carrier.closing())
       return Status::FailedPrecondition("program slot needs its original retired reset before initialization");
     if (slot.carrier.initialized()) return Status::Ok();
+#if defined(HYLE_TEST_INFERENCE_WARM_COST) && HYLE_TEST_INFERENCE_WARM_COST
+    testing::record_slot_initialization();
+#endif
     const auto& options = std::forward<PrepareInitialization>(prepare_initialization)();
     HYLE_RETURN_IF_ERROR(slot.carrier.initialize({
         .io = slot.io,

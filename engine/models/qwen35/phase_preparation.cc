@@ -10,6 +10,10 @@
 
 #include "../../inference/backend.h"
 
+#if defined(HYLE_TEST_INFERENCE_WARM_COST) && HYLE_TEST_INFERENCE_WARM_COST
+#include "../../../tests/tools/inference_warm_cost_probe.h"
+#endif
+
 namespace qwen35 {
 namespace {
 Tensor phase_tensor(const c::ResourceBudget &budget, mem::MemoryResourceRef resource,
@@ -20,6 +24,9 @@ Tensor phase_tensor(const c::ResourceBudget &budget, mem::MemoryResourceRef reso
 
 std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
     const PhasePrepareFacts &preparation, const PhaseEnvironment &environment) {
+#if defined(HYLE_TEST_INFERENCE_WARM_COST) && HYLE_TEST_INFERENCE_WARM_COST
+  inference::testing::record_phase_prepare();
+#endif
   const auto &definition = selection.family;
   const auto &selected_sampler = selection.sampling;
   const auto &execution = environment.execution;
