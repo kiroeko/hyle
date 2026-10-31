@@ -473,6 +473,11 @@ if(TARGET hyle_engine)
         set_tests_properties(hyle_qwen_input_packet_${_host_image_backend}_test PROPERTIES
           LABELS "tooling;generation;cache;${_host_image_backend};local-model"
           TIMEOUT 180 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
+        add_test(NAME hyle_qwen_cold_shape_fifo_${_host_image_backend}_test
+          COMMAND hyle_qwen_host_image_test --${_host_image_backend} --cold-shape-fifo)
+        set_tests_properties(hyle_qwen_cold_shape_fifo_${_host_image_backend}_test PROPERTIES
+          LABELS "tooling;generation;cache;${_host_image_backend};local-model"
+          TIMEOUT 180 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
       endif()
     endif()
   endforeach()
