@@ -41,7 +41,7 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
   const auto completion = definition.completion;
   const auto packing = definition.packing;
   const auto diagnostic = preparation.diagnostic, imported_sources = preparation.imported_sources;
-  const bool compact_draft = packs_draft(packing);
+  const bool packed_prefill = packs_prefill(packing), compact_draft = packs_draft(packing);
   const bool packed_verify = packs_verify(packing), packed_target = packs_target(packing);
     auto result = std::make_unique<Phase>();
     auto &phase = *result;
@@ -112,12 +112,23 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
           ? dense(Type::kInt32, {token_count, 1}) : dense(Type::kInt32, {token_count});
       const auto position_description = requests == 1 ? dense(Type::kInt32, {t})
           : dense(Type::kInt32, {static_cast<std::int64_t>(requests), t});
-      const bool packet_inputs = role == GraphRole::kText && packing == RowPacking::kRectangular &&
+      const bool sampling_identity = selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify;
+      const bool last_ids = (requests != 1 || packed_prefill) && !verifies_prefix(role);
+      const bool packet_inputs = role == GraphRole::kText && (packing == RowPacking::kRectangular || packed_prefill) &&
           !imported_sources && !diagnostic &&
           (execution.kind() == inference::BackendKind::kCpu || execution.kind() == inference::BackendKind::kCuda);
       if (packet_inputs) {
+        InputPacket::MetadataDescriptions metadata;
+        if (packed_prefill) {
+          metadata.last_ids = dense(Type::kInt32, {static_cast<std::int64_t>(requests)});
+          const auto count = cache::multiply(cache::multiply(requests, phase.prefix_rows), geometry.conv_kernel - 1);
+          metadata.history_select = dense(Type::kInt32, {static_cast<std::int64_t>(count)});
+        }
+        if (sampling_identity) metadata.sampling_identities = phase.batched_text_sampling
+            ? dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 4})
+            : dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 3, 4});
         io.input_packet_preparation = io.input_packet.prepare(token_description, position_description,
-            execution.device(), allocation_budget, execution_budget);
+            execution.device(), allocation_budget, execution_budget, metadata);
         // Packing is optional under a finite requested-byte cap. Release the
         // complete unpublished candidate before the old allocation path; keep
         // its typed refusal, and never mask a native or runtime write error.
@@ -128,7 +139,7 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
         io.tokens = phase_tensor(allocation_budget, execution.device(), token_description);
         io.positions = phase_tensor(allocation_budget, execution.device(), position_description);
       }
-      if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
+      if (sampling_identity && !io.input_packet.sampling_identities().valid()) {
         io.sampling_identities = phase_tensor(allocation_budget, execution.device(), phase.batched_text_sampling
             ? dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 4})
             : dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 3, 4}));
@@ -164,16 +175,19 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
           io.draft_ids.resize(requests);
         }
       }
-      if ((requests != 1 || packs_prefill(definition.packing)) && !verifies_prefix(role)) {
-        io.last_ids = phase_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
-        std::vector<std::int32_t> last_ids(requests);
-        for (std::size_t j = 0; j < requests; ++j) last_ids[j] = static_cast<std::int32_t>((j + 1) * tokens - 1);
-        io.last_ids.write<std::int32_t>(last_ids);
-        if (packs_prefill(definition.packing)) io.last_id_values.resize(requests);
+      if (last_ids) {
+        if (!io.input_packet.last_ids().valid()) {
+          io.last_ids = phase_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
+          std::vector<std::int32_t> initial_last_ids(requests);
+          for (std::size_t j = 0; j < requests; ++j) initial_last_ids[j] = static_cast<std::int32_t>((j + 1) * tokens - 1);
+          io.last_ids.write<std::int32_t>(initial_last_ids);
+        }
+        if (packed_prefill) io.last_id_values.resize(requests);
       }
       if (packed_target) {
         const auto count = cache::multiply(cache::multiply(requests, phase.prefix_rows), geometry.conv_kernel - 1);
-        io.history_select = phase_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(count)}));
+        if (!io.input_packet.history_select().valid())
+          io.history_select = phase_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(count)}));
         io.history_select_values.resize(count);
         if (packed_verify) {
           io.last_id_values.resize(requests);
@@ -193,8 +207,6 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
         const auto &output = *phase.probe_facts[i];
         io.probe_outputs[i] = phase_tensor(allocation_budget, take(execution.resource_for(output.storage)), output.description, output.caller_owned());
       }
-      const bool sampling_identity = selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify;
-      const bool last_ids = (requests != 1 || packs_prefill(definition.packing)) && !verifies_prefix(role);
       std::size_t fixed_count = 2 + sampling_identity + last_ids + packed_target + packed_verify +
           io.logits.caller_owned() + io.final_hidden.caller_owned();
       if (has_mtp(role)) fixed_count += 1 + bool(draft_lag(role)) +
@@ -211,14 +223,17 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
           io.input_packet.prepared() ? io.input_packet.tokens() : io.tokens.read()));
       check(program_slot.io.add_fixed(phase.position_port,
           io.input_packet.prepared() ? io.input_packet.positions() : io.positions.read()));
-      if (sampling_identity) check(program_slot.io.add_fixed(phase.sampling_identity_port, io.sampling_identities.read()));
+      if (sampling_identity) check(program_slot.io.add_fixed(phase.sampling_identity_port,
+          io.input_packet.sampling_identities().valid() ? io.input_packet.sampling_identities() : io.sampling_identities.read()));
       if (phase.sampling_valid_port) {
         io.sampling_valid = take(program_slot.io.add_readback(phase.sampling_valid_port, execution.storage_domains(), allocation_budget));
         if (phase.sampling_accept_port)
           io.sampling_accept = take(program_slot.io.add_readback(phase.sampling_accept_port, execution.storage_domains(), allocation_budget));
       }
-      if (last_ids) check(program_slot.io.add_fixed(phase.last_ids_port, io.last_ids.read()));
-      if (packed_target) check(program_slot.io.add_fixed(phase.history_select_port, io.history_select.read()));
+      if (last_ids) check(program_slot.io.add_fixed(phase.last_ids_port,
+          io.input_packet.last_ids().valid() ? io.input_packet.last_ids() : io.last_ids.read()));
+      if (packed_target) check(program_slot.io.add_fixed(phase.history_select_port,
+          io.input_packet.history_select().valid() ? io.input_packet.history_select() : io.history_select.read()));
       if (packed_verify) check(program_slot.io.add_fixed(phase.prefix_ids_port, io.prefix_ids.read()));
       if (io.logits.caller_owned()) check(program_slot.io.add_fixed_output(phase.logits_port, io.logits.view()));
       if (completion == TextCompletion::kEmitNext)

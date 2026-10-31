@@ -366,7 +366,9 @@ struct InputPreparationScratch final {
     if (phase.family->requests > 1 || packs_target(phase.family->packing))
       reserve(packed_ids, io.input_packet.prepared() ? io.input_packet.tokens().description() : io.tokens.description);
     reserve(positions, io.input_packet.prepared() ? io.input_packet.positions().description() : io.positions.description);
-    if (io.sampling_identities.caller_owned()) reserve(sampling_identities, io.sampling_identities.description);
+    if (io.input_packet.sampling_identities().valid())
+      reserve(sampling_identities, io.input_packet.sampling_identities().description());
+    else if (io.sampling_identities.caller_owned()) reserve(sampling_identities, io.sampling_identities.description);
     if (io.draft_positions.caller_owned()) reserve(draft_positions, io.draft_positions.description);
     if (io.catchup_token.caller_owned()) reserve(catchups, io.catchup_token.description);
   }
@@ -2931,22 +2933,20 @@ public:
             io.history_select_values[j * history_rows + row] = static_cast<std::int32_t>(source);
           }
         }
-        if (packed_prefill) io.last_ids.write<std::int32_t>(io.last_id_values);
-        io.history_select.write<std::int32_t>(io.history_select_values);
+        if (packed_prefill && !io.input_packet.last_ids().valid())
+          io.last_ids.write<std::int32_t>(io.last_id_values);
+        if (!io.input_packet.history_select().valid())
+          io.history_select.write<std::int32_t>(io.history_select_values);
       }
       const auto token_values = packed_target || width != 1
           ? std::span<const std::int32_t>(packed_ids) : requests[0].ids;
       const auto position_values = ahead
           ? std::span<const std::int32_t>(decode_ahead->positions.data(), decode_ahead->positions.size())
           : std::span<const std::int32_t>(positions);
-      if (io.input_packet.prepared()) {
-        if (relay) throw std::logic_error("host input packet cannot replace a device relay token");
-        check(io.input_packet.write(token_values, position_values));
-      } else {
+      if (!io.input_packet.prepared()) {
         if (!relay) io.tokens.write<std::int32_t>(token_values);
         io.positions.write<std::int32_t>(position_values);
       }
-      if (ahead) decode_ahead->positions.clear();
       if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
         auto &identities = input_scratch.sampling_identities;
         identities.clear();
@@ -2959,8 +2959,23 @@ public:
             identities.insert(identities.end(), identity.begin(), identity.end());
           }
         }
-        io.sampling_identities.write<std::uint32_t>(identities);
+        if (!io.input_packet.sampling_identities().valid())
+          io.sampling_identities.write<std::uint32_t>(identities);
       }
+      if (io.input_packet.prepared()) {
+        if (relay) throw std::logic_error("host input packet cannot replace a device relay token");
+        // Every range belongs to this borrowed original slot. Build all host
+        // inputs before the one synchronous write; no Source or Graph mirror
+        // is copied into this packet or granted a different lifetime.
+        check(io.input_packet.write(token_values, position_values, {
+            .last_ids = io.input_packet.last_ids().valid()
+                ? std::span<const std::int32_t>(io.last_id_values) : std::span<const std::int32_t>{},
+            .history_select = io.input_packet.history_select().valid()
+                ? std::span<const std::int32_t>(io.history_select_values) : std::span<const std::int32_t>{},
+            .sampling_identities = io.input_packet.sampling_identities().valid()
+                ? std::span<const std::uint32_t>(input_scratch.sampling_identities) : std::span<const std::uint32_t>{}}));
+      }
+      if (ahead) decode_ahead->positions.clear();
       const auto cold_start = Clock::now();
       const auto begin_member = [&](std::size_t j) {
         // The common target cohort already reserved its own tail metadata.
