@@ -24,6 +24,8 @@ Vulkan 源码构建需要宿主 shader 编译器；缺少时初始化可从中�
 ## 平台注意事项
 
 - 从普通 PowerShell 运行 `python scripts/test.py` 时，独立头测试也会取得对应 MSVC 环境。
+- 脚本统一 MSVC 子进程的诊断语言，保证 Ninja 正确追踪头文件。旧配置重新初始化后，
+  下一次正常构建可能补编缺少依赖记录的对象；重复初始化不强制全量重编。
 - `--sanitizer asan` 支持 Windows；TSan/UBSan 使用受支持的 Unix 工具链。ASan runtime 必须与编译器匹配。
 - 构建目录过长时，使用仓库内较短的 `--build-dir .scratch/b/<label>`。
   系统长路径开关不能解除每个编译器或第三方子工具的路径限制，见

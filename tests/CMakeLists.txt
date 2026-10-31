@@ -151,6 +151,15 @@ add_test(NAME hyle_simd_configure_generation_test
                  --cmake "${CMAKE_COMMAND}")
 set_tests_properties(hyle_simd_configure_generation_test PROPERTIES
   LABELS "tooling;build;simd")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND CMAKE_HOST_WIN32 AND CMAKE_GENERATOR MATCHES "^Ninja")
+  add_test(NAME hyle_ninja_headerdeps_recovery_test
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tooling/ninja_headerdeps_recovery_test.py"
+      --cmake "${CMAKE_COMMAND}" --ninja "${CMAKE_MAKE_PROGRAM}"
+      --compiler "${CMAKE_CXX_COMPILER}")
+  set_tests_properties(hyle_ninja_headerdeps_recovery_test PROPERTIES
+    LABELS "tooling;build;dependencies")
+endif()
 
 # Consumer input grammar is host-only and does not need a model, Compute
 # product, native SDK, or GoogleTest linkage. Keep it in the normal build/test

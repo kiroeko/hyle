@@ -49,7 +49,7 @@ class DevelopmentCommandsTest(unittest.TestCase):
         self.resources.return_value = {}
         self.addCleanup(resources.stop)
 
-    def environment(self, compiler="auto", cache=None, backends=(), generator=None):
+    def environment(self, compiler="auto", cache=None, backends=(), generator=None, configuring=False):
         cache = cache or {}
         if compiler == "clang":
             cc, cxx = (str(self.base / "tool chain/clang"),
@@ -139,6 +139,13 @@ class DevelopmentCommandsTest(unittest.TestCase):
         for option in ("--backends", "--components"):
             with self.subTest(empty_option=option):
                 self.assertNotEqual(self.invoke("init", option, "", "--dry-run")[0], 0)
+
+    def test_only_initialization_allows_ninja_language_reconfiguration(self):
+        with patch.object(support, "discover_environment", wraps=self.environment) as discovery:
+            self.succeeds("init", "--name", "language", "--components", "util")
+            self.assertIs(discovery.call_args.kwargs.get("configuring"), True)
+            self.succeeds("build", "--name", "language")
+            self.assertFalse(discovery.call_args.kwargs.get("configuring", False))
 
     def test_unknown_products_fail_before_tools_or_dependency_preparation(self):
         with patch.object(support, "discover_environment", wraps=self.environment) as discovery, \

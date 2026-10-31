@@ -1,0 +1,226 @@
+{
+  "schema": "hyle.finite-engineering-boundaries.v1",
+  "date": "2026-10-31",
+  "status": "PASS_WITH_RETAINED_FAILURES_AND_FINITE_SCOPE",
+  "entry_commit": "a1c3b42ab68b33915f851053a0c371f9461971ac",
+  "scope": "Engineering documentation, application/library/test-source ownership, public usage contracts and MSVC Ninja initialization/dependency recovery. Not a model correctness or performance claim.",
+  "changes": [
+    "Keep product/backend closure and real diagnostics/linkage/install options; no new user selector.",
+    "Clarify hyle CLI versus independently usable C++ libraries; centralize common parameters and default commands.",
+    "Move Kimi real-weight diagnostic registration into tests; preserve private component and graph-only validation consumer.",
+    "Keep Windows compiler children at VSLANG1033, repair retained Ninja parser, and prefer usable cached CMake/CTest.",
+    "Recover existing C/CXX objects with empty or missing dependency records through persistent build-local OBJECT_DEPENDS inputs; never delete objects, change source times or compiler flags.",
+    "Identify owned targets through the actual CMake directory tree, including external dependency subdirectories while preserving parent/sibling targets."
+  ],
+  "checks": {
+    "script_tests": {
+      "environment": 28,
+      "entry": 42,
+      "passed": 70
+    },
+    "engine_configure_tests": {
+      "passed": 9,
+      "skipped": 0,
+      "old_layout_regression": "RED retained",
+      "no_tests_tree_standalone_and_embedded_generation": "PASS",
+      "scope": "Interface SDK facades and retained compiler identity; no SDK or model link claim."
+    },
+    "real_ninja_migration_tests": {
+      "passed": 3,
+      "cases": [
+        "zero/missing records, empty TU, same-source shared scope and independent healthy object",
+        "embedded parent-root dependency base and genuinely external dependency child",
+        "Ninja Multi-Config nondefault Release, with healthy Release object preserved"
+      ],
+      "unicode_paths": true,
+      "repeat_no_CXX": true,
+      "source_object_bytes_and_times_unchanged_by_configure": true,
+      "compiler_commands_unchanged": true,
+      "pure_CMake_no_new_Python_requirement": true,
+      "same_source_scope": "A healthy target in the same directory compiling the same source may conservatively rebuild once."
+    },
+    "public_entry": {
+      "passed_stages": 8,
+      "all_exit_zero": true,
+      "offline": true,
+      "reuse": "Existing util build/install/independent consumer; no SDK or source copies.",
+      "first_and_final_util_build_CXX": 0,
+      "first_and_final_util_build_links": 0,
+      "consumer_exit_code": 0,
+      "consumer_build": "Existing objects reused; runtime staging executed.",
+      "normal_engine_cache_and_global_selection": "bytes and timestamps unchanged"
+    },
+    "docs": {
+      "agent_local_links_and_anchors": 88,
+      "help_invocations": 4,
+      "root_local_file_links_at_doc_commit": 305,
+      "shared_usage_contract_review": "No contradictions found with public headers and CMake; independent Invocations do not override non-concurrent artifact limits."
+    },
+    "normal_headerdeps_recovery": {
+      "CXX": 16,
+      "SDK_CXX": 9,
+      "app_CXX": 7,
+      "links": 3,
+      "NVCC": 0,
+      "Ninja_commands_compared": 1600,
+      "changed_commands": 0,
+      "C_CXX_objects_audited": 727,
+      "remaining_legitimate_empty_TUs": 3,
+      "three_control_and_new_text_sections_equal": true,
+      "scope": "Earlier actual dependency repair/build only, against preserved worktree sources; not a model runtime check."
+    }
+  },
+  "limits": [
+    "Finite Windows MSVC/Ninja native checks only; no all-platform, all-product, sanitizer, trace or ISA matrix.",
+    "CMake3.25 helper signature checked against official tagged source; minimum-version binary execution was not performed.",
+    "Actual migration tests use installed CMake4.4; the public util entry reuses its existing compatible cached CMake.",
+    "clang-cl follows the MSVC-family environment/helper path but native language-mismatch regression is registered only for actual MSVC; no new clang-cl native result claimed.",
+    "No new model inference, GPU performance window or downloads. Current architecture worktree changes remain pending their own liveness verification."
+  ],
+  "history": "All failed reproductions/preparation/configure/encoding attempts are retained in the archive. Historical open migration review is resolved by the later implementation/proofs, not erased.",
+  "current_source_pins": [
+    {
+      "path": "scripts/hyle_environment.py",
+      "bytes": 32103,
+      "sha256": "6bb9aa677b8909376ab31af4290809477ba3378f47d6b1a6669574f3ea5e61f1"
+    },
+    {
+      "path": "scripts/hyle_support.py",
+      "bytes": 33860,
+      "sha256": "437bf35ad848885e38b5c0359a6ab12a839255661600b03b71f21a2594611feb"
+    },
+    {
+      "path": "cmake/HyleBuildContract.cmake",
+      "bytes": 2571,
+      "sha256": "3c079b7a0c96b17ef952ad011f262e3ef06badd2e924e9dbb2a96b18e38373a1"
+    },
+    {
+      "path": "tests/tooling/bootstrap_environment_test.py",
+      "bytes": 30542,
+      "sha256": "2b1215cba47e0ec2e11498a5dfdc429c17f5b29d12dcbe9aa17089c756b860bf"
+    },
+    {
+      "path": "tests/tooling/development_scripts_test.py",
+      "bytes": 47285,
+      "sha256": "c1ffe872272bef761e043ec6156be0a34c13bc669e1f0e6169ef225accc9ccc6"
+    },
+    {
+      "path": "cmake/HyleNinjaHeaderDeps.cmake",
+      "bytes": 6271,
+      "sha256": "6c93cbe23ae05aa26537bac342dd7e6e4f1978424f3925af2ea6e9ab6348ddcf"
+    },
+    {
+      "path": "tests/tooling/ninja_headerdeps_recovery_test.py",
+      "bytes": 17230,
+      "sha256": "4dbbc504c842f60793755ae01ecfd3be2dcf310b92440f29724dd6fcd2a29313"
+    },
+    {
+      "path": "tests/CMakeLists.txt",
+      "bytes": 37856,
+      "sha256": "80ea50dd9846742d7fc141804207e235140931c1b93c265c76be5fa39aab7e15"
+    },
+    {
+      "path": "engine/models/kimi_k3/CMakeLists.txt",
+      "bytes": 283,
+      "sha256": "98393d2151995ff60f37ea9f137fecdaa2c3837a4969ae552e2ee6ec28bfa0fb"
+    },
+    {
+      "path": "tests/tooling/engine_components_test.py",
+      "bytes": 12274,
+      "sha256": "04ea8bc856cebc215e292f2e78e331d97129b679d3a4c8b68ca6a9e076071e4a"
+    },
+    {
+      "path": "CMakeLists.txt",
+      "bytes": 23304,
+      "sha256": "31cea28ec45af979f313e0f9bc0efbd5839b61731602d99e3558b278496de0fe"
+    },
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "bytes": 53028,
+      "sha256": "39934b85f9fc41cc9bcd124187d86d6a31d7d1c243f983d848382fa685bc7de2"
+    },
+    {
+      "path": "cmake/HyleComputeRoutes.cmake",
+      "bytes": 9475,
+      "sha256": "1851e6e5f611da2aecb48d82ba05bbb3b5147517cdc747bdbcbd6f7cfefcaeee"
+    },
+    {
+      "path": "cmake/HyleTrace.cmake",
+      "bytes": 6069,
+      "sha256": "cd13a5ed5924310e8ec4eaa235ee62f137adeddfbbab498aabfe6d86d3921b91"
+    },
+    {
+      "path": "scripts/hyle_resources.py",
+      "bytes": 5958,
+      "sha256": "1dc8edd3338047194992da9b2963a63f4bf8baba80528d9c3196443168c5f036"
+    },
+    {
+      "path": "engine/CMakeLists.txt",
+      "bytes": 1971,
+      "sha256": "a39d6eda0b97b15101c01c9b81128a08bd6d707b789c63909d45afc831faf433"
+    },
+    {
+      "path": "README.md",
+      "bytes": 7440,
+      "sha256": "e4d3fea1527793936b6deb3667b38369d582c514189335ac412aa8385a51df66"
+    },
+    {
+      "path": "docs/README.md",
+      "bytes": 2717,
+      "sha256": "19c566136ed8cde5a32d84775c46d5f49e90a6c3a993bfd52e0f3d2dbe9af889"
+    },
+    {
+      "path": "docs/developer/setup/README.md",
+      "bytes": 8016,
+      "sha256": "e5b80362ed82a302cc6907a95f1ecd4ad694028d7695e222866cf679873e27ac"
+    },
+    {
+      "path": "docs/developer/setup/windows.md",
+      "bytes": 3023,
+      "sha256": "0af9167a4b1af550bffadbc7d208871424cd10eb853b3050f53fe3373b64586b"
+    },
+    {
+      "path": "docs/architecture/build-system.md",
+      "bytes": 8069,
+      "sha256": "26acfcd72cd801a0f61739340e099736c74e933b5e5c285b1d0ba8c99ed3f5ef"
+    },
+    {
+      "path": "docs/user/README.md",
+      "bytes": 2535,
+      "sha256": "48776289b6b4b2d35835c760324e960bf39b36aba669b32d91b0fb531ea0e813"
+    },
+    {
+      "path": "docs/developer/inference-progress.md",
+      "bytes": 10560,
+      "sha256": "f8f4fde293ede2715f12ffde3d1e7c6c3e8edfebdfb4740457653c8206f2fb1c"
+    },
+    {
+      "path": "docs/implementation/inference-roadmap.md",
+      "bytes": 112489,
+      "sha256": "d893f2b0c1d863b6933d0427df3b5910cc27e95e365ebcbcc8005f71dee9e574"
+    },
+    {
+      "path": "engine/models/qwen35/README.md",
+      "bytes": 33953,
+      "sha256": "f67a4c3e6e7452b0bcfe5dd03ca8f61b0802c17e412a2532710626fb94406f96"
+    }
+  ],
+  "archive": {
+    "path": "inference-engineering-boundaries-2026-10-31.zip",
+    "bytes": 826031,
+    "sha256": "bf4bec59d9754eafe4aa70b03627746a6167a449dcd502ab8a7af77ebb9cced2",
+    "members": 817,
+    "payload_bytes": 4268028,
+    "manifest_member": ".scratch/inference-engineering-boundary-20261031/published-member-manifest.json",
+    "root_all_members_CRC_SHA_size_and_bytes_verified": true
+  },
+  "proof_index": {
+    "language_cache_and_actual16": ".scratch/inference-msvc-engineering-evidence-20261031/summary-draft.json",
+    "kimi": ".scratch/inference-kimi-test-boundary-20261031/summary.json",
+    "migration": ".scratch/inference-ninja-headerdeps-migration-20261031/source-freeze.json",
+    "public_entry": ".scratch/inference-engineering-boundary-20261031/public-entry-final/summary.json",
+    "docs": ".scratch/inference-engineering-entry-docs-20261031/verification.json",
+    "shared_usage": ".scratch/inference-engineering-boundary-20261031/shared-usage-review.json",
+    "migration_independent_review": ".scratch/inference-engineering-boundary-20261031/ninja-migration-independent-review.json"
+  }
+}

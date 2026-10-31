@@ -346,7 +346,7 @@ def initialize(args: argparse.Namespace) -> int:
             if extra.get(key) and not _same_path(extra[key], previous):
                 raise SetupError(f"{key} differs from this build's CUDA toolchain. Choose another --name or --build-dir.")
     environment = discover_environment(compiler=args.compiler or "auto", cache=dict(cache, **extra),
-                                       backends=selected["routes"], generator=args.generator)
+                                       backends=selected["routes"], generator=args.generator, configuring=True)
     if "vulkan" in selected["routes"] and cache.get("HYLE_VULKAN_GLSLANG"):
         environment.definitions["HYLE_VULKAN_GLSLANG"] = cache["HYLE_VULKAN_GLSLANG"]
     environment.definitions.update(extra)

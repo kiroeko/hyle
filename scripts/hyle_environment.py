@@ -286,7 +286,10 @@ def _windows_compilers(compiler: str, cache: dict[str, str], env: dict[str, str]
         raise SetupError(f"No matching MSVC 19.43+ toolset '{required}' in {tools}. "
                          "Install it with Visual Studio Installer; an existing cache will not switch toolchains.")
     version = max(versions)[1]
-    env = _vs_environment(install, version, arch, env)
+    # CMake caches the localized /showIncludes prefix. Use the same language
+    # for configuration and every later compiler child, including an already
+    # active developer shell or an explicitly localized parent environment.
+    env = dict(_vs_environment(install, version, arch, env), VSLANG="1033")
     _prepend(env, [install / "VC/Tools/Llvm/x64/bin", install / "VC/Tools/Llvm/bin"])
     use_clang = (family == "clang-cl" if requested else compiler in {"clang", "clang-cl"})
     cxx = requested or ("clang-cl.exe" if use_clang else str(tools / version / f"bin/Hostx64/{arch}/cl.exe"))
@@ -312,9 +315,10 @@ def windows_compiler_environment(cache: dict[str, str]) -> dict[str, str]:
     return env
 
 
-def _cmake_tools(env: dict[str, str], system: str) -> tuple[str, str]:
+def _cmake_tools(env: dict[str, str], system: str,
+                 cache: dict[str, str] | None = None) -> tuple[str, str]:
     minimum = _minimum_cmake_version()
-    candidates = [_which("cmake", env)]
+    candidates = [(cache or {}).get("CMAKE_COMMAND"), _which("cmake", env)]
     executable = "cmake.exe" if system == "Windows" else "cmake"
     candidates += [str(Path(directory) / executable) for directory in env.get("PATH", "").split(os.pathsep) if directory]
     if system == "Windows":
@@ -484,8 +488,24 @@ def find_openssl(environment: Environment) -> dict[str, str]:
     return {}
 
 
+def _check_ninja_include_language(cache: dict[str, str], generator: str | None) -> None:
+    directory = cache.get("CMAKE_CACHEFILE_DIR")
+    if not directory or not generator or not generator.startswith("Ninja"):
+        return
+    # Use the generated parser setting: project configuration can repair it
+    # in place without rewriting CMake's retained compiler-identification file.
+    rules = Path(directory) / "CMakeFiles/rules.ninja"
+    if rules.is_file():
+        prefixes = re.findall(r"^[ \t]*msvc_deps_prefix[ \t]*=[ \t]*(.*)$",
+                              rules.read_text(encoding="utf-8"), re.M)
+        if any(prefix != "Note: including file: " for prefix in prefixes):
+            raise SetupError("This Ninja build's MSVC /showIncludes parser uses another diagnostic language. "
+                             f'Rerun python scripts/init.py --build-dir "{directory}" '
+                             "to repair it in place for VSLANG=1033 before building.")
+
+
 def discover_environment(compiler: str = "auto", cache: dict[str, str] | None = None,
-                         backends=(), generator: str | None = None) -> Environment:
+                         backends=(), generator: str | None = None, configuring: bool = False) -> Environment:
     cache = dict(cache or {})
     _restore_cached_compilers(cache)
     system = platform.system()
@@ -508,11 +528,13 @@ def discover_environment(compiler: str = "auto", cache: dict[str, str] | None = 
     definitions: dict[str, str] = {}
     if system == "Windows":
         env, cc, cxx, installation, version = _windows_compilers(compiler, cache, env, selected_generator)
+        if not configuring:
+            _check_ninja_include_language(cache, selected_generator)
         _prepend(env, [installation / "Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin",
                        installation / "Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja"])
     else:
         cc, cxx = _unix_compilers(compiler, cache, env, system)
-    cmake, ctest = _cmake_tools(env, system)
+    cmake, ctest = _cmake_tools(env, system, cache)
     _prepend(env, [Path(cmake).parent])
     if not selected_generator:
         selected_generator = "Ninja" if _which("ninja", env) else ("NMake Makefiles" if system == "Windows" else "Unix Makefiles")

@@ -83,6 +83,7 @@ class EnvironmentTests(unittest.TestCase):
                 patch.object(tools, "_run", side_effect=AssertionError("must not reselect VS")):
             result = tools._windows_compilers("auto", cache, {}, "Ninja")
         self.assertEqual(Path(result[2]), selected)
+        self.assertEqual(result[0]["VSLANG"], "1033")
         self.assertEqual(setup.call_args.args[1], "14.44.35207")
         clang = installation / "VC/Tools/Llvm/x64/bin/clang-cl.exe"
         clang.parent.mkdir(parents=True)
@@ -105,6 +106,90 @@ class EnvironmentTests(unittest.TestCase):
             with self.assertRaisesRegex(tools.SetupError, "Cached build tool is missing"):
                 tools.discover_environment(cache=cache)
         which.assert_not_called()
+
+    def test_windows_build_and_header_environments_fix_include_language(self):
+        installation = self.root / "VS"
+        compiler = installation / "VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe"
+        compiler.parent.mkdir(parents=True)
+        compiler.write_text("compiler fixture")
+        ninja = self.root / "ninja.exe"
+        ninja.write_text("build tool fixture")
+        cache = {"CMAKE_C_COMPILER": str(compiler), "CMAKE_CXX_COMPILER": str(compiler),
+                 "CMAKE_GENERATOR": "Ninja", "CMAKE_MAKE_PROGRAM": str(ninja)}
+        active = {"VSINSTALLDIR": str(installation), "VCTOOLSVERSION": "14.50.35717",
+                  "VSCMD_ARG_TGT_ARCH": "x64", "VSCMD_VER": "18.0", "WINDOWSSDKDIR": "SDK",
+                  "INCLUDE": "headers", "LIB": "libs", "PATH": "existing"}
+        for language in (None, "2052", "1033"):
+            parent = dict(active)
+            if language is not None:
+                parent["VSLANG"] = language
+            with self.subTest(language=language), patch.dict(os.environ, parent, clear=True), \
+                    patch.object(tools.platform, "system", return_value="Windows"), \
+                    patch.object(tools.platform, "machine", return_value="AMD64"), \
+                    patch.object(tools, "_which", side_effect=lambda name, env: str(Path(name).resolve())), \
+                    patch.object(tools, "_cmake_tools", return_value=("/mock/cmake", "/mock/ctest")), \
+                    patch.object(tools.subprocess, "run", side_effect=AssertionError("active VS must be reused")):
+                before = dict(os.environ)
+                build = tools.discover_environment(cache=cache)
+                header = tools.windows_compiler_environment(cache)
+                self.assertEqual(build.env["VSLANG"], "1033")
+                self.assertEqual(header["VSLANG"], "1033")
+                self.assertEqual(build.cxx, str(compiler.resolve()))
+                for key in ("INCLUDE", "LIB", "WINDOWSSDKDIR", "VCTOOLSVERSION", "VSCMD_ARG_TGT_ARCH"):
+                    self.assertEqual(build.env[key], active[key])
+                    self.assertEqual(header[key], active[key])
+                self.assertEqual(dict(os.environ), before)
+
+    def test_unix_environment_keeps_explicit_diagnostic_language(self):
+        with patch.dict(os.environ, {"PATH": "existing", "VSLANG": "2052"}, clear=True), \
+                patch.object(tools.platform, "system", return_value="Linux"), \
+                patch.object(tools.platform, "machine", return_value="x86_64"), \
+                patch.object(tools, "_unix_compilers", return_value=("gcc", "g++")), \
+                patch.object(tools, "_cmake_tools", return_value=("/mock/cmake", "/mock/ctest")):
+            result = tools.discover_environment(generator="Xcode")
+        self.assertEqual(result.env["VSLANG"], "2052")
+
+    def test_ninja_language_repair_allows_init_in_same_build_directory(self):
+        build = self.root / "cached build"
+        rules = build / "CMakeFiles/rules.ninja"
+        rules.parent.mkdir(parents=True)
+        rules.write_text("msvc_deps_prefix = 注意: 包含文件:  \n", encoding="utf-8")
+        metadata = build / "CMakeFiles/4.4.0/CMakeCXXCompiler.cmake"
+        metadata.parent.mkdir()
+        metadata.write_text('set(CMAKE_CXX_CL_SHOWINCLUDES_PREFIX "注意: 包含文件:  ")\n', encoding="utf-8")
+        before = metadata.read_bytes()
+        ninja = self.root / "ninja.exe"
+        ninja.write_text("build tool fixture")
+        cache = {"CMAKE_CACHEFILE_DIR": str(build), "CMAKE_GENERATOR": "Ninja",
+                 "CMAKE_MAKE_PROGRAM": str(ninja)}
+        with patch.object(tools.platform, "system", return_value="Windows"), \
+                patch.object(tools.platform, "machine", return_value="AMD64"), \
+                patch.object(tools, "_windows_compilers", return_value=(
+                    {"PATH": "selected", "VSLANG": "1033"}, "cl", "cl", self.root, "14.50.35717")), \
+                patch.object(tools, "_cmake_tools", return_value=("/mock/cmake", "/mock/ctest")):
+            with self.assertRaisesRegex(tools.SetupError, "repair it in place") as error:
+                tools.discover_environment(cache=cache)
+            self.assertIn(f'--build-dir "{build}"', str(error.exception))
+            tools.discover_environment(cache=cache, configuring=True)
+            # Configuration changes only the actual Ninja parser setting.
+            # The old compiler metadata remains valid toolchain identity.
+            rules.write_text("msvc_deps_prefix = Note: including file: \n", encoding="utf-8")
+            selected = tools.discover_environment(cache=cache)
+        self.assertEqual(selected.env["VSLANG"], "1033")
+        self.assertEqual(metadata.read_bytes(), before)
+
+    def test_ninja_language_checks_every_scoped_parser_prefix(self):
+        build = self.root / "mixed rules"
+        rules = build / "CMakeFiles/rules.ninja"
+        rules.parent.mkdir(parents=True)
+        cache = {"CMAKE_CACHEFILE_DIR": str(build)}
+        rules.write_text("msvc_deps_prefix = Note: including file: \n"
+                         "rule CXX_COMPILER\n  msvc_deps_prefix = 注意: 包含文件:  \n", encoding="utf-8")
+        with self.assertRaisesRegex(tools.SetupError, "repair it in place"):
+            tools._check_ninja_include_language(cache, "Ninja")
+        rules.write_text("msvc_deps_prefix = Note: including file: \n"
+                         "rule CXX_COMPILER\n  msvc_deps_prefix = Note: including file: \n", encoding="utf-8")
+        tools._check_ninja_include_language(cache, "Ninja")
 
     def test_windows_cmd_import_preserves_unicode_and_parent_environment(self):
         installation = self.root / "VS"
@@ -338,6 +423,40 @@ class EnvironmentTests(unittest.TestCase):
                 patch.object(tools, "_run", return_value="cmake version 3.24.9"):
             with self.assertRaisesRegex(tools.SetupError, r"CMake/CTest 3\.25"):
                 tools._cmake_tools({"PATH": ""}, "Linux")
+
+    def test_cached_cmake_precedes_visual_studio_path(self):
+        cached, bundled = self.root / "CMake/bin", self.root / "VS/CMake/bin"
+        for directory in (cached, bundled):
+            directory.mkdir(parents=True)
+            (directory / "cmake.exe").touch()
+            (directory / "ctest.exe").touch()
+        cache = {"CMAKE_COMMAND": str(cached / "cmake.exe")}
+        def version(args, env):
+            return "cmake version 4.4.0" if Path(args[0]).parent == cached else "cmake version 4.2.3-msvc3"
+        with patch.object(tools, "_which", return_value=str(bundled / "cmake.exe")), \
+                patch.object(tools, "_run", side_effect=version) as run:
+            selected = tools._cmake_tools({"PATH": str(bundled)}, "Windows", cache)
+        self.assertEqual(selected, (str(cached / "cmake.exe"), str(cached / "ctest.exe")))
+        run.assert_called_once_with([str(cached / "cmake.exe"), "--version"], {"PATH": str(bundled)})
+
+    def test_unusable_cached_cmake_keeps_existing_fallbacks(self):
+        cached, bundled = self.root / "cached", self.root / "bundled"
+        for directory in (cached, bundled):
+            directory.mkdir()
+            (directory / "cmake.exe").touch()
+        (bundled / "ctest.exe").touch()
+        env = {"PATH": str(bundled)}
+        for reason in ("missing compiler", "missing ctest", "old version"):
+            with self.subTest(reason=reason):
+                candidate = cached / ("missing.exe" if reason == "missing compiler" else "cmake.exe")
+                if reason == "old version":
+                    (cached / "ctest.exe").touch()
+                def version(args, env):
+                    return "cmake version 3.24.0" if reason == "old version" and Path(args[0]).parent == cached else "cmake version 4.2.3-msvc3"
+                with patch.object(tools, "_which", return_value=str(bundled / "cmake.exe")), \
+                        patch.object(tools, "_run", side_effect=version):
+                    selected = tools._cmake_tools(env, "Windows", {"CMAKE_COMMAND": str(candidate)})
+                self.assertEqual(selected, (str(bundled / "cmake.exe"), str(bundled / "ctest.exe")))
 
     @staticmethod
     def openssl(root, suffix):
