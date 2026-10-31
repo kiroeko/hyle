@@ -8,13 +8,17 @@ Graph 用于把多个 Compute operation 编成可复用执行计划：推导中�
 Executable／Invocation，内部继续使用原生 Program、结果与完成机制。其余混合运行时仍在迁移。
 项目内的引擎层拥有模型加载、请求循环和 offload 策略；Graph 保持模型无关，亦可独立使用。
 
-先看下面的两节点例子和[生命周期](#四个生命周期对象)，再按需要选择：
+首次接入先看下面的两节点例子和[四个生命周期对象](#四个生命周期对象)，然后只查需要的专题：
 
-- 单 CPU 或单 CUDA：对应普通入口；最简单的固定设备图无需手写 target/storage/lane 表。
-- CPU 与一个 GPU：[显式片段组合](#cpu-与-gpu-组合)。
-- 可变 batch/token：[独立与派生维度](#独立与派生维度)与[精确变体](#有限精确变体)。
-- 内存上限、低热开销、capture：按后文编译与 replay 选项检查实际计划，不从逻辑图推断零分配。
-- KV/conv/recurrent 快照：[状态版本](state-versions.md)；Graph 不隐式决定何时发布模型状态。
+| 问题 | 入口 |
+|---|---|
+| 单设备运行或CPU＋一个GPU | [CPU](#普通-cpu-入口)、[CUDA](#普通-cuda-入口)、[显式片段组合](#cpu-与-gpu-组合) |
+| 动态batch／token与有限形状 | [派生维度](#独立与派生维度)、[精确变体](#有限精确变体) |
+| 编译和运行内存上限 | [常驻存储](#限制编译制品的常驻存储)、[冷构建增量](#限制整个编译过程的新增存储)、[并发运行存储](#限制所有并发-invocation-的运行存储) |
+| capture／replay及真实成本 | [replay路由](#冷态-replay-路由)、[冷热取舍](#冷路径热路径与调度取舍)、[报告](#report-怎么读) |
+| 外部资源、输出接力与关闭 | [资源访问](#外部可变资源声明访问与顺序)、[只读结果](#外部租约绑定与只读结果)、[所有权](#所有权与常见陷阱) |
+| KV／conv／recurrent状态发布 | [状态版本](state-versions.md)；Graph不隐式决定何时发布模型状态。 |
+
 
 ## 第一次图执行
 
@@ -942,10 +946,9 @@ submission admission 时等待上游。`ReplayReport` 提供四类 dependency �
 
 `kPreferCapture` 在不支持、不安全或 delegated 的 segment 上保留普通 route，最终可报告 `kCommands`、
 `kCaptured` 或 `kHybrid`；`kRequireCapture` 遇到任一 delegated 或不能 capture 的 command segment 就失败。
-当前 RTX 4070 纵切已验证：同一 CUDA target 的 compute/transfer lane 共用一个 device storage identity，只有
-实际产生 segment 的 lane 要求 Queue；兼容 CUDA stream 可用 event 非阻塞导入前缀，单 Queue 的兼容 copy
-segment 可 cold capture 并 warm replay。普通 CUDA FFN 还验证了 cuBLASLt/HYLE kernel 的
-同 Queue 计算 capture；这些单 Queue 证据不承诺一般 multi-stream capture。
+同一CUDA target的compute／transfer lane共享device storage identity，只有实际产生segment的lane要求Queue。
+兼容stream可用event导入前缀；copy与数学segment的capture资格仍由实际实现检查，
+单Queue可捕获不代表一般multi-stream capture。
 
 ## 冷路径、热路径与调度取舍
 

@@ -1,42 +1,43 @@
-# HYLE 文档
+# 文档导航
 
-HYLE 的产品目标是完整的单机推理引擎，基础库也可独立使用。当前开发重点仍是底层推理支持，
-项目内的 Qwen 引擎用于执行真实模型、发现接口与性能问题；通用加载、tokenizer 和服务接口尚未完成。
-`engine` 构建 `hyle` 命令行应用；基础库可以按产品独立构建、安装，并由 C++ 程序链接 `hyle::<product>`。
+先选要解决的问题，再深入对应细节。现行指南说明当前行为；历史记录仅供查证，不是继续开发的指令。
 
-## 从哪里开始
+## 先看整体重点
 
-第一次使用先读用户手册，跑通一个入口后再按需要查设计和开发资料。无需先通读全部架构或实验记录。
+| 你的问题 | 主入口 | 读到这里应知道什么 |
+|---|---|---|
+| HYLE是什么、现在怎么用 | [项目首页](../README.md) → [用户入口](user/README.md) | 产品范围、最短运行／集成路径和关键限制 |
+| 当前在哪、下一步做什么 | [推理看板](developer/inference-progress.md) | 整体粗估、当前任务、负责人、依赖与结项条件 |
+| 要把引擎做成什么 | [核心期许](architecture/inference-principles.md) → [工程范围](implementation/inference-roadmap.md) | 长期取舍与本阶段完整范围 |
+| 各层为什么这样分工 | [引擎概览](architecture/engine-overview.md) → [整体架构](architecture/inference-design.md) | 一次推理的路径、职责、状态和资源合同 |
+| 当前性能怎样 | [decode结果](developer/performance/decode.md) | 默认配置的实际速度、差距、内存边界及测法 |
 
-| 你想做的事 | 先读 |
-|---|---|
-| 初始化、构建、测试和安装 | [构建指南](developer/setup/README.md) |
-| 运行推理引擎 | [推理引擎指南](user/inference.md) |
-| 在自己的 C++ 程序中使用基础库 | [使用指南](user/usage-guide.md)，再按模块查[用户手册](user/README.md) |
-| 理解推理引擎的长期开发目标 | [两项核心期许](architecture/inference-principles.md) |
-| 看目前在哪、接下来做什么 | [推理进度](developer/inference-progress.md) |
-| 理解项目和模块分工 | [架构入口](architecture/README.md)，按其中的阅读顺序深入 |
-| 了解推理引擎的结构 | [推理引擎概览](architecture/engine-overview.md) |
-| 修改代码与排障 | [开发与维护](developer/README.md) |
-| 查性能数据 | 推理看 [decode 性能资料](developer/performance/decode.md)，基础模块看[模块性能数据](developer/performance/modules.md) |
+## 重要程度与作用范围
 
-文档里的缩写和固定说法（B2、N2／R2、pending、episode 等）见[术语表](glossary.md)。
+| 阅读层次 | 整体 | 局部 |
+|---|---|---|
+| **重点：先理解** | 上面的产品、目标、架构、进度与性能入口 | 正在修改模块的用途、边界、典型用法和关键取舍 |
+| **细节：遇到具体问题再查** | 安装交付、完整测量规则、平台组合 | API签名、dtype／布局／精度、权限／寿命、特定格式与失败条件 |
+| **历史：只为查证** | 旧计划、旧架构、过往性能窗口 | 单次实验命令、原角色／fixture、失败日志与候选取舍 |
 
-## 文档分层
+“局部”可以很关键，例如资源寿命；“细节”也可以很长，例如API参考。分类决定何时阅读，不能用行数代替重要性或删减必要合同。
 
-| 目录 | 内容 |
-|---|---|
-| [user](user/README.md) | 用户手册：引擎运行、C++ 集成、各模块用法与调用边界 |
-| [developer](developer/README.md) | 开发维护：环境、构建、测试、依赖、排障、性能测量与当前进度 |
-| [architecture](architecture/README.md) | 设计：模块职责、关键决策与理由、被放弃的方案 |
-| [implementation](implementation/README.md) | 推理工程计划、模型与算子覆盖、测试仍在读取的结构化输入 |
-| [evidence](evidence/README.md) | 实验原始数据：源码、日志、CSV/JSON、归档 |
+## 按内容类别深入
 
-## 维护约定
+| 类别 | 主要范围 | 入口与分工 |
+|---|---|---|
+| 使用 | 引擎整体／基础库局部 | [用户文档](user/README.md)：运行、集成、典型任务；各模块参考按需查 |
+| 架构 | 整体层次／局部设计 | [架构索引](architecture/README.md)：职责、理由、取舍；不追加实验流水 |
+| 开发操作 | 整体构建／平台局部 | [开发入口](developer/README.md)：构建、依赖、排障、维护；默认值只在[构建指南](developer/setup/README.md)维护 |
+| 当前工作 | 整体范围／具体任务 | [工程范围](implementation/inference-roadmap.md)讲做什么；[看板](developer/inference-progress.md)讲执行状态，两者不重复维护进度 |
+| 性能 | 整引擎／模块 | [性能入口](developer/performance/README.md)：decode结论、模块对照与统一测量方法 |
+| 模型与格式参考 | 模型／算子局部 | [模型与算子地图](implementation/model-operators.md)：需求、源身份、计算和状态边界；收录不等于支持 |
+| 原始记录 | 历史与复现 | [证据入口](evidence/README.md)：按结论链接查原始数据，无需通读 |
 
-同一事实只在所属位置维护，其它页面链接引用。API 签名与局部约束以公开头为准；
-用户手册讲怎么用，架构文档讲为什么，性能页面汇总数据并链接原始记录。
+术语按需查[术语表](glossary.md)，工作区和开发操作约定见[AGENTS.md](../AGENTS.md)。
 
-工作区与验证机器的约定见 [AGENTS.md](../AGENTS.md)。
-当前引擎实现范围与后续顺序见[推理工程计划](implementation/inference-roadmap.md)，
-正在进行的工作见[推理进度](developer/inference-progress.md)。
+## 怎么保持清楚
+
+同一事实只维护一处，其它页链接。更新已有结论，不把每批经历追加到页尾。日常改动只更新真正变化的用法／合同及一行看板；命令、版本、结果和必要边界直接引用原日志。
+
+不为文档整齐新建报告、清单、证据包或独立归档任务。新页只承载独立使用任务、独立合同或确有必要的专门参考；旧计划和旧调查进入历史或Git，不再与现行指南并列维护。必要API与正确性细节继续保留。

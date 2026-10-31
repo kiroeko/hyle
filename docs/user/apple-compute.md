@@ -3,12 +3,8 @@
 Apple 路线保留 MLX 的原生 arrays、编译融合与内存管理；原版 ggml Metal region 保有自己的
 原生程序与完成边界。普通 typed Direct 和 Graph 在准备期绑定实现，用户不必排序 Provider。
 
-可选[模型与阶段信息](compute.md#可选模型与阶段信息)作为最后一个参数传给
-`Context::prepare(operation, inputs, workload)` 或 `Context::compile(region, inputs, workload)`；
-普通 Graph 使用 `graph::CompileOptions::workload`；原生整段编译使用
-`graph::apple::CompileOptions::workload`。原生 `Program::workload()` 保留绑定身份，
-Graph 的 typed lowering 收到同一份冷信息。无注解继续使用合法 MLX baseline；这不声明新增了模型
-专用算法。改变身份后重新编译，MLX replay 不读取模型信息或重选规则。
+先完成[构建条件](#构建与运行条件)，再选[Direct](#普通-typed-direct)或[Graph](#graph-整段编译原生-expert)；
+并发、借用与关闭前查[资源寿命](#所有权线程与成本)。模型阶段注解和编译诊断属于可选参考。
 
 ## 构建与运行条件
 
@@ -321,6 +317,15 @@ HYLE 逻辑描述推断实际 MLX 分配或声称任意 native View 都零拷贝
 `context.environment()` 提供冷创建时记录的 GPU 名称/架构、macOS runtime/build、编译 SDK/部署下限、
 Metal compiler 和 MLX pin。规则可匹配这些事实；执行中不探测或计时选优。未知硬件采用对应
 格式合法的实现。默认 deployment 14.4 的构建未启用 NAX；其它硬件特性按实际构建与设备检查。
+
+## 可选模型与阶段信息
+
+可选[模型与阶段信息](compute.md#可选模型与阶段信息)作为最后一个参数传给
+`Context::prepare(operation, inputs, workload)` 或 `Context::compile(region, inputs, workload)`；
+普通 Graph 使用 `graph::CompileOptions::workload`；原生整段编译使用
+`graph::apple::CompileOptions::workload`。原生 `Program::workload()` 保留绑定身份，
+Graph 的 typed lowering 收到同一份冷信息。无注解继续使用合法 MLX baseline；这不声明新增了模型
+专用算法。改变身份后重新编译，MLX replay 不读取模型信息或重选规则。
 
 ## 可选编译诊断
 

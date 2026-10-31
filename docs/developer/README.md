@@ -1,27 +1,29 @@
 # 开发与维护
 
-先用[初始化指南](setup/README.md)准备工具和依赖，再按改动选择构建目标与测试。
+先用[初始化指南](setup/README.md)准备工具和依赖，再按改动选择构建目标与测试。只需阅读与当前改动相关的页面；实验历史不作为日常开发入口。
 日常以本地验证为主；[GitHub CI](../../.github/workflows/build.yml)按需手动运行基础组件检查，
 不代表所有 Compute/Graph 后端已通过，也不是开发前置条件。
 
-| 要做的事 | 说明 |
-|---|---|
-| 初始化、切换配置、构建、测试、安装 | [环境与构建](setup/README.md) |
-| 判断推理引擎开发方向与取舍 | [两项核心期许](../architecture/inference-principles.md) |
-| 查看当前普通推理、多会话、多任务进度 | [推理进度](inference-progress.md) |
-| 查看引擎现状与后续工作 | [推理工程计划](../implementation/inference-roadmap.md) |
-| 维护依赖、共享缓存或离线介质 | [依赖](setup/dependencies.md)、[离线构建](setup/offline.md) |
-| 定位崩溃、挂起、数值或测量异常 | [排障](debugging/README.md) |
-| 比较性能、定位慢项 | [性能测量](performance/README.md) |
-| 查询 CUDA decode 测量结果与调查边界 | [decode 记录](performance/decode.md) |
-| 查询基础模块与外部库的性能对照 | [模块性能数据](performance/modules.md) |
-| 查缩写和术语（B2、N2／R2、pending 等） | [术语表](../glossary.md) |
-| 修改 SIMD 实现或生成路由 | [SIMD 维护](maintenance/simd-dispatch-guide.md) |
-| 了解模块边界和设计取舍 | [架构](../architecture/README.md) |
-| 查询已验证模型、算子与边界 | [模型与算子覆盖](../implementation/model-operators.md) |
+## 先看整体重点
 
-用户如何调用库放在[用户手册](../user/README.md)，本页只讲维护代码所需的约定。
-工作区、验证机器和操作限制以根目录 [AGENTS.md](../../AGENTS.md) 为准。
+| 问题 | 唯一入口 |
+|---|---|
+| 怎样初始化、构建和运行相关测试 | [构建指南](setup/README.md) |
+| 项目往哪里做、当前做哪项 | [核心期许](../architecture/inference-principles.md)／[推理进度](inference-progress.md)；完整范围按需查[工程计划](../implementation/inference-roadmap.md) |
+| 当前推理性能是什么、差距在哪里 | [decode结论](performance/decode.md) |
+| 模块职责如何划分 | [架构入口](../architecture/README.md) |
+
+## 按改动查局部操作
+
+| 当前问题 | 参考 |
+|---|---|
+| 系统工具、依赖、cache或离线介质 | [构建指南](setup/README.md)中的平台入口、[依赖](setup/dependencies.md)、[离线](setup/offline.md) |
+| 崩溃、挂起、数值或测量异常 | [按症状排障](debugging/README.md) |
+| 怎么对齐工作量、测速度和内存 | [性能测量方法](performance/README.md) |
+| 修改SIMD实现或生成路由 | [SIMD维护](maintenance/simd-dispatch-guide.md) |
+| 查询具体模型／算子或术语 | [覆盖参考](../implementation/model-operators.md)、[术语表](../glossary.md) |
+
+用户调用方法在[用户手册](../user/README.md)，工作区与验证机器约定在[AGENTS.md](../../AGENTS.md)。下面只列代码维护的共同边界。
 
 ## 修改代码
 
@@ -64,7 +66,8 @@ C++ SDK 不承诺跨编译器、STL、runtime 或构建配置的二进制 ABI，
 性能变化使用[相同工作量和完成边界](performance/README.md)比较。
 报告实际运行结果与未验证项；不因文档修订扩大全库构建。
 
-修改用法就更新所属用户指南，改变设计取舍再更新架构说明。命令和默认值引用唯一的操作指南，
-不要另写一份配置表；API 的完整签名和细节在公开头，教程保留典型任务与易错边界。
-一次性调查先留在任务工作目录；值得复用的根因提炼进排障或设计说明，原始日志与数据留在
-[evidence](../evidence/README.md)。同一事实只在所属指南维护一份。
+修改用法、公开合同或关键设计取舍时，只更新对应指南；当前进度只改[看板](inference-progress.md)。命令和默认值引用唯一操作入口，API签名与局部约束以公开头为准。现有测试／基准日志足以复现时直接引用，不为每片另建报告或归档；需要保留的历史材料按[evidence说明](../evidence/README.md)查证。
+
+## 细节与历史
+
+模块性能旧对照按需查[模块数据](performance/modules.md)，推理逐批实验查[decode历史](../evidence/history/decode-2026-10-31.md)，原始材料查[evidence](../evidence/README.md)。这些用来复核某个结论，不作为开始开发前的必读清单。

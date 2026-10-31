@@ -1,35 +1,38 @@
-# HYLE 用户文档
+# HYLE 用户手册
 
-HYLE 包含推理引擎与可独立使用的 C++23 基础模块。基础模块的源码、静态 SDK 和动态 SDK 使用相同公开 API。
-当前引擎以 `hyle` 命令行程序交付，尚无引擎应用 API、产品 C API 或跨语言 binding。
+先选整体入口，跑通最小程序；局部模块和后端细节按需要查。当前引擎以`hyle`命令行交付，
+基础库提供相同C++23 API的源码、静态SDK和动态SDK；尚无引擎应用API、产品C API或跨语言binding。
 
-## 第一次使用
+## 整体使用：先读这里
 
-运行模型先看[推理引擎指南](inference.md)，其中说明当前 Qwen 输入准备、构建与功能边界。
-只使用基础模块，从[使用指南](usage-guide.md#第一次构建并使用)开始，完成构建、安装和最小 C++ 程序。
-指南会继续说明源码嵌入，以及何时选 Compute 或 Graph。
-不需要先通读架构和实施记录。
+| 目的 | 入口 | 读完能做什么 |
+|---|---|---|
+| 运行模型 | [推理引擎](inference.md) | 构建、准备本地输入并运行普通／MTP生成，了解现有模型限制。 |
+| 在自己的C++程序中用基础库 | [使用指南](usage-guide.md) | 选产品、构建安装、写最小消费者，再决定是否需要Compute／Graph。 |
+| 制作或部署SDK | [交付与集成](distribution.md) | 选择源码／静态／动态形式，处理版本、运行库与后端资源。 |
+| 管理异步和并发调用 | [调用安全边界](usage-contract.md) | 明确借用、完成、fiber、分配器和ISA的责任。 |
 
-跑通后按本页的任务分类查模块：直接执行算子看 Compute，编译多节点计算看 Graph。
-需要部署 SDK 时查交付说明；涉及借用、异步和并发时查调用安全边界。
+完整可编译工程见[样例](../../samples/README.md)。使用入口不要求先通读架构或实验记录。
 
-## 接入与运行
+## 计算子系统：按工作方式选择
 
-- [推理引擎](inference.md)：当前模型、构建、输入准备、普通／MTP 运行与限制。
-- [使用指南](usage-guide.md)：首次构建、最小消费者和模块选择。
-- [交付与集成](distribution.md)：SDK 安装、版本、动态库、后端资源和部署边界。
-- [调用安全边界](usage-contract.md)：借用、异步完成、fiber、分配器和 ISA。
-- [可编译样例](../../samples/README.md)：完整 C++ 工程和运行说明。
+| 需求 | 指南 |
+|---|---|
+| 准备一个算子，变化输入后重复提交 | [Compute](compute.md) |
+| 编译多节点计算，规划存储并重复执行 | [Graph](graph.md) |
 
-## 推理计算
+这两页的起步示例是主路径，算子、编码和高级资源章节是按需参考。
 
-- [Compute](compute.md)：准备算子、绑定存储、提交与等待。
-- [Graph](graph.md)：多节点图、编译、独立执行槽与重复执行。
-- [Apple MLX/Metal](apple-compute.md)、[Vulkan](vulkan-compute.md)：后端条件、原生接口和限制。
-- [批次 attention](batch-attention.md)：ragged/paged 请求、KV 编码和页面更新。
-- [状态版本](state-versions.md)：只读快照、dirty clone 和成功发布。
+## 按需专题：有对应需求再读
 
-## 通用模块
+| 局部问题 | 专题 |
+|---|---|
+| Apple或Vulkan原生接口、设备条件及资源 | [Apple MLX/Metal](apple-compute.md)、[Vulkan](vulkan-compute.md) |
+| 多请求attention、KV编码、页更新与有效区 | [批次attention](batch-attention.md) |
+| 只读快照、dirty clone和成功发布状态 | [状态版本](state-versions.md) |
+| 模型编码及特殊数学 | [Compute模型格式入口](compute.md#cpu-与模型格式接入)；整模型范围查[模型覆盖](../implementation/model-operators.md)。 |
+
+## 局部模块参考
 
 | 领域 | 指南 |
 |---|---|
@@ -40,5 +43,5 @@ HYLE 包含推理引擎与可独立使用的 C++23 基础模块。基础模块�
 | 执行与通信 | [sched](sched.md)、[io](io.md)、[process](process.md) |
 | 观测 | [obs](obs.md) |
 
-支持范围以具体接口的系统、设备、数值和布局条件为准。模型片段或单个平台的结果不代表整模型、
-所有硬件或任意编码均可用。文档中的缩写和术语见[术语表](../glossary.md)。
+接口签名以公开头为准，支持范围取决于具体系统、设备、数值和布局条件。
+组件通过不能代替整模型或任意编码可用。缩写见[术语表](../glossary.md)。

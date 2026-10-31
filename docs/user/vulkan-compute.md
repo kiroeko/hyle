@@ -5,21 +5,9 @@ HYLE 在准备期绑定 ggml region、IREE 原生程序或 HYLE shader，Graph �
 复用录制命令，成熟 Provider 保留自己的图/程序、编码和内部资源管理。
 普通用户只选择后端，具体实现按实际 operation、dtype、shape 与设备能力在准备期绑定。
 
-可选[模型与阶段信息](compute.md#可选模型与阶段信息)可随
-`vulkan::prepare(context, workload, operation, inputs...)` 传入；span 形式则使用最后一个参数
-`prepare(context, operation, arguments, workload)`。Graph 使用
-`graph::vulkan::CompileOptions::workload`，原生 `Program::workload()` 保留绑定身份。
-它与既有原生 `Environment` 一起供冷准备匹配规则；无注解仍使用合法 baseline。
-模型名不放宽数值/资源检查，也不代表新增专用优化；变更后重新准备，submit 不查询这些字段。
+先完成[构建条件](#构建与运行条件)，再选[Direct](#普通-direct-compute)或[Graph](#graph-与原生片段)；
+并发、借用与关闭前查[资源寿命](#资源并发失败与成本)。模型阶段注解和编译诊断属于可选参考。
 
-当前驻留SDPA有限高效档为同F32/F16、BSHD、同D64/128/256，GQA/MQA头关系沿公共
-描述检查。直接驻留档要求depth连续、正row-major padding、有效外层byte pitch为16的
-倍数，绑定的byte origin满足原生storage descriptor对齐；不满足origin时在绑定阶段
-拒绝。自然D64/128/256容量cache的合格view直接读取，额外query/KV Copy数为0。
-其他pitch仍走明确canonical Copy，不能用其数学通过证明零拷贝。该档借原全F32 scalar flash shader，保持F32输入和
-概率的精度；F32 accumulator本身不足以防止原native half内部缩窄。必要query转换、
-float shared scratch与split-KV暂存仍是真成本；该档的causal边界由shader处理，不物化完整`Q×K` mask。没有capture或全dtype/shape吞吐
-宣称。其他既有SDPA档保其原承载/费用，不因此签arbitrary page-table或整G01完成。
 ## 构建与运行条件
 
 ```sh
@@ -243,6 +231,17 @@ TopK 使用同一普通入口：`vk::prepare(context, c::TopK{.count = 8}, score
 这是完整 bitonic 排序，成本为 O(rows × padded_width × log²(padded_width))；全排序索引、
 长行 scratch、取值与布局复制均计费，k=1 也不免除完整排序。dense View 仍可有非对齐字节
 起点；准备时按排序核的设备对齐要求固定必要复制，计入根起点与累计别名偏移。
+
+### 驻留SDPA的布局与精度
+
+当前驻留SDPA有限高效档为同F32/F16、BSHD、同D64/128/256，GQA/MQA头关系沿公共
+描述检查。直接驻留档要求depth连续、正row-major padding、有效外层byte pitch为16的
+倍数，绑定的byte origin满足原生storage descriptor对齐；不满足origin时在绑定阶段
+拒绝。自然D64/128/256容量cache的合格view直接读取，额外query/KV Copy数为0。
+其他pitch仍走明确canonical Copy，不能用其数学通过证明零拷贝。该档借原全F32 scalar flash shader，保持F32输入和
+概率的精度；F32 accumulator本身不足以防止原native half内部缩窄。必要query转换、
+float shared scratch与split-KV暂存仍是真成本；该档的causal边界由shader处理，不物化完整`Q×K` mask。没有capture或全dtype/shape吞吐
+宣称。其他既有SDPA档保其原承载/费用，不因此签arbitrary page-table或整G01完成。
 
 ### 显式递归状态
 
@@ -469,6 +468,15 @@ CPU＋Vulkan使用普通`graph::compile`：冷装配实际CPU/Vulkan ExecutionSo
 调用方持有的`sched::BlockingPool`按实际阻塞工作配置容量；两个同时等待的槽可配置2。
 池必须活过Invocation关闭、已接纳任务尾部与`scheduler.drain()`，随后才能shutdown。
 原生pending分页及其余尚未迁移的消费者仍使用既有专用入口，其资格不能由ready链成功推导。
+
+## 可选模型与阶段信息
+
+可选[模型与阶段信息](compute.md#可选模型与阶段信息)可随
+`vulkan::prepare(context, workload, operation, inputs...)` 传入；span 形式则使用最后一个参数
+`prepare(context, operation, arguments, workload)`。Graph 使用
+`graph::vulkan::CompileOptions::workload`，原生 `Program::workload()` 保留绑定身份。
+它与既有原生 `Environment` 一起供冷准备匹配规则；无注解仍使用合法 baseline。
+模型名不放宽数值/资源检查，也不代表新增专用优化；变更后重新准备，submit 不查询这些字段。
 
 ## 可选编译诊断
 

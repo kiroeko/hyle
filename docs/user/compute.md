@@ -13,15 +13,16 @@ Context、Queue、PreparedOperation 和 OperationInvocation；[Apple](apple-comp
 实现冷准备；没有合法实现时返回 `Unimplemented`，不会隐式降低精度或更换设备。
 构建选择见[初始化参数](../developer/setup/README.md#选择配置)。
 
-建议按任务阅读：
+首次接入只需下面的Direct例子及[提交／生命周期](#prepareinvocation-与-submit)。其余按任务查阅：
 
-- 首次接入：下面的 Direct 例子，再看 [tensor/storage](#普通block-与-opaque-storage) 与
-  [prepare/submit](#prepareinvocation-与-submit)。
-- 需要具体算子：查看[能力与公共描述](#当前能力)，再核对后端支持的 dtype、布局与资源。
-- 资源复用：看[租约](#外部资源租约与-direct-提交)、[批量搬运](#准备批量范围搬运)与
-  [文件管线](#有界文件与资源管线)。
-- KV/多请求：看[批次 attention](batch-attention.md)；快照和状态分支见[状态版本](state-versions.md)。
-- 诊断或扩展实现：最后阅读显式 Provider、自定义 kernel 和资源访问章节。
+| 层次 | 需要什么 | 跳到哪里 |
+|---|---|---|
+| 基本接口 | 存储、常用算子与shape | [storage](#普通block-与-opaque-storage)、[能力表](#当前能力)、[View／Copy](#viewcopyfill-与-cast)、[MatMul](#matmul-权重形状) |
+| 资源组合 | 复用外部资源、批量搬运或流式装权重 | [租约](#外部资源租约与-direct-提交)、[批量搬运](#准备批量范围搬运)、[文件管线](#有界文件与资源管线) |
+| 模型专题 | 编码权重、FP8／FP4／GGUF／专家 | [格式入口](#cpu-与模型格式接入)、[非GGUF原格式](#cpu-非-gguf-原格式与压缩专家)、[专家工作集](#有界专家权重工作集) |
+| 推理状态 | KV、attention或状态分支 | [批次attention](batch-attention.md)、[状态版本](state-versions.md) |
+| 后端与扩展 | CUDA、原生后端、实现约束或自定义kernel | [CUDA](#普通-cuda-入口)、[Apple](apple-compute.md)、[Vulkan](vulkan-compute.md)、[实现绑定](#准备时绑定实现)、[自定义执行](#自定义执行接入-direct-与-graph) |
+
 
 ## 第一次 Direct 计算
 
@@ -80,15 +81,9 @@ CPU 数学依赖自动装配，按实际请求选择合法实现；不要求传�
 F16／BF16／F32 权重 `[N,K]`，以 F32 乘积、累加与输出产生 `[T,N]`。
 F32 激活保持来源精度，权重在读取时扩宽，不展开整份 F32 权重；具体类型组合与形状由各 Provider 冷准备检查。
 它也接受同批数的 `[B,T,K]`、`[B,N,K]`，输出 `[B,T,N]`，不隐式广播批维。
-CPU／CUDA 已检查批量 F32 激活路径，[Mac CPU与Metal下沉检查](../evidence/correctness/mtp-batched-f32-bfloat-apple-2026-10-24.json)也已通过；
-这些既有记录覆盖 BF16 权重而不展开整份 F32 副本。CUDA多批权重目前要求`N<=512`、偶数`K`。
-[Vulkan批量检查](../evidence/correctness/mtp-batched-f32-bfloat-vulkan-2026-10-24.json)已核F32低位、批权重偏移、输入保持及冷描述符；
-ggml设备路径暂不承载新批量BF16激活域，Vulkan会在prepare时明确拒绝该域，
-其它Provider仍以各自冷准备结果为准。
-
-扩展后的 F16／BF16／F32 组合分别有[CPU／Metal／Vulkan](../evidence/correctness/mtp-dense-linear-native-domains-2026-10-24.json)和
-[CUDA／cuBLAS](../evidence/correctness/mtp-dense-linear-cuda-2026-10-24.json)检查。
-cuBLAS 接受相同输入类型；混合类型由其它实际支持的 Provider 承接。
+CUDA多批权重目前要求`N<=512`、偶数`K`。Vulkan的ggml设备路径暂不承载批量BF16激活域，
+会在prepare时明确拒绝；其它Provider以各自冷准备结果为准。
+cuBLAS接受相同输入类型，混合类型由其它实际支持的Provider承接。
 普通 `MatMul` 继续遵守其原有类型规则。
 
 - 普通张量算子见下方能力表；GGUF 原编码使用[原生压缩权重](#ggufggml-原生压缩权重)，
@@ -176,11 +171,10 @@ plain dense bank的源保持同一scalar类型；encoded bank的源是显式dens
 `batch.report()`／`slots.report(slot)`区分logical、完整成功staging、原生已接纳与成功退休字节；
 这是上传范围记账，不是总线流量测量。`copied_bytes_unknown`为真时，零completed不代表未搬运。
 batch、绑定它的Invocation、旧GraphOutput或导出的lease仍存活时不能覆盖相应槽；Context、资源与allocator遵守原借用寿命。
-[三种GPU的真实工作集验证](../evidence/correctness/expert-working-set-reference-2026-10-21.json)
-覆盖512专家ID域中仅装载4个专家、NVFP4真实N2048/K8192、CT奇数行打包、双槽及失败恢复；
-CPU另验共同装配、冷打包和原子绑定。其它codec的精确角色旅程、制品payload、整模型和吞吐仍需分别核实。
-[原FP4编码分片旅程](../evidence/correctness/encoded-bank-slices-reference-2026-10-21.json)另覆盖三GPU实际N2048/K4096、7／256专家、同代I32映射、1字节拆分、双槽旧结果和失败恢复；host检查还覆盖FP8和block物理布局。[完整GA routed／shared FFN消费者](../evidence/correctness/ga-full-ffn-reference-2026-10-21.json)已四端沿同一WeightBatch执行普通／hash路由、down前route权重与旧结果寿命，共24次成功提交；范围为有限合成权重，不代表整制品执行。
-[GLM Flash混合MLX消费者](../evidence/correctness/glm-flash-mixed-mlx-reference-2026-10-21.json)覆盖g64、原F16 metadata与4／5／6bit角色、每代92份分立片段、双槽三代、同代映射及失败恢复；四端共16次成功提交。另修CUDA whole／sliced bank对齐，保原容量与字节合同；未测整制品或性能。
+这些接口约束上传范围与资源寿命，不保证整个模型常驻或吞吐。定向检查可查
+[工作集与双槽](../evidence/correctness/expert-working-set-reference-2026-10-21.json)、
+[编码分片](../evidence/correctness/encoded-bank-slices-reference-2026-10-21.json)和
+[混合编码角色](../evidence/correctness/glm-flash-mixed-mlx-reference-2026-10-21.json)。
 
 ## Queue、byte transfer 与 Completion
 

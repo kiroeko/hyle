@@ -9,7 +9,8 @@
 - 使用本地权重清单和 token IDs，输出包含生成 IDs 与计时的 JSON；分词需要另行准备 Python 环境。
 - 尚无通用模型目录加载、C++ tokenizer、引擎应用／HTTP 服务 API 或图片输入；其它模型家族仍是组件级实现与检查。
 
-后续范围见[推理工程计划](../implementation/inference-roadmap.md)。
+首次运行按“构建→准备本地输入并运行”两节完成；需要采样、MTP或多会话时再查[常用选项](#常用选项)。
+开发范围与任务见[看板](../developer/inference-progress.md)。
 
 ## 构建
 
@@ -56,38 +57,27 @@ python engine/models/qwen35/prepare.py --model LOCAL_MODEL --output .scratch/qwe
 输出目录必须是新目录，只保存偏移、token IDs 与输入记录，共用原权重文件。
 需要 MTP 时，在准备命令加 `--mtp`，运行时用 `--mtp on`。准备器会加入额外 15 份原 MTP 参数，
 仅准备不执行模型；同一份完整清单可切换普通／MTP。
-普通模式校验完整清单后只加载文本权重；官方 BF16 为 320 个文本张量加 15 个 MTP 张量，量化制品的物理张量数随格式而异。
-JSON 的 `text_tensors`／`mtp_tensors` 统计实际加载的物理角色，`weight_count_scope` 标明口径。只需普通模式时可省略准备器的 `--mtp`。
+只需普通模式时可省略准备器的`--mtp`；物理角色计数与输入身份见[模型输入说明](../../engine/models/qwen35/README.md#输入与数值政策)。
 
 ## 常用选项
 
 `--steps` 是最多输出数，包含 prefill 首 token，遇 EOS 可提前结束。
-底层普通与MTP请求还可独立设置额外停止 token、忽略模型 EOS，并在缓存命中与恢复时保留请求政策；
-该配置属于C++请求接口，当前命令行继续使用默认模型 EOS。
+命令行使用默认模型EOS；逐请求停止政策等C++扩展见[模型请求说明](../../engine/models/qwen35/README.md#自然生成批次与状态)。
 Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-dir>` 是脚本报告的目录。
 输入不足、模型身份不符、上下文容量不足或不支持的参数组合会明确失败。
 
 ### 输入分块与冷准备
 
-普通和MTP自然生成可加 `--prefill-chunk-tokens 256`，限制每次 prefill 实际消费的 token 行数，
-让请求调度在块间继续服务其它请求；默认不限制块长。中间块只推进真实 KV／递归状态，
-最后一块才生成首 token、推进采样游标。后续轮的 pending 输入仍只消费一次，
-`--capacity` 继续限制完整上下文，分块不会扩大它。该选项不支持固定 `prompt/decode` 重放，
-不支持的组合会直接报错；它不代表设备执行预热或所有路线的 varlen 合批。
-有限量子直接消费真实尾块，例如量子 8 的 23 行分为 `8+8+7`，P154／量子64为 `64+64+26`。
-普通或MTP请求在所选路线支持时复用容量图；同阶段、完成方式、采样配置和可用容量的不同长度请求可直接合批，
-短尾的私有计算载体可大于实际输入。缓存、递归状态、位置和采样只提交各成员的真实输入行。
-输出的 `batches` 分别报告 `input_rows`、`active_rows` 与 `physical_rows`；其它路线按真实长度接纳 exact 图，设备错误仍直接报告。
-其中 `input_rows` 是每成员实际提交的目标行数，`active_rows` 是其和，`physical_rows` 是计算载体容量；
-Verify提前结束提案时不按规划上界计数，验证后只接受部分前缀也不抹掉已执行的行。
-合法分块及算法选择会影响计算形状和舍入，不能保证与整段生成逐位相同，也不保证分块更快。
+`--prefill-chunk-tokens 256`限制一次prefill实际消费的token行数，让调度可在块间服务其它请求，
+默认不限制块长。中间块只更新状态，最后一块才生成首token；末尾pending只消费一次。
+`--capacity`仍限制完整上下文，分块不扩大它，也不支持固定`prompt/decode`重放。
+所选路线可用容量载体合批，但只提交各成员真实输入行。形状与舍入变化可能改变生成结果，分块不保证更快。
+实际行数、载体容量及状态发布语义查[模型运行说明](../../engine/models/qwen35/README.md#自然生成批次与状态)。
 
-`--warmup-shapes planned` 在 ready 前准备已有计划中会使用的执行载体，默认 `lazy` 保持按需准备。
-该选项保留实际批宽、行数、阶段和采样配置，不枚举所有上下文长度，不接纳会话或推进 RNG。
-它可增加启动时间与持久载体内存；`--cache-bytes` 不是这些资源的总显存上限。
-启用前缀缓存和有限块长时，容量及中间／末块完成方式进入同一冷计划；
-无界输入或其它未计划形状仍需有界冷接纳。额外形状容量由初始冷键数冻结，独立于会话缓存数量。
-这不是设备执行／CUDA capture 预热，首次真实绑定仍可能准备 replay。
+`--warmup-shapes planned`在ready前准备已有计划的执行载体；默认`lazy`按需准备。
+它保留真实阶段、形状与采样配置，不枚举全部长度、不接纳会话、不推进RNG；未计划形状仍需有界冷接纳。
+它可能增加启动时间与持久内存，`--cache-bytes`不是总显存上限。
+这也不是设备执行或CUDA capture预热，首次真实绑定仍可能准备replay。
 
 ### 连续接力
 
@@ -104,27 +94,13 @@ CUDA greedy 的K1 MTP也已接入单活动请求的自然接力；其它MTP宽�
 
 默认 greedy；也可用 `--sampling random --temperature 0.8 --top-k 40 --top-p 0.95 --seed 42`。
 普通与 MTP 共用温度→top-k→top-p 分布，`--top-k 0` 关闭该过滤。
-底层请求可以从同一Model的有限冷配置中选择greedy或不同温度／过滤政策；不同政策的兼容组共享权重和缓存，
-完整前缀命中按新请求自己的政策选择pending，同请求恢复保留历史pending和随机游标。
-普通与MTP的C++请求编排现支持逐请求只读bias／mask，以及按实际已消费历史推进的重复、出现和频率罚分；
-MTP同时对草稿q、目标p和拒绝残差使用同一数学政策。
-动态条件提供者接收当前turn已提交输出及未来草稿前缀；pending已在前者，不在后者重复。
-每个实际q条件行只取得一次，目标验证复用原行和q租约；StateOnly中间块不调用提供者。
-CPU／CUDA小型制品的多轮、缓存命中及失败重试见[自然条件输入](../evidence/correctness/inference-natural-logits-2026-10-29.json)，
-终止前缀、动态／静态合批、取消和同键主机恢复见[条件控制](../evidence/correctness/inference-natural-logits-control-2026-10-29.json)。
-这些逐请求扩展位于 `engine/` 的C++请求编排，目前没有对应CLI参数或已安装的server／引擎SDK入口；
-不据有限检查外推其它平台、任意语法提供者或完整任务质量。现有Compute／Graph SDK仍提供模型无关的计算与资源接口。
-每个会话有独立随机流，失败或被撤回成员不推进其已发布随机数位置；同批幸存成员沿原成功提交推进。
-普通／MTP已提交多成员批次可逐成员撤回发布；原设备工作仍完整退休，`stop`不授权提前释放资源。
-前缀命中保留当前会话的随机流。
-固定随机地址的恢复、重试及真实取消已检查，见[功能记录](../evidence/correctness/qwen-mtp-random-integration-2026-10-24.json)。
-相同 seed 不保证不同后端或普通／MTP 路径逐 token 相同。
+每个会话有独立随机流；失败或撤回的成员不推进已发布随机位置。相同seed不保证不同后端或普通／MTP逐token相同。
+逐请求bias／mask、历史罚分、动态条件及停止政策属于`engine/`内的C++请求扩展，
+没有对应CLI参数或已安装的引擎SDK／server入口；其合同查[输入与请求政策](../../engine/models/qwen35/README.md#输入与数值政策)。
 
 `--mtp-max-drafts` 控制每轮最多提出的草稿数，默认 1。`--mtp-min-probability` 设置
 草稿分布最大概率的最低门槛，范围为 0 到 1，默认 0；达到门槛才继续草稿，实际长度可以更短。
-这不是额外置信度模型。CPU／CUDA 已检查多草稿、提前截断和普通回退，见
-[多草稿与检查点记录](../evidence/correctness/qwen35-mtp-multidraft-checkpoint-controls-2026-10-24.json)。
-Apple／Vulkan 另已运行 K4 随机和双用户 K2 随机完整短旅程；具体制品和新增配置的完成范围以看板为准。
+这不是额外置信度模型。制品、后端与草稿数的实际运行范围见[模型覆盖](../implementation/model-operators.md)。
 
 ### 可选草稿词表
 
@@ -151,8 +127,7 @@ JSON的 `original_*_weight_bytes` 仍只统计原角色，额外payload见 `draf
 需要明确的 CPU＋GPU 分置时，用 `scripts/init.py` 的 `--backends cpu,cuda`、`cpu,metal` 或
 `cpu,vulkan` 分别准备对应构建，运行时选择 GPU 主后端并添加 `--cpu-ffn-layers 2`，将前两层 target FFN 及其
 原始权重放到 CPU；注意力、缓存和 MTP 留在所选 GPU。默认值 0 保持 GPU 放置。
-固定 BF16 模型的 CUDA 普通、K1／K4、随机、多会话及恢复见[CUDA 分置记录](../evidence/correctness/qwen35-cpu-ffn-cuda-placement-2026-10-24.json)；
-Apple／Vulkan 的完整随机 K1 短旅程见[原生混合记录](../evidence/correctness/mtp-qwen35-cpu-native-placement-2026-10-24.json)。这些功能检查尚未刷新正式性能对照。
+混合执行的适用制品和后端见[模型覆盖](../implementation/model-operators.md)；功能可用不代表比纯GPU更快。
 
 命令行保持原 CPU 线程默认值，不增加线程参数。程序集成可复用公开的
 `compute::cpu::DefaultContextOptions`；allocator／executor 支撑对象须活到全部派生制品和原生工作退休，
@@ -170,28 +145,28 @@ Apple／Vulkan 的完整随机 K1 短旅程见[原生混合记录](../evidence/c
 
 ## 制品与验证范围
 
-当前完整文本模型为 Qwen3.5-2B，包含普通生成、有界多草稿 MTP、多轮、多会话、
-共享前缀和有界缓存恢复。CUDA、Apple 和 Vulkan 已有列明范围的真实模型执行；
-CPU 入口的普通／MTP 短旅程已完整通过，缓存元数据计费已修复，见[检查记录](../evidence/correctness/qwen-mtp-cpu-layout-budget-2026-10-24.json)；已检查范围及各项边界见[推理工程范围](../implementation/inference-roadmap.md)。
-官方 BF16 及固定 GPTQ、NVFP4、Unsloth MTP GGUF Q4 制品已有完整模型短旅程；
-量化输入通过显式原角色清单借入文件范围，具体边界见[实现范围](../implementation/inference-roadmap.md)。这不代表可以直接加载任意量化模型目录。
-NF4 已接原量化状态校验、F16 激活／缓存及六输入压缩权重驻留，[CPU／CUDA 有限状态链](../evidence/correctness/nf4-source-resident-ordinary-consumer-2026-10-25.json)通过；完整 27B 模型未运行。加载器不预先展开整库，实际计划会报告压缩融合、分解及 workspace；CPU 多行仍可能选择分解，不能仅按 4bit 文件大小估算运行空间。
-CT asymmetric INT4 已接原零点角色和同一加载／投影流程，[原 CPU 组件](../evidence/correctness/ct-asymmetric-qwen-original-projections-2026-10-25.json)的七组投影通过；完整 27B 模型及该原权重路径的其它后端尚未验证。
-选定 MLX affine4／8 group64 制品已接原压缩投影、embedding 与共享 head，保留源 norm／conv 语义；[原 CPU／CUDA 组件及小型 CPU 状态链](../evidence/correctness/mlx-source-resident-ordinary-consumer-2026-10-25.json)通过。完整 2B／27B、质量及吞吐未测，不代表任意 MLX 目录可直接加载。
+| 范围 | 当前边界 |
+|---|---|
+| Qwen3.5-2B完整入口 | 官方BF16及固定GPTQ、NVFP4、GGUF Q4等制品有列明范围的完整短旅程；不代表任意量化目录可直接加载。 |
+| 较大Qwen制品 | Qwen3.8-27B有特定CPU／混合配置的完整短旅程；不能推广到全部制品或纯GPU常驻。 |
+| NF4、CT asymmetric INT4、MLX affine4／8 | 有压缩权重及有限状态链／原组件接入；完整对应大模型、质量和吞吐未交付。 |
+| GLM、DeepSeek、Kimi | 组件级实现与检查，没有完整引擎入口。 |
+
+模型、格式、后端与原始检查统一查[模型与算子覆盖](../implementation/model-operators.md)。
+加载器不会预先展开整库，但实际计划可能分解计算并使用workspace；4bit文件大小不是运行内存上限。
 
 原 CT channel/token FP8 与 local NVFP4 混合清单使用
 `--fp8-reader compressed-tensors-0.17.2a20260716` 固定参考算法；存在原 KV 校准参数时，
 还须显式选择缓存政策：`--kv-cache-dtype bf16` 保留原 BF16 缓存并省略校准角色加载；
 也可用 `--kv-cache-dtype e4m3fn`，读取每层原 BF16 K/V scale，采用固定校准的 target E4 缓存。
 它可与 `--mtp` 合用，draft KV 保留原 BF16／plain 存储，不推造 draft 校准参数；
-CPU／CUDA 的有限完整状态、真实合批、取消和恢复见[组合检查](../evidence/correctness/inference-mtp-e4-2026-10-28.json)。
 缺失、非正或非有限 scale 会在冷准备时拒绝，不合成默认 scale。
 两者都将校准参数的名字、形状及 hash 保留在输入身份和记录中，不把它们装成模型权重张量。
 E4 的缓存行载荷为 BF16 的一半，实际总 backing 仍包括页、元数据和其它状态。
 缓存政策不改变 activation、recurrent 或投影计算精度。channel/token 保留 BF16 QDQ 与逐权重舍入，
 local NVFP4 保留原独立全局乘数和 F32 输入预舍入；它们不套用 block128 或 ModelOpt 的算法。
-目前已检查完整原头部、小原权重投影和小清单真实加载，见[接线记录](../evidence/correctness/mtp-qwen-ct-mixed-prepared-binding-2026-10-24.json)；
-这不代表该 27B 制品已完成整模型生成。借入这类分离 target／MTP 文件时使用完整的 `--role-files` 原角色记录。
+这类清单的头部／投影与小规模加载不表示对应27B制品已完成整模型生成。
+借入分离target／MTP文件时，使用完整的`--role-files`原角色记录。
 
 ## 查看性能
 

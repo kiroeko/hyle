@@ -1,14 +1,24 @@
 # HYLE samples
 
-当前用户面只支持 C++23，交付形式有三种：完整源码、headers + static libraries、headers +
-shared libraries。这里的产品示例只演示这三种 C++ 接入；shared library 不等于 Native FFI，
-当前 Native FFI 状态是 `N/A`。
-早期 C schema/package fixture 与 managed probe 已移除；本目录没有 native-C 或外语产品示例。
+这里提供独立的C++23消费者工程，使用与产品相同的公开API。首次使用先跑
+[01_mem_container](01_mem_container/)；SDK集成看[04_prebuilt_lib](04_prebuilt_lib/)，
+计算图及后端专题按下表选择。当前没有产品C API或跨语言binding。
 
-每个 C++ 示例都是独立 CMake project。源码 sample 用 `add_subdirectory`，安装包 sample 用
-`find_package`；消费者均链接同名 `hyle::<product>` façade target。
+## 构建单个示例
 
-## 接入模式（每个 sample 的 CMakeLists 都这么做）
+```bash
+cd samples/01_mem_container
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release
+./build/mem_container_sample      # Windows: build\Release\mem_container_sample.exe
+```
+
+工具链同 HYLE：C++23（GCC 14+ / Clang 18+ / MSVC 19.43+）、CMake 3.25+。
+
+## 接入模式
+
+源码消费者使用`add_subdirectory()`；安装消费者使用`find_package(Hyle ...)`，见各样例README。
+源码接入的最小形式：
 
 ```cmake
 # 测试和基准默认关闭；只选择需要的产品。
@@ -52,20 +62,9 @@ Compute/Graph 路线样例仅在源码消费者未指定 `HYLE_COMPUTE_ROUTES` �
 | [`package/graph/file_streaming/`](package/graph/file_streaming/) | compute + graph + IO | F3 有界文件读入、逐组数学、资源回写与重读；官方工具核验本地 Qwen BF16/F32 范围，范围和限制见样例说明 |
 
 > 01-03 用源码 `add_subdirectory` 集成；04 及之后的编号示例与 `package/*/cpp` 用安装包集成。
-> `package/*/cpp` 是构建回归 fixture，不是额外的产品 API。
-
-## 构建单个示例
-
-```bash
-cd samples/01_mem_container
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build
-./build/mem_container_sample      # Windows: build\Release\mem_container_sample.exe
-```
-
-工具链同 HYLE：C++23（GCC 14+ / Clang 18+ / MSVC 19.43+）、CMake 3.25+。
+> `package/*/cpp` 同时用于安装消费回归，使用相同公开API。
 
 ## 集成前必读
 
 - [使用指南](../docs/user/usage-guide.md)：构建选项 + 各模块用法。
-- [调用安全边界](../docs/user/usage-contract.md)：热路径调用安全红线（违反 = UB）。
+- [调用安全边界](../docs/user/usage-contract.md)：借用、异步完成、fiber和资源寿命。
