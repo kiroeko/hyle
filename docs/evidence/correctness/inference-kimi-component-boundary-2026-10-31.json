@@ -10,7 +10,7 @@
       "Complete Kimi model or Kimi MTP",
       "All model/backend configurations or decode performance"
     ],
-    "architecture": "Model-private compiled GraphBuilder math and five-entry state; original ProgramIo/Carrier/Episode/LeasePool/StateVersion and Graph execution owners. No GTest, Qwen main or semantic Fragment in model implementation."
+    "architecture": "Model-private compiled GraphBuilder math and six-entry complete state; original ProgramIo/Carrier/Episode/LeasePool/StateVersion and Graph execution owners. No GTest, Qwen main or semantic Fragment in model implementation."
   },
   "source": {
     "base_head": "a416d96615ea5461d7d5afa7f25fa94545042866",
@@ -174,8 +174,8 @@
   "performance_claim": false,
   "archive": {
     "path": "docs/evidence/correctness/inference-kimi-component-boundary-2026-10-31.zip",
-    "bytes": 491956,
-    "sha256": "7c8a191089b77cdae1878cd91aff80e938206a82567cec7774ff60594eb44060",
+    "bytes": 489458,
+    "sha256": "5d830b28c3be43b5a06d2af61697aae57e2b341c1cf8786a387cd8b558dc22ca",
     "members": 254,
     "payload_members": 253,
     "all_members_readback_bytes_and_sha_verified": true,
