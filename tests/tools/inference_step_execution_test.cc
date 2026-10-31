@@ -20,6 +20,7 @@ enum class Event {
   kPrepareSuccessor, kSubmitSuccessor, kFinishCurrent, kFinishSuccessor,
   kFinishRefusal, kKeepSuccessor, kDiscardSuccessor, kBindSuccessor,
   kCarryCurrent, kCarrySuccessor, kCarryDeferred, kCarryUnavailable, kFinishReuse,
+  kObserveCurrent, kDeferCurrent,
   kRetireTyped, kRetireUnknown, kRecoverRetired, kRecoverPending,
 };
 using E = Event;
@@ -36,7 +37,7 @@ struct Log final {
         "shared step driver changed the original control order");
   }
 };
-enum class Fault { kNone, kTyped, kUnknown };
+enum class Fault { kNone, kTyped, kNative, kUnknown };
 struct ModelSignal final { const void *origin; int payload; };
 
 struct CommonAdapter {
@@ -57,6 +58,9 @@ struct CommonAdapter {
     if (event != fault_at) return;
     if (fault == Fault::kTyped)
       throw i::EvaluationFailure(hyle::Status::OutOfRange("original host selection refused"), 1);
+    if (fault == Fault::kNative)
+      throw i::EvaluationFailure(hyle::Status::FromNative(hyle::StatusCode::Unavailable,
+          {hyle::NativeErrorDomain::Unknown, 209}, "scripted native observation status"), 1);
     if (fault == Fault::kUnknown) throw ModelSignal{this, 73};
   }
   void prepare(i::StepPosition position) {
@@ -99,10 +103,10 @@ struct CommonAdapter {
 };
 
 // Deliberately has no successor, carry, refusal, bind or reuse methods.
-struct SynchronousAdapter final : CommonAdapter {
+struct SynchronousAdapter : CommonAdapter {
   static constexpr bool kSupportsSuccessor = false;
 };
-struct ContinuousAdapter final : CommonAdapter {
+struct ContinuousAdapter : CommonAdapter {
   static constexpr bool kSupportsSuccessor = true;
   i::StepSuccessor successor = i::StepSuccessor::kPrepared;
   bool keep = true, deferred = false;
@@ -124,6 +128,27 @@ struct ContinuousAdapter final : CommonAdapter {
     }
   }
   void finish_reuse() { hit(E::kFinishReuse); }
+};
+
+// This adapter supplies the optional poll protocol. The original synchronous
+// adapters above deliberately do not need either method or a retained cursor.
+struct PendingAdapter final : ContinuousAdapter {
+  bool ready = false;
+  std::size_t deferrals = 0;
+  i::StepSuccessor retained = i::StepSuccessor::kNone;
+  bool current_ready() { hit(E::kObserveCurrent); return ready; }
+  void defer_current(i::StepSuccessor value) {
+    hit(E::kDeferCurrent); retained = value; ++deferrals;
+  }
+};
+struct PendingSynchronousAdapter final : SynchronousAdapter {
+  bool ready = false;
+  std::size_t deferrals = 0;
+  bool current_ready() { hit(E::kObserveCurrent); return ready; }
+  void defer_current(i::StepSuccessor successor) {
+    require(successor == i::StepSuccessor::kNone, "synchronous pending adapter received successor authority");
+    hit(E::kDeferCurrent); ++deferrals;
+  }
 };
 
 void synchronous_adapters_and_resume_need_no_successor_protocol() {
@@ -253,6 +278,111 @@ void unknown_failure_is_rethrown_after_original_retirement_and_recovery() {
       E::kBindSuccessor, E::kFinishSuccessor, E::kCarrySuccessor, E::kFinishReuse,
       E::kRetireUnknown, E::kRecoverRetired});
 }
+
+void pending_current_resumes_without_repreparing_or_resubmitting() {
+  PendingSynchronousAdapter single;
+  i::StepDriveCursor single_cursor;
+  for (const bool resume : {false, true})
+    require(i::drive_steps(single, {.resume = resume, .cursor = &single_cursor}) == i::StepDriveResult::kPending &&
+        single_cursor.awaiting_current && single.deferrals == 1 && !single.committed_records &&
+        single.uncommitted_records == 1,
+        "synchronous pending adapter lost/repeated its original submitted current");
+  single.ready = true;
+  require(i::drive_steps(single, {.resume = true, .cursor = &single_cursor}) == i::StepDriveResult::kCompleted &&
+      !single_cursor.awaiting_current && single.committed_records == 1 && !single.uncommitted_records,
+      "synchronous pending current failed to finish exactly once after readiness");
+  single.log.expect({E::kPrepareCurrent, E::kSubmitCurrent, E::kCheckCancel, E::kObserveCurrent, E::kDeferCurrent,
+      E::kCheckCancel, E::kObserveCurrent, E::kCheckCancel, E::kObserveCurrent, E::kFinishCurrent});
+  for (const auto successor : {i::StepSuccessor::kPrepared, i::StepSuccessor::kNone,
+      i::StepSuccessor::kRefused, i::StepSuccessor::kUnavailable}) {
+    PendingAdapter adapter; adapter.successor = successor;
+    i::StepDriveCursor cursor;
+    require(i::drive_steps(adapter, {.cursor = &cursor}) == i::StepDriveResult::kPending &&
+        cursor.awaiting_current && adapter.deferrals == 1 && adapter.retained == successor &&
+        !adapter.committed_records && adapter.uncommitted_records ==
+            (successor == i::StepSuccessor::kPrepared ? 2u : 1u) && adapter.held_call_metadata,
+        "pending current lost its actual successor, record or original call borrow");
+    const auto first_size = adapter.log.size;
+    require(i::drive_steps(adapter, {.resume = true, .cursor = &cursor}) == i::StepDriveResult::kPending &&
+        cursor.awaiting_current && adapter.deferrals == 1 && !adapter.committed_records &&
+        adapter.log.size == first_size + 3 && adapter.log.values[first_size] == E::kCheckCancel &&
+        adapter.log.values[first_size + 1] == E::kCheckCancel &&
+        adapter.log.values[first_size + 2] == E::kObserveCurrent,
+        "repeated pending current prepared/submitted again, changed records or repeated its handoff");
+    adapter.ready = true;
+    const auto result = i::drive_steps(adapter, {.resume = true, .cursor = &cursor});
+    require(result == i::StepDriveResult::kCompleted && !cursor.awaiting_current &&
+        adapter.committed_records == (successor == i::StepSuccessor::kPrepared ? 2u : 1u) &&
+        !adapter.uncommitted_records && adapter.deferrals == 1,
+        "ready original current did not publish its original records exactly once");
+    const auto occurrences = [&](Event event) {
+      return std::count(std::span(adapter.log.values).first(adapter.log.size).begin(),
+          std::span(adapter.log.values).first(adapter.log.size).end(), event);
+    };
+    require(occurrences(E::kPrepareCurrent) == 1 && occurrences(E::kSubmitCurrent) == 1 &&
+        occurrences(E::kPrepareSuccessor) == 1 &&
+        occurrences(E::kSubmitSuccessor) == (successor == i::StepSuccessor::kPrepared ? 1 : 0) &&
+        occurrences(E::kFinishCurrent) == 1 &&
+        occurrences(E::kFinishRefusal) == (successor == i::StepSuccessor::kRefused ? 1 : 0) &&
+        occurrences(E::kCarryUnavailable) == (successor == i::StepSuccessor::kUnavailable ? 1 : 0),
+        "pending resume changed prepared/submitted ownership or replayed a refusal/unavailable branch");
+  }
+  PendingAdapter deferred;
+  i::StepDriveCursor cursor;
+  require(i::drive_steps(deferred, {.defer_successor = true, .cursor = &cursor}) == i::StepDriveResult::kPending,
+      "pending A with accepted B did not retain both original steps");
+  deferred.ready = true;
+  require(i::drive_steps(deferred, {.resume = true, .defer_successor = true, .cursor = &cursor}) ==
+          i::StepDriveResult::kDeferred && !cursor.awaiting_current && deferred.deferred &&
+      deferred.committed_records == 1 && deferred.uncommitted_records == 1,
+      "ready A did not transfer its already submitted B through the existing deferred boundary");
+}
+
+void pending_cancel_and_poll_failures_keep_original_retirement_rules() {
+  for (const auto successor : {i::StepSuccessor::kPrepared, i::StepSuccessor::kNone}) {
+    PendingAdapter cancelled; cancelled.successor = successor;
+    i::StepDriveCursor cursor;
+    require(i::drive_steps(cancelled, {.cursor = &cursor}) == i::StepDriveResult::kPending,
+        "cancel fixture never held its original pending current");
+    cancelled.cancel_on_check = cancelled.cancellation_checks + 1;
+    require(i::drive_steps(cancelled, {.resume = true, .cursor = &cursor}) == i::StepDriveResult::kCompleted &&
+        !cursor.awaiting_current && !cancelled.committed_records &&
+        cancelled.cancelled_with_successor == (successor == i::StepSuccessor::kPrepared),
+        "pending cancellation published A or lost the accepted B cancellation boundary");
+  }
+  for (const bool retired : {false, true}) for (const auto fault : {Fault::kTyped, Fault::kNative}) {
+    PendingAdapter typed;
+    i::StepDriveCursor cursor;
+    require(i::drive_steps(typed, {.cursor = &cursor}) == i::StepDriveResult::kPending,
+        "poll fault fixture never held accepted original work");
+    typed.fault = fault; typed.fault_at = E::kObserveCurrent;
+    typed.retirement_report = {retired, hyle::Status::Unavailable("original poll retirement observation")};
+    try { (void)i::drive_steps(typed, {.resume = true, .cursor = &cursor});
+      throw std::runtime_error("pending original poll failure disappeared"); }
+    catch (const i::EvaluationFailure &failure) {
+      require(&failure == typed.failure_seen &&
+          (fault == Fault::kNative ? failure.status().IsUnavailable() && failure.status().has_native_error()
+                                  : failure.status().IsOutOfRange() && !failure.status().has_native_error()) &&
+          failure.participant() == 1 && failure.retirement_observed() && failure.retirement().retired == retired &&
+          failure.retirement().status.IsUnavailable() && !typed.committed_records &&
+          typed.uncommitted_records == (retired ? 0u : 2u) && typed.held_call_metadata == !retired,
+          "pending poll failure changed identity, published state or dropped unretired original records");
+    }
+  }
+  PendingAdapter unknown;
+  i::StepDriveCursor cursor;
+  require(i::drive_steps(unknown, {.cursor = &cursor}) == i::StepDriveResult::kPending,
+      "unknown poll fixture did not retain its accepted work");
+  unknown.fault = Fault::kUnknown; unknown.fault_at = E::kObserveCurrent;
+  try { (void)i::drive_steps(unknown, {.resume = true, .cursor = &cursor});
+    throw std::runtime_error("unknown original poll exception disappeared"); }
+  catch (const ModelSignal &signal) {
+    require(signal.origin == static_cast<CommonAdapter *>(&unknown) && signal.payload == 73 &&
+        unknown.signal_seen == &signal && !unknown.failure_seen && !unknown.committed_records &&
+        !unknown.uncommitted_records && !unknown.held_call_metadata,
+        "pending unknown poll exception was replaced or skipped original retirement/recovery");
+  }
+}
 } // namespace
 
 int main() {
@@ -263,7 +393,9 @@ int main() {
     cancellation_discard_and_defer_preserve_original_stage_boundaries();
     typed_failure_keeps_status_identity_and_unretired_records();
     unknown_failure_is_rethrown_after_original_retirement_and_recovery();
-    std::puts("{\"status\":\"PASS\",\"groups\":6,\"device_execution\":false}");
+    pending_current_resumes_without_repreparing_or_resubmitting();
+    pending_cancel_and_poll_failures_keep_original_retirement_rules();
+    std::puts("{\"status\":\"PASS\",\"groups\":8,\"device_execution\":false}");
     return 0;
   } catch (const std::exception &error) {
     std::fprintf(stderr, "inference step execution: %s\n", error.what());

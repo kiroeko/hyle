@@ -1,5 +1,7 @@
 #pragma once
 
+#include <thread>
+
 // Included after the real Model and qwen_generation_state_case oracle. This
 // drives the existing RequestLoop/advance_generation_wave; it owns no executor.
 namespace qwen_continuous_generation_case {
@@ -223,11 +225,13 @@ inline Result run_arm(q::Model &model, const std::array<std::vector<std::int32_t
   const auto execute_wave = [&](i::RequestWave wave, std::span<std::size_t> reserved) {
     current_wave = wave;
     const bool resumed = !continuation.pending_calls.empty();
+    const bool observing_current = continuation.drive_cursor.awaiting_current;
     const bool draining = wave.drain_requested || continuation.cohort.drain_requested() ||
         std::ranges::any_of(wave.credits, [](const auto &grant) { return grant.cancelled; });
     const auto answer = q::advance_generation_wave(model, wave, reserved, false, continuation, execute_ready, on_submit, on_batch);
     for (std::size_t at = 0; at < wave.keys.size(); ++at) returned_reserved[wave.keys[at].slot] = reserved[at];
-    if (resumed && !draining && !answer.failure &&
+    if (resumed && !observing_current && !draining && !answer.failure &&
+        requests[wave.keys.front().slot].ledger->committed_count > before_commits[wave.keys.front().slot] &&
         std::ranges::any_of(wave.credits, [](const auto &grant) { return grant.additional != 0; })) {
       for (std::size_t at = 0; at < wave.keys.size(); ++at) {
         const auto member = wave.keys[at].slot; const auto &record = requests[member].ledger->records[before_commits[member]];
@@ -243,8 +247,9 @@ inline Result run_arm(q::Model &model, const std::array<std::vector<std::int32_t
       static_cast<std::vector<std::size_t> *>(nullptr), execute_wave, {}, continuous ? &continuation : nullptr};
   for (std::size_t member = 0; member < width; ++member)
     requests[member].request_key = keys[member] = loop.enqueue(member, &deliveries[member]);
+  const auto deadline = q::Clock::now() + std::chrono::seconds(30);
   for (; std::ranges::any_of(std::span(keys).first(width), [&](auto key) { return loop.matches(key); }); ++result.pumps) {
-    require(result.pumps < 80, "finite continuous request did not retire");
+    require(q::Clock::now() < deadline, "finite continuous request did not retire within its real completion deadline");
     for (std::size_t member = 0; member < width; ++member) before_commits[member] = requests[member].ledger->committed_count;
     submitted_successor_this_pump = false;
     i::RequestPumpResult pumped;
@@ -270,17 +275,27 @@ inline Result run_arm(q::Model &model, const std::array<std::vector<std::int32_t
     result.cancellations += pumped.cancelled;
     const bool pending = !continuation.pending_calls.empty();
     if (pending) {
-      require(continuous && pumped.waiting_retirement && model.active_step && !model.successor_step &&
+      const bool accepted_successor = continuation.drive_cursor.awaiting_current &&
+          continuation.drive_cursor.successor == i::StepSuccessor::kPrepared;
+      require(continuous && pumped.waiting_retirement && model.active_step &&
+          (accepted_successor ? model.successor_step && model.successor_step->submitted
+              : !model.successor_step || (continuation.drive_cursor.awaiting_current &&
+                  continuation.drive_cursor.successor == i::StepSuccessor::kRefused && !model.successor_step->submitted)) &&
           model.active_step->submitted && continuation.pending_calls.size() == loop.active().size(),
           "continuous pump lost its original pending native owner or active cohort");
       ++result.pending_returns;
-      streak = submitted_successor_this_pump ? streak + 1 : 0;
+      if (submitted_successor_this_pump) ++streak;
       result.consecutive_pending = (std::max)(result.consecutive_pending, streak);
-      for (auto key : loop.active()) {
+      for (std::size_t member = 0; member < loop.active().size(); ++member) {
+        const auto key = loop.active()[member];
         const auto &request = requests[key.slot];
+        const auto &call = continuation.pending_calls[member];
         require(key == keys[key.slot] && request.progress.turn_index == 0 && request.progress.turn_started() &&
-            returned_reserved[key.slot] == 1 && request.session->pending == model.active_step.get() &&
-            request.ledger->next().pending_input == request.progress.generated.back(),
+            returned_reserved[key.slot] == (accepted_successor ? 2u : 1u) &&
+            request.session->pending == model.active_step.get() &&
+            (call.generation ? !request.progress.generated.empty() &&
+                request.ledger->next().pending_input == request.progress.generated.back()
+                : request.ledger->next().pending_input == -1 && !request.ledger->next().prompt_ids.empty()),
             "pending wave changed its key/turn/ledger or released its actual output reservation");
       }
     } else streak = 0;
@@ -318,6 +333,7 @@ inline Result run_arm(q::Model &model, const std::array<std::vector<std::int32_t
       require(loop.acknowledge(keys[member], produced, adapter), "original continuous ACK was rejected");
       require(deliveries[member].available(produced) >= returned_reserved[member], "ACK released the pending candidate's charged credit");
     }
+    if (pumped.waiting_retirement && !pumped.executed) std::this_thread::yield();
   }
   require(!continuous || (result.consecutive_pending >= 3 && result.submit_before_observe >= 3 &&
       result.renewals >= 2 && result.pending_length27 && !sources.empty()),

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <thread>
+
 // Natural greedy RequestLoop consumer. The original Model/Continuation owns
 // every submit, acceptance decision, Source permission and retirement.
 namespace qwen_mtp_natural_relay_case {
@@ -152,9 +154,18 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
         "natural K1 wave lost its original ordered output grant");
     reserved = wave.credits.front().reserved; additional = wave.credits.front().additional;
     if (!continuation.pending_calls.empty()) {
-      require(reserved == 2 && additional <= 2 && !wave.credits.front().cancelled,
-          "natural pending K1 B did not retain exactly its original two output reservations");
-      ++result.reserved_two_grants;
+      const auto actual_outputs = [](const q::PreparedGenerationCall &call) {
+        return call.completion == q::TextCompletion::kStateOnly ? std::size_t{0}
+            : call.generation ? (std::min)(call.quota, std::size_t{2}) : std::size_t{1};
+      };
+      auto expected_reserved = actual_outputs(continuation.pending_calls.front());
+      if (continuation.drive_cursor.awaiting_current &&
+          continuation.drive_cursor.successor == i::StepSuccessor::kPrepared)
+        expected_reserved += actual_outputs(continuation.pending_successor_calls.front());
+      require(reserved == expected_reserved && reserved + additional <= delivery.maximum_pending() &&
+          !wave.credits.front().cancelled,
+          "natural pending K1 A/B lost its actual still-publishable output reservations");
+      if (reserved == 2) ++result.reserved_two_grants;
     }
     return q::advance_generation_wave(model, wave, remaining, false, continuation,
         execute_ready, submitted, observed_batch);
@@ -162,19 +173,27 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
   q::GenerationRequestAdapter adapter{model, static_cast<q::cache::PrefixCache *>(nullptr), std::span(requests),
       false, static_cast<std::vector<std::size_t> *>(nullptr), execute_wave, {}, &continuation};
   request.request_key = loop.enqueue(0, &delivery);
+  const auto deadline = q::Clock::now() + std::chrono::seconds(30);
   for (std::size_t pumps = 0; loop.matches(request.request_key); ++pumps) {
-    require(pumps < outputs * 4, "natural K1 RequestLoop did not finish its finite request");
+    require(q::Clock::now() < deadline, "natural K1 RequestLoop did not finish within its real completion deadline");
     const auto pumped = loop.pump_once(adapter);
     require(!pumped.cancelled && (!pumped.waiting_output ||
         delivery.acknowledged() < request.progress.generated.size()),
         "natural K1 normal delivery cancelled or stalled without a real output awaiting acknowledgement");
     if (!continuation.pending_calls.empty()) {
-      require(model.active_step && model.active_step->submitted && !model.successor_step &&
-          model.active_step->execution.sources && model.active_step->execution.has_completion(),
-          "natural K1 deferred wave lost the original promoted B submission");
-      ++result.deferred_waves;
+      const bool accepted_successor = continuation.drive_cursor.awaiting_current &&
+          continuation.drive_cursor.successor == i::StepSuccessor::kPrepared;
+      require(model.active_step && model.active_step->submitted &&
+          (accepted_successor ? model.successor_step && model.successor_step->submitted
+              : !model.successor_step || (continuation.drive_cursor.awaiting_current &&
+                  continuation.drive_cursor.successor == i::StepSuccessor::kRefused && !model.successor_step->submitted)) &&
+          (continuation.pending_synchronous || model.active_step->execution.sources) &&
+          model.active_step->execution.has_completion(),
+          "natural K1 pending wave lost its original A/B submission or required Source");
+      if (!continuation.drive_cursor.awaiting_current) ++result.deferred_waves;
     }
     delivery.acknowledge_prefix(request.progress.generated.size(), request.progress.generated.size());
+    if (pumped.waiting_retirement && !pumped.executed) std::this_thread::yield();
   }
   require(request.progress.request_done() && result.final_state && !request.session &&
       observed == request.ledger->committed_count && observed == request.progress.observed_commits() &&

@@ -11,6 +11,7 @@
 
 #include "family_factory.h"
 #include "input_packet.h"
+#include "ordinary_io.h"
 #include "../../inference/program_slots.h"
 #include "../../inference/readback_batch.h"
 #include "hyle/graph/batch.h"
@@ -31,6 +32,7 @@ struct StateBank final {
 // Mutable input, result and layout carriers belong to one actual Invocation.
 // Sharing a finite child/Queue never grants another slot access to these bytes.
 struct PhaseIo final {
+  OrdinaryIoPlan ordinary_io;
   c::BatchLayoutVersion attention_layout;
   // Original per-Invocation planning storage. Nodes are fixed at cold
   // preparation; layout aliases exist only during batch::prepare below.

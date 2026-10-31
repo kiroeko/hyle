@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "mtp_graph.h"
+#include "ordinary_io.h"
 #include "../../inference/backend.h"
 
 #if defined(HYLE_TEST_INFERENCE_WARM_COST) && HYLE_TEST_INFERENCE_WARM_COST
@@ -415,8 +416,9 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     // Private View outputs cannot lend an independent storage lease to a
     // transfer. Materialize only ordinary CUDA host-consumed small results;
     // their original types/values stay exact and Graph owns every Copy.
-    const bool caller_small_results = role == GraphRole::kText && !diagnostic &&
-        execution.kind() == inference::BackendKind::kCuda && !execution.has_cpu_assist();
+    const bool caller_small_results = OrdinaryIoCapabilities{
+        .backend = execution.kind(), .role = role, .completion = completion,
+        .packing = packing, .cpu_assist = execution.has_cpu_assist(), .diagnostic = diagnostic}.caller_small_results();
     const auto publish_valid = [&] {
       if (caller_small_results) definition.sampling_valid_port = r.copy(definition.sampling_valid_port);
       r.publish(definition.sampling_valid_port);

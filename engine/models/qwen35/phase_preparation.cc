@@ -43,6 +43,9 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
   const auto diagnostic = preparation.diagnostic, imported_sources = preparation.imported_sources;
   const bool packed_prefill = packs_prefill(packing), compact_draft = packs_draft(packing);
   const bool packed_verify = packs_verify(packing), packed_target = packs_target(packing);
+  const OrdinaryIoCapabilities ordinary_io{.backend = execution.kind(), .role = role,
+      .completion = completion, .packing = packing, .cpu_assist = execution.has_cpu_assist(),
+      .diagnostic = diagnostic, .imported_sources = imported_sources};
     auto result = std::make_unique<Phase>();
     auto &phase = *result;
     phase.imported_sources = imported_sources;
@@ -114,10 +117,7 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
           : dense(Type::kInt32, {static_cast<std::int64_t>(requests), t});
       const bool sampling_identity = selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify;
       const bool last_ids = (requests != 1 || packed_prefill) && !verifies_prefix(role);
-      const bool packet_inputs = role == GraphRole::kText && (packing == RowPacking::kRectangular || packed_prefill) &&
-          !imported_sources && !diagnostic &&
-          (execution.kind() == inference::BackendKind::kCpu || execution.kind() == inference::BackendKind::kCuda);
-      if (packet_inputs) {
+      if (ordinary_io.packet_inputs()) {
         InputPacket::MetadataDescriptions metadata;
         if (packed_prefill) {
           metadata.last_ids = dense(Type::kInt32, {static_cast<std::int64_t>(requests)});
@@ -135,11 +135,17 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
         if (!io.input_packet_preparation.ok() && !io.input_packet.allocation_refused())
           return io.input_packet_preparation;
       }
-      if (!io.input_packet.prepared()) {
+      if (io.input_packet.prepared()) {
+        io.ordinary_io.inputs = OrdinaryInputMode::kPacket;
+        io.ordinary_io.packet_last_ids = packed_prefill;
+        io.ordinary_io.packet_history_select = packed_prefill;
+        io.ordinary_io.packet_sampling_identities = sampling_identity;
+      }
+      if (!io.ordinary_io.packet()) {
         io.tokens = phase_tensor(allocation_budget, execution.device(), token_description);
         io.positions = phase_tensor(allocation_budget, execution.device(), position_description);
       }
-      if (sampling_identity && !io.input_packet.sampling_identities().valid()) {
+      if (sampling_identity && !io.ordinary_io.packet_sampling_identities) {
         io.sampling_identities = phase_tensor(allocation_budget, execution.device(), phase.batched_text_sampling
             ? dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 4})
             : dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 3, 4}));
@@ -176,7 +182,7 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
         }
       }
       if (last_ids) {
-        if (!io.input_packet.last_ids().valid()) {
+        if (!io.ordinary_io.packet_last_ids) {
           io.last_ids = phase_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
           std::vector<std::int32_t> initial_last_ids(requests);
           for (std::size_t j = 0; j < requests; ++j) initial_last_ids[j] = static_cast<std::int32_t>((j + 1) * tokens - 1);
@@ -186,7 +192,7 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
       }
       if (packed_target) {
         const auto count = cache::multiply(cache::multiply(requests, phase.prefix_rows), geometry.conv_kernel - 1);
-        if (!io.input_packet.history_select().valid())
+        if (!io.ordinary_io.packet_history_select)
           io.history_select = phase_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(count)}));
         io.history_select_values.resize(count);
         if (packed_verify) {
@@ -220,20 +226,20 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
       // Register once in the original cold installation order. Tensor owners
       // stay here; each readback's only owner moves into the same shared IO.
       check(program_slot.io.add_fixed(phase.token_port,
-          io.input_packet.prepared() ? io.input_packet.tokens() : io.tokens.read()));
+          io.ordinary_io.packet() ? io.input_packet.tokens() : io.tokens.read()));
       check(program_slot.io.add_fixed(phase.position_port,
-          io.input_packet.prepared() ? io.input_packet.positions() : io.positions.read()));
+          io.ordinary_io.packet() ? io.input_packet.positions() : io.positions.read()));
       if (sampling_identity) check(program_slot.io.add_fixed(phase.sampling_identity_port,
-          io.input_packet.sampling_identities().valid() ? io.input_packet.sampling_identities() : io.sampling_identities.read()));
+          io.ordinary_io.packet_sampling_identities ? io.input_packet.sampling_identities() : io.sampling_identities.read()));
       if (phase.sampling_valid_port) {
         io.sampling_valid = take(program_slot.io.add_readback(phase.sampling_valid_port, execution.storage_domains(), allocation_budget));
         if (phase.sampling_accept_port)
           io.sampling_accept = take(program_slot.io.add_readback(phase.sampling_accept_port, execution.storage_domains(), allocation_budget));
       }
       if (last_ids) check(program_slot.io.add_fixed(phase.last_ids_port,
-          io.input_packet.last_ids().valid() ? io.input_packet.last_ids() : io.last_ids.read()));
+          io.ordinary_io.packet_last_ids ? io.input_packet.last_ids() : io.last_ids.read()));
       if (packed_target) check(program_slot.io.add_fixed(phase.history_select_port,
-          io.input_packet.history_select().valid() ? io.input_packet.history_select() : io.history_select.read()));
+          io.ordinary_io.packet_history_select ? io.input_packet.history_select() : io.history_select.read()));
       if (packed_verify) check(program_slot.io.add_fixed(phase.prefix_ids_port, io.prefix_ids.read()));
       if (io.logits.caller_owned()) check(program_slot.io.add_fixed_output(phase.logits_port, io.logits.view()));
       if (completion == TextCompletion::kEmitNext)
@@ -259,13 +265,18 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
       check(program_slot.io.seal());
       // Only these ordinary host-consumed results share a copy episode.
       // Device relay outputs and their full original writers remain unchanged.
-      if (role == GraphRole::kText && completion == TextCompletion::kEmitNext &&
-          phase.sampling_valid_port && !phase.sampling_accept_port && !diagnostic && !imported_sources &&
-          execution.kind() == inference::BackendKind::kCuda && !execution.has_cpu_assist()) {
+      if (ordinary_io.batched_small_results(bool(phase.sampling_valid_port), bool(phase.sampling_accept_port))) {
         const std::array<const inference::PreparedReadback *, 2> results{
             take(program_slot.io.readback(io.sampling_valid)), take(program_slot.io.readback(io.next_id))};
         auto prepared = inference::PreparedReadbackBatch::prepare(execution, results, execution_budget);
-        if (prepared) io.small_results = std::move(*prepared);
+        if (prepared) {
+          const auto type = results[0]->facts.description.data_type();
+          if (type != Type::kBool && type != Type::kFloat32)
+            return hyle::Status::InvalidArgument("ordinary batched result requires an exact Bool/F32 predicate");
+          io.small_results = std::move(*prepared);
+          io.ordinary_io.results = type == Type::kFloat32
+              ? OrdinaryResultMode::kBatchFloat : OrdinaryResultMode::kBatchBool;
+        }
         else {
           io.small_results_preparation = prepared.error();
           // Qualification/cold capacity may keep the old independent reads.

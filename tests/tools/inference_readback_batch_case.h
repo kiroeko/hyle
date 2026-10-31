@@ -203,6 +203,35 @@ inline int run(i::BackendKind kind) {
       ports[0]->facts.description.data_type() == q::Type::kInt32 &&
       ports[1]->facts.description.data_type() == q::Type::kFloat32,
       "readback batch fixture did not retain two original caller-owned dtypes");
+  // Cold rejection must precede any transfer. These facts cannot grant a
+  // writer/resource to a default helper, even when its descriptor is valid.
+  auto empty_result = i::PreparedReadbackBatch::prepare(backend, {});
+  require(!empty_result && empty_result.error().IsInvalidArgument(),
+      "empty cold result inventory was accepted or treated as optional capability");
+  const std::array<const i::PreparedReadback *, 1> null_port{nullptr};
+  auto null_result = i::PreparedReadbackBatch::prepare(backend, null_port);
+  require(!null_result && null_result.error().IsInvalidArgument() && !null_result.error().has_native_error(),
+      "null cold readback port lost its original invalid-argument status");
+  const std::array<const i::PreparedReadback *, 3> too_many{ports[0], ports[1], ports[0]};
+  auto unsupported = i::PreparedReadbackBatch::prepare(backend, too_many);
+  require(!unsupported && unsupported.error().IsUnimplemented() && !unsupported.error().has_native_error(),
+      "cold result count qualification was not a typed nonnative capability miss");
+  i::PreparedReadback unbacked;
+  unbacked.facts = ports[0]->facts;
+  const std::array<const i::PreparedReadback *, 1> unbacked_port{&unbacked};
+  unsupported = i::PreparedReadbackBatch::prepare(backend, unbacked_port);
+  require(!unsupported && unsupported.error().IsUnimplemented() && !unbacked.pool().valid(),
+      "cold readback descriptor alone acquired original caller storage authority");
+  {
+    const std::array limits{c::ResourceBudgetLimit{q::mem::system_resource(), 1u << 20}};
+    auto tight = q::take(c::ResourceBudget::create({.limits = limits, .allow_unattributed = true}));
+    const auto before = q::take(tight.usage(q::mem::system_resource()));
+    auto pressure = q::take(tight.reserve(q::mem::system_resource(), before.limit_bytes - before.live_bytes));
+    auto refused = i::PreparedReadbackBatch::prepare(backend, ports, tight);
+    require(!refused && refused.error().IsResourceExhausted() && !refused.error().has_native_error() &&
+        q::take(tight.usage(q::mem::system_resource())).live_bytes == before.limit_bytes,
+        "cold readback capacity refusal retained unpublished metadata or lost its typed cause");
+  }
   auto batch = q::take(i::PreparedReadbackBatch::prepare(backend, ports));
   require(batch.valid() && !batch.in_flight(), "cold readback batch has no reusable original copy slot");
   auto invocation = q::take(compiled.executable.create_invocation());
