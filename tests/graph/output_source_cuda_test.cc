@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <mutex>
 #include <span>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -1488,7 +1489,22 @@ TEST(GraphOutputSourceCuda, HybridPendingTokenAndStoreReuseOnlyExistingRanges) {
   // This fixture selects the original Store's ordered-copy fallback instead;
   // its native Context, Queue, permissions and math remain unchanged.
   auto execution_source = g::ExecutionSource::acquire(context).value();
-  const std::array domains{g::StorageDomain{.resource = storage.ref(), .owner = storage}};
+  // A second real resource on this same CUDA Context forces compiler-owned
+  // physical transfers around the selected mathematical region. Source
+  // state/Store identity remains on the original storage and Queue.
+  auto replica_memory = c::cuda::MemoryResource::create(context,
+      c::cuda::MemoryKind::kDevice).value();
+  auto replica_storage = c::StorageOwner::adopt(context, std::move(replica_memory)).value();
+  const std::array domains{
+      g::StorageDomain{.resource = storage.ref(), .owner = storage},
+      g::StorageDomain{.resource = replica_storage.ref(), .owner = replica_storage}};
+  const std::array placements{
+      g::NodePlacement{copy0, g::ExecutionTargetId{0}, g::PlacementStrength::kRequired,
+                       g::StorageDomainId{1}},
+      g::NodePlacement{copy1, g::ExecutionTargetId{0}, g::PlacementStrength::kRequired,
+                       g::StorageDomainId{1}}};
+  const std::array external{
+      g::ExternalResourceContract{copied_token, g::StorageDomainId{0}}};
   const std::array targets{g::ExecutionTarget{
       .source = execution_source, .default_storage = g::StorageDomainId{0}}};
   const auto *store_provider = g::slots::detail::store_provider();
@@ -1499,12 +1515,41 @@ TEST(GraphOutputSourceCuda, HybridPendingTokenAndStoreReuseOnlyExistingRanges) {
       .source = std::move(*region_source), .provider_index = UINT32_MAX,
       .target = g::ExecutionTargetId{0}, .interface = store_provider, .context = &store_adapter}};
   auto consumer_plan = gd::compile_with_adapters(second_graph,
-      {.storage_domains = domains, .targets = targets}, {}, adapters);
+      {.storage_domains = domains, .targets = targets},
+      {.node_placements = placements, .external_resources = external}, adapters);
   ASSERT_TRUE(consumer_plan) << consumer_plan.error().message();
   ASSERT_EQ(consumer_plan->report.segment_count(), 1u);
-  bool captured_math = false, prepared_gap = false;
+  bool captured_math = false, prepared_gap = false, copied_result_output = false;
+  std::size_t physical_copies = 0;
   for (std::size_t i = 0; i < consumer_plan->report.step_count(); ++i) {
     const auto step = consumer_plan->report.step(i).value();
+    if (step.kind == g::CompileStepKind::kCopy) {
+      ++physical_copies;
+      ASSERT_EQ(step.input_count, 1u);
+      ASSERT_EQ(step.output_count, 1u);
+      EXPECT_EQ(step.node_count, 0u);
+      EXPECT_FALSE(step.provider.valid()); // Plain shared-Queue Graph Copy.
+      const auto source_instance = consumer_plan->report.step_input(i, 0).value();
+      const auto destination_instance = consumer_plan->report.step_output(i, 0).value();
+      const auto source_value = consumer_plan->report.physical_value(source_instance).value();
+      const auto destination_value = consumer_plan->report.physical_value(destination_instance).value();
+      RecordProperty("physical_copy_" + std::to_string(i),
+          (::testing::Message() << "src_instance=" << source_instance
+           << " src_value=" << source_value.value.ordinal()
+           << " src_storage=" << source_value.storage.ordinal()
+           << " src_external_input=" << source_value.external_input
+           << " src_external_output=" << source_value.external_output
+           << " dst_instance=" << destination_instance
+           << " dst_value=" << destination_value.value.ordinal()
+           << " dst_storage=" << destination_value.storage.ordinal()
+           << " dst_external_input=" << destination_value.external_input
+           << " dst_external_output=" << destination_value.external_output).GetString());
+      copied_result_output |= source_value.value == copied_token &&
+          destination_value.value == copied_token && !source_value.external_input &&
+          !source_value.external_output && destination_value.external_output &&
+          source_value.storage == g::StorageDomainId{1} &&
+          destination_value.storage == g::StorageDomainId{0};
+    }
     bool has_copy = false, has_store = false;
     for (std::size_t j = 0; j < step.node_count; ++j) {
       const auto node = consumer_plan->report.step_node(i, j).value();
@@ -1525,6 +1570,9 @@ TEST(GraphOutputSourceCuda, HybridPendingTokenAndStoreReuseOnlyExistingRanges) {
     }
   }
   ASSERT_TRUE(captured_math); ASSERT_TRUE(prepared_gap);
+  ASSERT_GT(physical_copies, 0u);
+  ASSERT_TRUE(copied_result_output); // Internal math result to the original external writer.
+  EXPECT_GT(consumer_plan->report.copy_bytes(), 0u);
   auto consumer = consumer_plan->executable.create_invocation().value();
   ASSERT_TRUE(consumer.prepare_resources().ok());
   ASSERT_TRUE(consumer.bind(token_input, token_desc, warm_token).ok());
@@ -1549,6 +1597,10 @@ TEST(GraphOutputSourceCuda, HybridPendingTokenAndStoreReuseOnlyExistingRanges) {
   EXPECT_EQ(consumer.replay_report()->host_wait_dependency_count, 0u);
   EXPECT_FALSE(consumer.prepare_replay(queues,
       {.mode = g::ReplayMode::kRequireCapture, .host_wait = g::HostWaitPolicy::kReject}).ok());
+  const auto same_tuple = gd::ReplayAccess::can_reuse_capture(consumer,
+      std::array{gd::ReplayInputBinding{token_input, token_view}});
+  ASSERT_TRUE(same_tuple) << same_tuple.error().message();
+  ASSERT_TRUE(*same_tuple);
   const auto restored = gd::ReplayAccess::prepare_reuse(consumer, queues);
   ASSERT_TRUE(restored.ok()) << restored.message();
   ASSERT_EQ(consumer.replay_route(), g::ReplayRoute::kHybrid);

@@ -118,6 +118,10 @@ prefill、续算和decode改变的是输入、合法形状及状态，不另造�
 物理span不携带租约、代际、命令或Queue资格，每次准备仍核新权限并封存当前槽。
 Commands失效也可保留上述几何事实，不能以没有capture身份为由重复构造整图View；
 Source、别名、跨存储副本、原生私有载体及实际Queue更换保留完整准备路径。
+Graph生成的普通Copy不含Provider私有调用参数，可以沿原录制参与复用；源和目标的完整描述、
+resource、handle、offset、extent及实际Queue仍须命中同一记录。由Region实现的复制仍核Provider合同。
+[CPU完整tuple与CUDA输出复制检查](../evidence/correctness/inference-capture-copy-2026-10-31.json)
+分别验证这些范围；捕获资格不授予Source或投影读取权限，也不代表跨turn预热已经完成。
 无别名投影使用编译时消费者索引核查实际读者和所选实现，页范围与权限仍逐次验证。
 跨资源的原生数学镜像仍由实际provider保留；只在真实resource相同时共享镜像，逻辑输入使用一个
 canonical只读绑定。CPU搬运按资源声明的稳定主机地址事实证明别名，不按内置resource身份放行。

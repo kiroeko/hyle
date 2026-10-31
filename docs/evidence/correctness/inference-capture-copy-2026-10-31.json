@@ -1,0 +1,202 @@
+{
+  "schema": "hyle-finite-correctness-evidence-v1",
+  "status": "PASS_FINITE_FINAL_CAPTURE_COPY_REPAIR",
+  "title": "Plain Graph Copy retained capture qualification",
+  "candidate_source_base": "a416d96615ea5461d7d5afa7f25fa94545042866",
+  "observed_repository_HEAD": "b2304095f960264861b459df1cc45f3cf7812258",
+  "goal_status": "ACTIVE; cross-turn Source candidate gate is not implemented by this slice",
+  "final_product_change": {
+    "executable_cc_insertions": 7,
+    "resources_cc_net_changes": 0,
+    "API_or_layout_changes": 0,
+    "plain_Copy_only": true,
+    "final_source_pins": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+        "bytes": 523125,
+        "sha256": "47614519d0500c5c9a3a59b2d8d98c30ce8f67ae7ab61b40f84a265e52b49a67"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+        "bytes": 257759,
+        "sha256": "7f4abb576636521b08103211d24dcd1d743f7fe3c6bf374f335cc00a2f0f60ee"
+      }
+    ],
+    "tests_source_pins": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+        "bytes": 727621,
+        "sha256": "34e5edbe6531011f76cd75e9c5e111e9a3b7d90662d4871089064a3ad163bcfe"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+        "bytes": 116249,
+        "sha256": "b602388acd2bbcd11cc1799d33dbd47196e0a05f866710e7dffe295c2019ae5b"
+      }
+    ],
+    "full_pending_patch": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-captured-graph-copy-20261031\\pending-final-source.patch",
+      "bytes": 15689,
+      "sha256": "4345cc6767d0ee8541a884f08bc5cc8e54422ed976d714de72516cde6e932ea4"
+    },
+    "final_Graph_DLL": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph.dll",
+      "bytes": 1254400,
+      "sha256": "baaecb2877e829e1d7e477a12e0acf30c6a8ab2df9a41fdb34de268604257076"
+    },
+    "Graph_import_unchanged": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph.lib",
+      "bytes": 281344,
+      "sha256": "a114b8df297b4702409de63ce8a0829cf42937ff1b44708a6a9d219fab79ff52"
+    }
+  },
+  "final_results": {
+    "CPU_current": {
+      "process_exit": 0,
+      "passed": 2,
+      "skipped": 0,
+      "same_EXE_sha256": "28b8f08445a6b563c624d7bdc344c2116024a7e1e6623ef14610bd2c9cfcd3c7",
+      "scope": "Two actual compiled input+output Graph Copies with prepared region gap; full source/destination descriptor/resource/handle/offset/extent keys, actual Queue, native invalidation and close. Mock capture certifies ordering/keys, not replayed Copy numerical bytes."
+    },
+    "CPU_old_Graph_control": {
+      "process_exit": 1,
+      "expected_failed_cases": 1,
+      "skipped": 0,
+      "actual_Graph_sha256": "dd2be903fc67a8a7aa26a86bf3cc0d7f0a3e8341ce8e5f4c22fcaae60606eca3",
+      "same_test_EXE": true,
+      "other_12_observed_Hyle_GGML_runtime_identities_same": true,
+      "failure": "Old Graph rejects *reusable for the genuine plain Graph Copy tuple."
+    },
+    "CUDA_Source": {
+      "process_exit": 0,
+      "passed": 1,
+      "skipped": 0,
+      "scope": "Real pending OutputSource/StoreSource -> original native Concat region -> plain Graph output Copy -> original external writer; exact values, page guards, Source permissions/whole outcome and retirement assertions retained. GPU direct Source-input Copy and projected Copy withdrawal are not claimed.",
+      "actual_Copy_properties": [
+        {
+          "name": "physical_copy_3",
+          "value": "src_instance=5 src_value=3 src_storage=1 src_external_input=false src_external_output=false dst_instance=7 dst_value=3 dst_storage=0 dst_external_input=false dst_external_output=true"
+        }
+      ]
+    },
+    "normal_product": {
+      "status": "PASS_TWO_FINITE_NORMAL_PRODUCT_RUNS",
+      "cases": [
+        {
+          "arm": "hyle_auto",
+          "report": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-captured-graph-copy-20261031\\normal-product-smoke\\checks\\hyle_auto\\attempt1\\report.json",
+            "bytes": 232346,
+            "sha256": "5b8efdb1b7129d0d0d4389effb337be749719cde3e8aae92391f15c36ce2995b"
+          },
+          "process": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-captured-graph-copy-20261031\\normal-product-smoke\\checks\\hyle_auto\\attempt1\\process.json",
+            "bytes": 8966,
+            "sha256": "8e8cc6d35083111b6494f739412e1d0ec20220f83eaf83a8010de0a673672b32"
+          },
+          "non_time_differences": 0,
+          "generated_tokens": 128,
+          "live_module_sampling_errors": {
+            "299": 7
+          },
+          "reused_existing_successful_native": true
+        },
+        {
+          "arm": "hyle_mtp",
+          "report": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-captured-graph-copy-20261031\\normal-product-smoke\\checks\\hyle_mtp\\attempt1\\report.json",
+            "bytes": 153531,
+            "sha256": "ed370671e0596f5366de0eb0f43c8712af6ac38168653461f66b0596e60d305c"
+          },
+          "process": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-captured-graph-copy-20261031\\normal-product-smoke\\checks\\hyle_mtp\\attempt1\\process.json",
+            "bytes": 8966,
+            "sha256": "efcc0ec79e84e10edb2b48747f8d09c9de729606e1ed1a6a47f79122b014a68c"
+          },
+          "non_time_differences": 0,
+          "generated_tokens": 128,
+          "live_module_sampling_errors": {
+            "299": 8
+          },
+          "reused_existing_successful_native": false
+        }
+      ],
+      "source_pins": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+          "bytes": 523125,
+          "sha256": "47614519d0500c5c9a3a59b2d8d98c30ce8f67ae7ab61b40f84a265e52b49a67"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+          "bytes": 257759,
+          "sha256": "7f4abb576636521b08103211d24dcd1d743f7fe3c6bf374f335cc00a2f0f60ee"
+        }
+      ],
+      "graph_dll": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph.dll",
+        "bytes": 1254400,
+        "sha256": "baaecb2877e829e1d7e477a12e0acf30c6a8ab2df9a41fdb34de268604257076"
+      },
+      "performance_claim": false,
+      "full_2B_Session_bytes_exported": false,
+      "wrapper_history": "Initial comparison used the old normalized schema and failed after successful ordinary native; raw-to-raw comparison corrected offline, ordinary was not rerun.",
+      "limits": "Finite module snapshots are not complete loader-event tracing. Original CLI reports omit full logical KV/carry/prior/raw RNG blobs."
+    }
+  },
+  "actual_final_stage_process_counts": {
+    "CXX": 5,
+    "CXX_success": 4,
+    "CXX_failed_fixture_API": 1,
+    "links": 4,
+    "links_failed": 0,
+    "regression_native": 4,
+    "regression_native_pass": 2,
+    "regression_native_expected_old_red": 1,
+    "regression_native_failed_fixture_topology": 1,
+    "normal_product_native": 2,
+    "normal_product_native_pass": 2,
+    "NVCC": 0,
+    "model_downloads": 0,
+    "automatic_retries": 0
+  },
+  "historical_diagnostics": {
+    "native_processes": 3,
+    "first_intrusive_fail": {
+      "exit": 1,
+      "scope": "Original assertion saw unexpected natural refusal. unitbuf AfterSubmit logging could change retirement timing; not evidence the original uninstrumented normal consumer fails."
+    },
+    "buffered_fail": {
+      "exit": 1,
+      "scope": "Fixed-capacity snapshots, no AfterSubmit callback scans/IO. Live old classifier first rejected plain Copy; cached_private=false and no complete keys."
+    },
+    "thirteen_line_candidate_warm_PASS": {
+      "exit": 0,
+      "scope": "Original six-step strategy, complete state/epoch/RNG/ledger and Source lifetime assertions. Same diagnostic EXE against unified SDK; included subsequently removed unreachable resources block."
+    },
+    "old_reason4_classifier": "Not updated after Copy fix. Never use its reason4 as new Graph qualification result. Stored new flags/keys and original complete assertions are authoritative."
+  },
+  "retained_failures_and_corrections": [
+    "Strict first Ninja dryrun wrapper rejected VerifyGlobs/CMake phony-only prediction; actual explain and root-approved monitored build show only resources CXX+Graph DLL.",
+    "Two metadata preparation failures were resolved offline before any compiler/producer launch.",
+    "CPU CXX attempt1: BufferView has no as_const; only nonexistent call removed, preserving real initialized 36-byte extent and assertions.",
+    "CUDA native attempt1: incorrect direct input-Copy topology expectation; actual defaults prefer existing input domain0. Corrected fixture asserts actual output Copy instead; no core/provider permission or math change.",
+    "Normal ordinary native succeeded but first wrapper compared old normalized derived schema against raw current report. Corrected raw-to-raw offline, no ordinary rerun; MTP then ran once."
+  ],
+  "resources_branch_withdrawal": "Six lines withdrawn: preservation loop only handles kProjected, while every legal Projected binder rejects a plain Copy physical reader. Ordinary OutputSource binds Caller scope. No projection permissions were expanded. See resources-branch-reachability.md.",
+  "limits": [
+    "The final product still has the original six-step Qwen overlap gate. No count-based replacement or incoming-Source subtuple API has been applied.",
+    "Static two-short-turn counterexample rejects preparation_uses>=2 as a sufficient proof; proposed real three-turn case remains unrun.",
+    "No speed/performance claim, peer run, profile window or arbitrary-model completion claim.",
+    "2B checks compare raw non-time CLI reports and all four full-vocabulary fields; no full logical 2B KV/carry/prior/raw RNG Session blobs exported.",
+    "Module samples have real Enum299 gaps; they are bounded live snapshots, not complete loader-event tracing.",
+    "Final native coverage is finite. Pending permission/Source, complete physical tuple, unknown/private resource admission, errors, close and real retirement retain original authorities."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-capture-copy-2026-10-31.zip",
+    "bytes": 379165,
+    "sha256": "4a37b4b002b065c69b448c239bd871be9a92c0246dc7df42fb973bced668f39a"
+  },
+  "archive_members": 204,
+  "archive_verification": "All selected member bytes/SHA256 and ZIP CRC read back; no executable/library/object/weight/raw state payload included."
+}

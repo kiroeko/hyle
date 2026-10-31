@@ -1231,6 +1231,10 @@ Status qualify_capture_variants(detail::InvocationState &invocation,
       if (!inspected)
         return std::move(inspected).error();
       preserves = *inspected;
+    } else if (step.kind == detail::PlanStepKind::kCopy) {
+      // A plain Graph Copy has no private invocation arguments. Submission
+      // derives its exact transfer from the keyed source/destination views.
+      preserves = true;
     } else {
       preserves = false;
     }
@@ -10092,6 +10096,9 @@ Result<ReplayRoute> reusable_capture_tuple(const detail::InvocationState &state,
             compute::detail::OperationPreparationAccess::preserves_capture_bindings(
                 state.invocations[i].operation));
         if (!preserves) return ReplayRoute::kUnprepared;
+      } else if (step.kind == detail::PlanStepKind::kCopy) {
+        // Region-backed copies took the branch above. A plain Copy's full
+        // source/destination tuple is checked by the same recorded key below.
       } else {
         return ReplayRoute::kUnprepared;
       }

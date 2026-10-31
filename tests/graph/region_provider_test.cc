@@ -7350,6 +7350,148 @@ TEST(GraphRegions, NativeCommandInvalidationKeepsOnlyRebuildSeedAndQueueStillDis
   EXPECT_TRUE(done->wait().ok());
 }
 
+// The existing mock capture fixture proves ordering and full borrowed keys;
+// it intentionally does not replay captured Copy bytes or certify GPU math.
+void check_plain_graph_copy_capture(bool check_lifecycle) {
+  namespace g = hyle::graph;
+  namespace gd = g::detail;
+  HostResource replica_resource;
+  RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
+  probe.capture_supported = true;
+  probe.capture_preserves_binding_identity = true;
+  probe.queued_transfers = true;
+  probe.region_input_resource = probe.region_output_resource =
+      hyle::mem::MemoryResourceRef(replica_resource);
+  // A real prepared nonblocking region is a gap between two generated Copies.
+  probe.artifact_properties.runtime = {
+      .mode = hyle::compute::ProviderRuntimeMode::kSharedQueue,
+      .workspace_owner = hyle::compute::ProviderWorkspaceOwner::kCaller,
+      .replay_class = ProviderReplayClass::kPrepared,
+      .blocks_host = false, .capture_compatible = false};
+  auto context = make_context(probe);
+  const auto logical = make_negations(2);
+  const std::array domains{
+      g::StorageDomain{.resource = hyle::mem::system_resource()},
+      g::StorageDomain{.resource = hyle::mem::MemoryResourceRef(replica_resource)}};
+  const std::array targets{g::ExecutionTarget{
+      .source = g::ExecutionSource::acquire(context).value(),
+      .default_storage = g::StorageDomainId{1}}};
+  const std::array external{
+      g::ExternalResourceContract{logical.input, g::StorageDomainId{0}},
+      g::ExternalResourceContract{logical.output, g::StorageDomainId{0}}};
+  auto compiled = g::compile(logical.graph,
+      {.storage_domains = domains, .targets = targets},
+      {.external_resources = external,
+       .operation_fallback = OperationFallbackPolicy::kReject});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  ASSERT_EQ(compiled->report.region_count(), 1u);
+  ASSERT_EQ(compiled->report.copy_bytes(), 2u * 8u * sizeof(float));
+  std::array<std::uint32_t, 2> copy_steps{};
+  std::size_t copies = 0;
+  for (std::size_t i = 0; i < compiled->report.step_count(); ++i) {
+    const auto step = compiled->report.step(i).value();
+    if (step.kind != g::CompileStepKind::kCopy) continue;
+    ASSERT_LT(copies, copy_steps.size());
+    copy_steps[copies++] = static_cast<std::uint32_t>(i);
+    EXPECT_EQ(step.node_count, 0u);
+  }
+  ASSERT_EQ(copies, copy_steps.size());
+  auto run = compiled->executable.create_invocation().value();
+  const auto *state = gd::InvocationAccess::state(run);
+  ASSERT_NE(state, nullptr);
+  for (auto step : copy_steps) {
+    EXPECT_EQ(state->plan->steps[step].kind, gd::PlanStepKind::kCopy);
+    EXPECT_FALSE(state->plan->steps[step].region.valid());
+  }
+  auto input_backing = make_tensor(row(9));
+  auto output_backing = make_tensor(row(9));
+  auto other_input = make_tensor(row(8));
+  constexpr std::array<float, 9> initialized{1, 2, 3, 4, 5, 6, 7, 8, 9};
+  write(input_backing, initialized); // Include the entire extra storage tail.
+  const auto input = TensorView::create(row(8),
+      input_backing.buffer.view().subview(0, 8u * sizeof(float)).value()).value();
+  const auto shifted_input = TensorView::create(row(8),
+      input_backing.buffer.view().subview(sizeof(float), 8u * sizeof(float)).value()).value();
+  const auto larger_input = ConstTensorView::from_initialized_storage(
+      row(8), input_backing.buffer.view()).value();
+  ASSERT_EQ(input.storage().size(), 8u * sizeof(float));
+  ASSERT_EQ(larger_input.storage().size(), 9u * sizeof(float));
+  const auto output = TensorView::create(row(8),
+      output_backing.buffer.view().subview(0, 8u * sizeof(float)).value()).value();
+  const auto shifted_output = TensorView::create(row(8),
+      output_backing.buffer.view().subview(sizeof(float), 8u * sizeof(float)).value()).value();
+  ASSERT_TRUE(run.bind(logical.input, input).ok());
+  ASSERT_TRUE(run.bind(logical.output, output).ok());
+  auto queue = context.create_queue().value();
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  ASSERT_TRUE(run.prepare_replay(queues,
+      {.mode = g::ReplayMode::kPreferCapture}).ok());
+  ASSERT_EQ(run.replay_route(), g::ReplayRoute::kHybrid);
+  ASSERT_EQ(run.replay_report()->recorded_capture_range_count, 2u);
+  EXPECT_EQ(run.replay_report()->immediate_transfer_count, 0u);
+  const auto recorded = probe.capture_end_count;
+  ASSERT_EQ(recorded, 2u);
+  const std::array same{gd::ReplayInputBinding{logical.input, input.as_const()}};
+  const auto reusable = gd::ReplayAccess::can_reuse_capture(run, same);
+  ASSERT_TRUE(reusable) << reusable.error().message();
+  ASSERT_TRUE(*reusable); // Old Graph rejects this genuine generated-Copy tuple.
+  ASSERT_TRUE(gd::ReplayAccess::prepare_reuse(run, queues).ok());
+  EXPECT_EQ(run.replay_report()->recorded_capture_range_count, 0u);
+  EXPECT_EQ(run.replay_report()->reused_capture_range_count, 2u);
+  auto done = run.submit(queues);
+  ASSERT_TRUE(done) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+  *done = {};
+  if (!check_lifecycle) {
+    for (auto changed : {shifted_input.as_const(), larger_input,
+                         other_input.view.as_const()}) {
+      const auto miss = gd::ReplayAccess::can_reuse_capture(run,
+          std::array{gd::ReplayInputBinding{logical.input, changed}});
+      ASSERT_TRUE(miss) << miss.error().message();
+      EXPECT_FALSE(*miss);
+    }
+    // Same backing and description, different destination offset: no recording
+    // or Commands fallback is permitted by the reuse-only operation.
+    ASSERT_TRUE(run.bind(logical.output, shifted_output).ok());
+    const auto miss = gd::ReplayAccess::prepare_reuse(run, queues);
+    EXPECT_TRUE(miss.IsUnavailable()) << miss.message();
+    EXPECT_EQ(run.replay_route(), g::ReplayRoute::kUnprepared);
+    EXPECT_FALSE(run.submit(queues));
+    EXPECT_EQ(probe.capture_end_count, recorded);
+    ASSERT_TRUE(run.bind(logical.output, output).ok());
+    ASSERT_TRUE(gd::ReplayAccess::prepare_reuse(run, queues).ok());
+    EXPECT_EQ(run.replay_report()->recorded_capture_range_count, 0u);
+    EXPECT_EQ(run.replay_report()->reused_capture_range_count, 2u);
+    EXPECT_EQ(probe.capture_end_count, recorded);
+  } else {
+    auto next_queue = context.create_queue().value();
+    const std::array changed_queue{g::QueueBinding{g::ExecutionLaneId{0}, &next_queue}};
+    const auto different_queue = gd::ReplayAccess::prepare_reuse(run, changed_queue);
+    EXPECT_TRUE(different_queue.IsInvalidArgument()) << different_queue.message();
+    EXPECT_FALSE(run.submit(changed_queue));
+    EXPECT_EQ(probe.capture_end_count, recorded);
+    ASSERT_TRUE(gd::ReplayAccess::prepare_reuse(run, queues).ok());
+    ASSERT_TRUE(gd::RegionAccess::invalidate_commands(run, copy_steps[0]).ok());
+    const auto invalidated = gd::ReplayAccess::can_reuse_capture(run, same);
+    ASSERT_TRUE(invalidated) << invalidated.error().message();
+    EXPECT_FALSE(*invalidated);
+    EXPECT_FALSE(gd::ReplayAccess::prepare_reuse(run, queues).ok());
+    EXPECT_FALSE(run.submit(queues));
+    EXPECT_EQ(probe.capture_end_count, recorded);
+    ASSERT_TRUE(run.close().ok());
+    EXPECT_FALSE(gd::ReplayAccess::prepare_reuse(run, queues).ok());
+    EXPECT_FALSE(run.submit(queues));
+  }
+}
+
+TEST(GraphRegions, PlainGraphCopyCaptureKeepsFullPhysicalTuple) {
+  check_plain_graph_copy_capture(false);
+}
+
+TEST(GraphRegions, PlainGraphCopyCaptureKeepsQueueAndInvalidationGates) {
+  check_plain_graph_copy_capture(true);
+}
+
 TEST(GraphRegions, StablePrivateCaptureVariantsReuseBothBoundPortsAfterPreparation) {
   RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
   probe.capture_supported = true;
