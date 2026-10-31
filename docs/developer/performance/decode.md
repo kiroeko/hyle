@@ -12,6 +12,14 @@
 单会话普通／MTP的最近跨引擎完整表见[推理进度](../inference-progress.md#最近完整性能对照)；
 下面的B2、CPU和局部候选属于不同窗口，各自保留版本与测量边界。
 
+2026-10-31：已列共同架构整改与有限检查完成，转默认完整词表普通／MTP性能。先生成正常Release GPU产品镜像，
+再做未profile的四项完整基线，随后分别跟踪主机提交空档、实际target／draft算量与GPU kernel。旧trace只供假设，不代签当前速度。
+正常GPU配置公开选择`HYLE_COMPUTE_ROUTES=cpu;cuda`，保默认`HYLE_STATIC=OFF`、非`HYLE_DEV_FACTORS`；
+现手工static闭包／指定runtime的结果尚未证明等于该产品镜像。复用已锁依赖、全离线配置，未完成正常build不得写成通过。
+canonical full-V四项入口保留在`.scratch/inference-plan-cold-facts-20261030/window.py`；禁用显式draft词表，
+核四个词表附加bytes／rows字段为0，并保实际target／draft／verified／consumed行数差异。
+冻结peer SHA433e7051可复用，但native core revision未证实等于当前本地llama HEAD，不称最新上游。
+
 2026-10-30的[显式草稿词表与完整消费者](../../evidence/performance/inference-draft-vocabulary-2026-10-30.json)
 在已列共同步骤驱动复审完成后恢复隔离候选；使用显式source-bound原ID文件，只冷导入草稿head行，完整target／embedding保留。
 CPU／CUDA原BF16／F16／F32行、原ID映射、budget拒绝重试及lease寿命通过；真实K1、双轮、K2输出和RNG保持，23个共同前缀的全部导出张量逐字节相同。

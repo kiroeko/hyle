@@ -148,6 +148,15 @@ Graph的可选原地复用另按required别名组的模同余约束检查完整�
 含真实F32 Exp两级链、4项专门liveness与现常量／预算／原错误合同；默认四对、完整Session及GLM Pro组件通过。
 非零origin的required-View补偿仅有精确算术支持，不据此声称新增可达消费者或所有组合已证明。
 
+三个辅助冷程序现独立到`auxiliary_programs.h/.cc`：原Draft／PrefixSampling／Frontier、literal、Graph、IO及carrier保持原stable owner，
+工厂同步借模型冷事实与预算；Model保准入、guard、初始化、成功发布、恢复与实际退休。内嵌Draft guard所需原episode布局移到私有头，
+没有新增owner或热回调。optional head准备提前、scratch／诊断merge延后；不声称失败优先级与失败后的peak原样。
+同次prepare还复用完整Phase key找到的元数据，接纳后重查；实际lease／epoch／Source／closing检查仍动态，没有跨call权限缓存。
+[本片检查与联合复审](../evidence/correctness/inference-auxiliary-warm-boundary-2026-10-31.json)覆盖三factory预算拒绝／同key重试、
+warm原program／Invocation、sampling／conditional／history／MTP及默认完整消费者与Session；另10个完整runtime方法原样。
+当前已列共同架构实现与有限整改检查已完成。新模型仍提供自己的数学、完整状态与静态适配，并接相应目标／入口与验证；
+concrete与有限族两种入口均复用原ProgramIo，不为了外观新增通用大接口。实际运行费用和接入成本继续实测，未证明任意模型或完整goal完成。
+
 当前异构消费者的接入面也已沿实际源码核对：
 
 | 消费者 | 已复用的共同机制 | 仍保留的模型事实及验证边界 |

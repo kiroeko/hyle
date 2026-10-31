@@ -92,6 +92,7 @@
 #include "target_graph.h"
 #include "family_factory.h"
 #include "phase.h"
+#include "auxiliary_programs.h"
 #include "hyle/compute/batch_transfer.h"
 #include "hyle/core/assert.h"
 #include "precision_profile.h"
@@ -125,7 +126,6 @@ using inference::BackendKind;
 using inference::BackendSelection;
 using inference::PreparedReadback;
 using inference::PreparedOutputFacts;
-using Clock = std::chrono::steady_clock;
 enum class ReplayPolicy { kAuto, kCommands, kPreferCapture };
 constexpr g::ReplayMode select_replay_mode(ReplayPolicy policy,
     std::size_t known_uses, bool sampling_enabled) noexcept {
@@ -370,119 +370,7 @@ struct InputPreparationScratch final {
     if (io.catchup_token.caller_owned()) reserve(catchups, io.catchup_token);
   }
 };
-class Session;
-struct StepMember final {
-  std::shared_ptr<Session> session;
-  cache::WorkingState *owner_state = nullptr;
-  const cache::State *base = nullptr;
-  std::uint64_t base_epoch = 0;
-  // Synchronous episode borrow, like its original request input. No native
-  // callback reads this policy; the original owner keeps it through finish.
-  const inference::RequestStopPolicy *stop_policy = nullptr;
-  LogitsInputs logits{}; // Original admitted episode snapshot, never history.
-  inference::ConditionalLogitsInputs conditional_logits{};
-  std::unique_ptr<cache::State> next{};
-  hyle::container::SmallVector<c::PagedArenaCommit, 32> target_updates{};
-  std::array<c::PagedArenaCommit, 2> draft_updates{};
-  // Armed only after members and ticket storage stop moving, then consumed
-  // before publication recycles their original candidate or previous state.
-  inference::PagedSequencePublication target_publication, draft_publication;
-  hyle::container::SmallVector<c::PagedPageAppender, 32> next_tails{};
-  std::array<c::PagedPageAppender, 2> next_draft_tails{};
-  c::BatchLayoutVersion layout{};
-  c::BatchLayoutVersion draft_layout{};
-  std::size_t input_tokens = 0, input_row_begin = 0, accepted_tokens = 0;
-  std::uint32_t verified_last_page = 0;
-  std::int32_t first_input = -1, draft_token = -1;
-  std::vector<std::int32_t> verification_inputs{};
-  std::vector<c::ReadLease> carry_prefix{};
-  // Frozen active inputs of this member's actual draft Append, not accepted rows.
-  std::size_t draft_input_rows = 0, discarded_draft_rows = 0;
-  bool sampled_accept = false;
 
-
-  inference::PagedSequenceEdit target_edit() noexcept {
-    return {base->paged, next->paged, {target_updates.data(), target_updates.size()}};
-  }
-  inference::PagedSequenceEdit draft_edit() noexcept {
-    return {base->draft->paged, next->draft->paged, draft_updates};
-  }
-  void preflight_frames() {
-    target_publication = {}; draft_publication = {};
-    target_publication = take(target_edit().prepare_publication());
-    if (draft_updates[0].valid() || draft_updates[1].valid())
-      draft_publication = take(draft_edit().prepare_publication());
-  }
-  void publish_frames(cache::State *previous, cache::State &candidate) noexcept {
-    HYLE_FATAL_ASSERT(target_publication.candidate() == &candidate.paged);
-    target_publication.publish(previous ? &previous->paged : nullptr);
-    if (draft_publication.valid()) {
-      HYLE_FATAL_ASSERT(candidate.draft && draft_publication.candidate() == &candidate.draft->paged &&
-          (!previous || previous->draft));
-      draft_publication.publish(previous ? &previous->draft->paged : nullptr);
-    }
-  }
-};
-// Typed views of one original Graph submission. They contain no executor,
-// model-state snapshot or observer independent of the original proxy. A
-// successor may keep these views after its producer's host episode retires.
-struct StepSources final : inference::SubmissionViews {
-  struct Boundary final {
-    std::weak_ptr<Session> session;
-    const cache::State *candidate = nullptr;
-    std::uint64_t epoch = 0;
-    std::size_t length = 0, draft_frontier = 0;
-  };
-  std::vector<Boundary> boundaries;
-  std::vector<c::ReadLease> published_states;
-  // K1 keeps the producer's full two-prefix publication rights in states.
-  // These independent original final-prefix views serve the next Gather.
-  std::vector<g::StoreSource> successor_states;
-  bool mtp_full_candidate = false;
-  void release_publication_views() noexcept {
-    if (!mtp_full_candidate) return;
-    // Model-owned full-prefix views have no consumer binding. Once A has
-    // published, B needs only its independent last-prefix views. Keeping the
-    // obsolete prefix tickets would exceed the original N + K*D*R pool bound.
-    // Preserve hidden's two rows and the identities of every successor view.
-    for (std::size_t bank = 0; bank < successor_states.size(); ++bank) states[bank] = {};
-  }
-};
-using IncomingStepSources = inference::IncomingExecutionSources<StepSources>;
-struct StepState final {
-  // Keep the model's original participant pins alive until after the common
-  // resource episode is destroyed. Session pending still borrows this Step.
-  hyle::container::SmallVector<StepMember, 1> members;
-  inference::ExecutionEpisode<ColdResources, StepSources, 34> execution;
-  c::BatchLayoutVersion draft_layout;
-  Phase *phase = nullptr;
-  Clock::time_point step_start{}, start{};
-  double submit_seconds = 0, cold_batch_seconds = 0, shape_admission_seconds = 0;
-  std::size_t input_tokens = 0, active_input_rows = 0, active_draft_rows = 0,
-      capture_recorded = 0, capture_reused = 0;
-  g::ReplayRoute replay_route = g::ReplayRoute::kUnprepared;
-  bool prepared = false, submitted = false, cancelled = false;
-  std::size_t state_slot = 0;
-  bool discard_stopped_members = false;
-  bool withdrawn(const StepMember &member) const noexcept;
-
-  void recycle_unpublished() noexcept {
-    for (auto &member : members) {
-      member.target_publication = {}; member.draft_publication = {};
-      member.owner_state->recycle_candidate(std::move(member.next)); member.base = nullptr;
-    }
-    phase = nullptr;
-  }
-  hyle::Result<bool> try_abort() noexcept {
-    return execution.recover([&]() noexcept { recycle_unpublished(); });
-  }
-  hyle::Result<bool> try_discard_successful() noexcept {
-    if (!phase)
-      return std::unexpected(hyle::Status::FailedPrecondition("unpublished episode lost its original program"));
-    return execution.discard_successful(phase->state_resource_ports,
-        [&]() noexcept { recycle_unpublished(); });
-  }
-};
 
 class Model;
 // Admission borrows the live Model. The cold resource owner and an explicit
@@ -624,30 +512,7 @@ struct MtpGenerationSelection final {
 // endpoint. Their speculative pages never become a Session head. Target
 // verification repairs the retained draft prefix with actual target hidden
 // rows before the existing Snapshot transaction can publish it.
-struct DraftProgram final {
-  std::size_t rows = 0, sampling_index = 0;
-  bool head = false;
-  g::ReplayMode replay_mode = g::ReplayMode::kCommands;
-  std::vector<Tensor> literals;
-  g::Graph graph;
-  inference::PreparedProgramFamily programs;
-  inference::ProgramCarrier<ColdResources> carrier;
-  V tokens, positions, key, value, metadata, hidden, id, identity, log_probabilities, valid, probability;
-  V bias, allowed, counts, next_counts;
-  std::vector<V> hidden_inputs;
-  std::vector<inference::ProgramIo::Input> hidden_bindings;
-  inference::ProgramIo::Input bias_input, allowed_input, counts_input;
-  StatePorts hidden_state;
-  inference::SlotTransactions hidden_transactions;
-  StepState guard; // The same original episode, cold-prepared for recursive reuse.
-  mtp::AppendNodes append;
-  g::NodeId attention;
-  Tensor token_values, position_values, identity_values;
-  inference::ProgramIo io;
-  inference::ProgramIo::Readback id_value, valid_value, probability_value;
-  c::LeasePool probability_pool, next_counts_pool;
-  inference::ProgramIo::Output probabilities_output, next_counts_output;
-};
+
 struct DraftWork final {
   cache::DraftState state;
   std::array<c::PagedPageAppender, 2> tails;
@@ -667,56 +532,16 @@ struct ConditionalLogitsProposal final {
   std::span<const std::int32_t> committed_outputs;
   std::vector<LogitsInputs> rows;
 };
-struct PrefixSamplingKey final {
-  std::size_t proposals, sampling_index;
-  bool conditional = false;
-  friend auto operator<=>(const PrefixSamplingKey &, const PrefixSamplingKey &) = default;
-};
-struct PrefixSamplingProgram final {
-  std::size_t proposals = 0, sampling_index = 0;
-  std::vector<Tensor> literals;
-  g::Graph graph;
-  inference::PreparedProgramFamily programs;
-  inference::ProgramCarrier<ColdResources> carrier;
-  V logits, identities, ids, bias, allowed, counts, continuation, packet;
-  struct ConditionalInput final {
-    V bias, allowed;
-    inference::ProgramIo::Input bias_input, allowed_input;
-  };
-  std::vector<ConditionalInput> conditional_inputs;
-  std::vector<V> q, accepted, final_ids, valid;
-  Tensor identity_values, id_values, continuation_values;
-  std::vector<float> continuation_host;
-  std::vector<std::int32_t> packet_host;
-  inference::ProgramIo io;
-  inference::ProgramIo::Input logits_input, bias_input, allowed_input, counts_input;
-  std::vector<inference::ProgramIo::Input> q_inputs;
-  inference::ProgramIo::Readback packet_value;
-};
+
+
 struct PrefixSamplingResult final {
   std::vector<std::int32_t> final_ids;
   inference::mtp::AcceptedPrefix prefix;
 };
 
-struct SamplingFrontier final {
-  std::vector<Tensor> literals;
-  g::Graph graph;
-  inference::PreparedProgramFamily programs;
-  inference::ProgramCarrier<ColdResources> carrier;
-  g::DimensionId last_row;
-  V hidden_port, identity_port, id_port, valid_port, bias_port, allowed_port, counts_port;
-  Tensor identity;
-  inference::ProgramIo io;
-  inference::ProgramIo::Input hidden_input, bias_input, allowed_input, counts_input;
-  inference::ProgramIo::Readback id, valid;
-};
 
-struct PreparedSampling final {
-  const std::size_t index;
-  const SamplingConfiguration configuration;
-  std::unique_ptr<SamplingFrontier> frontier;
-  PreparedSampling(std::size_t ordinal, SamplingConfiguration value) : index(ordinal), configuration(value) {}
-};
+
+
 
 // Actual cold storage and policy addresses borrowed by submitted Graphs. The
 // application Model and Session links are absent: a failed native prefix must
@@ -1651,169 +1476,18 @@ public:
     const auto key = std::tuple{rows, head, selected_index};
     if (draft_programs.contains(key)) return;
     prepare_cache();
-    auto prepared = std::make_unique<DraftProgram>(); auto &program = *prepared;
-    program.rows = rows; program.head = head; program.sampling_index = selected_index;
-    // No reliable auxiliary-use hint: Auto retains the original Commands path.
-    program.replay_mode = !selected_sampler.modifiers.history.empty() && head ? g::ReplayMode::kCommands
+    // Optional source transform remains with its original cold Model owner.
+    const bool subset = head && prepare_draft_vocabulary(selected_sampler);
+    const auto replay_mode = !selected_sampler.modifiers.history.empty() && head ? g::ReplayMode::kCommands
         : select_replay_mode(replay_policy, 1, selected_sampler.enabled);
-    GraphAssembly assembly(execution, precision, allocation_budget);
-    Recipe r(weights, projections, assembly, geometry, rows, 1, &weight_meanings);
-    const auto count = f(static_cast<std::int64_t>(rows));
-    program.tokens = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
-    program.positions = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
-    V shifted;
-    g::slots::Schema hidden_schema;
-    if (head) {
-      hidden_schema = take(g::slots::Schema::create(dense(precision.activation_type(), {1, hidden}),
-          cache_plan.hidden_slots,
-          cache::add(geometry.hidden_bytes(), cache::state_pool_padding(geometry.hidden_bytes()))));
-      auto &port = program.hidden_state;
-      port.pool = r.input(take(hidden_schema.capacity_description()));
-      port.source_ids = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
-      port.destination_ids = r.input(dense(Type::kInt32, {1}));
-      shifted = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
-          {port.pool, port.source_ids}, r.dense_spec(precision.activation_type(), {count, f(hidden)}), &port.gather);
-    } else {
-      // This maintenance graph only reads hidden and writes draft KV. Keep
-      // its original ready-leaf Commands path; no dummy Store or pool reader.
-      for (std::size_t row = 0; row < rows; ++row) {
-        program.hidden_inputs.push_back(r.input(dense(precision.activation_type(), {1, hidden})));
-      }
-      shifted = r.concat(program.hidden_inputs, 0, r.dense_spec(precision.activation_type(), {count, f(hidden)}));
-    }
-    std::vector<float> frequency(static_cast<std::size_t>(geometry.rotary / 2));
-    for (std::size_t i = 0; i < frequency.size(); ++i) frequency[i] = 1.F / std::pow(geometry.rope_theta, float(i) / static_cast<float>(frequency.size()));
-    auto &frequency_literal = assembly.literal_at(assembly.primary(), dense(Type::kFloat32, {geometry.rotary / 2}));
-    frequency_literal.write<float>(frequency);
-    const auto frequencies = r.constant(frequency_literal);
-    const mtp::Geometry row_geometry{1, count, count};
-    const auto projection = mtp::input_projection(r, program.tokens, shifted);
-    const auto kv = mtp::project_kv(r, projection, program.positions, frequencies, row_geometry);
-    if (head) {
-      program.key = r.input(take(c::batch_cache_description(attention_schema, c::BatchCacheRole::kKey)));
-      program.value = r.input(take(c::batch_cache_description(attention_schema, c::BatchCacheRole::kValue)));
-      program.metadata = r.input(take(attention_schema.metadata_description()));
-      const bool subset = prepare_draft_vocabulary(selected_sampler);
-      const auto result = mtp::full_head(r, projection, kv, program.positions, frequencies,
-          {attention_schema, program.key, program.value, program.metadata}, f(static_cast<std::int64_t>(rows - 1)), row_geometry,
-          [&](Recipe &recipe, V selected) { return draft_scores(recipe, selected, subset); });
-      program.append = result.append_nodes; program.attention = result.attention_node;
-      program.hidden = result.selected_hidden;
-      const auto inputs = prepare_logits_inputs(r, selected_sampler.modifiers);
-      if (inputs.bias) program.bias = *inputs.bias;
-      if (inputs.allowed) program.allowed = *inputs.allowed;
-      if (inputs.counts) program.counts = *inputs.counts;
-      const auto processed = sampling::process_logits(r, result.logits, inputs, selected_sampler.modifiers.history);
-      if (!selected_sampler.enabled) {
-        if (selected_sampler.modifiers.empty()) program.id = original_draft_id(r,
-            r.op(c::Operation(c::TopK{.count = 1}), {result.logits},
-                {r.dense_spec(Type::kFloat32, {f(1), f(1)}), r.dense_spec(Type::kInt32, {f(1), f(1)})})[1], subset);
-        else if (min_draft_probability() == 0) {
-          const auto selection = sampling::processed_selection(r, processed, std::optional<V>{}, selected_sampler.policy);
-          program.id = selection.id; program.valid = r.host_predicate(*selection.valid);
-        }
-      }
-      if (selected_sampler.enabled || min_draft_probability() > 0) {
-        const auto distribution = sampling::processed_distribution(r, processed,
-            selected_sampler.enabled ? selected_sampler.policy : sampling::Policy{});
-        program.log_probabilities = distribution.log_probabilities; program.valid = r.host_predicate(distribution.valid);
-        if (selected_sampler.enabled) {
-          program.identity = r.input(dense(Type::kUInt32, {1, 4}));
-          program.id = r.one(c::sampling_ops::categorical(), {program.log_probabilities, program.identity});
-          r.publish(program.log_probabilities);
-        } else if (!selected_sampler.modifiers.empty()) {
-          // Threshold already requires this one distribution's complete
-          // validity. Reuse it for a safe greedy ID instead of validating the
-          // same processed row a second time.
-          const auto safe = r.one(c::Select{}, {distribution.valid, processed.logits, r.scalar(0)});
-          program.id = r.op(c::Operation(c::TopK{.count = 1}), {safe})[1];
-        }
-        if (min_draft_probability() > 0) {
-          const auto maximum = r.copy(r.reshape(r.one(c::Reduce{.kind = c::ReductionKind::kMaximum,
-              .accumulation_type = Type::kFloat32}, {program.log_probabilities}), {f(1)}));
-          program.probability = r.unary(c::UnaryKind::kExp, maximum); r.publish(program.probability);
-        }
-      }
-      if (inputs.counts) {
-        program.next_counts = sampling::advance_history_counts(r, *inputs.counts, r.reshape(program.id, {f(1)}));
-        r.publish(program.next_counts);
-      }
-      if (program.valid) r.publish(program.valid);
-      r.op(c::Operation::custom(g::slots::Store{hidden_schema}),
-          {program.hidden, program.hidden_state.destination_ids}, {}, &program.hidden_state.store);
-      check(r.builder.depends_on(program.hidden_state.store, program.append.value));
-      r.publish(program.id);
-    } else program.append = mtp::append_kv(r, attention_schema, kv);
-    program.graph = take(std::move(r.builder).finish());
-    const std::array binding{g::ShapeBinding{r.last_row, static_cast<std::int64_t>(rows - 1)}};
-    const std::array variants{g::ExactShapeVariant{binding}};
-    const auto hidden_store = program.hidden_state.store;
-    const auto extra_stores = hidden_store.valid() ? std::span(&hidden_store, 1) : std::span<const g::NodeId>{};
-    check(program.programs.prepare(take(execution.compile(program.graph, assembly.constants(),
-        assembly.options({.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
-         .constants = assembly.constants(), .resource_budget = execution_budget}))), program.graph, variants,
-        {{}, extra_stores}, take(execution_budget.metadata_allocator())));
-    const auto &compiled_program = program.programs.child(0).compiled;
-    check(program.carrier.prepare(compiled_program, execution.queue_bindings()));
-    record_execution_plan(compiled_program.report, assembly.constants());
-    program.literals = std::move(assembly.literals);
-    program.token_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
-    program.position_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
+    auto built = build_draft_program({rows, selected_index, head, replay_mode, min_draft_probability()},
+        {geometry, precision, weights, projections, weight_meanings, ffn_placement.cpu_layers()},
+        {attention_schema, cache_plan.hidden_slots, cache_plan.active_sequences, cache_plan.candidate_boundaries,
+         prepared_draft_projection(subset)}, selected_sampler,
+        {execution, allocation_budget, execution_budget, cache_budget});
+    auto prepared = std::move(built.program); auto &program = *prepared;
+    merge_execution_plan(built.plan);
     input_scratch.draft_positions.reserve(rows);
-    if (head && selected_sampler.enabled)
-      program.identity_values = caller_tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
-    check(program.io.prepare(compiled_program, head && selected_sampler.enabled ? 3 : 2,
-        program.hidden_inputs.size() + bool(program.bias) + bool(program.allowed) + bool(program.counts),
-        head ? 1 + bool(program.valid) + (min_draft_probability() > 0) : 0,
-        head ? bool(selected_sampler.enabled) + bool(program.next_counts) : 0));
-    program.hidden_bindings.reserve(program.hidden_inputs.size());
-    for (const auto port : program.hidden_inputs) program.hidden_bindings.push_back(take(program.io.add_input(port)));
-    if (program.bias) program.bias_input = take(program.io.add_input(program.bias));
-    if (program.allowed) program.allowed_input = take(program.io.add_input(program.allowed));
-    if (program.counts) program.counts_input = take(program.io.add_input(program.counts));
-    if (head) {
-      if (selected_sampler.enabled) program.probabilities_output = take(program.io.add_output(program.log_probabilities));
-      if (program.next_counts) program.next_counts_output = take(program.io.add_output(program.next_counts));
-    }
-    for (const auto &output : program.programs.child(0).outputs()) {
-      if (!output.caller_owned()) continue;
-      const auto port = output.value;
-      if (port == program.next_counts) {
-        const auto &facts = program.io.output_facts(program.next_counts_output);
-        const auto bytes = take(facts.description.required_bytes());
-        const auto pool_capacity = take(inference::checked_output_pool_capacity(
-            std::array{bytes}, 2, cache::state_pool_alignment));
-        program.next_counts_pool = take(c::LeasePool::create(
-            take(execution.resource_for(facts.storage)), cache::add(pool_capacity.backing_bytes, 1),
-            {.max_blocks = pool_capacity.max_blocks, .resource_budget = execution_budget}));
-      } else if (port == program.log_probabilities) {
-        // One verifier cohort retains every member's q until target selection.
-        // Keep the original per-member allowance within the existing budget.
-        const auto blocks = cache::multiply(cache_plan.active_sequences, cache_plan.candidate_boundaries);
-        const auto &facts = program.io.output_facts(program.probabilities_output);
-        const auto bytes = take(facts.description.required_bytes());
-        const auto pool_capacity = take(inference::checked_output_pool_capacity(
-            std::array{bytes}, blocks, cache::state_pool_alignment));
-        program.probability_pool = take(c::LeasePool::create(
-            take(execution.resource_for(facts.storage)), cache::add(pool_capacity.backing_bytes, 1),
-            {.max_blocks = pool_capacity.max_blocks, .resource_budget = execution_budget}));
-      }
-    }
-    check(program.io.add_fixed(program.tokens, program.token_values.read()));
-    check(program.io.add_fixed(program.positions, program.position_values.read()));
-    if (head) {
-      program.id_value = take(program.io.add_readback(program.id, execution.storage_domains(), allocation_budget));
-      if (selected_sampler.enabled) check(program.io.add_fixed(program.identity, program.identity_values.read()));
-      if (program.valid) program.valid_value = take(program.io.add_readback(program.valid, execution.storage_domains(), allocation_budget));
-      if (min_draft_probability() > 0)
-        program.probability_value = take(program.io.add_readback(program.probability, execution.storage_domains(), allocation_budget));
-    }
-    check(program.io.seal());
-    if (head) {
-      const std::array specs{inference::SlotTransactionSpec{program.hidden_state.store,
-          rows, 1, {.resource_budget = cache_budget}}};
-      check(program.hidden_transactions.prepare(specs));
-    }
     program.guard.execution.configure(draft_bank + 2);
     const auto dirty_bound = cache::add(rows, cache::Plan::page_rows - 2) / cache::Plan::page_rows + 1;
     for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
@@ -2001,106 +1675,13 @@ public:
       throw std::runtime_error("conditional prefix inputs require configured bias or mask ports");
     const PrefixSamplingKey key{proposals, sampling_index, conditional};
     if (prefix_sampling_programs.contains(key)) return;
-    auto prepared = std::make_unique<PrefixSamplingProgram>(); auto &program = *prepared;
-    program.proposals = proposals; program.sampling_index = sampling_index;
-    GraphAssembly assembly(execution, precision, allocation_budget);
-    Recipe r(weights, projections, assembly, geometry, 1, 1, &weight_meanings);
-    const auto count = f(static_cast<std::int64_t>(proposals + 1));
-    program.logits = r.input(r.dense_spec(Type::kFloat32, {count, f(vocabulary)}));
-    auto shared_policy = selected_sampler.modifiers;
-    if (conditional) { shared_policy.bias = false; shared_policy.allowed = false; }
-    const auto inputs = prepare_logits_inputs(r, shared_policy);
-    std::vector<sampling::LogitsInputsFor<V>> conditional_ports;
-    if (conditional) {
-      conditional_ports.reserve(proposals + 1); program.conditional_inputs.resize(proposals + 1);
-      const sampling::LogitsPolicy policy{.bias = selected_sampler.modifiers.bias, .allowed = selected_sampler.modifiers.allowed};
-      for (auto &row : program.conditional_inputs) {
-        auto ports = prepare_logits_inputs(r, policy);
-        if (ports.bias) row.bias = *ports.bias;
-        if (ports.allowed) row.allowed = *ports.allowed;
-        conditional_ports.push_back(std::move(ports));
-      }
-    }
-    if (inputs.bias) program.bias = *inputs.bias;
-    if (inputs.allowed) program.allowed = *inputs.allowed;
-    if (inputs.counts) program.counts = *inputs.counts;
-    if (selected_sampler.enabled) {
-      program.identities = r.input(r.dense_spec(Type::kUInt32, {count, f(4)}));
-      if (proposals) program.ids = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(proposals)}));
-      auto assembled = sampling::speculative_prefix(r, program.logits, program.identities,
-          program.ids, selected_sampler.policy, inputs, selected_sampler.modifiers.history,
-          std::span<const sampling::LogitsInputsFor<V>>(conditional_ports));
-      program.q = std::move(assembled.q); program.accepted = std::move(assembled.accepted);
-      program.final_ids = std::move(assembled.final_ids); program.valid = std::move(assembled.valid);
-    } else {
-      if (!selected_sampler.modifiers.history.empty() && proposals)
-        program.ids = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(proposals)}));
-      auto row_inputs = inputs;
-      // A greedy verifier still needs the exact processed target of every row;
-      // no proposal-q or RNG ports belong to this program.
-      for (std::size_t row = 0; row <= proposals; ++row) {
-        if (conditional) {
-          row_inputs.bias = conditional_ports[row].bias; row_inputs.allowed = conditional_ports[row].allowed;
-        }
-        const auto raw = r.copy(r.slice(program.logits, 0, f(static_cast<std::int64_t>(row)), f(1)));
-        const auto selection = sampling::processed_selection(r,
-            sampling::process_logits(r, raw, row_inputs, selected_sampler.modifiers.history), std::optional<V>{}, selected_sampler.policy);
-        program.final_ids.push_back(r.reshape(selection.id, {f(1)})); program.valid.push_back(*selection.valid);
-        if (!selected_sampler.modifiers.history.empty() && row < proposals)
-          row_inputs.counts = sampling::advance_history_counts(r, *row_inputs.counts,
-              r.copy(r.slice(program.ids, 0, f(static_cast<std::int64_t>(row)), f(1))));
-      }
-    }
-    if (selected_sampler.enabled) {
-      if (proposals) program.continuation = r.input(dense(Type::kFloat32,
-          {static_cast<std::int64_t>(proposals)}));
-      program.packet = inference::mtp::sampled_prefix_packet(r, program.ids, program.continuation,
-          std::span<const V>(program.accepted), std::span<const V>(program.final_ids), std::span<const V>(program.valid));
-    } else {
-      program.packet = inference::mtp::validated_ids_packet(r,
-          std::span<const V>(program.final_ids), std::span<const V>(program.valid));
-    }
-    r.publish(program.packet);
-    program.graph = take(std::move(r.builder).finish());
-    const std::array binding{g::ShapeBinding{r.last_row, 0}};
-    const std::array variants{g::ExactShapeVariant{binding}};
-    check(program.programs.prepare(take(execution.compile(program.graph, assembly.constants(),
-        assembly.options({.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
-         .constants = assembly.constants(), .resource_budget = execution_budget}))), program.graph, variants));
-    const auto &compiled_program = program.programs.child(0).compiled;
-    check(program.carrier.prepare(compiled_program, execution.queue_bindings()));
-    record_execution_plan(compiled_program.report, assembly.constants());
-    program.literals = std::move(assembly.literals);
-    if (program.identities) {
-      program.identity_values = caller_tensor(execution.device(), dense(Type::kUInt32, {static_cast<std::int64_t>(proposals + 1), 4}));
+    auto built = build_prefix_sampling({proposals, sampling_index, conditional},
+        {geometry, precision, weights, projections, weight_meanings, ffn_placement.cpu_layers()}, selected_sampler,
+        {execution, allocation_budget, execution_budget, cache_budget});
+    auto prepared = std::move(built.program); auto &program = *prepared;
+    merge_execution_plan(built.plan);
+    if (program.identities)
       input_scratch.sampling_identities.reserve(take(program.identity_values.description.required_bytes()) / sizeof(std::uint32_t));
-    }
-    if (program.ids) program.id_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(proposals)}));
-    if (program.continuation) {
-      program.continuation_values = caller_tensor(execution.device(), dense(Type::kFloat32,
-          {static_cast<std::int64_t>(proposals)}));
-      program.continuation_host.resize(proposals);
-    }
-    program.packet_host.resize(selected_sampler.enabled ? proposals + 5 : proposals + 2);
-    check(program.io.prepare(compiled_program, bool(program.identities) + bool(program.ids) + bool(program.continuation),
-        cache::add(1 + program.q.size() + bool(program.bias) + bool(program.allowed) + bool(program.counts),
-            cache::multiply(program.conditional_inputs.size(), std::size_t(selected_sampler.modifiers.bias) + std::size_t(selected_sampler.modifiers.allowed))),
-        1, 0));
-    if (program.identities) check(program.io.add_fixed(program.identities, program.identity_values.read()));
-    if (program.ids) check(program.io.add_fixed(program.ids, program.id_values.read()));
-    if (program.continuation) check(program.io.add_fixed(program.continuation, program.continuation_values.read()));
-    program.packet_value = take(program.io.add_readback(program.packet, execution.storage_domains(), allocation_budget));
-    if (program.bias) program.bias_input = take(program.io.add_input(program.bias));
-    if (program.allowed) program.allowed_input = take(program.io.add_input(program.allowed));
-    if (program.counts) program.counts_input = take(program.io.add_input(program.counts));
-    for (auto &row : program.conditional_inputs) {
-      if (row.bias) row.bias_input = take(program.io.add_input(row.bias));
-      if (row.allowed) row.allowed_input = take(program.io.add_input(row.allowed));
-    }
-    program.q_inputs.reserve(program.q.size());
-    for (const auto port : program.q) program.q_inputs.push_back(take(program.io.add_input(port)));
-    program.logits_input = take(program.io.add_input(program.logits));
-    check(program.io.seal());
     initialize_prefix_sampling(program);
     prefix_sampling_programs.emplace(key, std::move(prepared));
   }
@@ -2279,46 +1860,11 @@ public:
       const auto &selected_sampler = entry->configuration;
       if (!selected_sampler.enabled && selected_sampler.modifiers.empty() && sampling_configuration_count() == 1) continue;
       if (!entry->frontier) {
-        auto prepared = std::make_unique<SamplingFrontier>();
-        GraphAssembly assembly(execution, precision, allocation_budget);
-        Recipe r(weights, projections, assembly, geometry, 1, 1, &weight_meanings);
-        prepared->last_row = r.last_row;
-        prepared->hidden_port = r.input(dense(precision.activation_type(), {1, hidden}));
-        if (selected_sampler.enabled) prepared->identity_port = r.input(dense(Type::kUInt32, {1, 4}));
-        const auto inputs = prepare_logits_inputs(r, selected_sampler.modifiers);
-        if (inputs.bias) prepared->bias_port = *inputs.bias;
-        if (inputs.allowed) prepared->allowed_port = *inputs.allowed;
-        if (inputs.counts) prepared->counts_port = *inputs.counts;
-        const auto selection = sampling::ordinary_selection(r,
-            r.scores(prepared->hidden_port, std::string(geometry.head_role())),
-            selected_sampler.enabled ? std::optional<V>(prepared->identity_port) : std::nullopt,
-            selected_sampler.policy, inputs, selected_sampler.modifiers.history);
-        prepared->id_port = selection.id;
-        if (selection.valid) prepared->valid_port = r.host_predicate(*selection.valid);
-        r.publish(prepared->id_port); if (prepared->valid_port) r.publish(prepared->valid_port);
-        prepared->graph = take(std::move(r.builder).finish());
-        // The frontier is a fixed [1,H] projection with no symbolic model rows.
-        const std::array shape{g::ShapeBinding{r.last_row, 0}};
-        const std::array variants{g::ExactShapeVariant{shape}};
-        check(prepared->programs.prepare(take(execution.compile(prepared->graph, assembly.constants(),
-            assembly.options({.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
-             .constants = assembly.constants(), .resource_budget = execution_budget}))), prepared->graph, variants));
-        const auto &compiled_program = prepared->programs.child(0).compiled;
-        check(prepared->carrier.prepare(compiled_program, execution.queue_bindings()));
-        record_execution_plan(compiled_program.report, assembly.constants());
-        prepared->literals = std::move(assembly.literals);
-        if (selected_sampler.enabled) prepared->identity = caller_tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
-        check(prepared->io.prepare(compiled_program, bool(prepared->identity_port),
-            1 + bool(prepared->bias_port) + bool(prepared->allowed_port) + bool(prepared->counts_port),
-            1 + bool(prepared->valid_port), 0));
-        if (prepared->identity_port) check(prepared->io.add_fixed(prepared->identity_port, prepared->identity.read()));
-        prepared->id = take(prepared->io.add_readback(prepared->id_port, execution.storage_domains(), allocation_budget));
-        if (prepared->valid_port) prepared->valid = take(prepared->io.add_readback(prepared->valid_port, execution.storage_domains(), allocation_budget));
-        prepared->hidden_input = take(prepared->io.add_input(prepared->hidden_port));
-        if (prepared->bias_port) prepared->bias_input = take(prepared->io.add_input(prepared->bias_port));
-        if (prepared->allowed_port) prepared->allowed_input = take(prepared->io.add_input(prepared->allowed_port));
-        if (prepared->counts_port) prepared->counts_input = take(prepared->io.add_input(prepared->counts_port));
-        check(prepared->io.seal());
+        auto built = build_sampling_frontier(
+            {geometry, precision, weights, projections, weight_meanings, ffn_placement.cpu_layers()}, selected_sampler,
+            {execution, allocation_budget, execution_budget, cache_budget});
+        merge_execution_plan(built.plan);
+        auto prepared = std::move(built.program);
         entry->frontier = std::move(prepared);
       }
     }
@@ -3267,11 +2813,23 @@ public:
     // A suffix first seen at a request boundary may compile a new exact family.
     // Charge that real synchronous work to this step, before the carrier loan.
     const auto step_start = Clock::now();
+    const ExecutionShape phase_key{requests.size(), physical_tokens, role, completion, sampling_index, relay, packing};
+    // Reuse only this call's original complete Phase metadata. Diagnostic
+    // execution keeps its existing default/probe preparation sequence.
+    const auto resolve_prepared_phase = [&]() -> Phase * {
+      if (!layer0_probe.empty()) return nullptr;
+      const auto found = phases.find(phase_key);
+      return found == phases.end() ? nullptr : found->second.get();
+    };
+    auto *prepared_phase = resolve_prepared_phase();
     double shape_admission_seconds = 0;
     if (!packed_prefill && (role == GraphRole::kText || is_mtp_prefill(role)) &&
-        !find_child(requests.size(), tokens, role, false, completion, sampling_index)) {
+        !prepared_phase && !find_child(requests.size(), tokens, role, false, completion, sampling_index)) {
       admit_exact_shape(tokens, requests.size(), role, completion, sampling_index);
       shape_admission_seconds = std::chrono::duration<double>(Clock::now() - step_start).count();
+      // Exact admission can retire/erase Phase and Family inventory entries.
+      // Re-resolve from the current map; no pointer is retained across calls.
+      prepared_phase = resolve_prepared_phase();
     }
     const bool ahead = !relay && !packed_target && take_decode_ahead(requests, role, completion, sampling_index, tokens);
     auto candidate = std::make_shared<StepState>(); candidate->execution.configure(draft_bank + 2);
@@ -3312,7 +2870,8 @@ public:
         if (found == phases.end() || !found->second->slots[slot].carrier.initialized())
           throw std::runtime_error("successor carrier must be cold-prepared before its predecessor submission");
       }
-      auto &phase = prepare_child(physical_tokens, !layer0_probe.empty(), width, role, completion, sampling_index, relay, packing);
+      auto &phase = prepared_phase ? *prepared_phase
+          : prepare_child(physical_tokens, !layer0_probe.empty(), width, role, completion, sampling_index, relay, packing);
       auto &carrier = phase.slots[slot].carrier;
       auto &program_slot = phase.slots[slot]; auto &io = program_slot.data;
       // A rejected successor never claims or clears its predecessor's run.

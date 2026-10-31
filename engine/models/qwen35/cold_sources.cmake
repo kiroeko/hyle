@@ -6,4 +6,5 @@ set(_hyle_qwen35_cold_sources
   "${CMAKE_CURRENT_LIST_DIR}/graph_builder.cc"
   "${CMAKE_CURRENT_LIST_DIR}/target_graph.cc"
   "${CMAKE_CURRENT_LIST_DIR}/family_factory.cc"
-  "${CMAKE_CURRENT_LIST_DIR}/phase_preparation.cc")
+  "${CMAKE_CURRENT_LIST_DIR}/phase_preparation.cc"
+  "${CMAKE_CURRENT_LIST_DIR}/auxiliary_programs.cc")

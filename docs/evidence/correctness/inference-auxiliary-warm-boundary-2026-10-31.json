@@ -1,0 +1,528 @@
+{
+  "schema": "hyle.inference.auxiliary-warm-boundary.v1",
+  "status": "CURRENT_FINITE_CHECKS_PASS",
+  "base_commit": "8c463c8d2d2ca011b018639508d26980c3515a6f",
+  "full_goal_complete": false,
+  "source_pins": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 513334,
+      "sha256": "327873338c11e189746da36d09cf2df9d398a82c66b592b946182b18bbc4f8be"
+    },
+    {
+      "path": "engine/models/qwen35/cold_sources.cmake",
+      "bytes": 537,
+      "sha256": "e8dcfd066f29678190d2ae13b92509c4dbb6ba8ca7b0dc9ade5df3ee76a28244"
+    },
+    {
+      "path": "engine/models/qwen35/episode_state.h",
+      "bytes": 6413,
+      "sha256": "a1b734728de2c31b553cb02c359fc362e1c6fb9f972866e4d3640e298ab22bcf"
+    },
+    {
+      "path": "engine/models/qwen35/auxiliary_programs.h",
+      "bytes": 5248,
+      "sha256": "eca819c32abbbee7421221847ce008a0a299b1c3ed09405e9df6c7e2fccfe6f9"
+    },
+    {
+      "path": "engine/models/qwen35/auxiliary_programs.cc",
+      "bytes": 25773,
+      "sha256": "294fc688c1c8595ea961d25816936e4149a918a6a67b68a9bf0e512b938fbedf"
+    },
+    {
+      "path": "tests/tools/qwen_host_image_test.cc",
+      "bytes": 11662,
+      "sha256": "4ca25f7aa8729adb003cc569803f555ce470a507180eb7e0542fd11f0a8234d2"
+    },
+    {
+      "path": "tests/tools/qwen_auxiliary_preparation_case.h",
+      "bytes": 6099,
+      "sha256": "9989d2f229f209d6ff1738c347f52c92af0966d07c330a04bea35afb3e4db512"
+    }
+  ],
+  "patch": {
+    "path": ".scratch/inference-auxiliary-warm-combined-20261030/auxiliary-warm-seven-source.patch",
+    "bytes": 87412,
+    "sha256": "6ae903f9b4e5f02c4b74e00db7777b74a2bfb6282dcd95729d8bb464c2e86b67"
+  },
+  "build": {
+    "totals": {
+      "CXX": {
+        "passed": 4,
+        "failed": 0
+      },
+      "link": {
+        "passed": 3,
+        "failed": 0
+      },
+      "native": {
+        "passed": 12,
+        "failed": 0
+      }
+    },
+    "actual_processes": 19,
+    "all_terminal": true,
+    "retained": 232,
+    "reused": 231,
+    "new_auxiliary_object": 1,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "processes": [
+      {
+        "kind": "CXX",
+        "receipt": {
+          "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/compile/auxiliary/attempt1/process.json",
+          "bytes": 150,
+          "sha256": "efc93ff31982ee2d9f596c4b6027327408e963a6268018069e0260293dd29032"
+        }
+      },
+      {
+        "kind": "CXX",
+        "receipt": {
+          "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/compile/cli/attempt1/process.json",
+          "bytes": 151,
+          "sha256": "77b34adfdcf5d2992b8e0b1d9ed5b9de166e6cfcda9bd78de8f4e98623682566"
+        }
+      },
+      {
+        "kind": "CXX",
+        "receipt": {
+          "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/compile/session/attempt1/process.json",
+          "bytes": 150,
+          "sha256": "0bae08e010d23c7ef788cbe438b1490b59a8803e46c6d4161b414cbd2f5354cf"
+        }
+      },
+      {
+        "kind": "CXX",
+        "receipt": {
+          "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/compile/tiny/attempt1/process.json",
+          "bytes": 150,
+          "sha256": "60bdd3c1a9123186282c5a742cd18e9411e00a429423907e7aae2c882939c67a"
+        }
+      },
+      {
+        "kind": "link",
+        "receipt": {
+          "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/link/cli/attempt1/process.json",
+          "bytes": 151,
+          "sha256": "88af7bedd4f7c8b9ea471861d55e666862b005ff9c941bd36f7e97c0267688cb"
+        }
+      },
+      {
+        "kind": "link",
+        "receipt": {
+          "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/link/session/attempt1/process.json",
+          "bytes": 151,
+          "sha256": "a14db3cf7b56c46aace915d4b974a874f0827203ed915d5e776e540ec7df633b"
+        }
+      },
+      {
+        "kind": "link",
+        "receipt": {
+          "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/link/tiny/attempt1/process.json",
+          "bytes": 150,
+          "sha256": "ef87fbebb9663cb0c1f71c51d58eb7957c33808489691dae790242f1432fc19b"
+        }
+      },
+      {
+        "kind": "native",
+        "receipt": {
+          "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/runs/candidate/auxiliary-preparation-cpu/attempt1/process.json",
+          "bytes": 151,
+          "sha256": "355772c7f28e6945f0b05181645b570937eefa72d13bff689c0da5d38029d45c"
+        }
+      },
+      {
+        "kind": "native",
+        "receipt": {
+          "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/runs/candidate/conditional-logits-cpu/attempt1/process.json",
+          "bytes": 151,
+          "sha256": "90cf9cc658bbcf35d05af80694be20723fbb5bde0940fe3e5c7c3003bbf4c866"
+        }
+      },
+      {
+        "kind": "native",
+        "receipt": {
+          "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/runs/candidate/history-logits-cpu/attempt1/process.json",
+          "bytes": 151,
+          "sha256": "8a7fa7e6c19b43915207f34ebe8e1eaa4fe331e5a84e1cd5881444bbfff55c93"
+        }
+      },
+      {
+        "kind": "native",
+        "receipt": {
+          "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/runs/candidate/mtp-logits-cuda/attempt1/process.json",
+          "bytes": 150,
+          "sha256": "6385ae03bcc13a4cf03c5bc3aa910fd3faf303f6375532314753ffe99cbf0194"
+        }
+      },
+      {
+        "kind": "native",
+        "receipt": {
+          "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/runs/candidate/mtp-single/attempt1/process.json",
+          "bytes": 150,
+          "sha256": "fc0c78cace5d75981901faf4d57783ec5864bd3706230531166cac34a78bc1c7"
+        }
+      },
+      {
+        "kind": "native",
+        "receipt": {
+          "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/runs/candidate/mtp-two/attempt1/process.json",
+          "bytes": 150,
+          "sha256": "e9d63f724150685e1291fa2cbb5203bbb06b21609f3be086a459a5e12635367b"
+        }
+      },
+      {
+        "kind": "native",
+        "receipt": {
+          "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/runs/candidate/ordinary-single/attempt1/process.json",
+          "bytes": 150,
+          "sha256": "bc5a5c5a8593c70f6606a6f6df19ee6a05e3f4cc31037d42f84f45d6b395bb17"
+        }
+      },
+      {
+        "kind": "native",
+        "receipt": {
+          "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/runs/candidate/ordinary-two/attempt1/process.json",
+          "bytes": 150,
+          "sha256": "6665deb7e5af94ffce13cab1594fbcd646773b49dc1ae53b4a5de304c30fee15"
+        }
+      },
+      {
+        "kind": "native",
+        "receipt": {
+          "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/runs/candidate/sampling-policies-cpu/attempt1/process.json",
+          "bytes": 151,
+          "sha256": "7b5a0c38569a7b18ab3d56e39ae4147533c057db6adb4f186559b576ef91c2a0"
+        }
+      },
+      {
+        "kind": "native",
+        "receipt": {
+          "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/runs/candidate/session-cuda/attempt1/process.json",
+          "bytes": 150,
+          "sha256": "15631ec77e988c5313c5d861b36ae25c0cb764a76c70d23500014cd84b054af3"
+        }
+      },
+      {
+        "kind": "native",
+        "receipt": {
+          "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/runs/near-baseline/mtp-single/attempt1/process.json",
+          "bytes": 150,
+          "sha256": "0b7ec28bdf20605cd88a87f4aad78bdf7a3a3c5b5c64075001d558d2d7ab6512"
+        }
+      },
+      {
+        "kind": "native",
+        "receipt": {
+          "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/runs/near-baseline/ordinary-single/attempt1/process.json",
+          "bytes": 151,
+          "sha256": "6bf62e3d8da392f2599765c1d874b18d5e9a115a9c60e3e179254a960a1d9826"
+        }
+      }
+    ]
+  },
+  "checks": {
+    "cases": {
+      "auxiliary-preparation-cpu": {
+        "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/runs/candidate/auxiliary-preparation-cpu/attempt1/report.json",
+        "bytes": 274,
+        "sha256": "b4c866e608c2e2069b5de39155503bd10a689300edf04639faab5f9c2788db01"
+      },
+      "sampling-policies-cpu": {
+        "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/runs/candidate/sampling-policies-cpu/attempt1/report.json",
+        "bytes": 95379,
+        "sha256": "f18dcac1f58b2fd4f0fa45b75a3a50cda7f9287108ab59596a4b9337fbe6fddd"
+      },
+      "conditional-logits-cpu": {
+        "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/runs/candidate/conditional-logits-cpu/attempt1/report.json",
+        "bytes": 912,
+        "sha256": "63544c849490de6a1b8ad6350a045ad2960bf4a9228042779cccf7551eefb129"
+      },
+      "history-logits-cpu": {
+        "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/runs/candidate/history-logits-cpu/attempt1/report.json",
+        "bytes": 7802,
+        "sha256": "9c97d2034d906cc669c341281dc32a58beb0053a5bbb1140dd0d969082a309ec"
+      },
+      "mtp-logits-cuda": {
+        "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/runs/candidate/mtp-logits-cuda/attempt1/report.json",
+        "bytes": 4264,
+        "sha256": "358e0008b6e28fbc0f1d3ef2716c456c56224fb6b384e099128392f623039a88"
+      }
+    },
+    "cold_budget_refusals": 3,
+    "same_key_retries": 3,
+    "warm_original_programs": true,
+    "tracked_execution_live_restored": true,
+    "default_pairs_against_retained_M2": {
+      "status": "PASS_ALL_FOUR_DEFAULT_CASES",
+      "checks": [
+        {
+          "case": "ordinary-single",
+          "all_non_timing_fields_equal": true,
+          "differences": [],
+          "reports": {
+            "baseline": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-m2-borrowed-alias-harness-20261030\\runs\\candidate\\ordinary-single\\attempt1\\report.json",
+              "bytes": 119971,
+              "sha256": "963060610b2fda7bf884ab7c23f64975a1dc3076e7b49ca075c2de661e76ff98"
+            },
+            "candidate": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-auxiliary-cold-program-harness-20261030\\runs\\candidate\\ordinary-single\\attempt1\\report.json",
+              "bytes": 119960,
+              "sha256": "3c0df976b7b2deb35519f3ec3c4cf738a5ea8b2c6b0223101a2ef418409d77af"
+            }
+          },
+          "timing_diagnostic": {
+            "prefill_seconds": {
+              "baseline": 0.0714704,
+              "candidate": 0.075887
+            },
+            "decode_seconds": {
+              "baseline": 0.6797428999999998,
+              "candidate": 0.6466539999999998
+            },
+            "session_seconds": {
+              "baseline": 0.7512133,
+              "candidate": 0.722541
+            },
+            "startup_to_ready_seconds": {
+              "baseline": 1.1610724,
+              "candidate": 1.4489999
+            }
+          },
+          "scope": "Retained M2 numerical facts, not a same-window performance comparison."
+        },
+        {
+          "case": "mtp-single",
+          "all_non_timing_fields_equal": true,
+          "differences": [],
+          "reports": {
+            "baseline": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-m2-borrowed-alias-harness-20261030\\runs\\candidate\\mtp-single\\attempt1\\report.json",
+              "bytes": 83491,
+              "sha256": "9e980a239ad885b366a3739ead84eb5c1d7a2fa11a2af0ee719422d9071ee724"
+            },
+            "candidate": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-auxiliary-cold-program-harness-20261030\\runs\\candidate\\mtp-single\\attempt1\\report.json",
+              "bytes": 83473,
+              "sha256": "5d44117aa3158c432a28cb22e8405b135b867cfdeb430431f51fc8e077d2121e"
+            }
+          },
+          "timing_diagnostic": {
+            "prefill_seconds": {
+              "baseline": 0.0790891,
+              "candidate": 0.0772684
+            },
+            "decode_seconds": {
+              "baseline": 0.5434948000000001,
+              "candidate": 0.5278446000000001
+            },
+            "session_seconds": {
+              "baseline": 0.6225839,
+              "candidate": 0.605113
+            },
+            "startup_to_ready_seconds": {
+              "baseline": 1.8184621,
+              "candidate": 1.8252496
+            }
+          },
+          "scope": "Retained M2 numerical facts, not a same-window performance comparison."
+        },
+        {
+          "case": "ordinary-two",
+          "all_non_timing_fields_equal": true,
+          "differences": [],
+          "reports": {
+            "baseline": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-m2-borrowed-alias-harness-20261030\\runs\\candidate\\ordinary-two\\attempt1\\report.json",
+              "bytes": 232349,
+              "sha256": "62bcaa6a09ea16448dc694373f515f247d669014917e61451517cd87a4a31a4c"
+            },
+            "candidate": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-auxiliary-cold-program-harness-20261030\\runs\\candidate\\ordinary-two\\attempt1\\report.json",
+              "bytes": 232342,
+              "sha256": "bcd47966be1d41b226fea81fcf2e869635cac443ec48d2ac8dffa7436bb8432e"
+            }
+          },
+          "timing_diagnostic": {
+            "prefill_seconds": {
+              "baseline": 0.1250702,
+              "candidate": 0.1172446
+            },
+            "decode_seconds": {
+              "baseline": 1.3878036000000002,
+              "candidate": 1.2632780999999995
+            },
+            "session_seconds": {
+              "baseline": 1.5128738,
+              "candidate": 1.3805227
+            },
+            "startup_to_ready_seconds": {
+              "baseline": 1.2273929,
+              "candidate": 1.2558929
+            }
+          },
+          "scope": "Retained M2 numerical facts, not a same-window performance comparison."
+        },
+        {
+          "case": "mtp-two",
+          "all_non_timing_fields_equal": true,
+          "differences": [],
+          "reports": {
+            "baseline": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-m2-borrowed-alias-harness-20261030\\runs\\candidate\\mtp-two\\attempt1\\report.json",
+              "bytes": 153525,
+              "sha256": "90aabfd6c2d3409bb23330cc9d1a50698ba3dab27042ec9b68e45b1edf6aaa27"
+            },
+            "candidate": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-auxiliary-cold-program-harness-20261030\\runs\\candidate\\mtp-two\\attempt1\\report.json",
+              "bytes": 153548,
+              "sha256": "2d83dcfe81fcaf34b9573c638bbf14390778f307425f24f9059192e73ad1372e"
+            }
+          },
+          "timing_diagnostic": {
+            "prefill_seconds": {
+              "baseline": 0.1269694,
+              "candidate": 0.1235638
+            },
+            "decode_seconds": {
+              "baseline": 1.0062151999999998,
+              "candidate": 0.9573969999999999
+            },
+            "session_seconds": {
+              "baseline": 1.1331846,
+              "candidate": 1.0809608
+            },
+            "startup_to_ready_seconds": {
+              "baseline": 1.9231748,
+              "candidate": 1.969261
+            }
+          },
+          "scope": "Retained M2 numerical facts, not a same-window performance comparison."
+        }
+      ]
+    },
+    "Session": {
+      "files_per_arm": 378,
+      "bytes_per_arm": 150761472,
+      "all_SHA_and_direct_bytes_equal": true,
+      "complete_observation_equal_except_output_root": true,
+      "final_versions": 0,
+      "report": {
+        "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/session-compare.json",
+        "bytes": 118756,
+        "sha256": "6679597be8cf3dcc405279e2fbcfa41ac73b25dac5f7e5309bc34f636105c2c0"
+      },
+      "manifest": {
+        "path": ".scratch/inference-auxiliary-cold-program-harness-20261030/session-vector-manifest.json",
+        "bytes": 275154,
+        "sha256": "23b2bfeb371f441fff4b1a7b9fada8c08d791d9e42aa809a7358745b774d68e3"
+      }
+    }
+  },
+  "near_single_timing_diagnostic": {
+    "scope": "One fresh old M2 mirror and one new candidate per single case, interleaved near window; gross-regression check only, no stable speedup claim.",
+    "checks": [
+      {
+        "case": "ordinary-single",
+        "decode_seconds": {
+          "old": 0.6471432,
+          "new": 0.6466539999999998
+        },
+        "startup_to_ready_seconds": {
+          "old": 1.2281309,
+          "new": 1.4489999
+        },
+        "old_process": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-auxiliary-cold-program-harness-20261030\\runs\\near-baseline\\ordinary-single\\attempt1\\process.json",
+          "bytes": 151,
+          "sha256": "6bf62e3d8da392f2599765c1d874b18d5e9a115a9c60e3e179254a960a1d9826"
+        },
+        "new_process": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-auxiliary-cold-program-harness-20261030\\runs\\candidate\\ordinary-single\\attempt1\\process.json",
+          "bytes": 150,
+          "sha256": "bc5a5c5a8593c70f6606a6f6df19ee6a05e3f4cc31037d42f84f45d6b395bb17"
+        },
+        "all_non_time_exact": true
+      },
+      {
+        "case": "mtp-single",
+        "decode_seconds": {
+          "old": 0.5232528000000001,
+          "new": 0.5278446000000001
+        },
+        "startup_to_ready_seconds": {
+          "old": 1.8125185,
+          "new": 1.8252496
+        },
+        "old_process": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-auxiliary-cold-program-harness-20261030\\runs\\near-baseline\\mtp-single\\attempt1\\process.json",
+          "bytes": 150,
+          "sha256": "0b7ec28bdf20605cd88a87f4aad78bdf7a3a3c5b5c64075001d558d2d7ab6512"
+        },
+        "new_process": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-auxiliary-cold-program-harness-20261030\\runs\\candidate\\mtp-single\\attempt1\\process.json",
+          "bytes": 150,
+          "sha256": "fc0c78cace5d75981901faf4d57783ec5864bd3706230531166cac34a78bc1c7"
+        },
+        "all_non_time_exact": true
+      }
+    ]
+  },
+  "hardware": {
+    "utc": "2026-10-31T04:55:22.174037+00:00",
+    "host": "kiro-workstation",
+    "GPU": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 12282 MiB, P0, 2475 MHz, 48",
+    "compiler": {
+      "path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+      "bytes": 682568,
+      "sha256": "194ddf4aafcb74452218a982309a97de30e0adb33edf4af02904ee107213e782"
+    },
+    "linker": {
+      "path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\link.exe",
+      "bytes": 3416136,
+      "sha256": "c988acb4ec7ef964ae4d4e414b693a6a3782dd85f1e200100b3f896db6b1a202"
+    },
+    "command": [
+      "nvidia-smi",
+      "--query-gpu=name,uuid,driver_version,memory.total,pstate,clocks.current.sm,temperature.gpu",
+      "--format=csv,noheader"
+    ],
+    "exit": 0,
+    "scope": "Actual read-only inventory; toolchain binaries rehashed equal prior cache. No controls/NVCC."
+  },
+  "implementation": {
+    "cold": "Original draft/prefix/frontier graph math, constants, ports, finite bindings and physical IO remain Qwen-local out of line; stable unique programs and original carrier/Graph/lease budgets retained.",
+    "runtime": "Original episode/guard declarations remain runtime dependencies, not pure cold data. Same-call Phase selection intentionally changes warm lookup wiring; no new permission/owner/executor.",
+    "proof": "Cold3 and8declarations reuse independent source projections; originalaux11runtime proof applies to aux-only extraction. Warmv2 and combined review separately cover intentional hot caller changes."
+  },
+  "history": {
+    "sampling_offline_parser": {
+      "stage": "OFFLINE_REPORT_SCHEMA",
+      "native_exit": 0,
+      "native_failed": false,
+      "error": "Existing sampling-policies emits full ordinary CLI report without status before final PASS test report; generic parser lacked its explicit schema.",
+      "correction": "Preserve both complete reports and exact middle fact line; validate ordinary counts/final0 and final sampling-policies PASS. No native rerun.",
+      "offline_parser_attempts": 2,
+      "second_error": "Full ordinary report is emitted before run_generation_sessions returns/cleans prefix state (live_committed_versions1,prefix_entries1); do not impose post-return0 on this report. Existing test asserts model.live0 after return."
+    },
+    "seal_preparation": {
+      "stage": "OFFLINE_SEAL_PREPARATION",
+      "error": "Initial local read helper called read_text on string path before any seal write; corrected to Path.",
+      "native_started": false,
+      "product_changed": false,
+      "second_error": "Historical M1hardware cache was absent; selected existing output-pool actual toolchain cache instead. Current232 base already written, no CXX/native retry."
+    },
+    "root_test_preparation": "Original LF-context patch attempt and corrected test plan retained. No native/CXX failure in this19process batch; offline parser corrections never reran native."
+  },
+  "scope": "Current Windows CPU/singleCUDA finite architecture checks. Four retained-M2 timing references are not same-window performance; two fresh old single controls only support gross-regression observations. No stable speedup/full performance window, full CMake build, second complete model, Mac/multi-card or whole-goal completion. Optional head preparation/failure priority and scratch/diagnostic merge ordering remain explicit limits; no full-heap accounting or late projection-fault claim.",
+  "archive": {
+    "path": "docs/evidence/correctness/inference-auxiliary-warm-boundary-2026-10-31.zip",
+    "bytes": 981918,
+    "sha256": "89142a5a950756cb3884ecb429f6bafdf5525d131fe995c66cb514e0c16937b5",
+    "members": 197,
+    "all_members_readback": true
+  }
+}
