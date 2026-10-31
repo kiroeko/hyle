@@ -50,7 +50,8 @@ Graph可选原地复用已按完整根offset与required组模同余修复，保�
 [本片检查](../evidence/correctness/inference-optional-alias-alignment-2026-10-30.json)以同新TU验证旧b8两项真实失败、新图78项通过／零跳过；默认四对非时间字段、完整Session状态一致，GLM Pro与tiny CPU batch-state通过。仅1Graph与2测试TU重编，230旧输入复用；最初NativeNeg/F32能力误选和诊断语法失败保留，单配耗时不冒称稳定性能收益。
 辅助draft／prefix／frontier冷工厂与同次warm Phase事实复用已完成；Model保原准入、guard、初始化／发布与退休，不新增热owner或回调。
 [本片检查](../evidence/correctness/inference-auxiliary-warm-boundary-2026-10-31.json)19进程全通过（4CXX、3link、12native），231旧输入全复用、仅新增aux对象；三真实tracked预算拒绝／重试和warm原身份通过。默认四项对保留M2结果非时间字段一致，Session各378份／150,761,472B完整字节一致；仅两个single有近窗粗退化观察，不宣称新完整性能窗。
-联合复审按五项正面要求核入口、四类消费者与成熟源码，当前未确认须先新增的共同实现缺项；下一步转正常GPU产品构建与默认full-V普通／MTP费用归因。既有手工缓存闭包不代签正常CMake产品镜像；使用公开GPU route、默认shared／非维护factor配置，复用离线依赖。后续实测暴露的架构／功能问题继续纳入，不缩小完整goal。
+联合复审按五项正面要求核入口、四类消费者与成熟源码，当前未确认须先新增的共同实现缺项。正常Release shared GPU产品已[构建并有限检查](../evidence/correctness/inference-shared-graph-batch-2026-10-31.json)：修复三处friend首次声明缺导出宏导致的MSVC冲突，同cache增量成功，CPU ordinary／CUDA K1各4输出和三函数外部导入通过。公开GPU route、非维护factor、离线依赖仍保；旧手工缓存闭包不代签该产品。
+[默认full-V32进程对照](../evidence/performance/inference-default-product-2026-10-31.json)全部exit0／同臂非计时稳定；普通单／双轮decode落后约2.83%／0.73%，MTP仍落后约10.51%／4.97%。actual rows、两次后继丢弃、8ready显存未知和2次有限模块枚举缺口保留；不签稳定提速或相同续算工作。下一步实际跟踪与性能收敛，实测暴露的新架构／功能问题继续纳入，不缩小完整goal。
 较强设备用于底座成熟后的更广整模型验证，当前工作不以租设备、完整大模型或通用loader／server为前置。
 新profile和优化尚未启动，原工具／命令准备保留；相关架构费用验证按实际改动安排。正在做和估计进度只在[看板](../developer/inference-progress.md)维护。
 

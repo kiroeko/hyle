@@ -12,13 +12,32 @@
 单会话普通／MTP的最近跨引擎完整表见[推理进度](../inference-progress.md#最近完整性能对照)；
 下面的B2、CPU和局部候选属于不同窗口，各自保留版本与测量边界。
 
-2026-10-31：已列共同架构整改与有限检查完成，转默认完整词表普通／MTP性能。先生成正常Release GPU产品镜像，
-再做未profile的四项完整基线，随后分别跟踪主机提交空档、实际target／draft算量与GPU kernel。旧trace只供假设，不代签当前速度。
+2026-10-31：已列共同架构整改与有限检查完成，转默认完整词表普通／MTP性能。正常Release GPU产品及32进程基线已通过，
+接下来分别跟踪主机提交空档、实际target／draft算量与GPU kernel。旧trace只供假设，不代签当前速度。
 正常GPU配置公开选择`HYLE_COMPUTE_ROUTES=cpu;cuda`，保默认`HYLE_STATIC=OFF`、非`HYLE_DEV_FACTORS`；
-现手工static闭包／指定runtime的结果尚未证明等于该产品镜像。复用已锁依赖、全离线配置，未完成正常build不得写成通过。
+正常shared构建曾暴露Graph batch三friend导出声明冲突，补原导出宏后59步增量构建与两tiny通过；默认性能现以正常镜像80ab6462为准，旧手工static闭包／指定runtime结果保留其原边界。
+正常产品[完整32进程对照](../../evidence/performance/inference-default-product-2026-10-31.json)：ordinary单／双轮decode99.07／101.33，对参考101.96／102.08；MTP121.47／133.88，对135.73／140.88，仍落后10.51%／4.97%。
+实际MTP target／draft行Hyle226／220、445／438，对参考220／216、438／435；Hyle两种工况均丢弃2个后继，不能只看已发布34／66轮就当等工作效率差。
+16份默认Hyle词表四字段全0；32native全exit0，8ready显存未知，2次模块Enum299有限快照缺口保留。新profile将分实际计算、capture／steady、准备与读回，不把profile TPS当正式吞吐。
 canonical full-V四项入口保留在`.scratch/inference-plan-cold-facts-20261030/window.py`；禁用显式draft词表，
 核四个词表附加bytes／rows字段为0，并保实际target／draft／verified／consumed行数差异。
-冻结peer SHA433e7051可复用，但native core revision未证实等于当前本地llama HEAD，不称最新上游。
+冻结peer SHA433e7051已补核为llama `d9e03f1074dbd2979126d91dce1b5d304ec8394e`＋GGML `456172ec733a135778adcd32d00e576a58232e45`，
+含已识别的分配／线程池错误恢复、CUDA VMM和capture异常清理补丁，不称最新上游；历史vendor DLL实际加载路径／哈希仍未知。
+源、对象和实际链接库的只读溯源见`.scratch/inference-default-product-window-20261031/peer-provenance.md/json`。
+
+2026-10-31只读复核旧10/28 trace：MTP Hyle／peer的GPU union为495.762／479.908ms，
+但实际target轮数34／33、target行68／66、接受29／30，draft行同为62；按轮粗除为14.581／14.543ms，
+不能把总GPU差直接当同工作效率差。包络差60.125ms中44.272ms落在GPU idle；旧Hyle的
+replay／prepare／postwait区间idle分别23.324／26.160／14.449ms，peer prepare仅0.086ms，submit idle反而更高。
+当前先验证设备后继与warm机制是否已覆盖这些旧空隙，分开capture／steady、GraphLaunch与输入／状态准备；
+再按实际N1／N2、行数与精度核投影路线。旧普通路径已命中BF16双投影SiLU，不能重复把它当新优化，
+其N1资格也不能直接推广至N2。此为历史单次node-trace的归因入口，非当前结论；完整SQL与源码边界保存在
+`.scratch/inference-old-profile-attribution-20261031/`，正常产品未profile基线已完成，新跟踪待执行。
+
+2026-10-31补核本地TensorRT-LLM `46d9966b54d9d11998b712e732fb20f64d4d35c0`：BF16 low-M专用路径须显式启用且要求100≤SM<110，本机SM89不适用。
+其默认BF16 head先产BF16 logits再转F32；Hyle保BF16输入与F32 scores，不能直接用较低输出精度代替当前数值合同。
+Hyle已有设备Top1、capture和后继token接力；新profile应核head实际carrier／算法、转型与流量，再分Top1 GPU和finish／readback间隙。
+源码依据及适用条件在`.scratch/inference-default-product-window-20261031/trt-bf16-head-review.md`，未运行TRT或宣称收益。
 
 2026-10-30的[显式草稿词表与完整消费者](../../evidence/performance/inference-draft-vocabulary-2026-10-30.json)
 在已列共同步骤驱动复审完成后恢复隔离候选；使用显式source-bound原ID文件，只冷导入草稿head行，完整target／embedding保留。

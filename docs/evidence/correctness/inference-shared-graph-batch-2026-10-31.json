@@ -1,0 +1,239 @@
+{
+  "schema": "hyle.inference.shared_graph_batch_correctness.v1",
+  "status": "NORMAL_SHARED_BUILD_AND_FINITE_CHECKS_PASS_AFTER_ONE_DECLARATION_FIX",
+  "date": "2026-10-31",
+  "source": {
+    "base_commit": "56c4ed66378947edfc710005122627dafef59a9a",
+    "file": "include/hyle/graph/batch.h",
+    "before": {
+      "bytes": 22004,
+      "sha256": "ee0531723b5bb69bf2a4ccb1b94a091700ffc9321aa800b62dce074f7fd90fe6"
+    },
+    "after": {
+      "bytes": 22067,
+      "sha256": "3fd0558682b4994aad5ced4f9a069c6d899c944b6ae376fc89ae2ac34142fc1d"
+    },
+    "patch_member": "source/three-friend-export.patch",
+    "source_pins_count": 18,
+    "source_pins_member": "source/source-pins.json",
+    "change": "Add the original HYLE_GRAPH_BATCH_API to three first friend declarations; no signatures, data members, function bodies or math change."
+  },
+  "normal_product": {
+    "configuration": {
+      "HYLE_COMPONENTS": "engine",
+      "HYLE_COMPUTE_ROUTES": "cpu;cuda",
+      "HYLE_STATIC": "OFF",
+      "HYLE_WERROR": "OFF",
+      "HYLE_TRACE": "OFF",
+      "HYLE_BUILD_TESTS": "OFF",
+      "HYLE_BUILD_BENCH": "OFF",
+      "HYLE_TEST_INSTRUMENTATION": "OFF",
+      "HYLE_SANITIZER": "off",
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CUDA_ARCHITECTURES": "80;89-real"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle.exe",
+      "bytes": 1797120,
+      "sha256": "80ab6462bb54ed4c2f8f1d66117095959a6ce4dcdb6f5c5f1998d099eeb141a3"
+    },
+    "configure_exit_code": 0,
+    "build_attempts": [
+      {
+        "attempt": "attempt1",
+        "pid": 13836,
+        "exit_code": 2,
+        "elapsed_seconds": 3232.1410000000033,
+        "compiler_object_build_steps": {
+          "CXX": 256,
+          "C": 9,
+          "CUDA": 176
+        },
+        "failed_edges": [
+          "FAILED: [code=2] src/graph_batch/CMakeFiles/hyle_graph_batch.dir/batch.cc.obj "
+        ],
+        "process": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-default-product-build-20261031\\build\\attempt1\\process.json",
+          "bytes": 432,
+          "sha256": "e0443dc62e9663726bdad31bcfbb4a245f8fa15eaf22f75cfac54163b23f6ffe"
+        }
+      },
+      {
+        "attempt": "attempt2",
+        "pid": 39120,
+        "exit_code": 0,
+        "elapsed_seconds": 59.68800000000192,
+        "compiler_object_build_steps": {
+          "CXX": 37,
+          "C": 0,
+          "CUDA": 0
+        },
+        "failed_edges": [],
+        "process": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-default-product-build-20261031\\build\\attempt2\\process.json",
+          "bytes": 431,
+          "sha256": "591bf34862f6ed8f3d6b48cbd01c2af500117b42e9512db30dc4ac86d6094168"
+        }
+      }
+    ],
+    "old_static_libraries_preserved_count": 12,
+    "offline": "Fully and updates disconnected ON; locked cached sources/SDKs reused, exact FlashInfer local override. No download or SDK copy by this evidence collector.",
+    "runtime_environment": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-default-product-build-20261031\\environment.json",
+      "bytes": 7030,
+      "sha256": "fa401c805ce573adca2ce7c1ebafc28e04739b8c3c8994283eb076ff942747ff"
+    },
+    "loaded_runtime": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-default-product-build-20261031\\loaded-runtime.json",
+      "bytes": 20014,
+      "sha256": "eadd18c1636bd26e0cc69b30682cd7d69f3a0df2345cc0b4d899d731c44e2b12"
+    }
+  },
+  "finite_checks": {
+    "help_exit_code": 0,
+    "smokes": [
+      {
+        "case": "tiny-cpu-ordinary",
+        "pid": 38136,
+        "exit_code": 0,
+        "backend": "cpu",
+        "outputs": 4,
+        "requested_outputs": 4,
+        "draft_vocabulary_rows": 0,
+        "actual_target_rows": 6,
+        "actual_draft_rows": null
+      },
+      {
+        "case": "tiny-cuda-mtp-k1",
+        "pid": 47380,
+        "exit_code": 0,
+        "backend": "cuda",
+        "outputs": 4,
+        "requested_outputs": 4,
+        "draft_vocabulary_rows": 0,
+        "actual_target_rows": 8,
+        "actual_draft_rows": 6
+      }
+    ],
+    "fixture": "Cached BF16 GA H64/V64/C16, 4 outputs per smoke; default complete V64, no subset vocabulary.",
+    "module_observations": [
+      {
+        "case": "help",
+        "pid": 24244,
+        "exit_code": 0,
+        "observed_module_union": 90,
+        "transient_module_sample_errors": {
+          "299": 3
+        }
+      },
+      {
+        "case": "tiny-cpu-ordinary",
+        "pid": 38136,
+        "exit_code": 0,
+        "observed_module_union": 90,
+        "transient_module_sample_errors": {
+          "299": 3
+        }
+      },
+      {
+        "case": "tiny-cuda-mtp-k1",
+        "pid": 47380,
+        "exit_code": 0,
+        "observed_module_union": 116,
+        "transient_module_sample_errors": {
+          "299": 4
+        }
+      }
+    ],
+    "normal_cpu_fingerprint_runtime": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_ggml_cpu_avx2_456172ec_c4ed2fbfa44e64bc.dll",
+      "bytes": 1205248,
+      "sha256": "2d80d9d2f4c9b0e32362bef177566720d61d67db653427755a430f7f59ca0a63"
+    },
+    "observation_boundary": "10ms PSAPI sampling recorded transient ERROR_PARTIAL_COPY(299), then successful module observations. It is neither a complete loader-event trace nor proof every loaded provider executed a kernel. No gdn_scale_v3.dll was observed.",
+    "external_shared_import": {
+      "counts": {
+        "CXX": 1,
+        "link": 1,
+        "run": 1,
+        "dumpbin": 2,
+        "automatic_retries": 0
+      },
+      "normal_batch_DLL": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_batch.dll",
+        "bytes": 463360,
+        "sha256": "6474d4a0875b664ab087808158e02dd3fcd9186f5dc997dc2e86ea8435496eab"
+      },
+      "three_export_lines": {
+        "?add_row_cache_gather@": [
+          "10    9 00030770 ?add_row_cache_gather@batch@graph@hyle@@YA?AV?$Result@VPagedRowCacheGather@batch@graph@hyle@@@3@AEAVGraphBuilder@23@VRowCacheBatchSchema@compute@3@VValueId@23@@Z"
+        ],
+        "?add_row_cache_gather_padded@": [
+          "11    A 00031350 ?add_row_cache_gather_padded@batch@graph@hyle@@YA?AV?$Result@VPagedRowCacheGatherPadded@batch@graph@hyle@@@3@AEAVGraphBuilder@23@VRowCacheBatchSchema@compute@3@VValueId@23@2I@Z"
+        ],
+        "?add_row_cache_indexer@": [
+          "12    B 00032320 ?add_row_cache_indexer@batch@graph@hyle@@YA?AV?$Result@VPagedRowCacheIndexer@batch@graph@hyle@@@3@AEAVGraphBuilder@23@VRowCacheBatchSchema@compute@3@VValueId@23@22I@Z"
+        ]
+      },
+      "three_import_lines": {
+        "?add_row_cache_gather@": [
+          "9 ?add_row_cache_gather@batch@graph@hyle@@YA?AV?$Result@VPagedRowCacheGather@batch@graph@hyle@@@3@AEAVGraphBuilder@23@VRowCacheBatchSchema@compute@3@VValueId@23@@Z"
+        ],
+        "?add_row_cache_gather_padded@": [
+          "A ?add_row_cache_gather_padded@batch@graph@hyle@@YA?AV?$Result@VPagedRowCacheGatherPadded@batch@graph@hyle@@@3@AEAVGraphBuilder@23@VRowCacheBatchSchema@compute@3@VValueId@23@2I@Z"
+        ],
+        "?add_row_cache_indexer@": [
+          "B ?add_row_cache_indexer@batch@graph@hyle@@YA?AV?$Result@VPagedRowCacheIndexer@batch@graph@hyle@@@3@AEAVGraphBuilder@23@VRowCacheBatchSchema@compute@3@VValueId@23@22I@Z"
+        ]
+      },
+      "scope": "Three volatile function addresses/IAT loads, no Graph work, GPU model or numerical claim. Loaded-module path sampling was not performed.",
+      "runtime": "No DLL in executable directory; normal bin is cwd and first PATH. Same current normal environment; no SDK copy."
+    }
+  },
+  "preserved_failures": [
+    {
+      "stage": "scratch preparation",
+      "outcome": "vcvars command quoting failed before CMake/build; note retained; scratch runner corrected"
+    },
+    {
+      "stage": "normal build attempt1",
+      "pid": 13836,
+      "exit_code": 2,
+      "elapsed_seconds": 3232.141,
+      "outcome": "MSVC C2375 for add_row_cache_gather, add_row_cache_gather_padded, add_row_cache_indexer first friend declarations. Already-running native_cache CUDA compilation was allowed to finish."
+    }
+  ],
+  "recovery": {
+    "stage": "same-cache incremental build attempt2",
+    "pid": 39120,
+    "exit_code": 0,
+    "elapsed_seconds": 59.688,
+    "configure_repeated": false,
+    "CUDA_object_recompiled": 0,
+    "TEMP_TMP": "Only retry child environment overridden to batch/tmp; original environment and attempt1 receipts unchanged."
+  },
+  "limits": [
+    "Compiler-object counts are Ninja build actions, not OS compiler subprocess counts.",
+    "External consumer keeps three real imported function addresses live; its successful run performs no Graph/model/GPU work and did not sample loaded-module paths.",
+    "Only help and exactly two tiny model smokes are part of this correctness package; the 32-process full-V performance window and new profiling are separate evidence.",
+    "No model data, SDK payload, DLL, executable, object, library or raw large vectors are included."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-shared-graph-batch-2026-10-31.zip",
+    "bytes": 146192,
+    "sha256": "834b62ad742c5e5c454b5811a22183d080226c9ba4d79cc3adce672bc55326d2",
+    "members": 93,
+    "manifest": {
+      "member": "manifest.json",
+      "bytes": 16444,
+      "sha256": "745e8f5cfd3c43eaabad9bdcc2cbd457049fbf97d7ecb3fdffaacebf78ada39b",
+      "payload_members": 92
+    },
+    "readback": {
+      "verified_members": 93,
+      "every_member_bytes_and_sha256": true,
+      "crc_test": "PASS"
+    }
+  },
+  "sealed_utc": "2026-10-31T06:12:28.201751+00:00"
+}

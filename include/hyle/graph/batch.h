@@ -65,7 +65,7 @@ public:
   compute::RowCacheBatchSchema schema()const noexcept{return schema_;}
 private:
   friend struct detail::RowCacheAccess;
-  friend Result<PagedRowCacheGather> add_row_cache_gather(GraphBuilder&,compute::RowCacheBatchSchema,ValueId)noexcept;
+  friend HYLE_GRAPH_BATCH_API Result<PagedRowCacheGather> add_row_cache_gather(GraphBuilder&,compute::RowCacheBatchSchema,ValueId)noexcept;
   compute::RowCacheBatchSchema schema_;
   NodeId map_,decode_;ValueId bank_,metadata_,ids_,mapped_,output_;
 };
@@ -85,7 +85,7 @@ public:
   NodeId node()const noexcept{return reader_.node();}
 private:
   friend struct detail::RowCacheAccess;
-  friend Result<PagedRowCacheGatherPadded> add_row_cache_gather_padded(GraphBuilder&,compute::RowCacheBatchSchema,ValueId,ValueId,std::uint32_t)noexcept;
+  friend HYLE_GRAPH_BATCH_API Result<PagedRowCacheGatherPadded> add_row_cache_gather_padded(GraphBuilder&,compute::RowCacheBatchSchema,ValueId,ValueId,std::uint32_t)noexcept;
   PagedRowCacheGather reader_;ValueId mask_;
 };
 HYLE_GRAPH_BATCH_API Result<PagedRowCacheGatherPadded> add_row_cache_gather_padded(
@@ -105,7 +105,7 @@ public:
   compute::RowCacheBatchSchema schema()const noexcept{return reader_.schema();}
 private:
   friend struct detail::RowCacheAccess;
-  friend Result<PagedRowCacheIndexer> add_row_cache_indexer(GraphBuilder&,compute::RowCacheBatchSchema,ValueId,ValueId,ValueId,std::uint32_t)noexcept;
+  friend HYLE_GRAPH_BATCH_API Result<PagedRowCacheIndexer> add_row_cache_indexer(GraphBuilder&,compute::RowCacheBatchSchema,ValueId,ValueId,ValueId,std::uint32_t)noexcept;
   PagedRowCacheGather reader_;
 };
 HYLE_GRAPH_BATCH_API Result<PagedRowCacheIndexer> add_row_cache_indexer(
