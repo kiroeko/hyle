@@ -2680,7 +2680,8 @@ Status validate_bound_store(const InvocationState &state, const OutputBindingEnt
 }
 bool same_ready_guard(const compute::ReadLease &, const compute::ReadLease &) noexcept;
 Status check_output_consumer(Invocation &invocation, OutputBindingBundle &bundle,
-    std::span<const QueueBinding> queues, bool require_binding) noexcept {
+    std::span<const QueueBinding> queues, bool require_binding,
+    bool *coverage_miss = nullptr) noexcept {
   auto *state = InvocationAccess::state(invocation);
   HYLE_RETURN_IF_ERROR(resource_control_ready(state));
   auto &source = *bundle.submission;
@@ -2713,8 +2714,10 @@ Status check_output_consumer(Invocation &invocation, OutputBindingBundle &bundle
     if (require_binding) {
       HYLE_ASSIGN_OR_RETURN(const auto reusable,
           ReplayAccess::can_reuse_capture(invocation, bundle.replacements));
-      if (!reusable)
+      if (!reusable) {
+        if (coverage_miss) *coverage_miss = true;
         return Status::Unavailable("pending outputs have no complete existing capture for their final physical tuple");
+      }
     }
     const auto expected = plan.capture_command_count == plan.command_count
         ? ReplayRoute::kCaptured : ReplayRoute::kHybrid;
@@ -3628,6 +3631,67 @@ Result<SourceBinding> StoreSource::reader_binding(Invocation &invocation, const 
   HYLE_RETURN_IF_ERROR(validate_store_ready(*state_, ready));
   return SourceBindingAccess::make({.store = this, .projection = projection, .graph = &graph, .store_ready = ready});
 }
+Result<bool> detail::ReplayAccess::has_capture_candidate(
+    const Invocation &invocation, const SourceBinding &intent) noexcept {
+  const auto *state = InvocationAccess::state(invocation);
+  HYLE_RETURN_IF_ERROR(resource_control_ready(state));
+  const auto &binding = SourceBindingAccess::get(intent);
+  const auto kinds = static_cast<unsigned>(binding.output != nullptr) +
+      static_cast<unsigned>(binding.store != nullptr) +
+      static_cast<unsigned>(binding.resource != nullptr);
+  if (kinds != 1)
+    return std::unexpected(Status::InvalidArgument("capture candidate needs one original Source view"));
+  if (!binding.output) {
+    const auto *store = OutputSourceAccess::state(binding.store);
+    const auto *resource = OutputSourceAccess::state(binding.resource);
+    if ((!store || !store->submission) && (!resource || !resource->submission))
+      return std::unexpected(Status::InvalidArgument("capture candidate Source is empty"));
+    return std::unexpected(Status::Unimplemented("capture candidate only inspects a plain OutputSource intent"));
+  }
+  const auto &projection = binding.projection;
+  const bool projected = projection.capacity.valid() || projection.metadata.valid() ||
+      projection.reader.valid() || !projection.access_nodes.empty() ||
+      projection.capability != compute::ProviderExtensionId{};
+  const auto &effect = binding.effect;
+  const bool effect_fields = effect.node.valid() || effect.step != 0 ||
+      effect.implementation != nullptr || effect.prepared != nullptr;
+  if (projected || binding.graph || !binding.readers.empty() || !binding.ready_inputs.empty() ||
+      effect_fields || !binding.effect_reads.empty() || !binding.store_ready.empty())
+    return std::unexpected(Status::InvalidArgument("capture candidate requires a pure OutputSource intent"));
+  const auto *output = OutputSourceAccess::state(binding.output);
+  if (!output || !output->submission || !output->tensor.valid())
+    return std::unexpected(Status::InvalidArgument("capture candidate Source is empty"));
+  const auto &plan = *state->plan;
+  const auto input = binding.input;
+  const auto descriptions = plan.domain_graph.valid()
+      ? std::span<const compute::TensorDesc>(state->concrete_descriptions)
+      : std::span<const compute::TensorDesc>(plan.descriptions);
+  if (!input.valid() || GraphIdentity::generation(input) != plan.generation ||
+      input.kind() != ValueKind::kInput || input.ordinal() >= plan.binding_roles.size() ||
+      !(plan.binding_roles[input.ordinal()] & kExternalInput) ||
+      input.ordinal() >= descriptions.size() ||
+      output->tensor.description() != descriptions[input.ordinal()])
+    return std::unexpected(Status::InvalidArgument("capture candidate needs its original input description"));
+  if (output->bound_once)
+    return std::unexpected(Status::FailedPrecondition("output view has already bound its original consumer"));
+  const auto &source = *output->submission;
+  if (state == source.producer)
+    return std::unexpected(Status::InvalidArgument("output relay cannot consume its own original submission"));
+  if (state->progress || plan.segments.size() != 1 || plan.required_queue_count != 1 ||
+      !shared_lane(plan, plan.segments.front().lane))
+    return std::unexpected(Status::Unimplemented("capture candidate requires one original shared segment"));
+  const auto lane = plan.segments.front().lane;
+  if (lane.ordinal() >= state->queues.size() || !state->queues[lane.ordinal()].valid())
+    return false;
+  const auto &queue = state->queues[lane.ordinal()];
+  if (!queue.is_open() || !source.queue.is_open())
+    return std::unexpected(Status::FailedPrecondition("capture candidate Queue is closed"));
+  if (!source.queue.same_owner(queue))
+    return std::unexpected(Status::InvalidArgument("capture candidate requires the producer's actual Queue"));
+  // tensor and Queue are fixed original metadata. Detached ready outputs keep
+  // them after writer/producer release; no poll, binding or permission occurs.
+  return candidate_with_input(invocation, {input, output->tensor});
+}
 Status bind_sources(Invocation &invocation, std::span<const SourceBinding> bindings) noexcept {
   auto *state = InvocationAccess::state(invocation);
   HYLE_RETURN_IF_ERROR(resource_control_ready(state));
@@ -3931,10 +3995,12 @@ Status release_sources(Invocation &invocation) noexcept {
   bundle->consumer = nullptr;
   return Status::Ok();
 }
-Status prepare_sources(Invocation &invocation, std::span<const QueueBinding> queues) noexcept {
+namespace {
+Status prepare_sources_impl(Invocation &invocation, std::span<const QueueBinding> queues,
+    bool *coverage_miss = nullptr) noexcept {
   HYLE_ASSIGN_OR_RETURN(auto owner, bound_output_bundle(invocation));
   auto *bundle = static_cast<OutputBindingBundle *>(owner.state());
-  HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, *bundle, queues, true));
+  HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, *bundle, queues, true, coverage_miss));
   if (queues.size() != 1) return Status::InvalidArgument("output relay requires one actual Queue");
   if (bundle->submitted) return Status::FailedPrecondition("output bundle consumer was already submitted");
   bundle->preparing = true;
@@ -3952,6 +4018,20 @@ Status prepare_sources(Invocation &invocation, std::span<const QueueBinding> que
     return ReplayAccess::prepare_reuse(invocation, queues);
   return invocation.prepare_replay(queues,
       {.mode = ReplayMode::kCommands, .host_wait = HostWaitPolicy::kReject});
+}
+} // namespace
+Status prepare_sources(Invocation &invocation, std::span<const QueueBinding> queues) noexcept {
+  return prepare_sources_impl(invocation, queues);
+}
+Result<bool> detail::ReplayAccess::try_prepare_sources(Invocation &invocation,
+    std::span<const QueueBinding> queues) noexcept {
+  bool coverage_miss = false;
+  auto status = prepare_sources_impl(invocation, queues, &coverage_miss);
+  if (!status.ok()) {
+    if (coverage_miss) return false;
+    return std::unexpected(std::move(status));
+  }
+  return true;
 }
 Result<compute::Completion> submit_sources(Invocation &invocation,
     std::span<const QueueBinding> queues) noexcept {

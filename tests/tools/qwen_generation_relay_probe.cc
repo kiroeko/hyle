@@ -133,12 +133,19 @@ ArmResult run_arm(q::Model &model, std::span<const std::int32_t> prompt, Arm arm
     std::array calls{q::prepare_generation_call(model, request, request.progress.output_limit(),
         nullptr, requests, credit)};
     const auto refused_before = continuation.successor_refusals;
+    const auto successors_before = continuation.successor_submissions;
+    const auto publications_before = continuation.successor_publications;
+    const auto discards_before = continuation.successor_discards;
+    const auto predecessor_slot = continuation.next_slot;
+    const auto refused_slot = (predecessor_slot + 1) % q::execution_slot_count;
+    const bool eos_target_wave = arm == Arm::kModelEos && oracle && before_outputs + 1 == oracle->ids.size();
+    bool accepted_eos_wave_successor = false;
     if (arm == Arm::kColdTuple && relay && !result.cold_tuple_changed && credit >= 2 &&
-        continuation.matches(calls) && continuation.ready_steps >= 6 &&
-        continuation.direction_warm[(continuation.next_slot + 1) % q::execution_slot_count]) {
+        continuation.matches(calls) && continuation.ready && !continuation.reprime_slot &&
+        std::ranges::all_of(imported_captures, [](bool captured) { return captured; })) {
       require(imported_captures[(continuation.next_slot + 1) % q::execution_slot_count],
           "cold R1 tuple replacement did not target an actually captured imported carrier");
-      displaced_output = qwen_generation_state_case::replace_successor_output(model, continuation, 1);
+      displaced_output = qwen_generation_state_case::replace_successor_output(model, continuation, 1, imported_captures);
       result.cold_tuple_changed = true;
     }
     const auto submitted = [&] {
@@ -149,7 +156,7 @@ ArmResult run_arm(q::Model &model, std::span<const std::int32_t> prompt, Arm arm
         require(model.active_step && model.active_step->execution.has_completion() && model.successor_step->execution.has_completion() &&
             model.successor_step->capture_reused > 0 && model.successor_step->capture_recorded == 0,
             "model EOS fixture did not observe the original accepted A/B completions");
-        result.accepted_eos_successor = true;
+        if (eos_target_wave) accepted_eos_wave_successor = true;
       }
       if (arm != Arm::kAfterSubmitCancel || result.cancel_after_submit || before_outputs < 8) return;
       require(model.active_step && model.active_step->submitted && model.active_step->execution.has_completion(),
@@ -182,11 +189,21 @@ ArmResult run_arm(q::Model &model, std::span<const std::int32_t> prompt, Arm arm
     }
     if (continuation.successor_refusals != refused_before) {
       require(arm == Arm::kColdTuple && result.cold_tuple_changed &&
-          continuation.successor_refusals == refused_before + 1 && continuation.unavailable &&
-          !continuation.successor_submissions && request.progress.generated.size() == before_outputs + 1 &&
-          calls[0].disposition == q::EvaluationDisposition::kPublished,
-          "natural cold tuple refusal lost A, accepted B, or failed to disable relay");
+          continuation.successor_refusals == refused_before + 1 && !continuation.unavailable &&
+          continuation.successor_submissions == successors_before && request.progress.generated.size() == before_outputs + 1 &&
+          calls[0].disposition == q::EvaluationDisposition::kPublished &&
+          !continuation.ready && continuation.pending_calls.empty() && !continuation.ready_steps &&
+          continuation.next_slot == predecessor_slot && continuation.reprime_slot == refused_slot,
+          "natural cold tuple refusal lost A, accepted B, or lost its typed ordinary re-prime route");
       result.cold_refusal_observed = true;
+    }
+    if (relay && eos_target_wave) {
+      require(accepted_eos_wave_successor && request.progress.turn_done &&
+          request.progress.generated.size() == before_outputs + 1 &&
+          continuation.successor_submissions == successors_before + 1 &&
+          continuation.successor_publications == publications_before && continuation.successor_discards == discards_before + 1,
+          "model EOS wave did not retain only A and retire its one actually accepted unpublished B");
+      result.accepted_eos_successor = true;
     }
     for (auto &call : calls) q::publish_generation_prompt(model, call, nullptr);
     ++result.waves;
@@ -288,8 +305,9 @@ ArmResult run_arm(q::Model &model, std::span<const std::int32_t> prompt, Arm arm
   result.successor_discards = continuation.successor_discards;
   result.successor_refusals = continuation.successor_refusals;
   if (relay && arm == Arm::kColdTuple) {
-    require(result.cold_tuple_changed && result.cold_refusal_observed && continuation.unavailable &&
-        result.successor_refusals == 1 && !result.successor_submissions && !result.successor_discards,
+    require(result.cold_tuple_changed && result.cold_refusal_observed && !continuation.unavailable &&
+        result.successor_refusals == 1 && !result.successor_discards &&
+        result.successor_publications == result.successor_submissions,
         "natural cold tuple was silently recorded, downgraded, retried or accepted");
   } else if (relay) {
     require(!continuation.unavailable &&
@@ -299,8 +317,7 @@ ArmResult run_arm(q::Model &model, std::span<const std::int32_t> prompt, Arm arm
         "ordinary continuation silently fell back or lost an accepted/published step");
     if (arm == Arm::kLateExtraStop || arm == Arm::kModelEos)
       require(result.successor_discards == 1 &&
-          (arm != Arm::kModelEos || (result.accepted_eos_successor && result.successor_submissions == 1 &&
-              result.successor_publications == 0)),
+          (arm != Arm::kModelEos || result.accepted_eos_successor),
           "late extra stop did not retire exactly one accepted, unpublished successor");
     else require(!result.successor_discards, "ordinary arm discarded an unexpected successor");
     if (arm == Arm::kCreditOne || arm == Arm::kExtraStop)

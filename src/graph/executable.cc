@@ -988,6 +988,56 @@ Status build_external_input_topology(detail::PlanState &plan) noexcept {
   return Status::Ok();
 }
 
+Status build_capture_input_coordinates(detail::PlanState &plan) noexcept {
+  auto &coordinates = plan.capture_input_coordinates;
+  coordinates.clear();
+  for (std::size_t range = 0; range < plan.capture_ranges.size(); ++range) {
+    if (range > UINT32_MAX)
+      return Status::ResourceExhausted("capture input range identity overflows");
+    const auto &capture = plan.capture_ranges[range];
+    std::size_t key = 0;
+    for (std::size_t index = capture.step_begin;
+         index < std::size_t{capture.step_begin} + capture.step_count; ++index) {
+      const auto &step = plan.steps[index];
+      if (!step.emits_command()) continue;
+      const auto first_input_key = key;
+      if (step.input_count > SIZE_MAX - key ||
+          step.output_count > SIZE_MAX - key - step.input_count)
+        return Status::ResourceExhausted("capture input key size overflows");
+      key += std::size_t{step.input_count} + step.output_count;
+      for (std::size_t port = 0; port < step.input_count; ++port) {
+        const auto instance = plan.node_inputs[step.input_begin + port];
+        auto root = instance;
+        for (std::size_t depth = 0;; ++depth) {
+          if (root >= plan.alias_sources.size() || depth >= plan.alias_sources.size())
+            return Status::Internal("capture input physical alias topology is invalid");
+          const auto parent = plan.alias_sources[root];
+          if (parent == detail::kNoInPlaceSource || parent == root) break;
+          root = parent;
+        }
+        const auto value = plan.instance_values[root];
+        // Copies create independent physical roots even when their logical
+        // ValueId is unchanged. Only the actual external root is substituted.
+        if ((plan.binding_roles[value] & detail::kExternalInput) == 0 ||
+            plan.external_instances[value] != root)
+          continue;
+        const auto ordinal = first_input_key + port;
+        if (ordinal > UINT32_MAX)
+          return Status::ResourceExhausted("capture input coordinate index overflows");
+        if (!coordinates.try_push_back({value, instance,
+                static_cast<std::uint32_t>(range), static_cast<std::uint32_t>(ordinal)}))
+          return plan_allocation_failure();
+      }
+    }
+  }
+  std::sort(coordinates.begin(), coordinates.end(), [](const auto &left, const auto &right) noexcept {
+    if (left.value != right.value) return left.value < right.value;
+    if (left.range != right.range) return left.range < right.range;
+    return left.key < right.key;
+  });
+  return Status::Ok();
+}
+
 Status validate_external_alias(detail::InvocationState &invocation,
                                std::size_t ordinal,
                                ByteRange candidate,
@@ -10027,6 +10077,35 @@ Status detail::RegionAccess::reset_configuration(Invocation &invocation) noexcep
 }
 
 namespace {
+Result<bool> full_zero_input_views(const detail::InvocationState &state,
+    std::size_t root, compute::ConstTensorView replacement) noexcept {
+  const auto &plan = *state.plan;
+  if (root >= plan.instance_values.size() || !replacement.valid()) return false;
+  const auto value = plan.instance_values[root];
+  if (value >= plan.external_instances.size() || plan.external_instances[value] != root ||
+      (plan.binding_roles[value] & detail::kExternalInput) == 0 ||
+      (plan.alias_sources[root] != detail::kNoInPlaceSource && plan.alias_sources[root] != root) ||
+      replacement.description() != physical_description(state, root))
+    return false;
+  HYLE_ASSIGN_OR_RETURN(const auto bytes, replacement.description().required_bytes());
+  if (bytes != replacement.storage().size()) return false;
+  const auto &descendants = plan.external_input_alias_descendants;
+  auto next = std::lower_bound(descendants.begin(), descendants.end(), value,
+      [](const auto &entry, std::uint32_t input) noexcept { return entry.value < input; });
+  bool found = false;
+  for (; next != descendants.end() && next->value == value; ++next) {
+    // Prove the entire external-root scope, not only one captured port. An
+    // in-place operation, materialized copy or partial View gets no new path.
+    if (!next->nonmaterializing_view) return false;
+    HYLE_ASSIGN_OR_RETURN(const auto offset, bound_alias_offset(state, next->instance));
+    HYLE_ASSIGN_OR_RETURN(const auto extent,
+        physical_description(state, next->instance).required_bytes());
+    if (offset != 0 || extent != bytes) return false;
+    found = true;
+  }
+  return found;
+}
+
 Result<bool> unchanged_prepared_full_views(
     const detail::InvocationState &state, std::size_t root,
     compute::ConstTensorView replacement) noexcept {
@@ -10065,6 +10144,98 @@ Result<bool> unchanged_prepared_full_views(
   return found;
 }
 
+Result<bool> incoming_capture_candidate(const detail::InvocationState &state,
+    const detail::ReplayInputBinding &replacement) noexcept {
+  const auto &plan = *state.plan;
+  const auto input = replacement.input;
+  if (!::hyle::graph::owns(plan, input) || input.kind() != ValueKind::kInput ||
+      !replacement.tensor.valid() ||
+      replacement.tensor.description() != logical_description(state, input.ordinal()))
+    return std::unexpected(Status::InvalidArgument(
+        "capture candidate needs its original complete input description"));
+  const auto root = plan.external_instances[input.ordinal()];
+  if (root >= plan.alias_sources.size() ||
+      (plan.alias_sources[root] != detail::kNoInPlaceSource && plan.alias_sources[root] != root))
+    return false;
+  const auto incoming = replacement.tensor.storage();
+  HYLE_ASSIGN_OR_RETURN(const auto input_bytes, replacement.tensor.description().required_bytes());
+  if (input_bytes != incoming.size()) return false;
+  // Validate the existing full, zero-offset View scope once. This inspects
+  // metadata only; an old readable binding is neither needed nor recreated.
+  const auto &descendants = plan.external_input_alias_descendants;
+  auto descendant = std::lower_bound(descendants.begin(), descendants.end(), input.ordinal(),
+      [](const auto &entry, std::uint32_t value) noexcept { return entry.value < value; });
+  for (; descendant != descendants.end() && descendant->value == input.ordinal(); ++descendant) {
+    if (!descendant->nonmaterializing_view) return false;
+    HYLE_ASSIGN_OR_RETURN(const auto offset, bound_alias_offset(state, descendant->instance));
+    if (offset != 0) return false;
+    HYLE_ASSIGN_OR_RETURN(const auto bytes,
+        physical_description(state, descendant->instance).required_bytes());
+    if (bytes != incoming.size()) return false;
+  }
+  if (state.progress || plan.segments.size() != 1 || plan.required_queue_count != 1 ||
+      !plan.command_count || plan.capture_ranges.empty())
+    return false;
+  const auto lane = plan.segments.front().lane;
+  if (!shared_lane(plan, lane) || lane.ordinal() >= state.queues.size() ||
+      !state.queues[lane.ordinal()].valid() || !state.queues[lane.ordinal()].is_open())
+    return false;
+  if (plan.planned_shared_capture_route != ReplayRoute::kCaptured &&
+      plan.planned_shared_capture_route != ReplayRoute::kHybrid)
+    return false;
+
+  const auto &coordinates = plan.capture_input_coordinates;
+  auto next = std::lower_bound(coordinates.begin(), coordinates.end(), input.ordinal(),
+      [](const auto &entry, std::uint32_t value) noexcept { return entry.value < value; });
+  auto active = state.captured_ranges.begin();
+  for (std::size_t index = 0; index < plan.capture_ranges.size(); ++index) {
+    const auto &range = plan.capture_ranges[index];
+    // Rebuild slots are created in immutable plan-range order. Commands may
+    // currently live in the active range instead of its retained variant.
+    if (index >= state.capture_rebuilds.size()) return false;
+    const auto &saved = state.capture_rebuilds[index];
+    if (saved.step_begin != range.step_begin || saved.step_count != range.step_count ||
+        !saved.qualification_valid || !saved.preserves_private_arguments)
+      return false;
+    const auto first = next;
+    while (next != coordinates.end() && next->value == input.ordinal() && next->range == index) ++next;
+    const auto matches = [&](const detail::CaptureBindingVariant &variant) noexcept {
+      if (!variant.key_valid) return false;
+      for (auto coordinate = first; coordinate != next; ++coordinate) {
+        if (coordinate->key >= variant.bindings.size()) return false;
+        const auto &key = variant.bindings[coordinate->key];
+        if (!key.valid() || key.description() != physical_description(state, coordinate->instance))
+          return false;
+        const auto actual = key.storage();
+        if (actual.resource() != incoming.resource() ||
+            actual.native_handle() != incoming.native_handle() ||
+            actual.offset() != incoming.offset() || actual.size() != incoming.size())
+          return false;
+      }
+      // An unrelated range has no substituted ports, but still needs one
+      // whole qualified, keyed and live recording. Never combine variants.
+      return true;
+    };
+    // append_capture_range keeps this table sorted, and invalidation erases
+    // without reordering. Visit each active recording at most once.
+    while (active != state.captured_ranges.end() && active->step_begin < range.step_begin) ++active;
+    bool found = active != state.captured_ranges.end() &&
+        active->step_begin == range.step_begin && active->step_count == range.step_count &&
+        saved.active_variant < 2 && active->commands.valid() &&
+        active->commands.tensor_bindings_have_stable_identity() &&
+        matches(saved.variants[saved.active_variant]);
+    if (!found)
+      for (const auto &variant : saved.variants)
+        if (variant.commands.valid() && variant.commands.tensor_bindings_have_stable_identity() &&
+            matches(variant)) {
+          found = true;
+          break;
+        }
+    if (!found) return false;
+  }
+  return true;
+}
+
 Result<ReplayRoute> reusable_capture_tuple(const detail::InvocationState &state,
     std::span<const detail::ReplayInputBinding> replacements) noexcept {
   const auto &plan = *state.plan;
@@ -10078,6 +10249,23 @@ Result<ReplayRoute> reusable_capture_tuple(const detail::InvocationState &state,
   const auto route = plan.planned_shared_capture_route;
   if (route != ReplayRoute::kCaptured && route != ReplayRoute::kHybrid)
     return ReplayRoute::kUnprepared;
+  bool resolve_full_views = false, unsupported_views = false;
+  for (const auto value : plan.external_input_aliases) {
+    const auto root = plan.external_instances[value];
+    auto tensor = state.readable[root];
+    for (const auto &replacement : replacements)
+      if (replacement.input.ordinal() == value) { tensor = replacement.tensor; break; }
+    HYLE_ASSIGN_OR_RETURN(const auto unchanged,
+        unchanged_prepared_full_views(state, root, tensor));
+    if (unchanged) continue;
+    HYLE_ASSIGN_OR_RETURN(const auto full, full_zero_input_views(state, root, tensor));
+    if (full) resolve_full_views = true;
+    else unsupported_views = true;
+  }
+  // Keep already prepared tuples on their original path. Only an entirely
+  // proven full-View scope may resolve stale aliases from the currently bound
+  // external roots; mixed/partial/destructive scopes remain conservative.
+  if (resolve_full_views && unsupported_views) return ReplayRoute::kUnprepared;
   for (const auto &candidate : plan.capture_ranges) {
     // Only recorded steps need stable capture keys/private arguments. Gaps
     // retain their original metadata preparation and ordinary Queue encoder.
@@ -10109,7 +10297,7 @@ Result<ReplayRoute> reusable_capture_tuple(const detail::InvocationState &state,
     if (saved == state.capture_rebuilds.end() || !saved->qualification_valid ||
         !saved->preserves_private_arguments)
       return ReplayRoute::kUnprepared;
-    const auto matches = [&](const detail::CaptureBindingVariant &variant) noexcept {
+    const auto matches = [&](const detail::CaptureBindingVariant &variant) noexcept -> Result<bool> {
       if (!variant.key_valid) return false;
       std::size_t port = 0;
       for (std::size_t index = saved->step_begin;
@@ -10119,6 +10307,35 @@ Result<ReplayRoute> reusable_capture_tuple(const detail::InvocationState &state,
         for (std::size_t input = 0; input < step.input_count; ++input) {
           const auto instance = plan.node_inputs[step.input_begin + input];
           auto tensor = state.readable[instance];
+          if (resolve_full_views) {
+            auto root = instance;
+            for (std::size_t depth = 0;; ++depth) {
+              if (root >= plan.alias_sources.size() || depth >= plan.alias_sources.size())
+                return std::unexpected(Status::Internal("capture input physical alias topology is invalid"));
+              const auto parent = plan.alias_sources[root];
+              if (parent == detail::kNoInPlaceSource || parent == root) break;
+              root = parent;
+            }
+            const auto value = plan.instance_values[root];
+            if (root != instance && (plan.binding_roles[value] & detail::kExternalInput) != 0 &&
+                plan.external_instances[value] == root) {
+              // The cold index proved every descendant is a full zero-offset
+              // nonmaterializing View. Compare this port's concrete descriptor
+              // and the real root's complete storage, without rebinding it.
+              tensor = state.readable[root];
+              for (const auto &replacement : replacements)
+                if (replacement.input.ordinal() == value) { tensor = replacement.tensor; break; }
+              if (port == variant.bindings.size() || !tensor.valid()) return false;
+              const auto &recorded = variant.bindings[port++];
+              if (!recorded.valid() || recorded.description() != physical_description(state, instance))
+                return false;
+              const auto actual = tensor.storage(), previous = recorded.storage();
+              if (actual.resource() != previous.resource() || actual.native_handle() != previous.native_handle() ||
+                  actual.offset() != previous.offset() || actual.size() != previous.size())
+                return false;
+              continue;
+            }
+          }
           for (const auto &replacement : replacements)
             if (instance == plan.external_instances[replacement.input.ordinal()]) {
               tensor = replacement.tensor;
@@ -10141,12 +10358,16 @@ Result<ReplayRoute> reusable_capture_tuple(const detail::InvocationState &state,
     for (const auto &range : state.captured_ranges)
       if (range.step_begin == candidate.step_begin && range.step_count == candidate.step_count &&
           range.commands.valid() && range.commands.tensor_bindings_have_stable_identity() &&
-          saved->active_variant < 2 && matches(saved->variants[saved->active_variant]))
-        found = true;
+          saved->active_variant < 2) {
+        HYLE_ASSIGN_OR_RETURN(const auto matched, matches(saved->variants[saved->active_variant]));
+        if (matched) found = true;
+      }
     if (!found)
       for (const auto &variant : saved->variants)
-        if (variant.commands.valid() && variant.commands.tensor_bindings_have_stable_identity() &&
-            matches(variant)) found = true;
+        if (variant.commands.valid() && variant.commands.tensor_bindings_have_stable_identity()) {
+          HYLE_ASSIGN_OR_RETURN(const auto matched, matches(variant));
+          if (matched) found = true;
+        }
     if (!found) return ReplayRoute::kUnprepared;
   }
   return route;
@@ -10615,6 +10836,13 @@ ReplayRoute detail::submitted_shared_replay_route(const InvocationState &state) 
   return route == state.replay_route ? route : ReplayRoute::kUnprepared;
 }
 
+Result<bool> detail::ReplayAccess::candidate_with_input(const Invocation &invocation,
+    const ReplayInputBinding &replacement) noexcept {
+  // Only the Source adapter calls this, after its original serialized control,
+  // descriptor, one-consumer and actual Queue checks. No permission is added.
+  return incoming_capture_candidate(*InvocationAccess::state(invocation), replacement);
+}
+
 Result<bool> detail::ReplayAccess::can_reuse_capture(const Invocation &invocation,
     std::span<const ReplayInputBinding> replacements) noexcept {
   const auto *state = InvocationAccess::state(invocation);
@@ -10634,7 +10862,11 @@ Result<bool> detail::ReplayAccess::can_reuse_capture(const Invocation &invocatio
     if (std::binary_search(plan.external_input_aliases.begin(), plan.external_input_aliases.end(), input.ordinal())) {
       HYLE_ASSIGN_OR_RETURN(const auto unchanged,
           unchanged_prepared_full_views(*state, plan.external_instances[input.ordinal()], replacement.tensor));
-      if (!unchanged) return false;
+      if (!unchanged) {
+        HYLE_ASSIGN_OR_RETURN(const auto full,
+            full_zero_input_views(*state, plan.external_instances[input.ordinal()], replacement.tensor));
+        if (!full) return false;
+      }
     }
     const auto instance = plan.external_instances[input.ordinal()];
     if (instance >= state->readable.size() || !state->readable[instance].valid() ||
@@ -11131,6 +11363,8 @@ Result<CompiledGraph> compile_plan(
                                   report, packing, adapters);
   if (status.ok())
     status = build_external_input_topology(*plan);
+  if (status.ok())
+    status = build_capture_input_coordinates(*plan);
   if (!status.ok()) {
     detail::release(plan);
     return std::unexpected(std::move(status));

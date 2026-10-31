@@ -658,6 +658,12 @@ struct ExternalInputConsumer final {
   std::uint32_t port;
 };
 
+// Cold coordinates in the original retained capture key, indexed by external
+// physical root. A materialized replica is never a replacement for that root.
+struct CaptureInputCoordinate final {
+  std::uint32_t value, instance, range, key;
+};
+
 // Final physical alias topology only. This is not an alias permission or a
 // prepared address: each use still proves the concrete full-span View tuple.
 struct ExternalInputAliasDescendant final {
@@ -754,6 +760,7 @@ struct PlanState final : util::RefCounted<PlanState> {
         steps(allocator_value),
         exact_variants(allocator_value), variant_order(allocator_value),
         segments(allocator_value), capture_ranges(allocator_value),
+        capture_input_coordinates(allocator_value),
         seal_binding_steps(allocator_value), copy_steps(allocator_value),
         segment_dependencies(allocator_value),
         segment_successors(allocator_value),
@@ -865,6 +872,8 @@ struct PlanState final : util::RefCounted<PlanState> {
   // are candidate intervals only; each Invocation still owns/validates actual
   // Queue recordings and their physical bindings.
   container::SmallVector<PlanCaptureRange, 4, mem::AllocatorRef> capture_ranges;
+  container::SmallVector<CaptureInputCoordinate, 0, mem::AllocatorRef>
+      capture_input_coordinates;
   // Final scheduled-step indices, rebuilt with segments after every reorder.
   // These classify immutable artifacts; they do not cache binding readiness,
   // transfer routes, permissions or Queue ownership.

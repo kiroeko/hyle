@@ -2316,7 +2316,8 @@ public:
       successor_step->execution.cleanup_pending = true;
       return {false, {}};
     }
-    if (successor_step->execution.run && successor_step->phase) {
+    if (successor_step->execution.run && successor_step->phase &&
+        !successor_step->execution.unsubmitted_reuse_declined()) {
       (void)successor_step->execution.retire(execution);
     }
     const auto retired = successor_step->try_abort();
@@ -3065,7 +3066,8 @@ public:
         check(run.bind(phase.sequence_offsets_port, dense(Type::kInt32, {static_cast<std::int64_t>(width + 1)}), offsets));
       }
       const auto batch_end = Clock::now();
-      check(step.execution.prepare_replay({.mode = phase.slots[slot].replay_mode, .host_wait = g::HostWaitPolicy::kAllow}));
+      if (predecessor) check(step.execution.prepare_successor_replay());
+      else check(step.execution.prepare_replay({.mode = phase.slots[slot].replay_mode, .host_wait = g::HostWaitPolicy::kAllow}));
       const auto replay_end = Clock::now();
       if (preparation) {
         preparation->layout_seconds = std::chrono::duration<double>(batch_start - cold_start).count();
@@ -3079,6 +3081,7 @@ public:
       step.cold_batch_seconds = std::chrono::duration<double>(Clock::now() - cold_start).count();
       ++phase.slots[slot].preparation_uses; step.prepared = true;
     } catch (inference::EvaluationFailure &failure) {
+      if (step.execution.unsubmitted_reuse_declined()) failure.observe_unsubmitted_reuse_refusal();
       failure.observe_retirement(predecessor ? abort_successor_episode() : abort_episode());
       throw;
     } catch (...) { if (predecessor) (void)abort_successor_episode(); else (void)abort_episode(); throw; }
@@ -4790,6 +4793,10 @@ struct GenerationContinuation final {
   inference::ContinuationCohort cohort;
   std::size_t next_slot = 0;
   std::optional<std::size_t> ready_slot;
+  // Actual typed coverage-refusal recovery only. Ordinary ready execution
+  // must re-prime this slot from its real predecessor before speculating again.
+  // This owns no Source, captured tuple, native work or admission permission.
+  std::optional<std::size_t> reprime_slot;
   std::array<bool, execution_slot_count> direction_warm{};
   std::size_t ready_steps = 0;
   std::shared_ptr<StepSources> ready;
@@ -4802,7 +4809,7 @@ struct GenerationContinuation final {
     if (!pending_calls.try_reserve(maximum_members)) throw std::bad_alloc{};
   }
   void release_ready() noexcept {
-    ready.reset(); ready_slot.reset(); next_slot = 0;
+    ready.reset(); ready_slot.reset(); reprime_slot.reset(); next_slot = 0;
   }
   void reset_reuse() noexcept {
     release_ready(); direction_warm.fill(false); ready_steps = 0;
@@ -5234,9 +5241,10 @@ struct GenerationStepAdapter final {
             credits[j].reserved, credits[j].additional).quota;
       }
     }
-    // Eligibility is a model fact. Original B prepare/submit still checks the
-    // complete tuple and Source; warm flags never grant execution authority.
-    if (draining || !imported || continuation.ready_steps < 6 || !continuation.direction_warm[next_slot] ||
+    // This call's actual incoming Source is only a necessary capture-key
+    // candidate. Original B preparation/submission still proves the complete
+    // current tuple, permissions and whole predecessor outcome.
+    if (draining || !imported || continuation.reprime_slot ||
         !std::ranges::all_of(calls, [&](const auto &call) {
           const auto &request = *call.request; const auto &ledger = *request.ledger;
           return !request.session->stopping && !request.session->failed && call.quota >= 2 * maximum_outputs &&
@@ -5246,6 +5254,20 @@ struct GenerationStepAdapter final {
               request.rounds.capacity() - request.rounds.size() >= 2 &&
               ledger.records.size() - ledger.committed_count >= 2;
         })) return inference::StepSuccessor::kNone;
+    // Imported A and B use the same original cold Phase. Its actual role,
+    // sampling, packing and rows already cover both Text T1 and MTP T2.
+    if (!a || !a->phase || !a->phase->imported_sources ||
+        a->phase->family->role != successor_role ||
+        a->phase->family->completion != TextCompletion::kEmitNext ||
+        a->phase->family->requests != calls.size() || next_slot >= a->phase->slots.size())
+      throw std::logic_error("successor lost its original imported Phase geometry");
+    auto &candidate_carrier = a->phase->slots[next_slot].carrier;
+    if (!candidate_carrier.initialized() || candidate_carrier.closing() || !candidate_carrier.retired())
+      return inference::StepSuccessor::kNone;
+    auto *candidate_run = take(candidate_carrier.borrow());
+    if (!take(g::detail::ReplayAccess::has_capture_candidate(*candidate_run,
+            a_source->primary_output.reader_binding(a->phase->token_port))))
+      return inference::StepSuccessor::kNone;
     for (std::size_t j = 0; j < calls.size(); ++j) {
       const auto &call = calls[j]; auto &request = *call.request;
       second.push_back(call); auto &following = second.back();
@@ -5352,9 +5374,16 @@ struct GenerationStepAdapter final {
     }
     refused_failure->observe_retirement(retired);
     if (!retired.retired || !refused_failure->retirement().status.ok()) throw *refused_failure;
-    // A retired; B was not submitted. Re-prime the original ready-input route,
-    // without permanently disabling later continuations for a coverage miss.
-    discard_records(); a_source.reset(); continuation.reset();
+    // A retired; B was not submitted. Its single-use Source cannot bind twice.
+    // A typed coverage miss needs ordinary ready execution of the real
+    // predecessor, then the refused slot. Preserve only this ordered cohort's
+    // temporary route; Source/permission/capture authority is never carried.
+    discard_records(); a_source.reset();
+    if (refused_failure->unsubmitted_reuse_refusal()) {
+      continuation.reset_reuse();
+      continuation.next_slot = slot;
+      continuation.reprime_slot = next_slot;
+    } else continuation.reset();
   }
   bool keep_successor() const {
     return inference::continuation_retention(calls, [](const auto &call) {
@@ -5410,7 +5439,12 @@ struct GenerationStepAdapter final {
         ++continuation.ready_steps;
         if (prior_slot && (*prior_slot + 1) % execution_slot_count == slot) continuation.direction_warm[slot] = true;
         continuation.ready_slot = slot; continuation.next_slot = next_slot;
-      } else { continuation.ready_slot.reset(); continuation.next_slot = 0; }
+        // This ordinary target has actually completed and published using the
+        // correct predecessor Source. Only now may speculative attempts resume.
+        if (continuation.reprime_slot == slot && prior_slot &&
+            (*prior_slot + 1) % execution_slot_count == slot)
+          continuation.reprime_slot.reset();
+      } else { continuation.ready_slot.reset(); continuation.next_slot = slot; }
       // Partial K1 acceptance cannot seed another full-candidate Source.
       if (mtp && !continuation.matches(calls)) continuation.release_ready();
       discard_records();

@@ -23,6 +23,10 @@ public:
         participant_(participant) {}
   const Status &status() const noexcept { return status_; }
   std::optional<std::size_t> participant() const noexcept { return participant_; }
+  // Ephemeral preparation origin only. It proves neither retirement nor any
+  // input/output permission, and is never inferred from an error code/message.
+  bool unsubmitted_reuse_refusal() const noexcept { return unsubmitted_reuse_refusal_; }
+  void observe_unsubmitted_reuse_refusal() noexcept { unsubmitted_reuse_refusal_ = true; }
   bool retirement_observed() const noexcept { return retirement_observed_; }
   const RetirementObservation &retirement() const noexcept { return retirement_; }
   // An outer original cleanup may drive pending work again. Preserve its real
@@ -37,6 +41,7 @@ private:
   std::optional<std::size_t> participant_;
   RetirementObservation retirement_{};
   bool retirement_observed_ = false;
+  bool unsubmitted_reuse_refusal_ = false;
 };
 
 } // namespace hyle::inference

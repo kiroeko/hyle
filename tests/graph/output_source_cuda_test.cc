@@ -1686,13 +1686,52 @@ TEST(GraphOutputSourceCuda, HybridPendingTokenAndStoreReuseOnlyExistingRanges) {
   const std::array bindings{
       token_source.reader_binding(token_input),
       *state_binding};
+  // This observes only the incoming token's necessary physical coordinates.
+  // It neither consumes that intent nor prepares the complete Source bundle.
+  const auto token_uses_before_query = token_pool.stats().active_uses;
+  const auto output_uses_before_query = output_pool.stats().active_uses;
+  const auto route_before_query = consumer.replay_route();
+  const auto candidate = gd::ReplayAccess::has_capture_candidate(consumer, bindings[0]);
+  ASSERT_TRUE(candidate) << candidate.error().message();
+  EXPECT_TRUE(*candidate);
+  const auto empty_candidate = gd::ReplayAccess::has_capture_candidate(consumer, g::SourceBinding{});
+  ASSERT_FALSE(empty_candidate);
+  EXPECT_TRUE(empty_candidate.error().IsInvalidArgument());
+  auto mixed_intent = bindings[0];
+  gd::SourceBindingAccess::get(mixed_intent).store = &state;
+  const auto mixed_candidate = gd::ReplayAccess::has_capture_candidate(consumer, mixed_intent);
+  ASSERT_FALSE(mixed_candidate);
+  EXPECT_TRUE(mixed_candidate.error().IsInvalidArgument());
+  const auto foreign_candidate = gd::ReplayAccess::has_capture_candidate(
+      consumer, token_source.reader_binding(table_input));
+  ASSERT_FALSE(foreign_candidate);
+  EXPECT_TRUE(foreign_candidate.error().IsInvalidArgument());
+  const auto store_candidate = gd::ReplayAccess::has_capture_candidate(consumer, *state_binding);
+  ASSERT_FALSE(store_candidate);
+  EXPECT_TRUE(store_candidate.error().IsUnimplemented());
+  EXPECT_EQ(token_pool.stats().active_uses, token_uses_before_query);
+  EXPECT_EQ(output_pool.stats().active_uses, output_uses_before_query);
+  EXPECT_EQ(consumer.replay_route(), route_before_query);
+  EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
   // Source authority can be bound before an unrelated captured input exists.
   // Only final preparation/submission qualifies the complete physical tuple.
   ASSERT_TRUE(consumer.unbind(marker_input).ok());
+  const auto incomplete_candidate = gd::ReplayAccess::has_capture_candidate(consumer, bindings[0]);
+  ASSERT_TRUE(incomplete_candidate) << incomplete_candidate.error().message();
+  EXPECT_TRUE(*incomplete_candidate); // Unrelated marker is not part of this necessary proof.
   const auto bound = g::bind_sources(consumer, bindings);
   ASSERT_TRUE(bound.ok()) << bound.message();
+  const auto reused_intent = gd::ReplayAccess::has_capture_candidate(consumer, bindings[0]);
+  ASSERT_FALSE(reused_intent);
+  EXPECT_TRUE(reused_intent.error().IsFailedPrecondition());
+  const auto incomplete = gd::ReplayAccess::try_prepare_sources(consumer, queues);
+  ASSERT_TRUE(incomplete) << incomplete.error().message();
+  EXPECT_FALSE(*incomplete);
   EXPECT_FALSE(g::prepare_sources(consumer, queues).ok());
   ASSERT_TRUE(consumer.bind(marker_input, token_desc, other_marker_ready).ok());
+  const auto changed_tuple = gd::ReplayAccess::try_prepare_sources(consumer, queues);
+  ASSERT_TRUE(changed_tuple) << changed_tuple.error().message();
+  EXPECT_FALSE(*changed_tuple);
   EXPECT_FALSE(g::prepare_sources(consumer, queues).ok());
   EXPECT_FALSE(g::submit_sources(consumer, queues));
   EXPECT_EQ(consumer.replay_route(), g::ReplayRoute::kUnprepared);
@@ -1701,8 +1740,19 @@ TEST(GraphOutputSourceCuda, HybridPendingTokenAndStoreReuseOnlyExistingRanges) {
   EXPECT_EQ(*common.poll(), c::CompletionPoll::kPending);
   EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
   ASSERT_TRUE(consumer.bind(marker_input, token_desc, marker_ready).ok());
+  auto other_queue = context.create_queue().value();
+  const std::array other_queues{g::QueueBinding{g::ExecutionLaneId{0}, &other_queue}};
+  const auto wrong_queue = gd::ReplayAccess::try_prepare_sources(consumer, other_queues);
+  ASSERT_FALSE(wrong_queue);
+  EXPECT_TRUE(wrong_queue.error().IsInvalidArgument());
+  const auto no_source_bundle = gd::ReplayAccess::try_prepare_sources(producer, queues);
+  ASSERT_FALSE(no_source_bundle);
+  EXPECT_TRUE(no_source_bundle.error().IsFailedPrecondition());
   const auto prepared = g::prepare_sources(consumer, queues);
   ASSERT_TRUE(prepared.ok()) << prepared.message();
+  const auto typed_prepared = gd::ReplayAccess::try_prepare_sources(consumer, queues);
+  ASSERT_TRUE(typed_prepared) << typed_prepared.error().message();
+  EXPECT_TRUE(*typed_prepared);
   ASSERT_EQ(consumer.replay_route(), g::ReplayRoute::kHybrid);
   EXPECT_EQ(consumer.replay_report()->recorded_capture_range_count, 0u);
   EXPECT_EQ(consumer.replay_report()->reused_capture_range_count, recorded_ranges);

@@ -139,20 +139,26 @@ inline std::filesystem::path model_eos_fixture(const std::filesystem::path &tiny
 }
 
 // Replace a real, retired output owner of the *next* imported carrier. Keeping
-// the old owner prevents allocation-address reuse. The ordinary Graph bind
-// revokes its old capture; pending B must reject rather than record a new one.
+// the old owner prevents allocation-address reuse. Recorded qualification may
+// remain, but pending B must reject the changed full tuple rather than record.
 inline q::PreparedReadback replace_successor_output(q::Model &model,
-    const q::GenerationContinuation &continuation, std::size_t width) {
+    const q::GenerationContinuation &continuation, std::size_t width,
+    std::span<const bool> captured_slots) {
   require(!model.active_step && !model.successor_step && !model.carrier_borrowed &&
-      continuation.ready && continuation.ready_steps >= 6,
-      "cold tuple replacement requires an actually warmed, idle owner boundary");
+      continuation.ready && !continuation.reprime_slot &&
+      captured_slots.size() == q::execution_slot_count &&
+      std::ranges::all_of(captured_slots, [](bool captured) { return captured; }),
+      "cold tuple replacement requires an idle owner and all actual captured imported slots");
   const auto found = model.phases.find({width, 1, q::GraphRole::kText, q::TextCompletion::kEmitNext, 0, true});
   require(found != model.phases.end(), "cold tuple replacement lost its actual imported family");
   auto &phase = *found->second;
   const auto slot = (continuation.next_slot + 1) % q::execution_slot_count;
-  require(continuation.direction_warm[slot] && (!continuation.ready_slot || *continuation.ready_slot != slot),
-      "cold tuple replacement selected a live source or unwarmed direction");
-  auto &run = *q::take(phase.slots[slot].carrier.borrow());
+  auto &carrier = phase.slots[slot].carrier;
+  require(continuation.ready_slot && *continuation.ready_slot != slot &&
+      carrier.initialized() && !carrier.closing() && carrier.retired(),
+      "cold tuple replacement selected a live Source or an unretired imported carrier");
+  auto &run = *q::take(carrier.borrow());
+  require(!run.in_flight(), "cold tuple replacement still has original native work");
   auto &io = phase.slots[slot].data; auto &readback = *q::take(phase.slots[slot].io.readback(io.next_id));
   require(phase.slots[slot].preparation_uses > 0,
       "cold tuple fixture did not replace an actually used imported carrier");

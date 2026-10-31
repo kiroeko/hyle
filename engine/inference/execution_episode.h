@@ -11,6 +11,7 @@
 #include "hyle/container/small_vector.h"
 #include "hyle/core/assert.h"
 #include "hyle/graph/batch.h"
+#include "hyle/graph/detail/replay_access.h"
 #include "submission_views.h"
 #include "append_transactions.h"
 #include "program_carrier.h"
@@ -106,11 +107,40 @@ class ExecutionEpisode final {
                     : run->prepare_replay(carrier->queues(), options);
   }
 
+  // A pending speculative consumer can only reuse recorded coverage. A ready
+  // Source retains ordinary preparation and may record, exactly as before.
+  // This typed false comes from Graph's exact final pending coverage test,
+  // after its original Source validation; no Status code/string infers it.
+  Status prepare_successor_replay() noexcept {
+    if (!run || !carrier || !incoming || !incoming->bound ||
+        !predecessor_episode || !predecessor_episode->run ||
+        has_completion() || sources || unsubmitted_reuse_declined_)
+      return Status::FailedPrecondition("successor replay requires one original unsubmitted incoming episode");
+    HYLE_ASSIGN_OR_RETURN(auto original, carrier->borrow());
+    if (original != run)
+      return Status::InvalidArgument("successor replay belongs to another original Invocation");
+    HYLE_ASSIGN_OR_RETURN(const bool prepared,
+        graph::detail::ReplayAccess::try_prepare_sources(*run, carrier->queues()));
+    if (!prepared) {
+      // Recovery waits for A before withdrawing B's original transactions.
+      // This is an episode-local failure origin, never a future reuse hint.
+      unsubmitted_reuse_declined_ = true;
+      cleanup_pending = true;
+      return Status::Unavailable("pending outputs have no complete existing capture for their final physical tuple");
+    }
+    return Status::Ok();
+  }
+  bool unsubmitted_reuse_declined() const noexcept {
+    return unsubmitted_reuse_declined_;
+  }
+
   // All routes submit through the same already selected original carrier.
   // Model policy still decides when to submit and when an outcome may publish.
   Status submit(const std::shared_ptr<Scope> &scope) noexcept {
     if (!run || !carrier)
       return Status::FailedPrecondition("execution episode has no original carrier");
+    if (unsubmitted_reuse_declined_)
+      return Status::FailedPrecondition("typed reuse refusal cannot submit its original episode");
     HYLE_ASSIGN_OR_RETURN(completion, carrier->submit(scope,
         [&](graph::Invocation &invocation, std::span<const graph::QueueBinding> queues) noexcept {
           return incoming ? graph::submit_sources(invocation, queues)
@@ -214,7 +244,8 @@ class ExecutionEpisode final {
   // is the model's nonthrowing final candidate discard, never publication.
   template<class Recycle>
   Result<bool> recover(Recycle &&recycle) noexcept {
-    return recover_impl(false, {}, std::forward<Recycle>(recycle));
+    unsubmitted_reuse_declined_ = false;
+    return recover_impl(RecoveryMode::kDestructive, {}, std::forward<Recycle>(recycle));
   }
 
   // Discard unpublished work only after observing its original whole-Graph
@@ -225,10 +256,32 @@ class ExecutionEpisode final {
   template<class Recycle>
   Result<bool> discard_successful(std::span<const graph::ValueId> ordinary_inputs,
       Recycle &&recycle) noexcept {
-    return recover_impl(true, ordinary_inputs, std::forward<Recycle>(recycle));
+    return recover_impl(RecoveryMode::kSuccessfulDiscard, ordinary_inputs, std::forward<Recycle>(recycle));
+  }
+
+  // Only the typed Graph coverage refusal above can select this path. Keep
+  // the open original Invocation/fixed IO, while recovering its real append,
+  // Store, Source and unpublished candidate capabilities. A cleanup error
+  // escalates to the original destructive recovery, without hiding its Status.
+  template<class Recycle>
+  Result<bool> recover_unsubmitted_reuse(std::span<const graph::ValueId> ordinary_inputs,
+      Recycle &&recycle) noexcept {
+    if (!unsubmitted_reuse_declined_)
+      return std::unexpected(Status::FailedPrecondition("episode has no typed unsubmitted reuse refusal"));
+    auto recovered = recover_impl(RecoveryMode::kUnsubmittedReuse, ordinary_inputs,
+        std::forward<Recycle>(recycle));
+    if (!recovered) {
+      record_retirement_status(terminal, recovered.error());
+      unsubmitted_reuse_declined_ = false;
+    }
+    return recovered;
   }
 
  private:
+  enum class RecoveryMode : std::uint8_t {
+    kDestructive, kSuccessfulDiscard, kUnsubmittedReuse
+  };
+  bool unsubmitted_reuse_declined_ = false;
   // A default terminal Status is not evidence of successful execution. Keep
   // this observation after the original Completion/Source has been released,
   // and remember withdrawal if later page rollback needs another attempt.
@@ -238,18 +291,24 @@ class ExecutionEpisode final {
   SuccessfulDiscard successful_discard_ = SuccessfulDiscard::kUnobserved;
 
   template<class Recycle>
-  Result<bool> recover_impl(bool keep_carrier,
+  Result<bool> recover_impl(RecoveryMode mode,
       std::span<const graph::ValueId> ordinary_inputs, Recycle &&recycle) noexcept {
     static_assert(noexcept(std::forward<Recycle>(recycle)()));
+    const bool keep_carrier = mode != RecoveryMode::kDestructive;
     // Destroying an unsubmitted successor's capture may synchronize its
     // context. Preserve the original predecessor gate before any withdrawal.
     if (cleanup_pending && predecessor_episode && predecessor_episode->run &&
         predecessor_episode->run->in_flight()) return false;
     if (keep_carrier) {
       if (!run || !carrier || !carrier->initialized() || carrier->closing())
-        return std::unexpected(Status::FailedPrecondition("successful discard requires its original open carrier"));
+        return std::unexpected(Status::FailedPrecondition("carrier-preserving recovery requires its original open carrier"));
       if (!terminal.ok()) return std::unexpected(terminal);
-      if (successful_discard_ == SuccessfulDiscard::kUnobserved) {
+      if (mode == RecoveryMode::kUnsubmittedReuse) {
+        if (!unsubmitted_reuse_declined_ || has_completion() || sources ||
+            (successful_discard_ != SuccessfulDiscard::kConsumersReleased &&
+                (!incoming || !incoming->bound)))
+          return std::unexpected(Status::FailedPrecondition("reuse refusal has submitted work or lost its original incoming bundle"));
+      } else if (successful_discard_ == SuccessfulDiscard::kUnobserved) {
         if (!has_completion())
           return std::unexpected(Status::FailedPrecondition("successful discard requires its original completion"));
         const auto observed = poll();
@@ -318,6 +377,7 @@ class ExecutionEpisode final {
     std::forward<Recycle>(recycle)();
     run = nullptr; carrier = nullptr; state_transactions = nullptr;
     successful_discard_ = SuccessfulDiscard::kUnobserved;
+    unsubmitted_reuse_declined_ = false;
     release_admission();
     return true;
   }

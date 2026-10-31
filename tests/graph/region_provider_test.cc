@@ -29,6 +29,7 @@
 #include "hyle/compute/storage_owner.h"
 #include "hyle/graph/region_provider.h"
 #include "hyle/graph/result.h"
+#include "hyle/graph/source.h"
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/graph/detail/replay_access.h"
 #include "hyle/graph/detail/region_adapter.h"
@@ -7492,6 +7493,367 @@ TEST(GraphRegions, PlainGraphCopyCaptureKeepsQueueAndInvalidationGates) {
   check_plain_graph_copy_capture(true);
 }
 
+// Uses the original async backend/capture fixture for metadata and retirement
+// checks. Mock captured Copies do not execute payloads or certify CUDA math.
+struct CaptureSourceQueryResource final {
+  std::shared_ptr<HostResource> storage;
+  hyle::mem::MemoryResourceRef ref() const noexcept {
+    return hyle::mem::MemoryResourceRef(*storage);
+  }
+};
+
+auto capture_source_query_snapshot(const RegionProbe &probe,
+    const HostResource &resource, const hyle::compute::LeasePool &pool,
+    const hyle::graph::Invocation &invocation) {
+  const auto stats = pool.stats();
+  const auto *state = hyle::graph::detail::InvocationAccess::state(invocation);
+  return std::array{
+      probe.completion_poll_count, probe.completion_wait_count,
+      probe.completion_destroy_count, probe.device_wait_count,
+      probe.capture_begin_count, probe.capture_end_count, probe.capture_abort_count,
+      probe.capture_launch_count, probe.capture_destroy_count,
+      probe.capture_recycle_count, probe.capture_rebuild_count,
+      probe.binding_prepare_count, probe.binding_seal_count,
+      probe.submit_count, probe.submit_attempt_count, probe.copy_count,
+      probe.extension_query_count, probe.resource_validation_count.load(),
+      probe.transfer_query_count, probe.reserve_completion_count,
+      resource.allocation_count, resource.live_allocations,
+      stats.capacity_bytes, stats.allocated_bytes, stats.peak_bytes,
+      static_cast<std::size_t>(stats.live_blocks),
+      static_cast<std::size_t>(stats.active_uses),
+      static_cast<std::size_t>(stats.reclaimed_blocks),
+      static_cast<std::size_t>(stats.closed),
+      static_cast<std::size_t>(state->replay_route),
+      state->captured_ranges.size(), state->capture_rebuilds.size(),
+      static_cast<std::size_t>(static_cast<bool>(state->input_sources))};
+}
+
+struct CaptureSourceQueryRetirement final {
+  hyle::graph::OutputSource &output;
+  hyle::graph::SubmissionSource &submission;
+  hyle::graph::Invocation *consumer = nullptr;
+  ValueId input{};
+  ~CaptureSourceQueryRetirement() {
+    if (consumer && hyle::graph::detail::has_input_source(
+            *hyle::graph::detail::InvocationAccess::state(*consumer), input))
+      EXPECT_TRUE(hyle::graph::release_sources(*consumer).ok());
+    EXPECT_TRUE(output.wait().ok());
+    EXPECT_TRUE(output.detach().ok());
+    EXPECT_TRUE(submission.detach().ok());
+  }
+};
+
+TEST(GraphRegions, SourceCaptureCandidateKeepsCopyReplicaAndControlBoundaries) {
+  namespace g = hyle::graph;
+  namespace gd = g::detail;
+  namespace c = hyle::compute;
+  RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
+  probe.capture_supported = true;
+  probe.capture_preserves_binding_identity = true;
+  probe.queued_transfers = true;
+  HostResource replica;
+  probe.region_input_resource = probe.region_output_resource =
+      hyle::mem::MemoryResourceRef(replica);
+  probe.artifact_properties.runtime = {
+      .mode = c::ProviderRuntimeMode::kSharedQueue,
+      .workspace_owner = c::ProviderWorkspaceOwner::kCaller,
+      .replay_class = ProviderReplayClass::kPrepared,
+      .blocks_host = false, .capture_compatible = false};
+  auto context = make_context(probe);
+  auto resource = std::make_shared<HostResource>();
+  auto storage = c::StorageOwner::adopt(context,
+      CaptureSourceQueryResource{resource}).value();
+  const std::array domains{
+      g::StorageDomain{.resource = storage.ref(), .owner = storage},
+      g::StorageDomain{.resource = hyle::mem::MemoryResourceRef(replica)}};
+  const std::array targets{g::ExecutionTarget{
+      .source = g::ExecutionSource::acquire(context).value(),
+      .default_storage = g::StorageDomainId{1}}};
+  const auto producer_graph = make_negations(2);
+  const auto logical = make_negations(2);
+  const auto compile = [&](const NegationGraph &description) {
+    const std::array contracts{
+        g::ExternalResourceContract{description.input, g::StorageDomainId{0}},
+        g::ExternalResourceContract{description.output, g::StorageDomainId{0}}};
+    return g::compile(description.graph, {.storage_domains = domains, .targets = targets},
+        {.external_resources = contracts, .operation_fallback = OperationFallbackPolicy::kReject});
+  };
+  auto producer_plan = compile(producer_graph).value();
+  auto consumer_plan = compile(logical).value();
+  auto shape_builder = GraphBuilder::create().value();
+  const auto longer_input = shape_builder.input(row(9)).value();
+  const auto longer_hidden = shape_builder.add(Unary{UnaryKind::kNeg}, longer_input).value();
+  const auto longer_output = shape_builder.add(Unary{UnaryKind::kNeg}, longer_hidden).value();
+  ASSERT_TRUE(shape_builder.publish(longer_output).ok());
+  const NegationGraph longer{std::move(shape_builder).finish().value(), longer_input, longer_output};
+  auto longer_plan = compile(longer).value();
+  auto longer_consumer = longer_plan.executable.create_invocation().value();
+  ASSERT_EQ(consumer_plan.report.copy_bytes(), 2u * 8u * sizeof(float));
+  ASSERT_EQ(consumer_plan.report.region_count(), 1u);
+  auto producer = producer_plan.executable.create_invocation().value();
+  auto other_producer = producer_plan.executable.create_invocation().value();
+  ASSERT_TRUE(producer.prepare_resources().ok());
+  ASSERT_TRUE(other_producer.prepare_resources().ok());
+  auto pool = c::LeasePool::create(storage.ref(), 512, {.max_blocks = 2}).value();
+  auto writer = pool.allocate(8u * sizeof(float), 256).value();
+  auto shifted_writer = pool.allocate(8u * sizeof(float), 256).value();
+  const std::array<float, 8> values{1, 2, 3, 4, 5, 6, 7, 8};
+  ASSERT_TRUE(writer.view()->write(std::as_bytes(std::span(values))).ok());
+  ASSERT_TRUE(shifted_writer.view()->write(std::as_bytes(std::span(values))).ok());
+  const auto future_input = writer.tensor(row(8))->as_const();
+  const auto shifted_input = shifted_writer.tensor(row(8))->as_const();
+  ASSERT_EQ(future_input.storage().native_handle(), shifted_input.storage().native_handle());
+  ASSERT_NE(future_input.storage().offset(), shifted_input.storage().offset());
+  auto initialized = make_tensor(row(8), storage.ref());
+  auto bootstrap = make_tensor(row(8), storage.ref());
+  write(initialized, values);
+  write(bootstrap, values);
+  auto destination = make_tensor(row(8), storage.ref());
+  auto bootstrap_destination = make_tensor(row(8), storage.ref());
+  auto wrong_queue_destination = make_tensor(row(8), storage.ref());
+  auto unrelated_destination = make_tensor(row(8), storage.ref());
+  auto queue = context.create_queue().value();
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  auto cold = consumer_plan.executable.create_invocation().value();
+  auto consumer = consumer_plan.executable.create_invocation().value();
+  auto bootstrap_consumer = consumer_plan.executable.create_invocation().value();
+  auto wrong_queue_consumer = consumer_plan.executable.create_invocation().value();
+  auto unrelated_range_consumer = consumer_plan.executable.create_invocation().value();
+  ASSERT_TRUE(consumer.prepare_resources().ok());
+  const auto warm = [&](g::Invocation &run, ConstTensorView input, TensorView output,
+                        std::span<const g::QueueBinding> on) {
+    EXPECT_TRUE(run.bind(logical.input, input).ok());
+    EXPECT_TRUE(run.bind(logical.output, output).ok());
+    const auto prepared = run.prepare_replay(on, {.mode = g::ReplayMode::kPreferCapture});
+    EXPECT_TRUE(prepared.ok()) << prepared.message();
+    EXPECT_EQ(run.replay_route(), g::ReplayRoute::kHybrid);
+  };
+  // Real initialized views are recorded before either producer submits. The
+  // second prepare moves the future-input variant into dormant storage.
+  warm(consumer, future_input, destination.view, queues);
+  warm(consumer, bootstrap.view.as_const(), destination.view, queues);
+  warm(bootstrap_consumer, bootstrap.view.as_const(), bootstrap_destination.view, queues);
+  warm(unrelated_range_consumer, future_input, unrelated_destination.view, queues);
+  auto another_queue = context.create_queue().value();
+  const std::array other_queues{g::QueueBinding{g::ExecutionLaneId{0}, &another_queue}};
+  warm(wrong_queue_consumer, future_input, wrong_queue_destination.view, other_queues);
+  const auto *state = gd::InvocationAccess::state(consumer);
+  const auto &coordinates = state->plan->capture_input_coordinates;
+  RecordProperty("capture_input_coordinate_size", static_cast<int>(sizeof(gd::CaptureInputCoordinate)));
+  RecordProperty("capture_input_coordinate_count", static_cast<int>(coordinates.size()));
+  RecordProperty("capture_input_coordinate_capacity", static_cast<int>(coordinates.capacity()));
+  RecordProperty("capture_input_coordinate_vector_control_bytes", static_cast<int>(sizeof(coordinates)));
+  ASSERT_EQ(sizeof(gd::CaptureInputCoordinate), 16u);
+  ASSERT_FALSE(coordinates.empty());
+  const auto root = state->plan->external_instances[logical.input.ordinal()];
+  std::size_t replicas = 0;
+  for (const auto &entry : state->plan->external_input_consumers)
+    if (entry.value == logical.input.ordinal() && entry.instance != root) ++replicas;
+  ASSERT_GT(replicas, 0u);
+  for (const auto &coordinate : coordinates)
+    if (coordinate.value == logical.input.ordinal()) EXPECT_EQ(coordinate.instance, root);
+  // Size/capacity/control are descriptive metadata, not a claim that 16*N
+  // includes allocator headers, transient growth or original budget high water.
+  ASSERT_TRUE(producer.bind(producer_graph.input, initialized.view).ok());
+  ASSERT_TRUE(producer.bind(producer_graph.output, row(8), std::move(writer)).ok());
+  ASSERT_TRUE(other_producer.bind(producer_graph.input, initialized.view).ok());
+  ASSERT_TRUE(other_producer.bind(producer_graph.output, row(8), std::move(shifted_writer)).ok());
+  ASSERT_TRUE(producer.prepare_replay(queues, {.mode = g::ReplayMode::kPreferCapture}).ok());
+  ASSERT_EQ(producer.replay_route(), g::ReplayRoute::kHybrid);
+  ASSERT_TRUE(other_producer.prepare_replay(queues, {.mode = g::ReplayMode::kPreferCapture}).ok());
+  ASSERT_EQ(other_producer.replay_route(), g::ReplayRoute::kHybrid);
+  auto accepted = producer.submit(queues);
+  ASSERT_TRUE(accepted) << accepted.error().message();
+  auto submitted_source = g::SubmissionSource::create(producer, std::move(*accepted), storage);
+  ASSERT_TRUE(submitted_source) << submitted_source.error().message();
+  auto submission = std::move(*submitted_source);
+  auto output_source = g::OutputSource::create(submission, producer_graph.output, storage, pool);
+  ASSERT_TRUE(output_source) << output_source.error().message();
+  auto source = std::move(*output_source);
+  CaptureSourceQueryRetirement retire{source, submission, &consumer, logical.input};
+  auto other_accepted = other_producer.submit(queues);
+  ASSERT_TRUE(other_accepted) << other_accepted.error().message();
+  auto other_submitted_source = g::SubmissionSource::create(other_producer,
+      std::move(*other_accepted), storage);
+  ASSERT_TRUE(other_submitted_source) << other_submitted_source.error().message();
+  auto other_submission = std::move(*other_submitted_source);
+  auto shifted_output_source = g::OutputSource::create(other_submission,
+      producer_graph.output, storage, pool);
+  ASSERT_TRUE(shifted_output_source) << shifted_output_source.error().message();
+  auto shifted_source = std::move(*shifted_output_source);
+  CaptureSourceQueryRetirement retire_shifted{shifted_source, other_submission};
+  ASSERT_LT(probe.completed_prefix, probe.submit_count);
+  const auto query = [&](const g::Invocation &run, const g::SourceBinding &intent) {
+    const auto before = capture_source_query_snapshot(probe, *resource, pool, run);
+    auto result = gd::ReplayAccess::has_capture_candidate(run, intent);
+    EXPECT_EQ(capture_source_query_snapshot(probe, *resource, pool, run), before);
+    return result;
+  };
+  const auto intent = source.reader_binding(logical.input);
+  const auto no_record = query(cold, intent);
+  ASSERT_TRUE(no_record) << no_record.error().message();
+  EXPECT_FALSE(*no_record);
+  const auto only_bootstrap = query(bootstrap_consumer, intent);
+  ASSERT_TRUE(only_bootstrap) << only_bootstrap.error().message();
+  EXPECT_FALSE(*only_bootstrap);
+  for (int repeat = 0; repeat < 2; ++repeat) {
+    const auto match = query(consumer, intent);
+    ASSERT_TRUE(match) << match.error().message();
+    EXPECT_TRUE(*match); // Input Copy destination keeps its own recorded replica.
+  }
+  const auto *unrelated_state = gd::InvocationAccess::state(unrelated_range_consumer);
+  std::uint32_t output_copy = UINT32_MAX;
+  for (std::size_t index = 0; index < unrelated_state->plan->steps.size(); ++index) {
+    const auto &step = unrelated_state->plan->steps[index];
+    if (step.kind == gd::PlanStepKind::kCopy &&
+        unrelated_state->plan->instance_values[unrelated_state->plan->node_inputs[step.input_begin]] ==
+            logical.output.ordinal())
+      output_copy = static_cast<std::uint32_t>(index);
+  }
+  ASSERT_NE(output_copy, UINT32_MAX);
+  ASSERT_TRUE(gd::RegionAccess::invalidate_commands(unrelated_range_consumer, output_copy).ok());
+  const auto missing_unrelated_range = query(unrelated_range_consumer, intent);
+  ASSERT_TRUE(missing_unrelated_range) << missing_unrelated_range.error().message();
+  EXPECT_FALSE(*missing_unrelated_range); // Matching input range cannot fill this missing output range.
+  const auto other_offset = query(consumer, shifted_source.reader_binding(logical.input));
+  ASSERT_TRUE(other_offset) << other_offset.error().message();
+  EXPECT_FALSE(*other_offset);
+  const auto wrong_queue = query(wrong_queue_consumer, intent);
+  ASSERT_FALSE(wrong_queue);
+  EXPECT_TRUE(wrong_queue.error().IsInvalidArgument());
+  const auto empty = query(consumer, g::SourceBinding{});
+  ASSERT_FALSE(empty);
+  EXPECT_TRUE(empty.error().IsInvalidArgument());
+  const auto foreign = query(consumer, source.reader_binding(producer_graph.input));
+  ASSERT_FALSE(foreign);
+  EXPECT_TRUE(foreign.error().IsInvalidArgument());
+  const auto not_input = query(consumer, source.reader_binding(logical.output));
+  ASSERT_FALSE(not_input);
+  EXPECT_TRUE(not_input.error().IsInvalidArgument());
+  const auto wrong_extent = query(longer_consumer, source.reader_binding(longer.input));
+  ASSERT_FALSE(wrong_extent);
+  EXPECT_TRUE(wrong_extent.error().IsInvalidArgument()); // Actual 8-vs-9 description/extent.
+  const auto own_running_producer = query(producer, source.reader_binding(producer_graph.input));
+  ASSERT_FALSE(own_running_producer);
+  EXPECT_TRUE(own_running_producer.error().IsUnavailable()); // Original control gate is first.
+  auto closed = consumer_plan.executable.create_invocation().value();
+  ASSERT_TRUE(closed.close().ok());
+  const auto closed_query = query(closed, intent);
+  ASSERT_FALSE(closed_query);
+  EXPECT_TRUE(closed_query.error().IsFailedPrecondition());
+  EXPECT_TRUE(gd::RegionAccess::has_input_binding(state, logical.input,
+      bootstrap.view.as_const()).value());
+  EXPECT_FALSE(static_cast<bool>(state->input_sources));
+  // Query never consumed bound_once or installed Source authority: the first
+  // ordinary original bind remains possible, then the one-shot guard applies.
+  const auto bound = g::bind_sources(consumer, std::array{intent});
+  ASSERT_TRUE(bound.ok()) << bound.message();
+  const auto once = query(consumer, intent);
+  ASSERT_FALSE(once);
+  EXPECT_TRUE(once.error().IsFailedPrecondition());
+  ASSERT_TRUE(g::release_sources(consumer).ok());
+  const auto still_once = query(consumer, intent);
+  ASSERT_FALSE(still_once);
+  EXPECT_TRUE(still_once.error().IsFailedPrecondition());
+}
+
+TEST(GraphRegions, SourceCaptureCandidateKeepsFullViewsAndDetachedReadySources) {
+  namespace g = hyle::graph;
+  namespace gd = g::detail;
+  namespace c = hyle::compute;
+  for (const bool partial : {false, true}) {
+    SCOPED_TRACE(partial);
+    RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
+    probe.capture_supported = true;
+    probe.capture_preserves_binding_identity = true;
+    probe.capture_private_arguments_stable = true;
+    probe.borrows_tensor_bindings = true;
+    probe.require_cold_bindings = true;
+    probe.artifact_properties.runtime.capture_compatible = true;
+    auto context = make_context(probe);
+    auto resource = std::make_shared<HostResource>();
+    auto storage = c::StorageOwner::adopt(context, CaptureSourceQueryResource{resource}).value();
+    const std::array domains{g::StorageDomain{.resource = storage.ref(), .owner = storage}};
+    const std::array targets{g::ExecutionTarget{
+        .source = g::ExecutionSource::acquire(context).value(), .default_storage = g::StorageDomainId{0}}};
+    const auto description = row(partial ? 9 : 8);
+    auto first = GraphBuilder::create().value();
+    const auto producer_input = first.input(description).value();
+    const auto intermediate = first.add(Unary{UnaryKind::kNeg}, producer_input).value();
+    const auto token = first.add(Unary{UnaryKind::kNeg}, intermediate).value();
+    ASSERT_TRUE(first.publish(token).ok());
+    auto producer_graph = std::move(first).finish().value();
+    auto producer_plan = g::compile(producer_graph, {.storage_domains = domains, .targets = targets}).value();
+    auto second = GraphBuilder::create().value();
+    const auto input = second.input(description).value();
+    auto view = input;
+    if (partial) {
+      view = second.add(c::View::slice(0, 1, 8).value(), view).value();
+    } else {
+      view = second.add(c::View::reshape(c::TensorShape::create(
+          std::array<std::int64_t, 2>{2, 4}).value()).value(), view).value();
+      view = second.add(c::View::reshape(c::TensorShape::create(
+          std::array<std::int64_t, 1>{8}).value()).value(), view).value();
+    }
+    view = second.add(Unary{UnaryKind::kNeg}, view).value();
+    const auto output = second.add(Unary{UnaryKind::kNeg}, view).value();
+    ASSERT_TRUE(second.publish(output).ok());
+    auto consumer_graph = std::move(second).finish().value();
+    auto consumer_plan = g::compile(consumer_graph, {.storage_domains = domains, .targets = targets}).value();
+    auto producer = producer_plan.executable.create_invocation().value();
+    ASSERT_TRUE(producer.prepare_resources().ok());
+    auto pool = c::LeasePool::create(storage.ref(), 256, {.max_blocks = 1}).value();
+    auto writer = pool.allocate(description.required_bytes().value(), 256).value();
+    const std::array<float, 9> values{1, 2, 3, 4, 5, 6, 7, 8, 9};
+    ASSERT_TRUE(writer.view()->write(std::as_bytes(std::span(values).first(partial ? 9u : 8u))).ok());
+    const auto future_input = writer.tensor(description)->as_const();
+    auto initialized = make_tensor(description, storage.ref());
+    write(initialized, std::span(values).first(partial ? 9u : 8u));
+    auto destination = make_tensor(row(8), storage.ref());
+    auto consumer = consumer_plan.executable.create_invocation().value();
+    auto cold = consumer_plan.executable.create_invocation().value();
+    ASSERT_TRUE(consumer.bind(input, future_input).ok());
+    ASSERT_TRUE(consumer.bind(output, destination.view).ok());
+    auto queue = context.create_queue().value();
+    const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+    ASSERT_TRUE(consumer.prepare_replay(queues, {.mode = g::ReplayMode::kRequireCapture}).ok());
+    ASSERT_TRUE(producer.bind(producer_input, initialized.view).ok());
+    ASSERT_TRUE(producer.bind(token, description, std::move(writer)).ok());
+    ASSERT_TRUE(producer.prepare_replay(queues, {.mode = g::ReplayMode::kPreferCapture}).ok());
+    ASSERT_EQ(producer.replay_route(), g::ReplayRoute::kCaptured);
+    auto accepted = producer.submit(queues);
+    ASSERT_TRUE(accepted) << accepted.error().message();
+    auto submitted_source = g::SubmissionSource::create(producer, std::move(*accepted), storage);
+    ASSERT_TRUE(submitted_source) << submitted_source.error().message();
+    auto submission = std::move(*submitted_source);
+    auto output_source = g::OutputSource::create(submission, token, storage, pool);
+    ASSERT_TRUE(output_source) << output_source.error().message();
+    auto source = std::move(*output_source);
+    CaptureSourceQueryRetirement retirement{source, submission};
+    const auto intent = source.reader_binding(input);
+    const auto query = [&](const g::Invocation &run) {
+      const auto before = capture_source_query_snapshot(probe, *resource, pool, run);
+      auto result = gd::ReplayAccess::has_capture_candidate(run, intent);
+      EXPECT_EQ(capture_source_query_snapshot(probe, *resource, pool, run), before);
+      return result;
+    };
+    const auto pending = query(consumer);
+    ASSERT_TRUE(pending) << pending.error().message();
+    EXPECT_EQ(*pending, !partial);
+    ASSERT_TRUE(source.wait().ok());
+    ASSERT_TRUE(source.detach().ok());
+    ASSERT_TRUE(submission.detach().ok());
+    // No binding was ever installed. Original ready view survives both detach
+    // operations; writer/producer null is not evidence of an invalid Source.
+    const auto ready = query(consumer);
+    ASSERT_TRUE(ready) << ready.error().message();
+    EXPECT_EQ(*ready, !partial);
+    const auto no_record = query(cold);
+    ASSERT_TRUE(no_record) << no_record.error().message();
+    EXPECT_FALSE(*no_record);
+  }
+}
+
 TEST(GraphRegions, StablePrivateCaptureVariantsReuseBothBoundPortsAfterPreparation) {
   RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
   probe.capture_supported = true;
@@ -7629,6 +7991,163 @@ TEST(GraphRegions, CaptureReuseKeepsFullViewAliasAndPrivateBindingRequirements) 
         original.view.storage().offset() + (partial ? sizeof(float) : 0));
     EXPECT_EQ(probe.capture_end_count, 1u);
   }
+}
+
+TEST(GraphRegions, CaptureReuseResolvesStaleFullViewsFromOneCompleteVariant) {
+  namespace g = hyle::graph;
+  namespace gd = g::detail;
+  namespace c = hyle::compute;
+  RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
+  probe.capture_supported = true;
+  probe.capture_preserves_binding_identity = true;
+  probe.capture_private_arguments_stable = true;
+  probe.borrows_tensor_bindings = true;
+  probe.require_cold_bindings = true;
+  probe.artifact_properties.runtime.capture_compatible = true;
+  auto builder = GraphBuilder::create().value();
+  const auto input = builder.input(row(8)).value();
+  auto alias = builder.add(c::View::reshape(c::TensorShape::create(
+      std::array<std::int64_t, 2>{2, 4}).value()).value(), input).value();
+  alias = builder.add(c::View::reshape(c::TensorShape::create(
+      std::array<std::int64_t, 1>{8}).value()).value(), alias).value();
+  const auto first = builder.add(Unary{UnaryKind::kNeg}, alias).value();
+  const auto output = builder.add(Unary{UnaryKind::kNeg}, first).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  auto context = make_context(probe);
+  auto compiled = g::compile(graph, context).value();
+  ASSERT_EQ(compiled.report.region_count(), 1u);
+  EXPECT_EQ(compiled.report.copy_bytes(), 0u);
+  for (std::size_t i = 0; i < compiled.report.step_count(); ++i)
+    EXPECT_NE(compiled.report.step(i)->kind, g::CompileStepKind::kCopy);
+  auto run = compiled.executable.create_invocation().value();
+  auto input_a = make_tensor(row(8)), input_b = make_tensor(row(8));
+  auto output_a = make_tensor(row(8)), output_b = make_tensor(row(8));
+  auto forced_output = make_tensor(row(8));
+  auto queue = context.create_queue().value();
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  const auto same_storage = [](auto left, auto right) {
+    return left.resource() == right.resource() && left.native_handle() == right.native_handle() &&
+        left.offset() == right.offset() && left.size() == right.size();
+  };
+  const auto same_tensor = [&](c::ConstTensorView left, c::ConstTensorView right) {
+    return left.valid() == right.valid() && (!left.valid() ||
+        (left.description() == right.description() && same_storage(left.storage(), right.storage())));
+  };
+  const auto prepare = [&](const OwnedTensor &source, const OwnedTensor &destination) {
+    auto status = run.bind(input, source.view.as_const());
+    if (!status.ok()) return status;
+    status = run.bind(output, destination.view);
+    if (!status.ok()) return status;
+    return run.prepare_replay(queues, {.mode = g::ReplayMode::kRequireCapture});
+  };
+  ASSERT_TRUE(prepare(input_a, output_a).ok());
+  ASSERT_TRUE(prepare(input_b, output_b).ok());
+  ASSERT_TRUE(prepare(input_a, output_a).ok());
+  ASSERT_EQ(probe.capture_end_count, 2u);
+  ASSERT_EQ(run.replay_report()->reused_capture_range_count, 1u);
+  const auto *state = gd::InvocationAccess::state(run);
+  ASSERT_NE(state, nullptr);
+  const auto root = state->plan->external_instances[input.ordinal()];
+  std::vector<std::uint32_t> full_views;
+  for (const auto &entry : state->plan->external_input_alias_descendants) {
+    if (entry.value != input.ordinal()) continue;
+    ASSERT_TRUE(entry.nonmaterializing_view);
+    full_views.push_back(entry.instance);
+  }
+  ASSERT_FALSE(full_views.empty());
+  for (const auto instance : full_views)
+    ASSERT_TRUE(same_storage(state->readable[instance].storage(), input_a.view.storage()));
+
+  // Only the external root changes. Its already prepared mathematical Views
+  // still describe A, while B's complete input/output tuple is retained.
+  ASSERT_TRUE(run.bind(input, input_b.view.as_const()).ok());
+  ASSERT_TRUE(same_tensor(state->readable[root], input_b.view.as_const()));
+  for (const auto instance : full_views)
+    ASSERT_TRUE(same_storage(state->readable[instance].storage(), input_a.view.storage()));
+  const std::array incoming{gd::ReplayInputBinding{input, input_b.view.as_const()}};
+  const auto counters = [&] {
+    return std::array{probe.propose_count, probe.compile_count, probe.extension_query_count,
+        probe.create_invocation_count, probe.binding_prepare_count, probe.binding_seal_count,
+        probe.submit_count, probe.submit_attempt_count, probe.completion_poll_count,
+        probe.completion_wait_count, probe.device_wait_count, probe.copy_count,
+        probe.capture_begin_count, probe.capture_end_count, probe.capture_abort_count,
+        probe.capture_launch_count, probe.capture_destroy_count, probe.capture_recycle_count,
+        probe.capture_rebuild_count, probe.transfer_query_count, probe.reserve_completion_count};
+  };
+  const auto keys = [&] {
+    std::vector<c::ConstTensorView> tensors;
+    for (const auto &range : state->capture_rebuilds)
+      for (const auto &variant : range.variants)
+        tensors.insert(tensors.end(), variant.bindings.begin(), variant.bindings.end());
+    return tensors;
+  };
+  const auto flags = [&] {
+    std::vector<std::size_t> values{
+        static_cast<std::size_t>(state->replay_route), state->captured_ranges.size(),
+        state->capture_rebuilds.size(), static_cast<std::size_t>(state->replay_prepared)};
+    for (const auto &range : state->capture_rebuilds) {
+      values.insert(values.end(), {range.step_begin, range.step_count, range.active_variant,
+          range.last_used, static_cast<std::size_t>(range.qualification_valid),
+          static_cast<std::size_t>(range.preserves_private_arguments)});
+      for (const auto &variant : range.variants)
+        values.insert(values.end(), {static_cast<std::size_t>(variant.key_valid),
+            static_cast<std::size_t>(variant.commands.valid()), variant.bindings.size()});
+    }
+    return values;
+  };
+  const auto query = [&](bool expected) {
+    const auto old_counters = counters();
+    const auto old_flags = flags();
+    const auto old_keys = keys();
+    const std::vector<c::ConstTensorView> old_readable(state->readable.begin(), state->readable.end());
+    const auto answer = gd::ReplayAccess::can_reuse_capture(run, incoming);
+    EXPECT_TRUE(answer) << answer.error().message();
+    if (answer) EXPECT_EQ(*answer, expected);
+    EXPECT_EQ(counters(), old_counters);
+    EXPECT_EQ(flags(), old_flags);
+    const auto current_keys = keys();
+    EXPECT_EQ(current_keys.size(), old_keys.size());
+    for (std::size_t i = 0; i < (std::min)(current_keys.size(), old_keys.size()); ++i)
+      EXPECT_TRUE(same_tensor(current_keys[i], old_keys[i]));
+    EXPECT_EQ(state->readable.size(), old_readable.size());
+    for (std::size_t i = 0; i < old_readable.size(); ++i)
+      EXPECT_TRUE(same_tensor(state->readable[i], old_readable[i]));
+    return answer;
+  };
+
+  ASSERT_TRUE(run.bind(output, forced_output.view).ok());
+  ASSERT_TRUE(query(false)); // A genuinely new output owner remains a miss.
+  EXPECT_TRUE(gd::ReplayAccess::prepare_reuse(run, queues).IsUnavailable());
+  ASSERT_TRUE(run.bind(output, output_a.view).ok());
+  ASSERT_TRUE(query(false)); // Never combine B's input with A's output key.
+  ASSERT_TRUE(run.bind(output, output_b.view).ok());
+  probe.capture_private_arguments_stable = false;
+  ASSERT_TRUE(query(false)); // Keep the original read-only private predicate.
+  probe.capture_private_arguments_stable = true;
+  const auto reusable = query(true);
+  ASSERT_TRUE(reusable);
+  ASSERT_TRUE(*reusable) << "stale full View must resolve from this complete B tuple";
+  for (const auto instance : full_views)
+    EXPECT_TRUE(same_storage(state->readable[instance].storage(), input_a.view.storage()));
+  const auto prepared = probe.binding_prepare_count;
+  const auto sealed = probe.binding_seal_count;
+  ASSERT_TRUE(gd::ReplayAccess::prepare_reuse(run, queues).ok());
+  EXPECT_EQ(run.replay_report()->recorded_capture_range_count, 0u);
+  EXPECT_EQ(run.replay_report()->reused_capture_range_count, 1u);
+  EXPECT_EQ(probe.binding_prepare_count, prepared + 1);
+  EXPECT_EQ(probe.binding_seal_count, sealed + 1);
+  EXPECT_EQ(probe.capture_end_count, 2u);
+  for (const auto instance : full_views)
+    EXPECT_TRUE(same_storage(state->readable[instance].storage(), input_b.view.storage()));
+  auto done = run.submit(queues);
+  ASSERT_TRUE(done);
+  ASSERT_TRUE(done->wait().ok());
+  EXPECT_TRUE(same_storage(probe.launched_input, input_b.view.storage()));
+  EXPECT_TRUE(same_storage(probe.launched_output, output_b.view.storage()));
+  // The existing mock verifies real Queue/capture/borrowed bindings, not native
+  // replayed payload math. Partial Views and materialized Copy negatives stay
+  // in their unchanged neighbouring regression cases.
 }
 
 TEST(GraphRegions, CaptureVariantsUseBoundedLruAndClearBeforeForcedChanges) {

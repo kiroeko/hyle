@@ -126,6 +126,15 @@ struct StepState final {
     phase = nullptr;
   }
   hyle::Result<bool> try_abort() noexcept {
+    if (execution.unsubmitted_reuse_declined()) {
+      if (submitted || !phase) {
+        inference::record_retirement_status(execution.terminal,
+            hyle::Status::FailedPrecondition("reuse refusal lost its unsubmitted original Phase"));
+        return execution.recover([&]() noexcept { recycle_unpublished(); });
+      }
+      return execution.recover_unsubmitted_reuse(phase->state_resource_ports,
+          [&]() noexcept { recycle_unpublished(); });
+    }
     return execution.recover([&]() noexcept { recycle_unpublished(); });
   }
   hyle::Result<bool> try_discard_successful() noexcept {

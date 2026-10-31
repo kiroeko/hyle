@@ -1,5 +1,7 @@
 #include "../../engine/models/qwen35/main.cc"
 #include "qwen_generation_state_case.h"
+#include "../../src/graph/plan_state.h"
+#include "qwen_generation_cross_turn_case.h"
 #include "qwen_continuous_generation_case.h"
 
 // Finite CUDA RequestLoop consumer. The original Model owns all target work,
@@ -44,7 +46,7 @@ struct ArmResult final {
   std::optional<std::array<std::size_t, 2>> first_successor_before, cancelled_before;
   std::size_t waves = 0, submits = 0, completed_steps = 0, successors = 0,
       publications = 0, discards = 0, refusals = 0, published_members = 0;
-  std::size_t credit_blocked = 0, cancelled = 0, survivor_r1 = 0, discarded_batches = 0;
+  std::size_t credit_blocked = 0, credit_trigger_outputs = 0, cancelled = 0, survivor_r1 = 0, discarded_batches = 0;
   std::array<bool, q::execution_slot_count> imported_r2_slots{};
   std::size_t maximum_ready_steps = 0, survivor_imported_batches = 0,
       survivor_first_imported_uses = 0, survivor_first_imported_captures = 0;
@@ -97,7 +99,11 @@ ArmResult run_arm(q::Model &model, const std::array<std::vector<std::int32_t>, 2
     request.turn_observations.resize(1);
     request.warm_inputs.push_back(std::make_shared<std::vector<std::int32_t>>(prompts[member]));
   }
-  std::array deliveries{i::OutputDelivery(2), i::OutputDelivery(2)};
+  // Keep the original transport-pause coverage in normal/cancel and the
+  // serial credit oracle. A warm two-output relay wave needs one spare credit
+  // so its real Source is still retained when the test installs credit1/2.
+  const auto delivery_window = relay && mode == Mode::kMemberCredit ? 3u : 2u;
+  std::array deliveries{i::OutputDelivery(delivery_window), i::OutputDelivery(delivery_window)};
   i::RequestLoop loop; loop.prepare(2, 2);
   q::GenerationContinuation local_continuation;
   auto &continuation = borrowed_continuation ? *borrowed_continuation : local_continuation;
@@ -190,18 +196,26 @@ ArmResult run_arm(q::Model &model, const std::array<std::vector<std::int32_t>, 2
     }
     const bool blocked = mode == Mode::kMemberCredit && leave_one_pending && !credit_done;
     const auto old_successors = continuation.successor_submissions;
+    const auto old_publications = continuation.successor_publications;
+    const auto old_discards = continuation.successor_discards;
+    const bool eos_target_wave = mode == Mode::kModelEos && active.size() == 2 && before[0] == 8;
+    bool accepted_eos_wave_successor = false;
     if (blocked) {
       require(active.size() == 2 && credits[0] == 1 && credits[1] == 2 &&
-          (!relay || (continuation.ready && continuation.ready_steps >= 6)),
-          "member-credit check did not reach a genuinely warmed R2 cohort with real credits1/2");
+          (!relay || (continuation.ready && result.first_successor_before &&
+              std::ranges::all_of(imported_captures, [](bool captured) { return captured; }))),
+          "member-credit check lost its real captured R2 cohort or actual credits1/2");
     }
     const auto refused_before = continuation.successor_refusals;
+    const auto predecessor_slot = continuation.next_slot;
+    const auto refused_slot = (predecessor_slot + 1) % q::execution_slot_count;
     if (mode == Mode::kColdTuple && relay && !result.cold_tuple_changed && active.size() == 2 &&
-        credits[0] >= 2 && credits[1] >= 2 && continuation.matches(calls) && continuation.ready_steps >= 6 &&
-        continuation.direction_warm[(continuation.next_slot + 1) % q::execution_slot_count]) {
+        credits[0] >= 2 && credits[1] >= 2 && continuation.matches(calls) &&
+        continuation.ready && !continuation.reprime_slot &&
+        std::ranges::all_of(imported_captures, [](bool captured) { return captured; })) {
       require(imported_captures[(continuation.next_slot + 1) % q::execution_slot_count],
           "cold R2 tuple replacement did not target an actually captured imported carrier");
-      displaced_output = qwen_generation_state_case::replace_successor_output(model, continuation, 2);
+      displaced_output = qwen_generation_state_case::replace_successor_output(model, continuation, 2, imported_captures);
       result.cold_tuple_changed = true;
     }
     const auto submitted = [&] {
@@ -235,7 +249,7 @@ ArmResult run_arm(q::Model &model, const std::array<std::vector<std::int32_t>, 2
           require(model.successor_step->execution.has_completion() && model.successor_step->capture_reused > 0 &&
               model.successor_step->capture_recorded == 0,
               "R2 model EOS did not observe a real accepted B reusing its existing capture");
-          result.accepted_eos_successor = true;
+          if (eos_target_wave) accepted_eos_wave_successor = true;
         }
       }
       if (model.active_step->execution.sources) sources.push_back(model.active_step->execution.sources);
@@ -257,15 +271,23 @@ ArmResult run_arm(q::Model &model, const std::array<std::vector<std::int32_t>, 2
           "cancellation itself published a candidate or permanently stopped its peer");
     };
     q::execute_generation_calls(model, calls, false, nullptr, requests, submitted, relay ? &continuation : nullptr, observed);
+    if (relay && eos_target_wave) {
+      require(accepted_eos_wave_successor && eos_finished && requests[0].progress.generated.size() == before[0] + 1 &&
+          continuation.successor_submissions == old_successors + 1 &&
+          continuation.successor_publications == old_publications && continuation.successor_discards == old_discards + 1,
+          "R2 model EOS wave did not retain only A and retire its one actually accepted unpublished B");
+      result.accepted_eos_successor = true;
+    }
     result.maximum_ready_steps = (std::max)(result.maximum_ready_steps, continuation.ready_steps);
     if (continuation.successor_refusals != refused_before) {
       require(mode == Mode::kColdTuple && result.cold_tuple_changed &&
           continuation.successor_refusals == refused_before + 1 && !continuation.unavailable &&
-          !continuation.successor_submissions && active.size() == 2,
+          continuation.successor_submissions == old_successors && active.size() == 2,
           "natural R2 cold tuple refusal recorded or accepted B instead of retaining A");
       require(!model.active_step && !model.successor_step && !model.carrier_borrowed &&
-          !continuation.ready && continuation.pending_calls.empty() && !continuation.ready_steps,
-          "cold tuple refusal must retire A and release reuse hints before re-priming");
+          !continuation.ready && continuation.pending_calls.empty() && !continuation.ready_steps &&
+          continuation.next_slot == predecessor_slot && continuation.reprime_slot == refused_slot,
+          "cold tuple refusal lost real retirement or the typed ordinary re-prime route");
       for (const auto &call : calls)
         require(call.disposition == q::EvaluationDisposition::kPublished &&
             call.request->progress.generated.size() == before[call.request->request_key.slot] + 1,
@@ -311,20 +333,29 @@ ArmResult run_arm(q::Model &model, const std::array<std::vector<std::int32_t>, 2
   require(result.keys[0] != result.keys[1], "R2 cohort did not receive distinct original request keys");
   for (std::size_t pumps = 0; loop.matches(result.keys[0]) || loop.matches(result.keys[1]); ++pumps) {
     require(pumps < 96, "finite R2 request journey failed to retire");
+    const std::array before_pump{requests[0].progress.generated.size(), requests[1].progress.generated.size()};
     result.cancelled += loop.pump_once(adapter).cancelled;
-    // Reach the actual warm boundary first. Withholding just A's last ACK then
-    // supplies real credit1 versus B's2 without altering the helper's quota.
+    // A real two-output warm wave leaves two unacknowledged outputs. Window3
+    // preserves its Source; ACKing neither A output but one B output creates
+    // exact real credits1/2 without retaining a Source over an actual pause.
+    const auto produced_a = requests[0].progress.generated.size(), produced_b = requests[1].progress.generated.size();
     if (mode == Mode::kMemberCredit && !credit_done && !leave_one_pending &&
-        requests[0].progress.generated.size() == 8 && requests[1].progress.generated.size() == 8) {
-      if (relay) require(continuation.ready_steps >= 6 && continuation.ready,
-          "credit fixture reached eight outputs before six real imported preparations");
-      leave_one_pending = true;
+        ((!relay && produced_a == 8 && produced_b == 8) ||
+         (relay && produced_a == produced_b && produced_a + 1 < kOutputs &&
+          produced_a == before_pump[0] + 2 && produced_b == before_pump[1] + 2 &&
+          continuation.ready && result.first_successor_before &&
+          std::ranges::all_of(imported_captures, [](bool captured) { return captured; })))) {
+      leave_one_pending = true; result.credit_trigger_outputs = produced_a;
     }
     for (std::size_t member = 0; member < 2; ++member) if (loop.matches(result.keys[member])) {
       const auto produced = requests[member].progress.generated.size();
       if (!deliveries[member].pending(requests[member].progress.generated).empty()) {
-        const auto through = mode == Mode::kMemberCredit && leave_one_pending && member == 0
-            ? produced - 1 : produced;
+        auto through = produced;
+        if (mode == Mode::kMemberCredit && leave_one_pending) {
+          const auto withheld = member == 0 ? (relay ? 2u : 1u) : (relay ? 1u : 0u);
+          require(produced >= withheld, "credit ACK would precede the original output stream");
+          through -= withheld;
+        }
         require(loop.acknowledge(result.keys[member], through, adapter), "R2 original delivery ACK was rejected");
       }
     }
@@ -356,12 +387,13 @@ ArmResult run_arm(q::Model &model, const std::array<std::vector<std::int32_t>, 2
   if (mode == Mode::kMemberCredit) require(result.credit_blocked == 1, "R2 member-credit boundary was not checked");
   if (mode == Mode::kModelEos)
     require(eos_finished && result.survivor_r1 && (!relay || (result.accepted_eos_successor &&
-        result.discarded_batches == 1 && continuation.successor_submissions == 1 &&
-        continuation.successor_publications == 0 && continuation.successor_discards == 1)),
+        result.discarded_batches == 1 && continuation.successor_discards - discards_before == 1 &&
+        continuation.successor_publications + continuation.successor_discards == continuation.successor_submissions)),
         "R2 EOS failed to retire accepted B as a whole and continue the surviving R1 peer");
   if (relay && mode == Mode::kColdTuple) {
     require(result.cold_tuple_changed && result.cold_refusal_observed && !continuation.unavailable &&
-        continuation.successor_refusals == 1 && !continuation.successor_submissions && !continuation.successor_discards,
+        continuation.successor_refusals == 1 && !continuation.successor_discards &&
+        continuation.successor_publications == continuation.successor_submissions,
         "R2 cold tuple lost its refusal, disabled later reuse or accepted the refused B");
   } else if (relay) {
     require(!continuation.unavailable && continuation.successor_refusals == 0 &&
@@ -613,7 +645,7 @@ int run(const std::filesystem::path &input, bool boundaries = false, bool warm_c
     require(std::ranges::all_of(fresh_r1, [](auto uses) { return uses == 0; }),
         "warm-cohort case started with an already prepared R1 imported slot");
     const auto warm = run_arm(model, prompts, Mode::kNormal, true, {}, &continuation);
-    require(warm.first_successor_before && warm.successors && warm.maximum_ready_steps >= 6 &&
+    require(warm.first_successor_before && warm.successors &&
         std::ranges::all_of(warm.imported_r2_slots, [](auto captured) { return captured; }) &&
         std::ranges::all_of(imported_uses(2), [](auto uses) { return uses != 0; }),
         "warm-cohort case did not really prepare all three R2 imported slots and accept a successor");
@@ -689,7 +721,8 @@ int run(const std::filesystem::path &input, bool boundaries = false, bool warm_c
         << ",\"published_members\":" << value.published_members << ",\"completed_steps\":" << value.completed_steps
         << ",\"successor_submissions\":" << value.successors << ",\"successor_publications\":" << value.publications
         << ",\"successor_discards\":" << value.discards << ",\"successor_refusals\":" << value.refusals
-        << ",\"survivor_r1\":" << value.survivor_r1 << ",\"batch_facts\":[";
+        << ",\"survivor_r1\":" << value.survivor_r1
+        << ",\"credit_trigger_outputs\":" << value.credit_trigger_outputs << ",\"batch_facts\":[";
     for (std::size_t batch = 0; batch < value.batches.size(); ++batch) {
       const auto &facts = value.batches[batch]; if (batch) std::cout << ',';
       std::cout << "{\"rows\":" << facts.rows << ",\"generation\":" << (facts.generation ? "true" : "false")
@@ -717,14 +750,15 @@ int main(int argc, char **argv) {
     const bool continuous = argc == 3 && std::string_view(argv[1]) == "--cuda-continuous";
     const bool source_failure = argc == 3 && std::string_view(argv[1]) == "--cuda-source-failure";
     const bool warm_cohort = argc == 3 && std::string_view(argv[1]) == "--warm-cohort";
+    const bool cross_turn = argc == 4 && std::string_view(argv[1]) == "--cross-turn";
     const bool boundaries = argc == 4 && std::string_view(argv[1]) == "--cuda-boundaries";
-    if (!continuous && !source_failure && !boundaries && !warm_cohort && (argc != 3 || std::string_view(argv[1]) != "--cuda"))
-      throw std::runtime_error("usage: qwen_generation_batch_relay_probe --cuda INPUT | --cuda-continuous CONTEXT32_TINY_INPUT | --cuda-source-failure INPUT | --cuda-boundaries TINY_INPUT NEW_OUTPUT_DIR | --warm-cohort INPUT");
+    if (!continuous && !source_failure && !boundaries && !warm_cohort && !cross_turn && (argc != 3 || std::string_view(argv[1]) != "--cuda"))
+      throw std::runtime_error("usage: qwen_generation_batch_relay_probe --cuda INPUT | --cuda-continuous CONTEXT32_TINY_INPUT | --cuda-source-failure INPUT | --cuda-boundaries TINY_INPUT NEW_OUTPUT_DIR | --warm-cohort INPUT | --cross-turn CONTEXT32_TINY_INPUT SYNTHETIC_CONTEXT64_INPUT");
     const auto compiled = q::Backend::compiled_backends();
     if (std::find(compiled.begin(), compiled.end(), q::BackendKind::kCuda) == compiled.end()) {
       std::cerr << "SKIP: CUDA route is not built\n"; return 77;
     }
-    return source_failure ? run_source_failure(argv[2]) : continuous ? qwen_continuous_generation_case::run(argv[2])
+    return cross_turn ? qwen_short_turn_capture_case::run(argv[2], argv[3]) : source_failure ? run_source_failure(argv[2]) : continuous ? qwen_continuous_generation_case::run(argv[2])
         : warm_cohort ? run(argv[2], false, true)
         : boundaries ? run(qwen_generation_state_case::model_eos_fixture(argv[2], argv[3], 9), true)
         : run(argv[2]);
