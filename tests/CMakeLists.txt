@@ -493,6 +493,16 @@ if(TARGET hyle_engine)
 endif()
 
 if(TARGET hyle_engine AND _HYLE_COMPUTE_HAVE_CUDA)
+  # Explicit real-weight diagnostic: callers supply INPUT_DIR and OUTPUT_DIR.
+  # Keep its test oracle out of testsOFF and standalone engine source closures.
+  add_executable(hyle_kimi_kda_mla_probe EXCLUDE_FROM_ALL tools/kimi_kda_mla_probe.cc)
+  target_link_libraries(hyle_kimi_kda_mla_probe PRIVATE hyle_kimi_k3_component)
+  hyle_apply_warnings(hyle_kimi_kda_mla_probe)
+  hyle_apply_sanitizer(hyle_kimi_kda_mla_probe)
+  set_target_properties(hyle_kimi_kda_mla_probe PROPERTIES
+    FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+  hyle_stage_runtime(hyle_kimi_kda_mla_probe)
+
   hyle_add_test(graph_route_cuda NAME inference_submission_views
     SOURCES tools/inference_submission_views_test.cc
     DEPS hyle_graph_batch hyle_compute_backend_cuda)

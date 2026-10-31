@@ -1,17 +1,6 @@
-# Explicit finite component diagnostic; default Qwen app does not link it.
+# Model-private component; the default Qwen application does not link it.
 if(NOT "cuda" IN_LIST _hyle_engine_routes)
   return()
 endif()
 include("${CMAKE_CURRENT_LIST_DIR}/component_sources.cmake")
 _hyle_add_kimi_k3_component(hyle::graph hyle::compute hyle::graph_progress hyle::mem)
-
-add_executable(hyle_kimi_kda_mla_probe EXCLUDE_FROM_ALL "${CMAKE_CURRENT_LIST_DIR}/../../../tests/tools/kimi_kda_mla_probe.cc")
-target_link_libraries(hyle_kimi_kda_mla_probe PRIVATE hyle_kimi_k3_component)
-if(COMMAND hyle_apply_warnings)
-  hyle_apply_warnings(hyle_kimi_kda_mla_probe)
-endif()
-if(COMMAND hyle_apply_sanitizer)
-  hyle_apply_sanitizer(hyle_kimi_kda_mla_probe)
-endif()
-set_target_properties(hyle_kimi_kda_mla_probe PROPERTIES FOLDER engine)
-hyle_stage_runtime(hyle_kimi_kda_mla_probe)

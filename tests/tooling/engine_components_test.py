@@ -165,6 +165,43 @@ endif()
             capture_output=True, text=True, timeout=30, **NO_WINDOW)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_cuda_tests_off_keeps_kimi_diagnostic_out_of_application(self):
+        # Exercise actual application CMake targets, including the CUDA branch
+        # that registers the private Kimi component. No native SDK is compiled.
+        source = self.directory / "cuda-application"
+        source.mkdir()
+        (source / "CMakeLists.txt").write_text(
+            'cmake_minimum_required(VERSION 3.25)\n'
+            'project(CudaEngineTargets LANGUAGES CXX)\n'
+            f'set(HYLE_SOURCE_DIR "{ROOT.as_posix()}")\n'
+            'set(HYLE_BUILD_TESTS OFF)\n'
+            'set(HYLE_COMPUTE_ROUTE_LIST "cpu;cuda")\n'
+            'foreach(product IN ITEMS compute graph graph_progress compute_stream mem)\n'
+            '  add_library(sdk_${product} INTERFACE)\n'
+            '  add_library(hyle::${product} ALIAS sdk_${product})\n'
+            'endforeach()\n'
+            'include("${HYLE_SOURCE_DIR}/cmake/HyleRuntimeStaging.cmake")\n'
+            'add_subdirectory("${HYLE_SOURCE_DIR}/engine" engine)\n'
+            'if(TARGET hyle_kimi_kda_mla_probe)\n'
+            '  message(FATAL_ERROR "testsOFF application acquired the Kimi test diagnostic")\n'
+            'endif()\n'
+            'if(NOT TARGET hyle_kimi_k3_component)\n'
+            '  message(FATAL_ERROR "CUDA application lost its model-private component")\n'
+            'endif()\n'
+            'get_target_property(excluded hyle_kimi_k3_component EXCLUDE_FROM_ALL)\n'
+            'get_target_property(kind hyle_kimi_k3_component TYPE)\n'
+            'get_target_property(links hyle_engine LINK_LIBRARIES)\n'
+            'if(NOT excluded OR NOT kind STREQUAL "STATIC_LIBRARY")\n'
+            '  message(FATAL_ERROR "Kimi component became a default product target")\n'
+            'endif()\n'
+            'if("hyle_kimi_k3_component" IN_LIST links)\n'
+            '  message(FATAL_ERROR "default Qwen application linked the Kimi component")\n'
+            'endif()\n', encoding="utf-8")
+        result = subprocess.run(
+            ["cmake", "-S", str(source), "-B", str(source / "build")],
+            capture_output=True, text=True, timeout=30, **NO_WINDOW)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_empty_or_ambiguous_selection_is_rejected(self):
         self.resolve("empty", "", success=False)
         self.resolve("all-and-engine", "all;engine", success=False)
