@@ -577,6 +577,20 @@ class DevelopmentCommandsTest(unittest.TestCase):
                 self.assertEqual((directory / "CMakeCache.txt").read_bytes(), before)
         self.assertEqual(self.commands, [])
 
+    def test_internal_factor_cache_is_rejected_even_when_empty(self):
+        with patch.object(support, "discover_environment", wraps=self.environment) as discovery:
+            for value in ("", "compute_backend_cpu"):
+                for action in ("init", "build", "test"):
+                    with self.subTest(value=value, action=action):
+                        directory = self.root / ".scratch/build/internal"
+                        self.write_cache(directory, HYLE_DEV_FACTORS=value)
+                        result, _, errors = self.invoke(action, "--build-dir", str(directory))
+                        self.assertNotEqual(result, 0)
+                        self.assertIn("internal factor build", errors)
+            discovery.assert_not_called()
+        self.assertEqual(self.commands, [])
+        self.resources.assert_not_called()
+
     def test_existing_cmake_build_does_not_require_script_metadata(self):
         directory = self.root / ".scratch/build/manual"
         self.write_cache(directory, HYLE_BUILD_TESTS="ON")

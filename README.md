@@ -46,45 +46,50 @@ CPU＋一张 GPU 的推理。引擎之下是一组可以单独构建和使用的
 
 ## 快速开始
 
-先按[环境准备](docs/developer/setup/README.md)装好工具链，然后在仓库根目录运行（以 CUDA 为例）：
+先按[环境准备](docs/developer/setup/README.md)装好工具链，再在仓库根目录运行：
+
+```text
+python scripts/init.py
+python scripts/build.py --jobs 2
+```
+
+新配置默认是 **CPU、Release、共享库、engine 及其依赖，测试和 trace 关闭**。
+已有配置保留原选择；初始化按所选产品准备依赖并复用缓存，不安装系统编译器、驱动或模型。
+
+常用选择如下；完整配置、切换、测试和安装方法见[构建指南](docs/developer/setup/README.md)。
+
+| 需要什么 | 传给 `init.py` 的参数 |
+|---|---|
+| CUDA 引擎 | `--name qwen-cuda --components engine --backends cuda` |
+| CPU＋CUDA 能力 | `--name qwen-mixed --components engine --backends cpu,cuda` |
+| 只使用基础库 | `--name libraries --components mem,container` |
+
+具名初始化后用同一名称构建，例如 CUDA：
 
 ```text
 python scripts/init.py --name qwen-cuda --components engine --backends cuda
-python scripts/build.py --target hyle_engine --jobs 2
+python scripts/build.py --name qwen-cuda --target hyle_engine --jobs 2
 ```
 
-准备输入并运行。准备脚本需要 Transformers 环境来分词；它核对本地模型文件，只生成权重偏移和
-token ID，不下载也不复制权重：
+准备本地输入并运行普通生成。分词需要另行准备兼容的 Transformers 环境；脚本核对本地模型文件，
+只生成权重偏移和 token ID，不下载也不复制权重：
 
 ```text
-python engine/models/qwen35/prepare.py --model LOCAL_MODEL --output .scratch/qwen-input --prompt "Please calculate 2 + 3. Answer briefly." --mtp
-<build-dir>/bin/hyle --inputs .scratch/qwen-input --mtp on --steps 64 --capacity 1024
+python engine/models/qwen35/prepare.py --model LOCAL_MODEL --output .scratch/qwen-input --prompt "Please calculate 2 + 3. Answer briefly."
+<build-dir>/bin/hyle --inputs .scratch/qwen-input --mtp off --steps 64 --capacity 1024
 ```
 
-`<build-dir>` 是构建脚本打印的目录，Windows 上程序为 `hyle.exe`。后端、采样、多轮与多会话
-参数见[推理引擎指南](docs/user/inference.md)。
+将 `<build-dir>` 替换为构建脚本打印的目录，Windows 使用实际 `hyle.exe` 路径。
+MTP 需要额外原权重，准备时加 `--mtp`，运行时用 `--mtp on`；后端选择、混合执行、采样与多会话见
+[推理引擎指南](docs/user/inference.md)。基础库的 C++ 集成从[使用指南](docs/user/usage-guide.md)开始。
 
-只使用基础库时选择具体模块，例如 `--components mem,container`，再通过 `find_package(Hyle)`
-链接 `hyle::mem` 等 target，完整步骤见[使用指南](docs/user/usage-guide.md)。
+## 性能与进度
 
-## 性能快照
-
-2026-10-26，Windows、i9-13900K、RTX 4070，Qwen3.5-2B BF16，单会话，每轮 154 个输入 token、
-生成 64 个；对照为本地固定版本的 llama.cpp（不是最新上游）。单位 tok/s，各取 3 个独立进程的中位数。
-
-| 工况 | prefill（HYLE / llama.cpp） | decode | 综合 |
-|---|---:|---:|---:|
-| 单轮普通 | 2094 / 1579 | 98.5 / 102.1 | 89.7 / 89.7 |
-| 单轮 MTP | 2230 / 1462 | 122.5 / 134.4 | 109.7 / 111.8 |
-| 两轮普通 | 2895 / 2453 | 98.6 / 102.1 | 92.4 / 94.1 |
-| 两轮 MTP | 2797 / 2421 | 127.1 / 140.8 | 116.2 / 125.1 |
-
-prefill 领先 16%–52%，decode 落后 3%–10%，MTP 的差距最大。两会话合批（N2/R2，固定输入回放）
-时 prefill 快约 23%，decode 落后约 9%，显存少用约 0.74 GiB。纯 CPU 时（同机，llama.cpp 为同版本 AVX2 构建）
-decode 慢约 5%。普通 B2 的已有 profile 显示，该窗口的墙时差距主要在每步的主机开销，
-GPU 活动时间与 llama.cpp 接近；该归因不直接覆盖单会话、MTP 或其它后端。这些数字会随开发变化，最新数据、测量方法和归因见
-[decode 性能资料](docs/developer/performance/decode.md)；基础模块与 Abseil、Folly、oneTBB、
-nghttp2 等库的对照见[模块性能数据](docs/developer/performance/modules.md)。
+最新普通／MTP、单轮／多轮的正式对照、内存和测量边界统一见
+[decode 性能资料](docs/developer/performance/decode.md)，当前任务与未完成项见
+[推理进度](docs/developer/inference-progress.md)。结果限于记录中的模型、平台、配置及固定参考版本，
+不代表任意模型或硬件已达标。基础模块与 Abseil、Folly、oneTBB、nghttp2 等的对照见
+[模块性能数据](docs/developer/performance/modules.md)。
 
 ## 平台与工具链
 

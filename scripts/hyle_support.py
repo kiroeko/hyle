@@ -62,7 +62,7 @@ def _check_source(cache: dict[str, str]) -> None:
     home = cache.get("CMAKE_HOME_DIRECTORY")
     if cache and (not home or not _same_path(home, ROOT)):
         raise SetupError("This build directory belongs to another source tree. Choose another --name or --build-dir.")
-    if cache.get("HYLE_DEV_FACTORS"):
+    if "HYLE_DEV_FACTORS" in cache:
         raise SetupError("This is an internal factor build. Use a product build with init.py, or continue using CMake directly.")
 
 
@@ -261,6 +261,9 @@ def _definitions(values: list[str]) -> dict[str, str]:
         key, separator, data = value.partition("=")
         if not separator or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", key):
             raise SetupError("-D/--define expects NAME=VALUE, for example -DCMAKE_POSITION_INDEPENDENT_CODE=ON.")
+        if key in {"HYLE_DEP_BUILD_DIR", "CMAKE_HOME_DIRECTORY"}:
+            raise SetupError(f"{key} follows this checkout and --build-dir in this entry. "
+                             "Use CMake directly for a custom source or dependency-build layout.")
         if key in managed:
             raise SetupError(f"{key} is managed by the script's named options; use those instead of -D.")
         if key in {"HYLE_IO_TLS", "HYLE_IO_HTTP2"}:

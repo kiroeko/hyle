@@ -1,60 +1,66 @@
 # 初始化、构建与测试
 
-Windows、Linux 和 macOS 共用三个入口，只依赖 Python 标准库：
+新配置默认是 **CPU、Release、共享库、engine 及其依赖，tests OFF、trace OFF**。
+在仓库根目录运行：
 
 ```text
 python scripts/init.py
-python scripts/build.py
-python scripts/test.py
+python scripts/build.py --jobs 2
 ```
 
-准备 Python 3.10+、CMake（最低版本以[根 CMakeLists.txt](../../../CMakeLists.txt)为准，当前为 3.25） 和受支持的 C/C++ 工具链；Unix 上若命令名是 `python3`，
-将示例中的 `python` 替换为 `python3`。基础工具的安装要求见
-[Windows](windows.md)、[Linux / WSL](linux-wsl.md)、[macOS](macos.md)。
-初始化会发现已装工具、准备所选后端的依赖并运行 CMake；不会安装系统编译器、驱动或更改全局环境。
+这三个入口 `init.py`、`build.py`、`test.py` 在 Windows、Linux、macOS 上共用，只依赖 Python 标准库。
+先安装 Python 3.10+、CMake（最低版本以[根 CMakeLists.txt](../../../CMakeLists.txt)为准，当前为 3.25）
+和受支持的 C/C++ 工具链，平台要求见[Windows](windows.md)、[Linux / WSL](linux-wsl.md)、[macOS](macos.md)。
+Unix 若使用 `python3`，替换示例中的 `python` 即可。
 
-新配置默认为 **CPU、Release、共享库、推理引擎及其依赖、tests OFF、trace OFF**。
-Provider 和第三方实现由 HYLE 自动装配，不需要用户选择。
-选择 `io` 产品时包含完整 TLS 与 HTTP/2 能力：需要已安装的 OpenSSL 3 开发包，nghttp2 按 lock 自动准备。
-已有配置保留其明确选择；只构建基础模块时传 `--components util` 或所需模块集合。
+初始化会发现已装工具、按产品／后端闭包准备依赖并运行 CMake，复用已有共享缓存。
+CPU/CUDA 闭包可能包含 ATen 等 SDK；首次取得依赖需要网络，`--offline` 缺少资产时明确失败。
+它不安装系统编译器／驱动、不改变全局环境，也不取得模型或安装 Python tokenizer 环境。
+Provider 自动装配，不需要用户选择；`io` 包含 TLS／HTTP/2，需要已安装的 OpenSSL 3 开发包，
+nghttp2 按 lock 准备。依赖细节见[依赖说明](dependencies.md)和[离线构建](offline.md)。
 
 ## 常见用法
 
 ```text
-# 默认引擎工程
-python scripts/init.py
-python scripts/build.py --jobs 2
-
 # CUDA 引擎，启用测试环境
-python scripts/init.py --backends cuda --components engine --tests --name inference
-python scripts/build.py --target hyle_engine --jobs 2
+python scripts/init.py --name inference --components engine --backends cuda --tests
+python scripts/build.py --name inference --target hyle_engine --jobs 2
 
 # 只构建工具模块，不准备 Compute/GPU 依赖
-python scripts/init.py --components util --name utility
-python scripts/build.py --jobs 2
+python scripts/init.py --name utility --components util
+python scripts/build.py --name utility --jobs 2
+```
 
-# 为上面已启用测试的配置构建并运行相关测试
+CPU＋CUDA 能力将上例的 `--backends cuda` 改为 `--backends cpu,cuda`；Apple Silicon 用 `metal`，
+Vulkan 用 `vulkan`，混合能力用 `cpu,metal` 或 `cpu,vulkan`。这些选择表示编译能力，
+实际设备与 CPU/GPU 分置仍由应用决定。只构建基础库也可用 `--components mem,container` 或 `compute,graph`。
+
+## 测试与安装
+
+对上面已启用测试的 `inference` 配置，先构建再运行 CTest：
+
+```text
 python scripts/build.py --name inference --target hyle_tests --jobs 2
 python scripts/test.py --name inference --filter compute --jobs 2
-
-# 将引擎配置安装到指定目录
 python scripts/build.py --name inference --install .scratch/install/hyle --jobs 2
 ```
 
-`init.py` 保存当前选中的初始化目录。`build.py` 和 `test.py` 无参使用当前配置；
-也可通过 `--name inference` 或高级参数 `--build-dir <path>` 选择已有配置。
-`test.py` 只运行 CTest，不隐式构建；未启用测试时会给出重新初始化的命令。
-初始化未完成或失败时，默认 build/test 拒绝沿用旧产物。修复原因后可无参运行 `init.py` 重试，
-也可用 `--name` / `--build-dir` 明确选择另一份已经成功的配置。
+`test.py` 不隐式构建；未启用测试时会给出重新初始化的命令。
+安装会构建完整的所选产品，不能与 `--target` 混用；选择引擎时还安装 `bin/hyle`（Windows为`hyle.exe`）。
 
-切换 Debug、编译器或后端时再次运行 `init.py`。默认构建目录位于
-`.scratch/build/` 中与实际配置匹配的目录；相同配置复用已有目录和共享依赖，
-不兼容的工具链不会混进原 cache。并行会话应选择不同的 `--name` 或 `--build-dir`。
-同一标签重配测试开关时可用 `--tests` / `--no-tests`。初始化失败不冒充新的可用配置。
-缩小产品集合时，只准备新集合实际需要的依赖；例如从 `all` 切到 `util`，不会继续准备协议依赖。
-ATen、Provider、TLS 与 HTTP/2 不再有二次能力开关。旧配置先对同一 `--name` 或 `--build-dir` 运行 `init.py`，
-脚本会清理已废弃的路由／Provider／协议开关并保留产品、后端及其它配置，再用 `build.py` 更新产物；
-build/test 遇到旧开关会提示重新初始化，不暗中重配或运行旧配置。
+## 切换与恢复
+
+`init.py` 保存当前选中的配置；build/test 无参使用它，也可用 `--name` 或 `--build-dir` 显式选择。
+已有配置保留未指定的组件、后端、配置和测试等选项。初始化未完成或失败时，默认 build/test 拒绝沿用旧产物；
+修复原因后无参重试 `init.py`，或明确选择另一份已成功的配置。
+
+切换 Debug、后端或测试开关时重新初始化对应配置，测试开关使用 `--tests`／`--no-tests`。
+更换编译器需使用另一 `--name`／`--build-dir`，避免混用不兼容 cache。
+默认构建目录在 `.scratch/build/`，相同配置复用目录与共享依赖；并行会话选择不同标签或目录。
+缩小产品集合后只准备新集合所需依赖，例如 `all` 切到 `util` 不继续准备协议依赖。
+
+旧配置先对同一标签或目录运行 `init.py`，清理已废弃的路由／Provider／协议开关并保留产品等选择；
+build/test 遇到旧开关会提示重新初始化，不暗中重配或运行旧配置。迁移细节见[依赖说明](dependencies.md)。
 
 ## 选择配置
 
@@ -91,7 +97,6 @@ CPU、Metal、Vulkan。其它架构只接受实际支持的后端。`metal` 对�
 `init.py --config` 使用表中的四种标准配置；消费已有 CMake 构建树时，build/test 也接受该树
 实际提供的自定义配置名称，不会把单配置构建树切成另一种配置。
 `build.py --install` 未指定 prefix 时写入 `.scratch/install/<build-name>`；
-安装会构建完整的所选产品，不能与 `--target` 混用；选择引擎时还安装 `bin/hyle`（Windows 为 `hyle.exe`）。
 构建树内程序位于 `<build-dir>/bin/`，多配置生成器位于 `bin/<config>/`。
 引擎的模型输入准备和当前运行限制见[引擎指南](../../user/inference.md)。高级的额外 CMake 输入使用
 `init.py -D NAME=VALUE`，可重复；脚本已有的选项使用对应参数。

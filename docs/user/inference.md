@@ -1,27 +1,31 @@
 # HYLE 推理引擎
 
-HYLE 正在由真实模型路径形成完整推理引擎，入口位于 `engine/`；基础模块仍可独立使用。
-当前主要用这条路径检验底层支持，应用入口随测试推进，server 与应用 API 留待后续。
-当前完整文本模型为 Qwen3.5-2B，包含普通生成、有界多草稿 MTP、多轮、多会话、
-共享前缀和有界缓存恢复。CUDA、Apple 和 Vulkan 已有列明范围的真实模型执行；
-CPU 入口的普通／MTP 短旅程已完整通过，缓存元数据计费已修复，见[检查记录](../evidence/correctness/qwen-mtp-cpu-layout-budget-2026-10-24.json)；已检查范围及各项边界见[推理工程范围](../implementation/inference-roadmap.md)。
-官方 BF16 及固定 GPTQ、NVFP4、Unsloth MTP GGUF Q4 制品已有完整模型短旅程；
-量化输入通过显式原角色清单借入文件范围，具体边界见[实现范围](../implementation/inference-roadmap.md)。这不代表可以直接加载任意量化模型目录。
-NF4 已接原量化状态校验、F16 激活／缓存及六输入压缩权重驻留，[CPU／CUDA 有限状态链](../evidence/correctness/nf4-source-resident-ordinary-consumer-2026-10-25.json)通过；完整 27B 模型未运行。加载器不预先展开整库，实际计划会报告压缩融合、分解及 workspace；CPU 多行仍可能选择分解，不能仅按 4bit 文件大小估算运行空间。
-CT asymmetric INT4 已接原零点角色和同一加载／投影流程，[原 CPU 组件](../evidence/correctness/ct-asymmetric-qwen-original-projections-2026-10-25.json)的七组投影通过；完整 27B 模型及该原权重路径的其它后端尚未验证。
-选定 MLX affine4／8 group64 制品已接原压缩投影、embedding 与共享 head，保留源 norm／conv 语义；[原 CPU／CUDA 组件及小型 CPU 状态链](../evidence/correctness/mlx-source-resident-ordinary-consumer-2026-10-25.json)通过。完整 2B／27B、质量及吞吐未测，不代表任意 MLX 目录可直接加载。
+入口在 `engine/`，当前完整文本模型为 Qwen3.5-2B，支持普通生成、MTP、多轮、多会话、共享前缀和有界缓存恢复。
+项目当前主要用真实模型检验底层推理支持，基础模块仍可独立使用。
 
-目前使用准备后的本地权重清单和 token IDs，输出 JSON 中的生成 IDs 与计时。
-尚无通用模型目录加载、C++ tokenizer、聊天服务或图片输入；其它模型的有限组件检查也不表示已有完整引擎。
-当前范围和后续顺序见[推理工程计划](../implementation/inference-roadmap.md)。
+运行范围与限制：
+
+- 单机 CPU、单 GPU 或 CPU＋一张 GPU；具体制品和平台以[验证范围](#制品与验证范围)为准。
+- 使用本地权重清单和 token IDs，输出包含生成 IDs 与计时的 JSON；分词需要另行准备 Python 环境。
+- 尚无通用模型目录加载、C++ tokenizer、引擎应用／HTTP 服务 API 或图片输入；其它模型家族仍是组件级实现与检查。
+
+后续范围见[推理工程计划](../implementation/inference-roadmap.md)。
 
 ## 构建
 
-先完成[环境准备](../developer/setup/README.md)，在仓库根目录运行，例如 CUDA：
+先完成[环境准备](../developer/setup/README.md)，在仓库根目录运行默认 CPU 构建：
+
+```text
+python scripts/init.py
+python scripts/build.py --target hyle_engine --jobs 2
+```
+
+新配置默认 CPU、Release、共享库、engine，测试和 trace 关闭；已有配置保留选择。
+CUDA、混合或基础库配置见[常见用法](../developer/setup/README.md#常见用法)，例如具名 CUDA 构建：
 
 ```text
 python scripts/init.py --name qwen-cuda --components engine --backends cuda
-python scripts/build.py --target hyle_engine --jobs 2
+python scripts/build.py --name qwen-cuda --target hyle_engine --jobs 2
 ```
 
 `engine` 是顶层新配置的默认组件。后端可选 `cpu`、`cuda`、`metal`、`vulkan` 或平台支持的组合，
@@ -45,33 +49,25 @@ python scripts/build.py --target hyle_engine --jobs 2
 初始化 C++ 构建不会自动安装它或获取模型。
 
 ```text
-python engine/models/qwen35/prepare.py --model LOCAL_MODEL --output .scratch/qwen-mtp-input --prompt "Please calculate 2 + 3. Answer briefly." --mtp
-<build-dir>/bin/hyle --inputs .scratch/qwen-mtp-input --mtp off --steps 64 --capacity 1024
-<build-dir>/bin/hyle --inputs .scratch/qwen-mtp-input --mtp on --steps 64 --capacity 1024
+python engine/models/qwen35/prepare.py --model LOCAL_MODEL --output .scratch/qwen-input --prompt "Please calculate 2 + 3. Answer briefly."
+<build-dir>/bin/hyle --inputs .scratch/qwen-input --mtp off --steps 64 --capacity 1024
 ```
 
 输出目录必须是新目录，只保存偏移、token IDs 与输入记录，共用原权重文件。
-`prepare.py --mtp` 加入额外 15 份原 MTP 参数，仅准备不执行模型；同一份完整清单可切换普通／MTP。
+需要 MTP 时，在准备命令加 `--mtp`，运行时用 `--mtp on`。准备器会加入额外 15 份原 MTP 参数，
+仅准备不执行模型；同一份完整清单可切换普通／MTP。
 普通模式校验完整清单后只加载文本权重；官方 BF16 为 320 个文本张量加 15 个 MTP 张量，量化制品的物理张量数随格式而异。
 JSON 的 `text_tensors`／`mtp_tensors` 统计实际加载的物理角色，`weight_count_scope` 标明口径。只需普通模式时可省略准备器的 `--mtp`。
-原 CT channel/token FP8 与 local NVFP4 混合清单使用
-`--fp8-reader compressed-tensors-0.17.2a20260716` 固定参考算法；存在原 KV 校准参数时，
-还须显式选择缓存政策：`--kv-cache-dtype bf16` 保留原 BF16 缓存并省略校准角色加载；
-也可用 `--kv-cache-dtype e4m3fn`，读取每层原 BF16 K/V scale，采用固定校准的 target E4 缓存。
-它可与 `--mtp` 合用，draft KV 保留原 BF16／plain 存储，不推造 draft 校准参数；
-CPU／CUDA 的有限完整状态、真实合批、取消和恢复见[组合检查](../evidence/correctness/inference-mtp-e4-2026-10-28.json)。
-缺失、非正或非有限 scale 会在冷准备时拒绝，不合成默认 scale。
-两者都将校准参数的名字、形状及 hash 保留在输入身份和记录中，不把它们装成模型权重张量。
-E4 的缓存行载荷为 BF16 的一半，实际总 backing 仍包括页、元数据和其它状态。
-缓存政策不改变 activation、recurrent 或投影计算精度。channel/token 保留 BF16 QDQ 与逐权重舍入，
-local NVFP4 保留原独立全局乘数和 F32 输入预舍入；它们不套用 block128 或 ModelOpt 的算法。
-目前已检查完整原头部、小原权重投影和小清单真实加载，见[接线记录](../evidence/correctness/mtp-qwen-ct-mixed-prepared-binding-2026-10-24.json)；
-这不代表该 27B 制品已完成整模型生成。借入这类分离 target／MTP 文件时使用完整的 `--role-files` 原角色记录。
+
+## 常用选项
+
 `--steps` 是最多输出数，包含 prefill 首 token，遇 EOS 可提前结束。
 底层普通与MTP请求还可独立设置额外停止 token、忽略模型 EOS，并在缓存命中与恢复时保留请求政策；
 该配置属于C++请求接口，当前命令行继续使用默认模型 EOS。
 Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-dir>` 是脚本报告的目录。
 输入不足、模型身份不符、上下文容量不足或不支持的参数组合会明确失败。
+
+### 输入分块与冷准备
 
 普通和MTP自然生成可加 `--prefill-chunk-tokens 256`，限制每次 prefill 实际消费的 token 行数，
 让请求调度在块间继续服务其它请求；默认不限制块长。中间块只推进真实 KV／递归状态，
@@ -93,6 +89,8 @@ Verify提前结束提案时不按规划上界计数，验证后只接受部分�
 无界输入或其它未计划形状仍需有界冷接纳。额外形状容量由初始冷键数冻结，独立于会话缓存数量。
 这不是设备执行／CUDA capture 预热，首次真实绑定仍可能准备 replay。
 
+### 连续接力
+
 普通 CUDA greedy 自然生成自动使用连续接力，无需额外参数；已有限检查单活动请求及双活动请求。
 CUDA greedy 的K1 MTP也已接入单活动请求的自然接力；其它MTP宽度和采样配置仍走原单步执行。
 当前仅为最多输出至少 10 个 token 的自然生成准备两层候选；prefill 保留原路径，后继只使用已有实际捕获。
@@ -101,6 +99,8 @@ CUDA greedy 的K1 MTP也已接入单活动请求的自然接力；其它MTP宽�
 遇到当前物理绑定缺少捕获时，先完成已提交工作，再沿原路径准备捕获并恢复接力；设备及清理错误继续报告。
 接力会增加载体和状态内存；不满足执行条件或额外资源不足时自动单步推进。具体速度与内存边界见[最新性能对照](../developer/performance/decode.md#目标与当前基线)。
 
+
+### 采样与 MTP
 
 默认 greedy；也可用 `--sampling random --temperature 0.8 --top-k 40 --top-p 0.95 --seed 42`。
 普通与 MTP 共用温度→top-k→top-p 分布，`--top-k 0` 关闭该过滤。
@@ -126,6 +126,8 @@ CPU／CUDA小型制品的多轮、缓存命中及失败重试见[自然条件输
 [多草稿与检查点记录](../evidence/correctness/qwen35-mtp-multidraft-checkpoint-controls-2026-10-24.json)。
 Apple／Vulkan 另已运行 K4 随机和双用户 K2 随机完整短旅程；具体制品和新增配置的完成范围以看板为准。
 
+### 可选草稿词表
+
 可用 `--mtp-draft-vocabulary FILE` 显式缩小草稿head，完整target head与embedding继续保留。
 当前支持原BF16／F16／F32稠密head、无logits modifier的greedy及零概率阈值；可用于K1与递归多草稿。
 显式选项遇到随机、modifier、非零阈值或不支持的权重会报错；未指定该选项仍使用原完整词表。
@@ -144,6 +146,8 @@ JSON的 `original_*_weight_bytes` 仍只统计原角色，额外payload见 `draf
 这些权重都不属于 `--cache-bytes`，payload字节数也不是物理显存峰。
 子集会改变提案和接受率，需按实际输入检查速度；代码语料先验不代表通用语言覆盖或质量保证。
 
+### CPU 与 GPU 分置
+
 需要明确的 CPU＋GPU 分置时，用 `scripts/init.py` 的 `--backends cpu,cuda`、`cpu,metal` 或
 `cpu,vulkan` 分别准备对应构建，运行时选择 GPU 主后端并添加 `--cpu-ffn-layers 2`，将前两层 target FFN 及其
 原始权重放到 CPU；注意力、缓存和 MTP 留在所选 GPU。默认值 0 保持 GPU 放置。
@@ -154,6 +158,8 @@ Apple／Vulkan 的完整随机 K1 短旅程见[原生混合记录](../evidence/c
 `compute::cpu::DefaultContextOptions`；allocator／executor 支撑对象须活到全部派生制品和原生工作退休，
 具体组合见 [CPU executor 示例](../../samples/package/graph/cpu_executor/README.md)和[架构说明](../architecture/inference-design.md)。
 
+### 多轮与多会话
+
 多轮 schedule、会话数量、同时活动数、缓存预算、trace 与数值限制见[模型运行说明](../../engine/models/qwen35/README.md)。
 当前多会话以共享模型、计划和有界执行资源组织，不按用户复制模型；缓存数量和实际批次宽度是独立配置。
 普通与 MTP 共用 `prompt/generate` 自然请求文件和多轮／多会话生命周期，用 `--mtp off|on` 切换。
@@ -161,6 +167,31 @@ Apple／Vulkan 的完整随机 K1 短旅程见[原生混合记录](../evidence/c
 普通模式也保留显式 `prompt/decode` 固定输入重放；同一会话清单不能混用两种语法。
 自然生成统一输出 `sessions[].result`，单请求为 `sessions[0].result`；其中 `generated_ids` 是实际生成 IDs。
 自然续文可能随合法计算形状发生差异，不能把 ID 一致当完整任务质量保证。
+
+## 制品与验证范围
+
+当前完整文本模型为 Qwen3.5-2B，包含普通生成、有界多草稿 MTP、多轮、多会话、
+共享前缀和有界缓存恢复。CUDA、Apple 和 Vulkan 已有列明范围的真实模型执行；
+CPU 入口的普通／MTP 短旅程已完整通过，缓存元数据计费已修复，见[检查记录](../evidence/correctness/qwen-mtp-cpu-layout-budget-2026-10-24.json)；已检查范围及各项边界见[推理工程范围](../implementation/inference-roadmap.md)。
+官方 BF16 及固定 GPTQ、NVFP4、Unsloth MTP GGUF Q4 制品已有完整模型短旅程；
+量化输入通过显式原角色清单借入文件范围，具体边界见[实现范围](../implementation/inference-roadmap.md)。这不代表可以直接加载任意量化模型目录。
+NF4 已接原量化状态校验、F16 激活／缓存及六输入压缩权重驻留，[CPU／CUDA 有限状态链](../evidence/correctness/nf4-source-resident-ordinary-consumer-2026-10-25.json)通过；完整 27B 模型未运行。加载器不预先展开整库，实际计划会报告压缩融合、分解及 workspace；CPU 多行仍可能选择分解，不能仅按 4bit 文件大小估算运行空间。
+CT asymmetric INT4 已接原零点角色和同一加载／投影流程，[原 CPU 组件](../evidence/correctness/ct-asymmetric-qwen-original-projections-2026-10-25.json)的七组投影通过；完整 27B 模型及该原权重路径的其它后端尚未验证。
+选定 MLX affine4／8 group64 制品已接原压缩投影、embedding 与共享 head，保留源 norm／conv 语义；[原 CPU／CUDA 组件及小型 CPU 状态链](../evidence/correctness/mlx-source-resident-ordinary-consumer-2026-10-25.json)通过。完整 2B／27B、质量及吞吐未测，不代表任意 MLX 目录可直接加载。
+
+原 CT channel/token FP8 与 local NVFP4 混合清单使用
+`--fp8-reader compressed-tensors-0.17.2a20260716` 固定参考算法；存在原 KV 校准参数时，
+还须显式选择缓存政策：`--kv-cache-dtype bf16` 保留原 BF16 缓存并省略校准角色加载；
+也可用 `--kv-cache-dtype e4m3fn`，读取每层原 BF16 K/V scale，采用固定校准的 target E4 缓存。
+它可与 `--mtp` 合用，draft KV 保留原 BF16／plain 存储，不推造 draft 校准参数；
+CPU／CUDA 的有限完整状态、真实合批、取消和恢复见[组合检查](../evidence/correctness/inference-mtp-e4-2026-10-28.json)。
+缺失、非正或非有限 scale 会在冷准备时拒绝，不合成默认 scale。
+两者都将校准参数的名字、形状及 hash 保留在输入身份和记录中，不把它们装成模型权重张量。
+E4 的缓存行载荷为 BF16 的一半，实际总 backing 仍包括页、元数据和其它状态。
+缓存政策不改变 activation、recurrent 或投影计算精度。channel/token 保留 BF16 QDQ 与逐权重舍入，
+local NVFP4 保留原独立全局乘数和 F32 输入预舍入；它们不套用 block128 或 ModelOpt 的算法。
+目前已检查完整原头部、小原权重投影和小清单真实加载，见[接线记录](../evidence/correctness/mtp-qwen-ct-mixed-prepared-binding-2026-10-24.json)；
+这不代表该 27B 制品已完成整模型生成。借入这类分离 target／MTP 文件时使用完整的 `--role-files` 原角色记录。
 
 ## 查看性能
 
