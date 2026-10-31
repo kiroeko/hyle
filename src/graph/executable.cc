@@ -3,6 +3,7 @@
 #include "hyle/compute/detail/resource_budget_access.h"
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/graph/detail/replay_access.h"
+#include "hyle/graph/detail/recording_access.h"
 #include "hyle/graph/detail/input_source.h"
 #include "hyle/graph/detail/region_adapter.h"
 
@@ -9988,6 +9989,11 @@ std::optional<std::size_t> Invocation::exact_variant_index() const noexcept {
 bool Invocation::in_flight() const noexcept {
   return state_ != nullptr && state_->phase.load(std::memory_order_acquire) ==
                                   detail::InvocationPhase::kRunning;
+}
+
+bool detail::RecordingAccess::active(const Invocation &invocation) noexcept {
+  const auto *state = detail::InvocationAccess::state(invocation);
+  return state && state->recording_only;
 }
 
 Status detail::RegionAccess::revoke_preparation(Invocation &invocation) noexcept {

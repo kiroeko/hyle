@@ -19,11 +19,14 @@
 #include "hyle/graph/detail/source_binding_access.h"
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/graph/detail/replay_access.h"
+#include "hyle/graph/detail/recording_access.h"
 #include "hyle/graph/detail/region_adapter.h"
 #include "hyle/graph/region_provider.h"
 #include "hyle/graph/slots.h"
 #include "hyle/graph/graph.h"
 #include "../../src/graph/slots_region.h"
+#include "../../src/graph/submission_internal.h"
+#include "../../src/graph/plan_state.h"
 
 namespace {
 namespace c = hyle::compute;
@@ -355,6 +358,195 @@ TEST(GraphOutputSourceCuda, PendingI32UsesOriginalQueueAndLeasesForCheckedGather
 TEST(GraphOutputSourceCuda, PendingI32PreparesRealStoreRegionBindingHooks) { relay(false, false, true); }
 TEST(GraphOutputSourceCuda, ProducerCheckedFailureRejectsConsumerPublicationAfterRetirement) { relay(true); }
 TEST(GraphOutputSourceCuda, RetiredSourceDetachesWhileReaderPendingAndProducerReusesNewWriter) { relay(false, true); }
+TEST(GraphOutputSourceCuda, ColdRecordingRejectsExecutionAndReusesOnlyAfterFreshRealInput) {
+  auto context_result = g::cuda::create_context();
+  ASSERT_TRUE(context_result) << context_result.error().message();
+  auto context = std::move(*context_result);
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(queue.reserve_completions(8).ok());
+  auto memory = c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value();
+  auto storage = c::StorageOwner::adopt(context, std::move(memory)).value();
+  const auto i32 = c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t, 1>{1}).value();
+  auto input_pool = c::LeasePool::create(storage.ref(), 256, {.max_blocks = 1}).value();
+  auto output_pool = c::LeasePool::create(storage.ref(), 256, {.max_blocks = 1}).value();
+  auto input_writer = input_pool.allocate(sizeof(std::int32_t), 256).value();
+  auto output_writer = output_pool.allocate(sizeof(std::int32_t), 256).value();
+  constexpr std::array<std::int32_t, 1> value{37}, sentinel{-777};
+  ASSERT_TRUE(input_writer.view()->write(std::as_bytes(std::span(value))).ok());
+  ASSERT_TRUE(output_writer.view()->write(std::as_bytes(std::span(sentinel))).ok());
+  auto input_ready = input_writer.publish().value();
+  const auto borrowed_input = input_ready.tensor(i32).value();
+  const auto output_storage = output_writer.view().value();
+
+  auto builder = g::GraphBuilder::create().value();
+  const auto input = builder.input(i32).value();
+  const auto copy0 = builder.add_node(c::Operation(c::Concat{.axis = 0}),
+      std::array{input}).value();
+  const auto intermediate = builder.result(copy0).value();
+  const auto copy1 = builder.add_node(c::Operation(c::Concat{.axis = 0}),
+      std::array{intermediate}).value();
+  const auto output = builder.result(copy1).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  const auto graph = std::move(builder).finish().value();
+  auto compiled = g::cuda::compile(graph, context, storage,
+      {.operation_fallback = g::OperationFallbackPolicy::kReject});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  ASSERT_EQ(compiled->report.region_count(), 1u);
+  ASSERT_EQ(compiled->report.step_count(), 1u);
+  auto run = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(run.prepare_resources().ok());
+  ASSERT_TRUE(run.bind(output, i32, std::move(output_writer)).ok());
+  EXPECT_FALSE(gd::RecordingAccess::bind_input(run, input, borrowed_input).ok());
+  const auto began = gd::RecordingAccess::begin(run);
+  ASSERT_TRUE(began.ok()) << began.message();
+  EXPECT_TRUE(gd::RecordingAccess::active(run));
+  EXPECT_FALSE(gd::RecordingAccess::begin(run).ok());
+  ASSERT_TRUE(gd::RecordingAccess::bind_input(run, input, borrowed_input).ok());
+
+  auto foreign_builder = g::GraphBuilder::create().value();
+  const auto foreign_input = foreign_builder.input(i32).value();
+  EXPECT_FALSE(gd::RecordingAccess::bind_input(run, foreign_input, borrowed_input).ok());
+  EXPECT_FALSE(gd::RecordingAccess::bind_projection(run, {},
+      {borrowed_input, borrowed_input}).ok());
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  const auto captured = run.prepare_replay(queues,
+      {.mode = g::ReplayMode::kRequireCapture, .host_wait = g::HostWaitPolicy::kReject});
+  ASSERT_TRUE(captured.ok()) << captured.message();
+  ASSERT_EQ(run.replay_route(), g::ReplayRoute::kCaptured);
+  ASSERT_EQ(run.replay_report()->recorded_capture_range_count, 1u);
+  EXPECT_EQ(run.replay_report()->reused_capture_range_count, 0u);
+  EXPECT_FALSE(run.in_flight());
+  EXPECT_FALSE(gd::RegionAccess::successful_outcome(run));
+  EXPECT_FALSE(run.output(output));
+  EXPECT_FALSE(run.result(output));
+  auto foreign_completion = c::Completion::completed();
+  const auto exported = g::SubmissionSource::create(run, std::move(foreign_completion), storage);
+  ASSERT_FALSE(exported);
+  EXPECT_TRUE(exported.error().IsFailedPrecondition());
+  EXPECT_TRUE(foreign_completion.valid());
+  EXPECT_FALSE(gd::ResourceSource::prepare(run, {.full = 1}, storage));
+  EXPECT_TRUE(g::bind_sources(run, {}).IsFailedPrecondition());
+  EXPECT_TRUE(g::prepare_sources(run, queues).IsFailedPrecondition());
+  const auto source_preparation = gd::ReplayAccess::try_prepare_sources(run, queues);
+  ASSERT_FALSE(source_preparation);
+  EXPECT_TRUE(source_preparation.error().IsFailedPrecondition());
+
+  const auto queued = run.submit(queue);
+  const auto queue_free = run.submit();
+  const auto bound_queues = run.submit(queues);
+  const auto cursor = gd::SubmissionCursor::begin(run, queues);
+  const auto retained = gd::RegionAccess::submit(run, queues, {});
+  const auto source_submit = g::submit_sources(run, queues);
+  ASSERT_FALSE(queued); EXPECT_TRUE(queued.error().IsFailedPrecondition());
+  ASSERT_FALSE(queue_free); EXPECT_TRUE(queue_free.error().IsFailedPrecondition());
+  ASSERT_FALSE(bound_queues); EXPECT_TRUE(bound_queues.error().IsFailedPrecondition());
+  ASSERT_FALSE(cursor); EXPECT_TRUE(cursor.error().IsFailedPrecondition());
+  ASSERT_FALSE(retained); EXPECT_TRUE(retained.error().IsFailedPrecondition());
+  ASSERT_FALSE(source_submit); EXPECT_TRUE(source_submit.error().IsFailedPrecondition());
+  ASSERT_EQ(cudaStreamSynchronize(c::cuda::stream(queue).value()), cudaSuccess);
+  std::array<std::int32_t, 1> actual{};
+  ASSERT_TRUE(output_storage.read(std::as_writable_bytes(std::span(actual))).ok());
+  EXPECT_EQ(actual, sentinel);
+  EXPECT_EQ(input_pool.stats().active_uses, 0u);
+  EXPECT_EQ(output_pool.stats().active_uses, 0u);
+
+  const auto ended = gd::RecordingAccess::end(run);
+  ASSERT_TRUE(ended.ok()) << ended.message();
+  EXPECT_FALSE(gd::RecordingAccess::active(run));
+  EXPECT_EQ(run.replay_route(), g::ReplayRoute::kUnprepared);
+  EXPECT_FALSE(run.replay_report());
+  const auto still_bound = gd::RegionAccess::has_input_binding(
+      gd::InvocationAccess::state(run), input, borrowed_input);
+  ASSERT_TRUE(still_bound) << still_bound.error().message();
+  EXPECT_FALSE(*still_bound);
+  EXPECT_FALSE(run.submit(queues));
+  ASSERT_TRUE(output_storage.read(std::as_writable_bytes(std::span(actual))).ok());
+  EXPECT_EQ(actual, sentinel);
+  ASSERT_TRUE(run.bind(input, i32, input_ready).ok());
+  const auto revalidated = run.prepare_replay(queues,
+      {.mode = g::ReplayMode::kRequireCapture, .host_wait = g::HostWaitPolicy::kReject});
+  ASSERT_TRUE(revalidated.ok()) << revalidated.message();
+  EXPECT_EQ(run.replay_report()->recorded_capture_range_count, 0u);
+  EXPECT_EQ(run.replay_report()->reused_capture_range_count, 1u);
+  auto submitted = run.submit(queues);
+  ASSERT_TRUE(submitted) << submitted.error().message();
+  ASSERT_TRUE(submitted->wait().ok());
+  ASSERT_TRUE(run.output(output)->storage().read(std::as_writable_bytes(std::span(actual))).ok());
+  EXPECT_EQ(actual, value);
+  *submitted = {};
+  run = {};
+  EXPECT_EQ(input_pool.stats().active_uses, 0u);
+  EXPECT_EQ(output_pool.stats().active_uses, 0u);
+  EXPECT_EQ(output_pool.stats().live_blocks, 0u);
+}
+
+TEST(GraphOutputSourceCuda, ColdRecordingEndRequiresOriginalStoreTransactionTake) {
+  auto context_result = g::cuda::create_context();
+  ASSERT_TRUE(context_result) << context_result.error().message();
+  auto context = std::move(*context_result);
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(queue.reserve_completions(8).ok());
+  auto memory = c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value();
+  auto storage = c::StorageOwner::adopt(context, std::move(memory)).value();
+  auto staging = c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kPinnedHost).value();
+  const auto item = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 1>{2}).value();
+  const auto rows = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 2>{1, 2}).value();
+  const auto i32 = c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t, 1>{1}).value();
+  auto inputs = c::LeasePool::create(storage.ref(), 256, {.max_blocks = 1}).value();
+  auto destinations = c::LeasePool::create(storage.ref(), 256, {.max_blocks = 1}).value();
+  auto source = inputs.allocate(2 * sizeof(float), 256).value();
+  constexpr std::array<float, 2> values{3, 5}, sentinel{-11, -13};
+  ASSERT_TRUE(source.view()->write(std::as_bytes(std::span(values))).ok());
+  const auto ready = source.publish().value();
+  std::array<c::WriteLease, 1> writers{destinations.allocate(2 * sizeof(float), 256).value()};
+  ASSERT_TRUE(writers[0].view()->write(std::as_bytes(std::span(sentinel))).ok());
+  const auto destination_storage = writers[0].view().value();
+  const auto layout = c::LeaseSlotLayout::create(destinations, item, 1, 256).value();
+  const auto schema = g::slots::Schema::create(item, 1, 256).value();
+  auto builder = g::GraphBuilder::create().value();
+  const auto rows_input = builder.input(rows).value();
+  const auto ids_input = builder.input(i32).value();
+  const auto store = builder.add_node(c::Operation::custom(g::slots::Store{schema}),
+      std::array{rows_input, ids_input}).value();
+  const auto graph = std::move(builder).finish().value();
+  auto compiled = g::cuda::compile(graph, context, storage);
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  auto run = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(run.prepare_resources().ok());
+  ASSERT_TRUE(run.bind(rows_input, rows, ready).ok());
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  ASSERT_TRUE(g::slots::prepare(run, queues, {.host_workspace = staging.ref()}).ok());
+  auto transaction = g::slots::SlotBindings::create(layout, {}, writers).value();
+  ASSERT_TRUE(g::slots::bind(run, graph, store, std::move(transaction)).ok());
+  ASSERT_TRUE(gd::RecordingAccess::begin(run).ok());
+  const auto exported = gd::RecordingAccess::store_output(run, store);
+  ASSERT_TRUE(exported) << exported.error().message();
+  EXPECT_EQ(exported->capacity.description(), schema.capacity_description().value());
+  EXPECT_EQ(exported->indices.description(), i32);
+  const auto premature_end = gd::RecordingAccess::end(run);
+  EXPECT_TRUE(premature_end.IsFailedPrecondition()) << premature_end.message();
+  EXPECT_TRUE(gd::RecordingAccess::active(run));
+  EXPECT_FALSE(g::StoreSource::prepare(run, store, storage));
+  auto returned = g::slots::take(run, store);
+  ASSERT_TRUE(returned) << returned.error().message();
+  EXPECT_EQ(returned->destination_count(), 1u);
+  const auto ended = gd::RecordingAccess::end(run);
+  ASSERT_TRUE(ended.ok()) << ended.message();
+  EXPECT_FALSE(gd::RecordingAccess::active(run));
+  ASSERT_EQ(cudaStreamSynchronize(c::cuda::stream(queue).value()), cudaSuccess);
+  std::array<float, 2> actual{};
+  ASSERT_TRUE(destination_storage.read(std::as_writable_bytes(std::span(actual))).ok());
+  EXPECT_EQ(actual, sentinel);
+  EXPECT_FALSE(run.result(ids_input));
+  returned->clear(); run = {};
+  EXPECT_EQ(destinations.stats().active_uses, 0u);
+  EXPECT_EQ(destinations.stats().live_blocks, 0u);
+}
+
 TEST(GraphOutputSourceCuda, PendingI32ReusesRealNativeRegionCaptureWithoutRecording) {
   auto context_result = g::cuda::create_context();
   ASSERT_TRUE(context_result) << context_result.error().message();

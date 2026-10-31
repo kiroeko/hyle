@@ -72,6 +72,10 @@ capture需要原生计划、workspace、metadata载体和实际参数保持相�
 完整View沿真实物理根解析，Copy结果独立；partial／未知别名、私有结果及其它Queue继续走完整资格检查。
 支持prepared重放不代表所有路径都无metadata／array分配，managed成本按实际声明，不隐藏JIT／搜索／重规划。
 
+内部`RecordingAccess`可在原Invocation上借物理参数只录制命令；该模式拒绝所有submit、Source导出和结果读取。
+退出前须取回真实Store／Append事务并撤回占位输入，退出同时撤销prepared资格。
+保留的录制不提供权限；真实执行须重新绑定当前输入、租约与依赖并完成正常准备。
+
 ### 分页布局与写入
 
 program容量、实际query端口行数和layout活跃行数分别表达；padding不授予额外KV或输出写权限。

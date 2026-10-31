@@ -12,6 +12,7 @@
 #include "hyle/core/assert.h"
 #include "hyle/graph/batch.h"
 #include "hyle/graph/detail/replay_access.h"
+#include "hyle/graph/detail/recording_access.h"
 #include "submission_views.h"
 #include "append_transactions.h"
 #include "program_carrier.h"
@@ -137,6 +138,7 @@ class ExecutionEpisode final {
   // All routes submit through the same already selected original carrier.
   // Model policy still decides when to submit and when an outcome may publish.
   Status submit(const std::shared_ptr<Scope> &scope) noexcept {
+    recording_prepared_ = false; // Any attempted admission revokes prepared-only withdrawal.
     if (!run || !carrier)
       return Status::FailedPrecondition("execution episode has no original carrier");
     if (unsubmitted_reuse_declined_)
@@ -242,6 +244,7 @@ class ExecutionEpisode final {
   // is the model's nonthrowing final candidate discard, never publication.
   template<class Recycle>
   Result<bool> recover(Recycle &&recycle) noexcept {
+    recording_prepared_ = false;
     unsubmitted_reuse_declined_ = false;
     return recover_impl(RecoveryMode::kDestructive, {}, std::forward<Recycle>(recycle));
   }
@@ -255,6 +258,23 @@ class ExecutionEpisode final {
   Result<bool> discard_successful(std::span<const graph::ValueId> ordinary_inputs,
       Recycle &&recycle) noexcept {
     return recover_impl(RecoveryMode::kSuccessfulDiscard, ordinary_inputs, std::forward<Recycle>(recycle));
+  }
+
+  // Set only after successful capture preparation in Graph's non-executable
+  // mode. This is not a native-success or publication observation.
+  Status mark_recording_prepared() noexcept {
+    if (!run || !carrier || has_completion() || sources || incoming || predecessor_episode ||
+        !terminal.ok() || !graph::detail::RecordingAccess::active(*run))
+      return Status::FailedPrecondition("recording preparation requires its original non-executable episode");
+    HYLE_ASSIGN_OR_RETURN(auto original, carrier->borrow());
+    if (original != run) return Status::InvalidArgument("recording preparation belongs to another carrier");
+    recording_prepared_ = true;
+    return Status::Ok();
+  }
+  template<class Recycle>
+  Result<bool> discard_recording_preparation(std::span<const graph::ValueId> ordinary_inputs,
+      Recycle &&recycle) noexcept {
+    return recover_impl(RecoveryMode::kRecordingPreparation, ordinary_inputs, std::forward<Recycle>(recycle));
   }
 
   // Only the typed Graph coverage refusal above can select this path. Keep
@@ -310,8 +330,9 @@ class ExecutionEpisode final {
   }
 
   enum class RecoveryMode : std::uint8_t {
-    kDestructive, kSuccessfulDiscard, kUnsubmittedReuse
+    kDestructive, kSuccessfulDiscard, kUnsubmittedReuse, kRecordingPreparation
   };
+  bool recording_prepared_ = false;
   bool unsubmitted_reuse_declined_ = false;
   // A default terminal Status is not evidence of successful execution. Keep
   // this observation after the original Completion/Source has been released,
@@ -334,7 +355,11 @@ class ExecutionEpisode final {
       if (!run || !carrier || !carrier->initialized() || carrier->closing())
         return std::unexpected(Status::FailedPrecondition("carrier-preserving recovery requires its original open carrier"));
       if (!terminal.ok()) return std::unexpected(terminal);
-      if (mode == RecoveryMode::kUnsubmittedReuse) {
+      if (mode == RecoveryMode::kRecordingPreparation) {
+        if (!recording_prepared_ || has_completion() || sources || incoming || predecessor_episode ||
+            !graph::detail::RecordingAccess::active(*run))
+          return std::unexpected(Status::FailedPrecondition("recording discard lost its never-submitted preparation"));
+      } else if (mode == RecoveryMode::kUnsubmittedReuse) {
         if (!unsubmitted_reuse_declined_ || has_completion() || sources ||
             (successful_discard_ != SuccessfulDiscard::kConsumersReleased &&
                 (!incoming || !incoming->bound)))
@@ -408,6 +433,7 @@ class ExecutionEpisode final {
     std::forward<Recycle>(recycle)();
     run = nullptr; carrier = nullptr; state_transactions = nullptr;
     successful_discard_ = SuccessfulDiscard::kUnobserved;
+    recording_prepared_ = false;
     unsubmitted_reuse_declined_ = false;
     release_admission();
     return true;

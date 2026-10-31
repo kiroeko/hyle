@@ -424,6 +424,19 @@ struct EvaluationRequest final {
   inference::RequestKey request_key{}; // Diagnostic identity only; not admission authority.
 };
 
+// Metadata only for the original cold Invocation. Graph enforces that these
+// borrowed coordinates cannot be submitted or exported as an execution Source.
+struct RecordingStepInputs final {
+  Phase *phase = nullptr;
+  std::size_t slot = 0;
+  c::ConstTensorView token;
+  std::span<const g::detail::RecordingStoreInputs> states;
+};
+struct DecodeRecording final {
+  std::size_t preparations = 0, captures = 0;
+  double seconds = 0, capture_preparation_seconds = 0;
+};
+
 // CPU topology only, never a candidate/head or permission. A weak identity and
 // the next committed epoch qualify consumption after the original predecessor.
 struct DecodeAheadMetadata final {
@@ -2287,6 +2300,91 @@ public:
     return count;
   }
 
+  DecodeRecording prepare_ordinary_decode_recordings(std::size_t sampling_index,
+      std::shared_ptr<Session> *prepared_session = nullptr) {
+    DecodeRecording report;
+    if (prepared_session && *prepared_session)
+      throw std::runtime_error("decode recording requires an empty session destination");
+    const auto &sampling = sampling_configuration(sampling_index).configuration;
+    if (cache_plan.draft_cache || capacity < 2 || cache_plan.in_flight_batches < 2 ||
+        !DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
+            sampling.enabled, !sampling.modifiers.empty()}.eligible()) return report;
+    const std::array one{std::size_t{1}};
+    prepare_execution(one, 1, GraphRole::kText, TextCompletion::kEmitNext, sampling_index);
+    prepare_relay_execution(1, sampling_index);
+    auto &direct = prepare_child(1, false, 1, GraphRole::kText, TextCompletion::kEmitNext, sampling_index);
+    auto &imported = prepare_child(1, false, 1, GraphRole::kText, TextCompletion::kEmitNext, sampling_index, true);
+    if (direct.slots[0].replay_mode == g::ReplayMode::kCommands) return report;
+    if (active_step || successor_step || carrier_borrowed || snapshot_versions.live)
+      throw std::runtime_error("decode recording requires an idle model before request admission");
+    const auto begin = Clock::now();
+    std::cerr << "decode_warmup_begin\n";
+    auto session = create_session(one, {}, GraphRole::kText, {}, false, TextCompletion::kEmitNext, sampling_index);
+    hyle::util::ScopeGuard retire_session{[&]() noexcept {
+      (void)abort_episode(); session->stop().IgnoreError(); (void)session->drain();
+    }};
+    struct Arguments final {
+      c::ConstTensorView token;
+      std::vector<g::detail::RecordingStoreInputs> states;
+    };
+    const auto record = [&](Phase &phase, std::size_t slot, const Arguments *previous) {
+      auto &carrier = phase.slots[slot].carrier;
+      auto *run = take(carrier.borrow());
+      check(g::detail::RecordingAccess::begin(*run));
+      hyle::util::ScopeGuard withdraw{[&]() noexcept {
+        (void)abort_episode();
+        if (carrier.initialized() && !carrier.closing() && carrier.retired())
+          if (auto original = carrier.borrow(); original)
+            g::detail::RecordingAccess::end(**original).IgnoreError();
+      }};
+      const std::array<std::int32_t, 1> placeholder{0};
+      const std::array requests{EvaluationRequest{session, placeholder}};
+      const RecordingStepInputs inputs{&phase, slot, previous ? previous->token : c::ConstTensorView{},
+          previous ? std::span<const g::detail::RecordingStoreInputs>(previous->states) : std::span<const g::detail::RecordingStoreInputs>{}};
+      prepare_evaluations<true>(requests, nullptr, GraphRole::kText, TextCompletion::kEmitNext,
+          {}, 0, 0, RowPacking::kRectangular, &inputs);
+      auto &step = *active_step;
+      if (step.submitted || step.execution.has_completion() || session->length() || session->head->next_id != -1)
+        throw std::runtime_error("cold recording unexpectedly executed or advanced private model state");
+      Arguments next;
+      const auto *output = take(phase.slots[slot].io.readback(phase.slots[slot].data.next_id));
+      next.token = take(c::ConstTensorView::create(output->facts.description,
+          take(c::detail::LeaseAccess::backing_span(output->pool()))));
+      next.states.reserve(phase.state_sources.size());
+      for (const auto &source : phase.state_sources)
+        next.states.push_back(take(g::detail::RecordingAccess::store_output(*run, source.store)));
+      ++report.preparations; report.captures += step.capture_recorded;
+      if (step.capture_recorded) report.capture_preparation_seconds += step.cold_batch_seconds;
+      if (!take(step.try_discard_recording_preparation()))
+        throw std::runtime_error("cold recording did not retire its unsubmitted transactions");
+      check(g::detail::RecordingAccess::end(*run));
+      detach_episode(); withdraw.dismiss();
+      return next;
+    };
+    auto previous = record(direct, 0, nullptr);
+    for (const auto slot : {std::size_t{0}, std::size_t{1}, std::size_t{2}, std::size_t{0}})
+      previous = record(imported, slot, &previous);
+    if (active_step || successor_step || carrier_borrowed || session->pending || session->stopping ||
+        session->failed || session->length() || session->head->next_id != -1 || snapshot_versions.live != 1)
+      throw std::runtime_error("cold recording retained work or changed the empty session");
+    if (prepared_session) {
+      // The first real request owns this initialized, still empty Session.
+      // Admission and its actual input validation remain in RequestLoop.
+      *prepared_session = std::move(session);
+    } else {
+      check(session->stop());
+      const auto retired = session->drain(); check(retired.status);
+      if (!retired.retired || snapshot_versions.live)
+        throw std::runtime_error("cold recording retained private state");
+    }
+    retire_session.dismiss();
+    report.seconds = std::chrono::duration<double>(Clock::now() - begin).count();
+    std::cerr << "decode_warmup_end graph_calls=0 target_rows=0 capture_recorded=" << report.captures
+        << " capture_associated_cold_prep_seconds=" << report.capture_preparation_seconds
+        << " seconds=" << report.seconds << " recorded_preparations=" << report.preparations << '\n';
+    return report;
+  }
+
   void detach_episode() noexcept {
     if (!active_step) return;
     if (successor_step && successor_step->execution.cleanup_pending) {
@@ -2728,14 +2826,23 @@ public:
         {}, 0, physical_rows, RowPacking::kVerify);
   }
 
+  template<bool recording_only = false>
   void prepare_evaluations(std::span<const EvaluationRequest> requests,
                            inference::PreparationObservation *preparation = nullptr,
                            GraphRole role = GraphRole::kText,
                            TextCompletion completion = TextCompletion::kEmitNext,
                            std::shared_ptr<StepSources> incoming = {}, std::size_t physical_slot = 0,
-                            std::size_t physical_rows = 0, RowPacking packing = RowPacking::kRectangular) {
+                            std::size_t physical_rows = 0, RowPacking packing = RowPacking::kRectangular,
+                            const RecordingStepInputs *recording = nullptr) {
     const auto predecessor = incoming && active_step ? active_step : std::shared_ptr<StepState>{};
     const bool relay = bool(incoming);
+    const bool recording_imported = recording_only && recording && recording->phase && recording->phase->imported_sources;
+    if constexpr (recording_only) {
+      if (!recording || !recording->phase || recording->slot >= recording->phase->slots.size() || relay ||
+          cache_plan.draft_cache || role != GraphRole::kText || completion != TextCompletion::kEmitNext ||
+          requests.size() != 1 || requests[0].ids.size() != 1 || physical_rows || packing != RowPacking::kRectangular)
+        throw std::runtime_error("cold recording requires its original ordinary T1 carrier");
+    }
     const bool mtp_relay = relay && incoming->mtp_full_candidate;
     if (!supports_completion(role, completion))
       throw std::runtime_error("state-only evaluation requires Text or teacher-forced MTP input");
@@ -2859,7 +2966,7 @@ public:
     // A suffix first seen at a request boundary may compile a new exact family.
     // Charge that real synchronous work to this step, before the carrier loan.
     const auto step_start = Clock::now();
-    const ExecutionShape phase_key{requests.size(), physical_tokens, role, completion, sampling_index, relay, packing};
+    const ExecutionShape phase_key{requests.size(), physical_tokens, role, completion, sampling_index, relay || recording_imported, packing};
     // Reuse only this call's original complete Phase metadata. Diagnostic
     // execution keeps its existing default/probe preparation sequence.
     const auto resolve_prepared_phase = [&]() -> Phase * {
@@ -2868,6 +2975,10 @@ public:
       return found == phases.end() ? nullptr : found->second.get();
     };
     auto *prepared_phase = resolve_prepared_phase();
+    if constexpr (recording_only) {
+      if (prepared_phase != recording->phase)
+        throw std::runtime_error("cold recording Phase does not belong to this exact model/shape");
+    }
     double shape_admission_seconds = 0;
     if (!packed_prefill && (role == GraphRole::kText || is_mtp_prefill(role)) &&
         !prepared_phase && !find_child(requests.size(), tokens, role, false, completion, sampling_index)) {
@@ -2877,7 +2988,7 @@ public:
       // Re-resolve from the current map; no pointer is retained across calls.
       prepared_phase = resolve_prepared_phase();
     }
-    const bool ahead = !relay && !packed_target && take_decode_ahead(requests, role, completion, sampling_index, tokens);
+    const bool ahead = !recording_only && !relay && !packed_target && take_decode_ahead(requests, role, completion, sampling_index, tokens);
     auto candidate = std::make_shared<StepState>(); candidate->execution.configure(draft_bank + 2);
     if (!candidate->members.try_reserve(requests.size())) throw std::bad_alloc{};
     for (std::size_t j = 0; j < requests.size(); ++j) {
@@ -2909,7 +3020,7 @@ public:
     step.shape_admission_seconds = shape_admission_seconds;
     if (!predecessor) for (auto &member : step.members) member.session->pending = &step;
     try {
-      const auto width = requests.size(), slot = relay ? physical_slot : slot_index;
+      const auto width = requests.size(), slot = recording_only ? recording->slot : relay ? physical_slot : slot_index;
       if (!layer0_probe.empty()) prepare_child(tokens, false, width, role, completion, sampling_index);
       if (predecessor) {
         const auto found = phases.find({width, tokens, role, completion, sampling_index, true});
@@ -2925,9 +3036,20 @@ public:
         throw std::runtime_error("successor cannot reuse its live predecessor carrier");
       initialize_slot(phase, slot);
       auto &run = *take(carrier.borrow());
+      if constexpr (recording_only) {
+        if (!g::detail::RecordingAccess::active(run))
+          throw std::runtime_error("cold recording lost Graph's non-executable mode");
+      }
       step.phase = &phase; step.execution.run = &run; step.execution.carrier = &carrier; step.state_slot = slot;
       step.execution.state_transactions = &phase.slots[slot].transactions;
       step.execution.nodes.assign(phase.append_nodes.begin(), phase.append_nodes.end());
+      if constexpr (recording_only) if (recording_imported) {
+        if (recording->states.size() != phase.state_sources.size() || !recording->token.valid())
+          throw std::runtime_error("cold recording lacks its original producer coordinates");
+        check(g::detail::RecordingAccess::bind_input(run, phase.token_port, recording->token));
+        for (std::size_t bank = 0; bank < recording->states.size(); ++bank)
+          check(g::detail::RecordingAccess::bind_store(run, phase.state_sources[bank].store, recording->states[bank]));
+      }
       if (packed_target) {
         // The prior step has really retired. Release this exact mirror alias
         // before batch::prepare tries to refresh its original metadata writer.
@@ -2986,7 +3108,7 @@ public:
           ? std::span<const std::int32_t>(decode_ahead->positions.data(), decode_ahead->positions.size())
           : std::span<const std::int32_t>(positions);
       if (!io.ordinary_io.packet()) {
-        if (!relay) io.tokens.write<std::int32_t>(token_values);
+        if (!relay && !recording_imported) io.tokens.write<std::int32_t>(token_values);
         io.positions.write<std::int32_t>(position_values);
       }
       if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
@@ -3068,7 +3190,7 @@ public:
         const bool is_hidden = bank.kind == StateBankKind::kHidden;
         const bool recurrent = bank.kind == StateBankKind::kRecurrent;
         const auto bytes = transactions.writer_bytes(index);
-        if (!relay) for (std::size_t j = 0; j < width; ++j) {
+        if (!relay && !recording_imported) for (std::size_t j = 0; j < width; ++j) {
           if (is_hidden) {
             if (has_mtp(role)) {
               const bool chronological = width == 1 && role == GraphRole::kMtpCatchupRound && packing == RowPacking::kRectangular;
@@ -3137,6 +3259,7 @@ public:
       step.capture_reused = replay_report.reused_capture_range_count;
       step.cold_batch_seconds = std::chrono::duration<double>(Clock::now() - cold_start).count();
       ++phase.slots[slot].preparation_uses; step.prepared = true;
+      if constexpr (recording_only) check(step.execution.mark_recording_prepared());
     } catch (inference::EvaluationFailure &failure) {
       if (step.execution.unsubmitted_reuse_declined()) failure.observe_unsubmitted_reuse_refusal();
       failure.observe_retirement(predecessor ? abort_successor_episode() : abort_episode());
@@ -6712,6 +6835,10 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       model.prepare_relay_execution(1, i, GraphRole::kMtpCatchupRound);
     }
   inference::RequestLoop request_loop;
+  if constexpr (!mtp) if (decode_overlap && requests.size() == 1 && decode_bound &&
+      model.cache_plan.active_sequences == 1)
+    (void)model.prepare_ordinary_decode_recordings(requests.front().sampling_index,
+        prefix_enabled ? nullptr : &requests.front().session);
   request_loop.prepare(requests.size(), model.cache_plan.resident_sessions);
   for (std::size_t index = 0; index < requests.size(); ++index)
     requests[index].request_key = request_loop.enqueue(index);

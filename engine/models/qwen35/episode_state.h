@@ -151,6 +151,15 @@ struct StepState final {
     return execution.discard_successful(phase->state_resource_ports,
         [&]() noexcept { recycle_unpublished(); });
   }
+  hyle::Result<bool> try_discard_recording_preparation() noexcept {
+    if (!phase || !prepared || submitted || cancelled)
+      return std::unexpected(hyle::Status::FailedPrecondition("recording discard requires its original prepared unsubmitted step"));
+    const auto retired = phase->slots[state_slot].data.small_results.recover();
+    inference::record_retirement_status(execution.terminal, retired.status);
+    if (!retired.retired) return false;
+    return execution.discard_recording_preparation(phase->state_resource_ports,
+        [&]() noexcept { recycle_unpublished(); });
+  }
 };
 
 } // namespace qwen35

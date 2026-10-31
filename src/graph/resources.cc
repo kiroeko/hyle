@@ -1,6 +1,7 @@
 #include "hyle/graph/executable.h"
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/graph/detail/replay_access.h"
+#include "hyle/graph/detail/recording_access.h"
 #include "hyle/graph/result.h"
 #include "hyle/graph/source.h"
 #include "hyle/graph/detail/source_binding_access.h"
@@ -170,6 +171,24 @@ Status resource_control_ready(const InvocationState *state) noexcept {
   return Status::Ok();
 }
 
+Status RecordingAccess::begin(Invocation &invocation) noexcept {
+  auto *state = InvocationAccess::state(invocation);
+  HYLE_RETURN_IF_ERROR(resource_control_ready(state));
+  if (state->recording_only || !state->resources)
+    return Status::FailedPrecondition("cold recording needs original prepared resources and a fresh mode");
+  // An existing immutable-input owner may contain implicit Source effects.
+  // This deliberately narrow mode accepts no such owner, including historic
+  // source storage; it never changes or infers a Source's permissions.
+  if (state->input_sources)
+    return Status::FailedPrecondition("cold recording cannot borrow an input Source owner");
+  HYLE_RETURN_IF_ERROR(RegionAccess::revoke_preparation(invocation));
+  state->recording_inputs.clear();
+  state->recording_projections.clear();
+  state->recording_access_nodes.clear();
+  state->recording_only = true;
+  return Status::Ok();
+}
+
 Status reset_resource_payload(Invocation &invocation) noexcept {
   auto *state = InvocationAccess::state(invocation);
   HYLE_RETURN_IF_ERROR(resource_control_ready(state));
@@ -262,6 +281,90 @@ const LeaseBinding *find_binding(const InvocationState *state, ValueId value) no
 LeaseBinding *find_binding(InvocationState *state, ValueId value) noexcept {
   return const_cast<LeaseBinding *>(find_binding(
       static_cast<const InvocationState *>(state), value));
+}
+Status RecordingAccess::bind_input(Invocation &invocation, ValueId value,
+    compute::ConstTensorView tensor) noexcept {
+  auto *state = InvocationAccess::state(invocation);
+  HYLE_RETURN_IF_ERROR(resource_control_ready(state));
+  if (!state->recording_only)
+    return Status::FailedPrecondition("borrowed recording input needs active cold recording");
+  const auto *binding = find_binding(state, value);
+  if (!binding || !binding->input || binding->scope != BindingScope::kCaller ||
+      binding->read.valid() || binding->write.valid() || binding->exclusive ||
+      binding->permissionless || binding->projected_writer || binding->projected_appender ||
+      has_input_source(*state, value))
+    return Status::FailedPrecondition("recording input cannot replace original lease or configuration authority");
+  const bool tracked = std::ranges::find(state->recording_inputs, value) !=
+      state->recording_inputs.end();
+  if (!tracked && !state->recording_inputs.try_reserve(state->recording_inputs.size() + 1))
+    return Status::ResourceExhausted("cold recording input metadata");
+  HYLE_RETURN_IF_ERROR(invocation.bind(value, tensor));
+  if (!tracked) state->recording_inputs.push_back(value);
+  return Status::Ok();
+}
+
+Status RecordingAccess::bind_projection(Invocation &invocation,
+    const ResourceProjection &projection, RecordingStoreInputs inputs) noexcept {
+  auto *state = InvocationAccess::state(invocation);
+  HYLE_RETURN_IF_ERROR(resource_control_ready(state));
+  if (!state->recording_only)
+    return Status::FailedPrecondition("recording projection needs active cold recording");
+  HYLE_ASSIGN_OR_RETURN(auto resource,
+      RegionAccess::projection_resource(invocation.executable(), projection));
+  const auto &plan = *state->plan;
+  const auto &capacity_description = plan.domain_graph.valid()
+      ? state->concrete_descriptions[projection.capacity.ordinal()]
+      : plan.descriptions[projection.capacity.ordinal()];
+  const auto &metadata_description = plan.domain_graph.valid()
+      ? state->concrete_descriptions[projection.metadata.ordinal()]
+      : plan.descriptions[projection.metadata.ordinal()];
+  if (!inputs.capacity.valid() || !inputs.indices.valid() ||
+      inputs.capacity.description() != capacity_description ||
+      inputs.indices.description() != metadata_description ||
+      inputs.capacity.storage().resource() != resource ||
+      inputs.indices.storage().resource() != resource)
+    return Status::InvalidArgument("recording projection differs from its immutable native schema/resource");
+  if (std::ranges::any_of(state->recording_projections, [&](const auto &entry) {
+        return entry.capacity == projection.capacity || entry.metadata == projection.metadata;
+      }))
+    return Status::FailedPrecondition("recording projection is already installed");
+  if (projection.access_nodes.size() > SIZE_MAX - state->recording_access_nodes.size() ||
+      !state->recording_access_nodes.try_reserve(
+          state->recording_access_nodes.size() + projection.access_nodes.size()) ||
+      !state->recording_projections.try_reserve(state->recording_projections.size() + 1))
+    return Status::ResourceExhausted("cold recording projection metadata");
+  // Both retain only borrowed input descriptions. A late refusal leaves the
+  // first input tracked for end()/ordinary destructive recovery, without a
+  // projection entry that could be mistaken for a complete descriptor.
+  HYLE_RETURN_IF_ERROR(bind_input(invocation, projection.capacity, inputs.capacity));
+  HYLE_RETURN_IF_ERROR(bind_input(invocation, projection.metadata, inputs.indices));
+  const auto begin = state->recording_access_nodes.size();
+  for (auto node : projection.access_nodes) state->recording_access_nodes.push_back(node);
+  state->recording_projections.push_back({projection.capacity, projection.metadata,
+      projection.reader, projection.capability, begin, projection.access_nodes.size(),
+      inputs.capacity, inputs.indices});
+  return Status::Ok();
+}
+
+Status RecordingAccess::end(Invocation &invocation) noexcept {
+  auto *state = InvocationAccess::state(invocation);
+  HYLE_RETURN_IF_ERROR(resource_control_ready(state));
+  if (!state->recording_only || !state->resources)
+    return Status::FailedPrecondition("cold recording end needs its original active resources");
+  for (const auto &binding : state->resources.get()->bindings)
+    if (binding.scope == BindingScope::kWrittenProjection || binding.scope == BindingScope::kWriteEffect)
+      return Status::FailedPrecondition("take original Store/Append transactions before ending cold recording");
+  HYLE_RETURN_IF_ERROR(RegionAccess::revoke_preparation(invocation));
+  // Use the same native-release and stable-command preservation checks as
+  // ordinary retired inputs. Clear the mode last: a partial/error return can
+  // never convert borrowed placeholders into submit authority.
+  HYLE_RETURN_IF_ERROR(invocation.unbind(
+      {state->recording_inputs.data(), state->recording_inputs.size()}));
+  state->recording_inputs.clear();
+  state->recording_projections.clear();
+  state->recording_access_nodes.clear();
+  state->recording_only = false;
+  return Status::Ok();
 }
 Status check_binding_replacement(const InvocationState &state, ValueId value) noexcept {
   const auto *binding = find_binding(&state, value);
@@ -1182,7 +1285,8 @@ Status RegionAccess::bind_write_effect(Invocation&invocation,const Graph&graph,
 }
 bool RegionAccess::successful_outcome(const Invocation&invocation)noexcept{
   const auto*state=InvocationAccess::state(invocation);
-  return outcome_available(invocation) && state->phase.load(std::memory_order_acquire)==InvocationPhase::kIdle &&
+  return outcome_available(invocation) && !state->recording_only &&
+      state->phase.load(std::memory_order_acquire)==InvocationPhase::kIdle &&
       state->outputs_ready.load(std::memory_order_acquire);
 }
 Result<bool> RegionAccess::has_pending_effect(const InvocationState *state, ProjectedWriter writer,
@@ -2806,6 +2910,36 @@ Result<StoreProjectionInputs> RegionAccess::store_source_projection(
     const InvocationState *state, ResourceProjection projection) noexcept {
   if (!state || !state->plan || !state->resources)
     return std::unexpected(Status::FailedPrecondition("Store projection has no original invocation resources"));
+  if (state->recording_only) {
+    const auto found = std::ranges::find_if(state->recording_projections, [&](const auto &entry) {
+      const auto nodes = std::span<const NodeId>(state->recording_access_nodes.data(),
+          state->recording_access_nodes.size()).subspan(entry.access_begin, entry.access_count);
+      return same_projection(projection, {entry.capacity, entry.metadata, entry.reader,
+          nodes, entry.capability});
+    });
+    if (found == state->recording_projections.end())
+      return std::unexpected(Status::FailedPrecondition("recording Store projection has no exact metadata descriptor"));
+    // Recheck the live selected implementation and complete current bindings.
+    // The descriptor is address metadata only; no pending/ready lease, Source
+    // owner or empty-footprint execution permission is inferred from it.
+    HYLE_ASSIGN_OR_RETURN(auto access, projection_access(*state->plan, state, projection));
+    (void)access;
+    const auto &plan = *state->plan;
+    const auto capacity_resource = plan.external_storage[projection.capacity.ordinal()];
+    const auto metadata_resource = plan.external_storage[projection.metadata.ordinal()];
+    if (capacity_resource >= plan.storage_domains.size() ||
+        metadata_resource >= plan.storage_domains.size() ||
+        found->capacity_view.storage().resource() != plan.storage_domains[capacity_resource].resource ||
+        found->indices_view.storage().resource() != plan.storage_domains[metadata_resource].resource)
+      return std::unexpected(Status::InvalidArgument("recording Store projection lost its exact native resources"));
+    HYLE_ASSIGN_OR_RETURN(const bool capacity_bound,
+        has_input_binding(state, projection.capacity, found->capacity_view));
+    HYLE_ASSIGN_OR_RETURN(const bool metadata_bound,
+        has_input_binding(state, projection.metadata, found->indices_view));
+    if (!capacity_bound || !metadata_bound)
+      return std::unexpected(Status::FailedPrecondition("recording Store projection inputs were replaced"));
+    return StoreProjectionInputs{found->capacity_view, found->indices_view};
+  }
   auto attached = bound_input_source(*state, projection.capacity, &output_source_table);
   if (!attached)
     return std::unexpected(Status::FailedPrecondition("Store projection has no exact original Source bundle"));
@@ -2850,6 +2984,8 @@ SubmissionSource::~SubmissionSource() { if (state_) state_->decref(); }
 Result<SubmissionSource> SubmissionSource::create(Invocation &invocation,
     compute::Completion &&submission, const compute::StorageOwner &storage) noexcept {
   auto *state = InvocationAccess::state(invocation);
+  if (state && state->recording_only)
+    return std::unexpected(Status::FailedPrecondition("cold recording cannot export a SubmissionSource"));
   if (!state || !storage || !state->observation.owns(submission))
     return std::unexpected(Status::InvalidArgument("submission source requires its exact submitted Invocation proxy and metadata owner"));
   HYLE_ASSIGN_OR_RETURN(auto queue, output_queue(*state));
@@ -2988,6 +3124,8 @@ Result<ResourceSource> ResourceSource::prepare(Invocation &invocation, ResourceS
     const compute::StorageOwner &storage, ResourceOptions options) noexcept {
   auto *parent = InvocationAccess::state(invocation);
   HYLE_RETURN_IF_ERROR(resource_control_ready(parent));
+  if (parent->recording_only)
+    return std::unexpected(Status::FailedPrecondition("cold recording cannot export a ResourceSource"));
   if (!storage || !options.allocator.valid() || !parent->resources ||
       (counts.full == 0 && counts.append == 0))
     return std::unexpected(Status::InvalidArgument("resource source needs original resources, mutable pages and its owner"));
@@ -3040,6 +3178,8 @@ Status ResourceSource::capture(const SubmissionSource &submission, ResourceContr
   auto *parent = source.producer;
   if (view.submission || !parent || parent != view.prepared_parent || !parent->resources)
     return Status::FailedPrecondition("resource contribution differs from its original submitted producer");
+  if (parent->recording_only)
+    return Status::FailedPrecondition("cold recording cannot capture ResourceSource outputs");
   const auto phase = parent->phase.load(std::memory_order_acquire);
   if (phase != InvocationPhase::kRunning &&
       !(phase == InvocationPhase::kIdle && parent->outputs_ready.load(std::memory_order_acquire)))
@@ -3302,6 +3442,8 @@ Result<OutputSource> OutputSource::create(const SubmissionSource &submission, Va
   std::lock_guard guard(source.observation);
   auto *state = source.producer;
   if (!state) return std::unexpected(Status::FailedPrecondition("submission source export is closed"));
+  if (state->recording_only)
+    return std::unexpected(Status::FailedPrecondition("cold recording cannot export an OutputSource"));
   const auto phase = state->phase.load(std::memory_order_acquire);
   if (phase != InvocationPhase::kRunning &&
       !(phase == InvocationPhase::kIdle && state->outputs_ready.load(std::memory_order_acquire)))
@@ -3438,6 +3580,8 @@ Result<StoreSourceState *> prepare_store_source(Invocation &invocation, NodeId n
     ResourceOptions options) noexcept {
   auto *parent = InvocationAccess::state(invocation);
   HYLE_RETURN_IF_ERROR(resource_control_ready(parent));
+  if (parent->recording_only)
+    return std::unexpected(Status::FailedPrecondition("cold recording cannot export a StoreSource"));
   if (!storage || !options.allocator.valid())
     return std::unexpected(Status::InvalidArgument("Store source needs its actual owner and cold allocator"));
   PrepareStoreSource call{.node = node};
@@ -3536,6 +3680,8 @@ Status StoreSource::capture(const SubmissionSource &submission) noexcept {
   if (view.submission || !source.producer || source.producer != view.prepared_parent ||
       !view.prepared_binding)
     return Status::FailedPrecondition("Store source does not name its original prepared submission");
+  if (source.producer->recording_only)
+    return Status::FailedPrecondition("cold recording cannot capture StoreSource outputs");
   const auto phase = source.producer->phase.load(std::memory_order_acquire);
   if (phase != InvocationPhase::kRunning &&
       !(phase == InvocationPhase::kIdle && source.producer->outputs_ready.load(std::memory_order_acquire)))
@@ -3695,6 +3841,8 @@ Result<bool> detail::ReplayAccess::has_capture_candidate(
 Status bind_sources(Invocation &invocation, std::span<const SourceBinding> bindings) noexcept {
   auto *state = InvocationAccess::state(invocation);
   HYLE_RETURN_IF_ERROR(resource_control_ready(state));
+  if (state->recording_only)
+    return Status::FailedPrecondition("cold recording cannot bind an execution Source bundle");
   if (bindings.empty() || bindings.size() > state->plan->input_ids.size()+state->plan->steps.size())
     return Status::InvalidArgument("output bundle has an invalid size");
   if (has_input_source_table(*state, &output_source_table))
@@ -3998,6 +4146,8 @@ Status release_sources(Invocation &invocation) noexcept {
 namespace {
 Status prepare_sources_impl(Invocation &invocation, std::span<const QueueBinding> queues,
     bool *coverage_miss = nullptr) noexcept {
+  if (RecordingAccess::active(invocation))
+    return Status::FailedPrecondition("cold recording cannot prepare an execution Source bundle");
   HYLE_ASSIGN_OR_RETURN(auto owner, bound_output_bundle(invocation));
   auto *bundle = static_cast<OutputBindingBundle *>(owner.state());
   HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, *bundle, queues, true, coverage_miss));
@@ -4035,6 +4185,8 @@ Result<bool> detail::ReplayAccess::try_prepare_sources(Invocation &invocation,
 }
 Result<compute::Completion> submit_sources(Invocation &invocation,
     std::span<const QueueBinding> queues) noexcept {
+  if (RecordingAccess::active(invocation))
+    return std::unexpected(Status::FailedPrecondition("cold recording cannot submit a Source bundle"));
   HYLE_ASSIGN_OR_RETURN(auto owner, bound_output_bundle(invocation));
   auto *bundle = static_cast<OutputBindingBundle *>(owner.state());
   HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, *bundle, queues, true));
@@ -4249,6 +4401,8 @@ Result<detail::SubmissionCursor> detail::begin_submission(Invocation &invocation
     std::span<const QueueBinding> queues, OrderedGraphSubmission ordered) noexcept {
   auto *state = InvocationAccess::state(invocation);
   HYLE_RETURN_IF_ERROR(resource_control_ready(state));
+  if (state->recording_only)
+    return std::unexpected(Status::FailedPrecondition("cold recording cannot submit Graph commands"));
   if (!state->submission_lifetime)
     return std::unexpected(Status::FailedPrecondition("graph submission lifetime is not prepared"));
   auto *episode = state->resources.get();
@@ -4338,6 +4492,8 @@ Result<compute::Completion> detail::RegionAccess::submit(Invocation &invocation,
     std::span<const QueueBinding> queues, OrderedGraphSubmission ordered) noexcept {
   auto *state = InvocationAccess::state(invocation);
   HYLE_RETURN_IF_ERROR(resource_control_ready(state));
+  if (state->recording_only)
+    return std::unexpected(Status::FailedPrecondition("cold recording cannot submit Graph commands"));
   if (state->progress) return state->progress.submit(invocation, queues, ordered);
   HYLE_ASSIGN_OR_RETURN(auto cursor, begin_submission(invocation, queues, ordered));
   const SharedSequenceFn before = ordered.admit ? &admit_submission_sequence : nullptr;
@@ -4358,6 +4514,8 @@ Result<compute::Completion> detail::RegionAccess::submit(Invocation &invocation,
 
 Result<GraphOutput> Invocation::result(ValueId value) noexcept {
   if (!state_) return std::unexpected(Status::FailedPrecondition("graph invocation is empty"));
+  if (state_->recording_only)
+    return std::unexpected(Status::FailedPrecondition("cold recording has no Graph execution result"));
   if (state_->phase.load(std::memory_order_acquire) != detail::InvocationPhase::kIdle ||
       !state_->outputs_ready.load(std::memory_order_acquire))
     return std::unexpected(Status::FailedPrecondition(

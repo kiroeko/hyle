@@ -426,6 +426,8 @@ Result<compute::Completion> Invocation::submit(compute::Queue &queue) noexcept {
   if (state_ == nullptr) {
     return std::unexpected(Status::FailedPrecondition("invocation is invalid"));
   }
+  if (state_->recording_only)
+    return std::unexpected(Status::FailedPrecondition("cold recording cannot submit Graph commands"));
   if (state_->plan->required_queue_count != 1) {
     return std::unexpected(Status::InvalidArgument(
         "single-queue submit requires exactly one active execution lane"));
@@ -450,6 +452,8 @@ Result<compute::Completion> Invocation::submit() noexcept {
   if (state_ == nullptr) {
     return std::unexpected(Status::FailedPrecondition("invocation is invalid"));
   }
+  if (state_->recording_only)
+    return std::unexpected(Status::FailedPrecondition("cold recording cannot submit Graph commands"));
   if (state_->plan->required_queue_count != 0) {
     return std::unexpected(Status::InvalidArgument(
         "queue-free submit requires a graph with no caller Queue lanes"));
@@ -466,6 +470,8 @@ Result<compute::Completion> Invocation::submit() noexcept {
 Result<compute::Completion>
 Invocation::submit(std::span<const QueueBinding> queues) noexcept {
   HYLE_RETURN_IF_ERROR(detail::resource_control_ready(state_));
+  if (state_->recording_only)
+    return std::unexpected(Status::FailedPrecondition("cold recording cannot submit Graph commands"));
   if (state_->progress)
     return state_->progress.submit(*this, queues, {});
   if (state_->resources || state_->input_sources)
@@ -490,6 +496,8 @@ Result<detail::SubmissionCursor> detail::SubmissionCursor::begin(
     return std::unexpected(Status::FailedPrecondition("invocation is invalid"));
   }
   HYLE_RETURN_IF_ERROR(resource_control_ready(state_));
+  if (state_->recording_only)
+    return std::unexpected(Status::FailedPrecondition("cold recording cannot submit Graph commands"));
   auto idle = detail::InvocationPhase::kIdle;
   if (!state_->phase.compare_exchange_strong(
           idle, detail::InvocationPhase::kRunning, std::memory_order_acq_rel,

@@ -246,6 +246,143 @@ inline void random_r2_cancel(const std::filesystem::path &input, q::BackendKind 
 }
 
 #if defined(HYLE_COMPUTE_CUDA)
+inline void ordinary_decode_recordings(const std::filesystem::path &input) {
+  const auto geometry = q::read_weight_geometry(input / "weights.tsv");
+  const std::array rows{std::size_t{1}, std::size_t{3}};
+  const auto make_model = [&](q::BackendKind backend) {
+    auto source = q::prepare_weight_source(input / "weights.tsv", false);
+    const auto plan = q::cache::plan(geometry, source.cache_row_bytes, 16, 1, 3,
+        q::recurrent_bytes(q::state_schema_for(geometry, 16), geometry), 1, 1, false, true, 2);
+    const std::array random{q::SamplingConfiguration{true, {1.F, 8, .9F}}};
+    const auto replay = backend == q::BackendKind::kCuda ? q::ReplayPolicy::kPreferCapture : q::ReplayPolicy::kCommands;
+    auto model = std::make_unique<q::Model>(std::move(source), geometry, 16, plan, std::filesystem::path{},
+        false, replay, SIZE_MAX, q::Model::Sampling{.enabled = false},
+        0, q::BackendSelection{.primary = backend}, random);
+    require(model->prepare_family(rows), "decode recording fixture lost its finite ordinary Family");
+    for (const auto count : rows) model->plan_replay_uses(count, 1, 16);
+    model->freeze_shape_plan(); model->prepare_state_storage(); model->prepare_execution(rows);
+    if (backend == q::BackendKind::kCuda) model->prepare_relay_execution();
+    return model;
+  };
+  const auto idle = [&](const q::Model &model) {
+    require(!model.active_step && !model.successor_step && !model.carrier_borrowed &&
+        !model.snapshot_versions.live && model.page_inventory.free_ids.size() == model.cache_plan.max_pages,
+        "ordinary decode recording retained private work, versions, pages or a carrier loan");
+  };
+  struct Result final {
+    std::vector<std::int32_t> ids;
+    std::vector<q::GenerationCommitRecord> records;
+    std::vector<std::uint64_t> epochs;
+    h::ImageBytes image;
+  };
+  const auto journey = [&](q::Model &model, std::shared_ptr<q::Session> prepared_session = {}) {
+    const std::array<std::int32_t, 3> prompt{1, 2, 3};
+    std::vector<q::GenerationRequest> requests;
+    requests.emplace_back("ordinary-after-recording", prompt, std::filesystem::path{}, 4, 0,
+        i::RequestStopPolicy({}, true));
+    auto &request = requests.front();
+    request.session = std::move(prepared_session);
+    i::RequestWindow keys; keys.prepare(1, 1);
+    request.request_key = keys.enqueue(0);
+    request.warm_inputs.push_back(std::make_shared<std::vector<std::int32_t>>(prompt.begin(), prompt.end()));
+    request.prompt = *request.warm_inputs.front();
+    request.ledger = std::make_unique<q::GenerationLedger>(4, 1);
+    request.round_emitted.resize(3); for (auto &emitted : request.round_emitted) emitted.reserve(1);
+    q::GenerationContinuation continuation; continuation.prepare(1);
+    hyle::util::ScopeGuard cleanup{[&]() noexcept {
+      continuation.reset(); (void)model.abort_episode();
+      if (request.session) {
+        request.session->stop().IgnoreError(); (void)request.session->drain();
+        (void)request.session->try_retire(); request.session.reset();
+      }
+    }};
+    Result result;
+    const auto observed = [&](const q::GenerationBatchFacts &facts) {
+      require(facts.members.size() == 1 && facts.members[0].request == &request &&
+          facts.members[0].disposition == q::EvaluationDisposition::kPublished &&
+          request.session->head->sampling == q::cache::SamplingCursor{},
+          "ordinary post-recording publication changed its request, disposition or greedy RNG");
+      result.epochs.push_back(request.session->head.epoch());
+    };
+    while (!request.progress.turn_done) {
+      require(request.ledger->committed_count < 4, "ordinary post-recording request exceeded its finite ledger");
+      std::array calls{q::prepare_generation_call(model, request, 4, nullptr, requests)};
+      if (!calls[0].generation) {
+        require(!request.session->length() && request.session->head->next_id == -1,
+            "new ordinary Session inherited a recording frontier");
+        for (const auto &bytes : qwen_state_reuse_case::state_bytes(model, *request.session->head))
+          require(std::ranges::all_of(bytes, [](auto byte) { return byte == std::byte{}; }),
+              "new ordinary Session did not clear the recycled recording state");
+      }
+      q::execute_generation_calls(model, calls, false, nullptr, requests, nullptr, &continuation, observed);
+    }
+    continuation.reset();
+    result.ids = request.progress.generated;
+    result.records.assign(request.ledger->records.begin(), request.ledger->records.begin() + request.ledger->committed_count);
+    auto storage = q::take(i::HostStateStorage::create(model.execution, 1, 4u << 20));
+    result.image = p::capture(model, *request.session, storage);
+    require(result.ids.size() == 4 && result.records.size() == 4 && result.epochs.size() == 4,
+        "private decode recording polluted the real request's output or ledger counts");
+    h::retire(request.session); idle(model); cleanup.dismiss(); return result;
+  };
+  auto control_model = make_model(q::BackendKind::kCuda), recorded_model = make_model(q::BackendKind::kCuda);
+  const auto recording = recorded_model->prepare_ordinary_decode_recordings(0);
+  require(recording.preparations == 5 && recording.captures > 0 && recording.seconds > 0 &&
+      recording.capture_preparation_seconds > 0 && recording.capture_preparation_seconds <= recording.seconds,
+      "ordinary cold recording did not prepare its five original Invocation tuples");
+  idle(*recorded_model);
+  std::shared_ptr<q::Session> prepared_session;
+  const auto session_recording = recorded_model->prepare_ordinary_decode_recordings(0, &prepared_session);
+  require(session_recording.preparations == 5 && session_recording.seconds > 0 &&
+      session_recording.capture_preparation_seconds >= 0 &&
+      session_recording.capture_preparation_seconds <= session_recording.seconds &&
+      prepared_session && prepared_session->head && !prepared_session->length() &&
+      prepared_session->head->next_id == -1 && prepared_session->head->sampling == q::cache::SamplingCursor{} &&
+      !prepared_session->pending && !prepared_session->stopping && !prepared_session->failed &&
+      !recorded_model->active_step && !recorded_model->successor_step && !recorded_model->carrier_borrowed &&
+      recorded_model->snapshot_versions.live == 1 &&
+      recorded_model->page_inventory.free_ids.size() == recorded_model->cache_plan.max_pages,
+      "ordinary cold recording did not hand out exactly one empty Session without retaining private work");
+  const auto control = journey(*control_model), candidate = journey(*recorded_model, std::move(prepared_session));
+  require(!prepared_session, "ordinary recording handoff retained another Session owner");
+  require(control.ids == candidate.ids && control.epochs == candidate.epochs &&
+      control.image.identity != candidate.image.identity &&
+      control.image.identity == control_model->host_image_identity(0) &&
+      candidate.image.identity == recorded_model->host_image_identity(0) &&
+      control_model->source_identity == recorded_model->source_identity &&
+      h::same_boundary(control.image.boundary, candidate.image.boundary) &&
+      control.image.layout == candidate.image.layout && control.image.total_bytes == candidate.image.total_bytes &&
+      control.image.payloads == candidate.image.payloads,
+      "ordinary cold recording changed real IDs, epochs or a complete logical state image");
+  for (std::size_t at = 0; at != control.records.size(); ++at)
+    require(control.records[at].same_result(candidate.records[at]) &&
+        control.records[at].committed == candidate.records[at].committed &&
+        control.records[at].user_output == candidate.records[at].user_output &&
+        control.records[at].imported == candidate.records[at].imported &&
+        control.records[at].turn == candidate.records[at].turn &&
+        std::ranges::equal(control.records[at].ids(), candidate.records[at].ids()) &&
+        std::ranges::equal(control.records[at].committed_ids(), candidate.records[at].committed_ids()),
+        "ordinary cold recording changed a real authoritative ledger input, RNG or decision");
+  const auto skipped = [&](q::Model &model, std::size_t sampling) {
+    const auto actual = model.prepare_ordinary_decode_recordings(sampling);
+    require(!actual.preparations && !actual.captures && actual.seconds == 0 && actual.capture_preparation_seconds == 0,
+        "ineligible ordinary route performed private cold recording");
+    idle(model);
+  };
+  skipped(*recorded_model, 1);
+  auto &slot = recorded_model->prepare_child(1, false).slots[0];
+  const auto replay = slot.replay_mode; slot.replay_mode = q::g::ReplayMode::kCommands;
+  hyle::util::ScopeGuard restore_replay{[&]() noexcept { slot.replay_mode = replay; }};
+  skipped(*recorded_model, 0);
+  auto cpu_model = make_model(q::BackendKind::kCpu); skipped(*cpu_model, 0);
+  std::cout << "{\"case\":\"ordinary-decode-recording\",\"recorded_preparations\":" << recording.preparations
+      << ",\"captures\":" << recording.captures
+      << ",\"session_preparations\":" << session_recording.preparations
+      << ",\"session_captures\":" << session_recording.captures
+      << ",\"real_ids_ledger_epochs_images_equal\":true,\"recycled_state_zeroed\":true,\"empty_session_handoff\":true,"
+         "\"random_commands_cpu_skipped\":true,\"final_private_versions\":0}\n";
+}
+
 inline void pending_graph_pumps(const std::filesystem::path &input) {
   auto source = q::prepare_weight_source(input / "weights.tsv", false);
   const auto geometry = source.roles.geometry;
@@ -377,7 +514,10 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   cold_capacity_fallback(input, kind);
   random_r2_cancel(input, kind);
 #if defined(HYLE_COMPUTE_CUDA)
-  if (kind == q::BackendKind::kCuda) pending_graph_pumps(input);
+  if (kind == q::BackendKind::kCuda) {
+    ordinary_decode_recordings(input);
+    pending_graph_pumps(input);
+  }
 #endif
   std::cout << "{\"status\":\"PASS\",\"case\":\"ordinary-wiring\",\"backend\":\"" << h::backend_name(kind)
       << "\",\"cold_capacity_fallback_graphs\":2,\"fixed_fallback_owners\":true,\"full_state_rng_epoch_equal\":true,"

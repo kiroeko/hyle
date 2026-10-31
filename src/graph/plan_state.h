@@ -1177,6 +1177,16 @@ struct ExternalAliasEntry final {
   std::uint32_t same_instance_next = kNoNode;
 };
 
+// Metadata-only cold recording descriptions. The access-node identities are
+// owned by the same Invocation, never borrowed from an adapter's stack span.
+struct RecordingProjection final {
+  ValueId capacity{}, metadata{};
+  NodeId reader{};
+  compute::ProviderExtensionId capability{};
+  std::size_t access_begin = 0, access_count = 0;
+  compute::ConstTensorView capacity_view{}, indices_view{};
+};
+
 struct InvocationState final : util::RefCounted<InvocationState> {
   InvocationState(PlanState *plan_value, mem::PlannedBuffers workspace_value,
                   mem::AllocatorRef allocator_value) noexcept
@@ -1186,6 +1196,8 @@ struct InvocationState final : util::RefCounted<InvocationState> {
         external_alias_heads(allocator), external_alias_entries(allocator),
         external_alias_instances(allocator),
         native_values(allocator), native_inputs(allocator),
+        recording_inputs(allocator), recording_projections(allocator),
+        recording_access_nodes(allocator),
         queues(allocator), candidate_queues(allocator),
         workspace(std::move(workspace_value)), invocations(allocator),
         submission_inputs(allocator), submission_outputs(allocator),
@@ -1250,6 +1262,13 @@ struct InvocationState final : util::RefCounted<InvocationState> {
   // Port records borrow original step slots, which remain in this Invocation.
   RegionValues native_values;
   RegionValues native_inputs;
+  // No lease, Source, Completion or execution authority is stored here.
+  // recording_only is cleared only after ordinary guarded input withdrawal.
+  bool recording_only = false;
+  container::SmallVector<ValueId, 0, mem::AllocatorRef> recording_inputs;
+  container::SmallVector<RecordingProjection, 0, mem::AllocatorRef>
+      recording_projections;
+  container::SmallVector<NodeId, 0, mem::AllocatorRef> recording_access_nodes;
   // Actual Queue owners outlive provider slots, command captures and resource
   // payload cleanup. The second vector is reusable cold transaction scratch.
   container::SmallVector<compute::detail::QueueRef, 2, mem::AllocatorRef> queues;

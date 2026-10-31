@@ -14,6 +14,7 @@
 #include "hyle/compute/detail/indexed_copy_backend.h"
 #include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/transfer.h"
+#include "hyle/graph/detail/recording_access.h"
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/graph/slots.h"
 #include "hyle/mem/std_allocator.h"
@@ -1415,3 +1416,75 @@ Status take(Invocation &invocation, std::span<const TakeRequest> requests) noexc
 }
 
 } // namespace hyle::graph::slots
+
+namespace hyle::graph::detail {
+Result<RecordingStoreInputs> RecordingAccess::store_output(
+    Invocation &invocation, NodeId store) noexcept {
+  if (!active(invocation))
+    return std::unexpected(Status::FailedPrecondition(
+        "Store recording metadata requires its original recording-only producer"));
+  slots::Find selected{store};
+  HYLE_RETURN_IF_ERROR(RegionAccess::visit(invocation, store, &slots::find, &selected));
+  if (!selected.binding)
+    return std::unexpected(Status::Unimplemented("Store has no selected original binding"));
+  const auto *data = slots::detail::StoreBindingAccess::get(*selected.binding);
+  if (!data || data->owner != InvocationAccess::state(invocation) ||
+      selected.facts.store != data->facts.store || selected.facts.schema != data->facts.schema ||
+      selected.facts.destination_indices != data->facts.destination_indices ||
+      selected.facts.destination_count != data->facts.destination_count ||
+      selected.facts.resource != data->facts.resource ||
+      !slots::same_source(selected.facts.source, data->artifact_source))
+    return std::unexpected(Status::FailedPrecondition(
+        "Store recording metadata differs from its prepared original producer"));
+  // This existing proof checks the actual writer generations and exact
+  // private destination-ID slice. It creates no Source or pending ticket.
+  HYLE_ASSIGN_OR_RETURN(auto exported, selected.binding->export_pending());
+  const auto configuration = selected.binding->configuration();
+  if (!slots::same_carrier(exported.capacity, configuration.capacity) ||
+      !slots::same_carrier(exported.indices, configuration.destination_indices))
+    return std::unexpected(Status::InvalidArgument(
+        "Store recording metadata differs from its original pool and controls"));
+  // Copy only the configured views. The original prepared Store keeps its
+  // control carrier; this return grants no payload readiness or permission.
+  return RecordingStoreInputs{configuration.capacity, configuration.destination_indices};
+}
+
+Status RecordingAccess::bind_store(Invocation &invocation, NodeId store,
+    const RecordingStoreInputs &inputs) noexcept {
+  if (!active(invocation))
+    return Status::FailedPrecondition(
+        "Store recording metadata requires its original recording-only consumer");
+  slots::Find selected{store};
+  HYLE_RETURN_IF_ERROR(RegionAccess::visit(invocation, store, &slots::find, &selected));
+  if (!selected.binding)
+    return Status::Unimplemented("Store has no selected original binding");
+  const auto *data = slots::detail::StoreBindingAccess::get(*selected.binding);
+  if (!data || data->mode != slots::SourceMode::kImported || !data->facts.source.count ||
+      data->source_nodes.empty() || !data->source_capability.valid() || !data->controls ||
+      selected.facts.store != data->facts.store || selected.facts.schema != data->facts.schema ||
+      selected.facts.destination_indices != data->facts.destination_indices ||
+      selected.facts.destination_count != data->facts.destination_count ||
+      selected.facts.resource != data->facts.resource ||
+      !slots::same_source(selected.facts.source, data->artifact_source))
+    return Status::FailedPrecondition(
+        "Store recording consumer needs its exact cold imported preparation");
+  HYLE_ASSIGN_OR_RETURN(auto capacity_description, data->facts.schema.capacity_description());
+  const auto &indices = inputs.indices.description();
+  if (!inputs.capacity.valid() || !inputs.indices.valid() ||
+      inputs.capacity.description() != capacity_description ||
+      !indices.is_plain() || !indices.is_dense() ||
+      indices.data_type() != compute::DataType::kInt32 || indices.rank() != 1 ||
+      indices.dimensions()[0] <= 0 ||
+      static_cast<std::uint64_t>(indices.dimensions()[0]) != data->facts.source.count ||
+      inputs.capacity.storage().resource() != data->facts.resource ||
+      inputs.indices.storage().resource() != data->facts.resource)
+    return Status::InvalidArgument("Store recording pool or IDs differ from its imported geometry");
+  HYLE_ASSIGN_OR_RETURN(auto execution,
+      RegionAccess::execution_source(invocation.executable(), selected.lane));
+  HYLE_RETURN_IF_ERROR(execution.validate_resource(inputs.capacity.storage().resource()));
+  HYLE_RETURN_IF_ERROR(execution.validate_resource(inputs.indices.storage().resource()));
+  // The core validates the complete selected projection and descriptions.
+  // Normal slots::bind still supplies every actual destination writer.
+  return bind_projection(invocation, slots::detail::imported_projection(*data), inputs);
+}
+} // namespace hyle::graph::detail
