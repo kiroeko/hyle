@@ -145,6 +145,12 @@ add_test(NAME hyle_shared_export_hygiene_test
                  "${CMAKE_CURRENT_SOURCE_DIR}/tooling/shared_export_hygiene_test.py")
 set_tests_properties(hyle_shared_export_hygiene_test PROPERTIES
   LABELS "tooling;build;package")
+add_test(NAME hyle_simd_configure_generation_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${CMAKE_CURRENT_SOURCE_DIR}/tooling/simd_configure_generation_test.py"
+                 --cmake "${CMAKE_COMMAND}")
+set_tests_properties(hyle_simd_configure_generation_test PROPERTIES
+  LABELS "tooling;build;simd")
 
 # Consumer input grammar is host-only and does not need a model, Compute
 # product, native SDK, or GoogleTest linkage. Keep it in the normal build/test

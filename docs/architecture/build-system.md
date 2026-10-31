@@ -61,6 +61,10 @@ Core-only不链接无关profiler、测试runtime或GPU SDK。更高ISA的实现T
 目标架构使用compiler/显式目标选择归一化，不能用Visual Studio或macOS宿主架构代替实际target。
 一棵build目录对应一种原生目标/工具链，源码cache则是跨build资源。
 
+配置阶段的生成文件按内容更新：重复初始化不改写未变化的文件，不应因此触发SDK重编。
+SIMD生成器汇总同一目录内各target的实际输出，只回收已不再选用、且带有自身标记的旧wrapper；
+切换fat／exact目标时保留仍在使用的文件，不删除整个生成目录。
+
 父工程保有自己的编译器、flags、输出目录、sanitizer和包策略。
 第三方的generic options在局部作用域设置，不FORCE改写父cache；upstream不能遵守时，窄适配保存其真实边界，
 而非再建立通用配置语言。

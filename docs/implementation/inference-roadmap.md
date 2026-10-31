@@ -55,6 +55,8 @@ Graph可选原地复用已按完整根offset与required组模同余修复，保�
 普通dense确定输入的首组合并已[实现并有限检查](../evidence/correctness/inference-input-packet-2026-10-31.json)：原Phase／slot持有对齐packet和精确端口视图，token／position一次同步写；保原carrier／Source退休与冷预算回落，无新用户开关。正常shared增量、7项CPU／CUDA和真实2B两轮旧／新检查通过；可导出trace逐字节相同，未导出的完整KV／carry／RNG blob不作证明。默认R1稳态relay原本只传position一次，不能据本片签稳态提速；其它metadata／读回和真实跨turn捕获复用继续。
 较强设备用于底座成熟后的更广整模型验证，当前工作不以租设备、完整大模型或通用loader／server为前置。
 按10/31用户顺序调整，已启动的一次ordinary跟踪已自然结束，完整非计时报告一致；首轮离线提取失败从原SQLite补齐，无模型重跑。其余三臂未启动，独立优化暂缓。工程入口复审保留现有产品／后端选择：修复空内部factor缓存检测，68项脚本检查及真实离线util初始化／重复初始化／构建安装／独立消费者通过；入门文档合并重复说明。正在做和估计进度只在[看板](../developer/inference-progress.md)维护。
+后续实际模块构建又补齐测试归属与私有头路径，并修复重复配置删除未变SIMD输出导致的重编；
+配置稳定性、离线入口与文档的范围和失败历史统一见[工程入口检查](../evidence/correctness/inference-engineering-entry-2026-10-31.json)。
 
 ## 当前 goal 范围：全部 review 应对
 

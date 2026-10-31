@@ -1,0 +1,342 @@
+{
+  "schema": "hyle.finite-engineering-evidence.v1",
+  "date": "2026-10-31",
+  "status": "PASS_WITH_RETAINED_HISTORICAL_FAILURES_AND_LIMITS",
+  "scope": "Engineering entry scripts/docs, Windows offline util install/consumer, configure-time SIMD stability, existing test ownership and private include correction. No new model/GPU/performance claim.",
+  "entry_commit": "f3173816059d6023af3958d276b8521a77ed4b3e",
+  "historical_source_pins": [
+    {
+      "path": "scripts/hyle_support.py",
+      "commit": "f3173816059d6023af3958d276b8521a77ed4b3e",
+      "bytes": 33842,
+      "sha256": "9e3a8ab62e2201019d87fc72df63554e0ce2396e0de719b653a058c87f4accbe",
+      "archive_member": ".scratch/inference-simd-configure-dirty-20261031/entry-source-f31738160/scripts/hyle_support.py"
+    },
+    {
+      "path": "scripts/init.py",
+      "commit": "f3173816059d6023af3958d276b8521a77ed4b3e",
+      "bytes": 176,
+      "sha256": "94590fffde6112379cb996f28f4396768a7f898a352e9e5cd980cd1b6e7f5bb0",
+      "archive_member": ".scratch/inference-simd-configure-dirty-20261031/entry-source-f31738160/scripts/init.py"
+    },
+    {
+      "path": "scripts/build.py",
+      "commit": "f3173816059d6023af3958d276b8521a77ed4b3e",
+      "bytes": 190,
+      "sha256": "1401757cb988ca314638c2a62aef9b5e28d464776df292df5d6030ad916f9256",
+      "archive_member": ".scratch/inference-simd-configure-dirty-20261031/entry-source-f31738160/scripts/build.py"
+    },
+    {
+      "path": "scripts/test.py",
+      "commit": "f3173816059d6023af3958d276b8521a77ed4b3e",
+      "bytes": 169,
+      "sha256": "137b8d4418a3016e120a1370b03e2bf7fd4b8bd250fec8a54346b6e7074957ce",
+      "archive_member": ".scratch/inference-simd-configure-dirty-20261031/entry-source-f31738160/scripts/test.py"
+    },
+    {
+      "path": "tests/tooling/development_scripts_test.py",
+      "commit": "f3173816059d6023af3958d276b8521a77ed4b3e",
+      "bytes": 46791,
+      "sha256": "7816e3a1c4879a5213badc4e8d6e1bc154c677cb8b1d73558aed3023fd952a15",
+      "archive_member": ".scratch/inference-simd-configure-dirty-20261031/entry-source-f31738160/tests/tooling/development_scripts_test.py"
+    },
+    {
+      "path": "tests/tooling/bootstrap_environment_test.py",
+      "commit": "f3173816059d6023af3958d276b8521a77ed4b3e",
+      "bytes": 22733,
+      "sha256": "b9bde45df87c0abcc806a345c985b0b5d67131d63de05996515f7028fa6b83d6",
+      "archive_member": ".scratch/inference-simd-configure-dirty-20261031/entry-source-f31738160/tests/tooling/bootstrap_environment_test.py"
+    },
+    {
+      "path": "tests/tooling/bootstrap_resources_test.py",
+      "commit": "f3173816059d6023af3958d276b8521a77ed4b3e",
+      "bytes": 6594,
+      "sha256": "69e5cca400ed45088e07f7869f4d73fa02d698157efc1fe6b2bf2917c7a60ca9",
+      "archive_member": ".scratch/inference-simd-configure-dirty-20261031/entry-source-f31738160/tests/tooling/bootstrap_resources_test.py"
+    },
+    {
+      "path": "README.md",
+      "commit": "f3173816059d6023af3958d276b8521a77ed4b3e",
+      "bytes": 7333,
+      "sha256": "e6f6eacd5a9570438cfceda0ac7c5141460d9ae0d90fb0823848b62e5e741699",
+      "archive_member": ".scratch/inference-simd-configure-dirty-20261031/entry-source-f31738160/README.md"
+    },
+    {
+      "path": "scripts/README.md",
+      "commit": "f3173816059d6023af3958d276b8521a77ed4b3e",
+      "bytes": 2792,
+      "sha256": "527c1495642ada12a441f9e367ff015e98b14dcafa3481b39009ba68ea74c791",
+      "archive_member": ".scratch/inference-simd-configure-dirty-20261031/entry-source-f31738160/scripts/README.md"
+    },
+    {
+      "path": "docs/developer/setup/README.md",
+      "commit": "f3173816059d6023af3958d276b8521a77ed4b3e",
+      "bytes": 7860,
+      "sha256": "8fbf4fed3a705c1098a65c91021d52e09a51bb71cf4b1a17f5ac29bd47315a7b",
+      "archive_member": ".scratch/inference-simd-configure-dirty-20261031/entry-source-f31738160/docs/developer/setup/README.md"
+    },
+    {
+      "path": "docs/user/inference.md",
+      "commit": "f3173816059d6023af3958d276b8521a77ed4b3e",
+      "bytes": 17381,
+      "sha256": "439b75269f888c3e2d1385adebad8297e516390a99dc921bb40b5dd341b3826e",
+      "archive_member": ".scratch/inference-simd-configure-dirty-20261031/entry-source-f31738160/docs/user/inference.md"
+    }
+  ],
+  "current_engineering_source_pins": [
+    {
+      "path": "cmake/HyleDispatch.cmake",
+      "bytes": 28452,
+      "sha256": "efcb2f6e405aabeba22c43138d0435a9fdee1098f1799db4cda1a6ceab78f97f"
+    },
+    {
+      "path": "tests/CMakeLists.txt",
+      "bytes": 36780,
+      "sha256": "98eea221609d7b190c6b49211b0960bf55c15135794dcd9b8a12c14672226b11"
+    },
+    {
+      "path": "tests/tooling/simd_configure_generation_test.py",
+      "bytes": 8501,
+      "sha256": "578452a5fce5e821d6ee927a7148625b2133996a073117be351093daeddc0e18"
+    },
+    {
+      "path": "tests/compute_state/CMakeLists.txt",
+      "bytes": 3712,
+      "sha256": "9aaf7b7e5d25d362092859a78d6bda7097149924c74a27f0fcc16cde93f1c80c"
+    },
+    {
+      "path": "tests/graph/CMakeLists.txt",
+      "bytes": 2827,
+      "sha256": "08e5759eb23e962053fbf4212c47d4a7fef6f6529442b17040e6e5f9f47c8cdf"
+    }
+  ],
+  "checks": {
+    "script_unit_tests": {
+      "passed": 68,
+      "groups": [
+        41,
+        22,
+        5
+      ],
+      "expected_custom_layout_rejections": 2,
+      "expected_exit_code": 2,
+      "receipt": ".scratch/inference-engineering-review-20261031/final-checks.json"
+    },
+    "windows_offline_util": {
+      "passed_stages": [
+        "init",
+        "repeat-init",
+        "build-install",
+        "consumer-configure",
+        "consumer-build",
+        "consumer-run"
+      ],
+      "all_six_stage_exits_zero": true,
+      "components": "util",
+      "shared": true,
+      "offline": true,
+      "tests_enabled": false,
+      "selection_metadata_redirected_only": true,
+      "receipts": [
+        ".scratch/inference-engineering-review-20261031/real-entry-results.json",
+        ".scratch/inference-engineering-review-20261031/consumer-results.json"
+      ]
+    },
+    "docs": {
+      "actual_help_commands_passed": 5,
+      "help_names": [
+        "init",
+        "build",
+        "test",
+        "engine",
+        "prepare"
+      ],
+      "original_document_local_links": 69,
+      "examples_checked_against_real_help": 21,
+      "later_full_document_local_links": 643,
+      "link_counts_are_distinct_reviews_not_added": true,
+      "original_EOL_preserved": true,
+      "receipts": [
+        ".scratch/inference-engineering-docs-edit-20261031/verification.json",
+        ".scratch/inference-engineering-review-20261031/final-checks.json"
+      ],
+      "historical_note": "The earlier docs verification preceded final root wording; final f317 source pins are authoritative. The superseded uniform-CRLF result is retained as history, not current proof."
+    },
+    "simd_generator": {
+      "one_regression_test_configurations": 9,
+      "manual_full_passes": 2,
+      "registered_ctest_full_passes": 1,
+      "same_configuration_bytes_and_mtime_stable": true,
+      "fat_exact_roundtrip": true,
+      "multi_target_own_target_union": true,
+      "removed_kernels_reclaimed": true,
+      "unowned_outputs_preserved": true,
+      "current_normal_generated_inputs_exact": 29,
+      "old_code_red": {
+        "actual_configure_exits": [
+          0,
+          0
+        ],
+        "python_exit": 1,
+        "same_generated_hashes": 5,
+        "changed_generated_mtimes": 5,
+        "unrelated_outputs_deleted": [
+          "keep.txt",
+          "foreign/foreign_scalar.cc"
+        ],
+        "only_test_change_was_included_module": true
+      },
+      "details": ".scratch/inference-simd-configure-dirty-20261031/engineering-evidence-draft.json"
+    },
+    "registered_ctest": {
+      "exit_code": 0,
+      "passed": 2,
+      "failed": 0,
+      "names": [
+        "hyle_engine_components_test",
+        "hyle_simd_configure_generation_test"
+      ],
+      "simd_labels": [
+        "tooling",
+        "build",
+        "simd"
+      ],
+      "explicit_actual_CMAKE_COMMAND": true,
+      "new_registration_switch": false,
+      "existing_gate": "HYLE_BUILD_TESTS",
+      "receipt": ".scratch/inference-kimi-component-boundary-20261031/validation/control/module-ctest/attempt1/process.json"
+    },
+    "test_entry_repairs": [
+      {
+        "file": "tests/compute_state/CMakeLists.txt",
+        "receipt": {
+          "path": ".scratch/inference-kimi-component-boundary-20261031/validation/approved-consumer-state-owner.json",
+          "bytes": 366,
+          "sha256": "5146bb0bdc413c970beb568c4e9fe5e61800cb7d68c24dfd26a2989ad7590bf4"
+        },
+        "old_failure": {
+          "path": ".scratch/inference-kimi-component-boundary-20261031/validation/control/module-configure/attempt1/stderr.log",
+          "bytes": 797,
+          "sha256": "bb158a57d2a7a4faceba25d8d7f263fc804c3e8e51678d368dbc79d64adfd29c"
+        },
+        "fix": "Set HYLE_TEST_MODULE compute_state on existing native_fault_consumer; aggregate dependency and CTest already existed.",
+        "actual_after": "module-configure attempt2 exit0; no new backend or test scope."
+      },
+      {
+        "file": "tests/graph/CMakeLists.txt",
+        "receipt": {
+          "path": ".scratch/inference-kimi-component-boundary-20261031/validation/approved-consumer-graph-private-include.json",
+          "bytes": 340,
+          "sha256": "4ce2954d47282ff0a85342393b346dee8428c2f40c2f69e3418636b2770ddc69"
+        },
+        "before_commands": {
+          "path": ".scratch/inference-captured-graph-copy-20261031/normal-test-commands.json",
+          "bytes": 36292,
+          "sha256": "8d2062b9136e8d1c2d875dd54614a661eabda54e2b001cbe1253a2df39e3914d"
+        },
+        "fix": "Add PRIVATE src/graph beside existing src/compute for formal hyle_graph_executable_test; bare private includes otherwise unresolved.",
+        "actual_after": "module-configure attempt3 exit0; successful configure does not itself prove Graph test CXX/link/native."
+      }
+    ]
+  },
+  "actual_cost": {
+    "receipt": {
+      "path": ".scratch/inference-kimi-component-boundary-20261031/validation/control/build/attempt1/result.json",
+      "bytes": 6364,
+      "sha256": "35bd8501c9670786962f3c9d73f8ee8361b891d39abf0c3e47b9988505b74483"
+    },
+    "simd_cxx_actions": 38,
+    "other_graph_sdk_cxx_actions": 2,
+    "kimi_consumer_cxx_actions": 4,
+    "total_cxx_actions": 44,
+    "cuda_actions": 0,
+    "whole_mixed_process_elapsed_seconds": 49.5,
+    "whole_mixed_process_exit_code": 2,
+    "whole_process_failure": "Kimi test helper ADD_FAILURE identifier missing; separate retained CXX failure, not SIMD compile failure.",
+    "isolated_simd_wall_seconds": null,
+    "subsequent_builds": [
+      {
+        "receipt": {
+          "path": ".scratch/inference-kimi-component-boundary-20261031/validation/control/build/attempt2/result.json",
+          "bytes": 1313,
+          "sha256": "9f1a689465759a5a622e518812caecb2b5c96317e0bf7d2708f804d26434d057"
+        },
+        "simd_cxx_actions": 0,
+        "total_cxx_actions": 1
+      },
+      {
+        "receipt": {
+          "path": ".scratch/inference-kimi-component-boundary-20261031/validation/control/build/attempt3/result.json",
+          "bytes": 1326,
+          "sha256": "ea4aa019c27f0b3fe592012ef30ab5a9f61fc10ab8f309c35d70c0ef4c724c19"
+        },
+        "simd_cxx_actions": 0,
+        "total_cxx_actions": 1
+      },
+      {
+        "receipt": {
+          "path": ".scratch/inference-kimi-component-boundary-20261031/validation/control/module-build/attempt1/result.json",
+          "bytes": 2102,
+          "sha256": "674afb78579355aa58ed21a8e3da1113cbe3e8718e2ca7004151d833e222c1d9"
+        },
+        "simd_cxx_actions": 0,
+        "total_cxx_actions": 6
+      }
+    ]
+  },
+  "retained_failures": [
+    {
+      "kind": "expected old generator red",
+      "python_exit": 1,
+      "new_product_failure": false
+    },
+    {
+      "kind": "initial SIMD Python regression Windows separator KeyError",
+      "underlying_configure_exits": [
+        0,
+        0,
+        0
+      ],
+      "limit": "History note preserved; no independent initial wrapper process/stderr receipt was saved."
+    },
+    {
+      "kind": "mixed normal build attempt1 Kimi ADD_FAILURE compile error",
+      "exit_code": 2,
+      "scope": "Not a SIMD compile failure; mixed build receipt retained. Kimi correctness is outside this engineering bundle."
+    },
+    {
+      "kind": "module configure attempt1 missing native_fault_consumer owner",
+      "exit_code": 1,
+      "fixed_by": "Existing helper HYLE_TEST_MODULE metadata only; aggregate and CTest already existed."
+    },
+    {
+      "kind": "offline evidence preparation assumption about missing old outputs.json",
+      "exit_code": 1,
+      "configure_build_native_reruns": 0,
+      "receipt": ".scratch/inference-simd-configure-dirty-20261031/engineering-draft-preparation-attempt1.json"
+    },
+    {
+      "kind": "earlier entry empty-factor-cache regression red and first edit assertion",
+      "receipt": ".scratch/inference-engineering-review-20261031/final-checks.json",
+      "limit": "Retained original handoff/history statement; no separate raw old-red process receipt supplied, so no invented process count."
+    }
+  ],
+  "limits": [
+    "Windows installed tools and selected util closure only; not all products, platforms, build/install combinations or SIMD numerical kernels.",
+    "LANGUAGES NONE fixtures prove actual CMake output generation and cleanup, not CXX/ISA execution.",
+    "38 already-dirty SIMD CXX actions were genuinely paid once; old compiled generated-content pins were unavailable, and old mtimes were never restored.",
+    "The 49.5-second mixed failed process includes 38 SIMD, 2 Graph and 4 Kimi CXX actions; no isolated SIMD wall time exists.",
+    "Repeated output hash+mtime checks prove the inspected configurations, not every future generator use.",
+    "The formal Graph test private-include fix was configured successfully; Graph test compile/link/native validation remains in its own evidence batch.",
+    "Original superseded receipts remain historical. No util-build/install tree, SDK, models, DLLs, objects, binaries or SQLite is archived.",
+    "This packaging step ran no configure, CXX, link, native model, GPU or download."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-engineering-entry-2026-10-31.zip",
+    "bytes": 317604,
+    "sha256": "7c6130074ba1421e77499f99e44a234647fc7755634227dba3658f49bde5a738",
+    "members": 304,
+    "manifest_sha256": "05ac2cbd29734d7f073e3d3ad08b9a4668f737eaf3465804192163367e067f92",
+    "readback": "ALL_MEMBER_BYTES_SHA256_AND_CRC_PASS"
+  }
+}

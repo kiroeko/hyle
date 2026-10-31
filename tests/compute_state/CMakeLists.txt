@@ -18,6 +18,8 @@ if(_HYLE_COMPUTE_HAVE_VULKAN AND TARGET hyle_compute_route_vulkan)
 endif()
 if(_state_native_copy_dependencies)
   add_executable(hyle_compute_state_native_fault_consumer native_fault_consumer.cc)
+  set_target_properties(hyle_compute_state_native_fault_consumer PROPERTIES
+    HYLE_TEST_MODULE compute_state)
   target_compile_features(hyle_compute_state_native_fault_consumer PRIVATE cxx_std_23)
   target_link_libraries(hyle_compute_state_native_fault_consumer PRIVATE
     hyle_compute_state ${_state_native_copy_dependencies})
