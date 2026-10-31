@@ -604,7 +604,17 @@ struct ColdResources final {
     for (const auto &entry : sampling_configurations) if (entry.get() == value) return entry->index;
     throw std::runtime_error("sampling configuration belongs to another model");
   }
+  bool pending_readbacks() const noexcept {
+    for (const auto *cache : {&phases, &probe_phases})
+      for (const auto &[shape, phase] : *cache) {
+        (void)shape;
+        for (const auto &slot : phase->slots.slots())
+          if (slot.data.small_results.in_flight()) return true;
+      }
+    return false;
+  }
   bool pending() const noexcept {
+    if (pending_readbacks()) return true;
     for (const auto *cache : {&phases, &probe_phases})
       for (const auto &[shape, phase] : *cache) {
         (void)shape;
@@ -621,6 +631,10 @@ struct ColdResources final {
     });
   }
   void release_invocation_roots() noexcept {
+    // Releasing even an idle Graph can destroy CUDA workspace/capture and
+    // synchronize its Context. Preserve every root while an independent
+    // result copy still reads that Context; its original retention owns us.
+    if (pending_readbacks()) return;
     // The accepted attachment is the only temporary scope->Graph->scope
     // cycle. Drop these application roots at handoff; the original native
     // Completion still retains its Graph until actual retirement.
@@ -643,9 +657,23 @@ struct ColdResources final {
       g::Invocation empty;
       status = wait ? retirement_backend->drain_retired(empty) : retirement_backend->collect_retired();
     }
+    // A copy may retain completed Graph outputs after the host Model has
+    // handed off its endpoint. Recover that original copy first; neither an
+    // idle Graph nor a failed copy observation authorizes early retirement.
+    bool copies_retired = true;
+    for (auto *cache : {&phases, &probe_phases})
+      for (auto &[shape, phase] : *cache) {
+        (void)shape;
+        for (auto &slot : phase->slots.slots()) {
+          const auto observed = slot.data.small_results.recover(wait);
+          copies_retired = copies_retired && observed.retired;
+          inference::record_retirement_status(status, observed.status);
+        }
+      }
+    if (retirement_backend && copies_retired && !pending_readbacks()) release_invocation_roots();
     // A pending original guard is not an observation failure. Preserve actual
     // backend errors independently; neither fact substitutes for the other.
-    return {!pending(), status};
+    return {copies_retired && !pending(), status};
   }
 };
 
@@ -998,11 +1026,12 @@ public:
     (void)abort_episode();
     // Attempt actual native retirement before detaching application links.
     // Scheduler idleness alone does not prove native/completion retirement.
-    for (auto *cache : {&phases, &probe_phases})
-      for (auto &[tokens, phase] : *cache) {
-        (void)tokens;
-        (void)phase->slots.retire_all(execution);
-      }
+    if (!resources_->pending_readbacks())
+      for (auto *cache : {&phases, &probe_phases})
+        for (auto &[tokens, phase] : *cache) {
+          (void)tokens;
+          (void)phase->slots.retire_all(execution);
+        }
     if (workers) workers->shutdown();
     if (scheduler) scheduler->drain();
     (void)abort_episode();
@@ -1016,6 +1045,14 @@ public:
       session->pending = nullptr;
       if (active_step) inference::record_retirement_status(session->retirement_status, active_step->execution.terminal);
     }
+    // Move the original copy observations to their native reaper at handoff.
+    // Their cold retention nodes remain queryable and retain the source scope
+    // until actual retirement, even without an escaped Session to poll it.
+    for (auto *cache : {&phases, &probe_phases})
+      for (auto &[shape, phase] : *cache) {
+        (void)shape;
+        for (auto &slot : phase->slots.slots()) slot.data.small_results.abandon_observation();
+      }
     resources_->release_invocation_roots();
     // Teardown never promotes an unpublished successor back into escaped
     // Sessions whose Model link has already been withdrawn above.
@@ -2364,6 +2401,11 @@ public:
   inference::RetirementObservation abort_episode() noexcept {
     discard_decode_ahead();
     if (!active_step) return {true, {}};
+    if (active_step->phase) {
+      const auto copied = active_step->phase->slots[active_step->state_slot].data.small_results.recover();
+      inference::record_retirement_status(active_step->execution.terminal, copied.status);
+      if (!copied.retired) return {false, active_step->execution.terminal};
+    }
     if (successor_step && successor_step->execution.run && successor_step->phase) {
       // Capture destruction for an unsubmitted B can synchronize its native
       // context. Keep the original predecessor gate before even draining B.
@@ -3304,8 +3346,30 @@ public:
               check(program_slot.io.read(run, io.draft_id, std::as_writable_bytes(std::span(io.draft_ids))));
               for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].draft_token = io.draft_ids[j];
             }
+            const bool batched_small_results = io.small_results.valid();
+            if (batched_small_results) {
+              const auto *valid = take(program_slot.io.readback(io.sampling_valid));
+              const bool float_predicates = valid->facts.description.data_type() == Type::kFloat32;
+              const std::array destinations{
+                  float_predicates ? std::as_writable_bytes(std::span(io.sampling_scratch))
+                      : std::as_writable_bytes(std::span(io.sampling_valid_values)),
+                  std::as_writable_bytes(next_ids)};
+              check(io.small_results.read(run, destinations, resources_));
+              // Preserve the original predicate's exact Bool/F32 validation;
+              // no cast or arithmetic repacks invalid values into success.
+              for (std::size_t j = 0; j < io.sampling_valid_values.size(); ++j) {
+                if (float_predicates) {
+                  const auto value = io.sampling_scratch[j];
+                  if (value != 0 && value != 1)
+                    throw inference::EvaluationFailure(hyle::Status::InvalidArgument("host predicate is not exact F32 zero or one"));
+                  io.sampling_valid_values[j] = static_cast<std::uint8_t>(value == 1);
+                } else if (io.sampling_valid_values[j] > 1)
+                  throw inference::EvaluationFailure(hyle::Status::InvalidArgument("host predicate is not exact Bool zero or one"));
+              }
+            }
             if (phase.sampling_valid_port && !state_only && phase.family->role != GraphRole::kVerify) {
-              check(take(program_slot.io.readback(io.sampling_valid))->predicates(run, io.sampling_valid_values, io.sampling_scratch));
+              if (!batched_small_results)
+                check(take(program_slot.io.readback(io.sampling_valid))->predicates(run, io.sampling_valid_values, io.sampling_scratch));
               auto bad = std::ranges::find_if(io.sampling_valid_values, [](auto value) { return value != 1; });
               if (step.discard_stopped_members)
                 while (bad != io.sampling_valid_values.end() &&
@@ -3338,7 +3402,8 @@ public:
               std::ranges::fill(next_ids, -1);
               select(std::span<const std::int32_t>(next_ids), step, next_ids);
             } else {
-              check(program_slot.io.read(run, io.next_id, std::as_writable_bytes(next_ids)));
+              if (!batched_small_results)
+                check(program_slot.io.read(run, io.next_id, std::as_writable_bytes(next_ids)));
               select(std::span<const std::int32_t>(next_ids), step, next_ids);
             }
             for (std::size_t j = 0; j < outputs.size(); ++j) {

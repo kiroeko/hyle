@@ -412,6 +412,15 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
       if (has_mtp(role)) definition.state_sources.push_back({port.store, port.gather});
     }
     definition.hidden_port = last;
+    // Private View outputs cannot lend an independent storage lease to a
+    // transfer. Materialize only ordinary CUDA host-consumed small results;
+    // their original types/values stay exact and Graph owns every Copy.
+    const bool caller_small_results = role == GraphRole::kText && !diagnostic &&
+        execution.kind() == inference::BackendKind::kCuda && !execution.has_cpu_assist();
+    const auto publish_valid = [&] {
+      if (caller_small_results) definition.sampling_valid_port = r.copy(definition.sampling_valid_port);
+      r.publish(definition.sampling_valid_port);
+    };
     const auto bonus_logits_inputs = [&](std::size_t request) {
       auto inputs = logits_inputs[request];
       if (!selected_sampler.modifiers.history.empty())
@@ -428,7 +437,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         definition.id_port = r.reshape(r.one(c::sampling_ops::categorical(),
             {p.log_probabilities, definition.sampling_identity_port}), {batch, f(1)});
         definition.sampling_valid_port = r.host_predicate(r.reshape(p.valid, {batch}));
-        r.publish(definition.sampling_valid_port);
+        publish_valid();
       } else if (!selected_sampler.enabled) {
         std::vector<V> ids, valid;
         V false_value;
@@ -454,7 +463,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
             r.dense_spec(Type::kInt32, {drafts_token(role) ? packed : batch})),
             {drafts_token(role) ? packed : batch, f(1)});
         definition.sampling_valid_port = r.host_predicate(r.concat(valid, 0, r.dense_spec(Type::kBool, {batch})));
-        r.publish(definition.sampling_valid_port);
+        publish_valid();
       } else {
         std::vector<V> ids, valid, accepted;
         for (std::size_t request = 0; request < requests; ++request) {
@@ -479,7 +488,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         definition.id_port = r.reshape(r.concat(ids, 0, r.dense_spec(Type::kInt32,
             {f(static_cast<std::int64_t>(ids.size()))})), {verifies_prefix(role) ? packed : batch, f(1)});
         definition.sampling_valid_port = r.host_predicate(r.concat(valid, 0, r.dense_spec(Type::kBool, {batch})));
-        r.publish(definition.sampling_valid_port);
+        publish_valid();
         if (drafts_token(role)) {
           definition.sampling_accept_port = r.host_predicate(r.concat(accepted, 0, r.dense_spec(Type::kBool, {batch})));
           r.publish(definition.sampling_accept_port);
@@ -487,7 +496,10 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
       }
     }
     r.publish(definition.hidden_port);
-    if (completion == TextCompletion::kEmitNext) { r.publish(definition.logits_port); r.publish(definition.id_port); }
+    if (completion == TextCompletion::kEmitNext) {
+      if (caller_small_results && definition.sampling_valid_port) definition.id_port = r.copy(definition.id_port);
+      r.publish(definition.logits_port); r.publish(definition.id_port);
+    }
     if (drafts_token(role) && requests == 1 && packing == RowPacking::kRectangular &&
         !selected_sampler.enabled && selected_sampler.modifiers.empty() &&
         prepared.emit_successor) {

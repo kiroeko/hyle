@@ -126,6 +126,14 @@ struct StepState final {
     phase = nullptr;
   }
   hyle::Result<bool> try_abort() noexcept {
+    if (phase) {
+      // An unsuccessful readback wait is not proof that its native copy has
+      // stopped reading Graph outputs. Release those readers only after the
+      // original copy update really retires, before recovering this Graph.
+      const auto retired = phase->slots[state_slot].data.small_results.recover();
+      inference::record_retirement_status(execution.terminal, retired.status);
+      if (!retired.retired) return false;
+    }
     if (execution.unsubmitted_reuse_declined()) {
       if (submitted || !phase) {
         inference::record_retirement_status(execution.terminal,

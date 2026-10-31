@@ -12,6 +12,7 @@
 #include "family_factory.h"
 #include "input_packet.h"
 #include "../../inference/program_slots.h"
+#include "../../inference/readback_batch.h"
 #include "hyle/graph/batch.h"
 
 namespace qwen35 {
@@ -45,6 +46,8 @@ struct PhaseIo final {
   std::vector<std::int32_t> draft_hidden_indices, draft_token_indices;
   inference::ProgramIo::Readback next_id, draft_id, sampling_valid, sampling_accept;
   inference::ProgramIo::Readback successor_token, successor_catchup;
+  inference::PreparedReadbackBatch small_results;
+  hyle::Status small_results_preparation;
   std::vector<std::uint8_t> sampling_valid_values, sampling_accept_values;
   std::vector<float> sampling_scratch;
   std::vector<std::int32_t> draft_ids, prefix_candidates;
@@ -79,7 +82,7 @@ struct PhasePrepareFacts final {
   std::array<g::ReplayMode, execution_slot_count> replay_modes{};
 };
 struct PhaseEnvironment final {
-  const inference::Backend &execution;
+  inference::Backend &execution;
   const ModelGeometry &geometry;
   std::span<const StateSchema> recurrent_descriptions;
   const c::ResourceBudget &allocation_budget;

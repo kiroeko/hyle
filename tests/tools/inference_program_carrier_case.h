@@ -125,7 +125,12 @@ inline std::size_t finish_source_chain(i::Backend &backend, const g::CompiledGra
   const std::array ordinary_second{second};
   for (std::size_t index = 3; index-- > 1;) {
     auto &episode = *episodes[index];
-    q::check(episode.finish_success(0, 0, ordinary_second,
+    q::check(episode.wait());
+    require(q::take(episode.poll()) == c::CompletionPoll::kComplete &&
+        q::take(episode.poll()) == c::CompletionPoll::kComplete && !completed[index] &&
+        episode.incoming && episode.incoming->bound && episode.predecessor_episode == episodes[index - 1],
+        "repeated Source completion observation invoked callbacks or withdrew its original consumer owners");
+    require(q::take(episode.try_finish_success(0, 0, ordinary_second,
         [&]() noexcept { ++completed[index]; },
         [&]() -> hyle::Status {
           require(completed[index] == 1 && !interpreted[index], "Source output observation preceded completion");
@@ -148,13 +153,13 @@ inline std::size_t finish_source_chain(i::Backend &backend, const g::CompiledGra
                 "middle stage interpretation preceded its own producer export detach");
           }
           ++interpreted[index]; return {};
-        }));
+        })), "ready Source stage did not finish through its original nonblocking observation");
     require(!episode.incoming && !episode.predecessor_episode && carriers[index].initialized(),
         "successful Source stage lost its original carrier or retained incoming readers");
   }
   bool original_exception = false;
   try {
-    (void)episodes[0]->finish_success(0, 0, std::array{first, second},
+    (void)episodes[0]->try_finish_success(0, 0, std::array{first, second},
         [&]() noexcept { ++completed[0]; },
         [&]() -> hyle::Status {
           retained[0] = q::take(io[0].retain(*episodes[0]->run, outputs[0])); ++observed[0];
@@ -418,7 +423,10 @@ inline int run(q::BackendKind kind) {
   const auto complete_a = [&]() -> hyle::Status { ++completions[0]; return {}; };
   const auto no_completion = a_episode.finish_success(0, 0, ordinary_inputs,
       on_a_completion, observe_a, complete_a);
-  require(no_completion.IsFailedPrecondition() && !completion_callbacks[0] && !observations[0] && !completions[0],
+  const auto no_try_completion = a_episode.try_finish_success(0, 0, ordinary_inputs,
+      on_a_completion, observe_a, complete_a);
+  require(no_completion.IsFailedPrecondition() && !no_try_completion &&
+      no_try_completion.error().IsFailedPrecondition() && !completion_callbacks[0] && !observations[0] && !completions[0],
       "default success without a Completion entered stage callbacks");
   std::weak_ptr<Scope> a_lifetime = a_scope, b_lifetime = b_scope;
   auto a_done = q::take(a.submit(a_scope)); a_scope.reset();
@@ -434,11 +442,26 @@ inline int run(q::BackendKind kind) {
   a_episode.completion = std::move(a_done); b_episode.completion = std::move(b_done);
   const auto outside_appends = a_episode.finish_success(1, 0, ordinary_inputs,
       on_a_completion, observe_a, complete_a);
+  const auto outside_try_appends = a_episode.try_finish_success(1, 0, ordinary_inputs,
+      on_a_completion, observe_a, complete_a);
   require(outside_appends.IsOutOfRange() && a_episode.completion.valid() &&
+      !outside_try_appends && outside_try_appends.error().IsOutOfRange() &&
       !completion_callbacks[0] && !observations[0] && !completions[0],
       "invalid stage append range waited or entered a model callback");
-  const auto observation_refused = a_episode.finish_success(0, 0, ordinary_inputs,
+  q::check(a_episode.wait());
+  require(q::take(a_episode.poll()) == c::CompletionPoll::kComplete &&
+      q::take(a_episode.poll()) == c::CompletionPoll::kComplete && a_episode.completion.valid() &&
+      !completion_callbacks[0] && !observations[0] && !completions[0],
+      "repeated original Completion observation invoked stage callbacks or discarded its owner");
+  const auto try_observation_refused = a_episode.try_finish_success(0, 0, ordinary_inputs,
       on_a_completion, observe_a, complete_a);
+  require(!try_observation_refused, "nonblocking finish swallowed its original observer refusal");
+  const auto observation_refused = try_observation_refused.error();
+  const auto repeated_try_refusal = a_episode.try_finish_success(0, 0, ordinary_inputs,
+      on_a_completion, observe_a, complete_a);
+  require(!repeated_try_refusal && repeated_try_refusal.error().IsFailedPrecondition() &&
+      completion_callbacks[0] == 1 && observations[0] == 1 && !completions[0],
+      "nonblocking finish retried callbacks after its original partial failure");
   const auto completion_refused = b_episode.finish_success(0, 0, ordinary_inputs,
       [&]() noexcept { ++completion_callbacks[1]; },
       [&]() -> hyle::Status {
@@ -467,6 +490,58 @@ inline int run(q::BackendKind kind) {
   require(actual_a == std::array<float, 4>{11, 22, 33, 44} && actual_b == std::array<float, 4>{6, 9, 14, 19},
       "two native carriers mixed fixed inputs or their prepared readbacks");
   a_done = {}; b_done = {};
+  // Reuse B's actual bound inputs and original Invocation for one successful
+  // try-finish. Natural CUDA scheduling may already have completed this tiny
+  // graph; only a real pending observation exercises the no-callback branch.
+  auto try_scope = std::make_shared<Scope>();
+  std::weak_ptr<Scope> try_lifetime = try_scope;
+  std::size_t try_admission = 1, try_pending_observations = 0;
+  std::array<std::size_t, 3> try_callbacks{};
+  b_episode.candidate_admission = &try_admission;
+  q::check(b_episode.prepare_replay({.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
+  q::check(b_episode.submit(try_scope)); try_scope.reset();
+  const auto on_try_completion = [&]() noexcept { ++try_callbacks[0]; };
+  const auto observe_try = [&]() -> hyle::Status {
+    require(try_callbacks == std::array<std::size_t, 3>{1, 0, 0} && try_admission == 1,
+        "nonblocking output observation preceded completion or released original admission");
+    q::check(b_io.read(*b_run, b_readback, std::as_writable_bytes(std::span(actual_b))));
+    ++try_callbacks[1]; return {};
+  };
+  const auto complete_try = [&]() -> hyle::Status {
+    require(try_callbacks == std::array<std::size_t, 3>{1, 1, 0},
+        "nonblocking completion preceded its original output observation");
+    ++try_callbacks[2]; return {};
+  };
+  const auto try_finish = [&] {
+    return q::take(b_episode.try_finish_success(0, 0, ordinary_inputs,
+        on_try_completion, observe_try, complete_try));
+  };
+  bool try_finished = try_finish();
+  if (!try_finished) {
+    ++try_pending_observations;
+    require(try_callbacks == std::array<std::size_t, 3>{} && try_admission == 1 &&
+        !try_lifetime.expired() && b_episode.completion.valid() &&
+        b_episode.run == b_run && b_episode.carrier == &b,
+        "pending nonblocking finish invoked callbacks or released its original execution owners");
+    try_finished = try_finish();
+    if (!try_finished) {
+      ++try_pending_observations;
+      require(try_callbacks == std::array<std::size_t, 3>{} && try_admission == 1 &&
+          !try_lifetime.expired() && b_episode.completion.valid(),
+          "repeated pending finish changed callbacks, admission or its original retained owner");
+      q::check(b_episode.wait());
+      try_finished = try_finish();
+    }
+  }
+  const auto repeated_try_finish = b_episode.try_finish_success(0, 0, ordinary_inputs,
+      on_try_completion, observe_try, complete_try);
+  require(try_finished && !repeated_try_finish && repeated_try_finish.error().IsFailedPrecondition() &&
+      try_callbacks == std::array<std::size_t, 3>{1, 1, 1} && !b_episode.has_completion() &&
+      try_admission == 1 && try_lifetime.expired() && b.retired() &&
+      actual_b == std::array<float, 4>{6, 9, 14, 19},
+      "nonblocking finish repeated a callback, lost output values or changed original retirement/admission");
+  b_episode.release_admission();
+  require(!try_admission, "nonblocking finish lost its model-owned admission release");
   // Keep the actual Graph output pin. Carrier metadata grants no extra right
   // to unbind the original Graph while an observation still owns its slot.
   auto pinned = q::take(a_run->result(output)); const std::array release{first};
@@ -502,7 +577,7 @@ inline int run(q::BackendKind kind) {
       "irreversible slot-group handoff evaluated a retired carrier's initialization recipe");
   const auto source_submissions = finish_source_chain(backend, compiled, graph, first, second, output, description);
   std::cout << "{\"status\":\"PASS\",\"case\":\"program-carrier\",\"backend\":\"" << qwen_host_image_case::backend_name(kind)
-      << "\",\"models\":0,\"native_submissions\":" << 2 + source_submissions << ",\"carriers\":" << 2 + source_submissions
+      << "\",\"models\":0,\"native_submissions\":" << 3 + source_submissions << ",\"carriers\":" << 2 + source_submissions
       << ",\"cold_failure_atomic\":true,"
          "\"independent_fixed_bindings\":true,\"real_completion_retirement\":true,\"GraphOutput_pin_preserved\":true,"
          "\"typed_io_installation\":true,\"common_slot_inventory\":true,\"group_cold_failure_unpublished\":true,"
@@ -513,7 +588,10 @@ inline int run(q::BackendKind kind) {
          "\"actual_stride_rejected_original_permission_preserved\":true,"
          "\"finish_no_completion_rejected_before_callbacks\":true,\"finish_append_range_preflight\":true,"
          "\"finish_completion_observe_complete_order\":true,\"finish_callback_status_resources_preserved\":true,"
-         "\"finish_source_chain_submissions\":" << source_submissions
+         "\"try_finish_original_completion_reobserved\":true,\"try_finish_preflight_before_observation\":true,"
+         "\"try_finish_callback_failure_preserved\":true,\"try_finish_callback_order\":true,"
+         "\"try_finish_once_without_success_cache\":true,\"try_finish_pending_observations\":" << try_pending_observations << ','
+      << "\"finish_source_chain_submissions\":" << source_submissions
       << ",\"finish_middle_incoming_before_own_detach_rejected\":" << (source_submissions ? "true" : "null")
       << ",\"finish_middle_detach_then_release_succeeded\":" << (source_submissions ? "true" : "null")
       << ",\"finish_model_exception_preserved_and_recovered\":" << (source_submissions ? "true" : "null")

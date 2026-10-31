@@ -158,7 +158,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind = q::Back
   for (const auto &[key, family] : model.families)
     require(family->role == q::GraphRole::kText && family->sampling == &model.sampling_configuration(key.sampling_index),
         "family sampling binding differs from its cold key");
-  std::size_t batched_families = 0, flat_identity_phases = 0;
+  std::size_t batched_families = 0, flat_identity_phases = 0, batched_readback_phases = 0;
   for (const auto &[key, family] : model.families)
     if (key.requests == 2 && key.sampling_index == 3) {
       require(family->batched_text_sampling, "unfiltered R2 family did not select the batched identity contract");
@@ -174,6 +174,23 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind = q::Back
           identities.description().dimensions()[1] == 4,
           "unfiltered R2 phase identity storage is not the real [R,4] port");
       ++flat_identity_phases;
+      if (kind == q::BackendKind::kCuda && !phase->imported_sources) {
+        if (!io.small_results.valid()) {
+          const auto *valid = q::take(phase->slots[q::Model::slot_index].io.readback(io.sampling_valid));
+          const auto *id = q::take(phase->slots[q::Model::slot_index].io.readback(io.next_id));
+          std::cerr << "small_result_qualification=" << io.small_results_preparation.message()
+              << " valid_ownership=" << static_cast<int>(valid->facts.ownership)
+              << " id_ownership=" << static_cast<int>(id->facts.ownership) << '\n';
+        }
+        require(io.small_results.valid() && !io.small_results.in_flight(),
+            "ordinary CUDA sampling did not retain its retired cold readback batch");
+        const auto copied = io.small_results.report();
+        if (copied.phase_completions) {
+          require(copied.copies == 2 && copied.active_copies == 2 && copied.phases == 1 && copied.host_waits <= 1,
+              "ordinary result pair did not use one original CopyBatch phase/wait");
+          ++batched_readback_phases;
+        }
+      } else require(!io.small_results.valid(), "CPU or imported-source sampling replaced its original direct readback");
       if (key.tokens == 1) {
         std::array<std::uint32_t, 8> actual;
         q::check(model.execution.read(identities.storage(), std::as_writable_bytes(std::span(actual))));
@@ -187,8 +204,10 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind = q::Back
       }
     }
   require(batched_families && flat_identity_phases, "tiny Model never entered actual unfiltered R2 sampling");
+  require(kind != q::BackendKind::kCuda || batched_readback_phases,
+      "ordinary CUDA consumer never executed a batched result copy");
   std::cout << "batched_text_sampling=true flat_identity_rows=2 flat_identity_words=4 families="
-      << batched_families << " phases=" << flat_identity_phases << '\n';
+      << batched_families << " phases=" << flat_identity_phases << " readback_batch_phases=" << batched_readback_phases << '\n';
   preflight(model); boundaries(model, prompt, suffix);
   std::cout << "{\"status\":\"PASS\",\"case\":\"sampling-policies\",\"ordinary\":true,\"same_model\":true,"
       "\"configurations\":4,\"requests\":6,\"turns\":12,\"N\":2,\"R\":2,\"partial_prefix_input_cursor\":true,\"quality_claim\":false,\"performance_claim\":false}\n";

@@ -17,6 +17,7 @@
 #include "qwen_history_replay_case.h"
 #include "qwen_history_control_case.h"
 #include "inference_program_carrier_case.h"
+#include "inference_readback_batch_case.h"
 #include "inference_mtp_packet_case.h"
 #include "qwen_generation_wave_case.h"
 #include "qwen_sampling_policy_case.h"
@@ -61,6 +62,7 @@ int main(int argc, char **argv) {
     const bool mtp_logits = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-logits";
     const bool mtp_e4 = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-e4";
     const bool program_carrier = argc >= 3 && std::string_view(argv[argc - 1]) == "--program-carrier";
+    const bool readback_batch = argc >= 3 && std::string_view(argv[argc - 1]) == "--readback-batch";
     const bool mtp_packet = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-packet";
     const bool history_logits = argc >= 3 && std::string_view(argv[argc - 1]) == "--history-logits";
     const bool history_ordinary = argc >= 3 && std::string_view(argv[argc - 1]) == "--history-ordinary";
@@ -82,9 +84,9 @@ int main(int argc, char **argv) {
     const bool phase_preparation = argc >= 3 && std::string_view(argv[argc - 1]) == "--phase-preparation";
     const bool auxiliary_preparation = argc >= 3 && std::string_view(argv[argc - 1]) == "--auxiliary-preparation";
     const bool publication_retirement = argc >= 3 && std::string_view(argv[argc - 1]) == "--publication-retirement";
-    const auto input_argc = argc - static_cast<int>(lagged || state_reuse || mtp_batch_state || packed_prefill || ragged_prefill || mtp_packed_prefill || mtp_ragged_prefill || mtp_chunked_prefill || logits_preflight || mtp_stop || mtp_sampling || mtp_logits || conditional_logits || conditional_verify || natural_logits || natural_logits_control || mtp_e4 || program_carrier || mtp_packet || history_logits || history_ordinary || history_replay || history_control || generation_wave || sampling_policies || mtp_group_return || mtp_mixed_lag || mtp_varlen_verify || mtp_relay || mtp_natural_relay || cold_demand || commit_failure || cold_family || input_packet || phase_preparation || auxiliary_preparation || publication_retirement || cold_shape_fifo || warm_cost);
+    const auto input_argc = argc - static_cast<int>(lagged || state_reuse || mtp_batch_state || packed_prefill || ragged_prefill || mtp_packed_prefill || mtp_ragged_prefill || mtp_chunked_prefill || logits_preflight || mtp_stop || mtp_sampling || mtp_logits || conditional_logits || conditional_verify || natural_logits || natural_logits_control || mtp_e4 || program_carrier || readback_batch || mtp_packet || history_logits || history_ordinary || history_replay || history_control || generation_wave || sampling_policies || mtp_group_return || mtp_mixed_lag || mtp_varlen_verify || mtp_relay || mtp_natural_relay || cold_demand || commit_failure || cold_family || input_packet || phase_preparation || auxiliary_preparation || publication_retirement || cold_shape_fifo || warm_cost);
     if (input_argc < 2 || input_argc > 3)
-      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda|--apple|--vulkan [prepared_input_directory] [--mtp-lag1|--state-reuse|--mtp-batch-state|--packed-prefill|--ragged-prefill|--mtp-packed-prefill|--mtp-ragged-prefill|--mtp-chunked-prefill|--logits-preflight|--mtp-stop|--mtp-sampling|--mtp-logits|--conditional-logits|--conditional-verify|--natural-logits|--natural-logits-control|--mtp-e4|--program-carrier|--mtp-packet|--history-logits|--history-ordinary|--history-replay|--history-control|--generation-wave|--sampling-policies|--mtp-group-return|--mtp-mixed-lag|--mtp-varlen-verify|--mtp-relay|--mtp-natural-relay|--cold-demand|--commit-failure|--cold-family|--input-packet|--phase-preparation|--auxiliary-preparation|--publication-retirement|--cold-shape-fifo|--warm-cost]");
+      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda|--apple|--vulkan [prepared_input_directory] [--mtp-lag1|--state-reuse|--mtp-batch-state|--packed-prefill|--ragged-prefill|--mtp-packed-prefill|--mtp-ragged-prefill|--mtp-chunked-prefill|--logits-preflight|--mtp-stop|--mtp-sampling|--mtp-logits|--conditional-logits|--conditional-verify|--natural-logits|--natural-logits-control|--mtp-e4|--program-carrier|--readback-batch|--mtp-packet|--history-logits|--history-ordinary|--history-replay|--history-control|--generation-wave|--sampling-policies|--mtp-group-return|--mtp-mixed-lag|--mtp-varlen-verify|--mtp-relay|--mtp-natural-relay|--cold-demand|--commit-failure|--cold-family|--input-packet|--phase-preparation|--auxiliary-preparation|--publication-retirement|--cold-shape-fifo|--warm-cost]");
     const std::string_view selected(argv[1]);
     auto backend = qwen35::BackendKind::kDefault;
     if (selected == "--cpu") backend = qwen35::BackendKind::kCpu;
@@ -97,6 +99,11 @@ int main(int argc, char **argv) {
       std::cerr << "SKIP: selected route is not built\n"; return 77;
     }
     if (program_carrier) return inference_program_carrier_case::run(backend);
+    if (readback_batch) {
+      const auto result = inference_readback_batch_case::run(backend);
+      if (result || input_argc != 3) return result;
+      return inference_readback_batch_case::run_model_handoff(argv[2], backend);
+    }
     if (mtp_packet) return inference_mtp_packet_case::run(backend);
     if (cold_demand) return inference_cold_demand_case::run();
     std::string input;

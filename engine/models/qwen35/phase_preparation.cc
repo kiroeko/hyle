@@ -29,7 +29,7 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
 #endif
   const auto &definition = selection.family;
   const auto &selected_sampler = selection.sampling;
-  const auto &execution = environment.execution;
+  auto &execution = environment.execution;
   const auto &geometry = environment.geometry;
   const auto state_schema = environment.recurrent_descriptions;
   const auto &allocation_budget = environment.allocation_budget;
@@ -99,7 +99,7 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
     if (diagnostic) for (std::size_t i = 0; i < phase.probe_ports.size(); ++i)
       phase.probe_facts[i] = &phase.child->output(phase.probe_ports[i]);
     check(phase.slots.prepare(phase.child->compiled, execution.queue_bindings(), physical_slots, transactions,
-        [&](std::size_t slot, auto &program_slot) {
+        [&](std::size_t slot, auto &program_slot) -> hyle::Status {
       auto &io = program_slot.data;
       io.batch_layouts.reserve(phase.attention_nodes.size() + drafts_token(role));
       for (auto node : phase.attention_nodes) io.batch_layouts.push_back({node, {}});
@@ -257,6 +257,24 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
         if (const auto *output = phase.probe_facts[i]; output && output->caller_owned())
           check(program_slot.io.add_fixed_output(output->value, io.probe_outputs[i].view()));
       check(program_slot.io.seal());
+      // Only these ordinary host-consumed results share a copy episode.
+      // Device relay outputs and their full original writers remain unchanged.
+      if (role == GraphRole::kText && completion == TextCompletion::kEmitNext &&
+          phase.sampling_valid_port && !phase.sampling_accept_port && !diagnostic && !imported_sources &&
+          execution.kind() == inference::BackendKind::kCuda && !execution.has_cpu_assist()) {
+        const std::array<const inference::PreparedReadback *, 2> results{
+            take(program_slot.io.readback(io.sampling_valid)), take(program_slot.io.readback(io.next_id))};
+        auto prepared = inference::PreparedReadbackBatch::prepare(execution, results, execution_budget);
+        if (prepared) io.small_results = std::move(*prepared);
+        else {
+          io.small_results_preparation = prepared.error();
+          // Qualification/cold capacity may keep the old independent reads.
+          // Never turn a native or runtime observation error into a fallback.
+          if (prepared.error().has_native_error() ||
+              (!prepared.error().IsUnimplemented() && !prepared.error().IsResourceExhausted()))
+            return prepared.error();
+        }
+      }
       return hyle::Status::Ok();
     }));
   return result;

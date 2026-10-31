@@ -73,7 +73,7 @@ private:
 #if defined(HYLE_COMPUTE_CUDA)
   struct CudaEndpoint final {
     compute::Context context;
-    compute::StorageOwner memory, mixed_staging;
+    compute::StorageOwner memory, staging_owner;
     compute::cuda::MemoryResource staging;
     compute::Queue queue;
     graph::ExecutionSource source;
@@ -252,15 +252,13 @@ private:
       HYLE_ASSIGN_OR_RETURN(endpoint.memory, compute::StorageOwner::adopt(endpoint.context, std::move(memory)));
       HYLE_ASSIGN_OR_RETURN(endpoint.staging, compute::cuda::MemoryResource::create(
           endpoint.context, compute::cuda::MemoryKind::kPinnedHost));
-      if (selection.cpu_assist) {
-        HYLE_ASSIGN_OR_RETURN(endpoint.mixed_staging,
-            compute::StorageOwner::adopt(endpoint.context, std::move(endpoint.staging)));
-        staging_owner = endpoint.mixed_staging;
-      }
+      HYLE_ASSIGN_OR_RETURN(endpoint.staging_owner,
+          compute::StorageOwner::adopt(endpoint.context, std::move(endpoint.staging)));
+      staging_owner = endpoint.staging_owner;
       HYLE_ASSIGN_OR_RETURN(endpoint.queue, endpoint.context.create_queue());
       HYLE_ASSIGN_OR_RETURN(endpoint.source, graph::ExecutionSource::acquire(endpoint.context));
       state.device = endpoint.memory.ref();
-      state.staging = endpoint.mixed_staging ? endpoint.mixed_staging.ref() : endpoint.staging.ref();
+      state.staging = endpoint.staging_owner.ref();
       state.domains[0] = {.resource = state.device, .workspace_budget_bytes = budgets.device, .owner = endpoint.memory};
       state.targets[0] = {endpoint.source, graph::StorageDomainId{0}};
       state.queues[state.queue_count++] = {.lane = graph::ExecutionLaneId{0}, .queue = &endpoint.queue};
@@ -346,6 +344,20 @@ public:
   mem::MemoryResourceRef device() const noexcept { return state_ ? state_->device : mem::MemoryResourceRef{}; }
   mem::MemoryResourceRef host_device() const noexcept { return state_ ? state_->host : mem::MemoryResourceRef{}; }
   mem::MemoryResourceRef staging() const noexcept { return state_ ? state_->staging : mem::MemoryResourceRef{}; }
+
+  // Retain the endpoint's actual original staging resource. This adds no
+  // Graph storage domain and preserves existing budget/resource identities.
+  // It lets a native transfer outlive the host Backend without borrowing a
+  // destroyed MemoryResource wrapper or inventing another unbudgeted resource.
+  Result<HostStorage> retain_staging_storage() const noexcept {
+    if (!state_) return std::unexpected(Status::FailedPrecondition("Backend is not initialized"));
+#if defined(HYLE_COMPUTE_CUDA)
+    if (const auto *endpoint = std::get_if<CudaEndpoint>(&state_->primary))
+      return HostStorage::retain(endpoint->staging_owner);
+#endif
+    if (kind() == BackendKind::kCpu) return create_host_storage();
+    return std::unexpected(Status::Unimplemented("retained staging requires a CPU or CUDA endpoint"));
+  }
 
   // Independent cold host-storage scope for complete parked state. Every
   // native route uses its own original host resource, never CPU assistance

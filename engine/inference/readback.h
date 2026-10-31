@@ -105,9 +105,8 @@ struct PreparedReadback final {
     HYLE_ASSIGN_OR_RETURN(auto output, run.result(facts.value));
     if (facts.caller_owned()) {
       if (caller_) return caller_.view().read(bytes);
-      HYLE_ASSIGN_OR_RETURN(auto owner, output.storage_lease());
+      HYLE_ASSIGN_OR_RETURN(auto owner, retain_storage(output));
       HYLE_ASSIGN_OR_RETURN(auto storage, owner.view());
-      HYLE_RETURN_IF_ERROR(check_storage(storage));
       return storage.read(bytes);
     }
     if (auto tensor = output.tensor(); tensor)
@@ -116,6 +115,15 @@ struct PreparedReadback final {
     HYLE_ASSIGN_OR_RETURN(auto storage, owner.view());
     return storage.read(bytes);
   }
+
+  // Retain this completed Graph result's actual storage, checking a caller
+  // output against its original full writer. No pending bytes or readiness
+  // are supplied by the cold resource identity below.
+  Result<compute::ReadLease> retain_storage(graph::Invocation &run) const noexcept {
+    HYLE_ASSIGN_OR_RETURN(auto output, run.result(facts.value));
+    return retain_storage(output);
+  }
+  mem::MemoryResourceRef resource() const noexcept { return storage_.resource(); }
 
   // Optional retired withdrawal before changing Invocation. Call before other
   // withdrawals revoke output observation. Escaped results/source pins reject
@@ -189,6 +197,14 @@ struct PreparedReadback final {
   }
 
 private:
+  Result<compute::ReadLease> retain_storage(graph::GraphOutput &output) const noexcept {
+    HYLE_ASSIGN_OR_RETURN(auto owner, output.storage_lease());
+    if (facts.caller_owned()) {
+      HYLE_ASSIGN_OR_RETURN(auto storage, owner.view());
+      HYLE_RETURN_IF_ERROR(check_storage(storage));
+    }
+    return owner;
+  }
   Status check_storage(mem::ConstBufferView storage) const noexcept {
     if (!storage_.valid() || storage.resource() != storage_.resource() ||
         storage.native_handle() != storage_.native_handle() ||

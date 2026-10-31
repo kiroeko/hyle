@@ -470,6 +470,11 @@ if(TARGET hyle_engine)
         LABELS "tooling;generation;cache;transfer;${_host_image_backend};local-model"
         TIMEOUT 180 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
       if(_host_image_backend STREQUAL "cpu" OR _host_image_backend STREQUAL "cuda")
+        add_test(NAME hyle_inference_readback_batch_${_host_image_backend}_test
+          COMMAND hyle_qwen_host_image_test --${_host_image_backend} --readback-batch)
+        set_tests_properties(hyle_inference_readback_batch_${_host_image_backend}_test PROPERTIES
+          LABELS "tooling;generation;transfer;${_host_image_backend}"
+          TIMEOUT 60 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
         add_test(NAME hyle_qwen_input_packet_${_host_image_backend}_test
           COMMAND hyle_qwen_host_image_test --${_host_image_backend} --input-packet)
         set_tests_properties(hyle_qwen_input_packet_${_host_image_backend}_test PROPERTIES
