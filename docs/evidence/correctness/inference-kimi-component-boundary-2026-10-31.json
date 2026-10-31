@@ -1,0 +1,184 @@
+{
+  "schema": "HYLE_CORRECTNESS_EVIDENCE_V1",
+  "date": "2026-10-31",
+  "result": "PASS_WITH_RETAINED_FAILED_ATTEMPTS",
+  "scope": {
+    "component": "Original Kimi K3 KDA layer0 to NoPE MLA layer3, two-step stateful component",
+    "full_model": false,
+    "not_proved": [
+      "Intervening layers1/2, residual/FFN/head or token generation",
+      "Complete Kimi model or Kimi MTP",
+      "All model/backend configurations or decode performance"
+    ],
+    "architecture": "Model-private compiled GraphBuilder math and five-entry state; original ProgramIo/Carrier/Episode/LeasePool/StateVersion and Graph execution owners. No GTest, Qwen main or semantic Fragment in model implementation."
+  },
+  "source": {
+    "base_head": "a416d96615ea5461d7d5afa7f25fa94545042866",
+    "files": 20,
+    "patch": "final-source.patch",
+    "source_pins": "source-pins.json",
+    "math_and_state_projection": "37 static original/new token checks passed; static result is separate from actual native checks",
+    "five_model_cpp_files_unchanged_from_v3": true
+  },
+  "normal_shared_build": {
+    "cache": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+    "components": "engine",
+    "routes": "cpu;cuda",
+    "configuration": "Release/shared, testsOFF, DEV_FACTORS absent, trace/instrumentation/sanitizer off, fully offline",
+    "sdk_cxx_actual": 40,
+    "sdk_cxx_breakdown": {
+      "simd_from_pre_fix_generated_mtime_churn": 38,
+      "graph_capture_copy_fix": 2
+    },
+    "all_build_attempts": [
+      {
+        "stage": "build",
+        "attempt": "attempt1",
+        "exit_code": 2,
+        "cxx": 44,
+        "nvcc": 0,
+        "links": 3,
+        "receipt": "validation\\control\\build\\attempt1\\result.json"
+      },
+      {
+        "stage": "build",
+        "attempt": "attempt2",
+        "exit_code": 0,
+        "cxx": 1,
+        "nvcc": 0,
+        "links": 1,
+        "receipt": "validation\\control\\build\\attempt2\\result.json"
+      },
+      {
+        "stage": "build",
+        "attempt": "attempt3",
+        "exit_code": 0,
+        "cxx": 1,
+        "nvcc": 0,
+        "links": 1,
+        "receipt": "validation\\control\\build\\attempt3\\result.json"
+      },
+      {
+        "stage": "module-build",
+        "attempt": "attempt1",
+        "exit_code": 0,
+        "cxx": 6,
+        "nvcc": 0,
+        "links": 4,
+        "receipt": "validation\\control\\module-build\\attempt1\\result.json"
+      }
+    ],
+    "total_cxx_actions": 52,
+    "total_link_actions": 9,
+    "total_nvcc_actions": 0,
+    "historical_graph_scope": "Both successful Kimi native checks used executable.cc +7 and resources.cc +6 (13-line candidate); exact source/DLL/import pins retained. Later resources six-line unreachable branch was reverted; no claim that Kimi was rerun against the final seven-line SDK.",
+    "final_graph_scope_reference": "external/graph-copy/final-source-freeze.json"
+  },
+  "native": {
+    "thin_probe": {
+      "attempt": "attempt2",
+      "pid": 22264,
+      "exit_code": 0,
+      "report": {
+        "result": "pass",
+        "component": "KDA0-to-NoPE-MLA3",
+        "full_model": false,
+        "steps": 2,
+        "committed": 2,
+        "stale_refused": 2,
+        "cancelled": 1,
+        "bind_refused": 1,
+        "state_versions": 0,
+        "source_before_host_observation": 2,
+        "consumer_recorded_ranges": 0,
+        "consumer_host_waits": 0
+      },
+      "vector_files": 32,
+      "vector_bytes": 15378440,
+      "vector_manifest": "kimi/validation/native-attempt2-vector-manifest.json",
+      "raw_vectors_in_zip": false
+    },
+    "public_graph_module": {
+      "components": "graph",
+      "routes": "cpu;cuda",
+      "engine_target_absent": true,
+      "tests": 1,
+      "failures": 0,
+      "skips": 0,
+      "filter": "KimiHeterogeneousState.CudaOriginalParametersKdaMlaKeepCompleteStateAcrossContinuation",
+      "pid": 25260,
+      "original_assertions": "Existing six/nine outputs, actual F64 projection certificates, complete state feedback, old readers/fork/cancel/stale, Source submission before host observation and stale reset-submit rejection preserved."
+    },
+    "configure_ctests": {
+      "hyle_engine_components_test": "PASS",
+      "hyle_simd_configure_generation_test": "PASS"
+    },
+    "runtime_observation": "Actual loaded normal shared runtime DLL paths/SHA retained; finite 10ms PSAPI observations may contain error299 and are not a complete loader/kernel trace."
+  },
+  "isolation": {
+    "all_four_tu_backend_macros": {
+      "HYLE_COMPUTE_CPU": 1,
+      "HYLE_COMPUTE_CUDA": 1
+    },
+    "model_impl_forbidden_actual_header_deps": 0,
+    "private_cold_edit_prediction": {
+      "cold_cxx": 1,
+      "consumer_cxx": 0,
+      "other_model_cxx": 0,
+      "sdk_cxx": 0,
+      "nvcc": 0,
+      "source_bytes_and_known_mtime_restored": true
+    },
+    "normal_qwen_has_kimi_link_dependency": false,
+    "same_cache_restored": true,
+    "restore_prediction": {
+      "engine_cxx": 0,
+      "kimi_cxx": 0,
+      "sdk_cxx": 0,
+      "nvcc": 0
+    },
+    "same_configuration_generated_sources": {
+      "files": 29,
+      "bytes_and_mtimes_stable_after_fix": true
+    }
+  },
+  "retained_failures": [
+    {
+      "stage": "normal build attempt1",
+      "exit_code": 2,
+      "detail": "Probe included old GLM test reference with four ADD_FAILURE calls but no GTest. Pure scalar block extracted; GLM GTest diagnostics restored, probe kept GTest-free."
+    },
+    {
+      "stage": "thin native attempt1",
+      "exit_code": 1,
+      "detail": "New probe wrongly expected InvalidArgument for 4-byte MLA cache view. Original public contract/GTest requires OutOfRange; corrected strict status/no-native/observed-retired requirements without changing original model math."
+    },
+    {
+      "stage": "module configure attempt1",
+      "exit_code": 1,
+      "detail": "Existing compute_state native_fault_consumer lacked HYLE_TEST_MODULE owner; only metadata corrected, original aggregate/CTest retained."
+    }
+  ],
+  "preparation_notes": [
+    "Initial main-manifest Ninja dry-run only exposed VerifyGlobs/regeneration; byte-exact query manifests then exposed actual actions.",
+    "Initial module dependency postprocessor incorrectly expected the primary source in the header cache; corrected proof uses the explicit actual source edge plus actual header dependencies. No build/native rerun for this note."
+  ],
+  "input": {
+    "fixed_revision": "f831ab66814297da540d832a5235f8e904f29d06",
+    "cached_union_parts": 4,
+    "union_bytes": 1352207360,
+    "authenticated_roles": 23,
+    "authentication": "Real Data.load verifies fixed source identities, each union/role SHA and finite coefficients. No payload/model copied into evidence."
+  },
+  "downloads": 0,
+  "performance_claim": false,
+  "archive": {
+    "path": "docs/evidence/correctness/inference-kimi-component-boundary-2026-10-31.zip",
+    "bytes": 491956,
+    "sha256": "7c8a191089b77cdae1878cd91aff80e938206a82567cec7774ff60594eb44060",
+    "members": 254,
+    "payload_members": 253,
+    "all_members_readback_bytes_and_sha_verified": true,
+    "excludes": "Models, SDK copies, DLL/object/executable binaries and raw vectors"
+  }
+}

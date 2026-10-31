@@ -169,6 +169,12 @@ concrete与有限族两种入口均复用原ProgramIo，不为了外观新增通
 | Kimi KDA→MLA原组件 | ProgramIo、ProgramCarrier、ExecutionEpisode及真实Source接力 | 异构递归／MLA状态与feature输出；没有生成token或请求驱动证明 |
 | DeepSeek原组件及压缩侧车 | ProgramIo、普通Graph生命周期、接受与提交见证 | 具体router分段与压缩状态／sidecar；没有完整请求驱动证明 |
 
+Kimi的角色导入、冷数学和程序／完整状态现位于`engine/models/kimi_k3/`的三个独立编译单元，
+有限探针与原GTest链接同一模型私有组件；默认Qwen应用不链接它，也不新增安装产品或用户开关。
+组件直接使用原Graph和执行载体，六项完整状态先形成未发布候选，验证后的Head发布仍归调用者。
+[正常shared与独立graph产品检查](../evidence/correctness/inference-kimi-component-boundary-2026-10-31.json)
+保留实际数值、旧读者、取消、Source与退休检查；它只证明该异构组件的接入边界。
+
 后三者当前使用有限具体图，未消费ColdShapePlan／PreparedProgramFamily；不为接口外观伪造Qwen程序族，也不把IO复用扩大为完整冷工厂／调度复用。
 完整Family和Phase物理准备之后继续核其余冷程序与稳态事实接线。
 Model保留原准入、cache／可选head准备与成功发布；继续保原Graph稳定地址、预算、literal／采样寿命、失败不发布及可重试合同。

@@ -17,7 +17,9 @@
 #include "kimi_original_attention_roles.h"
 #include "kimi_original_attention_input.h"
 #include "kimi_original_attention_reference.h"
+#include "original_readonly_role.h"
 #include "model_graph_run.h"
+#include "../../engine/models/kimi_k3/component.h"
 #include "../../engine/inference/backend.h"
 #include "../../engine/inference/output_pool_capacity.h"
 #include "../../engine/inference/execution_episode.h"
@@ -36,7 +38,7 @@ using model_graph_run::detail::take;
 using model_graph_run::detail::check;
 constexpr std::int64_t kCapacity=4, kChannels=3*96*128;
 constexpr auto kProfile=d5_moe_semantic_fragments::kKdaProfiles[0];
-struct Epoch final {std::uint64_t step;std::int32_t position,session;};
+using Epoch=hyle::inference::kimi_k3::Epoch;
 
 TEST(KimiHeterogeneousStatePlan,RejectsInvalidColdHistoryBeforeParameterConstruction) {
   for(const auto history:std::array{kimi::OrdinaryHistory{0,0},kimi::OrdinaryHistory{4,-1},
@@ -185,283 +187,79 @@ c::ReadLease upload(const c::StorageOwner &owner,std::span<const std::byte> raw)
 }
 void verified() {if(::testing::Test::HasFailure())throw std::runtime_error("Kimi independent reference failed before publication");}
 
-struct Literal final {
-  c::TensorDesc description;Bytes raw;c::ReadLease lease;
-};
-// Only cold generated parameters are shared by the three concrete MLA phases.
-// Exact bytes/descriptor equality is checked, not inferred from a role's shape.
-struct LiteralBank final {
-  std::vector<std::vector<Literal>> slots;
-  c::ReadLease bind(std::size_t slot,const c::TensorDesc &description,Bytes raw,const c::StorageOwner &owner) {
-    if(slots.size()<=slot)slots.resize(slot+1);
-    for(const auto &literal:slots[slot])if(literal.description==description&&literal.raw==raw)return literal.lease;
-    auto lease=upload(owner,raw);slots[slot].push_back({description,std::move(raw),lease});return lease;
-  }
-  void release_host_bytes() {for(auto &slot:slots)for(auto &literal:slot)Bytes{}.swap(literal.raw);}
-};
-struct Run;
-using Episode=inference::ExecutionEpisode<Run,inference::SubmissionViews,0>;
-struct Pending final {
-  std::shared_ptr<Run> owner;
-  std::shared_ptr<Episode> execution;
-  // Host call ordering only; retirement is always queried from the original
-  // Completion/Invocation and carrier, never inferred from this observation.
-  bool observed=false;
-  Pending()=default;
-  Pending(std::shared_ptr<Run> run,std::shared_ptr<Episode> episode)
-      :owner(std::move(run)),execution(std::move(episode)) {}
-  Pending(const Pending&)=delete;
-  Pending &operator=(const Pending&)=delete;
-  Pending(Pending&&)=default;
-  Pending &operator=(Pending&&)=delete;
-  ~Pending();
-};
-struct Run final : std::enable_shared_from_this<Run> {
-  // The accepted original Completion retains this actual Run, including its
-  // stable carrier node and the Backend's real Context/Queue/storage endpoint.
-  std::shared_ptr<inference::Backend> backend;
-  sem::Fragment facts;sem::GraphCase logical;
-  std::vector<c::ReadLease> literals;
-  std::unique_ptr<model_graph_run::ColdProgram> cold_program;
-  c::LeasePool pool;
-  std::shared_ptr<Episode> pending;
-  bool submit_attempted=false;
-  inference::ProgramCarrier<Run> carrier;
-  std::size_t submissions=0,source_submissions_before_host_observation=0;
-  std::size_t recorded_capture_ranges=0,reused_capture_ranges=0,host_waits=0;
-  std::size_t cold_capture_preparations=0,cold_recorded_ranges=0,cold_reused_ranges=0;
-  double cold_capture_seconds=0;
-  g::ReplayReport last_replay{};
+namespace component=hyle::inference::kimi_k3;
+using component::LiteralBank;
+using component::Pending;
+using component::State;
+using component::Entry;
+using component::kHistory;
+using component::kRecurrent;
+using component::kMla;
+using component::kCursor;
+using component::kFeature;
+using component::kEpoch;
+using component::kEntries;
+
+// Test-only oracle facts. All native execution/retirement is the real model's
+// Program; enable_shared_from_this retains this same object/control block.
+struct Run final : component::Program {
+  sem::Fragment facts;
   static sem::ValueId source_constant(sem::Fragment &f,std::vector<c::ReadLease> &supplied,
       const original_named_role_source::ReadonlyRole &role,const c::StorageOwner &owner) {
     if(f.constants.size()!=supplied.size())throw std::runtime_error("original Kimi learned constants must be the entire cold prefix");
     if(role.owner.ref()!=owner.ref())throw std::runtime_error("original Kimi constant owner differs from its cold Graph owner");
     const auto value=f.constant(role.description,{});supplied.push_back(role.lease);return value;
   }
-  static std::shared_ptr<Run> prepare(sem::Fragment f,std::shared_ptr<inference::Backend> selected_backend,LiteralBank *shared=nullptr,
-      std::vector<c::ReadLease> supplied_literals={}) {
-    auto result=std::make_shared<Run>();result->backend=std::move(selected_backend);
-    auto &context=*take(result->backend->common_context(),"Kimi original Backend Context");
-    const auto &owner=result->backend->storage_owner();
-    result->literals=std::move(supplied_literals);
-    const auto supplied=result->literals.size();
+  static std::shared_ptr<Run> prepare(sem::Fragment f,std::shared_ptr<inference::Backend> selected_backend,
+      LiteralBank *shared=nullptr,std::vector<c::ReadLease> supplied_literals={}) {
+    auto result=std::make_shared<Run>();
+    const auto &owner=selected_backend->storage_owner();
+    auto leases=std::move(supplied_literals);const auto supplied=leases.size();
     if(supplied>f.constants.size())throw std::runtime_error("original Kimi constant lease count differs");
     for(std::size_t i=0;i<supplied;++i) {
       const auto &description=f.description(f.constants[i]);
-      if(!f.constant_bytes[i].empty()||result->literals[i].size()!=take(description.required_bytes(),"original Kimi supplied constant extent"))
+      if(!f.constant_bytes[i].empty()||leases[i].size()!=take(description.required_bytes(),"original Kimi supplied constant extent"))
         throw std::runtime_error("original Kimi constant must have its actual lease and no generated payload");
-      take(result->literals[i].tensor(description),"original Kimi typed source lease");
+      take(leases[i].tensor(description),"original Kimi typed source lease");
     }
-    // Explicit caller outputs keep every generated value independent of the
-    // phase's mutable storage and of source/input aliases across later steps.
     for(auto &output:f.outputs)output=f.one(c::Operation(c::Copy{}),{output});
-    result->logical=sem::make_graph(f);std::vector<g::ConstantBinding> constants;
+    auto logical_case=sem::make_graph(f);component::GraphDefinition definition;
     for(std::size_t i=0;i<f.constants.size();++i) {
       const auto &description=f.description(f.constants[i]);
       if(i>=supplied) {
-        if(f.constant_bytes[i].empty()&&take(description.required_bytes(),"Kimi literal extent"))
-          throw std::runtime_error("original Kimi constant source lease is absent");
-        result->literals.push_back(shared?shared->bind(i,description,std::move(f.constant_bytes[i]),owner):upload(owner,f.constant_bytes[i]));
+        if(f.constant_bytes[i].empty()&&take(description.required_bytes(),"Kimi literal extent"))throw std::runtime_error("original Kimi constant source lease is absent");
+        leases.push_back(shared?shared->bind(i,description,std::move(f.constant_bytes[i]),owner):upload(owner,f.constant_bytes[i]));
       }
-      constants.push_back({.value=result->logical.constants[i],.tensor=take(result->literals[i].tensor(description),"Kimi typed literal"),
-          .owner=owner,.lease=result->literals[i]});
+      definition.constants.push_back({.value=logical_case.constants[i],.tensor=take(leases[i].tensor(description),"Kimi typed literal"),.owner=owner,.lease=leases[i]});
     }
-    f.constant_bytes.clear();
-    const c::WorkloadContext workload{take(c::ModelArtifactProfile::create(*f.profile),"Kimi geometry profile"),f.phase,{0x48594c454d4f444cULL,f.region,1}};
-    std::vector<model_graph_run::Port> inputs,outputs;
-    for(std::size_t i=0;i<f.inputs.size();++i)inputs.push_back({result->logical.inputs[i],f.description(f.inputs[i])});
-    for(std::size_t i=0;i<f.outputs.size();++i)outputs.push_back({result->logical.outputs[i],f.description(f.outputs[i])});
-    result->cold_program=model_graph_run::ColdProgram::create(
-        take(g::cuda::compile(result->logical.graph,context,owner,{.constants=constants,.workload=workload}),"Kimi ordinary Graph compile"),inputs,outputs);
-    std::vector<std::size_t> output_sizes;
-    output_sizes.reserve(result->cold_program->output_count());
-    for(std::size_t i=0;i<result->cold_program->output_count();++i)
-      output_sizes.push_back(take(result->cold_program->output(i).description.required_bytes(),"Kimi output extent"));
-    constexpr std::uint32_t generations=8;
-    if (output_sizes.empty()) throw std::runtime_error("caller output inventory must be nonempty");
-    const auto output_capacity=take(inference::checked_output_pool_capacity(output_sizes,generations,256),
-        "Kimi output pool capacity");
-    result->pool=take(c::LeasePool::create(owner.ref(),output_capacity.backing_bytes,
-        {.max_blocks=output_capacity.max_blocks,.backing_alignment=256}),"bounded Kimi output generations");
-    check(result->carrier.prepare(result->cold_program->compiled,result->backend->queue_bindings()),"Kimi original carrier preparation");
-    check(result->carrier.initialize({.io=result->cold_program->io,.invocation={.resources=g::ResourceOptions{}}}),"Kimi original Invocation installation");
-    result->facts=std::move(f);return result;
+    for(std::size_t i=0;i<f.inputs.size();++i)definition.inputs.push_back({logical_case.inputs[i],f.description(f.inputs[i])});
+    for(std::size_t i=0;i<f.outputs.size();++i)definition.outputs.push_back({logical_case.outputs[i],f.description(f.outputs[i])});
+    definition.graph=std::move(logical_case.graph);definition.region=f.region;
+    definition.workload={take(c::ModelArtifactProfile::create(*f.profile),"Kimi geometry profile"),f.phase,{0x48594c454d4f444cULL,f.region,1}};
+    f.constant_bytes.clear();result->facts=std::move(f);result->install(std::move(definition),std::move(selected_backend));return result;
   }
-
-  inference::RetirementObservation recover_pending() noexcept {
-    if(!pending)return {true,{}};
-    auto episode=pending;
-    // A plain bind refusal has not touched Source/export or submission. Use
-    // the original reset only with the carrier's actual retirement proof.
-    if(!submit_attempted&&!episode->incoming&&!episode->sources&&episode->run&&carrier.retired()) {
-      const auto reset=episode->run->reset();
-      if(reset.ok()) {
-        episode->run=nullptr;episode->carrier=nullptr;pending.reset();return {true,{}};
-      }
-    }
-    episode->cleanup_pending=true;
-    auto observed=episode->retire(*backend);
-    auto recovered=episode->recover([]() noexcept {});
-    // An unsubmitted Source consumer may retain the original predecessor
-    // retirement gate. Drain only that original episode, leaving its exports
-    // intact; then recover this consumer before producer cleanup can proceed.
-    if(recovered&&!*recovered&&episode->predecessor_episode) {
-      const auto predecessor=episode->predecessor_episode->retire(*backend);
-      inference::record_retirement_status(observed.status,predecessor.status);
-      recovered=episode->recover([]() noexcept {});
-    }
-    if(!recovered)inference::record_retirement_status(observed.status,recovered.error());
-    observed.retired=carrier.retired()&&observed.retired&&recovered&&*recovered;
-    if(observed.retired)pending.reset(); // A partial return retains this exact original episode.
-    return observed;
+  static std::shared_ptr<Run> original(component::GraphDefinition definition,std::shared_ptr<inference::Backend> selected_backend,bool attention) {
+    auto result=std::make_shared<Run>();result->facts={.profile=kProfile,.region=definition.region};
+    if(attention)result->facts.bfloat_chain_outputs={0,1,2,3,4,5,6,8};
+    result->install(std::move(definition),std::move(selected_backend));return result;
   }
-
-  Pending prepare_inputs(std::span<const c::ReadLease> input,c::WriteLease *hidden_writer=nullptr) {
-    if(input.size()!=cold_program->input_count())throw std::runtime_error("Kimi original input count");
-    if(pending) {
-      const auto observed=recover_pending();
-      if(!observed.retired)throw inference::EvaluationFailure(hyle::Status::Unavailable("Kimi original episode is still retiring"));
-      check(observed.status,"Kimi previous original retirement");
-    }
-    if(!carrier.initialized())
-      check(carrier.initialize({.io=cold_program->io,.invocation={.resources=g::ResourceOptions{}}}),"Kimi original Invocation retry");
-    auto episode=std::make_shared<Episode>();pending=episode;submit_attempted=false;
-    try {
-      auto &run=*take(carrier.borrow(),"Kimi original carrier admission");
-      episode->run=&run;episode->carrier=&carrier;
-      // All ordinary binding and capture preparation precede producer submit.
-      // A real input refusal retains the original Invocation for a legal retry.
-      for(std::size_t i=0;i<input.size();++i)
-        check(cold_program->bind(run,i,input[i]),"Kimi ordinary dynamic input");
-      for(std::size_t i=0;i<cold_program->output_count();++i) {
-        if(i==5&&hidden_writer) {
-          const auto &output=cold_program->output(i);
-          check(run.bind(output.value,output.description,std::move(*hidden_writer)),"Kimi original reclaimed hidden writer");
-        } else check(cold_program->bind_output(run,i,pool),"Kimi original output writer");
-      }
-      return {shared_from_this(),std::move(episode)};
-    } catch(inference::EvaluationFailure &failure) {
-      failure.observe_retirement(recover_pending());throw;
-    } catch(...) { (void)recover_pending();throw; }
-  }
-
-  static const char *route_name(g::ReplayRoute route) noexcept {
-    switch(route) {
-      case g::ReplayRoute::kCommands:return "commands";
-      case g::ReplayRoute::kCaptured:return "captured";
-      case g::ReplayRoute::kHybrid:return "hybrid";
-      default:return "unprepared";
+  void verify_reset() {
+    auto &run=*take(carrier.borrow(),"Kimi original reset Invocation");
+    auto stale=run.submit(carrier.queues());
+    EXPECT_FALSE(stale);
+    if(stale) {
+      const auto retired=carrier.retire(*backend);
+      check(retired.status,"Kimi unexpected stale submit retirement");
+      if(!retired.retired)throw std::runtime_error("Kimi unexpected stale submit is still retiring");
+      check(carrier.reset_retired(),"Kimi unexpected stale submit reset");
+      throw std::runtime_error("Kimi reset retained stale replay");
     }
   }
-  g::ReplayReport replay_report(const Episode &episode,const char *stage) const {
-    const auto report=take(episode.run->replay_report(),"Kimi actual replay report");
-    std::printf("Kimi region=%llu stage=%s route=%s recorded=%zu reused=%zu hostWait=%zu deviceWait=%zu\n",
-        static_cast<unsigned long long>(facts.region),stage,route_name(report.route),
-        report.recorded_capture_range_count,report.reused_capture_range_count,
-        report.host_wait_dependency_count,report.device_wait_dependency_count);
-    return report;
-  }
-  c::WriteLease prepare_source_reuse(Pending &prepared,c::ReadLease &hidden_ready) {
-    if(prepared.owner.get()!=this||prepared.execution!=pending||submit_attempted)
-      throw std::runtime_error("Kimi cold capture requires its original unsubmitted episode");
-    auto &episode=*prepared.execution;
-    const auto start=std::chrono::steady_clock::now();
-    try {
-      const auto original=take(hidden_ready.tensor(cold_program->input(0).description),"Kimi cold hidden tensor");
-      const auto generation=hidden_ready.generation();
-      check(episode.prepare_replay({.mode=g::ReplayMode::kPreferCapture,.host_wait=g::HostWaitPolicy::kReject}),
-          "Kimi complete MLA cold capture");
-      const auto report=replay_report(episode,"consumer-cold-prepare");
-      if((report.route!=g::ReplayRoute::kCaptured&&report.route!=g::ReplayRoute::kHybrid)||
-          report.host_wait_dependency_count||(!report.recorded_capture_range_count&&!report.reused_capture_range_count))
-        throw std::runtime_error("Kimi MLA cold preparation did not establish actual capture coverage");
-      ++cold_capture_preparations;cold_recorded_ranges+=report.recorded_capture_range_count;
-      cold_reused_ranges+=report.reused_capture_range_count;
-      // Preserve every other original input, output writer and captured private
-      // address. Only this complete ready input hands its one block to KDA.
-      check(episode.run->unbind(cold_program->input(0).value),"Kimi cold hidden input withdrawal");
-      auto writer=take(hidden_ready.try_write(),"Kimi original hidden writer handoff");
-      const auto reclaimed=take(writer.view(),"Kimi reclaimed hidden backing");
-      const auto storage=original.storage();
-      if(writer.generation()!=generation||reclaimed.resource()!=storage.resource()||
-          reclaimed.native_handle()!=storage.native_handle()||reclaimed.offset()!=storage.offset()||
-          reclaimed.size()!=storage.size())
-        throw std::runtime_error("Kimi cold hidden handoff changed its original physical writer");
-      cold_capture_seconds+=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
-      return writer;
-    } catch(inference::EvaluationFailure &failure) {
-      failure.observe_retirement(recover_pending());throw;
-    } catch(...) { (void)recover_pending();throw; }
-  }
-
-  void submit(Pending &prepared,Pending *previous=nullptr,bool capture_hidden=false) {
-    if(prepared.owner.get()!=this||prepared.execution!=pending||submit_attempted)
-      throw std::runtime_error("Kimi submit requires its original prepared episode");
-    auto &episode=*prepared.execution;auto &run=*episode.run;
-    try {
-      if(previous) {
-        if(!previous->execution||!previous->execution->sources||previous->observed)
-          throw std::runtime_error("Kimi MLA requires its unobserved original KDA submission");
-        episode.incoming=std::make_unique<inference::IncomingExecutionSources<inference::SubmissionViews>>();
-        episode.incoming->owner=previous->execution->sources;
-        episode.incoming->bindings.push_back(episode.incoming->owner->primary_output.reader_binding(cold_program->input(0).value));
-        episode.predecessor_episode=previous->execution;
-      }
-      if(capture_hidden) {
-        episode.sources=std::make_shared<inference::SubmissionViews>();
-        check(episode.sources->prepare(run,std::span<const inference::SubmissionViews::StoreCapture>{},std::span<const inference::SubmissionViews::PageCapture>{},{}),"Kimi original hidden Source preparation");
-      }
-      check(episode.bind_consumers(logical.graph),"Kimi original consumer bundle");
-      check(episode.prepare_replay({.mode=capture_hidden?g::ReplayMode::kPreferCapture:g::ReplayMode::kCommands,
-          .host_wait=(previous||capture_hidden)?g::HostWaitPolicy::kReject:g::HostWaitPolicy::kAllow}),"Kimi original replay preparation");
-      last_replay=replay_report(episode,previous?"consumer-source-reuse":capture_hidden?"producer":"standalone");
-      if(previous) {
-        const auto source=take(run.input_source_report(),"Kimi actual dependency report");
-        std::printf("Kimi region=%llu sources=%zu sourceDeviceWait=%zu sourceHostWait=%zu\n",
-            static_cast<unsigned long long>(facts.region),source.source_count,source.device_wait_count,source.host_wait_count);
-        if(last_replay.recorded_capture_range_count||last_replay.host_wait_dependency_count||
-            !last_replay.reused_capture_range_count||source.source_count!=1||source.device_wait_count!=1||source.host_wait_count)
-          throw std::runtime_error("Kimi Source submit did not reuse complete device-ordered cold capture");
-      }
-      recorded_capture_ranges+=last_replay.recorded_capture_range_count;
-      reused_capture_ranges+=last_replay.reused_capture_range_count;host_waits+=last_replay.host_wait_dependency_count;
-      submit_attempted=true;
-      check(episode.submit(shared_from_this()),"Kimi original Graph submit");
-      if(previous)++source_submissions_before_host_observation;
-      if(capture_hidden)
-        take(episode.sources->capture(run,episode.completion,cold_program->output(5).value,
-            backend->storage_owner(),pool),"Kimi actual hidden OutputSource");
-    } catch(inference::EvaluationFailure &failure) {
-      failure.observe_retirement(recover_pending());throw;
-    } catch(...) { (void)recover_pending();throw; }
-  }
-
   std::vector<c::ReadLease> finish(Pending &submitted) {
-    if(submitted.owner.get()!=this||submitted.execution!=pending||!submit_attempted)
-      throw std::runtime_error("Kimi finish requires its original pending episode");
-    auto &episode=*submitted.execution;
-    submitted.observed=true;
-    try {
-      std::vector<c::ReadLease> result;
-      check(episode.finish_success(0,0,{},[&]() noexcept {++submissions;},[&]() -> hyle::Status {
-        result.reserve(cold_program->output_count());
-        for(std::size_t i=0;i<cold_program->output_count();++i)
-          result.push_back(take(cold_program->retain(*episode.run,i),"Kimi retained original result"));
-        return hyle::Status::Ok();
-      },[]() noexcept -> hyle::Status {return hyle::Status::Ok();}),"Kimi original successful Graph stage");
-      episode.sources.reset();
-      // Successful serial reuse keeps the same Invocation. Recovery alone
-      // uses reset_retired(), after the original transactions have returned.
-      check(episode.run->reset(),"Kimi original Invocation reset");
-      if(episode.run->submit(carrier.queues()))throw std::runtime_error("Kimi reset retained stale replay");
-      episode.run=nullptr;episode.carrier=nullptr;pending.reset();
-      submitted.execution.reset();submitted.owner.reset();return result;
-    } catch(inference::EvaluationFailure &failure) {
-      failure.observe_retirement(recover_pending());throw;
-    } catch(...) { (void)recover_pending();throw; }
+    auto result=component::Program::finish(submitted);verify_reset();return result;
   }
   std::vector<c::ReadLease> execute(std::span<const c::ReadLease> input) {
-    auto prepared=prepare_inputs(input);submit(prepared);return finish(prepared);
+    auto result=component::Program::execute(input);verify_reset();return result;
   }
   void record_properties(const std::string &prefix) const {
     ::testing::Test::RecordProperty(prefix+"_replay_route",route_name(last_replay.route));
@@ -474,82 +272,14 @@ struct Run final : std::enable_shared_from_this<Run> {
     ::testing::Test::RecordProperty(prefix+"_cold_capture_seconds",std::to_string(cold_capture_seconds));
   }
 };
-Pending::~Pending() {if(owner&&execution&&owner->pending==execution)(void)owner->recover_pending();}
-
-// Cold-only original parameter assembly. ReadLeases are moved into the
-// existing Run::literals vector; no second table owns the native constants.
 inline std::shared_ptr<Run> prepare_original_kda(const kimi_original_attention_roles::Kda &original,
     const std::shared_ptr<inference::Backend> &backend) {
-  const auto &owner=backend->storage_owner();
-  sem::Fragment f{.profile=kProfile,.region=0x030602};
-  const auto input=f.input(sem::dense({1,7168}));
-  const auto history=f.input(sem::dense({3,kChannels}));
-  const auto state=f.input(sem::dense({1,96,128,128}));
-  std::vector<c::ReadLease> literals;literals.reserve(12);
-  const auto constant=[&](const original_named_role_source::ReadonlyRole &role) {
-    return Run::source_constant(f,literals,role,owner);
-  };
-  const auto parameters=kimi_original_attention_values::declare_kda(original.view(),constant);
-  const auto result=kda::append_kda(f,input,history,state,parameters,{7168,96,128,1.e-5F,1.e-5F});
-  const auto outputs=result.outputs();f.outputs.assign(outputs.begin(),outputs.end());
-  f.state_ports={{1,0},{2,2}};
-  return Run::prepare(std::move(f),backend,nullptr,std::move(literals));
+  return Run::original(component::build_kda_graph(original,backend->storage_owner()),backend,false);
 }
 inline std::shared_ptr<Run> prepare_original_mla(std::int32_t position,const kimi_original_attention_roles::Mla &original,
     const std::shared_ptr<inference::Backend> &backend,LiteralBank &small_literals) {
-  const auto &owner=backend->storage_owner();
-  sem::Fragment f{.profile=kProfile,.region=0x070701};
-  const auto input=f.input(sem::dense({1,7168}));
-  const auto past=f.input(sem::dense({kCapacity,576}));
-  std::vector<c::ReadLease> literals;literals.reserve(10);
-  const auto constant=[&](const original_named_role_source::ReadonlyRole &role) {
-    return Run::source_constant(f,literals,role,owner);
-  };
-  const auto parameters=kimi_original_attention_values::declare_mla(original.view(),constant);
-  const auto result=kimi::append_mla(f,input,past,parameters,kimi::OrdinaryHistory{kCapacity,position});
-  const auto outputs=result.outputs();f.outputs.assign(outputs.begin(),outputs.end());
-  f.bfloat_chain_outputs={0,1,2,3,4,5,6,8};f.state_ports={{1,0}};
-  // Same real integer cursor successor as the synthetic ordinary consumer.
-  const auto cursor=f.input(sem::dense({1},c::DataType::kInt32));
-  const auto one=f.constant(sem::dense({1},c::DataType::kInt32),sem::bytes(std::vector<std::int32_t>{1}));
-  const auto joined=f.one(c::Operation(c::Concat{.axis=0}),{cursor,one});
-  const auto scanned=f.one(c::Operation(c::Scan{.axis=0}),{joined});
-  f.outputs.push_back(f.one(c::Operation(c::Gather{}),{scanned,one}));
-  return Run::prepare(std::move(f),backend,&small_literals,std::move(literals));
+  return Run::original(component::build_mla_graph(position,original,backend->storage_owner(),small_literals),backend,true);
 }
-
-enum Entry:std::size_t {kHistory,kRecurrent,kMla,kCursor,kFeature,kEpoch,kEntries};
-struct State final {
-  c::StateSchema schema;c::StateStore store;std::array<c::StateEntryId,kEntries> entries;
-  c::ReadLease member(const c::StateVersion &v,Entry entry) const {return take(v.member(entries[entry]),"Kimi complete member");}
-  Epoch epoch(const c::StateVersion &version) const {
-    const auto raw=read(member(version,kEpoch));
-    if(raw.size()!=sizeof(Epoch))throw std::runtime_error("Kimi Epoch metadata extent");
-    Epoch result{};std::memcpy(&result,raw.data(),sizeof(result));return result;
-  }
-  static State create(const c::StorageOwner &owner,std::size_t budget) {
-    const std::array descriptions{sem::dense({3,kChannels}),sem::dense({1,96,128,128}),sem::dense({kCapacity,576}),
-        sem::dense({1},c::DataType::kInt32),sem::dense({1,7168})};
-    std::vector<c::StateEntrySpec> specs;
-    for(const auto &description:descriptions)specs.push_back({.description=description,.resource=owner.ref()});
-    specs.push_back({.kind=c::StateEntryKind::kHostMetadata,.metadata_bytes=sizeof(Epoch)});
-    State result;result.schema=take(c::StateSchema::create(specs),"Kimi heterogeneous schema");
-    result.store=take(c::StateStore::create(result.schema,{.max_versions=12,.max_drafts=3,.max_retained_blocks=128,
-        .max_backing_bytes=budget,.max_host_snapshot_bytes=4096}),"one bounded heterogeneous StateStore");
-    for(std::size_t i=0;i<kEntries;++i)result.entries[i]=take(result.schema.entry(i),"Kimi state entry");return result;
-  }
-  c::StateVersion initial(const c::StorageOwner &owner,std::int32_t session) {
-    std::vector<c::StateMember> members;
-    for(std::size_t i=0;i<kEpoch;++i) {
-      const auto spec=take(schema.specification(entries[i]),"Kimi initial descriptor");
-      Bytes raw(take(spec.description.required_bytes(),"Kimi initial bytes"));
-      if(i==kMla)raw=sem::bytes(std::vector<float>(std::size_t(kCapacity*576),std::bit_cast<float>(std::uint32_t{0x7fc12345})));
-      members.push_back({entries[i],upload(owner,raw)});
-    }
-    const Epoch epoch{0,0,session};members.push_back({entries[kEpoch],{},std::as_bytes(std::span(&epoch,1))});
-    return take(store.import(members),"Kimi empty complete state");
-  }
-};
 
 struct Mla final {std::shared_ptr<Run> run;kimi::MlaReference reference;};
 Mla prepare_mla(std::int32_t position,const std::shared_ptr<inference::Backend> &backend,LiteralBank &literals) {
@@ -663,7 +393,7 @@ TEST(KimiHeterogeneousState,CudaOriginalGeometrySyntheticKdaMlaPublishesWholeSta
       c::WriteLease hidden_writer;
       const bool rejected_binding=!cancel&&binding_rejections==0;
       if(!cancel) {
-        hidden_writer=take(kda_run->pool.allocate(take(kda_run->cold_program->output(5).description.required_bytes(),
+        hidden_writer=take(kda_run->pool.allocate(take(kda_run->output(5).description.required_bytes(),
             "Kimi future hidden extent")),"Kimi original hidden pool writer");
         check(take(hidden_writer.view(),"Kimi cold hidden initialization view").fill(std::byte{}),"Kimi cold hidden initialization");
         mla_args[0]=take(hidden_writer.publish(),"Kimi initialized future hidden lease");
@@ -825,7 +555,7 @@ TEST(KimiHeterogeneousState,CudaOriginalParametersKdaMlaKeepCompleteStateAcrossC
       const std::array args{upload(owner,sem::bytes(activation)),
           state.member(before,kHistory),state.member(before,kRecurrent)};
       auto &run=attention[std::size_t(position)];
-      auto hidden_writer=take(recurrent->pool.allocate(take(recurrent->cold_program->output(5).description.required_bytes(),
+      auto hidden_writer=take(recurrent->pool.allocate(take(recurrent->output(5).description.required_bytes(),
           "original Kimi future hidden extent")),"original Kimi hidden pool writer");
       check(take(hidden_writer.view(),"original Kimi cold hidden initialization view").fill(std::byte{}),"original Kimi cold hidden initialization");
       std::array mla_args{take(hidden_writer.publish(),"original Kimi initialized future hidden lease"),

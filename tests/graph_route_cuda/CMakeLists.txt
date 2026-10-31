@@ -151,10 +151,19 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
     target_link_libraries(hyle_graph_route_cuda_glm_mtp_state_consumer_test PRIVATE ggml)
     target_include_directories(hyle_graph_route_cuda_glm_mtp_state_consumer_test SYSTEM PRIVATE "${HYLE_GGML_SOURCE_DIR}/src")
     hyle_stage_runtime(hyle_graph_route_cuda_glm_mtp_state_consumer_test)
+    # Reuse only the model-owned component, including without an engine target.
+    include("${CMAKE_CURRENT_LIST_DIR}/../../engine/models/kimi_k3/component_sources.cmake")
+    set(_hyle_kimi_graph_dependency hyle_graph_route_cuda)
+    if(TARGET hyle::graph)
+      set(_hyle_kimi_graph_dependency hyle::graph)
+    endif()
+    _hyle_add_kimi_k3_component(${_hyle_kimi_graph_dependency} hyle_graph_batch
+      hyle_compute_state hyle_mem_vm hyle_graph_progress)
+    unset(_hyle_kimi_graph_dependency)
     hyle_add_test(graph_route_cuda NAME kimi_heterogeneous_state
       SOURCES ../compute_models/kimi_heterogeneous_state_consumer_test.cc
       DEFINES HYLE_TEST_KIMI_STATE_CUDA=1
-      DEPS hyle_compute_state hyle_simd hyle_compute_backend_cuda)
+      DEPS hyle_compute_state hyle_simd hyle_compute_backend_cuda hyle_kimi_k3_component)
     target_link_libraries(hyle_graph_route_cuda_kimi_heterogeneous_state_test PRIVATE ggml)
     target_include_directories(hyle_graph_route_cuda_kimi_heterogeneous_state_test SYSTEM PRIVATE "${HYLE_GGML_SOURCE_DIR}/src")
     hyle_stage_runtime(hyle_graph_route_cuda_kimi_heterogeneous_state_test)

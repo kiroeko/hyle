@@ -436,6 +436,7 @@ _hyle_declare_component(compute_route_cuda
 _hyle_declare_component(graph_route_cuda
   PRIVATE_DEPS compute compute_backend_cuda compute_provider_cuda container graph_provider_ggml_cuda graph_batch
   PUBLIC_DEPS core compute_route_cuda graph
+  TEST_DEPS graph_progress
   SPLIT_PUBLIC_HEADERS hyle/graph/cuda.h)
 
 # Native MLX region ownership is independent of the common Queue executor.

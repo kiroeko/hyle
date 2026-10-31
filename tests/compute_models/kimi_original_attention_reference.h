@@ -1,7 +1,7 @@
 #pragma once
 
 #include "kimi_original_attention_roles.h"
-#include "glm_original_indexer_reference.h"
+#include "original_scalar_reference.h"
 
 // Private source-only oracle. Reads original file rows, never the uploaded
 // packed convolution or derived K/V operands. No full F32 weight bank exists.
@@ -10,7 +10,7 @@
 // producer boundaries: local projection certificates accept those producers.
 namespace kimi_original_attention_reference {
 namespace raw=kimi_original_attention_roles;
-namespace scalar=glm_original_indexer_reference::detail;
+namespace scalar=original_scalar_reference;
 using raw::Data;
 using raw::Role;
 inline constexpr std::size_t hidden=7168,heads=96,depth=128,width=heads*depth;
