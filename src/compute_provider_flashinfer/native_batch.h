@@ -39,6 +39,11 @@ cudaError_t plan_batch(void *,BatchSpec,const std::int32_t *,const std::int32_t 
 cudaError_t run_batch(const void *,BatchSpec,const void *,const void *,const void *,const void *,void *,void *,void *,cudaStream_t);
 cudaError_t run_highdim_batch(const void *,BatchSpec,const void *,const void *,const void *,const void *,void *,void *,void *,cudaStream_t);
 cudaError_t run_cache_batch(const void *,BatchSpec,const void *,const void *,const void *,const void *,void *,void *,void *,cudaStream_t);
+// Finite R1/Q<=2 qualification against the original physical-Q2 plan.
+cudaError_t qualify_device_layout_choice(const void *,BatchSpec,const std::int32_t *,
+    const std::int32_t *,cudaStream_t,bool &) noexcept;
+cudaError_t select_device_layout(const void *,BatchSpec,const std::int32_t *,
+    const void *,const void *,void *,std::size_t,void *,cudaStream_t) noexcept;
 std::size_t mla_state_bytes() noexcept;
 void initialize_mla_state(void *) noexcept;
 void destroy_mla_state(void *) noexcept;

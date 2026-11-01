@@ -383,6 +383,195 @@ inline void ordinary_decode_recordings(const std::filesystem::path &input) {
          "\"random_commands_cpu_skipped\":true,\"final_private_versions\":0}\n";
 }
 
+inline void mtp_decode_recordings(const std::filesystem::path &input) {
+  namespace s = qwen_mtp_batch_state_case;
+  namespace t = qwen_mtp_stop_case;
+  const auto geometry = q::read_weight_geometry(input / "weights.tsv");
+  require(geometry.mtp_layers == 1, "MTP cold recording requires the cached original NextN weights");
+  const std::array one{std::size_t{1}}, two{std::size_t{2}}, three{std::size_t{3}};
+  const auto make_model = [&] {
+    auto source = q::prepare_weight_source(input / "weights.tsv", true);
+    const auto plan = q::cache::plan(geometry, source.cache_row_bytes, 16, 1, 3,
+        q::recurrent_bytes(q::state_schema_for(geometry, 16), geometry), 1, 2, true, true, 2);
+    const std::array random{q::SamplingConfiguration{true, {1.F, 8, .9F}}};
+    auto model = std::make_unique<q::Model>(std::move(source), geometry, 16, plan, std::filesystem::path{},
+        false, q::ReplayPolicy::kPreferCapture, SIZE_MAX, q::Model::Sampling{.enabled = false},
+        0, q::BackendSelection{.primary = q::BackendKind::kCuda}, random);
+    model->configure_draft_policy({.max_drafts = 1});
+    for (std::size_t index = 0; index != 2; ++index) {
+      require(model->prepare_family(three, false, 1, q::GraphRole::kMtpPrefill, false, q::TextCompletion::kEmitNext, index),
+          "MTP recording lost its original prefill Family");
+      model->plan_replay_uses(3, 1, 16, q::GraphRole::kMtpPrefill, q::TextCompletion::kEmitNext, index);
+      for (const auto role : {q::GraphRole::kMtpRound, q::GraphRole::kMtpCatchupRound,
+                              q::GraphRole::kMtpSingle, q::GraphRole::kMtpCatchupSingle}) {
+        const auto rows = q::drafts_token(role) ? std::span<const std::size_t>(two) : std::span<const std::size_t>(one);
+        require(model->prepare_family(rows, false, 1, role, false, q::TextCompletion::kEmitNext, index),
+            "MTP recording lost an original finite decode role");
+        model->plan_replay_uses(rows[0], 1, 16, role, q::TextCompletion::kEmitNext, index);
+      }
+    }
+    model->freeze_shape_plan(); model->prepare_state_storage();
+    for (std::size_t index = 0; index != 2; ++index) {
+      model->prepare_execution(three, 1, q::GraphRole::kMtpPrefill, q::TextCompletion::kEmitNext, index);
+      for (const auto role : {q::GraphRole::kMtpRound, q::GraphRole::kMtpCatchupRound,
+                              q::GraphRole::kMtpSingle, q::GraphRole::kMtpCatchupSingle})
+        model->prepare_execution(q::drafts_token(role) ? std::span<const std::size_t>(two) : std::span<const std::size_t>(one),
+            1, role, q::TextCompletion::kEmitNext, index);
+    }
+    model->prepare_relay_execution(1, 0, q::GraphRole::kMtpCatchupRound);
+    return model;
+  };
+  const auto idle = [&](const q::Model &model, std::size_t versions = 0) {
+    require(!model.active_step && !model.successor_step && !model.carrier_borrowed &&
+        model.snapshot_versions.live == versions && model.page_inventory.free_ids.size() == model.cache_plan.max_pages &&
+        model.draft_inventory.free_ids.size() == model.draft_inventory.owners.size(),
+        "MTP cold recording retained an original episode, version, page or native operation");
+  };
+  const auto coverage = [&](q::Model &model) {
+    auto &round = model.prepare_child(2, false, 1, q::GraphRole::kMtpRound);
+    auto &catchup = model.prepare_child(2, false, 1, q::GraphRole::kMtpCatchupRound);
+    auto &single = model.prepare_child(1, false, 1, q::GraphRole::kMtpSingle);
+    auto &catchup_single = model.prepare_child(1, false, 1, q::GraphRole::kMtpCatchupSingle);
+    auto &imported = model.prepare_child(2, false, 1, q::GraphRole::kMtpCatchupRound,
+        q::TextCompletion::kEmitNext, 0, true);
+    return std::array{round.slots[0].preparation_uses, catchup.slots[0].preparation_uses,
+        single.slots[0].preparation_uses, catchup_single.slots[0].preparation_uses,
+        imported.slots[0].preparation_uses, imported.slots[1].preparation_uses, imported.slots[2].preparation_uses};
+  };
+  const auto recorded_six = [&](q::Model &model, const auto &before) {
+    const auto after = coverage(model);
+    constexpr std::array<std::size_t, 7> uses{1, 1, 0, 0, 2, 1, 1};
+    for (std::size_t at = 0; at != uses.size(); ++at)
+      require(after[at] == before[at] + uses[at], "MTP cold recording changed its exact original role/slot cohort");
+    require(!model.submitted_draft_rows, "MTP cold recording submitted native draft mathematics");
+  };
+  struct Result final {
+    std::vector<std::int32_t> ids;
+    std::vector<q::GenerationCommitRecord> records;
+    std::vector<std::uint64_t> epochs;
+    h::ImageBytes prefill_image, image;
+    std::weak_ptr<q::Session> retired_session;
+    std::size_t accepted = 0, rejected = 0;
+    double prefill_seconds = 0;
+  };
+  const auto journey = [&](q::Model &model, std::size_t sampling, std::shared_ptr<q::Session> prepared = {}) {
+    constexpr std::size_t outputs = 6;
+    const std::array<std::int32_t, 3> prompt{1, 2, 3};
+    std::vector<q::GenerationRequest> requests;
+    requests.emplace_back("mtp-after-recording", prompt, std::filesystem::path{}, outputs, sampling,
+        i::RequestStopPolicy({}, true));
+    auto &request = requests.front(); t::prepare_request(request, 16);
+    request.progress.initial_sampling = sampling ? q::cache::SamplingCursor{808, 17, 0} : q::cache::SamplingCursor{};
+    request.session = std::move(prepared);
+    i::RequestWindow keys; keys.prepare(1, 1); request.request_key = keys.enqueue(0);
+    q::GenerationContinuation continuation; continuation.prepare(1);
+    auto storage = q::take(i::HostStateStorage::create(model.execution, 1, 4u << 20));
+    hyle::util::ScopeGuard cleanup{[&]() noexcept {
+      continuation.reset(); (void)model.abort_episode();
+      if (request.session) {
+        request.session->stop().IgnoreError(); (void)request.session->drain();
+        (void)request.session->try_retire(); request.session.reset();
+      }
+    }};
+    Result result;
+    const auto observed = [&](const q::GenerationBatchFacts &facts) {
+      require(facts.members.size() == 1 && facts.members[0].request == &request,
+          "MTP post-recording publication changed its original request");
+      if (facts.members[0].disposition == q::EvaluationDisposition::kCancelled) return;
+      require(facts.members[0].disposition == q::EvaluationDisposition::kPublished,
+          "MTP post-recording publication lost its original disposition");
+      const auto &record = request.ledger->records[request.ledger->committed_count - 1];
+      const auto cursor = sampling ? record.before.sampling.advanced(q::drafts_token(record.role) ? 3 : 1)
+                                   : q::cache::SamplingCursor{};
+      require(record.after.sampling == cursor && request.session->head->sampling == cursor,
+          "MTP post-recording publication changed its actual RNG reservation");
+      result.epochs.push_back(request.session->head.epoch());
+      if (record.generation && record.draft_limit) {
+        result.accepted += record.accepted_draft; result.rejected += !record.accepted_draft;
+      }
+    };
+    while (!request.progress.turn_done) {
+      require(request.ledger->committed_count < outputs, "MTP post-recording request exceeded its finite ledger");
+      std::array calls{q::prepare_generation_call(model, request, outputs, nullptr, requests)};
+      const bool prefill = !calls[0].generation;
+      if (prefill) {
+        const auto initial = s::image(model, *request.session->head);
+        require(!initial.length && !initial.frontier && !initial.lag && initial.pending == -1 && initial.catchup == -1 &&
+            initial.sampling == request.progress.initial_sampling && !request.ledger->committed_count &&
+            request.progress.generated.empty(), "fresh MTP Session inherited a cold recording boundary or request output");
+        for (const auto &bytes : initial.payloads)
+          require(std::ranges::all_of(bytes, [](auto byte) { return byte == std::byte{}; }),
+              "fresh MTP Session did not zero its original recurrent/history/hidden state");
+        result.retired_session = request.session;
+      }
+      q::execute_generation_calls(model, calls, false, nullptr, requests, [&] {
+        if (sampling) require(model.active_step->phase->slots[model.active_step->state_slot].replay_mode == q::g::ReplayMode::kCommands &&
+            !model.active_step->capture_recorded, "MTP random verification unexpectedly enabled native capture");
+      }, &continuation, observed);
+      if (prefill) { result.prefill_seconds = calls[0].step_seconds; result.prefill_image = p::capture(model, *request.session, storage); }
+    }
+    continuation.reset(); result.ids = request.progress.generated;
+    result.records.assign(request.ledger->records.begin(), request.ledger->records.begin() + request.ledger->committed_count);
+    result.image = p::capture(model, *request.session, storage);
+    require(result.ids.size() == outputs && result.records.size() == result.epochs.size() && result.prefill_seconds > 0,
+        "MTP cold recording polluted real request counts or omitted its independent prefill");
+    h::retire(request.session); idle(model);
+    require(result.retired_session.expired(), "MTP independent Session retained a hidden strong owner after retirement");
+    cleanup.dismiss(); return result;
+  };
+  auto control_model = make_model(), recorded_model = make_model();
+  const auto before_private = coverage(*recorded_model);
+  const auto recording = recorded_model->prepare_mtp_decode_recordings(0);
+  require(recording.preparations == 6 && recording.captures > 0, "MTP cold recording did not prepare its six original T2 tuples");
+  recorded_six(*recorded_model, before_private); idle(*recorded_model);
+  std::shared_ptr<q::Session> prepared;
+  const auto before_session = coverage(*recorded_model);
+  const auto session_recording = recorded_model->prepare_mtp_decode_recordings(0, &prepared);
+  require(session_recording.preparations == 6 && prepared && prepared->head && !prepared->pending &&
+      !prepared->stopping && !prepared->failed && !prepared->length() && prepared->head->next_id == -1 &&
+      prepared->head->draft && !prepared->head->draft->frontier && !prepared->head->draft->lag &&
+      prepared->head->draft->catchup_token == -1 && prepared->head->paged.pages.empty() &&
+      prepared->head->draft->paged.pages.empty() && prepared->head->sampling == q::cache::SamplingCursor{},
+      "MTP cold recording changed the real empty head/draft handed to the request");
+  recorded_six(*recorded_model, before_session); idle(*recorded_model, 1);
+  const auto same = [&](const Result &a, const Result &b, std::size_t sampling) {
+    require(a.ids == b.ids && a.epochs == b.epochs && a.records.size() == b.records.size() &&
+        a.accepted == b.accepted && a.rejected == b.rejected && control_model->source_identity == recorded_model->source_identity,
+        "MTP cold recording changed real IDs, epochs, ledger counts or natural acceptance");
+    for (const auto images : {std::pair{&a.prefill_image, &b.prefill_image}, std::pair{&a.image, &b.image}})
+      require(images.first->identity == control_model->host_image_identity(sampling) &&
+          images.second->identity == recorded_model->host_image_identity(sampling) &&
+          h::same_boundary(images.first->boundary, images.second->boundary) && images.first->layout == images.second->layout &&
+          images.first->total_bytes == images.second->total_bytes && images.first->payloads == images.second->payloads,
+          "MTP cold recording changed a complete prefill or terminal HostImage");
+    for (std::size_t at = 0; at != a.records.size(); ++at)
+      require(a.records[at].same_result(b.records[at]) && a.records[at].committed == b.records[at].committed &&
+          a.records[at].user_output == b.records[at].user_output && a.records[at].imported == b.records[at].imported &&
+          a.records[at].turn == b.records[at].turn && std::ranges::equal(a.records[at].ids(), b.records[at].ids()) &&
+          std::ranges::equal(a.records[at].committed_ids(), b.records[at].committed_ids()),
+          "MTP cold recording changed an authoritative input, decision, RNG or committed ledger boundary");
+  };
+  const auto first_control = journey(*control_model, 0), first = journey(*recorded_model, 0, std::move(prepared));
+  same(first_control, first, 0); require(!prepared, "MTP empty Session handoff retained its output owner");
+  const auto second_control = journey(*control_model, 0), second = journey(*recorded_model, 0);
+  same(second_control, second, 0);
+  require(first.ids == second.ids && first.epochs == second.epochs,
+      "second independent MTP Session inherited the retired first Session's state");
+  for (auto *model : {control_model.get(), recorded_model.get()}) {
+    const auto skipped = model->prepare_mtp_decode_recordings(1);
+    require(!skipped.preparations && !skipped.captures && skipped.seconds == 0 && skipped.capture_preparation_seconds == 0,
+        "MTP random route performed private cold recording");
+    idle(*model);
+  }
+  same(journey(*control_model, 1), journey(*recorded_model, 1), 1);
+  std::cout << "{\"case\":\"mtp-decode-recording\",\"recorded_preparations\":" << recording.preparations
+      << ",\"captures\":" << recording.captures << ",\"session_preparations\":" << session_recording.preparations
+      << ",\"session_captures\":" << session_recording.captures << ",\"greedy_accepted_drafts\":" << first.accepted
+      << ",\"greedy_rejected_drafts\":" << first.rejected << ",\"first_prefill_step_seconds\":" << first.prefill_seconds
+      << ",\"second_independent_prefill_step_seconds\":" << second.prefill_seconds
+      << ",\"independent_greedy_sessions\":2,\"random_ids_rng_ledger_images_equal\":true,\"final_versions\":0}\n";
+}
+
 inline void pending_graph_pumps(const std::filesystem::path &input) {
   auto source = q::prepare_weight_source(input / "weights.tsv", false);
   const auto geometry = source.roles.geometry;
@@ -516,6 +705,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
 #if defined(HYLE_COMPUTE_CUDA)
   if (kind == q::BackendKind::kCuda) {
     ordinary_decode_recordings(input);
+    mtp_decode_recordings(input);
     pending_graph_pumps(input);
   }
 #endif

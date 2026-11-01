@@ -12,6 +12,33 @@
 
 namespace hyle::inference {
 
+// One request owner's history of published proposal outcomes. The caller
+// observes each real proposal once; queries neither observe nor reset history.
+// An optional rejection latch lasts until another turn is observed. A zero
+// threshold remains an ungated control regardless of observed outcomes.
+// This policy owns no model state, native work, Source or submission authority.
+class SuccessorAcceptanceGate final {
+ public:
+  explicit SuccessorAcceptanceGate(std::size_t required_accepts, bool stop_after_rejection = false) noexcept
+      : required_accepts_(required_accepts), stop_after_rejection_(stop_after_rejection) {}
+
+  bool allows(std::size_t turn) const noexcept {
+    return !required_accepts_ || (turn_ && *turn_ == turn && !rejected_ && accepted_streak_ == required_accepts_);
+  }
+  void observe(std::size_t turn, bool fully_accepted) noexcept {
+    if (!turn_ || *turn_ != turn) { turn_ = turn; accepted_streak_ = 0; rejected_ = false; }
+    if (!fully_accepted) {
+      accepted_streak_ = 0;
+      rejected_ = stop_after_rejection_;
+    } else if (accepted_streak_ < required_accepts_) ++accepted_streak_;
+  }
+
+ private:
+  std::size_t required_accepts_, accepted_streak_ = 0;
+  bool stop_after_rejection_, rejected_ = false;
+  std::optional<std::size_t> turn_;
+};
+
 struct ContinuationMember final {
   RequestKey key;
   std::size_t turn = 0;

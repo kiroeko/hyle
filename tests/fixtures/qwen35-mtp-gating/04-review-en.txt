@@ -1,0 +1,10 @@
+Review this intake counter. It will run whenever a new visitor arrives:
+
+def add_visit(item, visits=[]):
+    visits.append(item)
+    counts = {}
+    for visit in visits:
+        counts[visit["category"]] = 1
+    return counts
+
+Find the correctness problems, show a repaired implementation, and demonstrate two consecutive calls with expected results. The event coordinator should be able to understand why the original version loses information. Discuss how you would test the repair.

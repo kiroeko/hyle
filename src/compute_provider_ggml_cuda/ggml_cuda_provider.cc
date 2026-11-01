@@ -74,6 +74,7 @@ struct Program final {
     std::size_t node = 0;
     std::size_t count = 0;
     std::int64_t extent = 0;
+    std::uint32_t source_input = UINT32_MAX;
   };
 
   CUcontext primary = nullptr;
@@ -696,6 +697,13 @@ struct Invocation final {
       if (next_check < program.index_checks.size() &&
           program.index_checks[next_check].node == node_index) {
         const auto &check = program.index_checks[next_check++];
+        if (check.source_input != UINT32_MAX) {
+          auto *selected = internal::create_tensor_input(arena.get(), recipe.values[node.outputs[0]]);
+          ggml_set_input(selected);
+          safe_indices.push_back(selected);
+          tensors[node.outputs[0]] = selected;
+          continue;
+        }
         index_id = recipe.inputs[check.input];
         original_ids = tensors[index_id];
         const CheckedIndicesKey key{original_ids, check.count, check.extent};
@@ -1190,7 +1198,11 @@ detail::EnqueueResult submit(void *value, void *lane, detail::QueueSequence &seq
       return initialized;
     for (std::size_t i = 0; i < program.index_checks.size(); ++i) {
       const auto &check = program.index_checks[i];
-      terminal = cuda::status(internal::check_indices(
+      terminal = check.source_input != UINT32_MAX ? cuda::status(internal::select_indexed_source(
+          static_cast<const std::int32_t *>(invocation.pointers[check.source_input]),
+          static_cast<const std::int32_t *>(invocation.pointers[check.input]),
+          static_cast<std::int32_t *>(invocation.safe_indices[i]->data),
+          check.extent, status_word, *stream)) : cuda::status(internal::check_indices(
           static_cast<const std::int32_t *>(invocation.pointers[check.input]),
           static_cast<std::int32_t *>(invocation.safe_indices[i]->data),
           check.count, check.extent, status_word, *stream));
@@ -1828,6 +1840,50 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
     for (std::size_t node_index = 0; node_index < recipe.nodes.size();
          ++node_index) {
       const auto &node = recipe.nodes[node_index];
+      if (node.indexed_state && node.operation.get_if<Gather>()) {
+        const auto *selection = node.operation.get_if<Gather>();
+        if (!selection || selection->axis != 0 || selection->bounds != IndexBoundsPolicy::kChecked ||
+            node.bfloat_paired_projection || node.inputs.size() != 2 || node.outputs.size() != 1)
+          return ProviderPrepareOutcome::error(Status::InvalidArgument("indexed source choice has no exact checked selection"));
+        const auto ids = node.inputs[0], selector = node.inputs[1], selected = node.outputs[0];
+        if (ids >= recipe.values.size() || selector >= recipe.values.size() || selected >= recipe.values.size())
+          return ProviderPrepareOutcome::error(Status::InvalidArgument("indexed source choice value is foreign"));
+        const auto scalar = TensorDesc::dense(DataType::kInt32, std::array<std::int64_t, 1>{1}).value();
+        const auto pair = TensorDesc::dense(DataType::kInt32, std::array<std::int64_t, 1>{2}).value();
+        const auto source = std::ranges::find(recipe.inputs, ids), control = std::ranges::find(recipe.inputs, selector);
+        if (recipe.values[ids] != pair || recipe.values[selector] != scalar || recipe.values[selected] != scalar ||
+            source == recipe.inputs.end() || control == recipe.inputs.end() ||
+            std::ranges::find(recipe.inputs, selected) != recipe.inputs.end() ||
+            std::ranges::find(recipe.outputs, selected) != recipe.outputs.end() ||
+            std::ranges::find(recipe.effect_roots, selected) != recipe.effect_roots.end() ||
+            std::ranges::any_of(recipe.constants,[&](const auto&c){return c.value==selected;}))
+          return ProviderPrepareOutcome::error(Status::InvalidArgument("indexed source choice must retain the original finite input controls"));
+        std::int64_t slots = 0;std::size_t consumers = 0;
+        for (std::size_t ordinal=0;ordinal<recipe.nodes.size();++ordinal) {
+          const auto&consumer=recipe.nodes[ordinal];
+          if(ordinal!=node_index && std::ranges::find(consumer.outputs,selected)!=consumer.outputs.end())
+            return ProviderPrepareOutcome::error(Status::InvalidArgument("indexed source choice has another producer"));
+          for (std::size_t port = 0; port < consumer.inputs.size(); ++port) {
+            if (consumer.inputs[port] != selected) continue;
+            const auto state_port = consumer.operation.custom_as<model_ops::CausalConv1d>() ? 2U :
+                consumer.operation.custom_as<model_ops::RecurrentGatedDeltaNet>() ? 7U : 5U;
+            if (ordinal<=node_index || !consumer.indexed_state || port != state_port + 1 ||
+                state_port >= consumer.inputs.size() || consumer.inputs[state_port] >= recipe.values.size())
+              return ProviderPrepareOutcome::error(Status::InvalidArgument("indexed source choice escapes its original indexed math"));
+            const auto &pool = recipe.values[consumer.inputs[state_port]];
+            if (pool.rank() != 2 || pool.dimensions()[0] <= 0 || pool.dimensions()[0] > INT32_MAX)
+              return ProviderPrepareOutcome::error(Status::InvalidArgument("indexed source choice pool extent is invalid"));
+            slots = pool.dimensions()[0];++consumers;
+          }
+        }
+        if (consumers != 1)
+          return ProviderPrepareOutcome::error(Status::InvalidArgument("indexed source choice needs exactly one original indexed consumer"));
+        index_checks.push_back({static_cast<std::uint32_t>(control - recipe.inputs.begin()),node_index,1,slots,
+            static_cast<std::uint32_t>(source - recipe.inputs.begin())});
+        for (const auto id : node.inputs) alignments[id] = std::max(alignments[id], sizeof(std::int32_t));
+        alignments[selected] = sizeof(std::int32_t);
+        continue;
+      }
       if (node.indexed_state &&
           (!supports_indexed_state(value, node, recipe.values) ||
            std::ranges::find(recipe.effect_roots, node.outputs[0]) == recipe.effect_roots.end()))

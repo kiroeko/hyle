@@ -27,6 +27,9 @@ struct PreparedSampling; // Stable owner lives in the original ColdResources.
 
 struct FamilyPorts {
   std::size_t prefix_rows = 1;
+  // Only the opt-in continuation Family emits its own next device decision
+  // and writes the complete raw append envelope for a later real Source.
+  bool continuous_device_successor = false;
   V token_port, position_port, last_ids_port, metadata_port, logits_port, id_port, hidden_port;
   V sampling_identity_port, sampling_valid_port, sampling_accept_port;
   V sequence_offsets_port, history_select_port, prefix_ids_port;
@@ -38,6 +41,14 @@ struct FamilyPorts {
   V draft_key_port, draft_value_port, draft_metadata_port, draft_position_port;
   V carry_input_port, prior_input_port, catchup_token_port, draft_id_port;
   V successor_token_port, successor_catchup_port;
+  // Optional greedy K1 device decision. Each is a distinct owned I32[1]
+  // output; these values describe proposal agreement before stop/quota
+  // policy, never Source/publication rights.
+  V successor_accepted_count_port, successor_prefix_index_port;
+  V successor_pending_port, successor_lag_port, successor_selected_catchup_port;
+  // Dedicated continuation Family only. Existing position ports carry the
+  // prefix0 candidate; these carry prefix1. Prefix choice is I32[1].
+  V predecessor_prefix_port, continuation_position_port, continuation_draft_position_port;
   V draft_hidden_select_port, draft_token_select_port, draft_last_ids_port;
   StatePorts hidden_state;
   g::NodeId draft_attention_node;
@@ -91,6 +102,11 @@ struct FamilyPreparedFacts final {
   std::uint32_t state_slots = 0, hidden_slots = 0;
   bool retain_hidden = false, emit_successor = false;
   DraftProjectionView draft_projection;
+  // Original full-candidate successor outputs keep their existing contract.
+  // The caller enables these extra device outputs only with a complete
+  // accepted-prefix metadata/state/retirement route.
+  bool device_acceptance_successor = false;
+  bool continuous_device_successor = false;
 };
 struct FamilyCompileContext final {
   inference::Backend &execution;

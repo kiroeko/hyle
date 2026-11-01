@@ -12,6 +12,96 @@ namespace {
 namespace i = hyle::inference;
 void require(bool value, const char *message) { if (!value) throw std::runtime_error(message); }
 
+void successor_acceptance_gate_uses_only_published_observations() {
+  i::SuccessorAcceptanceGate gate{2};
+  const auto &queried = gate;
+  static_assert(noexcept(i::SuccessorAcceptanceGate{2}));
+  static_assert(noexcept(queried.allows(0)) && noexcept(gate.observe(0, true)));
+  require(!queried.allows(0) && !queried.allows(1),
+      "an unobserved request enabled speculative successors");
+  gate.observe(0, true);
+  for (unsigned poll = 0; poll < 64; ++poll)
+    require(!queried.allows(0) && !queried.allows(1),
+        "querying current or another turn counted an acceptance or enabled successors");
+  gate.observe(0, true);
+  require(queried.allows(0) && !queried.allows(1),
+      "two actual acceptances did not open only their own turn");
+  for (unsigned accepted = 0; accepted < 64; ++accepted) {
+    gate.observe(0, true);
+    require(queried.allows(0) && !queried.allows(1),
+        "further acceptances exceeded the bounded threshold or leaked to another turn");
+  }
+  i::SuccessorAcceptanceGate other_request{2};
+  require(!other_request.allows(0), "a new request inherited another request's acceptance history");
+  gate.observe(0, false);
+  require(!queried.allows(0), "a rejected proposal retained the preceding acceptance streak");
+  gate.observe(0, true);
+  require(!queried.allows(0), "one acceptance after rejection restored the old streak");
+  gate.observe(0, true);
+  require(queried.allows(0), "two fresh acceptances after rejection did not reopen successors");
+
+  gate.observe(1, true);
+  require(!queried.allows(0) && !queried.allows(1),
+      "a new turn retained the preceding turn's acceptance streak");
+  gate.observe(1, false);
+  gate.observe(1, true);
+  require(!queried.allows(1), "a rejection in a new turn did not reset its own history");
+  gate.observe(1, true);
+  require(queried.allows(1), "a new turn could not establish its independent acceptance streak");
+  const auto maximum_turn = (std::numeric_limits<std::size_t>::max)();
+  gate.observe(maximum_turn, true);
+  require(!queried.allows(1) && !queried.allows(maximum_turn),
+      "the maximum turn identity was treated as an uninitialized sentinel");
+  gate.observe(maximum_turn, true);
+  require(queried.allows(maximum_turn), "the maximum turn identity could not open its own gate");
+
+  i::SuccessorAcceptanceGate control{0};
+  require(control.allows(0) && control.allows(maximum_turn),
+      "the ungated control required an observation before allowing successors");
+  control.observe(0, false);
+  control.observe(1, true);
+  require(control.allows(0) && control.allows(1) && control.allows(maximum_turn),
+      "rejection or a turn transition gated the zero-threshold control");
+}
+
+void successor_acceptance_gate_can_stop_after_a_turn_rejection() {
+  i::SuccessorAcceptanceGate gate{8, true};
+  const auto &queried = gate;
+  static_assert(noexcept(i::SuccessorAcceptanceGate{8, true}));
+  gate.observe(0, false);
+  for (unsigned accepted = 0; accepted < 32; ++accepted) {
+    gate.observe(0, true);
+    require(!queried.allows(0), "acceptances reopened a turn latched by a rejected proposal");
+  }
+  for (unsigned poll = 0; poll < 64; ++poll)
+    require(!queried.allows(0) && !queried.allows(1),
+        "querying another turn cleared the rejection latch or enabled an unobserved turn");
+  for (unsigned accepted = 0; accepted < 8; ++accepted) {
+    gate.observe(1, true);
+    require(queried.allows(1) == (accepted == 7) && !queried.allows(0),
+        "the next turn retained a rejection latch or opened before eight actual acceptances");
+  }
+  for (unsigned poll = 0; poll < 64; ++poll)
+    require(queried.allows(1) && !queried.allows(2),
+        "querying another turn reset an open turn or counted an acceptance for the next turn");
+  gate.observe(1, false);
+  for (unsigned accepted = 0; accepted < 32; ++accepted) gate.observe(1, true);
+  require(!queried.allows(1), "a rejection failed to latch a previously open turn");
+  for (unsigned accepted = 0; accepted < 8; ++accepted) gate.observe(2, true);
+  require(queried.allows(2) && !queried.allows(1),
+      "an observed new turn failed to clear the previous turn's rejection latch");
+
+  // Zero requests the ungated control, including when stop-on-rejection is set.
+  i::SuccessorAcceptanceGate control{0, true};
+  require(control.allows(0) && control.allows(1), "a zero threshold was gated before any observation");
+  control.observe(0, false);
+  control.observe(0, true);
+  require(control.allows(0) && control.allows(1), "a rejection latched the zero-threshold control");
+  control.observe(1, false);
+  require(control.allows(0) && control.allows(1) && control.allows(2),
+      "a new turn changed the zero-threshold control's ungated semantics");
+}
+
 void continuation_cohort_preserves_pending_identity_and_drain_intent() {
   using Cohort = i::ContinuationCohort;
   i::RequestWindow window, foreign; window.prepare(2, 2); foreign.prepare(2, 2);
@@ -150,10 +240,12 @@ void continuation_retention_keeps_or_retires_the_whole_actual_successor() {
 
 int main() {
   try {
+    successor_acceptance_gate_uses_only_published_observations();
+    successor_acceptance_gate_can_stop_after_a_turn_rejection();
     continuation_cohort_preserves_pending_identity_and_drain_intent();
     continuation_quota_bounds_original_grants_without_overflow();
     continuation_retention_keeps_or_retires_the_whole_actual_successor();
-    std::puts("{\"status\":\"PASS\",\"groups\":3,\"device_execution\":false}");
+    std::puts("{\"status\":\"PASS\",\"groups\":5,\"device_execution\":false}");
     return 0;
   } catch (const std::exception &error) {
     std::fprintf(stderr, "inference continuation: %s\n", error.what());

@@ -34,6 +34,21 @@ __global__ void publish(const unsigned char *source, unsigned char *destination,
        i < bytes; i += std::size_t(gridDim.x) * blockDim.x)
     destination[i] = source[i];
 }
+
+__global__ void select_source(const std::int32_t *sources,
+    const std::int32_t *selector, std::int32_t *selected, std::int64_t slots,
+    unsigned *status) {
+  *selected = -1;
+  if (*status != 0) return;
+  const auto choice = *selector;
+  const auto left = sources[0], right = sources[1];
+  if (choice < 0 || choice >= 2 || left < 0 || std::int64_t(left) >= slots ||
+      right < 0 || std::int64_t(right) >= slots) {
+    atomicCAS(status, 0U, static_cast<unsigned>(cuda::detail::DeviceStatusCode::kIndexOutOfRange));
+    return;
+  }
+  *selected = choice ? right : left;
+}
 } // namespace
 
 cudaError_t check_indices(const std::int32_t *source, std::int32_t *safe,
@@ -53,6 +68,13 @@ cudaError_t publish_checked(const void *source, void *destination,
   publish<<<blocks(bytes), kThreads, 0, stream>>>(
       static_cast<const unsigned char *>(source),
       static_cast<unsigned char *>(destination), bytes, status);
+  return cudaGetLastError();
+}
+
+cudaError_t select_indexed_source(const std::int32_t *sources,
+    const std::int32_t *selector, std::int32_t *selected, std::int64_t slots,
+    unsigned *status, cudaStream_t stream) noexcept {
+  select_source<<<1, 1, 0, stream>>>(sources, selector, selected, slots, status);
   return cudaGetLastError();
 }
 } // namespace hyle::compute::ggml_cuda::internal

@@ -17,6 +17,7 @@ struct BeforeCommandChange final {
 enum class BatchGraphContract : std::uint8_t {
   kPreparedMetadataCapacity,
   kOwnedLayoutActive,
+  kDeviceLayoutChoice,
 };
 // Graph's original shared-region admission/retirement owns external inputs,
 // output and this same native slot. This bridge does not create a Completion,
@@ -34,6 +35,10 @@ struct BatchGraphAccess final {
   HYLE_COMPUTE_BATCH_API static Result<ReadLease> metadata(const BatchInvocation&) noexcept;
   HYLE_COMPUTE_BATCH_API static Result<PreparedBatch> prepare(BatchInvocation&,
       const BatchLayoutVersion&,bool update,BeforeCommandChange) noexcept;
+  HYLE_COMPUTE_BATCH_API static Result<PreparedBatch> prepare_choices(BatchInvocation&,
+      const std::array<BatchLayoutVersion,2>&,bool update,BeforeCommandChange) noexcept;
+  HYLE_COMPUTE_BATCH_API static Status validate_choices(const BatchInvocation&,
+      const std::array<BatchLayoutVersion,2>&) noexcept;
   // Prepare a local plan using the source's already checked-retired same-layout
   // mirror. Sharing precedes upload; each plan/workspace stays independent.
   HYLE_COMPUTE_BATCH_API static Result<PreparedBatch> prepare_shared(BatchInvocation&,

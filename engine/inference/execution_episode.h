@@ -91,6 +91,29 @@ class ExecutionEpisode final {
     HYLE_RETURN_IF_ERROR(graph::batch::prepare(*run, carrier->queues(), layouts, options));
     return append_transactions().subspan(first, count).bind(*run, logical, cache_inputs);
   }
+  Status prepare_appends(const graph::Graph &logical,
+      std::span<const graph::batch::NodeLayoutChoice> layouts,
+      std::size_t first, std::size_t count,
+      std::span<const graph::ValueId> cache_inputs,
+      graph::batch::PrepareOptions options = {}) noexcept {
+    if (!run || !carrier)
+      return Status::FailedPrecondition("execution episode has no original carrier");
+    if (first > nodes.size() || count > nodes.size() - first ||
+        first > appends.size() || count > appends.size() - first ||
+        first > bound.size() || count > bound.size() - first)
+      return Status::OutOfRange("choice append preparation exceeds the original episode cohort");
+    HYLE_ASSIGN_OR_RETURN(const bool prepared,
+        graph::batch::try_prepare_choices(*run, carrier->queues(), layouts, options));
+    if (!prepared) {
+      if (predecessor_episode && incoming && !incoming->bound && !has_completion() && !sources) {
+        unsubmitted_reuse_declined_ = true;
+        preparation_declined_ = true;
+        cleanup_pending = true;
+      }
+      return Status::Unimplemented("finite native layout choices declined before changing the original preparation");
+    }
+    return append_transactions().subspan(first, count).bind(*run, logical, cache_inputs);
+  }
   Status bind_consumers(const graph::Graph &state_graph) noexcept {
     if (!run || !carrier)
       return Status::FailedPrecondition("execution episode has no original carrier");
@@ -334,6 +357,7 @@ class ExecutionEpisode final {
   };
   bool recording_prepared_ = false;
   bool unsubmitted_reuse_declined_ = false;
+  bool preparation_declined_ = false;
   // A default terminal Status is not evidence of successful execution. Keep
   // this observation after the original Completion/Source has been released,
   // and remember withdrawal if later page rollback needs another attempt.
@@ -362,7 +386,7 @@ class ExecutionEpisode final {
       } else if (mode == RecoveryMode::kUnsubmittedReuse) {
         if (!unsubmitted_reuse_declined_ || has_completion() || sources ||
             (successful_discard_ != SuccessfulDiscard::kConsumersReleased &&
-                (!incoming || !incoming->bound)))
+                (!incoming || (!incoming->bound && !preparation_declined_))))
           return std::unexpected(Status::FailedPrecondition("reuse refusal has submitted work or lost its original incoming bundle"));
       } else if (successful_discard_ == SuccessfulDiscard::kUnobserved) {
         if (!has_completion())
@@ -435,6 +459,7 @@ class ExecutionEpisode final {
     successful_discard_ = SuccessfulDiscard::kUnobserved;
     recording_prepared_ = false;
     unsubmitted_reuse_declined_ = false;
+    preparation_declined_ = false;
     release_admission();
     return true;
   }

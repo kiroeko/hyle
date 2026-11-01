@@ -17,6 +17,7 @@
 #include "native_batch.h"
 #include "native_cache_encoder.h"
 #include "hyle/compute/detail/batch_provider.h"
+#include "hyle/compute/detail/batch_device_choice.h"
 #include "hyle/compute/detail/batch_output_extent.h"
 #include "hyle/compute/detail/queue_ref.h"
 #include "native_context.h"
@@ -156,6 +157,7 @@ struct BatchSlot final {
   // active generation/layout when sizing or common quota admission fails.
   BatchWorkspaceQuery workspace_query;
   bool mla=false;
+  bool device_choice=false;
 };
 Status qualify_batch(void*opaque,BatchCapacity capacity,const BatchProgramOptions&options)noexcept {
   auto&context=*static_cast<ProviderContext*>(opaque);
@@ -472,6 +474,68 @@ Result<bool> update_batch_slot(void*opaque,const BatchLayoutVersion&layout,Batch
   slot.layout=layout;slot.generation=layout.generation();*report=slot.report;report->layout_generation=slot.generation;report->reused_native_plan=true;
   slot.report=*report;return true;
 }
+Status qualify_device_choices(void*opaque,Queue&queue,const BatchLayoutVersion&zero,
+    const BatchLayoutVersion&nonzero,detail::BatchDeviceChoiceStage stage)noexcept{
+  auto&slot=*static_cast<BatchSlot*>(opaque);
+  if(stage!=detail::BatchDeviceChoiceStage::kPreflight && stage!=detail::BatchDeviceChoiceStage::kPrepared)
+    return Status::InvalidArgument("FlashInfer device choice qualification stage is invalid");
+  if(slot.mla || !slot.generation || slot.spec.query_rows!=2 || slot.spec.requests!=1 ||
+      !slot.layout.origin_schema().owns(zero) || !slot.layout.origin_schema().owns(nonzero))
+    return Status::Unimplemented("FlashInfer device choices require the original R1/Q2 GQA plan");
+  HYLE_ASSIGN_OR_RETURN(auto stream,cuda::stream(queue));
+  cuda::detail::ScopedPrimaryContext scope(slot.primary);if(!scope)return scope.status();
+  const auto anchor=slot.layout.host();
+  const auto chunk_count=[&](HostBatchLayout h)->std::uint64_t{
+    if(!slot.kv_chunk_rows || slot.kv_chunk_rows%slot.spec.page_size)return UINT64_MAX;
+    const auto chunk=slot.kv_chunk_rows/slot.spec.page_size;
+    const auto pages=std::uint64_t(h.kv_indptr[1]-h.kv_indptr[0]);
+    return (std::max(pages,std::uint64_t{1})+chunk-1)/chunk;
+  };
+  const auto chunks=chunk_count(zero.host());
+  if(chunks==UINT64_MAX || chunk_count(nonzero.host())!=chunks ||
+      (stage==detail::BatchDeviceChoiceStage::kPrepared && chunk_count(anchor)!=chunks))
+    return Status::Unimplemented("FlashInfer device choices change the actual KV tile schedule");
+  for(const auto*layout:{&zero,&nonzero}){
+    const auto h=layout->host();
+    if(layout->facts().requests!=1)
+      return Status::Unimplemented("FlashInfer device choices change the actual KV tile schedule");
+    auto spec=slot.spec;spec.query_rows=layout->facts().query_rows;bool qualified=false;
+    HYLE_RETURN_IF_ERROR(cuda::status(native::qualify_device_layout_choice(slot.plan,spec,
+        h.query_indptr.data(),h.kv_indptr.data(),stream,qualified)));
+    if(!qualified)return Status::Unimplemented("FlashInfer device choices do not preserve the original max-Q2 launch/merge topology");
+  }
+  // Preflight may see a retired older anchor. The ordinary native planner
+  // must refresh its real tile/mask/merge contents before authorizing select.
+  if(stage==detail::BatchDeviceChoiceStage::kPrepared)slot.device_choice=true;
+  return Status::Ok();
+}
+detail::EnqueueResult select_device_choices(void*opaque,detail::QueueSequence&sequence,
+    ConstTensorView selector,mem::ConstBufferView zero,mem::ConstBufferView nonzero,
+    mem::BufferView selected,detail::BatchWorkspaceViews workspace)noexcept{
+  auto&slot=*static_cast<BatchSlot*>(opaque);
+  if(!slot.device_choice || zero.size()!=nonzero.size() || zero.size()!=selected.size())
+    return detail::EnqueueResult::rejected(Status::FailedPrecondition("FlashInfer device choices are not qualified"));
+  auto stream=cuda::stream(sequence);if(!stream)return detail::EnqueueResult::rejected(stream.error());
+  // The private pair is packed at the encoded byte extent, which can be
+  // 4 mod 8 for R1. Its selector kernel reads I32 words; only the selected
+  // opaque metadata carrier retains the ordinary eight-byte alignment.
+  auto choice=cuda::detail::const_pointer(selector.storage(),4,1),left=cuda::detail::const_pointer(zero,4,1),right=cuda::detail::const_pointer(nonzero,4,1);
+  auto out=cuda::detail::mutable_pointer(selected,8,1),integer=cuda::detail::mutable_pointer(workspace.int_workspace,16,1),output=cuda::detail::mutable_pointer(workspace.output,16,1);
+  if(!choice)return detail::EnqueueResult::rejected(choice.error());
+  if(!left)return detail::EnqueueResult::rejected(left.error());
+  if(!right)return detail::EnqueueResult::rejected(right.error());
+  if(!out)return detail::EnqueueResult::rejected(out.error());
+  if(!integer)return detail::EnqueueResult::rejected(integer.error());
+  if(!output)return detail::EnqueueResult::rejected(output.error());
+  cuda::detail::ScopedPrimaryContext scope(slot.primary);if(!scope)return detail::EnqueueResult::rejected(scope.status());
+  const auto picked=native::select_device_layout(slot.plan,slot.spec,static_cast<const std::int32_t*>(*choice),
+      *left,*right,*out,selected.size(),*integer,*stream);
+  if(picked!=cudaSuccess)return detail::EnqueueResult::accepted_command(cuda::status(picked));
+  // Q1 leaves its inactive second physical row untouched by attention. Zero
+  // the complete owned Q2 output first; dense successors may safely read it.
+  return detail::EnqueueResult::accepted_command(cuda::status(cudaMemsetAsync(*output,0,workspace.output.size(),*stream)));
+}
+const detail::BatchDeviceChoiceVTable kDeviceChoiceVTable{&qualify_device_choices,&select_device_choices};
 ProviderRuntimeProperties batch_runtime(void *) noexcept {
   return {.mode=ProviderRuntimeMode::kSharedQueue,
       .workspace_owner=ProviderWorkspaceOwner::kProvider,
@@ -492,6 +556,7 @@ const detail::BatchProviderVTable kMlaVTable{.qualify=&qualify_mla,.create=&crea
 const void*query_extension(void*,ProviderExtensionId id)noexcept{
   if(id==detail::kBatchPlanningExtensionId)return &kBatchVTable;
   if(id==detail::kMlaBatchPlanningExtensionId)return &kMlaVTable;
+  if(id==detail::kBatchDeviceChoiceExtensionId)return &kDeviceChoiceVTable;
   return nullptr;
 }
 

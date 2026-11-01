@@ -241,9 +241,10 @@ public:
   // Bind only after the exact predecessor's publication AND its host output
   // observation. A complete boundary, rather than just a token, ties this
   // deferred record to that predecessor's actual length and sampling facts.
-  // A rejection preserves the unknown input and every reserved record.
+  // A refused binding preserves the unknown input and every reserved record.
   GenerationCommitRecord &bind_successor(const GenerationBoundary &actual,
-      std::size_t observed_commits, std::size_t turn, std::int32_t actual_last_token) {
+      std::size_t observed_commits, std::size_t turn, std::int32_t actual_last_token,
+      bool device_k1_choice = false) {
     if (!successor_ordinal_ || *successor_ordinal_ != committed_count ||
         observed_commits != committed_count || !committed_count || committed_count >= records.size())
       throw std::runtime_error("generation successor requires its committed and observed predecessor");
@@ -253,7 +254,7 @@ public:
         previous.accepted == 1 && previous.verified_rows == 1 &&
         previous.emitted_count == 1 && !previous.emitted.empty() &&
         previous.emitted[0] == actual.next_id && record.role == GraphRole::kText;
-    const bool k1 = k1_pending_boundary(previous) &&
+    const bool full_k1 = k1_pending_boundary(previous) &&
         previous.quota >= 4 && record.quota >= 2 && record.quota <= previous.quota - 2 &&
         previous.accepted == 2 && previous.verified_rows == 2 && previous.consumed_drafts == 1 &&
         previous.agreed && previous.accepted_draft && previous.draft >= 0 &&
@@ -270,7 +271,35 @@ public:
         actual.frontier <= actual.length && actual.length - actual.frontier == 1 &&
         actual.catchup_token == previous.draft && actual.sampling == previous.before.sampling &&
         record.role == GraphRole::kMtpCatchupRound && record.draft_limit == 1;
-    if (!previous.committed || (!ordinary && !k1) || !previous.generation ||
+    // The opt-in device route executed one of two prevalidated input layouts.
+    // Bind only its already published, observed strict K1 decision, including
+    // a disagreement. Default callers retain the original full-accept gate.
+    const auto consumed = previous.accepted;
+    const bool chosen_k1 = device_k1_choice && k1_pending_boundary(previous) &&
+        previous.quota >= 4 && record.quota >= 2 && record.quota <= previous.quota - 2 &&
+        consumed >= 1 && consumed <= 2 && previous.verified_rows == 2 &&
+        previous.consumed_drafts == consumed - 1 && previous.agreed == (consumed == 2) &&
+        previous.accepted_draft == (consumed == 2) && previous.draft >= 0 &&
+        previous.target_first >= 0 && previous.target_second >= 0 &&
+        (previous.target_first == previous.draft) == (consumed == 2) &&
+        actual.next_id == (consumed == 2 ? previous.target_second : previous.target_first) &&
+        previous.emitted_count == consumed && previous.emitted.size() >= consumed &&
+        previous.emitted[0] == previous.target_first &&
+        (consumed == 1 || previous.emitted[1] == previous.target_second) &&
+        previous.accepted_inputs.size() >= consumed && previous.accepted_inputs[0] == previous.pending_input &&
+        (consumed == 1 || previous.accepted_inputs[1] == previous.draft) &&
+        previous.verification_inputs.size() == 2 &&
+        previous.verification_inputs[0] == previous.pending_input && previous.verification_inputs[1] == previous.draft &&
+        actual.length >= previous.before.length && actual.length - previous.before.length == consumed &&
+        actual.frontier >= previous.before.frontier &&
+        actual.frontier - previous.before.frontier == previous.before.lag + 1 &&
+        previous.draft_rows == previous.before.lag + 1 && actual.lag == consumed - 1 &&
+        actual.frontier <= actual.length && actual.length - actual.frontier == consumed - 1 &&
+        actual.catchup_token == (consumed == 2 ? previous.draft : -1) &&
+        actual.sampling == previous.before.sampling &&
+        record.role == GraphRole::kMtpCatchupRound && record.draft_limit == 1;
+    const bool k1 = device_k1_choice ? chosen_k1 : full_k1;
+    if (!previous.committed || (!ordinary && !k1) || (device_k1_choice && !k1) || !previous.generation ||
         previous.completion != TextCompletion::kEmitNext || !previous.user_output || previous.imported ||
         previous.input_deferred || previous.ids().size() != 1 || previous.stopped ||
         previous.after != actual || actual.next_id < 0 || actual_last_token != actual.next_id ||
@@ -280,6 +309,8 @@ public:
         record.completion != TextCompletion::kEmitNext || !record.user_output || record.imported)
       throw std::runtime_error("generation successor input differs from its actual predecessor");
     record.before = actual; record.pending_input = actual.next_id; record.input_deferred = false;
+    if (device_k1_choice)
+      record.role = actual.lag ? GraphRole::kMtpCatchupRound : GraphRole::kMtpRound;
     // B is now the known-input current record; it may reserve C while B is
     // still pending. Only one unknown input exists beyond the committed prefix.
     successor_ordinal_.reset();

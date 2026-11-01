@@ -107,6 +107,11 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
       io.batch_layouts.reserve(phase.attention_nodes.size() + drafts_token(role));
       for (auto node : phase.attention_nodes) io.batch_layouts.push_back({node, {}});
       if (drafts_token(role)) io.batch_layouts.push_back({phase.draft_attention_node, {}});
+      if (role == GraphRole::kMtpContinuation) {
+        io.batch_layout_choices.reserve(phase.attention_nodes.size() + 1);
+        for (auto node : phase.attention_nodes) io.batch_layout_choices.push_back({node, {}});
+        io.batch_layout_choices.push_back({phase.draft_attention_node, {}});
+      }
       program_slot.planned_uses = planned_slot_uses[slot];
       program_slot.replay_mode = preparation.replay_modes[slot];
       const auto token_count = has_mtp(role) && !is_mtp_prefill(role)
@@ -144,6 +149,11 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
       if (!io.ordinary_io.packet()) {
         io.tokens = phase_tensor(allocation_budget, execution.device(), token_description);
         io.positions = phase_tensor(allocation_budget, execution.device(), position_description);
+      }
+      if (phase.predecessor_prefix_port) {
+        io.predecessor_prefix = phase_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {1}));
+        io.continuation_positions = phase_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {2}));
+        io.continuation_draft_positions = phase_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {2}));
       }
       if (sampling_identity && !io.ordinary_io.packet_sampling_identities) {
         io.sampling_identities = phase_tensor(allocation_budget, execution.device(), phase.batched_text_sampling
@@ -214,6 +224,7 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
         io.probe_outputs[i] = phase_tensor(allocation_budget, take(execution.resource_for(output.storage)), output.description, output.caller_owned());
       }
       std::size_t fixed_count = 2 + sampling_identity + last_ids + packed_target + packed_verify +
+          3 * bool(phase.predecessor_prefix_port) +
           io.logits.caller_owned() + io.final_hidden.caller_owned();
       if (has_mtp(role)) fixed_count += 1 + bool(draft_lag(role)) +
           ((packs_prefill(definition.packing) || compact_draft) ? 1 + bool(draft_lag(role)) : 0) + compact_draft;
@@ -221,7 +232,9 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
         fixed_count += output && output->caller_owned();
       const auto readback_count = bool(phase.sampling_valid_port) + bool(phase.sampling_accept_port) +
           (completion == TextCompletion::kEmitNext) + drafts_token(role) +
-          bool(phase.successor_token_port) + bool(phase.successor_catchup_port);
+          bool(phase.successor_token_port) + bool(phase.successor_catchup_port) +
+          bool(phase.successor_accepted_count_port) + bool(phase.successor_prefix_index_port) +
+          bool(phase.successor_pending_port) + bool(phase.successor_lag_port) + bool(phase.successor_selected_catchup_port);
       check(program_slot.io.prepare(phase.child->compiled, fixed_count, 0, readback_count, 0));
       // Register once in the original cold installation order. Tensor owners
       // stay here; each readback's only owner moves into the same shared IO.
@@ -229,6 +242,11 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
           io.ordinary_io.packet() ? io.input_packet.tokens() : io.tokens.read()));
       check(program_slot.io.add_fixed(phase.position_port,
           io.ordinary_io.packet() ? io.input_packet.positions() : io.positions.read()));
+      if (phase.predecessor_prefix_port) {
+        check(program_slot.io.add_fixed(phase.predecessor_prefix_port, io.predecessor_prefix.read()));
+        check(program_slot.io.add_fixed(phase.continuation_position_port, io.continuation_positions.read()));
+        check(program_slot.io.add_fixed(phase.continuation_draft_position_port, io.continuation_draft_positions.read()));
+      }
       if (sampling_identity) check(program_slot.io.add_fixed(phase.sampling_identity_port,
           io.ordinary_io.packet_sampling_identities ? io.input_packet.sampling_identities() : io.sampling_identities.read()));
       if (phase.sampling_valid_port) {
@@ -248,6 +266,13 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
         io.successor_token = take(program_slot.io.add_readback(phase.successor_token_port, execution.storage_domains(), allocation_budget));
       if (phase.successor_catchup_port)
         io.successor_catchup = take(program_slot.io.add_readback(phase.successor_catchup_port, execution.storage_domains(), allocation_budget));
+      if (phase.successor_accepted_count_port) {
+        io.successor_accepted_count = take(program_slot.io.add_readback(phase.successor_accepted_count_port, execution.storage_domains(), allocation_budget));
+        io.successor_prefix_index = take(program_slot.io.add_readback(phase.successor_prefix_index_port, execution.storage_domains(), allocation_budget));
+        io.successor_pending = take(program_slot.io.add_readback(phase.successor_pending_port, execution.storage_domains(), allocation_budget));
+        io.successor_lag = take(program_slot.io.add_readback(phase.successor_lag_port, execution.storage_domains(), allocation_budget));
+        io.successor_selected_catchup = take(program_slot.io.add_readback(phase.successor_selected_catchup_port, execution.storage_domains(), allocation_budget));
+      }
       if (io.final_hidden.caller_owned()) check(program_slot.io.add_fixed_output(phase.hidden_port, io.final_hidden.view()));
       if (has_mtp(role)) {
         check(program_slot.io.add_fixed(phase.draft_position_port, io.draft_positions.read()));

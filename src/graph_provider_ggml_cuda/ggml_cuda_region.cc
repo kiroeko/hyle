@@ -169,11 +169,12 @@ struct FusionUses final {
 // The immutable native recipe below contains only its indexed GDN; original
 // Graph identities/effect ownership remain in this artifact's cold binding.
 struct IndexedStatePattern final {
-  std::array<NodeId, 5> nodes{};
+  std::vector<NodeId> nodes;
   NodeId gather, gdn, store;
   ValueId pool, source_ids, destination_ids, scores;
   slots::Schema schema;
   std::uint32_t source_count = 0, destination_count = 0;
+  ValueId source_selector{};
 };
 
 // Only immutable cold identities are shared between the indexed math routes.
@@ -184,14 +185,52 @@ struct IndexedChain final {
   ValueId pool, source_ids, destination_ids, scores;
   slots::Schema schema;
   std::uint32_t source_count = 0, destination_count = 0;
+  ValueId source_selector{};
 };
 struct IndexedConvPattern final {
   IndexedChain chain;
   ValueId chunk, weights;
 };
+// Only a checked selection of one of two whole rows is elided. The first
+// Gather and its real I32[2] input remain the Source permission identity.
+struct IndexedSource final {
+  NodeId gather, selection;
+  ValueId pool, ids, selector;
+};
+Result<bool> indexed_source(const Graph&graph,NodeId last,IndexedSource&out)noexcept{
+  HYLE_ASSIGN_OR_RETURN(auto operation,graph.operation(last));
+  const auto*gather=operation.get_if<compute::Gather>();
+  if(!gather || (gather->axis!=0 && gather->axis!=-2) ||
+      gather->bounds!=compute::IndexBoundsPolicy::kChecked)return false;
+  HYLE_ASSIGN_OR_RETURN(auto pool,graph.node_input(last,0));
+  HYLE_ASSIGN_OR_RETURN(auto ids,graph.node_input(last,1));
+  if(pool.kind()==ValueKind::kInput && ids.kind()==ValueKind::kInput){
+    out={last,{},pool,ids,{}};return true;
+  }
+  if(pool.kind()!=ValueKind::kNodeOutput)return false;
+  HYLE_ASSIGN_OR_RETURN(auto first,graph.producer(pool));
+  HYLE_ASSIGN_OR_RETURN(auto first_op,graph.operation(first));
+  const auto*source=first_op.get_if<compute::Gather>();
+  if(!source || (source->axis!=0 && source->axis!=-2) ||
+      source->bounds!=compute::IndexBoundsPolicy::kChecked)return false;
+  HYLE_ASSIGN_OR_RETURN(auto capacity,graph.node_input(first,0));
+  HYLE_ASSIGN_OR_RETURN(auto controls,graph.node_input(first,1));
+  if(capacity.kind()!=ValueKind::kInput || controls.kind()!=ValueKind::kInput)return false;
+  HYLE_ASSIGN_OR_RETURN(auto pair,graph.value_description(controls));
+  HYLE_ASSIGN_OR_RETURN(auto selector,graph.value_description(ids));
+  HYLE_ASSIGN_OR_RETURN(auto rows,graph.value_description(pool));
+  HYLE_ASSIGN_OR_RETURN(auto selected,graph.result(last));
+  HYLE_ASSIGN_OR_RETURN(auto row,graph.value_description(selected));
+  HYLE_ASSIGN_OR_RETURN(auto expected_pair,compute::TensorDesc::dense(compute::DataType::kInt32,std::array<std::int64_t,1>{2}));
+  HYLE_ASSIGN_OR_RETURN(auto expected_selector,compute::TensorDesc::dense(compute::DataType::kInt32,std::array<std::int64_t,1>{1}));
+  if(pair!=expected_pair || selector!=expected_selector || !rows.is_dense() || rows.rank()!=2 ||
+      rows.dimensions()[0]!=2 || !row.is_dense() || row.rank()!=2 || row.dimensions()[0]!=1 ||
+      rows.data_type()!=row.data_type() || rows.dimensions()[1]!=row.dimensions()[1])return false;
+  out={first,last,capacity,controls,ids};return true;
+}
 template<class Private>
 Result<bool> match_indexed_state(const Graph &graph, NodeId store_node,
-    IndexedStatePattern &out, Private private_value) noexcept {
+    IndexedStatePattern &out, Private private_value) noexcept try {
   const auto store_operation = graph.operation(store_node);
   const auto store = store_operation ? store_operation->custom_as<slots::Store>() : std::nullopt;
   if (!store) return false;
@@ -227,11 +266,14 @@ Result<bool> match_indexed_state(const Graph &graph, NodeId store_node,
   const auto *gather = gather_operation ? gather_operation->get_if<compute::Gather>() : nullptr;
   if (!gather || (gather->axis != 0 && gather->axis != -2) ||
       gather->bounds != compute::IndexBoundsPolicy::kChecked) return false;
-  HYLE_ASSIGN_OR_RETURN(auto pool, graph.node_input(gather_node, 0));
-  HYLE_ASSIGN_OR_RETURN(auto source_ids, graph.node_input(gather_node, 1));
+  IndexedSource source;
+  HYLE_ASSIGN_OR_RETURN(auto matched_source,indexed_source(graph,gather_node,source));
+  if(!matched_source)return false;
+  const auto pool=source.pool,source_ids=source.ids;
   if (pool.kind() != ValueKind::kInput || source_ids.kind() != ValueKind::kInput ||
       source_ids == destination_ids || pool == source_ids || pool == destination_ids) return false;
-  std::array nodes{gather_node, initial_view, gdn_node, state_view, store_node};
+  std::vector<NodeId> nodes{gather_node, initial_view, gdn_node, state_view, store_node};
+  if(source.selection.valid())nodes.push_back(source.gather);
   std::ranges::sort(nodes, {}, &NodeId::ordinal);
   if (std::adjacent_find(nodes.begin(), nodes.end()) != nodes.end()) return false;
   for (const auto node : nodes) {
@@ -244,6 +286,10 @@ Result<bool> match_indexed_state(const Graph &graph, NodeId store_node,
   for (const auto pair : {std::pair{gather_node, gathered}, std::pair{initial_view, initial},
                          std::pair{gdn_node, state}, std::pair{state_view, rows}})
     if (!private_value(pair.first, pair.second, nodes)) return false;
+  if(source.selection.valid()){
+    HYLE_ASSIGN_OR_RETURN(auto both,graph.result(source.gather));
+    if(!private_value(source.gather,both,nodes))return false;
+  }
   // These exact private controls are later supplied by the shared slot owner,
   // never arbitrary user-generated IDs or a relabelled whole-pool read lease.
   for (const auto value : {pool, source_ids, destination_ids})
@@ -268,7 +314,8 @@ Result<bool> match_indexed_state(const Graph &graph, NodeId store_node,
   const auto snapshots = gdn ? gdn->snapshot_count : recurrent->snapshot_count;
   if (batches <= 0 || batches > UINT32_MAX || snapshots == 0 ||
       static_cast<std::uint64_t>(batches) > UINT32_MAX / snapshots ||
-      source_description.dimensions()[0] != batches ||
+      source_description.dimensions()[0] != (source.selection.valid()?2:batches) ||
+      (source.selection.valid() && batches!=1) ||
       destination_description.dimensions()[0] != batches * snapshots ||
       rows_description.dimensions()[0] != batches * snapshots ||
       rows_description.dimensions()[1] != store->schema.item_elements()) return false;
@@ -281,10 +328,12 @@ Result<bool> match_indexed_state(const Graph &graph, NodeId store_node,
       initial_bytes / static_cast<std::uint64_t>(batches) / sizeof(float) !=
           static_cast<std::uint64_t>(store->schema.item_elements())) return false;
   HYLE_ASSIGN_OR_RETURN(auto scores, graph.result(gdn_node, 0));
-  out = {nodes, gather_node, gdn_node, store_node, pool, source_ids, destination_ids,
-         scores, store->schema, static_cast<std::uint32_t>(batches),
-         static_cast<std::uint32_t>(batches * snapshots)};
+  out = {std::move(nodes), source.gather, gdn_node, store_node, pool, source_ids, destination_ids,
+         scores, store->schema, static_cast<std::uint32_t>(source.selection.valid()?2:batches),
+         static_cast<std::uint32_t>(batches * snapshots),source.selector};
   return true;
+} catch (const std::bad_alloc &) {
+  return std::unexpected(Status::ResourceExhausted("indexed state cold pattern metadata"));
 }
 
 // Gather -> original-precision samples -> checked last-K history windows ->
@@ -412,8 +461,11 @@ Result<bool> match_indexed_conv(const Graph &graph, NodeId store_node,
   const auto *gather = gather_operation ? gather_operation->get_if<compute::Gather>() : nullptr;
   if (!gather || (gather->axis != 0 && gather->axis != -2) ||
       gather->bounds != compute::IndexBoundsPolicy::kChecked) return false;
-  HYLE_ASSIGN_OR_RETURN(chain.pool, graph.node_input(chain.gather, 0));
-  HYLE_ASSIGN_OR_RETURN(chain.source_ids, graph.node_input(chain.gather, 1));
+  IndexedSource source;
+  HYLE_ASSIGN_OR_RETURN(auto matched_source,indexed_source(graph,chain.gather,source));
+  if(!matched_source)return false;
+  if(source.selection.valid())chain.nodes.push_back(chain.gather);
+  chain.gather=source.gather;chain.pool=source.pool;chain.source_ids=source.ids;chain.source_selector=source.selector;
   if (chain.pool.kind() != ValueKind::kInput || chain.source_ids.kind() != ValueKind::kInput ||
       chain.pool == chain.source_ids || chain.pool == chain.destination_ids ||
       chain.source_ids == chain.destination_ids) return false;
@@ -430,7 +482,9 @@ Result<bool> match_indexed_conv(const Graph &graph, NodeId store_node,
       chunk_description.data_type() != type || chunk_description.dimensions()[0] != batches ||
       chunk_description.dimensions()[1] != tokens || chunk_description.dimensions()[2] != channels ||
       !source_description.is_dense() || source_description.rank() != 1 ||
-      source_description.data_type() != compute::DataType::kInt32 || source_description.dimensions()[0] != batches ||
+      source_description.data_type() != compute::DataType::kInt32 ||
+      source_description.dimensions()[0] != (source.selection.valid()?2:batches) ||
+      (source.selection.valid() && batches!=1) ||
       history > INT64_MAX / channels || chain.schema.item_elements() != history * channels ||
       rows_description.data_type() != type || rows_description.dimensions()[0] != batches * static_cast<std::int64_t>(windows.size()) ||
       rows_description.dimensions()[1] != history * channels ||
@@ -492,7 +546,7 @@ Result<bool> match_indexed_conv(const Graph &graph, NodeId store_node,
         (value.kind() == ValueKind::kNodeOutput && value != chain.scores &&
          inside(graph.producer(value).value()))) return false;
   }
-  chain.source_count = static_cast<std::uint32_t>(batches);
+  chain.source_count = static_cast<std::uint32_t>(source.selection.valid()?2:batches);
   chain.destination_count = static_cast<std::uint32_t>(rows_description.dimensions()[0]);
   out = std::move(result);
   return true;
@@ -506,6 +560,7 @@ Result<bool> supported_indexed_conv(void *context, const Graph &graph,
   const std::array values{pattern.chunk, pattern.weights, p.pool, p.source_ids, p.destination_ids, p.scores};
   std::vector<compute::TensorDesc> descriptions;
   for (const auto value : values) descriptions.push_back(graph.value_description(value).value());
+  if(p.source_selector.valid())descriptions[3]=compute::TensorDesc::dense(compute::DataType::kInt32,std::array<std::int64_t,1>{1}).value();
   const native::Node node{graph.operation(p.math).value(), {0, 1, 2, 3, 4}, {5}, true};
   return native::supports_indexed_state(context, node, descriptions);
 } catch (const std::bad_alloc &) {
@@ -1395,7 +1450,7 @@ Status qualify(void *context, const RegionCompileRequest &request,
         : Status::Unimplemented("linked native indexed convolution does not support this geometry");
   }
   if (request.graph && request.route == 6) {
-    if (request.nodes.size() != 5 || !request.has_unknown_effects ||
+    if ((request.nodes.size() != 5 && request.nodes.size() != 6) || !request.has_unknown_effects ||
         !request.effect_accesses.empty() || !request.effect_bindings.empty())
       return Status::Unimplemented("indexed GDN requires one original unknown Store effect");
     FusionUses uses(allocator);
@@ -1953,6 +2008,18 @@ compute::ProviderPrepareOutcome compile_indexed_chain(void *context,
   for (const auto value : math_inputs) node.inputs.push_back(local(value));
   if (std::ranges::any_of(node.inputs, [&](std::uint32_t id) { return id >= values.size(); }))
     return Outcome::unsupported(Status::Unimplemented("indexed math needs its original external boundary"));
+  if(pattern.source_selector.valid()){
+    const auto selector=local(pattern.source_selector);
+    if(selector>=values.size())return Outcome::unsupported(Status::Unimplemented("indexed source selector needs its original boundary"));
+    const auto selected=static_cast<std::uint32_t>(recipe.values.size());
+    recipe.values.push_back(compute::TensorDesc::dense(compute::DataType::kInt32,std::array<std::int64_t,1>{1}).value());
+    native::Node selection{compute::Operation(compute::Gather{.axis=0,.bounds=compute::IndexBoundsPolicy::kChecked}),
+        {local(pattern.source_ids),selector},{selected}};
+    selection.indexed_state=true;
+    recipe.nodes.push_back(std::move(selection));
+    for(std::size_t port=0;port<math_inputs.size();++port)
+      if(math_inputs[port]==pattern.source_ids)node.inputs[port]=selected;
+  }
   const auto score = static_cast<std::uint32_t>(recipe.values.size());
   recipe.values.push_back(request.graph->value_description(pattern.scores).value());
   node.outputs.push_back(score);
@@ -2030,7 +2097,7 @@ compile(void *context, const RegionCompileRequest &request,
             Status::Unimplemented("indexed GDN exact state chain changed"));
         chain = {{pattern.nodes.begin(), pattern.nodes.end()}, pattern.gather, pattern.gdn,
             pattern.store, pattern.pool, pattern.source_ids, pattern.destination_ids,
-            pattern.scores, pattern.schema, pattern.source_count, pattern.destination_count};
+            pattern.scores, pattern.schema, pattern.source_count, pattern.destination_count,pattern.source_selector};
         const auto operation = request.graph->operation(pattern.gdn).value();
         const bool recurrent = operation.custom_as<compute::model_ops::RecurrentGatedDeltaNet>().has_value();
         for (std::size_t port = 0; port < (recurrent ? 7U : 5U); ++port)

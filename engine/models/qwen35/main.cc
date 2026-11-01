@@ -60,6 +60,7 @@
 #include "../../inference/cold_demand.h"
 #include "../../inference/slot_transactions.h"
 #include "../../inference/append_transactions.h"
+#include "../../inference/paged_append_choice.h"
 #include "../../inference/retirement_observation.h"
 #include "../../inference/evaluation_failure.h"
 #include "../../inference/request_execution_failure.h"
@@ -94,6 +95,8 @@
 #include "phase.h"
 #include "auxiliary_programs.h"
 #include "hyle/compute/batch_transfer.h"
+#include "hyle/compute/detail/batch_device_choice.h"
+#include "hyle/compute/detail/device_choice_paged_append_backend.h"
 #include "hyle/core/assert.h"
 #include "precision_profile.h"
 #include "cache_precision.h"
@@ -354,6 +357,7 @@ struct InputPreparationScratch final {
   // Shared preparation reuses cold-bounded integers and temporary footprints.
   // Its source pins never survive a call; Graph retains its original leases.
   inference::PagedAppendScratch paged_appends;
+  inference::PagedAppendChoiceScratch paged_append_choices;
   void prepare(const Phase &phase) {
     const auto &io = phase.slots[0].data; // All slots share the same cold descriptions.
     const auto reserve = [](auto &values, const c::TensorDesc &description) {
@@ -430,6 +434,8 @@ struct RecordingStepInputs final {
   Phase *phase = nullptr;
   std::size_t slot = 0;
   c::ConstTensorView token;
+  c::ConstTensorView catchup;
+  c::ConstTensorView prefix;
   std::span<const g::detail::RecordingStoreInputs> states;
 };
 struct DecodeRecording final {
@@ -722,6 +728,45 @@ public:
     draft_policy_ = policy;
   }
   bool recursive_mtp() const noexcept { return max_drafts() && (max_drafts() > 1 || min_draft_probability() > 0); }
+  bool device_mtp_successor_enabled() const noexcept { return device_mtp_successor_; }
+  bool device_mtp_continuous_enabled() const noexcept {
+    return device_mtp_successor_ && cache_plan.in_flight_batches >= 3;
+  }
+  void configure_device_mtp_successor(bool enabled) {
+    if (preparation_started_)
+      throw std::runtime_error("configure device MTP continuation before model preparation");
+    if (enabled && (!cache_plan.draft_cache || cache_plan.active_sequences != 1 ||
+        cache_plan.resident_sessions != 1 || cache_plan.in_flight_batches < 2 ||
+        execution.kind() != BackendKind::kCuda || execution.has_cpu_assist() || scheduler ||
+        max_drafts() != 1 || recursive_mtp()))
+      throw std::runtime_error("device MTP continuation requires CUDA greedy K1 R1 N1");
+    device_mtp_successor_ = enabled;
+  }
+
+  void prepare_default_device_mtp_successor(bool requested) {
+    if (!requested || preparation_started_ || !cache_plan.draft_cache ||
+        cache_plan.active_sequences != 1 || cache_plan.resident_sessions != 1 ||
+        cache_plan.in_flight_batches < 2 || execution.kind() != BackendKind::kCuda ||
+        execution.has_cpu_assist() || scheduler || max_drafts() != 1 || recursive_mtp() ||
+        !target_kv_layers || vocabulary > (std::int64_t{1} << 24) || !resources_->attention_storage.empty() ||
+        (precision.activation_type() != Type::kFloat16 && precision.activation_type() != Type::kBFloat16) ||
+        geometry.key_depth != geometry.value_depth ||
+        (geometry.key_depth != 64 && geometry.key_depth != 128 && geometry.key_depth != 256)) return;
+    auto context = execution.common_context();
+    if (!context) return;
+    auto append = c::detail::BackendExtensionAccess::query(**context,
+        c::detail::kDeviceChoicePagedAppendExtensionId);
+    if (!append) {
+      if (!append.error().IsUnimplemented()) check(append.error());
+      return;
+    }
+    for (std::size_t index = 0; index < (*context)->provider_count(); ++index) {
+      auto attention = c::detail::ProviderExtensionAccess::query(**context, index,
+          c::detail::kBatchDeviceChoiceExtensionId);
+      if (attention) { configure_device_mtp_successor(true); return; }
+      if (!attention.error().IsUnimplemented()) check(attention.error());
+    }
+  }
 
   bool prepare_draft_vocabulary(const SamplingConfiguration &sampling) {
     if (!resources_->draft_vocabulary) return false;
@@ -780,6 +825,7 @@ public:
   c::ResourceBudget &cache_budget, &execution_budget, &allocation_budget;
   std::size_t known_cache_backing_bytes = 0;
   bool state_storage_prepared = false;
+  bool device_mtp_successor_ = false;
   const cache::Plan cache_plan;
   // The original plain storage/layout root also serves draft attention.
   // Calibrated target storage views share this metadata domain, not its dtype.
@@ -1238,6 +1284,7 @@ public:
         cache::add(cache_plan.draft_key_bank_bytes, cache_plan.draft_value_bank_bytes));
     const auto layout_capacity = prepared_schema.capacity();
     input_scratch.paged_appends.prepare(layout_capacity.max_requests, layout_capacity.max_page_refs);
+    input_scratch.paged_append_choices.prepare(layout_capacity.max_page_refs, draft_bank);
     // No PageRef exists until this complete cold source tuple is published.
     // Leave the schema sentinel invalid on failure so released quota can retry.
     static_assert(std::is_nothrow_move_assignable_v<hyle::inference::PagedPageInventory>);
@@ -1332,6 +1379,9 @@ public:
     const bool packed_verify = packs_verify(packing);
     const auto &prepared_sampling = sampling_configuration(sampling_index);
     const auto &selected_sampler = prepared_sampling.configuration;
+    if (role == GraphRole::kMtpContinuation && (!device_mtp_successor_ || requests != 1 ||
+        selected_sampler.enabled || !selected_sampler.modifiers.empty() || packing != RowPacking::kRectangular))
+      throw std::runtime_error("device MTP family requires its original configured greedy R1 continuation");
     if (!supports_completion(role, completion))
       throw std::runtime_error("state-only completion requires a Text or teacher-forced MTP input family");
     if (packed_prefill && (diagnostic || admitted_exact ||
@@ -1394,7 +1444,11 @@ public:
         {planned_chunks, requests, prefix_rows, role, completion, packing, diagnostic, admitted_exact},
         {geometry, precision, weights, projections, weight_meanings, ffn_placement.cpu_layers()},
         {attention_schema, attention_schemas, state_schema, cache_plan.state_slots, cache_plan.hidden_slots,
-         retains_sampling_frontier(), cache_plan.in_flight_batches >= 2 && !scheduler, prepared_draft_projection(subset)},
+         retains_sampling_frontier(), cache_plan.in_flight_batches >= 2 && !scheduler &&
+             (role != GraphRole::kMtpContinuation || device_mtp_continuous_enabled()),
+         prepared_draft_projection(subset), device_mtp_successor_ && requests == 1 &&
+             drafts_token(role) && (role != GraphRole::kMtpContinuation || device_mtp_continuous_enabled()) &&
+             !selected_sampler.enabled && selected_sampler.modifiers.empty(), device_mtp_continuous_enabled()},
         selected_sampler, {execution, allocation_budget, execution_budget});
     if (!built.family) return false;
     built.family->sampling = &prepared_sampling;
@@ -2172,13 +2226,14 @@ public:
     std::size_t physical_slots = 1;
     if (imported_sources) {
       const bool ordinary = tokens == 1 && role == GraphRole::kText && !cache_plan.draft_cache;
-      const bool mtp = tokens == 2 && requests == 1 && role == GraphRole::kMtpCatchupRound &&
-          cache_plan.draft_cache && definition.successor_token_port &&
+      const bool mtp = tokens == 2 && requests == 1 &&
+          (role == GraphRole::kMtpCatchupRound || (role == GraphRole::kMtpContinuation && device_mtp_successor_)) &&
+          cache_plan.draft_cache && (definition.successor_token_port || role == GraphRole::kMtpContinuation) &&
           !selected_sampler.enabled && selected_sampler.modifiers.empty() && packing == RowPacking::kRectangular;
       if ((!ordinary && !mtp) || diagnostic || completion != TextCompletion::kEmitNext ||
           cache_plan.in_flight_batches < 2 || scheduler)
         throw std::runtime_error("imported decode carriers require a complete supported predecessor and two candidate depths");
-      physical_slots = execution_slot_count;
+      physical_slots = role == GraphRole::kMtpContinuation && !device_mtp_continuous_enabled() ? 1 : execution_slot_count;
     }
     const auto planned_slot_uses = shape_plan.uses({requests, tokens, role, completion, sampling_index, false, packing});
     std::array<g::ReplayMode, execution_slot_count> replay_modes{};
@@ -2302,29 +2357,58 @@ public:
 
   DecodeRecording prepare_ordinary_decode_recordings(std::size_t sampling_index,
       std::shared_ptr<Session> *prepared_session = nullptr) {
+    if (cache_plan.draft_cache) return {};
+    return prepare_decode_recordings(sampling_index, false, prepared_session);
+  }
+
+  DecodeRecording prepare_mtp_decode_recordings(std::size_t sampling_index,
+      std::shared_ptr<Session> *prepared_session = nullptr) {
+    if (!cache_plan.draft_cache || max_drafts() != 1 || recursive_mtp()) return {};
+    try { return prepare_decode_recordings(sampling_index, true, prepared_session); }
+    catch (const inference::EvaluationFailure &failure) {
+      if (!device_mtp_successor_ || !failure.status().IsUnimplemented() ||
+          failure.status().has_native_error() || active_step || successor_step || carrier_borrowed ||
+          snapshot_versions.live || (prepared_session && *prepared_session) ||
+          (failure.retirement_observed() && (!failure.retirement().retired || !failure.retirement().status.ok()))) throw;
+      // An optional native shape was declined before request admission. The
+      // real private recording episode has retired; preserve the old route.
+      device_mtp_successor_ = false;
+      return prepare_decode_recordings(sampling_index, true, prepared_session);
+    }
+  }
+
+  DecodeRecording prepare_decode_recordings(std::size_t sampling_index, bool mtp,
+      std::shared_ptr<Session> *prepared_session) {
     DecodeRecording report;
     if (prepared_session && *prepared_session)
       throw std::runtime_error("decode recording requires an empty session destination");
     const auto &sampling = sampling_configuration(sampling_index).configuration;
-    if (cache_plan.draft_cache || capacity < 2 || cache_plan.in_flight_batches < 2 ||
+    if (capacity < 2 || cache_plan.in_flight_batches < 2 ||
         !DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
             sampling.enabled, !sampling.modifiers.empty()}.eligible()) return report;
-    const std::array one{std::size_t{1}};
-    prepare_execution(one, 1, GraphRole::kText, TextCompletion::kEmitNext, sampling_index);
-    prepare_relay_execution(1, sampling_index);
-    auto &direct = prepare_child(1, false, 1, GraphRole::kText, TextCompletion::kEmitNext, sampling_index);
-    auto &imported = prepare_child(1, false, 1, GraphRole::kText, TextCompletion::kEmitNext, sampling_index, true);
+    const auto role = mtp ? GraphRole::kMtpRound : GraphRole::kText;
+    const bool device_pair = mtp && device_mtp_successor_;
+    const auto relay_role = mtp ? (device_pair ? GraphRole::kMtpContinuation : GraphRole::kMtpCatchupRound) : GraphRole::kText;
+    const auto rows = mtp ? std::size_t{2} : std::size_t{1};
+    const std::array chunk{rows};
+    prepare_execution(chunk, 1, role, TextCompletion::kEmitNext, sampling_index);
+    if (mtp) prepare_execution(chunk, 1, GraphRole::kMtpCatchupRound, TextCompletion::kEmitNext, sampling_index);
+    prepare_relay_execution(1, sampling_index, relay_role);
+    auto &direct = prepare_child(rows, false, 1, role, TextCompletion::kEmitNext, sampling_index);
+    auto &imported = prepare_child(rows, false, 1, relay_role, TextCompletion::kEmitNext, sampling_index, true);
     if (direct.slots[0].replay_mode == g::ReplayMode::kCommands) return report;
     if (active_step || successor_step || carrier_borrowed || snapshot_versions.live)
       throw std::runtime_error("decode recording requires an idle model before request admission");
     const auto begin = Clock::now();
     std::cerr << "decode_warmup_begin\n";
-    auto session = create_session(one, {}, GraphRole::kText, {}, false, TextCompletion::kEmitNext, sampling_index);
+    auto session = create_session(chunk, {}, role, {}, false, TextCompletion::kEmitNext, sampling_index);
     hyle::util::ScopeGuard retire_session{[&]() noexcept {
       (void)abort_episode(); session->stop().IgnoreError(); (void)session->drain();
     }};
     struct Arguments final {
       c::ConstTensorView token;
+      c::ConstTensorView catchup;
+      c::ConstTensorView prefix;
       std::vector<g::detail::RecordingStoreInputs> states;
     };
     const auto record = [&](Phase &phase, std::size_t slot, const Arguments *previous) {
@@ -2340,19 +2424,39 @@ public:
       const std::array<std::int32_t, 1> placeholder{0};
       const std::array requests{EvaluationRequest{session, placeholder}};
       const RecordingStepInputs inputs{&phase, slot, previous ? previous->token : c::ConstTensorView{},
+          previous ? previous->catchup : c::ConstTensorView{},
+          previous ? previous->prefix : c::ConstTensorView{},
           previous ? std::span<const g::detail::RecordingStoreInputs>(previous->states) : std::span<const g::detail::RecordingStoreInputs>{}};
-      prepare_evaluations<true>(requests, nullptr, GraphRole::kText, TextCompletion::kEmitNext,
+      prepare_evaluations<true>(requests, nullptr, phase.family->role, TextCompletion::kEmitNext,
           {}, 0, 0, RowPacking::kRectangular, &inputs);
       auto &step = *active_step;
       if (step.submitted || step.execution.has_completion() || session->length() || session->head->next_id != -1)
         throw std::runtime_error("cold recording unexpectedly executed or advanced private model state");
       Arguments next;
-      const auto *output = take(phase.slots[slot].io.readback(phase.slots[slot].data.next_id));
-      next.token = take(c::ConstTensorView::create(output->facts.description,
-          take(c::detail::LeaseAccess::backing_span(output->pool()))));
-      next.states.reserve(phase.state_sources.size());
-      for (const auto &source : phase.state_sources)
-        next.states.push_back(take(g::detail::RecordingAccess::store_output(*run, source.store)));
+      const auto output_view = [&](inference::ProgramIo::Readback port) {
+        const auto *output = take(phase.slots[slot].io.readback(port));
+        return take(c::ConstTensorView::create(output->facts.description,
+            take(c::detail::LeaseAccess::backing_span(output->pool()))));
+      };
+      if (!mtp || (drafts_token(phase.family->role) &&
+          (phase.family->role != GraphRole::kMtpContinuation || device_mtp_continuous_enabled()))) {
+        next.token = output_view(mtp ? (device_pair ? phase.slots[slot].data.successor_pending
+            : phase.slots[slot].data.successor_token) : phase.slots[slot].data.next_id);
+        if (mtp) next.catchup = output_view(device_pair ? phase.slots[slot].data.successor_selected_catchup
+            : phase.slots[slot].data.successor_catchup);
+        if (device_pair) next.prefix = output_view(phase.slots[slot].data.successor_prefix_index);
+        next.states.reserve(phase.state_sources.size());
+        for (const auto &source : phase.state_sources) {
+          auto metadata = take(g::detail::RecordingAccess::store_output(*run, source.store));
+          if (mtp && !device_pair && next.states.size() < geometry.recurrent_layers() * 2) {
+            // A full K1 producer stores both prefixes. Its successor gathers the
+            // final target state, but keeps both hidden rows in chronological order.
+            metadata.indices = take(c::ConstTensorView::create(dense(Type::kInt32, {1}),
+                take(metadata.indices.storage().subview(sizeof(std::int32_t), sizeof(std::int32_t)))));
+          }
+          next.states.push_back(metadata);
+        }
+      }
       ++report.preparations; report.captures += step.capture_recorded;
       if (step.capture_recorded) report.capture_preparation_seconds += step.cold_batch_seconds;
       if (!take(step.try_discard_recording_preparation()))
@@ -2362,7 +2466,18 @@ public:
       return next;
     };
     auto previous = record(direct, 0, nullptr);
-    for (const auto slot : {std::size_t{0}, std::size_t{1}, std::size_t{2}, std::size_t{0}})
+    if (mtp) {
+      if (device_mtp_continuous_enabled()) {
+        for (const auto slot : {std::size_t{0}, std::size_t{1}, std::size_t{2}, std::size_t{0}})
+          previous = record(imported, slot, &previous);
+      } else if (device_pair) (void)record(imported, 0, &previous);
+      auto &catchup = prepare_child(rows, false, 1, GraphRole::kMtpCatchupRound, TextCompletion::kEmitNext, sampling_index);
+      auto catchup_arguments = record(catchup, 0, nullptr);
+      if (device_pair) (void)record(imported, device_mtp_continuous_enabled() ? 1 : 0, &catchup_arguments);
+      // Terminal T1 roles record on first use. Retaining their private native
+      // preparation here exceeds the startup-recording memory budget.
+    }
+    if (!device_pair) for (const auto slot : {std::size_t{0}, std::size_t{1}, std::size_t{2}, std::size_t{0}})
       previous = record(imported, slot, &previous);
     if (active_step || successor_step || carrier_borrowed || session->pending || session->stopping ||
         session->failed || session->length() || session->head->next_id != -1 || snapshot_versions.live != 1)
@@ -2383,6 +2498,52 @@ public:
         << " capture_associated_cold_prep_seconds=" << report.capture_preparation_seconds
         << " seconds=" << report.seconds << " recorded_preparations=" << report.preparations << '\n';
     return report;
+  }
+
+  hyle::Status resolve_device_mtp_successor(StepState &step, const cache::State &head) noexcept {
+    if (!step.device_input_choice || step.members.size() != 1 || !step.submitted ||
+        !step.execution.incoming || !step.execution.incoming->owner)
+      return hyle::Status::InvalidArgument("device successor has no original submitted K1 episode");
+    auto &member = step.members[0];
+    const auto &source = *step.execution.incoming->owner;
+    if (!source.mtp_device_choice || source.boundaries.size() != 1 || member.base != &head ||
+        !head.draft || head.length < member.choice_base_length ||
+        head.length - member.choice_base_length > 1 || head.draft->frontier != member.choice_draft_frontier ||
+        inference::request_token_stopped(head.next_id, model_eos_tokens, member.stop_policy))
+      return hyle::Status::InvalidArgument("device successor cannot bind its producer's actual boundary");
+    const auto choice = head.length - member.choice_base_length;
+    const auto rows = choice + 1;
+    if (step.execution.sources && step.execution.sources->boundaries.size() != 1)
+      return hyle::Status::InvalidArgument("device successor source lost its original member boundary");
+    if (head.draft->lag != choice || (choice == 0 && head.draft->catchup_token != -1) ||
+        (choice == 1 && head.draft->catchup_token < 0))
+      return hyle::Status::InvalidArgument("device successor producer has inconsistent draft frontier");
+    if (member.selected_input_choice)
+      return *member.selected_input_choice == choice ? hyle::Status::Ok()
+          : hyle::Status::InvalidArgument("device successor selection changed after binding");
+    if (!member.next || !member.next->draft ||
+        rows > SIZE_MAX - submitted_draft_rows || rows > SIZE_MAX - member.session->submitted_draft_rows)
+      return hyle::Status::OutOfRange("device successor row accounting exceeds its original capacity");
+    member.selected_input_choice = choice;
+    member.next->length = head.length + 2;
+    member.next->draft->frontier = member.choice_draft_frontier + rows;
+    member.next->paged.pages = std::move(member.target_choice_pages[choice]);
+    member.next->draft->paged.pages = std::move(member.draft_choice_pages[choice]);
+    member.layout = member.target_input_choices[choice];
+    member.draft_layout = step.draft_layout = member.draft_input_choices[choice];
+    member.first_input = head.next_id;
+    member.draft_input_rows = step.active_draft_rows = rows;
+    if (step.execution.sources) {
+      auto &boundary = step.execution.sources->boundaries[0];
+      boundary.length = member.next->length;
+      boundary.draft_frontier = member.next->draft->frontier;
+    }
+    if (step.draft_rows_deferred) {
+      submitted_draft_rows += rows;
+      member.session->submitted_draft_rows += rows;
+      step.draft_rows_deferred = false;
+    }
+    return hyle::Status::Ok();
   }
 
   void detach_episode() noexcept {
@@ -2411,7 +2572,12 @@ public:
       auto &member = active_step->members[j];
       const auto *source = active_step->execution.incoming ? active_step->execution.incoming->owner.get() : nullptr;
       const auto *boundary = source ? &source->boundaries[j] : nullptr;
-      const bool full_boundary = !boundary || (member.session->head && member.session->head->length == boundary->length &&
+      if (active_step->device_input_choice && member.session->head) {
+        const auto selected = resolve_device_mtp_successor(*active_step, *member.session->head);
+        if (!selected.ok()) { active_step->cancelled = true; continue; }
+      }
+      const bool full_boundary = active_step->device_input_choice ? member.selected_input_choice.has_value() :
+          !boundary || (member.session->head && member.session->head->length == boundary->length &&
           (!source->mtp_full_candidate || (member.session->head->draft &&
               member.session->head->draft->frontier == boundary->draft_frontier &&
               member.session->head->draft->lag == 1 && !inference::request_token_stopped(
@@ -2527,6 +2693,7 @@ public:
 
   // Cohort selection and physical capacity belong to the caller. A batch
   // owns one original Invocation, IO loan, Completion and publication transaction.
+  template<bool recording_only = false>
   void prepare_draft_append(StepState &step, GraphRole role) {
     auto &phase = *step.phase;
     auto &program_slot = phase.slots[step.state_slot]; auto &io = program_slot.data;
@@ -2633,18 +2800,21 @@ public:
     }
     if (step.active_draft_rows != step.draft_layout.facts().query_rows)
       throw std::logic_error("draft submission rows differ from the actual Append cohort");
-    if (draft_lag(role) && !relay) for (const auto &member : step.members) {
+    const bool recording_imported = recording_only && phase.imported_sources;
+    if (draft_lag(role) && !relay && !recording_imported) for (const auto &member : step.members) {
       const auto &old = *member.base->draft;
-      catchups.push_back(compact_draft && !old.lag ? member.first_input : old.catchup_token);
+      catchups.push_back(recording_only ? 0 : compact_draft && !old.lag ? member.first_input : old.catchup_token);
     }
     io.draft_positions.write<std::int32_t>(positions);
-    if (draft_lag(role) && !relay) io.catchup_token.write<std::int32_t>(catchups);
+    if (draft_lag(role) && !relay && !recording_imported) io.catchup_token.write<std::int32_t>(catchups);
     if (packs_prefill(phase.family->packing) || compact_draft) {
       io.draft_hidden_select.write<std::int32_t>(io.draft_hidden_indices);
       if (draft_lag(role)) io.draft_token_select.write<std::int32_t>(io.draft_token_indices);
     }
     if (compact_draft) io.draft_last_ids.write<std::int32_t>(last_rows);
   }
+
+  void prepare_device_mtp_inputs(StepState &step, bool recording_only);
 
   void discard_decode_ahead(const Session *session = nullptr) noexcept {
     if (!decode_ahead) return;
@@ -2839,11 +3009,20 @@ public:
     const bool recording_imported = recording_only && recording && recording->phase && recording->phase->imported_sources;
     if constexpr (recording_only) {
       if (!recording || !recording->phase || recording->slot >= recording->phase->slots.size() || relay ||
-          cache_plan.draft_cache || role != GraphRole::kText || completion != TextCompletion::kEmitNext ||
+          (cache_plan.draft_cache ? (role != GraphRole::kMtpRound && role != GraphRole::kMtpCatchupRound &&
+              role != GraphRole::kMtpSingle && role != GraphRole::kMtpCatchupSingle &&
+              role != GraphRole::kMtpContinuation) : role != GraphRole::kText) ||
+          completion != TextCompletion::kEmitNext ||
           requests.size() != 1 || requests[0].ids.size() != 1 || physical_rows || packing != RowPacking::kRectangular)
-        throw std::runtime_error("cold recording requires its original ordinary T1 carrier");
+        throw std::runtime_error("cold recording requires its original single-request decode carrier");
+      if (!g::detail::RecordingAccess::active(*take(recording->phase->slots[recording->slot].carrier.borrow())))
+        throw std::runtime_error("cold recording requires Graph's non-executable mode");
     }
     const bool mtp_relay = relay && incoming->mtp_full_candidate;
+    const bool device_mtp = mtp_relay && incoming->mtp_device_choice;
+    const bool device_input_choice = role == GraphRole::kMtpContinuation;
+    if (device_input_choice && !recording_only && (!device_mtp || !predecessor))
+      throw std::runtime_error("device MTP input selection requires its actual pending predecessor");
     if (!supports_completion(role, completion))
       throw std::runtime_error("state-only evaluation requires Text or teacher-forced MTP input");
     if (requests.empty() || requests.size() > cache_plan.active_sequences)
@@ -2852,9 +3031,9 @@ public:
       throw std::runtime_error("the original execution carrier has not retired");
     const bool ordinary_relay = relay && !mtp_relay && !cache_plan.draft_cache && role == GraphRole::kText;
     const bool complete_mtp_relay = mtp_relay && cache_plan.draft_cache && requests.size() == 1 &&
-        role == GraphRole::kMtpCatchupRound && (!predecessor || (predecessor->phase &&
+        role == (device_mtp ? GraphRole::kMtpContinuation : GraphRole::kMtpCatchupRound) && (!predecessor || (predecessor->phase &&
             drafts_token(predecessor->phase->family->role) && predecessor->input_tokens == 2)) &&
-        incoming->extra_outputs.size() == 1 && incoming->extra_outputs[0].valid() &&
+        incoming->extra_outputs.size() == (device_mtp ? 2u : 1u) && incoming->extra_outputs[0].valid() &&
         incoming->successor_states.size() == geometry.recurrent_layers() * 2;
     if (relay && (successor_step || scheduler || cache_plan.in_flight_batches < 2 ||
         (!ordinary_relay && !complete_mtp_relay) || completion != TextCompletion::kEmitNext || physical_slot >= execution_slot_count ||
@@ -2949,7 +3128,9 @@ public:
         const bool lag_matches = mtp_relay ? base->draft && base->draft->frontier == incoming->boundaries[j].draft_frontier &&
             base->length == incoming->boundaries[j].length && base->length - base->draft->frontier == 1 :
             compact_draft ? session.head->draft->lag <= 1 : session.head->draft->lag == draft_lag(role);
-        if (!lag_matches ||
+        // The real empty Head remains valid. A recording role describes only
+        // physical parameters; its unpublished candidate is never evaluated.
+        if ((!recording_only && !lag_matches) ||
             (!is_mtp_prefill(role) && supplied_tokens != 1))
           throw std::runtime_error("MTP role, pending token or catch-up lag does not match its snapshot");
       }
@@ -3047,6 +3228,10 @@ public:
         if (recording->states.size() != phase.state_sources.size() || !recording->token.valid())
           throw std::runtime_error("cold recording lacks its original producer coordinates");
         check(g::detail::RecordingAccess::bind_input(run, phase.token_port, recording->token));
+        if (has_mtp(role))
+          check(g::detail::RecordingAccess::bind_input(run, phase.catchup_token_port, recording->catchup));
+        if (phase.predecessor_prefix_port)
+          check(g::detail::RecordingAccess::bind_input(run, phase.predecessor_prefix_port, recording->prefix));
         for (std::size_t bank = 0; bank < recording->states.size(); ++bank)
           check(g::detail::RecordingAccess::bind_store(run, phase.state_sources[bank].store, recording->states[bank]));
       }
@@ -3168,6 +3353,9 @@ public:
           {decode_ahead->old_indptr.data(), decode_ahead->old_indptr.size()},
           {decode_ahead->old_ids.data(), decode_ahead->old_ids.size()},
           {decode_ahead->old_last.data(), decode_ahead->old_last.size()}} : c::HostBatchLayout{};
+      if (device_input_choice) {
+        prepare_device_mtp_inputs(step, recording_only);
+      } else {
       io.attention_layout = take(inference::prepare_paged_append(attention_schema, width,
           inference::PagedAppendBanks{page_inventory,
               std::span(step.execution.dirty.data(), draft_bank),
@@ -3182,7 +3370,8 @@ public:
            .append_options = {.resource_budget = cache_budget}},
           invalidate_tail, begin_member));
       if (ahead) decode_ahead->clear_output(); // Schema copied the original borrowed integers.
-      if (has_mtp(role)) prepare_draft_append(step, role);
+      if (has_mtp(role)) prepare_draft_append<recording_only>(step, role);
+      }
       auto &transactions = phase.slots[slot].transactions;
       for (std::size_t index = 0; index < phase.state_banks.size(); ++index) {
         const auto &bank = phase.state_banks[index];
@@ -3196,7 +3385,8 @@ public:
               const bool chronological = width == 1 && role == GraphRole::kMtpCatchupRound && packing == RowPacking::kRectangular;
               state_sources[chronological ? width + j : j] = step.members[j].base->carry_hidden;
               if (draft_lag(role)) state_sources[chronological ? j : width + j] = compact_draft && !step.members[j].base->draft->lag
-                  ? step.members[j].base->carry_hidden : step.members[j].base->prior_hidden;
+                  ? step.members[j].base->carry_hidden : recording_only
+                      ? step.members[j].base->carry_hidden : step.members[j].base->prior_hidden;
             }
           } else {
             const auto &state = step.members[j].base->state[bank.layer];
@@ -3212,7 +3402,17 @@ public:
       if (preparation) { preparation->slot = slot; preparation->phase_slot_prior_uses = phase.slots[slot].preparation_uses; }
       const auto batch_start = Clock::now();
       const auto append_banks = draft_bank + (has_mtp(role) ? 2u : 0u);
-      {
+      if (device_input_choice) {
+        hyle::util::ScopeGuard release_layouts{[&]() noexcept {
+          for (auto &entry : io.batch_layout_choices) entry.layouts = {};
+        }};
+        for (std::size_t i = 0; i < phase.attention_nodes.size(); ++i)
+          io.batch_layout_choices[i].layouts = step.members.front().target_input_choices;
+        io.batch_layout_choices.back().layouts = step.members.front().draft_input_choices;
+        check(step.execution.prepare_appends(phase.family->graph,
+            std::span<const g::batch::NodeLayoutChoice>(io.batch_layout_choices), 0, append_banks,
+            std::span<const V>(phase.append_cache_inputs).first(append_banks), {.host_workspace = execution.staging()}));
+      } else {
         hyle::util::ScopeGuard release_layouts{[&]() noexcept {
           for (auto &entry : io.batch_layouts) entry.layout = {};
         }};
@@ -3223,15 +3423,18 @@ public:
       }
       if (relay) {
         auto &input = *step.execution.incoming; auto &previous = *input.owner;
-        input.bindings.reserve(1 + previous.states.size() + previous.pages.size() + (mtp_relay ? 1u : 0u));
+        input.bindings.reserve(1 + previous.states.size() + previous.pages.size() + (device_mtp ? 2u : mtp_relay ? 1u : 0u));
         input.bindings.push_back(previous.primary_output.reader_binding(phase.token_port));
-        if (mtp_relay) input.bindings.push_back(previous.extra_outputs[0].reader_binding(phase.catchup_token_port));
-        const bool ready_states = previous.published_states.size() == previous.states.size() * width + (mtp_relay ? 1u : 0u) &&
+        if (device_mtp) {
+          input.bindings.push_back(previous.extra_outputs[0].reader_binding(phase.predecessor_prefix_port));
+          input.bindings.push_back(previous.extra_outputs[1].reader_binding(phase.catchup_token_port));
+        } else if (mtp_relay) input.bindings.push_back(previous.extra_outputs[0].reader_binding(phase.catchup_token_port));
+        const bool ready_states = !device_mtp && previous.published_states.size() == previous.states.size() * width + (mtp_relay ? 1u : 0u) &&
             std::ranges::all_of(previous.published_states, [](const auto &lease) { return lease.valid(); });
         for (std::size_t bank = 0; bank < previous.states.size(); ++bank) {
           const auto &source = mtp_relay && bank < previous.successor_states.size()
               ? previous.successor_states[bank] : previous.states[bank];
-          const auto count = mtp_relay && bank == previous.successor_states.size() ? 2u : width;
+          const auto count = device_mtp || (mtp_relay && bank == previous.successor_states.size()) ? 2u : width;
           input.bindings.push_back(take(source.reader_binding(run, phase.state_graph(),
               phase.state_sources[bank].store, ready_states ? std::span<const c::ReadLease>(previous.published_states).subspan(bank * width, count)
                   : std::span<const c::ReadLease>{})));
@@ -3297,8 +3500,10 @@ public:
         !take(phase.slots[step.state_slot].io.readback(phase.slots[step.state_slot].data.next_id))->pool().valid())
       throw inference::EvaluationFailure(hyle::Status::Unimplemented(
           "submission views require the original owned shared Queue and full token writer"));
+    const bool device_choice = device_mtp_successor_ && mtp && bool(phase.successor_prefix_index_port);
     auto sources = std::make_shared<StepSources>();
     sources->mtp_full_candidate = mtp;
+    sources->mtp_device_choice = device_choice;
     sources->boundaries.reserve(step.members.size());
     sources->published_states.resize(phase.state_sources.size() * step.members.size() + (mtp ? 1u : 0u));
     for (const auto &member : step.members) {
@@ -3313,12 +3518,13 @@ public:
         std::views::transform([&storage](g::NodeId append) {
           return inference::SubmissionViews::PageCapture{append, storage};
         });
-    check(sources->prepare(*step.execution.run, stores, appends, execution_budget, mtp ? 1u : 0u));
+    check(sources->prepare(*step.execution.run, stores, appends, execution_budget, device_choice ? 2u : mtp ? 1u : 0u));
     if (mtp) {
       sources->successor_states.reserve(geometry.recurrent_layers() * 2);
       for (std::size_t bank = 0; bank < geometry.recurrent_layers() * 2; ++bank)
         sources->successor_states.push_back(take(g::StoreSource::prepare(*step.execution.run,
-            phase.state_sources[bank].store, storage, g::StoreDestinationRange{1, 1},
+            phase.state_sources[bank].store, storage,
+            device_choice ? g::StoreDestinationRange{0, 2} : g::StoreDestinationRange{1, 1},
             {.resource_budget = execution_budget})));
     }
     step.execution.sources = sources;
@@ -3351,7 +3557,15 @@ public:
       auto &phase = *step.phase; auto &program_slot = phase.slots[step.state_slot]; auto &io = program_slot.data;
       auto &sources = *step.execution.sources;
       bool captured = false;
-      if (sources.mtp_full_candidate) {
+      if (sources.mtp_device_choice) {
+        const std::array<inference::SubmissionViews::OutputCapture, 3> outputs{{
+            {phase.successor_pending_port, execution.storage_owner(), take(program_slot.io.readback(io.successor_pending))->pool()},
+            {phase.successor_prefix_index_port, execution.storage_owner(), take(program_slot.io.readback(io.successor_prefix_index))->pool()},
+            {phase.successor_selected_catchup_port, execution.storage_owner(), take(program_slot.io.readback(io.successor_selected_catchup))->pool()}}};
+        captured = take(sources.capture_outputs(*step.execution.run, step.execution.completion, outputs,
+            execution.storage_owner(), optional_sources));
+        if (captured) for (auto &state : sources.successor_states) check(state.capture(sources.submission));
+      } else if (sources.mtp_full_candidate) {
         const std::array<inference::SubmissionViews::OutputCapture, 2> outputs{{
             {phase.successor_token_port, execution.storage_owner(), take(program_slot.io.readback(io.successor_token))->pool()},
             {phase.successor_catchup_port, execution.storage_owner(), take(program_slot.io.readback(io.successor_catchup))->pool()}}};
@@ -3445,7 +3659,7 @@ public:
           !published_members.try_resize(outputs.size(), std::uint8_t{1})) throw std::bad_alloc{};
       for (std::size_t j = 0; j < outputs.size(); ++j) {
         const auto &member = step.members[j];
-        const auto member_role = packs_draft(phase.family->packing)
+        const auto member_role = (packs_draft(phase.family->packing) || step.device_input_choice)
             ? (member.base->draft->lag ? GraphRole::kMtpCatchupRound : GraphRole::kMtpRound) : phase.family->role;
         finished_members[j].publication = publication.prepare(j, EvaluationAttemptFacts{
             member_role, phase.family->completion, generation_boundary(*member.base),
@@ -3528,6 +3742,19 @@ public:
                 check(program_slot.io.read(run, io.next_id, std::as_writable_bytes(next_ids)));
               select(std::span<const std::int32_t>(next_ids), step, next_ids);
             }
+            // Account the actual submitted work even when EOS or cancellation
+            // makes B unpublishable. These already retired A results are the
+            // exact same greedy predicate that its device selector consumed.
+            if (successor_step && successor_step->device_input_choice && successor_step->submitted &&
+                successor_step->draft_rows_deferred && step.members.size() == 1 &&
+                successor_step->members.size() == 1 && io.prefix_candidates.size() == 2) {
+              const auto rows = std::size_t{1} + (io.prefix_candidates[0] == step.members[0].draft_token);
+              auto &next = successor_step->members[0];
+              submitted_draft_rows = cache::add(submitted_draft_rows, rows);
+              next.session->submitted_draft_rows = cache::add(next.session->submitted_draft_rows, rows);
+              next.draft_input_rows = successor_step->active_draft_rows = rows;
+              successor_step->draft_rows_deferred = false;
+            }
             for (std::size_t j = 0; j < outputs.size(); ++j) {
               auto &member = step.members[j];
               // Retain every original physical owner for whole-cohort tail return,
@@ -3567,6 +3794,12 @@ public:
             return hyle::Status::Ok();
           },
           [&]() -> hyle::Status {
+            if (step.device_input_choice) {
+              if (step.members.size() != 1 || !step.members[0].selected_input_choice)
+                return hyle::Status::InvalidArgument("retired device successor has no resolved producer choice");
+              for (auto &append : step.execution.appends)
+                HYLE_RETURN_IF_ERROR(append.select_choice(*step.members[0].selected_input_choice));
+            }
             for (std::size_t bank_index = 0; bank_index < phase.state_banks.size(); ++bank_index) {
               const auto &bank = phase.state_banks[bank_index];
               auto writers = take(transactions.returned(bank_index));
@@ -3653,8 +3886,10 @@ public:
               auto after = generation_boundary(*member.next); after.next_id = next_ids[j];
               const std::array accepted{member.first_input, member.accepted_tokens == 2 ? member.draft_token : -1};
               const std::array verified{member.first_input, member.draft_token};
+              const auto result_role = step.device_input_choice
+                  ? (member.base->draft->lag ? GraphRole::kMtpCatchupRound : GraphRole::kMtpRound) : phase.family->role;
               publication.complete(j, EvaluationResultFacts{
-                  phase.family->role, after, outputs.size(), j, member.accepted_tokens, draft_rows, member.input_tokens,
+                  result_role, after, outputs.size(), j, member.accepted_tokens, draft_rows, member.input_tokens,
                   recursive ? std::span<const std::int32_t>(member.verification_inputs).first(member.accepted_tokens)
                       : std::span<const std::int32_t>(accepted),
                   recursive ? std::span<const std::int32_t>(member.verification_inputs)
@@ -4095,6 +4330,7 @@ public:
 };
 
 } // namespace qwen35
+#include "device_continuation.h"
 #include "session_transfer.h"
 namespace qwen35 {
 
@@ -5392,7 +5628,7 @@ struct GenerationStepAdapter final {
   AfterSubmit &after_submit;
   BatchObserver &batch_observer;
   std::span<const inference::RequestCreditGrant> credits;
-  bool drain_requested, resumed, mtp, imported;
+  bool drain_requested, resumed, mtp, device_mtp, continuous_mtp, imported;
   std::size_t maximum_outputs, slot, next_slot;
   GraphRole successor_role;
   std::optional<std::size_t> prior_slot;
@@ -5414,10 +5650,15 @@ struct GenerationStepAdapter final {
       : model(selected), calls(original), trace_states(trace), continuation(pending), after_submit(submitted),
         batch_observer(observer), credits(granted), drain_requested(drain),
         resumed(pending.drive_cursor.awaiting_current ? pending.pending_was_successor : resume),
-        mtp(model.cache_plan.draft_cache), imported(resume ? model.active_step->phase->imported_sources : continuation.matches(calls)),
-        maximum_outputs(mtp ? 2 : 1), slot(resume ? model.active_step->state_slot : continuation.next_slot),
-        next_slot((slot + 1) % execution_slot_count),
-        successor_role(mtp ? GraphRole::kMtpCatchupRound : GraphRole::kText), prior_slot(continuation.ready_slot),
+        mtp(model.cache_plan.draft_cache), device_mtp(model.device_mtp_successor_enabled()),
+        continuous_mtp(model.device_mtp_continuous_enabled()),
+        imported(resume ? model.active_step->phase->imported_sources : !device_mtp && continuation.matches(calls)),
+        maximum_outputs(mtp ? 2 : 1), slot(resume ? model.active_step->state_slot : device_mtp ? 0 : continuation.next_slot),
+        next_slot(device_mtp ? (continuous_mtp ? (imported ? (slot + 1) % execution_slot_count
+            : original[0].role == GraphRole::kMtpCatchupRound ? 1u : 0u) : 0u)
+            : (slot + 1) % execution_slot_count),
+        successor_role(device_mtp ? GraphRole::kMtpContinuation : mtp ? GraphRole::kMtpCatchupRound : GraphRole::kText),
+        prior_slot(continuation.ready_slot),
         second(pending.pending_successor_calls), refused_failure(pending.pending_refusal) {
     if (pending.drive_cursor.awaiting_current) {
       a = model.active_step.get(); b = model.successor_step.get();
@@ -5464,7 +5705,7 @@ struct GenerationStepAdapter final {
       if (!a->execution.sources) a_source.reset();
     } else {
       second_start = b->step_start;
-      b_source = model.prepare_submission_sources(*b);
+      if (!device_mtp || continuous_mtp) b_source = model.prepare_submission_sources(*b);
       model.submit_evaluations(*b);
       ++continuation.successor_submissions;
     }
@@ -5480,6 +5721,9 @@ struct GenerationStepAdapter final {
     continuation.hold_current(calls, false, resumed);
   }
   inference::StepSuccessor prepare_successor() {
+    // A device-selected B is the terminal member of this pair. It owns no
+    // outgoing Source and must not enter either legacy relay or C preparation.
+    if (device_mtp && !continuous_mtp && a && a->device_input_choice) return inference::StepSuccessor::kNone;
     if (!a_source) return inference::StepSuccessor::kUnavailable;
     draining = continuation.cohort.draining(drain_requested, credits);
     if (resumed && !draining) {
@@ -5495,7 +5739,7 @@ struct GenerationStepAdapter final {
     // This call's actual incoming Source is only a necessary capture-key
     // candidate. Original B preparation/submission still proves the complete
     // current tuple, permissions and whole predecessor outcome.
-    if (draining || !imported || continuation.reprime_slot ||
+    if (draining || (!device_mtp && (!imported || continuation.reprime_slot)) ||
         !std::ranges::all_of(calls, [&](const auto &call) {
           const auto &request = *call.request; const auto &ledger = *request.ledger;
           return !request.session->stopping && !request.session->failed && call.quota >= 2 * maximum_outputs &&
@@ -5505,19 +5749,28 @@ struct GenerationStepAdapter final {
               request.rounds.capacity() - request.rounds.size() >= 2 &&
               ledger.records.size() - ledger.committed_count >= 2;
         })) return inference::StepSuccessor::kNone;
-    // Imported A and B use the same original cold Phase. Its actual role,
-    // sampling, packing and rows already cover both Text T1 and MTP T2.
-    if (!a || !a->phase || !a->phase->imported_sources ||
-        a->phase->family->role != successor_role ||
-        a->phase->family->completion != TextCompletion::kEmitNext ||
-        a->phase->family->requests != calls.size() || next_slot >= a->phase->slots.size())
+    // Device B has its own original cold carrier. Ordinary relay A/B share
+    // their imported Phase; neither path prepares a new Phase while A runs.
+    Phase *successor_phase = a ? a->phase : nullptr;
+    if (device_mtp) {
+      if (calls.size() != 1 || !a_source->mtp_device_choice)
+        throw std::logic_error("device successor lost its original K1 selection Source");
+      const auto found = model.phases.find({calls.size(), 2, successor_role, TextCompletion::kEmitNext,
+          calls.front().request->sampling_index, true, RowPacking::kRectangular});
+      if (found == model.phases.end()) return inference::StepSuccessor::kNone;
+      successor_phase = found->second.get();
+    }
+    if (!a || !successor_phase || !successor_phase->imported_sources ||
+        successor_phase->family->role != successor_role ||
+        successor_phase->family->completion != TextCompletion::kEmitNext ||
+        successor_phase->family->requests != calls.size() || next_slot >= successor_phase->slots.size())
       throw std::logic_error("successor lost its original imported Phase geometry");
-    auto &candidate_carrier = a->phase->slots[next_slot].carrier;
+    auto &candidate_carrier = successor_phase->slots[next_slot].carrier;
     if (!candidate_carrier.initialized() || candidate_carrier.closing() || !candidate_carrier.retired())
       return inference::StepSuccessor::kNone;
     auto *candidate_run = take(candidate_carrier.borrow());
     if (!take(g::detail::ReplayAccess::has_capture_candidate(*candidate_run,
-            a_source->primary_output.reader_binding(a->phase->token_port))))
+            a_source->primary_output.reader_binding(successor_phase->token_port))))
       return inference::StepSuccessor::kNone;
     for (std::size_t j = 0; j < calls.size(); ++j) {
       const auto &call = calls[j]; auto &request = *call.request;
@@ -5533,7 +5786,8 @@ struct GenerationStepAdapter final {
     }
     try { b = &model.prepare_relay_evaluations(std::span(relay.data(), relay.size()), a_source, next_slot, successor_role); }
     catch (const inference::EvaluationFailure &failure) {
-      if (!failure.status().IsUnavailable() || failure.status().has_native_error() ||
+      if (!(failure.status().IsUnavailable() || (device_mtp && failure.status().IsUnimplemented())) ||
+          failure.status().has_native_error() ||
           (failure.retirement_observed() && !failure.retirement().status.ok()) ||
           (model.successor_step && model.successor_step->submitted)) throw;
       refused_failure = failure; ++continuation.successor_refusals;
@@ -5549,6 +5803,7 @@ struct GenerationStepAdapter final {
   }
   void finish(Position position) {
     finish_scratch();
+    const bool device_successor = device_mtp && model.active_step->device_input_choice;
     const auto current = position == Position::kCurrent ? calls : std::span(second.data(), second.size());
     const auto rows = model.active_step->input_tokens;
     const auto started = model.active_step->step_start;
@@ -5576,8 +5831,10 @@ struct GenerationStepAdapter final {
     observe_generation_batch(batch_observer, current, rows, seconds);
     for (auto &call : current) finish_generation_call(model, call);
     ++continuation.completed_steps;
-    if (position == Position::kSuccessor || (resumed && a_source)) ++continuation.successor_publications;
+    if (position == Position::kSuccessor || (resumed && (a_source || device_successor)))
+      ++continuation.successor_publications;
     if (position == Position::kCurrent && a_source) continuation.ready.reset();
+    if (device_mtp && position == Position::kCurrent) a = model.active_step.get();
   }
   void observe_cancelled(std::span<PreparedGenerationCall> current, Clock::time_point started,
       Clock::time_point retired_at) {
@@ -5631,7 +5888,7 @@ struct GenerationStepAdapter final {
     // predecessor, then the refused slot. Preserve only this ordered cohort's
     // temporary route; Source/permission/capture authority is never carried.
     discard_records(); a_source.reset();
-    if (refused_failure->unsubmitted_reuse_refusal()) {
+    if (!device_mtp && refused_failure->unsubmitted_reuse_refusal()) {
       continuation.reset_reuse();
       continuation.next_slot = slot;
       continuation.reprime_slot = next_slot;
@@ -5665,11 +5922,18 @@ struct GenerationStepAdapter final {
     }
   }
   void bind_successor() {
+    if (device_mtp) {
+      a = model.active_step.get();
+      if (!a || !a->device_input_choice || calls.size() != 1 || !calls.front().request->session->head)
+        throw std::logic_error("device successor lost its producer's actual published head");
+      check(model.resolve_device_mtp_successor(*a, *calls.front().request->session->head));
+    }
     for (std::size_t j = 0; j < calls.size(); ++j) {
       auto &request = *calls[j].request;
       auto &record = request.ledger->bind_successor(generation_boundary(*request.session->head),
-          request.progress.observed_commits(), request.progress.turn_index, request.progress.generated.back());
+          request.progress.observed_commits(), request.progress.turn_index, request.progress.generated.back(), device_mtp);
       second[j].pending = record.pending_input;
+      if (device_mtp) second[j].role = record.role;
     }
   }
   void carry(inference::StepCarry disposition) {
@@ -5683,11 +5947,18 @@ struct GenerationStepAdapter final {
       second.clear(); continuation.pending_refusal.reset();
       continuation.pending_synchronous = false; continuation.pending_was_successor = true;
       continuation.cohort.clear_drain();
-      continuation.next_slot = (next_slot + 1) % execution_slot_count;
+      continuation.next_slot = device_mtp && !continuous_mtp ? 0 : (next_slot + 1) % execution_slot_count;
+      if (device_mtp) { a_source.reset(); continuation.release_ready(); }
     } else if (disposition == inference::StepCarry::kSuccessor) {
+      if (device_mtp) {
+        a_source.reset(); b_source.reset(); continuation.reset_reuse(); return;
+      }
       a_source.reset(); continuation.ready = std::move(b_source); continuation.ready_slot = next_slot;
       continuation.next_slot = (next_slot + 1) % execution_slot_count;
     } else {
+      if (device_mtp) {
+        a_source.reset(); continuation.reset_reuse(); discard_records(); return;
+      }
       continuation.ready = std::move(a_source);
       if (imported) {
         ++continuation.ready_steps;
@@ -5724,7 +5995,8 @@ bool execute_generation_continuation(Model &model, std::span<PreparedGenerationC
     bool drain_requested = false) {
   const bool resumed = !continuation.pending_calls.empty();
   const bool mtp = model.cache_plan.draft_cache;
-  const auto successor_role = mtp ? GraphRole::kMtpCatchupRound : GraphRole::kText;
+  const auto successor_role = mtp ? (model.device_mtp_successor_enabled()
+      ? GraphRole::kMtpContinuation : GraphRole::kMtpCatchupRound) : GraphRole::kText;
   struct RetiredCalls final {
     Model &model; GenerationContinuation &continuation;
     int exceptions = std::uncaught_exceptions();
@@ -6495,6 +6767,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     BatchObserver &&batch_observer = nullptr) {
   constexpr bool mtp = Mode == GenerationMode::kMtp;
   const auto submitted_draft_begin = model.submitted_draft_rows;
+  model.prepare_default_device_mtp_successor(mtp && decode_overlap && !prefix_enabled && logits_providers.empty());
   if (!max_prefill_rows) throw std::runtime_error("prefill rows require a positive quantum");
   const inference::PrefillPolicy prefill(max_prefill_rows);
   if (!stop_policies.empty() && stop_policies.size() != schedules.size())
@@ -6656,6 +6929,10 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       if (width == 1 || width <= eligible) shapes[key][count] = cache::add(demand.uses, width == 1 ? restore_bound : 0);
     }
     if (decode_bound && width <= policy_decoding_requests) {
+      if constexpr (mtp) if (width == 1 && model.device_mtp_successor_enabled() &&
+          !model.sampling_configuration(sampling_index).configuration.enabled &&
+          model.sampling_configuration(sampling_index).configuration.modifiers.empty())
+        shapes[{GraphRole::kMtpContinuation, TextCompletion::kEmitNext}][2] = decode_bound;
       if constexpr (mtp) for (auto role : roles) {
         if (drafts_token(role) && (model.max_drafts() != 1 || model.recursive_mtp() ||
             width > policy_decoding_requests - dynamic_decoding_requests)) continue;
@@ -6832,13 +7109,17 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
           std::ranges::none_of(requests, [i](const auto &request) { return request.sampling_index == i; })) continue;
       for (const auto role : {GraphRole::kMtpRound, GraphRole::kMtpCatchupRound})
         model.prepare_execution(pair, 1, role, TextCompletion::kEmitNext, i);
-      model.prepare_relay_execution(1, i, GraphRole::kMtpCatchupRound);
+      model.prepare_relay_execution(1, i, model.device_mtp_successor_enabled()
+          ? GraphRole::kMtpContinuation : GraphRole::kMtpCatchupRound);
     }
   inference::RequestLoop request_loop;
-  if constexpr (!mtp) if (decode_overlap && requests.size() == 1 && decode_bound &&
-      model.cache_plan.active_sequences == 1)
-    (void)model.prepare_ordinary_decode_recordings(requests.front().sampling_index,
-        prefix_enabled ? nullptr : &requests.front().session);
+  if (decode_overlap && !requests.empty() && decode_bound && model.cache_plan.active_sequences == 1 &&
+      (requests.size() == 1 || model.cache_plan.resident_sessions == 1) &&
+      std::ranges::any_of(requests.front().progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; })) {
+    auto *prepared = prefix_enabled ? nullptr : &requests.front().session;
+    if constexpr (mtp) (void)model.prepare_mtp_decode_recordings(requests.front().sampling_index, prepared);
+    else (void)model.prepare_ordinary_decode_recordings(requests.front().sampling_index, prepared);
+  }
   request_loop.prepare(requests.size(), model.cache_plan.resident_sessions);
   for (std::size_t index = 0; index < requests.size(); ++index)
     requests[index].request_key = request_loop.enqueue(index);
@@ -7448,8 +7729,9 @@ int qwen35::run(int argc, char **argv) {
     const auto max_query_rows = (std::max)({*std::max_element(planned_chunks.begin(), planned_chunks.end()), mtp_schema_rows,
         mtp_enabled && mtp_has_decode ? max_drafts + 1 : std::size_t{1}});
     const auto requested_active = (std::min)(active_sequences, input_sessions);
-    // Reserve D2 only for the original device-ordered caller-owned route.
-    // The original capacity formula already accounts for the actual batch R.
+    // A continuous conditional successor retains its completed producer until
+    // the consumer really retires. Count that third original batch in the
+    // existing page/state bound, independently of simultaneous GPU work.
     bool overlap_selected = decode_overlap && natural_generation &&
         (!mtp_enabled || (max_drafts == 1 && min_draft_probability == 0)) && !progress &&
         qwen35::DeviceRelayCapabilities{backend_selection.primary, cpu_ffn_layers != 0,
@@ -7458,14 +7740,25 @@ int qwen35::run(int argc, char **argv) {
         std::ranges::any_of(generation_schedules, [](const auto &request) {
           return std::ranges::any_of(request.turns, [](const auto &turn) { return turn.max_outputs >= 10; });
         });
+    const bool continuous_mtp_candidate = overlap_selected && mtp_enabled && !prefix_enabled &&
+        cached_slots == 1 && requested_active == 1 && weight_source.cache_storage.empty() &&
+        geometry.attention_layers() && geometry.vocabulary <= (std::int64_t{1} << 24) &&
+        geometry.key_depth == geometry.value_depth &&
+        (geometry.key_depth == 64 || geometry.key_depth == 128 || geometry.key_depth == 256);
+    auto overlap_depth = continuous_mtp_candidate ? std::size_t{3} : std::size_t{2};
     const auto plan_for = [&](std::size_t residents) {
       return qwen35::cache::plan(geometry, weight_source.cache_row_bytes, capacity, residents,
           mtp_enabled && mtp_has_decode ? (std::max)(max_query_rows, std::size_t{2}) : max_query_rows, recurrent_payload,
           active_sequences == 0 ? residents : requested_active,
-          mtp_enabled ? max_drafts + 1 : 1, mtp_enabled, sampler.enabled, overlap_selected ? 2 : 1);
+          mtp_enabled ? max_drafts + 1 : 1, mtp_enabled, sampler.enabled, overlap_selected ? overlap_depth : 1);
     };
     const auto minimum_residents = active_sequences == 0 ? std::size_t{1} : requested_active;
     auto selected_cache = plan_for(cached_slots);
+    if (overlap_selected && overlap_depth == 3 && cache_bytes &&
+        plan_for(minimum_residents).backing_bytes > cache_bytes) {
+      overlap_depth = 2;
+      selected_cache = plan_for(cached_slots);
+    }
     if (overlap_selected && cache_bytes && plan_for(minimum_residents).backing_bytes > cache_bytes) {
       // Extra in-flight state is optional. A valid single-step configuration
       // must not be rejected merely because automatic overlap needs more room.

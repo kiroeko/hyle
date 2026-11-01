@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <span>
 #include <vector>
 
@@ -50,6 +51,12 @@ struct StepMember final {
   std::vector<c::ReadLease> carry_prefix{};
   // Frozen active inputs of this member's actual draft Append, not accepted rows.
   std::size_t draft_input_rows = 0, discarded_draft_rows = 0;
+  // One original candidate and epoch, with two prevalidated input layouts.
+  // These are physical preparation alternatives, never two published Heads.
+  std::array<c::BatchLayoutVersion, 2> target_input_choices, draft_input_choices;
+  std::array<std::vector<hyle::inference::PagedPageRef>, 2> target_choice_pages, draft_choice_pages;
+  std::size_t choice_base_length = 0, choice_draft_frontier = 0;
+  std::optional<std::size_t> selected_input_choice;
   bool sampled_accept = false;
 
 
@@ -91,6 +98,7 @@ struct StepSources final : inference::SubmissionViews {
   // These independent original final-prefix views serve the next Gather.
   std::vector<g::StoreSource> successor_states;
   bool mtp_full_candidate = false;
+  bool mtp_device_choice = false;
   void release_publication_views() noexcept {
     if (!mtp_full_candidate) return;
     // Model-owned full-prefix views have no consumer binding. Once A has
@@ -114,6 +122,7 @@ struct StepState final {
       capture_recorded = 0, capture_reused = 0;
   g::ReplayRoute replay_route = g::ReplayRoute::kUnprepared;
   bool prepared = false, submitted = false, cancelled = false;
+  bool device_input_choice = false, draft_rows_deferred = false;
   std::size_t state_slot = 0;
   bool discard_stopped_members = false;
   bool withdrawn(const StepMember &member) const noexcept;
@@ -122,6 +131,9 @@ struct StepState final {
     for (auto &member : members) {
       member.target_publication = {}; member.draft_publication = {};
       member.owner_state->recycle_candidate(std::move(member.next)); member.base = nullptr;
+      for (auto &pages : member.target_choice_pages) pages.clear();
+      for (auto &pages : member.draft_choice_pages) pages.clear();
+      member.target_input_choices = {}; member.draft_input_choices = {};
     }
     phase = nullptr;
   }

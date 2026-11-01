@@ -28,6 +28,10 @@ TargetGraphResult emit_target_graph(Recipe &r,
   const bool packed_verify = packs_verify(inputs.packing), packed_target = packs_target(inputs.packing);
   const auto frequencies = inputs.frequencies;
   const auto target_tokens = inputs.token_ids;
+  if (inputs.predecessor_prefix_index && requests != 1)
+    throw std::runtime_error("device predecessor prefix selection requires one original request");
+  if (inputs.zero_fill_envelope && !inputs.predecessor_prefix_index)
+    throw std::runtime_error("target raw append envelope requires its actual finite-choice selector");
   const auto attention_layers = geometry.attention_layers();
   if (state_schema.size() != geometry.layers.size() || outputs.layers.size() != state_schema.size() ||
       outputs.attention_nodes.size() != attention_layers || outputs.append_nodes.size() != 2 * attention_layers ||
@@ -48,12 +52,17 @@ TargetGraphResult emit_target_graph(Recipe &r,
         const auto schema = take(g::slots::Schema::create(item, inputs.state_slots,
             cache::add(bytes, cache::state_pool_padding(bytes))));
         port.pool = r.input(take(schema.capacity_description()));
-        port.source_ids = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
+        const auto sources = inputs.predecessor_prefix_index ? f(2) : batch;
+        port.source_ids = r.input(r.dense_spec(Type::kInt32, {sources}));
         port.destination_ids = r.input(dense(Type::kInt32,
             {static_cast<std::int64_t>(cache::multiply(requests, prefix_rows))}));
         auto rows = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
             {port.pool, port.source_ids}, r.dense_spec(item.data_type(),
-                {batch, f(schema.item_elements())}), &port.gather);
+                {sources, f(schema.item_elements())}), &port.gather);
+        if (inputs.predecessor_prefix_index)
+          rows = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
+              {rows, inputs.predecessor_prefix_index},
+              r.dense_spec(item.data_type(), {batch, f(schema.item_elements())}));
         return std::pair{schema, rows};
       };
       const auto [history_schema, history_rows] = state_port(ports.history, state_schema[i].history);
@@ -211,16 +220,30 @@ TargetGraphResult emit_target_graph(Recipe &r,
       if (cache_capacity.value_storage.data_type() == Type::kFloat8E4M3FN)
         value_rows = r.one(c::Operation::custom(c::model_ops::CacheEncode{cache_capacity.value_storage}),
             {value_rows}, r.dense_spec(Type::kFloat8E4M3FN, {packed, f(geometry.kv_heads), f(geometry.value_depth)}));
-      r.op(c::Operation::custom(take(g::batch::paged_append(schema, c::BatchCacheRole::kKey))),
-          {key_rows}, {}, &key_append);
-      r.op(c::Operation::custom(take(g::batch::paged_append(schema, c::BatchCacheRole::kValue))),
-          {value_rows}, {}, &value_append);
+      if (inputs.predecessor_prefix_index) {
+        r.op(c::Operation::custom(take(g::batch::device_choice_paged_append(
+            schema, c::BatchCacheRole::kKey, inputs.zero_fill_envelope))),
+            {key_rows, inputs.predecessor_prefix_index}, {}, &key_append);
+        r.op(c::Operation::custom(take(g::batch::device_choice_paged_append(
+            schema, c::BatchCacheRole::kValue, inputs.zero_fill_envelope))),
+            {value_rows, inputs.predecessor_prefix_index}, {}, &value_append);
+      } else {
+        r.op(c::Operation::custom(take(g::batch::paged_append(schema, c::BatchCacheRole::kKey))),
+            {key_rows}, {}, &key_append);
+        r.op(c::Operation::custom(take(g::batch::paged_append(schema, c::BatchCacheRole::kValue))),
+            {value_rows}, {}, &value_append);
+      }
       if (has_prior_append) check(r.builder.depends_on(key_append, prior_append));
       check(r.builder.depends_on(value_append, key_append));
       prior_append = value_append; has_prior_append = true;
-      auto attention = r.one(c::Operation::custom(c::PagedAttention{
-          .capacity = cache_capacity, .scale = 1.F / std::sqrt(static_cast<float>(geometry.key_depth)), .causal = true}),
-          {r.reshape(q, {packed, f(geometry.query_heads), f(geometry.key_depth)}), ports.key, ports.value, inputs.attention_metadata},
+      const auto attention_operation = inputs.predecessor_prefix_index
+          ? c::Operation::custom(take(g::batch::device_choice_paged_attention(
+              schema, {.scale = 1.F / std::sqrt(static_cast<float>(geometry.key_depth)), .causal = true})))
+          : c::Operation::custom(c::PagedAttention{
+              .capacity = cache_capacity, .scale = 1.F / std::sqrt(static_cast<float>(geometry.key_depth)), .causal = true});
+      auto attention = r.one(attention_operation,
+          {r.reshape(q, {packed, f(geometry.query_heads), f(geometry.key_depth)}), ports.key, ports.value,
+           inputs.predecessor_prefix_index ? inputs.predecessor_prefix_index : inputs.attention_metadata},
           r.dense_spec(r.activation_type(), {packed, f(geometry.query_heads), f(geometry.value_depth)}), &outputs.attention_nodes[layer]);
       check(r.builder.depends_on(outputs.attention_nodes[layer], key_append));
       check(r.builder.depends_on(outputs.attention_nodes[layer], value_append));

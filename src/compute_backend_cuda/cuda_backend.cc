@@ -17,6 +17,7 @@
 #include "driver_release.h"
 #include "hyle/compute/detail/backend_extension.h"
 #include "hyle/compute/detail/paged_append_backend.h"
+#include "hyle/compute/detail/device_choice_paged_append_backend.h"
 #include "hyle/compute/detail/indexed_copy_backend.h"
 #include "hyle/core/assert.h"
 
@@ -1493,6 +1494,8 @@ const void *query_extension_impl(void *, BackendExtensionId id) noexcept {
     return cuda::detail::copy_batch_interface();
   if (id == compute::detail::kPagedAppendExtensionId)
     return cuda::detail::paged_append_interface();
+  if (id == compute::detail::kDeviceChoicePagedAppendExtensionId)
+    return cuda::detail::device_choice_paged_append_interface();
   if (id == compute::detail::kIndexedCopyExtensionId)
     return cuda::detail::indexed_copy_interface();
   return nullptr;

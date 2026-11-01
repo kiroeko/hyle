@@ -171,10 +171,25 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
   const bool packed_verify = packs_verify(packing), packed_target = packs_target(packing);
   const auto target_kv_layers = geometry.attention_layers(), draft_bank = target_kv_layers * 2;
   const auto hidden = geometry.hidden, vocabulary = geometry.vocabulary;
+  const bool device_continuation = role == GraphRole::kMtpContinuation;
+  const bool continuous_successor = device_continuation && prepared.continuous_device_successor;
+  const bool emit_device_decision = prepared.device_acceptance_successor || continuous_successor;
+  if (device_continuation && (requests != 1 || prefix_rows != 2 ||
+      packing != RowPacking::kRectangular || completion != TextCompletion::kEmitNext ||
+      selected_sampler.enabled || !selected_sampler.modifiers.empty() ||
+      std::ranges::any_of(build_request.chunks, [](auto rows) { return rows != 2; })))
+    throw std::runtime_error("device MTP continuation requires the original greedy R1 T2 rectangular family");
+  const bool successor_eligible = drafts_token(role) && requests == 1 &&
+      packing == RowPacking::kRectangular && !selected_sampler.enabled &&
+      selected_sampler.modifiers.empty() && (prepared.emit_successor || continuous_successor);
+  if (emit_device_decision &&
+      (!successor_eligible || vocabulary > (std::int64_t{1} << 24)))
+    throw std::runtime_error("device successor decision requires the original greedy R1 K1 family and exact F32 token IDs");
   const auto ports_per_request = cache::add(76, cache::multiply(38, prefix_rows - 1));
   ExecutionPlanFacts plan_facts;
     auto result = std::make_unique<Family>();
     auto &definition = *result;
+    definition.continuous_device_successor = continuous_successor;
     definition.layers.resize(geometry.layers.size()); definition.attention_nodes.resize(target_kv_layers);
     definition.append_nodes.resize(draft_bank + 2);
     definition.append_cache_inputs.resize(draft_bank + 2);
@@ -211,6 +226,20 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
             {has_mtp(role) && !is_mtp_prefill(role) ? batch : packed}));
     definition.position_port = requests == 1 ? r.input(r.dense_spec(Type::kInt32, {t})) :
         r.input(r.dense_spec(Type::kInt32, {batch, t}));
+    V predecessor_prefix_index{}, predecessor_has_lag{}, target_positions = definition.position_port;
+    if (device_continuation) {
+      definition.predecessor_prefix_port = r.input(dense(Type::kInt32, {1}));
+      auto &choices = assembly.literal_at(assembly.primary(), dense(Type::kInt32, {2}));
+      constexpr std::array<std::int32_t, 2> indices{0, 1};
+      choices.write<std::int32_t>(indices);
+      predecessor_prefix_index = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
+          {r.constant(choices), definition.predecessor_prefix_port}, r.dense_spec(Type::kInt32, {f(1)}));
+      predecessor_has_lag = r.cast(r.cast(predecessor_prefix_index, Type::kFloat32), Type::kBool);
+      definition.continuation_position_port = r.input(r.dense_spec(Type::kInt32, {t}));
+      target_positions = r.one(c::Select{},
+          {predecessor_has_lag, definition.continuation_position_port, definition.position_port},
+          r.dense_spec(Type::kInt32, {t}));
+    }
     if ((requests != 1 || packed_prefill) && !verifies_prefix(role)) definition.last_ids_port = r.input(r.dense_spec(Type::kInt32, {batch}));
     if (packed_target) {
       definition.sequence_offsets_port = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(requests + 1)}));
@@ -219,7 +248,8 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     }
     if (packed_verify) definition.prefix_ids_port = r.input(dense(Type::kInt32,
         {static_cast<std::int64_t>(cache::multiply(requests, prefix_rows))}));
-    definition.metadata_port = r.input(take(definition.attention_schema.metadata_description()));
+    if (!device_continuation)
+      definition.metadata_port = r.input(take(definition.attention_schema.metadata_description()));
     std::vector<float> frequency(static_cast<std::size_t>(geometry.rotary / 2));
     for (std::size_t i = 0; i < frequency.size(); ++i) frequency[i] = 1.F / std::pow(geometry.rope_theta, float(i) / static_cast<float>(frequency.size()));
     auto &frequency_literal = assembly.literal_at(assembly.primary(), dense(Type::kFloat32, {geometry.rotary / 2}));
@@ -263,12 +293,17 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
           {port.pool, port.source_ids}, r.dense_spec(precision.activation_type(), {source_rows, f(hidden)}), &port.gather);
       // One fixed pool and private IDs; the original ready leases still prove
       // exactly these rows. Batched/packed order is [all carries, all priors].
-      const bool chronological = requests == 1 && role == GraphRole::kMtpCatchupRound &&
+      const bool chronological = requests == 1 &&
+          (role == GraphRole::kMtpCatchupRound || device_continuation) &&
           packing == RowPacking::kRectangular;
       // A K1 producer stores [prior, carry]. The lag1 R1 reader uses that same
       // real ID order, in ready and imported modes; only the graph interprets
       // the two chronological rows. No source ticket/ID is manufactured.
       definition.carry_input_port = r.slice(gathered, 0, chronological ? batch : f(0), batch);
+      if (device_continuation)
+        definition.carry_input_port = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
+            {gathered, predecessor_prefix_index},
+            r.dense_spec(precision.activation_type(), {batch, f(hidden)}));
       const auto draft_rows = is_mtp_prefill(role)
           ? (draft_lag(role) ? D(take(r.builder.dimension_sum(t, f(1)))) : t)
           : f(static_cast<std::int64_t>(draft_lag(role) + 1));
@@ -283,6 +318,13 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
       if (compact_draft) definition.draft_last_ids_port = r.input(r.dense_spec(Type::kInt32, {batch}));
       definition.draft_position_port = r.input(requests == 1 ? r.dense_spec(Type::kInt32, {draft_rows})
           : r.dense_spec(Type::kInt32, {batch, draft_rows}));
+      V draft_positions = definition.draft_position_port;
+      if (device_continuation) {
+        definition.continuation_draft_position_port = r.input(r.dense_spec(Type::kInt32, {draft_rows}));
+        draft_positions = r.one(c::Select{},
+            {predecessor_has_lag, definition.continuation_draft_position_port, definition.draft_position_port},
+            r.dense_spec(Type::kInt32, {draft_rows}));
+      }
       if (draft_lag(role)) {
         definition.prior_input_port = r.slice(gathered, 0, chronological ? f(0) : batch, batch);
         definition.catchup_token_port = r.input(r.dense_spec(Type::kInt32, {batch}));
@@ -298,6 +340,23 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
               {token_source, definition.draft_token_select_port}, r.dense_spec(Type::kInt32, {packed_draft_rows}));
           hidden_rows = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
               {hidden_source, definition.draft_hidden_select_port}, r.dense_spec(precision.activation_type(), {packed_draft_rows, f(hidden)}));
+        } else if (device_continuation) {
+          // Both physical rows exist. The typed attention/Append choice owns
+          // whether one or two are active. Pad the inactive row with valid
+          // token/hidden values before any embedding or projection reads it.
+          const auto lag1_ids = r.one(c::Concat{.axis = 0},
+              {definition.catchup_token_port, ids}, r.dense_spec(Type::kInt32, {f(2)}));
+          const auto lag0_ids = r.one(c::Concat{.axis = 0}, {ids, ids},
+              r.dense_spec(Type::kInt32, {f(2)}));
+          ids = r.one(c::Select{}, {predecessor_has_lag, lag1_ids, lag0_ids},
+              r.dense_spec(Type::kInt32, {f(2)}));
+          const auto lag1_hidden = r.one(c::Concat{.axis = 0},
+              {definition.prior_input_port, hidden_rows},
+              r.dense_spec(precision.activation_type(), {f(2), f(hidden)}));
+          const auto lag0_hidden = r.one(c::Concat{.axis = 0}, {hidden_rows, hidden_rows},
+              r.dense_spec(precision.activation_type(), {f(2), f(hidden)}));
+          hidden_rows = r.one(c::Select{}, {predecessor_has_lag, lag1_hidden, lag0_hidden},
+              r.dense_spec(precision.activation_type(), {f(2), f(hidden)}));
         } else if (draft_lag(role)) {
           if (requests == 1) {
             ids = r.one(c::Concat{.axis = 0}, {definition.catchup_token_port, ids}, r.dense_spec(Type::kInt32, {f(2)}));
@@ -313,18 +372,21 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         }
         const auto projection = mtp::input_projection(r, ids, hidden_rows);
         const mtp::Geometry row_geometry{requests, draft_rows, packed_draft_rows};
-        const auto kv = mtp::project_kv(r, projection, definition.draft_position_port, frequencies, row_geometry);
+        const auto kv = mtp::project_kv(r, projection, draft_positions, frequencies, row_geometry);
         mtp::AppendNodes append;
         if (drafts_token(role)) {
           definition.draft_key_port = r.input(take(c::batch_cache_description(attention_schema, c::BatchCacheRole::kKey)));
           definition.draft_value_port = r.input(take(c::batch_cache_description(attention_schema, c::BatchCacheRole::kValue)));
-          definition.draft_metadata_port = r.input(take(attention_schema.metadata_description()));
+          if (!device_continuation)
+            definition.draft_metadata_port = r.input(take(attention_schema.metadata_description()));
           definition.append_cache_inputs[draft_bank] = definition.draft_key_port;
           definition.append_cache_inputs[draft_bank + 1] = definition.draft_value_port;
-          const auto head = mtp::full_head(r, projection, kv, definition.draft_position_port, frequencies,
-              {attention_schema, definition.draft_key_port, definition.draft_value_port, definition.draft_metadata_port},
+          const auto head = mtp::full_head(r, projection, kv, draft_positions, frequencies,
+              {attention_schema, definition.draft_key_port, definition.draft_value_port,
+               definition.draft_metadata_port, predecessor_prefix_index, continuous_successor},
               f(static_cast<std::int64_t>(draft_lag(role))), row_geometry,
-              [&](Recipe &recipe, V selected) { return qwen35::draft_scores(recipe, selected, prepared.draft_projection); }, definition.draft_last_ids_port);
+              [&](Recipe &recipe, V selected) { return qwen35::draft_scores(recipe, selected, prepared.draft_projection); },
+              device_continuation ? predecessor_prefix_index : definition.draft_last_ids_port);
           append = head.append_nodes; definition.draft_attention_node = head.attention_node;
           if (!selected_sampler.enabled && selected_sampler.modifiers.empty())
             definition.draft_id_port = qwen35::original_draft_id(r, r.op(c::Operation(c::TopK{.count = 1}), {head.logits},
@@ -357,7 +419,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     // Writer-only draft maintenance has no attention data edge into target.
     // Order its real cache effects before target's first append as well.
     const auto target = emit_target_graph(r, {
-        .token_ids = target_tokens, .positions = definition.position_port,
+        .token_ids = target_tokens, .positions = target_positions,
         .attention_metadata = definition.metadata_port, .frequencies = frequencies,
         .sequence_offsets = definition.sequence_offsets_port, .history_select = definition.history_select_port,
         .requests = requests, .prefix_rows = prefix_rows, .packing = packing,
@@ -366,7 +428,9 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         .cpu_ffn_layers = model.cpu_ffn_layers,
         .preceding_append = has_mtp(role) && !is_mtp_prefill(role)
             ? definition.append_nodes[draft_bank + 1] : g::NodeId{},
-        .has_preceding_append = has_mtp(role) && !is_mtp_prefill(role)},
+        .has_preceding_append = has_mtp(role) && !is_mtp_prefill(role),
+        .predecessor_prefix_index = predecessor_prefix_index,
+        .zero_fill_envelope = continuous_successor},
         {definition.layers, definition.attention_nodes,
          std::span<g::NodeId>(definition.append_nodes).first(draft_bank),
          std::span<V>(definition.append_cache_inputs).first(draft_bank),
@@ -502,14 +566,46 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
       if (caller_small_results && definition.sampling_valid_port) definition.id_port = r.copy(definition.id_port);
       r.publish(definition.logits_port); r.publish(definition.id_port);
     }
-    if (drafts_token(role) && requests == 1 && packing == RowPacking::kRectangular &&
-        !selected_sampler.enabled && selected_sampler.modifiers.empty() &&
-        prepared.emit_successor) {
+    if (successor_eligible) {
       // Two complete, independently owned I32[1] outputs. OutputSource cannot
       // grant a fabricated subview of the two-row target-ID writer to B.
       definition.successor_token_port = r.copy(r.reshape(r.slice(definition.id_port, 0, f(1), f(1)), {f(1)}));
       definition.successor_catchup_port = r.copy(r.reshape(definition.draft_id_port, {f(1)}));
       r.publish(definition.successor_token_port); r.publish(definition.successor_catchup_port);
+      if (emit_device_decision) {
+        // These are the K1 agreement coordinates. The continuation owner
+        // still applies EOS/stop/quota and retains/retires both real prefixes.
+        const auto first = r.reshape(r.slice(definition.id_port, 0, f(0), f(1)), {f(1)});
+        const auto second = r.reshape(r.slice(definition.id_port, 0, f(1), f(1)), {f(1)});
+        const auto draft = r.reshape(definition.draft_id_port, {f(1)});
+        // CUDA's existing arithmetic route is floating-only. Every admitted
+        // token ID is exactly representable in F32; subtraction is zero iff
+        // the original I32 IDs agree. This does not alter logits or sampling.
+        const auto mismatch = r.cast(r.binary(c::BinaryKind::kSubtract,
+            r.cast(first, Type::kFloat32), r.cast(draft, Type::kFloat32)), Type::kBool);
+        const auto integer = [&](std::int32_t value) {
+          auto &literal = assembly.literal_at(assembly.primary(), dense(Type::kInt32, {1}));
+          literal.write<std::int32_t>(std::span(&value, 1));
+          return r.constant(literal);
+        };
+        const auto zero = integer(0), one = integer(1), two = integer(2), absent = integer(-1);
+        const auto select = [&](V rejected, V accepted) {
+          return r.one(c::Select{}, {mismatch, rejected, accepted}, r.dense_spec(Type::kInt32, {f(1)}));
+        };
+        definition.successor_accepted_count_port = r.copy(select(one, two));
+        definition.successor_prefix_index_port = r.copy(select(zero, one));
+        definition.successor_pending_port = r.copy(select(first, second));
+        definition.successor_lag_port = r.copy(select(zero, one));
+        // -1 means no logical catchup at lag0. A fixed upper-bound successor
+        // must select a valid inactive-row token before any embedding Gather;
+        // changing this scalar alone never authorizes its KV/state effects.
+        definition.successor_selected_catchup_port = r.copy(select(absent, draft));
+        r.publish(definition.successor_accepted_count_port);
+        r.publish(definition.successor_prefix_index_port);
+        r.publish(definition.successor_pending_port);
+        r.publish(definition.successor_lag_port);
+        r.publish(definition.successor_selected_catchup_port);
+      }
     }
     definition.graph = take(std::move(r.builder).finish());
     definition.literals = std::move(assembly.literals);

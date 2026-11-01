@@ -43,7 +43,7 @@
     {
       "path": "src/ggml-cuda/ggml-cuda.cu",
       "before_sha256": "523470d6604755b82d0208414ce40f1378941b10bc1349763bbdf02edaab9634",
-      "after_sha256": "ba03018513d442c562b5ef2a192ad3773729567d088112a33f54d19e3c3ca52d",
+      "after_sha256": "91a9e2deb8af9bc619a24cfadd58fe515c3b80456d600b3c003d32d30a3b3c51",
       "edits": [
         {
           "before": "    void clear_pool() {\n        ggml_cuda_set_device(device);\n        for (int i = 0; i < MAX_BUFFERS; ++i) {\n            ggml_cuda_buffer & b = buffer_pool[i];\n            if (b.ptr != nullptr) {\n                CUDA_CHECK(cudaFree(b.ptr));\n                pool_size -= b.size;\n                b.ptr  = nullptr;\n                b.size = 0;\n            }\n        }\n    }\n\n",
@@ -728,6 +728,42 @@
         {
           "before": "        src1->ne[1] == 1 && dst->ne[1] == 1 &&\n",
           "after": "        src1->ne[1] == dst->ne[1] &&\n        (src1->ne[1] == 1 || (src1->ne[1] == 2 &&\n            ggml_cuda_supports_bf16_paired_projection_geometry(device,\n                uint64_t(src0->ne[0]), uint64_t(src0->ne[1]), 2))) &&\n"
+        },
+        {
+          "before": "#include \"numerical_contract.h\"\n",
+          "after": "#include \"numerical_contract.h\"\n#include \"../compute_ggml_runtime/active_rows.h\"\n"
+        },
+        {
+          "before": "// One predicate for indexed dispatch and capture qualification. Preserve the\n",
+          "after": "// ARM1 keeps the physical-capacity graph/allocation immutable. Only stack\n// argument headers describe the active matrix to the original GEMM encoder.\nextern \"C\" int32_t ggml_hyle_cuda_matmul_active_rows_contract() {\n    return hyle::compute::ggml_cuda::internal::kActiveRowsMatMulContract;\n}\n\nstatic bool ggml_cuda_active_rows_matmul_bound(const ggml_tensor * dst, int device) {\n    using namespace hyle::compute::ggml_cuda::internal;\n    if (!is_active_rows_matmul(dst) || dst->type != GGML_TYPE_F32 ||\n            dst->op_params[0] != GGML_PREC_F32 || !dst->src[0] || !dst->src[1]) return false;\n    const auto * w = dst->src[0];\n    const auto * a = dst->src[1];\n    if ((w->type != GGML_TYPE_F16 && w->type != GGML_TYPE_BF16) || a->type != w->type ||\n            w->ne[0] <= 0 || w->ne[1] <= 0 || a->ne[1] <= 0 || a->ne[1] > INT32_MAX ||\n            a->ne[0] != w->ne[0] || dst->ne[0] != w->ne[1] || dst->ne[1] != a->ne[1] ||\n            !ggml_is_contiguous(w) || !ggml_is_contiguous(a) || !ggml_is_contiguous(dst)) return false;\n    for (int port = 2; port < GGML_MAX_SRC; ++port) if (dst->src[port]) return false;\n    const ggml_tensor * tensors[3] = {w, a, dst};\n    uintptr_t first[3] = {}, last[3] = {};\n    for (int index = 0; index < 3; ++index) {\n        const auto * tensor = tensors[index];\n        const size_t unit = ggml_type_size(tensor->type);\n        if (tensor->ne[2] != 1 || tensor->ne[3] != 1 ||\n                tensor->ne[0] <= 0 || tensor->ne[0] > INT32_MAX ||\n                uint64_t(tensor->ne[0]) > uint64_t(INT32_MAX) / uint64_t(tensor->ne[1]) ||\n                tensor->nb[0] != unit || tensor->nb[1] != size_t(tensor->ne[0]) * unit ||\n                !tensor->data || !tensor->buffer || !ggml_backend_buffer_is_cuda(tensor->buffer)) return false;\n        const auto * owner = static_cast<const ggml_backend_cuda_buffer_context *>(tensor->buffer->context);\n        if (!owner || owner->device != device || !owner->dev_ptr) return false;\n        const uintptr_t base = reinterpret_cast<uintptr_t>(owner->dev_ptr);\n        const size_t capacity = ggml_backend_buffer_get_size(tensor->buffer);\n        const size_t bytes = size_t(tensor->ne[1]) * tensor->nb[1];\n        first[index] = reinterpret_cast<uintptr_t>(tensor->data);\n        if (first[index] % unit || first[index] < base || first[index] - base > capacity ||\n                bytes > capacity - (first[index] - base) || bytes > UINTPTR_MAX - first[index]) return false;\n        last[index] = first[index] + bytes;\n    }\n    return !(first[2] < last[0] && first[0] < last[2]) &&\n           !(first[2] < last[1] && first[1] < last[2]);\n}\n\nstatic void ggml_cuda_mul_mat_active_rows(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {\n    using namespace hyle::compute::ggml_cuda::internal;\n    const int32_t rows = dst->op_params[kActiveRowsMatMulRowsParameter];\n    if (!ggml_cuda_active_rows_matmul_bound(dst, ctx.device) || rows < 0 || rows > dst->ne[1]) {\n        hyle::compute::ggml_cuda::bridge::fail(cudaErrorInvalidValue, \"invalid active-row MatMul binding/configuration\");\n    }\n    if (rows != 0) {\n        ggml_tensor active_a = *dst->src[1];\n        ggml_tensor active_y = *dst;\n        active_a.ne[1] = rows;\n        active_y.ne[1] = rows;\n        active_y.src[1] = &active_a;\n        active_y.op_params[kActiveRowsMatMulParameter] = 0;\n        // nb/data/buffer retain their original physical-C coordinates.\n        ggml_cuda_mul_mat(ctx, dst->src[0], &active_a, &active_y);\n    }\n    if (rows != dst->ne[1]) {\n        const size_t offset = size_t(rows) * dst->nb[1];\n        const size_t bytes = size_t(dst->ne[1] - rows) * dst->nb[1];\n        CUDA_CHECK(cudaMemsetAsync(static_cast<char *>(dst->data) + offset, 0, bytes, ctx.stream()));\n    }\n}\n\n// One predicate for indexed dispatch and capture qualification. Preserve the\n"
+        },
+        {
+          "before": "        case GGML_OP_MUL_MAT:\n            ggml_cuda_mul_mat(ctx, dst->src[0], dst->src[1], dst);\n            break;",
+          "after": "        case GGML_OP_MUL_MAT:\n            if (hyle::compute::ggml_cuda::internal::is_active_rows_matmul(dst)) {\n                ggml_cuda_mul_mat_active_rows(ctx, dst);\n            } else {\n                ggml_cuda_mul_mat(ctx, dst->src[0], dst->src[1], dst);\n            }\n            break;"
+        },
+        {
+          "before": "static bool ggml_cuda_graph_check_compability(ggml_cgraph * cgraph) {\n\n    bool use_cuda_graph = true;",
+          "after": "static bool ggml_cuda_graph_check_compability(ggml_cgraph * cgraph) {\n    for (int i = 0; i < cgraph->n_nodes; ++i) {\n        if (hyle::compute::ggml_cuda::internal::is_active_rows_matmul(cgraph->nodes[i])) return false;\n    }\n\n    bool use_cuda_graph = true;"
+        },
+        {
+          "before": "    ggml_tensor * node = cgraph->nodes[i];\n\n#if !defined(GGML_USE_HIP) && !defined(GGML_USE_MUSA)\n    if (node->op == GGML_OP_CPY &&",
+          "after": "    ggml_tensor * node = cgraph->nodes[i];\n    if (hyle::compute::ggml_cuda::internal::is_active_rows_matmul(node)) return 0;\n\n#if !defined(GGML_USE_HIP) && !defined(GGML_USE_MUSA)\n    if (node->op == GGML_OP_CPY &&"
+        },
+        {
+          "before": "        // Explicit frequencies use strict trigonometry and different src1/2\n        // semantics; none of the inverse-factor RoPE fusers may consume it.",
+          "after": "        if (hyle::compute::ggml_cuda::internal::is_active_rows_matmul(cgraph->nodes[node_idx + j])) {\n            return false;\n        }\n        // Explicit frequencies use strict trigonometry and different src1/2\n        // semantics; none of the inverse-factor RoPE fusers may consume it."
+        },
+        {
+          "before": "            if (value->op == GGML_OP_MUL_MAT) {\n                ++projections;",
+          "after": "            if (value->op == GGML_OP_MUL_MAT) {\n                if (hyle::compute::ggml_cuda::internal::is_active_rows_matmul(value)) return false;\n                ++projections;"
+        },
+        {
+          "before": "    if (!(first->flags & GGML_TENSOR_FLAG_COMPUTE) ||\n            !(second->flags & GGML_TENSOR_FLAG_COMPUTE) ||\n            !ggml_cuda_can_fuse_bf16_paired_matvec(first, second, device, require_bound)) return false;",
+          "after": "    if (hyle::compute::ggml_cuda::internal::is_active_rows_matmul(first) ||\n            hyle::compute::ggml_cuda::internal::is_active_rows_matmul(second)) return false;\n    if (!(first->flags & GGML_TENSOR_FLAG_COMPUTE) ||\n            !(second->flags & GGML_TENSOR_FLAG_COMPUTE) ||\n            !ggml_cuda_can_fuse_bf16_paired_matvec(first, second, device, require_bound)) return false;"
+        },
+        {
+          "before": "static bool ggml_cuda_match_matvec_fusion(ggml_cgraph * cgraph, int i,\n        bool require_bound, ggml_cuda_matvec_fusion_match & match) {\n",
+          "after": "static bool ggml_cuda_match_matvec_fusion(ggml_cgraph * cgraph, int i,\n        bool require_bound, ggml_cuda_matvec_fusion_match & match) {\n    if (hyle::compute::ggml_cuda::internal::is_active_rows_matmul(cgraph->nodes[i])) return false;\n"
         }
       ]
     },
@@ -1549,9 +1585,101 @@
         {
           "before": "    ggml_cuda_pdl_sync();\n#pragma unroll\n",
           "after": "    if constexpr (!Indexed) ggml_cuda_pdl_sync();\n#pragma unroll\n"
+        },
+        {
+          "before": "#include \"gated_delta_scale.h\"\n",
+          "after": "#include \"gated_delta_scale.h\"\n#include \"packed_gdn.h\"\n"
+        },
+        {
+          "before": "extern \"C\" std::int32_t ggml_hyle_cuda_gdn_indexed_state_contract() {\n    return ggml_cuda_gdn_indexed_contract;\n}\n",
+          "after": "extern \"C\" std::int32_t ggml_hyle_cuda_gdn_indexed_state_contract() {\n    return ggml_cuda_gdn_indexed_contract;\n}\n\nextern \"C\" std::int32_t ggml_hyle_cuda_gdn_r1_packed_contract() {\n    return hyle::compute::ggml_cuda::internal::kPackedGdnR1Contract;\n}\n"
+        },
+        {
+          "before": "bool ggml_cuda_supports_gated_delta_net_indexed(const ggml_tensor * dst) {",
+          "after": "// The original dense physical carrier remains intact. The sole additional\n// input is a private, already status-checked R1 [0,L] offset mirror.\nstatic bool ggml_cuda_gdn_is_r1_packed(const ggml_tensor * dst) {\n    return dst && dst->op == GGML_OP_GATED_DELTA_NET &&\n        ggml_get_op_params_i32(dst, hyle::compute::ggml_cuda::internal::kPackedGdnR1Parameter) ==\n            hyle::compute::ggml_cuda::internal::kPackedGdnR1Contract;\n}\n\nstatic bool ggml_cuda_supports_gdn_r1_packed(const ggml_tensor * dst) {\n    if (!ggml_cuda_gdn_is_r1_packed(dst) || ggml_cuda_gdn_is_indexed(dst) ||\n        !ggml_cuda_supports_gated_delta_net_typed(dst) ||\n        ggml_get_op_params_i32(dst, 0) != 1 || dst->src[2]->ne[3] != 1 ||\n        dst->src[2]->type != GGML_TYPE_F32 || dst->src[4]->type != GGML_TYPE_F32 ||\n        dst->src[6] || dst->src[7]) return false;\n    const auto * offsets = dst->src[8];\n    if (!offsets || offsets->type != GGML_TYPE_I32 || offsets->ne[0] != 2 ||\n        offsets->ne[1] != 1 || offsets->ne[2] != 1 || offsets->ne[3] != 1 ||\n        !ggml_is_contiguous(offsets)) return false;\n    for (int port = 9; port < GGML_MAX_SRC; ++port) if (dst->src[port]) return false;\n    return true;\n}\n\nbool ggml_cuda_supports_gated_delta_net_indexed(const ggml_tensor * dst) {"
+        },
+        {
+          "before": "    int32_t slots = 0;\n};",
+          "after": "    int32_t slots = 0;\n    const int32_t * packed_offsets = nullptr; // private status-checked R1 [0,L]\n};"
+        },
+        {
+          "before": "template <int S_v, bool KDA, bool keep_rs_t, typename TV, typename TB, bool Indexed = false>",
+          "after": "template <int S_v, bool KDA, bool keep_rs_t, typename TV, typename TB, bool Indexed = false, bool Packed = false>"
+        },
+        {
+          "before": "    if constexpr (!Indexed) ggml_cuda_pdl_sync();\n#pragma unroll\n",
+          "after": "    if constexpr (!Indexed) ggml_cuda_pdl_sync();\n    int64_t actual_tokens = n_tokens;\n    if constexpr (Packed) {\n        static_assert(!Indexed && !keep_rs_t, \"packed R1 GDN requires dense single-state output\");\n        // Read controls only after the original PDL producer dependency. A\n        // failed guard supplies a negative sentinel, which forbids all writes.\n        const int32_t begin = indexed.packed_offsets[0];\n        const int32_t end = indexed.packed_offsets[1];\n        if (begin != 0 || end < 0 || int64_t(end) > n_tokens) return;\n        actual_tokens = end;\n        if (actual_tokens == 0) {\n            // Do not load/store through float or evaluate any recurrence: this\n            // empty transition preserves every initial payload bit.\n#pragma unroll\n            for (int r = 0; r < rows_per_lane; ++r) {\n                const int i = r * warp_size + lane;\n                reinterpret_cast<uint32_t *>(state)[col * S_v + i] =\n                    reinterpret_cast<const uint32_t *>(curr_state)[i];\n            }\n            if (lane == 0) {\n                for (int64_t t = 0; t < n_tokens; ++t) {\n                    attn_data[col] = 0.0f;\n                    attn_data += S_v * H;\n                }\n            }\n            return;\n        }\n    }\n#pragma unroll\n"
+        },
+        {
+          "before": "    for (int t = 0; t < n_tokens; t++) {",
+          "after": "    for (int t = 0; t < actual_tokens; t++) {"
+        },
+        {
+          "before": "    if constexpr (!keep_rs_t) {\n#pragma unroll\n",
+          "after": "    if constexpr (Packed) {\n        // Inactive Y is initialized without touching padded Q/K/V/g/beta.\n        // attn_data already follows the L actual rows; physical strides stay T.\n        if (lane == 0) {\n            for (int64_t t = actual_tokens; t < n_tokens; ++t) {\n                attn_data[col] = 0.0f;\n                attn_data += S_v * H;\n            }\n        }\n    }\n\n    if constexpr (!keep_rs_t) {\n#pragma unroll\n"
+        },
+        {
+          "before": "template <bool KDA, bool keep_rs_t, typename TV, typename TB, bool Indexed = false>",
+          "after": "template <bool KDA, bool keep_rs_t, typename TV, typename TB, bool Indexed = false, bool Packed = false>"
+        },
+        {
+          "before": "gated_delta_net_cuda<16, KDA, keep_rs_t, TV, TB, Indexed>",
+          "after": "gated_delta_net_cuda<16, KDA, keep_rs_t, TV, TB, Indexed, Packed>"
+        },
+        {
+          "before": "gated_delta_net_cuda<32, KDA, keep_rs_t, TV, TB, Indexed>",
+          "after": "gated_delta_net_cuda<32, KDA, keep_rs_t, TV, TB, Indexed, Packed>"
+        },
+        {
+          "before": "gated_delta_net_cuda<64, KDA, keep_rs_t, TV, TB, Indexed>",
+          "after": "gated_delta_net_cuda<64, KDA, keep_rs_t, TV, TB, Indexed, Packed>"
+        },
+        {
+          "before": "gated_delta_net_cuda<128, KDA, keep_rs_t, TV, TB, Indexed>",
+          "after": "gated_delta_net_cuda<128, KDA, keep_rs_t, TV, TB, Indexed, Packed>"
+        },
+        {
+          "before": "template <typename TV, typename TB, bool Indexed = false>",
+          "after": "template <typename TV, typename TB, bool Indexed = false, bool Packed = false>"
+        },
+        {
+          "before": "    if (kda) {\n        if (keep_rs) {\n            launch_gated_delta_net<true, true, TV, TB, Indexed>",
+          "after": "    if constexpr (Packed) {\n        // The private entry has already qualified R1/K1 and all F32 tensors.\n        // The original physical layout and output-tail address stay unchanged.\n        indexed.packed_offsets = static_cast<const int32_t *>(dst->src[8]->data);\n        if (kda) {\n            launch_gated_delta_net<true, false, TV, TB, false, true>(q_d, k_d, v_d, g_d, b_d, s_d, dst_d, state_d,\n                S_v, H, n_tokens, n_seqs, sq1, sq2, sq3, sv1, sv2, sv3,\n                sg1, sg2, sg3, sb1, sb2, sb3, neqk1, rq3, scale, state_slot_stride, K, stream, indexed);\n        } else {\n            launch_gated_delta_net<false, false, TV, TB, false, true>(q_d, k_d, v_d, g_d, b_d, s_d, dst_d, state_d,\n                S_v, H, n_tokens, n_seqs, sq1, sq2, sq3, sv1, sv2, sv3,\n                sg1, sg2, sg3, sb1, sb2, sb3, neqk1, rq3, scale, state_slot_stride, K, stream, indexed);\n        }\n        return;\n    }\n\n    if (kda) {\n        if (keep_rs) {\n            launch_gated_delta_net<true, true, TV, TB, Indexed>"
+        },
+        {
+          "before": "void ggml_cuda_op_gated_delta_net(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {\n",
+          "after": "void ggml_cuda_op_gated_delta_net(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {\n    if (ggml_cuda_gdn_is_r1_packed(dst)) {\n        if (!ggml_cuda_supports_gdn_r1_packed(dst)) {\n            hyle::compute::ggml_cuda::bridge::fail(cudaErrorInvalidValue, \"invalid packed R1 GDN metadata\");\n        }\n        ggml_cuda_op_gated_delta_net_impl<float, float, false, true>(ctx, dst, nullptr);\n        return;\n    }\n"
+        },
+        {
+          "before": "        ggml_backend_cuda_context & ctx, ggml_tensor * dst, ggml_cuda_gated_delta_net_fused_cache cache) {\n",
+          "after": "        ggml_backend_cuda_context & ctx, ggml_tensor * dst, ggml_cuda_gated_delta_net_fused_cache cache) {\n    if (ggml_cuda_gdn_is_r1_packed(dst)) {\n        if (!ggml_cuda_supports_gdn_r1_packed(dst)) {\n            hyle::compute::ggml_cuda::bridge::fail(cudaErrorInvalidValue, \"invalid packed R1 GDN cache metadata\");\n        }\n        ggml_cuda_op_gated_delta_net_impl<float, float, false, true>(ctx, dst, &cache);\n        return;\n    }\n"
+        },
+        {
+          "before": "extern \"C\" std::int32_t ggml_hyle_cuda_gdn_r1_packed_contract() {\n    return hyle::compute::ggml_cuda::internal::kPackedGdnR1Contract;\n}\n",
+          "after": "extern \"C\" std::int32_t ggml_hyle_cuda_gdn_r1_packed_contract() {\n    return hyle::compute::ggml_cuda::internal::kPackedGdnR1Contract;\n}\n\nextern \"C\" std::int32_t ggml_hyle_cuda_gdn_r1_indexed_packed_contract() {\n    return hyle::compute::ggml_cuda::internal::kPackedGdnR1IndexedContract;\n}\n"
+        },
+        {
+          "before": "    for (int port = 8; port < GGML_MAX_SRC; ++port) if (dst->src[port]) return false;\n    const int64_t S = v->ne[0], H = v->ne[1], T = v->ne[2], B = v->ne[3], P = pool->ne[3];\n    const int K = ggml_get_op_params_i32(dst, 0);\n",
+          "after": "    const bool packed = ggml_cuda_gdn_is_r1_packed(dst);\n    for (int port = 8; port < GGML_MAX_SRC; ++port) {\n        if (dst->src[port] && !(packed && port == 8)) return false;\n    }\n    const int64_t S = v->ne[0], H = v->ne[1], T = v->ne[2], B = v->ne[3], P = pool->ne[3];\n    const int K = ggml_get_op_params_i32(dst, 0);\n    if (packed) {\n        // This additional private contract changes only the valid row limit.\n        // Slot leases, real capacity strides and the original state addressing\n        // remain the indexed operation's existing outer Graph authority.\n        const auto * offsets = dst->src[8];\n        if (K != 1 || B != 1 || v->type != GGML_TYPE_F32 ||\n            beta->type != GGML_TYPE_F32 || g->ne[0] != 1 ||\n            !offsets || offsets->type != GGML_TYPE_I32 || offsets->ne[0] != 2 ||\n            offsets->ne[1] != 1 || offsets->ne[2] != 1 || offsets->ne[3] != 1 ||\n            !ggml_is_contiguous(offsets)) return false;\n    }\n"
+        },
+        {
+          "before": "static_assert(!Indexed && !keep_rs_t, \"packed R1 GDN requires dense single-state output\");",
+          "after": "static_assert(!keep_rs_t, \"packed R1 GDN requires a single final state\");"
+        },
+        {
+          "before": "launch_gated_delta_net<true, false, TV, TB, false, true>",
+          "after": "launch_gated_delta_net<true, false, TV, TB, Indexed, true>"
+        },
+        {
+          "before": "launch_gated_delta_net<false, false, TV, TB, false, true>",
+          "after": "launch_gated_delta_net<false, false, TV, TB, Indexed, true>"
+        },
+        {
+          "before": "void ggml_cuda_op_gated_delta_net_indexed(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {\n    ggml_cuda_dispatch_gated_delta_net<true>(ctx, dst, nullptr);\n}",
+          "after": "void ggml_cuda_op_gated_delta_net_indexed(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {\n    if (ggml_cuda_gdn_is_r1_packed(dst)) {\n        if (!ggml_cuda_supports_gated_delta_net_indexed(dst)) {\n            hyle::compute::ggml_cuda::bridge::fail(cudaErrorInvalidValue, \"invalid indexed packed R1 GDN metadata\");\n        }\n        ggml_cuda_op_gated_delta_net_impl<float, float, true, true>(ctx, dst, nullptr);\n        return;\n    }\n    ggml_cuda_dispatch_gated_delta_net<true>(ctx, dst, nullptr);\n}"
         }
       ],
-      "after_sha256": "0ef41888f286b8eba0f91038ce86dca58f3d165c258929d407e9bf2b78c3032d"
+      "after_sha256": "a251683cb770e760cdbf13e522ebad5dddec34728594fe5e4de117e40e1d7c06"
     },
     {
       "path": "src/ggml-cuda/gated_delta_net.cuh",

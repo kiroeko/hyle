@@ -10,5 +10,9 @@ const void *paged_append_kernel() noexcept;
 cudaError_t launch_paged_append(
     const void *kernel, void *arena, const void *rows, const void *metadata,
     compute::detail::PagedAppendNativeSpec spec, cudaStream_t stream) noexcept;
+const void *device_choice_paged_append_kernel() noexcept;
+cudaError_t launch_device_choice_paged_append(const void *kernel,void *arena,
+    const void *rows,const void *metadata,const void *selector,
+    compute::detail::PagedAppendNativeSpec spec,cudaStream_t stream)noexcept;
 
 } // namespace hyle::compute::cuda::detail

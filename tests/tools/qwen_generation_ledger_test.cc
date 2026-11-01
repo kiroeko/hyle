@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdio>
 #include <limits>
+#include <optional>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -499,6 +500,101 @@ void k1_binding_requires_the_whole_greedy_state_boundary() {
       "valid K1 boundary could not retry the same original deferred record");
 }
 
+void device_k1_choice_binds_both_actual_prefixes_and_roles() {
+  for (const bool catchup : {false, true}) for (const bool accepted : {false, true}) {
+    q::GenerationLedger ledger(4, 8); prepare_k1(ledger.next());
+    if (catchup) {
+      auto &a = ledger.next(); a.role = q::GraphRole::kMtpCatchupRound;
+      a.before.frontier = 8; a.before.lag = 1; a.before.catchup_token = 13;
+    }
+    const auto *storage = ledger.records.data();
+    const auto caps = capacities(ledger.records[1]);
+    auto &b = ledger.reserve_successor(0, 2, 2);
+    require(b.input_deferred && b.role == q::GraphRole::kMtpCatchupRound,
+        "device K1 reservation inferred an unknown input role");
+    const auto after = commit_k1(ledger, 19, accepted ? 19 : 21, 23);
+    const auto committed = ledger.records[0];
+    const auto reserved = b;
+    if (!accepted) {
+      rejects([&] { (void)ledger.bind_successor(after, 1, 2, after.next_id); });
+      require(b.same_result(reserved) && b.pending_input == -1 && ledger.successor_ordinal() == 1,
+          "default full-accept refusal changed the device choice reservation");
+    }
+    require(&ledger.bind_successor(after, 1, 2, after.next_id, true) == &b &&
+        !b.input_deferred && !ledger.successor_ordinal() && b.before == after &&
+        b.pending_input == (accepted ? 23 : 21) && b.ids().size() == 1 && b.ids()[0] == after.next_id &&
+        b.role == (accepted ? q::GraphRole::kMtpCatchupRound : q::GraphRole::kMtpRound) &&
+        b.draft_limit == 1 && after.length == (accepted ? 11u : 10u) && after.frontier == 10 &&
+        after.lag == (accepted ? 1u : 0u) && after.catchup_token == (accepted ? 19 : -1) &&
+        after.sampling == hyle::inference::SamplingCursor{} && ledger.committed_count == 1 &&
+        ledger.records[0].same_result(committed) && ledger.records[0].committed &&
+        ledger.records.data() == storage && capacities(b) == caps,
+        "device K1 choice changed its actual input, prefix, RNG, role, committed record or storage");
+    // Both bound logical roles remain ordinary K1 ledger records. Only the
+    // request owner's existing quota renewal can reserve another unknown row.
+    rejects([&] { (void)ledger.reserve_successor(1, 2, 2); });
+    (void)ledger.renew_pending_quota(after, 1, 2, 6, 2, 2);
+    require(ledger.reserve_successor(1, 2, 2).input_deferred && ledger.successor_ordinal() == 2,
+        "device choice binding broke the existing logical K1 reservation contract");
+  }
+  q::GenerationLedger ordinary(3, 8); prepare(ordinary.next());
+  auto &b = ordinary.reserve_successor(0, 2, 2, 2, 1);
+  const auto after = commit(ordinary, 23);
+  rejects([&] { (void)ordinary.bind_successor(after, 1, 2, 23, true); });
+  require(b.input_deferred && &ordinary.bind_successor(after, 1, 2, 23) == &b,
+      "the explicit device K1 mode changed the ordinary default binding");
+}
+
+void device_k1_choice_rejects_inconsistent_observed_boundaries_without_mutation() {
+  for (const bool accepted : {false, true}) {
+    const auto invalid = [&](auto mutate, std::size_t observed = 1, std::size_t turn = 2,
+                             std::optional<std::int32_t> last = std::nullopt) {
+      q::GenerationLedger ledger(3, 8); prepare_k1(ledger.next());
+      (void)ledger.reserve_successor(0, 2, 2);
+      auto after = commit_k1(ledger, 19, accepted ? 19 : 21, 23);
+      mutate(ledger, after);
+      const auto records = ledger.records;
+      const auto caps = capacities(ledger.records[1]);
+      rejects([&] { (void)ledger.bind_successor(after, observed, turn, last.value_or(after.next_id), true); });
+      require(ledger.committed_count == 1 && ledger.successor_ordinal() == 1 &&
+          ledger.records[1].input_deferred && capacities(ledger.records[1]) == caps,
+          "rejected device K1 binding changed its reservation or prepared storage");
+      for (std::size_t at = 0; at < records.size(); ++at)
+        require(ledger.records[at].same_result(records[at]) &&
+            ledger.records[at].committed == records[at].committed &&
+            ledger.records[at].pending_input == records[at].pending_input,
+            "rejected device K1 binding mutated a committed or unknown-input record");
+    };
+    invalid([](auto &, auto &) {}, 0);
+    invalid([](auto &, auto &) {}, 2);
+    invalid([](auto &, auto &) {}, 1, 3);
+    invalid([](auto &, auto &) {}, 1, 2, -1);
+    invalid([](auto &ledger, auto &after) { ++after.length; ledger.records[0].after = after; });
+    invalid([](auto &ledger, auto &after) { ++after.frontier; ledger.records[0].after = after; });
+    invalid([](auto &ledger, auto &after) { after.lag ^= 1; ledger.records[0].after = after; });
+    invalid([](auto &ledger, auto &after) { after.catchup_token = 7; ledger.records[0].after = after; });
+    invalid([](auto &ledger, auto &after) { ++after.next_id; ledger.records[0].after = after; });
+    invalid([](auto &ledger, auto &after) { ++after.sampling.draw; ledger.records[0].after = after; });
+    invalid([](auto &ledger, auto &) { --ledger.records[0].draft_rows; });
+    invalid([](auto &ledger, auto &) { ledger.records[0].consumed_drafts ^= 1; });
+    invalid([](auto &ledger, auto &) { ledger.records[0].agreed = !ledger.records[0].agreed; });
+    invalid([](auto &ledger, auto &) { ledger.records[0].accepted_draft = !ledger.records[0].accepted_draft; });
+    invalid([](auto &ledger, auto &) { ledger.records[0].accepted_inputs[0] = 5; });
+    invalid([](auto &ledger, auto &) { ledger.records[0].verification_inputs[1] = 5; });
+    invalid([](auto &ledger, auto &) { ledger.records[0].emitted[0] = 5; });
+    invalid([](auto &ledger, auto &) { ledger.records[0].emitted_count = 0; });
+    invalid([](auto &ledger, auto &) { ledger.records[0].verified_rows = 1; });
+    invalid([](auto &ledger, auto &) { ledger.records[0].stopped = true; });
+    invalid([](auto &ledger, auto &) { ledger.records[0].quota = 3; });
+    invalid([](auto &ledger, auto &) { ledger.records[1].quota = 1; });
+    invalid([](auto &ledger, auto &) { ledger.records[1].role = q::GraphRole::kMtpRound; });
+    if (accepted) {
+      invalid([](auto &ledger, auto &) { ledger.records[0].accepted_inputs[1] = 5; });
+      invalid([](auto &ledger, auto &) { ledger.records[0].emitted[1] = 5; });
+    }
+  }
+}
+
 } // namespace
 
 int main() {
@@ -512,7 +608,9 @@ int main() {
     k1_full_acceptance_continues_with_the_original_owner_grant();
     k1_partial_and_terminal_results_preserve_only_the_committed_prefix();
     k1_binding_requires_the_whole_greedy_state_boundary();
-    std::puts("{\"status\":\"PASS\",\"groups\":9,\"device_execution\":false}");
+    device_k1_choice_binds_both_actual_prefixes_and_roles();
+    device_k1_choice_rejects_inconsistent_observed_boundaries_without_mutation();
+    std::puts("{\"status\":\"PASS\",\"groups\":11,\"device_execution\":false}");
     return 0;
   } catch (const std::exception &error) {
     std::fprintf(stderr, "%s\n", error.what()); return 1;

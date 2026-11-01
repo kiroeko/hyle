@@ -52,6 +52,9 @@ struct Node final {
   // original sample precision for history and F32 convolution mathematics.
   // Destination IDs are batch-major [B*K]; only Y is a tensor output. Actual
   // pool permissions belong to the outer Graph effect, never these integers.
+  // With Gather, this same marker identifies only a checked private I32[2]
+  // to I32[1] slot-ID selection for one subsequent indexed math consumer.
+  // No extra field is added to this same-build cross-library carrier.
   bool indexed_state = false;
   // Only the cold same-activation, two-output Graph proof sets this marker.
   // It permits the native two-column BF16 carrier without changing ordinary
