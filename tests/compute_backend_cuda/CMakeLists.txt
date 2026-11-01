@@ -10,6 +10,7 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
     cuda_backend_test.cc
     copy_batch_test.cc
     copy_program_test.cc
+    indexed_copy_test.cc
     device_status_test.cc
     native_retirement_test.cc
     cuda_test_kernel.cu)

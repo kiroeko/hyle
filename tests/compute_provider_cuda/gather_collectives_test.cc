@@ -22,6 +22,124 @@ template <class Bits> void both_indices(Context &owner, DataType dtype) {
   matrix<Bits, std::int32_t>(owner, dtype);
   matrix<Bits, std::int64_t>(owner, dtype);
 }
+
+template <class Bits, class Index>
+void wide_dense_rows(Context &owner, DataType dtype, std::int64_t columns,
+                     bool source_offset, bool output_offset, int index_mode,
+                     IndexBoundsPolicy bounds) {
+  SCOPED_TRACE(::testing::Message() << sizeof(Bits) << '/' << sizeof(Index)
+      << '/' << columns << '/' << source_offset << '/' << output_offset
+      << '/' << index_mode << '/' << static_cast<int>(bounds));
+  auto memory = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  auto queue = owner.create_queue().value();
+  const auto desc = TensorDesc::dense(dtype,
+      std::array<std::int64_t, 3>{2, 3, columns}).value();
+  const auto idesc = description(sizeof(Index) == 8 ? DataType::kInt64 : DataType::kInt32,
+      std::array<std::int64_t, 1>{3}, 0, index_mode);
+  Tensor source(desc, memory.ref(), source_offset), indices(idesc, memory.ref(), true);
+  std::vector<Bits> data(desc.element_count().value());
+  for (std::size_t i = 0; i < data.size(); ++i)
+    data[i] = static_cast<Bits>(0x7fc000018123ULL + i * 0x9e3779b1ULL);
+  const std::array<Index, 3> selected{2, 0, 2}; // Repeated source rows are legal.
+  source.write<Bits>(data);
+  indices.write<Index>(selected);
+  auto prepared = prepare(owner, Gather{.axis = 1, .bounds = bounds},
+      desc, idesc, memory.ref());
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->workspace_requirement().size, 0u);
+  Tensor output(prepared->output_description().value(), memory.ref(), output_offset);
+  auto slot = prepared->create_invocation().value();
+  auto completion = slot.submit(queue, source.view.as_const(),
+      indices.view.as_const(), output.view);
+  ASSERT_TRUE(completion) << completion.error().message();
+  ASSERT_TRUE(completion->wait().ok());
+  std::vector<Bits> expected(data.size());
+  for (std::size_t outer = 0; outer < 2; ++outer)
+    for (std::size_t row = 0; row < selected.size(); ++row)
+      std::copy_n(data.begin() + (outer * 3 + selected[row]) * columns, columns,
+          expected.begin() + (outer * selected.size() + row) * columns);
+  EXPECT_EQ(output.read<Bits>(), expected);
+  EXPECT_EQ(source.read<Bits>(), data);
+  EXPECT_EQ(indices.read<Index>(), (std::vector<Index>(selected.begin(), selected.end())));
+  source.guard(); indices.guard(); output.guard();
+}
+
+template <class Index> void wide_checked_failure(Context &owner) {
+  auto memory = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  auto queue = owner.create_queue().value();
+  const auto desc = TensorDesc::dense(DataType::kFloat32,
+      std::array<std::int64_t, 2>{3, 262144}).value();
+  const auto idesc = TensorDesc::dense(sizeof(Index) == 8 ? DataType::kInt64 : DataType::kInt32,
+      std::array<std::int64_t, 1>{3}).value();
+  Tensor source(desc, memory.ref()), indices(idesc, memory.ref());
+  std::vector<std::uint32_t> data(desc.element_count().value());
+  std::iota(data.begin(), data.end(), 0x7fc00001u);
+  source.write<std::uint32_t>(data);
+  auto program = prepare(owner, Gather{}, desc, idesc, memory.ref()).value();
+  Tensor output(program.output_description().value(), memory.ref());
+  const std::vector<std::uint32_t> poison(data.size(), 0xdeadbeefu);
+  for (const auto invalid : {Index{-1}, Index{3}, (std::numeric_limits<Index>::max)()}) {
+    SCOPED_TRACE(invalid);
+    indices.write<Index>(std::array<Index, 3>{2, 0, invalid});
+    output.write<std::uint32_t>(poison);
+    auto slot = program.create_invocation().value();
+    auto completion = slot.submit(queue, source.view.as_const(), indices.view.as_const(), output.view);
+    ASSERT_TRUE(completion) << completion.error().message();
+    EXPECT_TRUE(completion->wait().IsOutOfRange());
+    EXPECT_EQ(output.read<std::uint32_t>(), poison);
+    output.guard();
+  }
+  // A new invocation uses the original fresh device-status reservation.
+  indices.write<Index>(std::array<Index, 3>{2, 0, 2});
+  auto fresh = program.create_invocation().value();
+  auto completion = fresh.submit(queue, source.view.as_const(), indices.view.as_const(), output.view);
+  ASSERT_TRUE(completion) << completion.error().message();
+  ASSERT_TRUE(completion->wait().ok());
+  const auto actual = output.read<std::uint32_t>();
+  for (std::size_t row = 0; row < 3; ++row) {
+    const auto selected = row == 1 ? 0u : 2u;
+    EXPECT_TRUE(std::equal(actual.begin() + row * 262144,
+        actual.begin() + (row + 1) * 262144, data.begin() + selected * 262144));
+  }
+  output.guard();
+}
+
+TEST(CudaCcclGather, DenseMegabyteRowsPreserveBitsWithOuterGroupsDuplicatesAndTails) {
+  auto owner = context();
+  wide_dense_rows<std::uint32_t, std::int32_t>(owner, DataType::kFloat32,
+      262144, false, false, 0, IndexBoundsPolicy::kChecked);
+  wide_dense_rows<std::uint64_t, std::int64_t>(owner, DataType::kFloat64,
+      131072, false, false, 1, IndexBoundsPolicy::kChecked);
+  wide_dense_rows<std::uint8_t, std::int64_t>(owner, DataType::kUInt8,
+      1048579, true, true, 0, IndexBoundsPolicy::kChecked);
+  wide_dense_rows<std::uint32_t, std::int32_t>(owner, DataType::kUInt32,
+      262145, true, true, 1, IndexBoundsPolicy::kUnchecked);
+}
+
+TEST(CudaCcclGather, CheckedWideRowFailurePreventsEveryOutputByteAndFreshSlotRecovers) {
+  auto owner = context();
+  wide_checked_failure<std::int32_t>(owner);
+  wide_checked_failure<std::int64_t>(owner);
+}
+
+TEST(CudaCcclGather, LargeSourceAddressSpansRemainPreparedWithoutAllocatingTheirPayload) {
+  auto owner = context();
+  auto memory = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  const auto indices = TensorDesc::dense(DataType::kInt64,
+      std::array<std::int64_t, 1>{1}).value();
+  constexpr std::int64_t large = (std::int64_t{1} << 32) + 16;
+  const std::array sources{
+      TensorDesc::dense(DataType::kUInt8, std::array<std::int64_t, 2>{large, 1}).value(),
+      TensorDesc::strided_bytes(DataType::kUInt8,
+          std::array<std::int64_t, 2>{2, 7}, std::array<std::int64_t, 2>{large, 1}).value()};
+  for (const auto &source : sources) {
+    auto prepared = prepare(owner, Gather{}, source, indices, memory.ref());
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    EXPECT_EQ(prepared->workspace_requirement().size, 0u);
+    EXPECT_TRUE(prepared->create_invocation());
+  }
+}
+
 TEST(CudaCcclGather,
      EveryStorageTypeAndIndexWidthPreserveBitsAcrossAxesAndStrides) {
   auto owner = context();

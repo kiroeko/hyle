@@ -161,6 +161,128 @@ __global__ void gather_output_kernel(Program program, const void *input,
                     static_cast<T *>(output), status}(logical);
 }
 
+constexpr std::uint32_t kGatherRowTileBytes = 16384;
+
+// An independent dense-row address proof. Keep the general Program and its
+// 64-bit/strided mapping unchanged when any source, result or index span does
+// not fit. Output descriptions are dense in the original Gather inference.
+struct GatherRows32 final {
+  std::uint32_t row_bytes = 0, width = 0, index_count = 0;
+  std::uint32_t tiles_per_row = 0, blocks = 0, index_rank = 0;
+  std::uint32_t index_dimensions[8]{}, index_strides[8]{};
+  bool dense_indices = false;
+};
+
+bool dense_gather_rows32(const Program &program, GatherRows32 &rows) {
+  constexpr auto maximum = std::numeric_limits<std::uint32_t>::max();
+  if (!program.dense || !program.count || !program.inner ||
+      !program.index_count || !program.width || !program.element_bytes ||
+      program.width > maximum || program.index_count > maximum ||
+      program.inner > maximum / program.element_bytes ||
+      program.count % program.inner != 0)
+    return false;
+  const auto row_bytes = program.inner * program.element_bytes;
+  const auto output_rows = program.count / program.inner;
+  if (output_rows % program.index_count != 0 ||
+      output_rows > maximum / row_bytes || program.width > maximum / row_bytes)
+    return false;
+  const auto source_group_bytes = program.width * row_bytes;
+  const auto outer = output_rows / program.index_count;
+  if (outer > maximum / source_group_bytes)
+    return false;
+
+  const auto index_bytes = program.index_i64 ? sizeof(std::int64_t)
+                                            : sizeof(std::int32_t);
+  auto index_span = index_bytes;
+  auto dense_stride = index_bytes;
+  bool dense_indices = true;
+  for (auto d = program.index_rank; d-- > 0;) {
+    const auto dimension = program.index_dimensions[d];
+    if (!dimension || dimension > maximum)
+      return false;
+    if (dimension > 1) {
+      const auto stride = program.index_strides[d];
+      if (stride > (maximum - index_span) / (dimension - 1))
+        return false;
+      index_span += (dimension - 1) * stride;
+      dense_indices = dense_indices && stride == dense_stride;
+    }
+    if (dimension > maximum / dense_stride)
+      return false;
+    dense_stride *= dimension;
+  }
+  const auto tiles = 1 + (row_bytes - 1) / kGatherRowTileBytes;
+  if (output_rows > static_cast<std::size_t>(INT_MAX) / tiles)
+    return false;
+  rows.row_bytes = static_cast<std::uint32_t>(row_bytes);
+  rows.width = static_cast<std::uint32_t>(program.width);
+  rows.index_count = static_cast<std::uint32_t>(program.index_count);
+  rows.tiles_per_row = static_cast<std::uint32_t>(tiles);
+  rows.blocks = static_cast<std::uint32_t>(output_rows * tiles);
+  rows.index_rank = program.index_rank;
+  rows.dense_indices = dense_indices;
+  for (std::uint32_t d = 0; d < rows.index_rank; ++d) {
+    rows.index_dimensions[d] = static_cast<std::uint32_t>(program.index_dimensions[d]);
+    // A singleton dimension contributes zero even if its public byte stride
+    // is larger than UINT32_MAX; all contributing strides were proved above.
+    rows.index_strides[d] = program.index_dimensions[d] == 1
+        ? 0 : static_cast<std::uint32_t>(program.index_strides[d]);
+  }
+  return true;
+}
+
+template <class Index>
+__device__ Index gather_row_index32(const GatherRows32 &rows, const void *indices,
+                                     std::uint32_t logical) {
+  std::uint32_t offset = 0;
+  if (rows.dense_indices) {
+    offset = logical * static_cast<std::uint32_t>(sizeof(Index));
+  } else {
+    for (auto d = rows.index_rank; d-- > 0;) {
+      offset += logical % rows.index_dimensions[d] * rows.index_strides[d];
+      logical /= rows.index_dimensions[d];
+    }
+  }
+  Index selected;
+  // Plain index storage can be unaligned, including for I64 indices.
+  memcpy(&selected, static_cast<const unsigned char *>(indices) + offset,
+         sizeof(selected));
+  return selected;
+}
+
+template <class Index, bool Vectorized>
+__global__ void gather_dense_rows32_kernel(GatherRows32 rows, const void *input,
+    const void *indices, void *output, const unsigned *status) {
+  // The original preceding check validates ALL IDs. An error from any ID or
+  // an earlier ordered producer prevents every byte of this whole output.
+  if (status != nullptr && *status != 0)
+    return;
+  const auto row = static_cast<std::uint32_t>(blockIdx.x) / rows.tiles_per_row;
+  const auto tile = static_cast<std::uint32_t>(blockIdx.x) % rows.tiles_per_row;
+  const auto selected = static_cast<std::uint32_t>(
+      gather_row_index32<Index>(rows, indices, row % rows.index_count));
+  const auto source_row = row / rows.index_count * rows.width + selected;
+  const auto *source = static_cast<const unsigned char *>(input) + source_row * rows.row_bytes;
+  auto *destination = static_cast<unsigned char *>(output) + row * rows.row_bytes;
+  const auto tile_begin = tile * kGatherRowTileBytes;
+  if constexpr (Vectorized) {
+    for (std::uint32_t byte = static_cast<std::uint32_t>(threadIdx.x) * 16u;
+         byte < kGatherRowTileBytes; byte += kGatherThreads * 16u) {
+      const auto column = tile_begin + byte;
+      if (column < rows.row_bytes)
+        *reinterpret_cast<uint4 *>(destination + column) =
+            *reinterpret_cast<const uint4 *>(source + column);
+    }
+  } else {
+    for (std::uint32_t byte = threadIdx.x; byte < kGatherRowTileBytes;
+         byte += kGatherThreads) {
+      const auto column = tile_begin + byte;
+      if (column < rows.row_bytes)
+        destination[column] = source[column];
+    }
+  }
+}
+
 template <class Kernel>
 cudaError_t configure_fixed_kernel(Kernel kernel,
                                   unsigned threads = kGatherThreads) {
@@ -180,6 +302,19 @@ cudaError_t configure_gather(const Program &program) {
     const auto status = configure_fixed_kernel(gather_check_kernel);
     if (status != cudaSuccess)
       return status;
+  }
+  GatherRows32 rows;
+  if (dense_gather_rows32(program, rows)) {
+    // Binding alignment is known only at submit. Materialize both legal
+    // payloads now, before an external CUDA Graph capture can begin.
+    if (program.index_i64) {
+      auto status = configure_fixed_kernel(gather_dense_rows32_kernel<std::int64_t, true>);
+      return status == cudaSuccess
+          ? configure_fixed_kernel(gather_dense_rows32_kernel<std::int64_t, false>) : status;
+    }
+    auto status = configure_fixed_kernel(gather_dense_rows32_kernel<std::int32_t, true>);
+    return status == cudaSuccess
+        ? configure_fixed_kernel(gather_dense_rows32_kernel<std::int32_t, false>) : status;
   }
   switch (program.element_bytes) {
   case 1:
@@ -473,6 +608,27 @@ template <class T>
 cudaError_t gather(const Program &program, const void *input,
                    const void *index_input, void *output, cudaStream_t stream,
                    const unsigned *status) {
+  GatherRows32 rows;
+  if (dense_gather_rows32(program, rows)) {
+    const bool vectorized = ((reinterpret_cast<std::uintptr_t>(input) |
+        reinterpret_cast<std::uintptr_t>(output) | rows.row_bytes) & 15u) == 0;
+    if (program.index_i64) {
+      if (vectorized)
+        gather_dense_rows32_kernel<std::int64_t, true><<<rows.blocks, kGatherThreads, 0, stream>>>(
+            rows, input, index_input, output, status);
+      else
+        gather_dense_rows32_kernel<std::int64_t, false><<<rows.blocks, kGatherThreads, 0, stream>>>(
+            rows, input, index_input, output, status);
+    } else {
+      if (vectorized)
+        gather_dense_rows32_kernel<std::int32_t, true><<<rows.blocks, kGatherThreads, 0, stream>>>(
+            rows, input, index_input, output, status);
+      else
+        gather_dense_rows32_kernel<std::int32_t, false><<<rows.blocks, kGatherThreads, 0, stream>>>(
+            rows, input, index_input, output, status);
+    }
+    return cudaGetLastError();
+  }
   const auto blocks = static_cast<unsigned>(
       (program.count + kGatherThreads - 1) / kGatherThreads);
   gather_output_kernel<T><<<blocks, kGatherThreads, 0, stream>>>(
