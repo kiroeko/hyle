@@ -154,6 +154,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   require(bucket.prepare_prefill_family(bucket_chunks), "selected CPU/CUDA route did not prepare its packed prefill math");
   for (const auto rows : exact_chunks) exact.plan_replay_uses(rows, 1, 8);
   bucket.plan_replay_uses(8, 1, 8, q::GraphRole::kText, q::TextCompletion::kEmitNext, 0, q::RowPacking::kPrefill);
+  if (kind == q::BackendKind::kCuda) bucket.prepare_shared_prefill_workspace();
   exact.prepare_execution(exact_chunks); bucket.prepare_prefill_execution(bucket_chunks);
   auto exact_storage = q::take(hyle::inference::HostStateStorage::create(exact.execution, 1, 4u << 20));
   auto bucket_storage = q::take(hyle::inference::HostStateStorage::create(bucket.execution, 1, 4u << 20));

@@ -18,6 +18,7 @@
 #include "native_cache_encoder.h"
 #include "hyle/compute/detail/batch_provider.h"
 #include "hyle/compute/detail/batch_device_choice.h"
+#include "hyle/compute/detail/batch_float_workspace.h"
 #include "hyle/compute/detail/batch_output_extent.h"
 #include "hyle/compute/detail/queue_ref.h"
 #include "native_context.h"
@@ -536,6 +537,22 @@ detail::EnqueueResult select_device_choices(void*opaque,detail::QueueSequence&se
   return detail::EnqueueResult::accepted_command(cuda::status(cudaMemsetAsync(*output,0,workspace.output.size(),*stream)));
 }
 const detail::BatchDeviceChoiceVTable kDeviceChoiceVTable{&qualify_device_choices,&select_device_choices};
+Status graph_float_workspace(void*context,BatchCapacity capacity,std::uint32_t physical_rows,
+    const BatchProgramOptions&options,WorkspaceRequirement*out)noexcept{
+  *out={};
+  HYLE_RETURN_IF_ERROR(qualify_batch(context,capacity,options));
+  // Reserve the original configured hard cap only for multirow prefill-sized
+  // carriers. Tiny decode/verify slots keep their original owned allocation.
+  if(physical_rows<16 || physical_rows>capacity.max_query_rows)
+    return Status::Unimplemented("FlashInfer shared float scratch requires a prefill-sized carrier");
+  if(!options.max_float_workspace_bytes)
+    return Status::InvalidArgument("FlashInfer shared float scratch requires a positive configured cap");
+  // PrefillPlan only materializes private integer metadata and float offsets.
+  // Run overwrites temporary V/softmax rows before merging; no float state is
+  // retained between runs. This opt-in does not cover the separate MLA plan.
+  *out={options.max_float_workspace_bytes,16};return Status::Ok();
+}
+const detail::BatchFloatWorkspaceVTable kFloatWorkspaceVTable{&graph_float_workspace};
 ProviderRuntimeProperties batch_runtime(void *) noexcept {
   return {.mode=ProviderRuntimeMode::kSharedQueue,
       .workspace_owner=ProviderWorkspaceOwner::kProvider,
@@ -557,6 +574,7 @@ const void*query_extension(void*,ProviderExtensionId id)noexcept{
   if(id==detail::kBatchPlanningExtensionId)return &kBatchVTable;
   if(id==detail::kMlaBatchPlanningExtensionId)return &kMlaVTable;
   if(id==detail::kBatchDeviceChoiceExtensionId)return &kDeviceChoiceVTable;
+  if(id==detail::kBatchFloatWorkspaceExtensionId)return &kFloatWorkspaceVTable;
   return nullptr;
 }
 

@@ -107,6 +107,7 @@ struct ResourceEpisode final {
   std::uint32_t permission_capacity = 0;
   bool configuration_spans = false;
   const ResourcePayloadVTable *payload_table = nullptr;
+  ResourcePayloadValidationFn payload_validation = nullptr;
   void *payload = nullptr;
 };
 
@@ -196,6 +197,11 @@ Status reset_resource_payload(Invocation &invocation) noexcept {
   auto &episode = *state->resources.get();
   return episode.payload_table->reset(episode.payload, invocation);
 }
+Status validate_resource_payload(const InvocationState &state) noexcept {
+  if (!state.resources || !state.resources.get()->payload_validation) return Status::Ok();
+  const auto &episode = *state.resources.get();
+  return episode.payload_validation(episode.payload, &state);
+}
 
 Result<void *> RegionAccess::resource_payload(Invocation &invocation,
     const ResourcePayloadVTable *table) noexcept {
@@ -258,6 +264,11 @@ Result<std::shared_ptr<compute::Queue>> RegionAccess::metadata_queue(
 }
 Status RegionAccess::attach_resource_payload(Invocation &invocation,
     const ResourcePayloadVTable *table, void *payload) noexcept {
+  return attach_resource_payload(invocation, table, payload, nullptr);
+}
+Status RegionAccess::attach_resource_payload(Invocation &invocation,
+    const ResourcePayloadVTable *table, void *payload,
+    ResourcePayloadValidationFn validation) noexcept {
   auto *state = InvocationAccess::state(invocation);
   HYLE_ASSIGN_OR_RETURN(auto *episode, require_resources(state));
   if (!table || !table->reset || !table->destroy || !payload)
@@ -265,6 +276,7 @@ Status RegionAccess::attach_resource_payload(Invocation &invocation,
   if (episode->payload)
     return Status::FailedPrecondition("graph invocation already owns a resource payload");
   episode->payload_table = table;
+  episode->payload_validation = validation;
   episode->payload = payload;
   return Status::Ok();
 }

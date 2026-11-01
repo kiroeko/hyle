@@ -12,6 +12,9 @@
 
 #include "../../inference/backend.h"
 #include "../../inference/ct_block128_graph.h"
+#include "hyle/compute/detail/packed_row_matmul.h"
+#include "hyle/compute/detail/provider_extension.h"
+#include "hyle/compute/sequence_ops.h"
 #include "hyle/simd/dtype.h"
 
 namespace qwen35 {
@@ -25,7 +28,29 @@ GraphAssembly::Scope::~Scope() { assembly.location_ = previous; }
 GraphAssembly::GraphAssembly(const Backend &environment, PrecisionProfile precision,
                          const c::ResourceBudget &budget)
       : bindings_(environment.storage_domains()), backend_(environment), budget_(budget), precision_(precision), mixed_(environment.has_cpu_assist()),
-        predicate_type_(environment.native_generated_storage() ? Type::kFloat32 : Type::kBool) {}
+        predicate_type_(environment.native_generated_storage() ? Type::kFloat32 : Type::kBool) {
+  if (mixed_) return;
+  const auto context = environment.common_context();
+  if (!context) return;
+  for (std::size_t i = 0; i < (*context)->provider_count(); ++i) {
+    // Require the same source to support ordinary operation cold rows. The
+    // region-only prototype does not qualify the Model's default dispatch.
+    const auto rows = c::detail::ProviderExtensionAccess::query(**context, i,
+        c::detail::kPackedRowMatMulRowsExtensionId);
+    if (!rows) continue;
+    const auto source = c::detail::ProviderExtensionAccess::query(*rows,
+        c::detail::kPackedRowMatMulSourceExtensionId);
+    if (!source) continue;
+    bool available = false;
+    const auto status = c::detail::ProviderExtensionAccess::call(*source,
+        [](void *context, const void *table, void *out) noexcept -> hyle::Status {
+          const auto *cap = static_cast<const c::detail::PackedRowMatMulSourceVTable *>(table);
+          *static_cast<bool *>(out) = cap && cap->available && cap->available(context);
+          return hyle::Status::Ok();
+        }, &available);
+    if (status.ok() && available) { packed_row_matmul_ = true; break; }
+  }
+}
 
 GraphAssembly::Location GraphAssembly::primary() { return {g::ExecutionTargetId{0}, g::StorageDomainId{0}}; }
 
@@ -44,6 +69,7 @@ Tensor &GraphAssembly::literal(c::TensorDesc description) { return literal_at(lo
 Type GraphAssembly::predicate_type() const { return predicate_type_; }
 
 Type GraphAssembly::activation_type() const noexcept { return precision_.activation_type(); }
+bool GraphAssembly::supports_packed_row_matmul() const noexcept { return packed_row_matmul_; }
 
 void GraphAssembly::node(g::NodeId node) {
   if (mixed_) check(bindings_.node(node, location_));
@@ -299,6 +325,8 @@ V Recipe::emit_projection(V x, const ProjectionBinding &binding, bool scores) {
   auto dimensions = std::vector<D>(spec(x).dimensions().begin(), spec(x).dimensions().end());
   // Cold bindings already validate the source logical [N,K] layout.
   dimensions.back() = f(projection_detail::logical_shape(binding)[0]);
+  const bool bounded_rows = projection_offsets.valid() && !scores &&
+      spec(x).dimensions()[0] == packed_rows;
   const auto result = std::visit([&](const auto &projection) -> V {
     using P = std::decay_t<decltype(projection)>;
     if constexpr (std::is_same_v<P, StoredProjection>) {
@@ -310,8 +338,12 @@ V Recipe::emit_projection(V x, const ProjectionBinding &binding, bool scores) {
         if (stored.data_type() != Type::kFloat16 || !projection.weight->description.is_plain())
           throw std::runtime_error("F16 source projection requires a dense F16 operand");
         constexpr std::array<std::int32_t, 2> axes{1, 0};
+        const auto rhs = one(take(c::View::permute(axes)), {original});
+        if (bounded_rows)
+          return one(c::sequence_ops::packed_row_matmul(Type::kFloat16),
+              {x, rhs, projection_offsets}, dense_spec(Type::kFloat16, dimensions));
         return one(c::MatMul{.accumulation_type = Type::kFloat32},
-            {x, one(take(c::View::permute(axes)), {original})}, dense_spec(Type::kFloat16, dimensions));
+            {x, rhs}, dense_spec(Type::kFloat16, dimensions));
       }
       if (c::gguf_quantized_type(stored.storage_format())) {
         constexpr std::array<std::int32_t, 2> axes{1, 0};
@@ -329,6 +361,9 @@ V Recipe::emit_projection(V x, const ProjectionBinding &binding, bool scores) {
         throw std::runtime_error("original dense projection requires a supported floating operand");
       constexpr std::array<std::int32_t, 2> axes{1, 0};
       const auto rhs = one(take(c::View::permute(axes)), {original});
+      if (bounded_rows)
+        return one(c::sequence_ops::packed_row_matmul(Type::kBFloat16),
+            {x, rhs, projection_offsets}, dense_spec(Type::kBFloat16, dimensions));
       return one(c::MatMul{}, {x, rhs}, dense_spec(Type::kBFloat16, dimensions));
     } else if constexpr (std::is_same_v<P, MlxAffineProjection>) {
       if (activation_type() != Type::kBFloat16) throw std::runtime_error("MLX source projection requires BF16 activation");

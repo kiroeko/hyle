@@ -304,23 +304,24 @@ ggml_status compute_on_admitted_stream(ggml_backend *backend,
   AdmittedStreamScope scope(backend, stream);
   try {
     scope.install();
+    auto *context =
+        static_cast<ggml_backend_cuda_context *>(backend->context);
+    ggml_cuda_set_device(context->device);
+#if defined(USE_CUDA_GRAPH)
+    // Preserve the original metadata used by Mean's CUB choice. Commands
+    // must not enter native warmup/capture/instantiation: the outer Graph
+    // already owns replay policy and its actual recording/retirement.
+    (void)ggml_cuda_graph_set_enabled(context, ggml_cuda_graph_get_key(graph));
+#endif
     scope.begin_compute();
-    const auto status = ggml_backend_graph_compute_async(backend, graph);
-    if (status != GGML_STATUS_SUCCESS) {
-      (void)scope.drain_all();
-      // Retain the native graph status if restoring a handle also fails.
-      (void)scope.restore();
-      *retirement_error = scope.recover();
-      return status;
-    }
+    ggml_cuda_graph_encode(context, graph);
     const auto restored = scope.restore();
     *retirement_error = scope.recover();
     if (restored != CUBLAS_STATUS_SUCCESS)
       fail(restored, "restoring native cuBLAS stream and workspace");
-    return status;
+    return GGML_STATUS_SUCCESS;
   } catch (...) {
-    // The original native capture guard has already unwound here. Keep the
-    // borrowed stream installed through all-stream drain, including streams
+    // Keep the borrowed stream installed through all-stream drain, including streams
     // whose ordinary native join node was never reached. An unsuccessful
     // drain is an explicit retirement fact for the original Queue owner.
     *retirement_error = scope.recover();

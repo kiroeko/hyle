@@ -60,6 +60,16 @@ HYLE_GRAPH_BATCH_API Result<compute::NativePagedBatchReport> native_report(
 // next metadata update. Rejection changes no binding or replay preparation.
 HYLE_GRAPH_BATCH_API Result<compute::ReadLease> query_offsets(
     graph::Invocation &, NodeId) noexcept;
+// Opt-in R1 host row control from this same original prepared attention slot.
+// Owns its real query-offset guard as a Graph configuration input and binds
+// only selected regions recognizing that exact offsets ValueId. Host rows
+// come from the owned layout, never a caller scalar or a device readback.
+// Every configured consumer is cleared on reset; replay needs fresh binding.
+// With no accepting row consumer, this only binds the original offsets guard
+// and retains the legacy packed route. Dynamic row consumers require an R1
+// shared producer and an ordinary, non-recording-only preparation.
+HYLE_GRAPH_BATCH_API Status bind_query_rows(
+    graph::Invocation &, NodeId attention, ValueId offsets_input) noexcept;
 // Optional cold capture inside the already selected native slots. Bind every
 // ordinary tensor first; the enclosing Invocation still owns replay/submit.
 HYLE_GRAPH_BATCH_API Status prepare_replay(graph::Invocation &,

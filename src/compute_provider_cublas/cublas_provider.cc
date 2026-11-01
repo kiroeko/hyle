@@ -14,9 +14,13 @@
 #include <cublasLt.h>
 
 #include "hyle/compute/detail/capture_bindings.h"
+#include "hyle/compute/detail/packed_row_matmul.h"
+#include "checked_rows.h"
 #include "native_context.h"
+#include "operation_cold.h"
 #include "provider_internal.h"
 #include "hyle/compute/model_ops.h"
+#include "hyle/compute/sequence_ops.h"
 #include "hyle/container/small_vector.h"
 
 namespace hyle::compute::cublas {
@@ -39,11 +43,35 @@ struct CublasRun final {
   std::int32_t batch_count = 1;
 };
 
+struct MatrixLayout final {
+  std::uint64_t rows = 0;
+  std::uint64_t columns = 0;
+  std::int64_t leading = 0;
+  cublasLtOrder_t order = CUBLASLT_ORDER_ROW;
+};
+
+struct BatchGeometry final {
+  std::array<MatrixLayout, 3> matrices{};
+  std::array<std::size_t, kMaxTensorRank - 2> dimensions{};
+  std::array<std::array<std::size_t, kMaxTensorRank - 2>, 3> strides{};
+  std::array<DataType, 3> data_types{};
+  std::array<std::size_t, 3> element_bytes{};
+  std::size_t rank = 0;
+  std::size_t count = 1;
+};
+
 struct CublasPrepared final {
   CUcontext primary = nullptr;
   cublasLtMatmulDesc_t operation = nullptr;
   container::SmallVector<CublasRun, 1, mem::AllocatorRef> runs;
   std::size_t workspace_bytes = 0;
+  // Explicit packed-row operations retain the original C tactic and storage
+  // envelope. The checked output is a slice of that same caller workspace.
+  bool packed_rows = false;
+  BatchGeometry geometry;
+  TensorDesc offsets_description;
+  std::size_t vendor_workspace_bytes = 0, output_offset = 0;
+  std::size_t output_bytes = 0, output_row_bytes = 0;
   CublasPrepared(CUcontext context, mem::AllocatorRef allocator) noexcept
       : primary(context), runs(allocator) {}
 };
@@ -52,6 +80,13 @@ struct CublasInvocation final {
   CUcontext primary = nullptr;
   cublasLtHandle_t handle = nullptr;
   void *workspace = nullptr;
+  const CublasPrepared *prepared = nullptr;
+  void *private_output = nullptr;
+  CublasRun active_run;
+  ConstTensorView offsets;
+  std::int64_t rows = -1;
+  std::int64_t layout_rows = -1;
+  bool source_owned_rows = false;
 };
 
 Status translate(cublasStatus_t result, const char *operation) noexcept {
@@ -121,13 +156,6 @@ void destroy_context(void *state, mem::AllocatorRef allocator) noexcept {
   allocator.deallocate(context, sizeof(CublasContext), alignof(CublasContext));
 }
 
-struct MatrixLayout final {
-  std::uint64_t rows = 0;
-  std::uint64_t columns = 0;
-  std::int64_t leading = 0;
-  cublasLtOrder_t order = CUBLASLT_ORDER_ROW;
-};
-
 Status matrix_layout(const TensorDesc &description,
                      MatrixLayout &layout) noexcept {
   if (!description.valid() || !description.is_plain() ||
@@ -168,24 +196,15 @@ Status matrix_layout(const TensorDesc &description,
   return Status::Ok();
 }
 
-struct BatchGeometry final {
-  std::array<MatrixLayout, 3> matrices{};
-  std::array<std::size_t, kMaxTensorRank - 2> dimensions{};
-  std::array<std::array<std::size_t, kMaxTensorRank - 2>, 3> strides{};
-  std::array<DataType, 3> data_types{};
-  std::array<std::size_t, 3> element_bytes{};
-  std::size_t rank = 0;
-  std::size_t count = 1;
-};
-
 Status select_layouts(Operation operation, std::span<const TensorDesc> inputs,
                       std::span<const TensorDesc> outputs,
                       BatchGeometry &geometry) noexcept {
   const auto *matmul = operation.get_if<MatMul>();
   const bool scores = operation.custom_as<model_ops::DenseLinearF32>().has_value();
-  if ((!matmul && !scores) || inputs.size() != 2 || outputs.size() != 1)
+  const bool packed = operation.custom_as<sequence_ops::PackedRowMatMul>().has_value();
+  if ((!matmul && !scores && !packed) || inputs.size() != (packed ? 3 : 2) || outputs.size() != 1)
     return Status::Unimplemented(
-        "cuBLAS provider implements MatMul and DenseLinearF32 only");
+        "cuBLAS provider implements MatMul, DenseLinearF32 and PackedRowMatMul only");
   if (matmul && matmul->accumulation_type != DataType::kFloat32)
     return Status::Unimplemented("cuBLAS requires FP32 accumulation");
   if (scores && inputs[0].data_type() != inputs[1].data_type())
@@ -200,6 +219,8 @@ Status select_layouts(Operation operation, std::span<const TensorDesc> inputs,
     return Status::Unimplemented("cuBLAS requires matching matrix data types");
   std::array<TensorDesc, 1> inferred;
   HYLE_RETURN_IF_ERROR(infer_output_descriptions(operation, inputs, inferred));
+  if (packed && outputs[0] != inferred[0])
+    return Status::InvalidArgument("cuBLAS PackedRowMatMul output differs from inference");
   if (scores) {
     if (outputs[0] != inferred[0])
       return Status::InvalidArgument(
@@ -360,6 +381,11 @@ constexpr ProviderRuntimeProperties kRuntime{
     .supports_concurrent_invocations = true,
     .capture_compatible = true,
 };
+constexpr ProviderRuntimeProperties packed_runtime() noexcept {
+  auto runtime = kRuntime;
+  runtime.capture_compatible = false;
+  return runtime;
+}
 
 Status propose(void *, const detail::ProviderOperationRequest &request,
                std::span<detail::ResourceBindingRequirement> inputs,
@@ -382,11 +408,14 @@ Status propose(void *, const detail::ProviderOperationRequest &request,
   };
   for (auto &requirement : inputs)
     requirement = tensor;
+  const bool packed = request.operation.custom_as<sequence_ops::PackedRowMatMul>().has_value();
+  if (packed)
+    inputs[2].minimum_alignment = alignof(std::int32_t);
   for (auto &requirement : outputs)
     requirement = tensor;
   *proposal = detail::ProviderOperationProposal{
       .route = 1,
-      .runtime = kRuntime,
+      .runtime = packed ? packed_runtime() : kRuntime,
       .workspace_resource =
           {
               .required_properties = mem::MemoryProperty::kDeviceAccessible,
@@ -398,7 +427,7 @@ Status propose(void *, const detail::ProviderOperationRequest &request,
                .repack_bytes = 0,
                .synchronization_count = 0,
                .dispatch_count = std::nullopt},
-      .implementation = ProviderImplementationId{1},
+      .implementation = ProviderImplementationId{packed ? 2u : 1u},
   };
   return Status::Ok();
 }
@@ -418,9 +447,16 @@ void destroy_prepared(void *state, mem::AllocatorRef allocator) noexcept {
                        alignof(CublasPrepared));
 }
 
-Status configure_run(CublasPrepared &prepared, CublasRun &run,
-                      const BatchGeometry &geometry,
-                      ColdHandle &cold) noexcept {
+void destroy_layouts(CublasRun &run) noexcept {
+  for (auto &layout : run.layouts) {
+    if (layout)
+      (void)cublasLtMatrixLayoutDestroy(layout);
+    layout = nullptr;
+  }
+}
+
+Status create_layouts(CublasRun &run,
+                     const BatchGeometry &geometry) noexcept {
   const auto &layouts = geometry.matrices;
   for (std::size_t index = 0; index < layouts.size(); ++index) {
     const auto &layout = layouts[index];
@@ -453,6 +489,11 @@ Status configure_run(CublasPrepared &prepared, CublasRun &run,
           "cublasLtMatrixLayoutSetAttribute(batch_stride)"));
     }
   }
+  return Status::Ok();
+}
+
+Status configure_alignment(const CublasRun &run,
+                           cublasLtMatmulPreference_t preference) noexcept {
   const std::array attributes{CUBLASLT_MATMUL_PREF_MIN_ALIGNMENT_A_BYTES,
                              CUBLASLT_MATMUL_PREF_MIN_ALIGNMENT_B_BYTES,
                              CUBLASLT_MATMUL_PREF_MIN_ALIGNMENT_C_BYTES,
@@ -464,10 +505,18 @@ Status configure_run(CublasPrepared &prepared, CublasRun &run,
       alignment = std::gcd(alignment, run.byte_strides[port]);
     const auto qualified_alignment = static_cast<std::uint32_t>(alignment);
     HYLE_RETURN_IF_ERROR(translate(
-        cublasLtMatmulPreferenceSetAttribute(cold.preference, attributes[index],
+        cublasLtMatmulPreferenceSetAttribute(preference, attributes[index],
             &qualified_alignment, sizeof(qualified_alignment)),
         "cublasLtMatmulPreferenceSetAttribute(alignment)"));
   }
+  return Status::Ok();
+}
+
+Status configure_run(CublasPrepared &prepared, CublasRun &run,
+                     const BatchGeometry &geometry,
+                     ColdHandle &cold) noexcept {
+  HYLE_RETURN_IF_ERROR(create_layouts(run, geometry));
+  HYLE_RETURN_IF_ERROR(configure_alignment(run, cold.preference));
   cublasLtMatmulHeuristicResult_t result{};
   int count = 0;
   HYLE_RETURN_IF_ERROR(translate(
@@ -523,6 +572,66 @@ Status configure(CublasPrepared &prepared,
   return Status::Ok();
 }
 
+Status configure_active_run(const CublasPrepared &prepared,
+                            CublasInvocation &invocation,
+                            std::size_t rows) noexcept {
+  if (rows == 0 || invocation.layout_rows == static_cast<std::int64_t>(rows))
+    return Status::Ok();
+  auto geometry = prepared.geometry;
+  geometry.matrices[0].rows = rows;
+  geometry.matrices[2].rows = rows;
+  struct Candidate final {
+    CublasRun run;
+    cublasLtMatmulPreference_t preference = nullptr;
+    ~Candidate() {
+      destroy_layouts(run);
+      if (preference)
+        (void)cublasLtMatmulPreferenceDestroy(preference);
+    }
+  } candidate;
+  HYLE_RETURN_IF_ERROR(create_layouts(candidate.run, geometry));
+  cublasLtMatmulHeuristicResult_t result{};
+  const auto &original = prepared.runs.front().algorithm;
+  auto checked = cublasLtMatmulAlgoCheck(invocation.handle, prepared.operation,
+      candidate.run.layouts[0], candidate.run.layouts[1],
+      candidate.run.layouts[2], candidate.run.layouts[2], &original, &result);
+  if (checked == CUBLAS_STATUS_SUCCESS && result.state == CUBLAS_STATUS_SUCCESS &&
+      result.workspaceSize <= prepared.vendor_workspace_bytes) {
+    candidate.run.algorithm = original;
+  } else {
+    // Requalify only metadata using this invocation's original Lt handle.
+    // No payload allocation or workspace growth is permitted here.
+    HYLE_RETURN_IF_ERROR(translate(
+        cublasLtMatmulPreferenceCreate(&candidate.preference),
+        "cublasLtMatmulPreferenceCreate(active rows)"));
+    HYLE_RETURN_IF_ERROR(translate(cublasLtMatmulPreferenceSetAttribute(
+        candidate.preference, CUBLASLT_MATMUL_PREF_MAX_WORKSPACE_BYTES,
+        &prepared.vendor_workspace_bytes, sizeof(prepared.vendor_workspace_bytes)),
+        "cublasLtMatmulPreferenceSetAttribute(active workspace)"));
+    const std::uint32_t reduction = CUBLASLT_REDUCTION_SCHEME_COMPUTE_TYPE;
+    HYLE_RETURN_IF_ERROR(translate(cublasLtMatmulPreferenceSetAttribute(
+        candidate.preference, CUBLASLT_MATMUL_PREF_REDUCTION_SCHEME_MASK,
+        &reduction, sizeof(reduction)),
+        "cublasLtMatmulPreferenceSetAttribute(active reduction)"));
+    HYLE_RETURN_IF_ERROR(configure_alignment(candidate.run, candidate.preference));
+    int count = 0;
+    HYLE_RETURN_IF_ERROR(translate(cublasLtMatmulAlgoGetHeuristic(
+        invocation.handle, prepared.operation, candidate.run.layouts[0],
+        candidate.run.layouts[1], candidate.run.layouts[2],
+        candidate.run.layouts[2], candidate.preference, 1, &result, &count),
+        "cublasLtMatmulAlgoGetHeuristic(active rows)"));
+    if (count != 1 || result.state != CUBLAS_STATUS_SUCCESS ||
+        result.workspaceSize > prepared.vendor_workspace_bytes)
+      return Status::Unimplemented("cuBLAS active rows exceed the original tactic workspace");
+    candidate.run.algorithm = result.algo;
+  }
+  destroy_layouts(invocation.active_run);
+  invocation.active_run = candidate.run;
+  candidate.run.layouts = {};
+  invocation.layout_rows = static_cast<std::int64_t>(rows);
+  return Status::Ok();
+}
+
 Status create_invocation(void *state, mem::AllocatorRef allocator,
                          mem::BufferView workspace, void **output) noexcept {
   if (output == nullptr)
@@ -546,7 +655,10 @@ Status create_invocation(void *state, mem::AllocatorRef allocator,
   if (storage == nullptr)
     return Status::ResourceExhausted("cuBLAS invocation allocation failed");
   auto *invocation = ::new (storage)
-      CublasInvocation{.primary = prepared.primary, .workspace = scratch};
+      CublasInvocation{.primary = prepared.primary, .workspace = scratch,
+                       .prepared = &prepared};
+  if (prepared.packed_rows)
+    invocation->private_output = static_cast<std::byte *>(scratch) + prepared.output_offset;
   *output = invocation; // Compute destroys partial state on failure.
   return translate(cublasLtCreate(&invocation->handle),
                    "cublasLtCreate(invocation)");
@@ -557,6 +669,7 @@ void destroy_invocation(void *state, mem::AllocatorRef allocator) noexcept {
   if (invocation == nullptr)
     return;
   cuda::detail::ScopedPrimaryContext scope(invocation->primary);
+  destroy_layouts(invocation->active_run);
   if (invocation->handle != nullptr)
     (void)cublasLtDestroy(invocation->handle);
   invocation->~CublasInvocation();
@@ -564,11 +677,44 @@ void destroy_invocation(void *state, mem::AllocatorRef allocator) noexcept {
                        alignof(CublasInvocation));
 }
 
+bool same_view(ConstTensorView a, ConstTensorView b) noexcept {
+  const auto x = a.storage(), y = b.storage();
+  return a.description() == b.description() && x.resource() == y.resource() &&
+      x.native_handle() == y.native_handle() && x.offset() == y.offset() && x.size() == y.size();
+}
+
+Status prepare_bindings(void *state, void *lane,
+                        std::span<const ConstTensorView> inputs,
+                        std::span<const TensorView> outputs) noexcept {
+  const auto &prepared = *static_cast<const CublasPrepared *>(state);
+  const auto &invocation = *static_cast<const CublasInvocation *>(lane);
+  if (invocation.prepared != &prepared)
+    return Status::InvalidArgument("cuBLAS invocation belongs to another prepared operation");
+  if (!prepared.packed_rows) return Status::Ok();
+  if (inputs.size() != 3 || outputs.size() != 1)
+    return Status::InvalidArgument("cuBLAS packed rows binding counts differ");
+  if (invocation.rows < 0)
+    return Status::FailedPrecondition("cuBLAS packed rows require their typed cold configuration before binding");
+  if (!same_view(inputs[2], invocation.offsets))
+    return Status::FailedPrecondition("cuBLAS packed offsets differ from the typed cold configuration");
+  return Status::Ok();
+}
+
 detail::EnqueueResult submit(void *state, void *lane, detail::QueueSequence &sequence,
                              std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
   auto &prepared = *static_cast<CublasPrepared *>(state);
   auto &invocation = *static_cast<CublasInvocation *>(lane);
+  if (prepared.packed_rows) {
+    if (sequence.recording())
+      return detail::EnqueueResult::rejected(Status::Unimplemented(
+          "cuBLAS packed rows support Commands only"));
+    if (invocation.rows < 0)
+      return detail::EnqueueResult::rejected(Status::Unimplemented(
+          "cuBLAS packed rows require the typed host-owned offsets proof"));
+    auto bound = prepare_bindings(state, lane, inputs, outputs);
+    if (!bound.ok()) return detail::EnqueueResult::rejected(std::move(bound));
+  }
   auto stream = cuda::stream(sequence);
   if (!stream)
     return detail::EnqueueResult::rejected(std::move(stream).error());
@@ -587,22 +733,82 @@ detail::EnqueueResult submit(void *state, void *lane, detail::QueueSequence &seq
   cuda::detail::ScopedPrimaryContext scope(prepared.primary);
   if (!scope)
     return detail::EnqueueResult::rejected(scope.status());
+  unsigned *device_status = nullptr;
+  const std::int32_t *packed_offsets = nullptr;
+  if (prepared.packed_rows) {
+    cudaStreamCaptureStatus capture = cudaStreamCaptureStatusNone;
+    auto checked = cuda::status(cudaStreamIsCapturing(*stream, &capture));
+    if (!checked.ok()) return detail::EnqueueResult::rejected(std::move(checked));
+    if (capture != cudaStreamCaptureStatusNone)
+      return detail::EnqueueResult::rejected(Status::Unimplemented(
+          "cuBLAS packed rows do not support native capture"));
+    auto offsets = cuda::detail::const_pointer(inputs[2].storage(), alignof(std::int32_t), 1);
+    if (!offsets) return detail::EnqueueResult::rejected(std::move(offsets).error());
+    packed_offsets = static_cast<const std::int32_t *>(*offsets);
+    // The checked output is private only within the original caller workspace.
+    // Reject overlapping bindings before admitting even the status reset.
+    const auto base = reinterpret_cast<std::uintptr_t>(invocation.workspace);
+    const auto overlaps = [&](const void *pointer, std::size_t bytes) noexcept {
+      const auto address = reinterpret_cast<std::uintptr_t>(pointer);
+      return address >= base ? address - base < prepared.workspace_bytes :
+          base - address < bytes;
+    };
+    const std::array pointers{*left, *right, *offsets};
+    for (std::size_t i = 0; i < inputs.size(); ++i) {
+      auto bytes = inputs[i].description().required_bytes();
+      if (!bytes) return detail::EnqueueResult::rejected(std::move(bytes).error());
+      if (overlaps(pointers[i], *bytes))
+        return detail::EnqueueResult::rejected(Status::InvalidArgument(
+            "cuBLAS packed input overlaps its caller workspace"));
+    }
+    if (overlaps(*output, prepared.output_bytes))
+      return detail::EnqueueResult::rejected(Status::InvalidArgument(
+          "cuBLAS packed output overlaps its caller workspace"));
+    if (!invocation.source_owned_rows) {
+      auto initialized = cuda::detail::acquire_device_status(sequence, &device_status);
+      if (!initialized.status.ok()) return initialized;
+    }
+  }
   const float alpha = 1.0f;
   const float beta = 0.0f;
-  for (const auto &run : prepared.runs) {
+  const auto runs = prepared.packed_rows
+      ? std::span<const CublasRun>{&invocation.active_run, invocation.rows == 0 ? 0u : 1u}
+      : std::span<const CublasRun>{prepared.runs.data(), prepared.runs.size()};
+  for (const auto &run : runs) {
     const auto *a = static_cast<const char *>(*left) + run.offsets[0];
     const auto *b = static_cast<const char *>(*right) + run.offsets[1];
-    auto *c = static_cast<char *>(*output) + run.offsets[2];
+    auto *c = static_cast<char *>(prepared.packed_rows && !invocation.source_owned_rows
+        ? invocation.private_output : *output) + run.offsets[2];
     const auto result = cublasLtMatmul(
         invocation.handle, prepared.operation, &alpha, a, run.layouts[0],
         b, run.layouts[1], &beta, c, run.layouts[2], c, run.layouts[2],
-        &run.algorithm, invocation.workspace, prepared.workspace_bytes, *stream);
+        &run.algorithm, invocation.workspace,
+        prepared.packed_rows ? prepared.vendor_workspace_bytes : prepared.workspace_bytes, *stream);
     // Even a first vendor error may have enqueued work: preserve the real
     // accepted prefix and the original Invocation handle/workspace lifetime.
     if (result != CUBLAS_STATUS_SUCCESS)
       return detail::EnqueueResult::accepted_command(
           translate(result, "cublasLtMatmul"));
   }
+  if (prepared.packed_rows && invocation.source_owned_rows) {
+    // The original Batch-owned immutable mirror proves this prefix in cold
+    // preparation and at Graph seal. Like ordinary MatMul, an earlier device
+    // error may still leave physical output writes; the original Completion
+    // retains that failure and prevents successful result publication.
+    const auto active_bytes = static_cast<std::size_t>(invocation.rows) * prepared.output_row_bytes;
+    if (active_bytes == prepared.output_bytes)
+      return detail::EnqueueResult::accepted_command(Status::Ok());
+    return detail::EnqueueResult::accepted_command(cuda::status(cudaMemsetAsync(
+        static_cast<std::byte *>(*output) + active_bytes, 0,
+        prepared.output_bytes - active_bytes, *stream)));
+  }
+  if (prepared.packed_rows)
+    return detail::EnqueueResult::accepted_command(cuda::status(
+        cuda::detail::publish_packed_r1_prefix(invocation.private_output, *output,
+            prepared.output_row_bytes,
+            static_cast<std::int64_t>(prepared.geometry.matrices[0].rows),
+            static_cast<std::int32_t>(invocation.rows), packed_offsets,
+            device_status, *stream)));
   return detail::EnqueueResult::accepted_command(Status::Ok());
 }
 
@@ -616,6 +822,7 @@ const detail::ProviderPreparedVTable kPreparedVTable{
     .create_invocation = &create_invocation,
     .destroy_invocation = &destroy_invocation,
     .shared_submit = &submit,
+    .prepare_bindings = &prepare_bindings,
 };
 
 ProviderPrepareOutcome prepare(void *context_value,
@@ -652,11 +859,34 @@ ProviderPrepareOutcome prepare(void *context_value,
       return ProviderPrepareOutcome::resource_declined(std::move(status));
     return ProviderPrepareOutcome::error(std::move(status));
   }
+  prepared->packed_rows = request.operation.custom_as<sequence_ops::PackedRowMatMul>().has_value();
+  if (prepared->packed_rows) {
+    prepared->geometry = geometry;
+    prepared->offsets_description = request.inputs[2];
+    prepared->vendor_workspace_bytes = prepared->workspace_bytes;
+    auto bytes = request.outputs[0].required_bytes();
+    if (!bytes) {
+      destroy_prepared(prepared, allocator);
+      return ProviderPrepareOutcome::error(std::move(bytes).error());
+    }
+    if (prepared->workspace_bytes > SIZE_MAX - (kWorkspaceAlignment - 1)) {
+      destroy_prepared(prepared, allocator);
+      return ProviderPrepareOutcome::error(Status::OutOfRange("cuBLAS packed workspace alignment overflows"));
+    }
+    prepared->output_offset = (prepared->workspace_bytes + kWorkspaceAlignment - 1) & ~(kWorkspaceAlignment - 1);
+    if (*bytes > SIZE_MAX - prepared->output_offset) {
+      destroy_prepared(prepared, allocator);
+      return ProviderPrepareOutcome::error(Status::OutOfRange("cuBLAS packed workspace size overflows"));
+    }
+    prepared->output_bytes = *bytes;
+    prepared->output_row_bytes = *bytes / geometry.matrices[0].rows;
+    prepared->workspace_bytes = prepared->output_offset + *bytes;
+  }
   *output = detail::ProviderPrepared{
       .vtable = &kPreparedVTable,
       .state = prepared,
       .workspace = {prepared->workspace_bytes, kWorkspaceAlignment},
-      .runtime = kRuntime,
+      .runtime = prepared->packed_rows ? packed_runtime() : kRuntime,
       .persistent_bytes = std::nullopt,
       .invocation_private_bytes = std::nullopt,
   };
@@ -664,6 +894,60 @@ ProviderPrepareOutcome prepare(void *context_value,
 }
 
 Status drain_context(void *) noexcept { return Status::Ok(); }
+Status inspect_packed_rows(const detail::ProviderPrepared &value,
+                           detail::OperationPreparedAccess *access) noexcept {
+  if (!access) return Status::InvalidArgument("cuBLAS packed rows access output is null");
+  *access = {};
+  if (value.vtable != &kPreparedVTable || !value.state)
+    return Status::Unimplemented("foreign cuBLAS packed rows implementation");
+  const auto &prepared = *static_cast<const CublasPrepared *>(value.state);
+  if (!prepared.packed_rows)
+    return Status::Unimplemented("cuBLAS selected operation has no packed rows domain");
+  if (prepared.runs.size() != 1 || prepared.geometry.rank != 0 ||
+      prepared.geometry.count != 1 || prepared.output_bytes == 0)
+    return Status::Internal("cuBLAS packed rows implementation is invalid");
+  *access = {.requires_configuration = true};
+  return Status::Ok();
+}
+
+Status configure_packed_rows(const detail::ProviderPrepared &value, void *lane,
+                             const void *configuration) noexcept {
+  detail::OperationPreparedAccess access;
+  HYLE_RETURN_IF_ERROR(inspect_packed_rows(value, &access));
+  if (!lane || !configuration)
+    return Status::InvalidArgument("cuBLAS packed rows cold configuration is null");
+  const auto &prepared = *static_cast<const CublasPrepared *>(value.state);
+  auto &invocation = *static_cast<CublasInvocation *>(lane);
+  if (invocation.prepared != &prepared)
+    return Status::InvalidArgument("cuBLAS packed rows slot belongs to another operation");
+  // A failed replacement never leaves the previous host proof executable.
+  invocation.rows = -1;
+  invocation.offsets = {};
+  invocation.source_owned_rows = false;
+  const auto &config = *static_cast<const detail::PackedRowMatMulRowsConfiguration *>(configuration);
+  if (config.clear) return Status::Ok();
+  if (config.rows > prepared.geometry.matrices[0].rows ||
+      config.rows > static_cast<std::size_t>(INT32_MAX))
+    return Status::InvalidArgument("cuBLAS packed rows exceed the physical capacity");
+  if (config.offsets.description() != prepared.offsets_description)
+    return Status::InvalidArgument("cuBLAS packed rows offsets descriptor differs");
+  if (config.proof.valid() &&
+      (!same_view(config.proof.offsets(), config.offsets) ||
+       config.proof.rows() != config.rows ||
+       config.proof.capacity() != prepared.geometry.matrices[0].rows))
+    return Status::InvalidArgument("cuBLAS packed rows proof differs from the exact source tuple or capacity");
+  HYLE_ASSIGN_OR_RETURN(auto offsets,
+      cuda::detail::const_pointer(config.offsets.storage(), alignof(std::int32_t), 1));
+  (void)offsets;
+  cuda::detail::ScopedPrimaryContext scope(prepared.primary);
+  HYLE_RETURN_IF_ERROR(scope.status());
+  HYLE_RETURN_IF_ERROR(configure_active_run(prepared, invocation, config.rows));
+  invocation.offsets = config.offsets;
+  invocation.rows = static_cast<std::int64_t>(config.rows);
+  invocation.source_owned_rows = config.proof.valid();
+  return Status::Ok();
+}
+
 Status inspect_capture_bindings(const detail::ProviderPrepared &value,
                                 bool *preserves) noexcept {
   if (!preserves)
@@ -686,6 +970,16 @@ Status inspect_capture_bindings(const detail::ProviderPrepared &value,
   return Status::Ok();
 }
 const void *query_extension(void *, ProviderExtensionId id) noexcept {
+  static constexpr detail::PackedRowMatMulSourceVTable source{
+      [](void *context) noexcept -> bool {
+        const auto *value = static_cast<const CublasContext *>(context);
+        return value && value->primary;
+      }};
+  if (id == detail::kPackedRowMatMulSourceExtensionId) return &source;
+  static constexpr detail::OperationAccessVTable rows{
+      .inspect = &inspect_packed_rows,
+      .configure = &configure_packed_rows};
+  if (id == detail::kPackedRowMatMulRowsExtensionId) return &rows;
   static constexpr detail::CaptureBindingsVTable capture{
       .inspect = &inspect_capture_bindings};
   return id == detail::kCaptureBindingsExtensionId ? &capture : nullptr;

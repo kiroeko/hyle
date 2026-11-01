@@ -10,12 +10,15 @@
 
 #include "hyle/graph/region_provider.h"
 #include "hyle/graph/detail/region_access.h"
+#include "hyle/graph/detail/query_rows.h"
 #include "hyle/compute/model_ops.h"
+#include "hyle/compute/sequence_ops.h"
 #include "../graph_ggml_shared/constant_packing.h"
 #include "../graph/region_discovery.h"
 #include "../graph/slots_region.h"
 #include "hyle/graph/slots.h"
 #include "program.h"
+#include "active_rows.h"
 #include "constant_expressions.h"
 
 namespace hyle::graph::ggml_cuda {
@@ -120,6 +123,14 @@ bool single_constant_preparation(const Graph &graph, NodeId node) noexcept {
         ggml_shared::published_view_of(graph, value)) return false;
   }
   return true;
+}
+
+bool single_region_preparation(const Graph &graph, NodeId node) noexcept {
+  const auto operation = graph.operation(node);
+  // This explicit row operation requires the selected Graph artifact's typed
+  // Batch configuration, even when it is the only mathematical node.
+  return single_constant_preparation(graph, node) ||
+      (operation && operation->custom_as<compute::sequence_ops::PackedRowMatMul>());
 }
 
 // One discovery-local use index. It proves that delaying a private fused
@@ -250,7 +261,21 @@ Result<bool> match_indexed_state(const Graph &graph, NodeId store_node,
   const auto operation = graph.operation(gdn_node);
   const auto *gdn = operation ? operation->get_if<compute::GatedDeltaNet>() : nullptr;
   const auto recurrent = operation ? operation->custom_as<compute::model_ops::RecurrentGatedDeltaNet>() : std::nullopt;
-  if (!gdn && !recurrent) return false;
+  const auto packed = operation ? operation->custom_as<compute::sequence_ops::PackedGatedDeltaNet>() : std::nullopt;
+  if (!gdn && !recurrent && !packed) return false;
+  if (packed) {
+    HYLE_ASSIGN_OR_RETURN(auto inputs, graph.node_input_count(gdn_node));
+    HYLE_ASSIGN_OR_RETURN(auto outputs, graph.node_output_count(gdn_node));
+    if (packed->snapshot_count != 1 || inputs != 7 || outputs != 2) return false;
+    HYLE_ASSIGN_OR_RETURN(auto offsets, graph.node_input(gdn_node, 6));
+    // Length controls are an ordinary immutable boundary, never a Source or
+    // Store permission. Other layers may read the same real offset carrier.
+    if (offsets.kind() != ValueKind::kInput) return false;
+    HYLE_ASSIGN_OR_RETURN(auto description, graph.value_description(offsets));
+    HYLE_ASSIGN_OR_RETURN(auto expected, compute::TensorDesc::dense(
+        compute::DataType::kInt32, std::array<std::int64_t, 1>{2}));
+    if (description != expected) return false;
+  }
   HYLE_ASSIGN_OR_RETURN(auto actual_state, graph.result(gdn_node, 1));
   if (state != actual_state) return false;
   HYLE_ASSIGN_OR_RETURN(auto initial, graph.node_input(gdn_node, recurrent ? 7 : 5));
@@ -269,6 +294,9 @@ Result<bool> match_indexed_state(const Graph &graph, NodeId store_node,
   IndexedSource source;
   HYLE_ASSIGN_OR_RETURN(auto matched_source,indexed_source(graph,gather_node,source));
   if(!matched_source)return false;
+  // This addition covers one original R1 source only. The existing finite
+  // two-source selection remains the separate ordinary/indexed contract.
+  if (packed && source.selection.valid()) return false;
   const auto pool=source.pool,source_ids=source.ids;
   if (pool.kind() != ValueKind::kInput || source_ids.kind() != ValueKind::kInput ||
       source_ids == destination_ids || pool == source_ids || pool == destination_ids) return false;
@@ -311,7 +339,9 @@ Result<bool> match_indexed_state(const Graph &graph, NodeId store_node,
       source_description.data_type() != compute::DataType::kInt32 ||
       destination_description.data_type() != compute::DataType::kInt32) return false;
   const auto batches = initial_description.dimensions()[0];
-  const auto snapshots = gdn ? gdn->snapshot_count : recurrent->snapshot_count;
+  const auto snapshots = gdn ? gdn->snapshot_count
+      : recurrent ? recurrent->snapshot_count : packed->snapshot_count;
+  if (packed && batches != 1) return false;
   if (batches <= 0 || batches > UINT32_MAX || snapshots == 0 ||
       static_cast<std::uint64_t>(batches) > UINT32_MAX / snapshots ||
       source_description.dimensions()[0] != (source.selection.valid()?2:batches) ||
@@ -954,6 +984,14 @@ Status propose(void *context, const RegionDiscoveryRequest &request, mem::Alloca
       const auto &facts = request.leaf_preferences[i];
       if (facts.provider && facts.best && *facts.provider > *facts.best) {
         eligible[i] = kSupported;
+      } else if (!facts.provider && facts.best) {
+        // This typed operation has no direct GGML leaf proposal. Preserve
+        // the ordinary MatMul island boundary when another admitted leaf
+        // already owns its preferred execution, rather than spanning it in
+        // an unranked ordinary region which later overlaps that leaf.
+        const auto operation = graph.operation(node);
+        if (operation && operation->custom_as<compute::sequence_ops::PackedRowMatMul>())
+          eligible[i] = kSupported;
       }
     }
   }
@@ -1193,9 +1231,9 @@ Status propose(void *context, const RegionDiscoveryRequest &request, mem::Alloca
     }
   }
   const auto emit = [&](std::span<const NodeId> nodes) -> Result<bool> {
-    // Immutable preparation also applies to a single ordinary operation;
-    // dynamic singleton operations retain their ordinary provider ranks.
-    if (nodes.empty() || (nodes.size() == 1 && !single_constant_preparation(graph, nodes[0])))
+    // Immutable preparation and explicit typed row configuration also need
+    // an original Graph artifact for a singleton. Other ranks are unchanged.
+    if (nodes.empty() || (nodes.size() == 1 && !single_region_preparation(graph, nodes[0])))
       return true;
     std::uint32_t preference = 0;
     bool has_math = false;
@@ -1235,7 +1273,7 @@ Status propose(void *context, const RegionDiscoveryRequest &request, mem::Alloca
         return eligible[node.ordinal()] == kOrdinary;
       }, [&](std::span<const NodeId> nodes) -> Result<bool> {
         if (nodes.empty() || (nodes.size() == 1 &&
-            !single_constant_preparation(graph, nodes[0]))) return true;
+            !single_region_preparation(graph, nodes[0]))) return true;
         for (const auto node : nodes) ordinary_owner[node.ordinal()] = next_owner;
         ++next_owner;
         return true;
@@ -1551,8 +1589,8 @@ Status qualify(void *context, const RegionCompileRequest &request,
                    : Status::Unimplemented("ggml CUDA SiLU multiply boundary is not admitted");
   }
   if (request.nodes.size() == 1 &&
-      !single_constant_preparation(*request.graph, request.nodes.front()))
-    return Status::Unimplemented("ggml CUDA singleton has no immutable preparation");
+      !single_region_preparation(*request.graph, request.nodes.front()))
+    return Status::Unimplemented("ggml CUDA singleton has no region-owned preparation");
   for (const auto node : request.nodes) {
     auto supported = supported_node(context, *request.graph, node);
     if (!supported)
@@ -1702,6 +1740,11 @@ struct IndexedBinding final {
   std::vector<NodeId> nodes;
   NodeId gather;
 };
+struct QueryRowsDomain final {
+  ValueId input;
+  std::uint32_t port = 0, recipe_input = 0;
+  std::uint32_t capacity = 0;
+};
 struct Artifact final {
   compute::detail::ProviderPrepared native;
   std::optional<IndexedBinding> indexed;
@@ -1710,6 +1753,7 @@ struct Artifact final {
   std::array<std::uint32_t, 3> indexed_ports{};
   std::array<compute::TensorDesc, 3> indexed_descriptions{};
   std::vector<ProjectedGather> gathers;
+  std::vector<QueryRowsDomain> row_domains;
   // The special route does no constant folding/packing. Retain the real
   // physical constant owners/leases, without copying their tensor payload.
   std::vector<ConstantBinding> constants;
@@ -1743,7 +1787,25 @@ struct Invocation final {
   const compute::detail::ProviderPreparedVTable *vtable = nullptr;
   void *state = nullptr;
   std::vector<compute::ConstTensorView> input_bindings;
+  std::vector<detail::QueryRowsControl> row_controls;
+  bool rows_sealed = false;
 };
+bool same_view(compute::ConstTensorView a, compute::ConstTensorView b) noexcept {
+  const auto x = a.storage(), y = b.storage();
+  return a.valid() && b.valid() && a.description() == b.description() &&
+      x.resource() == y.resource() && x.native_handle() == y.native_handle() &&
+      x.offset() == y.offset() && x.size() == y.size();
+}
+Status qualify_rows(const QueryRowsDomain &domain,
+    const detail::QueryRowsControl &control, detail::QueryRowsFacts *out) noexcept {
+  const auto facts = control.inspect();
+  if (!facts) return facts.error();
+  if (facts->offsets_input != domain.input || facts->rows > domain.capacity ||
+      facts->capacity != domain.capacity || !facts->offsets.valid())
+    return Status::FailedPrecondition("packed matrix rows differ from the original Batch domain");
+  *out = *facts;
+  return Status::Ok();
+}
 Status create_region_invocation(void *value, mem::AllocatorRef allocator,
                                 mem::BufferView workspace,
                                 void **output) noexcept {
@@ -1755,6 +1817,13 @@ Status create_region_invocation(void *value, mem::AllocatorRef allocator,
     return Status::ResourceExhausted(
         "ggml CUDA region invocation allocation failed");
   auto *invocation = ::new (storage) Invocation;
+  try {
+    invocation->row_controls.resize(static_cast<const Artifact *>(value)->row_domains.size());
+  } catch (...) {
+    invocation->~Invocation();
+    allocator.deallocate(invocation, sizeof(Invocation), alignof(Invocation));
+    return Status::ResourceExhausted("ggml CUDA query row controls allocation failed");
+  }
   invocation->vtable = artifact.vtable;
   *output = invocation;
   return create_invocation(value, allocator, workspace, &invocation->state);
@@ -1777,6 +1846,16 @@ submit(void *value, void *lane, compute::detail::QueueSequence &sequence,
   const auto &artifact = region.native;
   if (!artifact.vtable) return compute::detail::EnqueueResult::no_op();
   const auto &invocation = *static_cast<Invocation *>(lane);
+  if (!region.row_domains.empty()) {
+    if (!invocation.rows_sealed || inputs.size() != invocation.input_bindings.size())
+      return compute::detail::EnqueueResult::rejected(Status::FailedPrecondition(
+          "packed matrix rows require the original sealed Batch configuration"));
+    for (const auto &domain : region.row_domains)
+      if (domain.port >= inputs.size() ||
+          !same_view(inputs[domain.port], invocation.input_bindings[domain.port]))
+        return compute::detail::EnqueueResult::rejected(Status::FailedPrecondition(
+            "packed matrix offsets differ from their admitted original span"));
+  }
   if (region.indexed) {
     if (!invocation.sealed || !invocation.store_binding.same_queue(sequence) ||
         inputs.size() != invocation.input_bindings.size())
@@ -1803,6 +1882,7 @@ Status prepare_bindings(void *value, void *lane,
   if (!artifact.vtable) return Status::Ok();
   auto &invocation = *static_cast<Invocation *>(lane);
   invocation.sealed = false;
+  invocation.rows_sealed = false;
   if (region.indexed) {
     for (const auto port : region.indexed_ports)
       if (port >= inputs.size())
@@ -1821,16 +1901,36 @@ Status prepare_bindings(void *value, void *lane,
   } catch (...) {
     return Status::ResourceExhausted("ggml CUDA cold region bindings failed");
   }
+  for (std::size_t i = 0; i < region.row_domains.size(); ++i) {
+    const auto &domain = region.row_domains[i];
+    detail::QueryRowsFacts facts;
+    HYLE_RETURN_IF_ERROR(qualify_rows(domain, invocation.row_controls[i], &facts));
+    if (domain.port >= invocation.input_bindings.size() ||
+        !same_view(facts.offsets, invocation.input_bindings[domain.port]))
+      return Status::FailedPrecondition("packed matrix input is not the original Batch offsets view");
+    HYLE_RETURN_IF_ERROR(native::configure_rows(artifact, invocation.state,
+        domain.recipe_input, facts.offsets, facts.rows));
+  }
   return artifact.vtable->prepare_bindings(
       artifact.state, invocation.state, invocation.input_bindings, outputs);
 }
 Status seal_bindings(void *value, void *lane) noexcept {
   const auto &region = *static_cast<Artifact *>(value);
-  if (!region.indexed) return Status::Ok();
   auto &invocation = *static_cast<Invocation *>(lane);
   invocation.sealed = false;
-  HYLE_RETURN_IF_ERROR(invocation.store_binding.validate_configuration(
-      invocation.configuration));
+  invocation.rows_sealed = false;
+  if (region.indexed)
+    HYLE_RETURN_IF_ERROR(invocation.store_binding.validate_configuration(
+        invocation.configuration));
+  for (std::size_t i = 0; i < region.row_domains.size(); ++i) {
+    const auto &domain = region.row_domains[i];
+    detail::QueryRowsFacts facts;
+    HYLE_RETURN_IF_ERROR(qualify_rows(domain, invocation.row_controls[i], &facts));
+    if (domain.port >= invocation.input_bindings.size() ||
+        !same_view(facts.offsets, invocation.input_bindings[domain.port]))
+      return Status::FailedPrecondition("packed matrix offsets changed before seal");
+  }
+  invocation.rows_sealed = true;
   invocation.sealed = true;
   return Status::Ok();
 }
@@ -1955,8 +2055,45 @@ const detail::RegionCaptureBindingsVTable capture_bindings{
               invocation.configuration.source_indices.valid() &&
               invocation.configuration.destination_indices.valid()));
     }};
+const detail::RegionQueryRowsVTable query_rows{
+    .accepts = [](const ProviderRegionPrepared &prepared, void *lane,
+        ValueId input) noexcept -> Result<bool> {
+      if (!prepared.state || !lane)
+        return std::unexpected(Status::InvalidArgument("query rows need their original artifact/slot"));
+      const auto &region = *static_cast<const Artifact *>(prepared.state);
+      return std::ranges::any_of(region.row_domains,
+          [input](const auto &domain) { return domain.input == input; });
+    },
+    .configure = [](const ProviderRegionPrepared &prepared, void *lane,
+        const detail::QueryRowsControl &control) noexcept -> Status {
+      if (!prepared.state || !lane)
+        return Status::InvalidArgument("query rows need their original artifact/slot");
+      const auto &region = *static_cast<const Artifact *>(prepared.state);
+      auto &invocation = *static_cast<Invocation *>(lane);
+      invocation.rows_sealed = false;
+      const auto facts = control.inspect();
+      if (!facts) return facts.error();
+      for (std::size_t i = 0; i < region.row_domains.size(); ++i) {
+        if (region.row_domains[i].input != facts->offsets_input) continue;
+        detail::QueryRowsFacts qualified;
+        HYLE_RETURN_IF_ERROR(qualify_rows(region.row_domains[i], control, &qualified));
+        invocation.row_controls[i] = control;
+        return Status::Ok();
+      }
+      return Status::Unimplemented("query rows are outside this compiled matrix domain");
+    },
+    .clear = [](const ProviderRegionPrepared &prepared, void *lane) noexcept {
+      if (!prepared.state || !lane) return;
+      const auto &region = *static_cast<const Artifact *>(prepared.state);
+      auto &invocation = *static_cast<Invocation *>(lane);
+      invocation.rows_sealed = false;
+      for (auto &control : invocation.row_controls) control = {};
+      (void)native::clear_rows(region.native, invocation.state);
+    }};
 const void *binding_release_extension(void *prepared, compute::ProviderExtensionId id) noexcept {
   const auto &region = *static_cast<const Artifact *>(prepared);
+  if (id == detail::kRegionQueryRowsExtensionId && !region.row_domains.empty())
+    return &query_rows;
   if (region.indexed) {
     if (id == slots::detail::kStoreBindingExtensionId) return &store_binding;
     if (id == detail::kRegionProjectedReadExtensionId) return &projected_read;
@@ -1974,8 +2111,13 @@ const void *binding_release_extension(void *prepared, compute::ProviderExtension
       .validate = [](void *, void *) noexcept { return Status::Ok(); },
       // TensorView metadata owns no leases or native imports. Keep its exact
       // arguments dormant so proven stable recordings can survive withdrawal.
-      .release = [](void *, void *lane) noexcept {
-        static_cast<Invocation *>(lane)->sealed = false;
+      .release = [](void *prepared, void *lane) noexcept {
+        auto &invocation = *static_cast<Invocation *>(lane);
+        invocation.sealed = false;
+        if (!static_cast<const Artifact *>(prepared)->row_domains.empty()) {
+          const ProviderRegionPrepared artifact{.state = prepared};
+          query_rows.clear(artifact, lane);
+        }
       },
       .borrows_tensor_views_only = true};
   return id == detail::kRegionBindingReleaseExtensionId ? &release : nullptr;
@@ -2103,6 +2245,8 @@ compile(void *context, const RegionCompileRequest &request,
         for (std::size_t port = 0; port < (recurrent ? 7U : 5U); ++port)
           math_inputs.push_back(request.graph->node_input(pattern.gdn, port).value());
         math_inputs.insert(math_inputs.end(), {pattern.pool, pattern.source_ids, pattern.destination_ids});
+        if (operation.custom_as<compute::sequence_ops::PackedGatedDeltaNet>())
+          math_inputs.push_back(request.graph->node_input(pattern.gdn, 6).value());
       } else {
         NodeId store;
         for (const auto node : request.nodes)
@@ -2192,6 +2336,27 @@ compile(void *context, const RegionCompileRequest &request,
           return compute::ProviderPrepareOutcome::error(
               Status::OutOfRange("ggml CUDA checked output cost overflows"));
     auto gathers = projected_gathers(request, recipe);
+    std::vector<QueryRowsDomain> row_domains;
+    for (const auto &node : recipe.nodes) {
+      if (!node.operation.custom_as<compute::sequence_ops::PackedRowMatMul>()) continue;
+      const auto offset_id = node.inputs[2];
+      const auto port = std::ranges::find(recipe.inputs, offset_id);
+      if (port == recipe.inputs.end())
+        return compute::ProviderPrepareOutcome::unsupported(Status::Unimplemented(
+            "packed matrix offsets must be the original external Graph input"));
+      const auto ordinal = static_cast<std::uint32_t>(port - recipe.inputs.begin());
+      if (ordinal >= request.inputs.size() || request.inputs[ordinal].kind() != ValueKind::kInput)
+        return compute::ProviderPrepareOutcome::unsupported(Status::Unimplemented(
+            "packed matrix offsets need an original Graph configuration input"));
+      const auto capacity = static_cast<std::uint32_t>(recipe.values[node.inputs[0]].dimensions()[0]);
+      const auto prior = std::ranges::find_if(row_domains,
+          [offset_id](const auto &domain) { return domain.recipe_input == offset_id; });
+      if (prior != row_domains.end()) {
+        if (prior->capacity != capacity)
+          return compute::ProviderPrepareOutcome::error(Status::InvalidArgument(
+              "one packed matrix row domain has different physical capacities"));
+      } else row_domains.push_back({request.inputs[ordinal], ordinal, offset_id, capacity});
+    }
     void *storage = allocator.allocate(sizeof(Artifact), alignof(Artifact));
     if (!storage)
       return compute::ProviderPrepareOutcome::error(
@@ -2199,6 +2364,7 @@ compile(void *context, const RegionCompileRequest &request,
               "ggml CUDA region artifact allocation failed"));
     auto *artifact = ::new (storage) Artifact;
     artifact->gathers = std::move(gathers);
+    artifact->row_domains = std::move(row_domains);
     if (recipe.nodes.empty()) {
       // All original outputs have ready artifact bindings. Keep a metadata
       // region for the logical producer/control edges, with no native program,

@@ -19,6 +19,15 @@ enum class BatchGraphContract : std::uint8_t {
   kOwnedLayoutActive,
   kDeviceLayoutChoice,
 };
+// Trusted Graph-only borrowed coordinates, never a storage permission. The
+// original region owns this fixed workspace through every native retirement.
+// Graph's existing root use admits execution/recording. The selected provider
+// must separately prove that cold planning neither reads nor writes this float
+// payload (it may only compute offsets), so planning needs no float write use.
+// Public/standalone Batch invocations retain their original owned workspaces.
+struct BatchGraphFloatWorkspace final {
+  mem::BufferView storage;
+};
 // Graph's original shared-region admission/retirement owns external inputs,
 // output and this same native slot. This bridge does not create a Completion,
 // executor or shadow output. It may only run inside that admitted region.
@@ -32,6 +41,11 @@ struct BatchGraphAccess final {
   // still really wait and publish ready metadata before Graph preparation.
   HYLE_COMPUTE_BATCH_API static Result<BatchInvocation> create(const BatchProgram&,
       Queue& execution,std::shared_ptr<Queue> metadata_queue) noexcept;
+  // The fixed view must cover the program's declared float hard cap. This
+  // entry neither acquires a lease nor manufactures Graph/root authority.
+  HYLE_COMPUTE_BATCH_API static Result<BatchInvocation> create(const BatchProgram&,
+      Queue& execution,std::shared_ptr<Queue> metadata_queue,
+      BatchGraphFloatWorkspace) noexcept;
   HYLE_COMPUTE_BATCH_API static Result<ReadLease> metadata(const BatchInvocation&) noexcept;
   HYLE_COMPUTE_BATCH_API static Result<PreparedBatch> prepare(BatchInvocation&,
       const BatchLayoutVersion&,bool update,BeforeCommandChange) noexcept;
@@ -48,6 +62,10 @@ struct BatchGraphAccess final {
   // Saves only the actual metadata carrier identity, never read permission.
   HYLE_COMPUTE_BATCH_API static Status validate_prepared(
       const PreparedBatch&,BatchGraphContract) noexcept;
+  // Read-only identity of the original prepared episode, including prepares
+  // that reuse one immutable layout version. No new epoch/permission is made.
+  HYLE_COMPUTE_BATCH_API static Result<std::uint64_t> preparation_epoch(
+      const PreparedBatch&) noexcept;
   // Cold Graph owns these exact bound ports; recording executes no tensors.
   HYLE_COMPUTE_BATCH_API static Status prepare_replay(PreparedBatch&,Queue&,
       std::span<const ConstTensorView>,std::span<const TensorView>,BatchGraphContract) noexcept;

@@ -1458,6 +1458,11 @@ Status project_generated_output(detail::InvocationState &invocation,
 Status seal_invocation_bindings(detail::InvocationState &invocation) noexcept {
   // Seals also validate managed slots whose ports are ordinary TensorViews.
   // Stable addresses cannot preserve a previous episode's preparation fact.
+  const auto payload = detail::validate_resource_payload(invocation);
+  if (!payload.ok()) {
+    invalidate_binding_cache(invocation);
+    return payload;
+  }
   for (const auto index : invocation.plan->seal_binding_steps) {
     const auto status = invocation.invocations[index].region.seal_bindings();
     if (!status.ok()) {

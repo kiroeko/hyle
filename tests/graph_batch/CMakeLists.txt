@@ -173,6 +173,12 @@ if(_HYLE_COMPUTE_HAVE_CUDA AND TARGET hyle_compute_route_cuda AND
     hyle_add_test(graph_batch NAME cuda_capture SOURCES batch_capture_test.cc
       DEPS hyle_graph_route_cuda hyle_simd)
     hyle_stage_runtime(hyle_graph_batch_cuda_capture_test)
+    hyle_add_test(graph_batch NAME cuda_shared_workspace SOURCES shared_workspace_cuda_test.cc
+      DEPS hyle_graph_route_cuda hyle_compute_backend_cuda hyle_simd)
+    hyle_stage_runtime(hyle_graph_batch_cuda_shared_workspace_test)
+    hyle_add_test(graph_batch NAME cuda_packed_rows SOURCES packed_row_matmul_cuda_test.cc
+      DEPS hyle_graph_route_cuda hyle_compute_backend_cuda hyle_simd)
+    hyle_stage_runtime(hyle_graph_batch_cuda_packed_rows_test)
     hyle_add_test(graph_batch NAME cuda_append SOURCES paged_append_cuda_consumer.cc
       DEPS hyle_graph_route_cuda hyle_simd)
     hyle_stage_runtime(hyle_graph_batch_cuda_append_test)

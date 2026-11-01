@@ -208,6 +208,9 @@ struct ResourcePayloadVTable final {
   Status (*reset)(void *, Invocation &) noexcept = nullptr;
   void (*destroy)(void *) noexcept = nullptr;
 };
+// Optional cold seal on the same original payload, never a submit callback.
+// It may only validate existing facts, not mutate bindings or accept work.
+using ResourcePayloadValidationFn = Status (*)(void *, const InvocationState *) noexcept;
 // Explicit cold/idle opt-in only. Views borrow the callback scope, never a
 // different execution slot. Ordinary compile/submit do not call this visitor.
 struct RegionAccess final {
@@ -222,6 +225,10 @@ struct RegionAccess final {
   HYLE_GRAPH_API static Result<bool> configure_node(
       Invocation &, NodeId,
       compute::ProviderExtensionId, const void *) noexcept;
+  // Pure cold inspection through the same selected operation/region dispatch
+  // as configure_node; never exports a raw provider object or permission.
+  HYLE_GRAPH_API static Result<RegionNodeAccess> inspect_node(
+      Invocation &, NodeId, compute::ProviderExtensionId) noexcept;
   // Cold/idle only. Call before mutating a selected slot's native resources,
   // including callbacks that may fail after a partial configuration change.
   // Discards only the covering recording and revokes prepared replay.
@@ -269,6 +276,10 @@ struct RegionAccess final {
   // Takes payload ownership only after successful cold admission.
   HYLE_GRAPH_API static Status attach_resource_payload(
       Invocation &, const ResourcePayloadVTable *, void *) noexcept;
+  // Keeps the legacy VTable and three-argument ABI unchanged. The optional
+  // validator borrows this same payload and runs only during cold sealing.
+  HYLE_GRAPH_API static Status attach_resource_payload(
+      Invocation &, const ResourcePayloadVTable *, void *, ResourcePayloadValidationFn) noexcept;
   // Cold opt-in capacity for extra records beyond the current binding count;
   // ordinary borrowed invocations need no lease table. Repeated reservations
   // still account for guards installed since the earlier reservation.

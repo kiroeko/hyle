@@ -37,6 +37,7 @@ private:
 
 HYLE_GRAPH_API Status resource_control_ready(const InvocationState *) noexcept;
 HYLE_GRAPH_API Status reset_resource_payload(Invocation &) noexcept;
+HYLE_GRAPH_API Status validate_resource_payload(const InvocationState &) noexcept;
 HYLE_GRAPH_API void reset_resource_bindings(InvocationState &) noexcept;
 // Clears cold configuration/projected owners and views, retaining caller ports.
 HYLE_GRAPH_API void reset_configuration_bindings(InvocationState &) noexcept;

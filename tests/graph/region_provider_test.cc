@@ -108,6 +108,7 @@ enum class ProposalMode : std::uint8_t {
   kResourceSingletons,
   kResourcePairs,
   kProjectedWriteRegion,
+  kProjectedWritePairs,
   kBoundaryWindows,
   kEquivalentRoutes,
 };
@@ -806,9 +807,10 @@ Result<bool> discover_test_regions(RegionProbe &probe, const Graph &graph,
     return add_node_set_proposal(writer, std::span(nodes).first(graph.node_count()));
   }
   if (probe.mode == ProposalMode::kResourceSingletons ||
-      probe.mode == ProposalMode::kResourcePairs) {
+      probe.mode == ProposalMode::kResourcePairs ||
+      probe.mode == ProposalMode::kProjectedWritePairs) {
     const std::size_t width =
-        probe.mode == ProposalMode::kResourcePairs ? 2 : 1;
+        probe.mode == ProposalMode::kResourceSingletons ? 1 : 2;
     for (std::size_t index = 0; index < graph.node_count(); index += width) {
       std::array<NodeId, 2> nodes{};
       const auto count = (std::min)(width, graph.node_count() - index);
@@ -1944,7 +1946,8 @@ Status compile_region_checked(void *context,
   std::uint32_t negations = 0, external_effects = 0;
   for (NodeId node : request.nodes) {
     if (is_negation(*request.graph, node.ordinal())) ++negations;
-    else if (probe.mode == ProposalMode::kProjectedWriteRegion &&
+    else if ((probe.mode == ProposalMode::kProjectedWriteRegion ||
+              probe.mode == ProposalMode::kProjectedWritePairs) &&
         request.graph->operation(node)->custom_as<ExternalEffect>()) ++external_effects;
     else return Status::InvalidArgument("region contains a non-negation node");
   }
@@ -3194,7 +3197,7 @@ ProjectedWriteGraph make_projected_write_graph(bool two_effects = false) {
 hyle::graph::detail::ProjectedWriter selected_projected_writer(
     hyle::graph::Invocation &run, NodeId writer) {
   hyle::graph::detail::ProjectedWriter result;
-  const auto status = hyle::graph::detail::RegionAccess::visit(run,
+  const auto status = hyle::graph::detail::RegionAccess::visit(run, writer,
       [](void *opaque, const hyle::graph::detail::RegionAccessView &view) noexcept {
         auto &selected = *static_cast<hyle::graph::detail::ProjectedWriter *>(opaque);
         selected.step = view.step; selected.implementation = view.prepared_vtable;
@@ -3274,6 +3277,192 @@ TEST(GraphRouteBoundary, ProjectedWriteRegionKeepsOneOriginalNominatedEffect) {
   EXPECT_FALSE(Access::has_write_effect(parent, selected, writers).value());
   ASSERT_TRUE(Access::bind_write_effect(run, logical.graph, capacity, {}, writers, {}, selected, {}, {}).ok());
   ASSERT_TRUE(Access::release_write_effect(run, logical.writer).ok());
+}
+
+TEST(GraphRouteBoundary, DuplicateOriginalWriteAuthorityRejectsWithoutBindingOrConsumption) {
+  using Access = hyle::graph::detail::RegionAccess;
+  const auto logical = make_projected_write_graph();
+  RegionProbe probe{.mode = ProposalMode::kProjectedWriteRegion};
+  probe.artifact_properties.preserves_effects = true;
+  probe.artifact_properties.runtime = kEffectRuntime;
+  auto context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context,
+      {.operation_fallback = OperationFallbackPolicy::kReject}).value();
+  auto run = compiled.executable.create_invocation(
+      {.resources = hyle::graph::ResourceOptions{}}).value();
+  const auto selected = selected_projected_writer(run, logical.writer);
+  const auto *parent = hyle::graph::detail::InvocationAccess::state(run);
+  auto pool = hyle::compute::LeasePool::create(hyle::mem::system_resource(),
+      256, {.max_blocks = 1}).value();
+  auto writer = pool.allocate(32).value();
+  const auto generation = writer.generation();
+  ASSERT_TRUE(writer.view()->fill(std::byte{0x5a}).ok());
+  const auto capacity = writer.tensor(row(8))->as_const();
+  const std::array<const hyle::compute::WriteLease *, 2> duplicate{&writer, &writer};
+  const std::array<const hyle::compute::WriteLease *, 1> original{&writer};
+  auto input = make_tensor(row(8));
+  auto output = make_tensor(row(8));
+  const std::array<float, 8> values{1, 2, 3, 4, 5, 6, 7, 8};
+  write(input, values);
+  ASSERT_TRUE(output.buffer.view().fill(std::byte{0x6b}).ok());
+  ASSERT_TRUE(run.bind(logical.input, input.view.as_const()).ok());
+  ASSERT_TRUE(run.bind(logical.output, output.view).ok());
+
+  const auto rejected = Access::bind_write_effect(
+      run, logical.graph, capacity, {}, duplicate, {}, selected, {}, {});
+  EXPECT_TRUE(rejected.IsInvalidArgument()) << rejected.message();
+  EXPECT_FALSE(Access::has_write_effect(parent, selected, original).value());
+  EXPECT_TRUE(Access::release_write_effect(run, logical.writer).IsInvalidArgument());
+  EXPECT_EQ(probe.submit_count, 0u);
+  EXPECT_EQ(probe.effect_submit_count, 0u);
+  EXPECT_FALSE(Access::successful_outcome(run));
+  EXPECT_FALSE(run.result(logical.output));
+  EXPECT_EQ(writer.generation(), generation);
+  std::array<std::byte, 32> observed{};
+  ASSERT_TRUE(writer.view()->read(observed).ok());
+  EXPECT_TRUE(std::all_of(observed.begin(), observed.end(),
+      [](std::byte value) { return value == std::byte{0x5a}; }));
+  ASSERT_TRUE(output.buffer.view().read(observed).ok());
+  EXPECT_TRUE(std::all_of(observed.begin(), observed.end(),
+      [](std::byte value) { return value == std::byte{0x6b}; }));
+
+  // The rejected list must leave the same original owner usable. The retry
+  // goes through real Graph submission and retirement, not just a second query.
+  ASSERT_TRUE(Access::bind_write_effect(
+      run, logical.graph, capacity, {}, original, {}, selected, {}, {}).ok());
+  auto queue = context.create_queue().value();
+  auto done = run.submit(queue);
+  ASSERT_TRUE(done) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+  *done = {};
+  EXPECT_EQ(probe.effect_submit_count, 1u);
+  const auto actual = read(output, values.size());
+  for (std::size_t i = 0; i < actual.size(); ++i) EXPECT_EQ(actual[i], -values[i]);
+  ASSERT_TRUE(Access::release_write_effect(run, logical.writer).ok());
+  auto returned = writer.publish();
+  ASSERT_TRUE(returned) << returned.error().message();
+  EXPECT_FALSE(writer.valid());
+  ASSERT_TRUE(returned->view()->read(observed).ok());
+  EXPECT_TRUE(std::all_of(observed.begin(), observed.end(),
+      [](std::byte value) { return value == std::byte{0x5a}; }));
+}
+
+TEST(GraphRouteBoundary, PendingEffectReadRejectsOverlappingOriginalWriterAndAllowsRetry) {
+  using Access = hyle::graph::detail::RegionAccess;
+  auto builder = GraphBuilder::create().value();
+  std::array<ValueId, 2> inputs{}, outputs{};
+  std::array<NodeId, 2> writers{};
+  for (std::size_t index = 0; index < writers.size(); ++index) {
+    inputs[index] = builder.input(row(8)).value();
+    const auto pure = builder.add_node(Operation(Unary{UnaryKind::kNeg}),
+        std::array{inputs[index]}).value();
+    outputs[index] = builder.result(pure).value();
+    ASSERT_TRUE(builder.publish(outputs[index]).ok());
+    writers[index] = builder.add_node(Operation::custom(ExternalEffect{}), {}).value();
+    ASSERT_TRUE(builder.depends_on(writers[index], pure).ok());
+    if (index) ASSERT_TRUE(builder.depends_on(pure, writers[index - 1]).ok());
+  }
+  const auto graph = std::move(builder).finish().value();
+  RegionProbe probe{.mode = ProposalMode::kProjectedWritePairs};
+  probe.artifact_properties.preserves_effects = true;
+  probe.artifact_properties.runtime = kEffectRuntime;
+  auto context = make_context(probe);
+  auto compiled = hyle::graph::compile(graph, context,
+      {.operation_fallback = OperationFallbackPolicy::kReject}).value();
+  ASSERT_EQ(compiled.report.region_count(), 2u);
+  auto run = compiled.executable.create_invocation(
+      {.resources = hyle::graph::ResourceOptions{}}).value();
+  const std::array selected{
+      selected_projected_writer(run, writers[0]),
+      selected_projected_writer(run, writers[1])};
+  ASSERT_NE(selected[0].step, selected[1].step);
+  const auto *parent = hyle::graph::detail::InvocationAccess::state(run);
+
+  // Both owners come from one real backing. Its retained full-capacity view
+  // is only geometry; neither this view nor pending registration grants ready
+  // permission for the second writer's bytes.
+  auto backing = Buffer::create(hyle::mem::system_resource(), 256, 64).value();
+  const auto capacity = ConstTensorView::create(row(64), backing.view()).value();
+  auto pool = hyle::compute::LeasePool::adopt(std::move(backing), {.max_blocks = 2}).value();
+  auto first = pool.allocate(32, 64).value();
+  auto second = pool.allocate(32, 64).value();
+  ASSERT_TRUE(first.view()->fill(std::byte{0x5a}).ok());
+  ASSERT_TRUE(second.view()->fill(std::byte{0x6b}).ok());
+  const auto first_generation = first.generation();
+  const auto second_generation = second.generation();
+  const std::array<const hyle::compute::WriteLease *, 1> first_owner{&first}, second_owner{&second};
+  const std::array<hyle::mem::ConstBufferView, 1> pending_reads{*second.view()};
+  ASSERT_EQ(first.view()->native_handle(), pending_reads[0].native_handle());
+  ASSERT_NE(first.view()->offset(), pending_reads[0].offset());
+  ASSERT_TRUE(Access::bind_write_effect(run, graph, capacity, {}, first_owner,
+      {}, selected[0], {}, {}, pending_reads, true).ok());
+  ASSERT_TRUE(Access::has_write_effect(parent, selected[0], first_owner).value());
+  ASSERT_TRUE(Access::has_pending_effect(parent, selected[0], pending_reads).value());
+
+  const auto rejected = Access::bind_write_effect(
+      run, graph, capacity, {}, second_owner, {}, selected[1], {}, {});
+  EXPECT_TRUE(rejected.IsInvalidArgument()) << rejected.message();
+  // Distinct original lease identities do not make overlapping physical
+  // pending reads writable. Pin this rejection to that physical-range guard.
+  EXPECT_EQ(rejected.message(), "projected writer overlaps an original pending effect read");
+  EXPECT_FALSE(Access::has_write_effect(parent, selected[1], second_owner).value());
+  EXPECT_TRUE(Access::release_write_effect(run, writers[1]).IsInvalidArgument());
+  EXPECT_TRUE(Access::has_write_effect(parent, selected[0], first_owner).value());
+  EXPECT_TRUE(Access::has_pending_effect(parent, selected[0], pending_reads).value());
+  EXPECT_EQ(probe.submit_count, 0u);
+  EXPECT_EQ(probe.effect_submit_count, 0u);
+  EXPECT_FALSE(Access::successful_outcome(run));
+  EXPECT_FALSE(run.result(outputs[0]));
+  EXPECT_FALSE(run.result(outputs[1]));
+  EXPECT_EQ(first.generation(), first_generation);
+  EXPECT_EQ(second.generation(), second_generation);
+  std::array<std::byte, 32> observed{};
+  ASSERT_TRUE(first.view()->read(observed).ok());
+  EXPECT_TRUE(std::all_of(observed.begin(), observed.end(),
+      [](std::byte value) { return value == std::byte{0x5a}; }));
+  ASSERT_TRUE(second.view()->read(observed).ok());
+  EXPECT_TRUE(std::all_of(observed.begin(), observed.end(),
+      [](std::byte value) { return value == std::byte{0x6b}; }));
+
+  // No Source is fabricated and this pending-read episode is never submitted.
+  // Release it, then retry both original writers without any pending read.
+  ASSERT_TRUE(Access::release_write_effect(run, writers[0]).ok());
+  EXPECT_FALSE(Access::has_pending_effect(parent, selected[0], pending_reads).value());
+  ASSERT_TRUE(Access::bind_write_effect(
+      run, graph, capacity, {}, second_owner, {}, selected[1], {}, {}).ok());
+  ASSERT_TRUE(Access::bind_write_effect(
+      run, graph, capacity, {}, first_owner, {}, selected[0], {}, {}).ok());
+  std::array<OwnedTensor, 2> input, output;
+  const std::array<float, 8> values{1, 2, 3, 4, 5, 6, 7, 8};
+  for (std::size_t index = 0; index < writers.size(); ++index) {
+    input[index] = make_tensor(row(8));
+    output[index] = make_tensor(row(8));
+    write(input[index], values);
+    ASSERT_TRUE(run.bind(inputs[index], input[index].view.as_const()).ok());
+    ASSERT_TRUE(run.bind(outputs[index], output[index].view).ok());
+  }
+  auto queue = context.create_queue().value();
+  auto done = run.submit(queue);
+  ASSERT_TRUE(done) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+  *done = {};
+  EXPECT_EQ(probe.effect_submit_count, 2u);
+  for (const auto &tensor : output) {
+    const auto actual = read(tensor, values.size());
+    for (std::size_t i = 0; i < actual.size(); ++i) EXPECT_EQ(actual[i], -values[i]);
+  }
+  ASSERT_TRUE(Access::release_projected_writes(run, writers).ok());
+  auto first_ready = first.publish(), second_ready = second.publish();
+  ASSERT_TRUE(first_ready) << first_ready.error().message();
+  ASSERT_TRUE(second_ready) << second_ready.error().message();
+  EXPECT_FALSE(first.valid());
+  EXPECT_FALSE(second.valid());
+  ASSERT_TRUE(first_ready->view()->read(observed).ok());
+  EXPECT_TRUE(std::all_of(observed.begin(), observed.end(),
+      [](std::byte value) { return value == std::byte{0x5a}; }));
+  ASSERT_TRUE(second_ready->view()->read(observed).ok());
+  EXPECT_TRUE(std::all_of(observed.begin(), observed.end(),
+      [](std::byte value) { return value == std::byte{0x6b}; }));
 }
 
 TEST(GraphRouteBoundary, ProjectedWriteRejectsASecondRegionEffectBeforeBinding) {

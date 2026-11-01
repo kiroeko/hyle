@@ -848,6 +848,10 @@ public:
   // One carrier per actually prepared finite shape. Serial admission borrows
   // its one slot and shared IO through native retirement and all result reads.
   std::map<ExecutionShape, std::unique_ptr<Phase>> &phases, &probe_phases;
+  // Configured bounded-prefill policy only. Original Graph Invocations retain
+  // their shared scratch; IO, state pools and decode carriers stay independent.
+  std::size_t bounded_prefill_rows = 0;
+  g::InvocationWorkspace prefill_workspace;
   std::map<std::tuple<std::size_t, bool, std::size_t>, std::unique_ptr<DraftProgram>> &draft_programs;
   std::map<PrefixSamplingKey, std::unique_ptr<PrefixSamplingProgram>> &prefix_sampling_programs;
   std::size_t draft_program_graph_calls = 0, prefix_decision_graph_calls = 0;
@@ -2202,6 +2206,11 @@ public:
     Phase::ExecutionSlots::Initialization initialization{
         .invocation = {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
         .progress = {scheduler.get(), workers.get()}};
+    if ((bounded_prefill_rows || prefill_workspace.valid()) && packs_prefill(phase.family->packing)) {
+      if (!prefill_workspace.valid())
+        throw std::logic_error("bounded prefill requires its qualified shared workspace before slot initialization");
+      initialization.workspace = &prefill_workspace;
+    }
     if (!phase.state_banks.empty()) initialization.slots.emplace(inference::ProgramInitialization::Slots{
         phase.state_graph(), phase.state_sources,
         {.host_workspace = execution.staging(), .resource_budget = execution_budget ? execution_budget : cache_budget}});
@@ -2238,7 +2247,10 @@ public:
     const auto planned_slot_uses = shape_plan.uses({requests, tokens, role, completion, sampling_index, false, packing});
     std::array<g::ReplayMode, execution_slot_count> replay_modes{};
     for (std::size_t slot = 0; slot < physical_slots; ++slot)
-      replay_modes[slot] = !selected_sampler.modifiers.history.empty() ? g::ReplayMode::kCommands
+      // Effective lengths and paged layouts change between prefill requests.
+      // Auto uses commands instead of paying a fresh capture for each layout.
+      replay_modes[slot] = (!selected_sampler.modifiers.history.empty() ||
+          (packs_prefill(packing) && replay_policy == ReplayPolicy::kAuto)) ? g::ReplayMode::kCommands
           : imported_sources ? g::ReplayMode::kPreferCapture : select_replay_mode(
           replay_policy, planned_slot_uses[slot], selected_sampler.enabled);
     auto result = prepare_phase({definition, selected->program, selected_sampler},
@@ -2329,6 +2341,43 @@ public:
       TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0,
       std::size_t requests = 1, GraphRole role = GraphRole::kText) {
     prepare_execution(capacities, requests, role, completion, sampling_index, RowPacking::kPrefill);
+  }
+
+  // Qualify the complete fixed inventory before any packed Invocation exists.
+  // Failure is a typed Graph refusal, never permission to allocate private
+  // scratch instead. The original per-route slots/IO keep their own owners.
+  void prepare_shared_prefill_workspace() {
+    if (active_step || successor_step || carrier_borrowed || prefill_workspace.valid())
+      throw std::logic_error("shared prefill preparation requires its original idle uninitialized inventory");
+    if (!execution_budget)
+      throw std::logic_error("shared prefill workspace requires the original execution resource budget");
+    std::vector<g::Executable> routes;
+    std::vector<ExecutionShape> shapes;
+    for (const auto &[key, family] : families) {
+      if (!family || !packs_prefill(key.packing)) continue;
+      if (key.requests != 1)
+        throw std::logic_error("bounded shared prefill requires R1 exact routes");
+      for (const auto rows : family->chunks) {
+        const auto selected = find_child(1, rows, key.role, false, key.completion, key.sampling_index, key.packing);
+        if (!selected) throw std::logic_error("bounded prefill lost its original exact child");
+        routes.push_back(selected->program.compiled.executable);
+        const ExecutionShape shape{1, rows, key.role, key.completion, key.sampling_index, false, key.packing};
+        if (const auto found = phases.find(shape); found != phases.end())
+          for (const auto &slot : found->second->slots.slots())
+            if (slot.carrier.initialized() || slot.carrier.pending())
+              throw std::logic_error("cannot replace scratch on an existing prefill Invocation");
+        shapes.push_back(shape);
+      }
+    }
+    if (routes.empty())
+      throw inference::EvaluationFailure(hyle::Status::Unimplemented("no fixed packed prefill route supports shared scratch"));
+    prefill_workspace = take(g::InvocationWorkspace::create(routes, {.resource_budget = execution_budget}));
+    std::cerr << "prefill_shared_workspace routes=" << routes.size() << " bytes=" << prefill_workspace.bytes()
+              << " resource_budget=execution configured_rows=" << bounded_prefill_rows << '\n';
+    for (const auto &shape : shapes) {
+      const std::array rows{shape.tokens};
+      prepare_prefill_execution(rows, shape.completion, shape.sampling_index, 1, shape.role);
+    }
   }
 
   void prepare_relay_execution(std::size_t requests = 1, std::size_t sampling_index = 0,
@@ -3208,14 +3257,23 @@ public:
         if (found == phases.end() || !found->second->slots[slot].carrier.initialized())
           throw std::runtime_error("successor carrier must be cold-prepared before its predecessor submission");
       }
+      const auto phase_prepare_start = Clock::now();
       auto &phase = prepared_phase ? *prepared_phase
           : prepare_child(physical_tokens, !layer0_probe.empty(), width, role, completion, sampling_index, relay, packing);
+      step.phase_prepare_seconds = prepared_phase ? 0.0
+          : std::chrono::duration<double>(Clock::now() - phase_prepare_start).count();
+      step.phase_creations = prepared_phase ? 0 : 1;
       auto &carrier = phase.slots[slot].carrier;
       auto &program_slot = phase.slots[slot]; auto &io = program_slot.data;
       // A rejected successor never claims or clears its predecessor's run.
       if (predecessor && predecessor->phase == &phase && predecessor->state_slot == slot)
         throw std::runtime_error("successor cannot reuse its live predecessor carrier");
+      const bool initialize = !carrier.initialized();
+      const auto slot_initialize_start = Clock::now();
       initialize_slot(phase, slot);
+      step.slot_initialize_seconds = initialize
+          ? std::chrono::duration<double>(Clock::now() - slot_initialize_start).count() : 0.0;
+      step.slot_initializations = initialize ? 1 : 0;
       auto &run = *take(carrier.borrow());
       if constexpr (recording_only) {
         if (!g::detail::RecordingAccess::active(run))
@@ -3235,12 +3293,8 @@ public:
         for (std::size_t bank = 0; bank < recording->states.size(); ++bank)
           check(g::detail::RecordingAccess::bind_store(run, phase.state_sources[bank].store, recording->states[bank]));
       }
-      if (packed_target) {
-        // The prior step has really retired. Release this exact mirror alias
-        // before batch::prepare tries to refresh its original metadata writer.
-        const std::array offset_input{phase.sequence_offsets_port};
-        check(run.unbind(offset_input));
-      }
+      // Batch owns the prior offsets/control episode and withdraws it before
+      // refreshing its original metadata writer in batch::prepare below.
       auto &packed_ids = input_scratch.packed_ids, &positions = input_scratch.positions;
       packed_ids.clear(); positions.clear();
       for (std::size_t j = 0; j < width; ++j) {
@@ -3444,8 +3498,7 @@ public:
       }
       check(step.execution.bind_consumers(phase.state_graph()));
       if (packed_target) {
-        auto offsets = take(g::batch::query_offsets(run, phase.attention_nodes.front()));
-        check(run.bind(phase.sequence_offsets_port, dense(Type::kInt32, {static_cast<std::int64_t>(width + 1)}), offsets));
+        check(g::batch::bind_query_rows(run, phase.attention_nodes.front(), phase.sequence_offsets_port));
       }
       const auto batch_end = Clock::now();
       if (predecessor) check(step.execution.prepare_successor_replay());
@@ -3639,6 +3692,8 @@ public:
     const bool state_only = phase.family->completion == TextCompletion::kStateOnly;
     const auto submit_seconds = step.submit_seconds, cold_batch_seconds = step.cold_batch_seconds;
     const auto shape_admission_seconds = step.shape_admission_seconds;
+    const auto phase_prepare_seconds = step.phase_prepare_seconds, slot_initialize_seconds = step.slot_initialize_seconds;
+    const auto phase_creations = step.phase_creations, slot_initializations = step.slot_initializations;
     const auto replay_route = step.replay_route;
     const auto capture_recorded = step.capture_recorded, capture_reused = step.capture_reused;
     std::array<c::ConstTensorView, 9> probe_views;
@@ -4003,6 +4058,8 @@ public:
       observation.submit_seconds = submit_seconds; observation.step_seconds = std::chrono::duration<double>(finished - step_start).count();
       observation.cold_batch_seconds = cold_batch_seconds; observation.replay_route = replay_route;
       observation.shape_admission_seconds = shape_admission_seconds;
+      observation.phase_prepare_seconds = phase_prepare_seconds; observation.slot_initialize_seconds = slot_initialize_seconds;
+      observation.phase_creations = phase_creations; observation.slot_initializations = slot_initializations;
       observation.capture_recorded = capture_recorded; observation.capture_reused = capture_reused;
       observation.scheduled_progress = static_cast<bool>(scheduler);
       CompletedEvaluationView completed{.observation = observation, .head = *session.head,
@@ -4561,7 +4618,9 @@ struct GenerationRequest {
   const inference::RequestStopPolicy stop_policy;
   std::unique_ptr<GenerationLedger> ledger;
   struct TurnObservation {
-    Clock::time_point start{}, prefill_endpoint{}, endpoint{};
+    Clock::time_point start{}, prefill_endpoint{}, endpoint{}, arrival{};
+    double prefill_shape_admission_seconds = 0, prefill_phase_prepare_seconds = 0, prefill_slot_initialize_seconds = 0;
+    std::size_t prefill_phase_creations = 0, prefill_slot_initializations = 0;
     std::size_t output_begin = 0, output_end = 0;
     std::size_t context_before = 0, context_after = 0;
   };
@@ -4596,6 +4655,17 @@ struct GenerationRequest {
     rounds.reserve(steps - 1);
   }
 };
+
+void observe_generation_preparation(GenerationRequest &request, const CompletedEvaluationView &view, bool generation) {
+  if (generation || request.turn_observations.empty()) return;
+  auto &turn = request.turn_observations.at(request.progress.turn_index);
+  const auto &observed = view.observation;
+  turn.prefill_shape_admission_seconds += observed.shape_admission_seconds;
+  turn.prefill_phase_prepare_seconds += observed.phase_prepare_seconds;
+  turn.prefill_slot_initialize_seconds += observed.slot_initialize_seconds;
+  turn.prefill_phase_creations += observed.phase_creations;
+  turn.prefill_slot_initializations += observed.slot_initializations;
+}
 
 // Cold episode count; imported source chunks have their own explicit bound.
 std::size_t generation_record_capacity(std::span<const inference::GenerationTurn> turns,
@@ -5820,6 +5890,7 @@ struct GenerationStepAdapter final {
     });
     const auto observe = [&](std::size_t j, const CompletedEvaluationView &view) {
       auto &call = current[j]; auto &request = *call.request;
+      observe_generation_preparation(request, view, call.generation);
       observe_completed_evaluation(model, outputs[j], {call.name, &request.trace, trace_states}, view);
     };
     if (mtp) model.finish_mtp_rounds(std::span(selections.data(), selections.size()), model_eos_tokens,
@@ -6164,6 +6235,7 @@ struct SynchronousGenerationStepAdapter final {
     });
     const auto observe = [&](std::size_t j, const CompletedEvaluationView &view) {
       const auto &call = calls[j];
+      observe_generation_preparation(*call.request, view, call.generation);
       observe_completed_evaluation(model, outputs[j], {call.name, &call.request->trace, trace_states}, view);
     };
     // Controls retain their original post-submit ordering. Optional CPU-only
@@ -6558,7 +6630,8 @@ struct GenerationRequestAdapter final {
     // its state slots; execute_wave would be too late for this boundary.
     if (continuation) continuation->admission(key, request.progress.turn_index);
     preflight_generation_sampling(model, request);
-    request.admission_start = Clock::now();
+    if (!request.progress.input_open() || request.admission_start == Clock::time_point{})
+      request.admission_start = Clock::now();
   }
   void admit(inference::RequestKey key, std::span<const inference::RequestKey>) const {
     auto &request = requests[key.slot];
@@ -6732,7 +6805,17 @@ void print_generation_request(const Model &model, const GenerationRequest &reque
           << ",\"output_begin\":" << turn.output_begin << ",\"output_end\":" << turn.output_end
           << ",\"prefill_seconds\":" << std::chrono::duration<double>(turn.prefill_endpoint - turn.start).count()
           << ",\"decode_seconds\":" << std::chrono::duration<double>(turn.endpoint - turn.prefill_endpoint).count()
-          << ",\"input_ids\":[";
+          << ",\"prefill_shape_admission_seconds\":" << turn.prefill_shape_admission_seconds
+          << ",\"prefill_phase_prepare_seconds\":" << turn.prefill_phase_prepare_seconds
+          << ",\"prefill_slot_initialize_seconds\":" << turn.prefill_slot_initialize_seconds
+          << ",\"prefill_phase_creations\":" << turn.prefill_phase_creations
+          << ",\"prefill_slot_initializations\":" << turn.prefill_slot_initializations;
+      if (turn.arrival != Clock::time_point{})
+        std::cout << ",\"arrival_elapsed_seconds\":" << std::chrono::duration<double>(turn.arrival - startup).count()
+                  << ",\"request_to_first_token_seconds\":" << std::chrono::duration<double>(turn.prefill_endpoint - turn.arrival).count();
+      if (i == 0) std::cout << ",\"after_ready_first_token_seconds\":"
+                           << std::chrono::duration<double>(turn.prefill_endpoint - ready).count();
+      std::cout << ",\"input_ids\":[";
       for (std::size_t k = 0; k < request.warm_inputs[i]->size(); ++k)
         std::cout << (k ? "," : "") << (*request.warm_inputs[i])[k];
       std::cout << "]}";
@@ -6764,8 +6847,26 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     std::span<const std::size_t> sampling_indices = {}, std::span<const inference::RequestStopPolicy> stop_policies = {},
     std::size_t max_prefill_rows = SIZE_MAX, bool warmup_planned_shapes = false,
     bool decode_overlap = false, std::span<const inference::LogitsInputProvider> logits_providers = {},
-    BatchObserver &&batch_observer = nullptr) {
+    BatchObserver &&batch_observer = nullptr, bool first_turn_only = false) {
   constexpr bool mtp = Mode == GenerationMode::kMtp;
+  if (first_turn_only && (schedules.size() != 1 || prefix_enabled || warmup_planned_shapes ||
+      model.cache_plan.resident_sessions != 1 || model.cache_plan.active_sequences != 1 ||
+      model.cache_plan.max_query_rows < model.capacity))
+    throw std::runtime_error("bounded natural generation requires N1/R1, configured-C query capacity, no prefix cache and lazy shape preparation");
+  const auto configured_bound = model.capacity;
+  if (first_turn_only) {
+    if (model.active_step || model.successor_step || model.carrier_borrowed || model.prefill_workspace.valid())
+      throw std::logic_error("bounded prefill policy must be configured before original execution");
+    max_prefill_rows = (std::min)({max_prefill_rows, std::size_t{512}, configured_bound});
+    if constexpr (mtp) if (max_prefill_rows < 2)
+      throw inference::EvaluationFailure(hyle::Status::Unimplemented("bounded MTP prefill requires a configured multirow carrier"));
+    model.bounded_prefill_rows = max_prefill_rows;
+  }
+  const auto configured_record_bound = first_turn_only ? cache::add(cache::multiply(configured_bound, 2), 2) : 0;
+  if (first_turn_only)
+    std::cerr << "cold_plan policy=configured-capacity visible_turns=1 configured_capacity=" << configured_bound
+              << " configured_sessions=1 configured_active_sequences=1 query_capacity=" << model.cache_plan.max_query_rows
+              << " configured_prefill_rows=" << max_prefill_rows << " future_shape_hints=0\n";
   const auto submitted_draft_begin = model.submitted_draft_rows;
   model.prepare_default_device_mtp_successor(mtp && decode_overlap && !prefix_enabled && logits_providers.empty());
   if (!max_prefill_rows) throw std::runtime_error("prefill rows require a positive quantum");
@@ -6804,37 +6905,43 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     if (schedule.turns.empty()) throw std::runtime_error("natural request requires a nonempty turn list");
     if (schedule.turns.front().prompt.empty())
       throw std::runtime_error("natural request requires a nonempty initial prompt");
+    const auto visible_turns = first_turn_only ? std::span(schedule.turns).first(1) : std::span(schedule.turns);
     std::size_t outputs = 0;
-    for (const auto &turn : schedule.turns) {
+    for (const auto &turn : visible_turns) {
       if (!turn.max_outputs)
         throw std::runtime_error("natural turns require positive output quota");
       outputs = cache::add(outputs, turn.max_outputs);
     }
     const auto &first = schedule.turns.front().prompt;
     requests.emplace_back(schedule.id, first, trace.empty() ? trace : trace /
-        ("session" + std::to_string(requests.size()) + "_" + schedule.id), outputs, sampling_indices.empty() ? 0 : sampling_indices[requests.size()],
+        ("session" + std::to_string(requests.size()) + "_" + schedule.id), first_turn_only ? configured_bound : outputs, sampling_indices.empty() ? 0 : sampling_indices[requests.size()],
         stop_policies.empty() ? inference::RequestStopPolicy{} : stop_policies[requests.size()]);
-    auto &request = requests.back(); request.progress.bind_turns(schedule.turns);
+    auto &request = requests.back();
+    if (first_turn_only) request.progress.bind_open_turns(visible_turns, configured_bound, configured_bound);
+    else request.progress.bind_turns(visible_turns);
     if (!logits_providers.empty()) request.logits_provider = logits_providers[requests.size() - 1];
     request.progress.initial_sampling = {model.sampling_seed, static_cast<std::uint64_t>(requests.size() - 1), 0};
-    request.turn_observations.resize(schedule.turns.size());
-    request.warm_inputs.reserve(schedule.turns.size());
-    for (std::size_t i = 0; i < schedule.turns.size(); ++i) {
-      const auto &ids = schedule.turns[i].prompt;
+    request.turn_observations.reserve(first_turn_only ? configured_bound : visible_turns.size());
+    request.turn_observations.resize(visible_turns.size());
+    if (first_turn_only) request.turn_observations[0].arrival = startup;
+    request.warm_inputs.reserve(first_turn_only ? configured_bound : visible_turns.size());
+    for (std::size_t i = 0; i < visible_turns.size(); ++i) {
+      const auto &ids = visible_turns[i].prompt;
       auto owner = std::make_shared<std::vector<std::int32_t>>(cache::add(ids.size(), i ? 1 : 0));
       std::copy(ids.begin(), ids.end(), owner->begin() + (i ? 1 : 0));
       request.warm_inputs.push_back(std::move(owner));
     }
     request.prompt = *request.warm_inputs[0];
-    const auto ledger_capacity = generation_record_capacity(schedule.turns, max_prefill_rows, first.size());
+    const auto ledger_capacity = first_turn_only ? configured_record_bound
+        : generation_record_capacity(visible_turns, max_prefill_rows, first.size());
     request.ledger = std::make_unique<GenerationLedger>(ledger_capacity, model.cache_plan.candidate_boundaries);
     dispatch_bound = cache::add(dispatch_bound, ledger_capacity);
-    request.round_emitted.resize(outputs - 1);
+    request.round_emitted.resize((first_turn_only ? configured_bound : outputs) - 1);
     for (auto &emitted : request.round_emitted) emitted.reserve(model.cache_plan.candidate_boundaries);
     if (prefix) request.input = token_plans[requests.size() - 1];
-    total_turns = cache::add(total_turns, schedule.turns.size());
+    total_turns = cache::add(total_turns, visible_turns.size());
     requested_outputs = cache::add(requested_outputs, outputs);
-    decode_bound = cache::add(decode_bound, outputs - schedule.turns.size());
+    decode_bound = first_turn_only ? configured_bound : cache::add(decode_bound, outputs - visible_turns.size());
     if (model.cache_plan.resident_sessions < schedules.size())
       restore_bound = cache::add(restore_bound, cache::multiply(schedule.turns.size() - 1, ledger_capacity));
   }
@@ -6864,7 +6971,31 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       consumed = part.begin + part.rows;
     }
   };
-  for (std::size_t i = 0; i < requests.size(); ++i) {
+  if (first_turn_only) {
+    // Fixed model/service policy, independent of even the first input length.
+    // Nonterminal chunks are exactly K; only the real final chunk emits an ID.
+    constexpr std::array prefill_tiers{std::size_t{16}, std::size_t{32}, std::size_t{64},
+        std::size_t{128}, std::size_t{256}, std::size_t{512}};
+    const auto add_capacity = [&](GraphRole role) {
+      const auto lag = static_cast<std::size_t>(draft_lag(role));
+      if (model.cache_plan.max_query_rows <= lag) return;
+      const auto maximum = (std::min)(max_prefill_rows, model.cache_plan.max_query_rows - lag);
+      if (is_mtp_prefill(role) && maximum < 2) return; // T1 keeps Single/CatchupSingle.
+      std::size_t previous = 0;
+      for (const auto tier : prefill_tiers) {
+        const auto rows = (std::min)(tier, maximum);
+        if (rows != previous) note_carrier(role, rows, 0, TextCompletion::kEmitNext, true);
+        previous = rows;
+        if (rows == maximum) break; // Include a configured non-power-of-two maximum exactly once.
+      }
+      if (configured_bound > max_prefill_rows && maximum == max_prefill_rows)
+        note_carrier(role, maximum, 0, TextCompletion::kStateOnly, true);
+    };
+    if constexpr (mtp) {
+      add_capacity(GraphRole::kMtpPrefill);
+      add_capacity(GraphRole::kMtpCatchupPrefill);
+    } else add_capacity(GraphRole::kText);
+  } else for (std::size_t i = 0; i < requests.size(); ++i) {
     std::vector<std::size_t> suffixes{requests[i].prompt.size()};
     if (prefix) for (std::size_t j = 0; j < i; ++j) {
       const auto length = requests[j].prompt.size();
@@ -6908,14 +7039,14 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   // Normal rebuild preserves original committed chunks, not original proposals.
   // Every consumed verifier prefix can become a teacher-forced prefill chunk.
   prompt_demand.inventory({prompt_role(1), TextCompletion::kEmitNext}, 1);
-  if constexpr (mtp) for (std::size_t rows = 2;
+  if constexpr (mtp) for (std::size_t rows = 2; !first_turn_only &&
       rows <= (std::min)(model.cache_plan.candidate_boundaries, model.cache_plan.max_query_rows); ++rows)
     prompt_demand.inventory({GraphRole::kMtpPrefill, TextCompletion::kEmitNext}, rows);
   for (std::size_t sampling_index = 0; sampling_index < model.sampling_configuration_count(); ++sampling_index) {
     if (std::ranges::none_of(requests, [&](const auto &request) { return request.sampling_index == sampling_index; })) continue;
     const auto matches_member = [&](std::size_t member) { return requests[member].sampling_index == sampling_index; };
     const auto policy_decoding_requests = static_cast<std::size_t>(std::count_if(requests.begin(), requests.end(), [&](const auto &request) {
-      return request.sampling_index == sampling_index && std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; });
+      return request.sampling_index == sampling_index && (first_turn_only || std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; }));
     }));
     const auto dynamic_decoding_requests = static_cast<std::size_t>(std::count_if(requests.begin(), requests.end(), [&](const auto &request) {
       return request.sampling_index == sampling_index && request.logits_provider &&
@@ -6983,7 +7114,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       // Length-aware carriers are needed for batching, bounded chunks or an
       // unknown prefix suffix; do not replace uniform math merely because the
       // more general carrier is available.
-      const bool variable_prefill = width > 1 || prefill.bounded() || prefix_enabled;
+      const bool variable_prefill = first_turn_only || width > 1 || prefill.bounded() || prefix_enabled;
       if (variable_prefill && (role == GraphRole::kText || is_mtp_prefill(role)) && model.layer0_probe.empty()) {
         std::vector<std::size_t> capacities;
         if (const auto *controls = carrier_demand.find(key))
@@ -7010,9 +7141,11 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
           capacities.erase(std::unique(capacities.begin(), capacities.end()), capacities.end());
         }
         if (!capacities.empty()) packed = model.prepare_prefill_family(capacities, completion, sampling_index, width, role);
+        if (first_turn_only && !packed)
+          throw inference::EvaluationFailure(hyle::Status::Unimplemented("configured bounded prefill has no original packed implementation"));
         if (packed) {
           for (const auto rows : capacities) {
-            const auto uses = carrier_demand.uses(key, rows);
+            const auto uses = first_turn_only ? configured_bound : carrier_demand.uses(key, rows);
             model.plan_replay_uses(rows, width, cache::add(uses, width == 1 ? restore_bound : 0),
                 role, completion, sampling_index, RowPacking::kPrefill);
           }
@@ -7056,6 +7189,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
                 std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; });
           })) model.prepare_recursive_round_programs(index, dynamic);
   model.freeze_shape_plan();
+  if (first_turn_only) model.prepare_shared_prefill_workspace();
   if (warmup_planned_shapes) {
     const auto begin = Clock::now();
     const auto shapes = model.prepare_planned_execution();
@@ -7074,17 +7208,17 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   if constexpr (!mtp) if (decode_bound) {
     const std::array decode{std::size_t{1}};
     for (std::size_t i = 0; i < model.sampling_configuration_count(); ++i)
-      if (std::ranges::any_of(requests, [i](const auto &request) { return request.sampling_index == i &&
-          std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; }); }))
+      if (std::ranges::any_of(requests, [i, first_turn_only](const auto &request) { return request.sampling_index == i &&
+          (first_turn_only || std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; })); }))
       {
         model.prepare_execution(decode, 1, GraphRole::kText, TextCompletion::kEmitNext, i);
         const auto &sampling = model.sampling_configuration(i).configuration;
         if (decode_overlap && model.cache_plan.in_flight_batches >= 2 &&
             DeviceRelayCapabilities{model.execution.kind(), model.execution.has_cpu_assist(),
                 bool(model.scheduler), sampling.enabled, !sampling.modifiers.empty()}.eligible()) {
-          const auto eligible = static_cast<std::size_t>(std::count_if(requests.begin(), requests.end(), [i](const auto &request) {
-            return request.sampling_index == i && std::ranges::any_of(request.progress.turns(),
-                [](const auto &turn) { return turn.max_outputs > 1; });
+          const auto eligible = static_cast<std::size_t>(std::count_if(requests.begin(), requests.end(), [i, first_turn_only](const auto &request) {
+            return request.sampling_index == i && (first_turn_only || std::ranges::any_of(request.progress.turns(),
+                [](const auto &turn) { return turn.max_outputs > 1; }));
           }));
           for (std::size_t width = 1; width <= (std::min)(eligible, model.cache_plan.active_sequences); ++width) {
             if (width != 1) model.prepare_execution(decode, width, GraphRole::kText, TextCompletion::kEmitNext, i);
@@ -7095,9 +7229,9 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   }
   if (mtp && decode_bound && model.max_drafts() == 1 && !model.recursive_mtp())
     for (std::size_t index = 0; index < model.sampling_configuration_count(); ++index)
-      if (std::ranges::any_of(requests, [index](const auto &request) {
+      if (std::ranges::any_of(requests, [index, first_turn_only](const auto &request) {
           return request.sampling_index == index && !request.logits_provider &&
-              std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; });
+              (first_turn_only || std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; }));
         })) for (const auto role : roles) if (drafts_token(role))
           model.prepare_execution(pair, 1, role, TextCompletion::kEmitNext, index);
   if constexpr (mtp) if (decode_overlap && decode_bound && model.cache_plan.in_flight_batches >= 2 &&
@@ -7115,7 +7249,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   inference::RequestLoop request_loop;
   if (decode_overlap && !requests.empty() && decode_bound && model.cache_plan.active_sequences == 1 &&
       (requests.size() == 1 || model.cache_plan.resident_sessions == 1) &&
-      std::ranges::any_of(requests.front().progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; })) {
+      (first_turn_only || std::ranges::any_of(requests.front().progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; }))) {
     auto *prepared = prefix_enabled ? nullptr : &requests.front().session;
     if constexpr (mtp) (void)model.prepare_mtp_decode_recordings(requests.front().sampling_index, prepared);
     else (void)model.prepare_ordinary_decode_recordings(requests.front().sampling_index, prepared);
@@ -7125,7 +7259,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     requests[index].request_key = request_loop.enqueue(index);
   std::vector<std::size_t> dispatch, dispatch_turns;
   dispatch.reserve(dispatch_bound); dispatch_turns.reserve(dispatch_bound);
-  std::vector<std::size_t> evictions; evictions.reserve(total_turns);
+  std::vector<std::size_t> evictions; evictions.reserve(first_turn_only ? configured_bound : total_turns);
   std::size_t completed = 0, admitted = 0;
   struct BatchObservation {
     std::size_t tokens, active_rows, physical_rows; GraphRole role; bool generation;
@@ -7293,7 +7427,37 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     if (pumped.waiting_retirement && continuation.drive_cursor.awaiting_current &&
         model.active_step && model.active_step->execution.has_completion())
       model.active_step->execution.wait().IgnoreError();
-    if (!pumped.executed && !pumped.waiting_retirement && completed != requests.size())
+    bool input_arrived = false;
+    if (first_turn_only && !pumped.waiting_retirement && requests[0].progress.waiting_for_input()) {
+      auto &request = requests[0];
+      if (model.active_step || model.successor_step || model.carrier_borrowed || !request.session || request.session->pending ||
+          !request_loop.active().empty())
+        throw std::logic_error("next input cannot arrive before its original published wave retires");
+      const auto arrival = Clock::now();
+      const auto visible = request.progress.turns().size();
+      // This is workload-driver EOF/ingress, outside every cold-planning loop.
+      // No future turn length or quota was supplied to the Model beforehand.
+      const auto &source = schedules.front().turns;
+      if (visible == source.size()) request.progress.close_input();
+      else {
+        const auto &next = source[visible];
+        if (visible >= configured_bound || next.prompt.size() >= configured_bound ||
+            !next.max_outputs || next.max_outputs > configured_bound)
+          throw std::out_of_range("input exceeds configured turn, prompt or output bound");
+        auto owner = std::make_shared<std::vector<std::int32_t>>(cache::add(next.prompt.size(), 1));
+        std::copy(next.prompt.begin(), next.prompt.end(), owner->begin() + 1);
+        request.progress.extend_turns(std::span(source).first(visible + 1));
+        request.warm_inputs.push_back(std::move(owner));
+        request.turn_observations.emplace_back(); request.turn_observations.back().arrival = arrival;
+        request.admission_start = arrival;
+        ++total_turns; requested_outputs = cache::add(requested_outputs, next.max_outputs);
+      }
+      std::cerr << "input_arrival visible_turns=" << request.progress.turns().size()
+                << " eof=" << !request.progress.input_open() << " elapsed_seconds="
+                << std::chrono::duration<double>(arrival - startup).count() << '\n';
+      request_loop.wake(request.request_key); input_arrived = true;
+    }
+    if (!pumped.executed && !pumped.waiting_retirement && !input_arrived && completed != requests.size())
       throw std::runtime_error("generation admission has no runnable resident request");
   }
   const auto post_endpoint_seconds = std::chrono::duration<double>(Clock::now() - endpoint).count();
@@ -7345,6 +7509,10 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       << ",\"requested_output_tokens\":" << requested_outputs << ",\"generated_tokens\":" << generated << ",\"generated_decode_tokens\":" << generated - total_turns
       << ",\"actual_graph_calls\":" << graph_calls << ",\"prefill_graph_calls\":" << actual_prefill_calls << ",\"decode_graph_calls\":" << actual_decode_calls
       << ",\"graph_participations\":" << actual_fresh_participations + restored.graph_calls + model.frontier_sampling_graph_calls + model.draft_program_graph_calls + model.prefix_decision_graph_calls
+      << ",\"cold_planning\":\"" << (first_turn_only ? "configured_capacity" : "full_schedule_preknowledge_invalid")
+      << "\",\"future_shape_hints\":" << (first_turn_only ? 0 : 1)
+      << ",\"configured_prefill_rows\":" << model.bounded_prefill_rows
+      << ",\"shared_prefill_scratch_bytes\":" << model.prefill_workspace.bytes()
       << ",\"logical_dispatches\":" << dispatch.size() << ",\"logical_prompt_tokens\":" << logical_prompt << ",\"logical_user_prompt_tokens\":" << user_prompt
       << ",\"pending_flushed_tokens\":" << total_turns - requests.size() << ",\"prefill_target_rows\":" << prefill_tokens
       << ",\"verified_target_rows\":" << verified
@@ -7465,7 +7633,7 @@ int qwen35::run(int argc, char **argv) {
     std::filesystem::path input, continuation, trace, layer0_probe, decode_ids, schedule_file, session_file, draft_vocabulary;
     std::size_t steps = 4, capacity = 128, max_sessions = 0, active_sequences = 0, cache_bytes = 0, max_drafts = 1, cpu_ffn_layers = 0;
     std::size_t max_prefill_rows = SIZE_MAX;
-    bool warmup_planned_shapes = false, decode_overlap = true;
+    bool warmup_planned_shapes = false, decode_overlap = true, require_bounded_generation = false;
     bool progress = false, trace_states = true, explicit_steps = false;
     bool mtp_enabled = false;
     bool explicit_mtp_drafts = false;
@@ -7491,6 +7659,12 @@ int qwen35::run(int argc, char **argv) {
       const std::string value = argv[++i];
       if (option == "--inputs") input = value;
       else if (option == "--prefill-chunk-tokens") max_prefill_rows = positive_size(option, value);
+      else if (option == "--diagnostic-first-turn-only") {
+        // Accept the old diagnostic spelling during the transition. Natural
+        // single-session generation now selects this policy by default.
+        if (value != "1") throw std::runtime_error("--diagnostic-first-turn-only only accepts 1; future-turn planning cannot be enabled with this option");
+        require_bounded_generation = true;
+      }
       else if (option == "--decode-overlap") {
         // Internal benchmark/diagnostic override. Normal use selects the
         // automatic policy and falls back using actual execution facts.
@@ -7633,6 +7807,18 @@ int qwen35::run(int argc, char **argv) {
     const bool natural_single = !scheduled && !explicit_continuation && !explicit_decode_ids &&
         layer0_probe.empty() && !preparation_diagnostics;
     const bool natural_generation = natural_schedule || natural_single;
+    // The default single-session route admits later turns only after the
+    // previous published wave retires. Auto N/R are configuration bounds of
+    // one here; future schedule lengths and quotas cannot select this policy.
+    // Untested backends, sampling, wider MTP, multi-session/prefix and explicit
+    // planned workloads retain their finite route and invalid-performance label.
+    const bool bounded_generation = natural_generation && !multiple_schedules && !prefix_enabled &&
+        !warmup_planned_shapes && max_sessions <= 1 && active_sequences <= 1 &&
+        backend_selection.primary == qwen35::BackendKind::kCuda && cpu_ffn_layers == 0 &&
+        !sampler.enabled && sampler.modifiers.empty() &&
+        (!mtp_enabled || (capacity > 1 && max_drafts == 1 && min_draft_probability == 0));
+    if (require_bounded_generation && !bounded_generation)
+      throw std::runtime_error("bounded natural generation requires CUDA without CPU assist, unmodified greedy, ordinary or K1 MTP, one session, auto or 1 for max-sessions/active-sequences, prefix off and lazy shape preparation");
     if (max_prefill_rows != SIZE_MAX && !natural_generation)
       throw std::runtime_error("--prefill-chunk-tokens requires natural generation; fixed replay is not supported");
     if (mtp_enabled && grammar == Grammar::kFixedInput)
@@ -7658,7 +7844,11 @@ int qwen35::run(int argc, char **argv) {
     else if (multiple_schedules)
       schedules = qwen35::benchmark::read_session_schedules(session_file, geometry.vocabulary, capacity,
           std::vector<qwen35::benchmark::SessionSchedule>{}.max_size(), true);
-    const auto input_sessions = natural_schedule ? generation_schedules.size() : scheduled ? schedules.size() : std::size_t{1};
+    if (bounded_generation && natural_schedule && generation_schedules.size() != 1)
+      throw std::runtime_error("bounded workload driver accepts exactly one session");
+    const auto input_sessions = bounded_generation ? std::size_t{1}
+        : natural_schedule ? generation_schedules.size() : scheduled ? schedules.size() : std::size_t{1};
+    if (bounded_generation && active_sequences == 0) active_sequences = 1;
     const auto recurrent_payload = qwen35::recurrent_bytes(qwen35::state_schema_for(geometry, capacity), geometry);
     // Configuration describes a maximum, never permission to overrun context.
     // Actual calls additionally clip against output quota and remaining rows.
@@ -7690,7 +7880,12 @@ int qwen35::run(int argc, char **argv) {
     std::vector<std::size_t> planned_chunks;
     std::size_t mtp_schema_rows = 0;
     bool mtp_has_decode = !scheduled && steps > 1;
-    if (natural_generation) {
+    if (bounded_generation) {
+      const auto &first = generation_schedules.front().turns.front();
+      planned_chunks.push_back(prefill.next(first.prompt.size()).rows);
+      mtp_schema_rows = capacity;
+      mtp_has_decode = mtp_enabled && capacity > 1;
+    } else if (natural_generation) {
       for (const auto &request : generation_schedules) for (std::size_t i = 0; i < request.turns.size(); ++i) {
         const auto tokens = qwen35::cache::add(request.turns[i].prompt.size(), i ? 1 : 0);
         const auto chunk_rows = prefill.next(tokens).rows;
@@ -7726,7 +7921,7 @@ int qwen35::run(int argc, char **argv) {
         token_plans.push_back(qwen35::cache::token_plan(chunks, capacity));
       }
     }
-    const auto max_query_rows = (std::max)({*std::max_element(planned_chunks.begin(), planned_chunks.end()), mtp_schema_rows,
+    const auto max_query_rows = bounded_generation ? capacity : (std::max)({*std::max_element(planned_chunks.begin(), planned_chunks.end()), mtp_schema_rows,
         mtp_enabled && mtp_has_decode ? max_drafts + 1 : std::size_t{1}});
     const auto requested_active = (std::min)(active_sequences, input_sessions);
     // A continuous conditional successor retains its completed producer until
@@ -7737,9 +7932,9 @@ int qwen35::run(int argc, char **argv) {
         qwen35::DeviceRelayCapabilities{backend_selection.primary, cpu_ffn_layers != 0,
             progress, sampler.enabled, !sampler.modifiers.empty()}.eligible() &&
         replay != qwen35::ReplayPolicy::kCommands && (trace.empty() || !trace_states) &&
-        std::ranges::any_of(generation_schedules, [](const auto &request) {
+        (bounded_generation ? capacity >= 10 : std::ranges::any_of(generation_schedules, [](const auto &request) {
           return std::ranges::any_of(request.turns, [](const auto &turn) { return turn.max_outputs >= 10; });
-        });
+        }));
     const bool continuous_mtp_candidate = overlap_selected && mtp_enabled && !prefix_enabled &&
         cached_slots == 1 && requested_active == 1 && weight_source.cache_storage.empty() &&
         geometry.attention_layers() && geometry.vocabulary <= (std::int64_t{1} << 24) &&
@@ -7800,9 +7995,9 @@ int qwen35::run(int argc, char **argv) {
     if (!trace.empty()) model.trace_routes = trace / "routes";
     if (natural_generation) {
       if (mtp_enabled) return qwen35::run_generation_sessions<qwen35::GenerationMode::kMtp>(model,
-          generation_schedules, trace, trace_states, startup, constructed, prefix_enabled, token_plans, {}, {}, max_prefill_rows, warmup_planned_shapes, overlap_selected);
+          generation_schedules, trace, trace_states, startup, constructed, prefix_enabled, token_plans, {}, {}, max_prefill_rows, warmup_planned_shapes, overlap_selected, {}, nullptr, bounded_generation);
       return qwen35::run_generation_sessions<qwen35::GenerationMode::kText>(model,
-          generation_schedules, trace, trace_states, startup, constructed, prefix_enabled, token_plans, {}, {}, max_prefill_rows, warmup_planned_shapes, overlap_selected);
+          generation_schedules, trace, trace_states, startup, constructed, prefix_enabled, token_plans, {}, {}, max_prefill_rows, warmup_planned_shapes, overlap_selected, {}, nullptr, bounded_generation);
     }
 
     // These owners are declared after Model, including on exception paths.

@@ -2,6 +2,8 @@
 #include "gated_delta_scale.h"
 #include "indexed_state.h"
 #include "indexed_conv.h"
+#include "packed_gdn.h"
+#include "../compute_ggml_runtime/active_rows.h"
 
 #include <algorithm>
 #include <array>
@@ -563,6 +565,40 @@ bool tensor_operation_supports(Operation operation,
                                std::span<const TensorDesc> inputs,
                                std::span<const TensorDesc> outputs,
                                int native_device) noexcept {
+  if (const auto packed = operation.custom_as<sequence_ops::PackedRowMatMul>()) {
+    std::array<TensorDesc, 1> inferred;
+    if (ggml_hyle_cuda_matmul_active_rows_contract() != kActiveRowsMatMulContract ||
+        inputs.size() != 3 || outputs.size() != 1 ||
+        !packed->infer_output_descriptions(inputs, inferred).ok() ||
+        inferred[0] != outputs[0]) return false;
+    return representable(inputs[0]) && representable(inputs[1]) &&
+        representable(inputs[2], true) && representable(outputs[0]);
+  }
+  if (const auto packed = operation.custom_as<sequence_ops::PackedGatedDeltaNet>()) {
+    if (packed->snapshot_count != 1 || inputs.size() != 7 || outputs.size() != 2 ||
+        ggml_hyle_cuda_gdn_r1_packed_contract() != kPackedGdnR1Contract ||
+        ggml_hyle_cuda_gdn_output_scale_contract() != ggml_runtime::kGdnOutputScaleContract)
+      return false;
+    std::array<TensorDesc, 2> inferred;
+    if (!packed->infer_output_descriptions(inputs, inferred).ok() ||
+        !std::ranges::equal(inferred, outputs))
+      return false;
+    for (const auto &input : inputs.first(6))
+      if (input.data_type() != DataType::kFloat32 || !input.is_dense() || !representable(input))
+        return false;
+    if (!representable(inputs[6], true)) return false;
+    for (const auto &output : outputs)
+      if (output.data_type() != DataType::kFloat32 || !output.is_dense() || !representable(output))
+        return false;
+    const auto q = inputs[0].dimensions(), v = inputs[2].dimensions();
+    const auto state = inputs[5].dimensions();
+    const auto scores = outputs[0].element_count().value();
+    const auto states = outputs[1].element_count().value();
+    return q[0] > 0 && q[0] <= INT32_MAX && state[0] == 1 && inputs[3].dimensions()[2] == 1 &&
+        (q[2] == 16 || q[2] == 32 || q[2] == 64 || q[2] == 128) &&
+        q[2] == v[2] && scores <= std::size_t{INT32_MAX} &&
+        states <= std::size_t{INT32_MAX} - scores;
+  }
   // Concat and GatherElements move I32 storage without numerical conversion.
   const bool integer_storage =
       (operation.get_if<Concat>() || operation.custom_as<model_ops::GatherElements>()) &&
@@ -1140,6 +1176,16 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
     result = ggml_lightning_indexer(
         context, values[node.inputs[0]], values[node.inputs[1]],
         values[node.inputs[2]], values[node.inputs[3]]);
+  } else if (node.operation.custom_as<sequence_ops::PackedRowMatMul>()) {
+    auto *left = native_shape(context, values[node.inputs[0]], recipe.values[node.inputs[0]]);
+    auto *right = ggml_transpose(context, values[node.inputs[1]]);
+    if (!ggml_is_contiguous(right)) right = ggml_cont(context, right);
+    // Preserve the ordinary F32 accumulator and original final Cast. Only
+    // this explicit operation admits the native host-prefix dispatch marker.
+    result = ggml_mul_mat(context, right, left);
+    if (!ggml_prec_set_acc(result, GGML_PREC_F32)) return {};
+    result->op_params[kActiveRowsMatMulParameter] = kActiveRowsMatMulContract;
+    set_matmul_active_rows(result, -1);
   } else if (node.operation.get_if<MatMul>() ||
              node.operation.custom_as<model_ops::DenseLinearF32>()) {
     auto *left = native_shape(context, values[node.inputs[0]],
@@ -1278,6 +1324,51 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
     ggml_mul_mat_set_hint(result, GGML_HINT_SRC0_IS_HADAMARD);
     if (!ggml_prec_set_acc(result, GGML_PREC_F32))
       return {};
+  } else if (const auto descriptor = node.operation.custom_as<sequence_ops::PackedGatedDeltaNet>()) {
+    // Packed [C,H,D] is already native [D,H,C,1]. Keep the physical
+    // capacity/strides immutable; only the checked src8 controls loop length.
+    const auto packed_input = [&](std::size_t port) {
+      const auto id = node.inputs[port];
+      return native_shape(context, values[id], recipe.values[id]);
+    };
+    ggml_tensor *packed;
+    if (node.indexed_state) {
+      auto *pool = values[node.inputs[5]];
+      auto *v = packed_input(2);
+      const auto width = v->ne[0], heads = v->ne[1];
+      auto *slots = ggml_view_4d(context, pool, width, width, heads,
+          pool->ne[1], static_cast<std::size_t>(width) * sizeof(float),
+          static_cast<std::size_t>(width * width) * sizeof(float), pool->nb[1], 0);
+      // Indexed native output contains only Y; the original pool writer is
+      // owned by the enclosing Store effect, not by a synthetic state tail.
+      packed = ggml_new_tensor_4d(context, GGML_TYPE_F32,
+          v->ne[0], v->ne[1], v->ne[2], v->ne[3]);
+      packed->op = GGML_OP_GATED_DELTA_NET;
+      for (std::size_t port = 0; port < 5; ++port) packed->src[port] = packed_input(port);
+      packed->src[5] = slots;
+      packed->src[6] = packed_input(6);
+      packed->src[7] = ggml_reshape_2d(context, packed_input(7), 1, 1);
+      packed->src[8] = packed_input(8);
+      packed->op_params[0] = 1;
+      packed->op_params[kIndexedStateParameter] = kIndexedStateContract;
+    } else {
+      packed = ggml_gated_delta_net(context, packed_input(0), packed_input(1), packed_input(2),
+          packed_input(3), packed_input(4), packed_input(5), 1);
+      packed->src[8] = packed_input(6);
+    }
+    packed->op_params[kPackedGdnR1Parameter] = kPackedGdnR1Contract;
+    ggml_runtime::set_gdn_output_scale(packed, descriptor->output_scale);
+    if (node.indexed_state)
+      return {as_output(context, packed, recipe.values[node.outputs[0]])};
+    const auto score_count = static_cast<std::int64_t>(
+        recipe.values[node.outputs[0]].element_count().value());
+    const auto state_count = static_cast<std::int64_t>(
+        recipe.values[node.outputs[1]].element_count().value());
+    auto *scores = ggml_cont(context, ggml_view_1d(context, packed, score_count, 0));
+    auto *state = ggml_cont(context, ggml_view_1d(context, packed, state_count,
+        static_cast<std::size_t>(score_count) * sizeof(float)));
+    return {as_output(context, scores, recipe.values[node.outputs[0]]),
+            as_output(context, state, recipe.values[node.outputs[1]])};
   } else if (node.operation.get_if<GatedDeltaNet>() ||
              node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>()) {
     const auto recurrent_input = [&](std::size_t port) {

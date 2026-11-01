@@ -81,6 +81,12 @@ RegionAccess::inspect_projection_node(const PlanState &plan,
   return call.facts;
 }
 
+Result<RegionNodeAccess> RegionAccess::inspect_node(Invocation&invocation,NodeId node,
+    compute::ProviderExtensionId extension)noexcept{
+  auto*state=InvocationAccess::state(invocation);
+  HYLE_RETURN_IF_ERROR(resource_control_ready(state));
+  return inspect_projection_node(*state->plan,state,node,extension);
+}
 Result<bool> RegionAccess::configure_node(Invocation&invocation,NodeId node,
     compute::ProviderExtensionId extension,const void*configuration)noexcept{
   auto*state=InvocationAccess::state(invocation);

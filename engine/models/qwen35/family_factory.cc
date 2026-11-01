@@ -563,7 +563,11 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     }
     r.publish(definition.hidden_port);
     if (completion == TextCompletion::kEmitNext) {
-      if (caller_small_results && definition.sampling_valid_port) definition.id_port = r.copy(definition.id_port);
+      // A packed MTP token may be a reshape View of the native TopK result.
+      // Keep its published bytes outside reusable Invocation scratch, exactly
+      // as ordinary caller-owned small results, without another sampler draw.
+      if ((caller_small_results && definition.sampling_valid_port) || (packed_prefill && is_mtp_prefill(role)))
+        definition.id_port = r.copy(definition.id_port);
       r.publish(definition.logits_port); r.publish(definition.id_port);
     }
     if (successor_eligible) {

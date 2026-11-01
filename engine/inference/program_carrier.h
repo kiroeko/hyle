@@ -9,6 +9,7 @@
 
 #include "hyle/graph/progress.h"
 #include "hyle/graph/slots.h"
+#include "hyle/graph/workspace.h"
 #include "execution_resources.h"
 #include "prepared_output.h"
 #include "program_io.h"
@@ -35,6 +36,7 @@ struct ProgramInitialization final {
   graph::InvocationOptions invocation{};
   Progress progress{};
   std::optional<Slots> slots{};
+  const graph::InvocationWorkspace *workspace = nullptr;
 };
 
 // The original accepted Completion owns the one retention attachment. Submit
@@ -100,7 +102,11 @@ public:
     const auto &progress = installation.progress;
     if ((progress.scheduler == nullptr) != (progress.workers == nullptr))
       return Status::InvalidArgument("program progress requires both original host runtimes");
-    HYLE_ASSIGN_OR_RETURN(auto candidate, compiled_->executable.create_invocation(installation.invocation));
+    HYLE_ASSIGN_OR_RETURN(auto candidate, ([&]() -> Result<graph::Invocation> {
+      if (installation.workspace)
+        return compiled_->executable.create_invocation(installation.invocation, *installation.workspace);
+      return compiled_->executable.create_invocation(installation.invocation);
+    })());
     // Selection is already fixed by prepare(). Compare the original complete
     // canonical identity, including derived dimensions, rather than asking a
     // model to restate a family ordinal and a subset of its shape bindings.

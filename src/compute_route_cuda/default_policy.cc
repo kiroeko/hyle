@@ -4,6 +4,7 @@
 
 #include "../compute/provider_internal.h"
 #include "hyle/compute/model_ops.h"
+#include "hyle/compute/sequence_ops.h"
 
 namespace hyle::compute::cuda::internal {
 namespace {
@@ -107,13 +108,14 @@ std::uint32_t rank(Family family, Family primary,
 
 bool admitted_matrix_candidate(Family family,
                                const ProviderOperationRequest &request) noexcept {
-  if (family != Family::kCublas || request.inputs.size() != 2 ||
+  const bool packed_rows = request.operation.custom_as<sequence_ops::PackedRowMatMul>().has_value();
+  if (family != Family::kCublas || request.inputs.size() != (packed_rows ? 3u : 2u) ||
       request.outputs.size() != 1)
     return false;
   const auto plain_matrix = [](const TensorDesc &description) noexcept {
     return description.is_plain() && description.rank() == 2;
   };
-  return std::ranges::all_of(request.inputs, plain_matrix) &&
+  return std::ranges::all_of(request.inputs.first(2), plain_matrix) &&
          std::ranges::all_of(request.outputs, plain_matrix);
 }
 

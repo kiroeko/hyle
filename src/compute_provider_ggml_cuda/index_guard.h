@@ -12,6 +12,19 @@ cudaError_t check_indices(const std::int32_t *source, std::int32_t *safe,
                           std::size_t count, std::int64_t extent,
                           unsigned *status, cudaStream_t stream) noexcept;
 
+// One packed sequence [0,L], 0 <= L <= physical capacity. Invalid offsets or
+// an earlier sequence error produce safe [0,-1]; public output publication
+// remains gated by the same original Queue device status.
+cudaError_t check_packed_r1_offsets(const std::int32_t *source,
+    std::int32_t *safe, std::int64_t capacity, unsigned *status,
+    cudaStream_t stream) noexcept;
+
+// Same original status/safe-offset path, additionally proving that the actual
+// device carrier agrees with its typed host-owned cold configuration.
+cudaError_t check_packed_r1_offsets_expected(const std::int32_t *source,
+    std::int32_t *safe, std::int64_t capacity, std::int32_t expected_rows,
+    unsigned *status, cudaStream_t stream) noexcept;
+
 // Both original slot IDs and the finite selector are checked. A prior error
 // or invalid control writes -1, which the original indexed kernels reject
 // before any source read or Store destination write.

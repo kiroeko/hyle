@@ -22,4 +22,12 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
   hyle_add_test(compute_provider_ggml_cuda NAME attention SOURCES attention_test.cc
     DEPS hyle_compute_backend_cuda hyle_compute_route_cuda hyle_graph_route_cuda)
   hyle_stage_runtime(hyle_compute_provider_ggml_cuda_attention_test)
+  hyle_add_test(compute_provider_ggml_cuda NAME packed_gdn SOURCES packed_gdn_test.cc
+    DEPS hyle_compute_backend_cuda hyle_graph_route_cuda)
+  hyle_stage_runtime(hyle_compute_provider_ggml_cuda_packed_gdn_test)
+  hyle_add_test(compute_provider_ggml_cuda NAME packed_rows SOURCES packed_row_matmul_test.cc
+    DEPS hyle_compute_backend_cuda)
+  target_include_directories(hyle_compute_provider_ggml_cuda_packed_rows_test PRIVATE
+    "${HYLE_SOURCE_DIR}/src/compute")
+  hyle_stage_runtime(hyle_compute_provider_ggml_cuda_packed_rows_test)
 endif()

@@ -24,6 +24,7 @@
 #include <ggml-impl.h>
 
 #include "hyle/compute/detail/capture_bindings.h"
+#include "hyle/compute/detail/packed_row_matmul.h"
 #include "hyle/compute/route_policy.h"
 #include "hyle/container/small_vector.h"
 #include "hyle/mem/std_allocator.h"
@@ -36,6 +37,9 @@
 #include "tensor_program.h"
 #include "indexed_state.h"
 #include "indexed_conv.h"
+#include "packed_gdn.h"
+#include "active_rows.h"
+#include "../compute_ggml_runtime/active_rows.h"
 #include "sink_mask.h"
 
 namespace hyle::compute::ggml_cuda {
@@ -75,6 +79,8 @@ struct Program final {
     std::size_t count = 0;
     std::int64_t extent = 0;
     std::uint32_t source_input = UINT32_MAX;
+    bool packed_r1_offsets = false;
+    bool host_rows = false;
   };
 
   CUcontext primary = nullptr;
@@ -84,6 +90,7 @@ struct Program final {
   std::vector<std::vector<float>> hadamards;
   std::vector<std::vector<std::int32_t>> snapshot_indices;
   std::vector<IndexCheck> index_checks;
+  std::vector<std::uint32_t> row_inputs;
   bool transpose_constant = false; // Only the cold constant factory sets it.
   std::vector<WorkspaceChunk> workspace_chunks{};
   WorkspaceRequirement workspace{};
@@ -237,6 +244,7 @@ struct CheckedIndicesKey final {
   ggml_tensor *source = nullptr;
   std::size_t count = 0;
   std::int64_t extent = 0;
+  bool packed_r1_offsets = false;
   bool operator==(const CheckedIndicesKey &) const = default;
 };
 struct CheckedIndicesHash final {
@@ -247,11 +255,22 @@ struct CheckedIndicesHash final {
     };
     combine(key.count);
     combine(std::hash<std::int64_t>{}(key.extent));
+    combine(key.packed_r1_offsets);
     return hash;
   }
 };
 
 struct Invocation final {
+  const Program *program_owner = nullptr;
+  struct RowConfiguration final {
+    std::uint32_t input = 0;
+    ConstTensorView offsets;
+    std::int32_t rows = -1;
+  };
+  struct RowNode final {
+    ggml_tensor *tensor = nullptr;
+    std::uint32_t input = 0;
+  };
   CUcontext primary = nullptr;
   ggml_runtime::MetadataArena arena;
   ggml_backend *backend = nullptr;
@@ -276,6 +295,8 @@ struct Invocation final {
   std::vector<ggml_tensor *> views;
   std::vector<void *> pointers;
   std::vector<ggml_tensor *> safe_indices;
+  std::vector<RowConfiguration> row_configurations;
+  std::vector<RowNode> row_nodes;
   // A failed outer record must be ended/aborted before its private streams
   // can be observed. The original Queue Completion owns this invocation.
   cudaStream_t failed_recording_stream = nullptr;
@@ -630,6 +651,7 @@ struct Invocation final {
 
   Status build(const Program &program, mem::AllocatorRef allocator,
                 bool metadata_only) {
+    program_owner = &program;
     primary = program.primary;
     workspace.initialize(program.device);
     cuda::detail::ScopedPrimaryContext scope(primary);
@@ -674,6 +696,10 @@ struct Invocation final {
     buffers.resize(count, nullptr);
     pointers.resize(recipe.inputs.size() + recipe.outputs.size());
     safe_indices.reserve(program.index_checks.size());
+    row_configurations.reserve(program.row_inputs.size());
+    for (const auto input : program.row_inputs)
+      row_configurations.push_back({input, {}, -1});
+    row_nodes.reserve(recipe.nodes.size());
     backend = ggml_backend_cuda_init(program.device);
     if (!backend)
       return Status::ResourceExhausted("ggml CUDA backend allocation failed");
@@ -706,7 +732,7 @@ struct Invocation final {
         }
         index_id = recipe.inputs[check.input];
         original_ids = tensors[index_id];
-        const CheckedIndicesKey key{original_ids, check.count, check.extent};
+        const CheckedIndicesKey key{original_ids, check.count, check.extent, check.packed_r1_offsets};
         auto found = checked.find(key);
         if (found == checked.end()) {
           auto *safe = internal::create_tensor_input(
@@ -743,6 +769,14 @@ struct Invocation final {
       }
       if (results.size() != node.outputs.size())
         return Status::Unimplemented("ggml CUDA tensor lowering declined");
+      if (node.operation.custom_as<sequence_ops::PackedRowMatMul>()) {
+        auto *native = results[0];
+        // as_output may add only the original final dtype conversion here.
+        if (native && native->op == GGML_OP_CPY) native = native->src[0];
+        if (!internal::is_active_rows_matmul(native))
+          return Status::Internal("packed row MatMul lost its original native producer");
+        row_nodes.push_back({native, node.inputs[2]});
+      }
       for (std::size_t i = 0; i < results.size(); ++i) {
         if (!ggml_backend_supports_op(backend, results[i])) {
           char message[256];
@@ -1103,6 +1137,17 @@ Status prepare_bindings(void *value, void *lane,
   if (inputs.size() != recipe.inputs.size() ||
       outputs.size() != recipe.outputs.size())
     return Status::InvalidArgument("ggml CUDA binding counts differ");
+  for (const auto &configuration : invocation.row_configurations) {
+    if (configuration.rows < 0) continue; // A new Graph slot may bind before configuration.
+    const auto input = std::ranges::find(recipe.inputs, configuration.input);
+    if (input == recipe.inputs.end()) return Status::Internal("packed rows control is not an input");
+    const auto &actual = inputs[static_cast<std::size_t>(input - recipe.inputs.begin())];
+    const auto expected = configuration.offsets.storage(), storage = actual.storage();
+    if (actual.description() != configuration.offsets.description() ||
+        storage.resource() != expected.resource() || storage.native_handle() != expected.native_handle() ||
+        storage.offset() != expected.offset() || storage.size() != expected.size())
+      return Status::FailedPrecondition("packed rows offsets differ from their original cold configuration");
+  }
   bool changed = !invocation.bindings_ready;
   for (std::size_t i = 0; i < inputs.size(); ++i) {
     auto pointer = cuda::detail::const_pointer(
@@ -1170,6 +1215,13 @@ detail::EnqueueResult submit(void *value, void *lane, detail::QueueSequence &seq
   const auto &program = *static_cast<Program *>(value);
   auto &invocation = *static_cast<Invocation *>(lane);
   const auto &recipe = program.recipe;
+  if (!program.row_inputs.empty()) {
+    if (sequence.recording())
+      return detail::EnqueueResult::rejected(Status::Unimplemented("packed row MatMul supports Commands only"));
+    if (std::ranges::any_of(invocation.row_configurations,
+            [](const auto &configuration) { return configuration.rows < 0; }))
+      return detail::EnqueueResult::rejected(Status::Unimplemented("packed row MatMul requires its typed host-owned offsets proof"));
+  }
   auto stream = cuda::stream(sequence);
   if (!stream)
     return detail::EnqueueResult::rejected(std::move(stream).error());
@@ -1198,7 +1250,34 @@ detail::EnqueueResult submit(void *value, void *lane, detail::QueueSequence &seq
       return initialized;
     for (std::size_t i = 0; i < program.index_checks.size(); ++i) {
       const auto &check = program.index_checks[i];
-      terminal = check.source_input != UINT32_MAX ? cuda::status(internal::select_indexed_source(
+      bool duplicate = false;
+      for (std::size_t previous = 0; previous < i; ++previous) {
+        const auto &old = program.index_checks[previous];
+        if (old.input == check.input && old.extent == check.extent && old.count == check.count &&
+            old.packed_r1_offsets == check.packed_r1_offsets && old.host_rows == check.host_rows &&
+            old.source_input == check.source_input && invocation.safe_indices[previous] == invocation.safe_indices[i]) {
+          duplicate = true; break;
+        }
+      }
+      if (duplicate) continue;
+      if (check.packed_r1_offsets) {
+        std::int32_t expected_rows = -1;
+        if (check.host_rows) {
+          const auto input = recipe.inputs[check.input];
+          const auto configuration = std::ranges::find_if(invocation.row_configurations,
+              [input](const auto &entry) { return entry.input == input; });
+          if (configuration == invocation.row_configurations.end() || configuration->rows < 0)
+            return detail::EnqueueResult::accepted_command(Status::FailedPrecondition("packed rows configuration expired before status validation"));
+          expected_rows = configuration->rows;
+        }
+        terminal = cuda::status(check.host_rows ? internal::check_packed_r1_offsets_expected(
+            static_cast<const std::int32_t *>(invocation.pointers[check.input]),
+            static_cast<std::int32_t *>(invocation.safe_indices[i]->data),
+            check.extent, expected_rows, status_word, *stream) : internal::check_packed_r1_offsets(
+            static_cast<const std::int32_t *>(invocation.pointers[check.input]),
+            static_cast<std::int32_t *>(invocation.safe_indices[i]->data),
+            check.extent, status_word, *stream));
+      } else terminal = check.source_input != UINT32_MAX ? cuda::status(internal::select_indexed_source(
           static_cast<const std::int32_t *>(invocation.pointers[check.source_input]),
           static_cast<const std::int32_t *>(invocation.pointers[check.input]),
           static_cast<std::int32_t *>(invocation.safe_indices[i]->data),
@@ -1286,6 +1365,8 @@ Status propose(void *context, const detail::ProviderOperationRequest &request,
                std::span<detail::ResourceBindingRequirement> outputs,
                detail::ProviderOperationProposal *output) noexcept {
   *output = {};
+  if (request.operation.custom_as<sequence_ops::PackedRowMatMul>())
+    return Status::Unimplemented("packed row MatMul requires an original typed Graph host-row proof");
   if (!request.shape.exact() ||
       !internal::supports(context, request.operation, request.inputs,
                           request.outputs))
@@ -1399,7 +1480,7 @@ Status inspect_projected_input(const detail::ProviderPrepared &value,
   const auto &check = program.index_checks[0];
   if (table.dimensions()[1] > INT64_MAX / unit || table.byte_strides()[1] != unit ||
       table.byte_strides()[0] < table.dimensions()[1] * unit ||
-      check.input != 1 || check.node != 0 || check.extent != table.dimensions()[0] ||
+      check.packed_r1_offsets || check.input != 1 || check.node != 0 || check.extent != table.dimensions()[0] ||
       !std::cmp_equal(check.count, ids.dimensions()[0]))
     return Status::Unimplemented("ggml CUDA projection differs from its actual indexed reader");
   // Native typed GET_ROWS keeps nb[1] and never converts/CONT-copies the bank.
@@ -1409,6 +1490,13 @@ Status inspect_projected_input(const detail::ProviderPrepared &value,
   return Status::Ok();
 }
 const void *query_extension(void *value, ProviderExtensionId id) noexcept {
+  static constexpr detail::PackedRowMatMulSourceVTable row_source{
+      [](void *context) noexcept -> bool {
+        const auto *source = static_cast<const Context *>(context);
+        return source && source->primary && source->device >= 0 && default_cublas_precision() &&
+            ggml_hyle_cuda_matmul_active_rows_contract() == internal::kActiveRowsMatMulContract;
+      }};
+  if (id == detail::kPackedRowMatMulSourceExtensionId) return &row_source;
   static constexpr detail::CaptureBindingsVTable capture{
       .inspect = &inspect_capture_bindings};
   if (id == detail::kCaptureBindingsExtensionId)
@@ -1433,6 +1521,58 @@ const detail::ProviderVTable kProvider{
 } // namespace
 
 namespace internal {
+Status configure_rows(const detail::ProviderPrepared &prepared, void *slot,
+    std::uint32_t recipe_offset_input, ConstTensorView offsets, std::size_t rows) noexcept {
+  if (prepared.vtable != &kPrepared || !prepared.state || !slot)
+    return Status::InvalidArgument("packed rows configuration names a foreign native slot");
+  const auto &program = *static_cast<const Program *>(prepared.state);
+  auto &invocation = *static_cast<Invocation *>(slot);
+  if (invocation.program_owner != &program)
+    return Status::InvalidArgument("packed rows configuration differs from its original program");
+  if (invocation.failed || invocation.recording_guard || invocation.native_retirement_required)
+    return Status::Unavailable("packed rows configuration requires its original retired native slot");
+  if (rows > static_cast<std::size_t>(INT32_MAX) ||
+      std::ranges::find(program.row_inputs, recipe_offset_input) == program.row_inputs.end() ||
+      recipe_offset_input >= program.recipe.values.size() ||
+      offsets.description() != program.recipe.values[recipe_offset_input])
+    return Status::InvalidArgument("packed rows configuration requires its exact offsets input and bounded rows");
+  cuda::detail::ScopedPrimaryContext scope(program.primary);
+  if (!scope) return scope.status();
+  const auto pointer = cuda::detail::const_pointer(offsets.storage(), sizeof(std::int32_t), 1);
+  if (!pointer) return pointer.error();
+  bool found = false;
+  for (const auto &node : invocation.row_nodes) if (node.input == recipe_offset_input) {
+    if (!is_active_rows_matmul(node.tensor) || node.tensor->ne[1] < 0 ||
+        rows > static_cast<std::uint64_t>(node.tensor->ne[1]))
+      return Status::InvalidArgument("packed rows exceed an original physical matrix carrier");
+    found = true;
+  }
+  if (!found) return Status::Internal("packed rows input has no original native matrix");
+  const auto configuration = std::ranges::find_if(invocation.row_configurations,
+      [recipe_offset_input](const auto &entry) { return entry.input == recipe_offset_input; });
+  if (configuration == invocation.row_configurations.end())
+    return Status::Internal("packed rows input lost its original configuration slot");
+  configuration->offsets = offsets;
+  configuration->rows = static_cast<std::int32_t>(rows);
+  for (const auto &node : invocation.row_nodes)
+    if (node.input == recipe_offset_input) set_matmul_active_rows(node.tensor, configuration->rows);
+  return Status::Ok();
+}
+
+Status clear_rows(const detail::ProviderPrepared &prepared, void *slot) noexcept {
+  if (prepared.vtable != &kPrepared || !prepared.state || !slot)
+    return Status::InvalidArgument("packed rows clear names a foreign native slot");
+  const auto &program = *static_cast<const Program *>(prepared.state);
+  auto &invocation = *static_cast<Invocation *>(slot);
+  if (invocation.program_owner != &program)
+    return Status::InvalidArgument("packed rows clear differs from its original program");
+  if (invocation.recording_guard || invocation.native_retirement_required)
+    return Status::Unavailable("packed rows clear requires original native retirement");
+  for (auto &entry : invocation.row_configurations) { entry.offsets = {}; entry.rows = -1; }
+  for (const auto &node : invocation.row_nodes) set_matmul_active_rows(node.tensor, -1);
+  return Status::Ok();
+}
+
 namespace {
 struct ColdPackingEpisode final {
   mem::AllocatorRef allocator;
@@ -1700,6 +1840,54 @@ bool supports(void *value, Operation operation,
 }
 
 namespace {
+bool supports_indexed_packed_gdn(void *value, const Node &node,
+                                std::span<const TensorDesc> values) noexcept {
+  const auto packed = node.operation.custom_as<sequence_ops::PackedGatedDeltaNet>();
+  if (!value || !node.indexed_state || !packed || packed->snapshot_count != 1 ||
+      node.inputs.size() != 9 || node.outputs.size() != 1 ||
+      std::ranges::any_of(node.inputs, [&](auto id) { return id >= values.size(); }) ||
+      node.outputs[0] >= values.size() ||
+      ggml_hyle_cuda_gdn_indexed_state_contract() != kIndexedStateContract ||
+      ggml_hyle_cuda_gdn_r1_indexed_packed_contract() != kPackedGdnR1IndexedContract)
+    return false;
+  const auto &q = values[node.inputs[0]], &v = values[node.inputs[2]];
+  const auto &pool = values[node.inputs[5]];
+  const auto &sources = values[node.inputs[6]], &destinations = values[node.inputs[7]];
+  constexpr auto unit = static_cast<std::int64_t>(sizeof(float));
+  if (!q.valid() || !v.valid() || q.rank() != 3 || v.rank() != 3 ||
+      q.dimensions()[0] <= 0 || q.dimensions()[2] <= 0 || v.dimensions()[1] <= 0 ||
+      !pool.valid() || !pool.is_plain() || pool.rank() != 2 ||
+      pool.data_type() != DataType::kFloat32 || pool.dimensions()[0] <= 0 ||
+      pool.dimensions()[0] > INT32_MAX || pool.byte_strides()[1] != unit ||
+      !sources.valid() || !sources.is_dense() || sources.rank() != 1 ||
+      sources.data_type() != DataType::kInt32 || sources.dimensions()[0] != 1 ||
+      !destinations.valid() || !destinations.is_dense() || destinations.rank() != 1 ||
+      destinations.data_type() != DataType::kInt32 || destinations.dimensions()[0] != 1)
+    return false;
+  const auto width = q.dimensions()[2], heads = v.dimensions()[1];
+  if (width > INT64_MAX / width || width * width > INT64_MAX / heads ||
+      pool.dimensions()[1] != width * width * heads ||
+      pool.dimensions()[1] > INT64_MAX / unit ||
+      pool.byte_strides()[0] < pool.dimensions()[1] * unit ||
+      pool.byte_strides()[0] % unit)
+    return false;
+  const auto bytes = pool.required_bytes();
+  if (!bytes || *bytes > static_cast<std::uint64_t>(INT64_MAX)) return false;
+  // Recheck the original packed mathematics with one real initial-state row.
+  // The pool/IDs retain their actual strides and outer Graph permissions.
+  std::array<TensorDesc, 7> original;
+  for (std::size_t i = 0; i < 5; ++i) original[i] = values[node.inputs[i]];
+  auto initial = TensorDesc::dense(DataType::kFloat32,
+      std::array<std::int64_t, 4>{1, heads, width, width});
+  if (!initial) return false;
+  original[5] = *initial;
+  original[6] = values[node.inputs[8]];
+  std::array<TensorDesc, 2> outputs;
+  return packed->infer_output_descriptions(original, outputs).ok() &&
+      outputs[0] == values[node.outputs[0]] &&
+      supports(value, node.operation, original, outputs);
+}
+
 bool supports_indexed_conv(void *value, const Node &node,
                            std::span<const TensorDesc> values) noexcept {
   if (!value || !node.indexed_state ||
@@ -1763,6 +1951,8 @@ bool supports_indexed_conv(void *value, const Node &node,
 
 bool supports_indexed_state(void *value, const Node &node,
                              std::span<const TensorDesc> values) noexcept {
+  if (node.operation.custom_as<sequence_ops::PackedGatedDeltaNet>())
+    return supports_indexed_packed_gdn(value, node, values);
   if (node.operation.custom_as<model_ops::CausalConv1d>())
     return supports_indexed_conv(value, node, values);
   const auto *gdn = node.operation.get_if<GatedDeltaNet>();
@@ -1830,6 +2020,7 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
   std::vector<std::vector<float>> hadamards;
   std::vector<std::vector<std::int32_t>> snapshot_indices;
   std::vector<Program::IndexCheck> index_checks;
+  std::vector<std::uint32_t> row_inputs;
   try {
     for (const auto id : recipe.effect_roots)
       if (id >= recipe.values.size())
@@ -1840,6 +2031,23 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
     for (std::size_t node_index = 0; node_index < recipe.nodes.size();
          ++node_index) {
       const auto &node = recipe.nodes[node_index];
+      if (const auto packed = node.operation.custom_as<sequence_ops::PackedRowMatMul>()) {
+        if (node.indexed_state || node.inputs.size() != 3 || node.outputs.size() != 1 ||
+            std::ranges::any_of(node.inputs, [&](auto id) { return id >= recipe.values.size(); }) ||
+            node.outputs[0] >= recipe.values.size())
+          return ProviderPrepareOutcome::error(Status::InvalidArgument("packed row MatMul recipe ports are invalid"));
+        std::array<TensorDesc, 3> input;
+        for (std::size_t i = 0; i < input.size(); ++i) input[i] = recipe.values[node.inputs[i]];
+        const std::array output{recipe.values[node.outputs[0]]};
+        if (!supports(value, node.operation, input, output))
+          return ProviderPrepareOutcome::unsupported(Status::Unimplemented("packed row MatMul has no exact native domain"));
+        const auto control = std::ranges::find(recipe.inputs, node.inputs[2]);
+        if (control == recipe.inputs.end())
+          return ProviderPrepareOutcome::unsupported(Status::Unimplemented("packed row MatMul offsets must be an original checked input"));
+        if (std::ranges::find(row_inputs, node.inputs[2]) == row_inputs.end()) row_inputs.push_back(node.inputs[2]);
+        index_checks.push_back({static_cast<std::uint32_t>(control - recipe.inputs.begin()),
+            node_index, 2, input[0].dimensions()[0], UINT32_MAX, true, true});
+      }
       if (node.indexed_state && node.operation.get_if<Gather>()) {
         const auto *selection = node.operation.get_if<Gather>();
         if (!selection || selection->axis != 0 || selection->bounds != IndexBoundsPolicy::kChecked ||
@@ -1899,6 +2107,17 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
         require(id);
       for (const auto id : node.outputs)
         require(id);
+      if (node.operation.custom_as<sequence_ops::PackedGatedDeltaNet>()) {
+        // Only a real immutable boundary can be validated before native
+        // graph compute. Internal/generated offsets retain another route.
+        const auto input = std::ranges::find(recipe.inputs,
+            node.inputs[node.indexed_state ? 8 : 6]);
+        if (input == recipe.inputs.end())
+          return ProviderPrepareOutcome::unsupported(Status::Unimplemented(
+              "ggml CUDA packed R1 offsets require a checked boundary"));
+        index_checks.push_back({static_cast<std::uint32_t>(input - recipe.inputs.begin()),
+            node_index, 2, recipe.values[node.inputs[0]].dimensions()[0], UINT32_MAX, true});
+      }
       const auto *gdn = node.operation.get_if<GatedDeltaNet>();
       const auto recurrent =
           node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>();
@@ -1992,6 +2211,7 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
                              std::move(snapshot_indices),
                              std::move(index_checks)},
       cleanup);
+  program->row_inputs = std::move(row_inputs);
   auto runtime = kRuntime;
   try {
     Invocation measurement;
@@ -2008,6 +2228,7 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
         return ProviderPrepareOutcome::error(scope.status());
       runtime.capture_compatible =
           bridge::record_compatible(measurement.backend, measurement.graph);
+      if (!program->row_inputs.empty()) runtime.capture_compatible = false;
     }
     measurement.workspace.measurement = &program->workspace_chunks;
     status = measurement.reserve(&measurement.workspace);

@@ -56,6 +56,7 @@ struct GraphAssembly final {
   Tensor &literal(c::TensorDesc description);
   Type predicate_type() const;
   Type activation_type() const noexcept;
+  bool supports_packed_row_matmul() const noexcept;
   void node(g::NodeId node);
   void external(V value, g::StorageDomainId storage = g::StorageDomainId{0});
   std::span<const g::ConstantBinding> constants() const noexcept;
@@ -69,6 +70,7 @@ private:
   const PrecisionProfile precision_;
   const bool mixed_;
   const Type predicate_type_;
+  bool packed_row_matmul_ = false;
   Location location_ = primary();
 };
 
@@ -85,6 +87,8 @@ struct Recipe final {
   const std::int64_t hidden;
   g::DimensionId last_row;
   D token_rows, packed_rows, sample_rows;
+  // Scoped token-row domain, identified symbolically rather than by extent.
+  V projection_offsets;
   Recipe(std::map<std::string, LoadedWeight> &selected, const ProjectionBindings &selected_projections,
          GraphAssembly &graph_assembly, const ModelGeometry &model_geometry,
          std::size_t max_query_rows, std::size_t requests = 1,

@@ -539,6 +539,16 @@ public:
 
   // Cold composition/diagnostics borrow only original selected endpoints. No getter
   // constructs an otherwise unselected Context or substitutes a native queue.
+  Result<const compute::Context *> common_context() const noexcept {
+    if (!state_) return std::unexpected(Status::FailedPrecondition("Backend is not initialized"));
+#if defined(HYLE_COMPUTE_CPU)
+    if (const auto *endpoint = std::get_if<CpuEndpoint>(&state_->primary)) return &endpoint->context;
+#endif
+#if defined(HYLE_COMPUTE_CUDA)
+    if (const auto *endpoint = std::get_if<CudaEndpoint>(&state_->primary)) return &endpoint->context;
+#endif
+    return std::unexpected(Status::FailedPrecondition("selected primary has no Compute Context"));
+  }
   Result<compute::Context *> common_context() noexcept {
     if (!state_) return std::unexpected(Status::FailedPrecondition("Backend is not initialized"));
 #if defined(HYLE_COMPUTE_CPU)

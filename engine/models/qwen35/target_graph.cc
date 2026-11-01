@@ -26,6 +26,13 @@ TargetGraphResult emit_target_graph(Recipe &r,
   const auto batch = f(static_cast<std::int64_t>(requests));
   const auto state_schema = inputs.recurrent_descriptions;
   const bool packed_verify = packs_verify(inputs.packing), packed_target = packs_target(inputs.packing);
+  struct ProjectionRowsScope final {
+    Recipe &recipe;
+    V previous;
+    ~ProjectionRowsScope() { recipe.projection_offsets = previous; }
+  } projection_rows{r, r.projection_offsets};
+  r.projection_offsets = requests == 1 && packs_prefill(inputs.packing) &&
+      assembly.supports_packed_row_matmul() ? inputs.sequence_offsets : V{};
   const auto frequencies = inputs.frequencies;
   const auto target_tokens = inputs.token_ids;
   if (inputs.predecessor_prefix_index && requests != 1)
@@ -96,15 +103,29 @@ TargetGraphResult emit_target_graph(Recipe &r,
             r.dense_spec(r.activation_type(), {history_outputs, channels}));
         store_state(ports.history, history_schema,
             r.reshape(next_history, {candidate_count, f(history_schema.item_elements())}));
-        const auto convolution = r.op(c::sequence_ops::packed_causal_conv1d(),
-            {r.cast(qkv, Type::kFloat32),
-             r.cast(r.reshape(r.weight(prefix + "linear_attn.conv1d.weight"),
-                 {channels, f(geometry.conv_kernel)}), Type::kFloat32),
-             r.cast(history, Type::kFloat32), inputs.sequence_offsets},
-            {r.dense_spec(Type::kFloat32, {packed, channels}),
-             r.dense_spec(Type::kFloat32, {batch, f(geometry.conv_kernel - 1), channels})});
+        const auto conv_weights = r.cast(r.reshape(
+            r.weight(prefix + "linear_attn.conv1d.weight"),
+            {channels, f(geometry.conv_kernel)}), Type::kFloat32);
+        V convolution;
+        if (requests == 1 && packs_prefill(inputs.packing)) {
+          // One request has the original [history || physical rows] layout.
+          // Reuse ordinary convolution's typed loads and MAC order; only its
+          // real prefix is consumed by the offset-aware recurrence/attention.
+          // Persistent history above still selects the actual length, never
+          // the padded end of this capacity tensor.
+          convolution = r.one(c::model_ops::causal_conv1d(),
+              {r.cast(r.reshape(raw_samples, {batch, r.sample_rows, channels}), Type::kFloat32),
+               conv_weights},
+              r.dense_spec(Type::kFloat32, {batch, t, channels}));
+        } else {
+          convolution = r.op(c::sequence_ops::packed_causal_conv1d(),
+              {r.cast(qkv, Type::kFloat32), conv_weights,
+               r.cast(history, Type::kFloat32), inputs.sequence_offsets},
+              {r.dense_spec(Type::kFloat32, {packed, channels}),
+               r.dense_spec(Type::kFloat32, {batch, f(geometry.conv_kernel - 1), channels})})[0];
+        }
         const auto activated = r.reshape(r.unary(c::UnaryKind::kSilu,
-            r.cast(convolution[0], r.activation_type())), {batch, t, channels});
+            r.cast(convolution, r.activation_type())), {batch, t, channels});
         auto q = r.reshape(r.slice(activated, 2, f(0), f(geometry.gdn_key_width())),
             {batch, t, f(geometry.gdn_key_heads), f(geometry.gdn_key_depth)});
         auto k = r.reshape(r.slice(activated, 2, f(geometry.gdn_key_width()), f(geometry.gdn_key_width())),
@@ -112,7 +133,15 @@ TargetGraphResult emit_target_graph(Recipe &r,
         auto v = r.reshape(r.slice(activated, 2, f(2 * geometry.gdn_key_width()), f(geometry.gdn_value_width())),
             {packed, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth)});
         v = r.activation_type() == Type::kFloat32 ? r.copy(v) : r.cast(v, Type::kFloat32);
-        q = r.gdn_key_rows(r.l2(q)); k = r.gdn_key_rows(r.l2(k));
+        const auto normalize_key = [&](V key) {
+          auto normalized_key = r.l2(key);
+          // Emit each widening next to its own BF16 normalization, before
+          // head expansion or packed views can separate the native pair.
+          if (packs_prefill(inputs.packing))
+            normalized_key = r.cast(normalized_key, Type::kFloat32);
+          return r.gdn_key_rows(normalized_key);
+        };
+        q = normalize_key(q); k = normalize_key(k);
         const auto a = r.reshape(r.cast(r.linear(normalized, prefix + "linear_attn.in_proj_a.weight"), Type::kFloat32),
             {packed, f(geometry.gdn_value_heads), f(1)});
         const auto b = r.reshape(r.linear(normalized, prefix + "linear_attn.in_proj_b.weight"),
@@ -129,7 +158,7 @@ TargetGraphResult emit_target_graph(Recipe &r,
             {r.cast(r.reshape(q, {packed, r.spec(q).dimensions()[2], f(geometry.gdn_key_depth)}), Type::kFloat32),
              r.cast(r.reshape(k, {packed, r.spec(k).dimensions()[2], f(geometry.gdn_key_depth)}), Type::kFloat32),
              r.cast(v, Type::kFloat32), g, beta,
-             r.reshape(recurrent_rows, {batch, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth), f(geometry.gdn_key_depth)}),
+             state,
              inputs.sequence_offsets},
             {r.dense_spec(Type::kFloat32, {packed, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth)}),
               packed_verify

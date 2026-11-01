@@ -37,6 +37,57 @@ inline bool rows(std::int64_t count) noexcept {
 
 } // namespace detail
 
+// One bounded sequence of matrix rows. A is [C,K], B is [K,N], and offsets
+// is dense I32[2] containing [0,L], 0 <= L <= C. All offsets are validated
+// before either prefix or tail is published. The prefix is the ordinary
+// same-type F16/BF16 MatMul with F32 accumulation and the requested final
+// output conversion; output[L:C] is positive zero without reading A[L:C].
+// Providers requiring a typed host length may decline unconfigured/direct
+// invocations rather than reading a device scalar back to the host.
+struct PackedRowMatMul final {
+  static constexpr OperationId operation_id{0x48594c4553455131ULL,
+                                             0x504b4d4d00000001ULL};
+  static constexpr std::string_view operation_name = "packed-row-matmul";
+  bool accumulate_f32 = true;
+  DataType output_type = DataType::kFloat32;
+
+  constexpr OperationTraits operation_traits() const noexcept {
+    return {{3, 3}, 1, AliasPolicy::kNone, EffectKind::kPure,
+            PrecisionPolicy::kAccumulateInDeclaredType, DataType::kFloat32, true};
+  }
+  Status infer_output_descriptions(std::span<const TensorDesc> inputs,
+                                   std::span<TensorDesc> outputs) const noexcept {
+    if (inputs.size() != 3 || outputs.size() != 1)
+      return Status::InvalidArgument("PackedRowMatMul requires A, B, offsets and one output");
+    if (!accumulate_f32)
+      return Status::Unimplemented("PackedRowMatMul requires original F32 accumulation");
+    if (!detail::dense(inputs[0], 2) || !inputs[1].valid() ||
+        !inputs[1].is_plain() || inputs[1].rank() != 2 ||
+        !detail::offsets(inputs[2], 1))
+      return Status::InvalidArgument("PackedRowMatMul requires dense A, plain matrix B and I32[2] offsets");
+    const auto a = inputs[0].dimensions(), b = inputs[1].dimensions();
+    const auto type = inputs[0].data_type();
+    if ((type != DataType::kFloat16 && type != DataType::kBFloat16) ||
+        inputs[1].data_type() != type ||
+        (output_type != DataType::kFloat32 && output_type != DataType::kFloat16 &&
+         output_type != DataType::kBFloat16) ||
+        a[0] <= 0 || !detail::rows(a[0]) || a[1] <= 0 || b[0] != a[1] || b[1] <= 0)
+      return Status::InvalidArgument("PackedRowMatMul requires matching F16/BF16 A[C,K], B[K,N] and a floating output");
+    constexpr std::int64_t unit = 2; // Both admitted plain source types are 16-bit.
+    const bool transposed = b[0] <= (std::numeric_limits<std::int64_t>::max)() / unit &&
+        inputs[1].byte_strides()[0] == unit && inputs[1].byte_strides()[1] == b[0] * unit;
+    if (!inputs[1].is_dense() && !transposed)
+      return Status::Unimplemented("PackedRowMatMul B requires original dense or transposed-contiguous matrix storage");
+    auto output = TensorDesc::dense(output_type, std::array{a[0], b[1]});
+    if (!output) return output.error();
+    outputs[0] = *output;
+    return Status::Ok();
+  }
+};
+inline Operation packed_row_matmul(DataType output_type, bool accumulate_f32 = true) noexcept {
+  return Operation::custom(PackedRowMatMul{accumulate_f32, output_type});
+}
+
 // Packed, independent sequences with explicit state. Inputs are Q, K, V,
 // log-decay, beta, initial state and I32 cumulative sequence offsets:
 //   Q/K [R,Hk,Dk], V [R,Hv,Dv], g [R,Hv,1 or Dv], beta [R,Hv,1],

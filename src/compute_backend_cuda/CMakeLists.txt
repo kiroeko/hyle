@@ -15,6 +15,7 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
     driver_release.cc
     cuda_memory.cc
     cuda_device_status.cc
+    checked_rows.cu
     device_status_kernel.cu
     cuda_indexed_copy.cu
     cuda_paged_append.cu)

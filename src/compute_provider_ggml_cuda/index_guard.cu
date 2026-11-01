@@ -35,6 +35,22 @@ __global__ void publish(const unsigned char *source, unsigned char *destination,
     destination[i] = source[i];
 }
 
+__global__ void packed_r1_offsets(const std::int32_t *source,
+    std::int32_t *safe, std::int64_t capacity, unsigned *status,
+    std::int32_t expected_rows) {
+  safe[0] = 0;
+  safe[1] = -1;
+  if (*status != 0) return;
+  const auto first = source[0], last = source[1];
+  if (first != 0 || last < 0 || std::int64_t(last) > capacity ||
+      (expected_rows >= 0 && last != expected_rows)) {
+    atomicCAS(status, 0U, static_cast<unsigned>(
+        cuda::detail::DeviceStatusCode::kInvalidSequenceOffsets));
+    return;
+  }
+  safe[1] = last;
+}
+
 __global__ void select_source(const std::int32_t *sources,
     const std::int32_t *selector, std::int32_t *selected, std::int64_t slots,
     unsigned *status) {
@@ -68,6 +84,22 @@ cudaError_t publish_checked(const void *source, void *destination,
   publish<<<blocks(bytes), kThreads, 0, stream>>>(
       static_cast<const unsigned char *>(source),
       static_cast<unsigned char *>(destination), bytes, status);
+  return cudaGetLastError();
+}
+
+cudaError_t check_packed_r1_offsets(const std::int32_t *source,
+    std::int32_t *safe, std::int64_t capacity, unsigned *status,
+    cudaStream_t stream) noexcept {
+  packed_r1_offsets<<<1, 1, 0, stream>>>(source, safe, capacity, status, -1);
+  return cudaGetLastError();
+}
+
+cudaError_t check_packed_r1_offsets_expected(const std::int32_t *source,
+    std::int32_t *safe, std::int64_t capacity, std::int32_t expected_rows,
+    unsigned *status, cudaStream_t stream) noexcept {
+  if (expected_rows < 0 || std::int64_t(expected_rows) > capacity)
+    return cudaErrorInvalidValue;
+  packed_r1_offsets<<<1, 1, 0, stream>>>(source, safe, capacity, status, expected_rows);
   return cudaGetLastError();
 }
 

@@ -1,9 +1,13 @@
 #include "hyle/graph/batch.h"
 #include "hyle/compute/detail/batch_provider.h"
 #include "hyle/graph/detail/region_access.h"
+#include "hyle/graph/detail/query_rows.h"
+#include "hyle/graph/detail/recording_access.h"
 #include "hyle/graph/region_provider.h"
 #include "hyle/compute/detail/batch_graph_access.h"
 #include "hyle/compute/detail/batch_device_choice.h"
+#include "hyle/compute/detail/batch_float_workspace.h"
+#include "hyle/compute/detail/packed_row_matmul.h"
 #include "hyle/compute/detail/paged_arena_access.h"
 #include "hyle/compute/detail/context_ref.h"
 #include "hyle/compute/detail/queue_ref.h"
@@ -12,6 +16,7 @@
 #include "hyle/compute/detail/indexed_copy_backend.h"
 #include "hyle/mem/std_allocator.h"
 #include "../graph/compile_internal.h"
+#include "../graph/plan_state.h"
 #include "../graph/execution_source_internal.h"
 #include "native_batch_regions.h"
 #include "row_cache_node.h"
@@ -26,6 +31,18 @@
 namespace hyle::graph::batch {
 namespace c=compute;namespace cd=c::detail;namespace gd=graph::detail;
 namespace gs=::hyle::graph::slots;
+namespace detail {
+struct QueryRowsAccess final {
+  static gd::QueryRowsControl make(const void*source,const gd::InvocationState*invocation,
+      gd::QueryRowsControl::Inspect inspect,std::uint64_t epoch,std::uint64_t generation,
+      ValueId input,c::ConstTensorView offsets)noexcept{
+    return gd::QueryRowsControl(source,invocation,inspect,epoch,generation,input,offsets);
+  }
+  static cd::PackedRowMatMulRowsProof make_rows_proof(const gd::QueryRowsFacts&facts)noexcept{
+    return {facts.offsets,facts.rows,facts.capacity};
+  }
+};
+} // namespace detail
 namespace {
 struct Region final {
   NodeId node;ValueId metadata;
@@ -39,6 +56,7 @@ struct Region final {
   bool device_choice=false;
   mem::MemoryResourceRef resource{};std::size_t boundary_count=0;
   bool graph_capture=false;
+  c::WorkspaceRequirement float_workspace{};
 };
 struct Slot final {
   struct WrittenBank final {c::BatchLayoutVersion layout;c::ConstTensorView capacity;NodeId producer;};
@@ -51,6 +69,7 @@ struct Slot final {
   // Physical metadata ownership only, not a retained read permission. The
   // selected top-level slots survive reset and flatten shared owners here.
   Slot*metadata_owner=nullptr;
+  mem::BufferView float_workspace;
 };
 std::size_t payloads(const Region&r)noexcept{return r.mla==c::MlaCacheLayout::kNone?3u:2u;}
 std::size_t ports(const Region&r)noexcept{return payloads(r)+(r.initial_layout.valid()?0u:1u);}
@@ -80,8 +99,13 @@ constexpr c::ProviderRuntimeProperties default_runtime{.mode=c::ProviderRuntimeM
   .blocks_host=true,.uses_private_threads=false,.supports_concurrent_invocations=true,.capture_compatible=false};
 void destroy_region(void*p,mem::AllocatorRef a)noexcept{a.destroy(static_cast<Region*>(p));}
 c::AliasSupport alias(void*,std::size_t,std::size_t)noexcept{return {};}
-Status create_slot(void*prepared,mem::AllocatorRef a,mem::BufferView,void**out)noexcept{
-  *out=a.construct<Slot>();if(!*out)return Status::ResourceExhausted("Graph batch slot metadata");static_cast<Slot*>(*out)->region=static_cast<Region*>(prepared);return Status::Ok();
+Status create_slot(void*prepared,mem::AllocatorRef a,mem::BufferView workspace,void**out)noexcept{
+  *out=nullptr;auto&r=*static_cast<Region*>(prepared);
+  if(r.float_workspace.size && (!workspace.valid() || workspace.resource()!=r.resource ||
+      workspace.size()<r.float_workspace.size || workspace.offset()%r.float_workspace.alignment))
+    return Status::InvalidArgument("Graph batch float scratch differs from its declared region workspace");
+  auto*s=a.construct<Slot>();if(!s)return Status::ResourceExhausted("Graph batch slot metadata");
+  s->region=&r;if(r.float_workspace.size)s->float_workspace=workspace;*out=s;return Status::Ok();
 }
 void destroy_slot(void*p,mem::AllocatorRef a)noexcept{a.destroy(static_cast<Slot*>(p));}
 cd::EnqueueResult submit_region(void*prepared,void*invocation,cd::QueueSequence&sequence,std::span<const c::ConstTensorView>inputs,std::span<const c::TensorView>outputs)noexcept{
@@ -139,6 +163,31 @@ Result<gd::RegionReadyControl> prepared_metadata(const Region&r,const Slot&s)noe
   if(tensor.storage().resource()!=r.resource)
     return std::unexpected(Status::InvalidArgument("owned batch metadata differs from its selected native resource"));
   return gd::RegionReadyControl{tensor,std::move(ready)};
+}
+Result<gd::QueryRowsFacts> inspect_query_rows(const void*source,
+    const gd::InvocationState*invocation,std::uint64_t epoch,std::uint64_t generation,
+    ValueId input,c::ConstTensorView expected)noexcept{
+  if(!source || !invocation || !expected.valid())
+    return std::unexpected(Status::FailedPrecondition("query rows need their original producer/binding"));
+  const auto&s=*static_cast<const Slot*>(source);
+  if(!s.region || s.region->device_choice || s.layout.generation()!=generation ||
+      s.layout.facts().requests!=1 || s.layout.facts().query_rows>s.region->query_rows)
+    return std::unexpected(Status::FailedPrecondition("query rows producer layout is stale"));
+  HYLE_ASSIGN_OR_RETURN(const auto current_epoch,cd::BatchGraphAccess::preparation_epoch(s.token));
+  if(current_epoch!=epoch)
+    return std::unexpected(Status::FailedPrecondition("query rows producer preparation changed"));
+  HYLE_ASSIGN_OR_RETURN(auto metadata,prepared_metadata(*s.region,s));
+  HYLE_ASSIGN_OR_RETURN(auto read,metadata.read.subview(
+      s.layout.origin_schema().metadata_offsets().query_indptr,2*sizeof(std::int32_t)));
+  HYLE_ASSIGN_OR_RETURN(auto view,read.view());
+  HYLE_ASSIGN_OR_RETURN(auto description,c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t,1>{2}));
+  if(expected.description()!=description || !same_storage(expected.storage(),view))
+    return std::unexpected(Status::FailedPrecondition("query rows differ from the original offsets mirror"));
+  HYLE_ASSIGN_OR_RETURN(const bool bound,gd::RegionAccess::has_input_binding(invocation,input,expected));
+  if(!bound)return std::unexpected(Status::FailedPrecondition("query rows offsets are no longer bound"));
+  return gd::QueryRowsFacts{input,expected,s.layout.facts().query_rows,
+      s.region->query_rows,generation,current_epoch};
 }
 const gd::RegionReadyControlVTable ready_controls{
   [](const ProviderRegionPrepared&prepared,void*invocation,
@@ -251,6 +300,27 @@ Status qualify_geometry(const AdapterContext&adapter,const BatchGeometry&shape,
     return table_value->qualify(context,shape.capacity,shape.math);
   },&call);
 }
+Result<c::WorkspaceRequirement> float_workspace(const AdapterContext&adapter,const BatchGeometry&shape,
+    std::uint32_t rows,mem::MemoryResourceRef resource={})noexcept{
+  // Fixed-layout and conditional decode slots retain their original private
+  // scratch. The new contract applies only to explicit-metadata GQA carriers.
+  if(shape.initial_layout.valid() || shape.device_choice || shape.mla!=c::MlaCacheLayout::kNone)
+    return c::WorkspaceRequirement{};
+  auto extension=cd::ProviderExtensionAccess::query(adapter.source,cd::kBatchFloatWorkspaceExtensionId);
+  if(!extension){if(extension.error().IsUnimplemented())return c::WorkspaceRequirement{};return std::unexpected(extension.error());}
+  auto options=shape.math;options.resource=resource.valid()?resource:adapter.resource;
+  struct Call{c::BatchCapacity capacity;std::uint32_t rows;const c::BatchProgramOptions*options;c::WorkspaceRequirement workspace;}call{shape.capacity,rows,&options,{}};
+  const auto status=cd::ProviderExtensionAccess::call(*extension,[](void*context,const void*table,void*opaque)noexcept{
+    auto&call=*static_cast<Call*>(opaque);const auto*t=static_cast<const cd::BatchFloatWorkspaceVTable*>(table);
+    if(!t || !t->workspace)return Status::FailedPrecondition("batch float scratch capability has no qualifier");
+    return t->workspace(context,call.capacity,call.rows,*call.options,&call.workspace);
+  },&call);
+  if(!status.ok()){if(status.IsUnimplemented() && !status.has_native_error())return c::WorkspaceRequirement{};return std::unexpected(status);}
+  if(!call.workspace.size || call.workspace.size<options.max_float_workspace_bytes ||
+      call.workspace.alignment<16 || (call.workspace.alignment&(call.workspace.alignment-1)))
+    return std::unexpected(Status::Internal("batch float scratch capability returned an invalid configured capacity"));
+  return call.workspace;
+}
 Status propose_native(void*opaque,const RegionDiscoveryRequest&request,mem::AllocatorRef,RegionProposalWriter&writer)noexcept{
   const auto&graph=request.graph;
   if(!request.allowed_nodes.empty() && request.allowed_nodes.size()!=graph.node_count())
@@ -294,7 +364,13 @@ Status native_resources(void*opaque,const RegionCompileRequest&r,mem::AllocatorR
     inputs[std::size_t(found-r.inputs.begin())].resource.minimum_alignment=shape.device_choice?4:8;
   }
   outputs[0]={.resource=requirement};
-  *proposal={.runtime=adapter.runtime,.workspace_resource=requirement};return Status::Ok();
+  HYLE_ASSIGN_OR_RETURN(auto query_value,r.graph->node_input(r.nodes[0],0));
+  HYLE_ASSIGN_OR_RETURN(auto query,r.graph->value_description(query_value));
+  if(query.rank()!=3 || query.dimensions()[0]<0 || std::uint64_t(query.dimensions()[0])>shape.capacity.max_query_rows)
+    return Status::InvalidArgument("native batch query extent exceeds its configured capacity");
+  HYLE_ASSIGN_OR_RETURN(auto scratch,float_workspace(adapter,shape,static_cast<std::uint32_t>(query.dimensions()[0])));
+  auto runtime=adapter.runtime;if(scratch.size)runtime.workspace_owner=c::ProviderWorkspaceOwner::kCaller;
+  *proposal={.runtime=runtime,.workspace_resource=requirement};return Status::Ok();
 }
 c::ProviderPrepareOutcome compile_native_region(void*opaque,const RegionCompileRequest&r,
     mem::AllocatorRef allocator,ProviderRegionPrepared*out)noexcept{
@@ -325,13 +401,17 @@ c::ProviderPrepareOutcome compile_native_region(void*opaque,const RegionCompileR
       (!shape->initial_layout.valid() && shape->mla!=c::MlaCacheLayout::kNone &&
        query_rows!=shape->capacity.max_query_rows))
     return c::ProviderPrepareOutcome::error(Status::InvalidArgument("native batch concrete Q/output geometry differs"));
+  auto scratch=float_workspace(adapter,*shape,query_rows,r.output_resources[0]);
+  if(!scratch)return c::ProviderPrepareOutcome::error(scratch.error());
+  auto runtime=adapter.runtime;if(scratch->size)runtime.workspace_owner=c::ProviderWorkspaceOwner::kCaller;
   auto*p=allocator.construct<Region>();if(!p)return c::ProviderPrepareOutcome::error(Status::ResourceExhausted("native batch region metadata"));
-  *out={.vtable=&region_table,.state=p,.properties={.workspace={0,16},
-      .persistent_bytes=sizeof(Region),.runtime=adapter.runtime,.invocation_private_bytes=std::nullopt}};
+  *out={.vtable=&region_table,.state=p,.properties={.workspace=*scratch,
+      .persistent_bytes=sizeof(Region),.runtime=runtime,.invocation_private_bytes=std::nullopt}};
   p->node=r.nodes[0];p->context=adapter.context;p->source=adapter.source;
   p->capacity=shape->capacity;p->mla=shape->mla;p->options=shape->math;p->resource=r.output_resources[0];p->boundary_count=r.inputs.size();
   p->initial_layout=shape->initial_layout;p->query_rows=query_rows;p->graph_capture=adapter.runtime.capture_compatible;
   p->choice_schema=shape->choice_schema;p->device_choice=shape->device_choice;
+  p->float_workspace=*scratch;
   for(std::size_t i=0;i<count;++i){
     auto value=r.graph->node_input(p->node,i);if(!value)return c::ProviderPrepareOutcome::error(value.error());
     const auto found=std::find(r.inputs.begin(),r.inputs.end(),*value);
@@ -655,7 +735,14 @@ Status prepare_native(graph::Invocation&invocation,std::span<const QueueBinding>
           HYLE_ASSIGN_OR_RETURN(s.program,cd::BatchGraphAccess::prepare(r.context,r.source,std::move(schema),native_options));
           HYLE_ASSIGN_OR_RETURN(auto upload,gd::RegionAccess::metadata_queue(invocation,entry.lane,
               {.allocator=options.allocator,.resource_budget=options.resource_budget}));
-          HYLE_ASSIGN_OR_RETURN(s.native,cd::BatchGraphAccess::create(s.program,*entry.queue,std::move(upload)));
+          if(s.float_workspace.valid() && options.max_float_workspace_bytes<=s.float_workspace.size()){
+            HYLE_ASSIGN_OR_RETURN(s.native,cd::BatchGraphAccess::create(s.program,*entry.queue,std::move(upload),
+                cd::BatchGraphFloatWorkspace{s.float_workspace}));
+          }else{
+            // Explicit caps above the compiled region envelope retain the
+            // original private path; never silently clamp a caller's limit.
+            HYLE_ASSIGN_OR_RETURN(s.native,cd::BatchGraphAccess::create(s.program,*entry.queue,std::move(upload)));
+          }
           s.prepared_options=options;s.queue=entry.queue_owner;
         }
         if(r.device_choice){
@@ -735,6 +822,48 @@ Result<MaterializedGraph> materialized_graph(const c::MaterializedBatchProgram&p
   HYLE_ASSIGN_OR_RETURN(result.graph,std::move(builder).finish());return result;
 }
 namespace {
+struct QueryRowsConsumer final {
+  std::uint32_t step=UINT32_MAX;
+  ProviderRegionPrepared prepared;
+  void*invocation=nullptr;
+  const cd::ProviderExtensionRef*owner=nullptr;
+  const gd::RegionQueryRowsVTable*table=nullptr;
+  ValueId input;
+  NodeId operation;
+  gd::QueryRowsControl control;
+  std::uint32_t capacity=0;
+};
+Result<bool> accepts_query_rows(const QueryRowsConsumer&consumer,ValueId input)noexcept{
+  if(!consumer.owner || !consumer.table || !consumer.table->accepts ||
+      !consumer.table->configure || !consumer.table->clear)
+    return std::unexpected(Status::FailedPrecondition("query rows consumer has no exact cold interface/owner"));
+  struct Call{const QueryRowsConsumer*consumer;ValueId input;bool accepted=false;}call{&consumer,input};
+  HYLE_RETURN_IF_ERROR(cd::ProviderExtensionAccess::call(*consumer.owner,
+      [](void*,const void*,void*opaque)noexcept->Status{
+    auto&call=*static_cast<Call*>(opaque);const auto&c=*call.consumer;
+    HYLE_ASSIGN_OR_RETURN(call.accepted,c.table->accepts(c.prepared,c.invocation,call.input));
+    return Status::Ok();
+  },&call));
+  return call.accepted;
+}
+Status configure_query_rows(Invocation&invocation,const QueryRowsConsumer&consumer,
+    const gd::QueryRowsControl&control,const gd::QueryRowsFacts&facts)noexcept{
+  if(consumer.operation.valid()){
+    if(facts.offsets_input!=consumer.input || facts.capacity!=consumer.capacity || facts.rows>consumer.capacity)
+      return Status::InvalidArgument("operation query rows differ from its original physical domain");
+    const cd::PackedRowMatMulRowsConfiguration configuration{facts.offsets,facts.rows,false,
+        detail::QueryRowsAccess::make_rows_proof(facts)};
+    HYLE_ASSIGN_OR_RETURN(const bool configured,gd::RegionAccess::configure_node(invocation,
+        consumer.operation,cd::kPackedRowMatMulRowsExtensionId,&configuration));
+    return configured?Status::Ok():Status::Internal("operation did not apply its query rows configuration");
+  }
+  struct Call{const QueryRowsConsumer*consumer;const gd::QueryRowsControl*control;}call{&consumer,&control};
+  return cd::ProviderExtensionAccess::call(*consumer.owner,
+      [](void*,const void*,void*opaque)noexcept->Status{
+    auto&call=*static_cast<Call*>(opaque);const auto&c=*call.consumer;
+    return c.table->configure(c.prepared,c.invocation,*call.control);
+  },&call);
+}
 struct BatchResources final{
   struct Metadata final {
     ValueId input;c::TensorDesc description;
@@ -750,6 +879,7 @@ struct BatchResources final{
   };
   using Pending=detail::PendingPageInput;
   explicit BatchResources(mem::AllocatorRef a):allocator(a),metadata(mem::StdAllocator<Metadata>(a)),rows(mem::StdAllocator<Row>(a)),
+    query_rows(mem::StdAllocator<QueryRowsConsumer>(a)),
     frame_slots(mem::StdAllocator<Slot*>(a)),selected_entries(mem::StdAllocator<PreparedEntry>(a)),
     append_queues(mem::StdAllocator<detail::AppendQueueBinding>(a)),
     shared_layouts(mem::StdAllocator<NodeLayout>(a)),native_regions(mem::StdAllocator<detail::NativeBatchRegionRef>(a)),
@@ -768,6 +898,9 @@ struct BatchResources final{
   mem::AllocatorRef allocator;compute::ResourceBudget budget;
   std::vector<Metadata,mem::StdAllocator<Metadata>>metadata;
   std::vector<Row,mem::StdAllocator<Row>>rows;
+  // Exact original consumers only; no row scalar, lease or execution owner.
+  // Reset clears these before their original Batch producer can be reused.
+  std::vector<QueryRowsConsumer,mem::StdAllocator<QueryRowsConsumer>>query_rows;
   // Borrowed only for reset of actual guards owned by the original slots.
   // Destruction never dereferences them; State owns their lifetime/order.
   std::vector<Slot*,mem::StdAllocator<Slot*>>frame_slots;
@@ -790,11 +923,45 @@ struct BatchResources final{
   std::size_t source_capacity=0,native_source_capacity=0,pending_capacity=0;
   bool dependent_ready=false;
 };
+Status validate_query_rows_payload(void*opaque,const gd::InvocationState*invocation)noexcept{
+  if(!opaque || !invocation)return Status::InvalidArgument("query rows validation has no original payload/invocation");
+  const auto&p=*static_cast<const BatchResources*>(opaque);
+  ValueId group_input;gd::QueryRowsFacts facts;
+  for(const auto&consumer:p.query_rows){
+    if(consumer.operation.valid()){
+      const auto&plan=*invocation->plan;
+      if(gd::GraphIdentity::generation(consumer.operation)!=plan.generation ||
+          consumer.operation.ordinal()>=plan.node_steps.size() ||
+          plan.node_steps[consumer.operation.ordinal()]!=consumer.step)
+        return Status::FailedPrecondition("operation query rows no longer name their original selected slot");
+    }
+    // bind_query_rows appends one whole same-control group and rejects a
+    // repeated input. No external writer can replace an entry in this payload.
+    if(group_input!=consumer.input){
+      HYLE_ASSIGN_OR_RETURN(facts,consumer.control.inspect());group_input=consumer.input;
+    }
+    if(!consumer.operation.valid())continue; // Regions retain their own cold seal.
+    if(facts.offsets_input!=consumer.input || facts.capacity!=consumer.capacity || facts.rows>consumer.capacity)
+      return Status::FailedPrecondition("operation query rows proof differs from its prepared domain");
+  }
+  return Status::Ok();
+}
 const gd::ResourcePayloadVTable resource_table{
   [](void*opaque,Invocation&invocation)noexcept->Status{
     auto&p=*static_cast<BatchResources*>(opaque);HYLE_RETURN_IF_ERROR(p.reusable());
     HYLE_RETURN_IF_ERROR(detail::PagedAppendAccess::reset(invocation));
     HYLE_RETURN_IF_ERROR(gd::RegionAccess::revoke_preparation(invocation));
+    for(const auto&consumer:p.query_rows)
+      HYLE_RETURN_IF_ERROR(gd::RegionAccess::invalidate_commands(invocation,consumer.step));
+    for(const auto&consumer:p.query_rows){
+      if(consumer.operation.valid()){
+        const cd::PackedRowMatMulRowsConfiguration clear{.clear=true};
+        HYLE_ASSIGN_OR_RETURN(const bool cleared,gd::RegionAccess::configure_node(invocation,
+            consumer.operation,cd::kPackedRowMatMulRowsExtensionId,&clear));
+        if(!cleared)return Status::Internal("operation did not clear its query rows configuration");
+      }else consumer.table->clear(consumer.prepared,consumer.invocation);
+    }
+    p.query_rows.clear();
     p.append_ready=false;for(auto&q:p.append_queues){q.queue={};q.metadata_queue.reset();}p.append_host={};
     // Readiness and page permissions expire on every reset. Unknown/native
     // reset callbacks still discard their recordings before releasing any
@@ -833,7 +1000,7 @@ Result<BatchResources*> ensure_resources(graph::Invocation&invocation,PrepareOpt
   auto*p=options.allocator.construct<BatchResources>(options.allocator);
   if(!p)return std::unexpected(Status::ResourceExhausted("typed Graph resource owner metadata"));
   p->budget=options.resource_budget;
-  auto status=gd::RegionAccess::attach_resource_payload(invocation,&resource_table,p);
+  auto status=gd::RegionAccess::attach_resource_payload(invocation,&resource_table,p,&validate_query_rows_payload);
   if(!status.ok()){p->destroy();return std::unexpected(status);}return p;
 }
 Status register_slots(graph::Invocation&invocation,BatchResources&p)noexcept{
@@ -1332,6 +1499,126 @@ Result<c::ReadLease> query_offsets(graph::Invocation&invocation,NodeId node)noex
     return std::unexpected(Status::OutOfRange("query-offset extent overflows"));
   return call.metadata.subview(call.layout.origin_schema().metadata_offsets().query_indptr,
       std::size_t(count)*sizeof(std::int32_t));
+}
+Status bind_query_rows(graph::Invocation&invocation,NodeId attention,ValueId offsets_input)noexcept{
+  HYLE_ASSIGN_OR_RETURN(auto*p,frame_resources(invocation));
+  HYLE_RETURN_IF_ERROR(p->reusable());
+  if(std::any_of(p->query_rows.begin(),p->query_rows.end(),[&](const auto&consumer){
+      return consumer.input==offsets_input;}))
+    return Status::FailedPrecondition("reset the previous query rows configuration before rebinding");
+  std::vector<QueryRowsConsumer,mem::StdAllocator<QueryRowsConsumer>>consumers{
+      mem::StdAllocator<QueryRowsConsumer>(p->allocator)};
+  struct Discover{ValueId input;decltype(consumers)*entries;BatchResources*resources;};
+  Discover discover{offsets_input,&consumers,p};
+  HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit(invocation,
+      [](void*opaque,const gd::RegionAccessView&view)noexcept->Status{
+    auto&call=*static_cast<Discover*>(opaque);
+    const auto*vtable=view.prepared_vtable;
+    const auto*table=vtable && vtable->query_extension?
+        static_cast<const gd::RegionQueryRowsVTable*>(vtable->query_extension(
+            view.prepared,gd::kRegionQueryRowsExtensionId)):nullptr;
+    if(!table)return Status::Ok();
+    QueryRowsConsumer consumer{view.step,{vtable,view.prepared},view.invocation,view.owner,table,call.input};
+    HYLE_ASSIGN_OR_RETURN(const bool accepted,accepts_query_rows(consumer,call.input));
+    if(!accepted)return Status::Ok();
+    if(std::any_of(call.resources->query_rows.begin(),call.resources->query_rows.end(),
+        [&](const auto&prior){return prior.step==view.step;}))
+      return Status::InvalidArgument("query rows consumer already belongs to another offsets binding");
+    try{call.entries->push_back(consumer);}
+    catch(...){return Status::ResourceExhausted("query rows consumer metadata");}
+    return Status::Ok();
+  },&discover));
+  // Fallback operations are not regions and never appear in RegionAccessView.
+  // Keep their original selected OperationInvocation and object-local cold
+  // dispatch; only the exact logical input2 may name this offsets ValueId.
+  HYLE_ASSIGN_OR_RETURN(auto input_resource,gd::RegionAccess::input_resource(invocation.executable(),offsets_input));
+  (void)input_resource;
+  auto*state=gd::InvocationAccess::state(invocation);const auto&plan=*state->plan;
+  const auto offsets_instance=plan.external_instances[offsets_input.ordinal()];
+  for(std::size_t index=0;index<plan.steps.size();++index){
+    const auto&step=plan.steps[index];
+    if(step.kind!=gd::PlanStepKind::kOperation || step.node_count!=1 || step.input_count!=3 ||
+        step.output_count!=1 || plan.node_inputs[step.input_begin+2]!=offsets_instance ||
+        plan.instance_values[offsets_instance]!=offsets_input.ordinal())continue;
+    const auto node=gd::GraphIdentity::node(plan.generation,step.node_begin);
+    auto inspected=gd::RegionAccess::inspect_node(invocation,node,cd::kPackedRowMatMulRowsExtensionId);
+    if(!inspected){
+      if(inspected.error().IsUnimplemented() && !inspected.error().has_native_error())continue;
+      return inspected.error();
+    }
+    if(!inspected->access.requires_configuration)
+      return Status::Internal("selected row operation does not require its typed configuration");
+    if(std::any_of(p->query_rows.begin(),p->query_rows.end(),[&](const auto&prior){return prior.step==index;}))
+      return Status::InvalidArgument("query rows operation already belongs to another offsets binding");
+    HYLE_ASSIGN_OR_RETURN(auto description,step.operation.input_description(0));
+    if(description.rank()!=2 || description.dimensions()[0]<=0 ||
+        std::uint64_t(description.dimensions()[0])>UINT32_MAX)
+      return Status::InvalidArgument("query rows operation has no bounded matrix row domain");
+    QueryRowsConsumer consumer;consumer.step=std::uint32_t(index);consumer.input=offsets_input;
+    consumer.operation=node;consumer.capacity=std::uint32_t(description.dimensions()[0]);
+    try{consumers.push_back(consumer);}
+    catch(...){return Status::ResourceExhausted("query rows operation metadata");}
+  }
+  // Legacy packed consumers keep their original ready offsets and require no
+  // host row configuration. This also preserves delegated native providers.
+  if(consumers.empty()){
+    HYLE_ASSIGN_OR_RETURN(auto offsets,query_offsets(invocation,attention));
+    HYLE_ASSIGN_OR_RETURN(auto view,offsets.view());
+    if(view.size()%sizeof(std::int32_t) || view.size()/sizeof(std::int32_t)>INT64_MAX)
+      return Status::OutOfRange("query offsets description overflows");
+    HYLE_ASSIGN_OR_RETURN(auto description,c::TensorDesc::dense(c::DataType::kInt32,
+        std::array<std::int64_t,1>{std::int64_t(view.size()/sizeof(std::int32_t))}));
+    return bind_metadata(invocation,offsets_input,description,std::move(offsets));
+  }
+  if(gd::RecordingAccess::active(invocation))
+    return Status::Unimplemented("dynamic host query rows do not configure recording-only graphs");
+  struct Producer{
+    NodeId attention;Slot*slot=nullptr;c::BatchLayoutVersion layout;c::ReadLease offsets;
+    std::uint64_t epoch=0;
+  }producer{attention};
+  HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit(invocation,attention,
+      [](void*opaque,const gd::RegionAccessView&view)noexcept->Status{
+    auto&call=*static_cast<Producer*>(opaque);
+    if(view.prepared_vtable!=&region_table)
+      return Status::Unimplemented("host query rows need the original shared Batch slot");
+    const auto&r=*static_cast<const Region*>(view.prepared);auto&s=*static_cast<Slot*>(view.invocation);
+    if(r.node!=call.attention || r.device_choice)
+      return Status::Unimplemented("host query rows do not consume device layout choices");
+    HYLE_ASSIGN_OR_RETURN(auto metadata,prepared_metadata(r,s));
+    if(s.layout.facts().requests!=1 || s.layout.facts().query_rows>r.query_rows)
+      return Status::Unimplemented("host query rows require an R1 physical query envelope");
+    HYLE_ASSIGN_OR_RETURN(call.epoch,cd::BatchGraphAccess::preparation_epoch(s.token));
+    call.slot=&s;call.layout=s.layout;
+    HYLE_ASSIGN_OR_RETURN(call.offsets,metadata.read.subview(
+        call.layout.origin_schema().metadata_offsets().query_indptr,2*sizeof(std::int32_t)));
+    return Status::Ok();
+  },&producer));
+  HYLE_ASSIGN_OR_RETURN(auto description,c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t,1>{2}));
+  HYLE_ASSIGN_OR_RETURN(auto tensor,producer.offsets.tensor(description));
+  if(consumers.size()>p->query_rows.max_size()-p->query_rows.size())
+    return Status::ResourceExhausted("query rows consumer capacity overflows");
+  try{p->query_rows.reserve(p->query_rows.size()+consumers.size());}
+  catch(...){return Status::ResourceExhausted("query rows fixed consumer capacity");}
+  HYLE_RETURN_IF_ERROR(bind_metadata(invocation,offsets_input,description,std::move(producer.offsets)));
+  const auto control=detail::QueryRowsAccess::make(producer.slot,gd::InvocationAccess::state(invocation),
+      &inspect_query_rows,producer.epoch,producer.layout.generation(),offsets_input,tensor);
+  // Register before the first mutation: a partially configured consumer is
+  // cleared by the original typed resource reset on every later error.
+  for(auto&consumer:consumers)consumer.control=control;
+  p->query_rows.insert(p->query_rows.end(),consumers.begin(),consumers.end());
+  const auto configure=[&]()noexcept->Status{
+    HYLE_ASSIGN_OR_RETURN(const auto facts,control.inspect());
+    if(facts.offsets_input!=offsets_input || facts.capacity!=producer.slot->region->query_rows || facts.rows>facts.capacity)
+      return Status::InvalidArgument("query rows proof differs from its original binding domain");
+    for(const auto&consumer:consumers)
+      HYLE_RETURN_IF_ERROR(gd::RegionAccess::invalidate_commands(invocation,consumer.step));
+    for(const auto&consumer:consumers)HYLE_RETURN_IF_ERROR(configure_query_rows(invocation,consumer,control,facts));
+    return Status::Ok();
+  };
+  auto status=configure();
+  if(!status.ok())status.Update(gd::RegionAccess::reset_configuration(invocation));
+  return status;
 }
 Status prepare_replay(graph::Invocation&invocation,std::span<const QueueBinding>queues)noexcept{return capture_native(invocation,queues);}
 Result<SourceBinding>reader_binding(Invocation&invocation,ValueId bank,

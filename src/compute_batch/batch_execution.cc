@@ -63,6 +63,9 @@ struct BatchInvocationData final:util::RefCounted<BatchInvocationData>{
   QueueRef queue_owner;Queue*queue=nullptr;void*native=nullptr;
   BatchReplay*replay=nullptr;
   WriteLease mirror,output,float_workspace,int_workspace,host_workspace,staging;
+  // Coordinates borrowed only by the trusted outer Graph region. Its original
+  // root/native-use lifetime owns both payload and permission, not this view.
+  mem::BufferView graph_float_workspace;
   ReadLease mirror_ready,output_ready,staging_ready;
   ReadLease graph_shared_metadata;
   ProviderExtensionRef choice_extension;
@@ -117,7 +120,8 @@ void native_release(void*opaque)noexcept{
 Result<d::BatchWorkspaceViews> workspace_views(d::BatchInvocationData&s)noexcept{
   d::BatchWorkspaceViews views;
   HYLE_ASSIGN_OR_RETURN(views.metadata,(s.graph_shared_metadata.valid()?s.graph_shared_metadata:s.mirror_ready).view());
-  if(s.float_workspace.valid()){HYLE_ASSIGN_OR_RETURN(views.float_workspace,s.float_workspace.view());}
+  if(s.graph_float_workspace.valid())views.float_workspace=s.graph_float_workspace;
+  else if(s.float_workspace.valid()){HYLE_ASSIGN_OR_RETURN(views.float_workspace,s.float_workspace.view());}
   if(s.int_workspace.valid()){HYLE_ASSIGN_OR_RETURN(views.int_workspace,s.int_workspace.view());}
   if(s.host_workspace.valid()){HYLE_ASSIGN_OR_RETURN(views.host_workspace,s.host_workspace.view());}
   if(s.output.valid()){HYLE_ASSIGN_OR_RETURN(views.output,s.output.view());}return views;
@@ -140,6 +144,8 @@ Result<BatchPlanReport> query_workspace(d::BatchInvocationData&s,const BatchLayo
   const auto floating=report.float_workspace_bytes,integer=report.int_workspace_bytes;
   if(floating>p.options.max_float_workspace_bytes || integer>p.options.max_int_workspace_bytes)
     return std::unexpected(Status::ResourceExhausted("batch layout workspace exceeds program hard caps"));
+  if(s.graph_float_workspace.valid() && floating>s.graph_float_workspace.size())
+    return std::unexpected(Status::ResourceExhausted("batch layout exceeds its fixed Graph float workspace"));
   if(floating>SIZE_MAX-integer || floating+integer>SIZE_MAX-512u)
     return std::unexpected(Status::OutOfRange("batch scratch extent overflow"));
   return report;
@@ -162,7 +168,10 @@ Result<bool> prepare_workspace(d::BatchInvocationData&s,const BatchPlanReport&re
     PreparationChangeGate&gate)noexcept{
   auto&p=*s.program;if(!p.table->uses_caller_workspace)return false;
   const auto floating=report.float_workspace_bytes,integer=report.int_workspace_bytes;
-  if(s.float_workspace.size()>=floating && s.int_workspace.size()>=integer && s.host_workspace.size()>=integer)return false;
+  const bool borrowed=s.graph_float_workspace.valid();
+  if(borrowed && floating>s.graph_float_workspace.size())
+    return std::unexpected(Status::ResourceExhausted("batch layout exceeds its fixed Graph float workspace"));
+  if((borrowed || s.float_workspace.size()>=floating) && s.int_workspace.size()>=integer && s.host_workspace.size()>=integer)return false;
   // All ticket/completion/output guards ran before this cold mutation. Release
   // an old capture before its addresses, and old charges before the new exact
   // request so a hard budget never needs two generations of idle scratch.
@@ -176,7 +185,7 @@ Result<bool> prepare_workspace(d::BatchInvocationData&s,const BatchPlanReport&re
         {.max_blocks=1,.allocator=p.allocator,.resource_budget=p.options.resource_budget}));
     HYLE_ASSIGN_OR_RETURN(auto next,pool.allocate(bytes));retain_domain(*s.buffers,pool);lease=std::move(next);return Status::Ok();
   };
-  HYLE_RETURN_IF_ERROR(grow(s.float_workspace,p.options.resource,floating));
+  if(!borrowed)HYLE_RETURN_IF_ERROR(grow(s.float_workspace,p.options.resource,floating));
   HYLE_RETURN_IF_ERROR(grow(s.int_workspace,p.options.resource,integer));
   HYLE_RETURN_IF_ERROR(grow(s.host_workspace,p.options.host_workspace,integer));
   return true;
@@ -421,8 +430,26 @@ Result<BatchInvocation> BatchInvocation::create(const BatchProgram&program,Queue
 }
 namespace {
 Result<d::BatchInvocationData*> create_batch_invocation(d::BatchProgramData*p,Queue&queue,
-    bool external_output,std::shared_ptr<Queue>metadata_queue={})noexcept{
+    bool external_output,std::shared_ptr<Queue>metadata_queue={},
+    const d::BatchGraphFloatWorkspace*graph_float=nullptr)noexcept{
   if(!p || !queue.valid())return std::unexpected(Status::InvalidArgument("batch invocation program/queue is invalid"));
+  if(graph_float){
+    const auto storage=graph_float->storage;
+    if(!external_output || !p->table->uses_caller_workspace)
+      return std::unexpected(Status::Unimplemented("borrowed float workspace requires a caller-workspace Graph batch"));
+    if(!queue.is_open() || !p->context.owns(queue) || !storage.valid() ||
+        storage.resource()!=p->options.resource || !storage.native_handle())
+      return std::unexpected(Status::InvalidArgument("Graph float workspace differs from the original resource/Context"));
+    HYLE_RETURN_IF_ERROR(p->context.validate_resource(storage.resource()));
+    const auto properties=storage.resource().properties();
+    if(properties.domain!=p->options.resource.domain() ||
+        properties.minimum_alignment<16 || properties.minimum_alignment%16 || storage.offset()%16)
+      return std::unexpected(Status::InvalidArgument("Graph float workspace requires its original domain and 16-byte alignment"));
+    if(storage.size()<p->options.max_float_workspace_bytes)
+      return std::unexpected(Status::ResourceExhausted("Graph float workspace is smaller than the declared program cap"));
+    if(storage.offset()>SIZE_MAX-storage.size())
+      return std::unexpected(Status::OutOfRange("Graph float workspace range overflows"));
+  }
   if(metadata_queue && (!queue.is_open() || !metadata_queue->is_open() ||
       !p->context.owns(queue) || !p->context.owns(*metadata_queue)))
     return std::unexpected(Status::InvalidArgument("batch metadata and execution Queues must belong to the original open Context"));
@@ -433,6 +460,7 @@ Result<d::BatchInvocationData*> create_batch_invocation(d::BatchProgramData*p,Qu
   util::ScopeGuard rollback{[&]()noexcept{s->release_user();}};
   HYLE_ASSIGN_OR_RETURN(s->queue_owner,d::QueueRef::acquire(queue));
   s->queue=&queue;s->external_output=external_output;
+  if(graph_float)s->graph_float_workspace=graph_float->storage;
   s->buffers=p->allocator.construct<d::BatchBuffers>(p);if(!s->buffers)return std::unexpected(Status::ResourceExhausted("batch buffer owner"));
   s->buffers->metadata_queue=std::move(metadata_queue);
   s->buffers->provider_owner=p->extension;
@@ -844,6 +872,12 @@ Result<BatchInvocation> d::BatchGraphAccess::create(const BatchProgram&program,Q
   HYLE_ASSIGN_OR_RETURN(auto*data,create_batch_invocation(program.data_,execution,true,std::move(metadata_queue)));
   return BatchInvocation(data);
 }
+Result<BatchInvocation> d::BatchGraphAccess::create(const BatchProgram&program,Queue&execution,
+    std::shared_ptr<Queue>metadata_queue,BatchGraphFloatWorkspace workspace)noexcept{
+  HYLE_ASSIGN_OR_RETURN(auto*data,create_batch_invocation(program.data_,execution,true,
+      std::move(metadata_queue),&workspace));
+  return BatchInvocation(data);
+}
 Result<ReadLease> d::BatchGraphAccess::metadata(const BatchInvocation&invocation)noexcept{
   if(!invocation.data_ || !invocation.data_->prepared)return std::unexpected(Status::FailedPrecondition("Graph batch slot is not prepared"));
   return invocation.data_->graph_shared_metadata.valid()?invocation.data_->graph_shared_metadata:invocation.data_->mirror_ready;
@@ -954,6 +988,15 @@ Result<PreparedBatch> d::BatchGraphAccess::prepare_shared(BatchInvocation&target
 }
 void d::BatchGraphAccess::clear_shared_metadata(BatchInvocation&invocation)noexcept{
   if(invocation.data_)invocation.data_->graph_shared_metadata.reset();
+}
+Result<std::uint64_t> d::BatchGraphAccess::preparation_epoch(const PreparedBatch&token)noexcept{
+  const auto*s=token.data_;
+  if(!s || token.epoch_!=s->epoch || !s->external_output || s->closed || s->failed ||
+      !s->prepared || s->ran || !s->program->schema.owns(s->layout) || !s->queue_owner.is_open())
+    return std::unexpected(Status::FailedPrecondition("Graph batch preparation epoch is stale"));
+  if(s->pending.load(std::memory_order_acquire) || s->uses.active_batches() || !s->completion.available())
+    return std::unexpected(Status::Unavailable("Graph batch preparation still has native work/completion"));
+  return token.epoch_;
 }
 Status d::BatchGraphAccess::validate_prepared(const PreparedBatch&token,BatchGraphContract contract)noexcept{
   auto*s=token.data_;

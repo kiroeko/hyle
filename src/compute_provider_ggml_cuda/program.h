@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "hyle/compute/providers/ggml_cuda.h"
+#include "hyle/compute/sequence_ops.h"
 #include "provider_internal.h"
 
 namespace hyle::compute::ggml_cuda::internal {
@@ -24,6 +25,10 @@ inline constexpr detail::ResourceBindingRequirement kBinding{
 
 inline std::size_t boundary_alignment(Operation operation,
                                       DataType type) noexcept {
+  // The exact checked offsets input borrows the original Batch query-indptr
+  // subview. Matrix payloads and outputs keep their ordinary alignment.
+  if (operation.custom_as<sequence_ops::PackedRowMatMul>() && type == DataType::kInt32)
+    return sizeof(std::int32_t);
   // F32 Add uses typed scalar loads/stores, including native multi-Add and
   // fused bias readers. A dense row slice need not begin on an allocation
   // boundary. Other readers of the same value retain their own requirements.
@@ -35,7 +40,8 @@ inline std::size_t boundary_alignment(Operation operation,
   // GDN's F32 scalar loads also accept per-token gate subviews (a token's
   // scalar decay/beta is often only four bytes past the preceding token).
   return operation.get_if<Copy>() || operation.get_if<Cast>() ||
-                 operation.get_if<Concat>() || operation.get_if<GatedDeltaNet>()
+                 operation.get_if<Concat>() || operation.get_if<GatedDeltaNet>() ||
+                 operation.custom_as<sequence_ops::PackedGatedDeltaNet>()
              ? data_type_size(type)
              : kBinding.minimum_alignment;
 }

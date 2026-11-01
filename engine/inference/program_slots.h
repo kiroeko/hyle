@@ -46,6 +46,7 @@ class ProgramSlots final {
     graph::InvocationOptions invocation{};
     ProgramInitialization::Progress progress{};
     std::optional<ProgramInitialization::Slots> slots{};
+    const graph::InvocationWorkspace *workspace = nullptr;
   };
 
   ProgramSlots() = default;
@@ -119,7 +120,8 @@ class ProgramSlots final {
         .io = slot.io,
         .invocation = options.invocation,
         .progress = options.progress,
-        .slots = options.slots}));
+        .slots = options.slots,
+        .workspace = options.workspace}));
     slot.preparation_uses = 0;
     return Status::Ok();
   }

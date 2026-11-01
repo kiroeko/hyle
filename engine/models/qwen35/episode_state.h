@@ -120,6 +120,8 @@ struct StepState final {
   double submit_seconds = 0, cold_batch_seconds = 0, shape_admission_seconds = 0;
   std::size_t input_tokens = 0, active_input_rows = 0, active_draft_rows = 0,
       capture_recorded = 0, capture_reused = 0;
+  double phase_prepare_seconds = 0, slot_initialize_seconds = 0;
+  std::size_t phase_creations = 0, slot_initializations = 0;
   g::ReplayRoute replay_route = g::ReplayRoute::kUnprepared;
   bool prepared = false, submitted = false, cancelled = false;
   bool device_input_choice = false, draft_rows_deferred = false;
