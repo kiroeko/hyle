@@ -29,6 +29,7 @@
 #include "submission_lifetime.h"
 #include "progress_internal.h"
 #include "input_sources.h"
+#include "workspace_internal.h"
 
 namespace hyle::graph::detail {
 
@@ -1188,7 +1189,7 @@ struct RecordingProjection final {
 };
 
 struct InvocationState final : util::RefCounted<InvocationState> {
-  InvocationState(PlanState *plan_value, mem::PlannedBuffers workspace_value,
+  InvocationState(PlanState *plan_value, WorkspaceInstance workspace_value,
                   mem::AllocatorRef allocator_value) noexcept
       : allocator(allocator_value), plan(plan_value),
         concrete_descriptions(allocator), readable(allocator),
@@ -1287,7 +1288,11 @@ struct InvocationState final : util::RefCounted<InvocationState> {
   ResourceEpisodeOwner resources{};
   // Provider invocation state may borrow its assigned view until destruction,
   // so backing storage must be declared first and therefore destroyed last.
-  mem::PlannedBuffers workspace{};
+  WorkspaceInstance workspace{};
+  // One original lease use spans cold preparation and every accepted native
+  // preparation Completion, including an unknown retirement after host return.
+  compute::LeaseUseBatch workspace_preparation;
+  bool workspace_preparation_accepted = false;
   StepInvocations invocations;
   ReadableBindings submission_inputs;
   WritableBindings submission_outputs;

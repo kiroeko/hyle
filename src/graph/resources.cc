@@ -4451,6 +4451,7 @@ Result<detail::SubmissionCursor> detail::begin_submission(Invocation &invocation
       }
     }
     if (permissions.enabled()) HYLE_RETURN_IF_ERROR(permissions.admit(batch));
+    HYLE_RETURN_IF_ERROR(state->workspace.admit(batch));
   }
   HYLE_ASSIGN_OR_RETURN(auto cursor, SubmissionCursor::begin(invocation, queues, false));
   if (episode) episode->batch = std::move(batch);

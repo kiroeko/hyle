@@ -9488,6 +9488,18 @@ Result<Executable> Executable::exact_variant(std::size_t index) const noexcept {
 
 Result<Invocation> Executable::create_invocation(
     InvocationOptions options) const noexcept {
+  return create_invocation_impl(std::move(options), nullptr);
+}
+
+Result<Invocation> Executable::create_invocation(
+    InvocationOptions options, const InvocationWorkspace &workspace) const noexcept {
+  if (!workspace)
+    return std::unexpected(Status::InvalidArgument("shared invocation workspace is empty"));
+  return create_invocation_impl(std::move(options), &workspace);
+}
+
+Result<Invocation> Executable::create_invocation_impl(
+    InvocationOptions options, const InvocationWorkspace *shared_workspace) const noexcept {
   if (state_ == nullptr) {
     return std::unexpected(Status::FailedPrecondition("executable is invalid"));
   }
@@ -9503,8 +9515,8 @@ Result<Invocation> Executable::create_invocation(
     HYLE_RETURN_IF_ERROR(bind_shape_values(*domain, options.shape, allocator, values));
     if (const auto variant = find_exact_variant(*state_, values)) {
       values = ShapeValues(allocator);
-      return state_->exact_variants[*variant].create_invocation(
-          {.resources = std::move(options.resources)});
+      return state_->exact_variants[*variant].create_invocation_impl(
+          {.resources = std::move(options.resources)}, shared_workspace);
     }
     if (state_->finite_only)
       return std::unexpected(Status::Unimplemented(
@@ -9520,7 +9532,11 @@ Result<Invocation> Executable::create_invocation(
   if (budget != nullptr) {
     HYLE_ASSIGN_OR_RETURN(const auto requirement,
                           invocation_storage_requirement(*state_));
-    auto reserved = budget->reserve(requirement.bytes);
+    // The shared root is admitted/charged once by InvocationWorkspace in this
+    // same ResourceBudget scope. This slot still owns every private bound and
+    // uses the original family allocator for all its metadata allocations.
+    const auto owned_bytes = shared_workspace ? requirement.bytes - state_->workspace_bytes : requirement.bytes;
+    auto reserved = budget->reserve(owned_bytes);
     if (!reserved)
       return std::unexpected(Status::ResourceExhausted(
           "graph shared invocation storage budget is exhausted"));
@@ -9530,7 +9546,7 @@ Result<Invocation> Executable::create_invocation(
       if (!reservation.resources.try_reserve(
               state_->workspace_resources.size() + state_->steps.size()))
         return std::unexpected(invocation_allocation_failure());
-      for (std::size_t slot = 0; slot < state_->workspace_resources.size(); ++slot) {
+      for (std::size_t slot = 0; !shared_workspace && slot < state_->workspace_resources.size(); ++slot) {
         HYLE_ASSIGN_OR_RETURN(auto report, state_->workspace_plan.resource_plan(slot));
         HYLE_ASSIGN_OR_RETURN(auto charge,
             resources.reserve(state_->workspace_resources[slot], report.peak_bytes,
@@ -9556,10 +9572,17 @@ Result<Invocation> Executable::create_invocation(
 
   const std::span<const mem::MemoryResourceRef> selected_resources(
       state_->workspace_resources.data(), state_->workspace_resources.size());
-  auto workspace =
-      state_->workspace_plan.instantiate(selected_resources, allocator);
+  Result<detail::WorkspaceInstance> workspace = shared_workspace
+      ? detail::WorkspaceInstance::borrow(*shared_workspace, *state_, allocator)
+      : [&]() -> Result<detail::WorkspaceInstance> {
+          HYLE_ASSIGN_OR_RETURN(auto owned, state_->workspace_plan.instantiate(selected_resources, allocator));
+          return detail::WorkspaceInstance(std::move(owned));
+        }();
   if (!workspace)
     return std::unexpected(std::move(workspace).error());
+  // Providers can initialize their assigned scratch during cold creation.
+  // The shared writer is admitted before constructing any borrowing provider.
+  HYLE_ASSIGN_OR_RETURN(auto workspace_preparation, workspace->begin_preparation());
 
   void *storage = allocator.allocate(
       detail::InvocationState::allocation_bytes(budget != nullptr),
@@ -9824,6 +9847,11 @@ Result<Invocation> Executable::create_invocation(
   }
   rebuild_external_alias_index(*invocation);
   auto result = detail::InvocationAccess::adopt(invocation);
+  // Provider creation has returned without an admitted Graph run. Release its
+  // synchronous construction use before any resource preparation can nest.
+  // Accepted replay/capture work instead follows retain_preparation_completion.
+  workspace_preparation = {};
+  if (shared_workspace && !options.resources) options.resources = ResourceOptions{};
   if (options.resources)
     HYLE_RETURN_IF_ERROR(result.prepare_resources(std::move(*options.resources)));
   return result;

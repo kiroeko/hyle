@@ -37,6 +37,7 @@ struct SpecializationSignatureAccess;
 } // namespace detail
 
 class Invocation;
+class InvocationWorkspace;
 
 struct InvocationOptions final {
   std::span<const ShapeBinding> shape{};
@@ -586,6 +587,9 @@ struct InvocationStorageLimits final {
 };
 
 struct InvocationStorageUsage final {
+  // The shared-workspace overload excludes its separately owned root from
+  // these per-family counts; InvocationWorkspace/ResourceBudget account for
+  // that allocation once. Slot metadata/private bounds remain counted here.
   std::size_t live_bytes = 0;
   std::size_t peak_bytes = 0;
   std::size_t limit_bytes = SIZE_MAX;
@@ -984,8 +988,16 @@ public:
   // only an empty shape. Resource preparation belongs to that selected slot.
   HYLE_GRAPH_API Result<Invocation>
   create_invocation(InvocationOptions options = {}) const noexcept;
+  // Opt-in fixed scratch shared by mutually exclusive exact routes. The
+  // workspace factory rejects public outputs rooted in that scratch. Both
+  // parameters are required so existing create_invocation({}) stays unchanged.
+  HYLE_GRAPH_API Result<Invocation>
+  create_invocation(InvocationOptions options,
+                    const InvocationWorkspace &workspace) const noexcept;
 
 private:
+  Result<Invocation> create_invocation_impl(InvocationOptions,
+                                           const InvocationWorkspace *) const noexcept;
   friend struct detail::ExecutableAccess;
   explicit Executable(detail::PlanState *state) noexcept : state_(state) {}
   detail::PlanState *state_ = nullptr;

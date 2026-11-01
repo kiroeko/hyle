@@ -14,6 +14,7 @@ endif()
 if(_HYLE_COMPUTE_HAVE_CUDA AND TARGET hyle_graph_route_cuda
    AND TARGET hyle_compute_backend_cuda)
   hyle_add_test(graph NAME slots_cuda SOURCES slots_cuda_execution_test.cc output_source_cuda_test.cc
+    invocation_workspace_cuda_test.cc
     DEPS hyle_graph_route_cuda hyle_compute_backend_cuda)
   hyle_stage_runtime(hyle_graph_slots_cuda_test)
 endif()

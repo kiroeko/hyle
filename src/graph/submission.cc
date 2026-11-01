@@ -301,12 +301,29 @@ Status detail::begin_preparation(InvocationState &state) noexcept {
       state.plan->exclusive_in_flight.store(false, std::memory_order_release);
     return Status::Unavailable("graph bindings are already being prepared");
   }
+  auto workspace_use = state.workspace.begin_preparation();
+  if (!workspace_use) {
+    state.preparation_uses.store(0, std::memory_order_release);
+    if (exclusive) state.plan->exclusive_in_flight.store(false, std::memory_order_release);
+    return workspace_use.error();
+  }
+  state.workspace_preparation = std::move(*workspace_use);
+  state.workspace_preparation_accepted = false;
   return Status::Ok();
 }
 
 void detail::release_preparation(InvocationState &state) noexcept {
   const auto previous = state.preparation_uses.fetch_sub(1, std::memory_order_acq_rel);
   HYLE_FATAL_ASSERT(previous != 0);
+  if (previous == 1 && state.workspace_preparation.valid()) {
+    // The same sentinel/native retention count already proves all accepted
+    // preparation work retired. An unsubmitted recording merely rolls back.
+    if (state.workspace_preparation_accepted) {
+      auto retired = compute::Completion::completed(state.completion_terminal);
+      HYLE_FATAL_ASSERT(state.workspace_preparation.attach(retired).ok());
+    } else state.workspace_preparation = {};
+    state.workspace_preparation_accepted = false;
+  }
   if (previous == 1 && !state.plan->supports_concurrent_invocations)
     state.plan->exclusive_in_flight.store(false, std::memory_order_release);
 }
@@ -316,6 +333,7 @@ Status detail::retain_preparation_completion(
   HYLE_FATAL_ASSERT(!state.completion_retention.own.valid());
   HYLE_FATAL_ASSERT(state.preparation_uses.load(std::memory_order_acquire) != 0);
   state.preparation_uses.fetch_add(1, std::memory_order_relaxed);
+  state.workspace_preparation_accepted = true;
   state.completion_terminal = Status::Ok();
   state.phase.store(InvocationPhase::kRunning, std::memory_order_release);
   retain(&state);
