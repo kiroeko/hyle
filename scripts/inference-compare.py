@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-r"""Compare ordinary Qwen3.5 inference in fresh, interleaved processes.
+r"""Compare ordinary or K1 MTP Qwen3.5 inference in fresh, interleaved processes.
 
 The reference must implement the matched-input native consumer CLI (--model,
 --inputs, --steps/--schedule, --capacity, --mtp, --memory-snapshots); it is not
 llama-cli. Inputs and weights must already exist locally. No build, download,
-extra warmup run, profiler, memory sampler, automatic retry, or MTP process is started.
+extra warmup run, profiler, memory sampler, or automatic retry is started.
+MTP is off by default; --mtp on requires a reference GGUF containing its MTP weights.
 
 Example (add --dry-run to inspect without starting model processes):
   python scripts/inference-compare.py --hyle BUILD/bin/hyle.exe \
@@ -103,12 +104,14 @@ def command(arm: Arm, scenario: Scenario, args: argparse.Namespace) -> list[str]
         result = [str(arm.executable), "--inputs", str(args.inputs),
                   "--capacity", str(args.capacity), "--max-sessions", "1",
                   "--active-sequences", "1", "--prefix-cache", "off",
-                  "--progress", "direct", "--replay", "auto", "--mtp", "off",
+                  "--progress", "direct", "--replay", "auto", "--mtp", args.mtp,
                   "--backend", "cuda", "--sampling", "greedy", "--decode-overlap", "auto"]
+        if args.mtp == "on":
+            result += ["--mtp-max-drafts", "1"]
     else:
         result = [str(arm.executable), "--model", str(args.model),
                   "--inputs", str(args.reference_inputs), "--capacity", str(args.capacity),
-                  "--mtp", "off", "--memory-snapshots", "off"]
+                  "--mtp", args.mtp, "--memory-snapshots", "off"]
     if scenario.schedule:
         result += ["--schedule", str(scenario.schedule)]
     else:
@@ -237,19 +240,22 @@ def capture_rounds(stderr: str, count: int) -> list[dict]:
 
 
 def parse_report(stdout: str, stderr: str, arm: Arm, scenario: Scenario,
-                 capacity: int, wall: float) -> dict:
+                 capacity: int, wall: float, expected_mtp: bool = False) -> dict:
     # Hyle emits one complete final object; the native reference emits a pretty
     # printed object. Preserve the producer's stdout and never rewrite its JSON.
     raw = json.loads(stdout.lstrip("\ufeff"))
-    if raw.get("mtp") is not False:
-        raise ValueError("Expected an ordinary producer report with mtp=false")
+    if raw.get("mtp") is not expected_mtp:
+        raise ValueError(f"Expected producer report with mtp={expected_mtp}")
     if arm.hyle:
         if len(raw.get("sessions", [])) != 1:
             raise ValueError("Expected one resident Hyle session")
         detail = raw["sessions"][0]["result"]
-        for field in ("mtp_tensors", "draft_program_graph_calls", "draft_vocabulary_rows"):
-            if raw.get(field, 0) != 0:
-                raise ValueError(f"Unexpected ordinary draft work: {field}")
+        if not expected_mtp:
+            for field in ("mtp_tensors", "draft_program_graph_calls", "draft_vocabulary_rows"):
+                if raw.get(field, 0) != 0:
+                    raise ValueError(f"Unexpected ordinary draft work: {field}")
+        elif raw.get("mtp_max_drafts") != 1:
+            raise ValueError("Expected the requested Hyle K1 MTP producer")
     else:
         detail = raw
     turns, generated = detail["turns"], detail["generated_ids"]
@@ -261,7 +267,7 @@ def parse_report(stdout: str, stderr: str, arm: Arm, scenario: Scenario,
                             ("generated_decode_tokens", len(generated) - len(turns)),
                             ("turn_count", len(turns)), ("session_count", 1)):
         if field in raw and raw[field] != expected:
-            raise ValueError(f"Complete ordinary {field} differs from turn ledger")
+            raise ValueError(f"Complete {field} differs from turn ledger")
     for field in ("capacity", "requested_context", "context_capacity"):
         if field in raw and raw[field] != capacity:
             raise ValueError(f"Actual {field} differs from requested capacity")
@@ -310,21 +316,44 @@ def parse_report(stdout: str, stderr: str, arm: Arm, scenario: Scenario,
         context += target_rows
         if turn["context_after"] != context or context > capacity:
             raise ValueError(f"Turn {index + 1} context/target-row ledger differs")
-        if "target_decode_rows" in turn and turn["target_decode_rows"] != len(values) - 1:
+        if not expected_mtp and "target_decode_rows" in turn and turn["target_decode_rows"] != len(values) - 1:
             raise ValueError(f"Turn {index + 1} ordinary target decode-row ledger differs")
         observed.append(dict(turn=index + 1, outputs=len(values), generated_ids=values, input_rows=len(inputs),
                              target_rows=target_rows, prefill_seconds=prefill, decode_seconds=decode,
                              prefill_tokens_per_second=len(inputs) / prefill,
                              decode_tokens_per_second=(len(values) - 1) / decode if decode else None,
                              capture=capture))
+        if expected_mtp:
+            observed[-1]["producer_work"] = producer_work(turn)
         output_at = end
     if output_at != len(generated):
         raise ValueError("Generated IDs outside actual turn output ranges")
-    for field in ("actual_target_rows", "committed_target_rows", "processed_tokens"):
+    for field in (("committed_target_rows", "processed_tokens") if expected_mtp else
+                  ("actual_target_rows", "committed_target_rows", "processed_tokens")):
         if field in raw and raw[field] != context:
-            raise ValueError(f"Complete ordinary {field} differs from turn ledger")
+            raise ValueError(f"Complete {field} differs from turn ledger")
     if "prefill_target_rows" in raw and raw["prefill_target_rows"] != sum(turn["input_rows"] for turn in observed):
-        raise ValueError("Complete ordinary prefill_target_rows differs from turn ledger")
+        raise ValueError("Complete prefill_target_rows differs from turn ledger")
+    if expected_mtp:
+        work = producer_work(raw)
+        for field in ("actual_target_rows", "actual_draft_rows"):
+            if field not in work:
+                raise ValueError(f"MTP producer did not report {field}")
+        if work["actual_target_rows"] < context:
+            raise ValueError("Actual MTP target rows are below the committed turn context")
+        metrics.update({f"producer_{key}": value for key, value in work.items()})
+        # Extra execution includes rejected proposals and discarded successors;
+        # it is independent of the number of rejected draft proposals.
+        metrics["derived_extra_target_rows_actual_minus_committed"] = work["actual_target_rows"] - context
+        proposals = work.get("proposals", work.get("draft_rounds"))
+        if proposals is None and all("proposals" in turn["producer_work"] for turn in observed):
+            proposals = sum(turn["producer_work"]["proposals"] for turn in observed)
+            metrics["proposals_sum_of_producer_turns"] = proposals
+        accepted = work.get("accepted_drafts", work.get("consumed_drafts"))
+        if proposals is not None and accepted is not None:
+            if accepted > proposals:
+                raise ValueError("Accepted MTP drafts exceed producer proposal count")
+            metrics["derived_rejected_drafts_proposals_minus_accepted"] = proposals - accepted
     decode_outputs = len(generated) - len(turns)
     metrics.update(full_decode_tokens_per_second=decode_outputs / metrics["decode_seconds"]
                    if metrics["decode_seconds"] else None,
@@ -333,8 +362,26 @@ def parse_report(stdout: str, stderr: str, arm: Arm, scenario: Scenario,
                    new_user_prefill_tokens_per_second=sum(map(len, scenario.prompts)) / metrics["prefill_seconds"],
                    session_output_tokens_per_second=len(generated) / metrics["session_seconds"],
                    cold_output_tokens_per_second=len(generated) / metrics["startup_to_endpoint_seconds"])
-    return dict(metrics=metrics, turns=observed, generated_ids=generated,
-                target_rows=context, source_id=raw.get("source_id"))
+    return dict(metrics=metrics, turns=observed, generated_ids=generated, mtp=expected_mtp,
+                target_rows=context, source_id=raw.get("source_id"),
+                actual_draft_rows_scope=raw.get("actual_draft_rows_scope"))
+
+
+def producer_work(report: dict) -> dict[str, int]:
+    """Preserve only exported work counters; never substitute logical context."""
+    fields = ("actual_target_rows", "committed_target_rows", "prefill_target_rows", "verified_target_rows",
+              "target_decode_rows", "actual_draft_rows", "prefill_draft_rows", "draft_rows", "draft_decode_rows",
+              "draft_rounds", "proposals", "agreements", "accepted_drafts", "consumed_drafts", "rejected_drafts",
+              "extra_target_rows", "target_compute_calls", "draft_compute_calls",
+              "overlap_successor_submissions", "overlap_successor_discards")
+    result = {}
+    for key in fields:
+        if key in report:
+            value = report[key]
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"Invalid producer work counter {key}={value!r}")
+            result[key] = value
+    return result
 
 
 def distribution(values: list) -> str:
@@ -353,8 +400,9 @@ def id_comparison(left: list[int], right: list[int]) -> str:
             f"{common + 1 if left != right else 'none'}")
 
 
-def summarize(records: list[dict], arms: list[Arm], scenarios: list[Scenario]) -> tuple[str, bool]:
-    lines = ["Ordinary inference: full native endpoints; independent interleaved processes.",
+def summarize(records: list[dict], arms: list[Arm], scenarios: list[Scenario],
+              mtp: bool = False) -> tuple[str, bool]:
+    lines = [f"{'MTP K1' if mtp else 'Ordinary'} inference: full native endpoints; independent interleaved processes.",
              "Decode TPS uses full continuous decode intervals; explicit startup warmup remains in startup/cold TPS and parent wall.",
              "No decode_warmup markers means this binary/invocation did not execute that explicit startup stage; its fields are zero.",
              "Capture-associated cold prep sums the cold_batch_seconds of capture_recorded steps.",
@@ -362,6 +410,9 @@ def summarize(records: list[dict], arms: list[Arm], scenarios: list[Scenario]) -
              "Reference capture duration/count unknown unless producer exports them; warmup log counts are separate.",
              "Process output TPS uses parent wall, including launch, report publication and teardown; cold TPS uses native startup-to-endpoint.",
              "Natural cross-engine IDs may differ; equal prompt/quota does not establish equal follow-up work."]
+    if mtp:
+        lines.append("Turn target_rows are committed logical rows; producer_ counters preserve actual exported work. "
+                     "Derived extra target rows include discarded successors; rejected drafts use producer proposal/round count minus accepted/consumed drafts.")
     valid = True
     baseline = "old_hyle" if any(arm.name == "old_hyle" for arm in arms) else "reference"
     for scenario in scenarios:
@@ -383,6 +434,10 @@ def summarize(records: list[dict], arms: list[Arm], scenarios: list[Scenario]) -
                 for key in ("outputs", "input_rows", "target_rows", "prefill_seconds", "decode_seconds",
                             "prefill_tokens_per_second", "decode_tokens_per_second"):
                     lines.append(f"{prefix} {key}: {distribution([turn[key] for turn in turns])}")
+                if mtp:
+                    for key in sorted(set().union(*(turn["producer_work"] for turn in turns))):
+                        lines.append(f"{prefix} producer_{key}: "
+                                     f"{distribution([turn['producer_work'].get(key) for turn in turns])}")
                 for key in ("prefill_captures", "prefill_capture_associated_cold_prep_seconds",
                             "decode_captures", "decode_capture_associated_cold_prep_seconds",
                             "capture_recorded", "capture_reused", "capture_associated_cold_prep_seconds",
@@ -390,6 +445,8 @@ def summarize(records: list[dict], arms: list[Arm], scenarios: list[Scenario]) -
                     lines.append(f"{prefix} {key}: {distribution([turn['capture'][key] for turn in turns])}")
             for key in first["metrics"]:
                 lines.append(f"  {key}: {distribution([row['observation']['metrics'][key] for row in group])}")
+            if mtp:
+                lines.append(f"  producer_actual_draft_rows_scope={first['actual_draft_rows_scope'] or 'not exported'}")
         if baseline in representatives:
             for name, first in representatives.items():
                 if name != baseline:
@@ -428,15 +485,17 @@ def execute(folder: Path, arm: Arm, scenario: Scenario, args: argparse.Namespace
         raise RuntimeError(f"Consumer exit {result.returncode}; raw attempt retained: {folder}")
     observation = parse_report((folder / "stdout.log").read_text(encoding="utf-8-sig"),
                                (folder / "stderr.log").read_text(encoding="utf-8", errors="replace"),
-                               arm, scenario, args.capacity, wall)
+                               arm, scenario, args.capacity, wall, args.mtp == "on")
     return dict(arm=arm.name, scenario=scenario.name, observation=observation)
 
 
 def arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--hyle", type=Path, required=True, help="Current ordinary Hyle executable")
+    parser.add_argument("--hyle", type=Path, required=True, help="Current Hyle executable")
     parser.add_argument("--reference", type=Path, required=True, help="Matched-input native reference consumer executable")
     parser.add_argument("--model", type=Path, required=True, help="Existing reference GGUF; Hyle weights are selected by --inputs")
+    parser.add_argument("--mtp", choices=("off", "on"), default="off",
+                        help="Greedy K1 MTP; --model must contain MTP weights when on (default: off)")
     parser.add_argument("--inputs", type=Path, required=True, help="Existing Hyle inputs directory")
     parser.add_argument("--reference-inputs", type=Path, help="Reference prompt directory; defaults to --inputs")
     parser.add_argument("--schedule", type=Path, help="Existing prompt/generate schedule, any positive round count")
@@ -495,7 +554,7 @@ def main() -> int:
         if sum(map(len, scenario.prompts)) + sum(scenario.quotas) - 1 > args.capacity:
             raise ValueError(f"{scenario.name}: complete requested inputs/outputs exceed capacity")
     plan = [f"UTC={datetime.now(timezone.utc).isoformat()} platform={platform.platform()} Python={platform.python_version()}",
-            "Ordinary only; no MTP/download/build/retry/extra warmup/profile/memory observer. GPU concurrency=1.",
+            f"mode={'MTP K1' if args.mtp == 'on' else 'ordinary'}; no download/build/retry/extra warmup/profile/memory observer. GPU concurrency=1.",
             f"capacity={args.capacity} repeats={args.repeats} root={ROOT}"]
     for arm in arms:
         environment(arm)  # Validate each receipt before launching any process.
@@ -524,11 +583,11 @@ def main() -> int:
                 print(f"{folder.name}: exit0 target_rows={observation['target_rows']} "
                       f"decode_seconds={[turn['decode_seconds'] for turn in observation['turns']]}", flush=True)
     except BaseException as error:
-        text, _ = summarize(records, arms, scenarios)
+        text, _ = summarize(records, arms, scenarios, args.mtp == "on")
         (args.output / "endpoints.txt").write_text("INCOMPLETE WINDOW\n" + text, encoding="utf-8")
         (args.output / "failure.txt").write_text(f"{type(error).__name__}: {error}\nNo retry. All attempts retained.\n", encoding="utf-8")
         raise
-    text, valid = summarize(records, arms, scenarios)
+    text, valid = summarize(records, arms, scenarios, args.mtp == "on")
     (args.output / "endpoints.txt").write_text(text, encoding="utf-8")
     print(text, flush=True)
     if not valid:
