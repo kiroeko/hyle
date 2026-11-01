@@ -2,7 +2,7 @@
 
 更新：2026-11-01。**当前表对应未提交的设备端接受／连续接力候选，尚未通过完整验收。** 普通 decode 汇总领先约2.9%，MTP约6.1%；请求级 prefill 汇总落后约24%–27%，MTP启动和显存仍有缺口。
 
-本页集中维护最近结果、计时口径和复现入口；更新时替换当前表，不追加实验流水。任务顺序见[推理看板](../inference-progress.md)，统一方法见[性能测量](README.md)。
+本页只保留当前候选的最新对照与最新专项诊断；更新时替换旧数据。任务顺序见[推理看板](../inference-progress.md)，计时与实际算量口径见[性能测量](README.md)。
 
 ## 当前候选：普通／MTP × prefill／decode
 
@@ -54,7 +54,7 @@ Windows／RTX 4070、Qwen3.5-2B BF16、纯CUDA、greedy、完整词表、K1 MTP�
 
 本机原始数据：[主表与逐轮范围](../../../.scratch/inference-mtp-gating-20261101/prefill-decode-matrix2/summary.txt)、[逐轮TSV](../../../.scratch/inference-mtp-gating-20261101/prefill-decode-matrix2/turns.tsv)、[双方版本与全部命令](../../../.scratch/inference-mtp-gating-20261101/prefill-decode-matrix2/plan.txt)、[独立内存结果](../../../.scratch/inference-mtp-gating-20261101/device-memory3/analysis.txt)。原始日志仅留本地 `.scratch`，不作为随仓库发布的证据包。
 
-## Prefill冷准备诊断（独立窗口）
+## 最新Prefill冷准备诊断（独立窗口）
 
 同一普通模式二进制、同一8轮负载，默认lazy／现有 `--warmup-shapes planned`／冻结参考三臂交错，每臂3个独立进程，9进程均exit0。planned只提前创建已知形状的执行载体，不额外执行模型，不提前录制prefill图；Hyle两种配置的完整输出ID一致。
 
@@ -66,61 +66,4 @@ Windows／RTX 4070、Qwen3.5-2B BF16、纯CUDA、greedy、完整词表、K1 MTP�
 
 载体准备前移使ready增加约129ms、请求级prefill减少约122ms；Hyle完整进程吞吐为69.77／69.76 tok/s，基本不变，不能称为计算提速。第2–8轮planned仍落后参考约20.4%，且不同形状仍是首次使用，不能标为纯稳态结果。当前默认路径尚未改成planned；本诊断不能替换主表的默认配置数字。
 
-之前4082 tok/s来自154-token单轮输入；旧八轮测试重复154-token prompt。它们与本页不同形状的八轮汇总不是同一负载，不能据跨窗口绝对值判断代码退化。首轮参考的首次使用成本也会影响汇总，不能据汇总宣称通用热prefill领先。
-
 本机原始数据：[对照结果与全部范围](../../../.scratch/inference-mtp-gating-20261101/prefill-cold-ab1/summary.txt)、[版本与命令](../../../.scratch/inference-mtp-gating-20261101/prefill-cold-ab1/plan.txt)。本诊断与主表分属不同窗口，不混合样本。
-
-## 已提交版本的历史对照
-
-<details>
-<summary>2026-10-31 单轮／重复两轮历史基线</summary>
-
-**2026-10-31 14:00:28～14:02:46，Windows／RTX 4070，Qwen3.5-2B BF16，正常Release shared GPU产品。** 默认完整词表、greedy、普通与K1 MTP均自动接力；P154、每轮64输出、C1024、单活动会话、prefix off。单轮／两轮分别测量，不是双用户合批。
-
-每工况双方各3个独立计时进程和1个独立内存进程，共32进程均exit0，无profile或补样。表中为Hyle／冻结参考的中位数，速度tok/s、显存GiB。decode按原producer排除prefill首token，保留首次实际capture；综合按完整会话实际输出计数。
-
-| 工况 | prefill | decode | 综合输出速度 | dedicated采样峰 |
-|---|---:|---:|---:|---:|
-| 普通单轮 | 2174.88／1593.68 | 99.07／101.96 | 90.57／89.06 | 4.040／3.728 |
-| 普通两轮 | 2690.41／2372.93 | 101.33／102.08 | 94.24／93.98 | 4.171／3.728 |
-| MTP单轮 | 2129.37／1508.05 | 121.47／135.73 | 108.30／113.02 | 4.237／3.896 |
-| MTP两轮 | 2472.61／2343.57 | 133.88／140.88 | 120.04／124.76 | 4.372／3.896 |
-
-普通decode落后约2.83%／0.73%，MTP落后约10.51%／4.97%；显存采样峰高约8.38%～12.23%。本窗建立基线，没有证明新的稳定提速。完整秒数、样本范围、原报告与命令在[正常产品对照](../../evidence/performance/inference-default-product-2026-10-31.json)。
-
-</details>
-
-## 最短测量路径
-
-先按[构建指南](../setup/README.md)得到正常Release产物，再按[引擎指南](../../user/inference.md)准备本地输入。同一份含MTP权重的输入可运行两种模式：
-
-```text
-<build-dir>/bin/hyle --inputs .scratch/qwen-input --backend cuda --mtp off --steps 64 --capacity 1024
-<build-dir>/bin/hyle --inputs .scratch/qwen-input --backend cuda --mtp on --mtp-max-drafts 1 --steps 64 --capacity 1024
-```
-
-Windows使用实际`hyle.exe`。这是单臂复测入口，不会自动得到上表，也不会下载模型。正式对照还需固定同一输入／参考版本、交错独立进程，按[四项报告口径](README.md#推理对比固定报告)记录prefill、完整decode、独立内存和连续会话综合速度。
-
-复现10-31历史表的精确输入、双轮schedule、双方命令及独立内存观察器直接取原证据中的对应记录；本地缓存入口为`.scratch/inference-plan-cold-facts-20261030/window.py`。先核其固定输入与产物仍可用，不把历史脚本当当前自动执行指令，不为复现隐式下载权重。计时进程不装profiler；ready采样握手只放在独立内存进程。
-
-## 归因时保留的边界
-
-| 问题 | 已知事实 | 后续比较需区分 |
-|---|---|---|
-| 连续执行与准备 | 已有capture、设备token接力和正常后继发布；warm提示不是权限 | 首次录制／稳态复用、主机准备／真实GPU等待；不能相加重叠step时长代替墙时 |
-| MTP额外计算 | 历史单轮窗有2个被丢弃后继；当前设备端选择候选的本页负载无丢弃，拒绝草稿的验证工作仍计入实际行数 | 接受率和无效计算，与提交／重录／读回间隙分别归因 |
-| GPU投影与融合 | 部分投影融合及GEMV已使用；减少episode不等于减少kernel | 实际carrier／算法、M1／M2形状、流量及完整消费者净收益 |
-| 内存 | 历史表ready未知；当前另列独立采样峰差值，固定池归还不是物理释放 | 加载、准备、各轮prefill／decode及释放后的同步阶段值 |
-
-`actual_draft_rows`计入原Graph已接纳的活跃draft输入，包括之后丢弃／失败及恢复；恢复行是子类，不能再加一次。它不包含padding、provider内部准备、未返回Completion的部分失败或硬件FLOPs。完整定义见[工作量对齐](README.md#对齐工作量)。
-
-本地TensorRT-LLM `46d9966b54d9`的BF16 low-M专用路径要求100≤SM<110且显式启用，本机SM89不能照搬；其BF16 logits后转F32也不能代替Hyle现有F32 scores合同。借鉴源码不等于已复现其收益。
-
-## 可选实验与历史
-
-[显式32K词表实验](../../evidence/performance/inference-draft-vocabulary-2026-10-30.json)在有限场景出现收益，额外head／map占128MiB／128KiB，但它是显式代码域先验，只支持列明的greedy路径，不代签默认full-V、随机接受或其它模型。有限K2信号没有改变默认K1。
-
-较早长输入、B2、CPU、失败候选、主机／GPU跟踪及逐片A/B保存在[历史调查](../../evidence/history/decode-2026-10-31.md)。它们各自绑定当时版本；现行页面不再按日期追加实验流水。
-
-<a id="三轮共享缓存的四项基线2026-10-21"></a>
-历史入链：[2026-10-21三轮共享缓存基线](../../evidence/history/decode-2026-10-31.md#三轮共享缓存的四项基线2026-10-21)。
