@@ -54,6 +54,7 @@
 
 ### M1-5 长上下文准备收尾｜进行中
 - **已提交基线：** `cf56700c2`。16K 普通／MTP decode 已恢复至与参考接近；C2048 短负载不低于旧版98%，同配置显存采样峰增量0 MiB。详见[性能表](performance/decode.md)。不再重做已完成的容量诊断。
+- **当前：** 32K 普通 prefill 为参考的92.7%；主机 decode 准备从1K到32K分别增长约3.0倍／3.7倍。布局关系缓存和MTP候选页引用合并均未测出收益，已撤回；待处理旧页权限按bank常驻与增量验证。
 - **目标：** 一天内让 bank 页表／布局常驻，权限增量处理；decode 每步、prefill 每块只处理新增 token／页。保留原有权限、版本、有序发布和真实退休。
 - **固定负载：** 普通／MTP 四档 1024／4096／16384／32736 token，全部 C32768，每进程生成16 token；真实文本经本地原生 tokenizer 生成，参考核对实际 target／draft 容量并使用默认 warmup。正式计时同窗交错，每臂3个独立进程；不使用 profiler。
 - **验收命令：** `python .scratch/inference-long-context-20261101/acceptance.py timing --output <新目录> --hyle-version <实际版本> --baseline <cf56700c2构建> --baseline-version cf56700c2 --capacity 32768 --lengths 1024 4096 16384 32736 --modes both`；`python .scratch/inference-long-context-20261101/short_regression.py timing --output <新目录> --hyle-version <实际版本> --baseline <cf56700c2构建> --baseline-version cf56700c2 --modes both`；独立运行 `acceptance.py memory-run` 采样显存，并分别记录 1K／32K 的主机准备。

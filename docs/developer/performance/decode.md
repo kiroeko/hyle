@@ -4,26 +4,26 @@
 
 RTX 4070 12GB，Qwen3.5-2B BF16，greedy、纯 CUDA、默认参数。真实文本由原生 tokenizer 生成；双方 capacity 与参考实际 target/draft `n_ctx` 均为 32768。参考按默认流程预热，batch 2048、ubatch 512。每臂 3 个独立进程、同窗口交错，每进程生成 16 token。
 
-单元格为 **Hyle / llama.cpp** 三进程中位数。prefill 从请求开始算到首 token，不含模型加载及 ready 前准备；decode 为之后 15 个 token 的完整区间，包含首用开销；退出墙时包含进程启动到退出。
+单元格为 **Hyle / llama.cpp** 三进程中位数，每行采用该场景最近的有效同窗结果，不跨窗口推算差距。prefill 从请求开始算到首 token，不含模型加载及 ready 前准备；decode 为之后 15 个 token 的完整区间，包含首用开销；退出墙时包含进程启动到退出。
 
 | 模式 | 输入 token | prefill ms | decode tok/s | ready s | 退出墙时 s |
 |---|---:|---:|---:|---:|---:|
-| 普通 | 1024 | 103.58 / 120.78 | 98.40 / 94.75 | 1.769 / 1.775 | 2.553 / 2.600 |
+| 普通 | 1024 | 103.25 / 112.69 | 99.43 / 97.19 | 1.779 / 1.769 | 2.563 / 2.575 |
 | 普通 | 4096 | 400.19 / 427.49 | 99.65 / 92.95 | 1.780 / 1.768 | 2.881 / 2.882 |
-| 普通 | 16384 | 1779.40 / 1696.32 | 91.67 / 90.85 | 1.775 / 1.788 | 4.275 / 4.210 |
-| 普通 | 32736 | 3982.32 / 3706.68 | 85.00 / 85.58 | 1.821 / 1.801 | 6.516 / 6.243 |
-| MTP | 1024 | 116.55 / 131.17 | 116.43 / 118.14 | 2.941 / 1.830 | 3.750 / 2.639 |
+| 普通 | 16384 | 1884.39 / 1741.64 | 85.62 / 84.51 | 1.825 / 1.825 | 4.410 / 4.825 |
+| 普通 | 32736 | 3977.78 / 3688.26 | 87.66 / 85.08 | 1.790 / 1.795 | 6.476 / 6.202 |
+| MTP | 1024 | 112.73 / 122.54 | 120.79 / 121.73 | 2.947 / 1.844 | 3.775 / 2.641 |
 | MTP | 4096 | 443.22 / 474.68 | 118.50 / 115.63 | 2.967 / 1.848 | 4.102 / 3.006 |
-| MTP | 16384 | 1819.95 / 1975.81 | 108.96 / 108.26 | 2.994 / 1.885 | 5.540 / 4.545 |
-| MTP | 32736 | 4124.59 / 4327.33 | 101.85 / 98.03 | 3.003 / 1.858 | 7.862 / 6.923 |
+| MTP | 16384 | 1828.25 / 1944.95 | 110.30 / 106.78 | 2.973 / 1.823 | 5.518 / 4.497 |
+| MTP | 32736 | 4123.03 / 4303.84 | 102.84 / 98.98 | 2.961 / 1.853 | 7.818 / 6.901 |
 
 16K 独立同窗复测，旧版 `5b91c0cd7`／已提交版／参考的普通 decode 分别为 5.87／85.62／84.51 tok/s，MTP 为 13.60／110.30／106.78 tok/s；每臂3个进程，输出 ID 与旧版一致。普通新版范围为 73.20–88.88 tok/s，有较大波动，但新版和旧版范围不重叠。
 
-普通 16K prefill 慢 83.08ms，未达到验收；普通 32K decode 的两组三次范围重叠，不能断言稳定差距。MTP 1K、4K、16K decode 的两组范围重叠；32K 的 Hyle 范围为 100.83–101.91、参考为 97.07–100.19 tok/s。完整矩阵中每个场景的双方输出 ID 均一致。
+普通 32K prefill 为参考吞吐的 92.7%，未达到 97% 验收。最新窗口的普通16K及MTP 1K／32K decode 两组范围均重叠，不能将中位数差距解释成稳定领先或退化。各场景双方输出 ID 一致。
 
-16K 独立主机诊断中，普通 decode 准备中位数 1.34ms，15 次中 1 次超过 2ms；MTP 后继角色中位数 3.34ms、范围 2.93–4.49ms，6 次均超过 2ms。另以当前源码的观察程序各运行 3 个进程，首个不重叠发布间隔 / 后续中位间隔：普通 1.37–1.42 倍，MTP 1.26–1.38 倍，均小于 2 倍；诊断日志开销保留，不充当正式吞吐量。
+主机 decode 准备中位数从1K到32K：普通 0.70→2.08ms，MTP 1.50→5.54ms，均超过1.3倍。末段 prefill 分块准备分别为普通 2.81→3.44ms、MTP 2.88→5.58ms。采样是同一进程内的准备阶段，不能把重叠步长相加当成完整 decode 耗时。
 
-当前源码四档 teacher-forcing 的普通及 MTP 已检查位置 argmax 均匹配原版；自然 MTP 的 16 个 ID、已观察接力行和末步完整 logits 的 argmax 匹配，版本、RNG 和真实退休检查通过。同一数学路径下，原版与当前版在第 13、15、16 项的全部已初始化状态载荷及所记录的布局／边界字段逐字节一致，包含 draft。Round / Single 两条路径之间仍有浮点字节差异，尚无数值容差，不能宣称跨路径状态比较通过。
+已检查的四档普通及 MTP teacher-forcing argmax 均匹配原版；自然 MTP 的16个 ID、已观察接力行及末步 argmax 匹配。同一数学路径下，原版与当前版第13、15、16项的已初始化状态载荷及所记录边界字段逐字节一致，包含 draft。Round / Single 的已检查 teacher-forcing argmax 一致；分别从两种状态继续生成16 token 尚未验证，不能宣称本卡完整正确性通过。
 
 C2048 短负载使用 8 个不同 prompt、每轮 64 token。原版 / 当前版合并 decode：普通 101.57 / 102.17，MTP 125.57 / 125.99 tok/s；逐轮均达到原版的 98%，生成 ID 一致。
 
@@ -33,4 +33,4 @@ C2048 短负载使用 8 个不同 prompt、每轮 64 token。原版 / 当前版�
 
 复现长负载：`python .scratch/inference-long-context-20261101/acceptance.py timing --output <新目录> --hyle-version <实际版本> --lengths 1024 4096 16384 32736 --modes both`。
 
-原始数据：[完整矩阵与命令](../../../.scratch/inference-long-context-20261101/full-window-poolbulk-current1/m15-summary.txt)、[短负载](../../../.scratch/inference-long-context-20261101/short-window-lazypool-bulk1/summary.txt)、[独立显存](../../../.scratch/inference-long-context-20261101/memory-lazypool-bulk1/m15-memory-summary.txt)、[输入与 tokenizer](../../../.scratch/inference-long-context-20261101/workload/sources.txt)。
+原始数据：[普通1K／32K](../../../.scratch/inference-long-context-20261101/relation-window1/m15-summary.txt)、[16K](../../../.scratch/inference-long-context-20261101/precommit-head-16k-window1/m15-summary.txt)、[MTP 1K／32K](../../../.scratch/inference-long-context-20261101/choice-only-window1/m15-summary.txt)、[4K](../../../.scratch/inference-long-context-20261101/full-window-poolbulk-current1/m15-summary.txt)、[短负载](../../../.scratch/inference-long-context-20261101/short-window-lazypool-bulk1/summary.txt)、[独立显存](../../../.scratch/inference-long-context-20261101/memory-lazypool-bulk1/m15-memory-summary.txt)、[输入与 tokenizer](../../../.scratch/inference-long-context-20261101/workload/sources.txt)。
