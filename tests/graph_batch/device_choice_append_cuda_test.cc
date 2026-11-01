@@ -262,7 +262,7 @@ TEST(DeviceChoicePagedAppendCuda, CancellationIntentRetiresNativeWorkBeforeDisca
 
 // A real pending A -> B -> C chain keeps the zero-filled raw envelope separate
 // from the selected canonical prefix and its original page permissions.
-void append_source_journey(std::int32_t selector){
+void append_source_journey(std::int32_t selector,bool delta_only_predecessor=false){
   constexpr std::size_t logical_rows=1;
   constexpr bool cancel=false;
   SCOPED_TRACE(selector);
@@ -295,6 +295,13 @@ void append_source_journey(std::int32_t selector){
   const auto after0=logical_rows==1?version(b_query,ptr1,b_first_id,4):version(b_query,ptr2,b_ids,1);
   const auto after1=version(b_query,ptr2,b_ids,static_cast<std::int32_t>(logical_rows));
   const std::array choices{gb::PagedAppendChoice{before0,after0},gb::PagedAppendChoice{before1,after1}};
+  // Device allocation/free must stay outside every original-Queue host gate.
+  // Keep this unrelated real writer/backing through C's actual retirement.
+  c::PagedArena other_arena;c::PagedPageWriter replacement;
+  if(delta_only_predecessor){
+    other_arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,storage.ref(),{.max_backing_bytes=8192}).value();
+    replacement=other_arena.acquire(static_cast<std::uint32_t>(b_first_id[0])).value();
+  }
   auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,storage.ref(),{.max_backing_bytes=8192}).value();
   auto initial_writer=arena.acquire(0).value();
   std::array<std::uint16_t,256> original{};
@@ -449,7 +456,16 @@ void append_source_journey(std::int32_t selector){
   ASSERT_EQ(observed[0],selector);
   const auto chosen=observed[0]?1u:0u;
   auto returned_a=gb::take_append(a,a_append);ASSERT_TRUE(returned_a)<<returned_a.error().message();
-  auto full_a=page_source.ready(*returned_a);ASSERT_TRUE(full_a)<<full_a.error().message();
+  hyle::Result<c::PagedArenaRead> full_a=initial;
+  if(delta_only_predecessor){
+    auto frame=c::PagedArenaFrame::fork(c::PagedArenaFootprint::from_read(initial).value()).value();
+    auto delta=page_source.ready_delta(*returned_a,frame.view().value(),a_layout);
+    ASSERT_TRUE(delta)<<delta.error().message();
+    auto commit=frame.prepare_commit(std::move(*delta));ASSERT_TRUE(commit)<<commit.error().message();
+    ASSERT_TRUE(frame.commit(std::move(*commit)).ok());ASSERT_TRUE(frame.seal().ok());
+    full_a=frame.snapshot();
+  }else full_a=page_source.ready(*returned_a);
+  ASSERT_TRUE(full_a)<<full_a.error().message();
   ASSERT_EQ(b_common.poll().value(),c::CompletionPoll::kPending);
   const std::array<std::int32_t,2> c_ids{4,5};
   const auto b_actual=chosen?version(q0,ptr2,b_ids,1):version(q0,ptr1,b_first_id,4);
@@ -499,6 +515,16 @@ void append_source_journey(std::int32_t selector){
     ASSERT_FALSE(padding_is_not_canonical);EXPECT_TRUE(padding_is_not_canonical.error().IsInvalidArgument());
     EXPECT_EQ(working.epoch(),original_epoch);
   }
+  // Missing expected authority must reject before publication; the same
+  // genuine returned transaction remains available for the valid retry below.
+  ASSERT_GT(returned_b->page_count(),0u);
+  ASSERT_TRUE(returned_b->page(0)->lease().valid());
+  const auto writer_generation=returned_b->page(0)->lease().generation();
+  auto missing_expected=b_source.ready_delta(*returned_b,{},choices[chosen].next);
+  ASSERT_FALSE(missing_expected);EXPECT_TRUE(missing_expected.error().IsInvalidArgument());
+  EXPECT_EQ(working.epoch(),original_epoch);
+  EXPECT_TRUE(returned_b->page(0)->lease().valid());
+  EXPECT_EQ(returned_b->page(0)->lease().generation(),writer_generation);
   auto delta=b_source.ready_delta(*returned_b,working.view().value(),choices[chosen].next);
   ASSERT_TRUE(delta)<<delta.error().message();
   auto commit=working.prepare_commit(std::move(*delta));ASSERT_TRUE(commit)<<commit.error().message();
@@ -507,6 +533,25 @@ void append_source_journey(std::int32_t selector){
   EXPECT_EQ(canonical_b.layout().facts().kv_rows,chosen?5u:4u);
   EXPECT_EQ(canonical_b.page_count(),chosen?2u:1u);
   EXPECT_EQ(returned_b->appender_count(),0u);
+  if(delta_only_predecessor){
+    // A same-ordinal writer from another real arena is not this Source's
+    // original returned authority, even after its own publication is cached.
+    auto original=std::move(returned_b->page(0).value());
+    ASSERT_EQ(replacement.page(),original.page());
+    returned_b->page(0).value()=std::move(replacement);
+    const auto generation=returned_b->page(0)->lease().generation();
+    const auto rejected=b_source.ready_delta(*returned_b,working.view().value(),choices[chosen].next);
+    EXPECT_FALSE(rejected);
+    EXPECT_TRUE(returned_b->page(0)->lease().valid());
+    EXPECT_EQ(returned_b->page(0)->lease().generation(),generation);
+    replacement=std::move(returned_b->page(0).value());
+    returned_b->page(0).value()=std::move(original);
+    // Neither A's nor B's Source has needed a full cache on its Delta path.
+    // A genuine whole-footprint consumer must materialize them lazily here.
+    auto materialized=b_source.ready(*returned_b);ASSERT_TRUE(materialized)<<materialized.error().message();
+    EXPECT_EQ(materialized->layout().facts().kv_rows,chosen?5u:4u);
+    EXPECT_EQ(materialized->page_count(),chosen?2u:1u);
+  }
   EXPECT_EQ(last->poll().value(),c::CompletionPoll::kPending);
   EXPECT_FALSE(c_gate.open.load());
   // Release every external B guard while C is still a real native reader.
@@ -515,6 +560,7 @@ void append_source_journey(std::int32_t selector){
   ASSERT_TRUE(g::release_sources(b).ok());
   EXPECT_FALSE(arena.acquire(3));
   c_gate.release();ASSERT_TRUE(last->wait().ok());*last={};
+  if(delta_only_predecessor){replacement.lease().reset();ASSERT_TRUE(replacement.discard().ok());}
   auto returned_c=gb::take_append(consumer,c_append);ASSERT_TRUE(returned_c)<<returned_c.error().message();
   const auto released=g::release_sources(consumer);ASSERT_TRUE(released.ok())<<released.message();
   ASSERT_TRUE(returned_c->select_choice(0).ok());
@@ -552,4 +598,86 @@ void append_source_journey(std::int32_t selector){
 
 TEST(DeviceChoicePagedAppendCuda, RejectedPrefixExportsZeroRawPageButCommitsOnlyRealPrefix){append_source_journey(0);}
 TEST(DeviceChoicePagedAppendCuda, AcceptedPrefixExportsRealRawRowAndFeedsPendingSuccessor){append_source_journey(1);}
+TEST(DeviceChoicePagedAppendCuda, RejectedRawSourceDeltaFeedsPendingCAndLazilyMaterializes){append_source_journey(0,true);}
+TEST(DeviceChoicePagedAppendCuda, AcceptedRawSourceDeltaFeedsPendingCAndLazilyMaterializes){append_source_journey(1,true);}
+TEST(DeviceChoicePagedAppendCuda, SourceDeltaRejectsUnsubmittedNewAppendEpochAfterOwnPublication) {
+  auto context=g::cuda::create_context().value();auto queue=context.create_queue().value();
+  auto device=c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice).value();
+  auto storage=c::StorageOwner::adopt(context,std::move(device)).value();
+  auto host=c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kPinnedHost).value();
+  const auto plain=c::CacheStorage::plain(c::DataType::kBFloat16).value();
+  const c::BatchCapacity capacity{.storage=c::BatchStorage::kPaged,
+    .query_type=c::DataType::kBFloat16,.output_type=c::DataType::kBFloat16,
+    .key_storage=plain,.value_storage=plain,.max_requests=1,.max_query_rows=2,.max_kv_rows=4,
+    .max_pages=2,.max_page_refs=1,.query_heads=1,.kv_heads=1,.qk_head_dim=64,.value_head_dim=64,.page_size=4};
+  auto schema=c::BatchSchema::create(capacity).value();
+  const std::array<std::int32_t,2> q0{0,0},q1{0,1},ptr{0,1};
+  const std::array<std::int32_t,1> id{0},last1{1},last2{2};
+  const auto before=schema.version({q0,ptr,id,last1}).value();
+  const auto after=schema.version({q1,ptr,id,last2}).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,storage.ref(),{.max_backing_bytes=2048}).value();
+  auto original=arena.acquire(0).value();
+  std::array<std::uint16_t,256> raw{};raw.fill(std::uint16_t{0x7fc1});
+  std::fill_n(raw.begin(),64,bf16(10));
+  ASSERT_TRUE(original.lease().view()->write(std::as_bytes(std::span(raw))).ok());
+  auto publication=original.publish_appendable(1).value();
+  auto prefix=std::move(publication.prefix);
+  auto initial=arena.read(before,std::span(&prefix,1)).value();
+  std::array<c::PagedPageAppender,1> tails{std::move(publication.appender)};
+  ASSERT_TRUE(tails[0].reserve_rows(1).ok());
+  auto payload=c::LeasePool::create(storage.ref(),256,{.max_blocks=1}).value();
+  auto input_writer=payload.allocate(128,256).value();
+  std::array<std::uint16_t,64> words{};words.fill(bf16(20));
+  ASSERT_TRUE(input_writer.view()->write(std::as_bytes(std::span(words))).ok());
+  auto input_guard=input_writer.publish().value();
+  const auto rows=c::TensorDesc::dense(c::DataType::kBFloat16,std::array<std::int64_t,3>{1,1,64}).value();
+  auto builder=g::GraphBuilder::create().value();const auto input=builder.input(rows).value();
+  const auto node=builder.add_node(c::Operation::custom(gb::paged_append(schema,c::BatchCacheRole::kKey).value()),std::array{input}).value();
+  const auto graph=std::move(builder).finish().value();
+  auto compiled=g::cuda::compile(graph,context,storage);ASSERT_TRUE(compiled)<<compiled.error().message();
+  auto run=compiled->executable.create_invocation().value();
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0},&queue}};
+  ASSERT_TRUE(gb::prepare(run,queues,{}, {.host_workspace=host.ref()}).ok());
+  auto pages=gb::PagedAppendPages::create(arena,after,initial,std::span<c::PagedPageWriter>{},tails);
+  ASSERT_TRUE(pages)<<pages.error().message();
+  ASSERT_TRUE(gb::bind_append(run,graph,node,std::move(*pages)).ok());
+  ASSERT_TRUE(run.bind(input,rows,input_guard).ok());
+  auto source=gb::PagedAppendSource::prepare(run,node,storage).value();
+  ASSERT_TRUE(run.prepare_replay(queues,{.mode=g::ReplayMode::kCommands}).ok());
+  auto submitted=run.submit(queues);ASSERT_TRUE(submitted)<<submitted.error().message();
+  auto common_result=g::SubmissionSource::create(run,std::move(*submitted),storage);ASSERT_TRUE(common_result);
+  auto common=std::move(*common_result);ASSERT_TRUE(source.capture(common).ok());
+  ASSERT_TRUE(common.wait().ok());ASSERT_TRUE(common.detach().ok());
+  auto returned=gb::take_append(run,node);ASSERT_TRUE(returned)<<returned.error().message();
+  auto working=c::PagedArenaFrame::fork(c::PagedArenaFootprint::from_read(initial).value()).value();
+  const auto epoch=working.epoch();
+  auto delta=source.ready_delta(*returned,working.view().value(),after);ASSERT_TRUE(delta)<<delta.error().message();
+  ASSERT_EQ(returned->appender_count(),1u);
+  auto&tail=returned->appender(0).value();
+  ASSERT_EQ(tail.initialized_rows(),2u);ASSERT_EQ(tail.reserved_rows(),0u);
+  ASSERT_TRUE(tail.reserve_rows(1).ok());
+  // No new native operation is submitted. Cached own publication must not
+  // let this new epoch publish its uninitialized reserved suffix.
+  const auto repeated=source.ready_delta(*returned,working.view().value(),after);
+  EXPECT_FALSE(repeated);
+  EXPECT_FALSE(source.ready(*returned));
+  EXPECT_EQ(tail.reserved_rows(),1u);EXPECT_EQ(tail.initialized_rows(),2u);
+  EXPECT_EQ(working.epoch(),epoch);
+  ASSERT_TRUE(tail.rollback().ok());
+  auto commit=working.prepare_commit(std::move(*delta));ASSERT_TRUE(commit)<<commit.error().message();
+  ASSERT_TRUE(working.commit(std::move(*commit)).ok());ASSERT_TRUE(working.seal().ok());
+  {
+    auto snapshot=working.snapshot().value();ASSERT_EQ(snapshot.layout().facts().kv_rows,2u);
+    auto guard=snapshot.page_prefix(0).value();std::array<std::uint16_t,128> actual{};
+    ASSERT_TRUE(guard.view()->read(std::as_writable_bytes(std::span(actual))).ok());
+    for(std::size_t i=0;i<actual.size();++i)EXPECT_EQ(actual[i],bf16(i<64?10:20));
+  }
+  source={};common={};*returned={};working={};initial={};prefix={};run={};input_guard={};
+  EXPECT_EQ(payload.stats().active_uses,0u);EXPECT_EQ(payload.stats().live_blocks,0u);
+  auto reclaimed=arena.acquire(0);ASSERT_TRUE(reclaimed)<<reclaimed.error().message();
+  ASSERT_TRUE(reclaimed->lease().view()->read(std::as_writable_bytes(std::span(raw))).ok());
+  for(std::size_t i=128;i<raw.size();++i)EXPECT_EQ(raw[i],std::uint16_t{0x7fc1});
+  reclaimed->lease().reset();ASSERT_TRUE(reclaimed->discard().ok());
+}
+
 } // namespace

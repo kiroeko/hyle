@@ -65,6 +65,16 @@ public:
   // Own origins are updated; inherited guards are checked without widening them.
   // Idempotent, and never waits for a pending producer.
   HYLE_GRAPH_API Status publish_ready(std::span<const compute::ReadLease>) const noexcept;
+  // Publish only own original full/tail writes, in their capture order. Exact
+  // counts/root/generation/bounds and successful actual retirement are required.
+  // Ready inputs and inherited origin slots are untouched; no whole-bank
+  // readiness is inferred. All guards validate before any slot changes.
+  HYLE_GRAPH_API Status publish_own_writes(std::span<const compute::ReadLease> full_ready,
+      std::span<const compute::ReadLease> append_ready) const noexcept;
+  // Materialize the complete physical-order footprint from genuine original
+  // ready origins. Exact-size destination must be empty. A collection failure clears it;
+  // no allocation, wait or promotion of a pending ticket is introduced.
+  HYLE_GRAPH_API Status collect_ready(std::span<compute::ReadLease> destination) const noexcept;
   // Bounded initialized/prospective prefix of this original contribution.
   // Pure identity/range query, never a ready view or new work admission.
   HYLE_GRAPH_API Status covers_range(mem::ConstBufferView) const noexcept;

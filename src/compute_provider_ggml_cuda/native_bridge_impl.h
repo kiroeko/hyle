@@ -20,6 +20,31 @@ bool supports_bfloat_paired_projection(int device, std::uint64_t inner,
   return ggml_cuda_supports_bf16_paired_projection_geometry(device, inner, rows, columns);
 }
 
+namespace {
+// Preserve one independent native caching pool per backend stream. Most
+// programs never request its temporary storage, so construct the sizeable
+// native table only when that particular pool first allocates. Its cached
+// buffers and retirement still belong to the same backend and stream.
+class LazyLegacyPool final : public ggml_cuda_pool {
+public:
+  explicit LazyLegacyPool(int device) noexcept : device_(device) {}
+
+  void *alloc(size_t size, size_t *actual_size) override {
+    if (!pool_) pool_ = std::make_unique<ggml_cuda_pool_leg>(device_);
+    return pool_->alloc(size, actual_size);
+  }
+
+  void free(void *pointer, size_t size) noexcept override {
+    GGML_ASSERT(pool_ != nullptr);
+    pool_->free(pointer, size);
+  }
+
+private:
+  int device_;
+  std::unique_ptr<ggml_cuda_pool_leg> pool_;
+};
+} // namespace
+
 void initialize_backend(ggml_backend *backend) {
   auto *context = static_cast<ggml_backend_cuda_context *>(backend->context);
   // Keep the original caching allocator without creating an unused root
@@ -28,7 +53,7 @@ void initialize_backend(ggml_backend *backend) {
   for (int stream = 0; stream < GGML_CUDA_MAX_STREAMS; ++stream) {
     auto &pool = context->pools[context->device][stream];
     GGML_ASSERT(pool == nullptr);
-    pool = std::make_unique<ggml_cuda_pool_leg>(context->device);
+    pool = std::make_unique<LazyLegacyPool>(context->device);
   }
 }
 

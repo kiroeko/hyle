@@ -94,12 +94,12 @@ struct PagedAppendSourceData final : util::RefCounted<PagedAppendSourceData> {
   template<class T>using Vector=std::vector<T,mem::StdAllocator<T>>;
   PagedAppendSourceData(c::StorageOwner owner,c::ResourceBudget retained,mem::AllocatorRef a)noexcept
       :storage(std::move(owner)),budget(std::move(retained)),allocator(a),
-       pages(mem::StdAllocator<std::int32_t>(a)),rows(mem::StdAllocator<std::uint32_t>(a)),
        targets(mem::StdAllocator<PagedAppendTarget>(a)),required(mem::StdAllocator<std::uint32_t>(a)),
        ready(mem::StdAllocator<c::ReadLease>(a)),full(mem::StdAllocator<gd::ResourceFullRange>(a)),
        append(mem::StdAllocator<gd::ResourceAppendRange>(a)),inherited(mem::StdAllocator<gd::ResourceInheritance>(a)),
        proofs(mem::StdAllocator<gd::ProjectedReader>(a)),
        metadata(mem::StdAllocator<gd::ResourceReadyInput>(a)),published(mem::StdAllocator<c::ReadLease>(a)),
+       own_full(mem::StdAllocator<c::ReadLease>(a)),own_append(mem::StdAllocator<c::ReadLease>(a)),
        effect_reads(mem::StdAllocator<mem::ConstBufferView>(a)){}
   ~PagedAppendSourceData(){if(prepared_previous)prepared_previous->decref();}
   void destroy()noexcept{const auto owner=storage;const auto retained=budget;(void)owner;(void)retained;
@@ -110,7 +110,9 @@ struct PagedAppendSourceData final : util::RefCounted<PagedAppendSourceData> {
   c::ConstTensorView capacity;std::size_t row_bytes=0,input_appenders=0;
   bool appendable=false,reader_prepared=false,zero_fill_envelope=false;
   ValueId bank{};c::BatchLayoutVersion read_layout;
-  Vector<std::int32_t>pages;Vector<std::uint32_t>rows;
+  // Geometry borrows this Source's own immutable raw-layout caches. The
+  // retained layout, not a returned transaction's selected layout, owns them.
+  std::span<const std::int32_t>pages;std::span<const std::uint32_t>rows;
   Vector<PagedAppendTarget>targets;Vector<std::uint32_t>required;
   Vector<c::ReadLease>ready;Vector<gd::ResourceFullRange>full;Vector<gd::ResourceAppendRange>append;
   Vector<gd::ResourceInheritance>inherited;
@@ -118,7 +120,8 @@ struct PagedAppendSourceData final : util::RefCounted<PagedAppendSourceData> {
   // this separate from the returned transaction avoids a Source owner chain.
   PagedAppendSourceData*prepared_previous=nullptr;
   Vector<gd::ProjectedReader>proofs;Vector<gd::ResourceReadyInput>metadata;
-  Vector<c::ReadLease>published;bool publication_complete=false;
+  Vector<c::ReadLease>published,own_full,own_append;
+  bool own_writes_published=false,publication_complete=false;
   gd::ProjectedWriter effect{};Vector<mem::ConstBufferView>effect_reads;
 };
 struct PagedAppendData final {
@@ -340,6 +343,29 @@ Status retain_previous_pages(detail::PagedAppendData&p,std::span<const c::PagedA
   HYLE_ASSIGN_OR_RETURN(auto needed,cd::BatchLayoutAccess::page_requirements(p.previous_layout));
   const auto ids=needed.pages;const auto required=needed.required_rows;
   p.old_pages.resize(ids.size());
+  if(sources.size()==1 && sources.front().layout()==p.previous_layout){
+    // The exact original Frame already owns these physical-order guards.
+    // Collect their real leases in one call, then bound each to the logical
+    // prefix just as page_prefix does. Never retain the mutable Frame view.
+    HYLE_RETURN_IF_ERROR(cd::PagedArenaAccess::collect_pages(sources.front(),p.old_pages));
+    if(!ids.empty()){
+      const auto full=cd::BatchLayoutAccess::geometry(cd::PagedArenaAccess::schema(p.arena)).page_size;
+      const auto page_bytes=p.arena.page_bytes();
+      if(!full || !page_bytes || page_bytes%full)
+        return Status::FailedPrecondition("frame row geometry is invalid");
+      const auto row_bytes=page_bytes/full;
+      for(std::size_t i=0;i<ids.size();++i){
+        if(!required[i] || required[i]>full)
+          return Status::FailedPrecondition("frame page prefix is outside its logical layout");
+        const auto bytes=std::size_t(required[i])*row_bytes;
+        if(bytes>p.old_pages[i].size())
+          return Status::FailedPrecondition("frame guard does not cover its logical prefix");
+        HYLE_ASSIGN_OR_RETURN(auto prefix,p.old_pages[i].subview(0,bytes));
+        p.old_pages[i]=std::move(prefix);
+      }
+    }
+    return Status::Ok();
+  }
   for(const auto&source:sources){
     HYLE_ASSIGN_OR_RETURN(auto coverage,cd::BatchLayoutAccess::page_requirements(source.layout()));
     const auto source_ids=coverage.pages;const auto available=coverage.required_rows;
@@ -484,12 +510,24 @@ Result<PagedAppendPages> PagedAppendPages::create_impl(c::PagedArena arena,c::Ba
   return result;
 }
 namespace {
+Status materialize_source_ready(detail::PagedAppendSourceData&s)noexcept{
+  HYLE_RETURN_IF_ERROR(s.resource.successful_outcome());
+  if(!s.own_writes_published)
+    return Status::Unavailable("publish the original append writes before collecting its complete footprint");
+  if(s.publication_complete)return Status::Ok();
+  // reserve happened before acceptance; ReadLease default construction cannot
+  // allocate. A failed collect leaves only empty slots and no complete claim.
+  HYLE_FATAL_ASSERT(s.published.capacity()>=s.pages.size());
+  s.published.resize(s.pages.size());
+  const auto status=s.resource.collect_ready(s.published);
+  if(!status.ok()){s.published.clear();return status;}
+  s.publication_complete=true;
+  return Status::Ok();
+}
 Status resolve_previous_pages(detail::PagedAppendData&p)noexcept{
   if(!p.previous_source)return Status::Ok();
-  const auto&s=*p.previous_source;
-  HYLE_RETURN_IF_ERROR(s.resource.successful_outcome());
-  if(!s.publication_complete)
-    return Status::Unavailable("publish the predecessor's original append pages before inheriting them");
+  auto&s=*p.previous_source;
+  HYLE_RETURN_IF_ERROR(materialize_source_ready(s));
   HYLE_ASSIGN_OR_RETURN(auto needed,cd::BatchLayoutAccess::page_requirements(p.previous_layout));
   if((!p.choice_validation && s.layout!=p.previous_layout) || s.published.size()!=s.pages.size() || p.old_pages.size()!=needed.pages.size())
     return Status::Internal("pending append predecessor publication geometry changed");
@@ -526,6 +564,20 @@ Status publish_changed_pages(detail::PagedAppendData&p)noexcept{
     HYLE_ASSIGN_OR_RETURN(auto ready,p.appenders[i].publish());p.changed_pages.push_back(std::move(ready));
   }
   return Status::Ok();
+}
+Result<c::PagedArenaDelta> ready_delta_from_data(detail::PagedAppendData&p,
+    c::PagedArenaFootprint expected,c::BatchLayoutVersion accepted,bool previous_resolved)noexcept{
+  if(!p.successful)return std::unexpected(Status::FailedPrecondition("paged append requires a successful retired whole Graph"));
+  if(!expected.valid() || !cd::PagedArenaAccess::owns(p.arena,expected) ||
+      !p.descriptor.schema.owns(accepted))
+    return std::unexpected(Status::InvalidArgument("paged append delta needs its original arena and accepted layout"));
+  HYLE_RETURN_IF_ERROR(detail::selected_prefix(p,accepted));
+  // The Source path has published this transaction's exact own raw writes.
+  // Untouched canonical pages come from expected in FrameDelta::create, not
+  // p.old_pages. Ordinary callers still resolve the complete prior footprint.
+  if(!previous_resolved)HYLE_RETURN_IF_ERROR(resolve_previous_pages(p));
+  HYLE_RETURN_IF_ERROR(publish_changed_pages(p));
+  return c::PagedArenaDelta::create(std::move(expected),std::move(accepted),p.changed_pages);
 }
 }
 Result<c::PagedArenaRead> PagedAppendPages::ready()noexcept{
@@ -565,15 +617,8 @@ Status PagedAppendPages::select_choice(std::size_t observed_selector)noexcept{
 }
 Result<c::PagedArenaDelta> PagedAppendPages::ready_delta(c::PagedArenaFootprint expected,
     c::BatchLayoutVersion accepted)noexcept{
-  if(!data_ || !data_->successful)return std::unexpected(Status::FailedPrecondition("paged append requires a successful retired whole Graph"));
-  auto&p=*data_;
-  if(!expected.valid() || !cd::PagedArenaAccess::owns(p.arena,expected) ||
-      !p.descriptor.schema.owns(accepted))
-    return std::unexpected(Status::InvalidArgument("paged append delta needs its original arena and accepted layout"));
-  HYLE_RETURN_IF_ERROR(detail::selected_prefix(p,accepted));
-  HYLE_RETURN_IF_ERROR(resolve_previous_pages(p));
-  HYLE_RETURN_IF_ERROR(publish_changed_pages(p));
-  return c::PagedArenaDelta::create(std::move(expected),std::move(accepted),p.changed_pages);
+  if(!data_)return std::unexpected(Status::FailedPrecondition("paged append requires a successful retired whole Graph"));
+  return ready_delta_from_data(*data_,std::move(expected),std::move(accepted),false);
 }
 namespace detail {
 namespace {
@@ -1248,20 +1293,31 @@ Status same_source_transaction(const PagedAppendSourceData&s,const PagedAppendDa
       return Status::InvalidArgument("append source original target/prefix changed");
   return Status::Ok();
 }
-Status publish_source_pages(PagedAppendSourceData&s,PagedAppendData&p)noexcept{
+Status publish_source_own_writes(PagedAppendSourceData&s,PagedAppendData&p)noexcept{
   HYLE_RETURN_IF_ERROR(s.resource.successful_outcome());
   HYLE_RETURN_IF_ERROR(same_source_transaction(s,p));
   if(!p.successful)return Status::FailedPrecondition("take the successfully retired original append before source publication");
   if(p.choice_other && p.selected_choice<0)
     return Status::FailedPrecondition("select the actually observed append choice before source publication");
-  HYLE_RETURN_IF_ERROR(resolve_previous_pages(p));
-  auto&raw=raw_geometry(p);
-  if(&raw!=&p)HYLE_RETURN_IF_ERROR(resolve_previous_pages(raw));
+  // Host publication is ordered, independently of the native dependency.
+  // These flags attest only a completed original own-publication operation;
+  // the Core origins retain every actual per-page permission and live verdict.
+  const auto predecessor_ready=[](const PagedAppendData&transaction)noexcept->Status{
+    if(!transaction.previous_source)return Status::Ok();
+    const auto&previous=*transaction.previous_source;
+    HYLE_RETURN_IF_ERROR(previous.resource.successful_outcome());
+    return previous.own_writes_published?Status::Ok():
+        Status::Unavailable("publish the predecessor's original append writes before inheriting them");
+  };
+  HYLE_RETURN_IF_ERROR(predecessor_ready(p));
+  const auto&raw=raw_geometry(p);
+  if(&raw!=&p)HYLE_RETURN_IF_ERROR(predecessor_ready(raw));
   const auto full=s.resource.full_tickets();const auto append=s.resource.append_tickets();
-  if(full.size()!=p.writers.size() || append.size()!=p.input_appenders)
+  if(full.size()!=p.writers.size() || append.size()!=p.input_appenders ||
+      s.own_full.size()!=full.size() || s.own_append.size()!=append.size())
     return Status::FailedPrecondition("append source ticket counts changed");
   // All returned authorities are checked before publishing the first page.
-  // Already completed entries stay in the transaction's original retry cache.
+  // The cold own caches retain genuine guards across a later retryable error.
   for(std::size_t i=0;i<p.writers.size();++i)if(p.writers[i].lease().valid()){
     if(p.writers[i].page()!=s.targets[i].page)return Status::InvalidArgument("returned append source page changed");
     HYLE_RETURN_IF_ERROR(cd::LeaseAccess::matches_pending_read(full[i],p.writers[i].lease()));}
@@ -1269,60 +1325,58 @@ Status publish_source_pages(PagedAppendSourceData&s,PagedAppendData&p)noexcept{
     if(p.appenders[i].page()!=s.targets[p.writers.size()+i].page)
       return Status::InvalidArgument("returned append source tail changed");
     HYLE_RETURN_IF_ERROR(cd::LeaseAccess::matches_pending_append_read(append[i],cd::PagedArenaAccess::permission(p.appenders[i])));}
-  const auto retain=[&](const c::ReadLease&ready)noexcept->Status{
+  // A cached publication is idempotent only for the same returned authorities.
+  // In particular, reserve() starts another append epoch and must still fail
+  // the original ticket match above before any generic publication is reached.
+  if(s.own_writes_published)return Status::Ok();
+  const auto retain_own=[&](const c::ReadLease&ready)noexcept->Status{
     HYLE_ASSIGN_OR_RETURN(auto page,cd::PagedArenaAccess::page(p.arena,ready));
-    const auto found=std::lower_bound(s.pages.begin(),s.pages.end(),std::int32_t(page));
-    if(found==s.pages.end() || std::uint32_t(*found)!=page)
-      return Status::Internal("append publication contains an unexpected physical page");
-    const auto index=std::size_t(found-s.pages.begin());
-    HYLE_ASSIGN_OR_RETURN(auto bounded,ready.subview(0,std::size_t(s.rows[index])*s.row_bytes));
-    s.published[index]=std::move(bounded);return Status::Ok();
+    const auto found=std::find_if(s.targets.begin(),s.targets.end(),
+        [&](const auto&target){return target.page==page;});
+    if(found==s.targets.end())return Status::Internal("append own publication contains an unexpected physical page");
+    const auto index=std::size_t(found-s.targets.begin());
+    auto&slot=index<s.own_full.size()?s.own_full[index]:s.own_append[index-s.own_full.size()];
+    if(slot.valid())return Status::Ok();
+    HYLE_ASSIGN_OR_RETURN(auto bounded,ready.subview(0,std::size_t(s.required[index])*s.row_bytes));
+    slot=std::move(bounded);return Status::Ok();
   };
   for(std::size_t i=0;i<p.writers.size();++i){auto&writer=p.writers[i];if(!writer.lease().valid())continue;
     if(p.zero_fill_envelope){
-      // The original page API gives a genuine row-bounded prefix identity.
-      // Ordinary full-page publication plus subview is not that identity.
+      // The Source keeps the complete initialized raw prefix, including its
+      // zero suffix. Only selected canonical rows enter the Frame delta.
       HYLE_ASSIGN_OR_RETURN(auto ready,cd::PagedArenaAccess::publish_appendable_after_writes(writer,full[i],s.required[i]));
-      // Its physical frontier includes padding, so this real suffix authority
-      // must never escape as a canonical tail, even when the layouts coincide.
       ready.appender={};
-      HYLE_RETURN_IF_ERROR(retain(ready.prefix));
+      HYLE_RETURN_IF_ERROR(retain_own(ready.prefix));
       if(p.required[i]){
         HYLE_ASSIGN_OR_RETURN(auto canonical,ready.prefix.subview(0,std::size_t(p.required[i])*p.row_bytes));
         p.changed_pages.push_back(std::move(canonical));
       }
     }else if(p.appendable){
       HYLE_ASSIGN_OR_RETURN(auto ready,cd::PagedArenaAccess::publish_appendable_after_writes(writer,full[i],p.required[i]));
+      HYLE_RETURN_IF_ERROR(retain_own(ready.prefix));
       p.changed_pages.push_back(std::move(ready.prefix));
       if(ready.appender.valid())p.appenders.push_back(std::move(ready.appender));
     }else{
       HYLE_ASSIGN_OR_RETURN(auto ready,cd::LeaseAccess::publish_after_writes(writer.lease()));
-      HYLE_RETURN_IF_ERROR(writer.complete(ready,p.required[i]));p.changed_pages.push_back(std::move(ready));}}
+      HYLE_RETURN_IF_ERROR(writer.complete(ready,p.required[i]));
+      HYLE_RETURN_IF_ERROR(retain_own(ready));p.changed_pages.push_back(std::move(ready));}}
   for(std::size_t i=0;i<p.input_appenders;++i){auto&tail=p.appenders[i];if(!tail.valid() || !tail.reserved_rows())continue;
     HYLE_ASSIGN_OR_RETURN(auto ready,cd::PagedArenaAccess::publish_append_after_writes(tail,append[i]));
-    p.changed_pages.push_back(std::move(ready));}
-  // This fixed cache contains only genuinely published original guards. A
-  // pending continuation never turns its raw address carriers into readiness.
-  for(const auto&ready:s.ready)HYLE_RETURN_IF_ERROR(retain(ready));
-  if(!s.inherited.empty()){
-    HYLE_ASSIGN_OR_RETURN(auto before,cd::BatchLayoutAccess::page_footprint(raw.previous_layout));
-    for(const auto&entry:s.inherited){
-      const auto page=std::int32_t((entry.prefix.offset()-s.capacity.storage().offset())/p.arena.page_bytes());
-      const auto found=std::lower_bound(before.begin(),before.end(),page);
-      if(found==before.end() || *found!=page)
-        return Status::Internal("inherited append publication lost its original physical page");
-      HYLE_RETURN_IF_ERROR(retain(raw.old_pages[std::size_t(found-before.begin())]));
-    }
-  }
-  if(!p.zero_fill_envelope)for(const auto&ready:p.changed_pages)HYLE_RETURN_IF_ERROR(retain(ready));
-  for(const auto&ready:s.published)if(!ready.valid())
-    return Status::FailedPrecondition("append publication has not produced every original page");
-  // The shared origins may still be held by a later pending generation. Only
-  // genuine publication replaces their tickets; no readiness is inferred from
-  // the predecessor's terminal status or a raw capacity address.
-  HYLE_RETURN_IF_ERROR(s.resource.publish_ready(s.published));
-  s.publication_complete=true;
+    HYLE_RETURN_IF_ERROR(retain_own(ready));p.changed_pages.push_back(std::move(ready));}
+  // Preserve retries after a caller already used the ordinary ready path.
+  // Raw-zero guards are retained above before any canonical clipping.
+  for(const auto&ready:p.changed_pages)HYLE_RETURN_IF_ERROR(retain_own(ready));
+  for(const auto&ready:s.own_full)if(!ready.valid())
+    return Status::FailedPrecondition("append own publication lost an original full guard");
+  for(const auto&ready:s.own_append)if(!ready.valid())
+    return Status::FailedPrecondition("append own publication lost an original tail guard");
+  HYLE_RETURN_IF_ERROR(s.resource.publish_own_writes(s.own_full,s.own_append));
+  s.own_writes_published=true;
   return Status::Ok();
+}
+Status publish_source_pages(PagedAppendSourceData&s,PagedAppendData&p)noexcept{
+  HYLE_RETURN_IF_ERROR(publish_source_own_writes(s,p));
+  return materialize_source_ready(s);
 }
 } // namespace
 } // namespace detail
@@ -1369,23 +1423,27 @@ Result<PagedAppendSource>PagedAppendSource::prepare(Invocation&invocation,NodeId
   s.capacity=capacity;s.row_bytes=p.row_bytes;s.input_appenders=p.input_appenders;s.appendable=p.appendable;
   s.zero_fill_envelope=p.zero_fill_envelope;
   if(p.previous_source){s.prepared_previous=p.previous_source.get();s.prepared_previous->incref();}
+  // page_requirements already succeeded above. Resolve the same immutable
+  // cache through its retained Source owner before borrowing either span.
+  HYLE_ASSIGN_OR_RETURN(auto owned_geometry,cd::BatchLayoutAccess::page_requirements(s.layout));
+  s.pages=owned_geometry.pages;s.rows=owned_geometry.required_rows;
   try{
-    s.pages.assign(footprint.pages.begin(),footprint.pages.end());s.rows.assign(footprint.required_rows.begin(),footprint.required_rows.end());
-    s.published.resize(s.pages.size());
+    s.published.reserve(s.pages.size());
+    s.own_full.resize(p.writers.size());s.own_append.resize(p.input_appenders);
     s.targets.assign(p.targets.begin(),p.targets.end());s.required.assign(p.required.begin(),p.required.end());
     s.full.resize(p.writers.size());s.append.resize(p.input_appenders);
     if(p.previous_source)s.inherited.reserve(ready_count);else s.ready.reserve(ready_count);
+    std::size_t old_index=0;
     for(std::size_t i=0;i<footprint.pages.size();++i){const auto page=footprint.pages[i];
       if(is_changed(std::uint32_t(page)))continue;
-      const auto found=std::lower_bound(old.begin(),old.end(),page);
-      if(found==old.end() || *found!=page)return std::unexpected(Status::InvalidArgument("append source untouched page has no original guard"));
+      while(old_index<old.size() && old[old_index]<page)++old_index;
+      if(old_index==old.size() || old[old_index]!=page)return std::unexpected(Status::InvalidArgument("append source untouched page has no original guard"));
       const auto bytes=std::size_t(footprint.required_rows[i])*p.row_bytes;
       if(p.previous_source){
         HYLE_ASSIGN_OR_RETURN(auto prefix,s.capacity.storage().subview(std::size_t(page)*p.arena.page_bytes(),bytes));
         s.inherited.push_back({&p.previous_source->resource,prefix});
       }else{
-        const auto index=std::size_t(found-old.begin());
-        HYLE_ASSIGN_OR_RETURN(auto prefix,p.old_pages[index].subview(0,bytes));
+        HYLE_ASSIGN_OR_RETURN(auto prefix,p.old_pages[old_index].subview(0,bytes));
         s.ready.push_back(std::move(prefix));
       }
     }
@@ -1426,7 +1484,8 @@ Result<c::PagedArenaDelta>PagedAppendSource::ready_delta(PagedAppendPages&return
   HYLE_RETURN_IF_ERROR(detail::selected_prefix(*returned.data_,accepted));
   if(!expected.valid() || !cd::PagedArenaAccess::owns(returned.data_->arena,expected))
     return std::unexpected(Status::InvalidArgument("append source delta needs its original expected footprint"));
-  HYLE_RETURN_IF_ERROR(detail::publish_source_pages(*data_,*returned.data_));return returned.ready_delta(std::move(expected),std::move(accepted));
+  HYLE_RETURN_IF_ERROR(detail::publish_source_own_writes(*data_,*returned.data_));
+  return ready_delta_from_data(*returned.data_,std::move(expected),std::move(accepted),true);
 }
 namespace detail {
 Result<PagedAppendPages>PagedAppendSourceAccess::make_choices(c::PagedArena arena,

@@ -737,5 +737,45 @@ TEST(GraphPagedAppend,ExclusiveTailRollbackAndBoundedSnapshots){const auto resul
 TEST(GraphPagedAppend,WriterOnlyEffectsKeepOriginalPermissionsAndWholeOutcome){auto result=run(true,false,false,false,true);if(result.ok())result=run(true,false,true,false,true);EXPECT_TRUE(result.ok())<<result.message();}
 TEST(GraphPagedAppend,ConsumedCowTransactionReleasesOnlyItsRetiredInputs){auto result=consumed_cow_transaction(false);if(result.ok())result=consumed_cow_transaction(true);EXPECT_TRUE(result.ok())<<result.message();}
 TEST(GraphPagedAppend,ActiveRowsUseOnlyTheInitializedCarrierPrefix){const auto result=active_row_carrier();EXPECT_TRUE(result.ok())<<result.message();}
+TEST(GraphPagedAppend,ExactWorkingAndProposedSourcesRetainOriginalBoundedPage){
+ const auto type=c::DataType::kFloat16;const auto plain=c::CacheStorage::plain(type).value();
+ c::BatchCapacity cap{.query_type=type,.output_type=type,.key_storage=plain,.value_storage=plain,.max_requests=1,
+  .max_query_rows=1,.max_kv_rows=4,.max_pages=3,.max_page_refs=2,.query_heads=1,.kv_heads=1,
+  .qk_head_dim=64,.value_head_dim=64,.page_size=2};
+ auto schema=c::BatchSchema::create(cap).value();
+ auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,hyle::mem::system_resource(),{.max_backing_bytes=4096}).value();
+ const std::array<std::int32_t,2>q{0,1},ptr{0,1};const std::array<std::int32_t,1>old_id{0},next_id{1},two{2},one{1};
+ auto initial=schema.version({q,ptr,old_id,two}).value();
+ auto shorter=schema.version({q,ptr,old_id,one}).value();
+ auto next=schema.version({q,ptr,next_id,two}).value();
+ auto page=arena.acquire(0).value();ASSERT_TRUE(page.lease().view()->fill(std::byte{41}).ok());
+ auto guard=page.publish(2).value();
+ auto original=arena.read(initial,std::span(&guard,1)).value();
+ auto original_view=c::PagedArenaFootprint::from_read(original).value();
+ auto frame=c::PagedArenaFrame::fork(original_view).value();
+ auto other=c::PagedArenaFrame::fork(original_view).value();
+ auto stale=frame.view().value();
+ auto delta=c::PagedArenaDelta::create(stale,shorter,{}).value();
+ auto commit=frame.prepare_commit(std::move(delta)).value();
+ ASSERT_TRUE(frame.commit(std::move(commit)).ok());ASSERT_FALSE(stale.valid());
+ std::array<c::PagedPageWriter,1>dirty;dirty[0]=arena.acquire(1).value();
+ auto rejected=gb::PagedAppendPages::create(arena,next,initial,std::span(&stale,1),dirty);
+ ASSERT_FALSE(rejected);EXPECT_TRUE(rejected.error().IsInvalidArgument());EXPECT_TRUE(dirty[0].lease().valid());
+ auto current=frame.view().value();
+ auto working_append=gb::PagedAppendPages::create(arena,next,shorter,std::span(&current,1),dirty);
+ ASSERT_TRUE(working_append)<<working_append.error().message();EXPECT_FALSE(dirty[0].lease().valid());
+ *working_append={};current={};dirty[0]=arena.acquire(1).value();
+ auto prior=other.view().value();
+ auto proposed_delta=c::PagedArenaDelta::create(prior,shorter,{}).value();
+ auto proposal=other.prepare_commit(std::move(proposed_delta)).value();
+ auto proposed=proposal.view().value();
+ ASSERT_EQ(proposed.page_prefix(0)->size(),arena.page_bytes()/2);
+ auto append=gb::PagedAppendPages::create(arena,next,shorter,std::span(&proposed,1),dirty);
+ ASSERT_TRUE(append)<<append.error().message();EXPECT_FALSE(dirty[0].lease().valid());
+ stale={};frame={};prior={};proposed={};proposal={};other={};original_view={};original={};guard.reset();
+ auto still_pinned=arena.acquire(0);ASSERT_FALSE(still_pinned);EXPECT_TRUE(still_pinned.error().IsUnavailable());
+ *append={};
+ EXPECT_TRUE(arena.acquire(0));
+}
 TEST(GraphBatchQueryOffsets,CurrentMirrorPrefixAndIdleOwnershipOnCpu){const auto result=query_offset_projection();EXPECT_TRUE(result.ok())<<result.message();}
 #endif

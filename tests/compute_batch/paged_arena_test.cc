@@ -9,7 +9,9 @@
 #include "allocation_fault_fixture.h"
 #include "../../src/compute/completion_internal.h"
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <array>
+#include <vector>
 #include <limits>
 
 namespace {
@@ -1050,4 +1052,122 @@ TEST(PagedFrame, DeltaDoesNotRetainValidUnusedPagesAndActualReadsOutliveFrameCon
   EXPECT_TRUE(arena.acquire(0));EXPECT_TRUE(arena.acquire(1).error().IsUnavailable());
   native_read={};EXPECT_TRUE(arena.acquire(1));
 }
+TEST(PagedFrame, UntouchedOriginalPinsBlockReclaimAndKeepEpochCloseGuards) {
+  auto schema=c::BatchSchema::create(capacity()).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto zero=fill(arena,0,std::byte{83});const auto generation=zero.generation();
+  const auto initial=layout(schema,std::array<std::int32_t,1>{0});
+  const auto shorter=layout(schema,std::array<std::int32_t,1>{0},1);
+  auto original=arena.read(initial,std::array{zero}).value();
+  auto frame=c::PagedArenaFrame::fork(c::PagedArenaFootprint::from_read(original).value()).value();
+  zero.reset();original={};
+  auto before=frame.view().value();const auto epoch=frame.epoch();
+  auto blocked=arena.acquire(0);ASSERT_FALSE(blocked);EXPECT_TRUE(blocked.error().IsUnavailable());
+  EXPECT_EQ(frame.epoch(),epoch);
+  auto delta=c::PagedArenaDelta::create(before,shorter,{});ASSERT_TRUE(delta)<<delta.error().message();
+  auto ticket=frame.prepare_commit(std::move(*delta));ASSERT_TRUE(ticket)<<ticket.error().message();
+  ASSERT_TRUE(frame.commit(std::move(*ticket)).ok());
+  EXPECT_EQ(frame.epoch(),epoch+1);EXPECT_FALSE(before.valid());
+  auto stale=c::PagedArenaDelta::create(before,initial,{});ASSERT_FALSE(stale);
+  EXPECT_TRUE(stale.error().IsFailedPrecondition());
+  auto current=frame.view().value();auto prefix=current.page_prefix(0).value();
+  EXPECT_EQ(prefix.generation(),generation);EXPECT_EQ(prefix.size(),arena.page_bytes()/2);
+  EXPECT_EQ(first(prefix),std::byte{83});
+  auto still_blocked=arena.acquire(0);ASSERT_FALSE(still_blocked);EXPECT_TRUE(still_blocked.error().IsUnavailable());
+  // Every actual pin, including the stale footprint's Data ref, must retire.
+  prefix.reset();current={};before={};frame={};
+  auto reclaimed=arena.acquire(0);ASSERT_TRUE(reclaimed)<<reclaimed.error().message();
+  EXPECT_NE(reclaimed->lease().generation(),generation);
+  ASSERT_TRUE(reclaimed->lease().view()->fill(std::byte{89}).ok());
+  auto fresh=reclaimed->publish(2).value();
+  auto closed_read=arena.read(initial,std::array{fresh}).value();
+  auto closed_frame=c::PagedArenaFrame::from_frozen(closed_read).value();
+  auto closed_view=closed_frame.view().value();ASSERT_TRUE(arena.close().ok());
+  auto closed=c::PagedArenaDelta::create(closed_view,shorter,{});ASSERT_FALSE(closed);
+  EXPECT_TRUE(closed.error().IsFailedPrecondition());EXPECT_TRUE(closed_view.valid());
+  EXPECT_EQ(first(fresh),std::byte{89});
+}
+
+TEST(PagedFrame, OriginalCollectKeepsExactHeldGuardsAfterArenaCloseAndWrongExtent) {
+  auto schema=c::BatchSchema::create(capacity()).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto zero=fill(arena,0,std::byte{97}),one=fill(arena,1,std::byte{101});
+  const auto zero_generation=zero.generation(),one_generation=one.generation();
+  const auto initial=layout(schema,std::array<std::int32_t,2>{0,1},1);
+  auto original=arena.read(initial,std::array{zero,one}).value();
+  auto frame=c::PagedArenaFrame::fork(c::PagedArenaFootprint::from_read(original).value()).value();
+  auto view=frame.view().value();
+  std::array<c::ReadLease,1> wrong{zero};
+  const auto rejected=c::detail::PagedArenaAccess::collect_pages(view,wrong);
+  EXPECT_TRUE(rejected.IsInvalidArgument());EXPECT_EQ(wrong[0].generation(),zero_generation);
+  EXPECT_EQ(first(wrong[0]),std::byte{97});
+  zero.reset();one.reset();original={};wrong[0].reset();
+  ASSERT_TRUE(arena.close().ok());
+  // Collection of an already-held original permission remains legal after
+  // arena close; new writers/Frame deltas are independently closed-gated.
+  std::array<c::ReadLease,2> copied;
+  ASSERT_TRUE(c::detail::PagedArenaAccess::collect_pages(view,copied).ok());
+  EXPECT_EQ(copied[0].generation(),zero_generation);EXPECT_EQ(copied[1].generation(),one_generation);
+  EXPECT_EQ(copied[0].size(),arena.page_bytes());EXPECT_EQ(copied[1].size(),arena.page_bytes());
+  const auto before=view.page_prefix(1).value();
+  EXPECT_EQ(before.size(),arena.page_bytes()/2); // Logical prefix stays bounded.
+  view={};frame={};
+  EXPECT_EQ(first(copied[0]),std::byte{97});EXPECT_EQ(first(copied[1]),std::byte{101});
+}
+
+TEST(PagedFrame, SparseLargePageSetKeepsLogicalOrderAndChangedGuardsAcrossStructuralCommit) {
+  auto cap=capacity();cap.max_pages=300;cap.max_page_refs=300;cap.max_kv_rows=600;
+  auto schema=c::BatchSchema::create(cap).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),
+      {.max_backing_bytes=1u<<20}).value();
+  std::vector<std::int32_t> initial_ids;
+  std::vector<c::ReadLease> original_guards;
+  for(std::int32_t i=0;i<129;++i){
+    const auto page=2*i+1;initial_ids.push_back(page);
+    original_guards.push_back(fill(arena,std::uint32_t(page),std::byte(page%251)));
+  }
+  // Logical references are deliberately unrelated to sorted physical order.
+  std::reverse(initial_ids.begin(),initial_ids.end());
+  const auto initial=layout(schema,initial_ids);
+  auto frozen=arena.read(initial,original_guards).value();
+  auto frame=c::PagedArenaFrame::fork(c::PagedArenaFootprint::from_read(frozen).value()).value();
+  auto before=frame.view().value();const auto epoch=frame.epoch();
+  auto first_page=fill(arena,0,std::byte{201}),last_page=fill(arena,298,std::byte{202});
+  std::vector<std::int32_t> accepted_ids;
+  for(const auto page:initial_ids)if(page!=129)accepted_ids.push_back(page);
+  accepted_ids.push_back(0);accepted_ids.push_back(298);
+  std::rotate(accepted_ids.begin(),accepted_ids.begin()+37,accepted_ids.end());
+  const auto accepted=layout(schema,accepted_ids);
+  auto cropped=first_page.subview(0,arena.page_bytes()/2).value();
+  const auto bad=c::PagedArenaDelta::create(before,accepted,std::array{last_page,cropped});
+  ASSERT_FALSE(bad);EXPECT_TRUE(bad.error().IsInvalidArgument());
+  EXPECT_TRUE(before.valid());EXPECT_EQ(frame.epoch(),epoch);EXPECT_EQ(frame.layout(),initial);
+  // The input changes arrive in reverse physical order; both real guards must
+  // replace/add their exact pages, while all untouched holes remain untouched.
+  auto delta=c::PagedArenaDelta::create(before,accepted,std::array{last_page,first_page});
+  ASSERT_TRUE(delta)<<delta.error().message();
+  auto ticket=frame.prepare_commit(std::move(*delta));ASSERT_TRUE(ticket)<<ticket.error().message();
+  auto proposed=ticket->view();ASSERT_TRUE(proposed);
+  auto proposed_copy=c::PagedArenaFrame::fork(*proposed);ASSERT_TRUE(proposed_copy)<<proposed_copy.error().message();
+  ASSERT_TRUE(frame.commit(std::move(*ticket)).ok());
+  EXPECT_EQ(frame.epoch(),epoch+1);EXPECT_EQ(frame.layout(),accepted);EXPECT_EQ(frame.page_count(),130u);
+  EXPECT_FALSE(before.valid());
+  const auto stale=c::PagedArenaDelta::create(before,initial,{});
+  ASSERT_FALSE(stale);EXPECT_TRUE(stale.error().IsFailedPrecondition());
+  std::vector<c::ReadLease> logical(accepted_ids.size());
+  auto current=frame.view().value();ASSERT_TRUE(current.page_prefixes(logical).ok());
+  for(std::size_t i=0;i<logical.size();++i){
+    SCOPED_TRACE(i);
+    const auto page=accepted_ids[i];
+    EXPECT_EQ(first(logical[i]),page==0?std::byte{201}:page==298?std::byte{202}:std::byte(page%251));
+    EXPECT_EQ(logical[i].size(),arena.page_bytes());
+  }
+  EXPECT_FALSE(current.page_prefix(129));
+  EXPECT_EQ(first(original_guards[64]),std::byte{129});
+  ASSERT_TRUE(arena.close().ok());
+  const auto closed=c::PagedArenaDelta::create(current,accepted,{});
+  ASSERT_FALSE(closed);EXPECT_TRUE(closed.error().IsFailedPrecondition());
+  EXPECT_EQ(frame.epoch(),epoch+1);EXPECT_EQ(frame.layout(),accepted);
+}
+
 } } // namespace frame_contract

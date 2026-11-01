@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <new>
@@ -37,6 +38,71 @@ namespace hyle::graph {
 namespace detail {
 enum class BindingScope : std::uint8_t { kCaller, kConfiguration, kProjected, kWrittenProjection, kWriteEffect };
 
+// Immutable geometry copied from one original bind. This owns no lease,
+// Source, completion or execution state and never escapes its Episode binding.
+struct PendingReadRegistration final {
+  PendingReadRegistration(mem::AllocatorRef selected,mem::ConstBufferView original,
+      std::span<const mem::ConstBufferView> input)
+      :allocator(selected),capacity(original),ranges(input.begin(),input.end(),
+          mem::StdAllocator<mem::ConstBufferView>(selected)){}
+  mem::AllocatorRef allocator;
+  const mem::ConstBufferView capacity;
+  const std::vector<mem::ConstBufferView,mem::StdAllocator<mem::ConstBufferView>> ranges;
+};
+struct PendingReadRegistrationDelete final {
+  void operator()(PendingReadRegistration*value)const noexcept{
+    if(!value)return;
+    const auto allocator=value->allocator;
+    std::destroy_at(value);
+    allocator.deallocate(value,sizeof(PendingReadRegistration),alignof(PendingReadRegistration));
+  }
+};
+using PendingReadRegistrationOwner=std::unique_ptr<PendingReadRegistration,PendingReadRegistrationDelete>;
+PendingReadRegistrationOwner try_pending_read_registration(mem::AllocatorRef allocator,
+    mem::ConstBufferView capacity,std::span<const mem::ConstBufferView> ranges)noexcept{
+  if(ranges.size()<2)return {};
+  try{return PendingReadRegistrationOwner(allocator.construct<PendingReadRegistration>(allocator,capacity,ranges));}
+  catch(...){return {};}// Optional compression: the original flat reservation remains usable.
+}
+
+// Original ready guards owned by one anonymous projection suffix. This is
+// Episode metadata, not a Source or a combined bank permission. Every actual
+// admission/capture still visits each original guard and its live generation.
+struct ReadyReadRegistration final {
+  ReadyReadRegistration(mem::AllocatorRef selected,std::span<const compute::ReadLease> input)
+      :allocator(selected),guards(input.begin(),input.end(),mem::StdAllocator<compute::ReadLease>(selected)),
+       roots(mem::StdAllocator<const void*>(selected)){
+    roots.reserve(input.size());
+    for(const auto&read:guards)roots.push_back(compute::detail::LeaseAccess::identity(read));
+    std::sort(roots.begin(),roots.end(),std::less<const void*>{});
+    roots.erase(std::unique(roots.begin(),roots.end()),roots.end());
+  }
+  bool contains(const void*root)const noexcept{
+    return std::binary_search(roots.begin(),roots.end(),root,std::less<const void*>{});
+  }
+  mem::AllocatorRef allocator;
+  const std::vector<compute::ReadLease,mem::StdAllocator<compute::ReadLease>> guards;
+  // Immutable after construction; negative membership is only an algorithm
+  // shortcut, never a generation, range, prefix or retirement proof.
+  std::vector<const void*,mem::StdAllocator<const void*>> roots;
+};
+struct ReadyReadRegistrationDelete final {
+  void operator()(ReadyReadRegistration*value)const noexcept{
+    if(!value)return;
+    const auto allocator=value->allocator;std::destroy_at(value);
+    allocator.deallocate(value,sizeof(ReadyReadRegistration),alignof(ReadyReadRegistration));
+  }
+};
+using ReadyReadRegistrationOwner=std::unique_ptr<ReadyReadRegistration,ReadyReadRegistrationDelete>;
+ReadyReadRegistrationOwner try_ready_read_registration(mem::AllocatorRef allocator,
+    std::span<const compute::ReadLease> guards)noexcept{
+  // Keep small fixed projections allocation-free after reserve_reads, and
+  // avoid owner/index overhead when there is little metadata to compress.
+  if(guards.size()<4)return {};
+  try{return ReadyReadRegistrationOwner(allocator.construct<ReadyReadRegistration>(allocator,guards));}
+  catch(...){return {};}// Optional: all original flat reservation guarantees stay valid.
+}
+
 struct LeaseBinding final {
   ValueId value{};
   ValueId projection{};
@@ -54,7 +120,24 @@ struct LeaseBinding final {
   bool permission_changes_preserve_commands = false;
   mem::ConstBufferView pending_range{};
   bool pending_effect = false;
+  // Geometry of a whole anonymous, rootless pending-read registration. Only
+  // its first binding carries a relative count; no permission is stored here.
+  // All members share scope/projection/writer_step, so existing selective
+  // erase predicates remove the whole run or move it intact.
+  std::uint32_t pending_geometry_count = 0;
+  mem::ConstBufferView pending_geometry_capacity{};
+  PendingReadRegistrationOwner pending_registration{};
+  ReadyReadRegistrationOwner ready_registration{};
 };
+
+// Scalar and compact anonymous registrations expose the same original order.
+std::size_t binding_ready_count(const LeaseBinding&binding)noexcept{
+  return binding.ready_registration?binding.ready_registration->guards.size():
+      (binding.read.valid()?std::size_t{1}:std::size_t{0});
+}
+const compute::ReadLease&binding_ready(const LeaseBinding&binding,std::size_t member)noexcept{
+  return binding.ready_registration?binding.ready_registration->guards[member]:binding.read;
+}
 
 struct ResourceEpisode final {
   struct MetadataQueue final {
@@ -105,11 +188,69 @@ struct ResourceEpisode final {
   // Actual shared capacity of bindings, permissions and LeaseUsePool, rather
   // than the last caller's extra count or vector's geometric over-allocation.
   std::uint32_t permission_capacity = 0;
+  // One-way algorithm eligibility, never a permission or exact live counter.
+  // Only successful pending/ready group commit points can set this fact.
+  bool ever_installed_compact_registration = false;
   bool configuration_spans = false;
   const ResourcePayloadVTable *payload_table = nullptr;
   ResourcePayloadValidationFn payload_validation = nullptr;
   void *payload = nullptr;
 };
+
+// Preserve the original virtual per-range count for native-use capacity.
+// Flat fallback ranges still occupy individual bindings; a bank contributes
+// max(1,N), never just its one physical record. No mutable count debt is kept.
+Result<std::uint32_t> registered_permission_count(const ResourceEpisode&episode)noexcept{
+  if(!episode.ever_installed_compact_registration){
+    if(episode.bindings.size()>UINT32_MAX)
+      return std::unexpected(Status::ResourceExhausted("graph permission capacity overflow"));
+    return static_cast<std::uint32_t>(episode.bindings.size());
+  }
+  std::uint32_t count=0;
+  for(const auto&binding:episode.bindings){
+    const auto weight=binding.pending_registration?
+        (std::max)(std::size_t{1},binding.pending_registration->ranges.size()):
+        binding.ready_registration?binding.ready_registration->guards.size():std::size_t{1};
+    if(weight>UINT32_MAX-count)
+      return std::unexpected(Status::ResourceExhausted("graph permission capacity overflow"));
+    count+=static_cast<std::uint32_t>(weight);
+  }
+  return count;
+}
+
+// Compact records do not release native permission headroom. The ordinary
+// flat path retains its original capacity semantics and constant-time count.
+Result<bool> projection_capacity_available(const ResourceEpisode&episode,
+    std::size_t extra,ValueId replacement={})noexcept{
+  std::size_t occupied=episode.bindings.size(),limit=episode.bindings.capacity();
+  if(episode.ever_installed_compact_registration){
+    HYLE_ASSIGN_OR_RETURN(auto registered,registered_permission_count(episode));
+    occupied=registered;
+    limit=(std::min)(limit,std::size_t{episode.permission_capacity});
+  }
+  if(replacement.valid())for(const auto&entry:episode.bindings){
+    if(entry.value.valid() || entry.projection!=replacement)continue;
+    const auto weight=entry.pending_registration?
+        (std::max)(std::size_t{1},entry.pending_registration->ranges.size()):
+        entry.ready_registration?entry.ready_registration->guards.size():std::size_t{1};
+    HYLE_FATAL_ASSERT(weight<=occupied);occupied-=weight;
+  }
+  return occupied<=limit && extra<=limit-occupied;
+}
+
+// A whole relative run constructed only by the two original bind commit
+// loops below. Anonymous entries are never found by ValueId or rebound. Every
+// selective erase tests their common scope/projection/writer_step, so the run
+// moves intact or is removed completely. This is geometry, never permission.
+std::uint32_t pending_geometry_run_size(const ResourceEpisode&episode,std::size_t ordinal)noexcept{
+  const auto&binding=episode.bindings[ordinal];
+  const auto count=binding.pending_geometry_count;
+  return count>1 && count<=episode.bindings.size()-ordinal &&
+      !binding.value.valid() && binding.pending_effect && binding.pending_range.valid() &&
+      !binding.read.valid() && !binding.write.valid() && !binding.exclusive &&
+      !binding.projected_writer && !binding.projected_appender && binding.pending_geometry_capacity.valid()
+      ?count:0;
+}
 
 struct SubmissionLifetime final {
   explicit SubmissionLifetime(mem::AllocatorRef selected) noexcept
@@ -412,6 +553,7 @@ void clear_binding_owner(LeaseBinding &binding) noexcept {
   binding.projection = {};
   binding.projected_writer=nullptr;binding.projected_appender=nullptr;binding.writer_step=UINT32_MAX;
   binding.permission_changes_preserve_commands=false;
+  binding.pending_geometry_count=0;binding.pending_geometry_capacity={};binding.pending_registration.reset();binding.ready_registration.reset();
   binding.exclusive = false; binding.permissionless = false; binding.borrowed = true;
   binding.scope = BindingScope::kCaller;
 }
@@ -457,7 +599,7 @@ Status RegionAccess::withdraw_bindings_impl(Invocation &invocation,
   for (const auto &binding : episode->bindings) {
     if (ready_projection || source_owner) break;
     if (binding.scope == BindingScope::kWrittenProjection ||
-        (binding.scope == BindingScope::kProjected && !binding.read.valid() &&
+        (binding.scope == BindingScope::kProjected && !binding_ready_count(binding) &&
          !binding.permissionless))
       return Status::FailedPrecondition("take original page/source controls before unbinding caller ports");
   }
@@ -786,9 +928,10 @@ Status RegionAccess::reserve_reads(Invocation &invocation, std::uint32_t extra,
   // Repeated layout preparation reuses the same fixed permission/use storage.
   // Growth is cold and idle-gated; existing leases do not refer to this pool.
   // Keep the old pool until every replacement allocation has succeeded.
-  if (extra > UINT32_MAX - 1 || episode->bindings.size() > UINT32_MAX - 1 - extra)
+  HYLE_ASSIGN_OR_RETURN(auto registered,registered_permission_count(*episode));
+  if (extra > UINT32_MAX - 1 || registered > UINT32_MAX - 1 - extra)
     return Status::ResourceExhausted("graph permission capacity overflow");
-  const auto required = static_cast<std::uint32_t>(episode->bindings.size() + extra);
+  const auto required = static_cast<std::uint32_t>(registered + extra);
   if (required <= episode->permission_capacity) {
     try { episode->input_lease_candidates.reserve(episode->bindings.capacity()); }
     catch (...) { return Status::ResourceExhausted("graph fixed read lookup metadata"); }
@@ -798,6 +941,8 @@ Status RegionAccess::reserve_reads(Invocation &invocation, std::uint32_t extra,
       .max_resources_per_batch = required + 1,
       .allocator = options.allocator, .resource_budget = options.resource_budget}));
   try {
+    // Retain the old flat-fallback headroom. A previously reserved caller may
+    // later reject optional compression allocations without losing admission.
     episode->bindings.reserve(required);
     episode->input_lease_candidates.reserve(episode->bindings.capacity());
   }
@@ -862,9 +1007,9 @@ Status RegionAccess::bind_projected_impl(Invocation&invocation,ValueId value,
       return Status::InvalidArgument("projected capacity has an unqualified physical reader");
   }
   if(consumers.empty())return Status::InvalidArgument("projected capacity has no qualified reader");
-  const auto old_extra = std::count_if(episode->bindings.begin(), episode->bindings.end(),
-      [&](const auto &entry) { return !entry.value.valid() && entry.projection == value; });
-  if(!pages.empty() && pages.size()-1>episode->bindings.capacity()-(episode->bindings.size()-old_extra))
+  HYLE_ASSIGN_OR_RETURN(const auto has_capacity,projection_capacity_available(*episode,
+      pages.empty()?0:pages.size()-1,value));
+  if(!pages.empty() && !has_capacity)
     return Status::ResourceExhausted("projected graph permission capacity exhausted");
   const auto storage=tensor.storage();
   for(const auto&page:pages){HYLE_ASSIGN_OR_RETURN(auto view,page.view());
@@ -874,6 +1019,9 @@ Status RegionAccess::bind_projected_impl(Invocation&invocation,ValueId value,
       return Status::InvalidArgument("projected page permission is outside its native capacity");
   }
   if(validate_only)return Status::Ok();
+  // Optional: all original validators and flat capacity checks precede this.
+  // Allocation failure retains the already reserved scalar representation.
+  auto ready_registration=try_ready_read_registration(episode->allocator,pages.subspan(pages.empty()?0:1));
   HYLE_RETURN_IF_ERROR(invocation.bind(value,tensor));
   // The ordinary bind has now invalidated replay and removed the old page
   // permissions. Every rejecting check preceded it; this commit cannot grow
@@ -886,7 +1034,12 @@ Status RegionAccess::bind_projected_impl(Invocation&invocation,ValueId value,
   binding->scope=BindingScope::kProjected;
   binding->permission_changes_preserve_commands=std::all_of(readers.begin(),readers.end(),
       [](const auto&reader){return reader.permission_changes_preserve_commands;});
-  for(std::size_t i=1;i<pages.size();++i)episode->bindings.push_back({.projection=value,.read=pages[i],.borrowed=false,.scope=BindingScope::kProjected});
+  if(ready_registration){
+    episode->bindings.push_back({.projection=value,.borrowed=false,.scope=BindingScope::kProjected,
+        .ready_registration=std::move(ready_registration)});
+    episode->ever_installed_compact_registration=true;
+  }else for(std::size_t i=1;i<pages.size();++i)
+    episode->bindings.push_back({.projection=value,.read=pages[i],.borrowed=false,.scope=BindingScope::kProjected});
   return Status::Ok();
 }
 Status RegionAccess::bind_projected(Invocation&invocation,ValueId value,
@@ -960,10 +1113,14 @@ Result<bool> RegionAccess::has_read_projection(const InvocationState*state,
   std::size_t matched=1;
   for(const auto&extra:state->resources.get()->bindings){
     if(extra.value.valid() || extra.projection!=value)continue;
-    if(extra.scope!=BindingScope::kProjected || matched>=pages.size())
+    for(std::size_t member=0;member<binding_ready_count(extra);++member){
+      if(extra.scope!=BindingScope::kProjected || matched>=pages.size())
+        return std::unexpected(Status::InvalidArgument("read-projection guard count or scope differs from its original owner"));
+      HYLE_RETURN_IF_ERROR(match(binding_ready(extra,member),pages[matched]));
+      ++matched;
+    }
+    if(!binding_ready_count(extra))
       return std::unexpected(Status::InvalidArgument("read-projection guard count or scope differs from its original owner"));
-    HYLE_RETURN_IF_ERROR(match(extra.read,pages[matched]));
-    ++matched;
   }
   if(matched!=pages.size())
     return std::unexpected(Status::InvalidArgument("read-projection guard count differs from its original owner"));
@@ -985,11 +1142,31 @@ bool overlaps_resource_range(mem::ConstBufferView a, mem::ConstBufferView b) noe
       a.resource() != b.resource() || a.native_handle() != b.native_handle()) return false;
   return a.offset() <= b.offset() ? b.offset() - a.offset() < a.size() : a.offset() - b.offset() < b.size();
 }
+// Geometry already queried successfully in this one binding call. These
+// views do not replace lease checks or native-use admission, and never escape.
+struct MutableRangeViews final {
+  explicit MutableRangeViews(mem::AllocatorRef selected) noexcept : allocator(selected) {}
+  const compute::WriteLease *writer = nullptr;
+  const compute::detail::AppendLease *appender = nullptr;
+  mem::ConstBufferView write_range{}, append_range{};
+  // Same-call lookup facts only. Every lease/view/range check and native-use
+  // admission stays on the original path. No identity survives this bind.
+  struct WriterView final { const compute::WriteLease *writer; mem::ConstBufferView range; };
+  std::array<WriterView,64> writer_views;
+  std::size_t writer_view_count = 0;
+  std::array<const void *,64> writer_roots;
+  std::size_t writer_root_count = 0;
+  mem::AllocatorRef allocator;
+  bool has_writer_root(const void *root,std::span<const compute::WriteLease*const> writers) const noexcept {
+    if(writer_root_count)return std::binary_search(writer_roots.begin(),writer_roots.begin()+writer_root_count,root,std::less<const void*>{});
+    return std::ranges::any_of(writers,[&](const auto*page){return compute::detail::LeaseAccess::identity(*page)==root;});
+  }
+};
 Status validate_write_ranges(compute::ConstTensorView tensor,
     std::span<const compute::ReadLease>pages,
     std::span<const compute::WriteLease*const>writers,
     std::span<const compute::detail::AppendLease*const>appenders,
-    std::span<const compute::ReadLease>controls)noexcept{
+    std::span<const compute::ReadLease>controls,MutableRangeViews&views)noexcept{
   if(!tensor.valid() || (writers.empty() && appenders.empty()))
     return Status::InvalidArgument("projected write needs capacity and original mutable page permissions");
   const auto storage=tensor.storage();
@@ -998,15 +1175,38 @@ Status validate_write_ranges(compute::ConstTensorView tensor,
         range.offset()>=storage.offset() && range.offset()-storage.offset()<=storage.size() &&
         range.size()<=storage.size()-(range.offset()-storage.offset());
   };
+  // Multiple dirty pages amortize one optional ready-root lookup. Preparing
+  // identities invokes no fallible lease query; OOM retains the complete scan.
+  // Release this scratch before later required binding metadata is reserved.
+  container::SmallVector<const void *,64,mem::AllocatorRef> ready_roots(views.allocator);
+  const bool index_writers=writers.size()<=views.writer_roots.size();
+  const bool ready_index=index_writers && writers.size()>1 && ready_roots.try_resize(pages.size());
+  if(ready_index){
+    for(std::size_t i=0;i<pages.size();++i)ready_roots[i]=compute::detail::LeaseAccess::identity(pages[i]);
+    std::sort(ready_roots.begin(),ready_roots.end(),std::less<const void*>{});
+  }
+  const auto has_ready_root=[&](const void*root)noexcept{
+    if(ready_index)return std::binary_search(ready_roots.begin(),ready_roots.end(),root,std::less<const void*>{});
+    return std::ranges::any_of(pages,[&](const auto&read){return compute::detail::LeaseAccess::identity(read)==root;});
+  };
   for(std::size_t i=0;i<writers.size();++i){
     if(!writers[i] || !writers[i]->valid())return Status::InvalidArgument("projected page writer is empty");
     HYLE_ASSIGN_OR_RETURN(auto range,writers[i]->view());
     if(!inside(range))return Status::InvalidArgument("projected writer is outside its original capacity");
+    if(writers.size()==1){views.writer=writers[i];views.write_range=range;}
     const auto root=compute::detail::LeaseAccess::identity(*writers[i]);
     for(std::size_t j=0;j<i;++j)if(compute::detail::LeaseAccess::identity(*writers[j])==root)
       return Status::InvalidArgument("projected page writer is duplicated");
-    for(const auto&read:pages)if(compute::detail::LeaseAccess::identity(read)==root)
+    if(has_ready_root(root))
       return Status::InvalidArgument("projected page mixes ready and mutable permissions");
+    if(index_writers){views.writer_roots[i]=root;views.writer_views[i]={writers[i],range};}
+  }
+  // Install only after the original per-writer validation succeeds, preserving
+  // view/inside/duplicate/mixed-authority first-error order.
+  if(index_writers && !writers.empty()){
+    std::sort(views.writer_roots.begin(),views.writer_roots.begin()+writers.size(),std::less<const void*>{});
+    views.writer_root_count=writers.size();
+    views.writer_view_count=writers.size();
   }
   for(std::size_t i=0;i<appenders.size();++i){
     const auto*append=appenders[i];
@@ -1014,6 +1214,7 @@ Status validate_write_ranges(compute::ConstTensorView tensor,
       return Status::InvalidArgument("projected append authority has no original reserved suffix");
     HYLE_ASSIGN_OR_RETURN(auto range,append->view());
     if(!inside(range))return Status::InvalidArgument("projected suffix is outside its original capacity");
+    if(appenders.size()==1){views.appender=append;views.append_range=range;}
     const auto root=compute::detail::LeaseAccess::identity(*append);
     for(std::size_t j=0;j<i;++j)if(compute::detail::LeaseAccess::identity(*appenders[j])==root)
       return Status::InvalidArgument("projected append authority is duplicated");
@@ -1039,10 +1240,60 @@ Status validate_write_conflicts(const ResourceEpisode&episode,
     std::span<const compute::ReadLease>pages,
     std::span<const compute::WriteLease*const>writers,
     std::span<const compute::detail::AppendLease*const>appenders,
-    std::span<const compute::ReadLease>controls)noexcept{
+    std::span<const compute::ReadLease>controls,const MutableRangeViews&views)noexcept{
+  // Only views checked successfully by this same bind can exclude an old
+  // pending-read run. Above inline capacity, retain every original view query.
+  bool checked_writers=writers.size()==views.writer_view_count;
+  if(checked_writers)for(std::size_t i=0;i<writers.size();++i)
+    checked_writers &= views.writer_views[i].writer==writers[i] && views.writer_views[i].range.valid();
+  const bool checked_mutable_views = checked_writers &&
+      (appenders.empty() || (appenders.size()==1 && appenders.front()==views.appender && views.append_range.valid()));
+  const auto disjoint_writers=[&](mem::ConstBufferView capacity)noexcept{
+    for(std::size_t i=0;i<writers.size();++i)
+      if(overlaps_resource_range(capacity,views.writer_views[i].range))return false;
+    return true;
+  };
   // Inspect old reads only against new mutable roots, and old mutable roots
   // against new reads. Read/read pairs need no scan or duplicate owner table.
-  for(const auto&binding:episode.bindings){
+  for(std::size_t ordinal=0;ordinal<episode.bindings.size();++ordinal){
+    const auto&binding=episode.bindings[ordinal];
+    if(binding.ready_registration){
+      const auto&registration=*binding.ready_registration;
+      bool matches=false;
+      for(const auto*writer:writers)
+        matches|=registration.contains(compute::detail::LeaseAccess::identity(*writer));
+      for(const auto*append:appenders)
+        matches|=registration.contains(compute::detail::LeaseAccess::identity(*append));
+      if(!matches)continue; // Immutable negative root membership only.
+      // Keep the scalar guard-major error order. Never combine adjacent guards.
+      for(const auto&read:registration.guards){
+        const auto root=compute::detail::LeaseAccess::identity(read);
+        if(!root)continue;
+        if(views.has_writer_root(root,writers))
+          return Status::InvalidArgument("projected writer conflicts with an existing read or append permission");
+        for(const auto*append:appenders)
+          if(compute::detail::LeaseAccess::identity(*append)==root)
+            HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::validate_prefix(*append,read));
+      }
+      continue;
+    }
+    const auto*registration=binding.pending_registration.get();
+    if(registration && checked_mutable_views && binding.pending_effect && !binding.value.valid() &&
+        !binding.read.valid() && !binding.write.valid() && !binding.exclusive &&
+        !binding.projected_writer && !binding.projected_appender &&
+        disjoint_writers(registration->capacity) &&
+        (appenders.empty() || !overlaps_resource_range(registration->capacity,views.append_range)))continue;
+    const auto count=pending_geometry_run_size(episode,ordinal);
+    if(count && checked_mutable_views &&
+        disjoint_writers(binding.pending_geometry_capacity) &&
+        (appenders.empty() || !overlaps_resource_range(binding.pending_geometry_capacity,views.append_range))){
+      // All members were constructed together below, with no lease root and
+      // pending_range inside this capacity. Their original loop bodies could
+      // only test these now-proven-disjoint geometries, then continue. Keep
+      // every root/authority check and every potentially overlapping run live.
+      ordinal+=count-1;
+      continue;
+    }
     const auto*old_append=binding.projected_appender;
     const auto*old_write=binding.projected_writer;
     const bool ordinary_write=old_write || binding.exclusive;
@@ -1050,20 +1301,36 @@ Status validate_write_conflicts(const ResourceEpisode&episode,
         :old_write?compute::detail::LeaseAccess::identity(*old_write)
         :binding.write.valid()?compute::detail::LeaseAccess::identity(binding.write)
         :binding.read.valid()?compute::detail::LeaseAccess::identity(binding.read):nullptr;
-    if(binding.pending_range.valid()) {
-      for(const auto *page:writers) {
+    const auto check_pending=[&](mem::ConstBufferView pending_range)noexcept->Status{
+      if(!pending_range.valid())return Status::Ok();
+      for(std::size_t i=0;i<writers.size();++i) {
+        const auto *page=writers[i];
+        if(checked_writers) {
+          if(overlaps_resource_range(pending_range,views.writer_views[i].range))
+            return Status::InvalidArgument("projected writer overlaps an original pending effect read");
+          continue;
+        }
         HYLE_ASSIGN_OR_RETURN(auto range,page->view());
-        if(overlaps_resource_range(binding.pending_range,range))
+        if(overlaps_resource_range(pending_range,range))
           return Status::InvalidArgument("projected writer overlaps an original pending effect read");
       }
       for(const auto *append:appenders) {
+        if(append==views.appender && views.append_range.valid()) {
+          if(overlaps_resource_range(pending_range,views.append_range))
+            return Status::InvalidArgument("projected append overlaps an original pending effect read");
+          continue;
+        }
         HYLE_ASSIGN_OR_RETURN(auto range,append->view());
-        if(overlaps_resource_range(binding.pending_range,range))
+        if(overlaps_resource_range(pending_range,range))
           return Status::InvalidArgument("projected append overlaps an original pending effect read");
       }
-    }
+      return Status::Ok();
+    };
+    if(registration){
+      for(const auto range:registration->ranges)HYLE_RETURN_IF_ERROR(check_pending(range));
+    }else HYLE_RETURN_IF_ERROR(check_pending(binding.pending_range));
     if(!root)continue;
-    for(const auto*page:writers)if(compute::detail::LeaseAccess::identity(*page)==root && !ordinary_write)
+    if(!ordinary_write && views.has_writer_root(root,writers))
       return Status::InvalidArgument("projected writer conflicts with an existing read or append permission");
     for(const auto*append:appenders)if(compute::detail::LeaseAccess::identity(*append)==root){
       if(ordinary_write)return Status::InvalidArgument("projected append conflicts with an existing ordinary writer");
@@ -1078,7 +1345,7 @@ Status validate_write_conflicts(const ResourceEpisode&episode,
   }
   return Status::Ok();
 }
-Status validate_pending_write_reads(const ResourceEpisode &episode, compute::ConstTensorView capacity,
+Status validate_pending_write_reads_complete(const ResourceEpisode &episode, compute::ConstTensorView capacity,
     std::span<const mem::ConstBufferView> reads,
     std::span<const compute::WriteLease *const> writers,
     std::span<const compute::detail::AppendLease *const> appenders) noexcept {
@@ -1097,7 +1364,11 @@ Status validate_pending_write_reads(const ResourceEpisode &episode, compute::Con
       if(overlaps_resource_range(reads[i],range))
         return Status::InvalidArgument("pending effect read overlaps its append destination");
     }
-    for(const auto &old:episode.bindings) {
+    for(std::size_t ordinal=0;ordinal<episode.bindings.size();++ordinal) {
+      // A rootless pending run has none of the mutable fields tested below.
+      // Keep raw read order and every real mutable view/error unchanged.
+      if(const auto run=pending_geometry_run_size(episode,ordinal)){ordinal+=run-1;continue;}
+      const auto&old=episode.bindings[ordinal];
       if(old.projected_writer) {
         HYLE_ASSIGN_OR_RETURN(auto range,old.projected_writer->view());
         if(overlaps_resource_range(reads[i],range))
@@ -1112,6 +1383,87 @@ Status validate_pending_write_reads(const ResourceEpisode &episode, compute::Con
           return Status::InvalidArgument("pending effect read overlaps an existing mutable binding");
       }
     }
+  }
+  return Status::Ok();
+}
+// Prove the common disjoint physical order without sorting or allocating.
+// Arbitrary raw callers keep the original complete validation and error order.
+Status validate_pending_write_reads(const ResourceEpisode &episode, compute::ConstTensorView capacity,
+    std::span<const mem::ConstBufferView> reads,
+    std::span<const compute::WriteLease *const> writers,
+    std::span<const compute::detail::AppendLease *const> appenders,
+    const MutableRangeViews &views) noexcept {
+  const auto complete = [&]() noexcept {
+    return validate_pending_write_reads_complete(episode, capacity, reads, writers, appenders);
+  };
+  if (reads.size() < 2) return complete();
+  for (std::size_t i = 0; i < reads.size(); ++i) {
+    if (!reads[i].size() || !contains_resource_range(capacity.storage(), reads[i]) ||
+        (i && (reads[i].offset() <= reads[i - 1].offset() ||
+            reads[i].offset() - reads[i - 1].offset() < reads[i - 1].size())))
+      return complete();
+  }
+  // Scan original mutable registrations once, rather than rescan all readonly
+  // KV bindings for each page. Remember the original earliest conflict only;
+  // no authority, candidate cache or successful check survives this call.
+  std::size_t first_old_conflict = reads.size();
+  const char *old_error = nullptr;
+  const auto inspect = [&](mem::ConstBufferView range, const char *message) noexcept {
+    if (!overlaps_resource_range(capacity.storage(), range)) return;
+    const auto found = std::lower_bound(reads.begin(), reads.end(), range.offset(),
+        [](mem::ConstBufferView read, std::size_t begin) noexcept {
+          return read.offset() <= begin && begin - read.offset() >= read.size();
+        });
+    if (found == reads.end() || !overlaps_resource_range(*found, range)) return;
+    const auto ordinal = std::size_t(found - reads.begin());
+    if (ordinal < first_old_conflict) {
+      first_old_conflict = ordinal;
+      old_error = message;
+    }
+  };
+  for(std::size_t ordinal=0;ordinal<episode.bindings.size();++ordinal) {
+    if(const auto run=pending_geometry_run_size(episode,ordinal)){ordinal+=run-1;continue;}
+    const auto&old=episode.bindings[ordinal];
+    if (old.projected_writer) {
+      auto range = old.projected_writer->view();
+      if (!range) return complete();
+      inspect(*range, "pending effect read overlaps an existing writer");
+    } else if (old.projected_appender) {
+      auto range = old.projected_appender->view();
+      if (!range) return complete();
+      inspect(*range, "pending effect read overlaps an existing append");
+    } else if (old.exclusive && old.write.valid()) {
+      auto range = old.write.view();
+      if (!range) return complete();
+      inspect(*range, "pending effect read overlaps an existing mutable binding");
+    }
+  }
+  bool checked_writers=writers.size()==views.writer_view_count;
+  if(checked_writers)for(std::size_t i=0;i<writers.size();++i)
+    checked_writers &= views.writer_views[i].writer==writers[i] && views.writer_views[i].range.valid();
+  for (std::size_t i = 0; i < reads.size(); ++i) {
+    for (std::size_t j=0;j<writers.size();++j) {
+      const auto *writer=writers[j];
+      if (checked_writers) {
+        if (overlaps_resource_range(reads[i], views.writer_views[j].range))
+          return Status::InvalidArgument("pending effect read overlaps its dirty destination");
+        continue;
+      }
+      HYLE_ASSIGN_OR_RETURN(auto range, writer->view());
+      if (overlaps_resource_range(reads[i], range))
+        return Status::InvalidArgument("pending effect read overlaps its dirty destination");
+    }
+    for (const auto *append : appenders) {
+      if (append == views.appender && views.append_range.valid()) {
+        if (overlaps_resource_range(reads[i], views.append_range))
+          return Status::InvalidArgument("pending effect read overlaps its append destination");
+        continue;
+      }
+      HYLE_ASSIGN_OR_RETURN(auto range, append->view());
+      if (overlaps_resource_range(reads[i], range))
+        return Status::InvalidArgument("pending effect read overlaps its append destination");
+    }
+    if (i == first_old_conflict) return Status::InvalidArgument(old_error);
   }
   return Status::Ok();
 }
@@ -1204,32 +1556,35 @@ Status RegionAccess::bind_written_projection(Invocation&invocation,const Graph&g
     for(std::size_t i=0;i<count;++i){HYLE_ASSIGN_OR_RETURN(auto prerequisite,graph.node_dependency(node,i));ordered|=prerequisite==writer.node;}
     if(!ordered)return Status::InvalidArgument("projected reader lacks its explicit original Graph write dependency");
   }
-  HYLE_RETURN_IF_ERROR(validate_write_ranges(tensor,pages,writers,appenders,controls));
-  HYLE_RETURN_IF_ERROR(validate_write_conflicts(*episode,pages,writers,appenders,controls));
-  HYLE_RETURN_IF_ERROR(validate_pending_write_reads(*episode,tensor,pending_reads,writers,appenders));
+  MutableRangeViews mutable_views(episode->allocator);
+  HYLE_RETURN_IF_ERROR(validate_write_ranges(tensor,pages,writers,appenders,controls,mutable_views));
+  HYLE_RETURN_IF_ERROR(validate_write_conflicts(*episode,pages,writers,appenders,controls,mutable_views));
+  HYLE_RETURN_IF_ERROR(validate_pending_write_reads(*episode,tensor,pending_reads,writers,appenders,mutable_views));
+  HYLE_ASSIGN_OR_RETURN(auto registered,registered_permission_count(*episode));
   if(pages.size()>UINT32_MAX || writers.size()>UINT32_MAX-pages.size() ||
       appenders.size()>UINT32_MAX-pages.size()-writers.size() ||
       controls.size()>UINT32_MAX-pages.size()-writers.size()-appenders.size() ||
-      episode->bindings.size()>UINT32_MAX-pages.size()-writers.size()-appenders.size()-controls.size())
+      registered>UINT32_MAX-pages.size()-writers.size()-appenders.size()-controls.size())
     return Status::ResourceExhausted("projected writer permission count overflows");
   const auto extra=pages.size()+writers.size()+appenders.size()+controls.size();
   const auto pending_count=pending_reads.empty() && requires_source?std::size_t(1):pending_reads.size();
-  if(pending_count>UINT32_MAX-extra-episode->bindings.size())
+  if(pending_count>UINT32_MAX-extra-registered)
     return Status::ResourceExhausted("projected pending effect count overflows");
   HYLE_RETURN_IF_ERROR(reserve_reads(invocation,std::uint32_t(extra+pending_count),options));
+  auto pending_registration=try_pending_read_registration(episode->allocator,tensor.storage(),pending_reads);
   // The common read projection validates all physical consumers, aliases and
   // actual ready ranges before committing. Pending here means no ready lease
   // is invented for pages written earlier in this very Graph.
+  const auto ready_begin=episode->bindings.size();
   HYLE_RETURN_IF_ERROR(bind_projected_impl(invocation,value,tensor,pages,readers,true));
   // The common read binder appends the remaining page guards last. They
   // belong to this same written projection, including its committed tail
   // prefix; preserve that ownership for Source capture and retirement.
-  const auto extra_pages=pages.empty()?std::size_t{0}:pages.size()-1;
-  HYLE_FATAL_ASSERT(extra_pages<=episode->bindings.size());
-  for(std::size_t i=episode->bindings.size()-extra_pages;i<episode->bindings.size();++i){
+  HYLE_FATAL_ASSERT(ready_begin<=episode->bindings.size());
+  for(std::size_t i=ready_begin;i<episode->bindings.size();++i){
     auto&page_binding=episode->bindings[i];
     HYLE_FATAL_ASSERT(!page_binding.value.valid() && page_binding.projection==value &&
-        page_binding.scope==BindingScope::kProjected && page_binding.read.valid());
+        page_binding.scope==BindingScope::kProjected && binding_ready_count(page_binding));
     page_binding.scope=BindingScope::kWrittenProjection;page_binding.writer_step=writer.step;
   }
   auto*binding=find_binding(state,value);binding->scope=BindingScope::kWrittenProjection;
@@ -1243,10 +1598,22 @@ Status RegionAccess::bind_written_projection(Invocation&invocation,const Graph&g
   // These are original prepared-program control buffers, never arena pages or
   // write authority. The same episode admits/retains their actual read uses.
   for(const auto&control:controls)episode->bindings.push_back({.projection=value,.read=control,.borrowed=false,.scope=BindingScope::kWrittenProjection});
+  if(pending_registration){
+    episode->bindings.push_back({.projection=value,.writer_step=writer.step,.borrowed=false,
+        .scope=BindingScope::kWrittenProjection,.pending_effect=true,.pending_registration=std::move(pending_registration)});
+    episode->ever_installed_compact_registration=true;
+  }else{
+  const auto pending_geometry_begin=episode->bindings.size();
   for(const auto range:pending_reads)episode->bindings.push_back({.projection=value,.writer_step=writer.step,
       .borrowed=false,.scope=BindingScope::kWrittenProjection,.pending_range=range,.pending_effect=true});
+  if(pending_reads.size()>1){
+    auto&first=episode->bindings[pending_geometry_begin];
+    first.pending_geometry_count=static_cast<std::uint32_t>(pending_reads.size());
+    first.pending_geometry_capacity=tensor.storage();
+  }
   if(pending_reads.empty() && requires_source)episode->bindings.push_back({.projection=value,.writer_step=writer.step,
       .borrowed=false,.scope=BindingScope::kWrittenProjection,.pending_effect=true});
+  }
   episode->nominated_writers[writer.step]=writer.node.ordinal();
   return Status::Ok();
 }
@@ -1260,7 +1627,8 @@ Status RegionAccess::bind_write_effect(Invocation&invocation,const Graph&graph,
   HYLE_RETURN_IF_ERROR(validate_projected_writer(*state,graph,writer));
   if(episode->nominated_writers[writer.step]!=UINT32_MAX)
     return Status::FailedPrecondition("original write effect needs release before rebinding");
-  HYLE_RETURN_IF_ERROR(validate_write_ranges(tensor,pages,writers,appenders,controls));
+  MutableRangeViews mutable_views(episode->allocator);
+  HYLE_RETURN_IF_ERROR(validate_write_ranges(tensor,pages,writers,appenders,controls,mutable_views));
   const auto storage=tensor.storage();
   for(const auto&page:pages){HYLE_ASSIGN_OR_RETURN(auto view,page.view());
     if(view.resource()!=storage.resource() || view.native_handle()!=storage.native_handle() ||
@@ -1268,18 +1636,20 @@ Status RegionAccess::bind_write_effect(Invocation&invocation,const Graph&graph,
         view.size()>storage.size()-(view.offset()-storage.offset()))
       return Status::InvalidArgument("write-effect ready page is outside its original capacity");
   }
-  HYLE_RETURN_IF_ERROR(validate_write_conflicts(*episode,pages,writers,appenders,controls));
-  HYLE_RETURN_IF_ERROR(validate_pending_write_reads(*episode,tensor,pending_reads,writers,appenders));
+  HYLE_RETURN_IF_ERROR(validate_write_conflicts(*episode,pages,writers,appenders,controls,mutable_views));
+  HYLE_RETURN_IF_ERROR(validate_pending_write_reads(*episode,tensor,pending_reads,writers,appenders,mutable_views));
+  HYLE_ASSIGN_OR_RETURN(auto registered,registered_permission_count(*episode));
   if(pages.size()>UINT32_MAX || writers.size()>UINT32_MAX-pages.size() ||
       appenders.size()>UINT32_MAX-pages.size()-writers.size() ||
       controls.size()>UINT32_MAX-pages.size()-writers.size()-appenders.size() ||
-      episode->bindings.size()>UINT32_MAX-pages.size()-writers.size()-appenders.size()-controls.size())
+      registered>UINT32_MAX-pages.size()-writers.size()-appenders.size()-controls.size())
     return Status::ResourceExhausted("write-effect permission count overflows");
   const auto extra=pages.size()+writers.size()+appenders.size()+controls.size();
   const auto pending_count=pending_reads.empty() && requires_source?std::size_t(1):pending_reads.size();
-  if(pending_count>UINT32_MAX-extra-episode->bindings.size())
+  if(pending_count>UINT32_MAX-extra-registered)
     return Status::ResourceExhausted("write effect pending permission count overflows");
   HYLE_RETURN_IF_ERROR(reserve_reads(invocation,std::uint32_t(extra+pending_count),options));
+  auto pending_registration=try_pending_read_registration(episode->allocator,tensor.storage(),pending_reads);
   HYLE_RETURN_IF_ERROR(revoke_preparation(invocation));
   // No caller input or capacity lease is installed. All fallible validation
   // and growth precedes these infallible anonymous ownership records.
@@ -1288,10 +1658,22 @@ Status RegionAccess::bind_write_effect(Invocation&invocation,const Graph&graph,
   for(const auto*page:writers)episode->bindings.push_back({.projected_writer=page,.writer_step=writer.step,.borrowed=false,.scope=BindingScope::kWriteEffect});
   for(const auto*append:appenders)episode->bindings.push_back({.projected_appender=append,.writer_step=writer.step,.borrowed=false,.scope=BindingScope::kWriteEffect});
   for(const auto&control:controls)episode->bindings.push_back({.read=control,.writer_step=writer.step,.borrowed=false,.scope=BindingScope::kWriteEffect});
+  if(pending_registration){
+    episode->bindings.push_back({.writer_step=writer.step,.borrowed=false,
+        .scope=BindingScope::kWriteEffect,.pending_effect=true,.pending_registration=std::move(pending_registration)});
+    episode->ever_installed_compact_registration=true;
+  }else{
+  const auto pending_geometry_begin=episode->bindings.size();
   for(const auto range:pending_reads)episode->bindings.push_back({.writer_step=writer.step,
       .borrowed=false,.scope=BindingScope::kWriteEffect,.pending_range=range,.pending_effect=true});
+  if(pending_reads.size()>1){
+    auto&first=episode->bindings[pending_geometry_begin];
+    first.pending_geometry_count=static_cast<std::uint32_t>(pending_reads.size());
+    first.pending_geometry_capacity=tensor.storage();
+  }
   if(pending_reads.empty() && requires_source)episode->bindings.push_back({.writer_step=writer.step,
       .borrowed=false,.scope=BindingScope::kWriteEffect,.pending_effect=true});
+  }
   episode->nominated_writers[writer.step]=writer.node.ordinal();
   return Status::Ok();
 }
@@ -1317,12 +1699,24 @@ Result<bool> RegionAccess::has_pending_effect(const InvocationState *state, Proj
   if(writer.step>=episode.nominated_writers.size() || episode.nominated_writers[writer.step]!=writer.node.ordinal())
     return false;
   std::size_t count=0;bool registered=false;
-  for(const auto &binding:episode.bindings) {
-    if(binding.writer_step!=writer.step || !binding.pending_effect)continue;
+  for(std::size_t ordinal=0;ordinal<episode.bindings.size();++ordinal) {
+    const auto&binding=episode.bindings[ordinal];
+    if(binding.writer_step!=writer.step) {
+      if(const auto run=pending_geometry_run_size(episode,ordinal))ordinal+=run-1;
+      continue;
+    }
+    // A matching run still checks every original physical range in order.
+    if(!binding.pending_effect)continue;
     registered=true;
-    if(!binding.pending_range.valid())continue;
-    if(count>=ranges.size() || !same_resource_range(binding.pending_range,ranges[count++]))
-      return std::unexpected(Status::InvalidArgument("pending effect ranges differ from the original registration"));
+    const auto match=[&](mem::ConstBufferView range)noexcept->Status{
+      if(!range.valid())return Status::Ok();
+      if(count>=ranges.size() || !same_resource_range(range,ranges[count++]))
+        return Status::InvalidArgument("pending effect ranges differ from the original registration");
+      return Status::Ok();
+    };
+    if(binding.pending_registration){
+      for(const auto range:binding.pending_registration->ranges)HYLE_RETURN_IF_ERROR(match(range));
+    }else HYLE_RETURN_IF_ERROR(match(binding.pending_range));
   }
   if(count!=ranges.size() || !registered)
     return std::unexpected(Status::InvalidArgument("pending effect range set is empty or incomplete"));
@@ -1647,7 +2041,8 @@ Status RegionAccess::bind_read_projection(Invocation&invocation,ReadProjection p
     }
   }
   if(!consumed)return Status::InvalidArgument("projected root has no selected checked reader");
-  if(pages.size()-1>episode->bindings.capacity()-episode->bindings.size())return Status::ResourceExhausted("read projection guard capacity exhausted");
+  HYLE_ASSIGN_OR_RETURN(const auto has_capacity,projection_capacity_available(*episode,pages.size()-1));
+  if(!has_capacity)return Status::ResourceExhausted("read projection guard capacity exhausted");
   const auto storage=tensor.storage();for(const auto&page:pages){HYLE_ASSIGN_OR_RETURN(auto view,page.view());
     if(view.resource()!=storage.resource() || view.native_handle()!=storage.native_handle() || view.offset()<storage.offset() ||
         view.offset()-storage.offset()>storage.size() || view.size()>storage.size()-(view.offset()-storage.offset()))
@@ -1739,7 +2134,8 @@ Status RegionAccess::validate_projection_binding(Invocation&invocation,ResourceP
       (pages.empty() && !pending && !access.access.allows_empty_footprint) || (pending && !pages.empty()))
     return Status::InvalidArgument("row projection needs its native capacity and exact page guards");
   if(binding->read.valid() || binding->write.valid() || binding->permissionless)return Status::FailedPrecondition("row projection needs reset before rebinding");
-  if(!pages.empty() && pages.size()-1>episode->bindings.capacity()-episode->bindings.size())return Status::ResourceExhausted("row projection page guard capacity");
+  HYLE_ASSIGN_OR_RETURN(const auto has_capacity,projection_capacity_available(*episode,pages.empty()?0:pages.size()-1));
+  if(!pages.empty() && !has_capacity)return Status::ResourceExhausted("row projection page guard capacity");
   const auto storage=tensor.storage();for(const auto&page:pages){HYLE_ASSIGN_OR_RETURN(auto view,page.view());
     if(view.resource()!=storage.resource() || view.native_handle()!=storage.native_handle() || view.offset()<storage.offset() ||
         view.offset()-storage.offset()>storage.size() || view.size()>storage.size()-(view.offset()-storage.offset()))
@@ -1944,13 +2340,14 @@ Result<compute::ReadLease> output_storage(InvocationState &state,
     // Borrowed outputs, aliases and projected/native carriers still resolve
     // their actual owner by the original qualified range search.
     for (auto &binding : state.resources.get()->bindings) {
-      if (!binding.read.valid()) continue;
-      HYLE_ASSIGN_OR_RETURN(auto source, binding.read.view());
-      if (source.resource() != wanted.resource() || source.native_handle() != wanted.native_handle() ||
-          wanted.offset() < source.offset()) continue;
-      const auto offset = wanted.offset() - source.offset();
-      if (offset <= source.size() && bytes <= source.size() - offset)
-        return binding.read.subview(offset, bytes);
+      for(std::size_t member=0;member<binding_ready_count(binding);++member){
+        const auto&read=binding_ready(binding,member);
+        HYLE_ASSIGN_OR_RETURN(auto source,read.view());
+        if(source.resource()!=wanted.resource() || source.native_handle()!=wanted.native_handle() ||
+            wanted.offset()<source.offset())continue;
+        const auto offset=wanted.offset()-source.offset();
+        if(offset<=source.size() && bytes<=source.size()-offset)return read.subview(offset,bytes);
+      }
     }
   }
   return std::unexpected(Status::FailedPrecondition(
@@ -1981,8 +2378,11 @@ collect_input_lease_candidates(InvocationState &invocation) noexcept {
   // preparation guard as native hooks. Generated output projections change
   // readable/native_values, not this resource binding table.
   for (std::size_t index = 0; index < episode.bindings.size(); ++index) {
+    // Every run member has read.valid()==false. Preserve all actual read
+    // candidates, their original ordinal order, and the same guarded lifetime.
+    if(const auto run=pending_geometry_run_size(episode,index)){index+=run-1;continue;}
     const auto &binding = episode.bindings[index];
-    if (!binding.exclusive && binding.read.valid())
+    if (!binding.exclusive && binding_ready_count(binding))
       candidates.push_back(static_cast<std::uint32_t>(index));
   }
   return std::span<const std::uint32_t>(candidates);
@@ -2002,14 +2402,15 @@ const compute::ReadLease *input_lease(const InvocationState &invocation,
     // Exclusive bindings publish a read after success, but submit upgrades it
     // back to the original writer. A captured native read would prevent that
     // upgrade on a later cold rebind; the episode's write use owns this input.
-    if (binding.exclusive || !binding.read.valid()) continue;
-    const auto view = binding.read.view();
-    if (!view || view->resource() != wanted.resource() ||
-        view->native_handle() != wanted.native_handle() || wanted.offset() < view->offset())
-      continue;
-    const auto offset = wanted.offset() - view->offset();
-    if (offset <= view->size() && wanted.size() <= view->size() - offset)
-      return &binding.read;
+    if(binding.exclusive)continue;
+    for(std::size_t member=0;member<binding_ready_count(binding);++member){
+      const auto&read=binding_ready(binding,member);
+      const auto view=read.view();
+      if(!view || view->resource()!=wanted.resource() ||
+          view->native_handle()!=wanted.native_handle() || wanted.offset()<view->offset())continue;
+      const auto offset=wanted.offset()-view->offset();
+      if(offset<=view->size() && wanted.size()<=view->size()-offset)return &read;
+    }
   }
   return nullptr;
 }
@@ -2151,11 +2552,23 @@ struct OutputStorageRetention final {
   compute::CompletionRetention retirement;
 };
 
+// Identity-only acceleration for the pinned original submission. No entry is
+// a lease, readiness claim, combined range or independently retained producer.
+struct RegisteredReadyBucket final {
+  const void *root = nullptr;
+  std::uint32_t head = UINT32_MAX;
+  bool seen = false;
+};
+struct RegisteredReadyEntry final {
+  std::uint32_t binding = 0, member = 0, next = UINT32_MAX;
+};
 struct SubmissionSourceState final : util::RefCounted<SubmissionSourceState> {
   SubmissionSourceState(InvocationState *original, compute::detail::QueueRef queue_value,
       compute::StorageOwner storage, compute::Completion submission) noexcept
       : producer(original), queue(std::move(queue_value)), metadata_owner(std::move(storage)),
-        completion(std::move(submission)) {
+        completion(std::move(submission)),
+        ready_buckets(mem::StdAllocator<RegisteredReadyBucket>(metadata_owner.allocator())),
+        ready_entries(mem::StdAllocator<RegisteredReadyEntry>(metadata_owner.allocator())) {
     retain(producer);
     producer->results.fetch_add(1, std::memory_order_relaxed);
   }
@@ -2179,6 +2592,85 @@ struct SubmissionSourceState final : util::RefCounted<SubmissionSourceState> {
   compute::Completion completion;
   std::mutex observation;
   std::size_t borrows = 0;
+  // Only this source's observation lock protects these optional identities and
+  // call-scoped duplicate marks. Another Source of the same producer owns its
+  // own table. The results pin prevents original binding mutation until detach.
+  std::vector<RegisteredReadyBucket, mem::StdAllocator<RegisteredReadyBucket>> ready_buckets;
+  std::vector<RegisteredReadyEntry, mem::StdAllocator<RegisteredReadyEntry>> ready_entries;
+  std::size_t ready_binding_count = 0;
+  bool ready_index_attempted = false, ready_index_usable = false;
+
+  static std::size_t ready_hash(const void *root) noexcept {
+    auto bits = reinterpret_cast<std::uintptr_t>(root);
+    bits ^= bits >> 17;
+    bits *= std::uintptr_t{0x9e3779b1u};
+    return static_cast<std::size_t>(bits ^ (bits >> 11));
+  }
+  RegisteredReadyBucket *ready_bucket(const void *root) noexcept {
+    if (!ready_index_usable || !root) return nullptr;
+    auto index = ready_hash(root) & (ready_buckets.size() - 1);
+    for (std::size_t n = 0; n < ready_buckets.size(); ++n) {
+      auto &bucket = ready_buckets[index];
+      if (!bucket.root || bucket.root == root) return bucket.root ? &bucket : nullptr;
+      index = (index + 1) & (ready_buckets.size() - 1);
+    }
+    return nullptr;
+  }
+  bool index_ready_registrations(const ResourceEpisode &episode) noexcept {
+    if (ready_index_attempted) {
+      // This cannot change while the actual producer remains pinned. An
+      // unusable optional index always returns to the complete original scan.
+      if (ready_binding_count != episode.bindings.size()) ready_index_usable = false;
+      return ready_index_usable;
+    }
+    ready_index_attempted = true;
+    ready_binding_count = episode.bindings.size();
+    if (ready_binding_count > UINT32_MAX) return false;
+    std::size_t count = 0;
+    for(const auto&binding:episode.bindings){
+      const auto size=binding_ready_count(binding);
+      if(size>UINT32_MAX-count)return false;
+      count+=size;
+    }
+    if (!count || count > SIZE_MAX / 2) return false;
+    std::size_t bucket_count = 8;
+    while (bucket_count < count * 2) {
+      if (bucket_count > SIZE_MAX / 2) return false;
+      bucket_count *= 2;
+    }
+    try {
+      // First nonempty ready contribution only. Inherited-only successors do
+      // not allocate/build a table. The original StorageOwner retains this
+      // allocator even when the source outlives producer detach.
+      decltype(ready_buckets) buckets(ready_buckets.get_allocator());
+      decltype(ready_entries) entries(ready_entries.get_allocator());
+      buckets.resize(bucket_count);
+      entries.resize(count);
+      std::size_t cursor = count;
+      // Head insertion in reverse binding order preserves the old scan order,
+      // including all separately bounded guards for one root/generation.
+      for (std::size_t i = episode.bindings.size(); i != 0; --i) {
+        const auto &binding = episode.bindings[i - 1];
+        for(std::size_t member=binding_ready_count(binding);member!=0;--member){
+          const auto root=compute::detail::LeaseAccess::identity(binding_ready(binding,member-1));
+          if(!root)return false;
+          auto slot=ready_hash(root)&(bucket_count-1);
+          while(buckets[slot].root && buckets[slot].root!=root)slot=(slot+1)&(bucket_count-1);
+          auto&bucket=buckets[slot];bucket.root=root;
+          const auto ordinal=static_cast<std::uint32_t>(--cursor);
+          entries[ordinal]={static_cast<std::uint32_t>(i-1),static_cast<std::uint32_t>(member-1),bucket.head};
+          bucket.head=ordinal;
+        }
+      }
+      ready_buckets.swap(buckets);
+      ready_entries.swap(entries);
+      ready_index_usable = true;
+    } catch (...) {
+      // Optional metadata is never admission or permission. OOM keeps the
+      // original validation and Status ordering, without a partial cache.
+    }
+    return ready_index_usable;
+  }
 };
 struct OutputBindingBundle;
 struct OutputSourceState final : util::RefCounted<OutputSourceState> {
@@ -2395,9 +2887,42 @@ struct OutputBindingEntry final {
   std::span<const ResourceReadyInput> ready_inputs{};
   ProjectedWriter effect{};
   std::span<const mem::ConstBufferView> effect_reads{};
+  // Query algorithm only. The bundle owns this unchanged span; source identity,
+  // exact effect registration and real read admission are still checked live.
+  bool ordered_effect_reads = false;
   std::span<const compute::ReadLease> store_ready{};
   std::span<const compute::ReadLease> resource_ready{};
 };
+bool ordered_effect_read_ranges(std::span<const mem::ConstBufferView> reads) noexcept {
+  if (reads.empty()) return false;
+  const auto first = reads.front();
+  for (std::size_t i = 0; i < reads.size(); ++i) {
+    const auto range = reads[i];
+    if (!range.valid() || !range.size() || range.resource() != first.resource() ||
+        range.native_handle() != first.native_handle() ||
+        (i && (range.offset() <= reads[i - 1].offset() ||
+            range.offset() - reads[i - 1].offset() < reads[i - 1].size())))
+      return false;
+  }
+  return true;
+}
+bool has_exact_effect_read(const OutputBindingEntry &entry,
+    mem::ConstBufferView range) noexcept {
+  if (!entry.ordered_effect_reads)
+    return std::ranges::any_of(entry.effect_reads,
+        [&](auto exact) { return same_resource_range(exact, range); });
+  if (!range.valid()) return false;
+  // Nonempty disjoint intervals have strictly increasing ends. Subtraction
+  // avoids endpoint overflow and skips a guard ending exactly at this begin.
+  const auto found = std::lower_bound(entry.effect_reads.begin(), entry.effect_reads.end(),
+      range.offset(), [](auto exact, std::size_t begin) noexcept {
+        return exact.offset() <= begin && begin - exact.offset() >= exact.size();
+      });
+  // Keep the original exact-registration contract, including size. A covered
+  // subrange or two adjacent guards never substitute for the registered range.
+  return found != entry.effect_reads.end() && contains_resource_range(*found, range) &&
+      same_resource_range(*found, range);
+}
 struct OutputBindingBundle final : util::RefCounted<OutputBindingBundle> {
   explicit OutputBindingBundle(SubmissionSourceState *source) noexcept
       : submission(util::retain_ref(source)),
@@ -2759,7 +3284,23 @@ Result<bool> output_bundle_ready(const OutputBindingBundle &bundle) noexcept {
 Status validate_resource_effect(const InvocationState &state,const OutputBindingEntry &entry) noexcept {
   HYLE_ASSIGN_OR_RETURN(auto same,RegionAccess::has_pending_effect(&state,entry.effect,entry.effect_reads));
   if(!same)return Status::FailedPrecondition("pending resource effect registration was reset or replaced");
-  for(const auto range:entry.effect_reads)HYLE_RETURN_IF_ERROR(covers_resource_range(*entry.resource,range));
+  if (entry.ordered_effect_reads) {
+    // Both immutable sequences are physically ordered within their original
+    // capacities. Walk them together instead of searching the same lookup
+    // once per page. Every read must still fit one original permission;
+    // adjacent permissions never combine into wider authority.
+    auto permission = entry.resource->lookup.begin();
+    const auto end = entry.resource->lookup.end();
+    for (const auto range : entry.effect_reads) {
+      while (permission != end && permission->bound.offset() <= range.offset() &&
+          range.offset() - permission->bound.offset() >= permission->bound.size())
+        ++permission;
+      if (permission == end || !contains_resource_range(permission->bound, range))
+        return Status::InvalidArgument("effect read exceeds the source's exact produced prefixes");
+    }
+  } else {
+    for(const auto range:entry.effect_reads)HYLE_RETURN_IF_ERROR(covers_resource_range(*entry.resource,range));
+  }
   return Status::Ok();
 }
 Status validate_bound_store(const InvocationState &state, const OutputBindingEntry &entry) noexcept {
@@ -2970,7 +3511,10 @@ Result<StoreProjectionInputs> RegionAccess::store_source_projection(
     return std::unexpected(Status::Unimplemented("selected Store reader cannot import pending source permissions"));
   HYLE_RETURN_IF_ERROR(validate_bound_store(*state, *found));
   const auto step = state->plan->node_steps[projection.reader.ordinal()];
-  for (const auto &binding : state->resources.get()->bindings) {
+  const auto&episode=*state->resources.get();
+  for(std::size_t ordinal=0;ordinal<episode.bindings.size();++ordinal) {
+    if(const auto run=pending_geometry_run_size(episode,ordinal)){ordinal+=run-1;continue;}
+    const auto&binding=episode.bindings[ordinal];
     if (binding.writer_step != step || !binding.projected_writer) continue;
     const auto root = compute::detail::LeaseAccess::identity(*binding.projected_writer);
     for (const auto &ticket : found->store->tickets)
@@ -3265,14 +3809,17 @@ Status ResourceSource::capture(const SubmissionSource &submission, ResourceContr
           *append.appender, append.prefix));
       bool retained = false;
       for (const auto &prefix : episode.bindings) {
-        if (!belongs(prefix) || !prefix.read.valid() ||
-            compute::detail::LeaseAccess::identity(prefix.read) !=
-                compute::detail::LeaseAccess::identity(*append.appender)) continue;
-        HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::validate_prefix(*append.appender, prefix.read));
-        if (!source_retains_allocator(view.storage_owner,
-            compute::detail::LeaseAccess::metadata_backing_allocator(prefix.read)))
-          return Status::InvalidArgument("resource source cannot retain its append prefix allocator");
-        retained = true;
+        if(!belongs(prefix))continue;
+        for(std::size_t member=0;member<binding_ready_count(prefix);++member){
+          const auto&read=binding_ready(prefix,member);
+          if(compute::detail::LeaseAccess::identity(read)!=
+              compute::detail::LeaseAccess::identity(*append.appender))continue;
+          HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::validate_prefix(*append.appender,read));
+          if(!source_retains_allocator(view.storage_owner,
+              compute::detail::LeaseAccess::metadata_backing_allocator(read)))
+            return Status::InvalidArgument("resource source cannot retain its append prefix allocator");
+          retained=true;
+        }
       }
       if (!retained) return Status::InvalidArgument("resource append has no original registered prefix owner");
     }
@@ -3283,6 +3830,18 @@ Status ResourceSource::capture(const SubmissionSource &submission, ResourceContr
   // original writer may also read COW copy sources and private controls; those
   // do not become receiver permissions. Every supplied guard is still proved
   // against this exact original registration, without widening its range.
+  const bool indexed_ready = !contribution.ready.empty() && source.index_ready_registrations(episode);
+  struct ClearReadyMarks final {
+    SubmissionSourceState &source;
+    std::span<const compute::ReadLease> ready;
+    ~ClearReadyMarks() {
+      // Also runs after any failed range/generation/mixed-authority check, so
+      // retrying the same prepared ResourceSource cannot see old marks.
+      for (const auto &guard : ready)
+        if (auto *bucket = source.ready_bucket(compute::detail::LeaseAccess::identity(guard)))
+          bucket->seen = false;
+    }
+  } clear_ready_marks{source, contribution.ready};
   for (std::size_t i = 0; i < contribution.ready.size(); ++i) {
     const auto &ready = contribution.ready[i];
     const auto root = compute::detail::LeaseAccess::identity(ready);
@@ -3290,9 +3849,16 @@ Status ResourceSource::capture(const SubmissionSource &submission, ResourceContr
     if (!inside(actual) || !source_retains_allocator(view.storage_owner,
         compute::detail::LeaseAccess::metadata_backing_allocator(ready)))
       return Status::InvalidArgument("resource ready page range or allocator is not retained");
-    for (std::size_t j = 0; j < i; ++j)
-      if (compute::detail::LeaseAccess::identity(contribution.ready[j]) == root)
+    auto *registered_root = indexed_ready ? source.ready_bucket(root) : nullptr;
+    if (registered_root) {
+      if (registered_root->seen)
         return Status::InvalidArgument("resource source repeats a ready page root");
+      registered_root->seen = true;
+    } else {
+      for (std::size_t j = 0; j < i; ++j)
+        if (compute::detail::LeaseAccess::identity(contribution.ready[j]) == root)
+          return Status::InvalidArgument("resource source repeats a ready page root");
+    }
     for (const auto &full : contribution.full)
       if (compute::detail::LeaseAccess::identity(*full.writer) == root)
         return Status::InvalidArgument("resource source mixes ready and full permissions of one root");
@@ -3300,14 +3866,28 @@ Status ResourceSource::capture(const SubmissionSource &submission, ResourceContr
       if (compute::detail::LeaseAccess::identity(*append.appender) == root)
         return Status::InvalidArgument("resource source must cover an append prefix with its one append ticket");
     bool matched = false;
-    for (const auto &binding : episode.bindings) {
-      if (!belongs(binding) || !binding.read.valid() ||
-          compute::detail::LeaseAccess::identity(binding.read) != root ||
-          ready.generation() != binding.read.generation()) continue;
-      HYLE_ASSIGN_OR_RETURN(auto registered, binding.read.view());
+    const auto check_registered = [&](const LeaseBinding &binding,const compute::ReadLease&read) noexcept -> Status {
+      if (!belongs(binding) || !read.valid() ||
+          compute::detail::LeaseAccess::identity(read) != root ||
+          ready.generation() != read.generation()) return Status::Ok();
+      HYLE_ASSIGN_OR_RETURN(auto registered,read.view());
+      // One original guard must contain the complete supplied range. Separate
+      // registrations are never joined, even for adjacent same-root subviews.
       if (actual.resource() == registered.resource() && actual.native_handle() == registered.native_handle() &&
           actual.offset() >= registered.offset() && actual.offset() - registered.offset() <= registered.size() &&
           actual.size() <= registered.size() - (actual.offset() - registered.offset())) matched = true;
+      return Status::Ok();
+    };
+    if (indexed_ready) {
+      for (auto ordinal = registered_root ? registered_root->head : UINT32_MAX;
+           ordinal != UINT32_MAX; ordinal = source.ready_entries[ordinal].next){
+        const auto&entry=source.ready_entries[ordinal];const auto&binding=episode.bindings[entry.binding];
+        HYLE_RETURN_IF_ERROR(check_registered(binding,binding_ready(binding,entry.member)));
+      }
+    } else {
+      for(const auto&binding:episode.bindings)
+        for(std::size_t member=0;member<binding_ready_count(binding);++member)
+          HYLE_RETURN_IF_ERROR(check_registered(binding,binding_ready(binding,member)));
     }
     if (!matched) return Status::InvalidArgument("resource ready page exceeds its original registered guard");
   }
@@ -3337,12 +3917,17 @@ Status ResourceSource::capture(const SubmissionSource &submission, ResourceContr
   // An ancestor's bounds alone are not authority. This producer must still
   // hold that exact predecessor through the nominated writer's real effect
   // attachment. Its submission pin keeps these original attachments stable.
-  for (std::size_t i = 0; i < contribution.inherited.size(); ++i) {
-    const auto &incoming = contribution.inherited[i];
-    const auto *previous = OutputSourceAccess::state(incoming.source);
+  for (std::size_t i = 0; i < contribution.inherited.size();) {
+    const auto &first = contribution.inherited[i];
+    const auto *previous = OutputSourceAccess::state(first.source);
     if (!previous || previous == &view || !previous->submission ||
-        previous->submission.get() == &source || !inside(incoming.prefix) || !incoming.prefix.size())
+        previous->submission.get() == &source || !inside(first.prefix) || !first.prefix.size())
       return Status::InvalidArgument("inherited resource needs a bounded original predecessor permission");
+    // Same lock order as the single-page path: current submission observation,
+    // original predecessor observation, then each origin's publication lock.
+    // The current results pin holds its exact effect attachment stable. One
+    // contiguous ResourceSourceState group may share that relationship check;
+    // another source (even of the same submission) starts a fresh proof.
     std::lock_guard previous_guard(previous->submission->observation);
     auto *bundle = previous->bundle;
     if (!bundle || bundle->consumer != parent || bundle->submission.get() != previous->submission.get() ||
@@ -3355,15 +3940,24 @@ Status ResourceSource::capture(const SubmissionSource &submission, ResourceContr
     HYLE_ASSIGN_OR_RETURN(auto attachment, output_input_source(bundle));
     if (!effect_source_matches(*parent, proof.node, attachment))
       return Status::FailedPrecondition("inherited predecessor effect was reset or replaced");
-    const auto *permission = find_resource_permission(*previous, incoming.prefix);
-    if (!permission)
-      return Status::InvalidArgument("inherited resource exceeds its predecessor's actual readable prefix");
-    // Flatten to the root origin immediately, including inheritance of an
-    // already inherited page. Neither Source nor terminal ancestry is retained.
-    HYLE_ASSIGN_OR_RETURN(auto inherited, ResourceInheritedPermission::acquire(
-        permission->origin, permission->index));
-    view.inherited[i] = std::move(inherited);
-    view.lookup[own_count + i] = {permission->origin, permission->index, incoming.prefix};
+    do {
+      const auto &incoming = contribution.inherited[i];
+      // Keep per-page validation and first-error order. In particular, a bad
+      // later prefix cannot fail before an earlier origin acquire has run.
+      if (!inside(incoming.prefix) || !incoming.prefix.size())
+        return Status::InvalidArgument("inherited resource needs a bounded original predecessor permission");
+      const auto *permission = find_resource_permission(*previous, incoming.prefix);
+      if (!permission)
+        return Status::InvalidArgument("inherited resource exceeds its predecessor's actual readable prefix");
+      // Flatten to the root origin immediately, including inheritance of an
+      // already inherited page. Neither Source nor terminal ancestry is retained.
+      HYLE_ASSIGN_OR_RETURN(auto inherited, ResourceInheritedPermission::acquire(
+          permission->origin, permission->index));
+      view.inherited[i] = std::move(inherited);
+      view.lookup[own_count + i] = {permission->origin, permission->index, incoming.prefix};
+      ++i;
+    } while (i < contribution.inherited.size() &&
+        OutputSourceAccess::state(contribution.inherited[i].source) == previous);
   }
   std::sort(view.lookup.begin(), view.lookup.end(), [](const auto &left, const auto &right) {
     return left.bound.offset() < right.bound.offset();
@@ -3409,6 +4003,51 @@ Status ResourceSource::successful_outcome() const noexcept {
     return Status::Unavailable("resource source producer has not successfully retired");
   return Status::Ok();
 }
+Status ResourceSource::publish_own_writes(std::span<const compute::ReadLease> full_ready,
+    std::span<const compute::ReadLease> append_ready) const noexcept {
+  HYLE_RETURN_IF_ERROR(successful_outcome());
+  auto &origin = *state_->permissions;
+  if (full_ready.size() != origin.full.size() || append_ready.size() != origin.append.size())
+    return Status::InvalidArgument("own resource publication needs every original full and append guard");
+  const auto full_begin = origin.ready.size();
+  const auto append_begin = full_begin + origin.full.size();
+  // Capture order, not physical order. The bound is the original own slot's
+  // complete prefix, so validation requires exact root, generation and bytes.
+  for (std::size_t i = 0; i < full_ready.size(); ++i) {
+    const auto slot = full_begin + i;
+    HYLE_RETURN_IF_ERROR(validate_published_permission({&origin, slot, origin.bounds[slot]}, full_ready[i]));
+  }
+  for (std::size_t i = 0; i < append_ready.size(); ++i) {
+    const auto slot = append_begin + i;
+    HYLE_RETURN_IF_ERROR(validate_published_permission({&origin, slot, origin.bounds[slot]}, append_ready[i]));
+  }
+  // No rejecting operation remains. Inherited origin/slot pins and own ready
+  // inputs are unchanged; this does not declare the whole footprint ready.
+  std::lock_guard guard(origin.publication);
+  for (std::size_t i = 0; i < full_ready.size(); ++i) origin.published[full_begin + i] = full_ready[i];
+  for (std::size_t i = 0; i < append_ready.size(); ++i) origin.published[append_begin + i] = append_ready[i];
+  return Status::Ok();
+}
+Status ResourceSource::collect_ready(std::span<compute::ReadLease> destination) const noexcept {
+  HYLE_RETURN_IF_ERROR(successful_outcome());
+  if (destination.size() != state_->lookup.size())
+    return Status::InvalidArgument("resource collection needs its complete original footprint extent");
+  for (const auto &guard : destination)
+    if (guard.valid()) return Status::InvalidArgument("resource collection destination must be empty");
+  struct ClearFailure final {
+    std::span<compute::ReadLease> destination;
+    bool complete = false;
+    ~ClearFailure() { if (!complete) for (auto &guard : destination) guard = {}; }
+  } clear{destination};
+  for (std::size_t i = 0; i < destination.size(); ++i) {
+    HYLE_ASSIGN_OR_RETURN(auto ready, ready_resource_permission(state_->lookup[i]));
+    if (!ready.valid()) return Status::Unavailable("resource original prefix has not been genuinely published");
+    destination[i] = std::move(ready);
+  }
+  clear.complete = true;
+  return Status::Ok();
+}
+
 Status ResourceSource::publish_ready(std::span<const compute::ReadLease> ready) const noexcept {
   HYLE_RETURN_IF_ERROR(successful_outcome());
   auto &view = *state_;
@@ -3966,6 +4605,10 @@ Status bind_sources(Invocation &invocation, std::span<const SourceBinding> bindi
             .ready_inputs = std::span<const ResourceReadyInput>(bundle->ready_inputs).subspan(ready_begin,
                 binding.ready_inputs.size()),.effect=binding.effect,
             .effect_reads=std::span<const mem::ConstBufferView>(bundle->effect_reads).subspan(effect_begin,binding.effect_reads.size())});
+        // All backing was reserved above; these copied ranges are immutable
+        // until this original bundle is withdrawn/destroyed. No hot sorting.
+        bundle->entries.back().ordered_effect_reads =
+            ordered_effect_read_ranges(bundle->entries.back().effect_reads);
         if(binding.input.valid())bundle->replacements.push_back({binding.input, resource->capacity});
       }
     }
@@ -4262,7 +4905,7 @@ Result<compute::Completion> submit_sources(Invocation &invocation,
         return std::ranges::any_of(owner.entries,[&](const auto &entry) {
           return entry.effect.node.valid() && entry.effect.step==step &&
               ((!range.valid() && entry.effect_reads.empty()) ||
-               std::ranges::any_of(entry.effect_reads,[&](auto exact) {return same_resource_range(exact,range);}));
+               has_exact_effect_read(entry,range));
         });
       }};
   auto result = RegionAccess::submit(invocation, queues, ordered);
@@ -4438,8 +5081,13 @@ Result<detail::SubmissionCursor> detail::begin_submission(Invocation &invocation
     permissions.reset();
     for (const auto &binding : episode->bindings) {
       if(binding.pending_effect) {
-        if(!ordered.admit || !ordered.pending_effect ||
-            !ordered.pending_effect(ordered.owner,binding.writer_step,binding.pending_range))
+        if(!ordered.admit || !ordered.pending_effect)
+          return std::unexpected(Status::FailedPrecondition("pending effect read needs its exact ordered source admission"));
+        if(binding.pending_registration && !binding.pending_registration->ranges.empty()){
+          for(const auto range:binding.pending_registration->ranges)
+            if(!ordered.pending_effect(ordered.owner,binding.writer_step,range))
+              return std::unexpected(Status::FailedPrecondition("pending effect read needs its exact ordered source admission"));
+        }else if(!ordered.pending_effect(ordered.owner,binding.writer_step,binding.pending_range))
           return std::unexpected(Status::FailedPrecondition("pending effect read needs its exact ordered source admission"));
         continue;
       }
@@ -4454,6 +5102,13 @@ Result<detail::SubmissionCursor> detail::begin_submission(Invocation &invocation
         continue;
       }
       if (binding.borrowed || binding.permissionless) continue;
+      if(binding.ready_registration){
+        for(const auto&read:binding.ready_registration->guards){
+          if(permissions.enabled())HYLE_RETURN_IF_ERROR(permissions.add(read));
+          else HYLE_RETURN_IF_ERROR(batch.read(read));
+        }
+        continue;
+      }
       if (!binding.exclusive && !binding.read.valid() && binding.input &&
           ordered.pending_input && ordered.pending_input(ordered.owner, binding.value)) continue;
       if (permissions.enabled()) {
