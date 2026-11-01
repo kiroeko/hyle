@@ -72,9 +72,15 @@ KV、递归状态、位置和采样只提交各成员实际行。其它组合按
 `batches.input_rows` 是各成员真实目标行数，`active_rows` 是总和，`physical_rows` 是载体容量；
 Verify 提案截短不按规划上界计数，接受部分前缀也不抹掉已执行行。
 
-已知形状与后端选择在冷路径规划，首 prefill 和普通已知 decode 的 T1 载体在 ready 前准备。
-`--warmup-shapes planned` 可准备已有计划的其它载体；默认按需准备，未列 exact 形状仍可进入有界冷接纳。
-首次编译／载体准备／capture 都按实际发生的启动或请求边界计时，不把按需准备写成稳态热路径路由。
+纯 CUDA、无 modifier 的 greedy 单会话（普通或默认 K1 MTP），在 prefix off、lazy 且 N/R 为 auto 或1时，
+默认只按配置 C 和已到达首轮准备，不需要诊断开关。prefill 使用16/32/64/128/256/512容量档位，
+按配置上限截短，长输入分块；后续轮次在上一轮真实退休后交付，不以未来长度或输出配额规划。
+CLI 工作负载驱动仍预先解析 schedule；隔离的是它向 Model 冷规划提供的信息。
+其它后端、采样、较宽 MTP、多会话、prefix 和 `--warmup-shapes planned` 保留原有限输入功能路径，
+输出标为 `full_schedule_preknowledge_invalid`，不能用于未知后续输入的性能结论。
+初始化按模型加载、冷准备、ready和请求执行分段。冷准备用最小已配置档位（本次16行）的占位输入执行真实prefill，
+临时会话成功stop／drain后再录制decode命令；两者费用与实际工作分别统计，全部计入startup。
+NoSubmit录制本身不执行数学。实际请求的首次有效长度配置仍计入请求，不重置累计计数或回写真实RNG隐藏成本。
 主 Phase、NextN、frontier 和接受采样沿共同程序载体持有原 Invocation／Completion／资源租约。
 
 成功后先收齐结果和页事务、核 expected base，再发布完整状态；失败保留旧 head，按真实退休归还资源。
@@ -87,7 +93,8 @@ Verify 提案截短不按规划上界计数，接受部分前缀也不抹掉已�
 
 自然生成结果在 `sessions[].result`，单请求也读取 `sessions[0].result.generated_ids`。
 prefill／decode 按实际 episode 的不重叠 host 端点区间计时，和为 `session_seconds`；
-末端日志与退休尾成本另列 `post_endpoint_seconds`。流水 episode 的 `step_seconds` 可以重叠，不能相加替代真实 wall。
+末端日志与退休尾成本另列 `post_endpoint_seconds`。流水 episode 的 `step_seconds` 可以重叠，不能相加或取倒数推完整吞吐；
+完整decode吞吐使用实际decode输出数与不重叠的 `decode_seconds`。首步跨度和发布间隔须分别注明。
 `logical_user_prompt_tokens` 只计新增用户输入，`pending_flushed_tokens` 计多轮 pending，二者合为逻辑输入；
 `reused_tokens` 与 `restored_*` 分别记录复用及恢复，`actual_target_rows`／`actual_draft_rows` 记录真实计算。
 每请求延迟和参与次数可以重叠，不能相加当作物理调用或总耗时；含缓存的有效输入率也不等于相同计算量的算子速度。

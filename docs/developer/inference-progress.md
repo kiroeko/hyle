@@ -8,7 +8,7 @@
 
 | 里程碑 | 完成标准 | 状态 |
 |---|---|---|
-| M1 首轮冷开销 | Qwen3.5-2B 默认配置下，普通和 MTP 的单轮、两轮 decode 中位数都不低于同时段 llama.cpp；一篇讲清根因的技术文章 | 进行中 |
+| M1 首轮冷开销 | Qwen3.5-2B 默认配置下，普通和 MTP 的单轮、两轮及统一C32768四档长输入完整decode中位数均不低于同时段llama.cpp，16K prefill不低于参考，并通过M1-5；一篇讲清根因的技术文章 | 进行中 |
 | M2 主场景 | 按 M2-1 的实测选定一个场景，在该场景领先 llama.cpp 至少 1.3 倍，或做到它做不到的事 | 未开始 |
 | M3 发布 | README 第一屏是结果表和一条复现命令；文章公开 | 未开始 |
 | 上游 PR | 1–3 个性能 PR 合入 vLLM、SGLang、llama.cpp 或 FlashInfer，方向取自 M1、M2 查清的问题 | 未开始 |
@@ -44,12 +44,23 @@
 - **不做：** 设备端接受、kernel、ready 时间。约94%的盈亏接受率仍是粗估，不能当已测门槛。
 - **当前结果：** 固定token负载可用于功能回归；旧预知schedule测试的性能／显存结论作废，仅留排查日志。等待M1-4有效协议重测，不据旧结果结项。引擎候选未提交。
 
-### M1-4 Prefill不依赖预知长度｜进行中（先修测试）
+### M1-4 Prefill不依赖预知长度｜M1-4c按用户调整范围收尾
+- **收尾：** 设备连续MTP `67c6a9450`、有界有效行prefill `774abccaa`、独立冷准备 `eb767e022`。短普通／MTP合并decode领先3.37%／8.2%，同配置显存增量0；原短普通prefill为参考93.9%、普通ready慢80ms，95%／+50ms门槛未通过。短prompt约2ms与ready差距保留，不纳入M1-5。长16K decode耗时为参考6.46／7.17倍，尚未修复。新增MTP teacher唯一第13项argmax不同、oracle分差0.085544586<0.1，teacher反馈14—16项一致；状态字节差异未自行设容差。原目标和验收保留作边界参照，详见[性能表](performance/decode.md)。
 - **目标：** 冷期只依据已到达首轮与显式容量配置准备；后续请求长度未知。旧整schedule预知测试作废，不能另立为有效工况。
 - **先测：** Hyle只暴露首轮给冷规划，未来prompt／配额不影响family、载体、workspace、replay策略或主机缓冲预备；参考使用固定batch容量和默认启动warmup。每轮报告prefill／TTFT、shape admission和真实载体创建时间；启动加载／编译／准备／warmup单列并计入完整进程。
 - **再改：** 首次启动预热归引擎初始化，清理临时KV／GDN／RNG后才ready，测试只观察费用。优先复用现有有效长度prefill路径，采用与未来输入无关的少量容量档位／分块；工作区按配置上界复用。填充行不写KV、不推进GDN／conv；复用原权限与真实退休机制。
 - **验收：** 普通和MTP，同窗交错，每臂至少3个独立进程；冷期不知道后续长度时每轮prefill不低于做过启动warmup的参考，ready不慢于参考，显存增量≤64MiB，greedy ID不变；完整进程耗时及逐轮decode同时复核。新协议下未测项不得用旧数据补齐。
 - **不做：** Prefill数学kernel或decode优化，不靠挪ready标记、扣局部耗时或预读未来形状达标。若共享workspace需新生命周期接口，先报告范围与真实限制。
+
+### M1-5 长上下文执行与准备｜待做（先诊断汇报）
+- **目标：** 修复长输入后的decode退化，使每步主机准备只随新增token／页增长；不处理短prompt约2ms的prefill差距或ready。
+- **先诊断：** (a) 同一新1K输入，Hyle普通C2048／16896／32768各3个独立新进程；(b) 16K decode Hyle／参考各1个Nsight进程，只作归因，首步与稳态分开，必要时再查MTP；(c) 1K／4K／16K逐函数主机耗时、复杂度与准确源码循环／调用。先汇报结论，再修改。GPU空闲用真实活动区间union计算，kernel／API局部耗时不相加充当完整性能。
+- **修复范围：** 页表／布局按bank常驻，每步主机只处理增量；GPU按profile证据决定，候选实际长度attention规划须保留设备接力。复用既有权限、版本、提交与真实退休，不另造执行器或账簿。
+- **固定负载：** 普通／MTP四档1024／4096／16384／32736 token，全部C32768，每进程生成16 token并额外留16行余量。同一真实文档、同一指令的原文前缀经本地原生chat tokenizer生成，长度包含chat模板，不重复段落拼接。来源与命令见[输入记录](../../.scratch/inference-long-context-20261101/workload/sources.txt)。参考每个实际报告核target effective n_ctx=32768，MTP另核draft，保持默认warmup与batch2048／ubatch512。
+- **验收命令：** `.scratch/inference-prefill-close-20261101/long/run.py timing --capacity 32768 --workload .scratch/inference-long-context-20261101/workload --lengths 1024 4096 16384 32736 --modes both --output <新目录> --hyle-version <实际构建身份>`；诊断命令见[协议](../../.scratch/inference-long-context-20261101/protocol.txt)。双方同窗交错、各臂3个独立新进程，正式计时不带profiler；内存另采。
+- **通过标准：** 每档普通／MTP完整decode不低于参考；16K每步主机准备≤2ms、prefill不低于参考；prefill后首decode步≤稳态2倍。必须分别注明重叠step跨度与不重叠发布间隔，先固定定义；语义不清先报告，不换计时口径达标。C2048短负载decode不低于当前的98%；同配置显存采样峰增量≤64MiB。
+- **正确性：** teacher-forcing核每项argmax；不一致时oracle top1／top2分差须<0.1，并核对状态、版本、RNG与真实退休。字节差异和未设容差如实列出，不以近平局替代状态验收。完整进程墙时、加载／ready、P／D与实际输出另报；新C32768尚未运行，不能用旧C16896或重叠step倒数补结果。
+- **不做：** ready、短prompt约2ms差距、无profile证据的其它调优；不预读未来请求，不用局部GPU时间代替全进程性能。
 
 ### M2-1 主场景实测｜待做
 - **目标：** 用实测选出 M2 的场景。候选：(1) 混合架构加 MTP 的更大模型；(2) 12GB 显存加 64GB 内存跑 30B 级 MoE，专家放 CPU；(3) 混合模型的 agent 式多轮和分叉会话（重新生成、改写上一条、共享前缀）。
