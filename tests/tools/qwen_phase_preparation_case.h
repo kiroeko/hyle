@@ -41,6 +41,8 @@ inline int run(const std::filesystem::path &input) {
   auto budget = q::take(q::c::ResourceBudget::create({.limits = limits, .allow_unattributed = true}));
   q::Model model(std::move(backend), budget, std::move(source), geometry, 16, plan, {}, false,
       q::ReplayPolicy::kCommands, 16u << 20, {.enabled = false}, 0);
+  require(!model.begin_cold_families() && !model.attention_schema.valid() && model.families.empty(),
+      "finite caller budget must preserve serial family admission without preparing resources");
   const std::array rows{std::size_t{1}, std::size_t{3}};
   require(model.prepare_family(rows), "Phase budget fixture did not prepare its original complete Family");
   model.plan_execution(rows); model.freeze_shape_plan();

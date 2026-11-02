@@ -7,6 +7,7 @@
 #include <cmath>
 #include <iostream>
 #include <limits>
+#include <mutex>
 #include <optional>
 #include <ranges>
 #include <string>
@@ -23,6 +24,12 @@
 namespace qwen35 {
 using Clock = std::chrono::steady_clock;
 namespace {
+std::mutex family_log_mutex;
+template<class F> void family_log(F &&write) {
+  std::lock_guard lock(family_log_mutex);
+  write(std::cerr);
+}
+
 // Distinguish direct packed contractions from the ordinary Decode/Cast route.
 // The latter has per-projection Invocation workspace and may use managed
 // provider temporaries; it does not replace the original constant weight bank.
@@ -56,11 +63,12 @@ void report_packed_projections(const g::Graph &graph, const g::CompileReport &re
     }
     if (containing != 1) throw std::runtime_error("original packed projection is missing from its selected plan");
   }
-  if (!projections.empty())
-    std::cerr << "original_quantized_projections=" << projections.size()
+  if (!projections.empty()) family_log([&](std::ostream &out) {
+    out << "original_quantized_projections=" << projections.size()
               << " packed_contractions=" << packed
               << " decomposed_projections=" << projections.size() - packed
               << " graph_workspace_bytes=" << graph_workspace_bytes << '\n';
+  });
 }
 
 void merge_execution_plan_facts(ExecutionPlanFacts &result, const ExecutionPlanFacts &facts) {
@@ -102,9 +110,9 @@ ExecutionPlanFacts inspect_execution_plan(const inference::Backend &execution,
       throw std::runtime_error("CPU known workspace lacks its finite domain admission limit");
     facts.workspace_peak[0] = (std::max)(facts.workspace_peak[0], domain.workspace_bytes);
     facts.workspace_limits[0] = domain.workspace_budget_bytes;
-    std::cerr << "cpu_plan known_workspace_host=" << domain.workspace_bytes
+    family_log([&](std::ostream &out) { out << "cpu_plan known_workspace_host=" << domain.workspace_bytes
         << " workspace_host_limit=" << domain.workspace_budget_bytes
-        << " native_private_unknown=1 shared_requested_byte_limit=unlimited physical_memory_cap=0\n";
+        << " native_private_unknown=1 shared_requested_byte_limit=unlimited physical_memory_cap=0\n"; });
     facts.domain_count = 1;
     return facts;
   }
@@ -134,12 +142,12 @@ ExecutionPlanFacts inspect_execution_plan(const inference::Backend &execution,
     }
     ++host_constants;
   }
-  std::cerr << "hybrid_plan host_constants=" << host_constants << " materialized_constant_bytes="
+  family_log([&](std::ostream &out) { out << "hybrid_plan host_constants=" << host_constants << " materialized_constant_bytes="
       << report.materialized_constant_bytes() << " activation_copy_bytes=" << report.copy_bytes()
       << " known_workspace_device=" << take(report.storage_domain(0)).workspace_bytes
       << " known_workspace_host=" << take(report.storage_domain(1)).workspace_bytes
       << " known_workspace_staging=" << take(report.storage_domain(2)).workspace_bytes
-      << " native_private_unknown=1 shared_requested_byte_limit=unlimited physical_vram_cap=0\n";
+      << " native_private_unknown=1 shared_requested_byte_limit=unlimited physical_vram_cap=0\n"; });
   return facts;
 }
 
@@ -634,10 +642,10 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     if (variants.size() > (std::numeric_limits<std::size_t>::max)() / per_graph_preparations)
       throw std::runtime_error("finite text artifact preparation budget overflows");
     compile_options.max_placement_attempts = per_graph_preparations * variants.size();
-    std::cerr << "compile full text finite family requests=" << requests << " variants=" << variants.size()
+    family_log([&](std::ostream &out) { out << "compile full text finite family requests=" << requests << " variants=" << variants.size()
               << " max_query_rows=" << max_query_rows << " nodes=" << definition.graph.node_count()
               << " max_operation_proposals=" << compile_options.max_operation_proposals
-              << " max_placement_attempts=" << compile_options.max_placement_attempts << '\n';
+              << " max_placement_attempts=" << compile_options.max_placement_attempts << '\n'; });
     compile_options.resource_budget = execution_budget;
 #if defined(HYLE_TEST_INFERENCE_WARM_COST) && HYLE_TEST_INFERENCE_WARM_COST
     inference::testing::record_compile();
@@ -648,14 +656,14 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     auto compiled_family = take(std::move(compiled));
     const auto &family_report = compiled_family.report;
     const auto storage = family_report.total_compiled_storage();
-    std::cerr << "compiled text finite family variants=" << family_report.exact_variant_count()
+    family_log([&](std::ostream &out) { out << "compiled text finite family variants=" << family_report.exact_variant_count()
               << " compiled_known_bytes=" << storage.known_bytes()
               << " compiled_unknown_providers=" << storage.unknown_provider_count
               << " max_operation_proposals=" << compile_options.max_operation_proposals
               << " operation_proposals=" << family_report.total_search().operation_proposals
               << " max_placement_attempts=" << compile_options.max_placement_attempts
               << " placement_attempts=" << family_report.total_search().placement_attempts
-              << " cold_seconds=" << std::chrono::duration<double>(Clock::now() - start).count() << '\n';
+              << " cold_seconds=" << std::chrono::duration<double>(Clock::now() - start).count() << '\n'; });
     const auto hidden_store = definition.hidden_state.store;
     const auto extra_stores = hidden_store.valid() ? std::span(&hidden_store, 1) : std::span<const g::NodeId>{};
     check(definition.programs.prepare(std::move(compiled_family), definition.graph, variants,

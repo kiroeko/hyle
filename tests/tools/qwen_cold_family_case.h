@@ -49,6 +49,15 @@ inline int run(const std::filesystem::path &input) {
       q::recurrent_bytes(q::state_schema_for(geometry, 16), geometry), 1, 1, false, false);
   q::Model model(std::move(source), geometry, 16, plan, {}, false, q::ReplayPolicy::kCommands,
       16u << 20, {.enabled = false}, 0, {.primary = q::BackendKind::kCpu});
+  require(!model.weights.empty() && std::ranges::all_of(model.weights, [](const auto &item) {
+      return !item.second.tensor.writer && bool(item.second.tensor.ready);
+    }), "cold family fixture needs its original immutable weight bank");
+  auto &first_weight = model.weights.begin()->second;
+  const auto original_codec = first_weight.codec;
+  first_weight.codec = q::prepared::ProjectionCodec::kGptqV1Int4;
+  require(!model.begin_cold_families() && !model.attention_schema.valid() && model.families.empty(),
+      "unverified quantized packing must retain serial family preparation");
+  first_weight.codec = original_codec;
   const std::array finite_rows{std::size_t{1}, std::size_t{2}};
   // The first real Family compile fails after its original KV tuple is ready.
   // This is still KV-only storage: no state/hidden pool has been prepared.

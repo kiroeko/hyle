@@ -711,6 +711,25 @@ public:
 private:
   DraftPolicy draft_policy_;
   bool preparation_started_ = false;
+  struct ColdFamilyOutcome final {
+    std::optional<FamilyBuildResult> result;
+    std::exception_ptr error;
+  };
+  struct PendingColdFamily final {
+    FamilyKey key;
+    const PreparedSampling *sampling;
+    hyle::sched::JoinHandle<ColdFamilyOutcome> result;
+  };
+  struct PendingColdUse final {
+    std::size_t tokens, requests, count;
+    GraphRole role;
+    TextCompletion completion;
+    std::size_t sampling_index;
+    RowPacking packing;
+  };
+  std::unique_ptr<hyle::sched::BlockingPool> cold_family_pool_;
+  std::vector<PendingColdFamily> cold_families_;
+  std::vector<PendingColdUse> cold_uses_;
 public:
   const std::uint64_t sampling_seed;
   std::size_t max_drafts() const noexcept { return draft_policy_.max_drafts; }
@@ -1083,6 +1102,7 @@ public:
   }
 
   ~Model() {
+    cancel_cold_families();
     // Stop the host driver before joining its original scheduler/pool. Native
     // cancellation remains advisory and never serves as retirement proof.
     for (auto &weak : session_links) if (auto session = weak.lock()) session->stop().IgnoreError();
@@ -1378,6 +1398,90 @@ public:
     }
   }
 
+  // Compile the default single-session CUDA families concurrently only when
+  // every shared weight is already an immutable, dense read. Quantized
+  // packing and a caller-supplied allocation budget keep serial admission.
+  bool begin_cold_families() {
+    if (preparation_started_ || state_storage_prepared || allocation_budget ||
+        !families.empty() || !probe_families.empty() || cold_family_pool_ ||
+        std::ranges::any_of(weights, [](const auto &item) {
+          const auto codec = item.second.codec;
+          return bool(item.second.tensor.writer) || !item.second.tensor.ready ||
+              !item.second.tensor.description.is_plain() ||
+              (codec != prepared::ProjectionCodec::kUnspecified && codec != prepared::ProjectionCodec::kDense);
+        })) return false;
+    const auto available = std::thread::hardware_concurrency();
+    if (available < 2) return false;
+    const auto threads = (std::min)(available, 4u);
+    auto status = hyle::Status::Ok();
+    std::unique_ptr<hyle::sched::BlockingPool> pool;
+    try {
+      pool = std::make_unique<hyle::sched::BlockingPool>(mem::system_allocator(), threads,
+          std::chrono::seconds(10), &status);
+    } catch (const std::bad_alloc &) {
+      return false;
+    }
+    if (!status.ok()) return false;
+    prepare_cache();
+    cold_family_pool_ = std::move(pool);
+    return true;
+  }
+
+  void cancel_cold_families() noexcept {
+    // Jobs borrow Model, its backend and the immutable weight bank. A
+    // cancelled startup must join them before any of those owners retire.
+    if (cold_family_pool_) cold_family_pool_->shutdown();
+    cold_family_pool_.reset();
+    cold_families_.clear();
+    cold_uses_.clear();
+  }
+
+  void finish_cold_families() {
+    if (!cold_family_pool_) return;
+    std::vector<FamilyBuildResult> completed;
+    completed.reserve(cold_families_.size());
+    for (auto &pending : cold_families_) {
+      auto outcome = take(pending.result.join());
+      if (outcome.error) std::rethrow_exception(outcome.error);
+      if (!outcome.result || !outcome.result->family)
+        throw inference::EvaluationFailure(hyle::Status::Unimplemented(
+            "configured bounded prefill has no original packed implementation"));
+      completed.push_back(std::move(*outcome.result));
+    }
+    cold_family_pool_->shutdown();
+    cold_family_pool_.reset();
+    for (std::size_t i = 0; i < completed.size(); ++i) {
+      auto &built = completed[i];
+      auto &pending = cold_families_[i];
+      built.family->sampling = pending.sampling;
+      merge_execution_plan(built.plan);
+      if (!families.emplace(pending.key, std::move(built.family)).second)
+        throw std::runtime_error("text finite family was already prepared");
+    }
+    cold_families_.clear();
+    auto uses = std::move(cold_uses_);
+    cold_uses_.clear();
+    for (const auto &use : uses)
+      plan_replay_uses(use.tokens, use.requests, use.count, use.role,
+                       use.completion, use.sampling_index, use.packing);
+  }
+
+  FamilyBuildResult build_prepared_family(std::span<const std::size_t> chunks,
+      std::size_t requests, std::size_t prefix_rows, GraphRole role, TextCompletion completion,
+      RowPacking packing, bool diagnostic, bool admitted_exact, bool subset,
+      const SamplingConfiguration &selected_sampler) {
+    return build_family(
+        {chunks, requests, prefix_rows, role, completion, packing, diagnostic, admitted_exact},
+        {geometry, precision, weights, projections, weight_meanings, ffn_placement.cpu_layers()},
+        {attention_schema, attention_schemas, state_schema, cache_plan.state_slots, cache_plan.hidden_slots,
+         retains_sampling_frontier(), cache_plan.in_flight_batches >= 2 && !scheduler &&
+             (role != GraphRole::kMtpContinuation || device_mtp_continuous_enabled()),
+         prepared_draft_projection(subset), device_mtp_successor_ && requests == 1 &&
+             drafts_token(role) && (role != GraphRole::kMtpContinuation || device_mtp_continuous_enabled()) &&
+             !selected_sampler.enabled && selected_sampler.modifiers.empty(), device_mtp_continuous_enabled()},
+        selected_sampler, {execution, allocation_budget, execution_budget});
+  }
+
   bool prepare_family(std::span<const std::size_t> planned_chunks, bool diagnostic = false,
                       std::size_t requests = 1, GraphRole role = GraphRole::kText,
                       bool admitted_exact = false, TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0,
@@ -1437,7 +1541,11 @@ public:
       throw std::runtime_error("MTP multi-token prefill requires at least two rows; use its single-token family for T1");
     const auto family_key = admitted_exact ? FamilyKey::exact(requests, role, planned_chunks.front(), completion, sampling_index) : FamilyKey(requests, role, prefix_rows, completion, sampling_index, packing);
     auto &table = diagnostic ? probe_families : families;
-    if (table.contains(family_key)) throw std::runtime_error("text finite family was already prepared");
+    if (cold_family_pool_ && (diagnostic || admitted_exact || compact_draft || packed_verify))
+      finish_cold_families();
+    if (table.contains(family_key) || (!diagnostic && std::ranges::any_of(cold_families_,
+            [&](const auto &pending) { return pending.key == family_key; })))
+      throw std::runtime_error("text finite family was already prepared");
     // Validate admission before materializing the original cache/head tuple.
     // A later factory failure keeps that successfully prepared tuple alive.
     for (const auto tokens : planned_chunks)
@@ -1448,16 +1556,25 @@ public:
       throw std::runtime_error("finite family exceeds the configured batch capacity");
     prepare_cache();
     const bool subset = drafts_token(role) && prepare_draft_vocabulary(selected_sampler);
-    auto built = build_family(
-        {planned_chunks, requests, prefix_rows, role, completion, packing, diagnostic, admitted_exact},
-        {geometry, precision, weights, projections, weight_meanings, ffn_placement.cpu_layers()},
-        {attention_schema, attention_schemas, state_schema, cache_plan.state_slots, cache_plan.hidden_slots,
-         retains_sampling_frontier(), cache_plan.in_flight_batches >= 2 && !scheduler &&
-             (role != GraphRole::kMtpContinuation || device_mtp_continuous_enabled()),
-         prepared_draft_projection(subset), device_mtp_successor_ && requests == 1 &&
-             drafts_token(role) && (role != GraphRole::kMtpContinuation || device_mtp_continuous_enabled()) &&
-             !selected_sampler.enabled && selected_sampler.modifiers.empty(), device_mtp_continuous_enabled()},
-        selected_sampler, {execution, allocation_budget, execution_budget});
+    if (cold_family_pool_) {
+      auto task = hyle::sched::spawn_blocking(*cold_family_pool_, mem::system_allocator(),
+          [this, chunks = std::vector<std::size_t>(planned_chunks.begin(), planned_chunks.end()),
+           requests, prefix_rows, role, completion, packing, diagnostic, admitted_exact, subset,
+           selected = &selected_sampler]() -> ColdFamilyOutcome {
+        try {
+          const auto planned = std::span<const std::size_t>(chunks);
+          auto built = build_prepared_family(planned, requests, prefix_rows, role, completion, packing,
+                                             diagnostic, admitted_exact, subset, *selected);
+          return {.result = std::move(built)};
+        } catch (...) {
+          return {.error = std::current_exception()};
+        }
+      });
+      cold_families_.push_back({family_key, &prepared_sampling, std::move(task)});
+      return true;
+    }
+    auto built = build_prepared_family(planned_chunks, requests, prefix_rows, role, completion, packing,
+                                       diagnostic, admitted_exact, subset, selected_sampler);
     if (!built.family) return false;
     built.family->sampling = &prepared_sampling;
     merge_execution_plan(built.plan);
@@ -2062,6 +2179,10 @@ public:
                         RowPacking packing = RowPacking::kRectangular) {
     if (!phases.empty() || !probe_phases.empty() || carrier_borrowed)
       throw std::runtime_error("execution use plans must precede carrier preparation");
+    if (cold_family_pool_) {
+      cold_uses_.push_back({tokens, requests, count, role, completion, sampling_index, packing});
+      return;
+    }
     if (!find_child(requests, tokens, role, false, completion, sampling_index, packing))
       throw std::runtime_error("execution use shape is outside the shared finite family");
     shape_plan.add_uses({requests, tokens, role, completion, sampling_index, false, packing}, count);
@@ -7123,6 +7244,21 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   if constexpr (mtp) for (std::size_t rows = 2; !first_turn_only &&
       rows <= (std::min)(model.cache_plan.candidate_boundaries, model.cache_plan.max_query_rows); ++rows)
     prompt_demand.inventory({GraphRole::kMtpPrefill, TextCompletion::kEmitNext}, rows);
+  // Keep the group inside this cold preparation scope so exceptional exits
+  // always join its jobs before Model/backend/weight owners can retire.
+  struct ColdFamilyGuard final {
+    Model &model;
+    ~ColdFamilyGuard() { model.cancel_cold_families(); }
+  } cold_family_guard{model};
+  if constexpr (mtp) if (first_turn_only && decode_bound && requests.size() == 1 &&
+      !requests[0].logits_provider && model.sampling_configuration_count() == 1 &&
+      !model.sampling_configuration(0).configuration.enabled &&
+      model.sampling_configuration(0).configuration.modifiers.empty() &&
+      model.execution.kind() == BackendKind::kCuda && !model.execution.has_cpu_assist() &&
+      !model.scheduler && model.cache_plan.active_sequences == 1 && model.target_kv_layers &&
+      model.layer0_probe.empty() && !model.resources_->draft_vocabulary &&
+      model.max_drafts() == 1 && !model.recursive_mtp())
+    (void)model.begin_cold_families();
   for (std::size_t sampling_index = 0; sampling_index < model.sampling_configuration_count(); ++sampling_index) {
     if (std::ranges::none_of(requests, [&](const auto &request) { return request.sampling_index == sampling_index; })) continue;
     const auto matches_member = [&](std::size_t member) { return requests[member].sampling_index == sampling_index; };
@@ -7262,6 +7398,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     }
   }
   }
+  model.finish_cold_families();
   if (mtp && decode_bound)
     for (std::size_t index = 0; index < model.sampling_configuration_count(); ++index)
       for (const bool dynamic : {false, true})
