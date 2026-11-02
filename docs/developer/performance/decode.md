@@ -83,23 +83,27 @@ GPU 采样峰是下界，跨进程共享显存不可相加；多轮的准备和�
 
 ## 短prefill的同前缀归因
 
-普通模式、第2／5轮各一对带profiler的新进程；开始前双方输出前缀一致，输入为108／189行，已有上下文168／659 token。范围在首token发布处结束，未混入decode。下表是优化前的配对诊断，不能作为吞吐验收。
+11月3日复核：当前源码`5192b4232`，普通第5轮、189行、已有上下文659 token。双方此前输出及实际输入一致；各采一个新进程，范围在首token发布处结束，未混入decode。仅用于归因，上方完整性能表沿用上一轮验收。
 
-| 类别 | 第2轮Hyle／参考 ms | 第5轮Hyle／参考 ms |
+| 类别 | Hyle ms | 参考 ms |
 |---|---:|---:|
-| GEMM | 13.214／11.655 | 18.727／16.815 |
-| 注意力 | 0.100／0.248 | 0.259／0.337 |
-| GDN／conv | 1.839／1.818 | 3.611／3.137 |
-| 拷贝／gather | 1.246／0.621 | 1.909／1.068 |
-| 类型转换 | 0.000／0.532 | 0.000／0.848 |
-| 其它kernel | 1.422／1.193 | 2.396／1.908 |
-| 所选进程CUDA活动空档 | 6.605／3.761 | 6.547／4.748 |
-| 首kernel前 | 2.292／1.242 | 3.134／1.170 |
-| 选定prefill范围 | 24.425／19.828 | 33.449／28.862 |
+| GEMM | 16.950 | 17.417 |
+| 注意力 | 0.260 | 0.335 |
+| GDN／conv | 3.108 | 3.141 |
+| 拷贝／gather | 1.901 | 1.060 |
+| 类型转换 | 0.000 | 0.838 |
+| 其它kernel | 2.378 | 1.895 |
+| 所选进程CUDA活动空档 | 6.534 | 4.612 |
+| 首kernel前 | 3.205 | 1.401 |
+| 选定prefill范围 | 31.130 | 29.298 |
 
-行数绑定约0.52～0.53ms，发现消费节点约0.06ms；细分轨迹中186次cuBLAS行配置含约0.29ms的AlgoCheck。改后第5轮复用180次，仅6次进入原生检查。前后诊断的NVTX密度和机器状态不同，不用局部毫秒差计算收益；吞吐结论取无profiler的三进程计时。GEMM、拷贝和活动空档仍是剩余差距，不声称它们已改善；活动空档不代表整卡空闲，各项也不能简单相加推算请求时间。
+空档按对应CUDA API时序拆分：调用开始前2.874／1.364ms，调用中0.354／0.340ms，调用返回后2.965／2.646ms，最后一次CUDA活动后0.342／0.262ms。这是时序关联，不足以证明驱动或调度因果；活动空档不代表整卡空闲，首kernel前和各GPU分类不能简单相加。GEMM在这对轨迹里未落后，不把旧窗口的局部差值当作固定根因。
 
-原始结果：[计时及门槛](../../../.scratch/inference-perf-gap-20261103/timing-gates.txt)、[逐轮原数](../../../.scratch/inference-perf-gap-20261103/latest-details.txt)、[内存验收](../../../.scratch/inference-perf-gap-20261103/cache-memory1/summary.txt)、[teacher-forcing](../../../.scratch/inference-perf-gap-20261103/cache-teacher1/)、[第2轮配对轨迹](../../../.scratch/inference-perf-gap-20261103/turn2-nsys1/profile-comparison.md)、[第5轮配对轨迹](../../../.scratch/inference-perf-gap-20261103/turn5-nsys1/profile-comparison.md)、[改后命中计数](../../../.scratch/inference-perf-gap-20261103/turn5-cache1/profile-comparison.md)。
+带状态检查的发布拷贝每次1～2MiB、6～11µs，按读写总量约350～380GB/s；18次合计0.11～0.20ms。它不是先前低带宽通用拷贝的问题。第5轮另外有13次GPU、13次锁页内存分配，来自首次使用该档位及追加元数据；其中六个整数工作区此前为空，不能靠扩大旧容量消除。回放准备仍约0.97ms。
+
+本轮两个候选均不采用。C32768普通真实八轮、每臂3进程、与当前源码及同版参考交错：容量增长候选prefill合计187.62ms，当前188.39ms，范围重叠；提前准备后退出的候选210.31ms，当前188.06ms，用时增加11.8%。后者ready也增加60.5ms；退出路径的`reset_retired()`销毁Invocation，不能保留准备成果。两组候选与当前的512个输出ID均一致。未扩测MTP、长输入或内存；未交付新优化，默认源码不变，按两次无进展结束该方向。
+
+原始结果：[完整性能验收](../../../.scratch/inference-perf-gap-20261103/timing-gates.txt)、[逐轮原数](../../../.scratch/inference-perf-gap-20261103/latest-details.txt)、[内存验收](../../../.scratch/inference-perf-gap-20261103/cache-memory1/summary.txt)、[teacher-forcing](../../../.scratch/inference-perf-gap-20261103/cache-teacher1/)、[当前源码配对轨迹](../../../.scratch/inference-remaining-hotspots-20261103/turn5-baseline-profile1/profile-comparison.md)、[容量增长对照](../../../.scratch/inference-remaining-hotspots-20261103/growth1-c32768-off-window1/endpoints.txt)、[提前准备对照](../../../.scratch/inference-remaining-hotspots-20261103/cold-plan1-c32768-off-window1/endpoints.txt)。
 
 ## 复测
 
