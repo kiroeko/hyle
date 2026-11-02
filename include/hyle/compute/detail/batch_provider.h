@@ -64,6 +64,10 @@ struct BatchLayoutAccess final {
   // it retains no predecessor, ready permission or submission dependency.
   HYLE_COMPUTE_BATCH_API static Result<std::span<const BatchPageChange>> page_changes(
       const BatchLayoutVersion&before,const BatchLayoutVersion&after) noexcept;
+  // Per-request ordered logical prefix geometry, cached with the same version
+  // pair as page_changes. This carries no native page or read/write authority.
+  HYLE_COMPUTE_BATCH_API static Result<bool> logical_prefix_covers(
+      const BatchLayoutVersion&outer,const BatchLayoutVersion&inner) noexcept;
   // Borrows after and retains no earlier layout/permission. Arbitrary logical
   // reorder, shared prefixes and COW IDs remain explicit in these facts.
   HYLE_COMPUTE_BATCH_API static Result<BatchAppendFootprint> append_pages(

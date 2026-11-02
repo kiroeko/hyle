@@ -88,6 +88,7 @@ struct BatchLayoutData final:util::RefCounted<BatchLayoutData> {
     Changes(std::uint64_t g,mem::AllocatorRef a):generation(g),pages(mem::StdAllocator<BatchPageChange>(a)){}
     std::uint64_t generation;
     std::vector<BatchPageChange,mem::StdAllocator<BatchPageChange>> pages;
+    bool logical_prefix_known=false,logical_prefix=false;
   };
   struct Append final {
     Append(std::uint64_t g,mem::AllocatorRef a):generation(g),
@@ -401,7 +402,8 @@ Result<std::span<const std::int32_t>> detail::BatchLayoutAccess::page_footprint(
     decltype(data.page_footprint) next(mem::StdAllocator<std::int32_t>(data.allocator));
     try{next.assign(refs.begin(),refs.end());}
     catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("batch page footprint metadata"));}
-    std::sort(next.begin(),next.end());next.erase(std::unique(next.begin(),next.end()),next.end());
+    if(!std::is_sorted(next.begin(),next.end()))std::sort(next.begin(),next.end());
+    next.erase(std::unique(next.begin(),next.end()),next.end());
     data.page_footprint.swap(next);
   }
   return std::span<const std::int32_t>(data.page_footprint);
@@ -429,7 +431,8 @@ Result<detail::BatchPageFootprint> detail::BatchLayoutAccess::page_requirements(
       // Sort each physical ID together with its row requirement once. Looking
       // up every logical reference in a second sorted table made the first
       // use of each long layout dominate otherwise incremental bank edits.
-      std::sort(required.begin(),required.end(),[](const auto&a,const auto&b){return a.page<b.page;});
+      const auto by_page=[](const auto&a,const auto&b){return a.page<b.page;};
+      if(!std::is_sorted(required.begin(),required.end(),by_page))std::sort(required.begin(),required.end(),by_page);
       auto unique=required.begin();
       for(auto at=required.begin();at!=required.end();){
         auto value=*at++;
@@ -481,6 +484,32 @@ Result<std::span<const detail::BatchPageChange>> detail::BatchLayoutAccess::page
   }catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("batch page difference metadata"));}
   return std::span<const BatchPageChange>(data.changes.back().pages);
 }
+Result<bool> detail::BatchLayoutAccess::logical_prefix_covers(
+    const BatchLayoutVersion&outer,const BatchLayoutVersion&inner)noexcept{
+  if(!outer.valid() || !inner.valid() || !inner.origin_schema().owns(outer) ||
+      geometry(inner.origin_schema()).storage!=BatchStorage::kPaged)
+    return std::unexpected(Status::InvalidArgument("logical page prefix requires the same original paged schema"));
+  if(outer==inner)return true;
+  HYLE_ASSIGN_OR_RETURN(auto changes,page_changes(outer,inner));(void)changes;
+  auto&data=*inner.data_;std::lock_guard guard(data.export_lock);
+  auto found=std::find_if(data.changes.begin(),data.changes.end(),
+      [&](const auto&entry){return entry.generation==outer.generation();});
+  if(found==data.changes.end())return std::unexpected(Status::Internal("logical prefix lost its original version pair"));
+  if(found->logical_prefix_known)return found->logical_prefix;
+  const auto larger=outer.host(),smaller=inner.host();const auto page_size=geometry(data.schema).page_size;
+  bool covered=outer.facts().requests==inner.facts().requests;
+  for(std::uint32_t request=0;covered && request<inner.facts().requests;++request){
+    const auto small_count=std::uint32_t(smaller.kv_indptr[request+1]-smaller.kv_indptr[request]);
+    const auto large_count=std::uint32_t(larger.kv_indptr[request+1]-larger.kv_indptr[request]);
+    const auto small_rows=small_count?std::uint64_t(small_count-1)*page_size+smaller.last_page_lengths[request]:0;
+    const auto large_rows=large_count?std::uint64_t(large_count-1)*page_size+larger.last_page_lengths[request]:0;
+    covered=small_count<=large_count && small_rows<=large_rows;
+    for(std::uint32_t page=0;covered && page<small_count;++page)
+      covered=smaller.page_indices[std::size_t(smaller.kv_indptr[request])+page]==
+          larger.page_indices[std::size_t(larger.kv_indptr[request])+page];
+  }
+  found->logical_prefix=covered;found->logical_prefix_known=true;return covered;
+}
 Result<detail::BatchAppendFootprint> detail::BatchLayoutAccess::append_pages(
     const BatchLayoutVersion&before,const BatchLayoutVersion&after)noexcept{
   if(!before.valid() || !after.valid() || !after.origin_schema().owns(before) ||
@@ -511,7 +540,8 @@ Result<detail::BatchAppendFootprint> detail::BatchLayoutAccess::append_pages(
             added?std::uint32_t(next.query_indptr[request]+new_begin-previous_rows):0u,std::uint32_t(added)});
       }
     }
-    std::sort(staged.untouched.begin(),staged.untouched.end());
+    if(!std::is_sorted(staged.untouched.begin(),staged.untouched.end()))
+      std::sort(staged.untouched.begin(),staged.untouched.end());
     staged.untouched.erase(std::unique(staged.untouched.begin(),staged.untouched.end()),staged.untouched.end());
     data.appends.push_back(std::move(staged));
   }catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("batch append mapping metadata"));}

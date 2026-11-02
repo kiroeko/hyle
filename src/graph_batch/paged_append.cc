@@ -1626,14 +1626,10 @@ Result<PagedAppendPages>PagedAppendPages::create_choices_impl(c::PagedArena aren
     std::span<c::PagedPageWriter>dirty,bool zero_fill_envelope,PagedAppendOptions options,detail::PagedAppendSourceData*previous)noexcept{
   if(choices.size()!=2)return std::unexpected(Status::InvalidArgument("append needs exactly two checked layout choices"));
   // Choice one is the checked physical envelope, not an initialized frame.
-  HYLE_ASSIGN_OR_RETURN(auto first,cd::BatchLayoutAccess::page_requirements(choices[0].next));
-  HYLE_ASSIGN_OR_RETURN(auto second,cd::BatchLayoutAccess::page_requirements(choices[1].next));
-  std::size_t at=0;
-  for(std::size_t i=0;i<first.pages.size();++i){
-    while(at<second.pages.size() && second.pages[at]<first.pages[i])++at;
-    if(at==second.pages.size() || second.pages[at]!=first.pages[i] || second.required_rows[at]<first.required_rows[i])
+  HYLE_ASSIGN_OR_RETURN(auto envelope,cd::BatchLayoutAccess::page_changes(choices[1].next,choices[0].next));
+  for(const auto&change:envelope)
+    if(change.after_rows>change.before_rows)
       return std::unexpected(Status::InvalidArgument("append choice one must cover the common physical envelope"));
-  }
   HYLE_ASSIGN_OR_RETURN(auto zero,PagedAppendPages::create_impl(arena,choices[0].next,choices[0].previous,sources,dirty,{},true,options,previous,true,false));
   HYLE_ASSIGN_OR_RETURN(auto one,PagedAppendPages::create_impl(std::move(arena),choices[1].next,choices[1].previous,sources,dirty,{},true,options,previous,true,false));
   auto&p=*one.data_;auto&q=*zero.data_;
@@ -1651,9 +1647,8 @@ Result<PagedAppendPages>PagedAppendPages::create_choices_impl(c::PagedArena aren
     const auto small_rows=history(smaller,0,cap.page_size),large_rows=history(larger,0,cap.page_size);
     if(large_rows<small_rows || large_rows-small_rows>1)
       return std::unexpected(Status::InvalidArgument("raw append choices differ by more than one suffix row"));
-    for(std::size_t i=0;i<smaller.page_indices.size();++i)
-      if(smaller.page_indices[i]!=larger.page_indices[i])
-        return std::unexpected(Status::InvalidArgument("raw append choices have different logical prefix page mappings"));
+    HYLE_ASSIGN_OR_RETURN(const bool prefix,cd::BatchLayoutAccess::logical_prefix_covers(p.layout,q.layout));
+    if(!prefix)return std::unexpected(Status::InvalidArgument("raw append choices have different logical prefix page mappings"));
     std::uint32_t zero_rows=0;
     try{
       for(std::size_t i=0;i<p.required.size();++i){
@@ -1690,11 +1685,10 @@ Result<AppendFacts>PagedAppendSourceAccess::facts(const PagedAppendSource&source
 Status PagedAppendSourceAccess::covers(const PagedAppendSource&source,c::BatchLayoutVersion requested)noexcept{
   if(!source.data_ || !requested.valid() || !source.data_->layout.origin_schema().owns(requested))
     return Status::InvalidArgument("append source reader layout is foreign");
-  const auto&s=*source.data_;HYLE_ASSIGN_OR_RETURN(auto footprint,cd::BatchLayoutAccess::page_requirements(requested));
-  std::size_t index=0;for(std::size_t i=0;i<footprint.pages.size();++i){
-    while(index<s.pages.size() && s.pages[index]<footprint.pages[i])++index;
-    if(index==s.pages.size() || s.pages[index]!=footprint.pages[i] || s.rows[index]<footprint.required_rows[i])
-      return Status::InvalidArgument("append source cannot cover the reader's exact logical prefix");}
+  const auto&s=*source.data_;HYLE_ASSIGN_OR_RETURN(auto changes,cd::BatchLayoutAccess::page_changes(s.layout,requested));
+  for(const auto&change:changes)
+    if(change.after_rows>change.before_rows)
+      return Status::InvalidArgument("append source cannot cover the reader's exact logical prefix");
   return Status::Ok();
 }
 Result<SourceBinding>PagedAppendSourceAccess::binding(PagedAppendSource&source,ValueId bank,

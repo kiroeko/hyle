@@ -82,6 +82,45 @@ TEST(BatchLayout, AppendMappingPreservesPackedOffsetsCowAndSharedUntouchedRefere
   EXPECT_EQ(mapping.changed[0].page,7u);EXPECT_EQ(mapping.untouched[1],4);
   EXPECT_EQ(c::detail::BatchLayoutAccess::append_pages(before,after)->changed.data(),mapping.changed.data());
 }
+TEST(BatchLayout, LogicalPrefixKeepsPerRequestOrderEvenWhenPhysicalCoverageIsEqual){
+  auto schema=c::BatchSchema::create(capacity()).value();Layout input;input.tails={16,16};
+  auto outer=schema.version(input.host()).value();
+  input.q={0,0,0};input.tails={3,9};
+  auto prefix=schema.version(input.host()).value();
+  EXPECT_TRUE(c::detail::BatchLayoutAccess::logical_prefix_covers(outer,prefix).value());
+  EXPECT_FALSE(c::detail::BatchLayoutAccess::logical_prefix_covers(prefix,outer).value());
+  input.tails={16,16};input.pages={0,2,3};
+  auto reordered=schema.version(input.host()).value();
+  ASSERT_TRUE(c::detail::BatchLayoutAccess::page_changes(outer,reordered)->empty());
+  EXPECT_FALSE(c::detail::BatchLayoutAccess::logical_prefix_covers(outer,reordered).value());
+  input.pages={2,3,0};auto across_requests=schema.version(input.host()).value();
+  ASSERT_TRUE(c::detail::BatchLayoutAccess::page_changes(outer,across_requests)->empty());
+  EXPECT_FALSE(c::detail::BatchLayoutAccess::logical_prefix_covers(outer,across_requests).value());
+  EXPECT_TRUE(c::detail::BatchLayoutAccess::logical_prefix_covers(outer,outer).value());
+  auto foreign=c::BatchSchema::create(capacity()).value().version(prefix.host()).value();
+  EXPECT_TRUE(c::detail::BatchLayoutAccess::logical_prefix_covers(outer,foreign).error().IsInvalidArgument());
+  EXPECT_TRUE(c::detail::BatchLayoutAccess::logical_prefix_covers({},prefix).error().IsInvalidArgument());
+}
+TEST(BatchLayout, LogicalPrefixReusesTheVersionPairCacheAndConcurrentReaders){
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),1u<<20);
+  auto schema=c::BatchSchema::create(capacity(),{.allocator=quota.get()}).value();Layout input;
+  auto outer=schema.version(input.host()).value();input.q={0,0,0};input.tails={2,9};
+  auto inner=schema.version(input.host()).value();
+  EXPECT_TRUE(c::detail::BatchLayoutAccess::logical_prefix_covers(outer,inner).value());
+  auto equivalent=schema.version(outer.host()).value();
+  std::array<int,4> results{};std::array<std::thread,4> threads;
+  for(std::size_t i=0;i<threads.size();++i)threads[i]=std::thread([&,i]{
+    results[i]=c::detail::BatchLayoutAccess::logical_prefix_covers(equivalent,inner).value()?1:0;
+  });
+  for(auto&thread:threads)thread.join();for(auto value:results)EXPECT_EQ(value,1);
+  const auto used=quota.used();
+  {
+    auto reserved=quota.try_reserve_bytes(quota.remaining()).value();
+    EXPECT_TRUE(c::detail::BatchLayoutAccess::logical_prefix_covers(outer,inner).value());
+    EXPECT_TRUE(c::detail::BatchLayoutAccess::logical_prefix_covers(equivalent,inner).value());
+  }
+  EXPECT_EQ(quota.used(),used);
+}
 TEST(BatchLayout, AppendMappingRejectsPerRequestHistoryChangesAndIsOomRetryable){
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),1u<<20);
   auto schema=c::BatchSchema::create(capacity(),{.allocator=quota.get()}).value();
