@@ -14,6 +14,7 @@ struct LeaseBlock;
 struct LeaseUsePoolState;
 struct LeaseUseEpisode;
 struct LeaseAccess;
+class ReadLeaseGroup;
 } // namespace detail
 
 class WriteLease;
@@ -70,6 +71,7 @@ private:
   friend class LeasePool;
   friend class LeaseUseBatch;
   friend struct detail::LeaseAccess;
+  friend class detail::ReadLeaseGroup;
   friend class LeaseSlotLayout;
   ReadLease(detail::LeaseBlock *block, std::size_t offset, std::size_t size) noexcept
       : block_(block), offset_(offset), size_(size) {}

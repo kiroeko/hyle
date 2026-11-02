@@ -4,9 +4,11 @@
 #include "hyle/compute/detail/batch_provider.h"
 #include "hyle/mem/std_allocator.h"
 #include "hyle/util/ref_counted.h"
+#include "hyle/container/small_vector.h"
 #include <algorithm>
 #include <functional>
 #include <new>
+#include <mutex>
 #include <vector>
 
 namespace hyle::compute {
@@ -61,10 +63,14 @@ struct PagedArenaData final:util::RefCounted<PagedArenaData>{
   BatchCacheRole role=BatchCacheRole::kKey;
 };
 struct PagedArenaReadData final:util::RefCounted<PagedArenaReadData>{
-  PagedArenaReadData(PagedArenaData*p,BatchLayoutVersion l):arena(p),layout(std::move(l)),allocator(p->allocator),pages(mem::StdAllocator<ReadLease>(p->allocator)){p->incref();}
+  PagedArenaReadData(PagedArenaData*p,BatchLayoutVersion l):arena(p),layout(std::move(l)),allocator(p->allocator),pages(mem::StdAllocator<ReadLease>(p->allocator)),individual(p->allocator){p->incref();}
   void destroy()noexcept{auto*p=arena;const auto a=allocator;this->~PagedArenaReadData();p->decref();a.deallocate(this,sizeof(*this),alignof(PagedArenaReadData));}
   PagedArenaData*arena;BatchLayoutVersion layout;mem::AllocatorRef allocator;
   std::vector<ReadLease,mem::StdAllocator<ReadLease>> pages;
+  std::mutex immutable_mutex;
+  ReadLeaseGroup immutable;
+  container::SmallVector<ReadLease,2,mem::AllocatorRef> individual;
+  bool immutable_ready=false;
   bool sealed=true;
   std::uint64_t epoch=0;
 };
@@ -72,12 +78,15 @@ struct PagedArenaDeltaData final:util::RefCounted<PagedArenaDeltaData>{
   struct Change final {std::uint32_t page=0;std::size_t ordinal=0;ReadLease guard;};
   PagedArenaDeltaData(PagedArenaReadData*p,BatchLayoutVersion next)
       :base(p),epoch(p->epoch),layout(std::move(next)),allocator(p->allocator),
-       changes(mem::StdAllocator<Change>(allocator)),replacement(mem::StdAllocator<ReadLease>(allocator)){p->incref();}
+       changes(mem::StdAllocator<Change>(allocator)),replacement(mem::StdAllocator<ReadLease>(allocator)),individual(allocator){p->incref();}
   void destroy()noexcept{auto*p=base;const auto a=allocator;this->~PagedArenaDeltaData();
     a.deallocate(this,sizeof(*this),alignof(PagedArenaDeltaData));p->decref();}
   PagedArenaReadData*base;std::uint64_t epoch;BatchLayoutVersion layout;mem::AllocatorRef allocator;
   std::vector<Change,mem::StdAllocator<Change>>changes;
   std::vector<ReadLease,mem::StdAllocator<ReadLease>>replacement;
+  ReadLeaseGroup immutable;
+  container::SmallVector<ReadLease,2,mem::AllocatorRef> individual;
+  bool immutable_prepared=false;
   bool prepared=false,replace_table=false;
 };
 struct PagedArenaPendingReadData final:util::RefCounted<PagedArenaPendingReadData>{
@@ -780,6 +789,28 @@ Status detail::PagedArenaAccess::validate_page(const PagedArenaPendingRead&read,
 namespace {
 using FrameData=detail::PagedArenaReadData;
 using DeltaData=detail::PagedArenaDeltaData;
+Result<bool> retain_immutable(detail::ReadLeaseGroup&group,const ReadLease&guard,mem::AllocatorRef allocator)noexcept{
+  auto next=group.with(guard,allocator);
+  if(!next){
+    // Ordinary ready blocks and open append tails keep their individual native
+    // admission. They cannot enter a permanently immutable group.
+    if(next.error().IsFailedPrecondition())return false;
+    return std::unexpected(next.error());
+  }
+  group=std::move(*next);return true;
+}
+using IndividualPages=container::SmallVector<ReadLease,2,mem::AllocatorRef>;
+Status update_individual(IndividualPages&pages,std::size_t offset,const ReadLease*guard=nullptr,std::size_t bytes=0)noexcept{
+  const auto at=std::lower_bound(pages.begin(),pages.end(),offset,[](const auto&read,auto wanted){return read.view()->offset()<wanted;});
+  const bool found=at!=pages.end()&&at->view()->offset()==offset;
+  if(!guard){if(found)pages.erase(at);return Status::Ok();}
+  if(found&&detail::LeaseAccess::identity(*at)==detail::LeaseAccess::identity(*guard)&&at->size()==bytes)return Status::Ok();
+  HYLE_ASSIGN_OR_RETURN(auto prefix,guard->subview(0,bytes));
+  if(found){*at=std::move(prefix);return Status::Ok();}
+  const auto index=std::size_t(at-pages.begin());
+  if(!pages.try_push_back(std::move(prefix)))return Status::ResourceExhausted("individual frame permission metadata");
+  std::rotate(pages.begin()+index,pages.end()-1,pages.end());return Status::Ok();
+}
 bool current_footprint(const FrameData*p,std::uint64_t epoch,const DeltaData*next)noexcept{
   return p && p->epoch==epoch && (!next ||
       (next->base==p && next->epoch==epoch && next->prepared));
@@ -920,6 +951,14 @@ Result<PagedArenaDelta>PagedArenaDelta::create(PagedArenaFootprint expected,
   const auto full=detail::BatchLayoutAccess::geometry(arena.schema).page_size;
   if(!full || !arena.page_bytes || arena.page_bytes%full)
     return std::unexpected(Status::FailedPrecondition("delta row geometry is invalid"));
+  {
+    std::lock_guard lock(base.immutable_mutex);
+    if(base.immutable_ready){
+      p->immutable=base.immutable;p->immutable_prepared=true;
+      if(!p->individual.try_reserve(base.individual.size()))return std::unexpected(Status::ResourceExhausted("delta individual page metadata"));
+      for(const auto&guard:base.individual)p->individual.push_back(guard);
+    }
+  }
   if(changed.size()>p->changes.max_size())
     return std::unexpected(Status::OutOfRange("delta metadata extent overflows"));
   try{
@@ -935,6 +974,13 @@ Result<PagedArenaDelta>PagedArenaDelta::create(PagedArenaFootprint expected,
       return a.page!=b.page?a.page<b.page:a.guard.size()>b.guard.size();});
     p->changes.erase(std::unique(p->changes.begin(),p->changes.end(),
         [](const auto&a,const auto&b){return a.page==b.page;}),p->changes.end());
+    const auto forget=[&](std::size_t ordinal,bool erase_individual=true)noexcept->Status{
+      if(!p->immutable_prepared)return Status::Ok();
+      const auto offset=arena.span.offset()+std::size_t(old_ids[ordinal])*arena.page_bytes;
+      if(before[ordinal]==full){HYLE_ASSIGN_OR_RETURN(auto next,p->immutable.without(offset));p->immutable=std::move(next);}
+      if(erase_individual)HYLE_RETURN_IF_ERROR(update_individual(p->individual,offset));
+      return Status::Ok();
+    };
     std::size_t old=0,change=0;
     for(std::size_t i=0;i<ids.size();++i){
       const auto page=std::uint32_t(ids[i]);
@@ -942,31 +988,47 @@ Result<PagedArenaDelta>PagedArenaDelta::create(PagedArenaFootprint expected,
         return std::unexpected(Status::FailedPrecondition("delta layout exceeds initialized rows"));
       // All three tables are sorted unique physical IDs in this call. Cursors
       // replace only ordinal lookup; original guard and live checks stay below.
-      while(old<old_ids.size() && old_ids[old]<ids[i])++old;
+      while(old<old_ids.size() && old_ids[old]<ids[i]){HYLE_RETURN_IF_ERROR(forget(old));++old;}
       while(change<p->changes.size() && p->changes[change].page<page)++change;
       const bool changed_page=change<p->changes.size() && p->changes[change].page==page;
       const bool original_page=old<old_ids.size() && old_ids[old]==ids[i];
+      const auto previous=old;
+      if(original_page){
+        if(after[i]!=full)HYLE_RETURN_IF_ERROR(forget(old,false));
+        ++old;
+      }
       // This original Frame holds its own immutable page guard. Until its
       // epoch advances, that pin prevents whole-page reacquire/reclamation;
       // append can only grow the initialized suffix, never this old prefix.
       if(!changed_page && original_page){
-        const auto&held=base.pages[old];
-        if(before[old]>=after[i] && held.valid() &&
-            held.size()>=std::size_t(after[i])*(arena.page_bytes/full))continue;
+        const auto&held=base.pages[previous];
+        if(before[previous]>=after[i] && held.valid() &&
+            held.size()>=std::size_t(after[i])*(arena.page_bytes/full)){
+          if(p->immutable_prepared&&after[i]!=full)
+            HYLE_RETURN_IF_ERROR(update_individual(p->individual,arena.span.offset()+std::size_t(page)*arena.page_bytes,
+                &held,std::size_t(after[i])*(arena.page_bytes/full)));
+          continue;
+        }
       }
       // This fresh, unprepared Delta has no replacement table; ids[i] already
       // belongs to its accepted layout. Preserve frame_guard's exact fallback.
       const ReadLease*guard=nullptr;
       if(changed_page)guard=&p->changes[change].guard;
-      else if(original_page)guard=&base.pages[old];
+      else if(original_page)guard=&base.pages[previous];
       else return std::unexpected(Status::FailedPrecondition("frame has no original page permission"));
       HYLE_ASSIGN_OR_RETURN(auto actual,page_id(arena,*guard));
       if(actual!=page || guard->size()<std::size_t(after[i])*(arena.page_bytes/full))
         return std::unexpected(Status::FailedPrecondition("delta ready guard does not cover its logical rows"));
-      if(changed_page)continue;
-      if(!original_page || before[old]<after[i])
+      if(!changed_page && (!original_page || before[previous]<after[i]))
         return std::unexpected(Status::FailedPrecondition("delta widens an untouched original prefix"));
+      if(p->immutable_prepared){
+        bool grouped=false;
+        if(after[i]==full){HYLE_ASSIGN_OR_RETURN(grouped,retain_immutable(p->immutable,*guard,base.allocator));}
+        HYLE_RETURN_IF_ERROR(update_individual(p->individual,arena.span.offset()+std::size_t(page)*arena.page_bytes,
+            grouped?nullptr:guard,std::size_t(after[i])*(arena.page_bytes/full)));
+      }
     }
+    while(old<old_ids.size()){HYLE_RETURN_IF_ERROR(forget(old));++old;}
   }catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("frame delta page metadata"));}
   return result;
 }
@@ -1002,6 +1064,16 @@ Result<PagedArenaFrame>PagedArenaFrame::fork(const PagedArenaFootprint&source)no
   try{p->pages.resize(source.page_count());}
   catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("working frame page metadata"));}
   HYLE_RETURN_IF_ERROR(detail::PagedArenaAccess::collect_pages(source,p->pages));
+  {
+    std::lock_guard lock(source.data_->immutable_mutex);
+    if(source.proposed_?source.proposed_->immutable_prepared:source.data_->immutable_ready){
+      p->immutable=source.proposed_?source.proposed_->immutable:source.data_->immutable;
+      const auto&individual=source.proposed_?source.proposed_->individual:source.data_->individual;
+      if(!p->individual.try_reserve(individual.size()))return std::unexpected(Status::ResourceExhausted("frame fork individual permissions"));
+      for(const auto&guard:individual)p->individual.push_back(guard);
+      p->immutable_ready=true;
+    }
+  }
   return result;
 }
 bool PagedArenaFrame::sealed()const noexcept{return data_ && data_->sealed;}
@@ -1064,9 +1136,12 @@ Status PagedArenaFrame::validate_commit(const PagedArenaCommit&ticket)const noex
 }
 Status PagedArenaFrame::commit(PagedArenaCommit&&ticket)noexcept{
   HYLE_RETURN_IF_ERROR(validate_commit(ticket));auto*p=ticket.data_;
+  std::lock_guard lock(data_->immutable_mutex);
   if(p->replace_table)data_->pages.swap(p->replacement);
   else for(auto&change:p->changes)data_->pages[change.ordinal]=std::move(change.guard);
   data_->layout=std::move(p->layout);++data_->epoch;
+  data_->immutable=std::move(p->immutable);data_->immutable_ready=p->immutable_prepared;
+  data_->individual=std::move(p->individual);
   std::exchange(ticket.data_,nullptr)->decref();return Status::Ok();
 }
 bool detail::PagedArenaAccess::owns(const PagedArena&arena,const PagedArenaFootprint&view)noexcept{
@@ -1099,5 +1174,34 @@ Status detail::PagedArenaAccess::collect_pages(const PagedArenaFootprint&view,st
     if(pass)output[i]=*guard;
   }
   return Status::Ok();
+}
+Result<detail::ReadLeaseGroup> detail::PagedArenaAccess::immutable_pages(const PagedArenaFootprint&view)noexcept{
+  HYLE_ASSIGN_OR_RETURN(auto groups,read_groups(view));return std::move(groups.immutable);
+}
+Result<detail::PagedArenaReadGroups> detail::PagedArenaAccess::read_groups(const PagedArenaFootprint&view)noexcept{
+  if(!view.valid())return std::unexpected(Status::FailedPrecondition("frame footprint is empty or stale"));
+  auto&p=*view.data_;auto*next=view.proposed_;
+  std::lock_guard lock(p.immutable_mutex);
+  if(next?next->immutable_prepared:p.immutable_ready){
+    const auto&individual=next?next->individual:p.individual;
+    return PagedArenaReadGroups{next?next->immutable:p.immutable,std::span(individual.data(),individual.size())};
+  }
+  HYLE_ASSIGN_OR_RETURN(auto required,BatchLayoutAccess::page_requirements(frame_layout(p,next)));
+  const auto full=BatchLayoutAccess::geometry(p.arena->schema).page_size;
+  ReadLeaseGroup group;
+  IndividualPages individual(p.allocator);
+  for(std::size_t i=0;i<required.pages.size();++i){
+    HYLE_ASSIGN_OR_RETURN(auto guard,frame_guard(p,next,std::uint32_t(required.pages[i])));
+    bool grouped=false;
+    if(required.required_rows[i]==full){HYLE_ASSIGN_OR_RETURN(grouped,retain_immutable(group,*guard,p.allocator));}
+    if(!grouped){
+      HYLE_ASSIGN_OR_RETURN(auto prefix,guard->subview(0,std::size_t(required.required_rows[i])*(p.arena->page_bytes/full)));
+      if(!individual.try_push_back(std::move(prefix)))return std::unexpected(Status::ResourceExhausted("frame individual permission snapshot"));
+    }
+  }
+  if(next){next->immutable=group;next->individual=std::move(individual);next->immutable_prepared=true;}
+  else{p.immutable=group;p.individual=std::move(individual);p.immutable_ready=true;}
+  const auto&held=next?next->individual:p.individual;
+  return PagedArenaReadGroups{std::move(group),std::span(held.data(),held.size())};
 }
 } // namespace hyle::compute

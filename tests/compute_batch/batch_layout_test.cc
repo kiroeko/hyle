@@ -30,6 +30,45 @@ TEST(BatchLayout, SameShapeNewPageValuesHaveNewGenerationAndOldVersionRemains){
   EXPECT_GT(next.generation(),old.generation());EXPECT_FALSE(next==old);EXPECT_EQ(old.host().page_indices[0],2);EXPECT_EQ(next.host().page_indices[0],6);
   auto copy=old;EXPECT_TRUE(copy==old);schema={};old={};EXPECT_EQ(copy.host().last_page_lengths[1],10);
 }
+TEST(BatchLayout, PageDifferencesKeepSparseRowsStableAcrossBanksAndPredecessors){
+  auto schema=c::BatchSchema::create(capacity()).value();Layout input;
+  auto before=schema.version(input.host()).value(); // 0:3, 2:16, 3:10.
+  input.pages={2,1,3};input.tails={5,8};
+  auto after=schema.version(input.host()).value(); // 1:5, 2:16, 3:8.
+  const auto changes=c::detail::BatchLayoutAccess::page_changes(before,after).value();
+  ASSERT_EQ(changes.size(),3u);
+  EXPECT_EQ(changes[0].page,0);EXPECT_EQ(changes[0].before_rows,3u);EXPECT_EQ(changes[0].after_rows,0u);
+  EXPECT_EQ(changes[1].page,1);EXPECT_EQ(changes[1].before_rows,0u);EXPECT_EQ(changes[1].after_rows,5u);
+  EXPECT_EQ(changes[2].page,3);EXPECT_EQ(changes[2].before_rows,10u);EXPECT_EQ(changes[2].after_rows,8u);
+  auto from_other=schema.version(Layout{}.host()).value();
+  const auto other=c::detail::BatchLayoutAccess::page_changes(from_other,after).value();
+  EXPECT_EQ(other.size(),changes.size());EXPECT_EQ(changes[0].before_rows,3u);
+  EXPECT_EQ(c::detail::BatchLayoutAccess::page_changes(before,after)->data(),changes.data());
+  EXPECT_TRUE(c::detail::BatchLayoutAccess::page_changes(after,after)->empty());
+  auto foreign=c::BatchSchema::create(capacity()).value().version(input.host()).value();
+  EXPECT_TRUE(c::detail::BatchLayoutAccess::page_changes(foreign,after).error().IsInvalidArgument());
+  // The retained destination owns both mathematical spans. It does not need
+  // either old version or a permission for any of their physical pages.
+  before={};from_other={};schema={};
+  EXPECT_EQ(changes[2].after_rows,8u);EXPECT_EQ(other[1].page,1);
+}
+TEST(BatchLayout, PageDifferenceBudgetFailureIsRetryableAndConcurrentReadersShareFacts){
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),1u<<20);
+  auto schema=c::BatchSchema::create(capacity(),{.allocator=quota.get()}).value();Layout input;
+  auto before=schema.version(input.host()).value();input.pages={2,1,3};
+  auto after=schema.version(input.host()).value();
+  (void)c::detail::BatchLayoutAccess::page_requirements(before).value();
+  (void)c::detail::BatchLayoutAccess::page_requirements(after).value();
+  const auto live=quota.used();
+  {auto held=quota.try_reserve_bytes(quota.remaining()).value();
+    auto failed=c::detail::BatchLayoutAccess::page_changes(before,after);
+    ASSERT_FALSE(failed);EXPECT_TRUE(failed.error().IsResourceExhausted());}
+  EXPECT_EQ(quota.used(),live);
+  std::array<std::span<const c::detail::BatchPageChange>,8>results;std::array<std::thread,8>threads;
+  for(unsigned i=0;i<threads.size();++i)threads[i]=std::thread([&,i]{results[i]=c::detail::BatchLayoutAccess::page_changes(before,after).value();});
+  for(auto&thread:threads)thread.join();
+  for(const auto result:results){ASSERT_EQ(result.size(),2u);EXPECT_EQ(result.data(),results[0].data());}
+}
 TEST(BatchLayout, ActiveSnapshotIsCompactAndExplicitExportZerosAllInactiveCapacity){
   auto cap=capacity();cap.max_requests=4096;cap.max_page_refs=65536;
   auto schema=c::BatchSchema::create(cap).value();Layout input;auto version=schema.version(input.host()).value();

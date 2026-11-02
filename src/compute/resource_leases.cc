@@ -2,6 +2,7 @@
 #include "hyle/compute/lease_slots.h"
 
 #include <atomic>
+#include <algorithm>
 #include <limits>
 #include <mutex>
 #include <new>
@@ -9,6 +10,7 @@
 
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/lease_access.h"
+#include "hyle/compute/detail/read_lease_group.h"
 #include "hyle/compute/detail/resource_budget_access.h"
 #include "hyle/core/assert.h"
 #include "hyle/container/small_vector.h"
@@ -233,16 +235,259 @@ void LeaseBlock::destroy() noexcept {
   release_domain(owner);
 }
 
+struct ReadLeaseGroupData final : util::RefCounted<ReadLeaseGroupData> {
+  ReadLeaseGroupData(const ReadLease &permission, LeaseDomain *owner,
+      std::size_t first, mem::AllocatorRef selected) noexcept
+      : domain(owner), allocator(selected), read(permission), begin(first), end(first + permission.size()) {}
+  ReadLeaseGroupData(ReadLeaseGroupData *a, ReadLeaseGroupData *b) noexcept
+      : domain(a->domain), allocator(a->allocator), left(a), right(b),
+        begin(a->begin), end(b->end), count(a->count + b->count),
+        height(1 + (std::max)(a->height, b->height)) { left->incref(); right->incref(); }
+  void destroy() noexcept {
+    auto *a = left, *b = right; const auto selected = allocator;
+    // The original permission may own the metadata allocator's resource.
+    // Keep it (or both children) alive past this node's own deallocation.
+    auto permission = std::move(read);
+    this->~ReadLeaseGroupData();
+    selected.deallocate(this, sizeof(ReadLeaseGroupData), alignof(ReadLeaseGroupData));
+    if (a) a->decref();
+    if (b) b->decref();
+  }
+  LeaseDomain *domain;
+  mem::AllocatorRef allocator;
+  ReadLease read;
+  ReadLeaseGroupData *left = nullptr, *right = nullptr;
+  std::size_t begin, end;
+  std::uint32_t count = 1, height = 1;
+};
+namespace {
+struct GroupNodeOwner final {
+  ReadLeaseGroupData *data;
+  ~GroupNodeOwner() { if (data) data->decref(); }
+};
+Result<ReadLeaseGroupData *> group_parent(ReadLeaseGroupData *a, ReadLeaseGroupData *b) noexcept {
+  auto *node = a->allocator.construct<ReadLeaseGroupData>(a, b);
+  if (!node) return std::unexpected(Status::ResourceExhausted("immutable read group metadata"));
+  return node;
+}
+Result<ReadLeaseGroupData *> balance_group(ReadLeaseGroupData *a, ReadLeaseGroupData *b) noexcept {
+  if (a->height > b->height + 1) {
+    HYLE_FATAL_ASSERT(a->left && a->right);
+    if (a->left->height >= a->right->height) {
+      HYLE_ASSIGN_OR_RETURN(auto node, group_parent(a->right, b)); GroupNodeOwner hold{node};
+      return group_parent(a->left, node);
+    }
+    auto *middle = a->right;
+    HYLE_FATAL_ASSERT(middle->left && middle->right);
+    HYLE_ASSIGN_OR_RETURN(auto first, group_parent(a->left, middle->left)); GroupNodeOwner first_hold{first};
+    HYLE_ASSIGN_OR_RETURN(auto second, group_parent(middle->right, b)); GroupNodeOwner second_hold{second};
+    return group_parent(first, second);
+  }
+  if (b->height > a->height + 1) {
+    HYLE_FATAL_ASSERT(b->left && b->right);
+    if (b->right->height >= b->left->height) {
+      HYLE_ASSIGN_OR_RETURN(auto node, group_parent(a, b->left)); GroupNodeOwner hold{node};
+      return group_parent(node, b->right);
+    }
+    auto *middle = b->left;
+    HYLE_FATAL_ASSERT(middle->left && middle->right);
+    HYLE_ASSIGN_OR_RETURN(auto first, group_parent(a, middle->left)); GroupNodeOwner first_hold{first};
+    HYLE_ASSIGN_OR_RETURN(auto second, group_parent(middle->right, b->right)); GroupNodeOwner second_hold{second};
+    return group_parent(first, second);
+  }
+  return group_parent(a, b);
+}
+Result<ReadLeaseGroupData *> join_group(ReadLeaseGroupData *a, ReadLeaseGroupData *b) noexcept {
+  if (a->height > b->height + 1) {
+    HYLE_ASSIGN_OR_RETURN(auto next, join_group(a->right, b)); GroupNodeOwner hold{next};
+    return balance_group(a->left, next);
+  }
+  if (b->height > a->height + 1) {
+    HYLE_ASSIGN_OR_RETURN(auto next, join_group(a, b->left)); GroupNodeOwner hold{next};
+    return balance_group(next, b->right);
+  }
+  return group_parent(a, b);
+}
+bool group_has_root(const ReadLeaseGroupData *node, const LeaseBlock *block) noexcept {
+  if (node->domain != block->domain) return false;
+  const auto offset = static_cast<std::size_t>(block->range.offset());
+  while (node->left) node = offset < node->right->begin ? node->left : node->right;
+  return LeaseAccess::identity(node->read) == block;
+}
+Result<ReadLeaseGroupData *> insert_group(ReadLeaseGroupData *tree, ReadLeaseGroupData *leaf) noexcept {
+  if (!tree) { leaf->incref(); return leaf; }
+  if (tree->domain != leaf->domain)
+    return std::unexpected(Status::InvalidArgument("immutable bank group has another original domain"));
+  if (!tree->left) {
+    if (leaf->begin == tree->begin) {
+      if (LeaseAccess::identity(leaf->read) != LeaseAccess::identity(tree->read))
+        return std::unexpected(Status::InvalidArgument("immutable group offset has another original block"));
+      leaf->incref(); return leaf;
+    }
+    return leaf->begin < tree->begin ? join_group(leaf, tree) : join_group(tree, leaf);
+  }
+  if (leaf->begin < tree->right->begin) {
+    HYLE_ASSIGN_OR_RETURN(auto next, insert_group(tree->left, leaf)); GroupNodeOwner hold{next};
+    return balance_group(next, tree->right);
+  }
+  HYLE_ASSIGN_OR_RETURN(auto next, insert_group(tree->right, leaf)); GroupNodeOwner hold{next};
+  return balance_group(tree->left, next);
+}
+Result<ReadLeaseGroupData *> erase_group(ReadLeaseGroupData *tree, std::size_t offset) noexcept {
+  if (!tree) return nullptr;
+  if (!tree->left) {
+    if (offset == tree->begin) return nullptr;
+    tree->incref(); return tree;
+  }
+  if (offset < tree->right->begin) {
+    HYLE_ASSIGN_OR_RETURN(auto next, erase_group(tree->left, offset)); GroupNodeOwner hold{next};
+    if (next == tree->left) { tree->incref(); return tree; }
+    if (!next) { tree->right->incref(); return tree->right; }
+    return balance_group(next, tree->right);
+  }
+  HYLE_ASSIGN_OR_RETURN(auto next, erase_group(tree->right, offset)); GroupNodeOwner hold{next};
+  if (next == tree->right) { tree->incref(); return tree; }
+  if (!next) { tree->left->incref(); return tree->left; }
+  return balance_group(tree->left, next);
+}
+bool group_subset(const ReadLeaseGroupData *a, const ReadLeaseGroupData *b) noexcept {
+  if (a == b || !a) return true;
+  if (!b || a->domain != b->domain || a->count > b->count || a->begin < b->begin || a->end > b->end) return false;
+  if (!b->left) return !a->left && LeaseAccess::identity(a->read) == LeaseAccess::identity(b->read);
+  if (a->end <= b->right->begin) return group_subset(a, b->left);
+  if (a->begin >= b->right->begin) return group_subset(a, b->right);
+  return a->left && group_subset(a->left, b) && group_subset(a->right, b);
+}
+bool group_overlaps(const ReadLeaseGroupData *node, std::size_t begin, std::size_t bytes) noexcept {
+  if (begin >= node->end || (begin <= node->begin && bytes <= node->begin - begin)) return false;
+  if (!node->left) return true;
+  return group_overlaps(node->left, begin, bytes) || group_overlaps(node->right, begin, bytes);
+}
+} // namespace
+
+ReadLeaseGroup::ReadLeaseGroup(const ReadLeaseGroup &other) noexcept : data_(other.data_) {
+  if (data_) data_->incref();
+}
+ReadLeaseGroup &ReadLeaseGroup::operator=(const ReadLeaseGroup &other) noexcept {
+  if (this != &other) { ReadLeaseGroup next(other); std::swap(data_, next.data_); }
+  return *this;
+}
+ReadLeaseGroup::ReadLeaseGroup(ReadLeaseGroup &&other) noexcept : data_(std::exchange(other.data_, nullptr)) {}
+ReadLeaseGroup &ReadLeaseGroup::operator=(ReadLeaseGroup &&other) noexcept {
+  if (this != &other) { ReadLeaseGroup next(std::move(other)); std::swap(data_, next.data_); }
+  return *this;
+}
+ReadLeaseGroup::~ReadLeaseGroup() { reset(); }
+void ReadLeaseGroup::reset() noexcept { if (auto *old = std::exchange(data_, nullptr)) old->decref(); }
+std::uint32_t ReadLeaseGroup::size() const noexcept { return data_ ? data_->count : 0; }
+mem::AllocatorRef ReadLeaseGroup::metadata_allocator() const noexcept { return data_ ? data_->domain->allocator : mem::AllocatorRef{}; }
+Result<ReadLeaseGroup> ReadLeaseGroup::from_lease(const ReadLease &read, mem::AllocatorRef allocator) noexcept {
+  if (!read.block_ || !read.size_ || !allocator.valid())
+    return std::unexpected(Status::InvalidArgument("immutable read group needs an original bounded lease and allocator"));
+  auto *block = read.block_;
+  const auto actual=ResourceBudgetAccess::original_allocator(allocator);
+  const auto original=ResourceBudgetAccess::original_allocator(block->domain->allocator);
+  const auto same=[](mem::AllocatorRef a,mem::AllocatorRef b)noexcept{
+    return a.alloc_fn()==b.alloc_fn() && a.free_fn()==b.free_fn() &&
+        a.realloc_fn()==b.realloc_fn() && a.state()==b.state();
+  };
+  if(!same(actual,original) && !same(actual,mem::system_allocator()))
+    return std::unexpected(Status::InvalidArgument("read group metadata needs its original allocator or system allocation"));
+  {
+    std::lock_guard guard(block->domain->lock);
+    // Existing ReadLease ownership prevents block ABA. These restrictions are
+    // permanent: neither try_write nor any surviving append owner can reopen
+    // a mutable epoch after this qualification. Mutable tails stay individual.
+    if (read.offset_ || block->writer || block->writable || block->append_owner ||
+        block->append_reserved || block->writes || !block->failure.ok())
+      return std::unexpected(Status::FailedPrecondition("read group requires permanently immutable original blocks"));
+  }
+  auto *node = allocator.construct<ReadLeaseGroupData>(read, block->domain,
+      static_cast<std::size_t>(block->range.offset()), allocator);
+  if (!node) return std::unexpected(Status::ResourceExhausted("immutable read group metadata"));
+  return ReadLeaseGroup(node);
+}
+Result<ReadLeaseGroup> ReadLeaseGroup::join(const ReadLeaseGroup &a, const ReadLeaseGroup &b) noexcept {
+  if (!a.data_) return b;
+  if (!b.data_) return a;
+  if (a.data_->domain != b.data_->domain || a.data_->end > b.data_->begin)
+    return std::unexpected(Status::InvalidArgument("read groups must be ordered disjoint original blocks of one domain"));
+  if (a.data_->count > UINT32_MAX - b.data_->count)
+    return std::unexpected(Status::OutOfRange("immutable read group count overflows"));
+  HYLE_ASSIGN_OR_RETURN(auto node, join_group(a.data_, b.data_));
+  return ReadLeaseGroup(node);
+}
+Result<ReadLeaseGroup> ReadLeaseGroup::with(const ReadLease &read, mem::AllocatorRef allocator) const noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto leaf, from_lease(read, data_ ? data_->allocator : allocator));
+  if (data_ && data_->count == UINT32_MAX)
+    return std::unexpected(Status::OutOfRange("immutable read group count exhausted"));
+  HYLE_ASSIGN_OR_RETURN(auto next, insert_group(data_, leaf.data_));
+  return ReadLeaseGroup(next);
+}
+Result<ReadLeaseGroup> ReadLeaseGroup::without(std::size_t offset) const noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto next, erase_group(data_, offset));
+  return ReadLeaseGroup(next);
+}
+Result<ReadLease> ReadLeaseGroup::at(std::size_t offset) const noexcept {
+  auto *node = data_;
+  if (node) while (node->left) node = offset < node->right->begin ? node->left : node->right;
+  if (!node || node->begin != offset)
+    return std::unexpected(Status::FailedPrecondition("immutable group has no original page at this offset"));
+  return node->read;
+}
+bool ReadLeaseGroup::contains(mem::ConstBufferView view) const noexcept {
+  return find(view) != nullptr;
+}
+const ReadLease *ReadLeaseGroup::find(mem::ConstBufferView view) const noexcept {
+  if (!data_ || !view.valid() || !view.size()) return nullptr;
+  const auto &backing = data_->domain->backing;
+  if (view.resource() != backing.resource() || view.native_handle() != backing.native_handle()) return nullptr;
+  auto *node = data_;
+  while (node->left) node = view.offset() < node->right->begin ? node->left : node->right;
+  return view.offset() >= node->begin && view.offset() <= node->end && view.size() <= node->end - view.offset() ? &node->read : nullptr;
+}
+bool ReadLeaseGroup::within(mem::ConstBufferView view) const noexcept {
+  if (!data_) return true;
+  const auto &backing = data_->domain->backing;
+  return view.valid() && view.resource() == backing.resource() && view.native_handle() == backing.native_handle() &&
+      data_->begin >= view.offset() && data_->begin - view.offset() <= view.size() &&
+      data_->end - data_->begin <= view.size() - (data_->begin - view.offset());
+}
+bool ReadLeaseGroup::overlaps(mem::ConstBufferView view) const noexcept {
+  if (!data_ || !view.valid() || !view.size()) return false;
+  const auto &backing = data_->domain->backing;
+  return view.resource() == backing.resource() && view.native_handle() == backing.native_handle() &&
+      group_overlaps(data_, view.offset(), view.size());
+}
+bool ReadLeaseGroup::subset_of(const ReadLeaseGroup &other) const noexcept {
+  return group_subset(data_, other.data_);
+}
+const ReadLease *ReadLeaseGroup::page(std::uint32_t ordinal) const noexcept {
+  auto*node=data_;
+  if(!node || ordinal>=node->count)return nullptr;
+  while(node->left){
+    if(ordinal<node->left->count)node=node->left;
+    else{ordinal-=node->left->count;node=node->right;}
+  }
+  return &node->read;
+}
+
 struct LeaseUseEntry final {
-  LeaseBlock *block = nullptr;
+  LeaseUseEntry(LeaseBlock *value, bool writes, std::uint64_t epoch) noexcept
+      : block(value), write(writes), append_epoch(epoch) {}
+  explicit LeaseUseEntry(ReadLeaseGroupData *value) noexcept : group(value), immutable_group(true) {}
+  union { LeaseBlock *block = nullptr; ReadLeaseGroupData *group; };
   bool write = false;
+  bool immutable_group = false;
   std::uint64_t append_epoch = 0;
 };
+static_assert(sizeof(void *) != 8 || sizeof(LeaseUseEntry) == 24);
 struct LeaseUsePoolState;
 struct LeaseUseEpisode final {
   LeaseUsePoolState *pool = nullptr;
   CompletionRetention retention{};
   std::uint32_t count = 0;
+  std::uint32_t roots = 0;
 };
 struct LeaseUsePoolState final : util::RefCounted<LeaseUsePoolState> {
   LeaseUsePoolState(mem::AllocatorRef selected, std::size_t bytes,
@@ -284,6 +529,7 @@ void episode_terminal(void *opaque, const Status &terminal) noexcept {
   auto *episode = static_cast<LeaseUseEpisode *>(opaque);
   for (std::uint32_t index = 0; index < episode->count; ++index) {
     auto &entry = entries(episode)[index];
+    if (entry.immutable_group) continue; // A readonly receiver cannot poison its immutable sources.
     if (entry.append_epoch != 0) {
       std::lock_guard guard(entry.block->domain->lock);
       HYLE_FATAL_ASSERT(entry.block->append_epoch == entry.append_epoch);
@@ -300,6 +546,23 @@ void release_episode(void *opaque) noexcept {
   auto *pool = episode->pool;
   for (std::uint32_t index = 0; index < episode->count; ++index) {
     auto &entry = entries(episode)[index];
+    if (entry.immutable_group) {
+      auto *group = entry.group; auto *domain = group->domain; const auto count = group->count;
+      { std::lock_guard guard(domain->lock); domain->incref(); }
+      // One original immutable permission tree, retained until this actual
+      // Completion retires. Its leaves keep every exact block alive; there is
+      // no writer/append owner whose readiness needs per-block native counts.
+      group->decref();
+      bool last_domain;
+      {
+        std::lock_guard guard(domain->lock);
+        last_domain = domain->is_unique();
+        if (!last_domain) domain->decref();
+        domain->uses.fetch_sub(count, std::memory_order_release); domain->uses.notify_all();
+      }
+      if (last_domain) domain->decref();
+      std::destroy_at(&entry); continue;
+    }
     auto *block = entry.block;
     auto *domain = block->domain;
     {
@@ -351,12 +614,17 @@ Status add_use(LeaseUseEpisode *episode, LeaseBlock *block, bool write) noexcept
   if constexpr (!Unique) {
     for (std::uint32_t index = 0; index < episode->count; ++index) {
       const auto &entry = entries(episode)[index];
+      if (entry.immutable_group) {
+        if (group_has_root(entry.group, block))
+          return write ? Status::InvalidArgument("one use cannot mix lease permissions") : Status::Ok();
+        continue;
+      }
       if (entry.block == block)
         return entry.append_epoch == 0 && entry.write == write ? Status::Ok()
                                    : Status::InvalidArgument("one use cannot mix lease permissions");
     }
   }
-  if (episode->count == episode->pool->capacity)
+  if (episode->roots == episode->pool->capacity)
     return Status::ResourceExhausted("resource use metadata capacity exhausted");
   auto *domain = block->domain;
   {
@@ -390,6 +658,7 @@ Status add_use(LeaseUseEpisode *episode, LeaseBlock *block, bool write) noexcept
   }
   std::construct_at(entries(episode) + episode->count, block, write, std::uint64_t{0});
   ++episode->count;
+  ++episode->roots;
   return Status::Ok();
 }
 
@@ -456,7 +725,7 @@ Status LeaseAccess::append_unique(LeaseUseBatch &uses, const AppendLease &lease)
   auto *block = lease.block_;
   if (!episode || !block)
     return Status::FailedPrecondition("resource use or append lease is empty");
-  if (episode->count == episode->pool->capacity)
+  if (episode->roots == episode->pool->capacity)
     return Status::ResourceExhausted("resource use metadata capacity exhausted");
   // Like read_unique/write_unique this entry is already root-deduplicated by
   // the Graph. native_uses below also rejects any second admission of this root.
@@ -479,6 +748,7 @@ Status LeaseAccess::append_unique(LeaseUseBatch &uses, const AppendLease &lease)
   }
   std::construct_at(entries(episode) + episode->count, block, true, epoch);
   ++episode->count;
+  ++episode->roots;
   return Status::Ok();
 }
 
@@ -606,7 +876,7 @@ Status LeaseAccess::ordered_read_unique(LeaseUseBatch &uses,
   if (!episode) return Status::FailedPrecondition("pending append read use is empty");
   HYLE_RETURN_IF_ERROR(validate_pending_append_identity(ticket.block_, ticket.domain_,
       ticket.generation_, ticket.epoch_, ticket.committed_, ticket.reserved_));
-  if (episode->count == episode->pool->capacity)
+  if (episode->roots == episode->pool->capacity)
     return Status::ResourceExhausted("resource use metadata capacity exhausted");
   auto *block = ticket.block_;
   auto *domain = ticket.domain_;
@@ -626,6 +896,7 @@ Status LeaseAccess::ordered_read_unique(LeaseUseBatch &uses,
   // Only the producer's real append entry may poison append_failure.
   std::construct_at(entries(episode) + episode->count, block, false, std::uint64_t{0});
   ++episode->count;
+  ++episode->roots;
   return Status::Ok();
 }
 Result<ReadLease> LeaseAccess::publish_append_after_writes(AppendLease &lease,
@@ -869,6 +1140,23 @@ void detail::LeaseAccess::retire_host_snapshot_pool(LeasePool &pool, const ReadL
 
 Status detail::LeaseAccess::read_unique(LeaseUseBatch &uses, const ReadLease &lease) noexcept {
   return detail::add_use<true>(uses.state_, lease.block_, false);
+}
+Status detail::LeaseAccess::read_unique(LeaseUseBatch &uses, const ReadLeaseGroup &group) noexcept {
+  auto *episode = uses.state_; auto *data = group.data_;
+  if (!episode || !data) return Status::FailedPrecondition("resource use or immutable read group is empty");
+  if (data->count > episode->pool->capacity - episode->roots)
+    return Status::ResourceExhausted("resource use metadata capacity exhausted");
+  auto *domain = data->domain;
+  {
+    std::lock_guard guard(domain->lock);
+    if (domain->closed) return Status::FailedPrecondition("lease domain is closed");
+    if (domain->uses.load(std::memory_order_relaxed) > UINT64_MAX - data->count)
+      return Status::ResourceExhausted("resource native use count exhausted");
+    data->incref(); domain->uses.fetch_add(data->count, std::memory_order_relaxed);
+  }
+  std::construct_at(detail::entries(episode) + episode->count, data);
+  ++episode->count; episode->roots += data->count;
+  return Status::Ok();
 }
 Status detail::LeaseAccess::ordered_read_unique(LeaseUseBatch &uses, const WriteLease &lease) noexcept {
   return detail::add_use<true, true, true>(uses.state_, lease.block_, false);

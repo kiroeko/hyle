@@ -10,7 +10,7 @@ struct ProviderRegionPrepared;
 class SubmissionSource;
 HYLE_GRAPH_API Status release_sources(Invocation &) noexcept;
 }
-namespace hyle::compute::detail { class AppendLease; }
+namespace hyle::compute::detail { class AppendLease; class ReadLeaseGroup; }
 namespace hyle::graph::detail {
 struct PlanState;
 struct InvocationState;
@@ -301,6 +301,9 @@ struct RegionAccess final {
   HYLE_GRAPH_API static Status bind_projected(Invocation&,ValueId,
       compute::ConstTensorView,std::span<const compute::ReadLease>,
       std::span<const ProjectedReader>) noexcept;
+  HYLE_GRAPH_API static Status bind_projected(Invocation&,ValueId,
+      compute::ConstTensorView,std::span<const compute::ReadLease>,
+      const compute::detail::ReadLeaseGroup&,std::span<const ProjectedReader>) noexcept;
   // No ready permission is manufactured. The trusted adapter owns the typed
   // pending frame and supplies all exact guards in OrderedGraphSubmission.
   HYLE_GRAPH_API static Status bind_pending_projected(Invocation&,ValueId,
@@ -323,6 +326,8 @@ struct RegionAccess final {
       const InvocationState *, ResourceProjection) noexcept;
   HYLE_GRAPH_API static Result<bool> has_read_projection(const InvocationState*,
       ValueId,std::span<const compute::ReadLease>) noexcept;
+  HYLE_GRAPH_API static Result<bool> has_read_projection(const InvocationState*,
+      ValueId,std::span<const compute::ReadLease>,const compute::detail::ReadLeaseGroup&) noexcept;
   // Cold fact query of the original external input, under the caller's normal
   // Invocation synchronization. Checks the current description and exact
   // storage range, independently of lease authority. False after unbind/reset
@@ -342,6 +347,13 @@ struct RegionAccess final {
       std::span<const ProjectedReader>,std::span<const compute::ReadLease> controls,
       ResourceOptions,std::span<const mem::ConstBufferView> pending_reads = {},
       bool requires_source = false) noexcept;
+  HYLE_GRAPH_API static Status bind_written_projection(Invocation&,const Graph&,
+      ValueId,compute::ConstTensorView,std::span<const compute::ReadLease>,
+      const compute::detail::ReadLeaseGroup&,
+      std::span<const compute::WriteLease*const>,
+      std::span<const compute::detail::AppendLease*const>,ProjectedWriter,
+      std::span<const ProjectedReader>,std::span<const compute::ReadLease>,
+      ResourceOptions,std::span<const mem::ConstBufferView> = {},bool requires_source = false) noexcept;
   // Actual retired outcome only, including failure/closed recovery. Revokes
   // the original preparation before an adapter takes back its page owners.
   HYLE_GRAPH_API static Status release_written_projection(Invocation&,ValueId) noexcept;
@@ -354,6 +366,13 @@ struct RegionAccess final {
       std::span<const compute::detail::AppendLease*const>,ProjectedWriter,
       std::span<const compute::ReadLease> controls,ResourceOptions,
       std::span<const mem::ConstBufferView> pending_reads = {},bool requires_source = false) noexcept;
+  HYLE_GRAPH_API static Status bind_write_effect(Invocation&,const Graph&,
+      compute::ConstTensorView,std::span<const compute::ReadLease>,
+      const compute::detail::ReadLeaseGroup&,
+      std::span<const compute::WriteLease*const>,
+      std::span<const compute::detail::AppendLease*const>,ProjectedWriter,
+      std::span<const compute::ReadLease>,ResourceOptions,
+      std::span<const mem::ConstBufferView> = {},bool requires_source = false) noexcept;
   // Pure exact registration query, including an explicitly empty read set.
   // The ranges carry no authority by
   // themselves; the original ordered submission must admit their source.

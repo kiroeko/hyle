@@ -197,6 +197,11 @@ struct LeaseAccess final {
   // producer state and never exposes an untracked mutable alias. These are
   // permission/lifetime operations, not execution or dependency validation.
   static HYLE_COMPUTE_API Status read_unique(LeaseUseBatch &uses, const ReadLease &lease) noexcept;
+  // Exact, permanently immutable original blocks. Retains the same bounded
+  // permissions through this episode's real Completion; no page is promoted
+  // to a whole-bank read. Trusted caller deduplicates the group's roots against
+  // its other permissions, as for the single-root overload.
+  static HYLE_COMPUTE_API Status read_unique(LeaseUseBatch &, const ReadLeaseGroup &) noexcept;
   static HYLE_COMPUTE_API Status ordered_read_unique(LeaseUseBatch &uses, const WriteLease &lease) noexcept;
   // Export only after the F2 owner successfully submits this original writer;
   // that owner proves the original complete producer status and dependency.

@@ -23,6 +23,7 @@
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/detail/command_capture.h"
 #include "hyle/compute/detail/completion_access.h"
+#include "hyle/compute/detail/read_lease_group.h"
 #include "hyle/compute/providers/ggml_cpu.h"
 #include "hyle/compute/providers/native.h"
 #include "hyle/compute/route_policy.h"
@@ -7966,6 +7967,7 @@ struct ResourceReadyIndexCase final {
   Completion accepted;
   hyle::graph::SubmissionSource submission;
   bool bound = false, append_mode = false;
+  hyle::compute::detail::ReadLeaseGroup immutable;
 
   ~ResourceReadyIndexCase() {
     allocator->reject = false;
@@ -7980,7 +7982,7 @@ struct ResourceReadyIndexCase final {
     source = {}; second = {};
     if (bound) EXPECT_TRUE(hyle::graph::detail::RegionAccess::release_write_effect(run, logical.writer).ok());
   }
-  Status initialize(std::size_t ready_count, bool split = false, bool append = false, bool wait_for_retirement = true) {
+  Status initialize(std::size_t ready_count, bool split = false, bool append = false, bool wait_for_retirement = true,int grouped=0) {
     namespace g = hyle::graph;
     namespace gd = g::detail;
     namespace c = hyle::compute;
@@ -8009,7 +8011,8 @@ struct ResourceReadyIndexCase final {
       HYLE_ASSIGN_OR_RETURN(auto original, pool.allocate(32, 16));
       HYLE_ASSIGN_OR_RETURN(auto bytes, original.view());
       HYLE_RETURN_IF_ERROR(bytes.fill(std::byte{0x3c}));
-      HYLE_ASSIGN_OR_RETURN(page, original.publish());
+      if(grouped){HYLE_ASSIGN_OR_RETURN(auto fixed,LA::publish_appendable(original,32));page=std::move(fixed.prefix);}
+      else{HYLE_ASSIGN_OR_RETURN(page, original.publish());}
     }
     std::vector<c::ReadLease> registered;
     if (split) {
@@ -8018,6 +8021,11 @@ struct ResourceReadyIndexCase final {
       registered.push_back(std::move(left)); registered.push_back(std::move(right));
     } else registered.push_back(pages[0]);
     registered.push_back(pages[1]);
+    if(grouped){
+      HYLE_ASSIGN_OR_RETURN(immutable,immutable.with(pages[0]));
+      HYLE_ASSIGN_OR_RETURN(immutable,immutable.with(pages[1]));
+      registered.clear();
+    }
     append_mode = append;
     if (append) {
       HYLE_ASSIGN_OR_RETURN(auto original, pool.allocate(64, 16));
@@ -8031,7 +8039,7 @@ struct ResourceReadyIndexCase final {
       registered.push_back(append_prefix);
       const std::array<const c::detail::AppendLease *, 1> appenders{&appender};
       HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_write_effect(
-          run, logical.graph, capacity, registered, {}, appenders, selected, {}, {}));
+          run, logical.graph, capacity, registered,immutable, {}, appenders, selected, {}, {}));
     } else {
       HYLE_ASSIGN_OR_RETURN(writer, pool.allocate(32, 16));
       HYLE_ASSIGN_OR_RETURN(auto bytes, writer.view());
@@ -8039,7 +8047,7 @@ struct ResourceReadyIndexCase final {
       full_range = bytes;
       const std::array<const c::WriteLease *, 1> writers{&writer};
       HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_write_effect(
-          run, logical.graph, capacity, registered, writers, {}, selected, {}, {}));
+          run, logical.graph, capacity, registered,immutable, writers, {}, selected, {}, {}));
     }
     bound = true;
     input = make_tensor(row(8)); output = make_tensor(row(8));
@@ -8048,8 +8056,10 @@ struct ResourceReadyIndexCase final {
     HYLE_RETURN_IF_ERROR(run.bind(logical.input, input.view.as_const()));
     HYLE_RETURN_IF_ERROR(run.bind(logical.output, output.view));
     const gd::ResourceSourceCounts counts{.ready = ready_count, .full = append ? 0u : 1u, .append = append ? 1u : 0u};
-    HYLE_ASSIGN_OR_RETURN(source, gd::ResourceSource::prepare(run, counts, storage));
-    HYLE_ASSIGN_OR_RETURN(second, gd::ResourceSource::prepare(run, counts, storage));
+    auto captured=immutable;
+    if(grouped==2){HYLE_ASSIGN_OR_RETURN(captured,captured.with(pages[2]));}
+    HYLE_ASSIGN_OR_RETURN(source, gd::ResourceSource::prepare(run, counts,captured, storage));
+    HYLE_ASSIGN_OR_RETURN(second, gd::ResourceSource::prepare(run, counts,immutable, storage));
     HYLE_ASSIGN_OR_RETURN(queue, context.create_queue());
     const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
     HYLE_RETURN_IF_ERROR(run.prepare_replay(queues, {.mode = g::ReplayMode::kCommands}));
@@ -8074,6 +8084,78 @@ struct ResourceReadyIndexCase final {
         ? Status::Ok() : Status::Internal("capture modified original writer bytes");
   }
 };
+
+TEST(GraphRouteBoundary, ImmutableProjectionUsesOriginalCompletionAndExactGroupIdentity) {
+  namespace g=hyle::graph;namespace c=hyle::compute;namespace gd=g::detail;
+  using Access=gd::RegionAccess;
+  auto builder=GraphBuilder::create().value();
+  auto input=builder.input(row(16)).value();
+  auto node=builder.add_node(Operation(Unary{UnaryKind::kNeg}),std::array{input}).value();
+  auto output_id=builder.result(node).value();ASSERT_TRUE(builder.publish(output_id).ok());
+  auto graph=std::move(builder).finish().value();
+  RegionProbe probe{.mode=ProposalMode::kSingleton};auto context=make_context(probe);
+  auto compiled=g::compile(graph,context,{.operation_fallback=OperationFallbackPolicy::kReject}).value();
+  auto run=compiled.executable.create_invocation({.resources=g::ResourceOptions{}}).value();
+  ASSERT_TRUE(Access::reserve_reads(run,4,{}).ok());
+  auto pool=c::LeasePool::create(hyle::mem::system_resource(),128,{.max_blocks=2}).value();
+  auto first_writer=pool.allocate(32,16).value(),second_writer=pool.allocate(32,16).value();
+  const std::array<float,8> values{1,2,3,4,5,6,7,8};
+  ASSERT_TRUE(first_writer.view()->write(std::as_bytes(std::span(values))).ok());
+  ASSERT_TRUE(second_writer.view()->write(std::as_bytes(std::span(values))).ok());
+  auto first=c::detail::LeaseAccess::publish_appendable(first_writer,32).value().prefix;
+  auto second=c::detail::LeaseAccess::publish_appendable(second_writer,32).value().prefix;
+  auto group=c::detail::ReadLeaseGroup{}.with(first).value().with(second).value();
+  auto tensor=ConstTensorView::create(row(16),c::detail::LeaseAccess::backing_span(pool).value()).value();
+  const std::array readers{selected_projected_reader(run,node)};
+  const auto bound=Access::bind_projected(run,input,tensor,{},group,readers);ASSERT_TRUE(bound.ok())<<bound.message();
+  EXPECT_TRUE(Access::has_read_projection(gd::InvocationAccess::state(run),input,{},group).value());
+  auto subset=c::detail::ReadLeaseGroup::from_lease(first).value();
+  EXPECT_TRUE(Access::has_read_projection(gd::InvocationAccess::state(run),input,{},subset).error().IsInvalidArgument());
+  auto output=make_tensor(row(16));ASSERT_TRUE(run.bind(output_id,output.view).ok());
+  auto queue=context.create_queue().value();const std::array queues{g::QueueBinding{g::ExecutionLaneId{0},&queue}};
+  ASSERT_TRUE(run.prepare_replay(queues,{.mode=g::ReplayMode::kCommands}).ok());
+  auto done=run.submit(queues);ASSERT_TRUE(done)<<done.error().message();
+  ASSERT_TRUE(done->wait().ok());*done={};
+  ASSERT_TRUE(Access::release_read_projection(run,input).ok());
+  EXPECT_EQ(pool.stats().active_uses,0u);
+}
+
+TEST(GraphRouteBoundary, ImmutableResourceGroupKeepsExactPagesAndOwnWritePublication) {
+  namespace gd=hyle::graph::detail;namespace cd=hyle::compute::detail;
+  ResourceReadyIndexCase f;
+  ASSERT_TRUE(f.initialize(0,false,false,true,1).ok());
+  ASSERT_TRUE(f.capture({}).ok());
+  EXPECT_TRUE(f.source.covers_range(f.pages[0].view().value()).ok());
+  EXPECT_TRUE(f.source.covers_range(f.pages[1].view().value()).ok());
+  EXPECT_TRUE(f.source.covers_range(f.pages[2].view().value()).IsInvalidArgument());
+  EXPECT_EQ(f.source.immutable_pages()->size(),2u);
+  std::array<hyle::compute::ReadLease,3> collected;
+  EXPECT_TRUE(f.source.collect_ready(collected).IsUnavailable());
+  for(const auto&read:collected)EXPECT_FALSE(read.valid());
+  auto published=cd::LeaseAccess::publish_appendable_after_writes(f.writer,f.source.full_tickets()[0],32).value();
+  ASSERT_TRUE(f.source.publish_own_writes(std::array{published.prefix},{}).ok());
+  auto group=f.source.immutable_pages();ASSERT_TRUE(group)<<group.error().message();
+  EXPECT_EQ(group->size(),3u);EXPECT_FALSE(group->contains(f.pages[2].view().value()));
+  ASSERT_TRUE(f.source.collect_ready(collected).ok());
+  EXPECT_EQ(collected[0].generation(),f.pages[0].generation());
+  EXPECT_EQ(collected[1].generation(),f.pages[1].generation());
+  EXPECT_EQ(collected[2].generation(),published.prefix.generation());
+  EXPECT_TRUE(f.source.publish_ready(collected).ok());
+}
+
+TEST(GraphRouteBoundary, ImmutableResourceCaptureRejectsUnregisteredAndRepeatedPagesBeforeSealing) {
+  ResourceReadyIndexCase f;
+  ASSERT_TRUE(f.initialize(0,false,false,true,2).ok());
+  auto rejected=f.capture({});EXPECT_TRUE(rejected.IsInvalidArgument())<<rejected.message();
+  EXPECT_FALSE(f.source.valid());ASSERT_TRUE(f.untouched_writer().ok());
+  ASSERT_TRUE(f.capture({},true).ok());
+  EXPECT_EQ(f.second.immutable_pages()->size(),2u);
+  ResourceReadyIndexCase repeated;
+  ASSERT_TRUE(repeated.initialize(1,false,false,true,1).ok());
+  rejected=repeated.capture(std::array{repeated.pages[0]});
+  EXPECT_TRUE(rejected.IsInvalidArgument())<<rejected.message();
+  ASSERT_TRUE(repeated.untouched_writer().ok());
+}
 
 TEST(GraphRouteBoundary, PrefillSizedRootLookupKeepsOriginalWriterChecksAndFallbacks) {
   namespace g = hyle::graph;
@@ -8753,6 +8835,28 @@ struct InheritedResourceCaptureCase final {
         .capacity = consumer.producer.capacity, .full = full, .inherited = inherited});
   }
 };
+
+TEST(GraphRouteBoundary, ImmutableResourcePagesSupportSelectiveEffectAndFlattenedInheritance) {
+  namespace gd=hyle::graph::detail;
+  ResourceReadyIndexCase producer;
+  ASSERT_TRUE(producer.initialize(0,false,false,true,1).ok());
+  ASSERT_TRUE(producer.capture({}).ok());
+  const auto a=producer.pages[0].view().value(),b=producer.pages[1].view().value();
+  const std::array reads{a,b};
+  PendingEffectSourceConsumer consumer(producer);
+  ASSERT_TRUE(consumer.initialize(reads).ok());
+  InheritedResourceCaptureCase exported(consumer);
+  ASSERT_TRUE(exported.prepare(2).ok());
+  ASSERT_TRUE(consumer.bind(reads).ok());
+  ASSERT_TRUE(exported.submit().ok());
+  consumer.expect_poison();
+  const std::array inherited{gd::ResourceInheritance{&producer.source,a},gd::ResourceInheritance{&producer.source,b}};
+  const auto captured=exported.capture(inherited);ASSERT_TRUE(captured.ok())<<captured.message();
+  EXPECT_TRUE(exported.source.covers_range(a).ok());EXPECT_TRUE(exported.source.covers_range(b).ok());
+  EXPECT_TRUE(exported.source.covers_range(producer.pages[2].view().value()).IsInvalidArgument());
+  auto group=exported.source.immutable_pages();ASSERT_TRUE(group)<<group.error().message();
+  EXPECT_EQ(group->size(),2u);EXPECT_TRUE(consumer.writer.view().error().IsFailedPrecondition());
+}
 
 TEST(GraphRouteBoundary, PendingEffectSourceKeepsHolesBetweenOriginalPermissions) {
   ResourceReadyIndexCase producer;

@@ -11,6 +11,7 @@
 #include "hyle/compute/detail/append_lease.h"
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/lease_access.h"
+#include "hyle/compute/detail/read_lease_group.h"
 #include "hyle/compute/leased_operation.h"
 #include "hyle/compute/lease_slots.h"
 #include "hyle/compute/resource_leases.h"
@@ -1145,6 +1146,177 @@ TEST(ResourceLeases, CrossThreadReadersHoldGenerationWhileIndependentBlockRetire
   EXPECT_EQ(exclusive->generation(), generation);
   exclusive->reset();
   EXPECT_EQ(pool.stats().allocated_bytes, 0u);
+}
+
+TEST(ImmutableReadGroups, RejectsMutableAndAppendOwnedBlocksWithoutConsumingPermissions) {
+  auto pool = LeasePool::create(mem::system_resource(), 256, {.max_blocks = 2}).value();
+  auto writer = pool.allocate(64, 1).value();
+  auto mutable_read = writer.publish().value();
+  EXPECT_FALSE(detail::ReadLeaseGroup::from_lease(mutable_read));
+  EXPECT_TRUE(mutable_read.try_write());
+  auto tail_writer = pool.allocate(64, 1).value();
+  auto tail = detail::LeaseAccess::publish_appendable(tail_writer, 32).value();
+  EXPECT_FALSE(detail::ReadLeaseGroup::from_lease(tail.prefix));
+  ASSERT_TRUE(tail.appender.reserve(16).ok());
+  EXPECT_FALSE(detail::ReadLeaseGroup::from_lease(tail.prefix));
+  ASSERT_TRUE(tail.appender.rollback().ok());
+  tail.appender.reset();
+  auto group = detail::ReadLeaseGroup::from_lease(tail.prefix).value();
+  EXPECT_TRUE(group.contains(tail.prefix.view().value()));
+  auto wider = detail::LeaseAccess::backing_span(pool)->subview(tail.prefix.view()->offset(), 33).value();
+  EXPECT_FALSE(group.contains(wider));
+  EXPECT_FALSE(tail.prefix.try_write());
+}
+
+TEST(ImmutableReadGroups, OrderedJoinsPreserveHolesAndOriginalDomain) {
+  auto pool = LeasePool::create(mem::system_resource(), 256, {.max_blocks = 3}).value();
+  auto first_writer = pool.allocate(64, 1).value(), hole_writer = pool.allocate(64, 1).value(), last_writer = pool.allocate(64, 1).value();
+  auto first = detail::LeaseAccess::publish_appendable(first_writer, 64).value().prefix;
+  auto last = detail::LeaseAccess::publish_appendable(last_writer, 64).value().prefix;
+  auto a = detail::ReadLeaseGroup::from_lease(first).value(), b = detail::ReadLeaseGroup::from_lease(last).value();
+  auto both = detail::ReadLeaseGroup::join(a, b).value();
+  EXPECT_EQ(both.size(), 2u);
+  EXPECT_TRUE(both.contains(first.view().value())); EXPECT_TRUE(both.contains(last.view().value()));
+  EXPECT_FALSE(both.contains(mem::ConstBufferView(hole_writer.view().value())));
+  EXPECT_TRUE(both.within(detail::LeaseAccess::backing_span(pool).value()));
+  EXPECT_FALSE(both.within(first.view().value()));
+  EXPECT_FALSE(both.overlaps(mem::ConstBufferView(hole_writer.view().value())));
+  EXPECT_TRUE(both.overlaps(last.view()->subview(63,1).value()));
+  EXPECT_TRUE(a.subset_of(both)); EXPECT_FALSE(both.subset_of(a));
+  EXPECT_FALSE(detail::ReadLeaseGroup::join(b, a)); EXPECT_FALSE(detail::ReadLeaseGroup::join(a, a));
+  auto other = LeasePool::create(mem::system_resource(), 64).value();
+  auto other_writer = other.allocate(64, 1).value();
+  auto foreign = detail::LeaseAccess::publish_appendable(other_writer, 64).value().prefix;
+  auto foreign_group = detail::ReadLeaseGroup::from_lease(foreign).value();
+  EXPECT_FALSE(detail::ReadLeaseGroup::join(both, foreign_group));
+  EXPECT_FALSE(both.contains(foreign.view().value()));
+  EXPECT_FALSE(foreign_group.subset_of(both));
+}
+
+TEST(ImmutableReadGroups, RepeatedAppendAndPrependKeepExactPersistentSnapshots) {
+  constexpr unsigned count = 256;
+  auto pool = LeasePool::create(mem::system_resource(), count * 64, {.max_blocks = count}).value();
+  std::array<ReadLease, count> pages;
+  for (auto &page : pages) {
+    auto writer = pool.allocate(64, 1).value();
+    page = detail::LeaseAccess::publish_appendable(writer, 64).value().prefix;
+  }
+  detail::ReadLeaseGroup forward, reverse, older;
+  for (unsigned i = 0; i < count; ++i) {
+    auto next = detail::ReadLeaseGroup::from_lease(pages[i]).value();
+    forward = detail::ReadLeaseGroup::join(forward, next).value();
+    auto previous = detail::ReadLeaseGroup::from_lease(pages[count - i - 1]).value();
+    reverse = detail::ReadLeaseGroup::join(previous, reverse).value();
+    if (i == 63) older = forward;
+  }
+  EXPECT_EQ(forward.size(), count); EXPECT_EQ(reverse.size(), count); EXPECT_EQ(older.size(), 64u);
+  for (unsigned i = 0; i < count; ++i) {
+    EXPECT_TRUE(forward.contains(pages[i].view().value())); EXPECT_TRUE(reverse.contains(pages[i].view().value()));
+    EXPECT_EQ(older.contains(pages[i].view().value()), i < 64);
+    pages[i].reset();
+  }
+  forward.reset(); reverse.reset();
+  EXPECT_EQ(pool.stats().live_blocks, 64u);
+  older.reset(); EXPECT_EQ(pool.stats().live_blocks, 0u);
+}
+
+TEST(ImmutableReadGroups, OriginalCompletionOwnsPagesUntilActualRetirement) {
+  auto pool = LeasePool::create(mem::system_resource(), 128, {.max_blocks = 2}).value();
+  auto first_writer = pool.allocate(64, 1).value(), second_writer = pool.allocate(64, 1).value();
+  auto first = detail::LeaseAccess::publish_appendable(first_writer, 64).value().prefix;
+  auto second = detail::LeaseAccess::publish_appendable(second_writer, 64).value().prefix;
+  auto a = detail::ReadLeaseGroup::from_lease(first).value(), b = detail::ReadLeaseGroup::from_lease(second).value();
+  auto group = detail::ReadLeaseGroup::join(a, b).value();
+  auto uses = LeaseUsePool::create({.max_batches = 1, .max_resources_per_batch = 2}).value();
+  PendingUse pending;
+  {
+    auto batch = uses.begin().value();
+    ASSERT_TRUE(detail::LeaseAccess::read_unique(batch, group).ok());
+    EXPECT_EQ(pool.stats().active_uses, 2u);
+    auto completion = detail::CompletionAccess::make(&kPending, &pending);
+    ASSERT_TRUE(batch.attach(completion).ok());
+    group.reset(); a.reset(); b.reset(); first.reset(); second.reset();
+  }
+  EXPECT_TRUE(pending.retained.valid()); EXPECT_EQ(pool.stats().live_blocks, 2u);
+  EXPECT_TRUE(pool.close().IsUnavailable());
+  pending.done = true;
+  pending.retained.terminal(pending.retained.state, hyle::Status::Ok());
+  pending.retained.release(pending.retained.state); pending.retained = {};
+  EXPECT_EQ(pool.stats().active_uses, 0u); EXPECT_EQ(pool.stats().live_blocks, 0u);
+  EXPECT_EQ(uses.active_batches(), 0u); EXPECT_TRUE(pool.drain().ok());
+}
+
+TEST(ImmutableReadGroups, SparseEditsKeepOldSnapshotsAndReleaseOnlyRemovedPages) {
+  constexpr unsigned count = 127;
+  auto pool = LeasePool::create(mem::system_resource(), count * 64, {.max_blocks = count}).value();
+  std::array<ReadLease, count> pages;
+  for (auto &page : pages) {
+    auto writer = pool.allocate(64, 1).value();
+    page = detail::LeaseAccess::publish_appendable(writer, 64).value().prefix;
+  }
+  detail::ReadLeaseGroup group;
+  // Non-monotonic physical insertion and erasure exercise both rotations.
+  for (unsigned i = 0; i < count; ++i) group = group.with(pages[(i * 53) % count]).value();
+  auto original = group;
+  for (unsigned i = 0; i < count; ++i) {
+    EXPECT_TRUE(group.contains(pages[i].view().value()));
+    EXPECT_EQ(group.at(pages[i].view()->offset())->generation(), pages[i].generation());
+  }
+  for (unsigned i = 0; i < count; i += 2) group = group.without(pages[i].view()->offset()).value();
+  EXPECT_EQ(group.size(), count / 2); EXPECT_EQ(original.size(), count);
+  EXPECT_TRUE(group.subset_of(original)); EXPECT_FALSE(original.subset_of(group));
+  for (unsigned i = 0; i < count; ++i) {
+    EXPECT_EQ(group.contains(pages[i].view().value()), bool(i % 2));
+    EXPECT_TRUE(original.contains(pages[i].view().value())); pages[i].reset();
+  }
+  original.reset(); EXPECT_EQ(pool.stats().live_blocks, count / 2);
+  group = group.without((std::numeric_limits<std::size_t>::max)()).value();
+  EXPECT_EQ(group.size(), count / 2);
+  group.reset(); EXPECT_EQ(pool.stats().live_blocks, 0u);
+}
+
+TEST(ImmutableReadGroups, CapacityCountsOriginalRootsAndRollbackPreservesAdmission) {
+  auto pool = LeasePool::create(mem::system_resource(), 128, {.max_blocks = 2}).value();
+  auto first_writer = pool.allocate(64, 1).value(), second_writer = pool.allocate(64, 1).value();
+  auto first = detail::LeaseAccess::publish_appendable(first_writer, 64).value().prefix;
+  auto second = detail::LeaseAccess::publish_appendable(second_writer, 64).value().prefix;
+  auto a = detail::ReadLeaseGroup::from_lease(first).value(), b = detail::ReadLeaseGroup::from_lease(second).value();
+  auto group = detail::ReadLeaseGroup::join(a, b).value();
+  auto uses = LeaseUsePool::create({.max_batches = 1, .max_resources_per_batch = 1}).value();
+  {
+    auto batch = uses.begin().value();
+    EXPECT_TRUE(detail::LeaseAccess::read_unique(batch, group).IsResourceExhausted());
+    EXPECT_EQ(pool.stats().active_uses, 0u);
+    ASSERT_TRUE(detail::LeaseAccess::read_unique(batch, a).ok());
+    ASSERT_TRUE(batch.read(first).ok()); // Same original block is already retained by the group.
+    EXPECT_TRUE(batch.read(second).IsResourceExhausted());
+    EXPECT_EQ(pool.stats().active_uses, 1u);
+  }
+  EXPECT_EQ(pool.stats().active_uses, 0u);
+  ASSERT_TRUE(pool.close().ok());
+  auto batch = uses.begin().value();
+  EXPECT_TRUE(detail::LeaseAccess::read_unique(batch, a).IsFailedPrecondition());
+}
+
+TEST(ImmutableReadGroups, FailedReceiverDoesNotPoisonImmutableSources) {
+  auto pool = LeasePool::create(mem::system_resource(), 128, {.max_blocks = 2}).value();
+  auto source_writer = pool.allocate(64, 1).value(), destination = pool.allocate(64, 1).value();
+  ASSERT_TRUE(source_writer.view()->fill(std::byte{37}).ok());
+  auto source = detail::LeaseAccess::publish_appendable(source_writer, 64).value().prefix;
+  auto group = detail::ReadLeaseGroup::from_lease(source).value();
+  auto uses = LeaseUsePool::create({.max_batches = 1, .max_resources_per_batch = 2}).value();
+  auto batch = uses.begin().value();
+  ASSERT_TRUE(detail::LeaseAccess::read_unique(batch, group).ok());
+  ASSERT_TRUE(batch.write(destination).ok());
+  auto completion = Completion::completed(hyle::Status::Internal("receiver failed"));
+  ASSERT_TRUE(batch.attach(completion).ok());
+  EXPECT_EQ(pool.stats().active_uses, 0u);
+  EXPECT_FALSE(destination.publish());
+  std::array<std::byte, 64> actual;
+  ASSERT_TRUE(source.view()->read(actual).ok());
+  for (const auto byte : actual) EXPECT_EQ(byte, std::byte{37});
+  auto retry = uses.begin().value();
+  EXPECT_TRUE(detail::LeaseAccess::read_unique(retry, group).ok());
 }
 
 } // namespace

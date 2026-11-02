@@ -49,6 +49,12 @@ public:
   // Fixed, budgeted metadata only. No movable transaction or writer is borrowed.
   HYLE_GRAPH_API static Result<ResourceSource> prepare(Invocation &,
       ResourceSourceCounts, const compute::StorageOwner &, ResourceOptions = {}) noexcept;
+  // Counts describe only individual ready/pending permissions. The immutable
+  // group retains original blocks and is authenticated against this writer's
+  // registered group at capture, without widening a page to arena capacity.
+  HYLE_GRAPH_API static Result<ResourceSource> prepare(Invocation &,
+      ResourceSourceCounts,const compute::detail::ReadLeaseGroup&,
+      const compute::StorageOwner &,ResourceOptions = {}) noexcept;
   bool prepared() const noexcept { return state_ != nullptr; }
   HYLE_GRAPH_API bool valid() const noexcept;
   // After the original submission, during its metadata-only visit. All
@@ -56,6 +62,11 @@ public:
   HYLE_GRAPH_API Status capture(const SubmissionSource &, ResourceContribution) noexcept;
   HYLE_GRAPH_API compute::ConstTensorView capacity() const noexcept;
   HYLE_GRAPH_API std::span<const compute::ReadLease> ready_pages() const noexcept;
+  HYLE_GRAPH_API Result<compute::detail::ReadLeaseGroup> immutable_pages() const noexcept;
+  // Individual original bounds only; immutable group leaves are excluded.
+  // Queries grant no ready authority and do not observe the producer.
+  HYLE_GRAPH_API std::size_t individual_count() const noexcept;
+  HYLE_GRAPH_API Result<mem::ConstBufferView> individual_range(std::size_t) const noexcept;
   HYLE_GRAPH_API std::span<const compute::detail::PendingReadTicket> full_tickets() const noexcept;
   HYLE_GRAPH_API std::span<const compute::detail::PendingAppendReadTicket> append_tickets() const noexcept;
   // Typed publication must additionally preserve its own layout/frontier

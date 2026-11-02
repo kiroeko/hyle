@@ -26,6 +26,10 @@ struct BatchPageFootprint final {
   std::span<const std::int32_t> pages;
   std::span<const std::uint32_t> required_rows;
 };
+struct BatchPageChange final {
+  std::int32_t page=0;
+  std::uint32_t before_rows=0,after_rows=0;
+};
 struct BatchLayoutAccess final {
   // Capacity topology only: this grants neither schema membership nor cache
   // interpretation. Actual K/V storage and original page rights stay separate.
@@ -45,6 +49,10 @@ struct BatchLayoutAccess final {
   // Shares the original IDs and lazily caches their required row prefixes once
   // per layout, so all arenas/layers reuse the same active-sized facts.
   HYLE_COMPUTE_BATCH_API static Result<BatchPageFootprint> page_requirements(const BatchLayoutVersion&) noexcept;
+  // Mathematical difference shared by all banks. The result borrows after;
+  // it retains no predecessor, ready permission or submission dependency.
+  HYLE_COMPUTE_BATCH_API static Result<std::span<const BatchPageChange>> page_changes(
+      const BatchLayoutVersion&before,const BatchLayoutVersion&after) noexcept;
   static std::array<BatchMetadataSegment,5> row_segments(const RowCacheLayoutVersion&v) noexcept{return segments(v.owner_);}
   static Result<std::span<const std::int32_t>> row_page_footprint(const RowCacheLayoutVersion&v) noexcept{return page_footprint(v.owner_);}
 };

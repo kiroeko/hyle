@@ -1170,4 +1170,105 @@ TEST(PagedFrame, SparseLargePageSetKeepsLogicalOrderAndChangedGuardsAcrossStruct
   EXPECT_EQ(frame.epoch(),epoch+1);EXPECT_EQ(frame.layout(),accepted);
 }
 
+TEST(PagedFrame, ImmutableBankSnapshotsTrackFullLogicalPagesAcrossSparseCommit) {
+  auto schema=c::BatchSchema::create(capacity()).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  const auto immutable=[&](std::uint32_t page){
+    auto writer=arena.acquire(page).value();
+    EXPECT_TRUE(writer.lease().view()->fill(std::byte(page+17)).ok());
+    return writer.publish_appendable(2).value().prefix;
+  };
+  auto zero=immutable(0),one=immutable(1),two=immutable(2);
+  auto initial=layout(schema,std::array<std::int32_t,2>{0,1});
+  auto read=arena.read(initial,std::array{zero,one}).value();
+  auto frame=c::PagedArenaFrame::fork(c::PagedArenaFootprint::from_read(read).value()).value();
+  auto before=frame.view().value();
+  auto original=c::detail::PagedArenaAccess::immutable_pages(before).value();
+  EXPECT_EQ(original.size(),2u);
+  auto accepted=layout(schema,std::array<std::int32_t,2>{1,2},1);
+  auto delta=c::PagedArenaDelta::create(before,accepted,std::array{two}).value();
+  auto ticket=frame.prepare_commit(std::move(delta)).value();
+  auto proposed=ticket.view().value();
+  auto next=c::detail::PagedArenaAccess::immutable_pages(proposed).value();
+  EXPECT_EQ(next.size(),1u);
+  EXPECT_TRUE(next.contains(one.view().value())); EXPECT_FALSE(next.contains(zero.view().value()));
+  EXPECT_FALSE(next.contains(two.view().value())); // The logical final page exposes only one row.
+  auto fork=c::PagedArenaFrame::fork(proposed).value();
+  EXPECT_EQ(c::detail::PagedArenaAccess::immutable_pages(fork.view().value())->size(),1u);
+  ASSERT_TRUE(frame.commit(std::move(ticket)).ok());
+  EXPECT_FALSE(before.valid()); EXPECT_FALSE(proposed.valid());
+  EXPECT_TRUE(original.contains(zero.view().value())); EXPECT_TRUE(original.contains(one.view().value()));
+  EXPECT_EQ(c::detail::PagedArenaAccess::immutable_pages(frame.view().value())->size(),1u);
+  EXPECT_TRUE(c::detail::PagedArenaAccess::immutable_pages(before).error().IsFailedPrecondition());
+}
+
+TEST(PagedFrame, ResidentImmutableGroupAddsOnlyAReallyPublishedFullTail) {
+  auto schema=c::BatchSchema::create(capacity()).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto writer=arena.acquire(0).value();
+  ASSERT_TRUE(writer.lease().view()->subview(0,arena.page_bytes()/2)->fill(std::byte{41}).ok());
+  auto tail=writer.publish_appendable(1).value();
+  auto initial=layout(schema,std::array<std::int32_t,1>{0},1);
+  auto full=layout(schema,std::array<std::int32_t,1>{0},2);
+  auto read=arena.read(initial,std::array{tail.prefix}).value();
+  auto frame=c::PagedArenaFrame::fork(c::PagedArenaFootprint::from_read(read).value()).value();
+  auto before=frame.view().value();
+  EXPECT_EQ(c::detail::PagedArenaAccess::immutable_pages(before)->size(),0u);
+  auto beginning=c::detail::PagedArenaAccess::read_groups(before).value();
+  ASSERT_EQ(beginning.individual.size(),1u);EXPECT_EQ(beginning.individual[0].size(),arena.page_bytes()/2);
+  ASSERT_TRUE(tail.appender.reserve_rows(1).ok());
+  ASSERT_TRUE(tail.appender.view()->fill(std::byte{43}).ok());
+  auto ready=tail.appender.publish().value();
+  auto delta=c::PagedArenaDelta::create(before,full,std::array{ready}).value();
+  auto ticket=frame.prepare_commit(std::move(delta)).value();
+  auto grouped=c::detail::PagedArenaAccess::immutable_pages(ticket.view().value()).value();
+  EXPECT_EQ(grouped.size(),1u); EXPECT_TRUE(grouped.contains(ready.view().value()));
+  ASSERT_TRUE(frame.commit(std::move(ticket)).ok());
+  EXPECT_EQ(c::detail::PagedArenaAccess::immutable_pages(frame.view().value())->size(),1u);
+  EXPECT_TRUE(c::detail::PagedArenaAccess::read_groups(frame.view().value())->individual.empty());
+  auto shrink=c::PagedArenaDelta::create(frame.view().value(),initial,{}).value();
+  auto shrink_ticket=frame.prepare_commit(std::move(shrink)).value();
+  ASSERT_TRUE(frame.commit(std::move(shrink_ticket)).ok());
+  EXPECT_EQ(c::detail::PagedArenaAccess::immutable_pages(frame.view().value())->size(),0u);
+  auto shortened=c::detail::PagedArenaAccess::read_groups(frame.view().value()).value();
+  ASSERT_EQ(shortened.individual.size(),1u);EXPECT_EQ(shortened.individual[0].size(),arena.page_bytes()/2);
+  EXPECT_TRUE(grouped.contains(ready.view().value())); // Earlier native snapshots keep their exact real guards.
+}
+
+TEST(PagedFrame, ImmutableDeltaOomKeepsBankRootAndCommitAllocatesNothing) {
+  hyle_f5_fault_fixture::Allocator metadata;
+  auto schema=c::BatchSchema::create(capacity(),{.allocator=metadata.ref()}).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),
+      {.max_backing_bytes=4096,.allocator=metadata.ref()}).value();
+  auto zero_writer=arena.acquire(0).value(),one_writer=arena.acquire(1).value();
+  auto zero=zero_writer.publish_appendable(2).value().prefix,one=one_writer.publish_appendable(2).value().prefix;
+  auto initial=layout(schema,std::array<std::int32_t,1>{0});
+  auto accepted=layout(schema,std::array<std::int32_t,2>{0,1});
+  auto frozen=arena.read(initial,std::array{zero}).value();
+  auto frame=c::PagedArenaFrame::fork(c::PagedArenaFootprint::from_read(frozen).value()).value();
+  auto before=frame.view().value();
+  auto old_group=c::detail::PagedArenaAccess::immutable_pages(before).value();
+  (void)c::detail::BatchLayoutAccess::page_requirements(accepted).value();
+  const auto live=metadata.live;
+  c::PagedArenaDelta delta;
+  unsigned failures=0;
+  for(unsigned offset=0;offset<16;++offset){
+    metadata.fail=metadata.attempts+offset;
+    auto trial=c::PagedArenaDelta::create(before,accepted,std::array{one});
+    if(trial){delta=std::move(*trial);break;}
+    ++failures;
+    EXPECT_TRUE(trial.error().IsResourceExhausted()); EXPECT_EQ(metadata.live,live);
+    EXPECT_TRUE(before.valid()); EXPECT_EQ(frame.layout(),initial);
+    EXPECT_TRUE(c::detail::PagedArenaAccess::immutable_pages(before)->same_owner(old_group));
+  }
+  ASSERT_TRUE(delta.valid()); EXPECT_GE(failures,4u);
+  metadata.fail=(std::numeric_limits<std::size_t>::max)();
+  auto ticket=frame.prepare_commit(std::move(delta)).value();
+  const auto attempts=metadata.attempts;metadata.fail=attempts;
+  ASSERT_TRUE(frame.commit(std::move(ticket)).ok());
+  EXPECT_EQ(metadata.attempts,attempts);
+  EXPECT_EQ(c::detail::PagedArenaAccess::immutable_pages(frame.view().value())->size(),2u);
+  EXPECT_EQ(old_group.size(),1u); EXPECT_FALSE(old_group.contains(one.view().value()));
+}
+
 } } // namespace frame_contract

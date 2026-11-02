@@ -2,6 +2,7 @@
 #include "hyle/compute/paged_arena.h"
 #include "hyle/compute/paged_frame.h"
 #include "hyle/compute/detail/copy_stream_access.h"
+#include "hyle/compute/detail/read_lease_group.h"
 #include "hyle/mem/std_allocator.h"
 #include <vector>
 namespace hyle::compute::detail {
@@ -51,6 +52,12 @@ struct ArenaPageAppend final {
   mem::BufferView storage;
   const AppendLease*permission=nullptr;
 };
+struct PagedArenaReadGroups final {
+  ReadLeaseGroup immutable;
+  // Synchronous borrow only; copy these original guards before the caller's
+  // serialized Frame edit/publication owner can change its current epoch.
+  std::span<const ReadLease> individual;
+};
 // Trusted batch adapters only. Full span is an addressable capacity, not read
 // permission for unused pages. Retain/admit every returned page guard, and only
 // run a qualified operation whose actual reads follow this immutable layout.
@@ -91,6 +98,13 @@ struct PagedArenaAccess final {
   // The adapter must retain/admit actual leases; never cache this mutable view.
   HYLE_COMPUTE_BATCH_API static Status collect_pages(const PagedArenaFootprint&,
       std::span<ReadLease>) noexcept;
+  // Original Frame's persistent, fully visible immutable pages. Partial or
+  // mutable pages remain individual permissions. The caller serializes this
+  // preparation with the Frame's existing edit/publication owner.
+  HYLE_COMPUTE_BATCH_API static Result<ReadLeaseGroup> immutable_pages(
+      const PagedArenaFootprint&) noexcept;
+  HYLE_COMPUTE_BATCH_API static Result<PagedArenaReadGroups> read_groups(
+      const PagedArenaFootprint&) noexcept;
   HYLE_COMPUTE_BATCH_API static Result<ConstTensorView> tensor(const PagedArenaPendingRead&) noexcept;
   HYLE_COMPUTE_BATCH_API static Status validate_storage(const PagedArenaPendingRead&,const CacheStorage&) noexcept;
   HYLE_COMPUTE_BATCH_API static std::span<const ReadLease> pages(const PagedArenaPendingRead&) noexcept;

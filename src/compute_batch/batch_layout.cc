@@ -84,8 +84,14 @@ struct BatchSchemaData final:util::RefCounted<BatchSchemaData> {
   std::atomic<std::uint64_t> next_generation{1};
 };
 struct BatchLayoutData final:util::RefCounted<BatchLayoutData> {
+  struct Changes final {
+    Changes(std::uint64_t g,mem::AllocatorRef a):generation(g),pages(mem::StdAllocator<BatchPageChange>(a)){}
+    std::uint64_t generation;
+    std::vector<BatchPageChange,mem::StdAllocator<BatchPageChange>> pages;
+  };
   BatchLayoutData(BatchSchema s,mem::AllocatorRef a):schema(std::move(s)),allocator(a),
-      page_footprint(mem::StdAllocator<std::int32_t>(a)),page_required_rows(mem::StdAllocator<std::uint32_t>(a)){}
+      page_footprint(mem::StdAllocator<std::int32_t>(a)),page_required_rows(mem::StdAllocator<std::uint32_t>(a)),
+      changes(mem::StdAllocator<Changes>(a)){}
   void destroy()noexcept{const auto a=allocator;this->~BatchLayoutData();a.deallocate(this,sizeof(*this),alignof(BatchLayoutData));}
   BatchSchema schema;mem::AllocatorRef allocator;
   ReadLease bytes;mem::HostMapping mapping; // mapping dies before its backing
@@ -93,6 +99,7 @@ struct BatchLayoutData final:util::RefCounted<BatchLayoutData> {
   mutable ReadLease exported;
   mutable std::vector<std::int32_t,mem::StdAllocator<std::int32_t>> page_footprint;
   mutable std::vector<std::uint32_t,mem::StdAllocator<std::uint32_t>> page_required_rows;
+  mutable std::vector<Changes,mem::StdAllocator<Changes>> changes;
   std::uint64_t generation=0;BatchLayoutFacts facts{};
 };
 } // namespace detail
@@ -424,6 +431,35 @@ Result<detail::BatchPageFootprint> detail::BatchLayoutAccess::page_requirements(
     data.page_required_rows.swap(next_rows);
   }
   return BatchPageFootprint{data.page_footprint,data.page_required_rows};
+}
+Result<std::span<const detail::BatchPageChange>> detail::BatchLayoutAccess::page_changes(
+    const BatchLayoutVersion&before,const BatchLayoutVersion&after)noexcept{
+  if(!before.valid() || !after.valid() || !after.origin_schema().owns(before))
+    return std::unexpected(Status::InvalidArgument("page difference requires the same original layout schema"));
+  if(before==after)return std::span<const BatchPageChange>{};
+  HYLE_ASSIGN_OR_RETURN(auto old,page_requirements(before));
+  HYLE_ASSIGN_OR_RETURN(auto next,page_requirements(after));
+  auto&data=*after.data_;std::lock_guard guard(data.export_lock);
+  // Generations are monotonic within this retained original schema. A scalar
+  // key avoids pinning a chain of all previous layouts just to reuse geometry.
+  for(const auto&entry:data.changes)if(entry.generation==before.generation())
+    return std::span<const BatchPageChange>(entry.pages);
+  BatchLayoutData::Changes staged(before.generation(),data.allocator);
+  try{
+    for(std::size_t a=0,b=0;a<old.pages.size() || b<next.pages.size();){
+      if(b==next.pages.size() || (a<old.pages.size() && old.pages[a]<next.pages[b])){
+        staged.pages.push_back({old.pages[a],old.required_rows[a],0});++a;
+      }else if(a==old.pages.size() || next.pages[b]<old.pages[a]){
+        staged.pages.push_back({next.pages[b],0,next.required_rows[b]});++b;
+      }else{
+        if(old.required_rows[a]!=next.required_rows[b])
+          staged.pages.push_back({old.pages[a],old.required_rows[a],next.required_rows[b]});
+        ++a;++b;
+      }
+    }
+    data.changes.push_back(std::move(staged));
+  }catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("batch page difference metadata"));}
+  return std::span<const BatchPageChange>(data.changes.back().pages);
 }
 bool BatchLayoutVersion::operator==(const BatchLayoutVersion&v)const noexcept{return data_==v.data_;}
 Status infer_batch_attention(BatchCapacity c,BatchStorage storage,std::span<const TensorDesc> inputs,std::span<TensorDesc> outputs)noexcept {
