@@ -939,6 +939,7 @@ Result<PagedArenaDelta>PagedArenaDelta::create(PagedArenaFootprint expected,
   for(const auto&guard:changed){HYLE_ASSIGN_OR_RETURN(auto id,page_id(arena,guard));(void)id;}
   HYLE_ASSIGN_OR_RETURN(auto needed,detail::BatchLayoutAccess::page_requirements(accepted));
   HYLE_ASSIGN_OR_RETURN(auto original,detail::BatchLayoutAccess::page_requirements(base.layout));
+  HYLE_ASSIGN_OR_RETURN(auto layout_changes,detail::BatchLayoutAccess::page_changes(base.layout,accepted));
   const auto ids=needed.pages,old_ids=original.pages;
   const auto after=needed.required_rows,before=original.required_rows;
   if(old_ids.size()!=base.pages.size())return std::unexpected(Status::Internal("original frame guard extent differs"));
@@ -981,54 +982,61 @@ Result<PagedArenaDelta>PagedArenaDelta::create(PagedArenaFootprint expected,
       if(erase_individual)HYLE_RETURN_IF_ERROR(update_individual(p->individual,offset));
       return Status::Ok();
     };
-    std::size_t old=0,change=0;
-    for(std::size_t i=0;i<ids.size();++i){
-      const auto page=std::uint32_t(ids[i]);
-      if(!after[i] || after[i]>full || arena.slots[page].initialized_rows<after[i])
-        return std::unexpected(Status::FailedPrecondition("delta layout exceeds initialized rows"));
-      // All three tables are sorted unique physical IDs in this call. Cursors
-      // replace only ordinal lookup; original guard and live checks stay below.
-      while(old<old_ids.size() && old_ids[old]<ids[i]){HYLE_RETURN_IF_ERROR(forget(old));++old;}
-      while(change<p->changes.size() && p->changes[change].page<page)++change;
-      const bool changed_page=change<p->changes.size() && p->changes[change].page==page;
-      const bool original_page=old<old_ids.size() && old_ids[old]==ids[i];
-      const auto previous=old;
-      if(original_page){
-        if(after[i]!=full)HYLE_RETURN_IF_ERROR(forget(old,false));
-        ++old;
-      }
+    const auto validate=[&](std::uint32_t page,std::uint32_t old_rows,std::uint32_t rows)noexcept->Status{
+      const auto at=std::lower_bound(old_ids.begin(),old_ids.end(),std::int32_t(page));
+      const bool original_page=at!=old_ids.end() && std::uint32_t(*at)==page;
+      const auto previous=std::size_t(at-old_ids.begin());
+      if(!rows){if(original_page)HYLE_RETURN_IF_ERROR(forget(previous));return Status::Ok();}
+      if(rows>full || arena.slots[page].initialized_rows<rows)
+        return Status::FailedPrecondition("delta layout exceeds initialized rows");
+      const auto change=std::lower_bound(p->changes.begin(),p->changes.end(),page,
+          [](const auto&entry,auto wanted){return entry.page<wanted;});
+      const bool changed_page=change!=p->changes.end() && change->page==page;
+      if(original_page && rows!=full)HYLE_RETURN_IF_ERROR(forget(previous,false));
       // This original Frame holds its own immutable page guard. Until its
       // epoch advances, that pin prevents whole-page reacquire/reclamation;
       // append can only grow the initialized suffix, never this old prefix.
       if(!changed_page && original_page){
         const auto&held=base.pages[previous];
-        if(before[previous]>=after[i] && held.valid() &&
-            held.size()>=std::size_t(after[i])*(arena.page_bytes/full)){
-          if(p->immutable_prepared&&after[i]!=full)
+        if(old_rows>=rows && held.valid() && held.size()>=std::size_t(rows)*(arena.page_bytes/full)){
+          if(p->immutable_prepared&&rows!=full)
             HYLE_RETURN_IF_ERROR(update_individual(p->individual,arena.span.offset()+std::size_t(page)*arena.page_bytes,
-                &held,std::size_t(after[i])*(arena.page_bytes/full)));
-          continue;
+                &held,std::size_t(rows)*(arena.page_bytes/full)));
+          return Status::Ok();
         }
       }
-      // This fresh, unprepared Delta has no replacement table; ids[i] already
+      // This fresh, unprepared Delta has no replacement table; page already
       // belongs to its accepted layout. Preserve frame_guard's exact fallback.
       const ReadLease*guard=nullptr;
-      if(changed_page)guard=&p->changes[change].guard;
+      if(changed_page)guard=&change->guard;
       else if(original_page)guard=&base.pages[previous];
-      else return std::unexpected(Status::FailedPrecondition("frame has no original page permission"));
+      else return Status::FailedPrecondition("frame has no original page permission");
       HYLE_ASSIGN_OR_RETURN(auto actual,page_id(arena,*guard));
-      if(actual!=page || guard->size()<std::size_t(after[i])*(arena.page_bytes/full))
-        return std::unexpected(Status::FailedPrecondition("delta ready guard does not cover its logical rows"));
-      if(!changed_page && (!original_page || before[previous]<after[i]))
-        return std::unexpected(Status::FailedPrecondition("delta widens an untouched original prefix"));
+      if(actual!=page || guard->size()<std::size_t(rows)*(arena.page_bytes/full))
+        return Status::FailedPrecondition("delta ready guard does not cover its logical rows");
+      if(!changed_page && (!original_page || old_rows<rows))
+        return Status::FailedPrecondition("delta widens an untouched original prefix");
       if(p->immutable_prepared){
         bool grouped=false;
-        if(after[i]==full){HYLE_ASSIGN_OR_RETURN(grouped,retain_immutable(p->immutable,*guard,base.allocator));}
+        if(rows==full){HYLE_ASSIGN_OR_RETURN(grouped,retain_immutable(p->immutable,*guard,base.allocator));}
         HYLE_RETURN_IF_ERROR(update_individual(p->individual,arena.span.offset()+std::size_t(page)*arena.page_bytes,
-            grouped?nullptr:guard,std::size_t(after[i])*(arena.page_bytes/full)));
+            grouped?nullptr:guard,std::size_t(rows)*(arena.page_bytes/full)));
       }
+      return Status::Ok();
+    };
+    // The current Frame pins every unchanged original page through its epoch.
+    // Those prefixes cannot be reclaimed or shrink. Only changed logical rows
+    // and supplied replacement guards need per-bank permission validation.
+    for(const auto&change:layout_changes)
+      HYLE_RETURN_IF_ERROR(validate(std::uint32_t(change.page),change.before_rows,change.after_rows));
+    for(const auto&change:p->changes){
+      const auto altered=std::lower_bound(layout_changes.begin(),layout_changes.end(),std::int32_t(change.page),
+          [](const auto&entry,auto page){return entry.page<page;});
+      if(altered!=layout_changes.end() && std::uint32_t(altered->page)==change.page)continue;
+      const auto old=std::lower_bound(old_ids.begin(),old_ids.end(),std::int32_t(change.page));
+      const auto old_rows=old!=old_ids.end() && std::uint32_t(*old)==change.page?before[std::size_t(old-old_ids.begin())]:0;
+      HYLE_RETURN_IF_ERROR(validate(change.page,old_rows,after[change.ordinal]));
     }
-    while(old<old_ids.size()){HYLE_RETURN_IF_ERROR(forget(old));++old;}
   }catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("frame delta page metadata"));}
   return result;
 }
@@ -1101,7 +1109,9 @@ Result<PagedArenaCommit>PagedArenaFrame::prepare_commit(PagedArenaDelta&&delta)c
   if(data_->epoch==UINT64_MAX)return std::unexpected(Status::OutOfRange("frame epoch is exhausted"));
   HYLE_ASSIGN_OR_RETURN(auto before,detail::BatchLayoutAccess::page_footprint(data_->layout));
   HYLE_ASSIGN_OR_RETURN(auto after,detail::BatchLayoutAccess::page_footprint(p->layout));
-  const bool same=before.size()==after.size() && std::equal(before.begin(),before.end(),after.begin());
+  HYLE_ASSIGN_OR_RETURN(auto layout_changes,detail::BatchLayoutAccess::page_changes(data_->layout,p->layout));
+  const bool same=std::none_of(layout_changes.begin(),layout_changes.end(),
+      [](const auto&change){return !change.before_rows || !change.after_rows;});
   // Steady decode keeps the existing guard table. Only a structural page-set
   // change stages a full replacement, sized to the actual accepted footprint.
   std::vector<ReadLease,mem::StdAllocator<ReadLease>>replacement{mem::StdAllocator<ReadLease>(data_->allocator)};

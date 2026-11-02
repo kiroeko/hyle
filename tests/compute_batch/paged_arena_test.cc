@@ -1249,6 +1249,7 @@ TEST(PagedFrame, ImmutableDeltaOomKeepsBankRootAndCommitAllocatesNothing) {
   auto before=frame.view().value();
   auto old_group=c::detail::PagedArenaAccess::immutable_pages(before).value();
   (void)c::detail::BatchLayoutAccess::page_requirements(accepted).value();
+  (void)c::detail::BatchLayoutAccess::page_changes(initial,accepted).value();
   const auto live=metadata.live;
   c::PagedArenaDelta delta;
   unsigned failures=0;
