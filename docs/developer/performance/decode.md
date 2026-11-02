@@ -83,27 +83,38 @@ GPU 采样峰是下界，跨进程共享显存不可相加；多轮的准备和�
 
 ## 短prefill的同前缀归因
 
-11月3日复核：当前源码`5192b4232`，普通第5轮、189行、已有上下文659 token。双方此前输出及实际输入一致；各采一个新进程，范围在首token发布处结束，未混入decode。仅用于归因，上方完整性能表沿用上一轮验收。
+11月3日对齐：源码`5192b4232`与同版冻结参考，普通第5轮、189行、已有上下文659 token、C32768。三组独立进程按Hyle／参考、参考／Hyle、Hyle／参考交错采Nsight；双方此前输出与实际输入一致，范围结束于首token发布，未混入decode。下表按职责组合函数范围，区间取并集，各列为独立中位数；不是相同代码合同，也不代表纯CPU执行时间。上方完整性能表沿用原验收，本节只更新归因。
 
-| 类别 | Hyle ms | 参考 ms |
+| 主机职责／边界 | Hyle ms | 参考 ms |
 |---|---:|---:|
-| GEMM | 16.950 | 17.417 |
-| 注意力 | 0.260 | 0.335 |
-| GDN／conv | 3.108 | 3.141 |
-| 拷贝／gather | 1.901 | 1.060 |
-| 类型转换 | 0.000 | 0.838 |
-| 其它kernel | 2.378 | 1.895 |
-| 所选进程CUDA活动空档 | 6.534 | 4.612 |
-| 首kernel前 | 3.205 | 1.401 |
-| 选定prefill范围 | 31.130 | 29.298 |
+| 图、工作区与执行绑定 | 2.348 | 0.443 |
+| KV／状态布局与绑定 | 0.496 | 0.121 |
+| 输入包／输入设置 | 0.127 | 0.095 |
+| 准备完成／提交开始至首kernel | 0.099 | 0.405 |
+| 范围开始至首kernel（包含前述工作） | 3.169 | 1.230 |
 
-空档按对应CUDA API时序拆分：调用开始前2.874／1.364ms，调用中0.354／0.340ms，调用返回后2.965／2.646ms，最后一次CUDA活动后0.342／0.262ms。这是时序关联，不足以证明驱动或调度因果；活动空档不代表整卡空闲，首kernel前和各GPU分类不能简单相加。GEMM在这对轨迹里未落后，不把旧窗口的局部差值当作固定根因。
+Hyle第一项为`graph_batch_prepare`、`query_rows_bind`、`prepare_replay`；参考为`graph_params`、`model.build_graph`、scheduler reset／allocate。Hyle回放准备1.077ms，其中`prepare_invocation_bindings`1.042ms，seal为0.044ms，依赖／传输／输入源各低于0.001ms。参考建图0.247ms、scheduler分配0.146ms，其中split为0.088ms、buffer安排0.057ms。父子范围不能相加。
 
-带状态检查的发布拷贝每次1～2MiB、6～11µs，按读写总量约350～380GB/s；18次合计0.11～0.20ms。它不是先前低带宽通用拷贝的问题。第5轮另外有13次GPU、13次锁页内存分配，来自首次使用该档位及追加元数据；其中六个整数工作区此前为空，不能靠扩大旧容量消除。回放准备仍约0.97ms。
+原先约0.96ms的Graph批次准备不是原生注意力计划本体：六次FlashInfer plan合计0.130ms、查询0.041ms；六次Batch准备合计0.357ms，内含workspace申请0.134ms、plan等待0.014ms。其余仍包含外围资源和绑定处理。
 
-本轮两个候选均不采用。C32768普通真实八轮、每臂3进程、与当前源码及同版参考交错：容量增长候选prefill合计187.62ms，当前188.39ms，范围重叠；提前准备后退出的候选210.31ms，当前188.06ms，用时增加11.8%。后者ready也增加60.5ms；退出路径的`reset_retired()`销毁Invocation，不能保留准备成果。两组候选与当前的512个输出ID均一致。未扩测MTP、长输入或内存；未交付新优化，默认源码不变，按两次无进展结束该方向。
+细化计数区分了首次准备与重复准备：第2轮复用128行载体，719个节点的物理输入输出tuple全部未变，修订号改变258个，另461个tuple与修订号均未变；但719个都重走`prepare_command_bindings`。原因是`stable_binding_identity`全部为false，当前只在成功录图后接收该后端事实，Commands路径提前返回，得不到事实。此处尚未交付修复，不能直接置true或省略当前权限、修订、opaque carrier及退休检查。第5轮首次使用256行载体，719个绑定确实都要首次建立；601个View中564个投影复用，不能把该轮约1ms全部当成可消除的重复工作。计数探针含密集标记，只用其次数，不拿其耗时与稀疏标记版本计算收益。
 
-原始结果：[完整性能验收](../../../.scratch/inference-perf-gap-20261103/timing-gates.txt)、[逐轮原数](../../../.scratch/inference-perf-gap-20261103/latest-details.txt)、[内存验收](../../../.scratch/inference-perf-gap-20261103/cache-memory1/summary.txt)、[teacher-forcing](../../../.scratch/inference-perf-gap-20261103/cache-teacher1/)、[当前源码配对轨迹](../../../.scratch/inference-remaining-hotspots-20261103/turn5-baseline-profile1/profile-comparison.md)、[容量增长对照](../../../.scratch/inference-remaining-hotspots-20261103/growth1-c32768-off-window1/endpoints.txt)、[提前准备对照](../../../.scratch/inference-remaining-hotspots-20261103/cold-plan1-c32768-off-window1/endpoints.txt)。
+GPU也仍有差距，同三对轨迹中位数如下；因此不能将本轮prefill差距全部归于主机。
+
+| GPU类别／范围 | Hyle ms | 参考 ms |
+|---|---:|---:|
+| GEMM | 16.993 | 15.612 |
+| 注意力 | 0.261 | 0.335 |
+| GDN／conv | 3.129 | 3.152 |
+| 拷贝／gather | 1.908 | 1.229 |
+| 类型转换 | 0.000 | 0.848 |
+| 其它kernel | 2.378 | 1.906 |
+| 所选进程CUDA活动空档 | 6.848 | 3.787 |
+| 选定prefill范围 | 31.725 | 26.656 |
+
+总计14个带标记进程的完整512个输出ID均与各自未插桩原版一致；三对主对照及第2／5轮的细化／计数对照均通过边界、预热、实际容量和无未来形状提示检查。没有改产品实现，没有新增吞吐或内存验收；首kernel时间、父子函数、GPU类别与空档不能简单相加，profiler数字不代签吞吐收益。
+
+原始结果：[职责对齐及范围定义](../../../.scratch/inference-host-alignment-20261103/alignment-report.md)、[三对函数原数](../../../.scratch/inference-host-alignment-20261103/host-functions-summary.txt)、[重复载体计数](../../../.scratch/inference-host-alignment-20261103/turn2-count-pair1/fine-functions.txt)、[首次载体计数](../../../.scratch/inference-host-alignment-20261103/turn5-count-pair1/fine-functions.txt)。完整交付的[性能验收](../../../.scratch/inference-perf-gap-20261103/timing-gates.txt)、[内存验收](../../../.scratch/inference-perf-gap-20261103/cache-memory1/summary.txt)和[teacher-forcing](../../../.scratch/inference-perf-gap-20261103/cache-teacher1/)沿用原结果。
 
 ## 复测
 
