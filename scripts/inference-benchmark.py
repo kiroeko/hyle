@@ -243,6 +243,16 @@ def speed_cell(left, right):
     return f"{h:.1f} / {r:.1f} ({(h / r - 1) * 100:+.1f}%){'†' if overlap else ''}"
 
 
+def ratio_cell(left, right, *, timing=False):
+    if any(value is None for value in left + right):
+        return "不可用"
+    h, r = med(left), med(right)
+    if r <= 0:
+        return "不可用"
+    overlap = timing and max(min(left), min(right)) <= min(max(left), max(right))
+    return f"{h / r * 100:.1f}%{'†' if overlap else ''}"
+
+
 def memory_cell(left, right, key):
     h = [row["peaks"].get(key) for row in left]
     r = [row["peaks"].get(key) for row in right]
@@ -253,6 +263,8 @@ def memory_cell(left, right, key):
 
 
 def summarize(cases, measurements, args):
+    ratios = ["| 场景 / 轮次 | 输入 token | 准备（普通；MTP） | prefill 普通 | prefill MTP | decode 普通 | decode MTP | 显存（普通；MTP） | 内存（普通；MTP） | ID（普通；MTP） |",
+              "|---|---:|---:|---:|---:|---:|---:|---:|---:|---|"]
     table = ["| 场景 / 轮次 | 输入 token | 历史 token | 准备 s（普通；MTP） | prefill 普通 tok/s | prefill MTP tok/s | decode 普通 tok/s | decode MTP tok/s | 显存 MiB（普通；MTP） | 内存 MiB（普通；MTP） | ID（普通；MTP） |",
              "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|"]
     details = []
@@ -302,12 +314,27 @@ def summarize(cases, measurements, args):
             if mode not in groups or not args.memory_repeats:
                 return "未测"
             return memory_cell(groups[mode]["hyle"]["memory"], groups[mode]["reference"]["memory"], key)
+        def ready_ratio(mode):
+            if mode not in groups:
+                return "未测"
+            return ratio_cell(*[[r["metrics"]["startup_to_ready_seconds"] for r in groups[mode][arm]["timing"]]
+                                for arm in ("hyle", "reference")], timing=True)
+        def memory_ratio(mode, key):
+            if mode not in groups or not args.memory_repeats:
+                return "未测"
+            return ratio_cell(*[[r["peaks"].get(key) for r in groups[mode][arm]["memory"]]
+                                for arm in ("hyle", "reference")])
         for i, prompt in enumerate(case.scenario.prompts):
             def speed(mode, key):
                 if mode not in groups:
                     return "未测"
                 return speed_cell(*[[r["turns"][i][key] for r in groups[mode][arm]["timing"]]
                                     for arm in ("hyle", "reference")])
+            def speed_ratio(mode, key):
+                if mode not in groups:
+                    return "未测"
+                return ratio_cell(*[[r["turns"][i][key] for r in groups[mode][arm]["timing"]]
+                                    for arm in ("hyle", "reference")], timing=True)
             name = (f"单轮 C{case.capacity}" if len(case.scenario.prompts) == 1
                     else f"多轮 C{case.capacity} 第{i+1}轮")
             history_pairs = {mode: [sum(t["target_rows"] for t in groups[mode][arm]["timing"][0]["turns"][:i])
@@ -327,6 +354,13 @@ def summarize(cases, measurements, args):
                     return "相同"
                 first = next((index for index, (a, b) in enumerate(zip(left, right)) if a != b), min(len(left), len(right)))
                 return f"差@{first+1} ({len(left)}/{len(right)})"
+            ready_percent = ready_ratio("off") + "; " + ready_ratio("on") if i == 0 else "同上"
+            vram_percent = memory_ratio("off", "sampled_peak_gpu_dedicated_bytes") + "; " + memory_ratio("on", "sampled_peak_gpu_dedicated_bytes") if i == 0 else "同上"
+            ram_percent = memory_ratio("off", "observed_os_peak_working_set_bytes") + "; " + memory_ratio("on", "observed_os_peak_working_set_bytes") if i == 0 else "同上"
+            ratios.append(f"| {name} | {len(prompt)} | {ready_percent} | "
+                          f"{speed_ratio('off','prefill_tokens_per_second')} | {speed_ratio('on','prefill_tokens_per_second')} | "
+                          f"{speed_ratio('off','decode_tokens_per_second')} | {speed_ratio('on','decode_tokens_per_second')} | "
+                          f"{vram_percent} | {ram_percent} | {id_cell('off')}; {id_cell('on')} |")
             table.append(f"| {name} | {len(prompt)} | {history_cell} | {prepared} | "
                          f"{speed('off','prefill_tokens_per_second')} | {speed('on','prefill_tokens_per_second')} | "
                          f"{speed('off','decode_tokens_per_second')} | {speed('on','decode_tokens_per_second')} | {vram} | {ram} | "
@@ -334,8 +368,8 @@ def summarize(cases, measurements, args):
     header = ["# Hyle / llama.cpp 推理对照", "",
               f"测量开始（UTC）：{args.measurement_started}；表格更新：{datetime.now(timezone.utc).isoformat()}。",
               f"Hyle：`{args.hyle_version}`；参考：`{args.reference_version}`。GPU / 驱动：{args.hardware}。",
-              f"速度、准备：每臂 {args.repeats} 个独立进程的中位数，Hyle / 参考（相对差）；" +
-              (f"显存、内存：每臂 {args.memory_repeats} 个独立采样进程，Hyle / 参考（Hyle − 参考），单位 MiB。"
+              f"速度、准备：每臂 {args.repeats} 个独立进程的中位数；" +
+              (f"显存、内存：每臂 {args.memory_repeats} 个独立采样进程。"
                if args.memory_repeats else "本次未采样显存和内存。"), ""]
     notes = ["", "† 表示两组计时范围重叠，不能据此断定领先或退化；未标记也不代表经过显著性检验。",
              "准备为启动到 ready，含模型加载和启动预热；prefill 从请求到首 token，decode 含该轮首次使用开销。",
@@ -346,7 +380,11 @@ def summarize(cases, measurements, args):
              "GPU 采样峰是下界，跨进程共享显存不可相加；多轮的准备和内存为整次进程峰值，不是该轮增量。",
              "每次为新进程，但不清除操作系统文件缓存；准备时间不等于首次从冷磁盘加载。",
              "各场景的两引擎在同一窗口交错运行；不同场景及普通/MTP 使用各自窗口，不能跨窗口推算差距。"]
-    return "\n".join(header + table + notes) + "\n", "\n".join(details) + "\n"
+    sections = ["## 相对 llama.cpp", "", "数值为 Hyle ÷ llama.cpp：速度越高越好；准备时间、显存和内存越低越好。",
+                "† 表示计时范围重叠；显存是专用内存采样峰，内存是含共享及映射页的工作集峰值。",
+                "多轮若输出 ID 分叉，后续两边的实际上下文可能不同。", ""]
+    sections += ratios + ["", "## 实测数据", "", "数值为 Hyle / 参考；速度括号为相对差，内存括号为 MiB 差。", ""] + table
+    return "\n".join(header + sections + notes) + "\n", "\n".join(details) + "\n"
 
 
 def read_previous_run(args, cases, arms):

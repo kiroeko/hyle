@@ -45,6 +45,10 @@ class InferenceBenchmarkReportTest(unittest.TestCase):
         table, details = benchmark.summarize([case], measurements, args)
         self.assertIn("120 / 100 (+20)", table)
         self.assertIn("60 / 80 (-20)", table)
+        self.assertIn("## 相对 llama.cpp", table)
+        self.assertIn("100.0%†", table)
+        self.assertIn("120.0%", table)
+        self.assertIn("75.0%", table)
         self.assertIn("第2轮", table)
         self.assertIn("| 3 | 同上", table)
         self.assertIn("同上", table)
@@ -55,6 +59,10 @@ class InferenceBenchmarkReportTest(unittest.TestCase):
     def test_missing_memory_and_decode_are_never_reported_as_zero(self):
         self.assertEqual(benchmark.memory_cell([{"peaks": {"x": None}}], [{"peaks": {"x": 7}}], "x"), "不可用")
         self.assertEqual(benchmark.speed_cell([None, None, None], [1, 1, 1]), "不可用")
+        self.assertEqual(benchmark.ratio_cell([4], [0]), "不可用")
+        self.assertEqual(benchmark.ratio_cell([None], [10]), "不可用")
+        self.assertEqual(benchmark.ratio_cell([8, 10, 12], [9, 10, 11], timing=True), "100.0%†")
+        self.assertEqual(benchmark.ratio_cell([12, 13, 14], [9, 10, 11], timing=True), "130.0%")
 
     def test_memory_process_must_match_its_timing_workload(self):
         case, args, measurements = self.fixture()
