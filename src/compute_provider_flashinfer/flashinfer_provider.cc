@@ -15,6 +15,7 @@
 #include "hyle/compute/model_ops.h"
 #include "native_attention.h"
 #include "native_batch.h"
+#include "native_batch_occupancy.h"
 #include "native_cache_encoder.h"
 #include "hyle/compute/detail/batch_provider.h"
 #include "hyle/compute/detail/batch_device_choice.h"
@@ -120,6 +121,8 @@ constexpr ProviderRuntimeProperties kRuntime{
 struct ProviderContext final {
   CUcontext primary = nullptr;
   std::uint64_t maximum_grid = 0;
+  std::uint32_t multiprocessors = 0;
+  std::uint32_t prefill_blocks_per_sm = 0;
 };
 
 struct BatchWorkspaceQuery final {
@@ -144,6 +147,8 @@ bool same_batch_spec(const native::BatchSpec&a,const native::BatchSpec&b)noexcep
 }
 struct BatchSlot final {
   CUcontext primary=nullptr;
+  std::uint32_t multiprocessors=0;
+  std::uint32_t prefill_blocks_per_sm=0;
   native::BatchSpec spec{};
   void*plan=nullptr;
   std::size_t plan_bytes=0;
@@ -227,7 +232,9 @@ Status create_batch_slot(void*opaque,BatchCapacity capacity,const BatchProgramOp
   *output=nullptr;HYLE_RETURN_IF_ERROR(qualify_batch(opaque,capacity,options));auto&context=*static_cast<ProviderContext*>(opaque);
   HYLE_ASSIGN_OR_RETURN(auto offsets,batch_metadata_offsets(capacity));
   auto*p=allocator.construct<BatchSlot>();if(!p)return Status::ResourceExhausted("FlashInfer batch slot metadata");
-  p->primary=context.primary;p->plan_bytes=native::batch_state_bytes();p->plan=allocator.allocate(p->plan_bytes,16);
+  p->primary=context.primary;p->multiprocessors=context.multiprocessors;
+  p->prefill_blocks_per_sm=context.prefill_blocks_per_sm;
+  p->plan_bytes=native::batch_state_bytes();p->plan=allocator.allocate(p->plan_bytes,16);
   if(!p->plan){allocator.destroy(p);return Status::ResourceExhausted("FlashInfer batch plan metadata");}
   native::initialize_batch_state(p->plan);
   p->max_float_workspace_bytes=options.max_float_workspace_bytes;p->max_int_workspace_bytes=options.max_int_workspace_bytes;
@@ -296,7 +303,8 @@ bool can_reuse_batch_plan(const BatchSlot&slot,const BatchLayoutVersion&layout)n
 }
 Status query_bounded_batch_workspace(native::BatchSpec spec,HostBatchLayout metadata,cudaStream_t stream,
     std::size_t float_cap,std::size_t int_cap,const void*retained_plan,native::BatchFacts&facts,
-    bool&allow_graph_plan,bool&preserves_commands){
+    bool&allow_graph_plan,bool&preserves_commands,std::uint32_t multiprocessors,
+    std::uint32_t prefill_blocks_per_sm){
   allow_graph_plan=true;preserves_commands=false;
   HYLE_RETURN_IF_ERROR(cuda::status(native::query_batch_workspace(spec,metadata.query_indptr.data(),
       metadata.kv_indptr.data(),stream,facts,retained_plan,&preserves_commands,allow_graph_plan)));
@@ -307,6 +315,40 @@ Status query_bounded_batch_workspace(native::BatchSpec spec,HostBatchLayout meta
     HYLE_RETURN_IF_ERROR(cuda::status(native::query_batch_workspace(spec,metadata.query_indptr.data(),
         metadata.kv_indptr.data(),stream,facts,nullptr,&preserves_commands,allow_graph_plan)));
     preserves_commands=false;
+  }
+  // Only the measured plain BF16 D256 prefill domain is qualified here.
+  // Do not change small-query graph/decode plans or override a caller's cap.
+  if(facts.float_bytes<=float_cap && facts.int_bytes<=int_cap && multiprocessors && prefill_blocks_per_sm &&
+      spec.paged && spec.bfloat16 && !spec.fp8 && spec.causal && spec.window_left==-1 &&
+      spec.qk_head_dim==256 && spec.value_head_dim==256 && spec.requests==1 &&
+      spec.query_rows>=64 && spec.kv_heads && spec.query_heads%spec.kv_heads==0 &&
+      spec.page_size && facts.cta_tile_q==64 && metadata.kv_indptr.size()==2 &&
+      metadata.kv_indptr[0]==0 && metadata.kv_indptr[1]>0){
+    const auto pages=std::uint64_t(metadata.kv_indptr[1]);
+    const auto kv_rows=pages*spec.page_size;
+    const auto packed=std::uint64_t(spec.query_rows)*(spec.query_heads/spec.kv_heads);
+    const auto query_tiles=(packed+facts.cta_tile_q-1)/facts.cta_tile_q;
+    const auto base_ctas=query_tiles*spec.kv_heads;
+    const auto target_ctas=std::uint64_t(multiprocessors)*prefill_blocks_per_sm*2;
+    if(kv_rows>=8192 && base_ctas && base_ctas<target_ctas){
+      // Keep each KV partition substantial. Try the highest useful split
+      // first, falling back to the original plan when scratch is insufficient.
+      auto splits=(std::min)({std::uint64_t{8}, kv_rows/2048,
+          target_ctas/base_ctas+std::uint64_t(target_ctas%base_ctas!=0)});
+      const auto baseline_ctas=std::uint64_t(facts.padded_batch_size)*spec.kv_heads;
+      for(;splits>=2;--splits){
+        const auto chunk=pages/splits+std::uint64_t(pages%splits!=0);
+        if(chunk>std::uint64_t(INT32_MAX))continue;
+        native::BatchFacts candidate;bool preserves=false;
+        HYLE_RETURN_IF_ERROR(cuda::status(native::query_batch_workspace(spec,metadata.query_indptr.data(),
+            metadata.kv_indptr.data(),stream,candidate,retained_plan,&preserves,allow_graph_plan,
+            static_cast<std::int32_t>(chunk))));
+        if(candidate.float_bytes<=float_cap && candidate.int_bytes<=int_cap &&
+            std::uint64_t(candidate.padded_batch_size)*spec.kv_heads>baseline_ctas){
+          facts=candidate;preserves_commands=preserves;break;
+        }
+      }
+    }
   }
   return Status::Ok();
 }
@@ -335,7 +377,7 @@ Status query_batch_layout(BatchSlot&slot,Queue&queue,const BatchLayoutVersion&la
   if(slot.mla){HYLE_RETURN_IF_ERROR(cuda::status(native::query_mla_workspace(spec,metadata.query_indptr.data(),metadata.kv_indptr.data(),lengths.data(),*stream,facts)));}
   else HYLE_RETURN_IF_ERROR(query_bounded_batch_workspace(spec,metadata,*stream,
       slot.max_float_workspace_bytes,slot.max_int_workspace_bytes,compare_retained?slot.plan:nullptr,
-      facts,allow_graph_plan,preserves_commands));
+      facts,allow_graph_plan,preserves_commands,slot.multiprocessors,slot.prefill_blocks_per_sm));
   preserves_commands=compare_retained && preserves_commands &&
       facts.float_bytes==slot.report.float_workspace_bytes && facts.int_bytes==slot.report.int_workspace_bytes;
   slot.workspace_query={layout,std::move(queue_owner),slot.primary,spec,facts,
@@ -404,7 +446,7 @@ detail::EnqueueResult plan_batch_slot(void*opaque,detail::QueueSequence &sequenc
       if(slot.mla)status=cuda::status(native::query_mla_workspace(spec,metadata.query_indptr.data(),metadata.kv_indptr.data(),lengths.data(),*stream,facts));
       else{bool unused_preservation=false;
         status=query_bounded_batch_workspace(spec,metadata,*stream,float_cap,int_cap,
-            nullptr,facts,allow_graph_plan,unused_preservation);
+            nullptr,facts,allow_graph_plan,unused_preservation,slot.multiprocessors,slot.prefill_blocks_per_sm);
       }
     }
     if(!status.ok())return detail::EnqueueResult::rejected(status);
@@ -612,10 +654,11 @@ Status create_context(const Provider &provider, Device device,
   const bool qualified =
       match_route_selector(kHardwareRule, route_input).matched();
   std::uint64_t maximum_grid = 0;
+  int multiprocessors = 0;
+  int prefill_blocks_per_sm = 0;
   if (qualified) {
     cuda::detail::ScopedPrimaryContext scope(primary);
     HYLE_RETURN_IF_ERROR(scope.status());
-    int multiprocessors = 0;
     int threads_per_multiprocessor = 0;
     HYLE_RETURN_IF_ERROR(cuda::status(
         cudaDeviceGetAttribute(&multiprocessors, cudaDevAttrMultiProcessorCount,
@@ -625,6 +668,11 @@ Status create_context(const Provider &provider, Device device,
         environment->device_ordinal)));
     if (multiprocessors <= 0 || threads_per_multiprocessor < 128)
       return Status::Internal("FlashInfer CUDA residency facts are invalid");
+    const auto occupancy=native::paged_prefill_bf16_d256_occupancy(prefill_blocks_per_sm);
+    if(occupancy==cudaErrorInvalidValue || occupancy==cudaErrorNotSupported || occupancy==cudaErrorInvalidDeviceFunction){
+      // This optional prefill policy is unavailable; preserve the native plan.
+      (void)cudaGetLastError();prefill_blocks_per_sm=0;
+    }else HYLE_RETURN_IF_ERROR(cuda::status(occupancy));
     // Both admitted upstream entry families use at least 128 threads/block.
     maximum_grid = static_cast<std::uint64_t>(multiprocessors) *
                    static_cast<std::uint64_t>(threads_per_multiprocessor / 128);
@@ -633,7 +681,8 @@ Status create_context(const Provider &provider, Device device,
       allocator.allocate(sizeof(ProviderContext), alignof(ProviderContext));
   if (storage == nullptr)
     return Status::ResourceExhausted("FlashInfer context allocation failed");
-  *output = ::new (storage) ProviderContext{primary, maximum_grid};
+  *output = ::new (storage) ProviderContext{primary, maximum_grid, static_cast<std::uint32_t>(multiprocessors),
+      static_cast<std::uint32_t>((std::max)(prefill_blocks_per_sm,0))};
   return Status::Ok();
 }
 

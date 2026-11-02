@@ -1,4 +1,5 @@
 #include "native_batch.h"
+#include "native_batch_occupancy.h"
 #include <cuda_fp16.h>
 #include <cuda_bf16.h>
 #include <flashinfer/attention/default_prefill_params.cuh>
@@ -14,6 +15,18 @@ namespace fi=::flashinfer;
 std::size_t batch_state_bytes() noexcept{return sizeof(fi::PrefillPlanInfo);}
 void initialize_batch_state(void *p) noexcept{::new(p)fi::PrefillPlanInfo();}
 void destroy_batch_state(void *p) noexcept{static_cast<fi::PrefillPlanInfo*>(p)->~PrefillPlanInfo();}
+cudaError_t paged_prefill_bf16_d256_occupancy(int&blocks_per_sm) noexcept {
+  using Variant=fi::DefaultAttention<false,false,false,false>;
+  using Traits=fi::KernelTraits<fi::MaskMode::kCausal,64,1,1,16,16,4,1,
+      fi::PosEncodingMode::kNone,__nv_bfloat16,__nv_bfloat16,__nv_bfloat16,float,int,Variant>;
+  using Params=fi::BatchPrefillPagedParams<__nv_bfloat16,__nv_bfloat16,__nv_bfloat16,int>;
+  const auto kernel=fi::BatchPrefillWithPagedKVCacheKernel<Traits,Params>;
+  blocks_per_sm=0;
+  const auto shared=sizeof(Traits::SharedStoragePaged);
+  auto status=cudaFuncSetAttribute(kernel,cudaFuncAttributeMaxDynamicSharedMemorySize,static_cast<int>(shared));
+  if(status!=cudaSuccess)return status;
+  return cudaOccupancyMaxActiveBlocksPerMultiprocessor(&blocks_per_sm,kernel,128,shared);
+}
 namespace {
 // Fixed, small uniform query geometry is independent of the growing KV
 // prefix. The scheduler still materializes actual chunk/merge/mask metadata.
@@ -88,8 +101,10 @@ cudaError_t select_device_layout(const void*state,BatchSpec s,const std::int32_t
   return cudaPeekAtLastError();
 }
 cudaError_t query_batch_workspace(BatchSpec s,const std::int32_t*q,const std::int32_t*k,cudaStream_t stream,BatchFacts&facts,
-                                 const void*retained_plan,bool*preserves_commands,bool allow_graph_plan){
+                                 const void*retained_plan,bool*preserves_commands,bool allow_graph_plan,
+                                 std::int32_t fixed_split_pages){
   facts={};
+  facts.fixed_split_pages=fixed_split_pages;
   if(preserves_commands)*preserves_commands=false;
   if(s.query_rows==0)return cudaSuccess;
   const auto uniform=allow_graph_plan?graph_query_length(s,q):0;
@@ -98,7 +113,7 @@ cudaError_t query_batch_workspace(BatchSpec s,const std::int32_t*q,const std::in
   // offsets and launch facts without changing the retained native plan.
   const auto status=fi::PrefillPlanImpl<false>(facts.float_bytes,facts.int_bytes,nullptr,0,nullptr,nullptr,0,next,
       const_cast<std::int32_t*>(q),const_cast<std::int32_t*>(k),s.query_rows,s.requests,s.query_heads,s.kv_heads,
-      s.qk_head_dim,s.value_head_dim,s.paged?s.page_size:1,uniform>0,s.fp8?4:2,s.window_left,-1,false,0,uniform,
+      s.qk_head_dim,s.value_head_dim,s.paged?s.page_size:1,uniform>0,s.fp8?4:2,s.window_left,fixed_split_pages,false,0,uniform,
       stream,s.fp8?1:2,bf16_partial_domain(s));
   if(status!=cudaSuccess)return status;
   facts.cta_tile_q=std::uint32_t(next.cta_tile_q);facts.padded_batch_size=std::uint32_t(next.padded_batch_size);
@@ -113,7 +128,7 @@ cudaError_t plan_batch(void *state,BatchSpec s,const std::int32_t*q,const std::i
   if(s.query_rows==0){plan={};facts={};return cudaSuccess;}
   const auto uniform=allow_graph_plan?graph_query_length(s,q):0;
   fi::PrefillPlanInfo next;
-  const auto result=fi::PrefillPlan(f,fb,i,h,ib,next,const_cast<std::int32_t*>(q),const_cast<std::int32_t*>(k),s.query_rows,s.requests,s.query_heads,s.kv_heads,s.qk_head_dim,s.value_head_dim,s.paged?s.page_size:1,uniform>0,s.fp8?4:2,s.window_left,-1,false,0,uniform,stream,s.fp8?1:2,bf16_partial_domain(s));
+  const auto result=fi::PrefillPlan(f,fb,i,h,ib,next,const_cast<std::int32_t*>(q),const_cast<std::int32_t*>(k),s.query_rows,s.requests,s.query_heads,s.kv_heads,s.qk_head_dim,s.value_head_dim,s.paged?s.page_size:1,uniform>0,s.fp8?4:2,s.window_left,facts.fixed_split_pages,false,0,uniform,stream,s.fp8?1:2,bf16_partial_domain(s));
   if(result!=cudaSuccess)return result;
   // The original H2D may already be accepted. A violated preflight promise is
   // a terminal native error, never permission to replay changed arguments.

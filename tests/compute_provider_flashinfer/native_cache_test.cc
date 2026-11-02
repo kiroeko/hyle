@@ -5,6 +5,7 @@
 #include <hyle/compute/paged_arena.h>
 #include <hyle/compute/model_ops.h>
 #include <hyle/compute/prepared_operation.h>
+#include <cuda_runtime_api.h>
 #include "../compute_provider_native/half_test_support.h"
 #include "../compute_batch/allocation_fault_fixture.h"
 #include <array>
@@ -538,5 +539,80 @@ TEST(FlashinferCache, SplitKvPreservesFloat16PartialCancellationResidual){
 TEST(FlashinferCache, SplitKvSinglePartialScalesBeforeFinalNarrowing){
   split_precision_case<hyle::simd::float16_t>(0,true);
   split_precision_case<hyle::simd::bfloat16_t>(0,true);
+}
+
+TEST(FlashinferCache, LongPrefillSplitAndTightWorkspaceUseTheSameCausalState){
+  // This case covers both the selected and fallback plans on the measured
+  // 46-SM device; other devices can have a different native default plan.
+  int multiprocessors=0;
+  ASSERT_EQ(cudaDeviceGetAttribute(&multiprocessors,cudaDevAttrMultiProcessorCount,0),cudaSuccess);
+  if(multiprocessors!=46)GTEST_SKIP()<<"requires the measured 46-SM planning geometry";
+  using T=hyle::simd::bfloat16_t;
+  constexpr std::uint32_t rows=512,pages=512,page_size=16,heads=8,kv_heads=2,depth=256;
+  constexpr std::uint32_t kv_rows=pages*page_size;
+  const auto storage=c::CacheStorage::plain(c::DataType::kBFloat16).value();
+  const c::BatchCapacity cap{.storage=c::BatchStorage::kPaged,
+      .query_type=c::DataType::kBFloat16,.output_type=c::DataType::kBFloat16,
+      .key_storage=storage,.value_storage=storage,.max_requests=1,.max_query_rows=rows,
+      .max_kv_rows=kv_rows,.max_pages=pages,.max_page_refs=pages,
+      .query_heads=heads,.kv_heads=kv_heads,.qk_head_dim=depth,.value_head_dim=depth,.page_size=page_size};
+  auto context=c::Context::create(c::cuda::device(0).value(),c::flashinfer::provider()).value();
+  auto memory=c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice).value();
+  auto host=c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kPinnedHost).value();
+  auto queue=context.create_queue().value();auto schema=c::BatchSchema::create(cap).value();
+  const std::array<std::int32_t,2> qp{0,rows},kp{0,pages};
+  const std::array<std::int32_t,1> tails{page_size};
+  std::vector<std::int32_t> ids(pages);
+  for(std::uint32_t page=0;page<pages;++page)ids[page]=std::int32_t(pages-1-page);
+  auto layout=schema.version({qp,kp,ids,tails}).value();
+  constexpr std::size_t page_elements=std::size_t(page_size)*kv_heads*depth;
+  constexpr std::size_t page_bytes=page_elements*sizeof(T);
+  auto keys=c::PagedArena::create(schema,c::BatchCacheRole::kKey,memory.ref(),
+      {.max_backing_bytes=pages*page_bytes+64}).value();
+  auto values=c::PagedArena::create(schema,c::BatchCacheRole::kValue,memory.ref(),
+      {.max_backing_bytes=pages*page_bytes+64}).value();
+  std::vector<c::ReadLease> key_pages(pages),value_pages(pages);
+  std::vector<T> zero_page(page_elements,half_test::encode<T>(0.F)),value_page(page_elements);
+  const auto page_value=[](std::uint32_t page){return float(int(page%7)-3)*.25F;};
+  for(std::uint32_t page=0;page<pages;++page){
+    std::fill(value_page.begin(),value_page.end(),half_test::encode<T>(page_value(page)));
+    auto key=keys.acquire(page).value(),value=values.acquire(page).value();
+    ASSERT_TRUE(key.lease().view()->write(std::as_bytes(std::span(zero_page))).ok());
+    ASSERT_TRUE(value.lease().view()->write(std::as_bytes(std::span(value_page))).ok());
+    key_pages[page]=key.publish(page_size).value();value_pages[page]=value.publish(page_size).value();
+  }
+  auto key_frame=keys.read(layout,key_pages).value(),value_frame=values.read(layout,value_pages).value();
+  std::vector<T> query_values(std::size_t(rows)*heads*depth,half_test::encode<T>(0.F));
+  auto pool=c::LeasePool::create(memory.ref(),query_values.size()*sizeof(T)+64).value();
+  auto writer=pool.allocate(query_values.size()*sizeof(T)).value();
+  ASSERT_TRUE(writer.view()->write(std::as_bytes(std::span(query_values))).ok());
+  auto query=writer.publish().value();
+  std::vector<T> tight,split;
+  for(const auto workspace:{std::size_t{1}<<20,std::size_t{64}<<20}){
+    auto program=c::BatchProgram::prepare(context,schema,{.resource=memory.ref(),.host_workspace=host.ref(),
+        .max_float_workspace_bytes=workspace,.max_int_workspace_bytes=64u<<10,.scale=.0625F,.causal=true}).value();
+    auto slot=c::BatchInvocation::create(program,queue).value();auto prepared=slot.prepare_batch(layout);
+    ASSERT_TRUE(prepared)<<prepared.error().message();
+    EXPECT_EQ(slot.report().split_kv,workspace>(std::size_t{1}<<20));
+    EXPECT_LE(slot.report().float_workspace_bytes,workspace);
+    auto done=prepared->run(query,key_frame,value_frame);ASSERT_TRUE(done)<<done.error().message();
+    ASSERT_TRUE(done->wait().ok());auto output=slot.output().value();
+    auto &actual=workspace==(std::size_t{1}<<20)?tight:split;actual.resize(query_values.size());
+    ASSERT_TRUE(output.view()->read(std::as_writable_bytes(std::span(actual))).ok());
+    output.reset();*done={};*prepared={};ASSERT_TRUE(slot.close().ok());
+  }
+  for(const auto row:{0u,7u,15u,16u,257u,511u}){
+    const auto allowed=kv_rows-rows+row+1;
+    double sum=0;
+    for(std::uint32_t token=0;token<allowed;++token)sum+=page_value(std::uint32_t(ids[token/page_size]));
+    const double expected=sum/allowed;
+    for(const auto head:{0u,3u,7u})for(const auto channel:{0u,31u,255u}){
+      const auto index=(std::size_t(row)*heads+head)*depth+channel;
+      EXPECT_NEAR(half_test::decode(tight[index]),expected,.004);
+      EXPECT_NEAR(half_test::decode(split[index]),expected,.004);
+      EXPECT_NEAR(half_test::decode(split[index]),half_test::decode(tight[index]),.004);
+    }
+  }
+  ASSERT_TRUE(context.drain().ok());
 }
 }

@@ -23,6 +23,8 @@ inline bool bf16_partials_active(const BatchSpec &s,std::uint32_t tile,bool spli
 struct BatchFacts final {
   std::size_t float_bytes=0,int_bytes=0;
   std::uint32_t cta_tile_q=0,padded_batch_size=0,kv_chunk_rows=0;
+  // Exact scheduler input retained from workspace query through materialize.
+  std::int32_t fixed_split_pages=-1;
   bool split_kv=false;
   bool bf16_partials=false;
 };
@@ -33,7 +35,8 @@ void destroy_batch_state(void *) noexcept;
 // Optional read-only comparison against an original plan. True proves the
 // complete recorded launch topology, not permission to skip metadata upload.
 cudaError_t query_batch_workspace(BatchSpec,const std::int32_t *,const std::int32_t *,cudaStream_t,BatchFacts &,
-                                 const void *retained_plan=nullptr,bool *preserves_commands=nullptr,bool allow_graph_plan=true);
+                                 const void *retained_plan=nullptr,bool *preserves_commands=nullptr,bool allow_graph_plan=true,
+                                 std::int32_t fixed_split_pages=-1);
 cudaError_t plan_batch(void *,BatchSpec,const std::int32_t *,const std::int32_t *,void *,std::size_t,void *,void *,std::size_t,cudaStream_t,BatchFacts &,
                        bool preserve_commands=false,bool allow_graph_plan=true);
 cudaError_t run_batch(const void *,BatchSpec,const void *,const void *,const void *,const void *,void *,void *,void *,cudaStream_t);
