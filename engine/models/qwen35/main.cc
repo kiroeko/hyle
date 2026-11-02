@@ -442,6 +442,7 @@ struct DecodeRecording final {
   std::size_t preparations = 0, captures = 0;
   double seconds = 0, capture_preparation_seconds = 0;
 };
+enum class DecodeRecordingStage { kStartup, kRecovery };
 
 // CPU topology only, never a candidate/head or permission. A weak identity and
 // the next committed epoch qualify consumption after the original predecessor.
@@ -2532,13 +2533,14 @@ public:
   DecodeRecording prepare_ordinary_decode_recordings(std::size_t sampling_index,
       std::shared_ptr<Session> *prepared_session = nullptr) {
     if (cache_plan.draft_cache) return {};
-    return prepare_decode_recordings(sampling_index, false, prepared_session);
+    return prepare_decode_recordings(sampling_index, false, prepared_session, DecodeRecordingStage::kStartup);
   }
 
   DecodeRecording prepare_mtp_decode_recordings(std::size_t sampling_index,
-      std::shared_ptr<Session> *prepared_session = nullptr) {
+      std::shared_ptr<Session> *prepared_session = nullptr,
+      DecodeRecordingStage stage = DecodeRecordingStage::kStartup) {
     if (!cache_plan.draft_cache || max_drafts() != 1 || recursive_mtp()) return {};
-    try { return prepare_decode_recordings(sampling_index, true, prepared_session); }
+    try { return prepare_decode_recordings(sampling_index, true, prepared_session, stage); }
     catch (const inference::EvaluationFailure &failure) {
       if (!device_mtp_successor_ || !failure.status().IsUnimplemented() ||
           failure.status().has_native_error() || active_step || successor_step || carrier_borrowed ||
@@ -2547,12 +2549,51 @@ public:
       // An optional native shape was declined before request admission. The
       // real private recording episode has retired; preserve the old route.
       device_mtp_successor_ = false;
-      return prepare_decode_recordings(sampling_index, true, prepared_session);
+      return prepare_decode_recordings(sampling_index, true, prepared_session, stage);
     }
   }
 
+  // A cancelled/failed submitted episode must destroy its original Graph
+  // carrier. Rebuild the existing capture inventory at the next idle request
+  // admission, after its Session and every native use have actually retired.
+  void restore_mtp_decode_recordings(std::size_t sampling_index) {
+    if (!device_mtp_successor_ || active_step || successor_step || carrier_borrowed || snapshot_versions.live)
+      return;
+    const auto &sampling = sampling_configuration(sampling_index).configuration;
+    if (!DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
+            sampling.enabled, !sampling.modifiers.empty()}.eligible()) return;
+    const auto phase_for = [&](GraphRole role, bool imported) -> Phase * {
+      const auto found = phases.find({1, 2, role, TextCompletion::kEmitNext, sampling_index, imported,
+          RowPacking::kRectangular});
+      return found == phases.end() ? nullptr : found->second.get();
+    };
+    const std::array selected{phase_for(GraphRole::kMtpRound, false),
+        phase_for(GraphRole::kMtpCatchupRound, false), phase_for(GraphRole::kMtpContinuation, true)};
+    if (std::ranges::any_of(selected, [](const auto *phase) { return !phase || !phase->slots.size(); })) return;
+    const bool missing = !selected[0]->slots[0].carrier.initialized() || selected[0]->slots[0].carrier.closing() ||
+        !selected[1]->slots[0].carrier.initialized() || selected[1]->slots[0].carrier.closing() ||
+        std::ranges::any_of(selected[2]->slots.slots(), [](const auto &slot) {
+          return !slot.carrier.initialized() || slot.carrier.closing();
+        });
+    if (!missing || !private_publications_retired()) return;
+    for (auto *phase : selected) for (const auto &slot : phase->slots.slots())
+      if (!slot.carrier.retired()) return;
+    for (auto *phase : selected) {
+      const auto retired = phase->slots.retire_all(execution);
+      if (!retired.retired) {
+        inference::EvaluationFailure failure(retired.status.ok()
+            ? hyle::Status::Unavailable("MTP capture recovery has unretired native work") : retired.status);
+        failure.observe_retirement(retired);
+        throw failure;
+      }
+      check(retired.status);
+      for (auto &slot : phase->slots.slots()) check(slot.carrier.reset_retired());
+    }
+    (void)prepare_mtp_decode_recordings(sampling_index, nullptr, DecodeRecordingStage::kRecovery);
+  }
+
   DecodeRecording prepare_decode_recordings(std::size_t sampling_index, bool mtp,
-      std::shared_ptr<Session> *prepared_session) {
+      std::shared_ptr<Session> *prepared_session, DecodeRecordingStage stage) {
     DecodeRecording report;
     if (prepared_session && *prepared_session)
       throw std::runtime_error("decode recording requires an empty session destination");
@@ -2574,7 +2615,8 @@ public:
     if (active_step || successor_step || carrier_borrowed || snapshot_versions.live)
       throw std::runtime_error("decode recording requires an idle model before request admission");
     const auto begin = Clock::now();
-    std::cerr << "decode_warmup_begin\n";
+    const auto recording_phase = stage == DecodeRecordingStage::kStartup ? "decode_warmup" : "decode_recovery";
+    std::cerr << recording_phase << "_begin\n";
     auto session = create_session(chunk, {}, role, {}, false, TextCompletion::kEmitNext, sampling_index);
     hyle::util::ScopeGuard retire_session{[&]() noexcept {
       (void)abort_episode(); session->stop().IgnoreError(); (void)session->drain();
@@ -2668,7 +2710,7 @@ public:
     }
     retire_session.dismiss();
     report.seconds = std::chrono::duration<double>(Clock::now() - begin).count();
-    std::cerr << "decode_warmup_end graph_calls=0 target_rows=0 capture_recorded=" << report.captures
+    std::cerr << recording_phase << "_end graph_calls=0 target_rows=0 capture_recorded=" << report.captures
         << " capture_associated_cold_prep_seconds=" << report.capture_preparation_seconds
         << " seconds=" << report.seconds << " recorded_preparations=" << report.preparations << '\n';
     return report;
@@ -6757,6 +6799,7 @@ struct GenerationRequestAdapter final {
     preflight_generation_sampling(model, request);
     if (!request.progress.input_open() || request.admission_start == Clock::time_point{})
       request.admission_start = Clock::now();
+    if (!request.session) model.restore_mtp_decode_recordings(request.sampling_index);
   }
   void admit(inference::RequestKey key, std::span<const inference::RequestKey>) const {
     auto &request = requests[key.slot];

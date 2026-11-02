@@ -78,6 +78,25 @@ inline void compare_records(const Result &a, const Result &b) {
   }
 }
 
+inline void compare_request_records(const Result &a, const Result &b) {
+  require(a.ids == b.ids && a.records.size() == b.records.size(),
+      "recovered request changed complete IDs or ledger length");
+  for (std::size_t index = 0; index < a.records.size(); ++index) {
+    const auto &expected = a.records[index];
+    auto actual = b.records[index];
+    // The queued successor reserves a smaller quota and records its real
+    // imported Source. Those are scheduling facts, not different outputs.
+    require(!expected.generation || (actual.quota > 0 && actual.quota <= expected.quota),
+        "recovered successor exceeded its synchronous output quota");
+    actual.quota = expected.quota;
+    require(expected.same_result(actual) && expected.committed == actual.committed &&
+        expected.user_output == actual.user_output && expected.turn == actual.turn &&
+        std::ranges::equal(expected.ids(), actual.ids()) &&
+        std::ranges::equal(expected.committed_ids(), actual.committed_ids()),
+        "recovered request changed a committed decision, boundary or RNG fact");
+  }
+}
+
 // Require only real, already captured producer views. In particular a
 // continuation's own pending/prefix/catchup outputs describe its cB decision,
 // independently of the cA input selector that it consumed.
@@ -256,11 +275,101 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
   return result;
 }
 
-inline int run(const std::filesystem::path &input, q::BackendKind backend) {
-  if (backend != q::BackendKind::kCuda) {
-    std::cerr << "SKIP: device-continuation requires CUDA\n";
-    return 77;
+enum class BoundaryCase { kStop, kCancel, kHostFailure, kRecovery };
+
+// Exercise the actual request adapter with a submitted device successor.
+// The V64 fixture has no model EOS ID, so its stop case uses the same request
+// stop predicate with a real generated token; it is not a real-model EOS test.
+inline Result boundary_journey(q::Model &model, std::span<const std::int32_t> prompt,
+    std::int32_t stop_id, bool continuous, BoundaryCase selected) {
+  constexpr std::size_t outputs = 8;
+  const std::array extra{stop_id};
+  const i::RequestStopPolicy policy(selected == BoundaryCase::kStop
+      ? std::span<const std::int32_t>(extra) : std::span<const std::int32_t>{});
+  std::vector<q::GenerationRequest> requests;
+  requests.emplace_back("device-boundary", prompt, std::filesystem::path{}, outputs, 0, policy);
+  auto &request = requests.front();
+  auto owned = std::make_shared<std::vector<std::int32_t>>(prompt.begin(), prompt.end());
+  request.prompt = *owned; request.warm_inputs.push_back(std::move(owned));
+  request.input = q::cache::token_plan(request.prompt, model.capacity);
+  request.ledger = std::make_unique<q::GenerationLedger>(outputs, 3);
+  request.round_emitted.resize(outputs - 1);
+  for (auto &row : request.round_emitted) row.reserve(3);
+  request.turn_observations.resize(1);
+  i::RequestWindow keys; keys.prepare(1, 1); request.request_key = keys.enqueue(0);
+  q::GenerationContinuation continuation; continuation.enabled = continuous; continuation.prepare(1);
+  const auto unused_wave = [](i::RequestWave, std::span<std::size_t>) -> i::RequestWaveResult {
+    throw std::logic_error("boundary admission must not execute a request wave");
+  };
+  q::GenerationRequestAdapter admission{model, nullptr, std::span<q::GenerationRequest>(requests),
+      false, nullptr, unused_wave, {}, &continuation};
+  admission.admission_preflight(request.request_key);
+  hyle::util::ScopeGuard cleanup{[&]() noexcept {
+    continuation.reset(); (void)model.abort_episode();
+    if (request.session) {
+      request.session->stop().IgnoreError(); (void)request.session->drain();
+      (void)request.session->try_retire(); request.session.reset();
+    }
+  }};
+  bool observed_successor = false, interrupted = false;
+  std::optional<s::StateImage> before;
+  std::vector<std::int32_t> before_ids;
+  std::size_t before_commits = 0;
+  std::uint64_t before_epoch = 0;
+  while (!request.progress.turn_done && !interrupted) {
+    std::array calls{q::prepare_generation_call(model, request, outputs, nullptr, requests)};
+    if (calls[0].generation && (selected == BoundaryCase::kCancel || selected == BoundaryCase::kHostFailure)) {
+      before = s::image(model, *request.session->head);
+      before_ids = request.progress.generated; before_commits = request.ledger->committed_count;
+      before_epoch = request.session->head.epoch();
+    }
+    try {
+      q::execute_generation_calls(model, calls, false, nullptr, requests, [&] {
+        if (!model.successor_step || !model.successor_step->submitted) return;
+        observed_successor = true;
+        if (selected == BoundaryCase::kCancel) {
+          q::check(request.session->stop()); interrupted = true;
+        } else if (selected == BoundaryCase::kHostFailure) {
+          interrupted = true; throw std::runtime_error("injected device-successor host failure");
+        }
+      }, &continuation);
+    } catch (const std::runtime_error &failure) {
+      if (!interrupted || selected != BoundaryCase::kHostFailure ||
+          std::string_view(failure.what()) != "injected device-successor host failure") throw;
+    }
+    require(request.ledger->committed_count <= outputs, "device boundary exceeded its finite ledger");
   }
+  if (selected == BoundaryCase::kStop) {
+    require(request.progress.turn_done && request.progress.generated.size() >= 2 &&
+        request.progress.generated.back() == stop_id, "generated stop was not published at its actual boundary");
+    if (continuous) require(observed_successor && continuation.successor_discards == 1 &&
+        continuation.successor_submissions == 1 && !continuation.successor_publications,
+        "a stop in A failed to retire its already submitted device successor");
+  } else if (selected == BoundaryCase::kRecovery) {
+    require(request.progress.turn_done && request.progress.generated.size() == outputs,
+        "a request after cancellation or failure did not finish its original output quota");
+  } else {
+    require(interrupted && observed_successor && before && !model.active_step && !model.successor_step &&
+        request.session->head.epoch() == before_epoch && request.progress.generated == before_ids &&
+        request.ledger->committed_count == before_commits,
+        "cancelled or failed device successor published a pending head or output");
+    compare_state(model, *before, s::image(model, *request.session->head));
+  }
+  continuation.reset();
+  Result result; result.ids = request.progress.generated;
+  result.submitted = continuation.successor_submissions;
+  result.records.assign(request.ledger->records.begin(), request.ledger->records.begin() + request.ledger->committed_count);
+  result.final_state = s::image(model, *request.session->head);
+  h::retire(request.session);
+  require(!model.active_step && !model.successor_step && !model.carrier_borrowed && !model.snapshot_versions.live &&
+      model.page_inventory.free_ids.size() == model.page_inventory.owners.size() &&
+      model.draft_inventory.free_ids.size() == model.draft_inventory.owners.size(),
+      "device boundary left a native episode, state version or page owner alive");
+  cleanup.dismiss();
+  return result;
+}
+
+inline std::unique_ptr<q::Model> make_model(const std::filesystem::path &input, q::BackendKind backend) {
   auto source = q::prepare_weight_source(input / "weights.tsv", true);
   const auto geometry = source.roles.geometry;
   require(geometry.hidden == 64 && geometry.vocabulary == 64 && geometry.context_limit >= 16 &&
@@ -270,8 +379,9 @@ inline int run(const std::filesystem::path &input, q::BackendKind backend) {
       q::recurrent_bytes(q::state_schema_for(geometry, 16), geometry), 1, 2, true, true, 3);
   require(plan.state_slots == 7 && plan.hidden_slots == 8 && plan.snapshot_slots == 4 &&
       plan.in_flight_batches == 3, "continuous probe changed the original exact N1/R1/D3 pool bound");
-  q::Model model(std::move(source), geometry, 16, plan, {}, false, q::ReplayPolicy::kPreferCapture,
-      SIZE_MAX, {}, 0, {.primary = backend});
+  auto owner = std::make_unique<q::Model>(std::move(source), geometry, 16, plan, std::filesystem::path{}, false,
+      q::ReplayPolicy::kPreferCapture, SIZE_MAX, q::Model::Sampling{}, 0, q::BackendSelection{.primary = backend});
+  auto &model = *owner;
   model.configure_draft_policy({.max_drafts = 1});
   model.configure_device_mtp_successor(true);
   require(model.device_mtp_continuous_enabled(), "D3 did not enable the continuous device family");
@@ -295,13 +405,28 @@ inline int run(const std::filesystem::path &input, q::BackendKind backend) {
       model.page_inventory.free_ids.size() == model.page_inventory.owners.size() &&
       model.draft_inventory.free_ids.size() == model.draft_inventory.owners.size(),
       "cold recording did not leave seven dormant never-submitted Round/B0/B1/B2/B0/Catchup/B1 tuples");
+  return owner;
+}
+
+inline int run(const std::filesystem::path &input, q::BackendKind backend) {
+  if (backend != q::BackendKind::kCuda) {
+    std::cerr << "SKIP: device-continuation requires CUDA\n";
+    return 77;
+  }
+  auto owner = make_model(input, backend);
+  auto &model = *owner;
   constexpr std::array<std::array<std::int32_t, 3>, 8> prompts{{
       {1, 2, 3}, {2, 5, 7}, {3, 1, 4}, {7, 8, 9},
       {11, 2, 17}, {19, 23, 29}, {31, 37, 41}, {43, 47, 53}}};
   std::size_t a1 = 0, a2 = 0, submits = 0, reused = 0;
+  std::int32_t boundary_stop = -1;
   for (std::size_t index = 0; index < prompts.size(); ++index) {
     const auto serial = journey(model, prompts[index], false);
     const auto candidate = journey(model, prompts[index], true);
+    if (index == 5) {
+      require(serial.ids.size() >= 2 && serial.ids[0] != serial.ids[1], "fixture lacks a post-prefill stop");
+      boundary_stop = serial.ids[1];
+    }
     compare_records(serial, candidate);
     compare_state(model, *serial.final_state, *candidate.final_state);
     require(serial.draft_rows == candidate.draft_rows && serial.submitted == candidate.submitted &&
@@ -313,6 +438,26 @@ inline int run(const std::filesystem::path &input, q::BackendKind backend) {
     for (const auto id : candidate.ids) std::cout << id << ',';
     std::cout << " a1_published=" << candidate.a1_published << " a2_published=" << candidate.a2_published << '\n';
   }
+  const auto serial_stop = boundary_journey(model, prompts[5], boundary_stop, false, BoundaryCase::kStop);
+  const auto device_stop = boundary_journey(model, prompts[5], boundary_stop, true, BoundaryCase::kStop);
+  compare_records(serial_stop, device_stop);
+  compare_state(model, *serial_stop.final_state, *device_stop.final_state);
+  (void)boundary_journey(model, prompts[5], boundary_stop, true, BoundaryCase::kCancel);
+  const auto serial_recovery = boundary_journey(model, prompts[5], boundary_stop, false, BoundaryCase::kRecovery);
+  const auto cancel_recovery = boundary_journey(model, prompts[5], boundary_stop, true, BoundaryCase::kRecovery);
+  compare_request_records(serial_recovery, cancel_recovery);
+  compare_state(model, *serial_recovery.final_state, *cancel_recovery.final_state);
+  require(cancel_recovery.submitted > 0, "cancel recovery did not restore device successors");
+  owner.reset();
+  auto failure_owner = make_model(input, backend);
+  (void)boundary_journey(*failure_owner, prompts[5], boundary_stop, true, BoundaryCase::kHostFailure);
+  const auto failure_recovery = boundary_journey(*failure_owner, prompts[5], boundary_stop, true, BoundaryCase::kRecovery);
+  compare_request_records(serial_recovery, failure_recovery);
+  compare_state(*failure_owner, *serial_recovery.final_state, *failure_recovery.final_state);
+  require(failure_recovery.submitted > 0, "host failure recovery did not restore device successors");
+  std::cout << "PASS device_successor_boundaries generated_stop=1 cancel=1 host_failure=1 actual_model_eos=0"
+      << " cancel_recovery_successors=" << cancel_recovery.submitted
+      << " failure_recovery_successors=" << failure_recovery.submitted << '\n';
   std::cout << "coverage a1_published=" << a1 << " a2_published=" << a2 << " native_submissions=" << submits << '\n';
   std::cout << "PASS device_continuous_model prompts=" << prompts.size() << " journeys=" << prompts.size() * 2
       << " native_submissions=" << submits << " before_current_host_read_links=" << a1 + a2
@@ -320,7 +465,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind backend) {
       << " ids_and_ledger_equal=1 complete_state_oracle_equal=1 gdn_abs_budget=0.000003 controlled_acceptance=0"
          " k1_episodes=6 k1_quotas=4,4,4,4,4,2 continuation_slots=0,1,2,0,1"
          " cold_preparations=7 state_slots=7 hidden_slots=8 snapshots=4"
-         " natural_acceptance_coverage_observed_only=1 quota1_tail_covered=1 EOS_cancel_covered=0"
+         " natural_acceptance_coverage_observed_only=1 quota1_tail_covered=1 manual_journey_EOS_cancel_covered=0"
          " page128_covered=0 natural_RequestLoop=0"
          " performance_claim=0 final_versions=0\n";
   return 0;
