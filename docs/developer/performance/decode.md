@@ -76,7 +76,7 @@ GPU 采样峰是下界，跨进程共享显存不可相加；多轮的准备和�
 
 性能行为变化或关键节点更新完整表。逐项优化先缩小范围：例如在下方命令末尾追加 `--only long-32736-c32768 --modes off --memory-repeats 0`；未测项目会明确标为“未测”。完整表默认每臂 3 个计时进程、1 个独立内存进程；显存验收需要 `--memory-repeats 3`。
 
-Nsight 归因先用 `python scripts/inference-nsys-prepare.py --help` 生成带边界标记的诊断源码并编译，再用 `python scripts/inference-nsys-capture.py --help` 采集对照。当前支持单轮；预热、输入、容量或首 token 边界校验失败时不生成对比表。
+Nsight 归因先用 `python scripts/inference-nsys-prepare.py --help` 生成带边界标记的诊断源码并编译，再用 `python scripts/inference-nsys-capture.py --help` 采集对照。当前支持单轮；预热、输入、容量或首 token 边界校验失败时不生成对比表。新轨迹还分列 Hyle 主机准备与该进程 CUDA 活动、空档的重叠时间。
 
 本机复现命令（更新实际版本并换一个不存在的输出目录）：
 

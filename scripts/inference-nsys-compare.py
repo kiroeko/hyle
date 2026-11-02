@@ -11,6 +11,7 @@ ranges instead of guessing where prefill ended. It does not run a benchmark.
 from __future__ import annotations
 
 import argparse
+from bisect import bisect_right
 from collections import defaultdict
 from dataclasses import dataclass
 import json
@@ -166,14 +167,59 @@ def activity(db, interval):
                 kernel_count += 1
                 first_kernel = a if first_kernel is None else min(first_kernel, a)
     require(first_kernel is not None, "No prefill kernels")
-    busy, last = 0, interval.start
+    merged = []
     for begin, end in sorted(intervals):
-        if end > last:
-            busy += end - max(begin, last)
-            last = end
+        if merged and begin <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+        else:
+            merged.append((begin, end))
+    busy = sum(end - begin for begin, end in merged)
     return {"window": interval.end - interval.start, "sums": sums, "counts": counts,
             "idle": interval.end - interval.start - busy, "first_kernel": first_kernel - interval.start,
-            "kernels": kernel_count, "pid": pid}
+            "kernels": kernel_count, "pid": pid, "busy_intervals": merged}
+
+
+def host_preparation(events, interval, busy):
+    """Intersect complete host preparation ranges with this process's CUDA activity."""
+    names = ("hyle.host.cold_batch", "hyle.host.layout",
+             "hyle.host.batch_prepare", "hyle.host.replay_prepare")
+    for start, end, name in events:
+        if name not in names:
+            continue
+        if end is None:
+            require(not interval.start <= start <= interval.end,
+                    "hyle: host preparation range has no end")
+        elif start < interval.end and end > interval.start:
+            require(interval.start <= start <= end <= interval.end,
+                    "hyle: host preparation crosses a prefill boundary")
+    spans = {name: sorted((a, b) for a, b, event in events
+                          if event == name and b is not None and interval.start <= a <= b <= interval.end)
+             for name in names}
+    if not any(spans.values()):
+        return None  # Profiles collected before host ranges were added.
+    count = len(spans[names[0]])
+    require(count and all(len(spans[name]) == count for name in names),
+            "hyle: host preparation ranges are incomplete")
+    for i in range(count):
+        cold, layout, batch, replay = (spans[name][i] for name in names)
+        require(cold[0] <= layout[0] <= layout[1] <= batch[0] <= batch[1] <=
+                replay[0] <= replay[1] <= cold[1], "hyle: host preparation stages are not nested")
+        if i:
+            require(spans[names[0]][i - 1][1] <= cold[0],
+                    "hyle: overlapping host preparations need a different attribution")
+    ends = [end for _, end in busy]
+    result = {}
+    for name in names:
+        elapsed = overlap = 0
+        for start, end in spans[name]:
+            elapsed += end - start
+            index = bisect_right(ends, start)
+            while index < len(busy) and busy[index][0] < end:
+                overlap += max(0, min(end, busy[index][1]) - max(start, busy[index][0]))
+                index += 1
+        require(overlap <= elapsed, "hyle: host/CUDA overlap exceeds host preparation time")
+        result[name] = {"count": count, "elapsed": elapsed, "busy": overlap, "idle": elapsed - overlap}
+    return result
 
 
 def load_profile(profile, arm):
@@ -185,6 +231,8 @@ def load_profile(profile, arm):
                                  "from NVTX_EVENTS n left join StringIds s on n.textId=s.id"))
         interval = prefill_interval(events, arm)
         sample = activity(db, interval)
+        if arm == "hyle":
+            sample["host_preparation"] = host_preparation(events, interval, sample["busy_intervals"])
     finally:
         db.close()
     return info, interval, sample
@@ -208,6 +256,17 @@ def report(h, p):
                        ("选定 prefill 范围", "window")):
         a, b = hs[key] / 1e6, ps[key] / 1e6
         lines.append(f"| {title} | {a:.3f} | {b:.3f} | {a-b:+.3f} |")
+    host = hs.get("host_preparation")
+    if host:
+        lines += ["", f"Hyle 主机准备：{host['hyle.host.cold_batch']['count']} 次；"
+                      "按同一进程 CUDA 活动时间线取交集。", "",
+                  "| 主机阶段 | 总用时 ms | 与 CUDA 活动重叠 ms | 与 CUDA 空档重叠 ms |",
+                  "|---|---:|---:|---:|"]
+        for title, name in (("完整准备", "hyle.host.cold_batch"), ("布局 / 状态", "hyle.host.layout"),
+                            ("批次绑定", "hyle.host.batch_prepare"), ("回放准备", "hyle.host.replay_prepare")):
+            row = host[name]
+            lines.append(f"| {title} | {row['elapsed']/1e6:.3f} | {row['busy']/1e6:.3f} | {row['idle']/1e6:.3f} |")
+        lines += ["", "时间重叠仅表明同时发生，不能单凭它证明 GPU 等待的原因。"]
     lines += ["", "类型转换单列：无法仅凭 kernel 名称判断它属于 GDN、注意力或其他图算子。",
               "空档是被追踪进程的 kernel、memcpy、memset 活动并集之外的时间；不代表整卡空闲。",
               "首 kernel 前时间与空档和拷贝可能重叠；各类 GPU 时间也可能并发，不能直接相加推算请求时间。",

@@ -72,9 +72,22 @@ class Collection final {
     const auto error = cudaProfilerStop();
     if (error != cudaSuccess) throw std::runtime_error(cudaGetErrorString(error));
   }
+  bool active() const noexcept { return active_; }
   ~Collection() { if (active_) { nvtxRangePop(); nvtxRangePop(); (void)cudaProfilerStop(); } }
 };
 inline Collection *prefill = nullptr;
+class HostRange final {
+  bool active_ = false;
+ public:
+  explicit HostRange(const char *name) : active_(prefill && prefill->active()) {
+    if (active_) nvtxRangePushA(name);
+  }
+  void next(const char *name) {
+    if (active_) { nvtxRangePop(); nvtxRangePushA(name); }
+  }
+  void finish() { if (active_) { nvtxRangePop(); active_ = false; } }
+  ~HostRange() { finish(); }
+};
 }
 '''
 
@@ -108,6 +121,17 @@ def annotate(origin, arm):
                      '      nvtxMarkA("hyle.prefill.ledger_endpoint.observed");\n'
                      '      nvtxMarkA("hyle.prefill.capture_closed_at_ledger");\n'
                      '      hyle_profile_trace::prefill->finish();\n    }')
+        marker = "      const auto cold_start = Clock::now();"
+        edit(marker, marker + '\n      hyle_profile_trace::HostRange host_cold("hyle.host.cold_batch");\n'
+                     '      hyle_profile_trace::HostRange host_stage("hyle.host.layout");')
+        marker = "      const auto batch_start = Clock::now();"
+        edit(marker, '      host_stage.next("hyle.host.batch_prepare");\n' + marker)
+        marker = "      const auto batch_end = Clock::now();"
+        edit(marker, '      host_stage.next("hyle.host.replay_prepare");\n' + marker)
+        marker = "      const auto replay_end = Clock::now();"
+        edit(marker, marker + '\n      host_stage.finish();')
+        marker = "      step.cold_batch_seconds = std::chrono::duration<double>(Clock::now() - cold_start).count();"
+        edit(marker, marker + '\n      host_cold.finish();')
         entry = ('\nint main(int argc, char **argv) { if (!hyle_profile_io::initialize()) return 1; '
                  'return qwen35::run(argc, argv); }\n')
         text += entry

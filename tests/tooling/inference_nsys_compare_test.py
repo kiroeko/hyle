@@ -48,13 +48,20 @@ class PrefillScopeTest(unittest.TestCase):
                 return ("namespace qwen35 {\nnamespace sampling = hyle::inference::sampling;\n"
                         "  const auto start = Clock::now(); auto endpoint = start;\n"
                         "      return prepare_generation_call(model, request, request.progress.output_limit(), prefix.get(), requests,\n"
-                        "    request.prefill_endpoint = record.endpoint;\n")
+                        "    request.prefill_endpoint = record.endpoint;\n"
+                        "      const auto cold_start = Clock::now();\n"
+                        "      const auto batch_start = Clock::now();\n"
+                        "      const auto batch_end = Clock::now();\n"
+                        "      const auto replay_end = Clock::now();\n"
+                        "      step.cold_batch_seconds = std::chrono::duration<double>(Clock::now() - cold_start).count();\n")
         _, generated = prepare.annotate(Source(), "hyle")
         publication = generated.index("request.prefill_endpoint = record.endpoint;")
         endpoint = generated.index('nvtxMarkA("hyle.prefill.ledger_endpoint.observed")', publication)
         stop = generated.index("hyle_profile_trace::prefill->finish()", endpoint)
         self.assertLess(publication, endpoint)
         self.assertLess(endpoint, stop)
+        for name in ("hyle.host.cold_batch", "hyle.host.layout", "hyle.host.batch_prepare", "hyle.host.replay_prepare"):
+            self.assertIn(name, generated)
 
     def test_missing_duplicate_or_outside_peer_endpoint_is_rejected(self):
         whole = (10, 100, "peer.prefill")
@@ -92,6 +99,21 @@ class PrefillScopeTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "crosses a prefill boundary"):
             profile.activity(db, profile.Interval(10, 100, 100))
         db.close()
+
+    def test_host_preparation_overlap_is_bounded_by_cuda_activity(self):
+        scope = profile.Interval(0, 100, 100)
+        events = [(10, 70, "hyle.host.cold_batch"), (11, 20, "hyle.host.layout"),
+                  (20, 45, "hyle.host.batch_prepare"), (45, 65, "hyle.host.replay_prepare")]
+        host = profile.host_preparation(events, scope, [(20, 35), (50, 55)])
+        self.assertEqual(host["hyle.host.cold_batch"], {"count": 1, "elapsed": 60, "busy": 20, "idle": 40})
+        self.assertEqual(host["hyle.host.layout"]["busy"], 0)
+        self.assertEqual(host["hyle.host.batch_prepare"]["busy"], 15)
+        self.assertEqual(host["hyle.host.replay_prepare"]["busy"], 5)
+        self.assertIsNone(profile.host_preparation([], scope, []))
+        with self.assertRaisesRegex(ValueError, "incomplete"):
+            profile.host_preparation(events[:-1], scope, [])
+        with self.assertRaisesRegex(ValueError, "crosses a prefill boundary"):
+            profile.host_preparation(events + [(90, 110, "hyle.host.cold_batch")], scope, [])
 
 
 if __name__ == "__main__":
