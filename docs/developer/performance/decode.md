@@ -97,7 +97,7 @@ Hyle第一项为`graph_batch_prepare`、`query_rows_bind`、`prepare_replay`；�
 
 原先约0.96ms的Graph批次准备不是原生注意力计划本体：六次FlashInfer plan合计0.130ms、查询0.041ms；六次Batch准备合计0.357ms，内含workspace申请0.134ms、plan等待0.014ms。其余仍包含外围资源和绑定处理。
 
-细化计数区分了首次准备与重复准备：第2轮复用128行载体，719个节点的物理输入输出tuple全部未变，修订号改变258个，另461个tuple与修订号均未变；但719个都重走`prepare_command_bindings`。原因是`stable_binding_identity`全部为false，当前只在成功录图后接收该后端事实，Commands路径提前返回，得不到事实。此处尚未交付修复，不能直接置true或省略当前权限、修订、opaque carrier及退休检查。第5轮首次使用256行载体，719个绑定确实都要首次建立；601个View中564个投影复用，不能把该轮约1ms全部当成可消除的重复工作。计数探针含密集标记，只用其次数，不拿其耗时与稀疏标记版本计算收益。
+细化计数区分了首次准备与重复准备：第2轮复用128行载体，719个节点的物理输入输出tuple全部未变，修订号改变258个，另461个tuple与修订号均未变；但719个都重走`prepare_command_bindings`。原因是`stable_binding_identity`全部为false，当前只在成功录图后接收该后端事实，Commands路径提前返回，得不到事实。候选从实际Queue的既有后端扩展读取身份事实，保留修订、opaque carrier、当前seal与真实退休检查；重复轮绑定准备从719次降到192次，普通八轮准备中位数12.76→11.34ms。完整请求收益未复现，候选已撤回；默认产品源码仍为`5192b4232`。第5轮首次使用256行载体，719个绑定确实都要首次建立；601个View中564个投影复用，不能把该轮约1ms全部当成可消除的重复工作。计数探针含密集标记，只用其次数，不拿其耗时与稀疏标记版本计算收益。
 
 GPU也仍有差距，同三对轨迹中位数如下；因此不能将本轮prefill差距全部归于主机。
 
@@ -112,9 +112,11 @@ GPU也仍有差距，同三对轨迹中位数如下；因此不能将本轮prefi
 | 所选进程CUDA活动空档 | 6.848 | 3.787 |
 | 选定prefill范围 | 31.725 | 26.656 |
 
-总计14个带标记进程的完整512个输出ID均与各自未插桩原版一致；三对主对照及第2／5轮的细化／计数对照均通过边界、预热、实际容量和无未来形状提示检查。没有改产品实现，没有新增吞吐或内存验收；首kernel时间、父子函数、GPU类别与空档不能简单相加，profiler数字不代签吞吐收益。
+总计14个带标记进程的完整512个输出ID均与各自未插桩原版一致；三对主对照及第2／5轮的细化／计数对照均通过边界、预热、实际容量和无未来形状提示检查。这些职责对齐数据只用于归因；首kernel时间、父子函数、GPU类别与空档不能简单相加，profiler数字不代签吞吐收益。
 
 原始结果：[职责对齐及范围定义](../../../.scratch/inference-host-alignment-20261103/alignment-report.md)、[三对函数原数](../../../.scratch/inference-host-alignment-20261103/host-functions-summary.txt)、[重复载体计数](../../../.scratch/inference-host-alignment-20261103/turn2-count-pair1/fine-functions.txt)、[首次载体计数](../../../.scratch/inference-host-alignment-20261103/turn5-count-pair1/fine-functions.txt)。完整交付的[性能验收](../../../.scratch/inference-perf-gap-20261103/timing-gates.txt)、[内存验收](../../../.scratch/inference-perf-gap-20261103/cache-memory1/summary.txt)和[teacher-forcing](../../../.scratch/inference-perf-gap-20261103/cache-teacher1/)沿用原结果。
+
+候选覆盖C2048／C32768真实八轮及四档长输入，普通／MTP与基线和冻结参考同窗交错，每臂3个独立进程；三个确认窗各5进程。C32768八轮MTP确认prefill为190.35／190.67／192.10ms（候选／基线／参考）；16K MTP确认1746.52／1735.67／1933.44ms。范围重叠，整体收益未证明，候选撤回。所有候选／基线输出ID一致；独立显存未测，不新增内存验收。[命令、测试结果与撤回补丁](../../../.scratch/inference-command-binding-20261103/result.txt)。
 
 ## 复测
 
