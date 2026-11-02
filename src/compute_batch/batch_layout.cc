@@ -469,7 +469,17 @@ Result<std::span<const detail::BatchPageChange>> detail::BatchLayoutAccess::page
     return std::span<const BatchPageChange>(entry.pages);
   BatchLayoutData::Changes staged(before.generation(),data.allocator);
   try{
-    for(std::size_t a=0,b=0;a<old.pages.size() || b<next.pages.size();){
+    // Most append pairs preserve a long physical prefix. Compare its contiguous
+    // IDs/row bounds in bulk before merging the changed suffix. The normal
+    // merge still handles arbitrary insertion, removal and shared-page rows.
+    std::size_t common=0;
+    const auto count=std::min(old.pages.size(),next.pages.size());
+    if(count){
+      common=std::size_t(std::mismatch(old.pages.begin(),old.pages.begin()+count,next.pages.begin()).first-old.pages.begin());
+      if(common)common=std::size_t(std::mismatch(old.required_rows.begin(),old.required_rows.begin()+common,
+          next.required_rows.begin()).first-old.required_rows.begin());
+    }
+    for(std::size_t a=common,b=common;a<old.pages.size() || b<next.pages.size();){
       if(b==next.pages.size() || (a<old.pages.size() && old.pages[a]<next.pages[b])){
         staged.pages.push_back({old.pages[a],old.required_rows[a],0});++a;
       }else if(a==old.pages.size() || next.pages[b]<old.pages[a]){
@@ -504,9 +514,10 @@ Result<bool> detail::BatchLayoutAccess::logical_prefix_covers(
     const auto small_rows=small_count?std::uint64_t(small_count-1)*page_size+smaller.last_page_lengths[request]:0;
     const auto large_rows=large_count?std::uint64_t(large_count-1)*page_size+larger.last_page_lengths[request]:0;
     covered=small_count<=large_count && small_rows<=large_rows;
-    for(std::uint32_t page=0;covered && page<small_count;++page)
-      covered=smaller.page_indices[std::size_t(smaller.kv_indptr[request])+page]==
-          larger.page_indices[std::size_t(larger.kv_indptr[request])+page];
+    if(covered && small_count){
+      const auto*first=smaller.page_indices.data()+smaller.kv_indptr[request];
+      covered=std::equal(first,first+small_count,larger.page_indices.data()+larger.kv_indptr[request]);
+    }
   }
   found->logical_prefix=covered;found->logical_prefix_known=true;return covered;
 }

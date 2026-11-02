@@ -52,6 +52,26 @@ TEST(BatchLayout, PageDifferencesKeepSparseRowsStableAcrossBanksAndPredecessors)
   before={};from_other={};schema={};
   EXPECT_EQ(changes[2].after_rows,8u);EXPECT_EQ(other[1].page,1);
 }
+TEST(BatchLayout, PageDifferencesKeepAnotherRequestsRowChangeBeforeACowSuffix){
+  const auto schema=c::BatchSchema::create(capacity()).value();
+  const std::array<std::int32_t,4> query{0,0,0,0},kv{0,2,3,5};
+  const std::array<std::int32_t,5> old_pages{0,1,2,3,4},new_pages{0,1,2,3,6};
+  const std::array<std::int32_t,3> old_tails{16,3,5},new_tails{16,7,9};
+  const auto before=schema.version({query,kv,old_pages,old_tails}).value();
+  const auto after=schema.version({query,kv,new_pages,new_tails}).value();
+  const auto changes=c::detail::BatchLayoutAccess::page_changes(before,after).value();
+  ASSERT_EQ(changes.size(),3u);
+  EXPECT_EQ(changes[0].page,2);EXPECT_EQ(changes[0].before_rows,3u);EXPECT_EQ(changes[0].after_rows,7u);
+  EXPECT_EQ(changes[1].page,4);EXPECT_EQ(changes[1].before_rows,5u);EXPECT_EQ(changes[1].after_rows,0u);
+  EXPECT_EQ(changes[2].page,6);EXPECT_EQ(changes[2].before_rows,0u);EXPECT_EQ(changes[2].after_rows,9u);
+  const auto reversed=c::detail::BatchLayoutAccess::page_changes(after,before).value();
+  ASSERT_EQ(reversed.size(),changes.size());
+  for(std::size_t i=0;i<changes.size();++i){
+    EXPECT_EQ(reversed[i].page,changes[i].page);
+    EXPECT_EQ(reversed[i].before_rows,changes[i].after_rows);
+    EXPECT_EQ(reversed[i].after_rows,changes[i].before_rows);
+  }
+}
 TEST(BatchLayout, AppendMappingPreservesPackedOffsetsCowAndSharedUntouchedReferences){
   auto schema=c::BatchSchema::create(capacity()).value();
   const std::array<std::int32_t,3> zero{0,0,0},old_kv{0,2,4},next_kv{0,2,5},query{0,2,3};
