@@ -4,7 +4,9 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <limits>
+#include <mutex>
 #include <new>
 #include <numeric>
 #include <optional>
@@ -31,9 +33,7 @@ constexpr std::size_t kWorkspaceAlignment = 256;
 constexpr std::size_t kMaximumWorkspaceBytes = 32 * 1024 * 1024;
 
 // No mutable vendor handle is shared by concurrent prepare or execution.
-struct CublasContext final {
-  CUcontext primary = nullptr;
-};
+struct CublasContext;
 
 struct CublasRun final {
   std::array<cublasLtMatrixLayout_t, 3> layouts{};
@@ -60,8 +60,53 @@ struct BatchGeometry final {
   std::size_t count = 1;
 };
 
+
+// Immutable AlgoCheck facts only, scoped to the original device/provider
+// context. Vendor handles and mutable invocation layouts remain unshared.
+// This provider's descriptor is N/N, F32 scale, and compute mode is determined
+// by the input type. The full matrix/type tuple and serialized algorithm
+// therefore identify the exact check. Cache only success, not refusals.
+struct ActiveQualification final {
+  std::array<MatrixLayout,3> matrices{};
+  std::array<DataType,3> types{};
+  cublasLtMatmulAlgo_t algorithm{};
+  std::size_t workspace = 0;
+  bool occupied = false;
+  bool matches(const BatchGeometry &geometry,const cublasLtMatmulAlgo_t &algo) const noexcept {
+    if(!occupied || matrices[0].rows!=geometry.matrices[0].rows || types!=geometry.data_types ||
+        !std::equal(std::begin(algorithm.data),std::end(algorithm.data),std::begin(algo.data)))return false;
+    for(std::size_t i=0;i<matrices.size();++i){
+      const auto&a=matrices[i];const auto&b=geometry.matrices[i];
+      if(a.rows!=b.rows || a.columns!=b.columns || a.leading!=b.leading || a.order!=b.order)return false;
+    }
+    return true;
+  }
+};
+struct CublasContext final {
+  CUcontext primary = nullptr;
+  std::mutex qualification_mutex;
+  std::array<ActiveQualification,64> qualifications{};
+  std::size_t next_qualification=0;
+  bool qualified(const BatchGeometry &geometry,const cublasLtMatmulAlgo_t &algo,std::size_t &workspace) noexcept {
+    // Contention just uses the original native check. Never wait on another
+    // invocation's metadata preparation or retain a caller's configuration.
+    if(!qualification_mutex.try_lock())return false;
+    const std::lock_guard<std::mutex> guard(qualification_mutex,std::adopt_lock);
+    for(const auto&entry:qualifications)if(entry.matches(geometry,algo)){workspace=entry.workspace;return true;}
+    return false;
+  }
+  void remember(const BatchGeometry &geometry,const cublasLtMatmulAlgo_t &algo,std::size_t workspace) noexcept {
+    if(!qualification_mutex.try_lock())return;
+    const std::lock_guard<std::mutex> guard(qualification_mutex,std::adopt_lock);
+    for(const auto&entry:qualifications)if(entry.matches(geometry,algo))return;
+    qualifications[next_qualification]={geometry.matrices,geometry.data_types,algo,workspace,true};
+    next_qualification=(next_qualification+1)%qualifications.size();
+  }
+};
+
 struct CublasPrepared final {
   CUcontext primary = nullptr;
+  CublasContext *qualification = nullptr;
   cublasLtMatmulDesc_t operation = nullptr;
   container::SmallVector<CublasRun, 1, mem::AllocatorRef> runs;
   std::size_t workspace_bytes = 0;
@@ -72,8 +117,8 @@ struct CublasPrepared final {
   TensorDesc offsets_description;
   std::size_t vendor_workspace_bytes = 0, output_offset = 0;
   std::size_t output_bytes = 0, output_row_bytes = 0;
-  CublasPrepared(CUcontext context, mem::AllocatorRef allocator) noexcept
-      : primary(context), runs(allocator) {}
+  CublasPrepared(CublasContext &context, mem::AllocatorRef allocator) noexcept
+      : primary(context.primary), qualification(&context), runs(allocator) {}
 };
 
 struct CublasInvocation final {
@@ -592,9 +637,17 @@ Status configure_active_run(const CublasPrepared &prepared,
   HYLE_RETURN_IF_ERROR(create_layouts(candidate.run, geometry));
   cublasLtMatmulHeuristicResult_t result{};
   const auto &original = prepared.runs.front().algorithm;
-  auto checked = cublasLtMatmulAlgoCheck(invocation.handle, prepared.operation,
-      candidate.run.layouts[0], candidate.run.layouts[1],
-      candidate.run.layouts[2], candidate.run.layouts[2], &original, &result);
+  std::size_t qualified_workspace=0;
+  auto checked=CUBLAS_STATUS_SUCCESS;
+  if(prepared.qualification->qualified(geometry,original,qualified_workspace)){
+    result.state=CUBLAS_STATUS_SUCCESS;result.workspaceSize=qualified_workspace;
+  }else{
+    checked=cublasLtMatmulAlgoCheck(invocation.handle,prepared.operation,
+        candidate.run.layouts[0],candidate.run.layouts[1],
+        candidate.run.layouts[2],candidate.run.layouts[2],&original,&result);
+    if(checked==CUBLAS_STATUS_SUCCESS && result.state==CUBLAS_STATUS_SUCCESS)
+      prepared.qualification->remember(geometry,original,result.workspaceSize);
+  }
   if (checked == CUBLAS_STATUS_SUCCESS && result.state == CUBLAS_STATUS_SUCCESS &&
       result.workspaceSize <= prepared.vendor_workspace_bytes) {
     candidate.run.algorithm = original;
@@ -849,7 +902,7 @@ ProviderPrepareOutcome prepare(void *context_value,
     return ProviderPrepareOutcome::error(
         Status::ResourceExhausted("cuBLAS prepared allocation failed"));
   auto *prepared = ::new (storage) CublasPrepared(
-      static_cast<CublasContext *>(context_value)->primary, allocator);
+      *static_cast<CublasContext *>(context_value), allocator);
   status = configure(*prepared, geometry);
   if (!status.ok()) {
     destroy_prepared(prepared, allocator);

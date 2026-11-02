@@ -247,3 +247,31 @@ TEST(CublasPackedRowMatMul, MissingForeignOrInvalidControlPublishesNothingAndCan
   test.expect_poison(); good.expect_poison();
 }
 } // namespace
+
+namespace {
+TEST(CublasPackedRowMatMul, IndependentWeightsAndControlsSurviveManyPreparedRowShapes) {
+  Environment environment;
+  Case first(environment, c::DataType::kBFloat16, c::DataType::kFloat32, false);
+  Case second(environment, c::DataType::kBFloat16, c::DataType::kFloat32, false);
+  // Identical layouts and algorithm eligibility never imply shared payloads.
+  need(second.storage[1].view().fill(std::byte{0}));
+  const std::vector<std::byte> zero(second.outputs[0].storage().size(),std::byte{0});
+  const auto exercise=[&](std::size_t active) {
+    first.upload(active);second.upload(active);
+    first.poison();second.poison();
+    ASSERT_TRUE(first.configure(active).ok());
+    ASSERT_TRUE(second.configure(active).ok());
+    ASSERT_TRUE(first.submit().ok());
+    ASSERT_TRUE(second.submit().ok());
+    first.check(active);
+    std::vector<std::byte> actual(zero.size());
+    ASSERT_TRUE(second.outputs[0].storage().read(actual).ok());
+    EXPECT_EQ(actual,zero);second.guards();
+    // A remembered vendor qualification grants no executable row control.
+    ASSERT_TRUE(second.configure(0,true).ok());
+    second.poison();EXPECT_FALSE(second.submit().ok());second.expect_poison();
+  };
+  for(std::size_t rows=1;rows<=96;++rows){SCOPED_TRACE(rows);exercise(rows);}
+  for(const auto rows:{17u,1u,96u}){SCOPED_TRACE(rows);exercise(rows);}
+}
+} // namespace
