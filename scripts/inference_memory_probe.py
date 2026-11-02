@@ -17,8 +17,116 @@ from __future__ import annotations
 import ctypes as c
 from ctypes import wintypes as w
 import os
+import re
 import threading
 import time
+
+
+PHASE_METRICS = ("working_set_bytes", "private_commit_bytes",
+                 "gpu_dedicated_bytes", "gpu_shared_bytes")
+
+
+def phase_marker(line, timestamp_ns):
+    """Timestamp receipt of an existing unbuffered stderr marker, not GPU work."""
+    text = line.strip()
+    if re.match(r"^measure_memory name=ready_before_first(?:\s|$)", text):
+        return dict(timestamp_ns=timestamp_ns, label="ready", phase="ready", edge="point", line=text)
+    found = re.match(r"^memory_phase=(.+)_(prefill|decode)_(begin|end)(?:\s|$)", text)
+    if found:
+        return dict(timestamp_ns=timestamp_ns, label=found[1], phase=found[2], edge=found[3], line=text)
+    return None
+
+
+def phase_timeline(samples, markers, turn_count):
+    """Use complete sample intervals within observer-received phase boundaries.
+
+    A ready baseline is the most recent completed sample before ready, with
+    its actual age. Neither pipe latency nor between-snapshot peaks are known.
+    Lifetime OS peaks must never enter a phase's current-memory calculation.
+    """
+    if turn_count < 1:
+        raise ValueError("Need a positive phase turn count")
+    for rows in (samples, markers):
+        if any(a["timestamp_ns"] > b["timestamp_ns"] for a, b in zip(rows, rows[1:])):
+            raise ValueError("Memory samples/boundaries are out of order")
+    if any(row.get("sample_duration_ns", -1) < 0 for row in samples):
+        raise ValueError("Memory sample duration missing or negative")
+    errors, phases = [], []
+    ready = None
+    at = 0
+    if markers and markers[0]["phase"] == "ready":
+        ready_time = markers[0]["timestamp_ns"]
+        eligible = [row for row in samples
+                    if row["timestamp_ns"] + row["sample_duration_ns"] <= ready_time]
+        snapshot = eligible[-1] if eligible else None
+        ready = dict(timestamp_ns=ready_time, sample=snapshot,
+                     age_ns=ready_time-snapshot["timestamp_ns"] if snapshot else None)
+        at = 1
+        if snapshot is None:
+            errors.append("ready: no completed sample before boundary")
+        elif any(snapshot.get(key) is None for key in PHASE_METRICS):
+            errors.append("ready: some baseline memory metrics are unavailable")
+    else:
+        errors.append("ready: boundary missing")
+    previous = snapshot if ready else None
+    for turn in range(1, turn_count + 1):
+        label = None
+        for phase in ("prefill", "decode"):
+            bounds = []
+            for edge in ("begin", "end"):
+                # The existing MTP producer repeats the same prefill-begin at
+                # each chunk. The first begins the request; only its final
+                # prefill-end closes it. Preserve all raw markers externally.
+                if phase == "prefill" and edge == "end":
+                    while at < len(markers) and markers[at]["phase"] == phase and \
+                            markers[at]["edge"] == "begin" and markers[at]["label"] == label:
+                        at += 1
+                if at == len(markers):
+                    errors.append(f"turn{turn} {phase}_{edge}: boundary missing")
+                    break
+                marker = markers[at]
+                if marker["phase"] != phase or marker["edge"] != edge:
+                    raise ValueError(f"Out of order phase boundary: turn{turn} expected {phase}_{edge}")
+                label = marker["label"] if label is None else label
+                if marker["label"] != label:
+                    raise ValueError("Phase begin/end labels differ")
+                explicit = re.fullmatch(r"round(\d+)", label)
+                if explicit and int(explicit[1]) != turn:
+                    raise ValueError("Phase boundary turn differs from output ledger")
+                bounds.append(marker["timestamp_ns"])
+                at += 1
+            start, end = (bounds + [None, None])[:2]
+            selected = [row for row in samples if start is not None and end is not None
+                        and start <= row["timestamp_ns"]
+                        and row["timestamp_ns"] + row["sample_duration_ns"] <= end]
+            first, last = (selected[0], selected[-1]) if selected else (None, None)
+            if not selected:
+                errors.append(f"turn{turn} {phase}: no complete sample in window")
+            metrics = {}
+            for key in PHASE_METRICS:
+                values = [row[key] for row in selected if row.get(key) is not None]
+                begin_value = first.get(key) if first else None
+                end_value = last.get(key) if last else None
+                base = ready["sample"].get(key) if ready and ready["sample"] else None
+                prior = previous.get(key) if previous else None
+                metrics[key] = dict(start_bytes=begin_value, end_bytes=end_value,
+                                    peak_bytes=max(values) if values else None,
+                                    valid_samples=len(values),
+                                    delta_ready_bytes=end_value-base if end_value is not None and base is not None else None,
+                                    delta_previous_bytes=end_value-prior if end_value is not None and prior is not None else None)
+            times = [row["timestamp_ns"] for row in selected]
+            phases.append(dict(turn=turn, phase=phase, start_ns=start, end_ns=end,
+                               sample_count=len(selected),
+                               first_timestamp_ns=first["timestamp_ns"] if first else None,
+                               last_timestamp_ns=last["timestamp_ns"] if last else None,
+                               max_gap_ns=max((b-a for a, b in zip(times, times[1:])), default=None),
+                               metrics=metrics))
+            previous = last
+    if at != len(markers):
+        raise ValueError("Extra phase boundaries beyond output ledger")
+    if any(value["valid_samples"] == 0 for phase in phases for value in phase["metrics"].values()):
+        errors.append("Some phase memory metrics are unavailable")
+    return dict(ready=ready, phases=phases, errors=errors, complete=not errors)
 
 
 class _MemoryCounters(c.Structure):

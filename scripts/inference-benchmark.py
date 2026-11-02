@@ -27,6 +27,7 @@ import shutil
 import statistics
 import subprocess
 import sys
+import threading
 import time
 from types import SimpleNamespace
 
@@ -36,6 +37,9 @@ spec = importlib.util.spec_from_file_location("hyle_inference_compare", COMPARE_
 compare = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = compare
 spec.loader.exec_module(compare)
+spec = importlib.util.spec_from_file_location("hyle_inference_memory_probe", ROOT / "scripts/inference_memory_probe.py")
+memory_probe = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(memory_probe)
 
 
 @dataclass(frozen=True)
@@ -190,10 +194,24 @@ def observe_memory(folder, arm, case, mode, args, memory_probe):
     process = None
     stamp = datetime.now(timezone.utc).isoformat()
     start = time.perf_counter()
+    markers, reader_errors = [], []
+    def read_stderr(pipe, destination):
+        try:
+            with pipe:
+                for line in iter(pipe.readline, b""):
+                    received = time.perf_counter_ns()
+                    destination.write(line)
+                    marker = memory_probe.phase_marker(line.decode("utf-8", errors="replace"), received)
+                    if marker:
+                        markers.append(marker)
+        except Exception as error:
+            reader_errors.append(repr(error))
     try:
         with (folder / "stdout.log").open("wb") as out, (folder / "stderr.log").open("wb") as err:
-            process = subprocess.Popen(command, cwd=ROOT, env=environment, stdout=out, stderr=err,
+            process = subprocess.Popen(command, cwd=ROOT, env=environment, stdout=out, stderr=subprocess.PIPE,
                                        creationflags=subprocess.CREATE_NO_WINDOW)
+            reader = threading.Thread(target=read_stderr, args=(process.stderr, err), daemon=True)
+            reader.start()
             try:
                 probe.start(process.pid)
                 code = process.wait(timeout=args.timeout)
@@ -202,20 +220,26 @@ def observe_memory(folder, arm, case, mode, args, memory_probe):
                     process.kill()
                     process.wait()
                 probe.stop()
+                reader.join()
         result = probe.result()
     finally:
         probe.close()
     elapsed = time.perf_counter() - start
     require(code == 0, f"Memory producer failed: {folder}")
     require(result["samples"] and result["thread_error"] is None, f"Memory observer failed: {folder}")
+    require(not reader_errors, f"Memory boundary reader failed: {reader_errors}")
     stamps = [row["timestamp_ns"] for row in result["samples"]]
     gap_ms = max((b - a for a, b in zip(stamps, stamps[1:])), default=0) / 1e6
-    fields = ("timestamp_ns", "elapsed_ns", "working_set_bytes", "os_peak_working_set_bytes",
+    fields = ("timestamp_ns", "unix_time_ns", "elapsed_ns", "sample_duration_ns", "pid", "working_set_bytes", "os_peak_working_set_bytes",
               "private_commit_bytes", "os_peak_commit_bytes", "gpu_dedicated_bytes", "gpu_shared_bytes", "gpu_total_bytes")
     with (folder / "samples.tsv").open("w", encoding="utf-8", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=fields, delimiter="\t", extrasaction="ignore")
         writer.writeheader()
         writer.writerows(result["samples"])
+    with (folder / "boundaries.tsv").open("w", encoding="utf-8", newline="") as stream:
+        writer = csv.DictWriter(stream, fieldnames=("timestamp_ns", "label", "phase", "edge", "line"), delimiter="\t")
+        writer.writeheader()
+        writer.writerows(markers)
     peaks = result["peaks"]
     summary = [f"exit={code} independent_memory_process=True timing_comparison=False start_utc={stamp}",
                f"sample_count={len(stamps)} max_gap_ms={gap_ms:.3f} gpu_setup_error={result['gpu_setup_error']!r}"]
@@ -226,8 +250,51 @@ def observe_memory(folder, arm, case, mode, args, memory_probe):
     raw = json.loads(stdout)
     observation = compare.parse_report(stdout, stderr, arm, case.scenario, case.capacity, elapsed, mode == "on")
     qualify(raw, stderr, observation, arm, case, mode)
+    phases = memory_probe.phase_timeline(result["samples"], markers, len(observation["turns"]))
+    write_phase_memory(folder, phases)
     return {"peaks": peaks, "observation": observation, "samples": len(stamps), "max_gap_ms": gap_ms,
-            "gpu_setup_error": result["gpu_setup_error"]}
+            "gpu_setup_error": result["gpu_setup_error"], "phases": phases}
+
+
+def write_phase_memory(folder, timeline):
+    (folder / "phase-status.txt").write_text(
+        f"complete={timeline['complete']}\n"
+        "Boundary times are external stderr-line receipt times, not exact producer/GPU times; pipe latency is unknown.\n"
+        "Only complete sample intervals are assigned; ready uses the preceding completed sample with its age.\n"
+        "Current-memory peaks are sampling lower bounds; OS lifetime high-water marks remain process-only.\n"
+        "Pool return does not prove physical release; per-phase pool/retirement counters are not exported.\n"
+        + "\n".join(timeline["errors"]) + "\n", encoding="utf-8")
+    fields = ("turn", "phase", "start_ns", "end_ns", "sample_count", "first_timestamp_ns",
+              "last_timestamp_ns", "max_gap_ns", "metric", "start_bytes", "end_bytes", "peak_bytes",
+              "valid_samples", "delta_ready_bytes", "delta_previous_bytes", "ready_age_ns")
+    with (folder / "phase-memory.tsv").open("w", encoding="utf-8", newline="") as stream:
+        writer = csv.DictWriter(stream, fieldnames=fields, delimiter="\t")
+        writer.writeheader()
+        ready = timeline["ready"]
+        for key in ("working_set_bytes", "private_commit_bytes", "gpu_dedicated_bytes", "gpu_shared_bytes"):
+            sample = ready["sample"] if ready else None
+            value = sample.get(key) if sample else None
+            writer.writerow(dict(turn=0, phase="ready", start_ns=ready["timestamp_ns"] if ready else None,
+                                 end_ns=ready["timestamp_ns"] if ready else None,
+                                 first_timestamp_ns=sample["timestamp_ns"] if sample else None,
+                                 last_timestamp_ns=sample["timestamp_ns"] if sample else None,
+                                 metric=key, start_bytes=value, end_bytes=value,
+                                 valid_samples=int(value is not None), ready_age_ns=ready["age_ns"] if ready else None))
+        for phase in timeline["phases"]:
+            for key, metric in phase["metrics"].items():
+                writer.writerow(dict({k: v for k, v in phase.items() if k != "metrics"}, metric=key,
+                                     **metric, ready_age_ns=ready["age_ns"] if ready else None))
+
+
+def read_phase_memory(folder, turn_count):
+    if not (folder / "boundaries.tsv").is_file():
+        return None  # Old observations cannot acquire phase evidence retroactively.
+    with (folder / "samples.tsv").open(encoding="utf-8", newline="") as stream:
+        samples = [{key: int(value) if value else None for key, value in row.items()}
+                   for row in csv.DictReader(stream, delimiter="\t")]
+    with (folder / "boundaries.tsv").open(encoding="utf-8", newline="") as stream:
+        markers = [dict(row, timestamp_ns=int(row["timestamp_ns"])) for row in csv.DictReader(stream, delimiter="\t")]
+    return memory_probe.phase_timeline(samples, markers, turn_count)
 
 
 def med(values):
@@ -267,7 +334,7 @@ def summarize(cases, measurements, args):
               "|---|---:|---:|---:|---:|---:|---:|---:|---:|---|"]
     table = ["| 场景 / 轮次 | 输入 token | 历史 token | 准备 s（普通；MTP） | prefill 普通 tok/s | prefill MTP tok/s | decode 普通 tok/s | decode MTP tok/s | 显存 MiB（普通；MTP） | 私有提交峰 MiB（普通；MTP） | ID（普通；MTP） |",
              "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|"]
-    details = []
+    details, phase_tables = [], []
     for case in cases:
         groups = {mode: {arm: measurements[(case.name, mode, arm)] for arm in ("hyle", "reference")}
                   for mode in args.mode_list}
@@ -286,6 +353,10 @@ def summarize(cases, measurements, args):
                     details.append(f"{case.name} {mode} {name} memory samples={memory['samples']} "
                                    f"max_gap_ms={memory['max_gap_ms']:.3f} gpu_setup_error={memory['gpu_setup_error']!r} "
                                    f"peaks={memory['peaks']}")
+                    timeline = memory.get("phases")
+                    details.append(f"{case.name} {mode} {name} phase_memory: " +
+                                   (f"complete={timeline['complete']} errors={timeline['errors']} ready={timeline['ready']}"
+                                    if timeline else "not observed; old samples have no phase boundaries"))
                 for index in range(len(case.scenario.prompts)):
                     turns = [r["turns"][index] for r in group["timing"]]
                     for key in ("outputs", "input_rows", "prefill_seconds", "decode_seconds",
@@ -310,6 +381,9 @@ def summarize(cases, measurements, args):
                 return "未测"
             return "{:.3f} / {:.3f}".format(*[med([r["metrics"]["startup_to_ready_seconds"] for r in groups[mode][arm]["timing"]])
                                                for arm in ("hyle", "reference")])
+        for mode, arms in groups.items():
+            if args.memory_repeats:
+                phase_tables += phase_memory_table(case.name, mode, arms)
         def memory(mode, key):
             if mode not in groups or not args.memory_repeats:
                 return "未测"
@@ -384,7 +458,46 @@ def summarize(cases, measurements, args):
                 "† 表示计时范围重叠；显存是专用内存采样峰，私有提交峰不是总物理内存。",
                 "多轮若输出 ID 分叉，后续两边的实际上下文可能不同。", ""]
     sections += ratios + ["", "## 实测数据", "", "数值为 Hyle / 参考；速度括号为相对差，内存括号为 MiB 差。", ""] + table
+    if phase_tables:
+        sections += ["", "## 分阶段内存", "",
+                     "独立内存进程的中位数，单位 MiB：起→止；阶段采样峰；结束值相对 ready／上一阶段的增量。",
+                     "ready 使用边界前最近的已完成样本，实际样本时间和年龄见各进程 phase-memory.tsv；边界为外部收到 stderr 行的时间，管道延迟未知。",
+                     "仅纳入完整位于时间窗内的采样；空窗口和缺失值为不可用，OS 累计高水位不充当阶段峰。GPU 峰是采样下界。",
+                     "没有逐阶段导出的池／退休计数，不能把归池或观测下降解释为物理释放。", ""] + phase_tables
     return "\n".join(header + sections + notes) + "\n", "\n".join(details) + "\n"
+
+
+def phase_memory_table(case, mode, arms):
+    lines = [f"<details><summary>{case} / MTP {mode}</summary>", "",
+             "| 引擎 | 阶段 | 完整样本数范围 | Working set | 私有提交 | GPU专用 | GPU共享 |",
+             "|---|---|---:|---:|---:|---:|---:|---:|"]
+    for name, group in arms.items():
+        timelines = [row.get("phases") for row in group["memory"]]
+        if not timelines or any(row is None for row in timelines):
+            lines.append(f"| {name} | 未观察阶段边界 | — | 不可用 | 不可用 | 不可用 | 不可用 |")
+            continue
+        def number(values, signed=False):
+            return "不可用" if any(value is None for value in values) else format(
+                statistics.median(values)/2**20, "+.1f" if signed else ".1f")
+        ready_values = []
+        for key in memory_probe.PHASE_METRICS:
+            ready_values.append(number([row["ready"]["sample"].get(key)
+                                       if row["ready"] and row["ready"]["sample"] else None for row in timelines]))
+        lines.append(f"| {name} | ready 最近样本 | — | " + " | ".join(ready_values) + " |")
+        for index in range(len(timelines[0]["phases"])):
+            phases = [row["phases"][index] for row in timelines]
+            cells = []
+            for key in memory_probe.PHASE_METRICS:
+                values = [row["metrics"][key] for row in phases]
+                cells.append(number([row["start_bytes"] for row in values]) + "→" +
+                             number([row["end_bytes"] for row in values]) + "; 峰" +
+                             number([row["peak_bytes"] for row in values]) + "; Δ" +
+                             number([row["delta_ready_bytes"] for row in values], True) + "/" +
+                             number([row["delta_previous_bytes"] for row in values], True))
+            counts = [row["sample_count"] for row in phases]
+            label = f"第{phases[0]['turn']}轮 {phases[0]['phase']}"
+            lines.append(f"| {name} | {label} | {min(counts)}–{max(counts)} | " + " | ".join(cells) + " |")
+    return lines + ["", "</details>", ""]
 
 
 def read_previous_run(args, cases, arms):
@@ -456,7 +569,8 @@ def read_previous_run(args, cases, arms):
                     require(sample is not None and int(sample.group(1)) > 0, f"Memory sample metadata missing: {folder}")
                     data[(case.name, mode, arm.name)]["memory"].append(
                         {"peaks": peaks, "observation": observation, "samples": int(sample.group(1)),
-                         "max_gap_ms": float(sample.group(2)), "gpu_setup_error": ast.literal_eval(sample.group(3))})
+                         "max_gap_ms": float(sample.group(2)), "gpu_setup_error": ast.literal_eval(sample.group(3)),
+                         "phases": read_phase_memory(folder, len(detail["turns"]))})
     return data
 
 
@@ -502,7 +616,6 @@ def main():
     print("\n".join(plan), flush=True)
     if args.dry_run:
         return 0
-    import inference_memory_probe
     args.output.mkdir(parents=True)
     (args.output / "plan.txt").write_text("\n".join(plan) + "\n", encoding="utf-8")
     data = {}
@@ -526,7 +639,7 @@ def main():
                     folder = parent / "memory" / f"{ordinal:02}-{arm.name}"
                     print(f"START memory {case.name}/{mode}/{folder.name}", flush=True)
                     data[(case.name, mode, arm.name)]["memory"].append(
-                        observe_memory(folder, arm, case, mode, args, inference_memory_probe))
+                        observe_memory(folder, arm, case, mode, args, memory_probe))
             partial, partial_details = summarize(cases[:ci+1], data, args)
             (args.output / "partial-comparison.md").write_text(partial, encoding="utf-8", newline="\n")
             (args.output / "partial-details.txt").write_text(partial_details, encoding="utf-8", newline="\n")
