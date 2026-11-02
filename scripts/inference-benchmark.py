@@ -263,9 +263,9 @@ def memory_cell(left, right, key):
 
 
 def summarize(cases, measurements, args):
-    ratios = ["| 场景 / 轮次 | 输入 token | 准备（普通；MTP） | prefill 普通 | prefill MTP | decode 普通 | decode MTP | 显存（普通；MTP） | 内存（普通；MTP） | ID（普通；MTP） |",
+    ratios = ["| 场景 / 轮次 | 输入 token | 准备（普通；MTP） | prefill 普通 | prefill MTP | decode 普通 | decode MTP | 显存（普通；MTP） | 私有提交峰（普通；MTP） | ID（普通；MTP） |",
               "|---|---:|---:|---:|---:|---:|---:|---:|---:|---|"]
-    table = ["| 场景 / 轮次 | 输入 token | 历史 token | 准备 s（普通；MTP） | prefill 普通 tok/s | prefill MTP tok/s | decode 普通 tok/s | decode MTP tok/s | 显存 MiB（普通；MTP） | 内存 MiB（普通；MTP） | ID（普通；MTP） |",
+    table = ["| 场景 / 轮次 | 输入 token | 历史 token | 准备 s（普通；MTP） | prefill 普通 tok/s | prefill MTP tok/s | decode 普通 tok/s | decode MTP tok/s | 显存 MiB（普通；MTP） | 私有提交峰 MiB（普通；MTP） | ID（普通；MTP） |",
              "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|"]
     details = []
     for case in cases:
@@ -344,7 +344,7 @@ def summarize(cases, measurements, args):
                 "/".join(map(str, history_pairs[mode])) if mode in history_pairs else "未测" for mode in ("off", "on"))
             prepared = ready("off") + "; " + ready("on") if i == 0 else "同上"
             vram = memory("off", "sampled_peak_gpu_dedicated_bytes") + "; " + memory("on", "sampled_peak_gpu_dedicated_bytes") if i == 0 else "同上"
-            ram = memory("off", "observed_os_peak_working_set_bytes") + "; " + memory("on", "observed_os_peak_working_set_bytes") if i == 0 else "同上"
+            ram = memory("off", "observed_os_peak_commit_bytes") + "; " + memory("on", "observed_os_peak_commit_bytes") if i == 0 else "同上"
             def id_cell(mode):
                 if mode not in groups:
                     return "未测"
@@ -356,7 +356,7 @@ def summarize(cases, measurements, args):
                 return f"差@{first+1} ({len(left)}/{len(right)})"
             ready_percent = ready_ratio("off") + "; " + ready_ratio("on") if i == 0 else "同上"
             vram_percent = memory_ratio("off", "sampled_peak_gpu_dedicated_bytes") + "; " + memory_ratio("on", "sampled_peak_gpu_dedicated_bytes") if i == 0 else "同上"
-            ram_percent = memory_ratio("off", "observed_os_peak_working_set_bytes") + "; " + memory_ratio("on", "observed_os_peak_working_set_bytes") if i == 0 else "同上"
+            ram_percent = memory_ratio("off", "observed_os_peak_commit_bytes") + "; " + memory_ratio("on", "observed_os_peak_commit_bytes") if i == 0 else "同上"
             ratios.append(f"| {name} | {len(prompt)} | {ready_percent} | "
                           f"{speed_ratio('off','prefill_tokens_per_second')} | {speed_ratio('on','prefill_tokens_per_second')} | "
                           f"{speed_ratio('off','decode_tokens_per_second')} | {speed_ratio('on','decode_tokens_per_second')} | "
@@ -376,12 +376,12 @@ def summarize(cases, measurements, args):
              "输入是本轮用户 prompt；多轮 prefill 还包含上一轮待提交 token，速度按实际输入行数计算。",
              "历史 token 是本轮之前已处理的上下文；若四个进程组不同，按普通 Hyle/参考；MTP Hyle/参考列出。",
              "ID 是该轮自然输出对比；一旦分叉，后续轮次的实际上下文可能不同。",
-             "显存为本进程专用 GPU 内存采样峰；内存为观测到的进程工作集操作系统峰值，包含共享/映射页，不等于独占物理内存。",
+             "显存为本进程专用 GPU 内存采样峰；私有提交峰为观测到的进程私有提交操作系统峰值，不是常驻物理内存，且不包含 mmap 文件页。",
              "GPU 采样峰是下界，跨进程共享显存不可相加；多轮的准备和内存为整次进程峰值，不是该轮增量。",
              "每次为新进程，但不清除操作系统文件缓存；准备时间不等于首次从冷磁盘加载。",
              "各场景的两引擎在同一窗口交错运行；不同场景及普通/MTP 使用各自窗口，不能跨窗口推算差距。"]
-    sections = ["## 相对 llama.cpp", "", "数值为 Hyle ÷ llama.cpp：速度越高越好；准备时间、显存和内存越低越好。",
-                "† 表示计时范围重叠；显存是专用内存采样峰，内存是含共享及映射页的工作集峰值。",
+    sections = ["## 相对 llama.cpp", "", "数值为 Hyle ÷ llama.cpp：速度越高越好；准备时间、显存和私有提交峰越低越好。",
+                "† 表示计时范围重叠；显存是专用内存采样峰，私有提交峰不是总物理内存。",
                 "多轮若输出 ID 分叉，后续两边的实际上下文可能不同。", ""]
     sections += ratios + ["", "## 实测数据", "", "数值为 Hyle / 参考；速度括号为相对差，内存括号为 MiB 差。", ""] + table
     return "\n".join(header + sections + notes) + "\n", "\n".join(details) + "\n"

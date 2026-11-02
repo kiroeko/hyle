@@ -35,7 +35,8 @@ class InferenceBenchmarkReportTest(unittest.TestCase):
                                    metrics=dict(startup_to_ready_seconds=1.2, startup_to_endpoint_seconds=2.0,
                                                 parent_process_wall_seconds=2.5))
                 peaks = dict(sampled_peak_gpu_dedicated_bytes=2**20 * (120 if name == "hyle" else 100),
-                             observed_os_peak_working_set_bytes=2**20 * (60 if name == "hyle" else 80))
+                             observed_os_peak_working_set_bytes=2**20 * (60 if name == "hyle" else 80),
+                             observed_os_peak_commit_bytes=2**20 * (140 if name == "hyle" else 100))
                 memory = dict(observation=observation, peaks=peaks, samples=10, max_gap_ms=15, gpu_setup_error=None)
                 measurements[(case.name, mode, name)] = dict(timing=[observation] * 3, memory=[memory])
         return case, args, measurements
@@ -44,11 +45,13 @@ class InferenceBenchmarkReportTest(unittest.TestCase):
         case, args, measurements = self.fixture()
         table, details = benchmark.summarize([case], measurements, args)
         self.assertIn("120 / 100 (+20)", table)
-        self.assertIn("60 / 80 (-20)", table)
+        self.assertIn("140 / 100 (+40)", table)
+        self.assertNotIn("60 / 80 (-20)", table)
+        self.assertIn("私有提交峰", table)
         self.assertIn("## 相对 llama.cpp", table)
         self.assertIn("100.0%†", table)
         self.assertIn("120.0%", table)
-        self.assertIn("75.0%", table)
+        self.assertIn("140.0%", table)
         self.assertIn("第2轮", table)
         self.assertIn("| 3 | 同上", table)
         self.assertIn("同上", table)
