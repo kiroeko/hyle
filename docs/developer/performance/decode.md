@@ -97,7 +97,7 @@ Hyle第一项为`graph_batch_prepare`、`query_rows_bind`、`prepare_replay`；�
 
 原先约0.96ms的Graph批次准备不是原生注意力计划本体：六次FlashInfer plan合计0.130ms、查询0.041ms；六次Batch准备合计0.357ms，内含workspace申请0.134ms、plan等待0.014ms。其余仍包含外围资源和绑定处理。
 
-细化计数区分了首次准备与重复准备：第2轮复用128行载体，719个节点的物理输入输出tuple全部未变，修订号改变258个，另461个tuple与修订号均未变；但719个都重走`prepare_command_bindings`。原因是`stable_binding_identity`全部为false，当前只在成功录图后接收该后端事实，Commands路径提前返回，得不到事实。候选从实际Queue的既有后端扩展读取身份事实，保留修订、opaque carrier、当前seal与真实退休检查；重复轮绑定准备从719次降到192次，普通八轮准备中位数12.76→11.34ms。完整请求收益未复现。第二版仅在本次Commands准备使用后端事实，保持原捕获状态机，普通八轮准备11.96→11.06ms，但完整prefill为183.79／184.08／176.71ms（候选／基线／参考），范围重叠。两版均已撤回，默认产品源码仍为`5192b4232`。第5轮首次使用256行载体，719个绑定确实都要首次建立；601个View中564个投影复用，不能把该轮约1ms全部当成可消除的重复工作。计数探针含密集标记，只用其次数，不拿其耗时与稀疏标记版本计算收益。
+细化计数区分了首次准备与重复准备：第2轮复用128行载体，719个节点的物理输入输出tuple全部未变，修订号改变258个，另461个tuple与修订号均未变；但719个都重走`prepare_command_bindings`。原因是`stable_binding_identity`只在成功录图后接收后端事实，Commands路径得不到事实。读取实际Queue事实的两版候选均减少了准备工作，但完整请求收益未复现，已撤回。第5轮首次使用256行载体，719个绑定确实都要首次建立；601个View中564个投影复用，不能把该轮约1ms全部当成可消除的重复工作。密集计数探针只用于次数，不与稀疏标记版本比较耗时。
 
 GPU也仍有差距，同三对轨迹中位数如下；因此不能将本轮prefill差距全部归于主机。
 
@@ -116,13 +116,20 @@ GPU也仍有差距，同三对轨迹中位数如下；因此不能将本轮prefi
 | 空档：末次GPU活动至首token边界 | 0.333 | 0.156 |
 | 选定prefill范围 | 31.725 | 26.656 |
 
-空档按下一次活动的关联CUDA API分组，每个进程的分组与活动并集之和等于完整范围；各列是独立中位数，不能相加。首kernel之后，下一API尚未开始的部分仅0.112／0.016ms，不能把已提交后的空档都归为CPU发射不足，也不能据此判为WDDM。Hyle每次有193次`cudaMemsetAsync`，参考30次；其中186次矩阵尾行清零的GPU时间中位数合计0.200ms。`PackedRowMatMul`公开合同要求`output[L:C]`正零，不能直接删除。尚未实现有效行执行合同调整。[API计数](../../../.scratch/inference-command-binding-20261103/paired-api.txt)及[空档分组](../../../.scratch/inference-command-binding-20261103/paired-api-gaps.txt)。
+空档按下一次活动的关联CUDA API分组，每个进程的分组与活动并集之和等于完整范围；各列是独立中位数，不能相加。首kernel之后，下一API尚未开始的部分仅0.112／0.016ms，不能把已提交后的空档都归为CPU发射不足，也不能据此判为WDDM。Hyle每次有193次`cudaMemsetAsync`，参考30次；其中186次矩阵尾行清零的GPU时间中位数合计0.200ms。`PackedRowMatMul`公开合同要求`output[L:C]`正零，不能直接删除。[API计数](../../../.scratch/inference-command-binding-20261103/paired-api.txt)及[空档分组](../../../.scratch/inference-command-binding-20261103/paired-api-gaps.txt)。
 
 总计14个带标记进程的完整512个输出ID均与各自未插桩原版一致；三对主对照及第2／5轮的细化／计数对照均通过边界、预热、实际容量和无未来形状提示检查。这些职责对齐数据只用于归因；首kernel时间、父子函数、GPU类别与空档不能简单相加，profiler数字不代签吞吐收益。
 
 原始结果：[职责对齐及范围定义](../../../.scratch/inference-host-alignment-20261103/alignment-report.md)、[三对函数原数](../../../.scratch/inference-host-alignment-20261103/host-functions-summary.txt)、[重复载体计数](../../../.scratch/inference-host-alignment-20261103/turn2-count-pair1/fine-functions.txt)、[首次载体计数](../../../.scratch/inference-host-alignment-20261103/turn5-count-pair1/fine-functions.txt)。完整交付的[性能验收](../../../.scratch/inference-perf-gap-20261103/timing-gates.txt)、[内存验收](../../../.scratch/inference-perf-gap-20261103/cache-memory1/summary.txt)和[teacher-forcing](../../../.scratch/inference-perf-gap-20261103/cache-teacher1/)沿用原结果。
 
-候选覆盖C2048／C32768真实八轮及四档长输入，普通／MTP与基线和冻结参考同窗交错，每臂3个独立进程；三个确认窗各5进程。C32768八轮MTP确认prefill为190.35／190.67／192.10ms（候选／基线／参考）；16K MTP确认1746.52／1735.67／1933.44ms。范围重叠，整体收益未证明，候选撤回。所有候选／基线输出ID一致；独立显存未测，不新增内存验收。[命令、测试结果与撤回补丁](../../../.scratch/inference-command-binding-20261103/result.txt)。
+11月3日进一步验证：冷期证明内部填充行不可观察后，允许省掉其写入，公开算子合同保持不变。单组同前缀轨迹中矩阵尾行清零186→120次，数学kernel仍为962个；其它逐行运算仍计算填充行。与Commands绑定复用合并后，首次三进程筛选的C32768普通prefill快2.68%，五进程复核未复现：
+
+| 普通真实八轮，prefill合计ms | 候选 | 基线5192b4232 | 冻结参考 | 相对基线速度 |
+|---|---:|---:|---:|---:|
+| C2048，每臂5进程 | 182.561 | 184.629 | 176.338 | 101.13%，范围重叠 |
+| C32768，每臂5进程 | 183.244 | 183.293 | 174.440 | 100.03%，范围重叠 |
+
+候选覆盖两种capacity的真实八轮及1K／4K／16K／32K，普通／MTP每臂至少3个同窗独立进程，输出ID全部与基线一致；53项相关测试通过。32K普通decode初验为基线97.35%，五进程复核为99.82%，未重复触发98%门槛。没有证明可复现的完整请求收益，候选已撤回，产品源码仍为`5192b4232`，上方默认性能表不变。本候选未运行独立内存验收，不新增显存结论；按AGENTS停止本方向。[命令、结果与完整撤回补丁](../../../.scratch/inference-effective-rows-20261103/result.txt)。
 
 ## 复测
 
