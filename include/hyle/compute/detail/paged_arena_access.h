@@ -56,6 +56,8 @@ struct PagedArenaReadGroups final {
   ReadLeaseGroup immutable;
   // Synchronous borrow only; copy these original guards before the caller's
   // serialized Frame edit/publication owner can change its current epoch.
+  // Guards keep their original extent; consumers must intersect them with
+  // the layout's required rows before authorizing a logical page prefix.
   std::span<const ReadLease> individual;
 };
 // Trusted batch adapters only. Full span is an addressable capacity, not read

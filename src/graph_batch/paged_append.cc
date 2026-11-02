@@ -442,7 +442,15 @@ Status retain_previous_pages(detail::PagedAppendData&p,std::span<const c::PagedA
     HYLE_ASSIGN_OR_RETURN(auto groups,cd::PagedArenaAccess::read_groups(sources.front()));
     p.old_group=std::move(groups.immutable);p.sparse_old=true;
     // The borrow ends here, before any Frame edit or asynchronous episode.
-    p.old_pages.assign(groups.individual.begin(),groups.individual.end());
+    p.old_pages.reserve(groups.individual.size());
+    for(const auto&guard:groups.individual){
+      HYLE_ASSIGN_OR_RETURN(auto page,cd::PagedArenaAccess::page(p.arena,guard));
+      const auto at=std::lower_bound(ids.begin(),ids.end(),std::int32_t(page));
+      if(at==ids.end() || std::uint32_t(*at)!=page)
+        return Status::FailedPrecondition("original individual permission is outside its frame");
+      HYLE_ASSIGN_OR_RETURN(auto prefix,guard.subview(0,std::size_t(required[std::size_t(at-ids.begin())])*p.row_bytes));
+      p.old_pages.push_back(std::move(prefix));
+    }
     if(std::size_t(p.old_group.size())+p.old_pages.size()!=ids.size())
       return Status::FailedPrecondition("original frame permission groups differ from its logical pages");
     return Status::Ok();
@@ -488,7 +496,7 @@ Result<PagedAppendPages> PagedAppendPages::create_impl(c::PagedArena arena,c::Ba
   if(pending_previous)p->previous_source=util::retain_ref(pending_previous);
   HYLE_ASSIGN_OR_RETURN(p->descriptor,paged_append(cd::PagedArenaAccess::schema(p->arena),cd::PagedArenaAccess::role(p->arena)));
   HYLE_ASSIGN_OR_RETURN(p->rows,row_description(p->descriptor,p->layout.facts().query_rows));HYLE_ASSIGN_OR_RETURN(auto row_bytes,p->rows.required_bytes());p->row_bytes=row_bytes/p->layout.facts().query_rows;
-  const auto cap=p->descriptor.schema.capacity();const auto old=p->previous_layout;
+  const auto old=p->previous_layout;
   if(!p->descriptor.schema.owns(old) || old.facts().requests!=p->layout.facts().requests)
     return std::unexpected(Status::InvalidArgument("paged append old/new request domains differ"));
   try{
@@ -515,7 +523,6 @@ Result<PagedAppendPages> PagedAppendPages::create_impl(c::PagedArena arena,c::Ba
     std::sort(writer_order.begin(),writer_order.end(),[&](auto a,auto b){return facts[a].page<facts[b].page;});
     for(std::size_t i=1;i<writer_order.size();++i)if(facts[writer_order[i-1]].page==facts[writer_order[i]].page)
       return std::unexpected(Status::InvalidArgument("paged append repeats a dirty original page"));
-    const auto before=old.host(),after=p->layout.host();
     // Exact selected source guards keep these original physical pages alive;
     // no mutable Frame table is borrowed by the asynchronous Graph episode.
     HYLE_ASSIGN_OR_RETURN(auto old_ids,cd::BatchLayoutAccess::page_footprint(old));
@@ -529,53 +536,40 @@ Result<PagedAppendPages> PagedAppendPages::create_impl(c::PagedArena arena,c::Ba
         [](std::int32_t id,std::uint32_t target){return std::uint32_t(id)<target;});
       if(found==old_ids.end() || std::uint32_t(*found)!=page)return std::unexpected(Status::InvalidArgument("paged append prefix page is absent"));
       return std::size_t(found-old_ids.begin());};
-    for(std::uint32_t request=0;request<p->layout.facts().requests;++request){
-      const auto previous_rows=history(before,request,cap.page_size),next_rows=history(after,request,cap.page_size);
-      const auto rows=std::uint32_t(after.query_indptr[request+1]-after.query_indptr[request]);
-      if(std::uint64_t(previous_rows)+rows!=next_rows)return std::unexpected(Status::InvalidArgument("paged append must extend each request by its packed query rows"));
-      const auto pages=std::uint32_t(after.kv_indptr[request+1]-after.kv_indptr[request]);
-      for(std::uint32_t logical=0;logical<pages;++logical){
-        const auto physical=std::uint32_t(after.page_indices[std::size_t(after.kv_indptr[request])+logical]);
-        const auto begin=logical*cap.page_size,end=std::min(next_rows,begin+cap.page_size);
-        const auto inherited=previous_rows>begin?std::min(previous_rows-begin,cap.page_size):0;
-        const auto index=writer_index(physical);
-        if(end>previous_rows && end>begin && rows){
-          if(index==facts.size())return std::unexpected(Status::InvalidArgument("paged append has no writer for new rows"));
-          if(p->required[index])return std::unexpected(Status::InvalidArgument("paged append dirty page is shared across requests"));
-          p->required[index]=end-begin;
-          if(index>=dirty.size()){
-            if(!inherited || inherited!=facts[index].initialized_rows ||
-                facts[index].reserved_rows!=end-begin-inherited)
-              return std::unexpected(Status::InvalidArgument("paged append tail differs from the exact committed frontier/new rows"));
-            const auto source_page=std::uint32_t(before.page_indices[std::size_t(before.kv_indptr[request])+logical]);
-            if(source_page!=physical)
-              return std::unexpected(Status::InvalidArgument("paged append tail differs from the exact committed frontier/new rows"));
-            HYLE_ASSIGN_OR_RETURN(auto ordinal,old_page_index(source_page));
-            HYLE_ASSIGN_OR_RETURN(auto fact,cd::PagedArenaAccess::appender(p->arena,tails[index-dirty.size()]));
-            HYLE_ASSIGN_OR_RETURN(auto prefix,detail::old_ready_page(*p,ordinal));
-            HYLE_RETURN_IF_ERROR(cd::LeaseAccess::validate_prefix(*fact.permission,prefix));
-          }else if(inherited){
-            const auto source_page=std::uint32_t(before.page_indices[std::size_t(before.kv_indptr[request])+logical]);
-            if(source_page==physical)return std::unexpected(Status::InvalidArgument("retained prefix must use a distinct dirty COW page"));
-            HYLE_ASSIGN_OR_RETURN(auto ordinal,old_page_index(source_page));
-            p->ranges.push_back({index,0,ordinal,std::size_t(inherited)*p->row_bytes,true});
-          }
-          const auto new_begin=std::max(begin,previous_rows);
-          p->ranges.push_back({index,std::size_t(new_begin-begin)*p->row_bytes,
-            std::size_t(std::uint32_t(after.query_indptr[request])+new_begin-previous_rows)*p->row_bytes,
-            std::size_t(end-new_begin)*p->row_bytes,false});
-        }else{
-          const auto source_page=std::uint32_t(before.page_indices[std::size_t(before.kv_indptr[request])+logical]);
-          if(index!=facts.size()){
-            if(!choice_validation || index>=dirty.size() || source_page==physical || !inherited || p->required[index])
-              return std::unexpected(Status::InvalidArgument("paged append dirty page has no appended rows"));
-            HYLE_ASSIGN_OR_RETURN(auto ordinal,old_page_index(source_page));
-            p->required[index]=inherited;
-            p->ranges.push_back({index,0,ordinal,std::size_t(inherited)*p->row_bytes,true});
-          }else if(source_page!=physical)return std::unexpected(Status::InvalidArgument("paged append changed an untouched prefix page"));
-          // This ID comes from old's immutable page table; retain_previous_pages
-          // already validated this bank's corresponding logical prefixes.
+    HYLE_ASSIGN_OR_RETURN(auto mapping,cd::BatchLayoutAccess::append_pages(old,p->layout));
+    // A writer may not alias another request's retained logical prefix, even
+    // if it is a legitimate appended page in this request. Check only the
+    // actual writer cohort against the shared mathematical untouched set.
+    for(const auto&fact:facts)if(std::binary_search(mapping.untouched.begin(),mapping.untouched.end(),std::int32_t(fact.page)))
+      return std::unexpected(Status::InvalidArgument("paged append writer overlaps an untouched prefix page"));
+    for(const auto&page:mapping.changed){
+      const auto physical=page.page,inherited=page.inherited_rows;
+      const auto index=writer_index(physical);
+      if(page.appended_rows){
+        if(index==facts.size())return std::unexpected(Status::InvalidArgument("paged append has no writer for new rows"));
+        if(p->required[index])return std::unexpected(Status::InvalidArgument("paged append dirty page is shared across requests"));
+        p->required[index]=page.required_rows;
+        if(index>=dirty.size()){
+          if(!inherited || inherited!=facts[index].initialized_rows || facts[index].reserved_rows!=page.appended_rows || page.previous_page!=physical)
+            return std::unexpected(Status::InvalidArgument("paged append tail differs from the exact committed frontier/new rows"));
+          HYLE_ASSIGN_OR_RETURN(auto ordinal,old_page_index(page.previous_page));
+          HYLE_ASSIGN_OR_RETURN(auto fact,cd::PagedArenaAccess::appender(p->arena,tails[index-dirty.size()]));
+          HYLE_ASSIGN_OR_RETURN(auto prefix,detail::old_ready_page(*p,ordinal));
+          HYLE_RETURN_IF_ERROR(cd::LeaseAccess::validate_prefix(*fact.permission,prefix));
+        }else if(inherited){
+          if(page.previous_page==physical)return std::unexpected(Status::InvalidArgument("retained prefix must use a distinct dirty COW page"));
+          HYLE_ASSIGN_OR_RETURN(auto ordinal,old_page_index(page.previous_page));
+          p->ranges.push_back({index,0,ordinal,std::size_t(inherited)*p->row_bytes,true});
         }
+        p->ranges.push_back({index,std::size_t(inherited)*p->row_bytes,std::size_t(page.input_begin)*p->row_bytes,
+            std::size_t(page.appended_rows)*p->row_bytes,false});
+      }else{
+        if(index==facts.size())return std::unexpected(Status::InvalidArgument("paged append changed an untouched prefix page"));
+        if(!choice_validation || index>=dirty.size() || !inherited || p->required[index])
+          return std::unexpected(Status::InvalidArgument("paged append dirty page has no appended rows"));
+        HYLE_ASSIGN_OR_RETURN(auto ordinal,old_page_index(page.previous_page));
+        p->required[index]=inherited;
+        p->ranges.push_back({index,0,ordinal,std::size_t(inherited)*p->row_bytes,true});
       }
     }
     for(std::size_t i=0;i<dirty.size();++i){if(!p->required[i] && !choice_validation)return std::unexpected(Status::InvalidArgument("paged append contains an unused writer"));
@@ -598,10 +592,11 @@ Status materialize_source_ready(detail::PagedAppendSourceData&s)noexcept{
   if(!s.own_writes_published)
     return Status::Unavailable("publish the original append writes before collecting its complete footprint");
   if(s.publication_complete)return Status::Ok();
-  // reserve happened before acceptance; ReadLease default construction cannot
-  // allocate. A failed collect leaves only empty slots and no complete claim.
-  HYLE_FATAL_ASSERT(s.published.capacity()>=s.pages.size());
-  s.published.resize(s.pages.size());
+  // Only legacy full-footprint export needs this array. Default ready_delta
+  // retains the shared group and its own writes. Allocation failure preserves
+  // already-published original writes so the caller can retry this export.
+  try{s.published.resize(s.pages.size());}
+  catch(const std::bad_alloc&){return Status::ResourceExhausted("complete append publication metadata");}
   const auto status=s.resource.collect_ready(s.published);
   if(!status.ok()){s.published.clear();return status;}
   s.publication_complete=true;
@@ -1559,7 +1554,6 @@ Result<PagedAppendSource>PagedAppendSource::prepare(Invocation&invocation,NodeId
   HYLE_ASSIGN_OR_RETURN(auto owned_geometry,cd::BatchLayoutAccess::page_requirements(s.layout));
   s.pages=owned_geometry.pages;s.rows=owned_geometry.required_rows;
   try{
-    s.published.reserve(s.pages.size());
     s.own_full.resize(p.writers.size());s.own_append.resize(p.input_appenders);
     s.targets.assign(p.targets.begin(),p.targets.end());s.required.assign(p.required.begin(),p.required.end());
     s.full.resize(p.writers.size());s.append.resize(p.input_appenders);

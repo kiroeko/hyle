@@ -30,6 +30,17 @@ struct BatchPageChange final {
   std::int32_t page=0;
   std::uint32_t before_rows=0,after_rows=0;
 };
+// Logical append mapping only. Each entry either appends rows or changes an
+// inherited physical page. Unchanged references are checked once per pair;
+// banks still authenticate their own actual writers and original permissions.
+struct BatchAppendPage final {
+  std::uint32_t page=0,previous_page=UINT32_MAX;
+  std::uint32_t inherited_rows=0,required_rows=0,input_begin=0,appended_rows=0;
+};
+struct BatchAppendFootprint final {
+  std::span<const BatchAppendPage> changed;
+  std::span<const std::int32_t> untouched;
+};
 struct BatchLayoutAccess final {
   // Capacity topology only: this grants neither schema membership nor cache
   // interpretation. Actual K/V storage and original page rights stay separate.
@@ -52,6 +63,10 @@ struct BatchLayoutAccess final {
   // Mathematical difference shared by all banks. The result borrows after;
   // it retains no predecessor, ready permission or submission dependency.
   HYLE_COMPUTE_BATCH_API static Result<std::span<const BatchPageChange>> page_changes(
+      const BatchLayoutVersion&before,const BatchLayoutVersion&after) noexcept;
+  // Borrows after and retains no earlier layout/permission. Arbitrary logical
+  // reorder, shared prefixes and COW IDs remain explicit in these facts.
+  HYLE_COMPUTE_BATCH_API static Result<BatchAppendFootprint> append_pages(
       const BatchLayoutVersion&before,const BatchLayoutVersion&after) noexcept;
   static std::array<BatchMetadataSegment,5> row_segments(const RowCacheLayoutVersion&v) noexcept{return segments(v.owner_);}
   static Result<std::span<const std::int32_t>> row_page_footprint(const RowCacheLayoutVersion&v) noexcept{return page_footprint(v.owner_);}

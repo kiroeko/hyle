@@ -13,6 +13,7 @@
 #include <array>
 #include <vector>
 #include <limits>
+#include <thread>
 
 namespace {
 namespace c=hyle::compute;namespace m=hyle::mem;
@@ -957,7 +958,7 @@ TEST(PagedFrame, StaleForeignAndSealedTicketsDoNotConsumeTheUpdateOrAdvanceAnyBo
   EXPECT_EQ(frame.epoch(),epoch+1);EXPECT_EQ(frame.snapshot()->layout(),shorter);
 }
 
-TEST(PagedFrame, PrepareOomLeavesReadyDeltaIntactAndStructuralCommitAllocatesNothing) {
+TEST(PagedFrame, PreparedPermissionsTransferWithoutAllocationAndSealOomIsRetryable) {
   hyle_f5_fault_fixture::Allocator metadata;
   auto schema=c::BatchSchema::create(capacity(),{.allocator=metadata.ref()}).value();
   auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),
@@ -969,17 +970,22 @@ TEST(PagedFrame, PrepareOomLeavesReadyDeltaIntactAndStructuralCommitAllocatesNot
   auto frame=c::PagedArenaFrame::fork(c::PagedArenaFootprint::from_read(frozen).value()).value();
   auto before=frame.view().value();const auto epoch=frame.epoch();
   auto delta=c::PagedArenaDelta::create(before,accepted,std::array{one}).value();
-  const auto live=metadata.live;metadata.fail=metadata.attempts;
-  auto failed=frame.prepare_commit(std::move(delta));ASSERT_FALSE(failed);
-  EXPECT_TRUE(failed.error().IsResourceExhausted());EXPECT_TRUE(delta.valid());
-  EXPECT_EQ(metadata.live,live);EXPECT_EQ(frame.layout(),initial);EXPECT_EQ(frame.epoch(),epoch);
-  EXPECT_TRUE(before.valid());EXPECT_EQ(first(one),std::byte{43});
-  metadata.fail=(std::numeric_limits<std::size_t>::max)();
-  auto ticket=frame.prepare_commit(std::move(delta));ASSERT_TRUE(ticket);EXPECT_FALSE(delta.valid());
   const auto attempts=metadata.attempts;metadata.fail=attempts;
+  auto ticket=frame.prepare_commit(std::move(delta));ASSERT_TRUE(ticket);EXPECT_FALSE(delta.valid());
+  EXPECT_EQ(metadata.attempts,attempts);EXPECT_TRUE(before.valid());
   ASSERT_TRUE(frame.commit(std::move(*ticket)).ok());
   EXPECT_EQ(metadata.attempts,attempts);EXPECT_EQ(frame.layout(),accepted);EXPECT_EQ(frame.epoch(),epoch+1);
   EXPECT_EQ(frame.view()->page_prefix(1)->size(),arena.page_bytes()/2);
+  const auto failed=frame.can_seal();EXPECT_TRUE(failed.IsResourceExhausted());
+  EXPECT_FALSE(frame.sealed());EXPECT_EQ(frame.layout(),accepted);EXPECT_EQ(frame.epoch(),epoch+1);
+  metadata.fail=(std::numeric_limits<std::size_t>::max)();
+  ASSERT_TRUE(frame.can_seal().ok());
+  const auto export_attempts=metadata.attempts;metadata.fail=export_attempts;
+  ASSERT_TRUE(frame.seal().ok());auto snapshot=frame.snapshot().value();
+  const auto guards=c::detail::PagedArenaAccess::pages(snapshot);
+  ASSERT_EQ(guards.size(),2u);EXPECT_EQ(guards[1].size(),arena.page_bytes());
+  EXPECT_EQ(metadata.attempts,export_attempts);
+  EXPECT_EQ(snapshot.page_prefix(1)->size(),arena.page_bytes()/2);
 }
 
 TEST(PagedFrame, EveryChangedGuardIsValidatedIncludingUnusedForeignBatchMembers) {
@@ -1231,7 +1237,8 @@ TEST(PagedFrame, ResidentImmutableGroupAddsOnlyAReallyPublishedFullTail) {
   ASSERT_TRUE(frame.commit(std::move(shrink_ticket)).ok());
   EXPECT_EQ(c::detail::PagedArenaAccess::immutable_pages(frame.view().value())->size(),0u);
   auto shortened=c::detail::PagedArenaAccess::read_groups(frame.view().value()).value();
-  ASSERT_EQ(shortened.individual.size(),1u);EXPECT_EQ(shortened.individual[0].size(),arena.page_bytes()/2);
+  ASSERT_EQ(shortened.individual.size(),1u);EXPECT_EQ(shortened.individual[0].size(),arena.page_bytes());
+  EXPECT_EQ(frame.view()->page_prefix(0)->size(),arena.page_bytes()/2);
   EXPECT_TRUE(grouped.contains(ready.view().value())); // Earlier native snapshots keep their exact real guards.
 }
 
@@ -1270,6 +1277,51 @@ TEST(PagedFrame, ImmutableDeltaOomKeepsBankRootAndCommitAllocatesNothing) {
   EXPECT_EQ(metadata.attempts,attempts);
   EXPECT_EQ(c::detail::PagedArenaAccess::immutable_pages(frame.view().value())->size(),2u);
   EXPECT_EQ(old_group.size(),1u); EXPECT_FALSE(old_group.contains(one.view().value()));
+}
+
+TEST(PagedFrame, LargeSparseForkSharesOriginalPermissionsWithinFixedMetadataBudget) {
+  m::QuotaAllocator metadata(m::system_allocator(),1u<<22);
+  auto cap=capacity();cap.max_pages=300;cap.max_page_refs=300;cap.max_kv_rows=600;
+  auto schema=c::BatchSchema::create(cap,{.allocator=metadata.get()}).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),
+      {.max_backing_bytes=1u<<20,.allocator=metadata.get()}).value();
+  std::vector<std::int32_t> ids;std::vector<c::ReadLease> guards;
+  for(std::uint32_t i=0;i<129;++i){
+    const auto page=2*i+1;ids.push_back(std::int32_t(page));
+    auto writer=arena.acquire(page).value();
+    ASSERT_TRUE(writer.lease().view()->fill(std::byte(page%251)).ok());
+    guards.push_back(writer.publish_appendable(2).value().prefix);
+  }
+  std::reverse(ids.begin(),ids.end());
+  auto original=arena.read(layout(schema,ids),guards).value();
+  auto view=c::PagedArenaFootprint::from_read(original).value();
+  auto group=c::detail::PagedArenaAccess::immutable_pages(view).value();
+  ASSERT_EQ(group.size(),129u);
+  c::PagedArenaFrame frame;
+  {
+    // A fork can retain a Frame/root, but this budget cannot hold another
+    // 129-entry array of original ReadLease handles.
+    auto reserved=metadata.try_reserve_bytes(metadata.remaining()-1024).value();
+    auto fork=c::PagedArenaFrame::fork(view);ASSERT_TRUE(fork)<<fork.error().message();
+    frame=std::move(*fork);
+    EXPECT_TRUE(c::detail::PagedArenaAccess::immutable_pages(frame.view().value())->same_owner(group));
+    EXPECT_EQ(frame.page_count(),129u);
+  }
+  ASSERT_TRUE(frame.seal().ok());auto snapshot=frame.snapshot().value();
+  view={};original={};guards.clear();frame={};group.reset();
+  ASSERT_TRUE(arena.close().ok());
+  // Concurrent first compatibility exports share one stable, pre-reserved
+  // array. The snapshot owns its exact guards after every Frame is gone.
+  std::array<std::span<const c::ReadLease>,4> exported;
+  std::array<std::thread,4> readers;
+  for(std::size_t i=0;i<readers.size();++i)
+    readers[i]=std::thread([&,i]{exported[i]=c::detail::PagedArenaAccess::pages(snapshot);});
+  for(auto&reader:readers)reader.join();
+  for(const auto leases:exported){
+    ASSERT_EQ(leases.size(),129u);EXPECT_EQ(leases.data(),exported[0].data());
+    EXPECT_EQ(first(leases[0]),std::byte{1});EXPECT_EQ(first(leases[128]),std::byte{6});
+  }
+  EXPECT_FALSE(snapshot.page_prefix(2)); // Sparse holes grant no permission.
 }
 
 } } // namespace frame_contract

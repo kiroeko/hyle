@@ -71,6 +71,10 @@ struct PagedArenaReadData final:util::RefCounted<PagedArenaReadData>{
   ReadLeaseGroup immutable;
   container::SmallVector<ReadLease,2,mem::AllocatorRef> individual;
   bool immutable_ready=false;
+  // Working Frames own their shared original permissions here. The flat
+  // vector is only a compatibility export, reserved before sealing and filled
+  // on demand. Native adapters retain the group or exact individual guards.
+  bool resident=false,pages_ready=true;
   bool sealed=true;
   std::uint64_t epoch=0;
 };
@@ -78,16 +82,15 @@ struct PagedArenaDeltaData final:util::RefCounted<PagedArenaDeltaData>{
   struct Change final {std::uint32_t page=0;std::size_t ordinal=0;ReadLease guard;};
   PagedArenaDeltaData(PagedArenaReadData*p,BatchLayoutVersion next)
       :base(p),epoch(p->epoch),layout(std::move(next)),allocator(p->allocator),
-       changes(mem::StdAllocator<Change>(allocator)),replacement(mem::StdAllocator<ReadLease>(allocator)),individual(allocator){p->incref();}
+       changes(mem::StdAllocator<Change>(allocator)),individual(allocator){p->incref();}
   void destroy()noexcept{auto*p=base;const auto a=allocator;this->~PagedArenaDeltaData();
     a.deallocate(this,sizeof(*this),alignof(PagedArenaDeltaData));p->decref();}
   PagedArenaReadData*base;std::uint64_t epoch;BatchLayoutVersion layout;mem::AllocatorRef allocator;
   std::vector<Change,mem::StdAllocator<Change>>changes;
-  std::vector<ReadLease,mem::StdAllocator<ReadLease>>replacement;
   ReadLeaseGroup immutable;
   container::SmallVector<ReadLease,2,mem::AllocatorRef> individual;
   bool immutable_prepared=false;
-  bool prepared=false,replace_table=false;
+  bool prepared=false;
 };
 struct PagedArenaPendingReadData final:util::RefCounted<PagedArenaPendingReadData>{
   PagedArenaPendingReadData(PagedArenaData*p,BatchLayoutVersion l)
@@ -104,6 +107,48 @@ struct PagedArenaPendingReadData final:util::RefCounted<PagedArenaPendingReadDat
 };
 } // namespace detail
 namespace {
+using FrameData=detail::PagedArenaReadData;
+using DeltaData=detail::PagedArenaDeltaData;
+std::size_t frame_page_count(const FrameData&p)noexcept{
+  return p.resident?std::size_t(p.immutable.size())+p.individual.size():p.pages.size();
+}
+Result<const ReadLease*>resident_guard(const detail::PagedArenaData&arena,
+    const detail::ReadLeaseGroup&group,std::span<const ReadLease>individual,std::uint32_t page)noexcept{
+  HYLE_ASSIGN_OR_RETURN(auto probe,arena.span.subview(std::size_t(page)*arena.page_bytes,1));
+  if(const auto*guard=group.find(probe))return guard;
+  const auto at=std::lower_bound(individual.begin(),individual.end(),probe.offset(),
+      [](const auto&guard,auto offset){return guard.view()->offset()<offset;});
+  if(at==individual.end() || at->view()->offset()!=probe.offset())
+    return std::unexpected(Status::FailedPrecondition("frame has no original page permission"));
+  return &*at;
+}
+Result<const ReadLease*>original_guard(const FrameData&p,std::uint32_t page)noexcept{
+  if(p.resident)return resident_guard(*p.arena,p.immutable,std::span(p.individual.data(),p.individual.size()),page);
+  HYLE_ASSIGN_OR_RETURN(auto ids,detail::BatchLayoutAccess::page_footprint(p.layout));
+  const auto at=std::lower_bound(ids.begin(),ids.end(),std::int32_t(page));
+  if(at==ids.end() || std::uint32_t(*at)!=page || std::size_t(at-ids.begin())>=p.pages.size())
+    return std::unexpected(Status::FailedPrecondition("frame has no original page permission"));
+  return &p.pages[std::size_t(at-ids.begin())];
+}
+Result<ReadLease>frame_prefix(const FrameData&,const DeltaData*,std::uint32_t,std::uint32_t=0)noexcept;
+Status frame_prefixes(const FrameData&,const DeltaData*,std::span<ReadLease>)noexcept;
+std::span<const ReadLease>flat_pages(FrameData&p)noexcept{
+  if(!p.resident)return p.pages;
+  std::lock_guard lock(p.immutable_mutex);
+  if(!p.pages_ready){
+    // can_seal preflights storage, and fork/Delta creation caches the layout's
+    // exact IDs. This compatibility getter performs no fallible allocation.
+    const auto ids=detail::BatchLayoutAccess::page_footprint(p.layout);
+    HYLE_FATAL_ASSERT(p.sealed && ids && p.pages.capacity()>=ids->size());
+    p.pages.resize(ids->size());
+    for(std::size_t i=0;i<ids->size();++i){
+      const auto guard=original_guard(p,std::uint32_t((*ids)[i]));
+      HYLE_FATAL_ASSERT(guard);p.pages[i]=**guard;
+    }
+    p.pages_ready=true;
+  }
+  return p.pages;
+}
 Result<std::uint32_t> page_id(const detail::PagedArenaData&p,const ReadLease&lease)noexcept{
   HYLE_ASSIGN_OR_RETURN(auto view,lease.view());
   if(view.resource()!=p.span.resource() || view.native_handle()!=p.span.native_handle() ||
@@ -309,9 +354,9 @@ Result<PagedArenaRead> PagedArena::reframe_impl(BatchLayoutVersion layout,
   for(const auto&source:sources){
     if(!source.data_ || source.data_->arena!=data_)
       return std::unexpected(Status::InvalidArgument("paged reframe source is empty or belongs to another arena"));
-    if(source.data_->pages.size()>candidates.max_size()-count)
+    if(source.page_count()>candidates.max_size()-count)
       return std::unexpected(Status::OutOfRange("paged reframe source page count"));
-    count+=source.data_->pages.size();
+    count+=source.page_count();
   }
   HYLE_ASSIGN_OR_RETURN(auto required,detail::BatchLayoutAccess::page_footprint(layout));
   if(required.size()>selected.max_size())return std::unexpected(Status::OutOfRange("paged reframe target page count"));
@@ -323,7 +368,7 @@ Result<PagedArenaRead> PagedArena::reframe_impl(BatchLayoutVersion layout,
       const auto first=candidates.size();
       // Existing ready frames store one guard per page in canonical ID order.
       // Validate the real original identity/generation before borrowing it.
-      for(const auto&lease:source.data_->pages){
+      for(const auto&lease:detail::PagedArenaAccess::pages(source)){
         HYLE_ASSIGN_OR_RETURN(auto page,page_id(*data_,lease));
         candidates.push_back({page,0,&lease});
       }
@@ -659,73 +704,14 @@ PagedArenaRead::PagedArenaRead(PagedArenaRead&&p)noexcept:data_(std::exchange(p.
 PagedArenaRead&PagedArenaRead::operator=(PagedArenaRead&&p)noexcept{if(this!=&p){PagedArenaRead next(std::move(p));std::swap(data_,next.data_);}return *this;}
 PagedArenaRead::~PagedArenaRead(){if(data_)data_->decref();}
 BatchLayoutVersion PagedArenaRead::layout()const noexcept{return data_?data_->layout:BatchLayoutVersion{};}
-std::size_t PagedArenaRead::page_count()const noexcept{return data_?data_->pages.size():0;}
+std::size_t PagedArenaRead::page_count()const noexcept{return data_?frame_page_count(*data_):0;}
 Result<ReadLease> PagedArenaRead::page_prefix(std::uint32_t physical_page)const noexcept{
   if(!data_)return std::unexpected(Status::FailedPrecondition("paged arena read is empty"));
-  const auto&arena=*data_->arena;
-  if(!arena.schema.owns(data_->layout))
-    return std::unexpected(Status::InvalidArgument("paged arena read layout is foreign"));
-  if(physical_page>=arena.slots.size())
-    return std::unexpected(Status::OutOfRange("paged arena read physical page is out of range"));
-  const auto page_rows=detail::BatchLayoutAccess::geometry(arena.schema).page_size;
-  if(!page_rows || !arena.page_bytes || arena.page_bytes%page_rows)
-    return std::unexpected(Status::FailedPrecondition("paged arena read row geometry is invalid"));
-  // The immutable layout, not the slot's possibly advanced initialized_rows,
-  // limits this export even when its original guard covers the whole page.
-  const auto host=data_->layout.host();std::uint32_t rows=0;
-  for(std::size_t request=0;request<data_->layout.facts().requests;++request){
-    const auto end=std::size_t(host.kv_indptr[request+1]);
-    for(auto index=std::size_t(host.kv_indptr[request]);index<end;++index)
-      if(std::uint32_t(host.page_indices[index])==physical_page)
-        rows=std::max(rows,index+1==end?std::uint32_t(host.last_page_lengths[request]):page_rows);
-  }
-  if(!rows || rows>page_rows)
-    return std::unexpected(Status::FailedPrecondition("paged arena read physical page is absent from its footprint"));
-  const ReadLease*selected=nullptr;
-  for(const auto&guard:data_->pages){
-    HYLE_ASSIGN_OR_RETURN(auto page,page_id(arena,guard));
-    if(page==physical_page)selected=&guard;
-  }
-  const auto bytes=std::size_t(rows)*(arena.page_bytes/page_rows);
-  if(!selected || selected->size()<bytes)
-    return std::unexpected(Status::FailedPrecondition("paged arena read page permission does not cover its logical prefix"));
-  return selected->subview(0,bytes);
+  return frame_prefix(*data_,nullptr,physical_page);
 }
 Status PagedArenaRead::page_prefixes(std::span<ReadLease> output)const noexcept{
   if(!data_)return Status::FailedPrecondition("paged arena read is empty");
-  const auto&arena=*data_->arena;
-  if(!arena.schema.owns(data_->layout))return Status::InvalidArgument("paged arena read layout is foreign");
-  if(output.size()!=data_->layout.facts().page_refs)return Status::InvalidArgument("page prefix output count differs from the logical layout");
-  const auto rows_per_page=detail::BatchLayoutAccess::geometry(arena.schema).page_size;
-  if(!rows_per_page || !arena.page_bytes || arena.page_bytes%rows_per_page)
-    return Status::FailedPrecondition("paged arena read row geometry is invalid");
-  const auto find=[&](std::uint32_t wanted)->Result<const ReadLease*>{
-    // read_impl keeps these unique guards sorted by physical page ID.
-    std::size_t begin=0,end=data_->pages.size();
-    while(begin<end){const auto middle=begin+(end-begin)/2;
-      HYLE_ASSIGN_OR_RETURN(auto id,page_id(arena,data_->pages[middle]));
-      if(id<wanted)begin=middle+1;else end=middle;
-    }
-    if(begin==data_->pages.size())return std::unexpected(Status::FailedPrecondition("page prefix permission is absent"));
-    HYLE_ASSIGN_OR_RETURN(auto id,page_id(arena,data_->pages[begin]));
-    if(id!=wanted)return std::unexpected(Status::FailedPrecondition("page prefix permission is absent"));
-    return &data_->pages[begin];
-  };
-  const auto host=data_->layout.host();
-  // Preflight the whole export before replacing any caller-owned handle.
-  for(unsigned pass=0;pass<2;++pass)
-    for(std::size_t request=0;request<data_->layout.facts().requests;++request){
-      const auto end=std::size_t(host.kv_indptr[request+1]);
-      for(auto index=std::size_t(host.kv_indptr[request]);index<end;++index){
-        const auto rows=index+1==end?std::uint32_t(host.last_page_lengths[request]):rows_per_page;
-        const auto bytes=std::size_t(rows)*(arena.page_bytes/rows_per_page);
-        HYLE_ASSIGN_OR_RETURN(auto guard,find(std::uint32_t(host.page_indices[index])));
-        if(!rows || rows>rows_per_page || guard->size()<bytes)
-          return Status::FailedPrecondition("page prefix permission does not cover its logical rows");
-        if(pass){HYLE_ASSIGN_OR_RETURN(auto lease,guard->subview(0,bytes));output[index]=std::move(lease);}
-      }
-    }
-  return Status::Ok();
+  return frame_prefixes(*data_,nullptr,output);
 }
 Result<ConstTensorView> detail::PagedArenaAccess::tensor(const PagedArenaRead&read)noexcept{if(!read.data_)return std::unexpected(Status::FailedPrecondition("paged arena read is empty"));return ConstTensorView::create(read.data_->arena->description,read.data_->arena->span);}
 Status detail::PagedArenaAccess::validate_storage(const PagedArenaRead&read,const CacheStorage&expected)noexcept{
@@ -742,7 +728,7 @@ Status detail::PagedArenaAccess::validate_storage(const PagedArenaPendingRead&re
   return (arena.role==BatchCacheRole::kValue?cap.value_storage:cap.key_storage)==expected?
       Status::Ok():Status::InvalidArgument("pending cache encoding/scale differs from mathematical port");
 }
-std::span<const ReadLease> detail::PagedArenaAccess::pages(const PagedArenaRead&read)noexcept{return read.data_?std::span<const ReadLease>(read.data_->pages):std::span<const ReadLease>{};}
+std::span<const ReadLease> detail::PagedArenaAccess::pages(const PagedArenaRead&read)noexcept{return read.data_?flat_pages(*read.data_):std::span<const ReadLease>{};}
 RowCacheLayoutVersion PagedRowCacheRead::layout()const noexcept{return detail::BatchLayoutAccess::row_layout(owner_.layout());}
 Result<ReadLease> PagedRowCacheRead::page_prefix(std::uint32_t physical_page)const noexcept{return owner_.page_prefix(physical_page);}
 RowCacheLayoutVersion PagedRowCachePendingRead::layout()const noexcept{return detail::BatchLayoutAccess::row_layout(owner_.layout());}
@@ -787,8 +773,6 @@ Status detail::PagedArenaAccess::validate_page(const PagedArenaPendingRead&read,
   return Status::Ok();
 }
 namespace {
-using FrameData=detail::PagedArenaReadData;
-using DeltaData=detail::PagedArenaDeltaData;
 Result<bool> retain_immutable(detail::ReadLeaseGroup&group,const ReadLease&guard,mem::AllocatorRef allocator)noexcept{
   auto next=group.with(guard,allocator);
   if(!next){
@@ -804,11 +788,11 @@ Status update_individual(IndividualPages&pages,std::size_t offset,const ReadLeas
   const auto at=std::lower_bound(pages.begin(),pages.end(),offset,[](const auto&read,auto wanted){return read.view()->offset()<wanted;});
   const bool found=at!=pages.end()&&at->view()->offset()==offset;
   if(!guard){if(found)pages.erase(at);return Status::Ok();}
-  if(found&&detail::LeaseAccess::identity(*at)==detail::LeaseAccess::identity(*guard)&&at->size()==bytes)return Status::Ok();
-  HYLE_ASSIGN_OR_RETURN(auto prefix,guard->subview(0,bytes));
-  if(found){*at=std::move(prefix);return Status::Ok();}
+  if(guard->size()<bytes)return Status::FailedPrecondition("individual permission does not cover its logical rows");
+  if(found&&detail::LeaseAccess::identity(*at)==detail::LeaseAccess::identity(*guard)&&at->size()==guard->size())return Status::Ok();
+  if(found){*at=*guard;return Status::Ok();}
   const auto index=std::size_t(at-pages.begin());
-  if(!pages.try_push_back(std::move(prefix)))return Status::ResourceExhausted("individual frame permission metadata");
+  if(!pages.try_push_back(*guard))return Status::ResourceExhausted("individual frame permission metadata");
   std::rotate(pages.begin()+index,pages.end()-1,pages.end());return Status::Ok();
 }
 bool current_footprint(const FrameData*p,std::uint64_t epoch,const DeltaData*next)noexcept{
@@ -825,24 +809,16 @@ Result<const ReadLease*>frame_guard(const FrameData&p,const DeltaData*next,std::
   if(found==ids.end() || std::uint32_t(*found)!=page)
     return std::unexpected(Status::FailedPrecondition("page is absent from this frame footprint"));
   if(next){
-    if(next->replace_table && next->prepared){
-      const auto ordinal=std::size_t(found-ids.begin());
-      if(ordinal>=next->replacement.size())return std::unexpected(Status::Internal("prepared frame guard table is incomplete"));
-      return &next->replacement[ordinal];
-    }
+    if(next->immutable_prepared)
+      return resident_guard(*p.arena,next->immutable,std::span(next->individual.data(),next->individual.size()),page);
     const auto changed=std::lower_bound(next->changes.begin(),next->changes.end(),page,
         [](const auto&entry,auto wanted){return entry.page<wanted;});
     if(changed!=next->changes.end() && changed->page==page)return &changed->guard;
   }
-  HYLE_ASSIGN_OR_RETURN(auto before,detail::BatchLayoutAccess::page_footprint(p.layout));
-  const auto original=std::lower_bound(before.begin(),before.end(),page,
-      [](std::int32_t id,std::uint32_t wanted){return std::uint32_t(id)<wanted;});
-  if(original==before.end() || std::uint32_t(*original)!=page || std::size_t(original-before.begin())>=p.pages.size())
-    return std::unexpected(Status::FailedPrecondition("frame has no original page permission"));
-  return &p.pages[std::size_t(original-before.begin())];
+  return original_guard(p,page);
 }
 Result<ReadLease>frame_prefix(const FrameData&p,const DeltaData*next,std::uint32_t page,
-    std::uint32_t requested=0)noexcept{
+    std::uint32_t requested)noexcept{
   if(page>=p.arena->slots.size())return std::unexpected(Status::OutOfRange("frame page is outside its arena"));
   const auto full=detail::BatchLayoutAccess::geometry(p.arena->schema).page_size;
   if(!full || !p.arena->page_bytes || p.arena->page_bytes%full)
@@ -911,7 +887,7 @@ Result<PagedArenaFootprint>PagedArenaFootprint::from_read(const PagedArenaRead&r
 bool PagedArenaFootprint::valid()const noexcept{return current_footprint(data_,epoch_,proposed_);}
 BatchLayoutVersion PagedArenaFootprint::layout()const noexcept{return valid()?frame_layout(*data_,proposed_):BatchLayoutVersion{};}
 std::size_t PagedArenaFootprint::page_count()const noexcept{
-  if(!valid())return 0;if(!proposed_)return data_->pages.size();
+  if(!valid())return 0;if(!proposed_)return frame_page_count(*data_);
   const auto ids=detail::BatchLayoutAccess::page_footprint(proposed_->layout);return ids?ids->size():0;
 }
 Result<ReadLease>PagedArenaFootprint::page_prefix(std::uint32_t page)const noexcept{
@@ -942,24 +918,20 @@ Result<PagedArenaDelta>PagedArenaDelta::create(PagedArenaFootprint expected,
   HYLE_ASSIGN_OR_RETURN(auto layout_changes,detail::BatchLayoutAccess::page_changes(base.layout,accepted));
   const auto ids=needed.pages,old_ids=original.pages;
   const auto after=needed.required_rows,before=original.required_rows;
-  if(old_ids.size()!=base.pages.size())return std::unexpected(Status::Internal("original frame guard extent differs"));
+  if(old_ids.size()!=frame_page_count(base))return std::unexpected(Status::Internal("original frame guard extent differs"));
   if(ids.empty() && (accepted.facts().page_refs ||
       (!detail::BatchLayoutAccess::is_row_cache(arena.schema) && accepted.facts().query_rows)))
     return std::unexpected(Status::InvalidArgument("nonempty delta layout has no ready pages"));
+  HYLE_ASSIGN_OR_RETURN(auto held_groups,detail::PagedArenaAccess::read_groups(expected));
   auto*p=base.allocator.construct<DeltaData>(&base,std::move(accepted));
   if(!p)return std::unexpected(Status::ResourceExhausted("frame delta metadata"));
   PagedArenaDelta result(p);
   const auto full=detail::BatchLayoutAccess::geometry(arena.schema).page_size;
   if(!full || !arena.page_bytes || arena.page_bytes%full)
     return std::unexpected(Status::FailedPrecondition("delta row geometry is invalid"));
-  {
-    std::lock_guard lock(base.immutable_mutex);
-    if(base.immutable_ready){
-      p->immutable=base.immutable;p->immutable_prepared=true;
-      if(!p->individual.try_reserve(base.individual.size()))return std::unexpected(Status::ResourceExhausted("delta individual page metadata"));
-      for(const auto&guard:base.individual)p->individual.push_back(guard);
-    }
-  }
+  p->immutable=std::move(held_groups.immutable);p->immutable_prepared=true;
+  if(!p->individual.try_reserve(held_groups.individual.size()))return std::unexpected(Status::ResourceExhausted("delta individual page metadata"));
+  for(const auto&guard:held_groups.individual)p->individual.push_back(guard);
   if(changed.size()>p->changes.max_size())
     return std::unexpected(Status::OutOfRange("delta metadata extent overflows"));
   try{
@@ -997,19 +969,17 @@ Result<PagedArenaDelta>PagedArenaDelta::create(PagedArenaFootprint expected,
       // epoch advances, that pin prevents whole-page reacquire/reclamation;
       // append can only grow the initialized suffix, never this old prefix.
       if(!changed_page && original_page){
-        const auto&held=base.pages[previous];
-        if(old_rows>=rows && held.valid() && held.size()>=std::size_t(rows)*(arena.page_bytes/full)){
+        HYLE_ASSIGN_OR_RETURN(auto held,original_guard(base,page));
+        if(old_rows>=rows && held->valid() && held->size()>=std::size_t(rows)*(arena.page_bytes/full)){
           if(p->immutable_prepared&&rows!=full)
             HYLE_RETURN_IF_ERROR(update_individual(p->individual,arena.span.offset()+std::size_t(page)*arena.page_bytes,
-                &held,std::size_t(rows)*(arena.page_bytes/full)));
+                held,std::size_t(rows)*(arena.page_bytes/full)));
           return Status::Ok();
         }
       }
-      // This fresh, unprepared Delta has no replacement table; page already
-      // belongs to its accepted layout. Preserve frame_guard's exact fallback.
       const ReadLease*guard=nullptr;
       if(changed_page)guard=&change->guard;
-      else if(original_page)guard=&base.pages[previous];
+      else if(original_page){HYLE_ASSIGN_OR_RETURN(guard,original_guard(base,page));}
       else return Status::FailedPrecondition("frame has no original page permission");
       HYLE_ASSIGN_OR_RETURN(auto actual,page_id(arena,*guard));
       if(actual!=page || guard->size()<std::size_t(rows)*(arena.page_bytes/full))
@@ -1065,35 +1035,31 @@ Result<PagedArenaFrame>PagedArenaFrame::fork(const PagedArenaFootprint&source)no
   if(!source.valid())return std::unexpected(Status::FailedPrecondition("frame fork source is empty or stale"));
   auto*arena=source.data_->arena;
   if(arena->closed)return std::unexpected(Status::FailedPrecondition("frame fork arena is closed"));
+  HYLE_ASSIGN_OR_RETURN(auto groups,detail::PagedArenaAccess::read_groups(source));
   auto*p=arena->allocator.construct<FrameData>(arena,source.layout());
   if(!p)return std::unexpected(Status::ResourceExhausted("working frame metadata"));
-  PagedArenaFrame result(p);p->sealed=false;
-  if(source.page_count()>p->pages.max_size())return std::unexpected(Status::OutOfRange("frame fork page count overflows"));
-  try{p->pages.resize(source.page_count());}
-  catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("working frame page metadata"));}
-  HYLE_RETURN_IF_ERROR(detail::PagedArenaAccess::collect_pages(source,p->pages));
-  {
-    std::lock_guard lock(source.data_->immutable_mutex);
-    if(source.proposed_?source.proposed_->immutable_prepared:source.data_->immutable_ready){
-      p->immutable=source.proposed_?source.proposed_->immutable:source.data_->immutable;
-      const auto&individual=source.proposed_?source.proposed_->individual:source.data_->individual;
-      if(!p->individual.try_reserve(individual.size()))return std::unexpected(Status::ResourceExhausted("frame fork individual permissions"));
-      for(const auto&guard:individual)p->individual.push_back(guard);
-      p->immutable_ready=true;
-    }
-  }
+  PagedArenaFrame result(p);p->sealed=false;p->resident=true;p->pages_ready=false;
+  p->immutable=std::move(groups.immutable);p->immutable_ready=true;
+  if(!p->individual.try_reserve(groups.individual.size()))return std::unexpected(Status::ResourceExhausted("frame fork individual permissions"));
+  for(const auto&guard:groups.individual)p->individual.push_back(guard);
   return result;
 }
 bool PagedArenaFrame::sealed()const noexcept{return data_ && data_->sealed;}
 std::uint64_t PagedArenaFrame::epoch()const noexcept{return data_?data_->epoch:0;}
 BatchLayoutVersion PagedArenaFrame::layout()const noexcept{return data_?data_->layout:BatchLayoutVersion{};}
-std::size_t PagedArenaFrame::page_count()const noexcept{return data_?data_->pages.size():0;}
+std::size_t PagedArenaFrame::page_count()const noexcept{return data_?frame_page_count(*data_):0;}
 Result<PagedArenaFootprint>PagedArenaFrame::view()const noexcept{
   if(!data_)return std::unexpected(Status::FailedPrecondition("frame is empty"));
   return PagedArenaFootprint(data_,data_->epoch);
 }
 Status PagedArenaFrame::can_seal()const noexcept{
   if(!data_)return Status::FailedPrecondition("frame is empty");
+  if(data_->resident && !data_->sealed){
+    const auto count=frame_page_count(*data_);
+    if(count>data_->pages.max_size())return Status::OutOfRange("sealed frame export extent overflows");
+    try{data_->pages.reserve(count);}
+    catch(const std::bad_alloc&){return Status::ResourceExhausted("sealed frame compatibility export capacity");}
+  }
   return Status::Ok();
 }
 Status PagedArenaFrame::seal()noexcept{HYLE_RETURN_IF_ERROR(can_seal());data_->sealed=true;return Status::Ok();}
@@ -1107,33 +1073,10 @@ Result<PagedArenaCommit>PagedArenaFrame::prepare_commit(PagedArenaDelta&&delta)c
   if(data_->sealed || data_->arena->closed)return std::unexpected(Status::FailedPrecondition("frame is sealed or its arena is closed"));
   if(data_->epoch!=p->epoch || p->prepared)return std::unexpected(Status::FailedPrecondition("frame delta is stale or already prepared"));
   if(data_->epoch==UINT64_MAX)return std::unexpected(Status::OutOfRange("frame epoch is exhausted"));
-  HYLE_ASSIGN_OR_RETURN(auto before,detail::BatchLayoutAccess::page_footprint(data_->layout));
-  HYLE_ASSIGN_OR_RETURN(auto after,detail::BatchLayoutAccess::page_footprint(p->layout));
-  HYLE_ASSIGN_OR_RETURN(auto layout_changes,detail::BatchLayoutAccess::page_changes(data_->layout,p->layout));
-  const bool same=std::none_of(layout_changes.begin(),layout_changes.end(),
-      [](const auto&change){return !change.before_rows || !change.after_rows;});
-  // Steady decode keeps the existing guard table. Only a structural page-set
-  // change stages a full replacement, sized to the actual accepted footprint.
-  std::vector<ReadLease,mem::StdAllocator<ReadLease>>replacement{mem::StdAllocator<ReadLease>(data_->allocator)};
-  if(!same){
-    if(after.size()>replacement.max_size())return std::unexpected(Status::OutOfRange("updated frame page count overflows"));
-    try{replacement.reserve(after.size());
-      std::size_t old=0,change=0;
-      for(const auto page:after){
-        while(old<before.size() && before[old]<page)++old;
-        while(change<p->changes.size() && p->changes[change].page<std::uint32_t(page))++change;
-        // The ticket is not prepared yet, so frame_guard selects a changed
-        // guard first, otherwise this exact original physical-order ordinal.
-        const ReadLease*guard=nullptr;
-        if(change<p->changes.size() && p->changes[change].page==std::uint32_t(page))guard=&p->changes[change].guard;
-        else if(old<before.size() && before[old]==page && old<data_->pages.size())guard=&data_->pages[old];
-        else return std::unexpected(Status::FailedPrecondition("frame has no original page permission"));
-        HYLE_ASSIGN_OR_RETURN(auto actual,page_id(*data_->arena,*guard));
-        if(actual!=std::uint32_t(page))return std::unexpected(Status::FailedPrecondition("updated frame page guard changed"));
-        replacement.push_back(*guard);}}
-    catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("updated frame guard metadata"));}
-  }
-  p->replacement.swap(replacement);p->replace_table=!same;p->prepared=true;
+  // Delta creation validates and persistently edits only changed pages. Both
+  // proposed views and commit retain that complete group directly.
+  if(!p->immutable_prepared)return std::unexpected(Status::Internal("frame delta has no prepared permissions"));
+  p->prepared=true;
   return PagedArenaCommit(std::exchange(delta.data_,nullptr));
 }
 Status PagedArenaFrame::validate_commit(const PagedArenaCommit&ticket)const noexcept{
@@ -1147,8 +1090,7 @@ Status PagedArenaFrame::validate_commit(const PagedArenaCommit&ticket)const noex
 Status PagedArenaFrame::commit(PagedArenaCommit&&ticket)noexcept{
   HYLE_RETURN_IF_ERROR(validate_commit(ticket));auto*p=ticket.data_;
   std::lock_guard lock(data_->immutable_mutex);
-  if(p->replace_table)data_->pages.swap(p->replacement);
-  else for(auto&change:p->changes)data_->pages[change.ordinal]=std::move(change.guard);
+  data_->pages.clear();data_->resident=true;data_->pages_ready=false;
   data_->layout=std::move(p->layout);++data_->epoch;
   data_->immutable=std::move(p->immutable);data_->immutable_ready=p->immutable_prepared;
   data_->individual=std::move(p->individual);
@@ -1173,7 +1115,7 @@ Status detail::PagedArenaAccess::collect_pages(const PagedArenaFootprint&view,st
   // the epoch changes. This copies existing permissions; no ready range or
   // arena capacity is manufactured. Proposed views retain full validation.
   const auto&held=view.data_->pages;
-  if(!view.proposed_ && held.size()==ids.size() &&
+  if(!view.data_->resident && !view.proposed_ && held.size()==ids.size() &&
       std::all_of(held.begin(),held.end(),[](const auto&guard){return guard.valid();})){
     std::copy(held.begin(),held.end(),output.begin());return Status::Ok();
   }
@@ -1205,8 +1147,7 @@ Result<detail::PagedArenaReadGroups> detail::PagedArenaAccess::read_groups(const
     bool grouped=false;
     if(required.required_rows[i]==full){HYLE_ASSIGN_OR_RETURN(grouped,retain_immutable(group,*guard,p.allocator));}
     if(!grouped){
-      HYLE_ASSIGN_OR_RETURN(auto prefix,guard->subview(0,std::size_t(required.required_rows[i])*(p.arena->page_bytes/full)));
-      if(!individual.try_push_back(std::move(prefix)))return std::unexpected(Status::ResourceExhausted("frame individual permission snapshot"));
+      if(!individual.try_push_back(*guard))return std::unexpected(Status::ResourceExhausted("frame individual permission snapshot"));
     }
   }
   if(next){next->immutable=group;next->individual=std::move(individual);next->immutable_prepared=true;}

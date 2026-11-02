@@ -52,6 +52,62 @@ TEST(BatchLayout, PageDifferencesKeepSparseRowsStableAcrossBanksAndPredecessors)
   before={};from_other={};schema={};
   EXPECT_EQ(changes[2].after_rows,8u);EXPECT_EQ(other[1].page,1);
 }
+TEST(BatchLayout, AppendMappingPreservesPackedOffsetsCowAndSharedUntouchedReferences){
+  auto schema=c::BatchSchema::create(capacity()).value();
+  const std::array<std::int32_t,3> zero{0,0,0},old_kv{0,2,4},next_kv{0,2,5},query{0,2,3};
+  const std::array<std::int32_t,4> old_pages{4,1,4,2};
+  const std::array<std::int32_t,5> next_pages{4,7,4,2,6};
+  const std::array<std::int32_t,2> old_tail{3,16},next_tail{5,1};
+  auto before=schema.version({zero,old_kv,old_pages,old_tail}).value();
+  auto after=schema.version({query,next_kv,next_pages,next_tail}).value();
+  auto mapping=c::detail::BatchLayoutAccess::append_pages(before,after).value();
+  ASSERT_EQ(mapping.changed.size(),2u);ASSERT_EQ(mapping.untouched.size(),2u);
+  EXPECT_EQ(mapping.untouched[0],2);EXPECT_EQ(mapping.untouched[1],4);
+  const auto first=mapping.changed[0],second=mapping.changed[1];
+  EXPECT_EQ(first.page,7u);EXPECT_EQ(first.previous_page,1u);EXPECT_EQ(first.inherited_rows,3u);
+  EXPECT_EQ(first.required_rows,5u);EXPECT_EQ(first.input_begin,0u);EXPECT_EQ(first.appended_rows,2u);
+  EXPECT_EQ(second.page,6u);EXPECT_EQ(second.previous_page,UINT32_MAX);EXPECT_EQ(second.inherited_rows,0u);
+  EXPECT_EQ(second.required_rows,1u);EXPECT_EQ(second.input_begin,2u);EXPECT_EQ(second.appended_rows,1u);
+  // A different predecessor may require a copy-only prefix. Insertion of that
+  // cache entry must not invalidate the first borrowed append mapping.
+  auto other=after;
+  const std::array<std::int32_t,5> cloned_pages{5,7,4,2,6};
+  auto clone=schema.version({zero,next_kv,cloned_pages,next_tail}).value();
+  const auto cow=c::detail::BatchLayoutAccess::append_pages(other,clone).value();
+  ASSERT_EQ(cow.changed.size(),1u);EXPECT_EQ(cow.changed[0].page,5u);
+  EXPECT_EQ(cow.changed[0].previous_page,4u);EXPECT_EQ(cow.changed[0].inherited_rows,16u);
+  EXPECT_EQ(cow.changed[0].appended_rows,0u);
+  auto equivalent=schema.version(before.host()).value();
+  ASSERT_TRUE(c::detail::BatchLayoutAccess::append_pages(equivalent,after));
+  EXPECT_EQ(mapping.changed[0].page,7u);EXPECT_EQ(mapping.untouched[1],4);
+  EXPECT_EQ(c::detail::BatchLayoutAccess::append_pages(before,after)->changed.data(),mapping.changed.data());
+}
+TEST(BatchLayout, AppendMappingRejectsPerRequestHistoryChangesAndIsOomRetryable){
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),1u<<20);
+  auto schema=c::BatchSchema::create(capacity(),{.allocator=quota.get()}).value();
+  Layout input;input.q={0,0,0};auto before=schema.version(input.host()).value();
+  input.q={0,2,3};input.tails={5,11};auto after=schema.version(input.host()).value();
+  input.tails={6,10};auto wrong=schema.version(input.host()).value();
+  EXPECT_TRUE(c::detail::BatchLayoutAccess::append_pages(before,wrong).error().IsInvalidArgument());
+  auto foreign=c::BatchSchema::create(capacity()).value().version(before.host()).value();
+  EXPECT_TRUE(c::detail::BatchLayoutAccess::append_pages(foreign,after).error().IsInvalidArgument());
+  const auto used=quota.used();
+  {
+    auto reserved=quota.try_reserve_bytes(quota.remaining()).value();
+    auto failed=c::detail::BatchLayoutAccess::append_pages(before,after);
+    ASSERT_FALSE(failed);EXPECT_TRUE(failed.error().IsResourceExhausted());
+  }
+  EXPECT_EQ(quota.used(),used);
+  std::array<c::detail::BatchAppendFootprint,4> results;
+  std::array<std::thread,4> threads;
+  for(std::size_t i=0;i<threads.size();++i)
+    threads[i]=std::thread([&,i]{results[i]=c::detail::BatchLayoutAccess::append_pages(before,after).value();});
+  for(auto&thread:threads)thread.join();
+  for(const auto&result:results){
+    ASSERT_EQ(result.changed.size(),2u);EXPECT_EQ(result.changed.data(),results[0].changed.data());
+    EXPECT_EQ(result.changed[0].appended_rows,2u);EXPECT_EQ(result.changed[1].input_begin,2u);
+  }
+}
 TEST(BatchLayout, PageDifferenceBudgetFailureIsRetryableAndConcurrentReadersShareFacts){
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),1u<<20);
   auto schema=c::BatchSchema::create(capacity(),{.allocator=quota.get()}).value();Layout input;

@@ -89,9 +89,16 @@ struct BatchLayoutData final:util::RefCounted<BatchLayoutData> {
     std::uint64_t generation;
     std::vector<BatchPageChange,mem::StdAllocator<BatchPageChange>> pages;
   };
+  struct Append final {
+    Append(std::uint64_t g,mem::AllocatorRef a):generation(g),
+        changed(mem::StdAllocator<BatchAppendPage>(a)),untouched(mem::StdAllocator<std::int32_t>(a)){}
+    std::uint64_t generation;
+    std::vector<BatchAppendPage,mem::StdAllocator<BatchAppendPage>> changed;
+    std::vector<std::int32_t,mem::StdAllocator<std::int32_t>> untouched;
+  };
   BatchLayoutData(BatchSchema s,mem::AllocatorRef a):schema(std::move(s)),allocator(a),
       page_footprint(mem::StdAllocator<std::int32_t>(a)),page_required_rows(mem::StdAllocator<std::uint32_t>(a)),
-      changes(mem::StdAllocator<Changes>(a)){}
+      changes(mem::StdAllocator<Changes>(a)),appends(mem::StdAllocator<Append>(a)){}
   void destroy()noexcept{const auto a=allocator;this->~BatchLayoutData();a.deallocate(this,sizeof(*this),alignof(BatchLayoutData));}
   BatchSchema schema;mem::AllocatorRef allocator;
   ReadLease bytes;mem::HostMapping mapping; // mapping dies before its backing
@@ -100,6 +107,7 @@ struct BatchLayoutData final:util::RefCounted<BatchLayoutData> {
   mutable std::vector<std::int32_t,mem::StdAllocator<std::int32_t>> page_footprint;
   mutable std::vector<std::uint32_t,mem::StdAllocator<std::uint32_t>> page_required_rows;
   mutable std::vector<Changes,mem::StdAllocator<Changes>> changes;
+  mutable std::vector<Append,mem::StdAllocator<Append>> appends;
   std::uint64_t generation=0;BatchLayoutFacts facts{};
 };
 } // namespace detail
@@ -407,24 +415,36 @@ Result<detail::BatchPageFootprint> detail::BatchLayoutAccess::page_requirements(
     // returned, never replace its backing while adding the parallel row facts.
     decltype(data.page_footprint) next_ids(mem::StdAllocator<std::int32_t>(data.allocator));
     decltype(data.page_required_rows) next_rows(mem::StdAllocator<std::uint32_t>(data.allocator));
+    struct Required final {std::int32_t page;std::uint32_t rows;};
+    std::vector<Required,mem::StdAllocator<Required>> required{mem::StdAllocator<Required>(data.allocator)};
     try{
-      if(data.page_footprint.empty()){
-        if(host.page_indices.size()>next_ids.max_size())return std::unexpected(Status::OutOfRange("batch page footprint extent"));
-        next_ids.assign(host.page_indices.begin(),host.page_indices.end());
-        std::sort(next_ids.begin(),next_ids.end());next_ids.erase(std::unique(next_ids.begin(),next_ids.end()),next_ids.end());
-      }
-      const auto ids=data.page_footprint.empty()?std::span<const std::int32_t>(next_ids):std::span<const std::int32_t>(data.page_footprint);
-      if(ids.size()>next_rows.max_size())return std::unexpected(Status::OutOfRange("batch page requirement extent"));
-      next_rows.resize(ids.size(),0u);
+      if(host.page_indices.size()>required.max_size())return std::unexpected(Status::OutOfRange("batch page requirement extent"));
+      required.reserve(host.page_indices.size());
       const auto full=geometry(data.schema).page_size;
       for(std::size_t request=0;request<data.facts.requests;++request){
         const auto end=std::size_t(host.kv_indptr[request+1]);
-        for(auto index=std::size_t(host.kv_indptr[request]);index<end;++index){
-          const auto found=std::lower_bound(ids.begin(),ids.end(),host.page_indices[index]);
-          if(found==ids.end() || *found!=host.page_indices[index])return std::unexpected(Status::Internal("batch page requirement lost its ID"));
-          auto&rows=next_rows[std::size_t(found-ids.begin())];
-          rows=std::max(rows,index+1==end?std::uint32_t(host.last_page_lengths[request]):full);
-        }
+        for(auto index=std::size_t(host.kv_indptr[request]);index<end;++index)
+          required.push_back({host.page_indices[index],index+1==end?std::uint32_t(host.last_page_lengths[request]):full});
+      }
+      // Sort each physical ID together with its row requirement once. Looking
+      // up every logical reference in a second sorted table made the first
+      // use of each long layout dominate otherwise incremental bank edits.
+      std::sort(required.begin(),required.end(),[](const auto&a,const auto&b){return a.page<b.page;});
+      auto unique=required.begin();
+      for(auto at=required.begin();at!=required.end();){
+        auto value=*at++;
+        while(at!=required.end() && at->page==value.page){value.rows=std::max(value.rows,at->rows);++at;}
+        *unique++=value;
+      }
+      const auto count=std::size_t(unique-required.begin());
+      if(count>next_rows.max_size() || count>next_ids.max_size())return std::unexpected(Status::OutOfRange("batch page requirement extent"));
+      if(data.page_footprint.empty())next_ids.reserve(count);
+      else if(data.page_footprint.size()!=count)return std::unexpected(Status::Internal("batch page requirement lost its ID"));
+      next_rows.reserve(count);
+      for(std::size_t i=0;i<count;++i){
+        if(data.page_footprint.empty())next_ids.push_back(required[i].page);
+        else if(data.page_footprint[i]!=required[i].page)return std::unexpected(Status::Internal("batch page requirement lost its ID"));
+        next_rows.push_back(required[i].rows);
       }
     }catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("batch page requirement metadata"));}
     if(data.page_footprint.empty())data.page_footprint.swap(next_ids);
@@ -460,6 +480,42 @@ Result<std::span<const detail::BatchPageChange>> detail::BatchLayoutAccess::page
     data.changes.push_back(std::move(staged));
   }catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("batch page difference metadata"));}
   return std::span<const BatchPageChange>(data.changes.back().pages);
+}
+Result<detail::BatchAppendFootprint> detail::BatchLayoutAccess::append_pages(
+    const BatchLayoutVersion&before,const BatchLayoutVersion&after)noexcept{
+  if(!before.valid() || !after.valid() || !after.origin_schema().owns(before) ||
+      geometry(after.origin_schema()).storage!=BatchStorage::kPaged || before.facts().requests!=after.facts().requests)
+    return std::unexpected(Status::InvalidArgument("append layouts require the same original paged request domain"));
+  auto&data=*after.data_;std::lock_guard guard(data.export_lock);
+  for(const auto&entry:data.appends)if(entry.generation==before.generation())
+    return BatchAppendFootprint{entry.changed,entry.untouched};
+  const auto old=before.host(),next=after.host();const auto full=geometry(data.schema).page_size;
+  BatchLayoutData::Append staged(before.generation(),data.allocator);
+  try{
+    for(std::size_t request=0;request<data.facts.requests;++request){
+      const auto first=std::size_t(old.kv_indptr[request]),count=std::size_t(old.kv_indptr[request+1])-first;
+      const auto start=std::size_t(next.kv_indptr[request]),pages=std::size_t(next.kv_indptr[request+1])-start;
+      const auto previous_rows=count?std::uint64_t(count-1)*full+std::uint32_t(old.last_page_lengths[request]):0;
+      const auto next_rows=pages?std::uint64_t(pages-1)*full+std::uint32_t(next.last_page_lengths[request]):0;
+      const auto query_rows=std::uint32_t(next.query_indptr[request+1]-next.query_indptr[request]);
+      if(previous_rows+query_rows!=next_rows)
+        return std::unexpected(Status::InvalidArgument("paged append must extend each request by its packed query rows"));
+      for(std::size_t logical=0;logical<pages;++logical){
+        const auto page=std::uint32_t(next.page_indices[start+logical]);
+        const auto begin=std::uint64_t(logical)*full,end=std::min(next_rows,begin+full);
+        const auto inherited=previous_rows>begin?std::min(previous_rows-begin,std::uint64_t(full)):0;
+        const auto source=inherited?std::uint32_t(old.page_indices[first+logical]):UINT32_MAX;
+        const auto new_begin=std::max(begin,previous_rows),added=end>new_begin?end-new_begin:0;
+        if(!added && source==page)staged.untouched.push_back(std::int32_t(page));
+        else staged.changed.push_back({page,source,std::uint32_t(inherited),std::uint32_t(end-begin),
+            added?std::uint32_t(next.query_indptr[request]+new_begin-previous_rows):0u,std::uint32_t(added)});
+      }
+    }
+    std::sort(staged.untouched.begin(),staged.untouched.end());
+    staged.untouched.erase(std::unique(staged.untouched.begin(),staged.untouched.end()),staged.untouched.end());
+    data.appends.push_back(std::move(staged));
+  }catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("batch append mapping metadata"));}
+  const auto&saved=data.appends.back();return BatchAppendFootprint{saved.changed,saved.untouched};
 }
 bool BatchLayoutVersion::operator==(const BatchLayoutVersion&v)const noexcept{return data_==v.data_;}
 Status infer_batch_attention(BatchCapacity c,BatchStorage storage,std::span<const TensorDesc> inputs,std::span<TensorDesc> outputs)noexcept {

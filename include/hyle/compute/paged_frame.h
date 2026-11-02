@@ -92,8 +92,9 @@ public:
   HYLE_COMPUTE_BATCH_API PagedArenaFrame(PagedArenaFrame&&) noexcept;
   HYLE_COMPUTE_BATCH_API PagedArenaFrame&operator=(PagedArenaFrame&&) noexcept;
   HYLE_COMPUTE_BATCH_API ~PagedArenaFrame();
-  // Readonly alias only; never unseals the original Data. fork copies just the
-  // current exact guard metadata and can also fork a ready proposed footprint.
+  // Readonly alias only; never unseals the original Data. fork shares immutable
+  // original permissions and copies individual tails/mutable-ready guards.
+  // It can also fork a ready proposed footprint.
   HYLE_COMPUTE_BATCH_API static Result<PagedArenaFrame> from_frozen(const PagedArenaRead&) noexcept;
   HYLE_COMPUTE_BATCH_API static Result<PagedArenaFrame> fork(const PagedArenaFootprint&) noexcept;
   bool valid() const noexcept { return data_ != nullptr; }
@@ -102,6 +103,8 @@ public:
   HYLE_COMPUTE_BATCH_API BatchLayoutVersion layout() const noexcept;
   HYLE_COMPUTE_BATCH_API std::size_t page_count() const noexcept;
   HYLE_COMPUTE_BATCH_API Result<PagedArenaFootprint> view() const noexcept;
+  // Preflights the capacity for a lazy legacy contiguous-guard export. Does
+  // not change logical state; joint owners preflight every participant first.
   HYLE_COMPUTE_BATCH_API Status can_seal() const noexcept;
   HYLE_COMPUTE_BATCH_API Status seal() noexcept;
   HYLE_COMPUTE_BATCH_API Result<PagedArenaRead> snapshot() const noexcept;
