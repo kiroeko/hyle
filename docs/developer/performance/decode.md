@@ -86,6 +86,8 @@ GPU 采样峰是下界，跨进程共享显存不可相加；多轮的准备和�
 
 本卡通过不代表逐格超过参考：1K MTP decode为参考97.7%，计时范围重叠；短多轮prefill的固定差距保留在表中。内存比较使用私有提交峰，不能将mmap工作集或GPU共享内存简单相加。
 
+2.E核查结束，未交付提速，产品仍为`319114961`。16K／32K配对轨迹的注意力分别多50.8／158.8ms；设备实查为2个block/SM，已有占用率修正生效。提高分块目标的三进程同窗试验，32K普通prefill为候选4.036s／当前3.900s／参考3.989s，范围重叠，未证明收益，16个输出ID相同、相关18项测试通过。诊断确认4份KV分块需64.25MiB工作区，超过当前64MiB硬上限，因此仍回落到3份、192个CTA；没有绕过上限或新增用户开关。候选不采用，未为弃用候选补做显存与teacher-forcing验收。原数见[三臂计时](../../../.scratch/inference-stage2e-20261102/waves4-window1/endpoints.txt)、[16K配对轨迹](../../../.scratch/inference-stage2e-20261102/current-16384-nsys1/profile-comparison.md)和[分块诊断](../../../.scratch/inference-stage2e-20261102/waves4-probe-native1/stderr.log)。上表保留已提交默认实现的数据。
+
 ## 32K普通prefill的最新配对profile
 
 仅作归因，各一个带profiler的新进程；首token发布即结束范围，未混入首次decode准备。两边首token ID相同。
