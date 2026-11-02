@@ -13,7 +13,7 @@
 | M3 发布 | README 第一屏是结果表和一条复现命令；文章公开 | 未开始 |
 | 上游 PR | 1–3 个性能 PR 合入 vLLM、SGLang、llama.cpp 或 FlashInfer，方向取自 M1、M2 查清的问题 | 未开始 |
 
-**当前执行：** 按用户确定的[阶段2顺序](base-ip.md)，先开2.B的单项 goal；下方M1条目保留已有验收边界，不重做已提交成果。
+**当前执行：** [2.B MTP连续接力](base-ip.md)已完成，提交 `fc369e05f`；下一项尚未启动。下方M1条目保留已有验收边界，不重做已提交成果。
 
 **暂停：** GLM、Kimi、DeepSeek 组件，主场景用不到的后端，基础库新功能，多卡，通用 loader、tokenizer、server。[base-ip总计划](base-ip.md)继续维护0～3阶段；2.B～2.F及阶段3仍保留。
 
