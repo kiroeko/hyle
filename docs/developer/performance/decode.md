@@ -1,6 +1,6 @@
 # CUDA 推理性能
 
-更新：2026-11-02。**M1-5 尚未完成；以下为已提交基线的数据。**
+更新：2026-11-02。**M1-5 尚未完成；以下为已提交版本的数据。**
 
 RTX 4070 12GB，Qwen3.5-2B BF16，greedy、纯 CUDA、默认参数。真实文本由原生 tokenizer 生成；双方 capacity 与参考实际 target/draft `n_ctx` 均为 32768。参考按默认流程预热，batch 2048、ubatch 512。每臂 3 个独立进程、同窗口交错，每进程生成 16 token。
 
@@ -8,29 +8,27 @@ RTX 4070 12GB，Qwen3.5-2B BF16，greedy、纯 CUDA、默认参数。真实文�
 
 | 模式 | 输入 token | prefill ms | decode tok/s | ready s | 退出墙时 s |
 |---|---:|---:|---:|---:|---:|
-| 普通 | 1024 | 103.25 / 112.69 | 99.43 / 97.19 | 1.779 / 1.769 | 2.563 / 2.575 |
-| 普通 | 4096 | 400.19 / 427.49 | 99.65 / 92.95 | 1.780 / 1.768 | 2.881 / 2.882 |
-| 普通 | 16384 | 1884.39 / 1741.64 | 85.62 / 84.51 | 1.825 / 1.825 | 4.410 / 4.825 |
-| 普通 | 32736 | 3977.78 / 3688.26 | 87.66 / 85.08 | 1.790 / 1.795 | 6.476 / 6.202 |
-| MTP | 1024 | 112.73 / 122.54 | 120.79 / 121.73 | 2.947 / 1.844 | 3.775 / 2.641 |
-| MTP | 4096 | 443.22 / 474.68 | 118.50 / 115.63 | 2.967 / 1.848 | 4.102 / 3.006 |
-| MTP | 16384 | 1828.25 / 1944.95 | 110.30 / 106.78 | 2.973 / 1.823 | 5.518 / 4.497 |
-| MTP | 32736 | 4123.03 / 4303.84 | 102.84 / 98.98 | 2.961 / 1.853 | 7.818 / 6.901 |
+| 普通 | 1024 | 102.75 / 107.10 | 100.41 / 93.94 | 1.811 / 1.778 | 2.601 / 2.589 |
+| 普通 | 4096 | 412.91 / 397.80 | 100.70 / 96.85 | 1.799 / 1.786 | 2.908 / 2.889 |
+| 普通 | 16384 | 1782.40 / 1710.01 | 94.21 / 88.87 | 1.802 / 1.795 | 4.278 / 4.206 |
+| 普通 | 32736 | 3996.75 / 3717.79 | 85.85 / 86.60 | 1.815 / 1.779 | 6.532 / 6.231 |
+| MTP | 1024 | 113.32 / 125.97 | 121.05 / 117.64 | 2.969 / 1.852 | 3.804 / 2.665 |
+| MTP | 4096 | 440.22 / 480.80 | 117.75 / 117.44 | 3.014 / 1.864 | 4.178 / 3.021 |
+| MTP | 16384 | 1831.93 / 1937.35 | 111.09 / 110.62 | 2.991 / 1.860 | 5.527 / 4.491 |
+| MTP | 32736 | 4111.78 / 4291.09 | 101.41 / 99.69 | 2.972 / 1.880 | 7.826 / 6.868 |
 
-16K 独立同窗复测，旧版 `5b91c0cd7`／已提交版／参考的普通 decode 分别为 5.87／85.62／84.51 tok/s，MTP 为 13.60／110.30／106.78 tok/s；每臂3个进程，输出 ID 与旧版一致。普通新版范围为 73.20–88.88 tok/s，有较大波动，但新版和旧版范围不重叠。
+普通 32K prefill 为参考吞吐的 93.0%，未达到 97% 验收。32K 的普通和 MTP decode，当前版与基线的三进程范围重叠；不能将中位数差距解释成稳定退化或提升。四档、两种模式的 16 个输出 ID 与基线及参考一致。
 
-普通 32K prefill 为参考吞吐的 92.7%，未达到 97% 验收。最新窗口的普通16K及MTP 1K／32K decode 两组范围均重叠，不能将中位数差距解释成稳定领先或退化。各场景双方输出 ID 一致。
+减少重复排序后，同一窗口中 32K MTP decode 的主机准备时间从基线 5.84ms 降到 4.42ms；完整 decode 为 101.71 / 101.41 tok/s（基线 / 当前），范围重叠，尚未测出吞吐提升。同一窗口从 1K 到 32K，当前版的主机准备中位数为普通 0.70→1.81ms、MTP 1.52→4.42ms，均超过 1.3 倍。逐步准备时间可能与执行重叠，不能相加当作完整 decode 耗时。
 
-主机 decode 准备中位数从1K到32K：普通 0.70→2.08ms，MTP 1.50→5.54ms，均超过1.3倍。末段 prefill 分块准备分别为普通 2.81→3.44ms、MTP 2.88→5.58ms。采样是同一进程内的准备阶段，不能把重叠步长相加当成完整 decode 耗时。
+C2048 短负载使用 8 个不同 prompt、每轮 64 token。基线 / 当前版合并 decode：普通 102.41 / 102.20，MTP 125.91 / 126.01 tok/s；逐轮均达到基线的 98%，512 个输出 ID 一致。普通 4K 单轮生成 128 token 的诊断中，当前 / 基线 / 参考分别为 102.26 / 102.18 / 99.09 tok/s；当前与基线 ID 一致，参考从第 108 个 token 开始分叉，原因未验证。
 
-已检查的四档普通及 MTP teacher-forcing argmax 均匹配原版；自然 MTP 的16个 ID、已观察接力行及末步 argmax 匹配。同一数学路径下，原版与当前版第13、15、16项的已初始化状态载荷及所记录边界字段逐字节一致，包含 draft。Round / Single 的已检查 teacher-forcing argmax 一致；分别从两种状态继续生成16 token 尚未验证，不能宣称本卡完整正确性通过。
+基线 `cf56700c2` 已检查四档普通及 MTP teacher-forcing argmax；同一路径的部分状态载荷和边界字段逐字节一致。当前版通过原有页读权限、候选选择测试和实际 MTP 输出对照；Round / Single 分别继续生成 16 token 尚未验证，不能宣称本卡完整正确性通过。
 
-C2048 短负载使用 8 个不同 prompt、每轮 64 token。原版 / 当前版合并 decode：普通 101.57 / 102.17，MTP 125.57 / 125.99 tok/s；逐轮均达到原版的 98%，生成 ID 一致。
+独立显存采样的 C32768、32736 输入场景：普通基线 / 当前 / 参考为 4593.08 / 4593.08 / 4297.16 MiB，MTP 为 5025.08 / 5025.08 / 4639.29 MiB。每臂 3 个独立进程，当前版相对基线的采样峰增量均为 0 MiB，通过 64 MiB 限制；采样峰是下界。
 
-独立显存采样的 C32768、32736 输入场景：普通原版 / 当前 / 参考为 4593.08 / 4593.08 / 4297.16 MiB，MTP 为 5025.08 / 5025.08 / 4639.29 MiB。每臂 3 个独立进程，当前版相对原版的采样峰增量均为 0 MiB，通过 64 MiB 限制；采样峰是下界。
-
-测量版本：Hyle `cf56700c2`；参考为冻结 llama.cpp `d9e03f1074dbd2979126d91dce1b5d304ec8394e` 的自建 consumer，非上游最新版标准 llama-bench。
+测量版本：Hyle `9e7fb61ad`；参考为冻结 llama.cpp `d9e03f1074dbd2979126d91dce1b5d304ec8394e` 的自建 consumer，非上游最新版标准 llama-bench。
 
 复现长负载：`python .scratch/inference-long-context-20261101/acceptance.py timing --output <新目录> --hyle-version <实际版本> --lengths 1024 4096 16384 32736 --modes both`。
 
-原始数据：[普通1K／32K](../../../.scratch/inference-long-context-20261101/relation-window1/m15-summary.txt)、[16K](../../../.scratch/inference-long-context-20261101/precommit-head-16k-window1/m15-summary.txt)、[MTP 1K／32K](../../../.scratch/inference-long-context-20261101/choice-only-window1/m15-summary.txt)、[4K](../../../.scratch/inference-long-context-20261101/full-window-poolbulk-current1/m15-summary.txt)、[短负载](../../../.scratch/inference-long-context-20261101/short-window-lazypool-bulk1/summary.txt)、[独立显存](../../../.scratch/inference-long-context-20261101/memory-lazypool-bulk1/m15-memory-summary.txt)、[输入与 tokenizer](../../../.scratch/inference-long-context-20261101/workload/sources.txt)。
+原始数据：[普通1K／4K／16K](../../../.scratch/inference-long-context-20261101/reads-merge-ordinary-repeat1/m15-summary.txt)、[普通32K及MTP 32K](../../../.scratch/inference-long-context-20261101/reads-merge-window1/m15-summary.txt)、[MTP 1K](../../../.scratch/inference-long-context-20261101/reads-merge-1k16-repeat1/m15-summary.txt)、[MTP 4K／16K](../../../.scratch/inference-long-context-20261101/reads-merge-4k16k-window1/m15-summary.txt)、[普通4K 128输出](../../../.scratch/inference-long-context-20261101/reads-merge-4k128-window2/summary.txt)、[短负载](../../../.scratch/inference-long-context-20261101/reads-merge-short-window1/summary.txt)、[独立显存](../../../.scratch/inference-long-context-20261101/reads-merge-memory-window1/m15-memory-summary.txt)、[输入与 tokenizer](../../../.scratch/inference-long-context-20261101/workload/sources.txt)。
