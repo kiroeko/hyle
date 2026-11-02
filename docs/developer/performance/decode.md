@@ -135,6 +135,8 @@ GPU也仍有差距，同三对轨迹中位数如下；因此不能将本轮prefi
 
 性能行为变化或关键节点更新完整表。逐项优化先缩小范围：例如在下方命令末尾追加 `--only long-32736-c32768 --modes off --memory-repeats 0`；未测项目会明确标为“未测”。脚本默认每臂 3 个计时进程、1 个独立内存进程；下方命令用 `--memory-repeats 3` 重测全部选定场景的显存。本表已包含 C2048／C32768 多轮；`--only multi-c32768` 可单独复测后者。
 
+独立内存进程默认输出`samples.tsv`、`boundaries.tsv`、`phase-memory.tsv`及`phase-status.txt`，报告中可展开各场景的ready基线、逐轮prefill／decode起止值、阶段采样峰和相对ready／上一阶段的增量。Working set、私有提交、GPU专用／共享分别列出；OS累计高水位仍只用于整进程。边界取外部收到stderr标记的时间，管道延迟未知；ready使用此前最近完成的样本并标出年龄。只有完整位于阶段内的样本才归入该阶段，空窗口和缺失值不填0；`--analyze`从原始时间戳重建。GPU峰仍为采样下界，未导出的逐阶段池／退休计数和物理释放不作推断。该工具改动不改变上方产品性能数据。
+
 Nsight 归因先用 `python scripts/inference-nsys-prepare.py --help` 生成带边界标记的诊断源码并编译，再用 `python scripts/inference-nsys-capture.py --help` 采集对照。仓库采集脚本当前支持单轮；本轮的按轮诊断脚本保留在原始结果目录。预热、输入、容量或首 token 边界校验失败时不生成对比表。新轨迹还分列 Hyle 主机准备与该进程 CUDA 活动、空档的重叠时间。
 
 本机复现命令（更新实际版本并换一个不存在的输出目录）：
