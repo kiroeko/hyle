@@ -9,6 +9,7 @@
 #include "hyle/graph/paged_append_source.h"
 #include "hyle/graph/detail/source_binding_access.h"
 #include "hyle/graph/result.h"
+#include "../../src/graph_batch/pending_read_merge.h"
 
 #include <algorithm>
 #include <array>
@@ -18,6 +19,7 @@
 #include <condition_variable>
 #include <cstdint>
 #include <mutex>
+#include <random>
 #include <span>
 #include <thread>
 #include <vector>
@@ -28,6 +30,50 @@ namespace cd = c::detail;
 namespace g = hyle::graph;
 namespace gd = g::detail;
 namespace gb = g::batch;
+
+TEST(GraphPagedAppendSourceCuda, MergedPendingReadsRetainExactOriginalPrefixes) {
+  namespace m = hyle::mem;
+  auto allocated = m::Buffer::create(m::system_resource(), 65536, 64);
+  ASSERT_TRUE(allocated) << allocated.error().message();
+  auto backing = std::move(*allocated);
+  const m::ConstBufferView whole = backing.view();
+  const auto order = [](auto a, auto b) {
+    return a.offset() < b.offset() || (a.offset() == b.offset() && a.size() > b.size());
+  };
+  const auto canonicalize = [&](auto &views) {
+    std::sort(views.begin(), views.end(), order);
+    views.erase(std::unique(views.begin(), views.end(), [](auto a, auto b) {
+      return a.offset() == b.offset();
+    }), views.end());
+  };
+  std::minstd_rand random(47031);
+  for (const auto count : std::array<std::size_t, 7>{0, 1, 2, 7, 32, 257, 1024}) {
+    for (unsigned trial = 0; trial != 12; ++trial) {
+      SCOPED_TRACE(count);
+      SCOPED_TRACE(trial);
+      std::vector<m::ConstBufferView> left, right;
+      const auto add = [&](auto &out, std::size_t size) {
+        for (std::size_t i = 0; i < size; ++i) {
+          const auto offset = std::size_t(random() % (trial % 2 ? 128u : 4096u)) * 16;
+          out.push_back(whole.subview(offset, 1 + random() % 16).value());
+        }
+      };
+      add(left, count); add(right, trial % 3 == 0 ? 0 : count + trial % 5);
+      canonicalize(left); canonicalize(right);
+      auto expected = left;
+      expected.insert(expected.end(), right.begin(), right.end());
+      canonicalize(expected); // Original sort-and-deduplicate behavior.
+      gb::detail::merge_pending_reads(left, std::span<const m::ConstBufferView>(right));
+      ASSERT_EQ(left.size(), expected.size());
+      for (std::size_t i = 0; i < left.size(); ++i) {
+        EXPECT_EQ(left[i].resource(), expected[i].resource());
+        EXPECT_EQ(left[i].native_handle(), expected[i].native_handle());
+        EXPECT_EQ(left[i].offset(), expected[i].offset());
+        EXPECT_EQ(left[i].size(), expected[i].size());
+      }
+    }
+  }
+}
 namespace i = hyle::inference;
 
 // A bounded original-Queue host gate. Every assertion exit releases it before

@@ -1,4 +1,5 @@
 #include "paged_append.h"
+#include "pending_read_merge.h"
 #include "hyle/graph/detail/source_binding_access.h"
 #include "hyle/compute/detail/batch_provider.h"
 #include "hyle/compute/detail/paged_arena_access.h"
@@ -236,10 +237,19 @@ Result<PendingAppendReads> pending_reads_for_bind(const PagedAppendData&p,bool p
     if(projected && p.old_ranges.size()>SIZE_MAX-copies)
       return std::unexpected(Status::ResourceExhausted("paged append pending reader count overflows"));
     reads.reserve(copies+(projected?p.old_ranges.size():0));
+    PendingAppendReads copied{mem::StdAllocator<mem::ConstBufferView>(p.allocator)};
+    if(projected)copied.reserve(copies);
+    auto&copy_reads=projected?copied:reads;
     for(const auto&range:p.ranges)if(range.prefix){
       HYLE_ASSIGN_OR_RETURN(auto prefix,append_prefix(p,range.source));
-      HYLE_ASSIGN_OR_RETURN(prefix,prefix.subview(0,range.bytes));reads.push_back(prefix);
+      HYLE_ASSIGN_OR_RETURN(prefix,prefix.subview(0,range.bytes));copy_reads.push_back(prefix);
     }
+    const auto canonicalize=[](auto&views){
+      std::sort(views.begin(),views.end(),[](auto left,auto right){
+        return left.offset()<right.offset() || (left.offset()==right.offset() && left.size()>right.size());});
+      views.erase(std::unique(views.begin(),views.end(),[](auto left,auto right){
+        return left.offset()==right.offset();}),views.end());
+    };
     if(projected){
       // The selected in-Graph attention also reads untouched old pages. Its
       // new dirty pages are covered by this Graph's writers; only the exact
@@ -256,17 +266,22 @@ Result<PendingAppendReads> pending_reads_for_bind(const PagedAppendData&p,bool p
           reads.push_back(prefix);++old;++next;
         }
       }
+      // The immutable page requirements are sorted physical IDs, and these
+      // subviews use that same arena's page offsets. Sort only the COW
+      // prefixes; merge them with the already sorted actual read ranges.
+      canonicalize(copied);
+      detail::merge_pending_reads(reads,std::span<const mem::ConstBufferView>(copied));
+    }else{
+      canonicalize(reads);
     }
-    // A shared old page can be both a COW source and an attention prefix.
-    // Keep its largest genuine required prefix, with one native admission.
-    std::sort(reads.begin(),reads.end(),[](auto left,auto right){
-      return left.offset()<right.offset() || (left.offset()==right.offset() && left.size()>right.size());});
-    reads.erase(std::unique(reads.begin(),reads.end(),[](auto left,auto right){return left.offset()==right.offset();}),reads.end());
     if(p.choice_other){
       HYLE_ASSIGN_OR_RETURN(auto other,pending_reads_for_bind(*p.choice_other,projected));
-      reads.insert(reads.end(),other.begin(),other.end());
-      std::sort(reads.begin(),reads.end(),[](auto left,auto right){return left.offset()<right.offset() || (left.offset()==right.offset() && left.size()>right.size());});
-      reads.erase(std::unique(reads.begin(),reads.end(),[](auto left,auto right){return left.offset()==right.offset();}),reads.end());
+      if(p.previous_source.get()==p.choice_other->previous_source.get() && !p.choice_other->choice_other)
+        detail::merge_pending_reads(reads,std::span<const mem::ConstBufferView>(other));
+      else{
+        reads.insert(reads.end(),other.begin(),other.end());
+        canonicalize(reads);
+      }
     }
     return reads;
   }catch(...){return std::unexpected(Status::ResourceExhausted("paged append pending reader metadata"));}
