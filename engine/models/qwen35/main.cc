@@ -93,6 +93,7 @@
 #include "target_graph.h"
 #include "family_factory.h"
 #include "phase.h"
+#include "prefill_inputs.h"
 #include "auxiliary_programs.h"
 #include "hyle/compute/batch_transfer.h"
 #include "hyle/compute/detail/batch_device_choice.h"
@@ -426,6 +427,9 @@ struct EvaluationRequest final {
   LogitsInputs logits{};
   inference::ConditionalLogitsInputs conditional_logits{};
   inference::RequestKey request_key{}; // Diagnostic identity only; not admission authority.
+  PrefillInputPackets *prefill_packets = nullptr;
+  std::span<const std::int32_t> prefill_prompt{};
+  std::size_t prefill_offset = 0, prefill_turn = 0;
 };
 
 // Metadata only for the original cold Invocation. Graph enforces that these
@@ -2360,12 +2364,14 @@ public:
     const auto start = Clock::now();
     std::size_t physical_slots = 1;
     if (imported_sources) {
+      const bool prefill = requests == 1 && role == GraphRole::kText && packs_prefill(packing) &&
+          !cache_plan.draft_cache && !selected_sampler.enabled && selected_sampler.modifiers.empty();
       const bool ordinary = tokens == 1 && role == GraphRole::kText && !cache_plan.draft_cache;
       const bool mtp = tokens == 2 && requests == 1 &&
           (role == GraphRole::kMtpCatchupRound || (role == GraphRole::kMtpContinuation && device_mtp_successor_)) &&
           cache_plan.draft_cache && (definition.successor_token_port || role == GraphRole::kMtpContinuation) &&
           !selected_sampler.enabled && selected_sampler.modifiers.empty() && packing == RowPacking::kRectangular;
-      if ((!ordinary && !mtp) || diagnostic || completion != TextCompletion::kEmitNext ||
+      if ((!ordinary && !mtp && !prefill) || diagnostic || (!prefill && completion != TextCompletion::kEmitNext) ||
           cache_plan.in_flight_batches < 2 || scheduler)
         throw std::runtime_error("imported decode carriers require a complete supported predecessor and two candidate depths");
       physical_slots = role == GraphRole::kMtpContinuation && !device_mtp_continuous_enabled() ? 1 : execution_slot_count;
@@ -2503,6 +2509,14 @@ public:
     for (const auto &shape : shapes) {
       const std::array rows{shape.tokens};
       prepare_prefill_execution(rows, shape.completion, shape.sampling_index, 1, shape.role);
+      const auto &sampling = sampling_configuration(shape.sampling_index).configuration;
+      if (shape.tokens == bounded_prefill_rows && shape.role == GraphRole::kText && !cache_plan.draft_cache && !sampling.enabled &&
+          sampling.modifiers.empty() && execution.kind() == BackendKind::kCuda &&
+          !execution.has_cpu_assist() && cache_plan.in_flight_batches >= 2 && !scheduler) {
+        auto &relay = prepare_child(shape.tokens, false, 1, shape.role, shape.completion,
+            shape.sampling_index, true, RowPacking::kPrefill);
+        check(relay.slots.initialize_all_with([&] { return slot_initialization(relay); }));
+      }
     }
   }
 
@@ -2798,8 +2812,9 @@ public:
               member.session->head->draft->frontier == boundary->draft_frontier &&
               member.session->head->draft->lag == 1 && !inference::request_token_stopped(
                   member.session->head->next_id, model_eos_tokens, member.stop_policy))));
-      if (member.session->head.get() == member.base && member.session->head.epoch() == member.base_epoch && full_boundary)
-        member.first_input = member.session->head->next_id;
+      if (member.session->head.get() == member.base && member.session->head.epoch() == member.base_epoch && full_boundary) {
+        if (!source || !source->prefill) member.first_input = member.session->head->next_id;
+      }
       else active_step->cancelled = true;
     }
   }
@@ -3235,6 +3250,8 @@ public:
         throw std::runtime_error("cold recording requires Graph's non-executable mode");
     }
     const bool mtp_relay = relay && incoming->mtp_full_candidate;
+    const bool prefill_relay = relay && incoming->prefill && packs_prefill(packing) &&
+        role == GraphRole::kText && requests.size() == 1 && !cache_plan.draft_cache;
     const bool device_mtp = mtp_relay && incoming->mtp_device_choice;
     const bool device_input_choice = role == GraphRole::kMtpContinuation;
     if (device_input_choice && !recording_only && (!device_mtp || !predecessor))
@@ -3252,8 +3269,8 @@ public:
         incoming->extra_outputs.size() == (device_mtp ? 2u : 1u) && incoming->extra_outputs[0].valid() &&
         incoming->successor_states.size() == geometry.recurrent_layers() * 2;
     if (relay && (successor_step || scheduler || cache_plan.in_flight_batches < 2 ||
-        (!ordinary_relay && !complete_mtp_relay) || completion != TextCompletion::kEmitNext || physical_slot >= execution_slot_count ||
-        incoming->boundaries.size() != requests.size() || !incoming->submission.valid() || !incoming->primary_output.valid() ||
+        (!ordinary_relay && !complete_mtp_relay && !prefill_relay) || (!prefill_relay && completion != TextCompletion::kEmitNext) || physical_slot >= execution_slot_count ||
+        incoming->boundaries.size() != requests.size() || !incoming->submission.valid() || (!prefill_relay && !incoming->primary_output.valid()) ||
         incoming->states.size() != geometry.recurrent_layers() * 2 + (mtp_relay ? 1u : 0u) ||
         incoming->pages.size() != draft_bank + (mtp_relay ? 2u : 0u) ||
         (predecessor && (predecessor->execution.sources != incoming || predecessor->cancelled || !predecessor->submitted ||
@@ -3268,7 +3285,7 @@ public:
     const auto &selected_sampler = prepared_sampling.configuration;
     if (mtp_relay && (selected_sampler.enabled || !selected_sampler.modifiers.empty()))
       throw std::runtime_error("MTP full-candidate successor requires its original greedy sampling configuration");
-    const auto supplied_tokens = relay ? std::size_t{1} : requests.front().ids.size();
+    const auto supplied_tokens = relay && !prefill_relay ? std::size_t{1} : requests.front().ids.size();
     const bool packed_prefill = packs_prefill(packing), packed_verify = packs_verify(packing);
     const bool packed_target = packs_target(packing);
     if (packed_target != (physical_rows != 0) || (packed_verify && role != GraphRole::kVerify))
@@ -3292,7 +3309,7 @@ public:
     if (compact_draft && (completion != TextCompletion::kEmitNext ||
         !find_child(requests.size(), physical_tokens, role, false, completion, sampling_index, packing)))
       throw std::runtime_error("mixed MTP draft rows require their original cold compact family");
-    if (packed_prefill && (relay || (role != GraphRole::kText && !is_mtp_prefill(role)) ||
+    if (packed_prefill && ((relay && !prefill_relay) || (role != GraphRole::kText && !is_mtp_prefill(role)) ||
         physical_tokens < tokens || !find_child(requests.size(), physical_tokens, role, false, completion, sampling_index, RowPacking::kPrefill)))
       throw std::runtime_error("prefill extent is outside its original cold packed family");
     if (packed_verify && (relay || physical_tokens < tokens || completion != TextCompletion::kEmitNext ||
@@ -3332,7 +3349,7 @@ public:
             epoch > UINT64_MAX - (predecessor ? 2u : 1u) ||
             incoming->boundaries[j].epoch != epoch + (predecessor ? 1u : 0u) ||
             (predecessor && predecessor->members[j].session != request.session) ||
-            (!request.ids.empty() && (predecessor || request.ids.size() != 1 || request.ids[0] != base->next_id)))
+            (!prefill_relay && !request.ids.empty() && (predecessor || request.ids.size() != 1 || request.ids[0] != base->next_id)))
           throw std::runtime_error("successor Source differs from its exact Session candidate and epoch");
       }
       const auto member_tokens = packed_target ? request.ids.size() : tokens;
@@ -3397,7 +3414,7 @@ public:
           .logits = completion == TextCompletion::kEmitNext ? request.logits : LogitsInputs{},
           .conditional_logits = request.conditional_logits,
           .input_tokens = packed_target ? request.ids.size() : tokens});
-      candidate->members.back().first_input = relay ? (predecessor ? -1 : request.session->head->next_id) : request.ids.front();
+      candidate->members.back().first_input = relay && !prefill_relay ? (predecessor ? -1 : request.session->head->next_id) : request.ids.front();
       if (role == GraphRole::kVerify)
         candidate->members.back().verification_inputs.assign(request.ids.begin(), request.ids.end());
     }
@@ -3420,7 +3437,7 @@ public:
       const auto width = requests.size(), slot = recording_only ? recording->slot : relay ? physical_slot : slot_index;
       if (!layer0_probe.empty()) prepare_child(tokens, false, width, role, completion, sampling_index);
       if (predecessor) {
-        const auto found = phases.find({width, tokens, role, completion, sampling_index, true});
+        const auto found = phases.find({width, physical_tokens, role, completion, sampling_index, true, packing});
         if (found == phases.end() || !found->second->slots[slot].carrier.initialized())
           throw std::runtime_error("successor carrier must be cold-prepared before its predecessor submission");
       }
@@ -3533,11 +3550,26 @@ public:
           io.sampling_identities.write<std::uint32_t>(identities);
       }
       if (io.ordinary_io.packet()) {
-        if (relay) throw std::logic_error("host input packet cannot replace a device relay token");
-        // Every range belongs to this borrowed original slot. Build all host
-        // inputs before the one synchronous write; no Source or Graph mirror
-        // is copied into this packet or granted a different lifetime.
-        check(io.input_packet.write(token_values, position_values, {
+        if (relay && !prefill_relay) throw std::logic_error("host input packet cannot replace a device relay token");
+        // A multi-chunk current turn can bind frozen request input. All other
+        // inputs retain the borrowed original slot's synchronous packet.
+        const auto &request = requests[0];
+        const bool uploaded = packed_prefill && width == 1 && !selected_sampler.enabled && request.prefill_packets &&
+            take(request.prefill_packets->prepare(io.input_packet, request.prefill_prompt,
+                request.prefill_offset, step.members[0].base->length, physical_tokens,
+                static_cast<std::size_t>(geometry.conv_kernel - 1), request.prefill_turn,
+                execution.device(), execution, allocation_budget, execution_budget));
+        if (packed_prefill && width == 1) {
+          const std::array ports{phase.token_port, phase.position_port, phase.last_ids_port, phase.history_select_port};
+          const std::array views{io.input_packet.tokens(), io.input_packet.positions(),
+              io.input_packet.last_ids(), io.input_packet.history_select()};
+          for (std::size_t port = 0; port < ports.size(); ++port) {
+            if (uploaded) check(run.bind(ports[port], views[port].description(),
+                take(request.prefill_packets->port(io.input_packet, request.prefill_offset, port))));
+            else check(run.bind(ports[port], views[port]));
+          }
+        }
+        if (!uploaded) check(io.input_packet.write(token_values, position_values, {
             .last_ids = io.ordinary_io.packet_last_ids
                 ? std::span<const std::int32_t>(io.last_id_values) : std::span<const std::int32_t>{},
             .history_select = io.ordinary_io.packet_history_select
@@ -3645,7 +3677,7 @@ public:
       if (relay) {
         auto &input = *step.execution.incoming; auto &previous = *input.owner;
         input.bindings.reserve(1 + previous.states.size() + previous.pages.size() + (device_mtp ? 2u : mtp_relay ? 1u : 0u));
-        input.bindings.push_back(previous.primary_output.reader_binding(phase.token_port));
+        if (!prefill_relay) input.bindings.push_back(previous.primary_output.reader_binding(phase.token_port));
         if (device_mtp) {
           input.bindings.push_back(previous.extra_outputs[0].reader_binding(phase.predecessor_prefix_port));
           input.bindings.push_back(previous.extra_outputs[1].reader_binding(phase.catchup_token_port));
@@ -3668,7 +3700,7 @@ public:
         check(g::batch::bind_query_rows(run, phase.attention_nodes.front(), phase.sequence_offsets_port));
       }
       const auto batch_end = Clock::now();
-      if (predecessor) check(step.execution.prepare_successor_replay());
+      if (predecessor && !prefill_relay) check(step.execution.prepare_successor_replay());
       else check(step.execution.prepare_replay({.mode = phase.slots[slot].replay_mode, .host_wait = g::HostWaitPolicy::kAllow}));
       const auto replay_end = Clock::now();
       if (preparation) {
@@ -3708,22 +3740,26 @@ public:
   // the same original views for a successor; no candidate head is exported and
   // the ordinary API remains on its existing direct Completion path.
   std::shared_ptr<StepSources> prepare_submission_sources(StepState &step) {
+    const bool prefill = step.phase && packs_prefill(step.phase->family->packing) &&
+        step.phase->family->role == GraphRole::kText && !cache_plan.draft_cache &&
+        step.phase->family->completion == TextCompletion::kStateOnly;
     const bool mtp = step.phase && drafts_token(step.phase->family->role) && step.members.size() == 1 &&
         step.phase->successor_token_port && step.phase->successor_catchup_port;
     if (!step.prepared || step.submitted || step.cancelled || step.execution.sources || !step.phase ||
         (!mtp && (step.phase->family->role != GraphRole::kText || cache_plan.draft_cache)) ||
-        step.phase->family->completion != TextCompletion::kEmitNext || scheduler)
+        (!prefill && step.phase->family->completion != TextCompletion::kEmitNext) || scheduler)
       throw std::runtime_error("submission views require one complete supported prepared episode");
     auto &phase = *step.phase;
     const auto &storage = execution.storage_owner();
     if (!storage || phase.slots[step.state_slot].carrier.queues().size() != 1 ||
-        !take(phase.slots[step.state_slot].io.readback(phase.slots[step.state_slot].data.next_id))->pool().valid())
+        (!prefill && !take(phase.slots[step.state_slot].io.readback(phase.slots[step.state_slot].data.next_id))->pool().valid()))
       throw inference::EvaluationFailure(hyle::Status::Unimplemented(
           "submission views require the original owned shared Queue and full token writer"));
     const bool device_choice = device_mtp_successor_ && mtp && bool(phase.successor_prefix_index_port);
     auto sources = std::make_shared<StepSources>();
     sources->mtp_full_candidate = mtp;
     sources->mtp_device_choice = device_choice;
+    sources->prefill = prefill;
     sources->boundaries.reserve(step.members.size());
     sources->published_states.resize(phase.state_sources.size() * step.members.size() + (mtp ? 1u : 0u));
     for (const auto &member : step.members) {
@@ -3769,7 +3805,7 @@ public:
     for (const auto &member : step.members)
       (void)cache::add(member.session->submitted_draft_rows, member.draft_input_rows);
     step.start = Clock::now(); step.submitted = true;
-    check(step.execution.submit(resources_));
+    check(step.execution.submit(resources_).WithContext("submitting original evaluation"));
     submitted_draft_rows = model_rows_after;
     for (const auto &member : step.members)
       member.session->submitted_draft_rows += member.draft_input_rows;
@@ -3792,7 +3828,9 @@ public:
         captured = take(sources.capture_outputs(*step.execution.run, step.execution.completion, outputs,
             execution.storage_owner(), optional_sources));
         if (captured) for (auto &state : sources.successor_states) check(state.capture(sources.submission));
-      } else captured = take(sources.capture(*step.execution.run, step.execution.completion,
+      } else if (sources.prefill) captured = take(sources.capture_outputs(*step.execution.run,
+          step.execution.completion, {}, execution.storage_owner(), false, true));
+      else captured = take(sources.capture(*step.execution.run, step.execution.completion,
           phase.id_port, execution.storage_owner(), take(program_slot.io.readback(io.next_id))->pool(), optional_sources));
       if (!captured) step.execution.sources.reset();
     }
@@ -4763,6 +4801,7 @@ enum class GenerationMode { kText, kMtp };
 struct GenerationRequest {
   std::string id, memory_name;
   std::span<const std::int32_t> prompt;
+  PrefillInputPackets prefill_packets;
   std::filesystem::path trace;
   inference::RequestProgress progress;
   inference::RequestKey request_key{};
@@ -6283,7 +6322,7 @@ bool execute_generation_continuation(Model &model, std::span<PreparedGenerationC
 // All scratch and request borrows are call-scoped; Model/Graph retain execution.
 template<class AfterSubmit, class BatchObserver>
 struct SynchronousGenerationStepAdapter final {
-  static constexpr bool kSupportsSuccessor = false;
+  static constexpr bool kSupportsSuccessor = true;
   using Position = inference::StepPosition;
   Model &model;
   std::span<PreparedGenerationCall> calls;
@@ -6301,6 +6340,9 @@ struct SynchronousGenerationStepAdapter final {
   std::size_t input_rows = 0, active_rows = 0, physical_rows = 0;
   Clock::time_point episode_start{};
   GenerationContinuation *continuation = nullptr;
+  hyle::container::SmallVector<PreparedGenerationCall, 1> following;
+  std::shared_ptr<StepSources> source;
+  bool resumed = false;
 
   SynchronousGenerationStepAdapter(Model &selected, std::span<PreparedGenerationCall> original,
       bool trace, bool packed, std::size_t verification_capacity, AfterSubmit &submitted, BatchObserver &observer,
@@ -6308,6 +6350,10 @@ struct SynchronousGenerationStepAdapter final {
       : model(selected), calls(original), trace_states(trace), packed_prefill(packed),
         packed_verification_capacity(verification_capacity), after_submit(submitted), batch_observer(observer),
         role(calls[0].role), generation(calls[0].generation), continuation(pending) {
+    resumed = continuation && calls.data() == continuation->pending_calls.data() &&
+        !continuation->pending_calls.empty() && model.active_step && model.active_step->submitted;
+    if (resumed && !generation)
+      packed_prefill = packs_prefill(model.active_step->phase->family->packing);
     if (continuation && continuation->drive_cursor.awaiting_current) {
       if (!model.active_step || model.successor_step || !model.active_step->submitted ||
           model.active_step->members.size() != calls.size())
@@ -6324,8 +6370,8 @@ struct SynchronousGenerationStepAdapter final {
         !results.try_resize(generation && role != GraphRole::kText ? calls.size() : 0) || !next.try_resize(calls.size()))
       throw std::bad_alloc{};
   }
-  void attach_outputs() {
-    for (auto &call : calls) {
+  void attach_outputs(std::span<PreparedGenerationCall> selected) {
+    for (auto &call : selected) {
       auto &request = *call.request;
       outputs.push_back(evaluation_output(model, request.session, {call.name, &request.trace, trace_states},
           &call.step_seconds, generation ? &request.endpoint : &request.prefill_endpoint, nullptr, nullptr));
@@ -6341,6 +6387,7 @@ struct SynchronousGenerationStepAdapter final {
     episode_start = model.active_step->step_start;
   }
   void prepare(Position) {
+    if (resumed) { submitted_geometry(); return; }
     for (auto &call : calls) {
       auto &request = *call.request;
       // Recursive proposals may have shortened since the initial metadata pass.
@@ -6350,17 +6397,67 @@ struct SynchronousGenerationStepAdapter final {
           generation ? std::span<const std::int32_t>(&call.pending, 1) : call.ids(), generation,
           call.quota, request.progress.turn_index, generation ? std::shared_ptr<const void>{} : std::shared_ptr<const void>(request.warm_inputs.at(request.progress.turn_index)), call.maximum, call.completion, call.input_begin, call.prefill_complete);
       inputs.push_back({request.session, call.ids(), &request.ledger->stop_policy(), call.logits, call.conditional_logits, request.request_key});
+      if (!generation && packed_prefill) {
+        inputs.back().prefill_packets = &request.prefill_packets;
+        inputs.back().prefill_prompt = request.prompt;
+        inputs.back().prefill_offset = call.input_begin;
+        inputs.back().prefill_turn = request.progress.turn_index;
+      }
     }
-    attach_outputs();
+    attach_outputs(calls);
     if (!generation && packed_prefill) model.prepare_prefill_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion);
     else if (packed_verification_capacity)
       model.prepare_verification_evaluations(std::span(inputs.data(), inputs.size()), packed_verification_capacity);
     else model.prepare_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion);
   }
-  void submit(Position) {
-    model.submit_evaluations();
+  bool prefill_pipeline() const {
+    if (generation || !packed_prefill || role != GraphRole::kText || calls.size() != 1 ||
+        model.cache_plan.draft_cache || model.scheduler || !model.prefill_workspace ||
+        model.execution.kind() != BackendKind::kCuda || model.execution.has_cpu_assist() ||
+        model.cache_plan.in_flight_batches < 2 || calls[0].ids().size() != model.bounded_prefill_rows ||
+        (trace_states && !calls[0].request->trace.empty())) return false;
+    const auto &sampling = calls[0].request->session->sampling_configuration().configuration;
+    return !sampling.enabled && sampling.modifiers.empty();
+  }
+  void submit(Position position) {
+    auto &step = position == Position::kCurrent ? *model.active_step : *model.successor_step;
+    if (prefill_pipeline() && step.phase->family->completion == TextCompletion::kStateOnly)
+      (void)model.prepare_submission_sources(step);
+    model.submit_evaluations(step);
     submitted_geometry();
     if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<AfterSubmit>>) after_submit();
+  }
+  inference::StepSuccessor prepare_successor() {
+    if (!prefill_pipeline() || calls[0].prefill_complete || !model.active_step ||
+        !model.active_step->execution.sources) return inference::StepSuccessor::kNone;
+    auto &request = *calls[0].request;
+    if (request.session->stopping || request.session->failed ||
+        request.ledger->records.size() - request.ledger->committed_count < 2)
+      return inference::StepSuccessor::kNone;
+    const auto begin = calls[0].input_begin + calls[0].ids().size();
+    if (begin >= request.prompt.size()) return inference::StepSuccessor::kNone;
+    const auto count = (std::min)(calls[0].ids().size(), request.prompt.size() - begin);
+    const bool complete = begin + count == request.prompt.size();
+    const auto completion = complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly;
+    const auto physical = model.prefill_capacity(count, completion, request.sampling_index, 1, role);
+    const auto found = model.phases.find({1, physical, role, completion, request.sampling_index, true, RowPacking::kPrefill});
+    if (found == model.phases.end()) return inference::StepSuccessor::kNone;
+    const auto slot = (model.active_step->state_slot + 1) % execution_slot_count;
+    auto &carrier = found->second->slots[slot].carrier;
+    if (!carrier.initialized() || carrier.closing() || !carrier.retired())
+      return inference::StepSuccessor::kNone;
+    following.push_back(calls[0]);
+    auto &next_call = following.back();
+    next_call.input_begin = begin; next_call.prompt = request.prompt.subspan(begin, count);
+    next_call.prefill_complete = complete; next_call.completion = completion;
+    next_call.step_seconds = next_call.proposal_seconds = 0;
+    next_call.disposition = EvaluationDisposition::kNotPublished;
+    next_call.name = calls[0].name.substr(0, calls[0].name.find("_chunk")) + "_chunk" + std::to_string(begin);
+    source = model.active_step->execution.sources;
+    const std::array input{EvaluationRequest{request.session, next_call.prompt, &request.ledger->stop_policy(),
+        next_call.logits, {}, request.request_key, &request.prefill_packets, request.prompt, begin, request.progress.turn_index}};
+    model.prepare_evaluations(input, nullptr, role, completion, source, slot, physical, RowPacking::kPrefill);
+    return inference::StepSuccessor::kPrepared;
   }
   bool cancelled() const { return model.active_step && model.active_step->cancelled; }
   bool current_ready() { return take(model.active_step->execution.poll()) != c::CompletionPoll::kPending; }
@@ -6370,6 +6467,9 @@ struct SynchronousGenerationStepAdapter final {
     // Its original transactions still require actual native retirement.
     const bool requested = std::ranges::any_of(model.active_step->members,
         [](const auto &member) { return member.session->stopping; });
+    // The original episodes and bound Source still retain all native readers.
+    // Drop only this adapter's extra pin before their ordinary reverse cleanup.
+    source.reset();
     auto retired = model.abort_episode();
     for (const auto &call : calls) if (call.request->session->stopping)
       inference::record_retirement_status(retired.status, call.request->session->retirement_status);
@@ -6393,24 +6493,28 @@ struct SynchronousGenerationStepAdapter final {
     }
     observe_generation_batch(batch_observer, calls, input_rows, seconds + proposal_seconds, active_rows, physical_rows);
   }
-  void finish(Position) {
-    if (outputs.empty()) { finish_scratch(); attach_outputs(); }
+  void finish(Position position) {
+    const auto selected_calls = position == Position::kCurrent ? this->calls : std::span(following.data(), following.size());
+    submitted_geometry();
+    if (outputs.empty() || position == Position::kSuccessor) {
+      outputs.clear(); selections.clear(); finish_scratch(); attach_outputs(selected_calls);
+    }
     bool prepared_ahead = false;
     const auto &eos = model_eos_tokens;
-    GenerationPublicationBatch publication(calls.size(), [&](std::size_t index) {
-      return GenerationPublicationInput{calls[index].request->ledger.get(), nullptr};
+    GenerationPublicationBatch publication(selected_calls.size(), [&](std::size_t index) {
+      return GenerationPublicationInput{selected_calls[index].request->ledger.get(), nullptr};
     });
     const auto observe = [&](std::size_t j, const CompletedEvaluationView &view) {
-      const auto &call = calls[j];
+      const auto &call = selected_calls[j];
       observe_generation_preparation(*call.request, view, call.generation);
       observe_completed_evaluation(model, outputs[j], {call.name, &call.request->trace, trace_states}, view);
     };
     // Controls retain their original post-submit ordering. Optional CPU-only
     // work follows them, and never turns its own allocation failure into a
     // failure or publication of this already submitted episode.
-    if (generation && ((calls.size() > 1 && role == GraphRole::kText) || verifies_prefix(role) || has_mtp(role)) &&
-        calls[0].completion == TextCompletion::kEmitNext) {
-      const bool continues = std::ranges::all_of(calls, [](const auto &call) {
+    if (generation && ((selected_calls.size() > 1 && role == GraphRole::kText) || verifies_prefix(role) || has_mtp(role)) &&
+        selected_calls[0].completion == TextCompletion::kEmitNext) {
+      const bool continues = std::ranges::all_of(selected_calls, [](const auto &call) {
         const auto &request = *call.request;
         return call.quota > 1 && request.progress.remaining_outputs() > 1 && request.session &&
             !request.session->stopping && !request.session->failed;
@@ -6426,35 +6530,66 @@ struct SynchronousGenerationStepAdapter final {
       // The original verifier and prefix decision have retired and released
       // their reads. Completed call records no longer need these private q
       // leases; retaining them would charge the next episode's bounded pool.
-      for (auto &call : calls) call.draft_log_probabilities.clear();
+      for (auto &call : selected_calls) call.draft_log_probabilities.clear();
     }
     else if (generation && role != GraphRole::kText) model.finish_mtp_rounds(std::span(selections.data(), selections.size()), eos,
         std::span(outputs.data(), outputs.size()), std::span(results.data(), results.size()), observe, publication);
     else model.finish_evaluations(std::span(outputs.data(), outputs.size()), std::span(next.data(), next.size()), observe, publication);
     double target_seconds = 0, proposal_seconds = 0;
-    for (std::size_t j = 0; j < calls.size(); ++j) {
-      target_seconds = (std::max)(target_seconds, calls[j].step_seconds);
-      proposal_seconds += calls[j].proposal_seconds;
-      calls[j].step_seconds += calls[j].proposal_seconds;
-      if (calls[j].proposal_seconds && calls[j].disposition == EvaluationDisposition::kPublished) {
-        auto &ledger = *calls[j].request->ledger;
-        ledger.records[ledger.committed_count - 1].step_seconds += calls[j].proposal_seconds;
+    for (std::size_t j = 0; j < selected_calls.size(); ++j) {
+      target_seconds = (std::max)(target_seconds, selected_calls[j].step_seconds);
+      proposal_seconds += selected_calls[j].proposal_seconds;
+      selected_calls[j].step_seconds += selected_calls[j].proposal_seconds;
+      if (selected_calls[j].proposal_seconds && selected_calls[j].disposition == EvaluationDisposition::kPublished) {
+        auto &ledger = *selected_calls[j].request->ledger;
+        ledger.records[ledger.committed_count - 1].step_seconds += selected_calls[j].proposal_seconds;
       }
     }
     // Shared target work is counted once; recursive proposals were serial
     // per member and are all retained. Cancelled members may have no output
     // endpoint, so a fully withdrawn batch uses its actual retired call end.
     if (target_seconds == 0) target_seconds = std::chrono::duration<double>(Clock::now() - episode_start).count();
-    observe_generation_batch(batch_observer, calls, input_rows, target_seconds + proposal_seconds, active_rows, physical_rows);
-    for (auto &call : calls) { finish_generation_call(model, call); call.conditional_logits = {}; }
+    observe_generation_batch(batch_observer, selected_calls, input_rows, target_seconds + proposal_seconds, active_rows, physical_rows);
+    for (auto &call : selected_calls) { finish_generation_call(model, call); call.conditional_logits = {}; }
     if (prepared_ahead)
-      for (const auto &call : calls)
+      for (const auto &call : selected_calls)
         if (call.disposition != EvaluationDisposition::kPublished || call.request->progress.turn_done ||
             !call.request->session || call.request->session->stopping) {
           model.discard_decode_ahead(call.request->session.get());
         }
   }
+  bool keep_successor() const {
+    return !following.empty() && calls[0].disposition == EvaluationDisposition::kPublished &&
+        !calls[0].request->session->stopping && !calls[0].request->session->failed &&
+        model.active_step && !model.active_step->cancelled;
+  }
+  void bind_successor() {
+    auto &call = following.front(); auto &request = *call.request;
+    // A's real publication/observation now supplies B's authoritative before
+    // boundary. B consumes known prompt input, never a guessed output token.
+    prepare_generation_record(*request.ledger, *request.session, call.role, call.ids(), false,
+        call.quota, request.progress.turn_index, request.warm_inputs.at(request.progress.turn_index),
+        call.maximum, call.completion, call.input_begin, call.prefill_complete);
+  }
+  void discard_successor() {
+    const auto retired = model.discard_successful_episode();
+    if (!retired.retired || !retired.status.ok()) {
+      inference::EvaluationFailure failure(retired.status.ok()
+          ? hyle::Status::Unavailable("prefill successor has not actually retired") : retired.status);
+      failure.observe_retirement(retired); throw failure;
+    }
+    following.clear(); source.reset();
+  }
+  void carry(inference::StepCarry disposition) {
+    if (disposition == inference::StepCarry::kDeferred) {
+      if (!continuation) throw std::logic_error("deferred prefill lost its original request continuation");
+      continuation->hold_current(std::span(following.data(), following.size()), true, true);
+    }
+  }
+  void finish_refusal() {}
+  void finish_reuse() {}
   inference::RetirementObservation retire_failure(inference::EvaluationFailure *failure) noexcept {
+    source.reset();
     return model.retire_failed_publication(
         failure && failure->retirement_observed() && !failure->retirement().retired);
   }
@@ -6617,7 +6752,8 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
   SynchronousGenerationStepAdapter<AfterSubmit, BatchObserver> adapter(model, calls, trace_states,
       packed_prefill, packed_verification_capacity, after_submit, batch_observer,
       defer_successor ? continuation : nullptr);
-  (void)inference::drive_steps(adapter, {.cursor = defer_successor && continuation ? &continuation->drive_cursor : nullptr});
+  (void)inference::drive_steps(adapter, {.defer_successor = defer_successor,
+      .cursor = defer_successor && continuation ? &continuation->drive_cursor : nullptr});
 }
 
 void publish_generation_prompt(Model &model, PreparedGenerationCall &call, cache::PrefixCache *prefix) {
@@ -6733,7 +6869,8 @@ inference::RequestWaveResult advance_generation_wave(Model &model, inference::Re
           if (continuation.pending_synchronous) {
             SynchronousGenerationStepAdapter<AfterSubmit, BatchObserver> adapter(model, calls, trace_states,
                 false, 0, after_submit, batch_observer, &continuation);
-            const auto result = inference::drive_steps(adapter, {.resume = true, .cursor = &continuation.drive_cursor});
+            const auto result = inference::drive_steps(adapter,
+                {.resume = true, .defer_successor = true, .cursor = &continuation.drive_cursor});
             if (result == inference::StepDriveResult::kCompleted) {
               for (auto &call : calls) publish_generation_prompt(model, call, prefix);
               continuation.clear_pending();

@@ -67,7 +67,8 @@ struct Gate final {
   }
 };
 
-void relay(bool bad_producer_index, bool reuse_producer = false, bool region_consumer = false) {
+void relay(bool bad_producer_index, bool reuse_producer = false, bool region_consumer = false,
+    bool handoff = false) {
   auto context_result = g::cuda::create_context();
   ASSERT_TRUE(context_result) << context_result.error().message();
   auto context = std::move(*context_result);
@@ -204,7 +205,9 @@ void relay(bool bad_producer_index, bool reuse_producer = false, bool region_con
   auto foreign = c::Completion::completed();
   EXPECT_FALSE(g::SubmissionSource::create(producer, std::move(foreign), storage));
   EXPECT_TRUE(foreign.valid());
-  auto submission_result = g::SubmissionSource::create(producer, std::move(*submitted), storage);
+  auto submission_result = handoff
+      ? g::SubmissionSource::create_handoff(producer, std::move(*submitted), storage)
+      : g::SubmissionSource::create(producer, std::move(*submitted), storage);
   ASSERT_TRUE(submission_result) << submission_result.error().message();
   auto submission_source = std::move(*submission_result);
   auto source_result = g::OutputSource::create(submission_source, token, storage, source_pool);
@@ -243,8 +246,8 @@ void relay(bool bad_producer_index, bool reuse_producer = false, bool region_con
   }
   const auto source_report = consumer.input_source_report().value();
   EXPECT_EQ(source_report.source_count, 1u);
-  EXPECT_EQ(source_report.device_wait_count, 1u);
-  EXPECT_EQ(source_report.host_wait_count, 0u);
+  EXPECT_EQ(source_report.device_wait_count, handoff ? 0u : 1u);
+  EXPECT_EQ(source_report.host_wait_count, handoff ? 1u : 0u);
   // The ordinary public entry cannot silently treat pending bytes as ready.
   EXPECT_FALSE(consumer.submit(queues));
   EXPECT_FALSE(consumer.in_flight());
@@ -254,7 +257,27 @@ void relay(bool bad_producer_index, bool reuse_producer = false, bool region_con
     reader_gate.arm(gate.stream);
     ASSERT_EQ(cudaLaunchHostFunc(reader_gate.stream, &Gate::wait, &reader_gate), cudaSuccess);
   }
+  std::jthread release;
+  if (handoff) release = std::jthread([&] {
+    std::this_thread::sleep_for(std::chrono::milliseconds(20)); gate.release();
+  });
   auto consumed = g::submit_sources(consumer, queues);
+  if (handoff && bad_producer_index) {
+    ASSERT_FALSE(consumed);
+    const auto failure = submission_source.wait();
+    ASSERT_FALSE(failure.ok());
+    EXPECT_EQ(consumed.error().code(), failure.code());
+    EXPECT_EQ(consumed.error().message(), failure.message());
+    // A's checked failure is observed before any B native admission or output.
+    EXPECT_FALSE(consumer.in_flight()); EXPECT_FALSE(consumer.output(selected));
+    EXPECT_EQ(output_pool.stats().active_uses, 0u);
+    EXPECT_FALSE(producer.in_flight());
+    EXPECT_FALSE(gate.timed_out.load());
+    source = {}; consumer = {}; submission_source = {}; producer = {};
+    EXPECT_EQ(source_pool.stats().live_blocks, 0u);
+    EXPECT_EQ(output_pool.stats().live_blocks, 0u);
+    return;
+  }
   ASSERT_TRUE(consumed) << consumed.error().message();
   auto pending = consumed->poll();
   ASSERT_TRUE(pending) << pending.error().message();
@@ -357,6 +380,7 @@ void relay(bool bad_producer_index, bool reuse_producer = false, bool region_con
 TEST(GraphOutputSourceCuda, PendingI32UsesOriginalQueueAndLeasesForCheckedGather) { relay(false); }
 TEST(GraphOutputSourceCuda, PendingI32PreparesRealStoreRegionBindingHooks) { relay(false, false, true); }
 TEST(GraphOutputSourceCuda, ProducerCheckedFailureRejectsConsumerPublicationAfterRetirement) { relay(true); }
+TEST(GraphOutputSourceCuda, HandoffCheckedFailureRejectsConsumerBeforeNativeAdmission) { relay(true, false, false, true); }
 TEST(GraphOutputSourceCuda, RetiredSourceDetachesWhileReaderPendingAndProducerReusesNewWriter) { relay(false, true); }
 TEST(GraphOutputSourceCuda, ColdRecordingRejectsExecutionAndReusesOnlyAfterFreshRealInput) {
   auto context_result = g::cuda::create_context();
@@ -770,7 +794,7 @@ TEST(GraphOutputSourceCuda, PendingI32ReusesRealNativeRegionCaptureWithoutRecord
   EXPECT_EQ(token_pool.stats().live_blocks, 0u);
   EXPECT_EQ(output_pool.stats().live_blocks, 0u);
 }
-TEST(GraphOutputSourceCuda, CapturedManagedI32ProducerRetainsItsOriginalSubmission) {
+void managed_i32_producer(bool handoff) {
   auto context_result = g::cuda::create_context();
   ASSERT_TRUE(context_result) << context_result.error().message();
   auto context = std::move(*context_result);
@@ -826,12 +850,12 @@ TEST(GraphOutputSourceCuda, CapturedManagedI32ProducerRetainsItsOriginalSubmissi
   ASSERT_TRUE(producer.bind(token, i32, std::move(token_writer)).ok());
   const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
   const auto captured = producer.prepare_replay(queues,
-      {.mode = g::ReplayMode::kRequireCapture, .host_wait = g::HostWaitPolicy::kReject});
+      {.mode = handoff ? g::ReplayMode::kCommands : g::ReplayMode::kRequireCapture, .host_wait = g::HostWaitPolicy::kReject});
   ASSERT_TRUE(captured.ok()) << captured.message();
-  ASSERT_EQ(producer.replay_route(), g::ReplayRoute::kCaptured);
+  ASSERT_EQ(producer.replay_route(), handoff ? g::ReplayRoute::kCommands : g::ReplayRoute::kCaptured);
   const auto replay = producer.replay_report().value();
-  EXPECT_EQ(replay.route, g::ReplayRoute::kCaptured);
-  EXPECT_EQ(replay.recorded_capture_range_count, 1u);
+  EXPECT_EQ(replay.route, handoff ? g::ReplayRoute::kCommands : g::ReplayRoute::kCaptured);
+  EXPECT_EQ(replay.recorded_capture_range_count, handoff ? 0u : 1u);
   EXPECT_EQ(replay.reused_capture_range_count, 0u);
   EXPECT_EQ(replay.immediate_transfer_count, 0u);
   EXPECT_EQ(replay.host_wait_dependency_count, 0u);
@@ -859,7 +883,13 @@ TEST(GraphOutputSourceCuda, CapturedManagedI32ProducerRetainsItsOriginalSubmissi
   ASSERT_EQ(cudaLaunchHostFunc(gate.stream, &Gate::wait, &gate), cudaSuccess);
   auto submitted = producer.submit(queues);
   ASSERT_TRUE(submitted) << submitted.error().message();
-  auto common_result = g::SubmissionSource::create(producer, std::move(*submitted), storage);
+  if (handoff) {
+    auto rejected = g::SubmissionSource::create(producer, std::move(*submitted), storage);
+    EXPECT_FALSE(rejected); EXPECT_TRUE(submitted->valid());
+  }
+  auto common_result = handoff
+      ? g::SubmissionSource::create_handoff(producer, std::move(*submitted), storage)
+      : g::SubmissionSource::create(producer, std::move(*submitted), storage);
   ASSERT_TRUE(common_result) << common_result.error().message();
   auto common = std::move(*common_result);
   auto source_result = g::OutputSource::create(common, token, storage, token_pool);
@@ -877,13 +907,17 @@ TEST(GraphOutputSourceCuda, CapturedManagedI32ProducerRetainsItsOriginalSubmissi
   EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
   const auto dependency = consumer.input_source_report().value();
   EXPECT_EQ(dependency.source_count, 1u);
-  EXPECT_EQ(dependency.device_wait_count, 1u);
-  EXPECT_EQ(dependency.host_wait_count, 0u);
+  EXPECT_EQ(dependency.device_wait_count, handoff ? 0u : 1u);
+  EXPECT_EQ(dependency.host_wait_count, handoff ? 1u : 0u);
   EXPECT_FALSE(consumer.submit(queues));
+  std::jthread release;
+  if (handoff) release = std::jthread([&] {
+    std::this_thread::sleep_for(std::chrono::milliseconds(20)); gate.release();
+  });
   auto consumed = g::submit_sources(consumer, queues);
   ASSERT_TRUE(consumed) << consumed.error().message();
   ASSERT_TRUE(consumed->poll());
-  EXPECT_EQ(*consumed->poll(), c::CompletionPoll::kPending);
+  if (!handoff) EXPECT_EQ(*consumed->poll(), c::CompletionPoll::kPending);
   gate.release();
   const auto terminal = consumed->wait();
   ASSERT_TRUE(terminal.ok()) << terminal.message();
@@ -904,6 +938,8 @@ TEST(GraphOutputSourceCuda, CapturedManagedI32ProducerRetainsItsOriginalSubmissi
   EXPECT_EQ(token_pool.stats().live_blocks, 0u);
   EXPECT_EQ(output_pool.stats().live_blocks, 0u);
 }
+TEST(GraphOutputSourceCuda, CapturedManagedI32ProducerRetainsItsOriginalSubmission) { managed_i32_producer(false); }
+TEST(GraphOutputSourceCuda, PendingManagedHandoffPreparesBeforeCompletionAndWaitsBeforeSubmission) { managed_i32_producer(true); }
 TEST(GraphOutputSourceCuda, TwoOutputsShareOneOriginalSubmissionAndAtomicBundle) {
   auto context_result = g::cuda::create_context();
   ASSERT_TRUE(context_result) << context_result.error().message();

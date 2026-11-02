@@ -80,7 +80,7 @@ struct SubmissionViews {
   // Capture never grows the cohort or copies an owner/pool descriptor.
   Result<bool> capture_outputs(graph::Invocation &run, compute::Completion &completion,
       std::span<const OutputCapture> outputs, const compute::StorageOwner &metadata_owner,
-      bool optional = false) noexcept {
+      bool optional = false, bool handoff = false) noexcept {
     if (submission.valid() || primary_output.valid())
       return std::unexpected(Status::FailedPrecondition("submission views already captured their original producer"));
     for (const auto &output : extra_outputs)
@@ -89,7 +89,9 @@ struct SubmissionViews {
     if ((outputs.empty() ? 0 : outputs.size() - 1) != extra_outputs.size())
       return std::unexpected(Status::InvalidArgument("output capture count differs from its prepared submission views"));
     captured_without_outputs_ = false;
-    auto exported = graph::SubmissionSource::create(run, std::move(completion), metadata_owner);
+    auto exported = handoff
+        ? graph::SubmissionSource::create_handoff(run, std::move(completion), metadata_owner)
+        : graph::SubmissionSource::create(run, std::move(completion), metadata_owner);
     if (!exported) {
       const auto &error = exported.error();
       // Only create's success-only transfer may decline. Once transferred,

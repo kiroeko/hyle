@@ -73,6 +73,13 @@ public:
   // Arbitrary Graph metadata keeps its original caller lifetime contract.
   HYLE_GRAPH_API static Result<SubmissionSource> create(Invocation &,
       compute::Completion &&, const compute::StorageOwner &metadata_owner) noexcept;
+  // Bind metadata while this exact original submission is pending, then wait
+  // for its whole successful native completion before consumer submission.
+  // One actual shared Queue is required; no pending native dependency is
+  // exported. Binding hooks remain metadata-only, as in ordinary preparation.
+  // This admits managed Commands without claiming prepared/nonblocking replay.
+  HYLE_GRAPH_API static Result<SubmissionSource> create_handoff(Invocation &,
+      compute::Completion &&, const compute::StorageOwner &metadata_owner) noexcept;
   bool valid() const noexcept { return state_ != nullptr; }
   HYLE_GRAPH_API Result<compute::CompletionPoll> poll() noexcept;
   HYLE_GRAPH_API Status wait() noexcept;
@@ -90,6 +97,8 @@ public:
       Status (*)(void *, const detail::RegionAccessView &) noexcept, void *) const noexcept;
 
 private:
+  static Result<SubmissionSource> create_impl(Invocation &, compute::Completion &&,
+      const compute::StorageOwner &, bool handoff) noexcept;
   friend class OutputSource;
   friend class StoreSource;
   friend class detail::ResourceSource;

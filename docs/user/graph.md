@@ -1175,6 +1175,11 @@ HYLE_ASSIGN_OR_RETURN(auto done, graph::submit_sources(consumer, queues));
 HYLE_RETURN_IF_ERROR(done.wait());
 ```
 
+需要先观察生产者完整完成结果时，可用`SubmissionSource::create_handoff`接管原提交。
+它要求同一实际Queue；`prepare_sources`可在生产者尚未完成时准备Commands元数据，
+`submit_sources`会等待原提交成功后才接纳消费者的GPU读写。共享工作区允许这类纯元数据准备重叠，
+原生提交和capture仍独占工作区；生产者失败会在消费者原生提交前原样返回。
+
 这不公开pending字节；原Queue、Source权限和最终物理绑定仍逐次校验，重绑实际输入会使原束失效。
 完成后先取回受影响的Store／Append，再用`release_sources(consumer)`撤回原束；原错误和真实退休要求不变。
 完整例子见[原输出与混合来源检查](../../tests/graph/output_source_cuda_test.cc)。

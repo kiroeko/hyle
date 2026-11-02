@@ -10417,7 +10417,10 @@ Status prepare_replay_impl(detail::InvocationState *state_,
     bool reuse_only) noexcept {
   if (!state_)
     return Status::FailedPrecondition("graph invocation is empty");
-  HYLE_RETURN_IF_ERROR(detail::begin_preparation(*state_));
+  // Commands planning only installs metadata and qualifies dependency routes.
+  // Provider binding/sealing hooks cannot touch tensor payloads or accept work.
+  // Capture may execute provider preparation and keeps exclusive scratch use.
+  HYLE_RETURN_IF_ERROR(detail::begin_preparation(*state_, options.mode != ReplayMode::kCommands));
   PreparationScope preparation{*state_};
   if (options.mode != ReplayMode::kCommands &&
       options.mode != ReplayMode::kPreferCapture &&

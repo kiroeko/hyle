@@ -23,6 +23,7 @@ inline void qualification_matrix() {
       Case{{.backend = q::BackendKind::kCuda, .packing = q::RowPacking::kPrefill}, true, true, true},
       Case{{.backend = q::BackendKind::kCuda, .cpu_assist = true}, true, false, false},
       Case{{.backend = q::BackendKind::kCuda, .imported_sources = true}, false, true, false},
+      Case{{.backend = q::BackendKind::kCuda, .packing = q::RowPacking::kPrefill, .imported_sources = true}, true, true, false},
       Case{{.backend = q::BackendKind::kCuda, .diagnostic = true}, false, false, false},
       Case{{.backend = q::BackendKind::kCuda, .completion = q::TextCompletion::kStateOnly}, true, false, false},
       Case{{.backend = q::BackendKind::kCuda, .role = q::GraphRole::kMtpPrefill}, false, false, false},

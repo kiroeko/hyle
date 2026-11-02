@@ -29,6 +29,10 @@ Status enqueue_segment_steps(InvocationState &, const PlanSegment &,
 // A function sentinel prevents a completed range from releasing admission while
 // later ranges still prepare; unknown native retirement keeps its own count.
 Status begin_preparation(InvocationState &) noexcept;
+// Binding/Commands planning obeys the provider hooks' no-payload/no-device-work
+// contract. It serializes this Invocation without taking another Invocation's
+// shared scratch writer. Cold creation and capture retain the original gate.
+Status begin_preparation(InvocationState &, bool touches_workspace) noexcept;
 void release_preparation(InvocationState &) noexcept;
 
 // Uses the original Invocation's idle retention node for a cold capture prefix.

@@ -419,6 +419,44 @@ inline void real_backend(const std::filesystem::path &input, q::BackendKind kind
     q::check(packed_packet.history_select().storage().read(std::as_writable_bytes(std::span(read_history))));
     require(read_last == packed_last && read_history == packed_history,
         "real packed-prefill packet metadata differs from its original I32 values");
+    q::PrefillInputPackets uploaded;
+    const std::array<std::int32_t, 9> prompt{1, 4, 7, 9, 10, 11, 12, 13, 14};
+    require(q::take(uploaded.prepare(packed_packet, prompt, 1, 7, 3, packed_history.size(), 0,
+        device, model.execution, model.allocation_budget, model.execution_budget)),
+        "current-turn prefill packets did not prepare on the real backend");
+    q::c::ReadLease retained;
+    for (std::size_t begin = 1; begin < prompt.size(); begin += 3) {
+      require(q::take(uploaded.prepare(packed_packet, prompt, begin, 7 + begin - 1, 3,
+          packed_history.size(), 0, device, model.execution, model.allocation_budget, model.execution_budget)),
+          "immutable input packet was not reused for its partial final chunk");
+      const auto count = (std::min)(std::size_t{3}, prompt.size() - begin);
+      std::array<std::int32_t, 3> chunk{}, chunk_positions{};
+      std::copy_n(prompt.begin() + begin, count, chunk.begin());
+      for (std::size_t row = 0; row < count; ++row) chunk_positions[row] = static_cast<std::int32_t>(7 + begin - 1 + row);
+      const std::array<std::int32_t, 1> chunk_last{static_cast<std::int32_t>(count - 1)};
+      for (std::size_t row = 0; row < packed_history.size(); ++row)
+        packed_history[row] = static_cast<std::int32_t>(count + row);
+      q::check(packed_packet.write(chunk, chunk_positions, {.last_ids = chunk_last, .history_select = packed_history}));
+      for (std::size_t port = 0; port < packed_ports.size(); ++port) {
+        auto lease = q::take(uploaded.port(packed_packet, begin, port));
+        auto view = q::take(lease.view());
+        std::vector<std::byte> actual(view.size()), expected(view.size());
+        q::check(view.read(actual)); q::check(packed_ports[port].storage().read(expected));
+        require(actual == expected && lease.size() == packed_ports[port].storage().size(),
+            "uploaded prefill packet differs from synchronous tokens, positions or state-tail indices");
+        if (begin == 1 && port == 0) retained = lease;
+      }
+    }
+    require(q::take(uploaded.prepare(packed_packet, prompt, 1, 17, 3, packed_history.size(), 1,
+        device, model.execution, model.allocation_budget, model.execution_budget)),
+        "new turn did not replace a packet with the same host token address");
+    const auto replacement = q::take(uploaded.port(packed_packet, 1, 0));
+    require(q::take(replacement.view()).native_handle() != q::take(retained.view()).native_handle(),
+        "new turn reused an immutable packet still retained by an old native reader");
+    std::array<std::int32_t, 3> old_chunk{};
+    q::check(q::take(retained.view()).read(std::as_writable_bytes(std::span(old_chunk))));
+    require(old_chunk == std::array<std::int32_t, 3>{4, 7, 9},
+        "replacing the current turn invalidated its previously retained reader");
     require(old_inputs(model.prepare_child(1, true)), "packet gate replaced original diagnostic inputs");
   }
 }
@@ -507,6 +545,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
          "\"cold_capacity_fallback\":true,\"mandatory_refusal_unpublished\":true,\"warm_original_invocation\":true,"
          "\"five_port_metadata_single_write\":true,\"metadata_extent_no_write\":true,"
          "\"packed_prefill_packet\":true,\"sampling_identity_packet\":true,"
+         "\"current_turn_packets_and_partial_tail\":true,\"retained_packet_after_turn_replacement\":true,"
          "\"cold_negative_gates\":\"relay3slots,diagnostic,MTP\","
          "\"submitted_graphs\":0,\"real_cuda_fault_injection\":false}\n";
   return 0;

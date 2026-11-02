@@ -17,8 +17,11 @@ namespace detail { struct InvocationWorkspaceState; struct WorkspaceAccess; }
 // Nonempty planner backings must use one native resource. Each remains a
 // disjoint aligned span in the shared allocation. Public outputs must be
 // caller-owned. Provider-private storage and caller IO stay separate.
-// Cold creation/preparation and submission use the same exclusive write
-// admission. Unknown native retirement keeps that use alive. A non-OK accepted
+// Cold creation, capture and submission use exclusive write admission.
+// Commands planning and binding/sealing hooks only process metadata; their
+// no-payload/no-device-work contract permits preparation of another Invocation
+// while native work retains this scratch. Actual submission remains exclusive.
+// Unknown native retirement keeps that use alive. A non-OK accepted
 // native terminal, including cancellation, makes the root writer unusable:
 // recreate the workspace and its borrowing invocations before retrying.
 // Existing Invocation control/Completion-observation serialization and native

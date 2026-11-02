@@ -137,7 +137,7 @@ hyle::Result<ScratchExtent> scratch_extent(const g::Executable &route) {
   return result;
 }
 
-TEST(InvocationWorkspaceCuda, ExactShapesSerializeNativeUsesAndKeepCallerResultsIndependent) {
+void shared_workspace(bool metadata_preparation) {
   auto context_result = g::cuda::create_context();
   ASSERT_TRUE(context_result) << context_result.error().message();
   auto context = std::move(*context_result);
@@ -236,6 +236,16 @@ TEST(InvocationWorkspaceCuda, ExactShapesSerializeNativeUsesAndKeepCallerResults
   ASSERT_FALSE(collision);
   EXPECT_TRUE(collision.error().IsUnavailable()) << collision.error().message();
   EXPECT_FALSE(b.in_flight()); EXPECT_FALSE(b.output(large.output));
+  if (metadata_preparation) {
+    const auto prepared = b.prepare_replay(queues,
+        {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kReject});
+    ASSERT_TRUE(prepared.ok()) << prepared.message();
+    EXPECT_FALSE(gate.open.load());
+    ASSERT_EQ(pending->poll().value(), c::CompletionPoll::kPending);
+    const auto early = b.submit(queues);
+    ASSERT_FALSE(early); EXPECT_TRUE(early.error().IsUnavailable());
+    EXPECT_FALSE(b.in_flight()); EXPECT_FALSE(b.output(large.output));
+  }
   ASSERT_TRUE(g::detail::RecordingAccess::begin(b).ok());
   const auto recording = b.prepare_replay(queues, capture);
   EXPECT_TRUE(recording.IsUnavailable()) << recording.message();
@@ -256,8 +266,11 @@ TEST(InvocationWorkspaceCuda, ExactShapesSerializeNativeUsesAndKeepCallerResults
   ASSERT_TRUE(b.bind(large.input, large.description, b_input).ok());
   const auto retried = b.prepare_replay(queues, capture);
   ASSERT_TRUE(retried.ok()) << retried.message();
-  EXPECT_EQ(b.replay_report()->recorded_capture_range_count, 0u);
-  EXPECT_GT(b.replay_report()->reused_capture_range_count, 0u);
+  if (metadata_preparation) EXPECT_GT(b.replay_report()->recorded_capture_range_count, 0u);
+  else {
+    EXPECT_EQ(b.replay_report()->recorded_capture_range_count, 0u);
+    EXPECT_GT(b.replay_report()->reused_capture_range_count, 0u);
+  }
   auto completed = b.submit(queues);
   ASSERT_TRUE(completed) << completed.error().message();
   ASSERT_TRUE(completed->wait().ok()); *completed = {};
@@ -274,6 +287,8 @@ TEST(InvocationWorkspaceCuda, ExactShapesSerializeNativeUsesAndKeepCallerResults
   EXPECT_FALSE(gate.timed_out.load());
 }
 
+TEST(InvocationWorkspaceCuda, ExactShapesSerializeNativeUsesAndKeepCallerResultsIndependent) { shared_workspace(false); }
+TEST(InvocationWorkspaceCuda, CommandsMetadataCanPrepareWhilePriorScratchUseIsPending) { shared_workspace(true); }
 TEST(InvocationWorkspaceCuda, RejectsNonCallerOutputsForeignResourcesAndUnlistedRoutes) {
   auto context_result = g::cuda::create_context();
   ASSERT_TRUE(context_result) << context_result.error().message();

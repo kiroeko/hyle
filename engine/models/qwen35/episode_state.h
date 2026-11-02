@@ -99,6 +99,7 @@ struct StepSources final : inference::SubmissionViews {
   std::vector<g::StoreSource> successor_states;
   bool mtp_full_candidate = false;
   bool mtp_device_choice = false;
+  bool prefill = false; // Known current-turn input; no speculative token output.
   void release_publication_views() noexcept {
     if (!mtp_full_candidate) return;
     // Model-owned full-prefix views have no consumer binding. Once A has

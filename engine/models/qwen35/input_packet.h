@@ -150,6 +150,7 @@ public:
   }
 
 private:
+  friend class PrefillInputPackets;
   enum Port : std::size_t { kTokens, kPositions, kLastIds, kHistorySelect, kSamplingIdentities, kPortCount };
   Tensor payload_, staging_;
   std::array<hyle::compute::ConstTensorView, kPortCount> views_;

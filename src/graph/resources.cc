@@ -2657,6 +2657,7 @@ struct RegisteredReadyEntry final {
   std::uint32_t binding = 0, member = 0, next = UINT32_MAX;
 };
 struct SubmissionSourceState final : util::RefCounted<SubmissionSourceState> {
+  bool handoff = false;
   SubmissionSourceState(InvocationState *original, compute::detail::QueueRef queue_value,
       compute::StorageOwner storage, compute::Completion submission) noexcept
       : producer(original), queue(std::move(queue_value)), metadata_owner(std::move(storage)),
@@ -3103,7 +3104,7 @@ Result<RegionReadyControl> RegionAccess::ready_control(const InvocationState *st
   return std::move(call.result);
 }
 namespace {
-Result<compute::detail::QueueRef> output_queue(const InvocationState &state) noexcept {
+Result<compute::detail::QueueRef> output_queue(const InvocationState &state, bool handoff = false) noexcept {
   const auto &plan = *state.plan;
   if (state.progress || plan.segments.size() != 1 || plan.required_queue_count != 1)
     return std::unexpected(Status::Unimplemented("output relay requires one original shared segment"));
@@ -3113,7 +3114,7 @@ Result<compute::detail::QueueRef> output_queue(const InvocationState &state) noe
     return std::unexpected(Status::Unimplemented("output relay requires one original shared Queue"));
   // The exact unobserved submit proxy prevents binding/replay mutation. These
   // are the original submission's actual ranges, not static provider promises.
-  if (submitted_shared_replay_route(state) == ReplayRoute::kUnprepared)
+  if (!handoff && submitted_shared_replay_route(state) == ReplayRoute::kUnprepared)
     return std::unexpected(Status::Unimplemented(
         "output relay requires actual captured ranges and prepared nonblocking command gaps"));
   HYLE_ASSIGN_OR_RETURN(auto endpoint,
@@ -3140,7 +3141,7 @@ const InputSourceVTable output_source_table{
         return std::unexpected(Status::FailedPrecondition("pending output requires its metadata-only bundle preparation"));
       if (!queue || !bundle.submission->queue.same_owner(*queue))
         return std::unexpected(Status::Unimplemented("output relay requires its original actual Queue"));
-      return InputDependencyRoute::kDeviceWait;
+      return bundle.submission->handoff ? InputDependencyRoute::kHostWait : InputDependencyRoute::kDeviceWait;
     },
     [](void *opaque) noexcept {
       return poll_submission(*static_cast<OutputBindingBundle *>(opaque)->submission);
@@ -3456,8 +3457,8 @@ Status check_output_consumer(Invocation &invocation, OutputBindingBundle &bundle
   if (state->progress || plan.segments.size() != 1 || plan.required_queue_count != 1 ||
       !shared_lane(plan, plan.segments.front().lane))
     return Status::Unimplemented("output relay consumer requires one original shared segment");
-  bool commands = plan.source_commands_prepared;
-  if (!bundle.all_ready) {
+  bool commands = plan.source_commands_prepared || source.handoff;
+  if (!bundle.all_ready && !source.handoff) {
     const bool retained = std::ranges::any_of(state->captured_ranges,
         [](const auto &range) { return range.commands.valid(); }) ||
         std::ranges::any_of(state->capture_rebuilds, [](const auto &range) {
@@ -3647,19 +3648,29 @@ SubmissionSource &SubmissionSource::operator=(SubmissionSource &&other) noexcept
 SubmissionSource::~SubmissionSource() { if (state_) state_->decref(); }
 Result<SubmissionSource> SubmissionSource::create(Invocation &invocation,
     compute::Completion &&submission, const compute::StorageOwner &storage) noexcept {
+  return create_impl(invocation, std::move(submission), storage, false);
+}
+Result<SubmissionSource> SubmissionSource::create_handoff(Invocation &invocation,
+    compute::Completion &&submission, const compute::StorageOwner &storage) noexcept {
+  return create_impl(invocation, std::move(submission), storage, true);
+}
+Result<SubmissionSource> SubmissionSource::create_impl(Invocation &invocation,
+    compute::Completion &&submission, const compute::StorageOwner &storage, bool handoff) noexcept {
   auto *state = InvocationAccess::state(invocation);
   if (state && state->recording_only)
     return std::unexpected(Status::FailedPrecondition("cold recording cannot export a SubmissionSource"));
   if (!state || !storage || !state->observation.owns(submission))
     return std::unexpected(Status::InvalidArgument("submission source requires its exact submitted Invocation proxy and metadata owner"));
-  HYLE_ASSIGN_OR_RETURN(auto queue, output_queue(*state));
+  HYLE_ASSIGN_OR_RETURN(auto queue, output_queue(*state, handoff));
   const auto &plan = *state->plan;
   HYLE_ASSIGN_OR_RETURN(auto context, ExecutionSourceAccess::compute(
       plan.targets[plan.lanes[plan.segments.front().lane.ordinal()].target.ordinal()].source));
   if (context->identity_key() != storage.context_identity())
     return std::unexpected(Status::InvalidArgument("submission metadata owner belongs to another Context"));
-  HYLE_ASSIGN_OR_RETURN(auto dependency, compute::detail::RetainedCompletion::native_dependency(submission));
-  (void)dependency;
+  if (!handoff) {
+    HYLE_ASSIGN_OR_RETURN(auto dependency, compute::detail::RetainedCompletion::native_dependency(submission));
+    (void)dependency;
+  }
   const auto allocator = storage.allocator();
   auto *memory = allocator.allocate(sizeof(SubmissionSourceState), alignof(SubmissionSourceState));
   if (!memory) return std::unexpected(Status::ResourceExhausted("submission source cold owner metadata"));
@@ -3677,6 +3688,7 @@ Result<SubmissionSource> SubmissionSource::create(Invocation &invocation,
     return std::unexpected(attached);
   }
   auto *owner = ::new (memory) SubmissionSourceState(state, std::move(queue), storage, std::move(submission));
+  owner->handoff = handoff;
   return SubmissionSource(owner);
 }
 Result<compute::CompletionPoll> SubmissionSource::poll() noexcept {
@@ -5018,7 +5030,7 @@ Status prepare_sources_impl(Invocation &invocation, std::span<const QueueBinding
     OutputBindingBundle *bundle;
     ~EndPreparation() { bundle->preparing = false; }
   } end{bundle};
-  if (bundle->all_ready) {
+  if (bundle->all_ready && !bundle->submission->handoff) {
     HYLE_RETURN_IF_ERROR(invocation.prepare_replay(queues,
         {.mode = ReplayMode::kPreferCapture, .host_wait = HostWaitPolicy::kReject}));
     bundle->consumer_route = invocation.replay_route();
@@ -5027,7 +5039,7 @@ Status prepare_sources_impl(Invocation &invocation, std::span<const QueueBinding
   if (bundle->consumer_route != ReplayRoute::kCommands)
     return ReplayAccess::prepare_reuse(invocation, queues);
   return invocation.prepare_replay(queues,
-      {.mode = ReplayMode::kCommands, .host_wait = HostWaitPolicy::kReject});
+      {.mode = ReplayMode::kCommands, .host_wait = bundle->submission->handoff ? HostWaitPolicy::kAllow : HostWaitPolicy::kReject});
 }
 } // namespace
 Status prepare_sources(Invocation &invocation, std::span<const QueueBinding> queues) noexcept {
@@ -5049,6 +5061,10 @@ Result<compute::Completion> submit_sources(Invocation &invocation,
     return std::unexpected(Status::FailedPrecondition("cold recording cannot submit a Source bundle"));
   HYLE_ASSIGN_OR_RETURN(auto owner, bound_output_bundle(invocation));
   auto *bundle = static_cast<OutputBindingBundle *>(owner.state());
+  // This exact Source owns the original full verdict, including native work
+  // that a managed encoder cannot expose as a device-only dependency. Wait
+  // before any consumer permission/native admission or shared scratch use.
+  if (bundle->submission->handoff) HYLE_RETURN_IF_ERROR(wait_submission(*bundle->submission));
   HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, *bundle, queues, true));
   const auto expected = bundle->consumer_route;
   if (queues.size() != 1 || invocation.replay_route() != expected)

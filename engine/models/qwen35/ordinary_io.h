@@ -20,7 +20,7 @@ struct OrdinaryIoCapabilities final {
   constexpr bool packet_inputs() const noexcept {
     return role == GraphRole::kText &&
         (packing == RowPacking::kRectangular || packs_prefill(packing)) &&
-        !diagnostic && !imported_sources &&
+        !diagnostic && (!imported_sources || packs_prefill(packing)) &&
         (backend == hyle::inference::BackendKind::kCpu || backend == hyle::inference::BackendKind::kCuda);
   }
   constexpr bool caller_small_results() const noexcept {

@@ -287,6 +287,9 @@ submit_delegated_segment(detail::InvocationState &invocation,
 } // namespace
 
 Status detail::begin_preparation(InvocationState &state) noexcept {
+  return begin_preparation(state, true);
+}
+Status detail::begin_preparation(InvocationState &state, bool touches_workspace) noexcept {
   HYLE_RETURN_IF_ERROR(resource_control_ready(&state));
   const bool exclusive = !state.plan->supports_concurrent_invocations;
   bool expected = false;
@@ -301,13 +304,15 @@ Status detail::begin_preparation(InvocationState &state) noexcept {
       state.plan->exclusive_in_flight.store(false, std::memory_order_release);
     return Status::Unavailable("graph bindings are already being prepared");
   }
-  auto workspace_use = state.workspace.begin_preparation();
-  if (!workspace_use) {
-    state.preparation_uses.store(0, std::memory_order_release);
-    if (exclusive) state.plan->exclusive_in_flight.store(false, std::memory_order_release);
-    return workspace_use.error();
+  if (touches_workspace) {
+    auto workspace_use = state.workspace.begin_preparation();
+    if (!workspace_use) {
+      state.preparation_uses.store(0, std::memory_order_release);
+      if (exclusive) state.plan->exclusive_in_flight.store(false, std::memory_order_release);
+      return workspace_use.error();
+    }
+    state.workspace_preparation = std::move(*workspace_use);
   }
-  state.workspace_preparation = std::move(*workspace_use);
   state.workspace_preparation_accepted = false;
   return Status::Ok();
 }
