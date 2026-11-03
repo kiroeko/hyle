@@ -127,6 +127,17 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
           {program.hidden, program.hidden_state.destination_ids}, {}, &program.hidden_state.store);
       check(r.builder.depends_on(program.hidden_state.store, program.append.value));
       r.publish(program.id);
+      if (build_request.verification_rows) {
+        if (selected_sampler.enabled || !selected_sampler.modifiers.empty() ||
+            build_request.minimum_probability != 0 || build_request.verification_rows < 3 ||
+            build_request.verification_rows > draft_facts.candidate_boundaries)
+          throw std::runtime_error("device verifier packet requires bounded unmodified greedy proposals");
+        const auto width = static_cast<std::int64_t>(build_request.verification_rows);
+        program.verification_prefix = r.input(dense(Type::kInt32, {width - 1}));
+        const std::array packet{program.verification_prefix, r.reshape(program.id, {f(1)})};
+        program.verification_packet = r.copy(r.concat(packet, 0, r.dense_spec(Type::kInt32, {f(width)})));
+        r.publish(program.verification_packet);
+      }
     } else program.append = mtp::append_kv(r, attention_schema, kv);
     program.graph = take(std::move(r.builder).finish());
     const std::array binding{g::ShapeBinding{r.last_row, static_cast<std::int64_t>(rows - 1)}};
@@ -143,11 +154,16 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
     program.literals = std::move(assembly.literals);
     program.token_values = auxiliary_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
     program.position_values = auxiliary_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
+    if (program.verification_prefix) {
+      const auto prefix_rows = static_cast<std::int64_t>(build_request.verification_rows - 1);
+      program.verification_prefix_values = auxiliary_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {prefix_rows}));
+      program.verification_prefix_values.write<std::int32_t>(std::vector<std::int32_t>(static_cast<std::size_t>(prefix_rows), 0));
+    }
     if (head && selected_sampler.enabled)
       program.identity_values = auxiliary_tensor(allocation_budget, execution.device(), dense(Type::kUInt32, {1, 4}));
-    check(program.io.prepare(compiled_program, head && selected_sampler.enabled ? 3 : 2,
+    check(program.io.prepare(compiled_program, (head && selected_sampler.enabled ? 3 : 2) + bool(program.verification_prefix),
         program.hidden_inputs.size() + bool(program.bias) + bool(program.allowed) + bool(program.counts),
-        head ? 1 + bool(program.valid) + (build_request.minimum_probability > 0) : 0,
+        head ? 1 + bool(program.valid) + (build_request.minimum_probability > 0) + bool(program.verification_packet) : 0,
         head ? bool(selected_sampler.enabled) + bool(program.next_counts) : 0));
     program.hidden_bindings.reserve(program.hidden_inputs.size());
     for (const auto port : program.hidden_inputs) program.hidden_bindings.push_back(take(program.io.add_input(port)));
@@ -184,8 +200,11 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
     }
     check(program.io.add_fixed(program.tokens, program.token_values.read()));
     check(program.io.add_fixed(program.positions, program.position_values.read()));
+    if (program.verification_prefix) check(program.io.add_fixed(program.verification_prefix, program.verification_prefix_values.read()));
     if (head) {
       program.id_value = take(program.io.add_readback(program.id, execution.storage_domains(), allocation_budget));
+      if (program.verification_packet)
+        program.verification_value = take(program.io.add_readback(program.verification_packet, execution.storage_domains(), allocation_budget));
       if (selected_sampler.enabled) check(program.io.add_fixed(program.identity, program.identity_values.read()));
       if (program.valid) program.valid_value = take(program.io.add_readback(program.valid, execution.storage_domains(), allocation_budget));
       if (build_request.minimum_probability > 0)

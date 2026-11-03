@@ -430,6 +430,9 @@ struct EvaluationRequest final {
   PrefillInputPackets *prefill_packets = nullptr;
   std::span<const std::int32_t> prefill_prompt{};
   std::size_t prefill_offset = 0, prefill_turn = 0;
+  // Original proposal submission, exporting only the complete token packet.
+  // No target state or page publication is imported from the private draft.
+  std::shared_ptr<StepSources> verification_tokens;
 };
 
 // Metadata only for the original cold Invocation. Graph enforces that these
@@ -879,6 +882,7 @@ public:
   std::map<std::tuple<std::size_t, bool, std::size_t>, std::unique_ptr<DraftProgram>> &draft_programs;
   std::map<PrefixSamplingKey, std::unique_ptr<PrefixSamplingProgram>> &prefix_sampling_programs;
   std::size_t draft_program_graph_calls = 0, prefix_decision_graph_calls = 0;
+  std::size_t device_verification_handoffs = 0;
   // Same admission scope as target work: active inputs of original accepted
   // Graph submissions, including discarded/failed work and private NextN.
   // Padding, provider-internal preparation and native kernel FLOPs are separate.
@@ -1225,6 +1229,8 @@ public:
         << ",\"draft_vocabulary_map_bytes\":" << (resources_->draft_head ? take(resources_->draft_head->original_ids.description.required_bytes()) : 0)
         << ",\"draft_vocabulary_policy\":\"greedy_unmodified_no_threshold\""
         << ",\"draft_program_graph_calls\":" << draft_program_graph_calls
+        << ",\"device_verification_handoffs\":" << device_verification_handoffs
+        << ",\"device_verification_hidden_rows\":" << cache_plan.auxiliary_hidden_rows
         << ",\"prefix_decision_graph_calls\":" << prefix_decision_graph_calls
         << ",\"packed_prefill_calls\":" << packed_prefill_calls - packed_prefill_offset[0]
         << ",\"packed_prefill_active_rows\":" << packed_prefill_active_rows - packed_prefill_offset[1]
@@ -1725,7 +1731,12 @@ public:
     // bound can select capture; writer-only repair retains its ready-leaf path.
     const auto replay_mode = !selected_sampler.modifiers.history.empty() && head ? g::ReplayMode::kCommands
         : select_replay_mode(replay_policy, head ? planned_uses : 1, selected_sampler.enabled);
-    auto built = build_draft_program({rows, selected_index, head, replay_mode, min_draft_probability()},
+    const auto packet_rows = head && max_drafts() > 1 && max_drafts() <= 3 && !selected_sampler.enabled &&
+        selected_sampler.modifiers.empty() && min_draft_probability() == 0 &&
+        execution.kind() == BackendKind::kCuda && !execution.has_cpu_assist() && !scheduler &&
+        cache_plan.active_sequences == 1 && cache_plan.auxiliary_hidden_rows >= 2 &&
+        replay_policy != ReplayPolicy::kCommands ? max_drafts() + 1 : 0;
+    auto built = build_draft_program({rows, selected_index, head, replay_mode, min_draft_probability(), packet_rows},
         {geometry, precision, weights, projections, weight_meanings, ffn_placement.cpu_layers()},
         {attention_schema, cache_plan.hidden_slots, cache_plan.active_sequences, cache_plan.candidate_boundaries,
          prepared_draft_projection(subset)}, selected_sampler,
@@ -1767,9 +1778,11 @@ public:
   // Append to an unpublished draft only. The first append uses COW; later
   // recursive rows may extend that private tail. Published Session tails are
   // never borrowed, so aborting proposal/verification leaves the old head valid.
+  template<class PrepareVerifier = std::nullptr_t>
   DraftProposal execute_draft(DraftWork &work, std::span<const std::int32_t> ids,
       std::span<const c::ReadLease> shifted, bool head, const std::array<std::uint32_t, 4> &identity = {},
-      std::size_t sampling_index = 0, const LogitsInputs &logits = {}) {
+      std::size_t sampling_index = 0, const LogitsInputs &logits = {},
+      std::span<const std::int32_t> verification_prefix = {}, PrepareVerifier &&prepare_verifier = nullptr) {
     if (ids.empty() || ids.size() != shifted.size() || !state_storage_prepared ||
         work.state.frontier > capacity || ids.size() > capacity - work.state.frontier)
       throw std::runtime_error("NextN input rows exceed the prepared context or hidden geometry");
@@ -1813,6 +1826,12 @@ public:
       positions.clear();
       for (std::size_t i = 0; i < ids.size(); ++i) positions.push_back(static_cast<std::int32_t>(length + i));
       program.token_values.write<std::int32_t>(ids); program.position_values.write<std::int32_t>(positions);
+      if (!verification_prefix.empty()) {
+        if (!program.verification_packet || verification_prefix.size() !=
+            static_cast<std::size_t>(program.verification_prefix_values.description.dimensions()[0]))
+          throw std::runtime_error("device verifier prefix differs from its original cold packet");
+        program.verification_prefix_values.write<std::int32_t>(verification_prefix);
+      }
       if (head) {
         auto &transactions = program.hidden_transactions;
         std::copy(shifted.begin(), shifted.end(), transactions.sources(0).begin());
@@ -1841,6 +1860,27 @@ public:
       check(guard.execution.submit(resources_));
       submitted_draft_rows = model_rows_after;
       if (work.session) work.session->submitted_draft_rows = session_rows_after;
+      if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<PrepareVerifier>>) {
+        if (!verification_prefix.empty()) {
+          guard.execution.sources = std::make_shared<StepSources>();
+          const auto *packet = take(program.io.readback(program.verification_value));
+          const std::array<inference::SubmissionViews::OutputCapture, 1> outputs{{
+              {program.verification_packet, execution.storage_owner(), packet->pool()}}};
+          // Bind the existing device Source while pending. Final capture
+          // preparation follows whole producer success, without forcing the
+          // target back to managed Commands.
+          const auto captured = take(guard.execution.sources->capture_outputs(run, guard.execution.completion,
+              outputs, execution.storage_owner(), true, false));
+          if (captured) {
+            prepare_verifier(guard.execution.sources, false);
+            check(guard.execution.wait());
+            check(guard.execution.sources->detach_outputs());
+            // Keep exports open until the target binds its ready packet. Only
+            // the final source/replay admission waits; batch/state prep overlapped.
+            prepare_verifier(guard.execution.sources, true);
+          } else guard.execution.sources.reset(); // Typed capability refusal preserves the original submit proxy.
+        }
+      }
       std::array<c::PagedPageAppender, 2> tails;
       check(guard.execution.finish_success(draft_bank, 2, take(program.io.withdrawal_values()),
           [&]() noexcept { ++draft_program_graph_calls; },
@@ -1886,12 +1926,16 @@ public:
       auto publication = take(edit.prepare_publication());
       publication.publish(&work.state.paged);
       work.tails = std::move(tails); work.state = std::move(next);
+      guard.execution.sources.reset(); // The admitted target retains its original view.
       for (auto &append : guard.execution.appends) append = {};
       for (auto &bank : guard.execution.dirty) bank.clear();
       for (auto &bank : guard.execution.tails) bank.clear();
       guard.execution.run = nullptr; guard.execution.carrier = nullptr; guard.execution.state_transactions = nullptr;
       return output;
     } catch (inference::EvaluationFailure &failure) {
+      if (active_step && active_step->execution.incoming &&
+          active_step->execution.incoming->owner == guard.execution.sources)
+        (void)abort_episode();
       // This validator has no target Step participant. Keep its original
       // private guard's actual retirement observation for a known caller key.
       guard.execution.cleanup_pending = true;
@@ -1901,6 +1945,9 @@ public:
       if (recovered && *recovered) { guard.execution.cleanup_pending = false; guard.execution.terminal = {}; }
       throw;
     } catch (...) {
+      if (active_step && active_step->execution.incoming &&
+          active_step->execution.incoming->owner == guard.execution.sources)
+        (void)abort_episode();
       // An unsuccessful private append is never a partially published head.
       guard.execution.cleanup_pending = true;
       const auto recovered = recover_draft_program(program);
@@ -3272,6 +3319,26 @@ public:
         {}, 0, physical_rows, RowPacking::kVerify);
   }
 
+  void finish_device_verification_preparation() {
+    if (!active_step || active_step->submitted || !active_step->prepared ||
+        !active_step->phase || active_step->phase->family->role != GraphRole::kVerify ||
+        !active_step->execution.incoming || active_step->execution.incoming->bound ||
+        active_step->execution.incoming->bindings.size() != 1)
+      throw std::logic_error("device verifier requires its original prepared target and token Source");
+    auto &step = *active_step;
+    const auto begin = Clock::now();
+    auto &incoming = *step.execution.incoming;
+    check(g::bind_sources(*step.execution.run, incoming.bindings));
+    incoming.bound = true; incoming.bindings.clear();
+    check(step.execution.prepare_replay({.mode = step.phase->slots[step.state_slot].replay_mode,
+        .host_wait = g::HostWaitPolicy::kAllow}));
+    step.replay_route = step.execution.run->replay_route();
+    const auto replay = take(step.execution.run->replay_report());
+    step.capture_recorded = replay.recorded_capture_range_count;
+    step.capture_reused = replay.reused_capture_range_count;
+    step.cold_batch_seconds += std::chrono::duration<double>(Clock::now() - begin).count();
+  }
+
   template<bool recording_only = false>
   void prepare_evaluations(std::span<const EvaluationRequest> requests,
                            inference::PreparationObservation *preparation = nullptr,
@@ -3331,6 +3398,12 @@ public:
     const auto &prepared_sampling = requests.front().session->sampling_configuration();
     const auto sampling_index = prepared_sampling.index;
     const auto &selected_sampler = prepared_sampling.configuration;
+    const auto token_source = requests.size() == 1 ? requests.front().verification_tokens : std::shared_ptr<StepSources>{};
+    if (token_source && (recording_only || relay || role != GraphRole::kVerify ||
+        packing != RowPacking::kRectangular || completion != TextCompletion::kEmitNext ||
+        selected_sampler.enabled || !selected_sampler.modifiers.empty() ||
+        !token_source->submission.valid() || !token_source->primary_output.valid()))
+      throw std::runtime_error("device verifier tokens require one original greedy target episode");
     if (mtp_relay && (selected_sampler.enabled || !selected_sampler.modifiers.empty()))
       throw std::runtime_error("MTP full-candidate successor requires its original greedy sampling configuration");
     const auto supplied_tokens = relay && !prefill_relay ? std::size_t{1} : requests.front().ids.size();
@@ -3469,6 +3542,10 @@ public:
     if (relay) {
       candidate->execution.incoming = std::make_unique<IncomingStepSources>();
       candidate->execution.incoming->owner = std::move(incoming);
+    } else if (token_source) {
+      candidate->execution.incoming = std::make_unique<IncomingStepSources>();
+      candidate->execution.incoming->owner = token_source;
+      candidate->execution.incoming->bindings.reserve(1);
     }
     auto &step = *candidate;
     if (predecessor) successor_step = candidate; else active_step = candidate;
@@ -3579,7 +3656,7 @@ public:
           ? std::span<const std::int32_t>(decode_ahead->positions.data(), decode_ahead->positions.size())
           : std::span<const std::int32_t>(positions);
       if (!io.ordinary_io.packet()) {
-        if (!relay && !recording_imported) io.tokens.write<std::int32_t>(token_values);
+        if (!relay && !recording_imported && !token_source) io.tokens.write<std::int32_t>(token_values);
         io.positions.write<std::int32_t>(position_values);
       }
       if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
@@ -3747,12 +3824,17 @@ public:
         for (std::size_t bank = 0; bank < previous.pages.size(); ++bank)
           input.bindings.push_back(take(g::batch::append_binding(run, phase.append_nodes[bank], previous.pages[bank])));
       }
-      check(step.execution.bind_consumers(phase.state_graph()));
+      if (token_source)
+        step.execution.incoming->bindings.push_back(token_source->primary_output.reader_binding(phase.token_port));
+      if (!token_source) check(step.execution.bind_consumers(phase.state_graph()));
+      else if (step.execution.state_transactions)
+        check(step.execution.state_transactions->bind(run, phase.state_graph()));
       if (packed_target) {
         check(g::batch::bind_query_rows(run, phase.attention_nodes.front(), phase.sequence_offsets_port));
       }
       const auto batch_end = Clock::now();
-      if (predecessor && !prefill_relay) check(step.execution.prepare_successor_replay());
+      if (token_source) { /* Final replay preparation follows this producer's retirement. */ }
+      else if (predecessor && !prefill_relay) check(step.execution.prepare_successor_replay());
       else check(step.execution.prepare_replay({.mode = phase.slots[slot].replay_mode, .host_wait = g::HostWaitPolicy::kAllow}));
       const auto replay_end = Clock::now();
       if (preparation) {
@@ -3760,10 +3842,12 @@ public:
         preparation->batch_prepare_seconds = std::chrono::duration<double>(batch_end - batch_start).count();
         preparation->replay_prepare_seconds = std::chrono::duration<double>(replay_end - batch_end).count();
       }
-      step.replay_route = run.replay_route();
-      const auto replay_report = take(run.replay_report());
-      step.capture_recorded = replay_report.recorded_capture_range_count;
-      step.capture_reused = replay_report.reused_capture_range_count;
+      if (!token_source) {
+        step.replay_route = run.replay_route();
+        const auto replay_report = take(run.replay_report());
+        step.capture_recorded = replay_report.recorded_capture_range_count;
+        step.capture_reused = replay_report.reused_capture_range_count;
+      }
       step.cold_batch_seconds = std::chrono::duration<double>(Clock::now() - cold_start).count();
       ++phase.slots[slot].preparation_uses; step.prepared = true;
       if constexpr (recording_only) check(step.execution.mark_recording_prepared());
@@ -4345,10 +4429,12 @@ public:
   // Returns the actual verifier input [pending, proposal0, ...]. Approximate
   // hidden is local to this recursion and is deliberately discarded with its
   // private pages; it is never installed in a committed draft cache.
+  template<class PrepareVerifier = std::nullptr_t>
   std::vector<std::int32_t> propose_recursive(Session &session, std::size_t maximum,
       std::span<const std::int32_t> eos = {}, std::vector<c::ReadLease> *q = nullptr,
       const inference::RequestStopPolicy *stop_policy = nullptr, const LogitsInputs &logits = {},
-      std::span<const LogitsInputs> conditional_inputs = {}, ConditionalLogitsProposal *dynamic = nullptr) {
+      std::span<const LogitsInputs> conditional_inputs = {}, ConditionalLogitsProposal *dynamic = nullptr,
+      PrepareVerifier &&prepare_verifier = nullptr) {
     if (session.model_ != this)
       throw std::runtime_error("recursive proposal Session belongs to another model");
     const auto &selected_sampling = session.sampling_configuration();
@@ -4398,8 +4484,14 @@ public:
       std::vector<c::ReadLease> shifted;
       if (!i && work.state.lag) { ids.push_back(work.state.catchup_token); shifted.push_back(session.head->prior_hidden); }
       ids.push_back(inputs.back()); shifted.push_back(i ? approximate : session.head->carry_hidden);
-      auto proposal = execute_draft(work, ids, shifted, true,
-          selected_sampler.enabled ? session.head->sampling.identity(2 * i) : std::array<std::uint32_t, 4>{}, selected_sampling.index, current_logits);
+      DraftProposal proposal;
+      const auto identity = selected_sampler.enabled ? session.head->sampling.identity(2 * i) : std::array<std::uint32_t, 4>{};
+      if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<PrepareVerifier>>) {
+        if (i + 1 == maximum && maximum == max_drafts())
+          proposal = execute_draft(work, ids, shifted, true, identity, selected_sampling.index, current_logits,
+              inputs, [&](const std::shared_ptr<StepSources> &source, bool ready) { prepare_verifier(inputs, source, ready); });
+        else proposal = execute_draft(work, ids, shifted, true, identity, selected_sampling.index, current_logits);
+      } else proposal = execute_draft(work, ids, shifted, true, identity, selected_sampling.index, current_logits);
       // Stop on a distribution property, not the sampled proposal's own
       // probability. The stopping condition is independent of this draw; its
       // unpublished address may then be the target's final draw at 2*m.
@@ -5459,6 +5551,7 @@ struct PreparedGenerationCall final {
   std::vector<std::int32_t> verification_ids;
   std::vector<c::ReadLease> draft_log_probabilities;
   bool generation = false, full_hit = false, initial_prefix = false, prefill_complete = true;
+  bool verification_prepared = false;
   EvaluationDisposition disposition = EvaluationDisposition::kNotPublished;
   LogitsInputs logits; // Snapshot the caller's input leases for this prepared episode.
   inference::LogitsInputProvider logits_provider;
@@ -6107,6 +6200,7 @@ struct GenerationStepAdapter final {
       following.pending = -1; following.quota = call.quota - maximum_outputs;
       following.role = successor_role;
       following.step_seconds = following.proposal_seconds = 0;
+      following.verification_prepared = false;
       following.disposition = EvaluationDisposition::kNotPublished;
       following.name = (request.progress.turn_index ? "round" + std::to_string(request.progress.turn_index + 1) + "_" : "") +
           (mtp ? "mtp" : "decode") + std::to_string(request.rounds.size() + 2);
@@ -6461,6 +6555,13 @@ struct SynchronousGenerationStepAdapter final {
       }
     }
     attach_outputs(calls);
+    if (calls.size() == 1 && calls[0].verification_prepared) {
+      if (role != GraphRole::kVerify || !model.active_step || model.active_step->submitted ||
+          model.active_step->members.size() != 1 || model.active_step->input_tokens != calls[0].ids().size())
+        throw std::logic_error("device verifier lost its original prepared target episode");
+      model.active_step->members[0].verification_inputs.assign(calls[0].ids().begin(), calls[0].ids().end());
+      return;
+    }
     if (!generation && packed_prefill) model.prepare_prefill_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion);
     else if (packed_verification_capacity)
       model.prepare_verification_evaluations(std::span(inputs.data(), inputs.size()), packed_verification_capacity);
@@ -6511,6 +6612,7 @@ struct SynchronousGenerationStepAdapter final {
     next_call.input_begin = begin; next_call.prompt = request.prompt.subspan(begin, count);
     next_call.prefill_complete = complete; next_call.completion = completion;
     next_call.step_seconds = next_call.proposal_seconds = 0;
+    next_call.verification_prepared = false;
     next_call.disposition = EvaluationDisposition::kNotPublished;
     next_call.name = calls[0].name.substr(0, calls[0].name.find("_chunk")) + "_chunk" + std::to_string(begin);
     source = model.active_step->execution.sources;
@@ -6743,12 +6845,14 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
           peer.logits.bias = first.bias; peer.logits.allowed = first.allowed;
         }
         peer.draft_log_probabilities.clear(); peer.conditional_logits = {}; peer.verification_ids.clear();
+        peer.verification_prepared = false;
       }
     };
     for (auto &call : calls) {
       if (!call.generation || call.role != GraphRole::kVerify)
         throw std::runtime_error("recursive MTP batch requires generation verifiers only");
       if (call.verification_ids.empty()) {
+        call.verification_prepared = false;
         const auto begin = Clock::now();
         try {
           std::optional<ConditionalLogitsProposal> dynamic;
@@ -6757,7 +6861,31 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
             dynamic->rows.reserve(call.maximum + 1);
             dynamic->rows.push_back({call.logits.bias, call.logits.allowed});
           }
-          call.verification_ids = model.propose_recursive(*call.request->session, call.maximum, eos,
+          const auto &sampling = call.request->session->sampling_configuration().configuration;
+          const bool device_packet = calls.size() == 1 && !dynamic && !sampling.enabled && sampling.modifiers.empty() &&
+              call.maximum > 1 && call.maximum <= 3 && call.maximum == model.max_drafts() &&
+              model.min_draft_probability() == 0 && model.execution.kind() == BackendKind::kCuda &&
+              !model.execution.has_cpu_assist() && !model.scheduler &&
+              model.cache_plan.active_sequences == 1 && model.cache_plan.auxiliary_hidden_rows >= 2 &&
+              model.replay_policy != ReplayPolicy::kCommands && call.request->trace.empty();
+          if (device_packet) {
+            call.verification_ids = model.propose_recursive(*call.request->session, call.maximum, eos,
+                &call.draft_log_probabilities, &call.request->ledger->stop_policy(), call.logits, {}, nullptr,
+                [&](std::span<const std::int32_t> prefix_ids, const std::shared_ptr<StepSources> &source, bool ready) {
+                  if (ready) { model.finish_device_verification_preparation(); return; }
+                  // The last ID is produced by this Source, never by the host
+                  // placeholder. Exact row count and all target states are known.
+                  std::array<std::int32_t, 4> shape{};
+                  if (prefix_ids.size() >= shape.size()) throw std::logic_error("device verifier packet exceeds its bounded K3 shape");
+                  std::copy(prefix_ids.begin(), prefix_ids.end(), shape.begin());
+                  const std::array input{EvaluationRequest{call.request->session, std::span(shape).first(prefix_ids.size() + 1),
+                      &call.request->ledger->stop_policy(), call.logits, {}, call.request->request_key,
+                      nullptr, {}, 0, 0, source}};
+                  model.prepare_evaluations(input, nullptr, GraphRole::kVerify);
+                  call.verification_prepared = true;
+                  ++model.device_verification_handoffs;
+                });
+          } else call.verification_ids = model.propose_recursive(*call.request->session, call.maximum, eos,
               &call.draft_log_probabilities, &call.request->ledger->stop_policy(), call.logits, {}, dynamic ? &*dynamic : nullptr);
           if (dynamic) {
             call.conditional_logits = inference::ConditionalLogitsInputs(dynamic->rows);
@@ -6779,6 +6907,9 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
           throw;
         }
         call.proposal_seconds = std::chrono::duration<double>(Clock::now() - begin).count();
+        // Preparation already overlapped the producer and is paid in proposal
+        // wall time. The remaining target stage starts here, exactly once.
+        if (call.verification_prepared) model.active_step->step_start = Clock::now();
       }
     }
     // Keep exact R1/uniform graphs. Only an unequal cohort selects the cold
@@ -8442,14 +8573,23 @@ int qwen35::run(int argc, char **argv) {
         geometry.key_depth == geometry.value_depth &&
         (geometry.key_depth == 64 || geometry.key_depth == 128 || geometry.key_depth == 256);
     auto overlap_depth = continuous_mtp_candidate ? std::size_t{3} : std::size_t{2};
+    bool device_verification_selected = mtp_enabled && max_drafts > 1 && max_drafts <= 3 &&
+        min_draft_probability == 0 && !sampler.enabled && sampler.modifiers.empty() &&
+        backend_selection.primary == qwen35::BackendKind::kCuda && !cpu_ffn_layers && !progress &&
+        requested_active == 1 && replay != qwen35::ReplayPolicy::kCommands;
     const auto plan_for = [&](std::size_t residents) {
       return qwen35::cache::plan(geometry, weight_source.cache_row_bytes, capacity, residents,
           mtp_enabled && mtp_has_decode ? (std::max)(max_query_rows, std::size_t{2}) : max_query_rows, recurrent_payload,
           active_sequences == 0 ? residents : requested_active,
-          mtp_enabled ? max_drafts + 1 : 1, mtp_enabled, sampler.enabled, overlap_selected ? overlap_depth : 1);
+          mtp_enabled ? max_drafts + 1 : 1, mtp_enabled, sampler.enabled, overlap_selected ? overlap_depth : 1,
+          device_verification_selected && (active_sequences == 0 ? residents : requested_active) == 1 ? 2 : 0);
     };
     const auto minimum_residents = active_sequences == 0 ? std::size_t{1} : requested_active;
     auto selected_cache = plan_for(cached_slots);
+    if (device_verification_selected && cache_bytes && plan_for(minimum_residents).backing_bytes > cache_bytes) {
+      device_verification_selected = false;
+      selected_cache = plan_for(cached_slots); // An optional overlap never excludes a previously fitting session.
+    }
     if (overlap_selected && overlap_depth == 3 && cache_bytes &&
         plan_for(minimum_residents).backing_bytes > cache_bytes) {
       overlap_depth = 2;

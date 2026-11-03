@@ -34,6 +34,9 @@ def check(args):
             assert raw["cold_planning"] == "configured_capacity" and raw["future_shape_hints"] == 0
             assert raw["mtp_max_drafts"] == width and raw["live_committed_versions"] == 0
             assert raw["sampling"] == "greedy" and raw["draft_program_graph_calls"] > 0
+            assert raw["device_verification_hidden_rows"] == 2
+            if quota >= width + 2:
+                assert raw["device_verification_handoffs"] > 0, "last draft did not feed the prepared verifier on device"
             detail = raw["sessions"][0]["result"]
             assert len(detail["turns"]) == 2 and len(detail["generated_ids"]) == 1+quota
             assert detail["turns"][0]["output_end"] == 1

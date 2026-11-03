@@ -61,6 +61,7 @@ struct Plan final {
   std::size_t hidden_row_bytes = 0, hidden_bytes = 0, backing_bytes = 0;
   std::size_t attention_layers = 0, recurrent_layers = 0;
   bool draft_cache = false;
+  std::size_t auxiliary_hidden_rows = 0;
 };
 inline Plan plan(const ModelGeometry &geometry, CacheRowBytes row_bytes,
                  std::size_t context, std::size_t residents,
@@ -68,8 +69,10 @@ inline Plan plan(const ModelGeometry &geometry, CacheRowBytes row_bytes,
                   std::size_t active_sequences = 1,
                    std::size_t candidate_boundaries = 1,
                    bool draft_cache = false, bool frontier_hidden = false,
-                   std::size_t in_flight_batches = 1) {
+                   std::size_t in_flight_batches = 1, std::size_t auxiliary_hidden_rows = 0) {
   geometry.validate();
+  if (auxiliary_hidden_rows && !draft_cache)
+    throw std::runtime_error("private draft hidden rows require a draft cache");
   if (!row_bytes.target.key || !row_bytes.target.value ||
       ((!row_bytes.draft.key) != (!row_bytes.draft.value)) ||
       (draft_cache && (!row_bytes.draft.key || !row_bytes.draft.value)))
@@ -95,7 +98,7 @@ inline Plan plan(const ModelGeometry &geometry, CacheRowBytes row_bytes,
   const auto candidate_states = multiply(candidate_boundaries, pending_sequences);
   const auto states = add(residents, candidate_states);
   const auto hidden_slots = draft_cache || candidate_boundaries > 1
-      ? add(multiply(2, residents), candidate_states)
+      ? add(add(multiply(2, residents), candidate_states), auxiliary_hidden_rows)
       : frontier_hidden ? snapshots : 0;
   const auto hidden_bytes = hidden_slots ? state_pool_backing_bytes(geometry.hidden_bytes(), hidden_slots) : 0;
   const auto page_refs = multiply(refs, active_sequences);
@@ -124,6 +127,7 @@ inline Plan plan(const ModelGeometry &geometry, CacheRowBytes row_bytes,
   result.hidden_slots = static_cast<std::uint32_t>(hidden_slots);
   result.hidden_bytes = hidden_bytes;
   result.draft_cache = draft_cache;
+  result.auxiliary_hidden_rows = auxiliary_hidden_rows;
   result.hidden_row_bytes = geometry.hidden_bytes();
   result.attention_layers = geometry.attention_layers(); result.recurrent_layers = geometry.recurrent_layers();
   const auto bank_rows = multiply(pages, Plan::page_rows);

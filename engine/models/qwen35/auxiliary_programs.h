@@ -33,6 +33,11 @@ struct DraftProgram final {
   mtp::AppendNodes append;
   g::NodeId attention;
   Tensor token_values, position_values, identity_values;
+  // Fixed-width greedy verifier input. The original proposal program produces
+  // its final ID on device; this packet has one complete caller-owned writer.
+  V verification_prefix, verification_packet;
+  Tensor verification_prefix_values;
+  inference::ProgramIo::Readback verification_value;
   inference::ProgramIo io;
   inference::ProgramIo::Readback id_value, valid_value, probability_value;
   c::LeasePool probability_pool, next_counts_pool;
@@ -98,6 +103,7 @@ struct DraftProgramRequest final {
   bool head = false;
   g::ReplayMode replay_mode = g::ReplayMode::kCommands;
   float minimum_probability = 0;
+  std::size_t verification_rows = 0;
 };
 struct DraftProgramFacts final {
   const c::BatchSchema &attention_schema;

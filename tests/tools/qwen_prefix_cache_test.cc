@@ -857,6 +857,13 @@ void batch_state_capacity() {
       three.snapshot_slots==6 && five.snapshot_slots==6 &&
       three.max_pages==batch.max_pages && five.max_pages==batch.max_pages,
       "K2/K4 candidate material rows must grow without adding committed versions or whole-context KV copies");
+  const auto proposal_overlap = p::plan(geometry, bf16_cache_rows(geometry), 256,4,16,payload,2,3,true,false,1,2);
+  require(proposal_overlap.auxiliary_hidden_rows == 2 && proposal_overlap.hidden_slots == three.hidden_slots + 2 &&
+      proposal_overlap.hidden_bytes == three.hidden_bytes + 2 * geometry.hidden_bytes() &&
+      proposal_overlap.backing_bytes == three.backing_bytes + 2 * geometry.hidden_bytes() &&
+      proposal_overlap.state_slots == three.state_slots && proposal_overlap.max_pages == three.max_pages &&
+      proposal_overlap.snapshot_slots == three.snapshot_slots,
+      "overlapping private proposal inputs/output must reserve hidden rows without inventing target states, pages or snapshots");
   const auto deep = p::plan(geometry, bf16_cache_rows(geometry), 256, 4, 16, payload, 2, 3, true, false, 3);
   require(deep.in_flight_batches == 3 && deep.candidate_boundaries == 3 && deep.state_slots == 22 &&
       deep.snapshot_slots == 10 && deep.max_pages == 70 && deep.hidden_slots == 26 &&
