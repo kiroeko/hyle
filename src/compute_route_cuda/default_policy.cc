@@ -64,7 +64,7 @@ Family baseline(const ProviderOperationRequest &request) noexcept {
     case UnaryKind::kSilu:
     case UnaryKind::kGelu:
     case UnaryKind::kGeluTanh: return Family::kSglang;
-    case UnaryKind::kSoftplus: return Family::kTorch;
+    case UnaryKind::kSoftplus: return Family::kNative;
     default: return Family::kGgml;
     }
   case OperationKind::kScan:

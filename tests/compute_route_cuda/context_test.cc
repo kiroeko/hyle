@@ -451,6 +451,70 @@ TEST(CudaDefaultCompute, DefaultRulesRetainSeparateAndPackedTailCapability) {
 }
 
 #if defined(HYLE_COMPUTE_TORCH_CUDA)
+TEST(CudaDefaultCompute, NativeSoftplusPreservesOriginalTorchRounding) {
+  const auto verify = []<class Value>() {
+    std::vector<Value> values;
+    if constexpr (std::is_same_v<Value, float>) {
+      for (int i = -102400; i <= 102400; ++i)
+        values.push_back(static_cast<float>(i) / 1024);
+      std::uint32_t seed = 815;
+      for (int i = 0; i < 65536; ++i) {
+        seed = 1664525U * seed + 1013904223U;
+        values.push_back(std::bit_cast<float>(seed));
+      }
+      for (const float value : {-std::numeric_limits<float>::infinity(),
+                               std::numeric_limits<float>::infinity(),
+                               std::numeric_limits<float>::quiet_NaN(),
+                               -0.0F, 0.0F, -100.0F, -90.0F, -80.0F, 20.0F})
+        values.push_back(value);
+    } else {
+      values.resize(65536);
+      for (std::size_t i = 0; i < values.size(); ++i)
+        values[i].bits = static_cast<std::uint16_t>(i);
+    }
+    const auto run = [&](bool original) {
+      auto owner = original
+          ? compute::Context::create(cuda::device(0).value(),
+                                     compute::torch_cuda::provider()).value()
+          : cuda::create_context().value();
+      auto resource = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+      const auto bytes = std::as_bytes(std::span(values));
+      const auto description = matrix(half_test::data_type<Value>(), 1,
+                                      static_cast<std::int64_t>(values.size()));
+      auto input = mem::Buffer::create(resource.ref(), bytes.size(), 256).value();
+      auto output = mem::Buffer::create(resource.ref(), bytes.size(), 256).value();
+      EXPECT_TRUE(input.view().write(bytes).ok());
+      const auto x = compute::TensorView::create(description, input.view()).value();
+      const auto y = compute::TensorView::create(description, output.view()).value();
+      const std::array inputs{x.as_const()};
+      const std::array outputs{y};
+      auto prepared = compute::prepare(owner, compute::Operation(compute::Unary{compute::UnaryKind::kSoftplus}),
+                                        inputs, outputs).value();
+      EXPECT_EQ(prepared.provider().id, original ? compute::torch_cuda::kProviderId
+                                                 : compute::cuda_native::kProviderId);
+      auto queue = owner.create_queue().value();
+      auto invocation = prepared.create_invocation().value();
+      auto completion = invocation.submit(queue, inputs, outputs).value();
+      EXPECT_TRUE(completion.wait().ok());
+      return half_test::read<Value>(output);
+    };
+    const auto original = run(true), actual = run(false);
+    ASSERT_EQ(original.size(), actual.size());
+    for (std::size_t i = 0; i < original.size(); ++i) {
+      if (std::isnan(half_test::decode(original[i])) &&
+          std::isnan(half_test::decode(actual[i])))
+        continue;
+      using Bits = std::conditional_t<std::is_same_v<Value, float>,
+                                      std::uint32_t, std::uint16_t>;
+      ASSERT_EQ(std::bit_cast<Bits>(original[i]), std::bit_cast<Bits>(actual[i]))
+          << "type=" << static_cast<int>(half_test::data_type<Value>()) << " input=" << i;
+    }
+  };
+  verify.operator()<float>();
+  verify.operator()<hyle::simd::float16_t>();
+  verify.operator()<hyle::simd::bfloat16_t>();
+}
+
 TEST(CudaDefaultCompute, BFloat16AttentionPrefersFusedTorchBeforeGgml) {
   auto owner = cuda::create_context().value();
   const auto environment = cuda::environment(owner).value();

@@ -131,9 +131,11 @@ template <TensorKind Kind> __device__ float unary(float x) {
     return sigmoid(x);
   else if constexpr (Kind == TensorKind::kRelu)
     return isnan(x) ? x : (x > 0 ? x : 0.0F);
-  else if constexpr (Kind == TensorKind::kSoftplus)
-    return fmaxf(x, 0.0F) + log1pf(expf(-fabsf(x)));
-  else {
+  else if constexpr (Kind == TensorKind::kSoftplus) {
+    // Keep the original ATen beta=1, threshold=20 F32 evaluation order.
+    // Reassociating positive inputs changes rounding before recurrent state.
+    return x > 20.0F ? x : log1pf(expf(x));
+  } else {
     static_assert(Kind == TensorKind::kSilu || Kind == TensorKind::kGelu ||
                   Kind == TensorKind::kGeluTanh);
     constexpr auto borrowed = Kind == TensorKind::kSilu
