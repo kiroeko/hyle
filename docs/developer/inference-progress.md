@@ -13,11 +13,22 @@
 | M3 发布 | README 第一屏是结果表和一条复现命令；文章公开 | 未开始 |
 | 上游 PR | 1–3 个性能 PR 合入 vLLM、SGLang、llama.cpp 或 FlashInfer，方向取自 M1、M2 查清的问题 | 未开始 |
 
-**当前执行：** 阶段2的2.B～2.F已全部结项；2.B／2.C／2.D交付默认优化，2.E／2.F核查结束、未新增提速（`8028d5da8`／`f9dfc9c3a`），产品源码保持`319114961`。最新C32768真实八轮普通／MTP decode为参考103.6%／107.1%，prefill为94.8%／100.2%；普通短prefill差距保留，见[性能表](performance/decode.md)。本轮阶段2工作结束，阶段3／M2未启动；不代签M1历史整体验收。
+**当前执行：** M1-7a已完成，结果见[最新性能表](performance/decode.md)。3.B原已结项（实现`0b6beae0c`、验收修复`65af95c2c`、结项`bbd5ec7c7`），本次没有重开其测试或修改引擎。M2未启动。
 
 **暂停：** GLM、Kimi、DeepSeek 组件，主场景用不到的后端，基础库新功能，多卡，通用 loader、tokenizer、server。
 
 ## 任务卡（按顺序做）
+
+### M1-7a 与最新上游 llama.cpp 正面对比｜已完成
+- **完成：** `e23027045`。固定最新提供官方CUDA包的`b12063 / 2cbca389f`，官方／自编与FA开关筛选后选官方CUDA13.4、FA=on。54个正式进程（36计时＋18独立显存采样）完整性检查通过，各格3个独立进程；20项工具检查通过，无引擎改动。标准pp512为上游80.9%～88.6%；tg128为98.7%～105.4%，范围均重叠。真实八轮合并普通／MTP decode领先4.5%／14.0%，MTP第4轮慢23.1%。普通外部ready慢202ms，MTP ready范围重叠；显存多332／494MiB。逐轮原数、MTP接受／提案数与冻结第三方见[性能表](performance/decode.md)，原始日志在`.scratch/inference-upstream-head-to-head-20261103/window1/`。一日时限内结束，不现场修复落后项。
+- **目标／前提：** 先测清当前默认实现与最新上游的胜负。3.B已停在提交节点并结项；测量期间GPU只运行当前测量进程，不同时运行3.B或其它GPU任务。
+- **上游准备：** 固定开始时最新、实际提供官方Windows CUDA包的release tag/commit；获取官方包与同源码自编Release版，后者用`-DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=89`。记录CUDA／编译选项，两份各跑llama-bench并择快；flash attention开、关均测，保留原数与选择依据。GitHub发布包／源码获取已获用户授权；模型只用本地BF16 GGUF，不下载权重。
+- **A 标准吞吐：** 上游`llama-bench -ngl 99 -r 5`分两次运行：`-p 512 -n 0 -d 0,4096,16384,30720`；`-p 0 -n 128 -d 512,4608,16896,31232`。Hyle C32768：先填入d行且不计时，再测实际512行prefill及128 token生成，其余默认。双方各3个独立进程、同窗交错。核对实际上下文及处理行数；注明llama-bench tg随机token／无采样，Hyle包含greedy采样。
+- **B 真实多轮：** 现有8个不同prompt，每轮64 token。上游`llama-server -np 1 -c 32768 -ngl 99`，使用A选出的FA设置，token数组、`cache_prompt`、greedy，读服务端`timings`；服务默认端口2048并启用`--metrics`。Hyle沿用现有入口；冻结参考作为同窗第三臂。各臂至少3个独立进程，逐轮报告。
+- **C MTP：** 从上游源码和实际入口确认Qwen3.5 MTP是否受支持；支持则用B的负载比较，逐轮报告接受／提案数；不支持则比较Hyle MTP与上游最快普通模式，并明确功能边界。
+- **D 启动／显存：** 上游启动到能接受请求，对比Hyle ready；显存由独立进程采样，双方capacity相同，采样不进入速度计时进程。
+- **验收命令／输出：** `python scripts/inference-upstream-compare.py --help`列出准备、计时、独立内存与离线分析入口；按本卡本地路径完成全矩阵。输出一张Hyle÷上游表，含各深度pp512／tg128、逐轮prefill毫秒／decode tok/s、MTP、启动和显存；各指标注明方向，标记范围重叠。附更快／更慢及差幅结论。脚本提交，提交信息写实际命令和版本，原始日志只留`.scratch/`。
+- **不做：** 不修改任何引擎／kernel，不下载模型，不现场修复落后项；只记后续profile方向。到时限即报告实测与缺项，不以历史窗口补齐新结论。
 
 ### C0 收尾工作树里的 1.C 改动｜已完成
 - **完成：** `975f03ffd`；驱动8组、CPU／CUDA普通接线检查及两项CTest通过；普通与MTP greedy两轮各128个输出ID均与10-31窗口一致。
