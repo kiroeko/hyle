@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "d5_qwen_gguf_vocabulary_test.h"
+#include "cpu_default_leaf_contract.h"
 #include "hyle/compute/provider.h"
 #include "hyle/graph/executable.h"
 #include "hyle/graph/graph.h"
@@ -50,8 +51,11 @@ inline void expect_mature(const g::CompiledGraph &compiled,
   EXPECT_EQ(compiled.executable.workload(), workload);
   for (std::size_t step = 0; step < compiled.report.step_count(); ++step) {
     const auto selected = compiled.report.step(step).value();
+    const auto node = compiled.report.node(selected.node_begin).value();
     EXPECT_TRUE(std::ranges::find(providers, selected.provider.id) !=
-                providers.end())
+                providers.end() || cpu_default_leaf_contract::selected(
+                    selected.provider.id, node.kind, selected.implementation,
+                    selected.policy))
         << selected.provider.name;
   }
 }

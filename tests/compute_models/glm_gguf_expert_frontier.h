@@ -101,7 +101,12 @@ struct Frontier final {
         }
         std::printf("B09 actual %s frontier stage0 missing=%zu (%s)\n",source::label(selected->source_contract().section).data(),missing.size(),wait?"waiting for explicit supply":"missing cache fails");std::fflush(stdout);announced=true;
       }
-      if(!wait)throw std::runtime_error("B09 actual selected experts missing; explicit artifact supply is required");
+      if(!wait) {
+        std::string message="B09 actual selected experts missing; explicit artifact supply is required: ";
+        message+=source::label(selected->source_contract().section);
+        for(const auto id:missing)message+=" "+std::to_string(id);
+        throw std::runtime_error(message);
+      }
       if(std::chrono::steady_clock::now()-started>std::chrono::minutes(20))throw std::runtime_error("B09 external expert wait exceeded20 minutes");
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }

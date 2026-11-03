@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include "../compute_models/cpu_default_leaf_contract.h"
 
 #include <array>
 #include <cmath>
@@ -219,7 +220,10 @@ TEST(CpuDefaultDirect,
                  hyle::mem::system_resource(), workload);
   ASSERT_TRUE(prepared) << prepared.error().message();
   EXPECT_TRUE(prepared->provider().id == c::ggml_cpu::kProviderId ||
-              prepared->provider().id == c::onednn::kProviderId)
+              prepared->provider().id == c::onednn::kProviderId ||
+              cpu_default_leaf_contract::selected(prepared->provider().id,
+                  prepared->kind(), prepared->implementation(),
+                  prepared->route_policy()))
       << prepared->provider().name;
   EXPECT_EQ(prepared->workload(), workload);
 

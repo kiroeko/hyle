@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include "../compute_models/cpu_default_leaf_contract.h"
 
 #include <algorithm>
 #include <array>
@@ -68,7 +69,9 @@ template <class Compiled> void expect_mature(const Compiled &compiled) {
     EXPECT_TRUE(provider == c::ggml_cpu::kProviderId ||
                 provider == c::onednn::kProviderId ||
                 provider == c::aten_cpu::kProviderId ||
-                provider == g::onednn::kProviderId || qualified_norm)
+                provider == g::onednn::kProviderId || qualified_norm ||
+                cpu_default_leaf_contract::selected(
+                    provider, node.kind, report.implementation, report.policy))
         << "step=" << step << " node=" << report.node_begin
         << " operation=" << c::operation_name(node.kind)
         << " provider=" << report.provider.name;

@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "d5_qwen_gguf_vocabulary_test.h"
+#include "cpu_default_leaf_contract.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/provider.h"
@@ -64,7 +65,9 @@ inline Call prepare(const c::Context &context, mem::MemoryResourceRef resource,
                              resource, workload)
                       .value();
   EXPECT_TRUE(std::ranges::find(providers, prepared.provider().id) !=
-              providers.end())
+              providers.end() || cpu_default_leaf_contract::selected(
+                  prepared.provider().id, prepared.kind(),
+                  prepared.implementation(), prepared.route_policy()))
       << prepared.provider().name;
   EXPECT_EQ(prepared.workload(), workload);
   const auto need = prepared.workspace_requirement();

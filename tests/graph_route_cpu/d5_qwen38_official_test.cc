@@ -18,6 +18,7 @@
 #include "../compute_models/d5_moe_semantic_fragments.h"
 #include "../compute_models/d5_qwen38_24t_semantic_fragments.h"
 #include <gtest/gtest.h>
+#include "../compute_models/cpu_default_leaf_contract.h"
 
 #include <algorithm>
 #include <array>
@@ -84,12 +85,8 @@ template <class Compiled> void expect_mature(const Compiled &compiled,
     bool mature = provider == c::ggml_cpu::kProviderId ||
                   provider == c::onednn::kProviderId ||
                   provider == g::onednn::kProviderId;
-    // Native checked Gather is a bit-preserving indexing leaf, not a
-    // replacement for mature arithmetic. Keep every numerical check below.
-    mature = mature || (provider == c::native::kProviderId &&
-        node.kind == c::OperationKind::kGather &&
-        report.implementation.value() ==
-            static_cast<std::uint64_t>(c::OperationKind::kGather) + 1);
+    mature = mature || cpu_default_leaf_contract::selected(
+        provider, node.kind, report.implementation, report.policy);
     if (fixture && node.ordinal < fixture->nodes.size() && report.node_count == 1) {
       const auto roundtrip = fixture->nodes[node.ordinal].operation
           .template custom_as<c::model_ops::BlockQuantizationRoundtrip>();
@@ -990,7 +987,10 @@ TEST(CpuGraphMoeFragments, D5KimiAbsorbedMlaWithCache) {
   for (int i = 0; i < 3; ++i) {
     auto profile = d5_moe_semantic_fragments::kKdaProfiles[i];
     SCOPED_TRACE(profile->variant);
-    run_q24_semantic_fragment(d5_kimi_remaining_fragments::mla(profile));
+    // GroupedMatMul declares F32 activations; the CPU provider preserves them.
+    // Select the existing independent F32 reference, as CUDA/Apple do.
+    run_q24_semantic_fragment(d5_kimi_remaining_fragments::mla(
+        profile, /*round_grouped_input_to_bfloat=*/false));
   }
 }
 

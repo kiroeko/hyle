@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include "../compute_models/cpu_default_leaf_contract.h"
 
 #include <algorithm>
 #include <array>
@@ -113,6 +114,8 @@ void expect_mature(const DirectCall &call, const c::WorkloadContext &workload) {
   bool mature = provider == c::ggml_cpu::kProviderId ||
                 provider == c::onednn::kProviderId;
   const auto policy = call.prepared.route_policy();
+  mature = mature || cpu_default_leaf_contract::selected(
+      provider, call.prepared.kind(), call.prepared.implementation(), policy);
   mature = mature || (provider == c::native::kProviderId &&
       call.prepared.kind() == c::OperationKind::kRmsNorm &&
       policy.namespace_id == 0x48594c4543505552ULL && policy.version == 2 &&
@@ -1275,7 +1278,9 @@ TEST(CpuMoeFragments, D5KimiAbsorbedMlaWithCache) {
   for (int i = 0; i < 3; ++i) {
     auto profile = d5_moe_semantic_fragments::kKdaProfiles[i];
     SCOPED_TRACE(profile->variant);
-    run_q24_semantic_fragment(d5_kimi_remaining_fragments::mla(profile));
+    // The public grouped projection preserves its F32 activation operand.
+    run_q24_semantic_fragment(d5_kimi_remaining_fragments::mla(
+        profile, /*round_grouped_input_to_bfloat=*/false));
   }
 }
 
@@ -1831,7 +1836,10 @@ TEST_P(CpuQwenOfficialVocabulary, D5WholeVocabularyGatherMapsGlobalRows) {
       [&](const c::PreparedOperation &prepared) {
         const auto provider = prepared.provider().id;
         EXPECT_TRUE(provider == c::ggml_cpu::kProviderId ||
-                    provider == c::onednn::kProviderId);
+                    provider == c::onednn::kProviderId ||
+                    cpu_default_leaf_contract::selected(provider,
+                        prepared.kind(), prepared.implementation(),
+                        prepared.route_policy()));
       });
 }
 
