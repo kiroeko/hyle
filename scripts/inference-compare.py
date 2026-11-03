@@ -328,10 +328,19 @@ def parse_report(stdout: str, stderr: str, arm: Arm, scenario: Scenario,
         output_at = end
     if output_at != len(generated):
         raise ValueError("Generated IDs outside actual turn output ranges")
-    for field in (("committed_target_rows", "processed_tokens") if expected_mtp else
-                  ("actual_target_rows", "committed_target_rows", "processed_tokens")):
+    for field in ("committed_target_rows", "processed_tokens"):
         if field in raw and raw[field] != context:
             raise ValueError(f"Complete {field} differs from turn ledger")
+    if not expected_mtp and "actual_target_rows" in raw:
+        work = producer_work(raw)
+        # An ordinary successor can already be executing when EOS is observed.
+        # Its row is real work but never becomes part of the committed context.
+        extra = (work.get("overlap_successor_discards", 0) +
+                 work.get("restored_target_rows", 0)) if arm.hyle else 0
+        if work["actual_target_rows"] != context + extra:
+            raise ValueError("Complete actual_target_rows differs from committed/restored/discarded rows")
+        metrics["producer_actual_target_rows"] = work["actual_target_rows"]
+        metrics["derived_extra_target_rows_actual_minus_committed"] = extra
     if "prefill_target_rows" in raw and raw["prefill_target_rows"] != sum(turn["input_rows"] for turn in observed):
         raise ValueError("Complete prefill_target_rows differs from turn ledger")
     if expected_mtp:
@@ -372,7 +381,7 @@ def producer_work(report: dict) -> dict[str, int]:
     fields = ("actual_target_rows", "committed_target_rows", "prefill_target_rows", "verified_target_rows",
               "target_decode_rows", "actual_draft_rows", "prefill_draft_rows", "draft_rows", "draft_decode_rows",
               "draft_rounds", "proposals", "agreements", "accepted_drafts", "consumed_drafts", "rejected_drafts",
-              "extra_target_rows", "target_compute_calls", "draft_compute_calls",
+              "extra_target_rows", "restored_target_rows", "target_compute_calls", "draft_compute_calls",
               "overlap_successor_submissions", "overlap_successor_discards")
     result = {}
     for key in fields:

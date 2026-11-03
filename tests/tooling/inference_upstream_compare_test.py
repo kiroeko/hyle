@@ -14,6 +14,40 @@ SPEC.loader.exec_module(M)
 
 
 class UpstreamAccountingTest(unittest.TestCase):
+    def ordinary_eos_report(self):
+        result = dict(generated_ids=[11, 12, 248046], turns=[dict(
+            turn=1, input_ids=[17], requested_steps=512, output_begin=0, output_end=3,
+            context_before=0, context_after=3, pending_flushed=False,
+            prefill_seconds=.01, decode_seconds=.02)])
+        return dict(mtp=False, sessions=[dict(result=result)],
+                    prefill_seconds=.01, decode_seconds=.02, session_seconds=.03,
+                    startup_to_ready_seconds=1, startup_to_endpoint_seconds=1.03,
+                    first_token_elapsed_seconds=1.01, actual_target_rows=4,
+                    committed_target_rows=3, prefill_target_rows=1,
+                    overlap_successor_discards=1)
+
+    def parse_ordinary_eos(self, raw):
+        arm = M.MATCHED.Arm("hyle", Path("hyle.exe"), "test", None, True)
+        case = M.MATCHED.Scenario("eos", [[17]], [512])
+        return M.MATCHED.parse_report(json.dumps(raw), "", arm, case, 32768, 1.1)
+
+    def test_ordinary_eos_keeps_discarded_work_and_actual_output_count(self):
+        parsed = self.parse_ordinary_eos(self.ordinary_eos_report())
+        self.assertEqual(parsed["turns"][0]["outputs"], 3)
+        self.assertEqual(parsed["target_rows"], 3)
+        self.assertEqual(parsed["metrics"]["producer_actual_target_rows"], 4)
+        self.assertEqual(parsed["metrics"]["derived_extra_target_rows_actual_minus_committed"], 1)
+
+    def test_ordinary_eos_rejects_unexplained_work_or_committed_rows(self):
+        for field, value in (("actual_target_rows", 5), ("committed_target_rows", 4),
+                             ("overlap_successor_discards", 0),
+                             ("overlap_successor_discards", True)):
+            with self.subTest(field=field, value=value):
+                raw = self.ordinary_eos_report()
+                raw[field] = value
+                with self.assertRaises(ValueError):
+                    self.parse_ordinary_eos(raw)
+
     def test_bench_preserves_process_mean_and_checks_depth(self):
         row = dict(n_prompt=0, n_gen=128, n_depth=4608, samples_ns=[1000000000]*5, avg_ts=128)
         parsed = M.parse_bench(json.dumps([row]), "tg", [4608], 5)

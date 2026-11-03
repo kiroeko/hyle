@@ -165,6 +165,7 @@ TEST(Flashinfer, NonPositiveQkScalesDeclineBeforeNativeSoftmax) {
   auto context=compute::Context::create(cuda::device(0).value(),
       compute::flashinfer::provider()).value();
   auto memory=cuda::MemoryResource::create(context,cuda::MemoryKind::kDevice).value();
+  auto host=cuda::MemoryResource::create(context,cuda::MemoryKind::kPinnedHost).value();
   const auto type=compute::DataType::kFloat16;
   const auto q=compute::TensorDesc::dense(type,std::array<std::int64_t,4>{1,2,8,256}).value();
   const auto kv=compute::TensorDesc::dense(type,std::array<std::int64_t,4>{1,3,2,256}).value();
@@ -182,7 +183,7 @@ TEST(Flashinfer, NonPositiveQkScalesDeclineBeforeNativeSoftmax) {
         std::array{q,kv,kv},std::array{q},memory.ref());
     ASSERT_FALSE(ordinary);EXPECT_TRUE(ordinary.error().IsUnimplemented());
     const auto batch=compute::BatchProgram::prepare(context,schema,
-        {.resource=memory.ref(),.max_float_workspace_bytes=1u<<20,
+        {.resource=memory.ref(),.host_workspace=host.ref(),.max_float_workspace_bytes=1u<<20,
          .max_int_workspace_bytes=16384,.scale=scale});
     ASSERT_FALSE(batch);EXPECT_TRUE(batch.error().IsUnimplemented());
   }
