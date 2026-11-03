@@ -1389,7 +1389,7 @@
       "name": "flashinfer_cache_patches",
       "class": "in_tree",
       "repository": "https://github.com/flashinfer-ai/flashinfer.git",
-      "version": "hyle-flashinfer-msvc-mla-v22",
+      "version": "hyle-flashinfer-msvc-mla-v23",
       "revision": "69ff11fc4954396d98326656dc85debd2223f637",
       "git_tree": "f5804ee37b4780d8e1a8b6019f9d4619230987d1",
       "archive": {
@@ -1407,13 +1407,13 @@
           {
             "root": "hyle",
             "path": "third_party/flashinfer_cache/NOTICE.md",
-            "sha256": "71f37eed61cd2749e20c4b058fbc2d8d8e2601086e3902d97317711709e106e9"
+            "sha256": "49b9b0dc08f2fd70f3a97fc48abbb14490c90a5b266dabf1011d7fda6b4e049e"
           }
         ]
       },
       "vendored": {
         "path": "third_party/flashinfer_cache",
-        "tree_sha256": "8b07f816f11208200dcca5caee4f094e9178afdf92e779c00daca9bf020f50ac"
+        "tree_sha256": "996caef3defb1803ae9db6fcf0fdb504a9908d82b84745a07e227cea86df2737"
       }
     },
     {

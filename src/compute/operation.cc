@@ -1986,6 +1986,33 @@ Result<bool> detail::OperationPreparationAccess::preserves_capture_bindings(
       "prepared capture bindings provider instance disappeared"));
 }
 
+Result<bool> detail::OperationInvocationAccess::configuration_preserves_capture(
+    const OperationInvocation &invocation, ProviderExtensionId extension,
+    const void *configuration) noexcept {
+  const auto *state = invocation.state_;
+  if (!state || !configuration || !extension.valid())
+    return std::unexpected(Status::InvalidArgument("capture configuration request is invalid"));
+  if (state->phase.load(std::memory_order_acquire) != InvocationPhase::kIdle || !state->is_unique())
+    return std::unexpected(Status::Unavailable("capture configuration requires its idle unretained slot"));
+  const auto &prepared = *state->prepared;
+  auto *context = prepared.context;
+  if (!context->admission.try_enter())
+    return std::unexpected(Status::FailedPrecondition("context is closed"));
+  struct Leave final { detail::ContextState *context; ~Leave() { context->admission.leave(); } } leave{context};
+  for (std::size_t index = 0; index < context->provider_count; ++index) {
+    const auto &slot = context->providers()[index];
+    if (slot.instance != prepared.provider_instance) continue;
+    const auto *provider = detail::ProviderAccess::vtable(slot.provider);
+    const auto *capability = provider->query_extension
+        ? static_cast<const detail::CaptureConfigurationVTable *>(provider->query_extension(
+              slot.state, detail::kCaptureConfigurationExtensionId)) : nullptr;
+    if (!capability || !capability->preserves) return false;
+    return capability->preserves(prepared.provider_prepared, state->provider_state,
+                                  extension, configuration);
+  }
+  return std::unexpected(Status::Internal("capture configuration provider instance disappeared"));
+}
+
 Status detail::OperationInvocationAccess::prepare_bindings(
     OperationInvocation &invocation, std::span<const ConstTensorView> inputs,
     std::span<const TensorView> outputs) noexcept {

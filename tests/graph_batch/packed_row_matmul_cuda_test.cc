@@ -243,5 +243,72 @@ TEST(GraphBatchPackedRowMatMulCuda, RecordingOnlyNeverExecutesOrManufacturesRows
   ASSERT_ROWS_OK(gd::RecordingAccess::end(f.run)); f.expect_poison();
   ASSERT_ROWS_OK(f.bind_rows()); ASSERT_ROWS_OK(f.execute(17));
 }
+
+TEST(GraphBatchPackedRowMatMulCuda, ResetReusesCaptureOnlyAfterFreshRowsProofAndBindings) {
+  for (const auto type : {c::DataType::kFloat16, c::DataType::kBFloat16}) {
+    SCOPED_TRACE(static_cast<int>(type));
+    PackedRowsFixture f(true, type);
+    const auto execute_capture = [&](std::uint32_t active) {
+      const auto prepared = f.run.prepare_replay(f.queues(),
+          {.mode = g::ReplayMode::kPreferCapture});
+      EXPECT_TRUE(prepared.ok()) << prepared.message();
+      if (!prepared.ok()) return g::ReplayReport{};
+      const auto report = f.run.replay_report().value();
+      auto submitted = f.run.submit(f.queues());
+      EXPECT_TRUE(submitted.has_value());
+      if (submitted) {
+        const auto retired = submitted->wait();
+        EXPECT_TRUE(retired.ok()) << retired.message();
+      }
+      f.check(active);
+      return report;
+    };
+    ASSERT_ROWS_OK(f.prepare(f.layout(17))); f.upload(17); f.poison();
+    ASSERT_ROWS_OK(f.bind_rows());
+    const auto first = execute_capture(17);
+    ASSERT_GT(first.recorded_capture_range_count, 0U);
+
+    // The same row count has a NEW Batch epoch. Old native commands may stay
+    // dormant, but a raw rebind of the genuine offsets cannot restore proof.
+    ASSERT_ROWS_OK(f.prepare(f.layout(17))); f.upload(17); f.poison();
+    {
+      const auto offsets = gb::query_offsets(f.run, f.attention).value();
+      ASSERT_ROWS_OK(f.run.bind(f.inputs[6], f.descriptions[6], offsets));
+    }
+    EXPECT_FALSE(f.run.prepare_replay(f.queues(),
+        {.mode = g::ReplayMode::kPreferCapture}).ok());
+    EXPECT_FALSE(f.run.submit(f.queues())); f.expect_poison();
+    ASSERT_ROWS_OK(f.bind_rows());
+    const auto second = execute_capture(17);
+    EXPECT_EQ(second.recorded_capture_range_count, 0U);
+    EXPECT_GT(second.reused_capture_range_count, 0U);
+
+    // Changing the native M must discard its old capture before replacing Lt
+    // descriptors. NaN padding detects accidental use of the old 17-row M.
+    ASSERT_ROWS_OK(f.prepare(f.layout(1))); f.upload(1); f.poison();
+    ASSERT_ROWS_OK(f.bind_rows());
+    const auto changed = execute_capture(1);
+    EXPECT_GT(changed.recorded_capture_range_count, 0U);
+  }
+}
+
+TEST(GraphBatchPackedRowMatMulCuda, FixedFullRowsCanRecordWithoutExecutingOrAdvancingState) {
+  PackedRowsFixture f;
+  ASSERT_ROWS_OK(f.prepare(f.layout(rows))); f.upload(rows); f.poison();
+  ASSERT_ROWS_OK(gd::RecordingAccess::begin(f.run));
+  ASSERT_ROWS_OK(f.bind_rows());
+  ASSERT_ROWS_OK(f.run.prepare_replay(f.queues(), {.mode = g::ReplayMode::kPreferCapture}));
+  EXPECT_GT(f.run.replay_report()->recorded_capture_range_count, 0U);
+  EXPECT_FALSE(f.run.submit(f.queues()));
+  f.expect_poison();
+  ASSERT_ROWS_OK(gd::RecordingAccess::end(f.run));
+  ASSERT_ROWS_OK(f.prepare(f.layout(rows))); f.upload(rows); f.poison();
+  ASSERT_ROWS_OK(f.bind_rows());
+  ASSERT_ROWS_OK(f.run.prepare_replay(f.queues(), {.mode = g::ReplayMode::kPreferCapture}));
+  EXPECT_EQ(f.run.replay_report()->recorded_capture_range_count, 0U);
+  EXPECT_GT(f.run.replay_report()->reused_capture_range_count, 0U);
+  auto submitted = f.run.submit(f.queues()).value();
+  ASSERT_ROWS_OK(submitted.wait()); f.check(rows);
+}
 #undef ASSERT_ROWS_OK
 } // namespace

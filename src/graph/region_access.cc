@@ -99,12 +99,26 @@ Result<bool> RegionAccess::configure_node(Invocation&invocation,NodeId node,
       inspect_projection_node(*state->plan, state, node, extension));
   const auto &step = state->plan->steps[index];
   if (!access.access.requires_configuration) return false;
-  // The selected callback may replace private plans before returning failure.
-  // No old recording may retain those resources across that mutation.
+  if (step.kind == PlanStepKind::kOperation) {
+    auto &operation = state->invocations[index].operation;
+    HYLE_ASSIGN_OR_RETURN(const bool preserves,
+        compute::detail::OperationInvocationAccess::configuration_preserves_capture(
+            operation, extension, configuration));
+    if (preserves) {
+      // Keep only retired, nonlaunchable keyed recordings. A fresh binding
+      // hook and all original configuration/permission seals still run.
+      recycle_step_recording(*state, index);
+      state->step_bindings[index].configuration_preserves_capture = true;
+    } else {
+      invalidate_step_recording(*state, index);
+    }
+    auto configured = compute::detail::OperationInvocationAccess::configure_cold(
+        operation, extension, configuration);
+    if (!configured || !*configured) invalidate_step_recording(*state, index);
+    return configured;
+  }
+  // Unknown region configuration may replace private plans even on failure.
   invalidate_step_recording(*state, index);
-  if (step.kind == PlanStepKind::kOperation)
-    return compute::detail::OperationInvocationAccess::configure_cold(
-        state->invocations[index].operation, extension, configuration);
   struct Call final {
     const ProviderRegionPrepared *prepared;
     void *slot;

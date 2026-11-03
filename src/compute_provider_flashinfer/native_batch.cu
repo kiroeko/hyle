@@ -28,7 +28,7 @@ cudaError_t paged_prefill_bf16_d256_occupancy(int&blocks_per_sm) noexcept {
   return cudaOccupancyMaxActiveBlocksPerMultiprocessor(&blocks_per_sm,kernel,128,shared);
 }
 namespace {
-// Fixed, small uniform query geometry is independent of the growing KV
+// Fixed uniform query geometry is independent of the growing KV
 // prefix. The scheduler still materializes actual chunk/merge/mask metadata.
 // Other native dispatch domains keep their original scheduling semantics.
 std::int64_t graph_query_length(BatchSpec s,const std::int32_t*q) noexcept {
@@ -36,7 +36,7 @@ std::int64_t graph_query_length(BatchSpec s,const std::int32_t*q) noexcept {
       s.qk_head_dim!=s.value_head_dim ||
       (s.qk_head_dim!=64 && s.qk_head_dim!=128 && s.qk_head_dim!=256))return 0;
   const auto rows=q[1]-q[0];
-  if(q[0]!=0 || (rows!=1 && rows!=2) ||
+  if(q[0]!=0 || (rows!=1 && rows!=2 && (rows<64 || rows%16)) ||
       std::uint64_t(rows)*s.requests!=s.query_rows)return 0;
   for(std::uint32_t r=0;r<s.requests;++r)
     if(q[r+1]-q[r]!=rows)return 0;

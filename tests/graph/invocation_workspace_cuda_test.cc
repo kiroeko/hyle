@@ -289,6 +289,74 @@ void shared_workspace(bool metadata_preparation) {
 
 TEST(InvocationWorkspaceCuda, ExactShapesSerializeNativeUsesAndKeepCallerResultsIndependent) { shared_workspace(false); }
 TEST(InvocationWorkspaceCuda, CommandsMetadataCanPrepareWhilePriorScratchUseIsPending) { shared_workspace(true); }
+
+TEST(InvocationWorkspaceCuda, CapturedSourceQueuesSharedScratchWithoutEarlyRetirement) {
+  auto context = g::cuda::create_context().value();
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(queue.reserve_completions(16).ok());
+  auto memory = c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value();
+  auto storage = c::StorageOwner::adopt(context, std::move(memory)).value();
+  const auto route = make_route(17);
+  auto compiled = g::cuda::compile(route.graph, context, storage,
+      {.region_selection = g::RegionSelectionPolicy::kDisabled}).value();
+  const std::array routes{compiled.executable};
+  auto workspace = g::InvocationWorkspace::create(routes).value();
+  auto a = compiled.executable.create_invocation({}, workspace).value();
+  auto b = compiled.executable.create_invocation({}, workspace).value();
+  auto inputs = c::LeasePool::create(storage.ref(), 1u << 20).value();
+  auto outputs = c::LeasePool::create(storage.ref(), 1u << 20).value();
+  const auto original = values(17, 10);
+  auto input_writer = inputs.allocate(original.size() * sizeof(float), 256).value();
+  ASSERT_TRUE(input_writer.view()->write(std::as_bytes(std::span(original))).ok());
+  auto input = input_writer.publish().value();
+  auto a_writer = outputs.allocate(original.size() * sizeof(float), 256).value();
+  auto b_writer = outputs.allocate(original.size() * sizeof(float), 256).value();
+  const auto a_view = a_writer.tensor(route.description).value().as_const();
+  ASSERT_TRUE(a.bind(route.input, route.description, input).ok());
+  ASSERT_TRUE(a.bind(route.output, route.description, std::move(a_writer)).ok());
+  ASSERT_TRUE(b.bind(route.input, a_view).ok());
+  ASSERT_TRUE(b.bind(route.output, route.description, std::move(b_writer)).ok());
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  const g::ReplayOptions capture{.mode = g::ReplayMode::kRequireCapture,
+      .host_wait = g::HostWaitPolicy::kReject};
+  ASSERT_TRUE(a.prepare_replay(queues, capture).ok());
+  ASSERT_TRUE(b.prepare_replay(queues, capture).ok());
+  WorkspaceGate gate;
+  gate.arm(c::cuda::stream(queue).value());
+  ASSERT_EQ(cudaLaunchHostFunc(gate.stream, &WorkspaceGate::wait, &gate), cudaSuccess);
+  auto first = a.submit(queues).value();
+  ASSERT_EQ(first.poll().value(), c::CompletionPoll::kPending);
+  // Same Queue alone cannot authorize an unrelated public submission.
+  auto unrelated = b.submit(queues);
+  ASSERT_FALSE(unrelated); EXPECT_TRUE(unrelated.error().IsUnavailable());
+  auto producer = g::SubmissionSource::create(a, std::move(first), storage).value();
+  auto output = g::OutputSource::create(producer, route.output, storage, outputs).value();
+  const std::array bindings{output.reader_binding(route.input)};
+  const auto bound = g::bind_sources(b, bindings);
+  ASSERT_TRUE(bound.ok()) << bound.message();
+  const auto prepared = g::prepare_sources(b, queues);
+  ASSERT_TRUE(prepared.ok()) << prepared.message();
+  EXPECT_EQ(b.replay_report()->recorded_capture_range_count, 0U);
+  EXPECT_GT(b.replay_report()->reused_capture_range_count, 0U);
+  auto second = g::submit_sources(b, queues);
+  ASSERT_TRUE(second) << second.error().message();
+  EXPECT_FALSE(gate.open.load());
+  EXPECT_EQ(second->poll().value(), c::CompletionPoll::kPending);
+  EXPECT_EQ(producer.poll().value(), c::CompletionPoll::kPending);
+  EXPECT_GT(inputs.stats().active_uses, 0U);
+  gate.release();
+  ASSERT_TRUE(second->wait().ok()); *second = {};
+  ASSERT_TRUE(producer.wait().ok());
+  expect_absolute(b.output(route.output).value(), original);
+  ASSERT_TRUE(g::release_sources(b).ok());
+  output = {};
+  ASSERT_TRUE(producer.detach().ok()); producer = {};
+  a = {}; b = {}; input = {};
+  EXPECT_EQ(inputs.stats().active_uses, 0U);
+  EXPECT_EQ(outputs.stats().active_uses, 0U);
+  EXPECT_FALSE(gate.timed_out.load());
+}
+
 TEST(InvocationWorkspaceCuda, RejectsNonCallerOutputsForeignResourcesAndUnlistedRoutes) {
   auto context_result = g::cuda::create_context();
   ASSERT_TRUE(context_result) << context_result.error().message();

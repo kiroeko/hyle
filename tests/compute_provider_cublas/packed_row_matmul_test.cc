@@ -90,7 +90,7 @@ struct Case final {
         std::array{result_description}, owner.memory.ref()).value();
     EXPECT_EQ(prepared.provider().id, c::cublas::kProviderId);
     EXPECT_EQ(prepared.implementation(), c::ProviderImplementationId{2});
-    EXPECT_FALSE(prepared.capture_compatible());
+    EXPECT_TRUE(prepared.capture_compatible());
     const auto needed = prepared.workspace_requirement();
     workspace = m::Buffer::create(owner.memory.ref(), needed.size + 32,
         (std::max)(needed.alignment, std::size_t{256})).value();

@@ -20,6 +20,7 @@
 #include "hyle/compute/detail/device_choice_paged_append_backend.h"
 #include "hyle/compute/detail/indexed_copy_backend.h"
 #include "hyle/core/assert.h"
+#include "hyle/container/small_vector.h"
 
 namespace hyle::compute::cuda {
 namespace detail {
@@ -1270,6 +1271,40 @@ Status begin_capture(void *backend_context, void *backend_queue) noexcept {
   return begun;
 }
 
+// Updates are atomic with the following launch. CUDA preserves parameters of
+// already queued launches, including ones whose original Completion is pending.
+Result<bool> update_capture_executable_locked(cuda::detail::CaptureExecutableState &instance,
+                                            cudaGraph_t graph) noexcept {
+  if (instance.selected_graph == graph) return true;
+#if CUDART_VERSION >= 12000
+  cudaGraphExecUpdateResultInfo result{};
+  result.result = cudaGraphExecUpdateError;
+  const auto updated = cudaGraphExecUpdate(instance.executable, graph, &result);
+  const auto update_result = result.result;
+#else
+  cudaGraphNode_t error_node = nullptr;
+  cudaGraphExecUpdateResult update_result = cudaGraphExecUpdateError;
+  const auto updated = cudaGraphExecUpdate(instance.executable, graph, &error_node, &update_result);
+#endif
+  if (updated == cudaSuccess) {
+    if (update_result != cudaGraphExecUpdateSuccess)
+      return std::unexpected(Status::Internal("CUDA graph update returned inconsistent success"));
+    instance.selected_graph = graph;
+    return true;
+  }
+  if (updated != cudaErrorGraphExecUpdateFailure) return std::unexpected(status(updated));
+  const auto last_error = cudaGetLastError();
+  if (last_error != cudaSuccess && last_error != cudaErrorGraphExecUpdateFailure)
+    return std::unexpected(status(last_error));
+  return false;
+}
+
+Result<bool> update_capture_executable(cuda::detail::CaptureExecutableState &instance,
+                                     cudaGraph_t graph) noexcept {
+  std::lock_guard lock(instance.lock);
+  return update_capture_executable_locked(instance, graph);
+}
+
 Status end_capture(void *backend_context, void *backend_queue,
                    mem::AllocatorRef allocator, void *rebuild_storage,
                    void **captured_commands) noexcept {
@@ -1304,70 +1339,67 @@ Status end_capture(void *backend_context, void *backend_queue,
     return status(ended);
   if (graph == nullptr)
     return Status::Internal("CUDA capture returned no graph");
-  struct ExecutableStorage final {
-    cudaGraphExec_t executable = nullptr;
-    ~ExecutableStorage() {
-      if (executable != nullptr)
-        status(cudaGraphExecDestroy(executable)).IgnoreError();
-    }
-  } selected;
+  void *storage = allocator.allocate(sizeof(CapturedCommandsState), alignof(CapturedCommandsState));
+  if (!storage) return Status::ResourceExhausted("CUDA graph artifact allocation failed");
+  auto captured = util::adopt_ref(::new (storage) CapturedCommandsState{});
+  context->incref(); queue->incref();
+  captured->context = context; captured->recorded_queue = queue; captured->allocator = allocator;
+  captured->graph = std::exchange(captured_graph.graph, nullptr);
+  if (used_status) captured->device_status = std::exchange(device_status.word, nullptr);
+  std::size_t node_count = 0;
+  HYLE_RETURN_IF_ERROR(status(cudaGraphGetNodes(captured->graph, nullptr, &node_count)));
+  container::SmallVector<cudaGraphNode_t, 32> nodes;
+  if (!nodes.try_resize(node_count))
+    return Status::ResourceExhausted("CUDA graph node inspection allocation failed");
+  HYLE_RETURN_IF_ERROR(status(cudaGraphGetNodes(captured->graph, nodes.data(), &node_count)));
+  bool cacheable = true;
+  for (const auto node : nodes) {
+    cudaGraphNodeType type;
+    HYLE_RETURN_IF_ERROR(status(cudaGraphNodeGetType(node, &type)));
+    // Never extend the lifetime of graph-owned allocations through this
+    // Queue cache. Uninspected nested/control graphs stay private as well.
+    cacheable &= type != cudaGraphNodeTypeMemAlloc && type != cudaGraphNodeTypeMemFree &&
+        type != cudaGraphNodeTypeGraph;
+#if CUDART_VERSION >= 12030
+    cacheable &= type != cudaGraphNodeTypeConditional;
+#endif
+  }
+  util::Ref<cuda::detail::CaptureExecutableState> selected;
   auto *rebuild = static_cast<CapturedCommandsState *>(rebuild_storage);
   if (rebuild != nullptr && rebuild->context == context &&
       rebuild->rebuild_only && rebuild->is_unique() &&
       !rebuild->status_busy.load(std::memory_order_acquire) &&
-      rebuild->executable != nullptr) {
-#if CUDART_VERSION >= 12000
-    cudaGraphExecUpdateResultInfo result{};
-    result.result = cudaGraphExecUpdateError;
-    const auto updated =
-        cudaGraphExecUpdate(rebuild->executable, graph, &result);
-    const auto update_result = result.result;
-#else
-    cudaGraphNode_t error_node = nullptr;
-    cudaGraphExecUpdateResult update_result = cudaGraphExecUpdateError;
-    const auto updated = cudaGraphExecUpdate(rebuild->executable, graph,
-                                             &error_node, &update_result);
-#endif
-    if (updated == cudaSuccess) {
-      if (update_result != cudaGraphExecUpdateSuccess)
-        return Status::Internal("CUDA graph update returned inconsistent success");
-      // Only the executable moves. The old state/status word remain immutable
-      // until the common owner destroys the consumed, nonlaunchable seed.
-      selected.executable = std::exchange(rebuild->executable, nullptr);
-    } else if (updated == cudaErrorGraphExecUpdateFailure) {
-      // Structural incompatibility is the only native update rejection that
-      // permits fresh instantiation. Do not swallow an unrelated sticky error.
-      const auto last_error = cudaGetLastError();
-      if (last_error != cudaSuccess &&
-          last_error != cudaErrorGraphExecUpdateFailure)
-        return status(last_error);
-    } else {
-      return status(updated);
-    }
+      rebuild->executable && rebuild->recorded_queue == queue &&
+      rebuild->executable->node_count == node_count) {
+    HYLE_ASSIGN_OR_RETURN(const auto updated, update_capture_executable(*rebuild->executable, captured->graph));
+    if (updated) selected = rebuild->executable;
   }
-  if (selected.executable == nullptr)
-    HYLE_RETURN_IF_ERROR(status(
-        cudaGraphInstantiateWithFlags(&selected.executable, graph, 0)));
-  const Status graph_destroyed =
-      status(cudaGraphDestroy(std::exchange(captured_graph.graph, nullptr)));
-  if (!graph_destroyed.ok())
-    return graph_destroyed;
-  void *storage = allocator.allocate(sizeof(CapturedCommandsState),
-                                     alignof(CapturedCommandsState));
-  if (storage == nullptr)
-    return Status::ResourceExhausted("CUDA graph artifact allocation failed");
-  context->incref();
-  auto *captured = ::new (storage) CapturedCommandsState{};
-  captured->context = context;
-  captured->executable = std::exchange(selected.executable, nullptr);
-  captured->allocator = allocator;
-  if (used_status)
-    captured->device_status = std::exchange(device_status.word, nullptr);
-  else
+  std::lock_guard cache_lock(queue->capture_executables_lock);
+  auto *available = static_cast<util::Ref<cuda::detail::CaptureExecutableState> *>(nullptr);
+  for (auto &candidate : queue->capture_executables) {
+    if (!cacheable) break;
+    if (!candidate) { if (!available) available = &candidate; continue; }
+    if (selected || candidate->node_count != node_count) continue;
+    HYLE_ASSIGN_OR_RETURN(const auto updated, update_capture_executable(*candidate, captured->graph));
+    if (updated) selected = candidate;
+  }
+  if (!selected) {
+    auto *bytes = queue->allocator.allocate(sizeof(cuda::detail::CaptureExecutableState),
+                                            alignof(cuda::detail::CaptureExecutableState));
+    if (!bytes) return Status::ResourceExhausted("CUDA graph instance allocation failed");
+    selected = util::adopt_ref(::new (bytes) cuda::detail::CaptureExecutableState{});
+    context->incref(); selected->context = context; selected->allocator = queue->allocator;
+    selected->node_count = node_count;
+    HYLE_RETURN_IF_ERROR(status(cudaGraphInstantiateWithFlags(&selected->executable, captured->graph, 0)));
+    selected->selected_graph = captured->graph;
+    if (available) *available = selected;
+  }
+  captured->executable = std::move(selected);
+  if (!used_status)
     // No captured node referenced this word. Keep one idle word in its
     // original Queue owner; checked artifacts still retain independent words.
     queue->capture_device_status = std::exchange(device_status.word, nullptr);
-  *captured_commands = captured;
+  *captured_commands = captured.release();
   return Status::Ok();
 }
 
@@ -1403,7 +1435,7 @@ bool recycle_capture_after_retirement(void *captured_commands) noexcept {
   // The caller's actual native retirement proof is required even for unchecked
   // captures, whose launch does not hold a status-reference refcount.
   if (captured == nullptr || captured->rebuild_only ||
-      captured->executable == nullptr || !captured->is_unique() ||
+      !captured->executable || !captured->is_unique() ||
       captured->status_busy.load(std::memory_order_acquire))
     return false;
   captured->rebuild_only = true;
@@ -1421,17 +1453,33 @@ launch_capture(void *backend_context, void *backend_queue,
     return compute::detail::EnqueueResult::rejected(
         Status::InvalidArgument("CUDA graph launch context is invalid"));
   }
-  if (captured->rebuild_only || captured->executable == nullptr)
+  if (captured->rebuild_only || !captured->executable)
     return compute::detail::EnqueueResult::rejected(
         Status::FailedPrecondition("CUDA graph artifact is rebuild-only"));
+  cuda::detail::ScopedPrimaryContext scope(context->primary);
+  if (!scope) return compute::detail::EnqueueResult::rejected(scope.status());
+  const auto launch = [&]() -> Status {
+    // Graph objects are not threadsafe, even when only being read by an
+    // update/instantiation. A foreign Queue gets the old private instance
+    // behavior instead of introducing a shared-graph dependency across Queues.
+    std::lock_guard template_lock(captured->foreign_lock);
+    if (queue != captured->recorded_queue) {
+      if (!captured->foreign_executable)
+        HYLE_RETURN_IF_ERROR(status(cudaGraphInstantiateWithFlags(
+            &captured->foreign_executable, captured->graph, 0)));
+      return status(cudaGraphLaunch(captured->foreign_executable, queue->stream));
+    }
+    auto &instance = *captured->executable;
+    std::lock_guard lock(instance.lock);
+    HYLE_ASSIGN_OR_RETURN(const auto updated, update_capture_executable_locked(instance, captured->graph));
+    if (!updated) return Status::FailedPrecondition("CUDA graph template is incompatible with its qualified instance");
+    return status(cudaGraphLaunch(instance.executable, queue->stream));
+  };
   if (captured->device_status != nullptr) {
     if (queue->capture_owned || queue->active_sequence == nullptr)
       return compute::detail::EnqueueResult::rejected(
           Status::FailedPrecondition("checked CUDA capture requires an "
                                      "ordinary admitted replay sequence"));
-    cuda::detail::ScopedPrimaryContext scope(context->primary);
-    if (!scope)
-      return compute::detail::EnqueueResult::rejected(scope.status());
     bool idle = false;
     if (!captured->status_busy.compare_exchange_strong(
             idle, true, std::memory_order_acq_rel, std::memory_order_acquire))
@@ -1457,19 +1505,15 @@ launch_capture(void *backend_context, void *backend_queue,
                                         queue->stream);
     if (seeded != cudaSuccess)
       return compute::detail::EnqueueResult::accepted_command(status(seeded));
-    const auto launched = cudaGraphLaunch(captured->executable, queue->stream);
-    if (launched != cudaSuccess)
-      return compute::detail::EnqueueResult::accepted_command(status(launched));
+    const auto launched = launch();
+    if (!launched.ok()) return compute::detail::EnqueueResult::accepted_command(launched);
     return compute::detail::EnqueueResult::accepted_command(
         status(cuda::detail::merge_device_status(context->status_merge_kernel,
                                                  captured->device_status, word,
                                                  queue->stream)));
   }
-  const cudaError_t launched =
-      cudaGraphLaunch(captured->executable, queue->stream);
-  if (launched != cudaSuccess) {
-    return compute::detail::EnqueueResult::rejected(status(launched));
-  }
+  const auto launched = launch();
+  if (!launched.ok()) return compute::detail::EnqueueResult::rejected(launched);
   return compute::detail::EnqueueResult::accepted_command();
 }
 

@@ -132,6 +132,9 @@ struct CublasInvocation final {
   std::int64_t rows = -1;
   std::int64_t layout_rows = -1;
   bool source_owned_rows = false;
+  // Last installed native layout mode; clear revokes the current proof while
+  // leaving these original native arguments alive until actual replacement.
+  bool layout_source_owned_rows = false;
 };
 
 Status translate(cublasStatus_t result, const char *operation) noexcept {
@@ -428,7 +431,7 @@ constexpr ProviderRuntimeProperties kRuntime{
 };
 constexpr ProviderRuntimeProperties packed_runtime() noexcept {
   auto runtime = kRuntime;
-  runtime.capture_compatible = false;
+  runtime.capture_compatible = true;
   return runtime;
 }
 
@@ -759,9 +762,9 @@ detail::EnqueueResult submit(void *state, void *lane, detail::QueueSequence &seq
   auto &prepared = *static_cast<CublasPrepared *>(state);
   auto &invocation = *static_cast<CublasInvocation *>(lane);
   if (prepared.packed_rows) {
-    if (sequence.recording())
+    if (sequence.recording() && !invocation.source_owned_rows)
       return detail::EnqueueResult::rejected(Status::Unimplemented(
-          "cuBLAS packed rows support Commands only"));
+          "cuBLAS packed capture requires the original immutable Batch rows proof"));
     if (invocation.rows < 0)
       return detail::EnqueueResult::rejected(Status::Unimplemented(
           "cuBLAS packed rows require the typed host-owned offsets proof"));
@@ -792,7 +795,7 @@ detail::EnqueueResult submit(void *state, void *lane, detail::QueueSequence &seq
     cudaStreamCaptureStatus capture = cudaStreamCaptureStatusNone;
     auto checked = cuda::status(cudaStreamIsCapturing(*stream, &capture));
     if (!checked.ok()) return detail::EnqueueResult::rejected(std::move(checked));
-    if (capture != cudaStreamCaptureStatusNone)
+    if (capture != cudaStreamCaptureStatusNone && !invocation.source_owned_rows)
       return detail::EnqueueResult::rejected(Status::Unimplemented(
           "cuBLAS packed rows do not support native capture"));
     auto offsets = cuda::detail::const_pointer(inputs[2].storage(), alignof(std::int32_t), 1);
@@ -998,7 +1001,27 @@ Status configure_packed_rows(const detail::ProviderPrepared &value, void *lane,
   invocation.offsets = config.offsets;
   invocation.rows = static_cast<std::int64_t>(config.rows);
   invocation.source_owned_rows = config.proof.valid();
+  invocation.layout_source_owned_rows = invocation.source_owned_rows;
   return Status::Ok();
+}
+
+Result<bool> configuration_preserves_capture(const detail::ProviderPrepared &value,
+    const void *lane, ProviderExtensionId kind, const void *configuration) noexcept {
+  if (value.vtable != &kPreparedVTable || !value.state || !lane || !configuration ||
+      kind != detail::kPackedRowMatMulRowsExtensionId) return false;
+  const auto &prepared = *static_cast<const CublasPrepared *>(value.state);
+  const auto &invocation = *static_cast<const CublasInvocation *>(lane);
+  if (!prepared.packed_rows || invocation.prepared != &prepared) return false;
+  const auto &config = *static_cast<const detail::PackedRowMatMulRowsConfiguration *>(configuration);
+  // Clearing only unbinds host authority. It never frees or changes native
+  // layouts/workspace; replay cannot be prepared until fresh proof is sealed.
+  if (config.clear) return true;
+  return invocation.layout_source_owned_rows && config.proof.valid() &&
+      invocation.layout_rows >= 0 && config.rows == std::size_t(invocation.layout_rows) &&
+      config.rows <= prepared.geometry.matrices[0].rows &&
+      config.offsets.description() == prepared.offsets_description &&
+      same_view(config.proof.offsets(), config.offsets) && config.proof.rows() == config.rows &&
+      config.proof.capacity() == prepared.geometry.matrices[0].rows;
 }
 
 Status inspect_capture_bindings(const detail::ProviderPrepared &value,
@@ -1035,7 +1058,10 @@ const void *query_extension(void *, ProviderExtensionId id) noexcept {
   if (id == detail::kPackedRowMatMulRowsExtensionId) return &rows;
   static constexpr detail::CaptureBindingsVTable capture{
       .inspect = &inspect_capture_bindings};
-  return id == detail::kCaptureBindingsExtensionId ? &capture : nullptr;
+  if (id == detail::kCaptureBindingsExtensionId) return &capture;
+  static constexpr detail::CaptureConfigurationVTable configuration_capture{
+      .preserves = &configuration_preserves_capture};
+  return id == detail::kCaptureConfigurationExtensionId ? &configuration_capture : nullptr;
 }
 
 #define HYLE_CUBLAS_STRINGIFY_IMPL(value) #value

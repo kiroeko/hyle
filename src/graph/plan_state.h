@@ -1167,6 +1167,9 @@ struct StepBindingState final {
   // Learned from this original Queue's actual capture implementation, never
   // inferred from an opaque MemoryResource allocation token.
   bool stable_binding_identity = false;
+  // A selected cold callback proved its native arguments unchanged. The next
+  // binding hook still runs, but may retain dormant keyed captures on success.
+  bool configuration_preserves_capture = false;
 };
 
 // One membership in the original input_ids/output_ids lists. These links only

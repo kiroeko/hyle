@@ -165,6 +165,12 @@ scaled DSA format with inline per-group scales or a BF16 positional tail.
 
 Non-graph prefill split partials use the scheduler's actual output indptr row
 count. Packed GQA query tiles do not add output rows. Query and materialization
-use the same checked count; graph plans retain their original padded bounds.
+use the same checked count. Fixed uniform large-query graph plans bound
+partials by their query rows and integral KV partition count; other graph
+plans retain their original padded bounds.
 Kernel indexing, F32 partial values, merge arithmetic and caller workspace caps
 are unchanged.
+
+Fixed large-query graph planning rounds its padded work bound to whole query
+tiles and uses a bounded multi-wave grid. Only host planning and workspace
+bounds change; existing device kernels and merge arithmetic are unchanged.

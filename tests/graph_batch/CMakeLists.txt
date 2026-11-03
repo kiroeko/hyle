@@ -170,7 +170,7 @@ endif()
 if(_HYLE_COMPUTE_HAVE_CUDA AND TARGET hyle_compute_route_cuda AND
    TARGET hyle_compute_provider_flashinfer)
   if(TARGET hyle_graph_route_cuda)
-    hyle_add_test(graph_batch NAME cuda_capture SOURCES batch_capture_test.cc
+    hyle_add_test(graph_batch NAME cuda_capture SOURCES batch_capture_test.cc fixed_prefill_capture_cuda_test.cc
       DEPS hyle_graph_route_cuda hyle_simd)
     hyle_stage_runtime(hyle_graph_batch_cuda_capture_test)
     hyle_add_test(graph_batch NAME cuda_shared_workspace SOURCES shared_workspace_cuda_test.cc

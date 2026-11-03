@@ -5343,7 +5343,12 @@ Result<detail::SubmissionCursor> detail::begin_submission(Invocation &invocation
       }
     }
     if (permissions.enabled()) HYLE_RETURN_IF_ERROR(permissions.admit(batch));
-    HYLE_RETURN_IF_ERROR(state->workspace.admit(batch));
+    const compute::detail::QueueRef *workspace_queue = nullptr;
+    if (state->plan->segments.size() == 1 && state->plan->required_queue_count == 1 &&
+        shared_lane(*state->plan, state->plan->segments.front().lane))
+      workspace_queue = &state->queues[state->plan->segments.front().lane.ordinal()];
+    HYLE_RETURN_IF_ERROR(state->workspace.admit(batch, workspace_queue, ordered.admit != nullptr)
+        .WithContext("admitting shared invocation workspace"));
   }
   HYLE_ASSIGN_OR_RETURN(auto cursor, SubmissionCursor::begin(invocation, queues, false));
   if (episode) episode->batch = std::move(batch);

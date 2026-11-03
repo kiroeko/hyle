@@ -127,14 +127,30 @@ struct ContextState final : util::RefCounted<ContextState> {
   const void *status_merge_kernel = device_status_merge_kernel();
 };
 
+// Native allocation only. Immutable graph templates and their original
+// Completions retain all argument/status/retirement ownership separately.
+struct CaptureExecutableState final : util::RefCounted<CaptureExecutableState> {
+  void destroy() noexcept;
+  ContextState *context = nullptr;
+  mem::AllocatorRef allocator{};
+  util::SpinLock lock;
+  cudaGraphExec_t executable = nullptr;
+  cudaGraph_t selected_graph = nullptr; // Borrowed only while its template lives.
+  std::size_t node_count = 0;
+};
 struct CapturedCommandsState final : util::RefCounted<CapturedCommandsState> {
   void destroy() noexcept;
   ContextState *context = nullptr;
-  cudaGraphExec_t executable = nullptr;
+  QueueState *recorded_queue = nullptr;
+  cudaGraph_t graph = nullptr;
+  util::Ref<CaptureExecutableState> executable;
+  // Preserve the old independent-artifact semantics on a foreign Queue.
+  util::SpinLock foreign_lock;
+  cudaGraphExec_t foreign_executable = nullptr;
   mem::AllocatorRef allocator{};
   unsigned *device_status = nullptr;
   std::atomic<bool> status_busy{false};
-  // A retired executable kept only as update storage can never launch again.
+  // An artifact recycled as update storage is no longer launchable.
   bool rebuild_only = false;
 };
 
@@ -169,6 +185,12 @@ struct QueueState final : util::RefCounted<QueueState> {
   EventSlot *active_sequence = nullptr;
   unsigned *capture_device_status = nullptr;
   bool capture_status_used = false;
+  // Bounded native instance cache. CUDA graph updates change only future
+  // launches; every template keeps its own immutable nodes and status word.
+  // Queue admission serializes cold cache selection; instance locks serialize
+  // update+launch with any other artifact using that native allocation.
+  util::SpinLock capture_executables_lock;
+  std::array<util::Ref<CaptureExecutableState>, 4> capture_executables;
 };
 
 class CudaResourceBase : public mem::MemoryResource {

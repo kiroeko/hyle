@@ -1,6 +1,7 @@
 #pragma once
 
 #include "hyle/compute/provider.h"
+#include "hyle/error/result.h"
 #include "hyle/error/status.h"
 
 namespace hyle::compute::detail {
@@ -19,5 +20,18 @@ struct CaptureBindingsVTable final {
   // Unknown implementations return Unimplemented, never a provider-wide proof.
   Status (*inspect)(const ProviderPrepared &,
                      bool *preserves_private_arguments) noexcept = nullptr;
+};
+
+// Optional, object-local cold configuration qualification. This is a separate
+// extension so existing CaptureBindingsVTable/provider ABIs remain intact.
+// True proves that applying this exact configuration cannot replace any
+// address, algorithm or scalar encoded in an existing native recording.
+// Readiness and permissions must still be revoked and qualified again.
+inline constexpr ProviderExtensionId kCaptureConfigurationExtensionId{
+    0x48594c4543415054ULL, 0x434f4e4649475552ULL, 1};
+struct CaptureConfigurationVTable final {
+  Result<bool> (*preserves)(const ProviderPrepared &, const void *invocation,
+                           ProviderExtensionId configuration_kind,
+                           const void *configuration) noexcept = nullptr;
 };
 } // namespace hyle::compute::detail

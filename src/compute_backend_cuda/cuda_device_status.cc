@@ -4,21 +4,48 @@
 #include <utility>
 
 namespace hyle::compute::cuda::detail {
-void CapturedCommandsState::destroy() noexcept {
+void CaptureExecutableState::destroy() noexcept {
   auto *retained_context = context;
   const auto selected = allocator;
   {
     ScopedPrimaryContext scope(context->primary);
+    if (scope && executable)
+      runtime_status(cudaGraphExecDestroy(executable)).IgnoreError();
+  }
+  this->~CaptureExecutableState();
+  selected.deallocate(this, sizeof(CaptureExecutableState), alignof(CaptureExecutableState));
+  retained_context->decref();
+}
+void CapturedCommandsState::destroy() noexcept {
+  auto *retained_context = context;
+  auto *retained_queue = recorded_queue;
+  const auto selected = allocator;
+  {
+    ScopedPrimaryContext scope(context->primary);
     if (scope) {
-      if (executable != nullptr)
-        runtime_status(cudaGraphExecDestroy(executable)).IgnoreError();
+      if (executable) {
+        std::lock_guard lock(executable->lock);
+        if (executable->selected_graph == graph) executable->selected_graph = nullptr;
+      }
+      if (foreign_executable)
+        runtime_status(cudaGraphExecDestroy(foreign_executable)).IgnoreError();
+      if (graph) runtime_status(cudaGraphDestroy(graph)).IgnoreError();
       if (device_status != nullptr)
         runtime_status(cudaFree(device_status)).IgnoreError();
     }
   }
+  executable.reset();
+  if (retained_queue) {
+    std::lock_guard lock(retained_queue->capture_executables_lock);
+    // The cache adds no lifetime beyond its last immutable template. It
+    // coordinates native allocations, never outstanding execution/retirement.
+    for (auto &instance : retained_queue->capture_executables)
+      if (instance && instance->is_unique()) instance.reset();
+  }
   this->~CapturedCommandsState();
   selected.deallocate(this, sizeof(CapturedCommandsState),
                       alignof(CapturedCommandsState));
+  if (retained_queue) retained_queue->decref();
   retained_context->decref();
 }
 

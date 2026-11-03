@@ -145,6 +145,11 @@ struct OperationInvocationAccess final {
   HYLE_COMPUTE_API static Result<bool> configure_cold(
       OperationInvocation &, ProviderExtensionId,
       const void *configuration) noexcept;
+  // Pure query on the original idle slot. Unknown providers/configurations
+  // return false; this never grants permission or applies the configuration.
+  HYLE_COMPUTE_API static Result<bool> configuration_preserves_capture(
+      const OperationInvocation &, ProviderExtensionId,
+      const void *configuration) noexcept;
   HYLE_COMPUTE_API static EnqueueResult
   enqueue(OperationInvocation &invocation, QueueSequence &sequence,
           std::span<const ConstTensorView> inputs,

@@ -2377,13 +2377,18 @@ public:
       physical_slots = role == GraphRole::kMtpContinuation && !device_mtp_continuous_enabled() ? 1 : execution_slot_count;
     }
     const auto planned_slot_uses = shape_plan.uses({requests, tokens, role, completion, sampling_index, false, packing});
+    const bool fixed_prefill_capture = packs_prefill(packing) && replay_policy == ReplayPolicy::kAuto &&
+        execution.kind() == BackendKind::kCuda && !execution.has_cpu_assist() && !scheduler &&
+        cache_plan.in_flight_batches >= 2 &&
+        !cache_plan.draft_cache && role == GraphRole::kText && tokens == bounded_prefill_rows &&
+        !selected_sampler.enabled && selected_sampler.modifiers.empty();
     std::array<g::ReplayMode, execution_slot_count> replay_modes{};
     for (std::size_t slot = 0; slot < physical_slots; ++slot)
-      // Effective lengths and paged layouts change between prefill requests.
-      // Auto uses commands instead of paying a fresh capture for each layout.
+      // Fixed full chunks retain qualified captures across changing prefixes.
+      // Other packed extents keep the original Commands fallback.
       replay_modes[slot] = (!selected_sampler.modifiers.history.empty() ||
-          (packs_prefill(packing) && replay_policy == ReplayPolicy::kAuto)) ? g::ReplayMode::kCommands
-          : imported_sources ? g::ReplayMode::kPreferCapture : select_replay_mode(
+          (packs_prefill(packing) && replay_policy == ReplayPolicy::kAuto && !fixed_prefill_capture)) ? g::ReplayMode::kCommands
+          : fixed_prefill_capture || imported_sources ? g::ReplayMode::kPreferCapture : select_replay_mode(
           replay_policy, planned_slot_uses[slot], selected_sampler.enabled);
     auto result = prepare_phase({definition, selected->program, selected_sampler},
         {tokens, physical_slots, diagnostic, imported_sources, planned_slot_uses, replay_modes},
@@ -2607,7 +2612,8 @@ public:
   }
 
   DecodeRecording prepare_decode_recordings(std::size_t sampling_index, bool mtp,
-      std::shared_ptr<Session> *prepared_session, DecodeRecordingStage stage) {
+      std::shared_ptr<Session> *prepared_session, DecodeRecordingStage stage,
+      std::size_t prefill_rows = 0) {
     DecodeRecording report;
     if (prepared_session && *prepared_session)
       throw std::runtime_error("decode recording requires an empty session destination");
@@ -2618,18 +2624,23 @@ public:
     const auto role = mtp ? GraphRole::kMtpRound : GraphRole::kText;
     const bool device_pair = mtp && device_mtp_successor_;
     const auto relay_role = mtp ? (device_pair ? GraphRole::kMtpContinuation : GraphRole::kMtpCatchupRound) : GraphRole::kText;
-    const auto rows = mtp ? std::size_t{2} : std::size_t{1};
+    const bool prefill_recording = prefill_rows != 0;
+    if (prefill_recording && (mtp || cache_plan.draft_cache || prefill_rows != bounded_prefill_rows))
+      throw std::logic_error("prefill recording requires its original fixed ordinary chunk");
+    const auto packing = prefill_recording ? RowPacking::kPrefill : RowPacking::kRectangular;
+    const auto rows = prefill_recording ? prefill_rows : mtp ? std::size_t{2} : std::size_t{1};
     const std::array chunk{rows};
-    prepare_execution(chunk, 1, role, TextCompletion::kEmitNext, sampling_index);
+    prepare_execution(chunk, 1, role, TextCompletion::kEmitNext, sampling_index, packing);
     if (mtp) prepare_execution(chunk, 1, GraphRole::kMtpCatchupRound, TextCompletion::kEmitNext, sampling_index);
-    prepare_relay_execution(1, sampling_index, relay_role);
-    auto &direct = prepare_child(rows, false, 1, role, TextCompletion::kEmitNext, sampling_index);
-    auto &imported = prepare_child(rows, false, 1, relay_role, TextCompletion::kEmitNext, sampling_index, true);
+    if (!prefill_recording) prepare_relay_execution(1, sampling_index, relay_role);
+    auto &direct = prepare_child(rows, false, 1, role, TextCompletion::kEmitNext, sampling_index, false, packing);
+    auto &imported = prepare_child(rows, false, 1, relay_role, TextCompletion::kEmitNext, sampling_index, true, packing);
     if (direct.slots[0].replay_mode == g::ReplayMode::kCommands) return report;
     if (active_step || successor_step || carrier_borrowed || snapshot_versions.live)
       throw std::runtime_error("decode recording requires an idle model before request admission");
     const auto begin = Clock::now();
-    const auto recording_phase = stage == DecodeRecordingStage::kStartup ? "decode_warmup" : "decode_recovery";
+    const auto recording_phase = prefill_recording ? "prefill_recording"
+        : stage == DecodeRecordingStage::kStartup ? "decode_warmup" : "decode_recovery";
     std::cerr << recording_phase << "_begin\n";
     auto session = create_session(chunk, {}, role, {}, false, TextCompletion::kEmitNext, sampling_index);
     hyle::util::ScopeGuard retire_session{[&]() noexcept {
@@ -2651,14 +2662,14 @@ public:
           if (auto original = carrier.borrow(); original)
             g::detail::RecordingAccess::end(**original).IgnoreError();
       }};
-      const std::array<std::int32_t, 1> placeholder{0};
+      const std::vector<std::int32_t> placeholder(prefill_recording ? rows : 1, 0);
       const std::array requests{EvaluationRequest{session, placeholder}};
       const RecordingStepInputs inputs{&phase, slot, previous ? previous->token : c::ConstTensorView{},
           previous ? previous->catchup : c::ConstTensorView{},
           previous ? previous->prefix : c::ConstTensorView{},
           previous ? std::span<const g::detail::RecordingStoreInputs>(previous->states) : std::span<const g::detail::RecordingStoreInputs>{}};
-      prepare_evaluations<true>(requests, nullptr, phase.family->role, TextCompletion::kEmitNext,
-          {}, 0, 0, RowPacking::kRectangular, &inputs);
+      prepare_evaluations<true>(requests, nullptr, phase.family->role, phase.family->completion,
+          {}, 0, prefill_recording ? rows : 0, packing, &inputs);
       auto &step = *active_step;
       if (step.submitted || step.execution.has_completion() || session->length() || session->head->next_id != -1)
         throw std::runtime_error("cold recording unexpectedly executed or advanced private model state");
@@ -2670,8 +2681,9 @@ public:
       };
       if (!mtp || (drafts_token(phase.family->role) &&
           (phase.family->role != GraphRole::kMtpContinuation || device_mtp_continuous_enabled()))) {
-        next.token = output_view(mtp ? (device_pair ? phase.slots[slot].data.successor_pending
-            : phase.slots[slot].data.successor_token) : phase.slots[slot].data.next_id);
+        if (phase.family->completion == TextCompletion::kEmitNext)
+          next.token = output_view(mtp ? (device_pair ? phase.slots[slot].data.successor_pending
+              : phase.slots[slot].data.successor_token) : phase.slots[slot].data.next_id);
         if (mtp) next.catchup = output_view(device_pair ? phase.slots[slot].data.successor_selected_catchup
             : phase.slots[slot].data.successor_catchup);
         if (device_pair) next.prefix = output_view(phase.slots[slot].data.successor_prefix_index);
@@ -2696,6 +2708,22 @@ public:
       return next;
     };
     auto previous = record(direct, 0, nullptr);
+    if (prefill_recording) {
+      auto &state_direct = prepare_child(rows, false, 1, role, TextCompletion::kStateOnly,
+          sampling_index, false, packing);
+      auto &state_imported = prepare_child(rows, false, 1, role, TextCompletion::kStateOnly,
+          sampling_index, true, packing);
+      const auto initial_states = record(state_direct, 0, nullptr);
+      previous = initial_states;
+      std::array<Arguments, execution_slot_count> states;
+      for (const auto slot : {std::size_t{1}, std::size_t{2}, std::size_t{0}, std::size_t{1}}) {
+        previous = record(state_imported, slot, &previous);
+        states[slot] = previous;
+      }
+      for (std::size_t slot = 0; slot < execution_slot_count; ++slot)
+        (void)record(imported, slot, &states[(slot + execution_slot_count - 1) % execution_slot_count]);
+      (void)record(imported, 1, &initial_states);
+    }
     if (mtp) {
       if (device_mtp_continuous_enabled()) {
         for (const auto slot : {std::size_t{0}, std::size_t{1}, std::size_t{2}, std::size_t{0}})
@@ -2707,7 +2735,7 @@ public:
       // Terminal T1 roles record on first use. Retaining their private native
       // preparation here exceeds the startup-recording memory budget.
     }
-    if (!device_pair) for (const auto slot : {std::size_t{0}, std::size_t{1}, std::size_t{2}, std::size_t{0}})
+    if (!device_pair && !prefill_recording) for (const auto slot : {std::size_t{0}, std::size_t{1}, std::size_t{2}, std::size_t{0}})
       previous = record(imported, slot, &previous);
     if (active_step || successor_step || carrier_borrowed || session->pending || session->stopping ||
         session->failed || session->length() || session->head->next_id != -1 || snapshot_versions.live != 1)
@@ -2728,6 +2756,14 @@ public:
         << " capture_associated_cold_prep_seconds=" << report.capture_preparation_seconds
         << " seconds=" << report.seconds << " recorded_preparations=" << report.preparations << '\n';
     return report;
+  }
+
+  DecodeRecording prepare_prefill_recordings(std::size_t sampling_index) {
+    if (cache_plan.draft_cache || !bounded_prefill_rows) return {};
+    const auto &sampling = sampling_configuration(sampling_index).configuration;
+    if (sampling.enabled || !sampling.modifiers.empty()) return {};
+    return prepare_decode_recordings(sampling_index, false, nullptr,
+        DecodeRecordingStage::kStartup, bounded_prefill_rows);
   }
 
   hyle::Status resolve_device_mtp_successor(StepState &step, const cache::State &head) noexcept {
@@ -3239,12 +3275,15 @@ public:
     const bool relay = bool(incoming);
     const bool recording_imported = recording_only && recording && recording->phase && recording->phase->imported_sources;
     if constexpr (recording_only) {
+      const bool fixed_prefill = packs_prefill(packing) && !cache_plan.draft_cache &&
+          role == GraphRole::kText && physical_rows == bounded_prefill_rows &&
+          requests.size() == 1 && requests[0].ids.size() == physical_rows;
       if (!recording || !recording->phase || recording->slot >= recording->phase->slots.size() || relay ||
           (cache_plan.draft_cache ? (role != GraphRole::kMtpRound && role != GraphRole::kMtpCatchupRound &&
               role != GraphRole::kMtpSingle && role != GraphRole::kMtpCatchupSingle &&
               role != GraphRole::kMtpContinuation) : role != GraphRole::kText) ||
-          completion != TextCompletion::kEmitNext ||
-          requests.size() != 1 || requests[0].ids.size() != 1 || physical_rows || packing != RowPacking::kRectangular)
+          (!fixed_prefill && (completion != TextCompletion::kEmitNext ||
+          requests.size() != 1 || requests[0].ids.size() != 1 || physical_rows || packing != RowPacking::kRectangular)))
         throw std::runtime_error("cold recording requires its original single-request decode carrier");
       if (!g::detail::RecordingAccess::active(*take(recording->phase->slots[recording->slot].carrier.borrow())))
         throw std::runtime_error("cold recording requires Graph's non-executable mode");
@@ -3467,9 +3506,9 @@ public:
       step.execution.state_transactions = &phase.slots[slot].transactions;
       step.execution.nodes.assign(phase.append_nodes.begin(), phase.append_nodes.end());
       if constexpr (recording_only) if (recording_imported) {
-        if (recording->states.size() != phase.state_sources.size() || !recording->token.valid())
+        if (recording->states.size() != phase.state_sources.size() || (!packed_prefill && !recording->token.valid()))
           throw std::runtime_error("cold recording lacks its original producer coordinates");
-        check(g::detail::RecordingAccess::bind_input(run, phase.token_port, recording->token));
+        if (!packed_prefill) check(g::detail::RecordingAccess::bind_input(run, phase.token_port, recording->token));
         if (has_mtp(role))
           check(g::detail::RecordingAccess::bind_input(run, phase.catchup_token_port, recording->catchup));
         if (phase.predecessor_prefix_port)
@@ -3554,7 +3593,11 @@ public:
         // A multi-chunk current turn can bind frozen request input. All other
         // inputs retain the borrowed original slot's synchronous packet.
         const auto &request = requests[0];
-        const bool uploaded = packed_prefill && width == 1 && !selected_sampler.enabled && request.prefill_packets &&
+        // Captures name this slot's original packet. Per-request uploaded
+        // slices have different addresses/offsets and cannot share that key.
+        const bool uploaded = packed_prefill && width == 1 &&
+            phase.slots[slot].replay_mode == g::ReplayMode::kCommands &&
+            !selected_sampler.enabled && request.prefill_packets &&
             take(request.prefill_packets->prepare(io.input_packet, request.prefill_prompt,
                 request.prefill_offset, step.members[0].base->length, physical_tokens,
                 static_cast<std::size_t>(geometry.conv_kernel - 1), request.prefill_turn,
@@ -3829,7 +3872,8 @@ public:
             execution.storage_owner(), optional_sources));
         if (captured) for (auto &state : sources.successor_states) check(state.capture(sources.submission));
       } else if (sources.prefill) captured = take(sources.capture_outputs(*step.execution.run,
-          step.execution.completion, {}, execution.storage_owner(), false, true));
+          step.execution.completion, {}, execution.storage_owner(), false,
+          step.replay_route != g::ReplayRoute::kCaptured));
       else captured = take(sources.capture(*step.execution.run, step.execution.completion,
           phase.id_port, execution.storage_owner(), take(program_slot.io.readback(io.next_id))->pool(), optional_sources));
       if (!captured) step.execution.sources.reset();
@@ -6340,7 +6384,9 @@ struct SynchronousGenerationStepAdapter final {
   std::size_t input_rows = 0, active_rows = 0, physical_rows = 0;
   Clock::time_point episode_start{};
   GenerationContinuation *continuation = nullptr;
-  hyle::container::SmallVector<PreparedGenerationCall, 1> following;
+  using FollowingCalls = decltype(GenerationContinuation::pending_successor_calls);
+  FollowingCalls local_following;
+  FollowingCalls &following;
   std::shared_ptr<StepSources> source;
   bool resumed = false;
 
@@ -6349,17 +6395,18 @@ struct SynchronousGenerationStepAdapter final {
       GenerationContinuation *pending = nullptr)
       : model(selected), calls(original), trace_states(trace), packed_prefill(packed),
         packed_verification_capacity(verification_capacity), after_submit(submitted), batch_observer(observer),
-        role(calls[0].role), generation(calls[0].generation), continuation(pending) {
+        role(calls[0].role), generation(calls[0].generation), continuation(pending),
+        following(pending ? pending->pending_successor_calls : local_following) {
     resumed = continuation && calls.data() == continuation->pending_calls.data() &&
         !continuation->pending_calls.empty() && model.active_step && model.active_step->submitted;
     if (resumed && !generation)
       packed_prefill = packs_prefill(model.active_step->phase->family->packing);
     if (continuation && continuation->drive_cursor.awaiting_current) {
-      if (!model.active_step || model.successor_step || !model.active_step->submitted ||
+      if (!model.active_step || !continuation->matches_pending_successor(model.successor_step.get()) || !model.active_step->submitted ||
           model.active_step->members.size() != calls.size())
         throw std::logic_error("synchronous generation lost its original pending batch");
       submitted_geometry();
-    } else prepare_scratch();
+    } else { following.clear(); prepare_scratch(); }
   }
   void prepare_scratch() {
     if (!inputs.try_reserve(calls.size())) throw std::bad_alloc{};
@@ -6440,6 +6487,10 @@ struct SynchronousGenerationStepAdapter final {
     const bool complete = begin + count == request.prompt.size();
     const auto completion = complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly;
     const auto physical = model.prefill_capacity(count, completion, request.sampling_index, 1, role);
+    // A fixed full-row capture cannot consume a shorter, dynamically packed
+    // tail. Retire its producer normally before configuring that last batch.
+    if (model.active_step->replay_route == g::ReplayRoute::kCaptured && count != physical)
+      return inference::StepSuccessor::kNone;
     const auto found = model.phases.find({1, physical, role, completion, request.sampling_index, true, RowPacking::kPrefill});
     if (found == model.phases.end()) return inference::StepSuccessor::kNone;
     const auto slot = (model.active_step->state_slot + 1) % execution_slot_count;
@@ -6584,6 +6635,7 @@ struct SynchronousGenerationStepAdapter final {
     if (disposition == inference::StepCarry::kDeferred) {
       if (!continuation) throw std::logic_error("deferred prefill lost its original request continuation");
       continuation->hold_current(std::span(following.data(), following.size()), true, true);
+      following.clear();
     }
   }
   void finish_refusal() {}
@@ -7651,6 +7703,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     if (!warmed.error().IsUnimplemented()) check(warmed.error());
     std::cerr << "startup_prefill_warmup skipped=unimplemented reason=" << warmed.error().message() << '\n';
   }
+  if constexpr (!mtp) if (first_turn_only)
+    (void)model.prepare_prefill_recordings(requests.front().sampling_index);
   const std::array packed_prefill_offset{startup_prefill_warmup.calls,
       startup_prefill_warmup.target_rows, startup_prefill_warmup.physical_rows};
   std::cerr << "startup_prefill_warmup calls=" << startup_prefill_warmup.calls

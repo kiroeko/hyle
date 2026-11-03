@@ -1567,7 +1567,7 @@ Status prepare_command_bindings(detail::InvocationState &invocation,
   changed |= native_inputs || cached.native_inputs;
   if (changed) {
     if (cached.stable_binding_identity && !native_inputs && !cached.native_inputs &&
-        cached.prepared_revision == cached.revision)
+        (cached.prepared_revision == cached.revision || cached.configuration_preserves_capture))
       detail::recycle_step_recording(invocation, static_cast<std::uint32_t>(step_index));
     else if (cached.stable_binding_identity && !native_inputs && !cached.native_inputs)
       invalidate_recording(invocation, static_cast<std::uint32_t>(step_index),
@@ -1596,6 +1596,7 @@ Status prepare_command_bindings(detail::InvocationState &invocation,
             .subspan(step.output_begin, step.output_count)));
   }
   cached.prepared_revision = cached.revision;
+  cached.configuration_preserves_capture = false;
   return Status::Ok();
 }
 
@@ -8700,6 +8701,7 @@ void invalidate_recording(detail::InvocationState &invocation,
   const bool retain_rebuild_seed = mode == CaptureInvalidation::kNativeArguments ||
                                     mode == CaptureInvalidation::kKeepExistingSeed;
   auto &binding = invocation.step_bindings[selected_step];
+  if (!recycle) binding.configuration_preserves_capture = false;
   // Saturation cannot preserve readiness: every changed binding must be
   // prepared again, even when a retired physical recording can stay dormant.
   if (binding.revision != UINT64_MAX)
@@ -10420,7 +10422,8 @@ Status prepare_replay_impl(detail::InvocationState *state_,
   // Commands planning only installs metadata and qualifies dependency routes.
   // Provider binding/sealing hooks cannot touch tensor payloads or accept work.
   // Capture may execute provider preparation and keeps exclusive scratch use.
-  HYLE_RETURN_IF_ERROR(detail::begin_preparation(*state_, options.mode != ReplayMode::kCommands));
+  HYLE_RETURN_IF_ERROR(detail::begin_preparation(*state_,
+      options.mode != ReplayMode::kCommands && !reuse_only));
   PreparationScope preparation{*state_};
   if (options.mode != ReplayMode::kCommands &&
       options.mode != ReplayMode::kPreferCapture &&

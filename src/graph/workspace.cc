@@ -3,9 +3,11 @@
 #include <algorithm>
 #include <bit>
 #include <memory>
+#include <mutex>
 #include <utility>
 
 #include "hyle/mem/alignment.h"
+#include "hyle/compute/detail/lease_access.h"
 #include "plan_state.h"
 #include "workspace_internal.h"
 
@@ -222,8 +224,29 @@ Result<detail::WorkspaceInstance> detail::WorkspaceInstance::borrow(
 }
 Result<compute::LeaseUseBatch> detail::WorkspaceInstance::begin_preparation() const noexcept {
   if (!shared_) return compute::LeaseUseBatch{};
+  std::lock_guard lock(shared_->admission_lock);
+  // Even failed exclusive preparation must not let a later native writer
+  // assume it was ordered behind work from the previous Queue.
+  shared_->ordered_queue.reset();
   HYLE_ASSIGN_OR_RETURN(auto use, shared_->preparation_uses.begin());
   HYLE_RETURN_IF_ERROR(use.write(shared_->writer));
   return use;
+}
+
+Status detail::WorkspaceInstance::admit(compute::LeaseUseBatch &use,
+    const compute::detail::QueueRef *queue, bool has_ordered_source) const noexcept {
+  if (!shared_) return Status::Ok();
+  std::lock_guard lock(shared_->admission_lock);
+  const auto exclusive = use.write(shared_->writer);
+  if (exclusive.ok()) {
+    shared_->ordered_queue = queue ? *queue : compute::detail::QueueRef{};
+    return Status::Ok();
+  }
+  if (!exclusive.IsUnavailable() || !has_ordered_source || !queue || !queue->is_open() ||
+      !shared_->ordered_queue.same_owner(*queue)) return exclusive;
+  // Every outstanding use of this private root was admitted on this exact
+  // physical Queue. Native queue order serializes them; each original use
+  // still remains attached until its own real completion retires.
+  return compute::detail::LeaseAccess::write_unique(use, shared_->writer, true);
 }
 } // namespace hyle::graph

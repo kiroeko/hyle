@@ -235,7 +235,7 @@
     {
       "path": "include/flashinfer/attention/scheduler.cuh",
       "before_sha256": "a11a39aea393cdb380ad9439aac9170cd96849d7426ebbb920c5c8cdadfcc575",
-      "after_sha256": "cdacd90a0d4f1f391e8f59b78027bfcb506ddce4afed9a87a07344633004b178",
+      "after_sha256": "3404fad85681bc28b507615b433ca26103f8d91f8c2c039b913cdab6515394b0",
       "edits": [
         {
           "before": "    int64_t uniform_q_len, cudaStream_t stream, uint32_t kv_dtype_bytes = 2) {",
@@ -360,6 +360,18 @@
         {
           "before": "    plan_info.v_offset = float_allocator.aligned_alloc_offset(\n        num_qo_heads * padded_batch_size * cta_tile_q * head_dim_vo * partial_value_bytes, 16,\n        \"batch_prefill_tmp_v\");\n    plan_info.s_offset = float_allocator.aligned_alloc_offset(\n        num_qo_heads * padded_batch_size * cta_tile_q * sizeof(float), 16, \"batch_prefill_tmp_s\");",
           "after": "    // Non-graph kernels address partials through o_indptr and guard real Q\n    // rows. Packed GQA tiles are not extra output rows. Graph replay retains\n    // the original padded bound because its active layout may change.\n    const size_t padded_partial_rows = size_t(padded_batch_size) * cta_tile_q;\n    size_t partial_rows = padded_partial_rows;\n    if (!enable_cuda_graph && !o_indptr_vec.empty()) {\n      if (o_indptr_vec.back() < 0 || uint64_t(o_indptr_vec.back()) > padded_partial_rows) {\n        FLASHINFER_ERROR(\"prefill partial row count exceeds its padded bound\");\n      }\n      partial_rows = size_t(o_indptr_vec.back());\n    }\n    plan_info.v_offset = float_allocator.aligned_alloc_offset(\n        size_t(num_qo_heads) * partial_rows * head_dim_vo * partial_value_bytes, 16,\n        \"batch_prefill_tmp_v\");\n    plan_info.s_offset = float_allocator.aligned_alloc_offset(\n        size_t(num_qo_heads) * partial_rows * sizeof(float), 16, \"batch_prefill_tmp_s\");"
+        },
+        {
+          "before": "  int num_blocks_per_sm = 2;",
+          "after": "  int num_blocks_per_sm = 2;\n  // A bounded multi-wave graph grid for a fixed large query geometry.\n  if (enable_cuda_graph && uniform_q_len >= 64) num_blocks_per_sm *= 4;"
+        },
+        {
+          "before": "  // Calculate the actual needed CTA when considering sliding window",
+          "after": "  if (enable_cuda_graph && uniform_q_len >= 64 && total_num_tiles_q) {\n    max_batch_size_if_split = ceil_div(max_batch_size_if_split, total_num_tiles_q) * total_num_tiles_q;\n  }\n  // Calculate the actual needed CTA when considering sliding window"
+        },
+        {
+          "before": "    if (!enable_cuda_graph && !o_indptr_vec.empty()) {",
+          "after": "    if (enable_cuda_graph && uniform_q_len >= 64) {\n      const size_t packed_rows = size_t(uniform_q_len) * (num_qo_heads / num_kv_heads);\n      const size_t tiles_per_request = ceil_div(packed_rows, size_t(cta_tile_q));\n      if (!tiles_per_request || size_t(padded_batch_size) % tiles_per_request) {\n        FLASHINFER_ERROR(\"fixed query graph has no integral tile bound\");\n      }\n      partial_rows = size_t(uniform_q_len) * (size_t(padded_batch_size) / tiles_per_request);\n      if (partial_rows > padded_partial_rows) {\n        FLASHINFER_ERROR(\"fixed query graph exceeds padded partial bound\");\n      }\n    } else if (!enable_cuda_graph && !o_indptr_vec.empty()) {"
         }
       ]
     },

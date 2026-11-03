@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <chrono>
@@ -495,6 +496,60 @@ TEST(CudaDeviceStatus, RebuiltCheckedCaptureUsesNewArgumentsAndKeepsOldFailure) 
       0, std::as_writable_bytes(std::span{actual})).ok());
   EXPECT_EQ(actual, (std::array{-1, 13, 0, 2, 0}));
   EXPECT_TRUE(old_failure.wait().IsOutOfRange());
+}
+
+TEST(CudaDeviceStatus, CompatibleTemplatesKeepPendingArgumentsAndStatusIndependent) {
+  Fixture fixture;
+  ASSERT_TRUE(fixture.write(std::array{-1, 7, 0, 0}).ok());
+  const auto capture = [&](std::size_t element, std::size_t counter) {
+    auto recording = QueueSequence::begin(fixture.first).value();
+    auto extension = CommandCaptureAccess::query(fixture.first).value();
+    EXPECT_TRUE(CommandCaptureAccess::begin(extension, recording).ok());
+    EXPECT_TRUE(fixture.check(recording, 1, false, element).ok());
+    auto *output = cuda::pointer<std::byte>(fixture.values.view()).value() + counter * sizeof(int);
+    recording.record(EnqueueResult::accepted_command(cuda::status(
+        launch_increment_kernel(cuda::stream(recording).value(), output, 1))));
+    auto result = CommandCaptureAccess::end(extension, recording, fixture.stats.get()).value();
+    EXPECT_TRUE(recording.finish().value().wait().ok());
+    return result;
+  };
+  auto a = capture(0, 2), b = capture(1, 3);
+  auto *backend = static_cast<cuda::detail::QueueState *>(
+      compute::detail::ContextAccess::backend_queue(fixture.first));
+  EXPECT_EQ(std::count_if(backend->capture_executables.begin(), backend->capture_executables.end(),
+      [](const auto &instance) { return bool(instance); }), 1);
+  Gate gate;
+  Release release{gate, cuda::stream(fixture.first).value()};
+  ASSERT_EQ(cudaLaunchHostFunc(release.stream, &Gate::wait, &gate), cudaSuccess);
+  auto first = QueueSequence::begin(fixture.first).value();
+  first.record(a.enqueue(first));
+  auto pending_a = first.finish().value();
+  auto second = QueueSequence::begin(fixture.first).value();
+  second.record(b.enqueue(second));
+  auto pending_b = second.finish().value();
+  EXPECT_EQ(pending_a.poll().value(), compute::CompletionPoll::kPending);
+  EXPECT_EQ(pending_b.poll().value(), compute::CompletionPoll::kPending);
+  gate.release();
+  EXPECT_TRUE(pending_a.wait().IsOutOfRange());
+  EXPECT_TRUE(pending_b.wait().ok());
+  std::array<int, 4> actual;
+  ASSERT_TRUE(fixture.values.read(0, std::as_writable_bytes(std::span(actual))).ok());
+  EXPECT_EQ(actual, (std::array{-1, 7, 1, 1}));
+  // A foreign Queue retains the old independent-artifact launch semantics.
+  auto foreign = QueueSequence::begin(fixture.second).value();
+  foreign.record(a.enqueue(foreign));
+  EXPECT_TRUE(foreign.finish().value().wait().IsOutOfRange());
+  EXPECT_TRUE(pending_a.wait().IsOutOfRange());
+  auto again = QueueSequence::begin(fixture.first).value();
+  again.record(b.enqueue(again));
+  EXPECT_TRUE(again.finish().value().wait().ok());
+  ASSERT_TRUE(fixture.values.read(0, std::as_writable_bytes(std::span(actual))).ok());
+  EXPECT_EQ(actual, (std::array{-1, 7, 2, 2}));
+  a = {}; b = {};
+  EXPECT_TRUE(std::all_of(backend->capture_executables.begin(), backend->capture_executables.end(),
+      [](const auto &instance) { return !instance; }));
+  EXPECT_TRUE(pending_a.wait().IsOutOfRange());
+  EXPECT_TRUE(pending_b.wait().ok());
 }
 
 TEST(CudaDeviceStatus, CapturedStatusRejectsOverlappingReuseAndAbortIsClean) {

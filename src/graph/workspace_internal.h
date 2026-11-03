@@ -1,11 +1,13 @@
 #pragma once
 
 #include "hyle/compute/resource_leases.h"
+#include "hyle/compute/detail/queue_ref.h"
 #include "hyle/container/small_vector.h"
 #include "hyle/graph/executable.h"
 #include "hyle/graph/workspace.h"
 #include "hyle/mem/lifetime_plan.h"
 #include "hyle/util/ref_counted.h"
+#include "hyle/util/spin_lock.h"
 
 namespace hyle::graph::detail {
 struct InvocationWorkspaceState final : util::RefCounted<InvocationWorkspaceState> {
@@ -18,6 +20,11 @@ struct InvocationWorkspaceState final : util::RefCounted<InvocationWorkspaceStat
   // Coordinates only. The private writer/use admission remains authoritative.
   mem::BufferView coordinates;
   compute::LeaseUsePool preparation_uses;
+  // Identity of the Queue shared by all currently admitted native writers.
+  // The lease's original use counters/completions remain the only retirement
+  // authority. Exclusive preparation clears this optional ordering fact.
+  mutable util::SpinLock admission_lock;
+  compute::detail::QueueRef ordered_queue;
 };
 struct WorkspaceAccess final {
   static InvocationWorkspace adopt(InvocationWorkspaceState *state) noexcept { return InvocationWorkspace(state); }
@@ -47,9 +54,9 @@ class WorkspaceInstance final {
     return mem::ConstBufferView(views_[request]);
   }
   bool shared() const noexcept { return static_cast<bool>(shared_); }
-  Status admit(compute::LeaseUseBatch &use) const noexcept {
-    return shared_ ? use.write(shared_->writer) : Status::Ok();
-  }
+  Status admit(compute::LeaseUseBatch &use,
+      const compute::detail::QueueRef *ordered_queue = nullptr,
+      bool has_ordered_source = false) const noexcept;
   Result<compute::LeaseUseBatch> begin_preparation() const noexcept;
  private:
   mem::PlannedBuffers owned_;

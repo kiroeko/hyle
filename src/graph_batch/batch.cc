@@ -951,7 +951,7 @@ const gd::ResourcePayloadVTable resource_table{
     auto&p=*static_cast<BatchResources*>(opaque);HYLE_RETURN_IF_ERROR(p.reusable());
     HYLE_RETURN_IF_ERROR(detail::PagedAppendAccess::reset(invocation));
     HYLE_RETURN_IF_ERROR(gd::RegionAccess::revoke_preparation(invocation));
-    for(const auto&consumer:p.query_rows)
+    for(const auto&consumer:p.query_rows)if(!consumer.operation.valid())
       HYLE_RETURN_IF_ERROR(gd::RegionAccess::invalidate_commands(invocation,consumer.step));
     for(const auto&consumer:p.query_rows){
       if(consumer.operation.valid()){
@@ -1570,8 +1570,6 @@ Status bind_query_rows(graph::Invocation&invocation,NodeId attention,ValueId off
         std::array<std::int64_t,1>{std::int64_t(view.size()/sizeof(std::int32_t))}));
     return bind_metadata(invocation,offsets_input,description,std::move(offsets));
   }
-  if(gd::RecordingAccess::active(invocation))
-    return Status::Unimplemented("dynamic host query rows do not configure recording-only graphs");
   struct Producer{
     NodeId attention;Slot*slot=nullptr;c::BatchLayoutVersion layout;c::ReadLease offsets;
     std::uint64_t epoch=0;
@@ -1595,6 +1593,9 @@ Status bind_query_rows(graph::Invocation&invocation,NodeId attention,ValueId off
   },&producer));
   HYLE_ASSIGN_OR_RETURN(auto description,c::TensorDesc::dense(c::DataType::kInt32,
       std::array<std::int64_t,1>{2}));
+  if(gd::RecordingAccess::active(invocation) &&
+      producer.layout.facts().query_rows!=producer.slot->region->query_rows)
+    return Status::Unimplemented("dynamic host query rows do not configure recording-only graphs");
   HYLE_ASSIGN_OR_RETURN(auto tensor,producer.offsets.tensor(description));
   if(consumers.size()>p->query_rows.max_size()-p->query_rows.size())
     return Status::ResourceExhausted("query rows consumer capacity overflows");
@@ -1611,7 +1612,7 @@ Status bind_query_rows(graph::Invocation&invocation,NodeId attention,ValueId off
     HYLE_ASSIGN_OR_RETURN(const auto facts,control.inspect());
     if(facts.offsets_input!=offsets_input || facts.capacity!=producer.slot->region->query_rows || facts.rows>facts.capacity)
       return Status::InvalidArgument("query rows proof differs from its original binding domain");
-    for(const auto&consumer:consumers)
+    for(const auto&consumer:consumers)if(!consumer.operation.valid())
       HYLE_RETURN_IF_ERROR(gd::RegionAccess::invalidate_commands(invocation,consumer.step));
     for(const auto&consumer:consumers)HYLE_RETURN_IF_ERROR(configure_query_rows(invocation,consumer,control,facts));
     return Status::Ok();
