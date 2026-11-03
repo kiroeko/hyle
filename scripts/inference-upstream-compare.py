@@ -121,18 +121,34 @@ def server_turn(raw, requested_prompt, cached_history, quota, *, mtp=False):
 def hyle_mtp_counts(raw):
     """Count verified proposals from the exported committed ledger, no guesses."""
     detail = raw["sessions"][0]["result"]
+    maximum = raw.get("mtp_max_drafts", 1)
+    if isinstance(maximum, bool) or not isinstance(maximum, int) or maximum < 0:
+        raise ValueError("Invalid Hyle maximum draft count")
     result = {turn["turn"]: dict(proposals=0, accepted=0) for turn in detail["turns"]}
+    draft_rounds = 0
     for record in raw["sessions"][0]["ledger"]:
         if not record["generation"]:
             continue
-        proposals, accepted = record["draft_limit"], record["consumed_drafts"]
-        if not 0 <= accepted <= proposals <= 1:
-            raise ValueError("Expected Hyle's default K1 proposal ledger")
+        limit, accepted = record["draft_limit"], record["consumed_drafts"]
+        verified = record.get("verified_rows")
+        if verified is None and maximum == 1:
+            verified = limit + 1  # Older default-K1 producer reports.
+        if (any(isinstance(value, bool) or not isinstance(value, int)
+                for value in (limit, accepted, verified)) or
+                not 0 <= accepted <= verified - 1 <= limit <= maximum):
+            raise ValueError("Hyle MTP ledger has invalid actual verifier rows or draft bounds")
+        proposals = verified - 1
+        if "verification_input_ids" in record and len(record["verification_input_ids"]) != verified:
+            raise ValueError("Hyle MTP verifier rows differ from its original input IDs")
+        draft_rounds += int(limit != 0)
         result[record["turn"]]["proposals"] += proposals
         result[record["turn"]]["accepted"] += accepted
-    if (sum(t["proposals"] for t in result.values()) != raw["draft_rounds"] or
+    if (draft_rounds != raw["draft_rounds"] or
             sum(t["accepted"] for t in result.values()) != raw["consumed_drafts"]):
         raise ValueError("Hyle per-turn MTP ledger differs from complete counters")
+    if "rounds" in detail and sum(row["proposals"] for row in detail["rounds"]) != sum(
+            turn["proposals"] for turn in result.values()):
+        raise ValueError("Hyle MTP ledger differs from actual round proposal counts")
     return result
 
 

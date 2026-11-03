@@ -240,7 +240,8 @@ def capture_rounds(stderr: str, count: int) -> list[dict]:
 
 
 def parse_report(stdout: str, stderr: str, arm: Arm, scenario: Scenario,
-                 capacity: int, wall: float, expected_mtp: bool = False) -> dict:
+                 capacity: int, wall: float, expected_mtp: bool = False,
+                 *, expected_max_drafts: int = 1) -> dict:
     # Hyle emits one complete final object; the native reference emits a pretty
     # printed object. Preserve the producer's stdout and never rewrite its JSON.
     raw = json.loads(stdout.lstrip("\ufeff"))
@@ -254,8 +255,8 @@ def parse_report(stdout: str, stderr: str, arm: Arm, scenario: Scenario,
             for field in ("mtp_tensors", "draft_program_graph_calls", "draft_vocabulary_rows"):
                 if raw.get(field, 0) != 0:
                     raise ValueError(f"Unexpected ordinary draft work: {field}")
-        elif raw.get("mtp_max_drafts") != 1:
-            raise ValueError("Expected the requested Hyle K1 MTP producer")
+        elif raw.get("mtp_max_drafts") != expected_max_drafts:
+            raise ValueError(f"Expected the requested Hyle K{expected_max_drafts} MTP producer")
     else:
         detail = raw
     turns, generated = detail["turns"], detail["generated_ids"]
@@ -355,6 +356,18 @@ def parse_report(stdout: str, stderr: str, arm: Arm, scenario: Scenario,
         # it is independent of the number of rejected draft proposals.
         metrics["derived_extra_target_rows_actual_minus_committed"] = work["actual_target_rows"] - context
         proposals = work.get("proposals", work.get("draft_rounds"))
+        if arm.hyle and "rounds" in detail:
+            # draft_rounds counts verifier episodes with a nonzero draft limit,
+            # not actual proposals. A K3 episode can contribute three; a
+            # threshold-clipped episode can contribute none.
+            counts = [row.get("proposals") for row in detail["rounds"]]
+            if any(isinstance(value, bool) or not isinstance(value, int) or value < 0
+                   for value in counts):
+                raise ValueError("MTP rounds lack actual proposal counts")
+            proposals = sum(counts)
+            metrics["proposals_sum_of_producer_rounds"] = proposals
+        elif arm.hyle and expected_max_drafts != 1:
+            raise ValueError("Multi-draft MTP requires actual round proposal counts")
         if proposals is None and all("proposals" in turn["producer_work"] for turn in observed):
             proposals = sum(turn["producer_work"]["proposals"] for turn in observed)
             metrics["proposals_sum_of_producer_turns"] = proposals

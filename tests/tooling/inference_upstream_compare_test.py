@@ -107,6 +107,46 @@ class UpstreamAccountingTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "complete counters"):
             M.hyle_mtp_counts(raw)
 
+    def test_multi_draft_counts_actual_rows_instead_of_limit_or_round_count(self):
+        raw = dict(mtp_max_drafts=3, draft_rounds=2, consumed_drafts=3, sessions=[dict(
+            result=dict(turns=[dict(turn=1), dict(turn=2)],
+                        rounds=[dict(proposals=3), dict(proposals=1), dict(proposals=0)]), ledger=[
+                dict(generation=True, turn=1, draft_limit=3, verified_rows=4, consumed_drafts=2),
+                dict(generation=True, turn=2, draft_limit=3, verified_rows=2, consumed_drafts=1),
+                dict(generation=True, turn=2, draft_limit=0, verified_rows=1, consumed_drafts=0)])])
+        self.assertEqual(M.hyle_mtp_counts(raw), {1:dict(proposals=3,accepted=2), 2:dict(proposals=1,accepted=1)})
+        for field, value in (("verified_rows", None), ("verified_rows", True), ("verified_rows", 5),
+                             ("consumed_drafts", 4), ("draft_limit", True)):
+            with self.subTest(field=field, value=value):
+                changed = json.loads(json.dumps(raw))
+                changed["sessions"][0]["ledger"][0][field] = value
+                with self.assertRaises(ValueError):
+                    M.hyle_mtp_counts(changed)
+        raw["sessions"][0]["result"]["rounds"][0]["proposals"] = 2
+        with self.assertRaisesRegex(ValueError, "actual round"):
+            M.hyle_mtp_counts(raw)
+
+    def test_multi_draft_report_requires_requested_width_and_actual_proposals(self):
+        raw = self.ordinary_eos_report()
+        raw.update(mtp=True, mtp_max_drafts=3, actual_target_rows=5, committed_target_rows=5,
+                   actual_draft_rows=6, draft_rounds=1, consumed_drafts=3)
+        result = raw["sessions"][0]["result"]
+        result["generated_ids"] = [11,12,13,14,248046]
+        result["turns"][0].update(output_end=5,context_after=5)
+        result["rounds"] = [dict(proposals=3)]
+        arm = M.MATCHED.Arm("hyle",Path("hyle.exe"),"test",None,True)
+        scenario = M.MATCHED.Scenario("multi",[[17]],[512])
+        with self.assertRaisesRegex(ValueError,"K1"):
+            M.MATCHED.parse_report(json.dumps(raw),"",arm,scenario,32768,1.1,True)
+        parsed = M.MATCHED.parse_report(json.dumps(raw),"",arm,scenario,32768,1.1,True,
+                                       expected_max_drafts=3)
+        self.assertEqual(parsed["metrics"]["proposals_sum_of_producer_rounds"],3)
+        self.assertEqual(parsed["metrics"]["derived_rejected_drafts_proposals_minus_accepted"],0)
+        del result["rounds"]
+        with self.assertRaisesRegex(ValueError,"actual round proposal"):
+            M.MATCHED.parse_report(json.dumps(raw),"",arm,scenario,32768,1.1,True,
+                                   expected_max_drafts=3)
+
     def test_standard_schedule_has_exact_512_compute_rows(self):
         from types import SimpleNamespace
         with tempfile.TemporaryDirectory(dir=ROOT / ".scratch") as tmp:

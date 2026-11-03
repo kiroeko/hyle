@@ -64,7 +64,7 @@ def classify(name):
     name = name.lower()
     if any(x in name for x in ("flash_attn", "batchprefillwith", "mergestateskernel", "merge_states")):
         return "attention"
-    if any(x in name for x in ("gemm", "gemvx", "mul_mat_vec", "splitkreduce")):
+    if any(x in name for x in ("gemm", "gemvx", "mul_mat_vec", "mul_mat_f", "splitkreduce")):
         return "gemm"
     if "gated_delta_net" in name or "ssm_conv" in name:
         return "gdn_conv"
@@ -73,7 +73,7 @@ def classify(name):
     if "convert_unary" in name:
         return "conversion"
     if any(x in name for x in ("concat", "cpy_", "copy_rows", "gather", "k_get_rows", "k_set_rows",
-                                 "append_rows", "::publish(")):
+                                 "append_rows", "append_choice_rows", "::publish(")):
         return "copy"
     return "other"
 

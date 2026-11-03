@@ -1704,7 +1704,8 @@ public:
               << " seconds=" << std::chrono::duration<double>(Clock::now() - admission_start).count() << '\n';
   }
 
-  void prepare_draft_program(std::size_t rows, bool head, std::size_t sampling_index = 0) {
+  void prepare_draft_program(std::size_t rows, bool head, std::size_t sampling_index = 0,
+      std::size_t planned_uses = 1) {
     preparation_started_ = true;
     if (state_storage_prepared || !cache_plan.draft_cache || !rows || rows > capacity)
       throw std::runtime_error("prepare a positive NextN width before selected cache storage");
@@ -1715,8 +1716,10 @@ public:
     prepare_cache();
     // Optional source transform remains with its original cold Model owner.
     const bool subset = head && prepare_draft_vocabulary(selected_sampler);
+    // Repeated proposal heads share this original carrier. Their cold usage
+    // bound can select capture; writer-only repair retains its ready-leaf path.
     const auto replay_mode = !selected_sampler.modifiers.history.empty() && head ? g::ReplayMode::kCommands
-        : select_replay_mode(replay_policy, 1, selected_sampler.enabled);
+        : select_replay_mode(replay_policy, head ? planned_uses : 1, selected_sampler.enabled);
     auto built = build_draft_program({rows, selected_index, head, replay_mode, min_draft_probability()},
         {geometry, precision, weights, projections, weight_meanings, ffn_placement.cpu_layers()},
         {attention_schema, cache_plan.hidden_slots, cache_plan.active_sequences, cache_plan.candidate_boundaries,
@@ -1945,15 +1948,16 @@ public:
 
   // Target family widths and replay counts stay with the finite request plan;
   // every recursive consumer shares this model's actual NextN/sampler programs.
-  void prepare_recursive_round_programs(std::size_t sampling_index = 0, bool conditional = false) {
+  void prepare_recursive_round_programs(std::size_t sampling_index = 0, bool conditional = false,
+      std::size_t planned_uses = 1) {
     const auto &selected_sampler = sampling_configuration(sampling_index).configuration;
     for (std::size_t rows = 1; rows <= cache_plan.candidate_boundaries; ++rows) {
       prepare_draft_program(rows, false);
       if (selected_sampler.enabled || !selected_sampler.modifiers.empty())
         prepare_prefix_sampling(rows - 1, sampling_index, conditional);
     }
-    prepare_draft_program(1, true, sampling_index);
-    if (capacity > 1) prepare_draft_program(2, true, sampling_index);
+    prepare_draft_program(1, true, sampling_index, planned_uses);
+    if (capacity > 1) prepare_draft_program(2, true, sampling_index, planned_uses);
   }
 
   PrefixSamplingResult sample_recursive_prefix(c::ConstTensorView logits,
@@ -7634,10 +7638,10 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   if (mtp && decode_bound)
     for (std::size_t index = 0; index < model.sampling_configuration_count(); ++index)
       for (const bool dynamic : {false, true})
-        if ((dynamic || model.recursive_mtp()) && std::ranges::any_of(requests, [index, dynamic](const auto &request) {
+        if ((dynamic || model.recursive_mtp()) && std::ranges::any_of(requests, [index, dynamic, first_turn_only](const auto &request) {
             return request.sampling_index == index && bool(request.logits_provider) == dynamic &&
-                std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; });
-          })) model.prepare_recursive_round_programs(index, dynamic);
+                (first_turn_only || std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; }));
+          })) model.prepare_recursive_round_programs(index, dynamic, decode_bound);
   model.freeze_shape_plan();
   if (first_turn_only) model.prepare_shared_prefill_workspace();
   if (warmup_planned_shapes) {
@@ -8287,15 +8291,15 @@ int qwen35::run(int argc, char **argv) {
     // The default single-session route admits later turns only after the
     // previous published wave retires. Auto N/R are configuration bounds of
     // one here; future schedule lengths and quotas cannot select this policy.
-    // Untested backends, sampling, wider MTP, multi-session/prefix and explicit
+    // Other backends, sampling/thresholds, K>3, multi-session/prefix and explicit
     // planned workloads retain their finite route and invalid-performance label.
     const bool bounded_generation = natural_generation && !multiple_schedules && !prefix_enabled &&
         !warmup_planned_shapes && max_sessions <= 1 && active_sequences <= 1 &&
         backend_selection.primary == qwen35::BackendKind::kCuda && cpu_ffn_layers == 0 &&
         !sampler.enabled && sampler.modifiers.empty() &&
-        (!mtp_enabled || (capacity > 1 && max_drafts == 1 && min_draft_probability == 0));
+        (!mtp_enabled || (capacity > 1 && max_drafts >= 1 && max_drafts <= 3 && min_draft_probability == 0));
     if (require_bounded_generation && !bounded_generation)
-      throw std::runtime_error("bounded natural generation requires CUDA without CPU assist, unmodified greedy, ordinary or K1 MTP, one session, auto or 1 for max-sessions/active-sequences, prefix off and lazy shape preparation");
+      throw std::runtime_error("bounded natural generation requires CUDA without CPU assist, unmodified greedy, ordinary or K1-K3 MTP without a draft threshold, one session, auto or 1 for max-sessions/active-sequences, prefix off and lazy shape preparation");
     if (max_prefill_rows != SIZE_MAX && !natural_generation)
       throw std::runtime_error("--prefill-chunk-tokens requires natural generation; fixed replay is not supported");
     if (mtp_enabled && grammar == Grammar::kFixedInput)

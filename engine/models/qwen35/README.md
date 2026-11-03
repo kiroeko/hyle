@@ -72,11 +72,12 @@ KV、递归状态、位置和采样只提交各成员实际行。其它组合按
 `batches.input_rows` 是各成员真实目标行数，`active_rows` 是总和，`physical_rows` 是载体容量；
 Verify 提案截短不按规划上界计数，接受部分前缀也不抹掉已执行行。
 
-纯 CUDA、无 modifier 的 greedy 单会话（普通或默认 K1 MTP），在 prefix off、lazy 且 N/R 为 auto 或1时，
+纯 CUDA、无 modifier 的 greedy 单会话（普通或无草稿概率门槛的 K1—K3 MTP），在 prefix off、lazy 且 N/R 为 auto 或1时，
 默认只按配置 C 和已到达首轮准备，不需要诊断开关。prefill 使用16/32/64/128/256/512容量档位，
 按配置上限截短，长输入分块；后续轮次在上一轮真实退休后交付，不以未来长度或输出配额规划。
 CLI 工作负载驱动仍预先解析 schedule；隔离的是它向 Model 冷规划提供的信息。
-其它后端、采样、较宽 MTP、多会话、prefix 和 `--warmup-shapes planned` 保留原有限输入功能路径，
+K2／K3仍使用递归起草与修复，独立草稿头按冷期重复次数选择原有捕获；设备连续接力仍限于K1。
+其它后端、采样、草稿概率门槛、K>3、多会话、prefix 和 `--warmup-shapes planned` 保留原有限输入功能路径，
 输出标为 `full_schedule_preknowledge_invalid`，不能用于未知后续输入的性能结论。
 初始化按模型加载、冷准备、ready和请求执行分段。冷准备用最小已配置档位（本次16行）的占位输入执行真实prefill，
 临时会话成功stop／drain后再录制decode命令；两者费用与实际工作分别统计，全部计入startup。

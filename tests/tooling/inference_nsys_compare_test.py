@@ -18,6 +18,15 @@ prepare_spec.loader.exec_module(prepare)
 
 
 class PrefillScopeTest(unittest.TestCase):
+    def test_small_batch_ggml_matmul_and_device_choice_copies_are_classified(self):
+        for name in ("void mul_mat_f<__nv_bfloat162, 32, 4, 8, false>(...)",
+                     "void mul_mat_vec_f<__nv_bfloat16, float>(...)",
+                     "internal::gemvx::kernel<int, __nv_bfloat16>(...)"):
+            with self.subTest(name=name):
+                self.assertEqual(profile.classify(name), "gemm")
+        self.assertEqual(profile.classify("hyle::cuda::append_choice_rows(...)"), "copy")
+        self.assertEqual(profile.classify("rms_norm_f32(...)"), "other")
+
     def test_selects_first_token_even_when_outer_range_includes_decode(self):
         events = [(10, 100, "hyle.prefill"), (80, None, "hyle.prefill.ledger_endpoint.observed"),
                   (85, None, "hyle.generation.prepare"), (95, None, "hyle.prefill.endpoint.observed")]
