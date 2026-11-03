@@ -3,7 +3,8 @@
 
 No engine changes, weight downloads, profiling, or in-process memory observers.
 prepare verifies local inputs/software; select screens both builds/FA choices;
-standard runs pp512/tg128; multi runs cached real conversations; memory repeats
+standard runs pp512 and configurable decode lengths (default tg128); long runs
+whole-prompt TTFT; multi runs cached real conversations; memory repeats
 multi with a separate-process Windows sampler; analyze reads the TSV/logs.
 Software retrieval/build commands and pinned versions belong in the run's text
 notes. All paths must already exist; the script never downloads model files.
@@ -11,6 +12,7 @@ notes. All paths must already exist; the script never downloads model files.
 from __future__ import annotations
 
 import argparse
+from contextlib import nullcontext
 import csv
 from datetime import datetime, timezone
 import importlib.util
@@ -63,13 +65,13 @@ def finite(value, name, *, zero=False):
     return float(value)
 
 
-def parse_bench(text, kind, depths, reps):
+def parse_bench(text, kind, depths, reps, prompt_tokens=512, *, decode_tokens=128):
     records = json.loads(text.lstrip("\ufeff"))
     if not isinstance(records, list) or len(records) != len(depths):
         raise ValueError("llama-bench did not report all requested depths")
     result = []
     for raw, depth in zip(records, depths):
-        wanted = (512, 0) if kind == "pp" else (0, 128)
+        wanted = (prompt_tokens, 0) if kind == "pp" else (0, decode_tokens)
         if (raw["n_prompt"], raw["n_gen"], raw["n_depth"]) != (*wanted, depth):
             raise ValueError("llama-bench row differs from requested pp/tg/depth")
         samples = raw["samples_ns"]
@@ -81,10 +83,10 @@ def parse_bench(text, kind, depths, reps):
         # within-process repetitions, never counted as independent processes.
         tps = finite(raw["avg_ts"], "avg_ts")
         result.append(dict(depth=depth, prefill_tps=tps if kind == "pp" else None,
-                           prefill_ms=512000 / tps if kind == "pp" else None,
+                           prefill_ms=prompt_tokens * 1000 / tps if kind == "pp" else None,
                            decode_tps=tps if kind == "tg" else None,
-                           input_rows=512 if kind == "pp" else 0,
-                           outputs=128 if kind == "tg" else 0))
+                           input_rows=prompt_tokens if kind == "pp" else 0,
+                           outputs=decode_tokens if kind == "tg" else 0))
     return result
 
 
@@ -172,7 +174,7 @@ def env_for(args, arm):
 
 
 def exclusive(args, folder):
-    """Fail on competing inference; require a quiet device before the run."""
+    """Reject competing inference and apply the caller's GPU utilization limit."""
     if os.name == "nt":
         query = ("Get-Process -ErrorAction SilentlyContinue | Where-Object { "
                  "$_.ProcessName -match '^(hyle.*|llama.*|peer_long|nsys|ncu)$' } | "
@@ -204,6 +206,33 @@ def new_run(args, name):
     return folder
 
 
+class GPUClocks:
+    """Identical, separate-process 1Hz clock sampling for both timed arms."""
+    def __init__(self, folder):
+        self.path = folder / "gpu-clocks.csv"
+
+    def __enter__(self):
+        self.stream = self.path.open("wb")
+        try:
+            self.process = subprocess.Popen([
+                "nvidia-smi", "--query-gpu=timestamp,index,clocks.sm,clocks.mem,power.draw,utilization.gpu,temperature.gpu,pstate",
+                "--format=csv", "--loop-ms=1000"], stdout=self.stream, stderr=subprocess.DEVNULL)
+        except BaseException:
+            self.stream.close()
+            raise
+        return self
+
+    def __exit__(self, *_):
+        try:
+            self.process.terminate()
+            self.process.wait(timeout=5)
+        finally:
+            if self.process.poll() is None:
+                self.process.kill()
+                self.process.wait()
+            self.stream.close()
+
+
 def raw_run(args, arm, command, folder, *, memory=False):
     (folder / "command.txt").write_text(subprocess.list2cmdline(command) + "\n", encoding="utf-8")
     probe = None
@@ -212,7 +241,9 @@ def raw_run(args, arm, command, folder, *, memory=False):
         probe = MemoryProbe(interval_s=0.01)
     ready = []
     start = time.perf_counter()
-    with (folder / "stdout.log").open("wb") as output, (folder / "stderr.log").open("wb") as error:
+    clocks = nullcontext() if memory else GPUClocks(folder)
+    with clocks, (folder / "stdout.log").open("wb") as output, (folder / "stderr.log").open("wb") as error:
+        start = time.perf_counter()
         process = subprocess.Popen(command, stdout=output, stderr=subprocess.PIPE, env=env_for(args, arm))
         def drain():
             for line in process.stderr:
@@ -225,6 +256,7 @@ def raw_run(args, arm, command, folder, *, memory=False):
             if probe:
                 probe.start(process.pid)
             code = process.wait(timeout=args.process_timeout)
+            native_end = time.perf_counter()
         except BaseException:
             process.kill()
             process.wait()
@@ -235,7 +267,7 @@ def raw_run(args, arm, command, folder, *, memory=False):
                 probe.stop()
                 memory_report(folder, probe.result())
                 probe.close()
-    wall = time.perf_counter() - start
+    wall = native_end - start
     (folder / "result.txt").write_text(f"exit={code} wall_s={wall:.9f}\n", encoding="utf-8")
     if code:
         raise RuntimeError(f"Native command failed ({code}); logs: {folder}")
@@ -267,18 +299,21 @@ def memory_peaks(folder):
             if "observed_os_peak_commit_bytes" in values else None}
 
 
-def bench(args, build, fa, kind, repeat, phase):
-    folder = new_run(args, f"{phase}-{repeat}-{build}-{fa}-{kind}")
+def bench(args, build, fa, kind, repeat, phase, prompt_tokens=512):
+    decode_tokens = getattr(args, "decode_tokens", 128)
+    suffix = f"-{prompt_tokens}" if prompt_tokens != 512 else ""
+    folder = new_run(args, f"{phase}-{repeat}-{build}-{fa}-{kind}{suffix}")
     binary = (args.official_bin if build == "official" else args.source_bin) / "llama-bench.exe"
-    depths = PP_DEPTHS if kind == "pp" else TG_DEPTHS
+    depths = ((0,) if phase == "L" or prompt_tokens != 512 else PP_DEPTHS) if kind == "pp" else TG_DEPTHS
     command = [str(binary), "-m", str(args.model), "-ngl", "99", "-r", str(args.bench_reps),
-               "-p", "512" if kind == "pp" else "0", "-n", "0" if kind == "pp" else "128",
+               "-p", str(prompt_tokens) if kind == "pp" else "0", "-n", "0" if kind == "pp" else str(decode_tokens),
                "-d", ",".join(map(str, depths)), "-fa", "1" if fa == "on" else "0", "-o", "json"]
     wall, _ = raw_run(args, build, command, folder)
-    rows = parse_bench((folder / "stdout.log").read_text(encoding="utf-8-sig"), kind, depths, args.bench_reps)
+    rows = parse_bench((folder / "stdout.log").read_text(encoding="utf-8-sig"), kind, depths,
+                       args.bench_reps, prompt_tokens, decode_tokens=decode_tokens)
     for row in rows:
         row.update(phase=phase, arm=f"{build}-fa-{fa}", mode="off", repeat=repeat,
-                   scenario=kind, wall_s=wall, log_dir=str(folder))
+                   scenario=kind + suffix, wall_s=wall, log_dir=str(folder))
     write_rows(args.output / "records.tsv", rows)
     print(folder.name, [(r["depth"], round(r.get("prefill_tps") or r["decode_tps"], 2)) for r in rows], flush=True)
 
@@ -298,14 +333,30 @@ def standard_schedule(args, depth):
         # next 512 compute rows; sending 512 new IDs would incorrectly time 513.
         prompt = prompt[1:]
     (folder / "prompt.ids").write_text(" ".join(map(str, prompt)) + "\n", encoding="utf-8")
-    lines += ["prompt prompt.ids", "generate 128"]
+    lines += ["prompt prompt.ids", f"generate {getattr(args, 'decode_tokens', 128)}"]
     path = folder / "schedule.txt"
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return MATCHED.read_schedule(path)
 
 
-def native(args, arm, scenario, mode, repeat, phase, *, depth=None, memory=False):
-    name = f"{phase}-{repeat}-{arm}-{mode}-{depth if depth is not None else 'eight'}"
+def long_schedule(args, length):
+    # One output measures TTFT without mixing decode or overflowing a 32K
+    # context with the standard benchmark's implicit 128-output quota.
+    if length < 1 or length > args.capacity:
+        raise ValueError("Whole prompt does not fit the configured capacity")
+    tokens = MATCHED.read_ids(args.long_ids)[:length]
+    if len(tokens) != length:
+        raise ValueError("Long token tape too short")
+    folder = args.output / "workload" / f"long-{length}"
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "prompt.ids").write_text(" ".join(map(str,tokens)) + "\n", encoding="utf-8")
+    path = folder / "schedule.txt"
+    path.write_text("prompt prompt.ids\ngenerate 1\n", encoding="utf-8")
+    return MATCHED.read_schedule(path)
+
+
+def native(args, arm, scenario, mode, repeat, phase, *, depth=None, memory=False, label=None):
+    name = f"{phase}-{repeat}-{arm}-{mode}-{label or (depth if depth is not None else 'eight')}"
     folder = new_run(args, name)
     if arm == "hyle":
         command = [str(args.hyle), "--inputs", str(args.inputs), "--capacity", str(args.capacity),
@@ -339,7 +390,7 @@ def native(args, arm, scenario, mode, repeat, phase, *, depth=None, memory=False
         work = turn.get("producer_work", {})
         counted = counts.get(turn["turn"], {})
         rows.append(dict(phase=phase, arm=arm, mode=mode, repeat=repeat,
-                         scenario="standard" if depth is not None else "eight", depth=depth,
+                         scenario="standard" if depth is not None else label or "eight", depth=depth,
                          turn=turn["turn"], prefill_ms=turn["prefill_seconds"] * 1000,
                          prefill_tps=turn["prefill_tokens_per_second"],
                          decode_tps=turn["decode_tokens_per_second"], decode_ms=turn["decode_seconds"] * 1000,
@@ -457,6 +508,7 @@ def normalized_rows(args):
 
 def validate(args):
     rows = normalized_rows(args)
+    decode_tokens = getattr(args, "decode_tokens", 128)
     repeats = set(range(1, args.repeats + 1))
     checked = []
     def group(values, label):
@@ -467,11 +519,14 @@ def validate(args):
     for depth in PP_DEPTHS:
         hyle = [r for r in rows if r["phase"] == "A" and r["arm"] == "hyle" and r["depth"] == depth]
         group(hyle, f"Hyle d={depth}")
-        if any(r["input_rows"] != 512 or r["outputs"] != 128 or r["context_before"] != depth for r in hyle):
+        if any(r["input_rows"] != 512 or r["outputs"] != decode_tokens or r["context_before"] != depth for r in hyle):
             raise ValueError("Standard Hyle row/output/depth mismatch")
         for kind, actual in (("pp", depth), ("tg", depth+512)):
-            group([r for r in rows if r["phase"] == "A" and r["arm"] == f"{args.selected}-fa-{args.fa}"
-                   and r["scenario"] == kind and r["depth"] == actual], f"upstream {kind} d={actual}")
+            upstream = [r for r in rows if r["phase"] == "A" and r["arm"] == f"{args.selected}-fa-{args.fa}"
+                        and r["scenario"] == kind and r["depth"] == actual]
+            group(upstream, f"upstream {kind} d={actual}")
+            if kind == "tg" and any(r["outputs"] != decode_tokens for r in upstream):
+                raise ValueError("Standard upstream generation length mismatch")
     for phase in ("BC", "D"):
         for arm in args.arms:
             for mode in args.modes:
@@ -510,6 +565,7 @@ def validate(args):
 
 def analyze(args):
     rows = normalized_rows(args)
+    decode_tokens = getattr(args, "decode_tokens", 128)
     lines = ["# M1-7a 与上游正面对照", "", f"生成时间：{datetime.now(timezone.utc).isoformat()}",
              f"Hyle {args.hyle_version}; upstream {args.upstream_version}; frozen {args.reference_version}.",
              f"参考选择：{args.selected}, FA={args.fa}; capacity={args.capacity}。", "",
@@ -525,10 +581,17 @@ def analyze(args):
         lines.append(f"| {label} | {field} | {cell(lv,rv)} | {range_text(lv)} | {range_text(rv)} | {frozen} | {len(lv)}/{len(rv)} |")
     for depth in PP_DEPTHS:
         hyle = [r for r in rows if r["phase"] == "A" and r["arm"] == "hyle" and r["depth"] == depth]
-        for kind, field, actual_depth in (("pp512", "prefill_tps", depth), ("tg128", "decode_tps", depth + 512)):
+        for kind, field, actual_depth in (("pp512", "prefill_tps", depth), (f"tg{decode_tokens}", "decode_tps", depth + 512)):
             upstream = [r for r in rows if r["phase"] == "A" and r["arm"] == f"{args.selected}-fa-{args.fa}"
                         and r["depth"] == actual_depth and r["scenario"] == ("pp" if kind == "pp512" else "tg")]
+            if field == "decode_tps" and any(r["outputs"] != decode_tokens for r in hyle+upstream):
+                raise ValueError("Standard generation length differs from --decode-tokens")
             compare(f"{kind} d={actual_depth}", field, hyle, upstream)
+    lengths = sorted({int(r["input_rows"]) for r in rows if r["phase"] == "L"})
+    for length in lengths:
+        group = [r for r in rows if r["phase"] == "L" and r["input_rows"] == length]
+        compare(f"整段 {length} token", "prefill_tps", [r for r in group if r["arm"] == "hyle"],
+                [r for r in group if r["arm"] == f"{args.selected}-fa-{args.fa}"])
     for mode in ("off", "on"):
         combined = {}
         for arm in ("hyle", "upstream", "frozen"):
@@ -555,7 +618,7 @@ def analyze(args):
             group = [r for r in rows if r["phase"] == phase and r["mode"] == mode and r["turn"] == 1]
             compare(f"MTP={mode}", field, [r for r in group if r["arm"] == "hyle"],
                     [r for r in group if r["arm"] == "upstream"], [r for r in group if r["arm"] == "frozen"])
-    lines += ["", "A: llama-bench tg128为随机token、无采样的128步；Hyle为128输出中的127个decode步，含greedy采样。",
+    lines += ["", f"A: llama-bench tg{decode_tokens}为随机token、无采样的{decode_tokens}步；Hyle为{decode_tokens}输出中的{decode_tokens-1}个decode步，含greedy采样。",
               "A: 非零深度的Hyle先处理d行并产生一个待提交token；第二轮511个新ID加该token，共512计算行。",
               "llama-bench请求context=d+p+n，内部可按对齐取整；Hyle固定C32768。B/C/D两边固定C32768并核对server日志。",
               "B/C每个引擎使用自身输出续写同一组新prompt；分叉后历史内容可能不同。",
@@ -577,7 +640,7 @@ def analyze(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("phase", choices=("prepare", "select", "standard", "multi", "memory", "validate", "analyze"))
+    parser.add_argument("phase", choices=("prepare", "select", "standard", "long", "multi", "memory", "validate", "analyze"))
     parser.add_argument("--output", type=Path, required=True)
     for name in ("hyle", "inputs", "model", "mtp-model", "reference", "reference-inputs", "long-ids", "schedule",
                  "official-bin", "source-bin", "hyle-runtime", "reference-runtime"):
@@ -589,7 +652,10 @@ def main():
     parser.add_argument("--fa", choices=("on", "off"), default="on")
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--bench-reps", type=int, default=5)
+    parser.add_argument("--decode-tokens", type=int, default=128,
+                        help="Output count for standard Hyle/llama-bench decode (default: 128)")
     parser.add_argument("--capacity", type=int, default=32768)
+    parser.add_argument("--long-lengths", type=int, nargs="+", default=[16384,32736])
     parser.add_argument("--modes", nargs="+", choices=("off", "on"), default=["off", "on"])
     parser.add_argument("--arms", nargs="+", choices=("hyle", "upstream", "frozen"), default=["hyle", "upstream", "frozen"])
     parser.add_argument("--port", type=int, default=2048)
@@ -601,15 +667,19 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     if args.repeats < 1 or args.bench_reps < 1:
         parser.error("Positive independent process/repetition counts required")
+    if args.decode_tokens < 2:
+        parser.error("--decode-tokens must be at least 2")
     required = []
     if args.phase == "prepare":
         required = ["official_bin", "source_bin"]
     elif args.phase == "select":
         required = ["official_bin", "source_bin", "model"]
-    elif args.phase == "standard":
+    elif args.phase in ("standard", "long"):
         required = ["hyle", "inputs", "model", "long_ids", args.selected + "_bin"]
-        if args.capacity < PP_DEPTHS[-1] + 512 + 127:
+        if args.phase == "standard" and args.capacity < PP_DEPTHS[-1] + 512 + args.decode_tokens - 1:
             parser.error("capacity cannot hold the longest standard prompt plus generation")
+        if args.phase == "long" and (min(args.long_lengths) < 1 or max(args.long_lengths) > args.capacity):
+            parser.error("long prompt lengths must fit capacity")
     elif args.phase in ("multi", "memory"):
         required = ["schedule"]
         if "hyle" in args.arms:
@@ -660,6 +730,15 @@ def main():
                     bench(args,args.selected,args.fa,value,repeat,"A")
                 else:
                     native(args,"hyle",standard_schedule(args,value),"off",repeat,"A",depth=value)
+    elif args.phase == "long":
+        for length in args.long_lengths:
+            for repeat in range(1,args.repeats+1):
+                jobs = ("hyle","upstream") if repeat % 2 else ("upstream","hyle")
+                for arm in jobs:
+                    if arm == "hyle":
+                        native(args,"hyle",long_schedule(args,length),"off",repeat,"L",label=f"pp{length}")
+                    else:
+                        bench(args,args.selected,args.fa,"pp",repeat,"L",prompt_tokens=length)
     else:
         scenario = MATCHED.read_schedule(args.schedule)
         if len(scenario.prompts) != 8 or scenario.quotas != [64]*8:

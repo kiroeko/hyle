@@ -24,6 +24,23 @@ class UpstreamAccountingTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             M.parse_bench(json.dumps([row]), "tg", [4608], 3)
 
+    def test_long_prefill_is_not_mislabelled_as_pp512(self):
+        row = dict(n_prompt=32736,n_gen=0,n_depth=0,samples_ns=[4000000000]*5,avg_ts=8184)
+        parsed=M.parse_bench(json.dumps([row]),"pp",[0],5,prompt_tokens=32736)[0]
+        self.assertEqual(parsed["input_rows"],32736)
+        self.assertEqual(parsed["prefill_ms"],4000)
+        with self.assertRaises(ValueError):
+            M.parse_bench(json.dumps([row]),"pp",[0],5)
+
+    def test_long_decode_keeps_its_actual_step_count(self):
+        row = dict(n_prompt=0, n_gen=512, n_depth=31232,
+                   samples_ns=[5120000000]*5, avg_ts=100)
+        parsed = M.parse_bench(json.dumps([row]), "tg", [31232], 5, decode_tokens=512)[0]
+        self.assertEqual(parsed["outputs"], 512)
+        self.assertEqual(parsed["decode_tps"], 100)
+        with self.assertRaises(ValueError):
+            M.parse_bench(json.dumps([row]), "tg", [31232], 5)
+
     def test_cached_conversation_and_first_output_accounting(self):
         raw = dict(tokens=list(range(64)), timings=dict(predicted_n=64, prompt_n=4, cache_n=9,
                    prompt_ms=2, predicted_ms=630, draft_n=40, draft_n_accepted=30))
@@ -82,6 +99,29 @@ class UpstreamAccountingTest(unittest.TestCase):
             row = M.read_rows(path)[0]
             self.assertIsNone(row["gpu_mib"])
             self.assertEqual(row["repeat"], 1)
+
+    def test_standard_long_decode_keeps_prefill_at_512_rows(self):
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory(dir=ROOT / ".scratch") as tmp:
+            path = Path(tmp)
+            source = path / "source.ids"
+            source.write_text(" ".join(str(i+1) for i in range(32736)), encoding="utf-8")
+            args = SimpleNamespace(output=path, long_ids=source, decode_tokens=512)
+            case = M.standard_schedule(args, 30720)
+            self.assertEqual(case.quotas, [1, 512])
+            self.assertEqual(len(case.prompts[-1]) + 1, 512)
+
+    def test_whole_prompt_does_not_inherit_128_decode_outputs(self):
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory(dir=ROOT / ".scratch") as tmp:
+            path=Path(tmp)
+            source=path/"source.ids"
+            source.write_text(" ".join(str(i+1) for i in range(32736)),encoding="utf-8")
+            args=SimpleNamespace(output=path,long_ids=source,capacity=32768)
+            scenario=M.long_schedule(args,32736)
+            self.assertEqual([len(p) for p in scenario.prompts],[32736])
+            self.assertEqual(scenario.quotas,[1])
+            with self.assertRaises(ValueError):M.long_schedule(args,32769)
 
 
 if __name__ == "__main__":
