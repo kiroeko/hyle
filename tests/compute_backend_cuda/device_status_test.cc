@@ -498,7 +498,7 @@ TEST(CudaDeviceStatus, RebuiltCheckedCaptureUsesNewArgumentsAndKeepsOldFailure) 
   EXPECT_TRUE(old_failure.wait().IsOutOfRange());
 }
 
-TEST(CudaDeviceStatus, CompatibleTemplatesKeepPendingArgumentsAndStatusIndependent) {
+TEST(CudaDeviceStatus, LiveTemplatesKeepNativeInstancesPendingArgumentsAndStatusIndependent) {
   Fixture fixture;
   ASSERT_TRUE(fixture.write(std::array{-1, 7, 0, 0}).ok());
   const auto capture = [&](std::size_t element, std::size_t counter) {
@@ -517,7 +517,10 @@ TEST(CudaDeviceStatus, CompatibleTemplatesKeepPendingArgumentsAndStatusIndepende
   auto *backend = static_cast<cuda::detail::QueueState *>(
       compute::detail::ContextAccess::backend_queue(fixture.first));
   EXPECT_EQ(std::count_if(backend->capture_executables.begin(), backend->capture_executables.end(),
-      [](const auto &instance) { return bool(instance); }), 1);
+      [](const auto &instance) { return bool(instance); }), 2);
+  std::array<cudaGraph_t, 4> selected{};
+  for (std::size_t index = 0; index != selected.size(); ++index)
+    if (backend->capture_executables[index]) selected[index] = backend->capture_executables[index]->selected_graph;
   Gate gate;
   Release release{gate, cuda::stream(fixture.first).value()};
   ASSERT_EQ(cudaLaunchHostFunc(release.stream, &Gate::wait, &gate), cudaSuccess);
@@ -527,6 +530,11 @@ TEST(CudaDeviceStatus, CompatibleTemplatesKeepPendingArgumentsAndStatusIndepende
   auto second = QueueSequence::begin(fixture.first).value();
   second.record(b.enqueue(second));
   auto pending_b = second.finish().value();
+  // Both launches are pending. Alternating their different arguments must
+  // keep their native executable selections instead of patching one instance.
+  for (std::size_t index = 0; index != selected.size(); ++index)
+    if (backend->capture_executables[index])
+      EXPECT_EQ(backend->capture_executables[index]->selected_graph, selected[index]);
   EXPECT_EQ(pending_a.poll().value(), compute::CompletionPoll::kPending);
   EXPECT_EQ(pending_b.poll().value(), compute::CompletionPoll::kPending);
   gate.release();

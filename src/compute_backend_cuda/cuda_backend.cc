@@ -1376,10 +1376,13 @@ Status end_capture(void *backend_context, void *backend_queue,
   }
   std::lock_guard cache_lock(queue->capture_executables_lock);
   auto *available = static_cast<util::Ref<cuda::detail::CaptureExecutableState> *>(nullptr);
+  // Alternating live templates must not patch one native executable on every
+  // launch. Only an idle cache entry, or the retirement-authorized rebuild
+  // above, may supply an existing allocation to a new template.
   for (auto &candidate : queue->capture_executables) {
     if (!cacheable) break;
     if (!candidate) { if (!available) available = &candidate; continue; }
-    if (selected || candidate->node_count != node_count) continue;
+    if (selected || !candidate->is_unique() || candidate->node_count != node_count) continue;
     HYLE_ASSIGN_OR_RETURN(const auto updated, update_capture_executable(*candidate, captured->graph));
     if (updated) selected = candidate;
   }

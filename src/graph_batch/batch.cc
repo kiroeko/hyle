@@ -302,9 +302,9 @@ Status qualify_geometry(const AdapterContext&adapter,const BatchGeometry&shape,
 }
 Result<c::WorkspaceRequirement> float_workspace(const AdapterContext&adapter,const BatchGeometry&shape,
     std::uint32_t rows,mem::MemoryResourceRef resource={})noexcept{
-  // Fixed-layout and conditional decode slots retain their original private
-  // scratch. The new contract applies only to explicit-metadata GQA carriers.
-  if(shape.initial_layout.valid() || shape.device_choice || shape.mla!=c::MlaCacheLayout::kNone)
+  // GQA float partials are disposable regardless of whether metadata is fixed,
+  // explicit or device-selected. The separate MLA plan keeps its own contract.
+  if(shape.mla!=c::MlaCacheLayout::kNone)
     return c::WorkspaceRequirement{};
   auto extension=cd::ProviderExtensionAccess::query(adapter.source,cd::kBatchFloatWorkspaceExtensionId);
   if(!extension){if(extension.error().IsUnimplemented())return c::WorkspaceRequirement{};return std::unexpected(extension.error());}

@@ -878,7 +878,7 @@ public:
   // Configured bounded-prefill policy only. Original Graph Invocations retain
   // their shared scratch; IO, state pools and decode carriers stay independent.
   std::size_t bounded_prefill_rows = 0;
-  g::InvocationWorkspace prefill_workspace;
+  g::InvocationWorkspace execution_workspace;
   std::map<std::tuple<std::size_t, bool, std::size_t>, std::unique_ptr<DraftProgram>> &draft_programs;
   std::map<PrefixSamplingKey, std::unique_ptr<PrefixSamplingProgram>> &prefix_sampling_programs;
   std::size_t draft_program_graph_calls = 0, prefix_decision_graph_calls = 0;
@@ -2392,11 +2392,9 @@ public:
     Phase::ExecutionSlots::Initialization initialization{
         .invocation = {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
         .progress = {scheduler.get(), workers.get()}};
-    if ((bounded_prefill_rows || prefill_workspace.valid()) && packs_prefill(phase.family->packing)) {
-      if (!prefill_workspace.valid())
-        throw std::logic_error("bounded prefill requires its qualified shared workspace before slot initialization");
-      initialization.workspace = &prefill_workspace;
-    }
+    if (execution_workspace.valid()) initialization.workspace = &execution_workspace;
+    else if (bounded_prefill_rows && packs_prefill(phase.family->packing))
+      throw std::logic_error("bounded prefill requires its qualified shared workspace before slot initialization");
     if (!phase.state_banks.empty()) initialization.slots.emplace(inference::ProgramInitialization::Slots{
         phase.state_graph(), phase.state_sources,
         {.host_workspace = execution.staging(), .resource_budget = execution_budget ? execution_budget : cache_budget}});
@@ -2536,36 +2534,36 @@ public:
     prepare_execution(capacities, requests, role, completion, sampling_index, RowPacking::kPrefill);
   }
 
-  // Qualify the complete fixed inventory before any packed Invocation exists.
+  // Qualify every cold-known role before any Invocation borrows the root.
   // Failure is a typed Graph refusal, never permission to allocate private
   // scratch instead. The original per-route slots/IO keep their own owners.
-  void prepare_shared_prefill_workspace() {
-    if (active_step || successor_step || carrier_borrowed || prefill_workspace.valid())
-      throw std::logic_error("shared prefill preparation requires its original idle uninitialized inventory");
+  void prepare_shared_execution_workspace() {
+    if (active_step || successor_step || carrier_borrowed || execution_workspace.valid())
+      throw std::logic_error("shared execution preparation requires its original idle uninitialized inventory");
     if (!execution_budget)
-      throw std::logic_error("shared prefill workspace requires the original execution resource budget");
+      throw std::logic_error("shared execution workspace requires the original execution resource budget");
     std::vector<g::Executable> routes;
     std::vector<ExecutionShape> shapes;
     for (const auto &[key, family] : families) {
-      if (!family || !packs_prefill(key.packing)) continue;
+      if (!family) continue;
       if (key.requests != 1)
-        throw std::logic_error("bounded shared prefill requires R1 exact routes");
+        throw std::logic_error("bounded shared execution requires R1 exact routes");
       for (const auto rows : family->chunks) {
         const auto selected = find_child(1, rows, key.role, false, key.completion, key.sampling_index, key.packing);
-        if (!selected) throw std::logic_error("bounded prefill lost its original exact child");
+        if (!selected) throw std::logic_error("shared execution lost its original exact child");
         routes.push_back(selected->program.compiled.executable);
         const ExecutionShape shape{1, rows, key.role, key.completion, key.sampling_index, false, key.packing};
         if (const auto found = phases.find(shape); found != phases.end())
           for (const auto &slot : found->second->slots.slots())
             if (slot.carrier.initialized() || slot.carrier.pending())
-              throw std::logic_error("cannot replace scratch on an existing prefill Invocation");
-        shapes.push_back(shape);
+              throw std::logic_error("cannot replace scratch on an existing Invocation");
+        if (packs_prefill(key.packing)) shapes.push_back(shape);
       }
     }
     if (routes.empty())
-      throw inference::EvaluationFailure(hyle::Status::Unimplemented("no fixed packed prefill route supports shared scratch"));
-    prefill_workspace = take(g::InvocationWorkspace::create(routes, {.resource_budget = execution_budget}));
-    std::cerr << "prefill_shared_workspace routes=" << routes.size() << " bytes=" << prefill_workspace.bytes()
+      throw inference::EvaluationFailure(hyle::Status::Unimplemented("no cold-known route supports shared scratch"));
+    execution_workspace = take(g::InvocationWorkspace::create(routes, {.resource_budget = execution_budget}));
+    std::cerr << "execution_shared_workspace routes=" << routes.size() << " bytes=" << execution_workspace.bytes()
               << " resource_budget=execution configured_rows=" << bounded_prefill_rows << '\n';
     for (const auto &shape : shapes) {
       const std::array rows{shape.tokens};
@@ -6569,7 +6567,7 @@ struct SynchronousGenerationStepAdapter final {
   }
   bool prefill_pipeline() const {
     if (generation || !packed_prefill || role != GraphRole::kText || calls.size() != 1 ||
-        model.cache_plan.draft_cache || model.scheduler || !model.prefill_workspace ||
+        model.cache_plan.draft_cache || model.scheduler || !model.execution_workspace ||
         model.execution.kind() != BackendKind::kCuda || model.execution.has_cpu_assist() ||
         model.cache_plan.in_flight_batches < 2 || calls[0].ids().size() != model.bounded_prefill_rows ||
         (trace_states && !calls[0].request->trace.empty())) return false;
@@ -7430,7 +7428,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     throw std::runtime_error("bounded natural generation requires N1/R1, configured-C query capacity, no prefix cache and lazy shape preparation");
   const auto configured_bound = model.capacity;
   if (first_turn_only) {
-    if (model.active_step || model.successor_step || model.carrier_borrowed || model.prefill_workspace.valid())
+    if (model.active_step || model.successor_step || model.carrier_borrowed || model.execution_workspace.valid())
       throw std::logic_error("bounded prefill policy must be configured before original execution");
     max_prefill_rows = (std::min)({max_prefill_rows, std::size_t{512}, configured_bound});
     if constexpr (mtp) if (max_prefill_rows < 2)
@@ -7779,7 +7777,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
                 (first_turn_only || std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; }));
           })) model.prepare_recursive_round_programs(index, dynamic, decode_bound);
   model.freeze_shape_plan();
-  if (first_turn_only) model.prepare_shared_prefill_workspace();
+  if (first_turn_only) model.prepare_shared_execution_workspace();
   if (warmup_planned_shapes) {
     const auto begin = Clock::now();
     const auto shapes = model.prepare_planned_execution();
@@ -8122,7 +8120,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       << ",\"cold_planning\":\"" << (first_turn_only ? "configured_capacity" : "full_schedule_preknowledge_invalid")
       << "\",\"future_shape_hints\":" << (first_turn_only ? 0 : 1)
       << ",\"configured_prefill_rows\":" << model.bounded_prefill_rows
-      << ",\"shared_prefill_scratch_bytes\":" << model.prefill_workspace.bytes()
+      << ",\"shared_execution_scratch_bytes\":" << model.execution_workspace.bytes()
+      << ",\"shared_prefill_scratch_bytes\":" << model.execution_workspace.bytes()
       << ",\"cold_prepare_seconds\":" << cold_prepare_seconds
       << ",\"startup_prefill_warmup_calls\":" << startup_prefill_warmup.calls
       << ",\"startup_prefill_warmup_target_rows\":" << startup_prefill_warmup.target_rows

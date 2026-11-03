@@ -19,6 +19,7 @@
 #include "hyle/graph/batch.h"
 #include "hyle/graph/cuda.h"
 #include "hyle/graph/detail/recording_access.h"
+#include "hyle/graph/detail/region_access.h"
 #include "hyle/graph/workspace.h"
 #include "../../src/graph/plan_state.h"
 
@@ -249,6 +250,38 @@ TEST(GraphBatchSharedWorkspaceCuda, SerialAttentionAndExactRoutesBorrowOnePlanne
     EXPECT_GT(report.float_workspace_bytes, 0u);
     EXPECT_GT(report.int_workspace_bytes, 0u);
     EXPECT_LE(report.float_workspace_bytes, float_cap);
+  }
+}
+
+TEST(GraphBatchSharedWorkspaceCuda, DecodeVerifyAndPrefillReuseScratchAcrossConfigurationReset) {
+  Environment e;
+  const auto decode = route(e, 1), verify = route(e, 2), prefill = route(e, 128);
+  const std::array routes{decode.compiled.executable, verify.compiled.executable, prefill.compiled.executable};
+  auto workspace = g::InvocationWorkspace::create(routes, {.resource_budget = e.budget}).value();
+  BoundRoute a(e, decode, workspace), b(e, verify, workspace), c(e, prefill, workspace);
+  same_scratch(a); same_scratch(b); same_scratch(c);
+  EXPECT_EQ(a.scratch(0).native_handle(), c.scratch(0).native_handle());
+  EXPECT_EQ(b.scratch(0).native_handle(), c.scratch(0).native_handle());
+  EXPECT_EQ(workspace.bytes(), (std::max)({extent(routes[0]), extent(routes[1]), extent(routes[2])}));
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &e.queue}};
+  const g::ReplayOptions capture{.mode = g::ReplayMode::kRequireCapture, .host_wait = g::HostWaitPolicy::kAllow};
+  for (std::size_t cycle = 0; cycle != 2; ++cycle) {
+    for (auto *bound : {&c, &a, &b}) {
+      const auto active = bound == &a ? 1u : bound == &b ? 2u : 105u;
+      if (cycle) ASSERT_TRUE(gd::RegionAccess::reset_configuration(bound->run).ok());
+      ASSERT_TRUE(bound->prepare(e.layout(active)).ok());
+      ASSERT_TRUE(bound->run.prepare_replay(queues, capture).ok());
+      if (cycle) EXPECT_GT(bound->run.replay_report()->reused_capture_range_count, 0u);
+      auto submitted = bound->run.submit(queues); ASSERT_TRUE(submitted) << submitted.error().message();
+      ASSERT_TRUE(submitted->wait().ok()); *submitted = {}; bound->check(active);
+    }
+    // All public results retain their original caller IO after other shapes
+    // overwrite the common partial buffer; none escapes through scratch.
+    a.check(1); b.check(2); c.check(105);
+    const auto a_plan = gb::query_offsets(a.run, decode.attention[0]).value();
+    const auto b_plan = gb::query_offsets(b.run, verify.attention[0]).value();
+    const auto av = a_plan.view().value(), bv = b_plan.view().value();
+    EXPECT_TRUE(av.native_handle() != bv.native_handle() || av.offset() != bv.offset());
   }
 }
 

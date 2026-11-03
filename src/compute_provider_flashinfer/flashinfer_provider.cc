@@ -583,10 +583,11 @@ Status graph_float_workspace(void*context,BatchCapacity capacity,std::uint32_t p
     const BatchProgramOptions&options,WorkspaceRequirement*out)noexcept{
   *out={};
   HYLE_RETURN_IF_ERROR(qualify_batch(context,capacity,options));
-  // Reserve the original configured hard cap only for multirow prefill-sized
-  // carriers. Tiny decode/verify slots keep their original owned allocation.
-  if(physical_rows<16 || physical_rows>capacity.max_query_rows)
-    return Status::Unimplemented("FlashInfer shared float scratch requires a prefill-sized carrier");
+  // Reserve the original configured hard cap for this concrete carrier.
+  // Decode and verifier float partials are disposable just like prefill's;
+  // private integer plans retain their own addresses and generations.
+  if(!physical_rows || physical_rows>capacity.max_query_rows)
+    return Status::Unimplemented("FlashInfer shared float scratch requires a nonempty concrete carrier");
   if(!options.max_float_workspace_bytes)
     return Status::InvalidArgument("FlashInfer shared float scratch requires a positive configured cap");
   // PrefillPlan only materializes private integer metadata and float offsets.

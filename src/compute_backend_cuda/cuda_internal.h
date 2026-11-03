@@ -185,10 +185,9 @@ struct QueueState final : util::RefCounted<QueueState> {
   EventSlot *active_sequence = nullptr;
   unsigned *capture_device_status = nullptr;
   bool capture_status_used = false;
-  // Bounded native instance cache. CUDA graph updates change only future
-  // launches; every template keeps its own immutable nodes and status word.
-  // Queue admission serializes cold cache selection; instance locks serialize
-  // update+launch with any other artifact using that native allocation.
+  // Bounded native instance cache. Live templates keep independent executables;
+  // authorized rebuilds may reuse an idle native allocation. Queue admission
+  // serializes cold selection, and instance locks serialize update+launch.
   util::SpinLock capture_executables_lock;
   std::array<util::Ref<CaptureExecutableState>, 4> capture_executables;
 };
