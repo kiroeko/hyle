@@ -186,6 +186,9 @@ void compare_case(std::int64_t width, std::int64_t heads,
 TEST(GgmlCudaIndexedGdn, FinalStatePreservesNoncontiguousSlotsAndPadding) {
   compare_case(16, 2, 3, 1, false, std::nullopt);
 }
+TEST(GgmlCudaIndexedGdn, MmaFinalStatePreservesNoncontiguousSlotsAndPadding) {
+  compare_case(128, 16, 65, 1, false, std::nullopt);
+}
 TEST(GgmlCudaIndexedGdn, LastKIsChronologicalWhenTokensExceedK) {
   compare_case(16, 2, 4, 2, false, 0.5F);
 }

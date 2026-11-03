@@ -287,6 +287,22 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
   # needs the language's compile rules in the current directory scope.
   enable_language(CUDA)
   get_target_property(_cuda_sources ggml-cuda SOURCES)
+  # Port only b12063/2cbca389f GDN MMA, retaining the locked runtime, its
+  # checked native carriers and the serial fallback in the same CUDA unit.
+  set(_serial_gdn "${_cuda_sources}")
+  list(FILTER _serial_gdn INCLUDE REGEX "/gated_delta_net\\.cu$")
+  list(LENGTH _serial_gdn _serial_gdn_count)
+  if(NOT _serial_gdn_count EQUAL 1)
+    message(FATAL_ERROR "Locked ggml CUDA must provide exactly one gated_delta_net.cu")
+  endif()
+  set(_mma_bridge "${CMAKE_CURRENT_SOURCE_DIR}/cuda_gdn_bridge.cu")
+  list(REMOVE_ITEM _cuda_sources ${_serial_gdn})
+  list(APPEND _cuda_sources "${_mma_bridge}")
+  get_target_property(_cuda_directory ggml-cuda SOURCE_DIR)
+  set_property(SOURCE "${_mma_bridge}" DIRECTORY "${_cuda_directory}"
+    APPEND PROPERTY INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}")
+  set_property(SOURCE "${_mma_bridge}" DIRECTORY "${_cuda_directory}"
+    APPEND PROPERTY COMPILE_DEFINITIONS "HYLE_GGML_GDN_SOURCE=\"${_serial_gdn}\"")
   set(_precise_unary "${_cuda_sources}")
   list(FILTER _precise_unary INCLUDE REGEX "/unary\\.cu$")
   list(LENGTH _precise_unary _precise_count)

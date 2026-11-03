@@ -49,12 +49,13 @@ struct Packed final {
   m::Buffer workspace;
   c::OperationInvocation invocation;
 
-  Packed(Environment &environment, std::int64_t depth)
-      : fixture(9, 1, capacity, key_heads, value_heads, depth) {
+  Packed(Environment &environment, std::int64_t depth,
+         std::int64_t keys = key_heads, std::int64_t values = value_heads)
+      : fixture(9, 1, capacity, keys, values, depth) {
     const auto f32 = c::DataType::kFloat32;
-    descriptions = {dense(f32, {capacity, key_heads, depth}), dense(f32, {capacity, key_heads, depth}),
-        dense(f32, {capacity, value_heads, depth}), dense(f32, {capacity, value_heads, 1}),
-        dense(f32, {capacity, value_heads, 1}), fixture.inputs[5], dense(c::DataType::kInt32, {2})};
+    descriptions = {dense(f32, {capacity, keys, depth}), dense(f32, {capacity, keys, depth}),
+        dense(f32, {capacity, values, depth}), dense(f32, {capacity, values, 1}),
+        dense(f32, {capacity, values, 1}), fixture.inputs[5], dense(c::DataType::kInt32, {2})};
     const auto operation = c::sequence_ops::packed_gated_delta_net();
     const auto inferred = c::infer_output_descriptions(operation, descriptions, output_descriptions);
     EXPECT_TRUE(inferred.ok()) << inferred.message();
@@ -153,7 +154,7 @@ std::array<std::vector<float>, 2> dense_reference(Environment &environment, cons
 
 void expect_result(Environment &environment, const Packed &packed, std::size_t active) {
   const auto actual_y = packed.read(0), state = packed.read(1);
-  const auto active_elements = active * std::size_t(value_heads * packed.fixture.depth);
+  const auto active_elements = active * std::size_t(packed.fixture.value_heads * packed.fixture.depth);
   if (active) {
     const auto reference = dense_reference(environment, packed, active);
     expect_bits(std::span(actual_y).first(active_elements), reference[0]);
@@ -195,6 +196,46 @@ TEST(GgmlCudaPackedGdn, EmptyPreservesInitialNaNPayloadAndNegativeZeroBits) {
   }
 }
 
+TEST(GgmlCudaPackedGdn, MmaDomainMatchesIndependentRecurrenceWithPoisonedPadding) {
+  Environment environment;
+  for (const auto heads : {16, 32}) {
+    SCOPED_TRACE(heads);
+    Packed packed(environment, 128, 16, heads);
+    for (const auto active : {1u, 63u, 65u, 105u, 128u}) {
+      SCOPED_TRACE(active);
+      packed.upload(active); packed.poison();
+      const auto status = packed.submit(environment.queue);
+      ASSERT_TRUE(status.ok()) << status.message();
+      gdn_snapshot_fixture::Fixture reference(9, 1, active, 16, heads, 128);
+      for (std::size_t port = 0; port < reference.data.size(); ++port)
+        std::copy_n(packed.fixture.data[port].begin(), reference.data[port].size(), reference.data[port].begin());
+      const auto expected = reference.oracle(1);
+      for (std::size_t port = 0; port < expected.size(); ++port) {
+        const auto actual = packed.read(port);
+        for (std::size_t i = 0; i < expected[port].size(); ++i)
+          EXPECT_NEAR(actual[i], expected[port][i], 1e-5) << "port " << port << " element " << i;
+        if (port == 0) {
+          for (std::size_t i = expected[port].size(); i < actual.size(); ++i)
+            EXPECT_EQ(std::bit_cast<std::uint32_t>(actual[i]), 0U) << "inactive output " << i;
+        }
+      }
+      // Both carriers use the same MMA schedule for these actual lengths.
+      if (active >= 64) expect_result(environment, packed, active);
+      packed.expect_guards();
+    }
+    // No recurrence may run for L=0, even though the physical shape selects MMA.
+    constexpr std::array<std::uint32_t, 3> special{0x80000000U, 0x7fc01234U, 0x3f800000U};
+    for (std::size_t i = 0; i < packed.fixture.data[5].size(); ++i)
+      packed.fixture.data[5][i] = std::bit_cast<float>(special[i % special.size()]);
+    packed.upload(0); packed.poison();
+    ASSERT_TRUE(packed.submit(environment.queue).ok());
+    expect_result(environment, packed, 0);
+    packed.offsets({0, 129}); packed.poison();
+    EXPECT_TRUE(packed.submit(environment.queue).IsInvalidArgument());
+    packed.expect_poison();
+  }
+}
+
 TEST(GgmlCudaPackedGdn, InvalidOffsetsPreserveBothOutputsAndRetiredPlanCanRetry) {
   Environment environment;
   Packed packed(environment, 32);
@@ -217,9 +258,7 @@ TEST(GgmlCudaPackedGdn, InvalidOffsetsPreserveBothOutputsAndRetiredPlanCanRetry)
   }
 }
 
-TEST(GgmlCudaPackedGdn, CapturedFixedCapacityReusesItsTupleWhenActualLengthChanges) {
-  Environment environment;
-  Packed packed(environment, 128);
+void captured_lengths(Environment &environment, Packed &packed, std::span<const unsigned> lengths) {
   auto builder = g::GraphBuilder::create().value();
   std::array<g::ValueId, 7> inputs;
   for (std::size_t port = 0; port < inputs.size(); ++port) inputs[port] = builder.input(packed.descriptions[port]).value();
@@ -234,7 +273,7 @@ TEST(GgmlCudaPackedGdn, CapturedFixedCapacityReusesItsTupleWhenActualLengthChang
   for (std::size_t port = 0; port < outputs.size(); ++port) ASSERT_TRUE(run.bind(outputs[port], packed.outputs[port]).ok());
   const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &environment.queue}};
   std::size_t round = 0;
-  for (const auto active : {128u, 105u, 1u, 0u, 105u, 128u}) {
+  for (const auto active : lengths) {
     SCOPED_TRACE(active);
     packed.upload(active); packed.poison();
     const auto prepared = run.prepare_replay(queues,
@@ -251,5 +290,17 @@ TEST(GgmlCudaPackedGdn, CapturedFixedCapacityReusesItsTupleWhenActualLengthChang
     ASSERT_TRUE(status.ok()) << status.message();
     expect_result(environment, packed, active);
   }
+}
+TEST(GgmlCudaPackedGdn, CapturedFixedCapacityReusesItsTupleWhenActualLengthChanges) {
+  Environment environment;
+  Packed packed(environment, 128);
+  const std::array lengths{128u, 105u, 1u, 0u, 105u, 128u};
+  captured_lengths(environment, packed, lengths);
+}
+TEST(GgmlCudaPackedGdn, CapturedMmaPreservesLengthChangesAndEmptyStateBits) {
+  Environment environment;
+  Packed packed(environment, 128, 16, 16);
+  const std::array lengths{128u, 105u, 65u, 0u, 105u, 128u};
+  captured_lengths(environment, packed, lengths);
 }
 } // namespace
