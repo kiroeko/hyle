@@ -1866,7 +1866,7 @@ public:
           const auto *packet = take(program.io.readback(program.verification_value));
           const std::array<inference::SubmissionViews::OutputCapture, 1> outputs{{
               {program.verification_packet, execution.storage_owner(), packet->pool()}}};
-          // Bind the existing device Source while pending. Final capture
+          // Export the existing device Source while pending. Final capture
           // preparation follows whole producer success, without forcing the
           // target back to managed Commands.
           const auto captured = take(guard.execution.sources->capture_outputs(run, guard.execution.completion,
