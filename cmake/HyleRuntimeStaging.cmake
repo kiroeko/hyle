@@ -1,5 +1,24 @@
 include_guard(GLOBAL)
 
+# Keep SDKs in the ordinary target/runtime closure while resolving their
+# Windows imports only when used. Static factors forward the final link flags
+# to their consumer; shared factors keep them private to their own DLL.
+function(_hyle_delay_load_sdk_imports target)
+  if(NOT (MSVC OR CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC"))
+    return()
+  endif()
+  get_target_property(_type "${target}" TYPE)
+  if(_type STREQUAL "STATIC_LIBRARY")
+    set(_scope INTERFACE)
+  else()
+    set(_scope PRIVATE)
+  endif()
+  target_link_libraries("${target}" PRIVATE delayimp)
+  foreach(_dll IN LISTS ARGN)
+    target_link_options("${target}" ${_scope} "LINKER:/DELAYLOAD:${_dll}")
+  endforeach()
+endfunction()
+
 # Some native SDKs omit loader-only DLLs from their imported target graph.
 # Associate those files with real owners, rather than copying them into every
 # executable merely because the SDK was discovered during configuration.

@@ -44,6 +44,7 @@ if(_HYLE_COMPUTE_HAVE_TORCH_CPU)
   # Use imported identities, not TORCH_LIBRARIES' absolute c10.lib path. A
   # relocated consumer resolves its own SDK through the dependency shim.
   target_link_libraries(hyle_compute_provider_native PRIVATE torch torch_cpu c10)
+  _hyle_delay_load_sdk_imports(hyle_compute_provider_native torch_cpu.dll)
   if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     # Let the consuming application's SDK RPATH reach this adapter's private
     # Torch dependency; a DT_RUNPATH here would suppress that ancestor search.

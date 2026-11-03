@@ -31,6 +31,7 @@ target_include_directories(hyle_compute_provider_torch_cuda SYSTEM PRIVATE
   "${_cpu_root}/include" "${_cpu_root}/include/torch/csrc/api/include" "${_cuda_root}/include")
 target_link_libraries(hyle_compute_provider_torch_cuda PRIVATE
   torch torch_cpu c10 hyle_vendor_torch_cuda hyle_vendor_c10_cuda CUDA::cudart CUDA::cublas)
+_hyle_delay_load_sdk_imports(hyle_compute_provider_torch_cuda torch_cpu.dll torch_cuda.dll)
 if(TORCH_CXX_FLAGS)
   separate_arguments(_torch_flags NATIVE_COMMAND "${TORCH_CXX_FLAGS}")
   target_compile_options(hyle_compute_provider_torch_cuda PRIVATE ${_torch_flags})

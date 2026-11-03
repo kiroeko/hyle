@@ -1,6 +1,17 @@
 #include "hyle/compute/providers/torch_cuda.h"
 #include "hyle/core/environment.h"
 
+#if defined(_MSC_VER)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <Windows.h>
+#include <delayimp.h>
+#endif
+
 #if HYLE_COMPILER_MSVC
 // Pinned c10 irange emits C4702 in /O2 SYSTEM headers.
 #pragma warning(push)
@@ -38,6 +49,20 @@
 
 namespace hyle::compute::torch_cuda {
 namespace {
+#if defined(_MSC_VER)
+int delay_import_exception(unsigned long code) noexcept {
+  return code == VcppException(ERROR_SEVERITY_ERROR, ERROR_MOD_NOT_FOUND) ||
+         code == VcppException(ERROR_SEVERITY_ERROR, ERROR_PROC_NOT_FOUND)
+      ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH;
+}
+bool load_cuda_runtime() noexcept {
+  __try { return SUCCEEDED(__HrLoadAllImportsForDll("torch_cuda.dll")); }
+  __except (delay_import_exception(GetExceptionCode())) { return false; }
+}
+#else
+bool load_cuda_runtime() noexcept { return true; }
+#endif
+
 constexpr ProviderRuntimeProperties kRuntime{
     .mode = ProviderRuntimeMode::kSharedQueue,
     .workspace_owner = ProviderWorkspaceOwner::kProvider,
@@ -370,6 +395,14 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
   cuda::detail::ScopedPrimaryContext scope(context.primary);
   if (!scope) { destroy_program(program, allocator); return ProviderPrepareOutcome::error(scope.status()); }
   try {
+    // CUDA hooks register when the SDK image loads. Resolve its real imports
+    // before asking the common CPU dispatch runtime to initialize this device.
+    // This stays in cold prepare; unused providers need no ATen initialization.
+    if (!load_cuda_runtime()) {
+      destroy_program(program, allocator);
+      return ProviderPrepareOutcome::error(
+          Status::Unavailable("CUDA ATen runtime imports could not be loaded"));
+    }
     // The original CUDA hook initializes the device allocator before a BLAS
     // handle requests workspace. Merely loading its DLL does not do this.
     at::globalContext().lazyInitDevice(at::kCUDA);
