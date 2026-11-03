@@ -1,12 +1,12 @@
 # CUDA 推理性能
 
-更新：2026-11-03，M1-9。**候选性能已测完，但长序列数值验收未通过，不能当作完成或发布结果。**
+更新：2026-11-03，M1-9。**同精度上游teacher-forcing的1058个位置argmax全部一致；性能门槛仍未全部通过。旧HEAD数值对照的超门槛分歧保留，M1-9未完成。**
 
 普通pp512在4K／16K／30K深度为上游速度的92.1%／92.3%／96.3%，相对本卡起点提升14.0%／11.6%／11.1%。生成上限512时，后三档decode领先1.5%／2.4%／3.3%。16K整段prefill中位数仍落后；32K中位数接近、范围重叠。M1-9未完成。
 
 ## 当前普通候选
 
-起点为`68bda28f3`。候选为已提交GDN MMA `b2ba22d36`加工作树里的FlashInfer分块／工作区补丁；使用真实默认CMake构建，没有修改decode路径或增加用户开关。两项加速都受到下述长序列数值失败的限制。
+起点为`68bda28f3`。本轮为GDN MMA `b2ba22d36`加FlashInfer分块／工作区修正（锁定补丁`hyle-flashinfer-msvc-mla-v22`）；使用真实默认CMake构建。数值与旧HEAD、独立上游的两种比较分别列出。
 
 RTX4070 12GB、i9-13900K、驱动617.14；Hyle为MSVC Release、CUDA13.3.73、`HYLE_COMPONENTS=engine`，沿用`80;89-real`构建。模型为本地Qwen3.5-2B BF16，greedy、C32768。上游固定[b12063](https://github.com/ggml-org/llama.cpp/releases/tag/b12063)／`2cbca389f515df455412dafa07e2b1359cc72a6d`官方Windows CUDA13.4、FA=on。
 
@@ -41,33 +41,46 @@ Hyle用既有真实文本、生成1个输出，只测首token；上游为stock `
 
 独立10ms显存采样：GDN版与候选各3个进程，六个GPU峰均为4597.078MiB，增量0；采样器均无错误。相同负载的私有提交峰中位数为7262.422／7279.141MiB，候选增加16.719MiB；不是RSS，也不与mmap工作集混比。
 
-## 数值验收：未通过
+## 数值核验：上游通过，旧HEAD比较仍有分歧
 
 4K共同前缀的513个输出argmax一致；整段16K／32736各16个检查通过。30K的513个位置出现5处argmax差异，其中`output=490`的oracle top-1／top-2分差0.204898834，超过既定0.1门槛。该处旧路径选择8836，候选选择5014；旧oracle另外两个独立进程的全部513项分数完全一致。
 
-分开测试GDN加速、注意力加速，两者均在同一位置超门槛。因此`b2ba22d36`的短验证也不足以覆盖长序列，不能仅把问题归给未提交的注意力补丁。现阶段只确认数值偏移可复现，尚未证明是哪个算子的错误或可接受的舍入误差。所有检查的长度／epoch／RNG／真实退休正常，不能替代数值通过。
+分开测试GDN加速、注意力加速，两者均在同一位置超门槛。控制实验保持旧GDN、旧注意力和权重，只把prefill分块从512改为256，也在同一位置与旧512 oracle分歧。因此该分歧不能单独证明新kernel错误；旧HEAD对照仍没有达到0.1要求。
 
-默认构建成功，Windows相关测试28项、统计工具12项通过；这些结果不覆盖上述未通过项。注意力补丁保留在工作树，未作为已验证优化提交。
+独立参照使用固定b12063的原生C API、官方运行库、同一token前缀及C32768／FA=on。BF16 KV与Hyle精度一致：4K／30K各513个位置、16K／32736各16个位置，共1058项argmax全部一致。默认F16 KV另测4K／30K共1026项，仅30K索引161不同，上游分差0.010324478<0.1。两种KV精度下，上游在索引490均选择5014。
+
+此处保留0.1阈值，同时报告旧HEAD与独立上游两个参照。上游同精度核验通过，不把旧HEAD的失败改写为通过。所有Hyle检查的长度／epoch／RNG／真实退休正常；GDN独立递归单元检查的逐元素绝对误差门槛为1e-5。默认构建成功，Windows相关测试28项、统计工具12项通过。
 
 ## 剩余热点的配对Nsight
 
-下表为GDN更新后、注意力补丁前的同prompt、同512行配对轨迹（`profile-gdn2-balanced`）。单进程带profiler，只作归因；不拿局部时间充当正式吞吐。
+下表为本轮GDN与注意力修正后的同prompt、同512行配对轨迹（`profile-gpuctxsw-current1`），同时记录GPU上下文切换。每边一个进程，仅作归因；kernel墙时可能包含其它上下文驻留，不能直接当成纯计算耗时。
 
 | 类别 | 4K Hyle／上游ms | 30K Hyle／上游ms |
 |---|---:|---:|
-| GEMM | 30.233／29.606 | 30.096／29.746 |
-| 注意力 | 2.875／1.822 | 17.037／14.798 |
-| GDN／conv | 2.816／3.245 | 2.818／3.280 |
-| 类型转换 | 0／1.149 | 0／1.150 |
-| 拷贝／gather／memset | 2.960／2.538 | 2.940／4.017 |
-| 其它kernel | 4.677／3.936 | 4.582／3.311 |
-| 本进程GPU活动以外的空档 | 6.969／4.216 | 6.392／6.983 |
-| 首kernel前时间 | 3.064／3.495 | 3.378／7.347 |
-| kernel数 | 956／832 | 962／832 |
+| GEMM | 33.386／34.259 | 32.526／31.680 |
+| 注意力 | 2.286／2.119 | 16.499／17.037 |
+| GDN／conv | 2.836／3.728 | 2.855／3.307 |
+| 类型转换 | 0／1.143 | 0／1.151 |
+| 拷贝／gather／memset | 2.970／2.560 | 3.158／4.688 |
+| 其它kernel | 5.123／3.436 | 5.188／3.362 |
+| 本进程GPU活动以外的空档 | 7.893／4.259 | 6.725／6.793 |
+| 首kernel前时间 | 3.859／3.075 | 3.256／6.699 |
+| kernel数 | 962／832 | 962／832 |
 
-GDN已不再是慢项。4K多出的2.753ms空档中，1.804ms发生在下一条CUDA API已返回之后；内存分配／事件创建合计仅约0.24ms。计算命令约12.6ms已提交完，后段仍有排队空档，不能全部归为主机准备。布局准备4K／30K约0.132／0.143ms，不是旧页整表复制复发的证据。
+将CUDA活动空档与GPU上下文驻留区间取交集，可拆为：
 
-长注意力、较多的小算子、流依赖／WDDM调度仍需区分；保留GameViewer时，本进程没有CUDA活动不等于全卡空闲。两种后续注意力调度试验未测出稳定收益，未采用。
+| 空档中的GPU上下文状态 | 4K Hyle／上游ms | 30K Hyle／上游ms |
+|---|---:|---:|
+| 其它进程上下文驻留 | 3.358／2.587 | 0.987／4.776 |
+| 目标进程上下文驻留 | 3.404／1.419 | 5.103／1.423 |
+| 系统／空闲上下文 | 0／0 | 0／0.077 |
+| 切换／未覆盖区间 | 1.131／0.253 | 0.635／0.517 |
+
+其它进程包括dwm、Chrome、WindowsTerminal与msedgewebview2。上下文驻留按RestoreStart→SaveEnd计算，包含恢复／保存成本；它不是指令发射时间。4K多出的3.634ms空档中，0.771ms与其它进程驻留重叠、0.878ms在切换／未覆盖区间、1.985ms在目标上下文内。30K的目标上下文内空档多3.680ms，却被上游更多的外部驻留掩盖；单看总空档会误判。
+
+kernel时间与目标上下文驻留取交集后，注意力4K／30K分别为2.286／1.925、15.203／14.588ms；其它kernel分别为4.491／3.085、4.544／3.083ms。剩余优先项是目标上下文内的提交空档和更多的小算子。不能从正式端到端数字中直接扣掉这些profiler区间，也不能把目标上下文空档全部称为主机准备。
+
+既有准备轨迹的布局时间4K／30K约0.132／0.143ms，没有旧页整表复制复发的证据。两种后续注意力调度试验未测出稳定收益，未采用。当前普通prefill采用Commands；注意力provider现有固定Q图复用只覆盖Q=1／2，较大固定Q的复用能力尚未实现。
 
 ## 真实八轮／MTP最近一次测量
 
@@ -98,6 +111,8 @@ GDN已不再是慢项。4K多出的2.753ms空档中，1.804ms发生在下一条C
 
 常规入口：`python scripts/inference-upstream-compare.py --help`，提供`standard/long/multi/memory/validate/analyze`；服务端默认端口2048并启用`--metrics`。上游tg固定输出数；Hyle遇到EOS仍按真实输出数报告，标准等长验收不会把截短样本当成完整512。
 
-本机M1-9的实际命令、版本与逐进程频率在[66进程窗口](../../../.scratch/inference-prefill-upstream-fix-20261103/default-attention-window2-balanced/)，[完整性检查](../../../.scratch/inference-prefill-upstream-fix-20261103/default-attention-window2-balanced/validation.txt)通过；[独立内存](../../../.scratch/inference-prefill-upstream-fix-20261103/default-attention-memory1-balanced/)、[长序列teacher](../../../.scratch/inference-prefill-upstream-fix-20261103/teacher-default-attention-long1/)、[数值隔离](../../../.scratch/inference-prefill-upstream-fix-20261103/teacher-long-isolate1/)、[oracle重跑](../../../.scratch/inference-prefill-upstream-fix-20261103/teacher-long-oracle-repeat1/)保留原数。
+本机M1-9的实际命令、版本与逐进程频率在[66进程窗口](../../../.scratch/inference-prefill-upstream-fix-20261103/default-attention-window2-balanced/)，[完整性检查](../../../.scratch/inference-prefill-upstream-fix-20261103/default-attention-window2-balanced/validation.txt)通过；[独立内存](../../../.scratch/inference-prefill-upstream-fix-20261103/default-attention-memory1-balanced/)、[长序列teacher](../../../.scratch/inference-prefill-upstream-fix-20261103/teacher-default-attention-long1/)、[数值隔离](../../../.scratch/inference-prefill-upstream-fix-20261103/teacher-long-isolate1/)、[oracle重跑](../../../.scratch/inference-prefill-upstream-fix-20261103/teacher-long-oracle-repeat1/)保留原数。补充的[旧内核256行控制](../../../.scratch/inference-prefill-upstream-fix-20261103/teacher-shape-control256/)、[上游30K](../../../.scratch/inference-prefill-upstream-fix-20261103/teacher-upstream1/)与[上游其它长度](../../../.scratch/inference-prefill-upstream-fix-20261103/teacher-upstream2/)均保留完整命令、logits摘要与有效运行库路径。
 
 M1-7a的多轮／MTP／资源仍见[该窗口](../../../.scratch/inference-upstream-head-to-head-20261103/window1/)。旧标准吞吐表和冻结版第三方只保留在Git历史，不用于替代新测量。
+
+最新成对[GPU上下文轨迹](../../../.scratch/inference-prefill-upstream-fix-20261103/profile-gpuctxsw-current1/)保留4K／30K分类表与驻留交集原数；设备事件追踪已关闭，未采用开启它时扰动较大的那组计时。

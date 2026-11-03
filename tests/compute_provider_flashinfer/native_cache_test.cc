@@ -595,6 +595,11 @@ TEST(FlashinferCache, LongPrefillSplitAndTightWorkspaceUseTheSameCausalState){
     ASSERT_TRUE(prepared)<<prepared.error().message();
     EXPECT_EQ(slot.report().split_kv,workspace>(std::size_t{1}<<20));
     EXPECT_LE(slot.report().float_workspace_bytes,workspace);
+    // Query/materialize must size real partial rows, not multiply the GQA
+    // packed CTA rows by the query-head count a second time. This geometry's
+    // prefill policy bounds KV partitions by eight; graph plans are separate.
+    EXPECT_LE(slot.report().float_workspace_bytes,
+        std::size_t(rows)*heads*(depth+1)*sizeof(float)*8);
     auto done=prepared->run(query,key_frame,value_frame);ASSERT_TRUE(done)<<done.error().message();
     ASSERT_TRUE(done->wait().ok());auto output=slot.output().value();
     auto &actual=workspace==(std::size_t{1}<<20)?tight:split;actual.resize(query_values.size());

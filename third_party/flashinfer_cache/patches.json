@@ -235,7 +235,7 @@
     {
       "path": "include/flashinfer/attention/scheduler.cuh",
       "before_sha256": "a11a39aea393cdb380ad9439aac9170cd96849d7426ebbb920c5c8cdadfcc575",
-      "after_sha256": "e6d8286c3cefd4ac0a68f364b7fdccc3b91bdce7f7846a896d69d2f45af54407",
+      "after_sha256": "cdacd90a0d4f1f391e8f59b78027bfcb506ddce4afed9a87a07344633004b178",
       "edits": [
         {
           "before": "    int64_t uniform_q_len, cudaStream_t stream, uint32_t kv_dtype_bytes = 2) {",
@@ -356,6 +356,10 @@
         {
           "before": "  AlignedAllocator float_allocator = hyle_query ? AlignedAllocator() :\n      AlignedAllocator(float_buffer, float_workspace_size_in_bytes);\n  plan_info.partial_o_offset = float_allocator.aligned_alloc_offset(\n      size_t(partial_o_nnz) * head_dim_o * sizeof_dtype_o, 16, \"mla_partial_o\");\n  plan_info.partial_lse_offset = float_allocator.aligned_alloc_offset(\n      size_t(partial_o_nnz) * sizeof(float), 16, \"mla_partial_lse\");\n\n  if (hyle_float_bytes) *hyle_float_bytes = float_allocator.num_allocated_bytes();\n",
           "after": "  size_t hyle_partial_workspace_bytes = 0;\n  plan_info.partial_o_offset = 0;\n  plan_info.partial_lse_offset = 0;\n  if (partial_o_nnz != 0) {\n    AlignedAllocator float_allocator = hyle_query ? AlignedAllocator() :\n        AlignedAllocator(float_buffer, float_workspace_size_in_bytes);\n    plan_info.partial_o_offset = float_allocator.aligned_alloc_offset(\n        size_t(partial_o_nnz) * head_dim_o * sizeof_dtype_o, 16, \"mla_partial_o\");\n    plan_info.partial_lse_offset = float_allocator.aligned_alloc_offset(\n        size_t(partial_o_nnz) * sizeof(float), 16, \"mla_partial_lse\");\n    hyle_partial_workspace_bytes = float_allocator.num_allocated_bytes();\n  }\n\n  if (hyle_float_bytes) *hyle_float_bytes = hyle_partial_workspace_bytes;\n"
+        },
+        {
+          "before": "    plan_info.v_offset = float_allocator.aligned_alloc_offset(\n        num_qo_heads * padded_batch_size * cta_tile_q * head_dim_vo * partial_value_bytes, 16,\n        \"batch_prefill_tmp_v\");\n    plan_info.s_offset = float_allocator.aligned_alloc_offset(\n        num_qo_heads * padded_batch_size * cta_tile_q * sizeof(float), 16, \"batch_prefill_tmp_s\");",
+          "after": "    // Non-graph kernels address partials through o_indptr and guard real Q\n    // rows. Packed GQA tiles are not extra output rows. Graph replay retains\n    // the original padded bound because its active layout may change.\n    const size_t padded_partial_rows = size_t(padded_batch_size) * cta_tile_q;\n    size_t partial_rows = padded_partial_rows;\n    if (!enable_cuda_graph && !o_indptr_vec.empty()) {\n      if (o_indptr_vec.back() < 0 || uint64_t(o_indptr_vec.back()) > padded_partial_rows) {\n        FLASHINFER_ERROR(\"prefill partial row count exceeds its padded bound\");\n      }\n      partial_rows = size_t(o_indptr_vec.back());\n    }\n    plan_info.v_offset = float_allocator.aligned_alloc_offset(\n        size_t(num_qo_heads) * partial_rows * head_dim_vo * partial_value_bytes, 16,\n        \"batch_prefill_tmp_v\");\n    plan_info.s_offset = float_allocator.aligned_alloc_offset(\n        size_t(num_qo_heads) * partial_rows * sizeof(float), 16, \"batch_prefill_tmp_s\");"
         }
       ]
     },

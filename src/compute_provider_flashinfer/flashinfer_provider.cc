@@ -329,11 +329,11 @@ Status query_bounded_batch_workspace(native::BatchSpec spec,HostBatchLayout meta
     const auto packed=std::uint64_t(spec.query_rows)*(spec.query_heads/spec.kv_heads);
     const auto query_tiles=(packed+facts.cta_tile_q-1)/facts.cta_tile_q;
     const auto base_ctas=query_tiles*spec.kv_heads;
-    const auto target_ctas=std::uint64_t(multiprocessors)*prefill_blocks_per_sm*2;
-    if(kv_rows>=8192 && base_ctas && base_ctas<target_ctas){
+    const auto target_ctas=std::uint64_t(multiprocessors)*prefill_blocks_per_sm*4;
+    if(kv_rows>=4096 && base_ctas && base_ctas<target_ctas){
       // Keep each KV partition substantial. Try the highest useful split
       // first, falling back to the original plan when scratch is insufficient.
-      auto splits=(std::min)({std::uint64_t{8}, kv_rows/2048,
+      auto splits=(std::min)({std::uint64_t{8}, kv_rows/1024,
           target_ctas/base_ctas+std::uint64_t(target_ctas%base_ctas!=0)});
       const auto baseline_ctas=std::uint64_t(facts.padded_batch_size)*spec.kv_heads;
       for(;splits>=2;--splits){

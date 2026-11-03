@@ -162,3 +162,9 @@ cross-warpgroup m/d state: CKV512+KPE64 needs 101376 bytes and CKV512 needs
 91296 bytes. Plain storage, the MLA scheduler, F32 split partial/merge, existing
 synchronization and output ownership remain unchanged. This is not the separate
 scaled DSA format with inline per-group scales or a BF16 positional tail.
+
+Non-graph prefill split partials use the scheduler's actual output indptr row
+count. Packed GQA query tiles do not add output rows. Query and materialization
+use the same checked count; graph plans retain their original padded bounds.
+Kernel indexing, F32 partial values, merge arithmetic and caller workspace caps
+are unchanged.
