@@ -71,10 +71,7 @@ TEST(CudaDefaultGraph, BfloatGatesUseNormalDirectAndPreparedGraphEntries) {
                                            .value())
                       .ok());
       ASSERT_TRUE(graph::cuda::prepare_replay(graph_slot, queue).ok());
-      EXPECT_EQ(graph_slot.replay_route(),
-                selected == compute::ggml_cuda::kProviderId
-                    ? graph::ReplayRoute::kCommands
-                    : graph::ReplayRoute::kCaptured);
+      EXPECT_EQ(graph_slot.replay_route(), graph::ReplayRoute::kCaptured);
       std::vector<Value> values(static_cast<std::size_t>(4 * width));
       for (int seed : {1, 3, 7}) {
         for (std::size_t i = 0; i < values.size(); ++i)
@@ -484,7 +481,7 @@ TEST(CudaDefaultGraph, DefaultRulesPrepareSeparateAndPackedTailCapability) {
     }
     ASSERT_TRUE(slot.bind(result, output.view).ok());
     ASSERT_TRUE(graph::cuda::prepare_replay(slot, queue).ok());
-    EXPECT_EQ(slot.replay_route(), graph::ReplayRoute::kCommands);
+    EXPECT_EQ(slot.replay_route(), graph::ReplayRoute::kCaptured);
     for (const float value : {1.0F, 2.0F}) {
       first.write(std::vector<float>(
           static_cast<std::size_t>(hidden) * (packed ? 2 : 1), value));
@@ -511,7 +508,7 @@ TEST(CudaDefaultGraph, RejectsMissingResourcesAndUnsupportedOperations) {
   auto logical = std::move(builder).finish().value();
   EXPECT_FALSE(graph::cuda::compile(logical, compute::Context{}, resource.ref())
                    .has_value());
-  auto missing = graph::cuda::compile(logical, owner, {});
+  auto missing = graph::cuda::compile(logical, owner, hyle::mem::MemoryResourceRef{});
   ASSERT_FALSE(missing.has_value());
   EXPECT_TRUE(missing.error().IsInvalidArgument());
   auto unsupported = graph::cuda::compile(logical, owner, resource.ref());

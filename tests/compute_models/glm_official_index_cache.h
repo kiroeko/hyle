@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../engine/models/glm/glm_official_index_cache.h"
+
 #include "d5_glm_remaining_fragments.h"
 #include <numeric>
 #include <stdexcept>
@@ -22,30 +24,8 @@ namespace c = hyle::compute;
 namespace sem = d5_qwen38_24t_semantic_fragments;
 namespace glm = d5_glm_remaining_fragments;
 using Value = sem::ValueId;
-inline constexpr std::int64_t kDepth = 128, kHeads = 32, kPool = 4;
-inline constexpr std::int64_t kCapacity = 514, kTopPools = 512;
-inline constexpr std::int64_t kLatent = 512, kMlaHeads = 64;
-inline constexpr std::int64_t kSelected = kTopPools * kPool;
-inline constexpr float kFloor = 1.0e-4F;
 
-inline Value cast(sem::Fragment &f, Value x, c::DataType type) {
-  return f.one(c::Operation(c::Cast{type}), {x});
-}
-inline Value bfloat_boundary(sem::Fragment &f, Value x) {
-  return cast(f, cast(f, x, c::DataType::kBFloat16), c::DataType::kFloat32);
-}
-struct Quantized final { Value codes, scale, rotated, transformed, input; };
-inline Quantized quantize(sem::Fragment &f, Value x, std::int64_t rows) {
-  const auto &desc = f.description(x);
-  if (desc.rank() != 2 || desc.dimensions()[0] != rows || desc.dimensions()[1] != kDepth)
-    throw std::runtime_error("GLM quantizer requires the actual whole row extent");
-  const auto input = cast(f, x, c::DataType::kFloat32);
-  const auto transformed = f.one(c::Operation(c::Hadamard{}), {input});
-  x = bfloat_boundary(f, transformed);
-  const auto encoded = f.append(c::model_ops::float8_block_quantize(
-      c::model_ops::Float8ScalePolicy::kPowerOfTwo, kFloor), {x}, 2);
-  return {encoded[0], encoded[1], x, transformed, input};
-}
+
 inline std::vector<float> ape() {
   std::vector<float> result(kPool * kDepth);
   for (std::size_t i = 0; i < result.size(); ++i)
@@ -109,27 +89,6 @@ struct Consumer final {
 // Raw F32 head weights are supplied before either 1/sqrt(heads) factor or
 // quantization scale folding. Keep the original ordered F32 products shared
 // by the standalone cache component and a complete NextN consumer.
-inline Value score_encoded(sem::Fragment &f, Value bank, Value scales,
-                           const Quantized &query, Value raw_weights,
-                           std::int64_t visible) {
-  std::vector<std::int32_t> prefix(std::size_t(visible), 0);
-  std::iota(prefix.begin(), prefix.end(), 0);
-  const auto valid = f.constant(sem::dense({visible}, c::DataType::kInt32), sem::bytes(prefix));
-  const auto key = cast(f, f.one(c::Operation(c::Gather{}), {bank, valid}), c::DataType::kFloat32);
-  const auto key_scale = glm::reshape(f, f.one(c::Operation(c::Gather{}), {scales, valid}), {1, visible});
-  auto dot = f.one(c::Operation(c::MatMul{}),
-      {cast(f, query.codes, c::DataType::kFloat32), glm::permute(f, key, {1, 0})});
-  dot = glm::unary(f, c::UnaryKind::kRelu, dot);
-  auto gate = glm::binary(f, c::BinaryKind::kMultiply, raw_weights,
-      glm::filled(f, sem::dense({1}), 1.0F / std::sqrt(float(kHeads))));
-  gate = glm::binary(f, c::BinaryKind::kMultiply,
-      glm::reshape(f, gate, {kHeads, 1}), query.scale);
-  gate = glm::binary(f, c::BinaryKind::kMultiply, gate,
-      glm::filled(f, sem::dense({1}), 1.0F / std::sqrt(float(kDepth))));
-  auto score = glm::reshape(f, glm::reduce(f,
-      glm::binary(f, c::BinaryKind::kMultiply, dot, gate), 0), {1, visible});
-  return glm::binary(f, c::BinaryKind::kMultiply, score, key_scale);
-}
 inline Consumer consumer(std::int64_t visible) {
   if (visible < kTopPools || visible > kCapacity) throw std::runtime_error("GLM cache consumer visible extent");
   Consumer r; r.visible = visible;

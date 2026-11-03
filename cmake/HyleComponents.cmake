@@ -561,7 +561,7 @@ _hyle_declare_component(compute_state
 
   # F5 metadata is independent of native execution and Graph owners.
   _hyle_declare_component(compute_batch
-    PRIVATE_DEPS core util_core
+    PRIVATE_DEPS core container util_core
     PUBLIC_DEPS compute compute_ops error mem
     PUBLIC_TYPE_DEPS compute compute_ops error mem
     TEST_DEPS compute_state compute_backend_cpu

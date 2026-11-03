@@ -663,6 +663,11 @@ if(_HYLE_COMPUTE_HAVE_VULKAN AND TARGET hyle_graph_route_vulkan
   hyle_stage_runtime(hyle_graph_route_vulkan_qwen_resource_retirement_test)
 endif()
 
+# Model components stay out of SDK products and the default Qwen application.
+# Module-only validation reuses the same private sources without an engine.
+include("${HYLE_SOURCE_DIR}/engine/models/glm/component_sources.cmake")
+include("${HYLE_SOURCE_DIR}/engine/models/deepseek/component_sources.cmake")
+
 # Every module owns its test registration beside its test sources. A real
 # subdirectory gives each module independent source/binary/variable scope while
 # target names and the common output directory remain stable.
@@ -686,6 +691,26 @@ foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
       get_target_property(_hyle_module_target_type
         ${_hyle_module_target} TYPE)
       if(_hyle_module_target_type STREQUAL "EXECUTABLE")
+        if(_hyle_module_target MATCHES "^hyle_graph_route_(cpu|cuda|apple|vulkan)_test$" OR
+           (_hyle_module_target MATCHES "(glm|deepseek|dspark)" AND
+            NOT _hyle_module_target STREQUAL "hyle_compute_state_dspark_block5_policy_test"))
+          _hyle_add_glm_component(hyle_graph hyle_compute hyle_mem_vm)
+          _hyle_add_deepseek_component(hyle_graph hyle_compute hyle_mem_vm)
+          target_link_libraries(${_hyle_module_target} PRIVATE hyle_glm_component hyle_deepseek_component)
+        elseif(_hyle_module_target MATCHES "^hyle_graph_route_(cpu|cuda|apple|vulkan)_qwen_mtp_state_consumer_test$")
+          _hyle_add_model_components_common(hyle_graph hyle_compute hyle_mem_vm)
+          target_link_libraries(${_hyle_module_target} PRIVATE hyle_model_components_common hyle_mem_vm)
+        elseif(_hyle_module_target MATCHES "^hyle_compute_route_(cpu|cuda|apple|vulkan)_test$" OR
+               _hyle_module_target MATCHES "^hyle_graph_route_(cpu|cuda|apple|vulkan)_ga_full_ffn_test$")
+          # Direct Compute fixtures use the same typed projection, without
+          # acquiring a Graph dependency or the rest of a model component.
+          target_sources(${_hyle_module_target} PRIVATE
+            "${HYLE_SOURCE_DIR}/engine/models/deepseek/dspark_stored_projection_fragment.cc")
+          if(_hyle_module_target MATCHES "^hyle_compute_route_(cpu|cuda|apple|vulkan)_test$")
+            target_sources(${_hyle_module_target} PRIVATE
+              "${HYLE_SOURCE_DIR}/engine/models/deepseek/dspark_vocabulary_fragment.cc")
+          endif()
+        endif()
         get_target_property(_hyle_test_owner
           ${_hyle_module_target} HYLE_TEST_MODULE)
         if(NOT _hyle_test_owner STREQUAL "${_component}")

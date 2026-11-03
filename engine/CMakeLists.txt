@@ -38,6 +38,8 @@ set_target_properties(hyle_engine PROPERTIES OUTPUT_NAME hyle)
 hyle_configure_engine_target(hyle_engine)
 add_subdirectory(models/qwen35)
 add_subdirectory(models/kimi_k3)
+add_subdirectory(models/glm)
+add_subdirectory(models/deepseek)
 
 if(_hyle_engine_standalone)
   include(GNUInstallDirs)

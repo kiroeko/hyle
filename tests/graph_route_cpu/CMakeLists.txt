@@ -79,6 +79,11 @@ if(HYLE_GGML_CPU_ENABLED)
               ../compute_models/glm_pro_mtp_state_consumer_test.cc
       DEPS hyle_compute_state hyle_simd)
     target_compile_definitions(hyle_graph_route_cpu_glm_mtp_state_consumer_test PRIVATE HYLE_TEST_GLM_STATE_CPU=1)
+    if(MSVC)
+      # Full-vocabulary CPU graphs need more than the Windows 1 MiB default.
+      # Reserve virtual stack space; keep the normal commit size.
+      target_link_options(hyle_graph_route_cpu_glm_mtp_state_consumer_test PRIVATE /STACK:16777216)
+    endif()
     target_link_libraries(hyle_graph_route_cpu_glm_mtp_state_consumer_test PRIVATE ggml)
     target_include_directories(hyle_graph_route_cpu_glm_mtp_state_consumer_test SYSTEM PRIVATE "${HYLE_GGML_SOURCE_DIR}/src")
     hyle_stage_runtime(hyle_graph_route_cpu_glm_mtp_state_consumer_test)

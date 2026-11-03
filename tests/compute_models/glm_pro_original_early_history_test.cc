@@ -586,7 +586,9 @@ struct SharedDevice final {std::shared_ptr<c::cuda::MemoryResource> device;m::Me
 // does not execute or claim the omitted layer75/76 body. Their input74 and
 // target76 hidden/residual boundaries below are explicit finite fixtures.
 TEST(GlmProOrdinaryEarlyHistory,CudaActualLayer74IndexSuppliesShortTarget77) {
-  const auto bundle=directory("HYLE_GLM_PRO_INDEX74_BUNDLE");ASSERT_FALSE(bundle.empty());
+  const auto bundle=directory("HYLE_GLM_PRO_INDEX74_BUNDLE");
+  if(bundle.empty())GTEST_SKIP()<<"Set HYLE_GLM_PRO_INDEX74_BUNDLE to the authenticated original layer74 fixture";
+  ASSERT_FALSE(bundle.empty());
   auto context=take(g::cuda::create_context(),"ordinary Pro CUDA Context");
   auto device=std::make_shared<c::cuda::MemoryResource>(take(c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice),"ordinary Pro actual device"));
   auto owner=take(c::StorageOwner::adopt(context,SharedDevice{device}),"ordinary Pro original native owner");

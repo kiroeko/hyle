@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../engine/models/deepseek/dspark_component_math.h"
+
 #include "d5_deepseek_official_fragments.h"
 #include "d5_deepseek_remaining_fragments.h"
 #include "d5_glm_remaining_fragments.h"
@@ -86,13 +88,7 @@ inline ValueId mean(Fragment &f, ValueId x) {
       .axes = c::Axes::from(std::span(&axis, 1)).value(), .keep_dimensions = true,
       .accumulation_type = c::DataType::kFloat32}), {x});
 }
-struct QueryNormPorts final {
-  ValueId input,square_raw,square,mean_raw,mean,variance_raw,variance,inverse_raw,inverse,output_raw,output;
-  template<class Visitor> void visit_values(Visitor &&visitor) {
-    for(auto *value:{&input,&square_raw,&square,&mean_raw,&mean,&variance_raw,&variance,
-        &inverse_raw,&inverse,&output_raw,&output}) visitor(*value);
-  }
-};
+using QueryNormPorts=dspark_component_math::QueryNormPorts;
 inline ValueId query_norm(Fragment &f, ValueId x, QueryNormPorts *ports=nullptr) {
   const auto square_raw=binary(f, c::BinaryKind::kMultiply, x, x);
   auto square = bfloat_boundary(f, square_raw);
@@ -137,12 +133,7 @@ inline std::vector<float> rope_frequencies(bool compressed, bool inverse) {
   }
   return result;
 }
-struct RopePorts final {
-  ValueId input,raw,stored;
-  template<class Visitor> void visit_values(Visitor &&visitor) {
-    for(auto *value:{&input,&raw,&stored})visitor(*value);
-  }
-};
+using RopePorts=dspark_component_math::RopePorts;
 inline ValueId rope(Fragment &f, ValueId x, ValueId positions, bool compressed, bool inverse = false,
                     RopePorts *ports=nullptr) {
   const auto depth = f.description(x).dimensions().back();
@@ -681,11 +672,9 @@ inline Fragment attention(const moe::Case &model, std::int64_t ratio,
   }
   return f;
 }
-struct HyperPrePorts final {
-  ValueId state, flat, projection, inverse, mixes, pre, post, combination, collapsed_raw, collapsed;
-};
-struct HyperPostPorts final { ValueId branch, residual, expanded, stored; };
-struct HyperValues final { ValueId fn, scale, base; };
+using HyperPrePorts=dspark_component_math::HyperPrePorts;
+using HyperPostPorts=dspark_component_math::HyperPostPorts;
+using HyperValues=dspark_component_math::HyperValues;
 struct HyperParameters final { ImmutableF32Parameter fn, scale, base; };
 struct Hyper final {
   ValueId collapsed, post, combination;

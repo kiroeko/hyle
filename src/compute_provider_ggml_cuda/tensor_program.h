@@ -73,7 +73,8 @@ constexpr HadamardFactors hadamard_factors(std::int64_t width) noexcept {
 
 // Native device is nominated by the actual provider Context. Unknown callers
 // decline the large packed exception; ordinary bounded MatMul is unchanged.
-bool tensor_operation_supports(Operation, std::span<const TensorDesc>,
+// Same-build white-box validation; this header is not part of the SDK.
+HYLE_COMPUTE_PROVIDER_GGML_CUDA_API bool tensor_operation_supports(Operation, std::span<const TensorDesc>,
                                std::span<const TensorDesc>,
                                int native_device = -1) noexcept;
 ggml_tensor *create_tensor_input(ggml_context *, const TensorDesc &);

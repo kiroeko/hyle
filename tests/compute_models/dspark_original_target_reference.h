@@ -20,6 +20,7 @@
 
 #include "dspark_original_target_fragment.h"
 #include "dspark_original_target_roles.h"
+#include "d5_deepseek_official_attention.h"
 #include "dspark_original_hc_reference.h"
 #include "dspark_original_expert_reference.h"
 #include "glm_original_attention_reference.h"
@@ -37,7 +38,7 @@ namespace hc=dspark_original_hc_reference;
 namespace fp8=glm_original_attention_reference;
 namespace scalar=glm_original_indexer_reference::detail;
 namespace original=glm_original_mtp_roles;
-namespace ds=graph::ds;
+namespace ds=d5_deepseek_official_attention;
 using Role=roles::Role;
 using Value=graph::Value;
 using Bytes=std::vector<std::byte>;
@@ -75,7 +76,7 @@ inline void exact(std::span<const float> actual,std::span<const float> expected,
     ASSERT_EQ(std::bit_cast<std::uint32_t>(actual[i]),std::bit_cast<std::uint32_t>(expected[i]))<<label<<'['<<i<<']';
 }
 inline void close(std::span<const float> actual,std::span<const float> expected,const char *label) {
-  SCOPED_TRACE(label);graph::sem::oracle::expect_close(actual,expected,8.0e-5F,4.0e-5F);
+  SCOPED_TRACE(label);d5_qwen38_24t_semantic_fragments::oracle::expect_close(actual,expected,8.0e-5F,4.0e-5F);
 }
 inline void store(std::span<const float> actual,std::span<const float> raw,const char *label) {
   EXPECT_TRUE(hc::expect_bfloat_store(actual,raw,label));

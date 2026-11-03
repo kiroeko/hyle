@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../engine/models/detail/component_definition.h"
+
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -403,20 +405,9 @@ inline GraphCase make_graph(const Layout &layout = official_layout()) {
 
 // The Direct recipe uses Compute-only values and output inference. It does not
 // create or link a Graph, preserving the independent Direct delivery seam.
-enum class ValueKind : std::uint8_t { kInput, kConstant, kNodeOutput };
-
-struct ValueId final {
-  std::uint32_t index = 0;
-  ValueKind type = ValueKind::kInput;
-  std::uint32_t ordinal() const noexcept { return index; }
-  ValueKind kind() const noexcept { return type; }
-};
-
-struct DirectNode final {
-  c::Operation operation;
-  std::vector<ValueId> inputs;
-  std::vector<ValueId> outputs;
-};
+using ValueKind = hyle::inference::model_definition::ValueKind;
+using ValueId = hyle::inference::model_definition::ValueId;
+using DirectNode = hyle::inference::model_definition::DirectNode;
 
 struct DirectPorts final {
   c::TensorDesc activation_desc;

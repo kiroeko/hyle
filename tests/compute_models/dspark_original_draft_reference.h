@@ -96,7 +96,7 @@ template<class Get,class GetBytes> void attention(const roles::Data &data,std::s
   const auto keys=get(p.keys),mask=get(p.mask);
   target::exact(keys,get(h.decoded),"formal draft SAME decoded K/V rows");
   const auto context=get(p.context_raw);
-  target::close(context,graph::ds::old::sink_reference(get(p.rotary.stored),keys,keys,mask,
+  target::close(context,target::ds::old::sink_reference(get(p.rotary.stored),keys,keys,mask,
       data.floats(name(data,stage,"attn.attn_sink")),graph::kRows,graph::kWindow+graph::kRows,
       1.F/std::sqrt(float(graph::kDepth))),"formal draft sink attention actual operands");
   target::store(get(p.context_stored),context,"formal draft attention BF16 return");

@@ -1,0 +1,6 @@
+include("${CMAKE_CURRENT_LIST_DIR}/component_sources.cmake")
+if(TARGET hyle_mem_vm)
+  _hyle_add_deepseek_component(hyle::graph hyle::compute hyle::mem hyle_mem_vm)
+else()
+  _hyle_add_deepseek_component(hyle::graph hyle::compute hyle::mem)
+endif()

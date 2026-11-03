@@ -47,6 +47,12 @@ struct Recipe final {
   std::vector<g::ConstantBinding> constants;
   m::MemoryResourceRef resource = m::system_resource();
   const g::TensorSpec &spec(V value) const { return specs.at(value.ordinal()); }
+  static g::TensorSpec dense_spec(Type type, std::span<const D> dimensions) {
+    return take(g::TensorSpec::dense(type, dimensions));
+  }
+  static g::TensorSpec dense_spec(Type type, std::initializer_list<D> dimensions) {
+    return dense_spec(type, std::span(dimensions.begin(), dimensions.size()));
+  }
   V remember(V value, const c::TensorDesc &desc) {
     if (specs.size() <= value.ordinal()) specs.resize(value.ordinal() + 1);
     specs[value.ordinal()] = take(g::TensorSpec::concrete(desc));
@@ -65,6 +71,12 @@ struct Recipe final {
   }
   template<class O> V one(O operation, std::initializer_list<V> arguments) {
     return op(c::Operation(operation), arguments).at(0);
+  }
+  template<class O> V one(O operation, std::initializer_list<V> arguments, g::TensorSpec output) {
+    const auto actual = one(std::move(operation), arguments);
+    if (take(spec(actual).concrete_description()) != take(output.concrete_description()))
+      throw std::runtime_error("sampling test inferred output differs from the declared spec");
+    return actual;
   }
   V scalar(float value) {
     const auto desc = dense(Type::kFloat32, {1});

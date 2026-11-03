@@ -207,6 +207,68 @@ endif()
         self.resolve("all-and-engine", "all;engine", success=False)
         self.resolve("missing-parent-selection", embedded=True, success=False)
 
+    def model_component(self, family):
+        # Exercise the private component without the application or test SDK.
+        # The same target must also be present but unlinked in the application.
+        for application in (False, True):
+            source = self.directory / (family + str(application))
+            source.mkdir()
+            body = (
+                'cmake_minimum_required(VERSION 3.25)\n'
+                'project(ModelBoundary LANGUAGES CXX)\n'
+                f'set(HYLE_SOURCE_DIR "{ROOT.as_posix()}")\n'
+                'set(HYLE_COMPUTE_ROUTE_LIST "cpu;cuda")\n'
+                'foreach(product IN ITEMS compute graph graph_progress compute_stream mem)\n'
+                '  add_library(sdk_${product} INTERFACE)\n'
+                '  add_library(hyle::${product} ALIAS sdk_${product})\n'
+                'endforeach()\n')
+            if application:
+                body += (
+                    'add_library(hyle_mem_vm INTERFACE)\n'
+                    'include("${HYLE_SOURCE_DIR}/cmake/HyleRuntimeStaging.cmake")\n'
+                    'add_subdirectory("${HYLE_SOURCE_DIR}/engine" engine)\n'
+                    'get_target_property(links hyle_engine LINK_LIBRARIES)\n'
+                    f'if("hyle_{family}_component" IN_LIST links)\n'
+                    '  message(FATAL_ERROR "default Qwen linked an unrelated model")\n'
+                    'endif()\n')
+            else:
+                body += (
+                    f'include("${{HYLE_SOURCE_DIR}}/engine/models/{family}/component_sources.cmake")\n'
+                    f'_hyle_add_{family}_component(hyle::graph hyle::compute hyle::mem)\n')
+            body += f'''
+get_target_property(kind hyle_{family}_component TYPE)
+get_target_property(excluded hyle_{family}_component EXCLUDE_FROM_ALL)
+get_target_property(links hyle_{family}_component LINK_LIBRARIES)
+get_target_property(sources hyle_{family}_component SOURCES)
+if(NOT kind STREQUAL "STATIC_LIBRARY" OR NOT excluded)
+  message(FATAL_ERROR "model component escaped its private build boundary")
+endif()
+foreach(dependency IN ITEMS hyle::graph hyle::compute hyle::mem)
+  if(NOT dependency IN_LIST links)
+    message(FATAL_ERROR "model lost its actual SDK dependency")
+  endif()
+endforeach()
+if(TARGET hyle_mem_vm AND NOT "hyle_mem_vm" IN_LIST links)
+  message(FATAL_ERROR "embedded model lost the actual file-mapping dependency")
+endif()
+foreach(file IN LISTS sources)
+  cmake_path(IS_PREFIX HYLE_SOURCE_DIR "${{file}}" NORMALIZE inside)
+  if(NOT inside OR NOT file MATCHES "/engine/models/{family}/[^/]+[.]cc$")
+    message(FATAL_ERROR "model implementation still comes from tests/another family")
+  endif()
+endforeach()
+'''
+            (source / "CMakeLists.txt").write_text(body, encoding="utf-8")
+            result = subprocess.run(["cmake", "-S", str(source), "-B", str(source / "build")],
+                                    capture_output=True, text=True, timeout=30, **NO_WINDOW)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_glm_private_component_and_sdk_dependencies(self):
+        self.model_component("glm")
+
+    def test_deepseek_private_component_and_sdk_dependencies(self):
+        self.model_component("deepseek")
+
     def test_retirement_gate_follows_the_selected_route_on_macos(self):
         # This source-selection fixture deliberately keeps the host C++
         # compiler. Enabling Objective-C++ is recorded, not executed: no SDK

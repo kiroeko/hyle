@@ -48,7 +48,7 @@ TEST(CudaDefaultGraph,
     ASSERT_TRUE(slots[i].bind(prefix, sums[i].view).ok());
     const auto status = graph::cuda::prepare_replay(slots[i], queues[i]);
     ASSERT_TRUE(status.ok()) << status.message();
-    EXPECT_EQ(slots[i].replay_route(), graph::ReplayRoute::kCommands);
+    EXPECT_EQ(slots[i].replay_route(), graph::ReplayRoute::kHybrid);
   }
   std::vector<std::int32_t> old_values, old_indices, old_sums;
   for (int repeat = 0; repeat < 3; ++repeat) {
@@ -180,7 +180,7 @@ TEST(CudaDefaultGraph,
     ASSERT_TRUE(slots[lane].bind(indices, orders[lane].view).ok());
     ASSERT_TRUE(slots[lane].bind(selected, outputs[lane].view).ok());
     ASSERT_TRUE(graph::cuda::prepare_replay(slots[lane], queues[lane]).ok());
-    EXPECT_EQ(slots[lane].replay_route(), graph::ReplayRoute::kCommands);
+    EXPECT_EQ(slots[lane].replay_route(), graph::ReplayRoute::kHybrid);
   }
   std::vector<std::uint64_t> old_output;
   std::vector<std::int32_t> old_order;

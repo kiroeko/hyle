@@ -84,6 +84,12 @@ template <class Compiled> void expect_mature(const Compiled &compiled,
     bool mature = provider == c::ggml_cpu::kProviderId ||
                   provider == c::onednn::kProviderId ||
                   provider == g::onednn::kProviderId;
+    // Native checked Gather is a bit-preserving indexing leaf, not a
+    // replacement for mature arithmetic. Keep every numerical check below.
+    mature = mature || (provider == c::native::kProviderId &&
+        node.kind == c::OperationKind::kGather &&
+        report.implementation.value() ==
+            static_cast<std::uint64_t>(c::OperationKind::kGather) + 1);
     if (fixture && node.ordinal < fixture->nodes.size() && report.node_count == 1) {
       const auto roundtrip = fixture->nodes[node.ordinal].operation
           .template custom_as<c::model_ops::BlockQuantizationRoundtrip>();

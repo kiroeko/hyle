@@ -21,13 +21,19 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
   target_link_libraries(hyle_graph_route_cuda_gguf_nvfp4_test PRIVATE ggml)
   hyle_stage_runtime(hyle_graph_route_cuda_gguf_nvfp4_test)
   hyle_add_test(graph_route_cuda NAME grouped_shared_activation
-    SOURCES grouped_shared_activation_test.cc DEPS hyle_compute_backend_cuda)
+    SOURCES grouped_shared_activation_test.cc DEPS hyle_compute_backend_cuda hyle_compute_provider_ggml_cuda)
+  target_link_libraries(hyle_graph_route_cuda_grouped_shared_activation_test PRIVATE ggml)
+  target_include_directories(hyle_graph_route_cuda_grouped_shared_activation_test SYSTEM PRIVATE "${HYLE_GGML_SOURCE_DIR}/src")
+  target_include_directories(hyle_graph_route_cuda_grouped_shared_activation_test PRIVATE
+    "$<TARGET_PROPERTY:hyle_compute_provider_ggml_cuda,INCLUDE_DIRECTORIES>")
   hyle_stage_runtime(hyle_graph_route_cuda_grouped_shared_activation_test)
   hyle_add_test(graph_route_cuda NAME ct_packed_linear
     SOURCES ct_packed_grouped_test.cc ct_packed_linear_test.cc gptq_reference_test.cc static_fp8_reference_test.cc scalar_float_test.cc DEPS hyle_compute_backend_cuda)
   hyle_stage_runtime(hyle_graph_route_cuda_ct_packed_linear_test)
   hyle_add_test(graph_route_cuda NAME fp8_shared_prologue
     SOURCES fp8_shared_prologue_test.cc DEPS hyle_compute_backend_cuda)
+  target_link_libraries(hyle_graph_route_cuda_fp8_shared_prologue_test PRIVATE ggml)
+  target_include_directories(hyle_graph_route_cuda_fp8_shared_prologue_test SYSTEM PRIVATE "${HYLE_GGML_SOURCE_DIR}/src")
   hyle_stage_runtime(hyle_graph_route_cuda_fp8_shared_prologue_test)
 endif()
 
@@ -72,6 +78,8 @@ endif()
 if(_HYLE_COMPUTE_HAVE_CUDA AND TARGET hyle_compute_state)
   hyle_add_test(graph_route_cuda NAME ga_full_ffn
     SOURCES ga_full_ffn_test.cc DEPS hyle_graph_batch hyle_compute_state hyle_simd hyle_compute_backend_cuda)
+  target_link_libraries(hyle_graph_route_cuda_ga_full_ffn_test PRIVATE ggml)
+  target_include_directories(hyle_graph_route_cuda_ga_full_ffn_test SYSTEM PRIVATE "${HYLE_GGML_SOURCE_DIR}/src")
   hyle_stage_runtime(hyle_graph_route_cuda_ga_full_ffn_test)
 endif()
 
