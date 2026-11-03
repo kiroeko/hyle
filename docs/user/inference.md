@@ -104,11 +104,24 @@ CUDA greedy 的K1 MTP也已接入单活动请求的自然接力；其它MTP宽�
 草稿分布最大概率的最低门槛，范围为 0 到 1，默认 0；达到门槛才继续草稿，实际长度可以更短。
 这不是额外置信度模型。制品、后端与草稿数的实际运行范围见[模型覆盖](../implementation/model-operators.md)。
 
-### 可选草稿词表
+### 草稿词表
 
-可用 `--mtp-draft-vocabulary FILE` 显式缩小草稿head，完整target head与embedding继续保留。
-当前支持原BF16／F16／F32稠密head、无logits modifier的greedy及零概率阈值；可用于K1与递归多草稿。
-显式选项遇到随机、modifier、非零阈值或不支持的权重会报错；未指定该选项仍使用原完整词表。
+默认 `--mtp-draft-vocabulary auto`：MTP开启、无logits modifier的greedy、零概率阈值时，
+读取输入目录的 `mtp-draft-vocabulary.ids`。文件不存在或采样政策不适用时使用完整词表；
+存在但source identity不匹配时拒绝加载。`--mtp-draft-vocabulary full` 强制完整词表作对照，
+也可用 `--mtp-draft-vocabulary FILE` 显式选择另一份准备文件。
+当前支持原BF16／F16／F32稠密head，可用于K1与递归多草稿；完整target head与embedding继续保留。
+显式文件遇到随机、modifier、非零阈值或不支持的权重会报错。
+
+准备阶段可用本地模型生成独立校准语料，默认选32768行：
+
+```powershell
+python scripts/prepare-mtp-draft-vocabulary.py --hyle <hyle.exe> --inputs <准备目录> --tokenizer-dir <本地tokenizer目录> --work-dir .scratch/draft-calibration --output <准备目录>/mtp-draft-vocabulary.ids
+```
+
+该工具只用本地文件，固定24个独立提示、普通greedy各生成至多256个token，只统计生成的ID。
+按频次选行，未出现的ID按原ID升序补齐；不使用八轮验收负载。校准在启动之前单独运行，
+原始输出保留在新建的work目录，不覆盖已有结果。没有准备文件的模型不会在启动时自行校准。
 文件绑定准备清单的原source identity及实际词表大小，格式为：
 
 ```text
@@ -119,10 +132,11 @@ hyle-draft-vocabulary-v1
 ```
 
 IDs必须非空、互异且在原词表范围内；冷期按原ID排序，保持greedy平局顺序，图内输出仍还原为原token ID。
-选中行只导入一次，额外保留在原资源作用域；例如2B BF16模型的32K行需要128 MiB权重及128 KiB映射。
+选中行在冷期只导入一次，额外保留在原资源作用域；例如2B BF16模型的32K行需要128 MiB权重及128 KiB映射。
+准备完成的不可变投影和映射可供原并行编译流程读取；热路径继续在设备上映射为原ID，不新增分配。
 JSON的 `original_*_weight_bytes` 仍只统计原角色，额外payload见 `draft_vocabulary_weight_bytes`／`draft_vocabulary_map_bytes`；
 这些权重都不属于 `--cache-bytes`，payload字节数也不是物理显存峰。
-子集会改变提案和接受率，需按实际输入检查速度；代码语料先验不代表通用语言覆盖或质量保证。
+子集会改变提案和接受率，需按实际输入检查速度；有限校准语料不代表通用语言覆盖。
 
 ### CPU 与 GPU 分置
 

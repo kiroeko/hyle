@@ -1415,6 +1415,11 @@ public:
               !item.second.tensor.description.is_plain() ||
               (codec != prepared::ProjectionCodec::kUnspecified && codec != prepared::ProjectionCodec::kDense);
         })) return false;
+    // The optional row transform finishes with the original cold Model owner.
+    // Family workers only borrow its immutable projection and ID-map leases.
+    if (resources_->draft_vocabulary && (!resources_->draft_head ||
+        resources_->draft_head->weight.tensor.writer || !resources_->draft_head->weight.tensor.ready ||
+        resources_->draft_head->original_ids.writer || !resources_->draft_head->original_ids.ready)) return false;
     const auto available = std::thread::hardware_concurrency();
     if (available < 2) return false;
     const auto threads = (std::min)(available, 4u);
@@ -7492,7 +7497,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       model.sampling_configuration(0).configuration.modifiers.empty() &&
       model.execution.kind() == BackendKind::kCuda && !model.execution.has_cpu_assist() &&
       !model.scheduler && model.cache_plan.active_sequences == 1 && model.target_kv_layers &&
-      model.layer0_probe.empty() && !model.resources_->draft_vocabulary &&
+      model.layer0_probe.empty() &&
       model.max_drafts() == 1 && !model.recursive_mtp())
     (void)model.begin_cold_families();
   for (std::size_t sampling_index = 0; sampling_index < model.sampling_configuration_count(); ++sampling_index) {
@@ -8088,7 +8093,7 @@ int qwen35::run(int argc, char **argv) {
         "  --mtp off|on                Multi-token prediction (default: off)\n"
         "  --mtp-max-drafts N          Maximum proposals; 0 disables drafting (default: 1)\n"
         "  --mtp-min-probability FLOAT  Stop below max draft probability, [0,1] (default: 0)\n"
-        "  --mtp-draft-vocabulary FILE  Explicit source-bound draft IDs; unmodified greedy only\n"
+        "  --mtp-draft-vocabulary auto|full|FILE  Prepared draft IDs (default: auto); greedy only\n"
         "  --sampling greedy|random    Token selection (default: greedy)\n"
         "  --temperature FLOAT         Random policy temperature > 0 (default: 1)\n"
         "  --top-k N                    Random policy top-k; 0 disables (default: 0)\n"
@@ -8111,7 +8116,8 @@ int qwen35::run(int argc, char **argv) {
   }
   const auto startup = qwen35::Clock::now();
   try {
-    std::filesystem::path input, continuation, trace, layer0_probe, decode_ids, schedule_file, session_file, draft_vocabulary;
+    std::filesystem::path input, continuation, trace, layer0_probe, decode_ids, schedule_file, session_file;
+    std::filesystem::path draft_vocabulary = "auto";
     std::size_t steps = 4, capacity = 128, max_sessions = 0, active_sequences = 0, cache_bytes = 0, max_drafts = 1, cpu_ffn_layers = 0;
     std::size_t max_prefill_rows = SIZE_MAX;
     bool warmup_planned_shapes = false, decode_overlap = true, require_bounded_generation = false;
@@ -8253,6 +8259,20 @@ int qwen35::run(int argc, char **argv) {
     }
     const bool scheduled = single_schedule || multiple_schedules;
     if (input.empty()) throw std::runtime_error("--inputs DIR is required");
+    if (draft_vocabulary == "full") draft_vocabulary.clear();
+    else if (draft_vocabulary == "auto") {
+      draft_vocabulary.clear();
+      // A prepared, source-bound asset is policy, not a guess based on vocab
+      // size or on this request's tokens. Other sampling policies keep the
+      // original full-vocabulary path. A stale asset still fails validation.
+      if (mtp_enabled && max_drafts && !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0) {
+        const auto prepared = input / "mtp-draft-vocabulary.ids";
+        std::error_code error;
+        const auto exists = std::filesystem::exists(prepared, error);
+        if (error) throw std::runtime_error("cannot inspect prepared draft vocabulary: " + error.message());
+        if (exists) draft_vocabulary = prepared;
+      }
+    }
     if (!draft_vocabulary.empty() && (!mtp_enabled || !max_drafts ||
         sampler.enabled || !sampler.modifiers.empty() || min_draft_probability != 0))
       throw std::runtime_error("--mtp-draft-vocabulary requires --mtp on, active drafting, unmodified greedy sampling and zero minimum probability");
