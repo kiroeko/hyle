@@ -15,7 +15,7 @@
 
 **当前执行：** 阶段2的2.B～2.F已全部结项；2.B／2.C／2.D交付默认优化，2.E／2.F核查结束、未新增提速（`8028d5da8`／`f9dfc9c3a`），产品源码保持`319114961`。最新C32768真实八轮普通／MTP decode为参考103.6%／107.1%，prefill为94.8%／100.2%；普通短prefill差距保留，见[性能表](performance/decode.md)。本轮阶段2工作结束，阶段3／M2未启动；不代签M1历史整体验收。
 
-**暂停：** GLM、Kimi、DeepSeek 组件，主场景用不到的后端，基础库新功能，多卡，通用 loader、tokenizer、server。[base-ip总计划](base-ip.md)继续维护0～3阶段；2.B～2.F及阶段3仍保留。
+**暂停：** GLM、Kimi、DeepSeek 组件，主场景用不到的后端，基础库新功能，多卡，通用 loader、tokenizer、server。
 
 ## 任务卡（按顺序做）
 
