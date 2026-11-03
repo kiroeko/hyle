@@ -10,12 +10,12 @@
 
 原阶段2的2.B～2.F全部结项，现归0.F。2.B／2.C／2.D交付默认优化，2.E／2.F核查结束、未新增提速；历史提交和验收边界保留在下方。随后`5192b4232`交付cuBLAS成功算法检查事实缓存，最新数据统一见[性能表](performance/decode.md)。短prefill、ready及内存差距仍存在，归并不将它们改写为已修复。
 
-当前按用户直接指令完成CPU／Nsight对齐，已定位Commands路径的重复绑定准备；修法尚未实现或验收，见性能表。这不重开原阶段2，也不将新发现写成已解决。阶段3的3.A已交付，3.B尚未结项；执行范围以用户当前指令为准。
+当前按用户直接指令完成CPU／Nsight对齐，已定位Commands路径的重复绑定准备；修法尚未实现或验收，见性能表。这不重开原阶段2，也不将新发现写成已解决。阶段3的3.A／3.B均已交付；各自验收和未验证边界见下方，执行范围以用户当前指令为准。
 
 | 任务 | 负责人 | 当前状态 | 明确交付 |
 |---|---|---|---|
 | 3.A 分阶段内存测量工具 | Codex | 已完成；`13ea6b0dd` | ready基线、逐轮prefill／decode时间窗与增量；408个真实阶段窗口通过 |
-| 3.B GLM／DeepSeek私有组件编译边界 | Codex | 待启动；原3.D | 将现有模型私有实现迁入各自engine/models编译单元，保留有限行为与独立重编边界 |
+| 3.B GLM／DeepSeek私有组件编译边界 | Codex | 已完成；`0b6beae0c`／`65af95c2c` | 51个私有编译单元；23组CTest验收，独立修改时Qwen／共同SDK重编为0 |
 
 速度、长输入和额外模式／平台归最终验收清单，引用已有证据，不另开纯总结卡。原重复154-token prompt只作回归；真实多轮采用8个不同prompt。设备接受候选可在草稿被拒时继续有效执行，不沿用旧门控候选“押注全接受”的解释。
 
@@ -24,7 +24,7 @@
 | 阶段 | 进度依据 | 状态／结束条件 |
 |---|---|---|
 | 0 已交付基线 | 6/6项已结 | 0.A～0.F限已列交付及原证据范围；0.F由原阶段2归并，不重复计功 |
-| 3 剩余开发与最终验收 | 3.A已完成，3.B待做；验收逐项列状态 | 3.A／3.B交付并通过各自验收；最终验收清单列明已通过、未达标、未运行和硬件受限，保留未验证边界 |
+| 3 剩余开发与最终验收 | 开发卡2/2已完成；最终验收保留有限边界 | 3.A／3.B交付并通过各自验收；最终验收清单列明已通过、未达标、未运行和硬件受限，保留未验证边界 |
 
 开发任务职责不重叠，结果只计一次；直接依赖只指向更早阶段或同阶段更早项。两张开发卡没有相互依赖，按用户当前指令或看板卡启动。每张卡自带必要检查、提交与最小记录；最终验收只补受改动影响或现有证据缺失的检查，不重复全量刷分，不设置纯归档／总结任务。
 
@@ -121,12 +121,12 @@
 
 ### 3．剩余开发与最终验收
 
-本阶段开发共两项：分阶段内存测量已交付，GLM／DeepSeek私有实现尚未形成各自编译单元。速度和平台覆盖另列最终验收清单。
+本阶段两项开发均已交付：分阶段内存测量，以及GLM／DeepSeek私有组件编译边界。速度和平台覆盖另列最终验收清单。
 
 | ID | 开发卡 | 直接依赖 | 状态／交付 |
 |---|---|---|---|
 | 3.A | 分阶段内存测量工具 | 0.F | 已完成；`13ea6b0dd`，14项工具测试、36个独立内存进程、408个阶段窗口通过 |
-| 3.B | GLM／DeepSeek私有组件编译边界 | 0.B、0.D | 待启动；迁移现有私有实现，验证独立重编；保留原oracle／fixture |
+| 3.B | GLM／DeepSeek私有组件编译边界 | 0.B、0.D | 已完成；`0b6beae0c`／`65af95c2c`；私有实现独立编译，默认Qwen不链接，保留原oracle／fixture |
 
 **3.A 分阶段内存测量工具（原3.B）｜已完成：`13ea6b0dd`**
 
@@ -135,7 +135,10 @@
 - **验收命令和标准：** `python tests/tooling/inference_benchmark_test.py`，补乱序／缺失边界、空采样窗和累计峰不能代替阶段峰的用例。集成验收复用[性能表完整命令](performance/decode.md#复测)，更新`--hyle`／`--hyle-version`及新`--output`，选择`--only long-32736-c32768 multi-c2048 multi-c32768 --modes both --memory-repeats 3 --memory-interval 0.001`。测试通过；每场景／模式双方各3个独立内存进程，阶段与输出轮次一致，有效样本可追到时间窗，ID与相同负载计时进程一致。observer不进入计时进程；缺字段留未完成，不填0。GPU峰标采样下界，OS高水位不称阶段峰；working set、私有提交、GPU专用／共享分列。沿用已有池／退休计数，归池不当作物理释放，未证明处明示。
 - **不做：** 不优化内存／速度，不新建资源账簿，不改ready定义或执行／退休政策，不新增全设备同步，不扩其它平台采样器，不下载模型。
 
-**3.B GLM／DeepSeek私有组件编译边界（原3.D）**
+**3.B GLM／DeepSeek私有组件编译边界（原3.D）｜已完成：`0b6beae0c`／`65af95c2c`**
+
+- **完成：** GLM 30、DeepSeek 18、共同冷准备适配3个编译单元；要求的构建与23组CTest程序验收通过，GoogleTest 1,224项通过、30项因缺fixture跳过，工程检查11项通过。CPU GLM完整程序重跑23/23通过，原CPU直接调用的40项失败复验全部通过；1,082个原断言／trace调用保留，数值门槛不放宽。分别修改两家私有实现时，只重编各自1个单元，Qwen／共同SDK均为0；默认Qwen不链接这些组件。[命令、原数与跳过项](../../.scratch/inference-stage3-components-20261103/result.txt)。
+- **验证边界：** 本卡验证Windows CPU／CUDA；30项缺fixture用例仍未验证，Apple／Vulkan本卡未运行。此前额外CUDA格式矩阵的失败及未运行部分保留，不由本卡代签完整兼容性。B09随机用例按用户授权补齐16个必要专家片段、共348MiB，经原预算工具获取并恢复PAUSED；该用例未跳过。未改模型数学、公开API／ABI或默认推理dispatch，不新增性能结论。
 
 - **目标：** 将现有私有数学、权重roles、冷准备、状态布局与已有请求适配迁入`engine/models/glm/`、`engine/models/deepseek/`编译单元；测试保留独立oracle／fixture和断言。复用现有Compute／Graph／执行／退休机制，私有目标按需构建。
 - **验收命令和标准：** `python tests/tooling/engine_components_test.py`补两组私有目标／依赖检查。将`$stage3Build`设为已有CPU／CUDA测试构建目录，运行`cmake --build $stage3Build --config Release --target hyle_engine hyle_graph_route_cpu_tests hyle_graph_route_cuda_tests hyle_compute_state_tests --verbose`，再运行`ctest --test-dir $stage3Build -C Release --output-on-failure --no-tests=error -R '^(hyle_engine_components_test|hyle_graph_route_(cpu|cuda)_test|hyle_.*(glm|deepseek|dspark).*)$'`。构建及相关测试通过，测试数不减少，原数值／状态／RNG／权限／发布／退休断言不放宽。分别改动两家私有实现并记录增量构建：Qwen和共同SDK编译单元重编数为0；私有实现不再由测试头提供，默认Qwen不链接这两个组件。缺缓存／工具链／设备的部分列未完成。
