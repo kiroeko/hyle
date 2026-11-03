@@ -7,6 +7,20 @@ macOS are supported; available compute backends are CPU, CUDA, Apple Metal and V
 HYLE 是面向单机的推理引擎。引擎负责模型、生成、会话与请求；Compute、Graph、内存、调度、I/O
 等基础库保持模型无关，可单独构建和使用。项目目前集中完善推理底座。
 
+## 与llama.cpp相比
+
+Qwen3.5-2B BF16、RTX4070、C32768，参考为官方CUDA版llama.cpp **b12063**。
+最近有效同窗测量：普通推理接近或小幅领先，准备32K草稿子集的MTP八轮合计快28.7%；MTP第4轮仍慢15.2%。
+
+| 场景 | Hyle速度÷llama.cpp | 测量版本 |
+|---|---:|---|
+| 普通pp512，深度4K／16K／30K | 98.6%／97.6%／102.7%，范围重叠 | `7369894f0` |
+| 普通真实八轮decode | 104.8% | `131f5b347` |
+| MTP真实八轮decode，32K草稿子集 | **128.7%**（140.13／108.90 tok/s） | `1622ad33d` |
+
+各项取最近一次有效对照，来自不同窗口；MTP需先准备源身份绑定的子集，显存峰比原Hyle MTP增加82MiB。
+**[查看完整性能对比：逐轮结果、长prompt、启动、显存与复现方法 →](docs/developer/performance/decode.md)**
+
 | 想做什么 | 从这里开始 |
 |---|---|
 | 构建并运行模型 | [推理引擎指南](docs/user/inference.md) |
@@ -49,8 +63,8 @@ MTP、采样、后端及会话配置继续看[推理引擎指南](docs/user/infe
 
 ## 性能与进度
 
-最新完整普通／MTP、单轮／多轮速度、内存及测量限制见[decode 性能资料](docs/developer/performance/decode.md)；
-当前任务与粗估进度只在[看板](docs/developer/inference-progress.md)维护。
+完整结果见首页上方的[性能摘要及详细对照](docs/developer/performance/decode.md)；
+当前任务由[看板](docs/developer/inference-progress.md)维护。
 结果限于记录的模型、平台、配置及参考版本，不能从组件通过推定整模型性能。
 基础库对照见[模块性能](docs/developer/performance/modules.md)。
 
