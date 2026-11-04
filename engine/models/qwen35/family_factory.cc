@@ -90,6 +90,25 @@ sampling::LogitsInputsFor<V> prepare_logits_inputs(Recipe &r, sampling::LogitsPo
 
 V draft_scores(Recipe &recipe, V selected_hidden, DraftProjectionView projection) {
   if (!projection.original_ids) return recipe.scores(selected_hidden, std::string(recipe.geometry.head_role()));
+  if (projection.indexed_rows) {
+    const auto rows = recipe.spec(selected_hidden).dimensions()[0];
+    if (!rows.is_fixed() || rows.fixed_value() != 1)
+      throw std::logic_error("indexed draft projection requires its cold single-request carrier");
+    const auto weight = recipe.operand(*projection.projection.weight);
+    const auto vocabulary = recipe.spec(weight).dimensions()[0];
+    const auto hidden = recipe.spec(weight).dimensions()[1];
+    const auto mapping = recipe.constant(*projection.original_ids);
+    const auto count = recipe.spec(mapping).dimensions()[0];
+    // One original output row is one expert with N=1. Only metadata views
+    // and the exact BF16->F32 activation widening precede the existing op.
+    const auto bank = recipe.reshape(weight, {vocabulary, f(1), hidden});
+    const auto activation = recipe.reshape(recipe.cast(selected_hidden, Type::kFloat32),
+        {rows, f(1), hidden});
+    const auto ids = recipe.reshape(mapping, {rows, count});
+    const auto scores = recipe.one(c::model_ops::grouped_matmul(), {bank, activation, ids},
+        recipe.dense_spec(Type::kFloat32, {rows, count, f(1)}));
+    return recipe.reshape(scores, {rows, count});
+  }
   return recipe.emit_projection(selected_hidden, projection.projection, true);
 }
 V original_draft_id(Recipe &recipe, V compact_id, DraftProjectionView projection) {

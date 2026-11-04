@@ -99,17 +99,26 @@ struct LoadedWeight final {
   std::uint32_t group_size = 0;
 };
 
-// Extra cold draft projection only. Original target/embedding weights and
-// their source meanings are never replaced by this selected-row bank.
+// Optional extra cold draft projection. A qualified indexed route borrows the
+// original immutable bank instead of making a selected-row copy. Original
+// target/embedding meanings and their actual owner remain unchanged.
 struct PreparedDraftHead final {
   LoadedWeight weight;
   Tensor original_ids;
   std::string identity;
+  Tensor *indexed_weight = nullptr;
+  Tensor &projection_weight() noexcept {
+    return indexed_weight ? *indexed_weight : weight.tensor;
+  }
+  std::size_t extra_weight_bytes() const {
+    return indexed_weight ? 0 : take(weight.tensor.description.required_bytes());
+  }
 };
 
 // Transform only; policy/idle checks and optional publication belong to Model.
 PreparedDraftHead prepare_draft_head(hyle::inference::Backend &backend,
-    const LoadedWeight &original, const hyle::inference::DraftVocabulary &mapping,
+    LoadedWeight &original, const hyle::inference::DraftVocabulary &mapping,
+    std::size_t max_requests,
     const hyle::compute::ResourceBudget &budget = {});
 
 using WeightMeanings = std::map<std::string, prepared::ParameterMeaning>;

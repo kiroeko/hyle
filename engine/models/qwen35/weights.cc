@@ -27,6 +27,8 @@
 #include "nf4_weight_import.h"
 #include "hyle/io/file.h"
 #include "hyle/io/io_context.h"
+#include "hyle/compute/model_ops.h"
+#include "hyle/compute/prepared_operation.h"
 #include "hyle/sched/blocking.h"
 #include "hyle/sched/join.h"
 #include "hyle/sched/scheduler.h"
@@ -943,14 +945,39 @@ WeightLoadReport load_weight_bank(const std::filesystem::path &manifest,
   return load_selected_weight_roles(roles, backend, weights, weight_pools, placement);
 }
 
-PreparedDraftHead prepare_draft_head(Backend &execution, const LoadedWeight &original,
-    const hyle::inference::DraftVocabulary &mapping, const c::ResourceBudget &allocation_budget) {
-  auto selected = select_dense_weight_rows(execution, original, mapping.ids(), allocation_budget);
+PreparedDraftHead prepare_draft_head(Backend &execution, LoadedWeight &original,
+    const hyle::inference::DraftVocabulary &mapping, std::size_t max_requests,
+    const c::ResourceBudget &allocation_budget) {
+  const auto &description = original.tensor.description;
+  Tensor *indexed = nullptr;
+  if (max_requests == 1 && execution.kind() == hyle::inference::BackendKind::kCuda &&
+      description.valid() && description.rank() == 2 && description.is_dense() &&
+      description.is_plain() && description.data_type() == Type::kBFloat16 &&
+      !original.group_size && (original.codec == prepared::ProjectionCodec::kDense ||
+                              original.codec == prepared::ProjectionCodec::kUnspecified) &&
+      original.tensor.ready && !original.tensor.writer &&
+      take(original.tensor.ready.view()).resource() == execution.device()) {
+    const auto shape = description.dimensions();
+    const auto rows = static_cast<std::int64_t>(mapping.size());
+    const std::array inputs{dense(Type::kBFloat16, {shape[0], 1, shape[1]}),
+        dense(Type::kFloat32, {1, 1, shape[1]}), dense(Type::kInt32, {1, rows})};
+    const std::array outputs{dense(Type::kFloat32, {1, rows, 1})};
+    // Descriptor preparation proves the actual device/strides and capture
+    // contract before choosing this cold representation. It reads no payload.
+    auto candidate = c::prepare(*take(execution.common_context()),
+        c::model_ops::grouped_matmul(), inputs, outputs, execution.device());
+    if (!candidate) {
+      if (!candidate.error().IsUnimplemented() || candidate.error().has_native_error())
+        check(candidate.error());
+    } else if (candidate->capture_compatible()) indexed = &original.tensor;
+  }
+  LoadedWeight selected;
+  if (!indexed) selected = select_dense_weight_rows(execution, original, mapping.ids(), allocation_budget);
   Tensor ids(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(mapping.size())}),
       true, allocation_budget);
   check(execution.write(ids.storage(), std::as_bytes(mapping.ids()))); ids.freeze(execution);
   auto identity = hyle::inference::artifact::sha256(std::as_bytes(mapping.ids()));
-  return {std::move(selected), std::move(ids), std::move(identity)};
+  return {std::move(selected), std::move(ids), std::move(identity), indexed};
 }
 
 } // namespace qwen35

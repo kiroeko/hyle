@@ -71,12 +71,13 @@ struct Family final : FamilyPorts {
   g::DimensionId last_row;
   std::vector<std::size_t> chunks;
 };
-// An optional already prepared dense projection. Empty is the normal full-V
-// path. The two Tensor children stay with their original cold owner; this view
-// is borrowed synchronously and never becomes a second permission/owner.
+// An optional cold projection and row mapping. Empty is the normal full-V
+// path. Tensors stay with their original cold owner; this synchronous view
+// never becomes a second permission/owner.
 struct DraftProjectionView final {
   StoredProjection projection;
   Tensor *original_ids = nullptr;
+  bool indexed_rows = false;
 };
 
 struct FamilyBuildRequest final {

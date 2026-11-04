@@ -811,13 +811,15 @@ public:
       throw std::runtime_error("draft vocabulary requires a BF16/F16/F32 head");
     const auto &mapping = *resources_->draft_vocabulary;
     auto &original = weights.at(std::string(geometry.head_role()));
-    resources_->draft_head.emplace(prepare_draft_head(execution, original, mapping, allocation_budget));
+    resources_->draft_head.emplace(prepare_draft_head(execution, original, mapping,
+        cache_plan.active_sequences, allocation_budget));
     return true;
   }
 
   DraftProjectionView prepared_draft_projection(bool subset) {
     if (!subset) return {};
-    return {{&resources_->draft_head->weight.tensor}, &resources_->draft_head->original_ids};
+    return {{&resources_->draft_head->projection_weight()}, &resources_->draft_head->original_ids,
+        resources_->draft_head->indexed_weight != nullptr};
   }
   V draft_scores(Recipe &recipe, V selected_hidden, bool subset) {
     return qwen35::draft_scores(recipe, selected_hidden, prepared_draft_projection(subset));
@@ -1225,7 +1227,8 @@ public:
         << ",\"draft_vocabulary_requested_rows\":" << (resources_->draft_vocabulary ? resources_->draft_vocabulary->size() : 0)
         << ",\"draft_vocabulary_rows\":" << (resources_->draft_head ? resources_->draft_head->original_ids.description.dimensions()[0] : 0)
         << ",\"draft_vocabulary_identity\":\"" << (resources_->draft_head ? resources_->draft_head->identity : std::string{}) << '"'
-        << ",\"draft_vocabulary_weight_bytes\":" << (resources_->draft_head ? take(resources_->draft_head->weight.tensor.description.required_bytes()) : 0)
+        << ",\"draft_vocabulary_weight_bytes\":" << (resources_->draft_head ? resources_->draft_head->extra_weight_bytes() : 0)
+        << ",\"draft_vocabulary_indexed_rows\":" << (resources_->draft_head && resources_->draft_head->indexed_weight ? "true" : "false")
         << ",\"draft_vocabulary_map_bytes\":" << (resources_->draft_head ? take(resources_->draft_head->original_ids.description.required_bytes()) : 0)
         << ",\"draft_vocabulary_policy\":\"greedy_unmodified_no_threshold\""
         << ",\"draft_program_graph_calls\":" << draft_program_graph_calls
@@ -1424,7 +1427,7 @@ public:
     // The optional row transform finishes with the original cold Model owner.
     // Family workers only borrow its immutable projection and ID-map leases.
     if (resources_->draft_vocabulary && (!resources_->draft_head ||
-        resources_->draft_head->weight.tensor.writer || !resources_->draft_head->weight.tensor.ready ||
+        resources_->draft_head->projection_weight().writer || !resources_->draft_head->projection_weight().ready ||
         resources_->draft_head->original_ids.writer || !resources_->draft_head->original_ids.ready)) return false;
     const auto available = std::thread::hardware_concurrency();
     if (available < 2) return false;

@@ -16,14 +16,15 @@ def check(args):
     lines = text.splitlines()
     vocabulary = int(lines[2].split()[3])
     assert vocabulary == 64, "use the existing tiny V64 fixture, not a full model"
-    for name, identity in (("asset", lines[1]), ("missing", None), ("stale", "0" * 64)):
+    for name, identity in (("asset", lines[1]), ("partial", lines[1]), ("missing", None), ("stale", "0" * 64)):
         folder = args.output / name
         folder.mkdir()
         (folder / "weights.tsv").write_text(text, encoding="utf-8")
         if identity is not None:
+            ids = reversed(range(16 if name == "partial" else vocabulary))
             (folder / "mtp-draft-vocabulary.ids").write_text(
                 f"hyle-draft-vocabulary-v1\n{identity}\n{vocabulary}\n" +
-                " ".join(map(str, reversed(range(vocabulary)))) + "\n", encoding="utf-8")
+                " ".join(map(str, ids)) + "\n", encoding="utf-8")
     (args.output / "prompt.ids").write_text("1 2 3\n", encoding="utf-8")
     schedule = args.output / "schedule.txt"
     schedule.write_text("prompt prompt.ids\ngenerate 9\n", encoding="utf-8")
@@ -42,6 +43,12 @@ def check(args):
         assert result.returncode == 0, folder
         raw = json.loads((folder / "stdout.log").read_text())
         assert raw["draft_vocabulary_rows"] == selected and raw["live_committed_versions"] == 0
+        if raw["draft_vocabulary_indexed_rows"]:
+            assert selected and raw["active_sequences"] == 1
+            assert raw["draft_vocabulary_weight_bytes"] == 0
+        elif selected:
+            assert raw["draft_vocabulary_weight_bytes"] > 0
+        assert raw["draft_vocabulary_map_bytes"] == selected * 4
         detail = raw["sessions"][0]["result"]
         assert len(detail["generated_ids"]) == 9
         ledger = raw["sessions"][0]["ledger"]
@@ -59,6 +66,8 @@ def check(args):
         auto = run(f"K{width}-auto", extra=options, selected=vocabulary)
         full = run(f"K{width}-full", extra=[*options, "--mtp-draft-vocabulary", "full"])
         assert auto == full, "complete subset changed greedy outputs"
+    assert run("partial-auto", inputs="partial", selected=16) == run(
+        "partial-full", inputs="partial", extra=["--mtp-draft-vocabulary", "full"])
     assert run("missing-fallback", inputs="missing") == run("auto-full", extra=["--mtp-draft-vocabulary", "full"])
     run("stale-rejected", inputs="stale", success=False)
     run("stale-full", inputs="stale", extra=["--mtp-draft-vocabulary", "full"])
@@ -68,7 +77,7 @@ def check(args):
         "ordinary-full", extra=["--mtp", "off", "--warmup-shapes", "planned", "--mtp-draft-vocabulary", "full"])
     assert run("random", extra=["--sampling", "random", "--seed", "7"]) == run(
         "random-full", extra=["--sampling", "random", "--seed", "7", "--mtp-draft-vocabulary", "full"])
-    print("PASS: auto/full/missing/stale policies, K1/K2/K3 complete-subset IDs, ordinary/random fallback, work/RNG and retirement", flush=True)
+    print("PASS: auto/full/partial/missing/stale policies, K1/K2/K3 IDs, indexed storage reporting, ordinary/random fallback, work/RNG and retirement", flush=True)
 
 
 if __name__ == "__main__":
