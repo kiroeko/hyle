@@ -132,10 +132,11 @@ hyle-draft-vocabulary-v1
 ```
 
 IDs必须非空、互异且在原词表范围内；冷期按原ID排序，保持greedy平局顺序，图内输出仍还原为原token ID。
-选中行在冷期只导入一次，额外保留在原资源作用域；例如2B BF16模型的32K行需要128 MiB权重及128 KiB映射。
-准备完成的不可变投影和映射可供原并行编译流程读取；热路径继续在设备上映射为原ID，不新增分配。
+CUDA单活动请求、通过冷期设备能力检查的BF16 head可直接读取原矩阵的选中行，只额外保留ID映射；
+其它设备、dtype或批次能力在冷期导入一次行副本。例如2B BF16模型的32K行，直接读取时额外权重为0、映射128 KiB，
+行副本路径则另占128 MiB权重。已有准备文件不需要重做。不可变投影和映射供原并行编译流程读取，热路径不新增分配。
 JSON的 `original_*_weight_bytes` 仍只统计原角色，额外payload见 `draft_vocabulary_weight_bytes`／`draft_vocabulary_map_bytes`；
-这些权重都不属于 `--cache-bytes`，payload字节数也不是物理显存峰。
+`draft_vocabulary_indexed_rows` 表示是否直接读取原矩阵。额外权重不属于 `--cache-bytes`，payload字节数也不是物理显存峰。
 子集会改变提案和接受率，需按实际输入检查速度；有限校准语料不代表通用语言覆盖。
 
 ### CPU 与 GPU 分置
