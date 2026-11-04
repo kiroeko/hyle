@@ -84,7 +84,7 @@ Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-di
 普通 CUDA greedy 自然生成自动使用连续接力，无需额外参数；已有限检查单活动请求及双活动请求。
 CUDA greedy 的K1 MTP也已接入单活动请求的自然接力；其它MTP宽度默认保留原执行路径。
 无草稿概率门槛的CUDA greedy单会话K2／K3也只按配置容量和已到达首轮准备；后续长度与配额不参与冷规划。
-显式`--mtp-threshold-mode extend`可为CUDA单请求K2／K3启用草稿间、验证到下一批首草稿的Source接力。
+本试验分支的CUDA greedy单请求K2／K3在非零概率阈值下启用草稿间、验证到下一批首草稿的Source接力。
 这条试验路径仍逐图由主机准备，没有K1的连续目标验证后继；当前默认保留同窗比较中更快的K1。
 当前仅为最多输出至少 10 个 token 的自然生成准备两层候选；prefill 保留原路径，后继只使用已有实际捕获。
 完整同形、同序的活动请求组可持续接力；异形分组保留原同步执行。输出额度不足时先完成已接纳工作，再暂停等待额度。
@@ -103,9 +103,9 @@ CUDA greedy 的K1 MTP也已接入单活动请求的自然接力；其它MTP宽�
 
 `--mtp-max-drafts` 控制每轮最多提出的草稿数，默认 1。`--mtp-min-probability` 设置
 草稿分布最大概率的最低门槛，范围为 0 到 1，默认 0。
-默认`--mtp-threshold-mode filter`会丢弃未过门槛的当前草稿，允许零草稿。
-`extend`保留已算出的当前草稿，低于门槛时只停止继续起草；有剩余额度时至少保留一个草稿。
-`extend`仅接纳无modifier的greedy，且草稿上限必须大于0；它仍不是默认策略。
+`experiment/mtp-source-extend-20261104`分支在无modifier的greedy下保留已算出的当前草稿，
+低于门槛时只停止继续起草；有剩余额度时至少保留一个草稿。通过切换分支选择试验，不增加实验开关。
+main和filter试验分支保留丢弃未过门槛当前草稿的政策，允许零草稿。
 这不是额外置信度模型。制品、后端与草稿数的实际运行范围见[模型覆盖](../implementation/model-operators.md)。
 
 ### 草稿词表

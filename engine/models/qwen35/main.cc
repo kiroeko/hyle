@@ -8996,7 +8996,6 @@ int qwen35::run(int argc, char **argv) {
         "  --mtp off|on                Multi-token prediction (default: off)\n"
         "  --mtp-max-drafts N          Maximum proposals; 0 disables drafting (default: 1)\n"
         "  --mtp-min-probability FLOAT  Stop below max draft probability, [0,1] (default: 0)\n"
-        "  --mtp-threshold-mode filter|extend  Filter current draft or stop extending (default: filter)\n"
         "  --mtp-draft-vocabulary auto|full|FILE  Prepared draft IDs (default: auto); greedy only\n"
         "  --sampling greedy|random    Token selection (default: greedy)\n"
         "  --temperature FLOAT         Random policy temperature > 0 (default: 1)\n"
@@ -9030,7 +9029,6 @@ int qwen35::run(int argc, char **argv) {
     bool explicit_mtp_drafts = false;
     float min_draft_probability = 0;
     bool explicit_mtp_probability = false;
-    bool extend_draft_probability = false, explicit_mtp_threshold_mode = false;
     qwen35::Model::Sampling sampler;
     bool explicit_sampling_parameters = false;
     bool single_schedule = false, multiple_schedules = false;
@@ -9115,11 +9113,6 @@ int qwen35::run(int argc, char **argv) {
           throw std::runtime_error("--mtp-max-drafts requires a nonnegative integer within the supported size range");
         explicit_mtp_drafts = true;
       }
-      else if (option == "--mtp-threshold-mode") {
-        if (value != "filter" && value != "extend")
-          throw std::runtime_error("--mtp-threshold-mode requires filter or extend");
-        extend_draft_probability = value == "extend"; explicit_mtp_threshold_mode = true;
-      }
       else if (option == "--mtp-draft-vocabulary") {
         if (value.empty()) throw std::runtime_error("--mtp-draft-vocabulary requires a nonempty file path");
         draft_vocabulary = value;
@@ -9195,7 +9188,10 @@ int qwen35::run(int argc, char **argv) {
       throw std::runtime_error("--top-k exceeds the source vocabulary");
     if (explicit_mtp_drafts && !mtp_enabled) throw std::runtime_error("--mtp-max-drafts requires --mtp on");
     if (explicit_mtp_probability && !mtp_enabled) throw std::runtime_error("--mtp-min-probability requires --mtp on");
-    if (explicit_mtp_threshold_mode && !mtp_enabled) throw std::runtime_error("--mtp-threshold-mode requires --mtp on");
+    // This experiment branch makes the extension policy its greedy behavior.
+    // The stable/filter implementation remains on its own Git branch.
+    const bool extend_draft_probability = mtp_enabled && min_draft_probability > 0 &&
+        !sampler.enabled && sampler.modifiers.empty();
     if (explicit_sampling_parameters && !sampler.enabled)
       throw std::runtime_error("--temperature, --top-k, --top-p and --seed require --sampling random");
     if (sampler.enabled && (!layer0_probe.empty() || preparation_diagnostics))
