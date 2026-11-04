@@ -4,7 +4,7 @@
 
 用户已授权以新 goal 继续本计划中的 review 和未完成项，首先执行 M1-11。任务范围和停止条件见下文；不从旧计划恢复额外方向。[看板](inference-progress.md)由用户维护，未同步的旧状态不覆盖本轮直接指令。常规性能原数见[性能表](performance/decode.md)，本次复测原数见[逐轮结果](../../.scratch/inference-bf16-retest-20261104/window1/summary.txt)。
 
-**当前续接状态：** M1-11进行中。共同BF16 oracle的512项完整logits比较和12进程ready分段已完成；Q4_K_M通过本次有限负载门槛，Q8_0的平均KL为上游110.897%，未通过110%门槛。量化Family计划与编译墙时约1.61s、同源BF16约0.456s；首个明显误差放大层与实际量化路径仍需定位。M1-8剩余项和M1-10c尚未启动实现，goal保持active。
+**当前续接状态：** M1-11的数值比较、ready归因和未通过分支的逐层定位已交付；Q8资格缺项仍未通过，保留在goal验收中。Q4_K_M通过本次512项有限负载门槛，Q8_0的平均KL为上游110.897%，超过110%门槛。第0项和KL超额最大的第358项均在embedding的BF16舍入后于第0层明显放大；双方实际均使用MMVQ／MMQ和q8_1激活量化。量化Family计划与编译墙时约1.61s、同源BF16约0.456s。下一步M1-8只处理已归因的启动／资源费用，Q8性能继续作诊断；M1-10c尚未启动，goal保持active。
 
 另发现`tests/tools/qwen_packed_prefill_case.h`仍调用已移除的`prepare_shared_prefill_workspace`。本次诊断消费者在`.scratch`使用当前执行工作区接口，未改产品或原测试头；后续相关目标重编时需保留这个缺口，不能从既有二进制通过推定源码可重编。
 
@@ -108,6 +108,8 @@
 ready 用 BF16 MTP 与两种量化 MTP 各 3 个新进程，把加载、权重／草稿头准备、Family 编译、捕获／预热和外部启动余量分开。先记录真实重叠，不能把并行阶段耗时直接相加。确认量化投影是否量化激活、实际 GEMV／GEMM 路径；当前量化跑的是完整草稿词表，不能先把多出的 1.1 s 归因于 32K gather。
 
 **验收入口：** 新驱动在`.scratch/inference-quantized-qualification-20261104/`。已执行`python qualify.py build build2`、`python qualify.py prepare inputs1`、`python qualify.py teacher teacher1 --build-label build2 --input-label inputs1`，以及`python ready.py build ready-build1`、`python ready.py window ready-window1 --build-label ready-build1`，命令均以该目录为工作目录；新一轮使用新目录名。完整logits、共同BF16 oracle、KL及ready分段已输出，不能用旧top2脚本代签。`python tests/tooling/inference_upstream_compare_test.py`和`python tests/tooling/inference_nsys_compare_test.py`共24项通过。
+
+未通过分支另执行`python layers.py build layers-build2`、`python layers.py run layers1 --build-label layers-build2`、`python paths.py run paths1`与`python paths.py run paths-q4-1 --kind Q4_K_M`。逐层8进程和配对profile4进程的512项完整logits各自与未观测版逐位相同。已定位BF16／F32边界差异及第0层首次放大；不以该归因代签Q8资格通过，也不在M1-11改模型数学或kernel。
 
 **结束结果：** 给出每格式的资格结论和 ready 多出时间所在阶段。发现数值缺陷就先报告具体位置，本卡不顺带改 kernel；ready 改法交下一张卡。
 

@@ -143,7 +143,18 @@ d=0仍有预热差异：Hyle默认启动执行16行并预录固定批次图，st
 
 每位置最大绝对logit差的p50／p99：Q8 Hyle为0.38345／0.67536，上游为0.35598／0.61301；Q4 Hyle为2.56758／4.15472，上游为2.54800／4.17705。BF16 Hyle自身对oracle为509/512一致、平均KL 0.00025770；三处分歧的上游margin为0.043438／0.002975／0.011028，均低于BF16的0.1门槛。
 
-完整logits均有限，强制输入、位置、长度、状态epoch、RNG及原Session退休检查通过。Q8仍需定位逐层误差和实际量化执行路径，M1-11没有结项，也未调整门槛。数据和当前源码诊断消费者在`.scratch/inference-quantized-qualification-20261104/teacher1/`及`build2/`。
+完整logits均有限，强制输入、位置、长度、状态epoch、RNG及原Session退休检查通过。Q8资格仍未通过，未调整门槛。数据和当前源码诊断消费者在`.scratch/inference-quantized-qualification-20261104/teacher1/`及`build2/`。
+
+Q8未通过分支已沿共同前缀导出embedding和24层hidden，观察第0项及KL超额最大的第358项。两边的观测版共8个进程，全部512项完整logits与各自未观测版逐位相同。Q8 embedding的差异恰好等于上游F32结果向BF16的就近偶数舍入，首个明显放大的层为第0层。
+
+| 观察项 | Q8 embedding相对RMS差 | Q8第0层后 | Q8第23层后 | BF16第23层后 |
+|---:|---:|---:|---:|---:|
+| 0 | 0.1455% | 1.6295% | 3.3675% | 1.1997% |
+| 358 | 0.1455% | 1.4272% | 3.5066% | 1.3226% |
+
+相对RMS分母为对应上游hidden的RMS。Hyle的模型精度合同在embedding和层间保留BF16边界，上游这些hidden为F32；此处确认了实际差异及首次放大位置，没有证明全部KL差距都由这一个边界造成。逐层数据在`.scratch/inference-quantized-qualification-20261104/layers1/`。
+
+Q8与Q4各做一组同GGUF、同BF16 KV、同512项强制前缀的配对Nsight，四个profile的完整logits仍与未profile版本逐位相同。双方实际均调用MMVQ与`quantize_q8_1`，多行prefill调用MMQ与`quantize_mmq_q8_1`；Q4_K_M同时使用Q4_K、Q6_K矩阵。不能用“Hyle没有量化激活”解释差距。Hyle所用ggml为锁定的`456172ec733a`加既有补丁，上游仍为b12063／`2cbca389f`；归约和融合也存在版本差异，尚不能据此排除实现错误。这些全进程轨迹只认定路径，不作吞吐对照；记录在同目录`paths1/`和`paths-q4-1/`。
 
 ### 量化 MTP ready 的归因
 
