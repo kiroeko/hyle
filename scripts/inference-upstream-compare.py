@@ -377,6 +377,8 @@ def native(args, arm, scenario, mode, repeat, phase, *, depth=None, memory=False
     if arm == "hyle":
         command = [str(args.hyle), "--inputs", str(args.inputs), "--capacity", str(args.capacity),
                    "--backend", "cuda", "--mtp", mode, "--schedule", str(scenario.schedule)]
+        if mode == "on" and getattr(args, "hyle_max_drafts", 1) != 1:
+            command += ["--mtp-max-drafts", str(args.hyle_max_drafts)]
         version, exe, runtime = args.hyle_version, args.hyle, args.hyle_runtime
     else:
         command = [str(args.reference), "--model", str(args.mtp_model if mode == "on" else args.model),
@@ -392,7 +394,8 @@ def native(args, arm, scenario, mode, repeat, phase, *, depth=None, memory=False
     report = MATCHED.parse_report((folder / "stdout.log").read_text(encoding="utf-8-sig"),
                                   stderr,
                                   MATCHED.Arm(arm, exe, version, runtime, arm == "hyle"),
-                                  scenario, args.capacity, wall, mode == "on")
+                                  scenario, args.capacity, wall, mode == "on",
+                                  expected_max_drafts=getattr(args, "hyle_max_drafts", 1))
     selected = report["turns"][-1:] if depth is not None else report["turns"]
     producer_raw = json.loads((folder / "stdout.log").read_text(encoding="utf-8-sig"))
     counts = hyle_mtp_counts(producer_raw) if arm == "hyle" and mode == "on" else {}
@@ -673,6 +676,8 @@ def main():
     parser.add_argument("--capacity", type=int, default=32768)
     parser.add_argument("--long-lengths", type=int, nargs="+", default=[16384,32736])
     parser.add_argument("--modes", nargs="+", choices=("off", "on"), default=["off", "on"])
+    parser.add_argument("--hyle-max-drafts", type=int, default=1,
+                        help="Fixed Hyle proposal bound for MTP runs; upstream retains its own default")
     parser.add_argument("--arms", nargs="+", choices=("hyle", "upstream", "frozen"), default=["hyle", "upstream", "frozen"])
     parser.add_argument("--port", type=int, default=2048)
     parser.add_argument("--idle-max-util", type=int, default=10)
@@ -685,6 +690,8 @@ def main():
         parser.error("Positive independent process/repetition counts required")
     if args.decode_tokens < 2:
         parser.error("--decode-tokens must be at least 2")
+    if not 1 <= args.hyle_max_drafts < args.capacity:
+        parser.error("--hyle-max-drafts must be positive and below capacity")
     required = []
     if args.phase == "prepare":
         required = ["official_bin", "source_bin"]
