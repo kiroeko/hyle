@@ -26,9 +26,9 @@ TEST(GgmlCudaGraph, BfloatTypedElementwiseMatchesFloatRecipeAndKeepsEveryRoundin
   auto context = compute::Context::create(cuda::device(0).value(),
                                          graph::ggml_cuda::provider()).value();
   auto memory = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
-  const auto description = ggml_cuda_tensor_test::dense(compute::DataType::kBFloat16, {3, 17});
+  const auto description = ggml_cuda_tensor_test::dense(compute::DataType::kBFloat16, {17, 17});
   const auto row_description = ggml_cuda_tensor_test::dense(compute::DataType::kBFloat16, {17});
-  const auto column_description = ggml_cuda_tensor_test::dense(compute::DataType::kBFloat16, {3, 1});
+  const auto column_description = ggml_cuda_tensor_test::dense(compute::DataType::kBFloat16, {17, 1});
   const auto broadcast_row = ggml_cuda_tensor_test::dense(compute::DataType::kBFloat16, {1, 17});
   auto builder = graph::GraphBuilder::create().value();
   const auto x = builder.input(description).value();
@@ -96,14 +96,14 @@ TEST(GgmlCudaGraph, BfloatTypedElementwiseMatchesFloatRecipeAndKeepsEveryRoundin
     for (std::size_t slot = 0; slot < 2; ++slot) {
       SCOPED_TRACE(::testing::Message() << "slot=" << slot);
       const auto edge = bfloat_elementwise_test::edge_values();
-      a[slot].resize(51); b[slot].resize(17);
+      a[slot].resize(17 * 17); b[slot].resize(17);
       for (std::size_t i = 0; i < a[slot].size(); ++i)
-        a[slot][i] = edge[(i + round + slot) % edge.size()];
+        a[slot][i] = edge[(i / 17 + round + slot) % edge.size()];
       for (std::size_t i = 0; i < b[slot].size(); ++i)
         b[slot][i] = edge[(i + round + slot + 4) % edge.size()];
       left[slot] = ggml_cuda_tensor_test::upload<BF16>(memory.ref(), a[slot]);
       right[slot] = ggml_cuda_tensor_test::upload<BF16>(memory.ref(), b[slot]);
-      std::array<BF16, 3> one_values, half_values;
+      std::array<BF16, 17> one_values, half_values;
       std::array<BF16, 17> delta_values, factor_values;
       one_values.fill(half_test::encode<BF16>(1.0));
       half_values.fill(half_test::encode<BF16>(1.5));
@@ -146,9 +146,16 @@ TEST(GgmlCudaGraph, BfloatTypedElementwiseMatchesFloatRecipeAndKeepsEveryRoundin
         SCOPED_TRACE(op);
         const auto actual = half_test::read<BF16>(output[slot][op * 2]);
         const auto previous = half_test::read<BF16>(output[slot][op * 2 + 1]);
-        ASSERT_EQ(actual.size(), 51u); ASSERT_EQ(previous.size(), actual.size());
-        for (std::size_t i = 0; i < actual.size(); ++i)
-          bfloat_elementwise_test::expect_bits(actual[i], previous[i], i);
+        ASSERT_EQ(actual.size(), 17u * 17u); ASSERT_EQ(previous.size(), actual.size());
+        for (std::size_t i = 0; i < actual.size(); ++i) {
+          // Typed BF16 binary math is IEEE RN without FTZ. The old F32
+          // carrier has its own native flags and is not an edge-case oracle
+          // for BF16 subnormals (notably subnormal * infinity).
+          const auto expected = op < 4
+              ? bfloat_elementwise_test::reference(op, a[slot][i], b[slot][i % 17])
+              : previous[i];
+          bfloat_elementwise_test::expect_bits(actual[i], expected, i);
+        }
       }
       const auto sum = half_test::read<BF16>(output[slot][22]);
       const auto product = half_test::read<BF16>(output[slot][23]);
