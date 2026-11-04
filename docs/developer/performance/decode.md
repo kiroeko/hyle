@@ -144,7 +144,6 @@ MTP：Hyle 默认 K1。接受／提案使用各自真实导出计数；每验证
 | 7／99 | 251.43／224.03 | 112.2% | 21.15／35.43 | 23/39；36/77 | 6.26／10.42 |
 | 8／107 | 246.41／227.11 | 108.5% | 20.93／36.40 | 23/40；37/77 | 6.39／10.67 |
 
-
 ## 固定 K3：本轮复测
 
 | 轮 | K1 tok/s | K3 tok/s | K3/K1 |
@@ -212,7 +211,6 @@ d=0 的预热不同：Hyle 默认启动执行 16 行并预录相应图，stock l
 
 * Hyle 墙时从启动到实际进程退出；上游常驻 server 墙时到末轮响应完成，未包含随后人为终止服务的时间。该列分别报告真实端点，不用两者计算完整进程速度比。Hyle 全程输出率为 512／全程墙时，包含启动、所有请求和退出。
 
-
 ## 独立资源峰值
 
 | 格式／Hyle模式 | GPU dedicated峰 MiB H／上游 | H增量MiB | GPU shared峰 MiB H／上游 | 私有提交峰 MiB H／上游 | H增量MiB |
@@ -228,7 +226,6 @@ d=0 的预热不同：Hyle 默认启动执行 16 行并预录相应图，stock l
 每臂 3 个独立采样进程，表中取各进程峰值的中位数；BF16 K3 与默认 K1 共用前窗同一组上游 MTP 对照，不重复计数为额外上游进程。所有资源采样的 GPU 初始化和采样线程均无错误。
 
 GPU 来自 Windows WDDM 的进程计数器，dedicated／shared 各自报告，不相加两个独立峰值。私有提交使用成功 PSAPI 观测到的 OS 生命周期峰；不是实际驻留内存。本轮未采逐轮对齐的加载后／阶段末资源快照，采样峰仍是有限间隔下界。
-
 
 ## 普通 decode 的带宽与精度边界
 
@@ -286,7 +283,7 @@ Q8的Q8_1激活再量化会放大细小舍入差异；这组512位置不足以�
 
 本轮原数在 `.scratch/inference-performance-refresh-20261104/`：`window1/records.tsv` 为 69 个计时进程的标准、长 prompt 与八轮记录，`memory1/records.tsv` 为 39 个独立资源进程；每个进程保留命令、stdout、stderr、GPU 频率／负载。`versions.txt` 记录实际权重、准备文件、二进制和构建。汇总在相应 `*-summary.tsv`／`.txt`。
 
-本次融合原数在 `.scratch/inference-f32-fusion-20261104/`：`window2/`保留39个无profiler计时进程，`memory1/`为18个独立资源进程，各有原命令、stdout／stderr、GPU频率／负载、逐轮与合并表。`window1/`与测试编译重叠后已停止，不作为正式结果。`teacher5/`为最终构建的六个数值进程；`checks5/`、`graph-checks2/`、`baseline-graph-checks1/`、`state-checks1/`和`mtp-regression1/`保留相关检查。四份新profile在格式-臂目录，`validation.txt`统一核验。没有模型下载，PAUSED保留。
+本次融合原数在 `.scratch/inference-f32-fusion-20261104/`：`window2/`保留39个无profiler计时进程，`memory1/`为18个独立资源进程，各有原命令、stdout／stderr、GPU频率／负载、逐轮与合并表。`window1/`与测试编译重叠后已停止，不作为正式结果。`teacher6/`为最终构建的六个数值进程；`checks6/`、`graph-checks2/`、`baseline-graph-checks1/`、`state-checks1/`和`mtp-regression1/`保留相关检查。四份新profile在格式-臂目录，`validation.txt`统一核验。没有模型下载，PAUSED保留。
 
 ```text
 python -B .scratch/inference-f32-fusion-20261104/run.py window <新计时目录>
