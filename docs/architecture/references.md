@@ -33,6 +33,25 @@ Python包装、整模型runtime、服务cache和进程政策不会因提供参�
 渲染/资源流送、数值管线与异步服务用来检验通用性：同样的租约、group-ready、shape、失败和关闭
 是否成立，而不是要求Hyle实现这些领域的完整框架。硬件宣传或厂商结果只能提供需求线索，不能充当本项目性能结论。
 
+## 多容量、设备元数据与投机解码
+
+2026-11-05核对以下本地源码，所列文件内容与固定commit相同。只读外部实现，没有运行它们的新性能测试。
+关注的是容量、有效长度、原生计划和提交边界，不照搬模型数学或外部执行器。
+
+| 实现／固定版本 | 查到的设计 | 对Hyle的启示与边界 |
+|---|---|---|
+| [TensorRT-LLM `46d9966b54`](https://github.com/NVIDIA/TensorRT-LLM/blob/46d9966b54d9d11998b712e732fb20f64d4d35c0/tensorrt_llm/_torch/speculative/mtp.py#L430) | MTP在同一forward中循环草稿；接受数和`kv_lens_cuda`留在设备，原缓冲区就地更新。graph外的部分MLA路径仍调用`.item()`。 | 固定载体和动态有效长度分开。多模块MTP与Qwen重复单模块的数学不同，不能照搬其缓存算法。 |
+| [SGLang `234ccba7f6`](https://github.com/sgl-project/sglang/blob/234ccba7f625e12639e621044496bcc6197c3758/python/sglang/srt/speculative/eagle_draft_cuda_graph_runner.py#L371) | 按捕获宽度准备固定输入／位置／KV地址，整个`draft_forward`进入capture，步内不重复规划。 | 一张草稿图只解决步内提交；不能据此证明轮间没有主机依赖。 |
+| [SGLang overlap](https://github.com/sgl-project/sglang/blob/234ccba7f625e12639e621044496bcc6197c3758/python/sglang/srt/managers/overlap_utils.py#L520) | GPU保存下一轮精确长度；是否取CPU镜像由所用attention后端共同决定。部分后端／PP路径仍需D2H。 | 后端显式报告需要哪些主机事实，不把“支持CUDA Graph”等同于“无主机同步”。 |
+| [vLLM `276fbcff27`](https://github.com/vllm-project/vllm/blob/276fbcff2717bd934cfa37c8a2e4c391f3e7237b/vllm/v1/worker/gpu/spec_decode/multi_module_mtp/speculator.py#L155) | CPU使用`seq_lens_cpu_upper_bound`，GPU根据拒绝数更新精确长度、输入与slot mapping；草稿循环按批次描述捕获。 | 上界用于调度／准备，精确值用于执行。容量档位和设备有效值应分别表示。 |
+| [vLLM graph目录](https://github.com/vllm-project/vllm/blob/276fbcff2717bd934cfa37c8a2e4c391f3e7237b/vllm/v1/worker/gpu/spec_decode/target_dependent_ar/cudagraph_utils.py#L23) | 描述包含批次形状，必要时再按草稿步数专门化；不匹配已有项就明确回落。 | 缓存key反映物理形状与原生拓扑，不能只看batch size或指针地址。 |
+| [llama.cpp b12063／`2cbca389f5`](https://github.com/ggml-org/llama.cpp/blob/2cbca389f515df455412dafa07e2b1359cc72a6d/common/speculative.cpp#L1790) | 主机循环`llama_process`、采样和准备下一步；[NextN embedding读取](https://github.com/ggml-org/llama.cpp/blob/2cbca389f515df455412dafa07e2b1359cc72a6d/src/llama-context.cpp#L4522)显式synchronize。 | 是当前实测对照；这条路径不能作为“所有草稿和轮间接续都留在设备”的实现依据。 |
+
+SGLang还按接受位置选择或恢复线性注意力状态，见
+[hybrid linear attention](https://github.com/sgl-project/sglang/blob/234ccba7f625e12639e621044496bcc6197c3758/python/sglang/srt/layers/attention/hybrid_linear_attn_backend.py#L1505)。
+Hyle的GDN／conv／hidden前缀、pending和RNG仍由模型及原发布事务处理，不能只截短KV。
+容量档位／设备有效值的拟议分工见[多容量设计](inference-design.md#多容量设备批次设计提案)。
+
 ## TPU Megakernels 源码核对
 
 依据用户提供的本地仓库`C:\public\project-hyle\tpu-megakernels`。本次核对快照为
