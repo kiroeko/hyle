@@ -445,8 +445,8 @@ Result<d::BatchInvocationData*> create_batch_invocation(d::BatchProgramData*p,Qu
     if(properties.domain!=p->options.resource.domain() ||
         properties.minimum_alignment<16 || properties.minimum_alignment%16 || storage.offset()%16)
       return std::unexpected(Status::InvalidArgument("Graph float workspace requires its original domain and 16-byte alignment"));
-    if(storage.size()<p->options.max_float_workspace_bytes)
-      return std::unexpected(Status::ResourceExhausted("Graph float workspace is smaller than the declared program cap"));
+    if(!storage.size())
+      return std::unexpected(Status::ResourceExhausted("Graph float workspace is empty"));
     if(storage.offset()>SIZE_MAX-storage.size())
       return std::unexpected(Status::OutOfRange("Graph float workspace range overflows"));
   }

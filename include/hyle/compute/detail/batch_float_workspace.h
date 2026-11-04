@@ -5,11 +5,13 @@
 namespace hyle::compute::detail {
 // Separate opt-in; the existing BatchPlanning v7/MLA v5 ABI is unchanged.
 inline constexpr ProviderExtensionId kBatchFloatWorkspaceExtensionId{
-    0x48594c4542415443ULL, 0x464c4f4154534352ULL, 1};
+    0x48594c4542415443ULL, 0x464c4f4154534352ULL, 2};
 struct BatchFloatWorkspaceVTable final {
   // Cold, host-only qualification for this concrete Q carrier and original
-  // schema. The returned capacity is configured, never inferred from future
-  // workload layouts. The provider may decline unprofitable small carriers.
+  // schema. Return a fixed safe upper bound for every admitted layout fitting this
+  // concrete carrier and configured capacity, never future workload facts. It
+  // may be smaller than the configured hard cap; each actual plan is still
+  // checked against both that cap and the borrowed storage before use.
   //
   // On success float storage is disposable run scratch: no contents survive a
   // native run. All cold query/update/plan/replan/setup paths, including their

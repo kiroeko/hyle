@@ -316,7 +316,7 @@ Result<c::WorkspaceRequirement> float_workspace(const AdapterContext&adapter,con
     return t->workspace(context,call.capacity,call.rows,*call.options,&call.workspace);
   },&call);
   if(!status.ok()){if(status.IsUnimplemented() && !status.has_native_error())return c::WorkspaceRequirement{};return std::unexpected(status);}
-  if(!call.workspace.size || call.workspace.size<options.max_float_workspace_bytes ||
+  if(!call.workspace.size || call.workspace.size>options.max_float_workspace_bytes ||
       call.workspace.alignment<16 || (call.workspace.alignment&(call.workspace.alignment-1)))
     return std::unexpected(Status::Internal("batch float scratch capability returned an invalid configured capacity"));
   return call.workspace;
@@ -735,11 +735,11 @@ Status prepare_native(graph::Invocation&invocation,std::span<const QueueBinding>
           HYLE_ASSIGN_OR_RETURN(s.program,cd::BatchGraphAccess::prepare(r.context,r.source,std::move(schema),native_options));
           HYLE_ASSIGN_OR_RETURN(auto upload,gd::RegionAccess::metadata_queue(invocation,entry.lane,
               {.allocator=options.allocator,.resource_budget=options.resource_budget}));
-          if(s.float_workspace.valid() && options.max_float_workspace_bytes<=s.float_workspace.size()){
+          if(s.float_workspace.valid() && options.max_float_workspace_bytes<=r.options.max_float_workspace_bytes){
             HYLE_ASSIGN_OR_RETURN(s.native,cd::BatchGraphAccess::create(s.program,*entry.queue,std::move(upload),
                 cd::BatchGraphFloatWorkspace{s.float_workspace}));
           }else{
-            // Explicit caps above the compiled region envelope retain the
+            // Explicit caps above the original compiled hard cap retain the
             // original private path; never silently clamp a caller's limit.
             HYLE_ASSIGN_OR_RETURN(s.native,cd::BatchGraphAccess::create(s.program,*entry.queue,std::move(upload)));
           }

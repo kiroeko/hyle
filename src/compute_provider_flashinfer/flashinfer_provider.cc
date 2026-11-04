@@ -583,17 +583,57 @@ Status graph_float_workspace(void*context,BatchCapacity capacity,std::uint32_t p
     const BatchProgramOptions&options,WorkspaceRequirement*out)noexcept{
   *out={};
   HYLE_RETURN_IF_ERROR(qualify_batch(context,capacity,options));
-  // Reserve the original configured hard cap for this concrete carrier.
-  // Decode and verifier float partials are disposable just like prefill's;
-  // private integer plans retain their own addresses and generations.
   if(!physical_rows || physical_rows>capacity.max_query_rows)
     return Status::Unimplemented("FlashInfer shared float scratch requires a nonempty concrete carrier");
   if(!options.max_float_workspace_bytes)
     return Status::InvalidArgument("FlashInfer shared float scratch requires a positive configured cap");
-  // PrefillPlan only materializes private integer metadata and float offsets.
-  // Run overwrites temporary V/softmax rows before merging; no float state is
-  // retained between runs. This opt-in does not cover the separate MLA plan.
-  *out={options.max_float_workspace_bytes,16};return Status::Ok();
+  auto bound=options.max_float_workspace_bytes;
+  // R1 fixes the packed query length. Small queries use the original scheduler,
+  // without the separate >=64-row occupancy override. For every active Q extent
+  // its CTA tile is independent of KV length. PrefillPlanImpl bounds partials by
+  // max(2*SM/KV-heads, Q tiles)*CTA-Q; F32 also bounds optional BF16 partials.
+  if(capacity.max_requests==1 && physical_rows<64){
+    auto&owner=*static_cast<ProviderContext*>(context);
+    cuda::detail::ScopedPrimaryContext scope(owner.primary);
+    HYLE_RETURN_IF_ERROR(scope.status());
+    if(!owner.multiprocessors)return Status::Internal("FlashInfer scratch bound lacks device facts");
+    try{
+      native::BatchSpec spec{.query_heads=capacity.query_heads,.kv_heads=capacity.kv_heads,
+        .qk_head_dim=capacity.qk_head_dim,.value_head_dim=capacity.value_head_dim,
+        .page_size=capacity.page_size,.requests=1,.scale=options.scale,
+        .window_left=options.window_left,.paged=capacity.storage==BatchStorage::kPaged,
+        .bfloat16=capacity.query_type==DataType::kBFloat16,
+        .fp8=capacity.key_storage.data_type()==DataType::kFloat8E4M3FN,.causal=options.causal};
+      const auto refs=spec.paged?(std::min)(std::uint64_t(capacity.max_page_refs),
+        (std::uint64_t(capacity.max_kv_rows)+spec.page_size-1)/spec.page_size):capacity.max_kv_rows;
+      const std::int32_t kv[]{0,static_cast<std::int32_t>(refs)};
+      const auto limit=options.max_float_workspace_bytes;
+      const auto multiply=[limit](std::uint64_t a,std::uint64_t b)noexcept->std::size_t{
+        return b && a>limit/b?limit:static_cast<std::size_t>(a*b);
+      };
+      bound=0;
+      for(std::uint32_t rows=1;rows<=physical_rows;++rows){
+        spec.query_rows=rows;const std::int32_t q[]{0,static_cast<std::int32_t>(rows)};
+        native::BatchFacts facts;
+        HYLE_RETURN_IF_ERROR(cuda::status(native::query_batch_workspace(spec,q,kv,nullptr,facts,nullptr,nullptr,false)));
+        if(!facts.cta_tile_q)return Status::Internal("FlashInfer scratch bound has an empty CTA tile");
+        const auto tile=std::uint64_t(facts.cta_tile_q);
+        const auto tiles=(std::uint64_t(rows)*(capacity.query_heads/capacity.kv_heads)+tile-1)/tile;
+        const auto padded=(std::max)(2*std::uint64_t(owner.multiprocessors)/capacity.kv_heads,tiles);
+        const auto elements=multiply(multiply(padded,tile),capacity.query_heads);
+        auto value=multiply(elements,capacity.value_head_dim*sizeof(float));
+        const auto padding=(16-value%16)%16;
+        const auto scalar=multiply(elements,sizeof(float));
+        if(padding>limit-value || scalar>limit-value-padding)value=limit;
+        else value+=padding+scalar;
+        bound=(std::max)(bound,value);
+      }
+    }catch(const std::bad_alloc&){return Status::ResourceExhausted("FlashInfer scratch bound metadata");}
+     catch(const std::exception&e){return Status::Internal(e.what());}
+  }
+  // Integer plan tables remain private. Cold plan/update paths compute float
+  // offsets only; the real admitted Queue run overwrites these partials.
+  *out={bound,16};return Status::Ok();
 }
 const detail::BatchFloatWorkspaceVTable kFloatWorkspaceVTable{&graph_float_workspace};
 ProviderRuntimeProperties batch_runtime(void *) noexcept {

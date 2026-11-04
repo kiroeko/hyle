@@ -190,7 +190,8 @@ struct BoundRoute final {
     const auto step = state->plan->node_steps[route.attention[node].ordinal()];
     const auto request = state->plan->step_workspace_requests[step];
     EXPECT_NE(request, gd::kNoWorkspaceRequest);
-    EXPECT_EQ(state->plan->steps[step].workspace_requirement().size, float_cap);
+    EXPECT_GT(state->plan->steps[step].workspace_requirement().size, 0u);
+    EXPECT_LE(state->plan->steps[step].workspace_requirement().size, float_cap);
     return state->workspace.view(request).value();
   }
   void check(std::uint32_t active, std::uint16_t expected = 0x4000u) const {
@@ -341,7 +342,7 @@ TEST(GraphBatchSharedWorkspaceCuda, PendingRootAllowsAddressPlanningButRefusesRu
   EXPECT_FALSE(gate.timed_out.load());
 }
 
-TEST(GraphBatchSharedWorkspaceCuda, BorrowedViewValidatesFixedCapacityResourceAndAlignment) {
+TEST(GraphBatchSharedWorkspaceCuda, BorrowedViewValidatesActualCapacityResourceAndAlignment) {
   Environment e;
   constexpr std::size_t cap = 1u << 20;
   auto program = c::BatchProgram::prepare(e.context, e.schema,
@@ -355,8 +356,17 @@ TEST(GraphBatchSharedWorkspaceCuda, BorrowedViewValidatesFixedCapacityResourceAn
     return cd::BatchGraphAccess::create(program, e.queue, metadata_queue, {view});
   };
   auto absent = create({}); ASSERT_FALSE(absent); EXPECT_TRUE(absent.error().IsInvalidArgument());
-  auto short_view = create(backing.view().subview(0, cap - 16).value());
-  ASSERT_FALSE(short_view); EXPECT_TRUE(short_view.error().IsResourceExhausted());
+  {
+    auto below_cap = create(backing.view().subview(0, cap - 16).value());
+    ASSERT_TRUE(below_cap) << below_cap.error().message();
+  }
+  {
+    auto tiny = create(backing.view().subview(0, 16).value());
+    ASSERT_TRUE(tiny) << tiny.error().message();
+    auto refused = cd::BatchGraphAccess::prepare(*tiny, e.layout(16), true, {});
+    ASSERT_FALSE(refused); EXPECT_TRUE(refused.error().IsResourceExhausted()) << refused.error().message();
+    EXPECT_FALSE(tiny->in_flight());
+  }
   auto unaligned = create(backing.view().subview(1, cap).value());
   ASSERT_FALSE(unaligned); EXPECT_TRUE(unaligned.error().IsInvalidArgument());
   auto other_resource = c::cuda::MemoryResource::create(e.context, c::cuda::MemoryKind::kDevice).value();

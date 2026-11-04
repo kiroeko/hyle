@@ -25,6 +25,8 @@ enum class BatchGraphContract : std::uint8_t {
 // must separately prove that cold planning neither reads nor writes this float
 // payload (it may only compute offsets), so planning needs no float write use.
 // Public/standalone Batch invocations retain their original owned workspaces.
+// The fixed view may be smaller than the program hard cap. Every actual
+// layout must fit both limits before its float payload may be used.
 struct BatchGraphFloatWorkspace final {
   mem::BufferView storage;
 };
