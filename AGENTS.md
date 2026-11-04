@@ -17,7 +17,7 @@ HYLE 是 C++ 推理引擎，各基础库也能单独构建、安装和使用。�
 - 保持正确：API/ABI、数值、状态版本与 RNG、有序发布、权限、并发、依赖、设备限制和资源的真实退休。失败、没运行、受硬件限制要分别如实写明，不能写成通过。
 - 模型的数学、权重含义和状态布局放在 `engine/models/<模型>/`；请求、会话、缓存和生成政策放在 `engine/`；Compute/Graph 保持模型无关。复用现有的执行、资源、退休机制和加速路径，不另造执行器或账簿。
 - 性能以默认构建、默认参数下完整推理进程的 tok/s 为准。参考 llama.cpp 与 Hyle 在同一时段交错运行（记录版本），每臂至少 3 个独立进程，不跨时段比较。decode 按轮报告，首轮冷开销（录图、预热）单独列出用于定位，对外指标仍是包含冷开销的完整数字。kernel 数和局部计时只用来解释原因。
-- 可参考本地 llama.cpp、ik_llama.cpp、vLLM、SGLang、TensorRT-LLM、ds4、Strata、DeepInfer、deepseek-recipe 的源码（CUDA 优先参考 TensorRT-LLM），记录实际版本。
+- 可参考本地 llama.cpp、ik_llama.cpp、vLLM、SGLang、TensorRT-LLM、ds4、Strata、DeepInfer、deepseek-recipe、TPU Megakernels（`C:\public\project-hyle\tpu-megakernels`）的源码（CUDA 优先参考 TensorRT-LLM），记录实际版本。TPU Megakernels 的设备侧编排与资源复用参考边界见[参考实现](docs/architecture/references.md)。
 
 ## 记录
 
