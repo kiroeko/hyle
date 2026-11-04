@@ -55,7 +55,8 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     // Accepting two target rows from a lag0 base repairs one actual draft row.
     model->prepare_draft_program(1, false);
   }
-  if (kind == q::BackendKind::kCuda) packed.prepare_shared_prefill_workspace();
+  // Sampled verifier outputs keep their original private workspace; the
+  // shared execution contract requires caller-owned outputs for every route.
   exact.prepare_execution(lag0_rows, 1, q::GraphRole::kMtpPrefill);
   exact.prepare_execution(lag1_rows, 1, q::GraphRole::kMtpCatchupPrefill);
   for (const auto role : {q::GraphRole::kMtpPrefill, q::GraphRole::kMtpCatchupPrefill})

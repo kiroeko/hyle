@@ -1413,15 +1413,23 @@ public:
   }
 
   // Compile the default single-session CUDA families concurrently only when
-  // every shared weight is already an immutable, dense read. Quantized
-  // packing and a caller-supplied allocation budget keep serial admission.
+  // every shared weight is already an immutable read. Original GGUF Q8_0,
+  // Q4_K and Q6_K bindings are borrowed without rewriting their source bytes;
+  // their native recipes and packing caches belong to each compiled Family.
+  // Other packed codecs and caller budgets keep serial admission.
   bool begin_cold_families() {
     if (preparation_started_ || state_storage_prepared || allocation_budget ||
         !families.empty() || !probe_families.empty() || cold_family_pool_ ||
         std::ranges::any_of(weights, [](const auto &item) {
           const auto codec = item.second.codec;
+          const auto &description = item.second.tensor.description;
+          const auto quantized = c::gguf_quantized_type(description.storage_format());
+          const bool original_gguf = quantized &&
+              (*quantized == c::GgufQuantizedType::kQ8_0 ||
+               *quantized == c::GgufQuantizedType::kQ4K ||
+               *quantized == c::GgufQuantizedType::kQ6K);
           return bool(item.second.tensor.writer) || !item.second.tensor.ready ||
-              !item.second.tensor.description.is_plain() ||
+              (!description.is_plain() && !original_gguf) ||
               (codec != prepared::ProjectionCodec::kUnspecified && codec != prepared::ProjectionCodec::kDense);
         })) return false;
     // The optional row transform finishes with the original cold Model owner.

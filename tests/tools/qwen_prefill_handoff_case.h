@@ -28,7 +28,7 @@ inline std::unique_ptr<q::Model> make_model(const std::filesystem::path &input, 
   }
   model.bounded_prefill_rows = 2;
   model.freeze_shape_plan();
-  model.prepare_shared_prefill_workspace();
+  model.prepare_shared_execution_workspace();
   return owner;
 }
 

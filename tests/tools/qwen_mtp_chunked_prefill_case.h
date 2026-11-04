@@ -111,7 +111,8 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     model->prepare_family(seed, false, 1, q::GraphRole::kVerify);
     model->plan_replay_uses(3, 1, 1, q::GraphRole::kVerify); model->prepare_draft_program(1, false);
   }
-  if (kind == q::BackendKind::kCuda) chunk.prepare_shared_prefill_workspace();
+  // This sampled verifier owns internal outputs. Keep its original private
+  // workspace rather than admitting it to caller-output-only shared scratch.
   exact.prepare_execution(exact_prompts, 1, q::GraphRole::kMtpPrefill);
   exact.prepare_execution(catchup, 1, q::GraphRole::kMtpCatchupPrefill);
   chunk.prepare_execution(seed, 1, q::GraphRole::kMtpPrefill);
