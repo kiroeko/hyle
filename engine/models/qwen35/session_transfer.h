@@ -65,7 +65,7 @@ inline c::BatchLayoutVersion layout(Model &model, const std::vector<hyle::infere
 inline cache::HostImageSchema Model::host_image_schema() const {
   cache::HostImageSchema result;
   result.geometry = geometry; result.capacity = capacity;
-  result.hidden_row_bytes = geometry.hidden_bytes();
+  result.hidden_row_bytes = cache_plan.hidden_row_bytes;
   result.draft_cache = cache_plan.draft_cache; result.frontier_hidden = retains_sampling_frontier();
   for (std::size_t slot = 0; slot < target_kv_layers; ++slot) {
     const auto stored = target_attention_schema(slot).capacity();

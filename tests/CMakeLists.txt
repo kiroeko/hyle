@@ -379,6 +379,7 @@ set_tests_properties(hyle_qwen_prepared_roles_test PROPERTIES
 
 add_executable(hyle_qwen_precision_profile_test tools/qwen_precision_profile_test.cc)
 target_link_libraries(hyle_qwen_precision_profile_test PRIVATE hyle_build_contract)
+target_include_directories(hyle_qwen_precision_profile_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
 target_compile_features(hyle_qwen_precision_profile_test PRIVATE cxx_std_23)
 hyle_apply_warnings(hyle_qwen_precision_profile_test)
 hyle_apply_sanitizer(hyle_qwen_precision_profile_test)

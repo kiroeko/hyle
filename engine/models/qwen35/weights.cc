@@ -517,7 +517,7 @@ PreparedWeightSource prepare_weight_source(const std::filesystem::path &manifest
     throw std::runtime_error("draft vocabulary requires MTP weights");
   auto roles = read_weight_roles(manifest, include_mtp);
   auto storage = read_cache_calibration(roles);
-  const auto plain = take(c::CacheStorage::plain(PrecisionProfile::from_roles(roles).activation_type()));
+  const auto plain = take(c::CacheStorage::plain(PrecisionProfile::from_roles(roles).cache_type()));
   const auto plain_rows = cache_storage_row_bytes(roles.geometry, {plain, plain});
   const auto target_rows = storage.empty() ? plain_rows : cache_storage_row_bytes(roles.geometry, storage.front());
   for (const auto &pair : storage)

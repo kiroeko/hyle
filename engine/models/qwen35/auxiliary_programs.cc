@@ -41,7 +41,8 @@ AuxiliaryProgramResult<DraftProgram> build_draft_chain(
   program.positions = r.input(dense(Type::kInt32, {total}));
   const auto hidden_schema = take(g::slots::Schema::create(
       dense(model.precision.activation_type(), {1, geometry.hidden}), facts.hidden_slots,
-      cache::add(geometry.hidden_bytes(), cache::state_pool_padding(geometry.hidden_bytes()))));
+      cache::add(cache::multiply(static_cast<std::size_t>(geometry.hidden), model.precision.activation_bytes()),
+          cache::state_pool_padding(cache::multiply(static_cast<std::size_t>(geometry.hidden), model.precision.activation_bytes())))));
   auto &port = program.hidden_state;
   port.pool = r.input(take(hidden_schema.capacity_description()));
   port.source_ids = r.input(dense(Type::kInt32, {rows}));
@@ -161,7 +162,8 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
     if (head) {
       hidden_schema = take(g::slots::Schema::create(dense(precision.activation_type(), {1, hidden}),
           draft_facts.hidden_slots,
-          cache::add(geometry.hidden_bytes(), cache::state_pool_padding(geometry.hidden_bytes()))));
+          cache::add(cache::multiply(static_cast<std::size_t>(hidden), precision.activation_bytes()),
+              cache::state_pool_padding(cache::multiply(static_cast<std::size_t>(hidden), precision.activation_bytes())))));
       auto &port = program.hidden_state;
       port.pool = r.input(take(hidden_schema.capacity_description()));
       port.source_ids = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));

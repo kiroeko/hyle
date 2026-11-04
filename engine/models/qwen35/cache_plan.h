@@ -8,6 +8,7 @@
 #include <stdexcept>
 
 #include "model_geometry.h"
+#include "precision_profile.h"
 
 namespace qwen35::cache {
 
@@ -69,7 +70,8 @@ inline Plan plan(const ModelGeometry &geometry, CacheRowBytes row_bytes,
                   std::size_t active_sequences = 1,
                    std::size_t candidate_boundaries = 1,
                    bool draft_cache = false, bool frontier_hidden = false,
-                   std::size_t in_flight_batches = 1, std::size_t auxiliary_hidden_rows = 0) {
+                   std::size_t in_flight_batches = 1, std::size_t auxiliary_hidden_rows = 0,
+                   PrecisionProfile precision = {}) {
   geometry.validate();
   if (auxiliary_hidden_rows && !draft_cache)
     throw std::runtime_error("private draft hidden rows require a draft cache");
@@ -100,7 +102,8 @@ inline Plan plan(const ModelGeometry &geometry, CacheRowBytes row_bytes,
   const auto hidden_slots = draft_cache || candidate_boundaries > 1
       ? add(add(multiply(2, residents), candidate_states), auxiliary_hidden_rows)
       : frontier_hidden ? snapshots : 0;
-  const auto hidden_bytes = hidden_slots ? state_pool_backing_bytes(geometry.hidden_bytes(), hidden_slots) : 0;
+  const auto hidden_row_bytes = multiply(static_cast<std::size_t>(geometry.hidden), precision.activation_bytes());
+  const auto hidden_bytes = hidden_slots ? state_pool_backing_bytes(hidden_row_bytes, hidden_slots) : 0;
   const auto page_refs = multiply(refs, active_sequences);
   const auto query_rows = multiply(query_rows_per_request, active_sequences);
   const auto kv_rows = multiply(context, active_sequences);
@@ -128,7 +131,7 @@ inline Plan plan(const ModelGeometry &geometry, CacheRowBytes row_bytes,
   result.hidden_bytes = hidden_bytes;
   result.draft_cache = draft_cache;
   result.auxiliary_hidden_rows = auxiliary_hidden_rows;
-  result.hidden_row_bytes = geometry.hidden_bytes();
+  result.hidden_row_bytes = hidden_row_bytes;
   result.attention_layers = geometry.attention_layers(); result.recurrent_layers = geometry.recurrent_layers();
   const auto bank_rows = multiply(pages, Plan::page_rows);
   result.key_bank_bytes = add(multiply(bank_rows, row_bytes.target.key), 1);
@@ -144,7 +147,7 @@ inline Plan plan(const ModelGeometry &geometry, CacheRowBytes row_bytes,
   std::size_t recurrent_padding = 0;
   if (result.recurrent_layers) {
     const auto history_bytes = multiply(multiply(static_cast<std::size_t>(geometry.conv_kernel - 1),
-        static_cast<std::size_t>(geometry.gdn_qkv_width())), 2);
+        static_cast<std::size_t>(geometry.gdn_qkv_width())), precision.activation_bytes());
     const auto recurrent_bytes = multiply(multiply(static_cast<std::size_t>(geometry.gdn_value_heads),
         static_cast<std::size_t>(geometry.gdn_key_depth)),
         multiply(static_cast<std::size_t>(geometry.gdn_value_depth), 4));

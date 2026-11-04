@@ -98,10 +98,11 @@ inline ModeReport run_mode(const std::filesystem::path &input, q::BackendKind ki
   {
     auto source = q::prepare_weight_source(input / "weights.tsv", draft);
     const auto geometry = source.roles.geometry;
+    const auto precision = q::PrecisionProfile::from_roles(source.roles);
     require(geometry.context_limit >= 16 && geometry.vocabulary >= 4 && (!draft || geometry.mtp_layers == 1),
         "host image case requires C16, four tokens and the selected original MTP roles");
     const auto plan = q::cache::plan(geometry, source.cache_row_bytes, 16, 4, 3,
-        q::recurrent_bytes(q::state_schema_for(geometry, 16), geometry), 1, draft ? 2 : 1, draft, true);
+        q::recurrent_bytes(q::state_schema_for(geometry, 16, precision), geometry), 1, draft ? 2 : 1, draft, true, 1, 0, precision);
     q::Model model(std::move(source), geometry, 16, plan, {}, false, q::ReplayPolicy::kCommands, SIZE_MAX,
         {.enabled = true, .policy = {1.F, 8, .9F}, .seed = 123}, 0, {.primary = kind});
     cold = model.resources_;

@@ -201,6 +201,7 @@ TargetGraphResult emit_target_graph(Recipe &r,
         auto q = r.reshape(r.slice(activated, 2, f(0), f(geometry.gdn_key_width())), {batch, t, f(geometry.gdn_key_heads), f(geometry.gdn_key_depth)});
         auto k = r.reshape(r.slice(activated, 2, f(geometry.gdn_key_width()), f(geometry.gdn_key_width())), {batch, t, f(geometry.gdn_key_heads), f(geometry.gdn_key_depth)});
         auto v = r.reshape(r.slice(activated, 2, f(2 * geometry.gdn_key_width()), f(geometry.gdn_value_width())), {batch, t, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth)});
+        if (r.activation_type() == Type::kFloat32) v = r.copy(v);
         auto a = r.reshape(r.cast(r.linear(normalized, prefix + "linear_attn.in_proj_a.weight"), Type::kFloat32), {batch, t, f(geometry.gdn_value_heads), f(1)});
         auto b = r.reshape(r.linear(normalized, prefix + "linear_attn.in_proj_b.weight"), {batch, t, f(geometry.gdn_value_heads), f(1)});
         auto dt = r.reshape(r.cast(r.weight(prefix + "linear_attn.dt_bias"), Type::kFloat32), {f(1), f(1), f(geometry.gdn_value_heads), f(1)});
@@ -246,9 +247,11 @@ TargetGraphResult emit_target_graph(Recipe &r,
       if (cache_capacity.key_storage.data_type() == Type::kFloat8E4M3FN)
         key_rows = r.one(c::Operation::custom(c::model_ops::CacheEncode{cache_capacity.key_storage}),
             {key_rows}, r.dense_spec(Type::kFloat8E4M3FN, {packed, f(geometry.kv_heads), f(geometry.key_depth)}));
+      else key_rows = r.cast(key_rows, cache_capacity.key_storage.data_type());
       if (cache_capacity.value_storage.data_type() == Type::kFloat8E4M3FN)
         value_rows = r.one(c::Operation::custom(c::model_ops::CacheEncode{cache_capacity.value_storage}),
             {value_rows}, r.dense_spec(Type::kFloat8E4M3FN, {packed, f(geometry.kv_heads), f(geometry.value_depth)}));
+      else value_rows = r.cast(value_rows, cache_capacity.value_storage.data_type());
       if (inputs.predecessor_prefix_index) {
         r.op(c::Operation::custom(take(g::batch::device_choice_paged_append(
             schema, c::BatchCacheRole::kKey, inputs.zero_fill_envelope))),
@@ -271,12 +274,12 @@ TargetGraphResult emit_target_graph(Recipe &r,
           : c::Operation::custom(c::PagedAttention{
               .capacity = cache_capacity, .scale = 1.F / std::sqrt(static_cast<float>(geometry.key_depth)), .causal = true});
       auto attention = r.one(attention_operation,
-          {r.reshape(q, {packed, f(geometry.query_heads), f(geometry.key_depth)}), ports.key, ports.value,
+          {r.cast(r.reshape(q, {packed, f(geometry.query_heads), f(geometry.key_depth)}), cache_capacity.query_type), ports.key, ports.value,
            inputs.predecessor_prefix_index ? inputs.predecessor_prefix_index : inputs.attention_metadata},
-          r.dense_spec(r.activation_type(), {packed, f(geometry.query_heads), f(geometry.value_depth)}), &outputs.attention_nodes[layer]);
+          r.dense_spec(cache_capacity.output_type, {packed, f(geometry.query_heads), f(geometry.value_depth)}), &outputs.attention_nodes[layer]);
       check(r.builder.depends_on(outputs.attention_nodes[layer], key_append));
       check(r.builder.depends_on(outputs.attention_nodes[layer], value_append));
-      auto gated = r.binary(c::BinaryKind::kMultiply, r.reshape(attention, {packed, f(geometry.attention_width())}), r.unary(c::UnaryKind::kSigmoid, gate));
+      auto gated = r.binary(c::BinaryKind::kMultiply, r.cast(r.reshape(attention, {packed, f(geometry.attention_width())}), r.activation_type()), r.unary(c::UnaryKind::kSigmoid, gate));
       mixed = r.linear(gated, prefix + "self_attn.o_proj.weight");
     }
     const auto ffn_input = r.binary(c::BinaryKind::kAdd, x, mixed);

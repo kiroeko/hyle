@@ -349,13 +349,13 @@ V Recipe::emit_projection(V x, const ProjectionBinding &binding, bool scores) {
         constexpr std::array<std::int32_t, 2> axes{1, 0};
         const auto rhs = one(take(c::View::permute(axes)), {original});
         const auto output = one(c::MatMul{}, {cast(x, Type::kFloat32), rhs}, dense_spec(Type::kFloat32, dimensions));
-        return scores ? output : cast(output, Type::kBFloat16);
+        return scores ? output : cast(output, activation_type());
       }
       if (scores || stored.data_type() == Type::kFloat16 || stored.data_type() == Type::kFloat32) {
         const auto output = one(c::model_ops::dense_linear_f32(),
             {stored.data_type() == Type::kBFloat16 ? x : cast(x, Type::kFloat32), original},
             dense_spec(Type::kFloat32, dimensions));
-        return scores ? output : cast(output, Type::kBFloat16);
+        return scores ? output : cast(output, activation_type());
       }
       if (stored.data_type() != Type::kBFloat16)
         throw std::runtime_error("original dense projection requires a supported floating operand");

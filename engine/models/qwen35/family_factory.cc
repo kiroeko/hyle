@@ -198,6 +198,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
   const bool packed_verify = packs_verify(packing), packed_target = packs_target(packing);
   const auto target_kv_layers = geometry.attention_layers(), draft_bank = target_kv_layers * 2;
   const auto hidden = geometry.hidden, vocabulary = geometry.vocabulary;
+  const auto hidden_row_bytes = cache::multiply(static_cast<std::size_t>(hidden), precision.activation_bytes());
   const bool device_continuation = role == GraphRole::kMtpContinuation;
   const bool continuous_successor = device_continuation && prepared.continuous_device_successor;
   const bool emit_device_decision = prepared.device_acceptance_successor || continuous_successor;
@@ -244,7 +245,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     if (verifies_prefix(role) || has_mtp(role) || prepared.retain_hidden) {
       hidden_schema = take(g::slots::Schema::create(dense(precision.activation_type(), {1, hidden}),
           prepared.hidden_slots,
-          cache::add(geometry.hidden_bytes(), cache::state_pool_padding(geometry.hidden_bytes()))));
+          cache::add(hidden_row_bytes, cache::state_pool_padding(hidden_row_bytes))));
       definition.hidden_state.destination_ids = r.input(dense(Type::kInt32,
           {static_cast<std::int64_t>(cache::multiply(requests, prefix_rows))}));
     }

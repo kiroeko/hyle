@@ -997,7 +997,7 @@ public:
     if ((calibrated && (!target_kv_layers || resources_->attention_storage.size() != target_kv_layers)) ||
         (!calibrated && !resources_->attention_storage.empty()))
       throw std::runtime_error("prepared E4 cache storage requires its complete original target calibration pairs");
-    const auto plain = take(c::CacheStorage::plain(precision.activation_type()));
+    const auto plain = take(c::CacheStorage::plain(precision.cache_type()));
     const auto plain_rows = cache_storage_row_bytes(geometry, {plain, plain});
     const auto target_rows = calibrated ? cache_storage_row_bytes(geometry, resources_->attention_storage.front()) : plain_rows;
     const cache::KvRowBytes actual_target{target_rows[0], target_rows[1]}, actual_draft{plain_rows[0], plain_rows[1]};
@@ -1017,7 +1017,7 @@ public:
         cache_plan.draft_value_bank_bytes != (cache_plan.draft_cache
             ? cache::add(cache::multiply(bank_rows, source.cache_row_bytes.draft.value), 1) : 0))
       throw std::runtime_error("cache backing plan differs from independent target/draft physical storage");
-    if (cache_plan.hidden_row_bytes != geometry.hidden_bytes() || cache_plan.attention_layers != target_kv_layers ||
+    if (cache_plan.hidden_row_bytes != cache::multiply(static_cast<std::size_t>(hidden), precision.activation_bytes()) || cache_plan.attention_layers != target_kv_layers ||
         cache_plan.recurrent_layers != geometry.recurrent_layers())
       throw std::runtime_error("cache layout differs from source model geometry");
     if (retains_sampling_frontier() && (!cache_plan.hidden_bytes || cache_plan.hidden_slots < cache_plan.snapshot_slots))
@@ -1296,10 +1296,10 @@ public:
     if (attention_schema.valid()) {
       return;
     }
-    const auto storage = take(c::CacheStorage::plain(precision.activation_type()));
+    const auto storage = take(c::CacheStorage::plain(precision.cache_type()));
     auto prepared_schema = take(c::BatchSchema::create({
-        .storage = c::BatchStorage::kPaged, .query_type = precision.activation_type(),
-        .output_type = precision.activation_type(), .key_storage = storage, .value_storage = storage,
+        .storage = c::BatchStorage::kPaged, .query_type = precision.cache_type(),
+        .output_type = precision.cache_type(), .key_storage = storage, .value_storage = storage,
         .max_requests = cache_plan.max_requests, .max_query_rows = cache_plan.max_query_rows,
         .max_kv_rows = cache_plan.max_kv_rows, .max_pages = cache_plan.max_pages,
         .max_page_refs = cache_plan.max_page_refs, .query_heads = static_cast<std::uint32_t>(geometry.query_heads), .kv_heads = static_cast<std::uint32_t>(geometry.kv_heads),
@@ -1380,13 +1380,13 @@ public:
     }
     if (cache_plan.hidden_bytes) {
       const auto slots = cache_plan.hidden_slots;
-      const auto bytes = cache::state_pool_backing_bytes(geometry.hidden_bytes(), slots);
+      const auto bytes = cache::state_pool_backing_bytes(cache_plan.hidden_row_bytes, slots);
       prepared_hidden = take(c::LeasePool::create(execution.device(), bytes,
           {.max_blocks = slots, .backing_alignment = cache::state_pool_alignment,
            .resource_budget = cache_budget}, allocation_budget));
       prepared_hidden_layout = take(c::LeaseSlotLayout::create(prepared_hidden,
           dense(precision.activation_type(), {1, hidden}), slots,
-          cache::add(geometry.hidden_bytes(), cache::state_pool_padding(geometry.hidden_bytes()))));
+          cache::add(cache_plan.hidden_row_bytes, cache::state_pool_padding(cache_plan.hidden_row_bytes))));
       prepared_bytes = cache::add(prepared_bytes, bytes);
     }
     const auto usage = take(cache_budget.usage(execution.device()));
@@ -2497,7 +2497,7 @@ public:
         if (!initial->draft->paged.frames.try_resize(2)) throw std::bad_alloc{};
         initial->draft->paged.frames[0] = working_frame(take(draft_inventory.banks[0].read(layout, {})));
         initial->draft->paged.frames[1] = working_frame(take(draft_inventory.banks[1].read(layout, {})));
-        auto zero = take(hidden_pool.allocate(geometry.hidden_bytes(), cache::state_pool_alignment));
+        auto zero = take(hidden_pool.allocate(cache_plan.hidden_row_bytes, cache::state_pool_alignment));
         check(zero.view()->fill(std::byte{})); initial->carry_hidden = take(zero.publish());
       }
       for (std::size_t i = 0; i < state_schema.size(); ++i) if (geometry.is_gdn(i)) {
@@ -8736,7 +8736,8 @@ int qwen35::run(int argc, char **argv) {
     const auto input_sessions = bounded_generation ? std::size_t{1}
         : natural_schedule ? generation_schedules.size() : scheduled ? schedules.size() : std::size_t{1};
     if (bounded_generation && active_sequences == 0) active_sequences = 1;
-    const auto recurrent_payload = qwen35::recurrent_bytes(qwen35::state_schema_for(geometry, capacity), geometry);
+    const auto source_precision = qwen35::PrecisionProfile::from_roles(weight_source.roles);
+    const auto recurrent_payload = qwen35::recurrent_bytes(qwen35::state_schema_for(geometry, capacity, source_precision), geometry);
     // Configuration describes a maximum, never permission to overrun context.
     // Actual calls additionally clip against output quota and remaining rows.
     max_drafts = (std::min)(max_drafts, capacity - 1);
@@ -8844,7 +8845,7 @@ int qwen35::run(int argc, char **argv) {
           mtp_enabled && mtp_has_decode ? (std::max)(max_query_rows, std::size_t{2}) : max_query_rows, recurrent_payload,
           active_sequences == 0 ? residents : requested_active,
           mtp_enabled ? max_drafts + 1 : 1, mtp_enabled, sampler.enabled, overlap_selected ? overlap_depth : 1,
-          device_verification_selected && (active_sequences == 0 ? residents : requested_active) == 1 ? 2 : 0);
+          device_verification_selected && (active_sequences == 0 ? residents : requested_active) == 1 ? 2 : 0, source_precision);
     };
     const auto minimum_residents = active_sequences == 0 ? std::size_t{1} : requested_active;
     auto selected_cache = plan_for(cached_slots);

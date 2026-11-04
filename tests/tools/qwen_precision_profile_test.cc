@@ -1,5 +1,6 @@
 // Cold source policy and digest; no device, model payload or network needed.
 #include "../../engine/models/qwen35/precision_profile.h"
+#include "../../engine/models/qwen35/cache_plan.h"
 #include "../../engine/inference/artifact_digest.h"
 
 #include <cstdio>
@@ -55,6 +56,48 @@ int main(int argc, char **argv) {
   e4.cache_policy = prepared::CachePolicy::kFloat8OriginalCalibration;
   e4.cache_calibration.push_back({});
   require(PrecisionProfile::from_roles(e4).activation_type() == DataType::kBFloat16);
+  prepared::Roles gguf;
+  gguf.representation = prepared::SourceRepresentation::kGgufConverted;
+  prepared::Role encoded;
+  encoded.name = "model.language_model.embed_tokens.weight";
+  encoded.meaning = prepared::ParameterMeaning::kEmbeddingRows;
+  encoded.dtype = "Q8_0";
+  gguf.selected.push_back(encoded);
+  encoded.name = "model.language_model.layers.0.mlp.gate_proj.weight";
+  encoded.meaning = prepared::ParameterMeaning::kLinearWeight;
+  gguf.selected.push_back(encoded);
+  const auto f32 = PrecisionProfile::from_roles(gguf);
+  require(f32.activation_type() == DataType::kFloat32 &&
+      f32.cache_type() == DataType::kBFloat16 && f32.activation_bytes() == 4);
+  gguf.selected.back().dtype = "Q4_K";
+  gguf.selected.front().dtype = "Q6_K";
+  require(PrecisionProfile::from_roles(gguf) == f32);
+  encoded.name = "mtp.fc.weight";
+  gguf.selected.push_back(encoded);
+  require(PrecisionProfile::from_roles(gguf) == PrecisionProfile{});
+  gguf.selected.pop_back();
+  gguf.selected.back().dtype = "Q3_K";
+  require(PrecisionProfile::from_roles(gguf) == PrecisionProfile{});
+  gguf.selected.back().dtype = "Q4_K";
+  gguf.representation = prepared::SourceRepresentation::kHfOriginal;
+  require(PrecisionProfile::from_roles(gguf) == PrecisionProfile{});
+  require(original.cache_type() == DataType::kFloat16 && original.activation_bytes() == 2);
+  ModelGeometry g;
+  g.hidden = 2048; g.intermediate = 6144; g.vocabulary = 248320;
+  g.query_heads = 8; g.kv_heads = 2; g.key_depth = g.value_depth = 256; g.rotary = 64;
+  g.gdn_key_heads = g.gdn_value_heads = 16;
+  g.gdn_key_depth = g.gdn_value_depth = 128;
+  g.conv_kernel = 4; g.context_limit = 32768; g.rope_theta = 10000; g.epsilon = 1e-6F;
+  g.layers = "GA";
+  const auto plan = [&](PrecisionProfile precision) {
+    const auto history = std::size_t{3 * 6144} * precision.activation_bytes();
+    return cache::plan(g, {{1024,1024},{}}, 128, 1, 16,
+        history + 16 * 128 * 128 * 4, 1, 1, false, true, 2, 0, precision);
+  };
+  const auto bf16_plan = plan({}), f32_plan = plan(f32);
+  require(f32_plan.hidden_row_bytes == 8192 && bf16_plan.hidden_row_bytes == 4096);
+  require(f32_plan.row_bytes == bf16_plan.row_bytes && f32_plan.state_slots == 3);
+  require(f32_plan.backing_bytes == bf16_plan.backing_bytes + 122880);
   e4.ct_mixed_policy.kind = prepared::CtMixedPolicy::Kind::kBlock128;
   require(PrecisionProfile::from_roles(e4).activation_type() == DataType::kBFloat16);
   e4.cache_policy = prepared::CachePolicy::kBFloat16OmitCalibration;
