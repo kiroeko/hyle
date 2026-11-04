@@ -215,24 +215,95 @@ d=0 的预热不同：Hyle 默认启动执行 16 行并预录相应图，stock l
 
 GPU 来自 Windows WDDM 的进程计数器，dedicated／shared 各自报告，不相加两个独立峰值。私有提交使用成功 PSAPI 观测到的 OS 生命周期峰；不是实际驻留内存。本轮未采逐轮对齐的加载后／阶段末资源快照，采样峰仍是有限间隔下界。
 
-## 正确性、资格与未重测的归因
+## 普通 decode 的带宽与精度边界
+
+当前普通 decode 距离按权重字节计算的理想上限，BF16／Q8／Q4 分别还有 28.0%／54.7%／78.7% 的速度空间。这不是已找到的优化收益。该口径假设每步只读一遍目标权重，带宽取 review 的 504GB/s，忽略 KV、GDN 状态、激活、写回、调度和同步。
+
+从本地 GGUF 逐张量计数：25 层中排除第 24 层 NextN，保留 320 个目标张量；187 个矩阵权重包含完整 tied embedding／输出头。完整词表只计一次，另加实际 embedding 的一行；不计文件头、对齐填充或 MTP 权重。GB 使用十进制。这里只计算编码权重口径，未采集 DRAM 事务计数器。
+
+| 格式 | 每步编码权重 GB | 504GB/s 理想 tok/s | Hyle 普通 tok/s（占上限） | 上游普通 tok/s（占上限） |
+|---|---:|---:|---:|---:|
+| BF16 | 3.764752 | 133.87 | 104.55（78.10%） | 100.23（74.87%） |
+| Q8_0 | 2.001053 | 251.87 | 162.85（64.66%） | 163.47（64.90%） |
+| Q4_K_M | 1.263437 | 398.91 | 223.27（55.97%） | 225.20（56.45%） |
+
+速度沿用上方同窗、无 profiler、每臂 3 个完整独立进程的普通模式结果，推理实现没有变化。为复核归因，另跑 8 个 Nsight 进程：三种格式各一对第四轮 63 步，加 Q8／Q4 各一个首轮 Hyle 对照。两臂 C32768、BF16 KV、无 MTP，第四轮 decode 从 596 行相同 token 前缀开始；上游重放 Hyle 当前输出作为输入。Hyle 含 greedy，上游 benchmark 无采样，prefill 分块也不同；这些 trace 只解释执行路径，不用于性能或 KL 资格。
+
+### 转换次数与耗时
+
+第四轮每步有 **259 次 BF16→F32、181 次 F32→BF16，共 440 次独立转换**，两种量化格式相同。上游的 24 次是 F32→F32 拷贝，另有 KV 写入转换等操作；不是 24 次 BF16↔F32。融合转换／Silu、输入 Q8 量化、gather／append 分开计数，`k_bin_bcast` 不算 cast。
+
+以下时间均为所选 63 步 CUDA 活动之和除以 63，单位 ms；同一行两数为 Hyle／上游。它们不能相加代替完整进程墙时。
+
+| 类别 | Q8_0 ms／步 H／上游 | Q4_K_M ms／步 H／上游 |
+|---|---:|---:|
+| 矩阵 | 4.9002／4.7574 | 3.2277／3.1584 |
+| 独立 BF16↔F32 转换 | 0.3594／0 | 0.3546／0 |
+| F32→F32 拷贝 | 0／0.0340 | 0／0.0343 |
+| 融合转换／Silu | 0.0343／0 | 0.0343／0 |
+| 矩阵输入 Q8 量化 | 0.1738／0.1624 | 0.1707／0.1540 |
+| norm／L2 | 0.2067／0.1441 | 0.2118／0.1470 |
+| GDN／conv | 0.0960／0.0810 | 0.1062／0.0679 |
+| 注意力及合并 | 0.0649／0.0545 | 0.0746／0.0531 |
+| 其它拷贝／gather／append | 0.0615／0.1369 | 0.0613／0.1391 |
+| 其它 kernel（含 Hyle greedy） | 0.2622／0.0969 | 0.2547／0.0880 |
+
+量化 Hyle 每步约 1244 个 kernel，上游 672 个；矩阵调用及其输入量化分别为 187／163 次。b12063 的 CUDA 路径含 FFN 双投影／GLU 融合；删除转换本身不能证明 Hyle 会自动得到同样的融合与调用数。BF16 对照为约 614／509 个 kernel，Hyle 独立转换仅 90 次、0.0687ms／步；不能把量化转换开销套到 BF16。
+
+Hyle 两种量化格式的全部 kernel 均在同一 CUDA stream。独立转换与其它 CUDA 活动相交不到 0.0006ms／步，独占时间 Q8／Q4 为 0.3589／0.3542ms；转换位于依赖链上，收益不是全部被其它 GPU 工作掩盖。第四轮 Hyle／上游选定范围分别为 Q8 402.65／382.73ms、Q4 298.25／281.64ms，其中所选进程 CUDA 空档分别为 13.47／34.94ms、13.84／36.28ms。空档包含 CPU 等待、提交和 profiler 开销，不能直接归因于某一种同步。
+
+Hyle 每个范围有 63 次 `cudaGraphLaunch`。Q8 的主机准备累计 43.61ms，其中 41.22ms 与 GPU 活动重叠；不能把这段主机时间再完整叠加到 GPU 耗时。首轮 Q8／Q4 也都是 440 次独立转换，分别为 0.3745／0.3857ms／步，没有录图或实例化调用混入选定 decode 范围。
+
+冷费用另看无 profiler 的原进程：Q8／Q4 冷准备中位数 1035.87／1064.58ms，首轮 prefill 23.00／23.13ms，首轮 63 个 decode 输出耗时 393.25／287.84ms；后七轮合并为 163.12／224.06 tok/s。主表仍保留首轮，未从对外速度中扣除冷费用。
+
+### 可支持的收益边界
+
+若把第四轮 trace 的转换独占时间全部从无 profiler 普通 decode 墙时净删去、替代成本为零，条件估算为 **Q8 +6.21%、Q4 +8.59%**。若实际净省 0.4ms，则为 +6.97%／+9.81%。单次 profile 不能给出无 profiler 候选的净收益；F32 运算、残留转换和状态流量可能抵消部分节省。Q4 的 9–15%、Q8 的 6–11% 尚不能作为已证实区间，高端需要额外融合或其它收益。
+
+用 187 个矩阵权重的编码字节除以矩阵 kernel 时间，得到 BF16／Q8／Q4 的有效带宽：Hyle 428.9／407.9／390.8GB/s，上游 422.9／420.2／399.3GB/s。它是逻辑权重吞吐，不是硬件 DRAM 带宽利用率；融合、缓存、输入量化、激活流量和实际事务都影响两者关系。本轮不能据此认定矩阵已无优化空间，也未验证 BF16 小 kernel 融合能提升 3–5%。
+
+### F32 候选的合同范围
+
+- `precision_profile.h` 当前仅选 BF16／F16。`graph_builder.cc` 的 GGUF 矩阵虽已用 F32 输入和输出，非 logits 分支仍硬转 BF16；embedding、norm、残差、Silu、GDN L2／epilogue 也有实际舍入边界。这是数学政策变化，不能当成删除冗余拷贝。
+- `weights.cc` 与 `main.cc::prepare_cache` 把 KV 存储和注意力 query／output 绑定到 activation。现有 FlashInfer paged 路径只接 F16／BF16 query／output，普通 KV append 也按 schema 接收类型。F32 层间计算必须明确保留 BF16 注意力／KV 的转换边界；直接全局换类型不能沿用当前快路径。
+- GDN recurrent 已是 F32，卷积 history 随 activation。若 history 改 F32，必须同步 state schema、池字节／padding、资源预算、重置和跨轮状态；若保持 BF16，则保留相应舍入。`model_geometry.h::hidden_bytes()`、`cache_plan.h` 与 `session_transfer.h` 还有每元素 2 字节的合同，不能遗漏 hidden／导入导出和 snapshot 格式。
+- 精度政策须在模型冷期固定，同模型普通／prefill／状态恢复使用一致数学；继续复用原 Graph、版本、有序发布、RNG 与真实退休。前缀缓存和 host image 的 model／math／format 身份必须隔离不同数学或布局，不能拿旧 BF16 状态直接续跑 F32。
+
+现有 Graph 已有 Cast、F32 量化矩阵与 F32 GDN 算子，源码审查未发现该候选必须新增模型专用 Graph／Compute 原语；编译后的实际 provider 选择和融合仍待实现验证。
+
+建议下一张卡先在命名试验分支验证 GGUF Q8／Q4 的普通 F32 层间路径，明确 BF16 KV／注意力及 GDN history 的边界，复用现有算子，不扩到新 kernel、MTP 或其它权重格式。用同一 BF16 oracle 的固定 512 项全维 logits 重跑 Q8 的 110% KL 门槛与 Q4 资格，再做同窗每臂至少 3 个无 profiler 完整进程、逐轮与独立资源对照；同时观察残留转换、ready 和后继重叠。数值改善、融合次数和速度增益均须候选实测，本次不实施该候选，也不修改看板。
+
+## 正确性与量化资格
 
 - 本轮 7 组 Hyle 八轮配置（BF16 普通／K1／K3，Q8 与 Q4 各普通／K1），各 3 个计时及 3 个独立采样进程，512 项输出均与各自既有验证过的同模式输出逐项一致。历史输出只作正确性参照，不用于性能比。未来长度提示、实际工作量、RNG 和最终版本退休检查通过。
 
 - 原 24 提示校准的 32768 行子集保持不变，校准不使用本八轮负载。有限语料不保证通用词表覆盖；草稿加速不能解释成接受率提高。普通／验证／最终输出仍使用完整词表。用法见[推理指南](../../user/inference.md#草稿词表)。
 
-- 本轮没有重新导出全维 logits 或跑 Nsight。以下是既有 `d64f36c5b` 推理实现对同一 BF16 GGUF oracle 的 512 项有限负载资格，原始日志在 `.scratch/inference-quantized-qualification-20261104/teacher1/`；不写成本次重新通过。
+- 本轮没有重新导出全维 logits。以下是既有 `d64f36c5b` 推理实现对同一 BF16 GGUF oracle 的 512 项有限负载资格，原始日志在 `.scratch/inference-quantized-qualification-20261104/teacher1/`；不写成本次重新通过。
 
 | 格式 | top1对BF16一致率 H／上游 | 平均KL H／上游 | H／上游KL | 历史资格 |
 |---|---|---|---|---|
 | Q8_0 | 501/512／498/512 | 0.00175036／0.00157836 | 110.897% | 未通过110%门槛；速度仅诊断 |
 | Q4_K_M | 455/512／460/512 | 0.07212950／0.07090097 | 101.733% | 通过该512项有限负载 |
 
-既有 BF16 Hyle 对 oracle 为 509/512，一致性分歧的上游 margin 均小于 0.1。此前逐层诊断确认 Hyle embedding／层间 BF16 边界与上游 F32 hidden 有差异，未证明这能解释全部 Q8 KL 超额，数值问题仍保留。旧 Nsight 的普通 decode／量化执行路径仅作历史归因，见 `.scratch/inference-bf16-bandwidth-review-20261104/` 与 `.scratch/inference-quantized-qualification-20261104/paths1/`，不据此给当前版本标新的热点数字。
+既有 BF16 Hyle 对 oracle 为 509/512，一致性分歧的上游 margin 均小于 0.1。此前逐层诊断确认 Hyle embedding／层间 BF16 边界与上游 F32 hidden 有差异，未证明这能解释全部 Q8 KL 超额，数值问题仍保留。本页普通 decode 归因使用上节的新 trace；旧 teacher 全进程 profile 含 prefill 和每位置完整 logits 导出，不按 512 项直接摊成普通 decode 开销。
 
 ## 复现与原始日志
 
 本轮原数在 `.scratch/inference-performance-refresh-20261104/`：`window1/records.tsv` 为 69 个计时进程的标准、长 prompt 与八轮记录，`memory1/records.tsv` 为 39 个独立资源进程；每个进程保留命令、stdout、stderr、GPU 频率／负载。`versions.txt` 记录实际权重、准备文件、二进制和构建。汇总在相应 `*-summary.tsv`／`.txt`。
+
+带宽调查原数在 `.scratch/inference-quantized-decode-boundary-20261104/`：8 份 `trace.nsys-rep`／SQLite、实际命令、输入 tape、版本和输出检查；`profile-summary.tsv`、各臂 `categories.tsv`／`kernel-times.tsv`／`host.tsv`／`cuda-api.tsv` 区分独立转换、融合、并发和空档。`weight-inventory.tsv`／`weight-summary.tsv` 逐张量记录字节，`bandwidth-headroom.tsv` 与 `stage-times.tsv` 可复算上述边界。Nsight Systems 2026.1.3，Hyle 仅在派生 main 中增加采集标记，复用当前默认 SDK；上游派生 benchmark 固定 b12063 并核对官方引擎 DLL 路径。5 份 Hyle profile 的 512 项自然输出均与当前无 profiler 普通基线一致。
+
+```text
+python -B .scratch/inference-quantized-decode-boundary-20261104/build_profile.py <新构建目录>
+python -B .scratch/inference-quantized-decode-boundary-20261104/profile.py Q8_0 hyle <新采集目录> 3
+python -B .scratch/inference-quantized-decode-boundary-20261104/profile.py Q8_0 peer <新采集目录> 3
+python -B .scratch/inference-quantized-decode-boundary-20261104/weights.py
+python -B .scratch/inference-quantized-decode-boundary-20261104/analyze.py
+python -B .scratch/inference-quantized-decode-boundary-20261104/conclusions.py
+```
+
+采集脚本默认复用已完成的 `build1`，其它格式传 `BF16`／`Q4_K_M`，Hyle 首轮传最后一个参数 `0`；更换构建目录时通过 `HYLE_PROFILE_BUILD` 指定。每个采集目录独立新建，不覆盖既有 trace。复现需要日志中已存在的本地权重及参考构建，不下载模型。
 
 ```text
 python -B .scratch/inference-performance-refresh-20261104/run.py prepare <新计时目录>
