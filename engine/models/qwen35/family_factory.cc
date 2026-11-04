@@ -201,6 +201,13 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
   const bool device_continuation = role == GraphRole::kMtpContinuation;
   const bool continuous_successor = device_continuation && prepared.continuous_device_successor;
   const bool emit_device_decision = prepared.device_acceptance_successor || continuous_successor;
+  const bool recursive_single = std::ranges::all_of(build_request.chunks, [](auto rows) { return rows == 1; });
+  const bool recursive_repair = prepared.recursive_repair && role == GraphRole::kVerify &&
+      requests == 1 && packing == RowPacking::kRectangular && !diagnostic &&
+      completion == TextCompletion::kEmitNext &&
+      (recursive_single || std::ranges::all_of(build_request.chunks, [](auto rows) { return rows >= 2; }));
+  if (recursive_repair && (selected_sampler.enabled || !selected_sampler.modifiers.empty()))
+    throw std::runtime_error("recursive repair requires unmodified greedy verification");
   if (device_continuation && (requests != 1 || prefix_rows != 2 ||
       packing != RowPacking::kRectangular || completion != TextCompletion::kEmitNext ||
       selected_sampler.enabled || !selected_sampler.modifiers.empty() ||
@@ -216,6 +223,8 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
   ExecutionPlanFacts plan_facts;
     auto result = std::make_unique<Family>();
     auto &definition = *result;
+    definition.recursive_repair = recursive_repair;
+    definition.recursive_single_repair = recursive_repair && recursive_single;
     definition.continuous_device_successor = continuous_successor;
     definition.layers.resize(geometry.layers.size()); definition.attention_nodes.resize(target_kv_layers);
     definition.append_nodes.resize(draft_bank + 2);
@@ -443,6 +452,18 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         definition.append_nodes[draft_bank] = append.key; definition.append_nodes[draft_bank + 1] = append.value;
       }
     }
+    if (recursive_repair) {
+      auto &port = definition.hidden_state;
+      port.pool = r.input(take(hidden_schema.capacity_description()));
+      port.source_ids = r.input(dense(Type::kInt32, {2}));
+      const auto gathered = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
+          {port.pool, port.source_ids}, r.dense_spec(precision.activation_type(), {f(2), f(hidden)}), &port.gather);
+      definition.prior_input_port = r.slice(gathered, 0, f(0), f(1));
+      definition.carry_input_port = r.slice(gathered, 0, f(1), f(1));
+      definition.repair_lag_port = r.input(dense(Type::kBool, {1}));
+      definition.catchup_token_port = r.input(dense(Type::kInt32, {1}));
+      definition.draft_position_port = r.input(r.dense_spec(Type::kInt32, {recursive_single ? f(2) : t}));
+    }
     // Writer-only draft maintenance has no attention data edge into target.
     // Order its real cache effects before target's first append as well.
     const auto target = emit_target_graph(r, {
@@ -472,6 +493,38 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     }
     // The selected child decides caller-written versus generated result storage.
     const auto normalized_last = r.norm(x, "norm.weight");
+    if (recursive_repair) {
+      // Every possible accepted prefix uses these same true target hidden
+      // rows. Compute the bounded physical append once; the original host
+      // selection still publishes only its actual canonical prefix.
+      const std::array hidden_parts{definition.prior_input_port, definition.carry_input_port, normalized_last};
+      const auto hidden_count = D(take(r.builder.dimension_sum(t, f(2))));
+      const auto all_hidden = r.concat(hidden_parts, 0,
+          r.dense_spec(precision.activation_type(), {hidden_count, f(hidden)}));
+      const auto repair_rows = recursive_single ? f(2) : t;
+      const auto shifted = r.one(c::Select{}, {definition.repair_lag_port,
+          r.copy(r.slice(all_hidden, 0, f(0), repair_rows)), r.copy(r.slice(all_hidden, 0, f(1), repair_rows))},
+          r.dense_spec(precision.activation_type(), {repair_rows, f(hidden)}));
+      const std::array token_parts{definition.catchup_token_port, recursive_single ? definition.token_port
+          : r.slice(definition.token_port, 0, f(0), D(r.last_row))};
+      const auto lagged_tokens = r.concat(token_parts, 0, r.dense_spec(Type::kInt32, {repair_rows}));
+      auto ordinary_tokens = definition.token_port;
+      if (recursive_single) {
+        auto &zero = assembly.literal_at(assembly.primary(), dense(Type::kInt32, {1}));
+        const std::array<std::int32_t, 1> value{}; zero.write<std::int32_t>(value);
+        const std::array padded_tokens{ordinary_tokens, r.constant(zero)};
+        ordinary_tokens = r.concat(padded_tokens, 0, r.dense_spec(Type::kInt32, {f(2)}));
+      }
+      const auto repair_tokens = r.one(c::Select{},
+          {definition.repair_lag_port, lagged_tokens, ordinary_tokens}, r.dense_spec(Type::kInt32, {repair_rows}));
+      const auto kv = mtp::project_kv(r, mtp::input_projection(r, repair_tokens, shifted),
+          definition.draft_position_port, frequencies, {1, repair_rows, repair_rows});
+      const auto append = mtp::append_kv(r, attention_schema, kv);
+      if (has_prior_append) check(r.builder.depends_on(append.key, prior_append));
+      definition.append_nodes[draft_bank] = append.key;
+      definition.append_nodes[draft_bank + 1] = append.value;
+      prior_append = append.value; has_prior_append = true;
+    }
     if (is_mtp_prefill(role)) {
       const auto kv = mtp::prefill_kv(r, definition.token_port, normalized_last,
           definition.carry_input_port, definition.prior_input_port, definition.catchup_token_port,
@@ -501,7 +554,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
       r.op(c::Operation::custom(g::slots::Store{hidden_schema}),
           {retained, port.destination_ids}, {}, &port.store);
       if (has_prior_append) check(r.builder.depends_on(port.store, prior_append));
-      if (has_mtp(role)) definition.state_sources.push_back({port.store, port.gather});
+      if (has_mtp(role) || recursive_repair) definition.state_sources.push_back({port.store, port.gather});
     }
     definition.hidden_port = last;
     // Private View outputs cannot lend an independent storage lease to a
@@ -596,6 +649,16 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
       if ((caller_small_results && definition.sampling_valid_port) || (packed_prefill && is_mtp_prefill(role)))
         definition.id_port = r.copy(definition.id_port);
       r.publish(definition.logits_port); r.publish(definition.id_port);
+    }
+    if (recursive_repair) {
+      // A private next head assumes full acceptance. The original host owner
+      // keeps it only after the actual prefix has published; these device
+      // values never choose or publish a Session boundary.
+      definition.successor_token_port = r.copy(r.reshape(
+          r.slice(definition.id_port, 0, D(r.last_row), f(1)), {f(1)}));
+      definition.successor_catchup_port = r.copy(
+          r.slice(definition.token_port, 0, D(r.last_row), f(1)));
+      r.publish(definition.successor_token_port); r.publish(definition.successor_catchup_port);
     }
     if (successor_eligible) {
       // Two complete, independently owned I32[1] outputs. OutputSource cannot

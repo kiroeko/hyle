@@ -24,6 +24,7 @@ using inference::LogitsInputs;
 struct ColdResources;
 
 class Session;
+struct DraftProgram;
 struct StepMember final {
   std::shared_ptr<Session> session;
   cache::WorkingState *owner_state = nullptr;
@@ -46,11 +47,17 @@ struct StepMember final {
   c::BatchLayoutVersion draft_layout{};
   std::size_t input_tokens = 0, input_row_begin = 0, accepted_tokens = 0;
   std::uint32_t verified_last_page = 0;
+  std::uint32_t draft_verified_last_page = 0;
   std::int32_t first_input = -1, draft_token = -1;
   std::vector<std::int32_t> verification_inputs{};
   std::vector<c::ReadLease> carry_prefix{};
   // Frozen active inputs of this member's actual draft Append, not accepted rows.
   std::size_t draft_input_rows = 0, discarded_draft_rows = 0;
+  // Real private lookahead is paid by its producer even if it is discarded.
+  // A later verifier may reuse that same work without charging it twice.
+  std::size_t advanced_draft_rows = 0, prepaid_draft_rows = 0;
+  std::optional<std::size_t> proposal_input_rows;
+  std::size_t proposal_graph_calls = 0;
   // One original candidate and epoch, with two prevalidated input layouts.
   // These are physical preparation alternatives, never two published Heads.
   std::array<c::BatchLayoutVersion, 2> target_input_choices, draft_input_choices;
@@ -86,6 +93,9 @@ struct StepMember final {
 // model-state snapshot or observer independent of the original proxy. A
 // successor may keep these views after its producer's host episode retires.
 struct StepSources final : inference::SubmissionViews {
+  // Cold carrier identity only. It selects another physical IO slot while
+  // this exact original proposal packet is still read by its verifier.
+  const DraftProgram *draft_origin = nullptr;
   struct Boundary final {
     std::weak_ptr<Session> session;
     const cache::State *candidate = nullptr;
@@ -97,6 +107,7 @@ struct StepSources final : inference::SubmissionViews {
   // K1 keeps the producer's full two-prefix publication rights in states.
   // These independent original final-prefix views serve the next Gather.
   std::vector<g::StoreSource> successor_states;
+  bool recursive_successor = false;
   bool mtp_full_candidate = false;
   bool mtp_device_choice = false;
   bool prefill = false; // Known current-turn input; no speculative token output.

@@ -40,11 +40,26 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
   const auto hidden = geometry.hidden;
     auto prepared = std::make_unique<DraftProgram>(); auto &program = *prepared;
     program.rows = rows; program.head = head; program.sampling_index = selected_index;
+    program.relay_stage = build_request.relay_stage;
+    program.from_target = build_request.from_target;
+    if (program.from_target && (!head || rows > 2 || program.relay_stage || !build_request.verification_rows))
+      throw std::runtime_error("target-fed draft requires its original bounded first head");
+    if (program.relay_stage && (!head || rows != 1 || program.relay_stage < 2 ||
+        program.relay_stage >= build_request.verification_rows))
+      throw std::runtime_error("draft successor requires its bounded one-row original head");
     program.replay_mode = build_request.replay_mode;
     GraphAssembly assembly(execution, precision, allocation_budget);
     Recipe r(weights, projections, assembly, geometry, rows, 1, &weight_meanings);
     const auto count = f(static_cast<std::int64_t>(rows));
-    program.tokens = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
+    if (program.from_target) {
+      program.pending_token = r.input(dense(Type::kInt32, {1}));
+      program.tokens = program.pending_token;
+      if (rows == 2) {
+        program.catchup_token = r.input(dense(Type::kInt32, {1}));
+        const std::array tokens{program.catchup_token, program.pending_token};
+        program.tokens = r.concat(tokens, 0, r.dense_spec(Type::kInt32, {count}));
+      }
+    } else program.tokens = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
     program.positions = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
     V shifted;
     g::slots::Schema hidden_schema;
@@ -87,7 +102,15 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
       if (inputs.bias) program.bias = *inputs.bias;
       if (inputs.allowed) program.allowed = *inputs.allowed;
       if (inputs.counts) program.counts = *inputs.counts;
-      const auto processed = sampling::process_logits(r, result.logits, inputs, selected_sampler.modifiers.history);
+      auto distribution_logits = result.logits;
+      if (build_request.minimum_probability > 0 && draft_facts.projection.indexed_rows) {
+        // Indexed scores end in an inferred reshape. The probability recipe
+        // needs a concrete dense row for its existing reductions; materialize
+        // that small F32 row without changing logits or the target head.
+        const auto spec = r.spec(distribution_logits);
+        distribution_logits = r.one(c::Copy{}, {distribution_logits}, r.dense_spec(spec.data_type(), spec.dimensions()));
+      }
+      const auto processed = sampling::process_logits(r, distribution_logits, inputs, selected_sampler.modifiers.history);
       if (!selected_sampler.enabled) {
         if (selected_sampler.modifiers.empty()) program.id = original_draft_id(r,
             r.op(c::Operation(c::TopK{.count = 1}), {result.logits},
@@ -129,14 +152,46 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
       r.publish(program.id);
       if (build_request.verification_rows) {
         if (selected_sampler.enabled || !selected_sampler.modifiers.empty() ||
-            build_request.minimum_probability != 0 || build_request.verification_rows < 3 ||
+            build_request.verification_rows < 3 ||
             build_request.verification_rows > draft_facts.candidate_boundaries)
           throw std::runtime_error("device verifier packet requires bounded unmodified greedy proposals");
         const auto width = static_cast<std::int64_t>(build_request.verification_rows);
-        program.verification_prefix = r.input(dense(Type::kInt32, {width - 1}));
-        const std::array packet{program.verification_prefix, r.reshape(program.id, {f(1)})};
+        V prefix;
+        if (program.from_target) {
+          auto &zeros = assembly.literal_at(assembly.primary(), dense(Type::kInt32, {width - 2}));
+          zeros.write<std::int32_t>(std::vector<std::int32_t>(static_cast<std::size_t>(width - 2), 0));
+          const std::array seed{program.pending_token, r.constant(zeros)};
+          prefix = r.concat(seed, 0, r.dense_spec(Type::kInt32, {f(width - 1)}));
+        } else {
+          program.verification_prefix = r.input(dense(Type::kInt32, {program.relay_stage ? width : width - 1}));
+          prefix = program.verification_prefix;
+        }
+        if (program.relay_stage) {
+          // The previous packet's last lane is its new proposal. Place that
+          // device ID into this prefix; no host placeholder supplies it.
+          std::vector<std::int32_t> indices(static_cast<std::size_t>(width - 1));
+          for (std::size_t i = 0; i < indices.size(); ++i) indices[i] = static_cast<std::int32_t>(i);
+          indices[program.relay_stage - 1] = static_cast<std::int32_t>(width - 1);
+          auto &literal = assembly.literal_at(assembly.primary(), dense(Type::kInt32, {width - 1}));
+          literal.write<std::int32_t>(indices);
+          prefix = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
+              {prefix, r.constant(literal)}, r.dense_spec(Type::kInt32, {f(width - 1)}));
+        }
+        const std::array packet{prefix, r.reshape(program.id, {f(1)})};
         program.verification_packet = r.copy(r.concat(packet, 0, r.dense_spec(Type::kInt32, {f(width)})));
         r.publish(program.verification_packet);
+        program.relay_token = r.copy(r.reshape(program.id, {f(1)}));
+        r.publish(program.relay_token);
+        if (build_request.minimum_probability > 0) {
+          const auto depth = static_cast<std::int64_t>(program.relay_stage ? program.relay_stage : 1);
+          const std::array selected{r.slice(prefix, 0, f(0), f(depth)), r.reshape(program.id, {f(1)})};
+          program.verification_compact = r.copy(r.concat(selected, 0, r.dense_spec(Type::kInt32, {f(depth + 1)})));
+          r.publish(program.verification_compact);
+          if (!program.relay_stage) {
+            program.verification_empty = r.copy(r.slice(prefix, 0, f(0), f(1)));
+            r.publish(program.verification_empty);
+          }
+        }
       }
     } else program.append = mtp::append_kv(r, attention_schema, kv);
     program.graph = take(std::move(r.builder).finish());
@@ -154,7 +209,7 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
     program.literals = std::move(assembly.literals);
     program.token_values = auxiliary_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
     program.position_values = auxiliary_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
-    if (program.verification_prefix) {
+    if (program.verification_prefix && !program.relay_stage) {
       const auto prefix_rows = static_cast<std::int64_t>(build_request.verification_rows - 1);
       program.verification_prefix_values = auxiliary_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {prefix_rows}));
       program.verification_prefix_values.write<std::int32_t>(std::vector<std::int32_t>(static_cast<std::size_t>(prefix_rows), 0));
@@ -163,7 +218,8 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
       program.identity_values = auxiliary_tensor(allocation_budget, execution.device(), dense(Type::kUInt32, {1, 4}));
     check(program.io.prepare(compiled_program, (head && selected_sampler.enabled ? 3 : 2) + bool(program.verification_prefix),
         program.hidden_inputs.size() + bool(program.bias) + bool(program.allowed) + bool(program.counts),
-        head ? 1 + bool(program.valid) + (build_request.minimum_probability > 0) + bool(program.verification_packet) : 0,
+        head ? 1 + bool(program.valid) + (build_request.minimum_probability > 0) + bool(program.verification_packet) +
+            bool(program.relay_token) + bool(program.verification_compact) + bool(program.verification_empty) : 0,
         head ? bool(selected_sampler.enabled) + bool(program.next_counts) : 0));
     program.hidden_bindings.reserve(program.hidden_inputs.size());
     for (const auto port : program.hidden_inputs) program.hidden_bindings.push_back(take(program.io.add_input(port)));
@@ -198,13 +254,20 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
             {.max_blocks = pool_capacity.max_blocks, .resource_budget = execution_budget}));
       }
     }
-    check(program.io.add_fixed(program.tokens, program.token_values.read()));
+    if (!program.relay_stage && !program.from_target) check(program.io.add_fixed(program.tokens, program.token_values.read()));
     check(program.io.add_fixed(program.positions, program.position_values.read()));
-    if (program.verification_prefix) check(program.io.add_fixed(program.verification_prefix, program.verification_prefix_values.read()));
+    if (program.verification_prefix && !program.relay_stage)
+      check(program.io.add_fixed(program.verification_prefix, program.verification_prefix_values.read()));
     if (head) {
       program.id_value = take(program.io.add_readback(program.id, execution.storage_domains(), allocation_budget));
       if (program.verification_packet)
         program.verification_value = take(program.io.add_readback(program.verification_packet, execution.storage_domains(), allocation_budget));
+      if (program.relay_token)
+        program.relay_token_value = take(program.io.add_readback(program.relay_token, execution.storage_domains(), allocation_budget));
+      if (program.verification_compact)
+        program.compact_value = take(program.io.add_readback(program.verification_compact, execution.storage_domains(), allocation_budget));
+      if (program.verification_empty)
+        program.empty_value = take(program.io.add_readback(program.verification_empty, execution.storage_domains(), allocation_budget));
       if (selected_sampler.enabled) check(program.io.add_fixed(program.identity, program.identity_values.read()));
       if (program.valid) program.valid_value = take(program.io.add_readback(program.valid, execution.storage_domains(), allocation_budget));
       if (build_request.minimum_probability > 0)
@@ -213,7 +276,7 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
     check(program.io.seal());
     if (head) {
       const std::array specs{inference::SlotTransactionSpec{program.hidden_state.store,
-          rows, 1, {.resource_budget = cache_budget}}};
+          program.relay_stage || program.from_target ? 0 : rows, 1, {.resource_budget = cache_budget}}};
       check(program.hidden_transactions.prepare(specs));
     }
   return {std::move(prepared), plan};

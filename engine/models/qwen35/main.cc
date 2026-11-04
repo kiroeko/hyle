@@ -543,18 +543,6 @@ struct MtpGenerationSelection final {
 // verification repairs the retained draft prefix with actual target hidden
 // rows before the existing Snapshot transaction can publish it.
 
-struct DraftWork final {
-  cache::DraftState state;
-  std::array<c::PagedPageAppender, 2> tails;
-  // Optional attribution to the original Session pinned by this synchronous
-  // proposal/repair call. Standalone private work still counts on the Model.
-  Session *session = nullptr;
-};
-struct DraftProposal final {
-  std::int32_t id = -1;
-  float probability = 0;
-  c::ReadLease hidden, log_probabilities, next_counts;
-};
 // Call-local linear proposal resolution. Row zero was resolved before request
 // admission; later rows are retained once and frozen for the original verifier.
 struct ConditionalLogitsProposal final {
@@ -648,7 +636,7 @@ struct ColdResources final {
         if (phase->slots.pending()) return true;
       }
     for (const auto &[shape, program] : draft_programs) {
-      (void)shape; if (program->carrier.pending()) return true;
+      (void)shape; if (program->pending_native()) return true;
     }
     for (const auto &[width, program] : prefix_sampling_programs) {
       (void)width; if (program->carrier.pending()) return true;
@@ -671,8 +659,10 @@ struct ColdResources final {
       }
     for (auto &[shape, program] : draft_programs) {
       (void)shape;
-      program->guard.execution.completion = {}; program->guard.execution.run = nullptr; program->guard.execution.carrier = nullptr;
-      program->carrier.release_invocation_root();
+      program->visit([](DraftProgram &part) {
+        part.guard.execution.completion = {}; part.guard.execution.run = nullptr; part.guard.execution.carrier = nullptr;
+        part.carrier.release_invocation_root();
+      });
     }
     for (auto &[width, program] : prefix_sampling_programs) { (void)width; program->carrier.release_invocation_root(); }
     for (auto &entry : sampling_configurations) if (entry->frontier)
@@ -715,6 +705,7 @@ public:
   struct DraftPolicy final {
     std::size_t max_drafts = 1;
     float minimum_probability = 0;
+    bool extend_from_probability = false;
   };
 private:
   DraftPolicy draft_policy_;
@@ -742,6 +733,7 @@ public:
   const std::uint64_t sampling_seed;
   std::size_t max_drafts() const noexcept { return draft_policy_.max_drafts; }
   float min_draft_probability() const noexcept { return draft_policy_.minimum_probability; }
+  bool extend_drafts_from_probability() const noexcept { return draft_policy_.extend_from_probability; }
   void configure_draft_policy(DraftPolicy policy) {
     if (preparation_started_)
       throw std::runtime_error("configure draft policy before the first model preparation");
@@ -750,11 +742,22 @@ public:
     if (policy.max_drafts >= capacity ||
         (cache_plan.draft_cache && policy.max_drafts >= cache_plan.candidate_boundaries))
       throw std::runtime_error("MTP maximum drafts exceed the original context or candidate capacity");
-    if (resources_->draft_vocabulary && (!policy.max_drafts || policy.minimum_probability != 0))
-      throw std::runtime_error("draft vocabulary requires active drafting with zero minimum probability");
+    if (resources_->draft_vocabulary && !policy.max_drafts)
+      throw std::runtime_error("draft vocabulary requires active drafting");
+    if (policy.extend_from_probability && (!policy.max_drafts ||
+        std::ranges::any_of(resources_->sampling_configurations, [](const auto &entry) {
+          return entry->configuration.enabled || !entry->configuration.modifiers.empty();
+        })))
+      throw std::runtime_error("MTP extension threshold requires active, unmodified greedy drafting");
     draft_policy_ = policy;
   }
   bool recursive_mtp() const noexcept { return max_drafts() && (max_drafts() > 1 || min_draft_probability() > 0); }
+  bool recursive_repair_enabled() const noexcept {
+    return max_drafts() > 1 && max_drafts() <= 3 && cache_plan.active_sequences == 1 &&
+        cache_plan.auxiliary_hidden_rows >= 2 && cache_plan.auxiliary_pages >= max_drafts() - 1 &&
+        execution.kind() == BackendKind::kCuda && !execution.has_cpu_assist() && !scheduler &&
+        !allocation_budget && replay_policy != ReplayPolicy::kCommands;
+  }
   bool device_mtp_successor_enabled() const noexcept { return device_mtp_successor_; }
   bool device_mtp_continuous_enabled() const noexcept {
     return device_mtp_successor_ && cache_plan.in_flight_batches >= 3;
@@ -797,8 +800,8 @@ public:
 
   bool prepare_draft_vocabulary(const SamplingConfiguration &sampling) {
     if (!resources_->draft_vocabulary) return false;
-    if (sampling.enabled || !sampling.modifiers.empty() || min_draft_probability() != 0)
-      throw std::runtime_error("draft vocabulary requires unmodified greedy sampling and zero minimum probability");
+    if (sampling.enabled || !sampling.modifiers.empty())
+      throw std::runtime_error("draft vocabulary requires unmodified greedy sampling");
     if (resources_->draft_head) return true;
     if (active_step || successor_step || carrier_borrowed)
       throw std::logic_error("draft vocabulary preparation requires the original idle model");
@@ -885,6 +888,7 @@ public:
   std::map<PrefixSamplingKey, std::unique_ptr<PrefixSamplingProgram>> &prefix_sampling_programs;
   std::size_t draft_program_graph_calls = 0, prefix_decision_graph_calls = 0;
   std::size_t device_verification_handoffs = 0;
+  std::size_t device_draft_handoffs = 0, device_draft_chains = 0, device_draft_reuse_refusals = 0;
   // Same admission scope as target work: active inputs of original accepted
   // Graph submissions, including discarded/failed work and private NextN.
   // Padding, provider-internal preparation and native kernel FLOPs are separate.
@@ -904,6 +908,25 @@ public:
   std::shared_ptr<StepState> active_step;
   std::shared_ptr<StepState> successor_step;
   std::optional<DecodeAheadMetadata> decode_ahead;
+  std::optional<RecursiveDraftAhead> recursive_ahead;
+  std::size_t recursive_ahead_submissions = 0, recursive_ahead_hits = 0,
+      recursive_ahead_discards = 0, recursive_ahead_refusals = 0;
+  struct DraftConfidence final {
+    std::weak_ptr<Session> session;
+    std::uint64_t epoch = 0;
+    std::array<float, 3> probability{};
+    std::size_t count = 0;
+  } draft_confidence;
+
+  void observe_draft_probability(Session &session, std::size_t depth, float probability) {
+    if (!min_draft_probability() || depth >= draft_confidence.probability.size()) return;
+    if (draft_confidence.session.lock().get() != &session || draft_confidence.epoch != session.head.epoch()) {
+      draft_confidence = {}; draft_confidence.session = session.shared_from_this();
+      draft_confidence.epoch = session.head.epoch();
+    }
+    draft_confidence.probability[depth] = probability;
+    draft_confidence.count = (std::max)(draft_confidence.count, depth + 1);
+  }
   std::size_t cpu_ahead_prepared = 0, cpu_ahead_hits = 0, cpu_ahead_discarded = 0;
   std::size_t packed_prefill_calls = 0, packed_prefill_active_rows = 0, packed_prefill_physical_rows = 0;
   double cpu_ahead_prepare_seconds = 0;
@@ -1114,6 +1137,7 @@ public:
 
   ~Model() {
     cancel_cold_families();
+    (void)discard_recursive_ahead();
     // Stop the host driver before joining its original scheduler/pool. Native
     // cancellation remains advisory and never serves as retirement proof.
     for (auto &weak : session_links) if (auto session = weak.lock()) session->stop().IgnoreError();
@@ -1224,16 +1248,26 @@ public:
         << ",\"frontier_sampling_graph_calls\":" << frontier_sampling_graph_calls
         << ",\"mtp_max_drafts\":" << (cache_plan.draft_cache ? max_drafts() : 0)
         << ",\"mtp_min_draft_probability\":" << (cache_plan.draft_cache ? min_draft_probability() : 0)
+        << ",\"mtp_threshold_mode\":\"" << (extend_drafts_from_probability() ? "extend" : "filter") << '"'
         << ",\"draft_vocabulary_requested_rows\":" << (resources_->draft_vocabulary ? resources_->draft_vocabulary->size() : 0)
         << ",\"draft_vocabulary_rows\":" << (resources_->draft_head ? resources_->draft_head->original_ids.description.dimensions()[0] : 0)
         << ",\"draft_vocabulary_identity\":\"" << (resources_->draft_head ? resources_->draft_head->identity : std::string{}) << '"'
         << ",\"draft_vocabulary_weight_bytes\":" << (resources_->draft_head ? resources_->draft_head->extra_weight_bytes() : 0)
         << ",\"draft_vocabulary_indexed_rows\":" << (resources_->draft_head && resources_->draft_head->indexed_weight ? "true" : "false")
         << ",\"draft_vocabulary_map_bytes\":" << (resources_->draft_head ? take(resources_->draft_head->original_ids.description.required_bytes()) : 0)
-        << ",\"draft_vocabulary_policy\":\"greedy_unmodified_no_threshold\""
+        << ",\"draft_vocabulary_policy\":\"" << (min_draft_probability() > 0
+            ? "greedy_unmodified_threshold" : "greedy_unmodified_no_threshold") << '"'
         << ",\"draft_program_graph_calls\":" << draft_program_graph_calls
         << ",\"device_verification_handoffs\":" << device_verification_handoffs
+      << ",\"device_draft_handoffs\":" << device_draft_handoffs
+      << ",\"device_draft_chains\":" << device_draft_chains
+      << ",\"recursive_ahead_submissions\":" << recursive_ahead_submissions
+      << ",\"recursive_ahead_hits\":" << recursive_ahead_hits
+      << ",\"recursive_ahead_discards\":" << recursive_ahead_discards
+      << ",\"recursive_ahead_refusals\":" << recursive_ahead_refusals
+      << ",\"device_draft_reuse_refusals\":" << device_draft_reuse_refusals
         << ",\"device_verification_hidden_rows\":" << cache_plan.auxiliary_hidden_rows
+        << ",\"device_draft_auxiliary_pages\":" << cache_plan.auxiliary_pages
         << ",\"prefix_decision_graph_calls\":" << prefix_decision_graph_calls
         << ",\"packed_prefill_calls\":" << packed_prefill_calls - packed_prefill_offset[0]
         << ",\"packed_prefill_active_rows\":" << packed_prefill_active_rows - packed_prefill_offset[1]
@@ -1395,8 +1429,10 @@ public:
     state_storage_prepared = true;
     for (auto *children : {&phases, &probe_phases})
       for (auto &[key, phase] : *children) prepare_transaction_layouts(*phase);
-    for (auto &[key, program] : draft_programs) if (program->head)
-      check(program->hidden_transactions.set_layout(0, hidden_layout));
+    for (auto &[key, program] : draft_programs)
+      program->visit([&](DraftProgram &part) {
+        if (part.head) check(part.hidden_transactions.set_layout(0, hidden_layout));
+      });
   }
 
   // Graph/counts may be prepared before admission allocates canonical storage.
@@ -1505,7 +1541,8 @@ public:
              (role != GraphRole::kMtpContinuation || device_mtp_continuous_enabled()),
          prepared_draft_projection(subset), device_mtp_successor_ && requests == 1 &&
              drafts_token(role) && (role != GraphRole::kMtpContinuation || device_mtp_continuous_enabled()) &&
-             !selected_sampler.enabled && selected_sampler.modifiers.empty(), device_mtp_continuous_enabled()},
+             !selected_sampler.enabled && selected_sampler.modifiers.empty(), device_mtp_continuous_enabled(),
+         recursive_repair_enabled() && requests == 1 && !selected_sampler.enabled && selected_sampler.modifiers.empty()},
         selected_sampler, {execution, allocation_budget, execution_budget});
   }
 
@@ -1743,7 +1780,7 @@ public:
     const auto replay_mode = !selected_sampler.modifiers.history.empty() && head ? g::ReplayMode::kCommands
         : select_replay_mode(replay_policy, head ? planned_uses : 1, selected_sampler.enabled);
     const auto packet_rows = head && max_drafts() > 1 && max_drafts() <= 3 && !selected_sampler.enabled &&
-        selected_sampler.modifiers.empty() && min_draft_probability() == 0 &&
+        selected_sampler.modifiers.empty() &&
         execution.kind() == BackendKind::kCuda && !execution.has_cpu_assist() && !scheduler &&
         cache_plan.active_sequences == 1 && cache_plan.auxiliary_hidden_rows >= 2 &&
         replay_policy != ReplayPolicy::kCommands ? max_drafts() + 1 : 0;
@@ -1754,19 +1791,46 @@ public:
         {execution, allocation_budget, execution_budget, cache_budget});
     auto prepared = std::move(built.program); auto &program = *prepared;
     merge_execution_plan(built.plan);
+    if (packet_rows && rows == 1 && !allocation_budget && cache_plan.auxiliary_pages >= max_drafts() - 1) {
+      for (std::size_t stage = 2; stage <= max_drafts(); ++stage) {
+        auto child = build_draft_program({1, selected_index, true, replay_mode,
+            min_draft_probability(), packet_rows, stage},
+            {geometry, precision, weights, projections, weight_meanings, ffn_placement.cpu_layers()},
+            {attention_schema, cache_plan.hidden_slots, cache_plan.active_sequences, cache_plan.candidate_boundaries,
+             prepared_draft_projection(subset)}, selected_sampler,
+            {execution, allocation_budget, execution_budget, cache_budget});
+        merge_execution_plan(child.plan);
+        program.successors[stage - 2] = std::move(child.program);
+      }
+    }
+    if (packet_rows && rows <= 2 && recursive_repair_enabled() && cache_plan.in_flight_batches >= 2) {
+      for (auto &successor : program.target_successors) {
+        auto child = build_draft_program({rows, selected_index, true, replay_mode,
+            min_draft_probability(), packet_rows, 0, true},
+            {geometry, precision, weights, projections, weight_meanings, ffn_placement.cpu_layers()},
+            {attention_schema, cache_plan.hidden_slots, cache_plan.active_sequences, cache_plan.candidate_boundaries,
+             prepared_draft_projection(subset)}, selected_sampler,
+            {execution, allocation_budget, execution_budget, cache_budget});
+        merge_execution_plan(child.plan);
+        successor = std::move(child.program);
+      }
+    }
     input_scratch.draft_positions.reserve(rows);
-    program.guard.execution.configure(draft_bank + 2);
-    const auto dirty_bound = cache::add(rows, cache::Plan::page_rows - 2) / cache::Plan::page_rows + 1;
-    for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
-      program.guard.execution.dirty[bank].reserve(dirty_bound);
-    program.guard.execution.nodes[draft_bank] = program.append.key;
-    program.guard.execution.nodes[draft_bank + 1] = program.append.value;
-    initialize_draft_program(program);
+    program.visit([&](DraftProgram &part) {
+      part.guard.execution.configure(draft_bank + 2);
+      const auto dirty_bound = cache::add(part.rows, cache::Plan::page_rows - 2) / cache::Plan::page_rows + 1;
+      for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
+        part.guard.execution.dirty[bank].reserve(dirty_bound);
+      part.guard.execution.nodes[draft_bank] = part.append.key;
+      part.guard.execution.nodes[draft_bank + 1] = part.append.value;
+      initialize_draft_program(part);
+    });
     draft_programs.emplace(key, std::move(prepared));
   }
 
   void initialize_draft_program(DraftProgram &program) {
-    const std::array sources{g::slots::SourceBinding{program.hidden_state.store, program.hidden_state.gather}};
+    const std::array sources{g::slots::SourceBinding{program.hidden_state.store, program.hidden_state.gather,
+        program.relay_stage || program.from_target ? g::slots::SourceMode::kImported : g::slots::SourceMode::kTransaction}};
     inference::ProgramInitialization initialization{
         .io = program.io,
         .invocation = {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
@@ -1775,33 +1839,36 @@ public:
         program.programs.child(0).resource_graph(), sources,
         {.host_workspace = execution.staging(), .resource_budget = execution_budget ? execution_budget : cache_budget}});
     check(program.carrier.initialize(initialization));
+    program.relay_primed = false;
   }
 
   // The shared carrier observes its original native owner. The original Step
   // alone can take back this NextN append/Store cohort before carrier reset.
   hyle::Result<bool> recover_draft_program(DraftProgram &program) noexcept {
     auto &guard = program.guard;
+    if (guard.execution.unsubmitted_reuse_declined()) {
+      HYLE_ASSIGN_OR_RETURN(const auto ordinary_inputs, program.io.withdrawal_values());
+      return guard.execution.recover_unsubmitted_reuse(ordinary_inputs,
+          [&]() noexcept { program.pending = {}; });
+    }
     const auto observed = guard.execution.retire(execution);
     if (!observed.retired) return false;
-    return guard.try_abort();
+    HYLE_ASSIGN_OR_RETURN(const bool recovered, guard.try_abort());
+    if (recovered) program.pending = {};
+    return recovered;
   }
 
-  // Append to an unpublished draft only. The first append uses COW; later
-  // recursive rows may extend that private tail. Published Session tails are
-  // never borrowed, so aborting proposal/verification leaves the old head valid.
-  template<class PrepareVerifier = std::nullptr_t>
-  DraftProposal execute_draft(DraftWork &work, std::span<const std::int32_t> ids,
-      std::span<const c::ReadLease> shifted, bool head, const std::array<std::uint32_t, 4> &identity = {},
-      std::size_t sampling_index = 0, const LogitsInputs &logits = {},
-      std::span<const std::int32_t> verification_prefix = {}, PrepareVerifier &&prepare_verifier = nullptr) {
-    if (ids.empty() || ids.size() != shifted.size() || !state_storage_prepared ||
-        work.state.frontier > capacity || ids.size() > capacity - work.state.frontier)
-      throw std::runtime_error("NextN input rows exceed the prepared context or hidden geometry");
-    auto found = draft_programs.find({ids.size(), head, head ? sampling_index : 0});
-    if (found == draft_programs.end()) throw std::runtime_error("NextN finite program was not cold prepared");
-    auto &program = *found->second;
+  // Prepare and submit the original private NextN append. Its candidate
+  // remains unpublished until finish_draft_episode observes whole success.
+  bool prepare_draft_episode(DraftProgram &program, DraftWork &work,
+      std::span<const std::int32_t> ids, std::span<const c::ReadLease> shifted,
+      const std::array<std::uint32_t, 4> &identity, const LogitsInputs &logits,
+      std::span<const std::int32_t> verification_prefix,
+      DraftProgram *previous = nullptr, bool export_source = false,
+      const std::shared_ptr<StepState> &target = {}, bool source_ready = false,
+      std::size_t source_cohort = 0, bool submit_now = true) {
+    const bool head = program.head;
     const auto &selected_sampler = sampling_configuration(program.sampling_index).configuration;
-    if (head) validate_logits_inputs(selected_sampler, logits, vocabulary);
     auto &guard = program.guard;
     if (guard.execution.cleanup_pending) {
       // Keep the same original failed episode and all its append/state facts
@@ -1810,21 +1877,45 @@ public:
         throw std::runtime_error("NextN original episode is still retiring");
       guard.execution.cleanup_pending = false; guard.execution.terminal = {};
     }
+    if (program.pending.active) throw std::logic_error("NextN original append has not finished");
     if (!program.carrier.initialized()) initialize_draft_program(program);
     auto &run = *take(program.carrier.borrow());
     guard.execution.run = &run; guard.execution.carrier = &program.carrier;
     if (head) guard.execution.state_transactions = &program.hidden_transactions;
-    cache::DraftState next;
-    DraftProposal output;
-    try {
+    program.pending.active = true;
+    program.pending.chain = export_source;
+    program.pending.next.session = work.session;
+    auto &next = program.pending.next.state;
+    const bool imported = previous || target;
+    if (previous) {
+      if (!program.relay_stage || !previous->guard.execution.sources ||
+          previous->guard.execution.sources->states.size() != 1 ||
+          previous->guard.execution.sources->pages.size() != 2 ||
+          previous->guard.execution.sources->extra_outputs.empty())
+        throw std::logic_error("draft successor lost its original complete Source");
+      guard.execution.incoming = std::make_unique<IncomingStepSources>();
+      guard.execution.incoming->owner = previous->guard.execution.sources;
+      guard.execution.predecessor_episode = {resources_, &previous->guard.execution};
+    }
+    if (target) {
+      if (previous || !program.from_target || !target->execution.sources ||
+          !target->execution.sources->recursive_successor || source_cohort >= 2)
+        throw std::logic_error("first draft lost its original verifier Source");
+      guard.execution.incoming = std::make_unique<IncomingStepSources>();
+      guard.execution.incoming->owner = target->execution.sources;
+      guard.execution.predecessor_episode = {target, &target->execution};
+    }
+    const auto incoming_pages = target
+        ? source_ready ? std::span<g::batch::PagedAppendSource>{}
+                       : std::span(target->execution.sources->pages).subspan(draft_bank, 2)
+        : previous ? std::span(previous->guard.execution.sources->pages) : std::span<g::batch::PagedAppendSource>{};
       const auto length = work.state.frontier;
       next.frontier = length + ids.size();
       if (!next.paged.frames.try_resize(work.state.paged.frames.size())) throw std::bad_alloc{};
-      std::array<c::PagedArenaCommit, 2> commits;
-      inference::PagedSequenceEdit edit(work.state.paged, next.paged, commits);
-      c::BatchLayoutVersion layout;
+      auto &layout = program.pending.layout;
       const auto member_at = [&](std::size_t) noexcept -> inference::PagedAppendMember {
-        return {work.state.paged, &next.paged, layout, length, ids.size(), work.tails, true};
+        return {work.state.paged, &next.paged, layout, length, ids.size(),
+            imported ? std::span<c::PagedPageAppender>{} : std::span(work.tails), !imported};
       };
       layout = take(inference::prepare_paged_append(attention_schema, 1,
           inference::PagedAppendBanks{draft_inventory,
@@ -1832,11 +1923,15 @@ public:
               std::span(guard.execution.tails.data() + draft_bank, 2),
               std::span(guard.execution.appends.data() + draft_bank, 2)},
           input_scratch.paged_appends, member_at,
-          {.capacity_rows = capacity, .append_options = {.resource_budget = cache_budget}}));
+          {.capacity_rows = capacity,
+           .incoming = incoming_pages,
+           .pending_predecessor = target ? !source_ready : previous && !previous->pending.finished,
+           .append_options = {.resource_budget = cache_budget}}));
       auto &positions = input_scratch.draft_positions;
       positions.clear();
       for (std::size_t i = 0; i < ids.size(); ++i) positions.push_back(static_cast<std::int32_t>(length + i));
-      program.token_values.write<std::int32_t>(ids); program.position_values.write<std::int32_t>(positions);
+      if (!imported) program.token_values.write<std::int32_t>(ids);
+      program.position_values.write<std::int32_t>(positions);
       if (!verification_prefix.empty()) {
         if (!program.verification_packet || verification_prefix.size() !=
             static_cast<std::size_t>(program.verification_prefix_values.description.dimensions()[0]))
@@ -1845,7 +1940,7 @@ public:
       }
       if (head) {
         auto &transactions = program.hidden_transactions;
-        std::copy(shifted.begin(), shifted.end(), transactions.sources(0).begin());
+        if (!imported) std::copy(shifted.begin(), shifted.end(), transactions.sources(0).begin());
         transactions.writers(0)[0] = take(hidden_pool.allocate(transactions.writer_bytes(0), cache::state_pool_alignment));
         check(transactions.stage(0));
       } else for (std::size_t row = 0; row < ids.size(); ++row)
@@ -1863,14 +1958,319 @@ public:
       check(guard.execution.prepare_appends(program.graph,
           head ? std::span<const g::batch::NodeLayout>(layouts) : std::span<const g::batch::NodeLayout>{},
           draft_bank, 2, cache_inputs, {.host_workspace = execution.staging()}));
-      check(guard.execution.bind_consumers(program.programs.child(0).resource_graph()));
-      check(guard.execution.prepare_replay({.mode = program.replay_mode, .host_wait = g::HostWaitPolicy::kAllow}));
+      if (previous) {
+        auto &incoming = *guard.execution.incoming;
+        auto &source = *incoming.owner;
+        incoming.bindings.reserve(5);
+        incoming.bindings.push_back(source.extra_outputs[0].reader_binding(program.tokens));
+        incoming.bindings.push_back(source.primary_output.reader_binding(program.verification_prefix));
+        incoming.bindings.push_back(take(source.states[0].reader_binding(run,
+            program.programs.child(0).resource_graph(), program.hidden_state.store,
+            previous->pending.finished ? std::span<const c::ReadLease>(source.published_states)
+                                       : std::span<const c::ReadLease>{})));
+        incoming.bindings.push_back(take(g::batch::append_binding(run, program.append.key, source.pages[0])));
+        incoming.bindings.push_back(take(g::batch::append_binding(run, program.append.value, source.pages[1])));
+      }
+      if (target) {
+        auto &incoming = *guard.execution.incoming; auto &source = *incoming.owner;
+        incoming.bindings.reserve(5);
+        const auto &pending = source_cohort ? source.extra_outputs[1] : source.primary_output;
+        const auto &catchup = source.extra_outputs[source_cohort ? 2 : 0];
+        incoming.bindings.push_back(pending.reader_binding(program.pending_token));
+        if (program.catchup_token) incoming.bindings.push_back(catchup.reader_binding(program.catchup_token));
+        const auto ready = source_ready ? std::span<const c::ReadLease>(source.published_states).last(program.rows)
+                                        : std::span<const c::ReadLease>{};
+        incoming.bindings.push_back(take(source.successor_states[source_cohort].reader_binding(run,
+            program.programs.child(0).resource_graph(), program.hidden_state.store, ready)));
+        if (!source_ready) {
+          incoming.bindings.push_back(take(g::batch::append_binding(run, program.append.key, incoming_pages[0])));
+          incoming.bindings.push_back(take(g::batch::append_binding(run, program.append.value, incoming_pages[1])));
+        }
+      }
+      check(guard.execution.bind_consumers(program.programs.child(0).resource_graph())
+          .WithContext("binding original draft successor sources"));
+      bool replay_ready = false;
+      if (imported && !source_ready && !(previous && previous->pending.finished) && program.relay_primed) {
+        const auto status = guard.execution.prepare_successor_replay();
+        if (!status.ok() && guard.execution.unsubmitted_reuse_declined()) return false;
+        check(status); replay_ready = true;
+      }
+      if (!replay_ready)
+        check(guard.execution.prepare_replay({.mode = program.replay_mode, .host_wait = g::HostWaitPolicy::kAllow})
+            .WithContext("preparing original draft successor replay"));
+      if (imported) program.relay_primed = true;
+      if (export_source) {
+        auto sources = std::make_shared<StepSources>();
+        sources->draft_origin = &program;
+        guard.execution.sources = sources;
+        sources->published_states.resize(1);
+        const auto &owner = execution.storage_owner();
+        const std::array stores{inference::SubmissionViews::StoreCapture{program.hidden_state.store, owner}};
+        const std::array pages{inference::SubmissionViews::PageCapture{program.append.key, owner},
+                               inference::SubmissionViews::PageCapture{program.append.value, owner}};
+        check(sources->prepare(run, stores, pages, execution_budget,
+            1 + bool(program.verification_compact) + bool(program.verification_empty)));
+      }
+      if (submit_now) submit_prepared_draft(program);
+      return true;
+  }
+
+  void submit_prepared_draft(DraftProgram &program) {
+      auto &guard = program.guard;
+      if (!program.pending.active || program.pending.submitted || !guard.execution.run)
+        throw std::logic_error("draft submission requires its original prepared private episode");
+      auto &run = *guard.execution.run;
+      auto *session = program.pending.next.session;
       const auto model_rows_after = cache::add(submitted_draft_rows, program.rows);
-      const auto session_rows_after = work.session
-          ? cache::add(work.session->submitted_draft_rows, program.rows) : 0;
+      const auto session_rows_after = session ? cache::add(session->submitted_draft_rows, program.rows) : 0;
+      const auto handoffs_after = guard.execution.incoming ? cache::add(device_draft_handoffs, 1) : device_draft_handoffs;
       check(guard.execution.submit(resources_));
+      program.pending.submitted = true;
       submitted_draft_rows = model_rows_after;
-      if (work.session) work.session->submitted_draft_rows = session_rows_after;
+      if (session) session->submitted_draft_rows = session_rows_after;
+      device_draft_handoffs = handoffs_after;
+      if (program.pending.chain) {
+        const auto &owner = execution.storage_owner();
+        std::array<inference::SubmissionViews::OutputCapture, 4> outputs{{
+            {program.verification_packet, owner, take(program.io.readback(program.verification_value))->pool()},
+            {program.relay_token, owner, take(program.io.readback(program.relay_token_value))->pool()},
+            {program.verification_compact ? program.verification_compact : program.verification_packet, owner,
+             take(program.io.readback(program.verification_compact ? program.compact_value : program.verification_value))->pool()},
+            {program.verification_empty ? program.verification_empty : program.verification_packet, owner,
+             take(program.io.readback(program.verification_empty ? program.empty_value : program.verification_value))->pool()}}};
+        const auto count = 2 + bool(program.verification_compact) + bool(program.verification_empty);
+        (void)take(guard.execution.sources->capture_outputs(run, guard.execution.completion, std::span(outputs).first(count), owner));
+      }
+  }
+
+  DraftProposal finish_draft_episode(DraftProgram &program, DraftWork &work) {
+    if (!program.pending.active) throw std::logic_error("NextN original append is not pending");
+    const bool head = program.head;
+    const auto &selected_sampler = sampling_configuration(program.sampling_index).configuration;
+    auto &guard = program.guard;
+    auto &run = *guard.execution.run;
+    auto &next = program.pending.next.state;
+    auto &commits = program.pending.commits;
+    auto &layout = program.pending.layout;
+    auto &output = program.pending.proposal;
+      auto &tails = program.pending.next.tails;
+      check(guard.execution.finish_success(draft_bank, 2, take(program.io.withdrawal_values()),
+          [&]() noexcept {
+            if (!program.pending.completion_counted) {
+              ++draft_program_graph_calls; program.pending.completion_counted = true;
+            }
+          },
+          [&]() -> hyle::Status {
+            if (head) {
+              if (program.valid) {
+                const auto flag = take(program.io.predicate(run, program.valid_value));
+                if (flag == 0) throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
+                    "recursive draft distribution is invalid; no head or RNG was published"));
+                if (flag != 1) throw std::runtime_error("recursive draft validity is outside its predicate encoding");
+                if (selected_sampler.enabled) output.log_probabilities =
+                    take(program.io.retain(run, program.probabilities_output, execution_budget));
+                if (min_draft_probability() > 0) {
+                  check(program.io.read(run, program.probability_value, std::as_writable_bytes(std::span(&output.probability, 1))));
+                  if (!std::isfinite(output.probability) || output.probability < 0 || output.probability > 1)
+                    throw std::runtime_error("draft maximum probability is outside its declared probability domain");
+                }
+              }
+              if (program.pending.chain) {
+                const auto width = max_drafts() + 1;
+                check(program.io.read(run, program.verification_value,
+                    std::as_writable_bytes(std::span(output.packet).first(width))));
+                output.id = output.packet[width - 1];
+              } else check(program.io.read(run, program.id_value, std::as_writable_bytes(std::span(&output.id, 1))));
+              if (output.id < 0 || output.id >= vocabulary) throw std::runtime_error("NextN proposal is outside vocabulary");
+              if (program.next_counts) output.next_counts =
+                  take(program.io.retain(run, program.next_counts_output, execution_budget));
+            }
+            return hyle::Status::Ok();
+          },
+          [&]() -> hyle::Status {
+            if (head) {
+              auto writers = take(program.hidden_transactions.returned(0));
+              output.hidden = program.pending.chain
+                  ? take(guard.execution.sources->states[0].publish(0, writers[0]))
+                  : take(writers[0].publish());
+              if (program.pending.chain) guard.execution.sources->published_states[0] = output.hidden;
+              check(program.hidden_transactions.clear(0));
+            }
+            const auto finish_at = [&](std::size_t) noexcept -> inference::PagedAppendFinishMember {
+              return {work.state.paged, next.paged, commits, layout, next.paged.pages.back().page(),
+                  static_cast<std::uint32_t>(next.frontier % cache::Plan::page_rows), tails};
+            };
+            check(inference::prepare_paged_append_commits(
+                std::span(guard.execution.appends.data() + draft_bank, 2), 1, finish_at,
+                program.pending.chain ? std::span<const g::batch::PagedAppendSource>(guard.execution.sources->pages)
+                                      : std::span<const g::batch::PagedAppendSource>{}));
+            check(inference::return_paged_append_tails(
+                guard.execution.append_transactions().subspan(draft_bank, 2), 2, 1,
+                input_scratch.paged_appends, finish_at));
+            return hyle::Status::Ok();
+          }));
+      inference::PagedSequenceEdit edit(work.state.paged, next.paged, commits);
+      auto publication = take(edit.prepare_publication());
+      publication.publish(&work.state.paged);
+      if (!program.pending.chain) guard.execution.sources.reset();
+      for (auto &append : guard.execution.appends) append = {};
+      for (auto &bank : guard.execution.dirty) bank.clear();
+      for (auto &bank : guard.execution.tails) bank.clear();
+      guard.execution.run = nullptr; guard.execution.carrier = nullptr; guard.execution.state_transactions = nullptr;
+    program.pending.finished = true;
+    return std::move(output);
+  }
+
+  bool recursive_ahead_matches(const Session &session) const noexcept {
+    if (!recursive_ahead || !recursive_ahead->reusable || !session.head) return false;
+    const auto &ahead = *recursive_ahead;
+    return ahead.before.session == &session && session.head.get() == ahead.candidate &&
+        session.head.epoch() == ahead.epoch && session.length() == ahead.length &&
+        session.head->draft && session.head->draft->lag == ahead.program->rows - 1;
+  }
+
+  inference::RetirementObservation discard_recursive_ahead() noexcept {
+    if (!recursive_ahead) return {true, {}};
+    auto &ahead = *recursive_ahead; auto &program = *ahead.program;
+    auto &episode = program.guard.execution;
+    hyle::Status status;
+    if (episode.run || episode.cleanup_pending) {
+      bool discarded_successfully = false;
+      // A refused unsubmitted consumer must wait for its original producer
+      // before withdrawing pending page/Store rights. Submitted work retains
+      // its own original completion and recovers through the same guard.
+      if (!episode.has_completion() && ahead.producer && ahead.producer->execution.has_completion()) {
+        const auto waited = ahead.producer->execution.wait();
+        inference::record_retirement_status(episode.terminal, waited);
+      }
+      if (program.pending.submitted && !program.pending.completion_counted && episode.has_completion()) {
+        const auto waited = episode.wait();
+        inference::record_retirement_status(episode.terminal, waited);
+        if (waited.ok()) {
+          ++draft_program_graph_calls; program.pending.completion_counted = true;
+          const auto inputs = program.io.withdrawal_values();
+          if (!inputs) return {false, inputs.error()};
+          const auto discarded = episode.discard_successful(*inputs, [&]() noexcept { program.pending = {}; });
+          if (!discarded) return {false, discarded.error()};
+          if (!*discarded) return {false, {}};
+          discarded_successfully = true;
+        }
+      }
+      if (!discarded_successfully) {
+        episode.cleanup_pending = true;
+        const auto retired = recover_draft_program(program);
+        if (!retired) return {false, retired.error()};
+        if (!*retired) return {false, episode.terminal};
+        program.relay_primed = false;
+      }
+      status = episode.terminal;
+      if (status.IsCancelled() && !status.has_native_error()) status = {};
+      episode.cleanup_pending = false; episode.terminal = {};
+    }
+    episode.sources.reset(); program.pending = {};
+    if (ahead.submitted) ++recursive_ahead_discards;
+    recursive_ahead.reset();
+    return {true, status};
+  }
+
+  inference::StepSuccessor prepare_recursive_ahead(const std::shared_ptr<StepState> &producer) {
+    if (recursive_ahead || !producer || !producer->phase || !producer->phase->recursive_repair ||
+        producer->members.size() != 1 || !producer->execution.sources ||
+        !producer->execution.sources->recursive_successor)
+      throw std::logic_error("recursive lookahead requires its original complete verifier Source");
+    auto &member = producer->members[0];
+    if (member.next->length >= capacity - 1) return inference::StepSuccessor::kNone;
+    const auto first_rows = producer->phase->recursive_single_repair ? std::size_t{1} : std::size_t{2};
+    const auto found = draft_programs.find({first_rows, true, member.session->sampling_configuration().index});
+    if (found == draft_programs.end() || !found->second->target_successors[0])
+      return inference::StepSuccessor::kNone;
+    recursive_ahead.emplace();
+    auto &ahead = *recursive_ahead;
+    ahead.producer = producer; ahead.session = member.session;
+    const auto *incoming_origin = producer->execution.incoming
+        ? producer->execution.incoming->owner->draft_origin : nullptr;
+    auto &slots = found->second->target_successors;
+    ahead.program = slots[incoming_origin == slots[0].get() ? 1 : 0].get();
+    ahead.candidate = member.next.get(); ahead.epoch = member.base_epoch + 1;
+    ahead.length = member.next->length; ahead.before.session = member.session.get();
+    auto &before = ahead.before.state;
+    before.frontier = ahead.length - (first_rows - 1); before.lag = static_cast<std::uint32_t>(first_rows - 1);
+    before.paged.pages = member.next->draft->paged.pages;
+    before.paged.pages.resize((before.frontier + cache::Plan::page_rows - 1) / cache::Plan::page_rows);
+    if (!before.paged.frames.try_resize(2)) throw std::bad_alloc{};
+    if (!ahead.program->relay_primed || !ahead.program->carrier.initialized() || ahead.program->carrier.closing())
+      return inference::StepSuccessor::kUnavailable;
+    const std::array<std::int32_t, 2> placeholders{};
+    if (!prepare_draft_episode(*ahead.program, ahead.before, std::span(placeholders).first(first_rows), {}, {}, {}, {},
+        nullptr, true, producer, false, 0, false)) {
+      ++recursive_ahead_refusals;
+      return inference::StepSuccessor::kRefused;
+    }
+    return inference::StepSuccessor::kPrepared;
+  }
+
+  void submit_recursive_ahead() {
+    if (!recursive_ahead || recursive_ahead->submitted || !recursive_ahead->producer)
+      throw std::logic_error("recursive lookahead lost its original unsubmitted carrier");
+    auto &ahead = *recursive_ahead;
+    submit_prepared_draft(*ahead.program);
+    ahead.submitted = true; ++recursive_ahead_submissions;
+    ahead.producer->members[0].advanced_draft_rows = ahead.program->rows;
+  }
+
+  void retain_recursive_ahead(bool keep) {
+    if (!recursive_ahead) return;
+    auto &ahead = *recursive_ahead;
+    auto *session = ahead.before.session;
+    keep = keep && session && session->head && !session->stopping && !session->failed &&
+        session->head.get() == ahead.candidate && session->head.epoch() == ahead.epoch &&
+        session->length() == ahead.length && session->head->draft && session->head->draft->lag == ahead.program->rows - 1;
+    if (!keep) {
+      const auto retired = discard_recursive_ahead();
+      if (!retired.retired || !retired.status.ok()) {
+        inference::EvaluationFailure failure(retired.status.ok()
+            ? hyle::Status::Unavailable("recursive lookahead has not actually retired") : retired.status);
+        failure.observe_retirement(retired); throw failure;
+      }
+      return;
+    }
+    auto &program = *ahead.program;
+    if (program.guard.execution.unsubmitted_reuse_declined()) {
+      if (!take(recover_draft_program(program)))
+        throw inference::EvaluationFailure(hyle::Status::Unavailable("refused recursive lookahead is still retiring"));
+      program.guard.execution.cleanup_pending = false; program.guard.execution.terminal = {};
+      program.relay_primed = false;
+    }
+    ahead.reusable = true;
+    if (ahead.submitted && !program.pending.finished) {
+      ahead.before.state = fork_draft(*session->head->draft);
+      program.pending.proposal = finish_draft_episode(program, ahead.before);
+      // Its first head is now a private completed proposal. The original
+      // draft Source suffices for its next sibling; the target can retire.
+      ahead.producer.reset();
+    }
+  }
+
+  // Append to an unpublished draft only. Source users can prepare multiple
+  // original episodes, then publish their private pages in predecessor order.
+  template<class PrepareVerifier = std::nullptr_t>
+  DraftProposal execute_draft(DraftWork &work, std::span<const std::int32_t> ids,
+      std::span<const c::ReadLease> shifted, bool head, const std::array<std::uint32_t, 4> &identity = {},
+      std::size_t sampling_index = 0, const LogitsInputs &logits = {},
+      std::span<const std::int32_t> verification_prefix = {}, PrepareVerifier &&prepare_verifier = nullptr) {
+    if (ids.empty() || ids.size() != shifted.size() || !state_storage_prepared ||
+        work.state.frontier > capacity || ids.size() > capacity - work.state.frontier)
+      throw std::runtime_error("NextN input rows exceed the prepared context or hidden geometry");
+    auto found = draft_programs.find({ids.size(), head, head ? sampling_index : 0});
+    if (found == draft_programs.end()) throw std::runtime_error("NextN finite program was not cold prepared");
+    auto &program = *found->second;
+    const auto &selected_sampler = sampling_configuration(program.sampling_index).configuration;
+    if (head) validate_logits_inputs(selected_sampler, logits, vocabulary);
+    auto &guard = program.guard;
+    try {
+      if (!prepare_draft_episode(program, work, ids, shifted, identity, logits, verification_prefix))
+        throw std::logic_error("ordinary draft preparation cannot decline Source coverage");
+      auto &run = *guard.execution.run;
       if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<PrepareVerifier>>) {
         if (!verification_prefix.empty()) {
           guard.execution.sources = std::make_shared<StepSources>();
@@ -1892,56 +2292,9 @@ public:
           } else guard.execution.sources.reset(); // Typed capability refusal preserves the original submit proxy.
         }
       }
-      std::array<c::PagedPageAppender, 2> tails;
-      check(guard.execution.finish_success(draft_bank, 2, take(program.io.withdrawal_values()),
-          [&]() noexcept { ++draft_program_graph_calls; },
-          [&]() -> hyle::Status {
-            if (head) {
-              if (program.valid) {
-                const auto flag = take(program.io.predicate(run, program.valid_value));
-                if (flag == 0) throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
-                    "recursive draft distribution is invalid; no head or RNG was published"));
-                if (flag != 1) throw std::runtime_error("recursive draft validity is outside its predicate encoding");
-                if (selected_sampler.enabled) output.log_probabilities =
-                    take(program.io.retain(run, program.probabilities_output, execution_budget));
-                if (min_draft_probability() > 0) {
-                  check(program.io.read(run, program.probability_value, std::as_writable_bytes(std::span(&output.probability, 1))));
-                  if (!std::isfinite(output.probability) || output.probability < 0 || output.probability > 1)
-                    throw std::runtime_error("draft maximum probability is outside its declared probability domain");
-                }
-              }
-              check(program.io.read(run, program.id_value, std::as_writable_bytes(std::span(&output.id, 1))));
-              if (output.id < 0 || output.id >= vocabulary) throw std::runtime_error("NextN proposal is outside vocabulary");
-              if (program.next_counts) output.next_counts =
-                  take(program.io.retain(run, program.next_counts_output, execution_budget));
-            }
-            return hyle::Status::Ok();
-          },
-          [&]() -> hyle::Status {
-            if (head) {
-              auto writers = take(program.hidden_transactions.returned(0));
-              output.hidden = take(writers[0].publish());
-              check(program.hidden_transactions.clear(0));
-            }
-            const auto finish_at = [&](std::size_t) noexcept -> inference::PagedAppendFinishMember {
-              return {work.state.paged, next.paged, commits, layout, next.paged.pages.back().page(),
-                  static_cast<std::uint32_t>(next.frontier % cache::Plan::page_rows), tails};
-            };
-            check(inference::prepare_paged_append_commits(
-                std::span(guard.execution.appends.data() + draft_bank, 2), 1, finish_at));
-            check(inference::return_paged_append_tails(
-                guard.execution.append_transactions().subspan(draft_bank, 2), 2, 1,
-                input_scratch.paged_appends, finish_at));
-            return hyle::Status::Ok();
-          }));
-      auto publication = take(edit.prepare_publication());
-      publication.publish(&work.state.paged);
-      work.tails = std::move(tails); work.state = std::move(next);
-      guard.execution.sources.reset(); // The admitted target retains its original view.
-      for (auto &append : guard.execution.appends) append = {};
-      for (auto &bank : guard.execution.dirty) bank.clear();
-      for (auto &bank : guard.execution.tails) bank.clear();
-      guard.execution.run = nullptr; guard.execution.carrier = nullptr; guard.execution.state_transactions = nullptr;
+      auto output = finish_draft_episode(program, work);
+      work = std::move(program.pending.next);
+      program.pending = {};
       return output;
     } catch (inference::EvaluationFailure &failure) {
       if (active_step && active_step->execution.incoming &&
@@ -3146,6 +3499,43 @@ public:
     if (compact_draft) io.draft_last_ids.write<std::int32_t>(last_rows);
   }
 
+  void prepare_recursive_repair_append(StepState &step) {
+    auto &phase = *step.phase;
+    if (!phase.recursive_repair || step.members.size() != 1)
+      throw std::logic_error("recursive repair append lost its original R1 verification carrier");
+    auto &member = step.members[0];
+    auto &io = phase.slots[step.state_slot].data;
+    const auto rows = phase.recursive_single_repair ? member.base->draft->lag + 1
+        : member.input_tokens - (member.base->draft->lag ? 0u : 1u);
+    member.next->draft.emplace();
+    auto &next = *member.next->draft;
+    if (!next.paged.frames.try_resize(2)) throw std::bad_alloc{};
+    next.frontier = member.base->draft->frontier + rows;
+    const auto member_at = [&](std::size_t) noexcept -> inference::PagedAppendMember {
+      return {member.base->draft->paged, &next.paged, member.draft_layout,
+          member.base->draft->frontier, rows, member.session->draft_tails,
+          member.session->draft_tail_epoch == member.base_epoch};
+    };
+    const auto invalidate = [&](std::size_t) noexcept { member.session->draft_tail_epoch = 0; };
+    step.draft_layout = take(inference::prepare_paged_append(attention_schema, 1,
+        inference::PagedAppendBanks{draft_inventory,
+            std::span(step.execution.dirty.data() + draft_bank, 2),
+            std::span(step.execution.tails.data() + draft_bank, 2),
+            std::span(step.execution.appends.data() + draft_bank, 2)},
+        input_scratch.paged_appends, member_at,
+        {.capacity_rows = capacity, .append_options = {.resource_budget = cache_budget}}, invalidate));
+    member.draft_verified_last_page = next.paged.pages.back().page();
+    member.draft_input_rows = step.active_draft_rows = rows;
+    auto &positions = input_scratch.draft_positions; positions.clear();
+    for (std::size_t row = 0; row < rows; ++row)
+      positions.push_back(static_cast<std::int32_t>(member.base->draft->frontier + row));
+    positions.resize(phase.recursive_single_repair ? 2 : member.input_tokens, 0);
+    io.draft_positions.write<std::int32_t>(positions);
+    const std::array<std::uint8_t, 1> lag{static_cast<std::uint8_t>(member.base->draft->lag)};
+    const std::array<std::int32_t, 1> catchup{member.base->draft->lag ? member.base->draft->catchup_token : 0};
+    io.repair_lag.write<std::uint8_t>(lag); io.catchup_token.write<std::int32_t>(catchup);
+  }
+
   void prepare_device_mtp_inputs(StepState &step, bool recording_only);
 
   void discard_decode_ahead(const Session *session = nullptr) noexcept {
@@ -3665,7 +4055,12 @@ public:
           ? std::span<const std::int32_t>(decode_ahead->positions.data(), decode_ahead->positions.size())
           : std::span<const std::int32_t>(positions);
       if (!io.ordinary_io.packet()) {
-        if (!relay && !recording_imported && !token_source) io.tokens.write<std::int32_t>(token_values);
+        if (!relay && !recording_imported && !token_source) {
+          io.tokens.write<std::int32_t>(token_values);
+          // A preceding device-packet verifier withdrew this exact input.
+          // Restore the original host carrier on a quota/coverage fallback.
+          if (role == GraphRole::kVerify) check(run.bind(phase.token_port, io.tokens.read()));
+        }
         io.positions.write<std::int32_t>(position_values);
       }
       if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
@@ -3762,6 +4157,7 @@ public:
           invalidate_tail, begin_member));
       if (ahead) decode_ahead->clear_output(); // Schema copied the original borrowed integers.
       if (has_mtp(role)) prepare_draft_append<recording_only>(step, role);
+      if (phase.recursive_repair) prepare_recursive_repair_append(step);
       }
       auto &transactions = phase.slots[slot].transactions;
       for (std::size_t index = 0; index < phase.state_banks.size(); ++index) {
@@ -3772,7 +4168,11 @@ public:
         const auto bytes = transactions.writer_bytes(index);
         if (!relay && !recording_imported) for (std::size_t j = 0; j < width; ++j) {
           if (is_hidden) {
-            if (has_mtp(role)) {
+            if (phase.recursive_repair) {
+              state_sources[0] = step.members[j].base->draft->lag
+                  ? step.members[j].base->prior_hidden : step.members[j].base->carry_hidden;
+              state_sources[1] = step.members[j].base->carry_hidden;
+            } else if (has_mtp(role)) {
               const bool chronological = width == 1 && role == GraphRole::kMtpCatchupRound && packing == RowPacking::kRectangular;
               state_sources[chronological ? width + j : j] = step.members[j].base->carry_hidden;
               if (draft_lag(role)) state_sources[chronological ? j : width + j] = compact_draft && !step.members[j].base->draft->lag
@@ -3792,7 +4192,7 @@ public:
       }
       if (preparation) { preparation->slot = slot; preparation->phase_slot_prior_uses = phase.slots[slot].preparation_uses; }
       const auto batch_start = Clock::now();
-      const auto append_banks = draft_bank + (has_mtp(role) ? 2u : 0u);
+      const auto append_banks = draft_bank + (has_mtp(role) || phase.recursive_repair ? 2u : 0u);
       if (device_input_choice) {
         hyle::util::ScopeGuard release_layouts{[&]() noexcept {
           for (auto &entry : io.batch_layout_choices) entry.layouts = {};
@@ -3890,8 +4290,10 @@ public:
         step.phase->family->completion == TextCompletion::kStateOnly;
     const bool mtp = step.phase && drafts_token(step.phase->family->role) && step.members.size() == 1 &&
         step.phase->successor_token_port && step.phase->successor_catchup_port;
+    const bool recursive = step.phase && step.phase->recursive_repair && step.members.size() == 1 &&
+        step.phase->successor_token_port && step.phase->successor_catchup_port;
     if (!step.prepared || step.submitted || step.cancelled || step.execution.sources || !step.phase ||
-        (!mtp && (step.phase->family->role != GraphRole::kText || cache_plan.draft_cache)) ||
+        (!mtp && !recursive && (step.phase->family->role != GraphRole::kText || cache_plan.draft_cache)) ||
         (!prefill && step.phase->family->completion != TextCompletion::kEmitNext) || scheduler)
       throw std::runtime_error("submission views require one complete supported prepared episode");
     auto &phase = *step.phase;
@@ -3904,9 +4306,11 @@ public:
     auto sources = std::make_shared<StepSources>();
     sources->mtp_full_candidate = mtp;
     sources->mtp_device_choice = device_choice;
+    sources->recursive_successor = recursive;
     sources->prefill = prefill;
     sources->boundaries.reserve(step.members.size());
-    sources->published_states.resize(phase.state_sources.size() * step.members.size() + (mtp ? 1u : 0u));
+    sources->published_states.resize(phase.state_sources.size() * step.members.size() +
+        (recursive ? phase.prefix_rows - 1 : mtp ? 1u : 0u));
     for (const auto &member : step.members) {
       if (member.base_epoch == UINT64_MAX) throw std::overflow_error("source candidate epoch exhausted");
       sources->boundaries.push_back({member.session, member.next.get(), member.base_epoch + 1,
@@ -3915,11 +4319,21 @@ public:
     const auto stores = phase.state_sources | std::views::transform([&storage](const auto &source) {
       return inference::SubmissionViews::StoreCapture{source.store, storage};
     });
-    const auto appends = std::span<const g::NodeId>(step.execution.nodes.data(), draft_bank + (mtp ? 2u : 0u)) |
+    const auto appends = std::span<const g::NodeId>(step.execution.nodes.data(), draft_bank + (mtp || recursive ? 2u : 0u)) |
         std::views::transform([&storage](g::NodeId append) {
           return inference::SubmissionViews::PageCapture{append, storage};
         });
-    check(sources->prepare(*step.execution.run, stores, appends, execution_budget, device_choice ? 2u : mtp ? 1u : 0u));
+    check(sources->prepare(*step.execution.run, stores, appends, execution_budget,
+        recursive ? 3u : device_choice ? 2u : mtp ? 1u : 0u));
+    if (recursive) {
+      // Independent typed views admit one pending attempt and one later ready
+      // attempt. A bound/refused view is never rebound to another bundle.
+      for (std::size_t cohort = 0; cohort < 2; ++cohort) {
+        sources->successor_states.push_back(take(g::StoreSource::prepare(*step.execution.run,
+            phase.hidden_state.store, storage, {phase.prefix_rows > 1 ? phase.prefix_rows - 2 : 0,
+                phase.prefix_rows > 1 ? 2u : 1u}, {.resource_budget = execution_budget})));
+      }
+    }
     if (mtp) {
       sources->successor_states.reserve(geometry.recurrent_layers() * 2);
       for (std::size_t bank = 0; bank < geometry.recurrent_layers() * 2; ++bank)
@@ -3958,7 +4372,20 @@ public:
       auto &phase = *step.phase; auto &program_slot = phase.slots[step.state_slot]; auto &io = program_slot.data;
       auto &sources = *step.execution.sources;
       bool captured = false;
-      if (sources.mtp_device_choice) {
+      if (sources.recursive_successor) {
+        const auto &pending_pool = take(program_slot.io.readback(io.successor_token))->pool();
+        const auto &catchup_pool = take(program_slot.io.readback(io.successor_catchup))->pool();
+        const std::array<inference::SubmissionViews::OutputCapture, 4> outputs{{
+            {phase.successor_token_port, execution.storage_owner(), pending_pool},
+            {phase.successor_catchup_port, execution.storage_owner(), catchup_pool},
+            {phase.successor_token_port, execution.storage_owner(), pending_pool},
+            {phase.successor_catchup_port, execution.storage_owner(), catchup_pool}}};
+        captured = take(sources.capture_outputs(*step.execution.run, step.execution.completion, outputs,
+            execution.storage_owner(), optional_sources));
+        if (captured) {
+          for (auto &state : sources.successor_states) check(state.capture(sources.submission));
+        }
+      } else if (sources.mtp_device_choice) {
         const std::array<inference::SubmissionViews::OutputCapture, 3> outputs{{
             {phase.successor_pending_port, execution.storage_owner(), take(program_slot.io.readback(io.successor_pending))->pool()},
             {phase.successor_prefix_index_port, execution.storage_owner(), take(program_slot.io.readback(io.successor_prefix_index))->pool()},
@@ -4000,8 +4427,11 @@ public:
   bool private_publications_retired() const noexcept {
     for (const auto &[key, program] : draft_programs) {
       (void)key;
-      if (program->guard.execution.run || program->guard.execution.cleanup_pending ||
-          !program->carrier.retired()) return false;
+      bool retired = true;
+      program->visit([&](const DraftProgram &part) {
+        retired = retired && !part.guard.execution.run && !part.guard.execution.cleanup_pending && part.carrier.retired();
+      });
+      if (!retired) return false;
     }
     for (const auto &[key, program] : prefix_sampling_programs) {
       (void)key;
@@ -4013,8 +4443,10 @@ public:
   }
 
   inference::RetirementObservation retire_failed_publication(bool private_pending = false) noexcept {
+    const auto private_ahead = discard_recursive_ahead();
     auto retired = abort_episode();
-    retired.retired = retired.retired && !private_pending && private_publications_retired();
+    inference::record_retirement_status(retired.status, private_ahead.status);
+    retired.retired = retired.retired && private_ahead.retired && !private_pending && private_publications_retired();
     return retired;
   }
 
@@ -4074,7 +4506,7 @@ public:
                 member.base->draft.has_value() == cache_plan.draft_cache,
             step.withdrawn(member)});
       }
-      const auto append_banks = draft_bank + (has_mtp(phase.family->role) ? 2u : 0u);
+      const auto append_banks = draft_bank + (has_mtp(phase.family->role) || phase.recursive_repair ? 2u : 0u);
       auto &transactions = phase.slots[step.state_slot].transactions;
       check(step.execution.finish_success(0, append_banks, phase.state_resource_ports,
           []() noexcept {},
@@ -4188,6 +4620,19 @@ public:
               draft.lag = static_cast<std::uint32_t>(member.next->length - draft.frontier);
               draft.catchup_token = draft.lag ? member.draft_token : -1;
             }
+            if (phase.recursive_repair) for (auto &member : step.members) {
+              if (step.withdrawn(member)) continue;
+              auto &draft = *member.next->draft;
+              draft.lag = member.accepted_tokens == 1 ? 0u : 1u;
+              draft.catchup_token = draft.lag ? member.verification_inputs[member.accepted_tokens - 1] : -1;
+              draft.frontier = member.next->length - draft.lag;
+              draft.paged.pages.resize((draft.frontier + cache::Plan::page_rows - 1) / cache::Plan::page_rows);
+              auto &layout_rows = input_scratch.paged_appends.next_rows;
+              layout_rows.reset();
+              check(layout_rows.append(draft.frontier - member.base->draft->frontier, draft.frontier,
+                  cache::Plan::page_rows, std::span<const hyle::inference::PagedPageRef>(draft.paged.pages)));
+              member.draft_layout = take(layout_rows.member_version(attention_schema, 0));
+            }
             if (std::ranges::any_of(outputs, [](const auto &output) { return output.capture_probes; }))
               for (std::size_t i = 0; i < probe_views.size(); ++i) {
                 const auto &output = *phase.probe_facts[i];
@@ -4223,7 +4668,8 @@ public:
                     auto ready = step.execution.sources && bank.source_index != SIZE_MAX
                         ? take(step.execution.sources->states[bank.source_index].publish(destination, writers[destination]))
                         : take(writers[destination].publish());
-                    if (step.execution.sources && step.execution.sources->mtp_full_candidate)
+                    if (step.execution.sources && (step.execution.sources->mtp_full_candidate ||
+                        step.execution.sources->recursive_successor))
                       step.execution.sources->published_states[bank.source_index + row] = ready;
                     if (row + 1 == count) member.next->carry_hidden = ready;
                     if (row + 2 == count) member.next->prior_hidden = ready;
@@ -4259,12 +4705,14 @@ public:
                 std::span(step.execution.appends.data(), draft_bank), outputs.size(), target_finish_at,
                 step.execution.sources ? std::span<const g::batch::PagedAppendSource>(step.execution.sources->pages).first(draft_bank)
                     : std::span<const g::batch::PagedAppendSource>{}));
-            if (has_mtp(phase.family->role)) {
+            if (has_mtp(phase.family->role) || phase.recursive_repair) {
               const auto draft_finish_at = [&](std::size_t j) noexcept -> inference::PagedAppendFinishMember {
                 auto &member = step.members[j]; auto &draft = *member.next->draft;
                 return {member.base->draft->paged, draft.paged, member.draft_updates, member.draft_layout,
-                    draft.paged.pages.back().page(), static_cast<std::uint32_t>(draft.frontier % cache::Plan::page_rows),
-                    member.next_draft_tails, !step.withdrawn(member)};
+                    phase.recursive_repair ? member.draft_verified_last_page : draft.paged.pages.back().page(),
+                    static_cast<std::uint32_t>(draft.frontier % cache::Plan::page_rows),
+                    member.next_draft_tails, !step.withdrawn(member),
+                    !phase.recursive_repair || draft.frontier - member.base->draft->frontier == member.draft_input_rows};
               };
               check(inference::prepare_paged_append_commits(
                   std::span(step.execution.appends.data() + draft_bank, 2), outputs.size(), draft_finish_at,
@@ -4289,6 +4737,17 @@ public:
               if (recursive) draft_rows = cache::add(draft_rows,
                   member.input_tokens - 1 + (member.input_tokens > 1 ? member.base->draft->lag : 0) +
                   member.discarded_draft_rows);
+              if (recursive && member.proposal_input_rows) {
+                draft_rows = cache::add(*member.proposal_input_rows,
+                    phase.recursive_repair ? member.draft_input_rows
+                        : member.next->draft->frontier - member.base->draft->frontier);
+                draft_rows = cache::add(draft_rows, member.advanced_draft_rows);
+              } else if (recursive) {
+                draft_rows = cache::add(draft_rows, member.advanced_draft_rows);
+                if (draft_rows < member.prepaid_draft_rows)
+                  throw std::logic_error("recursive work reused more rows than its actual proposal");
+                draft_rows -= member.prepaid_draft_rows;
+              }
               auto after = generation_boundary(*member.next); after.next_id = next_ids[j];
               const std::array accepted{member.first_input, member.accepted_tokens == 2 ? member.draft_token : -1};
               const std::array verified{member.first_input, member.draft_token};
@@ -4435,6 +4894,173 @@ public:
     finish_selected_evaluations(outputs, next_ids, std::move(select), [](StepState &) {}, std::move(observe), publication);
   }
 
+  // Bounded greedy heads share the original Source protocol. Prepare each next
+  // private append before observing its predecessor's ID; all page publication
+  // still follows real completion and predecessor order.
+  template<class PrepareVerifier>
+  bool propose_device_draft_chain(Session &session, std::size_t maximum, DraftWork &base,
+      c::ReadLease &approximate, std::vector<std::int32_t> &inputs, PrepareVerifier &&prepare_verifier,
+      DraftProgram *prefetched = nullptr, std::span<const std::int32_t> eos = {},
+      const inference::RequestStopPolicy *stop_policy = nullptr) {
+    auto &head = *draft_programs.at({1, true, session.sampling_configuration().index});
+    std::array<DraftProgram *, 3> chain{};
+    const auto first_rows = session.head->draft->lag + 1;
+    chain[0] = prefetched ? prefetched : draft_programs.at({first_rows, true, session.sampling_configuration().index}).get();
+    for (std::size_t i = 1; i < maximum; ++i) chain[i] = head.successors[i - 1].get();
+    std::array<std::int32_t, 2> ids{session.head->draft->catchup_token, inputs.front()};
+    const std::array shifted{session.head->prior_hidden, session.head->carry_hidden};
+    std::array<std::int32_t, 3> seed{}; seed[0] = inputs.front();
+    const auto chains_after = cache::add(device_draft_chains, 1);
+    std::size_t prepared = 0;
+    const bool thresholded = min_draft_probability() > 0;
+    std::array<bool, 3> finished{}, eager{};
+    if (thresholded && draft_confidence.session.lock().get() == &session &&
+        draft_confidence.epoch != UINT64_MAX && draft_confidence.epoch + 1 == session.head.epoch())
+      for (std::size_t i = 0; i < draft_confidence.count; ++i)
+        eager[i] = draft_confidence.probability[i] >= min_draft_probability();
+    std::array<std::int32_t, 4> computed_ids{}; computed_ids[0] = inputs.front();
+    bool logical_stop = false;
+    const auto recover = [&]() noexcept -> inference::RetirementObservation {
+      inference::RetirementObservation result{true, {}};
+      if (active_step && !active_step->submitted && active_step->phase &&
+          active_step->phase->family->role == GraphRole::kVerify) {
+        const auto retired = abort_episode(); result.retired = retired.retired;
+        inference::record_retirement_status(result.status, retired.status);
+      }
+      for (std::size_t i = prepared; i != 0; --i) {
+        auto &program = *chain[i - 1]; auto &execution = program.guard.execution;
+        if (!execution.run && !execution.cleanup_pending && !program.carrier.pending()) {
+          execution.sources.reset(); program.pending = {}; continue;
+        }
+        execution.cleanup_pending = true;
+        if (execution.has_completion()) {
+          execution.request_cancel().IgnoreError();
+          execution.wait().IgnoreError();
+        }
+        const auto retired = recover_draft_program(program);
+        result.retired = result.retired && retired && *retired;
+        if (!retired) inference::record_retirement_status(result.status, retired.error());
+        if (retired && *retired) { execution.cleanup_pending = false; execution.terminal = {}; }
+      }
+      return result;
+    };
+    const auto finish = [&](std::size_t index, c::ReadLease *hidden = nullptr) {
+      auto &program = *chain[index];
+      if (finished[index]) {
+        if (hidden) *hidden = program.guard.execution.sources->published_states[0];
+        return;
+      }
+      auto &before = index == 0 ? base : chain[index - 1]->pending.next;
+      auto proposal = program.pending.finished ? std::move(program.pending.proposal) : finish_draft_episode(program, before);
+      for (std::size_t row = 0; row <= index; ++row)
+        if (proposal.packet[row] != computed_ids[row])
+          throw std::runtime_error("draft Source packet differs from its actual preceding proposals");
+      computed_ids[index + 1] = proposal.id; finished[index] = true;
+      observe_draft_probability(session, index, proposal.probability);
+      if (!logical_stop) {
+        const bool below = thresholded && proposal.probability < min_draft_probability();
+        if (!below || extend_drafts_from_probability()) {
+          inputs.push_back(proposal.id);
+          if (thresholded && inference::request_token_stopped(proposal.id, eos, stop_policy)) logical_stop = true;
+        }
+        if (below) logical_stop = true;
+      }
+      if (hidden) *hidden = std::move(proposal.hidden);
+      // This original consumer has really retired and withdrawn its inputs.
+      // Its predecessor's independent ready views no longer serve a reader.
+      if (index && !thresholded) chain[index - 1]->guard.execution.sources.reset();
+    };
+    const auto finish_through = [&](std::size_t last, c::ReadLease *hidden = nullptr) {
+      for (std::size_t i = 0; i <= last; ++i) finish(i, i == last ? hidden : nullptr);
+    };
+    try {
+      prepared = 1;
+      if (!prefetched && !prepare_draft_episode(*chain[0], base, std::span(ids).last(first_rows),
+          std::span(shifted).last(first_rows), {}, {}, std::span(seed).first(maximum), nullptr, true))
+        throw std::logic_error("first draft cannot decline successor coverage");
+      if (prefetched && thresholded) finish(0);
+      for (std::size_t i = 1; i < maximum; ++i) {
+        const std::array<std::int32_t, 1> placeholder{0};
+        if (!chain[i]->relay_primed || (thresholded && !eager[i - 1])) finish_through(i - 1);
+        if (thresholded && logical_stop) break;
+        prepared = i + 1;
+        if (!prepare_draft_episode(*chain[i], chain[i - 1]->pending.next, placeholder,
+            {}, {}, {}, {}, chain[i - 1], true)) {
+          // The consumer was never submitted. Retire its prepared rights and
+          // publish the real predecessors in order. A typed Source view is
+          // single use, so resume the ordinary loop from this exact prefix;
+          // never rebind its already consumed authority or repeat real work.
+          ++device_draft_reuse_refusals;
+          check(chain[i - 1]->guard.execution.wait());
+          const auto retired = take(recover_draft_program(*chain[i]));
+          if (!retired) throw inference::EvaluationFailure(hyle::Status::Unavailable(
+              "unsubmitted draft successor is still retiring"));
+          chain[i]->guard.execution.cleanup_pending = false;
+          chain[i]->guard.execution.terminal = {};
+          chain[i]->relay_primed = false;
+          finish_through(i - 1, &approximate);
+          if (thresholded && logical_stop) { prepared = i; break; }
+          base = std::move(chain[i - 1]->pending.next);
+          for (std::size_t j = 0; j < prepared; ++j) {
+            chain[j]->guard.execution.sources.reset(); chain[j]->pending = {};
+          }
+          return false;
+        }
+      }
+      if (thresholded) {
+        // History only predicts how far to queue ahead. The current proposal's
+        // real probability always decides the verifier prefix, preserving the
+        // CLI threshold even when the prediction queues extra discarded work.
+        finish_through(prepared - 1);
+        const auto selected = inputs.size() > 1 ? inputs.size() - 2 : 0;
+        auto source = chain[selected]->guard.execution.sources;
+        const auto output = inputs.size() > 1 ? std::size_t{1} : std::size_t{2};
+        std::swap(source->primary_output, source->extra_outputs[output]);
+        for (std::size_t i = 0; i < prepared; ++i) {
+          auto &program = *chain[i];
+          if (auto &views = program.guard.execution.sources) {
+            views->states.clear(); views->pages.clear(); views->published_states.clear();
+          }
+          program.guard.execution.sources.reset(); program.pending = {};
+        }
+        // Only the selected token packet is needed by the verifier. Retire
+        // every private frame/fork before reacquiring the Session's old tail.
+        base = {}; approximate = {}; source->extra_outputs.clear();
+        if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<PrepareVerifier>>) {
+          const auto prefix = std::span<const std::int32_t>(inputs).first(inputs.size() - 1);
+          prepare_verifier(prefix, source, false);
+          prepare_verifier(prefix, source, true);
+        }
+        device_draft_chains = chains_after;
+        return true;
+      }
+      // Submit every already-covered private successor before any host ID
+      // readback can queue behind it. Publication remains predecessor ordered.
+      finish_through(maximum - 2);
+      auto &last = *chain[maximum - 1];
+      auto source = last.guard.execution.sources;
+      if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<PrepareVerifier>>) {
+        prepare_verifier(inputs, source, false);
+        check(last.guard.execution.wait());
+        check(source->detach_outputs());
+        prepare_verifier(inputs, source, true);
+      }
+      finish(maximum - 1);
+      // The verifier borrows only the final input packet. No next draft reads
+      // these retired private KV/hidden views; return their original capacity.
+      source->states.clear(); source->pages.clear(); source->extra_outputs.clear();
+      for (std::size_t i = 0; i < maximum; ++i) {
+        chain[i]->guard.execution.sources.reset(); chain[i]->pending = {};
+      }
+      device_draft_chains = chains_after;
+      // Speculative EOS does not publish a head. The original verifier clips
+      // the actual emitted prefix; every queued and executed row stays counted.
+      return true;
+    } catch (inference::EvaluationFailure &failure) {
+      failure.observe_retirement(recover()); throw;
+    } catch (...) { (void)recover(); throw; }
+  }
+
   // Returns the actual verifier input [pending, proposal0, ...]. Approximate
   // hidden is local to this recursion and is deliberately discarded with its
   // private pages; it is never installed in a committed draft cache.
@@ -4443,7 +5069,8 @@ public:
       std::span<const std::int32_t> eos = {}, std::vector<c::ReadLease> *q = nullptr,
       const inference::RequestStopPolicy *stop_policy = nullptr, const LogitsInputs &logits = {},
       std::span<const LogitsInputs> conditional_inputs = {}, ConditionalLogitsProposal *dynamic = nullptr,
-      PrepareVerifier &&prepare_verifier = nullptr) {
+      PrepareVerifier &&prepare_verifier = nullptr, std::size_t *prepaid_rows = nullptr) {
+    if (prepaid_rows) *prepaid_rows = 0;
     if (session.model_ != this)
       throw std::runtime_error("recursive proposal Session belongs to another model");
     const auto &selected_sampling = session.sampling_configuration();
@@ -4464,11 +5091,60 @@ public:
     const auto ended = [&](auto token) { return inference::request_token_stopped(token, eos, stop_policy); };
     std::vector<std::int32_t> inputs; inputs.reserve(maximum + 1); inputs.push_back(session.head->next_id);
     if (q) { q->clear(); q->reserve(maximum); }
-    if (!maximum) return inputs;
+    if (!maximum) {
+      const auto retired = discard_recursive_ahead();
+      if (!retired.retired || !retired.status.ok())
+        throw inference::EvaluationFailure(retired.status.ok()
+            ? hyle::Status::Unavailable("unused recursive lookahead is still retiring") : retired.status);
+      return inputs;
+    }
     if (inputs.front() < 0 || inputs.front() >= vocabulary || ended(inputs.front()))
       throw std::runtime_error("recursive proposals require a valid nonterminal emitted pending token");
     DraftWork work; work.state = fork_draft(*session.head->draft); work.session = &session;
     c::ReadLease approximate;
+    DraftProgram *prefetched = nullptr;
+    if (recursive_ahead) {
+      if (prepaid_rows && recursive_ahead_matches(session) && !selected_sampler.enabled &&
+          selected_sampler.modifiers.empty() && !dynamic && conditional_inputs.empty()) {
+        auto &ahead = *recursive_ahead;
+        auto &program = *ahead.program;
+        if (!ahead.submitted) {
+          ahead.before.state = fork_draft(*session.head->draft);
+          const std::array<std::int32_t, 2> placeholders{};
+          if (!prepare_draft_episode(program, ahead.before, std::span(placeholders).first(program.rows), {}, {}, {}, {}, nullptr,
+              true, ahead.producer, true, 1))
+            throw std::logic_error("ready original verifier Source cannot decline capture coverage");
+          program.pending.proposal = finish_draft_episode(program, ahead.before);
+        } else { *prepaid_rows = program.rows; ++recursive_ahead_hits; }
+        prefetched = &program;
+        recursive_ahead.reset();
+      } else {
+        const auto retired = discard_recursive_ahead();
+        if (!retired.retired || !retired.status.ok())
+          throw inference::EvaluationFailure(retired.status.ok()
+              ? hyle::Status::Unavailable("obsolete recursive lookahead is still retiring") : retired.status);
+      }
+    }
+    if (maximum > 1 && maximum == max_drafts() && !selected_sampler.enabled &&
+        selected_sampler.modifiers.empty() &&
+        !dynamic && conditional_inputs.empty()) {
+      const auto found = draft_programs.find({1, true, selected_sampling.index});
+      if (found != draft_programs.end() && maximum <= 3 && found->second->successors[maximum - 2] &&
+          propose_device_draft_chain(session, maximum, work, approximate, inputs,
+              std::forward<PrepareVerifier>(prepare_verifier), prefetched, eos, stop_policy)) return inputs;
+      if (inputs.size() > 1 && ended(inputs.back())) return inputs;
+    }
+    if (prefetched && prefetched->pending.active) {
+      const auto proposal = prefetched->pending.proposal;
+      observe_draft_probability(session, 0, proposal.probability);
+      approximate = prefetched->guard.execution.sources->published_states[0];
+      work = std::move(prefetched->pending.next);
+      prefetched->guard.execution.sources.reset(); prefetched->pending = {};
+      const bool below = min_draft_probability() > 0 && proposal.probability < min_draft_probability();
+      if (below && !extend_drafts_from_probability()) return inputs;
+      inputs.push_back(proposal.id);
+      if (ended(inputs.back()) || below) return inputs;
+    }
     auto current_logits = logits;
     const auto resolve = [&]() -> const LogitsInputs & {
       const auto row = inputs.size() - 1;
@@ -4483,7 +5159,7 @@ public:
       dynamic->rows.push_back(std::move(*supplied)); return dynamic->rows.back();
     };
     try {
-    for (std::size_t i = 0; i < maximum; ++i) {
+    for (std::size_t i = inputs.size() - 1; i < maximum; ++i) {
       if (dynamic) {
         const auto &row = resolve(); current_logits.bias = row.bias; current_logits.allowed = row.allowed;
       } else if (!conditional_inputs.empty()) {
@@ -4496,7 +5172,7 @@ public:
       DraftProposal proposal;
       const auto identity = selected_sampler.enabled ? session.head->sampling.identity(2 * i) : std::array<std::uint32_t, 4>{};
       if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<PrepareVerifier>>) {
-        if (i + 1 == maximum && maximum == max_drafts())
+        if (i + 1 == maximum && maximum == max_drafts() && min_draft_probability() == 0)
           proposal = execute_draft(work, ids, shifted, true, identity, selected_sampling.index, current_logits,
               inputs, [&](const std::shared_ptr<StepSources> &source, bool ready) { prepare_verifier(inputs, source, ready); });
         else proposal = execute_draft(work, ids, shifted, true, identity, selected_sampling.index, current_logits);
@@ -4504,11 +5180,13 @@ public:
       // Stop on a distribution property, not the sampled proposal's own
       // probability. The stopping condition is independent of this draw; its
       // unpublished address may then be the target's final draw at 2*m.
-      if (min_draft_probability() > 0 && proposal.probability < min_draft_probability()) break;
+      observe_draft_probability(session, i, proposal.probability);
+      const bool below = min_draft_probability() > 0 && proposal.probability < min_draft_probability();
+      if (below && !extend_drafts_from_probability()) break;
       inputs.push_back(proposal.id); approximate = std::move(proposal.hidden);
       if (proposal.next_counts.valid()) current_logits.counts.lease = std::move(proposal.next_counts);
       if (q && selected_sampler.enabled) q->push_back(std::move(proposal.log_probabilities));
-      if (ended(proposal.id)) break;
+      if (ended(proposal.id) || below) break;
     }
     if (dynamic) {
       // An accepted stop proposal ends selection before its bonus; rejection
@@ -4531,6 +5209,7 @@ public:
   void repair_recursive_draft(StepState &step) {
     if (step.phase->family->role != GraphRole::kVerify || !cache_plan.draft_cache)
       throw std::runtime_error("draft repair requires its unpublished target verifier");
+    if (step.phase->recursive_repair) return;
     for (auto &member : step.members) {
       if (step.withdrawn(member)) continue;
       const auto n = member.accepted_tokens;
@@ -4646,6 +5325,12 @@ public:
         const bool clipped = min_draft_probability() > 0 && selection.proposal_limit > width - 1 &&
             !inference::request_token_stopped(member.verification_inputs.back(), eos, member.stop_policy);
         member.discarded_draft_rows = clipped ? (width == 1 ? member.base->draft->lag + 1 : 1) : 0;
+        if (step.phase->recursive_repair) {
+          const auto retained = member.base->draft->lag + (accepted.consumed == 1 ? 1 : accepted.consumed - 1);
+          if (member.draft_input_rows < retained) throw std::logic_error("in-graph repair missed an accepted row");
+          member.discarded_draft_rows = cache::add(member.discarded_draft_rows, member.draft_input_rows - retained);
+          --result.auxiliary_graph_calls;
+        }
         result.auxiliary_graph_calls += clipped ? 1u : 0u;
         result.accepted_draft = result.consumed_drafts != 0;
         result.processed_target = member.accepted_tokens;
@@ -4654,6 +5339,20 @@ public:
         result.processed_draft = width - 1 + (width > 1 ? member.base->draft->lag : 0) +
             member.base->draft->lag + (member.accepted_tokens == 1 ? 1 : member.accepted_tokens - 1) +
             member.discarded_draft_rows;
+        result.processed_draft = cache::add(result.processed_draft, member.advanced_draft_rows);
+        if (result.processed_draft < member.prepaid_draft_rows)
+          throw std::logic_error("recursive result reused more rows than its actual proposal");
+        result.processed_draft -= member.prepaid_draft_rows;
+        result.auxiliary_graph_calls += member.advanced_draft_rows ? 1u : 0u;
+        if (member.prepaid_draft_rows) --result.auxiliary_graph_calls;
+        if (member.proposal_input_rows) {
+          const auto repair_rows = step.phase->recursive_repair ? member.draft_input_rows
+              : member.base->draft->lag + (member.accepted_tokens == 1 ? 1 : member.accepted_tokens - 1);
+          result.processed_draft = cache::add(cache::add(*member.proposal_input_rows, repair_rows), member.advanced_draft_rows);
+          result.auxiliary_graph_calls = member.proposal_graph_calls + (step.phase->recursive_repair ? 0u : 1u) +
+              (selected_sampler.enabled || !selected_sampler.modifiers.empty() ? 1u : 0u) +
+              (member.advanced_draft_rows ? 1u : 0u);
+        }
         result.stopped = accepted.stopped;
         publication.selected(j, result, selection.output_quota);
       }
@@ -5557,6 +6256,9 @@ struct PreparedGenerationCall final {
   std::int32_t pending = -1;
   std::size_t quota = 0, steps = 0;
   std::size_t maximum = 0;
+  std::size_t prepaid_draft_rows = 0;
+  std::optional<std::size_t> proposal_input_rows;
+  std::size_t proposal_graph_calls = 0;
   std::vector<std::int32_t> verification_ids;
   std::vector<c::ReadLease> draft_log_probabilities;
   bool generation = false, full_hit = false, initial_prefix = false, prefill_complete = true;
@@ -6500,7 +7202,7 @@ struct SynchronousGenerationStepAdapter final {
   FollowingCalls local_following;
   FollowingCalls &following;
   std::shared_ptr<StepSources> source;
-  bool resumed = false;
+  bool resumed = false, recursive_successor = false;
 
   SynchronousGenerationStepAdapter(Model &selected, std::span<PreparedGenerationCall> original,
       bool trace, bool packed, std::size_t verification_capacity, AfterSubmit &submitted, BatchObserver &observer,
@@ -6569,12 +7271,25 @@ struct SynchronousGenerationStepAdapter final {
           model.active_step->members.size() != 1 || model.active_step->input_tokens != calls[0].ids().size())
         throw std::logic_error("device verifier lost its original prepared target episode");
       model.active_step->members[0].verification_inputs.assign(calls[0].ids().begin(), calls[0].ids().end());
+      model.active_step->members[0].prepaid_draft_rows = calls[0].prepaid_draft_rows;
+      model.active_step->members[0].proposal_input_rows = calls[0].proposal_input_rows;
+      model.active_step->members[0].proposal_graph_calls = calls[0].proposal_graph_calls;
       return;
     }
     if (!generation && packed_prefill) model.prepare_prefill_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion);
     else if (packed_verification_capacity)
       model.prepare_verification_evaluations(std::span(inputs.data(), inputs.size()), packed_verification_capacity);
     else model.prepare_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion);
+    if (role == GraphRole::kVerify) for (std::size_t j = 0; j < calls.size(); ++j) {
+      model.active_step->members[j].prepaid_draft_rows = calls[j].prepaid_draft_rows;
+      model.active_step->members[j].proposal_input_rows = calls[j].proposal_input_rows;
+      model.active_step->members[j].proposal_graph_calls = calls[j].proposal_graph_calls;
+    }
+  }
+  bool recursive_pipeline() const {
+    return generation && role == GraphRole::kVerify && calls.size() == 1 &&
+        continuation && continuation->enabled && model.recursive_repair_enabled() &&
+        model.cache_plan.in_flight_batches >= 2 && calls[0].request->trace.empty();
   }
   bool prefill_pipeline() const {
     if (generation || !packed_prefill || role != GraphRole::kText || calls.size() != 1 ||
@@ -6586,14 +7301,31 @@ struct SynchronousGenerationStepAdapter final {
     return !sampling.enabled && sampling.modifiers.empty();
   }
   void submit(Position position) {
+    if (recursive_successor && position == Position::kSuccessor) {
+      model.submit_recursive_ahead();
+      if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<AfterSubmit>>) after_submit();
+      return;
+    }
     auto &step = position == Position::kCurrent ? *model.active_step : *model.successor_step;
-    if (prefill_pipeline() && step.phase->family->completion == TextCompletion::kStateOnly)
+    if ((prefill_pipeline() && step.phase->family->completion == TextCompletion::kStateOnly) ||
+        (recursive_pipeline() && step.phase->recursive_repair))
       (void)model.prepare_submission_sources(step);
     model.submit_evaluations(step);
     submitted_geometry();
     if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<AfterSubmit>>) after_submit();
   }
   inference::StepSuccessor prepare_successor() {
+    if (recursive_pipeline() && model.active_step && model.active_step->phase->recursive_repair) {
+      auto &call = calls[0]; auto &request = *call.request;
+      // A full accepted batch consumes this many outputs. Keep at least a
+      // pending token plus one proposal for a real next verifier.
+      const auto needed = model.active_step->input_tokens + 1;
+      if (call.quota < model.active_step->input_tokens || request.progress.remaining_outputs() <= needed ||
+          request.session->stopping || request.session->failed) return inference::StepSuccessor::kNone;
+      const auto result = model.prepare_recursive_ahead(model.active_step);
+      recursive_successor = result != inference::StepSuccessor::kNone;
+      return result;
+    }
     if (!prefill_pipeline() || calls[0].prefill_complete || !model.active_step ||
         !model.active_step->execution.sources) return inference::StepSuccessor::kNone;
     auto &request = *calls[0].request;
@@ -6641,7 +7373,10 @@ struct SynchronousGenerationStepAdapter final {
     // The original episodes and bound Source still retain all native readers.
     // Drop only this adapter's extra pin before their ordinary reverse cleanup.
     source.reset();
+    const auto private_ahead = model.discard_recursive_ahead();
     auto retired = model.abort_episode();
+    retired.retired = retired.retired && private_ahead.retired;
+    inference::record_retirement_status(retired.status, private_ahead.status);
     for (const auto &call : calls) if (call.request->session->stopping)
       inference::record_retirement_status(retired.status, call.request->session->retirement_status);
     if (!requested || !retired.retired || (!retired.status.ok() &&
@@ -6665,6 +7400,7 @@ struct SynchronousGenerationStepAdapter final {
     observe_generation_batch(batch_observer, calls, input_rows, seconds + proposal_seconds, active_rows, physical_rows);
   }
   void finish(Position position) {
+    if (recursive_successor && position == Position::kSuccessor) return;
     const auto selected_calls = position == Position::kCurrent ? this->calls : std::span(following.data(), following.size());
     submitted_geometry();
     if (outputs.empty() || position == Position::kSuccessor) {
@@ -6730,11 +7466,21 @@ struct SynchronousGenerationStepAdapter final {
         }
   }
   bool keep_successor() const {
+    if (recursive_successor) {
+      const auto &call = calls[0]; const auto &request = *call.request;
+      return model.recursive_ahead && call.disposition == EvaluationDisposition::kPublished &&
+          !request.progress.turn_done && request.progress.remaining_outputs() > 1 &&
+          !request.session->stopping && !request.session->failed && request.session->head &&
+          request.session->head.get() == model.recursive_ahead->candidate &&
+          request.session->head.epoch() == model.recursive_ahead->epoch &&
+          request.session->length() == model.recursive_ahead->length;
+    }
     return !following.empty() && calls[0].disposition == EvaluationDisposition::kPublished &&
         !calls[0].request->session->stopping && !calls[0].request->session->failed &&
         model.active_step && !model.active_step->cancelled;
   }
   void bind_successor() {
+    if (recursive_successor) { model.retain_recursive_ahead(keep_successor()); return; }
     auto &call = following.front(); auto &request = *call.request;
     // A's real publication/observation now supplies B's authoritative before
     // boundary. B consumes known prompt input, never a guessed output token.
@@ -6743,6 +7489,7 @@ struct SynchronousGenerationStepAdapter final {
         call.maximum, call.completion, call.input_begin, call.prefill_complete);
   }
   void discard_successor() {
+    if (recursive_successor) { model.retain_recursive_ahead(false); return; }
     const auto retired = model.discard_successful_episode();
     if (!retired.retired || !retired.status.ok()) {
       inference::EvaluationFailure failure(retired.status.ok()
@@ -6752,13 +7499,18 @@ struct SynchronousGenerationStepAdapter final {
     following.clear(); source.reset();
   }
   void carry(inference::StepCarry disposition) {
+    if (recursive_successor) {
+      if (disposition == inference::StepCarry::kUnavailable || disposition == inference::StepCarry::kCurrent)
+        model.retain_recursive_ahead(keep_successor());
+      return;
+    }
     if (disposition == inference::StepCarry::kDeferred) {
       if (!continuation) throw std::logic_error("deferred prefill lost its original request continuation");
       continuation->hold_current(std::span(following.data(), following.size()), true, true);
       following.clear();
     }
   }
-  void finish_refusal() {}
+  void finish_refusal() { if (recursive_successor) model.retain_recursive_ahead(keep_successor()); }
   void finish_reuse() {}
   inference::RetirementObservation retire_failure(inference::EvaluationFailure *failure) noexcept {
     source.reset();
@@ -6863,6 +7615,8 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
       if (call.verification_ids.empty()) {
         call.verification_prepared = false;
         const auto begin = Clock::now();
+        const auto proposal_rows_begin = call.request->session->submitted_draft_rows;
+        const auto proposal_calls_begin = model.draft_program_graph_calls;
         try {
           std::optional<ConditionalLogitsProposal> dynamic;
           if (call.logits_provider) {
@@ -6873,7 +7627,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
           const auto &sampling = call.request->session->sampling_configuration().configuration;
           const bool device_packet = calls.size() == 1 && !dynamic && !sampling.enabled && sampling.modifiers.empty() &&
               call.maximum > 1 && call.maximum <= 3 && call.maximum == model.max_drafts() &&
-              model.min_draft_probability() == 0 && model.execution.kind() == BackendKind::kCuda &&
+              model.execution.kind() == BackendKind::kCuda &&
               !model.execution.has_cpu_assist() && !model.scheduler &&
               model.cache_plan.active_sequences == 1 && model.cache_plan.auxiliary_hidden_rows >= 2 &&
               model.replay_policy != ReplayPolicy::kCommands && call.request->trace.empty();
@@ -6885,6 +7639,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
                   // The last ID is produced by this Source, never by the host
                   // placeholder. Exact row count and all target states are known.
                   std::array<std::int32_t, 4> shape{};
+                  shape[0] = call.pending;
                   if (prefix_ids.size() >= shape.size()) throw std::logic_error("device verifier packet exceeds its bounded K3 shape");
                   std::copy(prefix_ids.begin(), prefix_ids.end(), shape.begin());
                   const std::array input{EvaluationRequest{call.request->session, std::span(shape).first(prefix_ids.size() + 1),
@@ -6893,9 +7648,10 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
                   model.prepare_evaluations(input, nullptr, GraphRole::kVerify);
                   call.verification_prepared = true;
                   ++model.device_verification_handoffs;
-                });
+                }, &call.prepaid_draft_rows);
           } else call.verification_ids = model.propose_recursive(*call.request->session, call.maximum, eos,
-              &call.draft_log_probabilities, &call.request->ledger->stop_policy(), call.logits, {}, dynamic ? &*dynamic : nullptr);
+              &call.draft_log_probabilities, &call.request->ledger->stop_policy(), call.logits, {}, dynamic ? &*dynamic : nullptr,
+              nullptr, &call.prepaid_draft_rows);
           if (dynamic) {
             call.conditional_logits = inference::ConditionalLogitsInputs(dynamic->rows);
             call.logits.bias = {}; call.logits.allowed = {};
@@ -6916,6 +7672,8 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
           throw;
         }
         call.proposal_seconds = std::chrono::duration<double>(Clock::now() - begin).count();
+        call.proposal_input_rows = call.request->session->submitted_draft_rows - proposal_rows_begin;
+        call.proposal_graph_calls = model.draft_program_graph_calls - proposal_calls_begin;
         // Preparation already overlapped the producer and is paid in proposal
         // wall time. The remaining target stage starts here, exactly once.
         if (call.verification_prepared) model.active_step->step_start = Clock::now();
@@ -6952,9 +7710,13 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
   }
   SynchronousGenerationStepAdapter<AfterSubmit, BatchObserver> adapter(model, calls, trace_states,
       packed_prefill, packed_verification_capacity, after_submit, batch_observer,
-      defer_successor ? continuation : nullptr);
-  (void)inference::drive_steps(adapter, {.defer_successor = defer_successor,
-      .cursor = defer_successor && continuation ? &continuation->drive_cursor : nullptr});
+      continuation);
+  // A recursive successor is the original private first-head episode rather
+  // than a second target Step. Finish it in this existing synchronous driver;
+  // the shared deferred cursor describes only real target Step successors.
+  const bool defer_target = defer_successor && !adapter.recursive_pipeline();
+  (void)inference::drive_steps(adapter, {.defer_successor = defer_target,
+      .cursor = defer_target && continuation ? &continuation->drive_cursor : nullptr});
 }
 
 void publish_generation_prompt(Model &model, PreparedGenerationCall &call, cache::PrefixCache *prefix) {
@@ -8234,6 +8996,7 @@ int qwen35::run(int argc, char **argv) {
         "  --mtp off|on                Multi-token prediction (default: off)\n"
         "  --mtp-max-drafts N          Maximum proposals; 0 disables drafting (default: 1)\n"
         "  --mtp-min-probability FLOAT  Stop below max draft probability, [0,1] (default: 0)\n"
+        "  --mtp-threshold-mode filter|extend  Filter current draft or stop extending (default: filter)\n"
         "  --mtp-draft-vocabulary auto|full|FILE  Prepared draft IDs (default: auto); greedy only\n"
         "  --sampling greedy|random    Token selection (default: greedy)\n"
         "  --temperature FLOAT         Random policy temperature > 0 (default: 1)\n"
@@ -8267,6 +9030,7 @@ int qwen35::run(int argc, char **argv) {
     bool explicit_mtp_drafts = false;
     float min_draft_probability = 0;
     bool explicit_mtp_probability = false;
+    bool extend_draft_probability = false, explicit_mtp_threshold_mode = false;
     qwen35::Model::Sampling sampler;
     bool explicit_sampling_parameters = false;
     bool single_schedule = false, multiple_schedules = false;
@@ -8351,6 +9115,11 @@ int qwen35::run(int argc, char **argv) {
           throw std::runtime_error("--mtp-max-drafts requires a nonnegative integer within the supported size range");
         explicit_mtp_drafts = true;
       }
+      else if (option == "--mtp-threshold-mode") {
+        if (value != "filter" && value != "extend")
+          throw std::runtime_error("--mtp-threshold-mode requires filter or extend");
+        extend_draft_probability = value == "extend"; explicit_mtp_threshold_mode = true;
+      }
       else if (option == "--mtp-draft-vocabulary") {
         if (value.empty()) throw std::runtime_error("--mtp-draft-vocabulary requires a nonempty file path");
         draft_vocabulary = value;
@@ -8406,7 +9175,7 @@ int qwen35::run(int argc, char **argv) {
       // A prepared, source-bound asset is policy, not a guess based on vocab
       // size or on this request's tokens. Other sampling policies keep the
       // original full-vocabulary path. A stale asset still fails validation.
-      if (mtp_enabled && max_drafts && !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0) {
+      if (mtp_enabled && max_drafts && !sampler.enabled && sampler.modifiers.empty()) {
         const auto prepared = input / "mtp-draft-vocabulary.ids";
         std::error_code error;
         const auto exists = std::filesystem::exists(prepared, error);
@@ -8415,8 +9184,8 @@ int qwen35::run(int argc, char **argv) {
       }
     }
     if (!draft_vocabulary.empty() && (!mtp_enabled || !max_drafts ||
-        sampler.enabled || !sampler.modifiers.empty() || min_draft_probability != 0))
-      throw std::runtime_error("--mtp-draft-vocabulary requires --mtp on, active drafting, unmodified greedy sampling and zero minimum probability");
+        sampler.enabled || !sampler.modifiers.empty()))
+      throw std::runtime_error("--mtp-draft-vocabulary requires --mtp on, active drafting and unmodified greedy sampling");
     backend_selection = qwen35::select_execution(backend_selection, cpu_ffn_layers);
     auto weight_source = qwen35::prepare_weight_source(input / "weights.tsv", mtp_enabled, draft_vocabulary);
     const auto geometry = weight_source.roles.geometry;
@@ -8426,6 +9195,7 @@ int qwen35::run(int argc, char **argv) {
       throw std::runtime_error("--top-k exceeds the source vocabulary");
     if (explicit_mtp_drafts && !mtp_enabled) throw std::runtime_error("--mtp-max-drafts requires --mtp on");
     if (explicit_mtp_probability && !mtp_enabled) throw std::runtime_error("--mtp-min-probability requires --mtp on");
+    if (explicit_mtp_threshold_mode && !mtp_enabled) throw std::runtime_error("--mtp-threshold-mode requires --mtp on");
     if (explicit_sampling_parameters && !sampler.enabled)
       throw std::runtime_error("--temperature, --top-k, --top-p and --seed require --sampling random");
     if (sampler.enabled && (!layer0_probe.empty() || preparation_diagnostics))
@@ -8458,7 +9228,7 @@ int qwen35::run(int argc, char **argv) {
         !warmup_planned_shapes && max_sessions <= 1 && active_sequences <= 1 &&
         backend_selection.primary == qwen35::BackendKind::kCuda && cpu_ffn_layers == 0 &&
         !sampler.enabled && sampler.modifiers.empty() &&
-        (!mtp_enabled || (capacity > 1 && max_drafts >= 1 && max_drafts <= 3 && min_draft_probability == 0));
+        (!mtp_enabled || (capacity > 1 && max_drafts >= 1 && max_drafts <= 3));
     if (require_bounded_generation && !bounded_generation)
       throw std::runtime_error("bounded natural generation requires CUDA without CPU assist, unmodified greedy, ordinary or K1-K3 MTP without a draft threshold, one session, auto or 1 for max-sessions/active-sequences, prefix off and lazy shape preparation");
     if (max_prefill_rows != SIZE_MAX && !natural_generation)
@@ -8569,22 +9339,26 @@ int qwen35::run(int argc, char **argv) {
     // A continuous conditional successor retains its completed producer until
     // the consumer really retires. Count that third original batch in the
     // existing page/state bound, independently of simultaneous GPU work.
+    // Keep legacy explicit K2/K3 on their original preparation/relay route.
+    // The new adaptive policy opts into its finite private Source carriers.
+    const bool recursive_overlap = extend_draft_probability && mtp_enabled && max_drafts > 1 && max_drafts <= 3 &&
+        requested_active == 1 && !prefix_enabled;
     bool overlap_selected = decode_overlap && natural_generation &&
-        (!mtp_enabled || (max_drafts == 1 && min_draft_probability == 0)) && !progress &&
+        (!mtp_enabled || (max_drafts == 1 && min_draft_probability == 0) || recursive_overlap) && !progress &&
         qwen35::DeviceRelayCapabilities{backend_selection.primary, cpu_ffn_layers != 0,
             progress, sampler.enabled, !sampler.modifiers.empty()}.eligible() &&
         replay != qwen35::ReplayPolicy::kCommands && (trace.empty() || !trace_states) &&
         (bounded_generation ? capacity >= 10 : std::ranges::any_of(generation_schedules, [](const auto &request) {
           return std::ranges::any_of(request.turns, [](const auto &turn) { return turn.max_outputs >= 10; });
         }));
-    const bool continuous_mtp_candidate = overlap_selected && mtp_enabled && !prefix_enabled &&
+    const bool continuous_mtp_candidate = overlap_selected && mtp_enabled && max_drafts == 1 && !prefix_enabled &&
         cached_slots == 1 && requested_active == 1 && weight_source.cache_storage.empty() &&
         geometry.attention_layers() && geometry.vocabulary <= (std::int64_t{1} << 24) &&
         geometry.key_depth == geometry.value_depth &&
         (geometry.key_depth == 64 || geometry.key_depth == 128 || geometry.key_depth == 256);
     auto overlap_depth = continuous_mtp_candidate ? std::size_t{3} : std::size_t{2};
     bool device_verification_selected = mtp_enabled && max_drafts > 1 && max_drafts <= 3 &&
-        min_draft_probability == 0 && !sampler.enabled && sampler.modifiers.empty() &&
+        !sampler.enabled && sampler.modifiers.empty() &&
         backend_selection.primary == qwen35::BackendKind::kCuda && !cpu_ffn_layers && !progress &&
         requested_active == 1 && replay != qwen35::ReplayPolicy::kCommands;
     const auto plan_for = [&](std::size_t residents) {
@@ -8592,7 +9366,9 @@ int qwen35::run(int argc, char **argv) {
           mtp_enabled && mtp_has_decode ? (std::max)(max_query_rows, std::size_t{2}) : max_query_rows, recurrent_payload,
           active_sequences == 0 ? residents : requested_active,
           mtp_enabled ? max_drafts + 1 : 1, mtp_enabled, sampler.enabled, overlap_selected ? overlap_depth : 1,
-          device_verification_selected && (active_sequences == 0 ? residents : requested_active) == 1 ? 2 : 0);
+          device_verification_selected && (active_sequences == 0 ? residents : requested_active) == 1 ? 2 : 0,
+          extend_draft_probability && device_verification_selected &&
+              (active_sequences == 0 ? residents : requested_active) == 1 ? max_drafts - 1 : 0);
     };
     const auto minimum_residents = active_sequences == 0 ? std::size_t{1} : requested_active;
     auto selected_cache = plan_for(cached_slots);
@@ -8641,7 +9417,7 @@ int qwen35::run(int argc, char **argv) {
     const auto metadata_prepare_seconds = weight_source.metadata_prepare_seconds;
     const auto model_start = qwen35::Clock::now();
     qwen35::Model model(std::move(weight_source), geometry, capacity, selected_cache, layer0_probe, progress, replay, cache_bytes, sampler, cpu_ffn_layers, backend_selection);
-    model.configure_draft_policy({max_drafts, min_draft_probability});
+    model.configure_draft_policy({max_drafts, min_draft_probability, extend_draft_probability});
     const auto constructed = qwen35::Clock::now();
     if (!trace.empty()) model.trace_routes = trace / "routes";
     if (natural_generation) {

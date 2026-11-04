@@ -61,7 +61,7 @@ struct Plan final {
   std::size_t hidden_row_bytes = 0, hidden_bytes = 0, backing_bytes = 0;
   std::size_t attention_layers = 0, recurrent_layers = 0;
   bool draft_cache = false;
-  std::size_t auxiliary_hidden_rows = 0;
+  std::size_t auxiliary_hidden_rows = 0, auxiliary_pages = 0;
 };
 inline Plan plan(const ModelGeometry &geometry, CacheRowBytes row_bytes,
                  std::size_t context, std::size_t residents,
@@ -69,10 +69,11 @@ inline Plan plan(const ModelGeometry &geometry, CacheRowBytes row_bytes,
                   std::size_t active_sequences = 1,
                    std::size_t candidate_boundaries = 1,
                    bool draft_cache = false, bool frontier_hidden = false,
-                   std::size_t in_flight_batches = 1, std::size_t auxiliary_hidden_rows = 0) {
+                   std::size_t in_flight_batches = 1, std::size_t auxiliary_hidden_rows = 0,
+                   std::size_t auxiliary_pages = 0) {
   geometry.validate();
-  if (auxiliary_hidden_rows && !draft_cache)
-    throw std::runtime_error("private draft hidden rows require a draft cache");
+  if ((auxiliary_hidden_rows || auxiliary_pages) && !draft_cache)
+    throw std::runtime_error("private draft capacity requires a draft cache");
   if (!row_bytes.target.key || !row_bytes.target.value ||
       ((!row_bytes.draft.key) != (!row_bytes.draft.value)) ||
       (draft_cache && (!row_bytes.draft.key || !row_bytes.draft.value)))
@@ -90,7 +91,9 @@ inline Plan plan(const ModelGeometry &geometry, CacheRowBytes row_bytes,
   // beside the N committed complete-context capacities. This is a capacity
   // bound, not permission to reuse an in-flight page or publish a candidate.
   const auto pending_sequences = multiply(in_flight_batches, active_sequences);
-  const auto pages = add(multiply(refs, residents), pending_sequences);
+  // Private head successors retain real COW pages but create no target state
+  // version. Charge their pages without inventing extra recurrent snapshots.
+  const auto pages = add(add(multiply(refs, residents), pending_sequences), auxiliary_pages);
   const auto snapshots = add(residents, pending_sequences);
   // Each verifier prefix has independent material state, while its episode
   // still creates one unpublished version. Committed heads may retain carry
@@ -128,6 +131,7 @@ inline Plan plan(const ModelGeometry &geometry, CacheRowBytes row_bytes,
   result.hidden_bytes = hidden_bytes;
   result.draft_cache = draft_cache;
   result.auxiliary_hidden_rows = auxiliary_hidden_rows;
+  result.auxiliary_pages = auxiliary_pages;
   result.hidden_row_bytes = geometry.hidden_bytes();
   result.attention_layers = geometry.attention_layers(); result.recurrent_layers = geometry.recurrent_layers();
   const auto bank_rows = multiply(pages, Plan::page_rows);
