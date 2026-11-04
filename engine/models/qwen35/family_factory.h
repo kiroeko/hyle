@@ -27,6 +27,9 @@ struct PreparedSampling; // Stable owner lives in the original ColdResources.
 
 struct FamilyPorts {
   std::size_t prefix_rows = 1;
+  bool recursive_repair = false;
+  bool recursive_single_repair = false;
+  V repair_lag_port;
   // Only the opt-in continuation Family emits its own next device decision
   // and writes the complete raw append envelope for a later real Source.
   bool continuous_device_successor = false;
@@ -108,6 +111,7 @@ struct FamilyPreparedFacts final {
   // accepted-prefix metadata/state/retirement route.
   bool device_acceptance_successor = false;
   bool continuous_device_successor = false;
+  bool recursive_repair = false;
 };
 struct FamilyCompileContext final {
   inference::Backend &execution;

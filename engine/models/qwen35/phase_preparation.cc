@@ -75,7 +75,7 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
       }
     if (phase.hidden_state.store.valid())
       add_bank({.kind = StateBankKind::kHidden}, phase.hidden_state,
-          has_mtp(role) ? cache::multiply(requests, draft_lag(role) + 1) : 0);
+          phase.recursive_repair ? 2 : has_mtp(role) ? cache::multiply(requests, draft_lag(role) + 1) : 0);
     std::erase_if(phase.state_resource_ports, [&](V value) {
       return value.kind() != g::ValueKind::kInput && !phase.child->output(value).caller_owned();
     });
@@ -169,11 +169,13 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
         }
         if (float_predicates) io.sampling_scratch.resize(requests);
       }
-      if (has_mtp(role)) {
-        const auto draft_rows = is_mtp_prefill(role) ? t + static_cast<std::int64_t>(draft_lag(role)) : static_cast<std::int64_t>(draft_lag(role) + 1);
+      if (has_mtp(role) || phase.recursive_repair) {
+        const auto draft_rows = phase.recursive_repair ? phase.recursive_single_repair ? 2 : t
+            : is_mtp_prefill(role) ? t + static_cast<std::int64_t>(draft_lag(role)) : static_cast<std::int64_t>(draft_lag(role) + 1);
         io.draft_positions = phase_tensor(allocation_budget, execution.device(), requests == 1 ? dense(Type::kInt32, {draft_rows})
             : dense(Type::kInt32, {static_cast<std::int64_t>(requests), draft_rows}));
-        if (draft_lag(role)) io.catchup_token = phase_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
+        if (draft_lag(role) || phase.recursive_repair) io.catchup_token = phase_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
+        if (phase.recursive_repair) io.repair_lag = phase_tensor(allocation_budget, execution.device(), dense(Type::kBool, {1}));
         if (packs_prefill(definition.packing) || compact_draft) {
           const auto count = cache::multiply(requests, static_cast<std::size_t>(draft_rows));
           const auto description = dense(Type::kInt32, {static_cast<std::int64_t>(count)});
@@ -228,6 +230,7 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
           io.logits.caller_owned() + io.final_hidden.caller_owned();
       if (has_mtp(role)) fixed_count += 1 + bool(draft_lag(role)) +
           ((packs_prefill(definition.packing) || compact_draft) ? 1 + bool(draft_lag(role)) : 0) + compact_draft;
+      if (phase.recursive_repair) fixed_count += 3;
       if (diagnostic) for (const auto *output : phase.probe_facts)
         fixed_count += output && output->caller_owned();
       const auto readback_count = bool(phase.sampling_valid_port) + bool(phase.sampling_accept_port) +
@@ -283,6 +286,11 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
         }
         if (compact_draft) check(program_slot.io.add_fixed(phase.draft_last_ids_port, io.draft_last_ids.read()));
         if (drafts_token(role)) io.draft_id = take(program_slot.io.add_readback(phase.draft_id_port, execution.storage_domains(), allocation_budget));
+      }
+      if (phase.recursive_repair) {
+        check(program_slot.io.add_fixed(phase.draft_position_port, io.draft_positions.read()));
+        check(program_slot.io.add_fixed(phase.catchup_token_port, io.catchup_token.read()));
+        check(program_slot.io.add_fixed(phase.repair_lag_port, io.repair_lag.read()));
       }
       if (diagnostic) for (std::size_t i = 0; i < phase.probe_ports.size(); ++i)
         if (const auto *output = phase.probe_facts[i]; output && output->caller_owned())
