@@ -201,6 +201,10 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
   const bool device_continuation = role == GraphRole::kMtpContinuation;
   const bool continuous_successor = device_continuation && prepared.continuous_device_successor;
   const bool emit_device_decision = prepared.device_acceptance_successor || continuous_successor;
+  const bool repair_draft = prepared.recursive_draft_repair;
+  if (repair_draft && (role != GraphRole::kVerify || requests != 1 || prefix_rows < 2 ||
+      packing != RowPacking::kRectangular || selected_sampler.enabled || !selected_sampler.modifiers.empty()))
+    throw std::runtime_error("fused draft repair requires the original greedy exact R1 verifier");
   if (device_continuation && (requests != 1 || prefix_rows != 2 ||
       packing != RowPacking::kRectangular || completion != TextCompletion::kEmitNext ||
       selected_sampler.enabled || !selected_sampler.modifiers.empty() ||
@@ -217,6 +221,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     auto result = std::make_unique<Family>();
     auto &definition = *result;
     definition.continuous_device_successor = continuous_successor;
+    definition.recursive_draft_repair = repair_draft;
     definition.layers.resize(geometry.layers.size()); definition.attention_nodes.resize(target_kv_layers);
     definition.append_nodes.resize(draft_bank + 2);
     definition.append_cache_inputs.resize(draft_bank + 2);
@@ -311,6 +316,18 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
       return r.copy(r.slice(values, 0, f(static_cast<std::int64_t>(row)), f(1)));
     };
     D draft_sequence_rows = f(0), draft_packed_rows = f(0);
+    if (repair_draft) {
+      auto &port = definition.hidden_state;
+      port.pool = r.input(take(hidden_schema.capacity_description()));
+      port.source_ids = r.input(dense(Type::kInt32, {2}));
+      const auto gathered = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
+          {port.pool, port.source_ids}, r.dense_spec(precision.activation_type(), {f(2), f(hidden)}), &port.gather);
+      definition.carry_input_port = r.slice(gathered, 0, f(0), f(1));
+      definition.prior_input_port = r.slice(gathered, 0, f(1), f(1));
+      definition.draft_position_port = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(prefix_rows)}));
+      definition.catchup_token_port = r.input(dense(Type::kInt32, {1}));
+      definition.repair_lag_port = r.input(dense(Type::kInt32, {1}));
+    }
     if (has_mtp(role)) {
       auto &port = definition.hidden_state;
       const auto source_rows = f(static_cast<std::int64_t>(cache::multiply(requests, draft_lag(role) + 1)));
@@ -472,6 +489,32 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     }
     // The selected child decides caller-written versus generated result storage.
     const auto normalized_last = r.norm(x, "norm.weight");
+    if (repair_draft) {
+      const auto rows = static_cast<std::int64_t>(prefix_rows);
+      const auto previous = r.copy(r.slice(normalized_last, 0, f(0), f(rows - 1)));
+      const auto lag0_hidden = r.one(c::Concat{.axis = 0}, {definition.carry_input_port, previous},
+          r.dense_spec(precision.activation_type(), {f(rows), f(hidden)}));
+      const auto lag1_prefix = r.one(c::Concat{.axis = 0},
+          {definition.prior_input_port, definition.carry_input_port},
+          r.dense_spec(precision.activation_type(), {f(2), f(hidden)}));
+      const auto lag1_hidden = rows == 2 ? lag1_prefix : r.one(c::Concat{.axis = 0},
+          {lag1_prefix, r.copy(r.slice(normalized_last, 0, f(0), f(rows - 2)))},
+          r.dense_spec(precision.activation_type(), {f(rows), f(hidden)}));
+      const auto lag1_ids = r.one(c::Concat{.axis = 0},
+          {definition.catchup_token_port, r.copy(r.slice(target_tokens, 0, f(0), f(rows - 1)))},
+          r.dense_spec(Type::kInt32, {f(rows)}));
+      const auto lag = r.cast(r.cast(definition.repair_lag_port, Type::kFloat32), Type::kBool);
+      const auto ids = r.one(c::Select{}, {lag, lag1_ids, target_tokens}, r.dense_spec(Type::kInt32, {f(rows)}));
+      const auto hidden_rows = r.one(c::Select{}, {lag, lag1_hidden, lag0_hidden},
+          r.dense_spec(precision.activation_type(), {f(rows), f(hidden)}));
+      const auto projection = mtp::input_projection(r, ids, hidden_rows);
+      const auto kv = mtp::project_kv(r, projection, definition.draft_position_port, frequencies,
+          mtp::Geometry{1, f(rows), f(rows)});
+      const auto append = mtp::append_kv(r, attention_schema, kv);
+      if (has_prior_append) check(r.builder.depends_on(append.key, prior_append));
+      definition.append_nodes[draft_bank] = append.key; definition.append_nodes[draft_bank + 1] = append.value;
+      prior_append = append.value; has_prior_append = true;
+    }
     if (is_mtp_prefill(role)) {
       const auto kv = mtp::prefill_kv(r, definition.token_port, normalized_last,
           definition.carry_input_port, definition.prior_input_port, definition.catchup_token_port,
@@ -501,7 +544,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
       r.op(c::Operation::custom(g::slots::Store{hidden_schema}),
           {retained, port.destination_ids}, {}, &port.store);
       if (has_prior_append) check(r.builder.depends_on(port.store, prior_append));
-      if (has_mtp(role)) definition.state_sources.push_back({port.store, port.gather});
+      if (has_mtp(role) || repair_draft) definition.state_sources.push_back({port.store, port.gather});
     }
     definition.hidden_port = last;
     // Private View outputs cannot lend an independent storage lease to a

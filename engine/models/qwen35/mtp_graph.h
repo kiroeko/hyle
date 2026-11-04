@@ -308,7 +308,8 @@ AppendNodes append_kv(R &r, const compute::BatchSchema &schema, const KeyValue &
 template<class R, class Scores>
 Head full_head(R &r, const Projection &projection, const KeyValue &kv,
                Value positions, Value frequencies, const PagedInputs &paged,
-               Dimension last_row, const Geometry &shape, Scores &&scores, Value last_indices = {}) {
+               Dimension last_row, const Geometry &shape, Scores &&scores, Value last_indices = {},
+               bool selected_row_only = false) {
   detail::coordinates(r, shape, positions, frequencies);
   if (projection.rows != shape.packed_rows || kv.rows != projection.rows || (!last_indices && last_row.is_fixed() &&
       (last_row.fixed_value() < 0 || (shape.sequence_rows.is_fixed() &&
@@ -342,16 +343,23 @@ Head full_head(R &r, const Projection &projection, const KeyValue &kv,
       r.dense_spec(r.activation_type(), {projection.rows, fixed(r.geometry.query_heads), fixed(r.geometry.value_depth)}), &attention_node);
   detail::require(r.builder.depends_on(attention_node, nodes.key));
   detail::require(r.builder.depends_on(attention_node, nodes.value));
-  const auto gated = r.binary(compute::BinaryKind::kMultiply,
+  auto gated = r.binary(compute::BinaryKind::kMultiply,
       r.reshape(attention, {projection.rows, fixed(r.geometry.attention_width())}),
       r.unary(compute::UnaryKind::kSigmoid, gate));
-  auto x = r.binary(compute::BinaryKind::kAdd, projection.fused,
+  auto residual = projection.fused;
+  if (selected_row_only) {
+    if (shape.requests != 1 || last_indices || !last_row.is_fixed())
+      throw std::runtime_error("MTP last-only block requires one fixed original row");
+    gated = r.copy(r.slice(gated, 0, last_row, fixed(1)));
+    residual = r.copy(r.slice(residual, 0, last_row, fixed(1)));
+  }
+  auto x = r.binary(compute::BinaryKind::kAdd, residual,
       detail::linear_absolute(r, gated, "mtp.layers.0.self_attn.o_proj.weight"));
   x = block_graph::emit_ffn(r, x, "mtp.layers.0.");
   const auto hidden_rows = detail::norm_absolute(r, x, "mtp.norm.weight");
   // Compact members name their actual final packed row; the caller derives
   // these indices from the same layout that bounds the original KV appends.
-  const auto selected = last_indices
+  const auto selected = selected_row_only ? r.copy(hidden_rows) : last_indices
       ? r.one(compute::Gather{.axis = 0, .bounds = compute::IndexBoundsPolicy::kChecked},
           {hidden_rows, last_indices}, r.dense_spec(r.activation_type(), {batch, fixed(r.geometry.hidden)}))
       : shape.requests == 1

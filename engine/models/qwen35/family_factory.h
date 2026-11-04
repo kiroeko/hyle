@@ -30,6 +30,7 @@ struct FamilyPorts {
   // Only the opt-in continuation Family emits its own next device decision
   // and writes the complete raw append envelope for a later real Source.
   bool continuous_device_successor = false;
+  bool recursive_draft_repair = false;
   V token_port, position_port, last_ids_port, metadata_port, logits_port, id_port, hidden_port;
   V sampling_identity_port, sampling_valid_port, sampling_accept_port;
   V sequence_offsets_port, history_select_port, prefix_ids_port;
@@ -50,6 +51,7 @@ struct FamilyPorts {
   // prefix0 candidate; these carry prefix1. Prefix choice is I32[1].
   V predecessor_prefix_port, continuation_position_port, continuation_draft_position_port;
   V draft_hidden_select_port, draft_token_select_port, draft_last_ids_port;
+  V repair_lag_port;
   StatePorts hidden_state;
   g::NodeId draft_attention_node;
   std::vector<V> state_resource_ports;
@@ -108,6 +110,7 @@ struct FamilyPreparedFacts final {
   // accepted-prefix metadata/state/retirement route.
   bool device_acceptance_successor = false;
   bool continuous_device_successor = false;
+  bool recursive_draft_repair = false;
 };
 struct FamilyCompileContext final {
   inference::Backend &execution;

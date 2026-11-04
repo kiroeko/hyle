@@ -18,12 +18,122 @@ Tensor auxiliary_tensor(const c::ResourceBudget &budget, mem::MemoryResourceRef 
                         c::TensorDesc description, bool caller = true) {
   return Tensor(resource, description, caller, budget);
 }
+
+AuxiliaryProgramResult<DraftProgram> build_draft_chain(
+    const DraftProgramRequest &request, const FamilyModelFacts &model,
+    const DraftProgramFacts &facts, const SamplingConfiguration &sampling,
+    const AuxiliaryCompileContext &context) {
+  if (!request.head || request.rows < 1 || request.rows > 2 || request.steps < 2 || request.steps > 3 ||
+      request.steps >= facts.candidate_boundaries || request.minimum_probability != 0 ||
+      sampling.enabled || !sampling.modifiers.empty())
+    throw std::runtime_error("draft chain requires bounded unmodified greedy original inputs");
+  auto &execution = context.execution;
+  const auto &geometry = model.geometry;
+  const auto rows = static_cast<std::int64_t>(request.rows);
+  const auto total = static_cast<std::int64_t>(request.rows + request.steps - 1);
+  auto prepared = std::make_unique<DraftProgram>(); auto &program = *prepared;
+  program.rows = request.rows; program.steps = request.steps; program.head = true;
+  program.sampling_index = request.sampling_index; program.replay_mode = request.replay_mode;
+  program.chain.reserve(request.steps); program.chain_pages.resize(request.steps);
+  GraphAssembly assembly(execution, model.precision, context.allocation_budget);
+  Recipe r(model.weights, model.projections, assembly, geometry, total, 1, &model.weight_meanings);
+  program.tokens = r.input(dense(Type::kInt32, {rows}));
+  program.positions = r.input(dense(Type::kInt32, {total}));
+  const auto hidden_schema = take(g::slots::Schema::create(
+      dense(model.precision.activation_type(), {1, geometry.hidden}), facts.hidden_slots,
+      cache::add(geometry.hidden_bytes(), cache::state_pool_padding(geometry.hidden_bytes()))));
+  auto &port = program.hidden_state;
+  port.pool = r.input(take(hidden_schema.capacity_description()));
+  port.source_ids = r.input(dense(Type::kInt32, {rows}));
+  port.destination_ids = r.input(dense(Type::kInt32, {1}));
+  auto shifted = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
+      {port.pool, port.source_ids}, r.dense_spec(r.activation_type(), {f(rows), f(geometry.hidden)}), &port.gather);
+  std::vector<float> frequency(static_cast<std::size_t>(geometry.rotary / 2));
+  for (std::size_t i = 0; i < frequency.size(); ++i)
+    frequency[i] = 1.F / std::pow(geometry.rope_theta, float(i) / static_cast<float>(frequency.size()));
+  auto &literal = assembly.literal_at(assembly.primary(), dense(Type::kFloat32, {geometry.rotary / 2}));
+  literal.write<float>(frequency);
+  const auto frequencies = r.constant(literal);
+  auto ids = program.tokens;
+  mtp::Projection prefix;
+  mtp::KeyValue prefix_kv;
+  std::vector<V> packet{r.copy(r.slice(program.tokens, 0, f(rows - 1), f(1)))};
+  for (std::size_t i = 0; i < request.steps; ++i) {
+    const auto width = static_cast<std::int64_t>(request.rows + i);
+    const auto local_rows = i ? std::int64_t{1} : rows;
+    const auto local_positions = r.copy(r.slice(program.positions, 0, i ? f(width - 1) : f(0), f(local_rows)));
+    auto projection = mtp::input_projection(r, ids, shifted);
+    auto kv = mtp::project_kv(r, projection, local_positions, frequencies,
+        mtp::Geometry{1, f(local_rows), f(local_rows)});
+    if (i) {
+      projection = {f(width),
+          r.one(c::Concat{.axis = 0}, {prefix.fused, projection.fused},
+              r.dense_spec(r.activation_type(), {f(width), f(geometry.hidden)})),
+          r.one(c::Concat{.axis = 0}, {prefix.normalized, projection.normalized},
+              r.dense_spec(r.activation_type(), {f(width), f(geometry.hidden)}))};
+      kv = {f(width),
+          r.one(c::Concat{.axis = 0}, {prefix_kv.key_rows, kv.key_rows},
+              r.dense_spec(r.activation_type(), {f(width), f(geometry.kv_heads), f(geometry.key_depth)})),
+          r.one(c::Concat{.axis = 0}, {prefix_kv.value_rows, kv.value_rows},
+              r.dense_spec(r.activation_type(), {f(width), f(geometry.kv_heads), f(geometry.value_depth)}))};
+    }
+    DraftProgram::ChainStage stage;
+    stage.rows = static_cast<std::size_t>(width);
+    stage.key = r.input(take(c::batch_cache_description(facts.attention_schema, c::BatchCacheRole::kKey)));
+    stage.value = r.input(take(c::batch_cache_description(facts.attention_schema, c::BatchCacheRole::kValue)));
+    stage.metadata = r.input(take(facts.attention_schema.metadata_description()));
+    const auto positions = r.copy(r.slice(program.positions, 0, f(0), f(width)));
+    const auto result = mtp::full_head(r, projection, kv, positions, frequencies,
+        {facts.attention_schema, stage.key, stage.value, stage.metadata}, f(width - 1),
+        mtp::Geometry{1, f(width), f(width)},
+        [&](Recipe &recipe, V selected) { return draft_scores(recipe, selected, facts.projection); }, {}, i != 0);
+    stage.append = result.append_nodes; stage.attention = result.attention_node;
+    program.chain.push_back(stage);
+    program.hidden = result.selected_hidden;
+    program.id = original_draft_id(r, r.op(c::Operation(c::TopK{.count = 1}), {result.logits},
+        {r.dense_spec(Type::kFloat32, {f(1), f(1)}), r.dense_spec(Type::kInt32, {f(1), f(1)})})[1], facts.projection);
+    ids = r.reshape(program.id, {f(1)}); shifted = program.hidden;
+    packet.push_back(ids); prefix = projection; prefix_kv = kv;
+  }
+  r.op(c::Operation::custom(g::slots::Store{hidden_schema}),
+      {program.hidden, port.destination_ids}, {}, &port.store);
+  check(r.builder.depends_on(port.store, program.chain.back().append.value));
+  program.verification_packet = r.copy(r.concat(packet, 0,
+      r.dense_spec(Type::kInt32, {f(static_cast<std::int64_t>(packet.size()))})));
+  r.publish(program.verification_packet);
+  program.graph = take(std::move(r.builder).finish());
+  const std::array binding{g::ShapeBinding{r.last_row, total - 1}};
+  const std::array variants{g::ExactShapeVariant{binding}};
+  const std::array stores{port.store};
+  check(program.programs.prepare(take(execution.compile(program.graph, assembly.constants(),
+      assembly.options({.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
+          .constants = assembly.constants(), .resource_budget = context.execution_budget}))),
+      program.graph, variants, {{}, stores}, take(context.execution_budget.metadata_allocator())));
+  const auto &compiled = program.programs.child(0).compiled;
+  check(program.carrier.prepare(compiled, execution.queue_bindings()));
+  const auto plan = inspect_execution_plan(execution, model.cpu_ffn_layers, compiled.report, assembly.constants());
+  program.literals = std::move(assembly.literals);
+  program.token_values = auxiliary_tensor(context.allocation_budget, execution.device(), dense(Type::kInt32, {rows}));
+  program.position_values = auxiliary_tensor(context.allocation_budget, execution.device(), dense(Type::kInt32, {total}));
+  check(program.io.prepare(compiled, 2, 0, 1, 0));
+  check(program.io.add_fixed(program.tokens, program.token_values.read()));
+  check(program.io.add_fixed(program.positions, program.position_values.read()));
+  program.verification_value = take(program.io.add_readback(
+      program.verification_packet, execution.storage_domains(), context.allocation_budget));
+  check(program.io.seal());
+  const std::array specs{inference::SlotTransactionSpec{port.store, request.rows, 1,
+      {.resource_budget = context.cache_budget}}};
+  check(program.hidden_transactions.prepare(specs));
+  return {std::move(prepared), plan};
+}
 } // namespace
 
 AuxiliaryProgramResult<DraftProgram> build_draft_program(
     const DraftProgramRequest &build_request, const FamilyModelFacts &model,
     const DraftProgramFacts &draft_facts, const SamplingConfiguration &configuration,
     const AuxiliaryCompileContext &context) {
+  if (build_request.steps != 1)
+    return build_draft_chain(build_request, model, draft_facts, configuration, context);
   auto &execution = context.execution;
   const auto &allocation_budget = context.allocation_budget;
   const auto &execution_budget = context.execution_budget;

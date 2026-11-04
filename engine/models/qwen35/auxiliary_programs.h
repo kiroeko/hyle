@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <tuple>
 #include <vector>
 
 #include "episode_state.h"
@@ -14,8 +15,18 @@
 
 namespace qwen35 {
 
+struct DraftProgramKey final {
+  std::size_t rows, sampling_index, steps;
+  bool head;
+  DraftProgramKey(std::size_t r, bool h, std::size_t sampling, std::size_t k = 1)
+      : rows(r), sampling_index(sampling), steps(k), head(h) {}
+  DraftProgramKey(std::tuple<std::size_t, bool, std::size_t> original)
+      : DraftProgramKey(std::get<0>(original), std::get<1>(original), std::get<2>(original)) {}
+  friend auto operator<=>(const DraftProgramKey &, const DraftProgramKey &) = default;
+};
+
 struct DraftProgram final {
-  std::size_t rows = 0, sampling_index = 0;
+  std::size_t rows = 0, sampling_index = 0, steps = 1;
   bool head = false;
   g::ReplayMode replay_mode = g::ReplayMode::kCommands;
   std::vector<Tensor> literals;
@@ -29,6 +40,16 @@ struct DraftProgram final {
   inference::ProgramIo::Input bias_input, allowed_input, counts_input;
   StatePorts hidden_state;
   inference::SlotTransactions hidden_transactions;
+  struct ChainStage final {
+    std::size_t rows = 0;
+    V key, value, metadata;
+    mtp::AppendNodes append;
+    g::NodeId attention;
+  };
+  std::vector<ChainStage> chain;
+  // Private COW candidates pin their policy references until the same original
+  // guard has returned every native writer. They are never Session heads.
+  std::vector<inference::PagedSequenceState> chain_pages;
   StepState guard; // The same original episode, cold-prepared for recursive reuse.
   mtp::AppendNodes append;
   g::NodeId attention;
@@ -104,6 +125,7 @@ struct DraftProgramRequest final {
   g::ReplayMode replay_mode = g::ReplayMode::kCommands;
   float minimum_probability = 0;
   std::size_t verification_rows = 0;
+  std::size_t steps = 1;
 };
 struct DraftProgramFacts final {
   const c::BatchSchema &attention_schema;

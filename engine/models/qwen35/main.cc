@@ -397,6 +397,7 @@ public:
   std::uint64_t tail_epoch = 0, draft_tail_epoch = 0;
   // Monotonic accepted-Graph active input rows; never part of a Snapshot or RNG.
   std::size_t submitted_draft_rows = 0;
+  std::size_t proposal_graph_calls = 0;
   StepState *pending = nullptr; // Borrowed from Model; episode pins this Session.
   bool failed = false, stopping = false;
   hyle::Status retirement_status;
@@ -601,7 +602,7 @@ struct ColdResources final {
   const bool retain_sampling_frontier;
   std::map<FamilyKey, std::unique_ptr<Family>> families, probe_families;
   std::map<ExecutionShape, std::unique_ptr<Phase>> phases, probe_phases;
-  std::map<std::tuple<std::size_t, bool, std::size_t>, std::unique_ptr<DraftProgram>> draft_programs;
+  std::map<DraftProgramKey, std::unique_ptr<DraftProgram>> draft_programs;
   std::map<PrefixSamplingKey, std::unique_ptr<PrefixSamplingProgram>> prefix_sampling_programs;
 
   explicit ColdResources(const ModelGeometry &geometry, std::size_t capacity, PrecisionProfile precision,
@@ -881,9 +882,10 @@ public:
   // their shared scratch; IO, state pools and decode carriers stay independent.
   std::size_t bounded_prefill_rows = 0;
   g::InvocationWorkspace execution_workspace;
-  std::map<std::tuple<std::size_t, bool, std::size_t>, std::unique_ptr<DraftProgram>> &draft_programs;
+  std::map<DraftProgramKey, std::unique_ptr<DraftProgram>> &draft_programs;
   std::map<PrefixSamplingKey, std::unique_ptr<PrefixSamplingProgram>> &prefix_sampling_programs;
   std::size_t draft_program_graph_calls = 0, prefix_decision_graph_calls = 0;
+  std::size_t draft_chain_graph_calls = 0, draft_chain_attention_rows = 0;
   std::size_t device_verification_handoffs = 0;
   // Same admission scope as target work: active inputs of original accepted
   // Graph submissions, including discarded/failed work and private NextN.
@@ -1232,6 +1234,8 @@ public:
         << ",\"draft_vocabulary_map_bytes\":" << (resources_->draft_head ? take(resources_->draft_head->original_ids.description.required_bytes()) : 0)
         << ",\"draft_vocabulary_policy\":\"greedy_unmodified_no_threshold\""
         << ",\"draft_program_graph_calls\":" << draft_program_graph_calls
+        << ",\"draft_chain_graph_calls\":" << draft_chain_graph_calls
+        << ",\"draft_chain_attention_rows\":" << draft_chain_attention_rows
         << ",\"device_verification_handoffs\":" << device_verification_handoffs
         << ",\"device_verification_hidden_rows\":" << cache_plan.auxiliary_hidden_rows
         << ",\"prefix_decision_graph_calls\":" << prefix_decision_graph_calls
@@ -1505,7 +1509,9 @@ public:
              (role != GraphRole::kMtpContinuation || device_mtp_continuous_enabled()),
          prepared_draft_projection(subset), device_mtp_successor_ && requests == 1 &&
              drafts_token(role) && (role != GraphRole::kMtpContinuation || device_mtp_continuous_enabled()) &&
-             !selected_sampler.enabled && selected_sampler.modifiers.empty(), device_mtp_continuous_enabled()},
+             !selected_sampler.enabled && selected_sampler.modifiers.empty(), device_mtp_continuous_enabled(),
+         role == GraphRole::kVerify && prefix_rows >= 2 && requests == 1 && packing == RowPacking::kRectangular &&
+             greedy_draft_chain_enabled(selected_sampler) && cache_plan.in_flight_batches >= 3},
         selected_sampler, {execution, allocation_budget, execution_budget});
   }
 
@@ -1727,13 +1733,13 @@ public:
   }
 
   void prepare_draft_program(std::size_t rows, bool head, std::size_t sampling_index = 0,
-      std::size_t planned_uses = 1) {
+      std::size_t planned_uses = 1, std::size_t steps = 1) {
     preparation_started_ = true;
     if (state_storage_prepared || !cache_plan.draft_cache || !rows || rows > capacity)
       throw std::runtime_error("prepare a positive NextN width before selected cache storage");
     const auto selected_index = head ? sampling_index : 0;
     const auto &selected_sampler = sampling_configuration(selected_index).configuration;
-    const auto key = std::tuple{rows, head, selected_index};
+    const DraftProgramKey key{rows, head, selected_index, steps};
     if (draft_programs.contains(key)) return;
     prepare_cache();
     // Optional source transform remains with its original cold Model owner.
@@ -1747,20 +1753,25 @@ public:
         execution.kind() == BackendKind::kCuda && !execution.has_cpu_assist() && !scheduler &&
         cache_plan.active_sequences == 1 && cache_plan.auxiliary_hidden_rows >= 2 &&
         replay_policy != ReplayPolicy::kCommands ? max_drafts() + 1 : 0;
-    auto built = build_draft_program({rows, selected_index, head, replay_mode, min_draft_probability(), packet_rows},
+    auto built = build_draft_program({rows, selected_index, head, replay_mode, min_draft_probability(), packet_rows, steps},
         {geometry, precision, weights, projections, weight_meanings, ffn_placement.cpu_layers()},
         {attention_schema, cache_plan.hidden_slots, cache_plan.active_sequences, cache_plan.candidate_boundaries,
          prepared_draft_projection(subset)}, selected_sampler,
         {execution, allocation_budget, execution_budget, cache_budget});
     auto prepared = std::move(built.program); auto &program = *prepared;
     merge_execution_plan(built.plan);
-    input_scratch.draft_positions.reserve(rows);
-    program.guard.execution.configure(draft_bank + 2);
-    const auto dirty_bound = cache::add(rows, cache::Plan::page_rows - 2) / cache::Plan::page_rows + 1;
-    for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
+    input_scratch.draft_positions.reserve(rows + steps - 1);
+    program.guard.execution.configure(draft_bank + 2 * steps);
+    const auto dirty_bound = cache::add(rows + steps - 1, cache::Plan::page_rows - 2) / cache::Plan::page_rows + 1;
+    for (std::size_t bank = draft_bank; bank < draft_bank + 2 * steps; ++bank)
       program.guard.execution.dirty[bank].reserve(dirty_bound);
-    program.guard.execution.nodes[draft_bank] = program.append.key;
-    program.guard.execution.nodes[draft_bank + 1] = program.append.value;
+    if (steps == 1) {
+      program.guard.execution.nodes[draft_bank] = program.append.key;
+      program.guard.execution.nodes[draft_bank + 1] = program.append.value;
+    } else for (std::size_t i = 0; i < steps; ++i) {
+      program.guard.execution.nodes[draft_bank + 2 * i] = program.chain[i].append.key;
+      program.guard.execution.nodes[draft_bank + 2 * i + 1] = program.chain[i].append.value;
+    }
     initialize_draft_program(program);
     draft_programs.emplace(key, std::move(prepared));
   }
@@ -1781,14 +1792,153 @@ public:
   // alone can take back this NextN append/Store cohort before carrier reset.
   hyle::Result<bool> recover_draft_program(DraftProgram &program) noexcept {
     auto &guard = program.guard;
-    const auto observed = guard.execution.retire(execution);
-    if (!observed.retired) return false;
-    return guard.try_abort();
+    (void)guard.execution.retire(execution);
+    // A completed outgoing packet still owns its original observation. Let
+    // the same guard detach those exports before checking carrier retirement;
+    // recover() retains all writers whenever native work is actually pending.
+    auto recovered = guard.try_abort();
+    if (recovered && *recovered)
+      for (auto &pages : program.chain_pages) pages = {};
+    return recovered;
   }
 
   // Append to an unpublished draft only. The first append uses COW; later
   // recursive rows may extend that private tail. Published Session tails are
   // never borrowed, so aborting proposal/verification leaves the old head valid.
+  bool greedy_draft_chain_enabled(const SamplingConfiguration &sampling) const noexcept {
+    const bool eligible = max_drafts() >= 2 && max_drafts() <= 3 && min_draft_probability() == 0 &&
+        !sampling.enabled && sampling.modifiers.empty() && execution.kind() == BackendKind::kCuda &&
+        !execution.has_cpu_assist() && !scheduler && cache_plan.active_sequences == 1 &&
+        cache_plan.auxiliary_hidden_rows >= 2 && replay_policy != ReplayPolicy::kCommands;
+    if (!eligible) return false;
+    const auto found = projections.find(geometry.head_role());
+    const auto *stored = found == projections.end() ? nullptr : std::get_if<StoredProjection>(&found->second);
+    return stored && stored->weight && stored->weight->description.is_plain();
+  }
+
+  // Each finite stage has independent COW writers from the same real base.
+  // Cumulative KV and the selected hidden/ID remain values in this one Graph;
+  // no intermediate page is promoted or lent as a fabricated ready source.
+  template<class PrepareVerifier = std::nullptr_t>
+  std::vector<std::int32_t> execute_draft_chain(Session &session, std::size_t steps,
+      PrepareVerifier &&prepare_verifier = nullptr) {
+    const auto &base = *session.head->draft;
+    const auto rows = std::size_t{1} + base.lag;
+    auto found = draft_programs.find({rows, true, session.sampling_configuration().index, steps});
+    if (found == draft_programs.end()) throw std::logic_error("draft chain was not cold prepared");
+    auto &program = *found->second; auto &episode = program.guard.execution;
+    if (episode.cleanup_pending) {
+      if (!take(recover_draft_program(program))) throw std::runtime_error("draft chain is still retiring");
+      episode.cleanup_pending = false; episode.terminal = {};
+    }
+    if (!program.carrier.initialized()) initialize_draft_program(program);
+    auto &run = *take(program.carrier.borrow());
+    episode.run = &run; episode.carrier = &program.carrier;
+    episode.state_transactions = &program.hidden_transactions;
+    std::vector<std::int32_t> packet(steps + 1);
+    try {
+      std::array<g::batch::NodeLayout, 3> layouts;
+      std::array<V, 6> cache_inputs;
+      std::size_t attention_rows = 0;
+      for (std::size_t i = 0; i < steps; ++i) {
+        auto &pages = program.chain_pages[i];
+        if (!pages.pages.empty()) throw std::logic_error("draft chain retained a preceding private COW candidate");
+        if (!pages.frames.try_resize(2)) throw std::bad_alloc{};
+        auto &layout = layouts[i].layout;
+        const auto width = program.chain[i].rows;
+        const auto member = [&](std::size_t) noexcept -> inference::PagedAppendMember {
+          return {base.paged, &pages, layout, base.frontier, width};
+        };
+        const auto bank = draft_bank + 2 * i;
+        layout = take(inference::prepare_paged_append(attention_schema, 1,
+            inference::PagedAppendBanks{draft_inventory, std::span(episode.dirty.data() + bank, 2),
+                std::span(episode.tails.data() + bank, 2), std::span(episode.appends.data() + bank, 2)},
+            input_scratch.paged_appends, member,
+            {.capacity_rows = capacity, .append_options = {.resource_budget = cache_budget}}));
+        layouts[i].node = program.chain[i].attention;
+        cache_inputs[2 * i] = program.chain[i].key; cache_inputs[2 * i + 1] = program.chain[i].value;
+        attention_rows = cache::add(attention_rows, width);
+      }
+      std::array<std::int32_t, 2> ids{base.catchup_token, session.head->next_id};
+      program.token_values.write<std::int32_t>(std::span(ids).subspan(base.lag ? 0 : 1));
+      auto &positions = input_scratch.draft_positions; positions.clear();
+      for (std::size_t i = 0; i < rows + steps - 1; ++i)
+        positions.push_back(static_cast<std::int32_t>(base.frontier + i));
+      program.position_values.write<std::int32_t>(positions);
+      auto &transactions = program.hidden_transactions;
+      auto sources = transactions.sources(0);
+      sources[0] = base.lag ? session.head->prior_hidden : session.head->carry_hidden;
+      if (base.lag) sources[1] = session.head->carry_hidden;
+      transactions.writers(0)[0] = take(hidden_pool.allocate(transactions.writer_bytes(0), cache::state_pool_alignment));
+      check(transactions.stage(0));
+      check(episode.prepare_appends(program.graph, std::span(layouts).first(steps), draft_bank, 2 * steps,
+          std::span(cache_inputs).first(2 * steps), {.host_workspace = execution.staging()}));
+      check(episode.bind_consumers(program.programs.child(0).resource_graph()));
+      check(episode.prepare_replay({.mode = program.replay_mode, .host_wait = g::HostWaitPolicy::kReject}));
+      // These are newly projected MTP input rows. Cumulative attention work
+      // is separately reported; it must not be mistaken for new proposals.
+      const auto model_rows = cache::add(submitted_draft_rows, rows + steps - 1);
+      const auto session_rows = cache::add(session.submitted_draft_rows, rows + steps - 1);
+      const auto actual_attention = cache::add(draft_chain_attention_rows, attention_rows);
+      check(episode.submit(resources_));
+      submitted_draft_rows = model_rows; session.submitted_draft_rows = session_rows;
+      draft_chain_attention_rows = actual_attention;
+      if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<PrepareVerifier>>) {
+        episode.sources = std::make_shared<StepSources>();
+        const auto *readback = take(program.io.readback(program.verification_value));
+        const std::array<inference::SubmissionViews::OutputCapture, 1> outputs{{
+            {program.verification_packet, execution.storage_owner(), readback->pool()}}};
+        const auto captured = take(episode.sources->capture_outputs(run, episode.completion,
+            outputs, execution.storage_owner(), true, false));
+        if (captured) {
+          // Only shape and the original pending token are host inputs here.
+          // Every proposal is supplied by the original complete device packet.
+          std::vector<std::int32_t> shape(steps, 0); shape[0] = session.head->next_id;
+          prepare_verifier(std::span<const std::int32_t>(shape), episode.sources, false);
+          check(episode.wait()); check(episode.sources->detach_outputs());
+          prepare_verifier(std::span<const std::int32_t>(shape), episode.sources, true);
+        } else episode.sources.reset();
+      }
+      check(episode.finish_success(draft_bank, 2 * steps, take(program.io.withdrawal_values()),
+          [&]() noexcept { ++draft_program_graph_calls; ++draft_chain_graph_calls; },
+          [&]() -> hyle::Status {
+            check(program.io.read(run, program.verification_value, std::as_writable_bytes(std::span(packet))));
+            if (packet[0] != session.head->next_id || std::ranges::any_of(packet,
+                [&](auto id) { return id < 0 || id >= vocabulary; }))
+              throw std::runtime_error("draft chain packet differs from its original vocabulary/pending token");
+            return hyle::Status::Ok();
+          }, [&]() -> hyle::Status {
+            // Approximate hidden and every private COW page are intentionally
+            // discarded after real success/take; only target repair can commit.
+            check(program.hidden_transactions.clear(0));
+            return hyle::Status::Ok();
+          }));
+      for (auto &append : episode.appends) append = {};
+      for (auto &bank : episode.dirty) bank.clear();
+      for (auto &bank : episode.tails) bank.clear();
+      for (auto &pages : program.chain_pages) pages = {};
+      episode.sources.reset();
+      episode.run = nullptr; episode.carrier = nullptr; episode.state_transactions = nullptr;
+      return packet;
+    } catch (inference::EvaluationFailure &failure) {
+      if (active_step && active_step->execution.incoming && active_step->execution.incoming->owner == episode.sources)
+        (void)abort_episode();
+      episode.cleanup_pending = true;
+      const auto recovered = recover_draft_program(program);
+      if (!recovered) inference::record_retirement_status(episode.terminal, recovered.error());
+      failure.observe_retirement({recovered && *recovered, episode.terminal});
+      if (recovered && *recovered) { episode.cleanup_pending = false; episode.terminal = {}; }
+      throw;
+    } catch (...) {
+      if (active_step && active_step->execution.incoming && active_step->execution.incoming->owner == episode.sources)
+        (void)abort_episode();
+      episode.cleanup_pending = true;
+      const auto recovered = recover_draft_program(program);
+      if (recovered && *recovered) { episode.cleanup_pending = false; episode.terminal = {}; }
+      throw;
+    }
+  }
+
   template<class PrepareVerifier = std::nullptr_t>
   DraftProposal execute_draft(DraftWork &work, std::span<const std::int32_t> ids,
       std::span<const c::ReadLease> shifted, bool head, const std::array<std::uint32_t, 4> &identity = {},
@@ -1797,7 +1947,7 @@ public:
     if (ids.empty() || ids.size() != shifted.size() || !state_storage_prepared ||
         work.state.frontier > capacity || ids.size() > capacity - work.state.frontier)
       throw std::runtime_error("NextN input rows exceed the prepared context or hidden geometry");
-    auto found = draft_programs.find({ids.size(), head, head ? sampling_index : 0});
+    auto found = draft_programs.find({ids.size(), head, head ? sampling_index : 0, 1});
     if (found == draft_programs.end()) throw std::runtime_error("NextN finite program was not cold prepared");
     auto &program = *found->second;
     const auto &selected_sampler = sampling_configuration(program.sampling_index).configuration;
@@ -2021,6 +2171,10 @@ public:
     }
     prepare_draft_program(1, true, sampling_index, planned_uses);
     if (capacity > 1) prepare_draft_program(2, true, sampling_index, planned_uses);
+    if (!conditional && greedy_draft_chain_enabled(selected_sampler))
+      for (std::size_t steps = 2; steps <= max_drafts(); ++steps)
+        for (std::size_t rows = 1; rows <= 2; ++rows)
+          prepare_draft_program(rows, true, sampling_index, planned_uses, steps);
   }
 
   PrefixSamplingResult sample_recursive_prefix(c::ConstTensorView logits,
@@ -3146,6 +3300,36 @@ public:
     if (compact_draft) io.draft_last_ids.write<std::int32_t>(last_rows);
   }
 
+  void prepare_recursive_repair_append(StepState &step) {
+    auto &phase = *step.phase;
+    if (!phase.recursive_draft_repair || step.members.size() != 1 || phase.query_rows < 2)
+      throw std::logic_error("canonical repair append requires its exact R1 verifier");
+    auto &member = step.members[0]; auto &io = phase.slots[step.state_slot].data;
+    const auto &base = *member.base->draft;
+    member.next->draft.emplace(); auto &next = *member.next->draft;
+    if (!next.paged.frames.try_resize(2)) throw std::bad_alloc{};
+    next.frontier = base.frontier + phase.query_rows;
+    const auto member_at = [&](std::size_t) noexcept -> inference::PagedAppendMember {
+      // Never borrow a published tail for speculative target-prefix repair.
+      return {base.paged, &next.paged, member.draft_layout, base.frontier, phase.query_rows};
+    };
+    step.draft_layout = take(inference::prepare_paged_append(attention_schema, 1,
+        inference::PagedAppendBanks{draft_inventory,
+            std::span(step.execution.dirty.data() + draft_bank, 2),
+            std::span(step.execution.tails.data() + draft_bank, 2),
+            std::span(step.execution.appends.data() + draft_bank, 2)},
+        input_scratch.paged_appends, member_at,
+        {.capacity_rows = capacity, .append_options = {.resource_budget = cache_budget}}));
+    auto &positions = input_scratch.draft_positions; positions.clear();
+    for (std::size_t i = 0; i < phase.query_rows; ++i)
+      positions.push_back(static_cast<std::int32_t>(base.frontier + i));
+    io.draft_positions.write<std::int32_t>(positions);
+    const std::array catchup{base.lag ? base.catchup_token : member.first_input};
+    const std::array lag{static_cast<std::int32_t>(base.lag)};
+    io.catchup_token.write<std::int32_t>(catchup); io.repair_lag.write<std::int32_t>(lag);
+    step.active_draft_rows = member.draft_input_rows = phase.query_rows;
+  }
+
   void prepare_device_mtp_inputs(StepState &step, bool recording_only);
 
   void discard_decode_ahead(const Session *session = nullptr) noexcept {
@@ -3762,6 +3946,7 @@ public:
           invalidate_tail, begin_member));
       if (ahead) decode_ahead->clear_output(); // Schema copied the original borrowed integers.
       if (has_mtp(role)) prepare_draft_append<recording_only>(step, role);
+      else if (phase.recursive_draft_repair) prepare_recursive_repair_append(step);
       }
       auto &transactions = phase.slots[slot].transactions;
       for (std::size_t index = 0; index < phase.state_banks.size(); ++index) {
@@ -3772,7 +3957,11 @@ public:
         const auto bytes = transactions.writer_bytes(index);
         if (!relay && !recording_imported) for (std::size_t j = 0; j < width; ++j) {
           if (is_hidden) {
-            if (has_mtp(role)) {
+            if (phase.recursive_draft_repair) {
+              state_sources[0] = step.members[0].base->carry_hidden;
+              state_sources[1] = step.members[0].base->draft->lag
+                  ? step.members[0].base->prior_hidden : step.members[0].base->carry_hidden;
+            } else if (has_mtp(role)) {
               const bool chronological = width == 1 && role == GraphRole::kMtpCatchupRound && packing == RowPacking::kRectangular;
               state_sources[chronological ? width + j : j] = step.members[j].base->carry_hidden;
               if (draft_lag(role)) state_sources[chronological ? j : width + j] = compact_draft && !step.members[j].base->draft->lag
@@ -3792,7 +3981,7 @@ public:
       }
       if (preparation) { preparation->slot = slot; preparation->phase_slot_prior_uses = phase.slots[slot].preparation_uses; }
       const auto batch_start = Clock::now();
-      const auto append_banks = draft_bank + (has_mtp(role) ? 2u : 0u);
+      const auto append_banks = draft_bank + (has_mtp(role) || phase.recursive_draft_repair ? 2u : 0u);
       if (device_input_choice) {
         hyle::util::ScopeGuard release_layouts{[&]() noexcept {
           for (auto &entry : io.batch_layout_choices) entry.layouts = {};
@@ -4074,7 +4263,7 @@ public:
                 member.base->draft.has_value() == cache_plan.draft_cache,
             step.withdrawn(member)});
       }
-      const auto append_banks = draft_bank + (has_mtp(phase.family->role) ? 2u : 0u);
+      const auto append_banks = draft_bank + (has_mtp(phase.family->role) || phase.recursive_draft_repair ? 2u : 0u);
       auto &transactions = phase.slots[step.state_slot].transactions;
       check(step.execution.finish_success(0, append_banks, phase.state_resource_ports,
           []() noexcept {},
@@ -4464,9 +4653,32 @@ public:
     const auto ended = [&](auto token) { return inference::request_token_stopped(token, eos, stop_policy); };
     std::vector<std::int32_t> inputs; inputs.reserve(maximum + 1); inputs.push_back(session.head->next_id);
     if (q) { q->clear(); q->reserve(maximum); }
-    if (!maximum) return inputs;
+    if (!maximum) { session.proposal_graph_calls = 0; return inputs; }
     if (inputs.front() < 0 || inputs.front() >= vocabulary || ended(inputs.front()))
       throw std::runtime_error("recursive proposals require a valid nonterminal emitted pending token");
+    const auto graph_begin = draft_program_graph_calls;
+    hyle::util::ScopeGuard proposal_calls{[&]() noexcept {
+      session.proposal_graph_calls = draft_program_graph_calls - graph_begin;
+    }};
+    if (maximum >= 2 && greedy_draft_chain_enabled(selected_sampler) && !dynamic && conditional_inputs.empty()) {
+      const auto before = session.head->draft->frontier;
+      std::size_t dirty_pages = 0;
+      for (std::size_t i = 0; i < maximum; ++i)
+        dirty_pages += (before + session.head->draft->lag + 1 + i + cache::Plan::page_rows - 1) /
+            cache::Plan::page_rows - before / cache::Plan::page_rows;
+      if (cache_plan.in_flight_batches >= 3)
+        dirty_pages += (before + maximum + 1 + cache::Plan::page_rows - 1) /
+            cache::Plan::page_rows - before / cache::Plan::page_rows;
+      // The fixed inventory can refuse extra independent COW tails near the
+      // capacity boundary. Preserve its existing bounded sequential route.
+      if (dirty_pages <= draft_inventory.free_ids.size()) {
+        if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<PrepareVerifier>>) {
+          if (maximum == max_drafts())
+            return execute_draft_chain(session, maximum, std::forward<PrepareVerifier>(prepare_verifier));
+        }
+        return execute_draft_chain(session, maximum);
+      }
+    }
     DraftWork work; work.state = fork_draft(*session.head->draft); work.session = &session;
     c::ReadLease approximate;
     auto current_logits = logits;
@@ -4531,6 +4743,33 @@ public:
   void repair_recursive_draft(StepState &step) {
     if (step.phase->family->role != GraphRole::kVerify || !cache_plan.draft_cache)
       throw std::runtime_error("draft repair requires its unpublished target verifier");
+    if (step.phase->recursive_draft_repair) {
+      for (auto &member : step.members) {
+        if (step.withdrawn(member)) continue;
+        auto &next = *member.next->draft;
+        const auto physical_last = next.paged.pages.back().page();
+        const auto retained = member.accepted_tokens == 1 ? 1 : member.accepted_tokens - 1;
+        const auto rows = retained + member.base->draft->lag;
+        next.frontier = member.base->draft->frontier + rows;
+        next.lag = member.accepted_tokens == 1 ? 0u : 1u;
+        next.catchup_token = next.lag ? member.verification_inputs[member.accepted_tokens - 1] : -1;
+        next.paged.pages.resize((next.frontier + cache::Plan::page_rows - 1) / cache::Plan::page_rows);
+        auto &layout_rows = input_scratch.paged_appends.next_rows; layout_rows.reset();
+        check(layout_rows.append(rows, next.frontier, cache::Plan::page_rows,
+            std::span<const inference::PagedPageRef>(next.paged.pages)));
+        member.draft_layout = take(layout_rows.member_version(attention_schema, 0));
+        const auto finish_at = [&](std::size_t) noexcept -> inference::PagedAppendFinishMember {
+          return {member.base->draft->paged, next.paged, member.draft_updates, member.draft_layout,
+              physical_last, static_cast<std::uint32_t>(next.frontier % cache::Plan::page_rows),
+              member.next_draft_tails, true, rows == member.draft_input_rows};
+        };
+        check(inference::prepare_paged_append_commits(
+            std::span(step.execution.appends.data() + draft_bank, 2), 1, finish_at));
+        check(inference::return_paged_append_tails(step.execution.append_transactions().subspan(draft_bank, 2),
+            2, 1, input_scratch.paged_appends, finish_at));
+      }
+      return;
+    }
     for (auto &member : step.members) {
       if (step.withdrawn(member)) continue;
       const auto n = member.accepted_tokens;
@@ -4600,7 +4839,8 @@ public:
          const auto width = member.input_tokens;
          const auto rows = candidates.subspan(member.input_row_begin, width);
         result.pending = selection.expected_pending; result.proposal_count = width - 1; result.verified_rows = width;
-        result.auxiliary_graph_calls = width + (selected_sampler.enabled || !selected_sampler.modifiers.empty() ? 1u : 0u);
+        result.auxiliary_graph_calls = member.session->proposal_graph_calls + !step.phase->recursive_draft_repair +
+            (selected_sampler.enabled || !selected_sampler.modifiers.empty() ? 1u : 0u);
         result.draft = width > 1 ? member.verification_inputs[1] : -1;
         result.target_first = rows[0]; result.target_second = width > 1 ? rows[1] : -1;
         hyle::inference::mtp::AcceptedPrefix accepted;
@@ -4646,6 +4886,9 @@ public:
         const bool clipped = min_draft_probability() > 0 && selection.proposal_limit > width - 1 &&
             !inference::request_token_stopped(member.verification_inputs.back(), eos, member.stop_policy);
         member.discarded_draft_rows = clipped ? (width == 1 ? member.base->draft->lag + 1 : 1) : 0;
+        if (step.phase->recursive_draft_repair)
+          member.discarded_draft_rows += member.draft_input_rows - member.base->draft->lag -
+              (member.accepted_tokens == 1 ? 1 : member.accepted_tokens - 1);
         result.auxiliary_graph_calls += clipped ? 1u : 0u;
         result.accepted_draft = result.consumed_drafts != 0;
         result.processed_target = member.accepted_tokens;
@@ -8568,11 +8811,18 @@ int qwen35::run(int argc, char **argv) {
     const auto max_query_rows = bounded_generation ? capacity : (std::max)({*std::max_element(planned_chunks.begin(), planned_chunks.end()), mtp_schema_rows,
         mtp_enabled && mtp_has_decode ? max_drafts + 1 : std::size_t{1}});
     const auto requested_active = (std::min)(active_sequences, input_sessions);
+    const bool plain_draft_head = std::ranges::any_of(weight_source.roles.selected, [&](const auto &role) {
+      return role.name == geometry.head_role() &&
+          (role.projection_codec == qwen35::prepared::ProjectionCodec::kDense ||
+           role.projection_codec == qwen35::prepared::ProjectionCodec::kUnspecified) &&
+          (role.dtype == "BF16" || role.dtype == "F16" || role.dtype == "F32");
+    });
     // A continuous conditional successor retains its completed producer until
     // the consumer really retires. Count that third original batch in the
     // existing page/state bound, independently of simultaneous GPU work.
     bool overlap_selected = decode_overlap && natural_generation &&
-        (!mtp_enabled || (max_drafts == 1 && min_draft_probability == 0)) && !progress &&
+        (!mtp_enabled || (max_drafts >= 1 && max_drafts <= 3 && min_draft_probability == 0 &&
+                         (max_drafts == 1 || plain_draft_head))) && !progress &&
         qwen35::DeviceRelayCapabilities{backend_selection.primary, cpu_ffn_layers != 0,
             progress, sampler.enabled, !sampler.modifiers.empty()}.eligible() &&
         replay != qwen35::ReplayPolicy::kCommands && (trace.empty() || !trace_states) &&

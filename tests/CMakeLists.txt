@@ -519,6 +519,22 @@ if(TARGET hyle_engine)
   set_tests_properties(hyle_qwen_mtp_ahead_test PROPERTIES
     LABELS "tooling;generation;cache;local-model" TIMEOUT 180 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
 
+  if(TARGET hyle_graph_route_cuda)
+    add_executable(hyle_qwen_mtp_chain_test tools/qwen_mtp_chain_test.cc
+      ${_hyle_qwen35_cold_sources})
+    hyle_configure_engine_target(hyle_qwen_mtp_chain_test)
+    if(MSVC)
+      target_compile_options(hyle_qwen_mtp_chain_test PRIVATE /bigobj)
+    endif()
+    set_target_properties(hyle_qwen_mtp_chain_test PROPERTIES
+      FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+    add_dependencies(hyle_tests hyle_qwen_mtp_chain_test)
+    add_test(NAME hyle_qwen_mtp_chain_cuda_test COMMAND hyle_qwen_mtp_chain_test)
+    set_tests_properties(hyle_qwen_mtp_chain_cuda_test PROPERTIES
+      LABELS "tooling;generation;cache;cuda;local-model"
+      TIMEOUT 180 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
+  endif()
+
   add_executable(hyle_qwen_generation_batch_facts_probe tools/qwen_generation_batch_facts_probe.cc
     ${_hyle_qwen35_cold_sources})
   hyle_configure_engine_target(hyle_qwen_generation_batch_facts_probe)
