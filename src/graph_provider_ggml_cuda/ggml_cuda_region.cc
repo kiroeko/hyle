@@ -43,6 +43,8 @@ inline constexpr compute::RoutePolicyId kGgmlCudaIndexedStatePolicy{
     0x48594c4547474355ULL, 6, 1};
 inline constexpr compute::RoutePolicyId kGgmlCudaIndexedConvPolicy{
     0x48594c4547474355ULL, 7, 1};
+inline constexpr compute::RoutePolicyId kGgmlCudaQuantizedGluPolicy{
+    0x48594c4547474355ULL, 8, 1};
 
 Result<bool> supported_node(void *context, const Graph &graph,
                             NodeId node) noexcept {
@@ -833,6 +835,62 @@ Result<bool> matches_bfloat_dual_projection(
   return true;
 }
 
+template <class CanElide>
+Result<bool> matches_quantized_glu(void *context, const Graph &graph,
+    std::span<const NodeId> nodes, CanElide can_elide) noexcept {
+  if (nodes.size() != 3) return false;
+  const auto operation = graph.operation(nodes[2]);
+  const auto glu = operation ? operation->get_if<compute::GatedActivation>() : nullptr;
+  if (!glu || glu->activation != compute::GatedActivationKind::kSilu ||
+      glu->inputs != compute::GatedInputKind::kSeparate ||
+      graph.node_input_count(nodes[2]).value() != 2 ||
+      graph.node_output_count(nodes[2]).value() != 1) return false;
+  HYLE_ASSIGN_OR_RETURN(auto output, graph.result(nodes[2]));
+  HYLE_ASSIGN_OR_RETURN(auto description, graph.value_description(output));
+  if (!description.is_plain() || !description.is_dense() || description.rank() != 2 ||
+      description.data_type() != compute::DataType::kFloat32 ||
+      description.dimensions()[0] != 1 || description.dimensions()[1] <= 0) return false;
+  ValueId common;
+  std::optional<compute::GgufQuantizedType> encoding;
+  for (std::size_t i = 0; i < 2; ++i) {
+    const auto op = graph.operation(nodes[i]);
+    const auto matmul = op ? op->get_if<compute::MatMul>() : nullptr;
+    if (!matmul || (matmul->accumulation_type != compute::DataType::kUnknown &&
+                   matmul->accumulation_type != compute::DataType::kFloat32) ||
+        graph.node_input_count(nodes[i]).value() != 2 ||
+        graph.node_output_count(nodes[i]).value() != 1) return false;
+    HYLE_ASSIGN_OR_RETURN(auto result, graph.result(nodes[i]));
+    HYLE_ASSIGN_OR_RETURN(auto input, graph.node_input(nodes[2], i));
+    if (result != input || !can_elide(nodes[i], result) ||
+        graph.value_description(result).value() != description) return false;
+    HYLE_ASSIGN_OR_RETURN(auto x, graph.node_input(nodes[i], 0));
+    HYLE_ASSIGN_OR_RETURN(auto weight, graph.node_input(nodes[i], 1));
+    if (common.valid() && common != x) return false;
+    common = x;
+    HYLE_ASSIGN_OR_RETURN(auto a, graph.value_description(x));
+    HYLE_ASSIGN_OR_RETURN(auto w, graph.value_description(weight));
+    const auto type = compute::gguf_quantized_type(w.storage_format());
+    if (!a.is_plain() || !a.is_dense() || a.rank() != 2 ||
+        a.data_type() != compute::DataType::kFloat32 || a.dimensions()[0] != 1 ||
+        a.dimensions()[1] <= 0 || a.dimensions()[1] % 256 != 0 ||
+        !type || (*type != compute::GgufQuantizedType::kQ8_0 &&
+                  *type != compute::GgufQuantizedType::kQ4K &&
+                  *type != compute::GgufQuantizedType::kQ6K) ||
+        w.rank() != 2 || w.dimensions()[0] != a.dimensions()[1] ||
+        w.dimensions()[1] != description.dimensions()[1] ||
+        (encoding && *encoding != *type)) return false;
+    encoding = type;
+    const auto physical = w.transposed();
+    if (!physical || !physical->is_dense()) return false;
+  }
+  for (const auto node : nodes) {
+    if (graph.node_resource_count(node).value() != 0) return false;
+    HYLE_ASSIGN_OR_RETURN(auto supported, supported_node(context, graph, node));
+    if (!supported) return false;
+  }
+  return true;
+}
+
 struct BfloatProjection final {
   NodeId node;
   ValueId activation;
@@ -1051,6 +1109,35 @@ Status propose(void *context, const RegionDiscoveryRequest &request, mem::Alloca
 
   // A distinct no-copy implementation may cover two otherwise preferred BLAS
   // leaves. Their ordinary ranks and all nonmatching regions are unchanged.
+  for (std::size_t i = 0; i < graph.node_count(); ++i) {
+    HYLE_ASSIGN_OR_RETURN(auto terminal, graph.node_id(i));
+    const auto operation = graph.operation(terminal);
+    if (!operation || !operation->get_if<compute::GatedActivation>()) continue;
+    const auto a = graph.node_input(terminal, 0), b = graph.node_input(terminal, 1);
+    if (!a || !b || a->kind() != ValueKind::kNodeOutput || b->kind() != ValueKind::kNodeOutput) continue;
+    HYLE_ASSIGN_OR_RETURN(auto gate, graph.producer(*a));
+    HYLE_ASSIGN_OR_RETURN(auto up, graph.producer(*b));
+    if (gate == up) continue;
+    const std::array nodes{gate, up, terminal};
+    if (std::ranges::any_of(nodes, [&](NodeId node) { return !eligible[node.ordinal()]; })) continue;
+    HYLE_ASSIGN_OR_RETURN(auto matched, matches_quantized_glu(context, graph, nodes,
+        [&](NodeId node, ValueId value) {
+          const auto control = uses.control_readers[node.ordinal()];
+          return uses.uses[value.ordinal()] == 1 &&
+              (control == FusionUses::kNone || std::ranges::any_of(nodes,
+                  [&](NodeId consumer) { return control == consumer.ordinal(); }));
+        }));
+    if (!matched) continue;
+    HYLE_ASSIGN_OR_RETURN(auto contractible, is_region_contractible(graph, nodes, allocator));
+    if (!contractible) continue;
+    HYLE_ASSIGN_OR_RETURN(auto more, writer.try_add({.nodes = nodes,
+        .cost = {.workspace = std::nullopt, .persistent_bytes = std::nullopt,
+                 .copy_bytes = 0, .repack_bytes = 0, .synchronization_count = 2, .dispatch_count = 1},
+        .route = 8, .replay_class = compute::ProviderReplayClass::kManaged,
+        .implementation = compute::ProviderImplementationId{9},
+        .policy = kGgmlCudaQuantizedGluPolicy, .preference = 202}));
+    if (!more) return Status::Ok();
+  }
   for (std::size_t i = 0; i < graph.node_count(); ++i) {
     if (!eligible[i]) continue;
     HYLE_ASSIGN_OR_RETURN(auto multiply, graph.node_id(i));
@@ -1510,10 +1597,20 @@ Status qualify(void *context, const RegionCompileRequest &request,
     HYLE_ASSIGN_OR_RETURN(auto supported, supported_node(context, *request.graph, pattern.gdn));
     return supported ? Status::Ok() : Status::Unimplemented("indexed GDN original math is unsupported");
   }
-  if (!request.graph || (request.route != 1 && request.route != 2 && request.route != 3 && request.route != 4 && request.route != 5) || request.nodes.empty() ||
+  if (!request.graph || (request.route != 1 && request.route != 2 && request.route != 3 && request.route != 4 && request.route != 5 && request.route != 8) || request.nodes.empty() ||
       request.outputs.empty() || request.has_unknown_effects ||
       !request.effect_accesses.empty())
     return Status::Unimplemented("ggml CUDA region boundary is not admitted");
+
+  if (request.route == 8) {
+    HYLE_ASSIGN_OR_RETURN(auto matched, matches_quantized_glu(context, *request.graph,
+        request.nodes, [&](NodeId, ValueId value) {
+          return std::ranges::find(request.outputs, value) == request.outputs.end();
+        }));
+    return matched && request.outputs.size() == 1 &&
+            request.outputs[0] == request.graph->result(request.nodes.back()).value()
+        ? Status::Ok() : Status::Unimplemented("quantized GLU private projection boundary escapes");
+  }
 
   if (request.route == 5) {
     HYLE_ASSIGN_OR_RETURN(auto matches, matches_bfloat_paired_projection(
@@ -2295,7 +2392,7 @@ compile(void *context, const RegionCompileRequest &request,
     }
     for (const auto id : request.outputs)
       recipe.outputs.push_back(local(id));
-    if (request.route != 3 && request.route != 5) {
+    if (request.route != 3 && request.route != 5 && request.route != 8) {
       const auto constants = constant_expressions::prepare(context, request, values, recipe);
       if (constants.kind != compute::ProviderPrepareOutcomeKind::kPrepared)
         return constants;

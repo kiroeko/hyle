@@ -23,9 +23,14 @@ Value emit_ffn(R &r, Value residual, const std::string &absolute_prefix,
                std::span<Value> probes = {}) {
   const auto normalized = r.norm_absolute(residual, absolute_prefix + "post_attention_layernorm.weight");
   const auto projected_gate = r.linear_absolute(normalized, absolute_prefix + "mlp.gate_proj.weight");
-  const auto gate = r.unary(compute::UnaryKind::kSilu, projected_gate);
+  const bool f32 = r.activation_type() == Type::kFloat32;
+  const auto gate = f32 ? Value{} : r.unary(compute::UnaryKind::kSilu, projected_gate);
   const auto up = r.linear_absolute(normalized, absolute_prefix + "mlp.up_proj.weight");
-  const auto product = r.binary(compute::BinaryKind::kMultiply, gate, up);
+  const auto product = f32
+      ? r.one(compute::GatedActivation{.activation = compute::GatedActivationKind::kSilu,
+              .inputs = compute::GatedInputKind::kSeparate},
+          {projected_gate, up}, r.spec(projected_gate))
+      : r.binary(compute::BinaryKind::kMultiply, gate, up);
   if (!probes.empty()) {
     probes[3] = product; probes[5] = residual; probes[6] = normalized;
     probes[7] = projected_gate; probes[8] = up;

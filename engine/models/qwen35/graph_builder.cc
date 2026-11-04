@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <cmath>
 #include <cstdint>
 #include <stdexcept>
 #include <type_traits>
@@ -523,6 +524,18 @@ V Recipe::decay(const std::string &name) {
 // Literal BF16 boundaries from the independent local reference, including
 // BF16 square/sum/epsilon/rsqrt. GDN applies its own 1/sqrt(128) exactly once.
 V Recipe::l2(V x) {
+  if (spec(x).data_type() == Type::kFloat32 && spec(x).dimensions().back().is_fixed()) {
+    const auto width = spec(x).dimensions().back().fixed_value();
+    if (width <= 0) throw std::runtime_error("L2 requires a positive final dimension");
+    // RMS(x, eps/N) / sqrt(N) is x / sqrt(sum(x*x) + eps).
+    // Keep the additive epsilon; native L2's clamp(eps*eps) is different math.
+    auto &scale = assembly.literal(dense(Type::kFloat32, {width}));
+    const std::vector<float> values(static_cast<std::size_t>(width),
+        1.F / std::sqrt(static_cast<float>(width)));
+    scale.write<float>(values);
+    return same(c::RmsNorm{.epsilon = 1.e-6F / static_cast<float>(width)},
+        {x, constant(scale)}, x);
+  }
   const auto square = binary(c::BinaryKind::kMultiply, x, x);
   const std::array<std::int32_t, 1> axes{-1};
   auto dimensions = std::vector<D>(spec(square).dimensions().begin(), spec(square).dimensions().end());
