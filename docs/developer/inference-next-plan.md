@@ -4,6 +4,10 @@
 
 用户已授权以新 goal 继续本计划中的 review 和未完成项，首先执行 M1-11。任务范围和停止条件见下文；不从旧计划恢复额外方向。[看板](inference-progress.md)由用户维护，未同步的旧状态不覆盖本轮直接指令。常规性能原数见[性能表](performance/decode.md)，本次复测原数见[逐轮结果](../../.scratch/inference-bf16-retest-20261104/window1/summary.txt)。
 
+**当前续接状态：** M1-11进行中。共同BF16 oracle的512项完整logits比较和12进程ready分段已完成；Q4_K_M通过本次有限负载门槛，Q8_0的平均KL为上游110.897%，未通过110%门槛。量化Family计划与编译墙时约1.61s、同源BF16约0.456s；首个明显误差放大层与实际量化路径仍需定位。M1-8剩余项和M1-10c尚未启动实现，goal保持active。
+
+另发现`tests/tools/qwen_packed_prefill_case.h`仍调用已移除的`prepare_shared_prefill_workspace`。本次诊断消费者在`.scratch`使用当前执行工作区接口，未改产品或原测试头；后续相关目标重编时需保留这个缺口，不能从既有二进制通过推定源码可重编。
+
 ## 已交付的重构结果
 
 | 范围 | 最终落地内容 | 代表提交或依据 |
@@ -39,8 +43,8 @@
 | BF16 整段 16K／32K prefill | 上游的 100.6%／100.5% | 同上；不是最新 HEAD 重测 |
 | BF16 八轮普通 decode | 96.94／92.30 tok/s，领先 5.03% | `8bc1d85ee`，推理实现 `d64f36c5b`；每臂 3 个新进程 |
 | BF16 八轮 MTP decode | 130.96／108.04 tok/s，领先 21.21% | 同上；K1，已准备的 32768 行子集；第 4 轮仍慢 18.14% |
-| Q8_0 普通／MTP decode | 上游的 101.8%／115.4% | 计时已完成，数值资格待核验；完整草稿词表 |
-| Q4_K_M 普通／MTP decode | 上游的 98.4%／108.6% | 同上；普通进程范围重叠 |
+| Q8_0 普通／MTP decode | 上游的 101.8%／115.4% | 计时已完成；共同BF16 oracle的KL门槛未通过；完整草稿词表 |
+| Q4_K_M 普通／MTP decode | 上游的 98.4%／108.6% | 512项共同BF16资格通过；普通进程范围重叠，仍不代表更广泛质量验收 |
 
 最近一次独立资源采样中，BF16 普通／MTP 的显存峰比上游多约 250／176 MiB，私有提交峰多约 760／371 MiB；本次未重采资源。新同窗复测的外部 ready 为 2.028／1.991 s 和 2.034／2.256 s，分别慢 38 ms、快 222 ms。早期 review 中显存多 330～500 MiB、MTP ready 持平等数字已经被后续资源优化替代。私有提交不等于 RSS。
 
@@ -70,7 +74,7 @@
 | M1-10a 草稿小词表 | 已落地；收益来自草稿变便宜，覆盖率只有 74.6%，接受率反而下降 | 保留当前准备文件；64K、更多校准和上下文并集均未通过逐轮门槛，停止扩词表 |
 | 自适应 K 初测不如 K1 | 原型关闭了连续重叠，不能据串行结果否定接力后的收益；单次筛选也不作正式性能验收 | 与完整多草稿接力一起评估；小词表概率必须重新校准 |
 | 主机准备仍是普通 decode 大瓶颈 | 当前配对 63 步中 GPU 空闲仅 1.4%，其它小 kernel 比上游多约 0.22 ms/token | 不再为普通 decode 开泛化的主机流水或融合 kernel 调优 |
-| 量化普通持平、MTP 领先 | 计时支持该描述，数值资格仍未通过 | 完成 M1-11 后才决定能否用于正式宣传 |
+| 量化普通持平、MTP 领先 | 计时支持该描述；新标准下Q4通过512项，Q8的KL未通过 | 完成 M1-11 的未通过项定位后再收敛宣传边界 |
 | 量化差异大概只是计算路径不同 | 这是待验证假设，少量分歧也不能排除实现错误 | 同前缀对 BF16 原模型比较，并确认实际量化投影、激活和归约路径 |
 | M1-8 资源与 ready 瘦身 | BF16 已有多项交付；量化 MTP 仍比上游慢 1.09／1.19 s，显存多约 490／478 MiB | 只处理归因明确的量化剩余项，不重开整个资源系统 |
 | 性能收尾后转 M2 | 普通 BF16 已达到约持平口径；MTP 合计领先但并非每轮都赢 | 给剩余卡固定门槛和停止条件，结果不理想也结束 M1 追速 |
@@ -103,7 +107,7 @@
 
 ready 用 BF16 MTP 与两种量化 MTP 各 3 个新进程，把加载、权重／草稿头准备、Family 编译、捕获／预热和外部启动余量分开。先记录真实重叠，不能把并行阶段耗时直接相加。确认量化投影是否量化激活、实际 GEMV／GEMM 路径；当前量化跑的是完整草稿词表，不能先把多出的 1.1 s 归因于 32K gather。
 
-**验收入口：** 复用 `.scratch/inference-quantized-review-20261104/teacher.py` 和 `validate.py` 的输入及工作量检查；原 `teacher.py` 会在现有 5／6 处超门槛分歧上失败。完整 logits、共同 BF16 oracle、KL 和 ready 分段尚需在本卡扩展诊断驱动，开卡时固定实际命令后运行，不把旧脚本通过冒充新标准通过。相关工具检查为 `python tests/tooling/inference_upstream_compare_test.py`。
+**验收入口：** 新驱动在`.scratch/inference-quantized-qualification-20261104/`。已执行`python qualify.py build build2`、`python qualify.py prepare inputs1`、`python qualify.py teacher teacher1 --build-label build2 --input-label inputs1`，以及`python ready.py build ready-build1`、`python ready.py window ready-window1 --build-label ready-build1`，命令均以该目录为工作目录；新一轮使用新目录名。完整logits、共同BF16 oracle、KL及ready分段已输出，不能用旧top2脚本代签。`python tests/tooling/inference_upstream_compare_test.py`和`python tests/tooling/inference_nsys_compare_test.py`共24项通过。
 
 **结束结果：** 给出每格式的资格结论和 ready 多出时间所在阶段。发现数值缺陷就先报告具体位置，本卡不顺带改 kernel；ready 改法交下一张卡。
 
