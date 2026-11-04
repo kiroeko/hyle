@@ -107,6 +107,8 @@ struct PreparedDraftHead final {
   Tensor original_ids;
   std::string identity;
   Tensor *indexed_weight = nullptr;
+  std::optional<hyle::inference::DraftVocabularyContext> context;
+  Tensor allowed_rows;
   Tensor &projection_weight() noexcept {
     return indexed_weight ? *indexed_weight : weight.tensor;
   }
@@ -116,10 +118,12 @@ struct PreparedDraftHead final {
 };
 
 // Transform only; policy/idle checks and optional publication belong to Model.
+// A requested context extension returns an empty result when the indexed
+// route is unavailable; the caller retains its already prepared static head.
 PreparedDraftHead prepare_draft_head(hyle::inference::Backend &backend,
     LoadedWeight &original, const hyle::inference::DraftVocabulary &mapping,
     std::size_t max_requests,
-    const hyle::compute::ResourceBudget &budget = {});
+    const hyle::compute::ResourceBudget &budget = {}, std::size_t context_rows = 0);
 
 using WeightMeanings = std::map<std::string, prepared::ParameterMeaning>;
 struct WeightLoadReport final {

@@ -89,6 +89,7 @@ struct Recipe final {
   D token_rows, packed_rows, sample_rows;
   // Scoped token-row domain, identified symbolically rather than by extent.
   V projection_offsets;
+  V draft_vocabulary_ids, draft_vocabulary_allowed;
   Recipe(std::map<std::string, LoadedWeight> &selected, const ProjectionBindings &selected_projections,
          GraphAssembly &graph_assembly, const ModelGeometry &model_geometry,
          std::size_t max_query_rows, std::size_t requests = 1,

@@ -50,6 +50,7 @@ struct FamilyPorts {
   // prefix0 candidate; these carry prefix1. Prefix choice is I32[1].
   V predecessor_prefix_port, continuation_position_port, continuation_draft_position_port;
   V draft_hidden_select_port, draft_token_select_port, draft_last_ids_port;
+  V draft_vocabulary_ids_port, draft_vocabulary_allowed_port;
   StatePorts hidden_state;
   g::NodeId draft_attention_node;
   std::vector<V> state_resource_ports;
@@ -78,6 +79,7 @@ struct DraftProjectionView final {
   StoredProjection projection;
   Tensor *original_ids = nullptr;
   bool indexed_rows = false;
+  Tensor *allowed_rows = nullptr; // Mutable input map/mask; contents stable for each request.
 };
 
 struct FamilyBuildRequest final {

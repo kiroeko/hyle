@@ -88,6 +88,14 @@ sampling::LogitsInputsFor<V> prepare_logits_inputs(Recipe &r, sampling::LogitsPo
   return result;
 }
 
+static V draft_mapping(Recipe &recipe, DraftProjectionView projection) {
+  if (!projection.allowed_rows) return recipe.constant(*projection.original_ids);
+  if (!recipe.draft_vocabulary_ids) {
+    recipe.draft_vocabulary_ids = recipe.input(projection.original_ids->description);
+    recipe.draft_vocabulary_allowed = recipe.input(projection.allowed_rows->description);
+  }
+  return recipe.draft_vocabulary_ids;
+}
 V draft_scores(Recipe &recipe, V selected_hidden, DraftProjectionView projection) {
   if (!projection.original_ids) return recipe.scores(selected_hidden, std::string(recipe.geometry.head_role()));
   if (projection.indexed_rows) {
@@ -97,7 +105,7 @@ V draft_scores(Recipe &recipe, V selected_hidden, DraftProjectionView projection
     const auto weight = recipe.operand(*projection.projection.weight);
     const auto vocabulary = recipe.spec(weight).dimensions()[0];
     const auto hidden = recipe.spec(weight).dimensions()[1];
-    const auto mapping = recipe.constant(*projection.original_ids);
+    const auto mapping = draft_mapping(recipe, projection);
     const auto count = recipe.spec(mapping).dimensions()[0];
     // One original output row is one expert with N=1. Only metadata views
     // and the exact BF16->F32 activation widening precede the existing op.
@@ -107,14 +115,18 @@ V draft_scores(Recipe &recipe, V selected_hidden, DraftProjectionView projection
     const auto ids = recipe.reshape(mapping, {rows, count});
     const auto scores = recipe.one(c::model_ops::grouped_matmul(), {bank, activation, ids},
         recipe.dense_spec(Type::kFloat32, {rows, count, f(1)}));
-    return recipe.reshape(scores, {rows, count});
+    const auto logits = recipe.reshape(scores, {rows, count});
+    if (!projection.allowed_rows) return logits;
+    return recipe.one(c::Select{}, {recipe.reshape(recipe.draft_vocabulary_allowed, {rows, count}),
+        logits, recipe.scalar(-std::numeric_limits<float>::infinity())},
+        recipe.dense_spec(Type::kFloat32, {rows, count}));
   }
   return recipe.emit_projection(selected_hidden, projection.projection, true);
 }
 V original_draft_id(Recipe &recipe, V compact_id, DraftProjectionView projection) {
   if (!projection.original_ids) return compact_id;
   return recipe.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
-      {recipe.constant(*projection.original_ids), compact_id}, recipe.spec(compact_id));
+      {draft_mapping(recipe, projection), compact_id}, recipe.spec(compact_id));
 }
 
 ExecutionPlanFacts inspect_execution_plan(const inference::Backend &execution,
@@ -638,6 +650,8 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         r.publish(definition.successor_selected_catchup_port);
       }
     }
+    definition.draft_vocabulary_ids_port = r.draft_vocabulary_ids;
+    definition.draft_vocabulary_allowed_port = r.draft_vocabulary_allowed;
     definition.graph = take(std::move(r.builder).finish());
     definition.literals = std::move(assembly.literals);
     definition.specs = std::move(r.specs);

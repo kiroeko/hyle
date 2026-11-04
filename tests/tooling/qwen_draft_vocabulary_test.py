@@ -29,11 +29,11 @@ def check(args):
     schedule = args.output / "schedule.txt"
     schedule.write_text("prompt prompt.ids\ngenerate 9\n", encoding="utf-8")
 
-    def run(name, inputs="asset", extra=(), selected=0, success=True):
+    def run(name, inputs="asset", extra=(), selected=0, success=True, turns=1, outputs=9, schedule_file=schedule):
         folder = args.output / name
         folder.mkdir()
         command = [str(args.hyle), "--inputs", str(args.output / inputs), "--backend", "cuda",
-                   "--capacity", "32", "--mtp", "on", "--schedule", str(schedule), *extra]
+                   "--capacity", "32", "--mtp", "on", "--schedule", str(schedule_file), *extra]
         (folder / "command.txt").write_text(subprocess.list2cmdline(command) + "\n", encoding="utf-8")
         with (folder / "stdout.log").open("wb") as stdout, (folder / "stderr.log").open("wb") as stderr:
             result = subprocess.run(command, stdout=stdout, stderr=stderr, timeout=180)
@@ -42,18 +42,20 @@ def check(args):
             return
         assert result.returncode == 0, folder
         raw = json.loads((folder / "stdout.log").read_text())
-        assert raw["draft_vocabulary_rows"] == selected and raw["live_committed_versions"] == 0
+        context = raw["draft_vocabulary_context_capacity"]
+        assert context in (0, min(selected // 16, vocabulary - selected))
+        assert raw["draft_vocabulary_rows"] == selected + context and raw["live_committed_versions"] == 0
         if raw["draft_vocabulary_indexed_rows"]:
             assert selected and raw["active_sequences"] == 1
             assert raw["draft_vocabulary_weight_bytes"] == 0
         elif selected:
             assert raw["draft_vocabulary_weight_bytes"] > 0
-        assert raw["draft_vocabulary_map_bytes"] == selected * 4
+        assert raw["draft_vocabulary_map_bytes"] == (selected + context) * 4
         detail = raw["sessions"][0]["result"]
-        assert len(detail["generated_ids"]) == 9
+        assert len(detail["generated_ids"]) == outputs
         ledger = raw["sessions"][0]["ledger"]
         generation = [row for row in ledger if row["generation"]]
-        assert sum(row["accepted"] for row in generation) == 8
+        assert sum(row["accepted"] for row in generation) == outputs - turns
         if raw["sampling"] == "greedy":
             assert all(row["sampling_draw_before"] == row["sampling_draw_after"] == 0 for row in ledger)
         assert raw["actual_target_rows"] == raw["prefill_target_rows"] + sum(row["verified_rows"] for row in generation)
@@ -68,6 +70,13 @@ def check(args):
         assert auto == full, "complete subset changed greedy outputs"
     assert run("partial-auto", inputs="partial", selected=16) == run(
         "partial-full", inputs="partial", extra=["--mtp-draft-vocabulary", "full"])
+    (args.output / "first-context.ids").write_text("63\n", encoding="utf-8")
+    (args.output / "second-context.ids").write_text("62\n", encoding="utf-8")
+    context_schedule = args.output / "context-schedule.txt"
+    context_schedule.write_text("prompt first-context.ids\ngenerate 3\nprompt second-context.ids\ngenerate 3\n", encoding="utf-8")
+    assert run("context-two-turns", inputs="partial", selected=16, turns=2, outputs=6, schedule_file=context_schedule) == run(
+        "context-full", inputs="partial", extra=["--mtp-draft-vocabulary", "full"], turns=2, outputs=6,
+        schedule_file=context_schedule)
     assert run("missing-fallback", inputs="missing") == run("auto-full", extra=["--mtp-draft-vocabulary", "full"])
     run("stale-rejected", inputs="stale", success=False)
     run("stale-full", inputs="stale", extra=["--mtp-draft-vocabulary", "full"])

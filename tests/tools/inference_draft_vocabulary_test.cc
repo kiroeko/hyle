@@ -96,6 +96,35 @@ void invalid_vocabulary_and_token_ids_keep_precise_errors() {
   require(retry && std::ranges::equal(retry->ids(), std::array<std::int32_t, 2>{1, 4}),
       "an earlier invalid cold mapping prevented a valid independent construction");
 }
+
+void request_context_is_bounded_masked_and_atomic() {
+  const auto base = i::DraftVocabulary::create(20, std::array<std::int32_t, 4>{7, 1, 5, 3});
+  require(bool(base), "context base construction failed");
+  auto context = i::DraftVocabularyContext::create(*base, 4);
+  require(context && context->ids().size() == 8 && context->recent_storage().size() == 4 &&
+      context->active_rows() == 4, "context lost its cold bound");
+  const auto *ids_storage = context->ids().data();
+  const auto *mask_storage = context->allowed().data();
+  require(context->prepare(*base, std::array<std::int32_t, 4>{12, 2, 12, 5}).ok(),
+      "known context tokens were rejected");
+  constexpr std::array<std::int32_t, 8> expected{1, 2, 3, 5, 7, 12, 1, 1};
+  constexpr std::array<std::uint8_t, 8> mask{1, 1, 1, 1, 1, 1, 0, 0};
+  require(context->active_rows() == 6 && std::ranges::equal(context->ids(), expected) &&
+      std::ranges::equal(context->allowed(), mask), "context merge, target tie order or padding mask differs");
+  const auto invalid = context->prepare(*base, std::array<std::int32_t, 2>{2, 20});
+  const auto over = context->prepare(*base, std::array<std::int32_t, 5>{2, 4, 6, 8, 10});
+  require(invalid.IsOutOfRange() && over.IsInvalidArgument() &&
+      std::ranges::equal(context->ids(), expected) && std::ranges::equal(context->allowed(), mask),
+      "invalid context changed the last valid ID/mask pair");
+  require(context->prepare(*base, {}).ok() && context->active_rows() == 4 &&
+      context->ids()[0] == 1 && context->ids()[1] == 3 && context->ids()[2] == 5 && context->ids()[3] == 7 &&
+      context->allowed()[4] == 0 && context->ids().data() == ids_storage &&
+      context->allowed().data() == mask_storage, "request reset retained stale context or reallocated cold storage");
+  const auto zero = i::DraftVocabularyContext::create(*base, 0);
+  const auto too_many = i::DraftVocabularyContext::create(*base, 17);
+  require(!zero && zero.error().IsInvalidArgument() && !too_many && too_many.error().IsInvalidArgument(),
+      "invalid context capacity was accepted");
+}
 } // namespace
 
 int main() {
@@ -103,7 +132,8 @@ int main() {
     subset_owns_canonical_target_ids();
     full_permutation_and_i32_boundaries_are_accepted();
     invalid_vocabulary_and_token_ids_keep_precise_errors();
-    std::puts("{\"status\":\"PASS\",\"groups\":3,\"device_execution\":false}");
+    request_context_is_bounded_masked_and_atomic();
+    std::puts("{\"status\":\"PASS\",\"groups\":4,\"device_execution\":false}");
     return 0;
   } catch (const std::exception &error) {
     std::fprintf(stderr, "inference draft vocabulary: %s\n", error.what());

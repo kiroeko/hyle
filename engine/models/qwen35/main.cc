@@ -819,7 +819,35 @@ public:
   DraftProjectionView prepared_draft_projection(bool subset) {
     if (!subset) return {};
     return {{&resources_->draft_head->projection_weight()}, &resources_->draft_head->original_ids,
-        resources_->draft_head->indexed_weight != nullptr};
+        resources_->draft_head->indexed_weight != nullptr,
+        resources_->draft_head->context ? &resources_->draft_head->allowed_rows : nullptr};
+  }
+  void prepare_draft_context() {
+    if (!resources_->draft_head || !resources_->draft_head->indexed_weight ||
+        !resources_->draft_vocabulary) return;
+    if (preparation_started_ || !families.empty() || !draft_programs.empty() ||
+        active_step || successor_step || carrier_borrowed)
+      throw std::logic_error("draft context capacity must precede original cold graph preparation");
+    const auto &mapping = *resources_->draft_vocabulary;
+    const auto extra = (std::min)({mapping.size() / 16, std::size_t{2048}, capacity,
+        static_cast<std::size_t>(mapping.full_size()) - mapping.size()});
+    if (!extra) return;
+    auto candidate = prepare_draft_head(execution, weights.at(std::string(geometry.head_role())),
+        mapping, cache_plan.active_sequences, allocation_budget, extra);
+    if (candidate.context) resources_->draft_head.emplace(std::move(candidate));
+  }
+  inference::DraftVocabularyContext *draft_context() noexcept {
+    return resources_->draft_head && resources_->draft_head->context ? &*resources_->draft_head->context : nullptr;
+  }
+  void upload_draft_context(std::span<const std::int32_t> recent) {
+    auto *context = draft_context();
+    if (!context) return;
+    if (active_step || successor_step || carrier_borrowed || !private_publications_retired())
+      throw std::logic_error("draft context update requires retirement of every original reader");
+    check(context->prepare(*resources_->draft_vocabulary, recent));
+    auto &head = *resources_->draft_head;
+    check(execution.write(head.original_ids.storage(), std::as_bytes(context->ids())));
+    check(execution.write(head.allowed_rows.storage(), std::as_bytes(context->allowed())));
   }
   V draft_scores(Recipe &recipe, V selected_hidden, bool subset) {
     return qwen35::draft_scores(recipe, selected_hidden, prepared_draft_projection(subset));
@@ -1229,6 +1257,8 @@ public:
         << ",\"draft_vocabulary_identity\":\"" << (resources_->draft_head ? resources_->draft_head->identity : std::string{}) << '"'
         << ",\"draft_vocabulary_weight_bytes\":" << (resources_->draft_head ? resources_->draft_head->extra_weight_bytes() : 0)
         << ",\"draft_vocabulary_indexed_rows\":" << (resources_->draft_head && resources_->draft_head->indexed_weight ? "true" : "false")
+        << ",\"draft_vocabulary_context_capacity\":" << (resources_->draft_head && resources_->draft_head->context ?
+            resources_->draft_head->context->recent_storage().size() : 0)
         << ",\"draft_vocabulary_map_bytes\":" << (resources_->draft_head ? take(resources_->draft_head->original_ids.description.required_bytes()) : 0)
         << ",\"draft_vocabulary_policy\":\"greedy_unmodified_no_threshold\""
         << ",\"draft_program_graph_calls\":" << draft_program_graph_calls
@@ -1436,7 +1466,8 @@ public:
     // Family workers only borrow its immutable projection and ID-map leases.
     if (resources_->draft_vocabulary && (!resources_->draft_head ||
         resources_->draft_head->projection_weight().writer || !resources_->draft_head->projection_weight().ready ||
-        resources_->draft_head->original_ids.writer || !resources_->draft_head->original_ids.ready)) return false;
+        (!resources_->draft_head->context &&
+         (resources_->draft_head->original_ids.writer || !resources_->draft_head->original_ids.ready)))) return false;
     const auto available = std::thread::hardware_concurrency();
     if (available < 2) return false;
     const auto threads = (std::min)(available, 4u);
@@ -2457,7 +2488,9 @@ public:
           replay_policy, planned_slot_uses[slot], selected_sampler.enabled);
     auto result = prepare_phase({definition, selected->program, selected_sampler},
         {tokens, physical_slots, diagnostic, imported_sources, planned_slot_uses, replay_modes},
-        {execution, geometry, state_schema, allocation_budget, execution_budget, cache_budget});
+        {execution, geometry, state_schema, allocation_budget, execution_budget, cache_budget,
+         draft_context() ? &resources_->draft_head->original_ids : nullptr,
+         draft_context() ? &resources_->draft_head->allowed_rows : nullptr});
     auto &phase = *result;
     if (state_storage_prepared) prepare_transaction_layouts(phase);
     const auto &route_directory = layer0_probe.empty() ? trace_routes : layer0_probe;
@@ -7156,6 +7189,31 @@ struct GenerationRequestAdapter final {
       request.prompt = request.progress.begin_turn(*request.warm_inputs[request.progress.turn_index],
           request.progress.turn_index ? std::optional<std::int32_t>(request.session->head->next_id) : std::nullopt);
       request.turn_observations[request.progress.turn_index].output_begin = request.progress.turn_output_begin;
+      if (auto *context = model.draft_context()) {
+        auto recent = context->recent_storage();
+        std::size_t count = 0;
+        const auto append_recent = [&](std::span<const std::int32_t> ids) {
+          for (auto it = ids.rbegin(); it != ids.rend() && count < recent.size(); ++it)
+            recent[count++] = *it;
+        };
+        const auto known_turns = request.progress.turns();
+        if (known_turns.empty()) append_recent(request.prompt);
+        else {
+          append_recent(known_turns[request.progress.turn_index].prompt);
+          // Read only arrived user suffixes and already published outputs.
+          // The bounded scan never inspects the remaining schedule or a
+          // candidate that was merely submitted by the preceding turn.
+          std::size_t previous = request.progress.turn_index, visited = 0;
+          while (previous && count < recent.size() && visited++ < recent.size()) {
+            --previous;
+            const auto &observed = request.turn_observations[previous];
+            append_recent(std::span<const std::int32_t>(request.progress.generated).subspan(
+                observed.output_begin, observed.output_end - observed.output_begin));
+            append_recent(known_turns[previous].prompt);
+          }
+        }
+        model.upload_draft_context(recent.first(count));
+      }
     }
   }
   inference::RequestWaveResult execute_wave(inference::RequestWave wave,
@@ -7445,6 +7503,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     if constexpr (mtp) if (max_prefill_rows < 2)
       throw inference::EvaluationFailure(hyle::Status::Unimplemented("bounded MTP prefill requires a configured multirow carrier"));
     model.bounded_prefill_rows = max_prefill_rows;
+    if constexpr (mtp) model.prepare_draft_context();
   }
   const auto configured_record_bound = first_turn_only ? cache::add(cache::multiply(configured_bound, 2), 2) : 0;
   if (first_turn_only)

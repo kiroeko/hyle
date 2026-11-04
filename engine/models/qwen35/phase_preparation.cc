@@ -224,6 +224,7 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
         io.probe_outputs[i] = phase_tensor(allocation_budget, take(execution.resource_for(output.storage)), output.description, output.caller_owned());
       }
       std::size_t fixed_count = 2 + sampling_identity + last_ids + packed_target + packed_verify +
+          bool(phase.draft_vocabulary_ids_port) + bool(phase.draft_vocabulary_allowed_port) +
           3 * bool(phase.predecessor_prefix_port) +
           io.logits.caller_owned() + io.final_hidden.caller_owned();
       if (has_mtp(role)) fixed_count += 1 + bool(draft_lag(role)) +
@@ -242,6 +243,12 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
           io.ordinary_io.packet() ? io.input_packet.tokens() : io.tokens.read()));
       check(program_slot.io.add_fixed(phase.position_port,
           io.ordinary_io.packet() ? io.input_packet.positions() : io.positions.read()));
+      if (phase.draft_vocabulary_ids_port) {
+        if (!environment.draft_vocabulary_ids || !environment.draft_vocabulary_allowed)
+          throw std::logic_error("mutable draft vocabulary ports require their original cold owners");
+        check(program_slot.io.add_fixed(phase.draft_vocabulary_ids_port, environment.draft_vocabulary_ids->read()));
+        check(program_slot.io.add_fixed(phase.draft_vocabulary_allowed_port, environment.draft_vocabulary_allowed->read()));
+      }
       if (phase.predecessor_prefix_port) {
         check(program_slot.io.add_fixed(phase.predecessor_prefix_port, io.predecessor_prefix.read()));
         check(program_slot.io.add_fixed(phase.continuation_position_port, io.continuation_positions.read()));

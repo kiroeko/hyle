@@ -947,7 +947,7 @@ WeightLoadReport load_weight_bank(const std::filesystem::path &manifest,
 
 PreparedDraftHead prepare_draft_head(Backend &execution, LoadedWeight &original,
     const hyle::inference::DraftVocabulary &mapping, std::size_t max_requests,
-    const c::ResourceBudget &allocation_budget) {
+    const c::ResourceBudget &allocation_budget, std::size_t context_rows) {
   const auto &description = original.tensor.description;
   Tensor *indexed = nullptr;
   if (max_requests == 1 && execution.kind() == hyle::inference::BackendKind::kCuda &&
@@ -958,7 +958,7 @@ PreparedDraftHead prepare_draft_head(Backend &execution, LoadedWeight &original,
       original.tensor.ready && !original.tensor.writer &&
       take(original.tensor.ready.view()).resource() == execution.device()) {
     const auto shape = description.dimensions();
-    const auto rows = static_cast<std::int64_t>(mapping.size());
+    const auto rows = static_cast<std::int64_t>(cache::add(mapping.size(), context_rows));
     const std::array inputs{dense(Type::kBFloat16, {shape[0], 1, shape[1]}),
         dense(Type::kFloat32, {1, 1, shape[1]}), dense(Type::kInt32, {1, rows})};
     const std::array outputs{dense(Type::kFloat32, {1, rows, 1})};
@@ -971,13 +971,23 @@ PreparedDraftHead prepare_draft_head(Backend &execution, LoadedWeight &original,
         check(candidate.error());
     } else if (candidate->capture_compatible()) indexed = &original.tensor;
   }
+  if (context_rows && !indexed) return {};
   LoadedWeight selected;
   if (!indexed) selected = select_dense_weight_rows(execution, original, mapping.ids(), allocation_budget);
-  Tensor ids(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(mapping.size())}),
+  std::optional<hyle::inference::DraftVocabularyContext> context;
+  if (indexed && context_rows) context = take(hyle::inference::DraftVocabularyContext::create(mapping, context_rows));
+  const auto values = context ? context->ids() : mapping.ids();
+  Tensor ids(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(values.size())}),
       true, allocation_budget);
-  check(execution.write(ids.storage(), std::as_bytes(mapping.ids()))); ids.freeze(execution);
+  check(execution.write(ids.storage(), std::as_bytes(values)));
+  Tensor allowed;
+  if (context) {
+    allowed = Tensor(execution.device(), dense(Type::kBool, {static_cast<std::int64_t>(values.size())}),
+        true, allocation_budget);
+    check(execution.write(allowed.storage(), std::as_bytes(context->allowed())));
+  } else ids.freeze(execution);
   auto identity = hyle::inference::artifact::sha256(std::as_bytes(mapping.ids()));
-  return {std::move(selected), std::move(ids), std::move(identity), indexed};
+  return {std::move(selected), std::move(ids), std::move(identity), indexed, std::move(context), std::move(allowed)};
 }
 
 } // namespace qwen35

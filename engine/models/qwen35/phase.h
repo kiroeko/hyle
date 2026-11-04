@@ -96,6 +96,7 @@ struct PhaseEnvironment final {
   // Original options for later SlotBindings::create; ordinary vector metadata
   // inside SlotTransactions::prepare is not newly charged by this handle.
   const c::ResourceBudget &cache_budget;
+  Tensor *draft_vocabulary_ids = nullptr, *draft_vocabulary_allowed = nullptr;
 };
 
 // Synchronously create the original stable IO/slot group; do not initialize an

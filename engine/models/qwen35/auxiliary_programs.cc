@@ -161,7 +161,8 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
     }
     if (head && selected_sampler.enabled)
       program.identity_values = auxiliary_tensor(allocation_budget, execution.device(), dense(Type::kUInt32, {1, 4}));
-    check(program.io.prepare(compiled_program, (head && selected_sampler.enabled ? 3 : 2) + bool(program.verification_prefix),
+    check(program.io.prepare(compiled_program, (head && selected_sampler.enabled ? 3 : 2) + bool(program.verification_prefix) +
+        bool(r.draft_vocabulary_ids) + bool(r.draft_vocabulary_allowed),
         program.hidden_inputs.size() + bool(program.bias) + bool(program.allowed) + bool(program.counts),
         head ? 1 + bool(program.valid) + (build_request.minimum_probability > 0) + bool(program.verification_packet) : 0,
         head ? bool(selected_sampler.enabled) + bool(program.next_counts) : 0));
@@ -200,6 +201,10 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
     }
     check(program.io.add_fixed(program.tokens, program.token_values.read()));
     check(program.io.add_fixed(program.positions, program.position_values.read()));
+    if (r.draft_vocabulary_ids) {
+      check(program.io.add_fixed(r.draft_vocabulary_ids, draft_facts.projection.original_ids->read()));
+      check(program.io.add_fixed(r.draft_vocabulary_allowed, draft_facts.projection.allowed_rows->read()));
+    }
     if (program.verification_prefix) check(program.io.add_fixed(program.verification_prefix, program.verification_prefix_values.read()));
     if (head) {
       program.id_value = take(program.io.add_readback(program.id, execution.storage_domains(), allocation_budget));
