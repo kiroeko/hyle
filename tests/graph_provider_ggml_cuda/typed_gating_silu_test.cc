@@ -343,4 +343,60 @@ TEST(GgmlCudaTypedGatingSilu, PublishedAndViewReadIntermediatesKeepOriginalDecom
 TEST(GgmlCudaTypedGatingSilu, ExternalControlReaderKeepsOriginalDecomposition) {
   exercise(small(), false, false, Escape::kControl);
 }
+TEST(GgmlCudaTypedGatingSilu, F32SigmoidProductPreservesSpecialValuesEscapesAndCapturedRebinding) {
+  auto context = g::cuda::create_context().value();
+  auto owner = c::StorageOwner::adopt(context,
+      c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value()).value();
+  auto queue = context.create_queue().value();
+  const auto desc = dense(c::DataType::kFloat32, {1,128});
+  for (const bool escape : {false,true}) {
+    auto builder = g::GraphBuilder::create().value();
+    const auto x = builder.input(desc).value(), other = builder.input(desc).value();
+    const auto s = builder.add(c::Unary{c::UnaryKind::kSigmoid}, x).value();
+    const auto product = builder.add_node(c::Operation(c::Binary{c::BinaryKind::kMultiply}),
+        std::array{s,other}).value();
+    const auto y = builder.result(product).value();
+    ASSERT_TRUE(builder.publish(y).ok());
+    if (escape) ASSERT_TRUE(builder.publish(s).ok());
+    const auto graph = std::move(builder).finish().value();
+    auto program = g::cuda::compile(graph,context,owner).value();
+    std::size_t fused = 0;
+    for (std::size_t i=0;i<program.report.step_count();++i) {
+      const auto step = program.report.step(i).value();
+      fused += step.policy == kPolicy && step.node_count == 2;
+    }
+    EXPECT_EQ(fused,escape ? 0U : 1U);
+    auto slot = program.executable.create_invocation().value();
+    for (int round=0;round<2;++round) {
+      std::vector<float> a(128),b(128);
+      for (std::size_t i=0;i<a.size();++i) {
+        a[i]=(int((i+round)%37)-18)*.75F;
+        b[i]=(int(i%13)-6)*.125F;
+      }
+      a[0]=-INFINITY;a[1]=INFINITY;a[2]=NAN;a[3]=-0.F;
+      a[4]=std::numeric_limits<float>::denorm_min();
+      b[0]=-2.F;b[1]=INFINITY;b[2]=1.F;b[3]=-0.F;
+      auto ab=upload<float>(owner.ref(),a),bb=upload<float>(owner.ref(),b);
+      auto output=output_buffer(owner.ref(),desc),observed=output_buffer(owner.ref(),desc);
+      ASSERT_TRUE(slot.bind(x,c::ConstTensorView::create(desc,ab.view()).value()).ok());
+      ASSERT_TRUE(slot.bind(other,c::ConstTensorView::create(desc,bb.view()).value()).ok());
+      ASSERT_TRUE(slot.bind(y,c::TensorView::create(desc,output.view()).value()).ok());
+      if(escape) ASSERT_TRUE(slot.bind(s,c::TensorView::create(desc,observed.view()).value()).ok());
+      ASSERT_TRUE(g::cuda::prepare_replay(slot,queue,{.mode=g::ReplayMode::kRequireCapture}).ok());
+      auto done=slot.submit(queue).value();ASSERT_TRUE(done.wait().ok());
+      const auto got=half_test::read<float>(output);
+      for(std::size_t i=0;i<got.size();++i) {
+        const double sigmoid=1./(1.+std::exp(-double(a[i])));
+        const auto expected=float(sigmoid)*b[i];
+        if(std::isnan(expected)) EXPECT_TRUE(std::isnan(got[i]))<<i;
+        else if(!std::isfinite(expected) || expected==0.F) {
+          EXPECT_EQ(got[i],expected)<<i;
+          EXPECT_EQ(std::signbit(got[i]),std::signbit(expected))<<i;
+        } else EXPECT_NEAR(got[i],expected,std::abs(expected)*5.e-7F+1.e-7F)<<i;
+      }
+      auto held=slot.result(y).value();EXPECT_TRUE(slot.reset().IsUnavailable());
+      held.reset();ASSERT_TRUE(slot.reset().ok());
+    }
+  }
+}
 } // namespace

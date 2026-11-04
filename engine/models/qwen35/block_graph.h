@@ -51,11 +51,20 @@ Value emit_gdn_epilogue(R &r, Value recurrent, Value normalized,
   auto y = r.cast(recurrent, r.activation_type());
   if (!probes.empty()) probes[0] = y;
   const auto y_f32 = r.cast(y, Type::kFloat32);
-  y = r.cast(r.same(compute::RmsNorm{.epsilon = r.geometry.epsilon}, {y_f32}, y_f32), r.activation_type());
-  // Official F32 and converted BF16 norm scales keep their actual product
-  // rounding. Do not fold this scale into the RMS operation.
-  const auto norm_scale = r.weight_absolute(absolute_prefix + "linear_attn.norm.weight");
-  y = r.binary(compute::BinaryKind::kMultiply, r.cast(y, r.spec(norm_scale).data_type()), norm_scale);
+  if (r.activation_type() == Type::kFloat32) {
+    const auto norm_scale = r.weight_absolute(absolute_prefix + "linear_attn.norm.weight");
+    if (r.spec(norm_scale).data_type() == Type::kFloat32) {
+      y = r.same(compute::RmsNorm{.epsilon = r.geometry.epsilon}, {y_f32, norm_scale}, y_f32);
+    } else {
+      y = r.same(compute::RmsNorm{.epsilon = r.geometry.epsilon}, {y_f32}, y_f32);
+      y = r.binary(compute::BinaryKind::kMultiply, r.cast(y, r.spec(norm_scale).data_type()), norm_scale);
+    }
+  } else {
+    y = r.cast(r.same(compute::RmsNorm{.epsilon = r.geometry.epsilon}, {y_f32}, y_f32), r.activation_type());
+    // Keep the original construction order and public narrow product boundary.
+    const auto norm_scale = r.weight_absolute(absolute_prefix + "linear_attn.norm.weight");
+    y = r.binary(compute::BinaryKind::kMultiply, r.cast(y, r.spec(norm_scale).data_type()), norm_scale);
+  }
   const auto z = r.reshape(r.linear_absolute(normalized, absolute_prefix + "linear_attn.in_proj_z.weight"), row_shape);
   y = r.cast(r.binary(compute::BinaryKind::kMultiply, r.cast(y, Type::kFloat32),
       r.unary(compute::UnaryKind::kSilu, r.cast(z, Type::kFloat32))), r.activation_type());

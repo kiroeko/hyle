@@ -653,7 +653,8 @@ Result<bool> matches_silu_multiply(void *context, const Graph &graph,
   if (!silu || !multiply) return false;
   const auto *unary = silu->get_if<compute::Unary>();
   const auto *binary = multiply->get_if<compute::Binary>();
-  if (!unary || unary->kind != compute::UnaryKind::kSilu || !binary ||
+  if (!unary || (unary->kind != compute::UnaryKind::kSilu &&
+                 unary->kind != compute::UnaryKind::kSigmoid) || !binary ||
       binary->kind != compute::BinaryKind::kMultiply)
     return false;
   HYLE_ASSIGN_OR_RETURN(auto silu_inputs, graph.node_input_count(nodes[0]));
@@ -672,6 +673,9 @@ Result<bool> matches_silu_multiply(void *context, const Graph &graph,
   HYLE_ASSIGN_OR_RETURN(auto output, graph.result(nodes[1]));
   HYLE_ASSIGN_OR_RETURN(auto description, graph.value_description(gate));
   const auto type = description.data_type();
+  // A public BF16 sigmoid result cannot be elided by the F32 carrier.
+  if (unary->kind == compute::UnaryKind::kSigmoid && type != compute::DataType::kFloat32)
+    return false;
   if (!description.is_plain() || !description.is_dense() ||
       (type != compute::DataType::kFloat32 &&
        type != compute::DataType::kBFloat16))

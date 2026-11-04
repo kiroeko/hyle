@@ -16,6 +16,53 @@ using ggml_cuda_tensor_test::output_buffer;
 using ggml_cuda_tensor_test::upload;
 constexpr c::RoutePolicyId kPolicy{0x48594c4547474355ULL, 8, 1};
 
+TEST(GgmlCudaF32GdnNorm, WeightedNormMatchesFloat64AndStandaloneProduct) {
+  auto context = g::cuda::create_context().value();
+  auto owner = c::StorageOwner::adopt(context,
+      c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value()).value();
+  auto queue = context.create_queue().value();
+  constexpr std::size_t width=128, rows=32;
+  const auto desc=dense(c::DataType::kFloat32,{rows,width});
+  const auto weight_desc=dense(c::DataType::kFloat32,{width});
+  auto builder=g::GraphBuilder::create().value();
+  const auto x=builder.input(desc).value(), w=builder.input(weight_desc).value();
+  const auto node=builder.add_node(c::Operation(c::RmsNorm{.epsilon=1.e-6F}),std::array{x,w}).value();
+  const auto y=builder.result(node).value(); ASSERT_TRUE(builder.publish(y).ok());
+  auto compiled=g::cuda::compile(std::move(builder).finish().value(),context,owner).value();
+  auto slot=compiled.executable.create_invocation().value();
+  for (int round=0;round<2;++round) {
+    const auto values=d5_gguf_test::values(rows,width,19+round);
+    std::vector<float> scale(width);
+    for (std::size_t i=0;i<width;++i) scale[i]=float(int((i+round)%17)-8)*.25F;
+    auto input=upload<float>(owner.ref(),values), weight=upload<float>(owner.ref(),scale);
+    auto normalized=output_buffer(owner.ref(),desc), staged=output_buffer(owner.ref(),desc);
+    auto output=output_buffer(owner.ref(),desc);
+    const auto xv=c::ConstTensorView::create(desc,input.view()).value();
+    const auto wv=c::ConstTensorView::create(weight_desc,weight.view()).value();
+    ASSERT_TRUE(ggml_cuda_tensor_test::execute(context,c::Operation(c::RmsNorm{.epsilon=1.e-6F}),
+        std::span(&xv,1),c::TensorView::create(desc,normalized.view()).value()).ok());
+    const std::array inputs{c::ConstTensorView::create(desc,normalized.view()).value(),wv};
+    ASSERT_TRUE(ggml_cuda_tensor_test::execute(context,c::Operation(c::Binary{c::BinaryKind::kMultiply}),
+        inputs,c::TensorView::create(desc,staged.view()).value()).ok());
+    ASSERT_TRUE(slot.bind(x,xv).ok()); ASSERT_TRUE(slot.bind(w,wv).ok());
+    ASSERT_TRUE(slot.bind(y,c::TensorView::create(desc,output.view()).value()).ok());
+    ASSERT_TRUE(g::cuda::prepare_replay(slot,queue,{.mode=g::ReplayMode::kRequireCapture}).ok());
+    auto done=slot.submit(queue).value(); ASSERT_TRUE(done.wait().ok());
+    const auto got=half_test::read<float>(output), previous=half_test::read<float>(staged);
+    EXPECT_EQ(got,previous);
+    for (std::size_t row=0;row<rows;++row) {
+      double square=0;
+      for (std::size_t i=0;i<width;++i) square+=double(values[row*width+i])*values[row*width+i];
+      for (std::size_t i=0;i<width;++i) {
+        const double reference=double(values[row*width+i])/std::sqrt(square/width+1.e-6)*scale[i];
+        EXPECT_NEAR(double(got[row*width+i]),reference,2.e-7+std::abs(reference)*2.e-6);
+      }
+    }
+    auto held=slot.result(y).value(); EXPECT_TRUE(slot.reset().IsUnavailable());
+    held.reset(); ASSERT_TRUE(slot.reset().ok());
+  }
+}
+
 TEST(GgmlCudaF32L2, AdditiveEpsilonMatchesFloat64AcrossMagnitudesAndCapturedRebinding) {
   auto context = g::cuda::create_context().value();
   auto owner = c::StorageOwner::adopt(context,
