@@ -448,6 +448,21 @@ endif()
 
 if(TARGET hyle_engine)
   # The complete-state consumer is available on CPU-only builds as well.
+  if(TARGET hyle_graph_route_cuda)
+    add_test(NAME hyle_inference_quality_tool_test
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tooling/inference_quality_test.py")
+    set_tests_properties(hyle_inference_quality_tool_test PROPERTIES
+      LABELS "tooling;inference;quality;cpu" TIMEOUT 60 SKIP_RETURN_CODE 77)
+    add_executable(hyle_qwen_quality_worker tools/qwen_quality_worker.cc
+      ${_hyle_qwen35_cold_sources})
+    hyle_configure_engine_target(hyle_qwen_quality_worker)
+    if(MSVC)
+      target_compile_options(hyle_qwen_quality_worker PRIVATE /bigobj)
+    endif()
+    set_target_properties(hyle_qwen_quality_worker PROPERTIES
+      FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+    add_dependencies(hyle_tests hyle_qwen_quality_worker)
+  endif()
   add_executable(hyle_qwen_host_image_test tools/qwen_host_image_test.cc
     ${_hyle_qwen35_cold_sources})
   hyle_configure_engine_target(hyle_qwen_host_image_test)

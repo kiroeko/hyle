@@ -187,6 +187,28 @@ local NVFP4 保留原独立全局乘数和 F32 输入预舍入；它们不套用
 
 ## 查看性能
 
+普通 decode 的数值回归可用 `scripts/inference-quality.py` 逐行计算完整词表 KL，
+不保存完整 logits。它同时驻留 BF16 oracle 和一个候选模型，串行提交 GPU 工作；
+这不是速度测试。需要 Python NumPy、准备好的三格式本地输入和 GGUF，以及 CUDA 测试构建：
+
+```powershell
+cmake --build <build> --config Release --target hyle_qwen_quality_worker
+python scripts/inference-quality.py run --hyle-worker <build>/bin/hyle_qwen_quality_worker.exe --hyle-runtime <build>/bin --peer-worker <tools>/llama_quality_worker.exe --official-bin <b12063-bin> --bf16-model <BF16.gguf> --q8-model <Q8_0.gguf> --q4-model <Q4_K_M.gguf> --bf16-inputs <BF16-inputs> --q8-inputs <Q8-inputs> --q4-inputs <Q4-inputs> --corpus tests/data/inference-quality-prompts.tsv --output <fresh-output> --hyle-version <source-commit> --peer-version <peer-commit>
+```
+
+上游 worker 源码为 `tests/tools/llama_quality_worker.cc`，使用固定 b12063 的公开
+`include/`、`ggml/include/` 头文件编译，并链接其 `llama`、`ggml`、`ggml-base` 导入库；
+Windows 可从对应官方 DLL 的导出表生成导入库。需要 C++20；不链接 Hyle 的 ggml。
+worker 会核对实际载入的 DLL 位于 `--official-bin` 指定目录。
+
+默认取新提示集的 8192 个 BF16 greedy teacher 位置，每提示最多 64 个，遇 EOS 停止；
+每个候选强制使用同一前缀。提示通过 GGUF 自带 chat template 和 tokenizer 转换，不下载模型。
+每个提示后清空上游状态，Hyle 走原会话退休并核对页、版本和借用资源。
+输出仅保留 token、逐位置指标、命令和 stderr；可以用
+`python scripts/inference-quality.py analyze <output>` 重算提示分组 bootstrap。
+分组按提示重采样，不能把相邻位置当成独立样本。此合成短提示集用于有限数值回归，
+不代表通用质量、长上下文或 MTP 资格；护栏与实际结果见下方性能资料。
+
 普通与 MTP 分开对照，报告 prefill、decode、内存／显存以及真实多轮综合速度，加载时间另列。
 最新正式窗口、计数边界和已知热点统一保留在[decode 性能资料](../developer/performance/decode.md)，
 不以模型改名、组件测试通过或减少 kernel 数量推定端到端提速。
