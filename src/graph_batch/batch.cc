@@ -15,6 +15,7 @@
 #include "hyle/compute/detail/copy_outcome_source.h"
 #include "hyle/compute/detail/indexed_copy_backend.h"
 #include "hyle/mem/std_allocator.h"
+#include "hyle/container/small_vector.h"
 #include "../graph/compile_internal.h"
 #include "../graph/plan_state.h"
 #include "../graph/execution_source_internal.h"
@@ -46,7 +47,7 @@ struct QueryRowsAccess final {
 namespace {
 struct Region final {
   NodeId node;ValueId metadata;
-  std::array<ValueId,4> values{};std::array<std::size_t,4> inputs{};
+  std::array<ValueId,5> values{};std::array<std::size_t,5> inputs{};
   c::BatchProgramOptions options;
   cd::ContextRef context;cd::ProviderExtensionRef source;
   c::BatchCapacity capacity{};c::MlaCacheLayout mla=c::MlaCacheLayout::kNone;
@@ -54,16 +55,18 @@ struct Region final {
   c::BatchLayoutVersion initial_layout;
   c::BatchSchema choice_schema;
   bool device_choice=false;
+  bool device_lengths=false;
   mem::MemoryResourceRef resource{};std::size_t boundary_count=0;
   bool graph_capture=false;
   c::WorkspaceRequirement float_workspace{};
 };
 struct Slot final {
+  explicit Slot(mem::AllocatorRef allocator):choice_layouts(allocator){}
   struct WrittenBank final {c::BatchLayoutVersion layout;c::ConstTensorView capacity;NodeId producer;};
   Region*region=nullptr;c::BatchInvocation native;c::PreparedBatch token;
   std::uint32_t selected_step=UINT32_MAX;ExecutionLaneId lane{};
   c::BatchLayoutVersion layout;c::PagedArenaRead keys,values;
-  std::array<c::BatchLayoutVersion,2> choice_layouts;
+  container::SmallVector<c::BatchLayoutVersion,2,mem::AllocatorRef> choice_layouts;
   WrittenBank written_keys,written_values;
   c::BatchProgram program;PrepareOptions prepared_options{};cd::QueueRef queue;
   // Physical metadata ownership only, not a retained read permission. The
@@ -72,8 +75,8 @@ struct Slot final {
   mem::BufferView float_workspace;
 };
 std::size_t payloads(const Region&r)noexcept{return r.mla==c::MlaCacheLayout::kNone?3u:2u;}
-std::size_t ports(const Region&r)noexcept{return payloads(r)+(r.initial_layout.valid()?0u:1u);}
-cd::BatchGraphContract contract(const Region&r)noexcept{return r.device_choice?
+std::size_t ports(const Region&r)noexcept{return payloads(r)+(r.device_lengths?2u:r.initial_layout.valid()?0u:1u);}
+cd::BatchGraphContract contract(const Region&r)noexcept{return r.device_lengths?cd::BatchGraphContract::kDeviceLengths:r.device_choice?
     cd::BatchGraphContract::kDeviceLayoutChoice:r.initial_layout.valid()?
     cd::BatchGraphContract::kOwnedLayoutActive:cd::BatchGraphContract::kPreparedMetadataCapacity;}
 bool has_value_port(const Region&r)noexcept{return r.mla==c::MlaCacheLayout::kNone;}
@@ -89,7 +92,7 @@ Status covered_choices(const Slot&s,const c::BatchLayoutVersion&available)noexce
     for(std::size_t i=0;i<needed.pages.size();++i){
       while(at<permitted.pages.size() && permitted.pages[at]<needed.pages[i])++at;
       if(at==permitted.pages.size() || permitted.pages[at]!=needed.pages[i] || permitted.required_rows[at]<needed.required_rows[i])
-        return Status::InvalidArgument("ready page footprint does not cover both device choices");
+        return Status::InvalidArgument("ready page footprint does not cover every admitted device layout");
     }
   }
   return Status::Ok();
@@ -104,14 +107,14 @@ Status create_slot(void*prepared,mem::AllocatorRef a,mem::BufferView workspace,v
   if(r.float_workspace.size && (!workspace.valid() || workspace.resource()!=r.resource ||
       workspace.size()<r.float_workspace.size || workspace.offset()%r.float_workspace.alignment))
     return Status::InvalidArgument("Graph batch float scratch differs from its declared region workspace");
-  auto*s=a.construct<Slot>();if(!s)return Status::ResourceExhausted("Graph batch slot metadata");
+  auto*s=a.construct<Slot>(a);if(!s)return Status::ResourceExhausted("Graph batch slot metadata");
   s->region=&r;if(r.float_workspace.size)s->float_workspace=workspace;*out=s;return Status::Ok();
 }
 void destroy_slot(void*p,mem::AllocatorRef a)noexcept{a.destroy(static_cast<Slot*>(p));}
 cd::EnqueueResult submit_region(void*prepared,void*invocation,cd::QueueSequence&sequence,std::span<const c::ConstTensorView>inputs,std::span<const c::TensorView>outputs)noexcept{
   const auto&r=*static_cast<Region*>(prepared);auto&s=*static_cast<Slot*>(invocation);
   if(!s.token.valid() || inputs.size()!=r.boundary_count)return cd::EnqueueResult::rejected(Status::FailedPrecondition("Graph batch region has no explicit prepared token"));
-  std::array<c::ConstTensorView,4> ordered;for(std::size_t i=0;i<ports(r);++i)ordered[i]=inputs[r.inputs[i]];
+  std::array<c::ConstTensorView,5> ordered;for(std::size_t i=0;i<ports(r);++i)ordered[i]=inputs[r.inputs[i]];
   for(std::size_t port=1;port<payloads(r);++port){const auto&frame=port==1?s.keys:s.values;if(!frame.valid())continue;
     auto view=cd::PagedArenaAccess::tensor(frame);if(!view)return cd::EnqueueResult::rejected(view.error());
     if(frame.layout()!=s.layout || !same_storage(view->storage(),ordered[port].storage()))
@@ -221,6 +224,7 @@ struct BatchGeometry final {
   c::BatchLayoutVersion initial_layout;
   c::BatchSchema choice_schema;
   bool device_choice=false;
+  bool device_lengths=false;
 };
 Result<BatchGeometry> geometry(const c::Operation&operation)noexcept{
   BatchGeometry result;
@@ -228,7 +232,12 @@ Result<BatchGeometry> geometry(const c::Operation&operation)noexcept{
     result.math.scale=op.scale;result.math.causal=op.causal;
     result.math.window_left=op.window_left;
   };
-  if(const auto choice=operation.custom_as<DeviceChoicePagedAttention>()){
+  if(const auto indexed=operation.custom_as<DeviceLengthsPagedAttention>()){
+    if(!indexed->schema.valid())return std::unexpected(Status::InvalidArgument("device indexed attention schema is empty"));
+    result.capacity=indexed->schema.capacity();result.choice_schema=indexed->schema;
+    result.device_choice=true;result.device_lengths=true;
+    set(indexed->options);result.math.allow_bf16_partials=indexed->options.allow_bf16_partials;
+  }else if(const auto choice=operation.custom_as<DeviceChoicePagedAttention>()){
     if(!choice->schema.valid())return std::unexpected(Status::InvalidArgument("device choice attention schema is empty"));
     result.capacity=choice->schema.capacity();result.choice_schema=choice->schema;result.device_choice=true;
     set(choice->options);result.math.allow_bf16_partials=choice->options.allow_bf16_partials;
@@ -288,7 +297,8 @@ Status qualify_geometry(const AdapterContext&adapter,const BatchGeometry&shape,
   if(adapter.source.id()!=capability)return Status::Unimplemented("native batch capability has different payload semantics");
   if(shape.device_choice){
     if(!adapter.runtime.capture_compatible)return Status::Unimplemented("device choices require the original outer-capture-compatible provider");
-    auto choice=cd::ProviderExtensionAccess::query(adapter.source,cd::kBatchDeviceChoiceExtensionId);
+    auto choice=cd::ProviderExtensionAccess::query(adapter.source,shape.device_lengths?
+        cd::kBatchDeviceLengthsExtensionId:cd::kBatchDeviceChoiceExtensionId);
     if(!choice)return choice.error();
   }
   auto bound=shape;bound.math.resource=resource.valid()?resource:adapter.resource;
@@ -348,7 +358,7 @@ Status native_resources(void*opaque,const RegionCompileRequest&r,mem::AllocatorR
   if(!r.graph || r.nodes.size()!=1 || outputs.size()!=1 || r.has_unknown_effects || !r.effect_accesses.empty())
     return Status::Unimplemented("native batch requires its pure typed node");
   HYLE_ASSIGN_OR_RETURN(auto operation,r.graph->operation(r.nodes[0]));HYLE_ASSIGN_OR_RETURN(auto shape,geometry(operation));
-  const auto count=(shape.mla==c::MlaCacheLayout::kNone?3u:2u)+(shape.initial_layout.valid()?0u:1u);
+  const auto count=(shape.mla==c::MlaCacheLayout::kNone?3u:2u)+(shape.device_lengths?2u:shape.initial_layout.valid()?0u:1u);
   if(inputs.size()!=r.inputs.size() || inputs.empty() || inputs.size()>count)return Status::InvalidArgument("native batch boundary port count differs");
   HYLE_RETURN_IF_ERROR(qualify_geometry(*static_cast<AdapterContext*>(opaque),shape));
   const auto&adapter=*static_cast<AdapterContext*>(opaque);
@@ -357,8 +367,8 @@ Status native_resources(void*opaque,const RegionCompileRequest&r,mem::AllocatorR
           mem::MemoryProperty::kHostAccessible:mem::MemoryProperty::kDeviceAccessible,
       .minimum_alignment=16};
   std::fill(inputs.begin(),inputs.end(),RegionInputRequirement{.resource=requirement});
-  if(!shape.initial_layout.valid()){
-    HYLE_ASSIGN_OR_RETURN(auto metadata,r.graph->node_input(r.nodes[0],count-1));
+  if(!shape.initial_layout.valid())for(std::size_t port=shape.device_lengths?count-2:count-1;port<count;++port){
+    HYLE_ASSIGN_OR_RETURN(auto metadata,r.graph->node_input(r.nodes[0],port));
     const auto found=std::find(r.inputs.begin(),r.inputs.end(),metadata);
     if(found==r.inputs.end())return Status::InvalidArgument("native batch metadata boundary is missing");
     inputs[std::size_t(found-r.inputs.begin())].resource.minimum_alignment=shape.device_choice?4:8;
@@ -382,7 +392,7 @@ c::ProviderPrepareOutcome compile_native_region(void*opaque,const RegionCompileR
   const auto&adapter=*static_cast<AdapterContext*>(opaque);
   const auto admitted=qualify_geometry(adapter,*shape,r.output_resources[0]);
   if(!admitted.ok())return admitted.IsUnimplemented()?c::ProviderPrepareOutcome::unsupported(admitted):c::ProviderPrepareOutcome::error(admitted);
-  const auto count=(shape->mla==c::MlaCacheLayout::kNone?3u:2u)+(shape->initial_layout.valid()?0u:1u);
+  const auto count=(shape->mla==c::MlaCacheLayout::kNone?3u:2u)+(shape->device_lengths?2u:shape->initial_layout.valid()?0u:1u);
   if(r.inputs.empty() || r.inputs.size()>count)return c::ProviderPrepareOutcome::unsupported(Status::Unimplemented("native batch region port count differs"));
   auto query_value=r.graph->node_input(r.nodes[0],0);
   if(!query_value)return c::ProviderPrepareOutcome::error(query_value.error());
@@ -411,6 +421,7 @@ c::ProviderPrepareOutcome compile_native_region(void*opaque,const RegionCompileR
   p->capacity=shape->capacity;p->mla=shape->mla;p->options=shape->math;p->resource=r.output_resources[0];p->boundary_count=r.inputs.size();
   p->initial_layout=shape->initial_layout;p->query_rows=query_rows;p->graph_capture=adapter.runtime.capture_compatible;
   p->choice_schema=shape->choice_schema;p->device_choice=shape->device_choice;
+  p->device_lengths=shape->device_lengths;
   p->float_workspace=*scratch;
   for(std::size_t i=0;i<count;++i){
     auto value=r.graph->node_input(p->node,i);if(!value)return c::ProviderPrepareOutcome::error(value.error());
@@ -440,7 +451,7 @@ Result<CompiledGraph> compile(const Graph&graph,CompileEnvironment environment,C
     HYLE_ASSIGN_OR_RETURN(auto kind,graph.operation_kind(node));
     if(kind!=c::OperationKind::kCustom)continue;
     HYLE_ASSIGN_OR_RETURN(auto operation,graph.operation(node));has_append|=operation.custom_as<PagedAppend>().has_value() ||
-        operation.custom_as<DeviceChoicePagedAppend>().has_value();
+        operation.custom_as<DeviceChoicePagedAppend>().has_value() || operation.custom_as<DeviceLengthsPagedAppend>().has_value();
     has_store|=operation.custom_as<gs::Store>().has_value();}
   try{
     const auto effects=std::size_t(has_append)+std::size_t(has_store);
@@ -586,7 +597,7 @@ Status prepare_native(graph::Invocation&invocation,std::span<const QueueBinding>
     std::span<const NodeLayout>layouts,PrepareOptions options,
     std::span<const detail::NativeBatchRegionRef>native_regions,
     std::span<const NodeLayout>all_layouts,PreparedEntries*workspace=nullptr,
-    bool selected=false,std::span<const NodeLayoutChoice>choices={})noexcept{
+    bool selected=false,std::span<const NodeLayoutChoice>choices={},bool device_lengths=false)noexcept{
   if(!options.allocator.valid() || !options.host_workspace.valid() ||
       !options.max_float_workspace_bytes || !options.max_int_workspace_bytes)
     return Status::InvalidArgument("native Graph preparation resources are invalid");
@@ -632,13 +643,14 @@ Status prepare_native(graph::Invocation&invocation,std::span<const QueueBinding>
           binding.layout.facts().query_rows>found->region->query_rows)
         return Status::InvalidArgument("native Graph active queries exceed its concrete Q/output extent");
       if(found!=entries.end() && found->region->node==binding.node && found->region->device_choice &&
-          std::none_of(choices.begin(),choices.end(),[&](const auto&choice){return choice.node==binding.node;}))
-        return Status::InvalidArgument("device choice attention requires prepare_choices with both exact layouts");
+          std::none_of(choices.begin(),choices.end(),[&](const auto&choice){return choice.node==binding.node;}) &&
+          !(device_lengths && found->region->device_lengths))
+        return Status::InvalidArgument("device selected attention requires its exact cold layout set");
     }
     for(const auto&entry:entries)if(!entry.region->graph_capture)
       HYLE_RETURN_IF_ERROR(gd::RegionAccess::invalidate_commands(invocation,entry.step));
     for(auto&entry:entries){entry.slot->token={};entry.slot->layout={};entry.slot->keys={};entry.slot->values={};
-      entry.slot->choice_layouts={};
+      entry.slot->choice_layouts.clear();
       cd::BatchGraphAccess::clear_shared_metadata(entry.slot->native);}
     const auto apply=[&]()noexcept->Status{
       if(layouts.size()!=entries.size())return Status::InvalidArgument("native Graph requires every selected node layout");
@@ -745,12 +757,16 @@ Status prepare_native(graph::Invocation&invocation,std::span<const QueueBinding>
           }
           s.prepared_options=options;s.queue=entry.queue_owner;
         }
-        if(r.device_choice){
+        if(r.device_lengths){
+          if(!device_lengths || layout.facts().query_rows!=r.query_rows || !r.choice_schema.owns(layout))
+            return Status::InvalidArgument("device-length capacity differs from its original node/schema");
+          HYLE_ASSIGN_OR_RETURN(s.token,cd::BatchGraphAccess::prepare_lengths(s.native,layout,options.update,before_change));
+        }else if(r.device_choice){
           const auto choice=std::find_if(choices.begin(),choices.end(),[&](const auto&value){return value.node==r.node;});
           if(choice==choices.end() || !r.choice_schema.owns(choice->layouts[0]) || !r.choice_schema.owns(choice->layouts[1]))
             return Status::InvalidArgument("device choice attention alternatives differ from its original schema");
           HYLE_ASSIGN_OR_RETURN(s.token,cd::BatchGraphAccess::prepare_choices(s.native,choice->layouts,options.update,before_change));
-          s.choice_layouts=choice->layouts;
+          s.choice_layouts.assign(choice->layouts.begin(),choice->layouts.end());
         }else if(entry.metadata_source){
           HYLE_ASSIGN_OR_RETURN(s.token,cd::BatchGraphAccess::prepare_shared(
               s.native,layout,options.update,entry.metadata_source->slot->native,before_change));
@@ -800,7 +816,7 @@ Status capture_native(graph::Invocation&invocation,std::span<const QueueBinding>
       return Status::InvalidArgument("native Graph replay Queue differs from preparation");
     if(view.inputs.size()!=r.boundary_count || view.outputs.size()!=1)
       return Status::InvalidArgument("native Graph replay needs its complete original ports");
-    std::array<c::ConstTensorView,4>ordered;
+    std::array<c::ConstTensorView,5>ordered;
     for(std::size_t i=0;i<ports(r);++i)ordered[i]=view.inputs[r.inputs[i]];
     if(r.graph_capture)
       return cd::BatchGraphAccess::validate_replay(s.token,*found->queue,std::span(ordered).first(ports(r)),view.outputs,contract(r));
@@ -1229,7 +1245,7 @@ Status clear_native_frames(graph::Invocation&invocation)noexcept{
 }
 Status prepare_all(graph::Invocation&invocation,const Graph*graph,std::span<const QueueBinding>queues,
     std::span<const NodeLayout>layouts,std::span<const RowCacheBinding>rows,PrepareOptions options,
-    std::span<const NodeLayoutChoice>choices={})noexcept{
+    std::span<const NodeLayoutChoice>choices={},bool device_lengths=false)noexcept{
   if(!rows.empty() && !graph)return Status::InvalidArgument("typed row preparation needs its immutable source Graph");
   // Revoke this layout episode through the original outcome/result gate.
   // Stable caller bindings and their owners survive; page permissions do not.
@@ -1302,7 +1318,7 @@ Status prepare_all(graph::Invocation&invocation,const Graph*graph,std::span<cons
       catch(...){return Status::ResourceExhausted("native Graph cached layout partition");}
     }
     HYLE_RETURN_IF_ERROR(prepare_native(invocation,queues,shared_layouts,options,native_regions,layouts,
-        cache_selection?&p->selected_entries:nullptr,cached,choices));
+        cache_selection?&p->selected_entries:nullptr,cached,choices,device_lengths));
     if(p){
       for(const auto&region:p->native_regions)
         HYLE_RETURN_IF_ERROR(gd::RegionAccess::invalidate_commands(invocation,region.step));
@@ -1361,7 +1377,7 @@ Status native_frame(graph::Invocation&invocation,ValueId value,const Frame&frame
     if(r.values[1]!=call.value && (!has_value_port(r) || r.values[2]!=call.value))return Status::Ok();
     if(r.capacity.storage!=c::BatchStorage::kPaged || !s.layout.valid() || s.layout!=call.frame->layout() || !s.token.valid())
       return Status::InvalidArgument("typed page frame differs from its original prepared reader/layout");
-    if(r.device_choice)HYLE_RETURN_IF_ERROR(covered_choices(s,call.frame->layout()));
+    if(r.device_choice && !r.device_lengths)HYLE_RETURN_IF_ERROR(covered_choices(s,call.frame->layout()));
     if(r.values[1]==call.value)HYLE_RETURN_IF_ERROR(cd::PagedArenaAccess::validate_storage(*call.frame,r.capacity.key_storage));
     if(has_value_port(r) && r.values[2]==call.value)HYLE_RETURN_IF_ERROR(cd::PagedArenaAccess::validate_storage(*call.frame,r.capacity.value_storage));
     if(call.pending && ((r.values[1]==call.value && s.keys.valid()) ||
@@ -1380,6 +1396,11 @@ Status native_frame(graph::Invocation&invocation,ValueId value,const Frame&frame
 Status prepare(graph::Invocation&invocation,std::span<const QueueBinding>queues,
     std::span<const NodeLayout>layouts,PrepareOptions options)noexcept{
   return prepare_all(invocation,nullptr,queues,layouts,{},std::move(options));
+}
+Status prepare_lengths(graph::Invocation&invocation,std::span<const QueueBinding>queues,
+    std::span<const NodeLayout>envelopes,PrepareOptions options)noexcept{
+  if(envelopes.empty())return Status::InvalidArgument("device-length capacity envelopes are empty");
+  return prepare_all(invocation,nullptr,queues,envelopes,{},std::move(options),{},true);
 }
 Result<bool> try_prepare_choices(graph::Invocation&invocation,std::span<const QueueBinding>queues,
     std::span<const NodeLayoutChoice>choices,PrepareOptions options)noexcept{
@@ -1417,7 +1438,7 @@ Result<bool> try_prepare_choices(graph::Invocation&invocation,std::span<const Qu
       auto&call=*static_cast<Preflight*>(opaque);++call.selected;
       auto&r=*static_cast<Region*>(view.prepared);const auto&s=*static_cast<Slot*>(view.invocation);
       const auto choice=std::find_if(call.choices.begin(),call.choices.end(),[&](const auto&x){return x.node==r.node;});
-      if(choice==call.choices.end() || !r.device_choice ||
+      if(choice==call.choices.end() || !r.device_choice || r.device_lengths ||
           !r.choice_schema.owns(choice->layouts[0]) || !r.choice_schema.owns(choice->layouts[1]))
         return Status::InvalidArgument("device choice preflight differs from the exact original typed node/schema");
       const auto queued=std::find_if(call.queues.begin(),call.queues.end(),[&](const auto&q){return q.lane==view.lane;});
@@ -1639,7 +1660,7 @@ Result<SourceBinding>reader_binding(Invocation&invocation,ValueId bank,
   try{for(auto*slot:p->frame_slots){const auto&r=*slot->region;const auto&s=*slot;
     const bool key=r.values[1]==bank,value=has_value_port(r) && r.values[2]==bank;
     if(!key && !value)continue;
-    if(r.device_choice)HYLE_RETURN_IF_ERROR(covered_choices(s,layout));
+    if(r.device_choice && !r.device_lengths)HYLE_RETURN_IF_ERROR(covered_choices(s,layout));
     // Both contracts retain the actual ready layout mirror. Explicit ports
     // keep their original Graph configuration; owned-layout nodes qualify
     // their selected private control without manufacturing another input.
@@ -1677,6 +1698,13 @@ Status bind_append(Invocation&invocation,const Graph&graph,NodeId append,ValueId
   if(!alternatives && !alternatives.error().IsUnimplemented())return alternatives.error();
   ValueId append_selector;
   if(alternatives){HYLE_ASSIGN_OR_RETURN(append_selector,graph.node_input(append,1));}
+  std::array<ValueId,2>append_lengths;
+  if(facts.device_lengths){
+    HYLE_ASSIGN_OR_RETURN(auto operation,graph.operation(append));
+    if(!operation.custom_as<DeviceLengthsPagedAppend>())return Status::InvalidArgument("device length transaction requires its typed append operation");
+    HYLE_ASSIGN_OR_RETURN(append_lengths[0],graph.node_input(append,1));
+    HYLE_ASSIGN_OR_RETURN(append_lengths[1],graph.node_input(append,2));
+  }
   // Preserve the original idle/source gate before borrowing cached selected
   // slots. The actual bind below still checks the append artifact and port.
   HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit(invocation,append,
@@ -1690,8 +1718,12 @@ Status bind_append(Invocation&invocation,const Graph&graph,NodeId append,ValueId
     const auto&r=*slot->region;const auto&s=*slot;
     const bool key=r.values[1]==value,is_value=has_value_port(r) && r.values[2]==value;
     if(!key && !is_value)continue;
-    if(r.device_choice){
-      if(!alternatives || s.choice_layouts!=*alternatives || r.values[3]!=append_selector)
+    if(r.device_lengths){
+      if(!facts.device_lengths || s.layout!=facts.layout || r.values[3]!=append_lengths[0] || r.values[4]!=append_lengths[1])
+        return Status::InvalidArgument("device length attention and Append need identical capacity and original Q/KV controls");
+    }else if(facts.device_lengths)return Status::InvalidArgument("device length Append requires its capacity attention reader");
+    else if(r.device_choice){
+      if(!alternatives || !std::ranges::equal(s.choice_layouts,*alternatives) || r.values[3]!=append_selector)
         return Status::InvalidArgument("device choice attention and Append need identical two layouts and original selector");
     }else if(alternatives)return Status::InvalidArgument("device choice Append requires its device choice attention reader");
     const auto expected=key?(r.mla==c::MlaCacheLayout::kNone?c::BatchCacheRole::kKey:c::BatchCacheRole::kMla):c::BatchCacheRole::kValue;

@@ -81,6 +81,7 @@ struct Program final {
     std::uint32_t source_input = UINT32_MAX;
     bool packed_r1_offsets = false;
     bool host_rows = false;
+    std::size_t source_count = 0;
   };
 
   CUcontext primary = nullptr;
@@ -1255,7 +1256,8 @@ detail::EnqueueResult submit(void *value, void *lane, detail::QueueSequence &seq
         const auto &old = program.index_checks[previous];
         if (old.input == check.input && old.extent == check.extent && old.count == check.count &&
             old.packed_r1_offsets == check.packed_r1_offsets && old.host_rows == check.host_rows &&
-            old.source_input == check.source_input && invocation.safe_indices[previous] == invocation.safe_indices[i]) {
+            old.source_input == check.source_input && old.source_count == check.source_count &&
+            invocation.safe_indices[previous] == invocation.safe_indices[i]) {
           duplicate = true; break;
         }
       }
@@ -1279,6 +1281,7 @@ detail::EnqueueResult submit(void *value, void *lane, detail::QueueSequence &seq
             check.extent, status_word, *stream));
       } else terminal = check.source_input != UINT32_MAX ? cuda::status(internal::select_indexed_source(
           static_cast<const std::int32_t *>(invocation.pointers[check.source_input]),
+          check.source_count,
           static_cast<const std::int32_t *>(invocation.pointers[check.input]),
           static_cast<std::int32_t *>(invocation.safe_indices[i]->data),
           check.extent, status_word, *stream)) : cuda::status(internal::check_indices(
@@ -2057,9 +2060,11 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
         if (ids >= recipe.values.size() || selector >= recipe.values.size() || selected >= recipe.values.size())
           return ProviderPrepareOutcome::error(Status::InvalidArgument("indexed source choice value is foreign"));
         const auto scalar = TensorDesc::dense(DataType::kInt32, std::array<std::int64_t, 1>{1}).value();
-        const auto pair = TensorDesc::dense(DataType::kInt32, std::array<std::int64_t, 1>{2}).value();
+        const auto &choices = recipe.values[ids];
         const auto source = std::ranges::find(recipe.inputs, ids), control = std::ranges::find(recipe.inputs, selector);
-        if (recipe.values[ids] != pair || recipe.values[selector] != scalar || recipe.values[selected] != scalar ||
+        if (!choices.is_dense() || choices.data_type() != DataType::kInt32 || choices.rank() != 1 ||
+            choices.dimensions()[0] <= 0 || choices.dimensions()[0] > INT32_MAX ||
+            recipe.values[selector] != scalar || recipe.values[selected] != scalar ||
             source == recipe.inputs.end() || control == recipe.inputs.end() ||
             std::ranges::find(recipe.inputs, selected) != recipe.inputs.end() ||
             std::ranges::find(recipe.outputs, selected) != recipe.outputs.end() ||
@@ -2087,7 +2092,8 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
         if (consumers != 1)
           return ProviderPrepareOutcome::error(Status::InvalidArgument("indexed source choice needs exactly one original indexed consumer"));
         index_checks.push_back({static_cast<std::uint32_t>(control - recipe.inputs.begin()),node_index,1,slots,
-            static_cast<std::uint32_t>(source - recipe.inputs.begin())});
+            static_cast<std::uint32_t>(source - recipe.inputs.begin()),false,false,
+            static_cast<std::size_t>(choices.dimensions()[0])});
         for (const auto id : node.inputs) alignments[id] = std::max(alignments[id], sizeof(std::int32_t));
         alignments[selected] = sizeof(std::int32_t);
         continue;

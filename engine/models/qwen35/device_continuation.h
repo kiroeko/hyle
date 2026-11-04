@@ -24,13 +24,11 @@ inline void Model::prepare_device_mtp_inputs(StepState &step, bool recording_onl
     throw std::logic_error("device MTP inputs require the original greedy R1 continuation episode");
   auto &phase = *step.phase;
   auto &io = phase.slots[step.state_slot].data;
-  const bool zero_fill_envelope = phase.continuous_device_successor;
   auto &member = step.members[0];
   if (!member.base || !member.base->draft || !member.session || !member.owner_state || member.next ||
       member.input_tokens != 2 || step.execution.dirty.size() != draft_bank + 2 ||
       step.execution.tails.size() != draft_bank + 2 || step.execution.appends.size() != draft_bank + 2 ||
-      io.ordinary_io.packet() || !phase.predecessor_prefix_port || !phase.continuation_position_port ||
-      !phase.continuation_draft_position_port)
+      io.ordinary_io.packet() || !phase.predecessor_prefix_port)
     throw std::logic_error("device MTP input preparation lost its original base, carrier or bank cohort");
 
   std::array<std::size_t, 2> target_before{}, draft_before{};
@@ -97,26 +95,27 @@ inline void Model::prepare_device_mtp_inputs(StepState &step, bool recording_onl
       member.base->paged, target_before, {2, 2}, page_inventory, input_scratch.paged_append_choices,
       std::span(step.execution.dirty.data(), draft_bank),
       std::span(step.execution.appends.data(), draft_bank), member.target_choice_pages,
-      target_incoming, {.resource_budget = cache_budget}, zero_fill_envelope));
+      target_incoming, {.resource_budget = cache_budget}));
   member.next->paged.pages = member.target_choice_pages[1];
   member.layout = io.attention_layout = member.target_input_choices[1];
   member.draft_input_choices = take(inference::prepare_paged_append_choices(attention_schema,
       member.base->draft->paged, draft_before, {1, 2}, draft_inventory, input_scratch.paged_append_choices,
       std::span(step.execution.dirty.data() + draft_bank, 2),
       std::span(step.execution.appends.data() + draft_bank, 2), member.draft_choice_pages,
-      draft_incoming, {.resource_budget = cache_budget}, zero_fill_envelope));
+      draft_incoming, {.resource_budget = cache_budget}));
   member.next->draft->paged.pages = member.draft_choice_pages[1];
   member.draft_layout = step.draft_layout = member.draft_input_choices[1];
 
-  const std::array<std::int32_t, 2> target_zero{static_cast<std::int32_t>(target_before[0]),
-      static_cast<std::int32_t>(target_before[0] + 1)},
-      target_one{static_cast<std::int32_t>(target_before[1]), static_cast<std::int32_t>(target_before[1] + 1)},
-      draft_zero{static_cast<std::int32_t>(draft_before[0]), static_cast<std::int32_t>(draft_before[0])},
-      draft_one{static_cast<std::int32_t>(draft_before[1]), static_cast<std::int32_t>(draft_before[1] + 1)};
-  io.positions.write<std::int32_t>(target_zero);
-  io.continuation_positions.write<std::int32_t>(target_one);
-  io.draft_positions.write<std::int32_t>(draft_zero);
-  io.continuation_draft_positions.write<std::int32_t>(draft_one);
+  // One checked table row supplies RoPE positions and the original Q/KV
+  // controls. Attention and Append consume identical views of that row.
+  const std::array<std::int32_t,8>target_controls{
+      static_cast<std::int32_t>(target_before[0]),static_cast<std::int32_t>(target_before[0]+1),2,static_cast<std::int32_t>(target_before[0]+2),
+      static_cast<std::int32_t>(target_before[1]),static_cast<std::int32_t>(target_before[1]+1),2,static_cast<std::int32_t>(target_before[1]+2)};
+  const std::array<std::int32_t,8>draft_controls{
+      static_cast<std::int32_t>(draft_before[0]),static_cast<std::int32_t>(draft_before[0]),1,static_cast<std::int32_t>(draft_before[0]+1),
+      static_cast<std::int32_t>(draft_before[1]),static_cast<std::int32_t>(draft_before[1]+1),2,static_cast<std::int32_t>(draft_before[1]+2)};
+  io.positions.write<std::int32_t>(target_controls);
+  io.draft_positions.write<std::int32_t>(draft_controls);
   if (recording_only) {
     // Safe storage initialization only. The recording owner may subsequently
     // lend A's physical OutputSource coordinates without observing their value.

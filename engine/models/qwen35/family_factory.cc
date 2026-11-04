@@ -257,21 +257,26 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         ? r.input(r.dense_spec(Type::kInt32, {packed, f(1)}))
         : r.input(r.dense_spec(Type::kInt32,
             {has_mtp(role) && !is_mtp_prefill(role) ? batch : packed}));
-    definition.position_port = requests == 1 ? r.input(r.dense_spec(Type::kInt32, {t})) :
-        r.input(r.dense_spec(Type::kInt32, {batch, t}));
-    V predecessor_prefix_index{}, predecessor_has_lag{}, target_positions = definition.position_port;
+    const auto target_control_rows=device_continuation?D(take(r.builder.dimension_sum(t,f(2)))):D{};
+    definition.position_port = device_continuation?r.input(r.dense_spec(Type::kInt32,
+        {f(static_cast<std::int64_t>(prefix_rows)),target_control_rows})):
+        requests == 1 ? r.input(r.dense_spec(Type::kInt32, {t})) : r.input(r.dense_spec(Type::kInt32, {batch, t}));
+    V predecessor_prefix_index{}, predecessor_has_lag{}, target_positions = definition.position_port,
+        target_query_lengths{},target_kv_lengths{};
     if (device_continuation) {
       definition.predecessor_prefix_port = r.input(dense(Type::kInt32, {1}));
-      auto &choices = assembly.literal_at(assembly.primary(), dense(Type::kInt32, {2}));
-      constexpr std::array<std::int32_t, 2> indices{0, 1};
+      auto &choices = assembly.literal_at(assembly.primary(), dense(Type::kInt32, {static_cast<std::int64_t>(prefix_rows)}));
+      std::vector<std::int32_t>indices(prefix_rows);for(std::size_t i=0;i<prefix_rows;++i)indices[i]=static_cast<std::int32_t>(i);
       choices.write<std::int32_t>(indices);
       predecessor_prefix_index = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
           {r.constant(choices), definition.predecessor_prefix_port}, r.dense_spec(Type::kInt32, {f(1)}));
       predecessor_has_lag = r.cast(r.cast(predecessor_prefix_index, Type::kFloat32), Type::kBool);
-      definition.continuation_position_port = r.input(r.dense_spec(Type::kInt32, {t}));
-      target_positions = r.one(c::Select{},
-          {predecessor_has_lag, definition.continuation_position_port, definition.position_port},
-          r.dense_spec(Type::kInt32, {t}));
+      const auto selected=r.reshape(r.one(c::Gather{.axis=0,.bounds=c::IndexBoundsPolicy::kChecked},
+          {definition.position_port,predecessor_prefix_index},r.dense_spec(Type::kInt32,{f(1),target_control_rows})),{target_control_rows});
+      target_positions=r.slice(selected,0,f(0),t);
+      target_query_lengths=r.slice(selected,0,t,f(1));
+      const auto kv_offset=D(take(r.builder.dimension_sum(t,f(1))));
+      target_kv_lengths=r.slice(selected,0,kv_offset,f(1));
     }
     if ((requests != 1 || packed_prefill) && !verifies_prefix(role)) definition.last_ids_port = r.input(r.dense_spec(Type::kInt32, {batch}));
     if (packed_target) {
@@ -361,14 +366,18 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         if (draft_lag(role)) definition.draft_token_select_port = r.input(r.dense_spec(Type::kInt32, {packed_draft_rows}));
       }
       if (compact_draft) definition.draft_last_ids_port = r.input(r.dense_spec(Type::kInt32, {batch}));
-      definition.draft_position_port = r.input(requests == 1 ? r.dense_spec(Type::kInt32, {draft_rows})
-          : r.dense_spec(Type::kInt32, {batch, draft_rows}));
-      V draft_positions = definition.draft_position_port;
+      const auto draft_control_rows=device_continuation?D(take(r.builder.dimension_sum(draft_rows,f(2)))):D{};
+      definition.draft_position_port = r.input(device_continuation?r.dense_spec(Type::kInt32,
+          {f(static_cast<std::int64_t>(prefix_rows)),draft_control_rows}):
+          requests == 1 ? r.dense_spec(Type::kInt32, {draft_rows}) : r.dense_spec(Type::kInt32, {batch, draft_rows}));
+      V draft_positions = definition.draft_position_port,draft_query_lengths{},draft_kv_lengths{};
       if (device_continuation) {
-        definition.continuation_draft_position_port = r.input(r.dense_spec(Type::kInt32, {draft_rows}));
-        draft_positions = r.one(c::Select{},
-            {predecessor_has_lag, definition.continuation_draft_position_port, definition.draft_position_port},
-            r.dense_spec(Type::kInt32, {draft_rows}));
+        const auto selected=r.reshape(r.one(c::Gather{.axis=0,.bounds=c::IndexBoundsPolicy::kChecked},
+            {definition.draft_position_port,predecessor_prefix_index},r.dense_spec(Type::kInt32,{f(1),draft_control_rows})),{draft_control_rows});
+        draft_positions=r.slice(selected,0,f(0),draft_rows);
+        draft_query_lengths=r.slice(selected,0,draft_rows,f(1));
+        const auto kv_offset=D(take(r.builder.dimension_sum(draft_rows,f(1))));
+        draft_kv_lengths=r.slice(selected,0,kv_offset,f(1));
       }
       if (draft_lag(role)) {
         definition.prior_input_port = r.slice(gathered, 0, chronological ? f(0) : batch, batch);
@@ -428,7 +437,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
           definition.append_cache_inputs[draft_bank + 1] = definition.draft_value_port;
           const auto head = mtp::full_head(r, projection, kv, draft_positions, frequencies,
               {attention_schema, definition.draft_key_port, definition.draft_value_port,
-               definition.draft_metadata_port, predecessor_prefix_index, continuous_successor},
+               definition.draft_metadata_port, draft_query_lengths, draft_kv_lengths},
               f(static_cast<std::int64_t>(draft_lag(role))), row_geometry,
               [&](Recipe &recipe, V selected) { return qwen35::draft_scores(recipe, selected, prepared.draft_projection); },
               device_continuation ? predecessor_prefix_index : definition.draft_last_ids_port);
@@ -475,7 +484,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
             ? definition.append_nodes[draft_bank + 1] : g::NodeId{},
         .has_preceding_append = has_mtp(role) && !is_mtp_prefill(role),
         .predecessor_prefix_index = predecessor_prefix_index,
-        .zero_fill_envelope = continuous_successor},
+        .query_lengths=target_query_lengths,.kv_lengths=target_kv_lengths},
         {definition.layers, definition.attention_nodes,
          std::span<g::NodeId>(definition.append_nodes).first(draft_bank),
          std::span<V>(definition.append_cache_inputs).first(draft_bank),

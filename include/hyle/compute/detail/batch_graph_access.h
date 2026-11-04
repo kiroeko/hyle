@@ -18,6 +18,7 @@ enum class BatchGraphContract : std::uint8_t {
   kPreparedMetadataCapacity,
   kOwnedLayoutActive,
   kDeviceLayoutChoice,
+  kDeviceLengths,
 };
 // Trusted Graph-only borrowed coordinates, never a storage permission. The
 // original region owns this fixed workspace through every native retirement.
@@ -55,6 +56,10 @@ struct BatchGraphAccess final {
       const std::array<BatchLayoutVersion,2>&,bool update,BeforeCommandChange) noexcept;
   HYLE_COMPUTE_BATCH_API static Status validate_choices(const BatchInvocation&,
       const std::array<BatchLayoutVersion,2>&) noexcept;
+  // The original layout is a capacity envelope, including each request's
+  // maximum Q/KV prefix. Effective per-request lengths remain device data.
+  HYLE_COMPUTE_BATCH_API static Result<PreparedBatch> prepare_lengths(BatchInvocation&,
+      const BatchLayoutVersion&,bool update,BeforeCommandChange) noexcept;
   // Prepare a local plan using the source's already checked-retired same-layout
   // mirror. Sharing precedes upload; each plan/workspace stays independent.
   HYLE_COMPUTE_BATCH_API static Result<PreparedBatch> prepare_shared(BatchInvocation&,

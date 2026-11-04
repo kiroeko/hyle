@@ -55,10 +55,9 @@ struct PrefillSelection final {
 struct PagedInputs final {
   compute::BatchSchema schema;
   Value key, value, metadata;
-  // Optional finite, prevalidated two-layout route. Empty keeps the original
-  // explicit metadata operation and single-layout append contract.
-  Value choice_selector{};
-  bool zero_fill_envelope = false;
+  // Optional bounded per-request device lengths. The model's position
+  // selection supplies these same original values to Append and attention.
+  Value query_lengths{},kv_lengths{};
 };
 struct Head final {
   Value hidden_rows;      // Actual final-normalized BF16 [rows,H].
@@ -280,16 +279,16 @@ KeyValue prefill_kv(R &r, Value target_ids, Value normalized_target_rows,
 // frames and dirty pages through batch::prepare/bind_append, then take/ready.
 template<class R>
 AppendNodes append_kv(R &r, const compute::BatchSchema &schema, const KeyValue &kv,
-                      Value choice_selector = {}, bool zero_fill_envelope = false) {
+                      Value query_lengths = {}, Value kv_lengths = {}) {
   detail::paged_schema(schema, r.geometry, r.activation_type());
-  if (zero_fill_envelope && !choice_selector)
-    throw std::runtime_error("MTP raw append envelope requires its actual finite-choice selector");
+  if (bool(query_lengths)!=bool(kv_lengths))
+    throw std::runtime_error("MTP device append requires both original length vectors");
   AppendNodes nodes;
-  if (choice_selector) {
-    r.op(compute::Operation::custom(detail::require(graph::batch::device_choice_paged_append(
-        schema, compute::BatchCacheRole::kKey, zero_fill_envelope))), {kv.key_rows, choice_selector}, {}, &nodes.key);
-    r.op(compute::Operation::custom(detail::require(graph::batch::device_choice_paged_append(
-        schema, compute::BatchCacheRole::kValue, zero_fill_envelope))), {kv.value_rows, choice_selector}, {}, &nodes.value);
+  if (query_lengths) {
+    r.op(compute::Operation::custom(detail::require(graph::batch::device_lengths_paged_append(
+        schema, compute::BatchCacheRole::kKey))), {kv.key_rows, query_lengths,kv_lengths}, {}, &nodes.key);
+    r.op(compute::Operation::custom(detail::require(graph::batch::device_lengths_paged_append(
+        schema, compute::BatchCacheRole::kValue))), {kv.value_rows, query_lengths,kv_lengths}, {}, &nodes.value);
   } else {
     r.op(compute::Operation::custom(detail::require(graph::batch::paged_append(
         schema, compute::BatchCacheRole::kKey))), {kv.key_rows}, {}, &nodes.key);
@@ -321,7 +320,7 @@ Head full_head(R &r, const Projection &projection, const KeyValue &kv,
     if (indices.data_type() != Type::kInt32 || indices.rank() != 1 || indices.dimensions()[0] != batch)
       throw std::runtime_error("MTP last-row selection requires one I32 packed row index per request");
   }
-  const auto nodes = append_kv(r, paged.schema, kv, paged.choice_selector, paged.zero_fill_envelope);
+  const auto nodes = append_kv(r, paged.schema, kv, paged.query_lengths, paged.kv_lengths);
   auto projected = r.reshape(detail::linear_absolute(r, projection.normalized,
       "mtp.layers.0.self_attn.q_proj.weight"), {batch, shape.sequence_rows, fixed(r.geometry.query_heads), fixed(r.geometry.key_depth + r.geometry.value_depth)});
   auto query = detail::norm_absolute(r, r.slice(projected, 3, fixed(0), fixed(r.geometry.key_depth)),
@@ -332,15 +331,19 @@ Head full_head(R &r, const Projection &projection, const KeyValue &kv,
                           .layout = compute::RopeLayout::kHalfSplit};
   query = r.same(rope, {query, positions, frequencies}, query);
   graph::NodeId attention_node;
-  const auto attention_operation = paged.choice_selector
-      ? compute::Operation::custom(detail::require(graph::batch::device_choice_paged_attention(
-          paged.schema, {.scale = 1.F / std::sqrt(static_cast<float>(r.geometry.key_depth)), .causal = true})))
+  if(paged.query_lengths && !shape.packed_rows.is_fixed())
+    throw std::runtime_error("device MTP attention requires a cold physical query capacity");
+  const auto attention_operation = paged.query_lengths
+      ? compute::Operation::custom(detail::require(graph::batch::device_lengths_paged_attention(
+          paged.schema,static_cast<std::uint32_t>(shape.packed_rows.fixed_value()),
+          {.scale = 1.F / std::sqrt(static_cast<float>(r.geometry.key_depth)), .causal = true})))
       : compute::Operation::custom(compute::PagedAttention{
           .capacity = paged.schema.capacity(), .scale = 1.F / std::sqrt(static_cast<float>(r.geometry.key_depth)), .causal = true});
-  const auto attention = r.one(attention_operation,
-      {r.reshape(query, {projection.rows, fixed(r.geometry.query_heads), fixed(r.geometry.key_depth)}),
-       paged.key, paged.value, paged.choice_selector ? paged.choice_selector : paged.metadata},
-      r.dense_spec(r.activation_type(), {projection.rows, fixed(r.geometry.query_heads), fixed(r.geometry.value_depth)}), &attention_node);
+  const auto packed_query=r.reshape(query, {projection.rows, fixed(r.geometry.query_heads), fixed(r.geometry.key_depth)});
+  const auto result_spec=r.dense_spec(r.activation_type(), {projection.rows, fixed(r.geometry.query_heads), fixed(r.geometry.value_depth)});
+  const auto attention = paged.query_lengths?r.one(attention_operation,
+      {packed_query,paged.key,paged.value,paged.query_lengths,paged.kv_lengths},result_spec,&attention_node):
+      r.one(attention_operation,{packed_query,paged.key,paged.value,paged.metadata},result_spec,&attention_node);
   detail::require(r.builder.depends_on(attention_node, nodes.key));
   detail::require(r.builder.depends_on(attention_node, nodes.value));
   auto gated = r.binary(compute::BinaryKind::kMultiply,

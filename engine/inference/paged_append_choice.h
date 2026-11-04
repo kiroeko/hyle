@@ -45,8 +45,7 @@ inline Result<std::array<compute::BatchLayoutVersion, 2>> prepare_paged_append_c
     std::span<graph::batch::PagedAppendPages> appends,
     std::array<std::vector<PagedPageRef>, 2> &choice_pages,
     std::span<graph::batch::PagedAppendSource> incoming = {},
-    graph::batch::PagedAppendOptions options = {},
-    bool zero_fill_envelope = false) noexcept {
+    graph::batch::PagedAppendOptions options = {}) noexcept {
   scratch.sources.clear();
   struct ReleaseSources final {
     std::vector<compute::PagedArenaFootprint> &values;
@@ -162,12 +161,12 @@ inline Result<std::array<compute::BatchLayoutVersion, 2>> prepare_paged_append_c
     }
     for (std::size_t bank = 0; bank < banks; ++bank) {
       if (incoming.empty()) {
-        HYLE_ASSIGN_OR_RETURN(appends[bank], graph::batch::PagedAppendPages::create_choices(
-            inventory.banks[bank], choices, std::span<const compute::PagedArenaFootprint>(&scratch.sources[bank], 1),
-            dirty[bank], zero_fill_envelope, options));
+        HYLE_ASSIGN_OR_RETURN(appends[bank], graph::batch::PagedAppendPages::create_lengths(
+            inventory.banks[bank],choices[1].next,choices[0].previous,choices[1].previous,
+            std::span<const compute::PagedArenaFootprint>(&scratch.sources[bank], 1),dirty[bank],options));
       } else {
-        HYLE_ASSIGN_OR_RETURN(appends[bank], graph::batch::PagedAppendPages::create_choices(
-            inventory.banks[bank], choices, incoming[bank], dirty[bank], zero_fill_envelope, options));
+        HYLE_ASSIGN_OR_RETURN(appends[bank], graph::batch::PagedAppendPages::create_lengths(
+            inventory.banks[bank],choices[1].next,choices[0].previous,incoming[bank],dirty[bank],options));
       }
     }
     return next;

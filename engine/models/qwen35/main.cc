@@ -97,7 +97,7 @@
 #include "auxiliary_programs.h"
 #include "hyle/compute/batch_transfer.h"
 #include "hyle/compute/detail/batch_device_choice.h"
-#include "hyle/compute/detail/device_choice_paged_append_backend.h"
+#include "hyle/compute/detail/device_lengths_paged_append_backend.h"
 #include "hyle/core/assert.h"
 #include "precision_profile.h"
 #include "cache_precision.h"
@@ -783,14 +783,14 @@ public:
     auto context = execution.common_context();
     if (!context) return;
     auto append = c::detail::BackendExtensionAccess::query(**context,
-        c::detail::kDeviceChoicePagedAppendExtensionId);
+        c::detail::kDeviceLengthsPagedAppendExtensionId);
     if (!append) {
       if (!append.error().IsUnimplemented()) check(append.error());
       return;
     }
     for (std::size_t index = 0; index < (*context)->provider_count(); ++index) {
       auto attention = c::detail::ProviderExtensionAccess::query(**context, index,
-          c::detail::kBatchDeviceChoiceExtensionId);
+          c::detail::kBatchDeviceLengthsExtensionId);
       if (attention) { configure_device_mtp_successor(true); return; }
       if (!attention.error().IsUnimplemented()) check(attention.error());
     }
@@ -3850,7 +3850,7 @@ public:
           : std::span<const std::int32_t>(positions);
       if (!io.ordinary_io.packet()) {
         if (!relay && !recording_imported && !token_source) io.tokens.write<std::int32_t>(token_values);
-        io.positions.write<std::int32_t>(position_values);
+        if(!device_input_choice)io.positions.write<std::int32_t>(position_values);
       }
       if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
         auto &identities = input_scratch.sampling_identities;
@@ -3984,13 +3984,12 @@ public:
       const auto append_banks = draft_bank + (has_mtp(role) || phase.recursive_draft_repair ? 2u : 0u);
       if (device_input_choice) {
         hyle::util::ScopeGuard release_layouts{[&]() noexcept {
-          for (auto &entry : io.batch_layout_choices) entry.layouts = {};
+          for (auto &entry : io.batch_layouts) entry.layout = {};
         }};
         for (std::size_t i = 0; i < phase.attention_nodes.size(); ++i)
-          io.batch_layout_choices[i].layouts = step.members.front().target_input_choices;
-        io.batch_layout_choices.back().layouts = step.members.front().draft_input_choices;
-        check(step.execution.prepare_appends(phase.family->graph,
-            std::span<const g::batch::NodeLayoutChoice>(io.batch_layout_choices), 0, append_banks,
+          io.batch_layouts[i].layout = step.members.front().target_input_choices[1];
+        io.batch_layouts.back().layout = step.members.front().draft_input_choices[1];
+        check(step.execution.prepare_length_appends(phase.family->graph,io.batch_layouts,0,append_banks,
             std::span<const V>(phase.append_cache_inputs).first(append_banks), {.host_workspace = execution.staging()}));
       } else {
         hyle::util::ScopeGuard release_layouts{[&]() noexcept {
@@ -4392,8 +4391,13 @@ public:
             if (step.device_input_choice) {
               if (step.members.size() != 1 || !step.members[0].selected_input_choice)
                 return hyle::Status::InvalidArgument("retired device successor has no resolved producer choice");
-              for (auto &append : step.execution.appends)
-                HYLE_RETURN_IF_ERROR(append.select_choice(*step.members[0].selected_input_choice));
+              for(std::size_t bank=0;bank<step.execution.appends.size();++bank){
+                const auto&member=step.members[0];const auto selected=*member.selected_input_choice;
+                const auto&layout=bank<draft_bank?member.target_input_choices[selected]:member.draft_input_choices[selected];
+                const std::array<std::int32_t,1>q{static_cast<std::int32_t>(layout.facts().query_rows)},
+                    kv{static_cast<std::int32_t>(layout.facts().kv_rows)};
+                HYLE_RETURN_IF_ERROR(step.execution.appends[bank].select_lengths(q,kv));
+              }
             }
             for (std::size_t bank_index = 0; bank_index < phase.state_banks.size(); ++bank_index) {
               const auto &bank = phase.state_banks[bank_index];

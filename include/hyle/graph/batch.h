@@ -40,6 +40,9 @@ HYLE_GRAPH_BATCH_API Status prepare(graph::Invocation &,
 HYLE_GRAPH_BATCH_API Status prepare_choices(graph::Invocation &,
     std::span<const QueueBinding>, std::span<const NodeLayoutChoice>,
     PrepareOptions = {}) noexcept;
+HYLE_GRAPH_BATCH_API Status prepare_lengths(graph::Invocation &,
+    std::span<const QueueBinding>, std::span<const NodeLayout>,
+    PrepareOptions = {}) noexcept;
 // False is exclusively an unsupported read-only native preflight. No prior
 // binding/capture has changed. Errors during actual preparation remain errors.
 HYLE_GRAPH_BATCH_API Result<bool> try_prepare_choices(graph::Invocation &,
@@ -205,6 +208,25 @@ HYLE_GRAPH_BATCH_API Result<DeviceChoicePagedAppend> device_choice_paged_append(
     compute::BatchSchema,compute::BatchCacheRole)noexcept;
 HYLE_GRAPH_BATCH_API Result<DeviceChoicePagedAppend> device_choice_paged_append(
     compute::BatchSchema,compute::BatchCacheRole,bool zero_fill_envelope)noexcept;
+// Packed rows plus per-request I32 query/KV lengths. The owned capacity
+// transaction bounds previous positions and fresh COW destinations. It fully
+// initializes the private raw envelope; only a retired selected prefix is ready.
+struct DeviceLengthsPagedAppend final {
+  compute::BatchSchema schema;
+  compute::BatchCacheRole role=compute::BatchCacheRole::kKey;
+  static constexpr compute::OperationId operation_id{
+      0x48594c4547524241ULL,0x5041474544570003ULL};
+  static constexpr std::string_view operation_name="device-lengths-paged-append";
+  constexpr compute::OperationTraits operation_traits()const noexcept{
+    return {{3,3},0,compute::AliasPolicy::kNone,compute::EffectKind::kExternalSideEffect,
+        compute::PrecisionPolicy::kExact,compute::DataType::kUnknown};
+  }
+  HYLE_GRAPH_BATCH_API Status infer_output_descriptions(
+      std::span<const compute::TensorDesc>,std::span<compute::TensorDesc>)const noexcept;
+};
+static_assert(compute::detail::InlineCustomOperationDescriptor<DeviceLengthsPagedAppend>);
+HYLE_GRAPH_BATCH_API Result<DeviceLengthsPagedAppend> device_lengths_paged_append(
+    compute::BatchSchema,compute::BatchCacheRole)noexcept;
 class PagedAppendSource;
 namespace detail {struct PagedAppendData;struct PagedAppendAccess;struct PagedAppendSourceData;struct PagedAppendSourceAccess;}
 struct PagedAppendOptions final {
@@ -259,6 +281,20 @@ public:
   // of this execution's original selector. Only that choice may publish;
   // repeated selection must agree. Unused writers are discarded after take.
   HYLE_GRAPH_BATCH_API Status select_choice(std::size_t observed_selector)noexcept;
+  // Capacity's Q facts bound the PHYSICAL input rows; its KV facts bound the
+  // raw initialized envelope. Minimum is a prefix of the previous raw source,
+  // using its original physical page mapping. No Cartesian layout alternatives.
+  HYLE_GRAPH_BATCH_API static Result<PagedAppendPages> create_lengths(compute::PagedArena,
+      compute::BatchLayoutVersion capacity,compute::BatchLayoutVersion minimum_previous,
+      PagedAppendSource&,std::span<compute::PagedPageWriter>,PagedAppendOptions={})noexcept;
+  HYLE_GRAPH_BATCH_API static Result<PagedAppendPages> create_lengths(compute::PagedArena,
+      compute::BatchLayoutVersion capacity,compute::BatchLayoutVersion minimum_previous,
+      compute::BatchLayoutVersion previous_capacity,std::span<const compute::PagedArenaFootprint>,
+      std::span<compute::PagedPageWriter>,PagedAppendOptions={})noexcept;
+  // Supply this execution's observed Q/KV lengths after successful take. This
+  // performs no device readback and publishes no state or ready page itself.
+  HYLE_GRAPH_BATCH_API Status select_lengths(std::span<const std::int32_t> query_lengths,
+      std::span<const std::int32_t> kv_lengths)noexcept;
   // The sources prove the old logical prefixes independently of their raw
   // guard capacities. Construction retains exact original page leases, never
   // a mutable Frame or an epoch-sensitive footprint across asynchronous work.
@@ -293,6 +329,10 @@ private:
   friend struct detail::PagedAppendAccess;
   friend class PagedAppendSource;
   friend struct detail::PagedAppendSourceAccess;
+  static Result<PagedAppendPages> create_lengths_impl(compute::PagedArena,
+      compute::BatchLayoutVersion,compute::BatchLayoutVersion,compute::BatchLayoutVersion,
+      std::span<const compute::PagedArenaFootprint>,std::span<compute::PagedPageWriter>,
+      PagedAppendOptions,detail::PagedAppendSourceData*)noexcept;
   static Result<PagedAppendPages> create_choices_impl(compute::PagedArena,
       std::span<const PagedAppendChoice>,std::span<const compute::PagedArenaFootprint>,
       std::span<compute::PagedPageWriter>,bool zero_fill_envelope,PagedAppendOptions,detail::PagedAppendSourceData*)noexcept;
@@ -301,7 +341,8 @@ private:
       std::span<const compute::PagedArenaFootprint>,
       std::span<compute::PagedPageWriter>,std::span<compute::PagedPageAppender>,
       bool appendable,PagedAppendOptions,detail::PagedAppendSourceData* pending_previous=nullptr,
-      bool choice_validation=false,bool consume=true)noexcept;
+      bool choice_validation=false,bool consume=true,
+      const compute::BatchLayoutVersion*minimum_capacity=nullptr)noexcept;
   explicit PagedAppendPages(detail::PagedAppendData*p)noexcept:data_(p){}
   detail::PagedAppendData*data_=nullptr;
 };
@@ -391,6 +432,26 @@ struct DeviceChoicePagedAttention final {
 static_assert(compute::detail::InlineCustomOperationDescriptor<DeviceChoicePagedAttention>);
 HYLE_GRAPH_BATCH_API Result<DeviceChoicePagedAttention> device_choice_paged_attention(
     compute::BatchSchema, PagedAttentionOptions = {}) noexcept;
+// Q/K/V plus dense I32[max_requests] query and KV lengths. prepare_lengths
+// binds the original capacity envelope and page authority. Runtime values can
+// shorten each request independently; inactive output rows remain zero.
+struct DeviceLengthsPagedAttention final {
+  compute::BatchSchema schema;
+  PagedAttentionOptions options;
+  std::uint32_t physical_query_rows=0;
+  static constexpr compute::OperationId operation_id{
+      0x48594c4547524241ULL,0x4445564c454e0001ULL};
+  static constexpr std::string_view operation_name="device-lengths-paged-attention";
+  constexpr compute::OperationTraits operation_traits()const noexcept{
+    return {{5,5},1,compute::AliasPolicy::kNone,compute::EffectKind::kPure,
+        compute::PrecisionPolicy::kExact,compute::DataType::kFloat32};
+  }
+  HYLE_GRAPH_BATCH_API Status infer_output_descriptions(
+      std::span<const compute::TensorDesc>,std::span<compute::TensorDesc>)const noexcept;
+};
+static_assert(compute::detail::InlineCustomOperationDescriptor<DeviceLengthsPagedAttention>);
+HYLE_GRAPH_BATCH_API Result<DeviceLengthsPagedAttention> device_lengths_paged_attention(
+    compute::BatchSchema,std::uint32_t physical_query_rows,PagedAttentionOptions = {}) noexcept;
 struct MaterializedGraph final {
   Graph graph;
   std::array<ValueId,5> inputs{};

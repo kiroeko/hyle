@@ -47,9 +47,9 @@ struct FamilyPorts {
   // policy, never Source/publication rights.
   V successor_accepted_count_port, successor_prefix_index_port;
   V successor_pending_port, successor_lag_port, successor_selected_catchup_port;
-  // Dedicated continuation Family only. Existing position ports carry the
-  // prefix0 candidate; these carry prefix1. Prefix choice is I32[1].
-  V predecessor_prefix_port, continuation_position_port, continuation_draft_position_port;
+  // Continuation position ports hold bounded rows [positions...,Q,KV].
+  // One device prefix index selects a row for both math and cache effects.
+  V predecessor_prefix_port;
   V draft_hidden_select_port, draft_token_select_port, draft_last_ids_port;
   V repair_lag_port;
   StatePorts hidden_state;

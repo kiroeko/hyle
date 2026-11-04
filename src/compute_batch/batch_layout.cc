@@ -91,9 +91,10 @@ struct BatchLayoutData final:util::RefCounted<BatchLayoutData> {
     bool logical_prefix_known=false,logical_prefix=false;
   };
   struct Append final {
-    Append(std::uint64_t g,mem::AllocatorRef a):generation(g),
+    Append(std::uint64_t g,bool capacity,mem::AllocatorRef a):generation(g),capacity_envelope(capacity),
         changed(mem::StdAllocator<BatchAppendPage>(a)),untouched(mem::StdAllocator<std::int32_t>(a)){}
     std::uint64_t generation;
+    bool capacity_envelope=false;
     std::vector<BatchAppendPage,mem::StdAllocator<BatchAppendPage>> changed;
     std::vector<std::int32_t,mem::StdAllocator<std::int32_t>> untouched;
   };
@@ -523,14 +524,22 @@ Result<bool> detail::BatchLayoutAccess::logical_prefix_covers(
 }
 Result<detail::BatchAppendFootprint> detail::BatchLayoutAccess::append_pages(
     const BatchLayoutVersion&before,const BatchLayoutVersion&after)noexcept{
+  return append_pages(before,after,false);
+}
+Result<detail::BatchAppendFootprint> detail::BatchLayoutAccess::capacity_append_pages(
+    const BatchLayoutVersion&before,const BatchLayoutVersion&after)noexcept{
+  return append_pages(before,after,true);
+}
+Result<detail::BatchAppendFootprint> detail::BatchLayoutAccess::append_pages(
+    const BatchLayoutVersion&before,const BatchLayoutVersion&after,bool capacity_envelope)noexcept{
   if(!before.valid() || !after.valid() || !after.origin_schema().owns(before) ||
       geometry(after.origin_schema()).storage!=BatchStorage::kPaged || before.facts().requests!=after.facts().requests)
     return std::unexpected(Status::InvalidArgument("append layouts require the same original paged request domain"));
   auto&data=*after.data_;std::lock_guard guard(data.export_lock);
-  for(const auto&entry:data.appends)if(entry.generation==before.generation())
+  for(const auto&entry:data.appends)if(entry.generation==before.generation() && entry.capacity_envelope==capacity_envelope)
     return BatchAppendFootprint{entry.changed,entry.untouched};
   const auto old=before.host(),next=after.host();const auto full=geometry(data.schema).page_size;
-  BatchLayoutData::Append staged(before.generation(),data.allocator);
+  BatchLayoutData::Append staged(before.generation(),capacity_envelope,data.allocator);
   try{
     for(std::size_t request=0;request<data.facts.requests;++request){
       const auto first=std::size_t(old.kv_indptr[request]),count=std::size_t(old.kv_indptr[request+1])-first;
@@ -538,7 +547,9 @@ Result<detail::BatchAppendFootprint> detail::BatchLayoutAccess::append_pages(
       const auto previous_rows=count?std::uint64_t(count-1)*full+std::uint32_t(old.last_page_lengths[request]):0;
       const auto next_rows=pages?std::uint64_t(pages-1)*full+std::uint32_t(next.last_page_lengths[request]):0;
       const auto query_rows=std::uint32_t(next.query_indptr[request+1]-next.query_indptr[request]);
-      if(previous_rows+query_rows!=next_rows)
+      if(capacity_envelope && previous_rows>next_rows)
+        return std::unexpected(Status::InvalidArgument("capacity append cannot shrink its minimum KV prefix"));
+      if(!capacity_envelope && previous_rows+query_rows!=next_rows)
         return std::unexpected(Status::InvalidArgument("paged append must extend each request by its packed query rows"));
       for(std::size_t logical=0;logical<pages;++logical){
         const auto page=std::uint32_t(next.page_indices[start+logical]);
@@ -548,7 +559,7 @@ Result<detail::BatchAppendFootprint> detail::BatchLayoutAccess::append_pages(
         const auto new_begin=std::max(begin,previous_rows),added=end>new_begin?end-new_begin:0;
         if(!added && source==page)staged.untouched.push_back(std::int32_t(page));
         else staged.changed.push_back({page,source,std::uint32_t(inherited),std::uint32_t(end-begin),
-            added?std::uint32_t(next.query_indptr[request]+new_begin-previous_rows):0u,std::uint32_t(added)});
+            added && !capacity_envelope?std::uint32_t(next.query_indptr[request]+new_begin-previous_rows):0u,std::uint32_t(added)});
       }
     }
     if(!std::is_sorted(staged.untouched.begin(),staged.untouched.end()))

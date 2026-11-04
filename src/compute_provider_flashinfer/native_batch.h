@@ -12,6 +12,8 @@ struct BatchSpec final {
   std::int32_t window_left=-1;
   bool paged=false,bfloat16=false,fp8=false,causal=true;
   bool allow_bf16_partials=false;
+  // Opt-in bounded layout domain only. Ordinary plans keep their old policy.
+  bool bounded_layouts=false;
 };
 inline bool bf16_partial_domain(const BatchSpec &s) noexcept {
   return s.allow_bf16_partials && s.bfloat16 && s.fp8 && s.paged && s.page_size==16 &&

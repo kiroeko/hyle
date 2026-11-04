@@ -70,6 +70,9 @@ struct BatchInvocationData final:util::RefCounted<BatchInvocationData>{
   ReadLease graph_shared_metadata;
   ProviderExtensionRef choice_extension;
   const BatchDeviceChoiceVTable *choice_table=nullptr;
+  const BatchDeviceLengthsVTable *lengths_table=nullptr;
+  ProviderExtensionRef lengths_extension;
+  bool device_lengths=false;
   std::array<BatchLayoutVersion,2> choice_layouts;
   LeasePool choice_device_pool,choice_host_pool;
   WriteLease choice_pair,choice_selected,choice_staging;
@@ -322,17 +325,21 @@ Result<d::BatchWorkspaceViews> graph_views(d::BatchInvocationData*s,const QueueI
     std::span<const ConstTensorView>inputs,std::span<const TensorView>outputs,
     d::BatchGraphContract contract)noexcept{
   if(contract!=d::BatchGraphContract::kPreparedMetadataCapacity &&
-      contract!=d::BatchGraphContract::kOwnedLayoutActive && contract!=d::BatchGraphContract::kDeviceLayoutChoice)
+      contract!=d::BatchGraphContract::kOwnedLayoutActive && contract!=d::BatchGraphContract::kDeviceLayoutChoice &&
+      contract!=d::BatchGraphContract::kDeviceLengths)
     return std::unexpected(Status::InvalidArgument("Graph batch port contract is invalid"));
   const bool choice=contract==d::BatchGraphContract::kDeviceLayoutChoice;
-  const bool owned=contract==d::BatchGraphContract::kOwnedLayoutActive || choice;
+  const bool lengths=contract==d::BatchGraphContract::kDeviceLengths;
+  const bool owned=contract==d::BatchGraphContract::kOwnedLayoutActive || choice || lengths;
   if(!s || !s->external_output || !s->queue_owner.same_owner(queue) || s->closed || s->failed ||
       !s->prepared || (!owned && s->ran))
     return std::unexpected(Status::FailedPrecondition("Graph batch token/slot/queue is stale"));
   const auto payloads=input_count(s->program->schema);
-  if(inputs.size()!=payloads+(owned && !choice?0u:1u) || outputs.size()!=1)return std::unexpected(Status::InvalidArgument("Graph batch region port count"));
+  if(inputs.size()!=payloads+(lengths?2u:owned && !choice?0u:1u) || outputs.size()!=1)return std::unexpected(Status::InvalidArgument("Graph batch region port count"));
   if(choice && (!s->device_choices || !s->choice_table || !s->choice_ready.valid() || !s->choice_selected.valid()))
     return std::unexpected(Status::FailedPrecondition("device batch choice was not explicitly prepared"));
+  if(lengths && (!s->device_lengths || !s->lengths_table || !s->choice_selected.valid()))
+    return std::unexpected(Status::FailedPrecondition("device batch lengths were not explicitly prepared"));
   HYLE_ASSIGN_OR_RETURN(auto descriptions,input_descriptions(s->program->schema));
   const auto capacity=s->program->schema.capacity();
   auto query_rows=choice?2u:owned?s->layout.facts().query_rows:capacity.max_query_rows;
@@ -356,6 +363,14 @@ Result<d::BatchWorkspaceViews> graph_views(d::BatchInvocationData*s,const QueueI
     HYLE_ASSIGN_OR_RETURN(auto selector,TensorDesc::dense(DataType::kInt32,std::array<std::int64_t,1>{1}));
     if(inputs[payloads].description()!=selector || inputs[payloads].storage().resource()!=s->program->options.resource)
       return std::unexpected(Status::InvalidArgument("device batch choice needs its original I32[1] selector/resource"));
+    HYLE_ASSIGN_OR_RETURN(auto selected,s->choice_selected.view());mirror=selected;
+  }
+  if(lengths){
+    HYLE_ASSIGN_OR_RETURN(auto control,TensorDesc::dense(DataType::kInt32,
+        std::array<std::int64_t,1>{capacity.max_requests}));
+    for(std::size_t port=payloads;port<inputs.size();++port)
+      if(inputs[port].description()!=control || inputs[port].storage().resource()!=s->program->options.resource)
+        return std::unexpected(Status::InvalidArgument("device lengths need the original per-request I32 controls/resource"));
     HYLE_ASSIGN_OR_RETURN(auto selected,s->choice_selected.view());mirror=selected;
   }
   if(!owned){
@@ -512,7 +527,7 @@ Result<PreparedBatch> BatchInvocation::prepare(const BatchLayoutVersion&layout,b
   }
   HYLE_RETURN_IF_ERROR(validate_batch_attention_layout(layout,s.program->options.causal,s.program->options.window_left));
   if(s.tickets || in_flight() || !s.completion.available())return std::unexpected(Status::Unavailable("batch slot has a live ticket/native work/old completion"));
-  s.device_choices=false;
+  s.device_choices=false;s.device_lengths=false;
   // Native callbacks publish terminal before releasing pending. Check only
   // after actual retirement; an observation error must never reset the slot.
   if(!s.terminal.ok()){s.failed=true;return std::unexpected(Status::FailedPrecondition("batch invocation native terminal failed"));}
@@ -889,6 +904,7 @@ Result<PreparedBatch> d::BatchGraphAccess::prepare(BatchInvocation&target,
 Result<PreparedBatch> d::BatchGraphAccess::prepare_choices(BatchInvocation&target,
     const std::array<BatchLayoutVersion,2>&layouts,bool update,BeforeCommandChange before_change)noexcept{
   auto*s=target.data_;
+  if(s && s->lengths_table)return std::unexpected(Status::FailedPrecondition("bounded batch slot cannot change back to binary choice semantics"));
   if(!s || !s->external_output || !layouts[0].valid() || !layouts[1].valid() ||
       !s->program->schema.owns(layouts[0]) || !s->program->schema.owns(layouts[1]))
     return std::unexpected(Status::InvalidArgument("device batch choices need two versions of the original schema"));
@@ -981,6 +997,42 @@ Status d::BatchGraphAccess::validate_choices(const BatchInvocation&target,
         BatchDeviceChoiceStage::kPreflight);
   },&call);
 }
+Result<PreparedBatch> d::BatchGraphAccess::prepare_lengths(BatchInvocation&target,
+    const BatchLayoutVersion&envelope,bool update,BeforeCommandChange before_change)noexcept{
+  auto*s=target.data_;
+  if(!s || !s->external_output || !envelope.valid() || !s->program->schema.owns(envelope) ||
+      envelope.facts().requests!=s->program->schema.capacity().max_requests || !envelope.facts().query_rows)
+    return std::unexpected(Status::InvalidArgument("device lengths require the original full request-capacity envelope"));
+  if(s->choice_table)return std::unexpected(Status::FailedPrecondition("binary batch slot cannot change to device-length semantics"));
+  if(target.in_flight() || s->tickets || !s->completion.available() || s->closed || s->failed)
+    return std::unexpected(Status::Unavailable("device-length preparation needs its retired original slot"));
+  HYLE_RETURN_IF_ERROR(validate_batch_attention_layout(envelope,s->program->options.causal,s->program->options.window_left));
+  if(!s->buffers || !s->buffers->metadata_queue)
+    return std::unexpected(Status::Unimplemented("device-length preparation requires its independent metadata Queue"));
+  if(!s->lengths_table){
+    HYLE_ASSIGN_OR_RETURN(s->lengths_extension,ProviderExtensionAccess::query(s->program->extension,kBatchDeviceLengthsExtensionId));
+    if(before_change.call)HYLE_RETURN_IF_ERROR(before_change.call(before_change.state));
+    HYLE_RETURN_IF_ERROR(ProviderExtensionAccess::call(s->lengths_extension,[](void*,const void*table,void*opaque)noexcept->Status{
+      auto&s=*static_cast<BatchInvocationData*>(opaque);const auto*t=static_cast<const BatchDeviceLengthsVTable*>(table);
+      if(!t || !t->configure || !t->qualify || !t->update)return Status::Unimplemented("device-length capability is incomplete");
+      HYLE_RETURN_IF_ERROR(t->configure(s.native,planning_queue(s)));s.lengths_table=t;return Status::Ok();
+    },s));
+    update=false;
+  }
+  s->preparing_choices=true;util::ScopeGuard preparing{[&]()noexcept{s->preparing_choices=false;}};
+  HYLE_ASSIGN_OR_RETURN(auto token,target.prepare(envelope,update,nullptr,&before_change));
+  HYLE_RETURN_IF_ERROR(s->lengths_table->qualify(s->native,planning_queue(*s)));
+  if(!s->choice_selected.valid()){
+    if(before_change.call)HYLE_RETURN_IF_ERROR(before_change.call(before_change.state));
+    const auto bytes=s->program->schema.metadata_offsets().bytes;
+    if(!bytes || bytes>SIZE_MAX-16)return std::unexpected(Status::OutOfRange("device-length metadata extent overflows"));
+    HYLE_ASSIGN_OR_RETURN(s->choice_device_pool,LeasePool::create(s->program->options.resource,bytes+16,
+        {.max_blocks=1,.backing_alignment=16,.allocator=s->program->allocator,.resource_budget=s->program->options.resource_budget}));
+    HYLE_ASSIGN_OR_RETURN(s->choice_selected,s->choice_device_pool.allocate(bytes,16));
+    retain_domain(*s->buffers,s->choice_device_pool);
+  }
+  s->device_lengths=true;return token;
+}
 Result<PreparedBatch> d::BatchGraphAccess::prepare_shared(BatchInvocation&target,
     const BatchLayoutVersion&layout,bool update,const BatchInvocation&source,
     BeforeCommandChange before_change)noexcept{
@@ -1001,10 +1053,11 @@ Result<std::uint64_t> d::BatchGraphAccess::preparation_epoch(const PreparedBatch
 Status d::BatchGraphAccess::validate_prepared(const PreparedBatch&token,BatchGraphContract contract)noexcept{
   auto*s=token.data_;
   if(contract!=BatchGraphContract::kPreparedMetadataCapacity && contract!=BatchGraphContract::kOwnedLayoutActive &&
-      contract!=BatchGraphContract::kDeviceLayoutChoice)
+      contract!=BatchGraphContract::kDeviceLayoutChoice && contract!=BatchGraphContract::kDeviceLengths)
     return Status::InvalidArgument("Graph batch port contract is invalid");
   const bool choice=contract==BatchGraphContract::kDeviceLayoutChoice;
-  const bool owned=contract==BatchGraphContract::kOwnedLayoutActive || choice;
+  const bool lengths=contract==BatchGraphContract::kDeviceLengths;
+  const bool owned=contract==BatchGraphContract::kOwnedLayoutActive || choice || lengths;
   if(!s || token.epoch_!=s->epoch || !s->external_output || s->closed || s->failed ||
       !s->prepared || (!owned && s->ran) || !s->program->schema.owns(s->layout) ||
       !s->queue_owner.is_open())
@@ -1020,6 +1073,10 @@ Status d::BatchGraphAccess::validate_prepared(const PreparedBatch&token,BatchGra
       return Status::FailedPrecondition("device batch choice seal has no finite prepared alternatives");
     HYLE_ASSIGN_OR_RETURN(auto selected,s->choice_selected.view());metadata=selected;
   }
+  if(lengths){
+    if(!s->device_lengths || !s->lengths_table)return Status::FailedPrecondition("device lengths have no prepared capacity envelope");
+    HYLE_ASSIGN_OR_RETURN(auto selected,s->choice_selected.view());metadata=selected;
+  }
   if(metadata.resource()!=s->program->options.resource ||
       metadata.size()!=s->program->schema.metadata_offsets().bytes)
     return Status::InvalidArgument("Graph batch metadata carrier differs from its prepared owner");
@@ -1031,8 +1088,8 @@ Status d::BatchGraphAccess::prepare_replay(PreparedBatch&token,Queue&queue,
     std::span<const ConstTensorView>inputs,std::span<const TensorView>outputs,BatchGraphContract contract)noexcept{
   if(!token.data_ || token.epoch_!=token.data_->epoch)return Status::FailedPrecondition("Graph batch replay token is stale");
   HYLE_ASSIGN_OR_RETURN(auto views,graph_views(token.data_,queue,inputs,outputs,contract));
-  if(contract==BatchGraphContract::kDeviceLayoutChoice)
-    return Status::Unimplemented("device layout choices require the original outer Graph capture");
+  if(contract==BatchGraphContract::kDeviceLayoutChoice || contract==BatchGraphContract::kDeviceLengths)
+    return Status::Unimplemented("device batch metadata requires the original outer Graph capture");
   return capture_batch(*token.data_,inputs.first(input_count(token.data_->program->schema)),views);
 }
 Status d::BatchGraphAccess::validate_replay(PreparedBatch&token,Queue&queue,
@@ -1055,6 +1112,12 @@ d::EnqueueResult d::BatchGraphAccess::enqueue(PreparedBatch&token,QueueSequence&
   const auto valid=validate_replay_storage(*s,payloads,*views);
   if(!valid.ok())return EnqueueResult::rejected(valid);
   const auto choose=[&]()noexcept->EnqueueResult{
+    if(contract==BatchGraphContract::kDeviceLengths){
+      auto bounds=s->mirror_ready.view();if(!bounds)return EnqueueResult::rejected(bounds.error());
+      auto selected=s->choice_selected.view();if(!selected)return EnqueueResult::rejected(selected.error());
+      const auto payload_count=input_count(s->program->schema);
+      return s->lengths_table->update(s->native,sequence,inputs[payload_count],inputs[payload_count+1],*bounds,*selected,*views);
+    }
     if(contract!=BatchGraphContract::kDeviceLayoutChoice)return EnqueueResult::no_op();
     auto paired=s->choice_ready.view();if(!paired)return EnqueueResult::rejected(paired.error());
     const auto bytes=s->program->schema.metadata_offsets().bytes;

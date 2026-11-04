@@ -40,6 +40,7 @@ endif()
 
 hyle_add_module(compute_provider_flashinfer
   SOURCES flashinfer_provider.cc native_attention.cu native_batch.cu
+    native_device_lengths.cu
     native_cache.cu native_cache_encoder.cu native_highdim.cu native_mla.cu)
 target_include_directories(hyle_compute_provider_flashinfer BEFORE PRIVATE
   "${_cache_source}/include")

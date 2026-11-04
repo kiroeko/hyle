@@ -28,26 +28,30 @@ template<class T> T take(hyle::Result<T> value) {
   return std::move(*value);
 }
 void check(hyle::Status status) { if (!status.ok()) throw std::runtime_error(std::string(status.message())); }
-constexpr std::size_t kSlots = 8, kStride = 4096, kSnapshots = 2;
-constexpr std::array<std::uint32_t, 2> kSources{1, 3}, kDestinations{4, 6};
+constexpr std::size_t kSlots = 12, kStride = 4096, kSnapshots = 2;
+constexpr std::array<std::uint32_t, 8> kSources{1, 3, 0, 2, 5, 7, 8, 9};
+constexpr std::array<std::uint32_t, 2> kDestinations{4, 6};
 struct Math final {
   bool convolution;
   c::TensorDesc item, output;
   std::vector<c::TensorDesc> inputs;
   std::vector<std::vector<float>> values;
-  std::array<std::vector<float>, 2> initial, expected_output, expected_state;
+  std::vector<std::vector<float>> initial, expected_output, expected_state;
 };
-Math math(c::Context &context, m::MemoryResourceRef resource, bool convolution) {
+Math math(c::Context &context, m::MemoryResourceRef resource, bool convolution, std::size_t choices) {
   Math result{convolution};
+  result.initial.resize(choices); result.expected_output.resize(choices); result.expected_state.resize(choices);
   if (!convolution) {
     gdn_snapshot_fixture::Fixture fixture(9, 1, 4, 2, 2, 16);
     result.item = dense(c::DataType::kFloat32, {2, 16, 16});
     result.output = fixture.inputs[2];
     result.inputs.assign(fixture.inputs.begin(), fixture.inputs.begin() + 5);
     result.values.assign(fixture.data.begin(), fixture.data.begin() + 5);
-    result.initial[0] = fixture.data[5]; result.initial[1] = result.initial[0];
-    for (auto &x : result.initial[1]) x = -x / 2.F + .125F;
-    for (std::size_t choice = 0; choice < 2; ++choice) {
+    for (std::size_t choice = 0; choice < choices; ++choice) {
+      result.initial[choice] = fixture.data[5];
+      for (auto &x : result.initial[choice]) x = x / (choice + 1.F) + choice / 16.F;
+    }
+    for (std::size_t choice = 0; choice < choices; ++choice) {
       fixture.data[5] = result.initial[choice];
       std::array<m::Buffer, 6> storage;
       std::array<c::ConstTensorView, 6> inputs;
@@ -75,7 +79,7 @@ Math math(c::Context &context, m::MemoryResourceRef resource, bool convolution) 
     result.values.resize(2); result.values[0].resize(tokens * channels); result.values[1].resize(channels * (history + 1));
     for (std::size_t p = 0; p < 2; ++p) for (std::size_t j = 0; j < result.values[p].size(); ++j)
       result.values[p][j] = static_cast<float>(static_cast<int>((j + p * 7) % 31) - 15) / 32.F;
-    for (std::size_t choice = 0; choice < 2; ++choice) {
+    for (std::size_t choice = 0; choice < choices; ++choice) {
       auto &initial = result.initial[choice]; initial.resize(history * channels);
       for (std::size_t j = 0; j < initial.size(); ++j)
         initial[j] = static_cast<float>(static_cast<int>((j + choice * 17) % 41) - 20) / 64.F;
@@ -98,18 +102,21 @@ Math math(c::Context &context, m::MemoryResourceRef resource, bool convolution) 
 }
 enum class Fault { kNone, kLeftId, kRightId, kPriorError, kWithdraw };
 
-void exercise(bool convolution, std::int32_t selector, Fault fault = Fault::kNone, bool nested = true) {
+void exercise(bool convolution, std::int32_t selector, Fault fault = Fault::kNone, bool nested = true,
+    std::size_t choices = 2, std::size_t corrupt_index = 0) {
   SCOPED_TRACE(convolution ? "conv" : "GDN");
   SCOPED_TRACE(selector);
   auto context = take(g::cuda::create_context());
   auto device = take(c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice));
   auto staging = take(c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kPinnedHost));
-  const auto reference = math(context, device.ref(), convolution);
+  SCOPED_TRACE(choices);
+  if (!nested) choices = 1;
+  const auto reference = math(context, device.ref(), convolution, choices);
   const auto elements = take(reference.item.element_count());
   const auto bytes = take(reference.item.required_bytes());
   const auto schema = take(s::Schema::create(reference.item, kSlots, kStride));
   std::vector<std::byte> before(kSlots * kStride, std::byte{0xa5});
-  for (std::size_t p = 0; p < 2; ++p) {
+  for (std::size_t p = 0; p < choices; ++p) {
     const auto raw = std::as_bytes(std::span(reference.initial[p]));
     std::copy(raw.begin(), raw.end(), before.begin() + kSources[p] * kStride);
   }
@@ -125,16 +132,15 @@ void exercise(bool convolution, std::int32_t selector, Fault fault = Fault::kNon
     blocks[slot] = take(pool.allocate(bytes, 256)); EXPECT_EQ(take(layout.locate(blocks[slot])).index, slot);
     auto gap = take(pool.allocate(kStride - bytes, 256)); padding[slot] = take(gap.publish());
   }
-  std::array<c::ReadLease, 2> sources;
+  std::vector<c::ReadLease> sources(choices);
   std::array<c::WriteLease, 2> destinations;
-  for (std::size_t p = 0; p < 2; ++p) {
-    sources[p] = take(blocks[kSources[p]].publish()); destinations[p] = std::move(blocks[kDestinations[p]]);
-  }
+  for (std::size_t p = 0; p < choices; ++p) sources[p] = take(blocks[kSources[p]].publish());
+  for (std::size_t p = 0; p < 2; ++p) destinations[p] = std::move(blocks[kDestinations[p]]);
   for (std::size_t slot = 0; slot < kSlots; ++slot) if (blocks[slot].valid()) unused[slot] = take(blocks[slot].publish());
 
   auto builder = take(g::GraphBuilder::create());
   const auto capacity = take(builder.input(take(schema.capacity_description())));
-  const auto ids = take(builder.input(dense(c::DataType::kInt32, {nested ? 2 : 1})));
+  const auto ids = take(builder.input(dense(c::DataType::kInt32, {static_cast<std::int64_t>(choices)})));
   const auto dst = take(builder.input(dense(c::DataType::kInt32, {2})));
   const auto control = nested ? take(builder.input(dense(c::DataType::kInt32, {1}))) : g::ValueId{};
   g::ValueId error_table, error_ids, error_output;
@@ -222,23 +228,24 @@ void exercise(bool convolution, std::int32_t selector, Fault fault = Fault::kNon
           *static_cast<c::ConstTensorView *>(opaque) = binding->configuration().source_indices;
           return hyle::Status::Ok();
         }, &metadata));
-    ASSERT_EQ(metadata.description(), dense(c::DataType::kInt32, {2}));
-    auto corrupted = std::array<std::int32_t, 2>{1, 3};
-    corrupted[fault == Fault::kLeftId ? 0 : 1] = static_cast<std::int32_t>(kSlots);
+    ASSERT_EQ(metadata.description(), dense(c::DataType::kInt32, {static_cast<std::int64_t>(choices)}));
+    std::vector<std::int32_t> corrupted(kSources.begin(), kSources.begin() + choices);
+    corrupted[fault == Fault::kLeftId ? corrupt_index : choices - 1] = static_cast<std::int32_t>(kSlots);
     const auto *pointer = take(c::cuda::pointer<std::int32_t>(metadata.storage()));
     // Deliberate post-prepare corruption of this exact private metadata only;
     // it is never a Source or a legitimate ordinary binding operation.
-    struct Copy final { std::int32_t *destination; const std::int32_t *source; } copy_args{
-        const_cast<std::int32_t *>(pointer), corrupted.data()};
+    struct Copy final { std::int32_t *destination; const std::int32_t *source; std::size_t count; } copy_args{
+        const_cast<std::int32_t *>(pointer), corrupted.data(), choices};
     auto copy = take(c::cuda::submit(queue,
         +[](cudaStream_t stream, void *opaque) noexcept -> hyle::Status {
           const auto &args = *static_cast<const Copy *>(opaque);
           return c::cuda::status(cudaMemcpyAsync(args.destination, args.source,
-              2 * sizeof(std::int32_t), cudaMemcpyHostToDevice, stream));
+              args.count * sizeof(std::int32_t), cudaMemcpyHostToDevice, stream));
         }, &copy_args));
     check(copy.wait()); copy = {};
   }
-  const bool invalid = selector < 0 || selector >= 2 || fault == Fault::kLeftId || fault == Fault::kRightId || fault == Fault::kPriorError;
+  const bool invalid = selector < 0 || static_cast<std::size_t>(selector) >= choices ||
+      fault == Fault::kLeftId || fault == Fault::kRightId || fault == Fault::kPriorError;
   if (fault == Fault::kWithdraw) {
     check(invocation.reset()); auto returned = take(s::take(invocation, store));
     EXPECT_EQ(returned.destination_count(), 2u);
@@ -257,7 +264,7 @@ void exercise(bool convolution, std::int32_t selector, Fault fault = Fault::kNon
         EXPECT_EQ(std::bit_cast<std::uint32_t>(actual_output[element]),
             std::bit_cast<std::uint32_t>(reference.expected_output[choice][element])) << element;
       auto returned = take(s::take(invocation, store));
-      EXPECT_EQ(returned.source_count(), nested ? 2u : 1u);
+      EXPECT_EQ(returned.source_count(), choices);
       for (std::size_t row = 0; row < 2; ++row) {
         auto ready = take(returned.destinations()[row].publish());
         const auto expected = std::as_bytes(std::span(reference.expected_state[choice]).subspan(row * elements, elements));
@@ -287,5 +294,20 @@ TEST(DeviceChoiceIndexedState, UnsubmittedWithdrawalRetiresWithoutWritingOrPubli
 }
 TEST(DeviceChoiceIndexedState, OriginalOneSourceIndexedPathStillQualifies) {
   for (const bool convolution : {false, true}) exercise(convolution, 0, Fault::kNone, false);
+}
+TEST(DeviceChoiceIndexedState, MultipleCapacitiesUseAllCheckedSourcesAndOriginalCapturedMath) {
+  for (const bool convolution : {false, true}) for (const auto choices : {1u, 4u, 8u})
+    for (std::uint32_t selector = 0; selector < choices; ++selector)
+      exercise(convolution, static_cast<std::int32_t>(selector), Fault::kNone, true, choices);
+}
+TEST(DeviceChoiceIndexedState, MultipleCapacityBoundsAndEveryUnselectedSourceAreChecked) {
+  for (const bool convolution : {false, true}) for (const auto choices : {1u, 4u, 8u}) {
+    for (const auto selector : {-1, static_cast<std::int32_t>(choices)})
+      exercise(convolution, selector, Fault::kNone, true, choices);
+    for (std::size_t bad = 0; bad < choices; ++bad)
+      exercise(convolution, static_cast<std::int32_t>((bad + 1) % choices), Fault::kLeftId, true, choices, bad);
+    exercise(convolution, 0, Fault::kPriorError, true, choices);
+    exercise(convolution, 0, Fault::kWithdraw, true, choices);
+  }
 }
 } // namespace

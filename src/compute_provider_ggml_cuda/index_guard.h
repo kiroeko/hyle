@@ -25,11 +25,11 @@ cudaError_t check_packed_r1_offsets_expected(const std::int32_t *source,
     std::int32_t *safe, std::int64_t capacity, std::int32_t expected_rows,
     unsigned *status, cudaStream_t stream) noexcept;
 
-// Both original slot IDs and the finite selector are checked. A prior error
+// All original slot IDs and the finite selector are checked. A prior error
 // or invalid control writes -1, which the original indexed kernels reject
 // before any source read or Store destination write.
 cudaError_t select_indexed_source(const std::int32_t *sources,
-    const std::int32_t *selector, std::int32_t *selected, std::int64_t slots,
+    std::size_t count, const std::int32_t *selector, std::int32_t *selected, std::int64_t slots,
     unsigned *status, cudaStream_t stream) noexcept;
 
 // A checked region publishes none of its outputs after any invalid entry.

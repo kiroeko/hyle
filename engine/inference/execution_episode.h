@@ -91,8 +91,8 @@ class ExecutionEpisode final {
     HYLE_RETURN_IF_ERROR(graph::batch::prepare(*run, carrier->queues(), layouts, options));
     return append_transactions().subspan(first, count).bind(*run, logical, cache_inputs);
   }
-  Status prepare_appends(const graph::Graph &logical,
-      std::span<const graph::batch::NodeLayoutChoice> layouts,
+  Status prepare_length_appends(const graph::Graph &logical,
+      std::span<const graph::batch::NodeLayout> layouts,
       std::size_t first, std::size_t count,
       std::span<const graph::ValueId> cache_inputs,
       graph::batch::PrepareOptions options = {}) noexcept {
@@ -101,17 +101,10 @@ class ExecutionEpisode final {
     if (first > nodes.size() || count > nodes.size() - first ||
         first > appends.size() || count > appends.size() - first ||
         first > bound.size() || count > bound.size() - first)
-      return Status::OutOfRange("choice append preparation exceeds the original episode cohort");
-    HYLE_ASSIGN_OR_RETURN(const bool prepared,
-        graph::batch::try_prepare_choices(*run, carrier->queues(), layouts, options));
-    if (!prepared) {
-      if (predecessor_episode && incoming && !incoming->bound && !has_completion() && !sources) {
-        unsubmitted_reuse_declined_ = true;
-        preparation_declined_ = true;
-        cleanup_pending = true;
-      }
-      return Status::Unimplemented("finite native layout choices declined before changing the original preparation");
-    }
+      return Status::OutOfRange("device-length append preparation exceeds the original episode cohort");
+    // This is ordinary cold preparation, not a read-only preflight promise.
+    // Failures retain the original episode and follow its normal cleanup.
+    HYLE_RETURN_IF_ERROR(graph::batch::prepare_lengths(*run,carrier->queues(),layouts,options));
     return append_transactions().subspan(first, count).bind(*run, logical, cache_inputs);
   }
   Status bind_consumers(const graph::Graph &state_graph) noexcept {

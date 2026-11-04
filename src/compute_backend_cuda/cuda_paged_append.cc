@@ -6,6 +6,7 @@
 
 #include "hyle/compute/detail/paged_append_backend.h"
 #include "hyle/compute/detail/device_choice_paged_append_backend.h"
+#include "hyle/compute/detail/device_lengths_paged_append_backend.h"
 
 namespace hyle::compute::cuda::detail {
 namespace {
@@ -18,6 +19,7 @@ struct AppendProgram final {
   const void *kernel = nullptr;
   PagedAppendNativeSpec spec;
   std::size_t arena_bytes = 0, input_bytes = 0, metadata_bytes = 0;
+  std::uint32_t requests=0;
 };
 
 Status prepare_append(void *opaque, PagedAppendNativeSpec spec,
@@ -138,10 +140,47 @@ EnqueueResult enqueue_choice(void*opaque,void*queue_opaque,void*program_opaque,
 }
 const compute::detail::DeviceChoicePagedAppendBackendVTable choice_table{
     &prepare_choice,&destroy_append,&enqueue_choice,true};
+Status prepare_lengths(void*opaque,compute::detail::DeviceLengthsPagedAppendSpec spec,
+    mem::AllocatorRef allocator,void**output)noexcept{
+  if(!spec.requests || spec.requests>32 || spec.storage.input_rows>INT32_MAX ||
+      spec.storage.instruction_capacity<spec.requests+2)
+    return Status::Unimplemented("CUDA device-length append capacity domain is not qualified");
+  HYLE_RETURN_IF_ERROR(prepare_append(opaque,spec.storage,allocator,output));
+  auto*program=static_cast<AppendProgram*>(*output);program->kernel=device_lengths_paged_append_kernel();program->requests=spec.requests;
+  ScopedPrimaryContext scope(program->context->primary);auto status=scope.status();
+  if(status.ok()){
+    cudaFuncAttributes attributes{};status=runtime_status(cudaFuncGetAttributes(&attributes,program->kernel));
+    if(status.ok() && attributes.maxThreadsPerBlock<256)status=Status::Unimplemented("device-length append kernel block capacity is insufficient");
+  }
+  if(!status.ok()){destroy_append(program,allocator);*output=nullptr;}return status;
+}
+EnqueueResult enqueue_lengths(void*opaque,void*queue_opaque,void*program_opaque,
+    compute::detail::DeviceLengthsPagedAppendBindings bindings)noexcept{
+  auto*queue=static_cast<QueueState*>(queue_opaque);auto*program=static_cast<AppendProgram*>(program_opaque);
+  if(!queue || !program || queue->context!=opaque || program->context!=opaque || !queue->active_sequence || !program->requests)
+    return EnqueueResult::rejected(Status::InvalidArgument("device-length append needs its original admitted Queue"));
+  struct Check{mem::ConstBufferView view;std::size_t bytes,alignment;};
+  for(const auto&entry:std::array<Check,5>{{
+      {bindings.arena,program->arena_bytes,alignof(std::uint16_t)},
+      {bindings.rows,program->input_bytes,alignof(std::uint16_t)},
+      {bindings.metadata,program->metadata_bytes,alignof(compute::detail::PagedAppendInstruction)},
+      {bindings.query_lengths,std::size_t(program->requests)*4,alignof(std::int32_t)},
+      {bindings.kv_lengths,std::size_t(program->requests)*4,alignof(std::int32_t)}}}){
+    auto status=validate_carrier(queue->context,entry.view,entry.bytes,entry.alignment);
+    if(!status.ok())return EnqueueResult::rejected(std::move(status));
+  }
+  ScopedPrimaryContext scope(queue->context->primary);if(!scope)return EnqueueResult::rejected(scope.status());
+  unsigned*word=nullptr;auto initialized=acquire_device_status(queue,&word);if(!initialized.status.ok())return initialized;
+  return EnqueueResult::accepted_command(runtime_status(launch_device_lengths_paged_append(program->kernel,
+      const_cast<void*>(byte_pointer(bindings.arena)),byte_pointer(bindings.rows),byte_pointer(bindings.metadata),
+      byte_pointer(bindings.query_lengths),byte_pointer(bindings.kv_lengths),{program->spec,program->requests},word,queue->stream)));
+}
+const compute::detail::DeviceLengthsPagedAppendVTable lengths_table{&prepare_lengths,&destroy_append,&enqueue_lengths,true};
 } // namespace
 
 const compute::detail::PagedAppendBackendVTable *paged_append_interface() noexcept {
   return &table;
 }
 const compute::detail::DeviceChoicePagedAppendBackendVTable*device_choice_paged_append_interface()noexcept{return &choice_table;}
+const compute::detail::DeviceLengthsPagedAppendVTable*device_lengths_paged_append_interface()noexcept{return &lengths_table;}
 } // namespace hyle::compute::cuda::detail

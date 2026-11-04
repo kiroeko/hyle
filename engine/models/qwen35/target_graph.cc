@@ -37,8 +37,8 @@ TargetGraphResult emit_target_graph(Recipe &r,
   const auto target_tokens = inputs.token_ids;
   if (inputs.predecessor_prefix_index && requests != 1)
     throw std::runtime_error("device predecessor prefix selection requires one original request");
-  if (inputs.zero_fill_envelope && !inputs.predecessor_prefix_index)
-    throw std::runtime_error("target raw append envelope requires its actual finite-choice selector");
+  if (bool(inputs.query_lengths)!=bool(inputs.kv_lengths))
+    throw std::runtime_error("target device lengths require both original Q/KV controls");
   const auto attention_layers = geometry.attention_layers();
   if (state_schema.size() != geometry.layers.size() || outputs.layers.size() != state_schema.size() ||
       outputs.attention_nodes.size() != attention_layers || outputs.append_nodes.size() != 2 * attention_layers ||
@@ -252,13 +252,11 @@ TargetGraphResult emit_target_graph(Recipe &r,
         value_rows = r.one(c::Operation::custom(c::model_ops::CacheEncode{cache_capacity.value_storage}),
             {value_rows}, r.dense_spec(Type::kFloat8E4M3FN, {packed, f(geometry.kv_heads), f(geometry.value_depth)}));
       else value_rows = r.cast(value_rows, cache_capacity.value_storage.data_type());
-      if (inputs.predecessor_prefix_index) {
-        r.op(c::Operation::custom(take(g::batch::device_choice_paged_append(
-            schema, c::BatchCacheRole::kKey, inputs.zero_fill_envelope))),
-            {key_rows, inputs.predecessor_prefix_index}, {}, &key_append);
-        r.op(c::Operation::custom(take(g::batch::device_choice_paged_append(
-            schema, c::BatchCacheRole::kValue, inputs.zero_fill_envelope))),
-            {value_rows, inputs.predecessor_prefix_index}, {}, &value_append);
+      if (inputs.query_lengths) {
+        r.op(c::Operation::custom(take(g::batch::device_lengths_paged_append(
+            schema, c::BatchCacheRole::kKey))), {key_rows, inputs.query_lengths,inputs.kv_lengths}, {}, &key_append);
+        r.op(c::Operation::custom(take(g::batch::device_lengths_paged_append(
+            schema, c::BatchCacheRole::kValue))), {value_rows, inputs.query_lengths,inputs.kv_lengths}, {}, &value_append);
       } else {
         r.op(c::Operation::custom(take(g::batch::paged_append(schema, c::BatchCacheRole::kKey))),
             {key_rows}, {}, &key_append);
@@ -268,15 +266,17 @@ TargetGraphResult emit_target_graph(Recipe &r,
       if (has_prior_append) check(r.builder.depends_on(key_append, prior_append));
       check(r.builder.depends_on(value_append, key_append));
       prior_append = value_append; has_prior_append = true;
-      const auto attention_operation = inputs.predecessor_prefix_index
-          ? c::Operation::custom(take(g::batch::device_choice_paged_attention(
-              schema, {.scale = 1.F / std::sqrt(static_cast<float>(geometry.key_depth)), .causal = true})))
+      const auto attention_operation = inputs.query_lengths
+          ? c::Operation::custom(take(g::batch::device_lengths_paged_attention(
+              schema,static_cast<std::uint32_t>(prefix_rows),
+              {.scale = 1.F / std::sqrt(static_cast<float>(geometry.key_depth)), .causal = true})))
           : c::Operation::custom(c::PagedAttention{
               .capacity = cache_capacity, .scale = 1.F / std::sqrt(static_cast<float>(geometry.key_depth)), .causal = true});
-      auto attention = r.one(attention_operation,
-          {r.cast(r.reshape(q, {packed, f(geometry.query_heads), f(geometry.key_depth)}), cache_capacity.query_type), ports.key, ports.value,
-           inputs.predecessor_prefix_index ? inputs.predecessor_prefix_index : inputs.attention_metadata},
-          r.dense_spec(cache_capacity.output_type, {packed, f(geometry.query_heads), f(geometry.value_depth)}), &outputs.attention_nodes[layer]);
+      const auto query=r.cast(r.reshape(q, {packed, f(geometry.query_heads), f(geometry.key_depth)}), cache_capacity.query_type);
+      const auto result_spec=r.dense_spec(cache_capacity.output_type, {packed, f(geometry.query_heads), f(geometry.value_depth)});
+      const auto attention = inputs.query_lengths?r.one(attention_operation,
+          {query,ports.key,ports.value,inputs.query_lengths,inputs.kv_lengths},result_spec,&outputs.attention_nodes[layer]):
+          r.one(attention_operation,{query,ports.key,ports.value,inputs.attention_metadata},result_spec,&outputs.attention_nodes[layer]);
       check(r.builder.depends_on(outputs.attention_nodes[layer], key_append));
       check(r.builder.depends_on(outputs.attention_nodes[layer], value_append));
       auto gated = r.binary(c::BinaryKind::kMultiply, r.cast(r.reshape(attention, {packed, f(geometry.attention_width())}), r.activation_type()), r.unary(c::UnaryKind::kSigmoid, gate));

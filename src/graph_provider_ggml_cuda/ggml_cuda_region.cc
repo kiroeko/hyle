@@ -204,8 +204,8 @@ struct IndexedConvPattern final {
   IndexedChain chain;
   ValueId chunk, weights;
 };
-// Only a checked selection of one of two whole rows is elided. The first
-// Gather and its real I32[2] input remain the Source permission identity.
+// Only a checked selection of one whole row from a bounded table is elided.
+// The first Gather and its complete IDs remain the Source permission identity.
 struct IndexedSource final {
   NodeId gather, selection;
   ValueId pool, ids, selector;
@@ -229,15 +229,16 @@ Result<bool> indexed_source(const Graph&graph,NodeId last,IndexedSource&out)noex
   HYLE_ASSIGN_OR_RETURN(auto capacity,graph.node_input(first,0));
   HYLE_ASSIGN_OR_RETURN(auto controls,graph.node_input(first,1));
   if(capacity.kind()!=ValueKind::kInput || controls.kind()!=ValueKind::kInput)return false;
-  HYLE_ASSIGN_OR_RETURN(auto pair,graph.value_description(controls));
+  HYLE_ASSIGN_OR_RETURN(auto choices,graph.value_description(controls));
   HYLE_ASSIGN_OR_RETURN(auto selector,graph.value_description(ids));
   HYLE_ASSIGN_OR_RETURN(auto rows,graph.value_description(pool));
   HYLE_ASSIGN_OR_RETURN(auto selected,graph.result(last));
   HYLE_ASSIGN_OR_RETURN(auto row,graph.value_description(selected));
-  HYLE_ASSIGN_OR_RETURN(auto expected_pair,compute::TensorDesc::dense(compute::DataType::kInt32,std::array<std::int64_t,1>{2}));
   HYLE_ASSIGN_OR_RETURN(auto expected_selector,compute::TensorDesc::dense(compute::DataType::kInt32,std::array<std::int64_t,1>{1}));
-  if(pair!=expected_pair || selector!=expected_selector || !rows.is_dense() || rows.rank()!=2 ||
-      rows.dimensions()[0]!=2 || !row.is_dense() || row.rank()!=2 || row.dimensions()[0]!=1 ||
+  if(!choices.is_dense() || choices.data_type()!=compute::DataType::kInt32 || choices.rank()!=1 ||
+      choices.dimensions()[0]<=0 || choices.dimensions()[0]>INT32_MAX ||
+      selector!=expected_selector || !rows.is_dense() || rows.rank()!=2 ||
+      rows.dimensions()[0]!=choices.dimensions()[0] || !row.is_dense() || row.rank()!=2 || row.dimensions()[0]!=1 ||
       rows.data_type()!=row.data_type() || rows.dimensions()[1]!=row.dimensions()[1])return false;
   out={first,last,capacity,controls,ids};return true;
 }
@@ -296,8 +297,8 @@ Result<bool> match_indexed_state(const Graph &graph, NodeId store_node,
   IndexedSource source;
   HYLE_ASSIGN_OR_RETURN(auto matched_source,indexed_source(graph,gather_node,source));
   if(!matched_source)return false;
-  // This addition covers one original R1 source only. The existing finite
-  // two-source selection remains the separate ordinary/indexed contract.
+  // Packed math retains its existing single R1 source contract. Finite
+  // source selection remains the separate ordinary/indexed contract.
   if (packed && source.selection.valid()) return false;
   const auto pool=source.pool,source_ids=source.ids;
   if (pool.kind() != ValueKind::kInput || source_ids.kind() != ValueKind::kInput ||
@@ -346,7 +347,7 @@ Result<bool> match_indexed_state(const Graph &graph, NodeId store_node,
   if (packed && batches != 1) return false;
   if (batches <= 0 || batches > UINT32_MAX || snapshots == 0 ||
       static_cast<std::uint64_t>(batches) > UINT32_MAX / snapshots ||
-      source_description.dimensions()[0] != (source.selection.valid()?2:batches) ||
+      (!source.selection.valid() && source_description.dimensions()[0] != batches) ||
       (source.selection.valid() && batches!=1) ||
       destination_description.dimensions()[0] != batches * snapshots ||
       rows_description.dimensions()[0] != batches * snapshots ||
@@ -361,7 +362,7 @@ Result<bool> match_indexed_state(const Graph &graph, NodeId store_node,
           static_cast<std::uint64_t>(store->schema.item_elements())) return false;
   HYLE_ASSIGN_OR_RETURN(auto scores, graph.result(gdn_node, 0));
   out = {std::move(nodes), source.gather, gdn_node, store_node, pool, source_ids, destination_ids,
-         scores, store->schema, static_cast<std::uint32_t>(source.selection.valid()?2:batches),
+         scores, store->schema, static_cast<std::uint32_t>(source_description.dimensions()[0]),
          static_cast<std::uint32_t>(batches * snapshots),source.selector};
   return true;
 } catch (const std::bad_alloc &) {
@@ -515,7 +516,7 @@ Result<bool> match_indexed_conv(const Graph &graph, NodeId store_node,
       chunk_description.dimensions()[1] != tokens || chunk_description.dimensions()[2] != channels ||
       !source_description.is_dense() || source_description.rank() != 1 ||
       source_description.data_type() != compute::DataType::kInt32 ||
-      source_description.dimensions()[0] != (source.selection.valid()?2:batches) ||
+      (!source.selection.valid() && source_description.dimensions()[0] != batches) ||
       (source.selection.valid() && batches!=1) ||
       history > INT64_MAX / channels || chain.schema.item_elements() != history * channels ||
       rows_description.data_type() != type || rows_description.dimensions()[0] != batches * static_cast<std::int64_t>(windows.size()) ||
@@ -578,7 +579,7 @@ Result<bool> match_indexed_conv(const Graph &graph, NodeId store_node,
         (value.kind() == ValueKind::kNodeOutput && value != chain.scores &&
          inside(graph.producer(value).value()))) return false;
   }
-  chain.source_count = static_cast<std::uint32_t>(source.selection.valid()?2:batches);
+  chain.source_count = static_cast<std::uint32_t>(source_description.dimensions()[0]);
   chain.destination_count = static_cast<std::uint32_t>(rows_description.dimensions()[0]);
   out = std::move(result);
   return true;

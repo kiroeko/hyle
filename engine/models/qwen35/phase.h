@@ -37,7 +37,6 @@ struct PhaseIo final {
   // Original per-Invocation planning storage. Nodes are fixed at cold
   // preparation; layout aliases exist only during batch::prepare below.
   std::vector<g::batch::NodeLayout> batch_layouts;
-  std::vector<g::batch::NodeLayoutChoice> batch_layout_choices;
   InputPacket input_packet;
   // A nonnative cold capacity refusal keeps its original fact while selecting
   // the existing independent Tensor path. It never authorizes runtime fallback.
@@ -46,7 +45,7 @@ struct PhaseIo final {
   std::vector<std::int32_t> history_select_values, last_id_values, prefix_id_values;
   Tensor sampling_identities, draft_positions, catchup_token;
   Tensor repair_lag;
-  Tensor predecessor_prefix, continuation_positions, continuation_draft_positions;
+  Tensor predecessor_prefix;
   Tensor draft_hidden_select, draft_token_select, draft_last_ids;
   std::vector<std::int32_t> draft_hidden_indices, draft_token_indices;
   inference::ProgramIo::Readback next_id, draft_id, sampling_valid, sampling_accept;

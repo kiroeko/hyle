@@ -52,18 +52,19 @@ __global__ void packed_r1_offsets(const std::int32_t *source,
 }
 
 __global__ void select_source(const std::int32_t *sources,
-    const std::int32_t *selector, std::int32_t *selected, std::int64_t slots,
+    std::size_t count, const std::int32_t *selector, std::int32_t *selected, std::int64_t slots,
     unsigned *status) {
   *selected = -1;
   if (*status != 0) return;
   const auto choice = *selector;
-  const auto left = sources[0], right = sources[1];
-  if (choice < 0 || choice >= 2 || left < 0 || std::int64_t(left) >= slots ||
-      right < 0 || std::int64_t(right) >= slots) {
+  bool valid = choice >= 0 && std::size_t(choice) < count;
+  for (std::size_t i = 0; i < count; ++i)
+    valid = valid && sources[i] >= 0 && std::int64_t(sources[i]) < slots;
+  if (!valid) {
     atomicCAS(status, 0U, static_cast<unsigned>(cuda::detail::DeviceStatusCode::kIndexOutOfRange));
     return;
   }
-  *selected = choice ? right : left;
+  *selected = sources[choice];
 }
 } // namespace
 
@@ -104,9 +105,10 @@ cudaError_t check_packed_r1_offsets_expected(const std::int32_t *source,
 }
 
 cudaError_t select_indexed_source(const std::int32_t *sources,
-    const std::int32_t *selector, std::int32_t *selected, std::int64_t slots,
+    std::size_t count, const std::int32_t *selector, std::int32_t *selected, std::int64_t slots,
     unsigned *status, cudaStream_t stream) noexcept {
-  select_source<<<1, 1, 0, stream>>>(sources, selector, selected, slots, status);
+  if (!count || count > INT32_MAX || slots <= 0) return cudaErrorInvalidValue;
+  select_source<<<1, 1, 0, stream>>>(sources, count, selector, selected, slots, status);
   return cudaGetLastError();
 }
 } // namespace hyle::compute::ggml_cuda::internal

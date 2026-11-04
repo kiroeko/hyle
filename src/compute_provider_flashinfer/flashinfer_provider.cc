@@ -15,6 +15,7 @@
 #include "hyle/compute/model_ops.h"
 #include "native_attention.h"
 #include "native_batch.h"
+#include "native_device_lengths.h"
 #include "native_batch_occupancy.h"
 #include "native_cache_encoder.h"
 #include "hyle/compute/detail/batch_provider.h"
@@ -143,7 +144,8 @@ bool same_batch_spec(const native::BatchSpec&a,const native::BatchSpec&b)noexcep
       a.page_indices_offset==b.page_indices_offset && a.tail_offset==b.tail_offset &&
       a.scale==b.scale && a.key_scale==b.key_scale && a.value_scale==b.value_scale &&
       a.window_left==b.window_left && a.paged==b.paged && a.bfloat16==b.bfloat16 &&
-      a.fp8==b.fp8 && a.causal==b.causal && a.allow_bf16_partials==b.allow_bf16_partials;
+      a.fp8==b.fp8 && a.causal==b.causal && a.allow_bf16_partials==b.allow_bf16_partials &&
+      a.bounded_layouts==b.bounded_layouts;
 }
 struct BatchSlot final {
   CUcontext primary=nullptr;
@@ -164,6 +166,7 @@ struct BatchSlot final {
   BatchWorkspaceQuery workspace_query;
   bool mla=false;
   bool device_choice=false;
+  native::DeviceLengthsShape lengths_shape{};
 };
 Status qualify_batch(void*opaque,BatchCapacity capacity,const BatchProgramOptions&options)noexcept {
   auto&context=*static_cast<ProviderContext*>(opaque);
@@ -309,6 +312,8 @@ Status query_bounded_batch_workspace(native::BatchSpec spec,HostBatchLayout meta
   HYLE_RETURN_IF_ERROR(cuda::status(native::query_batch_workspace(spec,metadata.query_indptr.data(),
       metadata.kv_indptr.data(),stream,facts,retained_plan,&preserves_commands,allow_graph_plan)));
   if(facts.float_bytes>float_cap || facts.int_bytes>int_cap){
+    if(spec.bounded_layouts)
+      return Status::Unimplemented("FlashInfer bounded layout plan exceeds its configured workspace caps");
     // Fixed graph grids may need more scratch than the original schedule.
     // Preserve the old executable domain under an explicit smaller cap.
     allow_graph_plan=false;
@@ -579,6 +584,60 @@ detail::EnqueueResult select_device_choices(void*opaque,detail::QueueSequence&se
   return detail::EnqueueResult::accepted_command(cuda::status(cudaMemsetAsync(*output,0,workspace.output.size(),*stream)));
 }
 const detail::BatchDeviceChoiceVTable kDeviceChoiceVTable{&qualify_device_choices,&select_device_choices};
+Status configure_bounded_layouts(void*opaque,Queue&queue)noexcept{
+  auto&slot=*static_cast<BatchSlot*>(opaque);const auto&s=slot.spec;
+  if(slot.mla || !s.paged || s.fp8 || !s.causal || s.window_left!=-1 ||
+      s.qk_head_dim!=s.value_head_dim ||
+      (s.qk_head_dim!=64 && s.qk_head_dim!=128 && s.qk_head_dim!=256))
+    return Status::Unimplemented("FlashInfer bounded layouts require plain causal paged GQA");
+  HYLE_ASSIGN_OR_RETURN(auto stream,cuda::stream(queue));(void)stream;
+  cuda::detail::ScopedPrimaryContext scope(slot.primary);if(!scope)return scope.status();
+  if(!slot.spec.bounded_layouts){
+    slot.spec.bounded_layouts=true;slot.generation=0;slot.layout={};slot.report={};slot.workspace_query={};
+  }
+  slot.device_choice=false;return Status::Ok();
+}
+Status qualify_device_lengths(void*opaque,Queue&queue)noexcept{
+  auto&slot=*static_cast<BatchSlot*>(opaque);slot.lengths_shape={};
+  if(!slot.generation || !slot.spec.bounded_layouts || slot.mla)
+    return Status::FailedPrecondition("FlashInfer device lengths need their original prepared capacity plan");
+  HYLE_ASSIGN_OR_RETURN(auto stream,cuda::stream(queue));(void)stream;
+  cuda::detail::ScopedPrimaryContext scope(slot.primary);if(!scope)return scope.status();
+  const auto h=slot.layout.host();bool qualified=false;
+  HYLE_RETURN_IF_ERROR(cuda::status(native::qualify_device_lengths(slot.plan,slot.spec,slot.kv_chunk_rows,
+      h.query_indptr.data(),h.kv_indptr.data(),h.last_page_lengths.data(),slot.report.int_workspace_bytes,
+      slot.lengths_shape,qualified)));
+  return qualified?Status::Ok():Status::Unimplemented("FlashInfer cannot prove this fixed capacity plan covers the device-length domain");
+}
+detail::EnqueueResult update_device_lengths(void*opaque,detail::QueueSequence&sequence,
+    ConstTensorView query_lengths,ConstTensorView kv_lengths,mem::ConstBufferView bounds,
+    mem::BufferView selected,detail::BatchWorkspaceViews workspace)noexcept{
+  auto&slot=*static_cast<BatchSlot*>(opaque);
+  if(!slot.generation || !slot.spec.bounded_layouts || !slot.lengths_shape.spec.requests ||
+      bounds.size()!=slot.layout.origin_schema().metadata_offsets().bytes || selected.size()!=bounds.size() ||
+      workspace.int_workspace.size()!=slot.report.int_workspace_bytes)
+    return detail::EnqueueResult::rejected(Status::FailedPrecondition("FlashInfer device-length carriers differ from their capacity plan"));
+  auto stream=cuda::stream(sequence);if(!stream)return detail::EnqueueResult::rejected(stream.error());
+  auto q=cuda::detail::const_pointer(query_lengths.storage(),4,1),k=cuda::detail::const_pointer(kv_lengths.storage(),4,1),
+      envelope=cuda::detail::const_pointer(bounds,8,1);
+  auto metadata=cuda::detail::mutable_pointer(selected,8,1),integer=cuda::detail::mutable_pointer(workspace.int_workspace,16,1),
+      output=cuda::detail::mutable_pointer(workspace.output,16,1);
+  if(!q)return detail::EnqueueResult::rejected(q.error());
+  if(!k)return detail::EnqueueResult::rejected(k.error());
+  if(!envelope)return detail::EnqueueResult::rejected(envelope.error());
+  if(!metadata)return detail::EnqueueResult::rejected(metadata.error());
+  if(!integer)return detail::EnqueueResult::rejected(integer.error());
+  if(!output)return detail::EnqueueResult::rejected(output.error());
+  cuda::detail::ScopedPrimaryContext scope(slot.primary);if(!scope)return detail::EnqueueResult::rejected(scope.status());
+  unsigned*status=nullptr;auto initialized=cuda::detail::acquire_device_status(sequence,&status);
+  if(!initialized.status.ok())return initialized;
+  auto error=native::update_device_lengths(slot.lengths_shape,static_cast<const std::int32_t*>(*q),
+      static_cast<const std::int32_t*>(*k),*envelope,*metadata,*integer,status,*stream);
+  if(error==cudaSuccess)error=cudaMemsetAsync(*output,0,workspace.output.size(),*stream);
+  return detail::EnqueueResult::accepted_command(cuda::status(error));
+}
+const detail::BatchDeviceLengthsVTable kDeviceLengthsVTable{
+    &configure_bounded_layouts,&qualify_device_lengths,&update_device_lengths};
 Status graph_float_workspace(void*context,BatchCapacity capacity,std::uint32_t physical_rows,
     const BatchProgramOptions&options,WorkspaceRequirement*out)noexcept{
   *out={};
@@ -657,6 +716,7 @@ const void*query_extension(void*,ProviderExtensionId id)noexcept{
   if(id==detail::kBatchPlanningExtensionId)return &kBatchVTable;
   if(id==detail::kMlaBatchPlanningExtensionId)return &kMlaVTable;
   if(id==detail::kBatchDeviceChoiceExtensionId)return &kDeviceChoiceVTable;
+  if(id==detail::kBatchDeviceLengthsExtensionId)return &kDeviceLengthsVTable;
   if(id==detail::kBatchFloatWorkspaceExtensionId)return &kFloatWorkspaceVTable;
   return nullptr;
 }

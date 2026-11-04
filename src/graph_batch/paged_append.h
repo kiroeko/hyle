@@ -4,6 +4,7 @@
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/compute/detail/paged_append_backend.h"
 #include "hyle/compute/detail/device_choice_paged_append_backend.h"
+#include "hyle/compute/detail/device_lengths_paged_append_backend.h"
 #include "native_append_regions.h"
 #include <memory>
 #include "hyle/graph/paged_append_source.h"
@@ -26,6 +27,7 @@ struct AppendFacts final {
   compute::BatchCacheRole role=compute::BatchCacheRole::kKey;
   compute::ConstTensorView capacity;
   compute::CacheStorage storage; // Actual bank interpretation, not layout provenance.
+  bool device_lengths=false;
 };
 struct AppendQueueBinding final {
   ExecutionLaneId lane;
@@ -51,6 +53,9 @@ struct PagedAppendAccess final {
   static Status reset(Invocation&)noexcept;
 };
 struct PagedAppendSourceAccess final {
+  static Result<PagedAppendPages> make_lengths(compute::PagedArena,
+      compute::BatchLayoutVersion,compute::BatchLayoutVersion,PagedAppendSource&,
+      std::span<compute::PagedPageWriter>,PagedAppendOptions)noexcept;
   static Result<PagedAppendPages> make_choices(compute::PagedArena,
       std::span<const PagedAppendChoice>,PagedAppendSource&,
       std::span<compute::PagedPageWriter>,bool zero_fill_envelope,PagedAppendOptions) noexcept;

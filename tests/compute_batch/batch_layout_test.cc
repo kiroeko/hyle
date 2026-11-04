@@ -121,6 +121,29 @@ TEST(BatchLayout, LogicalPrefixKeepsPerRequestOrderEvenWhenPhysicalCoverageIsEqu
   EXPECT_TRUE(c::detail::BatchLayoutAccess::logical_prefix_covers(outer,foreign).error().IsInvalidArgument());
   EXPECT_TRUE(c::detail::BatchLayoutAccess::logical_prefix_covers({},prefix).error().IsInvalidArgument());
 }
+TEST(BatchLayout, CapacityCowGrowthDoesNotInventQueryRowsOrWeakenExactAppendCache){
+  auto c0=capacity();c0.max_query_rows=4;
+  auto schema=c::BatchSchema::create(c0).value();
+  const std::array<std::int32_t,2>q0{0,0},q4{0,4},kv0{0,2},kv1{0,3};
+  const std::array<std::int32_t,2>old_pages{0,1};const std::array<std::int32_t,3>new_pages{0,2,3};
+  const std::array<std::int32_t,1>old_tail{15},new_tail{7};
+  auto before=schema.version({q0,kv0,old_pages,old_tail}).value();
+  auto after=schema.version({q4,kv1,new_pages,new_tail}).value(); // KV31 ->39, physical Q4.
+  auto raw=c::detail::BatchLayoutAccess::capacity_append_pages(before,after).value();
+  ASSERT_EQ(raw.changed.size(),2u);ASSERT_EQ(raw.untouched.size(),1u);
+  EXPECT_EQ(raw.changed[0].inherited_rows,15u);EXPECT_EQ(raw.changed[0].appended_rows,1u);
+  EXPECT_EQ(raw.changed[1].appended_rows,7u);EXPECT_EQ(raw.changed[1].input_begin,0u);
+  EXPECT_EQ(after.facts().query_rows,4u);
+  EXPECT_TRUE(c::detail::BatchLayoutAccess::append_pages(before,after).error().IsInvalidArgument());
+  EXPECT_EQ(c::detail::BatchLayoutAccess::capacity_append_pages(before,after)->changed.data(),raw.changed.data());
+  EXPECT_TRUE(c::detail::BatchLayoutAccess::capacity_append_pages(after,before).error().IsInvalidArgument());
+  auto other=schema.version({q4,kv0,old_pages,std::array<std::int32_t,1>{11}}).value(); // KV27 ->31, Q4.
+  auto exact=schema.version({q4,kv0,old_pages,old_tail}).value();
+  auto bounded=c::detail::BatchLayoutAccess::capacity_append_pages(other,exact).value();
+  auto packed=c::detail::BatchLayoutAccess::append_pages(other,exact).value();
+  EXPECT_NE(bounded.changed.data(),packed.changed.data());
+  EXPECT_EQ(packed.changed[0].input_begin,0u);EXPECT_EQ(packed.changed[0].appended_rows,4u);
+}
 TEST(BatchLayout, LogicalPrefixReusesTheVersionPairCacheAndConcurrentReaders){
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),1u<<20);
   auto schema=c::BatchSchema::create(capacity(),{.allocator=quota.get()}).value();Layout input;

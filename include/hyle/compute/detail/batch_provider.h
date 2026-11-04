@@ -72,8 +72,16 @@ struct BatchLayoutAccess final {
   // reorder, shared prefixes and COW IDs remain explicit in these facts.
   HYLE_COMPUTE_BATCH_API static Result<BatchAppendFootprint> append_pages(
       const BatchLayoutVersion&before,const BatchLayoutVersion&after) noexcept;
+  // Raw initialization geometry for a bounded device append. KV envelope
+  // growth is independent of the physical input Q bound. input_begin is zero:
+  // this carries no packed-input mapping or permission to read more Q rows.
+  HYLE_COMPUTE_BATCH_API static Result<BatchAppendFootprint> capacity_append_pages(
+      const BatchLayoutVersion&minimum,const BatchLayoutVersion&capacity) noexcept;
   static std::array<BatchMetadataSegment,5> row_segments(const RowCacheLayoutVersion&v) noexcept{return segments(v.owner_);}
   static Result<std::span<const std::int32_t>> row_page_footprint(const RowCacheLayoutVersion&v) noexcept{return page_footprint(v.owner_);}
+private:
+  static Result<BatchAppendFootprint> append_pages(const BatchLayoutVersion&,
+      const BatchLayoutVersion&,bool capacity_envelope) noexcept;
 };
 inline constexpr ProviderExtensionId kBatchPlanningExtensionId{0x48594c4542415443ULL,0x504c414e4e494e47ULL,7};
 // Same carrier ABI, distinct two-payload mathematical/physical contract.

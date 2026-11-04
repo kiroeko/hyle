@@ -47,7 +47,7 @@ struct TargetGraphInputs final {
   // Optional R1 predecessor choice. The original Slot Gather retains both
   // candidate prefixes; an ordinary checked Gather selects the real state.
   V predecessor_prefix_index{};
-  bool zero_fill_envelope = false;
+  V query_lengths{},kv_lengths{};
 };
 struct TargetGraphPorts final {
   std::span<Ports> layers;

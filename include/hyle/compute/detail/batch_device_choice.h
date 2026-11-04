@@ -17,4 +17,17 @@ struct BatchDeviceChoiceVTable final {
       mem::ConstBufferView zero, mem::ConstBufferView nonzero,
       mem::BufferView selected, BatchWorkspaceViews) noexcept=nullptr;
 };
+// Transitional capability while existing consumers migrate from V1. Capacity
+// bounds are the prepared layout; each request supplies query/KV lengths.
+// The original owner holds both the immutable page envelope and writable
+// metadata/schedules. There is no table of accepted-layout combinations.
+inline constexpr ProviderExtensionId kBatchDeviceLengthsExtensionId{
+    0x48594c4542415443ULL,0x44455643484f4943ULL,2};
+struct BatchDeviceLengthsVTable final {
+  Status (*configure)(void *native, Queue &) noexcept=nullptr;
+  Status (*qualify)(void *native, Queue &) noexcept=nullptr;
+  EnqueueResult (*update)(void *native, QueueSequence &, ConstTensorView query_lengths,
+      ConstTensorView kv_lengths, mem::ConstBufferView bounds,
+      mem::BufferView metadata, BatchWorkspaceViews) noexcept=nullptr;
+};
 } // namespace hyle::compute::detail

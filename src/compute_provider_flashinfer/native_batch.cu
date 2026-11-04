@@ -36,7 +36,7 @@ std::int64_t graph_query_length(BatchSpec s,const std::int32_t*q) noexcept {
       s.qk_head_dim!=s.value_head_dim ||
       (s.qk_head_dim!=64 && s.qk_head_dim!=128 && s.qk_head_dim!=256))return 0;
   const auto rows=q[1]-q[0];
-  if(q[0]!=0 || (rows!=1 && rows!=2 && (rows<64 || rows%16)) ||
+  if(q[0]!=0 || rows<=0 || (!s.bounded_layouts && rows!=1 && rows!=2 && (rows<64 || rows%16)) ||
       std::uint64_t(rows)*s.requests!=s.query_rows)return 0;
   for(std::uint32_t r=0;r<s.requests;++r)
     if(q[r+1]-q[r]!=rows)return 0;
@@ -78,7 +78,7 @@ cudaError_t qualify_device_layout_choice(const void*state,BatchSpec s,const std:
     const auto status=fi::PrefillPlanImpl<false>(floating,integer,nullptr,0,nullptr,nullptr,0,candidate,
         const_cast<std::int32_t*>(q),const_cast<std::int32_t*>(k),s.query_rows,s.requests,s.query_heads,s.kv_heads,
         s.qk_head_dim,s.value_head_dim,s.page_size,uniform>0,2,s.window_left,-1,false,0,uniform,
-        stream,2,bf16_partial_domain(s));
+      stream,2,bf16_partial_domain(s));
     if(status!=cudaSuccess)return status;
     // R1 has one q tile for both counts. Request/q/kv tile and merge offsets
     // must be identical; only the device active row scalar may differ. The
@@ -113,7 +113,7 @@ cudaError_t query_batch_workspace(BatchSpec s,const std::int32_t*q,const std::in
   // offsets and launch facts without changing the retained native plan.
   const auto status=fi::PrefillPlanImpl<false>(facts.float_bytes,facts.int_bytes,nullptr,0,nullptr,nullptr,0,next,
       const_cast<std::int32_t*>(q),const_cast<std::int32_t*>(k),s.query_rows,s.requests,s.query_heads,s.kv_heads,
-      s.qk_head_dim,s.value_head_dim,s.paged?s.page_size:1,uniform>0,s.fp8?4:2,s.window_left,fixed_split_pages,false,0,uniform,
+      s.qk_head_dim,s.value_head_dim,s.paged?s.page_size:1,s.bounded_layouts || uniform>0,s.fp8?4:2,s.window_left,fixed_split_pages,false,0,uniform,
       stream,s.fp8?1:2,bf16_partial_domain(s));
   if(status!=cudaSuccess)return status;
   facts.cta_tile_q=std::uint32_t(next.cta_tile_q);facts.padded_batch_size=std::uint32_t(next.padded_batch_size);
@@ -128,7 +128,7 @@ cudaError_t plan_batch(void *state,BatchSpec s,const std::int32_t*q,const std::i
   if(s.query_rows==0){plan={};facts={};return cudaSuccess;}
   const auto uniform=allow_graph_plan?graph_query_length(s,q):0;
   fi::PrefillPlanInfo next;
-  const auto result=fi::PrefillPlan(f,fb,i,h,ib,next,const_cast<std::int32_t*>(q),const_cast<std::int32_t*>(k),s.query_rows,s.requests,s.query_heads,s.kv_heads,s.qk_head_dim,s.value_head_dim,s.paged?s.page_size:1,uniform>0,s.fp8?4:2,s.window_left,facts.fixed_split_pages,false,0,uniform,stream,s.fp8?1:2,bf16_partial_domain(s));
+  const auto result=fi::PrefillPlan(f,fb,i,h,ib,next,const_cast<std::int32_t*>(q),const_cast<std::int32_t*>(k),s.query_rows,s.requests,s.query_heads,s.kv_heads,s.qk_head_dim,s.value_head_dim,s.paged?s.page_size:1,s.bounded_layouts || uniform>0,s.fp8?4:2,s.window_left,facts.fixed_split_pages,false,0,uniform,stream,s.fp8?1:2,bf16_partial_domain(s));
   if(result!=cudaSuccess)return result;
   // The original H2D may already be accepted. A violated preflight promise is
   // a terminal native error, never permission to replay changed arguments.
