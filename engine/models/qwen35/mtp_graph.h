@@ -37,12 +37,12 @@ struct Geometry final {
 };
 struct Projection final {
   Dimension rows;
-  Value fused;       // BF16 [rows,H], residual before the MTP block.
-  Value normalized;  // Its BF16 input_layernorm boundary.
+  Value fused;       // Activation precision [rows,H], before the MTP block.
+  Value normalized;  // Its input_layernorm boundary.
 };
 struct KeyValue final {
   Dimension rows;
-  Value key_rows, value_rows; // BF16 [rows,Hkv,D]; key already has norm/RoPE.
+  Value key_rows, value_rows; // Activation precision; key has norm/RoPE.
 };
 struct AppendNodes final {
   graph::NodeId key, value;
@@ -115,12 +115,12 @@ void coordinates(R &r, const Geometry &shape, Value positions, Value frequencies
     throw std::runtime_error("MTP positions/frequencies differ from the original text geometry");
 }
 
-inline void paged_schema(const compute::BatchSchema &schema, const ModelGeometry &geometry, Type activation_type) {
+inline void paged_schema(const compute::BatchSchema &schema, const ModelGeometry &geometry, Type cache_type) {
   if (!schema.valid()) throw std::runtime_error("MTP requires its real paged schema");
   const auto capacity = schema.capacity();
-  const auto plain = require(compute::CacheStorage::plain(activation_type));
+  const auto plain = require(compute::CacheStorage::plain(cache_type));
   if (capacity.storage != compute::BatchStorage::kPaged ||
-      capacity.query_type != activation_type || capacity.output_type != activation_type ||
+      capacity.query_type != cache_type || capacity.output_type != cache_type ||
       capacity.key_storage != plain || capacity.value_storage != plain ||
       capacity.query_heads != geometry.query_heads || capacity.kv_heads != geometry.kv_heads ||
       capacity.qk_head_dim != geometry.key_depth || capacity.value_head_dim != geometry.value_depth)
@@ -281,20 +281,25 @@ KeyValue prefill_kv(R &r, Value target_ids, Value normalized_target_rows,
 template<class R>
 AppendNodes append_kv(R &r, const compute::BatchSchema &schema, const KeyValue &kv,
                       Value query_lengths = {}, Value kv_lengths = {}) {
-  detail::paged_schema(schema, r.geometry, r.activation_type());
+  // Match the target's independent BF16 attention boundary for F32 GGUF
+  // activations; changing projection precision does not widen persistent KV.
+  const auto cache_type = r.activation_type() == Type::kFloat32 ? Type::kBFloat16 : r.activation_type();
+  detail::paged_schema(schema, r.geometry, cache_type);
+  const auto key_rows = r.cast(kv.key_rows, cache_type);
+  const auto value_rows = r.cast(kv.value_rows, cache_type);
   if (bool(query_lengths)!=bool(kv_lengths))
     throw std::runtime_error("MTP device append requires both original length vectors");
   AppendNodes nodes;
   if (query_lengths) {
     r.op(compute::Operation::custom(detail::require(graph::batch::device_lengths_paged_append(
-        schema, compute::BatchCacheRole::kKey))), {kv.key_rows, query_lengths,kv_lengths}, {}, &nodes.key);
+        schema, compute::BatchCacheRole::kKey))), {key_rows, query_lengths,kv_lengths}, {}, &nodes.key);
     r.op(compute::Operation::custom(detail::require(graph::batch::device_lengths_paged_append(
-        schema, compute::BatchCacheRole::kValue))), {kv.value_rows, query_lengths,kv_lengths}, {}, &nodes.value);
+        schema, compute::BatchCacheRole::kValue))), {value_rows, query_lengths,kv_lengths}, {}, &nodes.value);
   } else {
     r.op(compute::Operation::custom(detail::require(graph::batch::paged_append(
-        schema, compute::BatchCacheRole::kKey))), {kv.key_rows}, {}, &nodes.key);
+        schema, compute::BatchCacheRole::kKey))), {key_rows}, {}, &nodes.key);
     r.op(compute::Operation::custom(detail::require(graph::batch::paged_append(
-        schema, compute::BatchCacheRole::kValue))), {kv.value_rows}, {}, &nodes.value);
+        schema, compute::BatchCacheRole::kValue))), {value_rows}, {}, &nodes.value);
   }
   detail::require(r.builder.depends_on(nodes.value, nodes.key));
   return nodes;
@@ -355,15 +360,16 @@ Head full_head(R &r, const Projection &projection, const KeyValue &kv,
           {.scale = 1.F / std::sqrt(static_cast<float>(r.geometry.key_depth)), .causal = true})))
       : compute::Operation::custom(compute::PagedAttention{
           .capacity = paged.schema.capacity(), .scale = 1.F / std::sqrt(static_cast<float>(r.geometry.key_depth)), .causal = true});
-  const auto packed_query=r.reshape(query, {query_rows, fixed(r.geometry.query_heads), fixed(r.geometry.key_depth)});
-  const auto result_spec=r.dense_spec(r.activation_type(), {query_rows, fixed(r.geometry.query_heads), fixed(r.geometry.value_depth)});
+  const auto packed_query=r.cast(r.reshape(query, {query_rows, fixed(r.geometry.query_heads), fixed(r.geometry.key_depth)}),
+      paged.schema.capacity().query_type);
+  const auto result_spec=r.dense_spec(paged.schema.capacity().output_type, {query_rows, fixed(r.geometry.query_heads), fixed(r.geometry.value_depth)});
   const auto attention = reader_lengths?r.one(attention_operation,
       {packed_query,paged.key,paged.value,reader_lengths,paged.kv_lengths},result_spec,&attention_node):
       r.one(attention_operation,{packed_query,paged.key,paged.value,paged.metadata},result_spec,&attention_node);
   detail::require(r.builder.depends_on(attention_node, nodes.key));
   detail::require(r.builder.depends_on(attention_node, nodes.value));
   auto gated = r.binary(compute::BinaryKind::kMultiply,
-      r.reshape(attention, {query_rows, fixed(r.geometry.attention_width())}),
+      r.cast(r.reshape(attention, {query_rows, fixed(r.geometry.attention_width())}), r.activation_type()),
       r.unary(compute::UnaryKind::kSigmoid, gate));
   if (selected_row_only && !last_query_only) {
     if (shape.requests != 1 || (!last_indices && !last_row.is_fixed()))

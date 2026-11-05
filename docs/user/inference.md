@@ -84,8 +84,9 @@ Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-di
 普通 CUDA greedy 自然生成自动使用连续接力，无需额外参数；已有限检查单活动请求及双活动请求。
 无草稿概率门槛的CUDA greedy单会话K1—K3已接入自然接力。固定K2／K3把起草、验证及draft KV修复放入同一张轮图，
 中间token和下一轮接受位置留在设备。冷期只按配置容量和已到达首轮准备，后续长度与配额不参与规划。
-具备完整默认制品的BF16 Qwen3.5-2B／CUDA单会话自然greedy请求默认K3，使用114688行Q4_K草稿子集。
-其余目录默认关闭MTP，显式开启后默认K1。K3的收益与资源边界见性能表。
+具备源匹配草稿子集、模型与后端能力的单会话自然greedy请求，在权重加载前一次选择默认路线：稠密目标配行块量化草稿头时优先K3，原稠密草稿头或行块量化目标优先K1。
+本机验收使用BF16的114688行Q4_K子集，以及Q8_0／Q4_K_M各自来源绑定的114688行原编码子集。
+未准备这些条件的目录默认关闭MTP；显式on仍可走原有限路径，未指定K时回落K1。收益与资源边界见性能表。
 当前仅为最多输出至少 10 个 token 的自然生成准备两层候选；prefill 保留原路径，后继只使用已有实际捕获。
 完整同形、同序的活动请求组可持续接力；异形分组保留原同步执行。输出额度不足时先完成已接纳工作，再暂停等待额度。
 其它后端、上述范围外的MTP、混合执行、随机采样、scheduler 或显式 commands 自动使用原单步行为；显式缓存预算容不下额外候选时也自动使用单步。
@@ -101,17 +102,18 @@ Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-di
 逐请求bias／mask、历史罚分、动态条件及停止政策属于`engine/`内的C++请求扩展，
 没有对应CLI参数或已安装的引擎SDK／server入口；其合同查[输入与请求政策](../../engine/models/qwen35/README.md#输入与数值政策)。
 
-`--mtp auto|off|on` 默认 `auto`；只为准备完整、通过下方资格检查的目录自动开启K3。
+`--mtp auto|off|on` 默认 `auto`；依据冷期能力和已准备制品选择固定K，运行过程中不按接受率或计时改变K。
 `--mtp off` 强制普通生成；`--mtp-max-drafts 1` 可覆盖已启用的K3，按K1执行。
-`--mtp-max-drafts` 控制每轮最多提出的草稿数，合格默认制品为3，其余显式MTP为1。`--mtp-min-probability` 设置
+`--mtp-max-drafts` 控制每轮最多提出的草稿数，覆盖默认偏好。`--mtp-min-probability` 设置
 草稿分布最大概率的最低门槛，范围为 0 到 1，默认 0；达到门槛才继续草稿，实际长度可以更短。
 这不是额外置信度模型。制品、后端与草稿数的实际运行范围见[模型覆盖](../implementation/model-operators.md)。
 
 ### 草稿词表
 
 默认 `--mtp-draft-vocabulary auto`：MTP开启、无logits modifier的greedy、零概率阈值时，
-合格的默认K3目录组合 `mtp-draft-head.tsv` 与 `mtp-draft-vocabulary-k3.ids`；
-其余显式MTP目录按原策略读取 `mtp-draft-vocabulary.ids`。文件不存在或采样政策不适用时使用完整词表；
+已安装的Q4目录组合 `mtp-draft-head.tsv` 与 `mtp-draft-vocabulary-k3.ids`；
+使用原编码子集的目录读取 `mtp-draft-vocabulary.ids`。缺少可选子集时，auto关闭MTP；显式on使用完整词表。
+采样政策不适用时不自动选择子集；
 存在但source identity不匹配时拒绝加载。`--mtp-draft-vocabulary full` 强制完整词表作对照，
 也可用 `--mtp-draft-vocabulary FILE` 显式选择另一份准备文件。
 支持原BF16／F16／F32稠密head；CUDA还支持GGUF Q8_0／Q4_K／Q6_K编码行的子集，保持原量化代码与scale字节。
@@ -191,9 +193,9 @@ hyle --inputs .scratch/mtp-ready --backend cuda --capacity 32768 --schedule <自
 
 已验证系统为Windows11 x64、RTX4070／SM8.9、驱动617.14、CUDA13.3.73。制品保存GGUF Q4_K行数据与原ID映射，
 其读取依赖相同Q4_K存储约定及兼容后端；其它系统未作本次性能验收。
-自动K3目前限原HF BF16 Qwen3.5-2B几何、BF16 KV、CUDA、容量4至32768、单会话自然greedy、零草稿概率阈值、
-lazy准备及默认接力／replay；CPU分置、prefix、多会话、scheduler和随机不自动启用。
-专用映射存在但头缺失、身份过期或行数不符时拒绝加载。普通独立头、旧32K目录和显式开关保留原策略。
+默认路线由模型、实际投影和后端能力决定，不要求2B几何或固定行数，也不设32K默认上限。
+CPU分置、prefix、多会话、scheduler和随机不自动启用；关闭overlap或选择prefer-capture不关闭MTP。
+选用了安装的Q4头／映射对后，头缺失、身份过期或绑定形状不符时拒绝加载；未选用的资产不强行读取。
 这些条件只选择当前模型制品及执行政策，不读取未来prompt、接受结果或输出配额，不做动态K。
 离线转译只运行一次，不计入推理性能；冷启动加载与ready单列。主要比较实际输出除以prefill＋decode墙时，
 再分别列两个阶段；启动不摊入生成速度。完整进程值只作另列诊断。速度验收范围与启动、显存成本见[性能表](../developer/performance/decode.md#固定-k3本轮复测)。

@@ -6,16 +6,26 @@ int main(int argc,char **argv) {
   namespace q=qwen35;namespace wire=inference_quality;
   try {
     if (argc==2 && std::string_view(argv[1])=="--help") {
-      std::cout<<"qwen_quality_worker INPUT CAPACITY MAX_OUTPUT_ROWS [--mtp [1|3]]\nBinary HYQL0001 stream;stdin P/D/R/X commands.\n"
+      std::cout<<"qwen_quality_worker INPUT CAPACITY MAX_OUTPUT_ROWS [--mtp [1|3] [--mtp-draft-vocabulary FILE]]\nBinary HYQL0001 stream;stdin P/D/R/X commands.\n"
           "--mtp evaluates the first verifier row of a real bounded round and publishes its one-token prefix.\n";return 0;
     }
-    const bool mtp=(argc==5 || argc==6) && std::string_view(argv[4])=="--mtp";
-    if (argc!=4 && !mtp) throw std::runtime_error("qwen_quality_worker INPUT CAPACITY MAX_OUTPUT_ROWS [--mtp [1|3]]");
-    const auto draft_option=mtp&&argc==6?std::string_view(argv[5]):std::string_view("1");
+    const bool mtp=argc>=5 && std::string_view(argv[4])=="--mtp";
+    if (argc!=4 && !mtp) throw std::runtime_error("qwen_quality_worker INPUT CAPACITY MAX_OUTPUT_ROWS [--mtp [1|3] [--mtp-draft-vocabulary FILE]]");
+    int option=mtp?5:argc;
+    const auto draft_option=option<argc && std::string_view(argv[option])!="--mtp-draft-vocabulary"
+        ?std::string_view(argv[option++]):std::string_view("1");
     if(draft_option!="1" && draft_option!="3")throw std::runtime_error("quality MTP supports fixed K1 or K3");
     const auto drafts=draft_option=="3"?std::size_t{3}:std::size_t{1};
+    std::filesystem::path draft_vocabulary;
+    if(option<argc){
+      if(std::string_view(argv[option++])!="--mtp-draft-vocabulary" || option>=argc || !*argv[option])
+        throw std::runtime_error("quality draft vocabulary requires its existing source-bound file");
+      draft_vocabulary=argv[option++];
+    }
+    if(option!=argc)throw std::runtime_error("extra quality worker options");
     wire::binary_stdout();
-    auto source=q::prepare_weight_source(std::filesystem::path(argv[1])/"weights.tsv",mtp);
+    auto source=q::prepare_weight_source(std::filesystem::path(argv[1])/"weights.tsv",mtp,draft_vocabulary);
+    const auto draft_vocabulary_rows=source.draft_vocabulary?source.draft_vocabulary->size():0;
     const auto geometry=source.roles.geometry;
     const auto precision=q::PrecisionProfile::from_roles(source.roles);
     const auto capacity=std::stoull(argv[2]), maximum=std::stoull(argv[3]);
@@ -129,7 +139,9 @@ int main(int argc,char **argv) {
       } else if (command=='R') {
         retire();wire::emit(3,std::uint32_t(model.vocabulary));
       } else if (command=='X') {
-        retire();std::cerr<<"quality_verified_rows="<<verifier_rows<<" total_positions="<<total<<" mtp="<<mtp<<" max_drafts="<<drafts<<'\n';
+        retire();std::cerr<<"quality_verified_rows="<<verifier_rows<<" total_positions="<<total<<" mtp="<<mtp<<" max_drafts="<<drafts
+            <<" draft_vocabulary_rows="<<draft_vocabulary_rows<<" draft_head_rows="
+            <<(model.resources_->draft_head?model.resources_->draft_head->projection_weight().description.dimensions()[0]:0)<<'\n';
         wire::emit(4,std::uint32_t(model.vocabulary));return 0;
       } else throw std::runtime_error("unknown quality command");
     }

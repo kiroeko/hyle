@@ -217,6 +217,26 @@ Backend create_execution(const ModelGeometry &geometry, const cache::Plan &plan,
   if (cpu_options) return take(Backend::create(selection, {compute, compute, staging}, *cpu_options));
   return take(Backend::create(selection, {compute, compute, staging}));
 }
+c::BatchCapacity attention_capacity(const ModelGeometry &geometry, PrecisionProfile precision, const cache::Plan &plan) {
+  const auto storage = take(c::CacheStorage::plain(precision.cache_type()));
+  return {.storage = c::BatchStorage::kPaged, .query_type = precision.cache_type(),
+      .output_type = precision.cache_type(), .key_storage = storage, .value_storage = storage,
+      .max_requests = plan.max_requests, .max_query_rows = plan.max_query_rows,
+      .max_kv_rows = plan.max_kv_rows, .max_pages = plan.max_pages, .max_page_refs = plan.max_page_refs,
+      .query_heads = static_cast<std::uint32_t>(geometry.query_heads),
+      .kv_heads = static_cast<std::uint32_t>(geometry.kv_heads),
+      .qk_head_dim = static_cast<std::uint32_t>(geometry.key_depth),
+      .value_head_dim = static_cast<std::uint32_t>(geometry.value_depth), .page_size = cache::Plan::page_rows};
+}
+bool supports_mtp_attention(Backend &execution, c::BatchCapacity capacity,
+    std::span<const CacheStoragePair> target_storage, const c::ResourceBudget &budget = {}) {
+  if (!take(execution.supports_device_lengths_batch(capacity, budget))) return false;
+  for (const auto &storage : target_storage) {
+    auto target = capacity; target.key_storage = storage[0]; target.value_storage = storage[1];
+    if (!take(execution.supports_device_lengths_batch(target, budget))) return false;
+  }
+  return true;
+}
 // Typed ready inputs shared by an episode or prepared for each conditional.
 // Bias/mask are immutable [1,V] snapshots; counts is C0 and mathematical
 // prefix updates create later exact I32 counts. Copies retain
@@ -723,6 +743,7 @@ public:
 private:
   DraftPolicy draft_policy_;
   bool preparation_started_ = false;
+  bool greedy_chain_policy_ = false;
   struct ColdFamilyOutcome final {
     std::optional<FamilyBuildResult> result;
     std::exception_ptr error;
@@ -757,6 +778,24 @@ public:
     if ((resources_->draft_vocabulary || resources_->draft_head) && (!policy.max_drafts || policy.minimum_probability != 0))
       throw std::runtime_error("prepared draft projection requires active drafting with zero minimum probability");
     draft_policy_ = policy;
+    // Immutable endpoint/model facts and the selected draft policy are cold
+    // decisions. Per-request sampler and ownership checks remain at use.
+    greedy_chain_policy_ = policy.max_drafts >= 2 && policy.max_drafts <= 3 && policy.minimum_probability == 0 &&
+        device_sampling_capable_ && cache_plan.active_sequences == 1 && cache_plan.auxiliary_hidden_rows >= 2 &&
+        cache_plan.private_draft_stages >= policy.max_drafts && replay_policy != ReplayPolicy::kCommands;
+    if (greedy_chain_policy_) {
+      const auto found = projections.find(geometry.head_role());
+      const auto *stored = found == projections.end() ? nullptr : std::get_if<StoredProjection>(&found->second);
+      greedy_chain_policy_ = stored && stored->weight;
+      if (greedy_chain_policy_ && !stored->weight->description.is_plain()) {
+        const auto codec = c::gguf_quantized_type(stored->weight->description.storage_format());
+        greedy_chain_policy_ = codec && (*codec == c::GgufQuantizedType::kQ8_0 ||
+            *codec == c::GgufQuantizedType::kQ4K || *codec == c::GgufQuantizedType::kQ6K);
+      }
+    }
+  }
+  bool device_greedy_sampling(const SamplingConfiguration &sampling) const noexcept {
+    return device_sampling_capable_ && !sampling.enabled && sampling.modifiers.empty();
   }
   bool recursive_mtp() const noexcept { return max_drafts() && (max_drafts() > 1 || min_draft_probability() > 0); }
   bool device_mtp_successor_enabled() const noexcept { return device_mtp_successor_; }
@@ -778,15 +817,8 @@ public:
     if (!device_mtp_model_contract()) return false;
     if (max_drafts() > 1 && !greedy_draft_chain_enabled(sampling_configuration(0).configuration)) return false;
     if (!backend_device_mtp_support_) {
-      const auto capacity = attention_capacity();
-      bool supported = take(execution.supports_device_lengths_batch(capacity, allocation_budget));
-      for (const auto &storage : resources_->attention_storage) {
-        if (!supported) break;
-        auto target = capacity;
-        target.key_storage = storage[0]; target.value_storage = storage[1];
-        supported = take(execution.supports_device_lengths_batch(target, allocation_budget));
-      }
-      backend_device_mtp_support_ = supported;
+      backend_device_mtp_support_ = supports_mtp_attention(execution, attention_capacity(),
+          resources_->attention_storage, allocation_budget);
     }
     return *backend_device_mtp_support_;
   }
@@ -857,6 +889,7 @@ public:
   const std::size_t target_kv_layers, draft_bank;
   const std::vector<std::size_t> attention_layer_ids;
   Backend execution;
+  const bool device_sampling_capable_;
   std::shared_ptr<ColdResources> resources_;
   const SamplingConfiguration &default_sampler; // Aggregate diagnostics describe this immutable default.
   // These original runtimes outlive every phase/slot and its native retirement.
@@ -883,15 +916,7 @@ public:
     return attention_schemas.empty() ? attention_schema : attention_schemas.at(layer);
   }
   c::BatchCapacity attention_capacity() const {
-    const auto storage = take(c::CacheStorage::plain(precision.cache_type()));
-    return {.storage = c::BatchStorage::kPaged, .query_type = precision.cache_type(),
-        .output_type = precision.cache_type(), .key_storage = storage, .value_storage = storage,
-        .max_requests = cache_plan.max_requests, .max_query_rows = cache_plan.max_query_rows,
-        .max_kv_rows = cache_plan.max_kv_rows, .max_pages = cache_plan.max_pages,
-        .max_page_refs = cache_plan.max_page_refs, .query_heads = static_cast<std::uint32_t>(geometry.query_heads),
-        .kv_heads = static_cast<std::uint32_t>(geometry.kv_heads),
-        .qk_head_dim = static_cast<std::uint32_t>(geometry.key_depth),
-        .value_head_dim = static_cast<std::uint32_t>(geometry.value_depth), .page_size = cache::Plan::page_rows};
+    return qwen35::attention_capacity(geometry, precision, cache_plan);
   }
   cache::VersionCount &snapshot_versions;
   std::size_t &carrier_borrowed;
@@ -980,6 +1005,8 @@ public:
            return indices;
          }()),
          execution(std::move(prepared_execution)),
+        device_sampling_capable_(DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), progress,
+            false, false}.eligible()),
          resources_(std::make_shared<ColdResources>(geometry, selected_capacity, precision,
               SamplingConfiguration{sampling_configuration.enabled, sampling_configuration.policy, sampling_configuration.modifiers}, additional_sampling,
               source.roles.cache_policy, std::move(source.cache_storage))),
@@ -1790,9 +1817,8 @@ public:
     // bound can select capture; writer-only repair retains its ready-leaf path.
     const auto replay_mode = !selected_sampler.modifiers.history.empty() && head ? g::ReplayMode::kCommands
         : select_replay_mode(replay_policy, head ? planned_uses : 1, selected_sampler.enabled);
-    const auto packet_rows = head && max_drafts() > 1 && max_drafts() <= 3 && !selected_sampler.enabled &&
-        selected_sampler.modifiers.empty() && min_draft_probability() == 0 &&
-        execution.kind() == BackendKind::kCuda && !execution.has_cpu_assist() && !scheduler &&
+    const auto packet_rows = head && max_drafts() > 1 && max_drafts() <= 3 && device_greedy_sampling(selected_sampler) &&
+        min_draft_probability() == 0 &&
         cache_plan.active_sequences == 1 && cache_plan.auxiliary_hidden_rows >= 2 &&
         replay_policy != ReplayPolicy::kCommands ? max_drafts() + 1 : 0;
     auto built = build_draft_program({rows, selected_index, head, replay_mode, min_draft_probability(), packet_rows, steps},
@@ -1848,19 +1874,7 @@ public:
   // recursive rows may extend that private tail. Published Session tails are
   // never borrowed, so aborting proposal/verification leaves the old head valid.
   bool greedy_draft_chain_enabled(const SamplingConfiguration &sampling) const noexcept {
-    const bool eligible = max_drafts() >= 2 && max_drafts() <= 3 && min_draft_probability() == 0 &&
-        !sampling.enabled && sampling.modifiers.empty() && execution.kind() == BackendKind::kCuda &&
-        !execution.has_cpu_assist() && !scheduler && cache_plan.active_sequences == 1 &&
-        cache_plan.auxiliary_hidden_rows >= 2 && cache_plan.private_draft_stages>=max_drafts() && replay_policy != ReplayPolicy::kCommands;
-    if (!eligible) return false;
-    const auto found = projections.find(geometry.head_role());
-    const auto *stored = found == projections.end() ? nullptr : std::get_if<StoredProjection>(&found->second);
-    if(!stored || !stored->weight)return false;
-    const auto&description=stored->weight->description;
-    if(description.is_plain())return true;
-    const auto codec=c::gguf_quantized_type(description.storage_format());
-    return codec && (*codec==c::GgufQuantizedType::kQ8_0 || *codec==c::GgufQuantizedType::kQ4K ||
-        *codec==c::GgufQuantizedType::kQ6K);
+    return greedy_chain_policy_ && device_greedy_sampling(sampling);
   }
 
   // Each finite stage has independent COW writers from the same real base.
@@ -2851,8 +2865,7 @@ public:
     if (!device_mtp_successor_ || active_step || successor_step || carrier_borrowed || snapshot_versions.live)
       return;
     const auto &sampling = sampling_configuration(sampling_index).configuration;
-    if (!DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
-            sampling.enabled, !sampling.modifiers.empty()}.eligible()) return;
+    if (!device_greedy_sampling(sampling)) return;
     const auto phase_for = [&](GraphRole role, bool imported) -> Phase * {
       const auto found = phases.find({1, max_drafts()+1, role, TextCompletion::kEmitNext, sampling_index, imported,
           RowPacking::kRectangular});
@@ -2891,8 +2904,7 @@ public:
       throw std::runtime_error("decode recording requires an empty session destination");
     const auto &sampling = sampling_configuration(sampling_index).configuration;
     if (capacity < 2 || cache_plan.in_flight_batches < 2 ||
-        !DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
-            sampling.enabled, !sampling.modifiers.empty()}.eligible()) return report;
+        !device_greedy_sampling(sampling)) return report;
     const auto role = mtp ? GraphRole::kMtpRound : GraphRole::kText;
     const bool device_pair = mtp && device_mtp_successor_;
     const auto relay_role = mtp ? (device_pair ? GraphRole::kMtpContinuation : GraphRole::kMtpCatchupRound) : GraphRole::kText;
@@ -8665,11 +8677,11 @@ int qwen35::run(int argc, char **argv) {
         "Usage: hyle --inputs DIR [options]\n"
         "  --inputs DIR                Locally prepared checkpoint and token IDs\n"
         "  --backend cpu|cuda|apple|vulkan  Primary backend; required when multiple GPU routes are compiled\n"
-        "  --mtp auto|off|on           Default: prepared CUDA BF16 2B K3, otherwise off\n"
-        "  --mtp-max-drafts N          Maximum proposals; 0 disables drafting (default: prepared K3, otherwise 1)\n"
+        "  --mtp auto|off|on           Cold policy: dense target + Q4 draft K3, other prepared drafts K1; otherwise off\n"
+        "  --mtp-max-drafts N          Maximum proposals; 0 disables drafting (default: cold policy, explicit fallback 1)\n"
         "  --mtp-min-probability FLOAT  Stop below max draft probability, [0,1] (default: 0)\n"
         "  --mtp-draft-vocabulary auto|full|FILE  Prepared draft IDs (default: auto); greedy only\n"
-        "  --mtp-draft-head auto|original|FILE  Offline full Q4_K proposal head (default: auto); greedy only\n"
+        "  --mtp-draft-head auto|original|FILE  Offline full/subset Q4_K proposal head (default: auto); greedy only\n"
         "  --sampling greedy|random    Token selection (default: greedy)\n"
         "  --temperature FLOAT         Random policy temperature > 0 (default: 1)\n"
         "  --top-k N                    Random policy top-k; 0 disables (default: 0)\n"
@@ -8687,6 +8699,16 @@ int qwen35::run(int argc, char **argv) {
         "  --cache-bytes auto|N        Session cache backing budget\n"
         "  --prefix-cache off|auto     Reuse completed prompt/turn checkpoints\n"
         "  --replay auto|commands|prefer-capture\n"
+        "  --decode-overlap auto|off   Continuous successor policy (default: auto)\n"
+        "  --progress direct|scheduler  Request progress owner (default: direct)\n"
+        "Diagnostics and fixed-input replay:\n"
+        "  --trace DIR                 Write execution trace\n"
+        "  --trace-level full|decisions  Trace contents (default: full)\n"
+        "  --preparation-diagnostics 0|1  Inspect ordinary cold preparation (default: 0)\n"
+        "  --layer0-probe DIR          Write ordinary layer-zero probe\n"
+        "  --continuation IDS          Fixed continuation token IDs\n"
+        "  --decode-ids FILE           Fixed decode replay token file\n"
+        "  --diagnostic-first-turn-only 1  Legacy assertion of bounded natural generation\n"
         "Prepare inputs with engine/models/qwen35/prepare.py; no model is downloaded at runtime.\n";
     return 0;
   }
@@ -8857,60 +8879,83 @@ int qwen35::run(int argc, char **argv) {
       if (error) throw std::runtime_error("cannot inspect prepared MTP defaults: " + error.message());
       return present;
     };
-    // Only the separately prepared K3 pair opts a directory into new defaults.
-    // Legacy full heads and 32K maps keep their existing explicit-MTP policy.
-    // This inspects current configuration and metadata, never future requests.
-    const bool default_route = natural_generation && !multiple_schedules && !prefix_enabled && !progress &&
-        !warmup_planned_shapes && max_sessions <= 1 && active_sequences <= 1 && capacity >= 4 && capacity <= 32768 &&
-        backend_selection.primary == qwen35::BackendKind::kCuda && cpu_ffn_layers == 0 &&
-        !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0 &&
-        decode_overlap && replay == qwen35::ReplayPolicy::kAuto;
-    const auto default_vocabulary = input / qwen35::kDefaultK3Vocabulary;
-    const bool prepared_assets = mtp_policy != "off" && max_drafts > 0 &&
-        backend_selection.primary == qwen35::BackendKind::kCuda &&
-        !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0 &&
-        draft_head == "auto" && draft_vocabulary == "auto" && exists(default_vocabulary);
-    const bool automatic_k3 = prepared_assets && default_route && max_drafts <= 3;
-    mtp_enabled = mtp_policy == "on" || automatic_k3;
-    const bool select_prepared_assets = mtp_enabled && prepared_assets;
-    if (select_prepared_assets && !exists(input / "mtp-draft-head.tsv"))
-      throw std::runtime_error("prepared K3 vocabulary requires its complete source-bound Q4_K draft head");
-    if(draft_head=="original")draft_head.clear();
-    else if(draft_head=="auto"){
-      draft_head.clear();
-      if(mtp_enabled && max_drafts && !sampler.enabled && sampler.modifiers.empty() && min_draft_probability==0){
-        const auto prepared=input/"mtp-draft-head.tsv";std::error_code error;
-        const auto exists=std::filesystem::exists(prepared,error);
-        if(error)throw std::runtime_error("cannot inspect prepared draft head: "+error.message());
-        if(exists)draft_head=prepared;
+    namespace mtp = hyle::inference::mtp;
+    const bool greedy_drafting = max_drafts && !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0;
+    // Configuration contract only: no future prompt, quota or measured speed
+    // selects a route. Defaults and their reasons live in the engine policy.
+    const bool automatic_contract = natural_generation && !multiple_schedules && !prefix_enabled && !progress &&
+        max_sessions <= 1 && active_sequences <= 1 && capacity > 1 && !cpu_ffn_layers &&
+        greedy_drafting && replay != qwen35::ReplayPolicy::kCommands;
+    const mtp::Request mtp_request{mtp_policy == "off" ? mtp::RequestedMode::kOff :
+        mtp_policy == "on" ? mtp::RequestedMode::kOn : mtp::RequestedMode::kAuto,
+        automatic_contract, explicit_mtp_drafts ? std::optional{max_drafts} : std::nullopt};
+    const bool explicit_assets = (draft_head != "auto" && draft_head != "original") ||
+        (draft_vocabulary != "auto" && draft_vocabulary != "full");
+    const bool inspect_assets = mtp_policy != "off" && greedy_drafting &&
+        (mtp_policy == "on" || automatic_contract);
+    const bool automatic_head = draft_head == "auto", automatic_vocabulary = draft_vocabulary == "auto";
+    bool incomplete_installed_pair = false;
+    if (draft_head == "original" || automatic_head) draft_head.clear();
+    if (draft_vocabulary == "full" || automatic_vocabulary) draft_vocabulary.clear();
+    if (inspect_assets) {
+      const auto prepared_head = input / "mtp-draft-head.tsv";
+      if (automatic_head && exists(prepared_head)) draft_head = prepared_head;
+      if (automatic_vocabulary) {
+        const auto installed = input / qwen35::kDefaultK3Vocabulary;
+        const auto original = input / "mtp-draft-vocabulary.ids";
+        if (exists(installed)) {
+          incomplete_installed_pair = automatic_head && draft_head.empty();
+          draft_vocabulary = installed;
+        } else if (draft_head.empty() && exists(original)) draft_vocabulary = original;
       }
     }
-    if (draft_vocabulary == "full") draft_vocabulary.clear();
-    else if (draft_vocabulary == "auto") {
-      draft_vocabulary.clear();
-      // A prepared, source-bound asset is policy, not a guess based on vocab
-      // size or on this request's tokens. Other sampling policies keep the
-      // original full-vocabulary path. A stale asset still fails validation.
-      if (select_prepared_assets) draft_vocabulary = default_vocabulary;
-      else if (draft_head.empty() && mtp_enabled && max_drafts && !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0) {
-        const auto prepared = input / "mtp-draft-vocabulary.ids";
-        std::error_code error;
-        const auto exists = std::filesystem::exists(prepared, error);
-        if (error) throw std::runtime_error("cannot inspect prepared draft vocabulary: " + error.message());
-        if (exists) draft_vocabulary = prepared;
+    if (explicit_assets && (!inspect_assets || (mtp_policy == "auto" && !automatic_contract)))
+      throw std::runtime_error("explicit draft assets require active unmodified greedy MTP and zero minimum probability");
+
+    auto weight_source = mtp_policy == "auto" && inspect_assets && !draft_vocabulary.empty()
+        ? qwen35::prepare_available_mtp_weight_source(input / "weights.tsv")
+        : qwen35::prepare_weight_source(input / "weights.tsv", mtp_policy == "on");
+    const auto source_mtp = qwen35::source_mtp_capabilities(weight_source.roles);
+    const bool request_mtp_source = weight_source.cache_row_bytes.draft.key != 0;
+    // Query the real original endpoint before payload IO. It is moved into
+    // Model below; neither a second executor nor a per-request router exists.
+    std::optional<qwen35::Backend> prepared_execution;
+    std::size_t device_drafts = 0;
+    const auto &source_geometry = weight_source.roles.geometry;
+    const auto draft_storage = draft_head.empty() ? source_mtp.target : mtp::TargetProjection::kRowBlockQuantized;
+    constexpr auto exact_token_domain = std::int64_t{1} << std::numeric_limits<float>::digits;
+    if (request_mtp_source && source_mtp.nextn && source_mtp.stored_projection && capacity > 1 &&
+        !cpu_ffn_layers && backend_selection.primary != qwen35::BackendKind::kCpu &&
+        source_geometry.attention_layers() && source_geometry.vocabulary <= exact_token_domain) {
+      const auto limit = (std::min)(std::size_t{3}, capacity - 1);
+      const auto wanted = mtp_request.maximum_drafts.value_or(mtp::preferred_drafts(source_mtp.target, draft_storage, limit).value_or(1));
+      if (wanted && wanted <= limit) {
+        prepared_execution.emplace(qwen35::take(qwen35::Backend::create(backend_selection)));
+        const auto precision = qwen35::PrecisionProfile::from_roles(weight_source.roles);
+        const auto qualify = [&](std::size_t drafts) {
+          const auto plan = qwen35::cache::plan(source_geometry, weight_source.cache_row_bytes, capacity, 1,
+              capacity, 0, 1, drafts + 1, true, false, 3, drafts > 1 ? 2 : 0, precision, drafts > 1 ? drafts : 0);
+          return qwen35::supports_mtp_attention(*prepared_execution,
+              qwen35::attention_capacity(source_geometry, precision, plan), weight_source.cache_storage);
+        };
+        if (qualify(wanted)) device_drafts = wanted;
+        else if (!mtp_request.maximum_drafts && wanted > 1 && qualify(1)) device_drafts = 1;
       }
     }
-    if (!draft_vocabulary.empty() && (!mtp_enabled || !max_drafts ||
-        sampler.enabled || !sampler.modifiers.empty() || min_draft_probability != 0))
-      throw std::runtime_error("--mtp-draft-vocabulary requires --mtp on, active drafting, unmodified greedy sampling and zero minimum probability");
-    if(!draft_head.empty() && (!mtp_enabled || !max_drafts || sampler.enabled || !sampler.modifiers.empty() || min_draft_probability!=0))
-      throw std::runtime_error("--mtp-draft-head requires active unmodified greedy MTP and zero minimum probability");
-    auto weight_source = qwen35::prepare_weight_source(input / "weights.tsv", mtp_enabled, draft_vocabulary,draft_head);
-    if (select_prepared_assets) {
-      if (!qwen35::has_qualified_k3_defaults(weight_source))
-        throw std::runtime_error("prepared K3 defaults require the qualified BF16 Qwen3.5-2B source and 114688 Q4_K rows");
-      if (automatic_k3 && !explicit_mtp_drafts) max_drafts = 3;
+    if (request_mtp_source && (mtp_policy == "on" || device_drafts)) {
+      if (incomplete_installed_pair)
+        throw std::runtime_error("prepared K3 vocabulary requires its complete source-bound Q4_K draft head");
+      qwen35::prepare_draft_assets(weight_source, draft_vocabulary, draft_head);
     }
+    const auto selection = mtp::select(mtp_request, {source_mtp.nextn, device_drafts != 0,
+        weight_source.draft_vocabulary.has_value(), source_mtp.target, device_drafts, draft_storage});
+    mtp_enabled = selection.enabled;
+    max_drafts = selection.maximum_drafts;
+    if (!mtp_enabled && explicit_assets)
+      throw std::runtime_error("explicit draft assets require an enabled MTP route");
+    if (!mtp_enabled && request_mtp_source) qwen35::discard_mtp_weight_source(weight_source);
+    std::cerr << "mtp_cold_policy enabled=" << mtp_enabled << " max_drafts=" << max_drafts
+        << " reason=" << mtp::reason_name(selection.reason) << '\n';
     const auto geometry = weight_source.roles.geometry;
     qwen35::validate_mtp_source(geometry, mtp_enabled);
     qwen35::FfnPlacement::validate(cpu_ffn_layers, geometry.layers.size());
@@ -9050,19 +9095,12 @@ int qwen35::run(int argc, char **argv) {
     const auto max_query_rows = bounded_generation ? capacity : (std::max)({*std::max_element(planned_chunks.begin(), planned_chunks.end()), mtp_schema_rows,
         mtp_enabled && mtp_has_decode ? max_drafts + 1 : std::size_t{1}});
     const auto requested_active = (std::min)(active_sequences, input_sessions);
-    const bool stored_draft_head = std::ranges::any_of(weight_source.roles.selected, [&](const auto &role) {
-      return role.name == geometry.head_role() &&
-          (role.projection_codec == qwen35::prepared::ProjectionCodec::kDense ||
-           role.projection_codec == qwen35::prepared::ProjectionCodec::kUnspecified) &&
-          (role.dtype == "BF16" || role.dtype == "F16" || role.dtype == "F32" ||
-           role.dtype == "Q8_0" || role.dtype == "Q4_K" || role.dtype == "Q6_K");
-    });
     // A continuous conditional successor retains its completed producer until
     // the consumer really retires. Count that third original batch in the
     // existing page/state bound, independently of simultaneous GPU work.
     bool overlap_selected = decode_overlap && natural_generation &&
         (!mtp_enabled || (max_drafts >= 1 && max_drafts <= 3 && min_draft_probability == 0 &&
-                         (max_drafts == 1 || stored_draft_head))) && !progress &&
+                         (max_drafts == 1 || source_mtp.stored_projection))) && !progress &&
         qwen35::DeviceRelayCapabilities{backend_selection.primary, cpu_ffn_layers != 0,
             progress, sampler.enabled, !sampler.modifiers.empty()}.eligible() &&
         replay != qwen35::ReplayPolicy::kCommands && (trace.empty() || !trace_states) &&
@@ -9070,14 +9108,11 @@ int qwen35::run(int argc, char **argv) {
           return std::ranges::any_of(request.turns, [](const auto &turn) { return turn.max_outputs >= 10; });
         }));
     const bool continuous_mtp_candidate = overlap_selected && mtp_enabled && !prefix_enabled &&
-        cached_slots == 1 && requested_active == 1 && weight_source.cache_storage.empty() &&
-        geometry.attention_layers() && geometry.vocabulary <= (std::int64_t{1} << 24) &&
-        geometry.key_depth == geometry.value_depth &&
-        (geometry.key_depth == 64 || geometry.key_depth == 128 || geometry.key_depth == 256);
+        cached_slots == 1 && requested_active == 1 && device_drafts >= max_drafts;
     auto overlap_depth = continuous_mtp_candidate ? std::size_t{3} : std::size_t{2};
     bool device_verification_selected = mtp_enabled && max_drafts > 1 && max_drafts <= 3 &&
         min_draft_probability == 0 && !sampler.enabled && sampler.modifiers.empty() &&
-        backend_selection.primary == qwen35::BackendKind::kCuda && !cpu_ffn_layers && !progress &&
+        device_drafts >= max_drafts && !progress &&
         requested_active == 1 && replay != qwen35::ReplayPolicy::kCommands;
     const auto plan_for = [&](std::size_t residents) {
       return qwen35::cache::plan(geometry, weight_source.cache_row_bytes, capacity, residents,
@@ -9133,7 +9168,10 @@ int qwen35::run(int argc, char **argv) {
     const auto active_slots = selected_cache.active_sequences;
     const auto metadata_prepare_seconds = weight_source.metadata_prepare_seconds;
     const auto model_start = qwen35::Clock::now();
-    qwen35::Model model(std::move(weight_source), geometry, capacity, selected_cache, layer0_probe, progress, replay, cache_bytes, sampler, cpu_ffn_layers, backend_selection);
+    auto execution = prepared_execution ? std::move(*prepared_execution)
+        : qwen35::create_execution(geometry, selected_cache, cpu_ffn_layers, backend_selection);
+    qwen35::Model model(std::move(execution), {}, std::move(weight_source), geometry, capacity,
+        selected_cache, layer0_probe, progress, replay, cache_bytes, sampler, cpu_ffn_layers);
     model.configure_draft_policy({max_drafts, min_draft_probability});
     const auto constructed = qwen35::Clock::now();
     if (!trace.empty()) model.trace_routes = trace / "routes";

@@ -1,4 +1,4 @@
-"""CUDA defaults/override checks using supplied local prepared BF16 2B assets.
+"""Cold defaults/override checks using supplied local prepared BF16 assets.
 
 No implicit weights, quantizer or tokenizer download. Performance is measured
 separately; these runs check the actual CLI, metadata refusal and retirement.
@@ -29,8 +29,11 @@ def check(args):
             if name=='stale':text=text.replace(text.splitlines()[1],'0'*64,1)
             if name=='wrong-rows':text='\n'.join(text.splitlines()[:3])+'\n0 1 2\n'
             (folder/'mtp-draft-vocabulary-k3.ids').write_text(text,encoding='utf-8')
+    dense_original=args.output/'dense-original';dense_original.mkdir()
+    (dense_original/'weights.tsv').write_text(original_text,encoding='utf-8')
+    (dense_original/'mtp-draft-vocabulary.ids').write_text(original_map,encoding='utf-8')
 
-    def run(name,extra=(),inputs=None,mtp=True,width=3,subset=True,error=None):
+    def run(name,extra=(),inputs=None,mtp=True,width=3,subset=True,error=None,rows=114688):
         folder=args.output/name;folder.mkdir()
         command=[str(args.hyle),'--inputs',str(inputs or args.inputs),'--backend','cuda','--capacity','2048',
                  '--schedule',str(schedule),*extra]
@@ -43,10 +46,12 @@ def check(args):
             assert 'startup_to_ready_seconds=' not in stderr,'invalid defaults reached model readiness'
             return
         assert result.returncode==0,(name,stderr)
+        assert stderr.count('mtp_cold_policy ')==1,name
+        assert stderr.index('mtp_cold_policy ')<stderr.index('resident text weights:'),name
         raw=json.loads((folder/'stdout.log').read_text(encoding='utf-8'))
         assert raw['mtp']==mtp and raw['mtp_max_drafts']==(width if mtp else 0),name
-        assert raw['draft_vocabulary_rows']==(114688 if subset else 0),name
-        assert raw['draft_head_rows']==(114688 if subset else 248320 if mtp else 0),name
+        assert raw['draft_vocabulary_rows']==(rows if subset else 0),name
+        assert raw['draft_head_rows']==(rows if subset else 248320 if mtp else 0),name
         assert raw['live_committed_versions']==0,name
         if raw['sampling']=='greedy':assert raw['future_shape_hints']==0,name
         ledger=raw['sessions'][0]['ledger'];generations=[r for r in ledger if r['generation']]
@@ -66,17 +71,25 @@ def check(args):
     one=run('override-k1',['--mtp-max-drafts','1'],width=1)
     assert one==run('explicit-k1',['--mtp','on','--mtp-max-drafts','1'],width=1)
     ordinary=run('disable',['--mtp','off'],mtp=False,subset=False)
-    assert ordinary==run('outside-default-context',['--capacity','65536'],mtp=False,subset=False)
+    assert automatic==run('larger-default-context',['--capacity','65536'])
+    assert automatic==run('automatic-without-overlap',['--decode-overlap','off'])
+    assert automatic==run('automatic-prefer-capture',['--replay','prefer-capture'])
     assert ordinary==run('legacy-default',inputs=args.output/'legacy',mtp=False,subset=False)
     run('legacy-enabled',['--mtp','on'],inputs=args.output/'legacy',width=1,subset=False)
-    row_error='bound draft vocabulary' if 'SUBSET' in head[0] else 'qualified BF16 Qwen3.5-2B'
+    dense_one=run('dense-original-auto',inputs=dense_original,width=1)
+    assert dense_one==run('dense-original-enabled',['--mtp','on'],inputs=dense_original,width=1)
+    assert dense_one==run('dense-original-k1',['--mtp','on','--mtp-max-drafts','1'],inputs=dense_original,width=1)
+    dense_three=run('dense-original-k3',['--mtp','on','--mtp-max-drafts','3'],inputs=dense_original)
+    assert dense_three==run('dense-original-auto-k3',['--mtp-max-drafts','3'],inputs=dense_original)
+    row_error='bound draft vocabulary' if 'SUBSET' in head[0] else None
     for fixture,message in [('missing-head','requires its complete source-bound'),('stale','source identity differs'),
                             ('wrong-rows',row_error)]:
-        run('reject-'+fixture,inputs=args.output/fixture,error=message)
+        if message:run('reject-'+fixture,inputs=args.output/fixture,error=message)
+        else:assert automatic==run('valid-small-map',inputs=args.output/fixture,rows=3)
     assert ordinary==run('ignore-stale-disabled',['--mtp','off'],inputs=args.output/'stale',mtp=False,subset=False)
     random=['--sampling','random','--temperature','0.8','--top-k','40','--top-p','0.95','--seed','7']
     assert run('random-auto',random,mtp=False,subset=False)==run('random-off',[*random,'--mtp','off'],mtp=False,subset=False)
-    print('PASS automatic K3,explicit overrides,unchanged legacy and random defaults,stale/incomplete/row refusal,work/RNG/retirement',flush=True)
+    print('PASS cold automatic K3,explicit overrides,legacy and random defaults,stale/incomplete/binding refusal,work/RNG/retirement',flush=True)
 
 
 if __name__=='__main__':

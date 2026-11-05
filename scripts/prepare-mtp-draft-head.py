@@ -111,11 +111,8 @@ def default_k3_inputs(inputs: Path, vocabulary: Path, head: dict) -> dict[str, b
     """Borrow original weight ranges; publish an explicit ready-input default."""
     lines = (inputs / "weights.tsv").read_text(encoding="utf-8").splitlines()
     geometry = shlex.split(lines[2])
-    axes = [2048,6144,248320,8,2,256,256,64,16,16,128,128,4,262144]
-    if (head["dtype"] != "BF16" or len(geometry) != 21 or list(map(int, geometry[1:15])) != axes or
-            float(geometry[15]) != 10000000 or float(geometry[16]) != 1e-6 or
-            geometry[17:] != ['1','1','grouped','GGGAGGGAGGGAGGGAGGGAGGGA']):
-        raise ValueError("automatic K3 preparation requires the qualified BF16 Qwen3.5-2B geometry")
+    if (head["dtype"] != "BF16" or len(geometry) != 21 or geometry[18:20] != ['1','grouped']):
+        raise ValueError("prepared proposal inputs require the original dense BF16 reader and one grouped NextN layer")
     if vocabulary.stat().st_size > 256 + head["vocabulary"] * 32:
         raise ValueError("K3 vocabulary exceeds its original text byte bound")
     text = vocabulary.read_text(encoding="utf-8");mapping = text.splitlines()
@@ -125,8 +122,8 @@ def default_k3_inputs(inputs: Path, vocabulary: Path, head: dict) -> dict[str, b
     if any(not re.fullmatch(r'[0-9]+', word) for word in words):
         raise ValueError("K3 vocabulary requires original nonnegative token IDs")
     ids = list(map(int, words))
-    if len(ids) != 114688 or len(set(ids)) != len(ids) or any(n >= head['vocabulary'] for n in ids):
-        raise ValueError("automatic K3 requires 114688 distinct original vocabulary rows")
+    if not 0 < len(ids) < head['vocabulary'] or len(set(ids)) != len(ids) or any(n >= head['vocabulary'] for n in ids):
+        raise ValueError("compact draft head requires a nonempty proper subset of distinct original vocabulary rows")
     normalized = lines[:3];mtp = set()
     for line in lines[3:]:
         fields = shlex.split(line)
@@ -223,7 +220,7 @@ def main():
     parser.add_argument("--quantizer-version", required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--default-k3-vocabulary", type=Path,
-                        help="prepare runnable BF16 2B inputs with only these114688 encoded rows; enables automatic CUDA K3")
+                        help="prepare source-bound BF16 proposal inputs with the supplied original-ID subset; the engine selects its cold default")
     args = parser.parse_args()
     result = prepare(args.inputs.resolve(), args.ggml_library.resolve(), args.quantizer_version, args.output.resolve(),
                      args.default_k3_vocabulary.resolve() if args.default_k3_vocabulary is not None else None)
