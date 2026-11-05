@@ -1142,6 +1142,9 @@ Status propose(void *context, const RegionDiscoveryRequest &request, mem::Alloca
         .implementation = compute::ProviderImplementationId{9},
         .policy = kGgmlCudaQuantizedGluPolicy, .preference = 202}));
     if (!more) return Status::Ok();
+    // Keep private projections with the complete admitted quantized GLU.
+    ffn_projection[gate.ordinal()] = 1;
+    ffn_projection[up.ordinal()] = 1;
   }
   for (std::size_t i = 0; i < graph.node_count(); ++i) {
     if (!eligible[i]) continue;
@@ -1191,6 +1194,65 @@ Status propose(void *context, const RegionDiscoveryRequest &request, mem::Alloca
       ffn_projection[up.ordinal()] = 1;
       break;
     }
+  }
+
+  // Sibling MMVQ projections may share one activation quantization. Ask the
+  // native provider for the actual route before offering a grouped region.
+  struct QuantProjection final { NodeId node; ValueId activation; std::int64_t inner; };
+  container::SmallVector<QuantProjection, 16, mem::AllocatorRef> quantized(allocator);
+  for (std::size_t i = 0; i < graph.node_count(); ++i) {
+    if (!eligible[i] || ffn_projection[i]) continue;
+    HYLE_ASSIGN_OR_RETURN(auto node, graph.node_id(i));
+    const auto operation = graph.operation(node);
+    const auto *matmul = operation ? operation->get_if<compute::MatMul>() : nullptr;
+    if (!matmul || matmul->accumulation_type != compute::DataType::kFloat32) continue;
+    HYLE_ASSIGN_OR_RETURN(auto resource_count, graph.node_resource_count(node));
+    HYLE_ASSIGN_OR_RETURN(auto input_count, graph.node_input_count(node));
+    HYLE_ASSIGN_OR_RETURN(auto output_count, graph.node_output_count(node));
+    if (resource_count != 0 || input_count != 2 || output_count != 1) continue;
+    HYLE_ASSIGN_OR_RETURN(auto activation, graph.node_input(node, 0));
+    HYLE_ASSIGN_OR_RETURN(auto x, graph.value_description(activation));
+    // Decline unrelated families before examining their weights or constants.
+    if (!x.is_plain() || !x.is_dense() || x.rank() != 2 ||
+        x.data_type() != compute::DataType::kFloat32 || x.dimensions()[0] != 1)
+      continue;
+    if (single_constant_preparation(graph, node)) continue;
+    HYLE_ASSIGN_OR_RETURN(auto weight, graph.node_input(node, 1));
+    HYLE_ASSIGN_OR_RETURN(auto result, graph.result(node));
+    HYLE_ASSIGN_OR_RETURN(auto w, graph.value_description(weight));
+    HYLE_ASSIGN_OR_RETURN(auto y, graph.value_description(result));
+    if (!native::supports_shared_mmvq_projection(context, x, w, y)) continue;
+    HYLE_ASSIGN_OR_RETURN(auto supported, supported_node(context, graph, node));
+    if (!supported) continue;
+    if (!quantized.try_push_back(QuantProjection{node, activation, x.dimensions()[1]}))
+      return Status::ResourceExhausted("ggml CUDA shared projection metadata failed");
+  }
+  std::ranges::sort(quantized, [](const QuantProjection &a, const QuantProjection &b) noexcept {
+    if (a.activation != b.activation) return a.activation.ordinal() < b.activation.ordinal();
+    if (a.inner != b.inner) return a.inner < b.inner;
+    return a.node.ordinal() < b.node.ordinal();
+  });
+  for (std::size_t first = 0; first < quantized.size();) {
+    std::size_t last = first + 1;
+    while (last < quantized.size() && quantized[last].activation == quantized[first].activation &&
+           quantized[last].inner == quantized[first].inner) ++last;
+    if (last - first >= 2) {
+      container::SmallVector<NodeId, 16, mem::AllocatorRef> nodes(allocator);
+      for (std::size_t i = first; i < last; ++i)
+        if (!nodes.try_push_back(quantized[i].node))
+          return Status::ResourceExhausted("ggml CUDA shared region metadata failed");
+      HYLE_ASSIGN_OR_RETURN(auto contractible, is_region_contractible(graph, nodes, allocator));
+      if (contractible) {
+        HYLE_ASSIGN_OR_RETURN(auto more, writer.try_add({.nodes = nodes,
+            .cost = {.workspace = std::nullopt, .persistent_bytes = std::nullopt,
+                     .copy_bytes = 0, .repack_bytes = 0, .synchronization_count = 2, .dispatch_count = 1},
+            .route = 1, .replay_class = compute::ProviderReplayClass::kManaged,
+            .implementation = compute::ProviderImplementationId{2}, .policy = kGgmlCudaRegionPolicy,
+            .preference = 201}));
+        if (!more) return Status::Ok();
+      }
+    }
+    first = last;
   }
 
   // Same logical activation and geometry, grouped once rather than comparing
