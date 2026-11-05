@@ -61,6 +61,8 @@ inline Result<bool> supports_captured_device_batch(const compute::Context &conte
         [](void *native, const void *interface_value, void *opaque) noexcept -> Status {
           const auto *table = static_cast<const d::BatchProviderVTable *>(interface_value);
           if (!table || !table->qualify || !table->create || !table->destroy ||
+              !table->update || !table->plan || !table->run ||
+              (table->uses_caller_workspace && !table->workspace) ||
               !table->runtime || !table->supports_command_capture)
             return Status::Unimplemented("captured paged attention is unavailable");
           const auto runtime = table->runtime(native);

@@ -1,4 +1,6 @@
 #include "../../engine/inference/backend.h"
+#include "../../src/compute/context_state.h"
+#include "../../src/compute/provider_internal.h"
 
 #include <cstdio>
 #include <stdexcept>
@@ -14,6 +16,42 @@ template<class T> T take(hyle::Result<T> value) {
   if (!value) throw std::runtime_error(std::string(value.error().message()));
   return std::move(*value);
 }
+
+// Replace only the selected provider's test vtable; its original Context,
+// state and ownership stay intact, and are restored before the Backend dies.
+struct IncompleteBatchProvider final {
+  using Provider = hyle::compute::Provider;
+  using Slot = hyle::compute::detail::ContextState::ProviderSlot;
+  using VTable = hyle::compute::detail::ProviderVTable;
+  using BatchTable = hyle::compute::detail::BatchProviderVTable;
+  Slot &slot;
+  Provider original;
+  const VTable *base;
+  VTable replacement;
+  BatchTable batch{};
+  unsigned missing;
+  static inline IncompleteBatchProvider *active = nullptr;
+
+  IncompleteBatchProvider(Slot &selected, unsigned field)
+      : slot(selected), original(selected.provider),
+        base(hyle::compute::detail::ProviderAccess::vtable(original)), replacement(*base), missing(field) {
+    active = this;
+    replacement.query_extension = [](void *native, hyle::compute::ProviderExtensionId id) noexcept -> const void * {
+      auto &self = *active;
+      const auto *value = self.base->query_extension(native, id);
+      if (!value || id != hyle::compute::detail::kBatchPlanningExtensionId) return value;
+      self.batch = *static_cast<const BatchTable *>(value);
+      if (self.missing == 0) self.batch.update = nullptr;
+      if (self.missing == 1) self.batch.plan = nullptr;
+      if (self.missing == 2) self.batch.run = nullptr;
+      if (self.missing == 3) { self.batch.uses_caller_workspace = true; self.batch.workspace = nullptr; }
+      if (self.missing == 4) { self.batch.uses_caller_workspace = false; self.batch.workspace = nullptr; }
+      return &self.batch;
+    };
+    slot.provider = hyle::compute::detail::ProviderAccess::with_vtable(original, &replacement);
+  }
+  ~IncompleteBatchProvider() { slot.provider = original; active = nullptr; }
+};
 }
 
 int main() {
@@ -51,6 +89,46 @@ int main() {
     capacity.qk_head_dim = capacity.value_head_dim = depth;
     require(take(backend.supports_device_lengths_batch(capacity)));
   }
+  capacity.qk_head_dim = capacity.value_head_dim = 64;
+  auto *context = take(backend.common_context());
+  auto *state = c::detail::ContextAccess::state(*context);
+  std::size_t selected = state->provider_count;
+  const auto provider_count = state->provider_count;
+  for (std::size_t index = 0; index < provider_count; ++index) {
+    const auto lengths = c::detail::ProviderExtensionAccess::query(*context, index,
+        c::detail::kBatchDeviceLengthsExtensionId);
+    const auto planning = c::detail::ProviderExtensionAccess::query(*context, index,
+        c::detail::kBatchPlanningExtensionId);
+    if (lengths && planning) {
+      struct RestoreCount final {
+        c::detail::ContextState *state;
+        std::size_t count;
+        ~RestoreCount() { state->provider_count = count; }
+      } restore{state, state->provider_count};
+      state->provider_count = index + 1;
+      if (take(backend.supports_device_lengths_batch(capacity))) { selected = index; break; }
+    }
+  }
+  require(selected < state->provider_count);
+  {
+    // Isolate the first compatible provider. Later providers may legitimately
+    // supply a fallback, so they must not mask this provider's missing method.
+    struct RestoreCount final {
+      c::detail::ContextState *state;
+      std::size_t count;
+      ~RestoreCount() { state->provider_count = count; }
+    } restore{state, state->provider_count};
+    state->provider_count = selected + 1;
+    for (unsigned missing = 0; missing != 4; ++missing) {
+      IncompleteBatchProvider incomplete(state->providers()[selected], missing);
+      require(!take(backend.supports_device_lengths_batch(capacity)));
+    }
+    {
+      IncompleteBatchProvider provider_owned_workspace(state->providers()[selected], 4);
+      require(take(backend.supports_device_lengths_batch(capacity)));
+    }
+  }
+  require(take(backend.supports_device_lengths_batch(capacity)));
   capacity.qk_head_dim = capacity.value_head_dim = 96;
   require(!take(backend.supports_device_lengths_batch(capacity)));
   capacity.qk_head_dim = 256; capacity.value_head_dim = 128;
