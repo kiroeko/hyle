@@ -39,6 +39,17 @@ void write(const fs::path &path, std::string_view text) {
   output << text;
   if (!output) throw std::runtime_error("cannot write prepared metadata fixture");
 }
+void available_matches(const fs::path &path, bool expected_mtp) {
+  const auto expected = p::read_roles(path, expected_mtp);
+  const auto available = p::read_roles(path, true, true);
+  require(available.identity == expected.identity && available.geometry == expected.geometry &&
+      available.bytes == expected.bytes && available.cache_policy == expected.cache_policy &&
+      std::ranges::equal(available.selected, expected.selected, [](const auto &a, const auto &b) {
+        return a.name == b.name && a.dtype == b.dtype && a.shape == b.shape && a.source == b.source &&
+            a.offset == b.offset && a.bytes == b.bytes && a.meaning == b.meaning &&
+            a.projection_codec == b.projection_codec && a.projection_group_size == b.projection_group_size;
+      }), "optional cold MTP selection changed validated source metadata");
+}
 std::string row(const p::Role &role) {
   std::ostringstream output;
   output << role.name << '\t' << role.dtype << '\t' << role.shape.size();
@@ -264,6 +275,8 @@ void ct_block128_and_bf16_local_policy(const fs::path &directory) {
   const auto restored = p::read_roles(path, false);
   require(restored.ct_mixed_policy.kind == p::CtMixedPolicy::Kind::kBlock128 && restored.bytes == selected.bytes,
       "source-derived CT block128 policy must roundtrip without widening original SF");
+  available_matches(path, false);
+  rejects([&] { (void)p::read_roles(path, true); }, "ordinary inference only");
 }
 void check_placement(const p::Roles &roles) {
   const qwen35::FfnPlacement primary(roles, 0), mixed(roles, 2), all_ffn(roles, roles.geometry.layers.size());
@@ -323,12 +336,22 @@ void full_inventory_and_selection(const fs::path &directory) {
   write(path, manifest(all));
   check_selected(p::read_roles(path, true), 335, 3885306496ull, true);
   check_selected(p::read_roles(path, false), 320, 3763650176ull, false);
+  available_matches(path, true);
   const auto first = p::read_roles(path, true).selected.front();
   require(first.source == directory / all.begin()->second.source && first.offset == all.begin()->second.offset,
       "quoted relative source or original source offset was lost");
   write(path, manifest(dense(false)));
   check_selected(p::read_roles(path, false), 320, 3763650176ull, false);
+  available_matches(path, false);
   rejects([&] { (void)p::read_roles(path, true); }, "MTP requires");
+  auto partial = all;
+  partial.erase("mtp.fc.weight");
+  write(path, manifest(partial));
+  rejects([&] { (void)p::read_roles(path, true, true); }, "missing prepared role");
+  auto malformed = all;
+  malformed.at("mtp.fc.weight").bytes += 1;
+  write(path, manifest(malformed));
+  rejects([&] { (void)p::read_roles(path, true, true); }, "byte extent differs");
 
   auto f32 = all;
   for (auto &[name, role] : f32) {
@@ -784,6 +807,7 @@ void gguf_inventory_and_source_semantics(const fs::path &directory) {
   const auto path=directory/"gguf.tsv";
   write(path,serialize(all));
   const auto parsed=p::read_roles(path,true);
+  available_matches(path, true);
   require(parsed.selected.size()==335 && parsed.bytes==complete.bytes &&
       parsed.selected.front().source==directory/all.begin()->second.source &&
       p::read_roles(path,false).selected.size()==320 && p::is_role_signature(p::gguf_role_signature),
@@ -830,6 +854,7 @@ void gguf_inventory_and_source_semantics(const fs::path &directory) {
   write(path,ordinary_manifest);
   require(p::read_roles(path,false).selected.size()==320,
       "ordinary GGUF metadata without NextN must roundtrip through the shared reader");
+  available_matches(path, false);
   rejects([&]{(void)p::read_roles(path,true);},"MTP requires");
   const auto complete_text=serialize(all);
   write(path,complete_text+std::string(p::maximum_manifest_line_bytes+1,'x'));
@@ -987,6 +1012,7 @@ void mlx_original_affine_names_and_effective_parameters(const fs::path &director
       }
     }
     const auto path=directory/("mlx-"+std::to_string(bits)+".tsv"); write(path,manifest); const auto parsed=p::read_roles(path,false);
+    available_matches(path, false);
     check_placement(parsed);
     require(parsed.geometry==model && parsed.mlx_policy.bits==bits,"MLX ordinary geometry/policy differs");
     const auto find=[&](std::string_view name)->const p::Role&{const auto it=std::ranges::find(parsed.selected,name,&p::Role::name);if(it==parsed.selected.end())throw std::runtime_error("missing selected MLX role");return *it;};

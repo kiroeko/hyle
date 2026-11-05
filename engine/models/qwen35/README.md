@@ -25,10 +25,9 @@
 
 官方 BF16 的 target 与 draft 末分数使用 `dense-linear-f32`：原 BF16 权重与激活得到 F32 scores，
 中间线性输出仍为 BF16；实际输入的 `score_dtype`／`score_policy` 写入 JSON。
-GGUF Q8_0／Q4_K_M 的普通模式在冷期选择 F32 层间激活、残差与卷积 history，
+规范GGUF Q8_0／Q4_K_M 的普通与MTP模式在冷期选择 F32 层间激活、残差与卷积 history，
 编码权重不展开；attention query／output 与 KV 仍为 BF16，在图内显式转换。
-开启 MTP 时保留原 BF16 激活与 history；其它源 reader 的精度政策不变。
-这两种模式的舍入不同，普通输出不承诺与 MTP 或旧 BF16 层间实现逐项相同。
+其它源 reader 的精度政策不变。MTP已使用这套F32边界，输出不承诺与旧BF16层间实现逐项相同。
 状态池、hidden 与 HostImage 按实际类型计费，数学政策不能在存活模型中切换；
 手动构造 `cache::Plan` 时须传入该源的 `PrecisionProfile`，与 `state_schema_for` 保持一致。
 形状、批宽、分块及合法归约可引起数值变化，同 seed 不保证普通／MTP或不同后端逐 token 相同。
@@ -44,7 +43,7 @@ q 与 p 复用同一不可变条件行；被取消或失败的候选不发布新
 
 词表选择与编码头转译是两个准备步骤。不同词表生产工具可输出相同的source-bound原ID文件；
 引擎不解释选词算法。当前验收使用生成词频降序、同频原ID升序选择，最后按原ID排序。
-默认采用114688行，显式映射仍由原完整词表大小限定，不是Compute／Graph容量上限。
+本机验收制品采用114688行；映射由原完整词表大小和实际绑定限定，不是默认资格指纹或Compute／Graph容量上限。
 
 `prepare-mtp-draft-head.py --default-k3-vocabulary FILE` 离线生成可直接加载的Q4_K子集及原ID映射。
 子集元数据仍放在`mtp-draft-head.tsv`，UTF-8文本依次为：

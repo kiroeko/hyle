@@ -78,7 +78,25 @@ Copy结果保留独立根；partial／未知别名、输出变化、私有状态
 ## 多容量设备批次设计提案
 
 本节依据[成熟引擎源码](references.md#多容量设备元数据与投机解码)定义迁移合同。CUDA组件、K1及Qwen固定K2／K3完整轮图与设备后继已接通main。Q4_K完整头可在冷期与显式原ID子集组合，复用原编码Gather和资源退休；114688行子集K3相对原32K K1通过M1-10e验收；成套离线制品随后接入BF16 2B／CUDA单会话自然greedy的自动K3默认。
-默认资格只在Qwen入口检查当前源几何、实际存储、制品身份及执行配置；不把K3或114688行变成Compute／Graph上限。原32K K3的M1-10d速度门槛仍未通过。实测见[性能表](../developer/performance/decode.md#固定-k3本轮复测)。
+默认选路在加载权重payload之前完成：模型报告NextN及投影存储能力，原Backend通过自己的provider报告设备长度与capture能力，
+[引擎策略表](../../engine/inference/mtp_policy.h)结合当前请求配置和已准备制品选择固定K。探测复用将移入Model的同一个Context／Queue，
+临时native metadata通过原provider和allocator退休；不创建第二执行器，也不读未来请求长度或配额。
+支持的稠密目标配行块量化草稿头时优先K3、其次K1；原稠密草稿头或行块量化目标优先K1。显式on及K覆盖默认偏好，未具备自动条件时auto关闭；
+显式on仍可使用原有限路径。制品损坏、身份不符、资源或native错误继续报错，不能统称为“不支持”而吞掉。
+
+| 判断 | 所属与回落 |
+|---|---|
+| 模型几何、角色、精度、状态布局、NextN及实际投影 | 模型原reader与构图合同；不合法来源在请求接纳前拒绝。取消2B几何、固定词表行数与32K默认上限指纹，保留真实上下文／索引界限。 |
+| 对称head dim、KV存储、设备长度、shared／managed／nonblocking capture | [Backend的真实provider资格检查](../../engine/inference/device_batch_capability.h)；Unimplemented才表示该能力不可用，实际布局和录制仍在原冷入口验证。驱动不重复维护head-dim名单。 |
+| 默认K、是否选准备好的投影 | 引擎冷策略；单会话自然greedy与零阈值合同以外auto关闭。关闭overlap或使用prefer-capture不再自动关闭MTP。显式planned请求仍保留原有限规划语义。 |
+| 准备资产的原始ID、源身份、形状与完整绑定 | 原制品reader；只验证实际选用的资产。选择了安装的Q4头／映射对后，缺失或损坏仍报错。 |
+| 静态endpoint、codec和草稿资格 | Model构造／configure期间确定；参数或投影不在热路径重复协商。每请求的实际采样条件仍检查。 |
+| 在途深度、私有阶段、字节预算、Source／epoch／权限及真实退休 | 原资源owner；额外overlap容不下时减深度或沿原有限路径推进。已经接纳的工作继续按原完成／退休合同处理，不能以默认策略替代这些检查。 |
+
+CLI和环境变量清点只统计真实解析／读取表达式。全平台自有C++源码有16处环境读取表达式（含平台包装器调用）、9个字面量变量名，
+其中3个是HYLE环境变量；元数据签名、shader占位符、宏和头保护不计入开关。CLI的33个已有选项均列入help，
+诊断／固定回放单独列出；旧first-turn-only拼写保留兼容。provider算子支持、CPU ISA、完成可用性与日志过滤分别属于实现／状态／观测合同，不能按名字都算成推理性能门。
+原32K K3的M1-10d速度门槛仍未通过。实测见[性能表](../developer/performance/decode.md#固定-k3本轮复测)。
 目标是让容量和有效值各自承担正确职责；候选数不再由K1的两种结果决定，底层也不认识K3或接受政策。
 
 ### 容量、有效值与计划

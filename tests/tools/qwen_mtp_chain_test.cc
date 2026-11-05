@@ -11,6 +11,33 @@ struct Result {
   std::vector<s::StateImage> states;
   std::vector<std::vector<std::int32_t>> emitted;
 };
+void cold_source_selection(const std::filesystem::path &input) {
+  const auto ordinary = q::prepare_weight_source(input / "weights.tsv", false);
+  const auto full = q::prepare_weight_source(input / "weights.tsv", true);
+  auto available = q::prepare_available_mtp_weight_source(input / "weights.tsv");
+  require(available.roles.bytes == full.roles.bytes && available.cache_row_bytes == full.cache_row_bytes &&
+      available.roles.selected.size() == full.roles.selected.size(), "optional source lost available NextN metadata");
+  q::discard_mtp_weight_source(available);
+  const auto &expected = ordinary.roles;
+  require(available.roles.identity == expected.identity && available.roles.geometry == expected.geometry &&
+      available.roles.bytes == expected.bytes && available.cache_row_bytes == ordinary.cache_row_bytes &&
+      available.cache_storage.size() == ordinary.cache_storage.size() &&
+      std::ranges::equal(available.roles.selected, expected.selected, [](const auto &a, const auto &b) {
+        return a.name == b.name && a.dtype == b.dtype && a.shape == b.shape && a.source == b.source &&
+            a.offset == b.offset && a.bytes == b.bytes && a.meaning == b.meaning &&
+            a.projection_codec == b.projection_codec && a.projection_group_size == b.projection_group_size;
+      }), "declining NextN changed original target metadata or physical cache rows");
+  const auto bytes = available.roles.bytes;
+  q::discard_mtp_weight_source(available);
+  require(available.roles.bytes == bytes, "repeated metadata decline changed target bytes");
+  const std::array<std::int32_t, 2> ids{0, 1};
+  available.draft_vocabulary = q::take(hyle::inference::DraftVocabulary::create(expected.geometry.vocabulary, ids));
+  bool refused = false;
+  try { q::discard_mtp_weight_source(available); } catch (const std::logic_error &) { refused = true; }
+  require(refused && available.roles.bytes == bytes && available.draft_vocabulary,
+      "metadata decline accepted already-bound proposal assets or mutated target source");
+  std::cout << "PASS optional NextN metadata and ordinary decline preserve original source/roles/cache rows; bound assets refused\n";
+}
 void zero_draft_cold(const std::filesystem::path &input) {
   for(const auto boundaries:{std::size_t{1},std::size_t{4}}){
   auto source=q::prepare_weight_source(input/"weights.tsv",true);const auto geometry=source.roles.geometry;
@@ -246,6 +273,7 @@ qwen_device_continuation_case::Result continuous_chain(const std::filesystem::pa
 int main(int argc,char**argv)try{
   if(argc==1){std::cerr<<"SKIP: pass prepared local C32 MTP inputs\n";return 77;}
   if(argc!=2)throw std::runtime_error("usage: qwen_mtp_chain_test PREPARED_LOCAL_INPUTS");
+  cold_source_selection(argv[1]);
   zero_draft_cold(argv[1]);
   require(qwen_device_continuation_case::run(argv[1],q::BackendKind::kCuda)==0,
       "generic prefix selection failed the original K1 continuation contract");

@@ -14,7 +14,8 @@ void require(bool value) {
 int main() {
   namespace m = hyle::inference::mtp;
   using Reason = m::SelectionReason;
-  const m::PreparedCapabilities dense{true, true, true, m::TargetProjection::kDense, 3};
+  const m::PreparedCapabilities dense{true, true, true, m::TargetProjection::kDense, 3,
+      m::TargetProjection::kRowBlockQuantized};
   auto packed = dense; packed.target = m::TargetProjection::kRowBlockQuantized;
   const m::Request automatic{m::RequestedMode::kAuto, true, {}};
   const auto check = [&](m::Request request, m::PreparedCapabilities available,
@@ -26,6 +27,12 @@ int main() {
   };
   check(automatic, dense, true, 3, Reason::kPreparedDefault);
   check(automatic, packed, true, 1, Reason::kPreparedDefault);
+  auto original_dense = dense; original_dense.draft = m::TargetProjection::kDense;
+  check(automatic, original_dense, true, 1, Reason::kPreparedDefault);
+  auto explicit_dense = automatic; explicit_dense.mode = m::RequestedMode::kOn; explicit_dense.maximum_drafts = 3;
+  check(explicit_dense, original_dense, true, 3, Reason::kRequestedOn);
+  explicit_dense.mode = m::RequestedMode::kAuto; explicit_dense.maximum_drafts = 2;
+  check(explicit_dense, original_dense, true, 2, Reason::kPreparedDefault);
   auto limited = dense; limited.maximum_drafts = 1;
   check(automatic, limited, true, 1, Reason::kPreparedDefault);
   limited.maximum_drafts = 0;
@@ -34,7 +41,7 @@ int main() {
   check(automatic, unavailable, false, 1, Reason::kModelUnavailable);
   unavailable = dense; unavailable.bounded_device_execution = false;
   check(automatic, unavailable, false, 1, Reason::kDeviceExecutionUnavailable);
-  unavailable = dense; unavailable.reduced_draft_projection = false;
+  unavailable = dense; unavailable.prepared_draft_projection = false;
   check(automatic, unavailable, false, 1, Reason::kPreparedProjectionUnavailable);
   auto request = automatic; request.automatic_contract = false;
   check(request, dense, false, 1, Reason::kAutomaticContractUnavailable);

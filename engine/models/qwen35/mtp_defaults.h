@@ -17,7 +17,8 @@ inline SourceMtpCapabilities source_mtp_capabilities(const prepared::Roles &role
   SourceMtpCapabilities result;
   // These readers have no NextN implementation. The original role reader
   // checks source identity, geometry and the complete parameter inventory.
-  result.nextn = roles.geometry.mtp_layers == 1 && !roles.mlx_policy.enabled() &&
+  result.nextn = roles.geometry.mtp_layers == 1 &&
+      std::ranges::any_of(roles.selected, [](const auto &role) { return role.name.starts_with("mtp."); }) && !roles.mlx_policy.enabled() &&
       roles.ct_mixed_policy.kind != prepared::CtMixedPolicy::Kind::kBlock128;
   const auto head = std::ranges::find(roles.selected, roles.geometry.head_role(), &prepared::Role::name);
   if (head == roles.selected.end() || head->projection_group_size ||

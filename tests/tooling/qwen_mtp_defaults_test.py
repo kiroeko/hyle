@@ -29,6 +29,9 @@ def check(args):
             if name=='stale':text=text.replace(text.splitlines()[1],'0'*64,1)
             if name=='wrong-rows':text='\n'.join(text.splitlines()[:3])+'\n0 1 2\n'
             (folder/'mtp-draft-vocabulary-k3.ids').write_text(text,encoding='utf-8')
+    dense_original=args.output/'dense-original';dense_original.mkdir()
+    (dense_original/'weights.tsv').write_text(original_text,encoding='utf-8')
+    (dense_original/'mtp-draft-vocabulary.ids').write_text(original_map,encoding='utf-8')
 
     def run(name,extra=(),inputs=None,mtp=True,width=3,subset=True,error=None,rows=114688):
         folder=args.output/name;folder.mkdir()
@@ -73,6 +76,11 @@ def check(args):
     assert automatic==run('automatic-prefer-capture',['--replay','prefer-capture'])
     assert ordinary==run('legacy-default',inputs=args.output/'legacy',mtp=False,subset=False)
     run('legacy-enabled',['--mtp','on'],inputs=args.output/'legacy',width=1,subset=False)
+    dense_one=run('dense-original-auto',inputs=dense_original,width=1)
+    assert dense_one==run('dense-original-enabled',['--mtp','on'],inputs=dense_original,width=1)
+    assert dense_one==run('dense-original-k1',['--mtp','on','--mtp-max-drafts','1'],inputs=dense_original,width=1)
+    dense_three=run('dense-original-k3',['--mtp','on','--mtp-max-drafts','3'],inputs=dense_original)
+    assert dense_three==run('dense-original-auto-k3',['--mtp-max-drafts','3'],inputs=dense_original)
     row_error='bound draft vocabulary' if 'SUBSET' in head[0] else None
     for fixture,message in [('missing-head','requires its complete source-bound'),('stale','source identity differs'),
                             ('wrong-rows',row_error)]:

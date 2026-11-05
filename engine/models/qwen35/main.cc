@@ -8677,11 +8677,11 @@ int qwen35::run(int argc, char **argv) {
         "Usage: hyle --inputs DIR [options]\n"
         "  --inputs DIR                Locally prepared checkpoint and token IDs\n"
         "  --backend cpu|cuda|apple|vulkan  Primary backend; required when multiple GPU routes are compiled\n"
-        "  --mtp auto|off|on           Cold default: prepared dense K3 / row-block K1; otherwise off\n"
+        "  --mtp auto|off|on           Cold policy: dense target + Q4 draft K3, other prepared drafts K1; otherwise off\n"
         "  --mtp-max-drafts N          Maximum proposals; 0 disables drafting (default: cold policy, explicit fallback 1)\n"
         "  --mtp-min-probability FLOAT  Stop below max draft probability, [0,1] (default: 0)\n"
         "  --mtp-draft-vocabulary auto|full|FILE  Prepared draft IDs (default: auto); greedy only\n"
-        "  --mtp-draft-head auto|original|FILE  Offline full Q4_K proposal head (default: auto); greedy only\n"
+        "  --mtp-draft-head auto|original|FILE  Offline full/subset Q4_K proposal head (default: auto); greedy only\n"
         "  --sampling greedy|random    Token selection (default: greedy)\n"
         "  --temperature FLOAT         Random policy temperature > 0 (default: 1)\n"
         "  --top-k N                    Random policy top-k; 0 disables (default: 0)\n"
@@ -8699,6 +8699,16 @@ int qwen35::run(int argc, char **argv) {
         "  --cache-bytes auto|N        Session cache backing budget\n"
         "  --prefix-cache off|auto     Reuse completed prompt/turn checkpoints\n"
         "  --replay auto|commands|prefer-capture\n"
+        "  --decode-overlap auto|off   Continuous successor policy (default: auto)\n"
+        "  --progress direct|scheduler  Request progress owner (default: direct)\n"
+        "Diagnostics and fixed-input replay:\n"
+        "  --trace DIR                 Write execution trace\n"
+        "  --trace-level full|decisions  Trace contents (default: full)\n"
+        "  --preparation-diagnostics 0|1  Inspect ordinary cold preparation (default: 0)\n"
+        "  --layer0-probe DIR          Write ordinary layer-zero probe\n"
+        "  --continuation IDS          Fixed continuation token IDs\n"
+        "  --decode-ids FILE           Fixed decode replay token file\n"
+        "  --diagnostic-first-turn-only 1  Legacy assertion of bounded natural generation\n"
         "Prepare inputs with engine/models/qwen35/prepare.py; no model is downloaded at runtime.\n";
     return 0;
   }
@@ -8902,27 +8912,23 @@ int qwen35::run(int argc, char **argv) {
     if (explicit_assets && (!inspect_assets || (mtp_policy == "auto" && !automatic_contract)))
       throw std::runtime_error("explicit draft assets require active unmodified greedy MTP and zero minimum probability");
 
-    auto weight_source = qwen35::prepare_weight_source(input / "weights.tsv", false);
-    auto source_mtp = qwen35::source_mtp_capabilities(weight_source.roles);
-    const bool request_mtp_source = mtp_policy == "on" || (inspect_assets && !draft_vocabulary.empty() &&
-        source_mtp.nextn && source_mtp.stored_projection);
-    if (request_mtp_source) {
-      const auto prior_metadata = weight_source.metadata_prepare_seconds;
-      weight_source = qwen35::prepare_weight_source(input / "weights.tsv", true);
-      weight_source.metadata_prepare_seconds += prior_metadata;
-      source_mtp = qwen35::source_mtp_capabilities(weight_source.roles);
-    }
+    auto weight_source = mtp_policy == "auto" && inspect_assets && !draft_vocabulary.empty()
+        ? qwen35::prepare_available_mtp_weight_source(input / "weights.tsv")
+        : qwen35::prepare_weight_source(input / "weights.tsv", mtp_policy == "on");
+    const auto source_mtp = qwen35::source_mtp_capabilities(weight_source.roles);
+    const bool request_mtp_source = weight_source.cache_row_bytes.draft.key != 0;
     // Query the real original endpoint before payload IO. It is moved into
     // Model below; neither a second executor nor a per-request router exists.
     std::optional<qwen35::Backend> prepared_execution;
     std::size_t device_drafts = 0;
     const auto &source_geometry = weight_source.roles.geometry;
+    const auto draft_storage = draft_head.empty() ? source_mtp.target : mtp::TargetProjection::kRowBlockQuantized;
     constexpr auto exact_token_domain = std::int64_t{1} << std::numeric_limits<float>::digits;
     if (request_mtp_source && source_mtp.nextn && source_mtp.stored_projection && capacity > 1 &&
         !cpu_ffn_layers && backend_selection.primary != qwen35::BackendKind::kCpu &&
         source_geometry.attention_layers() && source_geometry.vocabulary <= exact_token_domain) {
       const auto limit = (std::min)(std::size_t{3}, capacity - 1);
-      const auto wanted = mtp_request.maximum_drafts.value_or(mtp::preferred_drafts(source_mtp.target, limit).value_or(1));
+      const auto wanted = mtp_request.maximum_drafts.value_or(mtp::preferred_drafts(source_mtp.target, draft_storage, limit).value_or(1));
       if (wanted && wanted <= limit) {
         prepared_execution.emplace(qwen35::take(qwen35::Backend::create(backend_selection)));
         const auto precision = qwen35::PrecisionProfile::from_roles(weight_source.roles);
@@ -8942,16 +8948,12 @@ int qwen35::run(int argc, char **argv) {
       qwen35::prepare_draft_assets(weight_source, draft_vocabulary, draft_head);
     }
     const auto selection = mtp::select(mtp_request, {source_mtp.nextn, device_drafts != 0,
-        weight_source.draft_vocabulary.has_value(), source_mtp.target, device_drafts});
+        weight_source.draft_vocabulary.has_value(), source_mtp.target, device_drafts, draft_storage});
     mtp_enabled = selection.enabled;
     max_drafts = selection.maximum_drafts;
     if (!mtp_enabled && explicit_assets)
       throw std::runtime_error("explicit draft assets require an enabled MTP route");
-    if (!mtp_enabled && request_mtp_source) {
-      const auto prior_metadata = weight_source.metadata_prepare_seconds;
-      weight_source = qwen35::prepare_weight_source(input / "weights.tsv", false);
-      weight_source.metadata_prepare_seconds += prior_metadata;
-    }
+    if (!mtp_enabled && request_mtp_source) qwen35::discard_mtp_weight_source(weight_source);
     std::cerr << "mtp_cold_policy enabled=" << mtp_enabled << " max_drafts=" << max_drafts
         << " reason=" << mtp::reason_name(selection.reason) << '\n';
     const auto geometry = weight_source.roles.geometry;

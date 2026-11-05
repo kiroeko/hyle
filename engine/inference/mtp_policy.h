@@ -15,9 +15,10 @@ enum class TargetProjection { kDense, kRowBlockQuantized };
 struct PreparedCapabilities final {
   bool model = false;
   bool bounded_device_execution = false;
-  bool reduced_draft_projection = false;
+  bool prepared_draft_projection = false;
   TargetProjection target = TargetProjection::kDense;
   std::size_t maximum_drafts = 0;
+  TargetProjection draft = TargetProjection::kDense;
 };
 
 struct Request final {
@@ -28,6 +29,7 @@ struct Request final {
 
 struct DefaultPreference final {
   TargetProjection target;
+  TargetProjection draft;
   std::size_t drafts;
 };
 
@@ -35,14 +37,16 @@ struct DefaultPreference final {
 // establish mathematical/backend support. A failed preference tries the next
 // supported entry; K2 remains an explicit choice.
 inline constexpr std::array default_preferences{
-    DefaultPreference{TargetProjection::kDense, 3},
-    DefaultPreference{TargetProjection::kDense, 1},
-    DefaultPreference{TargetProjection::kRowBlockQuantized, 1}};
+    DefaultPreference{TargetProjection::kDense, TargetProjection::kRowBlockQuantized, 3},
+    DefaultPreference{TargetProjection::kDense, TargetProjection::kRowBlockQuantized, 1},
+    DefaultPreference{TargetProjection::kDense, TargetProjection::kDense, 1},
+    DefaultPreference{TargetProjection::kRowBlockQuantized, TargetProjection::kRowBlockQuantized, 1},
+    DefaultPreference{TargetProjection::kRowBlockQuantized, TargetProjection::kDense, 1}};
 
 constexpr std::optional<std::size_t> preferred_drafts(TargetProjection target,
-    std::size_t maximum) noexcept {
+    TargetProjection draft, std::size_t maximum) noexcept {
   for (const auto preference : default_preferences)
-    if (preference.target == target && preference.drafts <= maximum) return preference.drafts;
+    if (preference.target == target && preference.draft == draft && preference.drafts <= maximum) return preference.drafts;
   return {};
 }
 
@@ -91,13 +95,13 @@ constexpr Selection select(Request request, PreparedCapabilities capabilities) n
   if (!request.automatic_contract) return unavailable(SelectionReason::kAutomaticContractUnavailable);
   if (!capabilities.model) return unavailable(SelectionReason::kModelUnavailable);
   if (!capabilities.bounded_device_execution) return unavailable(SelectionReason::kDeviceExecutionUnavailable);
-  if (!capabilities.reduced_draft_projection) return unavailable(SelectionReason::kPreparedProjectionUnavailable);
+  if (!capabilities.prepared_draft_projection) return unavailable(SelectionReason::kPreparedProjectionUnavailable);
   if (request.maximum_drafts) {
     if (*request.maximum_drafts && *request.maximum_drafts <= capabilities.maximum_drafts)
       return {true, *request.maximum_drafts, SelectionReason::kPreparedDefault};
     return unavailable(SelectionReason::kDraftDepthUnavailable);
   }
-  if (const auto drafts = preferred_drafts(capabilities.target, capabilities.maximum_drafts))
+  if (const auto drafts = preferred_drafts(capabilities.target, capabilities.draft, capabilities.maximum_drafts))
     return {true, *drafts, SelectionReason::kPreparedDefault};
   return unavailable(SelectionReason::kDraftDepthUnavailable);
 }

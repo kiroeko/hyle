@@ -181,7 +181,7 @@ struct Roles final {
   MlxAffinePolicy mlx_policy{};
   ModelOptStaticFp8Policy static_fp8_policy{};
 };
-inline Roles read_gguf_roles(const std::filesystem::path &path, bool include_mtp);
+inline Roles read_gguf_roles(const std::filesystem::path &path, bool include_mtp, bool available_mtp_only = false);
 inline bool is_role_signature(std::string_view signature) noexcept {
   if (signature.ends_with('\r')) signature.remove_suffix(1);
   return signature == role_signature || signature == gguf_role_signature;
@@ -263,7 +263,7 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
                           CachePolicy cache_policy = CachePolicy::kDefault, Nf4Policy nf4_policy = {},
                           const std::map<std::string, Nf4State> &nf4_states = {},
                           CtAsymmetricPolicy ct_asymmetric_policy = {}, MlxAffinePolicy mlx_policy = {},
-                          ModelOptStaticFp8Policy static_fp8_policy = {}) {
+                          ModelOptStaticFp8Policy static_fp8_policy = {}, bool available_mtp_only = false) {
   geometry.validate();
   if (geometry.gdn_layout != GdnHeadLayout::kGrouped) throw std::runtime_error("HF roles require their original grouped GDN layout");
   const auto maximum_hf_physical_roles = parameter_inventory(geometry.mtp_layers != 0, geometry).size() * maximum_physical_components;
@@ -271,6 +271,10 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
   if (all.size() > maximum_hf_physical_roles)
     throw std::runtime_error("prepared physical role count exceeds model limit");
   Roles result{std::move(identity), {}, 0}; result.geometry = geometry;
+  const bool has_mtp = std::ranges::any_of(all, [](const auto &entry) { return entry.first.starts_with("mtp."); });
+  if (available_mtp_only)
+    include_mtp = include_mtp && has_mtp && geometry.mtp_layers == 1 && !mlx_policy.enabled() &&
+        ct_mixed_policy.kind != CtMixedPolicy::Kind::kBlock128;
   result.float8_policy = float8_policy;
   result.ct_mixed_policy = ct_mixed_policy;
   result.cache_policy = cache_policy;
@@ -303,7 +307,6 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
     if (role.bytes != physical_bytes(role.dtype, role.shape) || role.bytes > UINT64_MAX - role.offset)
       throw std::runtime_error("prepared role byte extent differs: " + name);
   }
-  const bool has_mtp = std::ranges::any_of(all, [](const auto &entry) { return entry.first.starts_with("mtp."); });
   if (include_mtp && !has_mtp) throw std::runtime_error("MTP requires prepared MTP roles");
   const auto inventory = parameter_inventory(has_mtp, geometry);
   std::set<std::string> consumed;
@@ -511,14 +514,14 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
   if (consumed.size() != all.size()) throw std::runtime_error("unclaimed prepared physical role");
   return result;
 }
-inline Roles read_roles(const std::filesystem::path &path, bool include_mtp) {
+inline Roles read_roles(const std::filesystem::path &path, bool include_mtp, bool available_mtp_only = false) {
   std::ifstream input(path);
   std::string signature, identity;
   read_manifest_line(input, signature, 128); read_manifest_line(input, identity, 65);
   // A prepared manifest may move between Windows and Unix without rewriting it.
   if (signature.ends_with('\r')) signature.pop_back();
   if (identity.ends_with('\r')) identity.pop_back();
-  if (signature == gguf_role_signature) return read_gguf_roles(path, include_mtp);
+  if (signature == gguf_role_signature) return read_gguf_roles(path, include_mtp, available_mtp_only);
   if (signature != role_signature) throw std::runtime_error("invalid prepared role signature");
   validate_identity(identity);
   std::string geometry_line; read_manifest_line(input, geometry_line);
@@ -630,7 +633,7 @@ inline Roles read_roles(const std::filesystem::path &path, bool include_mtp) {
       throw std::runtime_error("duplicate prepared role");
   }
   if (!input.eof()) throw std::runtime_error("failed reading prepared role manifest");
-  return select_roles(all, std::move(identity), include_mtp, geometry, float8_policy, ct_mixed_policy, cache_policy, nf4_policy, nf4_states, ct_asymmetric_policy, mlx_policy, static_fp8_policy);
+  return select_roles(all, std::move(identity), include_mtp, geometry, float8_policy, ct_mixed_policy, cache_policy, nf4_policy, nf4_states, ct_asymmetric_policy, mlx_policy, static_fp8_policy, available_mtp_only);
 }
 } // namespace qwen35::prepared
 
