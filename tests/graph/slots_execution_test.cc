@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "../compute_batch/allocation_fault_fixture.h"
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/cpu.h"
 #include "hyle/compute/prepared_operation.h"
@@ -303,6 +304,8 @@ TEST(GraphSlotsExecution, ResetRevokesTheActualWriteEpisodeAndReturnsItsOwner) {
 // Store. Only the real initialized source items are readable; the [P,E] pool
 // description does not manufacture initialized storage for the other slots.
 struct SourceProgram final {
+  enum class ExtraUse { kNone, kPublishPool, kPublishSourceIds, kPublishDestinationIds,
+    kReadPool, kReadSourceIds, kReadDestinationIds };
   c::Context context;
   c::Queue queue;
   s::Schema schema;
@@ -315,7 +318,7 @@ struct SourceProgram final {
   g::Invocation invocation;
   const std::array<g::QueueBinding, 1> queues{{{g::ExecutionLaneId{0}, &queue}}};
 
-  explicit SourceProgram(std::size_t stride, bool defaults = false)
+  explicit SourceProgram(std::size_t stride, bool defaults = false, ExtraUse extra = ExtraUse::kNone)
       : context(defaults ? g::cpu::create_context({.native_threads = 2}).value()
                          : c::Context::create(c::cpu::device(), c::native::provider()).value()),
         queue(context.create_queue().value()) {
@@ -331,9 +334,24 @@ struct SourceProgram final {
     gathered = builder.result(gather, 0).value();
     store = builder.add_node(c::Operation::custom(s::Store{schema}),
         std::array{gathered, destination_ids}).value();
+    if (extra == ExtraUse::kPublishPool) EXPECT_TRUE(builder.publish(pool).ok());
+    if (extra == ExtraUse::kPublishSourceIds) EXPECT_TRUE(builder.publish(source_ids).ok());
+    if (extra == ExtraUse::kPublishDestinationIds) EXPECT_TRUE(builder.publish(destination_ids).ok());
+    if (extra == ExtraUse::kReadPool || extra == ExtraUse::kReadSourceIds ||
+        extra == ExtraUse::kReadDestinationIds) {
+      const auto extra_pool = extra == ExtraUse::kReadPool ? pool
+          : builder.input(schema.capacity_description().value()).value();
+      const auto extra_ids = extra == ExtraUse::kReadSourceIds ? source_ids
+          : extra == ExtraUse::kReadDestinationIds ? destination_ids
+          : builder.input(ids_description).value();
+      EXPECT_TRUE(builder.add_node(c::Operation(c::Gather{.axis = 0,
+          .bounds = c::IndexBoundsPolicy::kChecked}), std::array{extra_pool, extra_ids}));
+    }
     EXPECT_TRUE(builder.publish(gathered).ok());
     graph = std::move(builder).finish().value();
-    compiled = g::cpu::compile(graph, context).value();
+    auto compiled_result = g::cpu::compile(graph, context);
+    if (!compiled_result) throw std::runtime_error(std::string(compiled_result.error().message()));
+    compiled = std::move(*compiled_result);
     invocation = compiled.executable.create_invocation().value();
     const auto description = graph.value_description(gathered).value();
     gathered_buffer = m::Buffer::create(m::system_resource(), description.required_bytes().value(), 64).value();
@@ -446,6 +464,35 @@ TEST(GraphSlotsExecution, SourceGatherPaddedUsesOriginalGuardsAndRecyclesBothIdS
 }
 TEST(GraphSlotsExecution, DefaultPaddedGatherUsesOriginalGuardsWithoutForcedProvider) {
   exercise_source_gather(kStride, true);
+}
+
+TEST(GraphSlotsExecution, SourceProofRejectsPublishedAndSharedInputs) {
+  for (const auto extra : {SourceProgram::ExtraUse::kPublishPool,
+      SourceProgram::ExtraUse::kPublishSourceIds, SourceProgram::ExtraUse::kReadPool,
+      SourceProgram::ExtraUse::kReadSourceIds}) {
+    SCOPED_TRACE(static_cast<int>(extra));
+    SourceProgram program(kStride, false, extra);
+    const std::array associations{s::SourceBinding{program.store, program.gather}};
+    EXPECT_TRUE(s::prepare(program.invocation, program.graph, program.queues, associations).IsInvalidArgument())
+        << static_cast<int>(extra);
+  }
+  // The Store provider rejects exposed destination IDs during compilation,
+  // before the later association proof can be prepared.
+  EXPECT_THROW((SourceProgram(kStride, false, SourceProgram::ExtraUse::kPublishDestinationIds)),
+      std::runtime_error);
+  EXPECT_THROW((SourceProgram(kStride, false, SourceProgram::ExtraUse::kReadDestinationIds)),
+      std::runtime_error);
+}
+
+TEST(GraphSlotsExecution, SourceProofAllocationFailureDoesNotPublishPartialPreparation) {
+  SourceProgram program(kStride);
+  const std::array associations{s::SourceBinding{program.store, program.gather}};
+  hyle_f5_fault_fixture::Allocator allocator;
+  allocator.fail = 0;
+  EXPECT_TRUE(s::prepare(program.invocation, program.graph, program.queues, associations,
+      {.allocator = allocator.ref()}).IsResourceExhausted());
+  EXPECT_EQ(allocator.live, 0u);
+  ASSERT_TRUE(s::prepare(program.invocation, program.graph, program.queues, associations).ok());
 }
 
 TEST(GraphSlotsExecution, InvalidAssociationCountAndReplacedSourceIdsPreserveOriginalOwners) {
