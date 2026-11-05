@@ -55,8 +55,8 @@ python engine/models/qwen35/prepare.py --model LOCAL_MODEL --output .scratch/qwe
 ```
 
 输出目录必须是新目录，只保存偏移、token IDs 与输入记录，共用原权重文件。
-需要 MTP 时，在准备命令加 `--mtp`，运行时用 `--mtp on`。准备器会加入额外 15 份原 MTP 参数，
-仅准备不执行模型；同一份完整清单可切换普通／MTP。
+需要 MTP 时，在原权重准备命令加 `--mtp`，准备器加入额外15份原MTP参数，仅准备不执行模型；同一完整清单可切换普通／MTP。
+具备下方完整默认制品的BF16 2B／CUDA目录会自动启用K3；其它目录仍需运行时显式 `--mtp on`。
 只需普通模式时可省略准备器的`--mtp`；物理角色计数与输入身份见[模型输入说明](../../engine/models/qwen35/README.md#输入与数值政策)。
 
 ## 常用选项
@@ -84,7 +84,8 @@ Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-di
 普通 CUDA greedy 自然生成自动使用连续接力，无需额外参数；已有限检查单活动请求及双活动请求。
 无草稿概率门槛的CUDA greedy单会话K1—K3已接入自然接力。固定K2／K3把起草、验证及draft KV修复放入同一张轮图，
 中间token和下一轮接受位置留在设备。冷期只按配置容量和已到达首轮准备，后续长度与配额不参与规划。
-默认仍为K1；K3的收益取决于草稿词表和额外资源，32K原头、独立全词表及114688行Q4_K子集头的结果分别见性能表。
+具备完整默认制品的BF16 Qwen3.5-2B／CUDA单会话自然greedy请求默认K3，使用114688行Q4_K草稿子集。
+其余目录默认关闭MTP，显式开启后默认K1。K3的收益与资源边界见性能表。
 当前仅为最多输出至少 10 个 token 的自然生成准备两层候选；prefill 保留原路径，后继只使用已有实际捕获。
 完整同形、同序的活动请求组可持续接力；异形分组保留原同步执行。输出额度不足时先完成已接纳工作，再暂停等待额度。
 其它后端、上述范围外的MTP、混合执行、随机采样、scheduler 或显式 commands 自动使用原单步行为；显式缓存预算容不下额外候选时也自动使用单步。
@@ -100,14 +101,17 @@ Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-di
 逐请求bias／mask、历史罚分、动态条件及停止政策属于`engine/`内的C++请求扩展，
 没有对应CLI参数或已安装的引擎SDK／server入口；其合同查[输入与请求政策](../../engine/models/qwen35/README.md#输入与数值政策)。
 
-`--mtp-max-drafts` 控制每轮最多提出的草稿数，默认 1。`--mtp-min-probability` 设置
+`--mtp auto|off|on` 默认 `auto`；只为准备完整、通过下方资格检查的目录自动开启K3。
+`--mtp off` 强制普通生成；`--mtp-max-drafts 1` 可覆盖已启用的K3，按K1执行。
+`--mtp-max-drafts` 控制每轮最多提出的草稿数，合格默认制品为3，其余显式MTP为1。`--mtp-min-probability` 设置
 草稿分布最大概率的最低门槛，范围为 0 到 1，默认 0；达到门槛才继续草稿，实际长度可以更短。
 这不是额外置信度模型。制品、后端与草稿数的实际运行范围见[模型覆盖](../implementation/model-operators.md)。
 
 ### 草稿词表
 
 默认 `--mtp-draft-vocabulary auto`：MTP开启、无logits modifier的greedy、零概率阈值时，
-读取输入目录的 `mtp-draft-vocabulary.ids`。文件不存在或采样政策不适用时使用完整词表；
+合格的默认K3目录组合 `mtp-draft-head.tsv` 与 `mtp-draft-vocabulary-k3.ids`；
+其余显式MTP目录按原策略读取 `mtp-draft-vocabulary.ids`。文件不存在或采样政策不适用时使用完整词表；
 存在但source identity不匹配时拒绝加载。`--mtp-draft-vocabulary full` 强制完整词表作对照，
 也可用 `--mtp-draft-vocabulary FILE` 显式选择另一份准备文件。
 支持原BF16／F16／F32稠密head；CUDA还支持GGUF Q8_0／Q4_K／Q6_K编码行的子集，保持原量化代码与scale字节。
@@ -168,9 +172,31 @@ python scripts/prepare-mtp-draft-vocabulary.py --inputs <准备目录> --calibra
 hyle --inputs <准备目录> --backend cuda --mtp on --mtp-max-drafts 3 --mtp-draft-head .scratch/full-draft-head/mtp-draft-head.tsv --mtp-draft-vocabulary .scratch/draft-subset.ids --schedule <自然请求文件>
 ```
 
-自动发现独立头时仍优先使用完整独立头，组合必须显式指定映射；不会自动改变已有部署的词表大小。
+普通独立头仍优先于旧自动映射；显式映射仍可组合。默认K3使用下一段专门准备的成套制品，不把旧32K目录自动升为K3。
 2B的114688行Q4_K头payload为126MiB、映射448KiB。组合路径目前只验证CUDA，要求启用草稿、无modifier的greedy和零概率阈值。
 更换草稿头会改变提案、接受率与轮次划分，速度与数值边界见[性能表](../developer/performance/decode.md#固定-k3本轮复测)。
+
+### 自动K3的准备与运行
+
+先按上文用独立校准生成114688行映射，再离线生成可直接运行的默认目录：
+
+```powershell
+python scripts/prepare-mtp-draft-head.py --inputs <含MTP的BF16准备目录> --ggml-library <本地ggml-base.dll> --quantizer-version llama.cpp@2cbca389f515df455412dafa07e2b1359cc72a6d --default-k3-vocabulary <114688行映射.ids> --output .scratch/mtp-ready
+hyle --inputs .scratch/mtp-ready --backend cuda --capacity 32768 --schedule <自然请求文件>
+```
+
+运行命令无需额外MTP、K或草稿头参数。输出目录必须是新目录；工具离线编码并只保存所选Q4_K行，
+借用原权重的绝对文件范围，并发布原`weights.tsv`格式、输入IDs和`mtp-draft-vocabulary-k3.ids`。
+完整子集payload、映射与原权重引用写完后才发布头元数据；头身份同时绑定原模型与规范I32映射。启动时只校验和加载，不下载、生成词表或量化权重。
+
+已验证系统为Windows11 x64、RTX4070／SM8.9、驱动617.14、CUDA13.3.73。制品保存GGUF Q4_K行数据与原ID映射，
+其读取依赖相同Q4_K存储约定及兼容后端；其它系统未作本次性能验收。
+自动K3目前限原HF BF16 Qwen3.5-2B几何、BF16 KV、CUDA、容量4至32768、单会话自然greedy、零草稿概率阈值、
+lazy准备及默认接力／replay；CPU分置、prefix、多会话、scheduler和随机不自动启用。
+专用映射存在但头缺失、身份过期或行数不符时拒绝加载。普通独立头、旧32K目录和显式开关保留原策略。
+这些条件只选择当前模型制品及执行政策，不读取未来prompt、接受结果或输出配额，不做动态K。
+离线转译只运行一次，不计入推理性能；冷启动加载与ready单列。主要比较实际输出除以prefill＋decode墙时，
+再分别列两个阶段；启动不摊入生成速度。完整进程值只作另列诊断。速度验收范围与启动、显存成本见[性能表](../developer/performance/decode.md#固定-k3本轮复测)。
 
 ### CPU 与 GPU 分置
 
@@ -187,7 +213,7 @@ hyle --inputs <准备目录> --backend cuda --mtp on --mtp-max-drafts 3 --mtp-dr
 
 多轮 schedule、会话数量、同时活动数、缓存预算、trace 与数值限制见[模型运行说明](../../engine/models/qwen35/README.md)。
 当前多会话以共享模型、计划和有界执行资源组织，不按用户复制模型；缓存数量和实际批次宽度是独立配置。
-普通与 MTP 共用 `prompt/generate` 自然请求文件和多轮／多会话生命周期，用 `--mtp off|on` 切换。
+普通与 MTP 共用 `prompt/generate` 自然请求文件和多轮／多会话生命周期，用 `--mtp auto|off|on` 选择。
 每轮 `prompt` 文件只提供新增用户 token；后续轮可使用空文件继续生成，消费者会恰好消费一次上一轮的末尾 pending。首轮 prompt 必须非空。
 普通模式也保留显式 `prompt/decode` 固定输入重放；同一会话清单不能混用两种语法。
 自然生成统一输出 `sessions[].result`，单请求为 `sessions[0].result`；其中 `generated_ids` 是实际生成 IDs。

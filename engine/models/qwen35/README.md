@@ -1,6 +1,6 @@
 # Qwen3.5-2B 模型实现与诊断
 
-这是 `hyle` 程序当前使用的真实文本模型实现，默认关闭 MTP，尚未接视觉。
+这是 `hyle` 程序当前使用的真实文本模型实现，合格离线准备目录默认启用K3，其余目录默认关闭MTP；尚未接视觉。
 当前仍以真实模型检验底层支持，使用本地权重清单和 token IDs；通用目录 loader、C++ tokenizer、
 聊天服务及稳定引擎应用 API 留待后续。第一次构建、准备输入与运行见[引擎指南](../../../docs/user/inference.md)。
 模块用户仍可独立使用 Compute／Graph；模型、生成政策和请求编排归 `engine/`。
@@ -39,6 +39,35 @@ GGUF Q8_0／Q4_K_M 的普通模式在冷期选择 F32 层间激活、残差与�
 提供者取得当前 turn 已提交输出与未来草稿前缀；pending 已在前者，后者不重复它。
 q 与 p 复用同一不可变条件行；被取消或失败的候选不发布新的 head、账簿或 RNG。
 使用范围与有限检查见[采样说明](../../../docs/user/inference.md)，严格决策回放仍不凭空恢复外部 bias／mask 载荷。
+
+## 离线草稿制品合同
+
+词表选择与编码头转译是两个准备步骤。不同词表生产工具可输出相同的source-bound原ID文件；
+引擎不解释选词算法。当前验收使用生成词频降序、同频原ID升序选择，最后按原ID排序。
+默认采用114688行，显式映射仍由原完整词表大小限定，不是Compute／Graph容量上限。
+
+`prepare-mtp-draft-head.py --default-k3-vocabulary FILE` 离线生成可直接加载的Q4_K子集及原ID映射。
+子集元数据仍放在`mtp-draft-head.tsv`，UTF-8文本依次为：
+
+```text
+HYLE_QWEN_DRAFT_HEAD_Q4_K_SUBSET_V1
+<原完整模型source identity>
+<子集payload SHA256>
+llama.cpp@<40位commit>:Q4_K:reference:no-imatrix
+<R> <H>
+"<payload路径>" <完整编码字节数>
+<规范原ID映射SHA256>
+```
+
+R非零且小于原完整词表，H与原完整dense head一致。payload按规范升序原ID排列，
+不展开、重排块内代码或scale；映射摘要为这些原ID的little-endian I32字节序列SHA256。
+原模型、payload、映射分别绑定；预检和加载前重新核对身份、形状、范围及映射。
+完整头的`HYLE_QWEN_DRAFT_HEAD_Q4_K_V1`六行格式保留。原目标验证head和embedding不替换。
+
+冷加载沿原FileStream直接载入子集，再通过原Tensor／租约机制发布ID映射；
+不在启动时重复量化或执行完整头的行复制。权重／ID读者可独立持有租约，真实退休前不回池。
+制品保存权重数据，读取依赖同一Q4_K约定和后端资格；已验证系统、模型、推理及自动默认范围见
+[自动K3用法](../../../docs/user/inference.md#自动k3的准备与运行)。离线准备不计入生成性能，冷加载与ready单列。
 
 ## 自然生成、批次与状态
 
