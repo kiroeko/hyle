@@ -8033,16 +8033,16 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     Model &model;
     ~ColdFamilyGuard() { model.cancel_cold_families(); }
   } cold_family_guard{model};
-  // Fixed K2/K3 borrow the same immutable weights. Auxiliary preparation below
-  // stays on this caller while independent target families compile in the pool.
-  if constexpr (mtp) if (first_turn_only && decode_bound && requests.size() == 1 &&
+  // Ordinary and MTP families borrow the same immutable weights. Auxiliary
+  // preparation stays on this caller while independent families compile.
+  if (first_turn_only && decode_bound && requests.size() == 1 &&
       !requests[0].logits_provider && model.sampling_configuration_count() == 1 &&
       !model.sampling_configuration(0).configuration.enabled &&
       model.sampling_configuration(0).configuration.modifiers.empty() &&
       model.execution.kind() == BackendKind::kCuda && !model.execution.has_cpu_assist() &&
       !model.scheduler && model.cache_plan.active_sequences == 1 && model.target_kv_layers &&
       model.layer0_probe.empty() &&
-      model.max_drafts() >= 1 && model.max_drafts() <= 3 && model.min_draft_probability() == 0)
+      (!mtp || (model.max_drafts() >= 1 && model.max_drafts() <= 3 && model.min_draft_probability() == 0)))
     (void)model.begin_cold_families();
   for (std::size_t sampling_index = 0; sampling_index < model.sampling_configuration_count(); ++sampling_index) {
     if (std::ranges::none_of(requests, [&](const auto &request) { return request.sampling_index == sampling_index; })) continue;
