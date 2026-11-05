@@ -784,7 +784,7 @@ public:
         cache_plan.in_flight_batches < 2 || execution.kind() != BackendKind::kCuda ||
         execution.has_cpu_assist() || scheduler || !bounded_device_mtp_policy() ||
         !target_kv_layers || vocabulary > (std::int64_t{1} << 24) || !resources_->attention_storage.empty() ||
-        (precision.activation_type() != Type::kFloat16 && precision.activation_type() != Type::kBFloat16) ||
+        (precision.cache_type() != Type::kFloat16 && precision.cache_type() != Type::kBFloat16) ||
         geometry.key_depth != geometry.value_depth ||
         (geometry.key_depth != 64 && geometry.key_depth != 128 && geometry.key_depth != 256)) return;
     if(max_drafts()>1 && !greedy_draft_chain_enabled(sampling_configuration(0).configuration))return;
