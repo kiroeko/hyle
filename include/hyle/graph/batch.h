@@ -15,12 +15,6 @@ namespace hyle::graph::batch {
 HYLE_GRAPH_BATCH_API Result<CompiledGraph> compile(const Graph &, CompileEnvironment,
     CompileOptions = {}) noexcept;
 struct NodeLayout final {NodeId node;compute::BatchLayoutVersion layout;};
-// Both immutable alternatives are checked before submission. The custom
-// attention's I32[1] input chooses zero/nonzero; it never supplies raw metadata.
-struct NodeLayoutChoice final {
-  NodeId node;
-  std::array<compute::BatchLayoutVersion,2> layouts;
-};
 // Cold native planning uses this same ordinary Graph invocation. Geometry and
 // attention mathematics come from the typed node; these are resource limits,
 // never a second copy of scale/causal/window/precision policy.
@@ -37,16 +31,8 @@ struct PrepareOptions final {
 HYLE_GRAPH_BATCH_API Status prepare(graph::Invocation &,
     std::span<const QueueBinding>, std::span<const NodeLayout>,
     PrepareOptions = {}) noexcept;
-HYLE_GRAPH_BATCH_API Status prepare_choices(graph::Invocation &,
-    std::span<const QueueBinding>, std::span<const NodeLayoutChoice>,
-    PrepareOptions = {}) noexcept;
 HYLE_GRAPH_BATCH_API Status prepare_lengths(graph::Invocation &,
     std::span<const QueueBinding>, std::span<const NodeLayout>,
-    PrepareOptions = {}) noexcept;
-// False is exclusively an unsupported read-only native preflight. No prior
-// binding/capture has changed. Errors during actual preparation remain errors.
-HYLE_GRAPH_BATCH_API Result<bool> try_prepare_choices(graph::Invocation &,
-    std::span<const QueueBinding>, std::span<const NodeLayoutChoice>,
     PrepareOptions = {}) noexcept;
 HYLE_GRAPH_BATCH_API Result<compute::BatchPlanReport> report(
     graph::Invocation &, NodeId) noexcept;
@@ -187,27 +173,6 @@ struct PagedAppend final {
 static_assert(compute::detail::InlineCustomOperationDescriptor<PagedAppend>);
 HYLE_GRAPH_BATCH_API Result<PagedAppend> paged_append(compute::BatchSchema,
      compute::BatchCacheRole)noexcept;
-// Two finite, prevalidated append layouts. The original dense I32[1] input
-// selects choice zero or choice one (any nonzero value); it grants no pages.
-struct DeviceChoicePagedAppend final {
-  compute::BatchSchema schema;
-  compute::BatchCacheRole role=compute::BatchCacheRole::kKey;
-  bool zero_fill_envelope=false;
-  static constexpr compute::OperationId operation_id{
-      0x48594c4547524241ULL,0x5041474544570002ULL};
-  static constexpr std::string_view operation_name="device-choice-paged-append";
-  constexpr compute::OperationTraits operation_traits()const noexcept{
-    return {{2,2},0,compute::AliasPolicy::kNone,compute::EffectKind::kExternalSideEffect,
-        compute::PrecisionPolicy::kExact,compute::DataType::kUnknown};
-  }
-  HYLE_GRAPH_BATCH_API Status infer_output_descriptions(
-      std::span<const compute::TensorDesc>,std::span<compute::TensorDesc>)const noexcept;
-};
-static_assert(compute::detail::InlineCustomOperationDescriptor<DeviceChoicePagedAppend>);
-HYLE_GRAPH_BATCH_API Result<DeviceChoicePagedAppend> device_choice_paged_append(
-    compute::BatchSchema,compute::BatchCacheRole)noexcept;
-HYLE_GRAPH_BATCH_API Result<DeviceChoicePagedAppend> device_choice_paged_append(
-    compute::BatchSchema,compute::BatchCacheRole,bool zero_fill_envelope)noexcept;
 // Packed rows plus per-request I32 query/KV lengths. The owned capacity
 // transaction bounds previous positions and fresh COW destinations. It fully
 // initializes the private raw envelope; only a retired selected prefix is ready.
@@ -233,9 +198,6 @@ struct PagedAppendOptions final {
   mem::AllocatorRef allocator=mem::system_allocator();
   compute::ResourceBudget resource_budget{};
 };
-struct PagedAppendChoice final {
-  compute::BatchLayoutVersion previous,next;
-};
 // Cold owned transaction: old exact ready pages, immutable next layout and
 // original dirty-page reservations. Construction validates append/prefix-COW
 // mappings before moving any writer. No native work is started by this owner.
@@ -259,28 +221,6 @@ public:
       compute::BatchLayoutVersion next,compute::PagedArenaRead previous,
       std::span<compute::PagedPageWriter> dirty,
       std::span<compute::PagedPageAppender> tails,PagedAppendOptions={})noexcept;
-  // Exactly two choices and one union of fresh dirty writers. Both old
-  // prefixes are covered by the same actual producer Source. All choices are
-  // validated before consuming any writer. Source export additionally requires
-  // the matching operation/constructor zero_fill_envelope opt-in (R1/maxQ2).
-  HYLE_GRAPH_BATCH_API static Result<PagedAppendPages> create_choices(
-      compute::PagedArena,std::span<const PagedAppendChoice>,PagedAppendSource&,
-      std::span<compute::PagedPageWriter> union_dirty,PagedAppendOptions={})noexcept;
-  HYLE_GRAPH_BATCH_API static Result<PagedAppendPages> create_choices(
-      compute::PagedArena,std::span<const PagedAppendChoice>,PagedAppendSource&,
-      std::span<compute::PagedPageWriter> union_dirty,bool zero_fill_envelope,PagedAppendOptions={})noexcept;
-  HYLE_GRAPH_BATCH_API static Result<PagedAppendPages> create_choices(
-      compute::PagedArena,std::span<const PagedAppendChoice>,
-      std::span<const compute::PagedArenaFootprint> sources,
-      std::span<compute::PagedPageWriter> union_dirty,PagedAppendOptions={})noexcept;
-  HYLE_GRAPH_BATCH_API static Result<PagedAppendPages> create_choices(
-      compute::PagedArena,std::span<const PagedAppendChoice>,
-      std::span<const compute::PagedArenaFootprint> sources,
-      std::span<compute::PagedPageWriter> union_dirty,bool zero_fill_envelope,PagedAppendOptions={})noexcept;
-  // After successful whole-Graph retirement/take, supply the observed value
-  // of this execution's original selector. Only that choice may publish;
-  // repeated selection must agree. Unused writers are discarded after take.
-  HYLE_GRAPH_BATCH_API Status select_choice(std::size_t observed_selector)noexcept;
   // Capacity's Q facts bound the PHYSICAL input rows; its KV facts bound the
   // raw initialized envelope. Minimum is a prefix of the previous raw source,
   // using its original physical page mapping. No Cartesian layout alternatives.
@@ -333,20 +273,19 @@ private:
       compute::BatchLayoutVersion,compute::BatchLayoutVersion,compute::BatchLayoutVersion,
       std::span<const compute::PagedArenaFootprint>,std::span<compute::PagedPageWriter>,
       PagedAppendOptions,detail::PagedAppendSourceData*)noexcept;
-  static Result<PagedAppendPages> create_choices_impl(compute::PagedArena,
-      std::span<const PagedAppendChoice>,std::span<const compute::PagedArenaFootprint>,
-      std::span<compute::PagedPageWriter>,bool zero_fill_envelope,PagedAppendOptions,detail::PagedAppendSourceData*)noexcept;
   static Result<PagedAppendPages> create_impl(compute::PagedArena,
       compute::BatchLayoutVersion,compute::BatchLayoutVersion,
       std::span<const compute::PagedArenaFootprint>,
       std::span<compute::PagedPageWriter>,std::span<compute::PagedPageAppender>,
       bool appendable,PagedAppendOptions,detail::PagedAppendSourceData* pending_previous=nullptr,
-      bool choice_validation=false,bool consume=true,
+      bool consume=true,
       const compute::BatchLayoutVersion*minimum_capacity=nullptr)noexcept;
   explicit PagedAppendPages(detail::PagedAppendData*p)noexcept:data_(p){}
   detail::PagedAppendData*data_=nullptr;
 };
 // Requires batch::prepare first. Failure leaves pages owned by the caller.
+// Device-length readers may have their own Q extent/control. They must retain
+// the append's original KV control, cache geometry and actual Queue owner.
 // The original Graph/selected artifacts prove write-before-read and admit only
 // exact dirty pages to its existing lease-use/Completion lifetime.
 HYLE_GRAPH_BATCH_API Status bind_append(Invocation&,const Graph&,NodeId append,
@@ -414,24 +353,6 @@ struct PagedMlaAttention final {
 static_assert(compute::detail::InlineCustomOperationDescriptor<PagedMlaAttention>);
 HYLE_GRAPH_BATCH_API Result<PagedMlaAttention> paged_mla_attention(
     compute::BatchLayoutVersion, PagedAttentionOptions = {})noexcept;
-// Physical Q/output have exactly two rows. Active Q and KV topology come only
-// from prepare_choices' two validated versions of this original schema.
-struct DeviceChoicePagedAttention final {
-  compute::BatchSchema schema;
-  PagedAttentionOptions options;
-  static constexpr compute::OperationId operation_id{
-      0x48594c4547524241ULL,0x4445564348410001ULL};
-  static constexpr std::string_view operation_name="device-choice-paged-attention";
-  constexpr compute::OperationTraits operation_traits()const noexcept{
-    return {{4,4},1,compute::AliasPolicy::kNone,compute::EffectKind::kPure,
-        compute::PrecisionPolicy::kExact,compute::DataType::kFloat32};
-  }
-  HYLE_GRAPH_BATCH_API Status infer_output_descriptions(
-      std::span<const compute::TensorDesc>,std::span<compute::TensorDesc>)const noexcept;
-};
-static_assert(compute::detail::InlineCustomOperationDescriptor<DeviceChoicePagedAttention>);
-HYLE_GRAPH_BATCH_API Result<DeviceChoicePagedAttention> device_choice_paged_attention(
-    compute::BatchSchema, PagedAttentionOptions = {}) noexcept;
 // Q/K/V plus dense I32[max_requests] query and KV lengths. prepare_lengths
 // binds the original capacity envelope and page authority. Runtime values can
 // shorten each request independently; inactive output rows remain zero.

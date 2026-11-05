@@ -51,10 +51,11 @@ struct StepMember final {
   std::vector<c::ReadLease> carry_prefix{};
   // Frozen active inputs of this member's actual draft Append, not accepted rows.
   std::size_t draft_input_rows = 0, discarded_draft_rows = 0;
-  // One original candidate and epoch, with two prevalidated input layouts.
-  // These are physical preparation alternatives, never two published Heads.
+  // Original raw capacity survives independently of the selected K1 input
+  // prefix. Model acceptance layouts grant no additional page authority.
   std::array<c::BatchLayoutVersion, 2> target_input_choices, draft_input_choices;
-  std::array<std::vector<hyle::inference::PagedPageRef>, 2> target_choice_pages, draft_choice_pages;
+  c::BatchLayoutVersion target_capacity_layout,draft_capacity_layout;
+  std::vector<hyle::inference::PagedPageRef> target_capacity_pages,draft_capacity_pages;
   std::size_t choice_base_length = 0, choice_draft_frontier = 0;
   std::optional<std::size_t> selected_input_choice;
   bool sampled_accept = false;
@@ -134,8 +135,8 @@ struct StepState final {
     for (auto &member : members) {
       member.target_publication = {}; member.draft_publication = {};
       member.owner_state->recycle_candidate(std::move(member.next)); member.base = nullptr;
-      for (auto &pages : member.target_choice_pages) pages.clear();
-      for (auto &pages : member.draft_choice_pages) pages.clear();
+      member.target_capacity_pages.clear();member.draft_capacity_pages.clear();
+      member.target_capacity_layout={};member.draft_capacity_layout={};
       member.target_input_choices = {}; member.draft_input_choices = {};
     }
     phase = nullptr;

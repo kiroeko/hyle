@@ -9,7 +9,7 @@ struct BeforeCommandChange final {
   void *state = nullptr;
   Status (*call)(void *) noexcept = nullptr;
 };
-// Both are trusted cold Graph contracts. Explicit capacity metadata is bound
+// These are trusted cold Graph contracts. Explicit capacity metadata is bound
 // and protected by Graph's owned configuration; its exact Q/output port extent
 // can be below the schema maximum, with active rows bounded by that extent.
 // Native math retains its own prepared mirror even when an authorized copy
@@ -17,8 +17,7 @@ struct BeforeCommandChange final {
 enum class BatchGraphContract : std::uint8_t {
   kPreparedMetadataCapacity,
   kOwnedLayoutActive,
-  kDeviceLayoutChoice,
-  kDeviceLengths,
+  kDeviceLengths = 3,
 };
 // Trusted Graph-only borrowed coordinates, never a storage permission. The
 // original region owns this fixed workspace through every native retirement.
@@ -52,10 +51,6 @@ struct BatchGraphAccess final {
   HYLE_COMPUTE_BATCH_API static Result<ReadLease> metadata(const BatchInvocation&) noexcept;
   HYLE_COMPUTE_BATCH_API static Result<PreparedBatch> prepare(BatchInvocation&,
       const BatchLayoutVersion&,bool update,BeforeCommandChange) noexcept;
-  HYLE_COMPUTE_BATCH_API static Result<PreparedBatch> prepare_choices(BatchInvocation&,
-      const std::array<BatchLayoutVersion,2>&,bool update,BeforeCommandChange) noexcept;
-  HYLE_COMPUTE_BATCH_API static Status validate_choices(const BatchInvocation&,
-      const std::array<BatchLayoutVersion,2>&) noexcept;
   // The original layout is a capacity envelope, including each request's
   // maximum Q/KV prefix. Effective per-request lengths remain device data.
   HYLE_COMPUTE_BATCH_API static Result<PreparedBatch> prepare_lengths(BatchInvocation&,

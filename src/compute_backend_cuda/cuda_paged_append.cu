@@ -60,45 +60,6 @@ __global__ void append_rows(
 } // namespace
 
 namespace {
-__global__ void append_choice_rows(void *arena_bytes,const void *input_bytes,
-    const void *metadata_bytes,const std::int32_t *selector,
-    compute::detail::PagedAppendNativeSpec spec){
-  const auto*metadata=static_cast<const compute::detail::PagedAppendMetadata*>(metadata_bytes);
-  const auto*all=reinterpret_cast<const compute::detail::PagedAppendInstruction*>(metadata+1);
-  const auto total=metadata->active_count;
-  if(!total || total>spec.instruction_capacity || metadata->reserved0 || metadata->reserved1 || metadata->reserved2)return;
-  const auto directory=all[0];const bool choice=*selector!=0;
-  const auto begin=choice?directory.source_row:1u;
-  const auto count=choice?directory.source_page:directory.source_kind;
-  if(begin>total || count>total-begin || directory.source_row!=1u+directory.source_kind)return;
-  auto*arena=static_cast<std::uint16_t*>(arena_bytes);const auto*input=static_cast<const std::uint16_t*>(input_bytes);
-  const auto row_elements=spec.row_bytes/sizeof(std::uint16_t);
-  for(std::uint64_t index=blockIdx.x;index<count;index+=gridDim.x){
-    const auto instruction=all[begin+index];
-    if(instruction.reserved0 || instruction.reserved1 || !instruction.rows || instruction.source_kind>2 ||
-        instruction.destination_page>=spec.physical_pages || instruction.destination_row>spec.page_rows ||
-        instruction.rows>spec.page_rows-instruction.destination_row)continue;
-    const std::uint16_t*source=nullptr;
-    if(!instruction.source_kind){
-      if(instruction.source_row>spec.input_rows || instruction.rows>spec.input_rows-instruction.source_row)continue;
-      source=input+std::size_t(instruction.source_row)*row_elements;
-    }else if(instruction.source_kind==1){
-      if(instruction.source_page>=spec.physical_pages || instruction.source_row>spec.page_rows ||
-          instruction.rows>spec.page_rows-instruction.source_row)continue;
-      source=arena+(std::size_t(instruction.source_page)*spec.page_rows+instruction.source_row)*row_elements;
-    }
-    auto*destination=arena+(std::size_t(instruction.destination_page)*spec.page_rows+instruction.destination_row)*row_elements;
-    for(std::size_t element=threadIdx.x; element<std::size_t(instruction.rows)*row_elements;element+=blockDim.x)
-      destination[element]=source?source[element]:std::uint16_t{0};
-  }
-}
-}
-const void*device_choice_paged_append_kernel()noexcept{return reinterpret_cast<const void*>(append_choice_rows);}
-cudaError_t launch_device_choice_paged_append(const void*kernel,void*arena,const void*rows,
-    const void*metadata,const void*selector,compute::detail::PagedAppendNativeSpec spec,cudaStream_t stream)noexcept{
-  const auto blocks=spec.instruction_capacity<65535U?spec.instruction_capacity:65535U;
-  void*arguments[]{&arena,&rows,&metadata,&selector,&spec};
-  return cudaLaunchKernel(kernel,dim3(blocks),dim3(256),arguments,0,stream);
 }
 
 const void *paged_append_kernel() noexcept {

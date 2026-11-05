@@ -11,7 +11,7 @@
 #include <span>
 #include <stdexcept>
 
-#include "../../inference/paged_append_choice.h"
+#include "../../inference/paged_append_capacity.h"
 
 namespace qwen35 {
 
@@ -91,20 +91,28 @@ inline void Model::prepare_device_mtp_inputs(StepState &step, bool recording_onl
       (void)source;
     }
   }
-  member.target_input_choices = take(inference::prepare_paged_append_choices(attention_schema,
-      member.base->paged, target_before, {2, 2}, page_inventory, input_scratch.paged_append_choices,
-      std::span(step.execution.dirty.data(), draft_bank),
-      std::span(step.execution.appends.data(), draft_bank), member.target_choice_pages,
-      target_incoming, {.resource_budget = cache_budget}));
-  member.next->paged.pages = member.target_choice_pages[1];
-  member.layout = io.attention_layout = member.target_input_choices[1];
-  member.draft_input_choices = take(inference::prepare_paged_append_choices(attention_schema,
-      member.base->draft->paged, draft_before, {1, 2}, draft_inventory, input_scratch.paged_append_choices,
-      std::span(step.execution.dirty.data() + draft_bank, 2),
-      std::span(step.execution.appends.data() + draft_bank, 2), member.draft_choice_pages,
-      draft_incoming, {.resource_budget = cache_budget}));
-  member.next->draft->paged.pages = member.draft_choice_pages[1];
-  member.draft_layout = step.draft_layout = member.draft_input_choices[1];
+  member.target_capacity_layout = take(inference::prepare_paged_append_capacity(attention_schema,
+      member.base->paged,{target_before[0],target_before[1],target_before[1]+2,2},page_inventory,input_scratch.paged_append_capacity,
+      std::span(step.execution.dirty.data(),draft_bank),std::span(step.execution.appends.data(),draft_bank),
+      member.target_capacity_pages,target_incoming,{.resource_budget=cache_budget}));
+  member.next->paged.pages=member.target_capacity_pages;
+  member.layout=io.attention_layout=member.target_capacity_layout;
+  member.draft_capacity_layout = take(inference::prepare_paged_append_capacity(attention_schema,
+      member.base->draft->paged,{draft_before[0],draft_before[1],draft_before[1]+2,2},draft_inventory,input_scratch.paged_append_capacity,
+      std::span(step.execution.dirty.data()+draft_bank,2),std::span(step.execution.appends.data()+draft_bank,2),
+      member.draft_capacity_pages,draft_incoming,{.resource_budget=cache_budget}));
+  member.next->draft->paged.pages=member.draft_capacity_pages;
+  member.draft_layout=step.draft_layout=member.draft_capacity_layout;
+  // These are Qwen K1's observed canonical input prefixes, not alternative
+  // physical plans. The full original raw cohort stays with this Step.
+  const auto view=[&](const auto&pages,std::size_t q,std::size_t kv){
+    auto&rows=input_scratch.paged_append_capacity.next;rows.reset();
+    check(rows.append(q,kv,cache::Plan::page_rows,std::span<const inference::PagedPageRef>(pages).first(
+        (kv+cache::Plan::page_rows-1)/cache::Plan::page_rows)));
+    return take(attention_schema.version(rows.layout()));
+  };
+  member.target_input_choices={view(member.target_capacity_pages,2,target_before[0]+2),member.target_capacity_layout};
+  member.draft_input_choices={view(member.draft_capacity_pages,1,draft_before[0]+1),member.draft_capacity_layout};
 
   // One checked table row supplies RoPE positions and the original Q/KV
   // controls. Attention and Append consume identical views of that row.

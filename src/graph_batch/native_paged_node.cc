@@ -74,35 +74,6 @@ Result<PagedMlaAttention> paged_mla_attention(c::BatchLayoutVersion layout,
     PagedAttentionOptions options) noexcept {
   return descriptor<PagedMlaAttention>(std::move(layout), options, true);
 }
-Status DeviceChoicePagedAttention::infer_output_descriptions(
-    std::span<const c::TensorDesc> inputs,std::span<c::TensorDesc> outputs)const noexcept{
-  if(!schema.valid() || schema.mla_layout()!=c::MlaCacheLayout::kNone ||
-      schema.capacity().storage!=c::BatchStorage::kPaged || inputs.size()!=4 || outputs.size()!=1 ||
-      !std::isfinite(options.scale))return Status::InvalidArgument("device choice attention geometry/ports differ");
-  const auto cap=schema.capacity();
-  HYLE_RETURN_IF_ERROR(c::validate_batch_capacity(cap));
-  HYLE_RETURN_IF_ERROR(c::validate_batch_attention_options(options.causal,options.window_left));
-  if(cap.max_query_rows<2 || options.allow_bf16_partials)
-    return Status::Unimplemented("device choice attention requires one request, physical Q2 and exact accumulation");
-  HYLE_ASSIGN_OR_RETURN(auto q,c::batch_query_description(cap,2));
-  HYLE_ASSIGN_OR_RETURN(auto k,c::batch_cache_description(schema,c::BatchCacheRole::kKey));
-  HYLE_ASSIGN_OR_RETURN(auto v,c::batch_cache_description(schema,c::BatchCacheRole::kValue));
-  HYLE_ASSIGN_OR_RETURN(auto s,c::TensorDesc::dense(c::DataType::kInt32,std::array<std::int64_t,1>{1}));
-  if(inputs[0]!=q || inputs[1]!=k || inputs[2]!=v || inputs[3]!=s)
-    return Status::InvalidArgument("device choice attention requires Q2, real cache capacities and I32[1] selector");
-  HYLE_ASSIGN_OR_RETURN(outputs[0],c::batch_output_description(cap,2));return Status::Ok();
-}
-Result<DeviceChoicePagedAttention> device_choice_paged_attention(c::BatchSchema schema,
-    PagedAttentionOptions options)noexcept{
-  DeviceChoicePagedAttention result{std::move(schema),options};
-  if(!result.schema.valid())return std::unexpected(Status::InvalidArgument("device choice attention schema is empty"));
-  const auto cap=result.schema.capacity();std::array<c::TensorDesc,4> in;
-  HYLE_ASSIGN_OR_RETURN(in[0],c::batch_query_description(cap,2));
-  HYLE_ASSIGN_OR_RETURN(in[1],c::batch_cache_description(result.schema,c::BatchCacheRole::kKey));
-  HYLE_ASSIGN_OR_RETURN(in[2],c::batch_cache_description(result.schema,c::BatchCacheRole::kValue));
-  HYLE_ASSIGN_OR_RETURN(in[3],c::TensorDesc::dense(c::DataType::kInt32,std::array<std::int64_t,1>{1}));
-  std::array<c::TensorDesc,1> out;HYLE_RETURN_IF_ERROR(result.infer_output_descriptions(in,out));return result;
-}
 Status DeviceLengthsPagedAttention::infer_output_descriptions(
     std::span<const c::TensorDesc>inputs,std::span<c::TensorDesc>outputs)const noexcept{
   if(!schema.valid() || schema.mla_layout()!=c::MlaCacheLayout::kNone ||

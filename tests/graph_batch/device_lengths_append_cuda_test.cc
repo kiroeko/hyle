@@ -30,7 +30,16 @@ void check(hyle::Status s,std::source_location at=std::source_location::current(
   if(!s.ok())throw std::runtime_error(std::to_string(at.line())+": "+std::string(s.message()));
 }
 constexpr std::uint32_t page_rows=16,depth=64,row_bytes=depth*2;
+struct PendingGate final{
+  std::atomic<bool>open{false},timed_out{false};std::mutex mutex;std::condition_variable changed;std::thread watchdog;
+  static void CUDART_CB wait(void*opaque){static_cast<PendingGate*>(opaque)->open.wait(false,std::memory_order_acquire);}
+  void arm(){watchdog=std::thread([this]{std::unique_lock lock(mutex);
+    if(!changed.wait_for(lock,std::chrono::seconds(10),[&]{return open.load();})){timed_out=true;release();}});}
+  void release(){open.store(true,std::memory_order_release);open.notify_all();changed.notify_all();}
+  ~PendingGate(){release();if(watchdog.joinable())watchdog.join();}
+};
 struct AppendCell final{
+  enum class QueryMode{kAppendRows,kLast,kLastForeignKv};
   c::Context context=take(g::cuda::create_context());
   c::Queue queue=take(context.create_queue());
   c::cuda::MemoryResource device=take(c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice));
@@ -40,14 +49,15 @@ struct AppendCell final{
   c::BatchSchema schema;c::PagedArena arena;c::BatchLayoutVersion previous,lower,capacity;
   c::PagedArena values;c::PagedArenaRead value_frame;std::vector<c::ReadLease>value_guards;
   c::PagedArenaRead frame;std::vector<c::ReadLease>old_guards;
-  c::LeasePool payload,output_pool;c::ReadLease rows,query;c::TensorDesc row_desc,control_desc;
+  c::LeasePool payload,output_pool;c::ReadLease rows,query;c::TensorDesc row_desc,reader_desc,control_desc;
+  c::BatchLayoutVersion reader_capacity;g::ValueId reader_query_port;bool last_query=false;
   g::Graph graph;g::CompiledGraph compiled;std::array<g::ValueId,3>inputs;g::NodeId append;
   bool with_attention=false;g::ValueId key_port,value_port,query_port,output;g::NodeId reader;
   AppendCell(std::uint32_t r,std::uint32_t q,std::uint32_t base,bool attention=false,bool pending=false,
-      bool larger_previous=false):requests(r),query_capacity(q),minimum(base),
+      bool larger_previous=false,QueryMode query_mode=QueryMode::kAppendRows):requests(r),query_capacity(q),minimum(base),
       prior(base+(larger_previous?2*q:q)),maximum(base+(larger_previous?q:2*q)),old_pages((prior+15)/16),new_pages((maximum+15)/16),
       dirty_begin(base/16),physical_pages(r*(old_pages+new_pages-dirty_begin+
-          (pending?(base+3*q+15)/16-dirty_begin:0u))+1),with_attention(attention){
+          (pending?(base+3*q+15)/16-dirty_begin:0u))+1),last_query(query_mode!=QueryMode::kAppendRows),with_attention(attention){
     const auto plain=take(c::CacheStorage::plain(c::DataType::kBFloat16));
     schema=take(c::BatchSchema::create({.query_type=c::DataType::kBFloat16,.output_type=c::DataType::kBFloat16,
         .key_storage=plain,.value_storage=plain,.max_requests=r,.max_query_rows=r*q,.max_kv_rows=r*std::max(prior,maximum+(pending?q:0u)),
@@ -56,6 +66,7 @@ struct AppendCell final{
     previous=layout(std::vector<std::int32_t>(r,0),std::vector<std::int32_t>(r,std::int32_t(prior)),false);
     lower=layout(std::vector<std::int32_t>(r,0),std::vector<std::int32_t>(r,std::int32_t(minimum)),false);
     capacity=layout(std::vector<std::int32_t>(r,std::int32_t(q)),std::vector<std::int32_t>(r,std::int32_t(maximum)),true);
+    reader_capacity=last_query?layout(std::vector<std::int32_t>(r,1),std::vector<std::int32_t>(r,std::int32_t(maximum)),true):capacity;
     arena=take(c::PagedArena::create(schema,c::BatchCacheRole::kKey,storage.ref(),
         {.max_backing_bytes=std::size_t(physical_pages)*page_rows*row_bytes+1}));
     for(std::uint32_t p=0;p<r*old_pages;++p){auto writer=take(arena.acquire(p));
@@ -65,8 +76,9 @@ struct AppendCell final{
     }
     frame=take(arena.read(previous,old_guards));
     row_desc=take(c::TensorDesc::dense(c::DataType::kBFloat16,std::array<std::int64_t,3>{r*q,1,depth}));
+    reader_desc=last_query?take(c::TensorDesc::dense(c::DataType::kBFloat16,std::array<std::int64_t,3>{r,1,depth})):row_desc;
     control_desc=take(c::TensorDesc::dense(c::DataType::kInt32,std::array<std::int64_t,1>{r}));
-    payload=take(c::LeasePool::create(storage.ref(),take(row_desc.required_bytes())*(with_attention?2u:1u)+4096,{.max_blocks=4,.backing_alignment=256}));
+    payload=take(c::LeasePool::create(storage.ref(),take(row_desc.required_bytes())*(with_attention?2u:1u)+4096,{.max_blocks=last_query?5u:4u,.backing_alignment=256}));
     auto writer=take(payload.allocate(take(row_desc.required_bytes()),256));std::vector<std::uint16_t>words(r*q*depth);
     for(std::uint32_t row=0;row<r*q;++row)std::fill_n(words.begin()+row*depth,depth,input_value(row));
     check(take(writer.view()).write(std::as_bytes(std::span(words))));rows=take(writer.publish());
@@ -82,14 +94,16 @@ struct AppendCell final{
         std::vector<std::uint16_t>ones(page_rows*depth,0x3f80);check(take(value_writer.lease().view()).write(std::as_bytes(std::span(ones))));
         value_guards.push_back(take(value_writer.publish(page_rows)));
       }
-      const auto ids=take(c::detail::BatchLayoutAccess::page_footprint(capacity));std::vector<c::ReadLease>used;
-      for(const auto id:ids)used.push_back(value_guards[std::size_t(id)]);value_frame=take(values.read(capacity,used));
-      auto query_writer=take(payload.allocate(take(row_desc.required_bytes()),256));check(take(query_writer.view()).fill(std::byte{0}));query=take(query_writer.publish());
-      output_pool=take(c::LeasePool::create(storage.ref(),take(row_desc.required_bytes()),{.max_blocks=1,.backing_alignment=256}));
+      const auto ids=take(c::detail::BatchLayoutAccess::page_footprint(reader_capacity));std::vector<c::ReadLease>used;
+      for(const auto id:ids)used.push_back(value_guards[std::size_t(id)]);value_frame=take(values.read(reader_capacity,used));
+      auto query_writer=take(payload.allocate(take(reader_desc.required_bytes()),256));check(take(query_writer.view()).fill(std::byte{0}));query=take(query_writer.publish());
+      output_pool=take(c::LeasePool::create(storage.ref(),take(reader_desc.required_bytes()),{.max_blocks=1,.backing_alignment=256}));
       key_port=take(builder.input(take(c::batch_cache_description(schema,c::BatchCacheRole::kKey))));
-      value_port=take(builder.input(take(c::batch_cache_description(schema,c::BatchCacheRole::kValue))));query_port=take(builder.input(row_desc));
-      reader=take(builder.add_node(c::Operation::custom(take(b::device_lengths_paged_attention(schema,r*q,{.scale=.125F,.causal=true}))),
-          std::array{query_port,key_port,value_port,qcontrol,kvcontrol}));
+      value_port=take(builder.input(take(c::batch_cache_description(schema,c::BatchCacheRole::kValue))));query_port=take(builder.input(reader_desc));
+      auto reader_queries=qcontrol;if(last_query){reader_query_port=take(builder.input(control_desc));reader_queries=take(builder.add(c::Copy{},reader_query_port));}
+      const auto reader_kv=query_mode==QueryMode::kLastForeignKv?take(builder.add(c::Copy{},kvcontrol)):kvcontrol;
+      reader=take(builder.add_node(c::Operation::custom(take(b::device_lengths_paged_attention(schema,last_query?r:r*q,{.scale=.125F,.causal=true}))),
+          std::array{query_port,key_port,value_port,reader_queries,reader_kv}));
       check(builder.depends_on(reader,append));output=take(builder.result(reader));check(builder.publish(output));
     }
     graph=take(std::move(builder).finish());
@@ -109,17 +123,21 @@ struct AppendCell final{
     }
     return take(schema.version({queries,pointers,ids,tails}));
   }
-  void run(const std::vector<std::int32_t>&q,const std::vector<std::int32_t>&kv,bool invalid=false){
+  void run(const std::vector<std::int32_t>&q,const std::vector<std::int32_t>&kv,bool invalid=false,bool discard=false,
+      const std::vector<std::int32_t>&selected_queries={}){
     auto invocation=take(compiled.executable.create_invocation());const std::array queues{g::QueueBinding{g::ExecutionLaneId{0},&queue}};
-    if(with_attention){const std::array envelopes{b::NodeLayout{reader,capacity}};
+    if(with_attention){const std::array envelopes{b::NodeLayout{reader,reader_capacity}};
       check(b::prepare_lengths(invocation,queues,envelopes,{.host_workspace=host.ref()}));
-      check(invocation.bind(query_port,row_desc,query));check(b::bind(invocation,value_port,value_frame));
-      auto out=take(output_pool.allocate(take(row_desc.required_bytes()),256));check(invocation.bind(output,row_desc,std::move(out)));
+      check(invocation.bind(query_port,reader_desc,query));check(b::bind(invocation,value_port,value_frame));
+      auto out=take(output_pool.allocate(take(reader_desc.required_bytes()),256));check(invocation.bind(output,reader_desc,std::move(out)));
     }else check(b::prepare(invocation,queues,{}, {.host_workspace=host.ref()}));
     check(invocation.bind(inputs[0],row_desc,rows));
-    std::array<c::ReadLease,2>controls;
+    std::array<c::ReadLease,3>controls;
     for(std::size_t i=0;i<2;++i){const auto&v=i?kv:q;auto writer=take(payload.allocate(v.size()*4,256));
       check(take(writer.view()).write(std::as_bytes(std::span(v))));controls[i]=take(writer.publish());check(invocation.bind(inputs[i+1],control_desc,controls[i]));}
+    const auto reader_queries=last_query?(selected_queries.empty()?std::vector<std::int32_t>(requests,1):selected_queries):q;
+    if(last_query){auto writer=take(payload.allocate(requests*4,256));check(take(writer.view()).write(std::as_bytes(std::span(reader_queries))));
+      controls[2]=take(writer.publish());check(invocation.bind(reader_query_port,control_desc,controls[2]));}
     std::vector<c::PagedPageWriter>writers;
     for(std::uint32_t p=requests*old_pages;p<physical_pages;++p){auto writer=take(arena.acquire(p));
       check(take(writer.lease().view()).fill(std::byte{0x5a}));if(p+1!=physical_pages)writers.push_back(std::move(writer));}
@@ -130,16 +148,22 @@ struct AppendCell final{
     else check(b::bind_append(invocation,graph,append,std::move(pages)));
     auto source=take(b::PagedAppendSource::prepare(invocation,append,storage));
     check(invocation.prepare_replay(queues,{.mode=g::ReplayMode::kRequireCapture,.host_wait=g::HostWaitPolicy::kReject}));
+    PendingGate gate;
+    if(discard){gate.arm();ASSERT_EQ(cudaLaunchHostFunc(take(c::cuda::stream(queue)),&PendingGate::wait,&gate),cudaSuccess);}
     auto done=take(invocation.submit(queues));auto common=take(g::SubmissionSource::create(invocation,std::move(done),storage));
-    check(source.capture(common));const auto status=common.wait();check(common.detach());
-    if(with_attention && !invalid){check(status);auto result=take(invocation.output(output));std::vector<std::uint16_t>got_output(requests*query_capacity*depth);
-      check(result.storage().read(std::as_writable_bytes(std::span(got_output))));const auto active=std::accumulate(q.begin(),q.end(),std::size_t{0});
+    check(source.capture(common));
+    if(discard){EXPECT_EQ(take(common.poll()),c::CompletionPoll::kPending);
+      EXPECT_FALSE(b::take_append(invocation,append));EXPECT_FALSE(arena.acquire(requests*old_pages));gate.release();}
+    const auto status=common.wait();check(common.detach());
+    if(with_attention && !invalid){check(status);auto result=take(invocation.output(output));std::vector<std::uint16_t>got_output(take(reader_desc.required_bytes())/2);
+      check(result.storage().read(std::as_writable_bytes(std::span(got_output))));const auto active=std::accumulate(reader_queries.begin(),reader_queries.end(),std::size_t{0});
       for(std::size_t i=0;i<got_output.size();++i)EXPECT_EQ(got_output[i],i<active*depth?0x3f80:0u)<<i;
     }
     auto returned=take(b::take_append(invocation,append));
     auto tensor=take(c::detail::PagedArenaAccess::tensor(arena));std::vector<std::uint16_t>got(take(tensor.description().required_bytes())/2);
     check(tensor.storage().read(std::as_writable_bytes(std::span(got))));
     if(invalid){EXPECT_TRUE(status.IsInvalidArgument())<<status.message();EXPECT_FALSE(returned.select_lengths(q,kv).ok());EXPECT_FALSE(source.ready(returned));}
+    else if(discard){check(status);EXPECT_FALSE(returned.ready());EXPECT_FALSE(source.ready(returned));}
     else{check(status);EXPECT_FALSE(returned.ready());check(returned.select_lengths(q,kv));check(returned.select_lengths(q,kv));
       auto changed=kv;++changed[0];EXPECT_FALSE(returned.select_lengths(q,changed).ok());
       if(std::any_of(kv.begin(),kv.end(),[&](auto rows){return rows<std::int32_t(maximum);})){auto padding=source.ready_delta(returned,footprint,capacity);
@@ -161,6 +185,13 @@ struct AppendCell final{
       if(!invalid)packed+=std::uint32_t(q[r]);
     }
     for(std::size_t i=std::size_t(physical_pages-1)*page_rows*depth;i<got.size();++i)EXPECT_EQ(got[i],0x5a5a);
+    if(discard){
+      source={};common={};invocation={};
+      for(std::size_t i=0;i<returned.page_count();++i){auto item=returned.page(i);ASSERT_TRUE(item);auto&writer=*item;writer.lease().reset();check(writer.discard());}
+      returned={};
+      for(auto page=requests*old_pages;page+1<physical_pages;++page){auto owner=take(arena.acquire(page));EXPECT_EQ(owner.initialized_rows(),0u);}
+      EXPECT_FALSE(gate.timed_out.load());
+    }
     if(invalid){
       // A failed Source seals its original generation. Actual retirement and
       // withdrawal precede dropping every ticket, then explicit page discard
@@ -178,6 +209,13 @@ TEST(DeviceLengthsAppendCuda, SeparateQueryAndRawKvCapacitiesPublishOnlyExecuted
         kv[request]=std::int32_t(base+(n*3+request)%(q+1))+queries[request];}
       cell.run(queries,kv);
     }
+  }
+}
+TEST(DeviceLengthsAppendCuda, AbandonedPendingPayloadRetiresBeforeWritersCanBeReacquired){
+  for(const auto r:{1u,2u,4u})for(const auto q:{2u,4u,8u}){
+    SCOPED_TRACE(::testing::Message()<<"R="<<r<<" Q="<<q);
+    AppendCell cell(r,q,31);cell.run(std::vector<std::int32_t>(r,1),std::vector<std::int32_t>(r,32),false,true);
+    cell.run(std::vector<std::int32_t>(r,1),std::vector<std::int32_t>(r,32));
   }
 }
 TEST(DeviceLengthsAppendCuda, InvalidControlsRetireWithOriginalErrorAndLeaveEveryWriterUntouched){
@@ -206,14 +244,43 @@ TEST(DeviceLengthsAppendCuda, SameGraphAttentionReadsOnlyDeviceSelectedWrittenRo
     cell.run(queries,kv);cell.run(std::vector<std::int32_t>(r,0),std::vector<std::int32_t>(r,31));
   }
 }
-struct PendingGate final{
-  std::atomic<bool>open{false},timed_out{false};std::mutex mutex;std::condition_variable changed;std::thread watchdog;
-  static void CUDART_CB wait(void*opaque){static_cast<PendingGate*>(opaque)->open.wait(false,std::memory_order_acquire);}
-  void arm(){watchdog=std::thread([this]{std::unique_lock lock(mutex);
-    if(!changed.wait_for(lock,std::chrono::seconds(10),[&]{return open.load();})){timed_out=true;release();}});}
-  void release(){open.store(true,std::memory_order_release);open.notify_all();changed.notify_all();}
-  ~PendingGate(){release();if(watchdog.joinable())watchdog.join();}
-};
+TEST(DeviceLengthsAppendCuda, EmptyActualPrefixKeepsReservedCapacityPrivateAndZerosInactiveQueries){
+  for(const auto r:{1u,2u,4u})for(const auto q:{2u,4u,8u}){
+    SCOPED_TRACE(::testing::Message()<<"R="<<r<<" Q="<<q);
+    const std::vector<std::int32_t>zero(r,0),one(r,1);
+    AppendCell packed(r,q,0,true);packed.run(zero,zero);packed.run(one,one);
+    AppendCell last(r,q,0,true,false,false,AppendCell::QueryMode::kLast);
+    last.run(zero,zero,false,false,zero);last.run(one,one);
+  }
+}
+TEST(DeviceLengthsAppendCuda, LastQueryCanReadTheSameKvPrefixAfterMultipleRowsWereAppended){
+  for(const auto r:{1u,2u,4u})for(const auto q:{2u,4u,8u}){
+    SCOPED_TRACE(::testing::Message()<<"R="<<r<<" appendQ="<<q<<" readerQ=1");
+    AppendCell cell(r,q,31,true,false,false,AppendCell::QueryMode::kLast);
+    for(std::uint32_t n=0;n<=q;++n){std::vector<std::int32_t>queries(r),kv(r);
+      for(std::uint32_t request=0;request<r;++request){queries[request]=std::int32_t((n+request)%(q+1));
+        kv[request]=std::int32_t(31+(n+request)%(q+1))+queries[request];}
+      cell.run(queries,kv);
+    }
+    std::vector<std::int32_t>inactive(r);for(std::uint32_t request=0;request<r;++request)inactive[request]=std::int32_t(request%2);
+    cell.run(std::vector<std::int32_t>(r,0),std::vector<std::int32_t>(r,31),false,false,inactive);
+    auto bad=std::vector<std::int32_t>(r,0),kv=std::vector<std::int32_t>(r,31);bad[0]=std::int32_t(q+1);kv[0]+=bad[0];
+    cell.run(bad,kv,true);cell.run(std::vector<std::int32_t>(r,1),std::vector<std::int32_t>(r,32));
+  }
+}
+TEST(DeviceLengthsAppendCuda, IndependentQueryControlsStillRequireTheOriginalKvControlIdentity){
+  AppendCell cell(2,8,31,true,false,false,AppendCell::QueryMode::kLastForeignKv);
+  auto invocation=take(cell.compiled.executable.create_invocation());const std::array queues{g::QueueBinding{g::ExecutionLaneId{0},&cell.queue}};
+  const std::array envelopes{b::NodeLayout{cell.reader,cell.reader_capacity}};
+  check(b::prepare_lengths(invocation,queues,envelopes,{.host_workspace=cell.host.ref()}));
+  std::vector<c::PagedPageWriter>writers;for(auto p=cell.requests*cell.old_pages;p+1<cell.physical_pages;++p)
+    writers.push_back(take(cell.arena.acquire(p)));
+  const std::array sources{take(c::PagedArenaFootprint::from_read(cell.frame))};
+  auto pages=take(b::PagedAppendPages::create_lengths(cell.arena,cell.capacity,cell.lower,cell.previous,sources,writers));
+  EXPECT_TRUE(b::bind_append(invocation,cell.graph,cell.append,cell.key_port,std::move(pages)).IsInvalidArgument());
+  EXPECT_TRUE(pages.valid());for(std::size_t i=0;i<pages.page_count();++i){auto writer=pages.page(i);ASSERT_TRUE(writer);
+    EXPECT_TRUE(writer->valid() && writer->lease().valid());}
+}
 void pending_chain(std::uint32_t requests,std::uint32_t qcap,bool smaller_capacity=false){
   AppendCell a(requests,qcap,31,false,true);const auto r=requests,q=qcap;
   const auto bmax=smaller_capacity?a.minimum+q:a.maximum+q,bpages=(bmax+15)/16;

@@ -53,53 +53,7 @@ bool same_recorded_plan(const fi::PrefillPlanInfo&a,const fi::PrefillPlanInfo&b)
       a.v_offset==b.v_offset && a.s_offset==b.s_offset &&
       a.block_valid_mask_offset==b.block_valid_mask_offset && a.split_kv==b.split_kv;
 }
-__global__ void select_layout_words(const std::int32_t*selector,const std::int32_t*zero,
-    const std::int32_t*nonzero,std::int32_t*output,std::size_t count,
-    std::size_t query_offset,std::uint32_t*total_rows){
-  const auto*source=*selector?nonzero:zero;
-  const auto index=std::size_t(blockIdx.x)*blockDim.x+threadIdx.x;
-  if(index<count)output[index]=source[index];
-  if(index==0 && total_rows)*total_rows=std::uint32_t(source[query_offset+1]-source[query_offset]);
-}
 } // namespace
-cudaError_t qualify_device_layout_choice(const void*state,BatchSpec s,const std::int32_t*q,
-    const std::int32_t*k,cudaStream_t stream,bool&qualified)noexcept{
-  qualified=false;
-  if(!state || !q || !k || !s.paged || s.fp8 || !s.causal || s.window_left!=-1 ||
-      s.requests!=1 || (s.query_rows!=1 && s.query_rows!=2) || q[0]!=0 ||
-      q[1]!=std::int32_t(s.query_rows) || s.qk_head_dim!=s.value_head_dim ||
-      (s.qk_head_dim!=64 && s.qk_head_dim!=128 && s.qk_head_dim!=256))return cudaSuccess;
-  try{
-    const auto&retained=*static_cast<const fi::PrefillPlanInfo*>(state);
-    if(!retained.enable_cuda_graph || retained.total_num_rows!=2 || retained.cta_tile_q<=0 ||
-        (s.query_rows==1 && 2u*(s.query_heads/s.kv_heads)>std::uint32_t(retained.cta_tile_q)))return cudaSuccess;
-    fi::PrefillPlanInfo candidate;std::size_t floating=0,integer=0;
-    const auto uniform=graph_query_length(s,q);
-    const auto status=fi::PrefillPlanImpl<false>(floating,integer,nullptr,0,nullptr,nullptr,0,candidate,
-        const_cast<std::int32_t*>(q),const_cast<std::int32_t*>(k),s.query_rows,s.requests,s.query_heads,s.kv_heads,
-        s.qk_head_dim,s.value_head_dim,s.page_size,uniform>0,2,s.window_left,-1,false,0,uniform,
-      stream,2,bf16_partial_domain(s));
-    if(status!=cudaSuccess)return status;
-    // R1 has one q tile for both counts. Request/q/kv tile and merge offsets
-    // must be identical; only the device active row scalar may differ. The
-    // provider additionally proves equal active KV chunk counts.
-    candidate.total_num_rows=retained.total_num_rows;
-    qualified=same_recorded_plan(retained,candidate);return cudaSuccess;
-  }catch(...){return cudaErrorInvalidValue;}
-}
-cudaError_t select_device_layout(const void*state,BatchSpec s,const std::int32_t*selector,
-    const void*zero,const void*nonzero,void*selected,std::size_t bytes,void*integer,cudaStream_t stream)noexcept{
-  if(!state || !selector || !zero || !nonzero || !selected || !integer || !bytes || bytes%4)
-    return cudaErrorInvalidValue;
-  const auto&plan=*static_cast<const fi::PrefillPlanInfo*>(state);
-  if(!plan.enable_cuda_graph || plan.total_num_rows_offset<0)return cudaErrorInvalidValue;
-  const auto words=bytes/4;
-  auto*rows=reinterpret_cast<std::uint32_t*>(static_cast<char*>(integer)+plan.total_num_rows_offset);
-  select_layout_words<<<static_cast<unsigned>((words+255)/256),256,0,stream>>>(selector,
-      static_cast<const std::int32_t*>(zero),static_cast<const std::int32_t*>(nonzero),
-      static_cast<std::int32_t*>(selected),words,s.query_indptr_offset/4,rows);
-  return cudaPeekAtLastError();
-}
 cudaError_t query_batch_workspace(BatchSpec s,const std::int32_t*q,const std::int32_t*k,cudaStream_t stream,BatchFacts&facts,
                                  const void*retained_plan,bool*preserves_commands,bool allow_graph_plan,
                                  std::int32_t fixed_split_pages){

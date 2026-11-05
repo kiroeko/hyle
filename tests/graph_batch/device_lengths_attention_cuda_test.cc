@@ -187,6 +187,51 @@ TEST(DeviceLengthsCuda, BadPhysicalEnvelopeDeclinesAndValidPreparationCanRetry){
   const std::array good{b::NodeLayout{cell.reader,cell.anchor}};
   check(b::prepare_lengths(invocation,queues,good,{.host_workspace=cell.host.ref()}));cell.run(invocation,{1,3},{1001,1015});
 }
+TEST(DeviceLengthsCuda, BackendRequestCapacityLimitIsAnExplicitTypedRefusal){
+  Cell cell(33,2,32);auto invocation=take(cell.compiled.executable.create_invocation());
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0},&cell.queue}};
+  const std::array layouts{b::NodeLayout{cell.reader,cell.anchor}};
+  const auto status=b::prepare_lengths(invocation,queues,layouts,{.host_workspace=cell.host.ref()});
+  EXPECT_TRUE(status.IsUnimplemented())<<status.message();
+  EXPECT_NE(invocation.replay_route(),g::ReplayRoute::kCaptured);
+}
+TEST(DeviceLengthsCuda, ForeignSchemaRefusalPreservesOriginalPreparedEpisodeAndCanRetry){
+  Cell cell(2,4,1024);auto invocation=cell.prepare();
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0},&cell.queue}};
+  std::array<hyle::mem::Buffer,2>controls{take(hyle::mem::Buffer::create(cell.device.ref(),8,256)),
+      take(hyle::mem::Buffer::create(cell.device.ref(),8,256))};
+  auto output=take(hyle::mem::Buffer::create(cell.device.ref(),take(cell.output_desc.required_bytes()),256));
+  const std::vector<std::int32_t>q{1,3},kv{1001,1015};
+  check(controls[0].view().write(std::as_bytes(std::span(q))));check(controls[1].view().write(std::as_bytes(std::span(kv))));
+  check(invocation.bind(cell.ports[0],cell.query_desc,cell.query));
+  check(b::bind(invocation,cell.ports[1],cell.key_frame));check(b::bind(invocation,cell.ports[2],cell.value_frame));
+  for(std::size_t p=0;p<2;++p)check(invocation.bind(cell.ports[3+p],take(c::ConstTensorView::create(cell.index_desc,controls[p].view()))));
+  check(invocation.bind(cell.output,take(c::TensorView::create(cell.output_desc,output.view()))));
+  check(invocation.prepare_replay(queues,{.mode=g::ReplayMode::kRequireCapture,.host_wait=g::HostWaitPolicy::kReject}));
+  const auto captured=invocation.replay_report()->recorded_capture_range_count;
+  const auto foreign=take(c::BatchSchema::create(cell.schema.capacity()));
+  const auto other=take(foreign.version(cell.anchor.host()));
+  const auto original=cell.anchor.host();const std::array<std::int32_t,2>one_request_queries{0,8};
+  const auto fewer=take(cell.schema.version({one_request_queries,original.kv_indptr.first(2),
+      original.page_indices.first(std::size_t(original.kv_indptr[1])),original.last_page_lengths.first(1)}));
+  for(const auto&bad:{other,cell.layout({1,3}),fewer}){
+    const std::array layouts{b::NodeLayout{cell.reader,bad}};
+    EXPECT_TRUE(b::prepare_lengths(invocation,queues,layouts,{.host_workspace=cell.host.ref()}).IsInvalidArgument());
+    EXPECT_EQ(invocation.replay_route(),g::ReplayRoute::kCaptured);
+  }
+  const std::array duplicate{b::NodeLayout{cell.reader,cell.anchor},b::NodeLayout{cell.reader,cell.anchor}};
+  EXPECT_TRUE(b::prepare_lengths(invocation,queues,duplicate,{.host_workspace=cell.host.ref()}).IsInvalidArgument());
+  auto foreign_context=take(g::cuda::create_context());auto foreign_queue=take(foreign_context.create_queue());
+  const std::array other_queues{g::QueueBinding{g::ExecutionLaneId{0},&foreign_queue}};
+  const std::array good{b::NodeLayout{cell.reader,cell.anchor}};
+  EXPECT_TRUE(b::prepare_lengths(invocation,other_queues,good,{.host_workspace=cell.host.ref()}).IsInvalidArgument());
+  EXPECT_EQ(invocation.replay_route(),g::ReplayRoute::kCaptured);
+  EXPECT_EQ(invocation.replay_report()->recorded_capture_range_count,captured);
+  auto done=take(invocation.submit(queues));check(done.wait());done={};
+  std::vector<std::uint16_t>actual(output.size()/2);check(output.view().read(std::as_writable_bytes(std::span(actual))));
+  cell.verify(actual,q,kv);
+  check(b::prepare_lengths(invocation,queues,good,{.host_workspace=cell.host.ref()}));
+}
 TEST(DeviceLengthsCuda, OneCapturedGraphReplaysDeviceLengthsAtTheSameAddresses){
   Cell cell(2,8,1024);auto invocation=cell.prepare();
   std::array<hyle::mem::Buffer,2>controls{take(hyle::mem::Buffer::create(cell.device.ref(),8,256)),

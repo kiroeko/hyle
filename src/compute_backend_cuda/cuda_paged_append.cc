@@ -5,7 +5,6 @@
 #include <utility>
 
 #include "hyle/compute/detail/paged_append_backend.h"
-#include "hyle/compute/detail/device_choice_paged_append_backend.h"
 #include "hyle/compute/detail/device_lengths_paged_append_backend.h"
 
 namespace hyle::compute::cuda::detail {
@@ -108,38 +107,6 @@ EnqueueResult enqueue_append(void *opaque, void *queue_opaque, void *program_opa
 
 const compute::detail::PagedAppendBackendVTable table{
     &prepare_append, &destroy_append, &enqueue_append, true};
-Status prepare_choice(void*opaque,PagedAppendNativeSpec spec,mem::AllocatorRef allocator,void**output)noexcept{
-  if(spec.instruction_capacity<3)return Status::InvalidArgument("device-choice append needs two nonempty streams and a directory");
-  HYLE_RETURN_IF_ERROR(prepare_append(opaque,spec,allocator,output));
-  auto*program=static_cast<AppendProgram*>(*output);program->kernel=device_choice_paged_append_kernel();
-  ScopedPrimaryContext scope(program->context->primary);
-  auto status=scope.status();
-  if(status.ok()){cudaFuncAttributes attributes{};status=runtime_status(cudaFuncGetAttributes(&attributes,program->kernel));
-    if(status.ok() && attributes.maxThreadsPerBlock<256)status=Status::Unimplemented("device-choice append kernel block capacity is insufficient");}
-  if(!status.ok()){destroy_append(program,allocator);*output=nullptr;}
-  return status;
-}
-EnqueueResult enqueue_choice(void*opaque,void*queue_opaque,void*program_opaque,
-    compute::detail::DeviceChoicePagedAppendNativeBindings bindings)noexcept{
-  auto*queue=static_cast<QueueState*>(queue_opaque);auto*program=static_cast<AppendProgram*>(program_opaque);
-  if(!queue || !program || queue->context!=opaque || program->context!=opaque || !queue->active_sequence)
-    return EnqueueResult::rejected(Status::InvalidArgument("device-choice append needs its original admitted Queue"));
-  struct Check final{mem::ConstBufferView view;std::size_t bytes,alignment;};
-  for(const auto&entry:std::array<Check,4>{{
-      {bindings.arena,program->arena_bytes,alignof(std::uint16_t)},
-      {bindings.rows,program->input_bytes,alignof(std::uint16_t)},
-      {bindings.metadata,program->metadata_bytes,alignof(compute::detail::PagedAppendInstruction)},
-      {bindings.selector,sizeof(std::int32_t),alignof(std::int32_t)}}}){
-    auto status=validate_carrier(queue->context,entry.view,entry.bytes,entry.alignment);
-    if(!status.ok())return EnqueueResult::rejected(std::move(status));
-  }
-  ScopedPrimaryContext scope(queue->context->primary);if(!scope)return EnqueueResult::rejected(scope.status());
-  return EnqueueResult::accepted_command(runtime_status(launch_device_choice_paged_append(program->kernel,
-      const_cast<void*>(byte_pointer(bindings.arena)),byte_pointer(bindings.rows),byte_pointer(bindings.metadata),
-      byte_pointer(bindings.selector),program->spec,queue->stream)));
-}
-const compute::detail::DeviceChoicePagedAppendBackendVTable choice_table{
-    &prepare_choice,&destroy_append,&enqueue_choice,true};
 Status prepare_lengths(void*opaque,compute::detail::DeviceLengthsPagedAppendSpec spec,
     mem::AllocatorRef allocator,void**output)noexcept{
   if(!spec.requests || spec.requests>32 || spec.storage.input_rows>INT32_MAX ||
@@ -181,6 +148,5 @@ const compute::detail::DeviceLengthsPagedAppendVTable lengths_table{&prepare_len
 const compute::detail::PagedAppendBackendVTable *paged_append_interface() noexcept {
   return &table;
 }
-const compute::detail::DeviceChoicePagedAppendBackendVTable*device_choice_paged_append_interface()noexcept{return &choice_table;}
 const compute::detail::DeviceLengthsPagedAppendVTable*device_lengths_paged_append_interface()noexcept{return &lengths_table;}
 } // namespace hyle::compute::cuda::detail

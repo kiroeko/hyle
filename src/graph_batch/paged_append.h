@@ -3,7 +3,6 @@
 #include "hyle/graph/detail/region_adapter.h"
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/compute/detail/paged_append_backend.h"
-#include "hyle/compute/detail/device_choice_paged_append_backend.h"
 #include "hyle/compute/detail/device_lengths_paged_append_backend.h"
 #include "native_append_regions.h"
 #include <memory>
@@ -42,7 +41,6 @@ struct PagedAppendAccess final {
   static bool needs_queue(const graph::detail::RegionAccessView&)noexcept;
   static Result<NativeAppendRegionRef> native(Invocation&,NodeId)noexcept;
   static Result<AppendFacts> facts(const PagedAppendPages&)noexcept;
-  static Result<std::array<compute::BatchLayoutVersion,2>> choices(const PagedAppendPages&)noexcept;
   static Status bind(Invocation&,const Graph&,NodeId,ValueId,PagedAppendPages&&,
       std::span<const graph::detail::ProjectedReader>,const compute::detail::QueueRef&,
       std::shared_ptr<compute::Queue> metadata_queue,mem::MemoryResourceRef host_workspace,ResourceOptions)noexcept;
@@ -56,9 +54,6 @@ struct PagedAppendSourceAccess final {
   static Result<PagedAppendPages> make_lengths(compute::PagedArena,
       compute::BatchLayoutVersion,compute::BatchLayoutVersion,PagedAppendSource&,
       std::span<compute::PagedPageWriter>,PagedAppendOptions)noexcept;
-  static Result<PagedAppendPages> make_choices(compute::PagedArena,
-      std::span<const PagedAppendChoice>,PagedAppendSource&,
-      std::span<compute::PagedPageWriter>,bool zero_fill_envelope,PagedAppendOptions) noexcept;
   static Result<PagedAppendPages> make(compute::PagedArena,compute::BatchLayoutVersion,
       PagedAppendSource&,std::span<compute::PagedPageWriter>,PagedAppendOptions) noexcept;
   static Result<AppendFacts> facts(const PagedAppendSource&) noexcept;

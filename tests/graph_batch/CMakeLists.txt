@@ -182,10 +182,10 @@ if(_HYLE_COMPUTE_HAVE_CUDA AND TARGET hyle_compute_route_cuda AND
     hyle_add_test(graph_batch NAME cuda_append SOURCES paged_append_cuda_consumer.cc
       DEPS hyle_graph_route_cuda hyle_simd)
     hyle_stage_runtime(hyle_graph_batch_cuda_append_test)
-    hyle_add_test(graph_batch NAME cuda_device_choices
-      SOURCES device_choice_attention_cuda_test.cc device_choice_append_cuda_test.cc device_lengths_attention_cuda_test.cc device_lengths_append_cuda_test.cc
+    hyle_add_test(graph_batch NAME cuda_device_lengths
+      SOURCES device_lengths_attention_cuda_test.cc device_lengths_append_cuda_test.cc device_lengths_source_cuda_test.cc
       DEPS hyle_graph_route_cuda hyle_compute_backend_cuda hyle_simd)
-    hyle_stage_runtime(hyle_graph_batch_cuda_device_choices_test)
+    hyle_stage_runtime(hyle_graph_batch_cuda_device_lengths_test)
   endif()
   hyle_add_test(graph_batch NAME cuda_public_native
     SOURCES ../compute_batch/public_batch_cuda_consumer.cc

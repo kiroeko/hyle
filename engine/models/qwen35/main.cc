@@ -60,7 +60,7 @@
 #include "../../inference/cold_demand.h"
 #include "../../inference/slot_transactions.h"
 #include "../../inference/append_transactions.h"
-#include "../../inference/paged_append_choice.h"
+#include "../../inference/paged_append_capacity.h"
 #include "../../inference/retirement_observation.h"
 #include "../../inference/evaluation_failure.h"
 #include "../../inference/request_execution_failure.h"
@@ -96,7 +96,7 @@
 #include "prefill_inputs.h"
 #include "auxiliary_programs.h"
 #include "hyle/compute/batch_transfer.h"
-#include "hyle/compute/detail/batch_device_choice.h"
+#include "hyle/compute/detail/batch_device_lengths.h"
 #include "hyle/compute/detail/device_lengths_paged_append_backend.h"
 #include "hyle/core/assert.h"
 #include "precision_profile.h"
@@ -358,7 +358,7 @@ struct InputPreparationScratch final {
   // Shared preparation reuses cold-bounded integers and temporary footprints.
   // Its source pins never survive a call; Graph retains its original leases.
   inference::PagedAppendScratch paged_appends;
-  inference::PagedAppendChoiceScratch paged_append_choices;
+  inference::PagedAppendCapacityScratch paged_append_capacity;
   void prepare(const Phase &phase) {
     const auto &io = phase.slots[0].data; // All slots share the same cold descriptions.
     const auto reserve = [](auto &values, const c::TensorDesc &description) {
@@ -1330,7 +1330,7 @@ public:
         cache::add(cache_plan.draft_key_bank_bytes, cache_plan.draft_value_bank_bytes));
     const auto layout_capacity = prepared_schema.capacity();
     input_scratch.paged_appends.prepare(layout_capacity.max_requests, layout_capacity.max_page_refs);
-    input_scratch.paged_append_choices.prepare(layout_capacity.max_page_refs, draft_bank);
+    input_scratch.paged_append_capacity.prepare(layout_capacity.max_page_refs, draft_bank);
     // No PageRef exists until this complete cold source tuple is published.
     // Leave the schema sentinel invalid on failure so released quota can retry.
     static_assert(std::is_nothrow_move_assignable_v<hyle::inference::PagedPageInventory>);
@@ -3012,8 +3012,8 @@ public:
     member.selected_input_choice = choice;
     member.next->length = head.length + 2;
     member.next->draft->frontier = member.choice_draft_frontier + rows;
-    member.next->paged.pages = std::move(member.target_choice_pages[choice]);
-    member.next->draft->paged.pages = std::move(member.draft_choice_pages[choice]);
+    member.next->paged.pages.resize(member.target_input_choices[choice].host().page_indices.size());
+    member.next->draft->paged.pages.resize(member.draft_input_choices[choice].host().page_indices.size());
     member.layout = member.target_input_choices[choice];
     member.draft_layout = step.draft_layout = member.draft_input_choices[choice];
     member.first_input = head.next_id;

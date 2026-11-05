@@ -73,7 +73,7 @@ def classify(name):
     if "convert_unary" in name:
         return "conversion"
     if any(x in name for x in ("concat", "cpy_", "copy_rows", "gather", "k_get_rows", "k_set_rows",
-                                 "append_rows", "append_choice_rows", "::publish(")):
+                                 "append_rows", "append_choice_rows", "append_device_lengths", "::publish(")):
         return "copy"
     return "other"
 

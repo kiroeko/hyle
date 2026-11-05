@@ -568,7 +568,7 @@ _hyle_declare_component(compute_state
     SPLIT_PUBLIC_HEADERS hyle/compute/batch_layout.h hyle/compute/batch_ops.h
       hyle/compute/batch_execution.h hyle/compute/detail/batch_provider.h
       hyle/compute/detail/batch_output_extent.h
-      hyle/compute/detail/batch_graph_access.h hyle/compute/detail/batch_device_choice.h hyle/compute/detail/batch_float_workspace.h hyle/compute/batch_materialize.h
+      hyle/compute/detail/batch_graph_access.h hyle/compute/detail/batch_device_lengths.h hyle/compute/detail/batch_float_workspace.h hyle/compute/batch_materialize.h
       hyle/compute/batch_paged_native.h
       hyle/compute/row_cache_paged.h
         hyle/compute/paged_arena.h hyle/compute/paged_frame.h
