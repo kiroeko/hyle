@@ -3,6 +3,7 @@ import hashlib
 import importlib.util
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('draft_head_preparer',ROOT/'scripts/prepare-mtp-draft-head.py')
@@ -87,6 +88,53 @@ class DraftHeadPreparation(unittest.TestCase):
         self.source()
         out=self.work/'bad-version'
         with self.assertRaises(ValueError):P.prepare(self.work,LIB,'unknown',out)
+        self.assertFalse(out.exists())
+
+    def default_references(self):
+        # Exercise reference publication only; the runtime separately validates
+        # the full mathematical inventory on the actual local 2B checkpoint.
+        identity='a'*64
+        geometry='geometry 2048 6144 248320 8 2 256 256 64 16 16 128 128 4 262144 10000000 1e-6 1 1 grouped "GGGAGGGAGGGAGGGAGGGAGGGA"'
+        names=['mtp.fc.weight','mtp.norm.weight','mtp.pre_fc_norm_embedding.weight','mtp.pre_fc_norm_hidden.weight']
+        names += ['mtp.layers.0.'+x+'.weight' for x in ['input_layernorm','post_attention_layernorm',
+            'mlp.gate_proj','mlp.up_proj','mlp.down_proj','self_attn.q_proj','self_attn.k_proj','self_attn.v_proj',
+            'self_attn.o_proj','self_attn.q_norm','self_attn.k_norm']]
+        (self.work/'borrowed weights.bin').write_bytes(b'12345678')
+        text='\n'.join(['HYLE_QWEN_ROLE_FILES_V2',identity,geometry]+[
+            name+' BF16 2 2 2 "borrowed weights.bin" 0 8' for name in names])+'\n'
+        (self.work/'weights.tsv').write_text(text,encoding='utf-8')
+        (self.work/'prompt.ids').write_bytes(b'1 2 3\n')
+        mapping=self.work/'mapping.ids'
+        mapping.write_text('hyle-draft-vocabulary-v1\n'+identity+'\n248320\n'+
+                           ' '.join(map(str,reversed(range(114688))))+'\n',encoding='utf-8')
+        return mapping,dict(identity=identity,dtype='BF16',hidden=2048,vocabulary=248320),text
+
+    def test_ready_inputs_borrow_original_ranges_and_keep_source_ids(self):
+        mapping,head,text=self.default_references()
+        files=P.default_k3_inputs(self.work,mapping,head)
+        self.assertEqual(set(files),{'weights.tsv',P.DEFAULT_K3_VOCABULARY,'prompt.ids'})
+        self.assertEqual(files['prompt.ids'],b'1 2 3\n')
+        lines=files['weights.tsv'].decode().splitlines()
+        self.assertEqual(lines[:3],text.splitlines()[:3])
+        self.assertEqual(sum(line.startswith('mtp.') for line in lines),15)
+        self.assertIn('"'+(self.work/'borrowed weights.bin').as_posix()+'"',lines[-1])
+        ids=files[P.DEFAULT_K3_VOCABULARY].decode().splitlines()
+        self.assertEqual(ids[:3],['hyle-draft-vocabulary-v1','a'*64,'248320'])
+        self.assertEqual(list(map(int,ids[3].split())),list(range(114688)))
+        self.assertEqual((self.work/'weights.tsv').read_text(),text)
+
+    def test_default_preparation_refuses_stale_duplicate_or_wrong_rows(self):
+        mapping,head,_=self.default_references();text=mapping.read_text()
+        for invalid in [text.replace('a'*64,'b'*64),text.replace('114687 114686','114686 114686'),
+                        text.replace('114687 ','248320 '),text.replace('114687 ',''),text.replace('114687 ','-1 ')]:
+            with self.subTest(prefix=invalid[:80]):
+                mapping.write_text(invalid)
+                with self.assertRaises(ValueError):P.default_k3_inputs(self.work,mapping,head)
+
+    def test_unqualified_defaults_fail_before_quantizer_or_output_creation(self):
+        self.source();mapping=self.work/'not-read.ids';out=self.work/'unqualified'
+        with patch.object(P,'Quantizer',side_effect=AssertionError('unqualified source reached quantizer')):
+            with self.assertRaises(ValueError):P.prepare(self.work,LIB,VERSION,out,mapping)
         self.assertFalse(out.exists())
 
 

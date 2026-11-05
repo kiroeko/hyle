@@ -89,6 +89,7 @@
 #include "ffn_placement.h"
 #include "projection_binding.h"
 #include "weights.h"
+#include "mtp_defaults.h"
 #include "graph_builder.h"
 #include "target_graph.h"
 #include "family_factory.h"
@@ -1095,7 +1096,8 @@ public:
     projections = prepare_projection_bindings(weights, cache_plan.draft_cache, geometry);
     if(source.draft_head){
       const auto begin=Clock::now();
-      resources_->draft_head.emplace(load_prepared_draft_head(execution,source_roles,*source.draft_head,allocation_budget));
+      resources_->draft_head.emplace(load_prepared_draft_head(execution,source_roles,*source.draft_head,allocation_budget,
+          source.draft_vocabulary ? &*source.draft_vocabulary : nullptr));
       resources_->draft_head_prepare_seconds=std::chrono::duration<double>(Clock::now()-begin).count();
     }
     if (source.draft_vocabulary) {
@@ -8660,8 +8662,8 @@ int qwen35::run(int argc, char **argv) {
         "Usage: hyle --inputs DIR [options]\n"
         "  --inputs DIR                Locally prepared checkpoint and token IDs\n"
         "  --backend cpu|cuda|apple|vulkan  Primary backend; required when multiple GPU routes are compiled\n"
-        "  --mtp off|on                Multi-token prediction (default: off)\n"
-        "  --mtp-max-drafts N          Maximum proposals; 0 disables drafting (default: 1)\n"
+        "  --mtp auto|off|on           Default: prepared CUDA BF16 2B K3, otherwise off\n"
+        "  --mtp-max-drafts N          Maximum proposals; 0 disables drafting (default: prepared K3, otherwise 1)\n"
         "  --mtp-min-probability FLOAT  Stop below max draft probability, [0,1] (default: 0)\n"
         "  --mtp-draft-vocabulary auto|full|FILE  Prepared draft IDs (default: auto); greedy only\n"
         "  --mtp-draft-head auto|original|FILE  Offline full Q4_K proposal head (default: auto); greedy only\n"
@@ -8695,6 +8697,7 @@ int qwen35::run(int argc, char **argv) {
     bool warmup_planned_shapes = false, decode_overlap = true, require_bounded_generation = false;
     bool progress = false, trace_states = true, explicit_steps = false;
     bool mtp_enabled = false;
+    std::string mtp_policy = "auto";
     bool explicit_mtp_drafts = false;
     float min_draft_probability = 0;
     bool explicit_mtp_probability = false;
@@ -8773,8 +8776,8 @@ int qwen35::run(int argc, char **argv) {
         explicit_sampling_parameters = true;
       }
       else if (option == "--mtp") {
-        if (value != "on" && value != "off") throw std::runtime_error("--mtp requires on or off");
-        mtp_enabled = value == "on";
+        if (value != "auto" && value != "on" && value != "off") throw std::runtime_error("--mtp requires auto, on or off");
+        mtp_policy = value;
       }
       else if (option == "--mtp-max-drafts") {
         const auto parsed = std::from_chars(value.data(), value.data() + value.size(), max_drafts);
@@ -8835,6 +8838,40 @@ int qwen35::run(int argc, char **argv) {
     }
     const bool scheduled = single_schedule || multiple_schedules;
     if (input.empty()) throw std::runtime_error("--inputs DIR is required");
+    backend_selection = qwen35::select_execution(backend_selection, cpu_ffn_layers);
+    const bool prefix_enabled = prefix_policy == "auto" || (prefix_policy.empty() && multiple_schedules);
+    using Grammar = qwen35::benchmark::ScheduleGrammar;
+    const auto grammar = single_schedule ? qwen35::benchmark::schedule_grammar(schedule_file)
+        : multiple_schedules ? qwen35::benchmark::session_schedule_grammar(session_file,
+            std::vector<qwen35::benchmark::SessionManifestEntry>{}.max_size()) : Grammar::kPromptOnly;
+    const bool natural_schedule = scheduled && grammar != Grammar::kFixedInput;
+    const bool natural_single = !scheduled && !explicit_continuation && !explicit_decode_ids &&
+        layer0_probe.empty() && !preparation_diagnostics;
+    const bool natural_generation = natural_schedule || natural_single;
+    const auto exists = [](const std::filesystem::path &path) {
+      std::error_code error;
+      const auto present = std::filesystem::exists(path, error);
+      if (error) throw std::runtime_error("cannot inspect prepared MTP defaults: " + error.message());
+      return present;
+    };
+    // Only the separately prepared K3 pair opts a directory into new defaults.
+    // Legacy full heads and 32K maps keep their existing explicit-MTP policy.
+    // This inspects current configuration and metadata, never future requests.
+    const bool default_route = natural_generation && !multiple_schedules && !prefix_enabled && !progress &&
+        !warmup_planned_shapes && max_sessions <= 1 && active_sequences <= 1 && capacity >= 4 && capacity <= 32768 &&
+        backend_selection.primary == qwen35::BackendKind::kCuda && cpu_ffn_layers == 0 &&
+        !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0 &&
+        decode_overlap && replay == qwen35::ReplayPolicy::kAuto;
+    const auto default_vocabulary = input / qwen35::kDefaultK3Vocabulary;
+    const bool prepared_assets = mtp_policy != "off" && max_drafts > 0 &&
+        backend_selection.primary == qwen35::BackendKind::kCuda &&
+        !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0 &&
+        draft_head == "auto" && draft_vocabulary == "auto" && exists(default_vocabulary);
+    const bool automatic_k3 = prepared_assets && default_route && max_drafts <= 3;
+    mtp_enabled = mtp_policy == "on" || automatic_k3;
+    const bool select_prepared_assets = mtp_enabled && prepared_assets;
+    if (select_prepared_assets && !exists(input / "mtp-draft-head.tsv"))
+      throw std::runtime_error("prepared K3 vocabulary requires its complete source-bound Q4_K draft head");
     if(draft_head=="original")draft_head.clear();
     else if(draft_head=="auto"){
       draft_head.clear();
@@ -8851,7 +8888,8 @@ int qwen35::run(int argc, char **argv) {
       // A prepared, source-bound asset is policy, not a guess based on vocab
       // size or on this request's tokens. Other sampling policies keep the
       // original full-vocabulary path. A stale asset still fails validation.
-      if (draft_head.empty() && mtp_enabled && max_drafts && !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0) {
+      if (select_prepared_assets) draft_vocabulary = default_vocabulary;
+      else if (draft_head.empty() && mtp_enabled && max_drafts && !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0) {
         const auto prepared = input / "mtp-draft-vocabulary.ids";
         std::error_code error;
         const auto exists = std::filesystem::exists(prepared, error);
@@ -8864,20 +8902,23 @@ int qwen35::run(int argc, char **argv) {
       throw std::runtime_error("--mtp-draft-vocabulary requires --mtp on, active drafting, unmodified greedy sampling and zero minimum probability");
     if(!draft_head.empty() && (!mtp_enabled || !max_drafts || sampler.enabled || !sampler.modifiers.empty() || min_draft_probability!=0))
       throw std::runtime_error("--mtp-draft-head requires active unmodified greedy MTP and zero minimum probability");
-    backend_selection = qwen35::select_execution(backend_selection, cpu_ffn_layers);
     auto weight_source = qwen35::prepare_weight_source(input / "weights.tsv", mtp_enabled, draft_vocabulary,draft_head);
+    if (select_prepared_assets) {
+      if (!qwen35::has_qualified_k3_defaults(weight_source))
+        throw std::runtime_error("prepared K3 defaults require the qualified BF16 Qwen3.5-2B source and 114688 Q4_K rows");
+      if (automatic_k3 && !explicit_mtp_drafts) max_drafts = 3;
+    }
     const auto geometry = weight_source.roles.geometry;
     qwen35::validate_mtp_source(geometry, mtp_enabled);
     qwen35::FfnPlacement::validate(cpu_ffn_layers, geometry.layers.size());
     if (sampler.policy.top_k > static_cast<std::size_t>(geometry.vocabulary))
       throw std::runtime_error("--top-k exceeds the source vocabulary");
-    if (explicit_mtp_drafts && !mtp_enabled) throw std::runtime_error("--mtp-max-drafts requires --mtp on");
-    if (explicit_mtp_probability && !mtp_enabled) throw std::runtime_error("--mtp-min-probability requires --mtp on");
+    if (explicit_mtp_drafts && !mtp_enabled) throw std::runtime_error("--mtp-max-drafts requires --mtp on or prepared automatic MTP");
+    if (explicit_mtp_probability && !mtp_enabled) throw std::runtime_error("--mtp-min-probability requires --mtp on or prepared automatic MTP");
     if (explicit_sampling_parameters && !sampler.enabled)
       throw std::runtime_error("--temperature, --top-k, --top-p and --seed require --sampling random");
     if (sampler.enabled && (!layer0_probe.empty() || preparation_diagnostics))
       throw std::runtime_error("random sampling does not support layer or preparation diagnostics");
-    const bool prefix_enabled = prefix_policy == "auto" || (prefix_policy.empty() && multiple_schedules);
     if (mtp_enabled) {
       if (explicit_continuation || explicit_decode_ids || !layer0_probe.empty())
         throw std::runtime_error("--mtp on uses natural generation; --continuation, --decode-ids and --layer0-probe are not supported");
@@ -8888,14 +8929,6 @@ int qwen35::run(int argc, char **argv) {
     if (prefix_enabled && !scheduled) throw std::runtime_error("--prefix-cache auto requires a schedule");
     if (single_schedule && multiple_schedules)
       throw std::runtime_error("--schedule and --session-schedules are exclusive");
-    using Grammar = qwen35::benchmark::ScheduleGrammar;
-    const auto grammar = single_schedule ? qwen35::benchmark::schedule_grammar(schedule_file)
-        : multiple_schedules ? qwen35::benchmark::session_schedule_grammar(session_file,
-            std::vector<qwen35::benchmark::SessionManifestEntry>{}.max_size()) : Grammar::kPromptOnly;
-    const bool natural_schedule = scheduled && grammar != Grammar::kFixedInput;
-    const bool natural_single = !scheduled && !explicit_continuation && !explicit_decode_ids &&
-        layer0_probe.empty() && !preparation_diagnostics;
-    const bool natural_generation = natural_schedule || natural_single;
     // The default single-session route admits later turns only after the
     // previous published wave retires. Auto N/R are configuration bounds of
     // one here; future schedule lengths and quotas cannot select this policy.

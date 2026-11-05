@@ -145,6 +145,8 @@ struct PreparedDraftHeadSource final {
   std::filesystem::path specification;
   prepared::Role role;
   std::string identity;
+  // Nonempty only for an offline compact head, whose rows require this map.
+  std::string vocabulary_identity{};
 };
 struct PreparedWeightSource {
   prepared::Roles roles;
@@ -168,7 +170,8 @@ PreparedWeightSource prepare_weight_source(const std::filesystem::path &manifest
 // stream. Its source identity/geometry bind the original complete target model.
 PreparedDraftHead load_prepared_draft_head(hyle::inference::Backend &backend,
     const prepared::Roles &original, const PreparedDraftHeadSource &source,
-    const hyle::compute::ResourceBudget &budget = {});
+    const hyle::compute::ResourceBudget &budget = {},
+    const hyle::inference::DraftVocabulary *mapping = nullptr);
 // One cold checked Gather over a loaded dense or canonical GGUF row bank.
 // Encoded rows keep every physical code/scale byte without dequantization.
 // Preserve caller order and repeats; the original Backend owns execution.

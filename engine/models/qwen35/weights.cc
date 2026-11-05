@@ -462,8 +462,10 @@ PreparedDraftHeadSource read_draft_head_source(const std::filesystem::path &path
     if(value.ends_with('\r'))value.pop_back();
     return value;
   };
-  constexpr std::string_view signature="HYLE_QWEN_DRAFT_HEAD_Q4_K_V1";
-  if(line(64)!=signature)throw std::runtime_error("draft head requires the prepared full Q4_K format");
+  const auto signature=line(64);
+  const bool compact=signature=="HYLE_QWEN_DRAFT_HEAD_Q4_K_SUBSET_V1";
+  if(!compact && signature!="HYLE_QWEN_DRAFT_HEAD_Q4_K_V1")
+    throw std::runtime_error("draft head requires a prepared Q4_K format");
   const auto base_identity=line(65);prepared::validate_identity(base_identity);
   if(base_identity!=roles.identity)throw std::runtime_error("draft head source identity differs from selected weights");
   const auto payload_identity=line(65);prepared::validate_identity(payload_identity);
@@ -475,10 +477,11 @@ PreparedDraftHeadSource read_draft_head_source(const std::filesystem::path &path
     throw std::runtime_error("draft head requires its fixed Q4_K reference quantizer identity");
   std::int64_t rows=0,columns=0;
   std::istringstream shape(line(64));
-  if(!(shape>>rows>>columns) || !(shape>>std::ws).eof() || rows!=roles.geometry.vocabulary || columns!=roles.geometry.hidden)
+  if(!(shape>>rows>>columns) || !(shape>>std::ws).eof() || columns!=roles.geometry.hidden ||
+      (compact ? rows<=0 || rows>=roles.geometry.vocabulary : rows!=roles.geometry.vocabulary))
     throw std::runtime_error("draft head shape differs from selected model geometry");
   const auto head=std::ranges::find(roles.selected,roles.geometry.head_role(),&prepared::Role::name);
-  if(head==roles.selected.end() || head->shape!=std::vector<std::int64_t>{rows,columns} || head->projection_group_size ||
+  if(head==roles.selected.end() || head->shape!=std::vector<std::int64_t>{roles.geometry.vocabulary,columns} || head->projection_group_size ||
       (head->projection_codec!=prepared::ProjectionCodec::kDense && head->projection_codec!=prepared::ProjectionCodec::kUnspecified) ||
       (head->dtype!="BF16" && head->dtype!="F16" && head->dtype!="F32"))
     throw std::runtime_error("separate Q4_K draft head requires the original complete dense target head");
@@ -489,6 +492,11 @@ PreparedDraftHeadSource read_draft_head_source(const std::filesystem::path &path
   if(!(payload>>std::quoted(payload_path)>>payload_bytes) || !(payload>>std::ws).eof() || payload_path.empty() ||
       std::ranges::any_of(payload_path,[](unsigned char c){return c<32;}) || payload_bytes!=expected)
     throw std::runtime_error("draft head payload differs from its complete encoded extent");
+  std::string vocabulary_identity;
+  if(compact) {
+    vocabulary_identity=line(65);
+    prepared::validate_identity(vocabulary_identity);
+  }
   input>>std::ws;
   if(!input.eof())throw std::runtime_error("draft head metadata has trailing fields");
   auto file=std::filesystem::path(payload_path);
@@ -496,12 +504,14 @@ PreparedDraftHeadSource read_draft_head_source(const std::filesystem::path &path
   file=std::filesystem::absolute(file).lexically_normal();
   if(!std::filesystem::is_regular_file(file) || std::filesystem::file_size(file,error)!=expected || error)
     throw std::runtime_error("draft head payload is missing or has a different byte extent");
-  auto role=*head;role.dtype="Q4_K";role.source=std::move(file);role.offset=0;role.bytes=expected;
+  auto role=*head;role.dtype="Q4_K";role.shape={rows,columns};role.source=std::move(file);role.offset=0;role.bytes=expected;
   role.meaning=prepared::ParameterMeaning::kLinearWeight;role.physical_name="draft-head-q4_k";role.original_offset=0;
   role.projection_codec=prepared::ProjectionCodec::kUnspecified;role.projection_group_size=0;
-  const auto identity_text=std::string(signature)+'\n'+base_identity+'\n'+payload_identity+'\n'+quantizer;
+  const auto identity_text=signature+'\n'+base_identity+'\n'+payload_identity+'\n'+quantizer+
+      (compact ? '\n'+vocabulary_identity : std::string{});
   return {std::filesystem::absolute(path).lexically_normal(),std::move(role),
-      hyle::inference::artifact::sha256(std::as_bytes(std::span(identity_text.data(),identity_text.size())))};
+      hyle::inference::artifact::sha256(std::as_bytes(std::span(identity_text.data(),identity_text.size()))),
+      std::move(vocabulary_identity)};
 }
 std::optional<hyle::inference::DraftVocabulary> read_draft_vocabulary(
     const std::filesystem::path &path, const prepared::Roles &roles) {
@@ -600,6 +610,10 @@ PreparedWeightSource prepare_weight_source(const std::filesystem::path &manifest
   if (vocabulary)
     vocabulary_identity = hyle::inference::artifact::sha256(std::as_bytes(vocabulary->ids()));
   auto head=draft_head.empty()?std::optional<PreparedDraftHeadSource>{}:read_draft_head_source(draft_head,roles);
+  if(head && !head->vocabulary_identity.empty() && (!vocabulary ||
+      head->vocabulary_identity!=vocabulary_identity ||
+      head->role.shape[0]!=static_cast<std::int64_t>(vocabulary->size())))
+    throw std::runtime_error("compact draft head requires its bound draft vocabulary");
   return {std::move(roles), std::move(storage), rows,
       std::chrono::duration<double>(Clock::now() - start).count(),
       std::move(vocabulary), std::move(vocabulary_identity),std::move(head)};
@@ -1040,18 +1054,28 @@ WeightLoadReport load_weight_bank(const std::filesystem::path &manifest,
 }
 
 PreparedDraftHead load_prepared_draft_head(Backend &execution,const prepared::Roles &original,
-    const PreparedDraftHeadSource &source,const c::ResourceBudget &budget) {
+    const PreparedDraftHeadSource &source,const c::ResourceBudget &budget,
+    const hyle::inference::DraftVocabulary *mapping) {
   const auto checked=read_draft_head_source(source.specification,original);
   if(checked.identity!=source.identity || checked.role.source!=source.role.source ||
       checked.role.bytes!=source.role.bytes || checked.role.shape!=source.role.shape)
     throw std::runtime_error("draft head metadata changed before weight loading");
+  if(!checked.vocabulary_identity.empty() && (!mapping || mapping->full_size()!=original.geometry.vocabulary ||
+      mapping->size()!=static_cast<std::size_t>(checked.role.shape[0]) ||
+      hyle::inference::artifact::sha256(std::as_bytes(mapping->ids()))!=checked.vocabulary_identity))
+    throw std::runtime_error("compact draft head requires its original bound draft vocabulary before loading");
   auto selected=original;selected.selected={checked.role};selected.bytes=checked.role.bytes;selected.identity=checked.identity;
   std::map<std::string,LoadedWeight>bank;std::vector<c::LeasePool>pools;
   const auto report=load_selected_weight_roles(selected,execution,bank,pools,FfnPlacement(selected,0),budget);
   if(bank.size()!=1 || pools.size()!=1 || report.bytes!=checked.role.bytes)
     throw std::runtime_error("prepared draft head stream lost its original single-role byte inventory");
   auto weight=std::move(bank.begin()->second);weight.tensor.pool=std::move(pools.front());
-  return {std::move(weight),{},checked.identity,nullptr};
+  Tensor ids;
+  if(!checked.vocabulary_identity.empty()) {
+    ids=Tensor(execution.device(),dense(Type::kInt32,{static_cast<std::int64_t>(mapping->size())}),true,budget);
+    check(execution.write(ids.storage(),std::as_bytes(mapping->ids())));ids.freeze(execution);
+  }
+  return {std::move(weight),std::move(ids),checked.identity,nullptr};
 }
 
 PreparedDraftHead prepare_draft_head(Backend &execution, LoadedWeight &original,

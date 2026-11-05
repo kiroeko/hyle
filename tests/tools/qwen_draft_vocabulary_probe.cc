@@ -502,10 +502,79 @@ void full_head(i::Backend &backend, const std::filesystem::path &manifest,
       "budget refusal/retry, every selected code/scale byte, combined identity, full-to-subset replacement, "
       "independent escaping leases and every resource domain retired\n";
 }
+void compact_head(i::Backend &backend, const std::filesystem::path &manifest,
+    const std::filesystem::path &specification, const std::filesystem::path &mapping_path,
+    const std::filesystem::path &full_specification, const std::filesystem::path &scratch) {
+  std::filesystem::create_directories(scratch);
+  const auto source=q::prepare_weight_source(manifest,true,mapping_path,specification);
+  const auto full=q::prepare_weight_source(manifest,true,{},full_specification);
+  require(source.draft_head && source.draft_vocabulary && full.draft_head &&
+      !source.draft_head->vocabulary_identity.empty() && full.draft_head->vocabulary_identity.empty(),
+      "compact fixture lost its independent full-head reference or map identity");
+  const auto &mapping=*source.draft_vocabulary;
+  const auto &prepared=*source.draft_head;
+  require(prepared.role.shape[0]==static_cast<std::int64_t>(mapping.size()), "compact shape differs from bound map");
+  bool refused=false;
+  try { (void)q::prepare_weight_source(manifest,true,{},specification); }
+  catch (const std::runtime_error &) { refused=true; }
+  require(refused,"compact metadata was accepted without its mapping");
+  std::vector<std::int32_t> changed(mapping.ids().begin(),mapping.ids().end());
+  std::int32_t missing=0;
+  while(std::ranges::binary_search(mapping.ids(),missing))++missing;
+  changed.back()=missing;
+  const auto foreign=q::take(i::DraftVocabulary::create(mapping.full_size(),changed));
+  std::vector<c::ResourceBudgetLimit> limits;
+  for(const auto resource:{backend.device(),backend.host_device(),backend.staging(),m::system_resource()})
+    if(resource && std::ranges::none_of(limits,[&](const auto &r){return r.resource==resource;}))limits.push_back({resource,1u<<30});
+  const auto budget=q::take(c::ResourceBudget::create({.limits=limits,.allow_unattributed=true}));
+  std::vector<std::size_t> baseline;
+  for(const auto &limit:limits)baseline.push_back(q::take(budget.usage(limit.resource)).live_bytes);
+  refused=false;
+  try { (void)q::load_prepared_draft_head(backend,source.roles,prepared,budget,&foreign); }
+  catch(const std::runtime_error &){refused=true;}
+  require(refused,"a different same-size map reinterpreted compact codes as other token IDs");
+  auto blocked=q::take(budget.reserve(backend.device(),q::take(budget.usage(backend.device())).limit_bytes));
+  refused=false;
+  try { (void)q::load_prepared_draft_head(backend,source.roles,prepared,budget,&mapping); }
+  catch(const i::EvaluationFailure &failure){refused=failure.status().IsResourceExhausted();}
+  require(refused,"direct compact loading ignored its original resource budget");blocked.reset();
+  c::ReadLease escaped,escaped_ids;
+  std::vector<std::byte> expected(prepared.role.bytes);
+  const auto row_bytes=prepared.role.bytes/mapping.size();
+  std::ifstream payload(full.draft_head->role.source,std::ios::binary);
+  for(std::size_t at=0;at<mapping.size();++at) {
+    payload.seekg(static_cast<std::streamoff>(mapping.ids()[at]*row_bytes));
+    payload.read(reinterpret_cast<char*>(expected.data()+at*row_bytes),static_cast<std::streamsize>(row_bytes));
+    require(bool(payload),"cannot read original full Q4 reference row");
+  }
+  {
+    auto head=q::load_prepared_draft_head(backend,source.roles,prepared,budget,&mapping);
+    require(read(backend,head.weight.tensor.ready)==expected && head.extra_weight_bytes()==expected.size() &&
+        values<std::int32_t>(backend,head.original_ids.ready)==std::vector<std::int32_t>(mapping.ids().begin(),mapping.ids().end()),
+        "offline compact codes/scales or IDs differ from all original selected rows");
+    auto complete=q::load_prepared_draft_head(backend,full.roles,*full.draft_head,budget);
+    prepared_scores(backend,complete,head,mapping,source.roles.geometry,budget);
+    escaped=head.weight.tensor.ready;escaped_ids=head.original_ids.ready;
+  }
+  q::check(backend.collect_retired());
+  require(read(backend,escaped)==expected && q::take(budget.usage(backend.device())).live_bytes<full.draft_head->role.bytes,
+      "compact escaped lease retained its full-head reference or lost its codes");
+  escaped.reset();q::check(backend.collect_retired());
+  require(values<std::int32_t>(backend,escaped_ids)==std::vector<std::int32_t>(mapping.ids().begin(),mapping.ids().end()),
+      "mapping lease retired before its independent reader");
+  escaped_ids.reset();q::check(backend.collect_retired());
+  for(std::size_t at=0;at<limits.size();++at)
+    require(q::take(budget.usage(limits[at].resource)).live_bytes==baseline[at],"compact source retained a resource domain after retirement");
+  std::cout<<"PASS compact Q4 head: bound source/map, same-size map refusal, budget refusal/retry, every selected code/scale and projection value, independent weight/ID escaping leases and real retirement\n";
+}
 } // namespace
 
 int main(int argc, char **argv) {
   try {
+    if(argc==8 && std::string_view(argv[1])=="cuda" && std::string_view(argv[2])=="--compact-head") {
+      auto backend=q::take(i::Backend::create({.primary=i::BackendKind::kCuda}));
+      compact_head(backend,argv[3],argv[4],argv[5],argv[6],argv[7]);return 0;
+    }
     if (argc == 4 && std::string_view(argv[1]) == "--metadata-self-test") {
       metadata(argv[2], argv[3]);
       std::cout << "PASS mapping metadata bounds, whitespace, invalid fields and retry; no Backend created\n";

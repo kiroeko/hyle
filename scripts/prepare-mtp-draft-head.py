@@ -18,6 +18,8 @@ import shlex
 
 
 SIGNATURE = "HYLE_QWEN_DRAFT_HEAD_Q4_K_V1"
+SUBSET_SIGNATURE = "HYLE_QWEN_DRAFT_HEAD_Q4_K_SUBSET_V1"
+DEFAULT_K3_VOCABULARY = "mtp-draft-vocabulary-k3.ids"
 
 
 def source_head(inputs: Path) -> dict:
@@ -105,11 +107,64 @@ class Quantizer:
             self.directory.close()
 
 
-def prepare(inputs: Path, library: Path, version: str, output: Path) -> dict:
+def default_k3_inputs(inputs: Path, vocabulary: Path, head: dict) -> dict[str, bytes]:
+    """Borrow original weight ranges; publish an explicit ready-input default."""
+    lines = (inputs / "weights.tsv").read_text(encoding="utf-8").splitlines()
+    geometry = shlex.split(lines[2])
+    axes = [2048,6144,248320,8,2,256,256,64,16,16,128,128,4,262144]
+    if (head["dtype"] != "BF16" or len(geometry) != 21 or list(map(int, geometry[1:15])) != axes or
+            float(geometry[15]) != 10000000 or float(geometry[16]) != 1e-6 or
+            geometry[17:] != ['1','1','grouped','GGGAGGGAGGGAGGGAGGGAGGGA']):
+        raise ValueError("automatic K3 preparation requires the qualified BF16 Qwen3.5-2B geometry")
+    if vocabulary.stat().st_size > 256 + head["vocabulary"] * 32:
+        raise ValueError("K3 vocabulary exceeds its original text byte bound")
+    text = vocabulary.read_text(encoding="utf-8");mapping = text.splitlines()
+    if (len(mapping) < 4 or mapping[:3] != ['hyle-draft-vocabulary-v1',head['identity'],str(head['vocabulary'])]):
+        raise ValueError("K3 vocabulary source identity or original geometry differs")
+    words = ' '.join(mapping[3:]).split()
+    if any(not re.fullmatch(r'[0-9]+', word) for word in words):
+        raise ValueError("K3 vocabulary requires original nonnegative token IDs")
+    ids = list(map(int, words))
+    if len(ids) != 114688 or len(set(ids)) != len(ids) or any(n >= head['vocabulary'] for n in ids):
+        raise ValueError("automatic K3 requires 114688 distinct original vocabulary rows")
+    normalized = lines[:3];mtp = set()
+    for line in lines[3:]:
+        fields = shlex.split(line)
+        if fields == ['kv_cache','BF16','omit_original_calibration']:
+            normalized.append(line);continue
+        if len(fields) < 6 or not fields[2].isdigit():
+            raise ValueError("automatic K3 requires original dense BF16 role records")
+        rank = int(fields[2]);path_at = 3 + rank
+        if (len(fields) != rank + 6 or fields[1] not in ('BF16','F32') or
+                (fields[1] == 'F32' and rank > 1)):
+            raise ValueError("automatic K3 cannot select another source arithmetic policy")
+        source = Path(fields[path_at])
+        if not source.is_absolute():source = inputs / source
+        source = source.resolve()
+        if any(c in source.as_posix() for c in '\r\n\0"'):
+            raise ValueError("original weight path contains an unsupported control character")
+        if not source.is_file():raise ValueError("original weight source is not available locally")
+        normalized.append('\t'.join([*fields[:path_at], '"'+source.as_posix()+'"', *fields[path_at+1:]]))
+        if fields[0].startswith('mtp.'):mtp.add(fields[0])
+    if len(mtp) != 15:
+        raise ValueError("automatic K3 requires the original complete 15-role NextN inventory")
+    result = {'weights.tsv': ('\n'.join(normalized)+'\n').encode('utf-8'),
+              DEFAULT_K3_VOCABULARY: ('\n'.join(mapping[:3])+'\n'+' '.join(map(str,sorted(ids)))+'\n').encode('utf-8')}
+    for name in ('prompt.ids','continuation.ids'):
+        if (inputs/name).is_file():result[name]=(inputs/name).read_bytes()
+    return result
+
+
+def prepare(inputs: Path, library: Path, version: str, output: Path, default_vocabulary: Path | None = None) -> dict:
     import numpy as np
     if not re.fullmatch(r"llama\.cpp@[0-9a-f]{40}", version):
         raise ValueError("record the actual local quantizer commit as llama.cpp@<40 hex>")
     head = source_head(inputs)
+    ready_inputs = default_k3_inputs(inputs, default_vocabulary, head) if default_vocabulary is not None else {}
+    selected_ids = (list(map(int,ready_inputs[DEFAULT_K3_VOCABULARY].decode('utf-8').splitlines()[3].split()))
+                    if ready_inputs else None)
+    mapping_identity = (hashlib.sha256(np.asarray(selected_ids,dtype='<i4').tobytes()).hexdigest()
+                        if selected_ids is not None else None)
     quantizer = Quantizer(library)
     try:
         output.mkdir(parents=True, exist_ok=False)
@@ -131,20 +186,31 @@ def prepare(inputs: Path, library: Path, version: str, output: Path) -> dict:
                 else:
                     values = np.frombuffer(raw, dtype="<f4" if unit == 4 else "<f2").astype(np.float32)
                 encoded = quantizer.rows(values, head["hidden"])
+                if selected_ids is not None:
+                    import bisect
+                    first=bisect.bisect_left(selected_ids,begin);last=bisect.bisect_left(selected_ids,begin+rows)
+                    at=np.asarray(selected_ids[first:last],dtype=np.int64)-begin
+                    # Q4_K reference quantization is row-independent. Select
+                    # already encoded bytes; never requantize compact weights.
+                    encoded=np.frombuffer(encoded,dtype=np.uint8).reshape(rows,-1)[at].tobytes()
                 target.write(encoded)
                 encoded_digest.update(encoded)
                 total += len(encoded)
-        expected = head["vocabulary"] * (head["hidden"] // 256) * 144
+        output_rows = len(selected_ids) if selected_ids is not None else head["vocabulary"]
+        expected = output_rows * (head["hidden"] // 256) * 144
         if total != expected or payload.stat().st_size != expected:
             raise ValueError("complete encoded head byte extent differs")
+        for name, data in ready_inputs.items():
+            with (output/name).open('xb') as stream:stream.write(data)
         # Publish metadata only after the complete payload has been written.
-        metadata = (f'{SIGNATURE}\n{head["identity"]}\n{encoded_digest.hexdigest()}\n'
+        metadata = (f'{SUBSET_SIGNATURE if selected_ids is not None else SIGNATURE}\n{head["identity"]}\n{encoded_digest.hexdigest()}\n'
                     f'{version}:Q4_K:reference:no-imatrix\n'
-                    f'{head["vocabulary"]} {head["hidden"]}\n'
+                    f'{output_rows} {head["hidden"]}\n'
                     f'"{payload.name}" {expected}\n')
+        if mapping_identity is not None:metadata+=mapping_identity+'\n'
         with (output / "mtp-draft-head.tsv").open("x", encoding="utf-8", newline="\n") as stream:
             stream.write(metadata)
-        return dict(rows=head["vocabulary"], columns=head["hidden"], bytes=expected,
+        return dict(rows=output_rows, columns=head["hidden"], bytes=expected,
                     source_head_sha256=source_digest.hexdigest(), payload_sha256=encoded_digest.hexdigest())
     finally:
         quantizer.close()
@@ -156,9 +222,12 @@ def main():
     parser.add_argument("--ggml-library", type=Path, required=True)
     parser.add_argument("--quantizer-version", required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--default-k3-vocabulary", type=Path,
+                        help="prepare runnable BF16 2B inputs with only these114688 encoded rows; enables automatic CUDA K3")
     args = parser.parse_args()
-    result = prepare(args.inputs.resolve(), args.ggml_library.resolve(), args.quantizer_version, args.output.resolve())
-    print("Prepared full Q4_K draft head:", result)
+    result = prepare(args.inputs.resolve(), args.ggml_library.resolve(), args.quantizer_version, args.output.resolve(),
+                     args.default_k3_vocabulary.resolve() if args.default_k3_vocabulary is not None else None)
+    print("Prepared automatic K3 inputs:" if args.default_k3_vocabulary else "Prepared full Q4_K draft head:", result)
 
 
 if __name__ == "__main__":
