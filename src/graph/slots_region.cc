@@ -761,29 +761,61 @@ bool same_source(const detail::StoreSource &a, const detail::StoreSource &b) noe
 bool same_logical_source(const detail::StoreSource &a, const detail::StoreSource &b) noexcept {
   return a.gather == b.gather && a.capacity == b.capacity && a.indices == b.indices && a.count == b.count;
 }
-Status private_input(const Graph &graph, ValueId value, NodeId reader,
+// Gather and Store controls must have exactly one original consumer and must
+// not be published. Build this transient index once for the immutable Graph;
+// every association still checks the complete ValueId and expected port.
+struct InputProof final {
+  ValueId value;
+  NodeId reader;
+  std::size_t port = 0;
+  bool consumed = false;
+  bool multiple = false;
+  bool published = false;
+};
+struct InputProofIndex final {
+  std::vector<InputProof, mem::StdAllocator<InputProof>> entries;
+  explicit InputProofIndex(mem::AllocatorRef allocator) : entries(mem::StdAllocator<InputProof>{allocator}) {}
+  Status build(const Graph &graph) noexcept {
+    try { entries.resize(graph.value_count()); }
+    catch (...) { return Status::ResourceExhausted("slot source input proof metadata"); }
+    for (std::size_t i = 0; i < graph.input_count(); ++i) {
+      HYLE_ASSIGN_OR_RETURN(auto value, graph.input_id(i));
+      if (value.ordinal() >= entries.size()) return Status::Internal("slot input proof ordinal is invalid");
+      entries[value.ordinal()].value = value;
+    }
+    for (std::size_t i = 0; i < graph.output_count(); ++i) {
+      HYLE_ASSIGN_OR_RETURN(auto value, graph.output_id(i));
+      if (value.kind() == ValueKind::kInput && value.ordinal() < entries.size() && entries[value.ordinal()].value == value)
+        entries[value.ordinal()].published = true;
+    }
+    for (std::size_t i = 0; i < graph.node_count(); ++i) {
+      HYLE_ASSIGN_OR_RETURN(auto node, graph.node_id(i));
+      HYLE_ASSIGN_OR_RETURN(auto count, graph.node_input_count(node));
+      for (std::size_t port = 0; port < count; ++port) {
+        HYLE_ASSIGN_OR_RETURN(auto value, graph.node_input(node, port));
+        if (value.kind() != ValueKind::kInput || value.ordinal() >= entries.size()) continue;
+        auto &entry = entries[value.ordinal()];
+        if (entry.value != value) continue;
+        if (entry.consumed) entry.multiple = true;
+        else { entry.consumed = true; entry.reader = node; entry.port = port; }
+      }
+    }
+    return Status::Ok();
+  }
+};
+Status private_input(const InputProofIndex &proof, ValueId value, NodeId reader,
     std::size_t reader_port) noexcept {
   if (!value.valid() || value.kind() != ValueKind::kInput)
     return Status::InvalidArgument("slot pool and controls need original Graph inputs");
-  for (std::size_t i = 0; i < graph.output_count(); ++i) {
-    HYLE_ASSIGN_OR_RETURN(auto output, graph.output_id(i));
-    if (output == value) return Status::InvalidArgument("slot pool/control cannot be published");
-  }
-  bool consumed = false;
-  for (std::size_t i = 0; i < graph.node_count(); ++i) {
-    HYLE_ASSIGN_OR_RETURN(auto node, graph.node_id(i));
-    HYLE_ASSIGN_OR_RETURN(auto count, graph.node_input_count(node));
-    for (std::size_t port = 0; port < count; ++port) {
-      HYLE_ASSIGN_OR_RETURN(auto input, graph.node_input(node, port));
-      if (input != value) continue;
-      if (node != reader || port != reader_port)
-        return Status::InvalidArgument("slot pool/control has an unrelated logical consumer");
-      consumed = true;
-    }
-  }
-  return consumed ? Status::Ok() : Status::InvalidArgument("slot pool/control has no original reader");
+  if (value.ordinal() >= proof.entries.size() || proof.entries[value.ordinal()].value != value)
+    return Status::InvalidArgument("slot pool and controls need original Graph inputs");
+  const auto &entry = proof.entries[value.ordinal()];
+  if (entry.published) return Status::InvalidArgument("slot pool/control cannot be published");
+  if (entry.multiple || (entry.consumed && (entry.reader != reader || entry.port != reader_port)))
+    return Status::InvalidArgument("slot pool/control has an unrelated logical consumer");
+  return entry.consumed ? Status::Ok() : Status::InvalidArgument("slot pool/control has no original reader");
 }
-Result<LogicalSource> describe_source(const Graph &graph, SourceBinding binding) noexcept {
+Result<LogicalSource> describe_source(const Graph &graph, SourceBinding binding, const InputProofIndex &proof) noexcept {
   if (!graph.valid() || !binding.store.valid() || !binding.gather.valid() || binding.store == binding.gather)
     return std::unexpected(Status::InvalidArgument("slot source association needs its original Graph and distinct nodes"));
   HYLE_ASSIGN_OR_RETURN(auto store_operation, graph.operation(binding.store));
@@ -799,9 +831,9 @@ Result<LogicalSource> describe_source(const Graph &graph, SourceBinding binding)
   HYLE_ASSIGN_OR_RETURN(auto destination_ids, graph.node_input(binding.store, 1));
   if (pool == source_ids || pool == destination_ids || source_ids == destination_ids)
     return std::unexpected(Status::InvalidArgument("slot source and destination controls must be distinct"));
-  HYLE_RETURN_IF_ERROR(private_input(graph, pool, binding.gather, 0));
-  HYLE_RETURN_IF_ERROR(private_input(graph, source_ids, binding.gather, 1));
-  HYLE_RETURN_IF_ERROR(private_input(graph, destination_ids, binding.store, 1));
+  HYLE_RETURN_IF_ERROR(private_input(proof, pool, binding.gather, 0));
+  HYLE_RETURN_IF_ERROR(private_input(proof, source_ids, binding.gather, 1));
+  HYLE_RETURN_IF_ERROR(private_input(proof, destination_ids, binding.store, 1));
   HYLE_ASSIGN_OR_RETURN(auto capacity_description, graph.value_description(pool));
   HYLE_ASSIGN_OR_RETURN(auto expected_capacity, store->schema.capacity_description());
   HYLE_ASSIGN_OR_RETURN(auto ids_description, graph.value_description(source_ids));
@@ -903,13 +935,20 @@ Status prepare_impl(Invocation &invocation, const Graph *graph,
     PrepareOptions options) noexcept {
   if (!options.allocator.valid() || !options.host_workspace.valid())
     return Status::InvalidArgument("slot preparation needs allocator and host workspace");
+  const ResourceOptions resources{options.allocator, options.resource_budget};
+  auto allocator = resources.allocator;
+  if (resources.resource_budget.valid()) {
+    HYLE_ASSIGN_OR_RETURN(allocator, resources.resource_budget.metadata_allocator());
+  }
+  InputProofIndex proof(allocator);
+  if (graph && graph->valid() && !sources.empty()) HYLE_RETURN_IF_ERROR(proof.build(*graph));
   // Reject foreign/duplicate logical associations before replacing any slot's
   // existing carriers. Selected arithmetic remains owned by its original plan.
   for (std::size_t i = 0; i < sources.size(); ++i) {
     if (!graph) return Status::InvalidArgument("slot source associations need their original Graph");
     if (sources[i].mode != SourceMode::kTransaction && sources[i].mode != SourceMode::kImported)
       return Status::InvalidArgument("slot source association mode is invalid");
-    HYLE_ASSIGN_OR_RETURN(auto logical, describe_source(*graph, sources[i]));
+    HYLE_ASSIGN_OR_RETURN(auto logical, describe_source(*graph, sources[i], proof));
     Find selected{sources[i].store};
     HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit(invocation, sources[i].store, &find, &selected));
     if (!selected.binding) return Status::Unimplemented("associated Store has no selected slot implementation");
@@ -922,12 +961,7 @@ Status prepare_impl(Invocation &invocation, const Graph *graph,
         return Status::InvalidArgument("slot source association duplicates a Store, reader or pool");
     }
   }
-  const ResourceOptions resources{options.allocator, options.resource_budget};
   HYLE_RETURN_IF_ERROR(invocation.prepare_resources(resources));
-  auto allocator = resources.allocator;
-  if (resources.resource_budget.valid()) {
-    HYLE_ASSIGN_OR_RETURN(allocator, resources.resource_budget.metadata_allocator());
-  }
   struct Pending final {
     Find found{};
     detail::StoreBinding next;
@@ -939,9 +973,9 @@ Status prepare_impl(Invocation &invocation, const Graph *graph,
   struct Call final {
     Invocation *invocation; const Graph *graph;
     std::span<const QueueBinding> queues; std::span<const SourceBinding> sources;
-    mem::AllocatorRef allocator;
+    mem::AllocatorRef allocator; const InputProofIndex *proof;
     std::vector<Pending, mem::StdAllocator<Pending>> *pending;
-  } call{&invocation, graph, queues, sources, allocator, &pending};
+  } call{&invocation, graph, queues, sources, allocator, &proof, &pending};
   HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit(invocation,
       [](void *opaque, const gd::RegionAccessView &view) noexcept -> Status {
     const auto *interface = store_interface(view);
@@ -952,7 +986,7 @@ Status prepare_impl(Invocation &invocation, const Graph *graph,
     bool logical_source = false;
     const auto association = std::ranges::find(call.sources, facts.store, &SourceBinding::store);
     if (association != call.sources.end()) {
-      HYLE_ASSIGN_OR_RETURN(auto logical, describe_source(*call.graph, *association));
+      HYLE_ASSIGN_OR_RETURN(auto logical, describe_source(*call.graph, *association, *call.proof));
       HYLE_RETURN_IF_ERROR(matches(facts, logical));
       if (!facts.source.count) { facts.source = logical.source; logical_source = true; }
     }
