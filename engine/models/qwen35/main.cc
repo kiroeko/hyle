@@ -585,6 +585,7 @@ struct ColdResources final {
   std::map<std::string, LoadedWeight> weights;
   ProjectionBindings projections;
   std::optional<inference::DraftVocabulary> draft_vocabulary;
+  std::string draft_vocabulary_identity;
   std::optional<PreparedDraftHead> draft_head;
   double draft_head_prepare_seconds=0;
   WeightMeanings weight_meanings;
@@ -806,22 +807,29 @@ public:
     if (!resources_->draft_vocabulary && !resources_->draft_head) return false;
     if (sampling.enabled || !sampling.modifiers.empty() || min_draft_probability() != 0)
       throw std::runtime_error("draft vocabulary requires unmodified greedy sampling and zero minimum probability");
-    if (resources_->draft_head) return true;
+    if (resources_->draft_head && (!resources_->draft_vocabulary ||
+        resources_->draft_head->original_ids.description.valid())) return true;
     if (active_step || successor_step || carrier_borrowed)
       throw std::logic_error("draft vocabulary preparation requires the original idle model");
-    const auto &projection = projections.at(std::string(geometry.head_role()));
-    const auto *stored = std::get_if<StoredProjection>(&projection);
-    if (!stored || !stored->weight)
-      throw std::runtime_error("draft vocabulary requires the original stored head");
-    const auto type = stored->weight->description.data_type();
-    if (type != Type::kBFloat16 && type != Type::kFloat16 && type != Type::kFloat32)
-      throw std::runtime_error("draft vocabulary requires a BF16/F16/F32 head");
     const auto &mapping = *resources_->draft_vocabulary;
-    auto &original = weights.at(std::string(geometry.head_role()));
-    const auto begin=Clock::now();
-    resources_->draft_head.emplace(prepare_draft_head(execution, original, mapping,
-        cache_plan.active_sequences, allocation_budget));
-    resources_->draft_head_prepare_seconds=std::chrono::duration<double>(Clock::now()-begin).count();
+    const auto begin = Clock::now();
+    if (resources_->draft_head) {
+      auto selected = subset_prepared_draft_head(execution, *resources_->draft_head,
+          mapping, cache_plan.active_sequences, allocation_budget);
+      resources_->draft_head.emplace(std::move(selected));
+    } else {
+      const auto &projection = projections.at(std::string(geometry.head_role()));
+      const auto *stored = std::get_if<StoredProjection>(&projection);
+      if (!stored || !stored->weight)
+        throw std::runtime_error("draft vocabulary requires the original stored head");
+      const auto type = stored->weight->description.data_type();
+      if (type != Type::kBFloat16 && type != Type::kFloat16 && type != Type::kFloat32)
+        throw std::runtime_error("draft vocabulary requires a BF16/F16/F32 head");
+      auto &original = weights.at(std::string(geometry.head_role()));
+      resources_->draft_head.emplace(prepare_draft_head(execution, original, mapping,
+          cache_plan.active_sequences, allocation_budget));
+    }
+    resources_->draft_head_prepare_seconds += std::chrono::duration<double>(Clock::now() - begin).count();
     return true;
   }
 
@@ -1092,6 +1100,7 @@ public:
     }
     if (source.draft_vocabulary) {
       resources_->draft_vocabulary = std::move(source.draft_vocabulary);
+      resources_->draft_vocabulary_identity = std::move(source.draft_vocabulary_identity);
     }
     if(resources_->draft_vocabulary || resources_->draft_head)(void)prepare_draft_projection(default_sampler);
     host_weight_bytes = loading.host_bytes; device_weight_bytes = loading.device_bytes;
@@ -1242,7 +1251,7 @@ public:
         << ",\"mtp_min_draft_probability\":" << (cache_plan.draft_cache ? min_draft_probability() : 0)
         << ",\"draft_vocabulary_requested_rows\":" << (resources_->draft_vocabulary ? resources_->draft_vocabulary->size() : 0)
         << ",\"draft_vocabulary_rows\":" << (resources_->draft_vocabulary && resources_->draft_head ? resources_->draft_head->original_ids.description.dimensions()[0] : 0)
-        << ",\"draft_vocabulary_identity\":\"" << (resources_->draft_vocabulary && resources_->draft_head ? resources_->draft_head->identity : std::string{}) << '"'
+        << ",\"draft_vocabulary_identity\":\"" << (resources_->draft_vocabulary ? resources_->draft_vocabulary_identity : std::string{}) << '"'
         << ",\"draft_vocabulary_weight_bytes\":" << (resources_->draft_vocabulary && resources_->draft_head ? resources_->draft_head->extra_weight_bytes() : 0)
         << ",\"draft_vocabulary_indexed_rows\":" << (resources_->draft_head && resources_->draft_head->indexed_weight ? "true" : "false")
         << ",\"draft_vocabulary_map_bytes\":" << (resources_->draft_vocabulary && resources_->draft_head ? take(resources_->draft_head->original_ids.description.required_bytes()) : 0)
@@ -8853,8 +8862,8 @@ int qwen35::run(int argc, char **argv) {
     if (!draft_vocabulary.empty() && (!mtp_enabled || !max_drafts ||
         sampler.enabled || !sampler.modifiers.empty() || min_draft_probability != 0))
       throw std::runtime_error("--mtp-draft-vocabulary requires --mtp on, active drafting, unmodified greedy sampling and zero minimum probability");
-    if(!draft_head.empty() && (!mtp_enabled || !max_drafts || sampler.enabled || !sampler.modifiers.empty() || min_draft_probability!=0 ||
-        !draft_vocabulary.empty()))throw std::runtime_error("--mtp-draft-head requires active unmodified greedy MTP without a subset mapping");
+    if(!draft_head.empty() && (!mtp_enabled || !max_drafts || sampler.enabled || !sampler.modifiers.empty() || min_draft_probability!=0))
+      throw std::runtime_error("--mtp-draft-head requires active unmodified greedy MTP and zero minimum probability");
     backend_selection = qwen35::select_execution(backend_selection, cpu_ffn_layers);
     auto weight_source = qwen35::prepare_weight_source(input / "weights.tsv", mtp_enabled, draft_vocabulary,draft_head);
     const auto geometry = weight_source.roles.geometry;

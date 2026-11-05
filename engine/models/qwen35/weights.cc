@@ -527,10 +527,21 @@ std::optional<hyle::inference::DraftVocabulary> read_draft_vocabulary(
     throw std::runtime_error("draft vocabulary text exceeds its full-vocabulary byte bound");
   std::ifstream input(path, std::ios::binary);
   if (!input) throw std::runtime_error("cannot open draft vocabulary: " + path.string());
+  // Keep a bounded immutable parse buffer. Per-character iostream calls made
+  // larger, otherwise valid head mappings a material part of model readiness.
+  std::string text(static_cast<std::size_t>(bytes), '\0');
+  input.read(text.data(), static_cast<std::streamsize>(text.size()));
+  if (!input || static_cast<std::size_t>(input.gcount()) != text.size() ||
+      input.peek() != std::char_traits<char>::eof() || input.bad())
+    throw std::runtime_error("draft vocabulary changed extent or failed reading");
+  std::size_t cursor = 0;
   const auto line = [&](std::size_t limit) {
-    std::string value;
-    if (!prepared::read_manifest_line(input, value, limit))
-      throw std::runtime_error("draft vocabulary header is incomplete");
+    if (cursor >= text.size()) throw std::runtime_error("draft vocabulary header is incomplete");
+    const auto newline = text.find('\n', cursor);
+    const auto end = newline == std::string::npos ? text.size() : newline;
+    if (end - cursor > limit) throw std::runtime_error("draft vocabulary header exceeds its byte bound");
+    auto value = text.substr(cursor, end - cursor);
+    cursor = newline == std::string::npos ? text.size() : newline + 1;
     if (value.ends_with('\r')) value.pop_back();
     return value;
   };
@@ -547,25 +558,20 @@ std::optional<hyle::inference::DraftVocabulary> read_draft_vocabulary(
     throw std::runtime_error("draft vocabulary full size differs from selected model vocabulary");
   std::vector<std::int32_t> ids;
   ids.reserve((std::min)(full_vocab, static_cast<std::size_t>(bytes)));
-  for (;;) {
-    input >> std::ws;
-    if (input.peek() == std::char_traits<char>::eof()) break;
+  while (cursor < text.size()) {
+    while (cursor < text.size() && std::isspace(static_cast<unsigned char>(text[cursor]))) ++cursor;
+    if (cursor == text.size()) break;
     if (ids.size() == full_vocab)
       throw std::runtime_error("draft vocabulary contains more IDs than the full vocabulary");
-    std::array<char, 16> word;
-    std::size_t count = 0;
-    for (auto ch = input.peek(); ch != std::char_traits<char>::eof() &&
-        !std::isspace(static_cast<unsigned char>(ch)); ch = input.peek()) {
-      if (count == word.size()) throw std::runtime_error("draft vocabulary token exceeds an I32 text field");
-      word[count++] = static_cast<char>(input.get());
-    }
+    const auto first = cursor;
+    while (cursor < text.size() && !std::isspace(static_cast<unsigned char>(text[cursor]))) ++cursor;
+    if (cursor - first > 16) throw std::runtime_error("draft vocabulary token exceeds an I32 text field");
     std::int32_t id = 0;
-    const auto token = std::from_chars(word.data(), word.data() + count, id);
-    if (token.ec != std::errc{} || token.ptr != word.data() + count)
+    const auto token = std::from_chars(text.data() + first, text.data() + cursor, id);
+    if (token.ec != std::errc{} || token.ptr != text.data() + cursor)
       throw std::runtime_error("draft vocabulary contains an invalid or overflowing I32 token ID");
     ids.push_back(id);
   }
-  if (input.bad()) throw std::runtime_error("failed reading draft vocabulary: " + path.string());
   return take(hyle::inference::DraftVocabulary::create(vocabulary, ids));
 }
 } // namespace
@@ -574,8 +580,8 @@ PreparedWeightSource prepare_weight_source(const std::filesystem::path &manifest
   const auto start = Clock::now();
   if (!include_mtp && !draft_vocabulary.empty())
     throw std::runtime_error("draft vocabulary requires MTP weights");
-  if(!draft_head.empty() && (!include_mtp || !draft_vocabulary.empty()))
-    throw std::runtime_error("separate full draft head requires MTP without a subset mapping");
+  if(!draft_head.empty() && !include_mtp)
+    throw std::runtime_error("separate draft head requires MTP weights");
   auto roles = read_weight_roles(manifest, include_mtp);
   auto storage = read_cache_calibration(roles);
   const auto plain = take(c::CacheStorage::plain(PrecisionProfile::from_roles(roles).cache_type()));
@@ -1081,6 +1087,22 @@ PreparedDraftHead prepare_draft_head(Backend &execution, LoadedWeight &original,
   check(execution.write(ids.storage(), std::as_bytes(mapping.ids()))); ids.freeze(execution);
   auto identity = hyle::inference::artifact::sha256(std::as_bytes(mapping.ids()));
   return {std::move(selected), std::move(ids), std::move(identity), indexed};
+}
+
+PreparedDraftHead subset_prepared_draft_head(Backend &execution, PreparedDraftHead &original,
+    const hyle::inference::DraftVocabulary &mapping, std::size_t max_requests,
+    const c::ResourceBudget &budget) {
+  const auto &description = original.weight.tensor.description;
+  if (!max_requests || original.indexed_weight || original.original_ids.description.valid() ||
+      original.identity.empty() || !description.valid() || description.rank() != 2 ||
+      description.is_plain() || description.storage_format().id() != c::kGgufQ4K ||
+      description.dimensions()[0] != mapping.full_size() || !original.weight.tensor.ready ||
+      original.weight.tensor.writer)
+    check(hyle::Status::InvalidArgument("prepared head subset requires its original complete ready Q4_K source"));
+  auto result = prepare_draft_head(execution, original.weight, mapping, max_requests, budget);
+  const auto identity = original.identity + '\n' + result.identity;
+  result.identity = hyle::inference::artifact::sha256(std::as_bytes(std::span(identity.data(), identity.size())));
+  return result;
 }
 
 } // namespace qwen35

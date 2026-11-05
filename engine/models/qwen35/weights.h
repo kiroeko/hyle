@@ -120,6 +120,12 @@ PreparedDraftHead prepare_draft_head(hyle::inference::Backend &backend,
     LoadedWeight &original, const hyle::inference::DraftVocabulary &mapping,
     std::size_t max_requests,
     const hyle::compute::ResourceBudget &budget = {});
+// Select from a complete prepared Q4_K proposal head. The source remains
+// intact on refusal; the caller replaces it only after native copy retirement.
+PreparedDraftHead subset_prepared_draft_head(hyle::inference::Backend &backend,
+    PreparedDraftHead &original, const hyle::inference::DraftVocabulary &mapping,
+    std::size_t max_requests,
+    const hyle::compute::ResourceBudget &budget = {});
 
 using WeightMeanings = std::map<std::string, prepared::ParameterMeaning>;
 struct WeightLoadReport final {

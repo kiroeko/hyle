@@ -142,6 +142,36 @@ void scores_and_original_ids(i::Backend &backend, q::LoadedWeight &source,
       "device TopK/Gather leaked compact IDs or changed ascending target-ID tie order");
 }
 
+void prepared_scores(i::Backend &backend, q::PreparedDraftHead &source,
+    q::PreparedDraftHead &subset, const i::DraftVocabulary &mapping,
+    const q::ModelGeometry &geometry, const c::ResourceBudget &budget) {
+  q::Tensor x(backend.device(), q::dense(Type::kBFloat16, {1, geometry.hidden}), true, budget);
+  std::vector<float> input_values(static_cast<std::size_t>(geometry.hidden));
+  for (std::size_t n = 0; n < input_values.size(); ++n)
+    input_values[n] = (static_cast<float>(n % 13) - 6.0f) / 64.0f;
+  const auto input_bytes = encoded(Type::kBFloat16, input_values);
+  q::check(backend.write(x.storage(), input_bytes)); x.freeze(backend);
+  std::map<std::string, q::LoadedWeight> unused;
+  q::ProjectionBindings projections{{std::string(geometry.head_role()), q::StoredProjection{&source.weight.tensor}}};
+  q::GraphAssembly assembly(backend, {}, budget);
+  q::Recipe recipe(unused, projections, assembly, geometry, 1);
+  const auto input = recipe.input(x.description);
+  const auto complete = recipe.scores(input, std::string(geometry.head_role()));
+  const auto selected = recipe.emit_projection(input, q::StoredProjection{&subset.weight.tensor}, true);
+  const std::array outputs{complete, selected};
+  for (auto output : outputs) recipe.publish(output);
+  const auto graph = q::take(std::move(recipe.builder).finish());
+  const std::array bindings{g::ShapeBinding{recipe.last_row, 0}};
+  const auto result = execute(backend, assembly, graph, input, x, outputs, bindings, budget);
+  const auto full_values = values<float>(backend, result[0]);
+  const auto subset_values = values<float>(backend, result[1]);
+  require(full_values.size() == static_cast<std::size_t>(geometry.vocabulary) && subset_values.size() == mapping.size(),
+      "prepared projection outputs lost full or selected vocabulary extent");
+  for (std::size_t n = 0; n < mapping.size(); ++n)
+    require(subset_values[n] == full_values[static_cast<std::size_t>(mapping.ids()[n])],
+        "compacting prepared Q4 rows changed their computed projection values");
+}
+
 void rows(i::Backend &backend, Type type, const c::ResourceBudget &budget) {
   const auto baseline = q::take(budget.usage(backend.device())).live_bytes;
   c::ReadLease escaped;
@@ -273,7 +303,7 @@ void metadata(const std::filesystem::path &manifest, const std::filesystem::path
     identity_refused = std::string_view(failure.what()).find("identity") != std::string_view::npos;
   }
   require(identity_refused, "mapping from another weight identity was accepted");
-  for (const auto bad : {std::string("0 0"), std::string("-1"), std::to_string(roles.geometry.vocabulary)}) {
+  for (const auto bad : {std::string("0 0"), std::string("-1"), std::string{}, std::to_string(roles.geometry.vocabulary)}) {
     write(roles.identity, roles.geometry.vocabulary, bad);
     bool refused = false;
     try { (void)q::prepare_weight_source(manifest, true, path); }
@@ -286,6 +316,33 @@ void metadata(const std::filesystem::path &manifest, const std::filesystem::path
   const auto source = q::prepare_weight_source(manifest, true, path);
   require(source.draft_vocabulary && std::ranges::equal(source.draft_vocabulary->ids(), std::array<std::int32_t, 4>{0, 2, 5, 7}),
       "corrected mapping metadata could not retry in canonical original-ID order");
+  {
+    std::ofstream output(path, std::ios::binary);
+    output << "hyle-draft-vocabulary-v1\r\n" << roles.identity << "\r\n" << roles.geometry.vocabulary
+        << "\r\n\t7  2\r\n5\v0";
+  }
+  const auto mixed_whitespace = q::prepare_weight_source(manifest, true, path);
+  require(mixed_whitespace.draft_vocabulary && std::ranges::equal(mixed_whitespace.draft_vocabulary->ids(),
+      std::array<std::int32_t, 4>{0, 2, 5, 7}), "bounded buffer changed CRLF, whitespace or final non-newline parsing");
+  for (const auto bad : {std::string("0x2"), std::string("2147483648"), std::string(17, '1'), std::string("0\0 2", 4)}) {
+    write(roles.identity, roles.geometry.vocabulary, bad);
+    bool refused = false;
+    try { (void)q::prepare_weight_source(manifest, true, path); }
+    catch (const std::runtime_error &) { refused = true; }
+    require(refused, "bounded mapping buffer accepted a malformed or overflowing token field");
+  }
+  {
+    std::ofstream output(path, std::ios::binary);
+    output << "hyle-draft-vocabulary-v1\n" << roles.identity << '\n' << roles.geometry.vocabulary << "\n0"
+        << std::string(static_cast<std::size_t>(roles.geometry.vocabulary) * 32 + 257, ' ');
+  }
+  bool oversized = false;
+  try { (void)q::prepare_weight_source(manifest, true, path); }
+  catch (const std::runtime_error &) { oversized = true; }
+  require(oversized, "bounded mapping buffer ignored the original file byte limit");
+  write(roles.identity, roles.geometry.vocabulary, "7 2 5 0");
+  require(bool(q::prepare_weight_source(manifest, true, path).draft_vocabulary),
+      "mapping parser could not retry after invalid or oversized text");
 }
 
 void full_head(i::Backend &backend, const std::filesystem::path &manifest,
@@ -309,6 +366,33 @@ void full_head(i::Backend &backend, const std::filesystem::path &manifest,
   require(refused, "changed metadata was not revalidated before streaming");
   write(text);
 
+  const auto mapping_path = scratch / "head-subset.ids";
+  const auto write_mapping = [&](const std::string &identity) {
+    std::ofstream output(mapping_path, std::ios::binary);
+    output << "hyle-draft-vocabulary-v1\n" << identity << '\n' << source.roles.geometry.vocabulary
+        << "\n0 " << source.roles.geometry.vocabulary / 2 << ' ' << source.roles.geometry.vocabulary - 1 << '\n';
+    require(bool(output), "cannot write prepared-head subset metadata");
+  };
+  auto foreign_identity = source.roles.identity;
+  foreign_identity[0] = foreign_identity[0] == '0' ? '1' : '0';
+  write_mapping(foreign_identity);
+  refused = false;
+  try { (void)q::prepare_weight_source(manifest, true, mapping_path, copy); }
+  catch (const std::runtime_error &) { refused = true; }
+  require(refused, "custom head bypassed independent subset source identity validation");
+  write_mapping(source.roles.identity);
+  auto foreign_head = text;
+  foreign_head.replace(foreign_head.find(source.roles.identity), source.roles.identity.size(), foreign_identity);
+  write(foreign_head);
+  refused = false;
+  try { (void)q::prepare_weight_source(manifest, true, mapping_path, copy); }
+  catch (const std::runtime_error &) { refused = true; }
+  require(refused, "subset mapping bypassed independent custom head identity validation");
+  write(text);
+  const auto combined = q::prepare_weight_source(manifest, true, mapping_path, copy);
+  require(combined.draft_head && combined.draft_vocabulary && combined.draft_vocabulary->size() == 3,
+      "independently validated head and subset were not both retained");
+
   std::vector<c::ResourceBudgetLimit> limits;
   for (const auto resource : {backend.device(), backend.host_device(), backend.staging(), m::system_resource()})
     if (resource && std::ranges::none_of(limits, [&](const auto &limit) { return limit.resource == resource; }))
@@ -322,7 +406,9 @@ void full_head(i::Backend &backend, const std::filesystem::path &manifest,
   catch (const i::EvaluationFailure &failure) { refused = failure.status().IsResourceExhausted(); }
   require(refused, "prepared head stream ignored its device resource budget");
   blocked.reset();
-  c::ReadLease escaped;
+  c::ReadLease escaped, subset_escaped;
+  std::vector<std::byte> subset_expected;
+  std::size_t subset_bytes = 0;
   {
     auto head = q::load_prepared_draft_head(backend, prepared.roles, *prepared.draft_head, budget);
     const auto &role = source.draft_head->role;
@@ -343,24 +429,98 @@ void full_head(i::Backend &backend, const std::filesystem::path &manifest,
       require(bool(payload), "cannot read original encoded head rows");
     }
     require(read(backend, selected.tensor.ready) == expected, "streamed full head changed physical row codes/scales");
+    const auto mapping = q::take(i::DraftVocabulary::create(vocabulary, ids));
+    const auto original_identity = head.identity;
+    const auto live = q::take(budget.usage(backend.device()));
+    auto unavailable = q::take(budget.reserve(backend.device(), live.limit_bytes - live.live_bytes));
+    refused = false;
+    try { (void)q::subset_prepared_draft_head(backend, head, mapping, 1, budget); }
+    catch (const i::EvaluationFailure &failure) { refused = failure.status().IsResourceExhausted(); }
+    require(refused && head.identity == original_identity && head.weight.tensor.ready &&
+        !head.original_ids.description.valid(), "refused subset mutated or retired the complete source head");
+    unavailable.reset();
+    auto compact = q::subset_prepared_draft_head(backend, head, mapping, 1, budget);
+    require(!compact.indexed_weight && compact.extra_weight_bytes() == expected.size() &&
+        read(backend, compact.weight.tensor.ready) == expected &&
+        values<std::int32_t>(backend, compact.original_ids.ready) == std::vector<std::int32_t>(ids.begin(), ids.end()),
+        "prepared head subset changed encoded rows, physical extent or original ID mapping");
+    head.identity[0] = head.identity[0] == '0' ? '1' : '0';
+    const auto alternative = q::subset_prepared_draft_head(backend, head, mapping, 1, budget);
+    require(compact.identity != alternative.identity && compact.identity != original_identity,
+        "selected head identity lost its original quantized head component");
+    head.identity = original_identity;
+    const auto smaller_domain = q::take(i::DraftVocabulary::create(vocabulary - 1, std::array<std::int32_t, 1>{0}));
+    refused = false;
+    try { (void)q::subset_prepared_draft_head(backend, head, smaller_domain, 1, budget); }
+    catch (const i::EvaluationFailure &failure) { refused = failure.status().IsInvalidArgument(); }
+    require(refused, "prepared subset accepted another original vocabulary domain");
+
+    // Spread 32K IDs over the whole original matrix, including its last row.
+    // Check every selected code/scale byte, not merely the three sample rows.
+    std::vector<std::int32_t> all_ids(32768);
+    for (std::size_t n = 0; n < all_ids.size(); ++n)
+      all_ids[n] = static_cast<std::int32_t>(n * static_cast<std::uint64_t>(vocabulary - 1) / (all_ids.size() - 1));
+    const auto full_mapping = q::take(i::DraftVocabulary::create(vocabulary, all_ids));
+    auto subset = q::subset_prepared_draft_head(backend, head, full_mapping, 1, budget);
+    subset_expected.resize(row_bytes * all_ids.size());
+    for (std::size_t n = 0; n < all_ids.size(); ++n) {
+      payload.clear(); payload.seekg(static_cast<std::streamoff>(all_ids[n] * row_bytes));
+      payload.read(reinterpret_cast<char *>(subset_expected.data() + n * row_bytes), static_cast<std::streamsize>(row_bytes));
+      require(bool(payload), "cannot read complete original 32K encoded row inventory");
+    }
+    subset_bytes = subset_expected.size();
+    require(read(backend, subset.weight.tensor.ready) == subset_expected &&
+        values<std::int32_t>(backend, subset.original_ids.ready) == all_ids && subset.extra_weight_bytes() == subset_bytes,
+        "32K prepared subset differs from original codes, scales, mapping or reported bytes");
+    prepared_scores(backend, head, subset, full_mapping, source.roles.geometry, budget);
     escaped = head.weight.tensor.ready;
+    head = std::move(subset);
+    q::check(backend.collect_retired());
+    require(escaped.size() == role.bytes && read(backend, head.weight.tensor.ready) == subset_expected,
+        "replacing the complete head invalidated an independently escaped source or compact projection");
+    refused = false;
+    try { (void)q::subset_prepared_draft_head(backend, head, full_mapping, 1, budget); }
+    catch (const i::EvaluationFailure &failure) { refused = failure.status().IsInvalidArgument(); }
+    require(refused, "an already selected head was reinterpreted as a complete original head");
+    subset_escaped = head.weight.tensor.ready;
   }
   q::check(backend.collect_retired());
   require(escaped.valid() && q::take(budget.usage(backend.device())).live_bytes >= source.draft_head->role.bytes,
       "escaping full head lease lost its original resource charge");
   escaped.reset(); q::check(backend.collect_retired());
+  const auto compact_live = q::take(budget.usage(backend.device())).live_bytes;
+  require(read(backend, subset_escaped) == subset_expected && compact_live >= subset_bytes &&
+      compact_live < source.draft_head->role.bytes,
+      "compact lease retained the complete head allocation or lost its own selected bytes");
+  subset_escaped.reset(); q::check(backend.collect_retired());
   for (std::size_t n = 0; n < limits.size(); ++n) {
     const auto live = q::take(budget.usage(limits[n].resource)).live_bytes;
     if (live != baseline[n]) std::cerr << "head budget domain " << n << " before=" << baseline[n] << " after=" << live << '\n';
     require(live == baseline[n], "full head stream retained resource charges after retirement");
   }
-  std::cout << "PASS full Q4_K head: metadata revalidation, budget refusal/retry, first/middle/last encoded rows, "
-      "escaped lease and every resource domain retired\n";
+  std::cout << "PASS full Q4_K head and 32K subset: independent source identities, metadata revalidation, "
+      "budget refusal/retry, every selected code/scale byte, combined identity, full-to-subset replacement, "
+      "independent escaping leases and every resource domain retired\n";
 }
 } // namespace
 
 int main(int argc, char **argv) {
   try {
+    if (argc == 4 && std::string_view(argv[1]) == "--metadata-self-test") {
+      metadata(argv[2], argv[3]);
+      std::cout << "PASS mapping metadata bounds, whitespace, invalid fields and retry; no Backend created\n";
+      return 0;
+    }
+    if (argc == 5 && std::string_view(argv[1]) == "--metadata-only") {
+      const auto source = q::prepare_weight_source(argv[2], true, argv[3], argv[4]);
+      require(source.draft_head && source.draft_vocabulary, "metadata probe requires both independent assets");
+      const auto rows = static_cast<std::int64_t>(source.draft_vocabulary->size());
+      const auto description = q::take(c::gguf_weight_description(c::GgufQuantizedType::kQ4K,
+          Type::kFloat32, source.roles.geometry.hidden, rows));
+      std::cout << "PASS metadata rows=" << rows << " encoded_bytes=" << q::take(description.required_bytes())
+          << " prepare_ms=" << source.metadata_prepare_seconds * 1000 << "; no Backend created\n";
+      return 0;
+    }
     if (argc == 6 && std::string_view(argv[1]) == "cuda" && std::string_view(argv[2]) == "--full-head") {
       auto backend = q::take(i::Backend::create({.primary = i::BackendKind::kCuda}));
       full_head(backend, argv[3], argv[4], argv[5]); return 0;
