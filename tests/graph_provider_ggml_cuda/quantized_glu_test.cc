@@ -184,6 +184,38 @@ TEST(GgmlCudaQuantizedGlu, OriginalProjectionsAndGluMatchCapturedRebindingWithPr
         auto done=slot.submit(queue).value(); ASSERT_TRUE(done.wait().ok());
         const auto got=half_test::read<float>(actual), want=half_test::read<float>(expected);
         for (std::size_t i=0;i<got.size();++i) EXPECT_NEAR(got[i],want[i],2.e-5F+std::abs(want[i])*2.e-5F)<<i;
+        if (escape == 0) {
+          // The singleton decode route may fuse these projections, whereas a
+          // two-row verifier cannot. Compare the same token across both shapes.
+          const auto a2_desc=dense(c::DataType::kFloat32,{2,k});
+          const auto y2_desc=dense(c::DataType::kFloat32,{2,n});
+          auto b2=g::GraphBuilder::create().value();
+          const auto a2=b2.input(a2_desc).value();
+          const auto w20=b2.input(w_desc).value(), w21=b2.input(w_desc).value();
+          const auto g2=b2.result(b2.add_node(c::Operation(c::MatMul{}),std::array{a2,w20}).value()).value();
+          const auto u2=b2.result(b2.add_node(c::Operation(c::MatMul{}),std::array{a2,w21}).value()).value();
+          const auto y2=b2.result(b2.add_node(c::Operation(c::GatedActivation{
+              .activation=c::GatedActivationKind::kSilu,.inputs=c::GatedInputKind::kSeparate}),
+              std::array{g2,u2}).value()).value();
+          ASSERT_TRUE(b2.publish(y2).ok());
+          auto compiled2=g::cuda::compile(std::move(b2).finish().value(),context,owner).value();
+          std::size_t paired2=0;
+          for (std::size_t i=0;i<compiled2.report.step_count();++i)
+            paired2 += compiled2.report.step(i).value().policy == kPolicy;
+          EXPECT_EQ(paired2,0U);
+          auto slot2=compiled2.executable.create_invocation().value();
+          auto values2=other_values; values2.insert(values2.end(),values.begin(),values.end());
+          auto input2=upload<float>(owner.ref(),values2), output2=output_buffer(owner.ref(),y2_desc);
+          ASSERT_TRUE(slot2.bind(a2,c::ConstTensorView::create(a2_desc,input2.view()).value()).ok());
+          ASSERT_TRUE(slot2.bind(w20,wv0).ok()); ASSERT_TRUE(slot2.bind(w21,wv1).ok());
+          ASSERT_TRUE(slot2.bind(y2,c::TensorView::create(y2_desc,output2.view()).value()).ok());
+          ASSERT_TRUE(g::cuda::prepare_replay(slot2,queue,{.mode=g::ReplayMode::kRequireCapture}).ok());
+          auto done2=slot2.submit(queue).value(); ASSERT_TRUE(done2.wait().ok());
+          const auto two=half_test::read<float>(output2);
+          for (std::size_t i=0;i<got.size();++i)
+            EXPECT_NEAR(two[std::size_t(n)+i],got[i],2.e-5F+std::abs(got[i])*2.e-5F)<<i;
+          ASSERT_TRUE(slot2.reset().ok());
+        }
         // Independent float64 decoded-weight oracle. Bound the original Q8_1
         // activation quantization by half a step per 32-element block, then
         // propagate that bound through SiLU (|derivative| < 1.1) and product.
