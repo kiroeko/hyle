@@ -166,6 +166,11 @@ prepared::Roles read_weight_roles(const std::filesystem::path &manifest, bool in
 PreparedWeightSource prepare_weight_source(const std::filesystem::path &manifest, bool include_mtp,
     const std::filesystem::path &draft_vocabulary = {},
     const std::filesystem::path &draft_head = {});
+// Attach checked proposal assets after cold source/backend selection. This
+// reads metadata only; the ordinary loader still owns all payload transfers.
+void prepare_draft_assets(PreparedWeightSource &source,
+    const std::filesystem::path &draft_vocabulary,
+    const std::filesystem::path &draft_head);
 // Load one offline-prepared proposal projection through the ordinary weight
 // stream. Its source identity/geometry bind the original complete target model.
 PreparedDraftHead load_prepared_draft_head(hyle::inference::Backend &backend,

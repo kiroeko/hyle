@@ -1,32 +1,33 @@
 #pragma once
 
 #include "weights.h"
+#include "../../inference/mtp_policy.h"
 
 namespace qwen35 {
-// A model-specific, offline-prepared default, not a Graph/Compute capacity or
-// a limit on explicit vocabulary selection. Other sources keep their policy.
+// Retain the installed name for existing prepared directories. It is not a
+// model/row-count fingerprint or a restriction on explicit asset selection.
 inline constexpr std::string_view kDefaultK3Vocabulary = "mtp-draft-vocabulary-k3.ids";
-inline constexpr std::size_t kDefaultK3VocabularyRows = 114688;
 
-inline bool has_qualified_k3_defaults(const PreparedWeightSource &source) {
-  const auto &g = source.roles.geometry;
-  return source.draft_head && source.draft_vocabulary &&
-      source.draft_vocabulary->size() == kDefaultK3VocabularyRows &&
-      source.roles.representation == prepared::SourceRepresentation::kHfOriginal &&
-      source.roles.cache_calibration.empty() &&
-      source.roles.cache_policy != prepared::CachePolicy::kFloat8OriginalCalibration &&
-      g.hidden == 2048 && g.intermediate == 6144 && g.vocabulary == 248320 &&
-      g.query_heads == 8 && g.kv_heads == 2 && g.key_depth == 256 && g.value_depth == 256 &&
-      g.rotary == 64 && g.gdn_key_heads == 16 && g.gdn_value_heads == 16 &&
-      g.gdn_key_depth == 128 && g.gdn_value_depth == 128 && g.conv_kernel == 4 &&
-      g.context_limit == 262144 && g.rope_theta == 10000000 && g.epsilon == 1e-6f &&
-      g.tied_head && g.mtp_layers == 1 && g.gdn_layout == GdnHeadLayout::kGrouped &&
-      g.layers == "GGGAGGGAGGGAGGGAGGGAGGGA" &&
-      !source.roles.selected.empty() &&
-      std::ranges::all_of(source.roles.selected, [](const auto &role) {
-        return (role.dtype == "BF16" || (role.dtype == "F32" && role.shape.size() <= 1)) &&
-            (role.projection_codec == prepared::ProjectionCodec::kDense ||
-             role.projection_codec == prepared::ProjectionCodec::kUnspecified);
-      });
+struct SourceMtpCapabilities final {
+  bool nextn = false, stored_projection = false;
+  hyle::inference::mtp::TargetProjection target = hyle::inference::mtp::TargetProjection::kDense;
+};
+
+inline SourceMtpCapabilities source_mtp_capabilities(const prepared::Roles &roles) {
+  SourceMtpCapabilities result;
+  // These readers have no NextN implementation. The original role reader
+  // checks source identity, geometry and the complete parameter inventory.
+  result.nextn = roles.geometry.mtp_layers == 1 && !roles.mlx_policy.enabled() &&
+      roles.ct_mixed_policy.kind != prepared::CtMixedPolicy::Kind::kBlock128;
+  const auto head = std::ranges::find(roles.selected, roles.geometry.head_role(), &prepared::Role::name);
+  if (head == roles.selected.end() || head->projection_group_size ||
+      (head->projection_codec != prepared::ProjectionCodec::kDense &&
+       head->projection_codec != prepared::ProjectionCodec::kUnspecified)) return result;
+  if (head->dtype == "BF16" || head->dtype == "F16" || head->dtype == "F32") result.stored_projection = true;
+  else if (head->dtype == "Q8_0" || head->dtype == "Q4_K" || head->dtype == "Q6_K") {
+    result.stored_projection = true;
+    result.target = hyle::inference::mtp::TargetProjection::kRowBlockQuantized;
+  }
+  return result;
 }
 } // namespace qwen35
