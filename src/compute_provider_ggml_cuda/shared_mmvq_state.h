@@ -107,15 +107,4 @@ inline Selection select(const void *context, const void *node, const void *input
   // A native stream absent from the cold plan uses the original unshared path.
   return {};
 }
-struct Scope {
-  explicit Scope(Plan *value) : plan(value) { begin(plan); }
-  ~Scope() { end(plan); }
-  void check() const {
-    if (plan && (active != plan || plan->poisoned))
-      throw std::logic_error("shared MMVQ encoder contract failed");
-  }
-  Scope(const Scope &) = delete;
-  Scope &operator=(const Scope &) = delete;
-  Plan *plan;
-};
 } // namespace hyle_shared_mmvq
