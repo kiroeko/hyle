@@ -262,6 +262,51 @@ TEST(FileStream, ImmutableMappingUsesBoundedStageAndCancellationDoesNotPublish) 
   EXPECT_EQ(cancelled.result().read_bytes, 0u); EXPECT_FALSE(cancelled.next_ready().has_value());
 }
 
+TEST(FileStream, BorrowedMappingCanRetireWhileCopiedOutputsRemainExported) {
+  Runtime runtime;
+  const auto input = bytes(); auto file_source = runtime.file(input);
+  auto pool = LeasePool::create(m::system_resource(), 1024).value();
+  ReadLease exported;
+  std::size_t exported_offset = 0;
+  {
+    auto file = sched::spawn_task_on(runtime.scheduler, 0, m::system_allocator(),
+        open_async(m::system_allocator(), &runtime.io, runtime.paths.back(), 0)).join().value().value();
+    auto mapping = m::FileMapping::map(file.release()).value();
+    EXPECT_FALSE(file.valid());
+    auto source = StreamSource::borrow(mapping).value();
+    auto ranges = read_ranges(pool); auto groups = read_groups(ranges);
+    auto ticket = runtime.pipeline.read(source, groups).value();
+    const auto result = ticket.wait();
+    ASSERT_TRUE(result.status.ok()); ASSERT_TRUE(result.complete); ASSERT_TRUE(result.retirement_proven);
+    EXPECT_EQ(result.read_bytes, input.size()); EXPECT_EQ(result.copied_bytes, input.size());
+    auto first = ticket.next_ready().value();
+    exported_offset = (first.tag() - 10) * 128;
+    exported = first.output(0).value();
+    ASSERT_TRUE(mapping.reset().ok());
+    EXPECT_FALSE(mapping.valid());
+    expect_bytes(exported, std::span(input).subspan(exported_offset, 128));
+  }
+  // The completed request remains retained by its exported destination. It
+  // must not consult the old borrowed mapping during collection or admission.
+  ASSERT_TRUE(runtime.pipeline.collect().ok());
+  EXPECT_EQ(runtime.pipeline.report().live_requests, 1u);
+  EXPECT_EQ(runtime.pipeline.report().mapping_copy_bytes, input.size());
+  {
+    auto ranges = read_ranges(pool); auto groups = read_groups(ranges);
+    auto ticket = runtime.pipeline.read(StreamSource::file(file_source), groups).value();
+    ASSERT_TRUE(ticket.wait().status.ok());
+    for (unsigned i = 0; i < 2; ++i) {
+      auto ready = ticket.next_ready().value();
+      expect_bytes(ready.output(0).value(), std::span(input).subspan((ready.tag() - 10) * 128, 128));
+    }
+  }
+  ASSERT_TRUE(runtime.pipeline.collect().ok());
+  expect_bytes(exported, std::span(input).subspan(exported_offset, 128));
+  exported.reset(); ASSERT_TRUE(runtime.pipeline.collect().ok());
+  EXPECT_EQ(runtime.pipeline.report().live_requests, 0u);
+  EXPECT_EQ(pool.stats().allocated_bytes, 0u);
+}
+
 TEST(FileStream, ColdOomAndOwnedFileFailureAreRecoverableWithoutMovingInputs) {
   Runtime runtime; const auto input = bytes(); runtime.file(input);
   auto raw = p::open_file(runtime.paths.back().c_str(), p::kOpenRead).value();

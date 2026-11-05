@@ -430,10 +430,6 @@ hyle::sched::Task<hyle::Result<WeightSourceFile>> open_weight_source(
     co_return std::unexpected(hyle::Status::InvalidArgument("checkpoint is not a regular file"));
   co_return WeightSourceFile{std::move(file), information->size};
 }
-hyle::sched::Task<hyle::Status> close_weight_source(
-    mem::AllocatorRef, hyle::io::File *file) {
-  co_return co_await file->close();
-}
 ModelGeometry read_weight_geometry(const std::filesystem::path &manifest) {
   std::ifstream input(manifest); std::string signature, identity, line;
   if (!input) throw std::runtime_error("cannot open prepared input: " + manifest.string());
@@ -870,10 +866,15 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
     if (!open_task.valid()) throw std::runtime_error("cannot allocate weight open task");
     auto file = take(take(hyle::sched::spawn_task_on(loader_scheduler, 0,
         mem::system_allocator(), std::move(open_task)).join()));
-    auto source = take(c::StreamFile::borrow(file.file, file.capacity));
+    // Transfer the already-inspected handle, with no reads in flight. Only
+    // selected ranges are faulted/copied by the original bounded pipeline.
+    auto mapping = take(mem::FileMapping::map(file.file.release()));
+    if (mapping.size() != file.capacity)
+      throw std::runtime_error("checkpoint size changed before weight mapping");
+    auto source = take(c::StreamSource::borrow(mapping));
     // A failed host allocation or result check can unwind after read() has
-    // accepted IO. The outer pipeline guard runs after this local File dies;
-    // retire this source first, while its borrowed File address is still valid.
+    // accepted work. Retire it while the borrowed mapping is still valid;
+    // exported ready leases do not require the source after real retirement.
     hyle::util::ScopeFail retire_source{[&]() noexcept { pipeline.drain().IgnoreError(); }};
     std::vector<c::StreamReadRange> ranges;
     ranges.reserve(indices.size());
@@ -900,7 +901,7 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
     std::vector<c::StreamReadGroup> groups;
     groups.reserve(ranges.size());
     for (std::size_t i = 0; i < ranges.size(); ++i) groups.push_back({i, std::span(ranges).subspan(i, 1)});
-    auto ticket = take(pipeline.read(c::StreamSource::file(source), groups));
+    auto ticket = take(pipeline.read(source, groups));
     std::vector<bool> delivered(groups.size(), false);
     for (std::size_t n = 0; n < groups.size(); ++n) {
       auto group = take(ticket.wait_next_ready());
@@ -920,11 +921,8 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
       throw std::runtime_error("weight stream byte inventory or retirement differs");
     ticket = {};
     check(pipeline.collect());
-    source.reset();
-    auto close_task = close_weight_source(mem::system_allocator(), &file.file);
-    if (!close_task.valid()) throw std::runtime_error("cannot allocate weight close task");
-    check(take(hyle::sched::spawn_task_on(loader_scheduler, 0,
-        mem::system_allocator(), std::move(close_task)).join()));
+    source = {};
+    check(mapping.reset());
     loaded += source_bytes;
   }
   std::size_t fp8_groups = 0, import_peak_bytes = 0;
