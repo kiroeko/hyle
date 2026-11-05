@@ -63,6 +63,21 @@ Result<compute::Completion> submit_retained(RetainedResources<Scope> &retention,
 // no payload owner, Completion, transaction or release permission.
 template<class Scope> class ProgramCarrier final {
 public:
+  // Unpublished original Graph Invocation. It is not a new execution owner:
+  // it can only be installed into the carrier that constructed it.
+  class ColdCandidate final {
+  public:
+    ColdCandidate(ColdCandidate &&) noexcept = default;
+    ColdCandidate &operator=(ColdCandidate &&) noexcept = default;
+    ColdCandidate(const ColdCandidate &) = delete;
+    ColdCandidate &operator=(const ColdCandidate &) = delete;
+  private:
+    friend class ProgramCarrier;
+    ColdCandidate(ProgramCarrier *owner, graph::Invocation invocation) noexcept
+        : owner_(owner), invocation_(std::move(invocation)) {}
+    ProgramCarrier *owner_ = nullptr;
+    graph::Invocation invocation_;
+  };
   ProgramCarrier() = default;
   ProgramCarrier(const ProgramCarrier &) = delete;
   ProgramCarrier &operator=(const ProgramCarrier &) = delete;
@@ -92,21 +107,39 @@ public:
   // programs. A partial bind never publishes a half-initialized run. Original
   // Graph destruction returns any fixed writer consumed by a failed candidate.
   Status initialize(const ProgramInitialization &installation) {
+    HYLE_ASSIGN_OR_RETURN(auto candidate, create_cold_candidate(installation));
+    return install_cold_candidate(installation, std::move(candidate));
+  }
+
+  // Only creation may run on a cold worker. Binding, Slot association and
+  // publication remain with the original caller and admission contracts.
+  Result<ColdCandidate> create_cold_candidate(const ProgramInitialization &installation) {
     if (handed_off_ || !compiled_)
-      return Status::FailedPrecondition("program carrier has no prepared program");
+      return std::unexpected(Status::FailedPrecondition("program carrier has no prepared program"));
     if (pending() || run_.in_flight())
-      return Status::Unavailable("program carrier has not actually retired");
+      return std::unexpected(Status::Unavailable("program carrier has not actually retired"));
     if (closing_ || run_)
-      return Status::FailedPrecondition("program carrier needs its original retired reset before initialization");
+      return std::unexpected(Status::FailedPrecondition("program carrier needs its original retired reset before initialization"));
     HYLE_RETURN_IF_ERROR(installation.io.check_program(*compiled_));
     const auto &progress = installation.progress;
     if ((progress.scheduler == nullptr) != (progress.workers == nullptr))
-      return Status::InvalidArgument("program progress requires both original host runtimes");
+      return std::unexpected(Status::InvalidArgument("program progress requires both original host runtimes"));
     HYLE_ASSIGN_OR_RETURN(auto candidate, ([&]() -> Result<graph::Invocation> {
       if (installation.workspace)
         return compiled_->executable.create_invocation(installation.invocation, *installation.workspace);
       return compiled_->executable.create_invocation(installation.invocation);
     })());
+    return ColdCandidate(this, std::move(candidate));
+  }
+
+  Status install_cold_candidate(const ProgramInitialization &installation, ColdCandidate &&cold) {
+    if (cold.owner_ != this || !cold.invocation_ || handed_off_ || !compiled_ || closing_ || run_ || pending())
+      return Status::FailedPrecondition("cold candidate differs from its idle original carrier");
+    HYLE_RETURN_IF_ERROR(installation.io.check_program(*compiled_));
+    const auto &progress = installation.progress;
+    if ((progress.scheduler == nullptr) != (progress.workers == nullptr))
+      return Status::InvalidArgument("program progress requires both original host runtimes");
+    auto &candidate = cold.invocation_;
     // Selection is already fixed by prepare(). Compare the original complete
     // canonical identity, including derived dimensions, rather than asking a
     // model to restate a family ordinal and a subset of its shape bindings.
@@ -121,6 +154,7 @@ public:
       HYLE_RETURN_IF_ERROR(graph::slots::prepare(candidate, slots.graph, queues(), slots.sources, slots.options));
     }
     run_ = std::move(candidate);
+    cold.owner_ = nullptr;
     return Status::Ok();
   }
 

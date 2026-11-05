@@ -7,6 +7,7 @@
 #include <new>
 
 #include "hyle/compute/detail/capture_bindings.h"
+#include "hyle/compute/detail/cold_invocation.h"
 #include "collectives.h"
 #include "native_context.h"
 #include "operation_cold.h"
@@ -439,6 +440,13 @@ Status inspect_projected_input(const detail::ProviderPrepared &value,
   return Status::Ok();
 }
 const void *query_extension(void *, ProviderExtensionId id) noexcept {
+  static constexpr detail::ColdInvocationWorkspaceVTable cold_workspace{
+      .inspect = [](const detail::ProviderPrepared &prepared, bool *independent) noexcept -> Status {
+        if (!independent) return Status::InvalidArgument("CCCL cold workspace output is null");
+        *independent = prepared.vtable == &kPrepared && prepared.state != nullptr;
+        return Status::Ok();
+      }};
+  if (id == detail::kColdInvocationWorkspaceExtensionId) return &cold_workspace;
   static constexpr detail::CaptureBindingsVTable capture{
       .inspect = &inspect_capture_bindings};
   if (id == detail::kCaptureBindingsExtensionId) return &capture;

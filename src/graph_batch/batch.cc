@@ -1,6 +1,7 @@
 #include "hyle/graph/batch.h"
 #include "hyle/compute/detail/batch_provider.h"
 #include "hyle/graph/detail/region_access.h"
+#include "hyle/graph/detail/cold_invocation.h"
 #include "hyle/graph/detail/query_rows.h"
 #include "hyle/graph/detail/recording_access.h"
 #include "hyle/graph/region_provider.h"
@@ -203,6 +204,12 @@ const ProviderRegionPreparedVTable region_table{.destroy_prepared=&destroy_regio
     return cd::BatchGraphAccess::validate_prepared(s.token,contract(r));
   },
   .query_extension=[](void*,c::ProviderExtensionId id)noexcept->const void*{
+    static constexpr gd::RegionColdInvocationWorkspaceVTable cold_workspace{
+      .inspect=[](const ProviderRegionPrepared &prepared,bool *independent)noexcept->Status{
+        if(!independent)return Status::InvalidArgument("batch cold workspace output is null");
+        *independent=prepared.state!=nullptr;return Status::Ok();
+      }};
+    if(id==gd::kRegionColdInvocationWorkspaceExtensionId)return &cold_workspace;
     if(id==gd::kRegionCaptureBindingsExtensionId)return &capture_bindings;
     if(id==gd::kRegionReadyControlExtensionId)return &ready_controls;
     return id==gd::kRegionProjectedReadExtensionId?&projected_table:nullptr;

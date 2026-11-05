@@ -10,6 +10,7 @@
 
 #include "hyle/graph/region_provider.h"
 #include "hyle/graph/detail/region_access.h"
+#include "hyle/graph/detail/cold_invocation.h"
 #include "hyle/graph/detail/query_rows.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/sequence_ops.h"
@@ -2222,6 +2223,18 @@ const void *binding_release_extension(void *prepared, compute::ProviderExtension
         }
       },
       .borrows_tensor_views_only = true};
+  static constexpr detail::RegionColdInvocationWorkspaceVTable cold_workspace{
+      .inspect = [](const ProviderRegionPrepared &prepared, bool *independent) noexcept -> Status {
+        if (!independent) return Status::InvalidArgument("ggml region cold workspace output is null");
+        const auto *artifact = static_cast<const Artifact *>(prepared.state);
+        // This region's only native artifact comes from native::compile, whose
+        // original Invocation creates private scratch independently of the
+        // caller workspace; generated-output projection is not implemented.
+        *independent = artifact && artifact->native.vtable && artifact->native.state &&
+            artifact->native.vtable->create_invocation;
+        return Status::Ok();
+      }};
+  if (id == detail::kRegionColdInvocationWorkspaceExtensionId) return &cold_workspace;
   return id == detail::kRegionBindingReleaseExtensionId ? &release : nullptr;
 }
 const ProviderRegionPreparedVTable kPrepared{

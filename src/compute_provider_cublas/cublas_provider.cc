@@ -16,6 +16,7 @@
 #include <cublasLt.h>
 
 #include "hyle/compute/detail/capture_bindings.h"
+#include "hyle/compute/detail/cold_invocation.h"
 #include "hyle/compute/detail/packed_row_matmul.h"
 #include "checked_rows.h"
 #include "native_context.h"
@@ -1046,6 +1047,13 @@ Status inspect_capture_bindings(const detail::ProviderPrepared &value,
   return Status::Ok();
 }
 const void *query_extension(void *, ProviderExtensionId id) noexcept {
+  static constexpr detail::ColdInvocationWorkspaceVTable cold_workspace{
+      .inspect = [](const detail::ProviderPrepared &prepared, bool *independent) noexcept -> Status {
+        if (!independent) return Status::InvalidArgument("cuBLAS cold workspace output is null");
+        *independent = prepared.vtable == &kPreparedVTable && prepared.state != nullptr;
+        return Status::Ok();
+      }};
+  if (id == detail::kColdInvocationWorkspaceExtensionId) return &cold_workspace;
   static constexpr detail::PackedRowMatMulSourceVTable source{
       [](void *context) noexcept -> bool {
         const auto *value = static_cast<const CublasContext *>(context);

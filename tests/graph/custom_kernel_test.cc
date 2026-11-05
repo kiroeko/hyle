@@ -1,14 +1,19 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <atomic>
+#include <chrono>
 #include <cstring>
 #include <memory>
+#include <optional>
 #include <string>
+#include <thread>
 #include <utility>
 
 #include "../compute/custom_kernel_fixture.h"
 #include "../compute/workload_fixture.h"
 #include "hyle/graph/executable.h"
+#include "hyle/graph/workspace.h"
 #include "hyle/mem/quota_allocator.h"
 #include "hyle/mem/stats.h"
 
@@ -28,6 +33,86 @@ PolicyGraph policy_graph(std::size_t count = 1) {
     output = builder.add(Operation::custom(Affine{1}), output).value();
   EXPECT_TRUE(builder.publish(output).ok());
   return {std::move(builder).finish().value(), input, output};
+}
+
+struct ColdCreateGate final {
+  std::atomic<unsigned> entered{0};
+  std::atomic<bool> release{false};
+};
+
+struct WorkspaceBlockingKernel final {
+  ColdCreateGate *gate = nullptr;
+  struct Invocation final {};
+  Result<Invocation> create_invocation(hyle::mem::BufferView workspace,
+                                      hyle::mem::AllocatorRef) const noexcept {
+    if (workspace.size() < 64)
+      return std::unexpected(Status::InvalidArgument("missing test workspace"));
+    gate->entered.fetch_add(1, std::memory_order_release);
+    gate->entered.notify_all();
+    gate->release.wait(false, std::memory_order_acquire);
+    return Invocation{};
+  }
+  AliasSupport alias_support(std::size_t, std::size_t) const noexcept { return {}; }
+  KernelCommandResult enqueue(Invocation &, detail::QueueSequence &,
+      std::span<const ConstTensorView>, std::span<const TensorView>) const noexcept {
+    return KernelCommandResult::rejected(Status::Internal("test does not submit"));
+  }
+};
+
+struct WorkspaceBlockingFactory final {
+  Factory base;
+  ColdCreateGate *gate = nullptr;
+  Result<KernelProposal> propose(const KernelRequest &request,
+      std::span<ResourceRequirement> inputs, std::span<ResourceRequirement> outputs) const noexcept {
+    HYLE_ASSIGN_OR_RETURN(auto proposal, base.propose(request, inputs, outputs));
+    proposal.cost.workspace = WorkspaceRequirement{64, 16};
+    proposal.workspace_resource = {.required_properties = hyle::mem::MemoryProperty::kHostAccessible,
+                                   .minimum_alignment = 16,
+                                   .exact_resource = hyle::mem::system_resource()};
+    return proposal;
+  }
+  KernelPreparation prepare(const KernelPrepareRequest &, hyle::mem::AllocatorRef allocator) const noexcept {
+    auto kernel = make_custom_kernel(WorkspaceBlockingKernel{gate},
+        {.workspace = {64, 16}, .runtime = runtime, .persistent_bytes = 0,
+         .invocation_private_bytes = 0}, allocator);
+    return kernel ? KernelPreparation::prepared(std::move(*kernel))
+                  : KernelPreparation::error(std::move(kernel).error());
+  }
+};
+
+TEST(GraphColdInvocation, UnknownWorkspaceCreationRetainsExclusiveAdmission) {
+  const auto logical = policy_graph();
+  Probe probe;
+  ColdCreateGate gate;
+  auto provider_value = make_custom_provider(identity, cpu::kBackendId,
+      WorkspaceBlockingFactory{Factory{std::make_unique<Config>(probe)}, &gate}).value();
+  auto context = Context::create(cpu::device(), provider_value).value();
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  EXPECT_FALSE(compiled.executable.cold_invocation_workspace_independent());
+  const std::array routes{compiled.executable};
+  auto workspace = hyle::graph::InvocationWorkspace::create(routes).value();
+  std::array<std::optional<Result<hyle::graph::Invocation>>, 2> result;
+  std::atomic<bool> second_done{false};
+  std::jthread first([&] { result[0].emplace(compiled.executable.create_invocation({}, workspace)); });
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(3);
+  while (!gate.entered.load(std::memory_order_acquire) && std::chrono::steady_clock::now() < deadline)
+    std::this_thread::yield();
+  const bool entered = gate.entered.load(std::memory_order_acquire) != 0;
+  std::jthread second([&] {
+    result[1].emplace(compiled.executable.create_invocation({}, workspace));
+    second_done.store(true, std::memory_order_release);
+  });
+  const auto second_deadline = std::chrono::steady_clock::now() + std::chrono::seconds(3);
+  while (!second_done.load(std::memory_order_acquire) && std::chrono::steady_clock::now() < second_deadline)
+    std::this_thread::yield();
+  gate.release.store(true, std::memory_order_release);
+  gate.release.notify_all();
+  first.join(); second.join();
+  ASSERT_TRUE(entered);
+  ASSERT_TRUE(result[0].has_value()); ASSERT_TRUE(*result[0]);
+  ASSERT_TRUE(result[1].has_value()); ASSERT_FALSE(*result[1]);
+  EXPECT_TRUE(result[1]->error().IsResourceExhausted()) << result[1]->error().message();
+  EXPECT_EQ(gate.entered.load(), 1u);
 }
 
 TEST(GraphCustomKernel, WorkloadReachesColdOperationsAndOutlivesCallerFacts) {

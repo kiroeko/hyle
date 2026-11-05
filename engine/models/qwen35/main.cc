@@ -761,6 +761,7 @@ private:
     RowPacking packing;
   };
   std::unique_ptr<hyle::sched::BlockingPool> cold_family_pool_;
+  std::unique_ptr<hyle::sched::BlockingPool> cold_slot_pool_;
   std::vector<PendingColdFamily> cold_families_;
   std::vector<PendingColdUse> cold_uses_;
 public:
@@ -1526,6 +1527,8 @@ public:
     // cancelled startup must join them before any of those owners retire.
     if (cold_family_pool_) cold_family_pool_->shutdown();
     cold_family_pool_.reset();
+    if (cold_slot_pool_) cold_slot_pool_->shutdown();
+    cold_slot_pool_.reset();
     cold_families_.clear();
     cold_uses_.clear();
   }
@@ -1542,8 +1545,9 @@ public:
             "configured bounded prefill has no original packed implementation"));
       completed.push_back(std::move(*outcome.result));
     }
-    cold_family_pool_->shutdown();
-    cold_family_pool_.reset();
+    // Reuse these same cold workers for qualified Invocation construction;
+    // family preparation has joined and cannot enqueue into this pool again.
+    cold_slot_pool_ = std::move(cold_family_pool_);
     for (std::size_t i = 0; i < completed.size(); ++i) {
       auto &built = completed[i];
       auto &pending = cold_families_[i];
@@ -2796,6 +2800,78 @@ public:
     execution_workspace = take(g::InvocationWorkspace::create(routes, {.resource_budget = execution_budget}));
     std::cerr << "execution_shared_workspace routes=" << routes.size() << " bytes=" << execution_workspace.bytes()
               << " resource_budget=execution configured_rows=" << bounded_prefill_rows << '\n';
+    const bool parallel_creation = cold_slot_pool_ && shapes.size() > 1 &&
+        std::ranges::all_of(shapes, [&](const auto &shape) {
+          const auto selected = find_child(1, shape.tokens, shape.role, false,
+              shape.completion, shape.sampling_index, shape.packing);
+          return selected && selected->program.compiled.executable.cold_invocation_workspace_independent();
+        });
+    if (parallel_creation) {
+      struct SlotJob final {
+        Phase *phase;
+        std::size_t slot;
+        Phase::ExecutionSlots::Initialization options;
+      };
+      struct SlotOutcome final {
+        std::optional<Phase::ExecutionSlots::ColdCandidate> candidate;
+        std::exception_ptr error;
+      };
+      std::vector<SlotJob> jobs;
+      jobs.reserve(shapes.size() + execution_slot_count);
+      const auto add = [&](Phase &phase, std::size_t slot) {
+        if (!phase.slots[slot].carrier.initialized())
+          jobs.push_back({&phase, slot, slot_initialization(phase)});
+      };
+      // Model tables and IO preparation stay on this caller. Only the
+      // independently qualified original Graph creations run on cold workers.
+      for (const auto &shape : shapes) {
+        auto &phase = prepare_child(shape.tokens, false, 1, shape.role, shape.completion,
+            shape.sampling_index, false, shape.packing);
+        add(phase, slot_index);
+        const auto &sampling = sampling_configuration(shape.sampling_index).configuration;
+        if (shape.tokens == bounded_prefill_rows && shape.role == GraphRole::kText && !cache_plan.draft_cache &&
+            !sampling.enabled && sampling.modifiers.empty() && execution.kind() == BackendKind::kCuda &&
+            !execution.has_cpu_assist() && cache_plan.in_flight_batches >= 2 && !scheduler) {
+          auto &relay = prepare_child(shape.tokens, false, 1, shape.role, shape.completion,
+              shape.sampling_index, true, RowPacking::kPrefill);
+          for (std::size_t slot = 0; slot < relay.slots.size(); ++slot) add(relay, slot);
+        }
+      }
+      std::vector<SlotOutcome> outcomes(jobs.size());
+      std::vector<hyle::sched::JoinHandle<bool>> workers;
+      const auto count = (std::min)(std::size_t{4}, jobs.size());
+      workers.reserve(count);
+      try {
+        for (std::size_t worker = 0; worker < count; ++worker)
+          workers.push_back(hyle::sched::spawn_blocking(*cold_slot_pool_, mem::system_allocator(),
+              [&, worker, count]() -> bool {
+                for (std::size_t index = worker; index < jobs.size(); index += count) {
+                  auto &job = jobs[index];
+                  try {
+                    outcomes[index].candidate.emplace(take(job.phase->slots.create_cold_candidate(job.slot, job.options)));
+                  } catch (...) { outcomes[index].error = std::current_exception(); }
+                }
+                return true;
+              }));
+        for (auto &worker : workers) (void)take(worker.join());
+      } catch (...) {
+        cold_slot_pool_->shutdown();
+        cold_slot_pool_.reset();
+        throw;
+      }
+      cold_slot_pool_->shutdown();
+      cold_slot_pool_.reset();
+      for (auto &outcome : outcomes) if (outcome.error) std::rethrow_exception(outcome.error);
+      for (std::size_t i = 0; i < jobs.size(); ++i) {
+        if (!outcomes[i].candidate) throw std::logic_error("cold worker lost its original Invocation");
+        check(jobs[i].phase->slots.install_cold_candidate(jobs[i].slot, jobs[i].options,
+            std::move(*outcomes[i].candidate)));
+      }
+      std::cerr << "cold_invocation_creation workers=" << count << " original_slots=" << jobs.size() << '\n';
+      return;
+    }
+    if (cold_slot_pool_) cold_slot_pool_->shutdown();
+    cold_slot_pool_.reset();
     for (const auto &shape : shapes) {
       const std::array rows{shape.tokens};
       prepare_prefill_execution(rows, shape.completion, shape.sampling_index, 1, shape.role);

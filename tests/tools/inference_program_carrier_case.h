@@ -357,7 +357,14 @@ inline int run(q::BackendKind kind) {
   });
   require(outside.IsOutOfRange() && !invalid_initialization_calls && !a.initialized() && !b.initialized(),
       "out-of-range initialization evaluated a recipe or installed an original carrier");
-  q::check(programs.initialize_with(1, initialize_b));
+  const auto staged_options = initialize_b();
+  auto staged_b = q::take(programs.create_cold_candidate(1, staged_options));
+  require(!a.initialized() && !b.initialized(),
+      "unpublished cold Invocation installed a carrier prematurely");
+  const auto wrong_carrier = programs.install_cold_candidate(0, staged_options, std::move(staged_b));
+  require(wrong_carrier.IsFailedPrecondition() && !a.initialized() && !b.initialized(),
+      "cold Invocation crossed its original carrier identity");
+  q::check(programs.install_cold_candidate(1, staged_options, std::move(staged_b)));
   require(b.initialized() && !a.initialized() && initialization_calls == std::array<std::size_t, 2>{0, 1},
       "initializing B repaired failed A or evaluated another slot's installation recipe");
   q::check(programs.initialize_with(0, initialize_a));

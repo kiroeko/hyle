@@ -48,6 +48,7 @@ class ProgramSlots final {
     std::optional<ProgramInitialization::Slots> slots{};
     const graph::InvocationWorkspace *workspace = nullptr;
   };
+  using ColdCandidate = typename ProgramCarrier<Scope>::ColdCandidate;
 
   ProgramSlots() = default;
   ProgramSlots(const ProgramSlots&) = delete;
@@ -122,6 +123,28 @@ class ProgramSlots final {
         .progress = options.progress,
         .slots = options.slots,
         .workspace = options.workspace}));
+    slot.preparation_uses = 0;
+    return Status::Ok();
+  }
+
+  // Creation may be moved to a cold worker only when the selected Graph
+  // explicitly proves the shared workspace will not be touched. Installation
+  // always returns to this original slot and its own fixed IO/transactions.
+  Result<ColdCandidate> create_cold_candidate(std::size_t index, const Initialization &options) {
+    if (index >= size_)
+      return std::unexpected(Status::OutOfRange("program slot is outside its cold carrier plan"));
+    auto &slot = entries_[index];
+    if (slot.carrier.closing() || slot.carrier.initialized())
+      return std::unexpected(Status::FailedPrecondition("cold candidate requires its original uninitialized slot"));
+    return slot.carrier.create_cold_candidate({.io = slot.io, .invocation = options.invocation,
+        .progress = options.progress, .slots = options.slots, .workspace = options.workspace});
+  }
+
+  Status install_cold_candidate(std::size_t index, const Initialization &options, ColdCandidate &&candidate) {
+    if (index >= size_) return Status::OutOfRange("program slot is outside its cold carrier plan");
+    auto &slot = entries_[index];
+    HYLE_RETURN_IF_ERROR(slot.carrier.install_cold_candidate({.io = slot.io, .invocation = options.invocation,
+        .progress = options.progress, .slots = options.slots, .workspace = options.workspace}, std::move(candidate)));
     slot.preparation_uses = 0;
     return Status::Ok();
   }
