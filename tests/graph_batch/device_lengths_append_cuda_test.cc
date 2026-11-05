@@ -211,6 +211,23 @@ TEST(DeviceLengthsAppendCuda, SeparateQueryAndRawKvCapacitiesPublishOnlyExecuted
     }
   }
 }
+TEST(DeviceLengthsAppendCuda, NonPowerOfTwoWriterCapacitiesKeepIndependentLastQueryAndExactCowBytes){
+  for(const auto r:{1u,3u})for(const auto q:{3u,5u,7u}){
+    SCOPED_TRACE(::testing::Message()<<"R="<<r<<" appendQ="<<q<<" readerQ=1");
+    AppendCell cell(r,q,31,true,false,false,AppendCell::QueryMode::kLast);
+    for(std::uint32_t n=0;n<=q;++n){
+      std::vector<std::int32_t>queries(r),kv(r);
+      for(std::uint32_t request=0;request<r;++request){
+        queries[request]=std::int32_t((n+request)%(q+1));
+        kv[request]=std::int32_t(31+(n+request)%(q+1))+queries[request];
+      }
+      cell.run(queries,kv);
+    }
+    auto bad=std::vector<std::int32_t>(r,0),kv=std::vector<std::int32_t>(r,31);
+    bad[0]=std::int32_t(q+1);kv[0]+=bad[0];cell.run(bad,kv,true);
+    cell.run(std::vector<std::int32_t>(r,1),std::vector<std::int32_t>(r,32));
+  }
+}
 TEST(DeviceLengthsAppendCuda, AbandonedPendingPayloadRetiresBeforeWritersCanBeReacquired){
   for(const auto r:{1u,2u,4u})for(const auto q:{2u,4u,8u}){
     SCOPED_TRACE(::testing::Message()<<"R="<<r<<" Q="<<q);

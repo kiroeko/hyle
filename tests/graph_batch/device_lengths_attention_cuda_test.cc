@@ -162,6 +162,36 @@ TEST(DeviceLengthsCuda, MultipleRequestQueryAndContextCapacitiesUseOriginalCaptu
     auto empty=cell.prepare();cell.run(empty,std::vector<std::int32_t>(r,0),std::vector<std::int32_t>(r,0));
   }
 }
+TEST(DeviceLengthsCuda, NonPowerOfTwoPhysicalCapacitiesReplayActualLengthsInOneCapture){
+  for(const auto r:{1u,3u})for(const auto q:{3u,5u,7u})for(const auto ctx:{31u,257u}){
+    SCOPED_TRACE(::testing::Message()<<"R="<<r<<" Q="<<q<<" C="<<ctx);
+    Cell cell(r,q,ctx,true);auto invocation=cell.prepare();
+    std::array<hyle::mem::Buffer,2>controls{take(hyle::mem::Buffer::create(cell.device.ref(),r*4,256)),
+        take(hyle::mem::Buffer::create(cell.device.ref(),r*4,256))};
+    auto output=take(hyle::mem::Buffer::create(cell.device.ref(),take(cell.output_desc.required_bytes()),256));
+    check(invocation.bind(cell.ports[0],cell.query_desc,cell.query));
+    check(b::bind(invocation,cell.ports[1],cell.key_frame));check(b::bind(invocation,cell.ports[2],cell.value_frame));
+    for(std::size_t p=0;p<2;++p)check(invocation.bind(cell.ports[3+p],take(c::ConstTensorView::create(cell.index_desc,controls[p].view()))));
+    check(invocation.bind(cell.output,take(c::TensorView::create(cell.output_desc,output.view()))));
+    const std::array queues{g::QueueBinding{g::ExecutionLaneId{0},&cell.queue}};
+    check(invocation.prepare_replay(queues,{.mode=g::ReplayMode::kRequireCapture,.host_wait=g::HostWaitPolicy::kReject}));
+    const auto captures=invocation.replay_report()->recorded_capture_range_count;
+    for(std::uint32_t n=0;n<=q+1;++n){
+      std::vector<std::int32_t>active(r),lengths(r);
+      for(std::uint32_t request=0;request<r;++request){
+        active[request]=n==q+1?0:std::int32_t((n+request)%(q+1));
+        lengths[request]=n==q+1?0:std::int32_t(ctx-request);
+      }
+      check(controls[0].view().write(std::as_bytes(std::span(active))));
+      check(controls[1].view().write(std::as_bytes(std::span(lengths))));check(output.view().fill(std::byte{0x7f}));
+      auto done=take(invocation.submit(queues));check(done.wait());done={};
+      std::vector<std::uint16_t>actual(output.size()/2);check(output.view().read(std::as_writable_bytes(std::span(actual))));
+      cell.verify(actual,active,lengths);
+      EXPECT_EQ(invocation.replay_route(),g::ReplayRoute::kCaptured);
+      EXPECT_EQ(invocation.replay_report()->recorded_capture_range_count,captures);
+    }
+  }
+}
 TEST(DeviceLengthsCuda, EachRequestIsBoundedIndependentlyAndErrorsUseOriginalCompletion){
   Cell cell(2,4,1024);
   const std::array<std::pair<std::vector<std::int32_t>,std::vector<std::int32_t>>,8>bad{{
