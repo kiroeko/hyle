@@ -743,6 +743,7 @@ public:
 private:
   DraftPolicy draft_policy_;
   bool preparation_started_ = false;
+  bool greedy_chain_policy_ = false;
   struct ColdFamilyOutcome final {
     std::optional<FamilyBuildResult> result;
     std::exception_ptr error;
@@ -777,6 +778,24 @@ public:
     if ((resources_->draft_vocabulary || resources_->draft_head) && (!policy.max_drafts || policy.minimum_probability != 0))
       throw std::runtime_error("prepared draft projection requires active drafting with zero minimum probability");
     draft_policy_ = policy;
+    // Immutable endpoint/model facts and the selected draft policy are cold
+    // decisions. Per-request sampler and ownership checks remain at use.
+    greedy_chain_policy_ = policy.max_drafts >= 2 && policy.max_drafts <= 3 && policy.minimum_probability == 0 &&
+        device_sampling_capable_ && cache_plan.active_sequences == 1 && cache_plan.auxiliary_hidden_rows >= 2 &&
+        cache_plan.private_draft_stages >= policy.max_drafts && replay_policy != ReplayPolicy::kCommands;
+    if (greedy_chain_policy_) {
+      const auto found = projections.find(geometry.head_role());
+      const auto *stored = found == projections.end() ? nullptr : std::get_if<StoredProjection>(&found->second);
+      greedy_chain_policy_ = stored && stored->weight;
+      if (greedy_chain_policy_ && !stored->weight->description.is_plain()) {
+        const auto codec = c::gguf_quantized_type(stored->weight->description.storage_format());
+        greedy_chain_policy_ = codec && (*codec == c::GgufQuantizedType::kQ8_0 ||
+            *codec == c::GgufQuantizedType::kQ4K || *codec == c::GgufQuantizedType::kQ6K);
+      }
+    }
+  }
+  bool device_greedy_sampling(const SamplingConfiguration &sampling) const noexcept {
+    return device_sampling_capable_ && !sampling.enabled && sampling.modifiers.empty();
   }
   bool recursive_mtp() const noexcept { return max_drafts() && (max_drafts() > 1 || min_draft_probability() > 0); }
   bool device_mtp_successor_enabled() const noexcept { return device_mtp_successor_; }
@@ -870,6 +889,7 @@ public:
   const std::size_t target_kv_layers, draft_bank;
   const std::vector<std::size_t> attention_layer_ids;
   Backend execution;
+  const bool device_sampling_capable_;
   std::shared_ptr<ColdResources> resources_;
   const SamplingConfiguration &default_sampler; // Aggregate diagnostics describe this immutable default.
   // These original runtimes outlive every phase/slot and its native retirement.
@@ -985,6 +1005,8 @@ public:
            return indices;
          }()),
          execution(std::move(prepared_execution)),
+        device_sampling_capable_(DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), progress,
+            false, false}.eligible()),
          resources_(std::make_shared<ColdResources>(geometry, selected_capacity, precision,
               SamplingConfiguration{sampling_configuration.enabled, sampling_configuration.policy, sampling_configuration.modifiers}, additional_sampling,
               source.roles.cache_policy, std::move(source.cache_storage))),
@@ -1795,9 +1817,8 @@ public:
     // bound can select capture; writer-only repair retains its ready-leaf path.
     const auto replay_mode = !selected_sampler.modifiers.history.empty() && head ? g::ReplayMode::kCommands
         : select_replay_mode(replay_policy, head ? planned_uses : 1, selected_sampler.enabled);
-    const auto packet_rows = head && max_drafts() > 1 && max_drafts() <= 3 && !selected_sampler.enabled &&
-        selected_sampler.modifiers.empty() && min_draft_probability() == 0 &&
-        execution.kind() == BackendKind::kCuda && !execution.has_cpu_assist() && !scheduler &&
+    const auto packet_rows = head && max_drafts() > 1 && max_drafts() <= 3 && device_greedy_sampling(selected_sampler) &&
+        min_draft_probability() == 0 &&
         cache_plan.active_sequences == 1 && cache_plan.auxiliary_hidden_rows >= 2 &&
         replay_policy != ReplayPolicy::kCommands ? max_drafts() + 1 : 0;
     auto built = build_draft_program({rows, selected_index, head, replay_mode, min_draft_probability(), packet_rows, steps},
@@ -1853,19 +1874,7 @@ public:
   // recursive rows may extend that private tail. Published Session tails are
   // never borrowed, so aborting proposal/verification leaves the old head valid.
   bool greedy_draft_chain_enabled(const SamplingConfiguration &sampling) const noexcept {
-    const bool eligible = max_drafts() >= 2 && max_drafts() <= 3 && min_draft_probability() == 0 &&
-        !sampling.enabled && sampling.modifiers.empty() && execution.kind() == BackendKind::kCuda &&
-        !execution.has_cpu_assist() && !scheduler && cache_plan.active_sequences == 1 &&
-        cache_plan.auxiliary_hidden_rows >= 2 && cache_plan.private_draft_stages>=max_drafts() && replay_policy != ReplayPolicy::kCommands;
-    if (!eligible) return false;
-    const auto found = projections.find(geometry.head_role());
-    const auto *stored = found == projections.end() ? nullptr : std::get_if<StoredProjection>(&found->second);
-    if(!stored || !stored->weight)return false;
-    const auto&description=stored->weight->description;
-    if(description.is_plain())return true;
-    const auto codec=c::gguf_quantized_type(description.storage_format());
-    return codec && (*codec==c::GgufQuantizedType::kQ8_0 || *codec==c::GgufQuantizedType::kQ4K ||
-        *codec==c::GgufQuantizedType::kQ6K);
+    return greedy_chain_policy_ && device_greedy_sampling(sampling);
   }
 
   // Each finite stage has independent COW writers from the same real base.
@@ -2856,8 +2865,7 @@ public:
     if (!device_mtp_successor_ || active_step || successor_step || carrier_borrowed || snapshot_versions.live)
       return;
     const auto &sampling = sampling_configuration(sampling_index).configuration;
-    if (!DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
-            sampling.enabled, !sampling.modifiers.empty()}.eligible()) return;
+    if (!device_greedy_sampling(sampling)) return;
     const auto phase_for = [&](GraphRole role, bool imported) -> Phase * {
       const auto found = phases.find({1, max_drafts()+1, role, TextCompletion::kEmitNext, sampling_index, imported,
           RowPacking::kRectangular});
@@ -2896,8 +2904,7 @@ public:
       throw std::runtime_error("decode recording requires an empty session destination");
     const auto &sampling = sampling_configuration(sampling_index).configuration;
     if (capacity < 2 || cache_plan.in_flight_batches < 2 ||
-        !DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
-            sampling.enabled, !sampling.modifiers.empty()}.eligible()) return report;
+        !device_greedy_sampling(sampling)) return report;
     const auto role = mtp ? GraphRole::kMtpRound : GraphRole::kText;
     const bool device_pair = mtp && device_mtp_successor_;
     const auto relay_role = mtp ? (device_pair ? GraphRole::kMtpContinuation : GraphRole::kMtpCatchupRound) : GraphRole::kText;
@@ -8877,6 +8884,7 @@ int qwen35::run(int argc, char **argv) {
     const bool inspect_assets = mtp_policy != "off" && greedy_drafting &&
         (mtp_policy == "on" || automatic_contract);
     const bool automatic_head = draft_head == "auto", automatic_vocabulary = draft_vocabulary == "auto";
+    bool incomplete_installed_pair = false;
     if (draft_head == "original" || automatic_head) draft_head.clear();
     if (draft_vocabulary == "full" || automatic_vocabulary) draft_vocabulary.clear();
     if (inspect_assets) {
@@ -8886,8 +8894,7 @@ int qwen35::run(int argc, char **argv) {
         const auto installed = input / qwen35::kDefaultK3Vocabulary;
         const auto original = input / "mtp-draft-vocabulary.ids";
         if (exists(installed)) {
-          if (automatic_head && draft_head.empty())
-            throw std::runtime_error("prepared K3 vocabulary requires its complete source-bound Q4_K draft head");
+          incomplete_installed_pair = automatic_head && draft_head.empty();
           draft_vocabulary = installed;
         } else if (draft_head.empty() && exists(original)) draft_vocabulary = original;
       }
@@ -8929,8 +8936,11 @@ int qwen35::run(int argc, char **argv) {
         else if (!mtp_request.maximum_drafts && wanted > 1 && qualify(1)) device_drafts = 1;
       }
     }
-    if (request_mtp_source && (mtp_policy == "on" || device_drafts))
+    if (request_mtp_source && (mtp_policy == "on" || device_drafts)) {
+      if (incomplete_installed_pair)
+        throw std::runtime_error("prepared K3 vocabulary requires its complete source-bound Q4_K draft head");
       qwen35::prepare_draft_assets(weight_source, draft_vocabulary, draft_head);
+    }
     const auto selection = mtp::select(mtp_request, {source_mtp.nextn, device_drafts != 0,
         weight_source.draft_vocabulary.has_value(), source_mtp.target, device_drafts});
     mtp_enabled = selection.enabled;
