@@ -11,6 +11,7 @@
 #include <variant>
 
 #include "host_storage.h"
+#include "device_batch_capability.h"
 #include "hyle/compute/file_stream.h"
 #include "hyle/compute/storage_owner.h"
 #include "hyle/graph/batch.h"
@@ -558,6 +559,18 @@ public:
     if (auto *endpoint = std::get_if<CudaEndpoint>(&state_->primary)) return &endpoint->context;
 #endif
     return std::unexpected(Status::FailedPrecondition("selected primary has no Compute Context"));
+  }
+  Result<bool> supports_device_lengths_batch(compute::BatchCapacity capacity,
+      const compute::ResourceBudget &budget = {}) noexcept {
+    if (!state_) return std::unexpected(Status::FailedPrecondition("Backend is not initialized"));
+    const auto context = common_context();
+    if (!context) return false; // This initialized endpoint has no common batch provider.
+    const auto queue = common_queue();
+    if (!queue) return std::unexpected(queue.error());
+    compute::BatchProgramOptions options;
+    options.resource = device();
+    options.resource_budget = budget;
+    return detail::supports_captured_device_batch(**context, **queue, capacity, options);
   }
   Result<compute::Queue *> common_queue() noexcept {
     if (!state_) return std::unexpected(Status::FailedPrecondition("Backend is not initialized"));

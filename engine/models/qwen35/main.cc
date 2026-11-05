@@ -767,41 +767,39 @@ public:
   bool device_mtp_continuous_enabled() const noexcept {
     return device_mtp_successor_ && cache_plan.in_flight_batches >= 3;
   }
+  bool device_mtp_model_contract() const noexcept {
+    constexpr auto exact_token_domain = std::int64_t{1} << std::numeric_limits<float>::digits;
+    return cache_plan.draft_cache && cache_plan.active_sequences == 1 &&
+        cache_plan.resident_sessions == 1 && cache_plan.in_flight_batches >= 2 &&
+        !execution.has_cpu_assist() && !scheduler && bounded_device_mtp_policy() &&
+        target_kv_layers && vocabulary <= exact_token_domain;
+  }
+  bool supports_device_mtp() {
+    if (!device_mtp_model_contract()) return false;
+    if (max_drafts() > 1 && !greedy_draft_chain_enabled(sampling_configuration(0).configuration)) return false;
+    if (!backend_device_mtp_support_) {
+      const auto capacity = attention_capacity();
+      bool supported = take(execution.supports_device_lengths_batch(capacity, allocation_budget));
+      for (const auto &storage : resources_->attention_storage) {
+        if (!supported) break;
+        auto target = capacity;
+        target.key_storage = storage[0]; target.value_storage = storage[1];
+        supported = take(execution.supports_device_lengths_batch(target, allocation_budget));
+      }
+      backend_device_mtp_support_ = supported;
+    }
+    return *backend_device_mtp_support_;
+  }
   void configure_device_mtp_successor(bool enabled) {
     if (preparation_started_)
       throw std::runtime_error("configure device MTP continuation before model preparation");
-    if (enabled && (!cache_plan.draft_cache || cache_plan.active_sequences != 1 ||
-        cache_plan.resident_sessions != 1 || cache_plan.in_flight_batches < 2 ||
-        execution.kind() != BackendKind::kCuda || execution.has_cpu_assist() || scheduler ||
-        !bounded_device_mtp_policy()))
+    if (enabled && !supports_device_mtp())
       throw std::runtime_error("device MTP continuation requires bounded CUDA greedy R1 N1");
     device_mtp_successor_ = enabled;
   }
 
   void prepare_default_device_mtp_successor(bool requested) {
-    if (!requested || preparation_started_ || !cache_plan.draft_cache ||
-        cache_plan.active_sequences != 1 || cache_plan.resident_sessions != 1 ||
-        cache_plan.in_flight_batches < 2 || execution.kind() != BackendKind::kCuda ||
-        execution.has_cpu_assist() || scheduler || !bounded_device_mtp_policy() ||
-        !target_kv_layers || vocabulary > (std::int64_t{1} << 24) || !resources_->attention_storage.empty() ||
-        (precision.cache_type() != Type::kFloat16 && precision.cache_type() != Type::kBFloat16) ||
-        geometry.key_depth != geometry.value_depth ||
-        (geometry.key_depth != 64 && geometry.key_depth != 128 && geometry.key_depth != 256)) return;
-    if(max_drafts()>1 && !greedy_draft_chain_enabled(sampling_configuration(0).configuration))return;
-    auto context = execution.common_context();
-    if (!context) return;
-    auto append = c::detail::BackendExtensionAccess::query(**context,
-        c::detail::kDeviceLengthsPagedAppendExtensionId);
-    if (!append) {
-      if (!append.error().IsUnimplemented()) check(append.error());
-      return;
-    }
-    for (std::size_t index = 0; index < (*context)->provider_count(); ++index) {
-      auto attention = c::detail::ProviderExtensionAccess::query(**context, index,
-          c::detail::kBatchDeviceLengthsExtensionId);
-      if (attention) { configure_device_mtp_successor(true); return; }
-      if (!attention.error().IsUnimplemented()) check(attention.error());
-    }
+    if (requested && !preparation_started_ && supports_device_mtp()) device_mtp_successor_ = true;
   }
 
   bool prepare_draft_projection(const SamplingConfiguration &sampling) {
@@ -874,6 +872,7 @@ public:
   std::size_t known_cache_backing_bytes = 0;
   bool state_storage_prepared = false;
   bool device_mtp_successor_ = false;
+  std::optional<bool> backend_device_mtp_support_;
   const cache::Plan cache_plan;
   // The original plain storage/layout root also serves draft attention.
   // Calibrated target storage views share this metadata domain, not its dtype.
@@ -882,6 +881,17 @@ public:
   const c::BatchSchema &target_attention_schema(std::size_t layer) const {
     if (layer >= target_kv_layers) throw std::runtime_error("invalid target attention cache slot");
     return attention_schemas.empty() ? attention_schema : attention_schemas.at(layer);
+  }
+  c::BatchCapacity attention_capacity() const {
+    const auto storage = take(c::CacheStorage::plain(precision.cache_type()));
+    return {.storage = c::BatchStorage::kPaged, .query_type = precision.cache_type(),
+        .output_type = precision.cache_type(), .key_storage = storage, .value_storage = storage,
+        .max_requests = cache_plan.max_requests, .max_query_rows = cache_plan.max_query_rows,
+        .max_kv_rows = cache_plan.max_kv_rows, .max_pages = cache_plan.max_pages,
+        .max_page_refs = cache_plan.max_page_refs, .query_heads = static_cast<std::uint32_t>(geometry.query_heads),
+        .kv_heads = static_cast<std::uint32_t>(geometry.kv_heads),
+        .qk_head_dim = static_cast<std::uint32_t>(geometry.key_depth),
+        .value_head_dim = static_cast<std::uint32_t>(geometry.value_depth), .page_size = cache::Plan::page_rows};
   }
   cache::VersionCount &snapshot_versions;
   std::size_t &carrier_borrowed;
@@ -1327,14 +1337,7 @@ public:
     if (attention_schema.valid()) {
       return;
     }
-    const auto storage = take(c::CacheStorage::plain(precision.cache_type()));
-    auto prepared_schema = take(c::BatchSchema::create({
-        .storage = c::BatchStorage::kPaged, .query_type = precision.cache_type(),
-        .output_type = precision.cache_type(), .key_storage = storage, .value_storage = storage,
-        .max_requests = cache_plan.max_requests, .max_query_rows = cache_plan.max_query_rows,
-        .max_kv_rows = cache_plan.max_kv_rows, .max_pages = cache_plan.max_pages,
-        .max_page_refs = cache_plan.max_page_refs, .query_heads = static_cast<std::uint32_t>(geometry.query_heads), .kv_heads = static_cast<std::uint32_t>(geometry.kv_heads),
-        .qk_head_dim = static_cast<std::uint32_t>(geometry.key_depth), .value_head_dim = static_cast<std::uint32_t>(geometry.value_depth), .page_size = cache::Plan::page_rows},
+    auto prepared_schema = take(c::BatchSchema::create(attention_capacity(),
         {.resource_budget = cache_budget}));
     std::vector<c::BatchSchema> prepared_schemas;
     prepared_schemas.reserve(resources_->attention_storage.size());
