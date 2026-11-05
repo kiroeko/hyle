@@ -82,9 +82,9 @@ Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-di
 ### 连续接力
 
 普通 CUDA greedy 自然生成自动使用连续接力，无需额外参数；已有限检查单活动请求及双活动请求。
-CUDA greedy 的K1 MTP也已接入单活动请求的自然接力；其它MTP宽度和采样配置仍走原单步执行。
-无草稿概率门槛的CUDA greedy单会话K2／K3也只按配置容量和已到达首轮准备；后续长度与配额不参与冷规划。
-这扩展了可测的冷准备范围，设备接力仍限于K1；当前默认保留同窗比较中更快的K1。
+无草稿概率门槛的CUDA greedy单会话K1—K3已接入自然接力。固定K2／K3把起草、验证及draft KV修复放入同一张轮图，
+中间token和下一轮接受位置留在设备。冷期只按配置容量和已到达首轮准备，后续长度与配额不参与规划。
+默认仍为K1；K3的收益取决于草稿词表和额外资源，32K原头与独立全词表Q4_K头的结果分别见性能表。
 当前仅为最多输出至少 10 个 token 的自然生成准备两层候选；prefill 保留原路径，后继只使用已有实际捕获。
 完整同形、同序的活动请求组可持续接力；异形分组保留原同步执行。输出额度不足时先完成已接纳工作，再暂停等待额度。
 其它后端、上述范围外的MTP、混合执行、随机采样、scheduler 或显式 commands 自动使用原单步行为；显式缓存预算容不下额外候选时也自动使用单步。
@@ -110,7 +110,8 @@ CUDA greedy 的K1 MTP也已接入单活动请求的自然接力；其它MTP宽�
 读取输入目录的 `mtp-draft-vocabulary.ids`。文件不存在或采样政策不适用时使用完整词表；
 存在但source identity不匹配时拒绝加载。`--mtp-draft-vocabulary full` 强制完整词表作对照，
 也可用 `--mtp-draft-vocabulary FILE` 显式选择另一份准备文件。
-当前支持原BF16／F16／F32稠密head，可用于K1与递归多草稿；完整target head与embedding继续保留。
+支持原BF16／F16／F32稠密head；CUDA还支持GGUF Q8_0／Q4_K／Q6_K编码行的子集，保持原量化代码与scale字节。
+可用于K1与多草稿；完整target head与embedding继续保留。编码行副本目前只验证CUDA，其它后端明确拒绝。
 显式文件遇到随机、modifier、非零阈值或不支持的权重会报错。
 
 准备阶段可用本地模型生成独立校准语料，默认选32768行：
@@ -138,6 +139,25 @@ CUDA单活动请求、通过冷期设备能力检查的BF16 head可直接读取�
 JSON的 `original_*_weight_bytes` 仍只统计原角色，额外payload见 `draft_vocabulary_weight_bytes`／`draft_vocabulary_map_bytes`；
 `draft_vocabulary_indexed_rows` 表示是否直接读取原矩阵。额外权重不属于 `--cache-bytes`，payload字节数也不是物理显存峰。
 子集会改变提案和接受率，需按实际输入检查速度；有限校准语料不代表通用语言覆盖。
+
+### 独立全词表草稿头
+
+BF16目标也可使用离线准备的全词表Q4_K草稿头。目标验证头与embedding继续使用原权重。
+准备工具只转换这一张矩阵，不下载模型或ggml库；输入是已有的BF16／F16／F32 HF准备目录，hidden须为256的倍数。
+本次验证使用llama.cpp `2cbca389f515df455412dafa07e2b1359cc72a6d` 的本地 `ggml-base.dll`，Q4_K参考量化、无importance matrix：
+
+```powershell
+python scripts/prepare-mtp-draft-head.py --inputs <准备目录> --ggml-library <本地ggml-base.dll> --quantizer-version llama.cpp@2cbca389f515df455412dafa07e2b1359cc72a6d --output .scratch/full-draft-head
+hyle --inputs <准备目录> --backend cuda --mtp on --mtp-max-drafts 3 --mtp-draft-head .scratch/full-draft-head/mtp-draft-head.tsv --schedule <自然请求文件>
+```
+
+输出目录必须是新目录。工具完整写入并验证编码行后才发布 `mtp-draft-head.tsv`；运行时校验元数据、原source identity、形状及payload范围，
+通过原权重流加载额外投影。2B全词表头的payload为286064640字节（272.8125MiB）；这不是完整进程的显存峰值。
+
+默认 `--mtp-draft-head auto` 在输入目录发现此文件时优先使用它，随后才考虑自动32K映射。
+`--mtp-draft-head original` 禁用独立头；同时加 `--mtp-draft-vocabulary full` 才是原始全词表头对照。
+显式独立头不能与显式子集映射同时选择；目前要求启用草稿、无modifier的greedy和零概率阈值。
+更换草稿头会改变提案、接受率与轮次划分，速度与数值边界见[性能表](../developer/performance/decode.md#固定-k3本轮复测)。
 
 ### CPU 与 GPU 分置
 

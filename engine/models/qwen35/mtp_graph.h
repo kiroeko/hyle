@@ -55,9 +55,10 @@ struct PrefillSelection final {
 struct PagedInputs final {
   compute::BatchSchema schema;
   Value key, value, metadata;
-  // Optional bounded per-request device lengths. The model's position
-  // selection supplies these same original values to Append and attention.
+  // Append's bounded per-request lengths. KV is shared with attention;
+  // an optional final query reads that prefix with its own one-row control.
   Value query_lengths{},kv_lengths{};
+  Value last_query_lengths{};
 };
 struct Head final {
   Value hidden_rows;      // Actual final-normalized BF16 [rows,H].
@@ -321,40 +322,60 @@ Head full_head(R &r, const Projection &projection, const KeyValue &kv,
       throw std::runtime_error("MTP last-row selection requires one I32 packed row index per request");
   }
   const auto nodes = append_kv(r, paged.schema, kv, paged.query_lengths, paged.kv_lengths);
-  auto projected = r.reshape(detail::linear_absolute(r, projection.normalized,
-      "mtp.layers.0.self_attn.q_proj.weight"), {batch, shape.sequence_rows, fixed(r.geometry.query_heads), fixed(r.geometry.key_depth + r.geometry.value_depth)});
+  const bool last_query_only=bool(paged.last_query_lengths);
+  auto query_rows=projection.rows,query_sequence_rows=shape.sequence_rows;
+  auto query_input=projection.normalized,residual=projection.fused,query_positions=positions;
+  if(last_query_only){
+    if(shape.requests!=1 || !paged.query_lengths || !paged.kv_lengths || (!last_indices && !last_row.is_fixed()))
+      throw std::runtime_error("MTP final query requires its checked R1 row and original bounded KV writer");
+    const auto select=[&](Value input){
+      std::vector<Dimension>dims(r.spec(input).dimensions().begin(),r.spec(input).dimensions().end());dims[0]=fixed(1);
+      return last_indices?r.one(compute::Gather{.axis=0,.bounds=compute::IndexBoundsPolicy::kChecked},
+          {input,last_indices},r.dense_spec(r.spec(input).data_type(),dims)):r.copy(r.slice(input,0,last_row,fixed(1)));
+    };
+    query_input=select(query_input);residual=select(residual);query_positions=select(positions);
+    query_rows=query_sequence_rows=fixed(1);
+  }
+  const auto reader_lengths=last_query_only?paged.last_query_lengths:paged.query_lengths;
+  auto projected = r.reshape(detail::linear_absolute(r, query_input,
+      "mtp.layers.0.self_attn.q_proj.weight"), {batch, query_sequence_rows, fixed(r.geometry.query_heads), fixed(r.geometry.key_depth + r.geometry.value_depth)});
   auto query = detail::norm_absolute(r, r.slice(projected, 3, fixed(0), fixed(r.geometry.key_depth)),
       "mtp.layers.0.self_attn.q_norm.weight");
   const auto gate = r.reshape(r.copy(r.slice(projected, 3, fixed(r.geometry.key_depth), fixed(r.geometry.value_depth))),
-      {projection.rows, fixed(r.geometry.attention_width())});
+      {query_rows, fixed(r.geometry.attention_width())});
   const compute::RoPE rope{.rotary_dimensions = static_cast<std::size_t>(r.geometry.rotary), .sequence_axis = 1,
                           .layout = compute::RopeLayout::kHalfSplit};
-  query = r.same(rope, {query, positions, frequencies}, query);
+  query = r.same(rope, {query, query_positions, frequencies}, query);
   graph::NodeId attention_node;
-  if(paged.query_lengths && !shape.packed_rows.is_fixed())
+  if(reader_lengths && !query_rows.is_fixed())
     throw std::runtime_error("device MTP attention requires a cold physical query capacity");
-  const auto attention_operation = paged.query_lengths
+  const auto attention_operation = reader_lengths
       ? compute::Operation::custom(detail::require(graph::batch::device_lengths_paged_attention(
-          paged.schema,static_cast<std::uint32_t>(shape.packed_rows.fixed_value()),
+          paged.schema,static_cast<std::uint32_t>(query_rows.fixed_value()),
           {.scale = 1.F / std::sqrt(static_cast<float>(r.geometry.key_depth)), .causal = true})))
       : compute::Operation::custom(compute::PagedAttention{
           .capacity = paged.schema.capacity(), .scale = 1.F / std::sqrt(static_cast<float>(r.geometry.key_depth)), .causal = true});
-  const auto packed_query=r.reshape(query, {projection.rows, fixed(r.geometry.query_heads), fixed(r.geometry.key_depth)});
-  const auto result_spec=r.dense_spec(r.activation_type(), {projection.rows, fixed(r.geometry.query_heads), fixed(r.geometry.value_depth)});
-  const auto attention = paged.query_lengths?r.one(attention_operation,
-      {packed_query,paged.key,paged.value,paged.query_lengths,paged.kv_lengths},result_spec,&attention_node):
+  const auto packed_query=r.reshape(query, {query_rows, fixed(r.geometry.query_heads), fixed(r.geometry.key_depth)});
+  const auto result_spec=r.dense_spec(r.activation_type(), {query_rows, fixed(r.geometry.query_heads), fixed(r.geometry.value_depth)});
+  const auto attention = reader_lengths?r.one(attention_operation,
+      {packed_query,paged.key,paged.value,reader_lengths,paged.kv_lengths},result_spec,&attention_node):
       r.one(attention_operation,{packed_query,paged.key,paged.value,paged.metadata},result_spec,&attention_node);
   detail::require(r.builder.depends_on(attention_node, nodes.key));
   detail::require(r.builder.depends_on(attention_node, nodes.value));
   auto gated = r.binary(compute::BinaryKind::kMultiply,
-      r.reshape(attention, {projection.rows, fixed(r.geometry.attention_width())}),
+      r.reshape(attention, {query_rows, fixed(r.geometry.attention_width())}),
       r.unary(compute::UnaryKind::kSigmoid, gate));
-  auto residual = projection.fused;
-  if (selected_row_only) {
-    if (shape.requests != 1 || last_indices || !last_row.is_fixed())
-      throw std::runtime_error("MTP last-only block requires one fixed original row");
-    gated = r.copy(r.slice(gated, 0, last_row, fixed(1)));
-    residual = r.copy(r.slice(residual, 0, last_row, fixed(1)));
+  if (selected_row_only && !last_query_only) {
+    if (shape.requests != 1 || (!last_indices && !last_row.is_fixed()))
+      throw std::runtime_error("MTP last-only block requires one checked original row");
+    const auto select=[&](Value values){return last_indices?
+        r.one(compute::Gather{.axis=0,.bounds=compute::IndexBoundsPolicy::kChecked},
+            {values,last_indices},r.dense_spec(r.activation_type(),{fixed(1),fixed(r.geometry.hidden)})):
+        r.copy(r.slice(values,0,last_row,fixed(1)));};
+    if(last_indices)gated=r.one(compute::Gather{.axis=0,.bounds=compute::IndexBoundsPolicy::kChecked},
+        {gated,last_indices},r.dense_spec(r.activation_type(),{fixed(1),fixed(r.geometry.attention_width())}));
+    else gated=r.copy(r.slice(gated,0,last_row,fixed(1)));
+    residual=select(residual);
   }
   auto x = r.binary(compute::BinaryKind::kAdd, residual,
       detail::linear_absolute(r, gated, "mtp.layers.0.self_attn.o_proj.weight"));
@@ -362,7 +383,7 @@ Head full_head(R &r, const Projection &projection, const KeyValue &kv,
   const auto hidden_rows = detail::norm_absolute(r, x, "mtp.norm.weight");
   // Compact members name their actual final packed row; the caller derives
   // these indices from the same layout that bounds the original KV appends.
-  const auto selected = selected_row_only ? r.copy(hidden_rows) : last_indices
+  const auto selected = selected_row_only || last_query_only ? r.copy(hidden_rows) : last_indices
       ? r.one(compute::Gather{.axis = 0, .bounds = compute::IndexBoundsPolicy::kChecked},
           {hidden_rows, last_indices}, r.dense_spec(r.activation_type(), {batch, fixed(r.geometry.hidden)}))
       : shape.requests == 1

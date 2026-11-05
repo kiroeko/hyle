@@ -10,11 +10,13 @@
 #include <chrono>
 #include <cmath>
 #include <iostream>
+#include <iomanip>
 #include <limits>
 #include <memory>
 #include <optional>
 #include <ranges>
 #include <set>
+#include <sstream>
 #include <string_view>
 #include <type_traits>
 
@@ -445,16 +447,73 @@ prepared::Roles read_weight_roles(const std::filesystem::path &manifest, bool in
   return prepared::read_roles(manifest, include_mtp);
 }
 namespace {
+PreparedDraftHeadSource read_draft_head_source(const std::filesystem::path &path,
+    const prepared::Roles &roles) {
+  std::error_code error;
+  const auto metadata_bytes=std::filesystem::file_size(path,error);
+  if(error || metadata_bytes>prepared::maximum_manifest_path_bytes+1024 ||
+      !std::filesystem::is_regular_file(path))
+    throw std::runtime_error("draft head requires a bounded regular metadata file");
+  std::ifstream input(path,std::ios::binary);
+  if(!input)throw std::runtime_error("cannot open draft head metadata");
+  const auto line=[&](std::size_t limit){
+    std::string value;
+    if(!prepared::read_manifest_line(input,value,limit))throw std::runtime_error("incomplete draft head metadata");
+    if(value.ends_with('\r'))value.pop_back();
+    return value;
+  };
+  constexpr std::string_view signature="HYLE_QWEN_DRAFT_HEAD_Q4_K_V1";
+  if(line(64)!=signature)throw std::runtime_error("draft head requires the prepared full Q4_K format");
+  const auto base_identity=line(65);prepared::validate_identity(base_identity);
+  if(base_identity!=roles.identity)throw std::runtime_error("draft head source identity differs from selected weights");
+  const auto payload_identity=line(65);prepared::validate_identity(payload_identity);
+  const auto quantizer=line(160);
+  constexpr std::string_view prefix="llama.cpp@",suffix=":Q4_K:reference:no-imatrix";
+  if(quantizer.size()!=prefix.size()+40+suffix.size() || !quantizer.starts_with(prefix) || !quantizer.ends_with(suffix) ||
+      !std::ranges::all_of(std::string_view(quantizer).substr(prefix.size(),40),[](char c){
+        return (c>='0' && c<='9') || (c>='a' && c<='f');}))
+    throw std::runtime_error("draft head requires its fixed Q4_K reference quantizer identity");
+  std::int64_t rows=0,columns=0;
+  std::istringstream shape(line(64));
+  if(!(shape>>rows>>columns) || !(shape>>std::ws).eof() || rows!=roles.geometry.vocabulary || columns!=roles.geometry.hidden)
+    throw std::runtime_error("draft head shape differs from selected model geometry");
+  const auto head=std::ranges::find(roles.selected,roles.geometry.head_role(),&prepared::Role::name);
+  if(head==roles.selected.end() || head->shape!=std::vector<std::int64_t>{rows,columns} || head->projection_group_size ||
+      (head->projection_codec!=prepared::ProjectionCodec::kDense && head->projection_codec!=prepared::ProjectionCodec::kUnspecified) ||
+      (head->dtype!="BF16" && head->dtype!="F16" && head->dtype!="F32"))
+    throw std::runtime_error("separate Q4_K draft head requires the original complete dense target head");
+  const auto description=take(c::gguf_weight_description(c::GgufQuantizedType::kQ4K,Type::kFloat32,columns,rows));
+  const auto expected=take(description.required_bytes());
+  std::string payload_path;std::uint64_t payload_bytes=0;
+  std::istringstream payload(line(prepared::maximum_manifest_path_bytes+64));
+  if(!(payload>>std::quoted(payload_path)>>payload_bytes) || !(payload>>std::ws).eof() || payload_path.empty() ||
+      std::ranges::any_of(payload_path,[](unsigned char c){return c<32;}) || payload_bytes!=expected)
+    throw std::runtime_error("draft head payload differs from its complete encoded extent");
+  input>>std::ws;
+  if(!input.eof())throw std::runtime_error("draft head metadata has trailing fields");
+  auto file=std::filesystem::path(payload_path);
+  if(!file.is_absolute())file=path.parent_path()/file;
+  file=std::filesystem::absolute(file).lexically_normal();
+  if(!std::filesystem::is_regular_file(file) || std::filesystem::file_size(file,error)!=expected || error)
+    throw std::runtime_error("draft head payload is missing or has a different byte extent");
+  auto role=*head;role.dtype="Q4_K";role.source=std::move(file);role.offset=0;role.bytes=expected;
+  role.meaning=prepared::ParameterMeaning::kLinearWeight;role.physical_name="draft-head-q4_k";role.original_offset=0;
+  role.projection_codec=prepared::ProjectionCodec::kUnspecified;role.projection_group_size=0;
+  const auto identity_text=std::string(signature)+'\n'+base_identity+'\n'+payload_identity+'\n'+quantizer;
+  return {std::filesystem::absolute(path).lexically_normal(),std::move(role),
+      hyle::inference::artifact::sha256(std::as_bytes(std::span(identity_text.data(),identity_text.size())))};
+}
 std::optional<hyle::inference::DraftVocabulary> read_draft_vocabulary(
     const std::filesystem::path &path, const prepared::Roles &roles) {
   if (path.empty()) return {};
   const auto head = std::ranges::find(roles.selected, roles.geometry.head_role(), &prepared::Role::name);
   if (head == roles.selected.end() ||
-      (head->dtype != "BF16" && head->dtype != "F16" && head->dtype != "F32") ||
+      (head->dtype != "BF16" && head->dtype != "F16" && head->dtype != "F32" &&
+       head->dtype != "Q8_0" && head->dtype != "Q4_K" && head->dtype != "Q6_K") ||
       (head->projection_codec != prepared::ProjectionCodec::kDense &&
        head->projection_codec != prepared::ProjectionCodec::kUnspecified) || head->projection_group_size ||
       head->shape != std::vector<std::int64_t>{roles.geometry.vocabulary, roles.geometry.hidden})
-    throw std::runtime_error("draft vocabulary requires the original dense BF16/F16/F32 full-vocabulary head");
+    throw std::runtime_error("draft vocabulary requires the original dense or row-blocked GGUF full-vocabulary head");
   std::error_code error;
   const auto exists = std::filesystem::exists(path, error);
   if (error) throw std::runtime_error("cannot inspect draft vocabulary: " + path.string() + ": " + error.message());
@@ -511,10 +570,12 @@ std::optional<hyle::inference::DraftVocabulary> read_draft_vocabulary(
 }
 } // namespace
 PreparedWeightSource prepare_weight_source(const std::filesystem::path &manifest, bool include_mtp,
-    const std::filesystem::path &draft_vocabulary) {
+    const std::filesystem::path &draft_vocabulary,const std::filesystem::path &draft_head) {
   const auto start = Clock::now();
   if (!include_mtp && !draft_vocabulary.empty())
     throw std::runtime_error("draft vocabulary requires MTP weights");
+  if(!draft_head.empty() && (!include_mtp || !draft_vocabulary.empty()))
+    throw std::runtime_error("separate full draft head requires MTP without a subset mapping");
   auto roles = read_weight_roles(manifest, include_mtp);
   auto storage = read_cache_calibration(roles);
   const auto plain = take(c::CacheStorage::plain(PrecisionProfile::from_roles(roles).cache_type()));
@@ -532,24 +593,55 @@ PreparedWeightSource prepare_weight_source(const std::filesystem::path &manifest
   std::string vocabulary_identity;
   if (vocabulary)
     vocabulary_identity = hyle::inference::artifact::sha256(std::as_bytes(vocabulary->ids()));
+  auto head=draft_head.empty()?std::optional<PreparedDraftHeadSource>{}:read_draft_head_source(draft_head,roles);
   return {std::move(roles), std::move(storage), rows,
       std::chrono::duration<double>(Clock::now() - start).count(),
-      std::move(vocabulary), std::move(vocabulary_identity)};
+      std::move(vocabulary), std::move(vocabulary_identity),std::move(head)};
 }
-LoadedWeight select_dense_weight_rows(Backend &backend, const LoadedWeight &weight,
+LoadedWeight select_stored_weight_rows(Backend &backend, const LoadedWeight &weight,
     std::span<const std::int32_t> ids, const c::ResourceBudget &budget) {
   const auto &description = weight.tensor.description;
   if (!description.valid() || description.rank() != 2 || description.dimensions()[0] <= 0 ||
       description.dimensions()[1] <= 0 || ids.empty() || ids.size() > INT32_MAX)
-    check(hyle::Status::InvalidArgument("dense weight row selection requires a positive matrix and bounded nonempty I32 rows"));
-  if (!description.is_plain() || !description.is_dense() ||
-      (description.data_type() != Type::kBFloat16 && description.data_type() != Type::kFloat16 &&
-       description.data_type() != Type::kFloat32) ||
-      (weight.codec != prepared::ProjectionCodec::kDense && weight.codec != prepared::ProjectionCodec::kUnspecified) ||
+    check(hyle::Status::InvalidArgument("stored weight row selection requires a positive matrix and bounded nonempty I32 rows"));
+  if ((weight.codec != prepared::ProjectionCodec::kDense && weight.codec != prepared::ProjectionCodec::kUnspecified) ||
       weight.group_size)
-    check(hyle::Status::Unimplemented("weight row selection supports only original dense BF16/F16/F32 storage"));
+    check(hyle::Status::Unimplemented("weight row selection requires independent stored rows without grouped source operands"));
+  const auto rows=description.dimensions()[0],columns=description.dimensions()[1];
+  const auto selected_rows=static_cast<std::int64_t>(ids.size());
+  c::TensorDesc input_description=description,output_description;
+  LoadedWeight result;
+  if (description.is_plain()) {
+    if (!description.is_dense() || (description.data_type()!=Type::kBFloat16 &&
+        description.data_type()!=Type::kFloat16 && description.data_type()!=Type::kFloat32))
+      check(hyle::Status::Unimplemented("weight row selection requires dense BF16/F16/F32 storage"));
+    output_description=result.tensor.description=dense(description.data_type(),{selected_rows,columns});
+    result.codec=prepared::ProjectionCodec::kDense;
+  } else {
+    if(backend.kind()!=hyle::inference::BackendKind::kCuda)
+      check(hyle::Status::Unimplemented("encoded row selection requires the qualified bit-preserving CUDA Gather"));
+    const auto codec=c::gguf_quantized_type(description.storage_format());
+    if (!codec || (*codec!=c::GgufQuantizedType::kQ8_0 && *codec!=c::GgufQuantizedType::kQ4K &&
+        *codec!=c::GgufQuantizedType::kQ6K) || description!=
+        take(take(c::gguf_weight_description(*codec,Type::kFloat32,columns,rows)).transposed()))
+      check(hyle::Status::Unimplemented("weight row selection requires original canonical Q8_0/Q4_K/Q6_K rows"));
+    const auto bytes=take(description.required_bytes());
+    if(bytes%static_cast<std::size_t>(rows) || (bytes/static_cast<std::size_t>(rows))%sizeof(std::uint16_t))
+      check(hyle::Status::Unimplemented("stored GGUF row gather requires complete two-byte words"));
+    const auto words=static_cast<std::int64_t>(bytes/static_cast<std::size_t>(rows)/sizeof(std::uint16_t));
+    // Existing same-type Gather preserves every F16 storage bit, including
+    // NaNs, without arithmetic. Use it as a physical two-byte row copy. The
+    // original initialized lease covers this entire range; restore the exact
+    // encoded descriptor before projection, without decoding codes or scales.
+    input_description=dense(Type::kFloat16,{rows,words});
+    output_description=dense(Type::kFloat16,{selected_rows,words});
+    result.tensor.description=take(take(c::gguf_weight_description(*codec,Type::kFloat32,columns,selected_rows)).transposed());
+    result.codec=weight.codec;
+    if(take(output_description.required_bytes())!=take(result.tensor.description.required_bytes()))
+      check(hyle::Status::Internal("selected encoded rows differ from their physical word extent"));
+  }
   if (!weight.tensor.ready.valid())
-    check(hyle::Status::FailedPrecondition("dense weight row selection requires its original loaded ready lease"));
+    check(hyle::Status::FailedPrecondition("stored weight row selection requires its original loaded ready lease"));
   const auto original = take(weight.tensor.ready.tensor(description));
   const auto resource = original.storage().resource();
   hyle::inference::GraphBindings bindings(backend.storage_domains());
@@ -558,12 +650,8 @@ LoadedWeight select_dense_weight_rows(Backend &backend, const LoadedWeight &weig
   Tensor indices(resource, index_description, true, budget);
   check(backend.write(indices.storage(), std::as_bytes(ids)));
   indices.freeze(backend);
-  LoadedWeight result;
-  result.tensor.description = dense(description.data_type(),
-      {static_cast<std::int64_t>(ids.size()), description.dimensions()[1]});
-  result.codec = prepared::ProjectionCodec::kDense;
   auto builder = take(g::GraphBuilder::create());
-  const auto input = take(builder.input(description));
+  const auto input = take(builder.input(input_description));
   const auto index = take(builder.input(index_description));
   const auto output = take(builder.add(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked}, input, index));
   check(builder.publish(output));
@@ -573,8 +661,8 @@ LoadedWeight select_dense_weight_rows(Backend &backend, const LoadedWeight &weig
   const auto compiled = take(backend.compile(graph, {}, bindings.options(
       {.resource_budget = budget, .value_placements = placement})));
   const auto facts = take(hyle::inference::prepare_output(compiled, output));
-  if (facts.description != result.tensor.description || facts.storage != storage)
-    check(hyle::Status::Internal("selected weight output differs from its original dense row contract"));
+  if (facts.description != output_description || facts.storage != storage)
+    check(hyle::Status::Internal("selected weight output differs from its original stored row contract"));
   if (facts.caller_owned()) {
     const auto bytes = take(result.tensor.description.required_bytes());
     result.tensor.pool = take(c::LeasePool::create(resource, bytes, {.max_blocks = 1, .resource_budget = budget}));
@@ -589,7 +677,7 @@ LoadedWeight select_dense_weight_rows(Backend &backend, const LoadedWeight &weig
     run.drain().IgnoreError();
   }};
   check(run.prepare_resources({.resource_budget = budget}));
-  check(run.bind(input, description, weight.tensor.ready));
+  check(run.bind(input, input_description, weight.tensor.ready));
   check(run.bind(index, index_description, indices.ready));
   if (facts.caller_owned()) check(run.bind(output, facts.description, std::move(result.tensor.writer)));
   const auto queues = take(hyle::inference::prepare_queue_bindings(backend.queue_bindings(), compiled.report));
@@ -945,6 +1033,21 @@ WeightLoadReport load_weight_bank(const std::filesystem::path &manifest,
   return load_selected_weight_roles(roles, backend, weights, weight_pools, placement);
 }
 
+PreparedDraftHead load_prepared_draft_head(Backend &execution,const prepared::Roles &original,
+    const PreparedDraftHeadSource &source,const c::ResourceBudget &budget) {
+  const auto checked=read_draft_head_source(source.specification,original);
+  if(checked.identity!=source.identity || checked.role.source!=source.role.source ||
+      checked.role.bytes!=source.role.bytes || checked.role.shape!=source.role.shape)
+    throw std::runtime_error("draft head metadata changed before weight loading");
+  auto selected=original;selected.selected={checked.role};selected.bytes=checked.role.bytes;selected.identity=checked.identity;
+  std::map<std::string,LoadedWeight>bank;std::vector<c::LeasePool>pools;
+  const auto report=load_selected_weight_roles(selected,execution,bank,pools,FfnPlacement(selected,0),budget);
+  if(bank.size()!=1 || pools.size()!=1 || report.bytes!=checked.role.bytes)
+    throw std::runtime_error("prepared draft head stream lost its original single-role byte inventory");
+  auto weight=std::move(bank.begin()->second);weight.tensor.pool=std::move(pools.front());
+  return {std::move(weight),{},checked.identity,nullptr};
+}
+
 PreparedDraftHead prepare_draft_head(Backend &execution, LoadedWeight &original,
     const hyle::inference::DraftVocabulary &mapping, std::size_t max_requests,
     const c::ResourceBudget &allocation_budget) {
@@ -972,7 +1075,7 @@ PreparedDraftHead prepare_draft_head(Backend &execution, LoadedWeight &original,
     } else if (candidate->capture_compatible()) indexed = &original.tensor;
   }
   LoadedWeight selected;
-  if (!indexed) selected = select_dense_weight_rows(execution, original, mapping.ids(), allocation_budget);
+  if (!indexed) selected = select_stored_weight_rows(execution, original, mapping.ids(), allocation_budget);
   Tensor ids(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(mapping.size())}),
       true, allocation_budget);
   check(execution.write(ids.storage(), std::as_bytes(mapping.ids()))); ids.freeze(execution);

@@ -44,8 +44,8 @@ struct TargetGraphInputs final {
   std::size_t cpu_ffn_layers;
   g::NodeId preceding_append;
   bool has_preceding_append;
-  // Optional R1 predecessor choice. The original Slot Gather retains both
-  // candidate prefixes; an ordinary checked Gather selects the real state.
+  // Optional R1 predecessor index. The original Slot Gather retains the
+  // producer's prefixes; an ordinary checked Gather selects the real state.
   V predecessor_prefix_index{};
   V query_lengths{},kv_lengths{};
 };

@@ -55,52 +55,13 @@ AuxiliaryProgramResult<DraftProgram> build_draft_chain(
   auto &literal = assembly.literal_at(assembly.primary(), dense(Type::kFloat32, {geometry.rotary / 2}));
   literal.write<float>(frequency);
   const auto frequencies = r.constant(literal);
-  auto ids = program.tokens;
-  mtp::Projection prefix;
-  mtp::KeyValue prefix_kv;
-  std::vector<V> packet{r.copy(r.slice(program.tokens, 0, f(rows - 1), f(1)))};
-  for (std::size_t i = 0; i < request.steps; ++i) {
-    const auto width = static_cast<std::int64_t>(request.rows + i);
-    const auto local_rows = i ? std::int64_t{1} : rows;
-    const auto local_positions = r.copy(r.slice(program.positions, 0, i ? f(width - 1) : f(0), f(local_rows)));
-    auto projection = mtp::input_projection(r, ids, shifted);
-    auto kv = mtp::project_kv(r, projection, local_positions, frequencies,
-        mtp::Geometry{1, f(local_rows), f(local_rows)});
-    if (i) {
-      projection = {f(width),
-          r.one(c::Concat{.axis = 0}, {prefix.fused, projection.fused},
-              r.dense_spec(r.activation_type(), {f(width), f(geometry.hidden)})),
-          r.one(c::Concat{.axis = 0}, {prefix.normalized, projection.normalized},
-              r.dense_spec(r.activation_type(), {f(width), f(geometry.hidden)}))};
-      kv = {f(width),
-          r.one(c::Concat{.axis = 0}, {prefix_kv.key_rows, kv.key_rows},
-              r.dense_spec(r.activation_type(), {f(width), f(geometry.kv_heads), f(geometry.key_depth)})),
-          r.one(c::Concat{.axis = 0}, {prefix_kv.value_rows, kv.value_rows},
-              r.dense_spec(r.activation_type(), {f(width), f(geometry.kv_heads), f(geometry.value_depth)}))};
-    }
-    DraftProgram::ChainStage stage;
-    stage.rows = static_cast<std::size_t>(width);
-    stage.key = r.input(take(c::batch_cache_description(facts.attention_schema, c::BatchCacheRole::kKey)));
-    stage.value = r.input(take(c::batch_cache_description(facts.attention_schema, c::BatchCacheRole::kValue)));
-    stage.metadata = r.input(take(facts.attention_schema.metadata_description()));
-    const auto positions = r.copy(r.slice(program.positions, 0, f(0), f(width)));
-    const auto result = mtp::full_head(r, projection, kv, positions, frequencies,
-        {facts.attention_schema, stage.key, stage.value, stage.metadata}, f(width - 1),
-        mtp::Geometry{1, f(width), f(width)},
-        [&](Recipe &recipe, V selected) { return draft_scores(recipe, selected, facts.projection); }, {}, i != 0);
-    stage.append = result.append_nodes; stage.attention = result.attention_node;
-    program.chain.push_back(stage);
-    program.hidden = result.selected_hidden;
-    program.id = original_draft_id(r, r.op(c::Operation(c::TopK{.count = 1}), {result.logits},
-        {r.dense_spec(Type::kFloat32, {f(1), f(1)}), r.dense_spec(Type::kInt32, {f(1), f(1)})})[1], facts.projection);
-    ids = r.reshape(program.id, {f(1)}); shifted = program.hidden;
-    packet.push_back(ids); prefix = projection; prefix_kv = kv;
-  }
+  auto chain=emit_draft_chain(r,program.tokens,shifted,program.positions,frequencies,
+      request.rows,request.steps,facts.attention_schema,facts.projection);
+  program.chain=std::move(chain.stages);program.hidden=chain.hidden;
   r.op(c::Operation::custom(g::slots::Store{hidden_schema}),
       {program.hidden, port.destination_ids}, {}, &port.store);
-  check(r.builder.depends_on(port.store, program.chain.back().append.value));
-  program.verification_packet = r.copy(r.concat(packet, 0,
-      r.dense_spec(Type::kInt32, {f(static_cast<std::int64_t>(packet.size()))})));
+  check(r.builder.depends_on(port.store, program.chain.back().append_value));
+  program.verification_packet=chain.packet;
   r.publish(program.verification_packet);
   program.graph = take(std::move(r.builder).finish());
   const std::array binding{g::ShapeBinding{r.last_row, total - 1}};

@@ -595,6 +595,74 @@ void device_k1_choice_rejects_inconsistent_observed_boundaries_without_mutation(
   }
 }
 
+void prepare_kstep(q::GenerationLedger&ledger,std::size_t steps,bool lag){
+  auto&record=ledger.next();prepare_k1(record,2*(steps+1)+2);record.draft_limit=steps;
+  record.role=lag?q::GraphRole::kMtpCatchupRound:q::GraphRole::kMtpRound;
+  record.before.frontier=record.before.length-(lag?1u:0u);record.before.lag=lag?1u:0u;
+  record.before.catchup_token=lag?13:-1;
+}
+q::GenerationBoundary commit_kstep(q::GenerationLedger&ledger,std::size_t consumed){
+  auto&record=ledger.next();const auto width=record.draft_limit+1;
+  constexpr std::array<std::int32_t,4>inputs{17,19,23,29};
+  record.accepted=consumed;record.verified_rows=width;record.consumed_drafts=consumed-1;
+  record.agreed=record.accepted_draft=consumed>1;record.draft=inputs[1];
+  record.target_first=consumed>1?inputs[1]:31;record.target_second=consumed>2?inputs[2]:consumed==2?31:37;
+  record.draft_rows=2*(record.draft_limit+record.before.lag);
+  record.accepted_inputs.resize(consumed);record.verification_inputs.resize(width);record.emitted.resize(consumed);
+  for(std::size_t i=0;i<width;++i)record.verification_inputs[i]=inputs[i];
+  for(std::size_t i=0;i<consumed;++i){record.accepted_inputs[i]=inputs[i];record.emitted[i]=i+1<consumed?inputs[i+1]:31;}
+  record.emitted_count=consumed;record.after=record.before;record.after.length+=consumed;
+  record.after.frontier+=record.before.lag+(consumed==1?1:consumed-1);
+  record.after.lag=consumed>1?1u:0u;record.after.catchup_token=consumed>1?inputs[consumed-1]:-1;record.after.next_id=31;
+  record.committed=true;++ledger.committed_count;return record.after;
+}
+void device_kstep_binds_every_actual_prefix_and_renews_only_original_credit(){
+  for(const auto steps:{2u,3u})for(const bool lag:{false,true})for(std::size_t consumed=1;consumed<=steps+1;++consumed){
+    q::GenerationLedger ledger(4,steps+1);prepare_kstep(ledger,steps,lag);const auto width=std::size_t(steps+1);
+    auto&next=ledger.reserve_successor(0,width+2,2);const auto storage=ledger.records.data();const auto before=capacities(next);
+    const auto after=commit_kstep(ledger,consumed);
+    rejects([&]{(void)ledger.bind_successor(after,1,2,31,false);});
+    require(next.input_deferred && ledger.successor_ordinal()==1,"nondevice route admitted a selected multi-step prefix");
+    require(&ledger.bind_successor(after,1,2,31,true)==&next && !next.input_deferred && next.before==after &&
+        next.pending_input==31 && next.draft_limit==steps && next.role==(consumed==1?q::GraphRole::kMtpRound:q::GraphRole::kMtpCatchupRound),
+        "device multi-step prefix lost its canonical lag, frontier or pending input");
+    rejects([&]{(void)ledger.renew_pending_quota(after,1,2,2*width,width-1,width);});
+    (void)ledger.renew_pending_quota(after,1,2,2*width,width,width);
+    require(next.quota==2*width && ledger.records.data()==storage && capacities(next)==before,
+        "multi-step renewal changed storage or used a different credit width");
+    (void)ledger.reserve_successor(1,width,2);ledger.discard_successor();
+    require(!ledger.successor_ordinal() && ledger.committed_count==1 && ledger.next().before==after,
+        "multi-step discard changed an authoritative or bound prefix");
+  }
+}
+void device_kstep_rejects_inconsistent_complete_boundaries_without_mutation(){
+  for(const auto steps:{2u,3u})for(const bool lag:{false,true})for(std::size_t consumed=1;consumed<=steps+1;++consumed){
+    const auto invalid=[&](auto mutate){
+      q::GenerationLedger ledger(3,steps+1);prepare_kstep(ledger,steps,lag);auto&next=ledger.reserve_successor(0,steps+3,2);
+      auto after=commit_kstep(ledger,consumed);mutate(ledger,after);
+      const auto previous=ledger.records[0],reserved=next;const auto before=capacities(next);
+      rejects([&]{(void)ledger.bind_successor(after,1,2,after.next_id,true);});
+      require(ledger.records[0].same_result(previous) && next.same_result(reserved) && capacities(next)==before &&
+          next.input_deferred && ledger.successor_ordinal()==1 && ledger.committed_count==1,
+          "rejected multi-step boundary mutated an original record or reservation");
+    };
+    invalid([](auto&ledger,auto&after){++after.frontier;ledger.records[0].after=after;});
+    invalid([](auto&ledger,auto&after){++after.length;ledger.records[0].after=after;});
+    invalid([](auto&ledger,auto&after){after.lag^=1;ledger.records[0].after=after;});
+    invalid([](auto&ledger,auto&after){after.catchup_token=5;ledger.records[0].after=after;});
+    invalid([](auto&ledger,auto&after){++after.sampling.draw;ledger.records[0].after=after;});
+    invalid([](auto&ledger,auto&){--ledger.records[0].draft_rows;});
+    invalid([](auto&ledger,auto&){ledger.records[0].agreed=!ledger.records[0].agreed;});
+    invalid([](auto&ledger,auto&){ledger.records[0].accepted_inputs[0]=5;});
+    invalid([](auto&ledger,auto&){ledger.records[0].emitted[0]=5;});
+    invalid([](auto&ledger,auto&){--ledger.records[0].verified_rows;});
+    invalid([](auto&ledger,auto&){ledger.records[0].stopped=true;});
+    invalid([](auto&ledger,auto&){--ledger.records[1].draft_limit;});
+    invalid([](auto&ledger,auto&){ledger.records[1].quota=1;});
+    if(consumed<steps+1)invalid([&](auto&ledger,auto&after){ledger.records[0].verification_inputs[consumed]=after.next_id;});
+  }
+}
+
 } // namespace
 
 int main() {
@@ -610,7 +678,9 @@ int main() {
     k1_binding_requires_the_whole_greedy_state_boundary();
     device_k1_choice_binds_both_actual_prefixes_and_roles();
     device_k1_choice_rejects_inconsistent_observed_boundaries_without_mutation();
-    std::puts("{\"status\":\"PASS\",\"groups\":11,\"device_execution\":false}");
+    device_kstep_binds_every_actual_prefix_and_renews_only_original_credit();
+    device_kstep_rejects_inconsistent_complete_boundaries_without_mutation();
+    std::puts("{\"status\":\"PASS\",\"groups\":13,\"device_execution\":false}");
     return 0;
   } catch (const std::exception &error) {
     std::fprintf(stderr, "%s\n", error.what()); return 1;

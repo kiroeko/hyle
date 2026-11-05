@@ -33,10 +33,10 @@ def check(args):
             stderr = (folder / "stderr.log").read_text(encoding="utf-8")
             assert raw["cold_planning"] == "configured_capacity" and raw["future_shape_hints"] == 0
             assert raw["mtp_max_drafts"] == width and raw["live_committed_versions"] == 0
-            assert raw["sampling"] == "greedy" and raw["draft_program_graph_calls"] > 0
+            assert raw["sampling"] == "greedy" and raw["draft_program_graph_calls"]+raw["draft_chain_graph_calls"] > 0
             assert raw["device_verification_hidden_rows"] == 2
             if quota >= width + 2:
-                assert raw["device_verification_handoffs"] > 0, "last draft did not feed the prepared verifier on device"
+                assert raw["device_verification_handoffs"] > 0 or raw["draft_chain_graph_calls"]>0, "drafts did not reach a device verifier or complete round"
             detail = raw["sessions"][0]["result"]
             assert len(detail["turns"]) == 2 and len(detail["generated_ids"]) == 1+quota
             assert detail["turns"][0]["output_end"] == 1
@@ -58,6 +58,26 @@ def check(args):
             inventories.append(sorted(inventory))
             print(f"PASS K{width} {name}: first quota1, late decode{quota-1}, no future hints/admission, exact work/RNG, retired",flush=True)
         assert inventories[0] == inventories[1], "future prompt/quotas changed the actual cold family inventory"
+        folder=args.output/f"K{width}-continuous";folder.mkdir()
+        (folder/"prompt.ids").write_text("1 2 3\n",encoding="utf-8")
+        schedule=folder/"schedule.txt";schedule.write_text("prompt prompt.ids\ngenerate 17\n",encoding="utf-8")
+        command=[str(args.hyle),"--inputs",str(args.inputs),"--backend","cuda","--capacity","32","--mtp","on",
+                 "--mtp-max-drafts",str(width),"--schedule",str(schedule)]
+        (folder/"command.txt").write_text(subprocess.list2cmdline(command)+"\n",encoding="utf-8")
+        with (folder/"stdout.log").open("wb") as stdout,(folder/"stderr.log").open("wb") as stderr:
+            result=subprocess.run(command,stdout=stdout,stderr=stderr,timeout=180)
+        assert result.returncode==0,folder
+        raw=json.loads((folder/"stdout.log").read_text());ledger=raw["sessions"][0]["ledger"]
+        generations=[row for row in ledger if row["generation"]]
+        assert len(raw["sessions"][0]["result"]["generated_ids"])==17
+        assert sum(row["accepted"] for row in generations)==16
+        assert raw["future_shape_hints"]==raw["live_committed_versions"]==0
+        assert all(row["sampling_draw_before"]==row["sampling_draw_after"]==0 for row in ledger)
+        assert raw["actual_target_rows"]==raw["prefill_target_rows"]+sum(row["verified_rows"] for row in generations)
+        assert raw["actual_draft_rows"]==raw["prefill_draft_rows"]+sum(row["draft_rows"] for row in generations)
+        assert raw["overlap_successor_submissions"]>0 and raw["overlap_successor_publications"]>0
+        assert raw["actual_graph_calls"]/raw["decode_graph_calls"]<=2
+        print(f"PASS K{width} C32 continuous: 17 outputs, real successor submission/publication, exact work/RNG and retirement",flush=True)
     print("PASS K2/K3 cold inventories ignore future lengths and quotas; recursive programs exist before late decode",flush=True)
 
 

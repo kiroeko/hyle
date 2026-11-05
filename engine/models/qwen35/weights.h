@@ -135,6 +135,11 @@ struct WeightLoadReport final {
   std::size_t nf4_groups = 0, nf4_original_bytes = 0, nf4_input_copy_bytes = 0, nf4_known_group_peak_bytes = 0;
 };
 enum class WeightSelection { kText, kTextAndMtp };
+struct PreparedDraftHeadSource final {
+  std::filesystem::path specification;
+  prepared::Role role;
+  std::string identity;
+};
 struct PreparedWeightSource {
   prepared::Roles roles;
   std::vector<CacheStoragePair> cache_storage;
@@ -142,6 +147,7 @@ struct PreparedWeightSource {
   double metadata_prepare_seconds = 0;
   std::optional<hyle::inference::DraftVocabulary> draft_vocabulary;
   std::string draft_vocabulary_identity;
+  std::optional<PreparedDraftHeadSource> draft_head;
 };
 namespace projection_detail {
 std::array<std::int64_t, 2> logical_shape(const ProjectionBinding &binding);
@@ -150,11 +156,17 @@ std::array<std::int64_t, 2> logical_shape(const ProjectionBinding &binding);
 ModelGeometry read_weight_geometry(const std::filesystem::path &manifest);
 prepared::Roles read_weight_roles(const std::filesystem::path &manifest, bool include_mtp);
 PreparedWeightSource prepare_weight_source(const std::filesystem::path &manifest, bool include_mtp,
-    const std::filesystem::path &draft_vocabulary = {});
-// One cold checked Gather over an already loaded plain dense weight. Preserve
-// the caller's row order, including repeats; mapping policy belongs to the
-// independently validated DraftVocabulary. The original Backend owns execution.
-LoadedWeight select_dense_weight_rows(hyle::inference::Backend &backend,
+    const std::filesystem::path &draft_vocabulary = {},
+    const std::filesystem::path &draft_head = {});
+// Load one offline-prepared proposal projection through the ordinary weight
+// stream. Its source identity/geometry bind the original complete target model.
+PreparedDraftHead load_prepared_draft_head(hyle::inference::Backend &backend,
+    const prepared::Roles &original, const PreparedDraftHeadSource &source,
+    const hyle::compute::ResourceBudget &budget = {});
+// One cold checked Gather over a loaded dense or canonical GGUF row bank.
+// Encoded rows keep every physical code/scale byte without dequantization.
+// Preserve caller order and repeats; the original Backend owns execution.
+LoadedWeight select_stored_weight_rows(hyle::inference::Backend &backend,
     const LoadedWeight &weight, std::span<const std::int32_t> ids,
     const hyle::compute::ResourceBudget &budget = {});
 hyle::mem::MemoryResourceRef weight_resource(const hyle::inference::Backend &backend, bool host);

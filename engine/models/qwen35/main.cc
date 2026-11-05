@@ -586,6 +586,7 @@ struct ColdResources final {
   ProjectionBindings projections;
   std::optional<inference::DraftVocabulary> draft_vocabulary;
   std::optional<PreparedDraftHead> draft_head;
+  double draft_head_prepare_seconds=0;
   WeightMeanings weight_meanings;
   std::string source_identity;
   std::vector<StateSchema> state_schema;
@@ -751,12 +752,16 @@ public:
     if (policy.max_drafts >= capacity ||
         (cache_plan.draft_cache && policy.max_drafts >= cache_plan.candidate_boundaries))
       throw std::runtime_error("MTP maximum drafts exceed the original context or candidate capacity");
-    if (resources_->draft_vocabulary && (!policy.max_drafts || policy.minimum_probability != 0))
-      throw std::runtime_error("draft vocabulary requires active drafting with zero minimum probability");
+    if ((resources_->draft_vocabulary || resources_->draft_head) && (!policy.max_drafts || policy.minimum_probability != 0))
+      throw std::runtime_error("prepared draft projection requires active drafting with zero minimum probability");
     draft_policy_ = policy;
   }
   bool recursive_mtp() const noexcept { return max_drafts() && (max_drafts() > 1 || min_draft_probability() > 0); }
   bool device_mtp_successor_enabled() const noexcept { return device_mtp_successor_; }
+  bool bounded_device_mtp_policy()const noexcept{
+    return max_drafts()>=1 && max_drafts()<=3 && min_draft_probability()==0 &&
+        (max_drafts()==1 || (cache_plan.in_flight_batches>=3 && cache_plan.private_draft_stages>=max_drafts()));
+  }
   bool device_mtp_continuous_enabled() const noexcept {
     return device_mtp_successor_ && cache_plan.in_flight_batches >= 3;
   }
@@ -766,8 +771,8 @@ public:
     if (enabled && (!cache_plan.draft_cache || cache_plan.active_sequences != 1 ||
         cache_plan.resident_sessions != 1 || cache_plan.in_flight_batches < 2 ||
         execution.kind() != BackendKind::kCuda || execution.has_cpu_assist() || scheduler ||
-        max_drafts() != 1 || recursive_mtp()))
-      throw std::runtime_error("device MTP continuation requires CUDA greedy K1 R1 N1");
+        !bounded_device_mtp_policy()))
+      throw std::runtime_error("device MTP continuation requires bounded CUDA greedy R1 N1");
     device_mtp_successor_ = enabled;
   }
 
@@ -775,11 +780,12 @@ public:
     if (!requested || preparation_started_ || !cache_plan.draft_cache ||
         cache_plan.active_sequences != 1 || cache_plan.resident_sessions != 1 ||
         cache_plan.in_flight_batches < 2 || execution.kind() != BackendKind::kCuda ||
-        execution.has_cpu_assist() || scheduler || max_drafts() != 1 || recursive_mtp() ||
+        execution.has_cpu_assist() || scheduler || !bounded_device_mtp_policy() ||
         !target_kv_layers || vocabulary > (std::int64_t{1} << 24) || !resources_->attention_storage.empty() ||
         (precision.activation_type() != Type::kFloat16 && precision.activation_type() != Type::kBFloat16) ||
         geometry.key_depth != geometry.value_depth ||
         (geometry.key_depth != 64 && geometry.key_depth != 128 && geometry.key_depth != 256)) return;
+    if(max_drafts()>1 && !greedy_draft_chain_enabled(sampling_configuration(0).configuration))return;
     auto context = execution.common_context();
     if (!context) return;
     auto append = c::detail::BackendExtensionAccess::query(**context,
@@ -796,8 +802,8 @@ public:
     }
   }
 
-  bool prepare_draft_vocabulary(const SamplingConfiguration &sampling) {
-    if (!resources_->draft_vocabulary) return false;
+  bool prepare_draft_projection(const SamplingConfiguration &sampling) {
+    if (!resources_->draft_vocabulary && !resources_->draft_head) return false;
     if (sampling.enabled || !sampling.modifiers.empty() || min_draft_probability() != 0)
       throw std::runtime_error("draft vocabulary requires unmodified greedy sampling and zero minimum probability");
     if (resources_->draft_head) return true;
@@ -805,21 +811,24 @@ public:
       throw std::logic_error("draft vocabulary preparation requires the original idle model");
     const auto &projection = projections.at(std::string(geometry.head_role()));
     const auto *stored = std::get_if<StoredProjection>(&projection);
-    if (!stored || !stored->weight || !stored->weight->description.is_plain())
-      throw std::runtime_error("draft vocabulary requires the original dense stored head");
+    if (!stored || !stored->weight)
+      throw std::runtime_error("draft vocabulary requires the original stored head");
     const auto type = stored->weight->description.data_type();
     if (type != Type::kBFloat16 && type != Type::kFloat16 && type != Type::kFloat32)
       throw std::runtime_error("draft vocabulary requires a BF16/F16/F32 head");
     const auto &mapping = *resources_->draft_vocabulary;
     auto &original = weights.at(std::string(geometry.head_role()));
+    const auto begin=Clock::now();
     resources_->draft_head.emplace(prepare_draft_head(execution, original, mapping,
         cache_plan.active_sequences, allocation_budget));
+    resources_->draft_head_prepare_seconds=std::chrono::duration<double>(Clock::now()-begin).count();
     return true;
   }
 
   DraftProjectionView prepared_draft_projection(bool subset) {
     if (!subset) return {};
-    return {{&resources_->draft_head->projection_weight()}, &resources_->draft_head->original_ids,
+    return {{&resources_->draft_head->projection_weight()},
+        resources_->draft_head->original_ids.description.valid()?&resources_->draft_head->original_ids:nullptr,
         resources_->draft_head->indexed_weight != nullptr};
   }
   V draft_scores(Recipe &recipe, V selected_hidden, bool subset) {
@@ -983,14 +992,14 @@ public:
     }
     const auto &source_roles = source.roles;
     if (source_roles.geometry != geometry) throw std::runtime_error("source geometry changed before weight loading");
-    if (source.draft_vocabulary) {
-      if (!cache_plan.draft_cache || source.draft_vocabulary->full_size() != vocabulary)
+    if (source.draft_vocabulary || source.draft_head) {
+      if (!cache_plan.draft_cache || (source.draft_vocabulary && source.draft_vocabulary->full_size() != vocabulary))
         throw std::runtime_error("draft vocabulary differs from the original complete model");
       if (std::ranges::any_of(resources_->sampling_configurations, [](const auto &prepared) {
             return prepared->configuration.enabled || !prepared->configuration.modifiers.empty();
           }))
         throw std::runtime_error("draft vocabulary requires unmodified greedy sampling for every request");
-      if (source.draft_vocabulary_identity != inference::artifact::sha256(std::as_bytes(source.draft_vocabulary->ids())))
+      if (source.draft_vocabulary && source.draft_vocabulary_identity != inference::artifact::sha256(std::as_bytes(source.draft_vocabulary->ids())))
         throw std::runtime_error("draft vocabulary identity changed before weight loading");
     }
     const bool calibrated = resources_->cache_policy == prepared::CachePolicy::kFloat8OriginalCalibration;
@@ -1076,10 +1085,15 @@ public:
     source_identity = loading.identity;
     weight_meanings = std::move(loading.meanings);
     projections = prepare_projection_bindings(weights, cache_plan.draft_cache, geometry);
+    if(source.draft_head){
+      const auto begin=Clock::now();
+      resources_->draft_head.emplace(load_prepared_draft_head(execution,source_roles,*source.draft_head,allocation_budget));
+      resources_->draft_head_prepare_seconds=std::chrono::duration<double>(Clock::now()-begin).count();
+    }
     if (source.draft_vocabulary) {
       resources_->draft_vocabulary = std::move(source.draft_vocabulary);
-      (void)prepare_draft_vocabulary(default_sampler);
     }
+    if(resources_->draft_vocabulary || resources_->draft_head)(void)prepare_draft_projection(default_sampler);
     host_weight_bytes = loading.host_bytes; device_weight_bytes = loading.device_bytes;
     physical_text_roles = loading.physical_text_roles; physical_mtp_roles = loading.physical_mtp_roles;
     canonical_weight_bytes = loading.canonical_bytes; fp8_weight_groups = loading.fp8_groups;
@@ -1227,12 +1241,18 @@ public:
         << ",\"mtp_max_drafts\":" << (cache_plan.draft_cache ? max_drafts() : 0)
         << ",\"mtp_min_draft_probability\":" << (cache_plan.draft_cache ? min_draft_probability() : 0)
         << ",\"draft_vocabulary_requested_rows\":" << (resources_->draft_vocabulary ? resources_->draft_vocabulary->size() : 0)
-        << ",\"draft_vocabulary_rows\":" << (resources_->draft_head ? resources_->draft_head->original_ids.description.dimensions()[0] : 0)
-        << ",\"draft_vocabulary_identity\":\"" << (resources_->draft_head ? resources_->draft_head->identity : std::string{}) << '"'
-        << ",\"draft_vocabulary_weight_bytes\":" << (resources_->draft_head ? resources_->draft_head->extra_weight_bytes() : 0)
+        << ",\"draft_vocabulary_rows\":" << (resources_->draft_vocabulary && resources_->draft_head ? resources_->draft_head->original_ids.description.dimensions()[0] : 0)
+        << ",\"draft_vocabulary_identity\":\"" << (resources_->draft_vocabulary && resources_->draft_head ? resources_->draft_head->identity : std::string{}) << '"'
+        << ",\"draft_vocabulary_weight_bytes\":" << (resources_->draft_vocabulary && resources_->draft_head ? resources_->draft_head->extra_weight_bytes() : 0)
         << ",\"draft_vocabulary_indexed_rows\":" << (resources_->draft_head && resources_->draft_head->indexed_weight ? "true" : "false")
-        << ",\"draft_vocabulary_map_bytes\":" << (resources_->draft_head ? take(resources_->draft_head->original_ids.description.required_bytes()) : 0)
+        << ",\"draft_vocabulary_map_bytes\":" << (resources_->draft_vocabulary && resources_->draft_head ? take(resources_->draft_head->original_ids.description.required_bytes()) : 0)
         << ",\"draft_vocabulary_policy\":\"greedy_unmodified_no_threshold\""
+        << ",\"draft_head_rows\":" << (resources_->draft_vocabulary ? resources_->draft_vocabulary->size() : resources_->draft_head ? resources_->draft_head->projection_weight().description.dimensions()[0] : 0)
+        << ",\"draft_head_weight_bytes\":" << (resources_->draft_head ? resources_->draft_head->extra_weight_bytes() : 0)
+        << ",\"draft_head_identity\":\"" << (resources_->draft_head ? resources_->draft_head->identity : std::string{}) << '"'
+        << ",\"draft_head_storage\":\"" << (!resources_->draft_head ? "original" : resources_->draft_head->projection_weight().description.is_plain() ? "dense" :
+            resources_->draft_head->projection_weight().description.storage_format().id()==c::kGgufQ4K ? "Q4_K" : "gguf_encoded") << '"'
+        << ",\"draft_head_prepare_seconds\":" << resources_->draft_head_prepare_seconds
         << ",\"draft_program_graph_calls\":" << draft_program_graph_calls
         << ",\"draft_chain_graph_calls\":" << draft_chain_graph_calls
         << ",\"draft_chain_attention_rows\":" << draft_chain_attention_rows
@@ -1438,12 +1458,14 @@ public:
         })) return false;
     // The optional row transform finishes with the original cold Model owner.
     // Family workers only borrow its immutable projection and ID-map leases.
-    if (resources_->draft_vocabulary && (!resources_->draft_head ||
-        resources_->draft_head->projection_weight().writer || !resources_->draft_head->projection_weight().ready ||
-        resources_->draft_head->original_ids.writer || !resources_->draft_head->original_ids.ready)) return false;
+    if (resources_->draft_vocabulary && !resources_->draft_head) return false;
+    if (resources_->draft_head && (resources_->draft_head->projection_weight().writer ||
+        !resources_->draft_head->projection_weight().ready ||
+        (resources_->draft_head->original_ids.description.valid() && (resources_->draft_head->original_ids.writer ||
+            !resources_->draft_head->original_ids.ready)))) return false;
     const auto available = std::thread::hardware_concurrency();
     if (available < 2) return false;
-    const auto threads = (std::min)(available, 4u);
+    const auto threads = (std::min)(available, 8u);
     auto status = hyle::Status::Ok();
     std::unique_ptr<hyle::sched::BlockingPool> pool;
     try {
@@ -1511,7 +1533,10 @@ public:
              drafts_token(role) && (role != GraphRole::kMtpContinuation || device_mtp_continuous_enabled()) &&
              !selected_sampler.enabled && selected_sampler.modifiers.empty(), device_mtp_continuous_enabled(),
          role == GraphRole::kVerify && prefix_rows >= 2 && requests == 1 && packing == RowPacking::kRectangular &&
-             greedy_draft_chain_enabled(selected_sampler) && cache_plan.in_flight_batches >= 3},
+             greedy_draft_chain_enabled(selected_sampler) && cache_plan.in_flight_batches >= 3,
+         (role == GraphRole::kMtpRound || role == GraphRole::kMtpCatchupRound || role==GraphRole::kMtpContinuation) && requests == 1 &&
+             packing == RowPacking::kRectangular && prefix_rows == max_drafts() + 1 &&
+             greedy_draft_chain_enabled(selected_sampler) && cache_plan.in_flight_batches >= 3 ? max_drafts() : 0},
         selected_sampler, {execution, allocation_budget, execution_budget});
   }
 
@@ -1555,7 +1580,10 @@ public:
       return true;
     }
     const std::size_t prefix_rows = role == GraphRole::kVerify ? planned_chunks.front()
-        : drafts_token(role) ? 2 : 1;
+        : drafts_token(role) ? ((role == GraphRole::kMtpRound || role == GraphRole::kMtpCatchupRound || role==GraphRole::kMtpContinuation) &&
+            requests == 1 && packing == RowPacking::kRectangular &&
+            greedy_draft_chain_enabled(sampling_configuration(sampling_index).configuration) &&
+            cache_plan.in_flight_batches >= 3 ? max_drafts() + 1 : 2) : 1;
     if (!prefix_rows || prefix_rows > cache_plan.candidate_boundaries)
       throw std::runtime_error("verification width exceeds the positive prepared prefix capacity");
     const auto ports_per_request = cache::add(76, cache::multiply(38, prefix_rows - 1));
@@ -1588,7 +1616,7 @@ public:
     if (requests > cache_plan.active_sequences || cache::multiply(requests, max_query_rows) > cache_plan.max_query_rows)
       throw std::runtime_error("finite family exceeds the configured batch capacity");
     prepare_cache();
-    const bool subset = drafts_token(role) && prepare_draft_vocabulary(selected_sampler);
+    const bool subset = drafts_token(role) && prepare_draft_projection(selected_sampler);
     if (cold_family_pool_) {
       auto task = hyle::sched::spawn_blocking(*cold_family_pool_, mem::system_allocator(),
           [this, chunks = std::vector<std::size_t>(planned_chunks.begin(), planned_chunks.end()),
@@ -1743,7 +1771,7 @@ public:
     if (draft_programs.contains(key)) return;
     prepare_cache();
     // Optional source transform remains with its original cold Model owner.
-    const bool subset = head && prepare_draft_vocabulary(selected_sampler);
+    const bool subset = head && prepare_draft_projection(selected_sampler);
     // Repeated proposal heads share this original carrier. Their cold usage
     // bound can select capture; writer-only repair retains its ready-leaf path.
     const auto replay_mode = !selected_sampler.modifiers.history.empty() && head ? g::ReplayMode::kCommands
@@ -1769,8 +1797,8 @@ public:
       program.guard.execution.nodes[draft_bank] = program.append.key;
       program.guard.execution.nodes[draft_bank + 1] = program.append.value;
     } else for (std::size_t i = 0; i < steps; ++i) {
-      program.guard.execution.nodes[draft_bank + 2 * i] = program.chain[i].append.key;
-      program.guard.execution.nodes[draft_bank + 2 * i + 1] = program.chain[i].append.value;
+      program.guard.execution.nodes[draft_bank + 2 * i] = program.chain[i].append_key;
+      program.guard.execution.nodes[draft_bank + 2 * i + 1] = program.chain[i].append_value;
     }
     initialize_draft_program(program);
     draft_programs.emplace(key, std::move(prepared));
@@ -1809,11 +1837,16 @@ public:
     const bool eligible = max_drafts() >= 2 && max_drafts() <= 3 && min_draft_probability() == 0 &&
         !sampling.enabled && sampling.modifiers.empty() && execution.kind() == BackendKind::kCuda &&
         !execution.has_cpu_assist() && !scheduler && cache_plan.active_sequences == 1 &&
-        cache_plan.auxiliary_hidden_rows >= 2 && replay_policy != ReplayPolicy::kCommands;
+        cache_plan.auxiliary_hidden_rows >= 2 && cache_plan.private_draft_stages>=max_drafts() && replay_policy != ReplayPolicy::kCommands;
     if (!eligible) return false;
     const auto found = projections.find(geometry.head_role());
     const auto *stored = found == projections.end() ? nullptr : std::get_if<StoredProjection>(&found->second);
-    return stored && stored->weight && stored->weight->description.is_plain();
+    if(!stored || !stored->weight)return false;
+    const auto&description=stored->weight->description;
+    if(description.is_plain())return true;
+    const auto codec=c::gguf_quantized_type(description.storage_format());
+    return codec && (*codec==c::GgufQuantizedType::kQ8_0 || *codec==c::GgufQuantizedType::kQ4K ||
+        *codec==c::GgufQuantizedType::kQ6K);
   }
 
   // Each finite stage has independent COW writers from the same real base.
@@ -2162,9 +2195,14 @@ public:
   // Target family widths and replay counts stay with the finite request plan;
   // every recursive consumer shares this model's actual NextN/sampler programs.
   void prepare_recursive_round_programs(std::size_t sampling_index = 0, bool conditional = false,
-      std::size_t planned_uses = 1) {
+      std::size_t planned_uses = 1, std::size_t maximum_proposals = SIZE_MAX) {
     const auto &selected_sampler = sampling_configuration(sampling_index).configuration;
-    for (std::size_t rows = 1; rows <= cache_plan.candidate_boundaries; ++rows) {
+    const auto maximum_rows = maximum_proposals == SIZE_MAX ? cache_plan.candidate_boundaries
+        : (std::min)(maximum_proposals, max_drafts()) + 1;
+    maximum_proposals = (std::min)(maximum_proposals, max_drafts());
+    if (!maximum_proposals && max_drafts())
+      throw std::logic_error("recursive programs require a positive proposal limit for active drafting");
+    for (std::size_t rows = 1; rows <= maximum_rows; ++rows) {
       prepare_draft_program(rows, false);
       if (selected_sampler.enabled || !selected_sampler.modifiers.empty())
         prepare_prefix_sampling(rows - 1, sampling_index, conditional);
@@ -2172,7 +2210,7 @@ public:
     prepare_draft_program(1, true, sampling_index, planned_uses);
     if (capacity > 1) prepare_draft_program(2, true, sampling_index, planned_uses);
     if (!conditional && greedy_draft_chain_enabled(selected_sampler))
-      for (std::size_t steps = 2; steps <= max_drafts(); ++steps)
+      for (std::size_t steps = 2; steps <= maximum_proposals; ++steps)
         for (std::size_t rows = 1; rows <= 2; ++rows)
           prepare_draft_program(rows, true, sampling_index, planned_uses, steps);
   }
@@ -2586,7 +2624,7 @@ public:
       const bool prefill = requests == 1 && role == GraphRole::kText && packs_prefill(packing) &&
           !cache_plan.draft_cache && !selected_sampler.enabled && selected_sampler.modifiers.empty();
       const bool ordinary = tokens == 1 && role == GraphRole::kText && !cache_plan.draft_cache;
-      const bool mtp = tokens == 2 && requests == 1 &&
+      const bool mtp = tokens == max_drafts()+1 && requests == 1 &&
           (role == GraphRole::kMtpCatchupRound || (role == GraphRole::kMtpContinuation && device_mtp_successor_)) &&
           cache_plan.draft_cache && (definition.successor_token_port || role == GraphRole::kMtpContinuation) &&
           !selected_sampler.enabled && selected_sampler.modifiers.empty() && packing == RowPacking::kRectangular;
@@ -2747,7 +2785,7 @@ public:
   void prepare_relay_execution(std::size_t requests = 1, std::size_t sampling_index = 0,
       GraphRole role = GraphRole::kText) {
     if (active_step || carrier_borrowed) throw std::runtime_error("relay carrier preparation requires an idle model");
-    auto &phase = prepare_child(drafts_token(role) ? 2 : 1, false, requests, role,
+    auto &phase = prepare_child(drafts_token(role) ? max_drafts()+1 : 1, false, requests, role,
         TextCompletion::kEmitNext, sampling_index, true);
     check(phase.slots.initialize_all_with([&] { return slot_initialization(phase); }));
   }
@@ -2777,10 +2815,11 @@ public:
   DecodeRecording prepare_mtp_decode_recordings(std::size_t sampling_index,
       std::shared_ptr<Session> *prepared_session = nullptr,
       DecodeRecordingStage stage = DecodeRecordingStage::kStartup) {
-    if (!cache_plan.draft_cache || max_drafts() != 1 || recursive_mtp()) return {};
+    if (!cache_plan.draft_cache || ((!device_mtp_successor_) && (max_drafts() != 1 || recursive_mtp()))) return {};
     try { return prepare_decode_recordings(sampling_index, true, prepared_session, stage); }
     catch (const inference::EvaluationFailure &failure) {
       if (!device_mtp_successor_ || !failure.status().IsUnimplemented() ||
+          max_drafts()>1 ||
           failure.status().has_native_error() || active_step || successor_step || carrier_borrowed ||
           snapshot_versions.live || (prepared_session && *prepared_session) ||
           (failure.retirement_observed() && (!failure.retirement().retired || !failure.retirement().status.ok()))) throw;
@@ -2801,7 +2840,7 @@ public:
     if (!DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
             sampling.enabled, !sampling.modifiers.empty()}.eligible()) return;
     const auto phase_for = [&](GraphRole role, bool imported) -> Phase * {
-      const auto found = phases.find({1, 2, role, TextCompletion::kEmitNext, sampling_index, imported,
+      const auto found = phases.find({1, max_drafts()+1, role, TextCompletion::kEmitNext, sampling_index, imported,
           RowPacking::kRectangular});
       return found == phases.end() ? nullptr : found->second.get();
     };
@@ -2847,7 +2886,7 @@ public:
     if (prefill_recording && (mtp || cache_plan.draft_cache || prefill_rows != bounded_prefill_rows))
       throw std::logic_error("prefill recording requires its original fixed ordinary chunk");
     const auto packing = prefill_recording ? RowPacking::kPrefill : RowPacking::kRectangular;
-    const auto rows = prefill_recording ? prefill_rows : mtp ? std::size_t{2} : std::size_t{1};
+    const auto rows = prefill_recording ? prefill_rows : mtp ? max_drafts()+1 : std::size_t{1};
     const std::array chunk{rows};
     prepare_execution(chunk, 1, role, TextCompletion::kEmitNext, sampling_index, packing);
     if (mtp) prepare_execution(chunk, 1, GraphRole::kMtpCatchupRound, TextCompletion::kEmitNext, sampling_index);
@@ -2913,7 +2952,7 @@ public:
             // A full K1 producer stores both prefixes. Its successor gathers the
             // final target state, but keeps both hidden rows in chronological order.
             metadata.indices = take(c::ConstTensorView::create(dense(Type::kInt32, {1}),
-                take(metadata.indices.storage().subview(sizeof(std::int32_t), sizeof(std::int32_t)))));
+                take(metadata.indices.storage().subview((phase.prefix_rows-1)*sizeof(std::int32_t), sizeof(std::int32_t)))));
           }
           next.states.push_back(metadata);
         }
@@ -2986,36 +3025,49 @@ public:
   }
 
   hyle::Status resolve_device_mtp_successor(StepState &step, const cache::State &head) noexcept {
-    if (!step.device_input_choice || step.members.size() != 1 || !step.submitted ||
+    if (!step.device_input_choice || !step.phase || step.members.size() != 1 || !step.submitted ||
         !step.execution.incoming || !step.execution.incoming->owner)
-      return hyle::Status::InvalidArgument("device successor has no original submitted K1 episode");
+      return hyle::Status::InvalidArgument("device successor has no original submitted episode");
     auto &member = step.members[0];
     const auto &source = *step.execution.incoming->owner;
     if (!source.mtp_device_choice || source.boundaries.size() != 1 || member.base != &head ||
         !head.draft || head.length < member.choice_base_length ||
-        head.length - member.choice_base_length > 1 || head.draft->frontier != member.choice_draft_frontier ||
+        head.length - member.choice_base_length >= member.target_input_choices.size() ||
         inference::request_token_stopped(head.next_id, model_eos_tokens, member.stop_policy))
       return hyle::Status::InvalidArgument("device successor cannot bind its producer's actual boundary");
     const auto choice = head.length - member.choice_base_length;
-    const auto rows = choice + 1;
+    if(choice>=member.draft_input_choices.size())return hyle::Status::InvalidArgument("device successor lost its draft coordinate");
+    const auto draft_layout=member.draft_input_choices[choice];
+    const auto rows=std::size_t(draft_layout.facts().query_rows);
+    const auto lag=choice?1u:0u;
+    const auto passes=step.phase->draft_chain_steps?2u:1u;
+    const auto work=rows*passes;
+    const auto attention=step.phase->draft_chain_steps;
     if (step.execution.sources && step.execution.sources->boundaries.size() != 1)
       return hyle::Status::InvalidArgument("device successor source lost its original member boundary");
-    if (head.draft->lag != choice || (choice == 0 && head.draft->catchup_token != -1) ||
-        (choice == 1 && head.draft->catchup_token < 0))
+    if (head.draft->frontier!=std::size_t(draft_layout.facts().kv_rows)-rows || head.draft->lag != lag ||
+        (!lag && head.draft->catchup_token != -1) || (lag && head.draft->catchup_token < 0))
       return hyle::Status::InvalidArgument("device successor producer has inconsistent draft frontier");
     if (member.selected_input_choice)
       return *member.selected_input_choice == choice ? hyle::Status::Ok()
           : hyle::Status::InvalidArgument("device successor selection changed after binding");
     if (!member.next || !member.next->draft ||
-        rows > SIZE_MAX - submitted_draft_rows || rows > SIZE_MAX - member.session->submitted_draft_rows)
+        work > SIZE_MAX - submitted_draft_rows || work > SIZE_MAX - member.session->submitted_draft_rows ||
+        (step.draft_rows_deferred && attention>SIZE_MAX-draft_chain_attention_rows))
       return hyle::Status::OutOfRange("device successor row accounting exceeds its original capacity");
+    const auto target_pages=member.target_input_choices[choice].host().page_indices.size();
+    const auto draft_pages=member.draft_input_choices[choice].host().page_indices.size();
+    if(member.next->paged.pages.size()<target_pages || member.next->draft->paged.pages.size()<draft_pages)
+      return hyle::Status::InvalidArgument("device successor canonical pages exceed their retained raw cohort");
     member.selected_input_choice = choice;
-    member.next->length = head.length + 2;
-    member.next->draft->frontier = member.choice_draft_frontier + rows;
-    member.next->paged.pages.resize(member.target_input_choices[choice].host().page_indices.size());
-    member.next->draft->paged.pages.resize(member.draft_input_choices[choice].host().page_indices.size());
+    member.next->length = head.length + step.phase->prefix_rows;
+    member.next->draft->frontier = head.draft->frontier + rows;
     member.layout = member.target_input_choices[choice];
     member.draft_layout = step.draft_layout = member.draft_input_choices[choice];
+    // Only clip the canonical view. Original raw cohorts remain owned until
+    // the native episode retires, including every unused speculative row.
+    member.next->paged.pages.resize(target_pages);
+    member.next->draft->paged.pages.resize(draft_pages);
     member.first_input = head.next_id;
     member.draft_input_rows = step.active_draft_rows = rows;
     if (step.execution.sources) {
@@ -3024,8 +3076,9 @@ public:
       boundary.draft_frontier = member.next->draft->frontier;
     }
     if (step.draft_rows_deferred) {
-      submitted_draft_rows += rows;
-      member.session->submitted_draft_rows += rows;
+      submitted_draft_rows += work;
+      member.session->submitted_draft_rows += work;
+      draft_chain_attention_rows+=attention;
       step.draft_rows_deferred = false;
     }
     return hyle::Status::Ok();
@@ -3186,7 +3239,7 @@ public:
     const auto width = step.members.size();
     const bool relay = bool(step.execution.incoming);
     const bool compact_draft = packs_draft(phase.family->packing);
-    const auto physical_rows = cache::multiply(width, is_mtp_prefill(role)
+    const auto physical_rows = cache::multiply(width, phase.draft_chain_steps ? phase.draft_chain_steps + draft_lag(role) : is_mtp_prefill(role)
         ? cache::add(phase.query_rows, draft_lag(role)) : draft_lag(role) + 1);
     auto &positions = input_scratch.draft_positions, &catchups = input_scratch.catchups;
     positions.resize(physical_rows); catchups.clear();
@@ -3195,7 +3248,7 @@ public:
     auto &last_rows = input_scratch.last_rows;
     row_inputs.clear(); offsets.resize(width + 1); last_rows.resize(width);
     for (const auto &member : step.members) row_inputs.push_back({member.base->draft->frontier,
-        compact_draft ? member.base->draft->lag + 1 : is_mtp_prefill(role)
+        phase.draft_chain_steps ? phase.draft_chain_steps + draft_lag(role) : compact_draft ? member.base->draft->lag + 1 : is_mtp_prefill(role)
             ? cache::add(member.input_tokens, draft_lag(role)) : draft_lag(role) + 1});
     (void)inference::pack_sequence_rows(row_inputs, physical_rows, offsets, last_rows, positions);
     if (compact_draft) {
@@ -3259,8 +3312,8 @@ public:
       auto &member = step.members[j]; auto &session = *member.session;
       return {member.base->draft->paged, member.next->draft ? &member.next->draft->paged : nullptr,
           member.draft_layout, member.base->draft->frontier, row_inputs[j].rows,
-          relay ? std::span<c::PagedPageAppender>{} : std::span(session.draft_tails),
-          !relay && session.draft_tail_epoch == member.base_epoch};
+          relay || phase.draft_chain_steps ? std::span<c::PagedPageAppender>{} : std::span(session.draft_tails),
+          !relay && !phase.draft_chain_steps && session.draft_tail_epoch == member.base_epoch};
     };
     const auto invalidate_tail = [&](std::size_t j) noexcept {
       if (!relay) step.members[j].session->draft_tail_epoch = 0;
@@ -3328,6 +3381,34 @@ public:
     const std::array lag{static_cast<std::int32_t>(base.lag)};
     io.catchup_token.write<std::int32_t>(catchup); io.repair_lag.write<std::int32_t>(lag);
     step.active_draft_rows = member.draft_input_rows = phase.query_rows;
+  }
+
+  void prepare_round_draft_chain(StepState &step) {
+    auto &phase = *step.phase; auto &member = step.members.front();
+    auto &io = phase.slots[step.state_slot].data;
+    const auto &base = *member.base->draft;
+    member.draft_chain_pages.resize(phase.draft_chain_steps);
+    for (std::size_t i = 0; i < phase.draft_chain_steps; ++i) {
+      auto &pages = member.draft_chain_pages[i];
+      if (!pages.frames.try_resize(2)) throw std::bad_alloc{};
+      auto &layout = io.batch_layouts[phase.attention_nodes.size() + i].layout;
+      const auto at = [&](std::size_t) noexcept -> inference::PagedAppendMember {
+        return {base.paged, &pages, layout, base.frontier, phase.draft_chain[i].rows};
+      };
+      const auto bank = draft_bank + 2 + 2 * i;
+      const bool relay = bool(step.execution.incoming);
+      layout = take(inference::prepare_paged_append(attention_schema, 1,
+          inference::PagedAppendBanks{draft_inventory, std::span(step.execution.dirty.data() + bank, 2),
+              std::span(step.execution.tails.data() + bank, 2), std::span(step.execution.appends.data() + bank, 2)},
+          input_scratch.paged_appends, at,
+          {.capacity_rows = capacity,
+           .incoming = relay ? std::span(step.execution.incoming->owner->pages).subspan(draft_bank, 2)
+               : std::span<g::batch::PagedAppendSource>{},
+           .pending_predecessor = bool(step.execution.predecessor_episode),
+           .append_options = {.resource_budget = cache_budget}}));
+    }
+    member.verification_inputs.assign(phase.prefix_rows, 0);
+    member.verification_inputs[0] = member.first_input;
   }
 
   void prepare_device_mtp_inputs(StepState &step, bool recording_only);
@@ -3573,7 +3654,7 @@ public:
     const bool ordinary_relay = relay && !mtp_relay && !cache_plan.draft_cache && role == GraphRole::kText;
     const bool complete_mtp_relay = mtp_relay && cache_plan.draft_cache && requests.size() == 1 &&
         role == (device_mtp ? GraphRole::kMtpContinuation : GraphRole::kMtpCatchupRound) && (!predecessor || (predecessor->phase &&
-            drafts_token(predecessor->phase->family->role) && predecessor->input_tokens == 2)) &&
+            drafts_token(predecessor->phase->family->role) && predecessor->input_tokens == max_drafts()+1)) &&
         incoming->extra_outputs.size() == (device_mtp ? 2u : 1u) && incoming->extra_outputs[0].valid() &&
         incoming->successor_states.size() == geometry.recurrent_layers() * 2;
     if (relay && (successor_step || scheduler || cache_plan.in_flight_batches < 2 ||
@@ -3617,7 +3698,10 @@ public:
       throw std::runtime_error("MTP role differs from its first member snapshot");
     if (compact_draft) role = GraphRole::kMtpCatchupRound;
     if (compact_draft) packing = RowPacking::kDraft;
-    auto tokens = drafts_token(role) ? std::size_t{2} : supplied_tokens;
+    const bool compound_round = requests.size() == 1 &&
+        (role == GraphRole::kMtpRound || role == GraphRole::kMtpCatchupRound || role==GraphRole::kMtpContinuation) &&
+        greedy_draft_chain_enabled(selected_sampler) && cache_plan.in_flight_batches >= 3;
+    auto tokens = drafts_token(role) ? (compound_round ? max_drafts() + 1 : std::size_t{2}) : supplied_tokens;
     if (packed_target) for (const auto &request : requests) tokens = (std::max)(tokens, request.ids.size());
     const auto physical_tokens = packed_target ? physical_rows : tokens;
     if (compact_draft && (completion != TextCompletion::kEmitNext ||
@@ -3783,6 +3867,7 @@ public:
       }
       step.phase = &phase; step.execution.run = &run; step.execution.carrier = &carrier; step.state_slot = slot;
       step.execution.state_transactions = &phase.slots[slot].transactions;
+      if (phase.draft_chain_steps) step.execution.configure(phase.append_nodes.size());
       step.execution.nodes.assign(phase.append_nodes.begin(), phase.append_nodes.end());
       if constexpr (recording_only) if (recording_imported) {
         if (recording->states.size() != phase.state_sources.size() || (!packed_prefill && !recording->token.valid()))
@@ -3947,6 +4032,7 @@ public:
       if (ahead) decode_ahead->clear_output(); // Schema copied the original borrowed integers.
       if (has_mtp(role)) prepare_draft_append<recording_only>(step, role);
       else if (phase.recursive_draft_repair) prepare_recursive_repair_append(step);
+      if (phase.draft_chain_steps) prepare_round_draft_chain(step);
       }
       auto &transactions = phase.slots[slot].transactions;
       for (std::size_t index = 0; index < phase.state_banks.size(); ++index) {
@@ -3981,14 +4067,16 @@ public:
       }
       if (preparation) { preparation->slot = slot; preparation->phase_slot_prior_uses = phase.slots[slot].preparation_uses; }
       const auto batch_start = Clock::now();
-      const auto append_banks = draft_bank + (has_mtp(role) || phase.recursive_draft_repair ? 2u : 0u);
+      const auto append_banks = draft_bank + (has_mtp(role) || phase.recursive_draft_repair ? 2u : 0u) + 2 * phase.draft_chain_steps;
       if (device_input_choice) {
         hyle::util::ScopeGuard release_layouts{[&]() noexcept {
           for (auto &entry : io.batch_layouts) entry.layout = {};
         }};
         for (std::size_t i = 0; i < phase.attention_nodes.size(); ++i)
-          io.batch_layouts[i].layout = step.members.front().target_input_choices[1];
-        io.batch_layouts.back().layout = step.members.front().draft_input_choices[1];
+          io.batch_layouts[i].layout = step.members.front().target_capacity_layout;
+        if(phase.draft_chain_steps)for(std::size_t i=0;i<phase.draft_chain_steps;++i)
+          io.batch_layouts[phase.attention_nodes.size()+i].layout=step.members.front().draft_chain_layouts[i];
+        else io.batch_layouts.back().layout = step.members.front().draft_capacity_layout;
         check(step.execution.prepare_length_appends(phase.family->graph,io.batch_layouts,0,append_banks,
             std::span<const V>(phase.append_cache_inputs).first(append_banks), {.host_workspace = execution.staging()}));
       } else {
@@ -3996,30 +4084,32 @@ public:
           for (auto &entry : io.batch_layouts) entry.layout = {};
         }};
         for (std::size_t i = 0; i < phase.attention_nodes.size(); ++i) io.batch_layouts[i].layout = io.attention_layout;
-        if (drafts_token(role)) io.batch_layouts.back().layout = step.draft_layout;
+        if (drafts_token(role) && !phase.draft_chain_steps) io.batch_layouts.back().layout = step.draft_layout;
         check(step.execution.prepare_appends(phase.family->graph, io.batch_layouts, 0, append_banks,
             std::span<const V>(phase.append_cache_inputs).first(append_banks), {.host_workspace = execution.staging()}));
       }
       if (relay) {
         auto &input = *step.execution.incoming; auto &previous = *input.owner;
-        input.bindings.reserve(1 + previous.states.size() + previous.pages.size() + (device_mtp ? 2u : mtp_relay ? 1u : 0u));
+        input.bindings.reserve(1 + previous.states.size() + previous.pages.size() + previous.draft_stage_sources.size() + (device_mtp ? 2u : mtp_relay ? 1u : 0u));
         if (!prefill_relay) input.bindings.push_back(previous.primary_output.reader_binding(phase.token_port));
         if (device_mtp) {
           input.bindings.push_back(previous.extra_outputs[0].reader_binding(phase.predecessor_prefix_port));
           input.bindings.push_back(previous.extra_outputs[1].reader_binding(phase.catchup_token_port));
         } else if (mtp_relay) input.bindings.push_back(previous.extra_outputs[0].reader_binding(phase.catchup_token_port));
-        const bool ready_states = !device_mtp && previous.published_states.size() == previous.states.size() * width + (mtp_relay ? 1u : 0u) &&
+        const bool ready_states = !device_mtp && previous.published_states.size() == previous.states.size() * width + (mtp_relay ? phase.prefix_rows-1 : 0u) &&
             std::ranges::all_of(previous.published_states, [](const auto &lease) { return lease.valid(); });
         for (std::size_t bank = 0; bank < previous.states.size(); ++bank) {
           const auto &source = mtp_relay && bank < previous.successor_states.size()
               ? previous.successor_states[bank] : previous.states[bank];
-          const auto count = device_mtp || (mtp_relay && bank == previous.successor_states.size()) ? 2u : width;
+          const auto count = device_mtp || (mtp_relay && bank == previous.successor_states.size()) ? phase.prefix_rows : width;
           input.bindings.push_back(take(source.reader_binding(run, phase.state_graph(),
               phase.state_sources[bank].store, ready_states ? std::span<const c::ReadLease>(previous.published_states).subspan(bank * width, count)
                   : std::span<const c::ReadLease>{})));
         }
         for (std::size_t bank = 0; bank < previous.pages.size(); ++bank)
           input.bindings.push_back(take(g::batch::append_binding(run, phase.append_nodes[bank], previous.pages[bank])));
+        for(std::size_t bank=0;bank<previous.draft_stage_sources.size();++bank)
+          input.bindings.push_back(take(g::batch::append_binding(run,phase.append_nodes[draft_bank+2+bank],previous.draft_stage_sources[bank])));
       }
       if (token_source)
         step.execution.incoming->bindings.push_back(token_source->primary_output.reader_binding(phase.token_port));
@@ -4094,7 +4184,7 @@ public:
     sources->mtp_device_choice = device_choice;
     sources->prefill = prefill;
     sources->boundaries.reserve(step.members.size());
-    sources->published_states.resize(phase.state_sources.size() * step.members.size() + (mtp ? 1u : 0u));
+    sources->published_states.resize(phase.state_sources.size() * step.members.size() + (mtp ? phase.prefix_rows-1 : 0u));
     for (const auto &member : step.members) {
       if (member.base_epoch == UINT64_MAX) throw std::overflow_error("source candidate epoch exhausted");
       sources->boundaries.push_back({member.session, member.next.get(), member.base_epoch + 1,
@@ -4113,8 +4203,12 @@ public:
       for (std::size_t bank = 0; bank < geometry.recurrent_layers() * 2; ++bank)
         sources->successor_states.push_back(take(g::StoreSource::prepare(*step.execution.run,
             phase.state_sources[bank].store, storage,
-            device_choice ? g::StoreDestinationRange{0, 2} : g::StoreDestinationRange{1, 1},
+            device_choice ? g::StoreDestinationRange{0, phase.prefix_rows} : g::StoreDestinationRange{phase.prefix_rows-1, 1},
             {.resource_budget = execution_budget})));
+      sources->draft_stage_sources.reserve(2*phase.draft_chain_steps);
+      for(std::size_t stage=0;stage<phase.draft_chain_steps;++stage)for(std::size_t bank=0;bank<2;++bank)
+        sources->draft_stage_sources.push_back(take(g::batch::PagedAppendSource::prepare(*step.execution.run,
+            phase.append_nodes[draft_bank+bank],storage,{.resource_budget=execution_budget})));
     }
     step.execution.sources = sources;
     return sources;
@@ -4134,14 +4228,20 @@ public:
         throw std::runtime_error("batch participant stopped before submission");
     // Validate counter additions before accepting native work. Afterwards only
     // scalar assignment remains, even if Source capture or observation fails.
-    const auto model_rows_after = cache::add(submitted_draft_rows, step.active_draft_rows);
+    const auto draft_passes = step.phase->draft_chain_steps ? 2u : 1u;
+    const auto model_rows_after = cache::add(submitted_draft_rows, cache::multiply(draft_passes, step.active_draft_rows));
+    std::size_t chain_attention_after = draft_chain_attention_rows;
+    if(!step.draft_rows_deferred)for (const auto &stage : step.phase->draft_chain)
+      chain_attention_after = cache::add(chain_attention_after, stage.rows);
     for (const auto &member : step.members)
-      (void)cache::add(member.session->submitted_draft_rows, member.draft_input_rows);
+      (void)cache::add(member.session->submitted_draft_rows, cache::multiply(draft_passes, member.draft_input_rows));
     step.start = Clock::now(); step.submitted = true;
     check(step.execution.submit(resources_).WithContext("submitting original evaluation"));
     submitted_draft_rows = model_rows_after;
+    draft_chain_attention_rows = chain_attention_after;
+    if (step.phase->draft_chain_steps) ++draft_chain_graph_calls;
     for (const auto &member : step.members)
-      member.session->submitted_draft_rows += member.draft_input_rows;
+      member.session->submitted_draft_rows += draft_passes * member.draft_input_rows;
     if (step.execution.sources) {
       auto &phase = *step.phase; auto &program_slot = phase.slots[step.state_slot]; auto &io = program_slot.data;
       auto &sources = *step.execution.sources;
@@ -4154,6 +4254,7 @@ public:
         captured = take(sources.capture_outputs(*step.execution.run, step.execution.completion, outputs,
             execution.storage_owner(), optional_sources));
         if (captured) for (auto &state : sources.successor_states) check(state.capture(sources.submission));
+        if (captured) for (auto &source : sources.draft_stage_sources) check(source.capture(sources.submission));
       } else if (sources.mtp_full_candidate) {
         const std::array<inference::SubmissionViews::OutputCapture, 2> outputs{{
             {phase.successor_token_port, execution.storage_owner(), take(program_slot.io.readback(io.successor_token))->pool()},
@@ -4161,6 +4262,7 @@ public:
         captured = take(sources.capture_outputs(*step.execution.run, step.execution.completion, outputs,
             execution.storage_owner(), optional_sources));
         if (captured) for (auto &state : sources.successor_states) check(state.capture(sources.submission));
+        if (captured) for (auto &source : sources.draft_stage_sources) check(source.capture(sources.submission));
       } else if (sources.prefill) captured = take(sources.capture_outputs(*step.execution.run,
           step.execution.completion, {}, execution.storage_owner(), false,
           step.replay_route != g::ReplayRoute::kCaptured));
@@ -4262,7 +4364,7 @@ public:
                 member.base->draft.has_value() == cache_plan.draft_cache,
             step.withdrawn(member)});
       }
-      const auto append_banks = draft_bank + (has_mtp(phase.family->role) || phase.recursive_draft_repair ? 2u : 0u);
+      const auto append_banks = draft_bank + (has_mtp(phase.family->role) || phase.recursive_draft_repair ? 2u : 0u) + 2 * phase.draft_chain_steps;
       auto &transactions = phase.slots[step.state_slot].transactions;
       check(step.execution.finish_success(0, append_banks, phase.state_resource_ports,
           []() noexcept {},
@@ -4275,7 +4377,12 @@ public:
             }
             if (drafts_token(phase.family->role)) {
               check(program_slot.io.read(run, io.draft_id, std::as_writable_bytes(std::span(io.draft_ids))));
-              for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].draft_token = io.draft_ids[j];
+              if (phase.draft_chain_steps) {
+                auto &member = step.members.front();
+                member.verification_inputs[0] = member.first_input;
+                std::copy(io.draft_ids.begin(), io.draft_ids.end(), member.verification_inputs.begin() + 1);
+                member.draft_token = io.draft_ids.back();
+              } else for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].draft_token = io.draft_ids[j];
             }
             const bool batched_small_results = io.ordinary_io.batched_results();
             if (batched_small_results) {
@@ -4341,11 +4448,19 @@ public:
             // exact same greedy predicate that its device selector consumed.
             if (successor_step && successor_step->device_input_choice && successor_step->submitted &&
                 successor_step->draft_rows_deferred && step.members.size() == 1 &&
-                successor_step->members.size() == 1 && io.prefix_candidates.size() == 2) {
-              const auto rows = std::size_t{1} + (io.prefix_candidates[0] == step.members[0].draft_token);
+                successor_step->members.size() == 1 && io.prefix_candidates.size() == phase.prefix_rows) {
+              std::size_t index=0;
+              for(;index+1<phase.prefix_rows;++index){
+                const auto draft=phase.draft_chain_steps?step.members[0].verification_inputs[index+1]:step.members[0].draft_token;
+                if(io.prefix_candidates[index]!=draft)break;
+              }
+              const auto lag=index?1u:0u;
+              const auto rows=successor_step->phase->prefix_rows-1+lag;
+              const auto work=rows*(successor_step->phase->draft_chain_steps?2u:1u);
               auto &next = successor_step->members[0];
-              submitted_draft_rows = cache::add(submitted_draft_rows, rows);
-              next.session->submitted_draft_rows = cache::add(next.session->submitted_draft_rows, rows);
+              submitted_draft_rows = cache::add(submitted_draft_rows, work);
+              next.session->submitted_draft_rows = cache::add(next.session->submitted_draft_rows, work);
+              draft_chain_attention_rows=cache::add(draft_chain_attention_rows,successor_step->phase->draft_chain_steps);
               next.draft_input_rows = successor_step->active_draft_rows = rows;
               successor_step->draft_rows_deferred = false;
             }
@@ -4370,7 +4485,7 @@ public:
                 member.layout = take(layout_rows.member_version(attention_schema, 0));
               }
             }
-            if (has_mtp(phase.family->role)) for (auto &member : step.members) {
+            if (has_mtp(phase.family->role) && !phase.draft_chain_steps) for (auto &member : step.members) {
               if (step.withdrawn(member)) continue;
               auto &draft = *member.next->draft;
               draft.lag = static_cast<std::uint32_t>(member.next->length - draft.frontier);
@@ -4394,8 +4509,11 @@ public:
               for(std::size_t bank=0;bank<step.execution.appends.size();++bank){
                 const auto&member=step.members[0];const auto selected=*member.selected_input_choice;
                 const auto&layout=bank<draft_bank?member.target_input_choices[selected]:member.draft_input_choices[selected];
-                const std::array<std::int32_t,1>q{static_cast<std::int32_t>(layout.facts().query_rows)},
-                    kv{static_cast<std::int32_t>(layout.facts().kv_rows)};
+                auto rows=layout.facts().query_rows,after=layout.facts().kv_rows;
+                if(bank>=draft_bank+2){const auto stage=(bank-draft_bank-2)/2,steps=phase.draft_chain_steps;
+                  rows=static_cast<std::uint32_t>(stage+1+(layout.facts().query_rows-steps));
+                  after=static_cast<std::uint32_t>(layout.facts().kv_rows-steps+stage+1);}
+                const std::array<std::int32_t,1>q{static_cast<std::int32_t>(rows)},kv{static_cast<std::int32_t>(after)};
                 HYLE_RETURN_IF_ERROR(step.execution.appends[bank].select_lengths(q,kv));
               }
             }
@@ -4452,7 +4570,7 @@ public:
                 std::span(step.execution.appends.data(), draft_bank), outputs.size(), target_finish_at,
                 step.execution.sources ? std::span<const g::batch::PagedAppendSource>(step.execution.sources->pages).first(draft_bank)
                     : std::span<const g::batch::PagedAppendSource>{}));
-            if (has_mtp(phase.family->role)) {
+            if (has_mtp(phase.family->role) && !phase.draft_chain_steps) {
               const auto draft_finish_at = [&](std::size_t j) noexcept -> inference::PagedAppendFinishMember {
                 auto &member = step.members[j]; auto &draft = *member.next->draft;
                 return {member.base->draft->paged, draft.paged, member.draft_updates, member.draft_layout,
@@ -4471,6 +4589,11 @@ public:
             // In particular, recursive proposals must repair their retained KV from
             // actual target hidden rows here, before ledger checks or any head swap.
             complete(step);
+            if (phase.draft_chain_steps) {
+              const auto private_appends = step.execution.append_transactions().subspan(draft_bank + 2, 2 * phase.draft_chain_steps);
+              if (!take(private_appends.discard())) throw std::logic_error("retired compound draft appends remain borrowed");
+              step.members.front().draft_chain_pages.clear();
+            }
             if (cache_plan.draft_cache)
               for (const auto &member : step.members)
                 if (!step.withdrawn(member)) validate_mtp_snapshot(*member.next, &member);
@@ -4478,7 +4601,7 @@ public:
               const auto &member = step.members[j];
               auto draft_rows = member.next->draft
                   ? member.next->draft->frontier - member.base->draft->frontier : 0;
-              const bool recursive = phase.family->role == GraphRole::kVerify;
+              const bool recursive = phase.family->role == GraphRole::kVerify || phase.draft_chain_steps;
               if (recursive) draft_rows = cache::add(draft_rows,
                   member.input_tokens - 1 + (member.input_tokens > 1 ? member.base->draft->lag : 0) +
                   member.discarded_draft_rows);
@@ -4745,9 +4868,9 @@ public:
   }
 
   void repair_recursive_draft(StepState &step) {
-    if (step.phase->family->role != GraphRole::kVerify || !cache_plan.draft_cache)
+    if ((step.phase->family->role != GraphRole::kVerify && !step.phase->draft_chain_steps) || !cache_plan.draft_cache)
       throw std::runtime_error("draft repair requires its unpublished target verifier");
-    if (step.phase->recursive_draft_repair) {
+    if (step.phase->recursive_draft_repair || step.phase->draft_chain_steps) {
       for (auto &member : step.members) {
         if (step.withdrawn(member)) continue;
         auto &next = *member.next->draft;
@@ -4768,7 +4891,9 @@ public:
               member.next_draft_tails, true, rows == member.draft_input_rows};
         };
         check(inference::prepare_paged_append_commits(
-            std::span(step.execution.appends.data() + draft_bank, 2), 1, finish_at));
+            std::span(step.execution.appends.data() + draft_bank, 2), 1, finish_at,
+            step.execution.sources ? std::span<const g::batch::PagedAppendSource>(step.execution.sources->pages).subspan(draft_bank, 2)
+                : std::span<const g::batch::PagedAppendSource>{}));
         check(inference::return_paged_append_tails(step.execution.append_transactions().subspan(draft_bank, 2),
             2, 1, input_scratch.paged_appends, finish_at));
       }
@@ -4804,7 +4929,8 @@ public:
   void finish_recursive_mtp(std::span<const MtpGenerationSelection> selections,
       std::span<const std::int32_t> eos, std::span<const EvaluationOutput> outputs,
       std::span<MtpRoundResult> results, Observe observe, Publication &&publication = {}) {
-    if (!active_step || selections.empty() || !active_step->phase || active_step->phase->family->role != GraphRole::kVerify ||
+    if (!active_step || selections.empty() || !active_step->phase ||
+        (active_step->phase->family->role != GraphRole::kVerify && !active_step->phase->draft_chain_steps) ||
         !cache_plan.draft_cache || selections.size() != active_step->members.size() ||
         outputs.size() != selections.size() || results.size() != selections.size())
       throw std::runtime_error("recursive finish requires the complete original verification batch");
@@ -4843,7 +4969,7 @@ public:
          const auto width = member.input_tokens;
          const auto rows = candidates.subspan(member.input_row_begin, width);
         result.pending = selection.expected_pending; result.proposal_count = width - 1; result.verified_rows = width;
-        result.auxiliary_graph_calls = member.session->proposal_graph_calls + !step.phase->recursive_draft_repair +
+        result.auxiliary_graph_calls = step.phase->draft_chain_steps ? 0 : member.session->proposal_graph_calls + !step.phase->recursive_draft_repair +
             (selected_sampler.enabled || !selected_sampler.modifiers.empty() ? 1u : 0u);
         result.draft = width > 1 ? member.verification_inputs[1] : -1;
         result.target_first = rows[0]; result.target_second = width > 1 ? rows[1] : -1;
@@ -4890,7 +5016,7 @@ public:
         const bool clipped = min_draft_probability() > 0 && selection.proposal_limit > width - 1 &&
             !inference::request_token_stopped(member.verification_inputs.back(), eos, member.stop_policy);
         member.discarded_draft_rows = clipped ? (width == 1 ? member.base->draft->lag + 1 : 1) : 0;
-        if (step.phase->recursive_draft_repair)
+        if (step.phase->recursive_draft_repair || step.phase->draft_chain_steps)
           member.discarded_draft_rows += member.draft_input_rows - member.base->draft->lag -
               (member.accepted_tokens == 1 ? 1 : member.accepted_tokens - 1);
         result.auxiliary_graph_calls += clipped ? 1u : 0u;
@@ -4927,6 +5053,10 @@ public:
   void finish_mtp_rounds(std::span<const MtpGenerationSelection> selections,
       std::span<const std::int32_t> eos, std::span<const EvaluationOutput> outputs,
       std::span<MtpRoundResult> results, Observe observe, Publication &&publication = {}) {
+    if (active_step && active_step->phase && active_step->phase->draft_chain_steps) {
+      finish_recursive_mtp(selections, eos, outputs, results, std::move(observe), std::forward<Publication>(publication));
+      return;
+    }
     if (!active_step || selections.empty() || selections.size() != active_step->members.size() ||
         outputs.size() != selections.size() || results.size() != selections.size() || !active_step->phase ||
         !has_mtp(active_step->phase->family->role) || is_mtp_prefill(active_step->phase->family->role))
@@ -5306,7 +5436,7 @@ GenerationCommitRecord &prepare_generation_record(GenerationLedger &ledger, cons
   record.role = role; record.generation = generation; record.quota = quota; record.turn = turn;
   record.completion = completion; record.input_begin = input_begin; record.prefill_complete = prefill_complete;
   record.user_output = completion == TextCompletion::kEmitNext;
-  record.draft_limit = role == GraphRole::kVerify ? maximum : drafts_token(role) ? 1 : 0;
+  record.draft_limit = role == GraphRole::kVerify ? maximum : drafts_token(role) ? (maximum ? maximum : 1) : 0;
   record.before = generation_boundary(*session.head);
   if (generation) record.pending_input = ids.front();
   else { record.input_owner = std::move(owner); record.prompt_ids = ids; }
@@ -5824,9 +5954,9 @@ struct PreparedGenerationCall final {
   // accepted prefix. Verify has no actual rows until its proposals are ready.
   std::size_t actual_target_rows() const noexcept {
     if (generation && role == GraphRole::kVerify) return verification_ids.size();
-    return generation && drafts_token(role) ? 2 : ids().size();
+    return generation && drafts_token(role) ? maximum + 1 : ids().size();
   }
-  std::size_t planned_rows() const noexcept { return role == GraphRole::kVerify ? maximum + 1 : drafts_token(role) ? 2 : ids().size(); }
+  std::size_t planned_rows() const noexcept { return role == GraphRole::kVerify || drafts_token(role) ? maximum + 1 : ids().size(); }
 };
 
 // Failure recovery may observe already authoritative records, but a second
@@ -6205,7 +6335,9 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
     const auto lag = request.session->head->draft ? request.session->head->draft->lag : 0;
     call.role = !model.cache_plan.draft_cache ? GraphRole::kText
         : one ? (lag ? GraphRole::kMtpCatchupSingle : GraphRole::kMtpSingle)
-        : !model.recursive_mtp() && !call.logits_provider
+        : !call.logits_provider && (!model.recursive_mtp() ||
+            (call.maximum == model.max_drafts() && model.cache_plan.in_flight_batches >= 3 &&
+             model.greedy_draft_chain_enabled(sampler)))
             ? (lag ? GraphRole::kMtpCatchupRound : GraphRole::kMtpRound) : GraphRole::kVerify;
     call.name = (request.progress.turn_index ? "round" + std::to_string(request.progress.turn_index + 1) + "_" : "") +
         (model.cache_plan.draft_cache ? "mtp" : "decode") + std::to_string(request.rounds.size() + 1);
@@ -6331,7 +6463,7 @@ struct GenerationStepAdapter final {
         mtp(model.cache_plan.draft_cache), device_mtp(model.device_mtp_successor_enabled()),
         continuous_mtp(model.device_mtp_continuous_enabled()),
         imported(resume ? model.active_step->phase->imported_sources : !device_mtp && continuation.matches(calls)),
-        maximum_outputs(mtp ? 2 : 1), slot(resume ? model.active_step->state_slot : device_mtp ? 0 : continuation.next_slot),
+        maximum_outputs(mtp ? model.max_drafts()+1 : 1), slot(resume ? model.active_step->state_slot : device_mtp ? 0 : continuation.next_slot),
         next_slot(device_mtp ? (continuous_mtp ? (imported ? (slot + 1) % execution_slot_count
             : original[0].role == GraphRole::kMtpCatchupRound ? 1u : 0u) : 0u)
             : (slot + 1) % execution_slot_count),
@@ -6433,7 +6565,7 @@ struct GenerationStepAdapter final {
     if (device_mtp) {
       if (calls.size() != 1 || !a_source->mtp_device_choice)
         throw std::logic_error("device successor lost its original K1 selection Source");
-      const auto found = model.phases.find({calls.size(), 2, successor_role, TextCompletion::kEmitNext,
+      const auto found = model.phases.find({calls.size(), maximum_outputs, successor_role, TextCompletion::kEmitNext,
           calls.front().request->sampling_index, true, RowPacking::kRectangular});
       if (found == model.phases.end()) return inference::StepSuccessor::kNone;
       successor_phase = found->second.get();
@@ -6688,13 +6820,14 @@ bool execute_generation_continuation(Model &model, std::span<PreparedGenerationC
     }
   } retired_calls{model, continuation};
   if (!resumed && (!continuation.enabled || continuation.unavailable || model.cache_plan.in_flight_batches < 2 ||
-      (mtp && (calls.size() != 1 || model.max_drafts() != 1 || model.recursive_mtp())) ||
+      (mtp && (calls.size() != 1 || !model.bounded_device_mtp_policy() ||
+          (model.max_drafts()>1 && !model.device_mtp_successor_enabled()))) ||
       std::ranges::any_of(calls, [&](const auto &call) {
         const auto &request = *call.request;
         const auto &sampling = request.session->sampling_configuration().configuration;
         return !DeviceRelayCapabilities{model.execution.kind(), model.execution.has_cpu_assist(),
             bool(model.scheduler), sampling.enabled, !sampling.modifiers.empty()}.eligible() ||
-            (mtp ? !drafts_token(call.role) || call.maximum != 1 : call.role != GraphRole::kText) ||
+            (mtp ? !drafts_token(call.role) || call.maximum != model.max_drafts() : call.role != GraphRole::kText) ||
             call.completion != TextCompletion::kEmitNext || call.full_hit || !call.generation ||
             (trace_states && !request.trace.empty());
       }))) {
@@ -7775,7 +7908,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     if (model.cache_plan.resident_sessions < schedules.size())
       restore_bound = cache::add(restore_bound, cache::multiply(schedule.turns.size() - 1, ledger_capacity));
   }
-  const std::array pair{std::size_t{2}};
+  const std::array pair{model.max_drafts()+1};
   using PromptKey = std::pair<GraphRole, TextCompletion>;
   using Demands = inference::ColdDemandInventory<PromptKey>;
   Demands prompt_demand, carrier_demand;
@@ -7866,6 +7999,17 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   }
   const std::array roles{GraphRole::kMtpRound, GraphRole::kMtpCatchupRound,
       GraphRole::kMtpSingle, GraphRole::kMtpCatchupSingle};
+  const auto standalone_draft_limit = [&]([[maybe_unused]] std::size_t sampling_index) {
+    // In this configured R1 policy, a full K always selects the compound
+    // round. Only shorter quota/context tails reach standalone proposal and
+    // verification programs; the bound needs no future turn information.
+    const auto maximum = model.max_drafts();
+    if constexpr (mtp) if (first_turn_only && requests.size() == 1 &&
+        !requests.front().logits_provider && model.cache_plan.in_flight_batches >= 3 &&
+        model.greedy_draft_chain_enabled(model.sampling_configuration(sampling_index).configuration))
+      return maximum - 1;
+    return maximum;
+  };
   // Normal rebuild preserves original committed chunks, not original proposals.
   // Every consumed verifier prefix can become a teacher-forced prefill chunk.
   prompt_demand.inventory({prompt_role(1), TextCompletion::kEmitNext}, 1);
@@ -7878,8 +8022,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     Model &model;
     ~ColdFamilyGuard() { model.cancel_cold_families(); }
   } cold_family_guard{model};
-  // Fixed K2/K3 borrow the same immutable weights. Their recursive auxiliary
-  // programs are still prepared below, after these target families have joined.
+  // Fixed K2/K3 borrow the same immutable weights. Auxiliary preparation below
+  // stays on this caller while independent target families compile in the pool.
   if constexpr (mtp) if (first_turn_only && decode_bound && requests.size() == 1 &&
       !requests[0].logits_provider && model.sampling_configuration_count() == 1 &&
       !model.sampling_configuration(0).configuration.enabled &&
@@ -7910,11 +8054,14 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       if constexpr (mtp) if (width == 1 && model.device_mtp_successor_enabled() &&
           !model.sampling_configuration(sampling_index).configuration.enabled &&
           model.sampling_configuration(sampling_index).configuration.modifiers.empty())
-        shapes[{GraphRole::kMtpContinuation, TextCompletion::kEmitNext}][2] = decode_bound;
+        shapes[{GraphRole::kMtpContinuation, TextCompletion::kEmitNext}][model.max_drafts()+1] = decode_bound;
       if constexpr (mtp) for (auto role : roles) {
-        if (drafts_token(role) && (model.max_drafts() != 1 || model.recursive_mtp() ||
+        const bool compound = width == 1 && model.cache_plan.in_flight_batches >= 3 &&
+            model.greedy_draft_chain_enabled(model.sampling_configuration(sampling_index).configuration);
+        if (drafts_token(role) && (((model.max_drafts() != 1 || model.recursive_mtp()) && !compound) ||
             width > policy_decoding_requests - dynamic_decoding_requests)) continue;
-        auto &uses = shapes[{role, TextCompletion::kEmitNext}][drafts_token(role) ? 2 : 1]; uses = cache::add(uses, decode_bound);
+        auto &uses = shapes[{role, TextCompletion::kEmitNext}][drafts_token(role)
+            ? (compound ? model.max_drafts() + 1 : 2) : 1]; uses = cache::add(uses, decode_bound);
       }
       else {
         auto &uses = shapes[{GraphRole::kText, TextCompletion::kEmitNext}][1];
@@ -7922,7 +8069,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       }
     }
     if (mtp && decode_bound && width <= recursive_requests)
-      for (std::size_t rows = 1; rows <= model.cache_plan.candidate_boundaries; ++rows)
+      for (std::size_t rows = standalone_draft_limit(sampling_index) < model.max_drafts() ? 2 : 1;
+          rows <= standalone_draft_limit(sampling_index) + 1; ++rows)
         shapes[{GraphRole::kVerify, TextCompletion::kEmitNext}][rows] = decode_bound;
     // Committed-token reconstruction normalizes lag while retaining each
     // chunk's completion. Strict replay instead preserves its recorded role.
@@ -7952,7 +8100,25 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     }
     for (const auto &[key, controls] : carrier_demand.entries())
       if (width <= Demands::eligible_members(controls, matches_member)) shapes.try_emplace(key);
-    for (const auto &[key, entries] : shapes) {
+    std::vector<decltype(shapes)::const_iterator> ordered_shapes;
+    for (auto entry = shapes.cbegin(); entry != shapes.cend(); ++entry) ordered_shapes.push_back(entry);
+    if constexpr (mtp) if (first_turn_only) {
+      // Submit multi-variant capacity families before singleton rounds. Their
+      // independent compiles can otherwise start in a second worker wave and
+      // extend ready even while most workers have already finished. The work
+      // estimate uses only the configured cold inventory, never future turns.
+      const auto work = [&](const auto entry) {
+        const auto *controls = carrier_demand.find(entry->first);
+        const auto variants = entry->second.size() + (controls ? controls->size() : 0);
+        const auto stages = drafts_token(entry->first.first) ? model.max_drafts() : std::size_t{1};
+        return (std::max)(variants, stages);
+      };
+      std::stable_sort(ordered_shapes.begin(), ordered_shapes.end(), [&](const auto a, const auto b) {
+        return work(a) > work(b);
+      });
+    }
+    for (const auto entry : ordered_shapes) {
+      const auto &[key, entries] = *entry;
       const auto [role, completion] = key;
       std::vector<std::size_t> chunks; chunks.reserve(entries.size());
       for (const auto &[tokens, uses] : entries) { (void)uses; chunks.push_back(tokens); }
@@ -8028,14 +8194,19 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     }
   }
   }
-  model.finish_cold_families();
+  // Family jobs borrow only immutable model/cache facts and return private
+  // plans. The caller can build its independent tail programs before joining;
+  // it alone merges plans and mutates auxiliary carriers. ColdFamilyGuard joins
+  // every worker before these owners retire on either success or failure.
   if (mtp && decode_bound)
     for (std::size_t index = 0; index < model.sampling_configuration_count(); ++index)
       for (const bool dynamic : {false, true})
         if ((dynamic || model.recursive_mtp()) && std::ranges::any_of(requests, [index, dynamic, first_turn_only](const auto &request) {
             return request.sampling_index == index && bool(request.logits_provider) == dynamic &&
                 (first_turn_only || std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; }));
-          })) model.prepare_recursive_round_programs(index, dynamic, decode_bound);
+          })) model.prepare_recursive_round_programs(index, dynamic, decode_bound,
+              dynamic ? model.max_drafts() : standalone_draft_limit(index));
+  model.finish_cold_families();
   model.freeze_shape_plan();
   if (first_turn_only) model.prepare_shared_execution_workspace();
   if (warmup_planned_shapes) {
@@ -8083,7 +8254,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
         })) for (const auto role : roles) if (drafts_token(role))
           model.prepare_execution(pair, 1, role, TextCompletion::kEmitNext, index);
   if constexpr (mtp) if (decode_overlap && decode_bound && model.cache_plan.in_flight_batches >= 2 &&
-      model.max_drafts() == 1 && !model.recursive_mtp())
+      model.bounded_device_mtp_policy() && (model.max_drafts()==1 || model.device_mtp_successor_enabled()))
     for (std::size_t i = 0; i < model.sampling_configuration_count(); ++i) {
       const auto &sampling = model.sampling_configuration(i).configuration;
       if (!DeviceRelayCapabilities{model.execution.kind(), model.execution.has_cpu_assist(),
@@ -8484,6 +8655,7 @@ int qwen35::run(int argc, char **argv) {
         "  --mtp-max-drafts N          Maximum proposals; 0 disables drafting (default: 1)\n"
         "  --mtp-min-probability FLOAT  Stop below max draft probability, [0,1] (default: 0)\n"
         "  --mtp-draft-vocabulary auto|full|FILE  Prepared draft IDs (default: auto); greedy only\n"
+        "  --mtp-draft-head auto|original|FILE  Offline full Q4_K proposal head (default: auto); greedy only\n"
         "  --sampling greedy|random    Token selection (default: greedy)\n"
         "  --temperature FLOAT         Random policy temperature > 0 (default: 1)\n"
         "  --top-k N                    Random policy top-k; 0 disables (default: 0)\n"
@@ -8508,6 +8680,7 @@ int qwen35::run(int argc, char **argv) {
   try {
     std::filesystem::path input, continuation, trace, layer0_probe, decode_ids, schedule_file, session_file;
     std::filesystem::path draft_vocabulary = "auto";
+    std::filesystem::path draft_head="auto";
     std::size_t steps = 4, capacity = 128, max_sessions = 0, active_sequences = 0, cache_bytes = 0, max_drafts = 1, cpu_ffn_layers = 0;
     std::size_t max_prefill_rows = SIZE_MAX;
     bool warmup_planned_shapes = false, decode_overlap = true, require_bounded_generation = false;
@@ -8604,6 +8777,10 @@ int qwen35::run(int argc, char **argv) {
         if (value.empty()) throw std::runtime_error("--mtp-draft-vocabulary requires a nonempty file path");
         draft_vocabulary = value;
       }
+      else if(option=="--mtp-draft-head"){
+        if(value.empty())throw std::runtime_error("--mtp-draft-head requires a nonempty file path");
+        draft_head=value;
+      }
       else if (option == "--cpu-ffn-layers") {
         const auto parsed = std::from_chars(value.data(), value.data() + value.size(), cpu_ffn_layers);
         if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size())
@@ -8649,13 +8826,23 @@ int qwen35::run(int argc, char **argv) {
     }
     const bool scheduled = single_schedule || multiple_schedules;
     if (input.empty()) throw std::runtime_error("--inputs DIR is required");
+    if(draft_head=="original")draft_head.clear();
+    else if(draft_head=="auto"){
+      draft_head.clear();
+      if(mtp_enabled && max_drafts && !sampler.enabled && sampler.modifiers.empty() && min_draft_probability==0){
+        const auto prepared=input/"mtp-draft-head.tsv";std::error_code error;
+        const auto exists=std::filesystem::exists(prepared,error);
+        if(error)throw std::runtime_error("cannot inspect prepared draft head: "+error.message());
+        if(exists)draft_head=prepared;
+      }
+    }
     if (draft_vocabulary == "full") draft_vocabulary.clear();
     else if (draft_vocabulary == "auto") {
       draft_vocabulary.clear();
       // A prepared, source-bound asset is policy, not a guess based on vocab
       // size or on this request's tokens. Other sampling policies keep the
       // original full-vocabulary path. A stale asset still fails validation.
-      if (mtp_enabled && max_drafts && !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0) {
+      if (draft_head.empty() && mtp_enabled && max_drafts && !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0) {
         const auto prepared = input / "mtp-draft-vocabulary.ids";
         std::error_code error;
         const auto exists = std::filesystem::exists(prepared, error);
@@ -8666,8 +8853,10 @@ int qwen35::run(int argc, char **argv) {
     if (!draft_vocabulary.empty() && (!mtp_enabled || !max_drafts ||
         sampler.enabled || !sampler.modifiers.empty() || min_draft_probability != 0))
       throw std::runtime_error("--mtp-draft-vocabulary requires --mtp on, active drafting, unmodified greedy sampling and zero minimum probability");
+    if(!draft_head.empty() && (!mtp_enabled || !max_drafts || sampler.enabled || !sampler.modifiers.empty() || min_draft_probability!=0 ||
+        !draft_vocabulary.empty()))throw std::runtime_error("--mtp-draft-head requires active unmodified greedy MTP without a subset mapping");
     backend_selection = qwen35::select_execution(backend_selection, cpu_ffn_layers);
-    auto weight_source = qwen35::prepare_weight_source(input / "weights.tsv", mtp_enabled, draft_vocabulary);
+    auto weight_source = qwen35::prepare_weight_source(input / "weights.tsv", mtp_enabled, draft_vocabulary,draft_head);
     const auto geometry = weight_source.roles.geometry;
     qwen35::validate_mtp_source(geometry, mtp_enabled);
     qwen35::FfnPlacement::validate(cpu_ffn_layers, geometry.layers.size());
@@ -8816,18 +9005,19 @@ int qwen35::run(int argc, char **argv) {
     const auto max_query_rows = bounded_generation ? capacity : (std::max)({*std::max_element(planned_chunks.begin(), planned_chunks.end()), mtp_schema_rows,
         mtp_enabled && mtp_has_decode ? max_drafts + 1 : std::size_t{1}});
     const auto requested_active = (std::min)(active_sequences, input_sessions);
-    const bool plain_draft_head = std::ranges::any_of(weight_source.roles.selected, [&](const auto &role) {
+    const bool stored_draft_head = std::ranges::any_of(weight_source.roles.selected, [&](const auto &role) {
       return role.name == geometry.head_role() &&
           (role.projection_codec == qwen35::prepared::ProjectionCodec::kDense ||
            role.projection_codec == qwen35::prepared::ProjectionCodec::kUnspecified) &&
-          (role.dtype == "BF16" || role.dtype == "F16" || role.dtype == "F32");
+          (role.dtype == "BF16" || role.dtype == "F16" || role.dtype == "F32" ||
+           role.dtype == "Q8_0" || role.dtype == "Q4_K" || role.dtype == "Q6_K");
     });
     // A continuous conditional successor retains its completed producer until
     // the consumer really retires. Count that third original batch in the
     // existing page/state bound, independently of simultaneous GPU work.
     bool overlap_selected = decode_overlap && natural_generation &&
         (!mtp_enabled || (max_drafts >= 1 && max_drafts <= 3 && min_draft_probability == 0 &&
-                         (max_drafts == 1 || plain_draft_head))) && !progress &&
+                         (max_drafts == 1 || stored_draft_head))) && !progress &&
         qwen35::DeviceRelayCapabilities{backend_selection.primary, cpu_ffn_layers != 0,
             progress, sampler.enabled, !sampler.modifiers.empty()}.eligible() &&
         replay != qwen35::ReplayPolicy::kCommands && (trace.empty() || !trace_states) &&
@@ -8849,7 +9039,8 @@ int qwen35::run(int argc, char **argv) {
           mtp_enabled && mtp_has_decode ? (std::max)(max_query_rows, std::size_t{2}) : max_query_rows, recurrent_payload,
           active_sequences == 0 ? residents : requested_active,
           mtp_enabled ? max_drafts + 1 : 1, mtp_enabled, sampler.enabled, overlap_selected ? overlap_depth : 1,
-          device_verification_selected && (active_sequences == 0 ? residents : requested_active) == 1 ? 2 : 0, source_precision);
+          device_verification_selected && (active_sequences == 0 ? residents : requested_active) == 1 ? 2 : 0, source_precision,
+          device_verification_selected ? max_drafts : 0);
     };
     const auto minimum_residents = active_sequences == 0 ? std::size_t{1} : requested_active;
     auto selected_cache = plan_for(cached_slots);

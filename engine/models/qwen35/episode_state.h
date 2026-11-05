@@ -49,13 +49,15 @@ struct StepMember final {
   std::int32_t first_input = -1, draft_token = -1;
   std::vector<std::int32_t> verification_inputs{};
   std::vector<c::ReadLease> carry_prefix{};
+  std::vector<inference::PagedSequenceState> draft_chain_pages;
+  std::vector<c::BatchLayoutVersion> draft_chain_layouts;
   // Frozen active inputs of this member's actual draft Append, not accepted rows.
   std::size_t draft_input_rows = 0, discarded_draft_rows = 0;
-  // Original raw capacity survives independently of the selected K1 input
-  // prefix. Model acceptance layouts grant no additional page authority.
-  std::array<c::BatchLayoutVersion, 2> target_input_choices, draft_input_choices;
-  c::BatchLayoutVersion target_capacity_layout,draft_capacity_layout;
-  std::vector<hyle::inference::PagedPageRef> target_capacity_pages,draft_capacity_pages;
+  // Model acceptance coordinates describe selected views of one prepared
+  // capacity. The complete raw page cohort survives canonical prefix clipping.
+  std::vector<c::BatchLayoutVersion> target_input_choices, draft_input_choices;
+  c::BatchLayoutVersion target_capacity_layout, draft_capacity_layout;
+  std::vector<hyle::inference::PagedPageRef> target_capacity_pages, draft_capacity_pages;
   std::size_t choice_base_length = 0, choice_draft_frontier = 0;
   std::optional<std::size_t> selected_input_choice;
   bool sampled_accept = false;
@@ -98,6 +100,7 @@ struct StepSources final : inference::SubmissionViews {
   // K1 keeps the producer's full two-prefix publication rights in states.
   // These independent original final-prefix views serve the next Gather.
   std::vector<g::StoreSource> successor_states;
+  std::vector<g::batch::PagedAppendSource> draft_stage_sources;
   bool mtp_full_candidate = false;
   bool mtp_device_choice = false;
   bool prefill = false; // Known current-turn input; no speculative token output.
@@ -135,9 +138,11 @@ struct StepState final {
     for (auto &member : members) {
       member.target_publication = {}; member.draft_publication = {};
       member.owner_state->recycle_candidate(std::move(member.next)); member.base = nullptr;
-      member.target_capacity_pages.clear();member.draft_capacity_pages.clear();
-      member.target_capacity_layout={};member.draft_capacity_layout={};
-      member.target_input_choices = {}; member.draft_input_choices = {};
+      member.target_capacity_pages.clear(); member.draft_capacity_pages.clear();
+      member.target_input_choices.clear(); member.draft_input_choices.clear();
+      member.target_capacity_layout = {}; member.draft_capacity_layout = {};
+      member.draft_chain_pages.clear();
+      member.draft_chain_layouts.clear();
     }
     phase = nullptr;
   }

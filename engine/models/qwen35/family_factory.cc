@@ -89,7 +89,7 @@ sampling::LogitsInputsFor<V> prepare_logits_inputs(Recipe &r, sampling::LogitsPo
 }
 
 V draft_scores(Recipe &recipe, V selected_hidden, DraftProjectionView projection) {
-  if (!projection.original_ids) return recipe.scores(selected_hidden, std::string(recipe.geometry.head_role()));
+  if (!projection.projection.weight) return recipe.scores(selected_hidden, std::string(recipe.geometry.head_role()));
   if (projection.indexed_rows) {
     const auto rows = recipe.spec(selected_hidden).dimensions()[0];
     if (!rows.is_fixed() || rows.fixed_value() != 1)
@@ -115,6 +115,60 @@ V original_draft_id(Recipe &recipe, V compact_id, DraftProjectionView projection
   if (!projection.original_ids) return compact_id;
   return recipe.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
       {recipe.constant(*projection.original_ids), compact_id}, recipe.spec(compact_id));
+}
+
+DraftChainValues emit_draft_chain(Recipe&r,V tokens,V shifted,V positions,V frequencies,
+    std::size_t rows,std::size_t steps,const c::BatchSchema&schema,DraftProjectionView head,
+    std::span<const DraftChainControl>controls,V has_lag){
+  if(!rows || rows>2 || steps<2 || steps>3 ||
+      (!controls.empty() && (controls.size()!=steps || rows!=2 || !has_lag)))
+    throw std::logic_error("draft chain requires its bounded original R1 rows and matching device controls");
+  DraftChainValues result;result.stages.reserve(steps);
+  auto ids=tokens;mtp::Projection prefix;mtp::KeyValue prefix_kv;
+  V last_query_lengths;
+  if(!controls.empty()){auto&literal=r.assembly.literal_at(GraphAssembly::primary(),dense(Type::kInt32,{1}));
+    constexpr std::array<std::int32_t,1>one{1};literal.write<std::int32_t>(one);last_query_lengths=r.constant(literal);}
+  std::vector<V>packet{r.copy(r.slice(tokens,0,f(static_cast<std::int64_t>(rows-1)),f(1)))};
+  for(std::size_t i=0;i<steps;++i){
+    const auto width=static_cast<std::int64_t>(rows+i),local_rows=static_cast<std::int64_t>(i?1:rows);
+    const auto cumulative_positions=controls.empty()?r.copy(r.slice(positions,0,f(0),f(width))):controls[i].positions;
+    const auto local_positions=!i?cumulative_positions:controls.empty()?
+        r.copy(r.slice(cumulative_positions,0,f(width-1),f(1))):
+        r.one(c::Gather{.axis=0,.bounds=c::IndexBoundsPolicy::kChecked},
+            {cumulative_positions,controls[i].last_index},r.dense_spec(Type::kInt32,{f(1)}));
+    auto projection=mtp::input_projection(r,ids,shifted);
+    auto kv=mtp::project_kv(r,projection,local_positions,frequencies,mtp::Geometry{1,f(local_rows),f(local_rows)});
+    if(i){
+      const auto pack=[&](V previous,V next){
+        std::vector<D>shape(r.spec(previous).dimensions().begin(),r.spec(previous).dimensions().end());shape[0]=f(width);
+        const auto spec=r.dense_spec(r.spec(previous).data_type(),shape);
+        const auto full=r.one(c::Concat{.axis=0},{previous,next},spec);
+        if(controls.empty())return full;
+        // At lag0 the old last physical row is padding. Move it behind the
+        // newly projected row; only a contiguous active prefix can reach KV.
+        const std::array compact{r.copy(r.slice(previous,0,f(0),f(width-2))),next,r.copy(r.slice(previous,0,f(0),f(1)))};
+        const auto padded=r.concat(compact,0,spec);
+        return r.one(c::Select{},{has_lag,full,padded},spec);
+      };
+      projection={f(width),pack(prefix.fused,projection.fused),pack(prefix.normalized,projection.normalized)};
+      kv={f(width),pack(prefix_kv.key_rows,kv.key_rows),pack(prefix_kv.value_rows,kv.value_rows)};
+    }
+    DraftChainStage stage;stage.rows=static_cast<std::size_t>(width);
+    stage.key=r.input(take(c::batch_cache_description(schema,c::BatchCacheRole::kKey)));
+    stage.value=r.input(take(c::batch_cache_description(schema,c::BatchCacheRole::kValue)));
+    if(controls.empty())stage.metadata=r.input(take(schema.metadata_description()));
+    const auto selected=mtp::full_head(r,projection,kv,cumulative_positions,frequencies,
+        {schema,stage.key,stage.value,stage.metadata,controls.empty()?V{}:controls[i].query_lengths,controls.empty()?V{}:controls[i].kv_lengths,last_query_lengths},
+        f(width-1),mtp::Geometry{1,f(width),f(width)},
+        [&](Recipe&recipe,V hidden){return draft_scores(recipe,hidden,head);},controls.empty()?V{}:controls[i].last_index,i!=0);
+    stage.append_key=selected.append_nodes.key;stage.append_value=selected.append_nodes.value;
+    stage.attention=selected.attention_node;result.stages.push_back(stage);result.hidden=selected.selected_hidden;
+    const auto id=original_draft_id(r,r.op(c::Operation(c::TopK{.count=1}),{selected.logits},
+        {r.dense_spec(Type::kFloat32,{f(1),f(1)}),r.dense_spec(Type::kInt32,{f(1),f(1)})})[1],head);
+    ids=r.reshape(id,{f(1)});shifted=result.hidden;packet.push_back(ids);prefix=projection;prefix_kv=kv;
+  }
+  result.packet=r.copy(r.concat(packet,0,r.dense_spec(Type::kInt32,{f(static_cast<std::int64_t>(packet.size()))})));
+  return result;
 }
 
 ExecutionPlanFacts inspect_execution_plan(const inference::Backend &execution,
@@ -203,14 +257,19 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
   const bool continuous_successor = device_continuation && prepared.continuous_device_successor;
   const bool emit_device_decision = prepared.device_acceptance_successor || continuous_successor;
   const bool repair_draft = prepared.recursive_draft_repair;
+  const auto chain_steps = prepared.draft_chain_steps;
+  if (chain_steps && (requests != 1 || prefix_rows != chain_steps + 1 || chain_steps < 2 || chain_steps > 3 ||
+      (role != GraphRole::kMtpRound && role != GraphRole::kMtpCatchupRound && !device_continuation) ||
+      packing != RowPacking::kRectangular || selected_sampler.enabled || !selected_sampler.modifiers.empty()))
+    throw std::runtime_error("compound MTP round requires its exact fixed greedy R1 family");
   if (repair_draft && (role != GraphRole::kVerify || requests != 1 || prefix_rows < 2 ||
       packing != RowPacking::kRectangular || selected_sampler.enabled || !selected_sampler.modifiers.empty()))
     throw std::runtime_error("fused draft repair requires the original greedy exact R1 verifier");
-  if (device_continuation && (requests != 1 || prefix_rows != 2 ||
+  if (device_continuation && (requests != 1 || prefix_rows != (chain_steps?chain_steps+1:2) ||
       packing != RowPacking::kRectangular || completion != TextCompletion::kEmitNext ||
       selected_sampler.enabled || !selected_sampler.modifiers.empty() ||
-      std::ranges::any_of(build_request.chunks, [](auto rows) { return rows != 2; })))
-    throw std::runtime_error("device MTP continuation requires the original greedy R1 T2 rectangular family");
+      std::ranges::any_of(build_request.chunks, [&](auto rows) { return rows != prefix_rows; })))
+    throw std::runtime_error("device MTP continuation requires its bounded greedy R1 rectangular family");
   const bool successor_eligible = drafts_token(role) && requests == 1 &&
       packing == RowPacking::kRectangular && !selected_sampler.enabled &&
       selected_sampler.modifiers.empty() && (prepared.emit_successor || continuous_successor);
@@ -223,9 +282,10 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     auto &definition = *result;
     definition.continuous_device_successor = continuous_successor;
     definition.recursive_draft_repair = repair_draft;
+    definition.draft_chain_steps = chain_steps;
     definition.layers.resize(geometry.layers.size()); definition.attention_nodes.resize(target_kv_layers);
-    definition.append_nodes.resize(draft_bank + 2);
-    definition.append_cache_inputs.resize(draft_bank + 2);
+    definition.append_nodes.resize(draft_bank + 2 + 2 * chain_steps);
+    definition.append_cache_inputs.resize(draft_bank + 2 + 2 * chain_steps);
     definition.requests = requests; definition.role = role; definition.prefix_rows = prefix_rows; definition.completion = completion;
     definition.admitted_exact = admitted_exact; definition.packing = packing;
     definition.state_resource_ports.reserve(ports_per_request * requests);
@@ -322,6 +382,8 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
       return r.copy(r.slice(values, 0, f(static_cast<std::int64_t>(row)), f(1)));
     };
     D draft_sequence_rows = f(0), draft_packed_rows = f(0);
+    V canonical_draft_positions{},canonical_query_lengths{},canonical_kv_lengths{};
+    std::vector<DraftChainControl>device_chain_controls;
     if (repair_draft) {
       auto &port = definition.hidden_state;
       port.pool = r.input(take(hidden_schema.capacity_description()));
@@ -336,7 +398,8 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     }
     if (has_mtp(role)) {
       auto &port = definition.hidden_state;
-      const auto source_rows = f(static_cast<std::int64_t>(cache::multiply(requests, draft_lag(role) + 1)));
+      const auto source_rows = f(static_cast<std::int64_t>(device_continuation?prefix_rows:
+          cache::multiply(requests, draft_lag(role) + 1)));
       port.pool = r.input(take(hidden_schema.capacity_description()));
       port.source_ids = r.input(r.dense_spec(Type::kInt32, {source_rows}));
       const auto gathered = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
@@ -354,7 +417,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         definition.carry_input_port = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
             {gathered, predecessor_prefix_index},
             r.dense_spec(precision.activation_type(), {batch, f(hidden)}));
-      const auto draft_rows = is_mtp_prefill(role)
+      const auto draft_rows = chain_steps ? f(static_cast<std::int64_t>(chain_steps + (device_continuation?1:draft_lag(role)))) : is_mtp_prefill(role)
           ? (draft_lag(role) ? D(take(r.builder.dimension_sum(t, f(1)))) : t)
           : f(static_cast<std::int64_t>(draft_lag(role) + 1));
       const auto packed_draft_rows = !draft_lag(role) && is_mtp_prefill(role) ? packed : requests == 1 ? draft_rows :
@@ -366,7 +429,9 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         if (draft_lag(role)) definition.draft_token_select_port = r.input(r.dense_spec(Type::kInt32, {packed_draft_rows}));
       }
       if (compact_draft) definition.draft_last_ids_port = r.input(r.dense_spec(Type::kInt32, {batch}));
-      const auto draft_control_rows=device_continuation?D(take(r.builder.dimension_sum(draft_rows,f(2)))):D{};
+      const auto stage_control_columns=chain_steps?4*chain_steps+chain_steps*(chain_steps-1)/2:0;
+      const auto draft_control_rows=device_continuation?D(take(r.builder.dimension_sum(draft_rows,
+          f(static_cast<std::int64_t>(2+stage_control_columns))))):D{};
       definition.draft_position_port = r.input(device_continuation?r.dense_spec(Type::kInt32,
           {f(static_cast<std::int64_t>(prefix_rows)),draft_control_rows}):
           requests == 1 ? r.dense_spec(Type::kInt32, {draft_rows}) : r.dense_spec(Type::kInt32, {batch, draft_rows}));
@@ -378,9 +443,34 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         draft_query_lengths=r.slice(selected,0,draft_rows,f(1));
         const auto kv_offset=D(take(r.builder.dimension_sum(draft_rows,f(1))));
         draft_kv_lengths=r.slice(selected,0,kv_offset,f(1));
+        if(chain_steps){
+          std::int64_t offset=static_cast<std::int64_t>(chain_steps+3);
+          for(std::size_t i=0;i<chain_steps;++i){
+            const auto rows=static_cast<std::int64_t>(i+2);
+            const auto integer=[&](std::int32_t value){auto&literal=assembly.literal_at(assembly.primary(),dense(Type::kInt32,{1}));
+              literal.write<std::int32_t>(std::span(&value,1));return r.constant(literal);};
+            const auto last=r.one(c::Select{},{predecessor_has_lag,integer(static_cast<std::int32_t>(i+1)),integer(static_cast<std::int32_t>(i))},
+                r.dense_spec(Type::kInt32,{f(1)}));
+            device_chain_controls.push_back({r.slice(selected,0,f(offset),f(rows)),r.slice(selected,0,f(offset+rows),f(1)),
+                r.slice(selected,0,f(offset+rows+1),f(1)),last});offset+=rows+2;
+          }
+        }
       }
+      canonical_draft_positions=draft_positions;canonical_query_lengths=draft_query_lengths;canonical_kv_lengths=draft_kv_lengths;
       if (draft_lag(role)) {
-        definition.prior_input_port = r.slice(gathered, 0, chronological ? f(0) : batch, batch);
+        if(device_continuation){
+          std::vector<std::int32_t>indices(prefix_rows);for(std::size_t i=1;i<prefix_rows;++i)indices[i]=static_cast<std::int32_t>(i-1);
+          if(std::ranges::all_of(indices,[&](auto value){return value==indices.front();}))
+            definition.prior_input_port=r.slice(gathered,0,f(indices.front()),batch);
+          else {
+            auto&prior_indices=assembly.literal_at(assembly.primary(),dense(Type::kInt32,{static_cast<std::int64_t>(prefix_rows)}));
+            prior_indices.write<std::int32_t>(indices);
+            const auto selected=r.one(c::Gather{.axis=0,.bounds=c::IndexBoundsPolicy::kChecked},
+                {r.constant(prior_indices),predecessor_prefix_index},r.dense_spec(Type::kInt32,{f(1)}));
+            definition.prior_input_port=r.one(c::Gather{.axis=0,.bounds=c::IndexBoundsPolicy::kChecked},
+                {gathered,selected},r.dense_spec(precision.activation_type(),{batch,f(hidden)}));
+          }
+        }else definition.prior_input_port = r.slice(gathered, 0, chronological ? f(0) : batch, batch);
         definition.catchup_token_port = r.input(r.dense_spec(Type::kInt32, {batch}));
       }
       if (drafts_token(role) || !is_mtp_prefill(role)) {
@@ -424,6 +514,20 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
                 r.dense_spec(precision.activation_type(), {batch, f(2), f(hidden)})), {packed_draft_rows, f(hidden)});
           }
         }
+        if (chain_steps) {
+          auto chain = emit_draft_chain(r, ids, hidden_rows, draft_positions, frequencies,
+              device_continuation?2:1+draft_lag(role), chain_steps, attention_schema, prepared.draft_projection,
+              device_chain_controls,predecessor_has_lag);
+          target_tokens = chain.packet; definition.draft_chain = std::move(chain.stages);
+          definition.draft_id_port = r.copy(r.reshape(r.slice(target_tokens, 0, f(1),
+              f(static_cast<std::int64_t>(chain_steps))), {f(static_cast<std::int64_t>(chain_steps)), f(1)}));
+          r.publish(definition.draft_id_port);
+          for (std::size_t i = 0; i < chain_steps; ++i) {
+            const auto bank = draft_bank + 2 + 2 * i; const auto &stage = definition.draft_chain[i];
+            definition.append_nodes[bank] = stage.append_key; definition.append_nodes[bank + 1] = stage.append_value;
+            definition.append_cache_inputs[bank] = stage.key; definition.append_cache_inputs[bank + 1] = stage.value;
+          }
+        } else {
         const auto projection = mtp::input_projection(r, ids, hidden_rows);
         const mtp::Geometry row_geometry{requests, draft_rows, packed_draft_rows};
         const auto kv = mtp::project_kv(r, projection, draft_positions, frequencies, row_geometry);
@@ -468,6 +572,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
                   r.dense_spec(Type::kInt32, {batch, f(2)})), {packed});
         } else append = mtp::append_kv(r, attention_schema, kv);
         definition.append_nodes[draft_bank] = append.key; definition.append_nodes[draft_bank + 1] = append.value;
+        }
       }
     }
     // Writer-only draft maintenance has no attention data edge into target.
@@ -480,9 +585,9 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         .state_slots = prepared.state_slots, .recurrent_descriptions = state_schema,
         .plain_attention_schema = attention_schema, .target_attention_schemas = attention_schemas,
         .cpu_ffn_layers = model.cpu_ffn_layers,
-        .preceding_append = has_mtp(role) && !is_mtp_prefill(role)
+        .preceding_append = has_mtp(role) && !is_mtp_prefill(role) && !chain_steps
             ? definition.append_nodes[draft_bank + 1] : g::NodeId{},
-        .has_preceding_append = has_mtp(role) && !is_mtp_prefill(role),
+        .has_preceding_append = has_mtp(role) && !is_mtp_prefill(role) && !chain_steps,
         .predecessor_prefix_index = predecessor_prefix_index,
         .query_lengths=target_query_lengths,.kv_lengths=target_kv_lengths},
         {definition.layers, definition.attention_nodes,
@@ -499,6 +604,32 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     }
     // The selected child decides caller-written versus generated result storage.
     const auto normalized_last = r.norm(x, "norm.weight");
+    if (chain_steps) {
+      const auto previous = r.copy(r.slice(normalized_last, 0, f(0), f(static_cast<std::int64_t>(chain_steps - 1))));
+      std::vector<V> hidden_rows;
+      if (draft_lag(role)) hidden_rows.push_back(definition.prior_input_port);
+      hidden_rows.push_back(definition.carry_input_port); hidden_rows.push_back(previous);
+      const auto width = f(static_cast<std::int64_t>(chain_steps + (device_continuation?1:draft_lag(role))));
+      auto canonical_hidden = r.concat(hidden_rows, 0,
+          r.dense_spec(precision.activation_type(), {width, f(hidden)}));
+      const auto prefix_ids = r.copy(r.slice(target_tokens, 0, f(0), f(static_cast<std::int64_t>(chain_steps))));
+      auto canonical_ids = draft_lag(role) ? r.one(c::Concat{.axis = 0},
+          {definition.catchup_token_port, prefix_ids}, r.dense_spec(Type::kInt32, {width})) : prefix_ids;
+      if(device_continuation){
+        const auto lag0_hidden=r.one(c::Concat{.axis=0},
+            {definition.carry_input_port,previous,definition.carry_input_port},r.dense_spec(precision.activation_type(),{width,f(hidden)}));
+        const auto lag0_ids=r.one(c::Concat{.axis=0},{prefix_ids,definition.token_port},r.dense_spec(Type::kInt32,{width}));
+        canonical_hidden=r.one(c::Select{},{predecessor_has_lag,canonical_hidden,lag0_hidden},r.dense_spec(precision.activation_type(),{width,f(hidden)}));
+        canonical_ids=r.one(c::Select{},{predecessor_has_lag,canonical_ids,lag0_ids},r.dense_spec(Type::kInt32,{width}));
+      }
+      const auto projection = mtp::input_projection(r, canonical_ids, canonical_hidden);
+      const auto kv = mtp::project_kv(r, projection, canonical_draft_positions, frequencies,
+          mtp::Geometry{1, width, width});
+      const auto append = mtp::append_kv(r, attention_schema, kv,canonical_query_lengths,canonical_kv_lengths);
+      if (has_prior_append) check(r.builder.depends_on(append.key, prior_append));
+      definition.append_nodes[draft_bank] = append.key; definition.append_nodes[draft_bank + 1] = append.value;
+      prior_append = append.value; has_prior_append = true;
+    }
     if (repair_draft) {
       const auto rows = static_cast<std::int64_t>(prefix_rows);
       const auto previous = r.copy(r.slice(normalized_last, 0, f(0), f(rows - 1)));
@@ -653,37 +784,47 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     if (successor_eligible) {
       // Two complete, independently owned I32[1] outputs. OutputSource cannot
       // grant a fabricated subview of the two-row target-ID writer to B.
-      definition.successor_token_port = r.copy(r.reshape(r.slice(definition.id_port, 0, f(1), f(1)), {f(1)}));
-      definition.successor_catchup_port = r.copy(r.reshape(definition.draft_id_port, {f(1)}));
+      definition.successor_token_port = r.copy(r.reshape(r.slice(definition.id_port, 0,
+          f(static_cast<std::int64_t>(prefix_rows - 1)), f(1)), {f(1)}));
+      definition.successor_catchup_port = r.copy(r.reshape(chain_steps ? r.slice(definition.draft_id_port, 0,
+          f(static_cast<std::int64_t>(chain_steps - 1)), f(1)) : definition.draft_id_port, {f(1)}));
       r.publish(definition.successor_token_port); r.publish(definition.successor_catchup_port);
       if (emit_device_decision) {
-        // These are the K1 agreement coordinates. The continuation owner
-        // still applies EOS/stop/quota and retains/retires both real prefixes.
-        const auto first = r.reshape(r.slice(definition.id_port, 0, f(0), f(1)), {f(1)});
-        const auto second = r.reshape(r.slice(definition.id_port, 0, f(1), f(1)), {f(1)});
-        const auto draft = r.reshape(definition.draft_id_port, {f(1)});
-        // CUDA's existing arithmetic route is floating-only. Every admitted
-        // token ID is exactly representable in F32; subtraction is zero iff
-        // the original I32 IDs agree. This does not alter logits or sampling.
-        const auto mismatch = r.cast(r.binary(c::BinaryKind::kSubtract,
-            r.cast(first, Type::kFloat32), r.cast(draft, Type::kFloat32)), Type::kBool);
         const auto integer = [&](std::int32_t value) {
           auto &literal = assembly.literal_at(assembly.primary(), dense(Type::kInt32, {1}));
           literal.write<std::int32_t>(std::span(&value, 1));
           return r.constant(literal);
         };
-        const auto zero = integer(0), one = integer(1), two = integer(2), absent = integer(-1);
-        const auto select = [&](V rejected, V accepted) {
-          return r.one(c::Select{}, {mismatch, rejected, accepted}, r.dense_spec(Type::kInt32, {f(1)}));
-        };
-        definition.successor_accepted_count_port = r.copy(select(one, two));
-        definition.successor_prefix_index_port = r.copy(select(zero, one));
-        definition.successor_pending_port = r.copy(select(first, second));
-        definition.successor_lag_port = r.copy(select(zero, one));
-        // -1 means no logical catchup at lag0. A fixed upper-bound successor
-        // must select a valid inactive-row token before any embedding Gather;
-        // changing this scalar alone never authorizes its KV/state effects.
-        definition.successor_selected_catchup_port = r.copy(select(absent, draft));
+        const auto select=[&](V predicate,V yes,V no){return r.one(c::Select{},
+            {predicate,yes,no},r.dense_spec(Type::kInt32,{f(1)}));};
+        const auto proposals=prefix_rows-1;
+        std::vector<V>integers,targets,drafts;
+        for(std::size_t i=0;i<=prefix_rows;++i)integers.push_back(integer(static_cast<std::int32_t>(i)));
+        for(std::size_t i=0;i<prefix_rows;++i)
+          targets.push_back(r.reshape(r.slice(definition.id_port,0,f(static_cast<std::int64_t>(i)),f(1)),{f(1)}));
+        for(std::size_t i=0;i<proposals;++i)
+          drafts.push_back(r.reshape(proposals==1?definition.draft_id_port:
+              r.slice(definition.draft_id_port,0,f(static_cast<std::int64_t>(i)),f(1)),{f(1)}));
+        const auto absent=integer(-1);
+        auto selected=integers[proposals],count=integers[prefix_rows],pending=targets.back(),
+            lag=integers[1],catchup=drafts.back();
+        // Propagate each complete prefix directly. A rejected one-proposal
+        // round reduces to the original Selects without table/Gather kernels;
+        // longer chains retain the same first-forward-mismatch semantics.
+        // IDs are exactly representable in F32. Stop/quota remain host policy.
+        for(std::size_t i=proposals;i-- >0;){
+          const auto mismatch=r.cast(r.binary(c::BinaryKind::kSubtract,r.cast(targets[i],Type::kFloat32),r.cast(drafts[i],Type::kFloat32)),Type::kBool);
+          selected=select(mismatch,integers[i],selected);
+          count=select(mismatch,integers[i+1],count);
+          pending=select(mismatch,targets[i],pending);
+          lag=select(mismatch,integers[i?1:0],lag);
+          catchup=select(mismatch,i?drafts[i-1]:absent,catchup);
+        }
+        definition.successor_accepted_count_port=r.copy(count);
+        definition.successor_prefix_index_port=r.copy(selected);
+        definition.successor_pending_port=r.copy(pending);
+        definition.successor_lag_port=r.copy(lag);
+        definition.successor_selected_catchup_port=r.copy(catchup);
         r.publish(definition.successor_accepted_count_port);
         r.publish(definition.successor_prefix_index_port);
         r.publish(definition.successor_pending_port);

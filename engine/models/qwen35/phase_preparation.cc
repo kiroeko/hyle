@@ -104,9 +104,10 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
     check(phase.slots.prepare(phase.child->compiled, execution.queue_bindings(), physical_slots, transactions,
         [&](std::size_t slot, auto &program_slot) -> hyle::Status {
       auto &io = program_slot.data;
-      io.batch_layouts.reserve(phase.attention_nodes.size() + drafts_token(role));
+      io.batch_layouts.reserve(phase.attention_nodes.size() + (phase.draft_chain_steps ? phase.draft_chain_steps : drafts_token(role)));
       for (auto node : phase.attention_nodes) io.batch_layouts.push_back({node, {}});
-      if (drafts_token(role)) io.batch_layouts.push_back({phase.draft_attention_node, {}});
+      if(phase.draft_chain_steps)for(const auto&stage:phase.draft_chain)io.batch_layouts.push_back({stage.attention,{}});
+      else if (drafts_token(role)) io.batch_layouts.push_back({phase.draft_attention_node, {}});
       program_slot.planned_uses = planned_slot_uses[slot];
       program_slot.replay_mode = preparation.replay_modes[slot];
       const auto token_count = has_mtp(role) && !is_mtp_prefill(role)
@@ -164,10 +165,12 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
         if (float_predicates) io.sampling_scratch.resize(requests);
       }
       if (has_mtp(role) || phase.recursive_draft_repair) {
-        const auto draft_rows = phase.recursive_draft_repair ? t : is_mtp_prefill(role)
+        const auto draft_rows = phase.draft_chain_steps ? static_cast<std::int64_t>(phase.draft_chain_steps+draft_lag(role)) :
+            phase.recursive_draft_repair ? t : is_mtp_prefill(role)
             ? t + static_cast<std::int64_t>(draft_lag(role)) : static_cast<std::int64_t>(draft_lag(role) + 1);
+        const auto stage_columns=phase.draft_chain_steps?4*phase.draft_chain_steps+phase.draft_chain_steps*(phase.draft_chain_steps-1)/2:0;
         io.draft_positions = phase_tensor(allocation_budget, execution.device(), phase.predecessor_prefix_port?dense(Type::kInt32,
-            {static_cast<std::int64_t>(phase.prefix_rows),draft_rows+2}):requests == 1 ? dense(Type::kInt32, {draft_rows})
+            {static_cast<std::int64_t>(phase.prefix_rows),draft_rows+2+static_cast<std::int64_t>(stage_columns)}):requests == 1 ? dense(Type::kInt32, {draft_rows})
             : dense(Type::kInt32, {static_cast<std::int64_t>(requests), draft_rows}));
         if (draft_lag(role) || phase.recursive_draft_repair)
           io.catchup_token = phase_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
@@ -187,7 +190,7 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
         }
         if (compact_draft) io.draft_last_ids = phase_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
         if (drafts_token(role)) {
-          io.draft_ids.resize(requests);
+          io.draft_ids.resize(requests * (phase.draft_chain_steps ? phase.draft_chain_steps : 1));
         }
       }
       if (last_ids) {

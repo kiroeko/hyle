@@ -111,16 +111,21 @@ private:
       throw std::runtime_error("MTP replay ledger has no uncommitted reserved record");
     return records[committed_count];
   }
-  // A K1 successor needs the original greedy R1 pending boundary. The Model
+  // A bounded MTP successor needs the original greedy R1 pending boundary. The Model
   // still proves its sampler/capability; a zero cursor is only a ledger fact.
-  static bool k1_pending_boundary(const GenerationCommitRecord &record) noexcept {
-    return drafts_token(record.role) && record.draft_limit == 1 &&
+  static bool mtp_pending_boundary(const GenerationCommitRecord &record) noexcept {
+    return drafts_token(record.role) && record.draft_limit && record.draft_limit<SIZE_MAX/2 &&
+        record.draft_limit+1<=record.emitted.capacity() && record.draft_limit+1<=record.accepted_inputs.capacity() &&
+        record.draft_limit+1<=record.verification_inputs.capacity() &&
         record.requests == 1 && record.member_index == 0 &&
         record.before.lag == draft_lag(record.role) &&
         record.before.frontier <= record.before.length &&
         record.before.length - record.before.frontier == record.before.lag &&
         record.pending_input >= 0 && record.pending_input == record.before.next_id &&
         record.before.sampling == hyle::inference::SamplingCursor{};
+  }
+  static bool k1_pending_boundary(const GenerationCommitRecord&record)noexcept{
+    return record.draft_limit==1 && mtp_pending_boundary(record);
   }
 
 public:
@@ -184,8 +189,8 @@ public:
       std::size_t reserved_outputs, std::size_t additional_outputs) {
     auto &record = next();
     const bool ordinary = record.role == GraphRole::kText && !record.draft_limit;
-    const bool k1 = k1_pending_boundary(record) && record.quota >= 2;
-    const auto width = ordinary ? std::size_t{1} : std::size_t{2};
+    const auto width=ordinary?std::size_t{1}:record.draft_limit<SIZE_MAX/2?record.draft_limit+1:0;
+    const bool k1 = mtp_pending_boundary(record) && record.quota >= width;
     const auto quota = hyle::inference::continuation_quota(
         {reserved_outputs, additional_outputs}, width, remaining_outputs);
     if (successor_ordinal_ || observed_commits != committed_count || (!ordinary && !k1) ||
@@ -210,7 +215,8 @@ public:
       std::size_t member_index = 0) {
     const auto &previous = next();
     const bool ordinary = previous.role == GraphRole::kText;
-    const bool k1 = k1_pending_boundary(previous) && requests == 1 && member_index == 0 &&
+    const auto width=ordinary?std::size_t{1}:previous.draft_limit<SIZE_MAX/2?previous.draft_limit+1:0;
+    const bool k1 = mtp_pending_boundary(previous) && requests == 1 && member_index == 0 &&
         !previous.accepted && !previous.verified_rows && !previous.emitted_count &&
         !previous.stopped && !previous.consumed_drafts && !previous.draft_rows;
     if (successor_ordinal_ || observed_commits != committed_count ||
@@ -219,20 +225,20 @@ public:
         previous.completion != TextCompletion::kEmitNext || !previous.user_output || previous.imported ||
         previous.ids().size() != 1 || previous.pending_input < 0 || previous.turn != turn ||
         (ordinary ? quota >= previous.quota
-                  : previous.quota < 4 || quota < 2 || quota > previous.quota - 2) ||
+                  : previous.quota < 2*width || quota < width || quota > previous.quota - width) ||
         records[committed_count + 1].committed)
       throw std::runtime_error("generation successor requires one bounded pending predecessor");
     const auto ordinal = committed_count + 1;
     auto &record = records[ordinal];
     reset_record(record);
     record.role = ordinary ? GraphRole::kText : GraphRole::kMtpCatchupRound;
-    record.draft_limit = ordinary ? 0 : 1;
+    record.draft_limit = ordinary ? 0 : previous.draft_limit;
     record.generation = true; record.input_deferred = true;
     record.completion = TextCompletion::kEmitNext; record.quota = quota; record.turn = turn;
     record.requests = requests; record.member_index = member_index;
     // Inline capacity is already present, including maximum_width=1. Retain
     // any larger cold capacity rather than allocating a second record owner.
-    record.emitted.resize(2, -1); record.accepted_inputs.resize(2, -1);
+    record.emitted.resize(ordinary?2:width, -1); record.accepted_inputs.resize(ordinary?2:width, -1);
     successor_ordinal_ = ordinal;
     return record;
   }
@@ -298,7 +304,36 @@ public:
         actual.catchup_token == (consumed == 2 ? previous.draft : -1) &&
         actual.sampling == previous.before.sampling &&
         record.role == GraphRole::kMtpCatchupRound && record.draft_limit == 1;
-    const bool k1 = device_k1_choice ? chosen_k1 : full_k1;
+    const bool chosen_kstep=[&]{
+      if(!device_k1_choice || previous.draft_limit<2 || !mtp_pending_boundary(previous))return false;
+      const auto width=previous.draft_limit+1;
+      const auto lag=consumed>1?1u:0u;
+      if(previous.quota<2*width || record.quota<width || record.quota>previous.quota-width ||
+          consumed<1 || consumed>width || previous.verified_rows!=width || previous.consumed_drafts!=consumed-1 ||
+          previous.agreed!=(consumed>1) || previous.accepted_draft!=(consumed>1) ||
+          previous.draft<0 || previous.target_first<0 || previous.target_second<0 ||
+          (previous.target_first==previous.draft)!=(consumed>1) ||
+          previous.emitted_count!=consumed || previous.emitted.size()<consumed ||
+          previous.accepted_inputs.size()<consumed || previous.verification_inputs.size()!=width ||
+          previous.verification_inputs[0]!=previous.pending_input || previous.verification_inputs[1]!=previous.draft ||
+          previous.emitted[0]!=previous.target_first || (consumed>1 && previous.emitted[1]!=previous.target_second) ||
+          previous.emitted[consumed-1]!=actual.next_id ||
+          (consumed<width && actual.next_id==previous.verification_inputs[consumed]) ||
+          actual.length<previous.before.length || actual.length-previous.before.length!=consumed ||
+          actual.frontier<previous.before.frontier ||
+          actual.frontier-previous.before.frontier!=previous.before.lag+(consumed==1?1:consumed-1) ||
+          previous.draft_rows!=2*(previous.draft_limit+previous.before.lag) || actual.lag!=lag ||
+          actual.frontier>actual.length || actual.length-actual.frontier!=lag ||
+          actual.catchup_token!=(lag?previous.verification_inputs[consumed-1]:-1) ||
+          actual.sampling!=previous.before.sampling || record.role!=GraphRole::kMtpCatchupRound ||
+          record.draft_limit!=previous.draft_limit)return false;
+      for(std::size_t i=0;i<consumed;++i){
+        if(previous.accepted_inputs[i]!=previous.verification_inputs[i] || previous.accepted_inputs[i]<0 || previous.emitted[i]<0)return false;
+        if(i+1<consumed && previous.emitted[i]!=previous.verification_inputs[i+1])return false;
+      }
+      return true;
+    }();
+    const bool k1 = device_k1_choice ? chosen_k1 || chosen_kstep : full_k1;
     if (!previous.committed || (!ordinary && !k1) || (device_k1_choice && !k1) || !previous.generation ||
         previous.completion != TextCompletion::kEmitNext || !previous.user_output || previous.imported ||
         previous.input_deferred || previous.ids().size() != 1 || previous.stopped ||

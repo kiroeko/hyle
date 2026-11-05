@@ -2,6 +2,7 @@
 
 // Qwen-private cold cache capacity and physical byte facts. No storage,
 // lease, version or session owner is created or retained by these values.
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -63,6 +64,7 @@ struct Plan final {
   std::size_t attention_layers = 0, recurrent_layers = 0;
   bool draft_cache = false;
   std::size_t auxiliary_hidden_rows = 0;
+  std::size_t private_draft_stages = 0;
 };
 inline Plan plan(const ModelGeometry &geometry, CacheRowBytes row_bytes,
                  std::size_t context, std::size_t residents,
@@ -71,10 +73,12 @@ inline Plan plan(const ModelGeometry &geometry, CacheRowBytes row_bytes,
                    std::size_t candidate_boundaries = 1,
                    bool draft_cache = false, bool frontier_hidden = false,
                    std::size_t in_flight_batches = 1, std::size_t auxiliary_hidden_rows = 0,
-                   PrecisionProfile precision = {}) {
+                   PrecisionProfile precision = {}, std::size_t private_draft_stages = 0) {
   geometry.validate();
   if (auxiliary_hidden_rows && !draft_cache)
     throw std::runtime_error("private draft hidden rows require a draft cache");
+  if(private_draft_stages && (!draft_cache || private_draft_stages>=candidate_boundaries))
+    throw std::runtime_error("private draft stages require their admitted draft prefix capacity");
   if (!row_bytes.target.key || !row_bytes.target.value ||
       ((!row_bytes.draft.key) != (!row_bytes.draft.value)) ||
       (draft_cache && (!row_bytes.draft.key || !row_bytes.draft.value)))
@@ -92,7 +96,14 @@ inline Plan plan(const ModelGeometry &geometry, CacheRowBytes row_bytes,
   // beside the N committed complete-context capacities. This is a capacity
   // bound, not permission to reuse an in-flight page or publish a candidate.
   const auto pending_sequences = multiply(in_flight_batches, active_sequences);
-  const auto pages = add(multiply(refs, residents), pending_sequences);
+  // A complete draft round retains every cumulative private COW stage and
+  // its canonical repair until the original episode retires. A device-selected
+  // predecessor can span a page boundary, so reserve each cohort's complete
+  // dirty-page envelope rather than one tail for the entire round.
+  const auto span=private_draft_stages?add(candidate_boundaries,private_draft_stages):1;
+  const auto cow_pages=private_draft_stages?(std::min)(refs,add(1,add(span-1,Plan::page_rows-1)/Plan::page_rows)):1;
+  const auto transient=private_draft_stages?multiply(add(private_draft_stages,1),cow_pages):1;
+  const auto pages = add(multiply(refs, residents), multiply(pending_sequences,transient));
   const auto snapshots = add(residents, pending_sequences);
   // Each verifier prefix has independent material state, while its episode
   // still creates one unpublished version. Committed heads may retain carry
@@ -131,6 +142,7 @@ inline Plan plan(const ModelGeometry &geometry, CacheRowBytes row_bytes,
   result.hidden_bytes = hidden_bytes;
   result.draft_cache = draft_cache;
   result.auxiliary_hidden_rows = auxiliary_hidden_rows;
+  result.private_draft_stages = private_draft_stages;
   result.hidden_row_bytes = hidden_row_bytes;
   result.attention_layers = geometry.attention_layers(); result.recurrent_layers = geometry.recurrent_layers();
   const auto bank_rows = multiply(pages, Plan::page_rows);

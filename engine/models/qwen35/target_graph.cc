@@ -59,7 +59,7 @@ TargetGraphResult emit_target_graph(Recipe &r,
         const auto schema = take(g::slots::Schema::create(item, inputs.state_slots,
             cache::add(bytes, cache::state_pool_padding(bytes))));
         port.pool = r.input(take(schema.capacity_description()));
-        const auto sources = inputs.predecessor_prefix_index ? f(2) : batch;
+        const auto sources = inputs.predecessor_prefix_index ? f(static_cast<std::int64_t>(prefix_rows)) : batch;
         port.source_ids = r.input(r.dense_spec(Type::kInt32, {sources}));
         port.destination_ids = r.input(dense(Type::kInt32,
             {static_cast<std::int64_t>(cache::multiply(requests, prefix_rows))}));

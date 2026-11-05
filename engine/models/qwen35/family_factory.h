@@ -25,12 +25,27 @@ struct SamplingConfiguration final {
 };
 struct PreparedSampling; // Stable owner lives in the original ColdResources.
 
+struct DraftChainStage final {
+  std::size_t rows=0;
+  V key,value,metadata;
+  g::NodeId append_key,append_value,attention;
+};
+struct DraftChainControl final {
+  V positions,query_lengths,kv_lengths,last_index;
+};
+struct DraftChainValues final {
+  V packet,hidden;
+  std::vector<DraftChainStage> stages;
+};
+
 struct FamilyPorts {
   std::size_t prefix_rows = 1;
   // Only the opt-in continuation Family emits its own next device decision
   // and writes the complete raw append envelope for a later real Source.
   bool continuous_device_successor = false;
   bool recursive_draft_repair = false;
+  std::size_t draft_chain_steps=0;
+  std::vector<DraftChainStage> draft_chain;
   V token_port, position_port, last_ids_port, metadata_port, logits_port, id_port, hidden_port;
   V sampling_identity_port, sampling_valid_port, sampling_accept_port;
   V sequence_offsets_port, history_select_port, prefix_ids_port;
@@ -111,6 +126,7 @@ struct FamilyPreparedFacts final {
   bool device_acceptance_successor = false;
   bool continuous_device_successor = false;
   bool recursive_draft_repair = false;
+  std::size_t draft_chain_steps=0;
 };
 struct FamilyCompileContext final {
   inference::Backend &execution;
@@ -140,5 +156,8 @@ ExecutionPlanFacts inspect_execution_plan(const inference::Backend &execution,
 sampling::LogitsInputsFor<V> prepare_logits_inputs(Recipe &recipe, sampling::LogitsPolicy policy);
 V draft_scores(Recipe &recipe, V selected_hidden, DraftProjectionView projection);
 V original_draft_id(Recipe &recipe, V compact_id, DraftProjectionView projection);
+DraftChainValues emit_draft_chain(Recipe &recipe,V tokens,V shifted,V positions,V frequencies,
+    std::size_t rows,std::size_t steps,const c::BatchSchema&schema,DraftProjectionView head,
+    std::span<const DraftChainControl>controls={},V has_lag={});
 
 } // namespace qwen35

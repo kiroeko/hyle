@@ -159,7 +159,7 @@ void rows(i::Backend &backend, Type type, const c::ResourceBudget &budget) {
     q::check(backend.write(source.tensor.storage(), bytes)); source.tensor.freeze(backend);
     const auto mapping = q::take(i::DraftVocabulary::create(8, std::array<std::int32_t, 4>{7, 2, 5, 0}));
     const auto row_bytes = bytes.size() / 8;
-    auto selected = q::select_dense_weight_rows(backend, source, mapping.ids(), budget);
+    auto selected = q::select_stored_weight_rows(backend, source, mapping.ids(), budget);
     expected = expected_rows(bytes, mapping.ids(), row_bytes);
     require(selected.tensor.description == q::dense(type, {4, 4}) &&
         selected.codec == q::prepared::ProjectionCodec::kDense && !selected.group_size &&
@@ -167,7 +167,7 @@ void rows(i::Backend &backend, Type type, const c::ResourceBudget &budget) {
         "cold Gather changed source bytes, selected order, storage type or dense codec");
     {
       constexpr std::array<std::int32_t, 3> repeats{5, 2, 5};
-      const auto repeated = q::select_dense_weight_rows(backend, source, repeats, budget);
+      const auto repeated = q::select_stored_weight_rows(backend, source, repeats, budget);
       require(read(backend, repeated.tensor.ready) == expected_rows(bytes, repeats, row_bytes),
           "low-level row selection failed to retain caller order and repeated rows");
     }
@@ -175,7 +175,7 @@ void rows(i::Backend &backend, Type type, const c::ResourceBudget &budget) {
     if (type == Type::kFloat32) {
       for (const auto bad : {-1, 8}) {
         bool refused = false;
-        try { (void)q::select_dense_weight_rows(backend, source, std::span(&bad, 1), budget); }
+        try { (void)q::select_stored_weight_rows(backend, source, std::span(&bad, 1), budget); }
         catch (const i::EvaluationFailure &failure) {
           refused = failure.status().IsOutOfRange() || failure.status().IsInvalidArgument();
         }
@@ -185,11 +185,11 @@ void rows(i::Backend &backend, Type type, const c::ResourceBudget &budget) {
       const auto usage = q::take(budget.usage(backend.device()));
       auto blocked = q::take(budget.reserve(backend.device(), usage.limit_bytes - usage.live_bytes));
       bool refused = false;
-      try { (void)q::select_dense_weight_rows(backend, source, mapping.ids(), budget); }
+      try { (void)q::select_stored_weight_rows(backend, source, mapping.ids(), budget); }
       catch (const i::EvaluationFailure &failure) { refused = failure.status().IsResourceExhausted(); }
       require(refused, "cold selected-row allocation ignored its actual resource budget");
       blocked.reset();
-      const auto retry = q::select_dense_weight_rows(backend, source, mapping.ids(), budget);
+      const auto retry = q::select_stored_weight_rows(backend, source, mapping.ids(), budget);
       require(read(backend, retry.tensor.ready) == expected && read(backend, source.tensor.ready) == bytes,
           "budget refusal prevented same-source retry or changed source bytes");
     }
@@ -201,6 +201,59 @@ void rows(i::Backend &backend, Type type, const c::ResourceBudget &budget) {
   escaped.reset(); q::check(backend.collect_retired());
   require(q::take(budget.usage(backend.device())).live_bytes == baseline,
       "released original row consumer retained native resources or requested-byte charges");
+}
+
+void encoded_rows(i::Backend&backend,c::GgufQuantizedType codec,const c::ResourceBudget&budget){
+  const auto baseline=q::take(budget.usage(backend.device())).live_bytes;
+  c::ReadLease escaped;std::vector<std::byte>expected;
+  {
+    constexpr std::int64_t rows=8,columns=256;
+    q::LoadedWeight source;
+    source.tensor=q::Tensor(backend.device(),q::take(q::take(c::gguf_weight_description(
+        codec,Type::kFloat32,columns,rows)).transposed()),true,budget);
+    const auto extent=q::take(source.tensor.description.required_bytes());
+    const auto row_bytes=extent/static_cast<std::size_t>(rows);
+    std::vector<std::byte>bytes(extent);
+    // Exercise arbitrary physical code/scale bits, including F16 NaN payloads.
+    // The exact byte oracle detects any conversion by the same-type Gather.
+    for(std::size_t n=0;n<bytes.size();++n)bytes[n]=static_cast<std::byte>((n*37+n/row_bytes*19)%256);
+    q::check(backend.write(source.tensor.storage(),bytes));source.tensor.freeze(backend);
+    constexpr std::array<std::int32_t,4>ids{7,2,5,2};
+    if(backend.kind()!=i::BackendKind::kCuda){
+      bool refused=false;
+      try{(void)q::select_stored_weight_rows(backend,source,ids,budget);}
+      catch(const i::EvaluationFailure&failure){refused=failure.status().IsUnimplemented();}
+      require(refused,"unqualified backend silently accepted encoded row selection");
+      return;
+    }
+    auto selected=q::select_stored_weight_rows(backend,source,ids,budget);
+    expected=expected_rows(bytes,ids,row_bytes);
+    require(selected.tensor.description==q::take(q::take(c::gguf_weight_description(
+        codec,Type::kFloat32,columns,ids.size())).transposed()) &&
+        selected.codec==source.codec && !selected.group_size && read(backend,selected.tensor.ready)==expected &&
+        read(backend,source.tensor.ready)==bytes,"encoded row selection changed codes/scales, format or caller order");
+    for(const auto id:{-1,8}){
+      bool refused=false;
+      try{(void)q::select_stored_weight_rows(backend,source,std::span(&id,1),budget);}
+      catch(const i::EvaluationFailure&failure){refused=failure.status().IsInvalidArgument() || failure.status().IsOutOfRange();}
+      require(refused && read(backend,source.tensor.ready)==bytes,"encoded row gather accepted an invalid ID or changed its source");
+    }
+    const auto usage=q::take(budget.usage(backend.device()));
+    auto blocked=q::take(budget.reserve(backend.device(),usage.limit_bytes-usage.live_bytes));
+    bool refused=false;
+    try{(void)q::select_stored_weight_rows(backend,source,ids,budget);}
+    catch(const i::EvaluationFailure&failure){refused=failure.status().IsResourceExhausted();}
+    require(refused,"encoded row selection ignored its original resource budget");
+    blocked.reset();
+    const auto retry=q::select_stored_weight_rows(backend,source,ids,budget);
+    require(read(backend,retry.tensor.ready)==expected,"encoded row selection could not retry after budget refusal");
+    escaped=selected.tensor.ready;
+  }
+  q::check(backend.collect_retired());
+  require(read(backend,escaped)==expected && q::take(budget.usage(backend.device())).live_bytes>baseline,
+      "encoded row lease lost its selected bytes or budget charge after source retirement");
+  escaped.reset();q::check(backend.collect_retired());
+  require(q::take(budget.usage(backend.device())).live_bytes==baseline,"encoded row selection retained native resources");
 }
 
 void metadata(const std::filesystem::path &manifest, const std::filesystem::path &scratch) {
@@ -234,10 +287,84 @@ void metadata(const std::filesystem::path &manifest, const std::filesystem::path
   require(source.draft_vocabulary && std::ranges::equal(source.draft_vocabulary->ids(), std::array<std::int32_t, 4>{0, 2, 5, 7}),
       "corrected mapping metadata could not retry in canonical original-ID order");
 }
+
+void full_head(i::Backend &backend, const std::filesystem::path &manifest,
+    const std::filesystem::path &specification, const std::filesystem::path &scratch) {
+  const auto source = q::prepare_weight_source(manifest, true, {}, specification);
+  require(bool(source.draft_head), "explicit prepared head was not retained");
+  std::filesystem::create_directories(scratch);
+  const auto copy = scratch / "head.tsv";
+  std::ifstream input(specification, std::ios::binary);
+  const std::string text{std::istreambuf_iterator<char>(input), {}};
+  const auto write = [&](const std::string &value) {
+    std::ofstream output(copy, std::ios::binary); output << value;
+    require(bool(output), "cannot write finite head metadata");
+  };
+  write(text);
+  const auto prepared = q::prepare_weight_source(manifest, true, {}, copy);
+  write(text + "unexpected\n");
+  bool refused = false;
+  try { (void)q::load_prepared_draft_head(backend, prepared.roles, *prepared.draft_head); }
+  catch (const std::runtime_error &) { refused = true; }
+  require(refused, "changed metadata was not revalidated before streaming");
+  write(text);
+
+  std::vector<c::ResourceBudgetLimit> limits;
+  for (const auto resource : {backend.device(), backend.host_device(), backend.staging(), m::system_resource()})
+    if (resource && std::ranges::none_of(limits, [&](const auto &limit) { return limit.resource == resource; }))
+      limits.push_back({resource, source.draft_head->role.bytes + (64u << 20)});
+  const auto budget = q::take(c::ResourceBudget::create({.limits = limits, .allow_unattributed = true}));
+  std::vector<std::size_t> baseline;
+  for (const auto &limit : limits) baseline.push_back(q::take(budget.usage(limit.resource)).live_bytes);
+  auto blocked = q::take(budget.reserve(backend.device(), q::take(budget.usage(backend.device())).limit_bytes));
+  refused = false;
+  try { (void)q::load_prepared_draft_head(backend, prepared.roles, *prepared.draft_head, budget); }
+  catch (const i::EvaluationFailure &failure) { refused = failure.status().IsResourceExhausted(); }
+  require(refused, "prepared head stream ignored its device resource budget");
+  blocked.reset();
+  c::ReadLease escaped;
+  {
+    auto head = q::load_prepared_draft_head(backend, prepared.roles, *prepared.draft_head, budget);
+    const auto &role = source.draft_head->role;
+    const auto vocabulary = source.roles.geometry.vocabulary;
+    const auto row_bytes = role.bytes / static_cast<std::size_t>(vocabulary);
+    require(head.identity == source.draft_head->identity && !head.indexed_weight &&
+        !head.original_ids.ready.valid() && head.extra_weight_bytes() == role.bytes &&
+        head.weight.tensor.description.storage_format().id() == c::kGgufQ4K,
+        "full head lost its independent encoded identity or became an indexed subset");
+    const std::array<std::int32_t, 3> ids{0, static_cast<std::int32_t>(vocabulary / 2),
+        static_cast<std::int32_t>(vocabulary - 1)};
+    const auto selected = q::select_stored_weight_rows(backend, head.weight, ids, budget);
+    std::ifstream payload(role.source, std::ios::binary);
+    std::vector<std::byte> expected(row_bytes * ids.size());
+    for (std::size_t n = 0; n < ids.size(); ++n) {
+      payload.seekg(static_cast<std::streamoff>(ids[n] * row_bytes));
+      payload.read(reinterpret_cast<char *>(expected.data() + n * row_bytes), static_cast<std::streamsize>(row_bytes));
+      require(bool(payload), "cannot read original encoded head rows");
+    }
+    require(read(backend, selected.tensor.ready) == expected, "streamed full head changed physical row codes/scales");
+    escaped = head.weight.tensor.ready;
+  }
+  q::check(backend.collect_retired());
+  require(escaped.valid() && q::take(budget.usage(backend.device())).live_bytes >= source.draft_head->role.bytes,
+      "escaping full head lease lost its original resource charge");
+  escaped.reset(); q::check(backend.collect_retired());
+  for (std::size_t n = 0; n < limits.size(); ++n) {
+    const auto live = q::take(budget.usage(limits[n].resource)).live_bytes;
+    if (live != baseline[n]) std::cerr << "head budget domain " << n << " before=" << baseline[n] << " after=" << live << '\n';
+    require(live == baseline[n], "full head stream retained resource charges after retirement");
+  }
+  std::cout << "PASS full Q4_K head: metadata revalidation, budget refusal/retry, first/middle/last encoded rows, "
+      "escaped lease and every resource domain retired\n";
+}
 } // namespace
 
 int main(int argc, char **argv) {
   try {
+    if (argc == 6 && std::string_view(argv[1]) == "cuda" && std::string_view(argv[2]) == "--full-head") {
+      auto backend = q::take(i::Backend::create({.primary = i::BackendKind::kCuda}));
+      full_head(backend, argv[3], argv[4], argv[5]); return 0;
+    }
     if ((argc != 2 && argc != 4) || (std::string_view(argv[1]) != "cpu" && std::string_view(argv[1]) != "cuda"))
       throw std::runtime_error("usage: qwen_draft_vocabulary_probe cpu|cuda [LOCAL_MANIFEST SCRATCH_DIR]");
     if (argc == 4) metadata(argv[2], argv[3]);
@@ -251,10 +378,14 @@ int main(int argc, char **argv) {
     std::vector<std::size_t> baseline;
     for (const auto &limit : limits) baseline.push_back(q::take(budget.usage(limit.resource)).live_bytes);
     for (const auto type : {Type::kFloat32, Type::kFloat16, Type::kBFloat16}) rows(backend, type, budget);
+    for(const auto codec:{c::GgufQuantizedType::kQ8_0,c::GgufQuantizedType::kQ4K,c::GgufQuantizedType::kQ6K})
+      encoded_rows(backend,codec,budget);
     for (std::size_t index = 0; index < limits.size(); ++index)
       require(q::take(budget.usage(limits[index].resource)).live_bytes == baseline[index], "cold consumer retained another resource-domain budget charge");
     std::cout << "{\"status\":\"PASS\",\"backend\":\"" << argv[1]
-        << "\",\"stored_types\":3,\"source_bytes_unchanged\":true,\"batched_original_ids_and_ties\":true,"
+        << "\",\"stored_types\":3,\"encoded_types\":" << (kind==i::BackendKind::kCuda?3:0)
+        << ",\"encoded_refusals\":" << (kind==i::BackendKind::kCuda?0:3)
+        << ",\"source_bytes_unchanged\":true,\"batched_original_ids_and_ties\":true,"
            "\"escaped_lease_budget_retired\":true,\"budget_rejection_and_retry\":true,\"invalid_ids_refused\":true,"
            "\"metadata_identity_checked\":" << (argc == 4 ? "true" : "false") << ",\"model_execution\":false}\n";
     return 0;

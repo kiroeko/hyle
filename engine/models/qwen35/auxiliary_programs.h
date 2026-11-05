@@ -40,13 +40,7 @@ struct DraftProgram final {
   inference::ProgramIo::Input bias_input, allowed_input, counts_input;
   StatePorts hidden_state;
   inference::SlotTransactions hidden_transactions;
-  struct ChainStage final {
-    std::size_t rows = 0;
-    V key, value, metadata;
-    mtp::AppendNodes append;
-    g::NodeId attention;
-  };
-  std::vector<ChainStage> chain;
+  std::vector<DraftChainStage> chain;
   // Private COW candidates pin their policy references until the same original
   // guard has returned every native writer. They are never Session heads.
   std::vector<inference::PagedSequenceState> chain_pages;

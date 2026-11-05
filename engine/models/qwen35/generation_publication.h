@@ -88,7 +88,7 @@ public:
     record->target_second = result.target_second; record->agreed = result.agreed;
     record->accepted_draft = result.accepted_draft; record->stopped = result.stopped;
     record->consumed_drafts = result.consumed_drafts;
-    if (record->role == GraphRole::kVerify) {
+    if (record->role == GraphRole::kVerify || (drafts_token(record->role) && record->draft_limit > 1)) {
       record->auxiliary_graph_calls = result.auxiliary_graph_calls;
       write_generation_tokens(record->emitted, result.emitted);
     } else write_generation_tokens(record->emitted,
