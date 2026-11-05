@@ -42,6 +42,7 @@
 #include "../compute_ggml_runtime/active_rows.h"
 #include "sink_mask.h"
 
+#include "shared_mmvq_native_scope.h"
 namespace hyle::compute::ggml_cuda {
 namespace {
 
@@ -103,6 +104,9 @@ struct Program final {
   struct PackedArena final { int stream = -1; std::size_t bytes = 0; };
   std::vector<PackedNode> packed_nodes{};
   std::vector<PackedArena> packed_arenas{};
+  std::vector<PackedNode> shared_nodes{};
+  std::vector<PackedArena> shared_arenas{};
+  std::size_t shared_bytes=0;
 };
 
 // The allocator type is private planning state. Tensor buffers returned from
@@ -306,6 +310,7 @@ struct Invocation final {
   bool native_retirement_required = false;
   bool failed = false;
   void * packed_scratch = nullptr; // Metadata only; payload is caller workspace.
+  std::unique_ptr<hyle_shared_mmvq::Plan> shared_plan;
 
   Invocation() = default;
   Invocation(const Invocation &) = delete;
@@ -922,6 +927,81 @@ struct Invocation final {
     return Status::Ok();
   }
 
+  Status measure_shared_mmvq(Program &program) {
+    const auto count = ggml_graph_n_nodes(graph);
+    if (count < 2)
+      return Status::Ok();
+    std::vector<Program::PackedNode> nodes;
+    std::uint64_t streams = 0;
+    const ggml_tensor *input = nullptr;
+    for (int ordinal = 0; ordinal < count; ++ordinal) {
+      auto *node = ggml_graph_node(graph, ordinal);
+      if (!node || node->op != GGML_OP_MUL_MAT || !node->src[0] || !node->src[1])
+        return Status::Ok();
+      const auto *weight = node->src[0];
+      const auto *current = node->src[1];
+      if ((input && input != current) || current->type != GGML_TYPE_F32 || current->ne[1] != 1 ||
+          current->ne[2] != 1 || current->ne[3] != 1 || weight->ne[2] != 1 || weight->ne[3] != 1 ||
+          !ggml_is_contiguous(current) || !ggml_is_contiguous(weight) || !ggml_is_contiguous(node))
+        return Status::Ok();
+      const auto plan = internal::packed_matmul_plan(program.device, weight->type, weight->ne[0],
+                                                     weight->ne[1], 1);
+      if (plan.route != internal::PackedMatmulRoute::kMmvq)
+        return Status::Ok();
+      input = current;
+      const auto mask = internal::packed_mmq_stream_mask(backend, node);
+      streams |= mask;
+      nodes.push_back({static_cast<std::size_t>(ordinal), plan, mask});
+    }
+    if (!input || !streams)
+      return Status::Ok();
+    const auto bytes = ggml_row_size(GGML_TYPE_Q8_1, input->ne[0]);
+    if (!bytes)
+      return Status::Internal("shared MMVQ row extent is zero");
+    program.shared_nodes = std::move(nodes);
+    program.shared_bytes = bytes;
+    for (unsigned slot = 0; streams; ++slot, streams >>= 1) {
+      if (!(streams & 1))
+        continue;
+      auto *metadata = NativeWorkspace::allocate(&workspace, bytes);
+      if (!metadata)
+        return Status::ResourceExhausted("shared MMVQ workspace measurement failed");
+      ggml_backend_buffer_free(metadata);
+      program.shared_arenas.push_back({static_cast<int>(slot), bytes});
+    }
+    return Status::Ok();
+  }
+  Status bind_shared_mmvq(const Program &program) {
+    if (program.shared_nodes.empty())
+      return Status::Ok();
+    std::vector<const void *> nodes;
+    std::vector<hyle_shared_mmvq::Arena> arenas;
+    const ggml_tensor *input = nullptr;
+    for (const auto &entry : program.shared_nodes) {
+      if (entry.ordinal >= static_cast<std::size_t>(ggml_graph_n_nodes(graph)))
+        return Status::FailedPrecondition("shared MMVQ graph changed");
+      auto *node = ggml_graph_node(graph, static_cast<int>(entry.ordinal));
+      if (!node || node->op != GGML_OP_MUL_MAT || !node->src[0] || !node->src[1] ||
+          (input && input != node->src[1]) ||
+          internal::packed_matmul_plan(program.device, node->src[0]->type, node->src[0]->ne[0],
+                                       node->src[0]->ne[1], 1) != entry.plan ||
+          internal::packed_mmq_stream_mask(backend, node) != entry.streams)
+        return Status::FailedPrecondition("shared MMVQ cold node/stream signature changed");
+      input = node->src[1];
+      nodes.push_back(node);
+    }
+    for (const auto &entry : program.shared_arenas) {
+      auto *metadata = NativeWorkspace::allocate(&workspace, entry.bytes);
+      if (!metadata)
+        return Status::ResourceExhausted("shared MMVQ workspace binding failed");
+      ggml_backend_buffer_free(metadata);
+      arenas.push_back({static_cast<unsigned>(entry.stream),
+                        workspace.base + workspace.span - entry.bytes, entry.bytes});
+    }
+    shared_plan = std::make_unique<hyle_shared_mmvq::Plan>(
+        backend->context, input, program.shared_bytes, std::move(nodes), std::move(arenas));
+    return Status::Ok();
+  }
   Status bind_packed_scratch(const Program &program) {
     std::vector<internal::PackedScratchBinding> bindings;
     std::vector<internal::PackedScratchArena> arenas;
@@ -981,6 +1061,7 @@ struct Invocation final {
       return Status::FailedPrecondition("ggml CUDA workspace layout changed");
     HYLE_RETURN_IF_ERROR(reserved);
     HYLE_RETURN_IF_ERROR(bind_packed_scratch(program));
+    HYLE_RETURN_IF_ERROR(bind_shared_mmvq(program));
     if (workspace.next != workspace.expected.size() ||
         workspace.span != program.workspace.size)
       return Status::FailedPrecondition("ggml CUDA workspace layout changed");
@@ -1297,6 +1378,7 @@ detail::EnqueueResult submit(void *value, void *lane, detail::QueueSequence &seq
   try {
     // Shared Program plans are immutable. Invocation/backend/workspace are
     // exclusive until Completion; TLS borrows only this CPU encoder's table.
+    SharedMmvqNativeScope shared_scope(invocation.shared_plan.get());
     internal::PackedScratchEncodeScope packed_scope(invocation.packed_scratch);
     if (sequence.recording()) {
       // The guard must outlive this encoder call: later providers still
@@ -1313,6 +1395,7 @@ detail::EnqueueResult submit(void *value, void *lane, detail::QueueSequence &seq
               *stream, &retirement_error)
         : bridge::compute_on_admitted_stream(invocation.backend, invocation.graph,
               *stream, &retirement_error);
+    shared_scope.check();
     packed_scope.check();
     if (result != GGML_STATUS_SUCCESS)
       terminal = Status::Internal("ggml CUDA native graph failed");
@@ -1782,6 +1865,13 @@ bool supports_bfloat_paired_projection(void *value, std::uint64_t inner,
   }
 }
 
+bool supports_shared_mmvq_projection(void *value, const TensorDesc &activation,
+                                     const TensorDesc &weight, const TensorDesc &output) noexcept {
+  if (!value) return false;
+  return shared_mmvq_projection_supported(activation, weight, output,
+                                           static_cast<Context *>(value)->device);
+}
+
 bool supports(void *value, Operation operation,
               std::span<const TensorDesc> inputs,
               std::span<const TensorDesc> outputs) noexcept {
@@ -2240,6 +2330,8 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
     status = measurement.reserve(&measurement.workspace);
     if (status.ok())
       status = measurement.measure_packed_scratch(*program);
+    if (status.ok())
+      status = measurement.measure_shared_mmvq(*program);
     if (!status.ok())
       return ProviderPrepareOutcome::error(std::move(status));
     program->workspace = {

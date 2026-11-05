@@ -1429,7 +1429,7 @@
       },
       "vendored": {
         "path": "third_party/ggml_cuda_runtime",
-        "tree_sha256": "1ee5a73864921f7b11af8de3ac95bccc57a99e7a6a94b8bf28bf9ea5f630cf38"
+        "tree_sha256": "2265d6bcf78a32f548f42ca820b3e284e42eca6f86c4e91ec2b450115712384d"
       },
       "license": {
         "expression": "MIT",
