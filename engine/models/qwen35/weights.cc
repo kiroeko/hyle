@@ -807,7 +807,7 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
     ~Shutdown() { scheduler.shutdown(); }
   } shutdown{loader_scheduler};
   check(io.status());
-  constexpr std::size_t staging_per_slot = 8u * 1024u * 1024u;
+  constexpr std::size_t staging_per_slot = 32u * 1024u * 1024u;
   constexpr std::uint32_t slots = 2;
   if (roles.bytes > (std::numeric_limits<std::size_t>::max)() - slots * staging_per_slot)
     throw std::runtime_error("weight loader backing capacity overflows");
