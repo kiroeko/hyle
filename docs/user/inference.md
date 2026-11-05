@@ -84,7 +84,7 @@ Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-di
 普通 CUDA greedy 自然生成自动使用连续接力，无需额外参数；已有限检查单活动请求及双活动请求。
 无草稿概率门槛的CUDA greedy单会话K1—K3已接入自然接力。固定K2／K3把起草、验证及draft KV修复放入同一张轮图，
 中间token和下一轮接受位置留在设备。冷期只按配置容量和已到达首轮准备，后续长度与配额不参与规划。
-默认仍为K1；K3的收益取决于草稿词表和额外资源，32K原头与独立全词表Q4_K头的结果分别见性能表。
+默认仍为K1；K3的收益取决于草稿词表和额外资源，32K原头、独立全词表及114688行Q4_K子集头的结果分别见性能表。
 当前仅为最多输出至少 10 个 token 的自然生成准备两层候选；prefill 保留原路径，后继只使用已有实际捕获。
 完整同形、同序的活动请求组可持续接力；异形分组保留原同步执行。输出额度不足时先完成已接纳工作，再暂停等待额度。
 其它后端、上述范围外的MTP、混合执行、随机采样、scheduler 或显式 commands 自动使用原单步行为；显式缓存预算容不下额外候选时也自动使用单步。
@@ -123,6 +123,9 @@ python scripts/prepare-mtp-draft-vocabulary.py --hyle <hyle.exe> --inputs <准�
 该工具只用本地文件，固定24个独立提示、普通greedy各生成至多256个token，只统计生成的ID。
 按频次选行，未出现的ID按原ID升序补齐；不使用八轮验收负载。校准在启动之前单独运行，
 原始输出保留在新建的work目录，不覆盖已有结果。没有准备文件的模型不会在启动时自行校准。
+也可用重复的 `--calibration-run DIR` 复用同一source的已有普通greedy校准；该模式不启动GPU，也不需要tokenizer。
+支持本工具的校准目录，以及含train／validation划分的已归档生成目录；只导入train，核对源身份、原始ID和会话退休。
+`--rows N` 可选任意非零且不超过原词表的行数，选择次序保持不变。
 文件绑定准备清单的原source identity及实际词表大小，格式为：
 
 ```text
@@ -156,7 +159,17 @@ hyle --inputs <准备目录> --backend cuda --mtp on --mtp-max-drafts 3 --mtp-dr
 
 默认 `--mtp-draft-head auto` 在输入目录发现此文件时优先使用它，随后才考虑自动32K映射。
 `--mtp-draft-head original` 禁用独立头；同时加 `--mtp-draft-vocabulary full` 才是原始全词表头对照。
-显式独立头不能与显式子集映射同时选择；目前要求启用草稿、无modifier的greedy和零概率阈值。
+独立Q4_K头可与显式子集映射组合。CUDA在冷期按原ID复制完整编码行，保持代码与scale字节；
+复制和ID上传退休后才替换完整草稿头，不更换目标验证头或embedding。头与映射分别绑定原source identity。
+例如从已有独立校准生成114688行映射，再用于K3：
+
+```powershell
+python scripts/prepare-mtp-draft-vocabulary.py --inputs <准备目录> --calibration-run <旧校准目录> --calibration-run <新增train校准目录> --rows 114688 --work-dir .scratch/draft-subset-calibration --output .scratch/draft-subset.ids
+hyle --inputs <准备目录> --backend cuda --mtp on --mtp-max-drafts 3 --mtp-draft-head .scratch/full-draft-head/mtp-draft-head.tsv --mtp-draft-vocabulary .scratch/draft-subset.ids --schedule <自然请求文件>
+```
+
+自动发现独立头时仍优先使用完整独立头，组合必须显式指定映射；不会自动改变已有部署的词表大小。
+2B的114688行Q4_K头payload为126MiB、映射448KiB。组合路径目前只验证CUDA，要求启用草稿、无modifier的greedy和零概率阈值。
 更换草稿头会改变提案、接受率与轮次划分，速度与数值边界见[性能表](../developer/performance/decode.md#固定-k3本轮复测)。
 
 ### CPU 与 GPU 分置
