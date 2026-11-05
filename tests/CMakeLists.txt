@@ -449,6 +449,18 @@ endif()
 if(TARGET hyle_engine)
   # The complete-state consumer is available on CPU-only builds as well.
   if(TARGET hyle_graph_route_cuda)
+    if(TARGET hyle_compute_provider_flashinfer)
+      add_executable(hyle_inference_device_batch_capability_test
+        tools/inference_device_batch_capability_test.cc)
+      hyle_configure_engine_target(hyle_inference_device_batch_capability_test)
+      set_target_properties(hyle_inference_device_batch_capability_test PROPERTIES
+        FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+      add_dependencies(hyle_tests hyle_inference_device_batch_capability_test)
+      add_test(NAME hyle_inference_device_batch_capability_test
+        COMMAND hyle_inference_device_batch_capability_test)
+      set_tests_properties(hyle_inference_device_batch_capability_test PROPERTIES
+        LABELS "tooling;inference;cuda;capability" TIMEOUT 60 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
+    endif()
     add_test(NAME hyle_inference_quality_tool_test
       COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tooling/inference_quality_test.py")
     set_tests_properties(hyle_inference_quality_tool_test PROPERTIES
