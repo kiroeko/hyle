@@ -20,15 +20,20 @@ def check(args):
         head[5]='"'+payload.resolve().as_posix()+'" '+count
         return head
     head=reference(args.inputs/'mtp-draft-head.tsv')
-    for name in ('legacy','missing-head','stale','wrong-rows','small-explicit'):
+    for name in ('legacy','missing-head','stale','wrong-rows','small-explicit','generic','generic-stale'):
         folder=args.output/name;folder.mkdir();(folder/'weights.tsv').write_text(original_text,encoding='utf-8')
         selected=reference(args.full_head) if name in ('legacy','small-explicit') else head
-        if name!='missing-head':(folder/'mtp-draft-head.tsv').write_text('\n'.join(selected)+'\n',encoding='utf-8')
-        if name!='legacy':
+        if name not in ('missing-head','generic','generic-stale'):
+            (folder/'mtp-draft-head.tsv').write_text('\n'.join(selected)+'\n',encoding='utf-8')
+        if name not in ('legacy','generic','generic-stale'):
             text=original_map
             if name=='stale':text=text.replace(text.splitlines()[1],'0'*64,1)
             if name in ('wrong-rows','small-explicit'):text='\n'.join(text.splitlines()[:3])+'\n0 1 2\n'
             (folder/'mtp-draft-vocabulary-k3.ids').write_text(text,encoding='utf-8')
+        if name in ('generic','generic-stale'):
+            text='\n'.join(original_map.splitlines()[:3])+'\n0 1 2\n'
+            if name=='generic-stale':text=text.replace(text.splitlines()[1],'0'*64,1)
+            (folder/'mtp-draft-vocabulary.ids').write_text(text,encoding='utf-8')
 
     def run(name,extra=(),inputs=None,mtp=True,width=3,subset=True,error=None,rows=114688):
         folder=args.output/name;folder.mkdir()
@@ -82,6 +87,11 @@ def check(args):
         '--mtp-draft-head',str(small/'mtp-draft-head.tsv'),
         '--mtp-draft-vocabulary',str(small/'mtp-draft-vocabulary-k3.ids')],inputs=small,rows=3)
     assert ordinary==run('small-auto-fallback',inputs=small,mtp=False,subset=False)
+    generic=args.output/'generic'
+    generic_auto=run('generic-auto',inputs=generic,width=1,rows=3)
+    assert generic_auto==run('generic-explicit',['--mtp','on','--mtp-max-drafts','1'],inputs=generic,width=1,rows=3)
+    assert ordinary==run('generic-off',['--mtp','off'],inputs=generic,mtp=False,subset=False)
+    run('reject-generic-stale',inputs=args.output/'generic-stale',error='source identity differs')
     if 'SUBSET' in head[0]:
         run('reject-wrong-rows',inputs=args.output/'wrong-rows',error='bound draft vocabulary')
     else:

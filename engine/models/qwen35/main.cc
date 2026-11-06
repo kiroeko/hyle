@@ -8697,7 +8697,7 @@ int qwen35::run(int argc, char **argv) {
         "Usage: hyle --inputs DIR [options]\n"
         "  --inputs DIR                Locally prepared checkpoint and token IDs\n"
         "  --backend cpu|cuda|apple|vulkan  Primary backend; required when multiple GPU routes are compiled\n"
-        "  --mtp auto|off|on           Default: prepared CUDA BF16 2B K3, otherwise off\n"
+        "  --mtp auto|off|on           Auto: prepared CUDA K3 or vocabulary K1; otherwise off\n"
         "  --mtp-max-drafts N          Maximum proposals; 0 disables drafting (default: prepared K3, otherwise 1)\n"
         "  --mtp-min-probability FLOAT  Stop below max draft probability, [0,1] (default: 0)\n"
         "  --mtp-draft-vocabulary auto|full|FILE  Prepared draft IDs (default: auto); greedy only\n"
@@ -8889,7 +8889,7 @@ int qwen35::run(int argc, char **argv) {
       if (error) throw std::runtime_error("cannot inspect prepared MTP defaults: " + error.message());
       return present;
     };
-    // Only the separately prepared K3 pair opts a directory into this default.
+    // A source-bound vocabulary opts a prepared directory into drafting.
     // The policy inspects current configuration, never future requests.
     namespace mtp = hyle::inference::mtp;
     const mtp::DefaultRequest default_request{
@@ -8906,12 +8906,18 @@ int qwen35::run(int argc, char **argv) {
         .max_drafts = max_drafts, .automatic_head = draft_head == "auto",
         .automatic_vocabulary = draft_vocabulary == "auto"};
     const auto default_vocabulary = input / qwen35::kDefaultK3Vocabulary;
+    const auto generic_vocabulary = input / "mtp-draft-vocabulary.ids";
+    const bool inspect_vocabulary = mtp::inspect_prepared_vocabulary(default_request);
+    const bool has_k3_vocabulary = inspect_vocabulary && exists(default_vocabulary);
+    const bool has_generic_vocabulary = !has_k3_vocabulary && inspect_vocabulary &&
+        default_request.mode == mtp::RequestedMode::kAuto && exists(generic_vocabulary);
     const auto default_selection = mtp::select_default(default_request,
-        mtp::inspect_prepared_vocabulary(default_request) && exists(default_vocabulary));
-    const bool automatic_k3 = default_selection.automatic;
+        has_k3_vocabulary || has_generic_vocabulary);
+    const bool automatic_k3 = default_selection.automatic && has_k3_vocabulary;
     mtp_enabled = default_selection.enabled;
     const bool select_prepared_assets = default_selection.prepared_assets;
-    if (select_prepared_assets && !exists(input / "mtp-draft-head.tsv"))
+    const bool select_generic_assets = select_prepared_assets && has_generic_vocabulary;
+    if (select_prepared_assets && !select_generic_assets && !exists(input / "mtp-draft-head.tsv"))
       throw std::runtime_error("prepared K3 vocabulary requires its complete source-bound Q4_K draft head");
     if(draft_head=="original")draft_head.clear();
     else if(draft_head=="auto"){
@@ -8920,7 +8926,7 @@ int qwen35::run(int argc, char **argv) {
         const auto prepared=input/"mtp-draft-head.tsv";std::error_code error;
         const auto exists=std::filesystem::exists(prepared,error);
         if(error)throw std::runtime_error("cannot inspect prepared draft head: "+error.message());
-        if(exists)draft_head=prepared;
+        if(exists && !select_generic_assets)draft_head=prepared;
       }
     }
     if (draft_vocabulary == "full") draft_vocabulary.clear();
@@ -8929,7 +8935,7 @@ int qwen35::run(int argc, char **argv) {
       // A prepared, source-bound asset is policy, not a guess based on vocab
       // size or on this request's tokens. Other sampling policies keep the
       // original full-vocabulary path. A stale asset still fails validation.
-      if (select_prepared_assets) draft_vocabulary = default_vocabulary;
+      if (select_prepared_assets) draft_vocabulary = select_generic_assets ? generic_vocabulary : default_vocabulary;
       else if (draft_head.empty() && mtp_enabled && max_drafts && !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0) {
         const auto prepared = input / "mtp-draft-vocabulary.ids";
         std::error_code error;
@@ -8944,7 +8950,7 @@ int qwen35::run(int argc, char **argv) {
     if(!draft_head.empty() && (!mtp_enabled || !max_drafts || sampler.enabled || !sampler.modifiers.empty() || min_draft_probability!=0))
       throw std::runtime_error("--mtp-draft-head requires active unmodified greedy MTP and zero minimum probability");
     auto weight_source = qwen35::prepare_weight_source(input / "weights.tsv", mtp_enabled, draft_vocabulary,draft_head);
-    if (select_prepared_assets) {
+    if (select_prepared_assets && !select_generic_assets) {
       const bool qualified_default = qwen35::has_qualified_k3_preference(weight_source);
       // Source and head readers have already validated explicit assets. The
       // known K3 preference is not a restriction on an explicit MTP request.

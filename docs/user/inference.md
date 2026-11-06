@@ -101,9 +101,11 @@ Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-di
 逐请求bias／mask、历史罚分、动态条件及停止政策属于`engine/`内的C++请求扩展，
 没有对应CLI参数或已安装的引擎SDK／server入口；其合同查[输入与请求政策](../../engine/models/qwen35/README.md#输入与数值政策)。
 
-`--mtp auto|off|on` 默认 `auto`；只为准备完整、通过下方资格检查的目录自动开启K3。
-`--mtp off` 强制普通生成；`--mtp-max-drafts 1` 可覆盖已启用的K3，按K1执行。
-`--mtp-max-drafts` 控制每轮最多提出的草稿数，合格默认制品为3，其余显式MTP为1。`--mtp-min-probability` 设置
+`--mtp auto|off|on` 默认 `auto`。在符合条件的 CUDA 自然 greedy 生成中，完整的默认 K3 制品优先；
+没有该制品但目录有来源匹配的 `mtp-draft-vocabulary.ids` 时，自动选择原始草稿头的 K1。
+其他情况默认关闭；`--mtp off` 强制普通生成。启用 MTP 会增加内存，收益取决于模型、词表和输入。
+`--mtp-max-drafts 1` 可覆盖已启用的 K3，按 K1 执行。
+`--mtp-max-drafts` 控制每轮最多提出的草稿数，合格默认 K3 制品为 3，其余为 1。`--mtp-min-probability` 设置
 草稿分布最大概率的最低门槛，范围为 0 到 1，默认 0；达到门槛才继续草稿，实际长度可以更短。
 这不是额外置信度模型。制品、后端与草稿数的实际运行范围见[模型覆盖](../implementation/model-operators.md)。
 
@@ -111,7 +113,8 @@ Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-di
 
 默认 `--mtp-draft-vocabulary auto`：MTP开启、无logits modifier的greedy、零概率阈值时，
 合格的默认K3目录组合 `mtp-draft-head.tsv` 与 `mtp-draft-vocabulary-k3.ids`；
-其余显式MTP目录按原策略读取 `mtp-draft-vocabulary.ids`。文件不存在或采样政策不适用时使用完整词表；
+其他 MTP 目录读取 `mtp-draft-vocabulary.ids`；该文件也可让符合条件的自动模式选择 K1。
+文件不存在或采样政策不适用时使用完整词表；
 存在但source identity不匹配时拒绝加载。`--mtp-draft-vocabulary full` 强制完整词表作对照，
 也可用 `--mtp-draft-vocabulary FILE` 显式选择另一份准备文件。
 支持原BF16／F16／F32稠密head；CUDA还支持GGUF Q8_0／Q4_K／Q6_K编码行的子集，保持原量化代码与scale字节。
