@@ -21,7 +21,6 @@ struct DefaultRequest final {
   bool default_backend = false;
   bool cpu_ffn = false;
   bool greedy = false;
-  bool decode_overlap = false;
   bool default_replay = false;
   std::size_t max_drafts = 0;
   bool automatic_head = false;
@@ -47,8 +46,8 @@ constexpr DefaultSelection select_default(const DefaultRequest &request,
   const bool automatic = prepared && request.natural_generation && !request.multiple_schedules &&
       !request.prefix_enabled && !request.scheduler_progress && !request.warmup_planned_shapes &&
       request.max_sessions <= 1 && request.active_sequences <= 1 && request.capacity >= 4 &&
-      request.capacity <= 32768 && !request.cpu_ffn && request.decode_overlap &&
-      request.default_replay && request.max_drafts <= 3;
+      request.capacity <= 32768 && !request.cpu_ffn && request.default_replay &&
+      request.max_drafts <= 3;
   const bool enabled = request.mode == RequestedMode::kOn || automatic;
   return {automatic, enabled, enabled && prepared};
 }

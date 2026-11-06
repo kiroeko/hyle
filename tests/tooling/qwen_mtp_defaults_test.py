@@ -62,7 +62,9 @@ def check(args):
     assert automatic==run('explicit-auto',['--mtp','auto'])
     assert automatic==run('enabled-default',['--mtp','on'])
     assert automatic==run('explicit-k3',['--mtp','on','--mtp-max-drafts','3'])
-    assert automatic==run('k3-without-overlap',['--mtp','on','--mtp-max-drafts','3','--decode-overlap','off'])
+    serial=run('k3-without-overlap',['--mtp','on','--mtp-max-drafts','3','--decode-overlap','off'])
+    assert automatic==serial
+    assert serial==run('auto-without-overlap',['--decode-overlap','off'])
     one=run('override-k1',['--mtp-max-drafts','1'],width=1)
     assert one==run('explicit-k1',['--mtp','on','--mtp-max-drafts','1'],width=1)
     ordinary=run('disable',['--mtp','off'],mtp=False,subset=False)
