@@ -90,6 +90,7 @@
 #include "projection_binding.h"
 #include "weights.h"
 #include "mtp_defaults.h"
+#include "../../inference/mtp_policy.h"
 #include "graph_builder.h"
 #include "target_graph.h"
 #include "family_factory.h"
@@ -8857,22 +8858,28 @@ int qwen35::run(int argc, char **argv) {
       if (error) throw std::runtime_error("cannot inspect prepared MTP defaults: " + error.message());
       return present;
     };
-    // Only the separately prepared K3 pair opts a directory into new defaults.
-    // Legacy full heads and 32K maps keep their existing explicit-MTP policy.
-    // This inspects current configuration and metadata, never future requests.
-    const bool default_route = natural_generation && !multiple_schedules && !prefix_enabled && !progress &&
-        !warmup_planned_shapes && max_sessions <= 1 && active_sequences <= 1 && capacity >= 4 && capacity <= 32768 &&
-        backend_selection.primary == qwen35::BackendKind::kCuda && cpu_ffn_layers == 0 &&
-        !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0 &&
-        decode_overlap && replay == qwen35::ReplayPolicy::kAuto;
+    // Only the separately prepared K3 pair opts a directory into this default.
+    // The policy inspects current configuration, never future requests.
+    namespace mtp = hyle::inference::mtp;
+    const mtp::DefaultRequest default_request{
+        .mode = mtp_policy == "off" ? mtp::RequestedMode::kOff :
+            mtp_policy == "on" ? mtp::RequestedMode::kOn : mtp::RequestedMode::kAuto,
+        .natural_generation = natural_generation, .multiple_schedules = multiple_schedules,
+        .prefix_enabled = prefix_enabled, .scheduler_progress = progress,
+        .warmup_planned_shapes = warmup_planned_shapes, .max_sessions = max_sessions,
+        .active_sequences = active_sequences, .capacity = capacity,
+        .default_backend = backend_selection.primary == qwen35::BackendKind::kCuda,
+        .cpu_ffn = cpu_ffn_layers != 0,
+        .greedy = !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0,
+        .decode_overlap = decode_overlap, .default_replay = replay == qwen35::ReplayPolicy::kAuto,
+        .max_drafts = max_drafts, .automatic_head = draft_head == "auto",
+        .automatic_vocabulary = draft_vocabulary == "auto"};
     const auto default_vocabulary = input / qwen35::kDefaultK3Vocabulary;
-    const bool prepared_assets = mtp_policy != "off" && max_drafts > 0 &&
-        backend_selection.primary == qwen35::BackendKind::kCuda &&
-        !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0 &&
-        draft_head == "auto" && draft_vocabulary == "auto" && exists(default_vocabulary);
-    const bool automatic_k3 = prepared_assets && default_route && max_drafts <= 3;
-    mtp_enabled = mtp_policy == "on" || automatic_k3;
-    const bool select_prepared_assets = mtp_enabled && prepared_assets;
+    const auto default_selection = mtp::select_default(default_request,
+        mtp::inspect_prepared_vocabulary(default_request) && exists(default_vocabulary));
+    const bool automatic_k3 = default_selection.automatic;
+    mtp_enabled = default_selection.enabled;
+    const bool select_prepared_assets = default_selection.prepared_assets;
     if (select_prepared_assets && !exists(input / "mtp-draft-head.tsv"))
       throw std::runtime_error("prepared K3 vocabulary requires its complete source-bound Q4_K draft head");
     if(draft_head=="original")draft_head.clear();
