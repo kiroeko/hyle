@@ -8945,9 +8945,12 @@ int qwen35::run(int argc, char **argv) {
       throw std::runtime_error("--mtp-draft-head requires active unmodified greedy MTP and zero minimum probability");
     auto weight_source = qwen35::prepare_weight_source(input / "weights.tsv", mtp_enabled, draft_vocabulary,draft_head);
     if (select_prepared_assets) {
-      if (!qwen35::has_qualified_k3_defaults(weight_source))
+      const bool qualified_default = qwen35::has_qualified_k3_preference(weight_source);
+      // Source and head readers have already validated explicit assets. The
+      // known K3 preference is not a restriction on an explicit MTP request.
+      if (!qualified_default && mtp_policy != "on")
         throw std::runtime_error("prepared K3 defaults require the qualified BF16 Qwen3.5-2B source and 114688 Q4_K rows");
-      if (automatic_k3 && !explicit_mtp_drafts) max_drafts = 3;
+      if (qualified_default && automatic_k3 && !explicit_mtp_drafts) max_drafts = 3;
     }
     const auto geometry = weight_source.roles.geometry;
     qwen35::validate_mtp_source(geometry, mtp_enabled);

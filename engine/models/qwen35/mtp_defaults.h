@@ -8,7 +8,7 @@ namespace qwen35 {
 inline constexpr std::string_view kDefaultK3Vocabulary = "mtp-draft-vocabulary-k3.ids";
 inline constexpr std::size_t kDefaultK3VocabularyRows = 114688;
 
-inline bool has_qualified_k3_defaults(const PreparedWeightSource &source) {
+inline bool has_qualified_k3_preference(const PreparedWeightSource &source) {
   const auto &g = source.roles.geometry;
   return source.draft_head && source.draft_vocabulary &&
       source.draft_vocabulary->size() == kDefaultK3VocabularyRows &&
