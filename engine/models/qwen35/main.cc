@@ -765,6 +765,8 @@ private:
   DraftPolicy draft_policy_;
   bool preparation_started_ = false;
   bool greedy_chain_available_ = false;
+  // Immutable per-sampler relay admission, resolved once after backend setup.
+  std::vector<std::uint8_t> device_relay_by_sampling_;
   struct ColdFamilyOutcome final {
     std::optional<FamilyBuildResult> result;
     std::exception_ptr error;
@@ -967,6 +969,9 @@ public:
   std::size_t submitted_draft_rows = 0;
   const PreparedSampling &sampling_configuration(std::size_t index = 0) const { return resources_->sampling_configuration(index); }
   std::size_t sampling_configuration_count() const noexcept { return resources_->sampling_configurations.size(); }
+  bool supports_device_relay(std::size_t sampling_index) const {
+    return device_relay_by_sampling_.at(sampling_index) != 0;
+  }
   std::size_t sampling_index(const PreparedSampling *value) const { return resources_->sampling_index(value); }
   bool retains_sampling_frontier() const noexcept {
     return resources_->retain_sampling_frontier;
@@ -1144,6 +1149,12 @@ public:
       workers = std::make_unique<hyle::sched::BlockingPool>(mem::system_allocator(), 1,
                                                           std::chrono::seconds(10), &status);
       check(status);
+    }
+    device_relay_by_sampling_.reserve(resources_->sampling_configurations.size());
+    for (const auto &prepared : resources_->sampling_configurations) {
+      const auto &sampling = prepared->configuration;
+      device_relay_by_sampling_.push_back(DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(),
+          bool(scheduler), sampling.enabled, !sampling.modifiers.empty()}.eligible());
     }
     const auto weight_load_start = Clock::now();
     auto loading = load_selected_weight_roles(source_roles, execution, weights, weight_pools, ffn_placement, allocation_budget);
@@ -2884,9 +2895,7 @@ public:
   void restore_mtp_decode_recordings(std::size_t sampling_index) {
     if (!device_mtp_successor_ || active_step || successor_step || carrier_borrowed || snapshot_versions.live)
       return;
-    const auto &sampling = sampling_configuration(sampling_index).configuration;
-    if (!DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
-            sampling.enabled, !sampling.modifiers.empty()}.eligible()) return;
+    if (!supports_device_relay(sampling_index)) return;
     const auto phase_for = [&](GraphRole role, bool imported) -> Phase * {
       const auto found = phases.find({1, max_drafts()+1, role, TextCompletion::kEmitNext, sampling_index, imported,
           RowPacking::kRectangular});
@@ -2923,10 +2932,8 @@ public:
     DecodeRecording report;
     if (prepared_session && *prepared_session)
       throw std::runtime_error("decode recording requires an empty session destination");
-    const auto &sampling = sampling_configuration(sampling_index).configuration;
     if (capacity < 2 || cache_plan.in_flight_batches < 2 ||
-        !DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
-            sampling.enabled, !sampling.modifiers.empty()}.eligible()) return report;
+        !supports_device_relay(sampling_index)) return report;
     const auto role = mtp ? GraphRole::kMtpRound : GraphRole::kText;
     const bool device_pair = mtp && device_mtp_successor_;
     const auto relay_role = mtp ? (device_pair ? GraphRole::kMtpContinuation : GraphRole::kMtpCatchupRound) : GraphRole::kText;
@@ -6874,9 +6881,7 @@ bool execute_generation_continuation(Model &model, std::span<PreparedGenerationC
           (model.max_drafts()>1 && !model.device_mtp_successor_enabled()))) ||
       std::ranges::any_of(calls, [&](const auto &call) {
         const auto &request = *call.request;
-        const auto &sampling = request.session->sampling_configuration().configuration;
-        return !DeviceRelayCapabilities{model.execution.kind(), model.execution.has_cpu_assist(),
-            bool(model.scheduler), sampling.enabled, !sampling.modifiers.empty()}.eligible() ||
+        return !model.supports_device_relay(request.session->sampling_configuration().index) ||
             (mtp ? !drafts_token(call.role) || call.maximum != model.max_drafts() : call.role != GraphRole::kText) ||
             call.completion != TextCompletion::kEmitNext || call.full_hit || !call.generation ||
             (trace_states && !request.trace.empty());
@@ -8281,10 +8286,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
           (first_turn_only || std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; })); }))
       {
         model.prepare_execution(decode, 1, GraphRole::kText, TextCompletion::kEmitNext, i);
-        const auto &sampling = model.sampling_configuration(i).configuration;
         if (decode_overlap && model.cache_plan.in_flight_batches >= 2 &&
-            DeviceRelayCapabilities{model.execution.kind(), model.execution.has_cpu_assist(),
-                bool(model.scheduler), sampling.enabled, !sampling.modifiers.empty()}.eligible()) {
+            model.supports_device_relay(i)) {
           const auto eligible = static_cast<std::size_t>(std::count_if(requests.begin(), requests.end(), [i, first_turn_only](const auto &request) {
             return request.sampling_index == i && (first_turn_only || std::ranges::any_of(request.progress.turns(),
                 [](const auto &turn) { return turn.max_outputs > 1; }));
@@ -8306,9 +8309,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   if constexpr (mtp) if (decode_overlap && decode_bound && model.cache_plan.in_flight_batches >= 2 &&
       model.bounded_device_mtp_policy() && (model.max_drafts()==1 || model.device_mtp_successor_enabled()))
     for (std::size_t i = 0; i < model.sampling_configuration_count(); ++i) {
-      const auto &sampling = model.sampling_configuration(i).configuration;
-      if (!DeviceRelayCapabilities{model.execution.kind(), model.execution.has_cpu_assist(),
-              bool(model.scheduler), sampling.enabled, !sampling.modifiers.empty()}.eligible() ||
+      if (!model.supports_device_relay(i) ||
           std::ranges::none_of(requests, [i](const auto &request) { return request.sampling_index == i; })) continue;
       for (const auto role : {GraphRole::kMtpRound, GraphRole::kMtpCatchupRound})
         model.prepare_execution(pair, 1, role, TextCompletion::kEmitNext, i);
