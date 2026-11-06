@@ -45,30 +45,58 @@ int main() {
   m::DefaultRequest typical{.mode=m::RequestedMode::kAuto, .natural_generation=true,
       .capacity=32768, .default_backend=true, .greedy=true, .replay_supports_chain=true,
       .max_drafts=1, .maximum_automatic_drafts=3, .automatic_head=true, .automatic_vocabulary=true};
-  if (m::selection_reason(typical, m::select_default(typical,false)) != "no_eligible_source" ||
-      m::selection_reason(typical, m::select_default(typical,false,true)) != "original_projection" ||
-      m::selection_reason(typical, m::select_default(typical,true)) != "prepared_vocabulary")
+  if (m::select_default(typical,false).reason != "no_eligible_source" ||
+      m::select_default(typical,false,true).reason != "original_projection" ||
+      m::select_default(typical,true).reason != "prepared_vocabulary")
     throw std::runtime_error("automatic source reason differs");
+  struct ConstraintCase final {
+    void (*apply)(m::DefaultRequest &);
+    std::string_view reason;
+  };
+  constexpr std::array constraints{
+      ConstraintCase{+[](m::DefaultRequest &r) { r.natural_generation=false; }, "non_natural_request"},
+      ConstraintCase{+[](m::DefaultRequest &r) { r.default_backend=false; }, "non_cuda_backend"},
+      ConstraintCase{+[](m::DefaultRequest &r) { r.greedy=false; }, "sampling_or_draft_threshold"},
+      ConstraintCase{+[](m::DefaultRequest &r) { r.automatic_head=false; }, "manual_draft_asset"},
+      ConstraintCase{+[](m::DefaultRequest &r) { r.active_sequences=2; }, "multiple_sessions_or_sequences"},
+      ConstraintCase{+[](m::DefaultRequest &r) { r.prefix_enabled=true; }, "prefix_cache"},
+      ConstraintCase{+[](m::DefaultRequest &r) { r.scheduler_progress=true; }, "scheduler"},
+      ConstraintCase{+[](m::DefaultRequest &r) { r.cpu_ffn=true; }, "cpu_ffn"},
+      ConstraintCase{+[](m::DefaultRequest &r) { r.replay_supports_chain=false; }, "replay_commands"},
+      ConstraintCase{+[](m::DefaultRequest &r) { r.capacity=3; }, "insufficient_capacity"},
+      ConstraintCase{+[](m::DefaultRequest &r) { r.maximum_automatic_drafts=0; }, "unsupported_draft_depth"},
+  };
+  for (const auto &test : constraints) {
+    auto request=typical;
+    test.apply(request);
+    const auto result=m::select_default(request,true);
+    if (result.automatic || result.enabled || result.reason!=test.reason)
+      throw std::runtime_error("automatic decision and constraint reason disagree");
+  }
+  auto multiple=typical;
+  multiple.greedy=false; multiple.prefix_enabled=true;
+  if (m::select_default(multiple,true).reason!="sampling_or_draft_threshold")
+    throw std::runtime_error("first automatic constraint changed");
   typical.capacity=3;
   if (m::select_default(typical,true).enabled ||
-      m::selection_reason(typical, m::select_default(typical,true)) != "insufficient_capacity")
+      m::select_default(typical,true).reason != "insufficient_capacity")
     throw std::runtime_error("short-context auto policy differs");
   typical.mode=m::RequestedMode::kOn;
   if (!m::select_default(typical,true).enabled ||
-      m::selection_reason(typical, m::select_default(typical,true)) != "explicit_on")
+      m::select_default(typical,true).reason != "explicit_on")
     throw std::runtime_error("short-context explicit route was blocked by auto policy");
   typical.mode=m::RequestedMode::kAuto; typical.capacity=32768;
   typical.greedy=false;
-  if (m::selection_reason(typical, m::select_default(typical,true)) != "sampling_or_draft_threshold")
+  if (m::select_default(typical,true).reason != "sampling_or_draft_threshold")
     throw std::runtime_error("sampling fallback reason differs");
   typical.greedy=true; typical.maximum_automatic_drafts=0;
-  if (m::selection_reason(typical, m::select_default(typical,true)) != "unsupported_draft_depth")
+  if (m::select_default(typical,true).reason != "unsupported_draft_depth")
     throw std::runtime_error("model chain capability reason differs");
   typical.maximum_automatic_drafts=3; typical.replay_supports_chain=false;
-  if (m::selection_reason(typical, m::select_default(typical,true)) != "replay_commands")
+  if (m::select_default(typical,true).reason != "replay_commands")
     throw std::runtime_error("replay fallback reason differs");
   typical.mode=m::RequestedMode::kOff;
-  if (m::selection_reason(typical, m::select_default(typical,true)) != "explicit_off")
+  if (m::select_default(typical,true).reason != "explicit_off")
     throw std::runtime_error("explicit off reason differs");
   std::printf("MTP cold policy: %zu configuration checks passed\n", checks);
 }

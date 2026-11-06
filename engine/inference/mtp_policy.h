@@ -39,28 +39,13 @@ struct DefaultSelection final {
   bool automatic = false;
   bool enabled = false;
   bool prepared_assets = false;
+  std::string_view reason;
 };
 
-constexpr DefaultSelection select_default(const DefaultRequest &request,
-    bool prepared_vocabulary_exists, bool original_projection_eligible = false) noexcept {
-  const bool prepared = inspect_prepared_vocabulary(request) && prepared_vocabulary_exists;
-  const bool available = prepared || (inspect_prepared_vocabulary(request) && original_projection_eligible);
-  // Very short contexts are a default cost policy, not a model capability:
-  // explicit MTP remains available and the execution path clips its depth.
-  const bool automatic = available && request.natural_generation && !request.multiple_schedules &&
-      !request.prefix_enabled && !request.scheduler_progress &&
-      request.max_sessions <= 1 && request.active_sequences <= 1 && request.capacity >= 4 &&
-      !request.cpu_ffn && request.replay_supports_chain &&
-      request.max_drafts <= request.maximum_automatic_drafts;
-  const bool enabled = request.mode == RequestedMode::kOn || automatic;
-  return {automatic, enabled, enabled && prepared};
-}
-
-// Report the first cold configuration constraint, not a per-token decision.
-constexpr std::string_view selection_reason(const DefaultRequest &request,
-    const DefaultSelection &selection) noexcept {
-  if (request.mode == RequestedMode::kOff) return "explicit_off";
-  if (request.mode == RequestedMode::kOn) return "explicit_on";
+// One cold policy decision supplies both admission and its explanation.
+// Asset inspection is separate because explicit MTP can use prepared assets
+// even when the automatic route is not selected.
+constexpr std::string_view automatic_constraint(const DefaultRequest &request) noexcept {
   if (!request.natural_generation) return "non_natural_request";
   if (!request.default_backend) return "non_cuda_backend";
   if (!request.greedy) return "sampling_or_draft_threshold";
@@ -71,12 +56,25 @@ constexpr std::string_view selection_reason(const DefaultRequest &request,
   if (request.scheduler_progress) return "scheduler";
   if (request.cpu_ffn) return "cpu_ffn";
   if (!request.replay_supports_chain) return "replay_commands";
-  // This reason describes the automatic policy, not a backend rejection.
+  // This is an automatic cost preference, not a backend rejection.
   if (request.capacity < 4) return "insufficient_capacity";
   if (!request.max_drafts || request.max_drafts > request.maximum_automatic_drafts)
     return "unsupported_draft_depth";
-  if (!selection.automatic) return "no_eligible_source";
-  return selection.prepared_assets ? "prepared_vocabulary" : "original_projection";
+  return {};
+}
+
+constexpr DefaultSelection select_default(const DefaultRequest &request,
+    bool prepared_vocabulary_exists, bool original_projection_eligible = false) noexcept {
+  const bool prepared = inspect_prepared_vocabulary(request) && prepared_vocabulary_exists;
+  const bool available = prepared || (inspect_prepared_vocabulary(request) && original_projection_eligible);
+  const auto constraint = automatic_constraint(request);
+  const bool automatic = available && constraint.empty();
+  const bool enabled = request.mode == RequestedMode::kOn || automatic;
+  const auto reason = request.mode == RequestedMode::kOff ? "explicit_off" :
+      request.mode == RequestedMode::kOn ? "explicit_on" :
+      !constraint.empty() ? constraint : !automatic ? "no_eligible_source" :
+      prepared ? "prepared_vocabulary" : "original_projection";
+  return {automatic, enabled, enabled && prepared, reason};
 }
 
 } // namespace hyle::inference::mtp

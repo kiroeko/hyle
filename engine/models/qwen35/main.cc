@@ -9200,7 +9200,7 @@ int qwen35::run(int argc, char **argv) {
         : qwen35::create_execution(geometry, selected_cache, cpu_ffn_layers, backend_selection);
     qwen35::Model model(std::move(execution), {}, std::move(weight_source), geometry, capacity,
         selected_cache, layer0_probe, progress, replay, cache_bytes, sampler, cpu_ffn_layers);
-    model.mtp_selection_reason = mtp::selection_reason(default_request, default_selection);
+    model.mtp_selection_reason = default_selection.reason;
     model.mtp_depth_source = !mtp_enabled ? "disabled" : explicit_mtp_drafts ? "explicit" :
         automatic_k3 ? "k3_artifact" : "default_k1";
     model.configure_draft_policy({max_drafts, min_draft_probability});
