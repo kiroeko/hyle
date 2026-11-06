@@ -4,6 +4,9 @@
 
 namespace qwen35 {
 
+// The currently built bounded device draft chain has up to three proposals.
+inline constexpr std::size_t kMaximumDeviceMtpDrafts = 3;
+
 // This describes the selected source projection, not whether a backend can
 // execute a particular MTP route. That is queried from the actual backend.
 inline bool supports_stored_draft_projection(const prepared::Roles &roles) {

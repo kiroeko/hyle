@@ -49,6 +49,17 @@ def check(args):
             return
         assert result.returncode==0,(name,stderr)
         raw=json.loads((folder/'stdout.log').read_text(encoding='utf-8'))
+        reasons={'default-auto':('prepared_vocabulary','k3_artifact'),
+                 'enabled-default':('explicit_on','k3_artifact'),
+                 'explicit-k3':('explicit_on','explicit'),
+                 'override-k1':('prepared_vocabulary','explicit'),
+                 'disable':('explicit_off','disabled'),
+                 'auto-commands':('replay_commands','disabled'),
+                 'legacy-default':('no_eligible_source','disabled'),
+                 'generic-auto':('prepared_vocabulary','default_k1'),
+                 'random-auto':('sampling_or_draft_threshold','disabled')}
+        if name in reasons:
+            assert (raw['mtp_selection_reason'],raw['mtp_depth_source'])==reasons[name],name
         assert raw['mtp']==mtp and raw['mtp_max_drafts']==(width if mtp else 0),name
         assert raw['draft_vocabulary_rows']==(rows if subset else 0),name
         assert raw['draft_head_rows']==(rows if subset else 248320 if mtp else 0),name

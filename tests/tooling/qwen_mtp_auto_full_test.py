@@ -37,6 +37,11 @@ def main():
                 raise RuntimeError(f'{label}/{mode}: see {folder}')
             raw = json.loads(result.stdout.decode('utf-8-sig'))
             expected = mode in ('auto', 'k1')
+            reasons = {'auto': ('original_projection', 'default_k1'),
+                       'k1': ('explicit_on', 'explicit'), 'off': ('explicit_off', 'disabled'),
+                       'random-auto': ('sampling_or_draft_threshold', 'disabled'),
+                       'random-off': ('explicit_off', 'disabled')}
+            assert (raw['mtp_selection_reason'], raw['mtp_depth_source']) == reasons[mode], (label, mode)
             assert raw['mtp'] == expected and raw['mtp_max_drafts'] == int(expected), (label, mode)
             assert raw['draft_vocabulary_rows'] == 0, (label, mode)
             assert raw['live_committed_versions'] == 0, (label, mode)

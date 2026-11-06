@@ -742,7 +742,7 @@ struct GreedyChainCapabilities final {
   bool capture_allowed = false, supported_projection = false;
 
   constexpr bool available() const noexcept {
-    return max_drafts >= 2 && max_drafts <= 3 && minimum_probability == 0 && device_relay &&
+    return max_drafts >= 2 && max_drafts <= kMaximumDeviceMtpDrafts && minimum_probability == 0 && device_relay &&
         active_sequences == 1 && auxiliary_hidden_rows >= 2 && private_draft_stages >= max_drafts &&
         capture_allowed && supported_projection;
   }
@@ -799,7 +799,7 @@ public:
       throw std::runtime_error("prepared draft projection requires active drafting with zero minimum probability");
     draft_policy_ = policy;
     bool supported_projection = false;
-    if (policy.max_drafts >= 2 && policy.max_drafts <= 3 && policy.minimum_probability == 0) {
+    if (policy.max_drafts >= 2 && policy.max_drafts <= kMaximumDeviceMtpDrafts && policy.minimum_probability == 0) {
       const auto found = projections.find(geometry.head_role());
       const auto *stored = found == projections.end() ? nullptr : std::get_if<StoredProjection>(&found->second);
       if (stored && stored->weight) {
@@ -820,7 +820,7 @@ public:
   bool recursive_mtp() const noexcept { return max_drafts() && (max_drafts() > 1 || min_draft_probability() > 0); }
   bool device_mtp_successor_enabled() const noexcept { return device_mtp_successor_; }
   bool bounded_device_mtp_policy()const noexcept{
-    return max_drafts()>=1 && max_drafts()<=3 && min_draft_probability()==0 &&
+    return max_drafts()>=1 && max_drafts()<=kMaximumDeviceMtpDrafts && min_draft_probability()==0 &&
         (max_drafts()==1 || (cache_plan.in_flight_batches>=3 && cache_plan.private_draft_stages>=max_drafts()));
   }
   bool device_mtp_continuous_enabled() const noexcept {
@@ -899,6 +899,7 @@ public:
   const FfnPlacement ffn_placement;
   std::size_t host_weight_bytes = 0, device_weight_bytes = 0;
   std::size_t physical_text_roles = 0, physical_mtp_roles = 0, canonical_weight_bytes = 0;
+  std::string_view mtp_selection_reason = "not_configured", mtp_depth_source = "not_configured";
   std::size_t ct_channel_groups = 0, ct_local_groups = 0, ct_block_groups = 0, omitted_cache_roles = 0;
   std::size_t fp8_weight_groups = 0, fp8_import_peak_bytes = 0;
   bool float8_weight_policy = false;
@@ -1242,6 +1243,8 @@ public:
   std::string weight_inventory_report() const {
     auto result = ",\"weight_count_scope\":\"selected_physical_roles\",\"text_tensors\":" +
         std::to_string(physical_text_roles) + ",\"mtp_tensors\":" + std::to_string(physical_mtp_roles);
+    result += ",\"mtp_selection_reason\":\"" + std::string(mtp_selection_reason) +
+        "\",\"mtp_depth_source\":\"" + std::string(mtp_depth_source) + "\"";
     if (float8_weight_policy) result += ",\"canonical_weight_tensors\":" + std::to_string(weights.size()) +
         ",\"canonical_weight_bytes\":" + std::to_string(canonical_weight_bytes) +
         ",\"fp8_block128_groups\":" + std::to_string(fp8_weight_groups) +
@@ -1834,7 +1837,7 @@ public:
     // bound can select capture; writer-only repair retains its ready-leaf path.
     const auto replay_mode = !selected_sampler.modifiers.history.empty() && head ? g::ReplayMode::kCommands
         : select_replay_mode(replay_policy, head ? planned_uses : 1, selected_sampler.enabled);
-    const auto packet_rows = head && max_drafts() > 1 && max_drafts() <= 3 && !selected_sampler.enabled &&
+    const auto packet_rows = head && max_drafts() > 1 && max_drafts() <= kMaximumDeviceMtpDrafts && !selected_sampler.enabled &&
         selected_sampler.modifiers.empty() && min_draft_probability() == 0 &&
         execution.kind() == BackendKind::kCuda && !execution.has_cpu_assist() && !scheduler &&
         cache_plan.active_sequences == 1 && cache_plan.auxiliary_hidden_rows >= 2 &&
@@ -8077,7 +8080,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       model.execution.kind() == BackendKind::kCuda && !model.execution.has_cpu_assist() &&
       !model.scheduler && model.cache_plan.active_sequences == 1 && model.target_kv_layers &&
       model.layer0_probe.empty() &&
-      (!mtp || (model.max_drafts() >= 1 && model.max_drafts() <= 3 && model.min_draft_probability() == 0)))
+      (!mtp || (model.max_drafts() >= 1 && model.max_drafts() <= kMaximumDeviceMtpDrafts && model.min_draft_probability() == 0)))
     (void)model.begin_cold_families();
   for (std::size_t sampling_index = 0; sampling_index < model.sampling_configuration_count(); ++sampling_index) {
     if (std::ranges::none_of(requests, [&](const auto &request) { return request.sampling_index == sampling_index; })) continue;
@@ -8903,7 +8906,8 @@ int qwen35::run(int argc, char **argv) {
         .cpu_ffn = cpu_ffn_layers != 0,
         .greedy = !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0,
         .replay_supports_chain = replay != qwen35::ReplayPolicy::kCommands,
-        .max_drafts = max_drafts, .automatic_head = draft_head == "auto",
+        .max_drafts = max_drafts, .maximum_automatic_drafts = qwen35::kMaximumDeviceMtpDrafts,
+        .automatic_head = draft_head == "auto",
         .automatic_vocabulary = draft_vocabulary == "auto"};
     const auto default_vocabulary = input / qwen35::kDefaultK3Vocabulary;
     const auto generic_vocabulary = input / "mtp-draft-vocabulary.ids";
@@ -8995,7 +8999,7 @@ int qwen35::run(int argc, char **argv) {
         !warmup_planned_shapes && max_sessions <= 1 && active_sequences <= 1 &&
         backend_selection.primary == qwen35::BackendKind::kCuda && cpu_ffn_layers == 0 &&
         !sampler.enabled && sampler.modifiers.empty() &&
-        (!mtp_enabled || (capacity > 1 && max_drafts >= 1 && max_drafts <= 3 && min_draft_probability == 0));
+        (!mtp_enabled || (capacity > 1 && max_drafts >= 1 && max_drafts <= qwen35::kMaximumDeviceMtpDrafts && min_draft_probability == 0));
     if (require_bounded_generation && !bounded_generation)
       throw std::runtime_error("bounded natural generation requires CUDA without CPU assist, unmodified greedy, ordinary or K1-K3 MTP without a draft threshold, one session, auto or 1 for max-sessions/active-sequences, prefix off and lazy shape preparation");
     if (max_prefill_rows != SIZE_MAX && !natural_generation)
@@ -9109,7 +9113,7 @@ int qwen35::run(int argc, char **argv) {
     // the consumer really retires. Count that third original batch in the
     // existing page/state bound, independently of simultaneous GPU work.
     bool overlap_selected = decode_overlap && natural_generation &&
-        (!mtp_enabled || (max_drafts >= 1 && max_drafts <= 3 && min_draft_probability == 0 &&
+        (!mtp_enabled || (max_drafts >= 1 && max_drafts <= qwen35::kMaximumDeviceMtpDrafts && min_draft_probability == 0 &&
                          (max_drafts == 1 || stored_draft_head))) && !progress &&
         qwen35::DeviceRelayCapabilities{backend_selection.primary, cpu_ffn_layers != 0,
             progress, sampler.enabled, !sampler.modifiers.empty()}.eligible() &&
@@ -9117,7 +9121,7 @@ int qwen35::run(int argc, char **argv) {
         (bounded_generation ? capacity >= 10 : std::ranges::any_of(generation_schedules, [](const auto &request) {
           return std::ranges::any_of(request.turns, [](const auto &turn) { return turn.max_outputs >= 10; });
         }));
-    bool device_verification_selected = mtp_enabled && max_drafts > 1 && max_drafts <= 3 &&
+    bool device_verification_selected = mtp_enabled && max_drafts > 1 && max_drafts <= qwen35::kMaximumDeviceMtpDrafts &&
         min_draft_probability == 0 && !sampler.enabled && sampler.modifiers.empty() &&
         backend_selection.primary == qwen35::BackendKind::kCuda && !cpu_ffn_layers && !progress &&
         requested_active == 1 && replay != qwen35::ReplayPolicy::kCommands;
@@ -9196,6 +9200,9 @@ int qwen35::run(int argc, char **argv) {
         : qwen35::create_execution(geometry, selected_cache, cpu_ffn_layers, backend_selection);
     qwen35::Model model(std::move(execution), {}, std::move(weight_source), geometry, capacity,
         selected_cache, layer0_probe, progress, replay, cache_bytes, sampler, cpu_ffn_layers);
+    model.mtp_selection_reason = mtp::selection_reason(default_request, default_selection);
+    model.mtp_depth_source = !mtp_enabled ? "disabled" : explicit_mtp_drafts ? "explicit" :
+        automatic_k3 ? "k3_artifact" : "default_k1";
     model.configure_draft_policy({max_drafts, min_draft_probability});
     const auto constructed = qwen35::Clock::now();
     if (!trace.empty()) model.trace_routes = trace / "routes";

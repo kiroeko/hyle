@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <string_view>
 
 namespace hyle::inference::mtp {
 
@@ -22,6 +23,7 @@ struct DefaultRequest final {
   bool greedy = false;
   bool replay_supports_chain = false;
   std::size_t max_drafts = 0;
+  std::size_t maximum_automatic_drafts = 0;
   bool automatic_head = false;
   bool automatic_vocabulary = false;
 };
@@ -47,9 +49,31 @@ constexpr DefaultSelection select_default(const DefaultRequest &request,
       !request.prefix_enabled && !request.scheduler_progress &&
       request.max_sessions <= 1 && request.active_sequences <= 1 && request.capacity >= 4 &&
       !request.cpu_ffn && request.replay_supports_chain &&
-      request.max_drafts <= 3;
+      request.max_drafts <= request.maximum_automatic_drafts;
   const bool enabled = request.mode == RequestedMode::kOn || automatic;
   return {automatic, enabled, enabled && prepared};
+}
+
+// Report the first cold configuration constraint, not a per-token decision.
+constexpr std::string_view selection_reason(const DefaultRequest &request,
+    const DefaultSelection &selection) noexcept {
+  if (request.mode == RequestedMode::kOff) return "explicit_off";
+  if (request.mode == RequestedMode::kOn) return "explicit_on";
+  if (!request.natural_generation) return "non_natural_request";
+  if (!request.default_backend) return "non_cuda_backend";
+  if (!request.greedy) return "sampling_or_draft_threshold";
+  if (!request.automatic_head || !request.automatic_vocabulary) return "manual_draft_asset";
+  if (request.multiple_schedules || request.max_sessions > 1 || request.active_sequences > 1)
+    return "multiple_sessions_or_sequences";
+  if (request.prefix_enabled) return "prefix_cache";
+  if (request.scheduler_progress) return "scheduler";
+  if (request.cpu_ffn) return "cpu_ffn";
+  if (!request.replay_supports_chain) return "replay_commands";
+  if (request.capacity < 4) return "insufficient_capacity";
+  if (!request.max_drafts || request.max_drafts > request.maximum_automatic_drafts)
+    return "unsupported_draft_depth";
+  if (!selection.automatic) return "no_eligible_source";
+  return selection.prepared_assets ? "prepared_vocabulary" : "original_projection";
 }
 
 } // namespace hyle::inference::mtp
