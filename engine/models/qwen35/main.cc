@@ -8670,7 +8670,7 @@ int qwen35::run(int argc, char **argv) {
         "Usage: hyle --inputs DIR [options]\n"
         "  --inputs DIR                Locally prepared checkpoint and token IDs\n"
         "  --backend cpu|cuda|apple|vulkan  Primary backend; required when multiple GPU routes are compiled\n"
-        "  --mtp auto|off|on           Cold policy: dense target + Q4 draft K3, other prepared drafts K1; otherwise off\n"
+        "  --mtp auto|off|on           Cold policy: prepared dense targets use K1/K3; quantized targets default off\n"
         "  --mtp-max-drafts N          Maximum proposals; 0 disables drafting (default: cold policy, explicit fallback 1)\n"
         "  --mtp-min-probability FLOAT  Stop below max draft probability, [0,1] (default: 0)\n"
         "  --mtp-draft-vocabulary auto|full|FILE  Prepared draft IDs (default: auto); greedy only\n"
@@ -8917,7 +8917,9 @@ int qwen35::run(int argc, char **argv) {
     const auto &source_geometry = weight_source.roles.geometry;
     const auto draft_storage = draft_head.empty() ? source_mtp.target : mtp::TargetProjection::kRowBlockQuantized;
     constexpr auto exact_token_domain = std::int64_t{1} << std::numeric_limits<float>::digits;
-    if (request_mtp_source && source_mtp.nextn && source_mtp.stored_projection && capacity > 1 &&
+    const bool automatic_candidate = mtp_policy != "auto" ||
+        mtp::automatic_default_available(source_mtp.target, draft_storage);
+    if (automatic_candidate && request_mtp_source && source_mtp.nextn && source_mtp.stored_projection && capacity > 1 &&
         !cpu_ffn_layers && backend_selection.primary != qwen35::BackendKind::kCpu &&
         source_geometry.attention_layers() && source_geometry.vocabulary <= exact_token_domain) {
       const auto limit = (std::min)(std::size_t{3}, capacity - 1);
@@ -8935,17 +8937,17 @@ int qwen35::run(int argc, char **argv) {
         else if (!mtp_request.maximum_drafts && wanted > 1 && qualify(1)) device_drafts = 1;
       }
     }
-    if (request_mtp_source && (mtp_policy == "on" || device_drafts)) {
-      if (incomplete_installed_pair)
-        throw std::runtime_error("prepared K3 vocabulary requires its complete source-bound Q4_K draft head");
-      qwen35::prepare_draft_assets(weight_source, draft_vocabulary, draft_head);
-    }
     const auto selection = mtp::select(mtp_request, {source_mtp.nextn, device_drafts != 0,
-        weight_source.draft_vocabulary.has_value(), source_mtp.target, device_drafts, draft_storage});
+        !draft_vocabulary.empty(), source_mtp.target, device_drafts, draft_storage});
     mtp_enabled = selection.enabled;
     max_drafts = selection.maximum_drafts;
     if (!mtp_enabled && explicit_assets)
       throw std::runtime_error("explicit draft assets require an enabled MTP route");
+    if (mtp_enabled && request_mtp_source) {
+      if (incomplete_installed_pair)
+        throw std::runtime_error("prepared K3 vocabulary requires its complete source-bound Q4_K draft head");
+      qwen35::prepare_draft_assets(weight_source, draft_vocabulary, draft_head);
+    }
     if (!mtp_enabled && request_mtp_source) qwen35::discard_mtp_weight_source(weight_source);
     std::cerr << "mtp_cold_policy enabled=" << mtp_enabled << " max_drafts=" << max_drafts
         << " reason=" << mtp::reason_name(selection.reason) << '\n';

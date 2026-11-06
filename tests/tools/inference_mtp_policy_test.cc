@@ -26,7 +26,9 @@ int main() {
     require(selection.reason == reason);
   };
   check(automatic, dense, true, 3, Reason::kPreparedDefault);
-  check(automatic, packed, true, 1, Reason::kPreparedDefault);
+  check(automatic, packed, false, 1, Reason::kAutomaticDefaultDisabled);
+  auto packed_explicit_depth = automatic; packed_explicit_depth.maximum_drafts = 3;
+  check(packed_explicit_depth, packed, false, 3, Reason::kAutomaticDefaultDisabled);
   auto original_dense = dense; original_dense.draft = m::TargetProjection::kDense;
   check(automatic, original_dense, true, 1, Reason::kPreparedDefault);
   auto explicit_dense = automatic; explicit_dense.mode = m::RequestedMode::kOn; explicit_dense.maximum_drafts = 3;
