@@ -1414,9 +1414,21 @@
         {
           "before": "        for (int i = 0; i < c_rows_per_block; ++i) {\n            tmp[i] += vec_dot_q_cuda(vx, &y[kby], kbx_offset + i*stride_row_x + kbx, kqs);",
           "after": "        for (int i = 0; i < c_rows_per_block; ++i) {\n            if constexpr (c_rows_per_block > 1) {\n                if (uint32_t(row0 + i) >= nrows_x) continue;\n            }\n            tmp[i] += vec_dot_q_cuda(vx, &y[kby], kbx_offset + i*stride_row_x + kbx, kqs);"
+        },
+        {
+          "before": "#include \"mmvq.cuh\"\n",
+          "after": "#include \"shared_mmvq_bridge.cc\"\n#include \"mmvq.cuh\"\n"
+        },
+        {
+          "before": "    ggml_cuda_pool_alloc<char> src1_q8_1(ctx.pool(), ne13*ne12 * ne11*ne10_padded * sizeof(block_q8_1)/QK8_1);\n    {\n        const int64_t s11 = src1->nb[1] / ts_src1;\n        const int64_t s12 = src1->nb[2] / ts_src1;\n        const int64_t s13 = src1->nb[3] / ts_src1;\n        quantize_row_q8_1_cuda(src1_d, nullptr, src1_q8_1.get(), src0->type, ne10, s11, s12, s13, ne10_padded, ne11, ne12, ne13, stream);\n    }",
+          "after": "    const size_t shared_bytes = ne13*ne12 * ne11*ne10_padded * sizeof(block_q8_1)/QK8_1;\n    bool shared_first = false;\n    auto * shared = static_cast<char *>(hyle_shared_mmvq_select(&ctx, dst, src1,\n        static_cast<unsigned>(ctx.curr_stream_no), shared_bytes, &shared_first));\n    ggml_cuda_pool_alloc<char> src1_q8_1(ctx.pool());\n    auto * quantized = shared ? shared : src1_q8_1.alloc(shared_bytes);\n    if (!shared || shared_first) {\n        const int64_t s11 = src1->nb[1] / ts_src1;\n        const int64_t s12 = src1->nb[2] / ts_src1;\n        const int64_t s13 = src1->nb[3] / ts_src1;\n        quantize_row_q8_1_cuda(src1_d, nullptr, quantized, src0->type, ne10, s11, s12, s13, ne10_padded, ne11, ne12, ne13, stream);\n    }"
+        },
+        {
+          "before": "        src0->data, src0->type, src1_q8_1.get(), ids_d, fusion_local, dst_d, ne00,",
+          "after": "        src0->data, src0->type, quantized, ids_d, fusion_local, dst_d, ne00,"
         }
       ],
-      "after_sha256": "2c7014e4ad6236639dbcca7b1ec494cd17b92985c1ca56c7f3da0aa14b89119d"
+      "after_sha256": "34b2d41462900061aa5ad4cb790004dd4fbfee091dcb8477ecb5b629a68cf173"
     },
     {
       "path": "src/ggml-cuda/gated_delta_net.cu",
