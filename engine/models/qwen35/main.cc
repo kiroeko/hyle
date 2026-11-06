@@ -90,6 +90,7 @@
 #include "projection_binding.h"
 #include "weights.h"
 #include "mtp_defaults.h"
+#include "mtp_capabilities.h"
 #include "../../inference/mtp_policy.h"
 #include "graph_builder.h"
 #include "target_graph.h"
@@ -217,6 +218,27 @@ Backend create_execution(const ModelGeometry &geometry, const cache::Plan &plan,
       << " staging=" << staging << " scope=known_per_invocation_workspace native_private_unknown=1 physical_vram_cap=0\n";
   if (cpu_options) return take(Backend::create(selection, {compute, compute, staging}, *cpu_options));
   return take(Backend::create(selection, {compute, compute, staging}));
+}
+c::BatchCapacity attention_capacity(const ModelGeometry &geometry, PrecisionProfile precision, const cache::Plan &plan) {
+  const auto storage = take(c::CacheStorage::plain(precision.cache_type()));
+  return {.storage = c::BatchStorage::kPaged, .query_type = precision.cache_type(),
+      .output_type = precision.cache_type(), .key_storage = storage, .value_storage = storage,
+      .max_requests = plan.max_requests, .max_query_rows = plan.max_query_rows,
+      .max_kv_rows = plan.max_kv_rows, .max_pages = plan.max_pages, .max_page_refs = plan.max_page_refs,
+      .query_heads = static_cast<std::uint32_t>(geometry.query_heads),
+      .kv_heads = static_cast<std::uint32_t>(geometry.kv_heads),
+      .qk_head_dim = static_cast<std::uint32_t>(geometry.key_depth),
+      .value_head_dim = static_cast<std::uint32_t>(geometry.value_depth), .page_size = cache::Plan::page_rows};
+}
+bool supports_mtp_attention(Backend &execution, c::BatchCapacity capacity,
+    std::span<const CacheStoragePair> target_storage, const c::ResourceBudget &budget = {}) {
+  if (!take(execution.supports_device_lengths_batch(capacity, budget))) return false;
+  for (const auto &storage : target_storage) {
+    auto target = capacity;
+    target.key_storage = storage[0]; target.value_storage = storage[1];
+    if (!take(execution.supports_device_lengths_batch(target, budget))) return false;
+  }
+  return true;
 }
 // Typed ready inputs shared by an episode or prepared for each conditional.
 // Bias/mask are immutable [1,V] snapshots; counts is C0 and mathematical
@@ -815,15 +837,8 @@ public:
     if (!device_mtp_model_contract()) return false;
     if (max_drafts() > 1 && !greedy_draft_chain_enabled(sampling_configuration(0).configuration)) return false;
     if (!backend_device_mtp_support_) {
-      const auto capacity = attention_capacity();
-      bool supported = take(execution.supports_device_lengths_batch(capacity, allocation_budget));
-      for (const auto &storage : resources_->attention_storage) {
-        if (!supported) break;
-        auto target = capacity;
-        target.key_storage = storage[0]; target.value_storage = storage[1];
-        supported = take(execution.supports_device_lengths_batch(target, allocation_budget));
-      }
-      backend_device_mtp_support_ = supported;
+      backend_device_mtp_support_ = supports_mtp_attention(execution, attention_capacity(),
+          resources_->attention_storage, allocation_budget);
     }
     return *backend_device_mtp_support_;
   }
@@ -920,15 +935,7 @@ public:
     return attention_schemas.empty() ? attention_schema : attention_schemas.at(layer);
   }
   c::BatchCapacity attention_capacity() const {
-    const auto storage = take(c::CacheStorage::plain(precision.cache_type()));
-    return {.storage = c::BatchStorage::kPaged, .query_type = precision.cache_type(),
-        .output_type = precision.cache_type(), .key_storage = storage, .value_storage = storage,
-        .max_requests = cache_plan.max_requests, .max_query_rows = cache_plan.max_query_rows,
-        .max_kv_rows = cache_plan.max_kv_rows, .max_pages = cache_plan.max_pages,
-        .max_page_refs = cache_plan.max_page_refs, .query_heads = static_cast<std::uint32_t>(geometry.query_heads),
-        .kv_heads = static_cast<std::uint32_t>(geometry.kv_heads),
-        .qk_head_dim = static_cast<std::uint32_t>(geometry.key_depth),
-        .value_head_dim = static_cast<std::uint32_t>(geometry.value_depth), .page_size = cache::Plan::page_rows};
+    return qwen35::attention_capacity(geometry, precision, cache_plan);
   }
   cache::VersionCount &snapshot_versions;
   std::size_t &carrier_borrowed;
@@ -9081,13 +9088,7 @@ int qwen35::run(int argc, char **argv) {
     const auto max_query_rows = bounded_generation ? capacity : (std::max)({*std::max_element(planned_chunks.begin(), planned_chunks.end()), mtp_schema_rows,
         mtp_enabled && mtp_has_decode ? max_drafts + 1 : std::size_t{1}});
     const auto requested_active = (std::min)(active_sequences, input_sessions);
-    const bool stored_draft_head = std::ranges::any_of(weight_source.roles.selected, [&](const auto &role) {
-      return role.name == geometry.head_role() &&
-          (role.projection_codec == qwen35::prepared::ProjectionCodec::kDense ||
-           role.projection_codec == qwen35::prepared::ProjectionCodec::kUnspecified) &&
-          (role.dtype == "BF16" || role.dtype == "F16" || role.dtype == "F32" ||
-           role.dtype == "Q8_0" || role.dtype == "Q4_K" || role.dtype == "Q6_K");
-    });
+    const bool stored_draft_head = qwen35::supports_stored_draft_projection(weight_source.roles);
     // A continuous conditional successor retains its completed producer until
     // the consumer really retires. Count that third original batch in the
     // existing page/state bound, independently of simultaneous GPU work.
@@ -9100,16 +9101,27 @@ int qwen35::run(int argc, char **argv) {
         (bounded_generation ? capacity >= 10 : std::ranges::any_of(generation_schedules, [](const auto &request) {
           return std::ranges::any_of(request.turns, [](const auto &turn) { return turn.max_outputs >= 10; });
         }));
-    const bool continuous_mtp_candidate = overlap_selected && mtp_enabled && !prefix_enabled &&
-        cached_slots == 1 && requested_active == 1 && weight_source.cache_storage.empty() &&
-        geometry.attention_layers() && geometry.vocabulary <= (std::int64_t{1} << 24) &&
-        geometry.key_depth == geometry.value_depth &&
-        (geometry.key_depth == 64 || geometry.key_depth == 128 || geometry.key_depth == 256);
-    auto overlap_depth = continuous_mtp_candidate ? std::size_t{3} : std::size_t{2};
     bool device_verification_selected = mtp_enabled && max_drafts > 1 && max_drafts <= 3 &&
         min_draft_probability == 0 && !sampler.enabled && sampler.modifiers.empty() &&
         backend_selection.primary == qwen35::BackendKind::kCuda && !cpu_ffn_layers && !progress &&
         requested_active == 1 && replay != qwen35::ReplayPolicy::kCommands;
+    // Ask the actual backend about the provisional maximum batch and every
+    // target cache storage. Unsupported implementations keep the original
+    // two-batch finite route. The created endpoint is reused by Model below.
+    std::optional<qwen35::Backend> prepared_execution;
+    bool continuous_mtp_candidate = false;
+    constexpr auto exact_token_domain = std::int64_t{1} << std::numeric_limits<float>::digits;
+    if (overlap_selected && mtp_enabled && !prefix_enabled && cached_slots == 1 &&
+        requested_active == 1 && geometry.attention_layers() && geometry.vocabulary <= exact_token_domain) {
+      const auto provisional = qwen35::cache::plan(geometry, weight_source.cache_row_bytes, capacity, cached_slots,
+          mtp_has_decode ? (std::max)(max_query_rows, std::size_t{2}) : max_query_rows, recurrent_payload,
+          active_sequences == 0 ? cached_slots : requested_active, max_drafts + 1, true, sampler.enabled, 3,
+          device_verification_selected ? 2 : 0, source_precision, device_verification_selected ? max_drafts : 0);
+      prepared_execution.emplace(qwen35::take(qwen35::Backend::create(backend_selection)));
+      continuous_mtp_candidate = qwen35::supports_mtp_attention(*prepared_execution,
+          qwen35::attention_capacity(geometry, source_precision, provisional), weight_source.cache_storage);
+    }
+    auto overlap_depth = continuous_mtp_candidate ? std::size_t{3} : std::size_t{2};
     const auto plan_for = [&](std::size_t residents) {
       return qwen35::cache::plan(geometry, weight_source.cache_row_bytes, capacity, residents,
           mtp_enabled && mtp_has_decode ? (std::max)(max_query_rows, std::size_t{2}) : max_query_rows, recurrent_payload,
@@ -9164,7 +9176,10 @@ int qwen35::run(int argc, char **argv) {
     const auto active_slots = selected_cache.active_sequences;
     const auto metadata_prepare_seconds = weight_source.metadata_prepare_seconds;
     const auto model_start = qwen35::Clock::now();
-    qwen35::Model model(std::move(weight_source), geometry, capacity, selected_cache, layer0_probe, progress, replay, cache_bytes, sampler, cpu_ffn_layers, backend_selection);
+    auto execution = prepared_execution ? std::move(*prepared_execution)
+        : qwen35::create_execution(geometry, selected_cache, cpu_ffn_layers, backend_selection);
+    qwen35::Model model(std::move(execution), {}, std::move(weight_source), geometry, capacity,
+        selected_cache, layer0_probe, progress, replay, cache_bytes, sampler, cpu_ffn_layers);
     model.configure_draft_policy({max_drafts, min_draft_probability});
     const auto constructed = qwen35::Clock::now();
     if (!trace.empty()) model.trace_routes = trace / "routes";

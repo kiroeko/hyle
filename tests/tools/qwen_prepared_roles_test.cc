@@ -3,6 +3,7 @@
 #include "../../engine/models/qwen35/ffn_placement.h"
 #include "qwen_geometry_fixture.h"
 #include "../../engine/models/qwen35/precision_profile.h"
+#include "../../engine/models/qwen35/mtp_capabilities.h"
 
 #include <cstdio>
 #include <array>
@@ -1063,6 +1064,34 @@ int main(int argc, char **argv) {
     if (argc < 2) throw std::runtime_error("pass the scratch fixture directory");
     const fs::path directory = argv[1];
     fs::create_directories(directory);
+    {
+      p::Roles roles{};
+      roles.geometry = geometry;
+      p::Role head{};
+      head.name = geometry.head_role();
+      for (const auto *dtype : {"BF16", "F16", "F32", "Q8_0", "Q4_K", "Q6_K"}) {
+        head.dtype = dtype;
+        for (const auto codec : {p::ProjectionCodec::kDense, p::ProjectionCodec::kUnspecified}) {
+          head.projection_codec = codec;
+          roles.selected = {head};
+          require(qwen35::supports_stored_draft_projection(roles), "supported stored MTP head was refused");
+        }
+      }
+      head.dtype = "BF16";
+      head.projection_codec = p::ProjectionCodec::kMlxAffine;
+      roles.selected = {head};
+      require(!qwen35::supports_stored_draft_projection(roles), "unsupported MTP head codec was admitted");
+      head.projection_codec = p::ProjectionCodec::kDense;
+      head.dtype = "I32";
+      roles.selected = {head};
+      require(!qwen35::supports_stored_draft_projection(roles), "unsupported MTP head type was admitted");
+      head.dtype = "BF16";
+      head.name = "unrelated.weight";
+      roles.selected = {head};
+      require(!qwen35::supports_stored_draft_projection(roles), "unrelated projection was admitted as MTP head");
+      roles.selected.clear();
+      require(!qwen35::supports_stored_draft_projection(roles), "missing projection was admitted as MTP head");
+    }
     cold_ffn_placement_comes_from_inventory();
     modelopt_static_fp8_preserves_original_scalar_roles(directory);
     mlx_original_affine_names_and_effective_parameters(directory);

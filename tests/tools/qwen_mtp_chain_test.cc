@@ -34,6 +34,12 @@ void zero_draft_cold(const std::filesystem::path &input) {
       q::recurrent_bytes(q::state_schema_for(geometry,16),geometry),1,boundaries,true,true);
   q::Model model(std::move(source),geometry,16,plan,{},false,q::ReplayPolicy::kCommands,SIZE_MAX,
       {.enabled=false,.modifiers={.bias=true,.allowed=true}},0,{.primary=q::BackendKind::kCuda});
+  auto capacity = model.attention_capacity();
+  require(q::supports_mtp_attention(model.execution, capacity, model.resources_->attention_storage),
+      "actual backend refused the supported model attention capacity");
+  capacity.qk_head_dim = capacity.value_head_dim = 96;
+  require(!q::supports_mtp_attention(model.execution, capacity, model.resources_->attention_storage),
+      "unsupported backend head dimensions were admitted");
   model.configure_draft_policy({0,0});
   model.prepare_recursive_round_programs(0,true);
   require(model.draft_programs.size()==boundaries+2 && model.prefix_sampling_programs.size()==boundaries &&
