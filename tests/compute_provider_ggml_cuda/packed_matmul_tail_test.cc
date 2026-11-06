@@ -13,6 +13,7 @@
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/ggml_cuda.h"
 #include "hyle/mem/buffer.h"
+#include "../compute_models/d5_gguf_test_support.h"
 
 namespace {
 namespace c = hyle::compute;
@@ -85,4 +86,61 @@ void check_q8_tail(std::int64_t columns, std::int64_t rows) {
 TEST(GgmlCudaPackedTail, Q8K512N1M1) { check_q8_tail(1, 1); }
 TEST(GgmlCudaPackedTail, Q8K512N3M1) { check_q8_tail(3, 1); }
 TEST(GgmlCudaPackedTail, Q8K512N3M2) { check_q8_tail(3, 2); }
+TEST(GgmlCudaPackedTail, Q8K512N3M3) { check_q8_tail(3, 3); }
+TEST(GgmlCudaPackedTail, Q8K512N3M4) { check_q8_tail(3, 4); }
+
+TEST(GgmlCudaPackedTail, QuantizedMultirowOddAndEvenOutputsMatchDecodedReference) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  auto context = c::Context::create(c::cuda::device(0).value(), c::ggml_cuda::provider()).value();
+  auto memory = c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value();
+  constexpr std::int64_t width = 512;
+  for (const auto format : {c::GgufQuantizedType::kQ4K, c::GgufQuantizedType::kQ5K,
+                            c::GgufQuantizedType::kQ6K, c::GgufQuantizedType::kQ8_0}) {
+    for (const std::int64_t columns : {1, 3, 4, 5}) {
+      for (const std::int64_t rows : {1, 2, 3, 4}) {
+        SCOPED_TRACE("format=" + std::to_string(static_cast<int>(format)) +
+                     " columns=" + std::to_string(columns) + " rows=" + std::to_string(rows));
+        const auto a_desc = c::TensorDesc::dense(c::DataType::kFloat32, std::array{rows, width}).value();
+        const auto w_desc = c::gguf_weight_description(format, c::DataType::kFloat32, width, columns).value();
+        const auto y_desc = c::TensorDesc::dense(c::DataType::kFloat32, std::array{rows, columns}).value();
+        const auto packed = d5_gguf_test::pack(format, d5_gguf_test::values(columns, width, 3),
+                                                columns, width, w_desc.required_bytes().value());
+        std::vector<float> input;
+        for (std::int64_t row = 0; row < rows; ++row) {
+          const auto values = d5_gguf_test::activation(width, static_cast<int>(row + 11));
+          input.insert(input.end(), values.begin(), values.end());
+        }
+        auto weights = m::Buffer::create(memory.ref(), packed.bytes.size(), 256).value();
+        auto activation = m::Buffer::create(memory.ref(), a_desc.required_bytes().value(), 256).value();
+        auto output = m::Buffer::create(memory.ref(), y_desc.required_bytes().value(), 256).value();
+        ASSERT_TRUE(weights.write(0, packed.bytes).ok());
+        ASSERT_TRUE(activation.write(0, std::as_bytes(std::span(input))).ok());
+        auto prepared = c::prepare(context, c::Operation(c::MatMul{}),
+                                   std::array{a_desc, w_desc}, std::array{y_desc}, memory.ref());
+        ASSERT_TRUE(prepared) << prepared.error().message();
+        const auto requirement = prepared->workspace_requirement();
+        m::Buffer workspace;
+        if (requirement.size)
+          workspace = m::Buffer::create(memory.ref(), requirement.size,
+                                        std::max(std::size_t{256}, requirement.alignment)).value();
+        auto invocation = prepared->create_invocation(workspace.view()).value();
+        auto queue = context.create_queue().value();
+        auto done = invocation.submit(queue, c::ConstTensorView::create(a_desc, activation.view()).value(),
+                                      c::ConstTensorView::create(w_desc, weights.view()).value(),
+                                      c::TensorView::create(y_desc, output.view()).value());
+        ASSERT_TRUE(done) << done.error().message();
+        ASSERT_TRUE(done->wait().ok());
+        std::vector<float> actual(std::size_t(rows * columns));
+        ASSERT_TRUE(output.read(0, std::as_writable_bytes(std::span(actual))).ok());
+        for (std::int64_t row = 0; row < rows; ++row) {
+          const auto expected = d5_gguf_test::matmul(
+              std::span(input).subspan(std::size_t(row * width), std::size_t(width)),
+              packed.decoded, columns, width);
+          d5_gguf_test::expect_quantized_matmul_close(
+              std::span(actual).subspan(std::size_t(row * columns), std::size_t(columns)), expected);
+        }
+      }
+    }
+  }
+}
 } // namespace

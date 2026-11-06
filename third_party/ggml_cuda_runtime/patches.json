@@ -1408,8 +1408,8 @@
           "after": "                for (int i = 0; i < rows_per_cuda_block; ++i) {\n                    if constexpr (rows_per_cuda_block > 1) {\n                        if (uint32_t(row0 + i) >= nrows_x) continue;\n                    }\n                    const size_t off = (size_t)(kbx_offset + i*stride_row_x + kbx_pf) * ggml_cuda_type_traits<type>::bs;"
         },
         {
-          "before": "            for (int i = 0; i < rows_per_cuda_block; ++i) {\n                tmp[j][i] += vec_dot_q_cuda(",
-          "after": "            for (int i = 0; i < rows_per_cuda_block; ++i) {\n                if constexpr (rows_per_cuda_block > 1) {\n                    if (uint32_t(row0 + i) >= nrows_x) continue;\n                }\n                tmp[j][i] += vec_dot_q_cuda("
+          "before": "            for (int i = 0; i < rows_per_cuda_block; ++i) {\n                tmp[j][i] += vec_dot_q_cuda(\n                    vx, &y[j*stride_col_y + kby], kbx_offset + i*stride_row_x + kbx, kqs);\n                if constexpr (has_fusion) {\n                    if (use_gate) {\n                        tmp_gate[j][i] += vec_dot_q_cuda(\n                            vgate, &y[j*stride_col_y + kby], kbx_offset + i*stride_row_x + kbx, kqs);\n",
+          "after": "            for (int i = 0; i < rows_per_cuda_block; ++i) {\n                // The last block can contain an incomplete row. Redirect its\n                // unpublished lane to row zero of this block, which is valid.\n                const int safe_i = uint32_t(row0 + i) < nrows_x ? i : 0;\n                tmp[j][i] += vec_dot_q_cuda(\n                    vx, &y[j*stride_col_y + kby], kbx_offset + safe_i*stride_row_x + kbx, kqs);\n                if constexpr (has_fusion) {\n                    if (use_gate) {\n                        tmp_gate[j][i] += vec_dot_q_cuda(\n                            vgate, &y[j*stride_col_y + kby], kbx_offset + safe_i*stride_row_x + kbx, kqs);\n"
         },
         {
           "before": "        for (int i = 0; i < c_rows_per_block; ++i) {\n            tmp[i] += vec_dot_q_cuda(vx, &y[kby], kbx_offset + i*stride_row_x + kbx, kqs);",
@@ -1428,7 +1428,7 @@
           "after": "        src0->data, src0->type, quantized, ids_d, fusion_local, dst_d, ne00,"
         }
       ],
-      "after_sha256": "34b2d41462900061aa5ad4cb790004dd4fbfee091dcb8477ecb5b629a68cf173"
+      "after_sha256": "0e2ddd4ae3b09cf660589d90c77b7ad8764c2bf6784e1ab07f659c9b5cb43ba3"
     },
     {
       "path": "src/ggml-cuda/gated_delta_net.cu",
