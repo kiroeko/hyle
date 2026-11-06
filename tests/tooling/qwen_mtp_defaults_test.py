@@ -78,10 +78,12 @@ def check(args):
     assert small_three==run('small-manual-k3',['--mtp','on','--mtp-max-drafts','3',
         '--mtp-draft-head',str(small/'mtp-draft-head.tsv'),
         '--mtp-draft-vocabulary',str(small/'mtp-draft-vocabulary-k3.ids')],inputs=small,rows=3)
-    run('small-auto-still-refused',inputs=small,error='qualified BF16 Qwen3.5-2B')
-    row_error='bound draft vocabulary' if 'SUBSET' in head[0] else 'qualified BF16 Qwen3.5-2B'
-    for fixture,message in [('missing-head','requires its complete source-bound'),('stale','source identity differs'),
-                            ('wrong-rows',row_error)]:
+    assert ordinary==run('small-auto-fallback',inputs=small,mtp=False,subset=False)
+    if 'SUBSET' in head[0]:
+        run('reject-wrong-rows',inputs=args.output/'wrong-rows',error='bound draft vocabulary')
+    else:
+        assert ordinary==run('wrong-rows-auto-fallback',inputs=args.output/'wrong-rows',mtp=False,subset=False)
+    for fixture,message in [('missing-head','requires its complete source-bound'),('stale','source identity differs')]:
         run('reject-'+fixture,inputs=args.output/fixture,error=message)
     assert ordinary==run('ignore-stale-disabled',['--mtp','off'],inputs=args.output/'stale',mtp=False,subset=False)
     random=['--sampling','random','--temperature','0.8','--top-k','40','--top-p','0.95','--seed','7']

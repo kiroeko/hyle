@@ -8948,8 +8948,15 @@ int qwen35::run(int argc, char **argv) {
       const bool qualified_default = qwen35::has_qualified_k3_preference(weight_source);
       // Source and head readers have already validated explicit assets. The
       // known K3 preference is not a restriction on an explicit MTP request.
-      if (!qualified_default && mtp_policy != "on")
-        throw std::runtime_error("prepared K3 defaults require the qualified BF16 Qwen3.5-2B source and 114688 Q4_K rows");
+      if (!qualified_default && mtp_policy != "on") {
+        // An otherwise valid artifact need not match the preferred default.
+        // Fall back before allocating the model instead of treating that
+        // performance preference as a source validity constraint.
+        mtp_enabled = false;
+        draft_vocabulary.clear();
+        draft_head.clear();
+        weight_source = qwen35::prepare_weight_source(input / "weights.tsv", false, {}, {});
+      }
       if (qualified_default && automatic_k3 && !explicit_mtp_drafts) max_drafts = 3;
     }
     const auto geometry = weight_source.roles.geometry;
