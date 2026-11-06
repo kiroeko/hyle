@@ -75,6 +75,10 @@ int main(int argc, char **argv) {
   encoded.name = "mtp.fc.weight";
   gguf.selected.push_back(encoded);
   require(PrecisionProfile::from_roles(gguf) == f32);
+  gguf.selected.back().dtype = "Q5_K";
+  require(PrecisionProfile::from_roles(gguf) == f32);
+  gguf.selected.back().dtype = "F32";
+  require(PrecisionProfile::from_roles(gguf) == f32);
   gguf.selected.back().dtype = "BF16";
   require(PrecisionProfile::from_roles(gguf) == PrecisionProfile{});
   gguf.selected.pop_back();

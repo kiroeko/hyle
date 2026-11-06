@@ -45,17 +45,18 @@ public:
       throw std::runtime_error("incompatible source activation precision policies");
     PrecisionProfile result;
     result.f16_ = roles.nf4_policy.enabled;
-    // GGUF Q8_0/Q4_K_M graphs keep quantized target/NextN projections and
-    // residuals in F32. Other source readers retain their actual original
-    // boundaries. KV/query/attention output remain independently BF16.
-    const auto quantized = [](const auto &role) {
-      return role.dtype == "Q8_0" || role.dtype == "Q4_K" || role.dtype == "Q6_K";
+    // Supported GGUF graphs keep target/NextN projections and residuals in
+    // F32, including original dense F32 operands. KV/query/attention output
+    // remain independently BF16.
+    const auto f32_operand = [](const auto &role) {
+      return role.dtype == "Q8_0" || role.dtype == "Q4_K" || role.dtype == "Q5_K" ||
+          role.dtype == "Q6_K" || role.dtype == "F32";
     };
     result.f32_ = roles.representation == prepared::SourceRepresentation::kGgufConverted &&
         std::ranges::any_of(roles.selected, [](const auto &role) { return role.dtype == "Q8_0" || role.dtype == "Q4_K"; }) &&
         std::ranges::all_of(roles.selected, [&](const auto &role) {
           return (role.meaning != prepared::ParameterMeaning::kLinearWeight &&
-                  role.meaning != prepared::ParameterMeaning::kEmbeddingRows) || quantized(role);
+                  role.meaning != prepared::ParameterMeaning::kEmbeddingRows) || f32_operand(role);
         });
     return result;
   }
