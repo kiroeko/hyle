@@ -940,12 +940,12 @@ struct Invocation final {
         return Status::Ok();
       const auto *weight = node->src[0];
       const auto *current = node->src[1];
-      if ((input && input != current) || current->type != GGML_TYPE_F32 || current->ne[1] != 1 ||
+      if ((input && input != current) || current->type != GGML_TYPE_F32 || current->ne[1] < 1 ||
           current->ne[2] != 1 || current->ne[3] != 1 || weight->ne[2] != 1 || weight->ne[3] != 1 ||
           !ggml_is_contiguous(current) || !ggml_is_contiguous(weight) || !ggml_is_contiguous(node))
         return Status::Ok();
       const auto plan = internal::packed_matmul_plan(program.device, weight->type, weight->ne[0],
-                                                     weight->ne[1], 1);
+                                                     weight->ne[1], current->ne[1]);
       if (plan.route != internal::PackedMatmulRoute::kMmvq)
         return Status::Ok();
       input = current;
@@ -955,9 +955,10 @@ struct Invocation final {
     }
     if (!input || !streams)
       return Status::Ok();
-    const auto bytes = ggml_row_size(GGML_TYPE_Q8_1, input->ne[0]);
-    if (!bytes)
-      return Status::Internal("shared MMVQ row extent is zero");
+    const auto row_bytes = ggml_row_size(GGML_TYPE_Q8_1, input->ne[0]);
+    if (!row_bytes || static_cast<std::size_t>(input->ne[1]) > SIZE_MAX / row_bytes)
+      return Status::Internal("shared MMVQ input extent is invalid");
+    const auto bytes = row_bytes * static_cast<std::size_t>(input->ne[1]);
     program.shared_nodes = std::move(nodes);
     program.shared_bytes = bytes;
     for (unsigned slot = 0; streams; ++slot, streams >>= 1) {
@@ -984,7 +985,7 @@ struct Invocation final {
       if (!node || node->op != GGML_OP_MUL_MAT || !node->src[0] || !node->src[1] ||
           (input && input != node->src[1]) ||
           internal::packed_matmul_plan(program.device, node->src[0]->type, node->src[0]->ne[0],
-                                       node->src[0]->ne[1], 1) != entry.plan ||
+                                       node->src[0]->ne[1], node->src[1]->ne[1]) != entry.plan ||
           internal::packed_mmq_stream_mask(backend, node) != entry.streams)
         return Status::FailedPrecondition("shared MMVQ cold node/stream signature changed");
       input = node->src[1];

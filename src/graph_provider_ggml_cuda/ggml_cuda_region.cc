@@ -1226,7 +1226,7 @@ Status propose(void *context, const RegionDiscoveryRequest &request, mem::Alloca
       HYLE_ASSIGN_OR_RETURN(auto w, graph.value_description(weight));
       HYLE_ASSIGN_OR_RETURN(auto y, graph.value_description(projected));
       HYLE_ASSIGN_OR_RETURN(auto z, graph.value_description(residual));
-      if (y != z || !native::supports_shared_mmvq_projection(context, x, w, y)) continue;
+      if (x.rank() != 2 || x.dimensions()[0] != 1 || y != z || !native::supports_shared_mmvq_projection(context, x, w, y)) continue;
       const std::array nodes{matmul_node, add};
       HYLE_ASSIGN_OR_RETURN(auto contractible, is_region_contractible(graph, nodes, allocator));
       if (!contractible) continue;
@@ -1259,7 +1259,7 @@ Status propose(void *context, const RegionDiscoveryRequest &request, mem::Alloca
     HYLE_ASSIGN_OR_RETURN(auto x, graph.value_description(activation));
     // Decline unrelated families before examining their weights or constants.
     if (!x.is_plain() || !x.is_dense() || x.rank() != 2 ||
-        x.data_type() != compute::DataType::kFloat32 || x.dimensions()[0] != 1)
+        x.data_type() != compute::DataType::kFloat32 || x.dimensions()[0] < 1)
       continue;
     if (single_constant_preparation(graph, node)) continue;
     HYLE_ASSIGN_OR_RETURN(auto weight, graph.node_input(node, 1));

@@ -2,6 +2,8 @@
 #include "hyle/graph/providers/ggml_cuda.h"
 #include "../compute_provider_ggml_cuda/tensor_test_support.h"
 #include "../compute_models/d5_gguf_test_support.h"
+#include "../../src/compute_provider_ggml_cuda/packed_matmul_native.h"
+#include <algorithm>
 #include <array>
 #include <vector>
 
@@ -174,6 +176,100 @@ TEST(SharedMmvq, TwoQueuesAndInvocationWorkspacesRemainIndependent) {
   }
 }
 
+TEST(SharedMmvq, MultirowCapturedReplayRecomputesForIndependentQueues) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  auto context = g::cuda::create_context().value();
+  auto owner = c::StorageOwner::adopt(
+      context, c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value()).value();
+  std::array queues{context.create_queue().value(), context.create_queue().value()};
+  constexpr std::int64_t k = 512, n = 257;
+  for (const std::int64_t rows : {2, 3, 4, 5, 8}) {
+    for (const auto format : {c::GgufQuantizedType::kQ4K, c::GgufQuantizedType::kQ5K,
+                              c::GgufQuantizedType::kQ6K, c::GgufQuantizedType::kQ8_0}) {
+      SCOPED_TRACE("rows=" + std::to_string(rows) + " format=" + std::to_string(static_cast<int>(format)));
+      const auto ad = dense(c::DataType::kFloat32, {rows, k});
+      const auto yd = dense(c::DataType::kFloat32, {rows, n});
+      const std::array formats{format,
+          format == c::GgufQuantizedType::kQ4K ? c::GgufQuantizedType::kQ5K : format,
+          format == c::GgufQuantizedType::kQ4K ? c::GgufQuantizedType::kQ6K : format};
+      const std::array wd{c::gguf_weight_description(formats[0], c::DataType::kFloat32, k, n).value(),
+                          c::gguf_weight_description(formats[1], c::DataType::kFloat32, k, n).value(),
+                          c::gguf_weight_description(formats[2], c::DataType::kFloat32, k, n).value()};
+      auto builder = g::GraphBuilder::create().value();
+      const auto a = builder.input(ad).value();
+      const std::array weights{builder.input(wd[0]).value(), builder.input(wd[1]).value(), builder.input(wd[2]).value()};
+      std::array<g::ValueId, 3> outputs;
+      for (std::size_t i = 0; i < outputs.size(); ++i) {
+        outputs[i] = builder.result(builder.add_node(c::Operation(c::MatMul{}), std::array{a, weights[i]}).value()).value();
+        ASSERT_TRUE(builder.publish(outputs[i]).ok());
+      }
+      auto compiled = g::cuda::compile(std::move(builder).finish().value(), context, owner).value();
+      bool grouped = false;
+      for (std::size_t i = 0; i < compiled.report.step_count(); ++i) {
+        const auto step = compiled.report.step(i).value();
+        grouped |= step.policy == c::RoutePolicyId{0x48594c4547474355ULL, 1, 1} && step.node_count == 3;
+      }
+      const auto native_type = [](c::GgufQuantizedType value) {
+        switch (value) {
+        case c::GgufQuantizedType::kQ4K: return GGML_TYPE_Q4_K;
+        case c::GgufQuantizedType::kQ5K: return GGML_TYPE_Q5_K;
+        case c::GgufQuantizedType::kQ6K: return GGML_TYPE_Q6_K;
+        case c::GgufQuantizedType::kQ8_0: return GGML_TYPE_Q8_0;
+        default: return GGML_TYPE_COUNT;
+        }
+      };
+      namespace native = c::ggml_cuda::internal;
+      const bool eligible = std::ranges::all_of(formats, [&](auto value) {
+        return native::packed_matmul_plan(0, native_type(value), k, n, rows).route ==
+               native::PackedMatmulRoute::kMmvq;
+      });
+      ASSERT_EQ(grouped, eligible);
+      std::array slots{compiled.executable.create_invocation().value(), compiled.executable.create_invocation().value()};
+      const auto p0 = d5_gguf_test::pack(formats[0], d5_gguf_test::values(n, k, 3), n, k, wd[0].required_bytes().value());
+      const auto p1 = d5_gguf_test::pack(formats[1], d5_gguf_test::values(n, k, 7), n, k, wd[1].required_bytes().value());
+      const auto p2 = d5_gguf_test::pack(formats[2], d5_gguf_test::values(n, k, 9), n, k, wd[2].required_bytes().value());
+      std::array ws{upload<std::byte>(owner.ref(), p0.bytes), upload<std::byte>(owner.ref(), p1.bytes),
+                    upload<std::byte>(owner.ref(), p2.bytes)};
+      std::array input{upload<float>(owner.ref(), d5_gguf_test::values(rows, k, 11)),
+                       upload<float>(owner.ref(), d5_gguf_test::values(rows, k, 27))};
+      std::array out0{output_buffer(owner.ref(), yd), output_buffer(owner.ref(), yd), output_buffer(owner.ref(), yd)};
+      std::array out1{output_buffer(owner.ref(), yd), output_buffer(owner.ref(), yd), output_buffer(owner.ref(), yd)};
+      for (std::size_t lane = 0; lane < slots.size(); ++lane) {
+        ASSERT_TRUE(slots[lane].bind(a, c::ConstTensorView::create(ad, input[lane].view()).value()).ok());
+        for (std::size_t i = 0; i < outputs.size(); ++i) {
+          ASSERT_TRUE(slots[lane].bind(weights[i], c::ConstTensorView::create(wd[i], ws[i].view()).value()).ok());
+          auto &output = lane ? out1[i] : out0[i];
+          ASSERT_TRUE(slots[lane].bind(outputs[i], c::TensorView::create(yd, output.view()).value()).ok());
+        }
+        ASSERT_TRUE(g::cuda::prepare_replay(slots[lane], queues[lane], {.mode = g::ReplayMode::kRequireCapture}).ok());
+      }
+      for (int round = 0; round < 2; ++round) {
+        if (round) {
+          for (std::size_t lane = 0; lane < slots.size(); ++lane) {
+            const auto values = d5_gguf_test::values(rows, k, 51 + static_cast<int>(lane));
+            ASSERT_TRUE(input[lane].view().write(std::as_bytes(std::span(values))).ok());
+          }
+        }
+        auto first = slots[0].submit(queues[0]).value();
+        auto second = slots[1].submit(queues[1]).value();
+        ASSERT_TRUE(first.wait().ok());
+        ASSERT_TRUE(second.wait().ok());
+        for (std::size_t lane = 0; lane < slots.size(); ++lane) {
+          const auto av = c::ConstTensorView::create(ad, input[lane].view()).value();
+          for (std::size_t i = 0; i < outputs.size(); ++i) {
+            auto expected = output_buffer(owner.ref(), yd);
+            const std::array args{av, c::ConstTensorView::create(wd[i], ws[i].view()).value()};
+            ASSERT_TRUE(ggml_cuda_tensor_test::execute(context, c::Operation(c::MatMul{}), args,
+                c::TensorView::create(yd, expected.view()).value()).ok());
+            const auto &actual = lane ? out1[i] : out0[i];
+            EXPECT_EQ(half_test::read<float>(actual), half_test::read<float>(expected));
+          }
+        }
+      }
+    }
+  }
+}
+
 TEST(SharedMmvq, UnsupportedWidthDoesNotOfferSharedRoute) {
   auto context = g::cuda::create_context().value();
   auto owner =
@@ -193,6 +289,28 @@ TEST(SharedMmvq, UnsupportedWidthDoesNotOfferSharedRoute) {
   }
   const auto compiled =
       g::cuda::compile(std::move(builder).finish().value(), context, owner).value();
+  for (std::size_t i = 0; i < compiled.report.step_count(); ++i) {
+    const auto step = compiled.report.step(i).value();
+    EXPECT_FALSE((step.policy == c::RoutePolicyId{0x48594c4547474355ULL, 1, 1} &&
+                  step.preference == 201 && step.node_count == 3));
+  }
+}
+
+TEST(SharedMmvq, LargeBatchKeepsTheOrdinaryProjectionRoute) {
+  auto context = g::cuda::create_context().value();
+  auto owner = c::StorageOwner::adopt(
+      context, c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value()).value();
+  constexpr std::int64_t k = 512, n = 257;
+  const auto ad = dense(c::DataType::kFloat32, {128, k});
+  const auto wd = c::gguf_weight_description(c::GgufQuantizedType::kQ4K, c::DataType::kFloat32, k, n).value();
+  auto builder = g::GraphBuilder::create().value();
+  const auto a = builder.input(ad).value();
+  for (int i = 0; i < 3; ++i) {
+    const auto w = builder.input(wd).value();
+    const auto node = builder.add_node(c::Operation(c::MatMul{}), std::array{a, w}).value();
+    ASSERT_TRUE(builder.publish(builder.result(node).value()).ok());
+  }
+  const auto compiled = g::cuda::compile(std::move(builder).finish().value(), context, owner).value();
   for (std::size_t i = 0; i < compiled.report.step_count(); ++i) {
     const auto step = compiled.report.step(i).value();
     EXPECT_FALSE((step.policy == c::RoutePolicyId{0x48594c4547474355ULL, 1, 1} &&
