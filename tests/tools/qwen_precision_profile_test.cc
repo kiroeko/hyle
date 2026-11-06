@@ -79,6 +79,18 @@ int main(int argc, char **argv) {
   require(PrecisionProfile::from_roles(gguf) == f32);
   gguf.selected.back().dtype = "F32";
   require(PrecisionProfile::from_roles(gguf) == f32);
+  gguf.selected[1].dtype = "Q6_K";
+  require(PrecisionProfile::from_roles(gguf) == f32);
+  gguf.selected.front().dtype = "Q5_K";
+  gguf.selected[1].dtype = "Q5_K";
+  require(PrecisionProfile::from_roles(gguf) == f32);
+  for (const auto &capability : qwen35::kGgufEncodingCapabilities) {
+    require(qwen35::gguf_capabilities(capability.dtype) == &capability);
+    require(qwen35::gguf_capabilities(capability.encoding) == &capability);
+  }
+  const auto *q5 = qwen35::gguf_capabilities("Q5_K");
+  require(q5 && q5->f32_operand && !q5->stored_draft_head && !q5->copy_encoded_rows && !q5->concurrent_cold_family);
+  require(!qwen35::gguf_capabilities("Q3_K"));
   gguf.selected.back().dtype = "BF16";
   require(PrecisionProfile::from_roles(gguf) == PrecisionProfile{});
   gguf.selected.pop_back();

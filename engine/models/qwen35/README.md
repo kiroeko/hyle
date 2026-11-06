@@ -25,8 +25,8 @@
 
 官方 BF16 的 target 与 draft 末分数使用 `dense-linear-f32`：原 BF16 权重与激活得到 F32 scores，
 中间线性输出仍为 BF16；实际输入的 `score_dtype`／`score_policy` 写入 JSON。
-符合条件的 GGUF Q8_0／Q4_K 混合来源在普通及 MTP 模式下选择 F32 层间激活、残差与卷积 history；
-Q5_K、Q6_K 和原始稠密 F32 线性权重可与其组合，编码权重不展开。attention query／output 与 KV 仍为 BF16，
+符合条件的 GGUF Q4_K／Q5_K／Q6_K／Q8_0 来源可在普通及 MTP 模式下选择 F32 层间激活、残差与卷积 history；
+原始稠密 F32 线性权重可与其组合，编码权重不展开。attention query／output 与 KV 仍为 BF16，
 在图内显式转换；其它源 reader 的精度政策不变。
 这两种模式的舍入不同，普通输出不承诺与 MTP 或旧 BF16 层间实现逐项相同。
 状态池、hidden 与 HostImage 按实际类型计费，数学政策不能在存活模型中切换；

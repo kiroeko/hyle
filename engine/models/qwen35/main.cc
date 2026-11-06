@@ -91,6 +91,7 @@
 #include "weights.h"
 #include "mtp_defaults.h"
 #include "mtp_capabilities.h"
+#include "gguf_capabilities.h"
 #include "../../inference/mtp_policy.h"
 #include "graph_builder.h"
 #include "target_graph.h"
@@ -807,8 +808,8 @@ public:
         if (description.is_plain()) supported_projection = true;
         else {
           const auto codec = c::gguf_quantized_type(description.storage_format());
-          supported_projection = codec && (*codec == c::GgufQuantizedType::kQ8_0 ||
-              *codec == c::GgufQuantizedType::kQ4K || *codec == c::GgufQuantizedType::kQ6K);
+          const auto *capability = codec ? gguf_capabilities(*codec) : nullptr;
+          supported_projection = capability && capability->stored_draft_head;
         }
       }
     }
@@ -1509,10 +1510,8 @@ public:
           const auto codec = item.second.codec;
           const auto &description = item.second.tensor.description;
           const auto quantized = c::gguf_quantized_type(description.storage_format());
-          const bool original_gguf = quantized &&
-              (*quantized == c::GgufQuantizedType::kQ8_0 ||
-               *quantized == c::GgufQuantizedType::kQ4K ||
-               *quantized == c::GgufQuantizedType::kQ6K);
+          const auto *capability = quantized ? gguf_capabilities(*quantized) : nullptr;
+          const bool original_gguf = capability && capability->concurrent_cold_family;
           return bool(item.second.tensor.writer) || !item.second.tensor.ready ||
               (!description.is_plain() && !original_gguf) ||
               (codec != prepared::ProjectionCodec::kUnspecified && codec != prepared::ProjectionCodec::kDense);

@@ -26,6 +26,7 @@
 #include "../../inference/graph_bindings.h"
 #include "../../inference/prepared_output.h"
 #include "fp8_weight_import.h"
+#include "gguf_capabilities.h"
 #include "nf4_weight_import.h"
 #include "hyle/io/file.h"
 #include "hyle/io/io_context.h"
@@ -517,9 +518,10 @@ std::optional<hyle::inference::DraftVocabulary> read_draft_vocabulary(
     const std::filesystem::path &path, const prepared::Roles &roles) {
   if (path.empty()) return {};
   const auto head = std::ranges::find(roles.selected, roles.geometry.head_role(), &prepared::Role::name);
+  const auto *head_capability = head == roles.selected.end() ? nullptr : gguf_capabilities(head->dtype);
   if (head == roles.selected.end() ||
       (head->dtype != "BF16" && head->dtype != "F16" && head->dtype != "F32" &&
-       head->dtype != "Q8_0" && head->dtype != "Q4_K" && head->dtype != "Q6_K") ||
+       (!head_capability || !head_capability->copy_encoded_rows)) ||
       (head->projection_codec != prepared::ProjectionCodec::kDense &&
        head->projection_codec != prepared::ProjectionCodec::kUnspecified) || head->projection_group_size ||
       head->shape != std::vector<std::int64_t>{roles.geometry.vocabulary, roles.geometry.hidden})
@@ -641,8 +643,8 @@ LoadedWeight select_stored_weight_rows(Backend &backend, const LoadedWeight &wei
     if(backend.kind()!=hyle::inference::BackendKind::kCuda)
       check(hyle::Status::Unimplemented("encoded row selection requires the qualified bit-preserving CUDA Gather"));
     const auto codec=c::gguf_quantized_type(description.storage_format());
-    if (!codec || (*codec!=c::GgufQuantizedType::kQ8_0 && *codec!=c::GgufQuantizedType::kQ4K &&
-        *codec!=c::GgufQuantizedType::kQ6K) || description!=
+    const auto *capability=codec?gguf_capabilities(*codec):nullptr;
+    if (!codec || !capability || !capability->copy_encoded_rows || description!=
         take(take(c::gguf_weight_description(*codec,Type::kFloat32,columns,rows)).transposed()))
       check(hyle::Status::Unimplemented("weight row selection requires original canonical Q8_0/Q4_K/Q6_K rows"));
     const auto bytes=take(description.required_bytes());

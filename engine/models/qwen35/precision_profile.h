@@ -4,6 +4,7 @@
 #include <stdexcept>
 
 #include "prepared_roles.h"
+#include "gguf_capabilities.h"
 #include "hyle/compute/tensor_desc.h"
 
 namespace qwen35 {
@@ -48,15 +49,14 @@ public:
     // Supported GGUF graphs keep target/NextN projections and residuals in
     // F32, including original dense F32 operands. KV/query/attention output
     // remain independently BF16.
-    const auto f32_operand = [](const auto &role) {
-      return role.dtype == "Q8_0" || role.dtype == "Q4_K" || role.dtype == "Q5_K" ||
-          role.dtype == "Q6_K" || role.dtype == "F32";
-    };
     result.f32_ = roles.representation == prepared::SourceRepresentation::kGgufConverted &&
-        std::ranges::any_of(roles.selected, [](const auto &role) { return role.dtype == "Q8_0" || role.dtype == "Q4_K"; }) &&
+        std::ranges::any_of(roles.selected, [](const auto &role) {
+          const auto *capability = gguf_capabilities(role.dtype);
+          return capability && capability->f32_operand;
+        }) &&
         std::ranges::all_of(roles.selected, [&](const auto &role) {
           return (role.meaning != prepared::ParameterMeaning::kLinearWeight &&
-                  role.meaning != prepared::ParameterMeaning::kEmbeddingRows) || f32_operand(role);
+                  role.meaning != prepared::ParameterMeaning::kEmbeddingRows) || supports_f32_gguf_operand(role.dtype);
         });
     return result;
   }
