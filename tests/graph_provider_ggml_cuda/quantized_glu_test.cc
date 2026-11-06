@@ -2,6 +2,7 @@
 #include "hyle/graph/providers/ggml_cuda.h"
 #include "../compute_provider_ggml_cuda/tensor_test_support.h"
 #include "../compute_models/d5_gguf_test_support.h"
+#include "../../src/compute_provider_ggml_cuda/packed_matmul_native.h"
 
 #include <array>
 #include <algorithm>
@@ -108,17 +109,29 @@ TEST(GgmlCudaF32L2, AdditiveEpsilonMatchesFloat64AcrossMagnitudesAndCapturedRebi
   }
 }
 
-TEST(GgmlCudaQuantizedGlu, OriginalProjectionsAndGluMatchCapturedRebindingWithPrivateBoundaries) {
+void check_quantized_glu(std::int64_t k) {
   d5_gguf_test::QuantizerCleanup cleanup;
   auto context = g::cuda::create_context().value();
   auto owner = c::StorageOwner::adopt(context,
       c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value()).value();
   auto queue = context.create_queue().value();
-  constexpr std::int64_t k = 256, n = 257;
+  constexpr std::int64_t n = 257;
   const auto a_desc = dense(c::DataType::kFloat32, {1,k});
   const auto y_desc = dense(c::DataType::kFloat32, {1,n});
-  for (const auto format : {c::GgufQuantizedType::kQ8_0,
-       c::GgufQuantizedType::kQ4K, c::GgufQuantizedType::kQ6K}) {
+  std::vector formats{c::GgufQuantizedType::kQ8_0,
+      c::GgufQuantizedType::kQ4K, c::GgufQuantizedType::kQ6K};
+  if (k == 512) {
+    const std::array additional{c::GgufQuantizedType::kQ4_0, c::GgufQuantizedType::kQ4_1,
+        c::GgufQuantizedType::kQ2K, c::GgufQuantizedType::kQ3K, c::GgufQuantizedType::kQ5K,
+        c::GgufQuantizedType::kIq1S, c::GgufQuantizedType::kIq1M,
+        c::GgufQuantizedType::kIq2Xxs, c::GgufQuantizedType::kIq2Xs,
+        c::GgufQuantizedType::kIq2S, c::GgufQuantizedType::kIq3Xxs,
+        c::GgufQuantizedType::kIq3S, c::GgufQuantizedType::kIq4Nl,
+        c::GgufQuantizedType::kIq4Xs, c::GgufQuantizedType::kMxfp4,
+        c::GgufQuantizedType::kNvfp4};
+    formats.insert(formats.end(), additional.begin(), additional.end());
+  }
+  for (const auto format : formats) {
     const auto w_desc = c::gguf_weight_description(format,c::DataType::kFloat32,k,n).value();
     for (int escape = 0; escape < 4; ++escape) {
       SCOPED_TRACE(static_cast<int>(format));
@@ -148,7 +161,12 @@ TEST(GgmlCudaQuantizedGlu, OriginalProjectionsAndGluMatchCapturedRebindingWithPr
       std::size_t paired = 0;
       for (std::size_t i=0;i<compiled.report.step_count();++i)
         paired += compiled.report.step(i).value().policy == kPolicy;
-      EXPECT_EQ(paired,escape == 0 ? 1U : 0U);
+      const bool legacy = format == c::GgufQuantizedType::kQ8_0 ||
+          format == c::GgufQuantizedType::kQ4K || format == c::GgufQuantizedType::kQ6K;
+      namespace native = c::ggml_cuda::internal;
+      const bool admitted = legacy || native::packed_matmul_plan(
+          0, d5_gguf_test::native_type(format), k, n, 1).route == native::PackedMatmulRoute::kMmvq;
+      EXPECT_EQ(paired, escape == 0 && admitted ? 1U : 0U);
       auto slot = compiled.executable.create_invocation().value();
       for (int round=0;round<2;++round) {
         const auto values=d5_gguf_test::values(1,k,11+round);
@@ -245,4 +263,7 @@ TEST(GgmlCudaQuantizedGlu, OriginalProjectionsAndGluMatchCapturedRebindingWithPr
     }
   }
 }
+
+TEST(GgmlCudaQuantizedGlu, OriginalWidthPreservesCapturedRebinding) { check_quantized_glu(256); }
+TEST(GgmlCudaQuantizedGlu, ProviderQualifiedFormatsPreserveCapturedRebinding) { check_quantized_glu(512); }
 } // namespace

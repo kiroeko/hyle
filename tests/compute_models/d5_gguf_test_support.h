@@ -55,6 +55,8 @@ inline ggml_type native_type(c::GgufQuantizedType type) {
     return GGML_TYPE_IQ4_XS;
   case c::GgufQuantizedType::kMxfp4:
     return GGML_TYPE_MXFP4;
+  case c::GgufQuantizedType::kNvfp4:
+    return GGML_TYPE_NVFP4;
   default:
     break; // Narrow IQ1 extensions use the separately pinned original port.
   }

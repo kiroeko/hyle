@@ -878,12 +878,15 @@ Result<bool> matches_quantized_glu(void *context, const Graph &graph,
     if (!a.is_plain() || !a.is_dense() || a.rank() != 2 ||
         a.data_type() != compute::DataType::kFloat32 || a.dimensions()[0] != 1 ||
         a.dimensions()[1] <= 0 || a.dimensions()[1] % 256 != 0 ||
-        !type || (*type != compute::GgufQuantizedType::kQ8_0 &&
-                  *type != compute::GgufQuantizedType::kQ4K &&
-                  *type != compute::GgufQuantizedType::kQ6K) ||
+        !type ||
         w.rank() != 2 || w.dimensions()[0] != a.dimensions()[1] ||
         w.dimensions()[1] != description.dimensions()[1] ||
         (encoding && *encoding != *type)) return false;
+    // Preserve the original 256-wide paths. Other formats use the actual
+    // provider's MMVQ admission instead of a model-derived format list.
+    const bool legacy = *type == compute::GgufQuantizedType::kQ8_0 ||
+        *type == compute::GgufQuantizedType::kQ4K || *type == compute::GgufQuantizedType::kQ6K;
+    if (!legacy && !native::supports_shared_mmvq_projection(context, a, w, description)) return false;
     encoding = type;
     const auto physical = w.transposed();
     if (!physical || !physical->is_dense()) return false;
