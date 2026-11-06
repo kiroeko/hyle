@@ -32,16 +32,26 @@ GraphAssembly::GraphAssembly(const Backend &environment, PrecisionProfile precis
         predicate_type_(environment.native_generated_storage() ? Type::kFloat32 : Type::kBool) {
   if (mixed_) return;
   const auto context = environment.common_context();
-  if (!context) return;
+  if (!context) {
+    if (environment.kind() == inference::BackendKind::kApple ||
+        environment.kind() == inference::BackendKind::kVulkan) return;
+    check(context.error());
+  }
   for (std::size_t i = 0; i < (*context)->provider_count(); ++i) {
     // Require the same source to support ordinary operation cold rows. The
     // region-only prototype does not qualify the Model's default dispatch.
     const auto rows = c::detail::ProviderExtensionAccess::query(**context, i,
         c::detail::kPackedRowMatMulRowsExtensionId);
-    if (!rows) continue;
+    if (!rows) {
+      if (rows.error().IsUnimplemented()) continue;
+      check(rows.error());
+    }
     const auto source = c::detail::ProviderExtensionAccess::query(*rows,
         c::detail::kPackedRowMatMulSourceExtensionId);
-    if (!source) continue;
+    if (!source) {
+      if (source.error().IsUnimplemented()) continue;
+      check(source.error());
+    }
     bool available = false;
     const auto status = c::detail::ProviderExtensionAccess::call(*source,
         [](void *context, const void *table, void *out) noexcept -> hyle::Status {
@@ -49,7 +59,11 @@ GraphAssembly::GraphAssembly(const Backend &environment, PrecisionProfile precis
           *static_cast<bool *>(out) = cap && cap->available && cap->available(context);
           return hyle::Status::Ok();
         }, &available);
-    if (status.ok() && available) { packed_row_matmul_ = true; break; }
+    if (!status.ok()) {
+      if (status.IsUnimplemented()) continue;
+      check(status);
+    }
+    if (available) { packed_row_matmul_ = true; break; }
   }
 }
 

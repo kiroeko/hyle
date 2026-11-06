@@ -26,6 +26,31 @@ void cold_policy_facts() {
   changed = valid; changed.supported_projection = false; require(!changed.available(), "unsupported projection selected the chain");
   changed = valid; changed.max_drafts = 2; changed.private_draft_stages = 2;
   require(changed.available(), "complete K2 capability was refused");
+  {
+    hyle::inference::Backend uninitialized;
+    bool rejected = false;
+    try {
+      q::GraphAssembly invalid(uninitialized);
+    } catch (const hyle::inference::EvaluationFailure &failure) {
+      rejected = failure.status().IsFailedPrecondition();
+    }
+    require(rejected, "uninitialized backend was silently treated as an unsupported capability");
+  }
+#if defined(HYLE_COMPUTE_CPU)
+  auto cpu_backend = q::take(hyle::inference::Backend::create(
+      {.primary = hyle::inference::BackendKind::kCpu}));
+  auto *context = q::take(cpu_backend.common_context());
+  require(context->provider_count() > 0, "CPU capability test needs a provider");
+  { q::GraphAssembly live(cpu_backend); }
+  q::check(context->close());
+  bool rejected = false;
+  try {
+    q::GraphAssembly closed(cpu_backend);
+  } catch (const hyle::inference::EvaluationFailure &failure) {
+    rejected = failure.status().IsFailedPrecondition();
+  }
+  require(rejected, "closed provider context was silently treated as an unsupported capability");
+#endif
 }
 void zero_draft_cold(const std::filesystem::path &input) {
   for(const auto boundaries:{std::size_t{1},std::size_t{4}}){
