@@ -1196,6 +1196,51 @@ Status propose(void *context, const RegionDiscoveryRequest &request, mem::Alloca
     }
   }
 
+  // A private MMVQ result followed by a same-shape residual can use the
+  // native matvec+add implementation. Preserve any published intermediate,
+  // outside reader or control edge as an ordinary boundary.
+  for (std::size_t i = 0; i < graph.node_count(); ++i) {
+    if (!eligible[i]) continue;
+    HYLE_ASSIGN_OR_RETURN(auto add, graph.node_id(i));
+    const auto operation = graph.operation(add);
+    const auto *binary = operation ? operation->get_if<compute::Binary>() : nullptr;
+    if (!binary || binary->kind != compute::BinaryKind::kAdd) continue;
+    HYLE_ASSIGN_OR_RETURN(auto ports, graph.node_input_count(add));
+    if (ports != 2) continue;
+    for (std::size_t port = 0; port < 2; ++port) {
+      HYLE_ASSIGN_OR_RETURN(auto projected, graph.node_input(add, port));
+      if (projected.kind() != ValueKind::kNodeOutput) continue;
+      HYLE_ASSIGN_OR_RETURN(auto matmul_node, graph.producer(projected));
+      if (!eligible[matmul_node.ordinal()] || ffn_projection[matmul_node.ordinal()]) continue;
+      const auto matmul_operation = graph.operation(matmul_node);
+      const auto *matmul = matmul_operation ? matmul_operation->get_if<compute::MatMul>() : nullptr;
+      if (!matmul || matmul->accumulation_type != compute::DataType::kFloat32 ||
+          single_constant_preparation(graph, matmul_node)) continue;
+      const auto control = uses.control_readers[matmul_node.ordinal()];
+      if (uses.uses[projected.ordinal()] != 1 ||
+          (control != FusionUses::kNone && control != add.ordinal())) continue;
+      HYLE_ASSIGN_OR_RETURN(auto activation, graph.node_input(matmul_node, 0));
+      HYLE_ASSIGN_OR_RETURN(auto weight, graph.node_input(matmul_node, 1));
+      HYLE_ASSIGN_OR_RETURN(auto residual, graph.node_input(add, 1 - port));
+      HYLE_ASSIGN_OR_RETURN(auto x, graph.value_description(activation));
+      HYLE_ASSIGN_OR_RETURN(auto w, graph.value_description(weight));
+      HYLE_ASSIGN_OR_RETURN(auto y, graph.value_description(projected));
+      HYLE_ASSIGN_OR_RETURN(auto z, graph.value_description(residual));
+      if (y != z || !native::supports_shared_mmvq_projection(context, x, w, y)) continue;
+      const std::array nodes{matmul_node, add};
+      HYLE_ASSIGN_OR_RETURN(auto contractible, is_region_contractible(graph, nodes, allocator));
+      if (!contractible) continue;
+      HYLE_ASSIGN_OR_RETURN(auto more, writer.try_add({.nodes = nodes,
+          .cost = {.workspace = std::nullopt, .persistent_bytes = std::nullopt,
+                   .copy_bytes = 0, .repack_bytes = 0, .synchronization_count = 2, .dispatch_count = 1},
+          .route = 1, .replay_class = compute::ProviderReplayClass::kManaged,
+          .implementation = compute::ProviderImplementationId{2}, .policy = kGgmlCudaRegionPolicy,
+          .preference = 201}));
+      if (!more) return Status::Ok();
+      break;
+    }
+  }
+
   // Sibling MMVQ projections may share one activation quantization. Ask the
   // native provider for the actual route before offering a grouped region.
   struct QuantProjection final { NodeId node; ValueId activation; std::int64_t inner; };
