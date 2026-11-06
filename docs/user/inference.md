@@ -114,7 +114,7 @@ JSON 的 `mtp_selection_reason` 报告冷期选择或回落原因，`mtp_depth_s
 ### 草稿词表
 
 默认 `--mtp-draft-vocabulary auto`：MTP开启、无logits modifier的greedy、零概率阈值时，
-默认 K3 目录组合 `mtp-draft-head.tsv` 与 `mtp-draft-vocabulary-k3.ids`；
+K3 制品使用 `mtp-draft-vocabulary-k3.ids`；有来源匹配的 `mtp-draft-head.tsv` 时使用该头，否则从支持的原始头提取所选行；
 其他 MTP 目录读取 `mtp-draft-vocabulary.ids`；该文件也可让符合条件的自动模式选择 K1。
 文件不存在或采样政策不适用时使用完整词表；
 存在但source identity不匹配时拒绝加载。`--mtp-draft-vocabulary full` 强制完整词表作对照，
@@ -136,6 +136,7 @@ python scripts/prepare-mtp-draft-vocabulary.py --hyle <hyle.exe> --inputs <准�
 也可用重复的 `--calibration-run DIR` 复用同一source的已有普通greedy校准；该模式不启动GPU，也不需要tokenizer。
 支持本工具的校准目录，以及含train／validation划分的已归档生成目录；只导入train，核对源身份、原始ID和会话退休。
 `--rows N` 可选任意非零且不超过原词表的行数，选择次序保持不变。
+如果已在目标负载上确认 K3 合适，可以把输出文件命名为 `mtp-draft-vocabulary-k3.ids`，让自动模式在冷期选择 K3；否则使用普通文件名选择 K1。
 文件绑定准备清单的原source identity及实际词表大小，格式为：
 
 ```text

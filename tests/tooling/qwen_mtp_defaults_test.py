@@ -56,6 +56,7 @@ def check(args):
                  'disable':('explicit_off','disabled'),
                  'auto-commands':('replay_commands','disabled'),
                  'legacy-default':('no_eligible_source','disabled'),
+                 'missing-head-auto':('prepared_vocabulary','k3_artifact'),
                  'generic-auto':('prepared_vocabulary','default_k1'),
                  'random-auto':('sampling_or_draft_threshold','disabled')}
         if name in reasons:
@@ -113,8 +114,12 @@ def check(args):
         run('reject-wrong-rows',inputs=args.output/'wrong-rows',error='bound draft vocabulary')
     else:
         assert small_three==run('wrong-rows-auto-k3',inputs=args.output/'wrong-rows',rows=3)
-    for fixture,message in [('missing-head','requires its complete source-bound'),('stale','source identity differs')]:
-        run('reject-'+fixture,inputs=args.output/fixture,error=message)
+    missing=args.output/'missing-head'
+    original_auto=run('missing-head-auto',inputs=missing)
+    assert original_auto==run('missing-head-explicit',
+        ['--mtp','on','--mtp-max-drafts','3','--mtp-draft-head','original',
+         '--mtp-draft-vocabulary',str(missing/'mtp-draft-vocabulary-k3.ids')],inputs=missing)
+    run('reject-stale',inputs=args.output/'stale',error='source identity differs')
     assert ordinary==run('ignore-stale-disabled',['--mtp','off'],inputs=args.output/'stale',mtp=False,subset=False)
     random=['--sampling','random','--temperature','0.8','--top-k','40','--top-p','0.95','--seed','7']
     assert run('random-auto',random,mtp=False,subset=False)==run('random-off',[*random,'--mtp','off'],mtp=False,subset=False)
@@ -142,7 +147,7 @@ def check(args):
         observed.append((raw['sessions'][0]['result']['generated_ids'],raw['sessions'][0]['ledger']))
     assert observed[0]==observed[1],'planned many-shape auto differs from explicit K3'
     print('PASS planned many-shape auto/explicit K3, outputs/ledger and retirement',flush=True)
-    print('PASS automatic K3,explicit source-bound subsets,unchanged legacy and random defaults,stale/incomplete/row refusal,work/RNG/retirement',flush=True)
+    print('PASS automatic K3 with prepared or original head,source-bound subsets,unchanged legacy and random defaults,stale/row refusal,work/RNG/retirement',flush=True)
 
 
 if __name__=='__main__':

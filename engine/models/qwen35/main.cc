@@ -8935,8 +8935,6 @@ int qwen35::run(int argc, char **argv) {
     mtp_enabled = default_selection.enabled;
     const bool select_prepared_assets = default_selection.prepared_assets;
     const bool select_generic_assets = select_prepared_assets && has_generic_vocabulary;
-    if (select_prepared_assets && !select_generic_assets && !exists(input / "mtp-draft-head.tsv"))
-      throw std::runtime_error("prepared K3 vocabulary requires its complete source-bound Q4_K draft head");
     if(draft_head=="original")draft_head.clear();
     else if(draft_head=="auto"){
       draft_head.clear();
@@ -8968,7 +8966,7 @@ int qwen35::run(int argc, char **argv) {
     if(!draft_head.empty() && (!mtp_enabled || !max_drafts || sampler.enabled || !sampler.modifiers.empty() || min_draft_probability!=0))
       throw std::runtime_error("--mtp-draft-head requires active unmodified greedy MTP and zero minimum probability");
     auto weight_source = qwen35::prepare_weight_source(input / "weights.tsv", mtp_enabled, draft_vocabulary,draft_head);
-    // A source-bound K3-named pair declares its intended depth. Explicit
+    // A source-bound K3-named vocabulary declares its intended depth. Explicit
     // depth still wins; a generic prepared vocabulary keeps the K1 policy.
     if (automatic_k3 && !explicit_mtp_drafts) max_drafts = 3;
     const auto geometry = weight_source.roles.geometry;
