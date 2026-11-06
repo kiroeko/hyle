@@ -10,11 +10,13 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <span>
 #include <stdexcept>
@@ -231,6 +233,72 @@ void rows(i::Backend &backend, Type type, const c::ResourceBudget &budget) {
   escaped.reset(); q::check(backend.collect_retired());
   require(q::take(budget.usage(backend.device())).live_bytes == baseline,
       "released original row consumer retained native resources or requested-byte charges");
+}
+
+void q5_projection_composition(i::Backend &backend, const c::ResourceBudget &budget) {
+  constexpr std::int64_t rows = 8, columns = 256;
+  q::LoadedWeight source;
+  source.tensor = q::Tensor(backend.device(), q::take(q::take(c::gguf_weight_description(
+      c::GgufQuantizedType::kQ5K, Type::kFloat32, columns, rows)).transposed()), true, budget);
+  const auto extent = q::take(source.tensor.description.required_bytes());
+  const auto row_bytes = extent / rows;
+  std::vector<std::byte> weights(extent);
+  for (std::size_t n = 0; n < weights.size(); ++n)
+    weights[n] = static_cast<std::byte>((n * 37 + n / row_bytes * 19) % 256);
+  for (std::size_t row = 0; row < rows; ++row) {
+    // The two leading F16 scales must be finite; retain varied code bits.
+    weights[row * row_bytes] = std::byte{0};
+    weights[row * row_bytes + 1] = std::byte{0x3c};
+    weights[row * row_bytes + 2] = std::byte{0};
+    weights[row * row_bytes + 3] = std::byte{0};
+  }
+  q::check(backend.write(source.tensor.storage(), weights)); source.tensor.freeze(backend);
+  const auto mapping = q::take(i::DraftVocabulary::create(rows, std::array<std::int32_t, 4>{0, 2, 5, 7}));
+  auto selected = q::select_stored_weight_rows(backend, source, mapping.ids(), budget);
+  q::Tensor ids(backend.device(), q::dense(Type::kInt32, {4}), true, budget);
+  q::check(backend.write(ids.storage(), std::as_bytes(mapping.ids()))); ids.freeze(backend);
+  q::ModelGeometry geometry; geometry.hidden = columns; geometry.vocabulary = rows; geometry.conv_kernel = 2;
+  q::prepared::Roles roles; roles.representation = q::prepared::SourceRepresentation::kGgufConverted;
+  q::prepared::Role head; head.dtype = "Q5_K"; head.meaning = q::prepared::ParameterMeaning::kLinearWeight;
+  roles.selected.push_back(head);
+  for (const std::int64_t batch : {1, 2}) {
+    q::Tensor x(backend.device(), q::dense(Type::kFloat32, {batch, columns}), true, budget);
+    std::vector<float> xs(static_cast<std::size_t>(batch * columns));
+    for (std::size_t n = 0; n < xs.size(); ++n) xs[n] = (static_cast<int>(n % 29) - 14) / 64.0f;
+    const auto xb = encoded(Type::kFloat32, xs); q::check(backend.write(x.storage(), xb)); x.freeze(backend);
+    std::map<std::string, q::LoadedWeight> unused;
+    q::ProjectionBindings projections{{"lm_head.weight", q::StoredProjection{&source.tensor}}};
+    q::GraphAssembly assembly(backend, q::PrecisionProfile::from_roles(roles), budget);
+    q::Recipe recipe(unused, projections, assembly, geometry, static_cast<std::size_t>(batch));
+    const auto input = recipe.input(x.description);
+    const auto full = recipe.scores(input, "lm_head.weight");
+    const auto compact = recipe.emit_projection(input, q::StoredProjection{&selected.tensor}, true);
+    const auto compact_id = recipe.op(c::Operation(c::TopK{.count = 1}), {compact})[1];
+    const auto original_id = recipe.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
+        {recipe.constant(ids), compact_id}, recipe.spec(compact_id));
+    const std::array outputs{full, compact, original_id};
+    for (auto value : outputs) recipe.publish(value);
+    const auto graph = q::take(std::move(recipe.builder).finish());
+    const std::array shape{g::ShapeBinding{recipe.last_row, batch - 1}};
+    const auto result = execute(backend, assembly, graph, input, x, outputs, shape, budget);
+    const auto full_scores = values<float>(backend, result[0]);
+    const auto subset = values<float>(backend, result[1]);
+    const auto chosen = values<std::int32_t>(backend, result[2]);
+    require(full_scores.size() == static_cast<std::size_t>(batch * rows) &&
+        subset.size() == static_cast<std::size_t>(batch) * mapping.size() &&
+        chosen.size() == static_cast<std::size_t>(batch), "Q5 scores shape differs");
+    for (std::size_t row = 0; row < static_cast<std::size_t>(batch); ++row) {
+      float best = -std::numeric_limits<float>::infinity();
+      std::int32_t expected = -1;
+      for (std::size_t n = 0; n < mapping.size(); ++n) {
+        const auto value = subset[row * mapping.size() + n];
+        require(std::isfinite(value) && value == full_scores[row * rows + mapping.ids()[n]],
+            "Q5 selected projection changed score");
+        if (value > best) { best = value; expected = mapping.ids()[n]; }
+      }
+      require(best != 0 && chosen[row] == expected, "Q5 selected projection failed original ID remapping");
+    }
+  }
 }
 
 void encoded_rows(i::Backend&backend,c::GgufQuantizedType codec,const c::ResourceBudget&budget){
@@ -607,13 +675,14 @@ int main(int argc, char **argv) {
     std::vector<std::size_t> baseline;
     for (const auto &limit : limits) baseline.push_back(q::take(budget.usage(limit.resource)).live_bytes);
     for (const auto type : {Type::kFloat32, Type::kFloat16, Type::kBFloat16}) rows(backend, type, budget);
-    for(const auto codec:{c::GgufQuantizedType::kQ8_0,c::GgufQuantizedType::kQ4K,c::GgufQuantizedType::kQ6K})
+    for(const auto codec:{c::GgufQuantizedType::kQ8_0,c::GgufQuantizedType::kQ4K,c::GgufQuantizedType::kQ6K,c::GgufQuantizedType::kQ5K})
       encoded_rows(backend,codec,budget);
+    if (kind==i::BackendKind::kCuda) q5_projection_composition(backend,budget);
     for (std::size_t index = 0; index < limits.size(); ++index)
       require(q::take(budget.usage(limits[index].resource)).live_bytes == baseline[index], "cold consumer retained another resource-domain budget charge");
     std::cout << "{\"status\":\"PASS\",\"backend\":\"" << argv[1]
-        << "\",\"stored_types\":3,\"encoded_types\":" << (kind==i::BackendKind::kCuda?3:0)
-        << ",\"encoded_refusals\":" << (kind==i::BackendKind::kCuda?0:3)
+        << "\",\"stored_types\":3,\"encoded_types\":" << (kind==i::BackendKind::kCuda?4:0)
+        << ",\"encoded_refusals\":" << (kind==i::BackendKind::kCuda?0:4)
         << ",\"source_bytes_unchanged\":true,\"batched_original_ids_and_ties\":true,"
            "\"escaped_lease_budget_retired\":true,\"budget_rejection_and_retry\":true,\"invalid_ids_refused\":true,"
            "\"metadata_identity_checked\":" << (argc == 4 ? "true" : "false") << ",\"model_execution\":false}\n";

@@ -646,7 +646,7 @@ LoadedWeight select_stored_weight_rows(Backend &backend, const LoadedWeight &wei
     const auto *capability=codec?gguf_capabilities(*codec):nullptr;
     if (!codec || !capability || !capability->copy_encoded_rows || description!=
         take(take(c::gguf_weight_description(*codec,Type::kFloat32,columns,rows)).transposed()))
-      check(hyle::Status::Unimplemented("weight row selection requires original canonical Q8_0/Q4_K/Q6_K rows"));
+      check(hyle::Status::Unimplemented("weight row selection requires supported original canonical GGUF rows"));
     const auto bytes=take(description.required_bytes());
     if(bytes%static_cast<std::size_t>(rows) || (bytes/static_cast<std::size_t>(rows))%sizeof(std::uint16_t))
       check(hyle::Status::Unimplemented("stored GGUF row gather requires complete two-byte words"));

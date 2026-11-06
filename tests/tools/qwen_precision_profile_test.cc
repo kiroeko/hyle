@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
     require(qwen35::gguf_capabilities(capability.encoding) == &capability);
   }
   const auto *q5 = qwen35::gguf_capabilities("Q5_K");
-  require(q5 && q5->f32_operand && !q5->stored_draft_head && !q5->copy_encoded_rows && !q5->concurrent_cold_family);
+  require(q5 && q5->f32_operand && !q5->stored_draft_head && q5->copy_encoded_rows && !q5->concurrent_cold_family);
   require(!qwen35::gguf_capabilities("Q3_K"));
   gguf.selected.back().dtype = "BF16";
   require(PrecisionProfile::from_roles(gguf) == PrecisionProfile{});

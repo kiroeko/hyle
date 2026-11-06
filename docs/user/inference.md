@@ -119,7 +119,8 @@ JSON 的 `mtp_selection_reason` 报告冷期选择或回落原因，`mtp_depth_s
 文件不存在或采样政策不适用时使用完整词表；
 存在但source identity不匹配时拒绝加载。`--mtp-draft-vocabulary full` 强制完整词表作对照，
 也可用 `--mtp-draft-vocabulary FILE` 显式选择另一份准备文件。
-支持原BF16／F16／F32稠密head；CUDA还支持GGUF Q8_0／Q4_K／Q6_K编码行的子集，保持原量化代码与scale字节。
+支持原BF16／F16／F32稠密head；CUDA还支持GGUF Q8_0／Q4_K／Q5_K／Q6_K编码行的子集，保持原量化代码与scale字节。
+Q5_K 的行复制、投影与原ID映射已用合成数据验证，尚未在完整Q5_K head模型上验证。
 可用于K1与多草稿；完整target head与embedding继续保留。编码行副本目前只验证CUDA，其它后端明确拒绝。
 显式文件遇到随机、modifier、非零阈值或不支持的权重会报错。
 
