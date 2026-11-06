@@ -520,7 +520,7 @@ TEST(GraphDiscovery, BudgetNeverPermitsAnIncompleteExecutable) {
   auto limited = hyle::graph::compile(logical.graph, context,
                                       {.max_operation_proposals = 1});
   ASSERT_FALSE(limited);
-  EXPECT_TRUE(limited.error().IsUnimplemented());
+  EXPECT_TRUE(limited.error().IsResourceExhausted()) << limited.error().message();
   EXPECT_EQ(probe.proposals, 1);
   EXPECT_EQ(probe.preparations, 0);
   EXPECT_EQ(probe.kernels, 0);
