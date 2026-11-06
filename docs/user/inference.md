@@ -110,6 +110,7 @@ JSON 的 `mtp_selection_reason` 报告冷期选择或回落原因，`mtp_depth_s
 `--mtp-max-drafts 1` 可覆盖已启用的 K3，按 K1 执行。
 `--mtp-max-drafts` 控制每轮最多提出的草稿数，自动 K3 制品为 3，其余默认为 1。`--mtp-min-probability` 设置
 草稿分布最大概率的最低门槛，范围为 0 到 1，默认 0；达到门槛才继续草稿，实际长度可以更短。
+草稿数设为 0 时，`auto` 和 `off` 使用普通路径；显式 `on` 保持 MTP 路径但不提出草稿。
 这不是额外置信度模型。制品、后端与草稿数的实际运行范围见[模型覆盖](../implementation/model-operators.md)。
 
 ### 草稿词表

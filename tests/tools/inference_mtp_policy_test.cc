@@ -86,6 +86,14 @@ int main() {
       m::select_default(typical,true).reason != "explicit_on")
     throw std::runtime_error("short-context explicit route was blocked by auto policy");
   typical.mode=m::RequestedMode::kAuto; typical.capacity=32768;
+  typical.max_drafts=0;
+  if (m::select_default(typical,true).reason != "drafting_disabled")
+    throw std::runtime_error("zero drafts should report the disabled policy");
+  typical.greedy=false;
+  if (m::select_default(typical,true).reason != "drafting_disabled")
+    throw std::runtime_error("explicit zero should explain a disabled automatic route");
+  typical.greedy=true;
+  typical.max_drafts=1;
   typical.greedy=false;
   if (m::select_default(typical,true).reason != "sampling_or_draft_threshold")
     throw std::runtime_error("sampling fallback reason differs");

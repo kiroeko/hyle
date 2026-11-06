@@ -8974,7 +8974,8 @@ int qwen35::run(int argc, char **argv) {
     qwen35::FfnPlacement::validate(cpu_ffn_layers, geometry.layers.size());
     if (sampler.policy.top_k > static_cast<std::size_t>(geometry.vocabulary))
       throw std::runtime_error("--top-k exceeds the source vocabulary");
-    if (explicit_mtp_drafts && !mtp_enabled) throw std::runtime_error("--mtp-max-drafts requires --mtp on or prepared automatic MTP");
+    if (explicit_mtp_drafts && max_drafts != 0 && !mtp_enabled)
+      throw std::runtime_error("--mtp-max-drafts requires --mtp on or prepared automatic MTP");
     if (explicit_mtp_probability && !mtp_enabled) throw std::runtime_error("--mtp-min-probability requires --mtp on or prepared automatic MTP");
     if (explicit_sampling_parameters && !sampler.enabled)
       throw std::runtime_error("--temperature, --top-k, --top-p and --seed require --sampling random");
@@ -9109,21 +9110,21 @@ int qwen35::run(int argc, char **argv) {
         mtp_enabled && mtp_has_decode ? max_drafts + 1 : std::size_t{1}});
     const auto requested_active = (std::min)(active_sequences, input_sessions);
     const bool stored_draft_head = qwen35::supports_stored_draft_projection(weight_source.roles);
+    const bool device_relay_eligible = qwen35::DeviceRelayCapabilities{
+        backend_selection.primary, cpu_ffn_layers != 0, progress,
+        sampler.enabled, !sampler.modifiers.empty()}.eligible();
     // A continuous conditional successor retains its completed producer until
     // the consumer really retires. Count that third original batch in the
     // existing page/state bound, independently of simultaneous GPU work.
     bool overlap_selected = decode_overlap && natural_generation &&
         (!mtp_enabled || (max_drafts >= 1 && max_drafts <= qwen35::kMaximumDeviceMtpDrafts && min_draft_probability == 0 &&
-                         (max_drafts == 1 || stored_draft_head))) && !progress &&
-        qwen35::DeviceRelayCapabilities{backend_selection.primary, cpu_ffn_layers != 0,
-            progress, sampler.enabled, !sampler.modifiers.empty()}.eligible() &&
+                         (max_drafts == 1 || stored_draft_head))) && device_relay_eligible &&
         replay != qwen35::ReplayPolicy::kCommands && (trace.empty() || !trace_states) &&
         (bounded_generation ? capacity > 1 : std::ranges::any_of(generation_schedules, [](const auto &request) {
           return std::ranges::any_of(request.turns, [](const auto &turn) { return turn.max_outputs > 1; });
         }));
     bool device_verification_selected = mtp_enabled && max_drafts > 1 && max_drafts <= qwen35::kMaximumDeviceMtpDrafts &&
-        min_draft_probability == 0 && !sampler.enabled && sampler.modifiers.empty() &&
-        backend_selection.primary == qwen35::BackendKind::kCuda && !cpu_ffn_layers && !progress &&
+        min_draft_probability == 0 && device_relay_eligible &&
         requested_active == 1 && replay != qwen35::ReplayPolicy::kCommands;
     // Ask the actual backend about the provisional maximum batch and every
     // target cache storage. Unsupported implementations keep the original

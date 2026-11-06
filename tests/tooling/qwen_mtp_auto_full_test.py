@@ -23,6 +23,9 @@ def main():
             ('k1', ['--mtp', 'on', '--mtp-max-drafts', '1',
                     '--mtp-draft-head', 'original', '--mtp-draft-vocabulary', 'full']),
             ('off', ['--mtp', 'off']),
+            ('auto-zero', ['--mtp-max-drafts', '0']),
+            ('off-zero', ['--mtp', 'off', '--mtp-max-drafts', '0']),
+            ('on-zero', ['--mtp', 'on', '--mtp-max-drafts', '0']),
             ('random-auto', ['--sampling', 'random', '--seed', '42']),
             ('random-off', ['--sampling', 'random', '--seed', '42', '--mtp', 'off']),
         ):
@@ -36,19 +39,28 @@ def main():
             if result.returncode:
                 raise RuntimeError(f'{label}/{mode}: see {folder}')
             raw = json.loads(result.stdout.decode('utf-8-sig'))
-            expected = mode in ('auto', 'k1')
+            expected = mode in ('auto', 'k1', 'on-zero')
             reasons = {'auto': ('original_projection', 'default_k1'),
                        'k1': ('explicit_on', 'explicit'), 'off': ('explicit_off', 'disabled'),
+                       'auto-zero': ('drafting_disabled', 'disabled'),
+                       'off-zero': ('explicit_off', 'disabled'),
+                       'on-zero': ('explicit_on', 'explicit'),
                        'random-auto': ('sampling_or_draft_threshold', 'disabled'),
                        'random-off': ('explicit_off', 'disabled')}
             assert (raw['mtp_selection_reason'], raw['mtp_depth_source']) == reasons[mode], (label, mode)
-            assert raw['mtp'] == expected and raw['mtp_max_drafts'] == int(expected), (label, mode)
+            assert raw['mtp'] == expected and raw['mtp_max_drafts'] == int(mode in ('auto', 'k1')), (label, mode)
+            if mode == 'on-zero': assert raw['draft_rounds'] == 0, (label, mode)
             assert raw['draft_vocabulary_rows'] == 0, (label, mode)
             assert raw['live_committed_versions'] == 0, (label, mode)
             reports[mode] = raw['sessions'][0]
-        for actual, reference in (('auto', 'k1'), ('random-auto', 'random-off')):
+        for actual, reference in (('auto', 'k1'), ('auto-zero', 'off'), ('off-zero', 'off'),
+                                  ('random-auto', 'random-off')):
             assert reports[actual]['result']['generated_ids'] == reports[reference]['result']['generated_ids'], (label, actual)
             assert reports[actual]['ledger'] == reports[reference]['ledger'], (label, actual)
+        conflict = subprocess.run([str(args.hyle), '--inputs', str(inputs), '--backend', 'cuda',
+            '--capacity', '32768', '--schedule', str(args.schedule), '--mtp', 'off', '--mtp-max-drafts', '1'],
+            capture_output=True, timeout=180)
+        assert conflict.returncode != 0 and b'--mtp-max-drafts requires' in conflict.stderr, label
         print('PASS', label, 'automatic full K1, explicit off and random fallback', flush=True)
 
 

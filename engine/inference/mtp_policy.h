@@ -46,6 +46,7 @@ struct DefaultSelection final {
 // Asset inspection is separate because explicit MTP can use prepared assets
 // even when the automatic route is not selected.
 constexpr std::string_view automatic_constraint(const DefaultRequest &request) noexcept {
+  if (!request.max_drafts) return "drafting_disabled";
   if (!request.natural_generation) return "non_natural_request";
   if (!request.default_backend) return "non_cuda_backend";
   if (!request.greedy) return "sampling_or_draft_threshold";
@@ -58,8 +59,7 @@ constexpr std::string_view automatic_constraint(const DefaultRequest &request) n
   if (!request.replay_supports_chain) return "replay_commands";
   // This is an automatic cost preference, not a backend rejection.
   if (request.capacity < 4) return "insufficient_capacity";
-  if (!request.max_drafts || request.max_drafts > request.maximum_automatic_drafts)
-    return "unsupported_draft_depth";
+  if (request.max_drafts > request.maximum_automatic_drafts) return "unsupported_draft_depth";
   return {};
 }
 

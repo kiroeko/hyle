@@ -121,6 +121,7 @@ def check(args):
          '--mtp-draft-vocabulary',str(missing/'mtp-draft-vocabulary-k3.ids')],inputs=missing)
     run('reject-stale',inputs=args.output/'stale',error='source identity differs')
     assert ordinary==run('ignore-stale-disabled',['--mtp','off'],inputs=args.output/'stale',mtp=False,subset=False)
+    assert ordinary==run('ignore-stale-zero',['--mtp-max-drafts','0'],inputs=args.output/'stale',mtp=False,subset=False)
     random=['--sampling','random','--temperature','0.8','--top-k','40','--top-p','0.95','--seed','7']
     assert run('random-auto',random,mtp=False,subset=False)==run('random-off',[*random,'--mtp','off'],mtp=False,subset=False)
     # Distinct explicitly planned prefill lengths exercise the aggregate cold
