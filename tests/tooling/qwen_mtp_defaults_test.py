@@ -85,13 +85,14 @@ def check(args):
     assert ordinary==run('legacy-default',inputs=args.output/'legacy',mtp=False,subset=False)
     run('legacy-enabled',['--mtp','on'],inputs=args.output/'legacy',width=1,subset=False)
     small=args.output/'small-explicit'
-    small_one=run('small-explicit-on',['--mtp','on'],inputs=small,width=1,rows=3)
-    assert small_one==run('small-explicit-k1',['--mtp','on','--mtp-max-drafts','1'],inputs=small,width=1,rows=3)
-    small_three=run('small-explicit-k3',['--mtp','on','--mtp-max-drafts','3'],inputs=small,rows=3)
+    small_one=run('small-explicit-k1',['--mtp','on','--mtp-max-drafts','1'],inputs=small,width=1,rows=3)
+    small_three=run('small-explicit-on',['--mtp','on'],inputs=small,rows=3)
+    assert small_three==run('small-explicit-k3',['--mtp','on','--mtp-max-drafts','3'],inputs=small,rows=3)
     assert small_three==run('small-manual-k3',['--mtp','on','--mtp-max-drafts','3',
         '--mtp-draft-head',str(small/'mtp-draft-head.tsv'),
         '--mtp-draft-vocabulary',str(small/'mtp-draft-vocabulary-k3.ids')],inputs=small,rows=3)
-    assert small_one==run('small-auto-k1',inputs=small,width=1,rows=3)
+    assert small_three==run('small-auto-k3',inputs=small,rows=3)
+    assert small_one==run('small-auto-explicit-k1',['--mtp-max-drafts','1'],inputs=small,width=1,rows=3)
     generic=args.output/'generic'
     generic_auto=run('generic-auto',inputs=generic,width=1,rows=3)
     assert generic_auto==run('generic-explicit',['--mtp','on','--mtp-max-drafts','1'],inputs=generic,width=1,rows=3)
@@ -100,7 +101,7 @@ def check(args):
     if 'SUBSET' in head[0]:
         run('reject-wrong-rows',inputs=args.output/'wrong-rows',error='bound draft vocabulary')
     else:
-        assert small_one==run('wrong-rows-auto-k1',inputs=args.output/'wrong-rows',width=1,rows=3)
+        assert small_three==run('wrong-rows-auto-k3',inputs=args.output/'wrong-rows',rows=3)
     for fixture,message in [('missing-head','requires its complete source-bound'),('stale','source identity differs')]:
         run('reject-'+fixture,inputs=args.output/fixture,error=message)
     assert ordinary==run('ignore-stale-disabled',['--mtp','off'],inputs=args.output/'stale',mtp=False,subset=False)

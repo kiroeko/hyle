@@ -84,7 +84,7 @@ Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-di
 普通 CUDA greedy 自然生成自动使用连续接力，无需额外参数；已有限检查单活动请求及双活动请求。
 无草稿概率门槛的CUDA greedy单会话K1—K3已接入自然接力。固定K2／K3把起草、验证及draft KV修复放入同一张轮图，
 中间token和下一轮接受位置留在设备。冷期只按配置容量和已到达首轮准备，后续长度与配额不参与规划。
-符合条件的自动 MTP 会根据准备目录中的草稿制品选择 K1 或 K3；显式开启时默认 K1。K3 的收益与资源边界见性能表。
+符合条件的 MTP 会根据准备目录中的草稿制品选择 K1 或 K3；没有 K3 制品时显式开启默认为 K1。K3 的收益与资源边界见性能表。
 当前仅为最多输出至少 10 个 token 的自然生成准备两层候选；prefill 保留原路径，后继只使用已有实际捕获。
 完整同形、同序的活动请求组可持续接力；异形分组保留原同步执行。输出额度不足时先完成已接纳工作，再暂停等待额度。
 其它后端、上述范围外的MTP、混合执行、随机采样、scheduler 或显式 commands 自动使用原单步行为；显式缓存预算容不下额外候选时也自动使用单步。
@@ -100,19 +100,19 @@ Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-di
 逐请求bias／mask、历史罚分、动态条件及停止政策属于`engine/`内的C++请求扩展，
 没有对应CLI参数或已安装的引擎SDK／server入口；其合同查[输入与请求政策](../../engine/models/qwen35/README.md#输入与数值政策)。
 
-`--mtp auto|off|on` 默认 `auto`。在符合条件的 CUDA 自然 greedy 生成中，完整的默认 K3 制品优先；
-有效制品不符合 K3 优选条件时使用 K1。没有该制品但目录有来源匹配的 `mtp-draft-vocabulary.ids` 时，
+`--mtp auto|off|on` 默认 `auto`。在符合条件的 CUDA 自然 greedy 生成中，来源匹配的 K3 命名制品优先选择 K3；
+没有该制品但目录有来源匹配的 `mtp-draft-vocabulary.ids` 时，
 自动选择原始草稿头的 K1。
 其他情况默认关闭；`--mtp off` 强制普通生成。启用 MTP 会增加内存，收益取决于模型、词表和输入。
 `--mtp-max-drafts 1` 可覆盖已启用的 K3，按 K1 执行。
-`--mtp-max-drafts` 控制每轮最多提出的草稿数，合格默认 K3 制品为 3，其余为 1。`--mtp-min-probability` 设置
+`--mtp-max-drafts` 控制每轮最多提出的草稿数，自动 K3 制品为 3，其余默认为 1。`--mtp-min-probability` 设置
 草稿分布最大概率的最低门槛，范围为 0 到 1，默认 0；达到门槛才继续草稿，实际长度可以更短。
 这不是额外置信度模型。制品、后端与草稿数的实际运行范围见[模型覆盖](../implementation/model-operators.md)。
 
 ### 草稿词表
 
 默认 `--mtp-draft-vocabulary auto`：MTP开启、无logits modifier的greedy、零概率阈值时，
-合格的默认K3目录组合 `mtp-draft-head.tsv` 与 `mtp-draft-vocabulary-k3.ids`；
+默认 K3 目录组合 `mtp-draft-head.tsv` 与 `mtp-draft-vocabulary-k3.ids`；
 其他 MTP 目录读取 `mtp-draft-vocabulary.ids`；该文件也可让符合条件的自动模式选择 K1。
 文件不存在或采样政策不适用时使用完整词表；
 存在但source identity不匹配时拒绝加载。`--mtp-draft-vocabulary full` 强制完整词表作对照，

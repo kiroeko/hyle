@@ -8950,12 +8950,9 @@ int qwen35::run(int argc, char **argv) {
     if(!draft_head.empty() && (!mtp_enabled || !max_drafts || sampler.enabled || !sampler.modifiers.empty() || min_draft_probability!=0))
       throw std::runtime_error("--mtp-draft-head requires active unmodified greedy MTP and zero minimum probability");
     auto weight_source = qwen35::prepare_weight_source(input / "weights.tsv", mtp_enabled, draft_vocabulary,draft_head);
-    if (select_prepared_assets && !select_generic_assets) {
-      const bool qualified_default = qwen35::has_qualified_k3_preference(weight_source);
-      // The preference selects K3; other valid source-bound heads keep the
-      // ordinary K1 default, or an explicitly requested draft depth.
-      if (qualified_default && automatic_k3 && !explicit_mtp_drafts) max_drafts = 3;
-    }
+    // A source-bound K3-named pair declares its intended depth. Explicit
+    // depth still wins; a generic prepared vocabulary keeps the K1 policy.
+    if (automatic_k3 && !explicit_mtp_drafts) max_drafts = 3;
     const auto geometry = weight_source.roles.geometry;
     qwen35::validate_mtp_source(geometry, mtp_enabled);
     qwen35::FfnPlacement::validate(cpu_ffn_layers, geometry.layers.size());
