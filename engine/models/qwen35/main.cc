@@ -9120,7 +9120,7 @@ int qwen35::run(int argc, char **argv) {
             progress, sampler.enabled, !sampler.modifiers.empty()}.eligible() &&
         replay != qwen35::ReplayPolicy::kCommands && (trace.empty() || !trace_states) &&
         (bounded_generation ? capacity > 1 : std::ranges::any_of(generation_schedules, [](const auto &request) {
-          return std::ranges::any_of(request.turns, [](const auto &turn) { return turn.max_outputs >= 10; });
+          return std::ranges::any_of(request.turns, [](const auto &turn) { return turn.max_outputs > 1; });
         }));
     bool device_verification_selected = mtp_enabled && max_drafts > 1 && max_drafts <= qwen35::kMaximumDeviceMtpDrafts &&
         min_draft_probability == 0 && !sampler.enabled && sampler.modifiers.empty() &&
