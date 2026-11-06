@@ -8,6 +8,10 @@
 
 namespace qwen35 {
 
+constexpr bool compact_draft_rows(std::size_t selected, std::size_t full) noexcept {
+  return selected != 0 && selected < full;
+}
+
 // Source mathematics fixed before state/Graph preparation. A F16 stored weight
 // by itself does not select F16 compute (the existing GPTQ reader uses BF16).
 class PrecisionProfile final {
@@ -25,7 +29,7 @@ public:
   constexpr bool is_f16() const noexcept { return f16_; }
   friend constexpr bool operator==(PrecisionProfile, PrecisionProfile) noexcept = default;
 
-  static PrecisionProfile from_roles(const prepared::Roles &roles) {
+  static PrecisionProfile from_roles(const prepared::Roles &roles, bool compact_mtp = false) {
     const bool has_nf4 = std::ranges::any_of(roles.selected, [](const auto &role) {
       return role.projection_codec == prepared::ProjectionCodec::kNf4DoubleQuant;
     });
@@ -45,13 +49,14 @@ public:
       throw std::runtime_error("incompatible source activation precision policies");
     PrecisionProfile result;
     result.f16_ = roles.nf4_policy.enabled;
-    // GGUF Q8_0/Q4_K_M graphs keep quantized target/NextN projections and
-    // residuals in F32. Other source readers retain their actual original
-    // boundaries. KV/query/attention output remain independently BF16.
+    // GGUF Q8_0/Q4_K_M ordinary graphs and compact-draft MTP graphs use F32
+    // activations. Full-head MTP keeps its existing BF16 path. KV/query and
+    // attention output remain independently BF16.
     const auto quantized = [](const auto &role) {
       return role.dtype == "Q8_0" || role.dtype == "Q4_K" || role.dtype == "Q6_K";
     };
     result.f32_ = roles.representation == prepared::SourceRepresentation::kGgufConverted &&
+        (compact_mtp || std::ranges::none_of(roles.selected, [](const auto &role) { return role.name.starts_with("mtp."); })) &&
         std::ranges::any_of(roles.selected, [](const auto &role) { return role.dtype == "Q8_0" || role.dtype == "Q4_K"; }) &&
         std::ranges::all_of(roles.selected, [&](const auto &role) {
           return (role.meaning != prepared::ParameterMeaning::kLinearWeight &&

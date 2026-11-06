@@ -971,7 +971,7 @@ public:
       std::size_t max_cache_bytes, Sampling sampling_configuration, std::size_t cpu_ffn_layer_count,
       std::span<const SamplingConfiguration> additional_sampling = {})
        : sampling_seed(sampling_configuration.seed), ffn_placement(source.roles, cpu_ffn_layer_count),
-         precision(PrecisionProfile::from_roles(source.roles)),
+         precision(precision_for_source(source)),
          geometry(model_geometry), hidden(geometry.hidden), intermediate(geometry.intermediate), vocabulary(geometry.vocabulary),
          target_kv_layers(geometry.attention_layers()), draft_bank(target_kv_layers * 2),
          attention_layer_ids([&] {
@@ -8974,7 +8974,7 @@ int qwen35::run(int argc, char **argv) {
     const auto input_sessions = bounded_generation ? std::size_t{1}
         : natural_schedule ? generation_schedules.size() : scheduled ? schedules.size() : std::size_t{1};
     if (bounded_generation && active_sequences == 0) active_sequences = 1;
-    const auto source_precision = qwen35::PrecisionProfile::from_roles(weight_source.roles);
+    const auto source_precision = qwen35::precision_for_source(weight_source);
     const auto recurrent_payload = qwen35::recurrent_bytes(qwen35::state_schema_for(geometry, capacity, source_precision), geometry);
     // Configuration describes a maximum, never permission to overrun context.
     // Actual calls additionally clip against output quota and remaining rows.

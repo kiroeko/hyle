@@ -74,9 +74,12 @@ int main(int argc, char **argv) {
   require(PrecisionProfile::from_roles(gguf) == f32);
   encoded.name = "mtp.fc.weight";
   gguf.selected.push_back(encoded);
-  require(PrecisionProfile::from_roles(gguf) == f32);
-  gguf.selected.back().dtype = "BF16";
   require(PrecisionProfile::from_roles(gguf) == PrecisionProfile{});
+  require(PrecisionProfile::from_roles(gguf, true) == f32);
+  require(!compact_draft_rows(0, 4) && compact_draft_rows(2, 4) &&
+      !compact_draft_rows(4, 4) && !compact_draft_rows(5, 4));
+  gguf.selected.back().dtype = "BF16";
+  require(PrecisionProfile::from_roles(gguf, true) == PrecisionProfile{});
   gguf.selected.pop_back();
   gguf.selected.back().dtype = "Q3_K";
   require(PrecisionProfile::from_roles(gguf) == PrecisionProfile{});

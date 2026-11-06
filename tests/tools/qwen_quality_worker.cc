@@ -27,7 +27,7 @@ int main(int argc,char **argv) {
     auto source=q::prepare_weight_source(std::filesystem::path(argv[1])/"weights.tsv",mtp,draft_vocabulary);
     const auto draft_vocabulary_rows=source.draft_vocabulary?source.draft_vocabulary->size():0;
     const auto geometry=source.roles.geometry;
-    const auto precision=q::PrecisionProfile::from_roles(source.roles);
+    const auto precision=q::precision_for_source(source);
     const auto capacity=std::stoull(argv[2]), maximum=std::stoull(argv[3]);
     if (!maximum || maximum>1000000) throw std::runtime_error("invalid row bound");
     const auto plan=q::cache::plan(geometry,source.cache_row_bytes,capacity,1,capacity,

@@ -157,6 +157,13 @@ struct PreparedWeightSource {
   std::string draft_vocabulary_identity;
   std::optional<PreparedDraftHeadSource> draft_head;
 };
+// Resolve once from the bound cold source; cache planning and Model must use
+// the same mathematical profile. No token or runtime history selects it.
+inline PrecisionProfile precision_for_source(const PreparedWeightSource &source) {
+  const bool compact = source.draft_vocabulary && compact_draft_rows(source.draft_vocabulary->size(),
+      static_cast<std::size_t>(source.draft_vocabulary->full_size()));
+  return PrecisionProfile::from_roles(source.roles, compact);
+}
 namespace projection_detail {
 std::array<std::int64_t, 2> logical_shape(const ProjectionBinding &binding);
 }
