@@ -14,7 +14,6 @@ struct DefaultRequest final {
   bool multiple_schedules = false;
   bool prefix_enabled = false;
   bool scheduler_progress = false;
-  bool warmup_planned_shapes = false;
   std::size_t max_sessions = 0;
   std::size_t active_sequences = 0;
   std::size_t capacity = 0;
@@ -44,9 +43,9 @@ constexpr DefaultSelection select_default(const DefaultRequest &request,
     bool prepared_vocabulary_exists) noexcept {
   const bool prepared = inspect_prepared_vocabulary(request) && prepared_vocabulary_exists;
   const bool automatic = prepared && request.natural_generation && !request.multiple_schedules &&
-      !request.prefix_enabled && !request.scheduler_progress && !request.warmup_planned_shapes &&
+      !request.prefix_enabled && !request.scheduler_progress &&
       request.max_sessions <= 1 && request.active_sequences <= 1 && request.capacity >= 4 &&
-      request.capacity <= 32768 && !request.cpu_ffn && request.replay_supports_chain &&
+      !request.cpu_ffn && request.replay_supports_chain &&
       request.max_drafts <= 3;
   const bool enabled = request.mode == RequestedMode::kOn || automatic;
   return {automatic, enabled, enabled && prepared};

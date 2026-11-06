@@ -844,20 +844,24 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     for (const auto &point : bindings) variants.push_back({point});
     g::CompileOptions compile_options{.shape_policy = g::CompileShapePolicy::kFiniteExact,
         .exact_variants = variants, .constants = assembly.constants()};
-    // The library's cold operation admission cap covers the whole family.
-    // Budget the requested finite children explicitly at the per-graph default;
-    // this is host search/storage policy, not device or execution capacity.
-    const auto per_graph_operations = g::CompileOptions{}.max_operation_proposals;
-    if (variants.size() > (std::numeric_limits<std::size_t>::max)() / per_graph_operations)
-      throw std::runtime_error("finite text operation proposal budget overflows");
-    compile_options.max_operation_proposals = per_graph_operations * variants.size();
-    const auto per_graph_preparations = g::CompileOptions{}.max_placement_attempts;
-    if (variants.size() > (std::numeric_limits<std::size_t>::max)() / per_graph_preparations)
-      throw std::runtime_error("finite text artifact preparation budget overflows");
-    compile_options.max_placement_attempts = per_graph_preparations * variants.size();
+    // Search and admission counters cover the whole finite family. Give every
+    // explicitly requested child the library's per-graph cold search budget;
+    // storage and device-resource limits remain independent.
+    const auto per_child = [&](std::size_t per_graph) {
+      if (variants.size() > (std::numeric_limits<std::size_t>::max)() / per_graph)
+        throw std::runtime_error("finite text family search budget overflows");
+      return per_graph * variants.size();
+    };
+    const g::CompileOptions defaults{};
+    compile_options.max_operation_proposals = per_child(defaults.max_operation_proposals);
+    compile_options.max_placement_attempts = per_child(defaults.max_placement_attempts);
+    compile_options.max_route_search_states = per_child(defaults.max_route_search_states);
+    compile_options.max_region_proposals = per_child(defaults.max_region_proposals);
+    compile_options.max_region_proposal_nodes = per_child(defaults.max_region_proposal_nodes);
     family_log([&](std::ostream &out) { out << "compile full text finite family requests=" << requests << " variants=" << variants.size()
               << " max_query_rows=" << max_query_rows << " nodes=" << definition.graph.node_count()
               << " max_operation_proposals=" << compile_options.max_operation_proposals
+              << " max_region_proposals=" << compile_options.max_region_proposals
               << " max_placement_attempts=" << compile_options.max_placement_attempts << '\n'; });
     compile_options.resource_budget = execution_budget;
 #if defined(HYLE_TEST_INFERENCE_WARM_COST) && HYLE_TEST_INFERENCE_WARM_COST

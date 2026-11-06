@@ -4,7 +4,7 @@ No implicit weights, quantizer or tokenizer download. Performance is measured
 separately; these runs check the actual CLI, metadata refusal and retirement.
 """
 from pathlib import Path
-import argparse,json,shlex,subprocess
+import argparse,json,re,shlex,subprocess
 
 
 def check(args):
@@ -53,7 +53,9 @@ def check(args):
         assert raw['draft_vocabulary_rows']==(rows if subset else 0),name
         assert raw['draft_head_rows']==(rows if subset else 248320 if mtp else 0),name
         assert raw['live_committed_versions']==0,name
-        if raw['sampling']=='greedy':assert raw['future_shape_hints']==0,name
+        planned='--warmup-shapes' in extra and extra[extra.index('--warmup-shapes')+1]=='planned'
+        if raw['sampling']=='greedy':
+            assert (raw['future_shape_hints']>0 if planned else raw['future_shape_hints']==0),name
         ledger=raw['sessions'][0]['ledger'];generations=[r for r in ledger if r['generation']]
         assert sum(r['accepted'] for r in generations)==16,name
         assert raw['actual_target_rows']==raw['prefill_target_rows']+sum(r['verified_rows'] for r in generations),name
@@ -72,11 +74,14 @@ def check(args):
     assert serial==run('auto-without-overlap',['--decode-overlap','off'])
     captured=run('explicit-prefer-capture',['--mtp','on','--mtp-max-drafts','3','--replay','prefer-capture'])
     assert captured==run('auto-prefer-capture',['--replay','prefer-capture'])
+    planned=run('explicit-planned',['--mtp','on','--mtp-max-drafts','3','--warmup-shapes','planned'])
+    assert planned==run('auto-planned',['--warmup-shapes','planned'])
     one=run('override-k1',['--mtp-max-drafts','1'],width=1)
     assert one==run('explicit-k1',['--mtp','on','--mtp-max-drafts','1'],width=1)
     ordinary=run('disable',['--mtp','off'],mtp=False,subset=False)
     assert ordinary==run('auto-commands',['--replay','commands'],mtp=False,subset=False)
-    assert ordinary==run('outside-default-context',['--capacity','65536'],mtp=False,subset=False)
+    expanded=run('explicit-expanded-context',['--capacity','65536','--mtp','on','--mtp-max-drafts','3'])
+    assert expanded==run('auto-expanded-context',['--capacity','65536'])
     assert ordinary==run('legacy-default',inputs=args.output/'legacy',mtp=False,subset=False)
     run('legacy-enabled',['--mtp','on'],inputs=args.output/'legacy',width=1,subset=False)
     small=args.output/'small-explicit'
@@ -101,6 +106,30 @@ def check(args):
     assert ordinary==run('ignore-stale-disabled',['--mtp','off'],inputs=args.output/'stale',mtp=False,subset=False)
     random=['--sampling','random','--temperature','0.8','--top-k','40','--top-p','0.95','--seed','7']
     assert run('random-auto',random,mtp=False,subset=False)==run('random-off',[*random,'--mtp','off'],mtp=False,subset=False)
+    # Distinct explicitly planned prefill lengths exercise the aggregate cold
+    # family search budget, not only the single-shape smoke case above.
+    many=args.output/'planned-many';many.mkdir();lines=[]
+    for index in range(12):
+        prompt=many/f'prompt{index}.ids';prompt.write_text(' '.join(['1']*(index+2))+'\n')
+        lines.extend((f'prompt {prompt.name}','generate 2'))
+    many_schedule=many/'schedule.txt';many_schedule.write_text('\n'.join(lines)+'\n')
+    observed=[]
+    for name,extra in (('auto',[]),('explicit',['--mtp','on','--mtp-max-drafts','3'])):
+        folder=many/name;folder.mkdir()
+        command=[str(args.hyle),'--inputs',str(args.inputs),'--backend','cuda','--capacity','2048',
+                 '--schedule',str(many_schedule),'--warmup-shapes','planned',*extra]
+        (folder/'command.txt').write_text(subprocess.list2cmdline(command)+'\n',encoding='utf-8')
+        with (folder/'stdout.log').open('wb') as stdout,(folder/'stderr.log').open('wb') as stderr:
+            result=subprocess.run(command,stdout=stdout,stderr=stderr,timeout=300)
+        error=(folder/'stderr.log').read_text(encoding='utf-8')
+        assert result.returncode==0,(name,error)
+        raw=json.loads((folder/'stdout.log').read_text(encoding='utf-8'))
+        assert raw['mtp'] and raw['mtp_max_drafts']==3 and raw['future_shape_hints']>0,name
+        assert raw['live_committed_versions']==0 and len(raw['sessions'][0]['result']['generated_ids'])==24,name
+        assert max(map(int,re.findall(r'compiled text finite family variants=(\d+)',error)),default=0)>=11,name
+        observed.append((raw['sessions'][0]['result']['generated_ids'],raw['sessions'][0]['ledger']))
+    assert observed[0]==observed[1],'planned many-shape auto differs from explicit K3'
+    print('PASS planned many-shape auto/explicit K3, outputs/ledger and retirement',flush=True)
     print('PASS automatic K3,explicit source-bound subsets,unchanged legacy and random defaults,stale/incomplete/row refusal,work/RNG/retirement',flush=True)
 
 

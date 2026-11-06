@@ -8897,7 +8897,7 @@ int qwen35::run(int argc, char **argv) {
             mtp_policy == "on" ? mtp::RequestedMode::kOn : mtp::RequestedMode::kAuto,
         .natural_generation = natural_generation, .multiple_schedules = multiple_schedules,
         .prefix_enabled = prefix_enabled, .scheduler_progress = progress,
-        .warmup_planned_shapes = warmup_planned_shapes, .max_sessions = max_sessions,
+        .max_sessions = max_sessions,
         .active_sequences = active_sequences, .capacity = capacity,
         .default_backend = backend_selection.primary == qwen35::BackendKind::kCuda,
         .cpu_ffn = cpu_ffn_layers != 0,
