@@ -25,15 +25,15 @@ int main() {
         request.greedy && request.automatic_head && request.automatic_vocabulary;
     if (m::inspect_prepared_vocabulary(request) != inspect)
       throw std::runtime_error("prepared asset inspection changed");
-    for (const bool exists : {false, true}) {
+    for (const bool exists : {false, true}) for (const bool original : {false, true}) {
       const bool prepared = inspect && exists;
       const bool route = request.natural_generation && !request.multiple_schedules &&
           !request.prefix_enabled && !request.scheduler_progress &&
           sessions <= 1 && active <= 1 && capacity >= 4 &&
           request.default_backend && !request.cpu_ffn && request.greedy && request.replay_supports_chain;
-      const bool automatic = prepared && route && depth <= 3;
+      const bool automatic = (prepared || (inspect && original)) && route && depth <= 3;
       const bool enabled = mode == m::RequestedMode::kOn || automatic;
-      const auto selected = m::select_default(request, exists);
+      const auto selected = m::select_default(request, exists, original);
       if (selected.automatic != automatic || selected.enabled != enabled ||
           selected.prepared_assets != (enabled && prepared))
         throw std::runtime_error("cold MTP policy changed an existing default or fallback");

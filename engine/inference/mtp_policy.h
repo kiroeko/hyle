@@ -40,9 +40,10 @@ struct DefaultSelection final {
 };
 
 constexpr DefaultSelection select_default(const DefaultRequest &request,
-    bool prepared_vocabulary_exists) noexcept {
+    bool prepared_vocabulary_exists, bool original_projection_eligible = false) noexcept {
   const bool prepared = inspect_prepared_vocabulary(request) && prepared_vocabulary_exists;
-  const bool automatic = prepared && request.natural_generation && !request.multiple_schedules &&
+  const bool available = prepared || (inspect_prepared_vocabulary(request) && original_projection_eligible);
+  const bool automatic = available && request.natural_generation && !request.multiple_schedules &&
       !request.prefix_enabled && !request.scheduler_progress &&
       request.max_sessions <= 1 && request.active_sequences <= 1 && request.capacity >= 4 &&
       !request.cpu_ffn && request.replay_supports_chain &&

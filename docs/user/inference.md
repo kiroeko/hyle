@@ -51,7 +51,7 @@ python scripts/build.py --name qwen-cuda --target hyle_engine --jobs 2
 
 ```text
 python engine/models/qwen35/prepare.py --model LOCAL_MODEL --output .scratch/qwen-input --prompt "Please calculate 2 + 3. Answer briefly."
-<build-dir>/bin/hyle --inputs .scratch/qwen-input --mtp off --steps 64 --capacity 1024
+<build-dir>/bin/hyle --inputs .scratch/qwen-input --steps 64 --capacity 1024
 ```
 
 输出目录必须是新目录，只保存偏移、token IDs 与输入记录，共用原权重文件。
@@ -102,7 +102,7 @@ Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-di
 
 `--mtp auto|off|on` 默认 `auto`。在符合条件的 CUDA 自然 greedy 生成中，来源匹配的 K3 命名制品优先选择 K3；
 没有该制品但目录有来源匹配的 `mtp-draft-vocabulary.ids` 时，
-自动选择原始草稿头的 K1。
+自动选择原始草稿头的 K1；没有词表制品时，具备完整 MTP 角色及 F32 量化路径的 GGUF 来源也可自动选择全词表 K1。
 其他情况默认关闭；`--mtp off` 强制普通生成。启用 MTP 会增加内存，收益取决于模型、词表和输入。
 `--mtp-max-drafts 1` 可覆盖已启用的 K3，按 K1 执行。
 `--mtp-max-drafts` 控制每轮最多提出的草稿数，自动 K3 制品为 3，其余默认为 1。`--mtp-min-probability` 设置

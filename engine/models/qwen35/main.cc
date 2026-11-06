@@ -8697,7 +8697,7 @@ int qwen35::run(int argc, char **argv) {
         "Usage: hyle --inputs DIR [options]\n"
         "  --inputs DIR                Locally prepared checkpoint and token IDs\n"
         "  --backend cpu|cuda|apple|vulkan  Primary backend; required when multiple GPU routes are compiled\n"
-        "  --mtp auto|off|on           Auto: prepared CUDA K3 or vocabulary K1; otherwise off\n"
+        "  --mtp auto|off|on           Auto: prepared K3, vocabulary K1, or eligible CUDA GGUF full-head K1\n"
         "  --mtp-max-drafts N          Maximum proposals; 0 disables drafting (default: prepared K3, otherwise 1)\n"
         "  --mtp-min-probability FLOAT  Stop below max draft probability, [0,1] (default: 0)\n"
         "  --mtp-draft-vocabulary auto|full|FILE  Prepared draft IDs (default: auto); greedy only\n"
@@ -8911,8 +8911,20 @@ int qwen35::run(int argc, char **argv) {
     const bool has_k3_vocabulary = inspect_vocabulary && exists(default_vocabulary);
     const bool has_generic_vocabulary = !has_k3_vocabulary && inspect_vocabulary &&
         default_request.mode == mtp::RequestedMode::kAuto && exists(generic_vocabulary);
+    bool original_projection_eligible = false;
+    if (!has_k3_vocabulary && !has_generic_vocabulary &&
+        default_request.mode == mtp::RequestedMode::kAuto &&
+        mtp::select_default(default_request, true).automatic) {
+      // A fully prepared GGUF inventory can supply its original MTP head;
+      // inspect only validated cold metadata and keep artifact selection separate.
+      const auto roles = qwen35::read_weight_roles(input / "weights.tsv", false);
+      original_projection_eligible = roles.representation == qwen35::prepared::SourceRepresentation::kGgufConverted &&
+          roles.geometry.mtp_layers == 1 &&
+          qwen35::PrecisionProfile::from_roles(roles).activation_type() == c::DataType::kFloat32 &&
+          qwen35::supports_stored_draft_projection(roles);
+    }
     const auto default_selection = mtp::select_default(default_request,
-        has_k3_vocabulary || has_generic_vocabulary);
+        has_k3_vocabulary || has_generic_vocabulary, original_projection_eligible);
     const bool automatic_k3 = default_selection.automatic && has_k3_vocabulary;
     mtp_enabled = default_selection.enabled;
     const bool select_prepared_assets = default_selection.prepared_assets;
@@ -8922,7 +8934,7 @@ int qwen35::run(int argc, char **argv) {
     if(draft_head=="original")draft_head.clear();
     else if(draft_head=="auto"){
       draft_head.clear();
-      if(mtp_enabled && max_drafts && !sampler.enabled && sampler.modifiers.empty() && min_draft_probability==0){
+      if(mtp_enabled && max_drafts && !sampler.enabled && sampler.modifiers.empty() && min_draft_probability==0 && !original_projection_eligible){
         const auto prepared=input/"mtp-draft-head.tsv";std::error_code error;
         const auto exists=std::filesystem::exists(prepared,error);
         if(error)throw std::runtime_error("cannot inspect prepared draft head: "+error.message());
