@@ -8902,7 +8902,7 @@ int qwen35::run(int argc, char **argv) {
         .default_backend = backend_selection.primary == qwen35::BackendKind::kCuda,
         .cpu_ffn = cpu_ffn_layers != 0,
         .greedy = !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0,
-        .default_replay = replay == qwen35::ReplayPolicy::kAuto,
+        .replay_supports_chain = replay != qwen35::ReplayPolicy::kCommands,
         .max_drafts = max_drafts, .automatic_head = draft_head == "auto",
         .automatic_vocabulary = draft_vocabulary == "auto"};
     const auto default_vocabulary = input / qwen35::kDefaultK3Vocabulary;

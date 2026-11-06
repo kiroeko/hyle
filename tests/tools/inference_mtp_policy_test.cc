@@ -30,7 +30,7 @@ int main() {
       const bool route = request.natural_generation && !request.multiple_schedules &&
           !request.prefix_enabled && !request.scheduler_progress && !request.warmup_planned_shapes &&
           sessions <= 1 && active <= 1 && capacity >= 4 && capacity <= 32768 &&
-          request.default_backend && !request.cpu_ffn && request.greedy && request.default_replay;
+          request.default_backend && !request.cpu_ffn && request.greedy && request.replay_supports_chain;
       const bool automatic = prepared && route && depth <= 3;
       const bool enabled = mode == m::RequestedMode::kOn || automatic;
       const auto selected = m::select_default(request, exists);

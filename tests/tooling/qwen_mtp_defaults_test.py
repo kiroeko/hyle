@@ -65,9 +65,12 @@ def check(args):
     serial=run('k3-without-overlap',['--mtp','on','--mtp-max-drafts','3','--decode-overlap','off'])
     assert automatic==serial
     assert serial==run('auto-without-overlap',['--decode-overlap','off'])
+    captured=run('explicit-prefer-capture',['--mtp','on','--mtp-max-drafts','3','--replay','prefer-capture'])
+    assert captured==run('auto-prefer-capture',['--replay','prefer-capture'])
     one=run('override-k1',['--mtp-max-drafts','1'],width=1)
     assert one==run('explicit-k1',['--mtp','on','--mtp-max-drafts','1'],width=1)
     ordinary=run('disable',['--mtp','off'],mtp=False,subset=False)
+    assert ordinary==run('auto-commands',['--replay','commands'],mtp=False,subset=False)
     assert ordinary==run('outside-default-context',['--capacity','65536'],mtp=False,subset=False)
     assert ordinary==run('legacy-default',inputs=args.output/'legacy',mtp=False,subset=False)
     run('legacy-enabled',['--mtp','on'],inputs=args.output/'legacy',width=1,subset=False)
