@@ -11,6 +11,22 @@ struct Result {
   std::vector<s::StateImage> states;
   std::vector<std::vector<std::int32_t>> emitted;
 };
+void cold_policy_facts() {
+  const q::GreedyChainCapabilities valid{3, 0, true, 1, 2, 3, true, true};
+  require(valid.available(), "complete K3 capability was refused");
+  auto changed = valid;
+  changed.max_drafts = 1; require(!changed.available(), "K1 selected the multi-stage chain");
+  changed = valid; changed.max_drafts = 4; require(!changed.available(), "unsupported depth selected the chain");
+  changed = valid; changed.minimum_probability = 0.1f; require(!changed.available(), "threshold selected the greedy chain");
+  changed = valid; changed.device_relay = false; require(!changed.available(), "missing device relay selected the chain");
+  changed = valid; changed.active_sequences = 2; require(!changed.available(), "multi-sequence selected the chain");
+  changed = valid; changed.auxiliary_hidden_rows = 1; require(!changed.available(), "missing hidden rows selected the chain");
+  changed = valid; changed.private_draft_stages = 2; require(!changed.available(), "missing private stage selected the chain");
+  changed = valid; changed.capture_allowed = false; require(!changed.available(), "commands-only replay selected the chain");
+  changed = valid; changed.supported_projection = false; require(!changed.available(), "unsupported projection selected the chain");
+  changed = valid; changed.max_drafts = 2; changed.private_draft_stages = 2;
+  require(changed.available(), "complete K2 capability was refused");
+}
 void zero_draft_cold(const std::filesystem::path &input) {
   for(const auto boundaries:{std::size_t{1},std::size_t{4}}){
   auto source=q::prepare_weight_source(input/"weights.tsv",true);const auto geometry=source.roles.geometry;
@@ -244,6 +260,7 @@ qwen_device_continuation_case::Result continuous_chain(const std::filesystem::pa
 }
 }
 int main(int argc,char**argv)try{
+  cold_policy_facts();
   if(argc==1){std::cerr<<"SKIP: pass prepared local C32 MTP inputs\n";return 77;}
   if(argc!=2)throw std::runtime_error("usage: qwen_mtp_chain_test PREPARED_LOCAL_INPUTS");
   zero_draft_cold(argv[1]);

@@ -709,6 +709,23 @@ struct ColdResources final {
   }
 };
 
+// Facts owned by the prepared model and endpoint. The sampler remains a
+// per-request decision; Source, state and retirement are still checked by
+// their original runtime owners.
+struct GreedyChainCapabilities final {
+  std::size_t max_drafts = 0;
+  float minimum_probability = 0;
+  bool device_relay = false;
+  std::size_t active_sequences = 0, auxiliary_hidden_rows = 0, private_draft_stages = 0;
+  bool capture_allowed = false, supported_projection = false;
+
+  constexpr bool available() const noexcept {
+    return max_drafts >= 2 && max_drafts <= 3 && minimum_probability == 0 && device_relay &&
+        active_sequences == 1 && auxiliary_hidden_rows >= 2 && private_draft_stages >= max_drafts &&
+        capture_allowed && supported_projection;
+  }
+};
+
 class Model final {
 public:
   struct Sampling final {
@@ -724,6 +741,7 @@ public:
 private:
   DraftPolicy draft_policy_;
   bool preparation_started_ = false;
+  bool greedy_chain_available_ = false;
   struct ColdFamilyOutcome final {
     std::optional<FamilyBuildResult> result;
     std::exception_ptr error;
@@ -758,6 +776,24 @@ public:
     if ((resources_->draft_vocabulary || resources_->draft_head) && (!policy.max_drafts || policy.minimum_probability != 0))
       throw std::runtime_error("prepared draft projection requires active drafting with zero minimum probability");
     draft_policy_ = policy;
+    bool supported_projection = false;
+    if (policy.max_drafts >= 2 && policy.max_drafts <= 3 && policy.minimum_probability == 0) {
+      const auto found = projections.find(geometry.head_role());
+      const auto *stored = found == projections.end() ? nullptr : std::get_if<StoredProjection>(&found->second);
+      if (stored && stored->weight) {
+        const auto &description = stored->weight->description;
+        if (description.is_plain()) supported_projection = true;
+        else {
+          const auto codec = c::gguf_quantized_type(description.storage_format());
+          supported_projection = codec && (*codec == c::GgufQuantizedType::kQ8_0 ||
+              *codec == c::GgufQuantizedType::kQ4K || *codec == c::GgufQuantizedType::kQ6K);
+        }
+      }
+    }
+    greedy_chain_available_ = GreedyChainCapabilities{policy.max_drafts, policy.minimum_probability,
+        DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler), false, false}.eligible(),
+        cache_plan.active_sequences, cache_plan.auxiliary_hidden_rows, cache_plan.private_draft_stages,
+        replay_policy != ReplayPolicy::kCommands, supported_projection}.available();
   }
   bool recursive_mtp() const noexcept { return max_drafts() && (max_drafts() > 1 || min_draft_probability() > 0); }
   bool device_mtp_successor_enabled() const noexcept { return device_mtp_successor_; }
@@ -1849,19 +1885,7 @@ public:
   // recursive rows may extend that private tail. Published Session tails are
   // never borrowed, so aborting proposal/verification leaves the old head valid.
   bool greedy_draft_chain_enabled(const SamplingConfiguration &sampling) const noexcept {
-    const bool eligible = max_drafts() >= 2 && max_drafts() <= 3 && min_draft_probability() == 0 &&
-        !sampling.enabled && sampling.modifiers.empty() && execution.kind() == BackendKind::kCuda &&
-        !execution.has_cpu_assist() && !scheduler && cache_plan.active_sequences == 1 &&
-        cache_plan.auxiliary_hidden_rows >= 2 && cache_plan.private_draft_stages>=max_drafts() && replay_policy != ReplayPolicy::kCommands;
-    if (!eligible) return false;
-    const auto found = projections.find(geometry.head_role());
-    const auto *stored = found == projections.end() ? nullptr : std::get_if<StoredProjection>(&found->second);
-    if(!stored || !stored->weight)return false;
-    const auto&description=stored->weight->description;
-    if(description.is_plain())return true;
-    const auto codec=c::gguf_quantized_type(description.storage_format());
-    return codec && (*codec==c::GgufQuantizedType::kQ8_0 || *codec==c::GgufQuantizedType::kQ4K ||
-        *codec==c::GgufQuantizedType::kQ6K);
+    return greedy_chain_available_ && !sampling.enabled && sampling.modifiers.empty();
   }
 
   // Each finite stage has independent COW writers from the same real base.
