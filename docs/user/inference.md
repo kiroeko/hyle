@@ -102,7 +102,8 @@ Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-di
 没有对应CLI参数或已安装的引擎SDK／server入口；其合同查[输入与请求政策](../../engine/models/qwen35/README.md#输入与数值政策)。
 
 `--mtp auto|off|on` 默认 `auto`。在符合条件的 CUDA 自然 greedy 生成中，完整的默认 K3 制品优先；
-没有该制品但目录有来源匹配的 `mtp-draft-vocabulary.ids` 时，自动选择原始草稿头的 K1。
+有效制品不符合 K3 优选条件时使用 K1。没有该制品但目录有来源匹配的 `mtp-draft-vocabulary.ids` 时，
+自动选择原始草稿头的 K1。
 其他情况默认关闭；`--mtp off` 强制普通生成。启用 MTP 会增加内存，收益取决于模型、词表和输入。
 `--mtp-max-drafts 1` 可覆盖已启用的 K3，按 K1 执行。
 `--mtp-max-drafts` 控制每轮最多提出的草稿数，合格默认 K3 制品为 3，其余为 1。`--mtp-min-probability` 设置

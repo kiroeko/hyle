@@ -86,7 +86,7 @@ def check(args):
     assert small_three==run('small-manual-k3',['--mtp','on','--mtp-max-drafts','3',
         '--mtp-draft-head',str(small/'mtp-draft-head.tsv'),
         '--mtp-draft-vocabulary',str(small/'mtp-draft-vocabulary-k3.ids')],inputs=small,rows=3)
-    assert ordinary==run('small-auto-fallback',inputs=small,mtp=False,subset=False)
+    assert small_one==run('small-auto-k1',inputs=small,width=1,rows=3)
     generic=args.output/'generic'
     generic_auto=run('generic-auto',inputs=generic,width=1,rows=3)
     assert generic_auto==run('generic-explicit',['--mtp','on','--mtp-max-drafts','1'],inputs=generic,width=1,rows=3)
@@ -95,7 +95,7 @@ def check(args):
     if 'SUBSET' in head[0]:
         run('reject-wrong-rows',inputs=args.output/'wrong-rows',error='bound draft vocabulary')
     else:
-        assert ordinary==run('wrong-rows-auto-fallback',inputs=args.output/'wrong-rows',mtp=False,subset=False)
+        assert small_one==run('wrong-rows-auto-k1',inputs=args.output/'wrong-rows',width=1,rows=3)
     for fixture,message in [('missing-head','requires its complete source-bound'),('stale','source identity differs')]:
         run('reject-'+fixture,inputs=args.output/fixture,error=message)
     assert ordinary==run('ignore-stale-disabled',['--mtp','off'],inputs=args.output/'stale',mtp=False,subset=False)
