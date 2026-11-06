@@ -77,6 +77,8 @@ constexpr HadamardFactors hadamard_factors(std::int64_t width) noexcept {
 HYLE_COMPUTE_PROVIDER_GGML_CUDA_API bool tensor_operation_supports(Operation, std::span<const TensorDesc>,
                                std::span<const TensorDesc>,
                                int native_device = -1) noexcept;
+bool shared_mmvq_projection_supported(const TensorDesc &, const TensorDesc &,
+                                      const TensorDesc &, int native_device) noexcept;
 ggml_tensor *create_tensor_input(ggml_context *, const TensorDesc &);
 std::vector<ggml_tensor *> lower_tensor_operation(
     ggml_context *, const Recipe &, const Node &, std::span<ggml_tensor *const>,

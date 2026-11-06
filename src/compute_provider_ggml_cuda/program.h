@@ -109,6 +109,9 @@ HYLE_COMPUTE_PROVIDER_GGML_CUDA_API bool
 supports_bfloat_paired_projection(void *context, std::uint64_t inner,
                                  std::uint64_t rows, std::uint64_t columns) noexcept;
 HYLE_COMPUTE_PROVIDER_GGML_CUDA_API bool
+supports_shared_mmvq_projection(void *context, const TensorDesc &, const TensorDesc &,
+                                const TensorDesc &) noexcept;
+HYLE_COMPUTE_PROVIDER_GGML_CUDA_API bool
 supports(void *context, Operation, std::span<const TensorDesc>,
          std::span<const TensorDesc>) noexcept;
 HYLE_COMPUTE_PROVIDER_GGML_CUDA_API bool

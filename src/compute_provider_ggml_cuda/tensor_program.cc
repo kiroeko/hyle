@@ -502,6 +502,27 @@ ggml_tensor *restore_axis(ggml_context *context, ggml_tensor *value,
 
 } // namespace
 
+bool shared_mmvq_projection_supported(const TensorDesc &activation, const TensorDesc &weight,
+                                      const TensorDesc &output, int device) noexcept {
+  if (!activation.valid() || !activation.is_plain() || !activation.is_dense() ||
+      activation.rank() != 2 || activation.data_type() != DataType::kFloat32 ||
+      activation.dimensions()[0] != 1 || !weight.valid() || weight.rank() != 2 ||
+      weight.data_type() != DataType::kFloat32 || weight.block_axis() != 0 ||
+      !output.valid() || !output.is_plain() || !output.is_dense() || output.rank() != 2 ||
+      output.data_type() != DataType::kFloat32 || output.dimensions()[0] != 1 ||
+      weight.dimensions()[0] != activation.dimensions()[1] ||
+      weight.dimensions()[1] != output.dimensions()[1])
+    return false;
+  const auto type = native_quantized_type(weight);
+  if (type == GGML_TYPE_COUNT) return false;
+  try {
+    return packed_matmul_plan(device, type, weight.dimensions()[0], weight.dimensions()[1], 1).route ==
+        PackedMatmulRoute::kMmvq;
+  } catch (...) {
+    return false;
+  }
+}
+
 std::size_t TensorBuildFrame::ShapeHash::operator()(
     const ShapeKey &key) const noexcept {
   auto hash = std::hash<ggml_tensor *>{}(key.source);
