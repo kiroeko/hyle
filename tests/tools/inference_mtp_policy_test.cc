@@ -49,6 +49,15 @@ int main() {
       m::selection_reason(typical, m::select_default(typical,false,true)) != "original_projection" ||
       m::selection_reason(typical, m::select_default(typical,true)) != "prepared_vocabulary")
     throw std::runtime_error("automatic source reason differs");
+  typical.capacity=3;
+  if (m::select_default(typical,true).enabled ||
+      m::selection_reason(typical, m::select_default(typical,true)) != "insufficient_capacity")
+    throw std::runtime_error("short-context auto policy differs");
+  typical.mode=m::RequestedMode::kOn;
+  if (!m::select_default(typical,true).enabled ||
+      m::selection_reason(typical, m::select_default(typical,true)) != "explicit_on")
+    throw std::runtime_error("short-context explicit route was blocked by auto policy");
+  typical.mode=m::RequestedMode::kAuto; typical.capacity=32768;
   typical.greedy=false;
   if (m::selection_reason(typical, m::select_default(typical,true)) != "sampling_or_draft_threshold")
     throw std::runtime_error("sampling fallback reason differs");

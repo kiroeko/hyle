@@ -45,6 +45,8 @@ constexpr DefaultSelection select_default(const DefaultRequest &request,
     bool prepared_vocabulary_exists, bool original_projection_eligible = false) noexcept {
   const bool prepared = inspect_prepared_vocabulary(request) && prepared_vocabulary_exists;
   const bool available = prepared || (inspect_prepared_vocabulary(request) && original_projection_eligible);
+  // Very short contexts are a default cost policy, not a model capability:
+  // explicit MTP remains available and the execution path clips its depth.
   const bool automatic = available && request.natural_generation && !request.multiple_schedules &&
       !request.prefix_enabled && !request.scheduler_progress &&
       request.max_sessions <= 1 && request.active_sequences <= 1 && request.capacity >= 4 &&
@@ -69,6 +71,7 @@ constexpr std::string_view selection_reason(const DefaultRequest &request,
   if (request.scheduler_progress) return "scheduler";
   if (request.cpu_ffn) return "cpu_ffn";
   if (!request.replay_supports_chain) return "replay_commands";
+  // This reason describes the automatic policy, not a backend rejection.
   if (request.capacity < 4) return "insufficient_capacity";
   if (!request.max_drafts || request.max_drafts > request.maximum_automatic_drafts)
     return "unsupported_draft_depth";
