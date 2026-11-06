@@ -129,12 +129,13 @@ inline Roles select_gguf_roles(const std::map<std::string,Role> &all,std::string
     if (extents[i-1].second>extents[i].first) throw std::runtime_error("prepared GGUF original ranges overlap");
   return result;
 }
-inline Roles read_gguf_roles(const std::filesystem::path &path,bool include_mtp) {
+inline Roles read_gguf_roles(const std::filesystem::path &path,bool include_mtp,bool available_mtp_only) {
   std::ifstream input(path);std::string signature,identity,line;
   read_manifest_line(input,signature,128);read_manifest_line(input,identity,65);read_manifest_line(input,line);
   for (auto *value:{&signature,&identity,&line}) if (value->ends_with('\r')) value->pop_back();
   if (signature!=gguf_role_signature) throw std::runtime_error("invalid prepared GGUF signature");
   const auto geometry = read_model_geometry(line);
+  if (available_mtp_only) include_mtp = include_mtp && geometry.mtp_layers == 1;
   read_manifest_line(input,line);
   OriginalSource source;
   std::istringstream header(line);std::string tag,extra;

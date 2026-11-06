@@ -585,14 +585,16 @@ std::optional<hyle::inference::DraftVocabulary> read_draft_vocabulary(
   return take(hyle::inference::DraftVocabulary::create(vocabulary, ids));
 }
 } // namespace
-PreparedWeightSource prepare_weight_source(const std::filesystem::path &manifest, bool include_mtp,
-    const std::filesystem::path &draft_vocabulary,const std::filesystem::path &draft_head) {
+namespace {
+PreparedWeightSource prepare_weight_source_metadata(const std::filesystem::path &manifest, bool include_mtp,
+    bool available_mtp_only, const std::filesystem::path &draft_vocabulary,const std::filesystem::path &draft_head) {
   const auto start = Clock::now();
   if (!include_mtp && !draft_vocabulary.empty())
     throw std::runtime_error("draft vocabulary requires MTP weights");
   if(!draft_head.empty() && !include_mtp)
     throw std::runtime_error("separate draft head requires MTP weights");
-  auto roles = read_weight_roles(manifest, include_mtp);
+  auto roles = prepared::read_roles(manifest, include_mtp, available_mtp_only);
+  const bool selected_mtp = std::ranges::any_of(roles.selected, [](const auto &role) { return role.name.starts_with("mtp."); });
   auto storage = read_cache_calibration(roles);
   const auto plain = take(c::CacheStorage::plain(PrecisionProfile::from_roles(roles).cache_type()));
   const auto plain_rows = cache_storage_row_bytes(roles.geometry, {plain, plain});
@@ -603,20 +605,49 @@ PreparedWeightSource prepare_weight_source(const std::filesystem::path &manifest
   // Original calibration selects target storage only. NextN keeps the source
   // activation's actual plain carrier, independently of target E4 byte size.
   cache::CacheRowBytes rows{{target_rows[0], target_rows[1]}, {}};
-  if (include_mtp) rows.draft = {plain_rows[0], plain_rows[1]};
-  auto vocabulary = include_mtp ? read_draft_vocabulary(draft_vocabulary, roles)
-                                : std::optional<hyle::inference::DraftVocabulary>{};
+  if (selected_mtp) rows.draft = {plain_rows[0], plain_rows[1]};
+  PreparedWeightSource source{std::move(roles), std::move(storage), rows,
+      std::chrono::duration<double>(Clock::now() - start).count(), {}, {}, {}};
+  if (selected_mtp) prepare_draft_assets(source, draft_vocabulary, draft_head);
+  return source;
+}
+} // namespace
+PreparedWeightSource prepare_weight_source(const std::filesystem::path &manifest, bool include_mtp,
+    const std::filesystem::path &draft_vocabulary,const std::filesystem::path &draft_head) {
+  return prepare_weight_source_metadata(manifest, include_mtp, false, draft_vocabulary, draft_head);
+}
+PreparedWeightSource prepare_available_mtp_weight_source(const std::filesystem::path &manifest) {
+  return prepare_weight_source_metadata(manifest, true, true, {}, {});
+}
+void discard_mtp_weight_source(PreparedWeightSource &source) {
+  if (source.draft_head || source.draft_vocabulary)
+    throw std::logic_error("decline MTP metadata before selecting proposal assets");
+  const auto begin = Clock::now();
+  std::erase_if(source.roles.selected, [](const auto &role) { return role.name.starts_with("mtp."); });
+  source.roles.bytes = 0;
+  for (const auto &role : source.roles.selected) source.roles.bytes = cache::add(source.roles.bytes, role.bytes);
+  source.cache_row_bytes.draft = {};
+  source.metadata_prepare_seconds += std::chrono::duration<double>(Clock::now() - begin).count();
+}
+void prepare_draft_assets(PreparedWeightSource &source,
+    const std::filesystem::path &draft_vocabulary, const std::filesystem::path &draft_head) {
+  const auto start = Clock::now();
+  if ((!draft_vocabulary.empty() || !draft_head.empty()) &&
+      !std::ranges::any_of(source.roles.selected, [](const auto &role) { return role.name.starts_with("mtp."); }))
+    throw std::runtime_error("draft assets require selected MTP weights");
+  auto vocabulary = read_draft_vocabulary(draft_vocabulary, source.roles);
   std::string vocabulary_identity;
   if (vocabulary)
     vocabulary_identity = hyle::inference::artifact::sha256(std::as_bytes(vocabulary->ids()));
-  auto head=draft_head.empty()?std::optional<PreparedDraftHeadSource>{}:read_draft_head_source(draft_head,roles);
+  auto head=draft_head.empty()?std::optional<PreparedDraftHeadSource>{}:read_draft_head_source(draft_head,source.roles);
   if(head && !head->vocabulary_identity.empty() && (!vocabulary ||
       head->vocabulary_identity!=vocabulary_identity ||
       head->role.shape[0]!=static_cast<std::int64_t>(vocabulary->size())))
     throw std::runtime_error("compact draft head requires its bound draft vocabulary");
-  return {std::move(roles), std::move(storage), rows,
-      std::chrono::duration<double>(Clock::now() - start).count(),
-      std::move(vocabulary), std::move(vocabulary_identity),std::move(head)};
+  source.draft_vocabulary = std::move(vocabulary);
+  source.draft_vocabulary_identity = std::move(vocabulary_identity);
+  source.draft_head = std::move(head);
+  source.metadata_prepare_seconds += std::chrono::duration<double>(Clock::now() - start).count();
 }
 LoadedWeight select_stored_weight_rows(Backend &backend, const LoadedWeight &weight,
     std::span<const std::int32_t> ids, const c::ResourceBudget &budget) {

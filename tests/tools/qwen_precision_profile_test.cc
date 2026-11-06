@@ -103,6 +103,22 @@ int main(int argc, char **argv) {
   require(f32_plan.hidden_row_bytes == 8192 && bf16_plan.hidden_row_bytes == 4096);
   require(f32_plan.row_bytes == bf16_plan.row_bytes && f32_plan.state_slots == 3);
   require(f32_plan.backing_bytes == bf16_plan.backing_bytes + 122880);
+  // The early device-capability probe uses these BatchCapacity fields before
+  // proposal assets are attached. Final resource accounting is rebuilt later.
+  g.mtp_layers = 1;
+  const auto probe = [&](PrecisionProfile precision) {
+    return cache::plan(g, {{1024,1024},{1024,1024}}, 128, 1, 128,
+        0, 1, 4, true, false, 3, 2, precision, 3);
+  };
+  const auto before_assets = probe({}), compact_assets = probe(f32);
+  require(PrecisionProfile{}.cache_type() == f32.cache_type() &&
+      before_assets.max_requests == compact_assets.max_requests &&
+      before_assets.max_query_rows == compact_assets.max_query_rows &&
+      before_assets.max_kv_rows == compact_assets.max_kv_rows &&
+      before_assets.max_pages == compact_assets.max_pages &&
+      before_assets.max_page_refs == compact_assets.max_page_refs);
+  require(before_assets.hidden_row_bytes != compact_assets.hidden_row_bytes &&
+      before_assets.backing_bytes != compact_assets.backing_bytes);
   e4.ct_mixed_policy.kind = prepared::CtMixedPolicy::Kind::kBlock128;
   require(PrecisionProfile::from_roles(e4).activation_type() == DataType::kBFloat16);
   e4.cache_policy = prepared::CachePolicy::kBFloat16OmitCalibration;
