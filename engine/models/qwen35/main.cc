@@ -3065,7 +3065,9 @@ public:
   }
 
   DecodeRecording prepare_prefill_recordings(std::size_t sampling_index) {
-    if (cache_plan.draft_cache || !bounded_prefill_rows) return {};
+    // A chunk covering the entire context cannot have a later state-only
+    // chunk. No such finite family exists or needs capture preparation.
+    if (cache_plan.draft_cache || !bounded_prefill_rows || bounded_prefill_rows >= capacity) return {};
     const auto &sampling = sampling_configuration(sampling_index).configuration;
     if (sampling.enabled || !sampling.modifiers.empty()) return {};
     return prepare_decode_recordings(sampling_index, false, nullptr,
@@ -9117,7 +9119,7 @@ int qwen35::run(int argc, char **argv) {
         qwen35::DeviceRelayCapabilities{backend_selection.primary, cpu_ffn_layers != 0,
             progress, sampler.enabled, !sampler.modifiers.empty()}.eligible() &&
         replay != qwen35::ReplayPolicy::kCommands && (trace.empty() || !trace_states) &&
-        (bounded_generation ? capacity >= 10 : std::ranges::any_of(generation_schedules, [](const auto &request) {
+        (bounded_generation ? capacity > 1 : std::ranges::any_of(generation_schedules, [](const auto &request) {
           return std::ranges::any_of(request.turns, [](const auto &turn) { return turn.max_outputs >= 10; });
         }));
     bool device_verification_selected = mtp_enabled && max_drafts > 1 && max_drafts <= qwen35::kMaximumDeviceMtpDrafts &&
