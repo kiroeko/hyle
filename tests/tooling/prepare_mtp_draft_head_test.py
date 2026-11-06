@@ -123,13 +123,25 @@ class DraftHeadPreparation(unittest.TestCase):
         self.assertEqual(list(map(int,ids[3].split())),list(range(114688)))
         self.assertEqual((self.work/'weights.tsv').read_text(),text)
 
-    def test_default_preparation_refuses_stale_duplicate_or_wrong_rows(self):
+    def test_default_preparation_refuses_stale_duplicate_or_invalid_rows(self):
         mapping,head,_=self.default_references();text=mapping.read_text()
         for invalid in [text.replace('a'*64,'b'*64),text.replace('114687 114686','114686 114686'),
-                        text.replace('114687 ','248320 '),text.replace('114687 ',''),text.replace('114687 ','-1 ')]:
+                        text.replace('114687 ','248320 '), '\n'.join(text.splitlines()[:3])+'\n',
+                        text.replace('114687 ','-1 ')]:
             with self.subTest(prefix=invalid[:80]):
                 mapping.write_text(invalid)
                 with self.assertRaises(ValueError):P.default_k3_inputs(self.work,mapping,head)
+
+    def test_ready_inputs_accept_other_model_geometry_and_subset_size(self):
+        mapping,head,text=self.default_references()
+        (self.work/'weights.tsv').write_text(text.replace('geometry 2048 6144','geometry 2048 8192'),encoding='utf-8')
+        mapping.write_text('hyle-draft-vocabulary-v1\n'+'a'*64+'\n248320\n'+
+                           ' '.join(map(str,reversed(range(131072))))+'\n',encoding='utf-8')
+        files=P.default_k3_inputs(self.work,mapping,head)
+        self.assertIn('geometry 2048 8192',files['weights.tsv'].decode())
+        ids=files[P.DEFAULT_K3_VOCABULARY].decode().splitlines()[3].split()
+        self.assertEqual(len(ids),131072)
+        self.assertEqual((ids[0],ids[-1]),('0','131071'))
 
     def test_unqualified_defaults_fail_before_quantizer_or_output_creation(self):
         self.source();mapping=self.work/'not-read.ids';out=self.work/'unqualified'

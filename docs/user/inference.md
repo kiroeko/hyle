@@ -194,9 +194,10 @@ hyle --inputs .scratch/mtp-ready --backend cuda --capacity 32768 --schedule <自
 
 已验证系统为Windows11 x64、RTX4070／SM8.9、驱动617.14、CUDA13.3.73。制品保存GGUF Q4_K行数据与原ID映射，
 其读取依赖相同Q4_K存储约定及兼容后端；其它系统未作本次性能验收。
-自动K3目前限原HF BF16 Qwen3.5-2B几何、BF16 KV、CUDA、容量4至32768、单会话自然greedy、零草稿概率阈值、
-lazy准备及默认接力／replay；CPU分置、prefix、多会话、scheduler和随机不自动启用。
-专用映射存在但头缺失、身份过期或行数不符时拒绝加载。普通独立头、旧32K目录和显式开关保留原策略。
+自动K3要求CUDA、容量至少4、单会话自然greedy、零草稿概率阈值，以及来源匹配的K3命名头和词表；
+CPU分置、prefix、多会话、scheduler、随机和`--replay commands`不自动启用。计划形状准备及关闭decode overlap均可使用自动MTP。
+专用映射存在但头缺失、身份过期或行数不符时拒绝加载。
+制品名表达K3偏好，本身不证明该模型或负载上K3最快；可用`--mtp-max-drafts 1`显式选择K1。
 这些条件只选择当前模型制品及执行政策，不读取未来prompt、接受结果或输出配额，不做动态K。
 离线转译只运行一次，不计入推理性能；冷启动加载与ready单列。主要比较实际输出除以prefill＋decode墙时，
 再分别列两个阶段；启动不摊入生成速度。完整进程值只作另列诊断。速度验收范围与启动、显存成本见[性能表](../developer/performance/decode.md#固定-k3本轮复测)。

@@ -44,7 +44,7 @@ q 与 p 复用同一不可变条件行；被取消或失败的候选不发布新
 
 词表选择与编码头转译是两个准备步骤。不同词表生产工具可输出相同的source-bound原ID文件；
 引擎不解释选词算法。当前验收使用生成词频降序、同频原ID升序选择，最后按原ID排序。
-默认采用114688行，显式映射仍由原完整词表大小限定，不是Compute／Graph容量上限。
+本机验证使用114688行，映射的实际行数由原完整词表大小限定，不是Compute／Graph容量上限。
 
 `prepare-mtp-draft-head.py --default-k3-vocabulary FILE` 离线生成可直接加载的Q4_K子集及原ID映射。
 子集元数据仍放在`mtp-draft-head.tsv`，UTF-8文本依次为：
