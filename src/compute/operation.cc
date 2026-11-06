@@ -18,6 +18,7 @@
 #include "backend_internal.h"
 #include "context_state.h"
 #include "hyle/compute/detail/capture_bindings.h"
+#include "hyle/compute/detail/cold_invocation.h"
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/queue_sequence.h"
 #include "prepared_state.h"
@@ -1947,6 +1948,32 @@ Result<detail::OperationPreparedAccess> detail::OperationPreparationAccess::insp
   struct Leave final { detail::ContextState *context; ~Leave(){context->admission.leave();} } leave{context};
   HYLE_ASSIGN_OR_RETURN(auto table, operation_access_table(*prepared, extension));
   return inspect_operation_access(*prepared, *table);
+}
+
+Result<bool> detail::OperationPreparationAccess::cold_invocation_workspace_independent(
+    const PreparedOperation &operation) noexcept {
+  const auto *prepared = operation.state_;
+  if (!prepared)
+    return std::unexpected(Status::InvalidArgument("cold invocation proof requires a prepared operation"));
+  auto *context = prepared->context;
+  if (!context->admission.try_enter())
+    return std::unexpected(Status::FailedPrecondition("context is closed"));
+  struct Leave final { detail::ContextState *context; ~Leave() { context->admission.leave(); } } leave{context};
+  for (std::size_t index = 0; index < context->provider_count; ++index) {
+    const auto &slot = context->providers()[index];
+    if (slot.instance != prepared->provider_instance) continue;
+    const auto *provider = detail::ProviderAccess::vtable(slot.provider);
+    const auto *capability = provider->query_extension
+        ? static_cast<const detail::ColdInvocationWorkspaceVTable *>(provider->query_extension(
+            slot.state, detail::kColdInvocationWorkspaceExtensionId)) : nullptr;
+    if (!capability || !capability->inspect) return false;
+    bool independent = false;
+    const auto status = capability->inspect(prepared->provider_prepared, &independent);
+    if (status.IsUnimplemented()) return false;
+    if (!status.ok()) return std::unexpected(status);
+    return independent;
+  }
+  return false;
 }
 
 Result<bool> detail::OperationPreparationAccess::preserves_capture_bindings(

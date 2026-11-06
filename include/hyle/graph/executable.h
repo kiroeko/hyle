@@ -958,6 +958,10 @@ public:
   HYLE_GRAPH_API std::size_t workspace_backing_count() const noexcept;
   HYLE_GRAPH_API bool supports_concurrent_invocations() const noexcept;
   HYLE_GRAPH_API bool is_shape_domain() const noexcept;
+  // Cold selected-artifact proof only: creation of independent Invocations
+  // does not access the bytes of their caller-shared workspace. It grants no
+  // permission for binding, capture or execution to overlap.
+  HYLE_GRAPH_API bool cold_invocation_workspace_independent() const noexcept;
   // False for a finite-exact parent (and an invalid handle). Its route counts,
   // workspace and required queues are zero; query a child or the Invocation's
   // executable for actual route requirements. No parent slot is constructed.

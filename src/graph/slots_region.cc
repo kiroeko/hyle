@@ -607,6 +607,13 @@ const ProviderRegionPreparedVTable prepared_table{
       s.sealed = true; return Status::Ok();
     },
     .query_extension = [](void *, c::ProviderExtensionId id) noexcept -> const void * {
+      static constexpr gd::RegionColdInvocationWorkspaceVTable cold_workspace{
+          .inspect = [](const ProviderRegionPrepared &prepared, bool *independent) noexcept -> Status {
+            if (!independent) return Status::InvalidArgument("slot store cold workspace output is null");
+            *independent = prepared.state != nullptr;
+            return Status::Ok();
+          }};
+      if (id == gd::kRegionColdInvocationWorkspaceExtensionId) return &cold_workspace;
       if (id == gd::kRegionBindingReleaseExtensionId) return &binding_release;
       if (id == detail::kStoreBindingExtensionId) return &store_binding;
       if (id == gd::kRegionCaptureBindingsExtensionId) return &capture_bindings;

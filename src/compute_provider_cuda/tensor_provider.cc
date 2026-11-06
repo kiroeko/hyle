@@ -256,6 +256,10 @@ const detail::ProviderPreparedVTable kPreparedVTable{
 };
 } // namespace
 
+bool cold_invocation_workspace_independent(const detail::ProviderPrepared &value) noexcept {
+  return value.vtable == &kPreparedVTable && value.state != nullptr;
+}
+
 bool preserves_capture_bindings(const detail::ProviderPrepared &value) noexcept {
   if (value.vtable != &kPreparedVTable || !value.state || value.workspace.size != 0 ||
       value.invocation_private_bytes != 0) return false;

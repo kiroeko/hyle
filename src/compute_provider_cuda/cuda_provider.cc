@@ -3,6 +3,7 @@
 #include "hyle/compute/sampling_ops.h"
 #include "hyle/compute/sequence_ops.h"
 #include "hyle/compute/detail/capture_bindings.h"
+#include "hyle/compute/detail/cold_invocation.h"
 
 #include <algorithm>
 #include <climits>
@@ -502,6 +503,17 @@ Status inspect_capture_bindings(const detail::ProviderPrepared &value, bool *pre
 }
 template<bool Sglang>
 const void *query_extension(void *,ProviderExtensionId id)noexcept{
+  static constexpr detail::ColdInvocationWorkspaceVTable cold_workspace{
+      .inspect=[](const detail::ProviderPrepared &value, bool *independent) noexcept -> Status {
+        if (!independent) return Status::InvalidArgument("CUDA cold workspace output is null");
+        const bool native = Sglang
+            ? value.vtable == &kPreparedVTable<true, false> || value.vtable == &kPreparedVTable<true, true>
+            : value.vtable == &kPreparedVTable<false, false>;
+        *independent = (native && value.state != nullptr) ||
+            (!Sglang && tensor::cold_invocation_workspace_independent(value));
+        return Status::Ok();
+      }};
+  if(id==detail::kColdInvocationWorkspaceExtensionId)return &cold_workspace;
   static constexpr detail::CaptureBindingsVTable capture{.inspect=&inspect_capture_bindings<Sglang>};
   if(id==detail::kCaptureBindingsExtensionId)return &capture;
   static constexpr detail::OperationAccessVTable access{

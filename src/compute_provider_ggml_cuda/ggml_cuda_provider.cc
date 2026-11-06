@@ -24,6 +24,7 @@
 #include <ggml-impl.h>
 
 #include "hyle/compute/detail/capture_bindings.h"
+#include "hyle/compute/detail/cold_invocation.h"
 #include "hyle/compute/detail/packed_row_matmul.h"
 #include "hyle/compute/route_policy.h"
 #include "hyle/container/small_vector.h"
@@ -1493,6 +1494,15 @@ Status inspect_projected_input(const detail::ProviderPrepared &value,
   return Status::Ok();
 }
 const void *query_extension(void *value, ProviderExtensionId id) noexcept {
+  static constexpr detail::ColdInvocationWorkspaceVTable cold_workspace{
+      .inspect = [](const detail::ProviderPrepared &prepared, bool *independent) noexcept -> Status {
+        if (!independent) return Status::InvalidArgument("ggml CUDA cold workspace output is null");
+        *independent = prepared.vtable == &kPrepared && prepared.state != nullptr;
+        // NativeWorkspace creates host binding-buffer metadata over the caller
+        // span; uploads in build() use separate per-Invocation scratch buffers.
+        return Status::Ok();
+      }};
+  if (id == detail::kColdInvocationWorkspaceExtensionId) return &cold_workspace;
   static constexpr detail::PackedRowMatMulSourceVTable row_source{
       [](void *context) noexcept -> bool {
         const auto *source = static_cast<const Context *>(context);

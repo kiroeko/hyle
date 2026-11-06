@@ -20,6 +20,7 @@
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/container/small_vector.h"
 #include "hyle/graph/executable.h"
+#include "hyle/graph/detail/cold_invocation.h"
 #include "hyle/graph/region_provider.h"
 #include "hyle/mem/lifetime_plan.h"
 #include "hyle/util/ref_counted.h"
@@ -213,6 +214,21 @@ public:
   Result<RegionInvocation>
   create_invocation(mem::BufferView workspace,
                     const mem::AllocatorRef &allocator) const noexcept;
+  Result<bool> cold_invocation_workspace_independent() const noexcept {
+    if (!valid() || !prepared_.vtable->query_extension) return false;
+    struct Call final { const PreparedRegion *region; bool independent = false; } call{this};
+    const auto status = source_.call(+[](void *, const void *, void *opaque) noexcept -> Status {
+      auto &call = *static_cast<Call *>(opaque);
+      const auto &prepared = call.region->prepared_;
+      const auto *capability = static_cast<const RegionColdInvocationWorkspaceVTable *>(
+          prepared.vtable->query_extension(prepared.state, kRegionColdInvocationWorkspaceExtensionId));
+      if (!capability || !capability->inspect) return Status::Ok();
+      return capability->inspect(prepared, &call.independent);
+    }, &call);
+    if (status.IsUnimplemented()) return false;
+    if (!status.ok()) return std::unexpected(status);
+    return call.independent;
+  }
   compute::detail::EnqueueResult
   enqueue_prevalidated(
       void *invocation, compute::detail::QueueSequence &sequence,
@@ -961,6 +977,7 @@ struct PlanState final : util::RefCounted<PlanState> {
   WorkspaceReusePolicy workspace_reuse =
       WorkspaceReusePolicy::kExistingOrderOnly;
   bool supports_concurrent_invocations = true;
+  bool cold_invocation_workspace_independent = false;
   std::atomic<bool> exclusive_in_flight{false};
   SpecializationSignature specialization{};
   // Sparse facts over the final selected physical topology, ordered by logical

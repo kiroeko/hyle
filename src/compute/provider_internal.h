@@ -157,6 +157,9 @@ struct ProviderVTable final {
 // one configured provider without leaking provider state or retaining caller
 // spans. Exact preparation revalidates the proposal identity and resources.
 struct OperationPreparationAccess final {
+  // A missing/declined exact-artifact capability preserves exclusive workspace.
+  HYLE_COMPUTE_API static Result<bool>
+  cold_invocation_workspace_independent(const PreparedOperation &) noexcept;
   HYLE_COMPUTE_API static Result<OperationPreparedAccess>
   inspect_access(const PreparedOperation &, ProviderExtensionId) noexcept;
   // Cold selected-artifact proof; missing/declined capability is false.

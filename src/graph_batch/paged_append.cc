@@ -1,6 +1,7 @@
 #include "paged_append.h"
 #include "pending_read_merge.h"
 #include "hyle/graph/detail/source_binding_access.h"
+#include "hyle/graph/detail/cold_invocation.h"
 #include "hyle/compute/detail/batch_provider.h"
 #include "hyle/compute/detail/paged_arena_access.h"
 #include "hyle/compute/detail/paged_append_program.h"
@@ -992,6 +993,12 @@ const ProviderRegionPreparedVTable table{
    s.sealed=true;return Status::Ok();
  },
  .query_extension=[](void*,c::ProviderExtensionId id)noexcept->const void*{
+   static constexpr gd::RegionColdInvocationWorkspaceVTable cold_workspace{
+     .inspect=[](const ProviderRegionPrepared&prepared,bool*independent)noexcept->Status{
+       if(!independent)return Status::InvalidArgument("paged append cold workspace output is null");
+       *independent=prepared.state!=nullptr;return Status::Ok();
+     }};
+   if(id==gd::kRegionColdInvocationWorkspaceExtensionId)return &cold_workspace;
    if(id==gd::kRegionBindingReleaseExtensionId)return &binding_release;
    if(id==gd::kRegionCaptureBindingsExtensionId)return &capture_bindings;
    if(id==gd::kRegionProjectedWriteExtensionId)return &projected_write;

@@ -55,6 +55,25 @@ Status invocation_allocation_failure() noexcept {
   return Status::ResourceExhausted("graph invocation allocation failed");
 }
 
+Result<bool> cold_workspace_independent(const detail::PlanState &plan) noexcept {
+  // Runtime-specialized artifacts do not exist until Invocation creation.
+  if (plan.domain_graph.valid() || !plan.supports_concurrent_invocations ||
+      plan.step_workspace_requests.size() != plan.steps.size()) return false;
+  for (std::size_t i = 0; i < plan.steps.size(); ++i) {
+    const auto &step = plan.steps[i];
+    if (!step.emits_command() ||
+        (step.kind != detail::PlanStepKind::kOperation && !step.region.valid())) continue;
+    // Even with no workspace, creation must explicitly support concurrent
+    // calls on the same prepared artifact. Unknown providers stay serialized.
+    const auto independent = step.region.valid()
+        ? step.region.cold_invocation_workspace_independent()
+        : compute::detail::OperationPreparationAccess::cold_invocation_workspace_independent(step.operation);
+    if (!independent) return std::unexpected(independent.error());
+    if (!*independent) return false;
+  }
+  return true;
+}
+
 std::uint64_t hash_word(std::uint64_t hash, std::uint64_t word) noexcept {
   constexpr std::uint64_t kPrime = 1099511628211ULL;
   for (std::size_t byte = 0; byte < sizeof(word); ++byte) {
@@ -9415,6 +9434,9 @@ std::size_t Executable::workspace_backing_count() const noexcept {
 bool Executable::supports_concurrent_invocations() const noexcept {
   return state_ != nullptr && state_->supports_concurrent_invocations;
 }
+bool Executable::cold_invocation_workspace_independent() const noexcept {
+  return state_ != nullptr && state_->cold_invocation_workspace_independent;
+}
 
 bool Executable::is_shape_domain() const noexcept {
   return state_ != nullptr && state_->domain_graph.valid();
@@ -9587,9 +9609,14 @@ Result<Invocation> Executable::create_invocation_impl(
         }();
   if (!workspace)
     return std::unexpected(std::move(workspace).error());
-  // Providers can initialize their assigned scratch during cold creation.
-  // The shared writer is admitted before constructing any borrowing provider.
-  HYLE_ASSIGN_OR_RETURN(auto workspace_preparation, workspace->begin_preparation());
+  // Unknown providers may initialize scratch during creation. Only a proof
+  // over every selected workspace-bearing artifact permits concurrent cold
+  // creation; binding, capture and submit retain the original writer admission.
+  std::optional<compute::LeaseUseBatch> workspace_preparation;
+  if (!shared_workspace || !state_->cold_invocation_workspace_independent) {
+    HYLE_ASSIGN_OR_RETURN(auto use, workspace->begin_preparation());
+    workspace_preparation.emplace(std::move(use));
+  }
 
   void *storage = allocator.allocate(
       detail::InvocationState::allocation_bytes(budget != nullptr),
@@ -11414,6 +11441,12 @@ Result<CompiledGraph> compile_plan(
     detail::release(plan);
     return std::unexpected(std::move(status));
   }
+  auto cold_proof = cold_workspace_independent(*plan);
+  if (!cold_proof) {
+    detail::release(plan);
+    return std::unexpected(std::move(cold_proof).error());
+  }
+  plan->cold_invocation_workspace_independent = *cold_proof;
   CompiledGraph result;
   auto *report_state = detail::CompileReportAccess::state(report);
   report_state->total_search = plan->search;
