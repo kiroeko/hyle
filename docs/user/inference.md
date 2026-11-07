@@ -106,6 +106,8 @@ prefill 保留原路径，后继只使用已有实际捕获。
 `mtp-draft-vocabulary.ids` 可以选择 MTP；制品可推荐草稿数，没有推荐时选择 K1。
 没有词表制品时，具备完整 MTP 角色及 F32 量化路径的 GGUF 来源也可自动选择全词表 K1。
 其他情况默认关闭；`--mtp off` 强制普通生成。启用 MTP 会增加内存，收益取决于模型、词表和输入。
+在自动策略允许的执行条件下，显式选择草稿头或词表也可启用 MTP；`mtp_selection_reason` 会报告 `explicit_draft_asset`。
+关闭 MTP 或草稿数为 0 时，不读取未使用的草稿制品；实际选中的无效或来源不符制品会报错。
 JSON 的 `mtp_selection_reason` 报告冷期选择或回落原因，`mtp_depth_source` 说明草稿数来自显式参数、制品推荐还是配置默认值。
 其中 `insufficient_capacity` 表示配置容量低于自动策略的阈值，并不代表后端不支持 MTP；显式启用仍受实际容量和能力限制。
 `--mtp-max-drafts 1` 可覆盖已启用的 K3，按 K1 执行。
@@ -122,6 +124,7 @@ JSON 的 `mtp_selection_reason` 报告冷期选择或回落原因，`mtp_depth_s
 文件不存在或采样政策不适用时使用完整词表；
 存在但source identity不匹配时拒绝加载。`--mtp-draft-vocabulary full` 强制完整词表作对照，
 也可用 `--mtp-draft-vocabulary FILE` 显式选择另一份准备文件。
+选择完整词表时，自动发现的compact头不适用，引擎改用原始头；显式指定不匹配的compact头会报错。
 支持原BF16／F16／F32稠密head；CUDA还支持GGUF Q8_0／Q4_K／Q5_K／Q6_K编码行的子集，保持原量化代码与scale字节。
 Q5_K 的行复制、1～4行投影与原ID映射已用合成数据验证；完整Q5_K头的本地2B模型已验证CUDA单请求greedy的自动K1与K3。
 可用于K1与多草稿；完整target head与embedding继续保留。编码行副本目前只验证CUDA，其它后端明确拒绝。

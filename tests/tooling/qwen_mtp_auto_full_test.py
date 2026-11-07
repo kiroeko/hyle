@@ -19,6 +19,8 @@ def main():
         reports = {}
         for mode, flags in (
             ('auto', []),
+            ('auto-manual', ['--mtp-draft-head', 'original', '--mtp-draft-vocabulary', 'full']),
+            ('auto-full', ['--mtp-draft-vocabulary', 'full']),
             ('k1', ['--mtp', 'on', '--mtp-max-drafts', '1',
                     '--mtp-draft-head', 'original', '--mtp-draft-vocabulary', 'full']),
             ('off', ['--mtp', 'off']),
@@ -44,8 +46,10 @@ def main():
             if result.returncode:
                 raise RuntimeError(f'{label}/{mode}: see {folder}')
             raw = json.loads(result.stdout.decode('utf-8-sig'))
-            expected = mode in ('auto', 'k1', 'on-zero', 'commands-auto', 'commands-k1', 'auto-k4', 'explicit-k4')
+            expected = mode in ('auto', 'auto-manual', 'auto-full', 'k1', 'on-zero', 'commands-auto', 'commands-k1', 'auto-k4', 'explicit-k4')
             reasons = {'auto': ('original_projection', 'configured_default'),
+                       'auto-manual': ('explicit_draft_asset', 'configured_default'),
+                       'auto-full': ('explicit_draft_asset', 'configured_default'),
                        'k1': ('explicit_on', 'explicit'), 'off': ('explicit_off', 'disabled'),
                        'auto-zero': ('drafting_disabled', 'disabled'),
                        'off-zero': ('explicit_off', 'disabled'),
@@ -58,7 +62,7 @@ def main():
                        'random-off': ('explicit_off', 'disabled')}
             assert (raw['mtp_selection_reason'], raw['mtp_depth_source']) == reasons[mode], (label, mode)
             expected_depth = 4 if mode in ('auto-k4', 'explicit-k4') else int(
-                mode in ('auto', 'k1', 'commands-auto', 'commands-k1'))
+                mode in ('auto', 'auto-manual', 'auto-full', 'k1', 'commands-auto', 'commands-k1'))
             assert raw['mtp'] == expected and raw['mtp_max_drafts'] == expected_depth, (label, mode)
             if mode in ('auto-k4', 'explicit-k4'):
                 assert raw['future_shape_hints'] == 0, (label, mode)
@@ -66,7 +70,8 @@ def main():
             assert raw['draft_vocabulary_rows'] == 0, (label, mode)
             assert raw['live_committed_versions'] == 0, (label, mode)
             reports[mode] = raw['sessions'][0]
-        for actual, reference in (('auto', 'k1'), ('commands-auto', 'commands-k1'), ('auto-k4', 'explicit-k4'),
+        for actual, reference in (('auto', 'k1'), ('auto-manual', 'k1'), ('auto-full', 'k1'),
+                                  ('commands-auto', 'commands-k1'), ('auto-k4', 'explicit-k4'),
                                   ('auto-zero', 'off'), ('off-zero', 'off'),
                                   ('random-auto', 'random-off')):
             assert reports[actual]['result']['generated_ids'] == reports[reference]['result']['generated_ids'], (label, actual)

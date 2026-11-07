@@ -559,16 +559,21 @@ PreparedWeightSource prepare_weight_source(const std::filesystem::path &manifest
   std::string vocabulary_identity;
   if (vocabulary)
     vocabulary_identity = hyle::inference::artifact::sha256(std::as_bytes(vocabulary->ids()));
-  auto selected_head = draft_head;
-  if (selected_head.empty() && auto_draft_head && include_mtp &&
+  auto head = draft_head.empty() ? std::optional<PreparedDraftHeadSource>{}
+                                 : read_draft_head_source(draft_head, roles);
+  if (!head && auto_draft_head && include_mtp &&
       (draft_vocabulary.empty() || preferences.head == hyle::inference::DraftHeadPreference::kPrepared)) {
     const auto candidate = manifest.parent_path() / "mtp-draft-head.tsv";
     std::error_code error;
     const auto exists = std::filesystem::exists(candidate, error);
     if (error) throw std::runtime_error("cannot inspect prepared draft head: " + error.message());
-    if (exists) selected_head = candidate;
+    if (exists) {
+      auto automatic_head = read_draft_head_source(candidate, roles);
+      // A compact head cannot implement an explicitly requested full
+      // vocabulary. The original head remains a valid automatic fallback.
+      if (vocabulary || automatic_head.vocabulary_identity.empty()) head = std::move(automatic_head);
+    }
   }
-  auto head=selected_head.empty()?std::optional<PreparedDraftHeadSource>{}:read_draft_head_source(selected_head,roles);
   if(head && !head->vocabulary_identity.empty() && (!vocabulary ||
       head->vocabulary_identity!=vocabulary_identity ||
       head->role.shape[0]!=static_cast<std::int64_t>(vocabulary->size())))

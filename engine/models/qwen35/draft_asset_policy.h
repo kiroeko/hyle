@@ -32,10 +32,11 @@ inline DraftAssetSelection select_draft_assets(const std::filesystem::path &inpu
     return present;
   };
   const auto prepared_vocabulary = input / "mtp-draft-vocabulary.ids";
+  const bool explicit_asset_selection = vocabulary != "auto" || head != "auto";
   const bool has_vocabulary = mtp::inspect_prepared_vocabulary(request) &&
       inspect(prepared_vocabulary, "cannot inspect prepared MTP defaults: ");
   bool original_projection_eligible = false;
-  if (!has_vocabulary && request.mode == mtp::RequestedMode::kAuto &&
+  if (!has_vocabulary && !explicit_asset_selection && request.mode == mtp::RequestedMode::kAuto &&
       mtp::select_default(request, true).automatic) {
     const auto roles = read_weight_roles(input / "weights.tsv", false);
     original_projection_eligible = roles.representation == prepared::SourceRepresentation::kGgufConverted &&
@@ -43,7 +44,9 @@ inline DraftAssetSelection select_draft_assets(const std::filesystem::path &inpu
         PrecisionProfile::from_roles(roles).activation_type() == hyle::compute::DataType::kFloat32 &&
         supports_stored_draft_projection(roles);
   }
-  const auto policy = mtp::select_default(request, has_vocabulary, original_projection_eligible);
+  const auto policy = mtp::select_default(request, has_vocabulary, original_projection_eligible,
+      explicit_asset_selection);
+  if (!policy.enabled || !request.max_drafts) return {policy, {}, {}, false};
   bool auto_head = false;
   if (head == "original") head.clear();
   else if (head == "auto") {

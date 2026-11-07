@@ -20,20 +20,23 @@ int main() {
     const auto flag = [bits](unsigned bit) { return (bits & (1u << bit)) != 0; };
     const m::DefaultRequest request{mode, flag(0), flag(1), flag(2), flag(3),
         sessions, active, capacity, flag(4), flag(5), flag(6),
-        depth, flag(8), flag(9)};
+        depth, flag(9)};
     const bool inspect = mode != m::RequestedMode::kOff && depth > 0 && request.automatic_backend_eligible &&
-        request.greedy && request.automatic_head && request.automatic_vocabulary;
+        request.greedy && request.automatic_vocabulary;
     if (m::inspect_prepared_vocabulary(request) != inspect)
       throw std::runtime_error("prepared asset inspection changed");
-    for (const bool exists : {false, true}) for (const bool original : {false, true}) {
+    for (const bool exists : {false, true}) for (const bool original : {false, true})
+      for (const bool explicit_asset : {false, true}) {
       const bool prepared = inspect && exists;
+      const bool source_allowed = mode != m::RequestedMode::kOff && depth > 0 &&
+          request.automatic_backend_eligible && request.greedy;
       const bool route = request.natural_generation && !request.multiple_schedules &&
           !request.prefix_enabled && !request.scheduler_progress &&
           sessions <= 1 && active <= 1 && capacity >= 4 &&
           request.automatic_backend_eligible && !request.cpu_ffn && request.greedy;
-      const bool automatic = (prepared || (inspect && original)) && route;
+      const bool automatic = (prepared || (source_allowed && (original || explicit_asset))) && route;
       const bool enabled = mode == m::RequestedMode::kOn || automatic;
-      const auto selected = m::select_default(request, exists, original);
+      const auto selected = m::select_default(request, exists, original, explicit_asset);
       if (selected.automatic != automatic || selected.enabled != enabled ||
           selected.prepared_assets != (enabled && prepared))
         throw std::runtime_error("cold MTP policy changed an existing default or fallback");
@@ -42,10 +45,11 @@ int main() {
   }
   m::DefaultRequest typical{.mode=m::RequestedMode::kAuto, .natural_generation=true,
       .capacity=32768, .automatic_backend_eligible=true, .greedy=true,
-      .max_drafts=1, .automatic_head=true, .automatic_vocabulary=true};
+      .max_drafts=1, .automatic_vocabulary=true};
   if (m::select_default(typical,false).reason != "no_eligible_source" ||
       m::select_default(typical,false,true).reason != "original_projection" ||
-      m::select_default(typical,true).reason != "prepared_vocabulary")
+      m::select_default(typical,true).reason != "prepared_vocabulary" ||
+      m::select_default(typical,false,false,true).reason != "explicit_draft_asset")
     throw std::runtime_error("automatic source reason differs");
   const auto automatic=m::select_default(typical,true);
   const auto recommended=m::select_draft_depth(automatic,false,1,2);
@@ -68,7 +72,6 @@ int main() {
       ConstraintCase{+[](m::DefaultRequest &r) { r.natural_generation=false; }, "non_natural_request"},
       ConstraintCase{+[](m::DefaultRequest &r) { r.automatic_backend_eligible=false; }, "backend_policy"},
       ConstraintCase{+[](m::DefaultRequest &r) { r.greedy=false; }, "sampling_or_draft_threshold"},
-      ConstraintCase{+[](m::DefaultRequest &r) { r.automatic_head=false; }, "manual_draft_asset"},
       ConstraintCase{+[](m::DefaultRequest &r) { r.active_sequences=2; }, "multiple_sessions_or_sequences"},
       ConstraintCase{+[](m::DefaultRequest &r) { r.prefix_enabled=true; }, "prefix_cache"},
       ConstraintCase{+[](m::DefaultRequest &r) { r.scheduler_progress=true; }, "scheduler"},

@@ -22,15 +22,13 @@ struct DefaultRequest final {
   bool cpu_ffn = false;
   bool greedy = false;
   std::size_t max_drafts = 0;
-  bool automatic_head = false;
   bool automatic_vocabulary = false;
 };
 
 // Avoid inspecting an unused artifact, including errors from its filesystem.
 constexpr bool inspect_prepared_vocabulary(const DefaultRequest &request) noexcept {
   return request.mode != RequestedMode::kOff && request.max_drafts > 0 &&
-      request.automatic_backend_eligible && request.greedy && request.automatic_head &&
-      request.automatic_vocabulary;
+      request.automatic_backend_eligible && request.greedy && request.automatic_vocabulary;
 }
 
 struct DefaultSelection final {
@@ -63,7 +61,6 @@ constexpr std::string_view automatic_constraint(const DefaultRequest &request) n
   if (!request.natural_generation) return "non_natural_request";
   if (!request.automatic_backend_eligible) return "backend_policy";
   if (!request.greedy) return "sampling_or_draft_threshold";
-  if (!request.automatic_head || !request.automatic_vocabulary) return "manual_draft_asset";
   if (request.multiple_schedules || request.max_sessions > 1 || request.active_sequences > 1)
     return "multiple_sessions_or_sequences";
   if (request.prefix_enabled) return "prefix_cache";
@@ -75,15 +72,17 @@ constexpr std::string_view automatic_constraint(const DefaultRequest &request) n
 }
 
 constexpr DefaultSelection select_default(const DefaultRequest &request,
-    bool prepared_vocabulary_exists, bool original_projection_eligible = false) noexcept {
+    bool prepared_vocabulary_exists, bool original_projection_eligible = false,
+    bool explicit_asset_selection = false) noexcept {
   const bool prepared = inspect_prepared_vocabulary(request) && prepared_vocabulary_exists;
-  const bool available = prepared || (inspect_prepared_vocabulary(request) && original_projection_eligible);
+  const bool available = prepared || original_projection_eligible || explicit_asset_selection;
   const auto constraint = automatic_constraint(request);
-  const bool automatic = available && constraint.empty();
+  const bool automatic = request.mode != RequestedMode::kOff && available && constraint.empty();
   const bool enabled = request.mode == RequestedMode::kOn || automatic;
   const auto reason = request.mode == RequestedMode::kOff ? "explicit_off" :
       request.mode == RequestedMode::kOn ? "explicit_on" :
       !constraint.empty() ? constraint : !automatic ? "no_eligible_source" :
+      explicit_asset_selection ? "explicit_draft_asset" :
       prepared ? "prepared_vocabulary" : "original_projection";
   return {automatic, enabled, enabled && prepared, reason};
 }

@@ -35,7 +35,7 @@ def check(args):
             if name=='generic-stale':text=text.replace(text.splitlines()[1],'0'*64,1)
             (folder/'mtp-draft-vocabulary.ids').write_text(text,encoding='utf-8')
 
-    def run(name,extra=(),inputs=None,mtp=True,width=3,subset=True,error=None,rows=114688):
+    def run(name,extra=(),inputs=None,mtp=True,width=3,subset=True,error=None,rows=114688,head_rows=None):
         folder=args.output/name;folder.mkdir()
         command=[str(args.hyle),'--inputs',str(inputs or args.inputs),'--backend','cuda','--capacity','2048',
                  '--schedule',str(schedule),*extra]
@@ -62,13 +62,21 @@ def check(args):
                  'auto-commands':('prepared_vocabulary','artifact_recommendation'),
                  'legacy-default':('no_eligible_source','disabled'),
                  'missing-head-auto':('prepared_vocabulary','artifact_recommendation'),
+                 'small-auto-manual-k3':('explicit_draft_asset','explicit'),
+                 'small-auto-vocabulary-file':('explicit_draft_asset','artifact_recommendation'),
+                 'small-auto-head-file':('explicit_draft_asset','artifact_recommendation'),
+                 'full-auto-original':('explicit_draft_asset','configured_default'),
+                 'full-auto-head':('explicit_draft_asset','configured_default'),
+                 'off-ignores-explicit':('explicit_off','disabled'),
+                 'zero-ignores-explicit':('drafting_disabled','disabled'),
                  'generic-auto':('prepared_vocabulary','configured_default'),
                  'random-auto':('sampling_or_draft_threshold','disabled')}
         if name in reasons:
             assert (raw['mtp_selection_reason'],raw['mtp_depth_source'])==reasons[name],name
         assert raw['mtp']==mtp and raw['mtp_max_drafts']==(width if mtp else 0),name
         assert raw['draft_vocabulary_rows']==(rows if subset else 0),name
-        assert raw['draft_head_rows']==(rows if subset else 248320 if mtp else 0),name
+        expected_head_rows = (rows if subset else 248320 if mtp else 0) if head_rows is None else head_rows
+        assert raw['draft_head_rows']==expected_head_rows,name
         assert raw['live_committed_versions']==0,name
         planned='--warmup-shapes' in extra and extra[extra.index('--warmup-shapes')+1]=='planned'
         if raw['sampling']=='greedy':
@@ -114,6 +122,13 @@ def check(args):
     assert small_three==run('small-manual-k3',['--mtp','on','--mtp-max-drafts','3',
         '--mtp-draft-head',str(small/'mtp-draft-head.tsv'),
             '--mtp-draft-vocabulary',str(small/'mtp-draft-vocabulary.ids')],inputs=small,rows=3)
+    assert small_three==run('small-auto-manual-k3',['--mtp-max-drafts','3',
+        '--mtp-draft-head',str(small/'mtp-draft-head.tsv'),
+        '--mtp-draft-vocabulary',str(small/'mtp-draft-vocabulary.ids')],inputs=small,rows=3)
+    assert small_three==run('small-auto-vocabulary-file',
+        ['--mtp-draft-vocabulary',str(small/'mtp-draft-vocabulary.ids')],inputs=small,rows=3)
+    assert small_three==run('small-auto-head-file',
+        ['--mtp-draft-head',str(small/'mtp-draft-head.tsv')],inputs=small,rows=3)
     assert small_three==run('small-auto-k3',inputs=small,rows=3)
     assert small_one==run('small-auto-explicit-k1',['--mtp-max-drafts','1'],inputs=small,width=1,rows=3)
     generic=args.output/'generic'
@@ -122,6 +137,9 @@ def check(args):
     assert generic_auto==run('generic-head-original',inputs=args.output/'generic-head',width=1,rows=3)
     assert ordinary==run('generic-off',['--mtp','off'],inputs=generic,mtp=False,subset=False)
     run('reject-generic-stale',inputs=args.output/'generic-stale',error='source identity differs')
+    run('reject-explicit-vocabulary-stale',
+        ['--mtp-draft-vocabulary',str(args.output/'generic-stale'/'mtp-draft-vocabulary.ids')],
+        error='source identity differs')
     if 'SUBSET' in head[0]:
         run('reject-wrong-rows',inputs=args.output/'wrong-rows',error='bound draft vocabulary')
     else:
@@ -131,9 +149,25 @@ def check(args):
     assert original_auto==run('missing-head-explicit',
         ['--mtp','on','--mtp-max-drafts','3','--mtp-draft-head','original',
          '--mtp-draft-vocabulary',str(missing/'mtp-draft-vocabulary.ids')],inputs=missing)
+    assert original_auto==run('missing-head-auto-original',
+        ['--mtp-draft-head','original'],inputs=missing)
     run('reject-stale',inputs=args.output/'stale',error='source identity differs')
     assert ordinary==run('ignore-stale-disabled',['--mtp','off'],inputs=args.output/'stale',mtp=False,subset=False)
     assert ordinary==run('ignore-stale-zero',['--mtp-max-drafts','0'],inputs=args.output/'stale',mtp=False,subset=False)
+    unused=['--mtp-draft-head',str(args.output/'missing-head.tsv'),
+            '--mtp-draft-vocabulary',str(args.output/'missing-vocabulary.ids')]
+    assert ordinary==run('off-ignores-explicit',['--mtp','off',*unused],mtp=False,subset=False)
+    assert ordinary==run('zero-ignores-explicit',['--mtp-max-drafts','0',*unused],mtp=False,subset=False)
+    run('reject-auto-missing-vocabulary', ['--mtp-draft-vocabulary',unused[3]], error='draft vocabulary file does not exist')
+    run('reject-auto-missing-head', ['--mtp-draft-head',unused[1]], error='draft head requires a bounded regular metadata file')
+    full=run('full-explicit-original',['--mtp','on','--mtp-max-drafts','1',
+        '--mtp-draft-head','original','--mtp-draft-vocabulary','full'],width=1,subset=False,head_rows=0)
+    assert full==run('full-auto-original',['--mtp-draft-head','original',
+        '--mtp-draft-vocabulary','full'],width=1,subset=False,head_rows=0)
+    if 'SUBSET' in head[0]:
+        assert full==run('full-auto-head',['--mtp-draft-vocabulary','full'],width=1,subset=False,head_rows=0)
+        run('reject-explicit-compact-full', ['--mtp-draft-vocabulary','full',
+            '--mtp-draft-head',str(args.inputs/'mtp-draft-head.tsv')], error='bound draft vocabulary')
     random=['--sampling','random','--temperature','0.8','--top-k','40','--top-p','0.95','--seed','7']
     assert run('random-auto',random,mtp=False,subset=False)==run('random-off',[*random,'--mtp','off'],mtp=False,subset=False)
     # Distinct explicitly planned prefill lengths exercise the aggregate cold

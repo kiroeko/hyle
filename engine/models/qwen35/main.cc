@@ -8702,7 +8702,7 @@ int qwen35::run(int argc, char **argv) {
         "Usage: hyle --inputs DIR [options]\n"
         "  --inputs DIR                Locally prepared checkpoint and token IDs\n"
         "  --backend cpu|cuda|apple|vulkan  Primary backend; required when multiple GPU routes are compiled\n"
-        "  --mtp auto|off|on           Auto: source-bound vocabulary or eligible CUDA GGUF full-head K1\n"
+        "  --mtp auto|off|on           Auto: prepared/explicit assets or eligible CUDA GGUF full-head K1\n"
         "  --mtp-max-drafts N          Maximum proposals; 0 disables drafting (default: artifact recommendation or 1)\n"
         "  --mtp-min-probability FLOAT  Stop below max draft probability, [0,1] (default: 0)\n"
         "  --mtp-draft-vocabulary auto|full|FILE  Prepared draft IDs (default: auto); greedy only\n"
@@ -8902,9 +8902,7 @@ int qwen35::run(int argc, char **argv) {
         .automatic_backend_eligible = backend_selection.primary == qwen35::BackendKind::kCuda,
         .cpu_ffn = cpu_ffn_layers != 0,
         .greedy = !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0,
-        .max_drafts = max_drafts,
-        .automatic_head = draft_head == "auto",
-        .automatic_vocabulary = draft_vocabulary == "auto"};
+        .max_drafts = max_drafts, .automatic_vocabulary = draft_vocabulary == "auto"};
     auto assets = qwen35::select_draft_assets(input, default_request,
         std::move(draft_vocabulary), std::move(draft_head));
     const auto default_selection = assets.policy;
