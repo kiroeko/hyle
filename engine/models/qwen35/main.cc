@@ -137,8 +137,8 @@ using inference::PreparedReadback;
 using inference::PreparedOutputFacts;
 enum class ReplayPolicy { kAuto, kCommands, kPreferCapture };
 constexpr g::ReplayMode select_replay_mode(ReplayPolicy policy,
-    std::size_t known_uses, bool sampling_enabled) noexcept {
-  return sampling_enabled || policy == ReplayPolicy::kCommands
+    std::size_t known_uses) noexcept {
+  return policy == ReplayPolicy::kCommands
       || (policy == ReplayPolicy::kAuto && known_uses <= 1)
       ? g::ReplayMode::kCommands : g::ReplayMode::kPreferCapture;
 }
@@ -1861,7 +1861,7 @@ public:
     // Repeated proposal heads share this original carrier. Their cold usage
     // bound can select capture; writer-only repair retains its ready-leaf path.
     const auto replay_mode = !selected_sampler.modifiers.history.empty() && head ? g::ReplayMode::kCommands
-        : select_replay_mode(replay_policy, head ? planned_uses : 1, selected_sampler.enabled);
+        : select_replay_mode(replay_policy, head ? planned_uses : 1);
     const auto packet_rows = head && draft_packet_enabled(selected_sampler) ? max_drafts() + 1 : 0;
     auto built = build_draft_program({rows, selected_index, head, replay_mode, min_draft_probability(), packet_rows, steps},
         {geometry, precision, weights, projections, weight_meanings, ffn_placement.cpu_layers()},
@@ -2719,7 +2719,7 @@ public:
       replay_modes[slot] = (!selected_sampler.modifiers.history.empty() ||
           (packs_prefill(packing) && replay_policy == ReplayPolicy::kAuto && !fixed_prefill_capture)) ? g::ReplayMode::kCommands
           : fixed_prefill_capture || imported_sources ? g::ReplayMode::kPreferCapture : select_replay_mode(
-          replay_policy, planned_slot_uses[slot], selected_sampler.enabled);
+          replay_policy, planned_slot_uses[slot]);
     auto result = prepare_phase({definition, selected->program, selected_sampler},
         {tokens, physical_slots, diagnostic, imported_sources, planned_slot_uses, replay_modes},
         {execution, geometry, state_schema, allocation_budget, execution_budget, cache_budget});

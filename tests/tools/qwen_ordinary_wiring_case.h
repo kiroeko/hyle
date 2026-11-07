@@ -381,7 +381,7 @@ inline void ordinary_decode_recordings(const std::filesystem::path &input) {
       << ",\"session_preparations\":" << session_recording.preparations
       << ",\"session_captures\":" << session_recording.captures
       << ",\"real_ids_ledger_epochs_images_equal\":true,\"recycled_state_zeroed\":true,\"empty_session_handoff\":true,"
-         "\"random_commands_cpu_skipped\":true,\"final_private_versions\":0}\n";
+         "\"random_and_cpu_relay_skipped\":true,\"final_private_versions\":0}\n";
 }
 
 inline void mtp_decode_recordings(const std::filesystem::path &input) {
@@ -506,8 +506,8 @@ inline void mtp_decode_recordings(const std::filesystem::path &input) {
         result.retired_session = request.session;
       }
       q::execute_generation_calls(model, calls, false, nullptr, requests, [&] {
-        if (sampling) require(model.active_step->phase->slots[model.active_step->state_slot].replay_mode == q::g::ReplayMode::kCommands &&
-            !model.active_step->capture_recorded, "MTP random verification unexpectedly enabled native capture");
+        if (sampling) require(!model.supports_device_relay(sampling) && !model.successor_step,
+            "MTP random verification unexpectedly enabled device relay");
       }, &continuation, observed);
       if (prefill) { result.prefill_seconds = calls[0].step_seconds; result.prefill_image = p::capture(model, *request.session, storage); }
     }

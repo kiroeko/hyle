@@ -137,8 +137,10 @@ void scan(Context &context, std::span<const std::int64_t> shape,
               no_work ? ProviderReplayClass::kPrepared
                       : ProviderReplayClass::kManaged);
     EXPECT_FALSE(prepared->runtime_properties().blocks_host);
+    const bool float_row = std::is_same_v<T, float> && desc.is_dense() &&
+        inner == 1 && data.size() == static_cast<std::size_t>(shape[axis]);
     EXPECT_EQ(prepared->runtime_properties().capture_compatible,
-              (no_work || std::is_same_v<T, std::int32_t>));
+              (no_work || std::is_same_v<T, std::int32_t> || float_row));
     auto scratch = workspace(*prepared, memory.ref());
     auto slot = prepared->create_invocation(scratch.view()).value();
     auto done = slot.submit(queue, input.view.as_const(), output.view);

@@ -18,7 +18,7 @@ constexpr ProviderRuntimeProperties kRuntime{
     .workspace_owner = ProviderWorkspaceOwner::kCaller,
     .replay_class = ProviderReplayClass::kPrepared,
     .blocks_host = false, .uses_private_threads = false,
-    .supports_concurrent_invocations = true, .capture_compatible = false};
+    .supports_concurrent_invocations = true, .capture_compatible = true};
 struct Prepared final { CUcontext primary; Program program; };
 struct Invocation final { void *workspace = nullptr; };
 
@@ -123,7 +123,9 @@ detail::EnqueueResult submit(void *state, void *slot, detail::QueueSequence &seq
   cudaStreamCaptureStatus capture;
   auto status = cuda::status(cudaStreamIsCapturing(*stream, &capture));
   if (!status.ok()) return detail::EnqueueResult::rejected(std::move(status));
-  if (capture != cudaStreamCaptureStatusNone)
+  // A Graph-owned recording also owns the checked status word for every
+  // replay. An unrelated external stream capture has no such ownership.
+  if (capture != cudaStreamCaptureStatusNone && !sequence.recording())
     return detail::EnqueueResult::rejected(Status::FailedPrecondition(
         "CUDA sampling has no external capture qualification"));
   unsigned *word = nullptr;

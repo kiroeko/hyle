@@ -31,6 +31,14 @@ bool checked_integer_scan(const collectives::Program &program) noexcept {
       program.type == collectives::Type::kInt32;
 }
 
+// The single-row F32 CUB paths have fixed caller-owned scratch and bindings;
+// other managed layouts remain unqualified for graph capture.
+bool captured_float_row(const collectives::Program &program) noexcept {
+  return (program.kind == collectives::Kind::kTopK || program.kind == collectives::Kind::kScan) &&
+      program.type == collectives::Type::kFloat32 && program.dense && program.inner == 1 &&
+      program.count == program.width;
+}
+
 ProviderRuntimeProperties
 runtime(const collectives::Program &program) noexcept {
   if (program.count == 0)
@@ -53,7 +61,7 @@ runtime(const collectives::Program &program) noexcept {
           .blocks_host = false,
           .uses_private_threads = false,
           .supports_concurrent_invocations = true,
-          .capture_compatible = prepared || checked_integer_scan(program)};
+          .capture_compatible = prepared || checked_integer_scan(program) || captured_float_row(program)};
 }
 
 Status describe(Operation operation, std::span<const TensorDesc> inputs,
@@ -307,7 +315,7 @@ detail::EnqueueResult submit(void *value, void *slot, detail::QueueSequence &seq
     auto status = cuda::status(cudaStreamIsCapturing(*stream, &capture));
     if (!status.ok())
       return detail::EnqueueResult::rejected(std::move(status));
-    if (capture != cudaStreamCaptureStatusNone)
+    if (capture != cudaStreamCaptureStatusNone && (!sequence.recording() || !captured_float_row(prepared.program)))
       return detail::EnqueueResult::rejected(Status::FailedPrecondition(
           "CCCL managed execution does not accept external capture"));
   }
@@ -322,9 +330,10 @@ detail::EnqueueResult submit(void *value, void *slot, detail::QueueSequence &seq
       prepared.program, *input, index_input, *values, indices,
       static_cast<Invocation *>(slot)->workspace, *stream, device_status));
   // Managed CUB dispatch may have enqueued work before a host-side failure.
-  // I32 Scan and prepared kernels instead use the Queue's accepted-prefix
-  // completion and guards, including failure after an earlier kernel launch.
-  if (!status.ok() && managed && !integer_scan)
+  // During recording the Graph owner aborts the captured command stream;
+  // synchronizing an actively captured stream is invalid. Outside recording,
+  // retain the managed fallback's original accepted-prefix synchronization.
+  if (!status.ok() && managed && !integer_scan && !sequence.recording())
     (void)cudaStreamSynchronize(*stream);
   return detail::EnqueueResult::accepted_command(std::move(status));
 }

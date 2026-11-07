@@ -170,7 +170,7 @@ public:
     slot_ = take(program_.create_invocation());
   }
   Answer run(std::span<const float> p, std::span<const float> q, std::span<const float> bonus,
-             std::int32_t proposal, Identity accept, Identity final) {
+             std::int32_t proposal, Identity accept, Identity final, bool capture = false) {
     const std::array<std::span<const std::byte>, 6> payloads{std::as_bytes(p), std::as_bytes(q), std::as_bytes(bonus),
         std::as_bytes(std::span(&proposal, 1)), std::as_bytes(std::span(accept)), std::as_bytes(std::span(final))};
     require(slot_.reset());
@@ -181,10 +181,13 @@ public:
     for (std::size_t i = 0; i < outputs_.size(); ++i)
       require(slot_.bind(output_ids_[i], take(c::TensorView::create(output_desc_[i], outputs_[i].view()))));
     const std::array queues{g::QueueBinding{.lane = g::ExecutionLaneId{0}, .queue = &queue_}};
-    require(slot_.prepare_replay(queues, {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kReject}));
+    require(slot_.prepare_replay(queues, {.mode = capture ? g::ReplayMode::kRequireCapture : g::ReplayMode::kCommands,
+        .host_wait = g::HostWaitPolicy::kReject}));
     const auto report = take(slot_.replay_report());
-    sampling_test::check(report.recorded_capture_range_count == 0 && report.reused_capture_range_count == 0,
-        "commands sampling unexpectedly entered a capture route");
+    last_recorded_ = report.recorded_capture_range_count;
+    last_reused_ = report.reused_capture_range_count;
+    sampling_test::check(capture ? last_recorded_ + last_reused_ > 0 : last_recorded_ + last_reused_ == 0,
+        "sampling replay selected an unexpected route");
     auto done = take(slot_.submit(queue_));
     require(done.wait());
     const auto boolean = [&](std::size_t port) {
@@ -202,14 +205,10 @@ public:
     require(outputs_[8].view().read(std::as_writable_bytes(std::span(result))));
     return result;
   }
-#if defined(HYLE_TEST_QWEN_SAMPLING_CUDA)
-  hyle::Status require_capture() {
-    const std::array queues{g::QueueBinding{.lane = g::ExecutionLaneId{0}, .queue = &queue_}};
-    return slot_.prepare_replay(queues, {.mode = g::ReplayMode::kRequireCapture,
-        .host_wait = g::HostWaitPolicy::kReject});
-  }
-#endif
+  std::size_t last_recorded() const { return last_recorded_; }
+  std::size_t last_reused() const { return last_reused_; }
 private:
+  std::size_t last_recorded_ = 0, last_reused_ = 0;
   c::Context context_;
 #if defined(HYLE_TEST_QWEN_SAMPLING_CUDA)
   c::cuda::MemoryResource device_;
@@ -651,14 +650,48 @@ TEST(QwenSamplingGraph, MultiRowPrefixRejectsMalformedRowPortsAtColdConstruction
   EXPECT_THROW((void)s::speculative_prefix(r,logits,good_keys,short_ids),std::runtime_error);
 }
 #if defined(HYLE_TEST_QWEN_SAMPLING_CUDA)
-TEST(QwenSamplingGraph, CategoricalRequiresCommandsAndRejectsRequiredCapture) {
+TEST(QwenSamplingGraph, CapturedFullVocabularySamplingReusesBindingsAndRandomIdentities) {
+  constexpr std::size_t width = 248320;
+  const s::Policy policy{.temperature = .8F, .top_k = 40, .top_p = .95F};
+  Session control(width, policy, s::DistributionConsumer::kCategoricalOnly);
+  Session captured(width, policy, s::DistributionConsumer::kCategoricalOnly);
+  std::vector<float> values(width);
+  for (std::size_t i = 0; i < width; ++i) values[i] = float((i * 73) % 1009) * .01F - 5.F;
+  for (std::uint32_t draw = 0; draw < 8; ++draw) {
+    values[(draw * 131) % width] += .1F;
+    const auto expected = control.run(values, values, values, 387, key(draw), key(draw, true));
+    const auto actual = captured.run(values, values, values, 387, key(draw), key(draw, true), true);
+    ASSERT_TRUE(expected.valid);
+    ASSERT_TRUE(actual.valid);
+    EXPECT_EQ(actual.final_id, expected.final_id);
+    EXPECT_EQ(actual.accepted, expected.accepted);
+    EXPECT_EQ(actual.p_valid, expected.p_valid);
+    EXPECT_EQ(actual.q_valid, expected.q_valid);
+    EXPECT_EQ(actual.bonus_valid, expected.bonus_valid);
+    EXPECT_EQ(actual.proposal_valid, expected.proposal_valid);
+    EXPECT_EQ(actual.residual_positive, expected.residual_positive);
+    const auto expected_logp = control.log_probabilities();
+    const auto actual_logp = captured.log_probabilities();
+    ASSERT_EQ(actual_logp.size(), expected_logp.size());
+    EXPECT_TRUE(std::equal(actual_logp.begin(), actual_logp.end(), expected_logp.begin())) << draw;
+    if (draw) EXPECT_GT(captured.last_reused(), 0u);
+    else EXPECT_GT(captured.last_recorded(), 0u);
+  }
+}
+
+TEST(QwenSamplingGraph, CapturedSamplingKeepsValidationAndRecoversAfterBadInput) {
   Session session(3);
-  const auto p = logs({.25, .25, .5});
-  ASSERT_TRUE(session.run(p, p, p, 0, key(0), key(0, true)).valid);
-  const auto capture = session.require_capture();
-  EXPECT_FALSE(capture.ok());
-  EXPECT_NE(capture.message().find("capture"), std::string_view::npos) << capture.message();
-  EXPECT_TRUE(session.run(p, p, p, 0, key(1), key(1, true)).valid);
+  const auto valid = logs({.25, .25, .5});
+  auto invalid = valid;
+  invalid[2] = std::numeric_limits<float>::quiet_NaN();
+  EXPECT_TRUE(session.run(valid, valid, valid, 0, key(0), key(0, true), true).valid);
+  EXPECT_FALSE(session.run(invalid, valid, valid, 0, key(1), key(1, true), true).valid);
+  EXPECT_THROW((void)session.run(valid, valid, valid, -1, key(2), key(2, true), true), std::runtime_error);
+  // A failed invocation is terminal by Graph contract; a new one must not
+  // inherit the prior capture's checked device status.
+  EXPECT_THROW((void)session.run(valid, valid, valid, 0, key(3), key(3, true), true), std::runtime_error);
+  Session recovered(3);
+  EXPECT_TRUE(recovered.run(valid, valid, valid, 0, key(3), key(3, true), true).valid);
 }
 #endif
 struct BatchedPolicyAnswer final {

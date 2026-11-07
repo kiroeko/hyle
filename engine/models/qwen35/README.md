@@ -170,7 +170,7 @@ cmake --build .scratch/qwen35-build --config Release --target hyle_engine
 - `--cache-bytes auto|N`：KV页池、状态池及保留原生结果backing的请求字节额度。CUDA的auto按实际N／R、草稿候选边界及在途深度规划；显式额度不足时缩小可驻留数量，不能容纳活动请求则在加载前报错。CPU／Apple／Vulkan的auto不设字节额度，仍受N／R和版本数约束。显式额度包含各自实际资源计费，原生结果在完成后、发布前准入；失败保留旧快照。淘汰归还页／版本，仍有读者和Model池的材料继续计费。该参数不是全进程或物理显存上限。
 - `--prefix-cache off|auto`：多会话manifest默认auto，单会话schedule及普通生成默认off；显式auto须使用schedule。在prompt／轮次恢复边界借用同Model和数学政策下真实保存的完整Snapshot，再计算后缀。完整prompt命中跳过主模型；无modifier的默认greedy可直接使用已保存ID，其它须重新选择的政策走frontier采样。恢复同一请求保留历史pending／RNG。目录最多N项，与会话head共用N份完整版本预算，在途候选材料另按实际深度准备；decode直接使用Session。
 - `--progress direct|scheduler`：默认direct；scheduler在原槽上准备进度驱动，复用同一提交机制。
-- `--replay auto|commands|prefer-capture`：默认auto，按冷计划中各批宽／child／槽的使用上界选择；一次使用走Commands，预计复用才PreferCapture。辅助NextN没有可靠使用次数提示，Auto仍按一次处理。当前主Phase有随机采样或history罚分时使用Commands，NextN带head的history分支亦使用Commands；接受采样和frontier程序当前显式使用Commands。其它满足条件的分支可把PreferCapture交给原Graph，捕获范围仍由原生能力和实际绑定决定。`planned_replay`记录冷选择，逐步日志记录实际录制／复用；用户不逐步选择Provider或另设流水开关。
+- `--replay auto|commands|prefer-capture`：默认auto，按冷计划中各批宽／child／槽的使用上界选择；一次使用走Commands，预计复用才PreferCapture。辅助NextN没有可靠使用次数提示，Auto仍按一次处理。随机采样可使用Graph支持的捕获路径；history罚分、NextN带head的history分支，以及接受采样和frontier程序仍使用Commands。捕获范围由原生能力和实际绑定决定。`planned_replay`记录冷选择，逐步日志记录实际录制／复用；用户不逐步选择Provider或另设流水开关。
 - `--decode-ids FILE`：固定单token输入带，允许跨过预测EOS；若同时给steps，须等于输入数加一。正常生成遇到endoftext或im_end停止。
 - `--trace DIR --trace-level decisions`：仅导出logits与最后hidden；默认full还导出conv/GDN状态与`kv-layout.json`。分页帧不公开原始bank载荷，后者记录实际页布局，不再导出dense KV文件。路由写入DIR/routes，不增加图输出。
 - `--layer0-probe DIR`：诊断时另行发布layer0边界并比较实际路由；诊断图会影响合法融合，因此与普通图分别冷准备，均计入启动时间。多会话的边界输出按`session<序号>_<ID>`子目录隔离，不覆盖其他会话；共享图的路由说明仍在DIR。
