@@ -6,8 +6,13 @@
 Its foundation libraries can also be built, installed and used independently. Windows, Linux and
 macOS are supported; available compute backends are CPU, CUDA, Apple Metal and Vulkan.
 
-HYLE 是面向单机的推理引擎。引擎负责模型、生成、会话与请求；Compute、Graph、内存、调度、I/O
-等基础库保持模型无关，可单独构建和使用。项目目前集中完善推理底座。
+HYLE 是面向单机的推理引擎。推理引擎内核负责已接纳工作的准备、模型计算、生成与状态推进；
+引擎的外围部分负责模型制品、请求、会话、调度和结果交付。内核包含模型专属实现，并使用可独立构建的
+Compute、Graph、内存、调度、I/O 等基础库；推理内核也不同于单个 CUDA／Metal kernel。
+当前完整入口仍以 Qwen 为主，内核与引擎外围尚未按这个职责边界完整拆开，见[引擎概览](docs/architecture/engine-overview.md)。
+
+当前开发顺序是先审计、修正并冻结推理内核，再设计、开发并冻结内核之外的引擎部分，完成后进入 M2。
+冻结确定职责与执行合同，不冻结具体 kernel 或性能实现；现有多模型、多平台和量化组件的验证范围按实际结果说明。
 
 ## 与llama.cpp相比
 

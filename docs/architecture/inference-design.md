@@ -1,7 +1,7 @@
 # 推理系统：职责与执行合同
 
-本页说明推理底座如何分工、何时可以发布状态和回收资源。长期取舍见[两项核心期许](inference-principles.md)；
-当前任务只在[进度看板](../developer/inference-progress.md)，实现范围在[工程计划](../implementation/inference-roadmap.md)。
+本页说明推理底座如何分工、何时可以发布状态和回收资源。推理内核与完整引擎的职责及冻结顺序见[引擎概览](engine-overview.md#推理内核与完整引擎)。长期取舍见[两项核心期许](inference-principles.md)；
+当前任务以用户指令和[进度看板](../developer/inference-progress.md)为准，实现范围见[工程计划](../implementation/inference-roadmap.md)。
 运行命令见[引擎指南](../user/inference.md)。逐批实验不在本页追加。
 
 ## 简明执行合同
