@@ -97,7 +97,7 @@ MTP 另保 draft KV、frontier／lag／catchup 和 carry／prior hidden。N 是�
 恢复同一请求保留历史 pending／RNG，decode 不逐 token 查树。
 
 普通 Phase 使用一个槽，已接通的设备后继 Phase 使用三个固定槽轮换，最多保留两个有序在途批次。
-CUDA greedy 普通自然生成以及单活动请求的 K1 MTP 可自动接力；其它采样、MTP宽度、后端、混合执行、
+符合执行条件的 CUDA 普通自然生成以及 greedy 单会话 K1—K3 MTP 可自动接力；随机采样 MTP、其它后端、混合执行、
 资源不足或不满足当前绑定条件时沿原单步路径推进。每槽有自己的 IO／状态事务，旧读者和原生工作退休前不能覆盖。
 后继仍由原 Model／Graph 的提交、完成、状态发布与退休机制管理，没有额外执行器；控制由调用方串行化。
 实际接力条件与冷准备选项见[用户指南](../../../docs/user/inference.md#准备本地输入并运行)。
@@ -108,7 +108,7 @@ KV、递归状态、位置和采样只提交各成员实际行。其它组合按
 `batches.input_rows` 是各成员真实目标行数，`active_rows` 是总和，`physical_rows` 是载体容量；
 Verify 提案截短不按规划上界计数，接受部分前缀也不抹掉已执行行。
 
-纯 CUDA、无 modifier 的 greedy 单会话（普通或无草稿概率门槛的 K1—K3 MTP），在 prefix off、lazy 且 N/R 为 auto 或1时，
+纯 CUDA、无 modifier 的 greedy 单会话（普通或 K1—K3 MTP），在 prefix off、lazy 且 N/R 为 auto 或1时，
 默认只按配置 C 和已到达首轮准备，不需要诊断开关。prefill 使用16/32/64/128/256/512容量档位，
 按配置上限截短，长输入分块；后续轮次在上一轮真实退休后交付，不以未来长度或输出配额规划。
 CLI 工作负载驱动仍预先解析 schedule；隔离的是它向 Model 冷规划提供的信息。
@@ -116,7 +116,7 @@ CLI 工作负载驱动仍预先解析 schedule；隔离的是它向 Model 冷规
 中间token、有效长度和下一轮接受位置留在设备，沿原Invocation／Source和退休机制提交后继。
 物理query容量为K+1，各候选前缀仍保留独立状态材料；短配额／上下文尾部使用冷期准备的较短程序。
 冷family借用已固定的权重与缓存合同，主线程并行准备自己的辅助程序；发布前统一join，异常先join再退休。
-其它后端、采样、草稿概率门槛、K>3、多会话、prefix 和 `--warmup-shapes planned` 保留原有限输入功能路径，
+其它后端、采样、K>3、多会话、prefix 和 `--warmup-shapes planned` 保留原有限输入功能路径，
 输出标为 `full_schedule_preknowledge_invalid`，不能用于未知后续输入的性能结论。
 初始化按模型加载、冷准备、ready和请求执行分段。冷准备用最小已配置档位（本次16行）的占位输入执行真实prefill，
 临时会话成功stop／drain后再录制decode命令；两者费用与实际工作分别统计，全部计入startup。
