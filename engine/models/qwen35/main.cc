@@ -8714,7 +8714,6 @@ int qwen35::run(int argc, char **argv) {
         "  --backend cpu|cuda|apple|vulkan  Primary backend; required when multiple GPU routes are compiled\n"
         "  --mtp auto|off|on           Auto: prepared/explicit assets or eligible CUDA GGUF full-head K1\n"
         "  --mtp-max-drafts N          Maximum proposals; 0 disables drafting (default: artifact recommendation or 1)\n"
-        "  --mtp-min-probability FLOAT  Stop below max draft probability, [0,1] (default: 0)\n"
         "  --mtp-draft-vocabulary auto|full|FILE  Prepared draft IDs (default: auto); greedy only\n"
         "  --mtp-draft-head auto|original|FILE  Prepared proposal head (default: auto); greedy only\n"
         "  --sampling greedy|random    Token selection (default: greedy)\n"
@@ -8725,7 +8724,6 @@ int qwen35::run(int argc, char **argv) {
         "  --steps N                   Maximum output tokens (default: 4)\n"
         "  --capacity N                Total context capacity (default: 128)\n"
         "  --prefill-chunk-tokens N    Maximum real rows per natural prefill episode\n"
-        "  --warmup-shapes lazy|planned  Prepare known carriers before ready (default: lazy)\n"
         "  --cpu-ffn-layers N          First N target FFNs on CPU; needs CPU+GPU build (default: 0)\n"
         "  --schedule FILE             One session's prompt/generate turns\n"
         "  --session-schedules FILE    Multiple named session schedules\n"
@@ -8733,9 +8731,19 @@ int qwen35::run(int argc, char **argv) {
         "  --active-sequences auto|N   Maximum actual execution batch width\n"
         "  --cache-bytes auto|N        Session cache backing budget\n"
         "  --prefix-cache off|auto     Reuse completed prompt/turn checkpoints\n"
+        "Advanced execution and diagnostics:\n"
+        "  --mtp-min-probability FLOAT  Stop below max draft probability, [0,1] (default: 0)\n"
+        "  --warmup-shapes lazy|planned  Prepare known carriers before ready (default: lazy)\n"
         "  --progress direct|scheduler  Request progress implementation (default: direct)\n"
         "  --replay auto|commands|prefer-capture\n"
         "  --require-bounded-generation on|off  Reject routes that need future request shapes (default: off)\n"
+        "  --decode-overlap auto|off   Automatic route or disable overlap\n"
+        "  --trace DIR                 Write generation trace to a local directory\n"
+        "  --trace-level full|decisions  State and decision trace, or decisions only\n"
+        "  --preparation-diagnostics 0|1  Report preparation diagnostics for fixed replay schedules\n"
+        "  --layer0-probe DIR          Write layer-zero probe results\n"
+        "  --continuation IDS          Append fixed token IDs before fixed replay\n"
+        "  --decode-ids IDS            Fixed replay token IDs\n"
         "Prepare inputs with engine/models/qwen35/prepare.py; no model is downloaded at runtime.\n";
     return 0;
   }
@@ -8917,7 +8925,7 @@ int qwen35::run(int argc, char **argv) {
         .max_drafts = max_drafts, .automatic_vocabulary = draft_vocabulary == "auto"};
     auto assets = qwen35::select_draft_assets(input, default_request,
         std::move(draft_vocabulary), std::move(draft_head),
-        backend_selection.primary == qwen35::BackendKind::kCuda);
+        qwen35::Backend::supports_encoded_row_gather(backend_selection));
     const auto default_selection = assets.policy;
     mtp_enabled = default_selection.enabled;
     auto weight_source = qwen35::prepare_weight_source(input / "weights.tsv", mtp_enabled,

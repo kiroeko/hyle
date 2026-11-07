@@ -81,8 +81,10 @@ TEST(QwenBackendCpuCuda, ColdBindingsUseActualDomainsAndPreserveMaterialization)
 }
 
 TEST(QwenBackendCpuCuda, ExplicitCudaRemainsOneCudaEndpoint) {
+  EXPECT_TRUE(Backend::supports_encoded_row_gather({.primary=BackendKind::kCuda}));
   auto created=Backend::create({.primary=BackendKind::kCuda});ASSERT_TRUE(created)<<created.error().message();
   auto backend=std::move(*created);
+  EXPECT_TRUE(backend.supports_encoded_row_gather());
   EXPECT_FALSE(backend.has_cpu_assist());EXPECT_FALSE(backend.host_device().valid());
   auto device_domain=backend.resource_for(g::StorageDomainId{0});ASSERT_TRUE(device_domain)<<device_domain.error().message();
   EXPECT_EQ(*device_domain,backend.device());
@@ -103,12 +105,16 @@ TEST(QwenBackendCpuCuda, ExplicitCudaRemainsOneCudaEndpoint) {
 }
 
 TEST(QwenBackendCpuCuda, ExplicitCpuExecutesOriginalQueueAfterMove) {
+  EXPECT_FALSE(Backend::supports_encoded_row_gather({.primary=BackendKind::kCpu}));
+  EXPECT_FALSE(Backend::supports_encoded_row_gather({.primary=BackendKind::kDefault}));
   auto created=Backend::create({.primary=BackendKind::kCpu});
   ASSERT_TRUE(created)<<created.error().message();
   auto before=std::move(*created);
   auto original_context=before.cpu_context();ASSERT_TRUE(original_context);
   auto original_queue=before.cpu_queue();ASSERT_TRUE(original_queue);
   auto backend=std::move(before);
+  EXPECT_FALSE(backend.supports_encoded_row_gather());
+  EXPECT_FALSE(before.supports_encoded_row_gather());
   EXPECT_EQ(before.kind(),BackendKind::kDefault);
   EXPECT_FALSE(before.common_context());EXPECT_FALSE(before.common_queue());
   EXPECT_EQ(backend.kind(),BackendKind::kCpu);EXPECT_STREQ(backend.name(),"cpu");

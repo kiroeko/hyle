@@ -176,6 +176,18 @@ public:
     return std::unexpected(Status::Unimplemented("no inference backend is compiled"));
   }
 
+  // Qualified storage-bit preservation for the F16 Gather used as an encoded
+  // weight-row copy. Executability is still checked by the actual graph build;
+  // generic floating Gather support alone does not establish this contract.
+  static constexpr bool supports_encoded_row_gather(BackendSelection selection) noexcept {
+#if defined(HYLE_COMPUTE_CUDA)
+    return selection.primary == BackendKind::kCuda;
+#else
+    (void)selection;
+    return false;
+#endif
+  }
+
   static Result<Backend> create(BackendSelection selection = {},
                                 WorkspaceBudgets budgets = {}) noexcept {
     return create_impl(selection, budgets, nullptr);
@@ -327,6 +339,9 @@ private:
 public:
   BackendKind kind() const noexcept { return state_ ? state_->selection.primary : BackendKind::kDefault; }
   BackendSelection selection() const noexcept { return state_ ? state_->selection : BackendSelection{}; }
+  bool supports_encoded_row_gather() const noexcept {
+    return state_ && supports_encoded_row_gather(state_->selection);
+  }
   bool host_only() const noexcept { return kind() == BackendKind::kCpu; }
   bool native_generated_storage() const noexcept {
     return kind() == BackendKind::kApple || kind() == BackendKind::kVulkan;

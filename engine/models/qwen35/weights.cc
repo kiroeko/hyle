@@ -596,8 +596,8 @@ LoadedWeight select_stored_weight_rows(Backend &backend, const LoadedWeight &wei
     output_description=result.tensor.description=dense(description.data_type(),{selected_rows,columns});
     result.codec=prepared::ProjectionCodec::kDense;
   } else {
-    if(backend.kind()!=hyle::inference::BackendKind::kCuda)
-      check(hyle::Status::Unimplemented("encoded row selection requires the qualified bit-preserving CUDA Gather"));
+    if(!backend.supports_encoded_row_gather())
+      check(hyle::Status::Unimplemented("encoded row selection requires bit-preserving backend Gather"));
     const auto codec=c::gguf_quantized_type(description.storage_format());
     const auto *capability=codec?gguf_capabilities(*codec):nullptr;
     if (!codec || !capability || !capability->copy_encoded_rows || description!=

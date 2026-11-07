@@ -158,6 +158,7 @@ JSON 的 `mtp_selection_reason` 报告冷期选择或回落原因，`mtp_depth_s
 自动词表不能由所选后端或原始头提取时会跳过，并按原始头能力选择全词表 MTP 或普通模式；显式指定的不支持词表会报错。
 被选中的制品若source identity不匹配会拒绝加载。`--mtp-draft-vocabulary full` 强制完整词表作对照，
 也可用 `--mtp-draft-vocabulary FILE` 显式选择另一份准备文件。
+子集头的接受率取决于实际生成内容；多语言或长尾词较多时，全词表头可能更快。
 选择完整词表时，自动发现的compact头不适用，引擎改用原始头；显式指定不匹配的compact头会报错。
 支持原BF16／F16／F32稠密head；CUDA还支持GGUF Q8_0／Q4_K／Q5_K／Q6_K编码行的子集，保持原量化代码与scale字节。
 子集会增加所选头的行副本；自动选择不按剩余显存回落，显存紧张时可选 `--mtp-draft-vocabulary full` 或 `--mtp off`。
