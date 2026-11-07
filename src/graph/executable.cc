@@ -10185,6 +10185,48 @@ Result<bool> unchanged_prepared_full_views(
   return found;
 }
 
+// A partial View can remain on its already prepared path only if every
+// nonmaterializing descendant still names its exact original root range.
+Result<bool> unchanged_prepared_input_views(const detail::InvocationState &state,
+    std::size_t root, compute::ConstTensorView replacement) noexcept {
+  const auto &plan = *state.plan;
+  if (!replacement.valid() || root >= plan.instance_values.size()) return false;
+  const auto value = plan.instance_values[root];
+  if (value >= plan.external_instances.size() || plan.external_instances[value] != root) return false;
+  const auto storage = replacement.storage();
+  const auto &descendants = plan.external_input_alias_descendants;
+  auto next = std::lower_bound(descendants.begin(), descendants.end(), value,
+      [](const auto &entry, std::uint32_t input) noexcept { return entry.value < input; });
+  bool found = false;
+  for (; next != descendants.end() && next->value == value; ++next) {
+    if (!next->nonmaterializing_view) return false;
+    const auto instance = next->instance;
+    const auto &description = physical_description(state, instance);
+    HYLE_ASSIGN_OR_RETURN(const auto bytes, description.required_bytes());
+    const auto &prepared = state.readable[instance];
+    if (!prepared.valid() || prepared.description() != description) return false;
+    auto current = instance;
+    std::size_t offset = 0;
+    for (std::size_t depth = 0; current != root; ++depth) {
+      if (current >= plan.alias_sources.size() || depth >= plan.alias_sources.size()) return false;
+      const auto parent = plan.alias_sources[current];
+      if (parent == detail::kNoInPlaceSource || parent == current) return false;
+      HYLE_ASSIGN_OR_RETURN(const auto part, bound_alias_offset(state, current));
+      if (part > SIZE_MAX - offset) return false;
+      offset += part;
+      current = parent;
+    }
+    if (offset > storage.size() || bytes > storage.size() - offset) return false;
+    const auto expected = storage.subview(offset, bytes);
+    if (!expected) return false;
+    const auto actual = prepared.storage();
+    if (actual.resource() != expected->resource() || actual.native_handle() != expected->native_handle() ||
+        actual.offset() != expected->offset() || actual.size() != expected->size()) return false;
+    found = true;
+  }
+  return found;
+}
+
 Result<bool> incoming_capture_candidate(const detail::InvocationState &state,
     const detail::ReplayInputBinding &replacement) noexcept {
   const auto &plan = *state.plan;
@@ -10297,15 +10339,15 @@ Result<ReplayRoute> reusable_capture_tuple(const detail::InvocationState &state,
     for (const auto &replacement : replacements)
       if (replacement.input.ordinal() == value) { tensor = replacement.tensor; break; }
     HYLE_ASSIGN_OR_RETURN(const auto unchanged,
-        unchanged_prepared_full_views(state, root, tensor));
+        unchanged_prepared_input_views(state, root, tensor));
     if (unchanged) continue;
     HYLE_ASSIGN_OR_RETURN(const auto full, full_zero_input_views(state, root, tensor));
     if (full) resolve_full_views = true;
     else unsupported_views = true;
   }
-  // Keep already prepared tuples on their original path. Only an entirely
-  // proven full-View scope may resolve stale aliases from the currently bound
-  // external roots; mixed/partial/destructive scopes remain conservative.
+  // Keep every exactly unchanged View on its original prepared binding.
+  // Changed roots may resolve stale aliases only when their entire scope is
+  // full and zero-offset; changed partial or destructive scopes still fail.
   if (resolve_full_views && unsupported_views) return ReplayRoute::kUnprepared;
   for (const auto &candidate : plan.capture_ranges) {
     // Only recorded steps need stable capture keys/private arguments. Gaps
@@ -10360,21 +10402,24 @@ Result<ReplayRoute> reusable_capture_tuple(const detail::InvocationState &state,
             const auto value = plan.instance_values[root];
             if (root != instance && (plan.binding_roles[value] & detail::kExternalInput) != 0 &&
                 plan.external_instances[value] == root) {
-              // The cold index proved every descendant is a full zero-offset
-              // nonmaterializing View. Compare this port's concrete descriptor
-              // and the real root's complete storage, without rebinding it.
-              tensor = state.readable[root];
+              auto external = state.readable[root];
               for (const auto &replacement : replacements)
-                if (replacement.input.ordinal() == value) { tensor = replacement.tensor; break; }
-              if (port == variant.bindings.size() || !tensor.valid()) return false;
-              const auto &recorded = variant.bindings[port++];
-              if (!recorded.valid() || recorded.description() != physical_description(state, instance))
-                return false;
-              const auto actual = tensor.storage(), previous = recorded.storage();
-              if (actual.resource() != previous.resource() || actual.native_handle() != previous.native_handle() ||
-                  actual.offset() != previous.offset() || actual.size() != previous.size())
-                return false;
-              continue;
+                if (replacement.input.ordinal() == value) { external = replacement.tensor; break; }
+              HYLE_ASSIGN_OR_RETURN(const auto unchanged,
+                  unchanged_prepared_input_views(state, root, external));
+              if (!unchanged) {
+                // This root was proven full, zero-offset in the preflight.
+                // Unchanged partial Views retain their exact prepared binding.
+                if (port == variant.bindings.size() || !external.valid()) return false;
+                const auto &recorded = variant.bindings[port++];
+                if (!recorded.valid() || recorded.description() != physical_description(state, instance))
+                  return false;
+                const auto actual = external.storage(), previous = recorded.storage();
+                if (actual.resource() != previous.resource() || actual.native_handle() != previous.native_handle() ||
+                    actual.offset() != previous.offset() || actual.size() != previous.size())
+                  return false;
+                continue;
+              }
             }
           }
           for (const auto &replacement : replacements)

@@ -505,6 +505,87 @@ TEST(GraphOutputSourceCuda, ColdRecordingRejectsExecutionAndReusesOnlyAfterFresh
   EXPECT_EQ(output_pool.stats().live_blocks, 0u);
 }
 
+TEST(GraphOutputSourceCuda, PendingCaptureAcceptsOnlyUnchangedPartialViewsAlongsideFullViews) {
+  auto context = g::cuda::create_context().value();
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(queue.reserve_completions(8).ok());
+  auto memory = c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value();
+  auto storage = c::StorageOwner::adopt(context, std::move(memory)).value();
+  const auto index_desc = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 1>{1}).value();
+  const auto table_desc = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 1>{4}).value();
+  const auto row_desc = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 1>{2}).value();
+  auto pool = c::LeasePool::create(storage.ref(), 5 * 256, {.max_blocks = 5}).value();
+  auto first = pool.allocate(sizeof(float), 256).value();
+  auto second = pool.allocate(sizeof(float), 256).value();
+  auto table = pool.allocate(4 * sizeof(float), 256).value();
+  auto other_table = pool.allocate(4 * sizeof(float), 256).value();
+  auto result = pool.allocate(2 * sizeof(float), 256).value();
+  constexpr std::array<float, 1> index{1};
+  constexpr std::array<float, 4> values{10, 20, 30, 40};
+  ASSERT_TRUE(first.view()->write(std::as_bytes(std::span(index))).ok());
+  ASSERT_TRUE(second.view()->write(std::as_bytes(std::span(index))).ok());
+  ASSERT_TRUE(table.view()->write(std::as_bytes(std::span(values))).ok());
+  ASSERT_TRUE(other_table.view()->write(std::as_bytes(std::span(values))).ok());
+  auto first_ready = first.publish().value();
+  auto second_ready = second.publish().value();
+  auto table_ready = table.publish().value();
+  auto other_table_ready = other_table.publish().value();
+  const auto first_view = first_ready.tensor(index_desc).value();
+
+  auto builder = g::GraphBuilder::create().value();
+  const auto token = builder.input(index_desc).value();
+  const auto rng = builder.input(table_desc).value();
+  const auto matrix_shape = c::TensorShape::create(std::array<std::int64_t, 2>{1, 1}).value();
+  const auto vector_shape = c::TensorShape::create(std::array<std::int64_t, 1>{1}).value();
+  const auto token_matrix = builder.add(c::View::reshape(matrix_shape).value(), token).value();
+  const auto token_vector = builder.add(c::View::reshape(vector_shape).value(), token_matrix).value();
+  const auto outer = builder.add(c::View::slice(0, 1, 3).value(), rng).value();
+  const auto inner = builder.add(c::View::slice(0, 1, 1).value(), outer).value();
+  const auto selected = builder.add(c::Concat{.axis = 0}, token_vector, inner).value();
+  const auto copied = builder.add(c::Concat{.axis = 0}, selected).value();
+  ASSERT_TRUE(builder.publish(copied).ok());
+  auto graph = std::move(builder).finish().value();
+  auto compiled = g::cuda::compile(graph, context, storage,
+      {.operation_fallback = g::OperationFallbackPolicy::kReject});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  auto run = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(run.prepare_resources().ok());
+  ASSERT_TRUE(run.bind(token, index_desc, first_ready).ok());
+  ASSERT_TRUE(run.bind(rng, table_desc, table_ready).ok());
+  ASSERT_TRUE(run.bind(copied, row_desc, std::move(result)).ok());
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  auto captured = run.prepare_replay(queues,
+      {.mode = g::ReplayMode::kRequireCapture, .host_wait = g::HostWaitPolicy::kReject});
+  ASSERT_TRUE(captured.ok()) << captured.message();
+  ASSERT_EQ(run.replay_route(), g::ReplayRoute::kCaptured);
+  ASSERT_TRUE(run.bind(token, index_desc, second_ready).ok());
+  captured = run.prepare_replay(queues,
+      {.mode = g::ReplayMode::kRequireCapture, .host_wait = g::HostWaitPolicy::kReject});
+  ASSERT_TRUE(captured.ok()) << captured.message();
+  const std::array replacement{gd::ReplayInputBinding{token, first_view}};
+  const auto compatible = gd::ReplayAccess::can_reuse_capture(run, replacement);
+  ASSERT_TRUE(compatible) << compatible.error().message();
+  EXPECT_TRUE(*compatible); // The unrelated nested slice still names its exact root range.
+  ASSERT_TRUE(run.bind(rng, table_desc, other_table_ready).ok());
+  const auto changed = gd::ReplayAccess::can_reuse_capture(run, replacement);
+  ASSERT_TRUE(changed) << changed.error().message();
+  EXPECT_FALSE(*changed); // A changed partial View must never reuse stale capture bindings.
+  ASSERT_TRUE(run.bind(rng, table_desc, table_ready).ok());
+  const auto restored = gd::ReplayAccess::can_reuse_capture(run, replacement);
+  ASSERT_TRUE(restored) << restored.error().message();
+  EXPECT_TRUE(*restored);
+  ASSERT_TRUE(gd::ReplayAccess::prepare_reuse(run, queues).ok());
+  auto submitted = run.submit(queues);
+  ASSERT_TRUE(submitted) << submitted.error().message();
+  ASSERT_TRUE(submitted->wait().ok());
+  std::array<float, 2> actual{};
+  ASSERT_TRUE(run.output(copied)->storage().read(std::as_writable_bytes(std::span(actual))).ok());
+  EXPECT_EQ(actual, (std::array<float, 2>{1, 30}));
+}
+
 TEST(GraphOutputSourceCuda, ColdRecordingEndRequiresOriginalStoreTransactionTake) {
   auto context_result = g::cuda::create_context();
   ASSERT_TRUE(context_result) << context_result.error().message();
