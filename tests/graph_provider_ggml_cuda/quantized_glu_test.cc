@@ -6,7 +6,9 @@
 
 #include <array>
 #include <algorithm>
+#include <bit>
 #include <cmath>
+#include <cstdint>
 #include <vector>
 
 namespace {
@@ -61,6 +63,64 @@ TEST(GgmlCudaF32GdnNorm, WeightedNormMatchesFloat64AndStandaloneProduct) {
     }
     auto held=slot.result(y).value(); EXPECT_TRUE(slot.reset().IsUnavailable());
     held.reset(); ASSERT_TRUE(slot.reset().ok());
+  }
+}
+
+TEST(GgmlCudaF32GdnNorm, SmallWidthsPreserveReductionBitsAcrossCaptureAndRebinding) {
+  auto context = g::cuda::create_context().value();
+  auto ggml_context = c::Context::create(c::cuda::device(0).value(), c::ggml_cuda::provider()).value();
+  auto owner = c::StorageOwner::adopt(context,
+      c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value()).value();
+  auto queue = context.create_queue().value();
+  for (const std::int64_t width : {1, 7, 31, 32, 33, 63, 64, 65, 96, 127, 128}) {
+    for (const std::int64_t rows : {1, 7, 129, 256}) {
+      for (const bool rank4 : {false, true}) {
+        SCOPED_TRACE(::testing::Message() << "width=" << width << " rows=" << rows << " rank4=" << rank4);
+        const auto desc = rank4 ? dense(c::DataType::kFloat32, {2, 3, rows, width})
+                                : dense(c::DataType::kFloat32, {rows, width});
+        const auto wd = dense(c::DataType::kFloat32, {width});
+        auto builder = g::GraphBuilder::create().value();
+        const auto x = builder.input(desc).value(), w = builder.input(wd).value();
+        const auto y = builder.result(builder.add_node(c::Operation(c::RmsNorm{.epsilon=1.e-6F}),
+            std::array{x,w}).value()).value();
+        ASSERT_TRUE(builder.publish(y).ok());
+        auto compiled = g::cuda::compile(std::move(builder).finish().value(), context, owner).value();
+        auto slot = compiled.executable.create_invocation().value();
+        for (int round = 0; round < 2; ++round) {
+          auto values = d5_gguf_test::values(rows * (rank4 ? 6 : 1), width, 17 + round);
+          for (std::size_t i = 0; i < values.size(); ++i)
+            values[i] *= (i % 4 == 0 ? 1.e3F : i % 4 == 1 ? 1.e-3F : 1.F);
+          std::vector<float> scales(static_cast<std::size_t>(width));
+          for (std::size_t i = 0; i < scales.size(); ++i)
+            scales[i] = float(int((i + round) % 13) - 6) / 8.F;
+          auto input = upload<float>(owner.ref(), values), weight = upload<float>(owner.ref(), scales);
+          auto normalized = output_buffer(owner.ref(), desc), expected = output_buffer(owner.ref(), desc);
+          auto output = output_buffer(owner.ref(), desc), direct = output_buffer(owner.ref(), desc);
+          const auto xv = c::ConstTensorView::create(desc, input.view()).value();
+          const auto wv = c::ConstTensorView::create(wd, weight.view()).value();
+          ASSERT_TRUE(ggml_cuda_tensor_test::execute(ggml_context, c::Operation(c::RmsNorm{.epsilon=1.e-6F}),
+              std::span(&xv, 1), c::TensorView::create(desc, normalized.view()).value()).ok());
+          const std::array product{c::ConstTensorView::create(desc, normalized.view()).value(), wv};
+          ASSERT_TRUE(ggml_cuda_tensor_test::execute(ggml_context, c::Operation(c::Binary{c::BinaryKind::kMultiply}),
+              product, c::TensorView::create(desc, expected.view()).value()).ok());
+          ASSERT_TRUE(ggml_cuda_tensor_test::execute(ggml_context, c::Operation(c::RmsNorm{.epsilon=1.e-6F}),
+              std::array{xv,wv}, c::TensorView::create(desc, direct.view()).value()).ok());
+          ASSERT_TRUE(slot.bind(x, xv).ok()); ASSERT_TRUE(slot.bind(w, wv).ok());
+          ASSERT_TRUE(slot.bind(y, c::TensorView::create(desc, output.view()).value()).ok());
+          ASSERT_TRUE(g::cuda::prepare_replay(slot, queue, {.mode=g::ReplayMode::kRequireCapture}).ok());
+          auto done = slot.submit(queue).value(); ASSERT_TRUE(done.wait().ok());
+          const auto actual = half_test::read<float>(output), reference = half_test::read<float>(expected);
+          const auto direct_values = half_test::read<float>(direct);
+          ASSERT_EQ(actual.size(), reference.size());
+          ASSERT_EQ(direct_values.size(), reference.size());
+          for (std::size_t i = 0; i < actual.size(); ++i) {
+            EXPECT_EQ(std::bit_cast<std::uint32_t>(actual[i]), std::bit_cast<std::uint32_t>(reference[i])) << i;
+            EXPECT_EQ(std::bit_cast<std::uint32_t>(direct_values[i]), std::bit_cast<std::uint32_t>(reference[i])) << i;
+          }
+          ASSERT_TRUE(slot.reset().ok());
+        }
+      }
+    }
   }
 }
 

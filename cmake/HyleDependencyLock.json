@@ -1429,7 +1429,7 @@
       },
       "vendored": {
         "path": "third_party/ggml_cuda_runtime",
-        "tree_sha256": "0d79b97ba737f5554a368fd557849dd117472b370b878531a2a9e082551e5488"
+        "tree_sha256": "f7b190d2a7779a26963c54ac1f998d96e34a499679884c8b5725ee4ad3c5b120"
       },
       "license": {
         "expression": "MIT",
@@ -1442,7 +1442,7 @@
           {
             "root": "hyle",
             "path": "third_party/ggml_cuda_runtime/NOTICE.md",
-            "sha256": "4390ceb9ba4b242245d587fc593287ac9ae8f340c9db82b86ab3642fdacd207d"
+            "sha256": "7134268d5629e05e475c892777fca44c9d73d7d16aab8c0b1deb6d76079d5014"
           }
         ]
       }
