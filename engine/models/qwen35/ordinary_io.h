@@ -1,10 +1,10 @@
 #pragma once
 
 #include <cstdint>
-#include <string_view>
 
 #include "execution_mode.h"
 #include "../../inference/backend.h"
+#include "../../inference/route_reason.h"
 
 namespace qwen35 {
 
@@ -56,15 +56,15 @@ struct DeviceRelayCapabilities final {
   hyle::inference::BackendKind backend = hyle::inference::BackendKind::kDefault;
   bool cpu_assist = false, scheduler = false, sampled_mtp = false, logits_modifiers = false;
 
-  constexpr std::string_view refusal_reason() const noexcept {
-    if (backend != hyle::inference::BackendKind::kCuda) return "backend";
-    if (cpu_assist) return "cpu_assist";
-    if (scheduler) return "scheduler";
-    if (sampled_mtp) return "sampling";
-    if (logits_modifiers) return "logits_modifiers";
-    return {};
+  constexpr hyle::inference::RouteReason refusal_reason() const noexcept {
+    if (backend != hyle::inference::BackendKind::kCuda) return hyle::inference::RouteReason::kBackend;
+    if (cpu_assist) return hyle::inference::RouteReason::kCpuAssist;
+    if (scheduler) return hyle::inference::RouteReason::kScheduler;
+    if (sampled_mtp) return hyle::inference::RouteReason::kSampling;
+    if (logits_modifiers) return hyle::inference::RouteReason::kLogitsModifiers;
+    return hyle::inference::RouteReason::kNone;
   }
-  constexpr bool eligible() const noexcept { return refusal_reason().empty(); }
+  constexpr bool eligible() const noexcept { return refusal_reason() == hyle::inference::RouteReason::kNone; }
 };
 
 } // namespace qwen35

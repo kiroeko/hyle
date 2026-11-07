@@ -1,9 +1,9 @@
 #pragma once
 
 #include "cold_workload.h"
+#include "route_reason.h"
 
 #include <cstddef>
-#include <string_view>
 
 namespace hyle::inference {
 
@@ -17,7 +17,7 @@ struct DecodeRouteFacts final {
   std::size_t max_device_drafts = 0;
   bool stored_draft_head = false;
   bool relay_eligible = false;
-  std::string_view relay_refusal;
+  RouteReason relay_refusal = RouteReason::kNone;
   bool commands_replay = false;
   bool has_decode = false;
   std::size_t resolved_active_sequences = 0;
@@ -25,7 +25,7 @@ struct DecodeRouteFacts final {
 
 struct DecodeRouteChoice final {
   bool enabled;
-  std::string_view reason;
+  RouteReason reason = RouteReason::kNone;
 };
 
 // Bounds the workload's shape independently of how the backend progresses it.
@@ -39,24 +39,24 @@ struct BoundedGenerationFacts final {
 
 constexpr DecodeRouteChoice select_bounded_generation(const BoundedGenerationFacts &facts) noexcept {
   const auto &workload = facts.workload;
-  if (!workload.natural_generation) return {false, "non_natural_request"};
+  if (!workload.natural_generation) return {false, RouteReason::kNonNaturalRequest};
   if (workload.multiple_schedules || workload.max_sessions > 1 || workload.active_sequences > 1)
-    return {false, "multiple_sessions_or_sequences"};
-  if (workload.prefix_enabled) return {false, "prefix_cache"};
-  if (workload.planned_shapes) return {false, "planned_shapes"};
-  if (!facts.supported_backend) return {false, "backend_capability"};
-  if (workload.cpu_assist) return {false, "cpu_assist"};
-  if (!workload.greedy) return {false, "sampling"};
-  if (facts.mtp_enabled && workload.capacity <= 1) return {false, "insufficient_capacity"};
-  if (facts.mtp_enabled && !facts.max_drafts) return {false, "drafting_disabled"};
-  return {true, "selected"};
+    return {false, RouteReason::kMultipleSessionsOrSequences};
+  if (workload.prefix_enabled) return {false, RouteReason::kPrefixCache};
+  if (workload.planned_shapes) return {false, RouteReason::kPlannedShapes};
+  if (!facts.supported_backend) return {false, RouteReason::kBackendCapability};
+  if (workload.cpu_assist) return {false, RouteReason::kCpuAssist};
+  if (!workload.greedy) return {false, RouteReason::kSampling};
+  if (facts.mtp_enabled && workload.capacity <= 1) return {false, RouteReason::kInsufficientCapacity};
+  if (facts.mtp_enabled && !facts.max_drafts) return {false, RouteReason::kDraftingDisabled};
+  return {true, RouteReason::kSelected};
 }
 
 struct DecodeBudgetRoutes final {
   DecodeRouteChoice overlap;
   DecodeRouteChoice verification;
   std::size_t overlap_depth;
-  std::string_view overlap_depth_reason;
+  RouteReason overlap_depth_reason = RouteReason::kNone;
 };
 
 // The model owns the capacity calculation. This policy only chooses which
@@ -64,45 +64,47 @@ struct DecodeBudgetRoutes final {
 template<class Fits>
 DecodeBudgetRoutes select_decode_budget_routes(DecodeBudgetRoutes routes, Fits fits) {
   if (routes.verification.enabled && !fits(routes))
-    routes.verification = {false, "cache_budget"};
+    routes.verification = {false, RouteReason::kCacheBudget};
   if (routes.overlap.enabled && routes.overlap_depth == 3 && !fits(routes)) {
     routes.overlap_depth = 2;
-    routes.overlap_depth_reason = "cache_budget";
+    routes.overlap_depth_reason = RouteReason::kCacheBudget;
   }
   if (routes.overlap.enabled && !fits(routes)) {
-    routes.overlap = {false, "cache_budget"};
-    routes.overlap_depth_reason = "cache_budget";
+    routes.overlap = {false, RouteReason::kCacheBudget};
+    routes.overlap_depth_reason = RouteReason::kCacheBudget;
   }
   return routes;
 }
 
 constexpr DecodeRouteChoice select_decode_overlap(const DecodeRouteFacts &facts) noexcept {
-  if (!facts.overlap_requested) return {false, "user_disabled"};
-  if (!facts.workload.natural_generation) return {false, "non_natural_request"};
+  if (!facts.overlap_requested) return {false, RouteReason::kUserDisabled};
+  if (!facts.workload.natural_generation) return {false, RouteReason::kNonNaturalRequest};
   if (facts.mtp_enabled) {
-    if (!facts.max_drafts) return {false, "drafting_disabled"};
-    if (facts.max_drafts > facts.max_device_drafts) return {false, "device_chain_capacity"};
-    if (facts.max_drafts > 1 && !facts.stored_draft_head) return {false, "draft_projection"};
+    if (!facts.max_drafts) return {false, RouteReason::kDraftingDisabled};
+    if (facts.max_drafts > facts.max_device_drafts) return {false, RouteReason::kDeviceChainCapacity};
+    if (facts.max_drafts > 1 && !facts.stored_draft_head) return {false, RouteReason::kDraftProjection};
   }
-  if (!facts.relay_eligible) return {false, facts.relay_refusal.empty() ? "relay_capability" : facts.relay_refusal};
-  if (facts.commands_replay) return {false, "commands_replay"};
-  if (facts.workload.state_trace) return {false, "state_trace"};
-  if (!facts.has_decode) return {false, "no_decode"};
-  return {true, "selected"};
+  if (!facts.relay_eligible)
+    return {false, facts.relay_refusal == RouteReason::kNone ? RouteReason::kRelayCapability : facts.relay_refusal};
+  if (facts.commands_replay) return {false, RouteReason::kCommandsReplay};
+  if (facts.workload.state_trace) return {false, RouteReason::kStateTrace};
+  if (!facts.has_decode) return {false, RouteReason::kNoDecode};
+  return {true, RouteReason::kSelected};
 }
 
 // Verification capacity also supports standalone draft chains, independently
 // of overlap and a compound projection. Tracing disables packet handoff but
 // can still use this capacity for an independent chain.
 constexpr DecodeRouteChoice select_device_verification(const DecodeRouteFacts &facts) noexcept {
-  if (!facts.mtp_enabled) return {false, "mtp_disabled"};
-  if (facts.max_drafts <= 1) return {false, "single_or_no_draft"};
-  if (facts.max_drafts > facts.max_device_drafts) return {false, "device_chain_capacity"};
-  if (!facts.relay_eligible) return {false, facts.relay_refusal.empty() ? "relay_capability" : facts.relay_refusal};
-  if (facts.resolved_active_sequences != 1) return {false, "active_sequences"};
-  if (facts.commands_replay) return {false, "commands_replay"};
-  if (!facts.has_decode) return {false, "no_decode"};
-  return {true, "selected"};
+  if (!facts.mtp_enabled) return {false, RouteReason::kMtpDisabled};
+  if (facts.max_drafts <= 1) return {false, RouteReason::kSingleOrNoDraft};
+  if (facts.max_drafts > facts.max_device_drafts) return {false, RouteReason::kDeviceChainCapacity};
+  if (!facts.relay_eligible)
+    return {false, facts.relay_refusal == RouteReason::kNone ? RouteReason::kRelayCapability : facts.relay_refusal};
+  if (facts.resolved_active_sequences != 1) return {false, RouteReason::kActiveSequences};
+  if (facts.commands_replay) return {false, RouteReason::kCommandsReplay};
+  if (!facts.has_decode) return {false, RouteReason::kNoDecode};
+  return {true, RouteReason::kSelected};
 }
 
 struct DecodeRoutePlans final {
@@ -116,13 +118,13 @@ constexpr DecodeRoutePlans plan_decode_routes(const DecodeRouteFacts &facts) noe
 
 constexpr DecodeRouteChoice select_continuous_mtp(const DecodeRouteFacts &facts, bool overlap_selected,
     std::size_t cached_sessions, bool has_attention, bool exact_token_ids) noexcept {
-  if (!overlap_selected) return {false, "overlap_disabled"};
-  if (!facts.mtp_enabled) return {false, "mtp_disabled"};
-  if (facts.workload.prefix_enabled) return {false, "prefix_cache"};
-  if (cached_sessions != 1 || facts.resolved_active_sequences != 1) return {false, "multiple_sessions_or_sequences"};
-  if (!has_attention) return {false, "no_attention_layers"};
-  if (!exact_token_ids) return {false, "token_id_precision"};
-  return {true, "selected"};
+  if (!overlap_selected) return {false, RouteReason::kOverlapDisabled};
+  if (!facts.mtp_enabled) return {false, RouteReason::kMtpDisabled};
+  if (facts.workload.prefix_enabled) return {false, RouteReason::kPrefixCache};
+  if (cached_sessions != 1 || facts.resolved_active_sequences != 1) return {false, RouteReason::kMultipleSessionsOrSequences};
+  if (!has_attention) return {false, RouteReason::kNoAttentionLayers};
+  if (!exact_token_ids) return {false, RouteReason::kTokenIdPrecision};
+  return {true, RouteReason::kSelected};
 }
 
 } // namespace hyle::inference

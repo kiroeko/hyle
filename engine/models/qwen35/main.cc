@@ -902,11 +902,13 @@ public:
   const FfnPlacement ffn_placement;
   std::size_t host_weight_bytes = 0, device_weight_bytes = 0;
   std::size_t physical_text_roles = 0, physical_mtp_roles = 0, canonical_weight_bytes = 0;
-  std::string_view mtp_selection_reason = "not_configured", mtp_depth_source = "not_configured";
-  std::string_view draft_vocabulary_selection_reason = "not_configured";
-  std::string_view bounded_generation_plan_reason = "not_configured";
-  std::string_view decode_overlap_plan_reason = "not_configured", device_verification_plan_reason = "not_configured";
-  std::string_view overlap_depth_plan_reason = "not_configured";
+  inference::RouteReason mtp_selection_reason = inference::RouteReason::kNotConfigured;
+  inference::RouteReason mtp_depth_source = inference::RouteReason::kNotConfigured;
+  inference::RouteReason draft_vocabulary_selection_reason = inference::RouteReason::kNotConfigured;
+  inference::RouteReason bounded_generation_plan_reason = inference::RouteReason::kNotConfigured;
+  inference::RouteReason decode_overlap_plan_reason = inference::RouteReason::kNotConfigured;
+  inference::RouteReason device_verification_plan_reason = inference::RouteReason::kNotConfigured;
+  inference::RouteReason overlap_depth_plan_reason = inference::RouteReason::kNotConfigured;
   std::size_t ct_channel_groups = 0, ct_local_groups = 0, ct_block_groups = 0, omitted_cache_roles = 0;
   std::size_t fp8_weight_groups = 0, fp8_import_peak_bytes = 0;
   bool float8_weight_policy = false;
@@ -1259,13 +1261,13 @@ public:
   std::string weight_inventory_report() const {
     auto result = ",\"weight_count_scope\":\"selected_physical_roles\",\"text_tensors\":" +
         std::to_string(physical_text_roles) + ",\"mtp_tensors\":" + std::to_string(physical_mtp_roles);
-    result += ",\"mtp_selection_reason\":\"" + std::string(mtp_selection_reason) +
-        "\",\"mtp_depth_source\":\"" + std::string(mtp_depth_source) +
-        "\",\"draft_vocabulary_selection_reason\":\"" + std::string(draft_vocabulary_selection_reason) +
-        "\",\"bounded_generation_plan_reason\":\"" + std::string(bounded_generation_plan_reason) +
-        "\",\"decode_overlap_plan_reason\":\"" + std::string(decode_overlap_plan_reason) +
-        "\",\"device_verification_plan_reason\":\"" + std::string(device_verification_plan_reason) +
-        "\",\"overlap_depth_plan_reason\":\"" + std::string(overlap_depth_plan_reason) + "\"";
+    result += ",\"mtp_selection_reason\":\"" + std::string(inference::route_reason_name(mtp_selection_reason)) +
+        "\",\"mtp_depth_source\":\"" + std::string(inference::route_reason_name(mtp_depth_source)) +
+        "\",\"draft_vocabulary_selection_reason\":\"" + std::string(inference::route_reason_name(draft_vocabulary_selection_reason)) +
+        "\",\"bounded_generation_plan_reason\":\"" + std::string(inference::route_reason_name(bounded_generation_plan_reason)) +
+        "\",\"decode_overlap_plan_reason\":\"" + std::string(inference::route_reason_name(decode_overlap_plan_reason)) +
+        "\",\"device_verification_plan_reason\":\"" + std::string(inference::route_reason_name(device_verification_plan_reason)) +
+        "\",\"overlap_depth_plan_reason\":\"" + std::string(inference::route_reason_name(overlap_depth_plan_reason)) + "\"";
     if (float8_weight_policy) result += ",\"canonical_weight_tensors\":" + std::to_string(weights.size()) +
         ",\"canonical_weight_bytes\":" + std::to_string(canonical_weight_bytes) +
         ",\"fp8_block128_groups\":" + std::to_string(fp8_weight_groups) +
@@ -8936,7 +8938,7 @@ int qwen35::run(int argc, char **argv) {
         .mtp_enabled = mtp_enabled, .max_drafts = max_drafts});
     const bool bounded_generation = bounded_plan.enabled;
     if (require_bounded_generation && !bounded_generation)
-      throw std::runtime_error("bounded natural generation unavailable: " + std::string(bounded_plan.reason));
+      throw std::runtime_error("bounded natural generation unavailable: " + std::string(inference::route_reason_name(bounded_plan.reason)));
     if (max_prefill_rows != SIZE_MAX && !natural_generation)
       throw std::runtime_error("--prefill-chunk-tokens requires natural generation; fixed replay is not supported");
     if (mtp_enabled && grammar == Grammar::kFixedInput)
@@ -9080,7 +9082,8 @@ int qwen35::run(int argc, char **argv) {
       prepared_execution.emplace(qwen35::take(qwen35::Backend::create(backend_selection)));
       continuous_mtp_candidate = qwen35::supports_mtp_attention(*prepared_execution,
           qwen35::attention_capacity(geometry, source_precision, provisional), weight_source.cache_storage);
-      overlap_depth_reason = continuous_mtp_candidate ? "selected" : "attention_capability";
+      overlap_depth_reason = continuous_mtp_candidate ? inference::RouteReason::kSelected :
+          inference::RouteReason::kAttentionCapability;
     }
     auto overlap_depth = continuous_mtp_candidate ? std::size_t{3} : std::size_t{2};
     const auto plan_for_routes = [&](std::size_t residents, bool overlap, std::size_t depth, bool verification) {

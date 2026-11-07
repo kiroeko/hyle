@@ -8,7 +8,6 @@
 #include <filesystem>
 #include <stdexcept>
 #include <string>
-#include <string_view>
 #include <utility>
 
 namespace qwen35 {
@@ -20,7 +19,7 @@ struct DraftAssetSelection final {
   std::filesystem::path vocabulary;
   std::filesystem::path head;
   bool auto_head = false;
-  std::string_view vocabulary_reason;
+  hyle::inference::RouteReason vocabulary_reason = hyle::inference::RouteReason::kNone;
 };
 
 inline DraftAssetSelection select_draft_assets(const std::filesystem::path &input,
@@ -61,16 +60,17 @@ inline DraftAssetSelection select_draft_assets(const std::filesystem::path &inpu
   }
   const auto policy = mtp::select_default(request, has_vocabulary, original_projection_eligible,
       explicit_asset_selection);
-  auto vocabulary_reason = vocabulary == "full" ? std::string_view{"explicit_full"} :
-      vocabulary != "auto" ? std::string_view{"explicit_file"} :
-      !may_use_automatic_vocabulary ? std::string_view{"not_inspected"} :
-      !present_automatic_vocabulary ? std::string_view{"not_present"} :
-      !usable_automatic_vocabulary ? std::string_view{"unsupported_source_or_backend"} :
-      std::string_view{"not_selected"};
+  auto vocabulary_reason = vocabulary == "full" ? hyle::inference::RouteReason::kExplicitFull :
+      vocabulary != "auto" ? hyle::inference::RouteReason::kExplicitFile :
+      !may_use_automatic_vocabulary ? hyle::inference::RouteReason::kNotInspected :
+      !present_automatic_vocabulary ? hyle::inference::RouteReason::kNotPresent :
+      !usable_automatic_vocabulary ? hyle::inference::RouteReason::kUnsupportedSourceOrBackend :
+      hyle::inference::RouteReason::kNotSelected;
   if (!policy.enabled || !request.max_drafts) {
     if (explicit_file)
       throw std::runtime_error("explicit MTP asset cannot be used: " +
-          std::string(request.max_drafts ? policy.reason : "drafting_disabled"));
+          std::string(hyle::inference::route_reason_name(request.max_drafts ? policy.reason :
+              hyle::inference::RouteReason::kDraftingDisabled)));
     return {policy, {}, {}, false, vocabulary_reason};
   }
   bool auto_head = false;
@@ -85,7 +85,7 @@ inline DraftAssetSelection select_draft_assets(const std::filesystem::path &inpu
     if (policy.prepared_assets) vocabulary = prepared_vocabulary;
     else if (head.empty() && usable_automatic_vocabulary)
       vocabulary = prepared_vocabulary;
-    if (!vocabulary.empty()) vocabulary_reason = "prepared_vocabulary";
+    if (!vocabulary.empty()) vocabulary_reason = hyle::inference::RouteReason::kPreparedVocabulary;
   }
   if (!vocabulary.empty() && !request.unmodified_greedy_drafting())
     throw std::runtime_error("--mtp-draft-vocabulary requires --mtp on, active drafting and unmodified greedy sampling");
