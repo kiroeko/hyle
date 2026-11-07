@@ -1,5 +1,6 @@
 // Cold source policy and digest; no device, model payload or network needed.
 #include "../../engine/models/qwen35/precision_profile.h"
+#include "../../engine/models/qwen35/mtp_capabilities.h"
 #include "../../engine/models/qwen35/cache_plan.h"
 #include "../../engine/inference/artifact_digest.h"
 
@@ -89,7 +90,12 @@ int main(int argc, char **argv) {
     require(qwen35::gguf_capabilities(capability.encoding) == &capability);
   }
   const auto *q5 = qwen35::gguf_capabilities("Q5_K");
-  require(q5 && q5->f32_operand && !q5->stored_draft_head && q5->copy_encoded_rows && !q5->concurrent_cold_family);
+  require(q5 && q5->f32_operand && q5->stored_draft_head && q5->copy_encoded_rows && !q5->concurrent_cold_family);
+  gguf.geometry.tied_head = true;
+  require(qwen35::supports_stored_draft_projection(gguf));
+  gguf.selected.front().dtype = "Q3_K";
+  require(!qwen35::supports_stored_draft_projection(gguf));
+  gguf.selected.front().dtype = "Q5_K";
   require(!qwen35::gguf_capabilities("Q3_K"));
   gguf.selected.back().dtype = "BF16";
   require(PrecisionProfile::from_roles(gguf) == PrecisionProfile{});

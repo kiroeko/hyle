@@ -261,7 +261,7 @@ void q5_projection_composition(i::Backend &backend, const c::ResourceBudget &bud
   q::prepared::Roles roles; roles.representation = q::prepared::SourceRepresentation::kGgufConverted;
   q::prepared::Role head; head.dtype = "Q5_K"; head.meaning = q::prepared::ParameterMeaning::kLinearWeight;
   roles.selected.push_back(head);
-  for (const std::int64_t batch : {1, 2}) {
+  for (const std::int64_t batch : {1, 2, 3, 4}) {
     q::Tensor x(backend.device(), q::dense(Type::kFloat32, {batch, columns}), true, budget);
     std::vector<float> xs(static_cast<std::size_t>(batch * columns));
     for (std::size_t n = 0; n < xs.size(); ++n) xs[n] = (static_cast<int>(n % 29) - 14) / 64.0f;

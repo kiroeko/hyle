@@ -21,7 +21,7 @@ struct GgufEncodingCapabilities final {
 
 inline constexpr std::array kGgufEncodingCapabilities{
     GgufEncodingCapabilities{"Q4_K", hyle::compute::GgufQuantizedType::kQ4K, true, true, true, true},
-    GgufEncodingCapabilities{"Q5_K", hyle::compute::GgufQuantizedType::kQ5K, true, false, true, false},
+    GgufEncodingCapabilities{"Q5_K", hyle::compute::GgufQuantizedType::kQ5K, true, true, true, false},
     GgufEncodingCapabilities{"Q6_K", hyle::compute::GgufQuantizedType::kQ6K, true, true, true, true},
     GgufEncodingCapabilities{"Q8_0", hyle::compute::GgufQuantizedType::kQ8_0, true, true, true, true},
 };
