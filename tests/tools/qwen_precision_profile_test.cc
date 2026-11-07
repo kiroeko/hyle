@@ -3,6 +3,7 @@
 #include "../../engine/models/qwen35/mtp_capabilities.h"
 #include "../../engine/models/qwen35/cache_plan.h"
 #include "../../engine/inference/artifact_digest.h"
+#include "../../engine/reporting/qwen35_weight_inventory.h"
 
 #include <cstdio>
 #include <string>
@@ -46,6 +47,27 @@ int main(int argc, char **argv) {
   require(!chain.packet_available() && !chain.available());
   chain = k3; chain.max_drafts = 2; chain.private_draft_stages = 2;
   require(chain.packet_available() && chain.available());
+  {
+    WeightInventoryFacts inventory;
+    inventory.text_tensors = 320; inventory.mtp_tensors = 15;
+    inventory.mtp_selection_reason = hyle::inference::RouteReason::kSelected;
+    inventory.draft_cache = true;
+    auto report = hyle::engine::reporting::qwen35_weight_inventory(inventory);
+    require(report.find("\"text_tensors\":320,\"mtp_tensors\":15") != std::string::npos);
+    require(report.find("\"mtp_selection_reason\":\"selected\"") != std::string::npos);
+    require(report.find("\"target_kv_cache_dtype\":\"BF16\",\"draft_kv_cache_dtype\":\"BF16\"") != std::string::npos);
+    require(report.find("fp8_block128_policy") == std::string::npos);
+    inventory.float8_weight_policy = true; inventory.fp8_reader = "test_reader";
+    inventory.canonical_tensors = 4; inventory.canonical_bytes = 64;
+    inventory.fp8_groups = 2; inventory.fp8_import_peak_bytes = 16;
+    inventory.cache_float8 = true; inventory.cache_calibration_roles = 8;
+    inventory.plain_cache_f16 = true;
+    report = hyle::engine::reporting::qwen35_weight_inventory(inventory);
+    require(report.find("\"canonical_weight_tensors\":4,\"canonical_weight_bytes\":64") != std::string::npos);
+    require(report.find("\"reader\":\"test_reader\"") != std::string::npos);
+    require(report.find("\"original_cache_calibration_roles\":8") != std::string::npos);
+    require(report.find("\"target_kv_cache_dtype\":\"E4M3FN\",\"draft_kv_cache_dtype\":\"F16\"") != std::string::npos);
+  }
   digest("", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
   digest("abc", "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
   digest("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq",

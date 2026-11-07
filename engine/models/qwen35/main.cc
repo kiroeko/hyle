@@ -82,6 +82,7 @@
 #include "../../inference/request_batch_execution.h"
 #include "../../inference/execution_observation.h"
 #include "../../reporting/execution_report.h"
+#include "../../reporting/qwen35_weight_inventory.h"
 #include "generation_schedule.h"
 #include "generation_tokens.h"
 #include "generation_ledger.h"
@@ -90,6 +91,7 @@
 #include "ffn_placement.h"
 #include "projection_binding.h"
 #include "weights.h"
+#include "weight_inventory.h"
 #include "mtp_capabilities.h"
 #include "draft_asset_policy.h"
 #include "gguf_capabilities.h"
@@ -1240,38 +1242,23 @@ public:
   std::string_view score_precision_policy() const {
     return score_policy(projections.at(std::string(geometry.head_role())), precision);
   }
-  std::string weight_inventory_report() const {
-    auto result = ",\"weight_count_scope\":\"selected_physical_roles\",\"text_tensors\":" +
-        std::to_string(physical_text_roles) + ",\"mtp_tensors\":" + std::to_string(physical_mtp_roles);
-    result += ",\"mtp_selection_reason\":\"" + std::string(inference::route_reason_name(mtp_selection_reason)) +
-        "\",\"mtp_depth_source\":\"" + std::string(inference::route_reason_name(mtp_depth_source)) +
-        "\",\"draft_vocabulary_selection_reason\":\"" + std::string(inference::route_reason_name(draft_vocabulary_selection_reason)) +
-        "\",\"bounded_generation_plan_reason\":\"" + std::string(inference::route_reason_name(bounded_generation_plan_reason)) +
-        "\",\"decode_overlap_plan_reason\":\"" + std::string(inference::route_reason_name(decode_overlap_plan_reason)) +
-        "\",\"device_verification_plan_reason\":\"" + std::string(inference::route_reason_name(device_verification_plan_reason)) +
-        "\",\"overlap_depth_plan_reason\":\"" + std::string(inference::route_reason_name(overlap_depth_plan_reason)) + "\"";
-    if (float8_weight_policy) result += ",\"canonical_weight_tensors\":" + std::to_string(weights.size()) +
-        ",\"canonical_weight_bytes\":" + std::to_string(canonical_weight_bytes) +
-        ",\"fp8_block128_groups\":" + std::to_string(fp8_weight_groups) +
-        ",\"fp8_import_temporary_group_peak_bytes\":" + std::to_string(fp8_import_peak_bytes) +
-        ",\"fp8_block128_policy\":{\"activation_scale\":\"divide\",\"activation_floor_f32_bits\":\"2edbe6ff\","
-        "\"input_dtype\":\"BF16\",\"accumulation_dtype\":\"F32\",\"output_dtype\":\"BF16\","
-        "\"weight_scale_conversion\":\"bf16_to_f32_exact\",\"reader\":\"" + std::string(prepared::fp8_reader) + "\"}";
-    if (ct_channel_groups || ct_local_groups) result += ",\"ct_channel_token_groups\":" + std::to_string(ct_channel_groups) +
-        ",\"ct_local_nvfp4_groups\":" + std::to_string(ct_local_groups);
-    if (ct_block_groups) result += ",\"ct_block128_bf16_groups\":" + std::to_string(ct_block_groups);
-    if (omitted_cache_roles) result += ",\"kv_cache_dtype\":\"BF16\",\"omitted_original_cache_calibration_roles\":" +
-        std::to_string(omitted_cache_roles);
-    if (resources_->cache_policy == prepared::CachePolicy::kFloat8OriginalCalibration)
-      result += ",\"kv_cache_dtype\":\"E4M3FN\",\"original_cache_calibration_roles\":" +
-          std::to_string(resources_->attention_storage.size() * 2);
-    if (cache_plan.draft_cache) {
-      const auto plain_dtype = precision.is_f16() ? "F16" : "BF16";
-      result += ",\"target_kv_cache_dtype\":\"" + std::string(resources_->cache_policy ==
-          prepared::CachePolicy::kFloat8OriginalCalibration ? "E4M3FN" : plain_dtype) +
-          "\",\"draft_kv_cache_dtype\":\"" + plain_dtype + "\"";
-    }
-    return result;
+  WeightInventoryFacts weight_inventory_facts() const noexcept {
+    const bool cache_float8 = resources_->cache_policy == prepared::CachePolicy::kFloat8OriginalCalibration;
+    return {.text_tensors = physical_text_roles, .mtp_tensors = physical_mtp_roles,
+        .mtp_selection_reason = mtp_selection_reason, .mtp_depth_source = mtp_depth_source,
+        .draft_vocabulary_selection_reason = draft_vocabulary_selection_reason,
+        .bounded_generation_plan_reason = bounded_generation_plan_reason,
+        .decode_overlap_plan_reason = decode_overlap_plan_reason,
+        .device_verification_plan_reason = device_verification_plan_reason,
+        .overlap_depth_plan_reason = overlap_depth_plan_reason,
+        .float8_weight_policy = float8_weight_policy, .canonical_tensors = weights.size(),
+        .canonical_bytes = canonical_weight_bytes, .fp8_groups = fp8_weight_groups,
+        .fp8_import_peak_bytes = fp8_import_peak_bytes, .fp8_reader = prepared::fp8_reader,
+        .ct_channel_groups = ct_channel_groups, .ct_local_groups = ct_local_groups,
+        .ct_block_groups = ct_block_groups, .omitted_cache_roles = omitted_cache_roles,
+        .cache_float8 = cache_float8,
+        .cache_calibration_roles = cache_float8 ? resources_->attention_storage.size() * 2 : 0,
+        .draft_cache = cache_plan.draft_cache, .plain_cache_f16 = precision.is_f16()};
   }
   Tensor caller_tensor(mem::MemoryResourceRef resource, c::TensorDesc description, bool caller = true) const {
     return Tensor(resource, description, caller, allocation_budget);
@@ -7663,7 +7650,7 @@ void print_generation_request(const Model &model, const GenerationRequest &reque
   const auto session_seconds = std::chrono::duration<double>(endpoint - prefill_start).count();
   std::cout << std::setprecision(17)
             << "{\"source_id\":\"" << model.source_identity << "\",\"score_dtype\":\"F32\",\"score_policy\":\"" << model.score_precision_policy()
-            << "\",\"mtp\":" << (model.cache_plan.draft_cache ? "true" : "false") << model.weight_inventory_report()
+            << "\",\"mtp\":" << (model.cache_plan.draft_cache ? "true" : "false") << hyle::engine::reporting::qwen35_weight_inventory(model.weight_inventory_facts())
             << model.cache_report(packed_prefill_offset) << ",\"visible_tokens\":" << request.visible_tokens;
   write_request_sampling(std::cout, model, request);
   if (model.cache_plan.draft_cache) std::cout << ",\"draft_frontier\":" << request.draft_frontier
@@ -8556,7 +8543,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   const auto graph_calls = cache::add(cache::add(cache::add(actual_prefill_calls, actual_decode_calls), restored.graph_calls),
       cache::add(model.frontier_sampling_graph_calls, cache::add(model.draft_program_graph_calls, model.prefix_decision_graph_calls)));
   std::cout << std::setprecision(17) << "{\"source_id\":\"" << model.source_identity << "\",\"score_dtype\":\"F32\",\"score_policy\":\"" << model.score_precision_policy()
-      << "\",\"mtp\":" << (model.cache_plan.draft_cache ? "true" : "false") << model.weight_inventory_report()
+      << "\",\"mtp\":" << (model.cache_plan.draft_cache ? "true" : "false") << hyle::engine::reporting::qwen35_weight_inventory(model.weight_inventory_facts())
       << ",\"session_count\":" << requests.size() << ",\"turn_count\":" << total_turns << ",\"active_sequences\":" << model.cache_plan.active_sequences << ",\"max_sessions\":" << model.cache_plan.resident_sessions
       << ",\"decode_overlap\":" << (decode_overlap ? "true" : "false")
       << ",\"decode_overlap_available\":" << (decode_overlap && !continuation.unavailable ? "true" : "false")
@@ -9770,7 +9757,7 @@ int qwen35::run(int argc, char **argv) {
         const auto &run = runs[s];
         const auto &phases = schedules[s].phases;
         std::cout << "{\"source_id\":\"" << model.source_identity << "\",\"score_dtype\":\"F32\",\"score_policy\":\"" << model.score_precision_policy()
-                  << '"' << model.weight_inventory_report() << ",\"visible_tokens\":"
+                  << '"' << hyle::engine::reporting::qwen35_weight_inventory(model.weight_inventory_facts()) << ",\"visible_tokens\":"
                   << run.visible_tokens << ",\"generated_ids\":[";
         for (std::size_t i = 0; i < run.generated.size(); ++i) std::cout << (i ? "," : "") << run.generated[i];
         std::cout << "],\"fixed_decode\":true,\"decode_input_ids\":[";
@@ -9836,7 +9823,7 @@ int qwen35::run(int argc, char **argv) {
           prefix_full_hits += run.prefix_full_hits; reused_tokens += run.reused_tokens;
         }
         std::cout << "{\"source_id\":\"" << model.source_identity << "\",\"score_dtype\":\"F32\",\"score_policy\":\"" << model.score_precision_policy()
-                  << '"' << model.weight_inventory_report() << ",\"session_count\":" << runs.size()
+                  << '"' << hyle::engine::reporting::qwen35_weight_inventory(model.weight_inventory_facts()) << ",\"session_count\":" << runs.size()
                   << ",\"execution\":\"equal_T_batched\",\"processed_tokens\":" << processed
                   << ",\"generated_tokens\":" << all_calls
                   << ",\"graph_participations\":" << graph_participations
@@ -9906,7 +9893,7 @@ int qwen35::run(int argc, char **argv) {
     const auto graph_calls = 1 + std::size_t(!extra.empty()) + consumed.size();
     std::cout << std::setprecision(17)
               << "{\"source_id\":\"" << model.source_identity << "\",\"score_dtype\":\"F32\",\"score_policy\":\"" << model.score_precision_policy()
-              << "\",\"mtp\":false" << model.weight_inventory_report() << model.cache_report()
+              << "\",\"mtp\":false" << hyle::engine::reporting::qwen35_weight_inventory(model.weight_inventory_facts()) << model.cache_report()
               << ",\"sampling_stream\":" << session->head->sampling.stream
               << ",\"sampling_draw_cursor\":" << session->head->sampling.draw
               << ",\"visible_tokens\":" << session->length() << ",\"generated_ids\":[";
