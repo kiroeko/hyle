@@ -136,6 +136,7 @@ public:
       input_desc_.push_back(desc);
       inputs_.push_back(take(m::Buffer::create(resource_, take(desc.required_bytes()), 64)));
     }
+    alternate_first_input_ = take(m::Buffer::create(resource_, take(floats.required_bytes()), 64));
     auto p = input_ids_[0], q = input_ids_[1], bonus = input_ids_[2];
     std::vector<V> policy_valid;
     if (policy) {
@@ -170,13 +171,15 @@ public:
     slot_ = take(program_.create_invocation());
   }
   Answer run(std::span<const float> p, std::span<const float> q, std::span<const float> bonus,
-             std::int32_t proposal, Identity accept, Identity final, bool capture = false) {
+             std::int32_t proposal, Identity accept, Identity final, bool capture = false,
+             bool alternate_first_input = false) {
     const std::array<std::span<const std::byte>, 6> payloads{std::as_bytes(p), std::as_bytes(q), std::as_bytes(bonus),
         std::as_bytes(std::span(&proposal, 1)), std::as_bytes(std::span(accept)), std::as_bytes(std::span(final))};
     require(slot_.reset());
     for (std::size_t i = 0; i < inputs_.size(); ++i) {
-      require(inputs_[i].view().write(payloads[i]));
-      require(slot_.bind(input_ids_[i], take(c::ConstTensorView::create(input_desc_[i], inputs_[i].view()))));
+      auto &buffer = i == 0 && alternate_first_input ? alternate_first_input_ : inputs_[i];
+      require(buffer.view().write(payloads[i]));
+      require(slot_.bind(input_ids_[i], take(c::ConstTensorView::create(input_desc_[i], buffer.view()))));
     }
     for (std::size_t i = 0; i < outputs_.size(); ++i)
       require(slot_.bind(output_ids_[i], take(c::TensorView::create(output_desc_[i], outputs_[i].view()))));
@@ -216,6 +219,7 @@ private:
   m::MemoryResourceRef resource_ = m::system_resource();
   c::Queue queue_;
   std::vector<m::Buffer> inputs_, outputs_, literals_;
+  m::Buffer alternate_first_input_;
   std::vector<c::TensorDesc> input_desc_, output_desc_;
   std::vector<V> input_ids_, output_ids_;
   g::Executable program_;
@@ -660,7 +664,7 @@ TEST(QwenSamplingGraph, CapturedFullVocabularySamplingReusesBindingsAndRandomIde
   for (std::uint32_t draw = 0; draw < 8; ++draw) {
     values[(draw * 131) % width] += .1F;
     const auto expected = control.run(values, values, values, 387, key(draw), key(draw, true));
-    const auto actual = captured.run(values, values, values, 387, key(draw), key(draw, true), true);
+    const auto actual = captured.run(values, values, values, 387, key(draw), key(draw, true), true, draw % 2 != 0);
     ASSERT_TRUE(expected.valid);
     ASSERT_TRUE(actual.valid);
     EXPECT_EQ(actual.final_id, expected.final_id);
@@ -674,8 +678,10 @@ TEST(QwenSamplingGraph, CapturedFullVocabularySamplingReusesBindingsAndRandomIde
     const auto actual_logp = captured.log_probabilities();
     ASSERT_EQ(actual_logp.size(), expected_logp.size());
     EXPECT_TRUE(std::equal(actual_logp.begin(), actual_logp.end(), expected_logp.begin())) << draw;
-    if (draw) EXPECT_GT(captured.last_reused(), 0u);
-    else EXPECT_GT(captured.last_recorded(), 0u);
+    if (draw >= 2) {
+      EXPECT_EQ(captured.last_recorded(), 0u);
+      EXPECT_GT(captured.last_reused(), 0u);
+    } else EXPECT_GT(captured.last_recorded(), 0u);
   }
 }
 
@@ -685,13 +691,17 @@ TEST(QwenSamplingGraph, CapturedSamplingKeepsValidationAndRecoversAfterBadInput)
   auto invalid = valid;
   invalid[2] = std::numeric_limits<float>::quiet_NaN();
   EXPECT_TRUE(session.run(valid, valid, valid, 0, key(0), key(0, true), true).valid);
-  EXPECT_FALSE(session.run(invalid, valid, valid, 0, key(1), key(1, true), true).valid);
-  EXPECT_THROW((void)session.run(valid, valid, valid, -1, key(2), key(2, true), true), std::runtime_error);
+  EXPECT_TRUE(session.run(valid, valid, valid, 0, key(1), key(1, true), true, true).valid);
+  EXPECT_FALSE(session.run(invalid, valid, valid, 0, key(2), key(2, true), true).valid);
+  EXPECT_GT(session.last_reused(), 0u);
+  EXPECT_TRUE(session.run(valid, valid, valid, 0, key(3), key(3, true), true, true).valid);
+  EXPECT_GT(session.last_reused(), 0u);
+  EXPECT_THROW((void)session.run(valid, valid, valid, -1, key(4), key(4, true), true), std::runtime_error);
   // A failed invocation is terminal by Graph contract; a new one must not
   // inherit the prior capture's checked device status.
-  EXPECT_THROW((void)session.run(valid, valid, valid, 0, key(3), key(3, true), true), std::runtime_error);
+  EXPECT_THROW((void)session.run(valid, valid, valid, 0, key(5), key(5, true), true), std::runtime_error);
   Session recovered(3);
-  EXPECT_TRUE(recovered.run(valid, valid, valid, 0, key(3), key(3, true), true).valid);
+  EXPECT_TRUE(recovered.run(valid, valid, valid, 0, key(5), key(5, true), true).valid);
 }
 #endif
 struct BatchedPolicyAnswer final {

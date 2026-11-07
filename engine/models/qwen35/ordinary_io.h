@@ -49,17 +49,18 @@ struct OrdinaryIoPlan final {
 };
 
 // A different capability from host input/result IO: device relay requires an
-// unmodified deterministic sampler. Keep actual cohort/Source/capture checks
-// with their original runtime owners.
+// unmodified ordinary sampler or deterministic MTP. Sampled MTP has a
+// separate acceptance/publishing path. Keep actual cohort/Source/capture
+// checks with their original runtime owners.
 struct DeviceRelayCapabilities final {
   hyle::inference::BackendKind backend = hyle::inference::BackendKind::kDefault;
-  bool cpu_assist = false, scheduler = false, sampling = false, logits_modifiers = false;
+  bool cpu_assist = false, scheduler = false, sampled_mtp = false, logits_modifiers = false;
 
   constexpr std::string_view refusal_reason() const noexcept {
     if (backend != hyle::inference::BackendKind::kCuda) return "backend";
     if (cpu_assist) return "cpu_assist";
     if (scheduler) return "scheduler";
-    if (sampling) return "sampling";
+    if (sampled_mtp) return "sampling";
     if (logits_modifiers) return "logits_modifiers";
     return {};
   }

@@ -4,6 +4,7 @@
 
 namespace hyle::compute::cuda_native::sampling {
 inline constexpr std::uint64_t kRoute = 0x53414d5001ULL;
+bool preserves_capture_bindings(const detail::ProviderPrepared &) noexcept;
 Status propose(const detail::ProviderOperationRequest &,
                  std::span<detail::ResourceBindingRequirement>,
                  std::span<detail::ResourceBindingRequirement>,

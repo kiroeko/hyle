@@ -485,8 +485,16 @@ Status inspect_capture_bindings(const detail::ProviderPrepared &value, bool *pre
       runtime.workspace_owner != ProviderWorkspaceOwner::kCaller ||
       runtime.replay_class != ProviderReplayClass::kPrepared || runtime.blocks_host ||
       runtime.uses_private_threads || !runtime.supports_concurrent_invocations ||
-      !runtime.capture_compatible || value.workspace.size != 0 ||
-      value.invocation_private_bytes != 0) return Status::Ok();
+      !runtime.capture_compatible) return Status::Ok();
+  // These implementations own fixed per-invocation workspace and prove their
+  // captured private addresses independently of the zero-workspace paths.
+  if constexpr (!Sglang) {
+    if (scattering::preserves_capture_bindings(value) || sampling::preserves_capture_bindings(value)) {
+      *preserves = true;
+      return Status::Ok();
+    }
+  }
+  if (value.workspace.size != 0 || value.invocation_private_bytes != 0) return Status::Ok();
   *preserves = native_capture_bindings<Sglang>(value) ||
       normalization::preserves_capture_bindings(value);
   if constexpr (!Sglang)

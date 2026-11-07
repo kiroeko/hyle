@@ -207,10 +207,18 @@ const detail::ProviderPreparedVTable kPreparedVTable{
 } // namespace
 
 bool preserves_capture_bindings(const detail::ProviderPrepared &value) noexcept {
-  if (value.vtable != &kPreparedVTable || !value.state || value.workspace.size != 0 ||
-      value.invocation_private_bytes != 0) return false;
+  if (value.vtable != &kPreparedVTable || !value.state) return false;
   const auto &prepared = *static_cast<const Prepared *>(value.state);
   const auto &program = prepared.program;
+  // The sorted path owns a cold child graph whose sort arrays and scratch
+  // point into this Invocation's caller workspace. It is never rebound or
+  // mutated, and Graph retains the Invocation until its captures retire.
+  if (program.layout.indices > 1 && prepared.primary && program.pack && program.copy && program.update &&
+      program.array_bytes && program.sort_bytes && program.array_bytes <= SIZE_MAX / 4 &&
+      program.sort_bytes <= SIZE_MAX - 4 * program.array_bytes &&
+      program.workspace_bytes == 4 * program.array_bytes + program.sort_bytes &&
+      value.workspace.size == program.workspace_bytes) return true;
+  if (value.workspace.size != 0 || value.invocation_private_bytes != 0) return false;
   // Only the zero/one-index path has no Invocation allocation or sort graph.
   // Its data addresses are ports; kernels and by-value layout stay cold. A
   // checked launch borrows the backend's capture-owned stable status word,

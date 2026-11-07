@@ -1164,7 +1164,7 @@ public:
     for (const auto &prepared : resources_->sampling_configurations) {
       const auto &sampling = prepared->configuration;
       device_relay_by_sampling_.push_back(DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(),
-          bool(scheduler), sampling.enabled, !sampling.modifiers.empty()}.eligible());
+          bool(scheduler), sampling.enabled && cache_plan.draft_cache, !sampling.modifiers.empty()}.eligible());
     }
     const auto weight_load_start = Clock::now();
     auto loading = load_selected_weight_roles(source_roles, execution, weights, weight_pools, ffn_placement, allocation_budget);
@@ -9078,7 +9078,7 @@ int qwen35::run(int argc, char **argv) {
     const bool stored_draft_head = qwen35::supports_stored_draft_projection(weight_source.roles);
     const qwen35::DeviceRelayCapabilities device_relay{
         backend_selection.primary, cpu_ffn_layers != 0, progress,
-        sampler.enabled, !sampler.modifiers.empty()};
+        sampler.enabled && mtp_enabled, !sampler.modifiers.empty()};
     const hyle::inference::DecodeRouteFacts route_facts{
         .workload = cold_workload, .overlap_requested = decode_overlap,
         .mtp_enabled = mtp_enabled, .max_drafts = max_drafts,

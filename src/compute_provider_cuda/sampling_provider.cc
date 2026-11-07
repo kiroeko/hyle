@@ -145,6 +145,15 @@ const detail::ProviderPreparedVTable kPrepared{
     .shared_submit = &submit};
 } // namespace
 
+bool preserves_capture_bindings(const detail::ProviderPrepared &value) noexcept {
+  if (value.vtable != &kPrepared || !value.state) return false;
+  const auto &prepared = *static_cast<const Prepared *>(value.state);
+  // RNG identities are explicit tensor inputs. The per-invocation scratch
+  // pointer and checked status owner remain fixed for the capture's lifetime.
+  return prepared.primary && value.workspace.size == prepared.program.workspace_bytes &&
+      value.invocation_private_bytes == (prepared.program.workspace_bytes ? sizeof(Invocation) : 0);
+}
+
 Status propose(const detail::ProviderOperationRequest &request,
     std::span<detail::ResourceBindingRequirement> inputs,
     std::span<detail::ResourceBindingRequirement> outputs,

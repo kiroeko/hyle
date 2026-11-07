@@ -39,7 +39,7 @@ inline void qualification_matrix() {
       !q::DeviceRelayCapabilities{.backend = q::BackendKind::kCpu}.eligible() &&
       !q::DeviceRelayCapabilities{.backend = q::BackendKind::kCuda, .cpu_assist = true}.eligible() &&
       !q::DeviceRelayCapabilities{.backend = q::BackendKind::kCuda, .scheduler = true}.eligible() &&
-      !q::DeviceRelayCapabilities{.backend = q::BackendKind::kCuda, .sampling = true}.eligible() &&
+      !q::DeviceRelayCapabilities{.backend = q::BackendKind::kCuda, .sampled_mtp = true}.eligible() &&
       !q::DeviceRelayCapabilities{.backend = q::BackendKind::kCuda, .logits_modifiers = true}.eligible(),
       "ordinary device relay escaped its separate static sampler/backend boundary");
 }
@@ -370,7 +370,12 @@ inline void ordinary_decode_recordings(const std::filesystem::path &input) {
         "ineligible ordinary route performed private cold recording");
     idle(model);
   };
-  skipped(*recorded_model, 1);
+  const auto random_recording = recorded_model->prepare_ordinary_decode_recordings(1);
+  require(random_recording.preparations == 5 && random_recording.captures > 0 &&
+      random_recording.seconds > 0 && random_recording.capture_preparation_seconds > 0 &&
+      random_recording.capture_preparation_seconds <= random_recording.seconds,
+      "ordinary random sampling did not record its relay tuples");
+  idle(*recorded_model);
   auto &slot = recorded_model->prepare_child(1, false).slots[0];
   const auto replay = slot.replay_mode; slot.replay_mode = q::g::ReplayMode::kCommands;
   hyle::util::ScopeGuard restore_replay{[&]() noexcept { slot.replay_mode = replay; }};
@@ -381,7 +386,7 @@ inline void ordinary_decode_recordings(const std::filesystem::path &input) {
       << ",\"session_preparations\":" << session_recording.preparations
       << ",\"session_captures\":" << session_recording.captures
       << ",\"real_ids_ledger_epochs_images_equal\":true,\"recycled_state_zeroed\":true,\"empty_session_handoff\":true,"
-         "\"random_and_cpu_relay_skipped\":true,\"final_private_versions\":0}\n";
+         "\"random_relay_recorded\":true,\"cpu_relay_skipped\":true,\"final_private_versions\":0}\n";
 }
 
 inline void mtp_decode_recordings(const std::filesystem::path &input) {

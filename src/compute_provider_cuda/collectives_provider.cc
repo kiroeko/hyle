@@ -395,7 +395,9 @@ Status inspect_capture_bindings(const detail::ProviderPrepared &value,
   // This exact I32 Scan retains its original caller workspace and offsets.
   // CUB's scan/min/max and the fixed check/output kernels borrow only those
   // addresses and explicit ports; no invocation-private carrier is replaced.
-  // Other Scan and managed TopK paths retain their original qualification.
+  // The captured dense F32 row paths likewise use only explicit tensor ports
+  // and this invocation's fixed caller workspace. CUB's managed dispatch
+  // records those addresses into the original Graph-owned capture.
   const bool integer_scan = checked_integer_scan(program) && prepared.primary &&
       value.runtime.workspace_owner == ProviderWorkspaceOwner::kCaller &&
       value.workspace.size == program.workspace_bytes && program.count != 0 &&
@@ -404,9 +406,13 @@ Status inspect_capture_bindings(const detail::ProviderPrepared &value,
       within_workspace(program.prefix_offset, program.count * sizeof(std::int64_t)) &&
       within_workspace(program.bounds_offset, 2 * sizeof(std::int64_t)) &&
       within_workspace(program.temporary_offset, program.temporary_bytes);
+  const bool float_row = captured_float_row(program) && prepared.primary &&
+      value.runtime.workspace_owner == ProviderWorkspaceOwner::kCaller &&
+      value.workspace.size == program.workspace_bytes &&
+      value.invocation_private_bytes == (program.workspace_bytes ? sizeof(Invocation) : 0);
   *preserves = value.runtime.capture_compatible &&
       value.runtime.mode == ProviderRuntimeMode::kSharedQueue &&
-      (program.count == 0 || program.kind == collectives::Kind::kGather || integer_scan ||
+      (program.count == 0 || program.kind == collectives::Kind::kGather || integer_scan || float_row ||
        (program.kind == collectives::Kind::kTopK && program.k == 1 &&
         program.arg_tiles != 0));
   return Status::Ok();
