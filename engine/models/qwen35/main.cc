@@ -1787,10 +1787,7 @@ struct SynchronousGenerationStepAdapter final {
     }
     attach_outputs(calls);
     if (calls.size() == 1 && calls[0].verification_prepared) {
-      if (role != GraphRole::kVerify || !model.active_step || model.active_step->submitted ||
-          model.active_step->members.size() != 1 || model.active_step->input_tokens != calls[0].ids().size())
-        throw std::logic_error("device verifier lost its original prepared target episode");
-      model.active_step->members[0].verification_inputs.assign(calls[0].ids().begin(), calls[0].ids().end());
+      model.bind_device_verification_inputs(role, calls[0].ids());
       return;
     }
     if (!generation && packed_prefill) model.prepare_prefill_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion);
@@ -2105,9 +2102,8 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
                   const std::array input{EvaluationRequest{call.request->session, std::span(shape).first(prefix_ids.size() + 1),
                       &call.request->ledger->stop_policy(), call.logits, {}, call.request->request_key,
                       nullptr, {}, 0, 0, source}};
-                  model.prepare_evaluations(input, nullptr, GraphRole::kVerify);
+                  model.prepare_device_verifier(input);
                   call.verification_prepared = true;
-                  ++model.device_verification_handoffs;
                 });
           } else call.verification_ids = model.propose_recursive(*call.request->session, call.maximum, eos,
               &call.draft_log_probabilities, &call.request->ledger->stop_policy(), call.logits, {}, dynamic ? &*dynamic : nullptr);
@@ -2126,14 +2122,14 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
             throw inference::RequestExecutionFailure::from_request_evaluation(failure, key);
           throw;
         } catch (...) {
-          const auto observed = model.resources_->retire(false);
+          const auto observed = model.try_retire_owned_resources();
           if (observed.retired) discard_proposals();
           throw;
         }
         call.proposal_seconds = std::chrono::duration<double>(Clock::now() - begin).count();
         // Preparation already overlapped the producer and is paid in proposal
         // wall time. The remaining target stage starts here, exactly once.
-        if (call.verification_prepared) model.active_step->step_start = Clock::now();
+        if (call.verification_prepared) model.start_device_verification_timing();
       }
     }
     // Keep exact R1/uniform graphs. Only an unequal cohort selects the cold

@@ -106,6 +106,8 @@ MTP可以是融合或递归执行，不必固定为三次提交。取消、背�
 
 当前Qwen入口的`run_generation_sessions`装配请求和冷计划，`GenerationRequestAdapter`连接共同请求循环与模型步骤；
 `Model`准备、提交和完成原始工作，`Session`持有已提交的完整状态头，`WorkingState`执行状态交换。
+设备草稿交给目标验证器时，由`Model`准备原验证步骤、绑定实际输入并观察所属资源退休；
+请求适配器仍负责请求身份和账本，不直接写入该验证步骤的输入字段。
 提交记录通过原模型的同步发布见证与状态头衔接；失败、取消和后继都沿原执行及退休路径处理。
 设备队列、Source、Completion与读写权限仍由原Graph／Compute机制负责。
 

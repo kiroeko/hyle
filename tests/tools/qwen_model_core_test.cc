@@ -67,6 +67,13 @@ int main(int argc, char **argv) try {
       q::recurrent_bytes(q::state_schema_for(geometry, capacity), geometry));
   q::Model model(std::move(source), geometry, capacity, plan, {}, false,
       q::ReplayPolicy::kCommands, SIZE_MAX, {}, 0, {.primary = backend});
+  bool missing_verifier_rejected = false, missing_timer_rejected = false;
+  try { model.bind_device_verification_inputs(q::GraphRole::kVerify, {}); }
+  catch (const std::logic_error &) { missing_verifier_rejected = true; }
+  try { model.start_device_verification_timing(); }
+  catch (const std::logic_error &) { missing_timer_rejected = true; }
+  require(missing_verifier_rejected && missing_timer_rejected && !model.active_step,
+      "device verification must not invent a prepared target episode");
   const std::array<std::size_t, 2> chunks{2, 1};
   require(model.prepare_family(chunks), "core consumer could not prepare its model family");
   model.plan_execution(chunks);

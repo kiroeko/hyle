@@ -3508,6 +3508,13 @@ public:
         {}, 0, physical_rows, RowPacking::kVerify);
   }
 
+  // Device draft packets prepare the original verifier while their producer is
+  // still active. Its Source and retirement remain owned by that same episode.
+  void prepare_device_verifier(std::span<const EvaluationRequest> requests) {
+    prepare_evaluations(requests, nullptr, GraphRole::kVerify);
+    ++device_verification_handoffs;
+  }
+
   void finish_device_verification_preparation() {
     if (!active_step || active_step->submitted || !active_step->prepared ||
         !active_step->phase || active_step->phase->family->role != GraphRole::kVerify ||
@@ -3526,6 +3533,24 @@ public:
     step.capture_recorded = replay.recorded_capture_range_count;
     step.capture_reused = replay.reused_capture_range_count;
     step.cold_batch_seconds += std::chrono::duration<double>(Clock::now() - begin).count();
+  }
+
+  // The producer has finished its proposal. Record its actual IDs on the
+  // existing unpublished verifier, without transferring ownership to the caller.
+  void bind_device_verification_inputs(GraphRole role, std::span<const std::int32_t> ids) {
+    if (role != GraphRole::kVerify || !active_step || active_step->submitted ||
+        active_step->members.size() != 1 || active_step->input_tokens != ids.size())
+      throw std::logic_error("device verifier lost its original prepared target episode");
+    active_step->members[0].verification_inputs.assign(ids.begin(), ids.end());
+  }
+
+  void start_device_verification_timing() {
+    if (!active_step) throw std::logic_error("device verifier lost its original prepared target episode");
+    active_step->step_start = Clock::now();
+  }
+
+  inference::RetirementObservation try_retire_owned_resources() noexcept {
+    return resources_->retire(false);
   }
 
   template<bool recording_only = false>
