@@ -24,6 +24,28 @@ template<class F> void rejects(F action) {
 int main(int argc, char **argv) {
   using namespace qwen35;
   using hyle::compute::DataType;
+  // Test model-owned cold chain capability without including the engine driver.
+  constexpr GreedyChainCapabilities k3{3, true, 1, 2, 3, true, true};
+  static_assert(k3.packet_available() && k3.available());
+  auto chain = k3;
+  chain.max_drafts = 1;
+  require(!chain.packet_available() && !chain.available());
+  chain = k3; chain.max_drafts = 4;
+  require(!chain.packet_available() && !chain.available());
+  chain = k3; chain.private_draft_stages = 2;
+  require(chain.packet_available() && !chain.available());
+  chain = k3; chain.supported_projection = false;
+  require(chain.packet_available() && !chain.available());
+  chain = k3; chain.device_relay = false;
+  require(!chain.packet_available() && !chain.available());
+  chain = k3; chain.active_sequences = 2;
+  require(!chain.packet_available() && !chain.available());
+  chain = k3; chain.auxiliary_hidden_rows = 1;
+  require(!chain.packet_available() && !chain.available());
+  chain = k3; chain.capture_allowed = false;
+  require(!chain.packet_available() && !chain.available());
+  chain = k3; chain.max_drafts = 2; chain.private_draft_stages = 2;
+  require(chain.packet_available() && chain.available());
   digest("", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
   digest("abc", "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
   digest("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq",

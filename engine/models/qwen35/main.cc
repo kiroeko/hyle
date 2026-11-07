@@ -732,24 +732,6 @@ struct ColdResources final {
   }
 };
 
-// Facts owned by the prepared model and endpoint. The sampler remains a
-// per-request decision; Source, state and retirement are still checked by
-// their original runtime owners.
-struct GreedyChainCapabilities final {
-  std::size_t max_drafts = 0;
-  bool device_relay = false;
-  std::size_t active_sequences = 0, auxiliary_hidden_rows = 0, private_draft_stages = 0;
-  bool capture_allowed = false, supported_projection = false;
-
-  constexpr bool packet_available() const noexcept {
-    return max_drafts >= 2 && max_drafts <= kMaximumDeviceMtpDrafts && device_relay &&
-        active_sequences == 1 && auxiliary_hidden_rows >= 2 && capture_allowed;
-  }
-  constexpr bool available() const noexcept {
-    return packet_available() && private_draft_stages >= max_drafts && supported_projection;
-  }
-};
-
 class Model final {
 public:
   struct Sampling final {
