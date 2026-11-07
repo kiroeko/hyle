@@ -271,7 +271,8 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
   target_include_directories(ggml-cuda PRIVATE "${_patched_source}/src/ggml-cuda")
   target_compile_definitions(ggml INTERFACE HYLE_GGML_CUDA_IQ1_EXTENSIONS=1)
   target_include_directories(ggml-cuda PRIVATE
-    "${HYLE_SOURCE_DIR}/src/compute_provider_ggml_cuda")
+    "${HYLE_SOURCE_DIR}/src/compute_provider_ggml_cuda"
+    "${CMAKE_CURRENT_SOURCE_DIR}")
   target_compile_options(ggml-cuda PRIVATE
     "$<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<NOT:$<BOOL:${MSVC}>>>:-Xcompiler=-fvisibility=hidden,-fvisibility-inlines-hidden>")
   if(NOT MSVC AND NOT HYLE_SANITIZER STREQUAL "off")

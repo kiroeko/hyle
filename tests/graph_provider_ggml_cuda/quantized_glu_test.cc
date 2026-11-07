@@ -266,4 +266,83 @@ void check_quantized_glu(std::int64_t k) {
 
 TEST(GgmlCudaQuantizedGlu, OriginalWidthPreservesCapturedRebinding) { check_quantized_glu(256); }
 TEST(GgmlCudaQuantizedGlu, ProviderQualifiedFormatsPreserveCapturedRebinding) { check_quantized_glu(512); }
+
+TEST(GgmlCudaQuantizedGlu, MultirowCapturePreservesPrivateAndPublishedProjections) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  auto context = g::cuda::create_context().value();
+  auto owner = c::StorageOwner::adopt(context,
+      c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value()).value();
+  auto queue = context.create_queue().value();
+  constexpr std::int64_t k = 512, n = 64;
+  int major = 0, minor = 0;
+  ASSERT_EQ(cudaDeviceGetAttribute(&major, cudaDevAttrComputeCapabilityMajor, 0), cudaSuccess);
+  ASSERT_EQ(cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, 0), cudaSuccess);
+  for (const auto format : {c::GgufQuantizedType::kQ8_0, c::GgufQuantizedType::kQ4K}) {
+    const auto wd = c::gguf_weight_description(format, c::DataType::kFloat32, k, n).value();
+    for (const std::int64_t rows : {127, 128, 256}) {
+      const auto ad = dense(c::DataType::kFloat32, {rows, k});
+      const auto yd = dense(c::DataType::kFloat32, {rows, n});
+      for (const bool expose_gate : {false, true}) {
+        SCOPED_TRACE(::testing::Message() << "format=" << int(format) << " rows=" << rows
+                                         << " expose_gate=" << expose_gate);
+        auto builder = g::GraphBuilder::create().value();
+        const auto x = builder.input(ad).value();
+        const auto wg = builder.input(wd).value(), wu = builder.input(wd).value();
+        const auto gate = builder.result(builder.add_node(c::Operation(c::MatMul{}),
+            std::array{x, wg}).value()).value();
+        const auto up = builder.result(builder.add_node(c::Operation(c::MatMul{}),
+            std::array{x, wu}).value()).value();
+        const auto y = builder.result(builder.add_node(c::Operation(c::GatedActivation{
+            .inputs=c::GatedInputKind::kSeparate}), std::array{gate, up}).value()).value();
+        ASSERT_TRUE(builder.publish(y).ok());
+        if (expose_gate) ASSERT_TRUE(builder.publish(gate).ok());
+        auto compiled = g::cuda::compile(std::move(builder).finish().value(), context, owner).value();
+        std::size_t fused = 0;
+        for (std::size_t i = 0; i < compiled.report.step_count(); ++i)
+          fused += compiled.report.step(i).value().policy == kPolicy;
+        if (rows == 127 || expose_gate) EXPECT_EQ(fused, 0U);
+        if (major == 8 && minor == 9 && rows != 127 && !expose_gate) EXPECT_EQ(fused, 1U);
+        auto slot = compiled.executable.create_invocation().value();
+        for (int round = 0; round < 2; ++round) {
+          const auto values = d5_gguf_test::values(rows, k, 11 + round);
+          const auto packed_gate = d5_gguf_test::pack(format, d5_gguf_test::values(n, k, 3 + round),
+                                                     n, k, wd.required_bytes().value());
+          const auto u = d5_gguf_test::pack(format, d5_gguf_test::values(n, k, 7 + round),
+                                           n, k, wd.required_bytes().value());
+          auto input = upload<float>(owner.ref(), values);
+          auto gb = upload<std::byte>(owner.ref(), packed_gate.bytes), ub = upload<std::byte>(owner.ref(), u.bytes);
+          auto expected_gate = output_buffer(owner.ref(), yd), expected_up = output_buffer(owner.ref(), yd);
+          auto expected = output_buffer(owner.ref(), yd), actual = output_buffer(owner.ref(), yd);
+          auto observed_gate = output_buffer(owner.ref(), yd);
+          const auto xv = c::ConstTensorView::create(ad, input.view()).value();
+          const auto gv = c::ConstTensorView::create(wd, gb.view()).value();
+          const auto uv = c::ConstTensorView::create(wd, ub.view()).value();
+          ASSERT_TRUE(ggml_cuda_tensor_test::execute(context, c::Operation(c::MatMul{}),
+              std::array{xv, gv}, c::TensorView::create(yd, expected_gate.view()).value()).ok());
+          ASSERT_TRUE(ggml_cuda_tensor_test::execute(context, c::Operation(c::MatMul{}),
+              std::array{xv, uv}, c::TensorView::create(yd, expected_up.view()).value()).ok());
+          const std::array products{c::ConstTensorView::create(yd, expected_gate.view()).value(),
+                                    c::ConstTensorView::create(yd, expected_up.view()).value()};
+          ASSERT_TRUE(ggml_cuda_tensor_test::execute(context, c::Operation(c::GatedActivation{
+              .inputs=c::GatedInputKind::kSeparate}), products,
+              c::TensorView::create(yd, expected.view()).value()).ok());
+          ASSERT_TRUE(slot.bind(x, xv).ok()); ASSERT_TRUE(slot.bind(wg, gv).ok());
+          ASSERT_TRUE(slot.bind(wu, uv).ok());
+          ASSERT_TRUE(slot.bind(y, c::TensorView::create(yd, actual.view()).value()).ok());
+          if (expose_gate) ASSERT_TRUE(slot.bind(gate,
+              c::TensorView::create(yd, observed_gate.view()).value()).ok());
+          ASSERT_TRUE(g::cuda::prepare_replay(slot, queue, {.mode=g::ReplayMode::kRequireCapture}).ok());
+          auto done = slot.submit(queue).value(); ASSERT_TRUE(done.wait().ok());
+          const auto got = half_test::read<float>(actual), want = half_test::read<float>(expected);
+          ASSERT_EQ(got.size(), want.size());
+          for (std::size_t i = 0; i < got.size(); ++i)
+            EXPECT_NEAR(got[i], want[i], 2.e-5F + std::abs(want[i]) * 2.e-5F) << i;
+          if (expose_gate) EXPECT_EQ(half_test::read<float>(observed_gate),
+                                     half_test::read<float>(expected_gate));
+          ASSERT_TRUE(slot.reset().ok());
+        }
+      }
+    }
+  }
+}
 } // namespace

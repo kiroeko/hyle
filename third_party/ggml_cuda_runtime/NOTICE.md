@@ -22,6 +22,11 @@ is compiled into the upstream translation unit. It is not an installed API.
 Numerical behavior, Direct/Graph execution and failure recovery still require
 tests of the operations and lifetimes being used.
 
+The multirow quantized gate/up SiLU path in `src/compute_ggml_runtime` adapts
+the existing ggml CUDA MMQ tile loaders and the interleaved weight-tile layout
+from llama.cpp `2cbca389f` (MIT, same LICENSE). It uses the existing native
+pool and admitted stream, and declines layouts outside its kernel contract.
+
 The narrow IQ1_XS/XXS/XXXS CUDA programs in `iq1-patches.json` and the three
 MMQ template instances originate from Unsloth llama.cpp
 `46cbf0e95786fe8f5b7c0e86d57aaf8f8eceea7f` (MIT, same LICENSE).

@@ -1873,6 +1873,13 @@ bool supports_shared_mmvq_projection(void *value, const TensorDesc &activation,
                                            static_cast<Context *>(value)->device);
 }
 
+bool supports_mmq_glu_projection(void *value, const TensorDesc &activation,
+                                 const TensorDesc &weight, const TensorDesc &output) noexcept {
+  if (!value) return false;
+  return mmq_glu_projection_supported(activation, weight, output,
+                                      static_cast<Context *>(value)->device);
+}
+
 bool supports(void *value, Operation operation,
               std::span<const TensorDesc> inputs,
               std::span<const TensorDesc> outputs) noexcept {

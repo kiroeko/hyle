@@ -3,6 +3,7 @@
 #include "indexed_state.h"
 #include "indexed_conv.h"
 #include "packed_gdn.h"
+#include "native_bridge.h"
 #include "../compute_ggml_runtime/active_rows.h"
 
 #include <algorithm>
@@ -518,6 +519,26 @@ bool shared_mmvq_projection_supported(const TensorDesc &activation, const Tensor
   try {
     return packed_matmul_plan(device, type, weight.dimensions()[0], weight.dimensions()[1], activation.dimensions()[0]).route ==
         PackedMatmulRoute::kMmvq;
+  } catch (...) {
+    return false;
+  }
+}
+
+bool mmq_glu_projection_supported(const TensorDesc &activation, const TensorDesc &weight,
+                                  const TensorDesc &output, int device) noexcept {
+  if (!activation.valid() || !activation.is_plain() || !activation.is_dense() ||
+      activation.rank() != 2 || activation.data_type() != DataType::kFloat32 ||
+      activation.dimensions()[0] <= 0 || activation.dimensions()[1] <= 0 ||
+      !weight.valid() || weight.rank() != 2 || weight.data_type() != DataType::kFloat32 ||
+      weight.block_axis() != 0 || !output.valid() || !output.is_plain() ||
+      !output.is_dense() || output.rank() != 2 || output.data_type() != DataType::kFloat32 ||
+      output.dimensions()[0] != activation.dimensions()[0] ||
+      weight.dimensions()[0] != activation.dimensions()[1] ||
+      weight.dimensions()[1] != output.dimensions()[1] || output.dimensions()[1] <= 0)
+    return false;
+  try {
+    return bridge::supports_mmq_glu_projection(device, native_quantized_type(weight),
+        activation.dimensions()[1], activation.dimensions()[0], output.dimensions()[1]);
   } catch (...) {
     return false;
   }

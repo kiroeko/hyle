@@ -1694,6 +1694,101 @@ TEST(GgmlCudaFusionLayout, QuantizedOddRowsPreservePaddedDestinationsAndSelected
 } // namespace
 
 namespace {
+namespace multirow_quantized_glu_test {
+namespace bridge = c::ggml_cuda::bridge;
+using native_fusion_layout_test::Owners;
+
+// The reference publishes both projection results, so they cannot be elided
+// into a native fusion. Both routes receive exactly the same encoded weights
+// and activation; this checks their accumulation/layout and gate ordering.
+std::vector<float> execute(ggml_type type, int rows, int columns, int inner,
+                           int seed, bool publish_intermediates) {
+  Owners o;
+  if (!o.initialize()) { ADD_FAILURE() << "CUDA initialization"; return {}; }
+  auto *up_weights = ggml_new_tensor_2d(o.ctx, type, inner, columns);
+  auto *gate_weights = ggml_new_tensor_2d(o.ctx, type, inner, columns);
+  auto *input = ggml_new_tensor_2d(o.ctx, GGML_TYPE_F32, inner, rows);
+  // The native graph allocator may recycle input storage after its last use.
+  // Bind persistent weights externally when replaying the same graph.
+  if (!o.bind(up_weights, ggml_nbytes(up_weights), true) ||
+      !o.bind(gate_weights, ggml_nbytes(gate_weights), true)) {
+    ADD_FAILURE() << "persistent weights allocation"; return {};
+  }
+  ggml_set_input(up_weights); ggml_set_input(gate_weights); ggml_set_input(input);
+  auto *gate = ggml_mul_mat(o.ctx, gate_weights, input);
+  auto *up = ggml_mul_mat(o.ctx, up_weights, input);
+  auto *output = ggml_swiglu_split(o.ctx, gate, up);
+  if (publish_intermediates) { ggml_set_output(gate); ggml_set_output(up); }
+  ggml_set_output(output);
+  auto *graph = ggml_new_graph_custom(o.ctx, 96, false);
+  if (publish_intermediates) {
+    ggml_build_forward_expand(graph, gate);
+    ggml_build_forward_expand(graph, up);
+  }
+  ggml_build_forward_expand(graph, output);
+  if (!o.allocate(graph)) { ADD_FAILURE() << "graph allocation"; return {}; }
+
+  const auto count = static_cast<std::size_t>(inner) * columns;
+  std::vector<float> up_source(count), gate_source(count);
+  for (std::size_t i = 0; i < count; ++i) {
+    up_source[i] = float(int((i * 19 + seed * 7) % 37) - 18) / 256.f;
+    gate_source[i] = float(int((i * 13 + seed * 11) % 41) - 20) / 256.f;
+  }
+  std::vector<std::byte> up_encoded(ggml_nbytes(up_weights));
+  std::vector<std::byte> gate_encoded(ggml_nbytes(gate_weights));
+  EXPECT_EQ(ggml_quantize_chunk(type, up_source.data(), up_encoded.data(),
+                               0, columns, inner, nullptr), up_encoded.size());
+  EXPECT_EQ(ggml_quantize_chunk(type, gate_source.data(), gate_encoded.data(),
+                               0, columns, inner, nullptr), gate_encoded.size());
+  std::vector<float> activation(static_cast<std::size_t>(inner) * rows);
+  ggml_backend_tensor_set(up_weights, up_encoded.data(), 0, up_encoded.size());
+  ggml_backend_tensor_set(gate_weights, gate_encoded.data(), 0, gate_encoded.size());
+  std::vector<float> result;
+  for (int round = 0; round < 2; ++round) {
+    for (std::size_t i = 0; i < activation.size(); ++i)
+      activation[i] = float(int((i * 17 + seed * 3 + round * 11) % 43) - 21) / 32.f;
+    ggml_backend_tensor_set(input, activation.data(), 0, activation.size() * sizeof(float));
+    if (ggml_backend_graph_compute(o.backend, graph) != GGML_STATUS_SUCCESS) {
+      ADD_FAILURE() << "graph execution"; return {};
+    }
+    const auto values = native_fusion_layout_test::read(output);
+    result.insert(result.end(), values.begin(), values.end());
+  }
+  return result;
+}
+
+TEST(GgmlCudaMultirowGlu, QuantizedTilesAgreeWithSeparateProjectionsAndFallback) {
+  const int device = bridge::device_index(0);
+  ASSERT_GE(device, 0);
+  int major = 0, minor = 0;
+  ASSERT_EQ(cudaDeviceGetAttribute(&major, cudaDevAttrComputeCapabilityMajor, 0), cudaSuccess);
+  ASSERT_EQ(cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, 0), cudaSuccess);
+  for (const auto type : {GGML_TYPE_Q4_K, GGML_TYPE_Q8_0}) {
+    for (const int rows : {127, 128, 256}) {
+      SCOPED_TRACE(::testing::Message() << "type=" << int(type) << " rows=" << rows);
+      const bool eligible = bridge::supports_mmq_glu_projection(device, type, 512, rows, 64);
+      if (rows == 127) EXPECT_FALSE(eligible);
+      if (major == 8 && minor == 9 && rows != 127) EXPECT_TRUE(eligible);
+      for (const int seed : {1, 7}) {
+        const auto expected = execute(type, rows, 64, 512, seed, true);
+        const auto actual = execute(type, rows, 64, 512, seed, false);
+        ASSERT_FALSE(expected.empty());
+        ASSERT_EQ(actual.size(), expected.size());
+        for (std::size_t i = 0; i < actual.size(); ++i) {
+          ASSERT_TRUE(std::isfinite(actual[i])) << i;
+          EXPECT_NEAR(actual[i], expected[i], 5e-5f) << i;
+        }
+      }
+    }
+    EXPECT_FALSE(bridge::supports_mmq_glu_projection(device, type, 512, 128, 65));
+    EXPECT_FALSE(bridge::supports_mmq_glu_projection(device, type, 256, 128, 64));
+  }
+  EXPECT_FALSE(bridge::supports_mmq_glu_projection(device, GGML_TYPE_Q6_K, 512, 128, 64));
+}
+} // namespace multirow_quantized_glu_test
+} // namespace
+
+namespace {
 namespace native_fusion_precision_test {
 using native_fusion_layout_test::Owners;
 using native_fusion_layout_test::read;

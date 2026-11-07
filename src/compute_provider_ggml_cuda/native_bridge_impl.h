@@ -20,6 +20,11 @@ bool supports_bfloat_paired_projection(int device, std::uint64_t inner,
   return ggml_cuda_supports_bf16_paired_projection_geometry(device, inner, rows, columns);
 }
 
+bool supports_mmq_glu_projection(int device, ggml_type type, std::uint64_t inner,
+                                 std::uint64_t rows, std::uint64_t columns) {
+  return hyle_cuda_mmq_glu_geometry(device, type, inner, columns, rows);
+}
+
 namespace {
 // Preserve one independent native caching pool per backend stream. Most
 // programs never request its temporary storage, so construct the sizeable

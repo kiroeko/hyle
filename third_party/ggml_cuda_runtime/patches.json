@@ -43,7 +43,7 @@
     {
       "path": "src/ggml-cuda/ggml-cuda.cu",
       "before_sha256": "523470d6604755b82d0208414ce40f1378941b10bc1349763bbdf02edaab9634",
-      "after_sha256": "91a9e2deb8af9bc619a24cfadd58fe515c3b80456d600b3c003d32d30a3b3c51",
+      "after_sha256": "fb097e191898ce749d6ab3704cd514ff85e4b3d0597cb52ac0f7d1becc92376a",
       "edits": [
         {
           "before": "    void clear_pool() {\n        ggml_cuda_set_device(device);\n        for (int i = 0; i < MAX_BUFFERS; ++i) {\n            ggml_cuda_buffer & b = buffer_pool[i];\n            if (b.ptr != nullptr) {\n                CUDA_CHECK(cudaFree(b.ptr));\n                pool_size -= b.size;\n                b.ptr  = nullptr;\n                b.size = 0;\n            }\n        }\n    }\n\n",
@@ -764,6 +764,22 @@
         {
           "before": "static bool ggml_cuda_match_matvec_fusion(ggml_cgraph * cgraph, int i,\n        bool require_bound, ggml_cuda_matvec_fusion_match & match) {\n",
           "after": "static bool ggml_cuda_match_matvec_fusion(ggml_cgraph * cgraph, int i,\n        bool require_bound, ggml_cuda_matvec_fusion_match & match) {\n    if (hyle::compute::ggml_cuda::internal::is_active_rows_matmul(cgraph->nodes[i])) return false;\n"
+        },
+        {
+          "before": "#include \"ggml-cuda/quantize.cuh\"\n",
+          "after": "#include \"ggml-cuda/quantize.cuh\"\n#include \"cuda_mmq_glu.cuh\"\n"
+        },
+        {
+          "before": "    bool quantized = false;\n};\n\nstatic bool ggml_cuda_fusion_disabled()",
+          "after": "    bool quantized = false;\n    bool multirow = false;\n};\n\nstatic bool ggml_cuda_fusion_disabled()"
+        },
+        {
+          "before": "            if (ggml_cuda_should_fuse_mul_mat_vec_f(up)) {\n                ggml_cuda_mm_fusion_args_host fusion_data{};",
+          "after": "            if (hyle_cuda_mmq_glu_supported(up, gate, glu, require_bound)) {\n                ggml_cuda_mm_fusion_args_host fusion_data{};\n                fusion_data.gate = gate->src[0];\n                match = { up, glu, fusion_data, 3, true, true };\n                fused_mul_mat_vec = true;\n                break;\n            }\n\n            if (ggml_cuda_should_fuse_mul_mat_vec_f(up)) {\n                ggml_cuda_mm_fusion_args_host fusion_data{};"
+        },
+        {
+          "before": "    if (ggml_cuda_match_matvec_fusion(cgraph, i, true, matvec)) {\n        if (matvec.quantized) {",
+          "after": "    if (ggml_cuda_match_matvec_fusion(cgraph, i, true, matvec)) {\n        if (matvec.multirow) {\n            hyle_cuda_mmq_glu_run(*cuda_ctx, matvec.mm, matvec.fusion.gate, matvec.dst);\n        } else if (matvec.quantized) {"
         }
       ]
     },

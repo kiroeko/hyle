@@ -854,7 +854,7 @@ Result<bool> matches_quantized_glu(void *context, const Graph &graph,
   HYLE_ASSIGN_OR_RETURN(auto description, graph.value_description(output));
   if (!description.is_plain() || !description.is_dense() || description.rank() != 2 ||
       description.data_type() != compute::DataType::kFloat32 ||
-      description.dimensions()[0] != 1 || description.dimensions()[1] <= 0) return false;
+      description.dimensions()[0] <= 0 || description.dimensions()[1] <= 0) return false;
   ValueId common;
   std::optional<compute::GgufQuantizedType> encoding;
   for (std::size_t i = 0; i < 2; ++i) {
@@ -876,7 +876,8 @@ Result<bool> matches_quantized_glu(void *context, const Graph &graph,
     HYLE_ASSIGN_OR_RETURN(auto w, graph.value_description(weight));
     const auto type = compute::gguf_quantized_type(w.storage_format());
     if (!a.is_plain() || !a.is_dense() || a.rank() != 2 ||
-        a.data_type() != compute::DataType::kFloat32 || a.dimensions()[0] != 1 ||
+        a.data_type() != compute::DataType::kFloat32 ||
+        a.dimensions()[0] != description.dimensions()[0] ||
         a.dimensions()[1] <= 0 || a.dimensions()[1] % 256 != 0 ||
         !type ||
         w.rank() != 2 || w.dimensions()[0] != a.dimensions()[1] ||
@@ -886,7 +887,11 @@ Result<bool> matches_quantized_glu(void *context, const Graph &graph,
     // provider's MMVQ admission instead of a model-derived format list.
     const bool legacy = *type == compute::GgufQuantizedType::kQ8_0 ||
         *type == compute::GgufQuantizedType::kQ4K || *type == compute::GgufQuantizedType::kQ6K;
-    if (!legacy && !native::supports_shared_mmvq_projection(context, a, w, description)) return false;
+    if (a.dimensions()[0] == 1) {
+      if (!legacy && !native::supports_shared_mmvq_projection(context, a, w, description)) return false;
+    } else if (!native::supports_mmq_glu_projection(context, a, w, description)) {
+      return false;
+    }
     encoding = type;
     const auto physical = w.transposed();
     if (!physical || !physical->is_dense()) return false;
