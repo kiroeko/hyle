@@ -33,6 +33,7 @@ struct ReductionProgram final {
   const void *kernel = nullptr;
   ReductionLayout layout{};
   unsigned shared_bytes = 0;
+  unsigned threads = 0;
 };
 
 cudaError_t reduction_prepare(ElementType type, ReductionKind kind,

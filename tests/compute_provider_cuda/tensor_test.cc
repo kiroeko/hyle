@@ -914,6 +914,34 @@ TEST(CudaReduction, NonFiniteValuesPropagateAcrossWarpAndTileBoundaries) {
                       ReductionKind::kSum);
 }
 
+TEST(CudaReduction, WideDenseMaximumPreservesSpecialValues) {
+  Fixture fixture;
+  const auto axes = Axes::from(std::array<std::int32_t, 1>{-1}).value();
+  for (const std::int64_t width : {65535, 65536, 65537, 248320}) {
+    const auto desc = TensorDesc::dense(DataType::kFloat32,
+        std::array<std::int64_t, 2>{1, width}).value();
+    std::vector<float> values(static_cast<std::size_t>(width), -17.F);
+    values[0] = -0.F;
+    values[static_cast<std::size_t>(width - 1)] = 2.F;
+    check_reduce<float>(fixture, desc, values, axes, false, ReductionKind::kMaximum);
+    for (const auto index : {std::size_t{0}, std::size_t{31}, std::size_t{32},
+                             std::size_t{255}, std::size_t{256}, std::size_t{1023},
+                             static_cast<std::size_t>(width - 1)}) {
+      const auto saved = values[index];
+      for (const float special : {NAN, INFINITY, -INFINITY}) {
+        values[index] = special;
+        check_reduce<float>(fixture, desc, values, axes, false, ReductionKind::kMaximum);
+      }
+      values[index] = saved;
+    }
+    std::fill(values.begin(), values.end(), -INFINITY);
+    check_reduce<float>(fixture, desc, values, axes, false, ReductionKind::kMaximum);
+    std::fill(values.begin(), values.end(), -0.F);
+    values.back() = 0.F;
+    check_reduce<float>(fixture, desc, values, axes, false, ReductionKind::kMaximum);
+  }
+}
+
 std::size_t broadcast_index(std::size_t logical,
                             std::span<const std::int64_t> shape,
                             std::span<const std::int64_t> mask) {

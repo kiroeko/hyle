@@ -9,6 +9,7 @@ namespace hyle::compute::cuda_native::native {
 namespace {
 namespace cg = cooperative_groups;
 constexpr unsigned kThreads = 256;
+constexpr unsigned kWideThreads = 1024;
 constexpr unsigned kCachedColumns = 8192;
 
 template <class T> __device__ float decode(T value) { return value; }
@@ -112,6 +113,18 @@ __global__ void reduce(const void *input, const void *, T *output,
     result = layout.width == 0 ? CUDART_NAN_F : result / layout.width;
   if (threadIdx.x == 0)
     output[blockIdx.x] = encode<T>(result);
+}
+
+// A single, very wide F32 maximum otherwise leaves most lanes in an SM idle.
+// Preserve the existing NaN-propagating extremum contract without workspace.
+__global__ void reduce_wide_f32_max(const void *input, const void *, float *output,
+                                    ReductionLayout layout) {
+  const auto tile = cg::tiled_partition<kWideThreads>(cg::this_thread_block());
+  float value = -CUDART_INF_F;
+  for (unsigned column = threadIdx.x; column < layout.width; column += kWideThreads)
+    value = Extremum<true>{}(value, static_cast<const float *>(input)[column]);
+  const float result = cg::reduce(tile, value, Extremum<true>{});
+  if (threadIdx.x == 0) output[0] = result;
 }
 
 template <class T, ReductionMask Mask, bool Dense>
@@ -281,17 +294,29 @@ cudaError_t reduction_prepare(ElementType type, ReductionKind kind,
   }
   if (kernel == nullptr)
     return cudaErrorInvalidValue;
+  unsigned threads = kThreads;
+  if (type == ElementType::kFloat32 && kind == ReductionKind::kMaximum && dense &&
+      layout.rows == 1 && layout.width >= 65536) {
+    const auto wide = reinterpret_cast<const void *>(reduce_wide_f32_max);
+    cudaFuncAttributes attributes{};
+    const auto status = cudaFuncGetAttributes(&attributes, wide);
+    if (status != cudaSuccess) return status;
+    if (attributes.maxThreadsPerBlock >= static_cast<int>(kWideThreads)) {
+      kernel = wide;
+      threads = kWideThreads;
+    }
+  }
   const unsigned shared = cached ? layout.width * sizeof(float) : 0;
   if (layout.rows != 0) {
     cudaFuncAttributes attributes{};
     const auto status = cudaFuncGetAttributes(&attributes, kernel);
     if (status != cudaSuccess)
       return status;
-    if (attributes.maxThreadsPerBlock < static_cast<int>(kThreads) ||
+    if (attributes.maxThreadsPerBlock < static_cast<int>(threads) ||
         attributes.maxDynamicSharedSizeBytes < static_cast<int>(shared))
       return cudaErrorNotSupported;
   }
-  *output = {kernel, layout, shared};
+  *output = {kernel, layout, shared, threads};
   return cudaSuccess;
 }
 
@@ -302,7 +327,7 @@ cudaError_t reduction_launch(const ReductionProgram &program, const void *input,
     return cudaSuccess;
   auto layout = program.layout;
   void *arguments[]{&input, &mask, &output, &layout};
-  return cudaLaunchKernel(program.kernel, dim3(layout.rows), dim3(kThreads),
+  return cudaLaunchKernel(program.kernel, dim3(layout.rows), dim3(program.threads),
                           arguments, program.shared_bytes, stream);
 }
 } // namespace hyle::compute::cuda_native::native
