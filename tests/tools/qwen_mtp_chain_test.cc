@@ -11,6 +11,27 @@ struct Result {
   std::vector<s::StateImage> states;
   std::vector<std::vector<std::int32_t>> emitted;
 };
+void q5_cold_families(const std::filesystem::path &input) {
+  auto source = q::prepare_weight_source(input / "weights.tsv", true);
+  const auto geometry = source.roles.geometry;
+  const auto head = std::ranges::find_if(source.roles.selected, [&](const auto &role) {
+    return role.name == geometry.head_role();
+  });
+  require(head != source.roles.selected.end() && head->dtype == "Q5_K", "Q5 cold-family test needs a Q5 head");
+  const auto precision = q::PrecisionProfile::from_roles(source.roles);
+  const auto recurrent = q::recurrent_bytes(q::state_schema_for(geometry, 32, precision), geometry);
+  const auto plan = q::cache::plan(geometry, source.cache_row_bytes, 32, 1, 4, recurrent,
+      1, 4, true, false, 3, 2, precision, 3);
+  q::Model model(std::move(source), geometry, 32, plan, {}, false,
+      q::ReplayPolicy::kAuto, SIZE_MAX, {}, 0, {.primary = q::BackendKind::kCuda});
+  model.configure_draft_policy({3, 0});
+  require(model.begin_cold_families(), "Q5 source declined the cold-family pool");
+  const std::array<std::size_t, 1> rows{3};
+  model.prepare_family(rows, false, 1, q::GraphRole::kText);
+  model.prepare_family(rows, false, 1, q::GraphRole::kMtpPrefill);
+  model.finish_cold_families();
+  std::cout << "PASS real Q5 source admitted the cold-family pool and compiled text/MTP families\n";
+}
 void cold_policy_facts() {
   for (const auto drafts : {0u, 1u, 2u, 3u, 4u})
     for (const auto threshold : {0.0f, 0.25f})
@@ -308,6 +329,9 @@ qwen_device_continuation_case::Result continuous_chain(const std::filesystem::pa
 }
 int main(int argc,char**argv)try{
   cold_policy_facts();
+  if (argc == 3 && std::string_view(argv[1]) == "--q5-cold-family") {
+    q5_cold_families(argv[2]); return 0;
+  }
   if(argc==1){std::cerr<<"SKIP: pass prepared local C32 MTP inputs\n";return 77;}
   if(argc!=2)throw std::runtime_error("usage: qwen_mtp_chain_test PREPARED_LOCAL_INPUTS");
   zero_draft_cold(argv[1]);

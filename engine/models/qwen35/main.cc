@@ -1515,9 +1515,9 @@ public:
   }
 
   // Compile the default single-session CUDA families concurrently only when
-  // every shared weight is already an immutable read. Original GGUF Q8_0,
-  // Q4_K and Q6_K bindings are borrowed without rewriting their source bytes;
-  // their native recipes and packing caches belong to each compiled Family.
+  // every shared weight is already an immutable read. Supported original
+  // GGUF bindings are borrowed without rewriting their source bytes; their
+  // native recipes and packing caches belong to each compiled Family.
   // Other packed codecs and caller budgets keep serial admission.
   bool begin_cold_families() {
     if (preparation_started_ || state_storage_prepared || allocation_budget ||
