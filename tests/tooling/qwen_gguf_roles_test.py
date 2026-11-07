@@ -212,6 +212,61 @@ class QwenGgufInputTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 roles._range_sha256(path,7,999)
 
+    def test_local_gguf_preparation_binds_content_and_rejects_changes(self):
+        header,source=fixture(1)
+        typed=inventory(header,source)
+        (ROOT/'.scratch').mkdir(exist_ok=True)
+        root=Path(tempfile.mkdtemp(prefix='local-gguf-roles-',dir=ROOT/'.scratch'))
+        first=root/'first.gguf';first.write_bytes(b'local-gguf-content')
+        second=root/'renamed.gguf';second.write_bytes(first.read_bytes())
+        def fake_hash(path,inventory,size):
+            bindings=[dict(physical_name=row['physical_name'],path=str(path),
+                           offset=row['absolute_inclusive'][0],bytes=row['bytes'],
+                           original_offset=row['absolute_inclusive'][0],sha256='5'*64)
+                      for row in inventory['roles']]
+            return hashlib.sha256(path.read_bytes()).hexdigest(),bindings
+        with patch.object(roles,'read_local_header',return_value=(header,b'header')), \
+             patch.object(roles,'typed_inventory',return_value=typed), \
+             patch.object(roles,'_hash_local_gguf',side_effect=fake_hash):
+            lines,receipt=roles.prepare_local_gguf(first,True)
+            renamed,other=roles.prepare_local_gguf(second,True)
+        self.assertEqual(receipt['source_id'],other['source_id'])
+        self.assertEqual(receipt['original_gguf_source']['lfs_sha256'],hashlib.sha256(first.read_bytes()).hexdigest())
+        self.assertEqual(receipt['selected_tensor_count'],335)
+        self.assertTrue(any(first.as_posix() in line for line in lines))
+        self.assertTrue(any(second.as_posix() in line for line in renamed))
+        changed=[False]
+        def mutate(path,inventory,size):
+            result=fake_hash(path,inventory,size)
+            if not changed[0]: path.write_bytes(b'changed-local-gguf-content');changed[0]=True
+            return result
+        with patch.object(roles,'read_local_header',return_value=(header,b'header')), \
+             patch.object(roles,'typed_inventory',return_value=typed), \
+             patch.object(roles,'_hash_local_gguf',side_effect=mutate):
+            with self.assertRaisesRegex(ValueError,'changed during'):
+                roles.prepare_local_gguf(first,True)
+        missing=deepcopy(typed);missing['geometry']['mtp_layers']=0
+        with patch.object(roles,'read_local_header',return_value=(header,b'header')), \
+             patch.object(roles,'typed_inventory',return_value=missing), \
+             patch.object(roles,'_hash_local_gguf',side_effect=AssertionError('unexpected full source read')):
+            with self.assertRaisesRegex(ValueError,'no NextN'):
+                roles.prepare_local_gguf(first,True)
+
+    def test_local_gguf_hashes_full_source_and_roles_in_one_pass(self):
+        (ROOT/'.scratch').mkdir(exist_ok=True)
+        directory=Path(tempfile.mkdtemp(prefix='local-gguf-hash-',dir=ROOT/'.scratch'))
+        path=directory/'local.gguf';data=b'headABgapCDEtail';path.write_bytes(data)
+        rows=[dict(physical_name='second',absolute_inclusive=[9,11],bytes=3),
+              dict(physical_name='first',absolute_inclusive=[4,5],bytes=2)]
+        full,bindings=roles._hash_local_gguf(path,dict(roles=rows),len(data))
+        self.assertEqual(full,hashlib.sha256(data).hexdigest())
+        self.assertEqual([row['physical_name'] for row in bindings],['first','second'])
+        self.assertEqual([row['sha256'] for row in bindings],
+                         [hashlib.sha256(b'AB').hexdigest(),hashlib.sha256(b'CDE').hexdigest()])
+        rows[0]['absolute_inclusive'][0]=5
+        with self.assertRaisesRegex(ValueError,'invalid local GGUF role range'):
+            roles._hash_local_gguf(path,dict(roles=rows),len(data))
+
     def test_fidelity_embedding_keeps_plain_f16_instead_of_inventing_q8(self):
         header,source = fixture(1)
         result = inventory(header,source)

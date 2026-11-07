@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Prepare a source-bound full-vocabulary Q4_K proposal head from local weights.
+"""Prepare a source-bound full or compact Q4_K proposal head from local weights.
 
 Only this one matrix is converted. The target head and embeddings stay in their
 original prepared source. Quantization runs offline through an explicitly named
 local ggml library, using its Q4_K reference quantizer without an importance
-matrix. No model, library, tokenizer or data is downloaded.
+matrix. A source-bound vocabulary can select the original rows before
+quantization. No model, library, tokenizer or data is downloaded.
 """
 from __future__ import annotations
 
@@ -107,6 +108,28 @@ class Quantizer:
             self.directory.close()
 
 
+def selected_vocabulary(vocabulary: Path, head: dict) -> tuple[list[str], list[int]]:
+    """Validate source-bound original IDs for an independently compact head."""
+    if vocabulary.stat().st_size > 256 + head["vocabulary"] * 32:
+        raise ValueError("draft vocabulary exceeds its original text byte bound")
+    text = vocabulary.read_text(encoding="utf-8");mapping = text.splitlines()
+    if (len(mapping) < 6 or mapping[:3] != ['hyle-draft-vocabulary-v2',head['identity'],str(head['vocabulary'])]):
+        raise ValueError("draft vocabulary source identity or original geometry differs")
+    recommendation = mapping[3].split()
+    if (len(recommendation) != 2 or recommendation[0] != 'recommended_drafts' or
+            (recommendation[1] != 'none' and
+             (not recommendation[1].isdigit() or not 0 < int(recommendation[1]) <= (1 << 64) - 1)) or
+            mapping[4] not in ('head original', 'head prepared')):
+        raise ValueError("draft vocabulary preference metadata is invalid")
+    words = ' '.join(mapping[5:]).split()
+    if any(not re.fullmatch(r'[0-9]+', word) for word in words):
+        raise ValueError("draft vocabulary requires original nonnegative token IDs")
+    ids = list(map(int, words))
+    if not 0 < len(ids) < head['vocabulary'] or len(set(ids)) != len(ids) or any(n >= head['vocabulary'] for n in ids):
+        raise ValueError("compact head requires distinct original vocabulary rows forming a nonempty subset")
+    return mapping, sorted(ids)
+
+
 def default_k3_inputs(inputs: Path, vocabulary: Path, head: dict) -> dict[str, bytes]:
     """Borrow original weight ranges; publish an explicit ready-input default."""
     lines = (inputs / "weights.tsv").read_text(encoding="utf-8").splitlines()
@@ -115,23 +138,7 @@ def default_k3_inputs(inputs: Path, vocabulary: Path, head: dict) -> dict[str, b
             int(geometry[1]) != head['hidden'] or int(geometry[3]) != head['vocabulary'] or
             geometry[18] != '1'):
         raise ValueError("automatic K3 preparation requires a dense BF16 source with one NextN layer")
-    if vocabulary.stat().st_size > 256 + head["vocabulary"] * 32:
-        raise ValueError("K3 vocabulary exceeds its original text byte bound")
-    text = vocabulary.read_text(encoding="utf-8");mapping = text.splitlines()
-    if (len(mapping) < 6 or mapping[:3] != ['hyle-draft-vocabulary-v2',head['identity'],str(head['vocabulary'])]):
-        raise ValueError("K3 vocabulary source identity or original geometry differs")
-    recommendation = mapping[3].split()
-    if (len(recommendation) != 2 or recommendation[0] != 'recommended_drafts' or
-            (recommendation[1] != 'none' and
-             (not recommendation[1].isdigit() or not 0 < int(recommendation[1]) <= (1 << 64) - 1)) or
-            mapping[4] not in ('head original', 'head prepared')):
-        raise ValueError("K3 vocabulary preference metadata is invalid")
-    words = ' '.join(mapping[5:]).split()
-    if any(not re.fullmatch(r'[0-9]+', word) for word in words):
-        raise ValueError("K3 vocabulary requires original nonnegative token IDs")
-    ids = list(map(int, words))
-    if not 0 < len(ids) < head['vocabulary'] or len(set(ids)) != len(ids) or any(n >= head['vocabulary'] for n in ids):
-        raise ValueError("automatic K3 requires distinct original vocabulary rows forming a nonempty subset")
+    mapping, ids = selected_vocabulary(vocabulary, head)
     normalized = lines[:3];mtp = set()
     for line in lines[3:]:
         fields = shlex.split(line)
@@ -161,13 +168,17 @@ def default_k3_inputs(inputs: Path, vocabulary: Path, head: dict) -> dict[str, b
     return result
 
 
-def prepare(inputs: Path, library: Path, version: str, output: Path, default_vocabulary: Path | None = None) -> dict:
+def prepare(inputs: Path, library: Path, version: str, output: Path, default_vocabulary: Path | None = None,
+            *, compact_vocabulary: Path | None = None) -> dict:
     import numpy as np
     if not re.fullmatch(r"llama\.cpp@[0-9a-f]{40}", version):
         raise ValueError("record the actual local quantizer commit as llama.cpp@<40 hex>")
+    if default_vocabulary is not None and compact_vocabulary is not None:
+        raise ValueError("choose either automatic K3 inputs or a separate compact head")
     head = source_head(inputs)
     ready_inputs = default_k3_inputs(inputs, default_vocabulary, head) if default_vocabulary is not None else {}
-    selected_ids = (list(map(int,ready_inputs[DEFAULT_VOCABULARY].decode('utf-8').splitlines()[5].split()))
+    selected_ids = (selected_vocabulary(compact_vocabulary, head)[1] if compact_vocabulary is not None else
+                    list(map(int,ready_inputs[DEFAULT_VOCABULARY].decode('utf-8').splitlines()[5].split()))
                     if ready_inputs else None)
     mapping_identity = (hashlib.sha256(np.asarray(selected_ids,dtype='<i4').tobytes()).hexdigest()
                         if selected_ids is not None else None)
@@ -191,14 +202,18 @@ def prepare(inputs: Path, library: Path, version: str, output: Path, default_voc
                     values = (np.frombuffer(raw, dtype="<u2").astype(np.uint32) << 16).view(np.float32)
                 else:
                     values = np.frombuffer(raw, dtype="<f4" if unit == 4 else "<f2").astype(np.float32)
-                encoded = quantizer.rows(values, head["hidden"])
                 if selected_ids is not None:
+                    if not np.isfinite(values).all():
+                        raise ValueError("quantizer requires finite original source rows")
                     import bisect
                     first=bisect.bisect_left(selected_ids,begin);last=bisect.bisect_left(selected_ids,begin+rows)
+                    if first == last:
+                        continue
                     at=np.asarray(selected_ids[first:last],dtype=np.int64)-begin
-                    # Q4_K reference quantization is row-independent. Select
-                    # already encoded bytes; never requantize compact weights.
-                    encoded=np.frombuffer(encoded,dtype=np.uint8).reshape(rows,-1)[at].tobytes()
+                    # Q4_K reference quantization is row-independent. Avoid
+                    # quantizing source rows that the compact head will omit.
+                    values=values.reshape(rows,head['hidden'])[at].copy(order='C')
+                encoded = quantizer.rows(values, head["hidden"])
                 target.write(encoded)
                 encoded_digest.update(encoded)
                 total += len(encoded)
@@ -228,12 +243,17 @@ def main():
     parser.add_argument("--ggml-library", type=Path, required=True)
     parser.add_argument("--quantizer-version", required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--default-k3-vocabulary", type=Path,
+    vocabulary = parser.add_mutually_exclusive_group()
+    vocabulary.add_argument("--default-k3-vocabulary", type=Path,
                         help="prepare runnable BF16 inputs with these source-bound encoded rows; enables automatic CUDA K3")
+    vocabulary.add_argument("--draft-vocabulary", type=Path,
+                        help="prepare only these source-bound rows without setting an automatic draft depth")
     args = parser.parse_args()
     result = prepare(args.inputs.resolve(), args.ggml_library.resolve(), args.quantizer_version, args.output.resolve(),
-                     args.default_k3_vocabulary.resolve() if args.default_k3_vocabulary is not None else None)
-    print("Prepared automatic K3 inputs:" if args.default_k3_vocabulary else "Prepared full Q4_K draft head:", result)
+                     args.default_k3_vocabulary.resolve() if args.default_k3_vocabulary is not None else None,
+                     compact_vocabulary=args.draft_vocabulary.resolve() if args.draft_vocabulary else None)
+    print("Prepared automatic K3 inputs:" if args.default_k3_vocabulary else
+          "Prepared compact Q4_K draft head:" if args.draft_vocabulary else "Prepared full Q4_K draft head:", result)
 
 
 if __name__ == "__main__":

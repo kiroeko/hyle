@@ -12,10 +12,12 @@ LIB=ROOT/'.scratch/inference-upstream-head-to-head-20261103/official/ggml-base.d
 VERSION='llama.cpp@2cbca389f515df455412dafa07e2b1359cc72a6d'
 
 
+@unittest.skipUnless(importlib.util.find_spec('numpy'), 'numpy is required for draft-head preparation')
 class DraftHeadPreparation(unittest.TestCase):
     def setUp(self):
         # Keep finite validation artifacts under the repository. No model is
         # copied/downloaded and this test does not recursively remove caches.
+        (ROOT/'.scratch').mkdir(exist_ok=True)
         self.work=Path(tempfile.mkdtemp(prefix='draft-head-prep-',dir=ROOT/'.scratch'))
 
     def source(self,dtype='BF16',rows=4):
@@ -89,6 +91,35 @@ class DraftHeadPreparation(unittest.TestCase):
         out=self.work/'bad-version'
         with self.assertRaises(ValueError):P.prepare(self.work,LIB,'unknown',out)
         self.assertFalse(out.exists())
+
+    @unittest.skipUnless(LIB.is_file(),'local pinned ggml library unavailable; no implicit download')
+    def test_compact_head_uses_source_bound_rows_without_a_k3_default(self):
+        import numpy as np
+        self.source('F16')
+        mapping=self.work/'subset.ids'
+        mapping.write_text('hyle-draft-vocabulary-v2\n'+'a'*64+
+                           '\n4\nrecommended_drafts none\nhead original\n3 1\n',encoding='utf-8')
+        full=self.work/'full';compact=self.work/'compact'
+        P.prepare(self.work,LIB,VERSION,full)
+        result=P.prepare(self.work,LIB,VERSION,compact,compact_vocabulary=mapping)
+        encoded=(full/'draft-head-q4_k.bin').read_bytes()
+        selected=(compact/'draft-head-q4_k.bin').read_bytes()
+        self.assertEqual(selected,encoded[144:288]+encoded[432:576])
+        meta=(compact/'mtp-draft-head.tsv').read_text().splitlines()
+        self.assertEqual((meta[0],meta[4],result['rows']),(P.SUBSET_SIGNATURE,'2 256',2))
+        self.assertEqual(meta[6],hashlib.sha256(np.asarray([1,3],dtype='<i4').tobytes()).hexdigest())
+        self.assertFalse((compact/'weights.tsv').exists())
+        self.assertFalse((compact/'mtp-draft-vocabulary.ids').exists())
+        stale=self.work/'stale.ids';stale.write_text(mapping.read_text().replace('a'*64,'b'*64))
+        rejected=self.work/'rejected'
+        with self.assertRaises(ValueError):P.prepare(self.work,LIB,VERSION,rejected,compact_vocabulary=stale)
+        self.assertFalse(rejected.exists())
+        self.source('F32')
+        path=self.work/'head.bin';raw=bytearray(path.read_bytes())
+        raw[8:12]=np.array([np.nan],dtype='<f4').tobytes();path.write_bytes(raw)
+        omitted=self.work/'omitted-nan'
+        with self.assertRaises(ValueError):P.prepare(self.work,LIB,VERSION,omitted,compact_vocabulary=mapping)
+        self.assertFalse((omitted/'mtp-draft-head.tsv').exists())
 
     def default_references(self):
         # Exercise reference publication only; the runtime separately validates

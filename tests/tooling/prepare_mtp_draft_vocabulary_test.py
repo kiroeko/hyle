@@ -33,6 +33,8 @@ class DefaultPreparation(unittest.TestCase):
         self.assertEqual(ids, [0, 2, 5, 7])
         self.assertEqual((ids, fingerprint), P.tokenizer_default_ids(PreparationTokenizer(), 8))
         self.assertEqual(len(fingerprint), 64)
+        self.assertEqual(P.tokenizer_default_ids(PreparationTokenizer(), 8, 1)[0], [7])
+        self.assertEqual(P.tokenizer_default_ids(PreparationTokenizer(), 8, 5)[0], [0,1,2,5,7])
 
     def test_invalid_token_ids_and_vocabulary_are_rejected(self):
         tokenizer = PreparationTokenizer()
@@ -41,22 +43,30 @@ class DefaultPreparation(unittest.TestCase):
         tokenizer.all_special_ids = [7]
         with self.assertRaises(ValueError): P.tokenizer_default_ids(tokenizer, 2)
         with self.assertRaises(ValueError): P.tokenizer_default_ids(tokenizer, 0)
+        with self.assertRaises(ValueError): P.tokenizer_default_ids(PreparationTokenizer(), 8, 9)
 
     def test_local_gguf_prepare_writes_only_quantized_mtp_default(self):
         spec = importlib.util.spec_from_file_location('qwen_prepare_test', ROOT/'engine/models/qwen35/prepare.py')
         prepare = importlib.util.module_from_spec(spec); spec.loader.exec_module(prepare)
+        (ROOT/'.scratch').mkdir(exist_ok=True)
         work = Path(tempfile.mkdtemp(prefix='tokenizer-default-', dir=ROOT/'.scratch'))
         model = work/'model'; model.mkdir(); (model/'config.json').write_text('{}')
+        tokenizer_dir=work/'separate-tokenizer';tokenizer_dir.mkdir()
         class Tokenizer(PreparationTokenizer):
             def apply_chat_template(self, messages, **kwargs):
                 return {'input_ids':[1, 2]} if kwargs['tokenize'] else messages[0]['content']
         tokenizer = Tokenizer()
-        auto = types.SimpleNamespace(from_pretrained=lambda path, local_files_only: tokenizer)
+        seen=[]
+        def from_pretrained(path, local_files_only):
+            self.assertTrue(local_files_only);seen.append(path);return tokenizer
+        auto = types.SimpleNamespace(from_pretrained=from_pretrained)
         fake_transformers = types.SimpleNamespace(AutoTokenizer=auto)
         identity = 'a'*64
-        for dtype, mtp in (('Q5_K', True), ('BF16', True), ('Q5_K', False)):
-            with self.subTest(dtype=dtype, mtp=mtp):
-                out = work/f'{dtype}-{mtp}'
+        cases=(('Q5_K',True,'auto',True),('BF16',True,'auto',False),('Q5_K',False,'auto',False),
+               ('Q5_K',True,'none',False),('BF16',True,'tokenizer',True))
+        for dtype, mtp, mode, expect_artifact in cases:
+            with self.subTest(dtype=dtype, mtp=mtp, mode=mode):
+                out = work/f'{dtype}-{mtp}-{mode}'
                 geometry = {'tied_head':True, 'vocabulary':8}
                 receipt = dict(source_id=identity, source_representation='gguf_converted',
                                geometry=geometry, physical_roles=1)
@@ -64,13 +74,16 @@ class DefaultPreparation(unittest.TestCase):
                          f'model.language_model.embed_tokens.weight\ttoken_embd.weight\t{dtype}']
                 gguf = types.SimpleNamespace(prepare_role_files=lambda path, enabled: (lines, receipt))
                 argv = ['prepare', '--model', str(model), '--output', str(out),
-                        '--gguf-role-files', str(work/'unused')]
+                        '--gguf-role-files', str(work/'unused'),'--tokenizer-dir',str(tokenizer_dir)]
                 if mtp: argv.append('--mtp')
+                if mode != 'auto': argv.extend(('--draft-vocabulary',mode))
                 with patch.object(sys, 'argv', argv), patch.dict(sys.modules, {'transformers':fake_transformers, 'gguf_roles':gguf}), \
                      patch.object(prepare.geometry, 'role_shapes', return_value={'mtp.test':(1,)}):
                     prepare.main()
                 artifact = out/'mtp-draft-vocabulary.ids'
-                self.assertEqual(artifact.exists(), dtype == 'Q5_K' and mtp)
+                self.assertEqual(seen[-1],tokenizer_dir)
+                self.assertEqual(json.loads((out/'input.json').read_text())['tokenizer_directory'],str(tokenizer_dir.resolve()))
+                self.assertEqual(artifact.exists(), expect_artifact)
                 if artifact.exists():
                     self.assertEqual(artifact.read_text().splitlines(),
                         ['hyle-draft-vocabulary-v2', identity, '8', 'recommended_drafts none', 'head original', '0 2 5 7'])
@@ -79,6 +92,7 @@ class DefaultPreparation(unittest.TestCase):
 
 class RecordedCalibration(unittest.TestCase):
     def setUp(self):
+        (ROOT/'.scratch').mkdir(exist_ok=True)
         self.work = Path(tempfile.mkdtemp(prefix='recorded-vocabulary-', dir=ROOT / '.scratch'))
         self.identity = 'a' * 64
         self.inputs = self.work / 'inputs'; self.inputs.mkdir()

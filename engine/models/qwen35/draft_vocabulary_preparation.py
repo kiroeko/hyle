@@ -50,7 +50,7 @@ def write_vocabulary(output, identity: str, vocabulary: int, ids: list[int],
                  f'recommended_drafts {recommendation}\nhead original\n')
     output.write(' '.join(map(str, ids)) + '\n')
 
-def tokenizer_default_ids(tokenizer, vocabulary: int) -> tuple[list[int], str]:
+def tokenizer_default_ids(tokenizer, vocabulary: int, rows: int | None = None) -> tuple[list[int], str]:
     """Select bounded common IDs from local tokenizer and preparation prompts."""
     if type(vocabulary) is not int or vocabulary <= 0:
         raise ValueError("positive source vocabulary required")
@@ -67,8 +67,11 @@ def tokenizer_default_ids(tokenizer, vocabulary: int) -> tuple[list[int], str]:
             raise ValueError("tokenizer prompt contains IDs outside the source vocabulary")
         encoded_prompts.append(ids)
         counts.update(ids)
-    rows = min(vocabulary, max(len(special), (vocabulary + 1) // 2))
-    selected = set(special)
+    if rows is None:
+        rows = max(len(special), (vocabulary + 1) // 2)
+    if type(rows) is not int or not 0 < rows <= vocabulary:
+        raise ValueError("draft row count must fit the source vocabulary")
+    selected = set(sorted(special, key=lambda value: (-counts[value], value))[:rows])
     for token in sorted(counts, key=lambda value: (-counts[value], value)):
         if len(selected) == rows:
             break

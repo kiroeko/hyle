@@ -188,27 +188,11 @@ def _range_sha256(path,offset,count):
     return result.hexdigest()
 
 
-def prepare_role_files(path, mtp):
-    """Authenticate borrowed actual role ranges; emit distinct typed TSV.
-
-    Always write the complete source role metadata. MTP-off selection is a loader
-    decision after full validation, not permission to hide a damaged NextN.
-    """
-    original = json.loads(Path(path).read_bytes())
-    require(original.get('signature') == PAYLOAD_SIGNATURE and original.get('complete') is True,
-            'GGUF preparation requires complete acquired payload records, not a header-only inventory')
-    source,header = original['source'],original['header']
-    header_path = (ROOT/header['path']).resolve()
-    raw = header_path.read_bytes()
-    received = hashlib.sha256(raw).hexdigest()
-    require(header['bytes'] == source['header_bytes'] == len(raw) and
-            header['sha256'] == source['header_sha256'] == received,
-            'cached original GGUF header identity differs')
-    inventory = inspect_local(header_path,source)
+def _prepare_inventory(inventory, source, bindings, mtp, *, verify_ranges):
+    """Build the common role manifest from a validated source inventory."""
     require(not mtp or inventory['geometry']['mtp_layers'] != 0,
             'source GGUF geometry has no NextN layer')
     selected = {row['physical_name']:row for row in inventory['roles']}
-    bindings = original['roles']
     require(len(bindings) == len(selected) and
             {row['physical_name'] for row in bindings} == set(selected),
             'GGUF acquired payload bindings are incomplete or duplicated')
@@ -219,8 +203,9 @@ def prepare_role_files(path, mtp):
                 re.fullmatch('[0-9a-f]{64}',binding.get('sha256','')),
                 'GGUF acquired original role range identity differs')
         body_path = (ROOT/binding['path']).resolve()
-        require(_range_sha256(body_path,binding['offset'],row['bytes']) == binding['sha256'],
-                'original GGUF role SHA256 differs: '+row['physical_name'])
+        if verify_ranges:
+            require(_range_sha256(body_path,binding['offset'],row['bytes']) == binding['sha256'],
+                    'original GGUF role SHA256 differs: '+row['physical_name'])
         shape = row['storage']['logical_shape']
         lines.append('\t'.join((row['logical_name'],row['physical_name'],row['storage']['dtype'],row['semantic'],
             str(len(shape)),*(str(d) for d in shape),_quoted(body_path.as_posix()),str(binding['offset']),
@@ -239,6 +224,75 @@ def prepare_role_files(path, mtp):
         text_weight_bytes=sum(row['bytes'] for row in inventory['roles'] if not row['logical_name'].startswith('mtp.')),
         mtp_weight_bytes=sum(row['bytes'] for row in inventory['roles'] if row['logical_name'].startswith('mtp.')),
         storage='borrowed original GGUF role ranges; no repacking or whole-bank dequantization')
+
+
+def prepare_role_files(path, mtp):
+    """Authenticate borrowed actual role ranges; emit distinct typed TSV.
+
+    Always write the complete source role metadata. MTP-off selection is a loader
+    decision after full validation, not permission to hide a damaged NextN.
+    """
+    original = json.loads(Path(path).read_bytes())
+    require(original.get('signature') == PAYLOAD_SIGNATURE and original.get('complete') is True,
+            'GGUF preparation requires complete acquired payload records, not a header-only inventory')
+    source,header = original['source'],original['header']
+    header_path = (ROOT/header['path']).resolve()
+    raw = header_path.read_bytes()
+    received = hashlib.sha256(raw).hexdigest()
+    require(header['bytes'] == source['header_bytes'] == len(raw) and
+            header['sha256'] == source['header_sha256'] == received,
+            'cached original GGUF header identity differs')
+    inventory = inspect_local(header_path,source)
+    return _prepare_inventory(inventory, source, original['roles'], mtp, verify_ranges=True)
+
+
+def _hash_local_gguf(path, inventory, size):
+    """Hash the complete file and its disjoint original roles in one pass."""
+    digest = hashlib.sha256()
+    bindings = []
+    cursor = 0
+    with path.open('rb') as stream:
+        def consume(count, role_digest=None):
+            nonlocal cursor
+            require(type(count) is int and count >= 0 and cursor + count <= size, 'invalid local GGUF role range')
+            while count:
+                chunk = stream.read(min(count, 8 * 1024 * 1024))
+                require(bool(chunk), 'short local GGUF read during source preparation')
+                digest.update(chunk)
+                if role_digest is not None: role_digest.update(chunk)
+                cursor += len(chunk)
+                count -= len(chunk)
+        for row in sorted(inventory['roles'], key=lambda item:item['absolute_inclusive'][0]):
+            first = row['absolute_inclusive'][0]
+            consume(first - cursor)
+            role_digest = hashlib.sha256()
+            consume(row['bytes'], role_digest)
+            bindings.append(dict(physical_name=row['physical_name'], path=str(path), offset=first,
+                                 bytes=row['bytes'], original_offset=first, sha256=role_digest.hexdigest()))
+        consume(size - cursor)
+        require(not stream.read(1), 'local GGUF grew during source preparation')
+    return digest.hexdigest(), bindings
+
+
+def prepare_local_gguf(path, mtp):
+    """Bind an existing single-file GGUF without copying or downloading it."""
+    path = Path(path).resolve()
+    require(path.is_file() and path.suffix.lower() == '.gguf', 'an existing local GGUF file is required')
+    before = path.stat()
+    header, raw = read_local_header(path)
+    source = dict(repository='local/content-sha256', revision='0'*40, file='local.gguf',
+                  size=before.st_size, lfs_sha256='0'*64, header_bytes=len(raw),
+                  header_sha256=hashlib.sha256(raw).hexdigest())
+    inventory = typed_inventory(header, source, header_sha256=source['header_sha256'])
+    require(not mtp or inventory['geometry']['mtp_layers'] != 0,
+            'source GGUF geometry has no NextN layer')
+    full_sha, bindings = _hash_local_gguf(path, inventory, before.st_size)
+    source.update(revision=full_sha[:40], lfs_sha256=full_sha)
+    inventory['source'].update(source)
+    after = path.stat()
+    require((before.st_size, before.st_mtime_ns) == (after.st_size, after.st_mtime_ns),
+            'local GGUF changed during source preparation')
+    return _prepare_inventory(inventory, source, bindings, mtp, verify_ranges=False)
 
 
 def main():

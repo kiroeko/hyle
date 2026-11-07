@@ -50,7 +50,7 @@ python scripts/build.py --name qwen-cuda --target hyle_engine --jobs 2
 初始化 C++ 构建不会自动安装它或获取模型。
 
 ```text
-python engine/models/qwen35/prepare.py --model LOCAL_MODEL --output .scratch/qwen-input --prompt "Please calculate 2 + 3. Answer briefly."
+python scripts/prepare-qwen35.py --model LOCAL_MODEL --output .scratch/qwen-input --prompt "Please calculate 2 + 3. Answer briefly."
 <build-dir>/bin/hyle --inputs .scratch/qwen-input --steps 64 --capacity 1024
 ```
 
@@ -59,6 +59,35 @@ python engine/models/qwen35/prepare.py --model LOCAL_MODEL --output .scratch/qwe
 量化 GGUF 头会同时从本地 tokenizer 的固定准备提示和特殊 token 生成来源绑定的半词表制品，不运行模型。
 符合自动选择条件的 CUDA 目录可通过下方来源匹配的草稿制品启用 MTP；具体选择见[采样与 MTP](#采样与-mtp)。
 只需普通模式时可省略准备器的`--mtp`；物理角色计数与输入身份见[模型输入说明](../../engine/models/qwen35/README.md#输入与数值政策)。
+
+### 一次准备并复用
+
+独立工具可从本地 Qwen 模型目录或单文件 GGUF 生成 Hyle 输入。GGUF 仍需要同模型的本地配置与 tokenizer：
+
+```powershell
+python scripts/prepare-qwen35.py --model <本地配置和tokenizer目录> --gguf <本地模型.gguf> --output .scratch/qwen-ready --mtp
+hyle --inputs .scratch/qwen-ready --steps 64 --capacity 1024
+```
+
+工具按本地内容计算来源身份、校验张量范围并生成 `weights.tsv`、输入 ID；原始输出头为量化编码的 GGUF 默认同时生成来源绑定的草稿子词表。本地文件的内容身份不等于已核验发布方的原始文件。工具不下载或复制原模型；`weights.tsv` 引用的原权重文件必须保持不变且可访问。重复加载同一准备目录不需要重新执行工具。直接读取相同 GGUF 内容时，来源身份不依赖其文件名；不同来源记录生成的身份可能不同，草稿制品必须匹配实际输入清单。
+
+HF 原权重可省略 `--gguf`。`--draft-vocabulary tokenizer` 显式从本地 tokenizer 生成子词表，`--draft-rows N` 调整行数；`none` 不生成。默认 tokenizer 方法不运行模型，也不保证对所有提示或设备都最快。需要按模型输出离线校准时，可指定 `--draft-vocabulary calibrated --hyle <本地hyle.exe>`；它运行固定提示的普通生成。已有同来源校准结果可用重复的 `--calibration-run <目录>` 复用，此时不需要再次运行模型。
+
+已有 Hyle 输入时，也可以只生成可复用资产，不重建权重清单：
+
+```powershell
+python scripts/prepare-qwen35.py --inputs <已有输入目录> --tokenizer-dir <同模型的本地tokenizer目录> --output .scratch/qwen-draft --mtp --draft-rows 114688
+hyle --inputs <已有输入目录> --mtp-draft-vocabulary .scratch/qwen-draft/mtp-draft-vocabulary.ids --steps 64 --capacity 1024
+```
+
+需要独立 Q4_K 草稿头时，可以在一次准备中同时生成子词表和头：
+
+```powershell
+python scripts/prepare-qwen35.py --model <本地HF模型目录> --output .scratch/qwen-q4-head --mtp --draft-vocabulary tokenizer --draft-head-q4 <本地ggml-base.dll> --quantizer-version llama.cpp@<40位实际提交号>
+hyle --inputs .scratch/qwen-q4-head --steps 64 --capacity 1024
+```
+
+该工具只支持其可读取的原始稠密 HF 头；有子词表时生成与其绑定的紧凑头，不自动推荐 K3。对已有输入生成独立资产后，运行时还需显式指定 `--mtp-draft-head .scratch/qwen-draft/mtp-draft-head.tsv`；直接准备的新输入目录在同时有子词表时可自动发现这些制品，仅准备全头时可用 `--mtp on`。完整词表仍来自模型本身，无需生成另一份权重或词表文件。引擎加载模型后自动准备并持久化这些资产尚未实现。
 
 ## 常用选项
 

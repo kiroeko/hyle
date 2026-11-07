@@ -16,6 +16,7 @@
 `--role-files` 使用固定 repository／revision 与角色 hash 的显式原文件记录，GGUF 使用
 `--gguf-role-files`。准备器不下载或复制整模型；原权重文件必须持续可访问。
 本地 tokenizer 由已安装的兼容 Transformers 调用，C++ 初始化脚本不安装该 Python 环境。
+面向用户的一次性入口是 `scripts/prepare-qwen35.py`：它可直接读取本地单文件 GGUF，也可从已有输入生成可复用的子词表和可选紧凑草稿头；运行时自动准备与持久化留待通用引擎入口实现。
 
 官方 BF16 输入包含 320 个文本张量；`prepare.py --mtp` 另含 15 个原 MTP 张量。
 完整清单可用 `--mtp off` 只加载文本权重，或用 `--mtp on` 执行草拟与验证。

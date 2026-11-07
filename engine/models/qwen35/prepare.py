@@ -693,24 +693,38 @@ def prepare_safetensors(model: Path, mtp: bool, config: dict, fp8_reader: str | 
     return _prepare_role_records(original,mtp,config,discover,fp8_reader,kv_cache_dtype)
 
 
-def main() -> None:
+def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", type=Path, required=True)
+    parser.add_argument("--tokenizer-dir", type=Path,
+                        help="local tokenizer directory; defaults to --model")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--prompt", default="Please calculate 2 + 3. Answer briefly.")
     parser.add_argument("--continuation", default="", help="optional raw text cached continuation")
     parser.add_argument("--mtp", action="store_true",
                         help="select the source NextN layer; does not execute MTP")
+    parser.add_argument("--draft-vocabulary", choices=('auto','tokenizer','none'), default='auto',
+                        help="prepare a source-bound draft subset automatically, from the local tokenizer, or not at all")
+    parser.add_argument("--draft-rows", type=int,
+                        help="optional tokenizer-selected draft row count; defaults to half the vocabulary")
     weight_source = parser.add_mutually_exclusive_group()
     weight_source.add_argument("--role-files", type=Path,
                         help="prepared fixed-source text role record; borrow original quantized files/ranges")
     weight_source.add_argument("--gguf-role-files", type=Path,
                         help="complete acquired GGUF payload-source record; preserve original codec and converted parameters")
+    weight_source.add_argument("--gguf", type=Path,
+                        help="existing local single-file GGUF; authenticate and borrow its original ranges")
     parser.add_argument("--fp8-reader", choices=[FP8_READER, CT_MIXED_READER, STATIC_FP8_READER],
                         help="explicit fixed reference-reader arithmetic for original FP8/CT sources")
     parser.add_argument("--kv-cache-dtype", choices=['bf16','e4m3fn'],
                         help="explicit BF16 KV omission or target E4M3FN KV with original K/V scales; NextN KV remains plain activation storage")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    if not args.mtp and (args.draft_vocabulary != 'auto' or args.draft_rows is not None):
+        parser.error("draft vocabulary preparation requires --mtp")
+    if args.draft_vocabulary == 'none' and args.draft_rows is not None:
+        parser.error("--draft-rows cannot be used when draft vocabulary preparation is disabled")
+    if args.draft_rows is not None and args.draft_rows <= 0:
+        parser.error("--draft-rows must be positive")
     if args.output.exists():
         raise ValueError("output directory must be new")
     os.environ.update(HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1",
@@ -718,36 +732,40 @@ def main() -> None:
     config_path = args.model / "config.json"
     config = json.loads(config_path.read_bytes())
     records = [dict(path="config.json", size_bytes=config_path.stat().st_size, sha256=digest(config_path))]
-    if args.gguf_role_files:
+    if args.gguf_role_files or args.gguf:
         if args.fp8_reader or args.kv_cache_dtype:
             raise ValueError("--fp8-reader describes original HF FP8 block128 roles, not GGUF")
         if __package__:
-            from .gguf_roles import prepare_role_files as prepare_gguf_role_files
+            from . import gguf_roles
         else:
-            from gguf_roles import prepare_role_files as prepare_gguf_role_files
-        role_lines, role_receipt = prepare_gguf_role_files(args.gguf_role_files, args.mtp)
+            import gguf_roles
+        role_lines, role_receipt = (gguf_roles.prepare_local_gguf(args.gguf, args.mtp) if args.gguf
+                                    else gguf_roles.prepare_role_files(args.gguf_role_files, args.mtp))
     elif args.role_files:
         role_lines, role_receipt = prepare_role_files(args.role_files, args.mtp, config, args.fp8_reader, args.kv_cache_dtype)
     else:
         role_lines, role_receipt = prepare_safetensors(args.model, args.mtp, config, args.fp8_reader, args.kv_cache_dtype)
     from transformers import AutoTokenizer
-    tokenizer = AutoTokenizer.from_pretrained(args.model, local_files_only=True)
+    tokenizer_dir = args.tokenizer_dir or args.model
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_dir, local_files_only=True)
     encoded = tokenizer.apply_chat_template([{"role": "user", "content": args.prompt}],
         add_generation_prompt=True, enable_thinking=False, tokenize=True, return_dict=True)
     prompt = encoded["input_ids"]
     continuation = tokenizer.encode(args.continuation, add_special_tokens=False)
     draft_vocabulary = None
-    if args.mtp and role_receipt.get("source_representation") == "gguf_converted":
+    use_tokenizer_vocabulary = args.mtp and (args.draft_vocabulary == 'tokenizer' or args.draft_rows is not None)
+    if args.mtp and args.draft_vocabulary == 'auto' and role_receipt.get("source_representation") == "gguf_converted":
         model_geometry = role_receipt["geometry"]
         head = ("model.language_model.embed_tokens.weight" if model_geometry["tied_head"]
                 else "lm_head.weight")
         head_roles = [line.split("\t") for line in role_lines[4:] if line.split("\t", 1)[0] == head]
         if len(head_roles) != 1:
             raise ValueError("GGUF source requires exactly one vocabulary head role")
-        if head_roles[0][2] not in ("F32", "F16", "BF16"):
-            ids, fingerprint = draft_vocabulary_preparation.tokenizer_default_ids(
-                tokenizer, model_geometry["vocabulary"])
-            draft_vocabulary = (ids, fingerprint)
+        use_tokenizer_vocabulary = use_tokenizer_vocabulary or head_roles[0][2] not in ("F32", "F16", "BF16")
+    if use_tokenizer_vocabulary:
+        ids, fingerprint = draft_vocabulary_preparation.tokenizer_default_ids(
+            tokenizer, role_receipt["geometry"]["vocabulary"], args.draft_rows)
+        draft_vocabulary = (ids, fingerprint)
     args.output.mkdir(parents=True)
     with (args.output / "weights.tsv").open("w", encoding="utf-8", newline="\n") as stream:
         stream.write("\n".join(role_lines) + "\n")
@@ -758,7 +776,7 @@ def main() -> None:
             draft_vocabulary_preparation.write_vocabulary(stream, role_receipt["source_id"],
                 role_receipt["geometry"]["vocabulary"], draft_vocabulary[0], None)
     receipt = dict(kind="qwen_text_input_preparation_no_model_execution",
-        original_files=records, tokenizer_directory=str(args.model.resolve()),
+        original_files=records, tokenizer_directory=str(tokenizer_dir.resolve()),
         prompt=args.prompt, prompt_ids=prompt, continuation_ids=continuation,
         script_sha256=digest(Path(__file__)), **role_receipt)
     receipt.update(weight_selection="text+mtp" if args.mtp else "text", manifest_signature=role_lines[0])

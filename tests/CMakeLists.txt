@@ -425,6 +425,21 @@ add_test(NAME hyle_qwen_hf_roles_test
 set_tests_properties(hyle_qwen_hf_roles_test PROPERTIES
   LABELS "tooling;mtp;parser;quantization" TIMEOUT 30)
 
+add_test(NAME hyle_prepare_qwen35_test
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tooling/prepare_qwen35_test.py")
+set_tests_properties(hyle_prepare_qwen35_test PROPERTIES
+  LABELS "tooling;inference;mtp;preparation" TIMEOUT 30)
+
+add_test(NAME hyle_prepare_mtp_draft_vocabulary_test
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tooling/prepare_mtp_draft_vocabulary_test.py")
+set_tests_properties(hyle_prepare_mtp_draft_vocabulary_test PROPERTIES
+  LABELS "tooling;inference;mtp;preparation" TIMEOUT 30)
+
+add_test(NAME hyle_prepare_mtp_draft_head_test
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tooling/prepare_mtp_draft_head_test.py")
+set_tests_properties(hyle_prepare_mtp_draft_head_test PROPERTIES
+  LABELS "tooling;inference;mtp;preparation" TIMEOUT 30)
+
 if(_HYLE_COMPUTE_HAVE_CUDA AND _HYLE_COMPUTE_REQUEST_CPU
    AND TARGET hyle_graph_route_cpu_cuda AND TARGET hyle_graph_route_cpu
    AND TARGET hyle_graph_route_cuda)
