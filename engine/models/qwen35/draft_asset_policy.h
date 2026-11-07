@@ -40,7 +40,7 @@ inline DraftAssetSelection select_draft_assets(const std::filesystem::path &inpu
   // An implicit map must never make a previously usable source/backend fail.
   // Explicit files still reach the loader and report their actual incompatibility.
   const bool may_use_automatic_vocabulary = request.mode != mtp::RequestedMode::kOff &&
-      request.max_drafts && request.greedy && request.automatic_vocabulary &&
+      request.max_drafts && request.unmodified_greedy_drafting() && request.automatic_vocabulary &&
       (request.mode == mtp::RequestedMode::kOn || request.automatic_backend_eligible);
   const bool present_automatic_vocabulary = may_use_automatic_vocabulary &&
       inspect(prepared_vocabulary, "cannot inspect prepared MTP defaults: ");
@@ -77,7 +77,7 @@ inline DraftAssetSelection select_draft_assets(const std::filesystem::path &inpu
   if (head == "original") head.clear();
   else if (head == "auto") {
     head.clear();
-    auto_head = request.greedy && !original_projection_eligible;
+    auto_head = request.unmodified_greedy_drafting() && !original_projection_eligible;
   }
   if (vocabulary == "full") vocabulary.clear();
   else if (vocabulary == "auto") {
@@ -87,9 +87,9 @@ inline DraftAssetSelection select_draft_assets(const std::filesystem::path &inpu
       vocabulary = prepared_vocabulary;
     if (!vocabulary.empty()) vocabulary_reason = "prepared_vocabulary";
   }
-  if (!vocabulary.empty() && !request.greedy)
+  if (!vocabulary.empty() && !request.unmodified_greedy_drafting())
     throw std::runtime_error("--mtp-draft-vocabulary requires --mtp on, active drafting, unmodified greedy sampling and zero minimum probability");
-  if (!head.empty() && !request.greedy)
+  if (!head.empty() && !request.unmodified_greedy_drafting())
     throw std::runtime_error("--mtp-draft-head requires active unmodified greedy MTP and zero minimum probability");
   return {policy, std::move(vocabulary), std::move(head), auto_head, vocabulary_reason};
 }

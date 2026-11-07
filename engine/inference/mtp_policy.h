@@ -1,5 +1,7 @@
 #pragma once
 
+#include "cold_workload.h"
+
 #include <cstddef>
 #include <string_view>
 
@@ -11,24 +13,21 @@ enum class RequestedMode { kOff, kAuto, kOn };
 // assert model or backend support; the selected source is validated separately.
 struct DefaultRequest final {
   RequestedMode mode = RequestedMode::kAuto;
-  bool natural_generation = false;
-  bool multiple_schedules = false;
-  bool prefix_enabled = false;
-  bool scheduler_progress = false;
-  std::size_t max_sessions = 0;
-  std::size_t active_sequences = 0;
-  std::size_t capacity = 0;
+  ColdWorkloadFacts workload;
   bool automatic_backend_eligible = false;
-  bool cpu_ffn = false;
-  bool greedy = false;
   std::size_t max_drafts = 0;
   bool automatic_vocabulary = false;
+
+  constexpr bool unmodified_greedy_drafting() const noexcept {
+    return workload.greedy && workload.zero_draft_threshold;
+  }
 };
 
 // Avoid inspecting an unused artifact, including errors from its filesystem.
 constexpr bool inspect_prepared_vocabulary(const DefaultRequest &request) noexcept {
   return request.mode != RequestedMode::kOff && request.max_drafts > 0 &&
-      request.automatic_backend_eligible && request.greedy && request.automatic_vocabulary;
+      request.automatic_backend_eligible && request.unmodified_greedy_drafting() &&
+      request.automatic_vocabulary;
 }
 
 struct DefaultSelection final {
@@ -57,17 +56,18 @@ constexpr DraftDepthSelection select_draft_depth(const DefaultSelection &selecti
 // Asset inspection is separate because explicit MTP can use prepared assets
 // even when the automatic route is not selected.
 constexpr std::string_view automatic_constraint(const DefaultRequest &request) noexcept {
+  const auto &workload = request.workload;
   if (!request.max_drafts) return "drafting_disabled";
-  if (!request.natural_generation) return "non_natural_request";
+  if (!workload.natural_generation) return "non_natural_request";
   if (!request.automatic_backend_eligible) return "backend_policy";
-  if (!request.greedy) return "sampling_or_draft_threshold";
-  if (request.multiple_schedules || request.max_sessions > 1 || request.active_sequences > 1)
+  if (!workload.greedy || !workload.zero_draft_threshold) return "sampling_or_draft_threshold";
+  if (workload.multiple_schedules || workload.max_sessions > 1 || workload.active_sequences > 1)
     return "multiple_sessions_or_sequences";
-  if (request.prefix_enabled) return "prefix_cache";
-  if (request.scheduler_progress) return "scheduler";
-  if (request.cpu_ffn) return "cpu_ffn";
+  if (workload.prefix_enabled) return "prefix_cache";
+  if (workload.scheduler_progress) return "scheduler";
+  if (workload.cpu_assist) return "cpu_ffn";
   // A draft needs at least one input row and one remaining position.
-  if (request.capacity < 2) return "insufficient_capacity";
+  if (workload.capacity < 2) return "insufficient_capacity";
   return {};
 }
 

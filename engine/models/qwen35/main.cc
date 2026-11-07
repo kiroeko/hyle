@@ -8909,19 +8909,21 @@ int qwen35::run(int argc, char **argv) {
     const bool natural_generation = natural_schedule || natural_single;
     const bool unmodified_greedy = !sampler.enabled && sampler.modifiers.empty();
     const bool zero_draft_threshold = min_draft_probability == 0;
+    const hyle::inference::ColdWorkloadFacts cold_workload{
+        .natural_generation = natural_generation, .multiple_schedules = multiple_schedules,
+        .prefix_enabled = prefix_enabled, .scheduler_progress = progress,
+        .planned_shapes = warmup_planned_shapes, .cpu_assist = cpu_ffn_layers != 0,
+        .greedy = unmodified_greedy, .zero_draft_threshold = zero_draft_threshold,
+        .state_trace = !trace.empty() && trace_states,
+        .max_sessions = max_sessions, .active_sequences = active_sequences, .capacity = capacity};
     // A source-bound vocabulary opts a prepared directory into drafting.
     // The policy inspects current configuration, never future requests.
     namespace mtp = hyle::inference::mtp;
     const mtp::DefaultRequest default_request{
         .mode = mtp_policy == "off" ? mtp::RequestedMode::kOff :
             mtp_policy == "on" ? mtp::RequestedMode::kOn : mtp::RequestedMode::kAuto,
-        .natural_generation = natural_generation, .multiple_schedules = multiple_schedules,
-        .prefix_enabled = prefix_enabled, .scheduler_progress = progress,
-        .max_sessions = max_sessions,
-        .active_sequences = active_sequences, .capacity = capacity,
+        .workload = cold_workload,
         .automatic_backend_eligible = backend_selection.primary == qwen35::BackendKind::kCuda,
-        .cpu_ffn = cpu_ffn_layers != 0,
-        .greedy = unmodified_greedy && zero_draft_threshold,
         .max_drafts = max_drafts, .automatic_vocabulary = draft_vocabulary == "auto"};
     auto assets = qwen35::select_draft_assets(input, default_request,
         std::move(draft_vocabulary), std::move(draft_head),
@@ -8961,13 +8963,9 @@ int qwen35::run(int argc, char **argv) {
     // Other backends, sampling/thresholds, multi-session/prefix and explicit
     // planned workloads retain their finite route and invalid-performance label.
     const auto bounded_plan = hyle::inference::select_bounded_generation({
-        .natural_generation = natural_generation, .multiple_schedules = multiple_schedules,
-        .prefix_cache = prefix_enabled, .planned_shapes = warmup_planned_shapes,
+        .workload = cold_workload,
         .supported_backend = backend_selection.primary == qwen35::BackendKind::kCuda,
-        .cpu_assist = cpu_ffn_layers != 0, .greedy = unmodified_greedy,
-        .mtp_enabled = mtp_enabled, .zero_draft_threshold = zero_draft_threshold,
-        .max_sessions = max_sessions, .active_sequences = active_sequences,
-        .capacity = capacity, .max_drafts = max_drafts});
+        .mtp_enabled = mtp_enabled, .max_drafts = max_drafts});
     const bool bounded_generation = bounded_plan.enabled;
     if (require_bounded_generation && !bounded_generation)
       throw std::runtime_error("bounded natural generation unavailable: " + std::string(bounded_plan.reason));
@@ -9082,21 +9080,19 @@ int qwen35::run(int argc, char **argv) {
         backend_selection.primary, cpu_ffn_layers != 0, progress,
         sampler.enabled, !sampler.modifiers.empty()};
     const hyle::inference::DecodeRouteFacts route_facts{
-        .overlap_requested = decode_overlap, .natural_generation = natural_generation,
+        .workload = cold_workload, .overlap_requested = decode_overlap,
         .mtp_enabled = mtp_enabled, .max_drafts = max_drafts,
         .max_device_drafts = qwen35::kMaximumDeviceMtpDrafts,
-        .zero_draft_threshold = zero_draft_threshold, .stored_draft_head = stored_draft_head,
+        .stored_draft_head = stored_draft_head,
         .relay_eligible = device_relay.eligible(), .relay_refusal = device_relay.refusal_reason(),
         .commands_replay = replay == qwen35::ReplayPolicy::kCommands,
-        .state_trace = !trace.empty() && trace_states,
         .has_decode = bounded_generation ? capacity > 1 : std::ranges::any_of(generation_schedules, [](const auto &request) {
           return std::ranges::any_of(request.turns, [](const auto &turn) { return turn.max_outputs > 1; });
-        }), .active_sequences = active_sequences == 0 ? cached_slots : requested_active};
+        }), .resolved_active_sequences = active_sequences == 0 ? cached_slots : requested_active};
     // A continuous conditional successor retains its completed producer until
     // the consumer really retires. Count that third original batch in the
     // existing page/state bound, independently of simultaneous GPU work.
-    auto overlap_plan = hyle::inference::select_decode_overlap(route_facts);
-    auto verification_plan = hyle::inference::select_device_verification(route_facts);
+    auto [overlap_plan, verification_plan] = hyle::inference::plan_decode_routes(route_facts);
     bool overlap_selected = overlap_plan.enabled;
     bool device_verification_selected = verification_plan.enabled;
     // Ask the actual backend about the provisional maximum batch and every
@@ -9106,7 +9102,7 @@ int qwen35::run(int argc, char **argv) {
     bool continuous_mtp_candidate = false;
     constexpr auto exact_token_domain = std::int64_t{1} << std::numeric_limits<float>::digits;
     const auto continuous_plan = hyle::inference::select_continuous_mtp(route_facts, overlap_selected,
-        prefix_enabled, cached_slots, geometry.attention_layers() != 0, geometry.vocabulary <= exact_token_domain);
+        cached_slots, geometry.attention_layers() != 0, geometry.vocabulary <= exact_token_domain);
     auto overlap_depth_reason = continuous_plan.reason;
     if (continuous_plan.enabled) {
       const auto provisional = qwen35::cache::plan(geometry, weight_source.cache_row_bytes, capacity, cached_slots,
