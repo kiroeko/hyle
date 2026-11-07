@@ -17,7 +17,7 @@ void check_decode_routes() {
                               (drafts==1 || x.stored_draft_head))) && x.relay_eligible &&
           !x.commands_replay && !x.state_trace && x.has_decode;
         const bool verify=x.mtp_enabled && drafts>1 && drafts<=3 && x.zero_draft_threshold &&
-          x.relay_eligible && active==1 && !x.commands_replay;
+          x.relay_eligible && active==1 && !x.commands_replay && x.has_decode;
         const auto o=select_decode_overlap(x),v=select_device_verification(x);
         if (o.enabled!=overlap || v.enabled!=verify || o.reason.empty() || v.reason.empty() ||
             (o.reason=="selected")!=o.enabled || (v.reason=="selected")!=v.enabled)
@@ -39,6 +39,50 @@ void check_decode_routes() {
   if (select_decode_overlap(facts).reason!="device_chain_capacity" ||
       select_device_verification(facts).reason!="device_chain_capacity")
     throw std::runtime_error("unsupported chain must retain its fallback reason");
+
+  // The verifier packet can be useful without overlap or the compound chain.
+  facts.max_drafts=3; facts.stored_draft_head=false;
+  if (select_decode_overlap(facts).reason!="draft_projection" || !select_device_verification(facts).enabled)
+    throw std::runtime_error("packet verification must remain independent of the compound projection");
+  facts.stored_draft_head=true; facts.state_trace=true;
+  if (select_decode_overlap(facts).reason!="state_trace" || !select_device_verification(facts).enabled)
+    throw std::runtime_error("tracing must not disable the independent verification packet");
+  facts.state_trace=false; facts.has_decode=false;
+  if (select_decode_overlap(facts).reason!="no_decode" || select_device_verification(facts).reason!="no_decode")
+    throw std::runtime_error("a finite workload without decode must not plan unused verification");
+
+  BoundedGenerationFacts bounded{.natural_generation=true, .supported_backend=true, .greedy=true,
+      .mtp_enabled=true, .zero_draft_threshold=true, .capacity=128, .max_drafts=3};
+  if (!select_bounded_generation(bounded).enabled) throw std::runtime_error("bounded route unavailable");
+  bounded.planned_shapes=true;
+  if (select_bounded_generation(bounded).reason!="planned_shapes")
+    throw std::runtime_error("planned shapes need an observable finite route");
+  bounded.planned_shapes=false; bounded.active_sequences=2;
+  if (select_bounded_generation(bounded).reason!="multiple_sessions_or_sequences")
+    throw std::runtime_error("bounded route admitted multiple active sequences");
+  bounded.active_sequences=1; bounded.zero_draft_threshold=false;
+  if (select_bounded_generation(bounded).reason!="draft_threshold")
+    throw std::runtime_error("bounded MTP admitted a draft threshold");
+  bounded.mtp_enabled=false;
+  if (!select_bounded_generation(bounded).enabled)
+    throw std::runtime_error("ordinary generation must not depend on the draft threshold");
+
+  const DecodeBudgetRoutes initial{{true,"selected"},{true,"selected"},3,"selected"};
+  // A synthetic monotonic capacity exposes each ordered fallback, without
+  // depending on a particular model's byte formula.
+  for (const int budget : {6,5,4,3,2,1}) {
+    const auto routes=select_decode_budget_routes(initial,[budget](const auto &r) {
+      return (r.verification.enabled ? 2 : 0) + (r.overlap.enabled ? int(r.overlap_depth) : 1) <= budget;
+    });
+    if (routes.verification.enabled!=(budget>=5) || routes.overlap.enabled!=(budget>=2) ||
+        routes.overlap_depth!=(budget>=3 ? std::size_t{3} : std::size_t{2}))
+      throw std::runtime_error("cache budget fallback order changed");
+  }
+  const auto single=select_decode_budget_routes(initial,[](const auto &r) { return !r.overlap.enabled; });
+  if (single.overlap.enabled || single.verification.enabled || single.overlap_depth!=2 ||
+      single.overlap.reason!="cache_budget" || single.verification.reason!="cache_budget" ||
+      single.overlap_depth_reason!="cache_budget")
+    throw std::runtime_error("cache budget failed to preserve fallback reasons");
 }
 
 int main() {

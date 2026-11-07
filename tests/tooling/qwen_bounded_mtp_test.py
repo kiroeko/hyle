@@ -89,7 +89,7 @@ def check(args):
         (planned / f'{setting}.stdout').write_bytes(result.stdout)
         (planned / f'{setting}.stderr').write_bytes(result.stderr)
         if setting == 'on':
-            assert result.returncode and b'bounded natural generation requires' in result.stderr
+            assert result.returncode and b'bounded natural generation unavailable: planned_shapes' in result.stderr
         else:
             assert result.returncode == 0
             report = json.loads(result.stdout)

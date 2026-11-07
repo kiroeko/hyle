@@ -76,12 +76,26 @@ def check(args):
             'k3-without-overlap':('prepared_vocabulary','user_disabled','selected','overlap_disabled'),
             'auto-commands':('prepared_vocabulary','commands_replay','commands_replay','overlap_disabled'),
             'auto-explicit-k4':('prepared_vocabulary','device_chain_capacity','device_chain_capacity','overlap_disabled'),
+            'scheduler-explicit':('prepared_vocabulary','scheduler','scheduler','overlap_disabled'),
+            'trace-explicit':('prepared_vocabulary','state_trace','selected','overlap_disabled'),
+            'explicit-planned':('prepared_vocabulary','selected','selected','selected'),
+            'auto-planned':('prepared_vocabulary','selected','selected','selected'),
             'full-auto-original':('explicit_full','selected','single_or_no_draft','selected'),
             'random-auto':('not_inspected','sampling','mtp_disabled','overlap_disabled')}
         if name in planned_reasons:
             actual=tuple(raw[key] for key in ('draft_vocabulary_selection_reason','decode_overlap_plan_reason',
                 'device_verification_plan_reason','overlap_depth_plan_reason'))
             assert actual==planned_reasons[name],(name,actual)
+        if name in ('default-auto','scheduler-explicit','trace-explicit'):
+            assert raw['bounded_generation_plan_reason']=='selected',name
+        if name in ('explicit-planned','auto-planned'):
+            assert raw['bounded_generation_plan_reason']=='planned_shapes',name
+            assert raw['decode_overlap_available'] and raw['overlap_successor_publications']>0,name
+            assert raw['draft_chain_graph_calls']>0,name
+        if name=='trace-explicit':
+            assert not raw['decode_overlap_available'] and raw['draft_chain_graph_calls']>0,name
+        if name=='scheduler-explicit':
+            assert not raw['decode_overlap_available'] and raw['draft_chain_graph_calls']==0,name
         assert raw['mtp']==mtp and raw['mtp_max_drafts']==(width if mtp else 0),name
         assert raw['draft_vocabulary_rows']==(rows if subset else 0),name
         expected_head_rows = (rows if subset else 248320 if mtp else 0) if head_rows is None else head_rows
@@ -110,6 +124,9 @@ def check(args):
     assert captured==run('auto-prefer-capture',['--replay','prefer-capture'])
     planned=run('explicit-planned',['--mtp','on','--mtp-max-drafts','3','--warmup-shapes','planned'])
     assert planned==run('auto-planned',['--warmup-shapes','planned'])
+    assert automatic==run('scheduler-explicit',['--mtp','on','--mtp-max-drafts','3','--progress','scheduler'])
+    assert automatic==run('trace-explicit',['--mtp','on','--mtp-max-drafts','3',
+                                           '--trace',str(args.output/'state-trace-data'),'--trace-level','full'])
     one=run('override-k1',['--mtp-max-drafts','1'],width=1)
     assert one==run('explicit-k1',['--mtp','on','--mtp-max-drafts','1'],width=1)
     ordinary=run('disable',['--mtp','off'],mtp=False,subset=False)
@@ -208,6 +225,22 @@ def check(args):
             observed_short.append(ids)
         assert all(ids==observed_short[0] for ids in observed_short)
     print('PASS short capacity 1/2/3: auto fallback or actual K1/K2 matches explicit routes',flush=True)
+    # A bounded session can admit future turns, while planned shapes know that
+    # this finite workload contains no decode at all.
+    one_step=[]
+    for name,extra,expected in (('lazy',[], 'selected'),('planned',['--warmup-shapes','planned'], 'no_decode')):
+        command=[str(args.hyle),'--inputs',str(short),'--backend','cuda','--capacity','128',
+                 '--steps','1',*extra]
+        result=subprocess.run(command,capture_output=True,timeout=180)
+        (short/f'one-step-{name}.stdout').write_bytes(result.stdout)
+        (short/f'one-step-{name}.stderr').write_bytes(result.stderr)
+        assert result.returncode==0,(name,result.stderr.decode(errors='replace'))
+        raw=json.loads(result.stdout.decode('utf-8-sig'))
+        assert raw['device_verification_plan_reason']==expected,(name,raw['device_verification_plan_reason'])
+        assert not raw['live_committed_versions']
+        one_step.append(raw['sessions'][0]['result']['generated_ids'])
+    assert one_step[0]==one_step[1] and len(one_step[0])==1
+    print('PASS finite no-decode verification route and bounded future-turn capacity',flush=True)
     def budget_run(label, budget=None):
         command=[str(args.hyle),'--inputs',str(short),'--backend','cuda','--capacity','128','--steps','4']
         if budget is not None: command.extend(('--cache-bytes',str(budget)))

@@ -141,7 +141,7 @@ prefill 保留原路径，后继只使用已有实际捕获。
 实际选中的无效或来源不符制品也会报错。
 JSON 的 `mtp_selection_reason` 报告冷期选择或回落原因，`mtp_depth_source` 说明草稿数来自显式参数、制品推荐还是配置默认值。
 `draft_vocabulary_selection_reason` 说明词表是否使用、缺失或因来源／后端能力而跳过。
-`decode_overlap_plan_reason`、`device_verification_plan_reason` 和 `overlap_depth_plan_reason` 解释冷期接力、设备验证及连续后继的计划选择；`cache_budget` 表示配置的缓存预算触发回落。运行时是否实际可接力仍以 `decode_overlap_available` 为准。
+`bounded_generation_plan_reason`、`decode_overlap_plan_reason`、`device_verification_plan_reason` 和 `overlap_depth_plan_reason` 解释有界生成、接力、设备验证及连续后继的计划选择；`cache_budget` 表示配置的缓存预算触发回落。显式计划的工作负载没有 decode 时，设备验证报告 `no_decode`；默认有界会话仍为可能到来的后续轮次保留能力。运行时是否实际可接力仍以 `decode_overlap_available` 为准。
 `insufficient_capacity` 表示容量不足以同时容纳输入和草稿位置；显式启用仍受实际容量和能力限制。
 `--mtp-max-drafts 1` 可覆盖已启用的 K3，按 K1 执行。
 `--mtp-max-drafts` 控制每轮最多提出的草稿数，默认采用制品推荐值，没有推荐时为 1。`--mtp-min-probability` 设置

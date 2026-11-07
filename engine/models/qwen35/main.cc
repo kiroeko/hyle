@@ -910,6 +910,7 @@ public:
   std::size_t physical_text_roles = 0, physical_mtp_roles = 0, canonical_weight_bytes = 0;
   std::string_view mtp_selection_reason = "not_configured", mtp_depth_source = "not_configured";
   std::string_view draft_vocabulary_selection_reason = "not_configured";
+  std::string_view bounded_generation_plan_reason = "not_configured";
   std::string_view decode_overlap_plan_reason = "not_configured", device_verification_plan_reason = "not_configured";
   std::string_view overlap_depth_plan_reason = "not_configured";
   std::size_t ct_channel_groups = 0, ct_local_groups = 0, ct_block_groups = 0, omitted_cache_roles = 0;
@@ -1267,6 +1268,7 @@ public:
     result += ",\"mtp_selection_reason\":\"" + std::string(mtp_selection_reason) +
         "\",\"mtp_depth_source\":\"" + std::string(mtp_depth_source) +
         "\",\"draft_vocabulary_selection_reason\":\"" + std::string(draft_vocabulary_selection_reason) +
+        "\",\"bounded_generation_plan_reason\":\"" + std::string(bounded_generation_plan_reason) +
         "\",\"decode_overlap_plan_reason\":\"" + std::string(decode_overlap_plan_reason) +
         "\",\"device_verification_plan_reason\":\"" + std::string(device_verification_plan_reason) +
         "\",\"overlap_depth_plan_reason\":\"" + std::string(overlap_depth_plan_reason) + "\"";
@@ -8950,13 +8952,17 @@ int qwen35::run(int argc, char **argv) {
     // one here; future schedule lengths and quotas cannot select this policy.
     // Other backends, sampling/thresholds, multi-session/prefix and explicit
     // planned workloads retain their finite route and invalid-performance label.
-    const bool bounded_generation = natural_generation && !multiple_schedules && !prefix_enabled &&
-        !warmup_planned_shapes && max_sessions <= 1 && active_sequences <= 1 &&
-        backend_selection.primary == qwen35::BackendKind::kCuda && cpu_ffn_layers == 0 &&
-        unmodified_greedy &&
-        (!mtp_enabled || (capacity > 1 && max_drafts >= 1 && zero_draft_threshold));
+    const auto bounded_plan = hyle::inference::select_bounded_generation({
+        .natural_generation = natural_generation, .multiple_schedules = multiple_schedules,
+        .prefix_cache = prefix_enabled, .planned_shapes = warmup_planned_shapes,
+        .supported_backend = backend_selection.primary == qwen35::BackendKind::kCuda,
+        .cpu_assist = cpu_ffn_layers != 0, .greedy = unmodified_greedy,
+        .mtp_enabled = mtp_enabled, .zero_draft_threshold = zero_draft_threshold,
+        .max_sessions = max_sessions, .active_sequences = active_sequences,
+        .capacity = capacity, .max_drafts = max_drafts});
+    const bool bounded_generation = bounded_plan.enabled;
     if (require_bounded_generation && !bounded_generation)
-      throw std::runtime_error("bounded natural generation requires CUDA without CPU assist, unmodified greedy, ordinary or MTP without a draft threshold, one session, auto or 1 for max-sessions/active-sequences, prefix off and lazy shape preparation");
+      throw std::runtime_error("bounded natural generation unavailable: " + std::string(bounded_plan.reason));
     if (max_prefill_rows != SIZE_MAX && !natural_generation)
       throw std::runtime_error("--prefill-chunk-tokens requires natural generation; fixed replay is not supported");
     if (mtp_enabled && grammar == Grammar::kFixedInput)
@@ -9077,7 +9083,7 @@ int qwen35::run(int argc, char **argv) {
         .state_trace = !trace.empty() && trace_states,
         .has_decode = bounded_generation ? capacity > 1 : std::ranges::any_of(generation_schedules, [](const auto &request) {
           return std::ranges::any_of(request.turns, [](const auto &turn) { return turn.max_outputs > 1; });
-        }), .active_sequences = requested_active};
+        }), .active_sequences = active_sequences == 0 ? cached_slots : requested_active};
     // A continuous conditional successor retains its completed producer until
     // the consumer really retires. Count that third original batch in the
     // existing page/state bound, independently of simultaneous GPU work.
@@ -9105,37 +9111,31 @@ int qwen35::run(int argc, char **argv) {
       overlap_depth_reason = continuous_mtp_candidate ? "selected" : "attention_capability";
     }
     auto overlap_depth = continuous_mtp_candidate ? std::size_t{3} : std::size_t{2};
-    const auto plan_for = [&](std::size_t residents) {
+    const auto plan_for_routes = [&](std::size_t residents, bool overlap, std::size_t depth, bool verification) {
       return qwen35::cache::plan(geometry, weight_source.cache_row_bytes, capacity, residents,
           mtp_enabled && mtp_has_decode ? (std::max)(max_query_rows, std::size_t{2}) : max_query_rows, recurrent_payload,
           active_sequences == 0 ? residents : requested_active,
-          mtp_enabled ? max_drafts + 1 : 1, mtp_enabled, sampler.enabled, overlap_selected ? overlap_depth : 1,
-          device_verification_selected && (active_sequences == 0 ? residents : requested_active) == 1 ? 2 : 0, source_precision,
-          device_verification_selected ? max_drafts : 0);
+          mtp_enabled ? max_drafts + 1 : 1, mtp_enabled, sampler.enabled, overlap ? depth : 1,
+          verification && (active_sequences == 0 ? residents : requested_active) == 1 ? 2 : 0, source_precision,
+          verification ? max_drafts : 0);
     };
     const auto minimum_residents = active_sequences == 0 ? std::size_t{1} : requested_active;
+    const auto budget_routes = hyle::inference::select_decode_budget_routes(
+        {overlap_plan, verification_plan, overlap_depth, overlap_depth_reason},
+        [&](const auto &routes) {
+          return !cache_bytes || plan_for_routes(minimum_residents, routes.overlap.enabled,
+              routes.overlap_depth, routes.verification.enabled).backing_bytes <= cache_bytes;
+        });
+    overlap_plan = budget_routes.overlap;
+    verification_plan = budget_routes.verification;
+    overlap_selected = overlap_plan.enabled;
+    device_verification_selected = verification_plan.enabled;
+    overlap_depth = budget_routes.overlap_depth;
+    overlap_depth_reason = budget_routes.overlap_depth_reason;
+    const auto plan_for = [&](std::size_t residents) {
+      return plan_for_routes(residents, overlap_selected, overlap_depth, device_verification_selected);
+    };
     auto selected_cache = plan_for(cached_slots);
-    if (device_verification_selected && cache_bytes && plan_for(minimum_residents).backing_bytes > cache_bytes) {
-      device_verification_selected = false;
-      verification_plan.enabled = false;
-      verification_plan.reason = "cache_budget";
-      selected_cache = plan_for(cached_slots); // An optional overlap never excludes a previously fitting session.
-    }
-    if (overlap_selected && overlap_depth == 3 && cache_bytes &&
-        plan_for(minimum_residents).backing_bytes > cache_bytes) {
-      overlap_depth = 2;
-      overlap_depth_reason = "cache_budget";
-      selected_cache = plan_for(cached_slots);
-    }
-    if (overlap_selected && cache_bytes && plan_for(minimum_residents).backing_bytes > cache_bytes) {
-      // Extra in-flight state is optional. A valid single-step configuration
-      // must not be rejected merely because automatic overlap needs more room.
-      overlap_selected = false;
-      overlap_plan.enabled = false;
-      overlap_plan.reason = "cache_budget";
-      overlap_depth_reason = "cache_budget";
-      selected_cache = plan_for(cached_slots);
-    }
     // Caller-written pools have an exact cold formula. Native generated
     // results instead enter the same byte scope after real completion, before
     // any append is taken or head published. Do not estimate native N from the
@@ -9172,6 +9172,7 @@ int qwen35::run(int argc, char **argv) {
     model.mtp_selection_reason = default_selection.reason;
     model.mtp_depth_source = depth_selection.source;
     model.draft_vocabulary_selection_reason = assets.vocabulary_reason;
+    model.bounded_generation_plan_reason = bounded_plan.reason;
     model.decode_overlap_plan_reason = overlap_plan.reason;
     model.device_verification_plan_reason = verification_plan.reason;
     model.overlap_depth_plan_reason = overlap_depth_reason;
