@@ -137,10 +137,12 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind = q::Back
       q::SamplingConfiguration{true, {1.F, 0, 1.F}}};
   q::Model model(input / "weights.tsv", geometry, capacity, plan, {}, false, q::ReplayPolicy::kCommands, 1073741824,
       {.enabled = false, .policy = {}, .seed = 123}, 0, {.primary = kind}, additional);
-  require(model.supports_device_relay(0) == (kind == q::BackendKind::kCuda) &&
-      !model.supports_device_relay(1) && !model.supports_device_relay(2) &&
-      !model.supports_device_relay(3),
-      "cold relay choices did not preserve each prepared sampling policy");
+  // Ordinary random sampling shares the device relay when the backend and
+  // modifiers permit it; sampled MTP retains its separate admission rule.
+  const bool relay_expected = kind == q::BackendKind::kCuda;
+  for (const auto index : {0u, 1u, 2u, 3u})
+    require(model.supports_device_relay(index) == relay_expected,
+        "cold relay choices did not preserve each prepared sampling policy");
   // The original filtered boundary producer remains independent of the new R2 cohort.
   const std::array boundary_chunks{prompt.size()};
   model.prepare_family(boundary_chunks, false, 1, q::GraphRole::kText, false, q::TextCompletion::kEmitNext, 2);
