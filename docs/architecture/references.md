@@ -33,6 +33,16 @@ Python包装、整模型runtime、服务cache和进程政策不会因提供参�
 渲染/资源流送、数值管线与异步服务用来检验通用性：同样的租约、group-ready、shape、失败和关闭
 是否成立，而不是要求Hyle实现这些领域的完整框架。硬件宣传或厂商结果只能提供需求线索，不能充当本项目性能结论。
 
+### 请求、模型执行和资源寿命
+
+下列本地源码只用于核对职责，不要求引入它们的进程模型、动态分派或执行器。
+
+| 参考版本 | 已核对的边界 | Hyle适用范围 |
+|---|---|---|
+| [TensorRT-LLM `46d9966b54` runner](https://github.com/NVIDIA/TensorRT-LLM/blob/46d9966b54d9d11998b712e732fb20f64d4d35c0/tensorrt_llm/_torch/pyexecutor/engine/runners/interface.py#L72)、[资源管理](https://github.com/NVIDIA/TensorRT-LLM/blob/46d9966b54d9d11998b712e732fb20f64d4d35c0/tensorrt_llm/_torch/pyexecutor/resource_manager.py#L199) | runner区分准备与执行输入，并约束输入拷贝和图释放的寿命；资源管理区分准备、更新与释放。 | 事实归各自所有者，释放依真实设备工作；不照搬Python接口到逐步热路径。 |
+| [vLLM `276fbcff27` 调度输出](https://github.com/vllm-project/vllm/blob/276fbcff2717bd934cfa37c8a2e4c391f3e7237b/vllm/v1/core/sched/output.py#L232)、[模型执行](https://github.com/vllm-project/vllm/blob/276fbcff2717bd934cfa37c8a2e4c391f3e7237b/vllm/v1/worker/gpu/model_runner.py#L1713) | 调度结果携带请求身份、步数及缓存变更，交给模型执行侧消费。 | 模型执行接收用于归因的请求身份是正常交界，不授予另一套状态或退休权威。 |
+| [llama.cpp `23b0202a18` 内存接口](https://github.com/ggml-org/llama.cpp/blob/23b0202a189c44a54625aadcb37a946dd1d6278d/src/llama-memory.h#L48) | 内存与单次批次上下文分开，KV只是模型内存的一种。 | 模型保有自己的完整状态布局；该源码版本只用于架构参考，不是性能对照版本。 |
+
 ## 多容量、设备元数据与投机解码
 
 2026-11-05核对以下本地源码，所列文件内容与固定commit相同。只读外部实现，没有运行它们的新性能测试。
