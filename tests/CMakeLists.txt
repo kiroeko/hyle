@@ -458,6 +458,23 @@ if(TARGET hyle_engine OR
 endif()
 
 if(TARGET hyle_engine)
+  # Exercise the model core as a separate consumer, without the CLI or the
+  # engine reporting source. A local prepared fixture is optional.
+  add_executable(hyle_qwen_model_core_test tools/qwen_model_core_test.cc tools/qwen_model_core_odr_test.cc
+    ${_hyle_qwen35_cold_sources})
+  target_compile_features(hyle_qwen_model_core_test PRIVATE cxx_std_23)
+  target_link_libraries(hyle_qwen_model_core_test PRIVATE hyle::graph hyle::compute
+    hyle::graph_progress hyle::compute_stream hyle::mem)
+  hyle_apply_warnings(hyle_qwen_model_core_test)
+  hyle_apply_sanitizer(hyle_qwen_model_core_test)
+  hyle_stage_runtime(hyle_qwen_model_core_test)
+  set_target_properties(hyle_qwen_model_core_test PROPERTIES
+    FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+  add_dependencies(hyle_tests hyle_qwen_model_core_test)
+  add_test(NAME hyle_qwen_model_core_test COMMAND hyle_qwen_model_core_test)
+  set_tests_properties(hyle_qwen_model_core_test PROPERTIES
+    LABELS "tooling;inference;core;local-model" TIMEOUT 180 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
+
   add_executable(hyle_inference_output_pool_capacity_test tools/inference_output_pool_capacity_test.cc)
   hyle_configure_engine_target(hyle_inference_output_pool_capacity_test)
   set_target_properties(hyle_inference_output_pool_capacity_test PROPERTIES

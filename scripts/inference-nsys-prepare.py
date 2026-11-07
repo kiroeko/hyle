@@ -104,7 +104,17 @@ def annotate(origin, arm):
         changes.append((old, new))
 
     if arm == "hyle":
-        for include in dict.fromkeys(re.findall(r'^#include "([^\"]+)"', before, re.MULTILINE)):
+        # The model core is now a separate internal header. Inline it only in
+        # this generated diagnostic TU so the existing exact markers can be
+        # inserted at their original model execution sites. Reverse checking
+        # below also verifies this expansion against the actual driver source.
+        core_include = '#include "model_core.h"'
+        if core_include in text:
+            core = (origin.parent / "model_core.h").read_text(encoding="utf-8")
+            if not core.startswith("#pragma once\n\n"):
+                raise ValueError("hyle: unexpected model core header")
+            edit(core_include, core.removeprefix("#pragma once\n\n").rstrip("\n"))
+        for include in dict.fromkeys(re.findall(r'^#include "([^\"]+)"', text, re.MULTILINE)):
             resolved = (origin.parent / include).resolve()
             if resolved.is_file():
                 edit('#include "' + include + '"', '#include "' + resolved.as_posix() + '"')

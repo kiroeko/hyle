@@ -72,6 +72,14 @@ class PrefillScopeTest(unittest.TestCase):
         for name in ("hyle.host.cold_batch", "hyle.host.layout", "hyle.host.batch_prepare", "hyle.host.replay_prepare"):
             self.assertIn(name, generated)
 
+    def test_preparer_accepts_split_model_core(self):
+        source = ROOT / "engine/models/qwen35/main.cc"
+        original, generated = prepare.annotate(source, "hyle")
+        self.assertIn('#include "model_core.h"', original)
+        self.assertNotIn('#include "model_core.h"', generated)
+        self.assertIn('hyle.host.cold_batch', generated)
+        self.assertIn('hyle.prefill.ledger_endpoint.observed', generated)
+
     def test_missing_duplicate_or_outside_peer_endpoint_is_rejected(self):
         whole = (10, 100, "peer.prefill")
         marker = (80, None, "peer.prefill.endpoint.observed")

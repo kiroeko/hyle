@@ -73,9 +73,9 @@ Qwen的模型私有实现位于`engine/models/qwen35/`：
 | 几何、精度与状态容量 | `model_geometry.h`、`precision_profile.h`、`cache_precision.h`、`cache_plan.h` |
 | 冷构图与主干数学 | [graph_builder.h/.cc](../../engine/models/qwen35/graph_builder.h)、[target_graph.h/.cc](../../engine/models/qwen35/target_graph.h)、`block_graph.h`、`mtp_graph.h` |
 | Family、Phase与辅助程序 | [family_factory.h/.cc](../../engine/models/qwen35/family_factory.h)、[phase.h](../../engine/models/qwen35/phase.h)、[phase_preparation.cc](../../engine/models/qwen35/phase_preparation.cc)、`auxiliary_programs.h/.cc` |
-| 完整状态与请求适配 | `session_state.h`、`host_image.h`、`session_transfer.h`、`generation_ledger.h`及`main.cc`中的Model／Session与静态适配 |
+| 完整状态与请求适配 | `session_state.h`、`host_image.h`、`session_transfer.h`、`generation_ledger.h`、[model_core.h](../../engine/models/qwen35/model_core.h)中的Model／Session，以及`main.cc`中的请求适配 |
 
-`main.cc`仍包含热Model、请求适配和CLI，不代表完整冷数学仍在那里。诊断消费者复用相同实现，按测试目标显式构建。
+`model_core.h`是当前模型内部入口，不是已冻结的公共引擎API。`main.cc`仍包含请求适配和CLI；诊断消费者复用相同实现，按测试目标显式构建。
 其它模型组件检验共同合同，不需要照搬Qwen目录内部的Family／Phase结构。
 
 ## 一次decode如何推进
@@ -96,8 +96,8 @@ MTP可以是融合或递归执行，不必固定为三次提交。取消、背�
 提交记录通过原模型的同步发布见证与状态头衔接；失败、取消和后继都沿原执行及退休路径处理。
 设备队列、Source、Completion与读写权限仍由原Graph／Compute机制负责。
 
-当前这些责任尚未形成可独立链接的内核入口：`Model`、`Session`、请求适配、报告和CLI仍共处Qwen的`main.cc`，
-部分测试直接包含该文件。`Model`仍含报告与诊断职责，执行请求也携带用于请求错误归因的身份；
+`Model`和`Session`已可由不包含CLI或报告实现的独立消费者使用，部分原有测试仍直接包含`main.cc`。
+`Model`仍含部分报告与诊断职责，执行请求也携带用于请求错误归因的身份；
 这些是继续审计的实际边界，不代表已经完成内核冻结。权重清单只从模型读取事实，JSON格式与路由原因由外围报告保有。
 
 ## 能力边界
