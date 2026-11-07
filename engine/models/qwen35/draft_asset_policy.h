@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace qwen35 {
@@ -19,6 +20,7 @@ struct DraftAssetSelection final {
   std::filesystem::path vocabulary;
   std::filesystem::path head;
   bool auto_head = false;
+  std::string_view vocabulary_reason;
 };
 
 inline DraftAssetSelection select_draft_assets(const std::filesystem::path &input,
@@ -40,8 +42,10 @@ inline DraftAssetSelection select_draft_assets(const std::filesystem::path &inpu
   const bool may_use_automatic_vocabulary = request.mode != mtp::RequestedMode::kOff &&
       request.max_drafts && request.greedy && request.automatic_vocabulary &&
       (request.mode == mtp::RequestedMode::kOn || request.automatic_backend_eligible);
+  const bool present_automatic_vocabulary = may_use_automatic_vocabulary &&
+      inspect(prepared_vocabulary, "cannot inspect prepared MTP defaults: ");
   bool usable_automatic_vocabulary = false;
-  if (may_use_automatic_vocabulary && inspect(prepared_vocabulary, "cannot inspect prepared MTP defaults: ")) {
+  if (present_automatic_vocabulary) {
     const auto roles = read_weight_roles(input / "weights.tsv", false);
     usable_automatic_vocabulary = supports_draft_vocabulary(roles, encoded_rows_on_backend);
   }
@@ -57,11 +61,17 @@ inline DraftAssetSelection select_draft_assets(const std::filesystem::path &inpu
   }
   const auto policy = mtp::select_default(request, has_vocabulary, original_projection_eligible,
       explicit_asset_selection);
+  auto vocabulary_reason = vocabulary == "full" ? std::string_view{"explicit_full"} :
+      vocabulary != "auto" ? std::string_view{"explicit_file"} :
+      !may_use_automatic_vocabulary ? std::string_view{"not_inspected"} :
+      !present_automatic_vocabulary ? std::string_view{"not_present"} :
+      !usable_automatic_vocabulary ? std::string_view{"unsupported_source_or_backend"} :
+      std::string_view{"not_selected"};
   if (!policy.enabled || !request.max_drafts) {
     if (explicit_file)
       throw std::runtime_error("explicit MTP asset cannot be used: " +
           std::string(request.max_drafts ? policy.reason : "drafting_disabled"));
-    return {policy, {}, {}, false};
+    return {policy, {}, {}, false, vocabulary_reason};
   }
   bool auto_head = false;
   if (head == "original") head.clear();
@@ -75,12 +85,13 @@ inline DraftAssetSelection select_draft_assets(const std::filesystem::path &inpu
     if (policy.prepared_assets) vocabulary = prepared_vocabulary;
     else if (head.empty() && usable_automatic_vocabulary)
       vocabulary = prepared_vocabulary;
+    if (!vocabulary.empty()) vocabulary_reason = "prepared_vocabulary";
   }
   if (!vocabulary.empty() && !request.greedy)
     throw std::runtime_error("--mtp-draft-vocabulary requires --mtp on, active drafting, unmodified greedy sampling and zero minimum probability");
   if (!head.empty() && !request.greedy)
     throw std::runtime_error("--mtp-draft-head requires active unmodified greedy MTP and zero minimum probability");
-  return {policy, std::move(vocabulary), std::move(head), auto_head};
+  return {policy, std::move(vocabulary), std::move(head), auto_head, vocabulary_reason};
 }
 
 } // namespace qwen35

@@ -73,6 +73,7 @@
 #include "../../inference/request_wave_execution.h"
 #include "../../inference/step_execution.h"
 #include "../../inference/continuation.h"
+#include "../../inference/decode_route_policy.h"
 #include "../../inference/prefill_plan.h"
 #include "../../inference/packed_rows.h"
 #include "../../inference/paged_append.h"
@@ -908,6 +909,9 @@ public:
   std::size_t host_weight_bytes = 0, device_weight_bytes = 0;
   std::size_t physical_text_roles = 0, physical_mtp_roles = 0, canonical_weight_bytes = 0;
   std::string_view mtp_selection_reason = "not_configured", mtp_depth_source = "not_configured";
+  std::string_view draft_vocabulary_selection_reason = "not_configured";
+  std::string_view decode_overlap_plan_reason = "not_configured", device_verification_plan_reason = "not_configured";
+  std::string_view overlap_depth_plan_reason = "not_configured";
   std::size_t ct_channel_groups = 0, ct_local_groups = 0, ct_block_groups = 0, omitted_cache_roles = 0;
   std::size_t fp8_weight_groups = 0, fp8_import_peak_bytes = 0;
   bool float8_weight_policy = false;
@@ -1261,7 +1265,11 @@ public:
     auto result = ",\"weight_count_scope\":\"selected_physical_roles\",\"text_tensors\":" +
         std::to_string(physical_text_roles) + ",\"mtp_tensors\":" + std::to_string(physical_mtp_roles);
     result += ",\"mtp_selection_reason\":\"" + std::string(mtp_selection_reason) +
-        "\",\"mtp_depth_source\":\"" + std::string(mtp_depth_source) + "\"";
+        "\",\"mtp_depth_source\":\"" + std::string(mtp_depth_source) +
+        "\",\"draft_vocabulary_selection_reason\":\"" + std::string(draft_vocabulary_selection_reason) +
+        "\",\"decode_overlap_plan_reason\":\"" + std::string(decode_overlap_plan_reason) +
+        "\",\"device_verification_plan_reason\":\"" + std::string(device_verification_plan_reason) +
+        "\",\"overlap_depth_plan_reason\":\"" + std::string(overlap_depth_plan_reason) + "\"";
     if (float8_weight_policy) result += ",\"canonical_weight_tensors\":" + std::to_string(weights.size()) +
         ",\"canonical_weight_bytes\":" + std::to_string(canonical_weight_bytes) +
         ",\"fp8_block128_groups\":" + std::to_string(fp8_weight_groups) +
@@ -8889,6 +8897,8 @@ int qwen35::run(int argc, char **argv) {
     const bool natural_single = !scheduled && !explicit_continuation && !explicit_decode_ids &&
         layer0_probe.empty() && !preparation_diagnostics;
     const bool natural_generation = natural_schedule || natural_single;
+    const bool unmodified_greedy = !sampler.enabled && sampler.modifiers.empty();
+    const bool zero_draft_threshold = min_draft_probability == 0;
     // A source-bound vocabulary opts a prepared directory into drafting.
     // The policy inspects current configuration, never future requests.
     namespace mtp = hyle::inference::mtp;
@@ -8901,7 +8911,7 @@ int qwen35::run(int argc, char **argv) {
         .active_sequences = active_sequences, .capacity = capacity,
         .automatic_backend_eligible = backend_selection.primary == qwen35::BackendKind::kCuda,
         .cpu_ffn = cpu_ffn_layers != 0,
-        .greedy = !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0,
+        .greedy = unmodified_greedy && zero_draft_threshold,
         .max_drafts = max_drafts, .automatic_vocabulary = draft_vocabulary == "auto"};
     auto assets = qwen35::select_draft_assets(input, default_request,
         std::move(draft_vocabulary), std::move(draft_head),
@@ -8943,8 +8953,8 @@ int qwen35::run(int argc, char **argv) {
     const bool bounded_generation = natural_generation && !multiple_schedules && !prefix_enabled &&
         !warmup_planned_shapes && max_sessions <= 1 && active_sequences <= 1 &&
         backend_selection.primary == qwen35::BackendKind::kCuda && cpu_ffn_layers == 0 &&
-        !sampler.enabled && sampler.modifiers.empty() &&
-        (!mtp_enabled || (capacity > 1 && max_drafts >= 1 && min_draft_probability == 0));
+        unmodified_greedy &&
+        (!mtp_enabled || (capacity > 1 && max_drafts >= 1 && zero_draft_threshold));
     if (require_bounded_generation && !bounded_generation)
       throw std::runtime_error("bounded natural generation requires CUDA without CPU assist, unmodified greedy, ordinary or MTP without a draft threshold, one session, auto or 1 for max-sessions/active-sequences, prefix off and lazy shape preparation");
     if (max_prefill_rows != SIZE_MAX && !natural_generation)
@@ -9054,30 +9064,37 @@ int qwen35::run(int argc, char **argv) {
         mtp_enabled && mtp_has_decode ? max_drafts + 1 : std::size_t{1}});
     const auto requested_active = (std::min)(active_sequences, input_sessions);
     const bool stored_draft_head = qwen35::supports_stored_draft_projection(weight_source.roles);
-    const bool device_relay_eligible = qwen35::DeviceRelayCapabilities{
+    const qwen35::DeviceRelayCapabilities device_relay{
         backend_selection.primary, cpu_ffn_layers != 0, progress,
-        sampler.enabled, !sampler.modifiers.empty()}.eligible();
+        sampler.enabled, !sampler.modifiers.empty()};
+    const hyle::inference::DecodeRouteFacts route_facts{
+        .overlap_requested = decode_overlap, .natural_generation = natural_generation,
+        .mtp_enabled = mtp_enabled, .max_drafts = max_drafts,
+        .max_device_drafts = qwen35::kMaximumDeviceMtpDrafts,
+        .zero_draft_threshold = zero_draft_threshold, .stored_draft_head = stored_draft_head,
+        .relay_eligible = device_relay.eligible(), .relay_refusal = device_relay.refusal_reason(),
+        .commands_replay = replay == qwen35::ReplayPolicy::kCommands,
+        .state_trace = !trace.empty() && trace_states,
+        .has_decode = bounded_generation ? capacity > 1 : std::ranges::any_of(generation_schedules, [](const auto &request) {
+          return std::ranges::any_of(request.turns, [](const auto &turn) { return turn.max_outputs > 1; });
+        }), .active_sequences = requested_active};
     // A continuous conditional successor retains its completed producer until
     // the consumer really retires. Count that third original batch in the
     // existing page/state bound, independently of simultaneous GPU work.
-    bool overlap_selected = decode_overlap && natural_generation &&
-        (!mtp_enabled || (max_drafts >= 1 && max_drafts <= qwen35::kMaximumDeviceMtpDrafts && min_draft_probability == 0 &&
-                         (max_drafts == 1 || stored_draft_head))) && device_relay_eligible &&
-        replay != qwen35::ReplayPolicy::kCommands && (trace.empty() || !trace_states) &&
-        (bounded_generation ? capacity > 1 : std::ranges::any_of(generation_schedules, [](const auto &request) {
-          return std::ranges::any_of(request.turns, [](const auto &turn) { return turn.max_outputs > 1; });
-        }));
-    bool device_verification_selected = mtp_enabled && max_drafts > 1 && max_drafts <= qwen35::kMaximumDeviceMtpDrafts &&
-        min_draft_probability == 0 && device_relay_eligible &&
-        requested_active == 1 && replay != qwen35::ReplayPolicy::kCommands;
+    auto overlap_plan = hyle::inference::select_decode_overlap(route_facts);
+    auto verification_plan = hyle::inference::select_device_verification(route_facts);
+    bool overlap_selected = overlap_plan.enabled;
+    bool device_verification_selected = verification_plan.enabled;
     // Ask the actual backend about the provisional maximum batch and every
     // target cache storage. Unsupported implementations keep the original
     // two-batch finite route. The created endpoint is reused by Model below.
     std::optional<qwen35::Backend> prepared_execution;
     bool continuous_mtp_candidate = false;
     constexpr auto exact_token_domain = std::int64_t{1} << std::numeric_limits<float>::digits;
-    if (overlap_selected && mtp_enabled && !prefix_enabled && cached_slots == 1 &&
-        requested_active == 1 && geometry.attention_layers() && geometry.vocabulary <= exact_token_domain) {
+    const auto continuous_plan = hyle::inference::select_continuous_mtp(route_facts, overlap_selected,
+        prefix_enabled, cached_slots, geometry.attention_layers() != 0, geometry.vocabulary <= exact_token_domain);
+    auto overlap_depth_reason = continuous_plan.reason;
+    if (continuous_plan.enabled) {
       const auto provisional = qwen35::cache::plan(geometry, weight_source.cache_row_bytes, capacity, cached_slots,
           mtp_has_decode ? (std::max)(max_query_rows, std::size_t{2}) : max_query_rows, recurrent_payload,
           active_sequences == 0 ? cached_slots : requested_active, max_drafts + 1, true, sampler.enabled, 3,
@@ -9085,6 +9102,7 @@ int qwen35::run(int argc, char **argv) {
       prepared_execution.emplace(qwen35::take(qwen35::Backend::create(backend_selection)));
       continuous_mtp_candidate = qwen35::supports_mtp_attention(*prepared_execution,
           qwen35::attention_capacity(geometry, source_precision, provisional), weight_source.cache_storage);
+      overlap_depth_reason = continuous_mtp_candidate ? "selected" : "attention_capability";
     }
     auto overlap_depth = continuous_mtp_candidate ? std::size_t{3} : std::size_t{2};
     const auto plan_for = [&](std::size_t residents) {
@@ -9099,17 +9117,23 @@ int qwen35::run(int argc, char **argv) {
     auto selected_cache = plan_for(cached_slots);
     if (device_verification_selected && cache_bytes && plan_for(minimum_residents).backing_bytes > cache_bytes) {
       device_verification_selected = false;
+      verification_plan.enabled = false;
+      verification_plan.reason = "cache_budget";
       selected_cache = plan_for(cached_slots); // An optional overlap never excludes a previously fitting session.
     }
     if (overlap_selected && overlap_depth == 3 && cache_bytes &&
         plan_for(minimum_residents).backing_bytes > cache_bytes) {
       overlap_depth = 2;
+      overlap_depth_reason = "cache_budget";
       selected_cache = plan_for(cached_slots);
     }
     if (overlap_selected && cache_bytes && plan_for(minimum_residents).backing_bytes > cache_bytes) {
       // Extra in-flight state is optional. A valid single-step configuration
       // must not be rejected merely because automatic overlap needs more room.
       overlap_selected = false;
+      overlap_plan.enabled = false;
+      overlap_plan.reason = "cache_budget";
+      overlap_depth_reason = "cache_budget";
       selected_cache = plan_for(cached_slots);
     }
     // Caller-written pools have an exact cold formula. Native generated
@@ -9147,6 +9171,10 @@ int qwen35::run(int argc, char **argv) {
         selected_cache, layer0_probe, progress, replay, cache_bytes, sampler, cpu_ffn_layers);
     model.mtp_selection_reason = default_selection.reason;
     model.mtp_depth_source = depth_selection.source;
+    model.draft_vocabulary_selection_reason = assets.vocabulary_reason;
+    model.decode_overlap_plan_reason = overlap_plan.reason;
+    model.device_verification_plan_reason = verification_plan.reason;
+    model.overlap_depth_plan_reason = overlap_depth_reason;
     model.configure_draft_policy({max_drafts, min_draft_probability});
     const auto constructed = qwen35::Clock::now();
     if (!trace.empty()) model.trace_routes = trace / "routes";

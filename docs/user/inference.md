@@ -111,7 +111,9 @@ prefill 保留原路径，后继只使用已有实际捕获。
 关闭 MTP、草稿数为 0，或自动策略回落时，不读取未使用的草稿制品；若显式指定了制品文件，冲突会报错并说明原因。
 实际选中的无效或来源不符制品也会报错。
 JSON 的 `mtp_selection_reason` 报告冷期选择或回落原因，`mtp_depth_source` 说明草稿数来自显式参数、制品推荐还是配置默认值。
-其中 `insufficient_capacity` 表示配置容量低于自动策略的阈值，并不代表后端不支持 MTP；显式启用仍受实际容量和能力限制。
+`draft_vocabulary_selection_reason` 说明词表是否使用、缺失或因来源／后端能力而跳过。
+`decode_overlap_plan_reason`、`device_verification_plan_reason` 和 `overlap_depth_plan_reason` 解释冷期接力、设备验证及连续后继的计划选择；`cache_budget` 表示配置的缓存预算触发回落。运行时是否实际可接力仍以 `decode_overlap_available` 为准。
+`insufficient_capacity` 表示容量不足以同时容纳输入和草稿位置；显式启用仍受实际容量和能力限制。
 `--mtp-max-drafts 1` 可覆盖已启用的 K3，按 K1 执行。
 `--mtp-max-drafts` 控制每轮最多提出的草稿数，默认采用制品推荐值，没有推荐时为 1。`--mtp-min-probability` 设置
 草稿分布最大概率的最低门槛，范围为 0 到 1，默认 0；达到门槛才继续草稿，实际长度可以更短。

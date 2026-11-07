@@ -71,6 +71,17 @@ def check(args):
                  'random-auto':('sampling_or_draft_threshold','disabled')}
         if name in reasons:
             assert (raw['mtp_selection_reason'],raw['mtp_depth_source'])==reasons[name],name
+        planned_reasons={
+            'default-auto':('prepared_vocabulary','selected','selected','selected'),
+            'k3-without-overlap':('prepared_vocabulary','user_disabled','selected','overlap_disabled'),
+            'auto-commands':('prepared_vocabulary','commands_replay','commands_replay','overlap_disabled'),
+            'auto-explicit-k4':('prepared_vocabulary','device_chain_capacity','device_chain_capacity','overlap_disabled'),
+            'full-auto-original':('explicit_full','selected','single_or_no_draft','selected'),
+            'random-auto':('not_inspected','sampling','mtp_disabled','overlap_disabled')}
+        if name in planned_reasons:
+            actual=tuple(raw[key] for key in ('draft_vocabulary_selection_reason','decode_overlap_plan_reason',
+                'device_verification_plan_reason','overlap_depth_plan_reason'))
+            assert actual==planned_reasons[name],(name,actual)
         assert raw['mtp']==mtp and raw['mtp_max_drafts']==(width if mtp else 0),name
         assert raw['draft_vocabulary_rows']==(rows if subset else 0),name
         expected_head_rows = (rows if subset else 248320 if mtp else 0) if head_rows is None else head_rows
@@ -172,6 +183,54 @@ def check(args):
             '--mtp-draft-head',str(args.inputs/'mtp-draft-head.tsv')], error='bound draft vocabulary')
     random=['--sampling','random','--temperature','0.8','--top-k','40','--top-p','0.95','--seed','7']
     assert run('random-auto',random,mtp=False,subset=False)==run('random-off',[*random,'--mtp','off'],mtp=False,subset=False)
+    short=args.output/'short-capacity';short.mkdir()
+    (short/'weights.tsv').write_text(original_text,encoding='utf-8')
+    (short/'mtp-draft-vocabulary.ids').write_text(original_map,encoding='utf-8')
+    (short/'mtp-draft-head.tsv').write_text('\n'.join(head)+'\n',encoding='utf-8')
+    (short/'prompt.ids').write_text('1\n')
+    for capacity in (1,2,3):
+        observed_short=[]
+        choices=[('auto',[])]
+        if capacity>1: choices.append(('explicit',['--mtp','on','--mtp-max-drafts',str(capacity-1)]))
+        for name,extra in choices:
+            command=[str(args.hyle),'--inputs',str(short),'--backend','cuda','--capacity',str(capacity),
+                     '--steps',str(capacity),*extra]
+            result=subprocess.run(command,capture_output=True,timeout=180)
+            (short/f'{capacity}-{name}.stdout').write_bytes(result.stdout)
+            (short/f'{capacity}-{name}.stderr').write_bytes(result.stderr)
+            assert result.returncode==0,(capacity,name,result.stderr.decode(errors='replace'))
+            raw=json.loads(result.stdout.decode('utf-8-sig'))
+            assert raw['mtp']==(capacity>1) and raw['mtp_max_drafts']==capacity-1
+            assert raw['mtp_selection_reason']==('insufficient_capacity' if capacity==1 else
+                                                  'prepared_vocabulary' if name=='auto' else 'explicit_on')
+            ids=raw['sessions'][0]['result']['generated_ids']
+            assert len(ids)==capacity and not raw['live_committed_versions']
+            observed_short.append(ids)
+        assert all(ids==observed_short[0] for ids in observed_short)
+    print('PASS short capacity 1/2/3: auto fallback or actual K1/K2 matches explicit routes',flush=True)
+    def budget_run(label, budget=None):
+        command=[str(args.hyle),'--inputs',str(short),'--backend','cuda','--capacity','128','--steps','4']
+        if budget is not None: command.extend(('--cache-bytes',str(budget)))
+        result=subprocess.run(command,capture_output=True,timeout=180)
+        (short/f'budget-{label}.stdout').write_bytes(result.stdout)
+        (short/f'budget-{label}.stderr').write_bytes(result.stderr)
+        assert result.returncode==0,(label,result.stderr.decode(errors='replace'))
+        raw=json.loads(result.stdout.decode('utf-8-sig'))
+        assert not raw['live_committed_versions']
+        return raw
+    unbounded=budget_run('auto')
+    baseline_ids=unbounded['sessions'][0]['result']['generated_ids']
+    backing=unbounded['cache_shared_backing_bytes']
+    budget_cases=((99,('selected','cache_budget','selected')),
+                  (97,('selected','cache_budget','cache_budget')),
+                  (60,('cache_budget','cache_budget','cache_budget')))
+    for percent, expected in budget_cases:
+        raw=budget_run(str(percent),backing*percent//100)
+        actual=tuple(raw[key] for key in ('decode_overlap_plan_reason','device_verification_plan_reason',
+                                         'overlap_depth_plan_reason'))
+        assert actual==expected,(percent,actual)
+        assert raw['sessions'][0]['result']['generated_ids']==baseline_ids
+    print('PASS cache budget reports each optional route fallback; outputs and retirement agree',flush=True)
     # Distinct explicitly planned prefill lengths exercise the aggregate cold
     # family search budget, not only the single-shape smoke case above.
     many=args.output/'planned-many';many.mkdir();lines=[]

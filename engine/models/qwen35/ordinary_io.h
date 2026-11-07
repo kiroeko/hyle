@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string_view>
 
 #include "execution_mode.h"
 #include "../../inference/backend.h"
@@ -54,10 +55,15 @@ struct DeviceRelayCapabilities final {
   hyle::inference::BackendKind backend = hyle::inference::BackendKind::kDefault;
   bool cpu_assist = false, scheduler = false, sampling = false, logits_modifiers = false;
 
-  constexpr bool eligible() const noexcept {
-    return backend == hyle::inference::BackendKind::kCuda && !cpu_assist && !scheduler &&
-        !sampling && !logits_modifiers;
+  constexpr std::string_view refusal_reason() const noexcept {
+    if (backend != hyle::inference::BackendKind::kCuda) return "backend";
+    if (cpu_assist) return "cpu_assist";
+    if (scheduler) return "scheduler";
+    if (sampling) return "sampling";
+    if (logits_modifiers) return "logits_modifiers";
+    return {};
   }
+  constexpr bool eligible() const noexcept { return refusal_reason().empty(); }
 };
 
 } // namespace qwen35

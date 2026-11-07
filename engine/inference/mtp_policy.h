@@ -66,8 +66,8 @@ constexpr std::string_view automatic_constraint(const DefaultRequest &request) n
   if (request.prefix_enabled) return "prefix_cache";
   if (request.scheduler_progress) return "scheduler";
   if (request.cpu_ffn) return "cpu_ffn";
-  // This is an automatic cost preference, not a backend rejection.
-  if (request.capacity < 4) return "insufficient_capacity";
+  // A draft needs at least one input row and one remaining position.
+  if (request.capacity < 2) return "insufficient_capacity";
   return {};
 }
 
