@@ -37,6 +37,10 @@ struct Policy final {
   float top_p = 1;
 };
 
+// A categorical-only consumer needs the same normalized distribution, but
+// does not require normalization over the full original vocabulary layout.
+enum class DistributionConsumer { kFullVocabulary, kCategoricalOnly };
+
 // Counts describe the caller's first logical conditional history, not KV
 // storage or a second token owner. Repetition also permits values below one;
 // negative finite presence/frequency coefficients boost previously seen IDs.
@@ -95,7 +99,8 @@ using Distribution = DistributionFor<g::ValueId>;
 // Invalid rows can have safe placeholder probabilities for eager execution;
 // valid MUST join the decision/session publication check, never be ignored.
 template<class R, class Value>
-DistributionFor<Value> distribution(R &r, Value logits, Policy policy = {}) {
+DistributionFor<Value> distribution(R &r, Value logits, Policy policy = {},
+    DistributionConsumer consumer = DistributionConsumer::kFullVocabulary) {
   const auto spec = r.spec(logits);
   if (spec.data_type() != Type::kFloat32 || spec.rank() != 2 ||
       !spec.dimensions()[0].is_fixed() || spec.dimensions()[0].fixed_value() <= 0 ||
@@ -111,6 +116,8 @@ DistributionFor<Value> distribution(R &r, Value logits, Policy policy = {}) {
   // must not reinterpret Cartesian Gather/Scatter or change RNG token columns.
   if (rows != 1 && (policy.top_p != 1.F || (policy.top_k && policy.top_k != vocabulary_size)))
     throw std::runtime_error("batched sampling distribution requires no top-k or nucleus filtering");
+  const bool normalize_selected = consumer == DistributionConsumer::kCategoricalOnly &&
+      policy.top_k && policy.top_k < vocabulary_size;
   const auto zero = r.scalar(0), one = r.scalar(1);
   const auto no = r.cast(zero, Type::kBool), yes = r.cast(one, Type::kBool);
   const auto select = [&](Value condition, Value a, Value b) { return r.one(c::Select{}, {condition, a, b}); };
@@ -163,13 +170,18 @@ DistributionFor<Value> distribution(R &r, Value logits, Policy policy = {}) {
       const auto keep = select(first, yes, under_cutoff);
       values = select(keep, values, r.scalar(-(std::numeric_limits<float>::infinity)()));
     }
+    // Unselected IDs have zero mass. Normalize the retained top-k values
+    // before scattering them back so categorical still addresses the original
+    // vocabulary columns and therefore the original per-token RNG words.
+    if (normalize_selected) values = r.one(c::Softmax{.axis = 1, .kind = c::SoftmaxKind::kLogSoftmax}, {values});
     const auto shape = c::TensorShape::create(std::array<std::int64_t, 2>{1, static_cast<std::int64_t>(vocabulary_size)});
     if (!shape) throw std::runtime_error("sampling vocabulary fill shape differs");
     const auto empty = r.one(c::Fill{.output_shape = *shape, .output_type = Type::kFloat32,
         .value = c::ScalarValue(-(std::numeric_limits<float>::infinity)())}, {});
     selected = r.one(c::Scatter{.axis = 1}, {empty, indices, values});
   }
-  const auto normalized = r.one(c::Softmax{.axis = 1, .kind = c::SoftmaxKind::kLogSoftmax}, {selected});
+  const auto normalized = normalize_selected ? selected :
+      r.one(c::Softmax{.axis = 1, .kind = c::SoftmaxKind::kLogSoftmax}, {selected});
   return {normalized, select(input_valid, valid_mass(normalized), no)};
 }
 
@@ -304,8 +316,9 @@ Value advance_history_counts(R &r, Value counts, Value token) {
 // pre-mask proof is joined exactly once; distribution validates post-bias/mask
 // support and normalization. Empty processing preserves the original graph.
 template<class R, class Value>
-DistributionFor<Value> processed_distribution(R &r, ProcessedLogitsFor<Value> processed, Policy policy = {}) {
-  auto p = distribution(r, processed.logits, policy);
+DistributionFor<Value> processed_distribution(R &r, ProcessedLogitsFor<Value> processed, Policy policy = {},
+    DistributionConsumer consumer = DistributionConsumer::kFullVocabulary) {
+  auto p = distribution(r, processed.logits, policy, consumer);
   if (processed.valid) {
     const auto no = r.cast(r.scalar(0), Type::kBool);
     p.valid = r.one(c::Select{}, {*processed.valid, p.valid, no});
@@ -320,7 +333,7 @@ template<class R, class Value>
 SelectionFor<Value> processed_selection(R &r, ProcessedLogitsFor<Value> processed,
     std::optional<Value> identity, Policy policy = {}) {
   if (identity) {
-    const auto p = processed_distribution(r, processed, policy);
+    const auto p = processed_distribution(r, processed, policy, DistributionConsumer::kCategoricalOnly);
     return {r.one(c::sampling_ops::categorical(), {p.log_probabilities, *identity}), p.valid};
   }
   if (!processed.valid) return {r.op(c::Operation(c::TopK{.count = 1}), {processed.logits}).at(1), {}};

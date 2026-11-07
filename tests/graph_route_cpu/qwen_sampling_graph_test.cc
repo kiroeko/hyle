@@ -116,7 +116,8 @@ struct Answer final {
 };
 class Session final {
 public:
-  explicit Session(std::size_t vocabulary, std::optional<s::Policy> policy = {}) {
+  explicit Session(std::size_t vocabulary, std::optional<s::Policy> policy = {},
+      s::DistributionConsumer consumer = s::DistributionConsumer::kFullVocabulary) {
 #if defined(HYLE_TEST_QWEN_SAMPLING_CUDA)
     context_ = take(g::cuda::create_context());
     device_ = take(c::cuda::MemoryResource::create(context_, c::cuda::MemoryKind::kDevice));
@@ -138,8 +139,8 @@ public:
     auto p = input_ids_[0], q = input_ids_[1], bonus = input_ids_[2];
     std::vector<V> policy_valid;
     if (policy) {
-      const auto target = s::distribution(r, p, *policy), draft = s::distribution(r, q, *policy),
-          next = s::distribution(r, bonus, *policy);
+      const auto target = s::distribution(r, p, *policy, consumer), draft = s::distribution(r, q, *policy, consumer),
+          next = s::distribution(r, bonus, *policy, consumer);
       p = target.log_probabilities; q = draft.log_probabilities; bonus = next.log_probabilities;
       policy_valid = {target.valid, draft.valid, next.valid};
     }
@@ -413,6 +414,39 @@ TEST(QwenSamplingGraph, PolicyHasExplicitTemperatureThenTopKThenNucleusOrder) {
   Session all(3, s::Policy{.top_p = .6F});
   ASSERT_TRUE(all.run(logits, logits, logits, 2, key(0), key(0, true)).valid);
   expect_probabilities(all.log_probabilities(), std::array{0., 1. / 3, 2. / 3});
+}
+
+TEST(QwenSamplingGraph, CompactCategoricalNormalizationPreservesOriginalVocabularyAndDraws) {
+  constexpr std::size_t width=96;
+  for (const auto policy : {s::Policy{.temperature=.8F,.top_k=40,.top_p=.95F},
+                            s::Policy{.temperature=2.F,.top_k=7,.top_p=.6F},
+                            s::Policy{.top_k=1,.top_p=.5F}}) {
+    Session reference(width,policy),compact(width,policy,s::DistributionConsumer::kCategoricalOnly);
+    std::vector<float> logits(width);
+    for (std::uint32_t draw=0;draw<32;++draw) {
+      for (std::size_t i=0;i<width;++i)
+        logits[i]=float(int((i*37+draw*19)%101)-50)*.03125F;
+      // Nonadjacent equal winners test the original-ID tie ordering.
+      logits[3]=logits[91]=4.F;
+      const auto a=reference.run(logits,logits,logits,3,key(draw),key(draw,true));
+      const auto b=compact.run(logits,logits,logits,3,key(draw),key(draw,true));
+      ASSERT_TRUE(a.valid); ASSERT_TRUE(b.valid);
+      EXPECT_EQ(a.accepted,b.accepted); EXPECT_EQ(a.final_id,b.final_id);
+      const auto full=reference.log_probabilities(),selected=compact.log_probabilities();
+      ASSERT_EQ(full.size(),width); ASSERT_EQ(selected.size(),width);
+      for (std::size_t i=0;i<width;++i) {
+        if (std::isinf(full[i])) EXPECT_EQ(full[i],selected[i]);
+        else EXPECT_NEAR(full[i],selected[i],1e-5F) << i;
+      }
+    }
+    for (const auto invalid : {std::numeric_limits<float>::quiet_NaN(),
+                               std::numeric_limits<float>::infinity()}) {
+      logits[0]=invalid;
+      EXPECT_FALSE(compact.run(logits,logits,logits,3,key(0),key(0,true)).valid);
+    }
+    std::fill(logits.begin(),logits.end(),-std::numeric_limits<float>::infinity());
+    EXPECT_FALSE(compact.run(logits,logits,logits,3,key(0),key(0,true)).valid);
+  }
 }
 
 TEST(QwenSamplingGraph, PolicyStableTiesAndExactCdfBoundariesRetainFirst) {

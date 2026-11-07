@@ -745,7 +745,8 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         std::vector<V> ids, valid, accepted;
         for (std::size_t request = 0; request < requests; ++request) {
           const auto p = sampling::processed_distribution(r, sampling::process_logits(r,
-              sampling_row(definition.logits_port, drafts_token(role) ? request * 2 : request), logits_inputs[request], selected_sampler.modifiers.history), selected_sampler.policy);
+              sampling_row(definition.logits_port, drafts_token(role) ? request * 2 : request), logits_inputs[request], selected_sampler.modifiers.history), selected_sampler.policy,
+              drafts_token(role) ? sampling::DistributionConsumer::kFullVocabulary : sampling::DistributionConsumer::kCategoricalOnly);
           if (drafts_token(role)) {
             const auto bonus = sampling::processed_distribution(r, sampling::process_logits(r,
                 sampling_row(definition.logits_port, request * 2 + 1), bonus_logits_inputs(request), selected_sampler.modifiers.history), selected_sampler.policy);
