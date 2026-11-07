@@ -19,7 +19,7 @@ import shlex
 
 SIGNATURE = "HYLE_QWEN_DRAFT_HEAD_Q4_K_V1"
 SUBSET_SIGNATURE = "HYLE_QWEN_DRAFT_HEAD_Q4_K_SUBSET_V1"
-DEFAULT_K3_VOCABULARY = "mtp-draft-vocabulary-k3.ids"
+DEFAULT_VOCABULARY = "mtp-draft-vocabulary.ids"
 
 
 def source_head(inputs: Path) -> dict:
@@ -118,9 +118,15 @@ def default_k3_inputs(inputs: Path, vocabulary: Path, head: dict) -> dict[str, b
     if vocabulary.stat().st_size > 256 + head["vocabulary"] * 32:
         raise ValueError("K3 vocabulary exceeds its original text byte bound")
     text = vocabulary.read_text(encoding="utf-8");mapping = text.splitlines()
-    if (len(mapping) < 4 or mapping[:3] != ['hyle-draft-vocabulary-v1',head['identity'],str(head['vocabulary'])]):
+    if (len(mapping) < 6 or mapping[:3] != ['hyle-draft-vocabulary-v2',head['identity'],str(head['vocabulary'])]):
         raise ValueError("K3 vocabulary source identity or original geometry differs")
-    words = ' '.join(mapping[3:]).split()
+    recommendation = mapping[3].split()
+    if (len(recommendation) != 2 or recommendation[0] != 'recommended_drafts' or
+            (recommendation[1] != 'none' and
+             (not recommendation[1].isdigit() or not 0 < int(recommendation[1]) <= (1 << 64) - 1)) or
+            mapping[4] not in ('head original', 'head prepared')):
+        raise ValueError("K3 vocabulary preference metadata is invalid")
+    words = ' '.join(mapping[5:]).split()
     if any(not re.fullmatch(r'[0-9]+', word) for word in words):
         raise ValueError("K3 vocabulary requires original nonnegative token IDs")
     ids = list(map(int, words))
@@ -148,7 +154,8 @@ def default_k3_inputs(inputs: Path, vocabulary: Path, head: dict) -> dict[str, b
     if len(mtp) != 15:
         raise ValueError("automatic K3 requires the original complete 15-role NextN inventory")
     result = {'weights.tsv': ('\n'.join(normalized)+'\n').encode('utf-8'),
-              DEFAULT_K3_VOCABULARY: ('\n'.join(mapping[:3])+'\n'+' '.join(map(str,sorted(ids)))+'\n').encode('utf-8')}
+              DEFAULT_VOCABULARY: ('\n'.join(mapping[:3])+ '\nrecommended_drafts 3\nhead prepared\n' +
+                                      ' '.join(map(str,sorted(ids)))+'\n').encode('utf-8')}
     for name in ('prompt.ids','continuation.ids'):
         if (inputs/name).is_file():result[name]=(inputs/name).read_bytes()
     return result
@@ -160,7 +167,7 @@ def prepare(inputs: Path, library: Path, version: str, output: Path, default_voc
         raise ValueError("record the actual local quantizer commit as llama.cpp@<40 hex>")
     head = source_head(inputs)
     ready_inputs = default_k3_inputs(inputs, default_vocabulary, head) if default_vocabulary is not None else {}
-    selected_ids = (list(map(int,ready_inputs[DEFAULT_K3_VOCABULARY].decode('utf-8').splitlines()[3].split()))
+    selected_ids = (list(map(int,ready_inputs[DEFAULT_VOCABULARY].decode('utf-8').splitlines()[5].split()))
                     if ready_inputs else None)
     mapping_identity = (hashlib.sha256(np.asarray(selected_ids,dtype='<i4').tobytes()).hexdigest()
                         if selected_ids is not None else None)

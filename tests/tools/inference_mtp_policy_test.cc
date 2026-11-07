@@ -10,20 +10,18 @@ int main() {
   constexpr std::array capacities{std::size_t{3}, std::size_t{4}, std::size_t{32768}, std::size_t{32769}};
   constexpr std::array counts{std::size_t{0}, std::size_t{1}, std::size_t{2}};
   constexpr std::array drafts{std::size_t{0}, std::size_t{1}, std::size_t{3}, std::size_t{4}};
-  constexpr std::array limits{std::size_t{0}, std::size_t{1}, std::size_t{3}, std::size_t{4}};
   constexpr std::array modes{m::RequestedMode::kOff, m::RequestedMode::kAuto, m::RequestedMode::kOn};
   for (unsigned bits = 0; bits < (1u << 10); ++bits)
     for (const auto capacity : capacities)
       for (const auto sessions : counts)
         for (const auto active : counts)
           for (const auto depth : drafts)
-            for (const auto limit : limits)
             for (const auto mode : modes) {
     const auto flag = [bits](unsigned bit) { return (bits & (1u << bit)) != 0; };
     const m::DefaultRequest request{mode, flag(0), flag(1), flag(2), flag(3),
-        sessions, active, capacity, flag(4), flag(5), flag(6), flag(7),
-        depth, limit, flag(8), flag(9)};
-    const bool inspect = mode != m::RequestedMode::kOff && depth > 0 && request.default_backend &&
+        sessions, active, capacity, flag(4), flag(5), flag(6),
+        depth, flag(8), flag(9)};
+    const bool inspect = mode != m::RequestedMode::kOff && depth > 0 && request.automatic_backend_eligible &&
         request.greedy && request.automatic_head && request.automatic_vocabulary;
     if (m::inspect_prepared_vocabulary(request) != inspect)
       throw std::runtime_error("prepared asset inspection changed");
@@ -32,8 +30,8 @@ int main() {
       const bool route = request.natural_generation && !request.multiple_schedules &&
           !request.prefix_enabled && !request.scheduler_progress &&
           sessions <= 1 && active <= 1 && capacity >= 4 &&
-          request.default_backend && !request.cpu_ffn && request.greedy && request.replay_supports_chain;
-      const bool automatic = (prepared || (inspect && original)) && route && depth <= limit;
+          request.automatic_backend_eligible && !request.cpu_ffn && request.greedy;
+      const bool automatic = (prepared || (inspect && original)) && route;
       const bool enabled = mode == m::RequestedMode::kOn || automatic;
       const auto selected = m::select_default(request, exists, original);
       if (selected.automatic != automatic || selected.enabled != enabled ||
@@ -43,28 +41,39 @@ int main() {
     }
   }
   m::DefaultRequest typical{.mode=m::RequestedMode::kAuto, .natural_generation=true,
-      .capacity=32768, .default_backend=true, .greedy=true, .replay_supports_chain=true,
-      .max_drafts=1, .maximum_automatic_drafts=3, .automatic_head=true, .automatic_vocabulary=true};
+      .capacity=32768, .automatic_backend_eligible=true, .greedy=true,
+      .max_drafts=1, .automatic_head=true, .automatic_vocabulary=true};
   if (m::select_default(typical,false).reason != "no_eligible_source" ||
       m::select_default(typical,false,true).reason != "original_projection" ||
       m::select_default(typical,true).reason != "prepared_vocabulary")
     throw std::runtime_error("automatic source reason differs");
+  const auto automatic=m::select_default(typical,true);
+  const auto recommended=m::select_draft_depth(automatic,false,1,2);
+  const auto wider=m::select_draft_depth(automatic,false,1,8);
+  const auto explicit_depth=m::select_draft_depth(automatic,true,1,2);
+  const auto unspecified=m::select_draft_depth(automatic,false,1,0);
+  const m::DefaultSelection explicit_on{false,true,true,"explicit_on"};
+  const auto explicit_on_recommendation=m::select_draft_depth(explicit_on,false,1,2);
+  if (recommended.max_drafts!=2 || recommended.source!="artifact_recommendation" ||
+      wider.max_drafts!=8 || wider.source!="artifact_recommendation" ||
+      explicit_depth.max_drafts!=1 || explicit_depth.source!="explicit" ||
+      unspecified.max_drafts!=1 || unspecified.source!="configured_default" ||
+      explicit_on_recommendation.max_drafts!=2 || explicit_on_recommendation.source!="artifact_recommendation")
+    throw std::runtime_error("source recommendation, capability or explicit depth priority differs");
   struct ConstraintCase final {
     void (*apply)(m::DefaultRequest &);
     std::string_view reason;
   };
   constexpr std::array constraints{
       ConstraintCase{+[](m::DefaultRequest &r) { r.natural_generation=false; }, "non_natural_request"},
-      ConstraintCase{+[](m::DefaultRequest &r) { r.default_backend=false; }, "non_cuda_backend"},
+      ConstraintCase{+[](m::DefaultRequest &r) { r.automatic_backend_eligible=false; }, "backend_policy"},
       ConstraintCase{+[](m::DefaultRequest &r) { r.greedy=false; }, "sampling_or_draft_threshold"},
       ConstraintCase{+[](m::DefaultRequest &r) { r.automatic_head=false; }, "manual_draft_asset"},
       ConstraintCase{+[](m::DefaultRequest &r) { r.active_sequences=2; }, "multiple_sessions_or_sequences"},
       ConstraintCase{+[](m::DefaultRequest &r) { r.prefix_enabled=true; }, "prefix_cache"},
       ConstraintCase{+[](m::DefaultRequest &r) { r.scheduler_progress=true; }, "scheduler"},
       ConstraintCase{+[](m::DefaultRequest &r) { r.cpu_ffn=true; }, "cpu_ffn"},
-      ConstraintCase{+[](m::DefaultRequest &r) { r.replay_supports_chain=false; }, "replay_commands"},
       ConstraintCase{+[](m::DefaultRequest &r) { r.capacity=3; }, "insufficient_capacity"},
-      ConstraintCase{+[](m::DefaultRequest &r) { r.maximum_automatic_drafts=0; }, "unsupported_draft_depth"},
   };
   for (const auto &test : constraints) {
     auto request=typical;
@@ -97,12 +106,10 @@ int main() {
   typical.greedy=false;
   if (m::select_default(typical,true).reason != "sampling_or_draft_threshold")
     throw std::runtime_error("sampling fallback reason differs");
-  typical.greedy=true; typical.maximum_automatic_drafts=0;
-  if (m::select_default(typical,true).reason != "unsupported_draft_depth")
-    throw std::runtime_error("model chain capability reason differs");
-  typical.maximum_automatic_drafts=3; typical.replay_supports_chain=false;
-  if (m::select_default(typical,true).reason != "replay_commands")
-    throw std::runtime_error("replay fallback reason differs");
+  typical.greedy=true; typical.max_drafts=4;
+  if (!m::select_default(typical,true).automatic)
+    throw std::runtime_error("explicit depth should retain the finite automatic route");
+  typical.max_drafts=1;
   typical.mode=m::RequestedMode::kOff;
   if (m::select_default(typical,true).reason != "explicit_off")
     throw std::runtime_error("explicit off reason differs");

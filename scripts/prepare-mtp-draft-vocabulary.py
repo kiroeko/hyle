@@ -103,6 +103,14 @@ def selected_ids(counts: Counter[int], vocabulary: int, rows: int) -> list[int]:
     return sorted(sorted(range(vocabulary), key=lambda token: (-counts[token], token))[:rows])
 
 
+def write_vocabulary(output, identity: str, vocabulary: int, ids: list[int],
+                     recommended_drafts: int | None) -> None:
+    recommendation = 'none' if recommended_drafts is None else str(recommended_drafts)
+    output.write(f'hyle-draft-vocabulary-v2\n{identity}\n{vocabulary}\n'
+                 f'recommended_drafts {recommendation}\nhead original\n')
+    output.write(' '.join(map(str, ids)) + '\n')
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--hyle", type=Path)
@@ -112,6 +120,8 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--rows", type=int, default=32768)
     parser.add_argument("--tokens", type=int, default=256)
+    parser.add_argument("--recommended-drafts", type=int,
+                        help="optional measured automatic draft depth for this source")
     parser.add_argument("--calibration-run", type=Path, action="append", default=[],
                         help="reuse existing source-bound calibration; repeat to combine runs; train split only, no GPU")
     args = parser.parse_args()
@@ -119,6 +129,8 @@ def main() -> None:
         value = getattr(args, name)
         setattr(args, name, value.resolve() if value is not None else None)
     args.calibration_run = [path.resolve() for path in args.calibration_run]
+    if args.recommended_drafts is not None and not 0 < args.recommended_drafts <= (1 << 64) - 1:
+        parser.error("recommended drafts must be a positive 64-bit count")
     if len(set(args.calibration_run)) != len(args.calibration_run):
         parser.error("the same calibration run cannot be counted twice")
     if not args.calibration_run and (args.hyle is None or args.tokenizer_dir is None or
@@ -145,8 +157,7 @@ def main() -> None:
         args.work_dir.mkdir(parents=True)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         with args.output.open("x", encoding="utf-8", newline="\n") as output:
-            output.write(f"hyle-draft-vocabulary-v1\n{identity}\n{vocabulary}\n")
-            output.write(" ".join(map(str, selected)) + "\n")
+            write_vocabulary(output, identity, vocabulary, selected, args.recommended_drafts)
         summary = (f"source={identity}\nprompts={prompts}; generated={sum(counts.values())}; distinct={len(counts)}\n"
                    f"rows={len(selected)}; generated-frequency descending; ties=original ID ascending\n"
                    "Offline reuse only; validation split ignored; no executable, tokenizer or GPU was invoked.\n")
@@ -190,8 +201,7 @@ def main() -> None:
     selected = selected_ids(counts, vocabulary, args.rows)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("x", encoding="utf-8", newline="\n") as output:
-        output.write(f"hyle-draft-vocabulary-v1\n{identity}\n{vocabulary}\n")
-        output.write(" ".join(map(str, sorted(selected))) + "\n")
+        write_vocabulary(output, identity, vocabulary, sorted(selected), args.recommended_drafts)
     summary = (f"source={identity}\nprompts={len(PROMPTS)}; generated={sum(counts.values())}; distinct={len(counts)}\n"
                f"rows={len(selected)}; generated-frequency descending; ties=original ID ascending\n"
                "Only generated output IDs were counted; no benchmark prompts or outputs were used.\n")

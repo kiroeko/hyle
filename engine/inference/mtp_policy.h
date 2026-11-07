@@ -18,12 +18,10 @@ struct DefaultRequest final {
   std::size_t max_sessions = 0;
   std::size_t active_sequences = 0;
   std::size_t capacity = 0;
-  bool default_backend = false;
+  bool automatic_backend_eligible = false;
   bool cpu_ffn = false;
   bool greedy = false;
-  bool replay_supports_chain = false;
   std::size_t max_drafts = 0;
-  std::size_t maximum_automatic_drafts = 0;
   bool automatic_head = false;
   bool automatic_vocabulary = false;
 };
@@ -31,7 +29,7 @@ struct DefaultRequest final {
 // Avoid inspecting an unused artifact, including errors from its filesystem.
 constexpr bool inspect_prepared_vocabulary(const DefaultRequest &request) noexcept {
   return request.mode != RequestedMode::kOff && request.max_drafts > 0 &&
-      request.default_backend && request.greedy && request.automatic_head &&
+      request.automatic_backend_eligible && request.greedy && request.automatic_head &&
       request.automatic_vocabulary;
 }
 
@@ -42,13 +40,28 @@ struct DefaultSelection final {
   std::string_view reason;
 };
 
+struct DraftDepthSelection final {
+  std::size_t max_drafts = 0;
+  std::string_view source;
+};
+
+// A validated artifact may recommend a depth; an explicit request wins.
+// The model and execution plan validate or limit the chosen depth later.
+constexpr DraftDepthSelection select_draft_depth(const DefaultSelection &selection,
+    bool explicit_depth, std::size_t requested_depth, std::size_t recommended_depth) noexcept {
+  if (!selection.enabled) return {requested_depth, "disabled"};
+  if (explicit_depth) return {requested_depth, "explicit"};
+  if (recommended_depth) return {recommended_depth, "artifact_recommendation"};
+  return {requested_depth, "configured_default"};
+}
+
 // One cold policy decision supplies both admission and its explanation.
 // Asset inspection is separate because explicit MTP can use prepared assets
 // even when the automatic route is not selected.
 constexpr std::string_view automatic_constraint(const DefaultRequest &request) noexcept {
   if (!request.max_drafts) return "drafting_disabled";
   if (!request.natural_generation) return "non_natural_request";
-  if (!request.default_backend) return "non_cuda_backend";
+  if (!request.automatic_backend_eligible) return "backend_policy";
   if (!request.greedy) return "sampling_or_draft_threshold";
   if (!request.automatic_head || !request.automatic_vocabulary) return "manual_draft_asset";
   if (request.multiple_schedules || request.max_sessions > 1 || request.active_sequences > 1)
@@ -56,10 +69,8 @@ constexpr std::string_view automatic_constraint(const DefaultRequest &request) n
   if (request.prefix_enabled) return "prefix_cache";
   if (request.scheduler_progress) return "scheduler";
   if (request.cpu_ffn) return "cpu_ffn";
-  if (!request.replay_supports_chain) return "replay_commands";
   // This is an automatic cost preference, not a backend rejection.
   if (request.capacity < 4) return "insufficient_capacity";
-  if (request.max_drafts > request.maximum_automatic_drafts) return "unsupported_draft_depth";
   return {};
 }
 

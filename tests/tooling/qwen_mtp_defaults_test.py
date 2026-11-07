@@ -12,7 +12,7 @@ def check(args):
     (args.output/'prompt.ids').write_text('1 2 3\n')
     schedule=args.output/'schedule.txt';schedule.write_text('prompt prompt.ids\ngenerate 17\n')
     original_text=(args.inputs/'weights.tsv').read_text(encoding='utf-8')
-    original_map=(args.inputs/'mtp-draft-vocabulary-k3.ids').read_text(encoding='utf-8')
+    original_map=(args.inputs/'mtp-draft-vocabulary.ids').read_text(encoding='utf-8')
     def reference(path):
         head=path.read_text(encoding='utf-8').splitlines()
         payload,count=shlex.split(head[5]);payload=Path(payload)
@@ -20,18 +20,18 @@ def check(args):
         head[5]='"'+payload.resolve().as_posix()+'" '+count
         return head
     head=reference(args.inputs/'mtp-draft-head.tsv')
-    for name in ('legacy','missing-head','stale','wrong-rows','small-explicit','generic','generic-stale'):
+    for name in ('legacy','missing-head','stale','wrong-rows','small-explicit','generic','generic-head','generic-stale'):
         folder=args.output/name;folder.mkdir();(folder/'weights.tsv').write_text(original_text,encoding='utf-8')
         selected=reference(args.full_head) if name in ('legacy','small-explicit') else head
         if name not in ('missing-head','generic','generic-stale'):
             (folder/'mtp-draft-head.tsv').write_text('\n'.join(selected)+'\n',encoding='utf-8')
-        if name not in ('legacy','generic','generic-stale'):
+        if name not in ('legacy','generic','generic-head','generic-stale'):
             text=original_map
             if name=='stale':text=text.replace(text.splitlines()[1],'0'*64,1)
-            if name in ('wrong-rows','small-explicit'):text='\n'.join(text.splitlines()[:3])+'\n0 1 2\n'
-            (folder/'mtp-draft-vocabulary-k3.ids').write_text(text,encoding='utf-8')
-        if name in ('generic','generic-stale'):
-            text='\n'.join(original_map.splitlines()[:3])+'\n0 1 2\n'
+            if name in ('wrong-rows','small-explicit'):text='\n'.join(text.splitlines()[:5])+'\n0 1 2\n'
+            (folder/'mtp-draft-vocabulary.ids').write_text(text,encoding='utf-8')
+        if name in ('generic','generic-head','generic-stale'):
+            text='\n'.join(original_map.splitlines()[:3])+'\nrecommended_drafts none\nhead original\n0 1 2\n'
             if name=='generic-stale':text=text.replace(text.splitlines()[1],'0'*64,1)
             (folder/'mtp-draft-vocabulary.ids').write_text(text,encoding='utf-8')
 
@@ -49,15 +49,20 @@ def check(args):
             return
         assert result.returncode==0,(name,stderr)
         raw=json.loads((folder/'stdout.log').read_text(encoding='utf-8'))
-        reasons={'default-auto':('prepared_vocabulary','k3_artifact'),
-                 'enabled-default':('explicit_on','k3_artifact'),
+        reasons={'default-auto':('prepared_vocabulary','artifact_recommendation'),
+                 'enabled-default':('explicit_on','artifact_recommendation'),
+                 'enabled-commands':('explicit_on','artifact_recommendation'),
                  'explicit-k3':('explicit_on','explicit'),
+                 'auto-explicit-k4':('prepared_vocabulary','explicit'),
+                 'explicit-k4':('explicit_on','explicit'),
+                 'auto-k4-commands':('prepared_vocabulary','explicit'),
+                 'explicit-k4-commands':('explicit_on','explicit'),
                  'override-k1':('prepared_vocabulary','explicit'),
                  'disable':('explicit_off','disabled'),
-                 'auto-commands':('replay_commands','disabled'),
+                 'auto-commands':('prepared_vocabulary','artifact_recommendation'),
                  'legacy-default':('no_eligible_source','disabled'),
-                 'missing-head-auto':('prepared_vocabulary','k3_artifact'),
-                 'generic-auto':('prepared_vocabulary','default_k1'),
+                 'missing-head-auto':('prepared_vocabulary','artifact_recommendation'),
+                 'generic-auto':('prepared_vocabulary','configured_default'),
                  'random-auto':('sampling_or_draft_threshold','disabled')}
         if name in reasons:
             assert (raw['mtp_selection_reason'],raw['mtp_depth_source'])==reasons[name],name
@@ -91,7 +96,13 @@ def check(args):
     one=run('override-k1',['--mtp-max-drafts','1'],width=1)
     assert one==run('explicit-k1',['--mtp','on','--mtp-max-drafts','1'],width=1)
     ordinary=run('disable',['--mtp','off'],mtp=False,subset=False)
-    assert ordinary==run('auto-commands',['--replay','commands'],mtp=False,subset=False)
+    commands_auto=run('auto-commands',['--replay','commands'])
+    assert commands_auto==run('enabled-commands',['--mtp','on','--replay','commands'])
+    assert commands_auto==run('explicit-commands',['--mtp','on','--mtp-max-drafts','3','--replay','commands'])
+    assert run('auto-explicit-k4',['--mtp-max-drafts','4'],width=4)==run(
+        'explicit-k4',['--mtp','on','--mtp-max-drafts','4'],width=4)
+    assert run('auto-k4-commands',['--mtp-max-drafts','4','--replay','commands'],width=4)==run(
+        'explicit-k4-commands',['--mtp','on','--mtp-max-drafts','4','--replay','commands'],width=4)
     expanded=run('explicit-expanded-context',['--capacity','65536','--mtp','on','--mtp-max-drafts','3'])
     assert expanded==run('auto-expanded-context',['--capacity','65536'])
     assert ordinary==run('legacy-default',inputs=args.output/'legacy',mtp=False,subset=False)
@@ -102,12 +113,13 @@ def check(args):
     assert small_three==run('small-explicit-k3',['--mtp','on','--mtp-max-drafts','3'],inputs=small,rows=3)
     assert small_three==run('small-manual-k3',['--mtp','on','--mtp-max-drafts','3',
         '--mtp-draft-head',str(small/'mtp-draft-head.tsv'),
-        '--mtp-draft-vocabulary',str(small/'mtp-draft-vocabulary-k3.ids')],inputs=small,rows=3)
+            '--mtp-draft-vocabulary',str(small/'mtp-draft-vocabulary.ids')],inputs=small,rows=3)
     assert small_three==run('small-auto-k3',inputs=small,rows=3)
     assert small_one==run('small-auto-explicit-k1',['--mtp-max-drafts','1'],inputs=small,width=1,rows=3)
     generic=args.output/'generic'
     generic_auto=run('generic-auto',inputs=generic,width=1,rows=3)
     assert generic_auto==run('generic-explicit',['--mtp','on','--mtp-max-drafts','1'],inputs=generic,width=1,rows=3)
+    assert generic_auto==run('generic-head-original',inputs=args.output/'generic-head',width=1,rows=3)
     assert ordinary==run('generic-off',['--mtp','off'],inputs=generic,mtp=False,subset=False)
     run('reject-generic-stale',inputs=args.output/'generic-stale',error='source identity differs')
     if 'SUBSET' in head[0]:
@@ -118,7 +130,7 @@ def check(args):
     original_auto=run('missing-head-auto',inputs=missing)
     assert original_auto==run('missing-head-explicit',
         ['--mtp','on','--mtp-max-drafts','3','--mtp-draft-head','original',
-         '--mtp-draft-vocabulary',str(missing/'mtp-draft-vocabulary-k3.ids')],inputs=missing)
+         '--mtp-draft-vocabulary',str(missing/'mtp-draft-vocabulary.ids')],inputs=missing)
     run('reject-stale',inputs=args.output/'stale',error='source identity differs')
     assert ordinary==run('ignore-stale-disabled',['--mtp','off'],inputs=args.output/'stale',mtp=False,subset=False)
     assert ordinary==run('ignore-stale-zero',['--mtp-max-drafts','0'],inputs=args.output/'stale',mtp=False,subset=False)

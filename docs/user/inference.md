@@ -84,7 +84,7 @@ Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-di
 普通 CUDA greedy 自然生成自动使用连续接力，无需额外参数；已有限检查单活动请求及双活动请求。
 无草稿概率门槛的CUDA greedy单会话K1—K3已接入自然接力。固定K2／K3把起草、验证及draft KV修复放入同一张轮图，
 中间token和下一轮接受位置留在设备。冷期只按配置容量和已到达首轮准备，后续长度与配额不参与规划。
-符合条件的 MTP 会根据准备目录中的草稿制品选择 K1 或 K3；没有 K3 制品时显式开启默认为 K1。K3 的收益与资源边界见性能表。
+符合条件的 MTP 根据来源绑定的草稿制品读取推荐草稿数；没有推荐时默认为 K1。K3 的收益与资源边界见性能表。
 单会话有界生成按配置容量准备接力；其它有限日程在有多于一个输出额度且执行能力允许时准备两层候选。
 prefill 保留原路径，后继只使用已有实际捕获。
 完整同形、同序的活动请求组可持续接力；异形分组保留原同步执行。输出额度不足时先完成已接纳工作，再暂停等待额度。
@@ -101,14 +101,14 @@ prefill 保留原路径，后继只使用已有实际捕获。
 逐请求bias／mask、历史罚分、动态条件及停止政策属于`engine/`内的C++请求扩展，
 没有对应CLI参数或已安装的引擎SDK／server入口；其合同查[输入与请求政策](../../engine/models/qwen35/README.md#输入与数值政策)。
 
-`--mtp auto|off|on` 默认 `auto`。在符合条件的 CUDA 自然 greedy 生成中，来源匹配的 K3 命名制品优先选择 K3；
-没有该制品但目录有来源匹配的 `mtp-draft-vocabulary.ids` 时，
-自动选择原始草稿头的 K1；没有词表制品时，具备完整 MTP 角色及 F32 量化路径的 GGUF 来源也可自动选择全词表 K1。
+`--mtp auto|off|on` 默认 `auto`。在符合条件的 CUDA 自然 greedy 生成中，目录里的来源匹配的
+`mtp-draft-vocabulary.ids` 可以选择 MTP；制品可推荐草稿数，没有推荐时选择 K1。
+没有词表制品时，具备完整 MTP 角色及 F32 量化路径的 GGUF 来源也可自动选择全词表 K1。
 其他情况默认关闭；`--mtp off` 强制普通生成。启用 MTP 会增加内存，收益取决于模型、词表和输入。
-JSON 的 `mtp_selection_reason` 报告冷期选择或回落原因，`mtp_depth_source` 说明草稿数来自显式参数、K3 制品还是 K1 默认。
+JSON 的 `mtp_selection_reason` 报告冷期选择或回落原因，`mtp_depth_source` 说明草稿数来自显式参数、制品推荐还是配置默认值。
 其中 `insufficient_capacity` 表示配置容量低于自动策略的阈值，并不代表后端不支持 MTP；显式启用仍受实际容量和能力限制。
 `--mtp-max-drafts 1` 可覆盖已启用的 K3，按 K1 执行。
-`--mtp-max-drafts` 控制每轮最多提出的草稿数，自动 K3 制品为 3，其余默认为 1。`--mtp-min-probability` 设置
+`--mtp-max-drafts` 控制每轮最多提出的草稿数，默认采用制品推荐值，没有推荐时为 1。`--mtp-min-probability` 设置
 草稿分布最大概率的最低门槛，范围为 0 到 1，默认 0；达到门槛才继续草稿，实际长度可以更短。
 草稿数设为 0 时，`auto` 和 `off` 使用普通路径；显式 `on` 保持 MTP 路径但不提出草稿。
 这不是额外置信度模型。制品、后端与草稿数的实际运行范围见[模型覆盖](../implementation/model-operators.md)。
@@ -116,8 +116,8 @@ JSON 的 `mtp_selection_reason` 报告冷期选择或回落原因，`mtp_depth_s
 ### 草稿词表
 
 默认 `--mtp-draft-vocabulary auto`：MTP开启、无logits modifier的greedy、零概率阈值时，
-K3 制品使用 `mtp-draft-vocabulary-k3.ids`；有来源匹配的 `mtp-draft-head.tsv` 时使用该头，否则从支持的原始头提取所选行；
-其他 MTP 目录读取 `mtp-draft-vocabulary.ids`；该文件也可让符合条件的自动模式选择 K1。
+读取 `mtp-draft-vocabulary.ids`。制品的 `head prepared` 偏好选择目录里来源匹配的 `mtp-draft-head.tsv`；
+该头不存在时从支持的原始头提取所选行。`head original` 选择原始头；显式 `--mtp-draft-head` 优先。
 文件不存在或采样政策不适用时使用完整词表；
 存在但source identity不匹配时拒绝加载。`--mtp-draft-vocabulary full` 强制完整词表作对照，
 也可用 `--mtp-draft-vocabulary FILE` 显式选择另一份准备文件。
@@ -138,20 +138,23 @@ python scripts/prepare-mtp-draft-vocabulary.py --hyle <hyle.exe> --inputs <准�
 也可用重复的 `--calibration-run DIR` 复用同一source的已有普通greedy校准；该模式不启动GPU，也不需要tokenizer。
 支持本工具的校准目录，以及含train／validation划分的已归档生成目录；只导入train，核对源身份、原始ID和会话退休。
 `--rows N` 可选任意非零且不超过原词表的行数，选择次序保持不变。
-如果已在目标负载上确认 K3 合适，可以把输出文件命名为 `mtp-draft-vocabulary-k3.ids`，让自动模式在冷期选择 K3；否则使用普通文件名选择 K1。
+如果已在目标负载上确认 K3 合适，可以在生成时指定 `--recommended-drafts 3`；
+该工具不会自动评测或推断最佳草稿数。没有指定时制品不带推荐，默认采用 K1。
 文件绑定准备清单的原source identity及实际词表大小，格式为：
 
 ```text
-hyle-draft-vocabulary-v1
+hyle-draft-vocabulary-v2
 <weights.tsv第二行的64位source identity>
 <模型实际词表大小>
+recommended_drafts none|<正整数>
+head original|prepared
 <以空白分隔的原token IDs>
 ```
 
 IDs必须非空、互异且在原词表范围内；冷期按原ID排序，保持greedy平局顺序，图内输出仍还原为原token ID。
 CUDA单活动请求、通过冷期设备能力检查的BF16 head可直接读取原矩阵的选中行，只额外保留ID映射；
 其它设备、dtype或批次能力在冷期导入一次行副本。例如2B BF16模型的32K行，直接读取时额外权重为0、映射128 KiB，
-行副本路径则另占128 MiB权重。已有准备文件不需要重做。不可变投影和映射供原并行编译流程读取，热路径不新增分配。
+行副本路径则另占128 MiB权重。v1 词表需要重新生成或转换为上述 v2 格式。不可变投影和映射供原并行编译流程读取，热路径不新增分配。
 JSON的 `original_*_weight_bytes` 仍只统计原角色，额外payload见 `draft_vocabulary_weight_bytes`／`draft_vocabulary_map_bytes`；
 `draft_vocabulary_indexed_rows` 表示是否直接读取原矩阵。额外权重不属于 `--cache-bytes`，payload字节数也不是物理显存峰。
 子集会改变提案和接受率，需按实际输入检查速度；有限校准语料不代表通用语言覆盖。
@@ -170,7 +173,8 @@ hyle --inputs <准备目录> --backend cuda --mtp on --mtp-max-drafts 3 --mtp-dr
 输出目录必须是新目录。工具完整写入并验证编码行后才发布 `mtp-draft-head.tsv`；运行时校验元数据、原source identity、形状及payload范围，
 通过原权重流加载额外投影。2B全词表头的payload为286064640字节（272.8125MiB）；这不是完整进程的显存峰值。
 
-默认 `--mtp-draft-head auto` 在输入目录发现此文件时优先使用它，随后才考虑自动32K映射。
+默认 `--mtp-draft-head auto` 根据词表制品的头偏好选择原始头或输入目录里的准备头；
+没有词表制品时，允许自动准备头的路径会查找该头，自动全词表 GGUF 路径使用原始头。
 `--mtp-draft-head original` 禁用独立头；同时加 `--mtp-draft-vocabulary full` 才是原始全词表头对照。
 独立Q4_K头可与显式子集映射组合。CUDA在冷期按原ID复制完整编码行，保持代码与scale字节；
 复制和ID上传退休后才替换完整草稿头，不更换目标验证头或embedding。头与映射分别绑定原source identity。
@@ -181,7 +185,7 @@ python scripts/prepare-mtp-draft-vocabulary.py --inputs <准备目录> --calibra
 hyle --inputs <准备目录> --backend cuda --mtp on --mtp-max-drafts 3 --mtp-draft-head .scratch/full-draft-head/mtp-draft-head.tsv --mtp-draft-vocabulary .scratch/draft-subset.ids --schedule <自然请求文件>
 ```
 
-普通独立头仍优先于旧自动映射；显式映射仍可组合。默认K3使用下一段专门准备的成套制品，不把旧32K目录自动升为K3。
+显式映射仍可与独立头组合。默认K3可使用下一段准备的成套制品。
 2B的114688行Q4_K头payload为126MiB、映射448KiB。组合路径目前只验证CUDA，要求启用草稿、无modifier的greedy和零概率阈值。
 更换草稿头会改变提案、接受率与轮次划分，速度与数值边界见[性能表](../developer/performance/decode.md#固定-k3本轮复测)。
 
@@ -195,15 +199,15 @@ hyle --inputs .scratch/mtp-ready --backend cuda --capacity 32768 --schedule <自
 ```
 
 运行命令无需额外MTP、K或草稿头参数。输出目录必须是新目录；工具离线编码并只保存所选Q4_K行，
-借用原权重的绝对文件范围，并发布原`weights.tsv`格式、输入IDs和`mtp-draft-vocabulary-k3.ids`。
+借用原权重的绝对文件范围，并发布原`weights.tsv`格式、输入IDs和带 K3 推荐的`mtp-draft-vocabulary.ids`。
 完整子集payload、映射与原权重引用写完后才发布头元数据；头身份同时绑定原模型与规范I32映射。启动时只校验和加载，不下载、生成词表或量化权重。
 
 已验证系统为Windows11 x64、RTX4070／SM8.9、驱动617.14、CUDA13.3.73。制品保存GGUF Q4_K行数据与原ID映射，
 其读取依赖相同Q4_K存储约定及兼容后端；其它系统未作本次性能验收。
-自动K3要求CUDA、容量至少4、单会话自然greedy、零草稿概率阈值，以及来源匹配的K3命名头和词表；
-CPU分置、prefix、多会话、scheduler、随机和`--replay commands`不自动启用。计划形状准备及关闭decode overlap均可使用自动MTP。
-专用映射存在但头缺失、身份过期或行数不符时拒绝加载。
-制品名表达K3偏好，本身不证明该模型或负载上K3最快；可用`--mtp-max-drafts 1`显式选择K1。
+自动选择要求CUDA、容量至少4、单会话自然greedy和零草稿概率阈值；
+CPU分置、prefix、多会话、scheduler和随机采样不自动启用。`--replay commands`、计划形状准备及关闭decode overlap均可使用自动MTP。
+准备头缺失时使用原始头；选中的制品身份过期或行数不符时拒绝加载。
+制品元数据表达K3偏好，本身不证明该模型或负载上K3最快；可用`--mtp-max-drafts 1`显式选择K1。
 这些条件只选择当前模型制品及执行政策，不读取未来prompt、接受结果或输出配额，不做动态K。
 离线转译只运行一次，不计入推理性能；冷启动加载与ready单列。主要比较实际输出除以prefill＋decode墙时，
 再分别列两个阶段；启动不摊入生成速度。完整进程值只作另列诊断。速度验收范围与启动、显存成本见[性能表](../developer/performance/decode.md#固定-k3本轮复测)。

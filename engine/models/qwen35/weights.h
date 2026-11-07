@@ -18,6 +18,7 @@
 
 #include "../../inference/evaluation_failure.h"
 #include "../../inference/draft_vocabulary.h"
+#include "../../inference/draft_vocabulary_artifact.h"
 #include "hyle/compute/file_stream.h"
 #include "hyle/compute/resource_leases.h"
 #include "hyle/mem/buffer.h"
@@ -156,6 +157,7 @@ struct PreparedWeightSource {
   std::optional<hyle::inference::DraftVocabulary> draft_vocabulary;
   std::string draft_vocabulary_identity;
   std::optional<PreparedDraftHeadSource> draft_head;
+  hyle::inference::DraftVocabularyPreferences draft_preferences;
 };
 namespace projection_detail {
 std::array<std::int64_t, 2> logical_shape(const ProjectionBinding &binding);
@@ -165,7 +167,7 @@ ModelGeometry read_weight_geometry(const std::filesystem::path &manifest);
 prepared::Roles read_weight_roles(const std::filesystem::path &manifest, bool include_mtp);
 PreparedWeightSource prepare_weight_source(const std::filesystem::path &manifest, bool include_mtp,
     const std::filesystem::path &draft_vocabulary = {},
-    const std::filesystem::path &draft_head = {});
+    const std::filesystem::path &draft_head = {}, bool auto_draft_head = false);
 // Load one offline-prepared proposal projection through the ordinary weight
 // stream. Its source identity/geometry bind the original complete target model.
 PreparedDraftHead load_prepared_draft_head(hyle::inference::Backend &backend,

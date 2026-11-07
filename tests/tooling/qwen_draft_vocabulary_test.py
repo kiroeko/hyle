@@ -23,7 +23,7 @@ def check(args):
         if identity is not None:
             ids = reversed(range(16 if name == "partial" else vocabulary))
             (folder / "mtp-draft-vocabulary.ids").write_text(
-                f"hyle-draft-vocabulary-v1\n{identity}\n{vocabulary}\n" +
+                f"hyle-draft-vocabulary-v2\n{identity}\n{vocabulary}\nrecommended_drafts none\nhead original\n" +
                 " ".join(map(str, ids)) + "\n", encoding="utf-8")
     (args.output / "prompt.ids").write_text("1 2 3\n", encoding="utf-8")
     schedule = args.output / "schedule.txt"

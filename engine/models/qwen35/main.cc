@@ -89,8 +89,8 @@
 #include "ffn_placement.h"
 #include "projection_binding.h"
 #include "weights.h"
-#include "mtp_defaults.h"
 #include "mtp_capabilities.h"
+#include "draft_asset_policy.h"
 #include "gguf_capabilities.h"
 #include "../../inference/mtp_policy.h"
 #include "graph_builder.h"
@@ -8702,11 +8702,11 @@ int qwen35::run(int argc, char **argv) {
         "Usage: hyle --inputs DIR [options]\n"
         "  --inputs DIR                Locally prepared checkpoint and token IDs\n"
         "  --backend cpu|cuda|apple|vulkan  Primary backend; required when multiple GPU routes are compiled\n"
-        "  --mtp auto|off|on           Auto: prepared K3, vocabulary K1, or eligible CUDA GGUF full-head K1\n"
-        "  --mtp-max-drafts N          Maximum proposals; 0 disables drafting (default: prepared K3, otherwise 1)\n"
+        "  --mtp auto|off|on           Auto: source-bound vocabulary or eligible CUDA GGUF full-head K1\n"
+        "  --mtp-max-drafts N          Maximum proposals; 0 disables drafting (default: artifact recommendation or 1)\n"
         "  --mtp-min-probability FLOAT  Stop below max draft probability, [0,1] (default: 0)\n"
         "  --mtp-draft-vocabulary auto|full|FILE  Prepared draft IDs (default: auto); greedy only\n"
-        "  --mtp-draft-head auto|original|FILE  Offline full Q4_K proposal head (default: auto); greedy only\n"
+        "  --mtp-draft-head auto|original|FILE  Prepared proposal head (default: auto); greedy only\n"
         "  --sampling greedy|random    Token selection (default: greedy)\n"
         "  --temperature FLOAT         Random policy temperature > 0 (default: 1)\n"
         "  --top-k N                    Random policy top-k; 0 disables (default: 0)\n"
@@ -8888,12 +8888,6 @@ int qwen35::run(int argc, char **argv) {
     const bool natural_single = !scheduled && !explicit_continuation && !explicit_decode_ids &&
         layer0_probe.empty() && !preparation_diagnostics;
     const bool natural_generation = natural_schedule || natural_single;
-    const auto exists = [](const std::filesystem::path &path) {
-      std::error_code error;
-      const auto present = std::filesystem::exists(path, error);
-      if (error) throw std::runtime_error("cannot inspect prepared MTP defaults: " + error.message());
-      return present;
-    };
     // A source-bound vocabulary opts a prepared directory into drafting.
     // The policy inspects current configuration, never future requests.
     namespace mtp = hyle::inference::mtp;
@@ -8904,71 +8898,21 @@ int qwen35::run(int argc, char **argv) {
         .prefix_enabled = prefix_enabled, .scheduler_progress = progress,
         .max_sessions = max_sessions,
         .active_sequences = active_sequences, .capacity = capacity,
-        .default_backend = backend_selection.primary == qwen35::BackendKind::kCuda,
+        .automatic_backend_eligible = backend_selection.primary == qwen35::BackendKind::kCuda,
         .cpu_ffn = cpu_ffn_layers != 0,
         .greedy = !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0,
-        .replay_supports_chain = replay != qwen35::ReplayPolicy::kCommands,
-        .max_drafts = max_drafts, .maximum_automatic_drafts = qwen35::kMaximumDeviceMtpDrafts,
+        .max_drafts = max_drafts,
         .automatic_head = draft_head == "auto",
         .automatic_vocabulary = draft_vocabulary == "auto"};
-    const auto default_vocabulary = input / qwen35::kDefaultK3Vocabulary;
-    const auto generic_vocabulary = input / "mtp-draft-vocabulary.ids";
-    const bool inspect_vocabulary = mtp::inspect_prepared_vocabulary(default_request);
-    const bool has_k3_vocabulary = inspect_vocabulary && exists(default_vocabulary);
-    const bool has_generic_vocabulary = !has_k3_vocabulary && inspect_vocabulary &&
-        default_request.mode == mtp::RequestedMode::kAuto && exists(generic_vocabulary);
-    bool original_projection_eligible = false;
-    if (!has_k3_vocabulary && !has_generic_vocabulary &&
-        default_request.mode == mtp::RequestedMode::kAuto &&
-        mtp::select_default(default_request, true).automatic) {
-      // A fully prepared GGUF inventory can supply its original MTP head;
-      // inspect only validated cold metadata and keep artifact selection separate.
-      const auto roles = qwen35::read_weight_roles(input / "weights.tsv", false);
-      original_projection_eligible = roles.representation == qwen35::prepared::SourceRepresentation::kGgufConverted &&
-          roles.geometry.mtp_layers == 1 &&
-          qwen35::PrecisionProfile::from_roles(roles).activation_type() == c::DataType::kFloat32 &&
-          qwen35::supports_stored_draft_projection(roles);
-    }
-    const auto default_selection = mtp::select_default(default_request,
-        has_k3_vocabulary || has_generic_vocabulary, original_projection_eligible);
-    const bool automatic_k3 = default_selection.automatic && has_k3_vocabulary;
+    auto assets = qwen35::select_draft_assets(input, default_request,
+        std::move(draft_vocabulary), std::move(draft_head));
+    const auto default_selection = assets.policy;
     mtp_enabled = default_selection.enabled;
-    const bool select_prepared_assets = default_selection.prepared_assets;
-    const bool select_generic_assets = select_prepared_assets && has_generic_vocabulary;
-    if(draft_head=="original")draft_head.clear();
-    else if(draft_head=="auto"){
-      draft_head.clear();
-      if(mtp_enabled && max_drafts && !sampler.enabled && sampler.modifiers.empty() && min_draft_probability==0 && !original_projection_eligible){
-        const auto prepared=input/"mtp-draft-head.tsv";std::error_code error;
-        const auto exists=std::filesystem::exists(prepared,error);
-        if(error)throw std::runtime_error("cannot inspect prepared draft head: "+error.message());
-        if(exists && !select_generic_assets)draft_head=prepared;
-      }
-    }
-    if (draft_vocabulary == "full") draft_vocabulary.clear();
-    else if (draft_vocabulary == "auto") {
-      draft_vocabulary.clear();
-      // A prepared, source-bound asset is policy, not a guess based on vocab
-      // size or on this request's tokens. Other sampling policies keep the
-      // original full-vocabulary path. A stale asset still fails validation.
-      if (select_prepared_assets) draft_vocabulary = select_generic_assets ? generic_vocabulary : default_vocabulary;
-      else if (draft_head.empty() && mtp_enabled && max_drafts && !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0) {
-        const auto prepared = input / "mtp-draft-vocabulary.ids";
-        std::error_code error;
-        const auto exists = std::filesystem::exists(prepared, error);
-        if (error) throw std::runtime_error("cannot inspect prepared draft vocabulary: " + error.message());
-        if (exists) draft_vocabulary = prepared;
-      }
-    }
-    if (!draft_vocabulary.empty() && (!mtp_enabled || !max_drafts ||
-        sampler.enabled || !sampler.modifiers.empty() || min_draft_probability != 0))
-      throw std::runtime_error("--mtp-draft-vocabulary requires --mtp on, active drafting, unmodified greedy sampling and zero minimum probability");
-    if(!draft_head.empty() && (!mtp_enabled || !max_drafts || sampler.enabled || !sampler.modifiers.empty() || min_draft_probability!=0))
-      throw std::runtime_error("--mtp-draft-head requires active unmodified greedy MTP and zero minimum probability");
-    auto weight_source = qwen35::prepare_weight_source(input / "weights.tsv", mtp_enabled, draft_vocabulary,draft_head);
-    // A source-bound K3-named vocabulary declares its intended depth. Explicit
-    // depth still wins; a generic prepared vocabulary keeps the K1 policy.
-    if (automatic_k3 && !explicit_mtp_drafts) max_drafts = 3;
+    auto weight_source = qwen35::prepare_weight_source(input / "weights.tsv", mtp_enabled,
+        assets.vocabulary, assets.head, assets.auto_head);
+    const auto depth_selection = mtp::select_draft_depth(default_selection, explicit_mtp_drafts,
+        max_drafts, weight_source.draft_preferences.recommended_drafts);
+    max_drafts = depth_selection.max_drafts;
     const auto geometry = weight_source.roles.geometry;
     qwen35::validate_mtp_source(geometry, mtp_enabled);
     qwen35::FfnPlacement::validate(cpu_ffn_layers, geometry.layers.size());
@@ -8994,15 +8938,15 @@ int qwen35::run(int argc, char **argv) {
     // The default single-session route admits later turns only after the
     // previous published wave retires. Auto N/R are configuration bounds of
     // one here; future schedule lengths and quotas cannot select this policy.
-    // Other backends, sampling/thresholds, K>3, multi-session/prefix and explicit
+    // Other backends, sampling/thresholds, multi-session/prefix and explicit
     // planned workloads retain their finite route and invalid-performance label.
     const bool bounded_generation = natural_generation && !multiple_schedules && !prefix_enabled &&
         !warmup_planned_shapes && max_sessions <= 1 && active_sequences <= 1 &&
         backend_selection.primary == qwen35::BackendKind::kCuda && cpu_ffn_layers == 0 &&
         !sampler.enabled && sampler.modifiers.empty() &&
-        (!mtp_enabled || (capacity > 1 && max_drafts >= 1 && max_drafts <= qwen35::kMaximumDeviceMtpDrafts && min_draft_probability == 0));
+        (!mtp_enabled || (capacity > 1 && max_drafts >= 1 && min_draft_probability == 0));
     if (require_bounded_generation && !bounded_generation)
-      throw std::runtime_error("bounded natural generation requires CUDA without CPU assist, unmodified greedy, ordinary or K1-K3 MTP without a draft threshold, one session, auto or 1 for max-sessions/active-sequences, prefix off and lazy shape preparation");
+      throw std::runtime_error("bounded natural generation requires CUDA without CPU assist, unmodified greedy, ordinary or MTP without a draft threshold, one session, auto or 1 for max-sessions/active-sequences, prefix off and lazy shape preparation");
     if (max_prefill_rows != SIZE_MAX && !natural_generation)
       throw std::runtime_error("--prefill-chunk-tokens requires natural generation; fixed replay is not supported");
     if (mtp_enabled && grammar == Grammar::kFixedInput)
@@ -9051,7 +8995,7 @@ int qwen35::run(int argc, char **argv) {
       steps = forced_steps;
     }
     if (input.empty())
-      throw std::runtime_error("usage: hyle --inputs DIR [--schedule FILE | --session-schedules FILE | [--continuation IDS] [--steps 4 | --decode-ids IDS]] [--mtp off|on] [--capacity 128] [--max-sessions auto|N] [--active-sequences auto|N] [--cache-bytes auto|N] [--prefix-cache off|auto] [--progress direct|scheduler] [--replay auto|commands|prefer-capture] [--trace DIR] [--trace-level full|decisions] [--preparation-diagnostics 0|1] [--layer0-probe DIR]");
+      throw std::runtime_error("usage: hyle --inputs DIR [--schedule FILE | --session-schedules FILE | [--continuation IDS] [--steps 4 | --decode-ids IDS]] [--mtp auto|off|on] [--capacity 128] [--max-sessions auto|N] [--active-sequences auto|N] [--cache-bytes auto|N] [--prefix-cache off|auto] [--progress direct|scheduler] [--replay auto|commands|prefer-capture] [--trace DIR] [--trace-level full|decisions] [--preparation-diagnostics 0|1] [--layer0-probe DIR]");
     const auto prompt = scheduled ? std::vector<std::int32_t>{} : qwen35::read_ids(input / "prompt.ids", geometry.vocabulary, capacity);
     const auto extra = continuation.empty() ? std::vector<std::int32_t>{} : qwen35::read_ids(continuation, geometry.vocabulary, capacity);
     if (!scheduled) {
@@ -9202,8 +9146,7 @@ int qwen35::run(int argc, char **argv) {
     qwen35::Model model(std::move(execution), {}, std::move(weight_source), geometry, capacity,
         selected_cache, layer0_probe, progress, replay, cache_bytes, sampler, cpu_ffn_layers);
     model.mtp_selection_reason = default_selection.reason;
-    model.mtp_depth_source = !mtp_enabled ? "disabled" : explicit_mtp_drafts ? "explicit" :
-        automatic_k3 ? "k3_artifact" : "default_k1";
+    model.mtp_depth_source = depth_selection.source;
     model.configure_draft_policy({max_drafts, min_draft_probability});
     const auto constructed = qwen35::Clock::now();
     if (!trace.empty()) model.trace_routes = trace / "routes";

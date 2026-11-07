@@ -17,7 +17,7 @@ def main():
     args = parser.parse_args()
     args.output.mkdir(parents=True)
     inputs = args.output/'inputs';inputs.mkdir()
-    for name in ('weights.tsv','mtp-draft-head.tsv','mtp-draft-vocabulary-k3.ids','draft-head-q4_k.bin'):
+    for name in ('weights.tsv','mtp-draft-head.tsv','mtp-draft-vocabulary.ids','draft-head-q4_k.bin'):
         if (args.inputs/name).is_file():os.link(args.inputs/name,inputs/name)
     if not (inputs/'weights.tsv').is_file():raise ValueError('prepared weights are required')
     (inputs/'prompt.ids').write_text('1\n',encoding='utf-8')
@@ -56,7 +56,7 @@ def main():
               'enabled',reports['candidate']['decode_overlap'],
               'successors',reports['candidate']['overlap_successor_submissions'],flush=True)
     chunked=args.output/'chunked-input';chunked.mkdir()
-    for name in ('weights.tsv','mtp-draft-head.tsv','mtp-draft-vocabulary-k3.ids','draft-head-q4_k.bin'):
+    for name in ('weights.tsv','mtp-draft-head.tsv','mtp-draft-vocabulary.ids','draft-head-q4_k.bin'):
         if (inputs/name).is_file():os.link(inputs/name,chunked/name)
     (chunked/'prompt.ids').write_text('1 2 3\n',encoding='utf-8')
     reports={}

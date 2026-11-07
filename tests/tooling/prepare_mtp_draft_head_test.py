@@ -105,28 +105,29 @@ class DraftHeadPreparation(unittest.TestCase):
         (self.work/'weights.tsv').write_text(text,encoding='utf-8')
         (self.work/'prompt.ids').write_bytes(b'1 2 3\n')
         mapping=self.work/'mapping.ids'
-        mapping.write_text('hyle-draft-vocabulary-v1\n'+identity+'\n248320\n'+
+        mapping.write_text('hyle-draft-vocabulary-v2\n'+identity+'\n248320\nrecommended_drafts none\nhead original\n'+
                            ' '.join(map(str,reversed(range(114688))))+'\n',encoding='utf-8')
         return mapping,dict(identity=identity,dtype='BF16',hidden=2048,vocabulary=248320),text
 
     def test_ready_inputs_borrow_original_ranges_and_keep_source_ids(self):
         mapping,head,text=self.default_references()
         files=P.default_k3_inputs(self.work,mapping,head)
-        self.assertEqual(set(files),{'weights.tsv',P.DEFAULT_K3_VOCABULARY,'prompt.ids'})
+        self.assertEqual(set(files),{'weights.tsv',P.DEFAULT_VOCABULARY,'prompt.ids'})
         self.assertEqual(files['prompt.ids'],b'1 2 3\n')
         lines=files['weights.tsv'].decode().splitlines()
         self.assertEqual(lines[:3],text.splitlines()[:3])
         self.assertEqual(sum(line.startswith('mtp.') for line in lines),15)
         self.assertIn('"'+(self.work/'borrowed weights.bin').as_posix()+'"',lines[-1])
-        ids=files[P.DEFAULT_K3_VOCABULARY].decode().splitlines()
-        self.assertEqual(ids[:3],['hyle-draft-vocabulary-v1','a'*64,'248320'])
-        self.assertEqual(list(map(int,ids[3].split())),list(range(114688)))
+        ids=files[P.DEFAULT_VOCABULARY].decode().splitlines()
+        self.assertEqual(ids[:5],['hyle-draft-vocabulary-v2','a'*64,'248320',
+                                  'recommended_drafts 3','head prepared'])
+        self.assertEqual(list(map(int,ids[5].split())),list(range(114688)))
         self.assertEqual((self.work/'weights.tsv').read_text(),text)
 
     def test_default_preparation_refuses_stale_duplicate_or_invalid_rows(self):
         mapping,head,_=self.default_references();text=mapping.read_text()
         for invalid in [text.replace('a'*64,'b'*64),text.replace('114687 114686','114686 114686'),
-                        text.replace('114687 ','248320 '), '\n'.join(text.splitlines()[:3])+'\n',
+                        text.replace('114687 ','248320 '), '\n'.join(text.splitlines()[:5])+'\n',
                         text.replace('114687 ','-1 ')]:
             with self.subTest(prefix=invalid[:80]):
                 mapping.write_text(invalid)
@@ -135,11 +136,11 @@ class DraftHeadPreparation(unittest.TestCase):
     def test_ready_inputs_accept_other_model_geometry_and_subset_size(self):
         mapping,head,text=self.default_references()
         (self.work/'weights.tsv').write_text(text.replace('geometry 2048 6144','geometry 2048 8192'),encoding='utf-8')
-        mapping.write_text('hyle-draft-vocabulary-v1\n'+'a'*64+'\n248320\n'+
+        mapping.write_text('hyle-draft-vocabulary-v2\n'+'a'*64+'\n248320\nrecommended_drafts none\nhead original\n'+
                            ' '.join(map(str,reversed(range(131072))))+'\n',encoding='utf-8')
         files=P.default_k3_inputs(self.work,mapping,head)
         self.assertIn('geometry 2048 8192',files['weights.tsv'].decode())
-        ids=files[P.DEFAULT_K3_VOCABULARY].decode().splitlines()[3].split()
+        ids=files[P.DEFAULT_VOCABULARY].decode().splitlines()[5].split()
         self.assertEqual(len(ids),131072)
         self.assertEqual((ids[0],ids[-1]),('0','131071'))
 

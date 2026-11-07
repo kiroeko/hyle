@@ -360,10 +360,21 @@ void metadata(const std::filesystem::path &manifest, const std::filesystem::path
   const auto path = scratch / "probe-draft-vocabulary.ids";
   const auto write = [&](std::string_view identity, std::int64_t vocabulary, std::string_view ids) {
     std::ofstream output(path, std::ios::binary);
-    output << "hyle-draft-vocabulary-v1\n" << identity << '\n' << vocabulary << '\n' << ids << '\n';
+    output << "hyle-draft-vocabulary-v2\n" << identity << '\n' << vocabulary
+           << "\nrecommended_drafts none\nhead original\n" << ids << '\n';
     require(bool(output), "cannot write finite mapping metadata");
   };
   auto wrong = roles.identity; wrong[0] = wrong[0] == '0' ? '1' : '0';
+  {
+    std::ofstream output(path, std::ios::binary);
+    output << "hyle-draft-vocabulary-v1\n" << roles.identity << '\n' << roles.geometry.vocabulary << "\n0 2\n";
+  }
+  bool old_format_refused = false;
+  try { (void)q::prepare_weight_source(manifest, true, path); }
+  catch (const std::runtime_error &failure) {
+    old_format_refused = std::string_view(failure.what()).find("hyle-draft-vocabulary-v2") != std::string_view::npos;
+  }
+  require(old_format_refused, "obsolete vocabulary format was not rejected with the expected version");
   write(wrong, roles.geometry.vocabulary, "0 2");
   bool identity_refused = false;
   try { (void)q::prepare_weight_source(manifest, true, path); }
@@ -386,12 +397,27 @@ void metadata(const std::filesystem::path &manifest, const std::filesystem::path
       "corrected mapping metadata could not retry in canonical original-ID order");
   {
     std::ofstream output(path, std::ios::binary);
-    output << "hyle-draft-vocabulary-v1\r\n" << roles.identity << "\r\n" << roles.geometry.vocabulary
-        << "\r\n\t7  2\r\n5\v0";
+    output << "hyle-draft-vocabulary-v2\r\n" << roles.identity << "\r\n" << roles.geometry.vocabulary
+        << "\r\nrecommended_drafts 3\r\nhead prepared\r\n\t7  2\r\n5\v0";
   }
   const auto mixed_whitespace = q::prepare_weight_source(manifest, true, path);
   require(mixed_whitespace.draft_vocabulary && std::ranges::equal(mixed_whitespace.draft_vocabulary->ids(),
       std::array<std::int32_t, 4>{0, 2, 5, 7}), "bounded buffer changed CRLF, whitespace or final non-newline parsing");
+  require(mixed_whitespace.draft_preferences.recommended_drafts == 3 &&
+      mixed_whitespace.draft_preferences.head == i::DraftHeadPreference::kPrepared,
+      "source-bound artifact preferences were not retained");
+  for (const auto bad : {"recommended_drafts 0\nhead original", "recommended_drafts -1\nhead original",
+                          "recommended_drafts 18446744073709551616\nhead original",
+                          "recommended_drafts 2\nhead other"}) {
+    std::ofstream output(path, std::ios::binary);
+    output << "hyle-draft-vocabulary-v2\n" << roles.identity << '\n' << roles.geometry.vocabulary
+           << '\n' << bad << "\n0 2\n";
+    output.close();
+    bool refused = false;
+    try { (void)q::prepare_weight_source(manifest, true, path); }
+    catch (const std::runtime_error &) { refused = true; }
+    require(refused, "invalid draft recommendation metadata was accepted");
+  }
   for (const auto bad : {std::string("0x2"), std::string("2147483648"), std::string(17, '1'), std::string("0\0 2", 4)}) {
     write(roles.identity, roles.geometry.vocabulary, bad);
     bool refused = false;
@@ -401,7 +427,8 @@ void metadata(const std::filesystem::path &manifest, const std::filesystem::path
   }
   {
     std::ofstream output(path, std::ios::binary);
-    output << "hyle-draft-vocabulary-v1\n" << roles.identity << '\n' << roles.geometry.vocabulary << "\n0"
+    output << "hyle-draft-vocabulary-v2\n" << roles.identity << '\n' << roles.geometry.vocabulary
+        << "\nrecommended_drafts none\nhead original\n0"
         << std::string(static_cast<std::size_t>(roles.geometry.vocabulary) * 32 + 257, ' ');
   }
   bool oversized = false;
@@ -427,6 +454,9 @@ void full_head(i::Backend &backend, const std::filesystem::path &manifest,
   };
   write(text);
   const auto prepared = q::prepare_weight_source(manifest, true, {}, copy);
+  const auto explicit_wins = q::prepare_weight_source(manifest, true, {}, copy, true);
+  require(explicit_wins.draft_head && explicit_wins.draft_head->specification == std::filesystem::absolute(copy).lexically_normal(),
+      "automatic head discovery replaced an explicitly selected head");
   write(text + "unexpected\n");
   bool refused = false;
   try { (void)q::load_prepared_draft_head(backend, prepared.roles, *prepared.draft_head); }
@@ -437,8 +467,9 @@ void full_head(i::Backend &backend, const std::filesystem::path &manifest,
   const auto mapping_path = scratch / "head-subset.ids";
   const auto write_mapping = [&](const std::string &identity) {
     std::ofstream output(mapping_path, std::ios::binary);
-    output << "hyle-draft-vocabulary-v1\n" << identity << '\n' << source.roles.geometry.vocabulary
-        << "\n0 " << source.roles.geometry.vocabulary / 2 << ' ' << source.roles.geometry.vocabulary - 1 << '\n';
+    output << "hyle-draft-vocabulary-v2\n" << identity << '\n' << source.roles.geometry.vocabulary
+        << "\nrecommended_drafts none\nhead original\n0 " << source.roles.geometry.vocabulary / 2 << ' '
+        << source.roles.geometry.vocabulary - 1 << '\n';
     require(bool(output), "cannot write prepared-head subset metadata");
   };
   auto foreign_identity = source.roles.identity;

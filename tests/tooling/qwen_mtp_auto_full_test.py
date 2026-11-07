@@ -16,7 +16,6 @@ def main():
     args.output.mkdir(parents=True)
     for label, inputs in (('q8', args.q8_inputs), ('q4', args.q4_inputs)):
         assert not (inputs / 'mtp-draft-vocabulary.ids').exists()
-        assert not (inputs / 'mtp-draft-vocabulary-k3.ids').exists()
         reports = {}
         for mode, flags in (
             ('auto', []),
@@ -26,6 +25,12 @@ def main():
             ('auto-zero', ['--mtp-max-drafts', '0']),
             ('off-zero', ['--mtp', 'off', '--mtp-max-drafts', '0']),
             ('on-zero', ['--mtp', 'on', '--mtp-max-drafts', '0']),
+            ('commands-auto', ['--replay', 'commands']),
+            ('commands-k1', ['--replay', 'commands', '--mtp', 'on', '--mtp-max-drafts', '1',
+                             '--mtp-draft-head', 'original', '--mtp-draft-vocabulary', 'full']),
+            ('auto-k4', ['--mtp-max-drafts', '4']),
+            ('explicit-k4', ['--mtp', 'on', '--mtp-max-drafts', '4',
+                             '--mtp-draft-head', 'original', '--mtp-draft-vocabulary', 'full']),
             ('random-auto', ['--sampling', 'random', '--seed', '42']),
             ('random-off', ['--sampling', 'random', '--seed', '42', '--mtp', 'off']),
         ):
@@ -39,21 +44,30 @@ def main():
             if result.returncode:
                 raise RuntimeError(f'{label}/{mode}: see {folder}')
             raw = json.loads(result.stdout.decode('utf-8-sig'))
-            expected = mode in ('auto', 'k1', 'on-zero')
-            reasons = {'auto': ('original_projection', 'default_k1'),
+            expected = mode in ('auto', 'k1', 'on-zero', 'commands-auto', 'commands-k1', 'auto-k4', 'explicit-k4')
+            reasons = {'auto': ('original_projection', 'configured_default'),
                        'k1': ('explicit_on', 'explicit'), 'off': ('explicit_off', 'disabled'),
                        'auto-zero': ('drafting_disabled', 'disabled'),
                        'off-zero': ('explicit_off', 'disabled'),
                        'on-zero': ('explicit_on', 'explicit'),
+                       'commands-auto': ('original_projection', 'configured_default'),
+                       'commands-k1': ('explicit_on', 'explicit'),
+                       'auto-k4': ('original_projection', 'explicit'),
+                       'explicit-k4': ('explicit_on', 'explicit'),
                        'random-auto': ('sampling_or_draft_threshold', 'disabled'),
                        'random-off': ('explicit_off', 'disabled')}
             assert (raw['mtp_selection_reason'], raw['mtp_depth_source']) == reasons[mode], (label, mode)
-            assert raw['mtp'] == expected and raw['mtp_max_drafts'] == int(mode in ('auto', 'k1')), (label, mode)
+            expected_depth = 4 if mode in ('auto-k4', 'explicit-k4') else int(
+                mode in ('auto', 'k1', 'commands-auto', 'commands-k1'))
+            assert raw['mtp'] == expected and raw['mtp_max_drafts'] == expected_depth, (label, mode)
+            if mode in ('auto-k4', 'explicit-k4'):
+                assert raw['future_shape_hints'] == 0, (label, mode)
             if mode == 'on-zero': assert raw['draft_rounds'] == 0, (label, mode)
             assert raw['draft_vocabulary_rows'] == 0, (label, mode)
             assert raw['live_committed_versions'] == 0, (label, mode)
             reports[mode] = raw['sessions'][0]
-        for actual, reference in (('auto', 'k1'), ('auto-zero', 'off'), ('off-zero', 'off'),
+        for actual, reference in (('auto', 'k1'), ('commands-auto', 'commands-k1'), ('auto-k4', 'explicit-k4'),
+                                  ('auto-zero', 'off'), ('off-zero', 'off'),
                                   ('random-auto', 'random-off')):
             assert reports[actual]['result']['generated_ids'] == reports[reference]['result']['generated_ids'], (label, actual)
             assert reports[actual]['ledger'] == reports[reference]['ledger'], (label, actual)

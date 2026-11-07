@@ -76,7 +76,8 @@ class RecordedCalibration(unittest.TestCase):
         with patch.object(sys, 'argv', argv), patch.dict(sys.modules, {'transformers':None}), \
              patch.object(V.subprocess, 'run', side_effect=AssertionError('offline mode launched a subprocess')):
             V.main()
-        self.assertEqual(output.read_text().split()[3:], ['0','1','2','5'])
+        self.assertEqual(output.read_text().splitlines()[3:],
+                         ['recommended_drafts none', 'head original', '0 1 2 5'])
         self.assertIn('generated=6', (report / 'calibration.txt').read_text())
         with patch.object(sys, 'argv', argv), redirect_stderr(io.StringIO()):
             with self.assertRaises(SystemExit): V.main()
@@ -85,6 +86,25 @@ class RecordedCalibration(unittest.TestCase):
         folder = self.legacy(); output = self.work / 'selected.ids'
         argv = ['prepare', '--inputs', str(self.inputs), '--work-dir', str(self.work / 'report'), '--output', str(output),
                 '--calibration-run', str(folder), '--calibration-run', str(folder)]
+        with patch.object(sys, 'argv', argv), redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit): V.main()
+        self.assertFalse(output.exists())
+
+    def test_measured_recommendation_is_bound_to_the_source(self):
+        folder = self.legacy(); output = self.work / 'selected.ids'
+        argv = ['prepare', '--inputs', str(self.inputs), '--work-dir', str(self.work / 'report'),
+                '--output', str(output), '--rows', '4', '--recommended-drafts', '3',
+                '--calibration-run', str(folder)]
+        with patch.object(sys, 'argv', argv): V.main()
+        self.assertEqual(output.read_text().splitlines(),
+                         ['hyle-draft-vocabulary-v2', self.identity, '8',
+                          'recommended_drafts 3', 'head original', '0 1 2 5'])
+
+    def test_invalid_recommendation_does_not_publish_an_artifact(self):
+        folder = self.legacy(); output = self.work / 'selected.ids'
+        argv = ['prepare', '--inputs', str(self.inputs), '--work-dir', str(self.work / 'report'),
+                '--output', str(output), '--rows', '4', '--recommended-drafts', '0',
+                '--calibration-run', str(folder)]
         with patch.object(sys, 'argv', argv), redirect_stderr(io.StringIO()):
             with self.assertRaises(SystemExit): V.main()
         self.assertFalse(output.exists())
