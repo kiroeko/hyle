@@ -42,6 +42,15 @@ inline void qualification_matrix() {
       !q::DeviceRelayCapabilities{.backend = q::BackendKind::kCuda, .sampled_mtp = true}.eligible() &&
       !q::DeviceRelayCapabilities{.backend = q::BackendKind::kCuda, .logits_modifiers = true}.eligible(),
       "ordinary device relay escaped its separate static sampler/backend boundary");
+  const q::PrefillRelayFacts prefill{q::BackendKind::kCuda, false, false, false, 2, true};
+  require(prefill.eligible() &&
+      !q::PrefillRelayFacts{q::BackendKind::kCpu, false, false, false, 2, true}.eligible() &&
+      !q::PrefillRelayFacts{q::BackendKind::kCuda, true, false, false, 2, true}.eligible() &&
+      !q::PrefillRelayFacts{q::BackendKind::kCuda, false, true, false, 2, true}.eligible() &&
+      !q::PrefillRelayFacts{q::BackendKind::kCuda, false, false, true, 2, true}.eligible() &&
+      !q::PrefillRelayFacts{q::BackendKind::kCuda, false, false, false, 1, true}.eligible() &&
+      !q::PrefillRelayFacts{q::BackendKind::kCuda, false, false, false, 2, false}.eligible(),
+      "prefill relay cold eligibility escaped its original model/backend/sampler boundary");
 }
 
 inline void cold_capacity_fallback(const std::filesystem::path &input, q::BackendKind kind) {
@@ -55,6 +64,8 @@ inline void cold_capacity_fallback(const std::filesystem::path &input, q::Backen
       q::ReplayPolicy::kCommands, SIZE_MAX, sampler, 0, {.primary = kind});
   q::Model fallback(std::move(fallback_source), geometry, 16, plan, {}, false,
       q::ReplayPolicy::kCommands, SIZE_MAX, sampler, 0, {.primary = kind});
+  require(!normal.supports_prefill_relay(0) && !fallback.supports_prefill_relay(0),
+      "random sampler incorrectly qualified for the ordinary prefill relay");
   const std::array rows{std::size_t{1}};
   for (auto *model : {&normal, &fallback}) {
     require(model->prepare_family(rows), "ordinary fallback fixture lost its original finite Family");

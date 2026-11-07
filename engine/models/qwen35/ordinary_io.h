@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 #include "execution_mode.h"
@@ -65,6 +66,21 @@ struct DeviceRelayCapabilities final {
     return hyle::inference::RouteReason::kNone;
   }
   constexpr bool eligible() const noexcept { return refusal_reason() == hyle::inference::RouteReason::kNone; }
+};
+
+// Cold eligibility for this model's ordinary prefill relay. This is separate
+// from decode relay: future implementations may support either one alone.
+// Per-episode shape, tracing, Source and resource checks remain at execution.
+struct PrefillRelayFacts final {
+  hyle::inference::BackendKind backend = hyle::inference::BackendKind::kDefault;
+  bool cpu_assist = false, scheduler = false, draft_cache = false;
+  std::size_t in_flight_batches = 0;
+  bool unmodified_greedy = false;
+
+  constexpr bool eligible() const noexcept {
+    return backend == hyle::inference::BackendKind::kCuda && !cpu_assist && !scheduler &&
+        !draft_cache && in_flight_batches >= 2 && unmodified_greedy;
+  }
 };
 
 } // namespace qwen35

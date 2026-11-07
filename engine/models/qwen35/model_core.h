@@ -731,8 +731,9 @@ private:
   bool preparation_started_ = false;
   bool greedy_chain_available_ = false;
   bool draft_packet_available_ = false;
-  // Immutable per-sampler relay admission, resolved once after backend setup.
-  std::vector<std::uint8_t> device_relay_by_sampling_;
+  // Immutable per-sampler route eligibility, resolved once after backend setup.
+  struct RelayPlan final { bool decode = false, prefill = false; };
+  std::vector<RelayPlan> relay_by_sampling_;
   struct ColdFamilyOutcome final {
     std::optional<FamilyBuildResult> result;
     std::exception_ptr error;
@@ -934,7 +935,10 @@ public:
   const PreparedSampling &sampling_configuration(std::size_t index = 0) const { return resources_->sampling_configuration(index); }
   std::size_t sampling_configuration_count() const noexcept { return resources_->sampling_configurations.size(); }
   bool supports_device_relay(std::size_t sampling_index) const {
-    return device_relay_by_sampling_.at(sampling_index) != 0;
+    return relay_by_sampling_.at(sampling_index).decode;
+  }
+  bool supports_prefill_relay(std::size_t sampling_index) const {
+    return relay_by_sampling_.at(sampling_index).prefill;
   }
   std::size_t sampling_index(const PreparedSampling *value) const { return resources_->sampling_index(value); }
   bool retains_sampling_frontier() const noexcept {
@@ -1114,11 +1118,15 @@ public:
                                                           std::chrono::seconds(10), &status);
       check(status);
     }
-    device_relay_by_sampling_.reserve(resources_->sampling_configurations.size());
+    relay_by_sampling_.reserve(resources_->sampling_configurations.size());
     for (const auto &prepared : resources_->sampling_configurations) {
       const auto &sampling = prepared->configuration;
-      device_relay_by_sampling_.push_back(DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(),
-          bool(scheduler), sampling.enabled && cache_plan.draft_cache, !sampling.modifiers.empty()}.eligible());
+      relay_by_sampling_.push_back({
+          DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
+              sampling.enabled && cache_plan.draft_cache, !sampling.modifiers.empty()}.eligible(),
+          PrefillRelayFacts{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
+              cache_plan.draft_cache, cache_plan.in_flight_batches,
+              !sampling.enabled && sampling.modifiers.empty()}.eligible()});
     }
     const auto weight_load_start = Clock::now();
     auto loading = load_selected_weight_roles(source_roles, execution, weights, weight_pools, ffn_placement, allocation_budget);
@@ -2549,10 +2557,7 @@ public:
     }
     const auto planned_slot_uses = shape_plan.uses({requests, tokens, role, completion, sampling_index, false, packing});
     const bool fixed_prefill_capture = packs_prefill(packing) && replay_policy == ReplayPolicy::kAuto &&
-        execution.kind() == BackendKind::kCuda && !execution.has_cpu_assist() && !scheduler &&
-        cache_plan.in_flight_batches >= 2 &&
-        !cache_plan.draft_cache && role == GraphRole::kText && tokens == bounded_prefill_rows &&
-        !selected_sampler.enabled && selected_sampler.modifiers.empty();
+        supports_prefill_relay(sampling_index) && role == GraphRole::kText && tokens == bounded_prefill_rows;
     std::array<g::ReplayMode, execution_slot_count> replay_modes{};
     for (std::size_t slot = 0; slot < physical_slots; ++slot)
       // Fixed full chunks retain qualified captures across changing prefixes.
@@ -2685,10 +2690,8 @@ public:
     for (const auto &shape : shapes) {
       const std::array rows{shape.tokens};
       prepare_prefill_execution(rows, shape.completion, shape.sampling_index, 1, shape.role);
-      const auto &sampling = sampling_configuration(shape.sampling_index).configuration;
-      if (shape.tokens == bounded_prefill_rows && shape.role == GraphRole::kText && !cache_plan.draft_cache && !sampling.enabled &&
-          sampling.modifiers.empty() && execution.kind() == BackendKind::kCuda &&
-          !execution.has_cpu_assist() && cache_plan.in_flight_batches >= 2 && !scheduler) {
+      if (shape.tokens == bounded_prefill_rows && shape.role == GraphRole::kText &&
+          supports_prefill_relay(shape.sampling_index)) {
         auto &relay = prepare_child(shape.tokens, false, 1, shape.role, shape.completion,
             shape.sampling_index, true, RowPacking::kPrefill);
         check(relay.slots.initialize_all_with([&] { return slot_initialization(relay); }));

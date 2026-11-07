@@ -1800,12 +1800,9 @@ struct SynchronousGenerationStepAdapter final {
   }
   bool prefill_pipeline() const {
     if (generation || !packed_prefill || role != GraphRole::kText || calls.size() != 1 ||
-        model.cache_plan.draft_cache || model.scheduler || !model.execution_workspace ||
-        model.execution.kind() != BackendKind::kCuda || model.execution.has_cpu_assist() ||
-        model.cache_plan.in_flight_batches < 2 || calls[0].ids().size() != model.bounded_prefill_rows ||
+        !model.execution_workspace || calls[0].ids().size() != model.bounded_prefill_rows ||
         (trace_states && !calls[0].request->trace.empty())) return false;
-    const auto &sampling = calls[0].request->session->sampling_configuration().configuration;
-    return !sampling.enabled && sampling.modifiers.empty();
+    return model.supports_prefill_relay(calls[0].request->session->sampling_configuration().index);
   }
   void submit(Position position) {
     auto &step = position == Position::kCurrent ? *model.active_step : *model.successor_step;

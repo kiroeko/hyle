@@ -21,6 +21,8 @@ inline std::unique_ptr<q::Model> make_model(const std::filesystem::path &input, 
       false, q::ReplayPolicy::kCommands, SIZE_MAX, q::Model::Sampling{}, 0,
       q::BackendSelection{.primary = q::BackendKind::kCuda});
   auto &model = *owner;
+  require(model.supports_prefill_relay(0) == (depth >= 2),
+      "prefill relay cold plan does not reflect the actual in-flight capacity");
   const std::array rows{std::size_t{2}};
   for (const auto completion : {q::TextCompletion::kStateOnly, q::TextCompletion::kEmitNext}) {
     require(model.prepare_prefill_family(rows, completion), "prefill handoff lost packed math");
