@@ -2,9 +2,10 @@
 
 **[Official website / 官网 →](https://axiomate.net/hyle)**
 
-**HYLE (HYbrid LEvels)** is a pre-release C++23 inference engine for CPU, one GPU, or CPU + one GPU.
-Its foundation libraries can also be built, installed and used independently. Windows, Linux and
-macOS are supported; available compute backends are CPU, CUDA, Apple Metal and Vulkan.
+**HYLE (HYbrid LEvels)** is a pre-release C++23 inference engine for a single machine.
+Its foundation libraries can also be built, installed and used independently. Builds target Windows,
+Linux and macOS; backend components include CPU, CUDA, Apple Metal and Vulkan. Actual model,
+format and backend coverage depends on the configuration and validation described below.
 
 HYLE 是面向单机的推理引擎。推理引擎内核负责已接纳工作的准备、模型计算、生成与状态推进；
 引擎的外围部分负责模型制品、请求、会话、调度和结果交付。内核包含模型专属实现，并使用可独立构建的
