@@ -166,17 +166,21 @@ Q5_K 的行复制、1～4行投影与原ID映射已用合成数据验证；本�
 可用于K1与多草稿；完整target head与embedding继续保留。编码行副本目前只支持CUDA，其它后端跳过自动词表并拒绝显式编码词表。
 显式文件遇到随机、modifier、非零阈值或不支持的权重会报错。
 
-准备阶段也可用本地模型生成独立校准语料，默认选32768行；输出到新文件后可显式指定，或替换准备目录中的自动词表：
+准备阶段可指定语言偏好，例如 `prepare.py ... --mtp --draft-languages zh,en`，使用本地 tokenizer 的中英和共享代码提示选择自动词表；默认行数仍为原词表的一半，可用 `--draft-rows` 调整。未指定语言时沿用原有提示。此方法只统计提示中的 token，不执行模型。
+
+也可用本地模型生成独立校准语料，按生成内容选行；例如为中英文和共享代码生成词表，默认选32768行：
 
 ```powershell
-python scripts/prepare-mtp-draft-vocabulary.py --hyle <hyle.exe> --inputs <准备目录> --tokenizer-dir <本地tokenizer目录> --work-dir .scratch/draft-calibration --output <准备目录>/mtp-draft-vocabulary.ids
+python scripts/prepare-mtp-draft-vocabulary.py --hyle <hyle.exe> --inputs <准备目录> --tokenizer-dir <本地tokenizer目录> --languages zh,en --work-dir .scratch/draft-calibration --output .scratch/draft-vocabulary-zh-en.ids
+hyle --inputs <准备目录> --backend cuda --mtp on --mtp-draft-vocabulary .scratch/draft-vocabulary-zh-en.ids --schedule <自然请求文件>
 ```
 
-该工具只用本地文件，固定24个独立提示、普通greedy各生成至多256个token，只统计生成的ID。
+该工具只用本地文件；不指定语言时使用24个独立提示，指定语言时使用对应提示和共享代码提示。内置 `ar,de,en,es,fr,hu,ja,ko,ru,th,vi,zh`，可用逗号选择多个语言，其中 `hu` 是匈牙利语。普通greedy每个提示最多生成256个token，只统计生成的ID；指定语言时优先保留本地 tokenizer 的特殊 token，行数不足时按原 ID 选取。
 按频次选行，未出现的ID按原ID升序补齐；不使用八轮验收负载。校准在启动之前单独运行，
 原始输出保留在新建的work目录，不覆盖已有结果。没有准备文件的模型不会在启动时自行校准。
 也可用重复的 `--calibration-run DIR` 复用同一source的已有普通greedy校准；该模式不启动GPU，也不需要tokenizer。
 支持本工具的校准目录，以及含train／validation划分的已归档生成目录；只导入train，核对源身份、原始ID和会话退休。
+对带分组的已归档语料指定 `--languages zh,en` 时，只统计对应语言和 `code` 组；每种指定语言都需要有训练样本。自备语料也可使用其他语言标签，并用 `--languages` 选择。无分组的旧校准目录不能按语言过滤。离线复用没有 tokenizer，因此不额外推断特殊 token。
 `--rows N` 可选任意非零且不超过原词表的行数，选择次序保持不变。
 如果已在目标负载上确认 K3 合适，可以在生成时指定 `--recommended-drafts 3`；
 该工具不会自动评测或推断最佳草稿数。没有指定时制品不带推荐，默认采用 K1。

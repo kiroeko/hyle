@@ -21,10 +21,12 @@ import sys
 
 # Shared with local input preparation; importing this helper never executes a model.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "engine/models/qwen35"))
-from draft_vocabulary_preparation import PROMPTS, selected_ids, write_vocabulary
+from draft_vocabulary_preparation import LANGUAGES, calibration_prompts, language_preferences, selected_ids, write_vocabulary
 
 
-def recorded_counts(folder: Path, identity: str, vocabulary: int) -> tuple[Counter[int], int]:
+def recorded_counts(folder: Path, identity: str, vocabulary: int,
+                    languages: frozenset[str] | None = None,
+                    groups_seen: set[str] | None = None) -> tuple[Counter[int], int]:
     """Read source-bound ordinary generations; mixed corpora import train only."""
     records = folder / "prompts.tsv"
     prompts: list[tuple[Path, str | None]] = []
@@ -39,20 +41,26 @@ def recorded_counts(folder: Path, identity: str, vocabulary: int) -> tuple[Count
                 raise ValueError("unknown recorded corpus split")
             if row["split"] != "train":
                 continue
-            if not row["index"].isdigit() or int(row["index"]) < 1 or not re.fullmatch(r"[A-Za-z0-9_]+", row["group"]):
+            if languages is not None and row["group"].lower() not in languages and row["group"].lower() != "code":
+                continue
+            if not row["index"].isdigit() or int(row["index"]) < 1 or not re.fullmatch(r"[A-Za-z0-9_-]+", row["group"]):
                 raise ValueError("invalid recorded training path")
             index = int(row["index"])
             if index in seen or not row["prompt"]:
                 raise ValueError("duplicate or empty recorded training prompt")
             seen.add(index)
             prompts.append((folder / f'train-{index:02}-{row["group"]}', row["prompt"]))
+            if groups_seen is not None:
+                groups_seen.add(row["group"].lower())
     else:
+        if languages is not None:
+            raise ValueError("language selection requires a recorded corpus with group labels")
         summary = (folder / "calibration.txt").read_text(encoding="utf-8")
         if f"source={identity}" not in summary.splitlines():
             raise ValueError("recorded calibration source identity differs")
         prompts = [(path, None) for path in sorted(folder.iterdir())
                    if path.is_dir() and re.fullmatch(r"prompt[0-9]+", path.name)]
-    if not prompts:
+    if not prompts and languages is None:
         raise ValueError("recorded calibration has no training prompts")
     counts: Counter[int] = Counter()
     for path, prompt in prompts:
@@ -81,6 +89,8 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--rows", type=int, default=32768)
     parser.add_argument("--tokens", type=int, default=256)
+    parser.add_argument("--languages", type=language_preferences,
+                        help="comma-separated local language profiles, e.g. zh,en; code prompts are shared")
     parser.add_argument("--recommended-drafts", type=int,
                         help="optional measured automatic draft depth for this source")
     parser.add_argument("--calibration-run", type=Path, action="append", default=[],
@@ -94,6 +104,8 @@ def main() -> None:
         parser.error("recommended drafts must be a positive 64-bit count")
     if len(set(args.calibration_run)) != len(args.calibration_run):
         parser.error("the same calibration run cannot be counted twice")
+    if not args.calibration_run and args.languages is not None and args.languages - LANGUAGES:
+        parser.error("unsupported built-in language profiles: " + ', '.join(sorted(args.languages - LANGUAGES)))
     if not args.calibration_run and (args.hyle is None or args.tokenizer_dir is None or
                                     not args.hyle.is_file() or not args.tokenizer_dir.is_dir()):
         parser.error("existing local executable and tokenizer directory required")
@@ -110,10 +122,16 @@ def main() -> None:
     if args.calibration_run:
         counts: Counter[int] = Counter()
         prompts = 0
+        groups_seen: set[str] = set()
         for path in args.calibration_run:
-            current, count = recorded_counts(path, identity, vocabulary)
+            current, count = recorded_counts(path, identity, vocabulary, args.languages, groups_seen)
             counts.update(current)
             prompts += count
+        missing = args.languages - groups_seen if args.languages is not None else frozenset()
+        if missing:
+            parser.error("recorded calibration has no training examples for: " + ', '.join(sorted(missing)))
+        if not prompts:
+            parser.error("recorded calibration has no training prompts in the selected languages")
         selected = selected_ids(counts, vocabulary, args.rows)
         args.work_dir.mkdir(parents=True)
         args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -122,6 +140,8 @@ def main() -> None:
         summary = (f"source={identity}\nprompts={prompts}; generated={sum(counts.values())}; distinct={len(counts)}\n"
                    f"rows={len(selected)}; generated-frequency descending; ties=original ID ascending\n"
                    "Offline reuse only; validation split ignored; no executable, tokenizer or GPU was invoked.\n")
+        if args.languages is not None:
+            summary += 'languages=' + ','.join(sorted(args.languages)) + '; shared=code\n'
         (args.work_dir / "calibration.txt").write_text(summary, encoding="utf-8")
         print(summary, flush=True)
         return
@@ -132,7 +152,8 @@ def main() -> None:
     tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_dir, local_files_only=True, trust_remote_code=False)
     args.work_dir.mkdir(parents=True)
     counts: Counter[int] = Counter()
-    for index, prompt in enumerate(PROMPTS, 1):
+    prompts = calibration_prompts(args.languages)
+    for index, prompt in enumerate(prompts, 1):
         folder = args.work_dir / f"prompt{index:02}"
         folder.mkdir()
         text = tokenizer.apply_chat_template([dict(role="user", content=prompt)], tokenize=False,
@@ -152,20 +173,29 @@ def main() -> None:
         if result.returncode:
             raise RuntimeError(f"calibration failed: {folder}")
         raw = json.loads((folder / "stdout.log").read_text(encoding="utf-8"))
+        if (raw.get("source_id") != identity or raw.get("sampling") != "greedy" or
+                raw.get("mtp_max_drafts") != 0 or raw.get("live_committed_versions") != 0 or
+                len(raw.get("sessions", [])) != 1):
+            raise ValueError("calibration requires the matching retired ordinary greedy source")
         generated = raw["sessions"][0]["result"]["generated_ids"]
         if not generated or any(not 0 <= token < vocabulary for token in generated):
             raise ValueError("invalid model-generated calibration IDs")
         counts.update(generated)
         (folder / "generated.ids").write_text(" ".join(map(str, generated)) + "\n", encoding="utf-8")
         (folder / "generated.txt").write_text(tokenizer.decode(generated), encoding="utf-8")
-        print(f"calibration {index}/{len(PROMPTS)}: generated={len(generated)}, distinct={len(counts)}", flush=True)
-    selected = selected_ids(counts, vocabulary, args.rows)
+        print(f"calibration {index}/{len(prompts)}: generated={len(generated)}, distinct={len(counts)}", flush=True)
+    required = (frozenset(sorted(set(tokenizer.all_special_ids))[:args.rows])
+                if args.languages is not None else frozenset())
+    selected = selected_ids(counts, vocabulary, args.rows, required)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("x", encoding="utf-8", newline="\n") as output:
         write_vocabulary(output, identity, vocabulary, sorted(selected), args.recommended_drafts)
-    summary = (f"source={identity}\nprompts={len(PROMPTS)}; generated={sum(counts.values())}; distinct={len(counts)}\n"
-               f"rows={len(selected)}; generated-frequency descending; ties=original ID ascending\n"
+    priority = "special IDs first; " if args.languages is not None else ""
+    summary = (f"source={identity}\nprompts={len(prompts)}; generated={sum(counts.values())}; distinct={len(counts)}\n"
+               f"rows={len(selected)}; {priority}generated-frequency descending; ties=original ID ascending\n"
                "Only generated output IDs were counted; no benchmark prompts or outputs were used.\n")
+    if args.languages is not None:
+        summary += 'languages=' + ','.join(sorted(args.languages)) + '; shared=code\n'
     (args.work_dir / "calibration.txt").write_text(summary, encoding="utf-8")
     print(summary, flush=True)
 

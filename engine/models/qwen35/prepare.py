@@ -707,6 +707,8 @@ def main(argv=None) -> None:
                         help="prepare a source-bound draft subset automatically, from the local tokenizer, or not at all")
     parser.add_argument("--draft-rows", type=int,
                         help="optional tokenizer-selected draft row count; defaults to half the vocabulary")
+    parser.add_argument("--draft-languages", type=draft_vocabulary_preparation.language_preferences,
+                        help="comma-separated local draft-language profiles, e.g. zh,en")
     weight_source = parser.add_mutually_exclusive_group()
     weight_source.add_argument("--role-files", type=Path,
                         help="prepared fixed-source text role record; borrow original quantized files/ranges")
@@ -719,10 +721,13 @@ def main(argv=None) -> None:
     parser.add_argument("--kv-cache-dtype", choices=['bf16','e4m3fn'],
                         help="explicit BF16 KV omission or target E4M3FN KV with original K/V scales; NextN KV remains plain activation storage")
     args = parser.parse_args(argv)
-    if not args.mtp and (args.draft_vocabulary != 'auto' or args.draft_rows is not None):
+    if args.draft_languages is not None and args.draft_languages - draft_vocabulary_preparation.LANGUAGES:
+        parser.error("unsupported built-in language profiles: " + ', '.join(sorted(
+            args.draft_languages - draft_vocabulary_preparation.LANGUAGES)))
+    if not args.mtp and (args.draft_vocabulary != 'auto' or args.draft_rows is not None or args.draft_languages is not None):
         parser.error("draft vocabulary preparation requires --mtp")
-    if args.draft_vocabulary == 'none' and args.draft_rows is not None:
-        parser.error("--draft-rows cannot be used when draft vocabulary preparation is disabled")
+    if args.draft_vocabulary == 'none' and (args.draft_rows is not None or args.draft_languages is not None):
+        parser.error("--draft-rows and --draft-languages cannot be used when draft vocabulary preparation is disabled")
     if args.draft_rows is not None and args.draft_rows <= 0:
         parser.error("--draft-rows must be positive")
     if args.output.exists():
@@ -753,7 +758,8 @@ def main(argv=None) -> None:
     prompt = encoded["input_ids"]
     continuation = tokenizer.encode(args.continuation, add_special_tokens=False)
     draft_vocabulary = None
-    use_tokenizer_vocabulary = args.mtp and (args.draft_vocabulary == 'tokenizer' or args.draft_rows is not None)
+    use_tokenizer_vocabulary = args.mtp and (args.draft_vocabulary == 'tokenizer' or
+                                             args.draft_rows is not None or args.draft_languages is not None)
     if args.mtp and args.draft_vocabulary == 'auto' and role_receipt.get("source_representation") == "gguf_converted":
         model_geometry = role_receipt["geometry"]
         head = ("model.language_model.embed_tokens.weight" if model_geometry["tied_head"]
@@ -764,7 +770,7 @@ def main(argv=None) -> None:
         use_tokenizer_vocabulary = use_tokenizer_vocabulary or head_roles[0][2] not in ("F32", "F16", "BF16")
     if use_tokenizer_vocabulary:
         ids, fingerprint = draft_vocabulary_preparation.tokenizer_default_ids(
-            tokenizer, role_receipt["geometry"]["vocabulary"], args.draft_rows)
+            tokenizer, role_receipt["geometry"]["vocabulary"], args.draft_rows, args.draft_languages)
         draft_vocabulary = (ids, fingerprint)
     args.output.mkdir(parents=True)
     with (args.output / "weights.tsv").open("w", encoding="utf-8", newline="\n") as stream:
@@ -783,6 +789,8 @@ def main(argv=None) -> None:
     if draft_vocabulary is not None:
         receipt["draft_vocabulary"] = dict(rows=len(draft_vocabulary[0]),
             tokenizer_selection_sha256=draft_vocabulary[1], selection="tokenizer_prompts_and_special_ids")
+        if args.draft_languages is not None:
+            receipt["draft_vocabulary"]["languages"] = sorted(args.draft_languages)
     (args.output / "input.json").write_text(json.dumps(receipt, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     expected = geometry.role_shapes(role_receipt["geometry"])
     summary = {"text_tensors":sum(not n.startswith("mtp.") for n in expected),
