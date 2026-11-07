@@ -886,13 +886,6 @@ public:
   const FfnPlacement ffn_placement;
   std::size_t host_weight_bytes = 0, device_weight_bytes = 0;
   std::size_t physical_text_roles = 0, physical_mtp_roles = 0, canonical_weight_bytes = 0;
-  inference::RouteReason mtp_selection_reason = inference::RouteReason::kNotConfigured;
-  inference::RouteReason mtp_depth_source = inference::RouteReason::kNotConfigured;
-  inference::RouteReason draft_vocabulary_selection_reason = inference::RouteReason::kNotConfigured;
-  inference::RouteReason bounded_generation_plan_reason = inference::RouteReason::kNotConfigured;
-  inference::RouteReason decode_overlap_plan_reason = inference::RouteReason::kNotConfigured;
-  inference::RouteReason device_verification_plan_reason = inference::RouteReason::kNotConfigured;
-  inference::RouteReason overlap_depth_plan_reason = inference::RouteReason::kNotConfigured;
   std::size_t ct_channel_groups = 0, ct_local_groups = 0, ct_block_groups = 0, omitted_cache_roles = 0;
   std::size_t fp8_weight_groups = 0, fp8_import_peak_bytes = 0;
   bool float8_weight_policy = false;
@@ -1245,12 +1238,6 @@ public:
   WeightInventoryFacts weight_inventory_facts() const noexcept {
     const bool cache_float8 = resources_->cache_policy == prepared::CachePolicy::kFloat8OriginalCalibration;
     return {.text_tensors = physical_text_roles, .mtp_tensors = physical_mtp_roles,
-        .mtp_selection_reason = mtp_selection_reason, .mtp_depth_source = mtp_depth_source,
-        .draft_vocabulary_selection_reason = draft_vocabulary_selection_reason,
-        .bounded_generation_plan_reason = bounded_generation_plan_reason,
-        .decode_overlap_plan_reason = decode_overlap_plan_reason,
-        .device_verification_plan_reason = device_verification_plan_reason,
-        .overlap_depth_plan_reason = overlap_depth_plan_reason,
         .float8_weight_policy = float8_weight_policy, .canonical_tensors = weights.size(),
         .canonical_bytes = canonical_weight_bytes, .fp8_groups = fp8_weight_groups,
         .fp8_import_peak_bytes = fp8_import_peak_bytes, .fp8_reader = prepared::fp8_reader,
@@ -7621,7 +7608,8 @@ void write_request_sampling(std::ostream &out, const Model &model, const Generat
 
 void print_generation_request(const Model &model, const GenerationRequest &request, std::size_t steps,
                        Clock::time_point startup, Clock::time_point ready,
-                       std::array<std::size_t, 3> packed_prefill_offset = {}) {
+                       std::array<std::size_t, 3> packed_prefill_offset = {},
+                       const hyle::engine::reporting::RouteDecisionFacts &routes = {}) {
   const auto &prompt = request.prompt;
   const auto &generated = request.progress.generated;
   const auto &rounds = request.rounds;
@@ -7650,7 +7638,7 @@ void print_generation_request(const Model &model, const GenerationRequest &reque
   const auto session_seconds = std::chrono::duration<double>(endpoint - prefill_start).count();
   std::cout << std::setprecision(17)
             << "{\"source_id\":\"" << model.source_identity << "\",\"score_dtype\":\"F32\",\"score_policy\":\"" << model.score_precision_policy()
-            << "\",\"mtp\":" << (model.cache_plan.draft_cache ? "true" : "false") << hyle::engine::reporting::qwen35_weight_inventory(model.weight_inventory_facts())
+            << "\",\"mtp\":" << (model.cache_plan.draft_cache ? "true" : "false") << hyle::engine::reporting::qwen35_weight_inventory(model.weight_inventory_facts(), routes)
             << model.cache_report(packed_prefill_offset) << ",\"visible_tokens\":" << request.visible_tokens;
   write_request_sampling(std::cout, model, request);
   if (model.cache_plan.draft_cache) std::cout << ",\"draft_frontier\":" << request.draft_frontier
@@ -7825,7 +7813,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     std::span<const std::size_t> sampling_indices = {}, std::span<const inference::RequestStopPolicy> stop_policies = {},
     std::size_t max_prefill_rows = SIZE_MAX, bool warmup_planned_shapes = false,
     bool decode_overlap = false, std::span<const inference::LogitsInputProvider> logits_providers = {},
-    BatchObserver &&batch_observer = nullptr, bool first_turn_only = false) {
+    BatchObserver &&batch_observer = nullptr, bool first_turn_only = false,
+    const hyle::engine::reporting::RouteDecisionFacts &routes = {}) {
   constexpr bool mtp = Mode == GenerationMode::kMtp;
   const auto cold_prepare_begin = Clock::now();
   std::cerr << "cold_prepare_begin\n";
@@ -8543,7 +8532,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   const auto graph_calls = cache::add(cache::add(cache::add(actual_prefill_calls, actual_decode_calls), restored.graph_calls),
       cache::add(model.frontier_sampling_graph_calls, cache::add(model.draft_program_graph_calls, model.prefix_decision_graph_calls)));
   std::cout << std::setprecision(17) << "{\"source_id\":\"" << model.source_identity << "\",\"score_dtype\":\"F32\",\"score_policy\":\"" << model.score_precision_policy()
-      << "\",\"mtp\":" << (model.cache_plan.draft_cache ? "true" : "false") << hyle::engine::reporting::qwen35_weight_inventory(model.weight_inventory_facts())
+      << "\",\"mtp\":" << (model.cache_plan.draft_cache ? "true" : "false") << hyle::engine::reporting::qwen35_weight_inventory(model.weight_inventory_facts(), routes)
       << ",\"session_count\":" << requests.size() << ",\"turn_count\":" << total_turns << ",\"active_sequences\":" << model.cache_plan.active_sequences << ",\"max_sessions\":" << model.cache_plan.resident_sessions
       << ",\"decode_overlap\":" << (decode_overlap ? "true" : "false")
       << ",\"decode_overlap_available\":" << (decode_overlap && !continuation.unavailable ? "true" : "false")
@@ -8618,7 +8607,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     auto &request = requests[i]; std::size_t quota = 0;
     for (const auto &turn : request.progress.turns()) quota = cache::add(quota, turn.max_outputs);
     std::cout << (i ? "," : "") << "{\"session_id\":\"" << request.id << "\",\"result\":";
-    print_generation_request(model, request, quota, startup, ready, packed_prefill_offset);
+    print_generation_request(model, request, quota, startup, ready, packed_prefill_offset, routes);
     std::cout << ",\"restore_count\":" << request.restore_count << ",\"idle_evictions\":" << request.idle_evictions
         << ",\"checkpoint_resume_hits\":" << request.checkpoint_resume_hits
         << ",\"checkpoint_resume_misses\":" << request.checkpoint_resume_misses << ",\"ledger\":[";
@@ -9113,21 +9102,19 @@ int qwen35::run(int argc, char **argv) {
         : qwen35::create_execution(geometry, selected_cache, cpu_ffn_layers, backend_selection);
     qwen35::Model model(std::move(execution), {}, std::move(weight_source), geometry, capacity,
         selected_cache, layer0_probe, progress, replay, cache_bytes, sampler, cpu_ffn_layers);
-    model.mtp_selection_reason = default_selection.reason;
-    model.mtp_depth_source = depth_selection.source;
-    model.draft_vocabulary_selection_reason = assets.vocabulary_reason;
-    model.bounded_generation_plan_reason = bounded_plan.reason;
-    model.decode_overlap_plan_reason = overlap_plan.reason;
-    model.device_verification_plan_reason = verification_plan.reason;
-    model.overlap_depth_plan_reason = overlap_depth_reason;
+    const hyle::engine::reporting::RouteDecisionFacts routes{
+        .mtp_selection_reason = default_selection.reason, .mtp_depth_source = depth_selection.source,
+        .draft_vocabulary_selection_reason = assets.vocabulary_reason,
+        .bounded_generation_plan_reason = bounded_plan.reason, .decode_overlap_plan_reason = overlap_plan.reason,
+        .device_verification_plan_reason = verification_plan.reason, .overlap_depth_plan_reason = overlap_depth_reason};
     model.configure_draft_policy({max_drafts});
     const auto constructed = qwen35::Clock::now();
     if (!trace.empty()) model.trace_routes = trace / "routes";
     if (natural_generation) {
       if (mtp_enabled) return qwen35::run_generation_sessions<qwen35::GenerationMode::kMtp>(model,
-          generation_schedules, trace, trace_states, startup, constructed, prefix_enabled, token_plans, {}, {}, max_prefill_rows, warmup_planned_shapes, overlap_selected, {}, nullptr, bounded_generation);
+          generation_schedules, trace, trace_states, startup, constructed, prefix_enabled, token_plans, {}, {}, max_prefill_rows, warmup_planned_shapes, overlap_selected, {}, nullptr, bounded_generation, routes);
       return qwen35::run_generation_sessions<qwen35::GenerationMode::kText>(model,
-          generation_schedules, trace, trace_states, startup, constructed, prefix_enabled, token_plans, {}, {}, max_prefill_rows, warmup_planned_shapes, overlap_selected, {}, nullptr, bounded_generation);
+          generation_schedules, trace, trace_states, startup, constructed, prefix_enabled, token_plans, {}, {}, max_prefill_rows, warmup_planned_shapes, overlap_selected, {}, nullptr, bounded_generation, routes);
     }
 
     // These owners are declared after Model, including on exception paths.
@@ -9757,7 +9744,7 @@ int qwen35::run(int argc, char **argv) {
         const auto &run = runs[s];
         const auto &phases = schedules[s].phases;
         std::cout << "{\"source_id\":\"" << model.source_identity << "\",\"score_dtype\":\"F32\",\"score_policy\":\"" << model.score_precision_policy()
-                  << '"' << hyle::engine::reporting::qwen35_weight_inventory(model.weight_inventory_facts()) << ",\"visible_tokens\":"
+                  << '"' << hyle::engine::reporting::qwen35_weight_inventory(model.weight_inventory_facts(), routes) << ",\"visible_tokens\":"
                   << run.visible_tokens << ",\"generated_ids\":[";
         for (std::size_t i = 0; i < run.generated.size(); ++i) std::cout << (i ? "," : "") << run.generated[i];
         std::cout << "],\"fixed_decode\":true,\"decode_input_ids\":[";
@@ -9823,7 +9810,7 @@ int qwen35::run(int argc, char **argv) {
           prefix_full_hits += run.prefix_full_hits; reused_tokens += run.reused_tokens;
         }
         std::cout << "{\"source_id\":\"" << model.source_identity << "\",\"score_dtype\":\"F32\",\"score_policy\":\"" << model.score_precision_policy()
-                  << '"' << hyle::engine::reporting::qwen35_weight_inventory(model.weight_inventory_facts()) << ",\"session_count\":" << runs.size()
+                  << '"' << hyle::engine::reporting::qwen35_weight_inventory(model.weight_inventory_facts(), routes) << ",\"session_count\":" << runs.size()
                   << ",\"execution\":\"equal_T_batched\",\"processed_tokens\":" << processed
                   << ",\"generated_tokens\":" << all_calls
                   << ",\"graph_participations\":" << graph_participations
@@ -9893,7 +9880,7 @@ int qwen35::run(int argc, char **argv) {
     const auto graph_calls = 1 + std::size_t(!extra.empty()) + consumed.size();
     std::cout << std::setprecision(17)
               << "{\"source_id\":\"" << model.source_identity << "\",\"score_dtype\":\"F32\",\"score_policy\":\"" << model.score_precision_policy()
-              << "\",\"mtp\":false" << hyle::engine::reporting::qwen35_weight_inventory(model.weight_inventory_facts()) << model.cache_report()
+              << "\",\"mtp\":false" << hyle::engine::reporting::qwen35_weight_inventory(model.weight_inventory_facts(), routes) << model.cache_report()
               << ",\"sampling_stream\":" << session->head->sampling.stream
               << ",\"sampling_draw_cursor\":" << session->head->sampling.draw
               << ",\"visible_tokens\":" << session->length() << ",\"generated_ids\":[";

@@ -50,9 +50,10 @@ int main(int argc, char **argv) {
   {
     WeightInventoryFacts inventory;
     inventory.text_tensors = 320; inventory.mtp_tensors = 15;
-    inventory.mtp_selection_reason = hyle::inference::RouteReason::kSelected;
+    hyle::engine::reporting::RouteDecisionFacts routes;
+    routes.mtp_selection_reason = hyle::inference::RouteReason::kSelected;
     inventory.draft_cache = true;
-    auto report = hyle::engine::reporting::qwen35_weight_inventory(inventory);
+    auto report = hyle::engine::reporting::qwen35_weight_inventory(inventory, routes);
     require(report.find("\"text_tensors\":320,\"mtp_tensors\":15") != std::string::npos);
     require(report.find("\"mtp_selection_reason\":\"selected\"") != std::string::npos);
     require(report.find("\"target_kv_cache_dtype\":\"BF16\",\"draft_kv_cache_dtype\":\"BF16\"") != std::string::npos);
@@ -62,7 +63,7 @@ int main(int argc, char **argv) {
     inventory.fp8_groups = 2; inventory.fp8_import_peak_bytes = 16;
     inventory.cache_float8 = true; inventory.cache_calibration_roles = 8;
     inventory.plain_cache_f16 = true;
-    report = hyle::engine::reporting::qwen35_weight_inventory(inventory);
+    report = hyle::engine::reporting::qwen35_weight_inventory(inventory, routes);
     require(report.find("\"canonical_weight_tensors\":4,\"canonical_weight_bytes\":64") != std::string::npos);
     require(report.find("\"reader\":\"test_reader\"") != std::string::npos);
     require(report.find("\"original_cache_calibration_roles\":8") != std::string::npos);

@@ -1,24 +1,37 @@
 #pragma once
 
 #include "../models/qwen35/weight_inventory.h"
+#include "../inference/route_reason.h"
 
 #include <string>
 
 namespace hyle::engine::reporting {
 
+// Reasons describe the outer driver's decisions; they are not model state.
+struct RouteDecisionFacts final {
+  inference::RouteReason mtp_selection_reason = inference::RouteReason::kNotConfigured;
+  inference::RouteReason mtp_depth_source = inference::RouteReason::kNotConfigured;
+  inference::RouteReason draft_vocabulary_selection_reason = inference::RouteReason::kNotConfigured;
+  inference::RouteReason bounded_generation_plan_reason = inference::RouteReason::kNotConfigured;
+  inference::RouteReason decode_overlap_plan_reason = inference::RouteReason::kNotConfigured;
+  inference::RouteReason device_verification_plan_reason = inference::RouteReason::kNotConfigured;
+  inference::RouteReason overlap_depth_plan_reason = inference::RouteReason::kNotConfigured;
+};
+
 // JSON fragment for the existing CLI report. The model supplies cold facts;
 // this formatting does not select a route or own model state.
-inline std::string qwen35_weight_inventory(const qwen35::WeightInventoryFacts &facts) {
+inline std::string qwen35_weight_inventory(const qwen35::WeightInventoryFacts &facts,
+    const RouteDecisionFacts &routes = {}) {
   using hyle::inference::route_reason_name;
   auto result = ",\"weight_count_scope\":\"selected_physical_roles\",\"text_tensors\":" +
       std::to_string(facts.text_tensors) + ",\"mtp_tensors\":" + std::to_string(facts.mtp_tensors);
-  result += ",\"mtp_selection_reason\":\"" + std::string(route_reason_name(facts.mtp_selection_reason)) +
-      "\",\"mtp_depth_source\":\"" + std::string(route_reason_name(facts.mtp_depth_source)) +
-      "\",\"draft_vocabulary_selection_reason\":\"" + std::string(route_reason_name(facts.draft_vocabulary_selection_reason)) +
-      "\",\"bounded_generation_plan_reason\":\"" + std::string(route_reason_name(facts.bounded_generation_plan_reason)) +
-      "\",\"decode_overlap_plan_reason\":\"" + std::string(route_reason_name(facts.decode_overlap_plan_reason)) +
-      "\",\"device_verification_plan_reason\":\"" + std::string(route_reason_name(facts.device_verification_plan_reason)) +
-      "\",\"overlap_depth_plan_reason\":\"" + std::string(route_reason_name(facts.overlap_depth_plan_reason)) + "\"";
+  result += ",\"mtp_selection_reason\":\"" + std::string(route_reason_name(routes.mtp_selection_reason)) +
+      "\",\"mtp_depth_source\":\"" + std::string(route_reason_name(routes.mtp_depth_source)) +
+      "\",\"draft_vocabulary_selection_reason\":\"" + std::string(route_reason_name(routes.draft_vocabulary_selection_reason)) +
+      "\",\"bounded_generation_plan_reason\":\"" + std::string(route_reason_name(routes.bounded_generation_plan_reason)) +
+      "\",\"decode_overlap_plan_reason\":\"" + std::string(route_reason_name(routes.decode_overlap_plan_reason)) +
+      "\",\"device_verification_plan_reason\":\"" + std::string(route_reason_name(routes.device_verification_plan_reason)) +
+      "\",\"overlap_depth_plan_reason\":\"" + std::string(route_reason_name(routes.overlap_depth_plan_reason)) + "\"";
   if (facts.float8_weight_policy) result += ",\"canonical_weight_tensors\":" + std::to_string(facts.canonical_tensors) +
       ",\"canonical_weight_bytes\":" + std::to_string(facts.canonical_bytes) +
       ",\"fp8_block128_groups\":" + std::to_string(facts.fp8_groups) +
