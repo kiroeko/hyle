@@ -10,7 +10,8 @@ namespace i = hyle::inference;
 namespace h = qwen_host_image_case;
 using h::require;
 
-inline std::unique_ptr<q::Model> make_model(const std::filesystem::path &input, std::size_t depth = 3) {
+inline std::unique_ptr<q::Model> make_model(const std::filesystem::path &input, std::size_t depth = 3,
+    q::ReplayPolicy replay = q::ReplayPolicy::kCommands) {
   auto weights = q::prepare_weight_source(input / "weights.tsv", false);
   const auto geometry = weights.roles.geometry;
   require(geometry.context_limit >= 16 && geometry.vocabulary >= 16 &&
@@ -18,7 +19,7 @@ inline std::unique_ptr<q::Model> make_model(const std::filesystem::path &input, 
   const auto plan = q::cache::plan(geometry, weights.cache_row_bytes, 16, 1, 2,
       q::recurrent_bytes(q::state_schema_for(geometry, 16), geometry), 1, 1, false, true, depth);
   auto owner = std::make_unique<q::Model>(std::move(weights), geometry, 16, plan, std::filesystem::path{},
-      false, q::ReplayPolicy::kCommands, SIZE_MAX, q::Model::Sampling{}, 0,
+      false, replay, SIZE_MAX, q::Model::Sampling{}, 0,
       q::BackendSelection{.primary = q::BackendKind::kCuda});
   auto &model = *owner;
   require(model.supports_prefill_relay(0) == (depth >= 2),
@@ -31,6 +32,7 @@ inline std::unique_ptr<q::Model> make_model(const std::filesystem::path &input, 
   model.bounded_prefill_rows = 2;
   model.freeze_shape_plan();
   model.prepare_shared_execution_workspace();
+  if (replay != q::ReplayPolicy::kCommands) (void)model.prepare_prefill_recordings(0);
   return owner;
 }
 
@@ -40,6 +42,7 @@ struct Result final {
   std::vector<q::GenerationCommitRecord> records;
   h::ImageBytes state;
   std::size_t successors = 0;
+  bool captured_short_tail_refused = false;
 };
 
 inline std::vector<std::vector<std::byte>> initialized_bytes(q::Model &model, const q::cache::State &head) {
@@ -89,6 +92,11 @@ inline Result journey(q::Model &model, bool continuous, Boundary boundary = Boun
   const q::cache::State *before_head = nullptr;
   std::uint64_t before_epoch = 0;
   const auto after_submit = [&] {
+    if (model.active_step && model.active_step->replay_route == q::g::ReplayRoute::kCaptured) {
+      require(!model.prefill_successor_slot(1, 2, q::GraphRole::kText, q::TextCompletion::kEmitNext, 0),
+          "captured full-row producer admitted a shorter physical tail");
+      result.captured_short_tail_refused = true;
+    }
     if (!model.successor_step || !model.successor_step->submitted) return;
     ++result.successors;
     require((!request.ledger->committed_count && !request.progress.input_consumed()) || boundary == Boundary::kNone,
@@ -165,12 +173,23 @@ inline int run(const std::filesystem::path &input, q::BackendKind backend) {
   const auto serial = journey(*serial_owner, false);
   auto owner = make_model(input);
   const auto continuous = journey(*owner, true);
+  auto captured_owner = make_model(input, 3, q::ReplayPolicy::kPreferCapture);
+  const auto captured = journey(*captured_owner, true);
+  require(captured.captured_short_tail_refused && captured.ids == serial.ids &&
+      captured.records.size() == serial.records.size() &&
+      h::same_boundary(serial.state.boundary, captured.state.boundary) &&
+      serial.state.layout == captured.state.layout && serial.state.total_bytes == captured.state.total_bytes &&
+      serial.state.payloads == captured.state.payloads,
+      "captured prefill did not refuse the short tail and preserve the serial state");
   require(serial.ids == continuous.ids && serial.records.size() == continuous.records.size(),
       "prefill handoff changed generated IDs or committed count");
   for (std::size_t index = 0; index < serial.records.size(); ++index) {
     const auto &a = serial.records[index], &b = continuous.records[index];
     require(a.same_result(b) && std::ranges::equal(a.ids(), b.ids()) &&
         std::ranges::equal(a.committed_ids(), b.committed_ids()), "prefill handoff changed an ordered record");
+    const auto &c = captured.records[index];
+    require(a.same_result(c) && std::ranges::equal(a.ids(), c.ids()) &&
+        std::ranges::equal(a.committed_ids(), c.committed_ids()), "captured prefill changed an ordered record");
   }
   require(h::same_boundary(serial.state.boundary, continuous.state.boundary) &&
       serial.state.layout == continuous.state.layout && serial.state.total_bytes == continuous.state.total_bytes &&
@@ -179,7 +198,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind backend) {
     auto interrupted = make_model(input);
     (void)journey(*interrupted, true, boundary);
   }
-  std::cout << "prefill-handoff PASS: seven chunks, three slots, partial tail, exact state/IDs/records, cancellation and host failure\n";
+  std::cout << "prefill-handoff PASS: seven chunks, three slots, captured short-tail refusal, exact state/IDs/records, cancellation and host failure\n";
   return 0;
 }
 } // namespace qwen_prefill_handoff_case

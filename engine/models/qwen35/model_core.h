@@ -4099,6 +4099,45 @@ public:
     return successor_step ? *successor_step : *active_step;
   }
 
+  // Inspect the actual prepared Phase and its original carrier; this only
+  // finds a capture candidate and does not grant submission or Source rights.
+  bool has_relay_successor_capture(const StepState *producer, const StepSources &source,
+      std::size_t requests, std::size_t outputs, GraphRole role, std::size_t sampling_index,
+      std::size_t slot, bool device_mtp) {
+    Phase *phase = producer ? producer->phase : nullptr;
+    if (device_mtp) {
+      if (requests != 1 || !source.mtp_device_choice)
+        throw std::logic_error("device successor lost its original K1 selection Source");
+      const auto found = phases.find({requests, outputs, role, TextCompletion::kEmitNext,
+          sampling_index, true, RowPacking::kRectangular});
+      if (found == phases.end()) return false;
+      phase = found->second.get();
+    }
+    if (!producer || !phase || !phase->imported_sources || phase->family->role != role ||
+        phase->family->completion != TextCompletion::kEmitNext ||
+        phase->family->requests != requests || slot >= phase->slots.size())
+      throw std::logic_error("successor lost its original imported Phase geometry");
+    auto &carrier = phase->slots[slot].carrier;
+    if (!carrier.initialized() || carrier.closing() || !carrier.retired()) return false;
+    auto *run = take(carrier.borrow());
+    return take(g::detail::ReplayAccess::has_capture_candidate(*run,
+        source.primary_output.reader_binding(phase->token_port)));
+  }
+
+  // A prefill successor can use only a prepared, idle original carrier with
+  // a replay shape matching the real tail. The caller retains the Source.
+  std::optional<std::size_t> prefill_successor_slot(std::size_t count, std::size_t physical,
+      GraphRole role, TextCompletion completion, std::size_t sampling_index) {
+    if (active_step->replay_route == g::ReplayRoute::kCaptured && count != physical)
+      return std::nullopt;
+    const auto found = phases.find({1, physical, role, completion, sampling_index, true, RowPacking::kPrefill});
+    if (found == phases.end()) return std::nullopt;
+    const auto slot = (active_step->state_slot + 1) % execution_slot_count;
+    auto &carrier = found->second->slots[slot].carrier;
+    if (!carrier.initialized() || carrier.closing() || !carrier.retired()) return std::nullopt;
+    return slot;
+  }
+
   // Reserve typed metadata before accepting native work. The caller can retain
   // the same original views for a successor; no candidate head is exported and
   // the ordinary API remains on its existing direct Completion path.

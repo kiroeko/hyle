@@ -1403,28 +1403,10 @@ struct GenerationStepAdapter final {
               request.rounds.capacity() - request.rounds.size() >= 2 &&
               ledger.records.size() - ledger.committed_count >= 2;
         })) return inference::StepSuccessor::kNone;
-    // Device B has its own original cold carrier. Ordinary relay A/B share
-    // their imported Phase; neither path prepares a new Phase while A runs.
-    Phase *successor_phase = a ? a->phase : nullptr;
-    if (device_mtp) {
-      if (calls.size() != 1 || !a_source->mtp_device_choice)
-        throw std::logic_error("device successor lost its original K1 selection Source");
-      const auto found = model.phases.find({calls.size(), maximum_outputs, successor_role, TextCompletion::kEmitNext,
-          calls.front().request->sampling_index, true, RowPacking::kRectangular});
-      if (found == model.phases.end()) return inference::StepSuccessor::kNone;
-      successor_phase = found->second.get();
-    }
-    if (!a || !successor_phase || !successor_phase->imported_sources ||
-        successor_phase->family->role != successor_role ||
-        successor_phase->family->completion != TextCompletion::kEmitNext ||
-        successor_phase->family->requests != calls.size() || next_slot >= successor_phase->slots.size())
-      throw std::logic_error("successor lost its original imported Phase geometry");
-    auto &candidate_carrier = successor_phase->slots[next_slot].carrier;
-    if (!candidate_carrier.initialized() || candidate_carrier.closing() || !candidate_carrier.retired())
-      return inference::StepSuccessor::kNone;
-    auto *candidate_run = take(candidate_carrier.borrow());
-    if (!take(g::detail::ReplayAccess::has_capture_candidate(*candidate_run,
-            a_source->primary_output.reader_binding(successor_phase->token_port))))
+    // Candidate lookup stays with the model that owns the original Phase and
+    // carrier; preparation below still proves the actual submission rights.
+    if (!model.has_relay_successor_capture(a, *a_source, calls.size(), maximum_outputs,
+            successor_role, calls.front().request->sampling_index, next_slot, device_mtp))
       return inference::StepSuccessor::kNone;
     for (std::size_t j = 0; j < calls.size(); ++j) {
       const auto &call = calls[j]; auto &request = *call.request;
@@ -1822,16 +1804,8 @@ struct SynchronousGenerationStepAdapter final {
     const bool complete = begin + count == request.prompt.size();
     const auto completion = complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly;
     const auto physical = model.prefill_capacity(count, completion, request.sampling_index, 1, role);
-    // A fixed full-row capture cannot consume a shorter, dynamically packed
-    // tail. Retire its producer normally before configuring that last batch.
-    if (model.active_step->replay_route == g::ReplayRoute::kCaptured && count != physical)
-      return inference::StepSuccessor::kNone;
-    const auto found = model.phases.find({1, physical, role, completion, request.sampling_index, true, RowPacking::kPrefill});
-    if (found == model.phases.end()) return inference::StepSuccessor::kNone;
-    const auto slot = (model.active_step->state_slot + 1) % execution_slot_count;
-    auto &carrier = found->second->slots[slot].carrier;
-    if (!carrier.initialized() || carrier.closing() || !carrier.retired())
-      return inference::StepSuccessor::kNone;
+    const auto slot = model.prefill_successor_slot(count, physical, role, completion, request.sampling_index);
+    if (!slot) return inference::StepSuccessor::kNone;
     following.push_back(calls[0]);
     auto &next_call = following.back();
     next_call.input_begin = begin; next_call.prompt = request.prompt.subspan(begin, count);
@@ -1843,7 +1817,7 @@ struct SynchronousGenerationStepAdapter final {
     source = model.active_step->execution.sources;
     const std::array input{EvaluationRequest{request.session, next_call.prompt, &request.ledger->stop_policy(),
         next_call.logits, {}, request.request_key, &request.prefill_packets, request.prompt, begin, request.progress.turn_index}};
-    model.prepare_evaluations(input, nullptr, role, completion, source, slot, physical, RowPacking::kPrefill);
+    model.prepare_evaluations(input, nullptr, role, completion, source, *slot, physical, RowPacking::kPrefill);
     return inference::StepSuccessor::kPrepared;
   }
   bool cancelled() const { return model.active_step && model.active_step->cancelled; }
