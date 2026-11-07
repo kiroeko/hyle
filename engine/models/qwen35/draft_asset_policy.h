@@ -23,7 +23,7 @@ struct DraftAssetSelection final {
 
 inline DraftAssetSelection select_draft_assets(const std::filesystem::path &input,
     const hyle::inference::mtp::DefaultRequest &request,
-    std::filesystem::path vocabulary, std::filesystem::path head) {
+    std::filesystem::path vocabulary, std::filesystem::path head, bool encoded_rows_on_backend) {
   namespace mtp = hyle::inference::mtp;
   const auto inspect = [](const std::filesystem::path &path, const char *label) {
     std::error_code error;
@@ -35,8 +35,17 @@ inline DraftAssetSelection select_draft_assets(const std::filesystem::path &inpu
   const bool explicit_asset_selection = vocabulary != "auto" || head != "auto";
   const bool explicit_file = (vocabulary != "auto" && vocabulary != "full") ||
       (head != "auto" && head != "original");
-  const bool has_vocabulary = mtp::inspect_prepared_vocabulary(request) &&
-      inspect(prepared_vocabulary, "cannot inspect prepared MTP defaults: ");
+  // An implicit map must never make a previously usable source/backend fail.
+  // Explicit files still reach the loader and report their actual incompatibility.
+  const bool may_use_automatic_vocabulary = request.mode != mtp::RequestedMode::kOff &&
+      request.max_drafts && request.greedy && request.automatic_vocabulary &&
+      (request.mode == mtp::RequestedMode::kOn || request.automatic_backend_eligible);
+  bool usable_automatic_vocabulary = false;
+  if (may_use_automatic_vocabulary && inspect(prepared_vocabulary, "cannot inspect prepared MTP defaults: ")) {
+    const auto roles = read_weight_roles(input / "weights.tsv", false);
+    usable_automatic_vocabulary = supports_draft_vocabulary(roles, encoded_rows_on_backend);
+  }
+  const bool has_vocabulary = mtp::inspect_prepared_vocabulary(request) && usable_automatic_vocabulary;
   bool original_projection_eligible = false;
   if (!has_vocabulary && !explicit_asset_selection && request.mode == mtp::RequestedMode::kAuto &&
       mtp::select_default(request, true).automatic) {
@@ -64,8 +73,7 @@ inline DraftAssetSelection select_draft_assets(const std::filesystem::path &inpu
   else if (vocabulary == "auto") {
     vocabulary.clear();
     if (policy.prepared_assets) vocabulary = prepared_vocabulary;
-    else if (head.empty() && request.greedy &&
-             inspect(prepared_vocabulary, "cannot inspect prepared draft vocabulary: "))
+    else if (head.empty() && usable_automatic_vocabulary)
       vocabulary = prepared_vocabulary;
   }
   if (!vocabulary.empty() && !request.greedy)

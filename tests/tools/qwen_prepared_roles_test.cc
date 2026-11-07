@@ -1069,22 +1069,38 @@ int main(int argc, char **argv) {
       roles.geometry = geometry;
       p::Role head{};
       head.name = geometry.head_role();
-      for (const auto *dtype : {"BF16", "F16", "F32", "Q8_0", "Q4_K", "Q6_K"}) {
+      head.shape = {geometry.vocabulary, geometry.hidden};
+      for (const auto *dtype : {"BF16", "F16", "F32", "Q8_0", "Q4_K", "Q5_K", "Q6_K"}) {
         head.dtype = dtype;
         for (const auto codec : {p::ProjectionCodec::kDense, p::ProjectionCodec::kUnspecified}) {
           head.projection_codec = codec;
           roles.selected = {head};
           require(qwen35::supports_stored_draft_projection(roles), "supported stored MTP head was refused");
+          require(qwen35::supports_draft_vocabulary(roles), "supported source vocabulary was refused");
+          const bool plain = head.dtype == "BF16" || head.dtype == "F16" || head.dtype == "F32";
+          require(qwen35::supports_draft_vocabulary(roles, false) == plain,
+                  "encoded row gather backend capability was ignored");
         }
       }
       head.dtype = "BF16";
       head.projection_codec = p::ProjectionCodec::kMlxAffine;
       roles.selected = {head};
       require(!qwen35::supports_stored_draft_projection(roles), "unsupported MTP head codec was admitted");
+      require(!qwen35::supports_draft_vocabulary(roles), "unsupported vocabulary codec was admitted");
       head.projection_codec = p::ProjectionCodec::kDense;
       head.dtype = "I32";
       roles.selected = {head};
       require(!qwen35::supports_stored_draft_projection(roles), "unsupported MTP head type was admitted");
+      require(!qwen35::supports_draft_vocabulary(roles), "unsupported vocabulary type was admitted");
+      head.dtype = "BF16";
+      head.projection_group_size = 32;
+      roles.selected = {head};
+      require(!qwen35::supports_draft_vocabulary(roles), "grouped vocabulary was admitted");
+      head.projection_group_size = 0;
+      head.shape.pop_back();
+      roles.selected = {head};
+      require(!qwen35::supports_draft_vocabulary(roles), "incorrect vocabulary shape was admitted");
+      head.shape = {geometry.vocabulary, geometry.hidden};
       head.dtype = "BF16";
       head.name = "unrelated.weight";
       roles.selected = {head};

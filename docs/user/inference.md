@@ -56,6 +56,7 @@ python engine/models/qwen35/prepare.py --model LOCAL_MODEL --output .scratch/qwe
 
 输出目录必须是新目录，只保存偏移、token IDs 与输入记录，共用原权重文件。
 需要 MTP 时，在原权重准备命令加 `--mtp`，准备器加入额外15份原MTP参数，仅准备不执行模型；同一完整清单可切换普通／MTP。
+量化 GGUF 头会同时从本地 tokenizer 的固定准备提示和特殊 token 生成来源绑定的半词表制品，不运行模型。
 符合自动选择条件的 CUDA 目录可通过下方来源匹配的草稿制品启用 MTP；具体选择见[采样与 MTP](#采样与-mtp)。
 只需普通模式时可省略准备器的`--mtp`；物理角色计数与输入身份见[模型输入说明](../../engine/models/qwen35/README.md#输入与数值政策)。
 
@@ -122,16 +123,18 @@ JSON 的 `mtp_selection_reason` 报告冷期选择或回落原因，`mtp_depth_s
 默认 `--mtp-draft-vocabulary auto`：MTP开启、无logits modifier的greedy、零概率阈值时，
 读取 `mtp-draft-vocabulary.ids`。制品的 `head prepared` 偏好选择目录里来源匹配的 `mtp-draft-head.tsv`；
 该头不存在时从支持的原始头提取所选行。`head original` 选择原始头；显式 `--mtp-draft-head` 优先。
-文件不存在或采样政策不适用时使用完整词表；
-存在但source identity不匹配时拒绝加载。`--mtp-draft-vocabulary full` 强制完整词表作对照，
+文件不存在或采样政策不适用时，已启用的 MTP 使用完整词表；
+自动词表不能由所选后端或原始头提取时会跳过，并按原始头能力选择全词表 MTP 或普通模式；显式指定的不支持词表会报错。
+被选中的制品若source identity不匹配会拒绝加载。`--mtp-draft-vocabulary full` 强制完整词表作对照，
 也可用 `--mtp-draft-vocabulary FILE` 显式选择另一份准备文件。
 选择完整词表时，自动发现的compact头不适用，引擎改用原始头；显式指定不匹配的compact头会报错。
 支持原BF16／F16／F32稠密head；CUDA还支持GGUF Q8_0／Q4_K／Q5_K／Q6_K编码行的子集，保持原量化代码与scale字节。
-Q5_K 的行复制、1～4行投影与原ID映射已用合成数据验证；完整Q5_K头的本地2B模型已验证CUDA单请求greedy的自动K1与K3。
-可用于K1与多草稿；完整target head与embedding继续保留。编码行副本目前只验证CUDA，其它后端明确拒绝。
+子集会增加所选头的行副本；自动选择不按剩余显存回落，显存紧张时可选 `--mtp-draft-vocabulary full` 或 `--mtp off`。
+Q5_K 的行复制、1～4行投影与原ID映射已用合成数据验证；本地2B模型已验证Q5_K完整头及子集头的CUDA单请求greedy生成。
+可用于K1与多草稿；完整target head与embedding继续保留。编码行副本目前只支持CUDA，其它后端跳过自动词表并拒绝显式编码词表。
 显式文件遇到随机、modifier、非零阈值或不支持的权重会报错。
 
-准备阶段可用本地模型生成独立校准语料，默认选32768行：
+准备阶段也可用本地模型生成独立校准语料，默认选32768行；输出到新文件后可显式指定，或替换准备目录中的自动词表：
 
 ```powershell
 python scripts/prepare-mtp-draft-vocabulary.py --hyle <hyle.exe> --inputs <准备目录> --tokenizer-dir <本地tokenizer目录> --work-dir .scratch/draft-calibration --output <准备目录>/mtp-draft-vocabulary.ids

@@ -7,12 +7,74 @@ import json
 from pathlib import Path
 import sys
 import tempfile
+import types
 import unittest
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location('recorded_draft_vocabulary', ROOT / 'scripts/prepare-mtp-draft-vocabulary.py')
 V = importlib.util.module_from_spec(spec); spec.loader.exec_module(V)
+import draft_vocabulary_preparation as P
+
+
+class PreparationTokenizer:
+    all_special_ids = [7]
+
+    def apply_chat_template(self, messages, **kwargs):
+        return messages[0]['content']
+
+    def encode(self, text, **kwargs):
+        return [5, 5, 2] if text else []
+
+
+class DefaultPreparation(unittest.TestCase):
+    def test_tokenizer_selection_is_deterministic_and_keeps_special_ids(self):
+        ids, fingerprint = P.tokenizer_default_ids(PreparationTokenizer(), 8)
+        self.assertEqual(ids, [0, 2, 5, 7])
+        self.assertEqual((ids, fingerprint), P.tokenizer_default_ids(PreparationTokenizer(), 8))
+        self.assertEqual(len(fingerprint), 64)
+
+    def test_invalid_token_ids_and_vocabulary_are_rejected(self):
+        tokenizer = PreparationTokenizer()
+        tokenizer.all_special_ids = [8]
+        with self.assertRaises(ValueError): P.tokenizer_default_ids(tokenizer, 8)
+        tokenizer.all_special_ids = [7]
+        with self.assertRaises(ValueError): P.tokenizer_default_ids(tokenizer, 2)
+        with self.assertRaises(ValueError): P.tokenizer_default_ids(tokenizer, 0)
+
+    def test_local_gguf_prepare_writes_only_quantized_mtp_default(self):
+        spec = importlib.util.spec_from_file_location('qwen_prepare_test', ROOT/'engine/models/qwen35/prepare.py')
+        prepare = importlib.util.module_from_spec(spec); spec.loader.exec_module(prepare)
+        work = Path(tempfile.mkdtemp(prefix='tokenizer-default-', dir=ROOT/'.scratch'))
+        model = work/'model'; model.mkdir(); (model/'config.json').write_text('{}')
+        class Tokenizer(PreparationTokenizer):
+            def apply_chat_template(self, messages, **kwargs):
+                return {'input_ids':[1, 2]} if kwargs['tokenize'] else messages[0]['content']
+        tokenizer = Tokenizer()
+        auto = types.SimpleNamespace(from_pretrained=lambda path, local_files_only: tokenizer)
+        fake_transformers = types.SimpleNamespace(AutoTokenizer=auto)
+        identity = 'a'*64
+        for dtype, mtp in (('Q5_K', True), ('BF16', True), ('Q5_K', False)):
+            with self.subTest(dtype=dtype, mtp=mtp):
+                out = work/f'{dtype}-{mtp}'
+                geometry = {'tied_head':True, 'vocabulary':8}
+                receipt = dict(source_id=identity, source_representation='gguf_converted',
+                               geometry=geometry, physical_roles=1)
+                lines = ['signature', identity, 'geometry', 'source',
+                         f'model.language_model.embed_tokens.weight\ttoken_embd.weight\t{dtype}']
+                gguf = types.SimpleNamespace(prepare_role_files=lambda path, enabled: (lines, receipt))
+                argv = ['prepare', '--model', str(model), '--output', str(out),
+                        '--gguf-role-files', str(work/'unused')]
+                if mtp: argv.append('--mtp')
+                with patch.object(sys, 'argv', argv), patch.dict(sys.modules, {'transformers':fake_transformers, 'gguf_roles':gguf}), \
+                     patch.object(prepare.geometry, 'role_shapes', return_value={'mtp.test':(1,)}):
+                    prepare.main()
+                artifact = out/'mtp-draft-vocabulary.ids'
+                self.assertEqual(artifact.exists(), dtype == 'Q5_K' and mtp)
+                if artifact.exists():
+                    self.assertEqual(artifact.read_text().splitlines(),
+                        ['hyle-draft-vocabulary-v2', identity, '8', 'recommended_drafts none', 'head original', '0 2 5 7'])
+                    self.assertEqual(json.loads((out/'input.json').read_text())['draft_vocabulary']['rows'], 4)
 
 
 class RecordedCalibration(unittest.TestCase):

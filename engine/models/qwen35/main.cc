@@ -8904,7 +8904,8 @@ int qwen35::run(int argc, char **argv) {
         .greedy = !sampler.enabled && sampler.modifiers.empty() && min_draft_probability == 0,
         .max_drafts = max_drafts, .automatic_vocabulary = draft_vocabulary == "auto"};
     auto assets = qwen35::select_draft_assets(input, default_request,
-        std::move(draft_vocabulary), std::move(draft_head));
+        std::move(draft_vocabulary), std::move(draft_head),
+        backend_selection.primary == qwen35::BackendKind::kCuda);
     const auto default_selection = assets.policy;
     mtp_enabled = default_selection.enabled;
     auto weight_source = qwen35::prepare_weight_source(input / "weights.tsv", mtp_enabled,

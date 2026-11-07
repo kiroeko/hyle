@@ -27,6 +27,7 @@
 #include "../../inference/prepared_output.h"
 #include "fp8_weight_import.h"
 #include "gguf_capabilities.h"
+#include "mtp_capabilities.h"
 #include "nf4_weight_import.h"
 #include "hyle/io/file.h"
 #include "hyle/io/io_context.h"
@@ -518,14 +519,7 @@ std::optional<hyle::inference::DraftVocabulary> read_draft_vocabulary(
     const std::filesystem::path &path, const prepared::Roles &roles,
     hyle::inference::DraftVocabularyPreferences &preferences) {
   if (path.empty()) return {};
-  const auto head = std::ranges::find(roles.selected, roles.geometry.head_role(), &prepared::Role::name);
-  const auto *head_capability = head == roles.selected.end() ? nullptr : gguf_capabilities(head->dtype);
-  if (head == roles.selected.end() ||
-      (head->dtype != "BF16" && head->dtype != "F16" && head->dtype != "F32" &&
-       (!head_capability || !head_capability->copy_encoded_rows)) ||
-      (head->projection_codec != prepared::ProjectionCodec::kDense &&
-       head->projection_codec != prepared::ProjectionCodec::kUnspecified) || head->projection_group_size ||
-      head->shape != std::vector<std::int64_t>{roles.geometry.vocabulary, roles.geometry.hidden})
+  if (!supports_draft_vocabulary(roles))
     throw std::runtime_error("draft vocabulary requires the original dense or row-blocked GGUF full-vocabulary head");
   auto artifact = hyle::inference::read_draft_vocabulary_artifact(
       path, roles.identity, roles.geometry.vocabulary);

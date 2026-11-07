@@ -17,8 +17,9 @@ import struct
 ROOT = Path(__file__).resolve().parents[3]
 
 if __package__:
-    from . import geometry, nf4_state
+    from . import draft_vocabulary_preparation, geometry, nf4_state
 else:
+    import draft_vocabulary_preparation
     import geometry
     import nf4_state
 
@@ -735,16 +736,35 @@ def main() -> None:
         add_generation_prompt=True, enable_thinking=False, tokenize=True, return_dict=True)
     prompt = encoded["input_ids"]
     continuation = tokenizer.encode(args.continuation, add_special_tokens=False)
+    draft_vocabulary = None
+    if args.mtp and role_receipt.get("source_representation") == "gguf_converted":
+        model_geometry = role_receipt["geometry"]
+        head = ("model.language_model.embed_tokens.weight" if model_geometry["tied_head"]
+                else "lm_head.weight")
+        head_roles = [line.split("\t") for line in role_lines[4:] if line.split("\t", 1)[0] == head]
+        if len(head_roles) != 1:
+            raise ValueError("GGUF source requires exactly one vocabulary head role")
+        if head_roles[0][2] not in ("F32", "F16", "BF16"):
+            ids, fingerprint = draft_vocabulary_preparation.tokenizer_default_ids(
+                tokenizer, model_geometry["vocabulary"])
+            draft_vocabulary = (ids, fingerprint)
     args.output.mkdir(parents=True)
     with (args.output / "weights.tsv").open("w", encoding="utf-8", newline="\n") as stream:
         stream.write("\n".join(role_lines) + "\n")
     for name, values in (("prompt.ids", prompt), ("continuation.ids", continuation)):
         (args.output / name).write_text(" ".join(map(str, values)) + "\n", encoding="ascii")
+    if draft_vocabulary is not None:
+        with (args.output / "mtp-draft-vocabulary.ids").open("w", encoding="ascii", newline="\n") as stream:
+            draft_vocabulary_preparation.write_vocabulary(stream, role_receipt["source_id"],
+                role_receipt["geometry"]["vocabulary"], draft_vocabulary[0], None)
     receipt = dict(kind="qwen_text_input_preparation_no_model_execution",
         original_files=records, tokenizer_directory=str(args.model.resolve()),
         prompt=args.prompt, prompt_ids=prompt, continuation_ids=continuation,
         script_sha256=digest(Path(__file__)), **role_receipt)
     receipt.update(weight_selection="text+mtp" if args.mtp else "text", manifest_signature=role_lines[0])
+    if draft_vocabulary is not None:
+        receipt["draft_vocabulary"] = dict(rows=len(draft_vocabulary[0]),
+            tokenizer_selection_sha256=draft_vocabulary[1], selection="tokenizer_prompts_and_special_ids")
     (args.output / "input.json").write_text(json.dumps(receipt, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     expected = geometry.role_shapes(role_receipt["geometry"])
     summary = {"text_tensors":sum(not n.startswith("mtp.") for n in expected),
