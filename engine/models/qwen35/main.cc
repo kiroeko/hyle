@@ -742,10 +742,12 @@ struct GreedyChainCapabilities final {
   std::size_t active_sequences = 0, auxiliary_hidden_rows = 0, private_draft_stages = 0;
   bool capture_allowed = false, supported_projection = false;
 
-  constexpr bool available() const noexcept {
+  constexpr bool packet_available() const noexcept {
     return max_drafts >= 2 && max_drafts <= kMaximumDeviceMtpDrafts && minimum_probability == 0 && device_relay &&
-        active_sequences == 1 && auxiliary_hidden_rows >= 2 && private_draft_stages >= max_drafts &&
-        capture_allowed && supported_projection;
+        active_sequences == 1 && auxiliary_hidden_rows >= 2 && capture_allowed;
+  }
+  constexpr bool available() const noexcept {
+    return packet_available() && private_draft_stages >= max_drafts && supported_projection;
   }
 };
 
@@ -765,6 +767,7 @@ private:
   DraftPolicy draft_policy_;
   bool preparation_started_ = false;
   bool greedy_chain_available_ = false;
+  bool draft_packet_available_ = false;
   // Immutable per-sampler relay admission, resolved once after backend setup.
   std::vector<std::uint8_t> device_relay_by_sampling_;
   struct ColdFamilyOutcome final {
@@ -815,10 +818,12 @@ public:
         }
       }
     }
-    greedy_chain_available_ = GreedyChainCapabilities{policy.max_drafts, policy.minimum_probability,
+    const GreedyChainCapabilities chain{policy.max_drafts, policy.minimum_probability,
         DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler), false, false}.eligible(),
         cache_plan.active_sequences, cache_plan.auxiliary_hidden_rows, cache_plan.private_draft_stages,
-        replay_policy != ReplayPolicy::kCommands, supported_projection}.available();
+        replay_policy != ReplayPolicy::kCommands, supported_projection};
+    draft_packet_available_ = chain.packet_available();
+    greedy_chain_available_ = chain.available();
   }
   bool recursive_mtp() const noexcept { return max_drafts() && (max_drafts() > 1 || min_draft_probability() > 0); }
   bool device_mtp_successor_enabled() const noexcept { return device_mtp_successor_; }
@@ -1847,11 +1852,7 @@ public:
     // bound can select capture; writer-only repair retains its ready-leaf path.
     const auto replay_mode = !selected_sampler.modifiers.history.empty() && head ? g::ReplayMode::kCommands
         : select_replay_mode(replay_policy, head ? planned_uses : 1, selected_sampler.enabled);
-    const auto packet_rows = head && max_drafts() > 1 && max_drafts() <= kMaximumDeviceMtpDrafts && !selected_sampler.enabled &&
-        selected_sampler.modifiers.empty() && min_draft_probability() == 0 &&
-        execution.kind() == BackendKind::kCuda && !execution.has_cpu_assist() && !scheduler &&
-        cache_plan.active_sequences == 1 && cache_plan.auxiliary_hidden_rows >= 2 &&
-        replay_policy != ReplayPolicy::kCommands ? max_drafts() + 1 : 0;
+    const auto packet_rows = head && draft_packet_enabled(selected_sampler) ? max_drafts() + 1 : 0;
     auto built = build_draft_program({rows, selected_index, head, replay_mode, min_draft_probability(), packet_rows, steps},
         {geometry, precision, weights, projections, weight_meanings, ffn_placement.cpu_layers()},
         {attention_schema, cache_plan.hidden_slots, cache_plan.active_sequences, cache_plan.candidate_boundaries,
@@ -1904,6 +1905,9 @@ public:
   // Append to an unpublished draft only. The first append uses COW; later
   // recursive rows may extend that private tail. Published Session tails are
   // never borrowed, so aborting proposal/verification leaves the old head valid.
+  bool draft_packet_enabled(const SamplingConfiguration &sampling) const noexcept {
+    return draft_packet_available_ && !sampling.enabled && sampling.modifiers.empty();
+  }
   bool greedy_draft_chain_enabled(const SamplingConfiguration &sampling) const noexcept {
     return greedy_chain_available_ && !sampling.enabled && sampling.modifiers.empty();
   }
@@ -7306,12 +7310,8 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
             dynamic->rows.push_back({call.logits.bias, call.logits.allowed});
           }
           const auto &sampling = call.request->session->sampling_configuration().configuration;
-          const bool device_packet = calls.size() == 1 && !dynamic && !sampling.enabled && sampling.modifiers.empty() &&
-              call.maximum > 1 && call.maximum <= 3 && call.maximum == model.max_drafts() &&
-              model.min_draft_probability() == 0 && model.execution.kind() == BackendKind::kCuda &&
-              !model.execution.has_cpu_assist() && !model.scheduler &&
-              model.cache_plan.active_sequences == 1 && model.cache_plan.auxiliary_hidden_rows >= 2 &&
-              model.replay_policy != ReplayPolicy::kCommands && call.request->trace.empty();
+          const bool device_packet = calls.size() == 1 && !dynamic && call.maximum == model.max_drafts() &&
+              model.draft_packet_enabled(sampling) && call.request->trace.empty();
           if (device_packet) {
             call.verification_ids = model.propose_recursive(*call.request->session, call.maximum, eos,
                 &call.draft_log_probabilities, &call.request->ledger->stop_policy(), call.logits, {}, nullptr,
@@ -8723,7 +8723,9 @@ int qwen35::run(int argc, char **argv) {
         "  --active-sequences auto|N   Maximum actual execution batch width\n"
         "  --cache-bytes auto|N        Session cache backing budget\n"
         "  --prefix-cache off|auto     Reuse completed prompt/turn checkpoints\n"
+        "  --progress direct|scheduler  Request progress implementation (default: direct)\n"
         "  --replay auto|commands|prefer-capture\n"
+        "  --require-bounded-generation on|off  Reject routes that need future request shapes (default: off)\n"
         "Prepare inputs with engine/models/qwen35/prepare.py; no model is downloaded at runtime.\n";
     return 0;
   }
@@ -8761,11 +8763,10 @@ int qwen35::run(int argc, char **argv) {
       const std::string value = argv[++i];
       if (option == "--inputs") input = value;
       else if (option == "--prefill-chunk-tokens") max_prefill_rows = positive_size(option, value);
-      else if (option == "--diagnostic-first-turn-only") {
-        // Accept the old diagnostic spelling during the transition. Natural
-        // single-session generation now selects this policy by default.
-        if (value != "1") throw std::runtime_error("--diagnostic-first-turn-only only accepts 1; future-turn planning cannot be enabled with this option");
-        require_bounded_generation = true;
+      else if (option == "--require-bounded-generation") {
+        if (value != "on" && value != "off")
+          throw std::runtime_error("--require-bounded-generation requires on or off");
+        require_bounded_generation = value == "on";
       }
       else if (option == "--decode-overlap") {
         // Internal benchmark/diagnostic override. Normal use selects the

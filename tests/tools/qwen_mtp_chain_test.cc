@@ -12,6 +12,22 @@ struct Result {
   std::vector<std::vector<std::int32_t>> emitted;
 };
 void cold_policy_facts() {
+  for (const auto drafts : {0u, 1u, 2u, 3u, 4u})
+    for (const auto threshold : {0.0f, 0.25f})
+      for (const bool relay : {false, true})
+        for (const auto active : {0u, 1u, 2u})
+          for (const auto hidden : {0u, 1u, 2u, 3u})
+            for (const auto stages : {0u, 1u, 2u, 3u, 4u})
+              for (const bool capture : {false, true})
+                for (const bool projection : {false, true}) {
+                  const q::GreedyChainCapabilities facts{drafts, threshold, relay, active, hidden, stages,
+                      capture, projection};
+                  const bool old_packet = drafts > 1 && drafts <= 3 && threshold == 0 && relay &&
+                      active == 1 && hidden >= 2 && capture;
+                  require(facts.packet_available() == old_packet, "cold packet admission changed");
+                  require(facts.available() == (old_packet && stages >= drafts && projection),
+                      "greedy chain admission changed");
+                }
   const q::GreedyChainCapabilities valid{3, 0, true, 1, 2, 3, true, true};
   require(valid.available(), "complete K3 capability was refused");
   auto changed = valid;

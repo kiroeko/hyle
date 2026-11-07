@@ -24,7 +24,7 @@ def check(args):
             schedule.write_text(f"prompt first.ids\ngenerate 1\nprompt later.ids\ngenerate {quota}\n", encoding="utf-8")
             command = [str(args.hyle), "--inputs", str(args.inputs), "--backend", "cuda",
                        "--capacity", "32", "--mtp", "on", "--mtp-max-drafts", str(width),
-                       "--diagnostic-first-turn-only", "1", "--schedule", str(schedule)]
+                       "--require-bounded-generation", "on", "--schedule", str(schedule)]
             (folder / "command.txt").write_text(subprocess.list2cmdline(command)+"\n", encoding="utf-8")
             with (folder / "stdout.log").open("wb") as stdout, (folder / "stderr.log").open("wb") as stderr:
                 result = subprocess.run(command,stdout=stdout,stderr=stderr,timeout=180)
@@ -78,7 +78,23 @@ def check(args):
         assert raw["overlap_successor_submissions"]>0 and raw["overlap_successor_publications"]>0
         assert raw["actual_graph_calls"]/raw["decode_graph_calls"]<=2
         print(f"PASS K{width} C32 continuous: 17 outputs, real successor submission/publication, exact work/RNG and retirement",flush=True)
-    print("PASS K2/K3 cold inventories ignore future lengths and quotas; recursive programs exist before late decode",flush=True)
+    planned = args.output / 'planned-route'
+    planned.mkdir()
+    schedule = args.output / 'K2-short' / 'schedule.txt'
+    for setting in ('on', 'off'):
+        command = [str(args.hyle), '--inputs', str(args.inputs), '--backend', 'cuda', '--capacity', '32',
+                   '--schedule', str(schedule), '--mtp', 'off', '--warmup-shapes', 'planned',
+                   '--require-bounded-generation', setting]
+        result = subprocess.run(command, capture_output=True, timeout=180)
+        (planned / f'{setting}.stdout').write_bytes(result.stdout)
+        (planned / f'{setting}.stderr').write_bytes(result.stderr)
+        if setting == 'on':
+            assert result.returncode and b'bounded natural generation requires' in result.stderr
+        else:
+            assert result.returncode == 0
+            report = json.loads(result.stdout)
+            assert report['future_shape_hints'] > 0 and report['live_committed_versions'] == 0
+    print("PASS K2/K3 cold inventories ignore future lengths and quotas; bounded requirement rejects planned routes",flush=True)
 
 
 if __name__ == "__main__":
