@@ -174,7 +174,7 @@ python scripts/prepare-mtp-draft-vocabulary.py --hyle <hyle.exe> --inputs <准�
 hyle --inputs <准备目录> --backend cuda --mtp on --mtp-draft-vocabulary .scratch/draft-vocabulary-zh-en.ids --schedule <自然请求文件>
 ```
 
-该工具只用本地文件；不指定语言时使用24个独立提示，指定语言时使用对应提示和共享代码提示。内置 `ar,de,en,es,fr,hu,ja,ko,ru,th,vi,zh`，可用逗号选择多个语言，其中 `hu` 是匈牙利语。普通greedy每个提示最多生成256个token，只统计生成的ID；指定语言时优先保留本地 tokenizer 的特殊 token，行数不足时按原 ID 选取。
+该工具只用本地文件；不指定语言时使用24个独立提示，指定语言时使用对应提示和共享代码提示。内置 `ar,de,en,es,fr,hu,ja,ko,ru,th,vi,zh`，可用逗号选择多个语言，其中 `hu` 是匈牙利语。普通greedy每个提示默认最多生成256个token，可用 `--tokens 1024` 扩大校准；只统计生成的ID。指定语言时优先保留本地 tokenizer 的特殊 token，行数不足时按原 ID 选取。校准内容多也不能保证覆盖全部语言或优于全词表，应按实际负载比较。
 按频次选行，未出现的ID按原ID升序补齐；不使用八轮验收负载。校准在启动之前单独运行，
 原始输出保留在新建的work目录，不覆盖已有结果。没有准备文件的模型不会在启动时自行校准。
 也可用重复的 `--calibration-run DIR` 复用同一source的已有普通greedy校准；该模式不启动GPU，也不需要tokenizer。
