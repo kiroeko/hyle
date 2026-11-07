@@ -260,7 +260,7 @@ int run(const std::filesystem::path &input, q::BackendKind backend) {
       q::recurrent_bytes(q::state_schema_for(geometry, kContext), geometry), 2, 3, true);
   q::Model model(std::move(source), geometry, kContext, plan, {}, false, q::ReplayPolicy::kCommands,
       SIZE_MAX, {}, 0, {.primary = backend});
-  model.configure_draft_policy({2, 0});
+  model.configure_draft_policy({2});
   const std::array prompt_rows{prompt.size()};
   const std::array verify_rows{std::size_t{2}, std::size_t{3}};
   for (const auto width : {std::size_t{1}, std::size_t{2}}) {

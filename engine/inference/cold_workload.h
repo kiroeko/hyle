@@ -14,7 +14,6 @@ struct ColdWorkloadFacts final {
   bool planned_shapes = false;
   bool cpu_assist = false;
   bool greedy = false;
-  bool zero_draft_threshold = false;
   bool state_trace = false;
   std::size_t max_sessions = 0;
   std::size_t active_sequences = 0;

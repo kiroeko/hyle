@@ -88,9 +88,9 @@ inline DraftAssetSelection select_draft_assets(const std::filesystem::path &inpu
     if (!vocabulary.empty()) vocabulary_reason = "prepared_vocabulary";
   }
   if (!vocabulary.empty() && !request.unmodified_greedy_drafting())
-    throw std::runtime_error("--mtp-draft-vocabulary requires --mtp on, active drafting, unmodified greedy sampling and zero minimum probability");
+    throw std::runtime_error("--mtp-draft-vocabulary requires --mtp on, active drafting and unmodified greedy sampling");
   if (!head.empty() && !request.unmodified_greedy_drafting())
-    throw std::runtime_error("--mtp-draft-head requires active unmodified greedy MTP and zero minimum probability");
+    throw std::runtime_error("--mtp-draft-head requires active unmodified greedy MTP");
   return {policy, std::move(vocabulary), std::move(head), auto_head, vocabulary_reason};
 }
 

@@ -212,7 +212,7 @@ int main(int argc,char**argv) {
         q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.value_depth)), 2)};
     const auto plan=q::cache::plan(geometry, {.target = cache_rows, .draft = cache_rows},context,4,15,q::recurrent_bytes(q::state_schema_for(geometry,context),geometry),1,5,true);
     q::Model model(inputs/"weights.tsv",geometry,context,plan,{},false,q::ReplayPolicy::kCommands,1024ULL*1024*1024);
-    model.configure_draft_policy({4,0});
+    model.configure_draft_policy({4});
     const std::array prompt_shape{std::size_t{15}},single{std::size_t{1}};const std::array<std::size_t,2> wide{3,5};
     model.prepare_family(prompt_shape,false,1,q::GraphRole::kMtpPrefill);
     model.plan_replay_uses(15,1,4,q::GraphRole::kMtpPrefill);

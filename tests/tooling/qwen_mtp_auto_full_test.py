@@ -58,7 +58,7 @@ def main():
                        'commands-k1': ('explicit_on', 'explicit'),
                        'auto-k4': ('original_projection', 'explicit'),
                        'explicit-k4': ('explicit_on', 'explicit'),
-                       'random-auto': ('sampling_or_draft_threshold', 'disabled'),
+                       'random-auto': ('sampling', 'disabled'),
                        'random-off': ('explicit_off', 'disabled')}
             assert (raw['mtp_selection_reason'], raw['mtp_depth_source']) == reasons[mode], (label, mode)
             expected_depth = 4 if mode in ('auto-k4', 'explicit-k4') else int(

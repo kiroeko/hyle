@@ -24,7 +24,7 @@ AuxiliaryProgramResult<DraftProgram> build_draft_chain(
     const DraftProgramFacts &facts, const SamplingConfiguration &sampling,
     const AuxiliaryCompileContext &context) {
   if (!request.head || request.rows < 1 || request.rows > 2 || request.steps < 2 || request.steps > 3 ||
-      request.steps >= facts.candidate_boundaries || request.minimum_probability != 0 ||
+      request.steps >= facts.candidate_boundaries ||
       sampling.enabled || !sampling.modifiers.empty())
     throw std::runtime_error("draft chain requires bounded unmodified greedy original inputs");
   auto &execution = context.execution;
@@ -165,31 +165,18 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
         if (selected_sampler.modifiers.empty()) program.id = original_draft_id(r,
             r.op(c::Operation(c::TopK{.count = 1}), {result.logits},
                 {r.dense_spec(Type::kFloat32, {f(1), f(1)}), r.dense_spec(Type::kInt32, {f(1), f(1)})})[1], draft_facts.projection);
-        else if (build_request.minimum_probability == 0) {
+        else {
           const auto selection = sampling::processed_selection(r, processed, std::optional<V>{}, selected_sampler.policy);
           program.id = selection.id; program.valid = r.host_predicate(*selection.valid);
         }
       }
-      if (selected_sampler.enabled || build_request.minimum_probability > 0) {
+      if (selected_sampler.enabled) {
         const auto distribution = sampling::processed_distribution(r, processed,
-            selected_sampler.enabled ? selected_sampler.policy : sampling::Policy{});
+            selected_sampler.policy);
         program.log_probabilities = distribution.log_probabilities; program.valid = r.host_predicate(distribution.valid);
-        if (selected_sampler.enabled) {
-          program.identity = r.input(dense(Type::kUInt32, {1, 4}));
-          program.id = r.one(c::sampling_ops::categorical(), {program.log_probabilities, program.identity});
-          r.publish(program.log_probabilities);
-        } else if (!selected_sampler.modifiers.empty()) {
-          // Threshold already requires this one distribution's complete
-          // validity. Reuse it for a safe greedy ID instead of validating the
-          // same processed row a second time.
-          const auto safe = r.one(c::Select{}, {distribution.valid, processed.logits, r.scalar(0)});
-          program.id = r.op(c::Operation(c::TopK{.count = 1}), {safe})[1];
-        }
-        if (build_request.minimum_probability > 0) {
-          const auto maximum = r.copy(r.reshape(r.one(c::Reduce{.kind = c::ReductionKind::kMaximum,
-              .accumulation_type = Type::kFloat32}, {program.log_probabilities}), {f(1)}));
-          program.probability = r.unary(c::UnaryKind::kExp, maximum); r.publish(program.probability);
-        }
+        program.identity = r.input(dense(Type::kUInt32, {1, 4}));
+        program.id = r.one(c::sampling_ops::categorical(), {program.log_probabilities, program.identity});
+        r.publish(program.log_probabilities);
       }
       if (inputs.counts) {
         program.next_counts = sampling::advance_history_counts(r, *inputs.counts, r.reshape(program.id, {f(1)}));
@@ -202,7 +189,7 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
       r.publish(program.id);
       if (build_request.verification_rows) {
         if (selected_sampler.enabled || !selected_sampler.modifiers.empty() ||
-            build_request.minimum_probability != 0 || build_request.verification_rows < 3 ||
+            build_request.verification_rows < 3 ||
             build_request.verification_rows > draft_facts.candidate_boundaries)
           throw std::runtime_error("device verifier packet requires bounded unmodified greedy proposals");
         const auto width = static_cast<std::int64_t>(build_request.verification_rows);
@@ -236,7 +223,7 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
       program.identity_values = auxiliary_tensor(allocation_budget, execution.device(), dense(Type::kUInt32, {1, 4}));
     check(program.io.prepare(compiled_program, (head && selected_sampler.enabled ? 3 : 2) + bool(program.verification_prefix),
         program.hidden_inputs.size() + bool(program.bias) + bool(program.allowed) + bool(program.counts),
-        head ? 1 + bool(program.valid) + (build_request.minimum_probability > 0) + bool(program.verification_packet) : 0,
+        head ? 1 + bool(program.valid) + bool(program.verification_packet) : 0,
         head ? bool(selected_sampler.enabled) + bool(program.next_counts) : 0));
     program.hidden_bindings.reserve(program.hidden_inputs.size());
     for (const auto port : program.hidden_inputs) program.hidden_bindings.push_back(take(program.io.add_input(port)));
@@ -280,8 +267,6 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
         program.verification_value = take(program.io.add_readback(program.verification_packet, execution.storage_domains(), allocation_budget));
       if (selected_sampler.enabled) check(program.io.add_fixed(program.identity, program.identity_values.read()));
       if (program.valid) program.valid_value = take(program.io.add_readback(program.valid, execution.storage_domains(), allocation_budget));
-      if (build_request.minimum_probability > 0)
-        program.probability_value = take(program.io.add_readback(program.probability, execution.storage_domains(), allocation_budget));
     }
     check(program.io.seal());
     if (head) {

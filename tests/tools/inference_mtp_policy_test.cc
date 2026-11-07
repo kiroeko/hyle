@@ -7,18 +7,17 @@
 
 void check_decode_routes() {
   using namespace hyle::inference;
-  for (unsigned bits=0; bits<(1u<<9); ++bits)
+  for (unsigned bits=0; bits<(1u<<8); ++bits)
     for (const auto drafts : {std::size_t{0},std::size_t{1},std::size_t{2},std::size_t{3},std::size_t{4}})
       for (const auto active : {std::size_t{0},std::size_t{1},std::size_t{2}}) {
         const auto f=[bits](unsigned bit){return (bits & (1u<<bit)) != 0;};
-        const ColdWorkloadFacts workload{.natural_generation=f(1), .zero_draft_threshold=f(3),
-            .state_trace=f(7)};
-        const DecodeRouteFacts x{workload,f(0),f(2),drafts,3,f(4),f(5),"",f(6),f(8),active};
+        const ColdWorkloadFacts workload{.natural_generation=f(1), .state_trace=f(6)};
+        const DecodeRouteFacts x{workload,f(0),f(2),drafts,3,f(3),f(4),"",f(5),f(7),active};
         const bool overlap=x.overlap_requested && x.workload.natural_generation &&
-          (!x.mtp_enabled || (drafts>=1 && drafts<=3 && x.workload.zero_draft_threshold &&
+          (!x.mtp_enabled || (drafts>=1 && drafts<=3 &&
                               (drafts==1 || x.stored_draft_head))) && x.relay_eligible &&
           !x.commands_replay && !x.workload.state_trace && x.has_decode;
-        const bool verify=x.mtp_enabled && drafts>1 && drafts<=3 && x.workload.zero_draft_threshold &&
+        const bool verify=x.mtp_enabled && drafts>1 && drafts<=3 &&
           x.relay_eligible && active==1 && !x.commands_replay && x.has_decode;
         const auto [o,v]=plan_decode_routes(x);
         if (o.enabled!=overlap || v.enabled!=verify || o.reason.empty() || v.reason.empty() ||
@@ -39,7 +38,7 @@ void check_decode_routes() {
             throw std::runtime_error("continuous MTP requires a selected overlap route");
         }
       }
-  DecodeRouteFacts facts{.workload={.natural_generation=true, .zero_draft_threshold=true},
+  DecodeRouteFacts facts{.workload={.natural_generation=true},
       .overlap_requested=true, .mtp_enabled=true, .max_drafts=3, .max_device_drafts=3,
       .stored_draft_head=true, .relay_eligible=false, .relay_refusal="scheduler", .has_decode=true,
       .resolved_active_sequences=1};
@@ -63,7 +62,7 @@ void check_decode_routes() {
     throw std::runtime_error("a finite workload without decode must not plan unused verification");
 
   BoundedGenerationFacts bounded{.workload={.natural_generation=true, .greedy=true,
-      .zero_draft_threshold=true, .capacity=128}, .supported_backend=true, .mtp_enabled=true,
+      .capacity=128}, .supported_backend=true, .mtp_enabled=true,
       .max_drafts=3};
   if (!select_bounded_generation(bounded).enabled) throw std::runtime_error("bounded route unavailable");
   bounded.workload.planned_shapes=true;
@@ -72,12 +71,10 @@ void check_decode_routes() {
   bounded.workload.planned_shapes=false; bounded.workload.active_sequences=2;
   if (select_bounded_generation(bounded).reason!="multiple_sessions_or_sequences")
     throw std::runtime_error("bounded route admitted multiple active sequences");
-  bounded.workload.active_sequences=1; bounded.workload.zero_draft_threshold=false;
-  if (select_bounded_generation(bounded).reason!="draft_threshold")
-    throw std::runtime_error("bounded MTP admitted a draft threshold");
+  bounded.workload.active_sequences=1;
   bounded.mtp_enabled=false;
   if (!select_bounded_generation(bounded).enabled)
-    throw std::runtime_error("ordinary generation must not depend on the draft threshold");
+    throw std::runtime_error("ordinary bounded generation was not selected");
 
   const DecodeBudgetRoutes initial{{true,"selected"},{true,"selected"},3,"selected"};
   // A synthetic monotonic capacity exposes each ordered fallback, without
@@ -114,7 +111,7 @@ int main() {
     const hyle::inference::ColdWorkloadFacts workload{
         .natural_generation=flag(0), .multiple_schedules=flag(1), .prefix_enabled=flag(2),
         .scheduler_progress=flag(3), .cpu_assist=flag(5), .greedy=flag(6),
-        .zero_draft_threshold=true, .max_sessions=sessions, .active_sequences=active, .capacity=capacity};
+        .max_sessions=sessions, .active_sequences=active, .capacity=capacity};
     const m::DefaultRequest request{mode, workload, flag(4), depth, flag(9)};
     const bool inspect = mode != m::RequestedMode::kOff && depth > 0 && request.automatic_backend_eligible &&
         request.workload.greedy && request.automatic_vocabulary;
@@ -143,7 +140,7 @@ int main() {
     }
   }
   m::DefaultRequest typical{.mode=m::RequestedMode::kAuto,
-      .workload={.natural_generation=true, .greedy=true, .zero_draft_threshold=true, .capacity=32768},
+      .workload={.natural_generation=true, .greedy=true, .capacity=32768},
       .automatic_backend_eligible=true, .max_drafts=1, .automatic_vocabulary=true};
   if (m::select_default(typical,false).reason != "no_eligible_source" ||
       m::select_default(typical,false,true).reason != "original_projection" ||
@@ -170,8 +167,7 @@ int main() {
   constexpr std::array constraints{
       ConstraintCase{+[](m::DefaultRequest &r) { r.workload.natural_generation=false; }, "non_natural_request"},
       ConstraintCase{+[](m::DefaultRequest &r) { r.automatic_backend_eligible=false; }, "backend_policy"},
-      ConstraintCase{+[](m::DefaultRequest &r) { r.workload.greedy=false; }, "sampling_or_draft_threshold"},
-      ConstraintCase{+[](m::DefaultRequest &r) { r.workload.zero_draft_threshold=false; }, "sampling_or_draft_threshold"},
+      ConstraintCase{+[](m::DefaultRequest &r) { r.workload.greedy=false; }, "sampling"},
       ConstraintCase{+[](m::DefaultRequest &r) { r.workload.active_sequences=2; }, "multiple_sessions_or_sequences"},
       ConstraintCase{+[](m::DefaultRequest &r) { r.workload.prefix_enabled=true; }, "prefix_cache"},
       ConstraintCase{+[](m::DefaultRequest &r) { r.workload.scheduler_progress=true; }, "scheduler"},
@@ -187,7 +183,7 @@ int main() {
   }
   auto multiple=typical;
   multiple.workload.greedy=false; multiple.workload.prefix_enabled=true;
-  if (m::select_default(multiple,true).reason!="sampling_or_draft_threshold")
+  if (m::select_default(multiple,true).reason!="sampling")
     throw std::runtime_error("first automatic constraint changed");
   typical.workload.capacity=1;
   if (m::select_default(typical,true).enabled ||
@@ -210,7 +206,7 @@ int main() {
   typical.workload.greedy=true;
   typical.max_drafts=1;
   typical.workload.greedy=false;
-  if (m::select_default(typical,true).reason != "sampling_or_draft_threshold")
+  if (m::select_default(typical,true).reason != "sampling")
     throw std::runtime_error("sampling fallback reason differs");
   typical.workload.greedy=true; typical.max_drafts=4;
   if (!m::select_default(typical,true).automatic)

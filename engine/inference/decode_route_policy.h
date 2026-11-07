@@ -49,7 +49,6 @@ constexpr DecodeRouteChoice select_bounded_generation(const BoundedGenerationFac
   if (!workload.greedy) return {false, "sampling"};
   if (facts.mtp_enabled && workload.capacity <= 1) return {false, "insufficient_capacity"};
   if (facts.mtp_enabled && !facts.max_drafts) return {false, "drafting_disabled"};
-  if (facts.mtp_enabled && !workload.zero_draft_threshold) return {false, "draft_threshold"};
   return {true, "selected"};
 }
 
@@ -83,7 +82,6 @@ constexpr DecodeRouteChoice select_decode_overlap(const DecodeRouteFacts &facts)
   if (facts.mtp_enabled) {
     if (!facts.max_drafts) return {false, "drafting_disabled"};
     if (facts.max_drafts > facts.max_device_drafts) return {false, "device_chain_capacity"};
-    if (!facts.workload.zero_draft_threshold) return {false, "draft_threshold"};
     if (facts.max_drafts > 1 && !facts.stored_draft_head) return {false, "draft_projection"};
   }
   if (!facts.relay_eligible) return {false, facts.relay_refusal.empty() ? "relay_capability" : facts.relay_refusal};
@@ -100,7 +98,6 @@ constexpr DecodeRouteChoice select_device_verification(const DecodeRouteFacts &f
   if (!facts.mtp_enabled) return {false, "mtp_disabled"};
   if (facts.max_drafts <= 1) return {false, "single_or_no_draft"};
   if (facts.max_drafts > facts.max_device_drafts) return {false, "device_chain_capacity"};
-  if (!facts.workload.zero_draft_threshold) return {false, "draft_threshold"};
   if (!facts.relay_eligible) return {false, facts.relay_refusal.empty() ? "relay_capability" : facts.relay_refusal};
   if (facts.resolved_active_sequences != 1) return {false, "active_sequences"};
   if (facts.commands_replay) return {false, "commands_replay"};

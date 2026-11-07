@@ -144,14 +144,13 @@ JSON 的 `mtp_selection_reason` 报告冷期选择或回落原因，`mtp_depth_s
 `bounded_generation_plan_reason`、`decode_overlap_plan_reason`、`device_verification_plan_reason` 和 `overlap_depth_plan_reason` 解释有界生成、接力、设备验证及连续后继的计划选择；`cache_budget` 表示配置的缓存预算触发回落。显式计划的工作负载没有 decode 时，设备验证报告 `no_decode`；默认有界会话仍为可能到来的后续轮次保留能力。运行时是否实际可接力仍以 `decode_overlap_available` 为准。
 `insufficient_capacity` 表示容量不足以同时容纳输入和草稿位置；显式启用仍受实际容量和能力限制。
 `--mtp-max-drafts 1` 可覆盖已启用的 K3，按 K1 执行。
-`--mtp-max-drafts` 控制每轮最多提出的草稿数，默认采用制品推荐值，没有推荐时为 1。`--mtp-min-probability` 设置
-草稿分布最大概率的最低门槛，范围为 0 到 1，默认 0；达到门槛才继续草稿，实际长度可以更短。
+`--mtp-max-drafts` 控制每轮最多提出的草稿数，默认采用制品推荐值，没有推荐时为 1。
 草稿数设为 0 时，`auto` 和 `off` 使用普通路径；显式 `on` 保持 MTP 路径但不提出草稿。
-这不是额外置信度模型。制品、后端与草稿数的实际运行范围见[模型覆盖](../implementation/model-operators.md)。
+制品、后端与草稿数的实际运行范围见[模型覆盖](../implementation/model-operators.md)。
 
 ### 草稿词表
 
-默认 `--mtp-draft-vocabulary auto`：MTP开启、无logits modifier的greedy、零概率阈值时，
+默认 `--mtp-draft-vocabulary auto`：MTP开启、无logits modifier的greedy时，
 读取 `mtp-draft-vocabulary.ids`。制品的 `head prepared` 偏好选择目录里来源匹配的 `mtp-draft-head.tsv`；
 该头不存在时从支持的原始头提取所选行。`head original` 选择原始头；显式 `--mtp-draft-head` 优先。
 文件不存在或采样政策不适用时，已启用的 MTP 使用完整词表；
@@ -164,7 +163,7 @@ JSON 的 `mtp_selection_reason` 报告冷期选择或回落原因，`mtp_depth_s
 子集会增加所选头的行副本；自动选择不按剩余显存回落，显存紧张时可选 `--mtp-draft-vocabulary full` 或 `--mtp off`。
 Q5_K 的行复制、1～4行投影与原ID映射已用合成数据验证；本地2B模型已验证Q5_K完整头及子集头的CUDA单请求greedy生成。
 可用于K1与多草稿；完整target head与embedding继续保留。编码行副本目前只支持CUDA，其它后端跳过自动词表并拒绝显式编码词表。
-显式文件遇到随机、modifier、非零阈值或不支持的权重会报错。
+显式文件遇到随机、modifier或不支持的权重会报错。
 
 准备阶段可指定语言偏好，例如 `prepare.py ... --mtp --draft-languages zh,en`，使用本地 tokenizer 的中英和共享代码提示选择自动词表；默认行数仍为原词表的一半，可用 `--draft-rows` 调整。未指定语言时沿用原有提示。此方法只统计提示中的 token，不执行模型。
 
@@ -230,7 +229,7 @@ hyle --inputs <准备目录> --backend cuda --mtp on --mtp-max-drafts 3 --mtp-dr
 ```
 
 显式映射仍可与独立头组合。默认K3可使用下一段准备的成套制品。
-2B的114688行Q4_K头payload为126MiB、映射448KiB。组合路径目前只验证CUDA，要求启用草稿、无modifier的greedy和零概率阈值。
+2B的114688行Q4_K头payload为126MiB、映射448KiB。组合路径目前只验证CUDA，要求启用草稿和无modifier的greedy。
 更换草稿头会改变提案、接受率与轮次划分，速度与数值边界见[性能表](../developer/performance/decode.md#固定-k3本轮复测)。
 
 ### 自动K3的准备与运行

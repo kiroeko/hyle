@@ -24,7 +24,7 @@ void q5_cold_families(const std::filesystem::path &input) {
       1, 4, true, false, 3, 2, precision, 3);
   q::Model model(std::move(source), geometry, 32, plan, {}, false,
       q::ReplayPolicy::kAuto, SIZE_MAX, {}, 0, {.primary = q::BackendKind::kCuda});
-  model.configure_draft_policy({3, 0});
+  model.configure_draft_policy({3});
   require(model.begin_cold_families(), "Q5 source declined the cold-family pool");
   const std::array<std::size_t, 1> rows{3};
   model.prepare_family(rows, false, 1, q::GraphRole::kText);
@@ -34,27 +34,25 @@ void q5_cold_families(const std::filesystem::path &input) {
 }
 void cold_policy_facts() {
   for (const auto drafts : {0u, 1u, 2u, 3u, 4u})
-    for (const auto threshold : {0.0f, 0.25f})
       for (const bool relay : {false, true})
         for (const auto active : {0u, 1u, 2u})
           for (const auto hidden : {0u, 1u, 2u, 3u})
             for (const auto stages : {0u, 1u, 2u, 3u, 4u})
               for (const bool capture : {false, true})
                 for (const bool projection : {false, true}) {
-                  const q::GreedyChainCapabilities facts{drafts, threshold, relay, active, hidden, stages,
+                  const q::GreedyChainCapabilities facts{drafts, relay, active, hidden, stages,
                       capture, projection};
-                  const bool old_packet = drafts > 1 && drafts <= 3 && threshold == 0 && relay &&
+                  const bool old_packet = drafts > 1 && drafts <= 3 && relay &&
                       active == 1 && hidden >= 2 && capture;
                   require(facts.packet_available() == old_packet, "cold packet admission changed");
                   require(facts.available() == (old_packet && stages >= drafts && projection),
                       "greedy chain admission changed");
                 }
-  const q::GreedyChainCapabilities valid{3, 0, true, 1, 2, 3, true, true};
+  const q::GreedyChainCapabilities valid{3, true, 1, 2, 3, true, true};
   require(valid.available(), "complete K3 capability was refused");
   auto changed = valid;
   changed.max_drafts = 1; require(!changed.available(), "K1 selected the multi-stage chain");
   changed = valid; changed.max_drafts = 4; require(!changed.available(), "unsupported depth selected the chain");
-  changed = valid; changed.minimum_probability = 0.1f; require(!changed.available(), "threshold selected the greedy chain");
   changed = valid; changed.device_relay = false; require(!changed.available(), "missing device relay selected the chain");
   changed = valid; changed.active_sequences = 2; require(!changed.available(), "multi-sequence selected the chain");
   changed = valid; changed.auxiliary_hidden_rows = 1; require(!changed.available(), "missing hidden rows selected the chain");
@@ -102,7 +100,7 @@ void zero_draft_cold(const std::filesystem::path &input) {
   capacity.qk_head_dim = capacity.value_head_dim = 96;
   require(!q::supports_mtp_attention(model.execution, capacity, model.resources_->attention_storage),
       "unsupported backend head dimensions were admitted");
-  model.configure_draft_policy({0,0});
+  model.configure_draft_policy({0});
   model.prepare_recursive_round_programs(0,true);
   require(model.draft_programs.size()==boundaries+2 && model.prefix_sampling_programs.size()==boundaries &&
       model.draft_programs.contains(q::DraftProgramKey{1,false,0}) &&
@@ -121,7 +119,7 @@ Result run(const std::filesystem::path &input,bool fused,bool compound=false,boo
       q::recurrent_bytes(q::state_schema_for(geometry,32),geometry),1,4,true,false,3,2,{},3);
   q::Model model(std::move(source),geometry,32,plan,{},false,
       fused?q::ReplayPolicy::kPreferCapture:q::ReplayPolicy::kCommands,SIZE_MAX,{},0,{.primary=q::BackendKind::kCuda});
-  model.configure_draft_policy({3,0});
+  model.configure_draft_policy({3});
   if(parallel)require(model.begin_cold_families(),"parallel cold contract did not start its original worker pool");
   const std::array seed_rows{std::size_t{3}};
   const auto prepare_families=[&]{
@@ -244,7 +242,7 @@ qwen_device_continuation_case::Result continuous_chain(const std::filesystem::pa
   const auto plan=q::cache::plan(geometry,source.cache_row_bytes,32,1,4,
       q::recurrent_bytes(q::state_schema_for(geometry,32),geometry),1,width,true,false,3,2,{},steps);
   q::Model model(std::move(source),geometry,32,plan,{},false,q::ReplayPolicy::kPreferCapture,SIZE_MAX,{},0,{.primary=q::BackendKind::kCuda});
-  model.configure_draft_policy({steps,0});if(device)model.configure_device_mtp_successor(true);
+  model.configure_draft_policy({steps});if(device)model.configure_device_mtp_successor(true);
   const std::array seed{std::size_t{3}},rows{width};
   model.prepare_family(seed,false,1,q::GraphRole::kMtpPrefill);model.plan_replay_uses(3,1,64,q::GraphRole::kMtpPrefill);
   for(const auto role:{q::GraphRole::kMtpRound,q::GraphRole::kMtpCatchupRound}){

@@ -33,7 +33,7 @@ struct DraftProgram final {
   g::Graph graph;
   inference::PreparedProgramFamily programs;
   inference::ProgramCarrier<ColdResources> carrier;
-  V tokens, positions, key, value, metadata, hidden, id, identity, log_probabilities, valid, probability;
+  V tokens, positions, key, value, metadata, hidden, id, identity, log_probabilities, valid;
   V bias, allowed, counts, next_counts;
   std::vector<V> hidden_inputs;
   std::vector<inference::ProgramIo::Input> hidden_bindings;
@@ -54,7 +54,7 @@ struct DraftProgram final {
   Tensor verification_prefix_values;
   inference::ProgramIo::Readback verification_value;
   inference::ProgramIo io;
-  inference::ProgramIo::Readback id_value, valid_value, probability_value;
+  inference::ProgramIo::Readback id_value, valid_value;
   c::LeasePool probability_pool, next_counts_pool;
   inference::ProgramIo::Output probabilities_output, next_counts_output;
 };
@@ -117,7 +117,6 @@ struct DraftProgramRequest final {
   std::size_t rows = 0, sampling_index = 0;
   bool head = false;
   g::ReplayMode replay_mode = g::ReplayMode::kCommands;
-  float minimum_probability = 0;
   std::size_t verification_rows = 0;
   std::size_t steps = 1;
 };

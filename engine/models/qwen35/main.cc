@@ -579,7 +579,6 @@ struct DraftWork final {
 };
 struct DraftProposal final {
   std::int32_t id = -1;
-  float probability = 0;
   c::ReadLease hidden, log_probabilities, next_counts;
 };
 // Call-local linear proposal resolution. Row zero was resolved before request
@@ -738,13 +737,12 @@ struct ColdResources final {
 // their original runtime owners.
 struct GreedyChainCapabilities final {
   std::size_t max_drafts = 0;
-  float minimum_probability = 0;
   bool device_relay = false;
   std::size_t active_sequences = 0, auxiliary_hidden_rows = 0, private_draft_stages = 0;
   bool capture_allowed = false, supported_projection = false;
 
   constexpr bool packet_available() const noexcept {
-    return max_drafts >= 2 && max_drafts <= kMaximumDeviceMtpDrafts && minimum_probability == 0 && device_relay &&
+    return max_drafts >= 2 && max_drafts <= kMaximumDeviceMtpDrafts && device_relay &&
         active_sequences == 1 && auxiliary_hidden_rows >= 2 && capture_allowed;
   }
   constexpr bool available() const noexcept {
@@ -762,7 +760,6 @@ public:
   };
   struct DraftPolicy final {
     std::size_t max_drafts = 1;
-    float minimum_probability = 0;
   };
 private:
   DraftPolicy draft_policy_;
@@ -793,20 +790,17 @@ private:
 public:
   const std::uint64_t sampling_seed;
   std::size_t max_drafts() const noexcept { return draft_policy_.max_drafts; }
-  float min_draft_probability() const noexcept { return draft_policy_.minimum_probability; }
   void configure_draft_policy(DraftPolicy policy) {
     if (preparation_started_)
       throw std::runtime_error("configure draft policy before the first model preparation");
-    if (!std::isfinite(policy.minimum_probability) || policy.minimum_probability < 0 || policy.minimum_probability > 1)
-      throw std::runtime_error("MTP minimum draft probability must be finite and within [0,1]");
     if (policy.max_drafts >= capacity ||
         (cache_plan.draft_cache && policy.max_drafts >= cache_plan.candidate_boundaries))
       throw std::runtime_error("MTP maximum drafts exceed the original context or candidate capacity");
-    if ((resources_->draft_vocabulary || resources_->draft_head) && (!policy.max_drafts || policy.minimum_probability != 0))
-      throw std::runtime_error("prepared draft projection requires active drafting with zero minimum probability");
+    if ((resources_->draft_vocabulary || resources_->draft_head) && !policy.max_drafts)
+      throw std::runtime_error("prepared draft projection requires active drafting");
     draft_policy_ = policy;
     bool supported_projection = false;
-    if (policy.max_drafts >= 2 && policy.max_drafts <= kMaximumDeviceMtpDrafts && policy.minimum_probability == 0) {
+    if (policy.max_drafts >= 2 && policy.max_drafts <= kMaximumDeviceMtpDrafts) {
       const auto found = projections.find(geometry.head_role());
       const auto *stored = found == projections.end() ? nullptr : std::get_if<StoredProjection>(&found->second);
       if (stored && stored->weight) {
@@ -819,17 +813,17 @@ public:
         }
       }
     }
-    const GreedyChainCapabilities chain{policy.max_drafts, policy.minimum_probability,
+    const GreedyChainCapabilities chain{policy.max_drafts,
         DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler), false, false}.eligible(),
         cache_plan.active_sequences, cache_plan.auxiliary_hidden_rows, cache_plan.private_draft_stages,
         replay_policy != ReplayPolicy::kCommands, supported_projection};
     draft_packet_available_ = chain.packet_available();
     greedy_chain_available_ = chain.available();
   }
-  bool recursive_mtp() const noexcept { return max_drafts() && (max_drafts() > 1 || min_draft_probability() > 0); }
+  bool recursive_mtp() const noexcept { return max_drafts() > 1; }
   bool device_mtp_successor_enabled() const noexcept { return device_mtp_successor_; }
   bool bounded_device_mtp_policy()const noexcept{
-    return max_drafts()>=1 && max_drafts()<=kMaximumDeviceMtpDrafts && min_draft_probability()==0 &&
+    return max_drafts()>=1 && max_drafts()<=kMaximumDeviceMtpDrafts &&
         (max_drafts()==1 || (cache_plan.in_flight_batches>=3 && cache_plan.private_draft_stages>=max_drafts()));
   }
   bool device_mtp_continuous_enabled() const noexcept {
@@ -865,8 +859,8 @@ public:
 
   bool prepare_draft_projection(const SamplingConfiguration &sampling) {
     if (!resources_->draft_vocabulary && !resources_->draft_head) return false;
-    if (sampling.enabled || !sampling.modifiers.empty() || min_draft_probability() != 0)
-      throw std::runtime_error("draft vocabulary requires unmodified greedy sampling and zero minimum probability");
+    if (sampling.enabled || !sampling.modifiers.empty())
+      throw std::runtime_error("draft vocabulary requires unmodified greedy sampling");
     if (resources_->draft_head && (!resources_->draft_vocabulary ||
         resources_->draft_head->original_ids.description.valid())) return true;
     if (active_step || successor_step || carrier_borrowed)
@@ -1334,14 +1328,13 @@ public:
         << ",\"mtp_acceptance_policy\":\"" << (!cache_plan.draft_cache ? "disabled" : default_sampler.enabled ? "min_one_p_over_q" : "equal_greedy_ids") << '"'
         << ",\"frontier_sampling_graph_calls\":" << frontier_sampling_graph_calls
         << ",\"mtp_max_drafts\":" << (cache_plan.draft_cache ? max_drafts() : 0)
-        << ",\"mtp_min_draft_probability\":" << (cache_plan.draft_cache ? min_draft_probability() : 0)
         << ",\"draft_vocabulary_requested_rows\":" << (resources_->draft_vocabulary ? resources_->draft_vocabulary->size() : 0)
         << ",\"draft_vocabulary_rows\":" << (resources_->draft_vocabulary && resources_->draft_head ? resources_->draft_head->original_ids.description.dimensions()[0] : 0)
         << ",\"draft_vocabulary_identity\":\"" << (resources_->draft_vocabulary ? resources_->draft_vocabulary_identity : std::string{}) << '"'
         << ",\"draft_vocabulary_weight_bytes\":" << (resources_->draft_vocabulary && resources_->draft_head ? resources_->draft_head->extra_weight_bytes() : 0)
         << ",\"draft_vocabulary_indexed_rows\":" << (resources_->draft_head && resources_->draft_head->indexed_weight ? "true" : "false")
         << ",\"draft_vocabulary_map_bytes\":" << (resources_->draft_vocabulary && resources_->draft_head ? take(resources_->draft_head->original_ids.description.required_bytes()) : 0)
-        << ",\"draft_vocabulary_policy\":\"greedy_unmodified_no_threshold\""
+        << ",\"draft_vocabulary_policy\":\"greedy_unmodified\""
         << ",\"draft_head_rows\":" << (resources_->draft_vocabulary ? resources_->draft_vocabulary->size() : resources_->draft_head ? resources_->draft_head->projection_weight().description.dimensions()[0] : 0)
         << ",\"draft_head_weight_bytes\":" << (resources_->draft_head ? resources_->draft_head->extra_weight_bytes() : 0)
         << ",\"draft_head_identity\":\"" << (resources_->draft_head ? resources_->draft_head->identity : std::string{}) << '"'
@@ -1863,7 +1856,7 @@ public:
     const auto replay_mode = !selected_sampler.modifiers.history.empty() && head ? g::ReplayMode::kCommands
         : select_replay_mode(replay_policy, head ? planned_uses : 1);
     const auto packet_rows = head && draft_packet_enabled(selected_sampler) ? max_drafts() + 1 : 0;
-    auto built = build_draft_program({rows, selected_index, head, replay_mode, min_draft_probability(), packet_rows, steps},
+    auto built = build_draft_program({rows, selected_index, head, replay_mode, packet_rows, steps},
         {geometry, precision, weights, projections, weight_meanings, ffn_placement.cpu_layers()},
         {attention_schema, cache_plan.hidden_slots, cache_plan.active_sequences, cache_plan.candidate_boundaries,
          prepared_draft_projection(subset)}, selected_sampler,
@@ -2160,11 +2153,6 @@ public:
                 if (flag != 1) throw std::runtime_error("recursive draft validity is outside its predicate encoding");
                 if (selected_sampler.enabled) output.log_probabilities =
                     take(program.io.retain(run, program.probabilities_output, execution_budget));
-                if (min_draft_probability() > 0) {
-                  check(program.io.read(run, program.probability_value, std::as_writable_bytes(std::span(&output.probability, 1))));
-                  if (!std::isfinite(output.probability) || output.probability < 0 || output.probability > 1)
-                    throw std::runtime_error("draft maximum probability is outside its declared probability domain");
-                }
               }
               check(program.io.read(run, program.id_value, std::as_writable_bytes(std::span(&output.id, 1))));
               if (output.id < 0 || output.id >= vocabulary) throw std::runtime_error("NextN proposal is outside vocabulary");
@@ -4911,10 +4899,6 @@ public:
               inputs, [&](const std::shared_ptr<StepSources> &source, bool ready) { prepare_verifier(inputs, source, ready); });
         else proposal = execute_draft(work, ids, shifted, true, identity, selected_sampling.index, current_logits);
       } else proposal = execute_draft(work, ids, shifted, true, identity, selected_sampling.index, current_logits);
-      // Stop on a distribution property, not the sampled proposal's own
-      // probability. The stopping condition is independent of this draw; its
-      // unpublished address may then be the target's final draw at 2*m.
-      if (min_draft_probability() > 0 && proposal.probability < min_draft_probability()) break;
       inputs.push_back(proposal.id); approximate = std::move(proposal.hidden);
       if (proposal.next_counts.valid()) current_logits.counts.lease = std::move(proposal.next_counts);
       if (q && selected_sampler.enabled) q->push_back(std::move(proposal.log_probabilities));
@@ -4926,7 +4910,7 @@ public:
       // for this unreachable row, without querying a terminated grammar.
       if (ended(inputs.back()) && dynamic->rows.size() < inputs.size())
         dynamic->rows.push_back(dynamic->rows.back());
-      else (void)resolve(); // A threshold-rejected draft already resolved this bonus.
+      else (void)resolve(); // Resolve the final live policy for the bonus row.
     }
     return inputs;
     } catch (inference::EvaluationFailure &failure) {
@@ -5084,17 +5068,13 @@ public:
         }
         member.accepted_tokens = accepted.consumed; selected[j] = result.next_id = accepted.next_id;
         result.agreed = accepted.first_agrees; result.consumed_drafts = accepted.consumed_drafts;
-        const bool clipped = min_draft_probability() > 0 && selection.proposal_limit > width - 1 &&
-            !inference::request_token_stopped(member.verification_inputs.back(), eos, member.stop_policy);
-        member.discarded_draft_rows = clipped ? (width == 1 ? member.base->draft->lag + 1 : 1) : 0;
+        member.discarded_draft_rows = 0;
         if (step.phase->recursive_draft_repair || step.phase->draft_chain_steps)
           member.discarded_draft_rows += member.draft_input_rows - member.base->draft->lag -
               (member.accepted_tokens == 1 ? 1 : member.accepted_tokens - 1);
-        result.auxiliary_graph_calls += clipped ? 1u : 0u;
         result.accepted_draft = result.consumed_drafts != 0;
         result.processed_target = member.accepted_tokens;
-        // Zero proposals never ran the draft head or its catch-up. A threshold-
-        // rejected first head is counted completely in discarded_draft_rows.
+        // Zero proposals never ran the draft head or its catch-up.
         result.processed_draft = width - 1 + (width > 1 ? member.base->draft->lag : 0) +
             member.base->draft->lag + (member.accepted_tokens == 1 ? 1 : member.accepted_tokens - 1) +
             member.discarded_draft_rows;
@@ -8096,7 +8076,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       model.execution.kind() == BackendKind::kCuda && !model.execution.has_cpu_assist() &&
       !model.scheduler && model.cache_plan.active_sequences == 1 && model.target_kv_layers &&
       model.layer0_probe.empty() &&
-      (!mtp || (model.max_drafts() >= 1 && model.max_drafts() <= kMaximumDeviceMtpDrafts && model.min_draft_probability() == 0)))
+      (!mtp || (model.max_drafts() >= 1 && model.max_drafts() <= kMaximumDeviceMtpDrafts)))
     (void)model.begin_cold_families();
   for (std::size_t sampling_index = 0; sampling_index < model.sampling_configuration_count(); ++sampling_index) {
     if (std::ranges::none_of(requests, [&](const auto &request) { return request.sampling_index == sampling_index; })) continue;
@@ -8732,7 +8712,6 @@ int qwen35::run(int argc, char **argv) {
         "  --cache-bytes auto|N        Session cache backing budget\n"
         "  --prefix-cache off|auto     Reuse completed prompt/turn checkpoints\n"
         "Advanced execution and diagnostics:\n"
-        "  --mtp-min-probability FLOAT  Stop below max draft probability, [0,1] (default: 0)\n"
         "  --warmup-shapes lazy|planned  Prepare known carriers before ready (default: lazy)\n"
         "  --progress direct|scheduler  Request progress implementation (default: direct)\n"
         "  --replay auto|commands|prefer-capture\n"
@@ -8759,8 +8738,6 @@ int qwen35::run(int argc, char **argv) {
     bool mtp_enabled = false;
     std::string mtp_policy = "auto";
     bool explicit_mtp_drafts = false;
-    float min_draft_probability = 0;
-    bool explicit_mtp_probability = false;
     qwen35::Model::Sampling sampler;
     bool explicit_sampling_parameters = false;
     bool single_schedule = false, multiple_schedules = false;
@@ -8808,22 +8785,15 @@ int qwen35::run(int argc, char **argv) {
         if (value != "greedy" && value != "random") throw std::runtime_error("--sampling requires greedy or random");
         sampler.enabled = value == "random";
       }
-      else if (option == "--temperature" || option == "--top-p" || option == "--mtp-min-probability") {
+      else if (option == "--temperature" || option == "--top-p") {
         float number = 0;
         std::istringstream parsed(value); parsed.imbue(std::locale::classic());
         parsed >> std::noskipws >> number;
-        const bool probability = option == "--mtp-min-probability";
-        if (probability && (!parsed || parsed.peek() != std::char_traits<char>::eof() ||
-            !std::isfinite(number) || number < 0 || number > 1))
-          throw std::runtime_error("--mtp-min-probability requires a finite probability within [0,1]");
-        if (!probability && (!parsed || parsed.peek() != std::char_traits<char>::eof() || !std::isfinite(number) ||
-            number <= 0 || (option == "--top-p" && number > 1)))
+        if (!parsed || parsed.peek() != std::char_traits<char>::eof() || !std::isfinite(number) ||
+            number <= 0 || (option == "--top-p" && number > 1))
           throw std::runtime_error(option + " requires a finite positive number" + (option == "--top-p" ? " at most one" : ""));
-        if (probability) { min_draft_probability = number; explicit_mtp_probability = true; }
-        else {
-          if (option == "--temperature") sampler.policy.temperature = number; else sampler.policy.top_p = number;
-          explicit_sampling_parameters = true;
-        }
+        if (option == "--temperature") sampler.policy.temperature = number; else sampler.policy.top_p = number;
+        explicit_sampling_parameters = true;
       }
       else if (option == "--top-k" || option == "--seed") {
         std::uint64_t number = 0;
@@ -8908,12 +8878,11 @@ int qwen35::run(int argc, char **argv) {
         layer0_probe.empty() && !preparation_diagnostics;
     const bool natural_generation = natural_schedule || natural_single;
     const bool unmodified_greedy = !sampler.enabled && sampler.modifiers.empty();
-    const bool zero_draft_threshold = min_draft_probability == 0;
     const hyle::inference::ColdWorkloadFacts cold_workload{
         .natural_generation = natural_generation, .multiple_schedules = multiple_schedules,
         .prefix_enabled = prefix_enabled, .scheduler_progress = progress,
         .planned_shapes = warmup_planned_shapes, .cpu_assist = cpu_ffn_layers != 0,
-        .greedy = unmodified_greedy, .zero_draft_threshold = zero_draft_threshold,
+        .greedy = unmodified_greedy,
         .state_trace = !trace.empty() && trace_states,
         .max_sessions = max_sessions, .active_sequences = active_sequences, .capacity = capacity};
     // A source-bound vocabulary opts a prepared directory into drafting.
@@ -8942,7 +8911,6 @@ int qwen35::run(int argc, char **argv) {
       throw std::runtime_error("--top-k exceeds the source vocabulary");
     if (explicit_mtp_drafts && max_drafts != 0 && !mtp_enabled)
       throw std::runtime_error("--mtp-max-drafts requires --mtp on or prepared automatic MTP");
-    if (explicit_mtp_probability && !mtp_enabled) throw std::runtime_error("--mtp-min-probability requires --mtp on or prepared automatic MTP");
     if (explicit_sampling_parameters && !sampler.enabled)
       throw std::runtime_error("--temperature, --top-k, --top-p and --seed require --sampling random");
     if (sampler.enabled && (!layer0_probe.empty() || preparation_diagnostics))
@@ -8960,7 +8928,7 @@ int qwen35::run(int argc, char **argv) {
     // The default single-session route admits later turns only after the
     // previous published wave retires. Auto N/R are configuration bounds of
     // one here; future schedule lengths and quotas cannot select this policy.
-    // Other backends, sampling/thresholds, multi-session/prefix and explicit
+    // Other backends, sampling, multi-session/prefix and explicit
     // planned workloads retain their finite route and invalid-performance label.
     const auto bounded_plan = hyle::inference::select_bounded_generation({
         .workload = cold_workload,
@@ -9180,7 +9148,7 @@ int qwen35::run(int argc, char **argv) {
     model.decode_overlap_plan_reason = overlap_plan.reason;
     model.device_verification_plan_reason = verification_plan.reason;
     model.overlap_depth_plan_reason = overlap_depth_reason;
-    model.configure_draft_policy({max_drafts, min_draft_probability});
+    model.configure_draft_policy({max_drafts});
     const auto constructed = qwen35::Clock::now();
     if (!trace.empty()) model.trace_routes = trace / "routes";
     if (natural_generation) {

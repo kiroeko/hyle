@@ -35,7 +35,7 @@ int main(int argc,char **argv) {
         1,mtp?drafts+1:1,mtp,true,mtp?3:1,mtp&&drafts>1?2:0,precision,mtp&&drafts>1?drafts:0);
     q::Model model(std::move(source),geometry,capacity,plan,{},false,q::ReplayPolicy::kAuto,
         SIZE_MAX,{},0,{.primary=q::BackendKind::kCuda});
-    if(mtp){model.configure_draft_policy({drafts,0});model.prepare_default_device_mtp_successor(true);}
+    if(mtp){model.configure_draft_policy({drafts});model.prepare_default_device_mtp_successor(true);}
     const auto single_role=mtp?q::GraphRole::kMtpSingle:q::GraphRole::kText;
     const auto prefill_role=mtp?q::GraphRole::kMtpPrefill:q::GraphRole::kText;
     const std::array rows{std::size_t{1}}, chunks{std::size_t{512}};

@@ -19,7 +19,7 @@ struct DefaultRequest final {
   bool automatic_vocabulary = false;
 
   constexpr bool unmodified_greedy_drafting() const noexcept {
-    return workload.greedy && workload.zero_draft_threshold;
+    return workload.greedy;
   }
 };
 
@@ -60,7 +60,7 @@ constexpr std::string_view automatic_constraint(const DefaultRequest &request) n
   if (!request.max_drafts) return "drafting_disabled";
   if (!workload.natural_generation) return "non_natural_request";
   if (!request.automatic_backend_eligible) return "backend_policy";
-  if (!workload.greedy || !workload.zero_draft_threshold) return "sampling_or_draft_threshold";
+  if (!workload.greedy) return "sampling";
   if (workload.multiple_schedules || workload.max_sessions > 1 || workload.active_sequences > 1)
     return "multiple_sessions_or_sequences";
   if (workload.prefix_enabled) return "prefix_cache";
