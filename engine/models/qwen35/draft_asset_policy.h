@@ -33,6 +33,8 @@ inline DraftAssetSelection select_draft_assets(const std::filesystem::path &inpu
   };
   const auto prepared_vocabulary = input / "mtp-draft-vocabulary.ids";
   const bool explicit_asset_selection = vocabulary != "auto" || head != "auto";
+  const bool explicit_file = (vocabulary != "auto" && vocabulary != "full") ||
+      (head != "auto" && head != "original");
   const bool has_vocabulary = mtp::inspect_prepared_vocabulary(request) &&
       inspect(prepared_vocabulary, "cannot inspect prepared MTP defaults: ");
   bool original_projection_eligible = false;
@@ -46,24 +48,29 @@ inline DraftAssetSelection select_draft_assets(const std::filesystem::path &inpu
   }
   const auto policy = mtp::select_default(request, has_vocabulary, original_projection_eligible,
       explicit_asset_selection);
-  if (!policy.enabled || !request.max_drafts) return {policy, {}, {}, false};
+  if (!policy.enabled || !request.max_drafts) {
+    if (explicit_file)
+      throw std::runtime_error("explicit MTP asset cannot be used: " +
+          std::string(request.max_drafts ? policy.reason : "drafting_disabled"));
+    return {policy, {}, {}, false};
+  }
   bool auto_head = false;
   if (head == "original") head.clear();
   else if (head == "auto") {
     head.clear();
-    auto_head = policy.enabled && request.max_drafts && request.greedy && !original_projection_eligible;
+    auto_head = request.greedy && !original_projection_eligible;
   }
   if (vocabulary == "full") vocabulary.clear();
   else if (vocabulary == "auto") {
     vocabulary.clear();
     if (policy.prepared_assets) vocabulary = prepared_vocabulary;
-    else if (head.empty() && policy.enabled && request.max_drafts && request.greedy &&
+    else if (head.empty() && request.greedy &&
              inspect(prepared_vocabulary, "cannot inspect prepared draft vocabulary: "))
       vocabulary = prepared_vocabulary;
   }
-  if (!vocabulary.empty() && (!policy.enabled || !request.max_drafts || !request.greedy))
+  if (!vocabulary.empty() && !request.greedy)
     throw std::runtime_error("--mtp-draft-vocabulary requires --mtp on, active drafting, unmodified greedy sampling and zero minimum probability");
-  if (!head.empty() && (!policy.enabled || !request.max_drafts || !request.greedy))
+  if (!head.empty() && !request.greedy)
     throw std::runtime_error("--mtp-draft-head requires active unmodified greedy MTP and zero minimum probability");
   return {policy, std::move(vocabulary), std::move(head), auto_head};
 }

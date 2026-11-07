@@ -67,8 +67,6 @@ def check(args):
                  'small-auto-head-file':('explicit_draft_asset','artifact_recommendation'),
                  'full-auto-original':('explicit_draft_asset','configured_default'),
                  'full-auto-head':('explicit_draft_asset','configured_default'),
-                 'off-ignores-explicit':('explicit_off','disabled'),
-                 'zero-ignores-explicit':('drafting_disabled','disabled'),
                  'generic-auto':('prepared_vocabulary','configured_default'),
                  'random-auto':('sampling_or_draft_threshold','disabled')}
         if name in reasons:
@@ -156,8 +154,12 @@ def check(args):
     assert ordinary==run('ignore-stale-zero',['--mtp-max-drafts','0'],inputs=args.output/'stale',mtp=False,subset=False)
     unused=['--mtp-draft-head',str(args.output/'missing-head.tsv'),
             '--mtp-draft-vocabulary',str(args.output/'missing-vocabulary.ids')]
-    assert ordinary==run('off-ignores-explicit',['--mtp','off',*unused],mtp=False,subset=False)
-    assert ordinary==run('zero-ignores-explicit',['--mtp-max-drafts','0',*unused],mtp=False,subset=False)
+    run('off-rejects-explicit',['--mtp','off',*unused],error='explicit MTP asset cannot be used: explicit_off')
+    run('zero-rejects-explicit',['--mtp-max-drafts','0',*unused],error='explicit MTP asset cannot be used: drafting_disabled')
+    run('random-rejects-explicit',['--sampling','random','--mtp-draft-vocabulary',str(small/'mtp-draft-vocabulary.ids')],
+        error='explicit MTP asset cannot be used: sampling_or_draft_threshold')
+    run('random-rejects-explicit-head',['--sampling','random','--mtp-draft-head',str(small/'mtp-draft-head.tsv')],
+        error='explicit MTP asset cannot be used: sampling_or_draft_threshold')
     run('reject-auto-missing-vocabulary', ['--mtp-draft-vocabulary',unused[3]], error='draft vocabulary file does not exist')
     run('reject-auto-missing-head', ['--mtp-draft-head',unused[1]], error='draft head requires a bounded regular metadata file')
     full=run('full-explicit-original',['--mtp','on','--mtp-max-drafts','1',
