@@ -244,7 +244,7 @@ hyle --inputs .scratch/mtp-ready --backend cuda --capacity 32768 --schedule <自
 
 已验证系统为Windows11 x64、RTX4070／SM8.9、驱动617.14、CUDA13.3.73。制品保存GGUF Q4_K行数据与原ID映射，
 其读取依赖相同Q4_K存储约定及兼容后端；其它系统未作本次性能验收。
-自动选择要求CUDA、容量至少4、单会话自然greedy和零草稿概率阈值；
+自动准入要求CUDA、容量至少2、单会话自然greedy和零草稿概率阈值；实际草稿深度仍受可用容量和执行能力限制。
 CPU分置、prefix、多会话、scheduler和随机采样不自动启用。`--replay commands`、计划形状准备及关闭decode overlap均可使用自动MTP。
 准备头缺失时使用原始头；选中的制品身份过期或行数不符时拒绝加载。
 制品元数据表达K3偏好，本身不证明该模型或负载上K3最快；可用`--mtp-max-drafts 1`显式选择K1。
