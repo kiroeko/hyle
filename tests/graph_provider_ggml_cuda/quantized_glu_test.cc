@@ -66,13 +66,14 @@ TEST(GgmlCudaF32GdnNorm, WeightedNormMatchesFloat64AndStandaloneProduct) {
   }
 }
 
-TEST(GgmlCudaF32GdnNorm, SmallWidthsPreserveReductionBitsAcrossCaptureAndRebinding) {
+TEST(GgmlCudaF32GdnNorm, WeightedWidthsPreserveReductionBitsAcrossCaptureAndRebinding) {
   auto context = g::cuda::create_context().value();
   auto ggml_context = c::Context::create(c::cuda::device(0).value(), c::ggml_cuda::provider()).value();
   auto owner = c::StorageOwner::adopt(context,
       c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value()).value();
   auto queue = context.create_queue().value();
-  for (const std::int64_t width : {1, 7, 31, 32, 33, 63, 64, 65, 96, 127, 128}) {
+  for (const std::int64_t width : {1, 7, 31, 32, 33, 63, 64, 65, 96, 127, 128,
+                                   1024, 1025, 1535, 1536, 2047, 2048}) {
     for (const std::int64_t rows : {1, 7, 129, 256}) {
       for (const bool rank4 : {false, true}) {
         SCOPED_TRACE(::testing::Message() << "width=" << width << " rows=" << rows << " rank4=" << rank4);

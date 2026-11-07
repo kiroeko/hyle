@@ -17,7 +17,7 @@ static __global__ void hyle_cuda_rms_norm_small_exact(
   const int row = blockIdx.x, channel = blockIdx.y, sample = blockIdx.z;
   const int lane = threadIdx.x;
   x += sample * stride_sample + channel * stride_channel + row * stride_row;
-  dst += ((sample * nchannels + channel) * nrows + row) * ncols;
+  dst += ((int64_t(sample) * nchannels + channel) * nrows + row) * ncols;
   mul += fastmodulo(sample, mul_nsamples_packed) * mul_stride_sample +
          fastmodulo(channel, mul_nchannels_packed) * mul_stride_channel +
          fastmodulo(row, mul_nrows_packed) * mul_stride_row;
@@ -37,6 +37,43 @@ static __global__ void hyle_cuda_rms_norm_small_exact(
   sum = warp_reduce_sum(sum);
   const float scale = rsqrtf(sum / ncols + eps);
   for (int col = lane; col < ncols; col += 32)
+    dst[col] = scale * x[col] * mul[fastmodulo(col, mul_ncols_packed)];
+}
+
+// Each thread reproduces two threads of the original 1024-thread reduction.
+// The full-width specialization avoids bounds checks for a 2048-element row.
+template<bool full_width>
+static __global__ void hyle_cuda_rms_norm_wide_exact(
+    const float *x, float *dst, const int ncols,
+    const int64_t stride_row, const int64_t stride_channel,
+    const int64_t stride_sample, const float eps, const float *mul,
+    const int64_t mul_stride_row, const int64_t mul_stride_channel,
+    const int64_t mul_stride_sample, const uint3 mul_ncols_packed,
+    const uint3 mul_nrows_packed, const uint3 mul_nchannels_packed,
+    const uint3 mul_nsamples_packed) {
+  ggml_cuda_pdl_lc();
+  const int row = blockIdx.x, channel = blockIdx.y, sample = blockIdx.z;
+  const int tid = threadIdx.x, lane = tid % 32, warp = tid / 32;
+  x += sample * stride_sample + channel * stride_channel + row * stride_row;
+  dst += ((int64_t(sample) * gridDim.y + channel) * gridDim.x + row) * ncols;
+  mul += fastmodulo(sample, mul_nsamples_packed) * mul_stride_sample +
+         fastmodulo(channel, mul_nchannels_packed) * mul_stride_channel +
+         fastmodulo(row, mul_nrows_packed) * mul_stride_row;
+  ggml_cuda_pdl_sync();
+
+  float a = 0.f, b = 0.f;
+  a += x[tid] * x[tid];
+  if (full_width || tid + 1024 < ncols) a += x[tid + 1024] * x[tid + 1024];
+  b += x[tid + 512] * x[tid + 512];
+  if (full_width || tid + 1536 < ncols) b += x[tid + 1536] * x[tid + 1536];
+  a = warp_reduce_sum(a);
+  b = warp_reduce_sum(b);
+  __shared__ float partial[32];
+  if (lane == 0) { partial[warp] = a; partial[warp + 16] = b; }
+  __syncthreads();
+  const float sum = warp_reduce_sum(partial[lane]);
+  const float scale = rsqrtf(sum / ncols + eps);
+  for (int col = tid; col < ncols; col += 512)
     dst[col] = scale * x[col] * mul[fastmodulo(col, mul_ncols_packed)];
 }
 #endif

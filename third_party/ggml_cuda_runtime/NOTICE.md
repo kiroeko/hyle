@@ -29,8 +29,9 @@ pool and admitted stream, and declines layouts outside its kernel contract.
 
 For sufficiently parallel weighted F32 RMSNorm rows of up to 128 elements, the
 CUDA integration uses one warp while retaining the original 256-thread
-reduction order. Small batches and other RMSNorm forms retain their existing
-dispatch.
+reduction order. For rows of 1024 to 2048 elements, a 512-thread kernel retains
+the original 1024-thread reduction order. Small batches and other RMSNorm forms
+retain their existing dispatch.
 
 The narrow IQ1_XS/XXS/XXXS CUDA programs in `iq1-patches.json` and the three
 MMQ template instances originate from Unsloth llama.cpp

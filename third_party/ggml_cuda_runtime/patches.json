@@ -1058,7 +1058,7 @@
     {
       "path": "src/ggml-cuda/norm.cu",
       "before_sha256": "8cb872a9633a7c68c5e9fa8c1f7d39afe9e66636c1299b9fc610b1b4217e7307",
-      "after_sha256": "b246a96b69f3f7cb338eb1c73fb97e78577e220f694fa1c49cfdb852cef6bce8",
+      "after_sha256": "dd901635166ee704180a4cb5c601a80bae67007eb945510e682295321d1e4a82",
       "edits": [
         {
           "before": "#include <cstdint>\n",
@@ -1135,6 +1135,10 @@
         {
           "before": "                          add_ncols, add_nrows, add_nchannels, add_nsamples,\n                          eps, stream);\n}",
           "after": "                          add_ncols, add_nrows, add_nchannels, add_nsamples,\n                          eps, ctx.device, stream);\n}"
+        },
+        {
+          "before": "        } else {\n            const dim3 block_dims(1024, 1, 1);\n            const ggml_cuda_kernel_launch_params launch_params = ggml_cuda_kernel_launch_params{blocks_num, block_dims, block_dims.x > WARP_SIZE ? 32 * sizeof(float): 0, stream};\n            ggml_cuda_kernel_launch(rms_norm_f32<1024, true>, launch_params,",
+          "after": "        }\n#if !defined(GGML_USE_HIP) && !defined(GGML_USE_MUSA)\n        else if (ncols <= 2048 &&\n                 int64_t(nrows) * nchannels * nsamples >=\n                     int64_t(2) * ggml_cuda_info().devices[device].nsm) {\n            // Two 512-thread blocks per SM supply at least 32 active warps.\n            // Preserve the original 1024-thread reduction order.\n            const dim3 block_dims(512, 1, 1);\n            const ggml_cuda_kernel_launch_params launch_params = {blocks_num, block_dims, 0, stream};\n            if (ncols == 2048) {\n                ggml_cuda_kernel_launch(hyle_cuda_rms_norm_wide_exact<true>, launch_params,\n                    x, dst, ncols, stride_row, stride_channel, stride_sample, eps, mul, mul_stride_row,\n                    mul_stride_channel, mul_stride_sample, mul_ncols_packed, mul_nrows_packed,\n                    mul_nchannels_packed, mul_nsamples_packed);\n            } else {\n                ggml_cuda_kernel_launch(hyle_cuda_rms_norm_wide_exact<false>, launch_params,\n                    x, dst, ncols, stride_row, stride_channel, stride_sample, eps, mul, mul_stride_row,\n                    mul_stride_channel, mul_stride_sample, mul_ncols_packed, mul_nrows_packed,\n                    mul_nchannels_packed, mul_nsamples_packed);\n            }\n        }\n#endif\n        else {\n            const dim3 block_dims(1024, 1, 1);\n            const ggml_cuda_kernel_launch_params launch_params = ggml_cuda_kernel_launch_params{blocks_num, block_dims, block_dims.x > WARP_SIZE ? 32 * sizeof(float): 0, stream};\n            ggml_cuda_kernel_launch(rms_norm_f32<1024, true>, launch_params,"
         }
       ]
     },
