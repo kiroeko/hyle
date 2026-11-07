@@ -114,6 +114,17 @@ def annotate(origin, arm):
             if not core.startswith("#pragma once\n\n"):
                 raise ValueError("hyle: unexpected model core header")
             edit(core_include, core.removeprefix("#pragma once\n\n").rstrip("\n"))
+            # The model-specific report adapter normally includes the core.
+            # Expand it in this diagnostic TU without including the core a
+            # second time after its pragma-once header was expanded above.
+            report_include = '#include "../../reporting/qwen35_cache_report.h"'
+            if report_include in text:
+                report = (origin.parent / "../../reporting/qwen35_cache_report.h").read_text(encoding="utf-8")
+                core_dependency = '#include "../models/qwen35/model_core.h"\n'
+                if not report.startswith("#pragma once\n\n") or report.count(core_dependency) != 1:
+                    raise ValueError("hyle: unexpected model report header")
+                report = report.removeprefix("#pragma once\n\n").replace(core_dependency, "", 1)
+                edit(report_include, report.rstrip("\n"))
         for include in dict.fromkeys(re.findall(r'^#include "([^\"]+)"', text, re.MULTILINE)):
             resolved = (origin.parent / include).resolve()
             if resolved.is_file():

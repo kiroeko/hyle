@@ -77,6 +77,8 @@ class PrefillScopeTest(unittest.TestCase):
         original, generated = prepare.annotate(source, "hyle")
         self.assertIn('#include "model_core.h"', original)
         self.assertNotIn('#include "model_core.h"', generated)
+        self.assertEqual(generated.count('class Model final {'), 1)
+        self.assertEqual(generated.count('inline std::string qwen35_cache_report('), 1)
         self.assertIn('hyle.host.cold_batch', generated)
         self.assertIn('hyle.prefill.ledger_endpoint.observed', generated)
 

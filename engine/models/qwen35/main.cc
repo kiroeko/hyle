@@ -20,6 +20,7 @@
 #include "../../inference/request_batch_execution.h"
 #include "../../inference/mtp_policy.h"
 #include "../../reporting/execution_report.h"
+#include "../../reporting/qwen35_cache_report.h"
 #include "../../reporting/qwen35_weight_inventory.h"
 #include "driver.h"
 
@@ -2473,7 +2474,7 @@ void print_generation_request(const Model &model, const GenerationRequest &reque
   std::cout << std::setprecision(17)
             << "{\"source_id\":\"" << model.source_identity << "\",\"score_dtype\":\"F32\",\"score_policy\":\"" << model.score_precision_policy()
             << "\",\"mtp\":" << (model.cache_plan.draft_cache ? "true" : "false") << hyle::engine::reporting::qwen35_weight_inventory(model.weight_inventory_facts(), routes)
-            << model.cache_report(packed_prefill_offset) << ",\"visible_tokens\":" << request.visible_tokens;
+            << hyle::engine::reporting::qwen35_cache_report(model, packed_prefill_offset) << ",\"visible_tokens\":" << request.visible_tokens;
   write_request_sampling(std::cout, model, request);
   if (model.cache_plan.draft_cache) std::cout << ",\"draft_frontier\":" << request.draft_frontier
       << ",\"draft_lag\":" << request.draft_lag;
@@ -3374,7 +3375,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       << ",\"overlap_successor_publications\":" << continuation.successor_publications
       << ",\"overlap_successor_discards\":" << continuation.successor_discards
       << ",\"overlap_successor_refusals\":" << continuation.successor_refusals
-      << model.cache_report(packed_prefill_offset) << ",\"prefix_cache\":" << (prefix_enabled ? "true" : "false")
+      << hyle::engine::reporting::qwen35_cache_report(model, packed_prefill_offset) << ",\"prefix_cache\":" << (prefix_enabled ? "true" : "false")
       << ",\"admitted_requests\":" << requests.size() << ",\"admitted_turns\":" << admitted << ",\"retired_requests\":" << completed
       << ",\"peak_resident_requests\":" << peak_resident << ",\"peak_committed_versions\":" << peak_committed
       << ",\"live_committed_versions\":" << model.snapshot_versions.live << ",\"idle_evictions\":" << evictions.size()
@@ -4602,7 +4603,7 @@ int qwen35::run(int argc, char **argv) {
                   << ",\"sampling_stream\":" << run.saved_sampling.stream
                   << ",\"sampling_draw_cursor\":" << run.saved_sampling.draw
                   << ",\"graph_input_tokens\":" << run.actual_graph_tokens
-                  << model.cache_report()
+                  << hyle::engine::reporting::qwen35_cache_report(model)
                   << ",\"cache_committed_version_limit\":" << cache_slots
                   << ",\"cache_live_snapshot_versions\":" << model.snapshot_versions.live
                   << ",\"cache_peak_committed_versions\":" << peak_committed_versions
@@ -4656,7 +4657,7 @@ int qwen35::run(int argc, char **argv) {
                   << ",\"max_cached_sessions\":" << max_sessions << ",\"active_sequences\":" << active_slots
                   << ",\"effective_cache_sessions\":" << cache_slots
                   << ",\"cache_recurrent_payload_bytes_per_snapshot\":" << recurrent_payload
-                  << model.cache_report()
+                  << hyle::engine::reporting::qwen35_cache_report(model)
                   << ",\"cache_page_rows\":" << qwen35::cache::Plan::page_rows
                   << ",\"cache_max_physical_pages\":" << selected_cache.max_pages
                   << ",\"cache_live_snapshot_versions\":" << model.snapshot_versions.live
@@ -4714,7 +4715,7 @@ int qwen35::run(int argc, char **argv) {
     const auto graph_calls = 1 + std::size_t(!extra.empty()) + consumed.size();
     std::cout << std::setprecision(17)
               << "{\"source_id\":\"" << model.source_identity << "\",\"score_dtype\":\"F32\",\"score_policy\":\"" << model.score_precision_policy()
-              << "\",\"mtp\":false" << hyle::engine::reporting::qwen35_weight_inventory(model.weight_inventory_facts(), routes) << model.cache_report()
+              << "\",\"mtp\":false" << hyle::engine::reporting::qwen35_weight_inventory(model.weight_inventory_facts(), routes) << hyle::engine::reporting::qwen35_cache_report(model)
               << ",\"sampling_stream\":" << session->head->sampling.stream
               << ",\"sampling_draw_cursor\":" << session->head->sampling.draw
               << ",\"visible_tokens\":" << session->length() << ",\"generated_ids\":[";

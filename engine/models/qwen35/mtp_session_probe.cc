@@ -433,7 +433,7 @@ struct PrefixObservation final {
       << ",\"actual_graph_calls\":" << graph_calls << ",\"full_hits\":" << full_hits << ",\"full_hit_head_vectors\":" << full_hit_vectors
       << ",\"old_prefix_full_byte_checks\":" << old_checks << ",\"peak_live_snapshot_versions\":" << peak_versions
       << ",\"final_live_snapshot_versions\":" << model.snapshot_versions.live
-      << model.cache_report() << ",\"peak_retained_output_backing_bytes\":" << peak_retained_output_bytes
+      << hyle::engine::reporting::qwen35_cache_report(model) << ",\"peak_retained_output_backing_bytes\":" << peak_retained_output_bytes
       << ",\"all_vectors_byte_equal\":" << (all_bytes ? "true" : "false") << ",\"all_finite\":" << (all_finite ? "true" : "false")
       << ",\"negative_teacher_forced_input\":248045,\"cached_pending\":198,\"negative_rejected\":" << (negative_rejected ? "true" : "false")
       << ",\"negative_error\":" << quoted(negative_error) << ",\"negative_bound_banks\":" << negative_bound_banks
