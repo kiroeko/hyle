@@ -7,6 +7,10 @@
 #include <cub/device/device_segmented_reduce.cuh>
 #include <cub/device/device_transform.cuh>
 #include <cub/version.cuh>
+#if defined(CCCL_VERSION) && CCCL_VERSION >= 3003000 && __has_include(<cub/device/device_topk.cuh>)
+#include <cub/device/device_topk.cuh>
+#define HYLE_CUDA_STABLE_SMALL_TOPK 1
+#endif
 #include <cuda/std/functional>
 #include <cuda/std/tuple>
 #include <cuda_bf16.h>
@@ -389,6 +393,43 @@ template <class Score> struct Decompose {
     return ::cuda::std::tie(key.row, key.nan, key.value);
   }
 };
+#if defined(HYLE_CUDA_STABLE_SMALL_TOPK)
+// Selection pays several dispatches, while small rows can be sorted as a
+// single tile. Keep those rows on radix sort and select only for longer rows
+// and the smaller half; other layouts, types and large selections also fall back.
+constexpr std::size_t kStableSelectionMinimum = 256 * 8;
+bool use_stable_small_topk(const Program &p) noexcept {
+  return p.kind == Kind::kTopK && p.type == Type::kFloat32 && p.dense && p.inner == 1 &&
+      p.count == p.width && p.width >= kStableSelectionMinimum && p.k > 1 && p.k <= p.width / 2;
+}
+
+__global__ void stable_topk_keys(Program p, const void *input, std::uint64_t *keys) {
+  for (std::size_t i = std::size_t(blockIdx.x) * blockDim.x + threadIdx.x;
+       i < p.width; i += std::size_t(gridDim.x) * blockDim.x) {
+    float value;
+    memcpy(&value, static_cast<const char *>(input) + i * sizeof(float), sizeof(float));
+    std::uint32_t ordered = 0; // NaNs are after all numbers in either direction.
+    if (!isnan(value)) {
+      auto bits = __float_as_uint(value == 0.F ? 0.F : value); // signed zeros tie.
+      ordered = (bits & 0x80000000u) ? ~bits : (bits ^ 0x80000000u);
+      if (!p.largest) ordered = ~ordered;
+    }
+    // Every key is unique; lower original indices win equal scores. DeviceTopK
+    // may return its set unordered, so the selected keys are sorted afterward.
+    keys[i] = (std::uint64_t(ordered) << 32) | std::uint32_t(~std::uint32_t(i));
+  }
+}
+__global__ void stable_topk_output(Program p, const void *input, const std::uint64_t *keys,
+                                   void *values, std::int32_t *indices) {
+  for (std::size_t i = std::size_t(blockIdx.x) * blockDim.x + threadIdx.x;
+       i < p.k; i += std::size_t(gridDim.x) * blockDim.x) {
+    const auto original = std::uint32_t(~std::uint32_t(keys[i]));
+    indices[i] = static_cast<std::int32_t>(original);
+    memcpy(static_cast<char *>(values) + i * sizeof(float),
+           static_cast<const char *>(input) + std::size_t(original) * sizeof(float), sizeof(float));
+  }
+}
+#endif
 template <class T> struct SortInput {
   Layout layout;
   const void *input;
@@ -639,6 +680,26 @@ cudaError_t gather(const Program &program, const void *input,
 template <class T> cudaError_t configure_typed(Program &program) {
   using Acc = Accumulation<T>;
   const Layout layout{program};
+#if defined(HYLE_CUDA_STABLE_SMALL_TOPK)
+  if constexpr (std::is_same_v<T, float>) if (use_stable_small_topk(program)) {
+    auto requirements = ::cuda::execution::require(::cuda::execution::determinism::not_guaranteed,
+                                                    ::cuda::execution::output_ordering::unsorted);
+    auto env = ::cuda::std::execution::env{::cuda::stream_ref{cudaStream_t{}}, requirements};
+    std::size_t selected_bytes = 0, sort_bytes = 0;
+    auto status = cub::DeviceTopK::MaxKeys(nullptr, selected_bytes,
+        static_cast<const std::uint64_t *>(nullptr), static_cast<std::uint64_t *>(nullptr),
+        program.count, program.k, env);
+    if (status != cudaSuccess) return status;
+    status = cub::DeviceRadixSort::SortKeysDescending(nullptr, sort_bytes,
+        static_cast<const std::uint64_t *>(nullptr), static_cast<std::uint64_t *>(nullptr), program.k);
+    if (status != cudaSuccess) return status;
+    program.temporary_bytes = std::max(selected_bytes, sort_bytes);
+    if (!reserve(program, program.count * sizeof(std::uint64_t), program.keys_in_offset) ||
+        !reserve(program, program.k * sizeof(std::uint64_t), program.keys_out_offset) ||
+        !reserve(program, program.temporary_bytes, program.temporary_offset)) return cudaErrorInvalidValue;
+    return cudaSuccess;
+  }
+#endif
   if (program.kind == Kind::kTopK && program.k == 1) {
     // Every nonempty TopK1 shape uses the same cold-prepared two-stage
     // selection, including one row and axes shorter than one tile. This
@@ -726,6 +787,27 @@ cudaError_t submit_typed(const Program &program, const void *input,
   auto *storage = static_cast<char *>(workspace);
   auto *temporary = storage + program.temporary_offset;
   auto bytes = program.temporary_bytes;
+#if defined(HYLE_CUDA_STABLE_SMALL_TOPK)
+  if constexpr (std::is_same_v<T, float>) if (use_stable_small_topk(program)) {
+    auto *keys = reinterpret_cast<std::uint64_t *>(storage + program.keys_in_offset);
+    auto *selected = reinterpret_cast<std::uint64_t *>(storage + program.keys_out_offset);
+    const auto blocks = static_cast<unsigned>(std::min<std::size_t>((program.count + 255) / 256, 65535));
+    stable_topk_keys<<<blocks, 256, 0, stream>>>(program, input, keys);
+    auto status = cudaGetLastError();
+    if (status != cudaSuccess) return status;
+    auto requirements = ::cuda::execution::require(::cuda::execution::determinism::not_guaranteed,
+                                                    ::cuda::execution::output_ordering::unsorted);
+    auto env = ::cuda::std::execution::env{::cuda::stream_ref{stream}, requirements};
+    status = cub::DeviceTopK::MaxKeys(temporary, bytes, keys, selected, program.count, program.k, env);
+    if (status != cudaSuccess) return status;
+    bytes = program.temporary_bytes;
+    status = cub::DeviceRadixSort::SortKeysDescending(temporary, bytes, selected, keys, program.k, 0, 64, stream);
+    if (status != cudaSuccess) return status;
+    stable_topk_output<<<static_cast<unsigned>(std::min<std::size_t>((program.k + 255) / 256, 65535)), 256, 0, stream>>>(
+        program, input, keys, output, static_cast<std::int32_t *>(indices));
+    return cudaGetLastError();
+  }
+#endif
   if (program.kind == Kind::kTopK && program.k == 1) {
     auto *selected = reinterpret_cast<ArgPair<Acc> *>(storage + program.prefix_offset);
     cudaError_t status;

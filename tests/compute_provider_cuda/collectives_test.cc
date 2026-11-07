@@ -134,6 +134,69 @@ TEST(CudaCccl, TopKFourTypesStableTiesNaNsAndOriginalBits) {
   selections<hyle::simd::bfloat16_t>(owner);
 }
 
+TEST(CudaCccl, SmallSingleRowTopKPreservesStableOrderAndBits) {
+  auto owner = context();
+  topk<float>(owner, std::array<std::int64_t, 2>{1, 1024}, -1, 0, 40);
+  topk<float>(owner, std::array<std::int64_t, 2>{1, 1025}, -1, 0, 40);
+  topk<float>(owner, std::array<std::int64_t, 2>{1, 2047}, -1, 0, 40);
+  topk<float>(owner, std::array<std::int64_t, 2>{1, 2048}, -1, 0, 40);
+  for (const auto k : {2u, 40u, 4096u, 4097u})
+    topk<float>(owner, std::array<std::int64_t, 2>{1, 8193}, -1, 0, k);
+  topk<float>(owner, std::array<std::int64_t, 2>{1, 248320}, -1, 0, 40);
+  // Non-dense views keep their original fallback.
+  topk<float>(owner, std::array<std::int64_t, 2>{1, 8193}, -1, 1, 40);
+}
+
+TEST(CudaCccl, SmallSingleRowTopKMatchesStableOracleAcrossFloatBits) {
+  auto owner = context();
+  auto memory = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  auto queue = owner.create_queue().value();
+  constexpr std::size_t width = 8193, k = 40;
+  const auto desc = TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 2>{1, width}).value();
+  Tensor input(desc, memory.ref());
+  std::vector<float> data(width);
+  std::uint32_t state = 0x734a62b1u;
+  for (auto &value : data) {
+    state = state * 1664525u + 1013904223u;
+    value = std::bit_cast<float>(state);
+  }
+  data[3] = data[5000] = std::numeric_limits<float>::infinity();
+  data[7] = 0.F;
+  data[8] = -0.F;
+  data[900] = std::bit_cast<float>(0x7fc01234u);
+  input.write<float>(data);
+  for (bool largest : {false, true}) {
+    const TopK operation{.count = k, .axis = -1, .largest = largest};
+    std::array<TensorDesc, 2> output_desc;
+    ASSERT_TRUE(infer_output_descriptions(Operation(operation), std::span(&desc, 1), output_desc).ok());
+    Tensor values(output_desc[0], memory.ref()), indices(output_desc[1], memory.ref());
+    auto prepared = prepare(owner, operation, desc, memory.ref());
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    auto scratch = workspace(*prepared, memory.ref());
+    auto slot = prepared->create_invocation(scratch.view()).value();
+    const auto in = input.view.as_const();
+    const std::array outputs{values.view, indices.view};
+    auto done = slot.submit(queue, std::span(&in, 1), outputs);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    auto order = std::vector<std::size_t>(width);
+    std::iota(order.begin(), order.end(), 0);
+    std::stable_sort(order.begin(), order.end(), [&](auto a, auto b) {
+      if (std::isnan(data[a])) return false;
+      if (std::isnan(data[b])) return true;
+      return largest ? data[a] > data[b] : data[a] < data[b];
+    });
+    const auto got = values.read<float>();
+    const auto selected = indices.read<std::int32_t>();
+    for (std::size_t i = 0; i < k; ++i) {
+      ASSERT_EQ(selected[i], order[i]);
+      ASSERT_EQ(std::bit_cast<std::uint32_t>(got[i]), std::bit_cast<std::uint32_t>(data[order[i]]));
+    }
+    values.guard();
+    indices.guard();
+  }
+}
+
 template <class T> void single_row_special_bits(Context &owner) {
   auto memory =
       cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
