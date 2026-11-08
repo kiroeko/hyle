@@ -7,6 +7,38 @@ from engine.text.worker_client import WorkerClient, WorkerError
 
 
 class WorkerClientLifecycleTest(unittest.TestCase):
+    def test_finite_turns_share_one_ordered_request(self):
+        code = "\n".join((
+            "import sys",
+            "print('READY\\t2\\t256\\t128\\t3', flush=True)",
+            "line = sys.stdin.readline().rstrip('\\r\\n')",
+            "assert line == 'G\\t1\\t1\\t10\\t1\\t\\t1\\t20,21\\t1\\t', repr(line)",
+            "print('A\\t1', flush=True)",
+            "for token in (11, 12, 13, 14):",
+            " print(f'T\\t1\\t{token}', flush=True)",
+            " assert sys.stdin.readline().rstrip('\\r\\n') == 'K\\t1\\t1'",
+            "print('F\\t1\\tcompleted', flush=True)",
+            "assert sys.stdin.readline().rstrip('\\r\\n') == 'Q'",
+            "print('BYE', flush=True)",
+        ))
+        worker = WorkerClient([sys.executable, '-B', '-c', code], startup_timeout=3)
+        try:
+            with self.assertRaises(ValueError):
+                worker.submit_turns([])
+            with self.assertRaises(ValueError):
+                worker.submit_turns([([], 1)])
+            request = worker.submit_turns([([10], 1), ([], 1), ([20, 21], 1), ([], 1)])
+            try:
+                for token in (11, 12, 13, 14):
+                    event = request.read(timeout=3)
+                    self.assertEqual((event.kind, event.token), ('token', token))
+                    request.acknowledge()
+                self.assertEqual(request.read(timeout=3).kind, 'completed')
+            finally:
+                request.close()
+        finally:
+            worker.close(timeout=3)
+
     def test_invalid_handshake_terminates_its_worker(self):
         started = []
         popen = subprocess.Popen

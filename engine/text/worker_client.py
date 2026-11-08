@@ -127,10 +127,19 @@ class WorkerClient:
             return not self._closed and self._failure is None and self._process.poll() is None
 
     def submit(self, tokens: Sequence[int], max_output_tokens: int) -> WorkerRequest:
-        if not tokens or type(max_output_tokens) is not int or max_output_tokens <= 0:
-            raise ValueError("prompt and output limit must be nonempty")
-        if any(type(token) is not int or token < 0 or token > 2147483647 for token in tokens):
-            raise ValueError("prompt contains an invalid token ID")
+        return self.submit_turns(((tokens, max_output_tokens),))
+
+    def submit_turns(self, turns: Sequence[tuple[Sequence[int], int]]) -> WorkerRequest:
+        """Submit one finite session; its turn outputs form one ordered stream."""
+        if not turns:
+            raise ValueError("at least one turn is required")
+        frames = []
+        for index, (tokens, max_output_tokens) in enumerate(turns):
+            if (index == 0 and not tokens) or type(max_output_tokens) is not int or max_output_tokens <= 0:
+                raise ValueError("initial prompt and each output limit must be nonempty")
+            if any(type(token) is not int or token < 0 or token > 2147483647 for token in tokens):
+                raise ValueError("prompt contains an invalid token ID")
+            frames.extend((str(max_output_tokens), ",".join(map(str, tokens))))
         events: queue.Queue = queue.Queue(maxsize=2)
         with self._state_lock:
             if self._closed or self._failure:
@@ -141,7 +150,7 @@ class WorkerClient:
             self._next_id += 1
             self._pending[request_id] = events
         try:
-            self._send(f"G\t{request_id}\t{max_output_tokens}\t" + ",".join(map(str, tokens)))
+            self._send(f"G\t{request_id}\t" + "\t".join(frames))
         except Exception:
             self._forget(request_id)
             raise

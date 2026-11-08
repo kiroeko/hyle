@@ -777,10 +777,12 @@ public:
     }
     for (std::size_t slot = 0; slot < keys.size(); ++slot) {
       const auto key = keys[slot];
-      const auto count = batch.sessions[slot].turns.front().max_outputs;
-      for (std::size_t n = 0; n < count && !consumer.cancel_requested(key);) {
-        if (consumer.try_write(key, static_cast<std::int32_t>(batch.sessions[slot].turns.front().prompt.front() + n))) ++n;
-        else if (!consumer.cancel_requested(key)) consumer.wait();
+      for (const auto &turn : batch.sessions[slot].turns) {
+        const auto first = turn.prompt.empty() ? 0 : turn.prompt.front();
+        for (std::size_t n = 0; n < turn.max_outputs && !consumer.cancel_requested(key);) {
+          if (consumer.try_write(key, static_cast<std::int32_t>(first + n))) ++n;
+          else if (!consumer.cancel_requested(key)) consumer.wait();
+        }
       }
       const auto cancelled = consumer.cancel_requested(key);
       window_.retire_active(key); window_.release(key);
@@ -809,13 +811,17 @@ void model_provider_selects_one_owner_and_rejects_ambiguity() {
 
 void token_worker_rejects_malformed_frames_without_starting_model() {
   auto control = std::make_shared<IngressTestControl>();
-  std::istringstream input("G\t0\t1\t1\nG\t7\t0\t1\nG\t8\t1\t-1\nC\t9\nQ\n");
+  std::istringstream input("G\t0\t1\t1\nG\t7\t0\t1\nG\t8\t1\t-1\n"
+      "G\t10\t1\t1\t0\t2\nG\t11\t1\t\t1\t2\nG\t12\t1\t1\t1\nC\t9\nQ\n");
   std::ostringstream output;
   i::TokenWorker worker(std::make_unique<IngressTestExecutor>(control), 2, 2, 1, 16, input, output);
   require(worker.run() == 0, "worker protocol did not close cleanly");
   require(output.str() == "READY\t2\t256\t128\t3,4\nE\t0\tprotocol\tinvalid request identity\n"
       "E\t7\tinvalid\tinvalid output limit or token list\n"
-      "E\t8\tinvalid\tinvalid output limit or token list\nC\t9\tstale\nBYE\n",
+      "E\t8\tinvalid\tinvalid output limit or token list\n"
+      "E\t10\tinvalid\tinvalid output limit or token list\n"
+      "E\t11\tinvalid\tinvalid output limit or token list\n"
+      "E\t12\tprotocol\tunknown or malformed command\nC\t9\tstale\nBYE\n",
       "worker protocol accepted malformed input or changed response order");
   std::lock_guard lock(control->mutex);
   require(control->batches.empty(), "malformed worker frame reached the model");
@@ -897,6 +903,13 @@ void token_worker_credit_and_cancellation_do_not_hang() {
     require(next() == "T\t1\t11", "worker did not resume after acknowledgement");
     input_buffer.send("K\t1\t1\n");
     require(next() == "F\t1\tcompleted", "worker lost normal terminal after acknowledgement");
+    input_buffer.send("G\t4\t2\t40\t1\t\t2\t50\t1\t\n");
+    require(next() == "A\t4", "worker did not admit a finite multi-turn session");
+    for (const auto token : {40, 41, 0, 50, 51, 0}) {
+      require(next() == "T\t4\t" + std::to_string(token), "worker reordered a session's turn outputs");
+      input_buffer.send("K\t4\t1\n");
+    }
+    require(next() == "F\t4\tcompleted", "worker lost the multi-turn terminal");
     input_buffer.send("G\t2\t2\t20\n");
     require(next() == "A\t2" && next() == "T\t2\t20", "worker lost second request");
     input_buffer.send("C\t2\n");

@@ -18,6 +18,39 @@ using qwen_generation_state_case::StateBytes;
 using qwen_generation_state_case::state_bytes;
 constexpr std::size_t kOutputs = 14;
 
+// Diagnostic report for the same cold capacity and random policy as the
+// reusable worker, including the original per-commit sampling cursor.
+int bounded_sampling_report(const std::filesystem::path &input, const std::filesystem::path &schedule,
+    bool bounded = true, std::size_t capture_after = SIZE_MAX, const std::filesystem::path &capture = {}) {
+  constexpr std::size_t capacity = 32768, prefill = 512;
+  auto source = q::prepare_weight_source(input / "weights.tsv", false);
+  const auto geometry = source.roles.geometry;
+  const auto precision = q::PrecisionProfile::from_roles(source.roles);
+  const auto recurrent = q::recurrent_bytes(q::state_schema_for(geometry, capacity, precision), geometry);
+  const auto plan = q::cache::plan(geometry, source.cache_row_bytes, capacity, 1, prefill, recurrent,
+      1, 1, false, true, 1, 0, precision, 0);
+  const auto execution = q::select_execution(q::BackendSelection{.primary = i::BackendKind::kCuda}, 0);
+  auto backend = q::create_execution(geometry, plan, 0, execution);
+  const q::Model::Sampling sampling{.enabled = true, .policy = {.8F, 40, .95F}, .seed = 123};
+  q::Model model(std::move(backend), hyle::compute::ResourceBudget{}, std::move(source), geometry,
+      capacity, plan, {}, false, q::ReplayPolicy::kAuto, SIZE_MAX, sampling, 0);
+  const std::vector<i::GenerationSessionSchedule> schedules{{"default",
+      q::benchmark::read_generation_schedule(schedule, geometry.vocabulary, capacity, 64)}};
+  const std::array<q::cache::TokenPlanRef, 0> token_plans{};
+  q::ReusableGenerationPreparation preparation;
+  const auto observer = [&](const q::GenerationBatchFacts &facts) {
+    for (const auto &member : facts.members) {
+      auto &request = *member.request;
+      if (request.ledger->committed_count == capture_after) request.trace = capture;
+      else if (!request.trace.empty()) request.trace.clear();
+    }
+  };
+  const auto now = q::Clock::now();
+  return q::run_generation_sessions<q::GenerationMode::kText>(model, schedules, {}, false, now, now,
+      false, token_plans, {}, {}, prefill, false, false, {}, observer, bounded, {}, nullptr,
+      std::cout, bounded ? &preparation : nullptr);
+}
+
 int observe_output(const std::filesystem::path &input, std::string_view mode, bool print_report = false) {
   const auto original_mode = mode;
   const bool cancel_before = mode == "cancel-before";
@@ -1174,6 +1207,13 @@ int run(const std::filesystem::path &input, bool boundaries = false, bool warm_c
 
 int main(int argc, char **argv) {
   try {
+    if (argc == 4 && std::string_view(argv[1]) == "--bounded-sampling-report")
+      return bounded_sampling_report(argv[2], argv[3]);
+    if (argc == 7 && std::string_view(argv[1]) == "--sampling-logits-at") {
+      const std::string_view mode(argv[4]);
+      require(mode == "bounded" || mode == "known", "sampling trace mode requires bounded or known");
+      return bounded_sampling_report(argv[2], argv[3], mode == "bounded", std::stoull(argv[5]), argv[6]);
+    }
     if (argc == 4 && std::string_view(argv[1]) == "--dispatcher-output")
       return dispatcher_output(argv[2], argv[3]);
     if (argc == 4 && (std::string_view(argv[1]) == "--queued-output" ||

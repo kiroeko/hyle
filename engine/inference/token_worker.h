@@ -23,7 +23,9 @@ namespace hyle::inference {
 
 // Internal local transport for a frontend process. It carries token IDs, not
 // protocol JSON or model state. Frames are TAB-delimited UTF-8/ASCII lines:
-// G id output_limit comma_separated_ids; K id accepted_count; C id; Q.
+// G id output_limit comma_separated_ids [output_limit comma_separated_ids ...];
+// K id accepted_count; C id; Q. Later turn inputs may be empty. Tokens from
+// all turns are delivered in order; this transport does not mark turn ends.
 // Responses are READY 2 vocabulary context stop_ids, A id, T id token,
 // F id completed|cancelled|closed,
 // E id kind message, C id accepted|stale and BYE. A request initially has one
@@ -80,7 +82,7 @@ public:
           if (!emit(error(id, "protocol", "invalid output acknowledgement"))) break;
         continue;
       }
-      if (fields[0] != "G" || fields.size() != 4) {
+      if (fields[0] != "G" || fields.size() < 4 || (fields.size() - 2) % 2 != 0) {
         if (!emit(error(id, "protocol", "unknown or malformed command"))) break;
         continue;
       }
@@ -88,14 +90,29 @@ public:
         if (!emit(error(id, "protocol", "duplicate active request identity"))) break;
         continue;
       }
-      std::size_t limit = 0;
-      std::vector<std::int32_t> tokens;
-      if (!number(fields[2], limit) || !limit || !parse_tokens(fields[3], tokens)) {
+      std::vector<GenerationTurn> turns;
+      std::size_t prompt_tokens = 0;
+      const auto turn_count = (fields.size() - 2) / 2;
+      bool valid = turn_count <= max_prompt_tokens_;
+      if (valid) turns.reserve(turn_count);
+      for (std::size_t at = 2; valid && at < fields.size(); at += 2) {
+        std::size_t limit = 0;
+        std::vector<std::int32_t> tokens;
+        if (!number(fields[at], limit) || !limit ||
+            !parse_tokens(fields[at + 1], tokens, !turns.empty()) ||
+            tokens.size() > max_prompt_tokens_ - prompt_tokens) {
+          valid = false;
+          break;
+        }
+        prompt_tokens += tokens.size();
+        turns.push_back({std::move(tokens), limit});
+      }
+      if (!valid) {
         if (!emit(error(id, "invalid", "invalid output limit or token list"))) break;
         continue;
       }
       try {
-        auto handle = dispatcher_.submit({std::to_string(id), {{std::move(tokens), limit}}});
+        auto handle = dispatcher_.submit({std::to_string(id), std::move(turns)});
         auto call = std::make_shared<Call>(std::move(handle));
         calls_.emplace(id, call);
         if (!emit("A\t" + std::to_string(id))) { call->cancel(); break; }
@@ -167,8 +184,8 @@ private:
       at = end + 1;
     }
   }
-  bool parse_tokens(std::string_view value, std::vector<std::int32_t> &tokens) const {
-    if (value.empty()) return false;
+  bool parse_tokens(std::string_view value, std::vector<std::int32_t> &tokens, bool allow_empty) const {
+    if (value.empty()) return allow_empty;
     for (const auto piece : split(value, ',')) {
       std::int32_t token = 0;
       if (tokens.size() == max_prompt_tokens_ || !number(piece, token) || token < 0) return false;
