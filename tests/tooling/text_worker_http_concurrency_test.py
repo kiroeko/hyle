@@ -4,8 +4,11 @@ Uses an existing local Qwen worker and input directory; never downloads models.
 """
 import argparse
 import json
+import re
 import socket
 import struct
+import subprocess
+import sys
 import threading
 import time
 import urllib.request
@@ -45,7 +48,30 @@ def main():
     parser.add_argument('--draft-count', type=int, choices=range(4), default=0,
                         help='explicit MTP draft depth; 0 tests ordinary generation')
     parser.add_argument('--tokenizer-dir', help='existing local tokenizer and model chat template')
+    parser.add_argument('--require-batched-verifier', action='store_true',
+                        help='also require an observed two-request recursive verifier batch')
     args = parser.parse_args()
+    if args.require_batched_verifier:
+        if args.draft_count < 2:
+            parser.error('--require-batched-verifier requires at least two drafts')
+        command = [sys.executable, '-B', '-m', 'tests.tooling.text_worker_http_concurrency_test',
+                   '--engine', args.engine, '--inputs', args.inputs, '--port', str(args.port),
+                   '--sampling', args.sampling, '--draft-count', str(args.draft_count),
+                   '--metrics' if args.metrics else '--no-metrics']
+        if args.tokenizer_dir:
+            command += ['--tokenizer-dir', args.tokenizer_dir]
+        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                encoding='utf-8', errors='replace', timeout=180)
+        sys.stdout.write(result.stdout)
+        sys.stderr.write(result.stderr)
+        if result.returncode:
+            raise RuntimeError(f'concurrent Responses check failed ({result.returncode})')
+        pattern = rf'^generation_batch requests=2 T={args.draft_count + 1} role=1(?:\s|$)'
+        count = len(re.findall(pattern, result.stderr, flags=re.MULTILINE))
+        if not count:
+            raise AssertionError('two-request recursive verifier batch was not observed')
+        print(f'observed {count} two-request K{args.draft_count} verifier batch(es)', flush=True)
+        return
     command = [args.engine, '--engine-worker', '--inputs', args.inputs, '--backend', 'cuda',
                '--capacity', '256', '--max-sessions', '2', '--active-sequences', '2', '--draft-count', str(args.draft_count),
                '--sampling', args.sampling]
