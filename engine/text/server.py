@@ -8,6 +8,7 @@ import select
 import socket
 import sys
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from types import MappingProxyType
 from typing import Any, Mapping, Protocol
@@ -77,6 +78,7 @@ class HttpExchange:
 
     def __init__(self, handler: BaseHTTPRequestHandler):
         self._handler = handler
+        self._next_peer_check = 0.0
 
     def read_json(self) -> Any:
         length = int(self._handler.headers.get('Content-Length', '-1'))
@@ -117,9 +119,8 @@ class HttpExchange:
             if self._handler.server.closing.is_set():  # type: ignore[attr-defined]
                 self._handler.close_connection = True
                 raise ClientDisconnected('server closing')
-            try:
-                return request.read(timeout=.25)
-            except queue.Empty:
+            now = time.monotonic()
+            if now >= self._next_peer_check:
                 try:
                     connection = self._handler.connection
                     readable, _, _ = select.select([connection], [], [], 0)
@@ -129,6 +130,11 @@ class HttpExchange:
                 if disconnected:
                     self._handler.close_connection = True
                     raise ClientDisconnected('client disconnected')
+                self._next_peer_check = now + .25
+            try:
+                return request.read(timeout=max(0., self._next_peer_check - time.monotonic()))
+            except queue.Empty:
+                continue
 
 
 class TextHttpAdapter(Protocol):

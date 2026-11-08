@@ -3,7 +3,9 @@ import contextlib
 import io
 import queue
 import socket
+import struct
 import threading
+import time
 import unittest
 import urllib.error
 import urllib.request
@@ -63,6 +65,46 @@ class FakeWorker:
 
 
 class TextFrontendTest(unittest.TestCase):
+    def test_nonstream_disconnect_cancels_while_tokens_continue(self):
+        class BusyRequest(FakeRequest):
+            def __init__(self):
+                super().__init__()
+                self.started = threading.Event()
+                self.produced = 0
+
+            def read(self, timeout=None):
+                time.sleep(.01)
+                if self.produced == 100:
+                    return TokenEvent('completed')
+                self.produced += 1
+                self.started.set()
+                return TokenEvent('token', ord('a'))
+
+        request = BusyRequest()
+        class BusyWorker(FakeWorker):
+            context = 256
+            def submit(self, tokens, max_output_tokens, *, stop_ids=()):
+                return request
+
+        server = ResponsesServer(('127.0.0.1', 0), TextEngine(BusyWorker(), FakeCodec(), 'hyle'), True)
+        thread = threading.Thread(target=server.serve_forever)
+        thread.start()
+        connection = socket.create_connection(('127.0.0.1', server.server_port), timeout=3)
+        try:
+            body = json.dumps({'model': 'hyle', 'input': 'x', 'max_output_tokens': 100}).encode()
+            connection.sendall(b'POST /v1/responses HTTP/1.1\r\nHost: localhost\r\n'
+                               + f'Content-Length: {len(body)}\r\n\r\n'.encode() + body)
+            self.assertTrue(request.started.wait(timeout=3))
+            connection.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('hh', 1, 0))
+            connection.close()
+            self.assertTrue(request.closed_event.wait(timeout=.75), 'disconnect did not cancel ongoing generation')
+            self.assertLess(request.produced, 100)
+        finally:
+            connection.close()
+            server.shutdown()
+            thread.join(timeout=3)
+            server.server_close()
+
     def test_explicit_sampling_arguments_are_not_silently_ignored(self):
         base = ['generate', '--engine', 'hyle', '--inputs', 'model', '--tokenizer-dir', 'tokenizer', '--text', 'x']
         for option, value in (('--temperature', '1'), ('--top-k', '0'), ('--top-p', '1'), ('--seed', '0')):
