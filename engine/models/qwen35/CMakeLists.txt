@@ -39,3 +39,24 @@ foreach(probe IN LISTS _qwen35_probes)
     endif()
   endif()
 endforeach()
+
+# Real-weight sampling diagnostics are opt-in: ordinary engine builds must not
+# compile their large model consumer or require local model assets.
+if((_qwen35_native OR _qwen35_cuda) AND
+   EXISTS "${CMAKE_CURRENT_LIST_DIR}/../../../tests/tools/qwen_random_mtp_probe.cc")
+  add_executable(hyle_qwen35_random_mtp_probe EXCLUDE_FROM_ALL
+    "${CMAKE_CURRENT_LIST_DIR}/../../../tests/tools/qwen_random_mtp_probe.cc"
+    ${_hyle_qwen35_cold_sources})
+  hyle_configure_engine_target(hyle_qwen35_random_mtp_probe)
+  if(MSVC)
+    target_compile_options(hyle_qwen35_random_mtp_probe PRIVATE /bigobj)
+  endif()
+  if(_qwen35_apple)
+    enable_language(OBJCXX)
+    target_sources(hyle_qwen35_random_mtp_probe PRIVATE native_gate_apple.mm)
+    set_target_properties(hyle_qwen35_random_mtp_probe PROPERTIES
+      OBJCXX_STANDARD 23 OBJCXX_STANDARD_REQUIRED ON OBJCXX_EXTENSIONS OFF)
+  else()
+    target_sources(hyle_qwen35_random_mtp_probe PRIVATE native_gate.cc)
+  endif()
+endif()
