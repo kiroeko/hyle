@@ -137,6 +137,143 @@ int observe_output(const std::filesystem::path &input, std::string_view mode, bo
   return 0;
 }
 
+int reusable_model(const std::filesystem::path &input, std::string_view mode, bool print_reports = false,
+                   const std::filesystem::path &prompt_file = {}) {
+  const auto original_mode = mode;
+  const bool overlap = mode.starts_with("overlap-");
+  if (overlap) mode.remove_prefix(8);
+  const bool fresh_batch = mode.starts_with("fresh-");
+  if (fresh_batch) mode.remove_prefix(6);
+  const bool chunked = mode.starts_with("chunk-");
+  if (chunked) mode.remove_prefix(6);
+  const bool multi = mode.starts_with("multi-");
+  if (multi) mode.remove_prefix(6);
+  const bool mtp = mode == "k1" || mode == "k3";
+  const bool random = mode == "random";
+  require(mtp || random || mode == "ordinary", "unknown reusable-model mode");
+  const std::size_t drafts = mode == "k3" ? 3 : 1;
+  auto source = q::prepare_weight_source(input / "weights.tsv", mtp);
+  const auto geometry = source.roles.geometry;
+  constexpr std::size_t capacity = 256, limit = 8;
+  auto prompt = q::read_ids(prompt_file.empty() ? input / "prompt.ids" : prompt_file, geometry.vocabulary,
+      static_cast<std::size_t>(geometry.context_limit));
+  require(prompt.size() > 24 && prompt.size() + limit <= capacity && geometry.context_limit >= capacity,
+      "reusable model requires its complete local Qwen prompt and C256 model");
+  require(!chunked || !multi || prompt.size() >= 40, "chunked multi-request fixture requires 40 prompt tokens");
+  const std::size_t prefill_rows = chunked ? 128 : SIZE_MAX;
+  const auto precision = q::PrecisionProfile::from_roles(source.roles);
+  const auto plan = q::cache::plan(geometry, source.cache_row_bytes, capacity, multi ? 2 : 1, chunked ? 128 : capacity,
+      q::recurrent_bytes(q::state_schema_for(geometry, capacity, precision), geometry), multi ? 2 : 1,
+      mtp ? drafts + 1 : 1, mtp, random, overlap ? 2 : 1, 0, precision);
+  const auto sampling = random ? q::Model::Sampling{.enabled = true, .policy = {.8F, 40, .95F}, .seed = 123}
+                               : q::Model::Sampling{};
+  q::Model model(std::move(source), geometry, capacity, plan, {}, false, overlap ? q::ReplayPolicy::kPreferCapture : q::ReplayPolicy::kCommands,
+      SIZE_MAX, sampling, 0, {.primary = i::BackendKind::kCuda});
+  if (mtp) model.configure_draft_policy({drafts});
+  q::ReusableGenerationPreparation preparation;
+  const std::array<q::cache::TokenPlanRef, 0> token_plans{};
+  struct Consumer final {
+    std::array<std::array<std::int32_t, limit * 2>, 2> ids{};
+    std::array<i::RequestKey, 2> keys{};
+    std::array<std::size_t, 2> count{}, finished_count{};
+    std::array<bool, 2> cancelled{};
+    bool cancel = false, overlap = false, invalid = false;
+    mutable bool saw_submitted = false;
+    q::Model *model = nullptr;
+    std::size_t max_pending() const noexcept { return 4; }
+    bool try_write(i::RequestKey key, std::int32_t id) noexcept {
+      if (key.slot >= 2 || count[key.slot] == ids[key.slot].size()) { invalid = true; return true; }
+      if (keys[key.slot].generation && keys[key.slot] != key) invalid = true;
+      keys[key.slot] = key;
+      ids[key.slot][count[key.slot]++] = id; return true;
+    }
+    bool cancel_requested(i::RequestKey key) const noexcept {
+      if (!cancel || key.slot != 0) return false;
+      if (!overlap) return count[0] != 0;
+      if (count[0] >= 2 && model && model->active_step && model->active_step->submitted &&
+          model->active_step->execution.has_completion()) { saw_submitted = true; return true; }
+      return false;
+    }
+    void finished(i::RequestKey key, bool stopped) noexcept {
+      if (key.slot >= 2) { invalid = true; return; }
+      if (keys[key.slot].generation && keys[key.slot] != key) invalid = true;
+      keys[key.slot] = key;
+      ++finished_count[key.slot]; cancelled[key.slot] = stopped;
+    }
+    void wait() noexcept { invalid = true; }
+  };
+  std::array<std::int32_t, limit * 2> baseline{};
+  std::array<i::RequestKey, 2> previous_keys{};
+  for (std::size_t turn = 0; turn < 5; ++turn) {
+    auto ids = prompt;
+    auto peer_ids = prompt;
+    if (turn == 2 && chunked && multi) {
+      ids.erase(ids.begin(), ids.end() - 40);
+      peer_ids = ids;
+    } else if (turn == 2) ids.erase(ids.begin() + 4, ids.begin() + 20);
+    std::vector<i::GenerationSessionSchedule> schedules{{"reused", {{std::move(ids), limit}}}};
+    const bool has_peer = multi && (fresh_batch || (turn > 0 && turn < 4));
+    if (has_peer) schedules.push_back({"peer", {{std::move(peer_ids), limit}}});
+    if (has_peer && turn == 2) for (auto &schedule : schedules)
+      schedule.turns.push_back({chunked ? std::vector<std::int32_t>(127, 1) : std::vector<std::int32_t>{1, 2, 3}, 4});
+    Consumer consumer{.cancel = turn == 3, .overlap = overlap, .model = &model};
+    std::ostringstream report;
+    const auto now = q::Clock::now();
+    if (turn == 1) {
+      bool rejected = false;
+      try {
+        if (mtp) (void)q::run_generation_sessions<q::GenerationMode::kMtp>(model, schedules, {}, false, now, now,
+            false, token_plans, {}, {}, prefill_rows, false, !overlap, {}, nullptr, true, {}, consumer, report, &preparation);
+        else (void)q::run_generation_sessions<q::GenerationMode::kText>(model, schedules, {}, false, now, now,
+            false, token_plans, {}, {}, prefill_rows, false, !overlap, {}, nullptr, true, {}, consumer, report, &preparation);
+      } catch (const std::invalid_argument &) { rejected = true; }
+      require(rejected && preparation.ready && !preparation.failed && !preparation.busy,
+          "cold configuration mismatch changed the reusable preparation");
+      auto bad_schedules = schedules; bad_schedules[0].turns[0].prompt[0] = -1;
+      rejected = false;
+      try {
+        if (mtp) (void)q::run_generation_sessions<q::GenerationMode::kMtp>(model, bad_schedules, {}, false, now, now,
+            false, token_plans, {}, {}, prefill_rows, false, overlap, {}, nullptr, true, {}, consumer, report, &preparation);
+        else (void)q::run_generation_sessions<q::GenerationMode::kText>(model, bad_schedules, {}, false, now, now,
+            false, token_plans, {}, {}, prefill_rows, false, overlap, {}, nullptr, true, {}, consumer, report, &preparation);
+      } catch (const std::invalid_argument &) { rejected = true; }
+      require(rejected && preparation.ready && !preparation.failed && !preparation.busy,
+          "invalid request poisoned the reusable preparation");
+    }
+    const auto result = mtp
+        ? q::run_generation_sessions<q::GenerationMode::kMtp>(model, schedules, {}, false, now, now,
+            false, token_plans, {}, {}, prefill_rows, false, overlap, {}, nullptr, true, {}, consumer, report, &preparation)
+        : q::run_generation_sessions<q::GenerationMode::kText>(model, schedules, {}, false, now, now,
+            false, token_plans, {}, {}, prefill_rows, false, overlap, {}, nullptr, true, {}, consumer, report, &preparation);
+    require(result == 0 && preparation.ready && !preparation.busy && !preparation.failed &&
+        consumer.finished_count[0] == 1 && !consumer.invalid && consumer.cancelled[0] == (turn == 3) &&
+        (!has_peer || (consumer.finished_count[1] == 1 && !consumer.cancelled[1])),
+        "reused model lost its request or preparation lifecycle");
+    for (std::size_t slot = 0; slot < (has_peer ? 2u : 1u); ++slot) {
+      require(consumer.keys[slot].generation && (!previous_keys[slot].generation ||
+          previous_keys[slot] != consumer.keys[slot]), "a stale request identity was reused across calls");
+      previous_keys[slot] = consumer.keys[slot];
+    }
+    require(!model.active_step && !model.successor_step && !model.carrier_borrowed &&
+        !model.snapshot_versions.live && !model.resources_->pending_readbacks(),
+        "reused request retained actual model work or state");
+    require(turn == 2 ? (consumer.count[0] > 0 && consumer.count[0] <= limit * 2) :
+        turn == 3 && overlap ? (consumer.saw_submitted && consumer.count[0] >= 2 && consumer.count[0] < limit) :
+        consumer.count[0] == (turn == 3 ? 1 : limit), "reused request produced the wrong output count");
+    if (turn == 0) baseline = consumer.ids[0];
+    if ((turn == 1 && (!multi || fresh_batch)) || turn == 4) require(consumer.ids[0] == baseline,
+        "a later independent request changed the original output or RNG");
+    if (has_peer && turn == 3) require(consumer.count[1] == limit,
+        "cancelling one reusable request prevented its peer from finishing");
+    if (turn == 3) require(report.str().find("\"cancelled_requests\":1") != std::string::npos,
+        "cancelled reusable request did not report cancellation");
+    std::cout << "reusable " << original_mode << " request=" << turn + 1 << " tokens=" << consumer.count[0]
+        << (has_peer ? "/" + std::to_string(consumer.count[1]) : "") << " cancelled=" << consumer.cancelled[0] << '\n';
+    if (print_reports) std::cout << report.str();
+  }
+  return 0;
+}
+
 enum class Mode { kNormal, kMemberCredit, kCancel, kModelEos, kColdTuple };
 
 void check_captured_sources(const q::Model &model, const q::StepState &step) {
@@ -869,6 +1006,10 @@ int main(int argc, char **argv) {
   try {
     if (argc >= 2 && std::string_view(argv[1]) == "--hyle-cli")
       return q::run(argc - 1, argv + 1);
+    if ((argc == 4 || argc == 5) && (std::string_view(argv[1]) == "--reusable" ||
+                      std::string_view(argv[1]) == "--reusable-json"))
+      return reusable_model(argv[2], argv[3], std::string_view(argv[1]) == "--reusable-json",
+          argc == 5 ? std::filesystem::path(argv[4]) : std::filesystem::path{});
     if (argc == 4 && (std::string_view(argv[1]) == "--output-observer" ||
                       std::string_view(argv[1]) == "--output-observer-json"))
       return observe_output(argv[2], argv[3], std::string_view(argv[1]) == "--output-observer-json");

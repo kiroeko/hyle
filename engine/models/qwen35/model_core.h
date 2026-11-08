@@ -2668,13 +2668,11 @@ public:
     std::vector<ExecutionShape> shapes;
     for (const auto &[key, family] : families) {
       if (!family) continue;
-      if (key.requests != 1)
-        throw std::logic_error("bounded shared execution requires R1 exact routes");
       for (const auto rows : family->chunks) {
-        const auto selected = find_child(1, rows, key.role, false, key.completion, key.sampling_index, key.packing);
+        const auto selected = find_child(key.requests, rows, key.role, false, key.completion, key.sampling_index, key.packing);
         if (!selected) throw std::logic_error("shared execution lost its original exact child");
         routes.push_back(selected->program.compiled.executable);
-        const ExecutionShape shape{1, rows, key.role, key.completion, key.sampling_index, false, key.packing};
+        const ExecutionShape shape{key.requests, rows, key.role, key.completion, key.sampling_index, false, key.packing};
         if (const auto found = phases.find(shape); found != phases.end())
           for (const auto &slot : found->second->slots.slots())
             if (slot.carrier.initialized() || slot.carrier.pending())
@@ -2689,8 +2687,8 @@ public:
               << " resource_budget=execution configured_rows=" << bounded_prefill_rows << '\n';
     for (const auto &shape : shapes) {
       const std::array rows{shape.tokens};
-      prepare_prefill_execution(rows, shape.completion, shape.sampling_index, 1, shape.role);
-      if (shape.tokens == bounded_prefill_rows && shape.role == GraphRole::kText &&
+      prepare_prefill_execution(rows, shape.completion, shape.sampling_index, shape.requests, shape.role);
+      if (shape.requests == 1 && shape.tokens == bounded_prefill_rows && shape.role == GraphRole::kText &&
           supports_prefill_relay(shape.sampling_index)) {
         auto &relay = prepare_child(shape.tokens, false, 1, shape.role, shape.completion,
             shape.sampling_index, true, RowPacking::kPrefill);
