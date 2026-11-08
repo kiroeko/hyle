@@ -33,7 +33,7 @@ BF16 MTP使用准备好的32K草稿子集，量化目标MTP使用完整草稿词
 
 | 想做什么 | 从这里开始 |
 |---|---|
-| 构建并运行模型 | [推理引擎指南](docs/user/inference.md) |
+| 构建并运行模型 | [推理引擎指南](docs/user/inference.md)；[文本 CLI 与 Responses 接口](docs/user/text-api.md) |
 | 在 C++ 工程中使用基础库 | [使用指南](docs/user/usage-guide.md)与[样例](samples/README.md) |
 | 看架构与开发方向 | [架构入口](docs/architecture/README.md)、[两项核心期许](docs/architecture/inference-principles.md) |
 | 看当前进度及下一项 | [推理看板](docs/developer/inference-progress.md) |
@@ -44,7 +44,8 @@ BF16 MTP使用准备好的32K草稿子集，量化目标MTP使用完整草稿词
 - **完整文本入口是 Qwen**：普通生成、greedy／随机采样、MTP、多轮／多会话、共享前缀及有界缓存恢复。
   当前日常完整验证模型为 Qwen3.5-2B；其它制品与较大模型的实际运行范围见[模型覆盖](docs/implementation/model-operators.md)。
 - **单机运行**：CPU、单 GPU 或 CPU＋一张 GPU；支持范围由实际后端、制品、布局和设备能力决定。
-- **尚未交付**：通用模型目录加载、C++ tokenizer、应用／HTTP 服务 API、图片输入及多卡／多机。
+- **文本服务初版**：本地 tokenizer 与模板接入，提供 CLI 和 Responses 文本子集；功能与限制见[接口指南](docs/user/text-api.md)。
+- **尚未交付**：通用模型目录加载、C++ tokenizer、完整服务 API、图片输入及多卡／多机。
   GLM、DeepSeek、Kimi 等目前是组件级实现，没有完整引擎入口。
 
 当前输入需要用 Python 准备本地权重清单和 token IDs；初始化 C++ 构建不会下载模型或安装 tokenizer 环境。

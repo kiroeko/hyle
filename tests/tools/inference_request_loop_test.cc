@@ -749,6 +749,7 @@ struct IngressTestControl final {
 class IngressTestExecutor final : public i::ModelExecutor {
 public:
   explicit IngressTestExecutor(std::shared_ptr<IngressTestControl> control) : control_(std::move(control)) {}
+  i::ModelDescription describe() const override { return {256, 128, {3, 4}}; }
   void validate(i::GenerationBatch batch) override {
     for (const auto &request : batch.sessions)
       if (request.turns.front().prompt.front() < 0) throw i::RequestRejected("invalid test token");
@@ -796,7 +797,7 @@ void token_worker_rejects_malformed_frames_without_starting_model() {
   std::ostringstream output;
   i::TokenWorker worker(std::make_unique<IngressTestExecutor>(control), 2, 2, 1, 16, input, output);
   require(worker.run() == 0, "worker protocol did not close cleanly");
-  require(output.str() == "READY\t1\nE\t0\tprotocol\tinvalid request identity\n"
+  require(output.str() == "READY\t2\t256\t128\t3,4\nE\t0\tprotocol\tinvalid request identity\n"
       "E\t7\tinvalid\tinvalid output limit or token list\n"
       "E\t8\tinvalid\tinvalid output limit or token list\nC\t9\tstale\nBYE\n",
       "worker protocol accepted malformed input or changed response order");
@@ -869,7 +870,7 @@ void token_worker_credit_and_cancellation_do_not_hang() {
       if (!output_buffer.line(line, std::chrono::seconds(3))) throw std::runtime_error("worker test timed out");
       return line;
     };
-    require(next() == "READY\t1", "worker did not become ready");
+    require(next() == "READY\t2\t256\t128\t3,4", "worker did not become ready");
     input_buffer.send("G\t1\t2\t10\n");
     require(next() == "A\t1" && next() == "T\t1\t10", "worker lost initial accepted token");
     std::string premature;

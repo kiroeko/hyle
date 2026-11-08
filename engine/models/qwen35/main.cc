@@ -3627,6 +3627,10 @@ class PreparedModelExecutor final : public inference::ModelExecutor {
 public:
   PreparedModelExecutor(Model &model, bool mtp, std::size_t prefill_rows, bool overlap)
       : model_(model), mtp_(mtp), overlap_(overlap), prefill_rows_(prefill_rows) {}
+  inference::ModelDescription describe() const override {
+    return {static_cast<std::size_t>(model_.vocabulary), model_.capacity,
+        {model_eos_tokens.begin(), model_eos_tokens.end()}};
+  }
   void validate(inference::GenerationBatch batch) override {
     if (running_.test(std::memory_order_acquire) || preparation_.busy || preparation_.failed)
       throw std::logic_error("prepared model executor is busy or failed");
@@ -3682,6 +3686,7 @@ class LoadedModelExecutor final : public inference::ModelExecutor {
 public:
   LoadedModelExecutor(std::unique_ptr<Model> model, bool mtp, std::size_t prefill_rows, bool overlap)
       : model_(std::move(model)), prepared_(*model_, mtp, prefill_rows, overlap) {}
+  inference::ModelDescription describe() const override { return prepared_.describe(); }
   void validate(inference::GenerationBatch batch) override { prepared_.validate(batch); }
   void execute(inference::GenerationBatch batch, inference::TokenConsumerRef &consumer) override {
     prepared_.execute(batch, consumer);

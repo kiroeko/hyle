@@ -5,6 +5,7 @@
 #include <span>
 #include <stdexcept>
 #include <type_traits>
+#include <vector>
 
 #include "request_progress.h"
 #include "request_stop_policy.h"
@@ -66,6 +67,13 @@ public:
   using std::invalid_argument::invalid_argument;
 };
 
+// Immutable metadata from the selected model adapter, available before
+// admission. Stop IDs are model policy, not guessed by transport or tokenizer.
+struct ModelDescription final {
+  std::size_t vocabulary = 0, context = 0;
+  std::vector<std::int32_t> stop_ids;
+};
+
 // One prepared model execution owner. Implementations report their actual
 // supported configuration at preparation/admission; this common boundary does
 // not name a model, platform, quantization or decoding algorithm. execute is
@@ -74,6 +82,7 @@ public:
 class ModelExecutor {
 public:
   virtual ~ModelExecutor() = default;
+  virtual ModelDescription describe() const = 0;
   // Serialized, side-effect-free admission; reject a request with
   // RequestRejected before any model work, not with a fabricated retirement.
   virtual void validate(GenerationBatch batch) = 0;

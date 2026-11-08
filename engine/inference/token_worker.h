@@ -24,7 +24,8 @@ namespace hyle::inference {
 // Internal local transport for a frontend process. It carries token IDs, not
 // protocol JSON or model state. Frames are TAB-delimited UTF-8/ASCII lines:
 // G id output_limit comma_separated_ids; K id accepted_count; C id; Q.
-// Responses are READY 1, A id, T id token, F id completed|cancelled|closed,
+// Responses are READY 2 vocabulary context stop_ids, A id, T id token,
+// F id completed|cancelled|closed,
 // E id kind message, C id accepted|stale and BYE. A request initially has one
 // output credit; K acknowledges delivered tokens and releases that credit.
 // Request IDs are nonzero unsigned integers.
@@ -34,16 +35,27 @@ public:
   TokenWorker(std::unique_ptr<ModelExecutor> executor, std::size_t batch_limit,
               std::size_t waiting_limit, std::size_t output_capacity,
               std::size_t max_prompt_tokens, std::istream &input, std::ostream &output)
-      : dispatcher_(std::move(executor), batch_limit, waiting_limit, output_capacity),
+      : description_(executor ? executor->describe() : ModelDescription{}),
+        dispatcher_(std::move(executor), batch_limit, waiting_limit, output_capacity),
         max_prompt_tokens_(max_prompt_tokens), input_(input), output_(output) {
-    if (!max_prompt_tokens) throw std::invalid_argument("worker prompt capacity must be positive");
+    if (!max_prompt_tokens || !description_.vocabulary || !description_.context ||
+        max_prompt_tokens > description_.context)
+      throw std::invalid_argument("worker requires valid model vocabulary and context");
+    for (const auto id : description_.stop_ids)
+      if (id < 0 || static_cast<std::size_t>(id) >= description_.vocabulary)
+        throw std::invalid_argument("worker model stop ID is outside its vocabulary");
   }
   TokenWorker(const TokenWorker &) = delete;
   TokenWorker &operator=(const TokenWorker &) = delete;
   ~TokenWorker() { close(); }
 
   int run() {
-    if (!emit("READY\t1")) return 1;
+    std::string ready = "READY\t2\t" + std::to_string(description_.vocabulary) + "\t" +
+        std::to_string(description_.context) + "\t";
+    if (description_.stop_ids.empty()) ready += "-";
+    else for (std::size_t index = 0; index < description_.stop_ids.size(); ++index)
+      ready += (index ? "," : "") + std::to_string(description_.stop_ids[index]);
+    if (!emit(ready)) return 1;
     std::string line;
     while (std::getline(input_, line)) {
       if (!line.empty() && line.back() == '\r') line.pop_back();
@@ -223,6 +235,7 @@ private:
     }
     calls_.clear();
   }
+  ModelDescription description_;
   GenerationDispatcher dispatcher_;
   const std::size_t max_prompt_tokens_;
   std::istream &input_;
