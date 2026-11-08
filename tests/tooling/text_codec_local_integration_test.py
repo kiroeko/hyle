@@ -36,9 +36,13 @@ def main():
     parser.add_argument('--tokenizer-dir', type=Path, required=True)
     parser.add_argument('--port', type=int, default=2048)
     parser.add_argument('--metrics', action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument('--mtp-auto', action='store_true', help='use the model\'s automatic MTP policy')
     args = parser.parse_args()
-    worker = WorkerClient([args.engine, '--engine-worker', '--inputs', args.inputs, '--backend', 'cuda',
-                           '--capacity', '256', '--max-sessions', '1', '--active-sequences', '1', '--draft-count', '0'])
+    command = [args.engine, '--engine-worker', '--inputs', args.inputs, '--backend', 'cuda',
+               '--capacity', '256', '--max-sessions', '1', '--active-sequences', '1']
+    if not args.mtp_auto:
+        command += ['--draft-count', '0']
+    worker = WorkerClient(command)
     try:
         template = Path('tests/data/text-codec-test-template.jinja')
         default = HuggingFaceTextCodec(args.tokenizer_dir, expected_vocabulary=worker.vocabulary)
