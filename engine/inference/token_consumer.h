@@ -1,0 +1,24 @@
+#pragma once
+
+#include <concepts>
+#include <cstddef>
+#include <cstdint>
+
+#include "request_window.h"
+
+namespace hyle::inference {
+
+// Called by the serialized request owner, never by a device completion.
+// A true write transfers one committed token to the consumer. A false write
+// transfers nothing; the owner keeps the token and its original request key.
+// wait() is called only when no request can advance without output credit and
+// no native work is awaiting observation. It must return when a retry is useful.
+// The consumer supplies bounded storage and synchronizes with its own reader.
+template<class T>
+concept TokenConsumer = requires(T &consumer, RequestKey key, std::int32_t token) {
+  { consumer.max_pending() } noexcept -> std::same_as<std::size_t>;
+  { consumer.try_write(key, token) } noexcept -> std::same_as<bool>;
+  { consumer.wait() } noexcept -> std::same_as<void>;
+};
+
+} // namespace hyle::inference

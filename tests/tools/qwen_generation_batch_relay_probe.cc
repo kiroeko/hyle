@@ -15,6 +15,9 @@ using qwen_generation_state_case::state_bytes;
 constexpr std::size_t kOutputs = 14;
 
 int observe_output(const std::filesystem::path &input, std::string_view mode) {
+  const auto original_mode = mode;
+  const bool stalled = mode.starts_with("stall-");
+  if (stalled) mode.remove_prefix(6);
   const bool mtp = mode == "k1" || mode == "k3";
   const bool random = mode == "random";
   require(mtp || random || mode == "ordinary", "unknown output-observer mode");
@@ -37,35 +40,42 @@ int observe_output(const std::filesystem::path &input, std::string_view mode) {
   if (mtp) model.configure_draft_policy({drafts});
   const std::array schedules{i::GenerationSessionSchedule{"observed", {{prompt, limit}}}};
   const std::array<q::cache::TokenPlanRef, 0> token_plans{};
-  std::array<std::int32_t, limit> received{};
-  std::size_t count = 0, calls = 0;
-  bool invalid = false;
-  const auto observe = [&](i::RequestKey key, std::span<const std::int32_t> ids) noexcept {
-    if (key.slot != 0 || ids.empty() || ids.size() > received.size() - count) {
-      invalid = true;
-      return;
+  struct Consumer final {
+    std::array<std::int32_t, limit> received{};
+    std::size_t count = 0, waits = 0, rejected = 0;
+    bool stalled = false, ready = false, invalid = false;
+    std::size_t max_pending() const noexcept { return stalled ? 1 : 4; }
+    bool try_write(i::RequestKey key, std::int32_t id) noexcept {
+      if (key.slot != 0 || count == received.size()) { invalid = true; return true; }
+      if (stalled && !ready) { ++rejected; return false; }
+      received[count++] = id; ready = false;
+      return true;
     }
-    for (const auto id : ids) received[count++] = id;
-    ++calls;
-  };
+    void wait() noexcept { ++waits; ready = true; }
+  } consumer{.stalled = stalled};
   std::ostringstream report;
   const auto now = q::Clock::now();
   const auto result = mtp
       ? q::run_generation_sessions<q::GenerationMode::kMtp>(model, schedules, {}, false,
-          now, now, false, token_plans, {}, {}, SIZE_MAX, false, false, {}, nullptr, false, {}, observe, report)
+          now, now, false, token_plans, {}, {}, SIZE_MAX, false, false, {}, nullptr, false, {}, consumer, report)
       : q::run_generation_sessions<q::GenerationMode::kText>(model, schedules, {}, false,
-          now, now, false, token_plans, {}, {}, SIZE_MAX, false, false, {}, nullptr, false, {}, observe, report);
-  require(result == 0 && !invalid && count == limit && calls > 1,
-      "observer did not receive incremental output from the real request");
+          now, now, false, token_plans, {}, {}, SIZE_MAX, false, false, {}, nullptr, false, {}, consumer, report);
+  require(result == 0 && !consumer.invalid && consumer.count == limit &&
+      (!stalled || (consumer.waits && consumer.rejected)),
+      "consumer did not receive bounded incremental output from the real request");
   std::ostringstream expected;
   expected << "\"generated_ids\":[";
-  for (std::size_t at = 0; at < count; ++at) expected << (at ? "," : "") << received[at];
+  for (std::size_t at = 0; at < consumer.count; ++at) expected << (at ? "," : "") << consumer.received[at];
   expected << ']';
   require(report.str().find(expected.str()) != std::string::npos,
       "observed committed IDs differ from the original generation report");
   require(!model.snapshot_versions.live && !model.active_step && !model.successor_step,
       "observed request retained model state or execution");
-  std::cout << "output observer " << mode << " PASS: " << count << " IDs, " << calls << " callbacks\n";
+  std::cout << "output consumer " << original_mode << " PASS: " << consumer.count
+      << " IDs, " << consumer.waits << " waits, " << consumer.rejected << " refused writes; ids=";
+  for (std::size_t at = 0; at < consumer.count; ++at)
+    std::cout << (at ? "," : "") << consumer.received[at];
+  std::cout << '\n';
   return 0;
 }
 

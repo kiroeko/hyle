@@ -10,6 +10,7 @@
 #include "../../inference/session_cache.h"
 #include "../../inference/request_progress.h"
 #include "../../inference/request_loop.h"
+#include "../../inference/token_consumer.h"
 #include "../../inference/request_wave_execution.h"
 #include "../../inference/step_execution.h"
 #include "../../inference/continuation.h"
@@ -2608,7 +2609,7 @@ hyle::Result<StartupPrefillWarmup> prepare_cold_prefill(Model &model, bool bound
   return report;
 }
 
-template<GenerationMode Mode, class BatchObserver = std::nullptr_t, class OutputObserver = std::nullptr_t>
+template<GenerationMode Mode, class BatchObserver = std::nullptr_t, class OutputConsumer = std::nullptr_t>
 int run_generation_sessions(Model &model, std::span<const inference::GenerationSessionSchedule> schedules,
     const std::filesystem::path &trace, bool trace_states, Clock::time_point startup,
     Clock::time_point constructed, bool prefix_enabled, std::span<const cache::TokenPlanRef> token_plans,
@@ -2616,7 +2617,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     std::size_t max_prefill_rows = SIZE_MAX, bool warmup_planned_shapes = false,
     bool decode_overlap = false, std::span<const inference::LogitsInputProvider> logits_providers = {},
     BatchObserver &&batch_observer = nullptr, bool first_turn_only = false,
-    const hyle::engine::reporting::RouteDecisionFacts &routes = {}, OutputObserver &&output_observer = nullptr,
+    const hyle::engine::reporting::RouteDecisionFacts &routes = {}, OutputConsumer &&output_consumer = nullptr,
     std::ostream &report_out = std::cout) {
   constexpr bool mtp = Mode == GenerationMode::kMtp;
   const auto cold_prepare_begin = Clock::now();
@@ -3095,19 +3096,20 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     else (void)model.prepare_ordinary_decode_recordings(requests.front().sampling_index, prepared);
   }
   request_loop.prepare(requests.size(), model.cache_plan.resident_sessions);
-  for (std::size_t index = 0; index < requests.size(); ++index)
-    requests[index].request_key = request_loop.enqueue(index);
-  // This synchronous observer sees committed output only. The key identifies
-  // the original request, but may already be retired. It does not own
-  // transport credit or cancellation; the normal CLI instantiation has no
-  // observer, cursor allocation or extra output path.
-  using OutputCursors = std::conditional_t<std::is_null_pointer_v<std::remove_cvref_t<OutputObserver>>,
-      std::nullptr_t, std::vector<std::size_t>>;
-  OutputCursors observed_outputs{};
-  if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputObserver>>) {
-    static_assert(std::is_nothrow_invocable_v<OutputObserver &, inference::RequestKey,
-        std::span<const std::int32_t>>, "output observer must not throw across an active model episode");
-    observed_outputs.resize(requests.size());
+  using OutputWindows = std::conditional_t<std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>,
+      std::nullptr_t, std::vector<inference::OutputDelivery>>;
+  OutputWindows output_windows{};
+  if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>) {
+    static_assert(inference::TokenConsumer<std::remove_reference_t<OutputConsumer>>);
+    output_windows.reserve(requests.size());
+    for (std::size_t index = 0; index < requests.size(); ++index)
+      output_windows.emplace_back(output_consumer.max_pending());
+  }
+  for (std::size_t index = 0; index < requests.size(); ++index) {
+    if constexpr (std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>)
+      requests[index].request_key = request_loop.enqueue(index);
+    else
+      requests[index].request_key = request_loop.enqueue(index, &output_windows[index]);
   }
   std::vector<std::size_t> dispatch, dispatch_turns;
   dispatch.reserve(dispatch_bound); dispatch_turns.reserve(dispatch_bound);
@@ -3276,15 +3278,20 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     const auto pumped = request_loop.pump_once(adapter);
     completed = cache::add(completed, pumped.completed);
     admitted = cache::add(admitted, pumped.admitted);
-    if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputObserver>>) {
+    bool output_progress = false;
+    if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>) {
       for (std::size_t index = 0; index < requests.size(); ++index) {
         const auto &request = requests[index];
-        const auto output = std::span<const std::int32_t>(request.progress.generated);
-        const auto begin = observed_outputs[index];
-        if (begin != output.size()) {
-          output_observer(request.request_key, output.subspan(begin));
-          observed_outputs[index] = output.size();
-        }
+        if (!request_loop.matches(request.request_key)) continue;
+        auto &window = output_windows[index];
+        const auto pending = window.pending(request.progress.generated);
+        std::size_t accepted = 0;
+        while (accepted < pending.size() && output_consumer.try_write(request.request_key, pending[accepted]))
+          ++accepted;
+        if (!accepted) continue;
+        if (!request_loop.acknowledge(request.request_key, window.acknowledged() + accepted, adapter))
+          throw std::logic_error("output acknowledgement lost its original request");
+        output_progress = true;
       }
     }
     // This closed CLI has no host work while the current Graph is pending.
@@ -3323,8 +3330,12 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
                 << std::chrono::duration<double>(arrival - startup).count() << '\n';
       request_loop.wake(request.request_key); input_arrived = true;
     }
-    if (!pumped.executed && !pumped.waiting_retirement && !input_arrived && completed != requests.size())
+    if (!pumped.executed && !pumped.waiting_retirement && !input_arrived && !output_progress && completed != requests.size()) {
+      if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>) {
+        if (pumped.waiting_output) { output_consumer.wait(); continue; }
+      }
       throw std::runtime_error("generation admission has no runnable resident request");
+    }
   }
   const auto post_endpoint_seconds = std::chrono::duration<double>(Clock::now() - endpoint).count();
   const auto session_seconds = std::chrono::duration<double>(endpoint - start).count();
