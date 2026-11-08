@@ -56,15 +56,22 @@ def check_teacher(args, prompt, actual):
     quality = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = quality
     spec.loader.exec_module(quality)
-    worker = quality.Worker([args.teacher_worker, args.teacher_inputs, '1024', str(len(actual))],
+    worker = quality.Worker([args.teacher_worker, args.teacher_inputs, str(args.capacity), str(len(prompt) + len(actual))],
                             Path(args.teacher_worker).parent, Path(args.teacher_output))
     success = False
     alternatives = []
     try:
-        worker.send('P 1 ' + str(len(prompt)) + ' ' + ' '.join(map(str, prompt)))
+        # The quality worker's initial prefill accepts at most 512 tokens.
+        # Feed the remaining known prompt through its ordinary teacher step.
+        initial = min(512, len(prompt))
+        worker.send('P 1 ' + str(initial) + ' ' + ' '.join(map(str, prompt[:initial])))
         frame = worker.next(2)
+        for token in prompt[initial:]:
+            worker.send(f'D 1 {token}')
+            frame = worker.next(2)
         for position, token in enumerate(actual):
-            if frame.case != 1 or frame.position != position or frame.length != len(prompt) + position:
+            if (frame.case != 1 or frame.position != len(prompt) - initial + position or
+                    frame.length != len(prompt) + position):
                 raise AssertionError('teacher prefix metadata differs')
             rank = int(np.count_nonzero(frame.values > frame.values[token]) + 1)
             gap = float(frame.values[frame.top1] - frame.values[token])
@@ -89,15 +96,20 @@ def main():
     parser.add_argument('--next-prompt', required=True)
     parser.add_argument('--sampling', choices=('greedy', 'random'), default='greedy')
     parser.add_argument('--draft-count', type=int, default=0)
+    parser.add_argument('--capacity', type=int, default=1024)
+    parser.add_argument('--max-output-tokens', type=int, default=64)
     parser.add_argument('--batch-reference-engine', help='optional pre-change engine for the same paired batch')
     parser.add_argument('--teacher-worker')
     parser.add_argument('--teacher-inputs')
     parser.add_argument('--teacher-output')
+    parser.add_argument('--verify-teacher', action='store_true', help='check even when greedy outputs match')
     args = parser.parse_args()
-    turns = [([int(value) for value in Path(path).read_text().split()], 64)
+    if args.verify_teacher and args.sampling != 'greedy':
+        parser.error('--verify-teacher requires greedy sampling')
+    turns = [([int(value) for value in Path(path).read_text().split()], args.max_output_tokens)
              for path in (args.prompt, args.next_prompt)]
     command = [args.engine, '--engine-worker', '--inputs', args.inputs, '--backend', 'cuda',
-               '--capacity', '1024', '--max-sessions', '2', '--active-sequences', '2',
+               '--capacity', str(args.capacity), '--max-sessions', '2', '--active-sequences', '2',
                '--draft-count', str(args.draft_count)]
     if args.sampling == 'random':
         command += ['--sampling', 'random', '--temperature', '0.8', '--top-k', '40',
@@ -120,39 +132,42 @@ def main():
     worker = WorkerClient(command)
     try:
         expected, boundaries = drain(worker.submit_turns(turns))
-        assert boundaries == [(0, 64), (1, 128)]
+        count = args.max_output_tokens
+        assert boundaries == [(0, count), (1, 2 * count)]
         if batch_references:
-            assert reference_single == expected[:64]
+            assert reference_single == expected[:count]
         live = worker.open_session(*turns[0])
         head = first_turn(live)
-        assert head == expected[:64]
+        assert head == expected[:count]
         for _ in range(2):
             ids, boundaries = drain(worker.submit_turns([turns[0]]))
-            assert len(ids) == 64 and boundaries == [(0, 64)]
+            assert len(ids) == count and boundaries == [(0, count)]
             if args.sampling == 'greedy':
-                assert ids == expected[:64]
+                assert ids == expected[:count]
         live.append(*turns[1])
         live.finish_input()
         tail, boundaries = drain(live)
-        assert head + tail == expected and boundaries == [(1, 64)]
-        print('live session: 128 IDs match finite baseline; two peers completed and reused a slot')
+        assert head + tail == expected and boundaries == [(1, count)]
+        print(f'live session: {2 * count} IDs match finite baseline; two peers completed and reused a slot')
 
         blocked = worker.submit(*turns[0])
         first = blocked.read(timeout=60)
         assert first.kind == 'token'
         peer_ids, boundaries = drain(worker.submit_turns([turns[0]]))
-        assert len(peer_ids) == 64 and boundaries == [(0, 64)]
+        assert len(peer_ids) == count and boundaries == [(0, count)]
         blocked.acknowledge()
         remaining, _ = drain(blocked, [first.token])
-        assert len(remaining) == 64
+        assert len(remaining) == count
         if args.sampling == 'greedy':
-            assert remaining == expected[:64]
-            if peer_ids not in [expected[:64], *batch_references]:
-                for index, reference_ids in enumerate([expected[:64], *batch_references]):
+            assert remaining == expected[:count]
+            if peer_ids not in [expected[:count], *batch_references]:
+                for index, reference_ids in enumerate([expected[:count], *batch_references]):
                     first = next((i for i, (a, b) in enumerate(zip(reference_ids, peer_ids)) if a != b), None)
                     print('peer differs from reference', index, 'at', first,
                           'tokens', (reference_ids[first], peer_ids[first]) if first is not None else None,
                           flush=True)
+                check_teacher(args, turns[0][0], peer_ids)
+            elif args.verify_teacher:
                 check_teacher(args, turns[0][0], peer_ids)
         print('finite request: peer completed while original output was backpressured')
 
@@ -165,7 +180,7 @@ def main():
         assert terminal.kind == 'cancelled', (terminal.kind, terminal.message)
         peer.close()
         ids, boundaries = drain(worker.submit_turns([turns[0]]))
-        assert len(ids) == 64 and boundaries == [(0, 64)]
+        assert len(ids) == count and boundaries == [(0, count)]
         anchor.finish_input()
         _, boundaries = drain(anchor)
         assert not boundaries
