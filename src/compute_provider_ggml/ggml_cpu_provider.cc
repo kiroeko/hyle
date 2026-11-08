@@ -948,9 +948,12 @@ void cast_nan_storage(ggml_tensor *output, const ggml_tensor *,
       stored = input->type == GGML_TYPE_F16
                    ? (sign << 31) | 0x7f800000U | ((bits & 0x3ffU) << 13)
                    : bits << 16;
-    else
-      stored = (sign << 15) |
-               (output->type == GGML_TYPE_F16 ? 0x7fffU : 0x7fc0U);
+    else if (output->type == GGML_TYPE_F16)
+      stored = (sign << 15) | 0x7fffU;
+    else {
+      const auto payload = input->type == GGML_TYPE_F32 ? bits >> 16 : bits >> 3;
+      stored = (sign << 15) | 0x7f80U | (payload & 0x7fU) | 0x40U;
+    }
     std::memcpy(destination + i * output_width, &stored, output_width);
   }
 }

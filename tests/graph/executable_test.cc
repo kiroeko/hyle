@@ -242,8 +242,10 @@ std::vector<float> read(const OwnedTensor &tensor, std::size_t count) {
 
 std::vector<float> read(ConstTensorView tensor, std::size_t count) {
   std::vector<float> result(count);
-  EXPECT_TRUE(
-      tensor.storage().read(std::as_writable_bytes(std::span(result))).ok());
+  const auto bytes = std::as_writable_bytes(std::span(result));
+  const auto logical = tensor.storage().subview(0, bytes.size());
+  EXPECT_TRUE(logical);
+  if (logical) EXPECT_TRUE(logical->read(bytes).ok());
   return result;
 }
 
@@ -1581,16 +1583,17 @@ TEST(GraphCompilationStorage,
   auto context =
       hyle::compute::test::native_context({.metadata_allocator = stats.get()})
           .value();
+  const Environment environment{{&context, hyle::mem::system_resource()}};
   const auto logical = make_resource_graph();
   EXPECT_FALSE(hyle::graph::CompileReport{}.compilation_storage());
   {
-    auto plain = hyle::graph::compile(logical.graph, context).value();
+    auto plain = hyle::graph::compile(logical.graph, environment.environment()).value();
     EXPECT_FALSE(plain.report.compilation_storage());
   }
   const auto baseline = stats.snapshot().live_bytes;
   auto compiled =
       hyle::graph::compile(
-          logical.graph, context,
+          logical.graph, environment.environment(),
           {.compilation_storage = hyle::graph::CompilationStorageLimits{}})
           .value();
   const auto usage = compiled.report.compilation_storage().value();
@@ -1666,16 +1669,17 @@ TEST(GraphCompilationStorage, ZeroPeakAndInvalidPolicyAllocateNothing) {
   auto context = hyle::compute::test::native_context(
                      {.metadata_allocator = probe_allocator(probe)})
                      .value();
+  const Environment environment{{&context, hyle::mem::system_resource()}};
   const auto logical = make_rms_graph(row(4));
   const auto before = probe.attempts.load();
   auto zero = hyle::graph::compile(
-      logical.graph, context,
+      logical.graph, environment.environment(),
       {.compilation_storage =
            hyle::graph::CompilationStorageLimits{.max_peak_bytes = 0}});
   ASSERT_FALSE(zero);
   EXPECT_TRUE(zero.error().IsResourceExhausted());
   auto invalid = hyle::graph::compile(
-      logical.graph, context,
+      logical.graph, environment.environment(),
       {.compilation_storage = hyle::graph::CompilationStorageLimits{
            .unknown = static_cast<hyle::graph::UnknownStoragePolicy>(99)}});
   ASSERT_FALSE(invalid);
@@ -2810,6 +2814,8 @@ TEST(GraphCompile, MaterializedPublishedConstantsAndViewsPreserveExactLayout) {
   std::array<float, 2> actual{};
   ASSERT_TRUE(run.output(view)
                   ->storage()
+                  .subview(0, sizeof(actual))
+                  .value()
                   .read(std::as_writable_bytes(std::span(actual)))
                   .ok());
   EXPECT_EQ(actual, (std::array{2.F, 3.F}));

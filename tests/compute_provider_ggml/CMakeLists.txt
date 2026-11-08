@@ -16,6 +16,10 @@ if(HYLE_GGML_CPU_ENABLED)
     "${HYLE_SOURCE_DIR}/src/compute_provider_ggml"
     "${HYLE_SOURCE_DIR}/src/compute_ggml_runtime"
     "${HYLE_GGML_SOURCE_DIR}/src")
+  if(HYLE_GGML_CPU_PEER_REVISION STREQUAL "ffa4e8b80930029a35991f94e7c8a93cd67730ab")
+    set_source_files_properties(native_paged_test.cc PROPERTIES
+      COMPILE_DEFINITIONS HYLE_EXPECT_GGML_CPU_F32_FLASH=1)
+  endif()
   if(MSVC)
     set_source_files_properties(../compute_ggml_runtime/gallocr_faults.c
       PROPERTIES COMPILE_OPTIONS /utf-8)

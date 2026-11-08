@@ -69,6 +69,11 @@ Status derived_constant_control(const compute::Context &cpu,
                                 const compute::cuda::MemoryResource &host,
                                 const compute::cuda::MemoryResource &device,
                                 hyle::sched::Scheduler &scheduler) noexcept {
+  (void)device;
+  HYLE_ASSIGN_OR_RETURN(auto native_storage, compute::cuda::MemoryResource::create(
+      cuda, compute::cuda::MemoryKind::kDevice));
+  HYLE_ASSIGN_OR_RETURN(auto owned_storage,
+      compute::StorageOwner::adopt(cuda, std::move(native_storage)));
   HYLE_ASSIGN_OR_RETURN(
       auto desc, compute::TensorDesc::dense(compute::DataType::kFloat32,
                                             std::array<std::int64_t, 2>{2, 9}));
@@ -76,7 +81,7 @@ Status derived_constant_control(const compute::Context &cpu,
                         compute::TensorDesc::dense(compute::DataType::kBFloat16,
                                                    desc.dimensions()));
   HYLE_ASSIGN_OR_RETURN(auto source, tensor(mem::system_resource(), desc));
-  HYLE_ASSIGN_OR_RETURN(auto weight, tensor(device.ref(), bf));
+  HYLE_ASSIGN_OR_RETURN(auto weight, tensor(owned_storage.ref(), bf));
   std::array<std::uint16_t, 18> bits;
   for (std::size_t i = 0; i < bits.size(); ++i)
     bits[i] = std::uint16_t(0x3e80 + i * 32);
@@ -121,13 +126,23 @@ Status derived_constant_control(const compute::Context &cpu,
       graph::ExternalResourceContract{x, kHostStorage},
       graph::ExternalResourceContract{negative, kHostStorage},
       graph::ExternalResourceContract{selected, kHostStorage}};
-  const std::array constants{graph::ConstantBinding{w, weight.view.as_const()}};
-  HYLE_ASSIGN_OR_RETURN(
-      auto compiled,
-      compile_mixed(logical, cpu, cuda, host, device,
-                      {.constants = constants,
-                       .node_placements = placements,
-                       .external_resources = external}));
+  HYLE_ASSIGN_OR_RETURN(auto weight_lease, owned_storage.adopt_buffer(std::move(weight.buffer)));
+  HYLE_ASSIGN_OR_RETURN(auto weight_view, weight_lease.tensor(bf));
+  const std::array constants{graph::ConstantBinding{
+      .value = w, .tensor = weight_view, .owner = owned_storage, .lease = weight_lease}};
+  HYLE_ASSIGN_OR_RETURN(auto gpu_source, graph::ExecutionSource::acquire(cuda));
+  HYLE_ASSIGN_OR_RETURN(auto cpu_source, graph::ExecutionSource::acquire(cpu));
+  const std::array domains{
+      graph::StorageDomain{.resource = owned_storage.ref(), .owner = owned_storage},
+      graph::StorageDomain{.resource = mem::system_resource()},
+      graph::StorageDomain{.resource = host.ref()}};
+  const std::array targets{
+      graph::ExecutionTarget{gpu_source, kDeviceStorage},
+      graph::ExecutionTarget{cpu_source, kHostStorage}};
+  const std::array lanes{graph::ExecutionLane{kCudaTarget}, graph::ExecutionLane{kCpuTarget}};
+  HYLE_ASSIGN_OR_RETURN(auto compiled, graph::compile(logical,
+      {.storage_domains = domains, .targets = targets, .lanes = lanes},
+      {.constants = constants, .node_placements = placements, .external_resources = external}));
   HYLE_RETURN_IF_ERROR(
       require(compiled.report.packed_constant_count() == 1,
               "mixed test did not prepare the BF16-derived constant"));

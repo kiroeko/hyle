@@ -4,8 +4,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <vector>
 
 #include "../compute/native_context_fixture.h"
+#include "cpu_context_fixture.h"
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/graph/executable.h"
 #include "hyle/mem/buffer.h"
@@ -115,19 +117,21 @@ TEST(GraphCudaReplay, MetadataViewAliasesDeviceStorageWithoutAKernelProvider) {
 TEST(GraphCudaReplay, MaterializesConstantsThroughACompletedDeviceCopy) {
   auto device = hyle::compute::cuda::device(0).value();
   auto context = Context::create(device).value();
-  auto target = hyle::compute::cuda::MemoryResource::create(
-                    context, hyle::compute::cuda::MemoryKind::kDevice)
-                    .value();
+  auto target_resource = hyle::compute::cuda::MemoryResource::create(
+                             context, hyle::compute::cuda::MemoryKind::kDevice)
+                             .value();
+  auto target = hyle::compute::StorageOwner::adopt(context, std::move(target_resource)).value();
   for (auto source_kind : {hyle::compute::cuda::MemoryKind::kPinnedHost,
                            hyle::compute::cuda::MemoryKind::kDevice}) {
     auto source_resource =
         hyle::compute::cuda::MemoryResource::create(context, source_kind)
             .value();
+    auto source_owner = hyle::compute::StorageOwner::adopt(context, std::move(source_resource)).value();
     std::array<float, 257> values{};
     for (std::size_t i = 0; i < values.size(); ++i)
       values[i] = static_cast<float>(i);
     auto source =
-        Buffer::create(source_resource.ref(), sizeof(values), 256).value();
+        Buffer::create(source_owner.ref(), sizeof(values), 256).value();
     ASSERT_TRUE(source.view().write(std::as_bytes(std::span(values))).ok());
     auto description =
         TensorDesc::dense(DataType::kFloat32,
@@ -137,18 +141,20 @@ TEST(GraphCudaReplay, MaterializesConstantsThroughACompletedDeviceCopy) {
     auto constant = builder.constant(description).value();
     ASSERT_TRUE(builder.publish(constant).ok());
     auto graph = std::move(builder).finish().value();
-    const std::array constants{hyle::graph::ConstantBinding{
-        constant,
-        hyle::compute::ConstTensorView::create(description, source.view())
-            .value(),
-        hyle::graph::ConstantPolicy::kMaterialize}};
-    const std::array storage{StorageDomain{target.ref()}};
+    auto source_lease = source_owner.adopt_buffer(std::move(source)).value();
+    std::array constants{hyle::graph::ConstantBinding{
+        .value = constant, .tensor = source_lease.tensor(description).value(),
+        .policy = hyle::graph::ConstantPolicy::kMaterialize,
+        .owner = source_owner, .lease = source_lease}};
+    const std::array storage{StorageDomain{.resource = target.ref(), .owner = target}};
     const std::array targets{ExecutionTarget{hyle::graph::ExecutionSource::acquire(context).value(), StorageDomainId{0}}};
     auto compiled = hyle::graph::compile(
         graph, {.storage_domains = storage, .targets = targets},
         {.constants = constants});
     ASSERT_TRUE(compiled) << compiled.error().message();
-    ASSERT_TRUE(source.reset().ok());
+    constants = {};
+    source_lease = {};
+    source_owner = {};
     EXPECT_EQ(compiled->executable.output_ownership().value(),
               hyle::graph::OutputOwnership::kExecutable);
     EXPECT_EQ(compiled->report.materialized_constant_bytes(), sizeof(values));
@@ -164,10 +170,10 @@ TEST(GraphCudaReplay, MaterializesConstantsThroughACompletedDeviceCopy) {
   }
 }
 
-TEST(GraphCudaReplay, RejectsCpuCudaComputePlacement) {
+TEST(GraphCudaReplay, ExecutesCpuPlacementWithCudaInputAndOutput) {
   auto cuda_device = hyle::compute::cuda::device(0);
   ASSERT_TRUE(cuda_device.has_value()) << cuda_device.error().message();
-  Context cpu_context = hyle::compute::test::native_context().value();
+  Context cpu_context = hyle::graph::test::cpu_context().value();
   Context cuda_context = Context::create(*cuda_device).value();
   auto pinned = hyle::compute::cuda::MemoryResource::create(
                     cuda_context, hyle::compute::cuda::MemoryKind::kPinnedHost)
@@ -223,9 +229,34 @@ TEST(GraphCudaReplay, RejectsCpuCudaComputePlacement) {
       hyle::graph::compile(graph, environment,
                            CompileOptions{.node_placements = placements,
                                           .external_resources = resources});
-  ASSERT_FALSE(compiled_result);
-  EXPECT_TRUE(compiled_result.error().IsInvalidArgument());
+  ASSERT_TRUE(compiled_result) << compiled_result.error().message();
   EXPECT_NE(cpu_context.device(), cuda_context.device());
+  std::size_t copies = 0;
+  for (std::size_t i = 0; i < compiled_result->report.step_count(); ++i)
+    copies += compiled_result->report.step(i)->kind == hyle::graph::CompileStepKind::kCopy;
+  EXPECT_GE(copies, 2u);
+  const std::array<float, 8> input_values{1, -2, 3, -4, 5, -6, 7, -8};
+  auto source = Buffer::create(device.ref(), sizeof(input_values), 256).value();
+  auto destination = Buffer::create(device.ref(), sizeof(input_values), 256).value();
+  ASSERT_TRUE(source.view().write(std::as_bytes(std::span(input_values))).ok());
+  auto run = compiled_result->executable.create_invocation().value();
+  ASSERT_TRUE(run.bind(input, TensorView::create(description, source.view()).value()).ok());
+  ASSERT_TRUE(run.bind(output, TensorView::create(description, destination.view()).value()).ok());
+  auto cpu_queue = cpu_context.create_queue().value();
+  auto cuda_queue = cuda_context.create_queue().value();
+  std::vector<QueueBinding> queues;
+  for (std::uint32_t i = 0; i < lanes.size(); ++i)
+    if (compiled_result->report.lane(i)->queue_required)
+      queues.push_back({ExecutionLaneId{i}, i == 0 ? &cpu_queue : &cuda_queue});
+  ASSERT_TRUE(run.prepare_replay(queues).ok());
+  auto completion = run.submit(queues);
+  ASSERT_TRUE(completion) << completion.error().message();
+  const auto status = completion->wait();
+  ASSERT_TRUE(status.ok()) << status.message();
+  std::array<float, 8> actual{};
+  ASSERT_TRUE(destination.view().read(std::as_writable_bytes(std::span(actual))).ok());
+  for (std::size_t i = 0; i < actual.size(); ++i)
+    EXPECT_EQ(actual[i], -input_values[i]);
 }
 
 TEST(GraphCudaReplay, CaptureBudgetPreservesCommandsAndReportsUnknownStorage) {

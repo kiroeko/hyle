@@ -10537,7 +10537,9 @@ TEST(GraphRegions, RelocatesAnUnselectedRegionNodeToAWorkingFallbackTarget) {
 
   EXPECT_EQ(compiled.report.region_count(), 1u);
   EXPECT_EQ(compiled.report.fallback_operation_count(), 1u);
-  EXPECT_EQ(probe.compiled_begin, 0u);
+  // The overlapping route beginning at node 1 has the lower dispatch cost.
+  // Node 0 must consequently run on the fallback target.
+  EXPECT_EQ(probe.compiled_begin, 1u);
   EXPECT_EQ(probe.compiled_count, 2u);
   EXPECT_EQ(probe.single_proposal_count, 3u);
   EXPECT_EQ(probe.single_artifact_count, 0u);
@@ -11621,7 +11623,10 @@ TEST(GraphRegions, StrictSearchRejectsLimitedDiscoveryBeforePreparation) {
     ASSERT_FALSE(compiled.has_value());
     EXPECT_TRUE(compiled.error().IsResourceExhausted());
     EXPECT_EQ(probe.compile_count, 0u);
-    EXPECT_EQ(probe.single_proposal_count, 0u);
+    // Leaf proposals are discovered before region discovery; no artifact may
+    // be prepared when strict region discovery reaches its limit.
+    EXPECT_EQ(probe.single_proposal_count, 2u);
+    EXPECT_EQ(probe.single_artifact_count, 0u);
   }
 }
 
@@ -11678,7 +11683,8 @@ TEST(GraphRegions, LimitedDiscoveryNeverHidesRealProviderErrors) {
     ASSERT_FALSE(compiled.has_value());
     EXPECT_EQ(compiled.error(), failure);
     EXPECT_EQ(probe.compile_count, 0u);
-    EXPECT_EQ(probe.single_proposal_count, 0u);
+    EXPECT_EQ(probe.single_proposal_count, 2u);
+    EXPECT_EQ(probe.single_artifact_count, 0u);
   }
 }
 
@@ -14200,7 +14206,10 @@ TEST(GraphRegions,
   EXPECT_EQ(first_probe.device_wait_count, 1u);
   EXPECT_EQ(second_probe.device_wait_count, 1u);
   EXPECT_TRUE(completion->wait().IsInternal());
-  EXPECT_EQ(first_probe.completion_wait_count, 1u);
+  // Two distinct first-target segments must both retire; the second target
+  // reports its own late failure independently.
+  EXPECT_EQ(first_probe.submit_count, 2u);
+  EXPECT_EQ(first_probe.completion_wait_count, 2u);
   EXPECT_EQ(second_probe.completion_wait_count, 1u);
   EXPECT_FALSE(invocation.in_flight());
   EXPECT_TRUE(invocation.output(remote).error().IsFailedPrecondition());

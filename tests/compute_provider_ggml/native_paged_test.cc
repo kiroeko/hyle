@@ -16,6 +16,7 @@
 #include <cstdio>
 #include <future>
 #include <limits>
+#include <type_traits>
 #include <vector>
 
 namespace {
@@ -54,8 +55,15 @@ template<class T>void runtime_q1_case(bool encoded,unsigned depth,unsigned value
   }
   auto pool=c::LeasePool::create(hyle::mem::system_resource(),2*8*depth*sizeof(T)+64).value();auto qw=pool.allocate(2*8*depth*sizeof(T)).value();
   ASSERT_TRUE(qw.view()->fill(std::byte{0}).ok());auto query=qw.publish().value();
-  auto program=c::BatchProgram::prepare(context,schema,{.resource=hyle::mem::system_resource(),.max_float_workspace_bytes=8u<<20,
-    .max_int_workspace_bytes=4096,.scale=.125F,.causal=causal,.window_left=window,.allocator=fault.ref()}).value();
+  auto program_result=c::BatchProgram::prepare(context,schema,{.resource=hyle::mem::system_resource(),.max_float_workspace_bytes=8u<<20,
+    .max_int_workspace_bytes=4096,.scale=.125F,.causal=causal,.window_left=window,.allocator=fault.ref()});
+#if !defined(HYLE_EXPECT_GGML_CPU_F32_FLASH)
+  if constexpr (std::is_same_v<T,float>)
+    if (!program_result && program_result.error().IsUnimplemented())
+      GTEST_SKIP()<<"selected ggml CPU provider does not support F32 batch attention: "<<program_result.error().message();
+#endif
+  ASSERT_TRUE(program_result)<<program_result.error().message();
+  auto program=std::move(*program_result);
   auto slot=c::BatchInvocation::create(program,queue).value();std::vector<std::int32_t> previous;
   c::BatchLayoutVersion initial;std::size_t prior_workspace=0;
   for(unsigned step=0;step<64;++step){
@@ -153,9 +161,15 @@ void f32_paged_prefill(bool causal,int window,unsigned tail){
   const std::array<std::int32_t,1> tails{static_cast<std::int32_t>(tail)};
   auto layout=schema.version({qp,kp,pages,tails}).value();
   auto key_frame=keys.read(layout,key_pages).value(),value_frame=values.read(layout,value_pages).value();
-  auto program=c::BatchProgram::prepare(context,schema,{.resource=hyle::mem::system_resource(),
+  auto program_result=c::BatchProgram::prepare(context,schema,{.resource=hyle::mem::system_resource(),
       .max_float_workspace_bytes=8u<<20,.max_int_workspace_bytes=4096,
-      .scale=.0625F,.causal=causal,.window_left=window}).value();
+      .scale=.0625F,.causal=causal,.window_left=window});
+#if !defined(HYLE_EXPECT_GGML_CPU_F32_FLASH)
+  if (!program_result && program_result.error().IsUnimplemented())
+    GTEST_SKIP()<<"selected ggml CPU provider does not support F32 batch attention: "<<program_result.error().message();
+#endif
+  ASSERT_TRUE(program_result)<<program_result.error().message();
+  auto program=std::move(*program_result);
   auto slot=c::BatchInvocation::create(program,queue).value();
   auto prepared=slot.prepare_batch(layout).value();
   auto done=prepared.run(query_lease,key_frame,value_frame).value();
