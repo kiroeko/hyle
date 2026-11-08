@@ -104,7 +104,9 @@ class ResponsesAdapter:
         try:
             request = engine.submit(prepared)
         except Exception as error:
-            engine.metrics.end(False, 0); self._error(exchange, 503, str(error)); return
+            engine.metrics.end(False, 0)
+            invalid = isinstance(error, ValueError) or response_error_kind(error) == 'invalid_request_error'
+            self._error(exchange, 400 if invalid else 503, str(error)); return
         if streaming:
             self._stream(exchange, engine, prepared, request, instructions)
         else:

@@ -12,6 +12,7 @@ import urllib.request
 from argparse import Namespace
 
 from engine.text.app import ResponsesServer, make_worker_command, parse_arguments
+from engine.text.contracts import WorkerError
 from engine.text.responses import InvalidRequest, ResponsesAdapter, parse_responses_input
 from engine.text.runtime import GenerationProgress, TextEngine
 from engine.text.server import TextHttpServer
@@ -340,6 +341,38 @@ class TextFrontendTest(unittest.TestCase):
         with self.assertRaises(ConnectionError):
             engine.generate(request, refuse, progress)
         self.assertEqual((progress.count, progress.last, request.acks), (1, ord("a"), 0))
+
+    def test_submit_errors_preserve_request_and_worker_failure_classification(self):
+        class RejectingWorker(FakeWorker):
+            def submit(self, tokens, max_output_tokens, *, stop_ids=()):
+                raise self.failure
+
+        worker = RejectingWorker()
+        engine = TextEngine(worker, FakeCodec(), 'hyle')
+        server = ResponsesServer(('127.0.0.1', 0), engine, True)
+        thread = threading.Thread(target=server.serve_forever)
+        thread.start()
+        try:
+            endpoint = f'http://127.0.0.1:{server.server_port}/v1/responses'
+            cases = ((ValueError('invalid token'), 400, 'invalid_request_error'),
+                     (WorkerError('invalid', 'invalid token'), 400, 'invalid_request_error'),
+                     (WorkerError('closed', 'invalid token'), 503, 'server_error'))
+            for failure, status, kind in cases:
+                worker.failure = failure
+                for streaming in (False, True):
+                    body = {'model': 'hyle', 'input': 'x', 'max_output_tokens': 3, 'stream': streaming}
+                    request = urllib.request.Request(endpoint, data=json.dumps(body).encode(),
+                                                     headers={'Content-Type': 'application/json'})
+                    with self.assertRaises(urllib.error.HTTPError) as caught:
+                        urllib.request.urlopen(request)
+                    with caught.exception as response:
+                        self.assertEqual(response.status, status)
+                        self.assertEqual(json.loads(response.read())['error']['type'], kind)
+            self.assertEqual((engine.metrics.requests, engine.metrics.failed), (6, 6))
+        finally:
+            server.shutdown()
+            thread.join()
+            server.server_close()
 
     def test_http_error_classification_uses_kind_not_message(self):
         class ErrorWorker(FakeWorker):
