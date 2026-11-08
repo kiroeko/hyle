@@ -18,6 +18,9 @@ constexpr auto native_backend = hyle::inference::BackendKind::kVulkan;
 void require(bool value, const char *message) {
   if (!value) throw std::runtime_error(message);
 }
+bool expected_replay_mismatch(const std::runtime_error &error) {
+  return std::string_view(error.what()).find("MTP replay natural decision or state boundary diverged") != std::string_view::npos;
+}
 void retire(std::shared_ptr<q::Session> &session) {
   if (!session) return;
   (void)session->stop(); const auto drained = session->drain();
@@ -80,7 +83,10 @@ void run(const std::filesystem::path &input) {
   std::cerr << "random_probe_stage=rejected_commit\n";
   bool failed = false;
   try { (void)round(model, session, rejected, &damaged); }
-  catch (const std::runtime_error &error) { failed = true; std::cerr << "random_probe_expected_failure=" << error.what() << '\n'; }
+  catch (const std::runtime_error &error) {
+    if (!expected_replay_mismatch(error)) throw;
+    failed = true; std::cerr << "random_probe_expected_failure=" << error.what() << '\n';
+  }
   require(failed && session->head.get() == base.get() && session->head->sampling.draw == 1 &&
       !rejected.committed_count && !model.active_step && !model.carrier_borrowed,
       "failed sampled episode published a partial head, cursor or ledger");
@@ -147,11 +153,97 @@ void run(const std::filesystem::path &input) {
       << "\",\"strict_replay\":true,\"failed_commit_retry\":true,\"blocked_native_cancel\":true,"
          "\"real_R2\":true,\"cached_frontier_streams\":true,\"performance_claim\":false}\n";
 }
+
+q::MtpRoundResult recursive_round(q::Model &model, const std::shared_ptr<q::Session> &session,
+    q::GenerationLedger &ledger, const q::GenerationCommitRecord *expected = nullptr) {
+  const auto pending = session->head->next_id;
+  const auto *base = session->head.get();
+  const auto before = q::generation_boundary(*base);
+  std::vector<q::c::ReadLease> probabilities;
+  const auto ids = model.propose_recursive(*session, 3, q::model_eos_tokens, &probabilities);
+  require(ids.size() == 4 && probabilities.size() == 3, "K3 did not retain all three actual proposal distributions");
+  require(session->head.get() == base && q::generation_boundary(*session->head) == before,
+      "draft proposals published state or advanced RNG");
+  q::prepare_generation_record(ledger, *session, q::GraphRole::kVerify,
+      std::span(&pending, 1), true, 4, 0, {}, 3);
+  model.prepare_evaluation(*session, ids, nullptr, q::GraphRole::kVerify);
+  model.submit_evaluation(*session);
+  const q::EvaluationIO io{.name = "random_recursive_round", .trace_states = false};
+  const std::array outputs{q::evaluation_output(model, session, io)};
+  const std::array selections{q::MtpGenerationSelection{session, pending, 4, probabilities, 3}};
+  std::array<q::MtpRoundResult, 1> results;
+  q::GenerationPublicationBatch publication({{&ledger, expected}});
+  model.finish_recursive_mtp(selections, q::model_eos_tokens, outputs, results,
+      [&](std::size_t j, const q::CompletedEvaluationView &view) {
+        q::observe_completed_evaluation(model, outputs[j], io, view);
+      }, publication);
+  return std::move(results[0]);
+}
+
+void run_recursive(const std::filesystem::path &input) {
+  const auto source = q::read_ids(input / "prompt.ids");
+  require(source.size() >= 15, "integration check requires fifteen existing prompt tokens");
+  const auto prompt = std::span(source).first(15);
+  const auto geometry = q::probe::read_two_b_geometry(input);
+  auto weights = q::prepare_weight_source(input / "weights.tsv", true);
+  const auto precision = q::PrecisionProfile::from_roles(weights.roles);
+  const auto plan = q::cache::plan(geometry, weights.cache_row_bytes, 64, 3, 15,
+      q::recurrent_bytes(q::state_schema_for(geometry, 64, precision), geometry), 1, 4, true, true, 1, 0, precision);
+  q::Model model(std::move(weights), geometry, 64, plan, {}, true, q::ReplayPolicy::kCommands, SIZE_MAX,
+      {.enabled = true, .policy = {1.5F, 40, .95F}, .seed = 123}, 0, {.primary=native_backend});
+  model.configure_draft_policy({.max_drafts = 3});
+  const std::array prefill{std::size_t{15}}, verify{std::size_t{4}};
+  model.prepare_family(prefill, false, 1, q::GraphRole::kMtpPrefill);
+  model.plan_replay_uses(15, 1, 12, q::GraphRole::kMtpPrefill);
+  model.prepare_family(verify, false, 1, q::GraphRole::kVerify);
+  model.plan_replay_uses(4, 1, 12, q::GraphRole::kVerify);
+  model.prepare_recursive_round_programs();
+  auto session = model.create_session(prefill, {}, q::GraphRole::kMtpPrefill);
+  q::GenerationLedger ledger(2, 4);
+  q::prepare_generation_record(ledger, *session, q::GraphRole::kMtpPrefill, prompt, false, 0, 0);
+  model.prepare_evaluation(*session, prompt, nullptr, q::GraphRole::kMtpPrefill); model.submit_evaluation(*session);
+  (void)q::finish_evaluation(model, *session, "prefill", {}, false, nullptr, nullptr, nullptr, nullptr, {}, &ledger);
+  auto base = session->checkpoint();
+  require(base->sampling == q::cache::SamplingCursor{123, 0, 1}, "K3 prefill did not publish exactly one draw");
+  const auto result = recursive_round(model, session, ledger);
+  const auto final = q::generation_boundary(*session->head);
+  require(final.sampling.draw == 8 && ledger.committed_count == 2,
+      "K3 round did not atomically publish its seven addresses and ledger");
+  retire(session);
+  q::GenerationRestoreStats stats;
+  std::cerr << "random_recursive_stage=strict_replay\n";
+  session = q::restore_mtp_session(model, ledger, {}, false, &stats);
+  require(q::generation_boundary(*session->head) == final && stats.graph_calls == 2,
+      "strict K3 replay changed a sampled decision or RNG boundary");
+  retire(session);
+  session = model.create_session({}, base, q::GraphRole::kMtpPrefill);
+  q::GenerationLedger rejected(1, 4);
+  auto damaged = ledger.records[1]; damaged.draft = static_cast<std::int32_t>((damaged.draft + 1) % geometry.vocabulary);
+  std::cerr << "random_recursive_stage=rejected_commit\n";
+  bool failed = false;
+  try { (void)recursive_round(model, session, rejected, &damaged); }
+  catch (const std::runtime_error &error) {
+    if (!expected_replay_mismatch(error)) throw;
+    failed = true; std::cerr << "random_recursive_expected_failure=" << error.what() << '\n';
+  }
+  require(failed && session->head.get() == base.get() && session->head->sampling.draw == 1 &&
+      !rejected.committed_count && !model.active_step && !model.carrier_borrowed,
+      "failed K3 episode published a partial head, cursor or ledger");
+  std::cerr << "random_recursive_stage=retry\n";
+  const auto retry = recursive_round(model, session, rejected, &ledger.records[1]);
+  require(retry.emitted == result.emitted && q::generation_boundary(*session->head) == final,
+      "K3 retry did not reproduce the original stochastic decision");
+  retire(session);
+  base.reset(); require(model.snapshot_versions.live == 0, "K3 transaction retained a model-state version");
+  std::cout << "{\"status\":\"PASS_RANDOM_K3_TRANSACTION\",\"backend\":\"" << model.execution.name()
+      << "\",\"strict_replay\":true,\"failed_commit_retry\":true,\"actual_q_rows\":3,"
+         "\"performance_claim\":false,\"quality_claim\":false}\n";
+}
 } // namespace
 int main(int argc, char **argv) {
   try {
     if (argc != 3 || std::string_view(argv[1]) != "--inputs")
       throw std::runtime_error("usage: qwen_random_mtp_probe --inputs EXISTING_PREPARED_MTP_DIR");
-    run(argv[2]); return 0;
+    run(argv[2]); run_recursive(argv[2]); return 0;
   } catch (const std::exception &error) { std::cerr << "random MTP integration: " << error.what() << '\n'; return 1; }
 }
