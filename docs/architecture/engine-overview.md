@@ -56,7 +56,9 @@ prefill／decode及推测步骤、采样、模型状态与缓存操作、执行�
 ```text
 engine/main.cc              模型提供者装配、token工作进程及原有Qwen CLI
 engine/text/                tokenizer、模板和协议无关的文本适配
-engine/text/app.py          本地文本CLI及Responses文本服务
+engine/text/app.py          本地文本CLI和服务装配
+engine/text/server.py       HTTP路由、连接和流式传输
+engine/text/responses.py    Responses文本协议适配
 engine/models/              模型制品、数学、完整状态和静态适配
 engine/inference/           请求、缓存、程序IO、步骤推进与资源交接的共同机制
 engine/reporting/           报告格式

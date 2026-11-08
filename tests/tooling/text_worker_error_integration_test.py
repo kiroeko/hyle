@@ -5,7 +5,10 @@ Only existing local inputs are used. The caller may choose another port when
 """
 import argparse
 import json
+import socket
+import struct
 import threading
+import time
 import urllib.error
 import urllib.request
 
@@ -43,7 +46,7 @@ def main():
     parser.add_argument('--metrics', action=argparse.BooleanOptionalAction, default=True)
     args = parser.parse_args()
     worker = WorkerClient([args.engine, '--engine-worker', '--inputs', args.inputs, '--backend', 'cuda',
-                           '--capacity', '128', '--max-sessions', '2', '--active-sequences', '2', '--draft-count', '0'])
+                           '--capacity', '128', '--max-sessions', '1', '--active-sequences', '1', '--draft-count', '0'])
     server = None
     thread = None
     try:
@@ -69,6 +72,25 @@ def main():
             else:
                 assert json.loads(text)['error']['type'] == 'invalid_request_error'
             assert worker.healthy
+        # A streaming peer can disappear while the model still owns a request.
+        # Force an immediate reset after the first token and verify that the
+        # original worker can retire it and accept another request.
+        body = json.dumps({'model': 'hyle', 'input': 'valid', 'max_output_tokens': 100,
+                           'stream': True}).encode()
+        with socket.create_connection(('127.0.0.1', args.port), timeout=60) as connection:
+            connection.sendall(b'POST /v1/responses HTTP/1.1\r\nHost: localhost\r\n'
+                               b'Content-Type: application/json\r\nConnection: close\r\n'
+                               + f'Content-Length: {len(body)}\r\n\r\n'.encode() + body)
+            data = b''
+            while b'event: response.output_text.delta\n' not in data:
+                chunk = connection.recv(65536)
+                assert chunk, data
+                data += chunk
+            connection.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('hh', 1, 0))
+        deadline = time.monotonic() + 30
+        while server.engine.metrics.failed < 3 and time.monotonic() < deadline:
+            time.sleep(.05)
+        assert server.engine.metrics.failed == 3, server.engine.metrics.render()
         body = {'model': 'hyle', 'input': 'valid', 'max_output_tokens': 4}
         request = urllib.request.Request(endpoint, data=json.dumps(body).encode(), headers={'Content-Type': 'application/json'})
         with urllib.request.urlopen(request, timeout=60) as response:
@@ -77,8 +99,8 @@ def main():
         if args.metrics:
             with urllib.request.urlopen(f'http://127.0.0.1:{args.port}/metrics', timeout=10) as response:
                 metrics = response.read().decode()
-            assert 'hyle_requests_failed_total 2\n' in metrics and 'hyle_requests_completed_total 1\n' in metrics
-        print('real worker: nonstream and stream invalid requests isolated; following request completed')
+            assert 'hyle_requests_failed_total 3\n' in metrics and 'hyle_requests_completed_total 1\n' in metrics
+        print('real worker: errors and streaming disconnect isolated; following request completed')
     finally:
         if server is not None:
             if thread is not None and thread.is_alive():

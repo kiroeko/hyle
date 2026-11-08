@@ -5,8 +5,10 @@ import urllib.error
 import urllib.request
 from argparse import Namespace
 
-from engine.text.app import InvalidRequest, ResponsesServer, TextEngine, make_worker_command, parse_responses_input
-from engine.text.runtime import GenerationProgress
+from engine.text.app import ResponsesServer, make_worker_command
+from engine.text.responses import InvalidRequest, ResponsesAdapter, parse_responses_input
+from engine.text.runtime import GenerationProgress, TextEngine
+from engine.text.server import TextHttpServer
 from engine.text.worker_client import TokenEvent
 
 
@@ -32,6 +34,7 @@ class FakeRequest:
         self.events = iter([TokenEvent("token", ord("a")), TokenEvent("token", 3), TokenEvent("completed")])
         self.acks = 0
         self.closed = False
+        self.closed_event = threading.Event()
 
     def read(self, timeout=None):
         return next(self.events)
@@ -41,6 +44,7 @@ class FakeRequest:
 
     def close(self):
         self.closed = True
+        self.closed_event.set()
 
 
 class FakeWorker:
@@ -55,6 +59,45 @@ class FakeWorker:
 
 
 class TextFrontendTest(unittest.TestCase):
+    def test_transport_composes_independent_adapter_routes(self):
+        class TestAdapter:
+            def handle_post(self, exchange, engine):
+                payload = exchange.read_json()
+                prepared = engine.prepare([{'role': 'user', 'content': payload['text']}], 3)
+                request = engine.submit(prepared)
+                try:
+                    text = engine.generate(request, lambda _: None, GenerationProgress())
+                    exchange.send_json(200, {'output': text})
+                finally:
+                    request.close()
+        worker = FakeWorker()
+        engine = TextEngine(worker, FakeCodec(), 'hyle')
+        routes = {'/v1/responses': ResponsesAdapter(), '/test-adapter': TestAdapter()}
+        server = TextHttpServer(('127.0.0.1', 0), engine, True, routes)
+        routes.clear()  # The running service retains its cold composition.
+        thread = threading.Thread(target=server.serve_forever)
+        thread.start()
+        try:
+            base = f'http://127.0.0.1:{server.server_port}'
+            for path, body, expected in (
+                ('/test-adapter', {'text': 'x'}, 'a'),
+                ('/v1/responses', {'model': 'hyle', 'input': 'x', 'max_output_tokens': 3}, 'a'),
+            ):
+                request = urllib.request.Request(base + path, data=json.dumps(body).encode(),
+                                                 headers={'Content-Type': 'application/json'})
+                with urllib.request.urlopen(request) as response:
+                    result = json.load(response)
+                text = result['output'] if path == '/test-adapter' else result['output'][0]['content'][0]['text']
+                self.assertEqual(text, expected)
+                self.assertTrue(worker.request.closed_event.wait(timeout=3))
+            with self.assertRaises(urllib.error.HTTPError) as missing:
+                urllib.request.urlopen(urllib.request.Request(base + '/missing', data=b'{}'))
+            self.assertEqual(missing.exception.code, 404)
+        finally:
+            server.shutdown()
+            thread.join()
+            server.server_close()
+
     def test_unspecified_overlap_is_selected_by_model_preparation(self):
         options = dict(engine="hyle", inputs="model", backend="cuda", capacity=128,
                        max_sessions=1, active_sequences=1, draft_count=0,
@@ -132,7 +175,7 @@ class TextFrontendTest(unittest.TestCase):
                         self.assertEqual([event["sequence_number"] for event in events], list(range(len(events))))
                     else:
                         self.assertEqual(json.loads(data)["error"]["type"], code)
-                    self.assertTrue(worker.request.closed)
+                    self.assertTrue(worker.request.closed_event.wait(timeout=3))
         finally:
             server.shutdown()
             thread.join()
@@ -204,7 +247,7 @@ class TextFrontendTest(unittest.TestCase):
                 self.assertEqual(output["output"][0]["content"][0]["text"], "a")
                 self.assertEqual(output["usage"]["output_tokens"], 2)
                 self.assertEqual(worker.request.acks, 2)
-                self.assertTrue(worker.request.closed)
+                self.assertTrue(worker.request.closed_event.wait(timeout=3))
         finally:
             server.shutdown()
             thread.join()

@@ -41,7 +41,7 @@ Hyle 借鉴统一请求语义和协议适配边界，不预先要求本地 CLI �
 
 工作进程使用 `engine/inference/model_provider.h` 的公共装载配置和提供者合同，`engine/model_catalog.h` 在程序装配时静态组合提供者。每个提供者只读检查自己的输入格式，匹配后由其完整验证和装载；无匹配或多个匹配会报错。当前只接入 Qwen 提供者，原有 Qwen CLI 仍单独转交其驱动。该机制没有动态插件或第二个模型执行器，也不证明其他模型已支持。Qwen 装载器在冷期复用已有 MTP、设备验证和接力策略；多会话自动 MTP 尚未接入。
 
-文本层的 `engine/text/runtime.py` 负责消息编码、请求提交和有序文本交付；CLI 与 Responses 都使用这条路径。`contracts.py` 描述 token 传输合同，`worker_client.py` 连接内部工作进程，`app.py` 负责 Responses 字段、HTTP 和事件格式。输出消费者接收文本之后才归还 token 配额；传输失败由原请求的取消与退休路径处理。
+文本层的 `engine/text/runtime.py` 负责消息编码、请求提交和有序文本交付；CLI 与 Responses 都使用这条路径。`contracts.py` 描述 token 传输合同，`worker_client.py` 连接内部工作进程；`server.py` 负责 HTTP 路由、连接和流式传输，`responses.py` 负责 Responses 字段与事件格式，`app.py` 在启动时组合入口和路由。输出消费者接收文本之后才归还 token 配额；传输失败由原请求的取消与退休路径处理。
 
 ## 请求与生命周期
 

@@ -113,7 +113,7 @@ class ArchitectureBoundariesTest(unittest.TestCase):
 
     def test_text_core_does_not_import_protocol_or_model_implementations(self):
         allowed = {'__init__': set(), 'contracts': set(), 'codec': set(), 'worker_client': {'contracts'},
-                   'runtime': {'contracts', 'codec'}}
+                   'runtime': {'contracts', 'codec'}, 'server': {'contracts', 'runtime'}}
         violations = []
         for name, local_allowed in allowed.items():
             path = ROOT / 'engine/text' / (name + '.py')
@@ -134,7 +134,8 @@ class ArchitectureBoundariesTest(unittest.TestCase):
                 else:
                     continue
                 for module in imports:
-                    if module.split('.')[0] in {'http', 'fastapi', 'flask', 'starlette'} or module.startswith('engine.'):
+                    if ((name != 'server' and module.split('.')[0] in {'http', 'fastapi', 'flask', 'starlette'}) or
+                            module.startswith('engine.')):
                         violations.append(f'{name}:{node.lineno}: {module}')
         self.assertEqual(violations, [])
 
