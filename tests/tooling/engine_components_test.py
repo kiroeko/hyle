@@ -8,6 +8,11 @@ import subprocess
 import tempfile
 import unittest
 
+if __package__:
+    from .inference_architecture_boundaries_test import ArchitectureBoundariesTest
+else:
+    from inference_architecture_boundaries_test import ArchitectureBoundariesTest
+
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRATCH = ROOT / ".scratch/validation/engine-components"
