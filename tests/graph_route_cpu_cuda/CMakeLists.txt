@@ -7,9 +7,11 @@ if(_HYLE_COMPUTE_HAVE_CUDA AND _HYLE_COMPUTE_REQUEST_CPU)
   hyle_add_header_self_contained_test(graph_route_cpu_cuda
     HEADER_DIR graph HEADERS cpu_cuda.h EXTRA_INCLUDE_DIRS "${_hyle_cuda_test_include}")
   hyle_add_test(graph_route_cpu_cuda NAME contracts
-    SOURCES ../graph/cpu_cuda_contracts.cc DEPS hyle_graph_route_cpu hyle_graph_route_cuda)
+    SOURCES ../graph/cpu_cuda_contracts.cc DEPS hyle_graph_route_cpu hyle_graph_route_cuda
+      hyle_graph_progress hyle_sched)
   hyle_add_test(graph_route_cpu_cuda NAME public_consumer
-    SOURCES ../../samples/package/graph/cpu_cuda/main.cc DEPS hyle_graph_route_cpu hyle_graph_route_cuda)
+    SOURCES ../../samples/package/graph/cpu_cuda/main.cc DEPS hyle_graph_route_cpu hyle_graph_route_cuda
+      hyle_graph_progress hyle_sched)
   hyle_add_test(graph_route_cpu_cuda NAME finite
     SOURCES ../graph/route_symmetry_cuda.cc
     DEPS hyle_graph_route_cpu hyle_graph_route_cuda hyle_graph_progress)

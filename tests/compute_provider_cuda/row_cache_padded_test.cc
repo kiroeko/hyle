@@ -185,10 +185,10 @@ TEST(CudaPaddedRowCache,
         std::reverse(selected.begin(), selected.end());
       ids.write(selected);
       auto &slot = slots[phase];
-      ASSERT_TRUE(gb::bind(slot, b, bank.view.as_const()).ok());
-      ASSERT_TRUE(gb::bind(slot, i, ids.view.as_const()).ok());
-      ASSERT_TRUE(gb::bind(slot, decoded, output[phase].view).ok());
-      ASSERT_TRUE(gb::bind(slot, widened, wide[phase].view).ok());
+      ASSERT_TRUE(slot.bind(b, bank.view.as_const()).ok());
+      ASSERT_TRUE(slot.bind(i, ids.view.as_const()).ok());
+      ASSERT_TRUE(slot.bind(decoded, output[phase].view).ok());
+      ASSERT_TRUE(slot.bind(widened, wide[phase].view).ok());
       auto done = slot.submit(queue);
       ASSERT_TRUE(done);
       ASSERT_TRUE(done->wait().ok());

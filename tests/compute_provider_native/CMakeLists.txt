@@ -21,7 +21,7 @@ hyle_add_test(compute_provider_native SOURCES
   reduction_test.cc
   transform_test.cc
   transformer_test.cc
-  DEPS hyle_compute_backend_cpu)
+  DEPS hyle_compute_backend_cpu hyle_compute_route_cpu)
 target_include_directories(hyle_compute_provider_native_test PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/../../src/compute")
 get_target_property(_hyle_native_capabilities hyle_compute_provider_native

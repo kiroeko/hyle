@@ -378,6 +378,7 @@ endif()
 
 add_executable(hyle_qwen_prepared_roles_test tools/qwen_prepared_roles_test.cc)
 target_link_libraries(hyle_qwen_prepared_roles_test PRIVATE hyle_build_contract)
+target_include_directories(hyle_qwen_prepared_roles_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
 target_compile_features(hyle_qwen_prepared_roles_test PRIVATE cxx_std_23)
 hyle_apply_warnings(hyle_qwen_prepared_roles_test)
 hyle_apply_sanitizer(hyle_qwen_prepared_roles_test)
@@ -445,7 +446,8 @@ if(_HYLE_COMPUTE_HAVE_CUDA AND _HYLE_COMPUTE_REQUEST_CPU
    AND TARGET hyle_graph_route_cuda)
   hyle_add_test(graph_route_cpu_cuda NAME qwen_backend
     SOURCES tools/qwen_backend_cpu_cuda_test.cc
-    DEPS hyle_graph_route_cpu hyle_graph_route_cuda hyle_graph_progress)
+    DEPS hyle_graph_route_cpu hyle_graph_route_cuda hyle_graph_progress
+      hyle_io_core hyle_compute_stream hyle_graph_batch hyle_compute_stream_cpu)
   hyle_stage_runtime(hyle_graph_route_cpu_cuda_qwen_backend_test)
 endif()
 
@@ -652,6 +654,9 @@ if(TARGET hyle_engine AND _HYLE_COMPUTE_HAVE_CUDA)
   add_executable(hyle_qwen_generation_batch_relay_probe tools/qwen_generation_batch_relay_probe.cc
     ${_hyle_qwen35_cold_sources})
   hyle_configure_engine_target(hyle_qwen_generation_batch_relay_probe)
+  if(MSVC)
+    target_compile_options(hyle_qwen_generation_batch_relay_probe PRIVATE /bigobj)
+  endif()
   set_target_properties(hyle_qwen_generation_batch_relay_probe PROPERTIES
     FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
   add_dependencies(hyle_tests hyle_qwen_generation_batch_relay_probe)
@@ -695,6 +700,10 @@ if(TARGET hyle_engine AND _HYLE_COMPUTE_HAVE_CUDA)
   add_executable(hyle_qwen_request_lifecycle_test tools/qwen_request_lifecycle_test.cc
     ${_hyle_qwen35_cold_sources})
   hyle_configure_engine_target(hyle_qwen_request_lifecycle_test)
+  if(MSVC)
+    # All request lifecycle cases are compiled into this one source.
+    target_compile_options(hyle_qwen_request_lifecycle_test PRIVATE /bigobj)
+  endif()
   set_target_properties(hyle_qwen_request_lifecycle_test PROPERTIES
     FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
   add_dependencies(hyle_tests hyle_qwen_request_lifecycle_test)

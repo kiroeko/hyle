@@ -5,7 +5,7 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
     SOURCES packed_resident_consumer.cc DEPS hyle_compute_backend_cuda hyle_compute_route_cuda)
   hyle_stage_runtime(hyle_compute_provider_cuda_packed_consumer_test)
   hyle_add_test(compute_provider_cuda NAME row_cache SOURCES row_cache_test.cc row_cache_paged_test.cc row_cache_indexer_test.cc row_cache_padded_test.cc
-    DEPS hyle_compute_backend_cuda hyle_compute_batch hyle_compute_route_cuda hyle_graph)
+    DEPS hyle_compute_backend_cuda hyle_compute_batch hyle_compute_route_cuda hyle_graph hyle_graph_batch)
   hyle_add_test(compute_provider_cuda SOURCES cuda_provider_test.cc grouped_fp8_test.cc tensor_test.cc scatter_test.cc sglang_primitives_test.cc collectives_test.cc gather_collectives_test.cc
     DEPS hyle_compute_backend_cuda hyle_graph)
 endif()

@@ -167,7 +167,7 @@ public:
                     mem::MemoryResourceRef destination,
                     std::size_t minimum_alignment,
                     std::size_t source_offset) noexcept;
-  compute::ProviderPrepareOutcome
+  HYLE_GRAPH_API compute::ProviderPrepareOutcome
   acquire(PlanState &plan,
           const GraphRegionSource &source,
           ExecutionTargetId target,

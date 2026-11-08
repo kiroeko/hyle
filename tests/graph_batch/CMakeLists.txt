@@ -189,11 +189,11 @@ if(_HYLE_COMPUTE_HAVE_CUDA AND TARGET hyle_compute_route_cuda AND
   endif()
   hyle_add_test(graph_batch NAME cuda_public_native
     SOURCES ../compute_batch/public_batch_cuda_consumer.cc
-    DEPS hyle_compute_route_cuda hyle_simd)
+    DEPS hyle_compute_route_cuda hyle_graph_route_cuda hyle_simd)
   hyle_stage_runtime(hyle_graph_batch_cuda_public_native_test)
   hyle_add_test(graph_batch NAME cuda_public_mla
     SOURCES ../compute_batch/public_mla_cuda_consumer.cc
-    DEPS hyle_compute_route_cuda hyle_simd)
+    DEPS hyle_compute_route_cuda hyle_graph_route_cuda hyle_simd)
   hyle_stage_runtime(hyle_graph_batch_cuda_public_mla_test)
   hyle_add_test(graph_batch NAME cuda_public_mla_pending
     SOURCES ../compute_batch/public_mla_pending_cuda_consumer.cc
@@ -201,6 +201,6 @@ if(_HYLE_COMPUTE_HAVE_CUDA AND TARGET hyle_compute_route_cuda AND
   hyle_stage_runtime(hyle_graph_batch_cuda_public_mla_pending_test)
   hyle_add_test(graph_batch NAME cuda_public_mla_pending_graph
     SOURCES ../compute_batch/public_mla_pending_graph_cuda_consumer.cc
-    DEPS hyle_compute_route_cuda hyle_simd)
+    DEPS hyle_compute_route_cuda hyle_graph_route_cuda hyle_simd)
   hyle_stage_runtime(hyle_graph_batch_cuda_public_mla_pending_graph_test)
 endif()

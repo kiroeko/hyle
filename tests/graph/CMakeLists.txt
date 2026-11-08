@@ -40,7 +40,7 @@ if(_HYLE_COMPUTE_REQUEST_CPU AND HYLE_GGML_CPU_ENABLED
     invocation_unbind_test.cc
     region_provider_test.cc
     DEPS hyle_compute_backend_cpu hyle_compute_provider_native
-         hyle_compute_provider_ggml Threads::Threads)
+         hyle_compute_provider_ggml hyle_container Threads::Threads)
   hyle_stage_runtime(hyle_graph_executable_test)
   target_include_directories(hyle_graph_executable_test PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../../src/compute"

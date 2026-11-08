@@ -137,8 +137,11 @@ struct NativeProgram final {
 TEST(GgmlCudaResources,
      OriginalRegionReplaysWithBorrowedPayloadAndIndependentBackends) {
   NativeProgram first, second;
-  ASSERT_NE(bridge::root_stream(first.backend),
-            bridge::root_stream(second.backend));
+  // Native streams are created lazily on first execution, so there is no root
+  // stream to compare. Select the original caching pools as production does;
+  // independence is checked by executing and draining each backend separately.
+  bridge::initialize_backend(first.backend);
+  bridge::initialize_backend(second.backend);
   for (int seed : {0, 3, 7}) {
     const auto values = first.values(seed);
     ASSERT_EQ(cudaMemcpy(first.input, values.data(), first.kBytes,
