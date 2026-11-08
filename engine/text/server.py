@@ -1,10 +1,13 @@
 """Local HTTP transport and cold route composition for text adapters."""
 from __future__ import annotations
 
+import io
 import json
 import queue
 import select
 import socket
+import sys
+import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from types import MappingProxyType
 from typing import Any, Mapping, Protocol
@@ -16,6 +19,56 @@ from .runtime import TextEngine
 
 class ClientDisconnected(ConnectionError):
     pass
+
+
+def _wait_socket(connection: socket.socket, closing: threading.Event, *, write: bool = False) -> None:
+    while not closing.is_set():
+        ready, writable, _ = select.select([] if write else [connection], [connection] if write else [], [], .25)
+        if ready or writable:
+            return
+    raise ClientDisconnected('server closing')
+
+
+class _SocketReader(io.RawIOBase):
+    def __init__(self, connection: socket.socket, closing: threading.Event):
+        super().__init__()
+        self.connection, self.closing = connection, closing
+
+    def readable(self) -> bool:
+        return True
+
+    def readinto(self, target) -> int:
+        while not self.closing.is_set():
+            try:
+                return self.connection.recv_into(target)
+            except (BlockingIOError, InterruptedError):
+                _wait_socket(self.connection, self.closing)
+        raise ClientDisconnected('server closing')
+
+
+class _SocketWriter(io.RawIOBase):
+    def __init__(self, connection: socket.socket, closing: threading.Event):
+        super().__init__()
+        self.connection, self.closing = connection, closing
+
+    def writable(self) -> bool:
+        return True
+
+    def write(self, data) -> int:
+        remaining = memoryview(data)
+        total = len(remaining)
+        while remaining:
+            if self.closing.is_set():
+                raise ClientDisconnected('server closing')
+            try:
+                sent = self.connection.send(remaining)
+            except (BlockingIOError, InterruptedError):
+                _wait_socket(self.connection, self.closing, write=True)
+                continue
+            if not sent:
+                raise ClientDisconnected('client disconnected')
+            remaining = remaining[sent:]
+        return total
 
 
 class HttpExchange:
@@ -61,6 +114,9 @@ class HttpExchange:
 
     def next_event(self, request: TokenRequest) -> TokenEvent:
         while True:
+            if self._handler.server.closing.is_set():  # type: ignore[attr-defined]
+                self._handler.close_connection = True
+                raise ClientDisconnected('server closing')
             try:
                 return request.read(timeout=.25)
             except queue.Empty:
@@ -71,6 +127,7 @@ class HttpExchange:
                 except (OSError, ValueError):
                     disconnected = True
                 if disconnected:
+                    self._handler.close_connection = True
                     raise ClientDisconnected('client disconnected')
 
 
@@ -81,6 +138,15 @@ class TextHttpAdapter(Protocol):
 class TextHttpHandler(BaseHTTPRequestHandler):
     protocol_version = 'HTTP/1.1'
     server_version = 'Hyle/0.1'
+
+    def setup(self) -> None:
+        super().setup()
+        self.rfile.close()
+        self.wfile.close()
+        self.connection.setblocking(False)
+        closing = self.server.closing  # type: ignore[attr-defined]
+        self.rfile = io.BufferedReader(_SocketReader(self.connection, closing))
+        self.wfile = _SocketWriter(self.connection, closing)
 
     def do_GET(self) -> None:
         exchange = HttpExchange(self)
@@ -109,9 +175,51 @@ class TextHttpHandler(BaseHTTPRequestHandler):
 
 
 class TextHttpServer(ThreadingHTTPServer):
-    daemon_threads = True
+    daemon_threads = False
 
     def __init__(self, address, engine: TextEngine, metrics_enabled: bool, routes: Mapping[str, TextHttpAdapter]):
         self.engine, self.metrics_enabled = engine, metrics_enabled
         self.routes = MappingProxyType(dict(routes))
+        self.closing = threading.Event()
+        self._connections_lock = threading.Lock()
+        self._connections: set[socket.socket] = set()
         super().__init__(address, TextHttpHandler)
+
+    def process_request(self, request, client_address) -> None:
+        # Register before starting the handler so close cannot miss a thread
+        # that has accepted a socket but has not started executing yet.
+        with self._connections_lock:
+            if self.closing.is_set():
+                self.shutdown_request(request)
+                return
+            self._connections.add(request)
+            try:
+                super().process_request(request, client_address)
+            except BaseException:
+                self._connections.discard(request)
+                raise
+
+    def process_request_thread(self, request, client_address) -> None:
+        try:
+            super().process_request_thread(request, client_address)
+        finally:
+            with self._connections_lock:
+                self._connections.discard(request)
+
+    def handle_error(self, request, client_address) -> None:
+        if self.closing.is_set() and isinstance(sys.exc_info()[1], OSError):
+            return
+        super().handle_error(request, client_address)
+
+    def server_close(self) -> None:
+        self.closing.set()
+        with self._connections_lock:
+            connections = tuple(self._connections)
+        # Wake blocked reads and writes before ThreadingMixIn joins handlers.
+        # Their request handles cancel through the original worker owner.
+        for connection in connections:
+            try:
+                connection.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+        super().server_close()

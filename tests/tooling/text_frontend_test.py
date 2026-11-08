@@ -1,4 +1,6 @@
 import json
+import queue
+import socket
 import threading
 import unittest
 import urllib.error
@@ -59,6 +61,81 @@ class FakeWorker:
 
 
 class TextFrontendTest(unittest.TestCase):
+    def test_server_close_cancels_inflight_handler_before_return(self):
+        class StalledRequest(FakeRequest):
+            def __init__(self):
+                super().__init__()
+                self.started = threading.Event()
+                self.first = True
+
+            def read(self, timeout=None):
+                if self.first:
+                    self.first = False
+                    self.started.set()
+                    return TokenEvent('token', ord('a'))
+                self.closed_event.wait(timeout=timeout)
+                raise queue.Empty
+
+        request = StalledRequest()
+        class StalledWorker(FakeWorker):
+            def submit(self, tokens, max_output_tokens, *, stop_ids=()):
+                return request
+
+        server = ResponsesServer(('127.0.0.1', 0), TextEngine(StalledWorker(), FakeCodec(), 'hyle'), True)
+        thread = threading.Thread(target=server.serve_forever)
+        thread.start()
+        connection = socket.create_connection(('127.0.0.1', server.server_port), timeout=3)
+        try:
+            body = json.dumps({'model': 'hyle', 'input': 'x', 'max_output_tokens': 3}).encode()
+            connection.sendall(b'POST /v1/responses HTTP/1.1\r\nHost: localhost\r\n'
+                               + f'Content-Length: {len(body)}\r\n\r\n'.encode() + body)
+            self.assertTrue(request.started.wait(timeout=3))
+            server.shutdown()
+            thread.join(timeout=3)
+            self.assertFalse(thread.is_alive())
+            server.server_close()
+            self.assertTrue(request.closed_event.wait(timeout=3), 'request handler outlived server close')
+        finally:
+            connection.close()
+            request.closed_event.wait(timeout=3)
+            if thread.is_alive():
+                server.shutdown()
+                thread.join(timeout=3)
+            server.server_close()
+
+    def test_server_close_wakes_incomplete_request_body(self):
+        entered, finished = threading.Event(), threading.Event()
+
+        class ReadingAdapter:
+            def handle_post(self, exchange, engine):
+                entered.set()
+                try:
+                    exchange.read_json()
+                except (OSError, ValueError):
+                    pass
+                finally:
+                    finished.set()
+
+        server = TextHttpServer(('127.0.0.1', 0), TextEngine(FakeWorker(), FakeCodec(), 'hyle'),
+                                True, {'/read': ReadingAdapter()})
+        thread = threading.Thread(target=server.serve_forever)
+        thread.start()
+        connection = socket.create_connection(('127.0.0.1', server.server_port), timeout=3)
+        try:
+            connection.sendall(b'POST /read HTTP/1.1\r\nHost: localhost\r\nContent-Length: 100\r\n\r\n{')
+            self.assertTrue(entered.wait(timeout=3))
+            server.shutdown()
+            thread.join(timeout=3)
+            self.assertFalse(thread.is_alive())
+            server.server_close()
+            self.assertTrue(finished.is_set())
+        finally:
+            connection.close()
+            if thread.is_alive():
+                server.shutdown()
+                thread.join(timeout=3)
+            server.server_close()
+
     def test_transport_composes_independent_adapter_routes(self):
         class TestAdapter:
             def handle_post(self, exchange, engine):
