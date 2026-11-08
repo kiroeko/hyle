@@ -144,6 +144,12 @@ public:
     if (item.state == QueuedTokenConsumer::ReadState::kToken) return {EventKind::kToken, item.token};
     if (item.state == QueuedTokenConsumer::ReadState::kTurnEnd) return {EventKind::kTurnEnd, 0, {}, item.turn};
     std::lock_guard lock(request_->mutex);
+    if ((item.state == QueuedTokenConsumer::ReadState::kCompleted ||
+         item.state == QueuedTokenConsumer::ReadState::kCancelled) && request_->failure) {
+      request_->state = detail::IngressState::kFailed;
+      (void)output->release(key);
+      return {EventKind::kFailed, 0, request_->failure};
+    }
     if (item.state == QueuedTokenConsumer::ReadState::kCompleted) {
       request_->state = detail::IngressState::kCompleted;
       (void)output->release(key);
@@ -353,6 +359,20 @@ private:
         job->changed.notify_all();
       }
       jobs_[slot].reset();
+    }
+    bool fail(RequestKey key, std::exception_ptr error) noexcept {
+      if (!error || key.slot >= jobs_.size() || !started_[key.slot] || finished_[key.slot] ||
+          keys_[key.slot] != key || !jobs_[key.slot]) return false;
+      auto &job = *jobs_[key.slot];
+      {
+        std::lock_guard lock(job.mutex);
+        if (job.state != detail::IngressState::kStarted) return false;
+        // An already requested user cancellation keeps its original outcome.
+        if (job.cancel_intent) return true;
+        job.failure = std::move(error);
+        job.cancel_intent = true;
+      }
+      return output_->request_cancel(key);
     }
     bool cancel_requested(RequestKey key) noexcept { return output_->cancel_requested(key); }
     void finished(RequestKey key, bool cancelled) noexcept {

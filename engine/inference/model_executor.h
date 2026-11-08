@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <span>
 #include <stdexcept>
 #include <type_traits>
@@ -41,6 +42,10 @@ public:
         cancel_([](void *p, RequestKey key) noexcept { return static_cast<T *>(p)->cancel_requested(key); }),
         finished_([](void *p, RequestKey key, bool cancelled) noexcept {
           static_cast<T *>(p)->finished(key, cancelled);
+        }), fail_([](void *p, RequestKey key, std::exception_ptr error) noexcept {
+          if constexpr (requires(T &c) { { c.fail(key, error) } noexcept -> std::same_as<bool>; })
+            return static_cast<T *>(p)->fail(key, std::move(error));
+          else { (void)p; (void)key; (void)error; return false; }
         }), wait_([](void *p) noexcept { static_cast<T *>(p)->wait(); }) {}
   std::size_t max_pending() const noexcept { return pending_(object_); }
   bool start(RequestKey key) noexcept { return start_(object_, key); }
@@ -49,6 +54,9 @@ public:
   bool try_turn_end(RequestKey key, std::size_t turn) noexcept { return turn_end_(object_, key, turn); }
   bool cancel_requested(RequestKey key) noexcept { return cancel_(object_, key); }
   void finished(RequestKey key, bool cancelled) noexcept { finished_(object_, key, cancelled); }
+  // A request-local rejection before its next turn submits model work.
+  // The original request owner still cancels and observes real retirement.
+  bool fail(RequestKey key, std::exception_ptr error) noexcept { return fail_(object_, key, std::move(error)); }
   void wait() noexcept { wait_(object_); }
 private:
   void *object_;
@@ -59,6 +67,7 @@ private:
   bool supports_turn_ends_;
   bool (*cancel_)(void *, RequestKey) noexcept;
   void (*finished_)(void *, RequestKey, bool) noexcept;
+  bool (*fail_)(void *, RequestKey, std::exception_ptr) noexcept;
   void (*wait_)(void *) noexcept;
 };
 static_assert(TokenConsumer<TokenConsumerRef>);

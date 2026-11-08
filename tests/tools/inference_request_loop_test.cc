@@ -1071,6 +1071,12 @@ public:
         auto &request = adapter.progress(keys[slot]);
         if (input.state == i::TurnInputState::kClosed) request.close_input();
         else {
+          if (input.turn.prompt == std::vector<std::int32_t>{250}) {
+            if (!consumer.fail(keys[slot], std::make_exception_ptr(i::RequestRejected("turn exceeds context"))))
+              throw std::logic_error("dynamic fixture could not reject one turn");
+            progress = true;
+            continue;
+          }
           schedules[slot].turns.push_back(std::move(input.turn));
           request.extend_turns(schedules[slot].turns);
         }
@@ -1413,6 +1419,30 @@ void abandoned_dynamic_request_releases_slot_beside_live_session() {
   dispatcher.shutdown();
 }
 
+void late_turn_rejection_preserves_other_requests() {
+  i::GenerationDispatcher dispatcher(std::make_unique<DynamicIngressTestExecutor>(), 2, 4, 1);
+  using Event = i::GenerationRequestHandle::EventKind;
+  using Input = i::GenerationRequestHandle::InputResult;
+  auto anchor = dispatcher.submit({"anchor", {{{1}, 1}}, i::GenerationSessionMode::kLive});
+  require(anchor.read().kind == Event::kToken && anchor.read().kind == Event::kTurnEnd,
+      "late rejection fixture did not pause its anchor");
+  auto rejected = dispatcher.submit({"rejected", {{{2}, 1}}, i::GenerationSessionMode::kLive});
+  require(rejected.read().kind == Event::kToken && rejected.read().kind == Event::kTurnEnd &&
+      rejected.append({{250}, 1}) == Input::kAccepted,
+      "late rejection fixture did not submit its next turn");
+  const auto failed = rejected.read();
+  require(failed.kind == Event::kFailed && failed.failure, "late rejection was not delivered after retirement");
+  bool typed = false;
+  try { std::rethrow_exception(failed.failure); } catch (const i::RequestRejected &) { typed = true; }
+  require(typed, "late rejection lost its request-specific error");
+  auto peer = dispatcher.submit({"peer", {{{3}, 1}}});
+  require(peer.read().kind == Event::kToken && peer.read().kind == Event::kCompleted,
+      "late rejection blocked or poisoned an unrelated request");
+  require(anchor.close_input() && anchor.read().kind == Event::kCompleted,
+      "late rejection interrupted the other live session");
+  dispatcher.shutdown();
+}
+
 void ingress_abandoned_handle_releases_its_request() {
   auto control = std::make_shared<IngressTestControl>();
   i::GenerationDispatcher dispatcher(std::make_unique<IngressTestExecutor>(control), 1, 2, 1);
@@ -1734,6 +1764,7 @@ int main() {
     live_ingress_shutdown_wakes_idle_owner();
     dynamic_ingress_runs_new_requests_beside_paused_session();
     abandoned_dynamic_request_releases_slot_beside_live_session();
+    late_turn_rejection_preserves_other_requests();
     ingress_abandoned_handle_releases_its_request();
     ingress_shutdown_does_not_fabricate_active_retirement();
     ingress_rejects_bad_request_without_poisoning_model();

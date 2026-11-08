@@ -3562,6 +3562,20 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
             !next.max_outputs || next.max_outputs > configured_bound ||
             std::ranges::any_of(next.prompt, [&](auto id) { return id < 0 || id >= model.vocabulary; }))
           throw std::out_of_range("input exceeds configured turn, prompt or output bound");
+        // The preceding turn may have stopped early. Check the next turn
+        // against its actual committed state, before extending or submitting it.
+        const auto before = request.session->length();
+        const auto input_rows = next.prompt.size() + 1; // Includes the pending prior output.
+        if (before > model.capacity || input_rows > model.capacity - before ||
+            next.max_outputs - 1 > model.capacity - before - input_rows) {
+          const auto error = std::make_exception_ptr(inference::RequestRejected(
+              "complete turn input and output quota exceed the remaining context"));
+          if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>> &&
+              requires { { output_consumer.fail(request.request_key, error) } noexcept -> std::same_as<bool>; }) {
+            if (reuse && output_consumer.fail(request.request_key, error)) { input_arrived = true; continue; }
+          }
+          std::rethrow_exception(error);
+        }
         auto owner = std::make_shared<std::vector<std::int32_t>>(cache::add(next.prompt.size(), 1));
         std::copy(next.prompt.begin(), next.prompt.end(), owner->begin() + 1);
         request.progress.extend_turns(std::span(next_source).first(visible + 1));
