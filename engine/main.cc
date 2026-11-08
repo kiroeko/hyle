@@ -1,5 +1,4 @@
-#include "models/qwen35/driver.h"
-#include "models/qwen35/prepared_executor.h"
+#include "model_catalog.h"
 #include "inference/backend.h"
 #include "inference/token_worker.h"
 
@@ -20,7 +19,7 @@ template<class T> T worker_number(std::string_view option, std::string_view valu
 }
 
 int token_worker(int argc, char **argv) {
-  qwen35::ModelLoadConfig config;
+  hyle::inference::ModelLoadConfig config;
   config.context = 4096; config.resident_sessions = 2; config.active_sequences = 2;
   std::size_t waiting = 64, output_capacity = 16;
   for (int at = 2; at < argc; at += 2) {
@@ -57,7 +56,7 @@ int token_worker(int argc, char **argv) {
     else if (option == "--seed") config.seed = worker_number<std::uint64_t>(option, value);
     else throw std::invalid_argument("unknown worker option: " + std::string(option));
   }
-  auto executor = qwen35::load_model_executor(config);
+  auto executor = hyle::engine::load_model(config);
   hyle::inference::TokenWorker worker(std::move(executor), config.resident_sessions,
       waiting, output_capacity, config.context, std::cin, std::cout);
   return worker.run();
@@ -69,5 +68,5 @@ int main(int argc, char **argv) {
     try { return token_worker(argc, argv); }
     catch (const std::exception &error) { std::cerr << "engine worker: " << error.what() << '\n'; return 1; }
   }
-  return qwen35::run(argc, argv);
+  return hyle::engine::run_legacy_cli(argc, argv);
 }

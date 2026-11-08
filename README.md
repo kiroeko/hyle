@@ -48,7 +48,7 @@ BF16 MTP使用准备好的32K草稿子集，量化目标MTP使用完整草稿词
 - **尚未交付**：通用模型目录加载、C++ tokenizer、完整服务 API、图片输入及多卡／多机。
   GLM、DeepSeek、Kimi 等目前是组件级实现，没有完整引擎入口。
 
-当前输入需要用 Python 准备本地权重清单和 token IDs；初始化 C++ 构建不会下载模型或安装 tokenizer 环境。
+运行需要先准备本地权重清单；原有 Qwen CLI 使用准备好的 token IDs，文本 CLI 和 Responses 可用本地 tokenizer 处理文本。初始化 C++ 构建不会下载模型或安装 tokenizer 环境。
 
 ## 快速开始
 

@@ -3698,7 +3698,29 @@ private:
   PreparedModelExecutor prepared_;
 };
 
-std::unique_ptr<inference::ModelExecutor> load_model_executor(const ModelLoadConfig &config) {
+bool matches_prepared_model(const std::filesystem::path &source) {
+  std::error_code error;
+  const bool directory = std::filesystem::is_directory(source, error);
+  if (error && error != std::errc::no_such_file_or_directory && error != std::errc::not_a_directory)
+    throw std::filesystem::filesystem_error("cannot inspect model input", source, error);
+  if (!directory) return false;
+  const auto manifest = source / "weights.tsv";
+  const bool exists = std::filesystem::exists(manifest, error);
+  if (error) throw std::filesystem::filesystem_error("cannot inspect model manifest", manifest, error);
+  if (!exists) return false;
+  std::ifstream input(manifest);
+  if (!input) throw std::runtime_error("cannot open model manifest: " + manifest.string());
+  std::string signature;
+  char ch;
+  while (input.get(ch) && ch != '\n') {
+    if (signature.size() == 128) return false;
+    signature.push_back(ch);
+  }
+  if (input.bad()) throw std::runtime_error("cannot read model manifest: " + manifest.string());
+  return prepared::is_role_signature(signature);
+}
+
+std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::ModelLoadConfig &config) {
   if (config.inputs.empty() || !config.context || !config.resident_sessions || !config.active_sequences ||
       config.active_sequences > config.resident_sessions || !config.prefill_rows ||
       (config.draft_count && *config.draft_count >= config.context))

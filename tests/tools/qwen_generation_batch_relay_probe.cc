@@ -158,7 +158,7 @@ int queued_output(const std::filesystem::path &input, std::string_view mode, boo
   std::unique_ptr<q::Model> model;
   std::unique_ptr<i::ModelExecutor> executor;
   if (loaded) {
-    q::ModelLoadConfig config;
+    i::ModelLoadConfig config;
     config.inputs = input; config.backend = i::BackendKind::kCuda; config.context = capacity;
     config.resident_sessions = config.active_sequences = 2;
     config.draft_count = mtp ? drafts : 0;
@@ -247,7 +247,7 @@ int dispatcher_output(const std::filesystem::path &input, std::string_view mode)
       static_cast<std::size_t>(geometry.context_limit));
   require(prompt.size() >= 8 && prompt.size() + limit <= capacity,
       "dispatcher output requires a complete local Qwen prompt and C256 model");
-  q::ModelLoadConfig config;
+  i::ModelLoadConfig config;
   config.inputs = input; config.backend = i::BackendKind::kCuda; config.context = capacity;
   config.resident_sessions = config.active_sequences = 2; config.draft_count = mtp ? drafts : 0;
   config.random = random;

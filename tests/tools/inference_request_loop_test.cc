@@ -4,6 +4,7 @@
 #include "../../engine/inference/token_delivery.h"
 #include "../../engine/inference/queued_token_consumer.h"
 #include "../../engine/inference/model_executor.h"
+#include "../../engine/inference/model_provider.h"
 #include "../../engine/inference/generation_dispatcher.h"
 #include "../../engine/inference/token_worker.h"
 #include "../../engine/inference/request_wave_execution.h"
@@ -791,6 +792,21 @@ private:
   std::shared_ptr<IngressTestControl> control_;
 };
 
+void model_provider_selects_one_owner_and_rejects_ambiguity() {
+  const auto a = +[](const std::filesystem::path &source) { return source.filename() == "model-a"; };
+  const auto b = +[](const std::filesystem::path &source) { return source.filename() == "model-b"; };
+  const auto load = +[](const i::ModelLoadConfig &) -> std::unique_ptr<i::ModelExecutor> {
+    return std::make_unique<IngressTestExecutor>(std::make_shared<IngressTestControl>());
+  };
+  const std::array providers{i::ModelProvider{"a", a, load}, i::ModelProvider{"b", b, load}};
+  require(i::select_model_provider(providers, "model-b").name == "b", "model provider selection ignored its input");
+  rejects<std::runtime_error>([&] { (void)i::select_model_provider(providers, "unknown"); });
+  const std::array ambiguous{i::ModelProvider{"a", a, load}, i::ModelProvider{"other", a, load}};
+  rejects<std::runtime_error>([&] { (void)i::select_model_provider(ambiguous, "model-a"); });
+  const std::array invalid{i::ModelProvider{"missing", a, nullptr}};
+  rejects<std::invalid_argument>([&] { (void)i::select_model_provider(invalid, "model-a"); });
+}
+
 void token_worker_rejects_malformed_frames_without_starting_model() {
   auto control = std::make_shared<IngressTestControl>();
   std::istringstream input("G\t0\t1\t1\nG\t7\t0\t1\nG\t8\t1\t-1\nC\t9\nQ\n");
@@ -1275,6 +1291,7 @@ int main() {
     generic_token_delivery_preserves_peer_and_retirement();
     generic_token_delivery_catches_cancel_during_write();
     queued_delivery_preserves_bounds_and_terminal_identity();
+    model_provider_selects_one_owner_and_rejects_ambiguity();
     token_worker_rejects_malformed_frames_without_starting_model();
     token_worker_credit_and_cancellation_do_not_hang();
     ingress_accepts_requests_during_execution_and_preserves_identity();
@@ -1296,7 +1313,7 @@ int main() {
     common_wave_drain_and_observation_never_start_new_work();
     common_wave_failure_keeps_exception_and_actual_retirement_independent();
     common_wave_rejects_foreign_reordered_or_unbacked_pending_credit();
-    std::puts("request loop: 29 host contract groups passed; no model/device loaded");
+    std::puts("request loop: 30 host contract groups passed; no model/device loaded");
     return 0;
   } catch (const std::exception &error) {
     track_allocations = false;
