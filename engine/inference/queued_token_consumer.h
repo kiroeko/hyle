@@ -45,7 +45,7 @@ public:
     if (closed_ || key.slot >= slots_.size() || !key.generation || slots_[key.slot].active) return false;
     auto &slot = slots_[key.slot];
     slot.key = key; slot.head = slot.size = 0; slot.active = true;
-    slot.done = slot.cancel = slot.cancelled = slot.terminal_observed = false;
+    slot.done = slot.cancel = slot.cancelled = slot.terminal_observed = slot.abandoned = false;
     ready_.notify_all();
     return true;
   }
@@ -71,7 +71,11 @@ public:
   void finished(RequestKey key, bool cancelled) noexcept {
     std::lock_guard lock(mutex_);
     if (auto *slot = find(key); slot && !slot->done) {
-      slot->done = true; slot->cancelled = cancelled; ready_.notify_all();
+      slot->done = true; slot->cancelled = cancelled;
+      // Abandoning a reader never fabricates native retirement. Only this
+      // original terminal notification can make its transport slot reusable.
+      if (slot->abandoned) { slot->active = false; wake_producer(); }
+      else ready_.notify_all();
     }
   }
   // The predicate is set while holding the same mutex as reader dequeue and
@@ -115,6 +119,17 @@ public:
     if (!slot || slot->done) return false;
     slot->cancel = true; wake_producer(); return true;
   }
+  // No reader remains. Drop only the transport backlog, request cancellation,
+  // and wait for the original model owner to report actual completion.
+  bool abandon(RequestKey key) noexcept {
+    std::lock_guard lock(mutex_);
+    auto *slot = find(key);
+    if (!slot) return false;
+    slot->abandoned = true; slot->cancel = true; slot->head = slot->size = 0;
+    if (slot->done) slot->active = false;
+    wake_producer();
+    return true;
+  }
   // Input arrival and output credit share this wait channel, so the model
   // owner cannot miss an ingress wake while it is waiting for either.
   void notify_input() noexcept {
@@ -138,7 +153,7 @@ private:
     RequestKey key{};
     std::vector<ReadResult> items;
     std::size_t head = 0, size = 0;
-    bool active = false, done = false, cancel = false, cancelled = false, terminal_observed = false;
+    bool active = false, done = false, cancel = false, cancelled = false, terminal_observed = false, abandoned = false;
   };
   Slot *find(RequestKey key) noexcept {
     if (key.slot >= slots_.size()) return nullptr;

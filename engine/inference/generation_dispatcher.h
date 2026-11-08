@@ -28,7 +28,7 @@ struct IngressRequest final {
   std::mutex mutex;
   std::condition_variable changed;
   IngressState state = IngressState::kPending;
-  bool cancel_intent = false;
+  bool cancel_intent = false, abandoned = false;
   std::shared_ptr<QueuedTokenConsumer> output;
   std::optional<RequestKey> key;
   std::exception_ptr failure;
@@ -53,10 +53,10 @@ public:
   GenerationRequestHandle &operator=(const GenerationRequestHandle &) = delete;
   GenerationRequestHandle(GenerationRequestHandle &&other) noexcept : request_(std::move(other.request_)) {}
   GenerationRequestHandle &operator=(GenerationRequestHandle &&other) noexcept {
-    if (this != &other) { cancel(); request_ = std::move(other.request_); }
+    if (this != &other) { abandon(); request_ = std::move(other.request_); }
     return *this;
   }
-  ~GenerationRequestHandle() { cancel(); }
+  ~GenerationRequestHandle() { abandon(); }
 
   // Add input only to this live request; the model owner later admits it at
   // its original idle turn boundary. Context reservations are conservative
@@ -162,6 +162,27 @@ public:
     return {EventKind::kClosed};
   }
 private:
+  void abandon() noexcept {
+    if (!request_) return;
+    std::shared_ptr<QueuedTokenConsumer> output;
+    std::optional<RequestKey> key;
+    {
+      std::lock_guard lock(request_->mutex);
+      request_->abandoned = true;
+      switch (request_->state) {
+        case detail::IngressState::kPending:
+          request_->state = detail::IngressState::kCancelled;
+          request_->changed.notify_all(); return;
+        case detail::IngressState::kAssigned:
+          request_->cancel_intent = true; return;
+        case detail::IngressState::kStarted:
+          request_->cancel_intent = true;
+          output = request_->output; key = request_->key; break;
+        default: return;
+      }
+    }
+    if (output && key) (void)output->abandon(*key);
+  }
   explicit GenerationRequestHandle(std::shared_ptr<detail::IngressRequest> request) : request_(std::move(request)) {}
   std::shared_ptr<detail::IngressRequest> request_;
   friend class GenerationDispatcher;
@@ -258,15 +279,17 @@ private:
     std::size_t max_pending() const noexcept { return output_->max_pending(); }
     bool start(RequestKey key) noexcept {
       if (key.slot >= jobs_.size() || started_[key.slot] || !output_->start(key)) return false;
-      auto &job = *jobs_[key.slot]; bool cancel = false;
+      auto &job = *jobs_[key.slot]; bool cancel = false, abandoned = false;
       {
         std::lock_guard lock(job.mutex);
         if (job.state != detail::IngressState::kAssigned) return false;
-        job.key = key; job.state = detail::IngressState::kStarted; cancel = job.cancel_intent;
+        job.key = key; job.state = detail::IngressState::kStarted;
+        cancel = job.cancel_intent; abandoned = job.abandoned;
         job.changed.notify_all();
       }
       keys_[key.slot] = key; started_[key.slot] = true;
-      if (cancel) (void)output_->request_cancel(key);
+      if (abandoned) (void)output_->abandon(key);
+      else if (cancel) (void)output_->request_cancel(key);
       return true;
     }
     bool try_write(RequestKey key, std::int32_t token) noexcept {

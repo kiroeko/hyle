@@ -915,6 +915,26 @@ void transport_slot_waits_for_terminal_observation_before_reuse() {
       "stale terminal identity affected the replacement transport slot");
 }
 
+void abandoned_transport_waits_for_actual_retirement() {
+  i::RequestWindow owner; owner.prepare(1, 1);
+  i::QueuedTokenConsumer queue(1, 1);
+  const auto first = owner.enqueue(0);
+  require(queue.start(first) && queue.try_write(first, 7) && queue.abandon(first) &&
+      queue.cancel_requested(first) && !queue.can_start(0),
+      "abandonment reused an unretired model slot");
+  queue.finished(first, true);
+  require(queue.can_start(0) && queue.read(first).state == i::QueuedTokenConsumer::ReadState::kStale,
+      "retired abandoned transport retained its unread output");
+  owner.admitted(first); owner.retire_active(first); owner.release(first);
+  const auto second = owner.enqueue(0);
+  require(queue.start(second) && queue.try_write(second, 8), "replacement transport did not start");
+  queue.finished(second, false);
+  require(!queue.can_start(0) && queue.abandon(second) && queue.can_start(0),
+      "abandonment after actual retirement did not release unread output");
+  require(!queue.abandon(first) && !queue.try_write(first, 9),
+      "abandoned stale key affected a later request");
+}
+
 void new_admission_skips_unreleased_transport_after_model_retirement() {
   i::RequestLoop owner; owner.prepare(2, 2); Adapter adapter{1, 1};
   i::QueuedTokenConsumer queue(2, 1); i::TokenDelivery first_delivery(1), peer_delivery(1);
@@ -1375,6 +1395,24 @@ void dynamic_ingress_runs_new_requests_beside_paused_session() {
   dispatcher.shutdown();
 }
 
+void abandoned_dynamic_request_releases_slot_beside_live_session() {
+  i::GenerationDispatcher dispatcher(std::make_unique<DynamicIngressTestExecutor>(), 2, 4, 1);
+  using Event = i::GenerationRequestHandle::EventKind;
+  auto live = dispatcher.submit({"live", {{{1}, 1}}, i::GenerationSessionMode::kLive});
+  require(live.read().kind == Event::kToken && live.read().kind == Event::kTurnEnd,
+      "abandonment fixture did not pause its live session");
+  {
+    auto abandoned = dispatcher.submit({"abandoned", {{{20}, 2}}});
+    require(abandoned.read().kind == Event::kToken, "abandonment fixture did not start its peer");
+  }
+  auto replacement = dispatcher.submit({"replacement", {{{30}, 1}}});
+  require(replacement.read().kind == Event::kToken && replacement.read().kind == Event::kCompleted,
+      "abandoned request retained the only available slot");
+  require(live.close_input() && live.read().kind == Event::kCompleted,
+      "abandoned peer changed the original live session");
+  dispatcher.shutdown();
+}
+
 void ingress_abandoned_handle_releases_its_request() {
   auto control = std::make_shared<IngressTestControl>();
   i::GenerationDispatcher dispatcher(std::make_unique<IngressTestExecutor>(control), 1, 2, 1);
@@ -1685,6 +1723,7 @@ int main() {
     turn_boundary_queue_is_bounded_and_keyed();
     queued_delivery_preserves_bounds_and_terminal_identity();
     transport_slot_waits_for_terminal_observation_before_reuse();
+    abandoned_transport_waits_for_actual_retirement();
     new_admission_skips_unreleased_transport_after_model_retirement();
     model_provider_selects_one_owner_and_rejects_ambiguity();
     token_worker_rejects_malformed_frames_without_starting_model();
@@ -1694,6 +1733,7 @@ int main() {
     live_ingress_appends_and_closes_without_losing_wakes();
     live_ingress_shutdown_wakes_idle_owner();
     dynamic_ingress_runs_new_requests_beside_paused_session();
+    abandoned_dynamic_request_releases_slot_beside_live_session();
     ingress_abandoned_handle_releases_its_request();
     ingress_shutdown_does_not_fabricate_active_retirement();
     ingress_rejects_bad_request_without_poisoning_model();
