@@ -3,6 +3,7 @@
 #include "inference_quality_protocol.h"
 #include <array>
 #include <filesystem>
+#include <span>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -39,12 +40,13 @@ int main(int argc,char **argv) {
 #endif
     const auto *vocab=llama_model_get_vocab(model);const auto size=llama_vocab_n_tokens(vocab);
     std::uint64_t case_id=0,position=0,length=0;bool active=false;
-    const auto evaluate=[&](std::vector<llama_token> &ids) {
+    const auto evaluate=[&](std::span<llama_token> ids,bool emit=true) {
       if (ids.empty() || ids.size()>512 || length+ids.size()>cp.n_ctx)
         throw std::runtime_error("invalid decode size");
       if (llama_decode(ctx,llama_batch_get_one(ids.data(),int32_t(ids.size()))))
         throw std::runtime_error("llama_decode failed");
       llama_synchronize(ctx);length+=ids.size();
+      if (!emit) return;
       const auto *logits=llama_get_logits_ith(ctx,-1);
       if (!logits) throw std::runtime_error("missing logits");
       const auto row=std::span(logits,std::size_t(size));const auto best=wire::top1(row);
@@ -57,11 +59,16 @@ int main(int argc,char **argv) {
       std::istringstream input(line);char command=0;input>>command;
       if (command=='P') {
         std::size_t count=0;input>>case_id>>count;
-        if (!input || !count || count>512) throw std::runtime_error("invalid prefill command");
+        if (!input || !count || count>=cp.n_ctx) throw std::runtime_error("invalid prefill command");
         std::vector<llama_token> ids(count);
         for (auto &id:ids) if (!(input>>id) || id<0 || id>=size) throw std::runtime_error("invalid token");
         std::string extra;if (input>>extra) throw std::runtime_error("extra prefill field");
-        llama_memory_clear(llama_get_memory(ctx),true);length=position=0;active=true;evaluate(ids);
+        llama_memory_clear(llama_get_memory(ctx),true);length=position=0;active=true;
+        std::size_t consumed=0;
+        while (count-consumed>512) {
+          evaluate(std::span(ids).subspan(consumed,512),false);consumed+=512;
+        }
+        evaluate(std::span(ids).subspan(consumed));
       } else if (command=='D') {
         std::uint64_t expected=0;llama_token token=-1;input>>expected>>token;
         if (!input || !active || expected!=case_id || token<0 || token>=size)

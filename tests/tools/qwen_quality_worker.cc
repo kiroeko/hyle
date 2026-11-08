@@ -124,12 +124,29 @@ int main(int argc,char **argv) {
       std::istringstream input(line);char command=0;input>>command;
       if (command=='P') {
         retire();std::size_t count=0;input>>case_id>>count;
-        if (!input || !count || count>512 || count>=capacity) throw std::runtime_error("invalid prefill command");
+        if (!input || !count || count>=capacity) throw std::runtime_error("invalid prefill command");
         std::vector<std::int32_t> ids(count);
         for (auto &id:ids) if (!(input>>id) || id<0 || id>=model.vocabulary) throw std::runtime_error("invalid prompt token");
         std::string extra;if (input>>extra) throw std::runtime_error("extra prefill field");
-        position=0;const std::array initial{count};session=model.create_session(initial,{},prefill_role);
-        evaluate(ids,true);
+        position=0;
+        const std::array initial{(std::min)(count,std::size_t{512})};
+        session=model.create_session(initial,{},prefill_role,{},false,
+            count>512?q::TextCompletion::kStateOnly:q::TextCompletion::kEmitNext);
+        std::size_t consumed=0;
+        while (count-consumed>512) {
+          const std::span chunk(ids.data()+consumed,std::size_t{512});
+          const std::array requests{q::EvaluationRequest{session,chunk}};
+          model.prepare_prefill_evaluations(requests,nullptr,prefill_role,q::TextCompletion::kStateOnly);
+          try {
+            model.submit_evaluation(*session);
+            (void)q::finish_evaluation(model,*session,"quality_prefill_chunk");
+          } catch (...) { (void)model.abort_episode();throw; }
+          consumed+=chunk.size();
+          if (session->length()!=consumed || model.active_step || model.carrier_borrowed || session->pending ||
+              session->head->sampling.draw)
+            throw std::runtime_error("quality prefill chunk retirement/RNG mismatch");
+        }
+        evaluate(std::span(ids.data()+consumed,count-consumed),true);
       } else if (command=='D') {
         std::uint64_t expected=0;std::int32_t token=-1;input>>expected>>token;
         if (!input || !session || expected!=case_id || token<0 || token>=model.vocabulary)
