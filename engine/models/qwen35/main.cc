@@ -2630,6 +2630,42 @@ struct ReusableGenerationPreparation final {
   ReusableGenerationPreparation &operator=(const ReusableGenerationPreparation &) = delete;
 };
 
+// Pure admission checks shared by the model adapter and actual reusable path.
+// Inspecting supplied turns never chooses a Graph shape or submits model work.
+void validate_reusable_batch(Model &model, inference::GenerationBatch batch, bool mtp,
+                             std::size_t configured_prefill) {
+  const auto schedules = batch.sessions;
+  const auto sampling_indices = batch.sampling_indices;
+  const auto stop_policies = batch.stop_policies;
+  const auto selected = sampling_indices.empty() ? 0 : sampling_indices.front();
+  if (schedules.empty() || schedules.size() > model.cache_plan.resident_sessions ||
+      (!sampling_indices.empty() && sampling_indices.size() != schedules.size()) ||
+      std::ranges::any_of(sampling_indices, [&](auto index) { return index != selected; }))
+    throw std::invalid_argument("reusable preparation requires bounded requests with a prepared sampling configuration");
+  if (!configured_prefill || (mtp && configured_prefill < 2))
+    throw std::invalid_argument("reusable request exceeds its configured input or output bounds");
+  for (const auto &schedule : schedules) {
+    if (schedule.turns.empty()) throw std::invalid_argument("reusable request requires an initial turn");
+    for (std::size_t turn = 0; turn < schedule.turns.size(); ++turn) {
+      const auto &input = schedule.turns[turn];
+      if (!input.max_outputs || (turn == 0 && input.prompt.empty()) ||
+          input.prompt.size() > model.capacity || (turn != 0 && input.prompt.size() >= model.capacity) ||
+          (turn == 0 && input.max_outputs - 1 > model.capacity - input.prompt.size()) ||
+          (turn != 0 && input.max_outputs > model.capacity))
+        throw std::invalid_argument("reusable request exceeds its configured input or output bounds");
+      if (std::ranges::any_of(input.prompt, [&](auto id) { return id < 0 || id >= model.vocabulary; }))
+        throw std::invalid_argument("reusable request contains a token outside the model vocabulary");
+    }
+  }
+  if (selected >= model.sampling_configuration_count())
+    throw std::invalid_argument("sampling configuration was not cold prepared");
+  if (!stop_policies.empty()) {
+    if (stop_policies.size() != schedules.size())
+      throw std::invalid_argument("one stop policy is required per reusable request");
+    for (const auto &policy : stop_policies) policy.validate(model.vocabulary);
+  }
+}
+
 template<GenerationMode Mode, class BatchObserver = std::nullptr_t, class OutputConsumer = std::nullptr_t>
 int run_generation_sessions(Model &model, std::span<const inference::GenerationSessionSchedule> schedules,
     const std::filesystem::path &trace, bool trace_states, Clock::time_point startup,
@@ -2645,32 +2681,15 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   const auto configured_prefill = (std::min)({max_prefill_rows, std::size_t{512}, model.capacity});
   const bool reuse_ready = reuse && reuse->ready;
   if (reuse) {
-    if (!first_turn_only || schedules.empty() || schedules.size() > model.cache_plan.resident_sessions || prefix_enabled ||
-        warmup_planned_shapes || !logits_providers.empty() || !trace.empty() || trace_states ||
-        (!sampling_indices.empty() && sampling_indices.size() != schedules.size()) ||
-        std::ranges::any_of(sampling_indices, [&](auto index) { return index != selected_sampling; }))
+    if (!first_turn_only || prefix_enabled || warmup_planned_shapes || !logits_providers.empty() ||
+        !trace.empty() || trace_states)
       throw std::invalid_argument("reusable preparation requires bounded requests with a prepared sampling configuration");
+    validate_reusable_batch(model, {schedules, sampling_indices, stop_policies}, mtp, configured_prefill);
     if (reuse->busy || reuse->failed) throw std::logic_error("reusable preparation is busy or failed");
     if (reuse_ready && (reuse->model != &model || reuse->resources.lock() != model.resources_ ||
         reuse->mtp != mtp || reuse->decode_overlap != decode_overlap || reuse->prefill_rows != configured_prefill ||
         reuse->sampling_index != selected_sampling))
       throw std::invalid_argument("reusable preparation differs from its original model or cold configuration");
-    if (!configured_prefill || (mtp && configured_prefill < 2))
-      throw std::invalid_argument("reusable request exceeds its configured input or output bounds");
-    for (const auto &schedule : schedules) {
-      if (schedule.turns.empty()) throw std::invalid_argument("reusable request requires an initial turn");
-      const auto &first = schedule.turns.front();
-      if (first.prompt.empty() || !first.max_outputs || first.prompt.size() > model.capacity ||
-          first.max_outputs - 1 > model.capacity - first.prompt.size())
-        throw std::invalid_argument("reusable request exceeds its configured input or output bounds");
-      if (std::ranges::any_of(first.prompt, [&](auto id) { return id < 0 || id >= model.vocabulary; }))
-        throw std::invalid_argument("reusable request contains a token outside the model vocabulary");
-    }
-    (void)model.sampling_configuration(selected_sampling);
-    if (!stop_policies.empty()) {
-      if (stop_policies.size() != schedules.size()) throw std::invalid_argument("one stop policy is required per reusable request");
-      for (const auto &policy : stop_policies) policy.validate(model.vocabulary);
-    }
     if (model.active_step || model.successor_step || model.carrier_borrowed ||
         model.snapshot_versions.live || model.resources_->pending_readbacks())
       throw std::logic_error("reusable preparation requires actual retirement of the preceding request");
@@ -3608,6 +3627,23 @@ class PreparedModelExecutor final : public inference::ModelExecutor {
 public:
   PreparedModelExecutor(Model &model, bool mtp, std::size_t prefill_rows, bool overlap)
       : model_(model), mtp_(mtp), overlap_(overlap), prefill_rows_(prefill_rows) {}
+  void validate(inference::GenerationBatch batch) override {
+    if (running_.test(std::memory_order_acquire) || preparation_.busy || preparation_.failed)
+      throw std::logic_error("prepared model executor is busy or failed");
+    if (model_.cache_plan.draft_cache != mtp_)
+      throw std::logic_error("prepared model mode differs from its cache plan");
+    try {
+      const auto prefill = (std::min)({prefill_rows_, std::size_t{512}, model_.capacity});
+      validate_reusable_batch(model_, batch, mtp_, prefill);
+      const auto selected = batch.sampling_indices.empty() ? 0 : batch.sampling_indices.front();
+      if (preparation_.ready && preparation_.sampling_index != selected)
+        throw std::invalid_argument("sampling configuration differs from the prepared executor");
+    } catch (const std::invalid_argument &error) {
+      throw inference::RequestRejected(error.what());
+    } catch (const std::out_of_range &error) {
+      throw inference::RequestRejected(error.what());
+    }
+  }
   void execute(inference::GenerationBatch batch, inference::TokenConsumerRef &consumer) override {
     // One original model/request owner is serialized. Do not hold a second
     // scheduler or infer that a failed invocation retired native work.
@@ -3646,6 +3682,7 @@ class LoadedModelExecutor final : public inference::ModelExecutor {
 public:
   LoadedModelExecutor(std::unique_ptr<Model> model, bool mtp, std::size_t prefill_rows, bool overlap)
       : model_(std::move(model)), prepared_(*model_, mtp, prefill_rows, overlap) {}
+  void validate(inference::GenerationBatch batch) override { prepared_.validate(batch); }
   void execute(inference::GenerationBatch batch, inference::TokenConsumerRef &consumer) override {
     prepared_.execute(batch, consumer);
   }

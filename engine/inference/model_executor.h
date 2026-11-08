@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <stdexcept>
 #include <type_traits>
 
 #include "request_progress.h"
@@ -58,6 +59,13 @@ struct GenerationBatch final {
   std::span<const RequestStopPolicy> stop_policies{};
 };
 
+// An admission rejection is known to precede native submission and state
+// mutation. Other exceptions do not imply that the model is reusable.
+class RequestRejected final : public std::invalid_argument {
+public:
+  using std::invalid_argument::invalid_argument;
+};
+
 // One prepared model execution owner. Implementations report their actual
 // supported configuration at preparation/admission; this common boundary does
 // not name a model, platform, quantization or decoding algorithm. execute is
@@ -66,6 +74,9 @@ struct GenerationBatch final {
 class ModelExecutor {
 public:
   virtual ~ModelExecutor() = default;
+  // Serialized, side-effect-free admission; reject a request with
+  // RequestRejected before any model work, not with a fabricated retirement.
+  virtual void validate(GenerationBatch batch) = 0;
   virtual void execute(GenerationBatch batch, TokenConsumerRef &consumer) = 0;
 };
 

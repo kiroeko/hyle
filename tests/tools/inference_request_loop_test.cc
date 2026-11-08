@@ -4,6 +4,7 @@
 #include "../../engine/inference/token_delivery.h"
 #include "../../engine/inference/queued_token_consumer.h"
 #include "../../engine/inference/model_executor.h"
+#include "../../engine/inference/generation_dispatcher.h"
 #include "../../engine/inference/request_wave_execution.h"
 
 #include <array>
@@ -734,6 +735,249 @@ void queued_delivery_preserves_bounds_and_terminal_identity() {
       !queue.wait_for_start(1), "actual retirement did not survive shutdown");
 }
 
+struct IngressTestControl final {
+  std::mutex mutex;
+  std::condition_variable changed;
+  bool started = false, proceed = false, fail = false, wrong_terminal = false;
+  std::vector<std::size_t> batches;
+};
+
+class IngressTestExecutor final : public i::ModelExecutor {
+public:
+  explicit IngressTestExecutor(std::shared_ptr<IngressTestControl> control) : control_(std::move(control)) {}
+  void validate(i::GenerationBatch batch) override {
+    for (const auto &request : batch.sessions)
+      if (request.turns.front().prompt.front() < 0) throw i::RequestRejected("invalid test token");
+  }
+  void execute(i::GenerationBatch batch, i::TokenConsumerRef &consumer) override {
+    std::vector<i::RequestKey> keys, foreign_keys;
+    i::RequestWindow foreign;
+    foreign.prepare(batch.sessions.size(), batch.sessions.size());
+    window_.prepare(batch.sessions.size(), batch.sessions.size());
+    for (std::size_t index = 0; index < batch.sessions.size(); ++index) {
+      const auto key = window_.enqueue(index); window_.admitted(key);
+      if (!consumer.start(key)) throw std::runtime_error("test consumer refused its key");
+      keys.push_back(key);
+      const auto foreign_key = foreign.enqueue(index); foreign.admitted(foreign_key); foreign_keys.push_back(foreign_key);
+    }
+    {
+      std::unique_lock lock(control_->mutex);
+      control_->batches.push_back(batch.sessions.size());
+      if (control_->batches.size() == 1) {
+        control_->started = true; control_->changed.notify_all();
+        control_->changed.wait(lock, [&] { return control_->proceed; });
+        if (control_->fail) throw std::runtime_error("scripted model failure");
+      }
+    }
+    for (std::size_t slot = 0; slot < keys.size(); ++slot) {
+      const auto key = keys[slot];
+      const auto count = batch.sessions[slot].turns.front().max_outputs;
+      for (std::size_t n = 0; n < count && !consumer.cancel_requested(key);) {
+        if (consumer.try_write(key, static_cast<std::int32_t>(batch.sessions[slot].turns.front().prompt.front() + n))) ++n;
+        else if (!consumer.cancel_requested(key)) consumer.wait();
+      }
+      const auto cancelled = consumer.cancel_requested(key);
+      window_.retire_active(key); window_.release(key);
+      consumer.finished(control_->wrong_terminal ? foreign_keys[slot] : key, cancelled);
+    }
+  }
+private:
+  i::RequestWindow window_;
+  std::shared_ptr<IngressTestControl> control_;
+};
+
+void ingress_accepts_requests_during_execution_and_preserves_identity() {
+  auto control = std::make_shared<IngressTestControl>();
+  i::GenerationDispatcher dispatcher(std::make_unique<IngressTestExecutor>(control), 2, 2, 1);
+  auto first = dispatcher.submit({"first", {{{10}, 2}}});
+  {
+    std::unique_lock lock(control->mutex);
+    control->changed.wait(lock, [&] { return control->started; });
+  }
+  auto second = dispatcher.submit({"second", {{{20}, 2}}});
+  auto discarded = dispatcher.submit({"discarded", {{{30}, 1}}});
+  rejects<std::runtime_error>([&] { (void)dispatcher.submit({"overflow", {{{50}, 1}}}); });
+  require(discarded.cancel() && discarded.read().kind == i::GenerationRequestHandle::EventKind::kCancelled,
+      "queued cancellation did not finish without model admission");
+  auto third = dispatcher.submit({"third", {{{40}, 1}}});
+  {
+    std::lock_guard lock(control->mutex); control->proceed = true; control->changed.notify_all();
+  }
+  using Kind = i::GenerationRequestHandle::EventKind;
+  auto read_token = [](auto &request, std::int32_t expected) {
+    const auto event = request.read();
+    require(event.kind == Kind::kToken && event.token == expected, "request received another request's token");
+  };
+  read_token(first, 10); read_token(first, 11);
+  require(first.read().kind == Kind::kCompleted, "first request lost completion");
+  read_token(second, 20); read_token(second, 21);
+  require(second.read().kind == Kind::kCompleted, "second request lost completion");
+  read_token(third, 40);
+  require(third.read().kind == Kind::kCompleted && discarded.read().kind == Kind::kCancelled,
+      "peer or cancelled request lost its terminal identity");
+  {
+    std::lock_guard lock(control->mutex);
+    require(control->batches == std::vector<std::size_t>{1, 2},
+        "requests arriving during execution were not admitted as the next cohort");
+  }
+  dispatcher.shutdown();
+  rejects<std::runtime_error>([&] { (void)dispatcher.submit({"closed", {{{1}, 1}}}); });
+}
+
+void ingress_cancels_active_request_without_stopping_peer() {
+  auto control = std::make_shared<IngressTestControl>();
+  i::GenerationDispatcher dispatcher(std::make_unique<IngressTestExecutor>(control), 2, 2, 1);
+  auto first = dispatcher.submit({"first", {{{10}, 2}}});
+  {
+    std::unique_lock lock(control->mutex);
+    control->changed.wait(lock, [&] { return control->started; });
+  }
+  auto peer = dispatcher.submit({"peer", {{{20}, 1}}});
+  require(first.cancel(), "active request cancellation was not accepted");
+  {
+    std::lock_guard lock(control->mutex); control->proceed = true; control->changed.notify_all();
+  }
+  using Kind = i::GenerationRequestHandle::EventKind;
+  require(first.read().kind == Kind::kCancelled, "active cancellation became completion");
+  const auto item = peer.read();
+  require(item.kind == Kind::kToken && item.token == 20 && peer.read().kind == Kind::kCompleted,
+      "active cancellation prevented a later peer from finishing");
+  dispatcher.shutdown();
+}
+
+void ingress_abandoned_handle_releases_its_request() {
+  auto control = std::make_shared<IngressTestControl>();
+  i::GenerationDispatcher dispatcher(std::make_unique<IngressTestExecutor>(control), 1, 2, 1);
+  {
+    auto abandoned = dispatcher.submit({"abandoned", {{{10}, 2}}});
+    std::unique_lock lock(control->mutex);
+    control->changed.wait(lock, [&] { return control->started; });
+  } // The last client handle requests cancellation without fabricating retirement.
+  auto peer = dispatcher.submit({"peer", {{{20}, 1}}});
+  {
+    std::lock_guard lock(control->mutex); control->proceed = true; control->changed.notify_all();
+  }
+  using Kind = i::GenerationRequestHandle::EventKind;
+  const auto token = peer.read();
+  require(token.kind == Kind::kToken && token.token == 20 && peer.read().kind == Kind::kCompleted,
+      "abandoned request permanently blocked its peer");
+  dispatcher.shutdown();
+}
+
+void ingress_shutdown_does_not_fabricate_active_retirement() {
+  auto control = std::make_shared<IngressTestControl>();
+  i::GenerationDispatcher dispatcher(std::make_unique<IngressTestExecutor>(control), 1, 2, 1);
+  auto active = dispatcher.submit({"active", {{{10}, 2}}});
+  {
+    std::unique_lock lock(control->mutex);
+    control->changed.wait(lock, [&] { return control->started; });
+  }
+  auto pending = dispatcher.submit({"pending", {{{20}, 1}}});
+  std::thread stopper([&] { dispatcher.shutdown(); });
+  const auto pending_event = pending.read();
+  const auto active_event = active.read();
+  {
+    std::lock_guard lock(control->mutex); control->proceed = true; control->changed.notify_all();
+  }
+  stopper.join();
+  using Kind = i::GenerationRequestHandle::EventKind;
+  require(pending_event.kind == Kind::kClosed && active_event.kind == Kind::kClosed,
+      "shutdown reported an unretired or unstarted request as completed");
+}
+
+void ingress_rejects_bad_request_without_poisoning_model() {
+  auto control = std::make_shared<IngressTestControl>();
+  i::GenerationDispatcher dispatcher(std::make_unique<IngressTestExecutor>(control), 2, 2, 1);
+  auto invalid = dispatcher.submit({"invalid", {{{-1}, 1}}});
+  const auto rejected = invalid.read();
+  require(rejected.kind == i::GenerationRequestHandle::EventKind::kFailed && rejected.failure,
+      "invalid request did not report its admission rejection");
+  bool exact = false;
+  try { std::rethrow_exception(rejected.failure); } catch (const i::RequestRejected &) { exact = true; }
+  require(exact, "invalid request lost its admission-rejection identity");
+  auto valid = dispatcher.submit({"valid", {{{20}, 1}}});
+  {
+    std::unique_lock lock(control->mutex);
+    control->changed.wait(lock, [&] { return control->started; });
+    control->proceed = true; control->changed.notify_all();
+  }
+  const auto token = valid.read();
+  require(token.kind == i::GenerationRequestHandle::EventKind::kToken && token.token == 20 &&
+      valid.read().kind == i::GenerationRequestHandle::EventKind::kCompleted,
+      "an admission rejection poisoned a later valid request");
+  dispatcher.shutdown();
+}
+
+void ingress_rejection_preserves_later_peer_slot() {
+  auto control = std::make_shared<IngressTestControl>();
+  i::GenerationDispatcher dispatcher(std::make_unique<IngressTestExecutor>(control), 2, 3, 1);
+  auto first = dispatcher.submit({"first", {{{10}, 1}}});
+  {
+    std::unique_lock lock(control->mutex);
+    control->changed.wait(lock, [&] { return control->started; });
+  }
+  auto invalid = dispatcher.submit({"invalid", {{{-1}, 1}}});
+  auto valid = dispatcher.submit({"valid", {{{20}, 1}}});
+  {
+    std::lock_guard lock(control->mutex); control->proceed = true; control->changed.notify_all();
+  }
+  using Kind = i::GenerationRequestHandle::EventKind;
+  require(first.read().kind == Kind::kToken && first.read().kind == Kind::kCompleted,
+      "first request did not finish");
+  const auto rejected = invalid.read();
+  const auto token = valid.read();
+  require(rejected.kind == Kind::kFailed && rejected.failure && token.kind == Kind::kToken && token.token == 20 &&
+      valid.read().kind == Kind::kCompleted, "rejected cohort member displaced a valid peer");
+  {
+    std::lock_guard lock(control->mutex);
+    require(control->batches == std::vector<std::size_t>{1, 1},
+        "rejected member was submitted to the model");
+  }
+  dispatcher.shutdown();
+}
+
+void ingress_rejects_foreign_terminal_without_hanging() {
+  auto control = std::make_shared<IngressTestControl>(); control->wrong_terminal = true;
+  i::GenerationDispatcher dispatcher(std::make_unique<IngressTestExecutor>(control), 1, 2, 1);
+  auto request = dispatcher.submit({"wrong-terminal", {{{10}, 1}}});
+  {
+    std::unique_lock lock(control->mutex);
+    control->changed.wait(lock, [&] { return control->started; });
+    control->proceed = true; control->changed.notify_all();
+  }
+  using Kind = i::GenerationRequestHandle::EventKind;
+  const auto token = request.read();
+  const auto terminal = request.read();
+  require(token.kind == Kind::kToken && token.token == 10 && terminal.kind == Kind::kFailed && terminal.failure,
+      "foreign terminal was accepted or left the reader blocked");
+  dispatcher.shutdown();
+}
+
+void ingress_propagates_model_failure_without_inventing_completion() {
+  auto control = std::make_shared<IngressTestControl>(); control->fail = true;
+  i::GenerationDispatcher dispatcher(std::make_unique<IngressTestExecutor>(control), 1, 2, 1);
+  auto first = dispatcher.submit({"first", {{{10}, 1}}});
+  {
+    std::unique_lock lock(control->mutex);
+    control->changed.wait(lock, [&] { return control->started; });
+  }
+  auto waiting = dispatcher.submit({"waiting", {{{20}, 1}}});
+  {
+    std::lock_guard lock(control->mutex); control->proceed = true; control->changed.notify_all();
+  }
+  using Kind = i::GenerationRequestHandle::EventKind;
+  const auto a = first.read(), b = waiting.read();
+  require(a.kind == Kind::kFailed && b.kind == Kind::kFailed && a.failure && b.failure,
+      "model failure was treated as a completed request");
+  bool exact = false;
+  try { std::rethrow_exception(a.failure); } catch (const std::runtime_error &error) {
+    exact = std::string_view(error.what()) == "scripted model failure";
+  }
+  require(exact, "ingress lost the original model failure");
+  rejects<std::runtime_error>([&] { (void)dispatcher.submit({"after", {{{1}, 1}}}); });
+  dispatcher.shutdown();
+}
+
 void prepared_hot_owner_allocates_nothing() {
   i::RequestLoop owner; owner.prepare(2, 2); Adapter adapter{3, 3};
   (void)owner.enqueue(0); (void)owner.enqueue(1);
@@ -907,6 +1151,14 @@ int main() {
     generic_token_delivery_preserves_peer_and_retirement();
     generic_token_delivery_catches_cancel_during_write();
     queued_delivery_preserves_bounds_and_terminal_identity();
+    ingress_accepts_requests_during_execution_and_preserves_identity();
+    ingress_cancels_active_request_without_stopping_peer();
+    ingress_abandoned_handle_releases_its_request();
+    ingress_shutdown_does_not_fabricate_active_retirement();
+    ingress_rejects_bad_request_without_poisoning_model();
+    ingress_rejection_preserves_later_peer_slot();
+    ingress_rejects_foreign_terminal_without_hanging();
+    ingress_propagates_model_failure_without_inventing_completion();
     prepared_hot_owner_allocates_nothing();
     in_flight_waves_keep_exact_credit_and_allow_continuation();
     pending_cohort_defers_cancel_eos_and_admission();
@@ -918,7 +1170,7 @@ int main() {
     common_wave_drain_and_observation_never_start_new_work();
     common_wave_failure_keeps_exception_and_actual_retirement_independent();
     common_wave_rejects_foreign_reordered_or_unbacked_pending_credit();
-    std::puts("request loop: 19 host contract groups passed; no model/device loaded");
+    std::puts("request loop: 27 host contract groups passed; no model/device loaded");
     return 0;
   } catch (const std::exception &error) {
     track_allocations = false;

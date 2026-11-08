@@ -2,6 +2,7 @@
 #include "qwen_generation_state_case.h"
 #include "../../src/graph/plan_state.h"
 #include "../../engine/inference/queued_token_consumer.h"
+#include "../../engine/inference/generation_dispatcher.h"
 
 #include <thread>
 #include "qwen_generation_cross_turn_case.h"
@@ -232,6 +233,77 @@ int queued_output(const std::filesystem::path &input, std::string_view mode, boo
     std::cout << (index ? "," : "") << received[1][index];
   std::cout << '\n';
   }
+  return 0;
+}
+
+int dispatcher_output(const std::filesystem::path &input, std::string_view mode) {
+  const bool mtp = mode == "k1" || mode == "k3";
+  const bool random = mode == "random";
+  require(mtp || random || mode == "ordinary", "unknown dispatcher-output mode");
+  const std::size_t drafts = mode == "k3" ? 3 : 1;
+  const auto geometry = q::read_weight_geometry(input / "weights.tsv");
+  constexpr std::size_t capacity = 256, limit = 8;
+  const auto prompt = q::read_ids(input / "prompt.ids", geometry.vocabulary,
+      static_cast<std::size_t>(geometry.context_limit));
+  require(prompt.size() >= 8 && prompt.size() + limit <= capacity,
+      "dispatcher output requires a complete local Qwen prompt and C256 model");
+  q::ModelLoadConfig config;
+  config.inputs = input; config.backend = i::BackendKind::kCuda; config.context = capacity;
+  config.resident_sessions = config.active_sequences = 2; config.draft_count = mtp ? drafts : 0;
+  config.random = random;
+  if (random) { config.temperature = .8F; config.top_k = 40; config.top_p = .95F; config.seed = 123; }
+  i::GenerationDispatcher dispatcher(q::load_model_executor(config), 2, 4, 1);
+  using Kind = i::GenerationRequestHandle::EventKind;
+  for (const bool later : {false, true}) {
+    std::vector<i::GenerationTurn> turns{{prompt, limit}};
+    if (later) turns.push_back({{static_cast<std::int32_t>(geometry.vocabulary)}, 1});
+    else turns.front().prompt.front() = static_cast<std::int32_t>(geometry.vocabulary);
+    auto rejected = dispatcher.submit({"invalid", std::move(turns)});
+    const auto event = rejected.read();
+    bool exact = false;
+    if (event.failure) try { std::rethrow_exception(event.failure); }
+      catch (const i::RequestRejected &) { exact = true; }
+      catch (...) {}
+    require(event.kind == Kind::kFailed && exact,
+        "invalid dispatched input did not receive a pre-admission rejection");
+  }
+  auto first = dispatcher.submit({"first", {{prompt, limit}}});
+  auto first_token = first.read();
+  if (first_token.kind == Kind::kFailed && first_token.failure) std::rethrow_exception(first_token.failure);
+  require(first_token.kind == Kind::kToken, "first dispatched request did not produce a token");
+  // These requests arrive while the first request is blocked by bounded output.
+  auto cancelled = dispatcher.submit({"cancelled", {{prompt, limit}}});
+  auto peer = dispatcher.submit({"peer", {{prompt, limit}}});
+  auto discarded = dispatcher.submit({"discarded", {{prompt, limit}}});
+  require(discarded.cancel() && discarded.read().kind == Kind::kCancelled,
+      "waiting request cancellation was not completed without model admission");
+  const auto drain = [](i::GenerationRequestHandle &request, std::vector<std::int32_t> &tokens) {
+    for (;;) {
+      const auto event = request.read();
+      if (event.kind == Kind::kToken) { tokens.push_back(event.token); continue; }
+      if (event.kind == Kind::kFailed && event.failure) std::rethrow_exception(event.failure);
+      return event.kind;
+    }
+  };
+  std::vector<std::int32_t> first_ids{first_token.token}, cancelled_ids, peer_ids;
+  require(drain(first, first_ids) == Kind::kCompleted && first_ids.size() == limit,
+      "first dispatched request did not finish");
+  const auto next = cancelled.read();
+  if (next.kind == Kind::kFailed && next.failure) std::rethrow_exception(next.failure);
+  require(next.kind == Kind::kToken, "next dispatched request did not start");
+  cancelled_ids.push_back(next.token);
+  require(cancelled.cancel(), "active dispatched cancellation was not accepted");
+  require(drain(cancelled, cancelled_ids) == Kind::kCancelled && !cancelled_ids.empty() &&
+      cancelled_ids.size() < limit, "active dispatched request did not retire as cancelled");
+  require(drain(peer, peer_ids) == Kind::kCompleted && peer_ids.size() == limit,
+      "active dispatched cancellation prevented its peer completing");
+  dispatcher.shutdown();
+  std::cout << "dispatcher output " << mode << " PASS: first=" << first_ids.size()
+      << " cancelled=" << cancelled_ids.size() << " peer=" << peer_ids.size()
+      << " waiting_cancelled=1 ids=";
+  for (std::size_t index = 0; index < peer_ids.size(); ++index)
+    std::cout << (index ? "," : "") << peer_ids[index];
+  std::cout << '\n';
   return 0;
 }
 
@@ -1102,6 +1174,8 @@ int run(const std::filesystem::path &input, bool boundaries = false, bool warm_c
 
 int main(int argc, char **argv) {
   try {
+    if (argc == 4 && std::string_view(argv[1]) == "--dispatcher-output")
+      return dispatcher_output(argv[2], argv[3]);
     if (argc == 4 && (std::string_view(argv[1]) == "--queued-output" ||
                       std::string_view(argv[1]) == "--loaded-output"))
       return queued_output(argv[2], argv[3], std::string_view(argv[1]) == "--loaded-output");
