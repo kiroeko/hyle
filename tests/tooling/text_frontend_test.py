@@ -61,6 +61,15 @@ class TextFrontendTest(unittest.TestCase):
             command = make_worker_command(Namespace(**options, overlap=setting))
             self.assertEqual(command[command.index("--overlap") + 1], value)
 
+    def test_unspecified_draft_count_uses_model_policy(self):
+        options = dict(engine="hyle", inputs="model", backend="cuda", capacity=128,
+                       max_sessions=1, active_sequences=1, overlap=None,
+                       sampling="greedy", draft_vocabulary=None, draft_head=None)
+        self.assertNotIn("--draft-count", make_worker_command(Namespace(**options, draft_count=None)))
+        for count in (0, 1, 3):
+            command = make_worker_command(Namespace(**options, draft_count=count))
+            self.assertEqual(command[command.index("--draft-count") + 1], str(count))
+
     def test_reject_unsupported_request_instead_of_ignoring(self):
         for payload in ({"model": "hyle", "input": "x", "tools": []},
                         {"model": "hyle", "input": "x", "store": True},

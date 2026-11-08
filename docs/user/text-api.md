@@ -13,6 +13,8 @@ Windows 使用 `hyle.exe`；其他平台的文本服务尚未验证。`--templat
 
 `POST /v1/responses` 支持 `model`（默认为 `hyle`）、`input`、`instructions`、`max_output_tokens`、`stream` 和 `store: false`。输入支持字符串或 system、user、assistant 文本消息；输出支持非流式文本及 SSE 文本事件。不支持的字段会被拒绝。流式事件参照 [OpenAI Responses 事件定义](https://developers.openai.com/api/reference/resources/responses/streaming-events)。
 
-服务复用一个模型进程，可接收多个请求，忙时排队并按有限批次运行；不提供跨请求持久 KV 会话或连续合批。每次请求须自行提供对话上下文。当前不支持工具调用、图片、服务端保存响应、逐请求采样配置或其他协议。采样设置在服务启动时指定；新入口默认关闭 MTP，尚未做与旧入口默认策略等价的性能验收。
+服务复用一个模型进程，可接收多个请求，忙时排队并按有限批次运行；不提供跨请求持久 KV 会话或连续合批。每次请求须自行提供对话上下文。当前不支持工具调用、图片、服务端保存响应、逐请求采样配置或其他协议。采样设置在服务启动时指定。
 
-当 `--max-sessions 1 --active-sequences 1`、CUDA、贪心且不使用 MTP 时，普通生成在准备阶段自动选择设备接力。多会话、随机采样和 MTP 仍使用原来的默认路径。可用 `--overlap` 或 `--no-overlap` 显式选择；接力需要额外的首次图准备，短请求的完整进程时间可能增加。
+默认配置允许两个活跃序列，自动 MTP 关闭。当 `--max-sessions 1 --active-sequences 1`、CUDA、贪心且制品符合条件时，自动选择 MTP 和制品推荐的草稿深度；其他条件继续使用普通生成。`--draft-count 0` 关闭 MTP，正数显式指定草稿深度，`--draft-vocabulary` 和 `--draft-head` 可指定本地制品。自动选择会将推荐深度限制在上下文容量内。
+
+单会话 CUDA 贪心生成在准备阶段按能力选择设备接力；多会话和随机采样仍使用原来的默认路径。可用 `--overlap` 或 `--no-overlap` 显式选择；接力需要额外的首次图准备，短请求的完整进程时间可能增加。

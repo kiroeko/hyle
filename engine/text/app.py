@@ -315,8 +315,9 @@ class ResponsesServer(ThreadingHTTPServer):
 def make_worker_command(args) -> list[str]:
     command = [str(args.engine), "--engine-worker", "--inputs", str(args.inputs), "--backend", args.backend,
                "--capacity", str(args.capacity), "--max-sessions", str(args.max_sessions),
-               "--active-sequences", str(args.active_sequences), "--draft-count", str(args.draft_count),
-               "--sampling", args.sampling]
+               "--active-sequences", str(args.active_sequences), "--sampling", args.sampling]
+    if args.draft_count is not None:
+        command += ["--draft-count", str(args.draft_count)]
     if args.overlap is not None:
         command += ["--overlap", "on" if args.overlap else "off"]
     if args.sampling == "random":
@@ -342,7 +343,7 @@ def main(argv: list[str] | None = None) -> int:
     common.add_argument("--capacity", type=int, default=4096)
     common.add_argument("--max-sessions", type=int, default=2)
     common.add_argument("--active-sequences", type=int, default=2)
-    common.add_argument("--draft-count", type=int, default=0)
+    common.add_argument("--draft-count", type=int)
     common.add_argument("--draft-vocabulary", type=Path)
     common.add_argument("--draft-head", type=Path)
     common.add_argument("--overlap", action=argparse.BooleanOptionalAction, default=None)
