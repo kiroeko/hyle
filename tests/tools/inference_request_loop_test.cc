@@ -1146,7 +1146,8 @@ void model_provider_selects_one_owner_and_rejects_ambiguity() {
 void token_worker_rejects_malformed_frames_without_starting_model() {
   auto control = std::make_shared<IngressTestControl>();
   std::istringstream input("G\t0\t1\t1\nG\t7\t0\t1\nG\t8\t1\t-1\n"
-      "G\t10\t1\t1\t0\t2\nG\t11\t1\t\t1\t2\nG\t12\t1\t1\t1\nC\t9\nQ\n");
+      "G\t10\t1\t1\t0\t2\nG\t11\t1\t\t1\t2\nG\t12\t1\t1\t1\n"
+      "g\t13\t256\t1\t1\ng\t14\t\t1\t1\ng\t15\t-1\t1\t1\nC\t9\nQ\n");
   std::ostringstream output;
   i::TokenWorker worker(std::make_unique<IngressTestExecutor>(control), 2, 2, 1, 16, input, output);
   require(worker.run() == 0, "worker protocol did not close cleanly");
@@ -1155,7 +1156,10 @@ void token_worker_rejects_malformed_frames_without_starting_model() {
       "E\t8\tinvalid\tinvalid output limit or token list\n"
       "E\t10\tinvalid\tinvalid output limit or token list\n"
       "E\t11\tinvalid\tinvalid output limit or token list\n"
-      "E\t12\tprotocol\tunknown or malformed command\nC\t9\tstale\nBYE\n",
+      "E\t12\tprotocol\tunknown or malformed command\n"
+      "E\t13\tinvalid\tinvalid output limit or token list\n"
+      "E\t14\tinvalid\tinvalid output limit or token list\n"
+      "E\t15\tinvalid\tinvalid output limit or token list\nC\t9\tstale\nBYE\n",
       "worker protocol accepted malformed input or changed response order");
   std::lock_guard lock(control->mutex);
   require(control->batches.empty(), "malformed worker frame reached the model");

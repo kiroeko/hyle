@@ -180,7 +180,7 @@ class ResponsesHandler(BaseHTTPRequestHandler):
         try:
             text = self.engine.generate(request, lambda _: None, progress, lambda: self._next(request))
             count, last = progress.count, progress.last
-            status = "incomplete" if count == prepared.limit and last not in self.engine.worker.stop_ids else "completed"
+            status = "incomplete" if count == prepared.limit and last not in self.engine.stop_ids else "completed"
             result = response_object("resp_" + uuid.uuid4().hex, "msg_" + uuid.uuid4().hex,
                                      self.engine.model_name, int(time.time()), prepared, status, text, count, instructions)
             self._json(200, result); success = True
@@ -220,7 +220,7 @@ class ResponsesHandler(BaseHTTPRequestHandler):
                      delta=chunk, logprobs=[])
             text = self.engine.generate(request, on_text, progress, lambda: self._next(request))
             count, last = progress.count, progress.last
-            status = "incomplete" if count == prepared.limit and last not in self.engine.worker.stop_ids else "completed"
+            status = "incomplete" if count == prepared.limit and last not in self.engine.stop_ids else "completed"
             result = response_object(response_id, item_id, self.engine.model_name, created, prepared,
                                      status, text, count, instructions)
             send("response.output_text.done", item_id=item_id, output_index=0, content_index=0, text=text, logprobs=[])

@@ -19,6 +19,7 @@ class FakeDecoder:
 
 
 class FakeCodec:
+    stop_ids = frozenset({3})
     def encode_messages(self, messages):
         return [1, 2]
 
@@ -47,7 +48,8 @@ class FakeWorker:
     stop_ids = {3}
     healthy = True
 
-    def submit(self, tokens, max_output_tokens):
+    def submit(self, tokens, max_output_tokens, *, stop_ids=()):
+        self.extra_stop_ids = stop_ids
         self.request = FakeRequest()
         return self.request
 
@@ -96,6 +98,49 @@ class TextFrontendTest(unittest.TestCase):
         with self.assertRaises(ConnectionError):
             engine.generate(request, refuse, progress)
         self.assertEqual((progress.count, progress.last, request.acks), (1, ord("a"), 0))
+
+    def test_tokenizer_end_token_is_submitted_and_not_rendered(self):
+        codec = FakeCodec()
+        codec.stop_ids = frozenset({3, ord("a")})
+        worker = FakeWorker()
+        engine = TextEngine(worker, codec, "hyle")
+        request = engine.submit(engine.prepare([{"role": "user", "content": "x"}], 3))
+        chunks = []
+        engine.generate(request, chunks.append, GenerationProgress())
+        self.assertEqual(worker.extra_stop_ids, (ord("a"),))
+        self.assertEqual(chunks, [])
+
+    def test_tokenizer_stop_at_output_limit_is_completed(self):
+        class StopWorker(FakeWorker):
+            def submit(self, tokens, max_output_tokens, *, stop_ids=()):
+                request = super().submit(tokens, max_output_tokens, stop_ids=stop_ids)
+                request.events = iter([TokenEvent("token", ord("a")), TokenEvent("completed")])
+                return request
+        codec = FakeCodec()
+        codec.stop_ids = frozenset({3, ord("a")})
+        server = ResponsesServer(("127.0.0.1", 0), TextEngine(StopWorker(), codec, "hyle"), True)
+        thread = threading.Thread(target=server.serve_forever)
+        thread.start()
+        try:
+            endpoint = f"http://127.0.0.1:{server.server_port}/v1/responses"
+            for streaming in (False, True):
+                body = {"model": "hyle", "input": "x", "max_output_tokens": 1, "stream": streaming}
+                request = urllib.request.Request(endpoint, data=json.dumps(body).encode(),
+                                                 headers={"Content-Type": "application/json"})
+                with urllib.request.urlopen(request) as response:
+                    data = response.read().decode()
+                if streaming:
+                    events = [json.loads(line[6:]) for line in data.splitlines() if line.startswith("data: ")]
+                    self.assertEqual(events[-1]["type"], "response.completed")
+                    output = events[-1]["response"]
+                else:
+                    output = json.loads(data)
+                self.assertEqual(output["status"], "completed")
+                self.assertEqual(output["output"][0]["content"][0]["text"], "")
+        finally:
+            server.shutdown()
+            thread.join()
+            server.server_close()
 
     def test_http_response_and_stream_finish_and_acknowledge(self):
         worker = FakeWorker()

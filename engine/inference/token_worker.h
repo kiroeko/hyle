@@ -24,8 +24,9 @@ namespace hyle::inference {
 // Internal local transport for a frontend process. It carries token IDs, not
 // protocol JSON or model state. Frames are TAB-delimited UTF-8/ASCII lines:
 // G or S id output_limit comma_separated_ids [output_limit comma_separated_ids ...];
-// O id output_limit comma_separated_ids opens a live input; I id sequence
-// output_limit comma_separated_ids appends one turn; Z id sequence closes its input. K acknowledges
+// O id output_limit comma_separated_ids opens a live input. Lowercase g/s/o
+// add a comma-separated extra-stop field after id. I id sequence output_limit
+// comma_separated_ids appends one turn; Z id sequence closes its input. K acknowledges
 // output credit; C cancels; Q shuts down. S and O request ordered B id turn
 // events; both tokens and boundaries use credit. Later turn inputs may be empty.
 // Responses are READY 2 vocabulary context stop_ids, A id, T id token, B id turn,
@@ -115,8 +116,13 @@ public:
         if (!emit("I\t" + std::to_string(id) + "\t" + std::to_string(sequence) + "\t" + status)) break;
         continue;
       }
-      if ((fields[0] != "G" && fields[0] != "S" && fields[0] != "O") || fields.size() < 4 ||
-          (fields.size() - 2) % 2 != 0 || (fields[0] == "O" && fields.size() != 4)) {
+      const bool extra_stops = fields[0] == "g" || fields[0] == "s" || fields[0] == "o";
+      const bool flat = fields[0] == "G" || fields[0] == "g";
+      const bool turns_mode = fields[0] == "S" || fields[0] == "s";
+      const bool live = fields[0] == "O" || fields[0] == "o";
+      const std::size_t start = extra_stops ? 3 : 2;
+      if ((!flat && !turns_mode && !live) || fields.size() < start + 2 ||
+          (fields.size() - start) % 2 != 0 || (live && fields.size() != start + 2)) {
         if (!emit(error(id, "protocol", "unknown or malformed command"))) break;
         continue;
       }
@@ -125,11 +131,15 @@ public:
         continue;
       }
       std::vector<GenerationTurn> turns;
+      std::vector<std::int32_t> stops;
       std::size_t prompt_tokens = 0;
-      const auto turn_count = (fields.size() - 2) / 2;
-      bool valid = turn_count <= max_prompt_tokens_;
+      const auto turn_count = (fields.size() - start) / 2;
+      bool valid = turn_count <= max_prompt_tokens_ &&
+          (!extra_stops || parse_tokens(fields[2], stops, false, description_.vocabulary));
+      if (valid) for (const auto token : stops)
+        if (static_cast<std::size_t>(token) >= description_.vocabulary) { valid = false; break; }
       if (valid) turns.reserve(turn_count);
-      for (std::size_t at = 2; valid && at < fields.size(); at += 2) {
+      for (std::size_t at = start; valid && at < fields.size(); at += 2) {
         std::size_t limit = 0;
         std::vector<std::int32_t> tokens;
         if (!number(fields[at], limit) || !limit ||
@@ -146,9 +156,9 @@ public:
         continue;
       }
       try {
-        const auto mode = fields[0] == "G" ? GenerationSessionMode::kFlat :
-            fields[0] == "S" ? GenerationSessionMode::kTurns : GenerationSessionMode::kLive;
-        auto handle = dispatcher_.submit({std::to_string(id), std::move(turns), mode});
+        const auto mode = flat ? GenerationSessionMode::kFlat :
+            turns_mode ? GenerationSessionMode::kTurns : GenerationSessionMode::kLive;
+        auto handle = dispatcher_.submit({std::to_string(id), std::move(turns), mode}, RequestStopPolicy(stops));
         auto call = std::make_shared<Call>(std::move(handle));
         calls_.emplace(id, call);
         if (!emit("A\t" + std::to_string(id))) { call->cancel(); break; }
@@ -220,11 +230,13 @@ private:
       at = end + 1;
     }
   }
-  bool parse_tokens(std::string_view value, std::vector<std::int32_t> &tokens, bool allow_empty) const {
+  bool parse_tokens(std::string_view value, std::vector<std::int32_t> &tokens, bool allow_empty,
+                    std::size_t limit = 0) const {
     if (value.empty()) return allow_empty;
+    if (!limit) limit = max_prompt_tokens_;
     for (const auto piece : split(value, ',')) {
       std::int32_t token = 0;
-      if (tokens.size() == max_prompt_tokens_ || !number(piece, token) || token < 0) return false;
+      if (tokens.size() == limit || !number(piece, token) || token < 0) return false;
       tokens.push_back(token);
     }
     return !tokens.empty();

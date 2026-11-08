@@ -47,6 +47,8 @@ class Metrics:
 class TextEngine:
     def __init__(self, worker: TokenWorker, codec: TextCodec, model_name: str):
         self.worker, self.codec, self.model_name = worker, codec, model_name
+        self.stop_ids = frozenset(worker.stop_ids | codec.stop_ids)
+        self.extra_stop_ids = tuple(sorted(self.stop_ids - worker.stop_ids))
         self.metrics = Metrics()
 
     def prepare(self, messages: Sequence[dict[str, Any]], limit: int) -> PreparedText:
@@ -61,7 +63,7 @@ class TextEngine:
         return PreparedText(ids, limit)
 
     def submit(self, prepared: PreparedText) -> TokenRequest:
-        return self.worker.submit(prepared.ids, prepared.limit)
+        return self.worker.submit(prepared.ids, prepared.limit, stop_ids=self.extra_stop_ids)
 
     def generate(self, request: TokenRequest, on_text: Callable[[str], None], progress: GenerationProgress,
                  read: Callable[[], TokenEvent] | None = None) -> str:
@@ -74,7 +76,7 @@ class TextEngine:
                 assert event.token is not None
                 progress.count += 1
                 progress.last = event.token
-                chunk = "" if event.token in self.worker.stop_ids else decoder.push(event.token)
+                chunk = "" if event.token in self.stop_ids else decoder.push(event.token)
                 if chunk:
                     on_text(chunk)
                     chunks.append(chunk)

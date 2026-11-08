@@ -7,6 +7,37 @@ from engine.text.worker_client import WorkerClient, WorkerError
 
 
 class WorkerClientLifecycleTest(unittest.TestCase):
+    def test_extra_stop_tokens_are_sent_per_request_in_each_mode(self):
+        for kind in ('g', 's', 'o'):
+            with self.subTest(kind=kind):
+                code = "\n".join((
+                    "import sys",
+                    "read = lambda: sys.stdin.readline().rstrip('\\r\\n')",
+                    "print('READY\\t2\\t256\\t128\\t3', flush=True)",
+                    f"assert read() == '{kind}\\t1\\t4,8\\t1\\t10'",
+                    "print('A\\t1', flush=True); print('T\\t1\\t4', flush=True)",
+                    "assert read() == 'K\\t1\\t1'; print('F\\t1\\tcompleted', flush=True)",
+                    "assert read() == 'Q'; print('BYE', flush=True)",
+                ))
+                worker = WorkerClient([sys.executable, '-B', '-c', code], startup_timeout=3)
+                try:
+                    with self.assertRaises(ValueError):
+                        worker.submit([10], 1, stop_ids=[256])
+                    if kind == 'g':
+                        request = worker.submit([10], 1, stop_ids=[8, 3, 4, 8])
+                    elif kind == 's':
+                        request = worker.submit_turns([([10], 1)], stop_ids=[8, 3, 4, 8])
+                    else:
+                        request = worker.open_session([10], 1, stop_ids=[8, 3, 4, 8])
+                    try:
+                        self.assertEqual(request.read(timeout=3).token, 4)
+                        request.acknowledge()
+                        self.assertEqual(request.read(timeout=3).kind, 'completed')
+                    finally:
+                        request.close()
+                finally:
+                    worker.close(timeout=3)
+
     def test_timed_out_input_cannot_be_retried_as_if_rejected(self):
         code = "\n".join((
             "import sys,time",

@@ -1,6 +1,6 @@
 # 文本 CLI 与 Responses 接口
 
-文本前端使用本地 Hugging Face tokenizer 和模型提供的 Jinja 模板，将 token 请求交给常驻的 Hyle 模型进程。准备目录必须与 tokenizer 属于同一模型；前端检查 token ID 范围，但不能证明两套文件的来源相同。前端只读取本地文件，不下载模型。Python 环境需要 `transformers`、`tokenizers` 和 `jinja2`。
+文本前端使用本地 Hugging Face tokenizer 和模型提供的 Jinja 模板，将 token 请求交给常驻的 Hyle 模型进程。准备目录必须与 tokenizer 属于同一模型；前端检查 token ID 范围，但不能证明两套文件的来源相同。模型声明的结束 ID 与本地 tokenizer／模型配置中的结束 ID 共同作为请求停止条件。前端只读取本地文件，不下载模型。Python 环境需要 `transformers`、`tokenizers` 和 `jinja2`。
 
 例如，在已构建 Hyle 并准备本地 Qwen3.5-2B 资产后：
 

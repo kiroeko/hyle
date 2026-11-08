@@ -169,21 +169,24 @@ class WorkerClient:
         with self._state_lock:
             return not self._closed and self._failure is None and self._process.poll() is None
 
-    def submit(self, tokens: Sequence[int], max_output_tokens: int) -> WorkerRequest:
-        return self._submit_turns(((tokens, max_output_tokens),), report_turns=False)
+    def submit(self, tokens: Sequence[int], max_output_tokens: int, *, stop_ids: Sequence[int] = ()) -> WorkerRequest:
+        return self._submit_turns(((tokens, max_output_tokens),), report_turns=False, stop_ids=stop_ids)
 
-    def submit_turns(self, turns: Sequence[tuple[Sequence[int], int]]) -> WorkerRequest:
+    def submit_turns(self, turns: Sequence[tuple[Sequence[int], int]], *, stop_ids: Sequence[int] = ()) -> WorkerRequest:
         """Submit one finite session with acknowledged, zero-based turn-end events."""
-        return self._submit_turns(turns, report_turns=True)
+        return self._submit_turns(turns, report_turns=True, stop_ids=stop_ids)
 
-    def open_session(self, tokens: Sequence[int], max_output_tokens: int) -> WorkerRequest:
+    def open_session(self, tokens: Sequence[int], max_output_tokens: int, *, stop_ids: Sequence[int] = ()) -> WorkerRequest:
         """Open one live session; append turns and explicitly finish its input."""
-        return self._submit_turns(((tokens, max_output_tokens),), report_turns=True, live=True)
+        return self._submit_turns(((tokens, max_output_tokens),), report_turns=True, live=True, stop_ids=stop_ids)
 
     def _submit_turns(self, turns: Sequence[tuple[Sequence[int], int]], *, report_turns: bool,
-                      live: bool = False) -> WorkerRequest:
+                      live: bool = False, stop_ids: Sequence[int] = ()) -> WorkerRequest:
         if not turns:
             raise ValueError("at least one turn is required")
+        if any(type(token) is not int or token < 0 or token >= self.vocabulary for token in stop_ids):
+            raise ValueError("stop token is outside the model vocabulary")
+        stops = sorted(set(stop_ids) - self.stop_ids)
         frames = []
         for index, (tokens, max_output_tokens) in enumerate(turns):
             if (index == 0 and not tokens) or type(max_output_tokens) is not int or max_output_tokens <= 0:
@@ -201,7 +204,9 @@ class WorkerClient:
             self._next_id += 1
             self._pending[request_id] = events
         try:
-            self._send(f"{'O' if live else 'S' if report_turns else 'G'}\t{request_id}\t" + "\t".join(frames))
+            kind = 'O' if live else 'S' if report_turns else 'G'
+            prefix = f"{kind.lower()}\t{request_id}\t{','.join(map(str, stops))}" if stops else f"{kind}\t{request_id}"
+            self._send(prefix + "\t" + "\t".join(frames))
         except Exception:
             self._forget(request_id)
             raise
