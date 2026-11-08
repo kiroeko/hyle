@@ -142,7 +142,8 @@ int observe_output(const std::filesystem::path &input, std::string_view mode, bo
 
 int queued_output(const std::filesystem::path &input, std::string_view mode) {
   const bool mtp = mode == "k1" || mode == "k3";
-  require(mtp || mode == "ordinary", "unknown queued-output mode");
+  const bool random = mode == "random";
+  require(mtp || random || mode == "ordinary", "unknown queued-output mode");
   const std::size_t drafts = mode == "k3" ? 3 : 1;
   auto source = q::prepare_weight_source(input / "weights.tsv", mtp);
   const auto geometry = source.roles.geometry;
@@ -154,23 +155,30 @@ int queued_output(const std::filesystem::path &input, std::string_view mode) {
   const auto precision = q::PrecisionProfile::from_roles(source.roles);
   const auto plan = q::cache::plan(geometry, source.cache_row_bytes, capacity, 2, capacity,
       q::recurrent_bytes(q::state_schema_for(geometry, capacity, precision), geometry), 2,
-      mtp ? drafts + 1 : 1, mtp, false, 1, 0, precision);
+      mtp ? drafts + 1 : 1, mtp, random, 1, 0, precision);
+  const auto sampling = random ? q::Model::Sampling{.enabled = true, .policy = {.8F, 40, .95F}, .seed = 123}
+                               : q::Model::Sampling{};
   q::Model model(std::move(source), geometry, capacity, plan, {}, false, q::ReplayPolicy::kCommands,
-      SIZE_MAX, {}, 0, {.primary = i::BackendKind::kCuda});
+      SIZE_MAX, sampling, 0, {.primary = i::BackendKind::kCuda});
   if (mtp) model.configure_draft_policy({drafts});
   const std::vector<i::GenerationSessionSchedule> schedules{
       {"cancelled", {{prompt, limit}}}, {"peer", {{prompt, limit}}}};
-  const std::array<q::cache::TokenPlanRef, 0> token_plans{};
+  auto executor = q::make_prepared_executor(model, mtp, SIZE_MAX, false);
+  std::array<i::RequestKey, 2> previous_keys{};
+  std::vector<std::int32_t> peer_baseline;
+  for (std::size_t round = 0; round < 2; ++round) {
   i::QueuedTokenConsumer consumer(2, 1);
   std::array<std::vector<std::int32_t>, 2> received;
   for (auto &tokens : received) tokens.reserve(limit);
   std::array<bool, 2> cancelled{}, completed{}, released{};
   std::array<std::exception_ptr, 2> errors{};
+  std::array<i::RequestKey, 2> keys{};
   std::array<std::thread, 2> readers;
   for (std::size_t slot = 0; slot < readers.size(); ++slot) readers[slot] = std::thread([&, slot] {
     try {
       const auto key = consumer.wait_for_start(slot);
       if (!key) throw std::runtime_error("queued request did not start");
+      keys[slot] = *key;
       for (;;) {
         const auto item = consumer.read(*key);
         if (item.state == i::QueuedTokenConsumer::ReadState::kToken) {
@@ -186,26 +194,28 @@ int queued_output(const std::filesystem::path &input, std::string_view mode) {
       }
     } catch (...) { errors[slot] = std::current_exception(); consumer.shutdown(); }
   });
-  std::ostringstream report;
-  const auto now = q::Clock::now();
-  int result = -1;
   std::exception_ptr failure;
   try {
-    result = mtp
-        ? q::run_generation_sessions<q::GenerationMode::kMtp>(model, schedules, {}, false,
-            now, now, false, token_plans, {}, {}, SIZE_MAX, false, false, {}, nullptr, false, {}, consumer, report)
-        : q::run_generation_sessions<q::GenerationMode::kText>(model, schedules, {}, false,
-            now, now, false, token_plans, {}, {}, SIZE_MAX, false, false, {}, nullptr, false, {}, consumer, report);
+    i::TokenConsumerRef consumer_ref(consumer);
+    executor->execute({schedules}, consumer_ref);
   } catch (...) { failure = std::current_exception(); consumer.shutdown(); }
   for (auto &reader : readers) reader.join();
   if (failure) std::rethrow_exception(failure);
   for (const auto &error : errors) if (error) std::rethrow_exception(error);
-  require(result == 0 && cancelled[0] && completed[1] && released[0] && released[1] &&
+  require(cancelled[0] && completed[1] && released[0] && released[1] &&
       !received[0].empty() && received[0].size() < limit && received[1].size() == limit &&
       !model.active_step && !model.successor_step && !model.snapshot_versions.live,
       "queued transport lost its peer, completion or actual retirement");
-  std::cout << "queued output " << mode << " PASS: cancelled=" << received[0].size()
+  for (std::size_t slot = 0; slot < keys.size(); ++slot) {
+    require(keys[slot].generation && (!previous_keys[slot].generation || keys[slot] != previous_keys[slot]),
+        "prepared executor reused an old request identity");
+    previous_keys[slot] = keys[slot];
+  }
+  if (round == 0) peer_baseline = received[1];
+  else require(peer_baseline == received[1], "prepared executor changed the surviving peer's IDs or RNG");
+  std::cout << "queued output " << mode << " batch=" << round + 1 << " PASS: cancelled=" << received[0].size()
       << " peer=" << received[1].size() << " retired=2\n";
+  }
   return 0;
 }
 

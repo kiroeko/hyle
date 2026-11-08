@@ -3,6 +3,7 @@
 #include "../../engine/inference/request_loop.h"
 #include "../../engine/inference/token_delivery.h"
 #include "../../engine/inference/queued_token_consumer.h"
+#include "../../engine/inference/model_executor.h"
 #include "../../engine/inference/request_wave_execution.h"
 
 #include <array>
@@ -699,14 +700,15 @@ void queued_delivery_preserves_bounds_and_terminal_identity() {
   i::RequestWindow window, foreign; window.prepare(2, 2); foreign.prepare(2, 2);
   const auto a = window.enqueue(0), b = window.enqueue(1), other = foreign.enqueue(0);
   i::QueuedTokenConsumer queue(2, 1);
-  require(queue.start(a) && queue.start(b) && !queue.start(a) && !queue.start(other),
+  i::TokenConsumerRef ref(queue);
+  require(ref.start(a) && ref.start(b) && !ref.start(a) && !ref.start(other),
       "queue replaced an active request identity");
-  require(queue.wait_for_start(0) == a && queue.try_write(a, 7) && queue.try_write(b, 11) &&
-      !queue.try_write(a, 8), "queue did not apply per-request bounds");
+  require(queue.wait_for_start(0) == a && ref.try_write(a, 7) && ref.try_write(b, 11) &&
+      !ref.try_write(a, 8), "queue did not apply per-request bounds");
   const auto first = queue.read(a);
   require(first.state == i::QueuedTokenConsumer::ReadState::kToken && first.token == 7,
       "queue changed the accepted token");
-  queue.wait(); // Reader signalled before the wait; the wake must not be lost.
+  ref.wait(); // Reader signalled before the wait; the wake must not be lost.
   require(queue.try_write(a, 8) && queue.request_cancel(a) && queue.cancel_requested(a) &&
       !queue.try_write(a, 9) && !queue.release(a), "cancel bypassed retirement or accepted more output");
   queue.finished(a, true);

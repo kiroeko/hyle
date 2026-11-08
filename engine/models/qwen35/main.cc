@@ -1,6 +1,8 @@
+#include <atomic>
 #include <deque>
 
 #include "model_core.h"
+#include "prepared_executor.h"
 #include "schedule.h"
 #include "session_schedule.h"
 #include "prefix_cache.h"
@@ -13,6 +15,7 @@
 #include "../../inference/request_progress.h"
 #include "../../inference/request_loop.h"
 #include "../../inference/token_delivery.h"
+#include "../../inference/model_executor.h"
 #include "../../inference/request_wave_execution.h"
 #include "../../inference/step_execution.h"
 #include "../../inference/continuation.h"
@@ -3596,6 +3599,47 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     report_out << "]}";
   }
   report_out << "]}\n"; return 0;
+}
+// Internal bridge from a prepared Qwen Model to the common finite-cohort
+// contract. The original Model outlives this object and remains the sole
+// owner of its weights, sessions, native work and retirement. It deliberately
+// does not expose Qwen's state or legacy JSON report to the common interface.
+class PreparedModelExecutor final : public inference::ModelExecutor {
+public:
+  PreparedModelExecutor(Model &model, bool mtp, std::size_t prefill_rows, bool overlap)
+      : model_(model), mtp_(mtp), overlap_(overlap), prefill_rows_(prefill_rows) {}
+  void execute(inference::GenerationBatch batch, inference::TokenConsumerRef &consumer) override {
+    // One original model/request owner is serialized. Do not hold a second
+    // scheduler or infer that a failed invocation retired native work.
+    if (running_.test_and_set(std::memory_order_acquire))
+      throw std::logic_error("prepared model executor is already running");
+    hyle::util::ScopeGuard release{[&]() noexcept { running_.clear(std::memory_order_release); }};
+    class NullBuffer final : public std::streambuf {
+      int_type overflow(int_type ch) override { return traits_type::not_eof(ch); }
+      std::streamsize xsputn(const char *, std::streamsize count) override { return count; }
+    } buffer;
+    std::ostream ignored_report(&buffer);
+    const std::array<cache::TokenPlanRef, 0> plans{};
+    const auto now = Clock::now();
+    const auto result = mtp_
+        ? run_generation_sessions<GenerationMode::kMtp>(model_, batch.sessions, {}, false, now, now, false,
+            plans, batch.sampling_indices, batch.stop_policies, prefill_rows_, false, overlap_, {}, nullptr,
+            true, {}, consumer, ignored_report, &preparation_)
+        : run_generation_sessions<GenerationMode::kText>(model_, batch.sessions, {}, false, now, now, false,
+            plans, batch.sampling_indices, batch.stop_policies, prefill_rows_, false, overlap_, {}, nullptr,
+            true, {}, consumer, ignored_report, &preparation_);
+    if (result != 0) throw std::runtime_error("prepared model execution returned a failure");
+  }
+private:
+  Model &model_;
+  ReusableGenerationPreparation preparation_;
+  bool mtp_, overlap_;
+  std::size_t prefill_rows_;
+  std::atomic_flag running_ = ATOMIC_FLAG_INIT;
+};
+std::unique_ptr<inference::ModelExecutor> make_prepared_executor(
+    Model &model, bool mtp, std::size_t prefill_rows, bool overlap) {
+  return std::make_unique<PreparedModelExecutor>(model, mtp, prefill_rows, overlap);
 }
 } // namespace qwen35
 
