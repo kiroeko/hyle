@@ -14,6 +14,7 @@
 #include "draft_asset_policy.h"
 #include "../../inference/session_cache.h"
 #include "../../inference/request_progress.h"
+#include "../../inference/request_admission.h"
 #include "../../inference/request_loop.h"
 #include "../../inference/token_delivery.h"
 #include "../../inference/model_executor.h"
@@ -2648,26 +2649,9 @@ void validate_reusable_batch(Model &model, inference::GenerationBatch batch, boo
   if (!configured_prefill || (mtp && configured_prefill < 2))
     throw std::invalid_argument("reusable request exceeds its configured input or output bounds");
   for (const auto &schedule : schedules) {
-    if (schedule.turns.empty()) throw std::invalid_argument("reusable request requires an initial turn");
-    if (schedule.accepts_live_input() && schedule.turns.size() != 1)
-      throw std::invalid_argument("live input requires one initial turn and turn boundaries");
-    if (schedule.turns.size() > model.capacity)
-      throw std::invalid_argument("reusable request exceeds its configured turn bound");
-    std::size_t prompt_total = 0, output_total = 0;
-    for (std::size_t turn = 0; turn < schedule.turns.size(); ++turn) {
-      const auto &input = schedule.turns[turn];
-      if (!input.max_outputs || (turn == 0 && input.prompt.empty()) ||
-          input.prompt.size() > model.capacity || (turn != 0 && input.prompt.size() >= model.capacity) ||
-          (turn == 0 && input.max_outputs - 1 > model.capacity - input.prompt.size()) ||
-          (turn != 0 && input.max_outputs > model.capacity) ||
-          input.prompt.size() > model.capacity - prompt_total ||
-          input.max_outputs > model.capacity - output_total)
-        throw std::invalid_argument("reusable request exceeds its configured input or output bounds");
-      prompt_total += input.prompt.size();
-      output_total += input.max_outputs;
-      if (std::ranges::any_of(input.prompt, [&](auto id) { return id < 0 || id >= model.vocabulary; }))
-        throw std::invalid_argument("reusable request contains a token outside the model vocabulary");
-    }
+    const auto error = inference::check_request_schedule(schedule, model.capacity,
+        static_cast<std::size_t>(model.vocabulary));
+    if (error) throw std::invalid_argument(inference::request_admission_message(*error));
   }
   if (selected >= model.sampling_configuration_count())
     throw std::invalid_argument("sampling configuration was not cold prepared");

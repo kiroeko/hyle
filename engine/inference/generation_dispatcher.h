@@ -16,6 +16,7 @@
 
 #include "model_executor.h"
 #include "queued_token_consumer.h"
+#include "request_admission.h"
 
 namespace hyle::inference {
 
@@ -226,8 +227,7 @@ public:
       if (schedule.turns.size() != 1 || !description_.context || !description_.vocabulary)
         throw std::invalid_argument("live generation needs one initial turn, model limits and turn boundaries");
       const auto &first = schedule.turns.front();
-      if (first.prompt.size() > description_.context || first.max_outputs - 1 > description_.context - first.prompt.size() ||
-          std::ranges::any_of(first.prompt, [&](auto id) { return id < 0 || std::size_t(id) >= description_.vocabulary; }))
+      if (check_request_schedule(schedule, description_.context, description_.vocabulary))
         throw std::invalid_argument("initial live turn exceeds model limits");
       request->open_input = true; request->context = description_.context; request->vocabulary = description_.vocabulary;
       request->reserved_context = first.prompt.size() + first.max_outputs - 1;

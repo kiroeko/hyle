@@ -70,7 +70,7 @@ Graph → Compute／后端       唯一的图执行、设备资源、完成与�
 
 | 要修改的职责 | 先看源码 |
 |---|---|
-| 请求身份、接纳与turn推进 | [request_loop.h](../../engine/inference/request_loop.h)、[request_window.h](../../engine/inference/request_window.h)、[request_progress.h](../../engine/inference/request_progress.h) |
+| 请求身份、接纳与turn推进 | [request_admission.h](../../engine/inference/request_admission.h)、[request_loop.h](../../engine/inference/request_loop.h)、[request_window.h](../../engine/inference/request_window.h)、[request_progress.h](../../engine/inference/request_progress.h) |
 | 输出、背压与停止 | [output_delivery.h](../../engine/inference/output_delivery.h)、[request_stop_policy.h](../../engine/inference/request_stop_policy.h) |
 | 前缀缓存与真实版本接纳 | [prefix_directory.h](../../engine/inference/prefix_directory.h)、[session_cache.h](../../engine/inference/session_cache.h)、[version_admission.h](../../engine/inference/version_admission.h) |
 | 冷形状、具体程序与物理槽 | [cold_shape_plan.h](../../engine/inference/cold_shape_plan.h)、[prepared_program_family.h](../../engine/inference/prepared_program_family.h)、[program_io.h](../../engine/inference/program_io.h)、[program_slots.h](../../engine/inference/program_slots.h) |

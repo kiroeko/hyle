@@ -1,6 +1,7 @@
 // Host owner contracts only. Retirement observations below are explicit test
 // inputs, not evidence that any device completed or freed physical memory.
 #include "../../engine/inference/request_loop.h"
+#include "../../engine/inference/request_admission.h"
 #include "../../engine/inference/token_delivery.h"
 #include "../../engine/inference/queued_token_consumer.h"
 #include "../../engine/inference/model_executor.h"
@@ -13,6 +14,7 @@
 #include <chrono>
 #include <cstdio>
 #include <deque>
+#include <limits>
 #include <cstdlib>
 #include <new>
 #include <optional>
@@ -1096,6 +1098,36 @@ public:
   }
 };
 
+void schedule_admission_is_model_independent_and_overflow_safe() {
+  using Error = i::RequestAdmissionError;
+  i::GenerationSessionSchedule schedule{"finite", {{{1}, 1}}};
+  require(!i::check_request_schedule(schedule, 1, 2), "exact one-token context was rejected");
+  require(i::check_request_schedule(schedule, 0, 2) == Error::kInvalidLimits,
+      "missing context was accepted");
+  schedule.turns.clear();
+  require(i::check_request_schedule(schedule, 4, 2) == Error::kNoTurns,
+      "empty schedule was accepted");
+  schedule.turns = {{{1}, 1}, {{}, 1}};
+  schedule.mode = i::GenerationSessionMode::kLive;
+  require(i::check_request_schedule(schedule, 4, 2) == Error::kInvalidLiveTurns,
+      "live input accepted pre-supplied future turns");
+  schedule.mode = i::GenerationSessionMode::kTurns;
+  require(!i::check_request_schedule(schedule, 4, 2), "empty later prompt was rejected");
+  schedule.turns[1].prompt = {2};
+  require(i::check_request_schedule(schedule, 4, 2) == Error::kToken,
+      "out-of-vocabulary token was accepted");
+  schedule.turns[1].prompt = {-1};
+  require(i::check_request_schedule(schedule, 4, 2) == Error::kToken,
+      "negative token was accepted");
+  schedule.turns = {{{1}, (std::numeric_limits<std::size_t>::max)()}};
+  require(i::check_request_schedule(schedule, 4, 2) == Error::kCapacity,
+      "oversized quota overflowed the context check");
+  schedule.turns = {{std::vector<std::int32_t>(25, 1), 12},
+                    {std::vector<std::int32_t>(20, 1), 12}};
+  require(!i::check_request_schedule(schedule, 64, 2),
+      "future quotas were incorrectly combined before an early stop could release context");
+}
+
 void model_provider_selects_one_owner_and_rejects_ambiguity() {
   const auto a = +[](const std::filesystem::path &source) { return source.filename() == "model-a"; };
   const auto b = +[](const std::filesystem::path &source) { return source.filename() == "model-b"; };
@@ -1755,6 +1787,7 @@ int main() {
     transport_slot_waits_for_terminal_observation_before_reuse();
     abandoned_transport_waits_for_actual_retirement();
     new_admission_skips_unreleased_transport_after_model_retirement();
+    schedule_admission_is_model_independent_and_overflow_safe();
     model_provider_selects_one_owner_and_rejects_ambiguity();
     token_worker_rejects_malformed_frames_without_starting_model();
     token_worker_credit_and_cancellation_do_not_hang();
