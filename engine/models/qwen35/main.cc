@@ -3641,6 +3641,49 @@ std::unique_ptr<inference::ModelExecutor> make_prepared_executor(
     Model &model, bool mtp, std::size_t prefill_rows, bool overlap) {
   return std::make_unique<PreparedModelExecutor>(model, mtp, prefill_rows, overlap);
 }
+
+class LoadedModelExecutor final : public inference::ModelExecutor {
+public:
+  LoadedModelExecutor(std::unique_ptr<Model> model, bool mtp, std::size_t prefill_rows, bool overlap)
+      : model_(std::move(model)), prepared_(*model_, mtp, prefill_rows, overlap) {}
+  void execute(inference::GenerationBatch batch, inference::TokenConsumerRef &consumer) override {
+    prepared_.execute(batch, consumer);
+  }
+private:
+  // The adapter is destroyed before the sole original model/resource owner.
+  std::unique_ptr<Model> model_;
+  PreparedModelExecutor prepared_;
+};
+
+std::unique_ptr<inference::ModelExecutor> load_model_executor(const ModelLoadConfig &config) {
+  if (config.inputs.empty() || !config.context || !config.resident_sessions || !config.active_sequences ||
+      config.active_sequences > config.resident_sessions || !config.prefill_rows || config.draft_count >= config.context)
+    throw std::invalid_argument("model loading requires valid context, sequence, prefill and draft capacities");
+  const bool mtp = config.draft_count != 0;
+  if (!mtp && (!config.draft_vocabulary.empty() || !config.draft_head.empty() || config.auto_draft_head))
+    throw std::invalid_argument("draft assets require enabled drafting");
+  const auto prefill = (std::min)({config.prefill_rows, std::size_t{512}, config.context});
+  if (mtp && prefill < 2) throw std::invalid_argument("MTP preparation needs a multirow prefill capacity");
+  auto source = prepare_weight_source(config.inputs / "weights.tsv", mtp, config.draft_vocabulary,
+      config.draft_head, config.auto_draft_head);
+  const auto geometry = source.roles.geometry;
+  validate_mtp_source(geometry, mtp);
+  if (config.top_k > static_cast<std::size_t>(geometry.vocabulary))
+    throw std::invalid_argument("sampling top-k exceeds the source vocabulary");
+  const auto precision = PrecisionProfile::from_roles(source.roles);
+  const auto query_rows = (std::max)(prefill, mtp ? cache::add(config.draft_count, 1) : std::size_t{1});
+  const auto plan = cache::plan(geometry, source.cache_row_bytes, config.context, config.resident_sessions,
+      query_rows, recurrent_bytes(state_schema_for(geometry, config.context, precision), geometry),
+      config.active_sequences, mtp ? cache::add(config.draft_count, 1) : 1, mtp, config.random,
+      config.overlap ? 2 : 1, 0, precision);
+  const Model::Sampling sampling{.enabled = config.random,
+      .policy = {config.temperature, config.top_k, config.top_p}, .seed = config.seed};
+  auto model = std::make_unique<Model>(std::move(source), geometry, config.context, plan,
+      std::filesystem::path{}, false, ReplayPolicy::kAuto, SIZE_MAX, sampling, 0,
+      BackendSelection{.primary = config.backend});
+  if (mtp) model->configure_draft_policy({config.draft_count});
+  return std::make_unique<LoadedModelExecutor>(std::move(model), mtp, config.prefill_rows, config.overlap);
+}
 } // namespace qwen35
 
 int qwen35::run(int argc, char **argv) {

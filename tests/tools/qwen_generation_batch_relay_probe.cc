@@ -140,7 +140,7 @@ int observe_output(const std::filesystem::path &input, std::string_view mode, bo
   return 0;
 }
 
-int queued_output(const std::filesystem::path &input, std::string_view mode) {
+int queued_output(const std::filesystem::path &input, std::string_view mode, bool loaded) {
   const bool mtp = mode == "k1" || mode == "k3";
   const bool random = mode == "random";
   require(mtp || random || mode == "ordinary", "unknown queued-output mode");
@@ -152,18 +152,31 @@ int queued_output(const std::filesystem::path &input, std::string_view mode) {
       static_cast<std::size_t>(geometry.context_limit));
   require(prompt.size() >= 8 && prompt.size() + limit <= capacity,
       "queued output requires a complete local Qwen prompt and C256 model");
-  const auto precision = q::PrecisionProfile::from_roles(source.roles);
-  const auto plan = q::cache::plan(geometry, source.cache_row_bytes, capacity, 2, capacity,
-      q::recurrent_bytes(q::state_schema_for(geometry, capacity, precision), geometry), 2,
-      mtp ? drafts + 1 : 1, mtp, random, 1, 0, precision);
   const auto sampling = random ? q::Model::Sampling{.enabled = true, .policy = {.8F, 40, .95F}, .seed = 123}
                                : q::Model::Sampling{};
-  q::Model model(std::move(source), geometry, capacity, plan, {}, false, q::ReplayPolicy::kCommands,
-      SIZE_MAX, sampling, 0, {.primary = i::BackendKind::kCuda});
-  if (mtp) model.configure_draft_policy({drafts});
+  std::unique_ptr<q::Model> model;
+  std::unique_ptr<i::ModelExecutor> executor;
+  if (loaded) {
+    q::ModelLoadConfig config;
+    config.inputs = input; config.backend = i::BackendKind::kCuda; config.context = capacity;
+    config.resident_sessions = config.active_sequences = 2;
+    config.draft_count = mtp ? drafts : 0;
+    config.random = random;
+    if (random) { config.temperature = .8F; config.top_k = 40; config.top_p = .95F; config.seed = 123; }
+    executor = q::load_model_executor(config);
+  } else {
+    const auto precision = q::PrecisionProfile::from_roles(source.roles);
+    const auto plan = q::cache::plan(geometry, source.cache_row_bytes, capacity, 2, capacity,
+        q::recurrent_bytes(q::state_schema_for(geometry, capacity, precision), geometry), 2,
+        mtp ? drafts + 1 : 1, mtp, random, 1, 0, precision);
+    model = std::make_unique<q::Model>(std::move(source), geometry, capacity, plan, std::filesystem::path{},
+        false, q::ReplayPolicy::kCommands, SIZE_MAX, sampling, 0,
+        i::BackendSelection{.primary = i::BackendKind::kCuda});
+    if (mtp) model->configure_draft_policy({drafts});
+    executor = q::make_prepared_executor(*model, mtp, SIZE_MAX, false);
+  }
   const std::vector<i::GenerationSessionSchedule> schedules{
       {"cancelled", {{prompt, limit}}}, {"peer", {{prompt, limit}}}};
-  auto executor = q::make_prepared_executor(model, mtp, SIZE_MAX, false);
   std::array<i::RequestKey, 2> previous_keys{};
   std::vector<std::int32_t> peer_baseline;
   for (std::size_t round = 0; round < 2; ++round) {
@@ -204,7 +217,7 @@ int queued_output(const std::filesystem::path &input, std::string_view mode) {
   for (const auto &error : errors) if (error) std::rethrow_exception(error);
   require(cancelled[0] && completed[1] && released[0] && released[1] &&
       !received[0].empty() && received[0].size() < limit && received[1].size() == limit &&
-      !model.active_step && !model.successor_step && !model.snapshot_versions.live,
+      (!model || (!model->active_step && !model->successor_step && !model->snapshot_versions.live)),
       "queued transport lost its peer, completion or actual retirement");
   for (std::size_t slot = 0; slot < keys.size(); ++slot) {
     require(keys[slot].generation && (!previous_keys[slot].generation || keys[slot] != previous_keys[slot]),
@@ -213,8 +226,11 @@ int queued_output(const std::filesystem::path &input, std::string_view mode) {
   }
   if (round == 0) peer_baseline = received[1];
   else require(peer_baseline == received[1], "prepared executor changed the surviving peer's IDs or RNG");
-  std::cout << "queued output " << mode << " batch=" << round + 1 << " PASS: cancelled=" << received[0].size()
-      << " peer=" << received[1].size() << " retired=2\n";
+  std::cout << (loaded ? "loaded output " : "queued output ") << mode << " batch=" << round + 1
+      << " PASS: cancelled=" << received[0].size() << " peer=" << received[1].size() << " retired=2 ids=";
+  for (std::size_t index = 0; index < received[1].size(); ++index)
+    std::cout << (index ? "," : "") << received[1][index];
+  std::cout << '\n';
   }
   return 0;
 }
@@ -1086,8 +1102,9 @@ int run(const std::filesystem::path &input, bool boundaries = false, bool warm_c
 
 int main(int argc, char **argv) {
   try {
-    if (argc == 4 && std::string_view(argv[1]) == "--queued-output")
-      return queued_output(argv[2], argv[3]);
+    if (argc == 4 && (std::string_view(argv[1]) == "--queued-output" ||
+                      std::string_view(argv[1]) == "--loaded-output"))
+      return queued_output(argv[2], argv[3], std::string_view(argv[1]) == "--loaded-output");
     if (argc >= 2 && std::string_view(argv[1]) == "--hyle-cli")
       return q::run(argc - 1, argv + 1);
     if ((argc == 4 || argc == 5) && (std::string_view(argv[1]) == "--reusable" ||
