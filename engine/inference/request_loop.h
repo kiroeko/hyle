@@ -129,6 +129,11 @@ public:
   }
   void wake(RequestKey key) { window_.wake(key); clear_credit_wait(key); }
   bool matches(RequestKey key) const noexcept { return window_.matches(key); }
+  // This is only a slot-availability query. The caller prepares its payload
+  // before enqueue and retains the original retirement/output authority.
+  std::optional<std::size_t> free_slot() const noexcept { return window_.free_slot(); }
+  template<class Eligible>
+  std::optional<std::size_t> free_slot(Eligible eligible) const { return window_.free_slot(std::move(eligible)); }
   std::span<const RequestKey> active() const noexcept { return window_.active(); }
   std::optional<RequestKey> waiting_front() const noexcept { return window_.waiting_front(); }
   bool cancelled(RequestKey key) const noexcept { return matches(key) && slots_[key.slot].cancel_requested; }

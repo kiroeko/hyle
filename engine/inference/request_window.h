@@ -66,6 +66,20 @@ public:
         slots_[key.slot].generation == key.generation && slots_[key.slot].state != State::kFree;
   }
 
+  // The payload owner may prepare a new request only in an actually released
+  // slot. Paused, retiring and output-draining requests remain occupied.
+  std::optional<std::size_t> free_slot() const noexcept {
+    for (std::size_t index = 0; index < slots_.size(); ++index)
+      if (slots_[index].state == State::kFree) return index;
+    return std::nullopt;
+  }
+  template<class Eligible>
+  std::optional<std::size_t> free_slot(Eligible eligible) const {
+    for (std::size_t index = 0; index < slots_.size(); ++index)
+      if (slots_[index].state == State::kFree && eligible(index)) return index;
+    return std::nullopt;
+  }
+
   std::optional<RequestKey> waiting_front() const noexcept {
     if (active_.size() == resident_limit_ || !waiting_count_) return std::nullopt;
     return waiting_[waiting_head_];

@@ -269,6 +269,33 @@ void pending_cohort_defers_cancel_eos_and_admission() {
       "actual discard lost committed A, published a cancelled turn or automatically executed a new cohort");
 }
 
+void arrival_during_native_work_waits_for_original_retirement() {
+  i::RequestLoop owner; owner.prepare(2, 1); AsyncAdapter adapter{1, 1};
+  i::OutputDelivery first_output(1), later_output(1);
+  const auto first = owner.enqueue(0, &first_output); adapter.stage_count = 3;
+  adapter.stages[0].additional[0] = 1; adapter.stages[0].remaining[0] = 1;
+  adapter.stages[0].advanced = true;
+  adapter.stages[1].reserved[0] = 1; adapter.stages[1].outputs[0] = 1;
+  adapter.stages[1].advanced = adapter.stages[1].retired = true;
+  adapter.stages[2].additional[1] = 1; adapter.stages[2].outputs[1] = 1;
+  adapter.stages[2].advanced = adapter.stages[2].retired = true;
+  const auto submitted = owner.pump_once(adapter);
+  require(submitted.waiting_retirement && owner.free_slot() == 1 && adapter.admissions == 1,
+      "native submission lost its in-flight owner or free ingress slot");
+  const auto later = owner.enqueue(*owner.free_slot(), &later_output);
+  require(!owner.free_slot() && !owner.waiting_front() && adapter.admissions == 1,
+      "new arrival modified or entered the in-flight cohort");
+  const auto retired = owner.pump_once(adapter);
+  require(!retired.waiting_retirement && adapter.admissions == 1 && owner.waiting_front() == later &&
+      owner.matches(first) && owner.matches(later), "new arrival entered before native retirement");
+  require(owner.acknowledge(first, 1, adapter), "retired first output was not delivered");
+  (void)owner.pump_once(adapter);
+  require(adapter.admissions == 2 && adapter.progress(later).generated == std::vector<std::int32_t>{11} &&
+      owner.acknowledge(later, 1, adapter), "new arrival did not enter after original retirement");
+  require(owner.pump_once(adapter).completed == 1 && owner.free_slot() == 0 && !owner.matches(later),
+      "new arrival did not retire and release its own slot");
+}
+
 void failure_observation_is_once_and_cleanup_cannot_resubmit() {
   i::RequestLoop owner; owner.prepare(1, 1); AsyncAdapter adapter{3}; i::OutputDelivery delivery(2);
   const auto key = owner.enqueue(0, &delivery); adapter.stage_count = 4;
@@ -632,6 +659,45 @@ void open_input_and_midturn_pause_keep_progress() {
       "invalid terminal delivery mutated native retirement or acknowledged fabricated credit");
 }
 
+void paused_session_allows_reuse_of_actually_retired_peer_slot() {
+  i::RequestLoop owner; owner.prepare(2, 2); Adapter adapter{2, 1};
+  const std::array turns{i::GenerationTurn{{1}, 1}, i::GenerationTurn{{2}, 1}};
+  adapter.progress_values[0]->bind_open_turns(std::span(turns).first(1), 2, 2);
+  adapter.progress_values[0]->initial_sampling = {42, 7, 0};
+  i::OutputDelivery live_output(1), first_output(1), second_output(1);
+  require(owner.free_slot() == 0, "fresh owner did not expose its first free slot");
+  const auto live = owner.enqueue(0, &live_output);
+  (void)owner.pump_once(adapter);
+  require(adapter.progress(live).waiting_for_input() && adapter.residents[0] && owner.free_slot() == 1 &&
+      owner.acknowledge(live, 1, adapter), "paused live session lost its key, head or remaining slot");
+
+  const auto first = owner.enqueue(*owner.free_slot(), &first_output);
+  (void)owner.pump_once(adapter);
+  require(owner.matches(first) && !owner.free_slot() && adapter.retirement_polls[1] == 1 &&
+      adapter.progress(live).generated == std::vector<std::int32_t>{1},
+      "undelivered peer output or paused session exposed an occupied slot");
+  require(owner.acknowledge(first, 1, adapter), "first peer output did not acknowledge");
+  require(owner.pump_once(adapter).completed == 1 && owner.free_slot() == 1 && !owner.matches(first),
+      "actually retired and drained peer did not release its slot");
+
+  adapter.progress_values[1].emplace(1);
+  const auto second = owner.enqueue(*owner.free_slot(), &second_output);
+  require(second != first && !owner.acknowledge(first, 1, adapter) && owner.matches(live),
+      "stale peer identity affected a replacement or the paused session");
+  (void)owner.pump_once(adapter);
+  require(owner.acknowledge(second, 1, adapter) && owner.pump_once(adapter).completed == 1 &&
+      owner.free_slot() == 1, "replacement peer failed to retire its own slot");
+
+  auto &progress = adapter.progress(live);
+  progress.extend_turns(turns); owner.wake(live); (void)owner.pump_once(adapter);
+  require(progress.generated == std::vector<std::int32_t>({1, 2}) && progress.observed_commits() == 2 &&
+      progress.initial_sampling.seed == 42 && progress.initial_sampling.stream == 7 && adapter.residents[0] &&
+      owner.acknowledge(live, 2, adapter), "new peers changed the original live progress or sampling identity");
+  progress.close_input(); owner.wake(live);
+  require(owner.pump_once(adapter).completed == 1 && !owner.matches(live) && owner.free_slot() == 0,
+      "closed live session did not retire and release its original slot");
+}
+
 struct DeliveryConsumer final {
   std::array<std::array<std::int32_t, 4>, 2> ids{};
   std::array<std::size_t, 2> count{}, notifications{};
@@ -829,6 +895,47 @@ void queued_delivery_preserves_bounds_and_terminal_identity() {
   queue.finished(other, true);
   require(queue.read(other).state == i::QueuedTokenConsumer::ReadState::kCancelled && queue.release(other) &&
       !queue.wait_for_start(1), "actual retirement did not survive shutdown");
+}
+
+void transport_slot_waits_for_terminal_observation_before_reuse() {
+  i::RequestWindow owner; owner.prepare(1, 1);
+  const auto key = owner.enqueue(0);
+  i::QueuedTokenConsumer queue(1, 1);
+  require(queue.can_start(0) && !queue.can_start(1) && queue.start(key) && !queue.can_start(0),
+      "transport slot availability did not follow its original owner");
+  queue.finished(key, false);
+  require(!queue.release(key) && !queue.can_start(0), "unobserved terminal was discarded for reuse");
+  require(queue.read(key).state == i::QueuedTokenConsumer::ReadState::kCompleted && !queue.can_start(0),
+      "terminal observation alone released the original slot");
+  require(queue.release(key) && queue.can_start(0), "observed terminal did not release transport capacity");
+  queue.wait(); // Release notified the producer before this wait; no wake is lost.
+  owner.admitted(key); owner.retire_active(key); owner.release(key);
+  const auto next = owner.enqueue(0);
+  require(queue.start(next) && !queue.release(key) && !queue.try_write(key, 9),
+      "stale terminal identity affected the replacement transport slot");
+}
+
+void new_admission_skips_unreleased_transport_after_model_retirement() {
+  i::RequestLoop owner; owner.prepare(2, 2); Adapter adapter{1, 1};
+  i::QueuedTokenConsumer queue(2, 1); i::TokenDelivery first_delivery(1), peer_delivery(1);
+  const auto first = owner.enqueue(0, &first_delivery.window()); first_delivery.bind(owner, first);
+  require(queue.start(first), "first transport slot was not attached");
+  (void)owner.pump_once(adapter); (void)first_delivery.service(owner, adapter, queue);
+  (void)owner.pump_once(adapter); (void)first_delivery.service(owner, adapter, queue);
+  require(!owner.matches(first) && owner.free_slot() == 0 && !queue.can_start(0),
+      "model retirement incorrectly implied downstream terminal observation");
+  const auto available = owner.free_slot([&](std::size_t slot) { return queue.can_start(slot); });
+  require(available == 1, "admission did not skip the downstream-owned first slot");
+  const auto peer = owner.enqueue(*available, &peer_delivery.window()); peer_delivery.bind(owner, peer);
+  require(queue.start(peer), "peer could not use the independently available slot");
+  (void)owner.pump_once(adapter); (void)peer_delivery.service(owner, adapter, queue);
+  (void)owner.pump_once(adapter); (void)peer_delivery.service(owner, adapter, queue);
+  require(queue.read(first).token == 1 &&
+      queue.read(first).state == i::QueuedTokenConsumer::ReadState::kCompleted && queue.release(first) &&
+      owner.free_slot([&](std::size_t slot) { return queue.can_start(slot); }) == 0,
+      "observing the original terminal did not restore its admission capacity");
+  require(queue.read(peer).token == 11 && queue.read(peer).state == i::QueuedTokenConsumer::ReadState::kCompleted &&
+      queue.release(peer), "new peer lost output or its own terminal");
 }
 
 struct IngressTestControl final {
@@ -1478,11 +1585,14 @@ int main() {
     deferred_terminal_keeps_original_identity_without_execution();
     errors_preserve_proof_and_committed_boundaries();
     open_input_and_midturn_pause_keep_progress();
+    paused_session_allows_reuse_of_actually_retired_peer_slot();
     generic_token_delivery_preserves_peer_and_retirement();
     generic_token_delivery_catches_cancel_during_write();
     delivery_orders_turn_boundaries_and_retirement();
     turn_boundary_queue_is_bounded_and_keyed();
     queued_delivery_preserves_bounds_and_terminal_identity();
+    transport_slot_waits_for_terminal_observation_before_reuse();
+    new_admission_skips_unreleased_transport_after_model_retirement();
     model_provider_selects_one_owner_and_rejects_ambiguity();
     token_worker_rejects_malformed_frames_without_starting_model();
     token_worker_credit_and_cancellation_do_not_hang();
@@ -1499,6 +1609,7 @@ int main() {
     prepared_hot_owner_allocates_nothing();
     in_flight_waves_keep_exact_credit_and_allow_continuation();
     pending_cohort_defers_cancel_eos_and_admission();
+    arrival_during_native_work_waits_for_original_retirement();
     failure_observation_is_once_and_cleanup_cannot_resubmit();
     invalid_wave_reservation_retains_real_retirement_gate();
     explicit_yield_drains_then_preserves_original_fifo_and_turn();

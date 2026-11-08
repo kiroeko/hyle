@@ -31,13 +31,21 @@ public:
 
   std::size_t max_pending() const noexcept { return pending_; }
 
+  // A model slot can be reused only when its old transport terminal has also
+  // been observed and released. This query never retires the model request.
+  bool can_start(std::size_t index) noexcept {
+    std::lock_guard lock(mutex_);
+    return !closed_ && index < slots_.size() && !slots_[index].active;
+  }
+
   // Called once after the request owner enqueues its actual key. A slot cannot
   // be reused until its former terminal has been observed, drained and released.
   bool start(RequestKey key) noexcept {
     std::lock_guard lock(mutex_);
     if (closed_ || key.slot >= slots_.size() || !key.generation || slots_[key.slot].active) return false;
     auto &slot = slots_[key.slot];
-    slot.key = key; slot.head = slot.size = 0; slot.active = true; slot.done = slot.cancel = slot.cancelled = false;
+    slot.key = key; slot.head = slot.size = 0; slot.active = true;
+    slot.done = slot.cancel = slot.cancelled = slot.terminal_observed = false;
     ready_.notify_all();
     return true;
   }
@@ -95,7 +103,10 @@ public:
       wake_producer();
       return item;
     }
-    if (slot->done) return {slot->cancelled ? ReadState::kCancelled : ReadState::kCompleted};
+    if (slot->done) {
+      slot->terminal_observed = true;
+      return {slot->cancelled ? ReadState::kCancelled : ReadState::kCompleted};
+    }
     return {ReadState::kClosed};
   }
   bool request_cancel(RequestKey key) noexcept {
@@ -113,8 +124,8 @@ public:
   bool release(RequestKey key) noexcept {
     std::lock_guard lock(mutex_);
     auto *slot = find(key);
-    if (!slot || !slot->done || slot->size) return false;
-    slot->active = false; ready_.notify_all(); return true;
+    if (!slot || !slot->done || !slot->terminal_observed || slot->size) return false;
+    slot->active = false; wake_producer(); return true;
   }
   // Shutdown wakes readers and the serialized owner. It requests cancellation;
   // it never fabricates native completion or marks an active request finished.
@@ -127,7 +138,7 @@ private:
     RequestKey key{};
     std::vector<ReadResult> items;
     std::size_t head = 0, size = 0;
-    bool active = false, done = false, cancel = false, cancelled = false;
+    bool active = false, done = false, cancel = false, cancelled = false, terminal_observed = false;
   };
   Slot *find(RequestKey key) noexcept {
     if (key.slot >= slots_.size()) return nullptr;
