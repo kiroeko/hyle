@@ -17,6 +17,7 @@ class TokenEvent:
     token: int | None = None
     message: str = ""
     turn: int | None = None
+    error_kind: str = ""  # Request-local error category, separate from display text.
 
 
 class TokenRequest(Protocol):

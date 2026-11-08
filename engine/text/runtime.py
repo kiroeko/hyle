@@ -89,6 +89,6 @@ class TextEngine:
                     chunks.append(tail)
                 return "".join(chunks)
             elif event.kind == "error":
-                raise WorkerError("generation", event.message)
+                raise WorkerError(event.error_kind or "generation", event.message)
             else:
                 raise WorkerError("generation", "generation " + event.kind)

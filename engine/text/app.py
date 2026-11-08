@@ -15,7 +15,7 @@ from typing import Any
 from urllib.parse import urlsplit
 
 from .codec import HuggingFaceTextCodec
-from .contracts import TokenRequest
+from .contracts import TokenRequest, WorkerError
 from .runtime import GenerationProgress, PreparedText, TextEngine
 from .worker_client import WorkerClient
 
@@ -26,6 +26,10 @@ class InvalidRequest(ValueError):
 
 class ClientDisconnected(ConnectionError):
     pass
+
+
+def response_error_kind(error: Exception) -> str:
+    return "invalid_request_error" if isinstance(error, WorkerError) and error.kind == "invalid" else "server_error"
 
 
 def parse_responses_input(payload: Any, model_name: str) -> tuple[list[dict[str, str]], int, bool, str | None]:
@@ -187,7 +191,7 @@ class ResponsesHandler(BaseHTTPRequestHandler):
         except ClientDisconnected:
             pass
         except Exception as error:
-            try: self._error(400 if str(error).startswith("invalid:") else 503, str(error))
+            try: self._error(400 if response_error_kind(error) == "invalid_request_error" else 503, str(error))
             except (BrokenPipeError, ConnectionResetError, OSError): pass
         finally:
             request.close(); self.engine.metrics.end(success, progress.count)
@@ -231,7 +235,7 @@ class ResponsesHandler(BaseHTTPRequestHandler):
         except (ClientDisconnected, BrokenPipeError, ConnectionResetError, OSError):
             pass
         except Exception as error:
-            try: send("error", code="server_error", message=str(error), param=None)
+            try: send("error", code=response_error_kind(error), message=str(error), param=None)
             except (BrokenPipeError, ConnectionResetError, OSError): pass
         finally:
             request.close(); self.engine.metrics.end(success, progress.count)

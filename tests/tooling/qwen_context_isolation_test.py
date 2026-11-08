@@ -73,7 +73,7 @@ def main():
         first = first_boundary(anchor)
         tokens, boundaries, event = consume(worker.submit_turns([(prompt, 32), (next_prompt, 32)]))
         assert len(tokens) == 32 and boundaries == [(0, 32)]
-        assert event.kind == 'error' and event.message.startswith('invalid: ') and 'remaining context' in event.message
+        assert event.kind == 'error' and event.error_kind == 'invalid' and 'remaining context' in event.message
         peer_tokens, _, peer = consume(worker.submit(prompt[:3], 1))
         assert len(peer_tokens) == 1 and peer.kind == 'completed'
         anchor.append(prompt[3:4], 1)

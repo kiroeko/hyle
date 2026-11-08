@@ -13,6 +13,8 @@ Windows 使用 `hyle.exe`；其他平台的文本服务尚未验证。`--templat
 
 `POST /v1/responses` 要求 `model` 与服务加载的模型名一致（服务默认模型名为 `hyle`），支持 `input`、`instructions`、`max_output_tokens`、`stream` 和 `store: false`。输入支持字符串或 system、user、assistant 文本消息；输出支持非流式文本及 SSE 文本事件。不支持的字段会被拒绝。流式事件参照 [OpenAI Responses 事件定义](https://developers.openai.com/api/reference/resources/responses/streaming-events)。
 
+无效请求在非流式响应中返回 HTTP 400；如果流式响应已开始，错误通过 `error` 事件交付。模型执行或传输失败按服务错误处理；单个请求被拒绝后，其他请求仍可使用健康的模型进程。
+
 服务复用一个模型进程，可接收多个请求；请求在运行期间可进入已释放的会话槽位，容量用尽时排队。不提供跨 HTTP 请求持久 KV 会话，每次请求须自行提供对话上下文。当前不支持工具调用、图片、服务端保存响应、逐请求采样配置或其他协议。采样设置在服务启动时指定。
 
 默认配置允许两个活跃序列，自动 MTP 关闭。当 `--max-sessions 1 --active-sequences 1`、CUDA、贪心且制品符合条件时，自动选择 MTP 和制品推荐的草稿深度；其他条件继续使用普通生成。`--draft-count 0` 关闭 MTP，正数显式指定草稿深度，`--draft-vocabulary` 和 `--draft-head` 可指定本地制品；这两个选项始终将参数视为文件路径，包括名为 `auto`、`full` 和 `original` 的文件。自动选择会将推荐深度限制在上下文容量内。

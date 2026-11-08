@@ -303,7 +303,7 @@ class WorkerClient:
                     request_id = int(fields[1])
                     if request_id == 0:
                         raise WorkerError("protocol", fields[3])
-                    self._publish(request_id, TokenEvent("error", message=fields[2] + ": " + fields[3]))
+                    self._publish(request_id, TokenEvent("error", message=fields[3], error_kind=fields[2]))
                 else:
                     raise WorkerError("protocol", "invalid model worker response")
         except Exception as error:

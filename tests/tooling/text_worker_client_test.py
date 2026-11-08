@@ -7,6 +7,26 @@ from engine.text.worker_client import WorkerClient, WorkerError
 
 
 class WorkerClientLifecycleTest(unittest.TestCase):
+    def test_request_error_kind_remains_separate_from_its_message(self):
+        code = "\n".join((
+            "import sys",
+            "read = lambda: sys.stdin.readline().rstrip('\\r\\n')",
+            "print('READY\\t2\\t256\\t128\\t3', flush=True)",
+            "assert read() == 'G\\t1\\t1\\t10'",
+            "print('A\\t1', flush=True); print('E\\t1\\tinvalid\\tbad request', flush=True)",
+            "assert read() == 'Q'; print('BYE', flush=True)",
+        ))
+        worker = WorkerClient([sys.executable, '-B', '-c', code], startup_timeout=3)
+        try:
+            request = worker.submit([10], 1)
+            try:
+                event = request.read(timeout=3)
+                self.assertEqual((event.kind, event.error_kind, event.message), ('error', 'invalid', 'bad request'))
+            finally:
+                request.close()
+        finally:
+            worker.close(timeout=3)
+
     def test_extra_stop_tokens_are_sent_per_request_in_each_mode(self):
         for kind in ('g', 's', 'o'):
             with self.subTest(kind=kind):

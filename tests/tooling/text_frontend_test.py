@@ -99,6 +99,45 @@ class TextFrontendTest(unittest.TestCase):
             engine.generate(request, refuse, progress)
         self.assertEqual((progress.count, progress.last, request.acks), (1, ord("a"), 0))
 
+    def test_http_error_classification_uses_kind_not_message(self):
+        class ErrorWorker(FakeWorker):
+            def submit(self, tokens, max_output_tokens, *, stop_ids=()):
+                request = super().submit(tokens, max_output_tokens, stop_ids=stop_ids)
+                request.events = iter([TokenEvent("error", message="invalid: same wording", error_kind=self.error_kind)])
+                return request
+        worker = ErrorWorker()
+        server = ResponsesServer(("127.0.0.1", 0), TextEngine(worker, FakeCodec(), "hyle"), True)
+        thread = threading.Thread(target=server.serve_forever)
+        thread.start()
+        try:
+            endpoint = f"http://127.0.0.1:{server.server_port}/v1/responses"
+            for kind, status, code in (("invalid", 400, "invalid_request_error"), ("model", 503, "server_error")):
+                worker.error_kind = kind
+                for streaming in (False, True):
+                    body = {"model": "hyle", "input": "x", "max_output_tokens": 3, "stream": streaming}
+                    request = urllib.request.Request(endpoint, data=json.dumps(body).encode(),
+                                                     headers={"Content-Type": "application/json"})
+                    try:
+                        response = urllib.request.urlopen(request)
+                    except urllib.error.HTTPError as error:
+                        response = error
+                    with response:
+                        data = response.read().decode()
+                        self.assertEqual(response.status, 200 if streaming else status)
+                    if streaming:
+                        events = [json.loads(line[6:]) for line in data.splitlines() if line.startswith("data: ")]
+                        self.assertEqual(events[-1]["type"], "error")
+                        self.assertEqual(events[-1]["code"], code)
+                        self.assertIsNone(events[-1]["param"])
+                        self.assertEqual([event["sequence_number"] for event in events], list(range(len(events))))
+                    else:
+                        self.assertEqual(json.loads(data)["error"]["type"], code)
+                    self.assertTrue(worker.request.closed)
+        finally:
+            server.shutdown()
+            thread.join()
+            server.server_close()
+
     def test_tokenizer_end_token_is_submitted_and_not_rendered(self):
         codec = FakeCodec()
         codec.stop_ids = frozenset({3, ord("a")})
