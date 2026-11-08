@@ -44,9 +44,14 @@ def main():
     parser.add_argument('--inputs', required=True)
     parser.add_argument('--port', type=int, default=2048)
     parser.add_argument('--metrics', action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument('--sampling', choices=('greedy', 'random'), default='greedy')
     args = parser.parse_args()
-    worker = WorkerClient([args.engine, '--engine-worker', '--inputs', args.inputs, '--backend', 'cuda',
-                           '--capacity', '128', '--max-sessions', '1', '--active-sequences', '1', '--draft-count', '0'])
+    command = [args.engine, '--engine-worker', '--inputs', args.inputs, '--backend', 'cuda',
+               '--capacity', '128', '--max-sessions', '1', '--active-sequences', '1', '--draft-count', '0',
+               '--sampling', args.sampling]
+    if args.sampling == 'random':
+        command += ['--temperature', '0.8', '--top-k', '40', '--top-p', '0.95', '--seed', '123']
+    worker = WorkerClient(command)
     server = None
     thread = None
     try:
@@ -128,7 +133,7 @@ def main():
             with urllib.request.urlopen(f'http://127.0.0.1:{args.port}/metrics', timeout=10) as response:
                 metrics = response.read().decode()
             assert 'hyle_requests_failed_total 4\n' in metrics and 'hyle_requests_completed_total 1\n' in metrics
-        print('real worker: errors and streaming/nonstreaming disconnects isolated; '
+        print(f'real {args.sampling} worker: errors and streaming/nonstreaming disconnects isolated; '
               f'nonstreaming stopped at {generated_after_disconnect}/100 tokens; following request completed')
     finally:
         if server is not None:
