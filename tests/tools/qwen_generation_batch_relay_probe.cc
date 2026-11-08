@@ -49,15 +49,12 @@ int observe_output(const std::filesystem::path &input, std::string_view mode) {
     ++calls;
   };
   std::ostringstream report;
-  auto *old_out = std::cout.rdbuf(report.rdbuf());
-  hyle::util::ScopeGuard restore{[&]() noexcept { std::cout.rdbuf(old_out); }};
   const auto now = q::Clock::now();
   const auto result = mtp
       ? q::run_generation_sessions<q::GenerationMode::kMtp>(model, schedules, {}, false,
-          now, now, false, token_plans, {}, {}, SIZE_MAX, false, false, {}, nullptr, false, {}, observe)
+          now, now, false, token_plans, {}, {}, SIZE_MAX, false, false, {}, nullptr, false, {}, observe, report)
       : q::run_generation_sessions<q::GenerationMode::kText>(model, schedules, {}, false,
-          now, now, false, token_plans, {}, {}, SIZE_MAX, false, false, {}, nullptr, false, {}, observe);
-  std::cout.rdbuf(old_out); restore.dismiss();
+          now, now, false, token_plans, {}, {}, SIZE_MAX, false, false, {}, nullptr, false, {}, observe, report);
   require(result == 0 && !invalid && count == limit && calls > 1,
       "observer did not receive incremental output from the real request");
   std::ostringstream expected;

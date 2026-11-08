@@ -2380,19 +2380,19 @@ struct GenerationRequestAdapter final {
   }
 };
 
-void print_generation_rebuild(const GenerationRestoreStats &stats, bool draft_cache) {
-  std::cout << ",\"restore_contract\":\"recompute_committed_inputs\",\"restored_graph_calls\":" << stats.graph_calls
+void print_generation_rebuild(std::ostream &out, const GenerationRestoreStats &stats, bool draft_cache) {
+  out << ",\"restore_contract\":\"recompute_committed_inputs\",\"restored_graph_calls\":" << stats.graph_calls
       << ",\"restored_target_rows\":" << stats.target_rows;
-  if (draft_cache) std::cout << ",\"restored_draft_rows\":" << stats.draft_rows
+  if (draft_cache) out << ",\"restored_draft_rows\":" << stats.draft_rows
       << ",\"actual_restored_draft_rows\":" << stats.submitted_draft_rows
       << ",\"normalized_lag_rows\":" << stats.normalized_lag_rows;
-  std::cout << ",\"decision_changes\":[";
+  out << ",\"decision_changes\":[";
   for (std::size_t i = 0; i < stats.decision_changes.size(); ++i) {
     const auto &change = stats.decision_changes[i];
-    std::cout << (i ? "," : "") << "{\"episode\":" << change.episode << ",\"historical_next\":" << change.historical
+    out << (i ? "," : "") << "{\"episode\":" << change.episode << ",\"historical_next\":" << change.historical
         << ",\"fresh_next\":" << change.fresh << '}';
   }
-  std::cout << ']';
+  out << ']';
 }
 
 void write_request_sampling(std::ostream &out, const Model &model, const GenerationRequest &request) {
@@ -2408,7 +2408,7 @@ void write_request_sampling(std::ostream &out, const Model &model, const Generat
       << ",\"request_mtp_acceptance_policy\":\"" << (!model.cache_plan.draft_cache ? "disabled" : configuration.enabled ? "min_one_p_over_q" : "equal_greedy_ids") << '\"';
 }
 
-void print_generation_request(const Model &model, const GenerationRequest &request, std::size_t steps,
+void print_generation_request(std::ostream &out, const Model &model, const GenerationRequest &request, std::size_t steps,
                        Clock::time_point startup, Clock::time_point ready,
                        std::array<std::size_t, 3> packed_prefill_offset = {},
                        const hyle::engine::reporting::RouteDecisionFacts &routes = {}) {
@@ -2438,16 +2438,16 @@ void print_generation_request(const Model &model, const GenerationRequest &reque
     }
   }
   const auto session_seconds = std::chrono::duration<double>(endpoint - prefill_start).count();
-  std::cout << std::setprecision(17)
+  out << std::setprecision(17)
             << "{\"source_id\":\"" << model.source_identity << "\",\"score_dtype\":\"F32\",\"score_policy\":\"" << model.score_precision_policy()
             << "\",\"mtp\":" << (model.cache_plan.draft_cache ? "true" : "false") << hyle::engine::reporting::qwen35_weight_inventory(model.weight_inventory_facts(), routes)
             << hyle::engine::reporting::qwen35_cache_report(model, packed_prefill_offset) << ",\"visible_tokens\":" << request.visible_tokens;
-  write_request_sampling(std::cout, model, request);
-  if (model.cache_plan.draft_cache) std::cout << ",\"draft_frontier\":" << request.draft_frontier
+  write_request_sampling(out, model, request);
+  if (model.cache_plan.draft_cache) out << ",\"draft_frontier\":" << request.draft_frontier
       << ",\"draft_lag\":" << request.draft_lag;
-  std::cout << ",\"generated_ids\":[";
-  for (std::size_t i = 0; i < generated.size(); ++i) std::cout << (i ? "," : "") << generated[i];
-  std::cout << "],\"prefill_seconds\":" << prefill_seconds << ",\"decode_seconds\":" << decode_seconds
+  out << ",\"generated_ids\":[";
+  for (std::size_t i = 0; i < generated.size(); ++i) out << (i ? "," : "") << generated[i];
+  out << "],\"prefill_seconds\":" << prefill_seconds << ",\"decode_seconds\":" << decode_seconds
             << ",\"session_seconds\":" << session_seconds
             << ",\"startup_total_seconds\":" << std::chrono::duration<double>(endpoint - startup).count()
             << ",\"startup_to_endpoint_seconds\":" << std::chrono::duration<double>(endpoint - startup).count()
@@ -2473,26 +2473,26 @@ void print_generation_request(const Model &model, const GenerationRequest &reque
             << ",\"actual_target_rows\":" << request.prefill_graph_tokens + verified_rows + request.restored.target_rows
             << ",\"committed_target_rows\":" << request.visible_tokens
             << ",\"committed_target_decode_rows\":" << request.visible_tokens - logical_prompt;
-  if (model.cache_plan.draft_cache) std::cout << ",\"prefill_draft_rows\":" << request.prefill_draft_rows
+  if (model.cache_plan.draft_cache) out << ",\"prefill_draft_rows\":" << request.prefill_draft_rows
       << ",\"actual_draft_rows\":" << request.actual_draft_rows()
       << ",\"actual_draft_rows_scope\":\"admitted_active_input_rows\""
       << ",\"draft_rows\":" << draft_rows << ",\"draft_rounds\":" << draft_rounds
       << ",\"agreements\":" << agreements << ",\"consumed_drafts\":" << accepts;
-  std::cout << ",\"diagnostic\":" << (trace.empty() ? "false" : "true");
+  out << ",\"diagnostic\":" << (trace.empty() ? "false" : "true");
   if (!request.turn_observations.empty()) {
-    std::cout << ",\"emitted_pending\":" << generated.back() << ",\"fresh_next_id\":" << request.fresh_next_id;
-    print_generation_rebuild(request.restored, model.cache_plan.draft_cache);
+    out << ",\"emitted_pending\":" << generated.back() << ",\"fresh_next_id\":" << request.fresh_next_id;
+    print_generation_rebuild(out, request.restored, model.cache_plan.draft_cache);
   }
   if (!request.id.empty())
-    std::cout << ",\"logical_prompt_tokens\":" << logical_prompt << ",\"reused_tokens\":" << request.reused_tokens
+    out << ",\"logical_prompt_tokens\":" << logical_prompt << ",\"reused_tokens\":" << request.reused_tokens
               << ",\"prefix_hits\":" << request.prefix_hits << ",\"prefix_misses\":" << request.prefix_misses
               << ",\"prefix_full_hits\":" << request.prefix_full_hits;
   if (!request.turn_observations.empty()) {
-    std::cout << ",\"between_turn_seconds\":" << (std::max)(0.0, session_seconds - prefill_seconds - decode_seconds)
+    out << ",\"between_turn_seconds\":" << (std::max)(0.0, session_seconds - prefill_seconds - decode_seconds)
               << ",\"phase_timing\":\"sum_per_turn_latency_including_interleaving\",\"turns\":[";
     for (std::size_t i = 0; i < request.turn_observations.size(); ++i) {
       const auto &turn = request.turn_observations[i];
-      std::cout << (i ? "," : "") << "{\"turn\":" << i + 1 << ",\"requested_steps\":" << request.progress.turns()[i].max_outputs
+      out << (i ? "," : "") << "{\"turn\":" << i + 1 << ",\"requested_steps\":" << request.progress.turns()[i].max_outputs
           << ",\"new_user_tokens\":" << request.progress.turns()[i].prompt.size() << ",\"pending_flushed\":" << (i ? 1 : 0)
           << ",\"context_before\":" << turn.context_before << ",\"context_after\":" << turn.context_after
           << ",\"output_begin\":" << turn.output_begin << ",\"output_end\":" << turn.output_end
@@ -2504,33 +2504,33 @@ void print_generation_request(const Model &model, const GenerationRequest &reque
           << ",\"prefill_phase_creations\":" << turn.prefill_phase_creations
           << ",\"prefill_slot_initializations\":" << turn.prefill_slot_initializations;
       if (turn.arrival != Clock::time_point{})
-        std::cout << ",\"arrival_elapsed_seconds\":" << std::chrono::duration<double>(turn.arrival - startup).count()
+        out << ",\"arrival_elapsed_seconds\":" << std::chrono::duration<double>(turn.arrival - startup).count()
                   << ",\"request_to_first_token_seconds\":" << std::chrono::duration<double>(turn.prefill_endpoint - turn.arrival).count();
-      if (i == 0) std::cout << ",\"after_ready_first_token_seconds\":"
+      if (i == 0) out << ",\"after_ready_first_token_seconds\":"
                            << std::chrono::duration<double>(turn.prefill_endpoint - ready).count();
-      std::cout << ",\"input_ids\":[";
+      out << ",\"input_ids\":[";
       for (std::size_t k = 0; k < request.warm_inputs[i]->size(); ++k)
-        std::cout << (k ? "," : "") << (*request.warm_inputs[i])[k];
-      std::cout << "]}";
+        out << (k ? "," : "") << (*request.warm_inputs[i])[k];
+      out << "]}";
     }
-    std::cout << ']';
+    out << ']';
   }
-  std::cout << ",\"rounds\":[";
+  out << ",\"rounds\":[";
   for (std::size_t i = 0; i < rounds.size(); ++i) {
     const auto &row = rounds[i];
-    std::cout << (i ? "," : "") << "{\"pending\":" << row.pending;
+    out << (i ? "," : "") << "{\"pending\":" << row.pending;
     if (!model.cache_plan.draft_cache) {
-      std::cout << ",\"next_id\":" << row.next_id << ",\"committed_target_rows\":" << row.processed_target << '}';
+      out << ",\"next_id\":" << row.next_id << ",\"committed_target_rows\":" << row.processed_target << '}';
       continue;
     }
-    std::cout << ",\"draft\":" << row.draft
+    out << ",\"draft\":" << row.draft
               << ",\"target_first\":" << row.target_first << ",\"target_second\":" << row.target_second
               << ",\"accepted_draft\":" << (row.accepted_draft ? "true" : "false")
               << ",\"proposals\":" << row.proposal_count << ",\"verified_rows\":" << row.verified_rows
               << ",\"consumed_drafts\":" << row.consumed_drafts << ",\"auxiliary_graph_calls\":" << row.auxiliary_graph_calls
               << ",\"committed_target_rows\":" << row.processed_target << ",\"draft_rows\":" << row.processed_draft << '}';
   }
-  std::cout << "]}";
+  out << "]}";
 }
 
 struct StartupPrefillWarmup final {
@@ -2616,7 +2616,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     std::size_t max_prefill_rows = SIZE_MAX, bool warmup_planned_shapes = false,
     bool decode_overlap = false, std::span<const inference::LogitsInputProvider> logits_providers = {},
     BatchObserver &&batch_observer = nullptr, bool first_turn_only = false,
-    const hyle::engine::reporting::RouteDecisionFacts &routes = {}, OutputObserver &&output_observer = nullptr) {
+    const hyle::engine::reporting::RouteDecisionFacts &routes = {}, OutputObserver &&output_observer = nullptr,
+    std::ostream &report_out = std::cout) {
   constexpr bool mtp = Mode == GenerationMode::kMtp;
   const auto cold_prepare_begin = Clock::now();
   std::cerr << "cold_prepare_begin\n";
@@ -3356,7 +3357,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   logical_prompt = cache::add(user_prompt, total_turns - requests.size());
   const auto graph_calls = cache::add(cache::add(cache::add(actual_prefill_calls, actual_decode_calls), restored.graph_calls),
       cache::add(model.frontier_sampling_graph_calls, cache::add(model.draft_program_graph_calls, model.prefix_decision_graph_calls)));
-  std::cout << std::setprecision(17) << "{\"source_id\":\"" << model.source_identity << "\",\"score_dtype\":\"F32\",\"score_policy\":\"" << model.score_precision_policy()
+  report_out << std::setprecision(17) << "{\"source_id\":\"" << model.source_identity << "\",\"score_dtype\":\"F32\",\"score_policy\":\"" << model.score_precision_policy()
       << "\",\"mtp\":" << (model.cache_plan.draft_cache ? "true" : "false") << hyle::engine::reporting::qwen35_weight_inventory(model.weight_inventory_facts(), routes)
       << ",\"session_count\":" << requests.size() << ",\"turn_count\":" << total_turns << ",\"active_sequences\":" << model.cache_plan.active_sequences << ",\"max_sessions\":" << model.cache_plan.resident_sessions
       << ",\"decode_overlap\":" << (decode_overlap ? "true" : "false")
@@ -3394,14 +3395,14 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       << ",\"restore_count\":" << restores << ",\"restored_graph_calls\":" << restored.graph_calls << ",\"restored_target_rows\":" << restored.target_rows
       << ",\"restore_step_seconds\":" << restored.step_seconds << ",\"restore_seconds\":" << restored.seconds
       << ",\"restore_contract\":\"recompute_committed_inputs\"";
-  if constexpr (mtp) std::cout << ",\"prefill_draft_rows\":" << prefill_draft << ",\"draft_rows\":" << drafted
+  if constexpr (mtp) report_out << ",\"prefill_draft_rows\":" << prefill_draft << ",\"draft_rows\":" << drafted
       << ",\"actual_draft_rows\":" << model.submitted_draft_rows - submitted_draft_begin
       << ",\"actual_draft_rows_scope\":\"admitted_active_input_rows\""
       << ",\"draft_rounds\":" << draft_rounds << ",\"agreements\":" << agreements << ",\"consumed_drafts\":" << accepts
       << ",\"restored_draft_rows\":" << restored.draft_rows
       << ",\"actual_restored_draft_rows\":" << restored.submitted_draft_rows
       << ",\"normalized_lag_rows\":" << restored.normalized_lag_rows;
-  std::cout << ",\"recomputed_decision_changes\":" << recomputed_changes
+  report_out << ",\"recomputed_decision_changes\":" << recomputed_changes
       << ",\"prefill_seconds\":" << prefill_seconds << ",\"decode_seconds\":" << decode_seconds << ",\"session_seconds\":" << session_seconds
       << ",\"step_sum_seconds\":" << actual_step_sum + restored.step_seconds + model.frontier_sampling_seconds
       << ",\"participation_step_sum_seconds\":" << step_sum_seconds << ",\"post_endpoint_seconds\":" << post_endpoint_seconds
@@ -3413,27 +3414,27 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       << ",\"output_tokens_per_second\":" << (session_seconds > 0 ? generated / session_seconds : 0)
       << ",\"diagnostic\":" << (trace.empty() ? "false" : "true") << ",\"dispatch\":[";
   for (std::size_t i = 0; i < dispatch.size(); ++i)
-    std::cout << (i ? "," : "") << "{\"session_id\":\"" << requests[dispatch[i]].id << "\",\"turn\":" << dispatch_turns[i] + 1 << '}';
-  std::cout << "],\"batches\":[";
+    report_out << (i ? "," : "") << "{\"session_id\":\"" << requests[dispatch[i]].id << "\",\"turn\":" << dispatch_turns[i] + 1 << '}';
+  report_out << "],\"batches\":[";
   for (std::size_t i = 0; i < batches.size(); ++i) {
     const auto &batch = batches[i];
-    std::cout << (i ? "," : "") << "{\"index\":" << i << ",\"requests\":" << batch.members.size()
+    report_out << (i ? "," : "") << "{\"index\":" << i << ",\"requests\":" << batch.members.size()
         << ",\"tokens\":" << batch.tokens << ",\"role\":" << static_cast<int>(batch.role)
         << ",\"generation\":" << (batch.generation ? "true" : "false") << ",\"session_ids\":[";
     for (std::size_t j = 0; j < batch.members.size(); ++j)
-      std::cout << (j ? "," : "") << '"' << requests[batch.members[j]].id << '"';
-    std::cout << ']';
-    std::cout << ",\"input_rows\":[";
-    for (std::size_t j = 0; j < batch.input_rows.size(); ++j) std::cout << (j ? "," : "") << batch.input_rows[j];
-    std::cout << "],\"active_rows\":" << batch.active_rows << ",\"physical_rows\":" << batch.physical_rows << '}';
+      report_out << (j ? "," : "") << '"' << requests[batch.members[j]].id << '"';
+    report_out << ']';
+    report_out << ",\"input_rows\":[";
+    for (std::size_t j = 0; j < batch.input_rows.size(); ++j) report_out << (j ? "," : "") << batch.input_rows[j];
+    report_out << "],\"active_rows\":" << batch.active_rows << ",\"physical_rows\":" << batch.physical_rows << '}';
   }
-  std::cout << "],\"sessions\":[";
+  report_out << "],\"sessions\":[";
   for (std::size_t i = 0; i < requests.size(); ++i) {
     auto &request = requests[i]; std::size_t quota = 0;
     for (const auto &turn : request.progress.turns()) quota = cache::add(quota, turn.max_outputs);
-    std::cout << (i ? "," : "") << "{\"session_id\":\"" << request.id << "\",\"result\":";
-    print_generation_request(model, request, quota, startup, ready, packed_prefill_offset, routes);
-    std::cout << ",\"restore_count\":" << request.restore_count << ",\"idle_evictions\":" << request.idle_evictions
+    report_out << (i ? "," : "") << "{\"session_id\":\"" << request.id << "\",\"result\":";
+    print_generation_request(report_out, model, request, quota, startup, ready, packed_prefill_offset, routes);
+    report_out << ",\"restore_count\":" << request.restore_count << ",\"idle_evictions\":" << request.idle_evictions
         << ",\"checkpoint_resume_hits\":" << request.checkpoint_resume_hits
         << ",\"checkpoint_resume_misses\":" << request.checkpoint_resume_misses << ",\"ledger\":[";
     std::size_t round = 0;
@@ -3443,7 +3444,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       for (const auto token : record.ids()) hash = (hash ^ static_cast<std::uint32_t>(token)) * 1099511628211ULL;
       const auto prefix_name = record.turn ? "round" + std::to_string(record.turn + 1) + "_" : "";
       const auto name = prefix_name + (record.generation ? (mtp ? "mtp" : "decode") + std::to_string(round) : "prefill");
-      std::cout << (j ? "," : "") << "{\"index\":" << j << ",\"turn\":" << record.turn + 1 << ",\"role\":" << static_cast<int>(record.role)
+      report_out << (j ? "," : "") << "{\"index\":" << j << ",\"turn\":" << record.turn + 1 << ",\"role\":" << static_cast<int>(record.role)
           << ",\"requests\":" << record.requests << ",\"member_index\":" << record.member_index
           << ",\"generation\":" << (record.generation ? "true" : "false") << ",\"input_rows\":" << record.ids().size()
           << ",\"verified_rows\":" << record.verified_rows << ",\"draft_limit\":" << record.draft_limit
@@ -3457,17 +3458,17 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
           << ",\"after_frontier\":" << record.after.frontier << ",\"after_lag\":" << record.after.lag << ",\"next_id\":" << record.after.next_id
           << ",\"committed_input_ids\":[";
       if (record.generation) for (std::size_t k = 0; k < record.accepted; ++k)
-        std::cout << (k ? "," : "") << record.accepted_inputs[k];
-      std::cout << "],\"verification_input_ids\":[";
+        report_out << (k ? "," : "") << record.accepted_inputs[k];
+      report_out << "],\"verification_input_ids\":[";
       for (std::size_t k = 0; k < record.verification_inputs.size(); ++k)
-        std::cout << (k ? "," : "") << record.verification_inputs[k];
-      std::cout << "],\"imported\":" << (record.imported ? "true" : "false")
+        report_out << (k ? "," : "") << record.verification_inputs[k];
+      report_out << "],\"imported\":" << (record.imported ? "true" : "false")
           << ",\"source_geometry\":\"" << (record.imported ? "unknown" : "recorded")
           << "\",\"trace_name\":\"" << (record.imported ? "" : name) << "\"}";
     }
-    std::cout << "]}";
+    report_out << "]}";
   }
-  std::cout << "]}\n"; return 0;
+  report_out << "]}\n"; return 0;
 }
 } // namespace qwen35
 
