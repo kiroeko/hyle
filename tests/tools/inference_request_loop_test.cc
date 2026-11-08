@@ -1007,6 +1007,69 @@ private:
   std::shared_ptr<IngressTestControl> control_;
 };
 
+// A host-only request owner exercises the real dispatcher/input handoff while
+// retaining the existing RequestLoop as the sole slot and retirement owner.
+class DynamicIngressTestExecutor final : public i::ModelExecutor {
+public:
+  i::ModelDescription describe() const override { return {256, 128, {}}; }
+  bool supports_dynamic_admission() const noexcept override { return true; }
+  void validate(i::GenerationBatch batch) override {
+    for (const auto &schedule : batch.sessions)
+      if (schedule.turns.front().prompt.front() < 0) throw i::RequestRejected("invalid test token");
+  }
+  void execute(i::GenerationBatch batch, i::TokenConsumerRef &consumer) override {
+    if (!batch.input || batch.sessions.size() != 1) throw std::logic_error("dynamic fixture needs one initial request");
+    i::RequestLoop owner; owner.prepare(2, 2); Adapter adapter{128, 128};
+    std::array<i::GenerationSessionSchedule, 2> schedules;
+    std::array<std::optional<i::TokenDelivery>, 2> deliveries;
+    std::array<i::RequestKey, 2> keys{};
+    const auto admit = [&](std::size_t slot, i::GenerationSessionSchedule schedule) {
+      schedules[slot] = std::move(schedule);
+      auto &stored = schedules[slot];
+      if (stored.accepts_live_input()) stored.turns.reserve(128);
+      adapter.progress_values[slot].emplace(128);
+      auto &progress = *adapter.progress_values[slot];
+      if (stored.accepts_live_input()) progress.bind_open_turns(stored.turns, 128, 128);
+      else progress.bind_turns(stored.turns);
+      adapter.stopped[slot] = false;
+      deliveries[slot].emplace(consumer.max_pending(), stored.reports_turn_ends() ?
+          (stored.accepts_live_input() ? 128 : stored.turns.size()) : 0);
+      keys[slot] = owner.enqueue(slot, &deliveries[slot]->window());
+      deliveries[slot]->bind(owner, keys[slot]);
+      if (!consumer.start(keys[slot])) throw std::logic_error("dynamic fixture consumer refused slot");
+    };
+    admit(0, batch.sessions.front());
+    for (;;) {
+      bool progress = false;
+      for (auto &delivery : deliveries) if (delivery) progress = delivery->service(owner, adapter, consumer) || progress;
+      const auto pumped = owner.pump_once(adapter);
+      for (auto &delivery : deliveries) if (delivery) progress = delivery->service(owner, adapter, consumer) || progress;
+      for (std::size_t slot = 0; slot < keys.size(); ++slot) {
+        if (!owner.matches(keys[slot]) || !adapter.progress(keys[slot]).waiting_for_input()) continue;
+        auto input = batch.input->poll_turn(keys[slot]);
+        if (input.state == i::TurnInputState::kWaiting) continue;
+        auto &request = adapter.progress(keys[slot]);
+        if (input.state == i::TurnInputState::kClosed) request.close_input();
+        else {
+          schedules[slot].turns.push_back(std::move(input.turn));
+          request.extend_turns(schedules[slot].turns);
+        }
+        owner.wake(keys[slot]); progress = true;
+      }
+      while (const auto slot = owner.free_slot([&](auto index) { return batch.input->can_admit(index); })) {
+        auto incoming = batch.input->poll_admission(*slot);
+        if (!incoming) break;
+        if (incoming->schedule.turns.front().prompt.front() < 0) {
+          batch.input->reject_admission(*slot, std::make_exception_ptr(i::RequestRejected("invalid test token")));
+        } else admit(*slot, std::move(incoming->schedule));
+        progress = true;
+      }
+      if (std::ranges::none_of(keys, [&](auto key) { return owner.matches(key); })) break;
+      if (!pumped.executed && !pumped.waiting_retirement && !progress) consumer.wait();
+    }
+  }
+};
+
 void model_provider_selects_one_owner_and_rejects_ambiguity() {
   const auto a = +[](const std::filesystem::path &source) { return source.filename() == "model-a"; };
   const auto b = +[](const std::filesystem::path &source) { return source.filename() == "model-b"; };
@@ -1280,6 +1343,32 @@ void live_ingress_shutdown_wakes_idle_owner() {
   const auto terminal = session.read();
   require(terminal.kind == Event::kCancelled || terminal.kind == Event::kClosed,
       "shutdown reported an open live session as completed");
+}
+
+void dynamic_ingress_runs_new_requests_beside_paused_session() {
+  i::GenerationDispatcher dispatcher(std::make_unique<DynamicIngressTestExecutor>(), 2, 4, 1);
+  using Event = i::GenerationRequestHandle::EventKind;
+  using Input = i::GenerationRequestHandle::InputResult;
+  auto live = dispatcher.submit({"live", {{{1}, 1}}, i::GenerationSessionMode::kLive});
+  require(live.read().kind == Event::kToken && live.read().kind == Event::kTurnEnd,
+      "dynamic fixture did not pause its original live session");
+  auto invalid = dispatcher.submit({"invalid", {{{-1}, 1}}});
+  const auto rejection = invalid.read();
+  require(rejection.kind == Event::kFailed && rejection.failure, "invalid new arrival was not isolated");
+  bool is_rejection = false;
+  try { std::rethrow_exception(rejection.failure); } catch (const i::RequestRejected &) { is_rejection = true; }
+  require(is_rejection, "new admission lost its typed rejection");
+  for (int attempt = 0; attempt < 2; ++attempt) {
+    auto peer = dispatcher.submit({"peer", {{{20}, 1}}});
+    const auto token = peer.read();
+    require(token.kind == Event::kToken && token.token == 11 && peer.read().kind == Event::kCompleted,
+        "new request did not finish in a reusable slot beside the paused session");
+  }
+  require(live.append({{2}, 1}) == Input::kAccepted && live.close_input(), "original session could not resume");
+  const auto token = live.read(), boundary = live.read();
+  require(token.kind == Event::kToken && token.token == 2 && boundary.kind == Event::kTurnEnd && boundary.turn == 1 &&
+      live.read().kind == Event::kCompleted, "new arrivals changed the original session's ordered continuation");
+  dispatcher.shutdown();
 }
 
 void ingress_abandoned_handle_releases_its_request() {
@@ -1600,6 +1689,7 @@ int main() {
     ingress_cancels_active_request_without_stopping_peer();
     live_ingress_appends_and_closes_without_losing_wakes();
     live_ingress_shutdown_wakes_idle_owner();
+    dynamic_ingress_runs_new_requests_beside_paused_session();
     ingress_abandoned_handle_releases_its_request();
     ingress_shutdown_does_not_fabricate_active_retirement();
     ingress_rejects_bad_request_without_poisoning_model();

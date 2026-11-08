@@ -97,6 +97,9 @@ class ModelExecutor {
 public:
   virtual ~ModelExecutor() = default;
   virtual ModelDescription describe() const = 0;
+  // Evaluated at construction, before execution. A supporting owner polls
+  // the same input source for new requests in genuinely reusable slots.
+  virtual bool supports_dynamic_admission() const noexcept { return false; }
   // Serialized, side-effect-free admission; reject a request with
   // RequestRejected before any model work, not with a fabricated retirement.
   virtual void validate(GenerationBatch batch) = 0;

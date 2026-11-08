@@ -1,5 +1,11 @@
 include("${CMAKE_CURRENT_LIST_DIR}/cold_sources.cmake")
 target_sources(hyle_engine PRIVATE main.cc ${_hyle_qwen35_cold_sources})
+if(MSVC)
+  # The combined model driver instantiations exceed the normal COFF section limit.
+  # Limit the option to this source; other engine objects retain their flags.
+  set_property(SOURCE "${CMAKE_CURRENT_LIST_DIR}/main.cc" TARGET_DIRECTORY hyle_engine
+    APPEND PROPERTY COMPILE_OPTIONS /bigobj)
+endif()
 
 # Real-weight diagnostics remain explicit targets, separate from the application.
 set(_qwen35_probes mtp_session)

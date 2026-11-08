@@ -183,6 +183,7 @@ public:
     if (!executor_ || !batch_limit || !waiting_limit || !output_capacity)
       throw std::invalid_argument("generation ingress requires a model and positive capacities");
     description_ = executor_->describe();
+    dynamic_admission_ = executor_->supports_dynamic_admission();
     worker_ = std::thread([this] { work(); });
   }
   GenerationDispatcher(const GenerationDispatcher &) = delete;
@@ -209,6 +210,7 @@ public:
     }
     request->schedule = std::move(schedule); request->stop = std::move(stop);
     request->sampling_index = sampling_index;
+    std::shared_ptr<QueuedTokenConsumer> wake_active;
     {
       std::lock_guard lock(mutex_);
       if (closed_) throw std::runtime_error("generation ingress is closed");
@@ -218,7 +220,9 @@ public:
       });
       if (waiting_.size() >= waiting_limit_) throw std::runtime_error("generation ingress queue is full");
       waiting_.push_back(request);
+      if (dynamic_admission_) wake_active = active_;
     }
+    if (wake_active) wake_active->notify_input();
     ready_.notify_one();
     return GenerationRequestHandle(std::move(request));
   }
@@ -249,8 +253,10 @@ private:
   using Job = std::shared_ptr<detail::IngressRequest>;
   class CohortConsumer final {
   public:
-    CohortConsumer(std::shared_ptr<QueuedTokenConsumer> output, std::vector<Job> &jobs)
-        : output_(std::move(output)), jobs_(jobs), started_(jobs.size()), finished_(jobs.size()), keys_(jobs.size()) {}
+    CohortConsumer(GenerationDispatcher &owner, std::shared_ptr<QueuedTokenConsumer> output,
+                   std::vector<Job> &jobs, std::size_t sampling)
+        : owner_(owner), output_(std::move(output)), jobs_(jobs), started_(jobs.size()),
+          finished_(jobs.size()), keys_(jobs.size()), sampling_(sampling) {}
     std::size_t max_pending() const noexcept { return output_->max_pending(); }
     bool start(RequestKey key) noexcept {
       if (key.slot >= jobs_.size() || started_[key.slot] || !output_->start(key)) return false;
@@ -295,6 +301,37 @@ private:
       }
       return {job.input_closed ? TurnInputState::kClosed : TurnInputState::kWaiting, {}};
     }
+    bool can_admit(std::size_t slot) noexcept {
+      return owner_.dynamic_admission_ && slot < jobs_.size() &&
+          (!jobs_[slot] || finished_[slot]) && output_->can_start(slot);
+    }
+    std::optional<GenerationAdmission> poll_admission(std::size_t slot) noexcept {
+      if (!can_admit(slot)) return std::nullopt;
+      std::lock_guard lock(owner_.mutex_);
+      if (owner_.closed_) return std::nullopt;
+      while (!owner_.waiting_.empty()) {
+        auto job = owner_.waiting_.front();
+        std::lock_guard job_lock(job->mutex);
+        if (job->state != detail::IngressState::kPending) { owner_.waiting_.pop_front(); continue; }
+        if (job->sampling_index != sampling_) return std::nullopt;
+        owner_.waiting_.pop_front(); job->state = detail::IngressState::kAssigned; job->output = output_;
+        jobs_[slot] = job; started_[slot] = finished_[slot] = false; keys_[slot] = {};
+        return GenerationAdmission{std::move(job->schedule), std::move(job->stop), job->sampling_index};
+      }
+      return std::nullopt;
+    }
+    void reject_admission(std::size_t slot, std::exception_ptr error) noexcept {
+      if (slot >= jobs_.size() || !jobs_[slot] || started_[slot]) { contract_error_ = true; return; }
+      auto job = jobs_[slot];
+      {
+        std::lock_guard lock(job->mutex);
+        if (job->state != detail::IngressState::kAssigned) { contract_error_ = true; return; }
+        if (job->cancel_intent) job->state = detail::IngressState::kCancelled;
+        else { job->failure = std::move(error); job->state = detail::IngressState::kFailed; }
+        job->changed.notify_all();
+      }
+      jobs_[slot].reset();
+    }
     bool cancel_requested(RequestKey key) noexcept { return output_->cancel_requested(key); }
     void finished(RequestKey key, bool cancelled) noexcept {
       if (key.slot >= jobs_.size() || !started_[key.slot] || finished_[key.slot] || keys_[key.slot] != key) {
@@ -305,14 +342,16 @@ private:
     void wait() noexcept { output_->wait(); }
     bool all_finished() const noexcept {
       if (contract_error_) return false;
-      for (std::size_t i = 0; i < jobs_.size(); ++i) if (!started_[i] || !finished_[i]) return false;
+      for (std::size_t i = 0; i < jobs_.size(); ++i) if (jobs_[i] && (!started_[i] || !finished_[i])) return false;
       return true;
     }
   private:
+    GenerationDispatcher &owner_;
     std::shared_ptr<QueuedTokenConsumer> output_;
     std::vector<Job> &jobs_;
     std::vector<bool> started_, finished_;
     std::vector<RequestKey> keys_;
+    std::size_t sampling_;
     bool contract_error_ = false;
   };
 
@@ -323,6 +362,7 @@ private:
       const bool stopping = closed_;
       closed_ = true;
       for (const auto &job : selected) {
+        if (!job) continue;
         std::lock_guard request_lock(job->mutex);
         if (job->state == detail::IngressState::kCompleted || job->state == detail::IngressState::kCancelled ||
             job->state == detail::IngressState::kFailed || job->state == detail::IngressState::kClosed) continue;
@@ -367,7 +407,7 @@ private:
             selected.push_back(job); waiting_.pop_front();
           }
           if (selected.empty()) continue;
-          output = std::make_shared<QueuedTokenConsumer>(selected.size(), output_capacity_);
+          output = std::make_shared<QueuedTokenConsumer>(dynamic_admission_ ? batch_limit_ : selected.size(), output_capacity_);
           for (const auto &job : selected) {
             std::lock_guard request_lock(job->mutex);
             // A request cancelled after dequeue needs no model admission.
@@ -418,7 +458,9 @@ private:
           schedules.push_back(std::move(job->schedule)); stops.push_back(std::move(job->stop));
           sampling.push_back(job->sampling_index);
         }
-        CohortConsumer consumer(output, selected);
+        const auto selected_sampling = sampling.front();
+        if (dynamic_admission_) selected.resize(batch_limit_);
+        CohortConsumer consumer(*this, output, selected, selected_sampling);
         TokenConsumerRef ref(consumer);
         GenerationInputRef input(consumer);
         executor_->execute({schedules, sampling, stops, &input}, ref);
@@ -434,6 +476,7 @@ private:
 
   std::unique_ptr<ModelExecutor> executor_;
   ModelDescription description_;
+  bool dynamic_admission_ = false;
   const std::size_t batch_limit_, waiting_limit_, output_capacity_;
   std::mutex mutex_;
   std::condition_variable ready_;
