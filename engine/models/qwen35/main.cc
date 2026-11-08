@@ -3098,10 +3098,15 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   request_loop.prepare(requests.size(), model.cache_plan.resident_sessions);
   using OutputWindows = std::conditional_t<std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>,
       std::nullptr_t, std::vector<inference::OutputDelivery>>;
+  struct OutputControl final { bool cancelled = false, notified = false; };
+  using OutputControls = std::conditional_t<std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>,
+      std::nullptr_t, std::vector<OutputControl>>;
   OutputWindows output_windows{};
+  OutputControls output_controls{};
   if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>) {
     static_assert(inference::TokenConsumer<std::remove_reference_t<OutputConsumer>>);
     output_windows.reserve(requests.size());
+    output_controls.resize(requests.size());
     for (std::size_t index = 0; index < requests.size(); ++index)
       output_windows.emplace_back(output_consumer.max_pending());
   }
@@ -3274,26 +3279,56 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   };
   GenerationRequestAdapter adapter{model, prefix.get(), std::span(requests), trace_states, &evictions, execute_wave,
       {}, &continuation};
-  while (completed != requests.size()) {
-    const auto pumped = request_loop.pump_once(adapter);
-    completed = cache::add(completed, pumped.completed);
-    admitted = cache::add(admitted, pumped.admitted);
-    bool output_progress = false;
+  const auto service_output = [&]() {
+    bool advanced = false;
     if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>) {
       for (std::size_t index = 0; index < requests.size(); ++index) {
         const auto &request = requests[index];
-        if (!request_loop.matches(request.request_key)) continue;
+        auto &control = output_controls[index];
+        const auto key = request.request_key;
+        if (!request_loop.matches(key)) {
+          if (!control.notified) {
+            output_consumer.finished(key, control.cancelled);
+            control.notified = true; advanced = true;
+          }
+          continue;
+        }
         auto &window = output_windows[index];
+        const auto cancel = [&]() {
+          if (control.cancelled || !output_consumer.cancel_requested(key)) return;
+          const auto status = request_loop.cancel(key, adapter);
+          if (!status.ok() && !(status.IsCancelled() && !status.has_native_error())) check(status);
+          control.cancelled = true; advanced = true;
+        };
+        cancel();
         const auto pending = window.pending(request.progress.generated);
         std::size_t accepted = 0;
-        while (accepted < pending.size() && output_consumer.try_write(request.request_key, pending[accepted]))
-          ++accepted;
-        if (!accepted) continue;
-        if (!request_loop.acknowledge(request.request_key, window.acknowledged() + accepted, adapter))
-          throw std::logic_error("output acknowledgement lost its original request");
-        output_progress = true;
+        if (control.cancelled) accepted = pending.size(); // Disconnected consumer abandons its pending output.
+        else while (accepted < pending.size() && !output_consumer.cancel_requested(key) &&
+                    output_consumer.try_write(key, pending[accepted])) ++accepted;
+        if (accepted) {
+          if (!request_loop.acknowledge(key, window.acknowledged() + accepted, adapter))
+            throw std::logic_error("output acknowledgement lost its original request");
+          advanced = true;
+        }
+        // A disconnect can race the last write; do not enter wait with an
+        // already-pending cancellation or publish another model episode.
+        cancel();
+        if (control.cancelled && window.acknowledged() != request.progress.generated.size()) {
+          if (!request_loop.acknowledge(key, request.progress.generated.size(), adapter))
+            throw std::logic_error("cancelled output lost its original request");
+          advanced = true;
+        }
       }
     }
+    return advanced;
+  };
+  while (completed != requests.size()) {
+    bool output_progress = service_output();
+    const auto pumped = request_loop.pump_once(adapter);
+    completed = cache::add(completed, pumped.completed);
+    admitted = cache::add(admitted, pumped.admitted);
+    output_progress = service_output() || output_progress;
     // This closed CLI has no host work while the current Graph is pending.
     // Any successor is already submitted; promoted B reaches the next pump first
     // so C can overlap it. The original next poll consumes any wait error.
@@ -3301,7 +3336,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
         model.active_step && model.active_step->execution.has_completion())
       model.active_step->execution.wait().IgnoreError();
     bool input_arrived = false;
-    if (first_turn_only && !pumped.waiting_retirement && requests[0].progress.waiting_for_input()) {
+    if (first_turn_only && !pumped.waiting_retirement && request_loop.matches(requests[0].request_key) &&
+        !request_loop.cancelled(requests[0].request_key) && requests[0].progress.waiting_for_input()) {
       auto &request = requests[0];
       if (model.active_step || model.successor_step || model.carrier_borrowed || !request.session || request.session->pending ||
           !request_loop.active().empty())
@@ -3335,6 +3371,24 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
         if (pumped.waiting_output) { output_consumer.wait(); continue; }
       }
       throw std::runtime_error("generation admission has no runnable resident request");
+    }
+  }
+  if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>) {
+    const auto cancelled = static_cast<std::size_t>(std::count_if(output_controls.begin(), output_controls.end(),
+        [](const auto &control) { return control.cancelled; }));
+    if (cancelled) {
+      // Planned-turn timing and decode totals are not meaningful for an
+      // interrupted workload. Preserve actual outputs without inventing them.
+      report_out << "{\"cancelled_requests\":" << cancelled << ",\"sessions\":[";
+      for (std::size_t index = 0; index < requests.size(); ++index) {
+        report_out << (index ? "," : "") << "{\"slot\":" << index << ",\"cancelled\":"
+            << (output_controls[index].cancelled ? "true" : "false") << ",\"generated_ids\":[";
+        const auto &ids = requests[index].progress.generated;
+        for (std::size_t at = 0; at < ids.size(); ++at) report_out << (at ? "," : "") << ids[at];
+        report_out << "]}";
+      }
+      report_out << "]}\n";
+      return 0;
     }
   }
   const auto post_endpoint_seconds = std::chrono::duration<double>(Clock::now() - endpoint).count();

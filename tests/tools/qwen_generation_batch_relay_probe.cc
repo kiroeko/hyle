@@ -14,10 +14,19 @@ using qwen_generation_state_case::StateBytes;
 using qwen_generation_state_case::state_bytes;
 constexpr std::size_t kOutputs = 14;
 
-int observe_output(const std::filesystem::path &input, std::string_view mode) {
+int observe_output(const std::filesystem::path &input, std::string_view mode, bool print_report = false) {
   const auto original_mode = mode;
-  const bool stalled = mode.starts_with("stall-");
-  if (stalled) mode.remove_prefix(6);
+  const bool cancel_before = mode == "cancel-before";
+  const bool cancel_blocked = mode == "cancel-blocked";
+  const bool cancel_after = mode == "cancel-after";
+  const bool cancel_inflight = mode == "cancel-inflight";
+  const bool peer_cancel = mode == "cancel-peer";
+  const bool peer_stall = mode == "stall-peer";
+  const bool peer = peer_cancel || peer_stall;
+  const bool cancellation = cancel_before || cancel_blocked || cancel_after || cancel_inflight || peer_cancel;
+  const bool stalled = mode.starts_with("stall-") || cancel_blocked || peer_cancel;
+  if (peer || cancellation) mode = "ordinary";
+  else if (mode.starts_with("stall-")) mode.remove_prefix(6);
   const bool mtp = mode == "k1" || mode == "k3";
   const bool random = mode == "random";
   require(mtp || random || mode == "ordinary", "unknown output-observer mode");
@@ -29,53 +38,102 @@ int observe_output(const std::filesystem::path &input, std::string_view mode) {
       static_cast<std::size_t>(geometry.context_limit));
   require(prompt.size() >= 8 && prompt.size() + limit <= capacity && geometry.context_limit >= capacity,
       "output observer requires a complete local Qwen prompt and C256 model");
-  const auto plan = q::cache::plan(geometry, source.cache_row_bytes, capacity, 1, prompt.size(),
+  const auto plan = q::cache::plan(geometry, source.cache_row_bytes, capacity, peer ? 2 : 1, prompt.size(),
       q::recurrent_bytes(q::state_schema_for(geometry, capacity), geometry), 1,
-      mtp ? drafts + 1 : 1, mtp, random);
+      mtp ? drafts + 1 : 1, mtp, random, cancel_inflight ? 2 : 1);
   const auto sampling = random ? q::Model::Sampling{.enabled = true, .policy = {.8F, 40, .95F}, .seed = 123}
                                : q::Model::Sampling{};
-  q::Model model(std::move(source), geometry, capacity, plan, {}, false, q::ReplayPolicy::kCommands,
+  q::Model model(std::move(source), geometry, capacity, plan, {}, false,
+      cancel_inflight ? q::ReplayPolicy::kPreferCapture : q::ReplayPolicy::kCommands,
       SIZE_MAX, sampling,
       0, {.primary = i::BackendKind::kCuda});
   if (mtp) model.configure_draft_policy({drafts});
-  const std::array schedules{i::GenerationSessionSchedule{"observed", {{prompt, limit}}}};
+  std::vector<i::GenerationSessionSchedule> schedules{{"observed", {{prompt, limit}}}};
+  if (peer) schedules.push_back({"peer", {{prompt, limit}}});
   const std::array<q::cache::TokenPlanRef, 0> token_plans{};
   struct Consumer final {
-    std::array<std::int32_t, limit> received{};
-    std::size_t count = 0, waits = 0, rejected = 0;
-    bool stalled = false, ready = false, invalid = false;
+    std::array<std::array<std::int32_t, limit>, 2> received{};
+    std::array<std::size_t, 2> count{}, finished_count{};
+    std::array<bool, 2> was_cancelled{};
+    std::size_t waits = 0, rejected = 0;
+    bool stalled = false, ready = false, invalid = false, peer = false, peer_cancel = false;
+    bool cancel_before = false, cancel_blocked = false, cancel_after = false, cancel_inflight = false;
+    mutable bool saw_submitted = false;
+    q::Model *model = nullptr;
     std::size_t max_pending() const noexcept { return stalled ? 1 : 4; }
     bool try_write(i::RequestKey key, std::int32_t id) noexcept {
-      if (key.slot != 0 || count == received.size()) { invalid = true; return true; }
-      if (stalled && !ready) { ++rejected; return false; }
-      received[count++] = id; ready = false;
+      if (key.slot >= (peer ? 2u : 1u) || count[key.slot] == limit) { invalid = true; return true; }
+      if ((peer && key.slot == 0 && (peer_cancel || count[1] < limit)) ||
+          (!peer && stalled && !ready)) { ++rejected; return false; }
+      received[key.slot][count[key.slot]++] = id; ready = false;
       return true;
     }
-    void wait() noexcept { ++waits; ready = true; }
-  } consumer{.stalled = stalled};
+    bool cancel_requested(i::RequestKey key) const noexcept {
+      if (key.slot == 0 && cancel_inflight && count[0] >= 2 && model && model->active_step &&
+          model->active_step->submitted && model->active_step->execution.has_completion()) {
+        saw_submitted = true; return true;
+      }
+      return key.slot == 0 && (cancel_before || (cancel_blocked && waits) ||
+          (cancel_after && count[0]) || (peer_cancel && rejected));
+    }
+    void finished(i::RequestKey key, bool cancelled) noexcept {
+      if (key.slot >= (peer ? 2u : 1u)) { invalid = true; return; }
+      if (!peer && (!model || model->active_step || model->successor_step || model->snapshot_versions.live)) invalid = true;
+      ++finished_count[key.slot]; was_cancelled[key.slot] = cancelled;
+    }
+    void wait() noexcept { ++waits; if (peer) invalid = true; ready = true; }
+  } consumer{.stalled = stalled, .peer = peer, .peer_cancel = peer_cancel,
+             .cancel_before = cancel_before, .cancel_blocked = cancel_blocked,
+             .cancel_after = cancel_after, .cancel_inflight = cancel_inflight, .model = &model};
   std::ostringstream report;
   const auto now = q::Clock::now();
   const auto result = mtp
       ? q::run_generation_sessions<q::GenerationMode::kMtp>(model, schedules, {}, false,
-          now, now, false, token_plans, {}, {}, SIZE_MAX, false, false, {}, nullptr, false, {}, consumer, report)
+          now, now, false, token_plans, {}, {}, SIZE_MAX, false, cancel_inflight, {}, nullptr, false, {}, consumer, report)
       : q::run_generation_sessions<q::GenerationMode::kText>(model, schedules, {}, false,
-          now, now, false, token_plans, {}, {}, SIZE_MAX, false, false, {}, nullptr, false, {}, consumer, report);
-  require(result == 0 && !consumer.invalid && consumer.count == limit &&
-      (!stalled || (consumer.waits && consumer.rejected)),
-      "consumer did not receive bounded incremental output from the real request");
+          now, now, false, token_plans, {}, {}, SIZE_MAX, false, cancel_inflight, {}, nullptr, false, {}, consumer, report);
+  require(result == 0 && !consumer.invalid && consumer.finished_count[0] == 1 &&
+      consumer.was_cancelled[0] == cancellation && (!stalled || consumer.rejected) &&
+      (!stalled || peer || consumer.waits),
+      "consumer did not observe exactly one retired terminal request");
+  if (peer) {
+    require(consumer.finished_count[1] == 1 && !consumer.was_cancelled[1] && consumer.count[1] == limit &&
+        consumer.count[0] == (peer_cancel ? 0 : limit), "blocked/cancelled request prevented its peer from completing");
+    if (!peer_cancel) require(consumer.received[0] == consumer.received[1], "blocked request changed generated IDs");
+    require(!model.snapshot_versions.live && !model.active_step && !model.successor_step,
+        "peer request retained model state or execution");
+    std::cout << "output consumer " << original_mode << " PASS: " << consumer.count[0] << "/"
+        << consumer.count[1] << " IDs, retired=2\n";
+    if (print_report) std::cout << report.str();
+    return 0;
+  }
+  if (cancellation) {
+    require((cancel_inflight ? (consumer.count[0] >= 2 && consumer.count[0] < limit && consumer.saw_submitted)
+                             : consumer.count[0] == (cancel_after ? 1 : 0)) &&
+        report.str().find("\"cancelled_requests\":1") != std::string::npos,
+        "cancellation delivered extra tokens or did not report the actual outcome");
+    require(!model.snapshot_versions.live && !model.active_step && !model.successor_step,
+        "cancelled request retained model state or execution");
+    std::cout << "output consumer " << original_mode << " PASS: " << consumer.count[0]
+        << " delivered, " << consumer.waits << " waits, retired=1\n";
+    if (print_report) std::cout << report.str();
+    return 0;
+  }
+  require(consumer.count[0] == limit, "consumer lost output from the real request");
   std::ostringstream expected;
   expected << "\"generated_ids\":[";
-  for (std::size_t at = 0; at < consumer.count; ++at) expected << (at ? "," : "") << consumer.received[at];
+  for (std::size_t at = 0; at < consumer.count[0]; ++at) expected << (at ? "," : "") << consumer.received[0][at];
   expected << ']';
   require(report.str().find(expected.str()) != std::string::npos,
       "observed committed IDs differ from the original generation report");
   require(!model.snapshot_versions.live && !model.active_step && !model.successor_step,
       "observed request retained model state or execution");
-  std::cout << "output consumer " << original_mode << " PASS: " << consumer.count
+  std::cout << "output consumer " << original_mode << " PASS: " << consumer.count[0]
       << " IDs, " << consumer.waits << " waits, " << consumer.rejected << " refused writes; ids=";
-  for (std::size_t at = 0; at < consumer.count; ++at)
-    std::cout << (at ? "," : "") << consumer.received[at];
+  for (std::size_t at = 0; at < consumer.count[0]; ++at)
+    std::cout << (at ? "," : "") << consumer.received[0][at];
   std::cout << '\n';
+  if (print_report) std::cout << report.str();
   return 0;
 }
 
@@ -811,8 +869,9 @@ int main(int argc, char **argv) {
   try {
     if (argc >= 2 && std::string_view(argv[1]) == "--hyle-cli")
       return q::run(argc - 1, argv + 1);
-    if (argc == 4 && std::string_view(argv[1]) == "--output-observer")
-      return observe_output(argv[2], argv[3]);
+    if (argc == 4 && (std::string_view(argv[1]) == "--output-observer" ||
+                      std::string_view(argv[1]) == "--output-observer-json"))
+      return observe_output(argv[2], argv[3], std::string_view(argv[1]) == "--output-observer-json");
     if (argc == 1) { std::cerr << "SKIP: pass --cuda PREPARED_LOCAL_INPUTS\n"; return 77; }
     if (argc == 2 && std::string_view(argv[1]) == "--cuda-continuous") {
       std::cerr << "SKIP: pass --cuda-continuous CONTEXT32_TINY_INPUT\n"; return 77;
