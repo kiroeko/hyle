@@ -11,10 +11,16 @@ def main():
     parser.add_argument('--engine', type=Path, required=True)
     parser.add_argument('--inputs', type=Path, required=True)
     parser.add_argument('--draft-count', type=int, choices=(0, 1, 3), default=0)
+    parser.add_argument('--sampling', choices=('greedy', 'random'), default='greedy')
     args = parser.parse_args()
-    worker = WorkerClient([args.engine, '--engine-worker', '--inputs', args.inputs, '--backend', 'cuda',
-                           '--capacity', '16', '--max-sessions', '1', '--active-sequences', '1',
-                           '--draft-count', str(args.draft_count)])
+    if args.sampling == 'random' and args.draft_count:
+        parser.error('random sampling test requires draft-count 0')
+    command = [args.engine, '--engine-worker', '--inputs', args.inputs, '--backend', 'cuda',
+               '--capacity', '16', '--max-sessions', '1', '--active-sequences', '1',
+               '--draft-count', str(args.draft_count), '--sampling', args.sampling]
+    if args.sampling == 'random':
+        command += ['--temperature', '0.8', '--top-k', '40', '--top-p', '0.95', '--seed', '7']
+    worker = WorkerClient(command)
 
     def read_token(request):
         event = request.read(timeout=60)
@@ -74,7 +80,7 @@ def main():
         finally:
             followup.close()
         assert worker.healthy
-        print(f'PASS draft-count={args.draft_count}: exact capacity, local rejection, '
+        print(f'PASS {args.sampling} draft-count={args.draft_count}: exact capacity, local rejection, '
               'early-stop quota release, live-turn boundary, slot reuse', flush=True)
     finally:
         worker.close(timeout=60)
