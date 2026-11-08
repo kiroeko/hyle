@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import math
 import sys
 from pathlib import Path
 
@@ -36,7 +37,7 @@ def make_worker_command(args) -> list[str]:
     return command
 
 
-def main(argv: list[str] | None = None) -> int:
+def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Hyle local text CLI and Responses service')
     sub = parser.add_subparsers(dest='command', required=True)
     common = argparse.ArgumentParser(add_help=False)
@@ -54,10 +55,10 @@ def main(argv: list[str] | None = None) -> int:
     common.add_argument('--draft-head', type=Path)
     common.add_argument('--overlap', action=argparse.BooleanOptionalAction, default=None)
     common.add_argument('--sampling', choices=('greedy', 'random'), default='greedy')
-    common.add_argument('--temperature', type=float, default=1.)
-    common.add_argument('--top-k', type=int, default=0)
-    common.add_argument('--top-p', type=float, default=1.)
-    common.add_argument('--seed', type=int, default=0)
+    common.add_argument('--temperature', type=float)
+    common.add_argument('--top-k', type=int)
+    common.add_argument('--top-p', type=float)
+    common.add_argument('--seed', type=int)
     serve = sub.add_parser('serve', parents=[common], help='serve the supported Responses subset')
     serve.add_argument('--host', default='127.0.0.1')
     serve.add_argument('--port', type=int, default=2048)
@@ -66,6 +67,27 @@ def main(argv: list[str] | None = None) -> int:
     generate.add_argument('--text', required=True)
     generate.add_argument('--max-output-tokens', type=int, default=256)
     args = parser.parse_args(argv)
+    if args.sampling != 'random' and any(value is not None for value in
+                                          (args.temperature, args.top_k, args.top_p, args.seed)):
+        parser.error('--temperature, --top-k, --top-p and --seed require --sampling random')
+    args.temperature = 1. if args.temperature is None else args.temperature
+    args.top_k = 0 if args.top_k is None else args.top_k
+    args.top_p = 1. if args.top_p is None else args.top_p
+    args.seed = 0 if args.seed is None else args.seed
+    if args.sampling == 'random':
+        if not math.isfinite(args.temperature) or args.temperature <= 0:
+            parser.error('--temperature requires a finite positive number')
+        if not math.isfinite(args.top_p) or not 0 < args.top_p <= 1:
+            parser.error('--top-p requires a finite number in (0, 1]')
+        if args.top_k < 0:
+            parser.error('--top-k requires a nonnegative integer')
+        if not 0 <= args.seed <= (1 << 64) - 1:
+            parser.error('--seed requires an unsigned 64-bit integer')
+    return args
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_arguments(argv)
     worker = WorkerClient(make_worker_command(args))
     try:
         codec = HuggingFaceTextCodec(args.tokenizer_dir, template=args.template,

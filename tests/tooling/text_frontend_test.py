@@ -1,4 +1,6 @@
 import json
+import contextlib
+import io
 import queue
 import socket
 import threading
@@ -7,7 +9,7 @@ import urllib.error
 import urllib.request
 from argparse import Namespace
 
-from engine.text.app import ResponsesServer, make_worker_command
+from engine.text.app import ResponsesServer, make_worker_command, parse_arguments
 from engine.text.responses import InvalidRequest, ResponsesAdapter, parse_responses_input
 from engine.text.runtime import GenerationProgress, TextEngine
 from engine.text.server import TextHttpServer
@@ -61,6 +63,37 @@ class FakeWorker:
 
 
 class TextFrontendTest(unittest.TestCase):
+    def test_explicit_sampling_arguments_are_not_silently_ignored(self):
+        base = ['generate', '--engine', 'hyle', '--inputs', 'model', '--tokenizer-dir', 'tokenizer', '--text', 'x']
+        for option, value in (('--temperature', '1'), ('--top-k', '0'), ('--top-p', '1'), ('--seed', '0')):
+            with self.subTest(option=option), contextlib.redirect_stderr(io.StringIO()) as error:
+                with self.assertRaises(SystemExit) as exit_code:
+                    parse_arguments(base + [option, value])
+                self.assertEqual(exit_code.exception.code, 2)
+                self.assertIn('require --sampling random', error.getvalue())
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            parse_arguments(['serve', '--engine', 'hyle', '--inputs', 'model', '--tokenizer-dir', 'tokenizer',
+                             '--temperature', '.8'])
+        defaults = parse_arguments(base + ['--sampling', 'random'])
+        self.assertEqual((defaults.temperature, defaults.top_k, defaults.top_p, defaults.seed), (1., 0, 1., 0))
+        command = make_worker_command(defaults)
+        for option, value in (('--temperature', '1.0'), ('--top-k', '0'), ('--top-p', '1.0'), ('--seed', '0')):
+            self.assertEqual(command[command.index(option) + 1], value)
+        selected = parse_arguments(base + ['--sampling', 'random', '--temperature', '.8', '--top-k', '40',
+                                           '--top-p', '.95', '--seed', '7'])
+        self.assertEqual((selected.temperature, selected.top_k, selected.top_p, selected.seed), (.8, 40, .95, 7))
+
+    def test_invalid_random_sampling_is_rejected_before_loading(self):
+        base = ['generate', '--engine', 'hyle', '--inputs', 'model', '--tokenizer-dir', 'tokenizer',
+                '--text', 'x', '--sampling', 'random']
+        for option, value in (('--temperature', 'nan'), ('--temperature', '0'), ('--top-p', 'inf'),
+                              ('--top-p', '0'), ('--top-p', '1.01'), ('--top-k', '-1'),
+                              ('--seed', '-1'), ('--seed', '18446744073709551616')):
+            with self.subTest(option=option, value=value), contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as error:
+                    parse_arguments(base + [option, value])
+                self.assertEqual(error.exception.code, 2)
+
     def test_server_close_cancels_inflight_handler_before_return(self):
         class StalledRequest(FakeRequest):
             def __init__(self):
