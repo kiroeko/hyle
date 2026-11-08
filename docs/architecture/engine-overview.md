@@ -68,7 +68,7 @@ Graph → Compute／后端       唯一的图执行、设备资源、完成与�
 依赖单向向下。Compute／Graph不解释模型文件或生成政策，也可由独立C++消费者使用。
 模型新增自己的数学与状态适配；共同机制不以Qwen的形状、MTP阶段或状态布局作为公共固定要求。
 [源码边界检查](../../tests/tooling/inference_architecture_boundaries_test.py)覆盖共同层和后端的直接include、部分生成脚本的静态导入、文本层静态导入及请求策略中的后端宏；它不能代替构建依赖闭包、动态加载或运行时行为验证。
-本机CUDA的Compute和Graph公开示例已分别作为独立C++程序链接现有共享库并运行，未链接引擎；这不代替单组件构建或安装包验证。
+本机CUDA的Compute和Graph公开示例已分别作为独立C++程序链接现有共享库并运行，未链接引擎；这不代替两者的单组件构建或安装包验证。Windows上另以`HYLE_COMPONENTS=mem`独立构建并安装共享库，已安装SDK的C++示例通过；该验证不包含Compute或Graph。
 
 ## 共同机制
 
