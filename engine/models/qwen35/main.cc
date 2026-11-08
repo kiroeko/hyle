@@ -214,6 +214,7 @@ struct GenerationRequest {
   };
   std::vector<TurnObservation> turn_observations;
   std::vector<std::shared_ptr<std::vector<std::int32_t>>> warm_inputs;
+  std::vector<inference::GenerationTurn> live_turns;
   std::size_t last_idle = 0;
   const std::size_t sampling_index;
   LogitsInputs logits; // One [1,V] snapshot for every conditional row in an output episode.
@@ -2647,6 +2648,8 @@ void validate_reusable_batch(Model &model, inference::GenerationBatch batch, boo
     throw std::invalid_argument("reusable request exceeds its configured input or output bounds");
   for (const auto &schedule : schedules) {
     if (schedule.turns.empty()) throw std::invalid_argument("reusable request requires an initial turn");
+    if (schedule.accepts_live_input() && schedule.turns.size() != 1)
+      throw std::invalid_argument("live input requires one initial turn and turn boundaries");
     if (schedule.turns.size() > model.capacity)
       throw std::invalid_argument("reusable request exceeds its configured turn bound");
     std::size_t prompt_total = 0, output_total = 0;
@@ -2683,10 +2686,14 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     bool decode_overlap = false, std::span<const inference::LogitsInputProvider> logits_providers = {},
     BatchObserver &&batch_observer = nullptr, bool first_turn_only = false,
     const hyle::engine::reporting::RouteDecisionFacts &routes = {}, OutputConsumer &&output_consumer = nullptr,
-    std::ostream &report_out = std::cout, ReusableGenerationPreparation *reuse = nullptr) {
+    std::ostream &report_out = std::cout, ReusableGenerationPreparation *reuse = nullptr,
+    inference::GenerationInputRef *live_input = nullptr) {
   constexpr bool mtp = Mode == GenerationMode::kMtp;
+  if (std::ranges::any_of(schedules, [](const auto &schedule) { return schedule.accepts_live_input(); }) &&
+      (!first_turn_only || !reuse || !live_input))
+    throw inference::RequestRejected("live input requires a reusable request owner and input source");
   if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>) {
-    if (std::ranges::any_of(schedules, [](const auto &schedule) { return schedule.report_turn_ends; })) {
+    if (std::ranges::any_of(schedules, [](const auto &schedule) { return schedule.reports_turn_ends(); })) {
       if constexpr (requires { output_consumer.supports_turn_ends(); }) {
         if (!output_consumer.supports_turn_ends())
           throw inference::RequestRejected("consumer does not support requested turn boundaries");
@@ -2696,7 +2703,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
         throw inference::RequestRejected("consumer does not support requested turn boundaries");
       }
     }
-  } else if (std::ranges::any_of(schedules, [](const auto &schedule) { return schedule.report_turn_ends; })) {
+  } else if (std::ranges::any_of(schedules, [](const auto &schedule) { return schedule.reports_turn_ends(); })) {
     throw inference::RequestRejected("turn boundaries require an output consumer");
   }
   const auto selected_sampling = sampling_indices.empty() ? 0 : sampling_indices.front();
@@ -2806,7 +2813,11 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
         ("session" + std::to_string(requests.size()) + "_" + schedule.id), first_turn_only ? configured_bound : outputs, sampling_indices.empty() ? 0 : sampling_indices[requests.size()],
         stop_policies.empty() ? inference::RequestStopPolicy{} : stop_policies[requests.size()]);
     auto &request = requests.back();
-    if (first_turn_only) request.progress.bind_open_turns(visible_turns, configured_bound, configured_bound);
+    if (schedule.accepts_live_input()) {
+      request.live_turns.reserve(configured_bound);
+      request.live_turns.push_back(visible_turns.front());
+      request.progress.bind_open_turns(request.live_turns, configured_bound, configured_bound);
+    } else if (first_turn_only) request.progress.bind_open_turns(visible_turns, configured_bound, configured_bound);
     else request.progress.bind_turns(visible_turns);
     if (!logits_providers.empty()) request.logits_provider = logits_providers[requests.size() - 1];
     request.progress.initial_sampling = {model.sampling_seed, static_cast<std::uint64_t>(requests.size() - 1), 0};
@@ -3232,7 +3243,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     static_assert(inference::TokenConsumer<std::remove_reference_t<OutputConsumer>>);
     for (std::size_t index = 0; index < requests.size(); ++index)
       output_deliveries.emplace_back(output_consumer.max_pending(),
-          schedules[index].report_turn_ends ? schedules[index].turns.size() : 0);
+          schedules[index].reports_turn_ends() ? (schedules[index].accepts_live_input() ? configured_bound : schedules[index].turns.size()) : 0);
   }
   for (std::size_t index = 0; index < requests.size(); ++index) {
     if constexpr (std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>)
@@ -3431,7 +3442,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     if (pumped.waiting_retirement && continuation.drive_cursor.awaiting_current &&
         model.active_step && model.active_step->execution.has_completion())
       model.active_step->execution.wait().IgnoreError();
-    bool input_arrived = false;
+    bool input_arrived = false, live_waiting = false;
     if (first_turn_only && !pumped.waiting_retirement) for (std::size_t index = 0; index < requests.size(); ++index) {
       auto &request = requests[index];
       if (!request_loop.matches(request.request_key) || request_loop.cancelled(request.request_key) ||
@@ -3444,15 +3455,25 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       // This is workload-driver EOF/ingress, outside every cold-planning loop.
       // No future turn length or quota was supplied to the Model beforehand.
       const auto &source = schedules[index].turns;
-      if (visible == source.size()) request.progress.close_input();
-      else {
-        const auto &next = source[visible];
+      if (schedules[index].accepts_live_input()) {
+        auto received = live_input->poll_turn(request.request_key);
+        if (received.state == inference::TurnInputState::kWaiting) { live_waiting = true; continue; }
+        if (received.state == inference::TurnInputState::kClosed) request.progress.close_input();
+        else {
+          if (visible >= configured_bound) throw std::out_of_range("live input exceeds its configured turn bound");
+          request.live_turns.push_back(std::move(received.turn));
+        }
+      } else if (visible == source.size()) request.progress.close_input();
+      if (request.progress.input_open()) {
+        const auto &next_source = schedules[index].accepts_live_input() ? request.live_turns : source;
+        const auto &next = next_source[visible];
         if (visible >= configured_bound || next.prompt.size() >= configured_bound ||
-            !next.max_outputs || next.max_outputs > configured_bound)
+            !next.max_outputs || next.max_outputs > configured_bound ||
+            std::ranges::any_of(next.prompt, [&](auto id) { return id < 0 || id >= model.vocabulary; }))
           throw std::out_of_range("input exceeds configured turn, prompt or output bound");
         auto owner = std::make_shared<std::vector<std::int32_t>>(cache::add(next.prompt.size(), 1));
         std::copy(next.prompt.begin(), next.prompt.end(), owner->begin() + 1);
-        request.progress.extend_turns(std::span(source).first(visible + 1));
+        request.progress.extend_turns(std::span(next_source).first(visible + 1));
         request.warm_inputs.push_back(std::move(owner));
         request.turn_observations.emplace_back(); request.turn_observations.back().arrival = arrival;
         request.admission_start = arrival;
@@ -3465,7 +3486,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     }
     if (!pumped.executed && !pumped.waiting_retirement && !input_arrived && !output_progress && completed != requests.size()) {
       if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>) {
-        if (pumped.waiting_output) { output_consumer.wait(); continue; }
+        if (pumped.waiting_output || live_waiting) { output_consumer.wait(); continue; }
       }
       throw std::runtime_error("generation admission has no runnable resident request");
     }
@@ -3687,10 +3708,10 @@ public:
     const auto result = mtp_
         ? run_generation_sessions<GenerationMode::kMtp>(model_, batch.sessions, {}, false, now, now, false,
             plans, batch.sampling_indices, batch.stop_policies, prefill_rows_, false, overlap_, {}, nullptr,
-            true, {}, consumer, ignored_report, &preparation_)
+            true, {}, consumer, ignored_report, &preparation_, batch.input)
         : run_generation_sessions<GenerationMode::kText>(model_, batch.sessions, {}, false, now, now, false,
             plans, batch.sampling_indices, batch.stop_policies, prefill_rows_, false, overlap_, {}, nullptr,
-            true, {}, consumer, ignored_report, &preparation_);
+            true, {}, consumer, ignored_report, &preparation_, batch.input);
     if (result != 0) throw std::runtime_error("prepared model execution returned a failure");
   }
 private:

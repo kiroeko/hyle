@@ -32,6 +32,11 @@ struct IngressRequest final {
   std::shared_ptr<QueuedTokenConsumer> output;
   std::optional<RequestKey> key;
   std::exception_ptr failure;
+  bool open_input = false, input_closed = false;
+  std::size_t context = 0, vocabulary = 0, reserved_context = 0;
+  std::size_t emitted = 0, turn_begin = 0, completed_turns = 0;
+  std::vector<std::size_t> turn_quotas;
+  std::deque<GenerationTurn> pending_turns;
 };
 } // namespace detail
 
@@ -40,6 +45,7 @@ struct IngressRequest final {
 // cancellation, so an abandoned transport cannot permanently hold credit.
 class GenerationRequestHandle final {
 public:
+  enum class InputResult { kAccepted, kClosed, kInvalid, kCapacity };
   enum class EventKind { kToken, kTurnEnd, kCompleted, kCancelled, kFailed, kClosed };
   struct Event final { EventKind kind; std::int32_t token = 0; std::exception_ptr failure{}; std::size_t turn = 0; };
   GenerationRequestHandle() = default;
@@ -51,6 +57,47 @@ public:
     return *this;
   }
   ~GenerationRequestHandle() { cancel(); }
+
+  // Add input only to this live request; the model owner later admits it at
+  // its original idle turn boundary. Context reservations are conservative
+  // until an early-stopped turn actually publishes its unused quota.
+  InputResult append(GenerationTurn turn) {
+    if (!request_) return InputResult::kClosed;
+    std::shared_ptr<QueuedTokenConsumer> output;
+    {
+      std::lock_guard lock(request_->mutex);
+      auto &r = *request_;
+      if (!r.open_input || r.input_closed || r.cancel_intent ||
+          (r.state != detail::IngressState::kPending && r.state != detail::IngressState::kAssigned &&
+           r.state != detail::IngressState::kStarted)) return InputResult::kClosed;
+      if (!turn.max_outputs || turn.prompt.size() >= r.context ||
+          std::ranges::any_of(turn.prompt, [&](auto id) { return id < 0 || std::size_t(id) >= r.vocabulary; }))
+        return InputResult::kInvalid;
+      if (r.turn_quotas.size() >= r.context || turn.prompt.size() > r.context - r.reserved_context ||
+          turn.max_outputs > r.context - r.reserved_context - turn.prompt.size()) return InputResult::kCapacity;
+      const auto quota = turn.max_outputs, cost = turn.prompt.size() + quota;
+      r.pending_turns.push_back(std::move(turn));
+      try { r.turn_quotas.push_back(quota); }
+      catch (...) { r.pending_turns.pop_back(); throw; }
+      r.reserved_context += cost; output = r.output;
+    }
+    if (output) output->notify_input();
+    return InputResult::kAccepted;
+  }
+  bool close_input() noexcept {
+    if (!request_) return false;
+    std::shared_ptr<QueuedTokenConsumer> output;
+    {
+      std::lock_guard lock(request_->mutex);
+      auto &r = *request_;
+      if (!r.open_input || r.input_closed || r.cancel_intent ||
+          (r.state != detail::IngressState::kPending && r.state != detail::IngressState::kAssigned &&
+           r.state != detail::IngressState::kStarted)) return false;
+      r.input_closed = true; output = r.output;
+    }
+    if (output) output->notify_input();
+    return true;
+  }
 
   bool cancel() noexcept {
     if (!request_) return false;
@@ -65,6 +112,7 @@ public:
         case detail::IngressState::kAssigned:
           request_->cancel_intent = true; return true;
         case detail::IngressState::kStarted:
+          request_->cancel_intent = true;
           output = request_->output; key = request_->key; break;
         default: return false;
       }
@@ -124,6 +172,8 @@ private:
 // its RequestLoop remains the only active-request/retirement owner. Requests
 // arriving during a cohort wait for the next one; this is not continuous
 // rebatching and it does not persist model sessions between execute calls.
+// An open session retains its cohort until its input closes or it is cancelled;
+// a later independent request waits for the next cohort.
 class GenerationDispatcher final {
 public:
   GenerationDispatcher(std::unique_ptr<ModelExecutor> executor, std::size_t batch_limit,
@@ -132,6 +182,7 @@ public:
         output_capacity_(output_capacity) {
     if (!executor_ || !batch_limit || !waiting_limit || !output_capacity)
       throw std::invalid_argument("generation ingress requires a model and positive capacities");
+    description_ = executor_->describe();
     worker_ = std::thread([this] { work(); });
   }
   GenerationDispatcher(const GenerationDispatcher &) = delete;
@@ -145,6 +196,17 @@ public:
     for (const auto &turn : schedule.turns) if (!turn.max_outputs)
       throw std::invalid_argument("generation request requires positive output limits");
     auto request = std::make_shared<detail::IngressRequest>();
+    if (schedule.accepts_live_input()) {
+      if (schedule.turns.size() != 1 || !description_.context || !description_.vocabulary)
+        throw std::invalid_argument("live generation needs one initial turn, model limits and turn boundaries");
+      const auto &first = schedule.turns.front();
+      if (first.prompt.size() > description_.context || first.max_outputs - 1 > description_.context - first.prompt.size() ||
+          std::ranges::any_of(first.prompt, [&](auto id) { return id < 0 || std::size_t(id) >= description_.vocabulary; }))
+        throw std::invalid_argument("initial live turn exceeds model limits");
+      request->open_input = true; request->context = description_.context; request->vocabulary = description_.vocabulary;
+      request->reserved_context = first.prompt.size() + first.max_outputs - 1;
+      request->turn_quotas.reserve(description_.context); request->turn_quotas.push_back(first.max_outputs);
+    }
     request->schedule = std::move(schedule); request->stop = std::move(stop);
     request->sampling_index = sampling_index;
     {
@@ -203,8 +265,36 @@ private:
       if (cancel) (void)output_->request_cancel(key);
       return true;
     }
-    bool try_write(RequestKey key, std::int32_t token) noexcept { return output_->try_write(key, token); }
-    bool try_turn_end(RequestKey key, std::size_t turn) noexcept { return output_->try_turn_end(key, turn); }
+    bool try_write(RequestKey key, std::int32_t token) noexcept {
+      if (!output_->try_write(key, token)) return false;
+      if (key.slot < jobs_.size() && jobs_[key.slot]->open_input) {
+        std::lock_guard lock(jobs_[key.slot]->mutex); ++jobs_[key.slot]->emitted;
+      }
+      return true;
+    }
+    bool try_turn_end(RequestKey key, std::size_t turn) noexcept {
+      if (key.slot >= jobs_.size()) return false;
+      auto &job = *jobs_[key.slot];
+      std::lock_guard lock(job.mutex);
+      if (!output_->try_turn_end(key, turn)) return false;
+      if (job.open_input) {
+        if (turn != job.completed_turns || turn >= job.turn_quotas.size() || job.emitted < job.turn_begin ||
+            job.emitted - job.turn_begin > job.turn_quotas[turn]) { contract_error_ = true; return true; }
+        job.reserved_context -= job.turn_quotas[turn] - (job.emitted - job.turn_begin);
+        job.turn_begin = job.emitted; ++job.completed_turns;
+      }
+      return true;
+    }
+    TurnInput poll_turn(RequestKey key) noexcept {
+      if (key.slot >= jobs_.size() || !started_[key.slot] || keys_[key.slot] != key)
+        return {TurnInputState::kClosed, {}};
+      auto &job = *jobs_[key.slot]; std::lock_guard lock(job.mutex);
+      if (!job.pending_turns.empty()) {
+        auto turn = std::move(job.pending_turns.front()); job.pending_turns.pop_front();
+        return {TurnInputState::kTurn, std::move(turn)};
+      }
+      return {job.input_closed ? TurnInputState::kClosed : TurnInputState::kWaiting, {}};
+    }
     bool cancel_requested(RequestKey key) noexcept { return output_->cancel_requested(key); }
     void finished(RequestKey key, bool cancelled) noexcept {
       if (key.slot >= jobs_.size() || !started_[key.slot] || finished_[key.slot] || keys_[key.slot] != key) {
@@ -330,7 +420,8 @@ private:
         }
         CohortConsumer consumer(output, selected);
         TokenConsumerRef ref(consumer);
-        executor_->execute({schedules, sampling, stops}, ref);
+        GenerationInputRef input(consumer);
+        executor_->execute({schedules, sampling, stops, &input}, ref);
         if (!consumer.all_finished()) throw std::logic_error("model returned without all request terminal notifications");
         {
           std::lock_guard lock(mutex_);
@@ -342,6 +433,7 @@ private:
   }
 
   std::unique_ptr<ModelExecutor> executor_;
+  ModelDescription description_;
   const std::size_t batch_limit_, waiting_limit_, output_capacity_;
   std::mutex mutex_;
   std::condition_variable ready_;

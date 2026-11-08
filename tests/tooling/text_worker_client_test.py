@@ -7,6 +7,74 @@ from engine.text.worker_client import WorkerClient, WorkerError
 
 
 class WorkerClientLifecycleTest(unittest.TestCase):
+    def test_timed_out_input_cannot_be_retried_as_if_rejected(self):
+        code = "\n".join((
+            "import sys,time",
+            "read = lambda: sys.stdin.readline().rstrip('\\r\\n')",
+            "print('READY\\t2\\t256\\t128\\t3', flush=True)",
+            "assert read() == 'O\\t1\\t1\\t10'; print('A\\t1', flush=True)",
+            "assert read() == 'I\\t1\\t1\\t1\\t20'; time.sleep(.2)",
+            "print('I\\t1\\t1\\taccepted', flush=True)",
+            "assert read() == 'C\\t1'; print('C\\t1\\taccepted', flush=True)",
+            "print('F\\t1\\tcancelled', flush=True)",
+            "assert read() == 'Q'; print('BYE', flush=True)",
+        ))
+        worker = WorkerClient([sys.executable, '-B', '-c', code], startup_timeout=3)
+        try:
+            session = worker.open_session([10], 1)
+            try:
+                with self.assertRaises(WorkerError) as timeout:
+                    session.append([20], 1, timeout=.02)
+                self.assertEqual(timeout.exception.kind, 'timeout')
+                with self.assertRaises(WorkerError) as uncertain:
+                    session.append([20], 1, timeout=3)
+                self.assertEqual(uncertain.exception.kind, 'uncertain')
+            finally:
+                session.close()
+        finally:
+            worker.close(timeout=3)
+
+    def test_live_session_appends_with_correlated_input_acknowledgements(self):
+        code = "\n".join((
+            "import sys",
+            "read = lambda: sys.stdin.readline().rstrip('\\r\\n')",
+            "print('READY\\t2\\t256\\t128\\t3', flush=True)",
+            "assert read() == 'O\\t1\\t1\\t10'",
+            "print('A\\t1', flush=True); print('T\\t1\\t11', flush=True)",
+            "assert read() == 'K\\t1\\t1'; print('B\\t1\\t0', flush=True)",
+            "assert read() == 'I\\t1\\t1\\t1\\t256'; print('I\\t1\\t1\\tinvalid', flush=True)",
+            "assert read() == 'I\\t1\\t2\\t1\\t20'; print('I\\t1\\t2\\tfailed', flush=True)",
+            "assert read() == 'I\\t1\\t3\\t1\\t20'; print('I\\t1\\t3\\taccepted', flush=True)",
+            "assert read() == 'Z\\t1\\t4'; print('Z\\t1\\t4\\taccepted', flush=True)",
+            "assert read() == 'K\\t1\\t1'; print('T\\t1\\t21', flush=True)",
+            "assert read() == 'K\\t1\\t1'; print('B\\t1\\t1', flush=True)",
+            "assert read() == 'K\\t1\\t1'; print('F\\t1\\tcompleted', flush=True)",
+            "assert read() == 'Q'; print('BYE', flush=True)",
+        ))
+        worker = WorkerClient([sys.executable, '-B', '-c', code], startup_timeout=3)
+        try:
+            session = worker.open_session([10], 1)
+            try:
+                self.assertEqual(session.read(timeout=3).token, 11); session.acknowledge()
+                self.assertEqual(session.read(timeout=3).turn, 0)
+                with self.assertRaises(WorkerError) as error:
+                    session.append([256], 1, timeout=3)
+                self.assertEqual(error.exception.kind, 'invalid')
+                with self.assertRaises(WorkerError) as failed:
+                    session.append([20], 1, timeout=3)
+                self.assertEqual(failed.exception.kind, 'failed')
+                session.append([20], 1, timeout=3); session.finish_input(timeout=3)
+                with self.assertRaises(WorkerError):
+                    session.append([30], 1, timeout=3)
+                session.acknowledge()
+                self.assertEqual(session.read(timeout=3).token, 21); session.acknowledge()
+                self.assertEqual(session.read(timeout=3).turn, 1); session.acknowledge()
+                self.assertEqual(session.read(timeout=3).kind, 'completed')
+            finally:
+                session.close()
+        finally:
+            worker.close(timeout=3)
+
     def test_finite_turns_share_one_ordered_request(self):
         code = "\n".join((
             "import sys",

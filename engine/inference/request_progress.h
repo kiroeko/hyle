@@ -20,10 +20,13 @@ struct GenerationTurn final {
   std::size_t max_outputs = 0;
 };
 
+enum class GenerationSessionMode { kFlat, kTurns, kLive };
 struct GenerationSessionSchedule final {
   std::string id;
   std::vector<GenerationTurn> turns;
-  bool report_turn_ends = false;
+  GenerationSessionMode mode = GenerationSessionMode::kFlat;
+  bool reports_turn_ends() const noexcept { return mode != GenerationSessionMode::kFlat; }
+  bool accepts_live_input() const noexcept { return mode == GenerationSessionMode::kLive; }
 };
 
 struct RequestInputCommit final {

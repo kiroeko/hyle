@@ -834,7 +834,7 @@ void queued_delivery_preserves_bounds_and_terminal_identity() {
 struct IngressTestControl final {
   std::mutex mutex;
   std::condition_variable changed;
-  bool started = false, proceed = false, fail = false, wrong_terminal = false;
+  bool started = false, proceed = false, fail = false, wrong_terminal = false, early_stop_first = false;
   std::vector<std::size_t> batches;
 };
 
@@ -868,15 +868,27 @@ public:
     }
     for (std::size_t slot = 0; slot < keys.size(); ++slot) {
       const auto key = keys[slot];
-      for (std::size_t turn_index = 0; turn_index < batch.sessions[slot].turns.size(); ++turn_index) {
-        const auto &turn = batch.sessions[slot].turns[turn_index];
+      const auto emit_turn = [&](const i::GenerationTurn &turn, std::size_t turn_index) {
         const auto first = turn.prompt.empty() ? 0 : turn.prompt.front();
-        for (std::size_t n = 0; n < turn.max_outputs && !consumer.cancel_requested(key);) {
+        const auto outputs = control_->early_stop_first && !turn_index ? std::size_t{1} : turn.max_outputs;
+        for (std::size_t n = 0; n < outputs && !consumer.cancel_requested(key);) {
           if (consumer.try_write(key, static_cast<std::int32_t>(first + n))) ++n;
           else if (!consumer.cancel_requested(key)) consumer.wait();
         }
-        if (batch.sessions[slot].report_turn_ends)
+        if (batch.sessions[slot].reports_turn_ends())
           while (!consumer.cancel_requested(key) && !consumer.try_turn_end(key, turn_index)) consumer.wait();
+      };
+      for (std::size_t turn_index = 0; turn_index < batch.sessions[slot].turns.size(); ++turn_index)
+        emit_turn(batch.sessions[slot].turns[turn_index], turn_index);
+      if (batch.sessions[slot].accepts_live_input()) {
+        if (!batch.input) throw std::logic_error("live test request lacks its input source");
+        auto turn_index = batch.sessions[slot].turns.size();
+        while (!consumer.cancel_requested(key)) {
+          auto input = batch.input->poll_turn(key);
+          if (input.state == i::TurnInputState::kClosed) break;
+          if (input.state == i::TurnInputState::kWaiting) { consumer.wait(); continue; }
+          emit_turn(input.turn, turn_index++);
+        }
       }
       const auto cancelled = consumer.cancel_requested(key);
       window_.retire_active(key); window_.release(key);
@@ -1014,6 +1026,22 @@ void token_worker_credit_and_cancellation_do_not_hang() {
     require(next() == "B\t5\t1", "worker lost the final turn boundary");
     input_buffer.send("K\t5\t1\n");
     require(next() == "F\t5\tcompleted", "worker ended before the final boundary");
+    input_buffer.send("O\t6\t1\t70\n");
+    require(next() == "A\t6" && next() == "T\t6\t70", "worker lost live initial token");
+    input_buffer.send("K\t6\t1\n");
+    require(next() == "B\t6\t0", "worker lost live turn boundary");
+    input_buffer.send("I\t6\t1\t1\t999\n");
+    require(next() == "I\t6\t1\tinvalid", "worker accepted a live token outside the vocabulary");
+    input_buffer.send("I\t6\t2\t1\t80\n");
+    require(next() == "I\t6\t2\taccepted", "worker did not acknowledge the appended turn");
+    input_buffer.send("Z\t6\t3\n");
+    require(next() == "Z\t6\t3\taccepted", "worker did not acknowledge input closure");
+    input_buffer.send("K\t6\t1\n");
+    require(next() == "T\t6\t80", "live input overtook its boundary");
+    input_buffer.send("K\t6\t1\n");
+    require(next() == "B\t6\t1", "worker lost the appended turn boundary");
+    input_buffer.send("K\t6\t1\n");
+    require(next() == "F\t6\tcompleted", "closed live session lost its terminal");
     input_buffer.send("G\t2\t2\t20\n");
     require(next() == "A\t2" && next() == "T\t2\t20", "worker lost second request");
     input_buffer.send("C\t2\n");
@@ -1100,6 +1128,51 @@ void ingress_cancels_active_request_without_stopping_peer() {
   require(item.kind == Kind::kToken && item.token == 20 && peer.read().kind == Kind::kCompleted,
       "active cancellation prevented a later peer from finishing");
   dispatcher.shutdown();
+}
+
+void live_ingress_appends_and_closes_without_losing_wakes() {
+  auto control = std::make_shared<IngressTestControl>(); control->early_stop_first = true;
+  i::GenerationDispatcher dispatcher(std::make_unique<IngressTestExecutor>(control), 1, 2, 1);
+  auto session = dispatcher.submit({"live", {{{10}, 128}}, i::GenerationSessionMode::kLive});
+  using Input = i::GenerationRequestHandle::InputResult;
+  using Event = i::GenerationRequestHandle::EventKind;
+  require(session.append({{}, 1}) == Input::kCapacity && session.append({{-1}, 1}) == Input::kInvalid &&
+      session.append({{1}, 0}) == Input::kInvalid, "live ingress accepted an invalid or over-capacity turn");
+  { std::lock_guard lock(control->mutex); control->proceed = true; control->changed.notify_all(); }
+  require(session.read().kind == Event::kToken, "live session lost its first token");
+  const auto first = session.read();
+  require(first.kind == Event::kTurnEnd && first.turn == 0, "live session lost its first boundary");
+  require(session.append({{20}, 2}) == Input::kAccepted && session.append({{}, 1}) == Input::kAccepted &&
+      session.close_input() && !session.close_input() && session.append({{1}, 1}) == Input::kClosed,
+      "live input did not release unused quota, queue turns or close exactly once");
+  const auto a = session.read(), b = session.read(), boundary = session.read();
+  require(a.kind == Event::kToken && a.token == 20 && b.kind == Event::kToken && b.token == 21 &&
+      boundary.kind == Event::kTurnEnd && boundary.turn == 1, "queued live turn lost its order");
+  const auto c = session.read(), last = session.read();
+  require(c.kind == Event::kToken && c.token == 0 && last.kind == Event::kTurnEnd && last.turn == 2 &&
+      session.read().kind == Event::kCompleted, "closed live input lost its queued turn or terminal");
+
+  auto cancelled = dispatcher.submit({"cancel", {{{4}, 1}}, i::GenerationSessionMode::kLive});
+  require(cancelled.read().kind == Event::kToken && cancelled.read().kind == Event::kTurnEnd &&
+      cancelled.cancel() && cancelled.read().kind == Event::kCancelled &&
+      cancelled.append({{1}, 1}) == Input::kClosed, "idle live cancellation did not wake and retire");
+  auto later = dispatcher.submit({"later", {{{30}, 1}}});
+  require(later.read().token == 30 && later.read().kind == Event::kCompleted,
+      "closed live session prevented a later request");
+  dispatcher.shutdown();
+}
+
+void live_ingress_shutdown_wakes_idle_owner() {
+  auto control = std::make_shared<IngressTestControl>(); control->proceed = true;
+  i::GenerationDispatcher dispatcher(std::make_unique<IngressTestExecutor>(control), 1, 2, 1);
+  auto session = dispatcher.submit({"live", {{{10}, 1}}, i::GenerationSessionMode::kLive});
+  using Event = i::GenerationRequestHandle::EventKind;
+  require(session.read().kind == Event::kToken && session.read().kind == Event::kTurnEnd,
+      "idle shutdown fixture did not finish its first turn");
+  dispatcher.shutdown();
+  const auto terminal = session.read();
+  require(terminal.kind == Event::kCancelled || terminal.kind == Event::kClosed,
+      "shutdown reported an open live session as completed");
 }
 
 void ingress_abandoned_handle_releases_its_request() {
@@ -1415,6 +1488,8 @@ int main() {
     token_worker_credit_and_cancellation_do_not_hang();
     ingress_accepts_requests_during_execution_and_preserves_identity();
     ingress_cancels_active_request_without_stopping_peer();
+    live_ingress_appends_and_closes_without_losing_wakes();
+    live_ingress_shutdown_wakes_idle_owner();
     ingress_abandoned_handle_releases_its_request();
     ingress_shutdown_does_not_fabricate_active_retirement();
     ingress_rejects_bad_request_without_poisoning_model();

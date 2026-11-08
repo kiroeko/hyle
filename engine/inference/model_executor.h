@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "request_progress.h"
+#include "generation_input.h"
 #include "request_stop_policy.h"
 #include "token_consumer.h"
 
@@ -70,6 +71,7 @@ struct GenerationBatch final {
   std::span<const GenerationSessionSchedule> sessions;
   std::span<const std::size_t> sampling_indices{};
   std::span<const RequestStopPolicy> stop_policies{};
+  GenerationInputRef *input = nullptr;
 };
 
 // An admission rejection is known to precede native submission and state

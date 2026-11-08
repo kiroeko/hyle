@@ -5,6 +5,7 @@ event credit; callers acknowledge after consuming each token or turn boundary.
 """
 from __future__ import annotations
 
+import math
 import queue
 import subprocess
 import threading
@@ -37,9 +38,13 @@ def _stop_owned_process(process: subprocess.Popen) -> bool:
 
 class WorkerRequest:
     """One reader; cancellation may come from another thread."""
-    def __init__(self, client: WorkerClient, request_id: int, events: queue.Queue):
+    def __init__(self, client: WorkerClient, request_id: int, events: queue.Queue, *, live: bool = False):
         self._client, self._id, self._events = client, request_id, events
         self._lock = threading.Lock()
+        self._input_lock = threading.Lock()
+        self._live = live
+        self._input_closed = False
+        self._input_uncertain = False
         self._outstanding = False
         self._terminal = False
         self._cancelled = False
@@ -75,6 +80,42 @@ class WorkerRequest:
             self._outstanding = False
             return True
 
+    def append(self, tokens: Sequence[int], max_output_tokens: int, *, timeout: float = 30) -> None:
+        if type(max_output_tokens) is not int or max_output_tokens <= 0:
+            raise ValueError("output limit must be positive")
+        if any(type(token) is not int or token < 0 or token > 2147483647 for token in tokens):
+            raise ValueError("prompt contains an invalid token ID")
+        with self._input_lock:
+            with self._lock:
+                if self._input_uncertain:
+                    raise WorkerError("uncertain", "session input outcome is unknown; cancel this session")
+                if not self._live or self._input_closed or self._terminal or self._cancelled:
+                    raise WorkerError("closed", "session input is closed")
+            try:
+                self._client._input_command(self._id, "I", f"{max_output_tokens}\t" + ",".join(map(str, tokens)), timeout)
+            except WorkerError as error:
+                if error.kind == "timeout":
+                    with self._lock:
+                        self._input_uncertain = True
+                raise
+
+    def finish_input(self, *, timeout: float = 30) -> None:
+        with self._input_lock:
+            with self._lock:
+                if self._input_uncertain:
+                    raise WorkerError("uncertain", "session input outcome is unknown; cancel this session")
+                if not self._live or self._input_closed or self._terminal or self._cancelled:
+                    raise WorkerError("closed", "session input is closed")
+            try:
+                self._client._input_command(self._id, "Z", "", timeout)
+            except WorkerError as error:
+                if error.kind == "timeout":
+                    with self._lock:
+                        self._input_uncertain = True
+                raise
+            with self._lock:
+                self._input_closed = True
+
     def close(self) -> None:
         try:
             self.cancel()
@@ -93,7 +134,9 @@ class WorkerClient:
         self._state_lock = threading.Lock()
         self._write_lock = threading.Lock()
         self._pending: dict[int, queue.Queue] = {}
+        self._controls: dict[tuple[int, int], tuple[str, queue.Queue]] = {}
         self._next_id = 1
+        self._next_control = 1
         self._closed = False
         self._failure: str | None = None
         self.vocabulary = 0
@@ -133,7 +176,12 @@ class WorkerClient:
         """Submit one finite session with acknowledged, zero-based turn-end events."""
         return self._submit_turns(turns, report_turns=True)
 
-    def _submit_turns(self, turns: Sequence[tuple[Sequence[int], int]], *, report_turns: bool) -> WorkerRequest:
+    def open_session(self, tokens: Sequence[int], max_output_tokens: int) -> WorkerRequest:
+        """Open one live session; append turns and explicitly finish its input."""
+        return self._submit_turns(((tokens, max_output_tokens),), report_turns=True, live=True)
+
+    def _submit_turns(self, turns: Sequence[tuple[Sequence[int], int]], *, report_turns: bool,
+                      live: bool = False) -> WorkerRequest:
         if not turns:
             raise ValueError("at least one turn is required")
         frames = []
@@ -153,11 +201,35 @@ class WorkerClient:
             self._next_id += 1
             self._pending[request_id] = events
         try:
-            self._send(f"{'S' if report_turns else 'G'}\t{request_id}\t" + "\t".join(frames))
+            self._send(f"{'O' if live else 'S' if report_turns else 'G'}\t{request_id}\t" + "\t".join(frames))
         except Exception:
             self._forget(request_id)
             raise
-        return WorkerRequest(self, request_id, events)
+        return WorkerRequest(self, request_id, events, live=live)
+
+    def _input_command(self, request_id: int, kind: str, payload: str, timeout: float) -> None:
+        if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or not math.isfinite(timeout) or timeout <= 0:
+            raise ValueError("input acknowledgement timeout must be finite and positive")
+        replies: queue.Queue = queue.Queue(maxsize=1)
+        with self._state_lock:
+            if self._closed or self._failure or request_id not in self._pending:
+                raise WorkerError("closed", self._failure or "request is closed")
+            if self._next_control > 18446744073709551615:
+                raise WorkerError("closed", "input command identity space is exhausted")
+            sequence = self._next_control
+            self._next_control += 1
+            self._controls[(request_id, sequence)] = (kind, replies)
+        try:
+            self._send(f"{kind}\t{request_id}\t{sequence}" + ("\t" + payload if payload else ""))
+            try:
+                status = replies.get(timeout=timeout)
+            except queue.Empty as error:
+                raise WorkerError("timeout", "session input acknowledgement timed out") from error
+            if status != "accepted":
+                raise WorkerError(status, "session input was not accepted")
+        finally:
+            with self._state_lock:
+                self._controls.pop((request_id, sequence), None)
 
     def _send(self, frame: str) -> None:
         with self._write_lock:
@@ -210,6 +282,12 @@ class WorkerClient:
                     continue
                 if kind == "C" and len(fields) == 3 and int(fields[1]) > 0 and fields[2] in ("accepted", "stale"):
                     continue
+                if kind in ("I", "Z") and len(fields) == 4 and int(fields[1]) > 0 and int(fields[2]) > 0 and fields[3] in ("accepted", "closed", "invalid", "capacity", "failed"):
+                    with self._state_lock:
+                        pending = self._controls.get((int(fields[1]), int(fields[2])))
+                    if pending and pending[0] == kind:
+                        pending[1].put_nowait(fields[3])
+                    continue
                 if kind == "T" and len(fields) == 3:
                     self._publish(int(fields[1]), TokenEvent("token", int(fields[2])))
                 elif kind == "B" and len(fields) == 3 and int(fields[2]) >= 0:
@@ -239,9 +317,15 @@ class WorkerClient:
             self._ready.set()
             with self._state_lock:
                 pending = list(self._pending.values())
+                controls = [entry[1] for entry in self._controls.values()]
             for events in pending:
                 try:
                     events.put_nowait(TokenEvent("error", message=self._failure or "model worker closed"))
+                except queue.Full:
+                    pass
+            for replies in controls:
+                try:
+                    replies.put_nowait("closed")
                 except queue.Full:
                     pass
 

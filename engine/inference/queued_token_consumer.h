@@ -104,6 +104,12 @@ public:
     if (!slot || slot->done) return false;
     slot->cancel = true; wake_producer(); return true;
   }
+  // Input arrival and output credit share this wait channel, so the model
+  // owner cannot miss an ingress wake while it is waiting for either.
+  void notify_input() noexcept {
+    std::lock_guard lock(mutex_);
+    wake_producer();
+  }
   bool release(RequestKey key) noexcept {
     std::lock_guard lock(mutex_);
     auto *slot = find(key);
