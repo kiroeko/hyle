@@ -3,6 +3,10 @@
 #include "../../engine/models/qwen35/main.cc"
 #include "../../engine/models/qwen35/native_gate.h"
 #include "../../engine/models/qwen35/probe_geometry.h"
+#include "../compute_models/sampling_fixture.h"
+#include <cmath>
+#include <limits>
+#include <numeric>
 
 namespace {
 namespace q = qwen35;
@@ -20,6 +24,52 @@ void require(bool value, const char *message) {
 }
 bool expected_replay_mismatch(const std::runtime_error &error) {
   return std::string_view(error.what()).find("MTP replay natural decision or state boundary diverged") != std::string_view::npos;
+}
+
+// Independent scalar Philox/Gumbel reference for the CUDA categorical route.
+// The Philox helper is separately checked against official known-answer vectors.
+std::int32_t reference_draw(std::span<const double> probabilities, std::array<std::uint32_t, 4> identity) {
+  double best = -std::numeric_limits<double>::infinity();
+  std::int32_t selected = -1;
+  for (std::size_t i = 0; i < probabilities.size(); ++i) {
+    if (!(probabilities[i] > 0)) continue;
+    const auto words = sampling_test::philox({static_cast<std::uint32_t>(i / 2), 0, identity[2], identity[3]},
+                                              {identity[0], identity[1]});
+    auto hi = words[(i % 2) * 2], lo = words[(i % 2) * 2 + 1];
+    const bool upper = (hi & 0x80000000u) != 0;
+    if (upper) { hi = ~hi; lo = ~lo; }
+    const double small = std::ldexp(static_cast<double>(hi), -32) +
+        std::ldexp(static_cast<double>(lo) + .5, -64);
+    const auto gumbel = -std::log(upper ? -std::log1p(-small) : -std::log(small));
+    const auto score = std::log(probabilities[i]) + gumbel;
+    if (score > best) { best = score; selected = static_cast<std::int32_t>(i); }
+  }
+  require(selected >= 0, "reference categorical distribution has no mass");
+  return selected;
+}
+
+std::vector<double> reference_target(std::span<const float> logits) {
+  // Match this probe's fixed temperature=1.5, top-k=40, top-p=.95 policy.
+  std::vector<std::size_t> order(logits.size());
+  std::iota(order.begin(), order.end(), std::size_t{0});
+  std::partial_sort(order.begin(), order.begin() + 40, order.end(), [&](auto a, auto b) {
+    return logits[a] == logits[b] ? a < b : logits[a] > logits[b];
+  });
+  std::vector<double> result(logits.size(), 0.);
+  const double maximum = logits[order[0]] / 1.5;
+  double total = 0.;
+  for (std::size_t i = 0; i < 40; ++i) {
+    require(std::isfinite(logits[order[i]]), "nonfinite target logits");
+    result[order[i]] = std::exp(logits[order[i]] / 1.5 - maximum); total += result[order[i]];
+  }
+  double kept = 0.;
+  for (std::size_t i = 0; i < 40; ++i) {
+    const auto id = order[i];
+    if (i && kept / total >= .95) result[id] = 0.; else kept += result[id];
+  }
+  require(kept > 0., "reference target distribution has no mass");
+  for (auto &value : result) value /= kept;
+  return result;
 }
 void retire(std::shared_ptr<q::Session> &session) {
   if (!session) return;
@@ -164,19 +214,68 @@ q::MtpRoundResult recursive_round(q::Model &model, const std::shared_ptr<q::Sess
   require(ids.size() == 4 && probabilities.size() == 3, "K3 did not retain all three actual proposal distributions");
   require(session->head.get() == base && q::generation_boundary(*session->head) == before,
       "draft proposals published state or advanced RNG");
+  std::array<std::vector<double>, 3> draft_probabilities;
+  if (native_backend == q::BackendKind::kCuda) for (std::size_t row = 0; row < probabilities.size(); ++row) {
+    std::vector<float> log_q(static_cast<std::size_t>(model.vocabulary));
+    q::check(model.execution.read(q::take(probabilities[row].view()), std::as_writable_bytes(std::span(log_q))));
+    auto &distribution = draft_probabilities[row]; distribution.reserve(log_q.size());
+    double sum = 0.;
+    for (const auto value : log_q) {
+      require(!std::isnan(value) && value != std::numeric_limits<float>::infinity(), "invalid actual draft log probability");
+      const auto mass = std::exp(static_cast<double>(value)); distribution.push_back(mass); sum += mass;
+    }
+    require(std::abs(sum - 1.) < 1e-4, "actual draft distribution is not normalized");
+    require(reference_draw(distribution, before.sampling.identity(2 * row)) == ids[row + 1],
+        "actual draft token differs from independent q/Philox draw");
+  }
   q::prepare_generation_record(ledger, *session, q::GraphRole::kVerify,
       std::span(&pending, 1), true, 4, 0, {}, 3);
   model.prepare_evaluation(*session, ids, nullptr, q::GraphRole::kVerify);
   model.submit_evaluation(*session);
   const q::EvaluationIO io{.name = "random_recursive_round", .trace_states = false};
-  const std::array outputs{q::evaluation_output(model, session, io)};
+  auto output = q::evaluation_output(model, session, io);
+  output.capture_tensors = native_backend == q::BackendKind::kCuda;
+  const std::array outputs{output};
   const std::array selections{q::MtpGenerationSelection{session, pending, 4, probabilities, 3}};
   std::array<q::MtpRoundResult, 1> results;
   q::GenerationPublicationBatch publication({{&ledger, expected}});
+  std::vector<float> target_logits;
   model.finish_recursive_mtp(selections, q::model_eos_tokens, outputs, results,
       [&](std::size_t j, const q::CompletedEvaluationView &view) {
+        if (native_backend == q::BackendKind::kCuda) {
+          require(j == 0 && view.logits.description() == q::dense(q::Type::kFloat32, {4, model.vocabulary}),
+              "K3 verifier target logits have unexpected geometry");
+          target_logits.resize(4 * static_cast<std::size_t>(model.vocabulary));
+          q::check(model.execution.read(view.logits.storage(), std::as_writable_bytes(std::span(target_logits))));
+        }
         q::observe_completed_evaluation(model, outputs[j], io, view);
       }, publication);
+  if (native_backend == q::BackendKind::kCuda) {
+    const auto vocabulary = static_cast<std::size_t>(model.vocabulary);
+    std::array<std::vector<double>, 4> target;
+    for (std::size_t row = 0; row < target.size(); ++row)
+      target[row] = reference_target(std::span(target_logits).subspan(row * vocabulary, vocabulary));
+    std::vector<std::int32_t> expected_ids;
+    bool rejected = false;
+    for (std::size_t row = 0; row < 3; ++row) {
+      const auto id = static_cast<std::size_t>(ids[row + 1]);
+      const auto q_mass = draft_probabilities[row][id];
+      require(q_mass > 0., "actual sampled proposal has zero q mass");
+      const auto alpha = (std::min)(1., target[row][id] / q_mass);
+      const std::array accept_distribution{alpha, 1. - alpha};
+      if (reference_draw(accept_distribution, before.sampling.identity(2 * row + 1)) == 0) {
+        expected_ids.push_back(ids[row + 1]);
+        continue;
+      }
+      std::vector<double> residual(vocabulary);
+      for (std::size_t i = 0; i < vocabulary; ++i)
+        residual[i] = (std::max)(0., target[row][i] - draft_probabilities[row][i]);
+      expected_ids.push_back(reference_draw(residual, before.sampling.identity(6)));
+      rejected = true; break;
+    }
+    if (!rejected) expected_ids.push_back(reference_draw(target[3], before.sampling.identity(6)));
+    require(results[0].emitted == expected_ids, "actual K3 output differs from independent p/q acceptance and draw");
+  }
   return std::move(results[0]);
 }
 
@@ -237,7 +336,8 @@ void run_recursive(const std::filesystem::path &input) {
   base.reset(); require(model.snapshot_versions.live == 0, "K3 transaction retained a model-state version");
   std::cout << "{\"status\":\"PASS_RANDOM_K3_TRANSACTION\",\"backend\":\"" << model.execution.name()
       << "\",\"strict_replay\":true,\"failed_commit_retry\":true,\"actual_q_rows\":3,"
-         "\"performance_claim\":false,\"quality_claim\":false}\n";
+         "\"independent_pq_philox_check\":" << (native_backend == q::BackendKind::kCuda ? "true" : "false")
+      << ",\"performance_claim\":false,\"quality_claim\":false}\n";
 }
 } // namespace
 int main(int argc, char **argv) {
