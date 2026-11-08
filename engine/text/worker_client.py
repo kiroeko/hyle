@@ -8,22 +8,10 @@ from __future__ import annotations
 import queue
 import subprocess
 import threading
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
 
-
-class WorkerError(RuntimeError):
-    def __init__(self, kind: str, message: str):
-        super().__init__(message)
-        self.kind = kind
-
-
-@dataclass(frozen=True)
-class TokenEvent:
-    kind: str
-    token: int | None = None
-    message: str = ""
+from .contracts import TokenEvent, WorkerError
 
 
 class WorkerRequest:

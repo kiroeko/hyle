@@ -6,6 +6,7 @@ import urllib.request
 from argparse import Namespace
 
 from engine.text.app import InvalidRequest, ResponsesServer, TextEngine, make_worker_command, parse_responses_input
+from engine.text.runtime import GenerationProgress
 from engine.text.worker_client import TokenEvent
 
 
@@ -82,8 +83,19 @@ class TextFrontendTest(unittest.TestCase):
             {"role": "user", "content": [{"type": "input_text", "text": "hello"}]}]}, "hyle")
         self.assertEqual(messages, [{"role": "user", "content": "hello"}])
         engine = TextEngine(FakeWorker(), FakeCodec(), "hyle")
-        with self.assertRaises(InvalidRequest):
-            engine.prepare({"model": "hyle", "input": "x", "max_output_tokens": 16})
+        with self.assertRaises(ValueError):
+            engine.prepare(messages, 16)
+
+    def test_runtime_delivers_before_acknowledging(self):
+        engine = TextEngine(FakeWorker(), FakeCodec(), "hyle")
+        prepared = engine.prepare([{"role": "user", "content": "x"}], 3)
+        request = engine.submit(prepared)
+        progress = GenerationProgress()
+        def refuse(_):
+            raise ConnectionError("consumer stopped")
+        with self.assertRaises(ConnectionError):
+            engine.generate(request, refuse, progress)
+        self.assertEqual((progress.count, progress.last, request.acks), (1, ord("a"), 0))
 
     def test_http_response_and_stream_finish_and_acknowledge(self):
         worker = FakeWorker()

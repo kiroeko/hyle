@@ -7,17 +7,17 @@ import queue
 import select
 import socket
 import sys
-import threading
 import time
 import uuid
-from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
-from .codec import HuggingFaceTextCodec, TextCodec
-from .worker_client import WorkerClient, WorkerError, WorkerRequest
+from .codec import HuggingFaceTextCodec
+from .contracts import TokenRequest
+from .runtime import GenerationProgress, PreparedText, TextEngine
+from .worker_client import WorkerClient
 
 
 class InvalidRequest(ValueError):
@@ -81,57 +81,8 @@ def parse_responses_input(payload: Any, model_name: str) -> tuple[list[dict[str,
     return messages, limit, stream, instructions
 
 
-@dataclass(frozen=True)
-class PreparedText:
-    ids: list[int]
-    limit: int
-    instructions: str | None
-
-
-class Metrics:
-    def __init__(self):
-        self._lock = threading.Lock()
-        self.requests = self.completed = self.failed = self.output_tokens = 0
-
-    def begin(self) -> None:
-        with self._lock:
-            self.requests += 1
-
-    def end(self, completed: bool, tokens: int) -> None:
-        with self._lock:
-            self.completed += int(completed)
-            self.failed += int(not completed)
-            self.output_tokens += tokens
-
-    def render(self) -> bytes:
-        with self._lock:
-            return (f"hyle_requests_total {self.requests}\n"
-                    f"hyle_requests_completed_total {self.completed}\n"
-                    f"hyle_requests_failed_total {self.failed}\n"
-                    f"hyle_output_tokens_total {self.output_tokens}\n").encode("ascii")
-
-
-class TextEngine:
-    def __init__(self, worker: WorkerClient, codec: TextCodec, model_name: str):
-        self.worker, self.codec, self.model_name = worker, codec, model_name
-        self.metrics = Metrics()
-
-    def prepare(self, payload: Any) -> tuple[PreparedText, bool]:
-        messages, limit, stream, instructions = parse_responses_input(payload, self.model_name)
-        try:
-            ids = self.codec.encode_messages(messages)
-        except Exception as error:
-            raise InvalidRequest("chat template could not render the supplied messages: " + str(error)) from error
-        if len(ids) > self.worker.context or limit - 1 > self.worker.context - len(ids):
-            raise InvalidRequest("prompt and output limit exceed the loaded model context")
-        return PreparedText(ids, limit, instructions), stream
-
-    def submit(self, prepared: PreparedText) -> WorkerRequest:
-        return self.worker.submit(prepared.ids, prepared.limit)
-
-
 def response_object(response_id: str, item_id: str, model: str, created: int, prepared: PreparedText,
-                    status: str, text: str, output_tokens: int) -> dict[str, Any]:
+                    status: str, text: str, output_tokens: int, instructions: str | None) -> dict[str, Any]:
     part = {"type": "output_text", "text": text, "annotations": [], "logprobs": []}
     item = {"id": item_id, "type": "message", "status": status, "role": "assistant", "content": [part]}
     usage = {"input_tokens": len(prepared.ids), "input_tokens_details": {"cached_tokens": 0},
@@ -139,7 +90,7 @@ def response_object(response_id: str, item_id: str, model: str, created: int, pr
              "total_tokens": len(prepared.ids) + output_tokens}
     return {"id": response_id, "object": "response", "created_at": created, "status": status,
             "error": None, "incomplete_details": {"reason": "max_output_tokens"} if status == "incomplete" else None,
-            "instructions": prepared.instructions, "max_output_tokens": prepared.limit, "model": model,
+            "instructions": instructions, "max_output_tokens": prepared.limit, "model": model,
             "output": [item] if status != "in_progress" else [], "parallel_tool_calls": False,
             "previous_response_id": None, "reasoning": {"effort": None, "summary": None},
             "store": False, "text": {"format": {"type": "text"}}, "tool_choice": "none", "tools": [],
@@ -195,7 +146,8 @@ class ResponsesHandler(BaseHTTPRequestHandler):
             if len(raw) != length:
                 raise InvalidRequest("incomplete request body")
             payload = json.loads(raw.decode("utf-8"))
-            prepared, streaming = self.engine.prepare(payload)
+            messages, limit, streaming, instructions = parse_responses_input(payload, self.engine.model_name)
+            prepared = self.engine.prepare(messages, limit)
         except (ValueError, UnicodeError, json.JSONDecodeError) as error:
             self._error(400, str(error)); return
         self.engine.metrics.begin()
@@ -204,9 +156,9 @@ class ResponsesHandler(BaseHTTPRequestHandler):
         except Exception as error:
             self.engine.metrics.end(False, 0); self._error(503, str(error)); return
         if streaming:
-            self._stream(prepared, request)
+            self._stream(prepared, request, instructions)
         else:
-            self._complete(prepared, request)
+            self._complete(prepared, request, instructions)
 
     def _disconnected(self) -> bool:
         try:
@@ -215,7 +167,7 @@ class ResponsesHandler(BaseHTTPRequestHandler):
         except (OSError, ValueError):
             return True
 
-    def _next(self, request: WorkerRequest):
+    def _next(self, request: TokenRequest):
         while True:
             try:
                 return request.read(timeout=.25)
@@ -223,36 +175,14 @@ class ResponsesHandler(BaseHTTPRequestHandler):
                 if self._disconnected():
                     raise ClientDisconnected("client disconnected")
 
-    def _generate(self, request: WorkerRequest, on_text, progress: dict[str, Any]):
-        decoder = self.engine.codec.new_decoder()
-        chunks: list[str] = []
-        while True:
-            event = self._next(request)
-            if event.kind == "token":
-                assert event.token is not None
-                progress["count"] += 1; progress["last"] = event.token
-                chunk = "" if event.token in self.engine.worker.stop_ids else decoder.push(event.token)
-                if chunk:
-                    on_text(chunk); chunks.append(chunk)
-                request.acknowledge()
-            elif event.kind == "completed":
-                tail = decoder.finish()
-                if tail:
-                    on_text(tail); chunks.append(tail)
-                return "".join(chunks)
-            elif event.kind == "error":
-                raise WorkerError("generation", event.message)
-            else:
-                raise WorkerError("generation", "generation " + event.kind)
-
-    def _complete(self, prepared: PreparedText, request: WorkerRequest) -> None:
-        progress: dict[str, Any] = {"count": 0, "last": None}; success = False
+    def _complete(self, prepared: PreparedText, request: TokenRequest, instructions: str | None) -> None:
+        progress = GenerationProgress(); success = False
         try:
-            text = self._generate(request, lambda _: None, progress)
-            count, last = progress["count"], progress["last"]
+            text = self.engine.generate(request, lambda _: None, progress, lambda: self._next(request))
+            count, last = progress.count, progress.last
             status = "incomplete" if count == prepared.limit and last not in self.engine.worker.stop_ids else "completed"
             result = response_object("resp_" + uuid.uuid4().hex, "msg_" + uuid.uuid4().hex,
-                                     self.engine.model_name, int(time.time()), prepared, status, text, count)
+                                     self.engine.model_name, int(time.time()), prepared, status, text, count, instructions)
             self._json(200, result); success = True
         except ClientDisconnected:
             pass
@@ -260,11 +190,11 @@ class ResponsesHandler(BaseHTTPRequestHandler):
             try: self._error(400 if str(error).startswith("invalid:") else 503, str(error))
             except (BrokenPipeError, ConnectionResetError, OSError): pass
         finally:
-            request.close(); self.engine.metrics.end(success, progress["count"])
+            request.close(); self.engine.metrics.end(success, progress.count)
 
-    def _stream(self, prepared: PreparedText, request: WorkerRequest) -> None:
+    def _stream(self, prepared: PreparedText, request: TokenRequest, instructions: str | None) -> None:
         response_id, item_id, created = "resp_" + uuid.uuid4().hex, "msg_" + uuid.uuid4().hex, int(time.time())
-        sequence = 0; progress: dict[str, Any] = {"count": 0, "last": None}; success = False
+        sequence = 0; progress = GenerationProgress(); success = False
         def send(kind: str, **values: Any) -> None:
             nonlocal sequence
             event = {"type": kind, "sequence_number": sequence, **values}; sequence += 1
@@ -277,7 +207,8 @@ class ResponsesHandler(BaseHTTPRequestHandler):
             self.send_header("Cache-Control", "no-cache")
             self.send_header("Connection", "close")
             self.end_headers(); self.close_connection = True
-            empty = response_object(response_id, item_id, self.engine.model_name, created, prepared, "in_progress", "", 0)
+            empty = response_object(response_id, item_id, self.engine.model_name, created, prepared,
+                                    "in_progress", "", 0, instructions)
             send("response.created", response=empty)
             send("response.in_progress", response=empty)
             send("response.output_item.added", output_index=0,
@@ -287,10 +218,11 @@ class ResponsesHandler(BaseHTTPRequestHandler):
             def on_text(chunk: str) -> None:
                 send("response.output_text.delta", item_id=item_id, output_index=0, content_index=0,
                      delta=chunk, logprobs=[])
-            text = self._generate(request, on_text, progress)
-            count, last = progress["count"], progress["last"]
+            text = self.engine.generate(request, on_text, progress, lambda: self._next(request))
+            count, last = progress.count, progress.last
             status = "incomplete" if count == prepared.limit and last not in self.engine.worker.stop_ids else "completed"
-            result = response_object(response_id, item_id, self.engine.model_name, created, prepared, status, text, count)
+            result = response_object(response_id, item_id, self.engine.model_name, created, prepared,
+                                     status, text, count, instructions)
             send("response.output_text.done", item_id=item_id, output_index=0, content_index=0, text=text, logprobs=[])
             send("response.content_part.done", item_id=item_id, output_index=0, content_index=0,
                  part=result["output"][0]["content"][0])
@@ -302,7 +234,7 @@ class ResponsesHandler(BaseHTTPRequestHandler):
             try: send("error", code="server_error", message=str(error), param=None)
             except (BrokenPipeError, ConnectionResetError, OSError): pass
         finally:
-            request.close(); self.engine.metrics.end(success, progress["count"])
+            request.close(); self.engine.metrics.end(success, progress.count)
 
 
 class ResponsesServer(ThreadingHTTPServer):
@@ -377,21 +309,11 @@ def main(argv: list[str] | None = None) -> int:
         else:
             if hasattr(sys.stdout, "reconfigure"):
                 sys.stdout.reconfigure(encoding="utf-8")
-            prepared, _ = engine.prepare({"model": args.model_name, "input": args.text,
-                                          "max_output_tokens": args.max_output_tokens})
-            request = engine.submit(prepared); decoder = codec.new_decoder()
+            prepared = engine.prepare([{"role": "user", "content": args.text}], args.max_output_tokens)
+            request = engine.submit(prepared)
             try:
-                while True:
-                    event = request.read()
-                    if event.kind == "token":
-                        assert event.token is not None
-                        if event.token not in worker.stop_ids:
-                            print(decoder.push(event.token), end="", flush=True)
-                        request.acknowledge()
-                    elif event.kind == "completed":
-                        print(decoder.finish(), end="", flush=True); print(); break
-                    else:
-                        raise WorkerError("generation", event.message or event.kind)
+                engine.generate(request, lambda chunk: print(chunk, end="", flush=True), GenerationProgress())
+                print()
             finally:
                 request.close()
     finally:
