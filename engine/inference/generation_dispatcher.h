@@ -167,13 +167,11 @@ private:
   friend class GenerationDispatcher;
 };
 
-// A thread-safe ingress and finite-cohort dispatcher. It owns neither session
-// state nor native execution: one worker calls the existing ModelExecutor, and
-// its RequestLoop remains the only active-request/retirement owner. Requests
-// arriving during a cohort wait for the next one; this is not continuous
-// rebatching and it does not persist model sessions between execute calls.
-// An open session retains its cohort until its input closes or it is cancelled;
-// a later independent request waits for the next cohort.
+// Thread-safe ingress for the existing serialized model owner. Its RequestLoop
+// remains the only active-request/retirement owner. A supporting executor may
+// admit waiting requests into actually retired and transport-released slots;
+// otherwise arrivals wait for the next execute call. Compatible arrivals keep
+// FIFO order without letting an incompatible sampling choice block free slots.
 class GenerationDispatcher final {
 public:
   GenerationDispatcher(std::unique_ptr<ModelExecutor> executor, std::size_t batch_limit,
@@ -309,12 +307,13 @@ private:
       if (!can_admit(slot)) return std::nullopt;
       std::lock_guard lock(owner_.mutex_);
       if (owner_.closed_) return std::nullopt;
-      while (!owner_.waiting_.empty()) {
-        auto job = owner_.waiting_.front();
+      auto queued = owner_.waiting_.begin();
+      while (queued != owner_.waiting_.end()) {
+        auto job = *queued;
         std::lock_guard job_lock(job->mutex);
-        if (job->state != detail::IngressState::kPending) { owner_.waiting_.pop_front(); continue; }
-        if (job->sampling_index != sampling_) return std::nullopt;
-        owner_.waiting_.pop_front(); job->state = detail::IngressState::kAssigned; job->output = output_;
+        if (job->state != detail::IngressState::kPending) { queued = owner_.waiting_.erase(queued); continue; }
+        if (job->sampling_index != sampling_) { ++queued; continue; }
+        owner_.waiting_.erase(queued); job->state = detail::IngressState::kAssigned; job->output = output_;
         jobs_[slot] = job; started_[slot] = finished_[slot] = false; keys_[slot] = {};
         return GenerationAdmission{std::move(job->schedule), std::move(job->stop), job->sampling_index};
       }

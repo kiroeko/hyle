@@ -1358,12 +1358,16 @@ void dynamic_ingress_runs_new_requests_beside_paused_session() {
   bool is_rejection = false;
   try { std::rethrow_exception(rejection.failure); } catch (const i::RequestRejected &) { is_rejection = true; }
   require(is_rejection, "new admission lost its typed rejection");
-  for (int attempt = 0; attempt < 2; ++attempt) {
-    auto peer = dispatcher.submit({"peer", {{{20}, 1}}});
+  auto incompatible = dispatcher.submit({"different-sampling", {{{30}, 1}}}, {}, 1);
+  std::array peers{dispatcher.submit({"first-peer", {{{20}, 1}}}),
+                   dispatcher.submit({"second-peer", {{{20}, 1}}})};
+  for (auto &peer : peers) {
     const auto token = peer.read();
     require(token.kind == Event::kToken && token.token == 11 && peer.read().kind == Event::kCompleted,
-        "new request did not finish in a reusable slot beside the paused session");
+        "compatible requests did not pass a differently sampled waiter in arrival order");
   }
+  require(incompatible.cancel() && incompatible.read().kind == Event::kCancelled,
+      "skipping an incompatible waiter lost its cancellation identity");
   require(live.append({{2}, 1}) == Input::kAccepted && live.close_input(), "original session could not resume");
   const auto token = live.read(), boundary = live.read();
   require(token.kind == Event::kToken && token.token == 2 && boundary.kind == Event::kTurnEnd && boundary.turn == 1 &&
