@@ -40,13 +40,11 @@ void run(const std::filesystem::path &input) {
   require(source.size() >= 15, "integration check requires fifteen existing prompt tokens");
   const auto prompt = std::span(source).first(15);
   const auto geometry = q::probe::read_two_b_geometry(input);
-  // This case uses the original plain 16-bit K/V cache carriers.
-  const q::cache::KvRowBytes cache_rows{
-      q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.key_depth)), 2),
-      q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.value_depth)), 2)};
-  const auto plan = q::cache::plan(geometry, {.target = cache_rows, .draft = cache_rows}, 64, 3, 15,
-      q::recurrent_bytes(q::state_schema_for(geometry, 64), geometry), 2, 2, true, true);
-  q::Model model(input / "weights.tsv", geometry, 64, plan, {}, true, q::ReplayPolicy::kCommands, SIZE_MAX,
+  auto weights = q::prepare_weight_source(input / "weights.tsv", true);
+  const auto precision = q::PrecisionProfile::from_roles(weights.roles);
+  const auto plan = q::cache::plan(geometry, weights.cache_row_bytes, 64, 3, 15,
+      q::recurrent_bytes(q::state_schema_for(geometry, 64, precision), geometry), 2, 2, true, true, 1, 0, precision);
+  q::Model model(std::move(weights), geometry, 64, plan, {}, true, q::ReplayPolicy::kCommands, SIZE_MAX,
       {.enabled = true, .policy = {1.5F, 40, .95F}, .seed = 123}, 0, {.primary=native_backend});
   const std::array prefill{std::size_t{15}}, pair{std::size_t{2}};
   model.prepare_family(prefill, false, 1, q::GraphRole::kMtpPrefill);
