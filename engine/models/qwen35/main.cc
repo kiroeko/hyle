@@ -66,6 +66,9 @@ void observe_completed_evaluation(Model &model, const EvaluationOutput &output,
     const EvaluationIO &io, const CompletedEvaluationView &completed) {
   auto &observation = completed.observation;
   if (!output.observation) { observation.name = io.name; hyle::engine::reporting::write_step_observation(std::cerr, observation); }
+  if ((!io.trace || io.trace->empty()) && !output.capture_probes) return;
+  const auto activation_suffix = model.precision.activation_type() == Type::kFloat32 ? ".f32" :
+      model.precision.is_f16() ? ".f16" : ".bf16";
   const auto dump_bytes = [&](mem::ConstBufferView view, const std::filesystem::path &path) {
     std::vector<std::byte> bytes(view.size()); check(model.execution.read(view, bytes));
     std::ofstream stream(path, std::ios::binary);
@@ -74,7 +77,7 @@ void observe_completed_evaluation(Model &model, const EvaluationOutput &output,
   };
   if (io.trace && !io.trace->empty()) {
     const auto directory = *io.trace / io.name; std::filesystem::create_directories(directory);
-    const auto dump_row = [&](c::ConstTensorView tensor, const char *file) {
+    const auto dump_row = [&](c::ConstTensorView tensor, const std::string &file) {
       if (completed.packed_input_rows) {
         const auto &description = tensor.description();
         if (!description.is_dense() || description.rank() != 2)
@@ -88,11 +91,11 @@ void observe_completed_evaluation(Model &model, const EvaluationOutput &output,
       }
     };
     if (completed.logits.valid()) dump_row(completed.logits, "logits.f32");
-    dump_row(completed.hidden, model.precision.is_f16() ? "hidden.f16" : "hidden.bf16");
+    dump_row(completed.hidden, std::string("hidden") + activation_suffix);
     if (io.trace_states) {
       for (std::size_t i = 0; i < model.state_schema.size(); ++i) if (model.geometry.is_gdn(i)) {
         const auto prefix = "layer" + std::to_string(i);
-        dump_bytes(take(completed.head.state[i].history.view()), directory / (prefix + (model.precision.is_f16() ? ".conv.f16" : ".conv.bf16")));
+        dump_bytes(take(completed.head.state[i].history.view()), directory / (prefix + ".conv" + activation_suffix));
         dump_bytes(take(completed.head.state[i].recurrent.view()), directory / (prefix + ".gdn.f32"));
       }
       std::ofstream layout_trace(directory / "kv-layout.json");
@@ -110,7 +113,7 @@ void observe_completed_evaluation(Model &model, const EvaluationOutput &output,
       if ((completed.requests != 1 && !view.description().is_dense()) || bytes % completed.requests)
         throw std::runtime_error("published batch diagnostic is not request-major dense");
       dump_bytes(take(view.storage().subview(completed.member_index * (bytes / completed.requests), bytes / completed.requests)),
-          directory / (std::string(layer0_probe_names[i]) + (model.precision.is_f16() ? ".f16" : ".bf16")));
+          directory / (std::string(layer0_probe_names[i]) + activation_suffix));
     }
   }
 }

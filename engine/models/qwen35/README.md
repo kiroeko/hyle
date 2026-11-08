@@ -172,7 +172,7 @@ cmake --build .scratch/qwen35-build --config Release --target hyle_engine
 - `--progress direct|scheduler`：默认direct；scheduler在原槽上准备进度驱动，复用同一提交机制。
 - `--replay auto|commands|prefer-capture`：默认auto，按冷计划中各批宽／child／槽的使用上界选择；一次使用走Commands，预计复用才PreferCapture。辅助NextN没有可靠使用次数提示，Auto仍按一次处理。随机采样可使用Graph支持的捕获路径；history罚分、NextN带head的history分支，以及接受采样和frontier程序仍使用Commands。捕获范围由原生能力和实际绑定决定。`planned_replay`记录冷选择，逐步日志记录实际录制／复用；用户不逐步选择Provider或另设流水开关。
 - `--decode-ids FILE`：固定单token输入带，允许跨过预测EOS；若同时给steps，须等于输入数加一。正常生成遇到endoftext或im_end停止。
-- `--trace DIR --trace-level decisions`：仅导出logits与最后hidden；默认full还导出conv/GDN状态与`kv-layout.json`。分页帧不公开原始bank载荷，后者记录实际页布局，不再导出dense KV文件。路由写入DIR/routes，不增加图输出。
+- `--trace DIR --trace-level decisions`：仅导出logits与最后hidden；默认full还导出conv/GDN状态与`kv-layout.json`。hidden、conv和layer0探针的`.f32`／`.f16`／`.bf16`后缀表示实际激活类型；logits和GDN递归状态为`.f32`。分页帧不公开原始bank载荷，后者记录实际页布局，不再导出dense KV文件。路由写入DIR/routes，不增加图输出。
 - `--layer0-probe DIR`：诊断时另行发布layer0边界并比较实际路由；诊断图会影响合法融合，因此与普通图分别冷准备，均计入启动时间。多会话的边界输出按`session<序号>_<ID>`子目录隔离，不覆盖其他会话；共享图的路由说明仍在DIR。
 - `--preparation-diagnostics 1`：仅普通greedy的固定 `prompt/decode` schedule，不支持自然生成或MTP；分开记录layout、batch和replay准备时间，注明实际槽及其首用，并读取六份公开BatchPlanReport。记录冷预分配，报告在原host输出端点后读取、最终端点后打印；标记为diagnostic，不用于吞吐对比。默认关闭，不增加这些报告查询。
 
