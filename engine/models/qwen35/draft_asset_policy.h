@@ -12,6 +12,21 @@
 
 namespace qwen35 {
 
+// A selected file is always a file, even when its name is "auto" or "full".
+// Entry points translate any textual policy keywords before this boundary.
+enum class DraftAssetKind { kAutomatic, kOriginal, kFile };
+struct DraftAssetRequest final {
+  DraftAssetKind kind = DraftAssetKind::kAutomatic;
+  std::filesystem::path file;
+
+  static DraftAssetRequest automatic() { return {}; }
+  static DraftAssetRequest original() { return {DraftAssetKind::kOriginal, {}}; }
+  static DraftAssetRequest from_file(std::filesystem::path path) {
+    if (path.empty()) throw std::invalid_argument("explicit draft asset path is empty");
+    return {DraftAssetKind::kFile, std::move(path)};
+  }
+};
+
 // Cold source selection. This chooses paths only; prepare_weight_source later
 // validates the selected vocabulary, original source and optional head.
 struct DraftAssetSelection final {
@@ -24,8 +39,18 @@ struct DraftAssetSelection final {
 
 inline DraftAssetSelection select_draft_assets(const std::filesystem::path &input,
     const hyle::inference::mtp::DefaultRequest &request,
-    std::filesystem::path vocabulary, std::filesystem::path head, bool encoded_rows_on_backend) {
+    DraftAssetRequest vocabulary_request, DraftAssetRequest head_request, bool encoded_rows_on_backend) {
   namespace mtp = hyle::inference::mtp;
+  const auto valid = [](const DraftAssetRequest &asset) {
+    switch (asset.kind) {
+      case DraftAssetKind::kAutomatic:
+      case DraftAssetKind::kOriginal: return asset.file.empty();
+      case DraftAssetKind::kFile: return !asset.file.empty();
+    }
+    return false;
+  };
+  if (!valid(vocabulary_request) || !valid(head_request))
+    throw std::invalid_argument("invalid draft asset selection");
   const auto inspect = [](const std::filesystem::path &path, const char *label) {
     std::error_code error;
     const auto present = std::filesystem::exists(path, error);
@@ -33,9 +58,9 @@ inline DraftAssetSelection select_draft_assets(const std::filesystem::path &inpu
     return present;
   };
   const auto prepared_vocabulary = input / "mtp-draft-vocabulary.ids";
-  const bool explicit_asset_selection = vocabulary != "auto" || head != "auto";
-  const bool explicit_file = (vocabulary != "auto" && vocabulary != "full") ||
-      (head != "auto" && head != "original");
+  const bool explicit_asset_selection = vocabulary_request.kind != DraftAssetKind::kAutomatic ||
+      head_request.kind != DraftAssetKind::kAutomatic;
+  const bool explicit_file = vocabulary_request.kind == DraftAssetKind::kFile || head_request.kind == DraftAssetKind::kFile;
   // An implicit map must never make a previously usable source/backend fail.
   // Explicit files still reach the loader and report their actual incompatibility.
   const bool may_use_automatic_vocabulary = request.mode != mtp::RequestedMode::kOff &&
@@ -60,8 +85,8 @@ inline DraftAssetSelection select_draft_assets(const std::filesystem::path &inpu
   }
   const auto policy = mtp::select_default(request, has_vocabulary, original_projection_eligible,
       explicit_asset_selection);
-  auto vocabulary_reason = vocabulary == "full" ? hyle::inference::RouteReason::kExplicitFull :
-      vocabulary != "auto" ? hyle::inference::RouteReason::kExplicitFile :
+  auto vocabulary_reason = vocabulary_request.kind == DraftAssetKind::kOriginal ? hyle::inference::RouteReason::kExplicitFull :
+      vocabulary_request.kind == DraftAssetKind::kFile ? hyle::inference::RouteReason::kExplicitFile :
       !may_use_automatic_vocabulary ? hyle::inference::RouteReason::kNotInspected :
       !present_automatic_vocabulary ? hyle::inference::RouteReason::kNotPresent :
       !usable_automatic_vocabulary ? hyle::inference::RouteReason::kUnsupportedSourceOrBackend :
@@ -73,15 +98,13 @@ inline DraftAssetSelection select_draft_assets(const std::filesystem::path &inpu
               hyle::inference::RouteReason::kDraftingDisabled)));
     return {policy, {}, {}, false, vocabulary_reason};
   }
+  auto vocabulary = std::move(vocabulary_request.file);
+  auto head = std::move(head_request.file);
   bool auto_head = false;
-  if (head == "original") head.clear();
-  else if (head == "auto") {
-    head.clear();
+  if (head_request.kind == DraftAssetKind::kAutomatic) {
     auto_head = request.unmodified_greedy_drafting() && !original_projection_eligible;
   }
-  if (vocabulary == "full") vocabulary.clear();
-  else if (vocabulary == "auto") {
-    vocabulary.clear();
+  if (vocabulary_request.kind == DraftAssetKind::kAutomatic) {
     if (policy.prepared_assets) vocabulary = prepared_vocabulary;
     else if (head.empty() && usable_automatic_vocabulary)
       vocabulary = prepared_vocabulary;

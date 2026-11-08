@@ -3890,11 +3890,11 @@ std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::M
           requested_depth ? mtp_policy::RequestedMode::kOn : mtp_policy::RequestedMode::kOff,
       .workload = workload, .automatic_backend_eligible = execution.primary == BackendKind::kCuda,
       .max_drafts = requested_depth, .automatic_vocabulary = config.draft_vocabulary.empty() && !explicit_depth};
-  const auto vocabulary = !config.draft_vocabulary.empty() ? config.draft_vocabulary :
-      std::filesystem::path(explicit_depth ? "full" : "auto");
-  const auto head = !config.draft_head.empty() ? config.draft_head :
-      std::filesystem::path(!explicit_depth || config.auto_draft_head ? "auto" : "original");
-  auto assets = select_draft_assets(config.inputs, request, vocabulary, head,
+  auto vocabulary = !config.draft_vocabulary.empty() ? DraftAssetRequest::from_file(config.draft_vocabulary) :
+      explicit_depth ? DraftAssetRequest::original() : DraftAssetRequest::automatic();
+  auto head = !config.draft_head.empty() ? DraftAssetRequest::from_file(config.draft_head) :
+      (!explicit_depth || config.auto_draft_head ? DraftAssetRequest::automatic() : DraftAssetRequest::original());
+  auto assets = select_draft_assets(config.inputs, request, std::move(vocabulary), std::move(head),
       Backend::supports_encoded_row_gather(execution));
   const bool mtp = assets.policy.enabled;
   const auto prefill = (std::min)({config.prefill_rows, std::size_t{512}, config.context});
@@ -4152,8 +4152,16 @@ int qwen35::run(int argc, char **argv) {
         .workload = cold_workload,
         .automatic_backend_eligible = backend_selection.primary == qwen35::BackendKind::kCuda,
         .max_drafts = max_drafts, .automatic_vocabulary = draft_vocabulary == "auto"};
+    // The legacy CLI supports policy keywords; resolve them here so the
+    // model's asset selection receives an unambiguous file or policy.
+    auto vocabulary_request = draft_vocabulary == "auto" ? qwen35::DraftAssetRequest::automatic() :
+        draft_vocabulary == "full" ? qwen35::DraftAssetRequest::original() :
+        qwen35::DraftAssetRequest::from_file(std::move(draft_vocabulary));
+    auto head_request = draft_head == "auto" ? qwen35::DraftAssetRequest::automatic() :
+        draft_head == "original" ? qwen35::DraftAssetRequest::original() :
+        qwen35::DraftAssetRequest::from_file(std::move(draft_head));
     auto assets = qwen35::select_draft_assets(input, default_request,
-        std::move(draft_vocabulary), std::move(draft_head),
+        std::move(vocabulary_request), std::move(head_request),
         qwen35::Backend::supports_encoded_row_gather(backend_selection));
     const auto default_selection = assets.policy;
     mtp_enabled = default_selection.enabled;
