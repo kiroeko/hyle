@@ -65,6 +65,53 @@ class FakeWorker:
 
 
 class TextFrontendTest(unittest.TestCase):
+    def test_half_closed_request_still_receives_nonstream_response(self):
+        class GatedRequest(FakeRequest):
+            def __init__(self):
+                super().__init__()
+                self.started, self.resume = threading.Event(), threading.Event()
+                self.first = True
+
+            def read(self, timeout=None):
+                if self.first:
+                    self.first = False
+                    self.started.set()
+                    if not self.resume.wait(timeout=3):
+                        raise RuntimeError('test did not resume generation')
+                    # Ensure the next read checks the peer after the FIN.
+                    time.sleep(.3)
+                return super().read(timeout)
+
+        request = GatedRequest()
+        class GatedWorker(FakeWorker):
+            def submit(self, tokens, max_output_tokens, *, stop_ids=()):
+                return request
+
+        server = ResponsesServer(('127.0.0.1', 0), TextEngine(GatedWorker(), FakeCodec(), 'hyle'), True)
+        thread = threading.Thread(target=server.serve_forever)
+        thread.start()
+        connection = socket.create_connection(('127.0.0.1', server.server_port), timeout=3)
+        try:
+            body = json.dumps({'model': 'hyle', 'input': 'x', 'max_output_tokens': 3}).encode()
+            connection.sendall(b'POST /v1/responses HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n'
+                               + f'Content-Length: {len(body)}\r\n\r\n'.encode() + body)
+            self.assertTrue(request.started.wait(timeout=3))
+            connection.shutdown(socket.SHUT_WR)
+            request.resume.set()
+            data = bytearray()
+            while part := connection.recv(4096):
+                data.extend(part)
+            headers, response = bytes(data).split(b'\r\n\r\n', 1)
+            self.assertTrue(headers.startswith(b'HTTP/1.1 200 '), headers)
+            self.assertEqual(json.loads(response)['output'][0]['content'][0]['text'], 'a')
+            self.assertTrue(request.closed_event.wait(timeout=3))
+        finally:
+            request.resume.set()
+            connection.close()
+            server.shutdown()
+            thread.join(timeout=3)
+            server.server_close()
+
     def test_nonstream_disconnect_cancels_while_tokens_continue(self):
         class BusyRequest(FakeRequest):
             def __init__(self):

@@ -1,7 +1,9 @@
 """Local tokenizer/template and real model Responses integration; no downloads."""
 import argparse
+import http.client
 import json
 from pathlib import Path
+import socket
 import threading
 import urllib.request
 
@@ -11,13 +13,24 @@ from engine.text.runtime import TextEngine
 from engine.text.worker_client import WorkerClient
 
 
-def post(port, streaming):
+def post(port, streaming, *, half_close=False):
     body = json.dumps({'model': 'hyle', 'input': '你好，what is 2 + 2?',
                        'max_output_tokens': 16, 'stream': streaming}).encode('utf-8')
-    request = urllib.request.Request(f'http://127.0.0.1:{port}/v1/responses', data=body,
-                                     headers={'Content-Type': 'application/json'})
-    with urllib.request.urlopen(request, timeout=60) as response:
-        raw = response.read().decode('utf-8')
+    if half_close:
+        with socket.create_connection(('127.0.0.1', port), timeout=60) as connection:
+            connection.sendall(b'POST /v1/responses HTTP/1.1\r\nHost: localhost\r\n'
+                               b'Content-Type: application/json\r\nConnection: close\r\n'
+                               + f'Content-Length: {len(body)}\r\n\r\n'.encode() + body)
+            connection.shutdown(socket.SHUT_WR)
+            response = http.client.HTTPResponse(connection)
+            response.begin()
+            assert response.status == 200, response.status
+            raw = response.read().decode('utf-8')
+    else:
+        request = urllib.request.Request(f'http://127.0.0.1:{port}/v1/responses', data=body,
+                                         headers={'Content-Type': 'application/json'})
+        with urllib.request.urlopen(request, timeout=60) as response:
+            raw = response.read().decode('utf-8')
     if not streaming:
         return json.loads(raw)
     events = [json.loads(line[6:]) for line in raw.splitlines() if line.startswith('data: ')]
@@ -67,6 +80,10 @@ def main():
                 assert ordinary['usage']['output_tokens'] > 0
                 assert ordinary['usage'] == stream['usage']
                 assert ordinary['output'][0]['content'][0]['text'] == stream['output'][0]['content'][0]['text']
+                for streaming in (False, True):
+                    half_closed = post(args.port, streaming, half_close=True)
+                    assert half_closed['usage'] == ordinary['usage']
+                    assert half_closed['output'][0]['content'][0]['text'] == ordinary['output'][0]['content'][0]['text']
                 print(name, 'template: nonstream and stream matched', ordinary['usage']['output_tokens'], 'tokens', flush=True)
             finally:
                 server.shutdown()

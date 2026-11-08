@@ -124,7 +124,13 @@ class HttpExchange:
                 try:
                     connection = self._handler.connection
                     readable, _, _ = select.select([connection], [], [], 0)
-                    disconnected = bool(readable) and not connection.recv(1, socket.MSG_PEEK)
+                    # EOF only closes the peer's sending direction. A client
+                    # may still be waiting for this response after SHUT_WR.
+                    # A reset raises OSError; a graceful full close cannot be
+                    # distinguished from a half-close until a write fails.
+                    if readable:
+                        connection.recv(1, socket.MSG_PEEK)
+                    disconnected = False
                 except (OSError, ValueError):
                     disconnected = True
                 if disconnected:
