@@ -3915,8 +3915,6 @@ std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::M
   if (config.top_k > static_cast<std::size_t>(geometry.vocabulary))
     throw std::invalid_argument("sampling top-k exceeds the source vocabulary");
   const auto precision = PrecisionProfile::from_roles(source.roles);
-  const auto bounded = inference::select_bounded_generation({.workload = workload,
-      .supported_backend = execution.primary == BackendKind::kCuda, .mtp_enabled = mtp, .max_drafts = depth});
   const DeviceRelayCapabilities relay{execution.primary, false, false, config.random && mtp, false};
   const inference::DecodeRouteFacts facts{.workload = workload, .overlap_requested = true,
       .mtp_enabled = mtp, .max_drafts = depth, .max_device_drafts = kMaximumDeviceMtpDrafts,
@@ -3924,7 +3922,7 @@ std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::M
       .relay_eligible = relay.eligible(), .relay_refusal = relay.refusal_reason(),
       .has_decode = config.context > 1, .resolved_active_sequences = config.active_sequences};
   const auto routes = inference::plan_decode_routes(facts);
-  const bool overlap = config.overlap.value_or(bounded.enabled && routes.overlap.enabled);
+  const bool overlap = config.overlap.value_or(inference::select_resident_decode_overlap(facts).enabled);
   // The verifier can consume a standalone draft chain; it does not require
   // an overlapping successor. Keep its independently selected capacity.
   const bool verification = routes.verification.enabled;

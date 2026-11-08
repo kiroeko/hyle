@@ -92,6 +92,17 @@ constexpr DecodeRouteChoice select_decode_overlap(const DecodeRouteFacts &facts)
   return {true, RouteReason::kSelected};
 }
 
+// A resident executor prepares this route before requests arrive. Its single
+// configured slot is independent of whether token selection is random;
+// sampled MTP and other unsupported cases are rejected by relay capability.
+constexpr DecodeRouteChoice select_resident_decode_overlap(const DecodeRouteFacts &facts) noexcept {
+  const auto route = select_decode_overlap(facts);
+  if (!route.enabled) return route;
+  if (facts.workload.max_sessions != 1 || facts.workload.active_sequences != 1)
+    return {false, RouteReason::kMultipleSessionsOrSequences};
+  return route;
+}
+
 // Verification capacity also supports standalone draft chains, independently
 // of overlap and a compound projection. Tracing disables packet handoff but
 // can still use this capacity for an independent chain.

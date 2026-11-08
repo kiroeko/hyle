@@ -68,6 +68,25 @@ void check_decode_routes() {
   if (select_decode_overlap(facts).reason!=RouteReason::kNoDecode || select_device_verification(facts).reason!=RouteReason::kNoDecode)
     throw std::runtime_error("a finite workload without decode must not plan unused verification");
 
+  DecodeRouteFacts resident{.workload={.natural_generation=true, .greedy=false,
+      .max_sessions=1, .active_sequences=1, .capacity=128},
+      .overlap_requested=true, .relay_eligible=true, .has_decode=true, .resolved_active_sequences=1};
+  if (!select_resident_decode_overlap(resident).enabled)
+    throw std::runtime_error("ordinary random sampling should use available single-session relay");
+  resident.workload.greedy=true;
+  if (!select_resident_decode_overlap(resident).enabled)
+    throw std::runtime_error("ordinary greedy single-session relay changed");
+  resident.workload.max_sessions=2;
+  if (select_resident_decode_overlap(resident).reason!=RouteReason::kMultipleSessionsOrSequences)
+    throw std::runtime_error("multi-session resident route must not select single-session relay");
+  resident.workload.max_sessions=1; resident.workload.active_sequences=2;
+  if (select_resident_decode_overlap(resident).reason!=RouteReason::kMultipleSessionsOrSequences)
+    throw std::runtime_error("multi-sequence resident route must not select single-session relay");
+  resident.workload.active_sequences=1; resident.relay_eligible=false;
+  resident.relay_refusal=RouteReason::kSampling;
+  if (select_resident_decode_overlap(resident).reason!=RouteReason::kSampling)
+    throw std::runtime_error("resident route lost its backend sampling refusal");
+
   BoundedGenerationFacts bounded{.workload={.natural_generation=true, .greedy=true,
       .capacity=128}, .supported_backend=true, .mtp_enabled=true,
       .max_drafts=3};
