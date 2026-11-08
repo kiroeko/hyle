@@ -40,9 +40,14 @@ def main():
     parser.add_argument('--inputs', required=True)
     parser.add_argument('--port', type=int, default=2048)
     parser.add_argument('--metrics', action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument('--sampling', choices=('greedy', 'random'), default='greedy')
     args = parser.parse_args()
-    worker = WorkerClient([args.engine, '--engine-worker', '--inputs', args.inputs, '--backend', 'cuda',
-                           '--capacity', '256', '--max-sessions', '2', '--active-sequences', '2', '--draft-count', '0'])
+    command = [args.engine, '--engine-worker', '--inputs', args.inputs, '--backend', 'cuda',
+               '--capacity', '256', '--max-sessions', '2', '--active-sequences', '2', '--draft-count', '0',
+               '--sampling', args.sampling]
+    if args.sampling == 'random':
+        command += ['--temperature', '0.8', '--top-k', '40', '--top-p', '0.95', '--seed', '123']
+    worker = WorkerClient(command)
     server = thread = first = second = None
     try:
         server = ResponsesServer(('127.0.0.1', args.port), TextEngine(worker, FixtureCodec(worker.vocabulary), 'hyle'),
@@ -87,7 +92,7 @@ def main():
         if args.metrics:
             with urllib.request.urlopen(f'http://127.0.0.1:{args.port}/metrics', timeout=10) as response:
                 assert response.read().decode() == metrics
-        print('two live HTTP streams: reset one; peer and subsequent request completed', flush=True)
+        print(f'two live {args.sampling} HTTP streams: reset one; peer and subsequent request completed', flush=True)
     finally:
         if first is not None:
             first.close()
