@@ -3,7 +3,7 @@
 HYLE 是 C++23 推理引擎项目，基础模块提供内存、数据结构、SIMD、调度、I/O、设备计算与 Graph，
 可以脱离引擎独立构建、安装和使用。资源流送、数值管线和异步服务也可复用这些模块。
 当前目标是 Windows、Linux、macOS 上的单机 CPU、CPU＋一张 GPU、单 GPU 推理，具体组合受系统和后端支持限制。
-当前主阶段先收敛底层推理支持，以项目内引擎执行真实模型发现缺口；完整应用、server 和 API 随后推进。
+当前使用本地Qwen3.5-2B完善底座和引擎；已有文本CLI与Responses文本服务初版，完整应用和API仍在建设。
 
 ## 为什么组合本身有价值
 
@@ -37,8 +37,8 @@ Compute 拥有设备、资源与算子执行；Graph 拥有逻辑 DAG、冷编�
 Compute／Graph 提供可复用的计算、存储、状态版本、依赖和完成机制。模型相关数值边界见
 [Compute](compute-design.md#推理负载与数值边界)，原生后端和混合计算见[路线设计](compute-routes.md)。
 当前 Qwen 完整文本路径及其它模型的有限 MTP 组件结果见[模型与算子覆盖](../implementation/model-operators.md)。
-完整引擎是产品目标，不表示通用 loader、C++ tokenizer、服务入口或图片链路已经完成；
-它们也不成为本阶段底层支持工作的前置。
+完整引擎是产品目标，不表示通用loader、C++ tokenizer、完整服务API或图片链路已经完成。
+已有文本服务的具体功能和限制见[文本接口指南](../user/text-api.md)。
 当前可运行边界见[引擎指南](../user/inference.md)，实施顺序见[推理工程计划](../implementation/inference-roadmap.md)。
 
 ## 扩展边界

@@ -7,7 +7,8 @@
 
 推理引擎负责把应用请求组织为完整的推理过程。内核之外的引擎部分负责模型制品的识别和读取、
 输入输出与tokenizer、请求与会话管理、跨请求调度、资源接纳与淘汰政策、结果交付及应用入口。
-HTTP服务可以作为引擎外围适配器；现有通用loader、C++ tokenizer和服务入口尚未交付。
+HTTP服务作为引擎外围适配器。当前已有本地文本CLI和Responses文本子集，使用Python tokenizer／模板与常驻模型进程；
+通用loader、C++ tokenizer和完整服务API尚未交付。
 
 推理引擎内核负责将已接纳的推理工作变为计算结果和新状态。它包括模型和设备的冷准备、模型计算、
 prefill／decode及推测步骤、采样、模型状态与缓存操作、执行依赖、完成观察和真实退休。
@@ -20,7 +21,8 @@ prefill／decode及推测步骤、采样、模型状态与缓存操作、执行�
 外围提供采样参数和停止政策，内核执行采样并与模型状态一起提交RNG。
 缓存政策与物理状态共享同一真实所有权和退休事实，不另建执行器或账簿。
 
-当前入口仍是Qwen驱动，模型、会话和请求装配有交叉；本定义不表示代码已完成拆分，也不声明稳定的引擎API。
+原有token CLI仍是Qwen驱动；文本入口通过公共请求合同接入Qwen。模型、会话和请求装配仍有交叉；
+本定义不表示代码已完成拆分，也不声明稳定的引擎API。
 先整体设计通用引擎及其执行边界，再按实际实现和验证结果分步冻结；目标和迁移方向见[通用引擎设计](engine-design.md)。
 冻结后的具体模型、kernel、融合和策略仍可演进；合同变更须说明影响并完成相关验证。
 
@@ -52,7 +54,9 @@ prefill／decode及推测步骤、采样、模型状态与缓存操作、执行�
 ## 分层
 
 ```text
-engine/main.cc              CLI转入具体模型
+engine/main.cc              模型提供者装配、token工作进程及原有Qwen CLI
+engine/text/                tokenizer、模板和协议无关的文本适配
+engine/text/app.py          本地文本CLI及Responses文本服务
 engine/models/              模型制品、数学、完整状态和静态适配
 engine/inference/           请求、缓存、程序IO、步骤推进与资源交接的共同机制
 engine/reporting/           报告格式
@@ -125,6 +129,7 @@ MTP可以是融合或递归执行，不必固定为三次提交。取消、背�
 - 完整文本入口仍以Qwen为主；GLM／Kimi／DeepSeek已有组件消费者，尚非第二完整引擎模型。
 - 连续执行按实际后端、采样和状态资格选择，auto不适用时保留原单步路径；物理载体数、在途深度和批成员数分别表达。
 - Backend当前以一个主端点及可选CPU辅助端点为主；Graph多端点表达不等于多GPU分片／跨Context等待或多机已接通。
-- 通用loader、C++ tokenizer、server／应用API与图片产品入口尚未交付；现有CLI使用准备后的权重和token IDs。
+- 原有Qwen CLI使用准备后的权重和token IDs；文本CLI与Responses文本服务使用本地tokenizer和模板。
+  通用loader、C++ tokenizer、完整服务API和图片产品入口尚未交付；实际字段见[文本接口指南](../user/text-api.md)。
 
 各模型／制品实际范围见[模型覆盖](../implementation/model-operators.md)，性能结果见[decode资料](../developer/performance/decode.md)。

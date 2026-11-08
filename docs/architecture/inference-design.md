@@ -247,7 +247,8 @@ Graph可表达多个资源域、端点与聚合完成；当前引擎Backend装�
 新数学与模型私有修改应限制在其编译边界，不要求修改其它家族；具体融合和专用快路由冷期选择保留。
 
 完整引擎当前仍以Qwen为主；GLM／Kimi／DeepSeek的组件证据不等于第二完整模型或任意拓扑验证。
-通用loader、C++ tokenizer、server／应用API、图片产品链路及多卡／多机未交付。
+文本CLI和Responses文本服务已接入公共请求入口；实际支持范围见[文本接口指南](../user/text-api.md)。
+通用loader、C++ tokenizer、完整服务API、图片产品链路及多卡／多机未交付。
 
 ## 实施包与收敛条件
 

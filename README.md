@@ -43,7 +43,7 @@ BF16 MTP使用准备好的32K草稿子集，量化目标MTP使用完整草稿词
 
 - **完整文本入口是 Qwen**：普通生成、greedy／随机采样、MTP、多轮／多会话、共享前缀及有界缓存恢复。
   当前日常完整验证模型为 Qwen3.5-2B；其它制品与较大模型的实际运行范围见[模型覆盖](docs/implementation/model-operators.md)。
-- **单机运行**：CPU、单 GPU 或 CPU＋一张 GPU；支持范围由实际后端、制品、布局和设备能力决定。
+- **单机运行**：本阶段完整引擎验证使用 Windows、CUDA 和 Qwen3.5-2B；CPU、Apple Metal 及其他模型的完整引擎路径尚未在本阶段验证。已有后端组件不等于完整路径已验证。
 - **文本服务初版**：本地 tokenizer 与模板接入，提供 CLI 和 Responses 文本子集；功能与限制见[接口指南](docs/user/text-api.md)。
 - **尚未交付**：通用模型目录加载、C++ tokenizer、完整服务 API、图片输入及多卡／多机。
   GLM、DeepSeek、Kimi 等目前是组件级实现，没有完整引擎入口。
