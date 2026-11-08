@@ -3,6 +3,7 @@
 
 #include "model_core.h"
 #include "prepared_executor.h"
+#include "device_mtp_planning.h"
 #include "schedule.h"
 #include "session_schedule.h"
 #include "prefix_cache.h"
@@ -3750,25 +3751,16 @@ std::unique_ptr<inference::ModelExecutor> load_model_executor(const ModelLoadCon
   const bool verification = overlap && routes.verification.enabled;
   const auto query_rows = (std::max)(prefill, mtp ? cache::add(depth, 1) : std::size_t{1});
   const auto recurrent = recurrent_bytes(state_schema_for(geometry, config.context, precision), geometry);
-  std::optional<Backend> prepared_execution;
-  constexpr auto exact_token_domain = std::int64_t{1} << std::numeric_limits<float>::digits;
-  const auto continuous = inference::select_continuous_mtp(facts, overlap, config.resident_sessions,
-      geometry.attention_layers() != 0, geometry.vocabulary <= exact_token_domain);
-  bool continuous_available = false;
-  if (continuous.enabled) {
-    const auto provisional = cache::plan(geometry, source.cache_row_bytes, config.context, config.resident_sessions,
-        query_rows, recurrent, config.active_sequences, depth + 1, true, config.random, 3,
-        verification ? 2 : 0, precision, verification ? depth : 0);
-    prepared_execution.emplace(take(Backend::create(execution)));
-    continuous_available = supports_mtp_attention(*prepared_execution,
-        attention_capacity(geometry, precision, provisional), source.cache_storage);
-  }
+  auto continuous = prepare_mtp_continuation({.routes = facts, .geometry = geometry, .source = source,
+      .precision = precision, .backend = execution, .context = config.context, .residents = config.resident_sessions,
+      .active_sequences = config.active_sequences, .query_rows = query_rows, .recurrent_bytes = recurrent,
+      .draft_depth = depth, .overlap = overlap, .verification = verification, .random = config.random});
   const auto plan = cache::plan(geometry, source.cache_row_bytes, config.context, config.resident_sessions,
       query_rows, recurrent, config.active_sequences, mtp ? cache::add(depth, 1) : 1, mtp, config.random,
-      overlap ? (continuous_available ? 3 : 2) : 1, verification ? 2 : 0, precision, verification ? depth : 0);
+      overlap ? (continuous.enabled ? 3 : 2) : 1, verification ? 2 : 0, precision, verification ? depth : 0);
   const Model::Sampling sampling{.enabled = config.random,
       .policy = {config.temperature, config.top_k, config.top_p}, .seed = config.seed};
-  auto backend = prepared_execution ? std::move(*prepared_execution) : create_execution(geometry, plan, 0, execution);
+  auto backend = continuous.endpoint ? std::move(*continuous.endpoint) : create_execution(geometry, plan, 0, execution);
   auto model = std::make_unique<Model>(std::move(backend), hyle::compute::ResourceBudget{}, std::move(source),
       geometry, config.context, plan, std::filesystem::path{}, false, ReplayPolicy::kAuto, SIZE_MAX, sampling, 0);
   if (mtp) model->configure_draft_policy({depth});
@@ -4156,24 +4148,15 @@ int qwen35::run(int argc, char **argv) {
     // Ask the actual backend about the provisional maximum batch and every
     // target cache storage. Unsupported implementations keep the original
     // two-batch finite route. The created endpoint is reused by Model below.
-    std::optional<qwen35::Backend> prepared_execution;
-    bool continuous_mtp_candidate = false;
-    constexpr auto exact_token_domain = std::int64_t{1} << std::numeric_limits<float>::digits;
-    const auto continuous_plan = hyle::inference::select_continuous_mtp(route_facts, overlap_selected,
-        cached_slots, geometry.attention_layers() != 0, geometry.vocabulary <= exact_token_domain);
-    auto overlap_depth_reason = continuous_plan.reason;
-    if (continuous_plan.enabled) {
-      const auto provisional = qwen35::cache::plan(geometry, weight_source.cache_row_bytes, capacity, cached_slots,
-          mtp_has_decode ? (std::max)(max_query_rows, std::size_t{2}) : max_query_rows, recurrent_payload,
-          active_sequences == 0 ? cached_slots : requested_active, max_drafts + 1, true, sampler.enabled, 3,
-          device_verification_selected ? 2 : 0, source_precision, device_verification_selected ? max_drafts : 0);
-      prepared_execution.emplace(qwen35::take(qwen35::Backend::create(backend_selection)));
-      continuous_mtp_candidate = qwen35::supports_mtp_attention(*prepared_execution,
-          qwen35::attention_capacity(geometry, source_precision, provisional), weight_source.cache_storage);
-      overlap_depth_reason = continuous_mtp_candidate ? inference::RouteReason::kSelected :
-          inference::RouteReason::kAttentionCapability;
-    }
-    auto overlap_depth = continuous_mtp_candidate ? std::size_t{3} : std::size_t{2};
+    auto continuous = qwen35::prepare_mtp_continuation({.routes = route_facts, .geometry = geometry,
+        .source = weight_source, .precision = source_precision, .backend = backend_selection,
+        .context = capacity, .residents = cached_slots,
+        .active_sequences = active_sequences == 0 ? cached_slots : requested_active,
+        .query_rows = mtp_has_decode ? (std::max)(max_query_rows, std::size_t{2}) : max_query_rows,
+        .recurrent_bytes = recurrent_payload, .draft_depth = max_drafts, .overlap = overlap_selected,
+        .verification = device_verification_selected, .random = sampler.enabled});
+    auto overlap_depth_reason = continuous.reason;
+    auto overlap_depth = continuous.enabled ? std::size_t{3} : std::size_t{2};
     const auto plan_for_routes = [&](std::size_t residents, bool overlap, std::size_t depth, bool verification) {
       return qwen35::cache::plan(geometry, weight_source.cache_row_bytes, capacity, residents,
           mtp_enabled && mtp_has_decode ? (std::max)(max_query_rows, std::size_t{2}) : max_query_rows, recurrent_payload,
@@ -4228,7 +4211,7 @@ int qwen35::run(int argc, char **argv) {
     const auto active_slots = selected_cache.active_sequences;
     const auto metadata_prepare_seconds = weight_source.metadata_prepare_seconds;
     const auto model_start = qwen35::Clock::now();
-    auto execution = prepared_execution ? std::move(*prepared_execution)
+    auto execution = continuous.endpoint ? std::move(*continuous.endpoint)
         : qwen35::create_execution(geometry, selected_cache, cpu_ffn_layers, backend_selection);
     qwen35::Model model(std::move(execution), {}, std::move(weight_source), geometry, capacity,
         selected_cache, layer0_probe, progress, replay, cache_bytes, sampler, cpu_ffn_layers);
