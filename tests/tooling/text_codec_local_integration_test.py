@@ -50,6 +50,7 @@ def main():
     parser.add_argument('--port', type=int, default=2048)
     parser.add_argument('--metrics', action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument('--mtp-auto', action='store_true', help='use the model\'s automatic MTP policy')
+    parser.add_argument('--openai-sdk', action='store_true', help='also exercise the installed OpenAI Python SDK locally')
     args = parser.parse_args()
     command = [args.engine, '--engine-worker', '--inputs', args.inputs, '--backend', 'cuda',
                '--capacity', '256', '--max-sessions', '1', '--active-sequences', '1']
@@ -84,6 +85,23 @@ def main():
                     half_closed = post(args.port, streaming, half_close=True)
                     assert half_closed['usage'] == ordinary['usage']
                     assert half_closed['output'][0]['content'][0]['text'] == ordinary['output'][0]['content'][0]['text']
+                if args.openai_sdk:
+                    import httpx
+                    import openai
+                    with openai.OpenAI(base_url=f'http://127.0.0.1:{args.port}/v1', api_key='local-test',
+                                       max_retries=0, http_client=httpx.Client(trust_env=False),
+                                       _strict_response_validation=True) as client:
+                        params = dict(model='hyle', input='Say hello in one short word.',
+                                      max_output_tokens=16, store=False)
+                        response = client.responses.create(**params)
+                        events = list(client.responses.create(**params, stream=True))
+                        assert response.status in ('completed', 'incomplete') and response.usage.output_tokens > 0
+                        assert [event.sequence_number for event in events] == list(range(len(events)))
+                        assert events[-1].type in ('response.completed', 'response.incomplete')
+                        text = ''.join(event.delta for event in events if event.type == 'response.output_text.delta')
+                        assert text == response.output_text == events[-1].response.output_text
+                        assert events[-1].response.usage.output_tokens == response.usage.output_tokens
+                    print(name, 'template: OpenAI SDK', openai.__version__, 'strict response and stream matched', flush=True)
                 print(name, 'template: nonstream and stream matched', ordinary['usage']['output_tokens'], 'tokens', flush=True)
             finally:
                 server.shutdown()
