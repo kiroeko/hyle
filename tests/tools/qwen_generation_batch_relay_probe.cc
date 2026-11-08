@@ -21,7 +21,8 @@ constexpr std::size_t kOutputs = 14;
 // Diagnostic report for the same cold capacity and random policy as the
 // reusable worker, including the original per-commit sampling cursor.
 int bounded_sampling_report(const std::filesystem::path &input, const std::filesystem::path &schedule,
-    bool bounded = true, std::size_t capture_after = SIZE_MAX, const std::filesystem::path &capture = {}) {
+    bool bounded = true, std::size_t capture_after = SIZE_MAX, const std::filesystem::path &capture = {},
+    std::size_t capture_through = SIZE_MAX) {
   constexpr std::size_t capacity = 32768, prefill = 512;
   auto source = q::prepare_weight_source(input / "weights.tsv", false);
   const auto geometry = source.roles.geometry;
@@ -41,7 +42,9 @@ int bounded_sampling_report(const std::filesystem::path &input, const std::files
   const auto observer = [&](const q::GenerationBatchFacts &facts) {
     for (const auto &member : facts.members) {
       auto &request = *member.request;
-      if (request.ledger->committed_count == capture_after) request.trace = capture;
+      const auto count = request.ledger->committed_count;
+      if (count >= capture_after && count <= (capture_through == SIZE_MAX ? capture_after : capture_through))
+        request.trace = capture;
       else if (!request.trace.empty()) request.trace.clear();
     }
   };
@@ -1213,6 +1216,13 @@ int main(int argc, char **argv) {
       const std::string_view mode(argv[4]);
       require(mode == "bounded" || mode == "known", "sampling trace mode requires bounded or known");
       return bounded_sampling_report(argv[2], argv[3], mode == "bounded", std::stoull(argv[5]), argv[6]);
+    }
+    if (argc == 8 && std::string_view(argv[1]) == "--sampling-logits-range") {
+      const std::string_view mode(argv[4]);
+      const auto first = std::stoull(argv[5]), last = std::stoull(argv[6]);
+      require((mode == "bounded" || mode == "known") && first && last >= first && last - first < 32,
+          "sampling trace requires a mode and at most 32 positive positions");
+      return bounded_sampling_report(argv[2], argv[3], mode == "bounded", first, argv[7], last);
     }
     if (argc == 4 && std::string_view(argv[1]) == "--dispatcher-output")
       return dispatcher_output(argv[2], argv[3]);
