@@ -52,6 +52,18 @@ def main():
             output, turns = collect(request, live=kind == 'live')
             assert output == reference[:index + 1] and turns == ([] if kind == 'flat' else [0]), (kind, reference, output, turns)
             print('PASS', kind, 'stop', token, 'sessions', args.sessions, flush=True)
+        # Stop IDs are vocabulary entries, not prompt positions. In particular,
+        # a valid stop list may contain more IDs than this session's context.
+        many_stops = []
+        for value in range(worker.vocabulary):
+            if value not in worker.stop_ids:
+                many_stops.append(value)
+            if len(many_stops) == worker.context + 1:
+                break
+        assert len(many_stops) == worker.context + 1
+        output, turns = collect(worker.submit(prompt, 1, stop_ids=many_stops))
+        assert output == reference[:1] and not turns, (reference, output, turns)
+        print('PASS', len(many_stops), 'extra stops with context', worker.context, flush=True)
     finally:
         worker.close()
 
