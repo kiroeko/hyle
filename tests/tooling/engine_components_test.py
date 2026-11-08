@@ -120,6 +120,23 @@ if(NOT HYLE_BUILD_PRODUCT_UTIL)
 endif()
 ''')
 
+    def test_compute_and_graph_roots_do_not_enable_engine(self):
+        # The application is a consumer, not an implicit dependency of either
+        # reusable facade, including when both are selected together.
+        for selection in ("compute", "graph", "compute;graph"):
+            with self.subTest(selection=selection):
+                expected = "".join(
+                    f'if(NOT HYLE_BUILD_PRODUCT_{product.upper()})\n'
+                    f'  message(FATAL_ERROR "selected {product} facade is missing")\nendif()\n'
+                    for product in selection.split(";")
+                )
+                self.resolve("library-" + selection.replace(";", "-"), selection,
+                             routes="cuda", checks=expected + '''
+if(HYLE_BUILD_ENGINE)
+  message(FATAL_ERROR "a library-only selection unexpectedly enabled the engine")
+endif()
+''')
+
     def test_all_has_application_only_for_standalone_build(self):
         self.resolve("all", "all", checks=self.engine_checks())
         self.resolve("embedded-all", "all", embedded=True, checks='''
