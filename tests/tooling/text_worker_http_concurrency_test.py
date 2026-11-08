@@ -11,6 +11,7 @@ import time
 import urllib.request
 
 from engine.text.app import ResponsesServer
+from engine.text.codec import HuggingFaceTextCodec
 from engine.text.runtime import TextEngine
 from engine.text.worker_client import WorkerClient
 from tests.tooling.text_worker_error_integration_test import FixtureCodec
@@ -41,6 +42,7 @@ def main():
     parser.add_argument('--port', type=int, default=2048)
     parser.add_argument('--metrics', action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument('--sampling', choices=('greedy', 'random'), default='greedy')
+    parser.add_argument('--tokenizer-dir', help='existing local tokenizer and model chat template')
     args = parser.parse_args()
     command = [args.engine, '--engine-worker', '--inputs', args.inputs, '--backend', 'cuda',
                '--capacity', '256', '--max-sessions', '2', '--active-sequences', '2', '--draft-count', '0',
@@ -50,8 +52,9 @@ def main():
     worker = WorkerClient(command)
     server = thread = first = second = None
     try:
-        server = ResponsesServer(('127.0.0.1', args.port), TextEngine(worker, FixtureCodec(worker.vocabulary), 'hyle'),
-                                 args.metrics)
+        codec = (HuggingFaceTextCodec(args.tokenizer_dir, expected_vocabulary=worker.vocabulary)
+                 if args.tokenizer_dir else FixtureCodec(worker.vocabulary))
+        server = ResponsesServer(('127.0.0.1', args.port), TextEngine(worker, codec, 'hyle'), args.metrics)
         thread = threading.Thread(target=server.serve_forever)
         thread.start()
         first, second = connect(args.port), connect(args.port)
@@ -74,6 +77,8 @@ def main():
         assert [item['sequence_number'] for item in events] == list(range(len(events)))
         assert events[-1]['type'] in ('response.completed', 'response.incomplete'), events[-1]
         assert events[-1]['response']['usage']['output_tokens'] > 1
+        streamed = ''.join(item['delta'] for item in events if item['type'] == 'response.output_text.delta')
+        assert streamed == events[-1]['response']['output'][0]['content'][0]['text']
         assert worker.healthy
         body = json.dumps({'model': 'hyle', 'input': 'valid', 'max_output_tokens': 4}).encode()
         request = urllib.request.Request(f'http://127.0.0.1:{args.port}/v1/responses', data=body,
@@ -92,7 +97,8 @@ def main():
         if args.metrics:
             with urllib.request.urlopen(f'http://127.0.0.1:{args.port}/metrics', timeout=10) as response:
                 assert response.read().decode() == metrics
-        print(f'two live {args.sampling} HTTP streams: reset one; peer and subsequent request completed', flush=True)
+        print(f'two live {args.sampling} HTTP streams ({"local tokenizer" if args.tokenizer_dir else "fixture codec"}): '
+              'reset one; peer and subsequent request completed', flush=True)
     finally:
         if first is not None:
             first.close()
