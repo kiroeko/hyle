@@ -1,6 +1,7 @@
 // Host owner contracts only. Retirement observations below are explicit test
 // inputs, not evidence that any device completed or freed physical memory.
 #include "../../engine/inference/request_loop.h"
+#include "../../engine/inference/token_delivery.h"
 #include "../../engine/inference/request_wave_execution.h"
 
 #include <array>
@@ -37,6 +38,7 @@ template<class Error, class Operation> void rejects(Operation operation) {
   throw std::runtime_error("invalid request-loop transition was accepted");
 }
 static_assert(!std::is_copy_constructible_v<i::RequestLoop> && !std::is_move_constructible_v<i::RequestLoop>);
+static_assert(!std::is_copy_constructible_v<i::TokenDelivery> && !std::is_move_constructible_v<i::TokenDelivery>);
 
 struct Adapter {
   std::array<std::optional<i::RequestProgress>, 4> progress_values;
@@ -621,6 +623,77 @@ void open_input_and_midturn_pause_keep_progress() {
       "invalid terminal delivery mutated native retirement or acknowledged fabricated credit");
 }
 
+struct DeliveryConsumer final {
+  std::array<std::array<std::int32_t, 4>, 2> ids{};
+  std::array<std::size_t, 2> count{}, notifications{};
+  std::array<bool, 2> cancel{}, finished_cancelled{};
+  bool block_first = false, cancel_after_write = false;
+  std::size_t max_pending() const noexcept { return 1; }
+  bool try_write(i::RequestKey key, std::int32_t id) noexcept {
+    if (block_first && key.slot == 0) return false;
+    ids[key.slot][count[key.slot]++] = id;
+    if (cancel_after_write && key.slot == 0) cancel[0] = true;
+    return true;
+  }
+  bool cancel_requested(i::RequestKey key) const noexcept { return cancel[key.slot]; }
+  void finished(i::RequestKey key, bool stopped) noexcept {
+    ++notifications[key.slot]; finished_cancelled[key.slot] = stopped;
+  }
+  void wait() noexcept {}
+};
+
+void generic_token_delivery_preserves_peer_and_retirement() {
+  i::RequestLoop owner; owner.prepare(2, 2); Adapter adapter{3, 2};
+  i::TokenDelivery a(1), b(1); DeliveryConsumer consumer; consumer.block_first = true;
+  const auto ka = owner.enqueue(0, &a.window()), kb = owner.enqueue(1, &b.window());
+  a.bind(owner, ka); b.bind(owner, kb);
+  rejects<std::logic_error>([&] { a.bind(owner, kb); });
+  i::RequestLoop foreign; foreign.prepare(1, 1);
+  rejects<std::logic_error>([&] { (void)a.service(foreign, adapter, consumer); });
+  (void)owner.pump_once(adapter);
+  require(!a.service(owner, adapter, consumer) && b.service(owner, adapter, consumer) &&
+      !a.window().acknowledged() && b.window().acknowledged() == 1,
+      "blocked delivery lost credit or prevented the peer's actual write");
+  (void)owner.pump_once(adapter);
+  (void)b.service(owner, adapter, consumer);
+  consumer.cancel[0] = true; adapter.deferred_terminal = 2;
+  require(a.service(owner, adapter, consumer) && a.cancelled() && a.window().acknowledged() == 1 &&
+      adapter.stops[0] == 1 && !consumer.notifications[0],
+      "cancellation failed to abandon only the undelivered prefix");
+  for (std::size_t n = 0; n < 12 && (owner.matches(ka) || owner.matches(kb)); ++n) {
+    (void)owner.pump_once(adapter);
+    (void)a.service(owner, adapter, consumer);
+    (void)b.service(owner, adapter, consumer);
+    require(!owner.matches(ka) || !consumer.notifications[0],
+        "consumer was finished before the original request retired");
+  }
+  require(!owner.matches(ka) && !owner.matches(kb) && consumer.notifications[0] == 1 &&
+      consumer.notifications[1] == 1 && consumer.finished_cancelled[0] && !consumer.finished_cancelled[1] &&
+      !consumer.count[0] && consumer.count[1] == 2 && consumer.ids[1][0] == 11 && consumer.ids[1][1] == 12,
+      "peer delivery, cancellation or terminal notification was lost");
+  require(!a.service(owner, adapter, consumer) && !b.service(owner, adapter, consumer) &&
+      consumer.notifications[0] == 1 && consumer.notifications[1] == 1,
+      "a repeated terminal observation duplicated notification");
+}
+
+void generic_token_delivery_catches_cancel_during_write() {
+  i::RequestLoop owner; owner.prepare(1, 1); Adapter adapter{3};
+  i::TokenDelivery delivery(1); DeliveryConsumer consumer; consumer.cancel_after_write = true;
+  const auto key = owner.enqueue(0, &delivery.window());
+  delivery.bind(owner, key);
+  (void)owner.pump_once(adapter);
+  allocation_count = 0; track_allocations = true;
+  const auto advanced = delivery.service(owner, adapter, consumer);
+  track_allocations = false;
+  require(advanced && !allocation_count && consumer.count[0] == 1 && delivery.cancelled() &&
+      delivery.window().acknowledged() == 1 && adapter.stops[0] == 1,
+      "write-time cancellation was missed, duplicated or allocated");
+  (void)owner.pump_once(adapter);
+  (void)delivery.service(owner, adapter, consumer);
+  require(!owner.matches(key) && consumer.notifications[0] == 1 && consumer.finished_cancelled[0] &&
+      adapter.executions[0] == 1, "write-time cancellation continued execution or lost its terminal");
+}
+
 void prepared_hot_owner_allocates_nothing() {
   i::RequestLoop owner; owner.prepare(2, 2); Adapter adapter{3, 3};
   (void)owner.enqueue(0); (void)owner.enqueue(1);
@@ -791,6 +864,8 @@ int main() {
     deferred_terminal_keeps_original_identity_without_execution();
     errors_preserve_proof_and_committed_boundaries();
     open_input_and_midturn_pause_keep_progress();
+    generic_token_delivery_preserves_peer_and_retirement();
+    generic_token_delivery_catches_cancel_during_write();
     prepared_hot_owner_allocates_nothing();
     in_flight_waves_keep_exact_credit_and_allow_continuation();
     pending_cohort_defers_cancel_eos_and_admission();
@@ -802,7 +877,7 @@ int main() {
     common_wave_drain_and_observation_never_start_new_work();
     common_wave_failure_keeps_exception_and_actual_retirement_independent();
     common_wave_rejects_foreign_reordered_or_unbacked_pending_credit();
-    std::puts("request loop: 16 host contract groups passed; no model/device loaded");
+    std::puts("request loop: 18 host contract groups passed; no model/device loaded");
     return 0;
   } catch (const std::exception &error) {
     track_allocations = false;

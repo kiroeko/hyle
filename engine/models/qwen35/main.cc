@@ -1,3 +1,5 @@
+#include <deque>
+
 #include "model_core.h"
 #include "schedule.h"
 #include "session_schedule.h"
@@ -10,7 +12,7 @@
 #include "../../inference/session_cache.h"
 #include "../../inference/request_progress.h"
 #include "../../inference/request_loop.h"
-#include "../../inference/token_consumer.h"
+#include "../../inference/token_delivery.h"
 #include "../../inference/request_wave_execution.h"
 #include "../../inference/step_execution.h"
 #include "../../inference/continuation.h"
@@ -3179,25 +3181,21 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     else (void)model.prepare_ordinary_decode_recordings(requests.front().sampling_index, prepared);
   }
   request_loop.prepare(requests.size(), model.cache_plan.resident_sessions);
-  using OutputWindows = std::conditional_t<std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>,
-      std::nullptr_t, std::vector<inference::OutputDelivery>>;
-  struct OutputControl final { bool cancelled = false, notified = false; };
-  using OutputControls = std::conditional_t<std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>,
-      std::nullptr_t, std::vector<OutputControl>>;
-  OutputWindows output_windows{};
-  OutputControls output_controls{};
+  using OutputDeliveries = std::conditional_t<std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>,
+      std::nullptr_t, std::deque<inference::TokenDelivery>>;
+  OutputDeliveries output_deliveries{};
   if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>) {
     static_assert(inference::TokenConsumer<std::remove_reference_t<OutputConsumer>>);
-    output_windows.reserve(requests.size());
-    output_controls.resize(requests.size());
     for (std::size_t index = 0; index < requests.size(); ++index)
-      output_windows.emplace_back(output_consumer.max_pending());
+      output_deliveries.emplace_back(output_consumer.max_pending());
   }
   for (std::size_t index = 0; index < requests.size(); ++index) {
     if constexpr (std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>)
       requests[index].request_key = request_loop.enqueue(index);
-    else
-      requests[index].request_key = request_loop.enqueue(index, &output_windows[index]);
+    else {
+      requests[index].request_key = request_loop.enqueue(index, &output_deliveries[index].window());
+      output_deliveries[index].bind(request_loop, requests[index].request_key);
+    }
   }
   std::vector<std::size_t> dispatch, dispatch_turns;
   dispatch.reserve(dispatch_bound); dispatch_turns.reserve(dispatch_bound);
@@ -3368,44 +3366,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   const auto service_output = [&]() {
     bool advanced = false;
     if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>) {
-      for (std::size_t index = 0; index < requests.size(); ++index) {
-        const auto &request = requests[index];
-        auto &control = output_controls[index];
-        const auto key = request.request_key;
-        if (!request_loop.matches(key)) {
-          if (!control.notified) {
-            output_consumer.finished(key, control.cancelled);
-            control.notified = true; advanced = true;
-          }
-          continue;
-        }
-        auto &window = output_windows[index];
-        const auto cancel = [&]() {
-          if (control.cancelled || !output_consumer.cancel_requested(key)) return;
-          const auto status = request_loop.cancel(key, adapter);
-          if (!status.ok() && !(status.IsCancelled() && !status.has_native_error())) check(status);
-          control.cancelled = true; advanced = true;
-        };
-        cancel();
-        const auto pending = window.pending(request.progress.generated);
-        std::size_t accepted = 0;
-        if (control.cancelled) accepted = pending.size(); // Disconnected consumer abandons its pending output.
-        else while (accepted < pending.size() && !output_consumer.cancel_requested(key) &&
-                    output_consumer.try_write(key, pending[accepted])) ++accepted;
-        if (accepted) {
-          if (!request_loop.acknowledge(key, window.acknowledged() + accepted, adapter))
-            throw std::logic_error("output acknowledgement lost its original request");
-          advanced = true;
-        }
-        // A disconnect can race the last write; do not enter wait with an
-        // already-pending cancellation or publish another model episode.
-        cancel();
-        if (control.cancelled && window.acknowledged() != request.progress.generated.size()) {
-          if (!request_loop.acknowledge(key, request.progress.generated.size(), adapter))
-            throw std::logic_error("cancelled output lost its original request");
-          advanced = true;
-        }
-      }
+      for (std::size_t index = 0; index < requests.size(); ++index)
+        advanced = output_deliveries[index].service(request_loop, adapter, output_consumer) || advanced;
     }
     return advanced;
   };
@@ -3467,15 +3429,15 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     reuse->ready = true; reuse_success = true;
   }
   if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>) {
-    const auto cancelled = static_cast<std::size_t>(std::count_if(output_controls.begin(), output_controls.end(),
-        [](const auto &control) { return control.cancelled; }));
+    const auto cancelled = static_cast<std::size_t>(std::count_if(output_deliveries.begin(), output_deliveries.end(),
+        [](const auto &delivery) { return delivery.cancelled(); }));
     if (cancelled) {
       // Planned-turn timing and decode totals are not meaningful for an
       // interrupted workload. Preserve actual outputs without inventing them.
       report_out << "{\"cancelled_requests\":" << cancelled << ",\"sessions\":[";
       for (std::size_t index = 0; index < requests.size(); ++index) {
         report_out << (index ? "," : "") << "{\"slot\":" << index << ",\"cancelled\":"
-            << (output_controls[index].cancelled ? "true" : "false") << ",\"generated_ids\":[";
+            << (output_deliveries[index].cancelled() ? "true" : "false") << ",\"generated_ids\":[";
         const auto &ids = requests[index].progress.generated;
         for (std::size_t at = 0; at < ids.size(); ++at) report_out << (at ? "," : "") << ids[at];
         report_out << "]}";
