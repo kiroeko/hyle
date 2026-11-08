@@ -23,6 +23,7 @@ struct GenerationTurn final {
 struct GenerationSessionSchedule final {
   std::string id;
   std::vector<GenerationTurn> turns;
+  bool report_turn_ends = false;
 };
 
 struct RequestInputCommit final {

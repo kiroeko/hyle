@@ -40,8 +40,8 @@ struct IngressRequest final {
 // cancellation, so an abandoned transport cannot permanently hold credit.
 class GenerationRequestHandle final {
 public:
-  enum class EventKind { kToken, kCompleted, kCancelled, kFailed, kClosed };
-  struct Event final { EventKind kind; std::int32_t token = 0; std::exception_ptr failure{}; };
+  enum class EventKind { kToken, kTurnEnd, kCompleted, kCancelled, kFailed, kClosed };
+  struct Event final { EventKind kind; std::int32_t token = 0; std::exception_ptr failure{}; std::size_t turn = 0; };
   GenerationRequestHandle() = default;
   GenerationRequestHandle(const GenerationRequestHandle &) = delete;
   GenerationRequestHandle &operator=(const GenerationRequestHandle &) = delete;
@@ -94,6 +94,7 @@ public:
     }
     const auto item = output->read(key);
     if (item.state == QueuedTokenConsumer::ReadState::kToken) return {EventKind::kToken, item.token};
+    if (item.state == QueuedTokenConsumer::ReadState::kTurnEnd) return {EventKind::kTurnEnd, 0, {}, item.turn};
     std::lock_guard lock(request_->mutex);
     if (item.state == QueuedTokenConsumer::ReadState::kCompleted) {
       request_->state = detail::IngressState::kCompleted;
@@ -203,6 +204,7 @@ private:
       return true;
     }
     bool try_write(RequestKey key, std::int32_t token) noexcept { return output_->try_write(key, token); }
+    bool try_turn_end(RequestKey key, std::size_t turn) noexcept { return output_->try_turn_end(key, turn); }
     bool cancel_requested(RequestKey key) noexcept { return output_->cancel_requested(key); }
     void finished(RequestKey key, bool cancelled) noexcept {
       if (key.slot >= jobs_.size() || !started_[key.slot] || finished_[key.slot] || keys_[key.slot] != key) {

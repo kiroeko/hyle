@@ -15,16 +15,16 @@ namespace hyle::inference {
 // A bounded transport handoff, not a model-output or session owner. The model
 // owner alone calls start/try_write/finished/wait; transport threads may read,
 // request cancellation, release retired slots and shut down. Each accepted
-// token is copied once into this queue; the existing output record and native
+// token or turn boundary is copied once into this queue; the output record and native
 // completion/retirement remain owned by the request loop and model.
 class QueuedTokenConsumer final {
 public:
-  enum class ReadState { kToken, kCompleted, kCancelled, kClosed, kStale };
-  struct ReadResult final { ReadState state; std::int32_t token = 0; };
+  enum class ReadState { kToken, kTurnEnd, kCompleted, kCancelled, kClosed, kStale };
+  struct ReadResult final { ReadState state; std::int32_t token = 0; std::size_t turn = 0; };
 
   QueuedTokenConsumer(std::size_t slots, std::size_t pending) : slots_(slots), pending_(pending) {
     if (!slots || !pending) throw std::invalid_argument("token queue requires positive slot and pending capacities");
-    for (auto &slot : slots_) slot.tokens.resize(pending);
+    for (auto &slot : slots_) slot.items.resize(pending);
   }
   QueuedTokenConsumer(const QueuedTokenConsumer &) = delete;
   QueuedTokenConsumer &operator=(const QueuedTokenConsumer &) = delete;
@@ -45,7 +45,14 @@ public:
     std::lock_guard lock(mutex_);
     auto *slot = find(key);
     if (!slot || closed_ || slot->cancel || slot->done || slot->size == pending_) return false;
-    slot->tokens[(slot->head + slot->size) % pending_] = token;
+    slot->items[(slot->head + slot->size) % pending_] = {ReadState::kToken, token, 0};
+    ++slot->size; ready_.notify_all(); return true;
+  }
+  bool try_turn_end(RequestKey key, std::size_t turn) noexcept {
+    std::lock_guard lock(mutex_);
+    auto *slot = find(key);
+    if (!slot || closed_ || slot->cancel || slot->done || slot->size == pending_) return false;
+    slot->items[(slot->head + slot->size) % pending_] = {ReadState::kTurnEnd, 0, turn};
     ++slot->size; ready_.notify_all(); return true;
   }
   bool cancel_requested(RequestKey key) noexcept {
@@ -83,10 +90,10 @@ public:
     auto *slot = find(key);
     if (!slot) return {ReadState::kStale};
     if (slot->size) {
-      const auto token = slot->tokens[slot->head];
+      const auto item = slot->items[slot->head];
       slot->head = (slot->head + 1) % pending_; --slot->size;
       wake_producer();
-      return {ReadState::kToken, token};
+      return item;
     }
     if (slot->done) return {slot->cancelled ? ReadState::kCancelled : ReadState::kCompleted};
     return {ReadState::kClosed};
@@ -112,7 +119,7 @@ public:
 private:
   struct Slot final {
     RequestKey key{};
-    std::vector<std::int32_t> tokens;
+    std::vector<ReadResult> items;
     std::size_t head = 0, size = 0;
     bool active = false, done = false, cancel = false, cancelled = false;
   };

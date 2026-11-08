@@ -20,6 +20,9 @@ namespace hyle::inference {
 // The consumer synchronizes with its own reader and must not reenter the owner.
 // An optional bool start(RequestKey) noexcept is called after enqueue and before
 // execution. False refuses attachment; it never submits or retires model work.
+// An optional bool try_turn_end(RequestKey, size_t) noexcept accepts one
+// zero-based published turn boundary in token order. False transfers nothing.
+// A turn boundary does not imply that the request or device work retired.
 template<class T>
 concept TokenConsumer = requires(T &consumer, RequestKey key, std::int32_t token) {
   { consumer.max_pending() } noexcept -> std::same_as<std::size_t>;

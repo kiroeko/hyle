@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <stdexcept>
 #include <utility>
@@ -18,7 +19,8 @@ namespace hyle::inference {
 // real retirement. Bind each object once to its original request identity.
 class TokenDelivery final {
 public:
-  explicit TokenDelivery(std::size_t maximum_pending) : window_(maximum_pending) {}
+  explicit TokenDelivery(std::size_t maximum_pending, std::size_t maximum_turns = 0)
+      : window_(maximum_pending, maximum_turns) {}
   TokenDelivery(const TokenDelivery &) = delete;
   TokenDelivery &operator=(const TokenDelivery &) = delete;
   TokenDelivery(TokenDelivery &&) = delete;
@@ -51,19 +53,34 @@ public:
       cancelled_ = true; advanced = true;
     };
     cancel();
-    const auto pending = window_.pending(progress.generated);
-    std::size_t accepted = 0;
-    if (cancelled_) accepted = pending.size();
-    else while (accepted < pending.size() && !consumer.cancel_requested(key) &&
-                consumer.try_write(key, pending[accepted])) ++accepted;
-    if (accepted) {
-      if (!loop.acknowledge(key, window_.acknowledged() + accepted, adapter))
-        throw std::logic_error("output acknowledgement lost its original request");
-      advanced = true;
+    for (;;) {
+      const auto pending = window_.pending(progress.generated);
+      const auto boundary = window_.next_turn_end();
+      if (boundary && boundary->through < window_.acknowledged())
+        throw std::logic_error("turn boundary fell behind its delivery cursor");
+      const auto limit = boundary ? (std::min)(pending.size(), boundary->through - window_.acknowledged()) : pending.size();
+      std::size_t accepted = 0;
+      if (cancelled_) accepted = pending.size();
+      else while (accepted < limit && !consumer.cancel_requested(key) &&
+                  consumer.try_write(key, pending[accepted])) ++accepted;
+      if (accepted) {
+        if (!loop.acknowledge(key, window_.acknowledged() + accepted, adapter))
+          throw std::logic_error("output acknowledgement lost its original request");
+        advanced = true;
+      }
+      if (cancelled_ || consumer.cancel_requested(key)) break;
+      if (!boundary || window_.acknowledged() != boundary->through) break;
+      if constexpr (requires { { consumer.try_turn_end(key, boundary->turn) } noexcept -> std::same_as<bool>; }) {
+        if (!consumer.try_turn_end(key, boundary->turn)) break;
+        window_.accept_turn_end(); advanced = true;
+      } else {
+        throw std::logic_error("consumer does not support requested turn boundaries");
+      }
     }
     // Cancellation may arrive during the last write. Abandon only this
     // consumer's undelivered prefix and retain native retirement ownership.
     cancel();
+    if (cancelled_) window_.discard_turn_ends();
     if (cancelled_ && window_.acknowledged() != progress.generated.size()) {
       if (!loop.acknowledge(key, progress.generated.size(), adapter))
         throw std::logic_error("cancelled output lost its original request");

@@ -23,10 +23,10 @@ namespace hyle::inference {
 
 // Internal local transport for a frontend process. It carries token IDs, not
 // protocol JSON or model state. Frames are TAB-delimited UTF-8/ASCII lines:
-// G id output_limit comma_separated_ids [output_limit comma_separated_ids ...];
-// K id accepted_count; C id; Q. Later turn inputs may be empty. Tokens from
-// all turns are delivered in order; this transport does not mark turn ends.
-// Responses are READY 2 vocabulary context stop_ids, A id, T id token,
+// G or S id output_limit comma_separated_ids [output_limit comma_separated_ids ...];
+// K id accepted_count; C id; Q. Later turn inputs may be empty. S requests
+// ordered B id zero_based_turn events; both tokens and boundaries use credit.
+// Responses are READY 2 vocabulary context stop_ids, A id, T id token, B id turn,
 // F id completed|cancelled|closed,
 // E id kind message, C id accepted|stale and BYE. A request initially has one
 // output credit; K acknowledges delivered tokens and releases that credit.
@@ -82,7 +82,7 @@ public:
           if (!emit(error(id, "protocol", "invalid output acknowledgement"))) break;
         continue;
       }
-      if (fields[0] != "G" || fields.size() < 4 || (fields.size() - 2) % 2 != 0) {
+      if ((fields[0] != "G" && fields[0] != "S") || fields.size() < 4 || (fields.size() - 2) % 2 != 0) {
         if (!emit(error(id, "protocol", "unknown or malformed command"))) break;
         continue;
       }
@@ -112,7 +112,7 @@ public:
         continue;
       }
       try {
-        auto handle = dispatcher_.submit({std::to_string(id), std::move(turns)});
+        auto handle = dispatcher_.submit({std::to_string(id), std::move(turns), fields[0] == "S"});
         auto call = std::make_shared<Call>(std::move(handle));
         calls_.emplace(id, call);
         if (!emit("A\t" + std::to_string(id))) { call->cancel(); break; }
@@ -163,7 +163,7 @@ private:
       if (cancelled) return false;
       --credit; return true;
     }
-    bool record_token() noexcept {
+    bool record_event() noexcept {
       std::lock_guard lock(credit_mutex);
       if (cancelled) return false;
       ++outstanding; return true;
@@ -210,8 +210,15 @@ private:
         const bool deliver_token = call->wait_for_credit();
         const auto event = call->handle.read();
         if (event.kind == Kind::kToken) {
-          if (deliver_token && call->record_token() &&
+          if (deliver_token && call->record_event() &&
               !emit("T\t" + std::to_string(id) + "\t" + std::to_string(event.token))) {
+            call->cancel(); break;
+          }
+          continue;
+        }
+        if (event.kind == Kind::kTurnEnd) {
+          if (deliver_token && call->record_event() &&
+              !emit("B\t" + std::to_string(id) + "\t" + std::to_string(event.turn))) {
             call->cancel(); break;
           }
           continue;

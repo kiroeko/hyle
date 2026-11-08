@@ -24,10 +24,18 @@ public:
         start_([](void *p, RequestKey key) noexcept {
           if constexpr (requires(T &c) { { c.start(key) } noexcept -> std::same_as<bool>; })
             return static_cast<T *>(p)->start(key);
-          else return true;
+          else { (void)p; (void)key; return true; }
         }),
         write_([](void *p, RequestKey key, std::int32_t token) noexcept {
           return static_cast<T *>(p)->try_write(key, token);
+        }),
+        turn_end_([](void *p, RequestKey key, std::size_t turn) noexcept {
+          if constexpr (requires(T &c) { { c.try_turn_end(key, turn) } noexcept -> std::same_as<bool>; })
+            return static_cast<T *>(p)->try_turn_end(key, turn);
+          else { (void)p; (void)key; (void)turn; return false; }
+        }),
+        supports_turn_ends_(requires(T &c, RequestKey key, std::size_t turn) {
+          { c.try_turn_end(key, turn) } noexcept -> std::same_as<bool>;
         }),
         cancel_([](void *p, RequestKey key) noexcept { return static_cast<T *>(p)->cancel_requested(key); }),
         finished_([](void *p, RequestKey key, bool cancelled) noexcept {
@@ -36,6 +44,8 @@ public:
   std::size_t max_pending() const noexcept { return pending_(object_); }
   bool start(RequestKey key) noexcept { return start_(object_, key); }
   bool try_write(RequestKey key, std::int32_t token) noexcept { return write_(object_, key, token); }
+  bool supports_turn_ends() const noexcept { return supports_turn_ends_; }
+  bool try_turn_end(RequestKey key, std::size_t turn) noexcept { return turn_end_(object_, key, turn); }
   bool cancel_requested(RequestKey key) noexcept { return cancel_(object_, key); }
   void finished(RequestKey key, bool cancelled) noexcept { finished_(object_, key, cancelled); }
   void wait() noexcept { wait_(object_); }
@@ -44,6 +54,8 @@ private:
   std::size_t (*pending_)(void *) noexcept;
   bool (*start_)(void *, RequestKey) noexcept;
   bool (*write_)(void *, RequestKey, std::int32_t) noexcept;
+  bool (*turn_end_)(void *, RequestKey, std::size_t) noexcept;
+  bool supports_turn_ends_;
   bool (*cancel_)(void *, RequestKey) noexcept;
   void (*finished_)(void *, RequestKey, bool) noexcept;
   void (*wait_)(void *) noexcept;

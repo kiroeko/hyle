@@ -16,6 +16,7 @@ class TokenEvent:
     kind: str
     token: int | None = None
     message: str = ""
+    turn: int | None = None
 
 
 class TokenRequest(Protocol):

@@ -2685,6 +2685,20 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     const hyle::engine::reporting::RouteDecisionFacts &routes = {}, OutputConsumer &&output_consumer = nullptr,
     std::ostream &report_out = std::cout, ReusableGenerationPreparation *reuse = nullptr) {
   constexpr bool mtp = Mode == GenerationMode::kMtp;
+  if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>) {
+    if (std::ranges::any_of(schedules, [](const auto &schedule) { return schedule.report_turn_ends; })) {
+      if constexpr (requires { output_consumer.supports_turn_ends(); }) {
+        if (!output_consumer.supports_turn_ends())
+          throw inference::RequestRejected("consumer does not support requested turn boundaries");
+      } else if constexpr (!requires(inference::RequestKey key, std::size_t turn) {
+          { output_consumer.try_turn_end(key, turn) } noexcept -> std::same_as<bool>;
+        }) {
+        throw inference::RequestRejected("consumer does not support requested turn boundaries");
+      }
+    }
+  } else if (std::ranges::any_of(schedules, [](const auto &schedule) { return schedule.report_turn_ends; })) {
+    throw inference::RequestRejected("turn boundaries require an output consumer");
+  }
   const auto selected_sampling = sampling_indices.empty() ? 0 : sampling_indices.front();
   const auto configured_prefill = (std::min)({max_prefill_rows, std::size_t{512}, model.capacity});
   const bool reuse_ready = reuse && reuse->ready;
@@ -3217,7 +3231,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>) {
     static_assert(inference::TokenConsumer<std::remove_reference_t<OutputConsumer>>);
     for (std::size_t index = 0; index < requests.size(); ++index)
-      output_deliveries.emplace_back(output_consumer.max_pending());
+      output_deliveries.emplace_back(output_consumer.max_pending(),
+          schedules[index].report_turn_ends ? schedules[index].turns.size() : 0);
   }
   for (std::size_t index = 0; index < requests.size(); ++index) {
     if constexpr (std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>)

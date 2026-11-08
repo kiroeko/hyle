@@ -63,7 +63,7 @@ struct Adapter {
   std::optional<std::size_t> cancel_during_wave;
   i::RequestLoop *cancel_owner = nullptr;
   hyle::Status stop_result{};
-  bool error_is_retired = false;
+  bool error_is_retired = false, stop_first_turn = false;
   hyle::Status error = hyle::Status::FromNative(hyle::StatusCode::Internal,
       {hyle::NativeErrorDomain::CudaDriver, 999}, "test native retirement failure");
 
@@ -111,7 +111,8 @@ struct Adapter {
       if (stopped[key.slot]) continue; // Explicit original model cancelled-member outcome.
       auto &p = progress(key); residents[key.slot] = true; ++executions[key.slot];
       const std::array output{static_cast<std::int32_t>(key.slot * 10 + p.generated.size() + 1)};
-      require(p.observe_commit(p.observed_commits(), output, true, true, false), "host output was replayed");
+      const bool is_stopped = stop_first_turn && !p.turn_index && p.generated.empty();
+      require(p.observe_commit(p.observed_commits(), output, true, true, is_stopped), "host output was replayed");
       if (throw_after_commit == key.slot) throw std::runtime_error("test observer failed after commit");
     }
     } catch (...) { return {true, {true, {}}, std::current_exception()}; }
@@ -702,6 +703,96 @@ void generic_token_delivery_catches_cancel_during_write() {
       adapter.executions[0] == 1, "write-time cancellation continued execution or lost its terminal");
 }
 
+struct TurnConsumer final {
+  std::array<int, 8> events{};
+  std::size_t count = 0, finishes = 0;
+  bool blocked = true, cancel = false, cancelled = false;
+  std::size_t max_pending() const noexcept { return 1; }
+  bool try_write(i::RequestKey, std::int32_t id) noexcept { events[count++] = id; return true; }
+  bool try_turn_end(i::RequestKey, std::size_t turn) noexcept {
+    if (blocked) return false;
+    events[count++] = -1 - static_cast<int>(turn); return true;
+  }
+  bool cancel_requested(i::RequestKey) const noexcept { return cancel; }
+  void finished(i::RequestKey, bool stopped) noexcept { ++finishes; cancelled = stopped; }
+  void wait() noexcept {}
+};
+
+void delivery_orders_turn_boundaries_and_retirement() {
+  i::RequestLoop owner; owner.prepare(1, 1); Adapter adapter{3};
+  const std::array turns{i::GenerationTurn{{1}, 2}, i::GenerationTurn{{2}, 1}};
+  adapter.progress_values[0]->bind_turns(turns);
+  i::TokenDelivery delivery(1, turns.size()); TurnConsumer consumer;
+  const auto key = owner.enqueue(0, &delivery.window()); delivery.bind(owner, key);
+  (void)owner.pump_once(adapter); (void)delivery.service(owner, adapter, consumer);
+  (void)owner.pump_once(adapter); (void)delivery.service(owner, adapter, consumer);
+  require(consumer.count == 2 && consumer.events[0] == 1 && consumer.events[1] == 2 &&
+      delivery.window().next_turn_end()->through == 2 && !consumer.finishes,
+      "blocked boundary lost its preceding output or finished the request");
+  (void)owner.pump_once(adapter); (void)delivery.service(owner, adapter, consumer);
+  require(consumer.count == 2 && owner.matches(key) && !consumer.finishes,
+      "a later token overtook a blocked turn boundary");
+  consumer.blocked = false;
+  allocation_count = 0; track_allocations = true;
+  (void)delivery.service(owner, adapter, consumer);
+  track_allocations = false;
+  require(!allocation_count && consumer.count == 5 && consumer.events[2] == -1 &&
+      consumer.events[3] == 3 && consumer.events[4] == -2 && !consumer.finishes,
+      "turn events were reordered, duplicated or allocated during delivery");
+  (void)owner.pump_once(adapter); (void)delivery.service(owner, adapter, consumer);
+  require(!owner.matches(key) && consumer.finishes == 1 && !consumer.cancelled,
+      "turn delivery bypassed the original terminal retirement");
+
+  i::RequestLoop stopped; stopped.prepare(1, 1); Adapter cancel_adapter{1};
+  const std::array one{i::GenerationTurn{{1}, 1}}; cancel_adapter.progress_values[0]->bind_turns(one);
+  i::TokenDelivery cancelled(1, 1); TurnConsumer cancel_consumer;
+  const auto stopped_key = stopped.enqueue(0, &cancelled.window()); cancelled.bind(stopped, stopped_key);
+  (void)stopped.pump_once(cancel_adapter); (void)cancelled.service(stopped, cancel_adapter, cancel_consumer);
+  require(cancel_consumer.count == 1 && stopped.matches(stopped_key), "blocked terminal boundary lost its key");
+  cancel_consumer.cancel = true; (void)cancelled.service(stopped, cancel_adapter, cancel_consumer);
+  (void)stopped.pump_once(cancel_adapter); (void)cancelled.service(stopped, cancel_adapter, cancel_consumer);
+  require(!stopped.matches(stopped_key) && cancel_consumer.count == 1 &&
+      cancel_consumer.finishes == 1 && cancel_consumer.cancelled,
+      "cancelled boundary was emitted or terminal notification was lost");
+
+  i::RequestLoop early; early.prepare(1, 1); Adapter early_adapter{4}; early_adapter.stop_first_turn = true;
+  const std::array early_turns{i::GenerationTurn{{1}, 3}, i::GenerationTurn{{2}, 1}};
+  early_adapter.progress_values[0]->bind_turns(early_turns);
+  i::TokenDelivery early_delivery(1, 2); TurnConsumer early_consumer; early_consumer.blocked = false;
+  const auto early_key = early.enqueue(0, &early_delivery.window()); early_delivery.bind(early, early_key);
+  for (std::size_t n = 0; n < 8 && early.matches(early_key); ++n) {
+    (void)early.pump_once(early_adapter); (void)early_delivery.service(early, early_adapter, early_consumer);
+  }
+  require(!early.matches(early_key) && early_consumer.count == 4 && early_consumer.events[0] == 1 &&
+      early_consumer.events[1] == -1 && early_consumer.events[2] == 2 && early_consumer.events[3] == -2 &&
+      early_consumer.finishes == 1, "early stop did not publish its actual turn boundary");
+}
+
+void turn_boundary_queue_is_bounded_and_keyed() {
+  i::RequestWindow owner; owner.prepare(1, 1);
+  const auto key = owner.enqueue(0);
+  i::QueuedTokenConsumer queue(1, 1); i::TokenConsumerRef ref(queue);
+  DeliveryConsumer legacy; i::TokenConsumerRef legacy_ref(legacy);
+  require(ref.supports_turn_ends() && !legacy_ref.supports_turn_ends() && ref.start(key) &&
+      ref.try_write(key, 7) && !ref.try_turn_end(key, 0), "boundary bypassed queue credit or capability");
+  require(queue.read(key).token == 7 && ref.try_turn_end(key, 0) && !ref.try_write(key, 8),
+      "boundary did not occupy the existing bounded queue");
+  const auto boundary = queue.read(key);
+  require(boundary.state == i::QueuedTokenConsumer::ReadState::kTurnEnd && boundary.turn == 0 &&
+      ref.try_write(key, 8) && queue.read(key).token == 8, "queue reordered a turn boundary");
+  queue.finished(key, false);
+  require(queue.read(key).state == i::QueuedTokenConsumer::ReadState::kCompleted && queue.release(key) &&
+      !ref.try_turn_end(key, 1), "retired key accepted a stale boundary");
+
+  i::OutputDelivery delivery(1, 2);
+  delivery.record_turn_end(0, 1); delivery.record_turn_end(0, 1);
+  rejects<std::logic_error>([&] { delivery.record_turn_end(0, 2); });
+  rejects<std::out_of_range>([&] { delivery.record_turn_end(2, 2); });
+  rejects<std::logic_error>([&] { delivery.accept_turn_end(); });
+  delivery.acknowledge_prefix(1, 1); delivery.accept_turn_end();
+  require(delivery.drained(1), "accepted boundary did not drain its original prefix");
+}
+
 void queued_delivery_preserves_bounds_and_terminal_identity() {
   i::RequestWindow window, foreign; window.prepare(2, 2); foreign.prepare(2, 2);
   const auto a = window.enqueue(0), b = window.enqueue(1), other = foreign.enqueue(0);
@@ -777,12 +868,15 @@ public:
     }
     for (std::size_t slot = 0; slot < keys.size(); ++slot) {
       const auto key = keys[slot];
-      for (const auto &turn : batch.sessions[slot].turns) {
+      for (std::size_t turn_index = 0; turn_index < batch.sessions[slot].turns.size(); ++turn_index) {
+        const auto &turn = batch.sessions[slot].turns[turn_index];
         const auto first = turn.prompt.empty() ? 0 : turn.prompt.front();
         for (std::size_t n = 0; n < turn.max_outputs && !consumer.cancel_requested(key);) {
           if (consumer.try_write(key, static_cast<std::int32_t>(first + n))) ++n;
           else if (!consumer.cancel_requested(key)) consumer.wait();
         }
+        if (batch.sessions[slot].report_turn_ends)
+          while (!consumer.cancel_requested(key) && !consumer.try_turn_end(key, turn_index)) consumer.wait();
       }
       const auto cancelled = consumer.cancel_requested(key);
       window_.retire_active(key); window_.release(key);
@@ -910,6 +1004,16 @@ void token_worker_credit_and_cancellation_do_not_hang() {
       input_buffer.send("K\t4\t1\n");
     }
     require(next() == "F\t4\tcompleted", "worker lost the multi-turn terminal");
+    input_buffer.send("S\t5\t1\t60\t1\t\n");
+    require(next() == "A\t5" && next() == "T\t5\t60", "worker lost the first session token");
+    input_buffer.send("K\t5\t1\n");
+    require(next() == "B\t5\t0", "worker lost the first turn boundary");
+    input_buffer.send("K\t5\t1\n");
+    require(next() == "T\t5\t0", "worker reordered the next turn token");
+    input_buffer.send("K\t5\t1\n");
+    require(next() == "B\t5\t1", "worker lost the final turn boundary");
+    input_buffer.send("K\t5\t1\n");
+    require(next() == "F\t5\tcompleted", "worker ended before the final boundary");
     input_buffer.send("G\t2\t2\t20\n");
     require(next() == "A\t2" && next() == "T\t2\t20", "worker lost second request");
     input_buffer.send("C\t2\n");
@@ -1303,6 +1407,8 @@ int main() {
     open_input_and_midturn_pause_keep_progress();
     generic_token_delivery_preserves_peer_and_retirement();
     generic_token_delivery_catches_cancel_during_write();
+    delivery_orders_turn_boundaries_and_retirement();
+    turn_boundary_queue_is_bounded_and_keyed();
     queued_delivery_preserves_bounds_and_terminal_identity();
     model_provider_selects_one_owner_and_rejects_ambiguity();
     token_worker_rejects_malformed_frames_without_starting_model();

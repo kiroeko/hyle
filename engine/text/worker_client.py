@@ -1,7 +1,7 @@
 """Bounded token transport to one persistent Hyle model process.
 
 This module knows neither model mathematics nor HTTP schemas. A request has one
-outstanding token credit; callers acknowledge only after consuming that token.
+event credit; callers acknowledge after consuming each token or turn boundary.
 """
 from __future__ import annotations
 
@@ -47,12 +47,12 @@ class WorkerRequest:
     def read(self, timeout: float | None = None) -> TokenEvent:
         with self._lock:
             if self._outstanding:
-                raise RuntimeError("acknowledge the previous token before reading another")
+                raise RuntimeError("acknowledge the previous event before reading another")
             if self._terminal:
                 raise RuntimeError("request has already terminated")
         event = self._events.get(timeout=timeout)
         with self._lock:
-            if event.kind == "token":
+            if event.kind in ("token", "turn_end"):
                 self._outstanding = True
             else:
                 self._terminal = True
@@ -62,7 +62,7 @@ class WorkerRequest:
     def acknowledge(self) -> None:
         with self._lock:
             if not self._outstanding or self._terminal:
-                raise RuntimeError("there is no unacknowledged token")
+                raise RuntimeError("there is no unacknowledged event")
             self._client._send(f"K\t{self._id}\t1")
             self._outstanding = False
 
@@ -127,10 +127,13 @@ class WorkerClient:
             return not self._closed and self._failure is None and self._process.poll() is None
 
     def submit(self, tokens: Sequence[int], max_output_tokens: int) -> WorkerRequest:
-        return self.submit_turns(((tokens, max_output_tokens),))
+        return self._submit_turns(((tokens, max_output_tokens),), report_turns=False)
 
     def submit_turns(self, turns: Sequence[tuple[Sequence[int], int]]) -> WorkerRequest:
-        """Submit one finite session; its turn outputs form one ordered stream."""
+        """Submit one finite session with acknowledged, zero-based turn-end events."""
+        return self._submit_turns(turns, report_turns=True)
+
+    def _submit_turns(self, turns: Sequence[tuple[Sequence[int], int]], *, report_turns: bool) -> WorkerRequest:
         if not turns:
             raise ValueError("at least one turn is required")
         frames = []
@@ -150,7 +153,7 @@ class WorkerClient:
             self._next_id += 1
             self._pending[request_id] = events
         try:
-            self._send(f"G\t{request_id}\t" + "\t".join(frames))
+            self._send(f"{'S' if report_turns else 'G'}\t{request_id}\t" + "\t".join(frames))
         except Exception:
             self._forget(request_id)
             raise
@@ -209,6 +212,8 @@ class WorkerClient:
                     continue
                 if kind == "T" and len(fields) == 3:
                     self._publish(int(fields[1]), TokenEvent("token", int(fields[2])))
+                elif kind == "B" and len(fields) == 3 and int(fields[2]) >= 0:
+                    self._publish(int(fields[1]), TokenEvent("turn_end", turn=int(fields[2])))
                 elif kind == "F" and len(fields) == 3 and fields[2] in ("completed", "cancelled", "closed"):
                     self._publish(int(fields[1]), TokenEvent(fields[2]))
                 elif kind == "E" and len(fields) == 4:

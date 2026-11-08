@@ -12,10 +12,10 @@ class WorkerClientLifecycleTest(unittest.TestCase):
             "import sys",
             "print('READY\\t2\\t256\\t128\\t3', flush=True)",
             "line = sys.stdin.readline().rstrip('\\r\\n')",
-            "assert line == 'G\\t1\\t1\\t10\\t1\\t\\t1\\t20,21\\t1\\t', repr(line)",
+            "assert line == 'S\\t1\\t1\\t10\\t1\\t\\t1\\t20,21\\t1\\t', repr(line)",
             "print('A\\t1', flush=True)",
-            "for token in (11, 12, 13, 14):",
-            " print(f'T\\t1\\t{token}', flush=True)",
+            "for kind, value in (('T', 11), ('B', 0), ('T', 12), ('B', 1), ('T', 13), ('B', 2), ('T', 14), ('B', 3)):",
+            " print(f'{kind}\\t1\\t{value}', flush=True)",
             " assert sys.stdin.readline().rstrip('\\r\\n') == 'K\\t1\\t1'",
             "print('F\\t1\\tcompleted', flush=True)",
             "assert sys.stdin.readline().rstrip('\\r\\n') == 'Q'",
@@ -32,6 +32,11 @@ class WorkerClientLifecycleTest(unittest.TestCase):
                 for token in (11, 12, 13, 14):
                     event = request.read(timeout=3)
                     self.assertEqual((event.kind, event.token), ('token', token))
+                    request.acknowledge()
+                    boundary = request.read(timeout=3)
+                    self.assertEqual((boundary.kind, boundary.turn), ('turn_end', token - 11))
+                    with self.assertRaises(RuntimeError):
+                        request.read(timeout=3)
                     request.acknowledge()
                 self.assertEqual(request.read(timeout=3).kind, 'completed')
             finally:

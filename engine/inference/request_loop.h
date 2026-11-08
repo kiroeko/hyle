@@ -415,7 +415,7 @@ private:
     if (!delivery) return true;
     const auto produced = adapter.progress(key).generated.size();
     (void)delivery->available(produced); // Preserve the original bounded-credit validation.
-    return delivery->acknowledged() == produced;
+    return delivery->drained(produced);
   }
   void release_terminal(const Terminal &entry, RequestPumpResult &result) {
     window_.release(entry.key); clear_credit_wait(entry.key); slots_[entry.key.slot] = {}; ++result.completed;
@@ -466,6 +466,8 @@ private:
         continue;
       }
       adapter.publish_turn(key);
+      if (slots_[key.slot].delivery)
+        slots_[key.slot].delivery->record_turn_end(progress.turn_index, progress.generated.size());
       if (progress.more_turns()) {
         slots_[key.slot].idle_order = window_.release_turn(key, true);
         progress.advance_turn();
