@@ -1,0 +1,234 @@
+#pragma once
+
+#include <atomic>
+#include <charconv>
+#include <condition_variable>
+#include <cstddef>
+#include <cstdint>
+#include <istream>
+#include <limits>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <ostream>
+#include <string>
+#include <string_view>
+#include <thread>
+#include <utility>
+#include <vector>
+
+#include "generation_dispatcher.h"
+
+namespace hyle::inference {
+
+// Internal local transport for a frontend process. It carries token IDs, not
+// protocol JSON or model state. Frames are TAB-delimited UTF-8/ASCII lines:
+// G id output_limit comma_separated_ids; K id accepted_count; C id; Q.
+// Responses are READY 1, A id, T id token, F id completed|cancelled|closed,
+// E id kind message, C id accepted|stale and BYE. A request initially has one
+// output credit; K acknowledges delivered tokens and releases that credit.
+// Request IDs are nonzero unsigned integers.
+// The frontend owns tokenizer, templates, protocol and disconnect detection.
+class TokenWorker final {
+public:
+  TokenWorker(std::unique_ptr<ModelExecutor> executor, std::size_t batch_limit,
+              std::size_t waiting_limit, std::size_t output_capacity,
+              std::size_t max_prompt_tokens, std::istream &input, std::ostream &output)
+      : dispatcher_(std::move(executor), batch_limit, waiting_limit, output_capacity),
+        max_prompt_tokens_(max_prompt_tokens), input_(input), output_(output) {
+    if (!max_prompt_tokens) throw std::invalid_argument("worker prompt capacity must be positive");
+  }
+  TokenWorker(const TokenWorker &) = delete;
+  TokenWorker &operator=(const TokenWorker &) = delete;
+  ~TokenWorker() { close(); }
+
+  int run() {
+    if (!emit("READY\t1")) return 1;
+    std::string line;
+    while (std::getline(input_, line)) {
+      if (!line.empty() && line.back() == '\r') line.pop_back();
+      reap();
+      if (line == "Q") break;
+      const auto fields = split(line, '\t');
+      std::uint64_t id = 0;
+      if (fields.size() < 2 || !number(fields[1], id) || !id) {
+        if (!emit("E\t0\tprotocol\tinvalid request identity")) break;
+        continue;
+      }
+      if (fields[0] == "C" && fields.size() == 2) {
+        const auto found = calls_.find(id);
+        const bool accepted = found != calls_.end() && found->second->cancel();
+        if (!emit("C\t" + std::to_string(id) + (accepted ? "\taccepted" : "\tstale"))) break;
+        continue;
+      }
+      if (fields[0] == "K" && fields.size() == 3) {
+        std::size_t count = 0;
+        const auto found = calls_.find(id);
+        if (!number(fields[2], count) || !count || found == calls_.end() || !found->second->acknowledge(count))
+          if (!emit(error(id, "protocol", "invalid output acknowledgement"))) break;
+        continue;
+      }
+      if (fields[0] != "G" || fields.size() != 4) {
+        if (!emit(error(id, "protocol", "unknown or malformed command"))) break;
+        continue;
+      }
+      if (calls_.contains(id)) {
+        if (!emit(error(id, "protocol", "duplicate active request identity"))) break;
+        continue;
+      }
+      std::size_t limit = 0;
+      std::vector<std::int32_t> tokens;
+      if (!number(fields[2], limit) || !limit || !parse_tokens(fields[3], tokens)) {
+        if (!emit(error(id, "invalid", "invalid output limit or token list"))) break;
+        continue;
+      }
+      try {
+        auto handle = dispatcher_.submit({std::to_string(id), {{std::move(tokens), limit}}});
+        auto call = std::make_shared<Call>(std::move(handle));
+        calls_.emplace(id, call);
+        if (!emit("A\t" + std::to_string(id))) { call->cancel(); break; }
+        try {
+          call->reader = std::thread([this, call, id] { deliver(call, id); });
+        } catch (...) {
+          call->cancel(); calls_.erase(id); throw;
+        }
+      } catch (const std::exception &exception) {
+        if (!emit(error(id, "admission", exception.what()))) break;
+      }
+    }
+    close();
+    return emit("BYE") ? 0 : 1;
+  }
+private:
+  struct Call final {
+    explicit Call(GenerationRequestHandle value) : handle(std::move(value)) {}
+    GenerationRequestHandle handle;
+    std::thread reader;
+    std::atomic<bool> done = false;
+    std::mutex credit_mutex;
+    std::condition_variable credit_ready;
+    std::size_t credit = 1, outstanding = 0;
+    bool cancelled = false;
+
+    bool cancel() noexcept {
+      {
+        std::lock_guard lock(credit_mutex);
+        if (cancelled || done.load(std::memory_order_acquire)) return false;
+        cancelled = true;
+      }
+      // Cancellation of delivery may still be needed after native completion
+      // when accepted tokens remain buffered. Never invent a native outcome.
+      (void)handle.cancel();
+      credit_ready.notify_all(); return true;
+    }
+    bool acknowledge(std::size_t count) noexcept {
+      std::lock_guard lock(credit_mutex);
+      if (count > outstanding) return false;
+      outstanding -= count;
+      if (!cancelled) credit += count;
+      credit_ready.notify_all(); return true;
+    }
+    bool wait_for_credit() {
+      std::unique_lock lock(credit_mutex);
+      credit_ready.wait(lock, [&] { return cancelled || credit; });
+      if (cancelled) return false;
+      --credit; return true;
+    }
+    bool record_token() noexcept {
+      std::lock_guard lock(credit_mutex);
+      if (cancelled) return false;
+      ++outstanding; return true;
+    }
+  };
+  template<class T> static bool number(std::string_view text, T &value) noexcept {
+    if (text.empty()) return false;
+    const auto result = std::from_chars(text.data(), text.data() + text.size(), value);
+    return result.ec == std::errc{} && result.ptr == text.data() + text.size();
+  }
+  static std::vector<std::string_view> split(std::string_view text, char separator) {
+    std::vector<std::string_view> fields;
+    std::size_t at = 0;
+    for (;;) {
+      const auto end = text.find(separator, at);
+      fields.push_back(text.substr(at, end == std::string_view::npos ? end : end - at));
+      if (end == std::string_view::npos) return fields;
+      at = end + 1;
+    }
+  }
+  bool parse_tokens(std::string_view value, std::vector<std::int32_t> &tokens) const {
+    if (value.empty()) return false;
+    for (const auto piece : split(value, ',')) {
+      std::int32_t token = 0;
+      if (tokens.size() == max_prompt_tokens_ || !number(piece, token) || token < 0) return false;
+      tokens.push_back(token);
+    }
+    return !tokens.empty();
+  }
+  static std::string error(std::uint64_t id, std::string_view kind, std::string_view message) {
+    std::string frame = "E\t" + std::to_string(id) + "\t" + std::string(kind) + "\t";
+    for (const auto ch : message) frame.push_back(ch == '\r' || ch == '\n' || ch == '\t' ? ' ' : ch);
+    return frame;
+  }
+  bool emit(const std::string &frame) {
+    std::lock_guard lock(output_mutex_);
+    output_ << frame << '\n' << std::flush;
+    return bool(output_);
+  }
+  void deliver(const std::shared_ptr<Call> &call, std::uint64_t id) noexcept {
+    try {
+      using Kind = GenerationRequestHandle::EventKind;
+      for (;;) {
+        const bool deliver_token = call->wait_for_credit();
+        const auto event = call->handle.read();
+        if (event.kind == Kind::kToken) {
+          if (deliver_token && call->record_token() &&
+              !emit("T\t" + std::to_string(id) + "\t" + std::to_string(event.token))) {
+            call->cancel(); break;
+          }
+          continue;
+        }
+        if (event.kind == Kind::kFailed) {
+          std::string kind = "model", message = "generation failed";
+          try { if (event.failure) std::rethrow_exception(event.failure); }
+          catch (const RequestRejected &exception) { kind = "invalid"; message = exception.what(); }
+          catch (const std::exception &exception) { message = exception.what(); }
+          catch (...) { message = "unknown generation failure"; }
+          (void)emit(error(id, kind, message));
+        } else {
+          const auto status = event.kind == Kind::kCompleted ? "completed" :
+              event.kind == Kind::kCancelled ? "cancelled" : "closed";
+          (void)emit("F\t" + std::to_string(id) + "\t" + status);
+        }
+        break;
+      }
+    } catch (...) {
+      call->cancel();
+      try { (void)emit(error(id, "internal", "output delivery failed")); } catch (...) {}
+    }
+    call->done.store(true, std::memory_order_release);
+  }
+  void reap() {
+    for (auto at = calls_.begin(); at != calls_.end();) {
+      if (!at->second->done.load(std::memory_order_acquire)) { ++at; continue; }
+      if (at->second->reader.joinable()) at->second->reader.join();
+      at = calls_.erase(at);
+    }
+  }
+  void close() noexcept {
+    for (auto &[id, call] : calls_) { (void)id; (void)call->cancel(); }
+    dispatcher_.shutdown();
+    for (auto &[id, call] : calls_) {
+      (void)id;
+      if (call->reader.joinable()) call->reader.join();
+    }
+    calls_.clear();
+  }
+  GenerationDispatcher dispatcher_;
+  const std::size_t max_prompt_tokens_;
+  std::istream &input_;
+  std::ostream &output_;
+  std::mutex output_mutex_;
+  std::map<std::uint64_t, std::shared_ptr<Call>> calls_;
+};
+
+} // namespace hyle::inference

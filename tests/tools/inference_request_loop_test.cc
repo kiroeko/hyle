@@ -5,13 +5,17 @@
 #include "../../engine/inference/queued_token_consumer.h"
 #include "../../engine/inference/model_executor.h"
 #include "../../engine/inference/generation_dispatcher.h"
+#include "../../engine/inference/token_worker.h"
 #include "../../engine/inference/request_wave_execution.h"
 
 #include <array>
+#include <chrono>
 #include <cstdio>
+#include <deque>
 #include <cstdlib>
 #include <new>
 #include <optional>
+#include <sstream>
 #include <type_traits>
 
 namespace {
@@ -786,6 +790,125 @@ private:
   std::shared_ptr<IngressTestControl> control_;
 };
 
+void token_worker_rejects_malformed_frames_without_starting_model() {
+  auto control = std::make_shared<IngressTestControl>();
+  std::istringstream input("G\t0\t1\t1\nG\t7\t0\t1\nG\t8\t1\t-1\nC\t9\nQ\n");
+  std::ostringstream output;
+  i::TokenWorker worker(std::make_unique<IngressTestExecutor>(control), 2, 2, 1, 16, input, output);
+  require(worker.run() == 0, "worker protocol did not close cleanly");
+  require(output.str() == "READY\t1\nE\t0\tprotocol\tinvalid request identity\n"
+      "E\t7\tinvalid\tinvalid output limit or token list\n"
+      "E\t8\tinvalid\tinvalid output limit or token list\nC\t9\tstale\nBYE\n",
+      "worker protocol accepted malformed input or changed response order");
+  std::lock_guard lock(control->mutex);
+  require(control->batches.empty(), "malformed worker frame reached the model");
+}
+
+class WorkerTestInput final : public std::streambuf {
+public:
+  void send(std::string_view value) {
+    std::lock_guard lock(mutex_);
+    for (const auto ch : value) bytes_.push_back(ch);
+    changed_.notify_all();
+  }
+  void close() {
+    std::lock_guard lock(mutex_); closed_ = true; changed_.notify_all();
+  }
+protected:
+  int_type underflow() override {
+    std::unique_lock lock(mutex_);
+    changed_.wait(lock, [&] { return closed_ || !bytes_.empty(); });
+    if (bytes_.empty()) return traits_type::eof();
+    current_ = bytes_.front(); bytes_.pop_front();
+    setg(&current_, &current_, &current_ + 1);
+    return traits_type::to_int_type(current_);
+  }
+private:
+  std::mutex mutex_;
+  std::condition_variable changed_;
+  std::deque<char> bytes_;
+  char current_ = 0;
+  bool closed_ = false;
+};
+
+class WorkerTestOutput final : public std::streambuf {
+public:
+  bool line(std::string &value, std::chrono::milliseconds timeout) {
+    std::unique_lock lock(mutex_);
+    if (!changed_.wait_for(lock, timeout, [&] { return bytes_.find('\n') != std::string::npos; })) return false;
+    const auto end = bytes_.find('\n'); value = bytes_.substr(0, end); bytes_.erase(0, end + 1); return true;
+  }
+protected:
+  int_type overflow(int_type value) override {
+    if (traits_type::eq_int_type(value, traits_type::eof())) return traits_type::not_eof(value);
+    const auto ch = traits_type::to_char_type(value); append(&ch, 1); return value;
+  }
+  std::streamsize xsputn(const char *data, std::streamsize size) override {
+    append(data, static_cast<std::size_t>(size)); return size;
+  }
+  int sync() override { return 0; }
+private:
+  void append(const char *data, std::size_t size) {
+    std::lock_guard lock(mutex_); bytes_.append(data, size); changed_.notify_all();
+  }
+  std::mutex mutex_;
+  std::condition_variable changed_;
+  std::string bytes_;
+};
+
+void token_worker_credit_and_cancellation_do_not_hang() {
+  auto control = std::make_shared<IngressTestControl>(); control->proceed = true;
+  WorkerTestInput input_buffer; WorkerTestOutput output_buffer;
+  std::istream input(&input_buffer); std::ostream output(&output_buffer);
+  i::TokenWorker worker(std::make_unique<IngressTestExecutor>(control), 1, 4, 1, 16, input, output);
+  int result = -1;
+  std::thread runner([&] { result = worker.run(); });
+  try {
+    auto next = [&] {
+      std::string line;
+      if (!output_buffer.line(line, std::chrono::seconds(3))) throw std::runtime_error("worker test timed out");
+      return line;
+    };
+    require(next() == "READY\t1", "worker did not become ready");
+    input_buffer.send("G\t1\t2\t10\n");
+    require(next() == "A\t1" && next() == "T\t1\t10", "worker lost initial accepted token");
+    std::string premature;
+    require(!output_buffer.line(premature, std::chrono::milliseconds(30)), "worker bypassed output credit");
+    input_buffer.send("K\t1\t2\n");
+    require(next() == "E\t1\tprotocol\tinvalid output acknowledgement", "worker accepted excess credit");
+    input_buffer.send("K\t1\t1\n");
+    require(next() == "T\t1\t11", "worker did not resume after acknowledgement");
+    input_buffer.send("K\t1\t1\n");
+    require(next() == "F\t1\tcompleted", "worker lost normal terminal after acknowledgement");
+    input_buffer.send("G\t2\t2\t20\n");
+    require(next() == "A\t2" && next() == "T\t2\t20", "worker lost second request");
+    input_buffer.send("C\t2\n");
+    bool acknowledged = false, terminal = false;
+    while (!acknowledged || !terminal) {
+      const auto line = next();
+      if (line == "C\t2\taccepted") acknowledged = true;
+      else if (line == "F\t2\tcancelled" || line == "F\t2\tcompleted") terminal = true;
+      else throw std::runtime_error("unexpected worker cancellation event");
+    }
+    input_buffer.send("G\t3\t2\t30\n");
+    require(next() == "A\t3" && next() == "T\t3\t30", "worker lost shutdown fixture");
+    input_buffer.send("Q\n");
+    bool saw_terminal = false;
+    for (;;) {
+      const auto line = next();
+      if (line == "BYE") break;
+      if (line == "F\t3\tcancelled" || line == "F\t3\tcompleted" || line == "F\t3\tclosed")
+        saw_terminal = true;
+      else throw std::runtime_error("unexpected worker shutdown event");
+    }
+    require(saw_terminal, "worker shutdown dropped its active request");
+    runner.join();
+    require(result == 0, "worker exited with a failure");
+  } catch (...) {
+    input_buffer.close(); runner.join(); throw;
+  }
+}
+
 void ingress_accepts_requests_during_execution_and_preserves_identity() {
   auto control = std::make_shared<IngressTestControl>();
   i::GenerationDispatcher dispatcher(std::make_unique<IngressTestExecutor>(control), 2, 2, 1);
@@ -1151,6 +1274,8 @@ int main() {
     generic_token_delivery_preserves_peer_and_retirement();
     generic_token_delivery_catches_cancel_during_write();
     queued_delivery_preserves_bounds_and_terminal_identity();
+    token_worker_rejects_malformed_frames_without_starting_model();
+    token_worker_credit_and_cancellation_do_not_hang();
     ingress_accepts_requests_during_execution_and_preserves_identity();
     ingress_cancels_active_request_without_stopping_peer();
     ingress_abandoned_handle_releases_its_request();
@@ -1170,7 +1295,7 @@ int main() {
     common_wave_drain_and_observation_never_start_new_work();
     common_wave_failure_keeps_exception_and_actual_retirement_independent();
     common_wave_rejects_foreign_reordered_or_unbacked_pending_credit();
-    std::puts("request loop: 27 host contract groups passed; no model/device loaded");
+    std::puts("request loop: 29 host contract groups passed; no model/device loaded");
     return 0;
   } catch (const std::exception &error) {
     track_allocations = false;
