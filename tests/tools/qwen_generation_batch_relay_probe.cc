@@ -13,6 +13,65 @@ using qwen_generation_state_case::require;
 using qwen_generation_state_case::StateBytes;
 using qwen_generation_state_case::state_bytes;
 constexpr std::size_t kOutputs = 14;
+
+int observe_output(const std::filesystem::path &input, std::string_view mode) {
+  const bool mtp = mode == "k1" || mode == "k3";
+  const bool random = mode == "random";
+  require(mtp || random || mode == "ordinary", "unknown output-observer mode");
+  const std::size_t drafts = mode == "k3" ? 3 : 1;
+  auto source = q::prepare_weight_source(input / "weights.tsv", mtp);
+  const auto geometry = source.roles.geometry;
+  constexpr std::size_t capacity = 256, limit = 8;
+  auto prompt = q::read_ids(input / "prompt.ids", geometry.vocabulary,
+      static_cast<std::size_t>(geometry.context_limit));
+  require(prompt.size() >= 8 && prompt.size() + limit <= capacity && geometry.context_limit >= capacity,
+      "output observer requires a complete local Qwen prompt and C256 model");
+  const auto plan = q::cache::plan(geometry, source.cache_row_bytes, capacity, 1, prompt.size(),
+      q::recurrent_bytes(q::state_schema_for(geometry, capacity), geometry), 1,
+      mtp ? drafts + 1 : 1, mtp, random);
+  const auto sampling = random ? q::Model::Sampling{.enabled = true, .policy = {.8F, 40, .95F}, .seed = 123}
+                               : q::Model::Sampling{};
+  q::Model model(std::move(source), geometry, capacity, plan, {}, false, q::ReplayPolicy::kCommands,
+      SIZE_MAX, sampling,
+      0, {.primary = i::BackendKind::kCuda});
+  if (mtp) model.configure_draft_policy({drafts});
+  const std::array schedules{i::GenerationSessionSchedule{"observed", {{prompt, limit}}}};
+  const std::array<q::cache::TokenPlanRef, 0> token_plans{};
+  std::array<std::int32_t, limit> received{};
+  std::size_t count = 0, calls = 0;
+  bool invalid = false;
+  const auto observe = [&](i::RequestKey key, std::span<const std::int32_t> ids) noexcept {
+    if (key.slot != 0 || ids.empty() || ids.size() > received.size() - count) {
+      invalid = true;
+      return;
+    }
+    for (const auto id : ids) received[count++] = id;
+    ++calls;
+  };
+  std::ostringstream report;
+  auto *old_out = std::cout.rdbuf(report.rdbuf());
+  hyle::util::ScopeGuard restore{[&]() noexcept { std::cout.rdbuf(old_out); }};
+  const auto now = q::Clock::now();
+  const auto result = mtp
+      ? q::run_generation_sessions<q::GenerationMode::kMtp>(model, schedules, {}, false,
+          now, now, false, token_plans, {}, {}, SIZE_MAX, false, false, {}, nullptr, false, {}, observe)
+      : q::run_generation_sessions<q::GenerationMode::kText>(model, schedules, {}, false,
+          now, now, false, token_plans, {}, {}, SIZE_MAX, false, false, {}, nullptr, false, {}, observe);
+  std::cout.rdbuf(old_out); restore.dismiss();
+  require(result == 0 && !invalid && count == limit && calls > 1,
+      "observer did not receive incremental output from the real request");
+  std::ostringstream expected;
+  expected << "\"generated_ids\":[";
+  for (std::size_t at = 0; at < count; ++at) expected << (at ? "," : "") << received[at];
+  expected << ']';
+  require(report.str().find(expected.str()) != std::string::npos,
+      "observed committed IDs differ from the original generation report");
+  require(!model.snapshot_versions.live && !model.active_step && !model.successor_step,
+      "observed request retained model state or execution");
+  std::cout << "output observer " << mode << " PASS: " << count << " IDs, " << calls << " callbacks\n";
+  return 0;
+}
+
 enum class Mode { kNormal, kMemberCredit, kCancel, kModelEos, kColdTuple };
 
 void check_captured_sources(const q::Model &model, const q::StepState &step) {
@@ -743,6 +802,10 @@ int run(const std::filesystem::path &input, bool boundaries = false, bool warm_c
 
 int main(int argc, char **argv) {
   try {
+    if (argc >= 2 && std::string_view(argv[1]) == "--hyle-cli")
+      return q::run(argc - 1, argv + 1);
+    if (argc == 4 && std::string_view(argv[1]) == "--output-observer")
+      return observe_output(argv[2], argv[3]);
     if (argc == 1) { std::cerr << "SKIP: pass --cuda PREPARED_LOCAL_INPUTS\n"; return 77; }
     if (argc == 2 && std::string_view(argv[1]) == "--cuda-continuous") {
       std::cerr << "SKIP: pass --cuda-continuous CONTEXT32_TINY_INPUT\n"; return 77;

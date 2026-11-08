@@ -2608,7 +2608,7 @@ hyle::Result<StartupPrefillWarmup> prepare_cold_prefill(Model &model, bool bound
   return report;
 }
 
-template<GenerationMode Mode, class BatchObserver = std::nullptr_t>
+template<GenerationMode Mode, class BatchObserver = std::nullptr_t, class OutputObserver = std::nullptr_t>
 int run_generation_sessions(Model &model, std::span<const inference::GenerationSessionSchedule> schedules,
     const std::filesystem::path &trace, bool trace_states, Clock::time_point startup,
     Clock::time_point constructed, bool prefix_enabled, std::span<const cache::TokenPlanRef> token_plans,
@@ -2616,7 +2616,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     std::size_t max_prefill_rows = SIZE_MAX, bool warmup_planned_shapes = false,
     bool decode_overlap = false, std::span<const inference::LogitsInputProvider> logits_providers = {},
     BatchObserver &&batch_observer = nullptr, bool first_turn_only = false,
-    const hyle::engine::reporting::RouteDecisionFacts &routes = {}) {
+    const hyle::engine::reporting::RouteDecisionFacts &routes = {}, OutputObserver &&output_observer = nullptr) {
   constexpr bool mtp = Mode == GenerationMode::kMtp;
   const auto cold_prepare_begin = Clock::now();
   std::cerr << "cold_prepare_begin\n";
@@ -3096,6 +3096,18 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   request_loop.prepare(requests.size(), model.cache_plan.resident_sessions);
   for (std::size_t index = 0; index < requests.size(); ++index)
     requests[index].request_key = request_loop.enqueue(index);
+  // This synchronous observer sees committed output only. The key identifies
+  // the original request, but may already be retired. It does not own
+  // transport credit or cancellation; the normal CLI instantiation has no
+  // observer, cursor allocation or extra output path.
+  using OutputCursors = std::conditional_t<std::is_null_pointer_v<std::remove_cvref_t<OutputObserver>>,
+      std::nullptr_t, std::vector<std::size_t>>;
+  OutputCursors observed_outputs{};
+  if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputObserver>>) {
+    static_assert(std::is_nothrow_invocable_v<OutputObserver &, inference::RequestKey,
+        std::span<const std::int32_t>>, "output observer must not throw across an active model episode");
+    observed_outputs.resize(requests.size());
+  }
   std::vector<std::size_t> dispatch, dispatch_turns;
   dispatch.reserve(dispatch_bound); dispatch_turns.reserve(dispatch_bound);
   std::vector<std::size_t> evictions; evictions.reserve(first_turn_only ? configured_bound : total_turns);
@@ -3263,6 +3275,17 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     const auto pumped = request_loop.pump_once(adapter);
     completed = cache::add(completed, pumped.completed);
     admitted = cache::add(admitted, pumped.admitted);
+    if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputObserver>>) {
+      for (std::size_t index = 0; index < requests.size(); ++index) {
+        const auto &request = requests[index];
+        const auto output = std::span<const std::int32_t>(request.progress.generated);
+        const auto begin = observed_outputs[index];
+        if (begin != output.size()) {
+          output_observer(request.request_key, output.subspan(begin));
+          observed_outputs[index] = output.size();
+        }
+      }
+    }
     // This closed CLI has no host work while the current Graph is pending.
     // Any successor is already submitted; promoted B reaches the next pump first
     // so C can overlap it. The original next poll consumes any wait error.
