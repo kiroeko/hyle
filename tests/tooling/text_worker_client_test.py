@@ -7,6 +7,33 @@ from engine.text.worker_client import WorkerClient, WorkerError
 
 
 class WorkerClientLifecycleTest(unittest.TestCase):
+    def test_invalid_worker_output_fails_all_pending_requests(self):
+        for frame in ('T\t1\t-1', 'T\t1\t256', 'T\t0\t1', 'B\t-1\t0',
+                      'F\t0\tcompleted', 'E\t-1\tinvalid\tbad request'):
+            with self.subTest(frame=frame):
+                code = "\n".join((
+                    "import sys,time",
+                    "read = lambda: sys.stdin.readline().rstrip('\\r\\n')",
+                    "print('READY\\t2\\t256\\t128\\t3', flush=True)",
+                    "assert read() == 'G\\t1\\t1\\t10'",
+                    "assert read() == 'G\\t2\\t1\\t11'",
+                    f"print({frame!r}, flush=True)",
+                    "time.sleep(10)",
+                ))
+                worker = WorkerClient([sys.executable, '-B', '-c', code], startup_timeout=3)
+                first = worker.submit([10], 1)
+                second = worker.submit([11], 1)
+                try:
+                    for request in (first, second):
+                        event = request.read(timeout=3)
+                        self.assertEqual(event.kind, 'error')
+                        self.assertTrue(event.message)
+                    self.assertFalse(worker.healthy)
+                finally:
+                    first.close(); second.close()
+                    with self.assertRaises(WorkerError):
+                        worker.close(timeout=3)
+
     def test_request_error_kind_remains_separate_from_its_message(self):
         code = "\n".join((
             "import sys",

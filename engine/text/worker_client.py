@@ -294,15 +294,20 @@ class WorkerClient:
                         pending[1].put_nowait(fields[3])
                     continue
                 if kind == "T" and len(fields) == 3:
-                    self._publish(int(fields[1]), TokenEvent("token", int(fields[2])))
-                elif kind == "B" and len(fields) == 3 and int(fields[2]) >= 0:
+                    request_id, token = int(fields[1]), int(fields[2])
+                    if request_id <= 0 or token < 0 or token >= self.vocabulary:
+                        raise WorkerError("protocol", "worker returned an invalid token frame")
+                    self._publish(request_id, TokenEvent("token", token))
+                elif kind == "B" and len(fields) == 3 and int(fields[1]) > 0 and int(fields[2]) >= 0:
                     self._publish(int(fields[1]), TokenEvent("turn_end", turn=int(fields[2])))
-                elif kind == "F" and len(fields) == 3 and fields[2] in ("completed", "cancelled", "closed"):
+                elif kind == "F" and len(fields) == 3 and int(fields[1]) > 0 and fields[2] in ("completed", "cancelled", "closed"):
                     self._publish(int(fields[1]), TokenEvent(fields[2]))
                 elif kind == "E" and len(fields) == 4:
                     request_id = int(fields[1])
                     if request_id == 0:
                         raise WorkerError("protocol", fields[3])
+                    if request_id < 0:
+                        raise WorkerError("protocol", "worker returned an invalid error frame")
                     self._publish(request_id, TokenEvent("error", message=fields[3], error_kind=fields[2]))
                 else:
                     raise WorkerError("protocol", "invalid model worker response")
