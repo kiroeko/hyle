@@ -3195,6 +3195,9 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     else {
       requests[index].request_key = request_loop.enqueue(index, &output_deliveries[index].window());
       output_deliveries[index].bind(request_loop, requests[index].request_key);
+      if constexpr (requires { { output_consumer.start(requests[index].request_key) } noexcept -> std::same_as<bool>; })
+        if (!output_consumer.start(requests[index].request_key))
+          throw std::runtime_error("output consumer refused its original request identity");
     }
   }
   std::vector<std::size_t> dispatch, dispatch_turns;

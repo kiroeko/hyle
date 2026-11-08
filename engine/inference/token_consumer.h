@@ -18,6 +18,8 @@ namespace hyle::inference {
 // no native work is awaiting observation. It must also wake for cancellation;
 // its readiness/cancellation check and wait must not lose a concurrent wake.
 // The consumer synchronizes with its own reader and must not reenter the owner.
+// An optional bool start(RequestKey) noexcept is called after enqueue and before
+// execution. False refuses attachment; it never submits or retires model work.
 template<class T>
 concept TokenConsumer = requires(T &consumer, RequestKey key, std::int32_t token) {
   { consumer.max_pending() } noexcept -> std::same_as<std::size_t>;

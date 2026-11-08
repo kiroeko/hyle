@@ -2,6 +2,7 @@
 // inputs, not evidence that any device completed or freed physical memory.
 #include "../../engine/inference/request_loop.h"
 #include "../../engine/inference/token_delivery.h"
+#include "../../engine/inference/queued_token_consumer.h"
 #include "../../engine/inference/request_wave_execution.h"
 
 #include <array>
@@ -694,6 +695,43 @@ void generic_token_delivery_catches_cancel_during_write() {
       adapter.executions[0] == 1, "write-time cancellation continued execution or lost its terminal");
 }
 
+void queued_delivery_preserves_bounds_and_terminal_identity() {
+  i::RequestWindow window, foreign; window.prepare(2, 2); foreign.prepare(2, 2);
+  const auto a = window.enqueue(0), b = window.enqueue(1), other = foreign.enqueue(0);
+  i::QueuedTokenConsumer queue(2, 1);
+  require(queue.start(a) && queue.start(b) && !queue.start(a) && !queue.start(other),
+      "queue replaced an active request identity");
+  require(queue.wait_for_start(0) == a && queue.try_write(a, 7) && queue.try_write(b, 11) &&
+      !queue.try_write(a, 8), "queue did not apply per-request bounds");
+  const auto first = queue.read(a);
+  require(first.state == i::QueuedTokenConsumer::ReadState::kToken && first.token == 7,
+      "queue changed the accepted token");
+  queue.wait(); // Reader signalled before the wait; the wake must not be lost.
+  require(queue.try_write(a, 8) && queue.request_cancel(a) && queue.cancel_requested(a) &&
+      !queue.try_write(a, 9) && !queue.release(a), "cancel bypassed retirement or accepted more output");
+  queue.finished(a, true);
+  require(!queue.release(a), "terminal release discarded a queued token");
+  const auto last = queue.read(a), terminal = queue.read(a);
+  require(last.state == i::QueuedTokenConsumer::ReadState::kToken && last.token == 8 &&
+      terminal.state == i::QueuedTokenConsumer::ReadState::kCancelled && queue.release(a) &&
+      queue.read(a).state == i::QueuedTokenConsumer::ReadState::kStale,
+      "cancelled terminal lost an accepted token or retained an old key");
+  const auto peer = queue.read(b); queue.finished(b, false);
+  require(peer.state == i::QueuedTokenConsumer::ReadState::kToken && peer.token == 11 &&
+      queue.read(b).state == i::QueuedTokenConsumer::ReadState::kCompleted && queue.release(b),
+      "peer completion was affected by another request's cancellation");
+  require(queue.start(other) && queue.try_write(other, 13) &&
+      queue.read(a).state == i::QueuedTokenConsumer::ReadState::kStale &&
+      !queue.request_cancel(a) && !queue.release(a), "stale key affected replacement request");
+  queue.shutdown();
+  require(queue.cancel_requested(other) && queue.read(other).token == 13 &&
+      queue.read(other).state == i::QueuedTokenConsumer::ReadState::kClosed && !queue.release(other),
+      "shutdown fabricated retirement or discarded accepted output");
+  queue.finished(other, true);
+  require(queue.read(other).state == i::QueuedTokenConsumer::ReadState::kCancelled && queue.release(other) &&
+      !queue.wait_for_start(1), "actual retirement did not survive shutdown");
+}
+
 void prepared_hot_owner_allocates_nothing() {
   i::RequestLoop owner; owner.prepare(2, 2); Adapter adapter{3, 3};
   (void)owner.enqueue(0); (void)owner.enqueue(1);
@@ -866,6 +904,7 @@ int main() {
     open_input_and_midturn_pause_keep_progress();
     generic_token_delivery_preserves_peer_and_retirement();
     generic_token_delivery_catches_cancel_during_write();
+    queued_delivery_preserves_bounds_and_terminal_identity();
     prepared_hot_owner_allocates_nothing();
     in_flight_waves_keep_exact_credit_and_allow_continuation();
     pending_cohort_defers_cancel_eos_and_admission();
@@ -877,7 +916,7 @@ int main() {
     common_wave_drain_and_observation_never_start_new_work();
     common_wave_failure_keeps_exception_and_actual_retirement_independent();
     common_wave_rejects_foreign_reordered_or_unbacked_pending_credit();
-    std::puts("request loop: 18 host contract groups passed; no model/device loaded");
+    std::puts("request loop: 19 host contract groups passed; no model/device loaded");
     return 0;
   } catch (const std::exception &error) {
     track_allocations = false;

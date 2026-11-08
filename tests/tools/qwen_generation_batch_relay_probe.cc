@@ -1,6 +1,9 @@
 #include "../../engine/models/qwen35/main.cc"
 #include "qwen_generation_state_case.h"
 #include "../../src/graph/plan_state.h"
+#include "../../engine/inference/queued_token_consumer.h"
+
+#include <thread>
 #include "qwen_generation_cross_turn_case.h"
 #include "qwen_continuous_generation_case.h"
 
@@ -134,6 +137,75 @@ int observe_output(const std::filesystem::path &input, std::string_view mode, bo
     std::cout << (at ? "," : "") << consumer.received[0][at];
   std::cout << '\n';
   if (print_report) std::cout << report.str();
+  return 0;
+}
+
+int queued_output(const std::filesystem::path &input, std::string_view mode) {
+  const bool mtp = mode == "k1" || mode == "k3";
+  require(mtp || mode == "ordinary", "unknown queued-output mode");
+  const std::size_t drafts = mode == "k3" ? 3 : 1;
+  auto source = q::prepare_weight_source(input / "weights.tsv", mtp);
+  const auto geometry = source.roles.geometry;
+  constexpr std::size_t capacity = 256, limit = 8;
+  const auto prompt = q::read_ids(input / "prompt.ids", geometry.vocabulary,
+      static_cast<std::size_t>(geometry.context_limit));
+  require(prompt.size() >= 8 && prompt.size() + limit <= capacity,
+      "queued output requires a complete local Qwen prompt and C256 model");
+  const auto precision = q::PrecisionProfile::from_roles(source.roles);
+  const auto plan = q::cache::plan(geometry, source.cache_row_bytes, capacity, 2, capacity,
+      q::recurrent_bytes(q::state_schema_for(geometry, capacity, precision), geometry), 2,
+      mtp ? drafts + 1 : 1, mtp, false, 1, 0, precision);
+  q::Model model(std::move(source), geometry, capacity, plan, {}, false, q::ReplayPolicy::kCommands,
+      SIZE_MAX, {}, 0, {.primary = i::BackendKind::kCuda});
+  if (mtp) model.configure_draft_policy({drafts});
+  const std::vector<i::GenerationSessionSchedule> schedules{
+      {"cancelled", {{prompt, limit}}}, {"peer", {{prompt, limit}}}};
+  const std::array<q::cache::TokenPlanRef, 0> token_plans{};
+  i::QueuedTokenConsumer consumer(2, 1);
+  std::array<std::vector<std::int32_t>, 2> received;
+  for (auto &tokens : received) tokens.reserve(limit);
+  std::array<bool, 2> cancelled{}, completed{}, released{};
+  std::array<std::exception_ptr, 2> errors{};
+  std::array<std::thread, 2> readers;
+  for (std::size_t slot = 0; slot < readers.size(); ++slot) readers[slot] = std::thread([&, slot] {
+    try {
+      const auto key = consumer.wait_for_start(slot);
+      if (!key) throw std::runtime_error("queued request did not start");
+      for (;;) {
+        const auto item = consumer.read(*key);
+        if (item.state == i::QueuedTokenConsumer::ReadState::kToken) {
+          received[slot].push_back(item.token);
+          if (slot == 0 && received[slot].size() == 1 && !consumer.request_cancel(*key))
+            throw std::runtime_error("queued cancellation was not accepted");
+          continue;
+        }
+        cancelled[slot] = item.state == i::QueuedTokenConsumer::ReadState::kCancelled;
+        completed[slot] = item.state == i::QueuedTokenConsumer::ReadState::kCompleted;
+        released[slot] = consumer.release(*key);
+        break;
+      }
+    } catch (...) { errors[slot] = std::current_exception(); consumer.shutdown(); }
+  });
+  std::ostringstream report;
+  const auto now = q::Clock::now();
+  int result = -1;
+  std::exception_ptr failure;
+  try {
+    result = mtp
+        ? q::run_generation_sessions<q::GenerationMode::kMtp>(model, schedules, {}, false,
+            now, now, false, token_plans, {}, {}, SIZE_MAX, false, false, {}, nullptr, false, {}, consumer, report)
+        : q::run_generation_sessions<q::GenerationMode::kText>(model, schedules, {}, false,
+            now, now, false, token_plans, {}, {}, SIZE_MAX, false, false, {}, nullptr, false, {}, consumer, report);
+  } catch (...) { failure = std::current_exception(); consumer.shutdown(); }
+  for (auto &reader : readers) reader.join();
+  if (failure) std::rethrow_exception(failure);
+  for (const auto &error : errors) if (error) std::rethrow_exception(error);
+  require(result == 0 && cancelled[0] && completed[1] && released[0] && released[1] &&
+      !received[0].empty() && received[0].size() < limit && received[1].size() == limit &&
+      !model.active_step && !model.successor_step && !model.snapshot_versions.live,
+      "queued transport lost its peer, completion or actual retirement");
+  std::cout << "queued output " << mode << " PASS: cancelled=" << received[0].size()
+      << " peer=" << received[1].size() << " retired=2\n";
   return 0;
 }
 
@@ -1004,6 +1076,8 @@ int run(const std::filesystem::path &input, bool boundaries = false, bool warm_c
 
 int main(int argc, char **argv) {
   try {
+    if (argc == 4 && std::string_view(argv[1]) == "--queued-output")
+      return queued_output(argv[2], argv[3]);
     if (argc >= 2 && std::string_view(argv[1]) == "--hyle-cli")
       return q::run(argc - 1, argv + 1);
     if ((argc == 4 || argc == 5) && (std::string_view(argv[1]) == "--reusable" ||
