@@ -3,8 +3,9 @@ import threading
 import unittest
 import urllib.error
 import urllib.request
+from argparse import Namespace
 
-from engine.text.app import InvalidRequest, ResponsesServer, TextEngine, parse_responses_input
+from engine.text.app import InvalidRequest, ResponsesServer, TextEngine, make_worker_command, parse_responses_input
 from engine.text.worker_client import TokenEvent
 
 
@@ -51,6 +52,15 @@ class FakeWorker:
 
 
 class TextFrontendTest(unittest.TestCase):
+    def test_unspecified_overlap_is_selected_by_model_preparation(self):
+        options = dict(engine="hyle", inputs="model", backend="cuda", capacity=128,
+                       max_sessions=1, active_sequences=1, draft_count=0,
+                       sampling="greedy", draft_vocabulary=None, draft_head=None)
+        self.assertNotIn("--overlap", make_worker_command(Namespace(**options, overlap=None)))
+        for setting, value in ((True, "on"), (False, "off")):
+            command = make_worker_command(Namespace(**options, overlap=setting))
+            self.assertEqual(command[command.index("--overlap") + 1], value)
+
     def test_reject_unsupported_request_instead_of_ignoring(self):
         for payload in ({"model": "hyle", "input": "x", "tools": []},
                         {"model": "hyle", "input": "x", "store": True},

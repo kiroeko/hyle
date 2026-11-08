@@ -316,7 +316,9 @@ def make_worker_command(args) -> list[str]:
     command = [str(args.engine), "--engine-worker", "--inputs", str(args.inputs), "--backend", args.backend,
                "--capacity", str(args.capacity), "--max-sessions", str(args.max_sessions),
                "--active-sequences", str(args.active_sequences), "--draft-count", str(args.draft_count),
-               "--overlap", "on" if args.overlap else "off", "--sampling", args.sampling]
+               "--sampling", args.sampling]
+    if args.overlap is not None:
+        command += ["--overlap", "on" if args.overlap else "off"]
     if args.sampling == "random":
         command += ["--temperature", str(args.temperature), "--top-k", str(args.top_k),
                     "--top-p", str(args.top_p), "--seed", str(args.seed)]
@@ -343,7 +345,7 @@ def main(argv: list[str] | None = None) -> int:
     common.add_argument("--draft-count", type=int, default=0)
     common.add_argument("--draft-vocabulary", type=Path)
     common.add_argument("--draft-head", type=Path)
-    common.add_argument("--overlap", action="store_true")
+    common.add_argument("--overlap", action=argparse.BooleanOptionalAction, default=None)
     common.add_argument("--sampling", choices=("greedy", "random"), default="greedy")
     common.add_argument("--temperature", type=float, default=1.)
     common.add_argument("--top-k", type=int, default=0)

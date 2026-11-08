@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <limits>
 #include <memory>
+#include <optional>
 
 #include "../../inference/model_executor.h"
 
@@ -18,16 +19,18 @@ class Model;
 std::unique_ptr<hyle::inference::ModelExecutor> make_prepared_executor(
     Model &model, bool mtp, std::size_t prefill_rows, bool overlap);
 
-// Explicit model-adapter inputs. The eventual engine policy chooses these
-// before loading; this factory does not guess automatic MTP or artifact policy.
-// Tokenizer/template assets and request scheduling are owned by the engine.
+// Model-adapter inputs. The existing common cold policy may select ordinary
+// single-session overlap when it is unspecified; MTP and draft assets remain
+// explicit here. Tokenizer, templates and scheduling are owned by the engine.
 struct ModelLoadConfig final {
   std::filesystem::path inputs, draft_vocabulary, draft_head;
   hyle::inference::BackendKind backend{};
   std::size_t context = 0, resident_sessions = 1, active_sequences = 1;
   std::size_t prefill_rows = (std::numeric_limits<std::size_t>::max)();
   std::size_t draft_count = 0;
-  bool auto_draft_head = false, overlap = false, random = false;
+  bool auto_draft_head = false, random = false;
+  // Unspecified selects the existing single-session ordinary route in cold preparation.
+  std::optional<bool> overlap;
   float temperature = 1.F, top_p = 1.F;
   std::size_t top_k = 0;
   std::uint64_t seed = 0;

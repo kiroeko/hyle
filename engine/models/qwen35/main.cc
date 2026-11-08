@@ -3702,6 +3702,18 @@ std::unique_ptr<inference::ModelExecutor> load_model_executor(const ModelLoadCon
       config.active_sequences > config.resident_sessions || !config.prefill_rows || config.draft_count >= config.context)
     throw std::invalid_argument("model loading requires valid context, sequence, prefill and draft capacities");
   const bool mtp = config.draft_count != 0;
+  const auto execution = select_execution(BackendSelection{.primary = config.backend}, 0);
+  // Reuse the bounded-generation policy for a natural single-session
+  // workload. Multi-session and explicit drafting retain their existing
+  // configuration until their automatic routes have their own preparation.
+  const inference::ColdWorkloadFacts workload{
+      .natural_generation = true, .greedy = !config.random,
+      .max_sessions = config.resident_sessions, .active_sequences = config.active_sequences,
+      .capacity = config.context};
+  const auto automatic_overlap = !mtp && inference::select_bounded_generation({
+      .workload = workload, .supported_backend = execution.primary == BackendKind::kCuda,
+      .mtp_enabled = false, .max_drafts = 0}).enabled;
+  const bool overlap = config.overlap.value_or(automatic_overlap);
   if (!mtp && (!config.draft_vocabulary.empty() || !config.draft_head.empty() || config.auto_draft_head))
     throw std::invalid_argument("draft assets require enabled drafting");
   const auto prefill = (std::min)({config.prefill_rows, std::size_t{512}, config.context});
@@ -3717,14 +3729,14 @@ std::unique_ptr<inference::ModelExecutor> load_model_executor(const ModelLoadCon
   const auto plan = cache::plan(geometry, source.cache_row_bytes, config.context, config.resident_sessions,
       query_rows, recurrent_bytes(state_schema_for(geometry, config.context, precision), geometry),
       config.active_sequences, mtp ? cache::add(config.draft_count, 1) : 1, mtp, config.random,
-      config.overlap ? 2 : 1, 0, precision);
+      overlap ? 2 : 1, 0, precision);
   const Model::Sampling sampling{.enabled = config.random,
       .policy = {config.temperature, config.top_k, config.top_p}, .seed = config.seed};
   auto model = std::make_unique<Model>(std::move(source), geometry, config.context, plan,
       std::filesystem::path{}, false, ReplayPolicy::kAuto, SIZE_MAX, sampling, 0,
-      BackendSelection{.primary = config.backend});
+      execution);
   if (mtp) model->configure_draft_policy({config.draft_count});
-  return std::make_unique<LoadedModelExecutor>(std::move(model), mtp, config.prefill_rows, config.overlap);
+  return std::make_unique<LoadedModelExecutor>(std::move(model), mtp, config.prefill_rows, overlap);
 }
 } // namespace qwen35
 
