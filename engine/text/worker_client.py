@@ -14,6 +14,27 @@ from typing import Sequence
 from .contracts import TokenEvent, WorkerError
 
 
+def _stop_owned_process(process: subprocess.Popen) -> bool:
+    """Stop and reap this worker after graceful protocol use is impossible."""
+    if process.poll() is None:
+        try:
+            process.terminate()
+        except OSError:
+            pass
+    try:
+        process.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        try:
+            process.kill()
+        except OSError:
+            pass
+        try:
+            process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            return False
+    return True
+
+
 class WorkerRequest:
     """One reader; cancellation may come from another thread."""
     def __init__(self, client: WorkerClient, request_id: int, events: queue.Queue):
@@ -79,15 +100,26 @@ class WorkerClient:
         self.context = 0
         self.stop_ids: frozenset[int] = frozenset()
         self._ready = threading.Event()
+        self._bye = threading.Event()
         self._reader = threading.Thread(target=self._read_frames, name="hyle-worker-output", daemon=True)
         self._reader.start()
         if not self._ready.wait(startup_timeout):
-            self._process.terminate()
-            self._process.wait(timeout=10)
+            self._cleanup_failed_start()
             raise WorkerError("startup", "model worker did not become ready")
         if self._failure:
-            self._process.wait(timeout=10)
+            self._cleanup_failed_start()
             raise WorkerError("startup", self._failure)
+
+    def _cleanup_failed_start(self) -> None:
+        if not _stop_owned_process(self._process):
+            raise WorkerError("startup", "failed model worker could not be stopped")
+        self._reader.join(timeout=5)
+        if self._reader.is_alive():
+            raise WorkerError("startup", "failed model worker output reader did not stop")
+        if self._process.stdin:
+            self._process.stdin.close()
+        if self._process.stdout:
+            self._process.stdout.close()
 
     @property
     def healthy(self) -> bool:
@@ -160,6 +192,7 @@ class WorkerClient:
                 fields = raw.rstrip("\r\n").split("\t", 3)
                 kind = fields[0]
                 if kind == "BYE" and len(fields) == 1:
+                    self._bye.set()
                     break
                 if kind == "A" and len(fields) == 2 and int(fields[1]) > 0:
                     continue
@@ -181,6 +214,14 @@ class WorkerClient:
         finally:
             if not self._failure and not self._closed:
                 self._failure = "model worker exited unexpectedly"
+            # The stream can no longer be consumed safely. Stop only this
+            # client's owned worker, including when it closed stdout but kept
+            # running. Never report its in-flight work as successful.
+            if self._failure and self._process.poll() is None:
+                try:
+                    self._process.terminate()
+                except OSError:
+                    pass
             self._ready.set()
             with self._state_lock:
                 pending = list(self._pending.values())
@@ -190,7 +231,7 @@ class WorkerClient:
                 except queue.Full:
                     pass
 
-    def close(self) -> None:
+    def close(self, *, timeout: float = 30) -> None:
         with self._state_lock:
             if self._closed:
                 return
@@ -200,12 +241,27 @@ class WorkerClient:
                 self._send("Q")
             except WorkerError:
                 pass
+        timed_out = False
         try:
-            self._process.wait(timeout=30)
-        except subprocess.TimeoutExpired as error:
-            raise WorkerError("shutdown", "model worker did not retire within 30 seconds") from error
+            exit_code = self._process.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            # Graceful shutdown was not observed. Ensure the subprocess we
+            # own is not orphaned, then report the failed graceful shutdown.
+            if not _stop_owned_process(self._process):
+                raise WorkerError("shutdown", "model worker could not be stopped")
         self._reader.join(timeout=5)
+        if self._reader.is_alive():
+            raise WorkerError("shutdown", "model worker output reader did not stop")
         if self._process.stdin:
             self._process.stdin.close()
         if self._process.stdout:
             self._process.stdout.close()
+        if timed_out:
+            raise WorkerError("shutdown", "model worker did not finish graceful shutdown before timeout")
+        if self._failure:
+            raise WorkerError("shutdown", self._failure)
+        if exit_code != 0:
+            raise WorkerError("shutdown", f"model worker exited with status {exit_code}")
+        if not self._bye.is_set():
+            raise WorkerError("shutdown", "model worker exited without shutdown acknowledgement")
