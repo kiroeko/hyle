@@ -9,11 +9,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--engine', required=True)
     parser.add_argument('--inputs', required=True)
-    parser.add_argument('--draft-count', type=int, choices=(0, 1), default=0)
+    parser.add_argument('--draft-count', type=int, choices=(0, 1, 3), default=0)
+    parser.add_argument('--output-capacity', type=int, choices=(1, 4), default=1)
     args = parser.parse_args()
     worker = WorkerClient([args.engine, '--engine-worker', '--inputs', args.inputs, '--backend', 'cuda',
                            '--capacity', '128', '--max-sessions', '1', '--active-sequences', '1',
-                           '--waiting-limit', '1', '--output-capacity', '1', '--draft-count', str(args.draft_count)])
+                           '--waiting-limit', '1', '--output-capacity', str(args.output_capacity),
+                           '--draft-count', str(args.draft_count)])
     requests = []
 
     def submit():
@@ -58,7 +60,7 @@ def main():
         assert result and worker.healthy
         followup = complete(submit())
         assert followup and worker.healthy
-        print(f'draft-count={args.draft_count}: held credit, queue-full rejection, '
+        print(f'draft-count={args.draft_count} output-capacity={args.output_capacity}: held credit, queue-full rejection, '
               f'waiting and active cancellation, replacement={len(result)} and followup={len(followup)} tokens', flush=True)
     finally:
         for request in requests:
