@@ -563,6 +563,10 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
             }
             definition.draft_id_port = r.reshape(r.concat(proposal_ids, 0,
                 r.dense_spec(Type::kInt32, {batch})), {batch, f(1)});
+            // The reshaped sampled proposal is both consumed by the target
+            // and published. Give it an independent output owner so the
+            // resident executor can safely reuse its shared workspace.
+            if (selected_sampler.enabled) definition.draft_id_port = r.copy(definition.draft_id_port);
           }
           r.publish(definition.draft_id_port);
           target_tokens = requests == 1 ? r.one(c::Concat{.axis = 0},
@@ -695,7 +699,8 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         .backend = execution.kind(), .role = role, .completion = completion,
         .packing = packing, .cpu_assist = execution.has_cpu_assist(), .diagnostic = diagnostic}.caller_small_results();
     const auto publish_valid = [&] {
-      if (caller_small_results) definition.sampling_valid_port = r.copy(definition.sampling_valid_port);
+      if (caller_small_results || (selected_sampler.enabled && has_mtp(role)))
+        definition.sampling_valid_port = r.copy(definition.sampling_valid_port);
       r.publish(definition.sampling_valid_port);
     };
     const auto bonus_logits_inputs = [&](std::size_t request) {
@@ -769,6 +774,8 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         publish_valid();
         if (drafts_token(role)) {
           definition.sampling_accept_port = r.host_predicate(r.concat(accepted, 0, r.dense_spec(Type::kBool, {batch})));
+          if (selected_sampler.enabled && has_mtp(role))
+            definition.sampling_accept_port = r.copy(definition.sampling_accept_port);
           r.publish(definition.sampling_accept_port);
         }
       }
@@ -778,7 +785,8 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
       // A packed MTP token may be a reshape View of the native TopK result.
       // Keep its published bytes outside reusable Invocation scratch, exactly
       // as ordinary caller-owned small results, without another sampler draw.
-      if ((caller_small_results && definition.sampling_valid_port) || (packed_prefill && is_mtp_prefill(role)))
+      if ((caller_small_results && definition.sampling_valid_port) ||
+          (selected_sampler.enabled && has_mtp(role)) || (packed_prefill && is_mtp_prefill(role)))
         definition.id_port = r.copy(definition.id_port);
       r.publish(definition.logits_port); r.publish(definition.id_port);
     }
