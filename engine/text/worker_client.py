@@ -55,7 +55,7 @@ class WorkerRequest:
                 raise RuntimeError("acknowledge the previous event before reading another")
             if self._terminal:
                 raise RuntimeError("request has already terminated")
-        event = self._events.get(timeout=timeout)
+        event = self._client._read_event(self._events, timeout)
         with self._lock:
             if event.kind in ("token", "turn_end"):
                 self._outstanding = True
@@ -139,6 +139,7 @@ class WorkerClient:
         self._next_control = 1
         self._closed = False
         self._failure: str | None = None
+        self._stream_end: str | None = None
         self.vocabulary = 0
         self.context = 0
         self.stop_ids: frozenset[int] = frozenset()
@@ -250,6 +251,19 @@ class WorkerClient:
         with self._state_lock:
             self._pending.pop(request_id, None)
 
+    def _read_event(self, events: queue.Queue, timeout: float | None) -> TokenEvent:
+        # Drain previously received events in order. If the output stream has
+        # ended, retain its failure even when a full queue could not accept the
+        # notification in _read_frames. Otherwise a reader could wait forever
+        # after consuming those already queued events.
+        with self._state_lock:
+            try:
+                return events.get_nowait()
+            except queue.Empty:
+                if self._stream_end is not None:
+                    return TokenEvent("error", message=self._stream_end)
+        return events.get(timeout=timeout)
+
     def _publish(self, request_id: int, event: TokenEvent) -> None:
         with self._state_lock:
             events = self._pending.get(request_id)
@@ -326,6 +340,7 @@ class WorkerClient:
                     pass
             self._ready.set()
             with self._state_lock:
+                self._stream_end = self._failure or "model worker closed"
                 pending = list(self._pending.values())
                 controls = [entry[1] for entry in self._controls.values()]
             for events in pending:

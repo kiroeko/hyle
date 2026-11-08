@@ -7,6 +7,34 @@ from engine.text.worker_client import WorkerClient, WorkerError
 
 
 class WorkerClientLifecycleTest(unittest.TestCase):
+    def test_worker_failure_is_observable_after_full_event_queue_drains(self):
+        code = "\n".join((
+            "import sys,time",
+            "print('READY\\t2\\t256\\t128\\t3', flush=True)",
+            "sys.stdin.readline()",
+            "print('T\\t1\\t11', flush=True)",
+            "print('B\\t1\\t0', flush=True)",
+            "print('invalid', flush=True)",
+            "time.sleep(30)",
+        ))
+        worker = WorkerClient([sys.executable, '-B', '-c', code], startup_timeout=3)
+        request = worker.open_session([10], 1)
+        try:
+            worker._reader.join(timeout=3)
+            self.assertFalse(worker._reader.is_alive(), 'worker output failure was not observed')
+            # An acknowledgement already accepted by the pipe can race with
+            # worker termination. Isolate event delivery from that timing.
+            with mock.patch.object(worker, '_send'):
+                self.assertEqual(request.read(timeout=1).token, 11); request.acknowledge()
+                self.assertEqual(request.read(timeout=1).kind, 'turn_end'); request.acknowledge()
+                event = request.read(timeout=1)
+            self.assertEqual(event.kind, 'error')
+            self.assertTrue(event.message)
+        finally:
+            request.close()
+            with self.assertRaises(WorkerError):
+                worker.close(timeout=3)
+
     def test_invalid_worker_output_fails_all_pending_requests(self):
         for frame in ('T\t1\t-1', 'T\t1\t256', 'T\t0\t1', 'B\t-1\t0',
                       'F\t0\tcompleted', 'E\t-1\tinvalid\tbad request'):
