@@ -42,10 +42,12 @@ def main():
     parser.add_argument('--port', type=int, default=2048)
     parser.add_argument('--metrics', action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument('--sampling', choices=('greedy', 'random'), default='greedy')
+    parser.add_argument('--draft-count', type=int, choices=range(4), default=0,
+                        help='explicit MTP draft depth; 0 tests ordinary generation')
     parser.add_argument('--tokenizer-dir', help='existing local tokenizer and model chat template')
     args = parser.parse_args()
     command = [args.engine, '--engine-worker', '--inputs', args.inputs, '--backend', 'cuda',
-               '--capacity', '256', '--max-sessions', '2', '--active-sequences', '2', '--draft-count', '0',
+               '--capacity', '256', '--max-sessions', '2', '--active-sequences', '2', '--draft-count', str(args.draft_count),
                '--sampling', args.sampling]
     if args.sampling == 'random':
         command += ['--temperature', '0.8', '--top-k', '40', '--top-p', '0.95', '--seed', '123']
@@ -97,7 +99,8 @@ def main():
         if args.metrics:
             with urllib.request.urlopen(f'http://127.0.0.1:{args.port}/metrics', timeout=10) as response:
                 assert response.read().decode() == metrics
-        print(f'two live {args.sampling} HTTP streams ({"local tokenizer" if args.tokenizer_dir else "fixture codec"}): '
+        print(f'two live {args.sampling} HTTP streams (draft-count={args.draft_count}, '
+              f'{"local tokenizer" if args.tokenizer_dir else "fixture codec"}): '
               'reset one; peer and subsequent request completed', flush=True)
     finally:
         if first is not None:
