@@ -3748,7 +3748,9 @@ std::unique_ptr<inference::ModelExecutor> load_model_executor(const ModelLoadCon
       .has_decode = config.context > 1, .resolved_active_sequences = config.active_sequences};
   const auto routes = inference::plan_decode_routes(facts);
   const bool overlap = config.overlap.value_or(bounded.enabled && routes.overlap.enabled);
-  const bool verification = overlap && routes.verification.enabled;
+  // The verifier can consume a standalone draft chain; it does not require
+  // an overlapping successor. Keep its independently selected capacity.
+  const bool verification = routes.verification.enabled;
   const auto query_rows = (std::max)(prefill, mtp ? cache::add(depth, 1) : std::size_t{1});
   const auto recurrent = recurrent_bytes(state_schema_for(geometry, config.context, precision), geometry);
   auto continuous = prepare_mtp_continuation({.routes = facts, .geometry = geometry, .source = source,

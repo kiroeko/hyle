@@ -59,6 +59,11 @@ void check_decode_routes() {
   if (select_decode_overlap(facts).reason!=RouteReason::kStateTrace || !select_device_verification(facts).enabled)
     throw std::runtime_error("tracing must retain capacity for an independent draft chain");
   facts.workload.state_trace=false;
+  facts.overlap_requested=false;
+  const auto independent = plan_decode_routes(facts);
+  if (independent.overlap.reason!=RouteReason::kUserDisabled || !independent.verification.enabled)
+    throw std::runtime_error("disabling overlap must retain independent device verification");
+  facts.overlap_requested=true;
   facts.has_decode=false;
   if (select_decode_overlap(facts).reason!=RouteReason::kNoDecode || select_device_verification(facts).reason!=RouteReason::kNoDecode)
     throw std::runtime_error("a finite workload without decode must not plan unused verification");
