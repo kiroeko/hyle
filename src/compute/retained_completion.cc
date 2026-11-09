@@ -433,7 +433,11 @@ Status RetainedCompletion::wait() noexcept {
     std::lock_guard guard(state_->lock);
     if (state_->phase == RetainedPhase::Unpublished) return state_->terminal;
   }
-  return wait_retained(*state_);
+  const auto terminal = wait_retained(*state_);
+  // A root drain joins the original posted driver even when observation
+  // failed. This does not claim that an unknown native error retired work.
+  state_->handoff_pending.wait(true, std::memory_order_acquire);
+  return terminal;
 }
 void RetainedCompletion::reset() noexcept {
   if (auto *state = std::exchange(state_, nullptr)) state->decref();

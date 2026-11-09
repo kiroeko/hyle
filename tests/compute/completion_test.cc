@@ -1060,6 +1060,51 @@ TEST(Completion, HandoffDoesNotHideAnObservedNativeError) {
   EXPECT_TRUE(owner.available());
 }
 
+TEST(Completion, RootWaitJoinsFailedHandoffAndKeepsPublicProxy) {
+  using namespace hyle::compute;
+  struct Gate final { std::atomic<bool> entered{false}, resume{false}; } gate;
+  auto owner = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  auto pending = owner.publish_pending({
+      &gate, nullptr, nullptr,
+      [](void *opaque) noexcept {
+        auto &gate = *static_cast<Gate *>(opaque);
+        gate.entered.store(true, std::memory_order_release);
+        gate.entered.notify_one();
+        gate.resume.wait(false, std::memory_order_acquire);
+      },
+      [](void *) noexcept {}});
+  hyle::Status handed, waited;
+  std::thread driver([&] {
+    handed = pending.ticket.handoff(Completion::completed(hyle::Status::Unavailable("native failure")));
+  });
+  gate.entered.wait(false, std::memory_order_acquire);
+  std::mutex mutex;
+  std::condition_variable changed;
+  bool started = false, finished = false;
+  std::thread waiter([&] {
+    { std::lock_guard lock(mutex); started = true; changed.notify_one(); }
+    waited = owner.wait();
+    { std::lock_guard lock(mutex); finished = true; changed.notify_one(); }
+  });
+  bool returned_early;
+  {
+    std::unique_lock lock(mutex);
+    changed.wait(lock, [&] { return started; });
+    returned_early = changed.wait_for(lock, std::chrono::milliseconds(30), [&] { return finished; });
+  }
+  gate.resume.store(true, std::memory_order_release);
+  gate.resume.notify_one();
+  driver.join(); waiter.join();
+  EXPECT_FALSE(returned_early);
+  EXPECT_TRUE(handed.ok());
+  EXPECT_TRUE(waited.IsUnavailable());
+  EXPECT_FALSE(owner.available()); // The separate public proxy still owns its observation.
+  const auto public_result = pending.completion.poll();
+  ASSERT_FALSE(public_result.has_value());
+  EXPECT_TRUE(public_result.error().IsUnavailable());
+  EXPECT_TRUE(owner.available());
+}
+
 TEST(Completion, RetainedPendingCancelAndAbandonRaceActualInstallationSafely) {
   using namespace hyle::compute;
   auto owner = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();

@@ -83,7 +83,8 @@ public:
   // Observes the same native cell without settling the separate public proxy.
   // Success also requires the posted handoff to release its observation;
   // poll remains pending until then. An error is not proof of native retirement.
-  // An empty/unpublished root reports its cached terminal, as wait does.
+  // Root wait joins the posted handoff even on error; it does not manufacture
+  // native retirement. An empty/unpublished root reports its cached terminal.
   HYLE_COMPUTE_API Result<CompletionPoll> poll() noexcept;
   HYLE_COMPUTE_API Status wait() noexcept;
   // F2 opt-in dependency bridge. Resolves only this known retained owner;
