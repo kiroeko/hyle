@@ -26,7 +26,10 @@ namespace hyle::inference {
 // protocol JSON or model state. Frames are TAB-delimited UTF-8/ASCII lines:
 // G or S id output_limit comma_separated_ids [output_limit comma_separated_ids ...];
 // O id output_limit comma_separated_ids opens a live input. Lowercase g/s/o
-// add a comma-separated extra-stop field after id. I id sequence output_limit
+// add a comma-separated extra-stop field after id. R id mode sampling_index
+// seed draft_limit stops output_limit ids ... carries request-local choices;
+// mode is G/S/O, and '-' means use the configured default or no extra stops.
+// I id sequence output_limit
 // comma_separated_ids appends one turn; Z id sequence closes its input. K acknowledges
 // output credit; C cancels; Q shuts down. S and O request ordered B id turn
 // events; both tokens and boundaries use credit. Later turn inputs may be empty.
@@ -118,11 +121,13 @@ public:
         if (!emit("I\t" + std::to_string(id) + "\t" + std::to_string(sequence) + "\t" + status)) break;
         continue;
       }
-      const bool extra_stops = fields[0] == "g" || fields[0] == "s" || fields[0] == "o";
-      const bool flat = fields[0] == "G" || fields[0] == "g";
-      const bool turns_mode = fields[0] == "S" || fields[0] == "s";
-      const bool live = fields[0] == "O" || fields[0] == "o";
-      const std::size_t start = extra_stops ? 3 : 2;
+      const bool configured = fields[0] == "R";
+      const auto mode_field = configured && fields.size() > 2 ? fields[2] : fields[0];
+      const bool extra_stops = configured || fields[0] == "g" || fields[0] == "s" || fields[0] == "o";
+      const bool flat = mode_field == "G" || mode_field == "g";
+      const bool turns_mode = mode_field == "S" || mode_field == "s";
+      const bool live = mode_field == "O" || mode_field == "o";
+      const std::size_t start = configured ? 7 : extra_stops ? 3 : 2;
       if ((!flat && !turns_mode && !live) || fields.size() < start + 2 ||
           (fields.size() - start) % 2 != 0 || (live && fields.size() != start + 2)) {
         if (!emit(error(id, "protocol", "unknown or malformed command"))) break;
@@ -134,10 +139,26 @@ public:
       }
       std::vector<GenerationTurn> turns;
       std::vector<std::int32_t> stops;
+      auto seed = default_seed_;
+      std::optional<std::size_t> draft_limit;
+      std::size_t sampling_index = 0;
+      if (configured) {
+        std::uint64_t seed_value = 0;
+        std::size_t draft_value = 0;
+        if ((fields[3] != "-" && !number(fields[3], sampling_index)) ||
+            (fields[4] != "-" && !number(fields[4], seed_value)) ||
+            (fields[5] != "-" && !number(fields[5], draft_value))) {
+          if (!emit(error(id, "invalid", "invalid request configuration"))) break;
+          continue;
+        }
+        if (fields[4] != "-") seed = seed_value;
+        if (fields[5] != "-") draft_limit = draft_value;
+      }
       std::size_t prompt_tokens = 0;
       const auto turn_count = (fields.size() - start) / 2;
       bool valid = turn_count <= max_prompt_tokens_ &&
-          (!extra_stops || parse_tokens(fields[2], stops, false, description_.vocabulary));
+          (!extra_stops || (configured && fields[6] == "-") ||
+           parse_tokens(fields[configured ? 6 : 2], stops, false, description_.vocabulary));
       if (valid) for (const auto token : stops)
         if (static_cast<std::size_t>(token) >= description_.vocabulary) { valid = false; break; }
       if (valid) turns.reserve(turn_count);
@@ -160,7 +181,8 @@ public:
       try {
         const auto mode = flat ? GenerationSessionMode::kFlat :
             turns_mode ? GenerationSessionMode::kTurns : GenerationSessionMode::kLive;
-        auto handle = dispatcher_.submit({std::to_string(id), std::move(turns), mode, default_seed_}, RequestStopPolicy(stops));
+        auto handle = dispatcher_.submit({std::to_string(id), std::move(turns), mode, seed, draft_limit},
+                                         RequestStopPolicy(stops), sampling_index);
         auto call = std::make_shared<Call>(std::move(handle));
         calls_.emplace(id, call);
         if (!emit("A\t" + std::to_string(id))) { call->cancel(); break; }

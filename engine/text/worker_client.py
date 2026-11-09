@@ -170,21 +170,34 @@ class WorkerClient:
         with self._state_lock:
             return not self._closed and self._failure is None and self._process.poll() is None
 
-    def submit(self, tokens: Sequence[int], max_output_tokens: int, *, stop_ids: Sequence[int] = ()) -> WorkerRequest:
-        return self._submit_turns(((tokens, max_output_tokens),), report_turns=False, stop_ids=stop_ids)
+    def submit(self, tokens: Sequence[int], max_output_tokens: int, *, stop_ids: Sequence[int] = (),
+               sampling_index: int | None = None, seed: int | None = None,
+               max_draft_tokens: int | None = None) -> WorkerRequest:
+        return self._submit_turns(((tokens, max_output_tokens),), report_turns=False, stop_ids=stop_ids,
+                                  sampling_index=sampling_index, seed=seed, max_draft_tokens=max_draft_tokens)
 
-    def submit_turns(self, turns: Sequence[tuple[Sequence[int], int]], *, stop_ids: Sequence[int] = ()) -> WorkerRequest:
+    def submit_turns(self, turns: Sequence[tuple[Sequence[int], int]], *, stop_ids: Sequence[int] = (),
+                     sampling_index: int | None = None, seed: int | None = None,
+                     max_draft_tokens: int | None = None) -> WorkerRequest:
         """Submit one finite session with acknowledged, zero-based turn-end events."""
-        return self._submit_turns(turns, report_turns=True, stop_ids=stop_ids)
+        return self._submit_turns(turns, report_turns=True, stop_ids=stop_ids,
+                                  sampling_index=sampling_index, seed=seed, max_draft_tokens=max_draft_tokens)
 
-    def open_session(self, tokens: Sequence[int], max_output_tokens: int, *, stop_ids: Sequence[int] = ()) -> WorkerRequest:
+    def open_session(self, tokens: Sequence[int], max_output_tokens: int, *, stop_ids: Sequence[int] = (),
+                     sampling_index: int | None = None, seed: int | None = None,
+                     max_draft_tokens: int | None = None) -> WorkerRequest:
         """Open one live session; append turns and explicitly finish its input."""
-        return self._submit_turns(((tokens, max_output_tokens),), report_turns=True, live=True, stop_ids=stop_ids)
+        return self._submit_turns(((tokens, max_output_tokens),), report_turns=True, live=True, stop_ids=stop_ids,
+                                  sampling_index=sampling_index, seed=seed, max_draft_tokens=max_draft_tokens)
 
     def _submit_turns(self, turns: Sequence[tuple[Sequence[int], int]], *, report_turns: bool,
-                      live: bool = False, stop_ids: Sequence[int] = ()) -> WorkerRequest:
+                      live: bool = False, stop_ids: Sequence[int] = (), sampling_index: int | None = None,
+                      seed: int | None = None, max_draft_tokens: int | None = None) -> WorkerRequest:
         if not turns:
             raise ValueError("at least one turn is required")
+        for value in (sampling_index, seed, max_draft_tokens):
+            if value is not None and (type(value) is not int or not 0 <= value <= 18446744073709551615):
+                raise ValueError("request configuration must be an unsigned 64-bit integer")
         if any(type(token) is not int or token < 0 or token >= self.vocabulary for token in stop_ids):
             raise ValueError("stop token is outside the model vocabulary")
         stops = sorted(set(stop_ids) - self.stop_ids)
@@ -206,7 +219,12 @@ class WorkerClient:
             self._pending[request_id] = events
         try:
             kind = 'O' if live else 'S' if report_turns else 'G'
-            prefix = f"{kind.lower()}\t{request_id}\t{','.join(map(str, stops))}" if stops else f"{kind}\t{request_id}"
+            if any(value is not None for value in (sampling_index, seed, max_draft_tokens)):
+                choices = (sampling_index, seed, max_draft_tokens)
+                fields = [str(value) if value is not None else '-' for value in choices]
+                prefix = "\t".join(('R', str(request_id), kind, *fields, ','.join(map(str, stops)) or '-'))
+            else:
+                prefix = f"{kind.lower()}\t{request_id}\t{','.join(map(str, stops))}" if stops else f"{kind}\t{request_id}"
             self._send(prefix + "\t" + "\t".join(frames))
         except Exception:
             self._forget(request_id)
@@ -376,10 +394,13 @@ class WorkerClient:
         self._reader.join(timeout=5)
         if self._reader.is_alive():
             raise WorkerError("shutdown", "model worker output reader did not stop")
-        if self._process.stdin:
-            self._process.stdin.close()
-        if self._process.stdout:
-            self._process.stdout.close()
+        close_error = None
+        for stream in (self._process.stdin, self._process.stdout):
+            if stream:
+                try:
+                    stream.close()
+                except OSError as error:
+                    close_error = close_error or error
         if timed_out:
             raise WorkerError("shutdown", "model worker did not finish graceful shutdown before timeout")
         if self._failure:
@@ -388,3 +409,5 @@ class WorkerClient:
             raise WorkerError("shutdown", f"model worker exited with status {exit_code}")
         if not self._bye.is_set():
             raise WorkerError("shutdown", "model worker exited without shutdown acknowledgement")
+        if close_error:
+            raise WorkerError("shutdown", "model worker pipe could not be closed") from close_error

@@ -7,6 +7,31 @@ from engine.text.worker_client import WorkerClient, WorkerError
 
 
 class WorkerClientLifecycleTest(unittest.TestCase):
+    def test_pipe_close_failure_is_reported_as_shutdown_error(self):
+        code = "\n".join((
+            "import sys",
+            "print('READY\\t2\\t256\\t128\\t3', flush=True)",
+            "assert sys.stdin.readline().rstrip() == 'Q'",
+            "print('BYE', flush=True)",
+        ))
+        worker = WorkerClient([sys.executable, '-B', '-c', code], startup_timeout=3)
+        stream = worker._process.stdin
+
+        class BrokenClose:
+            def write(self, value): return stream.write(value)
+            def flush(self): return stream.flush()
+            def close(self): raise OSError('pipe close failed')
+
+        worker._process.stdin = BrokenClose()
+        try:
+            with self.assertRaises(WorkerError) as error:
+                worker.close(timeout=3)
+            self.assertEqual(error.exception.kind, 'shutdown')
+            self.assertIn('pipe', str(error.exception))
+        finally:
+            worker._process.stdin = stream
+            stream.close()
+
     def test_worker_failure_is_observable_after_full_event_queue_drains(self):
         code = "\n".join((
             "import sys,time",
@@ -104,6 +129,40 @@ class WorkerClientLifecycleTest(unittest.TestCase):
                         request = worker.submit_turns([([10], 1)], stop_ids=[8, 3, 4, 8])
                     else:
                         request = worker.open_session([10], 1, stop_ids=[8, 3, 4, 8])
+                    try:
+                        self.assertEqual(request.read(timeout=3).token, 4)
+                        request.acknowledge()
+                        self.assertEqual(request.read(timeout=3).kind, 'completed')
+                    finally:
+                        request.close()
+                finally:
+                    worker.close(timeout=3)
+
+    def test_request_configuration_is_transmitted_in_each_mode(self):
+        for kind in ('G', 'S', 'O'):
+            with self.subTest(kind=kind):
+                code = "\n".join((
+                    "import sys",
+                    "read = lambda: sys.stdin.readline().rstrip('\\r\\n')",
+                    "print('READY\\t2\\t256\\t128\\t3', flush=True)",
+                    f"assert read() == 'R\\t1\\t{kind}\\t2\\t0\\t3\\t4,8\\t1\\t10'",
+                    "print('A\\t1', flush=True); print('T\\t1\\t4', flush=True)",
+                    "assert read() == 'K\\t1\\t1'; print('F\\t1\\tcompleted', flush=True)",
+                    "assert read() == 'Q'; print('BYE', flush=True)",
+                ))
+                worker = WorkerClient([sys.executable, '-B', '-c', code], startup_timeout=3)
+                try:
+                    for kwargs in ({'seed': -1}, {'seed': True}, {'sampling_index': 2**64},
+                                   {'max_draft_tokens': -1}):
+                        with self.assertRaises(ValueError):
+                            worker.submit([10], 1, **kwargs)
+                    options = dict(stop_ids=[8, 3, 4], sampling_index=2, seed=0, max_draft_tokens=3)
+                    if kind == 'G':
+                        request = worker.submit([10], 1, **options)
+                    elif kind == 'S':
+                        request = worker.submit_turns([([10], 1)], **options)
+                    else:
+                        request = worker.open_session([10], 1, **options)
                     try:
                         self.assertEqual(request.read(timeout=3).token, 4)
                         request.acknowledge()

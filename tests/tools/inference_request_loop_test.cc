@@ -967,6 +967,9 @@ struct IngressTestControl final {
   bool started = false, proceed = false, fail = false, wrong_terminal = false, early_stop_first = false;
   std::vector<std::size_t> batches;
   std::vector<std::optional<std::uint64_t>> seeds;
+  std::vector<std::optional<std::size_t>> draft_limits;
+  std::vector<std::size_t> sampling_indices;
+  std::vector<i::RequestStopPolicy> stops;
 };
 
 class IngressTestExecutor final : public i::ModelExecutor {
@@ -991,7 +994,12 @@ public:
     {
       std::unique_lock lock(control_->mutex);
       control_->batches.push_back(batch.sessions.size());
-      for (const auto &schedule : batch.sessions) control_->seeds.push_back(schedule.sampling_seed);
+      for (std::size_t index = 0; index < batch.sessions.size(); ++index) {
+        control_->seeds.push_back(batch.sessions[index].sampling_seed);
+        control_->draft_limits.push_back(batch.sessions[index].max_draft_tokens);
+        control_->sampling_indices.push_back(batch.sampling_indices.empty() ? 0 : batch.sampling_indices[index]);
+        control_->stops.push_back(batch.stop_policies.empty() ? i::RequestStopPolicy{} : batch.stop_policies[index]);
+      }
       if (control_->batches.size() == 1) {
         control_->started = true; control_->changed.notify_all();
         control_->changed.wait(lock, [&] { return control_->proceed; });
@@ -1248,7 +1256,9 @@ void token_worker_rejects_malformed_frames_without_starting_model() {
   auto control = std::make_shared<IngressTestControl>();
   std::istringstream input("G\t0\t1\t1\nG\t7\t0\t1\nG\t8\t1\t-1\n"
       "G\t10\t1\t1\t0\t2\nG\t11\t1\t\t1\t2\nG\t12\t1\t1\t1\n"
-      "g\t13\t256\t1\t1\ng\t14\t\t1\t1\ng\t15\t-1\t1\t1\nC\t9\nQ\n");
+      "g\t13\t256\t1\t1\ng\t14\t\t1\t1\ng\t15\t-1\t1\t1\n"
+      "R\t16\tG\t-1\t-\t-\t-\t1\t1\nR\t17\tG\t-\t18446744073709551616\t-\t-\t1\t1\n"
+      "R\t18\tG\t-\t-\t-1\t-\t1\t1\nR\t19\tX\t-\t-\t-\t-\t1\t1\nC\t9\nQ\n");
   std::ostringstream output;
   i::TokenWorker worker(std::make_unique<IngressTestExecutor>(control), 2, 2, 1, 16, input, output);
   require(worker.run() == 0, "worker protocol did not close cleanly");
@@ -1260,7 +1270,10 @@ void token_worker_rejects_malformed_frames_without_starting_model() {
       "E\t12\tprotocol\tunknown or malformed command\n"
       "E\t13\tinvalid\tinvalid output limit or token list\n"
       "E\t14\tinvalid\tinvalid output limit or token list\n"
-      "E\t15\tinvalid\tinvalid output limit or token list\nC\t9\tstale\nBYE\n",
+      "E\t15\tinvalid\tinvalid output limit or token list\n"
+      "E\t16\tinvalid\tinvalid request configuration\nE\t17\tinvalid\tinvalid request configuration\n"
+      "E\t18\tinvalid\tinvalid request configuration\nE\t19\tprotocol\tunknown or malformed command\n"
+      "C\t9\tstale\nBYE\n",
       "worker protocol accepted malformed input or changed response order");
   std::lock_guard lock(control->mutex);
   require(control->batches.empty(), "malformed worker frame reached the model");
@@ -1375,6 +1388,24 @@ void token_worker_credit_and_cancellation_do_not_hang() {
     require(next() == "B\t6\t1", "worker lost the appended turn boundary");
     input_buffer.send("K\t6\t1\n");
     require(next() == "F\t6\tcompleted", "closed live session lost its terminal");
+    input_buffer.send("R\t7\tG\t2\t0\t3\t5,7\t1\t90\n");
+    require(next() == "A\t7" && next() == "T\t7\t90", "worker lost the configured request");
+    input_buffer.send("K\t7\t1\n");
+    require(next() == "F\t7\tcompleted", "configured request lost its terminal");
+    input_buffer.send("R\t8\tS\t-\t-\t-\t-\t1\t100\n");
+    require(next() == "A\t8" && next() == "T\t8\t100", "configured turn session did not start");
+    input_buffer.send("K\t8\t1\n");
+    require(next() == "B\t8\t0", "configured turn session lost its boundary");
+    input_buffer.send("K\t8\t1\n");
+    require(next() == "F\t8\tcompleted", "configured turn session lost its terminal");
+    input_buffer.send("R\t9\tO\t-\t-\t-\t-\t1\t110\n");
+    require(next() == "A\t9" && next() == "T\t9\t110", "configured live session did not start");
+    input_buffer.send("K\t9\t1\n");
+    require(next() == "B\t9\t0", "configured live session lost its boundary");
+    input_buffer.send("Z\t9\t1\n");
+    require(next() == "Z\t9\t1\taccepted", "configured live session did not accept input closure");
+    input_buffer.send("K\t9\t1\n");
+    require(next() == "F\t9\tcompleted", "configured live session lost its terminal");
     input_buffer.send("G\t2\t2\t20\n");
     require(next() == "A\t2" && next() == "T\t2\t20", "worker lost second request");
     input_buffer.send("C\t2\n");
@@ -1400,8 +1431,18 @@ void token_worker_credit_and_cancellation_do_not_hang() {
     runner.join();
     require(result == 0, "worker exited with a failure");
     { std::lock_guard lock(control->mutex);
-      require(!control->seeds.empty() && std::ranges::all_of(control->seeds,
-          [](const auto seed) { return seed == 987; }), "worker did not attach its default seed to each request"); }
+      std::size_t configured = 0;
+      for (std::size_t index = 0; index < control->seeds.size(); ++index) {
+        if (control->sampling_indices[index] == 2) {
+          const std::array<std::int32_t, 2> stops{5, 7};
+          require(control->seeds[index] == 0 && control->draft_limits[index] == 3 &&
+              std::ranges::equal(control->stops[index].extra_tokens(), stops),
+              "worker lost request-specific seed, draft limit or stops");
+          ++configured;
+        } else require(control->seeds[index] == 987 && !control->draft_limits[index],
+                       "worker did not attach its default seed to the original request");
+      }
+      require(configured == 1, "worker did not forward the selected prepared sampler"); }
   } catch (...) {
     input_buffer.close(); runner.join(); throw;
   }
