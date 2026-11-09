@@ -10,6 +10,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <ostream>
 #include <string>
 #include <string_view>
@@ -39,10 +40,11 @@ class TokenWorker final {
 public:
   TokenWorker(std::unique_ptr<ModelExecutor> executor, std::size_t batch_limit,
               std::size_t waiting_limit, std::size_t output_capacity,
-              std::size_t max_prompt_tokens, std::istream &input, std::ostream &output)
+              std::size_t max_prompt_tokens, std::istream &input, std::ostream &output,
+              std::optional<std::uint64_t> default_seed = {})
       : description_(executor ? executor->describe() : ModelDescription{}),
         dispatcher_(std::move(executor), batch_limit, waiting_limit, output_capacity),
-        max_prompt_tokens_(max_prompt_tokens), input_(input), output_(output) {
+        max_prompt_tokens_(max_prompt_tokens), input_(input), output_(output), default_seed_(default_seed) {
     if (!max_prompt_tokens || !description_.vocabulary || !description_.context ||
         max_prompt_tokens > description_.context)
       throw std::invalid_argument("worker requires valid model vocabulary and context");
@@ -158,7 +160,7 @@ public:
       try {
         const auto mode = flat ? GenerationSessionMode::kFlat :
             turns_mode ? GenerationSessionMode::kTurns : GenerationSessionMode::kLive;
-        auto handle = dispatcher_.submit({std::to_string(id), std::move(turns), mode}, RequestStopPolicy(stops));
+        auto handle = dispatcher_.submit({std::to_string(id), std::move(turns), mode, default_seed_}, RequestStopPolicy(stops));
         auto call = std::make_shared<Call>(std::move(handle));
         calls_.emplace(id, call);
         if (!emit("A\t" + std::to_string(id))) { call->cancel(); break; }
@@ -312,6 +314,7 @@ private:
   const std::size_t max_prompt_tokens_;
   std::istream &input_;
   std::ostream &output_;
+  std::optional<std::uint64_t> default_seed_;
   std::mutex output_mutex_;
   std::map<std::uint64_t, std::shared_ptr<Call>> calls_;
 };

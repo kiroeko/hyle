@@ -25,9 +25,20 @@ struct GenerationSessionSchedule final {
   std::string id;
   std::vector<GenerationTurn> turns;
   GenerationSessionMode mode = GenerationSessionMode::kFlat;
+  // Request-local initial seed. The resulting cursor remains part of the
+  // original Session state; absence uses the model's existing default.
+  std::optional<std::uint64_t> sampling_seed;
   bool reports_turn_ends() const noexcept { return mode != GenerationSessionMode::kFlat; }
   bool accepts_live_input() const noexcept { return mode == GenerationSessionMode::kLive; }
 };
+
+// Admission assigns one initial address to this request. A caller-supplied
+// seed overrides the configured default; later draws live in the committed
+// Session cursor and are never reconstructed from the slot after admission.
+inline SamplingCursor initial_sampling_cursor(const GenerationSessionSchedule &schedule,
+    std::uint64_t default_seed, std::uint64_t stream) noexcept {
+  return {schedule.sampling_seed.value_or(default_seed), stream, 0};
+}
 
 struct RequestInputCommit final {
   std::size_t turn = 0, begin = 0;

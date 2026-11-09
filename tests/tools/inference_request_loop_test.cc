@@ -965,6 +965,7 @@ struct IngressTestControl final {
   std::condition_variable changed;
   bool started = false, proceed = false, fail = false, wrong_terminal = false, early_stop_first = false;
   std::vector<std::size_t> batches;
+  std::vector<std::optional<std::uint64_t>> seeds;
 };
 
 class IngressTestExecutor final : public i::ModelExecutor {
@@ -989,6 +990,7 @@ public:
     {
       std::unique_lock lock(control_->mutex);
       control_->batches.push_back(batch.sessions.size());
+      for (const auto &schedule : batch.sessions) control_->seeds.push_back(schedule.sampling_seed);
       if (control_->batches.size() == 1) {
         control_->started = true; control_->changed.notify_all();
         control_->changed.wait(lock, [&] { return control_->proceed; });
@@ -1101,6 +1103,14 @@ public:
 void schedule_admission_is_model_independent_and_overflow_safe() {
   using Error = i::RequestAdmissionError;
   i::GenerationSessionSchedule schedule{"finite", {{{1}, 1}}};
+  require(i::initial_sampling_cursor(schedule, 12, 3) == i::SamplingCursor{12, 3, 0},
+      "request without a seed lost its configured default");
+  schedule.sampling_seed = 0;
+  require(i::initial_sampling_cursor(schedule, 12, 4) == i::SamplingCursor{0, 4, 0},
+      "explicit zero request seed was replaced by the configured default");
+  schedule.sampling_seed = 98;
+  require(i::initial_sampling_cursor(schedule, 12, 5) == i::SamplingCursor{98, 5, 0},
+      "request seed did not initialize its independent cursor");
   require(!i::check_request_schedule(schedule, 1, 2), "exact one-token context was rejected");
   require(i::check_request_schedule(schedule, 0, 2) == Error::kInvalidLimits,
       "missing context was accepted");
@@ -1131,11 +1141,18 @@ void schedule_admission_is_model_independent_and_overflow_safe() {
 void model_provider_selects_one_owner_and_rejects_ambiguity() {
   const auto a = +[](const std::filesystem::path &source) { return source.filename() == "model-a"; };
   const auto b = +[](const std::filesystem::path &source) { return source.filename() == "model-b"; };
-  const auto load = +[](const i::ModelLoadConfig &) -> std::unique_ptr<i::ModelExecutor> {
+  const auto load = +[](const i::ModelLoadConfig &config) -> std::unique_ptr<i::ModelExecutor> {
+    require(config.assets.inputs.filename() == "model-b" && config.execution.context == 128 &&
+        config.sampling.random && config.sampling.top_k == 40,
+        "provider did not receive independent source, execution and sampling preparation facts");
     return std::make_unique<IngressTestExecutor>(std::make_shared<IngressTestControl>());
   };
   const std::array providers{i::ModelProvider{"a", a, load}, i::ModelProvider{"b", b, load}};
   require(i::select_model_provider(providers, "model-b").name == "b", "model provider selection ignored its input");
+  i::ModelLoadConfig config;
+  config.assets.inputs = "model-b"; config.execution.context = 128;
+  config.sampling.random = true; config.sampling.top_k = 40;
+  require(bool(i::load_model(providers, config)), "provider did not load its selected source");
   rejects<std::runtime_error>([&] { (void)i::select_model_provider(providers, "unknown"); });
   const std::array ambiguous{i::ModelProvider{"a", a, load}, i::ModelProvider{"other", a, load}};
   rejects<std::runtime_error>([&] { (void)i::select_model_provider(ambiguous, "model-a"); });
@@ -1221,7 +1238,7 @@ void token_worker_credit_and_cancellation_do_not_hang() {
   auto control = std::make_shared<IngressTestControl>(); control->proceed = true;
   WorkerTestInput input_buffer; WorkerTestOutput output_buffer;
   std::istream input(&input_buffer); std::ostream output(&output_buffer);
-  i::TokenWorker worker(std::make_unique<IngressTestExecutor>(control), 1, 4, 1, 16, input, output);
+  i::TokenWorker worker(std::make_unique<IngressTestExecutor>(control), 1, 4, 1, 16, input, output, 987);
   int result = -1;
   std::thread runner([&] { result = worker.run(); });
   try {
@@ -1298,6 +1315,9 @@ void token_worker_credit_and_cancellation_do_not_hang() {
     require(saw_terminal, "worker shutdown dropped its active request");
     runner.join();
     require(result == 0, "worker exited with a failure");
+    { std::lock_guard lock(control->mutex);
+      require(!control->seeds.empty() && std::ranges::all_of(control->seeds,
+          [](const auto seed) { return seed == 987; }), "worker did not attach its default seed to each request"); }
   } catch (...) {
     input_buffer.close(); runner.join(); throw;
   }

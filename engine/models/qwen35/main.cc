@@ -2708,7 +2708,8 @@ bool admit_waiting_generation(Model &model, inference::RequestLoop &loop,
       fresh.live_turns.push_back(visible_turns.front());
       fresh.progress.bind_open_turns(fresh.live_turns, bound, bound);
     } else fresh.progress.bind_open_turns(visible_turns, bound, bound);
-    fresh.progress.initial_sampling = {model.sampling_seed, static_cast<std::uint64_t>(*slot), 0};
+    fresh.progress.initial_sampling = inference::initial_sampling_cursor(
+        schedule, model.sampling_seed, static_cast<std::uint64_t>(*slot));
     fresh.turn_observations.reserve(bound);
     fresh.turn_observations.emplace_back(); fresh.turn_observations[0].arrival = Clock::now();
     fresh.warm_inputs.reserve(bound);
@@ -2885,7 +2886,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     } else if (first_turn_only) request.progress.bind_open_turns(visible_turns, configured_bound, configured_bound);
     else request.progress.bind_turns(visible_turns);
     if (!logits_providers.empty()) request.logits_provider = logits_providers[requests.size() - 1];
-    request.progress.initial_sampling = {model.sampling_seed, static_cast<std::uint64_t>(requests.size() - 1), 0};
+    request.progress.initial_sampling = inference::initial_sampling_cursor(
+        schedule, model.sampling_seed, static_cast<std::uint64_t>(requests.size() - 1));
     request.turn_observations.reserve(first_turn_only ? configured_bound : visible_turns.size());
     request.turn_observations.resize(visible_turns.size());
     if (first_turn_only) request.turn_observations[0].arrival = startup;
@@ -3876,72 +3878,72 @@ bool matches_prepared_model(const std::filesystem::path &source) {
 }
 
 std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::ModelLoadConfig &config) {
-  if (config.inputs.empty() || !config.context || !config.resident_sessions || !config.active_sequences ||
-      config.active_sequences > config.resident_sessions || !config.prefill_rows ||
-      (config.draft_count && *config.draft_count >= config.context))
+  if (config.assets.inputs.empty() || !config.execution.context || !config.execution.resident_sessions || !config.execution.active_sequences ||
+      config.execution.active_sequences > config.execution.resident_sessions || !config.execution.prefill_rows ||
+      (config.execution.draft_count && *config.execution.draft_count >= config.execution.context))
     throw std::invalid_argument("model loading requires valid context, sequence, prefill and draft capacities");
-  const auto execution = select_execution(BackendSelection{.primary = config.backend}, 0);
+  const auto execution = select_execution(BackendSelection{.primary = config.execution.backend}, 0);
   const inference::ColdWorkloadFacts workload{
-      .natural_generation = true, .greedy = !config.random,
-      .max_sessions = config.resident_sessions, .active_sequences = config.active_sequences,
-      .capacity = config.context};
+      .natural_generation = true, .greedy = !config.sampling.random,
+      .max_sessions = config.execution.resident_sessions, .active_sequences = config.execution.active_sequences,
+      .capacity = config.execution.context};
   namespace mtp_policy = inference::mtp;
-  const bool explicit_depth = config.draft_count.has_value();
-  const auto requested_depth = config.draft_count.value_or(1);
+  const bool explicit_depth = config.execution.draft_count.has_value();
+  const auto requested_depth = config.execution.draft_count.value_or(1);
   const mtp_policy::DefaultRequest request{
       .mode = !explicit_depth ? mtp_policy::RequestedMode::kAuto :
           requested_depth ? mtp_policy::RequestedMode::kOn : mtp_policy::RequestedMode::kOff,
       .workload = workload, .automatic_backend_eligible = execution.primary == BackendKind::kCuda,
-      .max_drafts = requested_depth, .automatic_vocabulary = config.draft_vocabulary.empty() && !explicit_depth};
-  auto vocabulary = !config.draft_vocabulary.empty() ? DraftAssetRequest::from_file(config.draft_vocabulary) :
+      .max_drafts = requested_depth, .automatic_vocabulary = config.assets.draft_vocabulary.empty() && !explicit_depth};
+  auto vocabulary = !config.assets.draft_vocabulary.empty() ? DraftAssetRequest::from_file(config.assets.draft_vocabulary) :
       explicit_depth ? DraftAssetRequest::original() : DraftAssetRequest::automatic();
-  auto head = !config.draft_head.empty() ? DraftAssetRequest::from_file(config.draft_head) :
-      (!explicit_depth || config.auto_draft_head ? DraftAssetRequest::automatic() : DraftAssetRequest::original());
-  auto assets = select_draft_assets(config.inputs, request, std::move(vocabulary), std::move(head),
+  auto head = !config.assets.draft_head.empty() ? DraftAssetRequest::from_file(config.assets.draft_head) :
+      (!explicit_depth || config.assets.auto_draft_head ? DraftAssetRequest::automatic() : DraftAssetRequest::original());
+  auto assets = select_draft_assets(config.assets.inputs, request, std::move(vocabulary), std::move(head),
       Backend::supports_encoded_row_gather(execution));
   const bool mtp = assets.policy.enabled;
-  const auto prefill = (std::min)({config.prefill_rows, std::size_t{512}, config.context});
+  const auto prefill = (std::min)({config.execution.prefill_rows, std::size_t{512}, config.execution.context});
   if (mtp && prefill < 2) throw std::invalid_argument("MTP preparation needs a multirow prefill capacity");
-  auto source = prepare_weight_source(config.inputs / "weights.tsv", mtp, assets.vocabulary,
+  auto source = prepare_weight_source(config.assets.inputs / "weights.tsv", mtp, assets.vocabulary,
       assets.head, assets.auto_head);
   const auto selected_depth = mtp ? mtp_policy::select_draft_depth(assets.policy, explicit_depth,
       requested_depth, source.draft_preferences.recommended_drafts).max_drafts : 0;
   // Recommendations describe a preferred maximum, not a requirement that a
   // short context can hold every proposed row.
-  const auto depth = (std::min)(selected_depth, config.context - 1);
+  const auto depth = (std::min)(selected_depth, config.execution.context - 1);
   if (mtp && !depth) throw std::invalid_argument("model draft depth requires a remaining context row");
   const auto geometry = source.roles.geometry;
   validate_mtp_source(geometry, mtp);
-  if (config.top_k > static_cast<std::size_t>(geometry.vocabulary))
+  if (config.sampling.top_k > static_cast<std::size_t>(geometry.vocabulary))
     throw std::invalid_argument("sampling top-k exceeds the source vocabulary");
   const auto precision = PrecisionProfile::from_roles(source.roles);
-  const DeviceRelayCapabilities relay{execution.primary, false, false, config.random && mtp, false};
+  const DeviceRelayCapabilities relay{execution.primary, false, false, config.sampling.random && mtp, false};
   const inference::DecodeRouteFacts facts{.workload = workload, .overlap_requested = true,
       .mtp_enabled = mtp, .max_drafts = depth, .max_device_drafts = kMaximumDeviceMtpDrafts,
       .stored_draft_head = supports_stored_draft_projection(source.roles),
       .relay_eligible = relay.eligible(), .relay_refusal = relay.refusal_reason(),
-      .has_decode = config.context > 1, .resolved_active_sequences = config.active_sequences};
+      .has_decode = config.execution.context > 1, .resolved_active_sequences = config.execution.active_sequences};
   const auto routes = inference::plan_decode_routes(facts);
-  const bool overlap = config.overlap.value_or(inference::select_resident_decode_overlap(facts).enabled);
+  const bool overlap = config.execution.overlap.value_or(inference::select_resident_decode_overlap(facts).enabled);
   // The verifier can consume a standalone draft chain; it does not require
   // an overlapping successor. Keep its independently selected capacity.
   const bool verification = routes.verification.enabled;
   const auto query_rows = (std::max)(prefill, mtp ? cache::add(depth, 1) : std::size_t{1});
-  const auto recurrent = recurrent_bytes(state_schema_for(geometry, config.context, precision), geometry);
+  const auto recurrent = recurrent_bytes(state_schema_for(geometry, config.execution.context, precision), geometry);
   auto continuous = prepare_mtp_continuation({.routes = facts, .geometry = geometry, .source = source,
-      .precision = precision, .backend = execution, .context = config.context, .residents = config.resident_sessions,
-      .active_sequences = config.active_sequences, .query_rows = query_rows, .recurrent_bytes = recurrent,
-      .draft_depth = depth, .overlap = overlap, .verification = verification, .random = config.random});
-  const auto plan = cache::plan(geometry, source.cache_row_bytes, config.context, config.resident_sessions,
-      query_rows, recurrent, config.active_sequences, mtp ? cache::add(depth, 1) : 1, mtp, config.random,
+      .precision = precision, .backend = execution, .context = config.execution.context, .residents = config.execution.resident_sessions,
+      .active_sequences = config.execution.active_sequences, .query_rows = query_rows, .recurrent_bytes = recurrent,
+      .draft_depth = depth, .overlap = overlap, .verification = verification, .random = config.sampling.random});
+  const auto plan = cache::plan(geometry, source.cache_row_bytes, config.execution.context, config.execution.resident_sessions,
+      query_rows, recurrent, config.execution.active_sequences, mtp ? cache::add(depth, 1) : 1, mtp, config.sampling.random,
       overlap ? (continuous.enabled ? 3 : 2) : 1, verification ? 2 : 0, precision, verification ? depth : 0);
-  const Model::Sampling sampling{.enabled = config.random,
-      .policy = {config.temperature, config.top_k, config.top_p}, .seed = config.seed};
+  const Model::Sampling sampling{.enabled = config.sampling.random,
+      .policy = {config.sampling.temperature, config.sampling.top_k, config.sampling.top_p}, .seed = 0};
   auto backend = continuous.endpoint ? std::move(*continuous.endpoint) : create_execution(geometry, plan, 0, execution);
   auto model = std::make_unique<Model>(std::move(backend), hyle::compute::ResourceBudget{}, std::move(source),
-      geometry, config.context, plan, std::filesystem::path{}, false, ReplayPolicy::kAuto, SIZE_MAX, sampling, 0);
+      geometry, config.execution.context, plan, std::filesystem::path{}, false, ReplayPolicy::kAuto, SIZE_MAX, sampling, 0);
   if (mtp) model->configure_draft_policy({depth});
-  return std::make_unique<LoadedModelExecutor>(std::move(model), mtp, config.prefill_rows, overlap);
+  return std::make_unique<LoadedModelExecutor>(std::move(model), mtp, config.execution.prefill_rows, overlap);
 }
 } // namespace qwen35
 

@@ -195,11 +195,11 @@ int queued_output(const std::filesystem::path &input, std::string_view mode, boo
   std::unique_ptr<i::ModelExecutor> executor;
   if (loaded) {
     i::ModelLoadConfig config;
-    config.inputs = input; config.backend = i::BackendKind::kCuda; config.context = capacity;
-    config.resident_sessions = config.active_sequences = 2;
-    config.draft_count = mtp ? drafts : 0;
-    config.random = random;
-    if (random) { config.temperature = .8F; config.top_k = 40; config.top_p = .95F; config.seed = 123; }
+    config.assets.inputs = input; config.execution.backend = i::BackendKind::kCuda; config.execution.context = capacity;
+    config.execution.resident_sessions = config.execution.active_sequences = 2;
+    config.execution.draft_count = mtp ? drafts : 0;
+    config.sampling.random = random;
+    if (random) { config.sampling.temperature = .8F; config.sampling.top_k = 40; config.sampling.top_p = .95F; }
     executor = q::load_model_executor(config);
   } else {
     const auto precision = q::PrecisionProfile::from_roles(source.roles);
@@ -213,7 +213,8 @@ int queued_output(const std::filesystem::path &input, std::string_view mode, boo
     executor = q::make_prepared_executor(*model, mtp, SIZE_MAX, false);
   }
   const std::vector<i::GenerationSessionSchedule> schedules{
-      {"cancelled", {{prompt, limit}}}, {"peer", {{prompt, limit}}}};
+      {"cancelled", {{prompt, limit}}, i::GenerationSessionMode::kFlat, 123},
+      {"peer", {{prompt, limit}}, i::GenerationSessionMode::kFlat, 123}};
   std::array<i::RequestKey, 2> previous_keys{};
   std::vector<std::int32_t> peer_baseline;
   for (std::size_t round = 0; round < 2; ++round) {
@@ -272,6 +273,44 @@ int queued_output(const std::filesystem::path &input, std::string_view mode, boo
   return 0;
 }
 
+int request_sampling_seed(const std::filesystem::path &input) {
+  const auto geometry = q::read_weight_geometry(input / "weights.tsv");
+  const auto prompt = q::read_ids(input / "prompt.ids", geometry.vocabulary,
+      static_cast<std::size_t>(geometry.context_limit));
+  require(prompt.size() >= 8 && prompt.size() + 16 <= 256, "seed test requires a local Qwen prompt");
+  i::ModelLoadConfig config;
+  config.assets.inputs = input; config.execution.backend = i::BackendKind::kCuda;
+  config.execution.context = 256; config.execution.draft_count = 0;
+  config.sampling = {.random = true, .temperature = .8F, .top_p = .95F, .top_k = 40};
+  auto executor = q::load_model_executor(config);
+  struct Consumer final {
+    std::vector<std::int32_t> ids;
+    bool complete = false;
+    std::size_t max_pending() const noexcept { return 32; }
+    bool start(i::RequestKey) noexcept { return true; }
+    bool try_write(i::RequestKey, std::int32_t id) noexcept { ids.push_back(id); return true; }
+    bool cancel_requested(i::RequestKey) noexcept { return false; }
+    void finished(i::RequestKey, bool cancelled) noexcept { complete = !cancelled; }
+    void wait() noexcept {}
+  };
+  const auto generate = [&](std::optional<std::uint64_t> seed) {
+    i::GenerationSessionSchedule schedule{"seed", {{prompt, 16}}, i::GenerationSessionMode::kFlat, seed};
+    i::GenerationBatch batch{std::span(&schedule, 1)};
+    Consumer consumer; consumer.ids.reserve(16);
+    i::TokenConsumerRef output(consumer);
+    executor->validate(batch); executor->execute(batch, output);
+    require(consumer.complete && !consumer.ids.empty(), "seeded request did not finish");
+    return consumer.ids;
+  };
+  const auto default_seed = generate(std::nullopt);
+  const auto other_seed = generate(123);
+  const auto explicit_zero = generate(0);
+  require(default_seed == explicit_zero && default_seed != other_seed,
+      "request seed was ignored, changed by slot reuse or did not preserve its default");
+  std::cout << "request sampling seed PASS: default=0 explicit=0 other=123\n";
+  return 0;
+}
+
 int dispatcher_output(const std::filesystem::path &input, std::string_view mode) {
   const bool mtp = mode == "k1" || mode == "k3";
   const bool random = mode == "random";
@@ -284,10 +323,10 @@ int dispatcher_output(const std::filesystem::path &input, std::string_view mode)
   require(prompt.size() >= 8 && prompt.size() + limit <= capacity,
       "dispatcher output requires a complete local Qwen prompt and C256 model");
   i::ModelLoadConfig config;
-  config.inputs = input; config.backend = i::BackendKind::kCuda; config.context = capacity;
-  config.resident_sessions = config.active_sequences = 2; config.draft_count = mtp ? drafts : 0;
-  config.random = random;
-  if (random) { config.temperature = .8F; config.top_k = 40; config.top_p = .95F; config.seed = 123; }
+  config.assets.inputs = input; config.execution.backend = i::BackendKind::kCuda; config.execution.context = capacity;
+  config.execution.resident_sessions = config.execution.active_sequences = 2; config.execution.draft_count = mtp ? drafts : 0;
+  config.sampling.random = random;
+  if (random) { config.sampling.temperature = .8F; config.sampling.top_k = 40; config.sampling.top_p = .95F; }
   i::GenerationDispatcher dispatcher(q::load_model_executor(config), 2, 4, 1);
   using Kind = i::GenerationRequestHandle::EventKind;
   for (const bool later : {false, true}) {
@@ -303,14 +342,18 @@ int dispatcher_output(const std::filesystem::path &input, std::string_view mode)
     require(event.kind == Kind::kFailed && exact,
         "invalid dispatched input did not receive a pre-admission rejection");
   }
-  auto first = dispatcher.submit({"first", {{prompt, limit}}});
+  const auto schedule = [&](std::string name) {
+    return i::GenerationSessionSchedule{std::move(name), {{prompt, limit}},
+        i::GenerationSessionMode::kFlat, random ? std::optional<std::uint64_t>{123} : std::nullopt};
+  };
+  auto first = dispatcher.submit(schedule("first"));
   auto first_token = first.read();
   if (first_token.kind == Kind::kFailed && first_token.failure) std::rethrow_exception(first_token.failure);
   require(first_token.kind == Kind::kToken, "first dispatched request did not produce a token");
   // These requests arrive while the first request is blocked by bounded output.
-  auto cancelled = dispatcher.submit({"cancelled", {{prompt, limit}}});
-  auto peer = dispatcher.submit({"peer", {{prompt, limit}}});
-  auto discarded = dispatcher.submit({"discarded", {{prompt, limit}}});
+  auto cancelled = dispatcher.submit(schedule("cancelled"));
+  auto peer = dispatcher.submit(schedule("peer"));
+  auto discarded = dispatcher.submit(schedule("discarded"));
   require(discarded.cancel() && discarded.read().kind == Kind::kCancelled,
       "waiting request cancellation was not completed without model admission");
   const auto drain = [](i::GenerationRequestHandle &request, std::vector<std::int32_t> &tokens) {
@@ -1210,6 +1253,8 @@ int run(const std::filesystem::path &input, bool boundaries = false, bool warm_c
 
 int main(int argc, char **argv) {
   try {
+    if (argc == 3 && std::string_view(argv[1]) == "--request-sampling-seed")
+      return request_sampling_seed(argv[2]);
     if (argc == 4 && std::string_view(argv[1]) == "--bounded-sampling-report")
       return bounded_sampling_report(argv[2], argv[3]);
     if (argc == 7 && std::string_view(argv[1]) == "--sampling-logits-at") {

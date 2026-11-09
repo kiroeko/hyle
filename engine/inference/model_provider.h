@@ -17,19 +17,33 @@ namespace hyle::inference {
 
 enum class BackendKind : std::uint8_t;
 
-// Cold configuration. A model provider validates its own supported inputs;
-// no model-specific tensor names or state layout cross this boundary.
-struct ModelLoadConfig final {
+// Immutable source assets are separate from execution capacity and from
+// prepared sampling programs. A provider validates its own source identity.
+struct ModelAssets final {
   std::filesystem::path inputs, draft_vocabulary, draft_head;
+  bool auto_draft_head = false;
+};
+
+struct ExecutionPreparation final {
   BackendKind backend{};
   std::size_t context = 0, resident_sessions = 1, active_sequences = 1;
   std::size_t prefill_rows = (std::numeric_limits<std::size_t>::max)();
   std::optional<std::size_t> draft_count;
-  bool auto_draft_head = false, random = false;
   std::optional<bool> overlap;
+};
+
+// Describes a program prepared for later request selection, not an RNG
+// cursor. Per-request RNG identity belongs to its request/session.
+struct PreparedSamplingPolicy final {
+  bool random = false;
   float temperature = 1.F, top_p = 1.F;
   std::size_t top_k = 0;
-  std::uint64_t seed = 0;
+};
+
+struct ModelLoadConfig final {
+  ModelAssets assets;
+  ExecutionPreparation execution;
+  PreparedSamplingPolicy sampling;
 };
 
 // Providers are composed at application startup. Matching may read source
@@ -57,8 +71,8 @@ inline const ModelProvider &select_model_provider(std::span<const ModelProvider>
 
 inline std::unique_ptr<ModelExecutor> load_model(std::span<const ModelProvider> providers,
                                                  const ModelLoadConfig &config) {
-  if (config.inputs.empty()) throw std::invalid_argument("model input path is required");
-  auto executor = select_model_provider(providers, config.inputs).load(config);
+  if (config.assets.inputs.empty()) throw std::invalid_argument("model input path is required");
+  auto executor = select_model_provider(providers, config.assets.inputs).load(config);
   if (!executor) throw std::runtime_error("model provider returned no executor");
   return executor;
 }
