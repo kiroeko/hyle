@@ -2,6 +2,7 @@
 
 #include "model_executor.h"
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -10,7 +11,6 @@
 #include <optional>
 #include <span>
 #include <stdexcept>
-#include <string>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -79,6 +79,15 @@ struct PreparedSamplingPolicy final {
   std::size_t top_k = 0;
 };
 
+// These are properties of the sampling policy itself. The provider still
+// validates model-dependent bounds, such as top-k versus vocabulary size.
+inline void validate_prepared_sampling_policy(const PreparedSamplingPolicy &policy) {
+  if (!std::isfinite(policy.temperature) || policy.temperature <= 0 ||
+      !std::isfinite(policy.top_p) || policy.top_p <= 0 || policy.top_p > 1 ||
+      (!policy.random && (policy.temperature != 1 || policy.top_p != 1 || policy.top_k)))
+    throw std::invalid_argument("invalid prepared sampling policy");
+}
+
 struct ModelLoadConfig final {
   ModelAssets assets;
   ExecutionPreparation execution;
@@ -114,6 +123,8 @@ inline const ModelProvider &select_model_provider(std::span<const ModelProvider>
 inline std::unique_ptr<ModelExecutor> load_model(std::span<const ModelProvider> providers,
                                                  const ModelLoadConfig &config) {
   validate_model_assets(config.assets);
+  validate_prepared_sampling_policy(config.sampling);
+  for (const auto &policy : config.additional_sampling) validate_prepared_sampling_policy(policy);
   auto executor = select_model_provider(providers, config.assets.inputs).load(config);
   if (!executor) throw std::runtime_error("model provider returned no executor");
   return executor;

@@ -1181,6 +1181,30 @@ void model_provider_selects_one_owner_and_rejects_ambiguity() {
   invalid_assets = config;
   invalid_assets.assets.auxiliary[1].path = "must-be-empty";
   rejects<std::invalid_argument>([&] { (void)i::load_model(providers, invalid_assets); });
+  const auto must_not_match = +[](const std::filesystem::path &) -> bool {
+    throw std::runtime_error("invalid policy reached the model provider");
+  };
+  const std::array guarded{i::ModelProvider{"guarded", must_not_match, load}};
+  const std::array invalid_policies{
+      i::PreparedSamplingPolicy{.random = true, .temperature = 0},
+      i::PreparedSamplingPolicy{.random = true, .temperature = std::numeric_limits<float>::quiet_NaN()},
+      i::PreparedSamplingPolicy{.random = true, .top_p = 0},
+      i::PreparedSamplingPolicy{.random = true, .top_p = 1.01F},
+      i::PreparedSamplingPolicy{.random = true, .top_p = std::numeric_limits<float>::infinity()},
+      i::PreparedSamplingPolicy{.random = false, .temperature = 0.8F},
+      i::PreparedSamplingPolicy{.random = false, .top_k = 4},
+  };
+  for (const auto &policy : invalid_policies) {
+    auto rejected = config;
+    rejected.sampling = policy;
+    rejects<std::invalid_argument>([&] { (void)i::load_model(guarded, rejected); });
+    rejected = config;
+    rejected.additional_sampling.push_back(policy);
+    rejects<std::invalid_argument>([&] { (void)i::load_model(guarded, rejected); });
+  }
+  auto prepared = config;
+  prepared.additional_sampling.push_back({.random = true, .temperature = 0.8F, .top_p = 0.95F, .top_k = 40});
+  require(bool(i::load_model(providers, prepared)), "valid additional sampling policy was rejected");
   rejects<std::runtime_error>([&] { (void)i::select_model_provider(providers, "unknown"); });
   const std::array ambiguous{i::ModelProvider{"a", a, load}, i::ModelProvider{"other", a, load}};
   rejects<std::runtime_error>([&] { (void)i::select_model_provider(ambiguous, "model-a"); });
