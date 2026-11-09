@@ -20,6 +20,7 @@
 #include <locale>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <ranges>
 #include <set>
@@ -396,8 +397,13 @@ class Session final : public std::enable_shared_from_this<Session> {
   friend class Model;
   Model *model_;
   std::shared_ptr<ColdResources> resources_;
-  explicit Session(Model &model, std::shared_ptr<ColdResources> resources, const PreparedSampling &sampling) noexcept
-      : model_(&model), resources_(std::move(resources)), sampling_(sampling) {}
+  // The same bounded offload pool can outlive Model with an escaped Session.
+  std::shared_ptr<hyle::sched::BlockingPool> retirement_workers_;
+  explicit Session(Model &model, std::shared_ptr<ColdResources> resources,
+      std::shared_ptr<hyle::sched::BlockingPool> retirement_workers,
+      const PreparedSampling &sampling) noexcept
+      : model_(&model), resources_(std::move(resources)),
+        retirement_workers_(std::move(retirement_workers)), sampling_(sampling) {}
   const PreparedSampling &sampling_;
 public:
   cache::WorkingState head;
@@ -586,6 +592,24 @@ struct PrefixSamplingResult final {
 // application Model and Session links are absent: a failed native prefix must
 // never retain or later dereference a destroyed host application object.
 struct ColdResources final {
+  struct DeferredRootRelease final {
+    hyle::sched::detail::BlockingJob job{};
+    std::shared_ptr<ColdResources> scope;
+    std::shared_ptr<DeferredRootRelease> worker_owner;
+    std::atomic<bool> done{false};
+    DeferredRootRelease() noexcept {
+      job.ctx = this;
+      job.run_fn = [](void *p) noexcept { static_cast<DeferredRootRelease *>(p)->scope->release_invocation_roots(); };
+      job.cancel_fn = job.run_fn;
+      job.destroy_fn = [](void *p) noexcept {
+        auto *self = static_cast<DeferredRootRelease *>(p);
+        auto owner = std::move(self->worker_owner);
+        self->scope.reset();
+        self->done.store(true, std::memory_order_release);
+        self->done.notify_all();
+      };
+    }
+  };
   // The Model hands off its original endpoint on teardown, including normal
   // retirement. Destroy payloads before this resource controller's final owner.
   std::optional<Backend> retirement_backend;
@@ -614,6 +638,9 @@ struct ColdResources final {
   std::map<ExecutionShape, std::unique_ptr<Phase>> phases, probe_phases;
   std::map<DraftProgramKey, std::unique_ptr<DraftProgram>> draft_programs;
   std::map<PrefixSamplingKey, std::unique_ptr<PrefixSamplingProgram>> prefix_sampling_programs;
+  std::mutex retirement_mutex;
+  std::shared_ptr<DeferredRootRelease> deferred_root_release;
+  bool invocation_roots_released = false;
 
   explicit ColdResources(const ModelGeometry &geometry, std::size_t capacity, PrecisionProfile precision,
       SamplingConfiguration first, std::span<const SamplingConfiguration> additional,
@@ -672,7 +699,7 @@ struct ColdResources final {
     // Releasing even an idle Graph can destroy CUDA workspace/capture and
     // synchronize its Context. Preserve every root while an independent
     // result copy still reads that Context; its original retention owns us.
-    if (pending_readbacks()) return;
+    if (invocation_roots_released || pending_readbacks()) return;
     // The accepted attachment is the only temporary scope->Graph->scope
     // cycle. Drop these application roots at handoff; the original native
     // Completion still retains its Graph until actual retirement.
@@ -688,9 +715,23 @@ struct ColdResources final {
     for (auto &[width, program] : prefix_sampling_programs) { (void)width; program->carrier.release_invocation_root(); }
     for (auto &entry : sampling_configurations) if (entry->frontier)
       entry->frontier->carrier.release_invocation_root();
+    invocation_roots_released = true;
   }
-  inference::RetirementObservation retire(bool wait) noexcept {
+  inference::RetirementObservation retire(bool wait, hyle::sched::BlockingPool *workers = nullptr,
+      const std::shared_ptr<ColdResources> &scope = {}) noexcept {
     hyle::Status status;
+    std::unique_lock lock(retirement_mutex, std::defer_lock);
+    if (wait) lock.lock();
+    else if (!lock.try_lock()) return {false, status};
+    if (deferred_root_release) {
+      if (wait) {
+        while (!deferred_root_release->done.load(std::memory_order_acquire))
+          deferred_root_release->done.wait(false, std::memory_order_acquire);
+      } else if (!deferred_root_release->done.load(std::memory_order_acquire)) {
+        return {false, status};
+      }
+      deferred_root_release.reset();
+    }
     if (retirement_backend) {
       g::Invocation empty;
       status = wait ? retirement_backend->drain_retired(empty) : retirement_backend->collect_retired();
@@ -708,7 +749,26 @@ struct ColdResources final {
           inference::record_retirement_status(status, observed.status);
         }
       }
-    if (retirement_backend && copies_retired && !pending_readbacks()) release_invocation_roots();
+    if (retirement_backend && copies_retired && !pending_readbacks() && !invocation_roots_released) {
+      if (wait) release_invocation_roots();
+      else {
+        if (!workers || !scope)
+          return {false, hyle::Status::FailedPrecondition("late root retirement needs its original scope and pool")};
+        std::shared_ptr<DeferredRootRelease> release;
+        try { release = std::make_shared<DeferredRootRelease>(); }
+        catch (const std::bad_alloc &) {
+          return {false, hyle::Status::ResourceExhausted("cannot allocate deferred root retirement")};
+        }
+        release->scope = scope;
+        release->worker_owner = release;
+        if (!workers->submit(&release->job)) {
+          release->worker_owner.reset();
+          return {false, hyle::Status::Unavailable("root retirement pool cannot accept work")};
+        }
+        deferred_root_release = std::move(release);
+        return {false, status};
+      }
+    }
     // A pending original guard is not an observation failure. Preserve actual
     // backend errors independently; neither fact substitutes for the other.
     return {copies_retired && !pending(), status};
@@ -885,7 +945,7 @@ public:
   std::unique_ptr<hyle::sched::BlockingPool> workers;
   // Provider destruction may block on unrelated native streams; keep it off
   // the progress pool so cancellation cannot starve the work it depends on.
-  std::unique_ptr<hyle::sched::BlockingPool> retirement_workers;
+  std::shared_ptr<hyle::sched::BlockingPool> retirement_workers;
   std::vector<c::LeasePool> &weight_pools;
   std::map<std::string, LoadedWeight> &weights;
   ProjectionBindings &projections;
@@ -1115,7 +1175,7 @@ public:
     }
     {
       auto status = hyle::Status::Ok();
-      retirement_workers = std::make_unique<hyle::sched::BlockingPool>(mem::system_allocator(), 1,
+      retirement_workers = std::make_shared<hyle::sched::BlockingPool>(mem::system_allocator(), 1,
                                                           std::chrono::seconds(10), &status);
       check(status);
     }
@@ -1203,9 +1263,8 @@ public:
         }
     if (workers) workers->shutdown();
     if (scheduler) scheduler->drain();
-    // Teardown may wait. Join real releases before destroying their scope;
-    // subsequent aborts fall back to synchronous destruction on this thread.
-    if (retirement_workers) retirement_workers->shutdown();
+    // A surviving Session keeps this same bounded pool for late root release.
+    // Explicit abort below joins any release posted by this Model.
     retirement_workers.reset();
     (void)abort_episode();
     // A persistent unknown observation may outlive this application Model.
@@ -2420,7 +2479,7 @@ public:
         (planned_chunks.empty() && (!prefix->length || prefix->next_id < 0))))
       throw std::runtime_error("prefix belongs to another model or context");
     if (prefix) validate_mtp_snapshot(*prefix);
-    auto session = std::shared_ptr<Session>(new Session(*this, resources_, prepared_sampling));
+    auto session = std::shared_ptr<Session>(new Session(*this, resources_, retirement_workers, prepared_sampling));
     std::erase_if(session_links, [](const auto &weak) { return weak.expired(); });
     session_links.push_back(session);
     if (!session->tails.try_resize(draft_bank)) throw std::bad_alloc{};
@@ -5134,7 +5193,7 @@ inline inference::RetirementObservation Session::try_retire() noexcept {
   if (pending && pending->discard_stopped_members && !pending->cancelled)
     return {false, retirement_status};
   inference::RetirementObservation observed{true, {}};
-  if (!model_) observed = resources_->retire(false);
+  if (!model_) observed = resources_->retire(false, retirement_workers_.get(), resources_);
   else if (pending) observed = model_->try_retire_episode();
   inference::record_retirement_status(retirement_status, observed.status);
   if (observed.retired) {
@@ -5146,7 +5205,7 @@ inline inference::RetirementObservation Session::drain() noexcept {
   if (pending && pending->discard_stopped_members && !pending->cancelled)
     return {false, retirement_status};
   inference::RetirementObservation observed{true, {}};
-  if (!model_) observed = resources_->retire(true);
+  if (!model_) observed = resources_->retire(true, retirement_workers_.get(), resources_);
   else if (pending) observed = model_->abort_episode();
   // Driving an unstopped Session preserves its head and continued-use contract.
   // In particular, a peer's ordinary episode cancellation is not made sticky.

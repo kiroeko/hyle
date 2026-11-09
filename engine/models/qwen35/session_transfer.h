@@ -168,7 +168,7 @@ inline std::shared_ptr<Session> Model::restore_session(std::shared_ptr<const cac
   if (snapshot_versions.live >= cache_plan.resident_sessions)
     throw std::runtime_error("complete host restore needs a free committed-version slot within N");
   // Full validation precedes any fresh version, page reservation or native use.
-  auto session = std::shared_ptr<Session>(new Session(*this, resources_,
+  auto session = std::shared_ptr<Session>(new Session(*this, resources_, retirement_workers,
       sampling_configuration(image->identity.sampling_index)));
   if (!session->tails.try_resize(draft_bank)) throw std::bad_alloc{};
   auto scope = std::make_shared<session_transfer::RestoreScope>();

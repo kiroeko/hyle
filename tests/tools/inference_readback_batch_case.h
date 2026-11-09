@@ -485,11 +485,12 @@ inline int run_model_handoff(const std::filesystem::path &input, i::BackendKind 
   for (const bool retain_session : {true, false}) {
     auto source = q::prepare_weight_source(input / "weights.tsv", false);
     const auto geometry = source.roles.geometry;
-    require(geometry.hidden == 64 && geometry.vocabulary == 64 && geometry.context_limit >= 16 &&
-        geometry.recurrent_layers() && geometry.attention_layers(),
-        "readback Model handoff requires its cached untrained GA/H64/V64/C16 fixture");
-    const auto plan = q::cache::plan(geometry, source.cache_row_bytes, 16, 1, 3,
-        q::recurrent_bytes(q::state_schema_for(geometry, 16), geometry), 1, 1, false, true);
+    require(geometry.context_limit >= 16 && geometry.recurrent_layers() && geometry.attention_layers(),
+        "readback Model handoff requires a local hybrid Qwen fixture");
+    const auto precision = q::PrecisionProfile::from_roles(source.roles);
+    const auto plan = q::cache::plan(geometry, source.cache_row_bytes, 16, 2, 3,
+        q::recurrent_bytes(q::state_schema_for(geometry, 16, precision), geometry),
+        1, 1, false, true, 1, 0, precision);
     auto model = std::make_unique<q::Model>(std::move(source), geometry, 16, plan,
         std::filesystem::path{}, false, q::ReplayPolicy::kCommands, SIZE_MAX,
         q::Model::Sampling{.enabled = true, .policy = {1.F, 0, 1.F}, .seed = 123},
@@ -503,6 +504,8 @@ inline int run_model_handoff(const std::filesystem::path &input, i::BackendKind 
     const std::array rows{std::size_t{2}};
     model->prepare_family(rows); model->plan_replay_uses(2, 1, 2); model->prepare_execution(rows);
     auto session = model->create_session(rows, {}, q::GraphRole::kText, q::cache::SamplingCursor{123, 7, 0});
+    auto peer = retain_session ? model->create_session(rows, {}, q::GraphRole::kText,
+        q::cache::SamplingCursor{123, 8, 0}) : std::shared_ptr<q::Session>{};
     const auto *const original_head = session->head.get();
     const auto original_epoch = session->head.epoch();
     const auto original_length = session->head->length;
@@ -559,6 +562,34 @@ inline int run_model_handoff(const std::filesystem::path &input, i::BackendKind 
     seam.gate.finish();
     const auto release_deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
     if (retain_session) {
+      auto scope = cold.lock();
+      require(bool(scope), "Session lost its original cold resource scope");
+      while (scope->pending_readbacks() && std::chrono::steady_clock::now() < release_deadline)
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      require(!scope->pending_readbacks(), "original readback did not retire after its gate opened");
+      auto unrelated = q::take(i::Backend::create({.primary = kind}));
+      NativeGate unrelated_gate; unrelated_gate.arm(unrelated);
+      std::mutex mutex; std::condition_variable changed;
+      bool returned = false, timed_out = false;
+      std::thread watchdog([&] {
+        std::unique_lock lock(mutex);
+        if (!changed.wait_for(lock, std::chrono::seconds(2), [&] { return returned; })) {
+          timed_out = true; unrelated_gate.release();
+        }
+      });
+      const auto waiting = session->try_retire();
+      { std::lock_guard lock(mutex); returned = true; }
+      changed.notify_one(); watchdog.join();
+      require(!timed_out && !waiting.retired && waiting.status == seam.failure && unrelated_gate.blocked(),
+          "late nonblocking Session retirement waited for an unrelated native stream or lost its status");
+      const auto *const original_release = scope->deferred_root_release.get();
+      require(original_release, "late Session did not retain its original root release");
+      const auto *const peer_head = peer->head.get();
+      const auto second = peer->try_retire();
+      require((second.retired || peer->head.get() == peer_head) &&
+          (second.retired || scope->deferred_root_release.get() == original_release),
+          "a peer Session replaced the original pending root release or its own head");
+      unrelated_gate.finish(); scope.reset();
       // Abandonment handed observation to the original CUDA reaper. A Session
       // drain may still see that host callback pending after the gate opens.
       auto retired = session->drain();
@@ -571,6 +602,8 @@ inline int run_model_handoff(const std::filesystem::path &input, i::BackendKind 
       require(retired.retired && !session->head,
           "Session retry did not observe real late retirement or retained a failed unpublished boundary");
       session.reset();
+      require(peer->drain().retired, "peer Session did not observe shared late root retirement");
+      peer.reset();
     }
     while ((!cold.expired() || metadata_live() != budget_control) && std::chrono::steady_clock::now() < release_deadline)
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
