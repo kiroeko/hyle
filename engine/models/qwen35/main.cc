@@ -2630,7 +2630,7 @@ struct ReusableGenerationPreparation final {
   inference::RequestLoop request_loop;
   const Model *model = nullptr;
   std::weak_ptr<ColdResources> resources;
-  std::size_t prefill_rows = 0, sampling_index = 0;
+  std::size_t prefill_rows = 0;
   bool mtp = false, decode_overlap = false, ready = false, busy = false, failed = false;
   ReusableGenerationPreparation() = default;
   ReusableGenerationPreparation(const ReusableGenerationPreparation &) = delete;
@@ -2644,11 +2644,9 @@ void validate_reusable_batch(Model &model, inference::GenerationBatch batch, boo
   const auto schedules = batch.sessions;
   const auto sampling_indices = batch.sampling_indices;
   const auto stop_policies = batch.stop_policies;
-  const auto selected = sampling_indices.empty() ? 0 : sampling_indices.front();
   if (schedules.empty() || schedules.size() > model.cache_plan.resident_sessions ||
-      (!sampling_indices.empty() && sampling_indices.size() != schedules.size()) ||
-      std::ranges::any_of(sampling_indices, [&](auto index) { return index != selected; }))
-    throw std::invalid_argument("reusable preparation requires bounded requests with a prepared sampling configuration");
+      (!sampling_indices.empty() && sampling_indices.size() != schedules.size()))
+    throw std::invalid_argument("reusable preparation requires bounded requests with prepared sampling configurations");
   if (!configured_prefill || (mtp && configured_prefill < 2))
     throw std::invalid_argument("reusable request exceeds its configured input or output bounds");
   for (const auto &schedule : schedules) {
@@ -2656,8 +2654,9 @@ void validate_reusable_batch(Model &model, inference::GenerationBatch batch, boo
         static_cast<std::size_t>(model.vocabulary));
     if (error) throw std::invalid_argument(inference::request_admission_message(*error));
   }
-  if (selected >= model.sampling_configuration_count())
-    throw std::invalid_argument("sampling configuration was not cold prepared");
+  for (const auto selected : sampling_indices)
+    if (selected >= model.sampling_configuration_count())
+      throw std::invalid_argument("sampling configuration was not cold prepared");
   if (!stop_policies.empty()) {
     if (stop_policies.size() != schedules.size())
       throw std::invalid_argument("one stop policy is required per reusable request");
@@ -2674,7 +2673,7 @@ bool admit_waiting_generation(Model &model, inference::RequestLoop &loop,
     std::vector<GenerationRequest> &requests,
     std::vector<inference::GenerationSessionSchedule> &schedules,
     RequestOutputDeliveries &deliveries, bool mtp, std::size_t prefill,
-    std::size_t sampling, std::size_t bound, std::size_t record_bound,
+    std::size_t bound, std::size_t record_bound,
     std::size_t &active, std::size_t &total_turns, std::size_t &outputs) {
   bool admitted = false;
   while (const auto slot = loop.free_slot([&](std::size_t index) { return input.can_admit(index); })) {
@@ -2685,8 +2684,6 @@ bool admit_waiting_generation(Model &model, inference::RequestLoop &loop,
       const std::span one_sampling(&next->sampling_index, 1);
       const std::span one_stop(&next->stop, 1);
       validate_reusable_batch(model, {one_schedule, one_sampling, one_stop}, mtp, prefill);
-      if (next->sampling_index != sampling)
-        throw std::invalid_argument("sampling configuration differs from the prepared executor");
       if (next->schedule.reports_turn_ends() && !consumer.supports_turn_ends())
         throw std::invalid_argument("consumer does not support requested turn boundaries");
     } catch (const std::invalid_argument &error) {
@@ -2763,7 +2760,6 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   } else if (std::ranges::any_of(schedules, [](const auto &schedule) { return schedule.reports_turn_ends(); })) {
     throw inference::RequestRejected("turn boundaries require an output consumer");
   }
-  const auto selected_sampling = sampling_indices.empty() ? 0 : sampling_indices.front();
   const auto configured_prefill = (std::min)({max_prefill_rows, std::size_t{512}, model.capacity});
   const bool reuse_ready = reuse && reuse->ready;
   if (reuse) {
@@ -2773,8 +2769,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     validate_reusable_batch(model, {schedules, sampling_indices, stop_policies}, mtp, configured_prefill);
     if (reuse->busy || reuse->failed) throw std::logic_error("reusable preparation is busy or failed");
     if (reuse_ready && (reuse->model != &model || reuse->resources.lock() != model.resources_ ||
-        reuse->mtp != mtp || reuse->decode_overlap != decode_overlap || reuse->prefill_rows != configured_prefill ||
-        reuse->sampling_index != selected_sampling))
+        reuse->mtp != mtp || reuse->decode_overlap != decode_overlap || reuse->prefill_rows != configured_prefill))
       throw std::invalid_argument("reusable preparation differs from its original model or cold configuration");
     if (model.active_step || model.successor_step || model.carrier_borrowed ||
         model.snapshot_versions.live || model.resources_->pending_readbacks())
@@ -2782,7 +2777,6 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     if (!reuse_ready) {
       reuse->model = &model; reuse->resources = model.resources_; reuse->mtp = mtp;
       reuse->decode_overlap = decode_overlap; reuse->prefill_rows = configured_prefill;
-      reuse->sampling_index = selected_sampling;
     }
     reuse->busy = true;
   }
@@ -3042,7 +3036,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       (!mtp || (model.max_drafts() >= 1 && model.max_drafts() <= kMaximumDeviceMtpDrafts)))
     (void)model.begin_cold_families();
   for (std::size_t sampling_index = 0; sampling_index < model.sampling_configuration_count(); ++sampling_index) {
-    if (std::ranges::none_of(requests, [&](const auto &request) { return request.sampling_index == sampling_index; })) continue;
+    if (!reuse && std::ranges::none_of(requests, [&](const auto &request) { return request.sampling_index == sampling_index; })) continue;
     const auto matches_member = [&](std::size_t member) { return reuse || requests[member].sampling_index == sampling_index; };
     const auto policy_decoding_requests = reuse ? model.cache_plan.active_sequences : static_cast<std::size_t>(std::count_if(requests.begin(), requests.end(), [&](const auto &request) {
       return request.sampling_index == sampling_index && (first_turn_only || std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; }));
@@ -3213,10 +3207,10 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   if (mtp && decode_bound)
     for (std::size_t index = 0; index < model.sampling_configuration_count(); ++index)
       for (const bool dynamic : {false, true})
-        if ((dynamic || model.recursive_mtp()) && std::ranges::any_of(requests, [index, dynamic, first_turn_only](const auto &request) {
+        if ((dynamic || model.recursive_mtp()) && ((reuse && !dynamic) || std::ranges::any_of(requests, [index, dynamic, first_turn_only](const auto &request) {
             return request.sampling_index == index && bool(request.logits_provider) == dynamic &&
                 (first_turn_only || std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; }));
-          })) model.prepare_recursive_round_programs(index, dynamic, decode_bound,
+          }))) model.prepare_recursive_round_programs(index, dynamic, decode_bound,
               dynamic ? model.max_drafts() : standalone_draft_limit(index));
   model.finish_cold_families();
   model.freeze_shape_plan();
@@ -3582,7 +3576,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       if (dynamic_admission && !pumped.waiting_retirement) {
         const auto admit = [&](inference::TokenConsumerRef &consumer) {
           return admit_waiting_generation(model, request_loop, *live_input, consumer, requests,
-              slot_schedules, output_deliveries, mtp, configured_prefill, selected_sampling,
+              slot_schedules, output_deliveries, mtp, configured_prefill,
               configured_bound, configured_record_bound, active_requests, total_turns, requested_outputs);
         };
         if constexpr (std::is_same_v<std::remove_cvref_t<OutputConsumer>, inference::TokenConsumerRef>)
@@ -3788,6 +3782,7 @@ public:
         {model_eos_tokens.begin(), model_eos_tokens.end()}};
   }
   bool supports_dynamic_admission() const noexcept override { return true; }
+  bool supports_concurrent_sampling_profiles() const noexcept override { return true; }
   void validate(inference::GenerationBatch batch) override {
     if (running_.test(std::memory_order_acquire) || preparation_.busy || preparation_.failed)
       throw std::logic_error("prepared model executor is busy or failed");
@@ -3796,9 +3791,6 @@ public:
     try {
       const auto prefill = (std::min)({prefill_rows_, std::size_t{512}, model_.capacity});
       validate_reusable_batch(model_, batch, mtp_, prefill);
-      const auto selected = batch.sampling_indices.empty() ? 0 : batch.sampling_indices.front();
-      if (preparation_.ready && preparation_.sampling_index != selected)
-        throw std::invalid_argument("sampling configuration differs from the prepared executor");
     } catch (const std::invalid_argument &error) {
       throw inference::RequestRejected(error.what());
     } catch (const std::out_of_range &error) {
@@ -3845,6 +3837,7 @@ public:
       : model_(std::move(model)), prepared_(*model_, mtp, prefill_rows, overlap) {}
   inference::ModelDescription describe() const override { return prepared_.describe(); }
   bool supports_dynamic_admission() const noexcept override { return prepared_.supports_dynamic_admission(); }
+  bool supports_concurrent_sampling_profiles() const noexcept override { return prepared_.supports_concurrent_sampling_profiles(); }
   void validate(inference::GenerationBatch batch) override { prepared_.validate(batch); }
   void execute(inference::GenerationBatch batch, inference::TokenConsumerRef &consumer) override {
     prepared_.execute(batch, consumer);
@@ -3914,8 +3907,19 @@ std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::M
   if (mtp && !depth) throw std::invalid_argument("model draft depth requires a remaining context row");
   const auto geometry = source.roles.geometry;
   validate_mtp_source(geometry, mtp);
-  if (config.sampling.top_k > static_cast<std::size_t>(geometry.vocabulary))
-    throw std::invalid_argument("sampling top-k exceeds the source vocabulary");
+  const auto valid_sampling = [&](const inference::PreparedSamplingPolicy &policy) {
+    if (policy.top_k > static_cast<std::size_t>(geometry.vocabulary))
+      throw std::invalid_argument("sampling top-k exceeds the source vocabulary");
+  };
+  valid_sampling(config.sampling);
+  std::vector<SamplingConfiguration> additional_sampling;
+  additional_sampling.reserve(config.additional_sampling.size());
+  bool retains_random_frontier = config.sampling.random;
+  for (const auto &policy : config.additional_sampling) {
+    valid_sampling(policy);
+    additional_sampling.push_back({policy.random, {policy.temperature, policy.top_k, policy.top_p}, {}});
+    retains_random_frontier = retains_random_frontier || policy.random;
+  }
   const auto precision = PrecisionProfile::from_roles(source.roles);
   const DeviceRelayCapabilities relay{execution.primary, false, false, config.sampling.random && mtp, false};
   const inference::DecodeRouteFacts facts{.workload = workload, .overlap_requested = true,
@@ -3935,13 +3939,14 @@ std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::M
       .active_sequences = config.execution.active_sequences, .query_rows = query_rows, .recurrent_bytes = recurrent,
       .draft_depth = depth, .overlap = overlap, .verification = verification, .random = config.sampling.random});
   const auto plan = cache::plan(geometry, source.cache_row_bytes, config.execution.context, config.execution.resident_sessions,
-      query_rows, recurrent, config.execution.active_sequences, mtp ? cache::add(depth, 1) : 1, mtp, config.sampling.random,
+      query_rows, recurrent, config.execution.active_sequences, mtp ? cache::add(depth, 1) : 1, mtp, retains_random_frontier,
       overlap ? (continuous.enabled ? 3 : 2) : 1, verification ? 2 : 0, precision, verification ? depth : 0);
   const Model::Sampling sampling{.enabled = config.sampling.random,
       .policy = {config.sampling.temperature, config.sampling.top_k, config.sampling.top_p}, .seed = 0};
   auto backend = continuous.endpoint ? std::move(*continuous.endpoint) : create_execution(geometry, plan, 0, execution);
   auto model = std::make_unique<Model>(std::move(backend), hyle::compute::ResourceBudget{}, std::move(source),
-      geometry, config.execution.context, plan, std::filesystem::path{}, false, ReplayPolicy::kAuto, SIZE_MAX, sampling, 0);
+      geometry, config.execution.context, plan, std::filesystem::path{}, false, ReplayPolicy::kAuto, SIZE_MAX, sampling, 0,
+      additional_sampling);
   if (mtp) model->configure_draft_policy({depth});
   return std::make_unique<LoadedModelExecutor>(std::move(model), mtp, config.execution.prefill_rows, overlap);
 }

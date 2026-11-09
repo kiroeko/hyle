@@ -311,6 +311,97 @@ int request_sampling_seed(const std::filesystem::path &input) {
   return 0;
 }
 
+int mixed_sampling(const std::filesystem::path &input, std::string_view mode) {
+  require(mode == "ordinary" || mode == "k1" || mode == "k3", "unknown mixed sampling mode");
+  const auto geometry = q::read_weight_geometry(input / "weights.tsv");
+  const auto prompt = q::read_ids(input / "prompt.ids", geometry.vocabulary,
+      static_cast<std::size_t>(geometry.context_limit));
+  require(prompt.size() >= 8 && prompt.size() + 16 <= 256, "mixed sampling test requires a local Qwen prompt");
+  i::ModelLoadConfig config;
+  config.assets.inputs = input; config.execution.backend = i::BackendKind::kCuda;
+  config.execution.context = 256; config.execution.resident_sessions = 2; config.execution.active_sequences = 2;
+  config.execution.draft_count = mode == "k3" ? 3 : mode == "k1" ? 1 : 0;
+  config.additional_sampling.push_back({.random = true, .temperature = .8F, .top_p = .95F, .top_k = 40});
+  config.additional_sampling.push_back({.random = true, .temperature = 1.2F, .top_p = .9F, .top_k = 30});
+  auto executor = q::load_model_executor(config);
+  struct FiniteConsumer final {
+    std::array<std::vector<std::int32_t>, 2> ids;
+    std::array<bool, 2> complete{};
+    std::size_t max_pending() const noexcept { return 8; }
+    bool start(i::RequestKey key) noexcept { return key.slot < ids.size(); }
+    bool try_write(i::RequestKey key, std::int32_t id) noexcept {
+      if (key.slot >= ids.size()) return false;
+      ids[key.slot].push_back(id); return true;
+    }
+    bool cancel_requested(i::RequestKey) noexcept { return false; }
+    void finished(i::RequestKey key, bool cancelled) noexcept {
+      if (key.slot < complete.size()) complete[key.slot] = !cancelled;
+    }
+    void wait() noexcept {}
+  } finite;
+  for (auto &ids : finite.ids) ids.reserve(8);
+  const std::array schedules{
+      i::GenerationSessionSchedule{"greedy", {{prompt, 8}}, i::GenerationSessionMode::kFlat, 123},
+      i::GenerationSessionSchedule{"random", {{prompt, 8}}, i::GenerationSessionMode::kFlat, 123}};
+  const std::array<std::size_t, 2> profiles{0, 1};
+  i::GenerationBatch batch{schedules, profiles}; i::TokenConsumerRef finite_output(finite);
+  executor->validate(batch); executor->execute(batch, finite_output);
+  require(finite.complete[0] && finite.complete[1] && finite.ids[0].size() == 8 && finite.ids[1].size() == 8,
+      "initial mixed cohort did not publish and retire both independent requests");
+  i::GenerationDispatcher dispatcher(std::move(executor), 2, 4, 8);
+  using Event = i::GenerationRequestHandle::EventKind;
+  using Input = i::GenerationRequestHandle::InputResult;
+  std::vector<std::int32_t> previous_random;
+  std::vector<std::int32_t> previous_alternate;
+  for (int repeat = 0; repeat < 3; ++repeat) {
+    const bool random_anchor = repeat == 1;
+    auto anchor = dispatcher.submit({"anchor", {{prompt, 1}}, i::GenerationSessionMode::kLive, 123}, {},
+        random_anchor ? 1 : 0);
+    require(anchor.read().kind == Event::kToken && anchor.read().kind == Event::kTurnEnd,
+        "mixed-sampling anchor did not pause on its original live turn");
+    auto invalid = dispatcher.submit({"invalid", {{prompt, 1}}}, {}, 9);
+    const auto rejected = invalid.read();
+    require(rejected.kind == Event::kFailed && bool(rejected.failure), "unknown sampler was not rejected locally");
+    bool exact = false;
+    try { std::rethrow_exception(rejected.failure); } catch (const i::RequestRejected &) { exact = true; }
+    require(exact, "unknown sampler lost its request-local admission error");
+    auto peer = dispatcher.submit({"peer", {{prompt, 8}}, i::GenerationSessionMode::kFlat, 123}, {},
+        random_anchor ? 0 : 1);
+    std::vector<std::int32_t> random_ids;
+    for (;;) {
+      const auto event = peer.read();
+      if (event.kind == Event::kToken) { random_ids.push_back(event.token); continue; }
+      if (event.kind == Event::kFailed && event.failure) std::rethrow_exception(event.failure);
+      require(event.kind == Event::kCompleted, "mixed-sampling peer did not complete");
+      break;
+    }
+    require(random_ids.size() == 8, "mixed-sampling peer did not progress beside a paused session");
+    if (!random_anchor) {
+      if (repeat) require(previous_random == random_ids, "mixed-sampling slot reuse changed the request RNG result");
+      previous_random = std::move(random_ids);
+    }
+    auto alternate = dispatcher.submit({"alternate", {{prompt, 8}}, i::GenerationSessionMode::kFlat, 123}, {}, 2);
+    std::vector<std::int32_t> alternate_ids;
+    for (;;) {
+      const auto event = alternate.read();
+      if (event.kind == Event::kToken) { alternate_ids.push_back(event.token); continue; }
+      if (event.kind == Event::kFailed && event.failure) std::rethrow_exception(event.failure);
+      require(event.kind == Event::kCompleted, "alternate sampling profile did not complete");
+      break;
+    }
+    require(alternate_ids.size() == 8, "alternate sampling profile did not progress");
+    if (repeat) require(previous_alternate == alternate_ids, "alternate profile lost its request RNG identity");
+    previous_alternate = std::move(alternate_ids);
+    require(anchor.append({{prompt.front()}, 1}) == Input::kAccepted && anchor.close_input(),
+        "mixed-sampling anchor could not continue");
+    require(anchor.read().kind == Event::kToken && anchor.read().kind == Event::kTurnEnd &&
+        anchor.read().kind == Event::kCompleted, "peer changed the anchor continuation");
+  }
+  dispatcher.shutdown();
+  std::cout << "mixed sampling " << mode << " PASS: initial mixed cohort, three profiles, both admission orders, RNG replay, invalid profile\n";
+  return 0;
+}
+
 int dispatcher_output(const std::filesystem::path &input, std::string_view mode) {
   const bool mtp = mode == "k1" || mode == "k3";
   const bool random = mode == "random";
@@ -1255,6 +1346,8 @@ int main(int argc, char **argv) {
   try {
     if (argc == 3 && std::string_view(argv[1]) == "--request-sampling-seed")
       return request_sampling_seed(argv[2]);
+    if (argc == 4 && std::string_view(argv[1]) == "--mixed-sampling")
+      return mixed_sampling(argv[2], argv[3]);
     if (argc == 4 && std::string_view(argv[1]) == "--bounded-sampling-report")
       return bounded_sampling_report(argv[2], argv[3]);
     if (argc == 7 && std::string_view(argv[1]) == "--sampling-logits-at") {

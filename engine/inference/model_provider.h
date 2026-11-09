@@ -12,6 +12,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace hyle::inference {
 
@@ -44,6 +45,9 @@ struct ModelLoadConfig final {
   ModelAssets assets;
   ExecutionPreparation execution;
   PreparedSamplingPolicy sampling;
+  // Index zero is sampling; additional entries are immutable prepared choices
+  // which requests can select independently.
+  std::vector<PreparedSamplingPolicy> additional_sampling;
 };
 
 // Providers are composed at application startup. Matching may read source

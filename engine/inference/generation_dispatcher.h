@@ -210,6 +210,7 @@ public:
       throw std::invalid_argument("generation ingress requires a model and positive capacities");
     description_ = executor_->describe();
     dynamic_admission_ = executor_->supports_dynamic_admission();
+    mixed_sampling_ = executor_->supports_concurrent_sampling_profiles();
     worker_ = std::thread([this] { work(); });
   }
   GenerationDispatcher(const GenerationDispatcher &) = delete;
@@ -341,7 +342,7 @@ private:
         auto job = *queued;
         std::lock_guard job_lock(job->mutex);
         if (job->state != detail::IngressState::kPending) { queued = owner_.waiting_.erase(queued); continue; }
-        if (job->sampling_index != sampling_) { ++queued; continue; }
+        if (!owner_.mixed_sampling_ && job->sampling_index != sampling_) { ++queued; continue; }
         owner_.waiting_.erase(queued); job->state = detail::IngressState::kAssigned; job->output = output_;
         jobs_[slot] = job; started_[slot] = finished_[slot] = false; keys_[slot] = {};
         return GenerationAdmission{std::move(job->schedule), std::move(job->stop), job->sampling_index};
@@ -445,7 +446,7 @@ private:
             const auto &job = waiting_.front();
             std::lock_guard request_lock(job->mutex);
             if (job->state != detail::IngressState::kPending) { waiting_.pop_front(); continue; }
-            if (!selected.empty() && job->sampling_index != selected.front()->sampling_index) break;
+            if (!mixed_sampling_ && !selected.empty() && job->sampling_index != selected.front()->sampling_index) break;
             selected.push_back(job); waiting_.pop_front();
           }
           if (selected.empty()) continue;
@@ -519,6 +520,7 @@ private:
   std::unique_ptr<ModelExecutor> executor_;
   ModelDescription description_;
   bool dynamic_admission_ = false;
+  bool mixed_sampling_ = false;
   const std::size_t batch_limit_, waiting_limit_, output_capacity_;
   std::mutex mutex_;
   std::condition_variable ready_;

@@ -109,6 +109,10 @@ public:
   // Evaluated at construction, before execution. A supporting owner polls
   // the same input source for new requests in genuinely reusable slots.
   virtual bool supports_dynamic_admission() const noexcept { return false; }
+  // Whether the same serialized owner can keep requests with different
+  // prepared sampling indices active. Actual device batches remain selected
+  // by the implementation's existing compatibility checks.
+  virtual bool supports_concurrent_sampling_profiles() const noexcept { return false; }
   // Serialized, side-effect-free admission; reject a request with
   // RequestRejected before any model work, not with a fabricated retirement.
   virtual void validate(GenerationBatch batch) = 0;

@@ -1035,8 +1035,10 @@ private:
 // retaining the existing RequestLoop as the sole slot and retirement owner.
 class DynamicIngressTestExecutor final : public i::ModelExecutor {
 public:
+  explicit DynamicIngressTestExecutor(bool mixed_sampling = false) noexcept : mixed_sampling_(mixed_sampling) {}
   i::ModelDescription describe() const override { return {256, 128, {}}; }
   bool supports_dynamic_admission() const noexcept override { return true; }
+  bool supports_concurrent_sampling_profiles() const noexcept override { return mixed_sampling_; }
   void validate(i::GenerationBatch batch) override {
     for (const auto &schedule : batch.sessions)
       if (schedule.turns.front().prompt.front() < 0) throw i::RequestRejected("invalid test token");
@@ -1098,6 +1100,8 @@ public:
       if (!pumped.executed && !pumped.waiting_retirement && !progress) consumer.wait();
     }
   }
+private:
+  bool mixed_sampling_;
 };
 
 void schedule_admission_is_model_independent_and_overflow_safe() {
@@ -1454,6 +1458,20 @@ void dynamic_ingress_runs_new_requests_beside_paused_session() {
   const auto token = live.read(), boundary = live.read();
   require(token.kind == Event::kToken && token.token == 2 && boundary.kind == Event::kTurnEnd && boundary.turn == 1 &&
       live.read().kind == Event::kCompleted, "new arrivals changed the original session's ordered continuation");
+  dispatcher.shutdown();
+}
+
+void dynamic_ingress_admits_supported_mixed_sampling() {
+  i::GenerationDispatcher dispatcher(std::make_unique<DynamicIngressTestExecutor>(true), 2, 4, 1);
+  using Event = i::GenerationRequestHandle::EventKind;
+  auto live = dispatcher.submit({"live", {{{1}, 1}}, i::GenerationSessionMode::kLive}, {}, 0);
+  require(live.read().kind == Event::kToken && live.read().kind == Event::kTurnEnd,
+      "mixed sampling fixture did not pause its first session");
+  auto peer = dispatcher.submit({"peer", {{{20}, 1}}}, {}, 1);
+  require(peer.read().kind == Event::kToken && peer.read().kind == Event::kCompleted,
+      "supported sampling profile was blocked by a paused peer");
+  require(live.close_input() && live.read().kind == Event::kCompleted,
+      "mixed sampling peer changed the original live session");
   dispatcher.shutdown();
 }
 
@@ -1820,6 +1838,7 @@ int main() {
     live_ingress_appends_and_closes_without_losing_wakes();
     live_ingress_shutdown_wakes_idle_owner();
     dynamic_ingress_runs_new_requests_beside_paused_session();
+    dynamic_ingress_admits_supported_mixed_sampling();
     abandoned_dynamic_request_releases_slot_beside_live_session();
     late_turn_rejection_preserves_other_requests();
     ingress_abandoned_handle_releases_its_request();
@@ -1840,7 +1859,7 @@ int main() {
     common_wave_drain_and_observation_never_start_new_work();
     common_wave_failure_keeps_exception_and_actual_retirement_independent();
     common_wave_rejects_foreign_reordered_or_unbacked_pending_credit();
-    std::puts("request loop: 30 host contract groups passed; no model/device loaded");
+    std::puts("request loop: host contract groups passed; no model/device loaded");
     return 0;
   } catch (const std::exception &error) {
     track_allocations = false;
