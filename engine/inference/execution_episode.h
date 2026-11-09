@@ -259,10 +259,11 @@ class ExecutionEpisode final {
   // rollback system. Keep every remaining fact on a partial return. Recycle
   // is the model's nonthrowing final candidate discard, never publication.
   template<class Recycle>
-  Result<bool> recover(Recycle &&recycle) noexcept {
+  Result<bool> recover(Recycle &&recycle, sched::BlockingPool *retirement_pool = nullptr,
+      const std::shared_ptr<Scope> &scope = {}) noexcept {
     recording_prepared_ = false;
     unsubmitted_reuse_declined_ = false;
-    return recover_impl(RecoveryMode::kDestructive, {}, std::forward<Recycle>(recycle));
+    return recover_impl(RecoveryMode::kDestructive, {}, std::forward<Recycle>(recycle), retirement_pool, scope);
   }
 
   // Discard unpublished work only after observing its original whole-Graph
@@ -358,10 +359,13 @@ class ExecutionEpisode final {
     kUnobserved, kSuccessObserved, kConsumersReleased
   };
   SuccessfulDiscard successful_discard_ = SuccessfulDiscard::kUnobserved;
+  bool carrier_reset_pending_ = false;
 
   template<class Recycle>
   Result<bool> recover_impl(RecoveryMode mode,
-      std::span<const graph::ValueId> ordinary_inputs, Recycle &&recycle) noexcept {
+      std::span<const graph::ValueId> ordinary_inputs, Recycle &&recycle,
+      sched::BlockingPool *retirement_pool = nullptr,
+      const std::shared_ptr<Scope> &scope = {}) noexcept {
     static_assert(noexcept(std::forward<Recycle>(recycle)()));
     const bool keep_carrier = mode != RecoveryMode::kDestructive;
     // Destroying an unsubmitted successor's capture may synchronize its
@@ -409,7 +413,15 @@ class ExecutionEpisode final {
       }
       sources.reset();
     }
-    if (run) {
+    if (carrier_reset_pending_) {
+      if (retirement_pool) {
+        HYLE_ASSIGN_OR_RETURN(const bool reset, carrier->try_reset_retired(*retirement_pool, scope));
+        if (!reset) return false;
+      } else {
+        HYLE_RETURN_IF_ERROR(carrier->wait_reset_retired());
+      }
+      carrier_reset_pending_ = false;
+    } else if (run) {
       if (!carrier)
         return std::unexpected(Status::FailedPrecondition("execution episode lost its original carrier"));
       if (run->in_flight() || carrier->pending()) return false;
@@ -429,7 +441,13 @@ class ExecutionEpisode final {
         incoming.reset(); predecessor_episode.reset();
         // Destructive recovery remains destructive even when it takes over
         // the remaining facts of a partially completed successful discard.
-        HYLE_RETURN_IF_ERROR(carrier->reset_retired());
+        if (retirement_pool) {
+          if (!scope) return std::unexpected(Status::InvalidArgument("deferred retirement requires its cold scope"));
+          HYLE_ASSIGN_OR_RETURN(const bool reset, carrier->try_reset_retired(*retirement_pool, scope));
+          if (!reset) { carrier_reset_pending_ = true; return false; }
+        } else {
+          HYLE_RETURN_IF_ERROR(carrier->reset_retired());
+        }
       }
     }
     HYLE_ASSIGN_OR_RETURN(const bool appends_discarded, append_transactions().discard());

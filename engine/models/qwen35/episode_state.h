@@ -146,7 +146,8 @@ struct StepState final {
     }
     phase = nullptr;
   }
-  hyle::Result<bool> try_abort() noexcept {
+  hyle::Result<bool> try_abort(hyle::sched::BlockingPool *retirement_pool = nullptr,
+      const std::shared_ptr<ColdResources> &scope = {}) noexcept {
     if (phase) {
       // An unsuccessful readback wait is not proof that its native copy has
       // stopped reading Graph outputs. Release those readers only after the
@@ -159,12 +160,12 @@ struct StepState final {
       if (submitted || !phase) {
         inference::record_retirement_status(execution.terminal,
             hyle::Status::FailedPrecondition("reuse refusal lost its unsubmitted original Phase"));
-        return execution.recover([&]() noexcept { recycle_unpublished(); });
+        return execution.recover([&]() noexcept { recycle_unpublished(); }, retirement_pool, scope);
       }
       return execution.recover_unsubmitted_reuse(phase->state_resource_ports,
           [&]() noexcept { recycle_unpublished(); });
     }
-    return execution.recover([&]() noexcept { recycle_unpublished(); });
+    return execution.recover([&]() noexcept { recycle_unpublished(); }, retirement_pool, scope);
   }
   hyle::Result<bool> try_discard_successful() noexcept {
     if (!phase)

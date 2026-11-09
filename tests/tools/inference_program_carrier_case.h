@@ -556,7 +556,17 @@ inline int run(q::BackendKind kind) {
   const auto closed_initialize = programs.initialize_with(0, initialize_a);
   require(closed_initialize.IsFailedPrecondition() && initialization_calls == std::array<std::size_t, 2>{1, 1},
       "closed truthy carrier evaluated its installation recipe or was admitted as an idempotent live run");
-  q::check(a.reset_retired()); require(!a.initialized() && !a.closing(), "actually retired carrier did not reset its original run");
+  hyle::sched::BlockingPool rejected_pool(q::mem::system_allocator(), 1);
+  rejected_pool.shutdown();
+  const auto refused_reset = a.try_reset_retired(rejected_pool, a_scope);
+  require(!refused_reset && refused_reset.error().IsUnavailable() && a.initialized() && a.closing() && !a.pending(),
+      "rejected deferred reset discarded or admitted the original invocation");
+  hyle::sched::BlockingPool retirement_pool(q::mem::system_allocator(), 1);
+  const auto posted_reset = a.try_reset_retired(retirement_pool, a_scope);
+  require(posted_reset && !*posted_reset && a.pending() && !a.initialized(),
+      "deferred reset claimed destruction or lost its pending owner");
+  q::check(a.wait_reset_retired());
+  require(!a.initialized() && !a.closing() && !a.pending(), "actually destroyed carrier did not reset its original run");
   const auto retired_b = programs.retire_all(backend); q::check(retired_b.status);
   require(retired_b.retired && !programs.pending(), "slot group did not actually retire its original B");
   q::check(b.reset_retired());

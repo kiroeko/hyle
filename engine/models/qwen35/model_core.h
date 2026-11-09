@@ -883,6 +883,9 @@ public:
   // These original runtimes outlive every phase/slot and its native retirement.
   std::unique_ptr<hyle::sched::Scheduler> scheduler;
   std::unique_ptr<hyle::sched::BlockingPool> workers;
+  // Provider destruction may block on unrelated native streams; keep it off
+  // the progress pool so cancellation cannot starve the work it depends on.
+  std::unique_ptr<hyle::sched::BlockingPool> retirement_workers;
   std::vector<c::LeasePool> &weight_pools;
   std::map<std::string, LoadedWeight> &weights;
   ProjectionBindings &projections;
@@ -1110,6 +1113,12 @@ public:
           cache::add(pool_capacity.backing_bytes, 1),
           {.max_blocks = pool_capacity.max_blocks, .resource_budget = execution_budget}));
     }
+    {
+      auto status = hyle::Status::Ok();
+      retirement_workers = std::make_unique<hyle::sched::BlockingPool>(mem::system_allocator(), 1,
+                                                          std::chrono::seconds(10), &status);
+      check(status);
+    }
     if (progress) {
       auto status = hyle::Status::Ok();
       scheduler = std::make_unique<hyle::sched::Scheduler>(1, mem::system_allocator(), 64, &status);
@@ -1194,6 +1203,10 @@ public:
         }
     if (workers) workers->shutdown();
     if (scheduler) scheduler->drain();
+    // Teardown may wait. Join real releases before destroying their scope;
+    // subsequent aborts fall back to synchronous destruction on this thread.
+    if (retirement_workers) retirement_workers->shutdown();
+    retirement_workers.reset();
     (void)abort_episode();
     // A persistent unknown observation may outlive this application Model.
     // Preserve the original native endpoint as an explicit Session retirement
@@ -3040,11 +3053,12 @@ public:
     }
   }
 
-  inference::RetirementObservation try_retire_episode() noexcept {
+  inference::RetirementObservation try_retire_episode(bool nonblocking = true) noexcept {
     if (!active_step) return {true, {}};
+    auto *retirement_pool = nonblocking ? retirement_workers.get() : nullptr;
     if (successor_step) {
       inference::record_retirement_status(successor_step->execution.terminal, execution.collect_retired());
-      const auto retired = successor_step->try_abort();
+      const auto retired = successor_step->try_abort(retirement_pool, resources_);
       if (!retired) return {false, retired.error()};
       if (!*retired) return {false, successor_step->execution.terminal};
       successor_step.reset();
@@ -3053,7 +3067,7 @@ public:
     // Drive its owning environment before checking the unchanged Graph/page
     // retirement gates; an observation error alone never proves retirement.
     inference::record_retirement_status(active_step->execution.terminal, execution.collect_retired());
-    const auto retired = active_step->try_abort();
+    const auto retired = active_step->try_abort(retirement_pool, resources_);
     if (!retired) {
       inference::record_retirement_status(active_step->execution.terminal, retired.error());
       return {false, active_step->execution.terminal};
@@ -3140,7 +3154,7 @@ public:
       (void)active_step->execution.retire(execution);
     }
     // Episode retirement alone does not release a Session's published head.
-    return try_retire_episode();
+    return try_retire_episode(false);
   }
 
   // Cohort selection and physical capacity belong to the caller. A batch

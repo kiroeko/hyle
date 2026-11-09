@@ -4,9 +4,13 @@
 #include "../../engine/models/qwen35/native_gate.h"
 #include "../../engine/models/qwen35/probe_geometry.h"
 #include "../compute_models/sampling_fixture.h"
+#include <atomic>
+#include <condition_variable>
 #include <cmath>
 #include <limits>
+#include <mutex>
 #include <numeric>
+#include <thread>
 
 namespace {
 namespace q = qwen35;
@@ -172,6 +176,60 @@ void run(const std::filesystem::path &input) {
   require(retired.retired, "cancelled Graph did not actually retire");
   require(base->sampling.draw == 1 && !model.active_step && !model.carrier_borrowed,
       "cancelled sampled work advanced the old cursor");
+  // Cancel before the host scheduler dispatches the Graph. The unrelated
+  // native gate remains busy after this Graph retires; provider destruction
+  // can nevertheless synchronize it. try_retire must not wait for that free.
+  session = model.create_session({}, base, q::GraphRole::kMtpPrefill);
+  model.prepare_evaluation(*session, std::span(&pending, 1), nullptr, q::GraphRole::kMtpRound);
+  episode = model.active_step.get();
+  {
+    q::probe::NativeGate gate(model.execution);
+    q::check(gate.arm()); q::check(gate.wait_until_entered());
+    struct SchedulerGate { std::atomic<bool> entered{false}, resume{false}; } scheduler_gate;
+    hyle::util::ScopeGuard release_scheduler{[&]() noexcept {
+      scheduler_gate.resume.store(true, std::memory_order_release); scheduler_gate.resume.notify_one();
+    }};
+    q::check(model.scheduler->spawn_detached(+[](void *opaque) noexcept {
+      auto &g = *static_cast<SchedulerGate *>(opaque);
+      g.entered.store(true, std::memory_order_release); g.entered.notify_one();
+      g.resume.wait(false, std::memory_order_acquire);
+    }, &scheduler_gate));
+    scheduler_gate.entered.wait(false, std::memory_order_acquire);
+    model.submit_evaluation(*session); q::check(session->stop());
+    scheduler_gate.resume.store(true, std::memory_order_release); scheduler_gate.resume.notify_one();
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(3);
+    bool observed_terminal = false;
+    while (std::chrono::steady_clock::now() < deadline) {
+      const auto observed = episode->execution.poll();
+      if (!observed || *observed == hyle::compute::CompletionPoll::kComplete) { observed_terminal = true; break; }
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    require(observed_terminal && !gate.timed_out(), "cancelled Graph did not finish while unrelated native work was held");
+    std::mutex mutex;
+    std::condition_variable cv;
+    bool returned = false, timed_out = false;
+    std::thread watchdog([&] {
+      std::unique_lock lock(mutex);
+      if (!cv.wait_for(lock, std::chrono::seconds(2), [&] { return returned; })) {
+        timed_out = true; gate.release();
+      }
+    });
+    const auto waiting = session->try_retire();
+    { std::lock_guard lock(mutex); returned = true; }
+    cv.notify_one(); watchdog.join();
+    require(!timed_out, "nonblocking retirement waited for an unrelated native stream");
+    if (!waiting.status.IsCancelled() || waiting.status.has_native_error()) q::check(waiting.status);
+    require(!waiting.retired && model.active_step.get() == episode && session->head.get() == base.get(),
+        "nonblocking retirement released owners before native destruction completed");
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    require(!session->try_retire().retired, "pending provider destruction was reported as retired");
+    gate.release(); q::check(gate.wait());
+  }
+  const auto final_drain = session->drain();
+  if (!final_drain.status.IsCancelled() || final_drain.status.has_native_error()) q::check(final_drain.status);
+  require(final_drain.retired && !model.active_step && !model.carrier_borrowed,
+      "deferred provider destruction did not actually retire");
+  session.reset();
   // Same state, two independent request streams, one real R2 target/draft
   // Graph. The fresh first tokens are sampled from the cached hidden row.
   std::array sessions{

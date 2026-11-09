@@ -1,8 +1,10 @@
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 #include <expected>
 #include <memory>
+#include <new>
 #include <optional>
 #include <span>
 #include <utility>
@@ -10,6 +12,7 @@
 #include "hyle/graph/progress.h"
 #include "hyle/graph/slots.h"
 #include "hyle/graph/workspace.h"
+#include "hyle/sched/blocking.h"
 #include "execution_resources.h"
 #include "prepared_output.h"
 #include "program_io.h"
@@ -82,7 +85,7 @@ public:
 
   bool initialized() const noexcept { return run_.valid(); }
   bool closing() const noexcept { return closing_; }
-  bool pending() const noexcept { return retirement_.pending(); }
+  bool pending() const noexcept { return retirement_.pending() || bool(deferred_reset_); }
   // Original native/retention fact only. Transactions and dynamic IO still
   // need their owner's take/recovery before the invocation can be reset.
   bool retired() const noexcept { return !run_.in_flight() && !pending(); }
@@ -179,11 +182,58 @@ public:
   Status reset_retired() noexcept {
     if (handed_off_)
       return Status::FailedPrecondition("program carrier was handed off for teardown");
+    if (deferred_reset_) {
+      if (!deferred_reset_->done.load(std::memory_order_acquire))
+        return Status::Unavailable("program destruction has not actually completed");
+      deferred_reset_.reset();
+    }
     if (run_.in_flight() || pending())
       return Status::Unavailable("program carrier has not actually retired");
     run_ = {};
     closing_ = false;
     return Status::Ok();
+  }
+
+  // Only explicit blocking drain/teardown may join a release already posted
+  // by nonblocking recovery. The job signals after provider destruction.
+  Status wait_reset_retired() noexcept {
+    if (deferred_reset_) {
+      while (!deferred_reset_->done.load(std::memory_order_acquire))
+        deferred_reset_->done.wait(false, std::memory_order_acquire);
+    }
+    return reset_retired();
+  }
+
+  // Native provider destruction may block even after this invocation's work
+  // retires (for example, a device allocator can synchronize other streams).
+  // Keep both the original invocation and its cold scope until that destruction
+  // really finishes. The caller polls this only on destructive recovery.
+  Result<bool> try_reset_retired(sched::BlockingPool &pool,
+      const std::shared_ptr<Scope> &scope) noexcept {
+    if (deferred_reset_) {
+      if (!deferred_reset_->done.load(std::memory_order_acquire)) return false;
+      deferred_reset_.reset();
+      closing_ = false;
+      return true;
+    }
+    if (handed_off_)
+      return std::unexpected(Status::FailedPrecondition("program carrier was handed off for teardown"));
+    if (run_.in_flight() || pending()) return false;
+    std::shared_ptr<DeferredReset> reset;
+    try { reset = std::make_shared<DeferredReset>(); }
+    catch (const std::bad_alloc &) {
+      return std::unexpected(Status::ResourceExhausted("cannot allocate deferred program retirement"));
+    }
+    reset->scope = scope;
+    reset->run = std::move(run_);
+    reset->worker_owner = reset;
+    if (!pool.submit(&reset->job)) {
+      run_ = std::move(reset->run);
+      reset->worker_owner.reset();
+      return std::unexpected(Status::Unavailable("program retirement pool cannot accept work"));
+    }
+    deferred_reset_ = std::move(reset);
+    return false;
   }
 
   // Teardown only: after the Scope has handed off its original Backend, drop
@@ -196,10 +246,33 @@ public:
   }
 
 private:
+  struct DeferredReset final {
+    sched::detail::BlockingJob job{};
+    graph::Invocation run;
+    std::shared_ptr<Scope> scope;
+    std::shared_ptr<DeferredReset> worker_owner;
+    std::atomic<bool> done{false};
+
+    DeferredReset() noexcept {
+      job.ctx = this;
+      job.run_fn = [](void *p) noexcept { static_cast<DeferredReset *>(p)->run = {}; };
+      // Pool shutdown may cancel a queued job; actual destruction is still
+      // required, and shutdown itself is explicitly allowed to wait for it.
+      job.cancel_fn = job.run_fn;
+      job.destroy_fn = [](void *p) noexcept {
+        auto *self = static_cast<DeferredReset *>(p);
+        auto owner = std::move(self->worker_owner);
+        self->scope.reset();
+        self->done.store(true, std::memory_order_release);
+        self->done.notify_all();
+      };
+    }
+  };
   const graph::CompiledGraph *compiled_ = nullptr;
   QueueBindings queues_;
   graph::Invocation run_;
   RetainedResources<Scope> retirement_;
+  std::shared_ptr<DeferredReset> deferred_reset_;
   bool closing_ = false;
   bool handed_off_ = false;
 };
