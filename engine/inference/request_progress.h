@@ -28,6 +28,10 @@ struct GenerationSessionSchedule final {
   // Request-local initial seed. The resulting cursor remains part of the
   // original Session state; absence uses the model's existing default.
   std::optional<std::uint64_t> sampling_seed;
+  // Optional request-local ceiling on speculative draft tokens per round.
+  // Providers must validate it against their cold-prepared execution plan.
+  // Zero disables proposals; it does not necessarily select a non-MTP model.
+  std::optional<std::size_t> max_draft_tokens;
   bool reports_turn_ends() const noexcept { return mode != GenerationSessionMode::kFlat; }
   bool accepts_live_input() const noexcept { return mode == GenerationSessionMode::kLive; }
 };

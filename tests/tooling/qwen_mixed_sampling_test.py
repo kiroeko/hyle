@@ -12,12 +12,13 @@ def main():
     parser.add_argument('--mode', choices=('ordinary', 'k1', 'k3', 'reverse-k1', 'reverse-k3',
                                            'subset-k1', 'subset-k3', 'subset-reverse-k1',
                                            'subset-reverse-k3', 'subset-head-k3',
-                                           'subset-head-reverse-k3'), required=True)
+                                           'subset-head-reverse-k3', 'depth-k3', 'depth-subset-k3',
+                                           'depth-uniform-k3'), required=True)
     args = parser.parse_args()
     result = subprocess.run([args.probe, '--mixed-sampling', args.inputs, args.mode],
                             capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=60)
     if result.returncode:
-        raise RuntimeError(f'mixed sampling failed: {result.stderr[-4000:]}')
+        raise RuntimeError(f'mixed sampling failed: {result.stdout[-2000:]}\n{result.stderr[-4000:]}')
     roles = Counter(int(role) for role in re.findall(
         r'generation_batch requests=\d+ T=\d+ role=(\d+)', result.stderr))
     if args.mode != 'ordinary' and not any(roles[role] for role in (1, 3, 4)):

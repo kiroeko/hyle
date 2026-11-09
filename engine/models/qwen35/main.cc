@@ -222,6 +222,7 @@ struct GenerationRequest {
   std::vector<inference::GenerationTurn> live_turns;
   std::size_t last_idle = 0;
   std::size_t sampling_index;
+  std::size_t max_draft_tokens = SIZE_MAX;
   LogitsInputs logits; // One [1,V] snapshot for every conditional row in an output episode.
   inference::LogitsInputProvider logits_provider;
   Clock::time_point admission_start{};
@@ -1187,7 +1188,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
     if (!remaining) throw std::runtime_error("MTP has exhausted the configured context capacity");
     request.ledger->bind_sampling(prepared_sampling, model.resources_);
     call.maximum = model.cache_plan.draft_cache
-        ? (std::min)({model.max_drafts(), call.quota - 1, remaining - 1}) : 0;
+        ? (std::min)({model.max_drafts(), request.max_draft_tokens, call.quota - 1, remaining - 1}) : 0;
     const bool one = call.maximum == 0;
     const auto lag = request.session->head->draft ? request.session->head->draft->lag : 0;
     call.role = !model.cache_plan.draft_cache ? GraphRole::kText
@@ -2653,6 +2654,8 @@ void validate_reusable_batch(Model &model, inference::GenerationBatch batch, boo
     const auto error = inference::check_request_schedule(schedule, model.capacity,
         static_cast<std::size_t>(model.vocabulary));
     if (error) throw std::invalid_argument(inference::request_admission_message(*error));
+    if (schedule.max_draft_tokens && *schedule.max_draft_tokens > (mtp ? model.max_drafts() : 0))
+      throw std::invalid_argument("requested draft ceiling exceeds the cold-prepared execution plan");
   }
   for (const auto selected : sampling_indices)
     if (selected >= model.sampling_configuration_count())
@@ -2700,6 +2703,7 @@ bool admit_waiting_generation(Model &model, inference::RequestLoop &loop,
     const auto visible_turns = std::span(schedule.turns).first(1);
     GenerationRequest fresh(schedule.id, visible_turns.front().prompt, {}, bound,
                             next->sampling_index, std::move(next->stop));
+    fresh.max_draft_tokens = schedule.max_draft_tokens.value_or(mtp ? model.max_drafts() : 0);
     if (schedule.accepts_live_input()) {
       fresh.live_turns.reserve(bound);
       fresh.live_turns.push_back(visible_turns.front());
@@ -2873,6 +2877,9 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
         ("session" + std::to_string(requests.size()) + "_" + schedule.id), first_turn_only ? configured_bound : outputs, sampling_indices.empty() ? 0 : sampling_indices[requests.size()],
         stop_policies.empty() ? inference::RequestStopPolicy{} : stop_policies[requests.size()]);
     auto &request = requests.back();
+    if (schedule.max_draft_tokens && *schedule.max_draft_tokens > (mtp ? model.max_drafts() : 0))
+      throw std::invalid_argument("requested draft ceiling exceeds the cold-prepared execution plan");
+    request.max_draft_tokens = schedule.max_draft_tokens.value_or(mtp ? model.max_drafts() : 0);
     if (schedule.accepts_live_input()) {
       request.live_turns.reserve(configured_bound);
       request.live_turns.push_back(visible_turns.front());

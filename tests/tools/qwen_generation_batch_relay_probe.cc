@@ -313,6 +313,10 @@ int request_sampling_seed(const std::filesystem::path &input) {
 
 int mixed_sampling(const std::filesystem::path &input, std::string_view mode) {
   const auto requested_mode = mode;
+  const bool mixed_depth = mode.starts_with("depth-");
+  if (mixed_depth) mode.remove_prefix(6);
+  const bool uniform_depth = mode.starts_with("uniform-");
+  if (uniform_depth) mode.remove_prefix(8);
   const bool subset = mode.starts_with("subset-");
   if (subset) mode.remove_prefix(7);
   const bool explicit_head = mode.starts_with("head-");
@@ -320,6 +324,7 @@ int mixed_sampling(const std::filesystem::path &input, std::string_view mode) {
   const bool random_default = mode.starts_with("reverse-");
   if (random_default) mode.remove_prefix(8);
   require(mode == "ordinary" || mode == "k1" || mode == "k3", "unknown mixed sampling mode");
+  require(!mixed_depth || mode == "k3", "mixed draft depth test requires K3 preparation");
   require(!subset || mode != "ordinary", "subset test requires active MTP");
   const auto geometry = q::read_weight_geometry(input / "weights.tsv");
   const auto prompt = q::read_ids(input / "prompt.ids", geometry.vocabulary,
@@ -362,13 +367,38 @@ int mixed_sampling(const std::filesystem::path &input, std::string_view mode) {
   } finite;
   for (auto &ids : finite.ids) ids.reserve(8);
   const std::array schedules{
-      i::GenerationSessionSchedule{"greedy", {{prompt, 8}}, i::GenerationSessionMode::kFlat, 123},
-      i::GenerationSessionSchedule{"random", {{prompt, 8}}, i::GenerationSessionMode::kFlat, 123}};
-  const std::array<std::size_t, 2> profiles{greedy_profile, random_profile};
+      i::GenerationSessionSchedule{"greedy", {{prompt, 8}}, i::GenerationSessionMode::kFlat, 123,
+                                   mixed_depth ? std::optional<std::size_t>{3} : std::nullopt},
+      i::GenerationSessionSchedule{"peer", {{prompt, 8}}, i::GenerationSessionMode::kFlat, 123,
+                                   mixed_depth ? std::optional<std::size_t>{uniform_depth ? 3u : 1u} : std::nullopt}};
+  const std::array<std::size_t, 2> profiles{greedy_profile, mixed_depth ? greedy_profile : random_profile};
+  std::array<std::vector<std::int32_t>, 2> separate;
+  if (mixed_depth) {
+    for (std::size_t index = 0; index < separate.size(); ++index) {
+      FiniteConsumer single;
+      for (auto &ids : single.ids) ids.reserve(8);
+      i::GenerationBatch one{std::span(&schedules[index], 1), std::span(&profiles[index], 1)};
+      i::TokenConsumerRef output(single);
+      executor->validate(one); executor->execute(one, output);
+      require(single.complete[0] && single.ids[0].size() == 8, "independent draft ceiling did not complete");
+      separate[index] = std::move(single.ids[0]);
+    }
+  }
   i::GenerationBatch batch{schedules, profiles}; i::TokenConsumerRef finite_output(finite);
   executor->validate(batch); executor->execute(batch, finite_output);
   require(finite.complete[0] && finite.complete[1] && finite.ids[0].size() == 8 && finite.ids[1].size() == 8,
       "initial mixed cohort did not publish and retire both independent requests");
+  if (mixed_depth) {
+    for (std::size_t index = 0; index < separate.size(); ++index) {
+      std::cout << "depth_" << (index ? 1 : 3) << "_separate=";
+      for (auto id : separate[index]) std::cout << id << ',';
+      std::cout << " mixed=";
+      for (auto id : finite.ids[index]) std::cout << id << ',';
+      std::cout << '\n';
+    }
+    // Different batch and verifier shapes can produce numeric top-1 forks.
+    // Same-prefix teacher checks belong to the traced quality experiment.
+  }
   i::GenerationDispatcher dispatcher(std::move(executor), 2, 4, 8);
   using Event = i::GenerationRequestHandle::EventKind;
   using Input = i::GenerationRequestHandle::InputResult;
@@ -376,7 +406,8 @@ int mixed_sampling(const std::filesystem::path &input, std::string_view mode) {
   std::vector<std::int32_t> previous_alternate;
   for (int repeat = 0; repeat < 3; ++repeat) {
     const bool random_anchor = repeat == 1;
-    auto anchor = dispatcher.submit({"anchor", {{prompt, 1}}, i::GenerationSessionMode::kLive, 123}, {},
+    auto anchor = dispatcher.submit({"anchor", {{prompt, 1}}, i::GenerationSessionMode::kLive, 123,
+                                     mixed_depth ? std::optional<std::size_t>{3} : std::nullopt}, {},
         random_anchor ? random_profile : greedy_profile);
     require(anchor.read().kind == Event::kToken && anchor.read().kind == Event::kTurnEnd,
         "mixed-sampling anchor did not pause on its original live turn");
@@ -386,7 +417,16 @@ int mixed_sampling(const std::filesystem::path &input, std::string_view mode) {
     bool exact = false;
     try { std::rethrow_exception(rejected.failure); } catch (const i::RequestRejected &) { exact = true; }
     require(exact, "unknown sampler lost its request-local admission error");
-    auto peer = dispatcher.submit({"peer", {{prompt, 8}}, i::GenerationSessionMode::kFlat, 123}, {},
+    if (mixed_depth) {
+      auto bad_depth = dispatcher.submit({"bad-depth", {{prompt, 1}}, i::GenerationSessionMode::kFlat, 123, 4});
+      const auto bad = bad_depth.read();
+      require(bad.kind == Event::kFailed && bool(bad.failure), "unprepared draft ceiling was accepted");
+      bool rejected_depth = false;
+      try { std::rethrow_exception(bad.failure); } catch (const i::RequestRejected &) { rejected_depth = true; }
+      require(rejected_depth, "draft ceiling rejection escaped its request");
+    }
+    auto peer = dispatcher.submit({"peer", {{prompt, 8}}, i::GenerationSessionMode::kFlat, 123,
+                                   mixed_depth ? std::optional<std::size_t>{1} : std::nullopt}, {},
         random_anchor ? greedy_profile : random_profile);
     std::vector<std::int32_t> random_ids;
     for (;;) {
@@ -401,7 +441,8 @@ int mixed_sampling(const std::filesystem::path &input, std::string_view mode) {
       if (repeat) require(previous_random == random_ids, "mixed-sampling slot reuse changed the request RNG result");
       previous_random = std::move(random_ids);
     }
-    auto alternate = dispatcher.submit({"alternate", {{prompt, 8}}, i::GenerationSessionMode::kFlat, 123}, {}, 2);
+    auto alternate = dispatcher.submit({"alternate", {{prompt, 8}}, i::GenerationSessionMode::kFlat, 123,
+                                        mixed_depth ? std::optional<std::size_t>{0} : std::nullopt}, {}, 2);
     std::vector<std::int32_t> alternate_ids;
     for (;;) {
       const auto event = alternate.read();
@@ -423,6 +464,29 @@ int mixed_sampling(const std::filesystem::path &input, std::string_view mode) {
   for (std::size_t j = 0; j < previous_random.size(); ++j) std::cout << (j ? "," : "") << previous_random[j];
   std::cout << "\nmixed sampling " << requested_mode << " PASS: initial mixed cohort, three profiles, both admission orders, RNG replay, invalid profile\n";
   return 0;
+}
+
+int mixed_depth_quality(const std::filesystem::path &input, const std::filesystem::path &trace,
+                        const std::filesystem::path &first, const std::filesystem::path &second) {
+  constexpr std::size_t capacity = 512, outputs = 32, prefill = 256;
+  auto source = q::prepare_weight_source(input / "weights.tsv", true);
+  const auto geometry = source.roles.geometry;
+  const auto precision = q::PrecisionProfile::from_roles(source.roles);
+  const auto plan = q::cache::plan(geometry, source.cache_row_bytes, capacity, 2, prefill,
+      q::recurrent_bytes(q::state_schema_for(geometry, capacity, precision), geometry),
+      2, 4, true, false, 1, 0, precision);
+  q::Model model(std::move(source), geometry, capacity, plan, {}, false, q::ReplayPolicy::kCommands,
+      SIZE_MAX, q::Model::Sampling{}, 0, {.primary = i::BackendKind::kCuda});
+  model.configure_draft_policy({3});
+  const auto a = q::read_ids(first, geometry.vocabulary, capacity - outputs);
+  const auto b = q::read_ids(second, geometry.vocabulary, capacity - outputs);
+  const std::array schedules{
+      i::GenerationSessionSchedule{"A", {{a, outputs}}, i::GenerationSessionMode::kFlat, std::nullopt, 3},
+      i::GenerationSessionSchedule{"B", {{b, outputs}}, i::GenerationSessionMode::kFlat, std::nullopt, 1}};
+  const std::array<q::cache::TokenPlanRef, 0> plans{};
+  const auto now = q::Clock::now();
+  return q::run_generation_sessions<q::GenerationMode::kMtp>(model, schedules, trace, false, now, now,
+      false, plans, {}, {}, prefill);
 }
 
 int dispatcher_output(const std::filesystem::path &input, std::string_view mode) {
@@ -1367,6 +1431,8 @@ int run(const std::filesystem::path &input, bool boundaries = false, bool warm_c
 
 int main(int argc, char **argv) {
   try {
+    if (argc == 6 && std::string_view(argv[1]) == "--mixed-depth-quality")
+      return mixed_depth_quality(argv[2], argv[3], argv[4], argv[5]);
     if (argc == 3 && std::string_view(argv[1]) == "--request-sampling-seed")
       return request_sampling_seed(argv[2]);
     if (argc == 4 && std::string_view(argv[1]) == "--mixed-sampling")
