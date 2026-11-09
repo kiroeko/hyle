@@ -1,4 +1,5 @@
 #include "../../engine/inference/mtp_policy.h"
+#include "../../engine/models/qwen35/mtp_default_policy.h"
 #include "../../engine/inference/decode_route_policy.h"
 
 #include <array>
@@ -143,7 +144,8 @@ int main() {
         .natural_generation=flag(0), .multiple_schedules=flag(1), .prefix_enabled=flag(2),
         .scheduler_progress=flag(3), .cpu_assist=flag(5), .greedy=flag(6),
         .max_sessions=sessions, .active_sequences=active, .capacity=capacity};
-    const m::DefaultRequest request{mode, workload, flag(4), depth, flag(9)};
+    const m::DefaultRequest request{mode, workload, flag(4), depth, flag(9),
+                                    qwen35::automatic_mtp_preference(workload)};
     const bool inspect = mode != m::RequestedMode::kOff && depth > 0 && request.automatic_backend_eligible &&
         request.workload.greedy && request.automatic_vocabulary;
     if (m::inspect_prepared_vocabulary(request) != inspect)
@@ -199,7 +201,10 @@ int main() {
       ConstraintCase{+[](m::DefaultRequest &r) { r.workload.natural_generation=false; }, RouteReason::kNonNaturalRequest},
       ConstraintCase{+[](m::DefaultRequest &r) { r.automatic_backend_eligible=false; }, RouteReason::kBackendPolicy},
       ConstraintCase{+[](m::DefaultRequest &r) { r.workload.greedy=false; }, RouteReason::kSampling},
-      ConstraintCase{+[](m::DefaultRequest &r) { r.workload.active_sequences=2; }, RouteReason::kMultipleSessionsOrSequences},
+      ConstraintCase{+[](m::DefaultRequest &r) {
+        r.workload.active_sequences=2;
+        r.automatic_preference=qwen35::automatic_mtp_preference(r.workload);
+      }, RouteReason::kMultipleSessionsOrSequences},
       ConstraintCase{+[](m::DefaultRequest &r) { r.workload.prefix_enabled=true; }, RouteReason::kPrefixCache},
       ConstraintCase{+[](m::DefaultRequest &r) { r.workload.scheduler_progress=true; }, RouteReason::kScheduler},
       ConstraintCase{+[](m::DefaultRequest &r) { r.workload.cpu_assist=true; }, RouteReason::kCpuAssist},
@@ -212,6 +217,16 @@ int main() {
     if (result.automatic || result.enabled || result.reason!=test.reason)
       throw std::runtime_error("automatic decision and constraint reason disagree");
   }
+  auto other_provider = typical;
+  other_provider.workload.max_sessions = 2;
+  other_provider.workload.active_sequences = 2;
+  if (!m::select_default(other_provider, true).automatic ||
+      qwen35::automatic_mtp_preference(other_provider.workload) != RouteReason::kMultipleSessionsOrSequences)
+    throw std::runtime_error("another provider inherited Qwen's multi-session default preference");
+  other_provider.automatic_preference = qwen35::automatic_mtp_preference(other_provider.workload);
+  other_provider.mode = m::RequestedMode::kOn;
+  if (!m::select_default(other_provider, true).enabled)
+    throw std::runtime_error("default preference blocked explicit MTP");
   auto multiple=typical;
   multiple.workload.greedy=false; multiple.workload.prefix_enabled=true;
   if (m::select_default(multiple,true).reason!=RouteReason::kSampling)

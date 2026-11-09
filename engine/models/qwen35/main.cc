@@ -12,6 +12,7 @@
 #include "generation_ledger.h"
 #include "generation_publication.h"
 #include "draft_asset_policy.h"
+#include "mtp_default_policy.h"
 #include "../../inference/session_cache.h"
 #include "../../inference/request_progress.h"
 #include "../../inference/request_admission.h"
@@ -3909,7 +3910,8 @@ std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::M
           requested_depth ? mtp_policy::RequestedMode::kOn : mtp_policy::RequestedMode::kOff,
       .workload = workload, .automatic_backend_eligible = execution.primary == BackendKind::kCuda,
       .max_drafts = requested_depth,
-      .automatic_vocabulary = vocabulary_asset ? vocabulary_asset->mode == inference::ModelAssetMode::kAutomatic : !explicit_depth};
+      .automatic_vocabulary = vocabulary_asset ? vocabulary_asset->mode == inference::ModelAssetMode::kAutomatic : !explicit_depth,
+      .automatic_preference = automatic_mtp_preference(workload)};
   // An explicitly selected asset belongs to the prepared model, and can be
   // consumed by any declared greedy profile even when profile zero samples.
   if (explicit_depth && (vocabulary_asset || head_asset))
@@ -4188,7 +4190,8 @@ int qwen35::run(int argc, char **argv) {
             mtp_policy == "on" ? mtp::RequestedMode::kOn : mtp::RequestedMode::kAuto,
         .workload = cold_workload,
         .automatic_backend_eligible = backend_selection.primary == qwen35::BackendKind::kCuda,
-        .max_drafts = max_drafts, .automatic_vocabulary = draft_vocabulary == "auto"};
+        .max_drafts = max_drafts, .automatic_vocabulary = draft_vocabulary == "auto",
+        .automatic_preference = qwen35::automatic_mtp_preference(cold_workload)};
     // The legacy CLI supports policy keywords; resolve them here so the
     // model's asset selection receives an unambiguous file or policy.
     auto vocabulary_request = draft_vocabulary == "auto" ? qwen35::DraftAssetRequest::automatic() :

@@ -17,6 +17,9 @@ struct DefaultRequest final {
   bool automatic_backend_eligible = false;
   std::size_t max_drafts = 0;
   bool automatic_vocabulary = false;
+  // A provider's measured default preference, not an execution capability.
+  // Explicit requests remain subject to the provider's real validation.
+  RouteReason automatic_preference = RouteReason::kNone;
 
   constexpr bool unmodified_greedy_drafting() const noexcept {
     return workload.greedy;
@@ -61,8 +64,7 @@ constexpr RouteReason automatic_constraint(const DefaultRequest &request) noexce
   if (!workload.natural_generation) return RouteReason::kNonNaturalRequest;
   if (!request.automatic_backend_eligible) return RouteReason::kBackendPolicy;
   if (!workload.greedy) return RouteReason::kSampling;
-  if (workload.multiple_schedules || workload.max_sessions > 1 || workload.active_sequences > 1)
-    return RouteReason::kMultipleSessionsOrSequences;
+  if (request.automatic_preference != RouteReason::kNone) return request.automatic_preference;
   if (workload.prefix_enabled) return RouteReason::kPrefixCache;
   if (workload.scheduler_progress) return RouteReason::kScheduler;
   if (workload.cpu_assist) return RouteReason::kCpuAssist;
