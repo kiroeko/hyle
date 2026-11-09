@@ -5,7 +5,7 @@
 #include <sstream>
 #include <string>
 
-#include "../models/qwen35/model_core.h"
+#include "model_core.h"
 
 namespace hyle::engine::reporting {
 

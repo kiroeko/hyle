@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../models/qwen35/weight_inventory.h"
-#include "../inference/route_reason.h"
+#include "weight_inventory.h"
+#include "../../inference/route_reason.h"
 
 #include <string>
 

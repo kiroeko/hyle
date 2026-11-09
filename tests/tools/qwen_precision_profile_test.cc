@@ -3,7 +3,7 @@
 #include "../../engine/models/qwen35/mtp_capabilities.h"
 #include "../../engine/models/qwen35/cache_plan.h"
 #include "../../engine/inference/artifact_digest.h"
-#include "../../engine/reporting/qwen35_weight_inventory.h"
+#include "../../engine/models/qwen35/weight_report.h"
 
 #include <cstdio>
 #include <string>

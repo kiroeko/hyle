@@ -124,6 +124,11 @@ function(hyle_add_header_self_contained_test module)
   unset(_hyle_extra_include_dir)
 endfunction()
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
+add_test(NAME hyle_inference_dependency_test
+         COMMAND "${Python3_EXECUTABLE}" -B
+                 "${CMAKE_CURRENT_SOURCE_DIR}/tooling/inference_dependency_test.py")
+set_tests_properties(hyle_inference_dependency_test PROPERTIES
+  LABELS "tooling;inference;architecture" TIMEOUT 30)
 add_test(NAME hyle_engine_components_test
          COMMAND "${Python3_EXECUTABLE}"
                  "${CMAKE_CURRENT_SOURCE_DIR}/tooling/engine_components_test.py")

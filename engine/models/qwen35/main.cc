@@ -29,8 +29,8 @@
 #include "../../inference/request_batch_execution.h"
 #include "../../inference/mtp_policy.h"
 #include "../../reporting/execution_report.h"
-#include "../../reporting/qwen35_cache_report.h"
-#include "../../reporting/qwen35_weight_inventory.h"
+#include "cache_report.h"
+#include "weight_report.h"
 #include "driver.h"
 
 namespace qwen35 {

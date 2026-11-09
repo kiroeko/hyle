@@ -117,10 +117,10 @@ def annotate(origin, arm):
             # The model-specific report adapter normally includes the core.
             # Expand it in this diagnostic TU without including the core a
             # second time after its pragma-once header was expanded above.
-            report_include = '#include "../../reporting/qwen35_cache_report.h"'
+            report_include = '#include "cache_report.h"'
             if report_include in text:
-                report = (origin.parent / "../../reporting/qwen35_cache_report.h").read_text(encoding="utf-8")
-                core_dependency = '#include "../models/qwen35/model_core.h"\n'
+                report = (origin.parent / "cache_report.h").read_text(encoding="utf-8")
+                core_dependency = '#include "model_core.h"\n'
                 if not report.startswith("#pragma once\n\n") or report.count(core_dependency) != 1:
                     raise ValueError("hyle: unexpected model report header")
                 report = report.removeprefix("#pragma once\n\n").replace(core_dependency, "", 1)
