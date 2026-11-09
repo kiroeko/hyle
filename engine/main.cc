@@ -2,6 +2,7 @@
 #include "inference/backend.h"
 #include "inference/token_worker.h"
 
+#include <array>
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
@@ -17,6 +18,29 @@ template<class T> T worker_number(std::string_view option, std::string_view valu
   if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size())
     throw std::invalid_argument(std::string(option) + " requires a valid number");
   return result;
+}
+
+// Internal worker arguments extend the default profile in declaration order;
+// requests select these already-prepared profiles by index.
+hyle::inference::PreparedSamplingPolicy worker_sampling_profile(std::string_view value) {
+  if (value == "greedy") return {};
+  if (value == "random") return {.random = true};
+  constexpr std::string_view prefix = "random,";
+  if (!value.starts_with(prefix))
+    throw std::invalid_argument("additional sampling requires greedy, random or random,temperature,top-k,top-p");
+  value.remove_prefix(prefix.size());
+  std::array<std::string_view, 3> parts;
+  for (std::size_t index = 0; index < parts.size(); ++index) {
+    const auto separator = value.find(',');
+    if ((index + 1 < parts.size() && separator == std::string_view::npos) ||
+        (index + 1 == parts.size() && separator != std::string_view::npos))
+      throw std::invalid_argument("additional random sampling requires temperature, top-k and top-p");
+    parts[index] = value.substr(0, separator);
+    if (separator != std::string_view::npos) value.remove_prefix(separator + 1);
+  }
+  return {.random = true, .temperature = worker_number<float>("additional temperature", parts[0]),
+          .top_p = worker_number<float>("additional top-p", parts[2]),
+          .top_k = worker_number<std::size_t>("additional top-k", parts[1])};
 }
 
 int token_worker(int argc, char **argv) {
@@ -55,6 +79,7 @@ int token_worker(int argc, char **argv) {
     } else if (option == "--temperature") config.sampling.temperature = worker_number<float>(option, value);
     else if (option == "--top-p") config.sampling.top_p = worker_number<float>(option, value);
     else if (option == "--top-k") config.sampling.top_k = worker_number<std::size_t>(option, value);
+    else if (option == "--additional-sampling") config.additional_sampling.push_back(worker_sampling_profile(value));
     else if (option == "--seed") default_seed = worker_number<std::uint64_t>(option, value);
     else throw std::invalid_argument("unknown worker option: " + std::string(option));
   }
