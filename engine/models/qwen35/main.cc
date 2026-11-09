@@ -16,6 +16,7 @@
 #include "../../inference/request_progress.h"
 #include "../../inference/request_admission.h"
 #include "../../inference/request_loop.h"
+#include "../../inference/request_owner.h"
 #include "../../inference/token_delivery.h"
 #include "../../inference/model_executor.h"
 #include "../../inference/request_wave_execution.h"
@@ -3511,20 +3512,22 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     }
     return advanced;
   };
-  while (active_requests) {
-    bool output_progress = service_output();
-    const auto pumped = request_loop.pump_once(adapter);
+  const auto pump = [&] { return request_loop.pump_once(adapter); };
+  const auto observe_pump = [&](const inference::RequestPumpResult &pumped) {
     completed = cache::add(completed, pumped.completed);
     if (pumped.completed > active_requests) throw std::logic_error("retired requests exceed active requests");
     active_requests -= pumped.completed;
     admitted = cache::add(admitted, pumped.admitted);
-    output_progress = service_output() || output_progress;
+  };
+  const auto await_retirement = [&](const inference::RequestPumpResult &pumped) {
     // This closed CLI has no host work while the current Graph is pending.
     // Any successor is already submitted; promoted B reaches the next pump first
     // so C can overlap it. The original next poll consumes any wait error.
     if (pumped.waiting_retirement && continuation.drive_cursor.awaiting_current &&
         model.active_step && model.active_step->execution.has_completion())
       model.active_step->execution.wait().IgnoreError();
+  };
+  const auto poll_input = [&](const inference::RequestPumpResult &pumped) {
     bool input_arrived = false, live_waiting = false;
     if (first_turn_only && !pumped.waiting_retirement) for (std::size_t index = 0; index < requests.size(); ++index) {
       auto &request = requests[index];
@@ -3597,13 +3600,18 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
         }
       }
     }
-    if (!pumped.executed && !pumped.waiting_retirement && !input_arrived && !output_progress && active_requests) {
-      if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>) {
-        if (pumped.waiting_output || live_waiting) { output_consumer.wait(); continue; }
-      }
-      throw std::runtime_error("generation admission has no runnable resident request");
+    return inference::RequestOwnerInputProgress{input_arrived, live_waiting};
+  };
+  const auto wait_idle = [&](const inference::RequestPumpResult &pumped,
+                             inference::RequestOwnerInputProgress input) {
+    (void)pumped; (void)input;
+    if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>) {
+      if (pumped.waiting_output || input.waiting) { output_consumer.wait(); return true; }
     }
-  }
+    return false;
+  };
+  inference::drive_request_owner(active_requests, service_output, pump, observe_pump,
+                                 await_retirement, poll_input, wait_idle);
   if (reuse) {
     if (model.active_step || model.successor_step || model.carrier_borrowed ||
         model.snapshot_versions.live || model.resources_->pending_readbacks())

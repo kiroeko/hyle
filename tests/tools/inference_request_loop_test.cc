@@ -1,6 +1,7 @@
 // Host owner contracts only. Retirement observations below are explicit test
 // inputs, not evidence that any device completed or freed physical memory.
 #include "../../engine/inference/request_loop.h"
+#include "../../engine/inference/request_owner.h"
 #include "../../engine/inference/request_admission.h"
 #include "../../engine/inference/token_delivery.h"
 #include "../../engine/inference/queued_token_consumer.h"
@@ -1179,6 +1180,49 @@ void model_provider_selects_one_owner_and_rejects_ambiguity() {
   rejects<std::invalid_argument>([&] { (void)i::select_model_provider(invalid, "model-a"); });
 }
 
+void request_owner_drives_input_output_and_real_retirement() {
+  std::size_t active = 1, cycle = 0, waits = 0, writes = 0;
+  std::array<char, 32> order{};
+  const auto mark = [&](char value) { order.at(writes++) = value; };
+  const auto service = [&] { mark('S'); return false; };
+  const auto pump = [&] {
+    mark('P'); ++cycle;
+    if (cycle == 1) return i::RequestPumpResult{.waiting_retirement = true};
+    if (cycle == 2) return i::RequestPumpResult{.waiting_output = true};
+    if (cycle == 3) return i::RequestPumpResult{.executed = true};
+    return i::RequestPumpResult{.completed = 2};
+  };
+  const auto observe = [&](const i::RequestPumpResult &result) {
+    mark('O');
+    require(result.completed <= active, "owner retired an unknown request");
+    active -= result.completed;
+  };
+  const auto await = [&](const i::RequestPumpResult &) { mark('R'); };
+  const auto intake = [&](const i::RequestPumpResult &result) {
+    mark('I');
+    if (cycle == 1) require(result.waiting_retirement, "owner lost the real retirement gate");
+    if (cycle == 3) { ++active; return i::RequestOwnerInputProgress{true, false}; }
+    return i::RequestOwnerInputProgress{false, cycle == 2};
+  };
+  const auto wait = [&](const i::RequestPumpResult &result, i::RequestOwnerInputProgress input) {
+    mark('W'); ++waits;
+    return result.waiting_output && input.waiting;
+  };
+  const auto before = allocation_count;
+  track_allocations = true;
+  i::drive_request_owner(active, service, pump, observe, await, intake, wait);
+  track_allocations = false;
+  require(!active && cycle == 4 && waits == 1 && allocation_count == before &&
+      std::string_view(order.data(), writes) == "SPOSRISPOSRIWSPOSRISPOSRI",
+      "common owner changed service/retirement/input order, lost a request or allocated hot state");
+  active = 1;
+  rejects<std::runtime_error>([&] {
+    i::drive_request_owner(active, [] { return false; }, [] { return i::RequestPumpResult{}; },
+        [](const auto &) {}, [](const auto &) {}, [](const auto &) { return i::RequestOwnerInputProgress{}; },
+        [](const auto &, const auto &) { return false; });
+  });
+}
+
 void token_worker_rejects_malformed_frames_without_starting_model() {
   auto control = std::make_shared<IngressTestControl>();
   std::istringstream input("G\t0\t1\t1\nG\t7\t0\t1\nG\t8\t1\t-1\n"
@@ -1846,6 +1890,7 @@ int main() {
     new_admission_skips_unreleased_transport_after_model_retirement();
     schedule_admission_is_model_independent_and_overflow_safe();
     model_provider_selects_one_owner_and_rejects_ambiguity();
+    request_owner_drives_input_output_and_real_retirement();
     token_worker_rejects_malformed_frames_without_starting_model();
     token_worker_credit_and_cancellation_do_not_hang();
     ingress_accepts_requests_during_execution_and_preserves_identity();
