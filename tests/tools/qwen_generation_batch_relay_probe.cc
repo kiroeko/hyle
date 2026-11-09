@@ -312,7 +312,15 @@ int request_sampling_seed(const std::filesystem::path &input) {
 }
 
 int mixed_sampling(const std::filesystem::path &input, std::string_view mode) {
+  const auto requested_mode = mode;
+  const bool subset = mode.starts_with("subset-");
+  if (subset) mode.remove_prefix(7);
+  const bool explicit_head = mode.starts_with("head-");
+  if (explicit_head) mode.remove_prefix(5);
+  const bool random_default = mode.starts_with("reverse-");
+  if (random_default) mode.remove_prefix(8);
   require(mode == "ordinary" || mode == "k1" || mode == "k3", "unknown mixed sampling mode");
+  require(!subset || mode != "ordinary", "subset test requires active MTP");
   const auto geometry = q::read_weight_geometry(input / "weights.tsv");
   const auto prompt = q::read_ids(input / "prompt.ids", geometry.vocabulary,
       static_cast<std::size_t>(geometry.context_limit));
@@ -321,8 +329,21 @@ int mixed_sampling(const std::filesystem::path &input, std::string_view mode) {
   config.assets.inputs = input; config.execution.backend = i::BackendKind::kCuda;
   config.execution.context = 256; config.execution.resident_sessions = 2; config.execution.active_sequences = 2;
   config.execution.draft_count = mode == "k3" ? 3 : mode == "k1" ? 1 : 0;
-  config.additional_sampling.push_back({.random = true, .temperature = .8F, .top_p = .95F, .top_k = 40});
+  if (subset) config.assets.draft_vocabulary = input / "mtp-draft-vocabulary.ids";
+  if (explicit_head) config.assets.draft_head = input / "mtp-draft-head.tsv";
+  const i::PreparedSamplingPolicy stochastic{.random = true, .temperature = .8F, .top_p = .95F, .top_k = 40};
+  if (random_default) { config.sampling = stochastic; config.additional_sampling.push_back({}); }
+  else config.additional_sampling.push_back(stochastic);
   config.additional_sampling.push_back({.random = true, .temperature = 1.2F, .top_p = .9F, .top_k = 30});
+  if (subset) {
+    auto unused = config;
+    unused.sampling = stochastic; unused.additional_sampling.clear();
+    bool rejected = false;
+    try { (void)q::load_model_executor(unused); }
+    catch (const std::runtime_error &) { rejected = true; }
+    require(rejected, "explicit subset without any greedy consumer was silently accepted");
+  }
+  const std::size_t greedy_profile = random_default ? 1 : 0, random_profile = random_default ? 0 : 1;
   auto executor = q::load_model_executor(config);
   struct FiniteConsumer final {
     std::array<std::vector<std::int32_t>, 2> ids;
@@ -343,7 +364,7 @@ int mixed_sampling(const std::filesystem::path &input, std::string_view mode) {
   const std::array schedules{
       i::GenerationSessionSchedule{"greedy", {{prompt, 8}}, i::GenerationSessionMode::kFlat, 123},
       i::GenerationSessionSchedule{"random", {{prompt, 8}}, i::GenerationSessionMode::kFlat, 123}};
-  const std::array<std::size_t, 2> profiles{0, 1};
+  const std::array<std::size_t, 2> profiles{greedy_profile, random_profile};
   i::GenerationBatch batch{schedules, profiles}; i::TokenConsumerRef finite_output(finite);
   executor->validate(batch); executor->execute(batch, finite_output);
   require(finite.complete[0] && finite.complete[1] && finite.ids[0].size() == 8 && finite.ids[1].size() == 8,
@@ -356,7 +377,7 @@ int mixed_sampling(const std::filesystem::path &input, std::string_view mode) {
   for (int repeat = 0; repeat < 3; ++repeat) {
     const bool random_anchor = repeat == 1;
     auto anchor = dispatcher.submit({"anchor", {{prompt, 1}}, i::GenerationSessionMode::kLive, 123}, {},
-        random_anchor ? 1 : 0);
+        random_anchor ? random_profile : greedy_profile);
     require(anchor.read().kind == Event::kToken && anchor.read().kind == Event::kTurnEnd,
         "mixed-sampling anchor did not pause on its original live turn");
     auto invalid = dispatcher.submit({"invalid", {{prompt, 1}}}, {}, 9);
@@ -366,7 +387,7 @@ int mixed_sampling(const std::filesystem::path &input, std::string_view mode) {
     try { std::rethrow_exception(rejected.failure); } catch (const i::RequestRejected &) { exact = true; }
     require(exact, "unknown sampler lost its request-local admission error");
     auto peer = dispatcher.submit({"peer", {{prompt, 8}}, i::GenerationSessionMode::kFlat, 123}, {},
-        random_anchor ? 0 : 1);
+        random_anchor ? greedy_profile : random_profile);
     std::vector<std::int32_t> random_ids;
     for (;;) {
       const auto event = peer.read();
@@ -398,7 +419,9 @@ int mixed_sampling(const std::filesystem::path &input, std::string_view mode) {
         anchor.read().kind == Event::kCompleted, "peer changed the anchor continuation");
   }
   dispatcher.shutdown();
-  std::cout << "mixed sampling " << mode << " PASS: initial mixed cohort, three profiles, both admission orders, RNG replay, invalid profile\n";
+  std::cout << "random_ids=";
+  for (std::size_t j = 0; j < previous_random.size(); ++j) std::cout << (j ? "," : "") << previous_random[j];
+  std::cout << "\nmixed sampling " << requested_mode << " PASS: initial mixed cohort, three profiles, both admission orders, RNG replay, invalid profile\n";
   return 0;
 }
 

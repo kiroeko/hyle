@@ -3883,11 +3883,17 @@ std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::M
   namespace mtp_policy = inference::mtp;
   const bool explicit_depth = config.execution.draft_count.has_value();
   const auto requested_depth = config.execution.draft_count.value_or(1);
-  const mtp_policy::DefaultRequest request{
+  mtp_policy::DefaultRequest request{
       .mode = !explicit_depth ? mtp_policy::RequestedMode::kAuto :
           requested_depth ? mtp_policy::RequestedMode::kOn : mtp_policy::RequestedMode::kOff,
       .workload = workload, .automatic_backend_eligible = execution.primary == BackendKind::kCuda,
       .max_drafts = requested_depth, .automatic_vocabulary = config.assets.draft_vocabulary.empty() && !explicit_depth};
+  // An explicitly selected asset belongs to the prepared model, and can be
+  // consumed by any declared greedy profile even when profile zero samples.
+  if (explicit_depth && (!config.assets.draft_vocabulary.empty() || !config.assets.draft_head.empty() ||
+      config.assets.auto_draft_head))
+    request.workload.greedy = !config.sampling.random || std::ranges::any_of(config.additional_sampling,
+        [](const auto &policy) { return !policy.random; });
   auto vocabulary = !config.assets.draft_vocabulary.empty() ? DraftAssetRequest::from_file(config.assets.draft_vocabulary) :
       explicit_depth ? DraftAssetRequest::original() : DraftAssetRequest::automatic();
   auto head = !config.assets.draft_head.empty() ? DraftAssetRequest::from_file(config.assets.draft_head) :

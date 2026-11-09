@@ -886,7 +886,7 @@ public:
   bool prepare_draft_projection(const SamplingConfiguration &sampling) {
     if (!resources_->draft_vocabulary && !resources_->draft_head) return false;
     if (sampling.enabled || !sampling.modifiers.empty())
-      throw std::runtime_error("draft vocabulary requires unmodified greedy sampling");
+      return false; // This sampling program uses the original full projection.
     if (resources_->draft_head && (!resources_->draft_vocabulary ||
         resources_->draft_head->original_ids.description.valid())) return true;
     if (active_step || successor_step || carrier_borrowed)
@@ -1096,10 +1096,10 @@ public:
     if (source.draft_vocabulary || source.draft_head) {
       if (!cache_plan.draft_cache || (source.draft_vocabulary && source.draft_vocabulary->full_size() != vocabulary))
         throw std::runtime_error("draft vocabulary differs from the original complete model");
-      if (std::ranges::any_of(resources_->sampling_configurations, [](const auto &prepared) {
-            return prepared->configuration.enabled || !prepared->configuration.modifiers.empty();
+      if (std::ranges::none_of(resources_->sampling_configurations, [](const auto &prepared) {
+            return !prepared->configuration.enabled && prepared->configuration.modifiers.empty();
           }))
-        throw std::runtime_error("draft vocabulary requires unmodified greedy sampling for every request");
+        throw std::runtime_error("prepared draft projection requires an unmodified greedy sampling consumer");
       if (source.draft_vocabulary && source.draft_vocabulary_identity != inference::artifact::sha256(std::as_bytes(source.draft_vocabulary->ids())))
         throw std::runtime_error("draft vocabulary identity changed before weight loading");
     }
@@ -1212,7 +1212,12 @@ public:
       resources_->draft_vocabulary = std::move(source.draft_vocabulary);
       resources_->draft_vocabulary_identity = std::move(source.draft_vocabulary_identity);
     }
-    if(resources_->draft_vocabulary || resources_->draft_head)(void)prepare_draft_projection(default_sampler);
+    if (resources_->draft_vocabulary || resources_->draft_head) {
+      const auto selected = std::ranges::find_if(resources_->sampling_configurations, [](const auto &prepared) {
+        return !prepared->configuration.enabled && prepared->configuration.modifiers.empty();
+      });
+      (void)prepare_draft_projection((*selected)->configuration);
+    }
     host_weight_bytes = loading.host_bytes; device_weight_bytes = loading.device_bytes;
     physical_text_roles = loading.physical_text_roles; physical_mtp_roles = loading.physical_mtp_roles;
     canonical_weight_bytes = loading.canonical_bytes; fp8_weight_groups = loading.fp8_groups;
