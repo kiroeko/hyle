@@ -3881,7 +3881,13 @@ bool matches_prepared_model(const std::filesystem::path &source) {
 }
 
 std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::ModelLoadConfig &config) {
-  if (config.assets.inputs.empty() || !config.execution.context || !config.execution.resident_sessions || !config.execution.active_sequences ||
+  inference::validate_model_assets(config.assets);
+  for (const auto &asset : config.assets.auxiliary)
+    if (asset.role != "draft.vocabulary" && asset.role != "draft.head")
+      throw std::invalid_argument("Qwen model does not support asset role: " + asset.role);
+  const auto *vocabulary_asset = inference::find_model_asset(config.assets, "draft.vocabulary");
+  const auto *head_asset = inference::find_model_asset(config.assets, "draft.head");
+  if (!config.execution.context || !config.execution.resident_sessions || !config.execution.active_sequences ||
       config.execution.active_sequences > config.execution.resident_sessions || !config.execution.prefill_rows ||
       (config.execution.draft_count && *config.execution.draft_count >= config.execution.context))
     throw std::invalid_argument("model loading requires valid context, sequence, prefill and draft capacities");
@@ -3897,17 +3903,19 @@ std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::M
       .mode = !explicit_depth ? mtp_policy::RequestedMode::kAuto :
           requested_depth ? mtp_policy::RequestedMode::kOn : mtp_policy::RequestedMode::kOff,
       .workload = workload, .automatic_backend_eligible = execution.primary == BackendKind::kCuda,
-      .max_drafts = requested_depth, .automatic_vocabulary = config.assets.draft_vocabulary.empty() && !explicit_depth};
+      .max_drafts = requested_depth,
+      .automatic_vocabulary = vocabulary_asset ? vocabulary_asset->mode == inference::ModelAssetMode::kAutomatic : !explicit_depth};
   // An explicitly selected asset belongs to the prepared model, and can be
   // consumed by any declared greedy profile even when profile zero samples.
-  if (explicit_depth && (!config.assets.draft_vocabulary.empty() || !config.assets.draft_head.empty() ||
-      config.assets.auto_draft_head))
+  if (explicit_depth && (vocabulary_asset || head_asset))
     request.workload.greedy = !config.sampling.random || std::ranges::any_of(config.additional_sampling,
         [](const auto &policy) { return !policy.random; });
-  auto vocabulary = !config.assets.draft_vocabulary.empty() ? DraftAssetRequest::from_file(config.assets.draft_vocabulary) :
+  auto vocabulary = vocabulary_asset ? (vocabulary_asset->mode == inference::ModelAssetMode::kFile
+      ? DraftAssetRequest::from_file(vocabulary_asset->path) : DraftAssetRequest::automatic()) :
       explicit_depth ? DraftAssetRequest::original() : DraftAssetRequest::automatic();
-  auto head = !config.assets.draft_head.empty() ? DraftAssetRequest::from_file(config.assets.draft_head) :
-      (!explicit_depth || config.assets.auto_draft_head ? DraftAssetRequest::automatic() : DraftAssetRequest::original());
+  auto head = head_asset ? (head_asset->mode == inference::ModelAssetMode::kFile
+      ? DraftAssetRequest::from_file(head_asset->path) : DraftAssetRequest::automatic()) :
+      !explicit_depth ? DraftAssetRequest::automatic() : DraftAssetRequest::original();
   auto assets = select_draft_assets(config.assets.inputs, request, std::move(vocabulary), std::move(head),
       Backend::supports_encoded_row_gather(execution));
   const bool mtp = assets.policy.enabled;

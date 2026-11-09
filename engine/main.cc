@@ -42,8 +42,8 @@ int token_worker(int argc, char **argv) {
     else if (option == "--active-sequences") config.execution.active_sequences = worker_number<std::size_t>(option, value);
     else if (option == "--prefill-chunk-tokens") config.execution.prefill_rows = worker_number<std::size_t>(option, value);
     else if (option == "--draft-count") config.execution.draft_count = worker_number<std::size_t>(option, value);
-    else if (option == "--draft-vocabulary") config.assets.draft_vocabulary = value;
-    else if (option == "--draft-head") config.assets.draft_head = value;
+    else if (option == "--draft-vocabulary") config.assets.set_file("draft.vocabulary", std::filesystem::path(value));
+    else if (option == "--draft-head") config.assets.set_file("draft.head", std::filesystem::path(value));
     else if (option == "--waiting-limit") waiting = worker_number<std::size_t>(option, value);
     else if (option == "--output-capacity") output_capacity = worker_number<std::size_t>(option, value);
     else if (option == "--overlap") {

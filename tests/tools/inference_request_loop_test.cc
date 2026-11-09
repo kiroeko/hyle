@@ -1146,8 +1146,11 @@ void model_provider_selects_one_owner_and_rejects_ambiguity() {
   const auto a = +[](const std::filesystem::path &source) { return source.filename() == "model-a"; };
   const auto b = +[](const std::filesystem::path &source) { return source.filename() == "model-b"; };
   const auto load = +[](const i::ModelLoadConfig &config) -> std::unique_ptr<i::ModelExecutor> {
+    const auto *asset = i::find_model_asset(config.assets, "model.private-table");
+    const auto *automatic = i::find_model_asset(config.assets, "model.optional-cache");
     require(config.assets.inputs.filename() == "model-b" && config.execution.context == 128 &&
-        config.sampling.random && config.sampling.top_k == 40,
+        config.sampling.random && config.sampling.top_k == 40 && asset && asset->path == "table.bin" &&
+        automatic && automatic->mode == i::ModelAssetMode::kAutomatic,
         "provider did not receive independent source, execution and sampling preparation facts");
     return std::make_unique<IngressTestExecutor>(std::make_shared<IngressTestControl>());
   };
@@ -1155,8 +1158,20 @@ void model_provider_selects_one_owner_and_rejects_ambiguity() {
   require(i::select_model_provider(providers, "model-b").name == "b", "model provider selection ignored its input");
   i::ModelLoadConfig config;
   config.assets.inputs = "model-b"; config.execution.context = 128;
+  config.assets.set_file("model.private-table", "old.bin");
+  config.assets.set_file("model.private-table", "table.bin");
+  config.assets.auxiliary.push_back({"model.optional-cache", i::ModelAssetMode::kAutomatic, {}});
   config.sampling.random = true; config.sampling.top_k = 40;
   require(bool(i::load_model(providers, config)), "provider did not load its selected source");
+  auto invalid_assets = config;
+  invalid_assets.assets.auxiliary.push_back({"model.private-table", i::ModelAssetMode::kFile, "another.bin"});
+  rejects<std::invalid_argument>([&] { (void)i::load_model(providers, invalid_assets); });
+  invalid_assets = config;
+  invalid_assets.assets.auxiliary[0].path.clear();
+  rejects<std::invalid_argument>([&] { (void)i::load_model(providers, invalid_assets); });
+  invalid_assets = config;
+  invalid_assets.assets.auxiliary[1].path = "must-be-empty";
+  rejects<std::invalid_argument>([&] { (void)i::load_model(providers, invalid_assets); });
   rejects<std::runtime_error>([&] { (void)i::select_model_provider(providers, "unknown"); });
   const std::array ambiguous{i::ModelProvider{"a", a, load}, i::ModelProvider{"other", a, load}};
   rejects<std::runtime_error>([&] { (void)i::select_model_provider(ambiguous, "model-a"); });

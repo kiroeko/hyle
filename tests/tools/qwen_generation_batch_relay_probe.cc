@@ -334,12 +334,20 @@ int mixed_sampling(const std::filesystem::path &input, std::string_view mode) {
   config.assets.inputs = input; config.execution.backend = i::BackendKind::kCuda;
   config.execution.context = 256; config.execution.resident_sessions = 2; config.execution.active_sequences = 2;
   config.execution.draft_count = mode == "k3" ? 3 : mode == "k1" ? 1 : 0;
-  if (subset) config.assets.draft_vocabulary = input / "mtp-draft-vocabulary.ids";
-  if (explicit_head) config.assets.draft_head = input / "mtp-draft-head.tsv";
+  if (subset) config.assets.set_file("draft.vocabulary", input / "mtp-draft-vocabulary.ids");
+  if (explicit_head) config.assets.set_file("draft.head", input / "mtp-draft-head.tsv");
   const i::PreparedSamplingPolicy stochastic{.random = true, .temperature = .8F, .top_p = .95F, .top_k = 40};
   if (random_default) { config.sampling = stochastic; config.additional_sampling.push_back({}); }
   else config.additional_sampling.push_back(stochastic);
   config.additional_sampling.push_back({.random = true, .temperature = 1.2F, .top_p = .9F, .top_k = 30});
+  {
+    auto invalid = config;
+    invalid.assets.set_file("unknown.model.asset", input / "weights.tsv");
+    bool rejected = false;
+    try { (void)q::load_model_executor(invalid); }
+    catch (const std::invalid_argument &) { rejected = true; }
+    require(rejected, "unknown provider-specific asset was silently accepted");
+  }
   if (subset) {
     auto unused = config;
     unused.sampling = stochastic; unused.additional_sampling.clear();
