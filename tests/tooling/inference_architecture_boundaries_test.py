@@ -72,6 +72,10 @@ class ArchitectureBoundariesTest(unittest.TestCase):
         self.assertEqual(inspect_includes([ROOT / 'engine/inference'],
             [ROOT / 'engine/models', ROOT / 'engine/text', ROOT / 'engine/reporting']), [])
 
+    def test_common_reporting_does_not_depend_on_models_or_frontends(self):
+        self.assertEqual(inspect_includes([ROOT / 'engine/reporting'],
+            [ROOT / 'engine/models', ROOT / 'engine/text']), [])
+
     def test_compute_and_graph_generators_do_not_import_engine(self):
         violations = []
         roots = [p for p in (ROOT / 'src').iterdir()
@@ -101,7 +105,7 @@ class ArchitectureBoundariesTest(unittest.TestCase):
         self.assertFalse(forbidden_include(compute, 'hyle/compute/future.h', [ROOT / 'include/hyle/graph']))
 
     def test_common_request_and_route_policies_do_not_compile_in_backend_choices(self):
-        files = ('request_admission.h', 'request_loop.h', 'generation_dispatcher.h', 'token_worker.h',
+        files = ('request_admission.h', 'request_loop.h', 'request_owner.h', 'generation_dispatcher.h', 'token_worker.h',
                  'mtp_policy.h', 'decode_route_policy.h', 'model_provider.h', 'model_executor.h')
         violations = []
         for name in files:
