@@ -42,6 +42,26 @@ inline std::optional<RequestAdmissionError> check_request_schedule(
   return std::nullopt;
 }
 
+// The previous output remains pending until this turn consumes it. A caller
+// using this bounded policy supplies its actual committed context, not prior
+// output quotas; models with other context policies need not use this check.
+enum class FollowupTurnError { kInvalidInput, kRemainingContext };
+inline std::optional<FollowupTurnError> check_followup_turn(
+    const GenerationTurn &turn, std::size_t visible_turns, std::size_t turn_bound,
+    std::size_t committed_context, std::size_t context, std::size_t vocabulary) noexcept {
+  if (!turn_bound || !context || !vocabulary || visible_turns >= turn_bound ||
+      turn.prompt.size() >= turn_bound || !turn.max_outputs || turn.max_outputs > turn_bound ||
+      std::ranges::any_of(turn.prompt, [&](auto id) {
+        return id < 0 || static_cast<std::size_t>(id) >= vocabulary;
+      })) return FollowupTurnError::kInvalidInput;
+  // prompt.size() < turn_bound, so adding the pending prior output is safe.
+  const auto input_rows = turn.prompt.size() + 1;
+  if (committed_context > context || input_rows > context - committed_context ||
+      turn.max_outputs - 1 > context - committed_context - input_rows)
+    return FollowupTurnError::kRemainingContext;
+  return std::nullopt;
+}
+
 inline const char *request_admission_message(RequestAdmissionError error) noexcept {
   switch (error) {
     case RequestAdmissionError::kInvalidLimits: return "reusable request requires valid model limits";

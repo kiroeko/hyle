@@ -1180,6 +1180,27 @@ void model_provider_selects_one_owner_and_rejects_ambiguity() {
   rejects<std::invalid_argument>([&] { (void)i::select_model_provider(invalid, "model-a"); });
 }
 
+void followup_admission_uses_actual_committed_context() {
+  using Error = i::FollowupTurnError;
+  i::GenerationTurn next{{1, 1}, 3};
+  require(!i::check_followup_turn(next, 1, 8, 2, 7, 2),
+      "followup rejected a context exactly filled by the prior pending token, prompt and output");
+  require(i::check_followup_turn(next, 1, 8, 3, 7, 2) == Error::kRemainingContext,
+      "followup omitted the pending token or exceeded remaining context");
+  require(i::check_followup_turn(next, 8, 8, 2, 7, 2) == Error::kInvalidInput,
+      "followup exceeded the configured turn bound");
+  next.prompt[0] = 2;
+  require(i::check_followup_turn(next, 1, 8, 2, 7, 2) == Error::kInvalidInput,
+      "followup accepted a token outside the model vocabulary");
+  next = {{}, 1};
+  require(!i::check_followup_turn(next, 1, 8, 6, 7, 2) &&
+      i::check_followup_turn(next, 1, 8, 7, 7, 2) == Error::kRemainingContext,
+      "empty followup did not account for the previous pending output");
+  next.max_outputs = 0;
+  require(i::check_followup_turn(next, 1, 8, 0, 7, 2) == Error::kInvalidInput,
+      "followup accepted a zero output limit");
+}
+
 void request_owner_drives_input_output_and_real_retirement() {
   std::size_t active = 1, cycle = 0, waits = 0, writes = 0;
   std::array<char, 32> order{};
@@ -1890,6 +1911,7 @@ int main() {
     new_admission_skips_unreleased_transport_after_model_retirement();
     schedule_admission_is_model_independent_and_overflow_safe();
     model_provider_selects_one_owner_and_rejects_ambiguity();
+    followup_admission_uses_actual_committed_context();
     request_owner_drives_input_output_and_real_retirement();
     token_worker_rejects_malformed_frames_without_starting_model();
     token_worker_credit_and_cancellation_do_not_hang();

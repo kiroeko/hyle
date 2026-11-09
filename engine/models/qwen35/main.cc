@@ -3554,16 +3554,13 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       if (request.progress.input_open()) {
         const auto &next_source = schedule.accepts_live_input() ? request.live_turns : source;
         const auto &next = next_source[visible];
-        if (visible >= configured_bound || next.prompt.size() >= configured_bound ||
-            !next.max_outputs || next.max_outputs > configured_bound ||
-            std::ranges::any_of(next.prompt, [&](auto id) { return id < 0 || id >= model.vocabulary; }))
+        const auto followup = inference::check_followup_turn(next, visible, configured_bound,
+            request.session->length(), model.capacity, static_cast<std::size_t>(model.vocabulary));
+        if (followup == inference::FollowupTurnError::kInvalidInput)
           throw std::out_of_range("input exceeds configured turn, prompt or output bound");
         // The preceding turn may have stopped early. Check the next turn
         // against its actual committed state, before extending or submitting it.
-        const auto before = request.session->length();
-        const auto input_rows = next.prompt.size() + 1; // Includes the pending prior output.
-        if (before > model.capacity || input_rows > model.capacity - before ||
-            next.max_outputs - 1 > model.capacity - before - input_rows) {
+        if (followup == inference::FollowupTurnError::kRemainingContext) {
           const auto error = std::make_exception_ptr(inference::RequestRejected(
               "complete turn input and output quota exceed the remaining context"));
           if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>> &&
