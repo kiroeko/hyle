@@ -928,6 +928,35 @@ TEST(Completion, RetainedPendingWaitPinsControlUntilConcurrentHandoffIsObserved)
   EXPECT_TRUE(extra.valid());
 }
 
+TEST(Completion, SuccessfulWaitDoesNotReleaseConcurrentHandoffOwner) {
+  using namespace hyle::compute;
+  struct NotifyGate final {
+    std::atomic<bool> entered{false}, resume{false};
+  } gate;
+  auto owner = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  auto pending = owner.publish_pending({
+      &gate, nullptr, nullptr,
+      [](void *opaque) noexcept {
+        auto &gate = *static_cast<NotifyGate *>(opaque);
+        gate.entered.store(true, std::memory_order_release);
+        gate.entered.notify_one();
+        gate.resume.wait(false, std::memory_order_acquire);
+      },
+      [](void *) noexcept {}});
+  hyle::Status handed;
+  std::thread driver([&] { handed = pending.ticket.handoff(Completion::completed()); });
+  gate.entered.wait(false, std::memory_order_acquire);
+  const auto waited = pending.completion.wait();
+  const auto available_during_handoff = owner.available();
+  gate.resume.store(true, std::memory_order_release);
+  gate.resume.notify_one();
+  driver.join();
+  EXPECT_TRUE(handed.ok());
+  EXPECT_TRUE(waited.ok());
+  EXPECT_FALSE(available_during_handoff);
+  EXPECT_TRUE(owner.available());
+}
+
 TEST(Completion, RetainedPendingCancelAndAbandonRaceActualInstallationSafely) {
   using namespace hyle::compute;
   auto owner = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
