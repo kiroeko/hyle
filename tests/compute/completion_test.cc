@@ -3,9 +3,12 @@
 #include <atomic>
 #include <array>
 #include <barrier>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <thread>
 #include <type_traits>
@@ -928,7 +931,7 @@ TEST(Completion, RetainedPendingWaitPinsControlUntilConcurrentHandoffIsObserved)
   EXPECT_TRUE(extra.valid());
 }
 
-TEST(Completion, SuccessfulWaitDoesNotReleaseConcurrentHandoffOwner) {
+TEST(Completion, PendingHandoffCannotPublishACompletedPoll) {
   using namespace hyle::compute;
   struct NotifyGate final {
     std::atomic<bool> entered{false}, resume{false};
@@ -946,13 +949,113 @@ TEST(Completion, SuccessfulWaitDoesNotReleaseConcurrentHandoffOwner) {
   hyle::Status handed;
   std::thread driver([&] { handed = pending.ticket.handoff(Completion::completed()); });
   gate.entered.wait(false, std::memory_order_acquire);
+  const auto polled = pending.completion.poll();
+  const auto available_during_handoff = owner.available();
+  gate.resume.store(true, std::memory_order_release);
+  gate.resume.notify_one();
+  driver.join();
   const auto waited = pending.completion.wait();
+  EXPECT_TRUE(handed.ok());
+  ASSERT_TRUE(polled.has_value());
+  EXPECT_EQ(*polled, CompletionPoll::kPending);
+  EXPECT_TRUE(waited.ok());
+  EXPECT_FALSE(available_during_handoff);
+  EXPECT_TRUE(owner.available());
+}
+
+TEST(Completion, SuccessfulWaitIncludesPostedHandoffRelease) {
+  using namespace hyle::compute;
+  struct Gate final { std::atomic<bool> entered{false}, resume{false}; } gate;
+  auto owner = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  auto pending = owner.publish_pending({
+      &gate, nullptr, nullptr,
+      [](void *opaque) noexcept {
+        auto &gate = *static_cast<Gate *>(opaque);
+        gate.entered.store(true, std::memory_order_release);
+        gate.entered.notify_one();
+        gate.resume.wait(false, std::memory_order_acquire);
+      },
+      [](void *) noexcept {}});
+  hyle::Status handed, waited;
+  std::thread driver([&] { handed = pending.ticket.handoff(Completion::completed()); });
+  gate.entered.wait(false, std::memory_order_acquire);
+  std::mutex mutex;
+  std::condition_variable changed;
+  bool started = false, finished = false;
+  std::thread waiter([&] {
+    { std::lock_guard lock(mutex); started = true; changed.notify_one(); }
+    waited = pending.completion.wait();
+    { std::lock_guard lock(mutex); finished = true; changed.notify_one(); }
+  });
+  bool returned_early;
+  {
+    std::unique_lock lock(mutex);
+    changed.wait(lock, [&] { return started; });
+    returned_early = changed.wait_for(lock, std::chrono::milliseconds(30), [&] { return finished; });
+  }
+  gate.resume.store(true, std::memory_order_release);
+  gate.resume.notify_one();
+  driver.join(); waiter.join();
+  EXPECT_FALSE(returned_early);
+  EXPECT_TRUE(handed.ok());
+  EXPECT_TRUE(waited.ok());
+  EXPECT_TRUE(owner.available());
+}
+
+TEST(Completion, AbandonDuringHandoffKeepsItsOriginalAllocationAlive) {
+  using namespace hyle::compute;
+  struct Gate final { std::atomic<bool> entered{false}, resume{false}; } gate;
+  SourceAllocations allocations;
+  auto owner = detail::RetainedCompletion::create(allocations.ref()).value();
+  auto pending = owner.publish_pending({
+      &gate, nullptr, nullptr,
+      [](void *opaque) noexcept {
+        auto &gate = *static_cast<Gate *>(opaque);
+        gate.entered.store(true, std::memory_order_release);
+        gate.entered.notify_one();
+        gate.resume.wait(false, std::memory_order_acquire);
+      },
+      [](void *) noexcept {}});
+  hyle::Status handed;
+  std::thread driver([&] { handed = pending.ticket.handoff(Completion::completed()); });
+  gate.entered.wait(false, std::memory_order_acquire);
+  owner.reset();
+  pending.completion = {};
+  EXPECT_EQ(allocations.frees, 0u);
+  gate.resume.store(true, std::memory_order_release);
+  gate.resume.notify_one();
+  driver.join();
+  EXPECT_TRUE(handed.ok());
+  EXPECT_EQ(allocations.allocations, 1u);
+  EXPECT_EQ(allocations.frees, 1u);
+}
+
+TEST(Completion, HandoffDoesNotHideAnObservedNativeError) {
+  using namespace hyle::compute;
+  struct Gate final { std::atomic<bool> entered{false}, resume{false}; } gate;
+  auto owner = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  auto pending = owner.publish_pending({
+      &gate, nullptr, nullptr,
+      [](void *opaque) noexcept {
+        auto &gate = *static_cast<Gate *>(opaque);
+        gate.entered.store(true, std::memory_order_release);
+        gate.entered.notify_one();
+        gate.resume.wait(false, std::memory_order_acquire);
+      },
+      [](void *) noexcept {}});
+  hyle::Status handed;
+  std::thread driver([&] {
+    handed = pending.ticket.handoff(Completion::completed(hyle::Status::Unavailable("native failure")));
+  });
+  gate.entered.wait(false, std::memory_order_acquire);
+  const auto polled = pending.completion.poll();
   const auto available_during_handoff = owner.available();
   gate.resume.store(true, std::memory_order_release);
   gate.resume.notify_one();
   driver.join();
   EXPECT_TRUE(handed.ok());
-  EXPECT_TRUE(waited.ok());
+  ASSERT_FALSE(polled.has_value());
+  EXPECT_TRUE(polled.error().IsUnavailable());
   EXPECT_FALSE(available_during_handoff);
   EXPECT_TRUE(owner.available());
 }

@@ -81,6 +81,8 @@ public:
   // cannot release lifetimes subsequently attached to the public proxy.
   HYLE_COMPUTE_API CompletionLifetime reserve_retirement() noexcept;
   // Observes the same native cell without settling the separate public proxy.
+  // Success also requires the posted handoff to release its observation;
+  // poll remains pending until then. An error is not proof of native retirement.
   // An empty/unpublished root reports its cached terminal, as wait does.
   HYLE_COMPUTE_API Result<CompletionPoll> poll() noexcept;
   HYLE_COMPUTE_API Status wait() noexcept;

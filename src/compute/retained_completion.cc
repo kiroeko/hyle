@@ -14,13 +14,40 @@
 #include "hyle/util/spin_lock.h"
 
 namespace hyle::compute::detail {
-struct RetainedCompletionState final : util::RefCounted<RetainedCompletionState> {
+struct RetainedCompletionState final {
   enum class Phase : unsigned char { Unpublished, Pending, Installing, Installed };
   explicit RetainedCompletionState(mem::AllocatorRef selected) noexcept : allocator(selected) {}
   void destroy() noexcept {
     const auto selected = allocator;
     std::destroy_at(this);
     selected.deallocate(this, sizeof(RetainedCompletionState), alignof(RetainedCompletionState));
+  }
+  // A handoff tail may need to signal after its logical driver reference is
+  // gone. Keep that short tail in the same allocation without counting it as
+  // another public/native observer. Both counts retire the original storage.
+  static constexpr std::uint64_t kTail = std::uint64_t{1} << 32;
+  std::atomic<std::uint64_t> references{1};
+  std::atomic<bool> handoff_pending{false};
+  void incref() noexcept {
+    const auto old = references.fetch_add(1, std::memory_order_relaxed);
+    HYLE_FATAL_ASSERT((old & (kTail - 1)) != 0 && (old & (kTail - 1)) != kTail - 1);
+  }
+  void decref() noexcept {
+    const auto old = references.fetch_sub(1, std::memory_order_release);
+    HYLE_FATAL_ASSERT((old & (kTail - 1)) != 0);
+    if (old == 1) { std::atomic_thread_fence(std::memory_order_acquire); destroy(); }
+  }
+  void pin_tail() noexcept {
+    const auto old = references.fetch_add(kTail, std::memory_order_relaxed);
+    HYLE_FATAL_ASSERT((old >> 32) != UINT32_MAX);
+  }
+  void unpin_tail() noexcept {
+    const auto old = references.fetch_sub(kTail, std::memory_order_release);
+    HYLE_FATAL_ASSERT(old >= kTail);
+    if (old == kTail) { std::atomic_thread_fence(std::memory_order_acquire); destroy(); }
+  }
+  bool is_unique() const noexcept {
+    return (references.load(std::memory_order_acquire) & (kTail - 1)) == 1;
   }
   mem::AllocatorRef allocator;
   Completion original;
@@ -134,6 +161,10 @@ Status wait_retained(RetainedCompletionState &state) noexcept {
     if (borrow_native(state, native)) {
       const auto terminal = native.valid() ? native.wait() : Status::Ok();
       return_native(state, std::move(native), terminal);
+      // Native success alone does not release the posted driver's observation
+      // reference. Failure remains immediately observable and is not treated
+      // as evidence that native work has retired.
+      if (terminal.ok()) state.handoff_pending.wait(true, std::memory_order_acquire);
       std::lock_guard guard(state.lock);
       return state.terminal;
     }
@@ -213,6 +244,7 @@ const CompletionVTable proxy_vtable{
       if (ready && *ready == CompletionPoll::kComplete) {
         std::lock_guard guard(state.lock);
         if (!state.terminal.ok()) return std::unexpected(state.terminal);
+        if (state.handoff_pending.load(std::memory_order_acquire)) return CompletionPoll::kPending;
       }
       return ready;
     },
@@ -249,7 +281,9 @@ Result<RetainedCompletion> RetainedCompletion::create(mem::AllocatorRef allocato
   if (!storage) return std::unexpected(Status::ResourceExhausted("completion observer metadata"));
   return RetainedCompletion(std::construct_at(static_cast<RetainedCompletionState *>(storage), allocator));
 }
-bool RetainedCompletion::available() const noexcept { return state_ && state_->is_unique(); }
+bool RetainedCompletion::available() const noexcept {
+  return state_ && !state_->handoff_pending.load(std::memory_order_acquire) && state_->is_unique();
+}
 bool RetainedCompletion::owns(const Completion &completion) const noexcept {
   const auto proxy = CompletionAccess::dependency(completion);
   return state_ && proxy.vtable == &proxy_vtable && proxy.state == state_;
@@ -303,6 +337,7 @@ RetainedCompletionPending RetainedCompletion::publish_pending(
   HYLE_FATAL_ASSERT(!control.wait || control.notify);
   if (!deferred_retirement) state_->retention.own = reserve_retirement();
   HYLE_FATAL_ASSERT(state_->deferred_prepared);
+  state_->handoff_pending.store(true, std::memory_order_release);
   {
     std::lock_guard guard(state_->lock);
     state_->deferred_prepared = false;
@@ -364,7 +399,14 @@ Status RetainedCompletionHandoff::handoff(Completion &&completion) noexcept {
     CompletionAccess::append_terminal(original, hint);
     original = {};
   }
+  // The tail holds only storage, not a public/native observation. It permits
+  // signalling after the original driver's logical reference is released,
+  // even if an abandoned root and proxy have already been destroyed.
+  state.pin_tail();
   state.decref(); // posted progress driver
+  state.handoff_pending.store(false, std::memory_order_release);
+  state.handoff_pending.notify_all();
+  state.unpin_tail();
   return Status::Ok();
 }
 Result<CompletionPoll> RetainedCompletion::poll() noexcept {
