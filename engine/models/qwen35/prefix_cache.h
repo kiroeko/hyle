@@ -122,12 +122,12 @@ public:
   std::size_t evictions() const noexcept { return directory_.evictions; }
   bool evict_one() noexcept { return directory_.evict_one(); }
   std::size_t match_length(const TokenPlan &input, std::size_t target, std::size_t minimum,
-                           const void *model, const void *math) const {
-    return directory_.match_length({model, math}, input, target, minimum);
+                           const void *model, const void *math, std::uint64_t sharing = 0) const {
+    return directory_.match_length({model, math, sharing}, input, target, minimum);
   }
   Hit lookup(const TokenPlan &input, std::size_t target, std::size_t minimum,
-             const void *model, const void *math) {
-    auto hit = directory_.lookup({model, math}, input, target, minimum);
+             const void *model, const void *math, std::uint64_t sharing = 0) {
+    auto hit = directory_.lookup({model, math, sharing}, input, target, minimum);
     if (hit) {
       const auto &head = hit.payload.snapshot;
       // Published payloads are immutable. Recheck the original model contract
@@ -137,7 +137,7 @@ public:
     }
     return {};
   }
-  bool publish(TokenPlanRef input, const SnapshotRef &snapshot, const ReplayPrefix &replay) {
+  bool publish(TokenPlanRef input, const SnapshotRef &snapshot, const ReplayPrefix &replay, std::uint64_t sharing = 0) {
     if (!input || !snapshot || !snapshot->length || snapshot->next_id < 0 ||
         snapshot->length > input->ids.size() || !replay.history || replay.length != snapshot->length ||
         replay.chunks == 0 || replay.chunks > replay.history->chunks.size() ||
@@ -156,7 +156,7 @@ public:
       covered += part.count;
     }
     if (covered != snapshot->length) throw std::runtime_error("prefix rebuild history does not cover its snapshot");
-    return directory_.publish({snapshot->model, snapshot->math}, std::move(input), snapshot->length,
+    return directory_.publish({snapshot->model, snapshot->math, sharing}, std::move(input), snapshot->length,
         PrefixPayload{snapshot, replay});
   }
 };

@@ -223,6 +223,7 @@ struct GenerationRequest {
   std::size_t last_idle = 0;
   std::size_t sampling_index;
   std::size_t max_draft_tokens = SIZE_MAX;
+  std::uint64_t cache_sharing_domain = 0;
   LogitsInputs logits; // One [1,V] snapshot for every conditional row in an output episode.
   inference::LogitsInputProvider logits_provider;
   Clock::time_point admission_start{};
@@ -756,7 +757,7 @@ void restore_generation_session(Model &model, GenerationRequest &request,
     if (ledger.sampling == &prepared_sampling &&
         checkpoint_covers_generation_ledger(request.completed_checkpoint, ledger)) {
       const auto length = request.completed_checkpoint.input->ids.size();
-      auto hit = prefix->lookup(*request.completed_checkpoint.input, length, length, &model, model.math_identity());
+      auto hit = prefix->lookup(*request.completed_checkpoint.input, length, length, &model, model.math_identity(), request.cache_sharing_domain);
       if (hit) {
         // A peer may have published the same consumed key with another pending
         // or RNG cursor. Restore only those historical scalar facts; the fork
@@ -1030,7 +1031,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
         if (!request.input) throw std::runtime_error("prefix admission requires its complete token plan");
         // No eviction/publication or directory mutation occurs between this
         // pure length preview and the original pinned lookup below.
-        consumed = prefix->match_length(*request.input, request.prompt.size(), 1, &model, model.math_identity());
+        consumed = prefix->match_length(*request.input, request.prompt.size(), 1, &model, model.math_identity(), request.cache_sharing_domain);
       }
       emits = prefill.next(request.prompt.size(), consumed).complete;
     }
@@ -1080,7 +1081,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
         : std::exchange(request.admission_start, Clock::time_point{});
     call.initial_prefix = prefix && request.progress.turn_index == 0;
     if (call.initial_prefix && !request.session) {
-      auto hit = prefix->lookup(*request.input, request.prompt.size(), 1, &model, model.math_identity());
+      auto hit = prefix->lookup(*request.input, request.prompt.size(), 1, &model, model.math_identity(), request.cache_sharing_domain);
       if (hit) {
         if (hit.payload.snapshot->draft.has_value() != model.cache_plan.draft_cache)
           throw std::runtime_error("prefix directory contains a different target/draft state contract");
@@ -2172,7 +2173,7 @@ void publish_generation_prompt(Model &model, PreparedGenerationCall &call, cache
     throw std::runtime_error("committed prefill chunks do not cover the complete prompt");
   if (request.session->head->draft && request.session->head->draft->lag)
     throw std::runtime_error("only a complete lag0 MTP prompt may enter the directory");
-  prefix->publish(request.input, request.session->checkpoint(), {request.history, request.history->chunks.size(), request.prompt.size()});
+  prefix->publish(request.input, request.session->checkpoint(), {request.history, request.history->chunks.size(), request.prompt.size()}, request.cache_sharing_domain);
   (void)model;
 }
 
@@ -2188,7 +2189,7 @@ void publish_generation_completed(Model &model, GenerationRequest &request, cach
     chunks.push_back({record.committed_ids(), record.after.next_id, record.completion == TextCompletion::kStateOnly});
   }
   request.completed_checkpoint = cache::consumed_checkpoint(chunks, *request.session->head, model.capacity);
-  prefix->publish(request.completed_checkpoint.input, request.session->checkpoint(), request.completed_checkpoint.replay);
+  prefix->publish(request.completed_checkpoint.input, request.session->checkpoint(), request.completed_checkpoint.replay, request.cache_sharing_domain);
 }
 
 void advance_generation_request(Model &model, GenerationRequest &request,
@@ -2704,6 +2705,7 @@ bool admit_waiting_generation(Model &model, inference::RequestLoop &loop,
     GenerationRequest fresh(schedule.id, visible_turns.front().prompt, {}, bound,
                             next->sampling_index, std::move(next->stop));
     fresh.max_draft_tokens = schedule.max_draft_tokens.value_or(mtp ? model.max_drafts() : 0);
+    fresh.cache_sharing_domain = schedule.cache_sharing_domain;
     if (schedule.accepts_live_input()) {
       fresh.live_turns.reserve(bound);
       fresh.live_turns.push_back(visible_turns.front());
@@ -2880,6 +2882,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     if (schedule.max_draft_tokens && *schedule.max_draft_tokens > (mtp ? model.max_drafts() : 0))
       throw std::invalid_argument("requested draft ceiling exceeds the cold-prepared execution plan");
     request.max_draft_tokens = schedule.max_draft_tokens.value_or(mtp ? model.max_drafts() : 0);
+    request.cache_sharing_domain = schedule.cache_sharing_domain;
     if (schedule.accepts_live_input()) {
       request.live_turns.reserve(configured_bound);
       request.live_turns.push_back(visible_turns.front());

@@ -32,6 +32,9 @@ struct GenerationSessionSchedule final {
   // Providers must validate it against their cold-prepared execution plan.
   // Zero disables proposals; it does not necessarily select a non-MTP model.
   std::optional<std::size_t> max_draft_tokens;
+  // A trusted application assigns this sharing domain before admission.
+  // Equal domains may share prefix state; zero is the original local domain.
+  std::uint64_t cache_sharing_domain = 0;
   bool reports_turn_ends() const noexcept { return mode != GenerationSessionMode::kFlat; }
   bool accepts_live_input() const noexcept { return mode == GenerationSessionMode::kLive; }
 };

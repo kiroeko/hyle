@@ -1075,6 +1075,31 @@ void typed_directory_presence_is_independent_of_payload_value() {
       "successful typed payload publication must move the original source only at commit");
 }
 
+void sharing_domains_are_isolated_and_preserve_pins() {
+  int model = 0, math = 0;
+  p::PrefixCache cache(2);
+  const auto input = tokens({1, 2, 3, 4});
+  const auto a = snapshot(4, &model, &math), b = snapshot(4, &model, &math);
+  const auto first = history(input, a), second = history(input, b);
+  require(cache.publish(input, a, first, 11), "publish first sharing domain");
+  require(cache.match_length(*input, 4, 1, &model, &math, 12) == 0 &&
+      !cache.lookup(*input, 4, 1, &model, &math, 12) &&
+      !cache.lookup(*input, 4, 1, &model, &math),
+      "identical token prefixes crossed distinct sharing domains");
+  require(cache.publish(input, b, second, 12), "publish second sharing domain");
+  auto a_hit = cache.lookup(*input, 4, 1, &model, &math, 11);
+  auto b_hit = cache.lookup(*input, 4, 1, &model, &math, 12);
+  require(a_hit && b_hit && a_hit.payload.snapshot == a && b_hit.payload.snapshot == b &&
+      cache.match_length(*input, 4, 1, &model, &math, 11) == 4,
+      "each sharing domain must retrieve its own original snapshot");
+  require(!cache.publish(input, a, first, 13), "pinned sharing domains must not be displaced");
+  a_hit.reset();
+  require(cache.publish(input, a, first, 13) && !cache.lookup(*input, 4, 1, &model, &math, 11) &&
+      cache.lookup(*input, 4, 1, &model, &math, 13).payload.snapshot == a &&
+      b_hit.payload.snapshot == b,
+      "domain eviction must preserve pinned peers and install the exact new domain");
+}
+
 void allocation_free_commit() {
   int model = 0, math = 0, other_model = 0;
   p::PrefixCache cache(2);
@@ -1133,6 +1158,7 @@ int main() {
     completed_checkpoint_validation(); std::puts("PASS rejected unconsumed pending, missing inputs and invalid completed checkpoints");
     bounded_tree_reuse(); std::puts("PASS split/prune/internal-boundary churn against linear oracle");
     typed_directory_presence_is_independent_of_payload_value(); std::puts("PASS typed payload node presence, move pins and reset");
+    sharing_domains_are_isolated_and_preserve_pins(); std::puts("PASS sharing-domain isolation, pinned peers and bounded eviction");
     allocation_free_commit(); std::puts("PASS allocation-free commit and bounded structural scratch");
     return 0;
   } catch (const std::exception &error) { std::fprintf(stderr, "%s\n", error.what()); return 1; }
@@ -1161,5 +1187,6 @@ TEST(QwenPrefixCache, CompletedConsumedCheckpoints) { completed_consumed_checkpo
 TEST(QwenPrefixCache, CompletedCheckpointValidation) { completed_checkpoint_validation(); }
 TEST(QwenPrefixCache, BoundedTreeReuse) { bounded_tree_reuse(); }
 TEST(InferencePrefixDirectory, NodePresenceAndTypedPayloadPins) { typed_directory_presence_is_independent_of_payload_value(); }
+TEST(QwenPrefixCache, SharingDomainsRemainIsolated) { sharing_domains_are_isolated_and_preserve_pins(); }
 TEST(QwenPrefixCache, AllocationFreeCommit) { allocation_free_commit(); }
 #endif

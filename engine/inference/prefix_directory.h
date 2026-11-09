@@ -10,6 +10,9 @@ namespace hyle::inference {
 struct CacheDomain final {
   const void *model = nullptr;
   const void *math = nullptr;
+  // Assigned by the trusted owner, not by an unverified client. Entries are
+  // shared only within the same model, math and caller sharing domain.
+  std::uint64_t sharing = 0;
 };
 
 // Single-owner, finite token radix/LRU directory. Payload completeness belongs
@@ -32,7 +35,7 @@ class PrefixDirectory final {
     std::size_t first = 0, count = 0, depth = 0;
     std::size_t parent = none, child = none, previous = none, next = none, entry = none;
   };
-  struct Domain final { const void *model; const void *math; std::size_t root; };
+  struct Domain final { const void *model; const void *math; std::uint64_t sharing; std::size_t root; };
   struct Entry final {
     Payload payload;
     std::size_t node = none, pins = 0, previous = none, next = none;
@@ -44,14 +47,16 @@ class PrefixDirectory final {
   std::vector<Domain> domains_;
   static bool domain_less(const Domain &a, const Domain &b) noexcept {
     const std::less<const void *> less;
-    return less(a.model, b.model) || (a.model == b.model && less(a.math, b.math));
+    return less(a.model, b.model) || (a.model == b.model &&
+        (less(a.math, b.math) || (a.math == b.math && a.sharing < b.sharing)));
   }
-  std::size_t domain_position(const void *model, const void *math) const noexcept {
+  std::size_t domain_position(CacheDomain identity) const noexcept {
     return static_cast<std::size_t>(std::lower_bound(domains_.begin(), domains_.end(),
-        Domain{model, math, none}, domain_less) - domains_.begin());
+        Domain{identity.model, identity.math, identity.sharing, none}, domain_less) - domains_.begin());
   }
-  bool same_domain(std::size_t position, const void *model, const void *math) const noexcept {
-    return position != domains_.size() && domains_[position].model == model && domains_[position].math == math;
+  bool same_domain(std::size_t position, CacheDomain identity) const noexcept {
+    return position != domains_.size() && domains_[position].model == identity.model &&
+        domains_[position].math == identity.math && domains_[position].sharing == identity.sharing;
   }
   std::int32_t first_token(std::size_t node) const noexcept {
     return nodes_[node].input->ids[nodes_[node].first];
@@ -241,9 +246,8 @@ public:
   }
 private:
   std::size_t find_match(CacheDomain identity, const TokenPlan &input, std::size_t target, std::size_t minimum) const {
-    const auto model = identity.model, math = identity.math;
-    const auto domain = domain_position(model, math);
-    if (!same_domain(domain, model, math)) return none;
+    const auto domain = domain_position(identity);
+    if (!same_domain(domain, identity)) return none;
     const auto limit = (std::min)(target, input.ids.size());
     auto current = domains_[domain].root; std::size_t position = 0, best = none;
     while (position < limit) {
@@ -262,8 +266,8 @@ private:
   bool publish_impl(CacheDomain identity, TokenPlanRef input, std::size_t complete_length, Source &&payload) {
     if (!input || !complete_length || complete_length > input->ids.size())
       throw std::runtime_error("only a nonempty complete input boundary may enter the directory");
-    const auto position = domain_position(identity.model, identity.math);
-    const auto found = same_domain(position, identity.model, identity.math);
+    const auto position = domain_position(identity);
+    const auto found = same_domain(position, identity);
     const auto old_node = found ? path_node(*input, complete_length, domains_[position].root) : none;
     if (old_node != none && nodes_[old_node].entry != none) {
       const auto slot = nodes_[old_node].entry; auto &entry = entries_[slot];
@@ -277,7 +281,7 @@ private:
     auto root = found ? domains_[position].root : allocate_node();
     if (!found) {
       domains_.insert(domains_.begin() + static_cast<std::ptrdiff_t>(position),
-          Domain{identity.model, identity.math, root});
+          Domain{identity.model, identity.math, identity.sharing, root});
     }
     const auto node = insert_path(input, complete_length, root);
     assert(!free_entries_.empty()); const auto slot = free_entries_.back(); free_entries_.pop_back();

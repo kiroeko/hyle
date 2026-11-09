@@ -489,6 +489,51 @@ int mixed_depth_quality(const std::filesystem::path &input, const std::filesyste
       false, plans, {}, {}, prefill);
 }
 
+int prefix_domain_report(const std::filesystem::path &input) {
+  constexpr std::size_t capacity = 256;
+  auto source = q::prepare_weight_source(input / "weights.tsv", false);
+  const auto geometry = source.roles.geometry;
+  const auto prompt = q::read_ids(input / "prompt.ids", geometry.vocabulary, capacity);
+  const auto precision = q::PrecisionProfile::from_roles(source.roles);
+  const auto plan = q::cache::plan(geometry, source.cache_row_bytes, capacity, 1, prompt.size(),
+      q::recurrent_bytes(q::state_schema_for(geometry, capacity, precision), geometry),
+      1, 1, false, false, 1, 0, precision);
+  q::Model model(std::move(source), geometry, capacity, plan, {}, false, q::ReplayPolicy::kCommands,
+      SIZE_MAX, q::Model::Sampling{}, 0, {.primary = i::BackendKind::kCuda});
+  const std::array chunks{prompt.size()};
+  require(model.prepare_family(chunks), "failed to prepare actual prefix family");
+  model.plan_execution(chunks);
+  model.prepare_execution(chunks);
+  auto session = model.create_session(chunks);
+  model.prepare_evaluation(*session, prompt);
+  model.submit_evaluation(*session);
+  const std::array outputs{q::EvaluationOutput{.session = session}};
+  std::int32_t next = -1;
+  model.finish_evaluations(outputs, std::span(&next, 1), [](std::size_t, const q::CompletedEvaluationView &) {});
+  require(session->length() == prompt.size() && session->head->next_id == next && next >= 0,
+      "actual prefill did not publish a complete prefix");
+  const auto tokens = i::token_plan(prompt, capacity);
+  {
+    const auto snapshot = session->checkpoint();
+    auto history = std::make_shared<q::cache::ReplayHistory>(capacity);
+    history->append(tokens, 0, prompt.size(), next);
+    q::cache::PrefixCache prefix(2);
+    require(prefix.publish(tokens, snapshot, {history, 1, prompt.size()}, 11), "actual prefix publication failed");
+    require(!prefix.lookup(*tokens, prompt.size(), 1, &model, model.math_identity(), 12) &&
+        !prefix.match_length(*tokens, prompt.size(), 1, &model, model.math_identity(), 12),
+        "actual complete state crossed sharing domains");
+    auto hit = prefix.lookup(*tokens, prompt.size(), 1, &model, model.math_identity(), 11);
+    require(hit && hit.payload.snapshot == snapshot && hit.complete_length() == prompt.size(),
+        "actual complete state was not reused in its own sharing domain");
+  }
+  q::check(session->stop());
+  const auto retired = session->drain();
+  q::check(retired.status);
+  require(retired.retired, "actual prefix session did not retire");
+  std::cout << "PASS actual prefix sharing domain\n";
+  return 0;
+}
+
 int dispatcher_output(const std::filesystem::path &input, std::string_view mode) {
   const bool mtp = mode == "k1" || mode == "k3";
   const bool random = mode == "random";
@@ -1431,6 +1476,8 @@ int run(const std::filesystem::path &input, bool boundaries = false, bool warm_c
 
 int main(int argc, char **argv) {
   try {
+    if (argc == 3 && std::string_view(argv[1]) == "--prefix-domain-report")
+      return prefix_domain_report(argv[2]);
     if (argc == 6 && std::string_view(argv[1]) == "--mixed-depth-quality")
       return mixed_depth_quality(argv[2], argv[3], argv[4], argv[5]);
     if (argc == 3 && std::string_view(argv[1]) == "--request-sampling-seed")
