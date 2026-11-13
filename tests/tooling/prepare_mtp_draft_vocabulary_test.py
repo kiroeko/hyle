@@ -82,7 +82,9 @@ class DefaultPreparation(unittest.TestCase):
         spec = importlib.util.spec_from_file_location('qwen_prepare_test', ROOT/'engine/models/qwen35/prepare.py')
         prepare = importlib.util.module_from_spec(spec); spec.loader.exec_module(prepare)
         (ROOT/'.scratch').mkdir(exist_ok=True)
-        work = Path(tempfile.mkdtemp(prefix='tokenizer-default-', dir=ROOT/'.scratch'))
+        fixture = tempfile.TemporaryDirectory(prefix='tokenizer-default-', dir=ROOT/'.scratch')
+        self.addCleanup(fixture.cleanup)
+        work = Path(fixture.name)
         model = work/'model'; model.mkdir(); (model/'config.json').write_text('{}')
         tokenizer_dir=work/'separate-tokenizer';tokenizer_dir.mkdir()
         class Tokenizer(PreparationTokenizer):
@@ -135,7 +137,9 @@ class DefaultPreparation(unittest.TestCase):
 class RecordedCalibration(unittest.TestCase):
     def setUp(self):
         (ROOT/'.scratch').mkdir(exist_ok=True)
-        self.work = Path(tempfile.mkdtemp(prefix='recorded-vocabulary-', dir=ROOT / '.scratch'))
+        fixture = tempfile.TemporaryDirectory(prefix='recorded-vocabulary-', dir=ROOT / '.scratch')
+        self.addCleanup(fixture.cleanup)
+        self.work = Path(fixture.name)
         self.identity = 'a' * 64
         self.inputs = self.work / 'inputs'; self.inputs.mkdir()
         (self.inputs / 'weights.tsv').write_text('HYLE_QWEN_ROLE_FILES_V2\n' + self.identity + '\ngeometry 256 512 8\n')
