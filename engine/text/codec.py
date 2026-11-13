@@ -15,7 +15,7 @@ class DecodeSession(Protocol):
 class TextCodec(Protocol):
     @property
     def stop_ids(self) -> frozenset[int]: ...
-    def encode_messages(self, messages: Sequence[dict[str, Any]]) -> list[int]: ...
+    def encode_messages(self, messages: Sequence[dict[str, Any]], *, continue_final_message: bool = False) -> list[int]: ...
     def new_decoder(self) -> DecodeSession: ...
 
 
@@ -94,12 +94,13 @@ class HuggingFaceTextCodec:
                                   for index in self._tokenizer.get_vocab().values()) or any(index >= vocabulary for index in self.stop_ids):
             raise ValueError('tokenizer or end-token IDs exceed the loaded model vocabulary')
 
-    def encode_messages(self, messages: Sequence[dict[str, Any]]) -> list[int]:
+    def encode_messages(self, messages: Sequence[dict[str, Any]], *, continue_final_message: bool = False) -> list[int]:
         if not messages:
             raise ValueError("at least one message is required")
         encoded = self._tokenizer.apply_chat_template(
             list(messages), chat_template=self._template, tokenize=True,
-            add_generation_prompt=True, return_dict=True)
+            add_generation_prompt=not continue_final_message, continue_final_message=continue_final_message,
+            return_dict=True)
         ids = encoded["input_ids"]
         if not isinstance(ids, list) or not ids or any(type(value) is not int for value in ids):
             raise ValueError("template did not produce one token sequence")

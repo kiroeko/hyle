@@ -114,6 +114,11 @@ class HttpExchange:
         self._handler.wfile.write(b'event: ' + kind.encode('ascii') + b'\ndata: ' + data + b'\n\n')
         self._handler.wfile.flush()
 
+    def send_data(self, event: Mapping[str, Any] | str) -> None:
+        data = event if isinstance(event, str) else json.dumps(event, ensure_ascii=False, separators=(',', ':'))
+        self._handler.wfile.write(b'data: ' + data.encode('utf-8') + b'\n\n')
+        self._handler.wfile.flush()
+
     def next_event(self, request: TokenRequest) -> TokenEvent:
         while True:
             if self._handler.server.closing.is_set():  # type: ignore[attr-defined]

@@ -10,7 +10,7 @@ import threading
 import time
 import urllib.request
 
-from engine.text.app import ResponsesServer, make_worker_command, parse_arguments, prepare_choices
+from engine.text.app import TextApiServer, make_worker_command, parse_arguments, prepare_choices
 from engine.text.codec import HuggingFaceTextCodec
 from engine.text.configuration import read_configuration
 from engine.text.runtime import TextEngine
@@ -44,7 +44,7 @@ def main():
     try:
         codec.validate_vocabulary(worker.vocabulary)
         engine = TextEngine(worker, codec, 'hyle', choices=choices, session_policy=choices.sessions)
-        server = ResponsesServer(('127.0.0.1', args.port), engine, True)
+        server = TextApiServer(('127.0.0.1', args.port), engine, True)
         thread = threading.Thread(target=server.serve_forever, kwargs={'poll_interval': .05})
         thread.start()
         import openai

@@ -10,6 +10,8 @@ from pathlib import Path
 
 from .codec import HuggingFaceTextCodec
 from .responses import ResponsesAdapter
+from .chat_completions import ChatCompletionsAdapter
+from .anthropic import AnthropicMessagesAdapter
 from .runtime import GenerationProgress, TextEngine
 from .server import TextHttpServer
 from .worker_client import WorkerClient
@@ -17,11 +19,12 @@ from .configuration import PreparedChoices, Selection, read_configuration
 from ..model_preparation import prepare_local_assets, validate_local_tokenizer
 
 
-class ResponsesServer(TextHttpServer):
-    """Current application composition; future protocols supply other routes."""
+class TextApiServer(TextHttpServer):
+    """Cold composition of the three supported text protocol adapters."""
     def __init__(self, address, engine: TextEngine, metrics_enabled: bool):
         adapter = ResponsesAdapter()
-        super().__init__(address, engine, metrics_enabled, {'/v1/responses': adapter, '/v1/responses/*': adapter})
+        super().__init__(address, engine, metrics_enabled, {'/v1/responses': adapter, '/v1/responses/*': adapter,
+            '/v1/chat/completions': ChatCompletionsAdapter(), '/v1/messages': AnthropicMessagesAdapter()})
 
 
 def make_worker_command(args, choices: PreparedChoices | None = None) -> list[str]:
@@ -62,7 +65,7 @@ def prepare_choices(args, codec, choices: PreparedChoices) -> PreparedChoices:
 
 
 def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description='Hyle local text CLI and Responses service')
+    parser = argparse.ArgumentParser(description='Hyle local text CLI and Responses, Chat Completions and Messages service')
     sub = parser.add_subparsers(dest='command', required=True)
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument('--engine', type=Path, required=True, help='built Hyle executable')
@@ -85,7 +88,7 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     common.add_argument('--top-k', type=int)
     common.add_argument('--top-p', type=float)
     common.add_argument('--seed', type=int)
-    serve = sub.add_parser('serve', parents=[common], help='serve the supported Responses subset')
+    serve = sub.add_parser('serve', parents=[common], help='serve the supported text API protocols')
     serve.add_argument('--host', default='127.0.0.1')
     serve.add_argument('--port', type=int, default=2048)
     serve.add_argument('--metrics', action=argparse.BooleanOptionalAction, default=True)
@@ -130,9 +133,9 @@ def main(argv: list[str] | None = None) -> int:
         engine = TextEngine(worker, codec, args.model_name, choices=choices,
                             session_policy=choices.sessions if args.command == 'serve' else None)
         if args.command == 'serve':
-            server = ResponsesServer((args.host, args.port), engine, args.metrics)
+            server = TextApiServer((args.host, args.port), engine, args.metrics)
             try:
-                print(f'Hyle Responses listening on {args.host}:{args.port}', file=sys.stderr, flush=True)
+                print(f'Hyle text APIs listening on {args.host}:{args.port}', file=sys.stderr, flush=True)
                 server.serve_forever()
             except KeyboardInterrupt:
                 pass

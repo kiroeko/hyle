@@ -3,7 +3,7 @@ import importlib.util
 import threading
 import unittest
 
-from engine.text.app import ResponsesServer
+from engine.text.app import TextApiServer
 from engine.text.runtime import TextEngine
 from engine.text.worker_client import TokenEvent
 from tests.tooling.text_frontend_test import FakeCodec, FakeWorker
@@ -18,7 +18,7 @@ class ResponsesSdkTest(unittest.TestCase):
         import httpx
         from openai import OpenAI
         self.worker = FakeWorker()
-        self.server = ResponsesServer(('127.0.0.1', 0), TextEngine(self.worker, FakeCodec(), 'hyle'), True)
+        self.server = TextApiServer(('127.0.0.1', 0), TextEngine(self.worker, FakeCodec(), 'hyle'), True)
         self.thread = threading.Thread(target=self.server.serve_forever)
         self.thread.start()
         self.client = OpenAI(base_url=f'http://127.0.0.1:{self.server.server_port}/v1', api_key='local-test',

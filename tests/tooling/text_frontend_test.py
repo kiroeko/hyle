@@ -11,7 +11,7 @@ import urllib.error
 import urllib.request
 from argparse import Namespace
 
-from engine.text.app import ResponsesServer, make_worker_command, parse_arguments
+from engine.text.app import TextApiServer, make_worker_command, parse_arguments
 from engine.text.contracts import WorkerError
 from engine.text.responses import InvalidRequest, ResponsesAdapter, parse_responses_input
 from engine.text.runtime import GenerationProgress, TextEngine
@@ -88,7 +88,7 @@ class TextFrontendTest(unittest.TestCase):
             def submit(self, tokens, max_output_tokens, *, stop_ids=()):
                 return request
 
-        server = ResponsesServer(('127.0.0.1', 0), TextEngine(GatedWorker(), FakeCodec(), 'hyle'), True)
+        server = TextApiServer(('127.0.0.1', 0), TextEngine(GatedWorker(), FakeCodec(), 'hyle'), True)
         thread = threading.Thread(target=server.serve_forever)
         thread.start()
         connection = socket.create_connection(('127.0.0.1', server.server_port), timeout=3)
@@ -134,7 +134,7 @@ class TextFrontendTest(unittest.TestCase):
             def submit(self, tokens, max_output_tokens, *, stop_ids=()):
                 return request
 
-        server = ResponsesServer(('127.0.0.1', 0), TextEngine(BusyWorker(), FakeCodec(), 'hyle'), True)
+        server = TextApiServer(('127.0.0.1', 0), TextEngine(BusyWorker(), FakeCodec(), 'hyle'), True)
         thread = threading.Thread(target=server.serve_forever)
         thread.start()
         connection = socket.create_connection(('127.0.0.1', server.server_port), timeout=3)
@@ -204,7 +204,7 @@ class TextFrontendTest(unittest.TestCase):
             def submit(self, tokens, max_output_tokens, *, stop_ids=()):
                 return request
 
-        server = ResponsesServer(('127.0.0.1', 0), TextEngine(StalledWorker(), FakeCodec(), 'hyle'), True)
+        server = TextApiServer(('127.0.0.1', 0), TextEngine(StalledWorker(), FakeCodec(), 'hyle'), True)
         thread = threading.Thread(target=server.serve_forever)
         thread.start()
         connection = socket.create_connection(('127.0.0.1', server.server_port), timeout=3)
@@ -349,7 +349,7 @@ class TextFrontendTest(unittest.TestCase):
 
         worker = RejectingWorker()
         engine = TextEngine(worker, FakeCodec(), 'hyle')
-        server = ResponsesServer(('127.0.0.1', 0), engine, True)
+        server = TextApiServer(('127.0.0.1', 0), engine, True)
         thread = threading.Thread(target=server.serve_forever)
         thread.start()
         try:
@@ -381,7 +381,7 @@ class TextFrontendTest(unittest.TestCase):
                 request.events = iter([TokenEvent("error", message="invalid: same wording", error_kind=self.error_kind)])
                 return request
         worker = ErrorWorker()
-        server = ResponsesServer(("127.0.0.1", 0), TextEngine(worker, FakeCodec(), "hyle"), True)
+        server = TextApiServer(("127.0.0.1", 0), TextEngine(worker, FakeCodec(), "hyle"), True)
         thread = threading.Thread(target=server.serve_forever)
         thread.start()
         try:
@@ -432,7 +432,7 @@ class TextFrontendTest(unittest.TestCase):
                 return request
         codec = FakeCodec()
         codec.stop_ids = frozenset({3, ord("a")})
-        server = ResponsesServer(("127.0.0.1", 0), TextEngine(StopWorker(), codec, "hyle"), True)
+        server = TextApiServer(("127.0.0.1", 0), TextEngine(StopWorker(), codec, "hyle"), True)
         thread = threading.Thread(target=server.serve_forever)
         thread.start()
         try:
@@ -458,7 +458,7 @@ class TextFrontendTest(unittest.TestCase):
 
     def test_http_response_and_stream_finish_and_acknowledge(self):
         worker = FakeWorker()
-        server = ResponsesServer(("127.0.0.1", 0), TextEngine(worker, FakeCodec(), "hyle"), True)
+        server = TextApiServer(("127.0.0.1", 0), TextEngine(worker, FakeCodec(), "hyle"), True)
         thread = threading.Thread(target=server.serve_forever)
         thread.start()
         try:

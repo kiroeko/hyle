@@ -3,7 +3,7 @@ import argparse
 import socket
 import threading
 
-from engine.text.app import ResponsesServer
+from engine.text.app import TextApiServer
 from engine.text.runtime import TextEngine
 from engine.text.worker_client import WorkerClient
 from tests.tooling.text_worker_error_integration_test import FixtureCodec
@@ -20,7 +20,7 @@ def main():
                            '--capacity', '2048', '--max-sessions', '1', '--active-sequences', '1', '--draft-count', '0'])
     server = thread = connection = None
     try:
-        server = ResponsesServer(('127.0.0.1', args.port), TextEngine(worker, FixtureCodec(worker.vocabulary), 'hyle'),
+        server = TextApiServer(('127.0.0.1', args.port), TextEngine(worker, FixtureCodec(worker.vocabulary), 'hyle'),
                                  args.metrics)
         thread = threading.Thread(target=server.serve_forever)
         thread.start()

@@ -53,7 +53,7 @@ class PreparedChoices:
     sessions: SessionPolicy = SessionPolicy()
     prefix_entries: int = 0
 
-    def select(self, values=None, *, temperature=None, top_p=None) -> Selection:
+    def select(self, values=None, *, temperature=None, top_p=None, top_k=None) -> Selection:
         values = {} if values is None else values
         if not isinstance(values, dict) or set(values) - {'execution_profile', 'sampling_profile', 'seed', 'max_draft_tokens'}:
             raise ValueError('unsupported hyle request selection')
@@ -67,15 +67,18 @@ class PreparedChoices:
             raise ValueError(key + ' was not cold prepared: ' + name)
         execution = named('execution_profile', self.executions)
         sampling = named('sampling_profile', self.samplers)
-        if temperature is not None or top_p is not None:
+        if temperature is not None or top_p is not None or top_k is not None:
             for value, label in ((temperature, 'temperature'), (top_p, 'top_p')):
                 if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value)):
                     raise ValueError(label + ' must be finite')
             if temperature is not None and temperature < 0 or top_p is not None and not 0 < top_p <= 1:
                 raise ValueError('sampling parameters exceed their supported range')
+            if top_k is not None and (type(top_k) is not int or top_k < 0):
+                raise ValueError('top_k must be a nonnegative integer')
             matches = [index for index, choice in enumerate(self.samplers)
                        if (temperature is None or (choice.temperature if choice.random else 0.) == temperature)
-                       and (top_p is None or choice.top_p == top_p)]
+                       and (top_p is None or choice.top_p == top_p)
+                       and (top_k is None or choice.top_k == top_k)]
             if 'sampling_profile' in values:
                 if sampling not in matches:
                     raise ValueError('sampling parameters differ from the selected prepared sampler')

@@ -1,4 +1,4 @@
-# 文本 CLI 与 Responses 接口
+# 文本 CLI 与 HTTP 接口
 
 文本前端使用本地 Hugging Face tokenizer 和 Jinja 模板，将 token 请求交给一个常驻模型进程。源模型准备时生成 `tokenizer-binding.tsv`，绑定权重来源、词表容量与原 tokenizer 的实际分词语义。文本入口在启动模型进程前核验，ID 范围相同但映射、分词规则或特殊 token 不同也会拒绝。没有绑定的旧目录须用原模型目录重新准备；加载入口不自动认领当次传入的 tokenizer。模型和 tokenizer 声明的结束 ID 共同作为停止条件。前端不下载模型。Python 环境需要 `transformers`、`tokenizers` 和 `jinja2`；TOML 配置使用 `tomllib`，旧 Python 可安装 `tomli`。
 
@@ -67,7 +67,50 @@ HTTP 用扩展对象 `hyle` 选择已准备程序。该对象只接受 `executio
  "hyle":{"execution_profile":"plain","sampling_profile":"chat","seed":7}}
 ```
 
-OpenAI Python SDK 可通过 `extra_body={"hyle": {...}}` 传入。标准 `temperature`／`top_p` 只能匹配已声明的采样程序，不会在请求中编译新程序。草稿上限只能收紧准备深度；上限零不把 MTP 方案变成普通方案。CLI 对应选项为 `--execution-profile NAME --sampling-profile NAME --request-seed N`。
+三种协议的 Python SDK 均可通过 `extra_body={"hyle": {...}}` 传入。标准 `temperature`／`top_p`，以及 Messages 的 `top_k`，只能匹配已声明的采样程序，不会在请求中编译新程序。草稿上限只能收紧准备深度；上限零不把 MTP 方案变成普通方案。CLI 对应选项为 `--execution-profile NAME --sampling-profile NAME --request-seed N`。
+
+## Chat Completions 与 Messages
+
+同一个 `serve` 命令同时提供下列路由。它们接入相同的文本准备、请求接纳、采样选择、KV 预算和退休机制；协议适配器不创建独立模型进程或调度器。
+
+| 协议 | 路由与文本范围 | 流式结束 |
+|---|---|---|
+| [OpenAI Chat Completions](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create) | `POST /v1/chat/completions`；developer／system／user／assistant 文本消息，字符串或 `type: text` 块；`n=1` | data-only SSE，`chat.completion.chunk`，最后 `data: [DONE]` |
+| [Anthropic Messages](https://platform.claude.com/docs/en/api/messages/create) | `POST /v1/messages`；user／assistant 文本消息、顶层 `system`，字符串或 `type: text` 块；必填 `max_tokens` | `message_start`、内容块事件、`message_delta`、`message_stop` |
+
+Chat 可用 `max_completion_tokens` 或 `max_tokens` 指定额度，不能同时提供两个非空值；省略时默认 256。
+`stream_options.include_usage: true` 在结束前增加一个 `choices: []` 的用量 chunk。
+`seed` 接受有符号 64 位整数并按位映射到引擎的 64 位 seed；它不能与 `hyle.seed` 冲突。
+Messages 以 assistant 消息结束时使用模板的 `continue_final_message`，续写该前缀；输出仅包含新生成的部分。
+模板无法渲染所给角色或前缀时返回 400。
+
+Chat 的 `stop` 支持字符串或最多四个字符串，Messages 使用 `stop_sequences` 数组。
+停止串即使跨解码块也不会出现在输出中；匹配后取消剩余工作并确认原生退休，再发送成功终止事件。
+自然停止对应 Chat 的 `finish_reason: stop`、Messages 的 `stop_reason: end_turn`；额度截断对应 `length`／`max_tokens`。
+Messages 的自定义停止返回 `stop_sequence` 及匹配的字符串。用量按实际消费的 token 计，包含 EOS 或形成停止串的 token，不是对显示文本重新分词。
+
+两种接口均为无状态完整历史请求。调用方每次提交 `messages`；不提供 Chat 存储／查询、跨协议响应 ID 或 Messages 线程接口。
+Chat `store: true` 会报错。需要保存及续接时使用 Responses。
+
+```python
+from openai import OpenAI
+import anthropic
+
+chat = OpenAI(base_url="http://127.0.0.1:2048/v1", api_key="local")
+result = chat.chat.completions.create(
+    model="hyle", messages=[{"role": "user", "content": "你好"}], max_completion_tokens=64)
+print(result.choices[0].message.content)
+
+messages = anthropic.Anthropic(base_url="http://127.0.0.1:2048", api_key="local")
+with messages.messages.stream(
+    model="hyle", messages=[{"role": "user", "content": "你好"}], max_tokens=64) as stream:
+    for text in stream.text_stream:
+        print(text, end="", flush=True)
+```
+
+SDK 是可选客户端依赖，服务端不依赖它们。上述 key 只满足客户端构造要求，本地服务没有认证。
+格式分别参照 [Chat SSE](https://developers.openai.com/api/reference/resources/chat/subresources/completions/streaming-events)
+和 [Messages SSE](https://platform.claude.com/docs/en/build-with-claude/streaming)。
 
 ## Responses 与进程内会话
 
@@ -95,8 +138,10 @@ OpenAI Python SDK 可通过 `extra_body={"hyle": {...}}` 传入。标准 `temper
 
 `prefix_cache.entries` 控制模型原状态预算内的完整前缀目录，不另造 KV 银行。前缀包含 KV、卷积、递归等模型完整续算状态，修改继续使用原 COW 与退休机制。默认 `shared: false`，服务为每条会话分配独立共享域；客户端不能提交共享域 ID。`shared: true` 只适合一个可信共享域，不提供租户认证。执行方案和采样数学仍分别限定复用。
 
-SSE 按[官方事件定义](https://developers.openai.com/api/reference/resources/responses/streaming-events)交付文本和终止事件。达到额度返回 `response.incomplete`；调用方应处理 `response.completed`、`response.incomplete` 和 `error`。旧版 SDK 的 `responses.stream(...).get_final_response()` 可能只接受 completed；可用 `responses.create(..., stream=True)` 处理截断。
+Responses SSE 按[官方事件定义](https://developers.openai.com/api/reference/resources/responses/streaming-events)交付文本和终止事件。达到额度返回 `response.incomplete`；调用方应处理 `response.completed`、`response.incomplete` 和 `error`。旧版 SDK 的 `responses.stream(...).get_final_response()` 可能只接受 completed；可用 `responses.create(..., stream=True)` 处理截断。
 
 无效选择在流开始前返回 400；模型／传输失败返回服务错误，流已开始则交付 `error`。断连或写入失败会取消未完成生成并等待原生终止。TCP 半关闭与优雅完全关闭不能仅靠读 EOF 区分，后者有时需等写入失败。服务关闭先唤醒接纳及连接处理线程，再退休保留会话并关闭模型进程。
 
-本机严格 SDK 检查覆盖三方案并发、可追加模板下的真实 KV 续接、默认模板重建、分叉、查询／删除、非法选择隔离、SSE 和断连后的继续服务。当前没有工具调用、图片、Chat／Anthropic 路由、多模型／多量化同时接纳或 KV 磁盘恢复。
+本机严格 SDK 检查覆盖三方案并发、可追加模板下的真实 KV 续接、默认模板重建、分叉、查询／删除、非法选择隔离、SSE 和断连后的继续服务。
+三种协议均只提供文本子集；工具调用、图片、结构化输出和专门的 thinking 协议字段尚未实现，遇到这些字段明确拒绝。
+当前也没有多模型／多量化同时接纳或 KV 磁盘恢复。

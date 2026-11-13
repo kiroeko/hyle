@@ -13,7 +13,7 @@ import threading
 import time
 import urllib.request
 
-from engine.text.app import ResponsesServer
+from engine.text.app import TextApiServer
 from engine.text.codec import HuggingFaceTextCodec
 from engine.text.runtime import TextEngine
 from engine.text.worker_client import WorkerClient
@@ -82,7 +82,7 @@ def main():
     try:
         codec = (HuggingFaceTextCodec(args.tokenizer_dir, expected_vocabulary=worker.vocabulary)
                  if args.tokenizer_dir else FixtureCodec(worker.vocabulary))
-        server = ResponsesServer(('127.0.0.1', args.port), TextEngine(worker, codec, 'hyle'), args.metrics)
+        server = TextApiServer(('127.0.0.1', args.port), TextEngine(worker, codec, 'hyle'), args.metrics)
         thread = threading.Thread(target=server.serve_forever)
         thread.start()
         first, second = connect(args.port), connect(args.port)

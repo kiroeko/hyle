@@ -7,7 +7,7 @@ import socket
 import threading
 import urllib.request
 
-from engine.text.app import ResponsesServer
+from engine.text.app import TextApiServer
 from engine.text.codec import HuggingFaceTextCodec
 from engine.text.runtime import TextEngine
 from engine.text.worker_client import WorkerClient
@@ -73,7 +73,7 @@ def main():
         decoded = ''.join(decoder.push(token) for token in ids) + decoder.finish()
         assert decoded == text, (decoded, text)
         for name, codec in (('default', default), ('explicit', explicit)):
-            server = ResponsesServer(('127.0.0.1', args.port), TextEngine(worker, codec, 'hyle'), args.metrics)
+            server = TextApiServer(('127.0.0.1', args.port), TextEngine(worker, codec, 'hyle'), args.metrics)
             thread = threading.Thread(target=server.serve_forever)
             thread.start()
             try:
