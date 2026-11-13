@@ -54,7 +54,9 @@ Qwen 的缓存和权重报告适配器放在其模型目录，公共报告层只
 
 工作进程使用 `engine/inference/model_provider.h` 的公共装载配置和提供者合同，`engine/model_catalog.h` 在程序装配时静态组合提供者。每个提供者只读检查自己的输入格式，匹配后由其完整验证和装载；无匹配或多个匹配会报错。当前只接入 Qwen 提供者；token CLI 与 worker 由同一公共应用装配。该机制没有动态插件或第二个模型执行器，也不证明其他模型已支持。Qwen 装载器在冷期复用已有 MTP、设备验证和接力策略。公共 MTP 选择器只处理 off／auto／on、提供者声明的可用来源和拒绝原因，不推导后端、采样或缓存资格。Qwen 的默认准入、词表探测与多会话偏好位于 `engine/models/qwen35/mtp_default_policy.h`；既有默认选择和回落保持不变，显式 MTP 仍由模型能力和资源验证。显式 K1／K3 已用本机 Q4 和真实 tokenizer 验证两个并发 Responses 流，断开其中一个后另一个及后续请求完成；日志观察到两请求共同进入验证批次。单卡双请求、每臂三进程的短提示筛查中，现有子集头在中英混合组有收益，在另一组多语言提示上 Q8／Q4 K1 和 BF16 K3 均慢于普通生成；同组 Q8／Q4 全头 K1 则快于普通生成。该结果不能推出所有模型或设备的默认策略。另用旧日程的 8 个短提示自然生成，比较真实双请求验证器：相对上游 BF16 同前缀，K1 首行的 Hyle／上游单请求 Q4 top1 一致数为 129／146、127／146，平均 KL 为 0.07024／0.06996。K3 的 220 个位置包含 94 个首行和 126 个后续行，Hyle／上游 Q4 top1 均为 197／220，平均 KL 为 0.06650／0.06600；只统计实际提出 3 个草稿且验证 4 行的成员，后续行还要求先前草稿实际被接受、其预测与已发布 token 一致。诊断使用 commands 重放；这些经过筛选的小样本不代表多会话 MTP 的完整性能或数值质量已经验收。
 
-文本层的 `engine/text/runtime.py` 负责消息编码、请求提交和有序文本交付；CLI 与 Responses 都使用这条路径。`contracts.py` 描述 token 传输合同，`worker_client.py` 连接内部工作进程；`server.py` 负责 HTTP 路由、连接和流式传输，`responses.py` 负责 Responses 字段与事件格式，`app.py` 在启动时组合入口和路由。输出消费者接收文本之后才归还 token 配额；传输失败由原请求的取消与退休路径处理。
+文本层的 `engine/text/runtime.py` 负责消息编码、请求提交和有序文本交付；CLI、Responses、Chat Completions 和 Anthropic Messages 都使用这条路径。`contracts.py` 描述 token 传输合同，`worker_client.py` 连接内部工作进程；`server.py` 负责 HTTP 路由、连接和流式传输，各协议适配器解释字段与事件，`app.py` 在启动时组合入口和路由。输出消费者接收文本之后才归还 token 配额；传输失败由原请求的取消与退休路径处理。
+
+文本层按实际准备结果选路。`ModelDescription` 报告各方案的身份、算法、草稿深度、输入种类与驻留兼容性；worker 在 READY 4 后发送完整 PROFILE 快照，再接受请求。字符串按 UTF-8／base64 编码，名称中的空格、制表符和换行不会改变帧边界。文本层核对方案身份，按声明的输入能力选择程序，并在编码前拒绝超过实际草稿上限的请求；不从模型私有的资产角色推断视觉支持。Windows 应用通过[进程 manifest](https://learn.microsoft.com/en-us/windows/apps/design/globalizing/use-utf8-code-page)声明 UTF-8，使 argv、文件路径和 IPC 使用相同编码，不修改系统区域设置；该声明要求 Windows 10 1903 或更新版本。
 
 ## 请求与生命周期
 

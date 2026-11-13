@@ -37,7 +37,12 @@ namespace hyle::inference {
 // comma_separated_ids appends one turn; Z id sequence closes its input. K acknowledges
 // output credit; C cancels; Q shuts down. S and O request ordered B id turn
 // events; both tokens and boundaries use credit. Later turn inputs may be empty.
-// Responses are READY 3 vocabulary context stop_ids source_identity, A id, T id token, B id turn,
+// Startup is READY 4 vocabulary context stop_ids source_identity profile_count,
+// then PROFILE index base64(name) base64(algorithm) max_drafts
+// comma_separated_base64(input_modalities) co_resident_indices_or_dash.
+// Metadata is a cold immutable
+// snapshot; readiness requires every declared profile. Remaining responses:
+// A id, T id token, B id turn,
 // F id completed|cancelled|closed,
 // E id kind message, C id accepted|stale and BYE. A request initially has one
 // output credit; K acknowledges delivered tokens and releases that credit.
@@ -58,6 +63,7 @@ public:
     for (const auto id : description_.stop_ids)
       if (id < 0 || static_cast<std::size_t>(id) >= description_.vocabulary)
         throw std::invalid_argument("worker model stop ID is outside its vocabulary");
+    validate_model_description(description_);
     if (std::ranges::any_of(description_.source_identity,
           [](unsigned char value) { return value <= 32 || value >= 127; }) ||
         description_.source_identity == "-")
@@ -68,13 +74,26 @@ public:
   ~TokenWorker() { close(); }
 
   int run() {
-    std::string ready = "READY\t3\t" + std::to_string(description_.vocabulary) + "\t" +
+    std::string ready = "READY\t4\t" + std::to_string(description_.vocabulary) + "\t" +
         std::to_string(description_.context) + "\t";
     if (description_.stop_ids.empty()) ready += "-";
     else for (std::size_t index = 0; index < description_.stop_ids.size(); ++index)
       ready += (index ? "," : "") + std::to_string(description_.stop_ids[index]);
     ready += "\t" + (description_.source_identity.empty() ? "-" : description_.source_identity);
+    ready += "\t" + std::to_string(description_.execution_profiles.size());
     if (!emit(ready)) return 1;
+    for (std::size_t i = 0; i < description_.execution_profiles.size(); ++i) {
+      const auto &profile = description_.execution_profiles[i];
+      auto frame = "PROFILE\t" + std::to_string(i) + "\t" + encode_text(profile.name) + "\t" +
+          encode_text(profile.algorithm) + "\t" + std::to_string(profile.max_draft_tokens) + "\t";
+      for (std::size_t j = 0; j < profile.input_modalities.size(); ++j)
+        frame += (j ? "," : "") + encode_text(profile.input_modalities[j]);
+      frame += '\t';
+      if (profile.co_resident_with.empty()) frame += '-';
+      else for (std::size_t j = 0; j < profile.co_resident_with.size(); ++j)
+        frame += (j ? "," : "") + std::to_string(profile.co_resident_with[j]);
+      if (!emit(frame)) return 1;
+    }
     std::string line;
     while (std::getline(input_, line)) {
       if (!line.empty() && line.back() == '\r') line.pop_back();
@@ -270,6 +289,22 @@ private:
     if (text.empty()) return false;
     const auto result = std::from_chars(text.data(), text.data() + text.size(), value);
     return result.ec == std::errc{} && result.ptr == text.data() + text.size();
+  }
+  static std::string encode_text(std::string_view input) {
+    constexpr std::string_view alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    std::string result;
+    result.reserve((input.size() + 2) / 3 * 4);
+    for (std::size_t at = 0; at < input.size(); at += 3) {
+      const auto count = (std::min)(std::size_t{3}, input.size() - at);
+      std::uint32_t word = 0;
+      for (std::size_t i = 0; i < count; ++i)
+        word |= static_cast<std::uint32_t>(static_cast<unsigned char>(input[at + i])) << (16 - 8 * i);
+      result.push_back(alphabet[(word >> 18) & 63]);
+      result.push_back(alphabet[(word >> 12) & 63]);
+      result.push_back(count > 1 ? alphabet[(word >> 6) & 63] : '=');
+      result.push_back(count > 2 ? alphabet[word & 63] : '=');
+    }
+    return result;
   }
   static std::vector<std::string_view> split(std::string_view text, char separator) {
     std::vector<std::string_view> fields;

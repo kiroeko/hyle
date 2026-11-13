@@ -129,11 +129,11 @@ def main(argv: list[str] | None = None) -> int:
     codec = HuggingFaceTextCodec(args.tokenizer_dir, template=args.template)
     expected_source = validate_local_tokenizer(args.inputs, codec.preparation_tokenizer)
     choices = prepare_choices(args, codec, choices)
-    if any(role=='vision.encoder' for profile in choices.executions for role,_ in profile.assets):
-        codec.image_processor=local_image_processor(args.inputs,args.tokenizer_dir,codec.preparation_tokenizer,context=args.capacity)
     worker = WorkerClient(make_worker_command(args, choices))
     engine = None
     try:
+        if any('image' in profile.input_modalities for profile in worker.execution_profiles):
+            codec.image_processor=local_image_processor(args.inputs,args.tokenizer_dir,codec.preparation_tokenizer,context=args.capacity)
         codec.validate_vocabulary(worker.vocabulary)
         if worker.source_identity != expected_source[0]:
             raise ValueError('loaded model source identity differs from the tokenizer binding')

@@ -323,6 +323,10 @@ if(TARGET hyle_error)
     LABELS "tooling;generation;failure;identity" TIMEOUT 30)
 
   add_executable(hyle_inference_request_loop_test tools/inference_request_loop_test.cc)
+  if(MSVC)
+    target_sources(hyle_inference_request_loop_test PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/../engine/windows-utf8.manifest")
+  endif()
   target_link_libraries(hyle_inference_request_loop_test PRIVATE hyle_build_contract hyle_error)
   target_compile_features(hyle_inference_request_loop_test PRIVATE cxx_std_23)
   hyle_apply_warnings(hyle_inference_request_loop_test)
@@ -333,6 +337,11 @@ if(TARGET hyle_error)
   add_test(NAME hyle_inference_request_loop_test COMMAND hyle_inference_request_loop_test)
   set_tests_properties(hyle_inference_request_loop_test PROPERTIES
     LABELS "tooling;generation;admission;retirement" TIMEOUT 30)
+  add_test(NAME hyle_engine_worker_contract_test
+    COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tooling/engine_worker_contract_test.py"
+      --engine "$<TARGET_FILE:hyle_inference_request_loop_test>")
+  set_tests_properties(hyle_engine_worker_contract_test PROPERTIES
+    LABELS "tooling;inference;host;transport" TIMEOUT 30)
 
   add_executable(hyle_inference_step_execution_test tools/inference_step_execution_test.cc)
   target_link_libraries(hyle_inference_step_execution_test PRIVATE hyle_build_contract hyle_error)

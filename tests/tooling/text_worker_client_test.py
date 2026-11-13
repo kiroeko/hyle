@@ -1,4 +1,5 @@
 import subprocess
+import base64
 import sys
 import unittest
 from unittest import mock
@@ -7,6 +8,43 @@ from engine.text.worker_client import WorkerClient, WorkerError
 
 
 class WorkerClientLifecycleTest(unittest.TestCase):
+    def test_prepared_metadata_reports_actual_profiles_and_escaped_names(self):
+        name = 'pictures\t图\nprofile'
+        encode = lambda value: base64.b64encode(value.encode('utf-8')).decode('ascii')
+        frames = ['READY\t4\t256\t128\t3\t' + 'a' * 64 + '\t2',
+            'PROFILE\t0\t' + encode('default') + '\t' + encode('ordinary') + '\t0\t' + encode('text') + '\t1',
+            'PROFILE\t1\t' + encode(name) + '\t' + encode('proposal') + '\t2\t' + encode('text') + ',' + encode('image') + '\t0']
+        code = '\n'.join(('import sys', *(f'print({frame!r}, flush=True)' for frame in frames),
+            "assert sys.stdin.readline().rstrip() == 'Q'", "print('BYE', flush=True)"))
+        worker = WorkerClient([sys.executable, '-B', '-c', code], startup_timeout=3)
+        try:
+            self.assertEqual(worker.execution_profiles[0].algorithm, 'ordinary')
+            self.assertEqual(worker.execution_profiles[1].name, name)
+            self.assertEqual(worker.execution_profiles[1].max_draft_tokens, 2)
+            self.assertEqual(worker.execution_profiles[1].input_modalities, ('text', 'image'))
+            self.assertEqual(worker.execution_profiles[0].co_resident_with, (1,))
+        finally:
+            worker.close(timeout=3)
+
+    def test_incomplete_or_invalid_prepared_metadata_never_becomes_ready(self):
+        profile = 'PROFILE\t0\tZGVmYXVsdA==\tb3JkaW5hcnk=\t0\tdGV4dA==\t-'
+        cases = [
+            ['READY\t4\t256\t128\t3\t-\t0'],
+            ['READY\t4\t256\t128\t3\t-\t2', profile],
+            ['READY\t4\t256\t128\t3\t-\t2', profile, profile.replace('PROFILE\t0', 'PROFILE\t1')],
+            ['READY\t4\t256\t128\t3\t-\t1', profile.replace('PROFILE\t0', 'PROFILE\t1')],
+            ['READY\t4\t256\t128\t3\t-\t1', profile.replace('\t0\tdGV4dA==', '\t-1\tdGV4dA==')],
+            ['READY\t4\t256\t128\t3\t-\t1', profile.replace('dGV4dA==', 'dGV4dA==,dGV4dA==')],
+            ['READY\t4\t256\t128\t3\t-\t1', profile.replace('ZGVmYXVsdA==', '@@@@')],
+            ['READY\t4\t256\t128\t3\t-\t1', profile[:-1] + '1'],
+        ]
+        for frames in cases:
+            with self.subTest(frames=frames):
+                code = '\n'.join(('import sys', *(f'print({frame!r}, flush=True)' for frame in frames)))
+                with self.assertRaises(WorkerError) as error:
+                    WorkerClient([sys.executable, '-B', '-c', code], startup_timeout=3)
+                self.assertEqual(error.exception.kind, 'startup')
+
     def test_current_ready_reports_original_source_and_unknown_is_explicit(self):
         for identity in ('a' * 64, '-'):
             code = '\n'.join(('import sys',

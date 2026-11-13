@@ -96,6 +96,10 @@ class TextEngine:
         self.extra_stop_ids = tuple(sorted(self.stop_ids - worker.stop_ids))
         self.metrics = Metrics()
         self.choices = choices or PreparedChoices()
+        self.execution_profiles = tuple(getattr(worker, 'execution_profiles', ()))
+        if self.execution_profiles and tuple(profile.name for profile in self.execution_profiles) != tuple(
+                profile.name for profile in self.choices.executions):
+            raise ValueError('prepared execution profiles differ from the requested configuration')
         self.sessions = TextSessions(worker, session_policy, self.extra_stop_ids,
                                     getattr(codec, 'history_message', None)) if session_policy else None
 
@@ -106,17 +110,21 @@ class TextEngine:
         try:
             attachments = ()
             images = has_images(messages)
-            if images:
-                selected = self.choices.executions[selection.execution_profile]
-                if not any(role == 'vision.encoder' for role, _ in selected.assets):
-                    matches = [i for i, profile in enumerate(self.choices.executions)
-                               if any(role == 'vision.encoder' for role, _ in profile.assets)]
+            if images and not self.execution_profiles:
+                raise ValueError('model worker did not report prepared image capabilities')
+            if self.execution_profiles:
+                modality = 'image' if images else 'text'
+                selected = self.execution_profiles[selection.execution_profile]
+                if modality not in selected.input_modalities:
+                    matches = [i for i, profile in enumerate(self.execution_profiles)
+                               if modality in profile.input_modalities]
                     if selection.execution_profile or len(matches) != 1:
-                        raise ValueError('select a cold-prepared image execution profile')
+                        raise ValueError(f'select a cold-prepared {modality} execution profile')
                     selection = replace(selection, execution_profile=matches[0])
-                draft_limit=self.choices.executions[selection.execution_profile].drafts
-                if selection.max_draft_tokens is not None and draft_limit is not None and selection.max_draft_tokens>draft_limit:
-                    raise ValueError('draft ceiling exceeds the prepared image execution profile')
+            if self.execution_profiles and selection.max_draft_tokens is not None and (
+                    selection.max_draft_tokens > self.execution_profiles[selection.execution_profile].max_draft_tokens):
+                raise ValueError('draft ceiling exceeds the actual prepared execution profile')
+            if images:
                 prepare_images=getattr(self.codec,'prepare_images',None)
                 if prepare_images is None: raise ValueError('the loaded codec has no image preparation recipe')
                 prepared = prepare_images(messages, continue_final_message=continue_final_message,

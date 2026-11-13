@@ -17,6 +17,7 @@
 #include <cstdio>
 #include <deque>
 #include <limits>
+#include <iostream>
 #include <cstdlib>
 #include <new>
 #include <optional>
@@ -1267,6 +1268,12 @@ void model_provider_selects_one_owner_and_rejects_ambiguity() {
   i::ModelDescription asymmetric;
   asymmetric.execution_profiles = {{"one", "mtp", 1, {1}}, {"two", "ordinary", 0, {}}};
   rejects<std::invalid_argument>([&] { i::validate_model_description(asymmetric); });
+  i::ModelDescription invalid_modality;
+  for (const auto &kinds : {std::vector<std::string>{}, std::vector<std::string>{""},
+                          std::vector<std::string>{"text", "text"}}) {
+    invalid_modality.execution_profiles[0].input_modalities = kinds;
+    rejects<std::invalid_argument>([&] { i::validate_model_description(invalid_modality); });
+  }
   auto prepared = config;
   prepared.additional_sampling.push_back({.random = true, .temperature = 0.8F, .top_p = 0.95F, .top_k = 40});
   require(bool(i::load_model(providers, prepared)), "valid additional sampling policy was rejected");
@@ -1425,8 +1432,11 @@ public:
   i::ModelDescription describe() const override {
     i::ModelDescription description{256, config_.execution.context, {}};
     description.execution_profiles.clear();
-    for (const auto &profile : config_.execution_profiles)
+    for (const auto &profile : config_.execution_profiles) {
       description.execution_profiles.push_back({profile.name, "host-fixture", profile.draft_count.value_or(0), {}});
+      if (std::ranges::any_of(profile.assets, [](const auto &asset) { return asset.role == "fixture.image"; }))
+        description.execution_profiles.back().input_modalities.push_back("image");
+    }
     return description;
   }
   void validate(i::GenerationBatch batch) override {
@@ -1483,7 +1493,7 @@ void application_uses_one_provider_path_for_cli_and_worker() {
   const auto cli_config = *application_loaded;
   auto worker = common; worker.insert(worker.begin(), "--engine-worker");
   const auto [worker_status, frames, worker_error] = run(worker, "Q\n");
-  require(!worker_status && frames.starts_with("READY\t3\t256\t128\t-\t-") && frames.ends_with("BYE\n") && worker_error.empty() &&
+  require(!worker_status && frames.starts_with("READY\t4\t256\t128\t-\t-\t1\nPROFILE\t0\t") && frames.ends_with("BYE\n") && worker_error.empty() &&
       application_loaded->execution.context == cli_config.execution.context &&
       application_loaded->execution.resident_sessions == cli_config.execution.resident_sessions &&
       application_loaded->execution.active_sequences == cli_config.execution.active_sequences &&
@@ -1553,6 +1563,21 @@ void prepared_execution_choices_keep_sampling_rng_and_compatibility_separate() {
       "execution identity replaced sampling/RNG or rejected requests reached model preparation");
 }
 
+void token_worker_reports_actual_profiles_without_executing_requests() {
+  i::ModelLoadConfig config;
+  config.execution.context = 128;
+  config.execution_profiles.push_back({.name = "pictures\t\n", .draft_count = 2,
+      .assets = {{"fixture.image", i::ModelAssetMode::kFile, "fixture.bin"}}});
+  std::istringstream input("Q\n");
+  std::ostringstream output;
+  i::TokenWorker worker(std::make_unique<ApplicationTestExecutor>(std::move(config)), 1, 1, 1, 16, input, output);
+  require(worker.run() == 0, "profile metadata worker did not stop");
+  require(output.str() == "READY\t4\t256\t128\t-\t-\t2\n"
+      "PROFILE\t0\tZGVmYXVsdA==\taG9zdC1maXh0dXJl\t0\tdGV4dA==\t-\n"
+      "PROFILE\t1\tcGljdHVyZXMJCg==\taG9zdC1maXh0dXJl\t2\tdGV4dA==,aW1hZ2U=\t-\nBYE\n",
+      "worker profile identity, actual depth, modality or UTF-8 framing differs");
+}
+
 void token_worker_rejects_malformed_frames_without_starting_model() {
   auto control = std::make_shared<IngressTestControl>();
   std::istringstream input("G\t0\t1\t1\nG\t7\t0\t1\nG\t8\t1\t-1\n"
@@ -1563,7 +1588,8 @@ void token_worker_rejects_malformed_frames_without_starting_model() {
   std::ostringstream output;
   i::TokenWorker worker(std::make_unique<IngressTestExecutor>(control), 2, 2, 1, 16, input, output);
   require(worker.run() == 0, "worker protocol did not close cleanly");
-  require(output.str() == "READY\t3\t256\t128\t3,4\t-\nE\t0\tprotocol\tinvalid request identity\n"
+  require(output.str() == "READY\t4\t256\t128\t3,4\t-\t1\nPROFILE\t0\tZGVmYXVsdA==\t\t0\tdGV4dA==\t-\n"
+      "E\t0\tprotocol\tinvalid request identity\n"
       "E\t7\tinvalid\tinvalid output limit or token list\n"
       "E\t8\tinvalid\tinvalid output limit or token list\n"
       "E\t10\tinvalid\tinvalid output limit or token list\n"
@@ -1645,7 +1671,8 @@ void token_worker_credit_and_cancellation_do_not_hang() {
       if (!output_buffer.line(line, std::chrono::seconds(3))) throw std::runtime_error("worker test timed out");
       return line;
     };
-    require(next() == "READY\t3\t256\t128\t3,4\t-", "worker did not become ready");
+    require(next() == "READY\t4\t256\t128\t3,4\t-\t1", "worker did not become ready");
+    require(next() == "PROFILE\t0\tZGVmYXVsdA==\t\t0\tdGV4dA==\t-", "worker omitted prepared profile facts");
     input_buffer.send("G\t1\t2\t10\n");
     require(next() == "A\t1" && next() == "T\t1\t10", "worker lost initial accepted token");
     std::string premature;
@@ -2235,8 +2262,20 @@ void common_wave_rejects_foreign_reordered_or_unbacked_pending_credit() {
 }
 }
 
-int main() {
+int main(int argc, char **argv) {
   try {
+    if (argc > 1) {
+      // A real process/argv/IPC consumer of the public application, with no
+      // model weights or device. Numerical and device tests stay separate.
+      const auto match = +[](const std::filesystem::path &source) {
+        return std::filesystem::is_regular_file(source / "host-contract.txt");
+      };
+      const auto load = +[](const i::ModelLoadConfig &config) -> std::unique_ptr<i::ModelExecutor> {
+        return std::make_unique<ApplicationTestExecutor>(config);
+      };
+      const std::array providers{i::ModelProvider{"host-contract", match, load}};
+      return hyle::engine::run_application(providers, argc, argv, std::cin, std::cout, std::cerr);
+    }
     fifo_and_headless_reservations();
     preflight_and_actual_eviction_facts();
     deferred_terminal_keeps_original_identity_without_execution();
@@ -2259,6 +2298,7 @@ int main() {
     request_assembly_keeps_admission_and_execution_failures_distinct();
     prepared_execution_choices_keep_sampling_rng_and_compatibility_separate();
     application_uses_one_provider_path_for_cli_and_worker();
+    token_worker_reports_actual_profiles_without_executing_requests();
     token_worker_rejects_malformed_frames_without_starting_model();
     token_worker_credit_and_cancellation_do_not_hang();
     ingress_accepts_requests_during_execution_and_preserves_identity();

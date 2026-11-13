@@ -27,6 +27,16 @@ class PreparedPrompt:
     attachments: tuple[PromptAttachment, ...]
 
 
+@dataclass(frozen=True)
+class ExecutionProfileFacts:
+    """Immutable facts from the actual prepared executor, not requested options."""
+    name: str
+    algorithm: str
+    max_draft_tokens: int
+    input_modalities: tuple[str, ...] = ('text',)
+    co_resident_with: tuple[int, ...] = ()
+
+
 class WorkerError(RuntimeError):
     def __init__(self, kind: str, message: str):
         super().__init__(message)
@@ -51,6 +61,7 @@ class TokenRequest(Protocol):
 class TokenWorker(Protocol):
     context: int
     stop_ids: frozenset[int]
+    execution_profiles: tuple[ExecutionProfileFacts, ...]
 
     @property
     def healthy(self) -> bool: ...

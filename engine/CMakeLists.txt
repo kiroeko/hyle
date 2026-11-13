@@ -22,6 +22,12 @@ function(hyle_configure_engine_target target)
   target_compile_features(${target} PRIVATE cxx_std_23)
   target_sources(${target} PRIVATE
     "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/reporting/execution_report.cc")
+  if(MSVC)
+    # argv and narrow filesystem paths use the same UTF-8 contract as IPC.
+    # This changes only this process, never the user's system locale.
+    target_sources(${target} PRIVATE
+      "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/windows-utf8.manifest")
+  endif()
   target_link_libraries(${target} PRIVATE hyle::graph hyle::compute
     hyle::graph_progress hyle::compute_stream hyle::mem)
   # Source and standalone application builds share the module warning policy;

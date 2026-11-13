@@ -3611,6 +3611,7 @@ public:
         {model_eos_tokens.begin(), model_eos_tokens.end()}};
     description.execution_profiles[0].algorithm = mtp_ ? "mtp" : "ordinary";
     description.execution_profiles[0].max_draft_tokens = mtp_ ? model_.max_drafts() : 0;
+    if (model_.vision) description.execution_profiles[0].input_modalities.push_back("image");
     description.source_identity = model_.source_identity;
     return description;
   }
@@ -3681,6 +3682,7 @@ public:
       const auto &model = *models_[j];
       inference::ExecutionProfileDescription profile{names_[j], model.cache_plan.draft_cache ? "mtp" : "ordinary",
           model.cache_plan.draft_cache ? model.max_drafts() : 0};
+      if (model.vision) profile.input_modalities.push_back("image");
       for (std::size_t k = 0; k < models_.size(); ++k) if (j != k) profile.co_resident_with.push_back(k);
       description.execution_profiles.push_back(std::move(profile));
     }

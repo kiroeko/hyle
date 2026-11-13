@@ -95,6 +95,9 @@ struct ExecutionProfileDescription final {
   // Self is implicit. Additional compatible identities must be symmetric;
   // this is residency compatibility, not permission to combine device rows.
   std::vector<std::size_t> co_resident_with;
+  // Actual accepted input kinds of this prepared program. These are public
+  // semantic capabilities, not asset role names or model-specific layouts.
+  std::vector<std::string> input_modalities{"text"};
 };
 
 struct ModelDescription final {
@@ -117,6 +120,13 @@ inline void validate_model_description(const ModelDescription &model) {
   for (std::size_t a = 0; a < model.execution_profiles.size(); ++a) {
     const auto &profile = model.execution_profiles[a];
     if (profile.name.empty()) throw std::invalid_argument("model execution profile has no name");
+    if (profile.input_modalities.empty()) throw std::invalid_argument("model execution profile has no input modality");
+    for (std::size_t i = 0; i < profile.input_modalities.size(); ++i) {
+      if (profile.input_modalities[i].empty()) throw std::invalid_argument("empty execution-profile input modality");
+      for (std::size_t j = 0; j < i; ++j)
+        if (profile.input_modalities[i] == profile.input_modalities[j])
+          throw std::invalid_argument("duplicate execution-profile input modality");
+    }
     for (std::size_t b = 0; b < a; ++b)
       if (profile.name == model.execution_profiles[b].name) throw std::invalid_argument("duplicate model execution profile name");
     for (auto b : profile.co_resident_with)

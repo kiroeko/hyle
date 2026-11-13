@@ -14,7 +14,27 @@ import time
 from pathlib import Path
 from typing import Sequence
 
-from .contracts import TokenEvent, WorkerError
+from .contracts import ExecutionProfileFacts, TokenEvent, WorkerError
+
+
+def _metadata_text(encoded: str) -> str:
+    raw = base64.b64decode(encoded, validate=True)
+    if base64.b64encode(raw).decode('ascii') != encoded:
+        raise WorkerError('protocol', 'noncanonical worker profile metadata')
+    return raw.decode('utf-8')
+
+
+def _execution_profile(fields, index) -> ExecutionProfileFacts:
+    if len(fields) != 7 or fields[:2] != ['PROFILE', str(index)]:
+        raise WorkerError('protocol', 'invalid prepared execution profile frame')
+    name, algorithm = _metadata_text(fields[2]), _metadata_text(fields[3])
+    maximum = int(fields[4])
+    modalities = tuple(_metadata_text(value) for value in fields[5].split(','))
+    if (not name or not fields[4].isdecimal() or not 0 <= maximum < 1 << 64 or
+            not all(modalities) or len(set(modalities)) != len(modalities)):
+        raise WorkerError('protocol', 'invalid prepared execution profile metadata')
+    peers = () if fields[6] == '-' else tuple(int(value) for value in fields[6].split(','))
+    return ExecutionProfileFacts(name, algorithm, maximum, modalities, peers)
 
 
 def _prompt_frame(tokens, attachments=()):
@@ -196,6 +216,7 @@ class WorkerClient:
         self.vocabulary = 0
         self.context = 0
         self.stop_ids: frozenset[int] = frozenset()
+        self.execution_profiles: tuple[ExecutionProfileFacts, ...] = ()
         self._ready = threading.Event()
         self._bye = threading.Event()
         self._reader = threading.Thread(target=self._read_frames, name="hyle-worker-output", daemon=True)
@@ -366,13 +387,30 @@ class WorkerClient:
 
     def _read_frames(self) -> None:
         ready = False
+        header = False
+        profile_count = 0
         try:
             assert self._process.stdout is not None
             for raw in self._process.stdout:
                 if not ready:
                     fields = raw.rstrip("\r\n").split("\t")
+                    if header:
+                        profile = _execution_profile(fields, len(self.execution_profiles))
+                        if any(previous.name == profile.name for previous in self.execution_profiles):
+                            raise WorkerError('protocol', 'duplicate worker execution profile name')
+                        self.execution_profiles += (profile,)
+                        if len(self.execution_profiles) == profile_count:
+                            for index, description in enumerate(self.execution_profiles):
+                                for peer in description.co_resident_with:
+                                    if (not 0 <= peer < profile_count or (peer != index and
+                                            index not in self.execution_profiles[peer].co_resident_with)):
+                                        raise WorkerError('protocol', 'invalid worker profile co-residency')
+                            ready = True
+                            self._ready.set()
+                        continue
                     legacy = len(fields) == 5 and fields[:2] == ['READY', '2']
-                    current = len(fields) == 6 and fields[:2] == ['READY', '3']
+                    profiled = len(fields) == 7 and fields[:2] == ['READY', '4']
+                    current = profiled or (len(fields) == 6 and fields[:2] == ['READY', '3'])
                     if not legacy and not current:
                         raise WorkerError("protocol", "invalid model worker handshake")
                     self.source_identity = fields[5] if current and fields[5] != '-' else None
@@ -385,6 +423,12 @@ class WorkerClient:
                     if self.vocabulary <= 0 or self.context <= 0 or any(
                             token < 0 or token >= self.vocabulary for token in self.stop_ids):
                         raise WorkerError("protocol", "invalid model worker metadata")
+                    if profiled:
+                        profile_count = int(fields[6])
+                        if profile_count <= 0 or not fields[6].isdecimal():
+                            raise WorkerError('protocol', 'invalid worker profile count')
+                        header = True
+                        continue
                     ready = True
                     self._ready.set()
                     continue
