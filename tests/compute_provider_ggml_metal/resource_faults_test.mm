@@ -3,6 +3,7 @@
 #include <array>
 #include <cmath>
 #include <cstdlib>
+#include <dlfcn.h>
 #include <new>
 #include <string>
 
@@ -28,11 +29,22 @@ thread_local int new_left = -1;
 thread_local bool new_failed = false;
 thread_local bool map_only = false;
 thread_local int map_depth = 0;
+
+// This fixture links HYLE and ggml statically. Inject only their C++ new
+// calls, not MetalTools/driver allocations reached through Objective-C.
+// Those factories promise NSError/nil, not C++ exception unwinding.
+bool fixture_allocation(const void *caller) {
+  Dl_info allocation{}, fixture{};
+  return dladdr(caller, &allocation) &&
+         dladdr(reinterpret_cast<const void *>(&fixture_allocation), &fixture) &&
+         allocation.dli_fbase == fixture.dli_fbase;
+}
 }
 extern "C" void hyle_metal_fault_map_enter(void) { ++map_depth; }
 extern "C" void hyle_metal_fault_map_leave(void) { --map_depth; }
 void *operator new(std::size_t size) {
-  if ((!map_only || map_depth != 0) && new_left > 0 && --new_left == 0) {
+  if ((!map_only || map_depth != 0) && new_left > 0 &&
+      fixture_allocation(__builtin_return_address(0)) && --new_left == 0) {
     new_left = -1;
     new_failed = true;
     throw std::bad_alloc();
