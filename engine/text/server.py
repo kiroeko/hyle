@@ -165,7 +165,7 @@ class TextHttpHandler(BaseHTTPRequestHandler):
         server = self.server
         path = urlsplit(self.path).path
         if path == '/health':
-            healthy = server.engine.worker.healthy  # type: ignore[attr-defined]
+            healthy = server.engine.healthy  # type: ignore[attr-defined]
             exchange.send_json(200 if healthy else 503, {'status': 'ok' if healthy else 'unavailable'})
         elif path == '/metrics' and server.metrics_enabled:  # type: ignore[attr-defined]
             data = server.engine.metrics.render()  # type: ignore[attr-defined]
@@ -175,7 +175,17 @@ class TextHttpHandler(BaseHTTPRequestHandler):
             self.send_header('Connection', 'close')
             self.end_headers(); self.wfile.write(data); self.close_connection = True
         else:
-            exchange.send_json(404, {'error': 'endpoint not found'})
+            adapter, key = server.resolve_route(path)  # type: ignore[attr-defined]
+            if adapter is not None and hasattr(adapter, 'handle_get'):
+                adapter.handle_get(exchange, server.engine, key)  # type: ignore[attr-defined]
+            else: exchange.send_json(404, {'error': 'endpoint not found'})
+
+    def do_DELETE(self) -> None:
+        exchange = HttpExchange(self)
+        adapter, key = self.server.resolve_route(urlsplit(self.path).path)  # type: ignore[attr-defined]
+        if adapter is not None and hasattr(adapter, 'handle_delete'):
+            adapter.handle_delete(exchange, self.server.engine, key)  # type: ignore[attr-defined]
+        else: exchange.send_json(404, {'error': 'endpoint not found'})
 
     def do_POST(self) -> None:
         exchange = HttpExchange(self)
@@ -196,6 +206,13 @@ class TextHttpServer(ThreadingHTTPServer):
         self._connections_lock = threading.Lock()
         self._connections: set[socket.socket] = set()
         super().__init__(address, TextHttpHandler)
+
+    def resolve_route(self, path):
+        if path in self.routes: return self.routes[path], ''
+        for prefix in sorted(self.routes, key=len, reverse=True):
+            if prefix.endswith('/*') and path.startswith(prefix[:-1]):
+                return self.routes[prefix], path[len(prefix) - 1:]
+        return None, ''
 
     def process_request(self, request, client_address) -> None:
         # Register before starting the handler so close cannot miss a thread
@@ -225,6 +242,7 @@ class TextHttpServer(ThreadingHTTPServer):
 
     def server_close(self) -> None:
         self.closing.set()
+        self.engine.begin_close()
         with self._connections_lock:
             connections = tuple(self._connections)
         # Wake blocked reads and writes before ThreadingMixIn joins handlers.
@@ -235,3 +253,4 @@ class TextHttpServer(ThreadingHTTPServer):
             except OSError:
                 pass
         super().server_close()
+        self.engine.close()

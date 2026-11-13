@@ -89,6 +89,11 @@ class HuggingFaceTextCodec:
         """Cold asset preparation borrows the same local tokenizer/template."""
         return self._tokenizer
 
+    def validate_vocabulary(self, vocabulary: int) -> None:
+        if vocabulary <= 0 or any(type(index) is not int or not 0 <= index < vocabulary
+                                  for index in self._tokenizer.get_vocab().values()) or any(index >= vocabulary for index in self.stop_ids):
+            raise ValueError('tokenizer or end-token IDs exceed the loaded model vocabulary')
+
     def encode_messages(self, messages: Sequence[dict[str, Any]]) -> list[int]:
         if not messages:
             raise ValueError("at least one message is required")
@@ -99,6 +104,27 @@ class HuggingFaceTextCodec:
         if not isinstance(ids, list) or not ids or any(type(value) is not int for value in ids):
             raise ValueError("template did not produce one token sequence")
         return ids
+
+    def continue_messages(self, tape: Sequence[int], messages: Sequence[dict[str, Any]]) -> list[int] | None:
+        # Tokenization at a text boundary need not reproduce generated IDs.
+        # Prove the complete rendered prefix, then preserve its actual tokens
+        # and tokenize only the new suffix. Arbitrary Jinja rewrites fall back
+        # to ordinary complete rendering instead of guessing delimiters.
+        rendered = self._tokenizer.apply_chat_template(list(messages), chat_template=self._template,
+            tokenize=False, add_generation_prompt=True)
+        prefix = self._tokenizer.decode(list(tape), skip_special_tokens=False, clean_up_tokenization_spaces=False)
+        if not rendered.startswith(prefix):
+            return None
+        return list(tape) + self._tokenizer.encode(rendered[len(prefix):], add_special_tokens=False)
+
+    def history_message(self, ids: Sequence[int], text: str) -> dict[str, str]:
+        # Keep template-significant generated markers in saved model context;
+        # presentation decoding can independently omit special token strings.
+        content = list(ids)
+        if content and content[-1] in self.stop_ids:
+            content.pop()
+        return {'role': 'assistant', 'content': self._tokenizer.decode(content, skip_special_tokens=False,
+                                                                     clean_up_tokenization_spaces=False)}
 
     def new_decoder(self) -> DecodeSession:
         return _HuggingFaceDecodeSession(self._tokenizer)

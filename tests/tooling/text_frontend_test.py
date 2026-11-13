@@ -318,7 +318,7 @@ class TextFrontendTest(unittest.TestCase):
 
     def test_reject_unsupported_request_instead_of_ignoring(self):
         for payload in ({"model": "hyle", "input": "x", "tools": []},
-                        {"model": "hyle", "input": "x", "store": True},
+                        {"model": "hyle", "input": "x", "store": "true"},
                         {"model": "wrong", "input": "x"}):
             with self.subTest(payload=payload), self.assertRaises(InvalidRequest):
                 parse_responses_input(payload, "hyle")

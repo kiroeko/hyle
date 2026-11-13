@@ -64,6 +64,9 @@ inline const ModelAsset *find_model_asset(const ModelAssets &assets, std::string
 }
 
 struct ExecutionPreparation final {
+  // Complete immutable prefixes share the model's original state/version
+  // budget. This bounds directory entries; it creates no additional KV bank.
+  std::size_t prefix_cache_entries = 0;
   BackendKind backend{};
   std::size_t context = 0, resident_sessions = 1, active_sequences = 1;
   std::size_t prefill_rows = (std::numeric_limits<std::size_t>::max)();

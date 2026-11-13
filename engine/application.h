@@ -82,6 +82,7 @@ inline ApplicationOptions parse_application_options(int argc, char **argv) {
     else if (option == "--max-sessions") config.execution.resident_sessions = application_number<std::size_t>(option, value);
     else if (option == "--active-sequences") config.execution.active_sequences = application_number<std::size_t>(option, value);
     else if (option == "--prefill-chunk-tokens") config.execution.prefill_rows = application_number<std::size_t>(option, value);
+    else if (option == "--prefix-cache-entries") config.execution.prefix_cache_entries = application_number<std::size_t>(option, value);
     else if (option == "--draft-count") profile.draft_count = application_number<std::size_t>(option, value);
     else if (option == "--overlap") {
       if (value != "on" && value != "off") throw std::invalid_argument("overlap requires on or off");
@@ -137,6 +138,7 @@ inline int run_application(std::span<const inference::ModelProvider> providers, 
           "  --draft-count N  --draft-vocabulary FILE  --draft-head FILE\n"
           "  --asset ROLE=FILE  --profile NAME  --profile-asset ROLE=FILE\n"
           "  --execution-profile N  --overlap on|off  --prefill-chunk-tokens N\n"
+          "  --prefix-cache-entries N  (complete-state prefix directory; default 0)\n"
           "  --engine-worker starts the internal token transport with the same model preparation.\n"
           "Model replay and tracing use their explicit diagnostic targets.\n";
       return 0;

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+import errno
 import hashlib
 import os
 from pathlib import Path
@@ -33,7 +34,8 @@ def _lock(path: Path) -> Iterator[None]:
                 try:
                     msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
                     break
-                except OSError:
+                except OSError as error:
+                    if error.errno not in (errno.EACCES, errno.EAGAIN, errno.EDEADLK): raise
                     time.sleep(.05)
             try:
                 yield

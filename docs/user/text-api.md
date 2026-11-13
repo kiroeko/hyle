@@ -1,26 +1,98 @@
 # 文本 CLI 与 Responses 接口
 
-文本前端使用本地 Hugging Face tokenizer 和模型提供的 Jinja 模板，将 token 请求交给常驻的 Hyle 模型进程。准备目录必须与 tokenizer 属于同一模型；前端检查 token ID 范围，但不能证明两套文件的来源相同。模型声明的结束 ID 与本地 tokenizer／模型配置中的结束 ID 共同作为请求停止条件。前端只读取本地文件，不下载模型。Python 环境需要 `transformers`、`tokenizers` 和 `jinja2`。
-
-例如，在已构建 Hyle 并准备本地 Qwen3.5-2B 资产后：
+文本前端使用本地 Hugging Face tokenizer 和 Jinja 模板，将 token 请求交给一个常驻模型进程。准备目录和 tokenizer 应属于同一模型；ID 范围检查不能证明两者来源相同。模型和 tokenizer 声明的结束 ID 共同作为停止条件。前端不下载模型。Python 环境需要 `transformers`、`tokenizers` 和 `jinja2`；TOML 配置使用 `tomllib`，旧 Python 可安装 `tomli`。
 
 ```text
 python -B -m engine.text.app generate --engine <build-dir>/bin/hyle.exe --inputs <prepared-dir> --tokenizer-dir <model-dir> --backend cuda --text "1 + 1 = ?" --max-output-tokens 16
 python -B -m engine.text.app serve --engine <build-dir>/bin/hyle.exe --inputs <prepared-dir> --tokenizer-dir <model-dir> --backend cuda --port 2048 --metrics
 ```
 
-Windows 使用 `hyle.exe`；其他平台的文本服务尚未验证。`--template <file>` 可显式选择本地 Jinja 模板。服务默认监听 `127.0.0.1:2048`，指标位于 `/metrics`，健康检查位于 `/health`。其仅为本地服务，不提供访问控制。
+服务默认监听 `127.0.0.1:2048`，指标位于 `/metrics`，健康检查位于 `/health`。它是本地服务，没有访问控制。本阶段实际验证 Windows／CUDA／本地 Qwen3.5-2B；其他平台尚未实际验证完整服务。`--template FILE` 可选择本地 Jinja 模板。
 
-`POST /v1/responses` 要求 `model` 与服务加载的模型名一致（服务默认模型名为 `hyle`），支持 `input`、`instructions`、`max_output_tokens`、`stream` 和 `store: false`。输入支持字符串或 system、user、assistant 文本消息；输出支持非流式文本及 SSE 文本事件。不支持的字段会被拒绝。流式事件参照 [OpenAI Responses 事件定义](https://developers.openai.com/api/reference/resources/responses/streaming-events)。
+## 冷期配置与请求选择
 
-本机使用 OpenAI Python SDK 2.29.0 的严格响应校验，已检查 Q4 普通和 BF16 自动 MTP 的同步与原始流式文本。原始流的调用方应分别处理 `response.completed`、`response.incomplete` 和 `error`；达到输出上限时返回 `response.incomplete`。该 SDK 版本的 `responses.stream(...).get_final_response()` 只接受 `response.completed`，遇到不完整响应会抛异常；需要处理截断时可使用 `responses.create(..., stream=True)` 读取终止事件。
+一个进程加载一个权重来源。多个执行方案共享原端点和不可变目标／MTP 权重，各自持有程序、草稿映射及完整状态。下面的 `service.toml` 声明全头 K1、子集头 K3 和普通生成；随机采样程序独立声明：
 
-无效请求在非流式响应或流开始之前返回 HTTP 400；如果流式响应已开始，错误通过 `error` 事件交付。模型执行或传输失败按服务错误处理；单个请求被拒绝后，其他请求仍可使用健康的模型进程。
+```toml
+[default_profile]
+draft_count = 1
 
-连接重置或输出写入失败时，流式和非流式请求都会请求取消；非流式生成期间定期检查连接。客户端可以在发送请求后关闭写入方向，继续接收响应；TCP 的读取 EOF 无法区分这种半关闭和优雅的完全关闭，后者可能要等后续写入失败才被发现。取消本身不表示设备工作已经退休。有序关闭服务时，监听结束后会断开活动连接，等待连接处理线程退出，再等待模型进程确认关闭；已开始的流可能因此中断。
+[[profiles]]
+name = "subset"
+draft_count = 3
+generate = { languages = "zh,en" }
 
-服务复用一个模型进程，可接收多个请求；请求在运行期间可进入已释放的会话槽位，容量用尽时排队。不提供跨 HTTP 请求持久 KV 会话，每次请求须自行提供对话上下文。当前不支持工具调用、图片、服务端保存响应、逐请求采样配置或其他协议。采样设置在服务启动时指定；显式设置 `--temperature`、`--top-k`、`--top-p` 或 `--seed` 时须同时指定 `--sampling random`。固定种子不保证不同并发调度下的输出逐项相同：采样流由会话槽位区分，实际批次也可能变化。BF16 的同前缀对照中，单请求批与双请求批的 logits 有差异，即使采样地址相同也会产生不同输出；这一对照不代表其他调度组合均已归因。
+[[profiles]]
+name = "plain"
+draft_count = 0
 
-默认配置允许两个活跃序列，自动 MTP 关闭。当 `--max-sessions 1 --active-sequences 1`、CUDA、贪心且制品符合条件时，自动选择 MTP 和制品推荐的草稿深度；其他条件继续使用普通生成。`--draft-count 0` 关闭 MTP，正数显式指定草稿深度，`--draft-vocabulary` 和 `--draft-head` 可指定本地制品；这两个选项始终将参数视为文件路径，包括名为 `auto`、`full` 和 `original` 的文件。自动选择会将推荐深度限制在上下文容量内。
+[[samplers]]
+name = "chat"
+mode = "random"
+temperature = 0.8
+top_k = 40
+top_p = 0.95
 
-单会话 CUDA 贪心生成及普通随机采样在准备阶段按能力选择设备接力；多会话仍使用原来的默认路径。可用 `--overlap` 或 `--no-overlap` 显式选择；接力需要额外的首次图准备，短请求的完整进程时间可能增加。
+[sessions]
+capacity = 128
+kv_capacity = 3
+ttl_seconds = 900
+max_waiting = 64
+
+[prefix_cache]
+entries = 3
+shared = false
+```
+
+```text
+python -B -m engine.text.app serve --engine <hyle.exe> --inputs <prepared-dir-with-MTP> --tokenizer-dir <model-dir> --backend cuda --max-sessions 3 --active-sequences 2 --config service.toml --asset-cache <asset-store> --port 2048 --metrics
+```
+
+`default_profile` 覆盖默认方案的启动设置，`profiles` 和 `samplers` 增加具名准备。加载后不能替换方案。不同方案分组执行，同方案仍可合批。`generate` 是模型准备器解释的冷期配方；Qwen 支持 `rows` 和逗号分隔的 `languages`，例如 `zh,en,hu`。首次加载生成来源绑定的完整 token 表、草稿 ID 和原编码紧凑头，再原子发布到 `--asset-cache`；重启复用相同配方。省略缓存路径时使用用户缓存目录下的 `hyle/assets`。不会在推理步骤中生成资产。
+
+预先生成的方法见[独立制品工具](inference.md#一次准备并复用)。显式复用时，把方案的 `generate` 换成：
+
+```toml
+assets = { "draft.vocabulary" = "C:/assets/mtp-draft-vocabulary.ids", "draft.head" = "C:/assets/mtp-draft-head.tsv" }
+```
+
+配置文件中的相对资产路径以配置文件目录为基准。新来源、tokenizer、模板或配方使用新不可变目录，不覆盖在途引用。词表选择是准备策略，不保证任何语言的接受率。
+
+HTTP 用扩展对象 `hyle` 选择已准备程序。该对象只接受 `execution_profile`、`sampling_profile`、`seed` 和 `max_draft_tokens`：
+
+```json
+{"model":"hyle","input":"写一段简短问候。","max_output_tokens":64,
+ "hyle":{"execution_profile":"plain","sampling_profile":"chat","seed":7}}
+```
+
+OpenAI Python SDK 可通过 `extra_body={"hyle": {...}}` 传入。标准 `temperature`／`top_p` 只能匹配已声明的采样程序，不会在请求中编译新程序。草稿上限只能收紧准备深度；上限零不把 MTP 方案变成普通方案。CLI 对应选项为 `--execution-profile NAME --sampling-profile NAME --request-seed N`。
+
+## Responses 与进程内会话
+
+`POST /v1/responses` 支持文本 `input`、`instructions`、`max_output_tokens`、`stream`、`store`、`previous_response_id` 及上述选择。`model` 必须匹配服务名，默认是 `hyle`。输入支持字符串或 system／user／assistant 文本消息；输出为文本响应或 SSE。其他字段明确拒绝。
+
+服务默认 `store: true`，仅保存在当前进程，受 `sessions.capacity` 和空闲 TTL 限制。`store: false` 不保存新响应。续接时只传新输入和先前响应 ID：
+
+```json
+{"model":"hyle","previous_response_id":"resp_...","input":"再给一个例子。","max_output_tokens":64}
+```
+
+`instructions` 仅用于当前响应，不自动继承。旧响应可分叉；只有一个分支能借用原生会话，其他分支重建自己的输入。字段语义参照[官方 Responses 合同](https://developers.openai.com/api/reference/resources/responses/methods/create)。
+
+`GET /v1/responses/{id}` 查询保留结果，`DELETE /v1/responses/{id}` 删除该记录并等待它持有的原生会话退休；删除返回[标准删除对象](https://developers.openai.com/api/reference/resources/responses/methods/delete)。删除父记录不删除已有子响应。未知、过期或已淘汰 ID 返回 404。没有跨服务重启的响应／KV 恢复。
+
+响应记录数、原生 KV 驻留上限和批内活动序列是三个独立预算。KV 满时先淘汰空闲原生会话，保留受限历史；全部忙时在有限接纳队列等待。原生终止确认前不复用预算，超时或退休失败会使会话服务失败关闭。TTL 也在没有新请求时回收空闲会话。
+
+满足相同方案、采样配置和实际 token 前缀时，续轮复用原会话的完整状态、pending 和 RNG。Jinja 改写历史前缀、改变配置、KV 淘汰或分叉时重建输入，不伪装缓存命中。保存的原始 token 与模板标记用于可追加模板；显示文本仍独立解码。重建不等于恢复完整 RNG 检查点，固定 seed 也不保证跨槽位／批形状的输出逐项一致。
+
+响应 `metadata` 报告 `hyle.execution_profile`、`hyle.sampling_profile` 和 `hyle.context`（`new`／`continued`／`replayed`）。`usage.input_tokens_details.cached_tokens` 只计已确认的会话续接 token；原生前缀目录的额外复用不计入该字段。
+
+## 前缀共享与交付
+
+`prefix_cache.entries` 控制模型原状态预算内的完整前缀目录，不另造 KV 银行。前缀包含 KV、卷积、递归等模型完整续算状态，修改继续使用原 COW 与退休机制。默认 `shared: false`，服务为每条会话分配独立共享域；客户端不能提交共享域 ID。`shared: true` 只适合一个可信共享域，不提供租户认证。执行方案和采样数学仍分别限定复用。
+
+SSE 按[官方事件定义](https://developers.openai.com/api/reference/resources/responses/streaming-events)交付文本和终止事件。达到额度返回 `response.incomplete`；调用方应处理 `response.completed`、`response.incomplete` 和 `error`。旧版 SDK 的 `responses.stream(...).get_final_response()` 可能只接受 completed；可用 `responses.create(..., stream=True)` 处理截断。
+
+无效选择在流开始前返回 400；模型／传输失败返回服务错误，流已开始则交付 `error`。断连或写入失败会取消未完成生成并等待原生终止。TCP 半关闭与优雅完全关闭不能仅靠读 EOF 区分，后者有时需等写入失败。服务关闭先唤醒接纳及连接处理线程，再退休保留会话并关闭模型进程。
+
+本机严格 SDK 检查覆盖三方案并发、可追加模板下的真实 KV 续接、默认模板重建、分叉、查询／删除、非法选择隔离、SSE 和断连后的继续服务。当前没有工具调用、图片、Chat／Anthropic 路由、多模型／多量化同时接纳或 KV 磁盘恢复。

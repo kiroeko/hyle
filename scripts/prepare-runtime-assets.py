@@ -5,8 +5,7 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from engine.asset_store import AssetStore
-from engine.models.qwen35.runtime_assets import prepare_assets
+from engine.model_preparation import prepare_local_assets
 from engine.text.codec import HuggingFaceTextCodec
 
 
@@ -20,12 +19,10 @@ def main():
     parser.add_argument('--template', type=Path)
     args = parser.parse_args()
     codec = HuggingFaceTextCodec(args.tokenizer_dir, template=args.template)
-    result = prepare_assets(args.inputs, args.tokenizer_dir, codec.preparation_tokenizer,
-                            AssetStore(args.output), rows=args.rows, languages=args.languages, template=args.template)
+    result = prepare_local_assets(args.inputs, args.tokenizer_dir, codec.preparation_tokenizer,
+                                  args.output, rows=args.rows, languages=args.languages, template=args.template)
     print('created' if result.created else 'reused', result.directory)
-    print('vocabulary', result.vocabulary)
-    print('draft.vocabulary', result.draft_vocabulary)
-    print('draft.head', result.draft_head)
+    for role, path in result.artifacts: print(role, path)
 
 
 if __name__ == '__main__':

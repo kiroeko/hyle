@@ -21,6 +21,22 @@ class PreparedAssets:
     draft_head: Path
     created: bool
 
+    @property
+    def execution_assets(self) -> tuple[tuple[str, Path], ...]:
+        return (('draft.vocabulary', self.draft_vocabulary), ('draft.head', self.draft_head))
+
+    @property
+    def artifacts(self) -> tuple[tuple[str, Path], ...]:
+        return (('vocabulary', self.vocabulary), *self.execution_assets)
+
+
+def matches_source(inputs: Path) -> bool:
+    path = Path(inputs) / 'weights.tsv'
+    if not path.is_file():
+        return False
+    with path.open('r', encoding='utf-8') as stream:
+        return stream.readline(129).strip() in ('HYLE_QWEN_ROLE_FILES_V2', 'HYLE_QWEN_GGUF_ROLE_FILES_V2')
+
 
 def source_facts(inputs: Path) -> dict:
     lines = (inputs / 'weights.tsv').read_text(encoding='utf-8').splitlines()
@@ -30,8 +46,14 @@ def source_facts(inputs: Path) -> dict:
     if not re.fullmatch('[0-9a-f]{64}', identity):
         raise ValueError('invalid prepared weight identity')
     geometry = shlex.split(lines[2]); hidden, vocabulary = int(geometry[1]), int(geometry[3])
-    roles = {row[0]: row for line in lines[3:] if (row := shlex.split(line)) and
-             row[0] in ('lm_head.weight', 'model.language_model.embed_tokens.weight')}
+    if geometry[0] != 'geometry' or hidden <= 0 or not 1 < vocabulary <= 2**31 - 1:
+        raise ValueError('invalid source projection geometry')
+    roles = {}
+    for line in lines[3:]:
+        row = shlex.split(line)
+        if row and row[0] in ('lm_head.weight', 'model.language_model.embed_tokens.weight'):
+            if row[0] in roles: raise ValueError('duplicate original projection role')
+            roles[row[0]] = row
     row = roles.get('lm_head.weight', roles.get('model.language_model.embed_tokens.weight'))
     if row is None:
         raise ValueError('source has no complete target projection')
@@ -56,9 +78,10 @@ def source_facts(inputs: Path) -> dict:
                 path=path, offset=offset, size=size, row_bytes=size // vocabulary)
 
 
-def tokenizer_identity(directory: Path, template: Path | None = None) -> str:
+def tokenizer_identity(directory: Path, template: Path | None = None, tokenizer=None) -> str:
     names = ('tokenizer.json', 'tokenizer_config.json', 'special_tokens_map.json', 'added_tokens.json',
-             'chat_template.jinja', 'config.json', 'generation_config.json', 'vocab.json', 'merges.txt')
+             'chat_template.jinja', 'config.json', 'generation_config.json', 'vocab.json', 'merges.txt',
+             'tokenizer.model', 'spiece.model', 'sentencepiece.bpe.model', 'vocab.txt')
     digest = hashlib.sha256()
     for name in names:
         path = directory / name
@@ -66,6 +89,13 @@ def tokenizer_identity(directory: Path, template: Path | None = None) -> str:
             digest.update(name.encode()); digest.update(bytes.fromhex(file_digest(path)))
     if template is not None:
         digest.update(b'explicit-template'); digest.update(bytes.fromhex(file_digest(template)))
+    backend = getattr(tokenizer, 'backend_tokenizer', None)
+    if backend is not None:
+        actual = json.loads(backend.to_str())
+        # These encode-call settings are transient, not tokenizer identity.
+        actual['padding'] = actual['truncation'] = None
+        digest.update(json.dumps(actual, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8'))
+        digest.update(json.dumps(sorted(tokenizer.all_special_ids)).encode('ascii'))
     return digest.hexdigest()
 
 
@@ -76,7 +106,7 @@ def prepare_assets(inputs: Path, tokenizer_directory: Path, tokenizer, store: As
     selected_rows = (facts['vocabulary'] + 1) // 2 if rows is None else rows
     if type(selected_rows) is not int or not 0 < selected_rows < facts['vocabulary']:
         raise ValueError('draft rows must be a proper nonempty subset of the target vocabulary')
-    tokenizer_id = tokenizer_identity(Path(tokenizer_directory), template)
+    tokenizer_id = tokenizer_identity(Path(tokenizer_directory), template, tokenizer)
     recipe = json.dumps(dict(provider='qwen35-stored-rows-v1', source=facts['identity'], tokenizer=tokenizer_id,
         rows=selected_rows, languages=sorted(language_set) if language_set is not None else None,
         dtype=facts['dtype']), sort_keys=True, separators=(',', ':'))

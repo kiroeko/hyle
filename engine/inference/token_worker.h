@@ -122,14 +122,15 @@ public:
         if (!emit("I\t" + std::to_string(id) + "\t" + std::to_string(sequence) + "\t" + status)) break;
         continue;
       }
-      const bool profiled = fields[0] == "P";
+      const bool scoped = fields[0] == "D";
+      const bool profiled = fields[0] == "P" || scoped;
       const bool configured = fields[0] == "R" || profiled;
       const auto mode_field = configured && fields.size() > 2 ? fields[2] : fields[0];
       const bool extra_stops = configured || fields[0] == "g" || fields[0] == "s" || fields[0] == "o";
       const bool flat = mode_field == "G" || mode_field == "g";
       const bool turns_mode = mode_field == "S" || mode_field == "s";
       const bool live = mode_field == "O" || mode_field == "o";
-      const std::size_t offset = profiled ? 1 : 0;
+      const std::size_t offset = scoped ? 2 : profiled ? 1 : 0;
       const std::size_t start = configured ? 7 + offset : extra_stops ? 3 : 2;
       if ((!flat && !turns_mode && !live) || fields.size() < start + 2 ||
           (fields.size() - start) % 2 != 0 || (live && fields.size() != start + 2)) {
@@ -146,10 +147,12 @@ public:
       std::optional<std::size_t> draft_limit;
       std::size_t sampling_index = 0;
       std::size_t execution_profile = 0;
+      std::uint64_t cache_domain = 0;
       if (configured) {
         std::uint64_t seed_value = 0;
         std::size_t draft_value = 0;
         if ((profiled && !number(fields[3], execution_profile)) ||
+            (scoped && !number(fields[4], cache_domain)) ||
             (fields[3 + offset] != "-" && !number(fields[3 + offset], sampling_index)) ||
             (fields[4 + offset] != "-" && !number(fields[4 + offset], seed_value)) ||
             (fields[5 + offset] != "-" && !number(fields[5 + offset], draft_value))) {
@@ -188,6 +191,7 @@ public:
             turns_mode ? GenerationSessionMode::kTurns : GenerationSessionMode::kLive;
         GenerationSessionSchedule schedule{std::to_string(id), std::move(turns), mode, seed, draft_limit};
         schedule.execution_profile = execution_profile;
+        schedule.cache_sharing_domain = cache_domain;
         auto handle = dispatcher_.submit(std::move(schedule),
                                          RequestStopPolicy(stops), sampling_index);
         auto call = std::make_shared<Call>(std::move(handle));

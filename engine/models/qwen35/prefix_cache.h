@@ -119,6 +119,15 @@ public:
     });
   }
   std::size_t size() const noexcept { return directory_.size(); }
+  std::size_t retained_versions() const {
+    std::vector<const State *> unique;
+    unique.reserve(size());
+    directory_.visit_payloads([&](const PrefixPayload &payload) {
+      const auto *state = payload.snapshot ? payload.snapshot->state_identity() : nullptr;
+      if (state && std::ranges::find(unique, state) == unique.end()) unique.push_back(state);
+    });
+    return unique.size();
+  }
   std::size_t evictions() const noexcept { return directory_.evictions; }
   bool evict_one() noexcept { return directory_.evict_one(); }
   std::size_t match_length(const TokenPlan &input, std::size_t target, std::size_t minimum,

@@ -10,9 +10,10 @@ format and backend coverage depends on the configuration and validation describe
 HYLE 是面向单机的推理引擎。推理引擎内核负责已接纳工作的准备、模型计算、生成与状态推进；
 引擎的外围部分负责模型制品、请求、会话、调度和结果交付。内核包含模型专属实现，并使用可独立构建的
 Compute、Graph、内存、调度、I/O 等基础库；推理内核也不同于单个 CUDA／Metal kernel。
-当前完整入口仍以 Qwen 为主，内核与引擎外围尚未按这个职责边界完整拆开，见[引擎概览](docs/architecture/engine-overview.md)。
+公共 CLI、token 工作进程与文本服务通过模型提供者装配；当前完整运行适配器是 Qwen3.5。
+模型保留数学、权重解释与完整状态，公共层负责请求选择、交付和会话，见[引擎概览](docs/architecture/engine-overview.md)。
 
-当前先整体设计通用推理引擎及其执行边界，再分步实现、验证并冻结；设计方向见[通用引擎设计](docs/architecture/engine-design.md)。
+通用装配的 R1–R4 职责与执行合同已冻结；已接入共享权重的多执行方案、服务会话与冷期制品复用，见[通用引擎设计](docs/architecture/engine-design.md)。
 冻结确定职责与执行合同，不冻结具体 kernel 或性能实现；现有多模型、多平台和量化组件的验证范围按实际结果说明。
 
 ## 与llama.cpp相比
@@ -44,7 +45,7 @@ Hyle 默认 BF16 为 K3，量化格式为子集头 K1；上游显式 K1，本窗
 - **完整文本入口是 Qwen**：普通生成、greedy／随机采样、MTP、多轮／多会话、共享前缀及有界缓存恢复。
   当前日常完整验证模型为 Qwen3.5-2B；其它制品与较大模型的实际运行范围见[模型覆盖](docs/implementation/model-operators.md)。
 - **单机运行**：本阶段完整引擎验证使用 Windows、CUDA 和 Qwen3.5-2B；CPU、Apple Metal 及其他模型的完整引擎路径尚未在本阶段验证。已有后端组件不等于完整路径已验证。
-- **文本服务初版**：本地 tokenizer 与模板接入，提供 CLI 和 Responses 文本子集；功能与限制见[接口指南](docs/user/text-api.md)。
+- **文本服务**：本地 tokenizer／Jinja，具名执行与采样选择、Responses 文本与 SSE、进程内续接／分叉、受限 KV 驻留和可信前缀域。冷期制品可独立生成或在加载时按配方生成，之后复用；功能与限制见[接口指南](docs/user/text-api.md)。
 - **尚未交付**：通用模型目录加载、C++ tokenizer、完整服务 API、图片输入及多卡／多机。
   GLM、DeepSeek、Kimi 等目前是组件级实现，没有完整引擎入口。
 

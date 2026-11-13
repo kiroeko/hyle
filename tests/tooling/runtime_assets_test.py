@@ -5,7 +5,7 @@ import threading
 import unittest
 
 from engine.asset_store import AssetStore
-from engine.models.qwen35.runtime_assets import prepare_assets
+from engine.models.qwen35.runtime_assets import prepare_assets, tokenizer_identity
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -98,6 +98,17 @@ class RuntimeAssetsTest(unittest.TestCase):
         self.assertFalse(errors); self.assertEqual(len(results), 2)
         self.assertEqual(results[0].directory, results[1].directory)
         self.assertEqual(sum(result.created for result in results), 1)
+
+    def test_effective_tokenizer_identity_ignores_only_transient_encode_options(self):
+        class Backend:
+            value = '{"model":{"vocab":{"x":1}},"padding":null,"truncation":null}'
+            def to_str(self): return self.value
+        tokenizer = Tokenizer(); tokenizer.backend_tokenizer = Backend()
+        first = tokenizer_identity(self.tokenizer, tokenizer=tokenizer)
+        tokenizer.backend_tokenizer.value = '{"padding":{"length":32},"truncation":{},"model":{"vocab":{"x":1}}}'
+        self.assertEqual(tokenizer_identity(self.tokenizer, tokenizer=tokenizer), first)
+        tokenizer.backend_tokenizer.value = '{"model":{"vocab":{"x":2}}}'
+        self.assertNotEqual(tokenizer_identity(self.tokenizer, tokenizer=tokenizer), first)
 
 
 if __name__ == '__main__':

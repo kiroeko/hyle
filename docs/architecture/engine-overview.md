@@ -7,8 +7,9 @@
 
 推理引擎负责把应用请求组织为完整的推理过程。内核之外的引擎部分负责模型制品的识别和读取、
 输入输出与tokenizer、请求与会话管理、跨请求调度、资源接纳与淘汰政策、结果交付及应用入口。
-HTTP服务作为引擎外围适配器。当前已有本地文本CLI和Responses文本子集，使用Python tokenizer／模板与常驻模型进程；
-通用loader、C++ tokenizer和完整服务API尚未交付。
+HTTP服务作为引擎外围适配器。当前本地文本CLI和Responses文本子集使用Python tokenizer／模板与常驻模型进程，
+支持冷期具名方案、进程内会话、可信前缀域与派生制品持久化。模型来源通过静态提供者分派，目前完整适配器是Qwen；
+C++ tokenizer和完整服务API尚未交付。
 
 推理引擎内核负责将已接纳的推理工作变为计算结果和新状态。它包括模型和设备的冷准备、模型计算、
 prefill／decode及推测步骤、采样、模型状态与缓存操作、执行依赖、完成观察和真实退休。
@@ -58,10 +59,14 @@ token CLI与文本工作进程共用公共模型提供者、装载配置和请�
 ```text
 engine/main.cc              静态登记提供者，调用公共应用入口
 engine/application.h        token CLI／worker的参数、装载与请求装配
+engine/model_preparation.py  冷期制品准备器登记
+engine/asset_store.py        不可变文件复用、校验和原子发布
 engine/text/                tokenizer、模板和协议无关的文本适配
 engine/text/app.py          本地文本CLI和服务装配
 engine/text/server.py       HTTP路由、连接和流式传输
 engine/text/responses.py    Responses文本协议适配
+engine/text/configuration.py 冷期方案与请求选择
+engine/text/sessions.py     响应历史、原生会话借用、TTL与回收
 engine/models/              模型制品、数学、完整状态和静态适配
 engine/inference/           请求、缓存、程序IO、步骤推进与资源交接的共同机制
 engine/reporting/           报告格式

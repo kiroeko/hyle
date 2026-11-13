@@ -230,6 +230,10 @@ public:
       if (entry.node != none && predicate(entry.payload)) return true;
     return false;
   }
+  // Observation only; original payloads and their resource owners stay put.
+  template<class Visitor> void visit_payloads(Visitor visitor) const {
+    for (const auto &entry : entries_) if (entry.node != none) visitor(entry.payload);
+  }
   std::size_t size() const noexcept { return size_; }
   bool evict_one() noexcept {
     const auto victim = evictable(); if (victim == none) return false;

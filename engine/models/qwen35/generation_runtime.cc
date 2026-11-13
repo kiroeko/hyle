@@ -36,6 +36,9 @@ namespace qwen35 {
 Model &generation_model(Model &fallback, const GenerationRequest &request) noexcept {
   return request.prepared_model ? *request.prepared_model : fallback;
 }
+cache::PrefixCache *generation_prefix(cache::PrefixCache *fallback, const GenerationRequest &request) noexcept {
+  return request.prepared_model ? request.prepared_prefix : fallback;
+}
 
 std::size_t generation_sampling_index(const Model &model, const GenerationLedger &ledger) {
   if (ledger.sampling && (ledger.sampling_owner.expired() || ledger.sampling_owner.owner_before(model.resources_) || model.resources_.owner_before(ledger.sampling_owner)))
@@ -2237,7 +2240,7 @@ inference::RequestWaveResult advance_generation_wave(Model &model, inference::Re
 template<class ExecuteWave>
 struct GenerationRequestAdapter final {
   Model &fallback_model;
-  cache::PrefixCache *prefix;
+  cache::PrefixCache *fallback_prefix;
   std::span<GenerationRequest> requests;
   bool trace_states;
   std::vector<std::size_t> *evictions;
@@ -2267,6 +2270,7 @@ struct GenerationRequestAdapter final {
   void admit(inference::RequestKey key, std::span<const inference::RequestKey>) const {
     auto &request = requests[key.slot];
     auto &model = generation_model(this->fallback_model, request);
+    auto *prefix = generation_prefix(this->fallback_prefix, request);
     if (!request.session && request.host_image) {
       if (request.host_image->identity.sampling_index != request.sampling_index)
         throw std::runtime_error("parked request sampling configuration changed");
@@ -2297,7 +2301,8 @@ struct GenerationRequestAdapter final {
   }
   void publish_turn(inference::RequestKey key) const {
     if (continuation) continuation->release(key);
-    publish_generation_completed(generation_model(fallback_model, requests[key.slot]), requests[key.slot], prefix);
+    publish_generation_completed(generation_model(fallback_model, requests[key.slot]), requests[key.slot],
+        generation_prefix(fallback_prefix, requests[key.slot]));
   }
   inference::RetirementObservation retire(inference::RequestKey key, inference::RequestRetirement reason) const {
     if (continuation) continuation->release(key);
@@ -2442,6 +2447,7 @@ void validate_reusable_batch(Model &model, inference::GenerationBatch batch, boo
 struct PreparedGenerationProfile final {
   Model *model;
   bool overlap;
+  cache::PrefixCache *prefix = nullptr;
 };
 
 Model &prepared_profile_model(Model &fallback, std::span<const PreparedGenerationProfile> profiles,
@@ -2481,7 +2487,7 @@ bool admit_waiting_generation(Model &model, inference::RequestLoop &loop,
     inference::RequestOutputSlots &deliveries, std::size_t prefill,
     std::size_t bound, std::size_t record_bound,
     std::size_t &active, std::size_t &total_turns, std::size_t &outputs,
-    std::span<const PreparedGenerationProfile> profiles = {}) {
+    std::span<const PreparedGenerationProfile> profiles = {}, cache::PrefixCache *prefix = nullptr) {
   const auto validate = [&](const inference::GenerationAdmission &next) {
     const std::span one_schedule(&next.schedule, 1);
     const std::span one_sampling(&next.sampling_index, 1);
@@ -2498,6 +2504,7 @@ bool admit_waiting_generation(Model &model, inference::RequestLoop &loop,
     GenerationRequest fresh(schedule.id, visible_turns.front().prompt, {}, bound,
                             next.sampling_index, std::move(next.stop));
     fresh.prepared_model = profiles.empty() ? nullptr : &selected;
+    fresh.prepared_prefix = profiles.empty() ? prefix : profiles[schedule.execution_profile].prefix;
     fresh.execution_profile = schedule.execution_profile;
     fresh.max_draft_tokens = schedule.max_draft_tokens.value_or(selected.cache_plan.draft_cache ? selected.max_drafts() : 0);
     fresh.cache_sharing_domain = schedule.cache_sharing_domain;
@@ -2513,6 +2520,7 @@ bool admit_waiting_generation(Model &model, inference::RequestLoop &loop,
     fresh.warm_inputs.reserve(bound);
     fresh.warm_inputs.push_back(std::make_shared<std::vector<std::int32_t>>(visible_turns.front().prompt));
     fresh.prompt = *fresh.warm_inputs[0];
+    if (fresh.prepared_prefix) fresh.input = cache::token_plan(fresh.prompt, selected.capacity);
     fresh.ledger = std::make_unique<GenerationLedger>(record_bound, selected.cache_plan.candidate_boundaries);
     fresh.round_emitted.resize(bound - 1);
     for (auto &emitted : fresh.round_emitted) emitted.reserve(selected.cache_plan.candidate_boundaries);
@@ -2923,7 +2931,7 @@ StartupPrefillWarmup prepare_generation_programs(Model &model, const GenerationP
           ? GraphRole::kMtpContinuation : GraphRole::kMtpCatchupRound);
     }
   if (!reuse_ready) {
-  auto warmed = prepare_cold_prefill(model, first_turn_only, mtp, requests.front().sampling_index);
+  auto warmed = prepare_cold_prefill(model, first_turn_only && !prefix_enabled, mtp, requests.front().sampling_index);
   if (warmed) startup_prefill_warmup = *warmed;
   else {
     if (!warmed.error().IsUnimplemented()) check(warmed.error());
@@ -2951,6 +2959,7 @@ struct GenerationExecutionOptions final {
   bool decode_overlap = false;
   ReusableGenerationPreparation *preparation = nullptr;
   std::span<const PreparedGenerationProfile> profiles{};
+  cache::PrefixCache *prefix = nullptr;
 };
 
 template<GenerationMode Mode, bool Diagnostic = false, class BatchObserver = std::nullptr_t, class OutputConsumer = std::nullptr_t>
@@ -2969,7 +2978,8 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
   const bool trace_states = Diagnostic && diagnostics->trace_states;
   const auto startup = Diagnostic ? diagnostics->startup : Clock::now();
   const auto constructed = Diagnostic ? diagnostics->constructed : startup;
-  const bool prefix_enabled = Diagnostic && diagnostics->prefix_enabled;
+  const bool prefix_enabled = Diagnostic ? diagnostics->prefix_enabled : options.prefix ||
+      std::ranges::any_of(options.profiles, [](const auto &profile) { return profile.prefix != nullptr; });
   const bool warmup_planned_shapes = Diagnostic && diagnostics->warmup_planned_shapes;
   const bool first_turn_only = bool(reuse) || (Diagnostic && diagnostics->first_turn_only);
   const auto token_plans = Diagnostic ? diagnostics->token_plans : std::span<const cache::TokenPlanRef>{};
@@ -2984,6 +2994,19 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
     if constexpr (mixed) { for (const auto &profile : options.profiles) visit(*profile.model); }
     else visit(model);
   };
+  auto local_prefix = Diagnostic && prefix_enabled ? std::make_unique<cache::PrefixCache>(model.cache_plan.resident_sessions) : nullptr;
+  auto *prefix = Diagnostic ? local_prefix.get() : options.prefix;
+  const auto selected_prefix = [&](std::size_t index) -> cache::PrefixCache * {
+    if constexpr (mixed) return options.profiles[index].prefix;
+    else { (void)index; return prefix; }
+  };
+  const auto cached_versions = [&](const Model &selected) {
+    if constexpr (mixed) {
+      for (const auto &profile : options.profiles) if (profile.model == &selected)
+        return profile.prefix ? profile.prefix->retained_versions() : std::size_t{0};
+      throw std::logic_error("model lost its prepared prefix owner");
+    } else { (void)selected; return prefix ? prefix->retained_versions() : std::size_t{0}; }
+  };
   if (std::ranges::any_of(schedules, [](const auto &schedule) { return schedule.accepts_live_input(); }) &&
       (!first_turn_only || !reuse || !live_input))
     throw inference::RequestRejected("live input requires a reusable request owner and input source");
@@ -2992,7 +3015,7 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
   const auto configured_prefill = (std::min)({max_prefill_rows, std::size_t{512}, model.capacity});
   const bool reuse_ready = reuse && reuse->ready;
   if (reuse) {
-    if (!first_turn_only || prefix_enabled || warmup_planned_shapes || !logits_providers.empty() ||
+    if (!first_turn_only || warmup_planned_shapes || !logits_providers.empty() ||
         !trace.empty() || trace_states)
       throw std::invalid_argument("reusable preparation requires bounded requests with a prepared sampling configuration");
     if constexpr (mixed) validate_profile_batch(model, {schedules, sampling_indices, stop_policies}, configured_prefill, options.profiles);
@@ -3003,7 +3026,7 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
       throw std::invalid_argument("reusable preparation differs from its original model or cold configuration");
     for_each_model([&](Model &selected) {
       if (selected.active_step || selected.successor_step || selected.carrier_borrowed ||
-          selected.snapshot_versions.live || selected.resources_->pending_readbacks())
+          selected.snapshot_versions.live != cached_versions(selected) || selected.resources_->pending_readbacks())
         throw std::logic_error("reusable preparation requires actual retirement of the preceding request");
     });
     if constexpr (mixed) {
@@ -3034,7 +3057,7 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
   const auto frontier_seconds_before = reuse_ready ? model.frontier_sampling_seconds : 0.;
   const auto cold_prepare_begin = Clock::now();
   std::cerr << "cold_prepare_begin\n";
-  if (first_turn_only && (prefix_enabled || warmup_planned_shapes ||
+  if (first_turn_only && ((prefix_enabled && !reuse) || warmup_planned_shapes ||
       (!reuse && (schedules.size() != 1 || model.cache_plan.resident_sessions != 1 || model.cache_plan.active_sequences != 1)) ||
       model.cache_plan.max_query_rows / model.cache_plan.active_sequences < (reuse ? configured_prefill : model.capacity)))
     throw std::runtime_error("bounded natural generation requires configured query capacity, no prefix cache and lazy shape preparation");
@@ -3064,7 +3087,7 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
               << " configured_active_sequences=" << model.cache_plan.active_sequences << " query_capacity=" << model.cache_plan.max_query_rows
               << " configured_prefill_rows=" << max_prefill_rows << " future_shape_hints=0\n";
   if constexpr (mixed) for (const auto &profile : options.profiles)
-    profile.model->prepare_default_device_mtp_successor(profile.model->cache_plan.draft_cache && profile.overlap);
+    profile.model->prepare_default_device_mtp_successor(profile.model->cache_plan.draft_cache && profile.overlap && !profile.prefix);
   else model.prepare_default_device_mtp_successor(mtp && decode_overlap && !prefix_enabled && logits_providers.empty());
   if (!max_prefill_rows) throw std::runtime_error("prefill rows require a positive quantum");
   const inference::PrefillPolicy prefill(max_prefill_rows);
@@ -3087,9 +3110,8 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
   }
   if (schedules.empty() || (!mixed && model.cache_plan.draft_cache != mtp))
     throw std::runtime_error("natural generation mode differs from its complete model/cache plan");
-  if (prefix_enabled && token_plans.size() != schedules.size())
+  if (Diagnostic && prefix_enabled && token_plans.size() != schedules.size())
     throw std::runtime_error("natural generation requires one validated prefix input per request");
-  auto prefix = prefix_enabled ? std::make_unique<cache::PrefixCache>(model.cache_plan.resident_sessions) : nullptr;
   std::vector<GenerationRequest> requests;
   requests.reserve(dynamic_admission ? model.cache_plan.resident_sessions : schedules.size());
   std::size_t total_turns = 0, requested_outputs = 0, decode_bound = 0, restore_bound = 0, dispatch_bound = 0;
@@ -3112,6 +3134,7 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
         stop_policies.empty() ? inference::RequestStopPolicy{} : stop_policies[requests.size()]);
     auto &request = requests.back();
     if constexpr (mixed) request.prepared_model = &request_model;
+    request.prepared_prefix = selected_prefix(schedule.execution_profile);
     request.execution_profile = schedule.execution_profile;
     if (schedule.max_draft_tokens && *schedule.max_draft_tokens > (request_mtp ? request_model.max_drafts() : 0))
       throw std::invalid_argument("requested draft ceiling exceeds the cold-prepared execution plan");
@@ -3143,7 +3166,10 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
     dispatch_bound = cache::add(dispatch_bound, ledger_capacity);
     request.round_emitted.resize((first_turn_only ? configured_bound : outputs) - 1);
     for (auto &emitted : request.round_emitted) emitted.reserve(request_model.cache_plan.candidate_boundaries);
-    if (prefix) request.input = token_plans[requests.size() - 1];
+    if (request.prepared_prefix) {
+      if constexpr (Diagnostic) request.input = token_plans[requests.size() - 1];
+      else request.input = cache::token_plan(request.prompt, request_model.capacity);
+    }
     total_turns = cache::add(total_turns, visible_turns.size());
     requested_outputs = cache::add(requested_outputs, outputs);
     decode_bound = cache::add(decode_bound, first_turn_only ? configured_bound : outputs - visible_turns.size());
@@ -3162,7 +3188,7 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
       for (std::size_t j = 0; j < profile.model->sampling_configuration_count(); ++j)
         warm.emplace_back("", requests.front().prompt, std::filesystem::path{}, configured_bound, j);
       auto plan = program_plan;
-      plan.requests = warm; plan.decode_overlap = profile.overlap;
+      plan.requests = warm; plan.decode_overlap = profile.overlap; plan.prefix_enabled = bool(profile.prefix);
       if (profile.model->cache_plan.draft_cache) {
         (void)prepare_generation_programs<GenerationMode::kMtp>(*profile.model, plan);
         prepare_generation_recordings<GenerationMode::kMtp>(*profile.model, plan);
@@ -3243,10 +3269,10 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
         if (step) for (const auto &member : step->members) candidates += bool(member.next);
       const auto live = std::size_t(selected.snapshot_versions.live);
       if (candidates > live) throw std::logic_error("generation candidates exceed their actual version ownership");
+      if (live - candidates > selected.cache_plan.resident_sessions)
+        throw std::runtime_error("generation committed version count exceeds its model's original budget");
       committed += live - candidates;
     });
-    if (committed > model.cache_plan.resident_sessions)
-      throw std::runtime_error("generation committed version count exceeds N after publication");
     peak_resident = (std::max)(peak_resident, resident_count());
     peak_committed = (std::max)(peak_committed, committed);
   };
@@ -3297,8 +3323,9 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
     const auto prepare_call = [&](inference::RequestKey key) {
       auto &request = requests[key.slot];
       auto &model = selected_model(request.execution_profile);
+      auto *prefix = selected_prefix(request.execution_profile);
       std::cerr << "generation_session id=" << request.id << " turn=" << request.progress.turn_index + 1 << " episode=" << request.rounds.size() << '\n';
-      return prepare_generation_call(model, request, request.progress.output_limit(), prefix.get(), requests,
+      return prepare_generation_call(model, request, request.progress.output_limit(), prefix, requests,
           request_loop.credit(key, request.progress.generated.size()), max_prefill_rows);
     };
     const auto batch_limit = [&](const PreparedGenerationCall &first) -> std::size_t {
@@ -3322,6 +3349,7 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
     };
     const auto fits = [&](std::span<PreparedGenerationCall> members) {
       auto &model = selected_model(members[0].request->execution_profile);
+      auto *prefix = selected_prefix(members[0].request->execution_profile);
       if (members[0].full_hit) return true;
       if (reuse && members.size() > 1 && !members[0].generation &&
           (members[0].role == GraphRole::kText || is_mtp_prefill(members[0].role)) &&
@@ -3333,17 +3361,18 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
       if (mixed_roles && !model.find_child(members.size(), 2, GraphRole::kMtpCatchupRound, false,
           members[0].completion, members[0].request->sampling_index, RowPacking::kDraft)) return false;
       return (!unequal || generation_prefill_capacity(model, members) || generation_verification_capacity(model, members)) &&
-          make_generation_batch_room(model, prefix.get(), members, requests);
+          make_generation_batch_room(model, prefix, members, requests);
     };
     const auto execute_batch = [&](std::span<PreparedGenerationCall> bucket, bool entire_wave) {
       auto &model = selected_model(bucket[0].request->execution_profile);
+      auto *prefix = selected_prefix(bucket[0].request->execution_profile);
       if constexpr (mixed) continuation.enabled = options.profiles[bucket[0].request->execution_profile].overlap;
       std::cerr << "generation_batch requests=" << bucket.size() << " T=" << bucket[0].planned_rows()
                 << " role=" << static_cast<int>(bucket[0].role) << " full_hit=" << bucket[0].full_hit;
       if constexpr (mixed) std::cerr << " execution_profile=" << bucket[0].request->execution_profile;
       std::cerr << '\n';
       try {
-        execute_generation_calls(model, bucket, trace_states, prefix.get(), requests,
+        execute_generation_calls(model, bucket, trace_states, prefix, requests,
             nullptr, &continuation, observe_batch, entire_wave, wave.credits);
       } catch (const inference::EvaluationFailure &failure) {
         // Only the real admitted bucket may attribute a native member failure.
@@ -3368,7 +3397,7 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
       observe_capacity();
     };
     const auto publish_call = [&](PreparedGenerationCall &call) {
-      publish_generation_prompt(selected_model(call.request->execution_profile), call, prefix.get());
+      publish_generation_prompt(selected_model(call.request->execution_profile), call, selected_prefix(call.request->execution_profile));
     };
     // These typed callable references bind the original model stages directly;
     // they hold no Model interface, runtime callbacks or execution authority.
@@ -3393,9 +3422,11 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
       if (!continuation.pending_calls.empty()) wave_model = &selected_model(continuation.pending_calls.front().request->execution_profile);
       else if (!wave.keys.empty()) wave_model = &selected_model(requests[wave.keys.front().slot].execution_profile);
     }
-    return advance_generation_wave(*wave_model, wave, reserved, trace_states, continuation, execute_ready, nullptr, observe_batch, prefix.get());
+    const auto profile = !continuation.pending_calls.empty() ? continuation.pending_calls.front().request->execution_profile :
+        !wave.keys.empty() ? requests[wave.keys.front().slot].execution_profile : 0;
+    return advance_generation_wave(*wave_model, wave, reserved, trace_states, continuation, execute_ready, nullptr, observe_batch, selected_prefix(profile));
   };
-  GenerationRequestAdapter adapter{model, prefix.get(), std::span(requests), trace_states, &evictions, execute_wave,
+  GenerationRequestAdapter adapter{model, prefix, std::span(requests), trace_states, &evictions, execute_wave,
       {}, &continuation};
   const auto service_output = [&]() {
     if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>)
@@ -3479,7 +3510,7 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
           return admit_waiting_generation(model, request_loop, *live_input, consumer, requests,
               slot_schedules, output_deliveries, configured_prefill,
               configured_bound, configured_record_bound, active_requests, total_turns, requested_outputs,
-              mixed ? options.profiles : std::span<const PreparedGenerationProfile>{});
+              mixed ? options.profiles : std::span<const PreparedGenerationProfile>{}, prefix);
         };
         if constexpr (std::is_same_v<std::remove_cvref_t<OutputConsumer>, inference::TokenConsumerRef>)
           input_arrived = admit(output_consumer) || input_arrived;
@@ -3504,7 +3535,7 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
   if (reuse) {
     for_each_model([&](Model &selected) {
       if (selected.active_step || selected.successor_step || selected.carrier_borrowed ||
-          selected.snapshot_versions.live || selected.resources_->pending_readbacks())
+          selected.snapshot_versions.live != cached_versions(selected) || selected.resources_->pending_readbacks())
         throw std::logic_error("reusable request has not actually retired its model resources");
     });
     reuse->ready = true; reuse_success = true;
@@ -3517,7 +3548,7 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
           .model = model,
           .requests = requests,
           .output_deliveries = delivery_view,
-          .prefix = prefix.get(),
+          .prefix = prefix,
           .dispatch = dispatch,
           .dispatch_turns = dispatch_turns,
           .evictions = evictions,
@@ -3586,8 +3617,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
 // does not expose Qwen's state or legacy JSON report to the common interface.
 class PreparedModelExecutor final : public inference::ModelExecutor {
 public:
-  PreparedModelExecutor(Model &model, bool mtp, std::size_t prefill_rows, bool overlap)
-      : model_(model), mtp_(mtp), overlap_(overlap), prefill_rows_(prefill_rows) {}
+  PreparedModelExecutor(Model &model, bool mtp, std::size_t prefill_rows, bool overlap, cache::PrefixCache *prefix = nullptr)
+      : model_(model), mtp_(mtp), overlap_(overlap), prefill_rows_(prefill_rows), prefix_(prefix) {}
   inference::ModelDescription describe() const override {
     inference::ModelDescription description{static_cast<std::size_t>(model_.vocabulary), model_.capacity,
         {model_eos_tokens.begin(), model_eos_tokens.end()}};
@@ -3617,7 +3648,7 @@ public:
     if (running_.test_and_set(std::memory_order_acquire))
       throw std::logic_error("prepared model executor is already running");
     hyle::util::ScopeGuard release{[&]() noexcept { running_.clear(std::memory_order_release); }};
-    const GenerationExecutionOptions options{prefill_rows_, overlap_, &preparation_};
+    const GenerationExecutionOptions options{prefill_rows_, overlap_, &preparation_, {}, prefix_};
     const auto result = mtp_
         ? execute_generation_sessions<GenerationMode::kMtp>(model_, batch, options, consumer)
         : execute_generation_sessions<GenerationMode::kText>(model_, batch, options, consumer);
@@ -3628,6 +3659,7 @@ private:
   ReusableGenerationPreparation preparation_;
   bool mtp_, overlap_;
   std::size_t prefill_rows_;
+  cache::PrefixCache *prefix_;
   std::atomic_flag running_ = ATOMIC_FLAG_INIT;
 };
 std::unique_ptr<inference::ModelExecutor> make_prepared_executor(
@@ -3642,10 +3674,14 @@ class LoadedModelExecutor final : public inference::ModelExecutor {
 public:
   LoadedModelExecutor(std::vector<std::unique_ptr<Model>> models,
       std::vector<PreparedGenerationProfile> profiles, std::vector<std::string> names,
-      std::size_t prefill_rows)
+      std::size_t prefill_rows, std::size_t prefix_entries)
       : models_(std::move(models)), profiles_(std::move(profiles)), names_(std::move(names)), prefill_rows_(prefill_rows) {
+    if (prefix_entries) for (auto &profile : profiles_) {
+      prefixes_.push_back(std::make_unique<cache::PrefixCache>(prefix_entries));
+      profile.prefix = prefixes_.back().get();
+    }
     if (models_.size() == 1) single_ = std::make_unique<PreparedModelExecutor>(
-        *models_[0], models_[0]->cache_plan.draft_cache, prefill_rows, profiles_[0].overlap);
+        *models_[0], models_[0]->cache_plan.draft_cache, prefill_rows, profiles_[0].overlap, profiles_[0].prefix);
   }
   inference::ModelDescription describe() const override {
     inference::ModelDescription description{static_cast<std::size_t>(models_[0]->vocabulary), models_[0]->capacity,
@@ -3684,6 +3720,8 @@ public:
   }
 private:
   std::vector<std::unique_ptr<Model>> models_;
+  // Complete cached states release before their original model resources.
+  std::vector<std::unique_ptr<cache::PrefixCache>> prefixes_;
   std::vector<PreparedGenerationProfile> profiles_;
   std::vector<std::string> names_;
   std::size_t prefill_rows_;
@@ -3834,6 +3872,6 @@ std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::M
   }
   for (const auto &profile : config.execution_profiles) names.push_back(profile.name);
   return std::make_unique<LoadedModelExecutor>(std::move(models), std::move(profiles), std::move(names),
-      config.execution.prefill_rows);
+      config.execution.prefill_rows, config.execution.prefix_cache_entries);
 }
 } // namespace qwen35

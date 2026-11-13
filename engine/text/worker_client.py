@@ -9,6 +9,7 @@ import math
 import queue
 import subprocess
 import threading
+import time
 from pathlib import Path
 from typing import Sequence
 
@@ -47,6 +48,7 @@ class WorkerRequest:
         self._input_uncertain = False
         self._outstanding = False
         self._terminal = False
+        self._terminal_event: TokenEvent | None = None
         self._cancelled = False
 
     def read(self, timeout: float | None = None) -> TokenEvent:
@@ -61,6 +63,7 @@ class WorkerRequest:
                 self._outstanding = True
             else:
                 self._terminal = True
+                self._terminal_event = event
                 self._client._forget(self._id)
         return event
 
@@ -124,6 +127,35 @@ class WorkerRequest:
         finally:
             self._client._forget(self._id)
 
+    def retire(self, *, timeout: float = 120) -> TokenEvent:
+        """Cancel and drain to the original owner's terminal observation.
+
+        One reader, after delivery has stopped. Already emitted tokens need no
+        credit after cancellation; do not send late acknowledgements to a
+        reaped worker request. A timeout/error is never retirement success.
+        """
+        if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or not math.isfinite(timeout) or timeout <= 0:
+            raise ValueError('retirement timeout must be finite and positive')
+        self.cancel()
+        deadline = time.monotonic() + timeout
+        while True:
+            with self._lock:
+                if self._terminal_event is not None:
+                    return self._terminal_event
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise WorkerError('timeout', 'original request retirement is unconfirmed')
+            try:
+                event = self._client._read_event(self._events, remaining)
+            except queue.Empty as error:
+                raise WorkerError('timeout', 'original request retirement is unconfirmed') from error
+            if event.kind in ('token', 'turn_end'):
+                continue
+            with self._lock:
+                self._terminal = True; self._terminal_event = event; self._outstanding = False
+            self._client._forget(self._id)
+            return event
+
 
 class WorkerClient:
     def __init__(self, command: Sequence[str | Path], *, startup_timeout: float = 60):
@@ -136,6 +168,7 @@ class WorkerClient:
         self._pending: dict[int, queue.Queue] = {}
         self._controls: dict[tuple[int, int], tuple[str, queue.Queue]] = {}
         self._next_id = 1
+        self._next_domain = 1
         self._next_control = 1
         self._closed = False
         self._failure: str | None = None
@@ -170,36 +203,48 @@ class WorkerClient:
         with self._state_lock:
             return not self._closed and self._failure is None and self._process.poll() is None
 
+    def allocate_cache_domain(self) -> int:
+        """Trusted frontend identity, never supplied by an HTTP client."""
+        with self._state_lock:
+            if self._next_domain >= 1 << 64:
+                raise WorkerError('closed', 'cache sharing identity space is exhausted')
+            value = self._next_domain
+            self._next_domain += 1
+            return value
+
     def submit(self, tokens: Sequence[int], max_output_tokens: int, *, stop_ids: Sequence[int] = (),
                sampling_index: int | None = None, seed: int | None = None,
-               max_draft_tokens: int | None = None, execution_profile: int | None = None) -> WorkerRequest:
+               max_draft_tokens: int | None = None, execution_profile: int | None = None,
+               cache_sharing_domain: int | None = None) -> WorkerRequest:
         return self._submit_turns(((tokens, max_output_tokens),), report_turns=False, stop_ids=stop_ids,
                                   sampling_index=sampling_index, seed=seed, max_draft_tokens=max_draft_tokens,
-                                  execution_profile=execution_profile)
+                                  execution_profile=execution_profile, cache_sharing_domain=cache_sharing_domain)
 
     def submit_turns(self, turns: Sequence[tuple[Sequence[int], int]], *, stop_ids: Sequence[int] = (),
                      sampling_index: int | None = None, seed: int | None = None,
-                     max_draft_tokens: int | None = None, execution_profile: int | None = None) -> WorkerRequest:
+                     max_draft_tokens: int | None = None, execution_profile: int | None = None,
+                     cache_sharing_domain: int | None = None) -> WorkerRequest:
         """Submit one finite session with acknowledged, zero-based turn-end events."""
         return self._submit_turns(turns, report_turns=True, stop_ids=stop_ids,
                                   sampling_index=sampling_index, seed=seed, max_draft_tokens=max_draft_tokens,
-                                  execution_profile=execution_profile)
+                                  execution_profile=execution_profile, cache_sharing_domain=cache_sharing_domain)
 
     def open_session(self, tokens: Sequence[int], max_output_tokens: int, *, stop_ids: Sequence[int] = (),
                      sampling_index: int | None = None, seed: int | None = None,
-                     max_draft_tokens: int | None = None, execution_profile: int | None = None) -> WorkerRequest:
+                     max_draft_tokens: int | None = None, execution_profile: int | None = None,
+                     cache_sharing_domain: int | None = None) -> WorkerRequest:
         """Open one live session; append turns and explicitly finish its input."""
         return self._submit_turns(((tokens, max_output_tokens),), report_turns=True, live=True, stop_ids=stop_ids,
                                   sampling_index=sampling_index, seed=seed, max_draft_tokens=max_draft_tokens,
-                                  execution_profile=execution_profile)
+                                  execution_profile=execution_profile, cache_sharing_domain=cache_sharing_domain)
 
     def _submit_turns(self, turns: Sequence[tuple[Sequence[int], int]], *, report_turns: bool,
                       live: bool = False, stop_ids: Sequence[int] = (), sampling_index: int | None = None,
                       seed: int | None = None, max_draft_tokens: int | None = None,
-                      execution_profile: int | None = None) -> WorkerRequest:
+                      execution_profile: int | None = None, cache_sharing_domain: int | None = None) -> WorkerRequest:
         if not turns:
             raise ValueError("at least one turn is required")
-        for value in (sampling_index, seed, max_draft_tokens, execution_profile):
+        for value in (sampling_index, seed, max_draft_tokens, execution_profile, cache_sharing_domain):
             if value is not None and (type(value) is not int or not 0 <= value <= 18446744073709551615):
                 raise ValueError("request configuration must be an unsigned 64-bit integer")
         if any(type(token) is not int or token < 0 or token >= self.vocabulary for token in stop_ids):
@@ -223,11 +268,12 @@ class WorkerClient:
             self._pending[request_id] = events
         try:
             kind = 'O' if live else 'S' if report_turns else 'G'
-            if execution_profile is not None or any(value is not None for value in (sampling_index, seed, max_draft_tokens)):
+            if cache_sharing_domain is not None or execution_profile is not None or any(value is not None for value in (sampling_index, seed, max_draft_tokens)):
                 choices = (sampling_index, seed, max_draft_tokens)
                 fields = [str(value) if value is not None else '-' for value in choices]
-                profile = (str(execution_profile),) if execution_profile is not None else ()
-                prefix = "\t".join(('P' if profile else 'R', str(request_id), kind, *profile,
+                profile = ((str(execution_profile or 0), str(cache_sharing_domain)) if cache_sharing_domain is not None else
+                           (str(execution_profile),) if execution_profile is not None else ())
+                prefix = "\t".join(('D' if cache_sharing_domain is not None else 'P' if profile else 'R', str(request_id), kind, *profile,
                                      *fields, ','.join(map(str, stops)) or '-'))
             else:
                 prefix = f"{kind.lower()}\t{request_id}\t{','.join(map(str, stops))}" if stops else f"{kind}\t{request_id}"

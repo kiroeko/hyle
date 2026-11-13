@@ -60,6 +60,7 @@ struct GenerationRequest {
   // A cold-prepared algorithm owns this request's full state and programs.
   // Null retains the original single-model/diagnostic fast path.
   Model *prepared_model = nullptr;
+  cache::PrefixCache *prepared_prefix = nullptr;
   std::size_t execution_profile = 0;
   std::size_t max_draft_tokens = SIZE_MAX;
   std::uint64_t cache_sharing_domain = 0;

@@ -98,7 +98,7 @@ python scripts/prepare-qwen35.py --model <本地HF模型目录> --output .scratc
 hyle generate --inputs .scratch/qwen-q4-head --tokens .scratch/qwen-q4-head/prompt.ids --max-output-tokens 64 --capacity 1024
 ```
 
-该工具只支持其可读取的原始稠密 HF 头；有子词表时生成与其绑定的紧凑头，不自动推荐 K3。对已有输入生成独立资产后，运行时还需显式指定 `--draft-head .scratch/qwen-draft/mtp-draft-head.tsv`；直接准备的新输入目录在同时有子词表时可自动发现这些制品，仅准备全头时可用 `--draft-count 1 --draft-head FILE`。完整词表仍来自模型本身，无需生成另一份权重或词表文件。引擎加载模型后自动准备并持久化这些资产尚未实现。
+该 Q4_K 量化工具只支持其可读取的原始稠密 HF 头；有子词表时生成与其绑定的紧凑头，不自动推荐 K3。对已有输入生成独立资产后，运行时还需显式指定 `--draft-head .scratch/qwen-draft/mtp-draft-head.tsv`；直接准备的新输入目录在同时有子词表时可自动发现这些制品，仅准备全头时可用 `--draft-count 1 --draft-head FILE`。完整词表仍来自原 tokenizer。文本入口还可按冷期配方自动生成并持久化原编码制品，见[服务配置](text-api.md#冷期配置与请求选择)；原生 token CLI 继续消费显式准备文件，不自行运行 tokenizer。
 
 ## 常用选项
 

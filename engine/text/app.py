@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import argparse
 import math
+import os
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 from .codec import HuggingFaceTextCodec
@@ -11,30 +13,52 @@ from .responses import ResponsesAdapter
 from .runtime import GenerationProgress, TextEngine
 from .server import TextHttpServer
 from .worker_client import WorkerClient
+from .configuration import PreparedChoices, Selection, read_configuration
+from ..model_preparation import prepare_local_assets
 
 
 class ResponsesServer(TextHttpServer):
     """Current application composition; future protocols supply other routes."""
     def __init__(self, address, engine: TextEngine, metrics_enabled: bool):
-        super().__init__(address, engine, metrics_enabled, {'/v1/responses': ResponsesAdapter()})
+        adapter = ResponsesAdapter()
+        super().__init__(address, engine, metrics_enabled, {'/v1/responses': adapter, '/v1/responses/*': adapter})
 
 
-def make_worker_command(args) -> list[str]:
+def make_worker_command(args, choices: PreparedChoices | None = None) -> list[str]:
     command = [str(args.engine), '--engine-worker', '--inputs', str(args.inputs), '--backend', args.backend,
                '--capacity', str(args.capacity), '--max-sessions', str(args.max_sessions),
                '--active-sequences', str(args.active_sequences), '--sampling', args.sampling]
-    if args.draft_count is not None:
-        command += ['--draft-count', str(args.draft_count)]
-    if args.overlap is not None:
-        command += ['--overlap', 'on' if args.overlap else 'off']
     if args.sampling == 'random':
         command += ['--temperature', str(args.temperature), '--top-k', str(args.top_k),
                     '--top-p', str(args.top_p), '--seed', str(args.seed)]
-    if args.draft_vocabulary:
-        command += ['--draft-vocabulary', str(args.draft_vocabulary)]
-    if args.draft_head:
-        command += ['--draft-head', str(args.draft_head)]
+    if choices is None:
+        if args.draft_count is not None: command += ['--draft-count', str(args.draft_count)]
+        if args.overlap is not None: command += ['--overlap', 'on' if args.overlap else 'off']
+        if args.draft_vocabulary: command += ['--draft-vocabulary', str(args.draft_vocabulary)]
+        if args.draft_head: command += ['--draft-head', str(args.draft_head)]
+    else:
+        for index, profile in enumerate(choices.executions):
+            if index: command += ['--profile', profile.name]
+            if profile.drafts is not None: command += ['--draft-count', str(profile.drafts)]
+            if profile.overlap is not None: command += ['--overlap', 'on' if profile.overlap else 'off']
+            for role, path in profile.assets: command += ['--profile-asset', role + '=' + str(path)]
+        for sampler in choices.samplers[1:]:
+            command += ['--additional-sampling', f'random,{sampler.temperature},{sampler.top_k},{sampler.top_p}' if sampler.random else 'greedy']
+        if choices.prefix_entries: command += ['--prefix-cache-entries', str(choices.prefix_entries)]
     return command
+
+
+def prepare_choices(args, codec, choices: PreparedChoices) -> PreparedChoices:
+    profiles = []
+    for profile in choices.executions:
+        if profile.generate is not None:
+            directory = args.asset_cache or Path(os.environ.get('LOCALAPPDATA', str(Path.home() / '.cache'))) / 'hyle' / 'assets'
+            assets = prepare_local_assets(args.inputs, args.tokenizer_dir, codec.preparation_tokenizer,
+                directory, template=args.template, **profile.generate)
+            print('runtime assets ' + ('created ' if assets.created else 'reused ') + str(assets.directory), file=sys.stderr, flush=True)
+            profile = replace(profile, assets=assets.execution_assets)
+        profiles.append(profile)
+    return replace(choices, executions=tuple(profiles))
 
 
 def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
@@ -46,6 +70,8 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     common.add_argument('--tokenizer-dir', type=Path, required=True, help='local tokenizer and model metadata')
     common.add_argument('--template', type=Path, help='explicit local Jinja template')
     common.add_argument('--model-name', default='hyle')
+    common.add_argument('--config', type=Path, help='cold execution/sampling and session policy TOML')
+    common.add_argument('--asset-cache', type=Path, help='immutable store for configured automatic asset recipes')
     common.add_argument('--backend', choices=('auto', 'cpu', 'cuda', 'apple', 'vulkan'), default='auto')
     common.add_argument('--capacity', type=int, default=4096)
     common.add_argument('--max-sessions', type=int, default=2)
@@ -66,6 +92,9 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     generate = sub.add_parser('generate', parents=[common], help='generate from one text prompt')
     generate.add_argument('--text', required=True)
     generate.add_argument('--max-output-tokens', type=int, default=256)
+    generate.add_argument('--execution-profile', default='default')
+    generate.add_argument('--sampling-profile', default='default')
+    generate.add_argument('--request-seed', type=int)
     args = parser.parse_args(argv)
     if args.sampling != 'random' and any(value is not None for value in
                                           (args.temperature, args.top_k, args.top_p, args.seed)):
@@ -88,11 +117,15 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_arguments(argv)
-    worker = WorkerClient(make_worker_command(args))
+    choices = read_configuration(args)
+    codec = HuggingFaceTextCodec(args.tokenizer_dir, template=args.template)
+    choices = prepare_choices(args, codec, choices)
+    worker = WorkerClient(make_worker_command(args, choices))
+    engine = None
     try:
-        codec = HuggingFaceTextCodec(args.tokenizer_dir, template=args.template,
-                                     expected_vocabulary=worker.vocabulary)
-        engine = TextEngine(worker, codec, args.model_name)
+        codec.validate_vocabulary(worker.vocabulary)
+        engine = TextEngine(worker, codec, args.model_name, choices=choices,
+                            session_policy=choices.sessions if args.command == 'serve' else None)
         if args.command == 'serve':
             server = ResponsesServer((args.host, args.port), engine, args.metrics)
             try:
@@ -105,7 +138,9 @@ def main(argv: list[str] | None = None) -> int:
         else:
             if hasattr(sys.stdout, 'reconfigure'):
                 sys.stdout.reconfigure(encoding='utf-8')
-            prepared = engine.prepare([{'role': 'user', 'content': args.text}], args.max_output_tokens)
+            selection = choices.select(dict(execution_profile=args.execution_profile, sampling_profile=args.sampling_profile,
+                                            **({'seed': args.request_seed} if args.request_seed is not None else {})))
+            prepared = engine.prepare([{'role': 'user', 'content': args.text}], args.max_output_tokens, selection)
             request = engine.submit(prepared)
             try:
                 engine.generate(request, lambda chunk: print(chunk, end='', flush=True), GenerationProgress())
@@ -113,7 +148,10 @@ def main(argv: list[str] | None = None) -> int:
             finally:
                 request.close()
     finally:
-        worker.close()
+        try:
+            if engine: engine.close()
+        finally:
+            worker.close()
     return 0
 
 
