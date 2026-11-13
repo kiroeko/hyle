@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   foundation:
-    name: Foundation / ${{ matrix.os }}
+    name: Foundation and engine host / ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -20,7 +20,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     env:
-      HYLE_DEP_SOURCE_CACHE: ${{ runner.temp }}/hyle-dependency-sources
       CMAKE_BUILD_PARALLEL_LEVEL: 2
       CTEST_PARALLEL_LEVEL: 2
     steps:
@@ -30,6 +29,14 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
+      - name: Set dependency cache path
+        shell: python
+        run: |
+          import os
+          from pathlib import Path
+          path = Path(os.environ["RUNNER_TEMP"]) / "hyle-dependency-sources"
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as output:
+              output.write(f"HYLE_DEP_SOURCE_CACHE={path}\n")
       - uses: actions/cache@v5
         with:
           path: ${{ env.HYLE_DEP_SOURCE_CACHE }}
@@ -47,6 +54,31 @@ jobs:
         run: python scripts/build.py --name ci-foundation --target hyle_tests --jobs 2
       - name: Test
         run: python scripts/test.py --name ci-foundation --jobs 2
+      - name: Verify native engine host coverage
+        shell: python
+        run: |
+          import json
+          import subprocess
+          listing = json.loads(subprocess.check_output([
+              "ctest", "--test-dir", ".scratch/build/ci-foundation", "--show-only=json-v1"
+          ], text=True))
+          required = {
+              "hyle_inference_request_loop_test", "hyle_engine_worker_contract_test",
+              "hyle_inference_request_execution_failure_test", "hyle_inference_step_execution_test",
+          }
+          missing = required - {test["name"] for test in listing["tests"]}
+          if missing:
+              raise RuntimeError(f"Missing engine host contracts: {sorted(missing)}")
+      - name: Text protocol and session contracts
+        run: >-
+          python -S -B -m unittest
+          tests.tooling.text_frontend_test
+          tests.tooling.text_completion_protocols_test
+          tests.tooling.text_worker_client_test
+          tests.tooling.text_sessions_test
+          tests.tooling.text_prepared_capabilities_test
+      - name: Inference architecture boundaries
+        run: python -S -B tests/tooling/inference_architecture_boundaries_test.py -v
       - name: Benchmark parser
         run: python tests/tooling/bench_stat_parser_test.py
       - name: Paired statistics

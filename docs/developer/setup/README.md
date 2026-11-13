@@ -120,4 +120,6 @@ cmake -DHYLE_SOURCE_DIR=. -DHYLE_SMOKE_ROOT=.scratch/smoke/core -DHYLE_SMOKE_COM
 
 Windows 上这些直接调用应从对应的 Visual Studio Developer Shell 执行。
 日常只运行与改动相关的测试和实验；手动 CI 使用同样的三个 Python 入口，不自动触发。
+三系统 CI 覆盖基础组件和引擎宿主的请求、接纳、失败、IPC、文本协议与会话合同；
+它不下载模型，也不能代替真实 CPU／GPU 的整模型验收。
 benchmark、代码生成和模拟器工具见 [scripts](../../../scripts/README.md)。
