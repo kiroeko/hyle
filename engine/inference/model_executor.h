@@ -1,9 +1,11 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <span>
+#include <string>
 #include <stdexcept>
 #include <type_traits>
 #include <vector>
@@ -86,10 +88,40 @@ struct GenerationBatch final {
 
 // Immutable metadata from the selected model adapter, available before
 // admission. Stop IDs are model policy, not guessed by transport or tokenizer.
+struct ExecutionProfileDescription final {
+  std::string name = "default";
+  std::string algorithm;
+  std::size_t max_draft_tokens = 0;
+  // Self is implicit. Additional compatible identities must be symmetric;
+  // this is residency compatibility, not permission to combine device rows.
+  std::vector<std::size_t> co_resident_with;
+};
+
 struct ModelDescription final {
   std::size_t vocabulary = 0, context = 0;
   std::vector<std::int32_t> stop_ids;
+  std::vector<ExecutionProfileDescription> execution_profiles{ExecutionProfileDescription{}};
 };
+
+inline bool execution_profiles_co_resident(const ModelDescription &model, std::size_t a, std::size_t b) noexcept {
+  if (a >= model.execution_profiles.size() || b >= model.execution_profiles.size()) return false;
+  if (a == b) return true;
+  const auto &allowed = model.execution_profiles[a].co_resident_with;
+  return std::find(allowed.begin(), allowed.end(), b) != allowed.end();
+}
+
+inline void validate_model_description(const ModelDescription &model) {
+  if (model.execution_profiles.empty()) throw std::invalid_argument("model has no prepared execution profile");
+  for (std::size_t a = 0; a < model.execution_profiles.size(); ++a) {
+    const auto &profile = model.execution_profiles[a];
+    if (profile.name.empty()) throw std::invalid_argument("model execution profile has no name");
+    for (std::size_t b = 0; b < a; ++b)
+      if (profile.name == model.execution_profiles[b].name) throw std::invalid_argument("duplicate model execution profile name");
+    for (auto b : profile.co_resident_with)
+      if (b >= model.execution_profiles.size() || !execution_profiles_co_resident(model, b, a))
+        throw std::invalid_argument("invalid or asymmetric execution-profile compatibility");
+  }
+}
 
 // One prepared model execution owner. Implementations report their actual
 // supported configuration at preparation/admission; this common boundary does

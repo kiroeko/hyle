@@ -1042,15 +1042,38 @@ private:
 
 // A host-only request owner exercises the real dispatcher/input handoff while
 // retaining the existing RequestLoop as the sole slot and retirement owner.
+struct ProfileAdmissions final {
+  struct Entry final {
+    std::string id;
+    std::size_t execution, sampling;
+    i::SamplingCursor cursor;
+    std::optional<std::size_t> draft;
+  };
+  std::mutex mutex;
+  std::vector<Entry> entries;
+};
 class DynamicIngressTestExecutor final : public i::ModelExecutor {
 public:
-  explicit DynamicIngressTestExecutor(bool mixed_sampling = false) noexcept : mixed_sampling_(mixed_sampling) {}
-  i::ModelDescription describe() const override { return {256, 128, {}}; }
+  explicit DynamicIngressTestExecutor(bool mixed_sampling = false,
+      std::shared_ptr<ProfileAdmissions> profiles = {}) noexcept
+      : mixed_sampling_(mixed_sampling), profiles_(std::move(profiles)) {}
+  i::ModelDescription describe() const override {
+    i::ModelDescription description{256, 128, {}};
+    if (profiles_) description.execution_profiles = {
+        {"subset-k3", "mtp", 3, {1}}, {"full-k1", "mtp", 1, {0}}, {"ordinary-random", "ordinary", 0, {}}};
+    return description;
+  }
   bool supports_dynamic_admission() const noexcept override { return true; }
   bool supports_concurrent_sampling_profiles() const noexcept override { return mixed_sampling_; }
   void validate(i::GenerationBatch batch) override {
-    for (const auto &schedule : batch.sessions)
+    for (const auto &schedule : batch.sessions) {
       if (schedule.turns.front().prompt.front() < 0) throw i::RequestRejected("invalid test token");
+      if (profiles_) {
+        if (schedule.execution_profile >= 3) throw i::RequestRejected("unprepared test execution profile");
+        if (schedule.max_draft_tokens && *schedule.max_draft_tokens > describe().execution_profiles[schedule.execution_profile].max_draft_tokens)
+          throw i::RequestRejected("draft ceiling exceeds execution profile");
+      }
+    }
   }
   void execute(i::GenerationBatch batch, i::TokenConsumerRef &consumer) override {
     if (!batch.input || batch.sessions.size() != 1) throw std::logic_error("dynamic fixture needs one initial request");
@@ -1067,13 +1090,19 @@ public:
       if (stored.accepts_live_input()) progress.bind_open_turns(stored.turns, 128, 128);
       else progress.bind_turns(stored.turns);
       adapter.stopped[slot] = false;
+      if (profiles_) {
+        std::lock_guard lock(profiles_->mutex);
+        profiles_->entries.push_back({stored.id, stored.execution_profile, incoming.sampling_index,
+            i::initial_sampling_cursor(stored, 999, slot), stored.max_draft_tokens});
+      }
       return keys[slot];
     };
     const auto validate = [&](const i::GenerationAdmission &incoming) {
-      if (incoming.schedule.turns.front().prompt.front() < 0) throw i::RequestRejected("invalid test token");
+      this->validate({std::span(&incoming.schedule, 1), std::span(&incoming.sampling_index, 1), std::span(&incoming.stop, 1)});
     };
     i::validate_turn_delivery(batch.sessions.front().reports_turn_ends(), consumer);
-    prepare(0, {batch.sessions.front(), {}, 0});
+    prepare(0, {batch.sessions.front(), batch.stop_policies.empty() ? i::RequestStopPolicy{} : batch.stop_policies.front(),
+                batch.sampling_indices.empty() ? 0 : batch.sampling_indices.front()});
     deliveries.prepare(0, consumer.max_pending(), schedules[0].reports_turn_ends() ?
         (schedules[0].accepts_live_input() ? 128 : schedules[0].turns.size()) : 0);
     deliveries.start(owner, 0, keys[0], consumer);
@@ -1106,6 +1135,7 @@ public:
   }
 private:
   bool mixed_sampling_;
+  std::shared_ptr<ProfileAdmissions> profiles_;
 };
 
 void schedule_admission_is_model_independent_and_overflow_safe() {
@@ -1197,6 +1227,23 @@ void model_provider_selects_one_owner_and_rejects_ambiguity() {
     rejected.additional_sampling.push_back(policy);
     rejects<std::invalid_argument>([&] { (void)i::load_model(guarded, rejected); });
   }
+  auto no_profiles = config; no_profiles.execution_profiles.clear();
+  rejects<std::invalid_argument>([&] { (void)i::load_model(guarded, no_profiles); });
+  auto duplicates = config; duplicates.execution_profiles.push_back({});
+  rejects<std::invalid_argument>([&] { (void)i::load_model(guarded, duplicates); });
+  auto duplicate_bindings = config;
+  duplicate_bindings.execution_profiles[0].assets = {{"private", i::ModelAssetMode::kFile, "one"},
+                                                   {"private", i::ModelAssetMode::kFile, "two"}};
+  rejects<std::invalid_argument>([&] { (void)i::load_model(guarded, duplicate_bindings); });
+  auto binding = config; binding.execution_profiles[0].assets.push_back(
+      {"model.private-table", i::ModelAssetMode::kFile, "profile.bin"});
+  const auto resolved = i::execution_profile_assets(binding, 0);
+  require(i::find_model_asset(resolved, "model.private-table")->path == "profile.bin" &&
+      i::find_model_asset(config.assets, "model.private-table")->path == "table.bin",
+      "profile binding mutated shared source assets");
+  i::ModelDescription asymmetric;
+  asymmetric.execution_profiles = {{"one", "mtp", 1, {1}}, {"two", "ordinary", 0, {}}};
+  rejects<std::invalid_argument>([&] { i::validate_model_description(asymmetric); });
   auto prepared = config;
   prepared.additional_sampling.push_back({.random = true, .temperature = 0.8F, .top_p = 0.95F, .top_k = 40});
   require(bool(i::load_model(providers, prepared)), "valid additional sampling policy was rejected");
@@ -1348,6 +1395,50 @@ void request_assembly_keeps_admission_and_execution_failures_distinct() {
       "consumer start refusal lost its original key or fabricated retirement");
 }
 
+void prepared_execution_choices_keep_sampling_rng_and_compatibility_separate() {
+  auto records = std::make_shared<ProfileAdmissions>();
+  i::GenerationDispatcher dispatcher(std::make_unique<DynamicIngressTestExecutor>(true, records), 2, 8, 1);
+  const auto schedule = [](std::string id, std::size_t profile, std::uint64_t seed, std::size_t drafts,
+                           i::GenerationSessionMode mode = i::GenerationSessionMode::kFlat) {
+    i::GenerationSessionSchedule value{std::move(id), {{{1}, 2}}, mode, seed, drafts};
+    value.execution_profile = profile; return value;
+  };
+  using Kind = i::GenerationRequestHandle::EventKind;
+  auto live = dispatcher.submit(schedule("subset", 0, 0, 3, i::GenerationSessionMode::kLive), {}, 1);
+  for (int token = 0; token < 2; ++token) {
+    require(live.read().kind == Kind::kToken, "profile request lost its original output");
+  }
+  require(live.read().kind == Kind::kTurnEnd, "profile request lost its turn boundary");
+  const auto finish = [&](i::GenerationRequestHandle &request) {
+    std::size_t tokens = 0;
+    for (;;) {
+      const auto event = request.read();
+      if (event.kind == Kind::kToken) { ++tokens; }
+      else { require(event.kind == Kind::kCompleted, "execution profile request did not complete"); return tokens; }
+    }
+  };
+  auto peer = dispatcher.submit(schedule("full", 1, 42, 1), {}, 0);
+  require(finish(peer) == 2, "compatible prepared executions did not coexist");
+  auto unsupported = dispatcher.submit(schedule("plain-incompatible", 2, 7, 0), {}, 1);
+  const auto rejected = unsupported.read();
+  require(rejected.kind == Kind::kFailed && rejected.failure, "incompatible execution silently changed mode or hung");
+  rejects<i::RequestRejected>([&] { std::rethrow_exception(rejected.failure); });
+  rejects<i::RequestRejected>([&] { (void)dispatcher.submit(schedule("unknown", 3, 0, 0)); });
+  auto bad_depth = dispatcher.submit(schedule("bad-depth", 1, 42, 2));
+  require(bad_depth.read().kind == Kind::kFailed, "execution profile silently clamped a wrong draft ceiling");
+  require(live.close_input() && live.read().kind == Kind::kCompleted,
+      "profile rejection damaged its compatible live peer");
+  auto ordinary = dispatcher.submit(schedule("plain", 2, 7, 0), {}, 1);
+  require(finish(ordinary) == 2, "incompatible profile could not execute in a later cohort");
+  std::lock_guard lock(records->mutex);
+  require(records->entries.size() == 3 && records->entries[0].execution == 0 && records->entries[0].sampling == 1 &&
+      records->entries[0].cursor.seed == 0 && records->entries[0].draft == 3 &&
+      records->entries[1].execution == 1 && records->entries[1].sampling == 0 && records->entries[1].cursor.seed == 42 &&
+      records->entries[1].draft == 1 && records->entries[2].execution == 2 && records->entries[2].cursor.seed == 7 &&
+      records->entries[2].draft == 0,
+      "execution identity replaced sampling/RNG or rejected requests reached model preparation");
+}
+
 void token_worker_rejects_malformed_frames_without_starting_model() {
   auto control = std::make_shared<IngressTestControl>();
   std::istringstream input("G\t0\t1\t1\nG\t7\t0\t1\nG\t8\t1\t-1\n"
@@ -1484,7 +1575,7 @@ void token_worker_credit_and_cancellation_do_not_hang() {
     require(next() == "B\t6\t1", "worker lost the appended turn boundary");
     input_buffer.send("K\t6\t1\n");
     require(next() == "F\t6\tcompleted", "closed live session lost its terminal");
-    input_buffer.send("R\t7\tG\t2\t0\t3\t5,7\t1\t90\n");
+    input_buffer.send("P\t7\tG\t0\t2\t0\t3\t5,7\t1\t90\n");
     require(next() == "A\t7" && next() == "T\t7\t90", "worker lost the configured request");
     input_buffer.send("K\t7\t1\n");
     require(next() == "F\t7\tcompleted", "configured request lost its terminal");
@@ -2051,6 +2142,7 @@ int main() {
     followup_admission_uses_actual_committed_context();
     request_owner_drives_input_output_and_real_retirement();
     request_assembly_keeps_admission_and_execution_failures_distinct();
+    prepared_execution_choices_keep_sampling_rng_and_compatibility_separate();
     token_worker_rejects_malformed_frames_without_starting_model();
     token_worker_credit_and_cancellation_do_not_hang();
     ingress_accepts_requests_during_execution_and_preserves_identity();

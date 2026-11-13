@@ -26,6 +26,7 @@ struct IngressRequest final {
   GenerationSessionSchedule schedule;
   RequestStopPolicy stop;
   std::size_t sampling_index = 0;
+  std::size_t execution_profile = 0;
   std::mutex mutex;
   std::condition_variable changed;
   IngressState state = IngressState::kPending;
@@ -209,6 +210,9 @@ public:
     if (!executor_ || !batch_limit || !waiting_limit || !output_capacity)
       throw std::invalid_argument("generation ingress requires a model and positive capacities");
     description_ = executor_->describe();
+    validate_model_description(description_);
+    if (description_.execution_profiles.size() > 1)
+      incompatible_profile_ = std::make_exception_ptr(RequestRejected("execution profiles cannot coexist in this model owner"));
     dynamic_admission_ = executor_->supports_dynamic_admission();
     mixed_sampling_ = executor_->supports_concurrent_sampling_profiles();
     worker_ = std::thread([this] { work(); });
@@ -219,6 +223,8 @@ public:
 
   GenerationRequestHandle submit(GenerationSessionSchedule schedule, RequestStopPolicy stop = {},
                                  std::size_t sampling_index = 0) {
+    if (schedule.execution_profile >= description_.execution_profiles.size())
+      throw RequestRejected("execution profile was not cold prepared");
     if (schedule.turns.empty() || schedule.turns.front().prompt.empty())
       throw std::invalid_argument("generation request requires an initial prompt");
     for (const auto &turn : schedule.turns) if (!turn.max_outputs)
@@ -234,6 +240,7 @@ public:
       request->reserved_context = first.prompt.size() + first.max_outputs - 1;
       request->turn_quotas.reserve(description_.context); request->turn_quotas.push_back(first.max_outputs);
     }
+    request->execution_profile = schedule.execution_profile;
     request->schedule = std::move(schedule); request->stop = std::move(stop);
     request->sampling_index = sampling_index;
     std::shared_ptr<QueuedTokenConsumer> wake_active;
@@ -342,6 +349,18 @@ private:
         auto job = *queued;
         std::lock_guard job_lock(job->mutex);
         if (job->state != detail::IngressState::kPending) { queued = owner_.waiting_.erase(queued); continue; }
+        bool compatible = true;
+        for (std::size_t index = 0; index < jobs_.size(); ++index)
+          if (jobs_[index] && !finished_[index] && !execution_profiles_co_resident(
+              owner_.description_, jobs_[index]->execution_profile, job->execution_profile)) {
+            compatible = false; break;
+          }
+        if (!compatible) {
+          queued = owner_.waiting_.erase(queued);
+          if (job->cancel_intent) job->state = detail::IngressState::kCancelled;
+          else { job->failure = owner_.incompatible_profile_; job->state = detail::IngressState::kFailed; }
+          job->changed.notify_all(); continue;
+        }
         if (!owner_.mixed_sampling_ && job->sampling_index != sampling_) { ++queued; continue; }
         owner_.waiting_.erase(queued); job->state = detail::IngressState::kAssigned; job->output = output_;
         jobs_[slot] = job; started_[slot] = finished_[slot] = false; keys_[slot] = {};
@@ -446,6 +465,9 @@ private:
             const auto &job = waiting_.front();
             std::lock_guard request_lock(job->mutex);
             if (job->state != detail::IngressState::kPending) { waiting_.pop_front(); continue; }
+            if (std::ranges::any_of(selected, [&](const auto &peer) {
+                  return !execution_profiles_co_resident(description_, peer->execution_profile, job->execution_profile);
+                })) break;
             if (!mixed_sampling_ && !selected.empty() && job->sampling_index != selected.front()->sampling_index) break;
             selected.push_back(job); waiting_.pop_front();
           }
@@ -519,6 +541,7 @@ private:
 
   std::unique_ptr<ModelExecutor> executor_;
   ModelDescription description_;
+  std::exception_ptr incompatible_profile_;
   bool dynamic_admission_ = false;
   bool mixed_sampling_ = false;
   const std::size_t batch_limit_, waiting_limit_, output_capacity_;

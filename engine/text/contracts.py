@@ -34,7 +34,8 @@ class TokenWorker(Protocol):
     def healthy(self) -> bool: ...
     def submit(self, tokens: Sequence[int], max_output_tokens: int, *,
                stop_ids: Sequence[int] = (), sampling_index: int | None = None,
-               seed: int | None = None, max_draft_tokens: int | None = None) -> TokenRequest: ...
+               seed: int | None = None, max_draft_tokens: int | None = None,
+               execution_profile: int | None = None) -> TokenRequest: ...
 
 
 class LiveTokenRequest(TokenRequest, Protocol):
@@ -47,4 +48,5 @@ class LiveTokenRequest(TokenRequest, Protocol):
 class LiveTokenWorker(TokenWorker, Protocol):
     def open_session(self, tokens: Sequence[int], max_output_tokens: int, *,
                      stop_ids: Sequence[int] = (), sampling_index: int | None = None,
-                     seed: int | None = None, max_draft_tokens: int | None = None) -> LiveTokenRequest: ...
+                     seed: int | None = None, max_draft_tokens: int | None = None,
+                     execution_profile: int | None = None) -> LiveTokenRequest: ...

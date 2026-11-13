@@ -11,6 +11,7 @@
 #include <variant>
 
 #include "host_storage.h"
+#include "backend_kind.h"
 #include "device_batch_capability.h"
 #include "hyle/compute/file_stream.h"
 #include "hyle/compute/storage_owner.h"
@@ -47,13 +48,6 @@
 namespace hyle::compute::cpu { struct DefaultContextOptions; }
 
 namespace hyle::inference {
-
-enum class BackendKind : std::uint8_t { kDefault, kCpu, kCuda, kApple, kVulkan };
-
-struct BackendSelection final {
-  BackendKind primary = BackendKind::kDefault;
-  bool cpu_assist = false;
-};
 
 struct WorkspaceBudgets final {
   std::size_t device = SIZE_MAX, host = SIZE_MAX, staging = SIZE_MAX;

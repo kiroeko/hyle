@@ -2652,6 +2652,8 @@ void validate_reusable_batch(Model &model, inference::GenerationBatch batch, boo
   if (!configured_prefill || (mtp && configured_prefill < 2))
     throw std::invalid_argument("reusable request exceeds its configured input or output bounds");
   for (const auto &schedule : schedules) {
+    if (schedule.execution_profile != 0)
+      throw std::invalid_argument("execution profile was not prepared by this Qwen owner");
     const auto error = inference::check_request_schedule(schedule, model.capacity,
         static_cast<std::size_t>(model.vocabulary));
     if (error) throw std::invalid_argument(inference::request_admission_message(*error));
@@ -3751,8 +3753,11 @@ public:
   PreparedModelExecutor(Model &model, bool mtp, std::size_t prefill_rows, bool overlap)
       : model_(model), mtp_(mtp), overlap_(overlap), prefill_rows_(prefill_rows) {}
   inference::ModelDescription describe() const override {
-    return {static_cast<std::size_t>(model_.vocabulary), model_.capacity,
+    inference::ModelDescription description{static_cast<std::size_t>(model_.vocabulary), model_.capacity,
         {model_eos_tokens.begin(), model_eos_tokens.end()}};
+    description.execution_profiles[0].algorithm = mtp_ ? "mtp" : "ordinary";
+    description.execution_profiles[0].max_draft_tokens = mtp_ ? model_.max_drafts() : 0;
+    return description;
   }
   bool supports_dynamic_admission() const noexcept override { return true; }
   bool supports_concurrent_sampling_profiles() const noexcept override { return true; }
@@ -3806,9 +3811,14 @@ std::unique_ptr<inference::ModelExecutor> make_prepared_executor(
 
 class LoadedModelExecutor final : public inference::ModelExecutor {
 public:
-  LoadedModelExecutor(std::unique_ptr<Model> model, bool mtp, std::size_t prefill_rows, bool overlap)
-      : model_(std::move(model)), prepared_(*model_, mtp, prefill_rows, overlap) {}
-  inference::ModelDescription describe() const override { return prepared_.describe(); }
+  LoadedModelExecutor(std::unique_ptr<Model> model, bool mtp, std::size_t prefill_rows, bool overlap,
+                      std::string profile_name)
+      : model_(std::move(model)), prepared_(*model_, mtp, prefill_rows, overlap), profile_name_(std::move(profile_name)) {}
+  inference::ModelDescription describe() const override {
+    auto description = prepared_.describe();
+    description.execution_profiles[0].name = profile_name_;
+    return description;
+  }
   bool supports_dynamic_admission() const noexcept override { return prepared_.supports_dynamic_admission(); }
   bool supports_concurrent_sampling_profiles() const noexcept override { return prepared_.supports_concurrent_sampling_profiles(); }
   void validate(inference::GenerationBatch batch) override { prepared_.validate(batch); }
@@ -3819,6 +3829,7 @@ private:
   // The adapter is destroyed before the sole original model/resource owner.
   std::unique_ptr<Model> model_;
   PreparedModelExecutor prepared_;
+  const std::string profile_name_;
 };
 
 bool matches_prepared_model(const std::filesystem::path &source) {
@@ -3844,15 +3855,20 @@ bool matches_prepared_model(const std::filesystem::path &source) {
 }
 
 std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::ModelLoadConfig &config) {
-  inference::validate_model_assets(config.assets);
-  for (const auto &asset : config.assets.auxiliary)
+  inference::validate_execution_preparation(config);
+  if (config.execution_profiles.size() != 1)
+    throw std::invalid_argument("Qwen preparation currently supports one execution profile per model owner");
+  const auto &profile = config.execution_profiles.front();
+  const auto source_assets = inference::execution_profile_assets(config, 0);
+  inference::validate_model_assets(source_assets);
+  for (const auto &asset : source_assets.auxiliary)
     if (asset.role != "draft.vocabulary" && asset.role != "draft.head")
       throw std::invalid_argument("Qwen model does not support asset role: " + asset.role);
-  const auto *vocabulary_asset = inference::find_model_asset(config.assets, "draft.vocabulary");
-  const auto *head_asset = inference::find_model_asset(config.assets, "draft.head");
+  const auto *vocabulary_asset = inference::find_model_asset(source_assets, "draft.vocabulary");
+  const auto *head_asset = inference::find_model_asset(source_assets, "draft.head");
   if (!config.execution.context || !config.execution.resident_sessions || !config.execution.active_sequences ||
       config.execution.active_sequences > config.execution.resident_sessions || !config.execution.prefill_rows ||
-      (config.execution.draft_count && *config.execution.draft_count >= config.execution.context))
+      (profile.draft_count && *profile.draft_count >= config.execution.context))
     throw std::invalid_argument("model loading requires valid context, sequence, prefill and draft capacities");
   const auto execution = select_execution(BackendSelection{.primary = config.execution.backend}, 0);
   const inference::ColdWorkloadFacts workload{
@@ -3860,8 +3876,8 @@ std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::M
       .max_sessions = config.execution.resident_sessions, .active_sequences = config.execution.active_sequences,
       .capacity = config.execution.context};
   namespace mtp_policy = inference::mtp;
-  const bool explicit_depth = config.execution.draft_count.has_value();
-  const auto requested_depth = config.execution.draft_count.value_or(1);
+  const bool explicit_depth = profile.draft_count.has_value();
+  const auto requested_depth = profile.draft_count.value_or(1);
   MtpDefaultRequest request{
       .mode = !explicit_depth ? mtp_policy::RequestedMode::kAuto :
           requested_depth ? mtp_policy::RequestedMode::kOn : mtp_policy::RequestedMode::kOff,
@@ -3915,7 +3931,7 @@ std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::M
       .relay_eligible = relay.eligible(), .relay_refusal = relay.refusal_reason(),
       .has_decode = config.execution.context > 1, .resolved_active_sequences = config.execution.active_sequences};
   const auto routes = inference::plan_decode_routes(facts);
-  const bool overlap = config.execution.overlap.value_or(inference::select_resident_decode_overlap(facts).enabled);
+  const bool overlap = profile.overlap.value_or(inference::select_resident_decode_overlap(facts).enabled);
   // The verifier can consume a standalone draft chain; it does not require
   // an overlapping successor. Keep its independently selected capacity.
   const bool verification = routes.verification.enabled;
@@ -3935,7 +3951,7 @@ std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::M
       geometry, config.execution.context, plan, std::filesystem::path{}, false, ReplayPolicy::kAuto, SIZE_MAX, sampling, 0,
       additional_sampling);
   if (mtp) model->configure_draft_policy({depth});
-  return std::make_unique<LoadedModelExecutor>(std::move(model), mtp, config.execution.prefill_rows, overlap);
+  return std::make_unique<LoadedModelExecutor>(std::move(model), mtp, config.execution.prefill_rows, overlap, profile.name);
 }
 } // namespace qwen35
 

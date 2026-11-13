@@ -63,8 +63,8 @@ def main():
     mixed = [*base, *subset, '--additional-sampling', 'random,0.8,40,0.95']
     worker = WorkerClient(mixed, startup_timeout=120)
     try:
-        greedy = consume(worker.submit(prompt, 16, sampling_index=0, max_draft_tokens=3))
-        sampled = consume(worker.submit(prompt, 16, sampling_index=1, seed=123, max_draft_tokens=1))
+        greedy = consume(worker.submit(prompt, 16, sampling_index=0, max_draft_tokens=3, execution_profile=0))
+        sampled = consume(worker.submit(prompt, 16, sampling_index=1, seed=123, max_draft_tokens=1, execution_profile=0))
         if greedy != greedy_reference or sampled != random_reference:
             raise AssertionError('prepared profile changed the corresponding single-profile output')
         requests = [worker.submit(prompt, 16, sampling_index=0, max_draft_tokens=3),
@@ -87,6 +87,12 @@ def main():
                 raise AssertionError('unprepared sampling profile was not rejected')
         finally:
             request.close()
+        request = worker.submit(prompt, 1, execution_profile=1)
+        try:
+            if request.read(timeout=120).kind != 'error':
+                raise AssertionError('unprepared execution profile was not rejected')
+        finally:
+            request.close()
         if len(consume(worker.submit(prompt, 2, sampling_index=0))) != 2 or not worker.healthy:
             raise AssertionError('rejected profile poisoned the worker')
     finally:
@@ -100,7 +106,7 @@ def main():
                   sampling_index=1, seed=0, max_draft_tokens=1)) != 16:
         raise AssertionError('default random profile did not complete')
     print('PASS prepared greedy/subset K3 and random/full K1: single outputs match, concurrent requests complete; '
-          'unprepared profile rejected; inverse profile order accepted', flush=True)
+          'unprepared sampling/execution rejected; inverse profile order accepted', flush=True)
 
 
 if __name__ == '__main__':

@@ -1,7 +1,9 @@
 #pragma once
 
 #include "model_executor.h"
+#include "backend_kind.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -17,8 +19,6 @@
 #include <vector>
 
 namespace hyle::inference {
-
-enum class BackendKind : std::uint8_t;
 
 // Asset roles are provider-defined; this common contract does not prescribe
 // a draft architecture or require every model to use a vocabulary projection.
@@ -67,8 +67,16 @@ struct ExecutionPreparation final {
   BackendKind backend{};
   std::size_t context = 0, resident_sessions = 1, active_sequences = 1;
   std::size_t prefill_rows = (std::numeric_limits<std::size_t>::max)();
+};
+
+// Immutable bindings for one prepared algorithm. The provider interprets
+// asset roles and can reject combinations it cannot prepare. Capacity and
+// endpoint ownership stay in execution; sampling and RNG are separate.
+struct PreparedExecutionProfile final {
+  std::string name = "default";
   std::optional<std::size_t> draft_count;
   std::optional<bool> overlap;
+  std::vector<ModelAsset> assets;
 };
 
 // Describes a program prepared for later request selection, not an RNG
@@ -95,7 +103,34 @@ struct ModelLoadConfig final {
   // Index zero is sampling; additional entries are immutable prepared choices
   // which requests can select independently.
   std::vector<PreparedSamplingPolicy> additional_sampling;
+  std::vector<PreparedExecutionProfile> execution_profiles{PreparedExecutionProfile{}};
 };
+
+// Resolve file bindings only, never duplicate weights or prepare a backend.
+// Profile-local roles override the common source's auxiliary bindings.
+inline ModelAssets execution_profile_assets(const ModelLoadConfig &config, std::size_t index) {
+  if (index >= config.execution_profiles.size()) throw std::invalid_argument("execution profile was not declared");
+  auto assets = config.assets;
+  for (const auto &binding : config.execution_profiles[index].assets) {
+    auto found = std::find_if(assets.auxiliary.begin(), assets.auxiliary.end(),
+        [&](const auto &asset) { return asset.role == binding.role; });
+    if (found == assets.auxiliary.end()) assets.auxiliary.push_back(binding);
+    else *found = binding;
+  }
+  return assets;
+}
+
+inline void validate_execution_preparation(const ModelLoadConfig &config) {
+  if (config.execution_profiles.empty()) throw std::invalid_argument("at least one execution profile is required");
+  for (std::size_t index = 0; index < config.execution_profiles.size(); ++index) {
+    const auto &profile = config.execution_profiles[index];
+    if (profile.name.empty()) throw std::invalid_argument("execution profile requires a name");
+    for (std::size_t previous = 0; previous < index; ++previous)
+      if (config.execution_profiles[previous].name == profile.name)
+        throw std::invalid_argument("duplicate execution profile name");
+    validate_model_assets({config.assets.inputs, profile.assets});
+  }
+}
 
 // Providers are composed at application startup. Matching may read source
 // metadata, but may not load weights or mutate the input. A match is only a
@@ -123,6 +158,7 @@ inline const ModelProvider &select_model_provider(std::span<const ModelProvider>
 inline std::unique_ptr<ModelExecutor> load_model(std::span<const ModelProvider> providers,
                                                  const ModelLoadConfig &config) {
   validate_model_assets(config.assets);
+  validate_execution_preparation(config);
   validate_prepared_sampling_policy(config.sampling);
   for (const auto &policy : config.additional_sampling) validate_prepared_sampling_policy(policy);
   auto executor = select_model_provider(providers, config.assets.inputs).load(config);

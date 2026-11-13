@@ -172,30 +172,34 @@ class WorkerClient:
 
     def submit(self, tokens: Sequence[int], max_output_tokens: int, *, stop_ids: Sequence[int] = (),
                sampling_index: int | None = None, seed: int | None = None,
-               max_draft_tokens: int | None = None) -> WorkerRequest:
+               max_draft_tokens: int | None = None, execution_profile: int | None = None) -> WorkerRequest:
         return self._submit_turns(((tokens, max_output_tokens),), report_turns=False, stop_ids=stop_ids,
-                                  sampling_index=sampling_index, seed=seed, max_draft_tokens=max_draft_tokens)
+                                  sampling_index=sampling_index, seed=seed, max_draft_tokens=max_draft_tokens,
+                                  execution_profile=execution_profile)
 
     def submit_turns(self, turns: Sequence[tuple[Sequence[int], int]], *, stop_ids: Sequence[int] = (),
                      sampling_index: int | None = None, seed: int | None = None,
-                     max_draft_tokens: int | None = None) -> WorkerRequest:
+                     max_draft_tokens: int | None = None, execution_profile: int | None = None) -> WorkerRequest:
         """Submit one finite session with acknowledged, zero-based turn-end events."""
         return self._submit_turns(turns, report_turns=True, stop_ids=stop_ids,
-                                  sampling_index=sampling_index, seed=seed, max_draft_tokens=max_draft_tokens)
+                                  sampling_index=sampling_index, seed=seed, max_draft_tokens=max_draft_tokens,
+                                  execution_profile=execution_profile)
 
     def open_session(self, tokens: Sequence[int], max_output_tokens: int, *, stop_ids: Sequence[int] = (),
                      sampling_index: int | None = None, seed: int | None = None,
-                     max_draft_tokens: int | None = None) -> WorkerRequest:
+                     max_draft_tokens: int | None = None, execution_profile: int | None = None) -> WorkerRequest:
         """Open one live session; append turns and explicitly finish its input."""
         return self._submit_turns(((tokens, max_output_tokens),), report_turns=True, live=True, stop_ids=stop_ids,
-                                  sampling_index=sampling_index, seed=seed, max_draft_tokens=max_draft_tokens)
+                                  sampling_index=sampling_index, seed=seed, max_draft_tokens=max_draft_tokens,
+                                  execution_profile=execution_profile)
 
     def _submit_turns(self, turns: Sequence[tuple[Sequence[int], int]], *, report_turns: bool,
                       live: bool = False, stop_ids: Sequence[int] = (), sampling_index: int | None = None,
-                      seed: int | None = None, max_draft_tokens: int | None = None) -> WorkerRequest:
+                      seed: int | None = None, max_draft_tokens: int | None = None,
+                      execution_profile: int | None = None) -> WorkerRequest:
         if not turns:
             raise ValueError("at least one turn is required")
-        for value in (sampling_index, seed, max_draft_tokens):
+        for value in (sampling_index, seed, max_draft_tokens, execution_profile):
             if value is not None and (type(value) is not int or not 0 <= value <= 18446744073709551615):
                 raise ValueError("request configuration must be an unsigned 64-bit integer")
         if any(type(token) is not int or token < 0 or token >= self.vocabulary for token in stop_ids):
@@ -219,10 +223,12 @@ class WorkerClient:
             self._pending[request_id] = events
         try:
             kind = 'O' if live else 'S' if report_turns else 'G'
-            if any(value is not None for value in (sampling_index, seed, max_draft_tokens)):
+            if execution_profile is not None or any(value is not None for value in (sampling_index, seed, max_draft_tokens)):
                 choices = (sampling_index, seed, max_draft_tokens)
                 fields = [str(value) if value is not None else '-' for value in choices]
-                prefix = "\t".join(('R', str(request_id), kind, *fields, ','.join(map(str, stops)) or '-'))
+                profile = (str(execution_profile),) if execution_profile is not None else ()
+                prefix = "\t".join(('P' if profile else 'R', str(request_id), kind, *profile,
+                                     *fields, ','.join(map(str, stops)) or '-'))
             else:
                 prefix = f"{kind.lower()}\t{request_id}\t{','.join(map(str, stops))}" if stops else f"{kind}\t{request_id}"
             self._send(prefix + "\t" + "\t".join(frames))

@@ -35,6 +35,8 @@ struct GenerationSessionSchedule final {
   // A trusted application assigns this sharing domain before admission.
   // Equal domains may share prefix state; zero is the original local domain.
   std::uint64_t cache_sharing_domain = 0;
+  // Model-scoped immutable execution preparation, independent of its sampler.
+  std::size_t execution_profile = 0;
   bool reports_turn_ends() const noexcept { return mode != GenerationSessionMode::kFlat; }
   bool accepts_live_input() const noexcept { return mode == GenerationSessionMode::kLive; }
 };

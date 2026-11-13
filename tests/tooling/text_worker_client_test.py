@@ -139,13 +139,17 @@ class WorkerClientLifecycleTest(unittest.TestCase):
                     worker.close(timeout=3)
 
     def test_request_configuration_is_transmitted_in_each_mode(self):
-        for kind in ('G', 'S', 'O'):
-            with self.subTest(kind=kind):
+        for kind, profile in ((kind, profile) for kind in ('G', 'S', 'O') for profile in (None, 2)):
+            with self.subTest(kind=kind, execution_profile=profile):
+                fields = ['R' if profile is None else 'P', '1', kind]
+                if profile is not None:
+                    fields.append(str(profile))
+                expected = '\t'.join([*fields, '2', '0', '3', '4,8', '1', '10'])
                 code = "\n".join((
                     "import sys",
                     "read = lambda: sys.stdin.readline().rstrip('\\r\\n')",
                     "print('READY\\t2\\t256\\t128\\t3', flush=True)",
-                    f"assert read() == 'R\\t1\\t{kind}\\t2\\t0\\t3\\t4,8\\t1\\t10'",
+                    f"assert read() == {expected!r}",
                     "print('A\\t1', flush=True); print('T\\t1\\t4', flush=True)",
                     "assert read() == 'K\\t1\\t1'; print('F\\t1\\tcompleted', flush=True)",
                     "assert read() == 'Q'; print('BYE', flush=True)",
@@ -153,10 +157,11 @@ class WorkerClientLifecycleTest(unittest.TestCase):
                 worker = WorkerClient([sys.executable, '-B', '-c', code], startup_timeout=3)
                 try:
                     for kwargs in ({'seed': -1}, {'seed': True}, {'sampling_index': 2**64},
-                                   {'max_draft_tokens': -1}):
+                                   {'max_draft_tokens': -1}, {'execution_profile': -1}, {'execution_profile': True}):
                         with self.assertRaises(ValueError):
                             worker.submit([10], 1, **kwargs)
-                    options = dict(stop_ids=[8, 3, 4], sampling_index=2, seed=0, max_draft_tokens=3)
+                    options = dict(stop_ids=[8, 3, 4], sampling_index=2, seed=0, max_draft_tokens=3,
+                                   execution_profile=profile)
                     if kind == 'G':
                         request = worker.submit([10], 1, **options)
                     elif kind == 'S':

@@ -65,14 +65,14 @@ int token_worker(int argc, char **argv) {
     else if (option == "--max-sessions") config.execution.resident_sessions = worker_number<std::size_t>(option, value);
     else if (option == "--active-sequences") config.execution.active_sequences = worker_number<std::size_t>(option, value);
     else if (option == "--prefill-chunk-tokens") config.execution.prefill_rows = worker_number<std::size_t>(option, value);
-    else if (option == "--draft-count") config.execution.draft_count = worker_number<std::size_t>(option, value);
+    else if (option == "--draft-count") config.execution_profiles.front().draft_count = worker_number<std::size_t>(option, value);
     else if (option == "--draft-vocabulary") config.assets.set_file("draft.vocabulary", std::filesystem::path(value));
     else if (option == "--draft-head") config.assets.set_file("draft.head", std::filesystem::path(value));
     else if (option == "--waiting-limit") waiting = worker_number<std::size_t>(option, value);
     else if (option == "--output-capacity") output_capacity = worker_number<std::size_t>(option, value);
     else if (option == "--overlap") {
       if (value != "on" && value != "off") throw std::invalid_argument("worker overlap requires on or off");
-      config.execution.overlap = value == "on";
+      config.execution_profiles.front().overlap = value == "on";
     } else if (option == "--sampling") {
       if (value != "greedy" && value != "random") throw std::invalid_argument("worker sampling requires greedy or random");
       config.sampling.random = value == "random";
