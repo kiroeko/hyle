@@ -92,6 +92,7 @@ inline std::string mlx_policy_line(std::uint32_t bits) {
 struct OriginalSource final {
   std::string repository, revision, file, lfs_sha256, xet_hash, header_sha256;
   std::uint64_t bytes = 0, header_bytes = 0;
+  friend bool operator==(const OriginalSource &, const OriginalSource &) = default;
 };
 struct Role final {
   std::string name, dtype;
@@ -105,6 +106,7 @@ struct Role final {
   ProjectionCodec projection_codec = ProjectionCodec::kUnspecified;
   std::uint32_t projection_group_size = 0;
   Nf4State nf4_state{};
+  friend bool operator==(const Role &, const Role &) = default;
 };
 struct Parameter final {
   std::vector<std::int64_t> shape;

@@ -20,10 +20,47 @@
 #include "hyle/compute/detail/capture_bindings.h"
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/queue_sequence.h"
+#include "hyle/compute/detail/packed_row_matmul.h"
+#include "hyle/compute/detail/provider_extension.h"
+#include "hyle/compute/sequence_ops.h"
 #include "prepared_state.h"
 #include "operation_cold.h"
 
 namespace hyle::compute {
+
+Result<bool> sequence_ops::supports_packed_row_matmul_rows(const Context &context) noexcept {
+  namespace cd = hyle::compute::detail;
+  if (!context.is_open())
+    return std::unexpected(Status::FailedPrecondition("packed rows require an open Context"));
+  for (std::size_t i = 0; i < context.provider_count(); ++i) {
+    auto rows = cd::ProviderExtensionAccess::query(context, i,
+        cd::kPackedRowMatMulRowsExtensionId);
+    if (!rows) {
+      if (rows.error().IsUnimplemented()) continue;
+      return std::unexpected(rows.error());
+    }
+    const auto source = cd::ProviderExtensionAccess::query(*rows,
+        cd::kPackedRowMatMulSourceExtensionId);
+    if (!source) {
+      if (source.error().IsUnimplemented()) continue;
+      return std::unexpected(source.error());
+    }
+    bool available = false;
+    const auto status = cd::ProviderExtensionAccess::call(*source,
+        [](void *provider, const void *table, void *out) noexcept -> Status {
+          const auto *cap = static_cast<const cd::PackedRowMatMulSourceVTable *>(table);
+          *static_cast<bool *>(out) = cap && cap->available && cap->available(provider);
+          return Status::Ok();
+        }, &available);
+    if (!status.ok()) {
+      if (status.IsUnimplemented()) continue;
+      return std::unexpected(status);
+    }
+    if (available) return true;
+  }
+  return false;
+}
+
 namespace {
 
 constexpr std::size_t kInlineInferredOutputs = 4;

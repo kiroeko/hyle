@@ -73,6 +73,7 @@
 #include "state_boundary.h"
 #include "publication_facts.h"
 #include "prepared_roles.h"
+#include "weight_storage.h"
 #include "ffn_placement.h"
 #include "projection_binding.h"
 #include "weights.h"
@@ -591,16 +592,6 @@ struct PrefixSamplingResult final {
 // Actual cold storage and policy addresses borrowed by submitted Graphs. The
 // application Model and Session links are absent: a failed native prefix must
 // never retain or later dereference a destroyed host application object.
-struct WeightStorage final {
-  // When shared, the original endpoint outlives its read leases and pools.
-  std::optional<Backend> endpoint;
-  std::vector<c::LeasePool> pools;
-  std::map<std::string, LoadedWeight> weights;
-  WeightMeanings meanings;
-  std::string identity;
-  std::optional<WeightLoadReport> inventory;
-};
-
 struct ColdResources final {
   struct DeferredRootRelease final {
     hyle::sched::detail::BlockingJob job{};
@@ -1070,7 +1061,7 @@ public:
       cache::Plan selected_cache, std::filesystem::path probe, bool progress, ReplayPolicy replay,
       std::size_t max_cache_bytes, Sampling sampling_configuration, std::size_t cpu_ffn_layer_count,
       std::span<const SamplingConfiguration> additional_sampling = {},
-      const Model *shared_weight_model = nullptr, bool retain_weight_inventory = false)
+      std::shared_ptr<WeightStorage> shared_weights = {})
        : sampling_seed(sampling_configuration.seed), ffn_placement(source.roles, cpu_ffn_layer_count),
          precision(PrecisionProfile::from_roles(source.roles)),
          geometry(model_geometry), hidden(geometry.hidden), intermediate(geometry.intermediate), vocabulary(geometry.vocabulary),
@@ -1084,7 +1075,7 @@ public:
          resources_(std::make_shared<ColdResources>(geometry, selected_capacity, precision,
               SamplingConfiguration{sampling_configuration.enabled, sampling_configuration.policy, sampling_configuration.modifiers}, additional_sampling,
               source.roles.cache_policy, std::move(source.cache_storage),
-              shared_weight_model ? shared_weight_model->resources_->weight_bank : nullptr)),
+              shared_weights)),
           default_sampler(resources_->sampling_configurations[0]->configuration),
          weight_pools(resources_->weight_pools), weights(resources_->weights), projections(resources_->projections),
          weight_meanings(resources_->weight_meanings), source_identity(resources_->source_identity),
@@ -1219,17 +1210,8 @@ public:
     }
     const auto weight_load_start = Clock::now();
     WeightLoadReport loading;
-    if (shared_weight_model) {
-      if (!execution.same_endpoint(shared_weight_model->execution) ||
-          geometry != shared_weight_model->geometry || source_roles.identity != shared_weight_model->source_identity ||
-          ffn_placement.cpu_layers() != shared_weight_model->ffn_placement.cpu_layers() ||
-          !resources_->weight_bank->inventory)
-        throw std::invalid_argument("shared weight bank differs from its original source, placement or endpoint");
-      for (const auto &role : source_roles.selected) {
-        const auto found = weights.find(role.name);
-        if (found == weights.end() || !found->second.tensor.ready || found->second.tensor.writer)
-          throw std::invalid_argument("shared weight bank lacks an immutable selected role: " + role.name);
-      }
+    if (shared_weights) {
+      validate_shared_weights(*shared_weights, execution, source_roles, ffn_placement.cpu_layers());
       loading = *resources_->weight_bank->inventory;
       loading.stream = {}; // Aliasing original read leases performs no IO/copy.
       std::cerr << "shared_weight_bank source=" << source_identity << " original_bytes=" << loading.bytes
@@ -1238,10 +1220,6 @@ public:
       loading = load_selected_weight_roles(source_roles, execution, weights, weight_pools, ffn_placement, allocation_budget);
       source_identity = loading.identity;
       weight_meanings = std::move(loading.meanings);
-    }
-    if (!shared_weight_model && retain_weight_inventory) {
-      resources_->weight_bank->endpoint.emplace(take(execution.share_endpoint()));
-      resources_->weight_bank->inventory = loading;
     }
     projections = prepare_projection_bindings(weights, cache_plan.draft_cache, geometry);
     if(source.draft_head){
@@ -2963,9 +2941,7 @@ public:
         throw std::runtime_error("cold recording unexpectedly executed or advanced private model state");
       Arguments next;
       const auto output_view = [&](inference::ProgramIo::Readback port) {
-        const auto *output = take(phase.slots[slot].io.readback(port));
-        return take(c::ConstTensorView::create(output->facts.description,
-            take(c::detail::LeaseAccess::backing_span(output->pool()))));
+        return take(phase.slots[slot].io.recording_output_view(*run, port));
       };
       if (!mtp || (drafts_token(phase.family->role) &&
           (phase.family->role != GraphRole::kMtpContinuation || device_mtp_continuous_enabled()))) {

@@ -1,4 +1,5 @@
 #include "generation_state.h"
+#include "request_installation.h"
 #include "generation_diagnostics.h"
 #include <atomic>
 #include "model_core.h"
@@ -2501,30 +2502,12 @@ bool admit_waiting_generation(Model &model, inference::RequestLoop &loop,
     const auto &schedule = schedules[slot];
     auto &selected = prepared_profile_model(model, profiles, schedule.execution_profile);
     const auto visible_turns = std::span(schedule.turns).first(1);
-    GenerationRequest fresh(schedule.id, visible_turns.front().prompt, {}, bound,
-                            next.sampling_index, std::move(next.stop));
-    fresh.prepared_model = profiles.empty() ? nullptr : &selected;
-    fresh.prepared_prefix = profiles.empty() ? prefix : profiles[schedule.execution_profile].prefix;
-    fresh.execution_profile = schedule.execution_profile;
-    fresh.max_draft_tokens = schedule.max_draft_tokens.value_or(selected.cache_plan.draft_cache ? selected.max_drafts() : 0);
-    fresh.cache_sharing_domain = schedule.cache_sharing_domain;
-    if (schedule.accepts_live_input()) {
-      fresh.live_turns.reserve(bound);
-      fresh.live_turns.push_back(visible_turns.front());
-      fresh.progress.bind_open_turns(fresh.live_turns, bound, bound);
-    } else fresh.progress.bind_open_turns(visible_turns, bound, bound);
-    fresh.progress.initial_sampling = inference::initial_sampling_cursor(
-        schedule, selected.sampling_seed);
-    fresh.turn_observations.reserve(bound);
-    fresh.turn_observations.emplace_back(); fresh.turn_observations[0].arrival = Clock::now();
-    fresh.warm_inputs.reserve(bound);
-    fresh.warm_inputs.push_back(std::make_shared<std::vector<std::int32_t>>(visible_turns.front().prompt));
-    fresh.prompt = *fresh.warm_inputs[0];
-    if (fresh.prepared_prefix) fresh.input = cache::token_plan(fresh.prompt, selected.capacity);
-    fresh.ledger = std::make_unique<GenerationLedger>(record_bound, selected.cache_plan.candidate_boundaries);
-    fresh.round_emitted.resize(bound - 1);
-    for (auto &emitted : fresh.round_emitted) emitted.reserve(selected.cache_plan.candidate_boundaries);
-    requests[slot] = std::move(fresh);
+    requests[slot] = install_generation_request({.schedule = schedule, .visible_turns = visible_turns,
+        .model = selected, .prepared_model = profiles.empty() ? nullptr : &selected,
+        .prefix = profiles.empty() ? prefix : profiles[schedule.execution_profile].prefix,
+        .output_capacity = bound, .turn_capacity = bound, .record_capacity = record_bound,
+        .open_turns = true, .sampling_index = next.sampling_index, .stop = std::move(next.stop),
+        .arrival = Clock::now()});
     outputs = cache::add(outputs, visible_turns.front().max_outputs);
     return requests[slot].request_key;
   };
@@ -3117,7 +3100,6 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
   std::size_t total_turns = 0, requested_outputs = 0, decode_bound = 0, restore_bound = 0, dispatch_bound = 0;
   for (const auto &schedule : schedules) {
     auto &request_model = selected_model(schedule.execution_profile);
-    const bool request_mtp = request_model.cache_plan.draft_cache;
     if (schedule.turns.empty()) throw std::runtime_error("natural request requires a nonempty turn list");
     if (schedule.turns.front().prompt.empty())
       throw std::runtime_error("natural request requires a nonempty initial prompt");
@@ -3129,47 +3111,19 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
       outputs = cache::add(outputs, turn.max_outputs);
     }
     const auto &first = schedule.turns.front().prompt;
-    requests.emplace_back(schedule.id, first, trace.empty() ? trace : trace /
-        ("session" + std::to_string(requests.size()) + "_" + schedule.id), first_turn_only ? configured_bound : outputs, sampling_indices.empty() ? 0 : sampling_indices[requests.size()],
-        stop_policies.empty() ? inference::RequestStopPolicy{} : stop_policies[requests.size()]);
-    auto &request = requests.back();
-    if constexpr (mixed) request.prepared_model = &request_model;
-    request.prepared_prefix = selected_prefix(schedule.execution_profile);
-    request.execution_profile = schedule.execution_profile;
-    if (schedule.max_draft_tokens && *schedule.max_draft_tokens > (request_mtp ? request_model.max_drafts() : 0))
-      throw std::invalid_argument("requested draft ceiling exceeds the cold-prepared execution plan");
-    request.max_draft_tokens = schedule.max_draft_tokens.value_or(request_mtp ? request_model.max_drafts() : 0);
-    request.cache_sharing_domain = schedule.cache_sharing_domain;
-    if (schedule.accepts_live_input()) {
-      request.live_turns.reserve(configured_bound);
-      request.live_turns.push_back(visible_turns.front());
-      request.progress.bind_open_turns(request.live_turns, configured_bound, configured_bound);
-    } else if (first_turn_only) request.progress.bind_open_turns(visible_turns, configured_bound, configured_bound);
-    else request.progress.bind_turns(visible_turns);
-    if (!logits_providers.empty()) request.logits_provider = logits_providers[requests.size() - 1];
-    request.progress.initial_sampling = inference::initial_sampling_cursor(
-        schedule, request_model.sampling_seed);
-    request.turn_observations.reserve(first_turn_only ? configured_bound : visible_turns.size());
-    request.turn_observations.resize(visible_turns.size());
-    if (first_turn_only) request.turn_observations[0].arrival = startup;
-    request.warm_inputs.reserve(first_turn_only ? configured_bound : visible_turns.size());
-    for (std::size_t i = 0; i < visible_turns.size(); ++i) {
-      const auto &ids = visible_turns[i].prompt;
-      auto owner = std::make_shared<std::vector<std::int32_t>>(cache::add(ids.size(), i ? 1 : 0));
-      std::copy(ids.begin(), ids.end(), owner->begin() + (i ? 1 : 0));
-      request.warm_inputs.push_back(std::move(owner));
-    }
-    request.prompt = *request.warm_inputs[0];
     const auto ledger_capacity = first_turn_only ? configured_record_bound
         : generation_record_capacity(visible_turns, max_prefill_rows, first.size());
-    request.ledger = std::make_unique<GenerationLedger>(ledger_capacity, request_model.cache_plan.candidate_boundaries);
+    requests.push_back(install_generation_request({.schedule = schedule, .visible_turns = visible_turns,
+        .model = request_model, .prepared_model = mixed ? &request_model : nullptr,
+        .prefix = selected_prefix(schedule.execution_profile), .output_capacity = first_turn_only ? configured_bound : outputs,
+        .turn_capacity = (first_turn_only || schedule.accepts_live_input()) ? configured_bound : visible_turns.size(),
+        .record_capacity = ledger_capacity, .open_turns = first_turn_only,
+        .sampling_index = sampling_indices.empty() ? 0 : sampling_indices[requests.size()],
+        .stop = stop_policies.empty() ? inference::RequestStopPolicy{} : stop_policies[requests.size()],
+        .trace = trace.empty() ? trace : trace / ("session" + std::to_string(requests.size()) + "_" + schedule.id),
+        .arrival = startup, .logits_provider = logits_providers.empty() ? inference::LogitsInputProvider{} : logits_providers[requests.size()],
+        .token_plan = Diagnostic && prefix_enabled ? token_plans[requests.size()] : cache::TokenPlanRef{}}));
     dispatch_bound = cache::add(dispatch_bound, ledger_capacity);
-    request.round_emitted.resize((first_turn_only ? configured_bound : outputs) - 1);
-    for (auto &emitted : request.round_emitted) emitted.reserve(request_model.cache_plan.candidate_boundaries);
-    if (request.prepared_prefix) {
-      if constexpr (Diagnostic) request.input = token_plans[requests.size() - 1];
-      else request.input = cache::token_plan(request.prompt, request_model.capacity);
-    }
     total_turns = cache::add(total_turns, visible_turns.size());
     requested_outputs = cache::add(requested_outputs, outputs);
     decode_bound = cache::add(decode_bound, first_turn_only ? configured_bound : outputs - visible_turns.size());
@@ -3754,8 +3708,18 @@ bool matches_prepared_model(const std::filesystem::path &source) {
   return prepared::is_role_signature(signature);
 }
 
-std::pair<std::unique_ptr<Model>, bool> load_execution_profile(const inference::ModelLoadConfig &config,
-    std::size_t index, const Model *shared, bool retain_inventory) {
+struct ExecutionProfilePreparation final {
+  PreparedWeightSource source;
+  Backend endpoint;
+  cache::Plan cache;
+  Model::Sampling sampling;
+  std::vector<SamplingConfiguration> additional_sampling;
+  std::size_t draft_depth;
+  bool overlap;
+};
+
+ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoadConfig &config,
+    std::size_t index, const Backend *shared_endpoint = nullptr) {
   const auto &profile = config.execution_profiles[index];
   const auto source_assets = inference::execution_profile_assets(config, index);
   inference::validate_model_assets(source_assets);
@@ -3848,38 +3812,54 @@ std::pair<std::unique_ptr<Model>, bool> load_execution_profile(const inference::
       .precision = precision, .backend = execution, .context = config.execution.context, .residents = config.execution.resident_sessions,
       .active_sequences = config.execution.active_sequences, .query_rows = query_rows, .recurrent_bytes = recurrent,
       .draft_depth = depth, .overlap = overlap, .verification = verification, .random = retains_random_frontier,
-      .shared_endpoint = shared ? &shared->execution : nullptr});
+      .shared_endpoint = shared_endpoint});
   const auto plan = cache::plan(geometry, source.cache_row_bytes, config.execution.context, config.execution.resident_sessions,
       query_rows, recurrent, config.execution.active_sequences, mtp ? cache::add(depth, 1) : 1, mtp, retains_random_frontier,
       overlap ? (continuous.enabled ? 3 : 2) : 1, verification ? 2 : 0, precision, verification ? depth : 0);
   const Model::Sampling sampling{.enabled = config.sampling.random,
       .policy = {config.sampling.temperature, config.sampling.top_k, config.sampling.top_p}, .seed = 0};
-  auto backend = shared ? take(shared->execution.share_endpoint()) :
+  auto backend = shared_endpoint ? take(shared_endpoint->share_endpoint()) :
       continuous.endpoint ? std::move(*continuous.endpoint) : create_execution(geometry, plan, 0, execution);
-  auto model = std::make_unique<Model>(std::move(backend), hyle::compute::ResourceBudget{}, std::move(source),
-      geometry, config.execution.context, plan, std::filesystem::path{}, false, ReplayPolicy::kAuto, SIZE_MAX, sampling, 0,
-      additional_sampling, shared, retain_inventory);
-  if (mtp) model->configure_draft_policy({depth});
-  return {std::move(model), overlap};
+  return {std::move(source), std::move(backend), plan, sampling, std::move(additional_sampling), depth, overlap};
+}
+
+std::unique_ptr<Model> instantiate_execution_profile(ExecutionProfilePreparation preparation,
+    std::size_t capacity, std::shared_ptr<WeightStorage> weights = {}) {
+  const auto geometry = preparation.source.roles.geometry;
+  auto model = std::make_unique<Model>(std::move(preparation.endpoint), hyle::compute::ResourceBudget{}, std::move(preparation.source),
+      geometry, capacity, preparation.cache, std::filesystem::path{}, false, ReplayPolicy::kAuto, SIZE_MAX,
+      preparation.sampling, 0, preparation.additional_sampling, std::move(weights));
+  if (preparation.cache.draft_cache) model->configure_draft_policy({preparation.draft_depth});
+  return model;
 }
 std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::ModelLoadConfig &config) {
   inference::validate_execution_preparation(config);
   const auto count = config.execution_profiles.size();
-  // An MTP bank contains all target roles as well. Load that superset once,
-  // even when the public default is ordinary. Profile indices never change.
-  std::size_t root = 0;
-  for (std::size_t j = 0; j < count; ++j) if (!config.execution_profiles[j].draft_count ||
-      *config.execution_profiles[j].draft_count != 0) { root = j; break; }
-  for (std::size_t j = 0; j < count; ++j) if (config.execution_profiles[j].draft_count &&
-      *config.execution_profiles[j].draft_count != 0) { root = j; break; }
   std::vector<std::unique_ptr<Model>> models(count);
   std::vector<PreparedGenerationProfile> profiles(count);
   std::vector<std::string> names;
-  auto original = load_execution_profile(config, root, nullptr, count > 1);
-  models[root] = std::move(original.first); profiles[root] = {models[root].get(), original.second};
-  for (std::size_t j = 0; j < count; ++j) if (j != root) {
-    auto additional = load_execution_profile(config, j, models[root].get(), false);
-    models[j] = std::move(additional.first); profiles[j] = {models[j].get(), additional.second};
+  auto first = prepare_execution_profile(config, 0);
+  if (count == 1) {
+    // Preserve the ordinary inline load and single prepared executor. No union
+    // inventory or separate asset pass is needed for one execution profile.
+    const bool overlap = first.overlap;
+    models[0] = instantiate_execution_profile(std::move(first), config.execution.context);
+    profiles[0] = {models[0].get(), overlap};
+  } else {
+    std::vector<ExecutionProfilePreparation> prepared;
+    prepared.reserve(count);
+    prepared.push_back(std::move(first));
+    for (std::size_t j = 1; j < count; ++j)
+      prepared.push_back(prepare_execution_profile(config, j, &prepared.front().endpoint));
+    std::vector<const PreparedWeightSource *> sources;
+    sources.reserve(count);
+    for (const auto &profile : prepared) sources.push_back(&profile.source);
+    auto weights = prepare_shared_weights(prepared.front().endpoint, shared_weight_roles(sources));
+    for (std::size_t j = 0; j < count; ++j) {
+      const bool overlap = prepared[j].overlap;
+      models[j] = instantiate_execution_profile(std::move(prepared[j]), config.execution.context, weights);
+      profiles[j] = {models[j].get(), overlap};
+    }
   }
   for (const auto &profile : config.execution_profiles) names.push_back(profile.name);
   return std::make_unique<LoadedModelExecutor>(std::move(models), std::move(profiles), std::move(names),

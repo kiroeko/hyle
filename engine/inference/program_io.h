@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "hyle/core/assert.h"
+#include "hyle/graph/detail/recording_access.h"
 #include "readback.h"
 
 namespace hyle::inference {
@@ -217,6 +218,16 @@ class ProgramIo final {
   Result<const PreparedReadback *> readback(Readback output) const noexcept {
     HYLE_RETURN_IF_ERROR(check(output, readbacks_.size()));
     return &readbacks_[output.index_];
+  }
+  Result<compute::ConstTensorView> recording_output_view(graph::Invocation &run, Readback output) const noexcept {
+    HYLE_ASSIGN_OR_RETURN(auto original, readback(output));
+    return graph::detail::RecordingAccess::output_view(run, original->pool(), original->facts.description);
+  }
+  Result<compute::WriteLease> reclaim_recorded_input(graph::Invocation &run, Input input,
+      compute::ReadLease &original) const noexcept {
+    HYLE_RETURN_IF_ERROR(check(input, inputs_.size()));
+    const auto &facts = inputs_[input.index_];
+    return graph::detail::RecordingAccess::reclaim_input_writer(run, facts.value, facts.description, original);
   }
   Result<compute::ReadLease> retain(graph::Invocation &run, Output output,
       const compute::ResourceBudget &budget = {}) const noexcept {

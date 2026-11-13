@@ -26,6 +26,7 @@ struct Nf4State final {
   std::uint32_t offset_f32_bits = 0;
   std::string original_json_sha256{};
   static constexpr std::string_view decode_dtype = "F16", compute_dtype = "F16";
+  friend bool operator==(const Nf4State &, const Nf4State &) = default;
 };
 
 // Deliberately limited to the fixed seven-field original QuantState object.

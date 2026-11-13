@@ -11,9 +11,64 @@
 #include "hyle/mem/quota_allocator.h"
 #include "provider_internal.h"
 #include "workload_fixture.h"
+#include "hyle/compute/sequence_ops.h"
+#include "hyle/compute/detail/packed_row_matmul.h"
 
 namespace {
 using namespace custom_test;
+
+struct PackedRowsSource final {
+  bool rows = false, source = false, available = false;
+  unsigned queries = 0;
+  static Provider provider(PackedRowsSource &probe) {
+    namespace d = hyle::compute::detail;
+    static const d::PackedRowMatMulSourceVTable capability{
+        [](void *p) noexcept { auto &s = *static_cast<PackedRowsSource *>(p); ++s.queries; return s.available; }};
+    static const int row_interface = 1; // Only presence is inspected by this coarse query.
+    static const d::ProviderVTable table{
+        .identity = {{0x48594c4554455354ULL, 0x5041434b524f5753ULL}, "packed rows query", "1"},
+        .create_context = [](const Provider &p, Device, void *, hyle::mem::AllocatorRef, void **out) noexcept {
+          *out = d::ProviderAccess::payload<PackedRowsSource *>(p); return Status::Ok(); },
+        .destroy_context = [](void *, hyle::mem::AllocatorRef) noexcept {},
+        .propose = [](void *, const d::ProviderOperationRequest &, std::span<d::ResourceBindingRequirement>,
+            std::span<d::ResourceBindingRequirement>, d::ProviderOperationProposal *) noexcept {
+          return Status::Unimplemented("query-only provider"); },
+        .prepare = [](void *, const d::ProviderPrepareRequest &, hyle::mem::AllocatorRef, d::ProviderPrepared *) noexcept {
+          return ProviderPrepareOutcome::unsupported(Status::Unimplemented("query-only provider")); },
+        .drain_context = [](void *) noexcept { return Status::Ok(); },
+        .query_extension = [](void *p, ProviderExtensionId id) noexcept -> const void * {
+          const auto &s = *static_cast<PackedRowsSource *>(p);
+          if (id == d::kPackedRowMatMulRowsExtensionId && s.rows) return &row_interface;
+          if (id == d::kPackedRowMatMulSourceExtensionId && s.source) return &capability;
+          return nullptr;
+        }};
+    return d::ProviderAccess::make(&table, &probe);
+  }
+};
+
+TEST(CustomKernel, PackedRowsColdQueryUsesOneQualifiedProviderInstance) {
+  for (const bool rows : {false, true})
+    for (const bool source : {false, true})
+      for (const bool available : {false, true}) {
+        PackedRowsSource probe{rows, source, available};
+        auto context = Context::create(cpu::device(), PackedRowsSource::provider(probe)).value();
+        const auto result = sequence_ops::supports_packed_row_matmul_rows(context);
+        ASSERT_TRUE(result) << result.error().message();
+        EXPECT_EQ(*result, rows && source && available);
+        EXPECT_EQ(probe.queries, rows && source ? 1u : 0u);
+      }
+  PackedRowsSource rows_only{true, false, true}, source_only{false, true, true}, supported{true, true, true};
+  const std::array split{ProviderBinding{PackedRowsSource::provider(rows_only), 100},
+                         ProviderBinding{PackedRowsSource::provider(source_only), 200}};
+  auto context = Context::create(cpu::device(), {.providers = split}).value();
+  EXPECT_FALSE(sequence_ops::supports_packed_row_matmul_rows(context).value());
+  const std::array later{split[0], ProviderBinding{PackedRowsSource::provider(supported), 200}};
+  auto qualified = Context::create(cpu::device(), {.providers = later}).value();
+  EXPECT_TRUE(sequence_ops::supports_packed_row_matmul_rows(qualified).value());
+  ASSERT_TRUE(qualified.close().ok());
+  EXPECT_TRUE(sequence_ops::supports_packed_row_matmul_rows(qualified).error().IsFailedPrecondition());
+  EXPECT_TRUE(sequence_ops::supports_packed_row_matmul_rows(Context{}).error().IsFailedPrecondition());
+}
 
 TEST(CustomKernel, WorkloadIsBoundOnceAndRetainedThroughInvocation) {
   Probe probe;

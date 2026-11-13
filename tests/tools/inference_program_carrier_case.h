@@ -95,7 +95,16 @@ inline std::size_t finish_source_chain(i::Backend &backend, const g::CompiledGra
     const auto report = q::take(episode.run->replay_report());
     require(report.route == g::ReplayRoute::kCaptured && report.recorded_capture_range_count &&
         !report.host_wait_dependency_count, "Source chain did not cold-capture its complete tuple");
-    if (index) q::check(episode.run->unbind(first));
+    if (index) {
+      auto wrong = scope->second;
+      require(!io[index].reclaim_recorded_input(*episode.run, ports[index][0], wrong),
+          "cold handoff accepted another ready input with the same description");
+      const auto generation = cold_ready[index - 1].generation();
+      auto writer = q::take(io[index].reclaim_recorded_input(*episode.run, ports[index][0], cold_ready[index - 1]));
+      require(writer.generation() == generation && q::take(writer.view()).native_handle() == physical[index - 1].native_handle(),
+          "cold handoff changed its original lease generation or backing");
+      cold_ready[index - 1] = q::take(writer.publish());
+    }
   }
   for (std::size_t index = 0; index < 3; ++index) {
     auto &episode = *episodes[index];

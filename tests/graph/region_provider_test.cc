@@ -6701,6 +6701,39 @@ TEST(GraphRegions, PreparedOnlyFiltersLeafBeforeArtifactCreation) {
   }
 }
 
+TEST(GraphRegions, PreparedReplayAndCaptureRequirementsComposeIndependently) {
+  const auto logical = make_negations(1);
+  for (const bool leaf : {false, true})
+    for (const bool prepared : {false, true})
+      for (const bool capture : {false, true})
+        for (const bool require_prepared : {false, true})
+          for (const bool require_capture : {false, true}) {
+            RegionProbe probe{.mode = ProposalMode::kSingleton};
+            if (leaf) probe.required_resource = hyle::mem::system_resource();
+            const auto replay = prepared ? ProviderReplayClass::kPrepared : ProviderReplayClass::kManaged;
+            probe.discovery_replay_class = replay;
+            probe.artifact_properties.runtime.replay_class = replay;
+            probe.single_replay_override = replay;
+            probe.capture_supported = capture;
+            probe.artifact_properties.runtime.capture_compatible = capture;
+            probe.cold_bindings_capture_compatible = capture;
+            auto context = Context::create(hyle::compute::cpu::device(), region_provider(probe)).value();
+            const auto requirements =
+                (require_prepared ? ProviderReplayPolicy::kRequirePrepared : ProviderReplayPolicy::kAllowAny) |
+                (require_capture ? ProviderReplayPolicy::kRequireCaptureCompatible : ProviderReplayPolicy::kAllowAny);
+            const auto compiled = hyle::graph::compile(logical.graph, context,
+                {.region_selection = leaf ? RegionSelectionPolicy::kDisabled : RegionSelectionPolicy::kAllowProviderRegions,
+                 .operation_fallback = leaf ? OperationFallbackPolicy::kAllow : OperationFallbackPolicy::kReject,
+                 .provider_replay = requirements});
+            const bool eligible = (!require_prepared || prepared) && (!require_capture || capture);
+            ASSERT_EQ(compiled.has_value(), eligible)
+                << "leaf=" << leaf << " prepared=" << prepared << " capture=" << capture
+                << " requirements=" << static_cast<unsigned>(requirements)
+                << (compiled ? "" : compiled.error().message());
+            EXPECT_EQ(probe.compile_count + probe.single_artifact_count, eligible ? 1u : 0u);
+          }
+}
+
 TEST(GraphRegions, PreparedOnlyFailsWhenNoEligibleExecutionRouteExists) {
   GraphBuilder builder = GraphBuilder::create().value();
   (void)builder

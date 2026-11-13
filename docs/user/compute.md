@@ -478,6 +478,9 @@ ggml CUDA 也遵循 caller-owned 合同：按 `workspace_requirement()` 分配�
 Status 诊断分配仍由各自合同负责。direct 用户可在准备后、提交前检查该字段；Graph 用户可通过
 [`CompileOptions::provider_replay`](graph.md#何时要求-prepared-only) 在创建 artifact 前筛选 leaf/region。
 这不改变 direct `prepare()` 的 Provider 顺序，也不增加每次 submit 的政策查询。
+`sequence_ops::supports_packed_row_matmul_rows(context)` 在冷期查询同一个 Provider 实例是否同时具备
+普通 PackedRowMatMul 和其行控制协议。它不创建程序、不提交队列，也不保证具体 shape、编码、资源或 capture 合格；
+这些仍由实际准备过程核对。缺少能力返回 false，真实查询错误保留。模型无需读取内部扩展表。
 direct operation 在比较偏好与歧义前先核对实际资源要求；相同偏好但适用资源不同的提案不会互相阻挡。真实 Provider 准备错误继续直接返回。
 
 需要区分同一家 Provider 的多个配置实例时，使用

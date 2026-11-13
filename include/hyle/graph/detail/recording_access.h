@@ -24,6 +24,17 @@ struct RecordingAccess final {
       const ResourceProjection &, RecordingStoreInputs) noexcept;
   HYLE_GRAPH_API static Status end(Invocation &) noexcept;
 
+  // Borrow only the physical span of an existing caller output while the
+  // original invocation is recording-only. This grants no lease permission.
+  HYLE_GRAPH_API static Result<compute::ConstTensorView> output_view(
+      Invocation &, const compute::LeasePool &, compute::TensorDesc) noexcept;
+  // A separately prepared ordinary invocation may capture a complete ready
+  // input before its original writer is reused by a predecessor. Verify the
+  // actual current binding, withdraw it through Graph, and reclaim that same
+  // full lease generation/span. No wait, publication, Source or owner is added.
+  HYLE_GRAPH_API static Result<compute::WriteLease> reclaim_input_writer(
+      Invocation &, ValueId, compute::TensorDesc, compute::ReadLease &) noexcept;
+
   // Implemented by the original Store adapter, using its exact selected slot.
   HYLE_GRAPH_API static Result<RecordingStoreInputs> store_output(
       Invocation &, NodeId) noexcept;

@@ -128,6 +128,23 @@ def main():
         finally:
             single.close(timeout=120)
     assert ordered[0] == ordered[1], 'sampler order changed the prepared greedy K3 execution'
+    # No profile acts as the asset loader for its peers. In particular the
+    # default may need only target roles while later profiles also need MTP.
+    command = [args.engine, '--engine-worker', '--inputs', args.inputs, '--backend', 'cuda',
+        '--capacity', '128', '--max-sessions', '1', '--active-sequences', '1', '--draft-count', '0',
+        '--profile', 'full', '--draft-count', '1', '--profile', 'subset', '--draft-count', '3',
+        '--profile-asset', 'draft.vocabulary=' + args.vocabulary]
+    reordered = WorkerClient(command, startup_timeout=120)
+    try:
+        for profile, expected in ((1, results[1]), (2, results[0])):
+            request = reordered.open_session([1, 2, 3], 8, execution_profile=profile)
+            assert turn(request, 0) == expected, 'profile load order changed prepared target mathematics'
+            finish(request)
+        request = reordered.open_session([1, 2, 3], 8, execution_profile=0)
+        assert len(turn(request, 0)) == 8
+        finish(request)
+    finally:
+        reordered.close(timeout=120)
     print("PASS native subset K3/full K1/plain random: co-residency, live turns, RNG, backpressure, cancellation and slot reuse")
 
 

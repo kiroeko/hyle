@@ -157,8 +157,6 @@ c::WriteLease Program::prepare_source_reuse(Pending &prepared,c::ReadLease &hidd
     auto &episode=*prepared.execution;
     const auto start=std::chrono::steady_clock::now();
     try {
-      const auto original=take(hidden_ready.tensor(this->input(0).description),"Kimi cold hidden tensor");
-      const auto generation=hidden_ready.generation();
       check(episode.prepare_replay({.mode=g::ReplayMode::kPreferCapture,.host_wait=g::HostWaitPolicy::kReject}),
           "Kimi complete MLA cold capture");
       const auto report=replay_report(episode,"consumer-cold-prepare");
@@ -169,14 +167,8 @@ c::WriteLease Program::prepare_source_reuse(Pending &prepared,c::ReadLease &hidd
       cold_reused_ranges+=report.reused_capture_range_count;
       // Preserve every other original input, output writer and captured private
       // address. Only this complete ready input hands its one block to KDA.
-      check(episode.run->unbind(this->input(0).value),"Kimi cold hidden input withdrawal");
-      auto writer=take(hidden_ready.try_write(),"Kimi original hidden writer handoff");
-      const auto reclaimed=take(writer.view(),"Kimi reclaimed hidden backing");
-      const auto storage=original.storage();
-      if(writer.generation()!=generation||reclaimed.resource()!=storage.resource()||
-          reclaimed.native_handle()!=storage.native_handle()||reclaimed.offset()!=storage.offset()||
-          reclaimed.size()!=storage.size())
-        throw std::runtime_error("Kimi cold hidden handoff changed its original physical writer");
+      auto writer=take(io.reclaim_recorded_input(*episode.run,inputs[0],hidden_ready),
+          "Kimi original hidden writer handoff");
       cold_capture_seconds+=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
       return writer;
     } catch(inference::EvaluationFailure &failure) {

@@ -2917,14 +2917,13 @@ struct RouteDiagnostic final {
 
 constexpr bool replay_allowed(ProviderReplayPolicy policy,
                               compute::ProviderReplayClass replay) noexcept {
-  return policy == ProviderReplayPolicy::kAllowAny ||
-         policy == ProviderReplayPolicy::kRequireCaptureCompatible ||
+  return !requires_provider(policy, ProviderReplayPolicy::kRequirePrepared) ||
          replay == compute::ProviderReplayClass::kPrepared;
 }
 
 constexpr bool capture_allowed(ProviderReplayPolicy policy,
     const compute::ProviderRuntimeProperties &runtime) noexcept {
-  return policy != ProviderReplayPolicy::kRequireCaptureCompatible || runtime.capture_compatible;
+  return !requires_provider(policy, ProviderReplayPolicy::kRequireCaptureCompatible) || runtime.capture_compatible;
 }
 
 using RegionExtensions =
@@ -11271,9 +11270,10 @@ Result<CompiledGraph> compile_plan(
       options.max_operation_proposals == 0 && !inherited_budget)
     return std::unexpected(
         Status::InvalidArgument("graph operation proposal budget is zero"));
-  if (options.provider_replay != ProviderReplayPolicy::kAllowAny &&
-      options.provider_replay != ProviderReplayPolicy::kRequirePrepared &&
-      options.provider_replay != ProviderReplayPolicy::kRequireCaptureCompatible) {
+  constexpr auto known_requirements = ProviderReplayPolicy::kRequirePrepared |
+                                      ProviderReplayPolicy::kRequireCaptureCompatible;
+  if ((static_cast<std::uint8_t>(options.provider_replay) &
+       ~static_cast<std::uint8_t>(known_requirements)) != 0) {
     return std::unexpected(
         Status::InvalidArgument("graph provider replay policy is invalid"));
   }

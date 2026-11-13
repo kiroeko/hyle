@@ -339,6 +339,38 @@ Status RecordingAccess::begin(Invocation &invocation) noexcept {
   return Status::Ok();
 }
 
+Result<compute::ConstTensorView> RecordingAccess::output_view(Invocation &invocation,
+    const compute::LeasePool &pool, compute::TensorDesc description) noexcept {
+  auto *state = InvocationAccess::state(invocation);
+  HYLE_RETURN_IF_ERROR(resource_control_ready(state));
+  if (!active(invocation))
+    return std::unexpected(Status::FailedPrecondition("physical output borrowing requires recording-only preparation"));
+  HYLE_ASSIGN_OR_RETURN(auto span, compute::detail::LeaseAccess::backing_span(pool));
+  return compute::ConstTensorView::create(description, span);
+}
+
+Result<compute::WriteLease> RecordingAccess::reclaim_input_writer(Invocation &invocation,
+    ValueId value, compute::TensorDesc description, compute::ReadLease &ready) noexcept {
+  auto *state = InvocationAccess::state(invocation);
+  HYLE_RETURN_IF_ERROR(resource_control_ready(state));
+  if (active(invocation))
+    return std::unexpected(Status::FailedPrecondition("ready input handoff requires ordinary owned bindings"));
+  HYLE_ASSIGN_OR_RETURN(auto original, ready.tensor(description));
+  const auto generation = ready.generation();
+  HYLE_ASSIGN_OR_RETURN(auto bound, RegionAccess::has_input_binding(state, value, original));
+  if (!bound)
+    return std::unexpected(Status::FailedPrecondition("cold handoff input differs from its original binding"));
+  HYLE_RETURN_IF_ERROR(invocation.unbind(value));
+  HYLE_ASSIGN_OR_RETURN(auto writer, ready.try_write());
+  HYLE_ASSIGN_OR_RETURN(auto reclaimed, writer.view());
+  const auto storage = original.storage();
+  if (writer.generation() != generation || reclaimed.resource() != storage.resource() ||
+      reclaimed.native_handle() != storage.native_handle() || reclaimed.offset() != storage.offset() ||
+      reclaimed.size() != storage.size())
+    return std::unexpected(Status::Internal("cold handoff changed the original full writer"));
+  return writer;
+}
+
 Status reset_resource_payload(Invocation &invocation) noexcept {
   auto *state = InvocationAccess::state(invocation);
   HYLE_RETURN_IF_ERROR(resource_control_ready(state));

@@ -2,6 +2,7 @@
 // request driver. Pass a prepared tiny local input; no weights are downloaded.
 #include "../../engine/models/qwen35/model_core.h"
 #include "../../engine/models/qwen35/token_ids.h"
+#include "../../engine/models/qwen35/request_installation.h"
 
 #include <algorithm>
 #include <array>
@@ -72,10 +73,30 @@ int main(int argc, char **argv) try {
       q::recurrent_bytes(q::state_schema_for(geometry, capacity, precision), geometry),
       1, 1, false, false, 1, 0, precision);
   auto endpoint = q::create_execution(geometry, plan, 0, {.primary = backend});
+  std::shared_ptr<q::WeightStorage> assets;
+  if (shared) {
+    const std::array sources{&source};
+    auto roles = q::shared_weight_roles(sources);
+    require(roles.bytes == source.roles.bytes && roles.selected == source.roles.selected,
+        "single source union changed its physical roles");
+    auto extended = source;
+    auto extra = source.roles.selected.front(); extra.name += ".test-extra";
+    extended.roles.selected.push_back(extra);
+    const std::array extended_sources{&source, &extended};
+    const auto union_roles = q::shared_weight_roles(extended_sources);
+    require(union_roles.selected.size() == source.roles.selected.size() + 1 &&
+        union_roles.bytes == q::cache::add(source.roles.bytes, extra.bytes),
+        "profile union omitted a role or loaded duplicate physical bytes");
+    extended.roles.selected.front().offset += 1;
+    bool conflict = false;
+    try { (void)q::shared_weight_roles(extended_sources); } catch (const std::invalid_argument &) { conflict = true; }
+    require(conflict, "matching source identity hid a conflicting physical role");
+    assets = q::prepare_shared_weights(endpoint, std::move(roles));
+  }
   auto original = std::make_unique<q::Model>(std::move(endpoint), hyle::compute::ResourceBudget{},
       std::move(source), geometry, capacity, plan, std::filesystem::path{}, false,
       q::ReplayPolicy::kCommands, SIZE_MAX, q::Model::Sampling{}, 0,
-      std::span<const q::SamplingConfiguration>{}, nullptr, shared);
+      std::span<const q::SamplingConfiguration>{}, assets);
   std::unique_ptr<q::Model> alias;
   if (shared) {
     auto second_source = q::prepare_weight_source(directory / "weights.tsv", false);
@@ -83,13 +104,46 @@ int main(int argc, char **argv) try {
     alias = std::make_unique<q::Model>(std::move(same), hyle::compute::ResourceBudget{},
         std::move(second_source), geometry, capacity, plan, std::filesystem::path{}, false,
         q::ReplayPolicy::kCommands, SIZE_MAX, q::Model::Sampling{}, 0,
-        std::span<const q::SamplingConfiguration>{}, original.get());
+        std::span<const q::SamplingConfiguration>{}, assets);
     require(&original->weights == &alias->weights && &original->weight_pools == &alias->weight_pools &&
         original->execution.same_endpoint(alias->execution), "prepared model copied weights or replaced the original endpoint");
     require(original->resources_ != alias->resources_, "prepared profiles share mutable state resources");
-    original.reset(); // The alias must execute after its original loader dies.
+    original.reset(); assets.reset(); // Neither another Model nor the assembler keeps the assets alive.
   }
   auto &model = shared ? *alias : *original;
+  {
+    i::GenerationSessionSchedule schedule{.id = "installation", .turns = {{{1, 2}, 4}, {{3, 4}, 4}},
+        .mode = i::GenerationSessionMode::kTurns, .sampling_seed = 42, .max_draft_tokens = 0,
+        .cache_sharing_domain = 19, .sampling_stream = 7};
+    const auto visible = std::span(schedule.turns).first(1);
+    const auto arrival = q::Clock::now();
+    auto initial = q::install_generation_request({.schedule = schedule, .visible_turns = visible, .model = model,
+        .output_capacity = 8, .turn_capacity = 8, .record_capacity = 32, .open_turns = true, .arrival = arrival});
+    auto admitted = q::install_generation_request({.schedule = schedule, .visible_turns = visible, .model = model,
+        .prepared_model = &model, .output_capacity = 8, .turn_capacity = 8, .record_capacity = 32,
+        .open_turns = true, .arrival = arrival});
+    require(initial.progress.initial_sampling == admitted.progress.initial_sampling &&
+        initial.progress.initial_sampling == q::cache::SamplingCursor{42, 7, 0} &&
+        initial.cache_sharing_domain == 19 && initial.max_draft_tokens == 0 && !initial.prepared_model &&
+        admitted.prepared_model == &model && initial.warm_inputs.size() == 1 && initial.turn_observations.size() == 1 &&
+        initial.turn_observations.front().arrival == arrival,
+        "request installation changed RNG, profile, visibility or initial arrival");
+    schedule.turns[0].prompt[0] = 5;
+    require(initial.prompt[0] == 1 && admitted.prompt[0] == 1,
+        "installed request borrows mutable ingress input instead of its retained payload");
+    auto diagnostic = q::install_generation_request({.schedule = schedule, .visible_turns = schedule.turns, .model = model,
+        .output_capacity = 8, .turn_capacity = 2, .record_capacity = 32});
+    require(diagnostic.warm_inputs.size() == 2 && diagnostic.warm_inputs[1]->size() == 3 &&
+        (*diagnostic.warm_inputs[1])[1] == 3 && diagnostic.turn_observations[0].arrival == q::Clock::time_point{},
+        "diagnostic installation lost a visible follow-up or its pending-token prefix");
+    schedule.mode = i::GenerationSessionMode::kLive;
+    auto live = q::install_generation_request({.schedule = schedule, .visible_turns = visible, .model = model,
+        .output_capacity = 8, .turn_capacity = 8, .record_capacity = 32, .open_turns = true});
+    auto moved = std::move(live);
+    require(moved.live_turns.size() == 1 && moved.progress.initial_sampling == initial.progress.initial_sampling &&
+        moved.prompt[0] == 5 && moved.warm_inputs.size() == 1,
+        "moving an installed live request invalidated its payload or exposed a future turn");
+  }
   bool missing_verifier_rejected = false, missing_timer_rejected = false;
   try { model.bind_device_verification_inputs(q::GraphRole::kVerify, {}); }
   catch (const std::logic_error &) { missing_verifier_rejected = true; }

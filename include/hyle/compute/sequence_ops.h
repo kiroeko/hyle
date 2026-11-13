@@ -13,6 +13,16 @@
 #include "hyle/compute/operation.h"
 
 namespace hyle::compute::sequence_ops {
+
+// Cold, coarse qualification for the ordinary PackedRowMatMul operation and
+// its host-proven row-control protocol on the same provider instance. This
+// does not qualify a particular tensor shape, encoding, resource or capture;
+// ordinary operation preparation still owns those checks. No artifact is
+// created and no queue is submitted. Missing capability returns false; real
+// provider/query errors propagate.
+HYLE_COMPUTE_API Result<bool>
+supports_packed_row_matmul_rows(const Context &context) noexcept;
+
 namespace detail {
 
 inline bool dense(const TensorDesc &description, std::size_t rank) noexcept {

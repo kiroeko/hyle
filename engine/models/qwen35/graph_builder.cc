@@ -13,8 +13,6 @@
 
 #include "../../inference/backend.h"
 #include "../../inference/ct_block128_graph.h"
-#include "hyle/compute/detail/packed_row_matmul.h"
-#include "hyle/compute/detail/provider_extension.h"
 #include "hyle/compute/sequence_ops.h"
 #include "hyle/simd/dtype.h"
 
@@ -37,34 +35,7 @@ GraphAssembly::GraphAssembly(const Backend &environment, PrecisionProfile precis
         environment.kind() == inference::BackendKind::kVulkan) return;
     check(context.error());
   }
-  for (std::size_t i = 0; i < (*context)->provider_count(); ++i) {
-    // Require the same source to support ordinary operation cold rows. The
-    // region-only prototype does not qualify the Model's default dispatch.
-    const auto rows = c::detail::ProviderExtensionAccess::query(**context, i,
-        c::detail::kPackedRowMatMulRowsExtensionId);
-    if (!rows) {
-      if (rows.error().IsUnimplemented()) continue;
-      check(rows.error());
-    }
-    const auto source = c::detail::ProviderExtensionAccess::query(*rows,
-        c::detail::kPackedRowMatMulSourceExtensionId);
-    if (!source) {
-      if (source.error().IsUnimplemented()) continue;
-      check(source.error());
-    }
-    bool available = false;
-    const auto status = c::detail::ProviderExtensionAccess::call(*source,
-        [](void *context, const void *table, void *out) noexcept -> hyle::Status {
-          const auto *cap = static_cast<const c::detail::PackedRowMatMulSourceVTable *>(table);
-          *static_cast<bool *>(out) = cap && cap->available && cap->available(context);
-          return hyle::Status::Ok();
-        }, &available);
-    if (!status.ok()) {
-      if (status.IsUnimplemented()) continue;
-      check(status);
-    }
-    if (available) { packed_row_matmul_ = true; break; }
-  }
+  packed_row_matmul_ = take(c::sequence_ops::supports_packed_row_matmul_rows(**context));
 }
 
 GraphAssembly::Location GraphAssembly::primary() { return {g::ExecutionTargetId{0}, g::StorageDomainId{0}}; }

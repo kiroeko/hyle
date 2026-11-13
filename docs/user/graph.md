@@ -252,7 +252,7 @@ CPU+CUDA 的既有 effect 能力保持原规则；有限形状表使用同一份
 | memory plan | 每个 `(logical value, storage)` 是一个 physical instance；默认只复用 happens-before 已证明有序的 lifetime，显式允许时才为硬预算增加可报告的顺序边 |
 | scheduling | 冷路径先做确定性 lane-aware Kahn 调度，再建立 happens-before 和 workspace；同 shared lane 尽量连续录入以减少 Queue segment |
 | replay | `prepare_replay()` 冷验证 bindings、transfer、Queue 与 delegated endpoint identity、dependency route 和 Completion 容量 |
-| Provider replay 要求 | `CompileOptions::provider_replay` 在冷编译筛选 leaf/region；默认允许所有合法类别，可要求 prepared 或 provider 声明的 capture 资格 |
+| Provider replay 要求 | `CompileOptions::provider_replay` 在冷编译筛选 leaf/region；默认允许所有合法类别，prepared 与 provider capture 资格可独立要求、按位或组合 |
 | Provider 准入 | 全局 `allowed_providers/denied_providers` 和逐节点 `node_providers` 硬约束同时筛选 leaf/region；可指定家族或精确 Context 配置槽位，不因融合或回退而放宽 |
 | capture | `kCommands`、`kPreferCapture`、`kRequireCapture`；capture 只适用于 shared Queue segment，delegated island 不能伪装成 Queue capture |
 | report | `CompileReport` 分列 target/storage/lane/segment/runtime owner；`ReplayReport` 给出 exact endpoint 后的 ordered/imported/host-wait 事实 |
@@ -279,6 +279,9 @@ commands，ggml保留自己的内部capture。它不是全算子覆盖或其他�
 再由 `prepare_replay(..., {.mode = ReplayMode::kRequireCapture})` 验证实际 capture 支持。
 leaf 在提案阶段过滤，region 在资源资格阶段过滤，均在创建 artifact 前完成。真实准备错误不会被吞掉以尝试其它 Provider。
 `kRequirePrepared` 仍只约束 replay 成本，不表示 capture。新的 provider 资格也不证明具体地址、Queue、拓扑或插入的 backend transfer 可录图；这些仍在 `prepare_replay()` 核验。编译完成后不临时改选 Provider。
+两项独立要求可以同时指定，不需要增加组合模式：
+`CompileOptions{.provider_replay = ProviderReplayPolicy::kRequirePrepared | ProviderReplayPolicy::kRequireCaptureCompatible}`。
+组合要求两项都满足；未知的要求位会被拒绝。并发 Invocation 和 host wait 继续使用各自的独立合同。
 普通允许 managed 的入口继续保留原版 ggml 内部融合/capture 和真实 commands 完成边界。
 `kCommands`只规定Graph外层的重放方式，不保证Provider内部已经预热。当前ggml CUDA程序会在本槽图属性稳定后延迟建立自己的capture；
 性能测量应分别保留每槽首次执行、内部准备和稳态调用，不能把槽0已预热视为槽1也已预热。

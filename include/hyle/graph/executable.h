@@ -777,18 +777,33 @@ enum class OperationFallbackPolicy : std::uint8_t {
   kReject,
 };
 
+// Independent cold requirements, combined with operator|. They constrain
+// provider proposals before artifact creation, not a mutually exclusive route.
 enum class ProviderReplayPolicy : std::uint8_t {
   // Accept any valid declared class, including unknown. This does not prove
   // a zero-allocation or bounded-cost provider replay.
   kAllowAny = 0,
   // Only proposals declaring prepared replay may create artifacts. This is
   // independent of shared/delegated ownership and command capture support.
-  kRequirePrepared,
+  kRequirePrepared = 1u << 0,
   // Filter provider-level command-capture eligibility while compiling. Actual
   // addresses, queues and topology are still qualified by prepare_replay().
   // Metadata Views and inserted backend transfers retain their own contracts.
-  kRequireCaptureCompatible,
+  kRequireCaptureCompatible = 1u << 1,
 };
+
+constexpr ProviderReplayPolicy operator|(ProviderReplayPolicy a,
+                                         ProviderReplayPolicy b) noexcept {
+  return static_cast<ProviderReplayPolicy>(static_cast<std::uint8_t>(a) |
+                                          static_cast<std::uint8_t>(b));
+}
+
+constexpr bool requires_provider(ProviderReplayPolicy requirements,
+                                 ProviderReplayPolicy requirement) noexcept {
+  return (static_cast<std::uint8_t>(requirements) &
+          static_cast<std::uint8_t>(requirement)) ==
+         static_cast<std::uint8_t>(requirement);
+}
 
 enum class CompileSearchPolicy : std::uint8_t {
   // Finish and validate a plan using the admitted candidates; report any
