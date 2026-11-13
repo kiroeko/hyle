@@ -704,6 +704,8 @@ void restore_generation_session(Model &model, GenerationRequest &request,
     if (!restored) ++request.checkpoint_resume_misses;
   }
   if (!restored) {
+    if(model.vision && std::ranges::any_of(request.progress.turns(),[](const auto &turn){return !turn.attachments.empty();}))
+      throw inference::RequestRejected("image sessions require their complete resident or host checkpoint; token-only replay is insufficient");
     const auto trace = request.trace.empty() ? request.trace
         : request.trace / "restores" / ("restore" + std::to_string(request.restore_count));
     restored = rebuild_generation_session(model, ledger, trace, trace_states, &request.restored, prefix, requests);
@@ -1086,6 +1088,21 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
       } else { request.prefix_misses = 1; request.history = std::make_shared<cache::ReplayHistory>(model.capacity); }
     }
     const auto part = request.progress.next_input(prefill);
+    if(request.image_turn!=request.progress.turn_index){
+      const auto &turn=request.progress.turns()[request.progress.turn_index];
+      request.image_input.reset();
+      if(!turn.attachments.empty()){
+        if(!model.vision || model.cache_plan.draft_cache)
+          throw inference::RequestRejected("image input requires a prepared ordinary vision execution profile");
+        const auto before=request.session?request.session->length():0;
+        const auto offset=request.session?request.session->head->rotary_offset:0;
+        try {
+          request.image_input=std::make_unique<ConditionedPrompt>(prepare_image_prompt(*model.vision,request.prompt,
+              turn.attachments,request.prompt.size()-turn.prompt.size(),static_cast<std::int64_t>(before)+offset,model.precision.activation_type()));
+        } catch(const std::invalid_argument &error){ throw inference::RequestRejected(error.what()); }
+      }
+      request.image_turn=request.progress.turn_index;
+    }
     call.input_begin = part.begin;
     call.prefill_complete = part.complete;
     call.completion = call.prefill_complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly;
@@ -1703,6 +1720,9 @@ struct SynchronousGenerationStepAdapter final {
           generation ? std::span<const std::int32_t>(&call.pending, 1) : call.ids(), generation,
           call.quota, request.progress.turn_index, generation ? std::shared_ptr<const void>{} : std::shared_ptr<const void>(request.warm_inputs.at(request.progress.turn_index)), call.maximum, call.completion, call.input_begin, call.prefill_complete);
       inputs.push_back({request.session, call.ids(), &request.ledger->stop_policy(), call.logits, call.conditional_logits, request.request_key});
+      if(!generation && request.image_input){
+        inputs.back().image_input=request.image_input.get();inputs.back().image_offset=call.input_begin;
+      }
       if (!generation && packed_prefill) {
         inputs.back().prefill_packets = &request.prefill_packets;
         inputs.back().prefill_prompt = request.prompt;
@@ -2415,6 +2435,14 @@ struct ReusableGenerationPreparation final {
 };
 
 // Pure admission checks shared by the model adapter and actual reusable path.
+void validate_image_turn(const Model &model, const inference::GenerationTurn &turn) {
+  if(turn.attachments.empty())return;
+  if(!model.vision || model.cache_plan.draft_cache)
+    throw std::invalid_argument("image input requires a prepared ordinary vision execution profile");
+  for(const auto &part:turn.attachments)model.vision->validate(part);
+  (void)image_position_plan(model.vision->geometry(),turn.prompt,turn.attachments,0,0);
+}
+
 // Inspecting supplied turns never chooses a Graph shape or submits model work.
 void validate_reusable_batch(Model &model, inference::GenerationBatch batch, bool mtp,
                              std::size_t configured_prefill, std::size_t profile = 0) {
@@ -2432,6 +2460,7 @@ void validate_reusable_batch(Model &model, inference::GenerationBatch batch, boo
     const auto error = inference::check_request_schedule(schedule, model.capacity,
         static_cast<std::size_t>(model.vocabulary));
     if (error) throw std::invalid_argument(inference::request_admission_message(*error));
+    for(const auto &turn:schedule.turns)validate_image_turn(model,turn);
     if (schedule.max_draft_tokens && *schedule.max_draft_tokens > (mtp ? model.max_drafts() : 0))
       throw std::invalid_argument("requested draft ceiling exceeds the cold-prepared execution plan");
   }
@@ -3434,10 +3463,14 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
             request.session->length(), selected.capacity, static_cast<std::size_t>(selected.vocabulary));
         if (followup == inference::FollowupTurnError::kInvalidInput)
           throw std::out_of_range("input exceeds configured turn, prompt or output bound");
+        std::exception_ptr input_error;
+        try { validate_image_turn(selected,next); }
+        catch(const std::invalid_argument &error){input_error=std::make_exception_ptr(inference::RequestRejected(error.what()));}
+        catch(const std::out_of_range &error){input_error=std::make_exception_ptr(inference::RequestRejected(error.what()));}
         // The preceding turn may have stopped early. Check the next turn
         // against its actual committed state, before extending or submitting it.
-        if (followup == inference::FollowupTurnError::kRemainingContext) {
-          const auto error = std::make_exception_ptr(inference::RequestRejected(
+        if (followup == inference::FollowupTurnError::kRemainingContext || input_error) {
+          const auto error = input_error?input_error:std::make_exception_ptr(inference::RequestRejected(
               "complete turn input and output quota exceed the remaining context"));
           if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>> &&
               requires { { output_consumer.fail(request.request_key, error) } noexcept -> std::same_as<bool>; }) {
@@ -3632,6 +3665,7 @@ public:
       std::size_t prefill_rows, std::size_t prefix_entries)
       : models_(std::move(models)), profiles_(std::move(profiles)), names_(std::move(names)), prefill_rows_(prefill_rows) {
     if (prefix_entries) for (auto &profile : profiles_) {
+      if(profile.model->vision)continue; // Token-only prefix keys do not identify image content.
       prefixes_.push_back(std::make_unique<cache::PrefixCache>(prefix_entries));
       profile.prefix = prefixes_.back().get();
     }
@@ -3716,6 +3750,7 @@ struct ExecutionProfilePreparation final {
   std::vector<SamplingConfiguration> additional_sampling;
   std::size_t draft_depth;
   bool overlap;
+  std::filesystem::path vision_path;
 };
 
 ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoadConfig &config,
@@ -3724,10 +3759,14 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
   const auto source_assets = inference::execution_profile_assets(config, index);
   inference::validate_model_assets(source_assets);
   for (const auto &asset : source_assets.auxiliary)
-    if (asset.role != "draft.vocabulary" && asset.role != "draft.head")
+    if (asset.role != "draft.vocabulary" && asset.role != "draft.head" && asset.role != "vision.encoder")
       throw std::invalid_argument("Qwen model does not support asset role: " + asset.role);
   const auto *vocabulary_asset = inference::find_model_asset(source_assets, "draft.vocabulary");
   const auto *head_asset = inference::find_model_asset(source_assets, "draft.head");
+  const auto *vision_asset=inference::find_model_asset(source_assets,"vision.encoder");
+  if(vision_asset && (vision_asset->mode!=inference::ModelAssetMode::kFile || profile.overlap.value_or(false) ||
+      (profile.draft_count && *profile.draft_count)))
+    throw std::invalid_argument("the prepared image recipe requires a file asset and ordinary generation without device overlap");
   if (!config.execution.context || !config.execution.resident_sessions || !config.execution.active_sequences ||
       config.execution.active_sequences > config.execution.resident_sessions || !config.execution.prefill_rows ||
       (profile.draft_count && *profile.draft_count >= config.execution.context))
@@ -3743,7 +3782,7 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
   const bool explicit_depth = profile.draft_count.has_value();
   const auto requested_depth = profile.draft_count.value_or(1);
   MtpDefaultRequest request{
-      .mode = !explicit_depth ? mtp_policy::RequestedMode::kAuto :
+      .mode = vision_asset ? mtp_policy::RequestedMode::kOff : !explicit_depth ? mtp_policy::RequestedMode::kAuto :
           requested_depth ? mtp_policy::RequestedMode::kOn : mtp_policy::RequestedMode::kOff,
       .workload = workload, .automatic_backend_eligible = execution.primary == BackendKind::kCuda,
       .max_drafts = requested_depth,
@@ -3799,7 +3838,7 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
   append_sampling_route(config.sampling);
   for (const auto &policy : config.additional_sampling) append_sampling_route(policy);
   const auto routes = qwen35::plan_prepared_decode_routes(sampling_routes, profile.overlap);
-  const bool overlap = routes.overlap;
+  const bool overlap = !vision_asset && routes.overlap;
   // The verifier can consume a standalone draft chain; it does not require
   // an overlapping successor. Keep its independently selected capacity.
   const bool verification = routes.verification;
@@ -3820,16 +3859,21 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
       .policy = {config.sampling.temperature, config.sampling.top_k, config.sampling.top_p}, .seed = 0};
   auto backend = shared_endpoint ? take(shared_endpoint->share_endpoint()) :
       continuous.endpoint ? std::move(*continuous.endpoint) : create_execution(geometry, plan, 0, execution);
-  return {std::move(source), std::move(backend), plan, sampling, std::move(additional_sampling), depth, overlap};
+  return {std::move(source), std::move(backend), plan, sampling, std::move(additional_sampling), depth, overlap,
+      vision_asset?vision_asset->path:std::filesystem::path{}};
 }
 
 std::unique_ptr<Model> instantiate_execution_profile(ExecutionProfilePreparation preparation,
-    std::size_t capacity, std::shared_ptr<WeightStorage> weights = {}) {
+    std::size_t capacity, std::shared_ptr<WeightStorage> weights = {}, std::shared_ptr<VisionEncoder> shared_vision = {}) {
   const auto geometry = preparation.source.roles.geometry;
+  const auto vision_path=preparation.vision_path;
+  const auto vision_target=vision_path.empty()?prepared::Roles{}:preparation.source.roles;
   auto model = std::make_unique<Model>(std::move(preparation.endpoint), hyle::compute::ResourceBudget{}, std::move(preparation.source),
       geometry, capacity, preparation.cache, std::filesystem::path{}, false, ReplayPolicy::kAuto, SIZE_MAX,
       preparation.sampling, 0, preparation.additional_sampling, std::move(weights));
   if (preparation.cache.draft_cache) model->configure_draft_policy({preparation.draft_depth});
+  if(!vision_path.empty())model->vision=shared_vision?std::move(shared_vision):
+      std::make_shared<VisionEncoder>(model->execution,vision_target,vision_path,model->allocation_budget);
   return model;
 }
 std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::ModelLoadConfig &config) {
@@ -3855,9 +3899,13 @@ std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::M
     sources.reserve(count);
     for (const auto &profile : prepared) sources.push_back(&profile.source);
     auto weights = prepare_shared_weights(prepared.front().endpoint, shared_weight_roles(sources));
+    std::map<std::filesystem::path,std::shared_ptr<VisionEncoder>> shared_vision;
     for (std::size_t j = 0; j < count; ++j) {
       const bool overlap = prepared[j].overlap;
-      models[j] = instantiate_execution_profile(std::move(prepared[j]), config.execution.context, weights);
+      const auto key=prepared[j].vision_path.empty()?std::filesystem::path{}:std::filesystem::canonical(prepared[j].vision_path);
+      auto encoder=key.empty()?std::shared_ptr<VisionEncoder>{}:shared_vision[key];
+      models[j] = instantiate_execution_profile(std::move(prepared[j]), config.execution.context, weights,std::move(encoder));
+      if(!key.empty())shared_vision[key]=models[j]->vision;
       profiles[j] = {models[j].get(), overlap};
     }
   }

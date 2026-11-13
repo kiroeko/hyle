@@ -7,6 +7,11 @@ from pathlib import Path
 from typing import Any, Protocol, Sequence
 
 
+def has_images(messages):
+    return any(isinstance(message.get('content'), list) and any(
+        part.get('type') == 'image' for part in message['content']) for message in messages)
+
+
 class DecodeSession(Protocol):
     def push(self, token: int) -> str: ...
     def finish(self) -> str: ...
@@ -26,7 +31,7 @@ class HuggingFaceTextCodec:
     remote model code is used. A custom template may be supplied explicitly.
     """
     def __init__(self, directory: Path, *, template: Path | None = None,
-                 expected_vocabulary: int | None = None):
+                 expected_vocabulary: int | None = None, image_processor=None):
         directory = Path(directory).resolve(strict=True)
         if not directory.is_dir():
             raise ValueError("tokenizer path is not a directory")
@@ -66,6 +71,7 @@ class HuggingFaceTextCodec:
         if expected_vocabulary is not None and any(token >= expected_vocabulary for token in stop):
             raise ValueError("model end-token ID is outside the model vocabulary")
         self._stop_ids = frozenset(stop)
+        self.image_processor = image_processor
 
     @staticmethod
     def _add_stop(target: set[int], value: Any) -> None:
@@ -105,6 +111,12 @@ class HuggingFaceTextCodec:
         if not isinstance(ids, list) or not ids or any(type(value) is not int for value in ids):
             raise ValueError("template did not produce one token sequence")
         return ids
+
+    def prepare_images(self, messages, *, continue_final_message=False, max_tokens=None):
+        if self.image_processor is None:
+            raise ValueError('no image execution recipe was prepared for this model')
+        return self.image_processor.prepare(messages, template=self._template,
+            continue_final_message=continue_final_message,max_tokens=max_tokens)
 
     def continue_messages(self, tape: Sequence[int], messages: Sequence[dict[str, Any]]) -> list[int] | None:
         # Tokenization at a text boundary need not reproduce generated IDs.

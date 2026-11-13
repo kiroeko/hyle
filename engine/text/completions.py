@@ -8,11 +8,12 @@ from typing import Any, Callable, Protocol
 from .contracts import TokenRequest, WorkerError
 from .runtime import GenerationProgress, PreparedText, TextEngine
 from .server import ClientDisconnected, HttpExchange
+from .media import content_parts
 
 
 @dataclass(frozen=True)
 class CompletionInput:
-    messages: list[dict[str, str]]
+    messages: list[dict[str, Any]]
     limit: int
     stream: bool
     selection: dict | None = None
@@ -50,13 +51,13 @@ def text_content(value: Any) -> str:
     return ''.join(parts)
 
 
-def message_list(value: Any, roles: tuple[str, ...]) -> list[dict[str, str]]:
+def message_list(value: Any, roles: tuple[str, ...], *, protocol='chat') -> list[dict[str, Any]]:
     if not isinstance(value, list) or not value: raise ValueError('messages must be a nonempty list')
     messages = []
     for message in value:
         if not isinstance(message, dict) or set(message) != {'role', 'content'} or message['role'] not in roles:
-            raise ValueError('messages require a supported role and text content')
-        messages.append({'role': message['role'], 'content': text_content(message['content'])})
+            raise ValueError('messages require a supported role and content')
+        messages.append({'role': message['role'], 'content': content_parts(message['content'], protocol=protocol, role=message['role'])})
     return messages
 
 
@@ -107,6 +108,7 @@ def serve_completion(exchange: HttpExchange, engine: TextEngine,
         selection = engine.choices.select(inputs.selection, temperature=inputs.temperature,
                                           top_p=inputs.top_p, top_k=inputs.top_k)
         prepared = engine.prepare(inputs.messages, inputs.limit, selection, continue_final_message=inputs.continue_final)
+        selection = prepared.selection
     except (ValueError, UnicodeError, WorkerError) as error:
         send_error(exchange, 400 if invalid_request(error) else 503, str(error), False)
         return
@@ -118,7 +120,7 @@ def serve_completion(exchange: HttpExchange, engine: TextEngine,
         # Use the same admission/KV budget and trusted prefix-sharing policy as
         # Responses, without creating stored protocol records or session IDs.
         request = engine.sessions.start('req_' + uuid.uuid4().hex, inputs.messages, prepared.ids, prepared.limit,
-            selection, save=False) if engine.sessions else engine.submit(prepared)
+            selection, save=False, **({'attachments': prepared.attachments} if prepared.attachments else {})) if engine.sessions else engine.submit(prepared)
         if inputs.stream:
             exchange.begin_stream(); started = True
             presentation.start(exchange, engine, prepared)

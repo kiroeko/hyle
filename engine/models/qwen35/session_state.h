@@ -100,11 +100,17 @@ struct State final {
   const void *model = nullptr;
   const void *math = nullptr;
   std::size_t length = 0;
+  // Difference between the next rotary coordinate and physical committed KV
+  // rows. Three-axis image positions can advance by less than their row count.
+  std::int64_t rotary_offset = 0;
   std::int32_t next_id = -1; // Valid only at a complete nonempty evaluated boundary.
   SamplingCursor sampling;
   const State *state_identity() const noexcept { return state_origin ? state_origin.get() : this; }
 
   hyle::Status can_seal() const noexcept {
+    if (length>INT32_MAX || rotary_offset < -static_cast<std::int64_t>(length) ||
+        rotary_offset>INT32_MAX-static_cast<std::int64_t>(length))
+      return hyle::Status::InvalidArgument("rotary boundary is outside its complete committed state");
     HYLE_RETURN_IF_ERROR(paged.can_seal());
     if (draft && draft->paged.frames.size() != 2)
       return hyle::Status::FailedPrecondition("Qwen MTP snapshot requires its two original draft banks");
@@ -124,7 +130,7 @@ struct State final {
     paged.clear(); state.clear();
     carry_hidden = {}; prior_hidden = {}; draft.reset();
     state_origin.reset(); version = {}; resource_owner.reset();
-    model = nullptr; math = nullptr; length = 0; next_id = -1; sampling = {};
+    model = nullptr; math = nullptr; length = 0; rotary_offset = 0; next_id = -1; sampling = {};
   }
 };
 

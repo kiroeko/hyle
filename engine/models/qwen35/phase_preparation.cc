@@ -117,6 +117,14 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
       const auto position_description = phase.predecessor_prefix_port?dense(Type::kInt32,
           {static_cast<std::int64_t>(phase.prefix_rows),t+2}):requests == 1 ? dense(Type::kInt32, {t})
           : dense(Type::kInt32, {static_cast<std::int64_t>(requests), t});
+      if(phase.image_features_port){
+        io.image_features=phase_tensor(allocation_budget,execution.device(),
+            dense(phase.hidden_facts->description.data_type(),{token_count,geometry.hidden}));
+        io.image_mask=phase_tensor(allocation_budget,execution.device(),
+            dense(definition.specs[phase.image_mask_port.ordinal()].data_type(),{token_count,1}));
+        io.position_cosine=phase_tensor(allocation_budget,execution.device(),dense(Type::kFloat32,{token_count,geometry.rotary/2}));
+        io.position_sine=phase_tensor(allocation_budget,execution.device(),dense(Type::kFloat32,{token_count,geometry.rotary/2}));
+      }
       const bool sampling_identity = selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify;
       const bool last_ids = (requests != 1 || packed_prefill) && !verifies_prefix(role);
       if (ordinary_io.packet_inputs()) {
@@ -226,6 +234,7 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
         io.probe_outputs[i] = phase_tensor(allocation_budget, take(execution.resource_for(output.storage)), output.description, output.caller_owned());
       }
       std::size_t fixed_count = 2 + sampling_identity + last_ids + packed_target + packed_verify +
+          (phase.image_features_port ? 4 : 0) +
           bool(phase.predecessor_prefix_port) +
           io.logits.caller_owned() + io.final_hidden.caller_owned();
       if (has_mtp(role)) fixed_count += 1 + bool(draft_lag(role)) +
@@ -245,6 +254,12 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
           io.ordinary_io.packet() ? io.input_packet.tokens() : io.tokens.read()));
       check(program_slot.io.add_fixed(phase.position_port,
           io.ordinary_io.packet() ? io.input_packet.positions() : io.positions.read()));
+      if(phase.image_features_port){
+        check(program_slot.io.add_fixed(phase.image_features_port,io.image_features.read()));
+        check(program_slot.io.add_fixed(phase.image_mask_port,io.image_mask.read()));
+        check(program_slot.io.add_fixed(phase.position_cosine_port,io.position_cosine.read()));
+        check(program_slot.io.add_fixed(phase.position_sine_port,io.position_sine.read()));
+      }
       if (phase.predecessor_prefix_port) {
         check(program_slot.io.add_fixed(phase.predecessor_prefix_port, io.predecessor_prefix.read()));
       }

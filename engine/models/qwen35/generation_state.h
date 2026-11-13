@@ -23,6 +23,8 @@ struct GenerationRequest {
   std::string id, memory_name;
   std::span<const std::int32_t> prompt;
   PrefillInputPackets prefill_packets;
+  std::unique_ptr<ConditionedPrompt> image_input;
+  std::size_t image_turn = SIZE_MAX;
   std::filesystem::path trace;
   inference::RequestProgress progress;
   inference::RequestKey request_key{};

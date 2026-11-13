@@ -47,6 +47,7 @@ struct FamilyPorts {
   std::size_t draft_chain_steps=0;
   std::vector<DraftChainStage> draft_chain;
   V token_port, position_port, last_ids_port, metadata_port, logits_port, id_port, hidden_port;
+  V image_features_port, image_mask_port, position_cosine_port, position_sine_port;
   V sampling_identity_port, sampling_valid_port, sampling_accept_port;
   V sequence_offsets_port, history_select_port, prefix_ids_port;
   bool batched_text_sampling = false; // Cold [R,4] identity-port contract.
@@ -112,6 +113,7 @@ struct FamilyModelFacts final {
   const ProjectionBindings &projections;
   const WeightMeanings &weight_meanings;
   std::size_t cpu_ffn_layers = 0;
+  bool conditioned_prefill = false;
 };
 struct FamilyPreparedFacts final {
   const c::BatchSchema &attention_schema;

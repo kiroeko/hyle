@@ -6,6 +6,8 @@ from typing import Callable, Protocol
 from .asset_store import AssetStore
 from .models.qwen35.runtime_assets import matches_source, prepare_assets, validate_tokenizer, source_identity
 from .models.qwen35.draft_vocabulary_preparation import write_vocabulary
+from .models.qwen35.vision_preparation import prepare_vision
+from .models.qwen35.vision_processing import ImageProcessor
 
 class PreparedAssetFiles(Protocol):
     directory: Path
@@ -23,11 +25,14 @@ class LocalPreparationProvider:
     validate_tokenizer: Callable[..., tuple[str, int]]
     source_identity: Callable[[Path], tuple[str, int]]
     write_vocabulary: Callable[..., None]
+    prepare_vision: Callable[..., str]
+    image_processor: Callable[..., object]
 
 
 # Registration only; neither the request layer nor HTTP interprets a manifest.
 _PREPARERS = (LocalPreparationProvider(matches=matches_source, prepare=prepare_assets,
-    validate_tokenizer=validate_tokenizer, source_identity=source_identity, write_vocabulary=write_vocabulary),)
+    validate_tokenizer=validate_tokenizer, source_identity=source_identity, write_vocabulary=write_vocabulary,
+    prepare_vision=prepare_vision, image_processor=ImageProcessor),)
 
 
 def _select(inputs: Path) -> LocalPreparationProvider:
@@ -47,6 +52,14 @@ def validate_local_tokenizer(inputs: Path, tokenizer) -> tuple[str, int]:
 
 def prepared_source_identity(inputs: Path) -> tuple[str, int]:
     return _select(inputs).source_identity(inputs)
+
+
+def prepare_local_vision(inputs: Path, model: Path, output: Path, *, mmproj: Path | None = None) -> str:
+    return _select(inputs).prepare_vision(model, inputs, output, mmproj=mmproj)
+
+
+def local_image_processor(inputs: Path, model: Path, tokenizer, *, context: int):
+    return _select(inputs).image_processor(model, tokenizer, context=context)
 
 
 def write_prepared_vocabulary(inputs: Path, output, ids: list[int], recommended_drafts: int | None, *,

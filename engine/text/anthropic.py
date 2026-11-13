@@ -45,7 +45,7 @@ def parse_messages(payload, model_name):
     request_object(payload, model_name, {'model', 'messages', 'system', 'max_tokens', 'stream',
         'temperature', 'top_p', 'top_k', 'stop_sequences', 'hyle'})
     if 'max_tokens' not in payload: raise ValueError('max_tokens is required')
-    messages = message_list(payload.get('messages'), ('user', 'assistant'))
+    messages = message_list(payload.get('messages'), ('user', 'assistant'), protocol='anthropic')
     if 'system' in payload: messages.insert(0, {'role': 'system', 'content': text_content(payload['system'])})
     stops = payload.get('stop_sequences')
     if stops is not None and not isinstance(stops, list): raise ValueError('stop_sequences must be a list')

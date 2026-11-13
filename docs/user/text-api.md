@@ -143,5 +143,19 @@ Responses SSE 按[官方事件定义](https://developers.openai.com/api/referenc
 无效选择在流开始前返回 400；模型／传输失败返回服务错误，流已开始则交付 `error`。断连或写入失败会取消未完成生成并等待原生终止。TCP 半关闭与优雅完全关闭不能仅靠读 EOF 区分，后者有时需等写入失败。服务关闭先唤醒接纳及连接处理线程，再退休保留会话并关闭模型进程。
 
 本机严格 SDK 检查覆盖三方案并发、可追加模板下的真实 KV 续接、默认模板重建、分叉、查询／删除、非法选择隔离、SSE 和断连后的继续服务。
-三种协议均只提供文本子集；工具调用、图片、结构化输出和专门的 thinking 协议字段尚未实现，遇到这些字段明确拒绝。
+三种协议支持下列图片输入；工具调用、结构化输出和专门的 thinking 协议字段尚未实现，遇到这些字段明确拒绝。
 当前也没有多模型／多量化同时接纳或 KV 磁盘恢复。
+
+## 图片输入
+
+启动时增加 `--vision <vision.tsv>`，或在具名方案的 `assets` 中指定 `"vision.encoder"`。准备与完整命令见[图片与 mmproj](vision.md)。服务复用同一个模型进程；图片请求选择已准备的普通视觉方案，纯文本保留原方案。图片解码还需要 Pillow 与 NumPy。
+
+| 协议 | user 消息中的图片块 |
+|---|---|
+| Responses | `{"type":"input_image","image_url":"data:image/png;base64,...","detail":"auto"}` |
+| Chat Completions | `{"type":"image_url","image_url":{"url":"data:image/png;base64,...","detail":"auto"}}` |
+| Anthropic Messages | `{"type":"image","source":{"type":"base64","media_type":"image/png","data":"..."}}` |
+
+文本与图片按块顺序进入模板；支持多图、SSE 和 Responses 历史。只接受内联 base64 的 PNG、JPEG、WebP 与单帧 GIF；远程 URL、file ID、动画和视频会报错。`detail` 为 `auto`／`high`／`low`，实际分辨率同时受源预处理配方和剩余上下文限制。单图编码数据最多 16 MiB，解码最多 32M 像素，HTTP 请求总量最多 32 MiB。没有视觉方案或模板丢失图片占位时返回 400。
+
+图片会话续接同时核对实际 token 前缀及图片载荷身份。默认 Qwen 模板可能改写历史的空 thinking 块或空格，此时完整重放；不会伪报 KV 命中。图片方案关闭仅按 token 匹配的共享前缀目录；完整驻留会话和宿主检查点仍携带 KV、递归状态、pending、RNG 及多轴位置偏移。

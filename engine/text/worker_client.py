@@ -5,6 +5,7 @@ event credit; callers acknowledge after consuming each token or turn boundary.
 """
 from __future__ import annotations
 
+import base64
 import math
 import queue
 import subprocess
@@ -14,6 +15,25 @@ from pathlib import Path
 from typing import Sequence
 
 from .contracts import TokenEvent, WorkerError
+
+
+def _prompt_frame(tokens, attachments=()):
+    result = [','.join(map(str, tokens))]
+    end, total = 0, 0
+    for part in attachments:
+        if (not isinstance(part.format, str) or not part.format or len(part.format) > 128 or
+                any(not (ch.isascii() and (ch.isalnum() or ch in '._-')) for ch in part.format) or
+                type(part.begin) is not int or type(part.rows) is not int or part.begin < end or part.rows < 0 or
+                part.begin + part.rows > len(tokens) or not 1 <= len(part.shape) <= 32 or
+                any(type(value) is not int or not 0 < value <= 2147483647 for value in part.shape) or
+                not isinstance(part.payload, bytes) or not part.payload):
+            raise ValueError('invalid prompt attachment')
+        total += len(part.payload)
+        if total > 128 << 20: raise ValueError('prompt attachment byte limit exceeded')
+        end = part.begin + part.rows
+        result.append(':'.join((part.format, str(part.begin), str(part.rows), ','.join(map(str, part.shape)),
+                                base64.b64encode(part.payload).decode('ascii'))))
+    return ';'.join(result)
 
 
 def _stop_owned_process(process: subprocess.Popen) -> bool:
@@ -83,7 +103,7 @@ class WorkerRequest:
             self._outstanding = False
             return True
 
-    def append(self, tokens: Sequence[int], max_output_tokens: int, *, timeout: float = 30) -> None:
+    def append(self, tokens: Sequence[int], max_output_tokens: int, *, timeout: float = 30, attachments=()) -> None:
         if type(max_output_tokens) is not int or max_output_tokens <= 0:
             raise ValueError("output limit must be positive")
         if any(type(token) is not int or token < 0 or token > 2147483647 for token in tokens):
@@ -95,7 +115,7 @@ class WorkerRequest:
                 if not self._live or self._input_closed or self._terminal or self._cancelled:
                     raise WorkerError("closed", "session input is closed")
             try:
-                self._client._input_command(self._id, "I", f"{max_output_tokens}\t" + ",".join(map(str, tokens)), timeout)
+                self._client._input_command(self._id, "I", f"{max_output_tokens}\t" + _prompt_frame(tokens, attachments), timeout)
             except WorkerError as error:
                 if error.kind == "timeout":
                     with self._lock:
@@ -215,10 +235,10 @@ class WorkerClient:
     def submit(self, tokens: Sequence[int], max_output_tokens: int, *, stop_ids: Sequence[int] = (),
                sampling_index: int | None = None, seed: int | None = None,
                max_draft_tokens: int | None = None, execution_profile: int | None = None,
-               cache_sharing_domain: int | None = None) -> WorkerRequest:
+               cache_sharing_domain: int | None = None, attachments=()) -> WorkerRequest:
         return self._submit_turns(((tokens, max_output_tokens),), report_turns=False, stop_ids=stop_ids,
                                   sampling_index=sampling_index, seed=seed, max_draft_tokens=max_draft_tokens,
-                                  execution_profile=execution_profile, cache_sharing_domain=cache_sharing_domain)
+                                  execution_profile=execution_profile, cache_sharing_domain=cache_sharing_domain, attachments=attachments)
 
     def submit_turns(self, turns: Sequence[tuple[Sequence[int], int]], *, stop_ids: Sequence[int] = (),
                      sampling_index: int | None = None, seed: int | None = None,
@@ -232,16 +252,16 @@ class WorkerClient:
     def open_session(self, tokens: Sequence[int], max_output_tokens: int, *, stop_ids: Sequence[int] = (),
                      sampling_index: int | None = None, seed: int | None = None,
                      max_draft_tokens: int | None = None, execution_profile: int | None = None,
-                     cache_sharing_domain: int | None = None) -> WorkerRequest:
+                     cache_sharing_domain: int | None = None, attachments=()) -> WorkerRequest:
         """Open one live session; append turns and explicitly finish its input."""
         return self._submit_turns(((tokens, max_output_tokens),), report_turns=True, live=True, stop_ids=stop_ids,
                                   sampling_index=sampling_index, seed=seed, max_draft_tokens=max_draft_tokens,
-                                  execution_profile=execution_profile, cache_sharing_domain=cache_sharing_domain)
+                                  execution_profile=execution_profile, cache_sharing_domain=cache_sharing_domain, attachments=attachments)
 
     def _submit_turns(self, turns: Sequence[tuple[Sequence[int], int]], *, report_turns: bool,
                       live: bool = False, stop_ids: Sequence[int] = (), sampling_index: int | None = None,
                       seed: int | None = None, max_draft_tokens: int | None = None,
-                      execution_profile: int | None = None, cache_sharing_domain: int | None = None) -> WorkerRequest:
+                      execution_profile: int | None = None, cache_sharing_domain: int | None = None, attachments=()) -> WorkerRequest:
         if not turns:
             raise ValueError("at least one turn is required")
         for value in (sampling_index, seed, max_draft_tokens, execution_profile, cache_sharing_domain):
@@ -256,7 +276,7 @@ class WorkerClient:
                 raise ValueError("initial prompt and each output limit must be nonempty")
             if any(type(token) is not int or token < 0 or token > 2147483647 for token in tokens):
                 raise ValueError("prompt contains an invalid token ID")
-            frames.extend((str(max_output_tokens), ",".join(map(str, tokens))))
+            frames.extend((str(max_output_tokens), _prompt_frame(tokens, attachments if index == 0 else ())))
         events: queue.Queue = queue.Queue(maxsize=2)
         with self._state_lock:
             if self._closed or self._failure:

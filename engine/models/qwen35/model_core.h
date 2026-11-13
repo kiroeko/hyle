@@ -36,6 +36,7 @@
 #include <vector>
 
 #include "session_state.h"
+#include "vision.h"
 #include "host_image.h"
 #include "../../inference/host_state_storage.h"
 #include "../../inference/state_transfer.h"
@@ -325,7 +326,7 @@ inline void validate_request_logits_inputs(const SamplingConfiguration &configur
 inline GenerationBoundary generation_boundary(const cache::State &head) noexcept {
   return {head.length, head.draft ? head.draft->frontier : 0,
       head.draft ? head.draft->lag : 0, head.next_id,
-      head.draft ? head.draft->catchup_token : -1, head.sampling};
+      head.draft ? head.draft->catchup_token : -1, head.sampling, head.rotary_offset};
 }
 struct FamilyKey final {
   std::size_t requests, verification_rows;
@@ -450,6 +451,8 @@ struct EvaluationRequest final {
   // Original proposal submission, exporting only the complete token packet.
   // No target state or page publication is imported from the private draft.
   std::shared_ptr<StepSources> verification_tokens;
+  const ConditionedPrompt *image_input = nullptr;
+  std::size_t image_offset = 0;
 };
 
 // Metadata only for the original cold Invocation. Graph enforces that these
@@ -964,6 +967,7 @@ public:
   c::ResourceBudget &cache_budget, &execution_budget, &allocation_budget;
   std::size_t known_cache_backing_bytes = 0;
   bool state_storage_prepared = false;
+  std::shared_ptr<VisionEncoder> vision;
   bool device_mtp_successor_ = false;
   std::optional<bool> backend_device_mtp_support_;
   const cache::Plan cache_plan;
@@ -1562,7 +1566,7 @@ public:
       const SamplingConfiguration &selected_sampler) {
     return build_family(
         {chunks, requests, prefix_rows, role, completion, packing, diagnostic, admitted_exact},
-        {geometry, precision, weights, projections, weight_meanings, ffn_placement.cpu_layers()},
+        {geometry, precision, weights, projections, weight_meanings, ffn_placement.cpu_layers(), bool(vision)},
         {attention_schema, attention_schemas, state_schema, cache_plan.state_slots, cache_plan.hidden_slots,
          retains_sampling_frontier(), cache_plan.in_flight_batches >= 2 && !scheduler &&
              (role != GraphRole::kMtpContinuation || device_mtp_continuous_enabled()),
@@ -2366,6 +2370,7 @@ public:
     next->prior_hidden = base->prior_hidden;
     if (base->draft) next->draft.emplace(alias_draft(*base->draft));
     next->model = base->model; next->math = base->math; next->length = base->length;
+    next->rotary_offset = base->rotary_offset;
     next->next_id = pending; next->sampling = cursor; return next;
   }
 
@@ -3922,7 +3927,8 @@ public:
         const auto &request = requests[j];
         if (!relay && width != 1) packed_ids.insert(packed_ids.end(), request.ids.begin(), request.ids.end());
         if (!ahead && !packed_target) for (std::size_t row = 0; row < step.members[j].input_tokens; ++row)
-          positions.push_back(static_cast<std::int32_t>(step.members[j].base->length + row));
+          positions.push_back(static_cast<std::int32_t>(step.members[j].base->length +
+              step.members[j].base->rotary_offset + row));
       }
       for (std::size_t j = 0; j < width; ++j) {
         if (!phase.logits_bias_ports.empty()) check(run.bind(phase.logits_bias_ports[j], requests[j].logits.bias.description, requests[j].logits.bias.lease));
@@ -3939,6 +3945,9 @@ public:
         row_inputs.clear(); offsets.resize(width + 1);
         for (const auto &member : step.members) row_inputs.push_back({member.base->length, member.input_tokens});
         const auto row_facts = inference::pack_sequence_rows(row_inputs, carrier_rows, offsets, io.last_id_values, positions);
+        for (std::size_t j=0;j<width;++j)
+          for(std::size_t row=0;row<step.members[j].input_tokens;++row)
+            positions[step.members[j].input_row_begin+row]+=static_cast<std::int32_t>(step.members[j].base->rotary_offset);
         if (row_facts.active_rows != step.active_input_rows || row_facts.max_member_rows != step.input_tokens)
           throw std::logic_error("packed target rows differ from the admitted episode");
         const auto history_rows = static_cast<std::size_t>(geometry.conv_kernel - 1);
@@ -3964,6 +3973,46 @@ public:
       }
       const auto token_values = packed_target || width != 1
           ? std::span<const std::int32_t>(packed_ids) : requests[0].ids;
+      if (phase.image_features_port) {
+        const auto rows=cache::multiply(width,physical_tokens), half=static_cast<std::size_t>(geometry.rotary/2);
+        std::vector<float> cosine(cache::multiply(rows,half),1.F),sine(cosine.size(),0.F),mask(rows,0.F);
+        std::vector<std::uint8_t> boolean_mask(rows,0);
+        io.image_features.zero();
+        for(std::size_t j=0;j<width;++j){
+          const auto &request=requests[j];const auto &member=step.members[j];
+          if(request.image_input && (request.image_offset>request.image_input->positions.size() ||
+              member.input_tokens>request.image_input->positions.size()-request.image_offset))
+            throw std::invalid_argument("image position interval differs from admitted prompt rows");
+          for(std::size_t row=0;row<member.input_tokens;++row){
+            std::array<std::int32_t,3> axes;
+            axes.fill(positions[member.input_row_begin+row]);
+            if(request.image_input)axes=request.image_input->positions[request.image_offset+row];
+            for(std::size_t d=0;d<half;++d){
+              std::size_t axis=0;
+              if(d%3==1 && d<vision->geometry().mrope[1]*3)axis=1;
+              if(d%3==2 && d<vision->geometry().mrope[2]*3)axis=2;
+              const auto angle=static_cast<float>(axes[axis])*std::pow(geometry.rope_theta,
+                  -static_cast<float>(2*d)/static_cast<float>(geometry.rotary));
+              cosine[(member.input_row_begin+row)*half+d]=std::cos(angle);
+              sine[(member.input_row_begin+row)*half+d]=std::sin(angle);
+            }
+          }
+          if(request.image_input)for(const auto &image:request.image_input->images){
+            const auto first=(std::max)(image.begin,request.image_offset);
+            const auto last=(std::min)(image.begin+image.rows,request.image_offset+member.input_tokens);
+            if(first>=last)continue;
+            const auto local=member.input_row_begin+first-request.image_offset;
+            const auto bytes_per_row=cache::multiply(static_cast<std::size_t>(geometry.hidden),precision.activation_bytes());
+            auto destination=take(io.image_features.storage().subview(local*bytes_per_row,(last-first)*bytes_per_row));
+            const auto source=take(image.features.ready.view());
+            check(destination.copy_from(take(source.subview((first-image.begin)*bytes_per_row,(last-first)*bytes_per_row))));
+            std::fill_n(mask.begin()+local,last-first,1.F);std::fill_n(boolean_mask.begin()+local,last-first,std::uint8_t{1});
+          }
+        }
+        if(io.image_mask.description.data_type()==Type::kFloat32)io.image_mask.write<float>(mask);
+        else io.image_mask.write<std::uint8_t>(boolean_mask);
+        io.position_cosine.write<float>(cosine);io.position_sine.write<float>(sine);
+      }
       const auto position_values = ahead
           ? std::span<const std::int32_t>(decode_ahead->positions.data(), decode_ahead->positions.size())
           : std::span<const std::int32_t>(positions);
@@ -4029,6 +4078,14 @@ public:
         member.next = reserve_state(session.head);
         if (!member.next_tails.try_resize(draft_bank)) throw std::bad_alloc{};
         member.next->length = member.base->length + member.input_tokens;
+        member.next->rotary_offset = member.base->rotary_offset;
+        if(requests[j].image_input){
+          std::int64_t next=static_cast<std::int64_t>(member.base->length)+member.base->rotary_offset;
+          for(std::size_t row=0;row<member.input_tokens;++row)
+            for(const auto coordinate:requests[j].image_input->positions[requests[j].image_offset+row])
+              next=(std::max)(next,static_cast<std::int64_t>(coordinate)+1);
+          member.next->rotary_offset=next-static_cast<std::int64_t>(member.next->length);
+        }
         member.next->sampling = selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify
             ? member.base->sampling.advanced(drafts_token(role) ? 3 : 1) : member.base->sampling;
       };

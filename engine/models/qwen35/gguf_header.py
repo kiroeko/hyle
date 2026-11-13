@@ -148,7 +148,7 @@ def parse_header(raw, tensor_count, header_bytes, retained_metadata=None, *, who
     return _parse(CachedReader(raw, whole_file_bytes), tensor_count, retained_metadata)
 
 
-def read_local_header(path, *, whole_file_bytes=None, maximum_header_bytes=16 * 1024 * 1024):
+def read_local_header(path, *, whole_file_bytes=None, maximum_header_bytes=16 * 1024 * 1024, retained_metadata=None):
     """Read only an original local file's header, or an exact cached header.
 
     A cached header needs its separately pinned whole_file_bytes. The returned
@@ -172,6 +172,6 @@ def read_local_header(path, *, whole_file_bytes=None, maximum_header_bytes=16 * 
             return source.read(last - first + 1), whole_file_bytes, None
 
         raw, metadata, tensors, metadata_count, _, _ = scan(exact,
-            url=str(path), tensor_count=count, maximum_header_bytes=maximum_header_bytes)
+            url=str(path), tensor_count=count, maximum_header_bytes=maximum_header_bytes, retained_metadata=retained_metadata)
     return dict(gguf_version=version, tensor_count=count, metadata_count=metadata_count,
                 tensor_data_offset=len(raw), metadata=metadata, tensors=tensors), raw

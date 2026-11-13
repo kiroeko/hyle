@@ -12,6 +12,8 @@
 
 #include "hyle/compute/operation.h"
 
+namespace hyle::compute { class Context; }
+
 namespace hyle::compute::sequence_ops {
 
 // Cold, coarse qualification for the ordinary PackedRowMatMul operation and

@@ -15,8 +15,8 @@ from .anthropic import AnthropicMessagesAdapter
 from .runtime import GenerationProgress, TextEngine
 from .server import TextHttpServer
 from .worker_client import WorkerClient
-from .configuration import PreparedChoices, Selection, read_configuration
-from ..model_preparation import prepare_local_assets, validate_local_tokenizer
+from .configuration import PreparedChoices, Selection, ExecutionChoice, read_configuration
+from ..model_preparation import prepare_local_assets, validate_local_tokenizer, local_image_processor
 
 
 class TextApiServer(TextHttpServer):
@@ -61,6 +61,9 @@ def prepare_choices(args, codec, choices: PreparedChoices) -> PreparedChoices:
             print('runtime assets ' + ('created ' if assets.created else 'reused ') + str(assets.directory), file=sys.stderr, flush=True)
             profile = replace(profile, assets=assets.execution_assets)
         profiles.append(profile)
+    if getattr(args,'vision',None):
+        if any(profile.name=='vision' for profile in profiles): raise ValueError('vision execution profile is already declared')
+        profiles.append(ExecutionChoice(name='vision',drafts=0,overlap=False,assets=(('vision.encoder',args.vision.resolve(strict=True)),)))
     return replace(choices, executions=tuple(profiles))
 
 
@@ -82,6 +85,7 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     common.add_argument('--draft-count', type=int)
     common.add_argument('--draft-vocabulary', type=Path)
     common.add_argument('--draft-head', type=Path)
+    common.add_argument('--vision', type=Path, help='source-bound vision.tsv; prepares an ordinary image execution profile')
     common.add_argument('--overlap', action=argparse.BooleanOptionalAction, default=None)
     common.add_argument('--sampling', choices=('greedy', 'random'), default='greedy')
     common.add_argument('--temperature', type=float)
@@ -94,6 +98,7 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     serve.add_argument('--metrics', action=argparse.BooleanOptionalAction, default=True)
     generate = sub.add_parser('generate', parents=[common], help='generate from one text prompt')
     generate.add_argument('--text', required=True)
+    generate.add_argument('--image', type=Path, action='append', default=[], help='local image, in prompt order; may repeat')
     generate.add_argument('--max-output-tokens', type=int, default=256)
     generate.add_argument('--execution-profile', default='default')
     generate.add_argument('--sampling-profile', default='default')
@@ -124,6 +129,8 @@ def main(argv: list[str] | None = None) -> int:
     codec = HuggingFaceTextCodec(args.tokenizer_dir, template=args.template)
     expected_source = validate_local_tokenizer(args.inputs, codec.preparation_tokenizer)
     choices = prepare_choices(args, codec, choices)
+    if any(role=='vision.encoder' for profile in choices.executions for role,_ in profile.assets):
+        codec.image_processor=local_image_processor(args.inputs,args.tokenizer_dir,codec.preparation_tokenizer,context=args.capacity)
     worker = WorkerClient(make_worker_command(args, choices))
     engine = None
     try:
@@ -146,7 +153,19 @@ def main(argv: list[str] | None = None) -> int:
                 sys.stdout.reconfigure(encoding='utf-8')
             selection = choices.select(dict(execution_profile=args.execution_profile, sampling_profile=args.sampling_profile,
                                             **({'seed': args.request_seed} if args.request_seed is not None else {})))
-            prepared = engine.prepare([{'role': 'user', 'content': args.text}], args.max_output_tokens, selection)
+            content = args.text
+            if args.image:
+                from PIL import Image
+                from .media import ImageInput, MAX_IMAGE_BYTES
+                content=[]
+                for path in args.image:
+                    if path.stat().st_size>MAX_IMAGE_BYTES: raise ValueError('image byte limit exceeded')
+                    data=path.read_bytes()
+                    from io import BytesIO
+                    with Image.open(BytesIO(data)) as image: media_type=Image.MIME.get(image.format)
+                    content.append({'type':'image','image':ImageInput(media_type,data)})
+                content.append({'type':'text','text':args.text})
+            prepared = engine.prepare([{'role': 'user', 'content': content}], args.max_output_tokens, selection)
             request = engine.submit(prepared)
             try:
                 engine.generate(request, lambda chunk: print(chunk, end='', flush=True), GenerationProgress())

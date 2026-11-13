@@ -581,6 +581,19 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     }
     // Writer-only draft maintenance has no attention data edge into target.
     // Order its real cache effects before target's first append as well.
+    V conditioned_embeddings{},position_cosine{},position_sine{};
+    if (model.conditioned_prefill && packed_prefill) {
+      if (has_mtp(role)) throw std::runtime_error("this image prefill recipe does not prepare a draft-state repair");
+      definition.image_features_port=r.input(r.dense_spec(precision.activation_type(),{packed,f(hidden)}));
+      definition.image_mask_port=r.input(r.dense_spec(assembly.predicate_type(),{packed,f(1)}));
+      const auto embeddings=r.embedding(target_tokens,"model.language_model.embed_tokens.weight");
+      conditioned_embeddings=r.one(c::Select{}, {definition.image_mask_port,definition.image_features_port,embeddings},
+          r.dense_spec(precision.activation_type(),{packed,f(hidden)}));
+      definition.position_cosine_port=r.input(r.dense_spec(Type::kFloat32,{packed,f(geometry.rotary/2)}));
+      definition.position_sine_port=r.input(r.dense_spec(Type::kFloat32,{packed,f(geometry.rotary/2)}));
+      position_cosine=r.reshape(definition.position_cosine_port,{batch,t,f(1),f(geometry.rotary/2)});
+      position_sine=r.reshape(definition.position_sine_port,{batch,t,f(1),f(geometry.rotary/2)});
+    }
     const auto target = emit_target_graph(r, {
         .token_ids = target_tokens, .positions = target_positions,
         .attention_metadata = definition.metadata_port, .frequencies = frequencies,
@@ -593,7 +606,8 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
             ? definition.append_nodes[draft_bank + 1] : g::NodeId{},
         .has_preceding_append = has_mtp(role) && !is_mtp_prefill(role) && !chain_steps,
         .predecessor_prefix_index = predecessor_prefix_index,
-        .query_lengths=target_query_lengths,.kv_lengths=target_kv_lengths},
+        .query_lengths=target_query_lengths,.kv_lengths=target_kv_lengths,
+        .input_embeddings=conditioned_embeddings,.position_cosine=position_cosine,.position_sine=position_sine},
         {definition.layers, definition.attention_nodes,
          std::span<g::NodeId>(definition.append_nodes).first(draft_bank),
          std::span<V>(definition.append_cache_inputs).first(draft_bank),

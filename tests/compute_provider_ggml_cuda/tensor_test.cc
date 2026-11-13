@@ -270,6 +270,41 @@ TEST(GgmlCudaTensor, FloatingNormAffineAndUnaryConversions) {
   unary_and_cast(ctx);
 }
 
+template<class Value> void image_gelu_equations(Context &ctx) {
+  auto memory=cuda::MemoryResource::create(ctx,cuda::MemoryKind::kDevice).value();
+  std::vector<Value> values;
+  for(double x:{-12.,-6.,-3.,-1.,-.125,0.,.125,.5,1.,2.,4.,8.,12.})values.push_back(half_test::encode<Value>(x));
+  const auto description=dense(half_test::data_type<Value>(),{static_cast<std::int64_t>(values.size())});
+  auto input=upload<Value>(memory.ref(),values),output=output_buffer(memory.ref(),description);
+  for(const auto kind:{UnaryKind::kGelu,UnaryKind::kGeluTanh}){
+    const std::array inputs{ConstTensorView::create(description,input.view()).value()};
+    const auto status=execute(ctx,Unary{kind},inputs,
+        TensorView::create(description,output.view()).value());
+    ASSERT_TRUE(status.ok())<<status.message();
+    const auto actual=half_test::read<Value>(output);
+    for(std::size_t i=0;i<values.size();++i){
+      const auto x=half_test::decode(values[i]);
+      const auto expected=kind==UnaryKind::kGelu ? .5*x*(1+std::erf(x/std::sqrt(2.))) :
+          .5*x*(1+std::tanh(std::sqrt(2./3.14159265358979323846)*(x+.044715*x*x*x)));
+      half_test::expect_near(actual[i],expected);
+    }
+  }
+}
+
+TEST(GgmlCudaTensor, VisionGeluErfAndTanhPreserveTheirDistinctEquations) {
+  auto ctx=context();
+  image_gelu_equations<float>(ctx);
+  image_gelu_equations<hyle::simd::float16_t>(ctx);
+  // The mature CUDA implementation declines BF16 GELU. Keep that qualification
+  // failure explicit; Qwen's visual equations use F32 independently of LM IO.
+  const auto description = dense(DataType::kBFloat16, {16});
+  auto memory = cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  auto rejected = prepare(ctx, Operation(Unary{UnaryKind::kGelu}),
+      std::span(&description, 1), std::span(&description, 1), memory.ref());
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsUnimplemented());
+}
+
 TEST(GgmlCudaTensor, MatureSwiGluCoversStorageTypesAndInputLayouts) {
   auto ctx = context();
   swiglu<float>(ctx);

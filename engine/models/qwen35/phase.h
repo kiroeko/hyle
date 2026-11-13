@@ -42,6 +42,7 @@ struct PhaseIo final {
   // the existing independent Tensor path. It never authorizes runtime fallback.
   hyle::Status input_packet_preparation;
   Tensor tokens, positions, last_ids, logits, final_hidden, history_select, prefix_ids;
+  Tensor image_features,image_mask,position_cosine,position_sine;
   std::vector<std::int32_t> history_select_values, last_id_values, prefix_id_values;
   Tensor sampling_identities, draft_positions, catchup_token;
   Tensor repair_lag;

@@ -74,7 +74,7 @@ class _SocketWriter(io.RawIOBase):
 
 class HttpExchange:
     """One HTTP request; the selected adapter owns protocol payloads."""
-    MAX_BODY = 1024 * 1024
+    MAX_BODY = 32 * 1024 * 1024
 
     def __init__(self, handler: BaseHTTPRequestHandler):
         self._handler = handler

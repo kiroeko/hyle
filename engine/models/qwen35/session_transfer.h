@@ -177,6 +177,7 @@ inline std::shared_ptr<Session> Model::restore_session(std::shared_ptr<const cac
   auto &state = *scope->state;
   const auto &boundary = scope->image->boundary;
   state.length = boundary.length; state.next_id = boundary.evaluated_next_id;
+  state.rotary_offset = boundary.rotary_offset;
   state.sampling = boundary.evaluated_sampling;
   const auto &parts = scope->image->layout; const auto count = parts.size();
   scope->pages.resize(count); scope->readers.resize(count);

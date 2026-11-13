@@ -5,6 +5,28 @@ from dataclasses import dataclass
 from typing import Protocol, Sequence
 
 
+@dataclass(frozen=True)
+class ImageInput:
+    media_type: str
+    data: bytes
+    detail: str = 'auto'
+
+
+@dataclass(frozen=True)
+class PromptAttachment:
+    format: str
+    begin: int
+    rows: int
+    shape: tuple[int, ...]
+    payload: bytes
+
+
+@dataclass(frozen=True)
+class PreparedPrompt:
+    ids: list[int]
+    attachments: tuple[PromptAttachment, ...]
+
+
 class WorkerError(RuntimeError):
     def __init__(self, kind: str, message: str):
         super().__init__(message)
@@ -35,12 +57,14 @@ class TokenWorker(Protocol):
     def submit(self, tokens: Sequence[int], max_output_tokens: int, *,
                stop_ids: Sequence[int] = (), sampling_index: int | None = None,
                seed: int | None = None, max_draft_tokens: int | None = None,
-               execution_profile: int | None = None, cache_sharing_domain: int | None = None) -> TokenRequest: ...
+               execution_profile: int | None = None, cache_sharing_domain: int | None = None,
+               attachments: Sequence[PromptAttachment] = ()) -> TokenRequest: ...
 
 
 class LiveTokenRequest(TokenRequest, Protocol):
     """One session with ordered, acknowledged turn events and explicit input EOF."""
-    def append(self, tokens: Sequence[int], max_output_tokens: int, *, timeout: float = 30) -> None: ...
+    def append(self, tokens: Sequence[int], max_output_tokens: int, *, timeout: float = 30,
+               attachments: Sequence[PromptAttachment] = ()) -> None: ...
     def finish_input(self, *, timeout: float = 30) -> None: ...
     def cancel(self) -> bool: ...
     def retire(self, *, timeout: float = 120) -> TokenEvent: ...
@@ -51,4 +75,5 @@ class LiveTokenWorker(TokenWorker, Protocol):
     def open_session(self, tokens: Sequence[int], max_output_tokens: int, *,
                      stop_ids: Sequence[int] = (), sampling_index: int | None = None,
                      seed: int | None = None, max_draft_tokens: int | None = None,
-                     execution_profile: int | None = None, cache_sharing_domain: int | None = None) -> LiveTokenRequest: ...
+                     execution_profile: int | None = None, cache_sharing_domain: int | None = None,
+                     attachments: Sequence[PromptAttachment] = ()) -> LiveTokenRequest: ...

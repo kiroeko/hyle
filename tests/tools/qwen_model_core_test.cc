@@ -43,6 +43,27 @@ std::string fixture_from_environment() {
 } // namespace
 
 int main(int argc, char **argv) try {
+  {
+    q::VisionGeometry geometry;geometry.merge=2;geometry.image_id=99;geometry.start_id=98;geometry.end_id=97;
+    const std::array<std::int32_t,10> ids{5,98,99,99,99,99,99,99,97,6};
+    i::PromptAttachment image{"qwen35.image.patches.f32.v1",2,6,{1,4,6},{}};
+    const auto plan=q::image_position_plan(geometry,ids,std::span(&image,1),0,10);
+    const std::vector<std::array<std::int32_t,3>> expected{{10,10,10},{11,11,11},{12,12,12},
+        {12,12,13},{12,12,14},{12,13,12},{12,13,13},{12,13,14},{15,15,15},{16,16,16}};
+    require(plan.positions==expected,"non-square image T/H/W positions or following text are incorrect");
+    image.begin=1;
+    require(q::image_position_plan(geometry,ids,std::span(&image,1),1,10).positions==expected,
+        "pending token changed the image's exact prompt interval");
+    image.rows=5;bool rejected=false;
+    try{(void)q::image_position_plan(geometry,ids,std::span(&image,1),1,10);}
+    catch(const std::invalid_argument &){rejected=true;}
+    require(rejected,"image grid/placeholder mismatch was accepted");
+    q::cache::State state;state.length=20;state.rotary_offset=-3;
+    const auto before=q::generation_boundary(state);state.rotary_offset=-2;
+    require(before.rotary_offset==-3 && before!=q::generation_boundary(state),
+        "complete generation boundary dropped the image rotary offset");
+    std::cout<<"PASS Qwen image positions: non-square grid, pending, next text and complete boundary\n";
+  }
   if (argc > 4) throw std::runtime_error("usage: qwen_model_core_test [PREPARED_INPUT] [--cuda] [--shared]");
   const auto input = argc > 1 ? std::string(argv[1]) : fixture_from_environment();
   if (input.empty()) {

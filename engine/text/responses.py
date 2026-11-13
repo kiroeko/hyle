@@ -1,4 +1,4 @@
-"""Text-only OpenAI Responses request and event adapter."""
+"""OpenAI Responses image/text input and text event adapter."""
 from __future__ import annotations
 
 import time
@@ -20,7 +20,7 @@ def response_error_kind(error: Exception) -> str:
     return 'invalid_request_error' if isinstance(error, WorkerError) and error.kind == 'invalid' else 'server_error'
 
 
-def parse_responses_input(payload: Any, model_name: str) -> tuple[list[dict[str, str]], int, bool, str | None]:
+def parse_responses_input(payload: Any, model_name: str) -> tuple[list[dict[str, Any]], int, bool, str | None]:
     if not isinstance(payload, dict):
         raise InvalidRequest('request body must be a JSON object')
     supported = {'model', 'input', 'instructions', 'max_output_tokens', 'stream', 'store',
@@ -46,7 +46,7 @@ def parse_responses_input(payload: Any, model_name: str) -> tuple[list[dict[str,
     instructions = payload.get('instructions')
     if instructions is not None and not isinstance(instructions, str):
         raise InvalidRequest('instructions must be a string')
-    messages: list[dict[str, str]] = []
+    messages: list[dict[str, Any]] = []
     if instructions is not None:
         messages.append({'role': 'system', 'content': instructions})
     source = payload['input']
@@ -55,22 +55,11 @@ def parse_responses_input(payload: Any, model_name: str) -> tuple[list[dict[str,
     elif isinstance(source, list) and source:
         for item in source:
             if not isinstance(item, dict) or set(item) - {'type', 'role', 'content'}:
-                raise InvalidRequest('input items must be text messages')
+                raise InvalidRequest('input items must be message objects')
             if item.get('type', 'message') != 'message' or item.get('role') not in ('system', 'user', 'assistant'):
-                raise InvalidRequest('only system, user and assistant text messages are supported')
-            content = item.get('content')
-            if isinstance(content, str):
-                text = content
-            elif isinstance(content, list):
-                parts = []
-                for part in content:
-                    if (not isinstance(part, dict) or set(part) != {'type', 'text'} or
-                            part['type'] not in ('input_text', 'output_text') or not isinstance(part['text'], str)):
-                        raise InvalidRequest('only text content parts are supported')
-                    parts.append(part['text'])
-                text = ''.join(parts)
-            else:
-                raise InvalidRequest('message content must be text')
+                raise InvalidRequest('only system, user and assistant messages are supported')
+            from .media import content_parts
+            text = content_parts(item.get('content'), protocol='responses', role=item['role'])
             messages.append({'role': item['role'], 'content': text})
     else:
         raise InvalidRequest('input must be a string or a nonempty message list')
@@ -132,6 +121,7 @@ class ResponsesAdapter:
             dialog.extend(messages[1:] if instructions is not None else messages)
             prepared = engine.prepare(([messages[0]] if instructions is not None else []) + dialog, limit, selection,
                                       parent.tape if parent else None)
+            selection = prepared.selection
         except SessionNotFound as error:
             self._error(exchange, 404, str(error)); return
         except WorkerError as error:
@@ -142,7 +132,7 @@ class ResponsesAdapter:
         try:
             response_id, item_id = 'resp_' + uuid.uuid4().hex, 'msg_' + uuid.uuid4().hex
             request = engine.sessions.start(response_id, dialog, prepared.ids, prepared.limit, selection,
-                parent=parent, save=save) if engine.sessions else engine.submit(prepared)
+                parent=parent, save=save, **({'attachments': prepared.attachments} if prepared.attachments else {})) if engine.sessions else engine.submit(prepared)
             metadata = {'hyle.execution_profile': engine.choices.executions[selection.execution_profile].name,
                         'hyle.sampling_profile': engine.choices.samplers[selection.sampling_index].name,
                         'hyle.context': 'continued' if getattr(request, 'cached_tokens', 0) else 'replayed' if parent else 'new'}

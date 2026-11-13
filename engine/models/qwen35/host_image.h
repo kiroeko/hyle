@@ -53,6 +53,7 @@ struct HostImageBoundary final {
   SamplingCursor evaluated_sampling, sampling;
   bool sampling_wrapper = false, has_carry = false, has_prior = false;
   std::optional<HostDraftBoundary> draft;
+  std::int64_t rotary_offset = 0;
 };
 struct HostImageIdentity final {
   // Non-owning process-local identities. The weak lifetime rejects dead or
@@ -144,7 +145,10 @@ inline hyle::Status validate_schema(const HostImageSchema &schema) noexcept {
 }
 inline hyle::Status validate_boundary(const HostImageSchema &schema, const HostImageBoundary &boundary) noexcept {
   const auto token = [&](std::int32_t id) { return id >= -1 && id < schema.geometry.vocabulary; };
-  if (boundary.length > schema.capacity || !token(boundary.next_id) || !token(boundary.evaluated_next_id) ||
+  if (boundary.length > schema.capacity || boundary.length>INT32_MAX ||
+      boundary.rotary_offset < -static_cast<std::int64_t>(boundary.length) ||
+      boundary.rotary_offset > INT32_MAX-static_cast<std::int64_t>(boundary.length) ||
+      !token(boundary.next_id) || !token(boundary.evaluated_next_id) ||
       (!boundary.length && (boundary.next_id != -1 || boundary.evaluated_next_id != -1)) ||
       (!boundary.sampling_wrapper && (boundary.next_id != boundary.evaluated_next_id ||
           boundary.sampling != boundary.evaluated_sampling)) ||
@@ -188,6 +192,7 @@ inline hyle::Result<HostImageBoundary> host_image_boundary(const State &state) n
   const auto *evaluated = state.state_identity();
   if (!state.model || !state.math || !evaluated || evaluated->state_origin ||
       evaluated->model != state.model || evaluated->math != state.math || evaluated->length != state.length ||
+      evaluated->rotary_offset != state.rotary_offset ||
       evaluated->paged.frames.size() != state.paged.frames.size() ||
       evaluated->state.size() != state.state.size() || evaluated->draft.has_value() != state.draft.has_value() ||
       evaluated->carry_hidden.valid() != state.carry_hidden.valid() || evaluated->prior_hidden.valid() != state.prior_hidden.valid())
@@ -197,6 +202,7 @@ inline hyle::Result<HostImageBoundary> host_image_boundary(const State &state) n
     return std::unexpected(hyle::Status::InvalidArgument("sampling wrapper changed its evaluated draft boundary"));
   HostImageBoundary result;
   result.length = state.length;
+  result.rotary_offset = state.rotary_offset;
   result.evaluated_next_id = evaluated->next_id; result.evaluated_sampling = evaluated->sampling;
   result.next_id = state.next_id; result.sampling = state.sampling;
   result.sampling_wrapper = bool(state.state_origin);

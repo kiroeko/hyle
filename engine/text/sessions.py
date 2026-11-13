@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import copy
+import hashlib
 import threading
 import time
 
@@ -23,6 +24,7 @@ class NativeSession:
     tape: tuple[int, ...]
     turn: int = 0
     released: bool = False
+    conditioning: tuple = ()
 
 
 @dataclass
@@ -194,7 +196,7 @@ class TextSessions:
                 self._retire(victim)
 
     def start(self, key: str, messages, ids, limit: int, selection: Selection, *,
-              parent: StoredTurn | None = None, save: bool = True) -> SessionTurn:
+              parent: StoredTurn | None = None, save: bool = True, attachments=()) -> SessionTurn:
         state = None
         with self._condition:
             self._check_open()
@@ -203,24 +205,36 @@ class TextSessions:
         domain = parent.domain if parent is not None else self._shared_domain
         if domain is None:
             domain = self.worker.allocate_cache_domain()
-        reusable = state is not None and state.selection == selection and tuple(ids[:len(state.tape)]) == state.tape
+        conditioning=tuple((part.begin,part.rows,part.format,part.shape,hashlib.sha256(part.payload).digest()) for part in attachments)
+        reusable = (state is not None and state.selection == selection and tuple(ids[:len(state.tape)]) == state.tape and
+                    state.conditioning==tuple(item for item in conditioning if item[0]<len(state.tape) and item[0]+item[1]<=len(state.tape)) and
+                    not any(item[0]<len(state.tape)<item[0]+item[1] for item in conditioning))
         if state is not None and not reusable:
             self._retire(state); state = None
         if state is None:
             self._reserve()
-        turn = SessionTurn(self, key, tuple(dict(m) for m in messages), ids, selection, save, domain)
+        # Structured content is mutable even though image bytes are immutable.
+        # Retain our own history tree without copying the underlying byte data.
+        turn = SessionTurn(self, key, tuple(copy.deepcopy(m) for m in messages), ids, selection, save, domain)
         try:
             with self._condition:
                 self._check_open(); self._active.add(turn)
             if state is None:
                 request = self.worker.open_session(ids, limit, stop_ids=self.stop_ids,
-                    cache_sharing_domain=domain, **selection.worker_options())
-                state = NativeSession(request, selection, domain, tuple(ids))
+                    cache_sharing_domain=domain, **selection.worker_options(),
+                    **({'attachments': attachments} if attachments else {}))
+                state = NativeSession(request, selection, domain, tuple(ids),conditioning=conditioning)
                 turn.native = state
             else:
                 turn.native = state
                 turn.cached_tokens = max(0, len(state.tape) - 1)
-                state.request.append(ids[len(state.tape):], limit, timeout=120)
+                suffix_attachments = tuple(replace(part, begin=part.begin-len(state.tape))
+                    for part in attachments if part.begin >= len(state.tape))
+                if any(part.begin < len(state.tape) < part.begin+part.rows for part in attachments):
+                    raise ValueError('session continuation splits an image input')
+                state.request.append(ids[len(state.tape):], limit, timeout=120,
+                    **({'attachments': suffix_attachments} if suffix_attachments else {}))
+                state.conditioning=conditioning
             with self._condition:
                 self._check_open()
             return turn

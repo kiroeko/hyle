@@ -11,6 +11,7 @@
 
 #include "graph_builder.h"
 #include "block_graph.h"
+#include "vision.h"
 #include "cache_plan.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/sequence_ops.h"
@@ -45,7 +46,7 @@ TargetGraphResult emit_target_graph(Recipe &r,
       outputs.append_cache_inputs.size() != 2 * attention_layers ||
       (!inputs.target_attention_schemas.empty() && inputs.target_attention_schemas.size() != attention_layers))
     throw std::runtime_error("target graph cold ports do not match the source geometry");
-  auto x = r.embedding(target_tokens, "model.language_model.embed_tokens.weight");
+  auto x = inputs.input_embeddings ? inputs.input_embeddings : r.embedding(target_tokens, "model.language_model.embed_tokens.weight");
   g::NodeId prior_append = inputs.preceding_append;
   bool has_prior_append = inputs.has_preceding_append;
   for (std::size_t i = 0; i < state_schema.size(); ++i) {
@@ -237,8 +238,13 @@ TargetGraphResult emit_target_graph(Recipe &r,
       auto k = r.norm(r.reshape(r.linear(normalized, prefix + "self_attn.k_proj.weight"), {batch, t, f(geometry.kv_heads), f(geometry.key_depth)}), prefix + "self_attn.k_norm.weight");
       auto v = r.linear(normalized, prefix + "self_attn.v_proj.weight");
       const c::RoPE rope{.rotary_dimensions = static_cast<std::size_t>(geometry.rotary), .sequence_axis = 1, .layout = c::RopeLayout::kHalfSplit};
-      q = r.same(rope, {q, inputs.positions, frequencies}, q);
-      k = r.same(rope, {k, inputs.positions, frequencies}, k);
+      if (inputs.position_cosine) {
+        q = apply_position_angles(r,q,inputs.position_cosine,inputs.position_sine,geometry.rotary);
+        k = apply_position_angles(r,k,inputs.position_cosine,inputs.position_sine,geometry.rotary);
+      } else {
+        q = r.same(rope, {q, inputs.positions, frequencies}, q);
+        k = r.same(rope, {k, inputs.positions, frequencies}, k);
+      }
       auto &key_append = outputs.append_nodes[layer * 2];
       auto &value_append = outputs.append_nodes[layer * 2 + 1];
       auto key_rows = r.reshape(k, {packed, f(geometry.kv_heads), f(geometry.key_depth)});

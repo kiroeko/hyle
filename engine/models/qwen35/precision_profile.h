@@ -26,6 +26,12 @@ public:
   constexpr bool is_f16() const noexcept { return f16_; }
   friend constexpr bool operator==(PrecisionProfile, PrecisionProfile) noexcept = default;
 
+  // Model equations such as a vision tower can prescribe F32 activations
+  // independently of the target LM and the original physical weight encoding.
+  static constexpr PrecisionProfile float32_activations() noexcept {
+    PrecisionProfile result; result.f32_=true; return result;
+  }
+
   static PrecisionProfile from_roles(const prepared::Roles &roles) {
     const bool has_nf4 = std::ranges::any_of(roles.selected, [](const auto &role) {
       return role.projection_codec == prepared::ProjectionCodec::kNf4DoubleQuant;

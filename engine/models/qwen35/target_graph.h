@@ -48,6 +48,7 @@ struct TargetGraphInputs final {
   // producer's prefixes; an ordinary checked Gather selects the real state.
   V predecessor_prefix_index{};
   V query_lengths{},kv_lengths{};
+  V input_embeddings{},position_cosine{},position_sine{};
 };
 struct TargetGraphPorts final {
   std::span<Ports> layers;

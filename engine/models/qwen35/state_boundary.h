@@ -13,6 +13,7 @@ struct GenerationBoundary final {
   std::uint32_t lag = 0;
   std::int32_t next_id = -1, catchup_token = -1;
   hyle::inference::SamplingCursor sampling{};
+  std::int64_t rotary_offset = 0;
   friend bool operator==(const GenerationBoundary &, const GenerationBoundary &) = default;
 };
 

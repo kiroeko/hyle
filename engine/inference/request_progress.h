@@ -12,12 +12,14 @@
 
 #include "prefill_plan.h"
 #include "sampling_cursor.h"
+#include "prompt_attachment.h"
 
 namespace hyle::inference {
 
 struct GenerationTurn final {
   std::vector<std::int32_t> prompt;
   std::size_t max_outputs = 0;
+  std::vector<PromptAttachment> attachments;
 };
 
 enum class GenerationSessionMode { kFlat, kTurns, kLive };

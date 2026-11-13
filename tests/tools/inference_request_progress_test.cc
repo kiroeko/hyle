@@ -2,6 +2,7 @@
 #include "../../engine/inference/request_progress.h"
 #include "../../engine/inference/request_stop_policy.h"
 #include "../../engine/inference/request_window.h"
+#include "../../engine/inference/prompt_transport.h"
 
 #include <array>
 #include <cstdio>
@@ -448,6 +449,23 @@ void immutable_request_stop_policy_controls_original_progress() {
 }
 } // namespace
 
+void prompt_conditioning_transport_preserves_order_and_rejects_invalid_extents() {
+  using hyle::inference::PromptAttachment;
+  using hyle::inference::parse_prompt_attachments;
+  std::vector<PromptAttachment> parts;
+  require(parse_prompt_attachments("1,2",2,parts) && parts.empty(),"plain token transport changed");
+  require(parse_prompt_attachments("1,2;model.image.v1:1:1:1,2,2:AAEC",2,parts),"valid image payload was rejected");
+  require(parts.size()==1 && parts[0].begin==1 && parts[0].rows==1 && parts[0].shape==std::vector<std::size_t>{1,2,2} &&
+      parts[0].payload==std::vector<std::byte>{std::byte{0},std::byte{1},std::byte{2}},"image payload changed in transport");
+  parts.clear();require(parse_prompt_attachments("1,2;cross.image:2:0:1,2,3,4,5:AA==",2,parts),
+      "opaque cross-attention anchor was forced to replace token rows or use a Compute tensor layout");
+  for(const auto frame:{"1,2;bad:2:1:1:AA==","1,2;bad:0:3:1:AA==","1,2;bad:0:1:0:AA==",
+      "1,2;bad:0:1:1:AB==","1,2;bad:0:1:1:AAA=;bad:0:1:1:AA==",
+      "1,2;bad:0:1:1:@@==","1,2;bad:0:1:1:AA=","1,2;bad:0:1:1:AA==;"}) {
+    parts.clear();require(!parse_prompt_attachments(frame,2,parts),"invalid conditioning frame was accepted");
+  }
+}
+
 int main() {
   try {
     require(delivered_journey(false) == delivered_journey(true), "batching changed host delivery semantics");
@@ -474,6 +492,8 @@ int main() {
     std::puts("PASS actual EOS quota refund, duplicate no-op and allocation-free remaining-capacity admission");
     immutable_request_stop_policy_controls_original_progress();
     std::puts("PASS immutable request stop IDs, default/extra/ignore semantics and allocation-free original progress");
+    prompt_conditioning_transport_preserves_order_and_rejects_invalid_extents();
+    std::puts("PASS opaque prompt conditioning, canonical base64, exact intervals and ordered non-overlap");
     return 0;
   } catch (const std::exception &error) {
     track_allocations = false; std::fprintf(stderr, "%s\n", error.what()); return 1;

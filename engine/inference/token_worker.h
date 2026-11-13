@@ -19,11 +19,14 @@
 #include <vector>
 
 #include "generation_dispatcher.h"
+#include "prompt_transport.h"
 
 namespace hyle::inference {
 
-// Internal local transport for a frontend process. It carries token IDs, not
-// protocol JSON or model state. Frames are TAB-delimited UTF-8/ASCII lines:
+// Internal local transport for a frontend process. It carries token IDs and
+// optional opaque prompt attachments, not HTTP JSON or model state. A token
+// field may use the suffix grammar in prompt_transport.h; plain text is unchanged.
+// Frames are TAB-delimited UTF-8/ASCII lines:
 // G or S id output_limit comma_separated_ids [output_limit comma_separated_ids ...];
 // O id output_limit comma_separated_ids opens a live input. Lowercase g/s/o
 // add a comma-separated extra-stop field after id. R id mode sampling_index
@@ -119,8 +122,14 @@ public:
         Result result = Result::kClosed;
         bool failed = false;
         try {
-          if (!number(fields[3], quota) || !quota || !parse_tokens(fields[4], tokens, true)) result = Result::kInvalid;
-          else if (found != calls_.end()) result = found->second->handle.append({std::move(tokens), quota});
+          GenerationTurn turn;
+          const auto token_field=fields[4].substr(0,fields[4].find(';'));
+          if (!number(fields[3], quota) || !quota || !parse_tokens(token_field, tokens, true) ||
+              !parse_prompt_attachments(fields[4],tokens.size(),turn.attachments)) result = Result::kInvalid;
+          else if (found != calls_.end()) {
+            turn.prompt=std::move(tokens);turn.max_outputs=quota;
+            result = found->second->handle.append(std::move(turn));
+          }
         } catch (const std::exception &) { failed = true; }
         const auto status = failed ? "failed" : result == Result::kAccepted ? "accepted" :
             result == Result::kInvalid ? "invalid" : result == Result::kCapacity ? "capacity" : "closed";
@@ -178,14 +187,16 @@ public:
       for (std::size_t at = start; valid && at < fields.size(); at += 2) {
         std::size_t limit = 0;
         std::vector<std::int32_t> tokens;
+        std::vector<PromptAttachment> attachments;
         if (!number(fields[at], limit) || !limit ||
-            !parse_tokens(fields[at + 1], tokens, !turns.empty()) ||
+            !parse_tokens(fields[at + 1].substr(0,fields[at+1].find(';')), tokens, !turns.empty()) ||
+            !parse_prompt_attachments(fields[at+1],tokens.size(),attachments) ||
             tokens.size() > max_prompt_tokens_ - prompt_tokens) {
           valid = false;
           break;
         }
         prompt_tokens += tokens.size();
-        turns.push_back({std::move(tokens), limit});
+        turns.push_back({std::move(tokens), limit, std::move(attachments)});
       }
       if (!valid) {
         if (!emit(error(id, "invalid", "invalid output limit or token list"))) break;

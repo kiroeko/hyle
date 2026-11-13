@@ -793,6 +793,8 @@ bool tensor_operation_supports(Operation operation,
     case UnaryKind::kRsqrt:
     case UnaryKind::kTanh:
     case UnaryKind::kSigmoid:
+    case UnaryKind::kGelu:
+    case UnaryKind::kGeluTanh:
       return true;
     default:
       return false;
@@ -968,6 +970,12 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
       break;
     case UnaryKind::kSigmoid:
       result = ggml_sigmoid(context, a);
+      break;
+    case UnaryKind::kGelu:
+      result = ggml_gelu_erf(context, a);
+      break;
+    case UnaryKind::kGeluTanh:
+      result = ggml_gelu(context, a);
       break;
     case UnaryKind::kSilu:
       result = ggml_silu(context, a);

@@ -46,7 +46,8 @@ Hyle 默认 BF16 为 K3，量化格式为子集头 K1；上游显式 K1，本窗
   当前日常完整验证模型为 Qwen3.5-2B；其它制品与较大模型的实际运行范围见[模型覆盖](docs/implementation/model-operators.md)。
 - **单机运行**：本阶段完整引擎验证使用 Windows、CUDA 和 Qwen3.5-2B；CPU、Apple Metal 及其他模型的完整引擎路径尚未在本阶段验证。已有后端组件不等于完整路径已验证。
 - **文本服务**：本地 tokenizer／Jinja，具名执行与采样选择；支持 OpenAI Responses、Chat Completions 和 Anthropic Messages 的文本与 SSE。Responses 提供进程内续接／分叉；三种协议共用受限 KV 驻留和可信前缀域。冷期制品可独立生成或在加载时按配方生成，之后复用；功能与限制见[接口指南](docs/user/text-api.md)。
-- **尚未交付**：通用模型目录加载、C++ tokenizer、完整服务 API、图片输入及多卡／多机。
+- **图片理解**：Qwen3.5-2B 的原始 HF 视觉权重或独立 GGUF mmproj，经[一次准备](docs/user/vision.md)复用；CLI 与三种 HTTP 协议接通图片、视觉计算及语言输入。实际验证 CUDA、BF16／Q8／Q4 语言模型、普通贪心及随机采样；图片 MTP 尚未实现。
+- **尚未交付**：通用模型目录加载、C++ tokenizer、完整服务 API、视频及多卡／多机。
   GLM、DeepSeek、Kimi 等目前是组件级实现，没有完整引擎入口。
 
 运行需要先准备本地权重清单。token CLI 与文本工作进程共用模型提供者和请求入口；文本 CLI 和三种 HTTP 协议可用本地 tokenizer 处理文本。Qwen 重放、探针及 JSON 报告使用独立诊断目标。初始化 C++ 构建不会下载模型或安装 tokenizer 环境。

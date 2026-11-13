@@ -3,11 +3,11 @@ from __future__ import annotations
 
 import threading
 from array import array
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, Callable, Sequence
 
-from .codec import TextCodec
-from .contracts import TokenEvent, TokenRequest, TokenWorker, WorkerError
+from .codec import TextCodec, has_images
+from .contracts import TokenEvent, TokenRequest, TokenWorker, WorkerError, PromptAttachment
 from .configuration import PreparedChoices, Selection, SessionPolicy
 from .sessions import TextSessions
 
@@ -17,6 +17,7 @@ class PreparedText:
     ids: list[int]
     limit: int
     selection: Selection = Selection()
+    attachments: tuple[PromptAttachment, ...] = ()
 
 
 @dataclass
@@ -103,19 +104,39 @@ class TextEngine:
         if type(limit) is not int or limit <= 0:
             raise ValueError("max_output_tokens must be a positive integer")
         try:
+            attachments = ()
+            images = has_images(messages)
+            if images:
+                selected = self.choices.executions[selection.execution_profile]
+                if not any(role == 'vision.encoder' for role, _ in selected.assets):
+                    matches = [i for i, profile in enumerate(self.choices.executions)
+                               if any(role == 'vision.encoder' for role, _ in profile.assets)]
+                    if selection.execution_profile or len(matches) != 1:
+                        raise ValueError('select a cold-prepared image execution profile')
+                    selection = replace(selection, execution_profile=matches[0])
+                draft_limit=self.choices.executions[selection.execution_profile].drafts
+                if selection.max_draft_tokens is not None and draft_limit is not None and selection.max_draft_tokens>draft_limit:
+                    raise ValueError('draft ceiling exceeds the prepared image execution profile')
+                prepare_images=getattr(self.codec,'prepare_images',None)
+                if prepare_images is None: raise ValueError('the loaded codec has no image preparation recipe')
+                prepared = prepare_images(messages, continue_final_message=continue_final_message,
+                    max_tokens=self.worker.context-limit+1)
+                ids, attachments = prepared.ids, prepared.attachments
             continuation = getattr(self.codec, 'continue_messages', None)
-            ids = continuation(previous_tape, messages) if continuation and previous_tape and not continue_final_message else None
+            if not images:
+                ids = continuation(previous_tape, messages) if continuation and previous_tape and not continue_final_message else None
             if ids is None:
                 ids = self.codec.encode_messages(messages, continue_final_message=True) if continue_final_message else self.codec.encode_messages(messages)
         except Exception as error:
             raise ValueError("chat template could not render the supplied messages: " + str(error)) from error
         if len(ids) > self.worker.context or limit - 1 > self.worker.context - len(ids):
             raise ValueError("prompt and output limit exceed the loaded model context")
-        return PreparedText(ids, limit, selection)
+        return PreparedText(ids, limit, selection, attachments)
 
     def submit(self, prepared: PreparedText) -> TokenRequest:
         return self.worker.submit(prepared.ids, prepared.limit, stop_ids=self.extra_stop_ids,
-                                  **prepared.selection.worker_options())
+                                  **prepared.selection.worker_options(),
+                                  **({'attachments': prepared.attachments} if prepared.attachments else {}))
 
     def begin_close(self) -> None:
         if self.sessions: self.sessions.begin_close()
