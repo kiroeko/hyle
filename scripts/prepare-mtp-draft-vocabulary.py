@@ -20,8 +20,10 @@ import sys
 
 
 # Shared with local input preparation; importing this helper never executes a model.
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "engine/models/qwen35"))
-from draft_vocabulary_preparation import LANGUAGES, calibration_prompts, language_preferences, selected_ids, write_vocabulary
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from engine.vocabulary import LANGUAGES, calibration_prompts, language_preferences, selected_ids
+from engine.model_preparation import prepared_source_identity, validate_local_tokenizer, write_prepared_vocabulary
+from engine.calibration import generated_ids, read_record, write_record
 
 
 def recorded_counts(folder: Path, identity: str, vocabulary: int,
@@ -64,7 +66,17 @@ def recorded_counts(folder: Path, identity: str, vocabulary: int,
         raise ValueError("recorded calibration has no training prompts")
     counts: Counter[int] = Counter()
     for path, prompt in prompts:
-        raw = json.loads((path / "stdout.log").read_text(encoding="utf-8"))
+        recorded = (path / "stdout.log").read_text(encoding="utf-8")
+        if recorded.startswith('HYLE_TOKEN_CALIBRATION_V1\n'):
+            generated = read_record(recorded, identity, vocabulary)
+            if prompt is not None and (path / 'prompt.txt').read_text(encoding='utf-8').strip() != prompt.strip():
+                raise ValueError('recorded training prompt differs from its declared split')
+            if (path / 'generated.ids').exists() and list(map(int, (path / 'generated.ids').read_text().split())) != generated:
+                raise ValueError('recorded ID text differs from its original process output')
+            counts.update(generated)
+            continue
+        # Explicit offline import of the old Qwen diagnostic recordings only.
+        raw = json.loads(recorded)
         if raw.get("source_id") != identity or raw.get("sampling") != "greedy" or raw.get("mtp_max_drafts") != 0:
             raise ValueError("recorded training requires matching ordinary greedy source")
         if raw.get("live_committed_versions") != 0 or len(raw.get("sessions", [])) != 1:
@@ -82,7 +94,9 @@ def recorded_counts(folder: Path, identity: str, vocabulary: int,
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--hyle", type=Path, help="Explicit hyle_qwen35_diagnostic executable; not the token CLI")
+    parser.add_argument("--hyle", type=Path, help="ordinary Hyle executable with the public token-worker entry")
+    parser.add_argument('--backend', choices=('cpu', 'cuda', 'apple', 'vulkan'),
+                        help='native execution backend; absent uses the engine default')
     parser.add_argument("--inputs", type=Path, required=True)
     parser.add_argument("--tokenizer-dir", type=Path)
     parser.add_argument("--work-dir", type=Path, required=True)
@@ -109,12 +123,7 @@ def main() -> None:
     if not args.calibration_run and (args.hyle is None or args.tokenizer_dir is None or
                                     not args.hyle.is_file() or not args.tokenizer_dir.is_dir()):
         parser.error("existing local executable and tokenizer directory required")
-    lines = (args.inputs / "weights.tsv").read_text(encoding="utf-8").splitlines()
-    identity = lines[1]
-    if len(identity) != 64 or any(ch not in "0123456789abcdef" for ch in identity):
-        parser.error("invalid prepared source identity")
-    geometry = lines[2].split()
-    vocabulary = int(geometry[3])
+    identity, vocabulary = prepared_source_identity(args.inputs)
     if not 0 < args.rows <= vocabulary or not 0 < args.tokens <= 1024:
         parser.error("rows must fit model vocabulary; tokens must be in [1,1024]")
     if args.work_dir.exists() or args.output.exists():
@@ -136,7 +145,7 @@ def main() -> None:
         args.work_dir.mkdir(parents=True)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         with args.output.open("x", encoding="utf-8", newline="\n") as output:
-            write_vocabulary(output, identity, vocabulary, selected, args.recommended_drafts)
+            write_prepared_vocabulary(args.inputs, output, selected, args.recommended_drafts)
         summary = (f"source={identity}\nprompts={prompts}; generated={sum(counts.values())}; distinct={len(counts)}\n"
                    f"rows={len(selected)}; generated-frequency descending; ties=original ID ascending\n"
                    "Offline reuse only; validation split ignored; no executable, tokenizer or GPU was invoked.\n")
@@ -147,49 +156,46 @@ def main() -> None:
         return
     os.environ.update(HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1", HF_DATASETS_OFFLINE="1",
                       HF_HUB_DISABLE_TELEMETRY="1", TOKENIZERS_PARALLELISM="false")
-    from transformers import AutoTokenizer
+    from engine.text.codec import HuggingFaceTextCodec
+    from engine.text.worker_client import WorkerClient
 
-    tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_dir, local_files_only=True, trust_remote_code=False)
+    codec = HuggingFaceTextCodec(args.tokenizer_dir)
+    tokenizer = codec.preparation_tokenizer
+    validate_local_tokenizer(args.inputs, tokenizer)
     args.work_dir.mkdir(parents=True)
     counts: Counter[int] = Counter()
     prompts = calibration_prompts(args.languages)
-    for index, prompt in enumerate(prompts, 1):
-        folder = args.work_dir / f"prompt{index:02}"
-        folder.mkdir()
-        text = tokenizer.apply_chat_template([dict(role="user", content=prompt)], tokenize=False,
-                                             add_generation_prompt=True, enable_thinking=False)
-        ids = tokenizer.encode(text, add_special_tokens=False)
-        if len(ids) + args.tokens > 2048:
-            raise ValueError("calibration prompt exceeds configured capacity")
-        (folder / "prompt.txt").write_text(prompt + "\n", encoding="utf-8")
-        (folder / "prompt.ids").write_text(" ".join(map(str, ids)) + "\n", encoding="utf-8")
-        schedule = folder / "schedule.txt"
-        schedule.write_text(f"prompt prompt.ids\ngenerate {args.tokens}\n", encoding="utf-8")
-        command = [str(args.hyle), "--inputs", str(args.inputs), "--backend", "cuda",
-                   "--mtp", "off", "--capacity", "2048", "--schedule", str(schedule)]
-        (folder / "command.txt").write_text(subprocess.list2cmdline(command) + "\n", encoding="utf-8")
-        with (folder / "stdout.log").open("wb") as stdout, (folder / "stderr.log").open("wb") as stderr:
-            result = subprocess.run(command, stdout=stdout, stderr=stderr, timeout=600)
-        if result.returncode:
-            raise RuntimeError(f"calibration failed: {folder}")
-        raw = json.loads((folder / "stdout.log").read_text(encoding="utf-8"))
-        if (raw.get("source_id") != identity or raw.get("sampling") != "greedy" or
-                raw.get("mtp_max_drafts") != 0 or raw.get("live_committed_versions") != 0 or
-                len(raw.get("sessions", [])) != 1):
-            raise ValueError("calibration requires the matching retired ordinary greedy source")
-        generated = raw["sessions"][0]["result"]["generated_ids"]
-        if not generated or any(not 0 <= token < vocabulary for token in generated):
-            raise ValueError("invalid model-generated calibration IDs")
-        counts.update(generated)
-        (folder / "generated.ids").write_text(" ".join(map(str, generated)) + "\n", encoding="utf-8")
-        (folder / "generated.txt").write_text(tokenizer.decode(generated), encoding="utf-8")
-        print(f"calibration {index}/{len(prompts)}: generated={len(generated)}, distinct={len(counts)}", flush=True)
+    command = [str(args.hyle), '--engine-worker', '--inputs', str(args.inputs), '--draft-count', '0',
+               '--sampling', 'greedy', '--capacity', '2048', '--max-sessions', '1', '--active-sequences', '1']
+    if args.backend is not None: command += ['--backend', args.backend]
+    (args.work_dir / 'command.txt').write_text(subprocess.list2cmdline(command) + '\n', encoding='utf-8')
+    worker = WorkerClient(command, startup_timeout=120)
+    try:
+        if worker.vocabulary != vocabulary or worker.source_identity != identity:
+            raise ValueError('calibration worker source identity differs from the prepared source')
+        for index, prompt in enumerate(prompts, 1):
+            folder = args.work_dir / f"prompt{index:02}"
+            folder.mkdir()
+            ids = codec.encode_messages([dict(role='user', content=prompt)])
+            if len(ids) + args.tokens > 2048:
+                raise ValueError("calibration prompt exceeds configured capacity")
+            (folder / "prompt.txt").write_text(prompt + "\n", encoding="utf-8")
+            (folder / "prompt.ids").write_text(" ".join(map(str, ids)) + "\n", encoding="utf-8")
+            generated = generated_ids(worker, ids, args.tokens, vocabulary)
+            with (folder / 'stdout.log').open('x', encoding='utf-8', newline='\n') as stream:
+                write_record(stream, identity, generated)
+            counts.update(generated)
+            (folder / "generated.ids").write_text(" ".join(map(str, generated)) + "\n", encoding="utf-8")
+            (folder / "generated.txt").write_text(tokenizer.decode(generated), encoding="utf-8")
+            print(f"calibration {index}/{len(prompts)}: generated={len(generated)}, distinct={len(counts)}", flush=True)
+    finally:
+        worker.close()
     required = (frozenset(sorted(set(tokenizer.all_special_ids))[:args.rows])
                 if args.languages is not None else frozenset())
     selected = selected_ids(counts, vocabulary, args.rows, required)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("x", encoding="utf-8", newline="\n") as output:
-        write_vocabulary(output, identity, vocabulary, sorted(selected), args.recommended_drafts)
+        write_prepared_vocabulary(args.inputs, output, sorted(selected), args.recommended_drafts)
     priority = "special IDs first; " if args.languages is not None else ""
     summary = (f"source={identity}\nprompts={len(prompts)}; generated={sum(counts.values())}; distinct={len(counts)}\n"
                f"rows={len(selected)}; {priority}generated-frequency descending; ties=original ID ascending\n"

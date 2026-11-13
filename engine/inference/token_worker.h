@@ -34,7 +34,7 @@ namespace hyle::inference {
 // comma_separated_ids appends one turn; Z id sequence closes its input. K acknowledges
 // output credit; C cancels; Q shuts down. S and O request ordered B id turn
 // events; both tokens and boundaries use credit. Later turn inputs may be empty.
-// Responses are READY 2 vocabulary context stop_ids, A id, T id token, B id turn,
+// Responses are READY 3 vocabulary context stop_ids source_identity, A id, T id token, B id turn,
 // F id completed|cancelled|closed,
 // E id kind message, C id accepted|stale and BYE. A request initially has one
 // output credit; K acknowledges delivered tokens and releases that credit.
@@ -55,17 +55,22 @@ public:
     for (const auto id : description_.stop_ids)
       if (id < 0 || static_cast<std::size_t>(id) >= description_.vocabulary)
         throw std::invalid_argument("worker model stop ID is outside its vocabulary");
+    if (std::ranges::any_of(description_.source_identity,
+          [](unsigned char value) { return value <= 32 || value >= 127; }) ||
+        description_.source_identity == "-")
+      throw std::invalid_argument("worker model source identity is not a protocol token");
   }
   TokenWorker(const TokenWorker &) = delete;
   TokenWorker &operator=(const TokenWorker &) = delete;
   ~TokenWorker() { close(); }
 
   int run() {
-    std::string ready = "READY\t2\t" + std::to_string(description_.vocabulary) + "\t" +
+    std::string ready = "READY\t3\t" + std::to_string(description_.vocabulary) + "\t" +
         std::to_string(description_.context) + "\t";
     if (description_.stop_ids.empty()) ready += "-";
     else for (std::size_t index = 0; index < description_.stop_ids.size(); ++index)
       ready += (index ? "," : "") + std::to_string(description_.stop_ids[index]);
+    ready += "\t" + (description_.source_identity.empty() ? "-" : description_.source_identity);
     if (!emit(ready)) return 1;
     std::string line;
     while (std::getline(input_, line)) {

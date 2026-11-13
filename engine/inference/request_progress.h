@@ -37,6 +37,9 @@ struct GenerationSessionSchedule final {
   std::uint64_t cache_sharing_domain = 0;
   // Model-scoped immutable execution preparation, independent of its sampler.
   std::size_t execution_profile = 0;
+  // Logical RNG namespace. Transport defaults to zero; physical admission,
+  // batch position and RequestKey generations do not affect its address.
+  std::uint32_t sampling_stream = 0;
   bool reports_turn_ends() const noexcept { return mode != GenerationSessionMode::kFlat; }
   bool accepts_live_input() const noexcept { return mode == GenerationSessionMode::kLive; }
 };
@@ -45,8 +48,8 @@ struct GenerationSessionSchedule final {
 // seed overrides the configured default; later draws live in the committed
 // Session cursor and are never reconstructed from the slot after admission.
 inline SamplingCursor initial_sampling_cursor(const GenerationSessionSchedule &schedule,
-    std::uint64_t default_seed, std::uint64_t stream) noexcept {
-  return {schedule.sampling_seed.value_or(default_seed), stream, 0};
+    std::uint64_t default_seed) noexcept {
+  return {schedule.sampling_seed.value_or(default_seed), schedule.sampling_stream, 0};
 }
 
 struct RequestInputCommit final {

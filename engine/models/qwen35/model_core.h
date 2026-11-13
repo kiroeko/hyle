@@ -881,7 +881,8 @@ public:
   }
   bool supports_device_mtp() {
     if (!device_mtp_model_contract()) return false;
-    if (max_drafts() > 1 && !greedy_draft_chain_enabled(sampling_configuration(0).configuration)) return false;
+    if (max_drafts() > 1 && std::ranges::none_of(resources_->sampling_configurations,
+        [&](const auto &prepared) { return greedy_draft_chain_enabled(prepared->configuration); })) return false;
     if (!backend_device_mtp_support_) {
       backend_device_mtp_support_ = supports_mtp_attention(execution, attention_capacity(),
           resources_->attention_storage, allocation_budget);

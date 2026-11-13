@@ -58,6 +58,21 @@ def inspect_includes(roots, forbidden):
 
 
 class ArchitectureBoundariesTest(unittest.TestCase):
+    def test_common_calibration_and_selection_do_not_import_model_implementations(self):
+        for name in ('calibration.py', 'vocabulary.py'):
+            path = ROOT / 'engine' / name
+            tree = ast.parse(path.read_text(encoding='utf-8'), filename=str(path))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    modules = [alias.name for alias in node.names]
+                elif isinstance(node, ast.ImportFrom):
+                    modules = [node.module or '']
+                else:
+                    continue
+                for module in modules:
+                    self.assertNotIn('models', module.split('.'))
+                    self.assertNotIn('cuda', module.lower())
+
     def test_compute_and_graph_do_not_depend_on_engine(self):
         roots = [ROOT / 'include/hyle/compute', ROOT / 'include/hyle/graph']
         roots += [p for p in (ROOT / 'src').iterdir()

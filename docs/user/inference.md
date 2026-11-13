@@ -72,7 +72,7 @@ hyle generate --inputs .scratch/qwen-ready --tokens .scratch/qwen-ready/prompt.i
 
 工具按本地内容计算来源身份、校验张量范围并生成 `weights.tsv`、输入 ID；原始输出头为量化编码的 GGUF 默认同时生成来源绑定的草稿子词表。本地文件的内容身份不等于已核验发布方的原始文件。工具不下载或复制原模型；`weights.tsv` 引用的原权重文件必须保持不变且可访问。重复加载同一准备目录不需要重新执行工具。直接读取相同 GGUF 内容时，来源身份不依赖其文件名；不同来源记录生成的身份可能不同，草稿制品必须匹配实际输入清单。
 
-HF 原权重可省略 `--gguf`。`--draft-vocabulary tokenizer` 显式从本地 tokenizer 生成子词表，`--draft-rows N` 调整行数；`none` 不生成。默认 tokenizer 方法不运行模型，也不保证对所有提示或设备都最快。需要按模型输出离线校准时，先构建下方独立诊断目标，再指定 `--draft-vocabulary calibrated --hyle <本地hyle_qwen35_diagnostic.exe>`；它运行固定提示的普通生成。已有同来源校准结果可用重复的 `--calibration-run <目录>` 复用，此时不需要再次运行模型。
+HF 原权重可省略 `--gguf`。`--draft-vocabulary tokenizer` 显式从本地 tokenizer 生成子词表，`--draft-rows N` 调整行数；`none` 不生成。默认 tokenizer 方法不运行模型，也不保证对所有提示或设备都最快。需要按模型输出离线校准时，指定 `--draft-vocabulary calibrated --hyle <本地hyle.exe> --backend cuda`；它通过公共 token 工作进程运行固定提示的普通生成，不需要诊断目标。后端可显式选择，省略时使用引擎默认。已有同来源校准结果可用重复的 `--calibration-run <目录>` 复用，此时不需要再次运行模型。
 
 已有 Hyle 输入时，也可以只生成可复用资产，不重建权重清单：
 
@@ -207,7 +207,7 @@ Q5_K 的行复制、1～4行投影与原ID映射已用合成数据验证；本�
 也可用本地模型生成独立校准语料，按生成内容选行；例如为中英文和共享代码生成词表，默认选32768行：
 
 ```powershell
-python scripts/prepare-mtp-draft-vocabulary.py --hyle <hyle_qwen35_diagnostic.exe> --inputs <准备目录> --tokenizer-dir <本地tokenizer目录> --languages zh,en --work-dir .scratch/draft-calibration --output .scratch/draft-vocabulary-zh-en.ids
+python scripts/prepare-mtp-draft-vocabulary.py --hyle <hyle.exe> --backend cuda --inputs <准备目录> --tokenizer-dir <本地tokenizer目录> --languages zh,en --work-dir .scratch/draft-calibration --output .scratch/draft-vocabulary-zh-en.ids
 hyle_qwen35_diagnostic --inputs <准备目录> --backend cuda --mtp on --mtp-draft-vocabulary .scratch/draft-vocabulary-zh-en.ids --schedule <自然请求文件>
 ```
 

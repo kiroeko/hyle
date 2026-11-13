@@ -77,19 +77,14 @@ def main():
         turn(replacement, 0)
         finish(replacement)
         finish(sessions[1]); finish(sessions[2])
-        # The original RNG address includes the request slot. Keep that
-        # address and R1 shape fixed while the unrelated profiles stay idle.
-        holders = [worker.open_session([1, 2, 3], 1, execution_profile=1),
-                   worker.open_session([1, 2, 3], 1, execution_profile=0)]
-        for holder in holders:
-            turn(holder, 0)
+        # Repeat with all physical slots free. Logical RNG coordinates must
+        # not depend on the earlier co-resident requests or their slot order.
+        # Both runs retain the same R1 mathematical shape.
         reference = worker.open_session([1, 2, 3], 8, execution_profile=2, sampling_index=1, seed=777)
         assert turn(reference, 0) == results[2], "mixed profiles changed independent random state"
         reference.append([4, 5], 8, timeout=120)
         assert turn(reference, 1) == followups[2], "mixed profiles changed continuation RNG/pending"
         finish(reference)
-        for holder in holders:
-            finish(holder)
         # A multi-profile owner must also combine compatible requests instead
         # of serializing every request merely because profiles were declared.
         peers = [worker.open_session([1, 2, 3], 24, execution_profile=0) for _ in range(2)]

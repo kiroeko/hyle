@@ -351,8 +351,14 @@ class WorkerClient:
             for raw in self._process.stdout:
                 if not ready:
                     fields = raw.rstrip("\r\n").split("\t")
-                    if len(fields) != 5 or fields[:2] != ["READY", "2"]:
+                    legacy = len(fields) == 5 and fields[:2] == ['READY', '2']
+                    current = len(fields) == 6 and fields[:2] == ['READY', '3']
+                    if not legacy and not current:
                         raise WorkerError("protocol", "invalid model worker handshake")
+                    self.source_identity = fields[5] if current and fields[5] != '-' else None
+                    if self.source_identity is not None and (not self.source_identity or
+                            any(not 32 < ord(char) < 127 for char in self.source_identity)):
+                        raise WorkerError('protocol', 'invalid model worker source identity')
                     self.vocabulary = int(fields[2])
                     self.context = int(fields[3])
                     self.stop_ids = frozenset() if fields[4] == "-" else frozenset(map(int, fields[4].split(",")))

@@ -4,6 +4,9 @@
 #include "../../inference/route_choice.h"
 
 #include <cstddef>
+#include <optional>
+#include <span>
+#include <vector>
 
 namespace qwen35 {
 
@@ -140,6 +143,30 @@ struct DecodeRoutePlans final {
 
 constexpr DecodeRoutePlans plan_decode_routes(const DecodeRouteFacts &facts) noexcept {
   return {select_decode_overlap(facts), select_device_verification(facts)};
+}
+
+// Residency is planned over all declared sampling programs. Each request still
+// qualifies its own route; a random program cannot inherit a greedy fast path.
+struct PreparedDecodeRoutes final {
+  std::vector<DecodeRoutePlans> by_sampling;
+  bool overlap = false, verification = false;
+};
+
+inline PreparedDecodeRoutes plan_prepared_decode_routes(std::span<const DecodeRouteFacts> choices,
+    std::optional<bool> requested_overlap = {}) {
+  PreparedDecodeRoutes result;
+  result.by_sampling.reserve(choices.size());
+  for (const auto &facts : choices) {
+    auto routes = plan_decode_routes(facts);
+    routes.overlap = select_resident_decode_overlap(facts);
+    if (requested_overlap && !*requested_overlap)
+      routes.overlap = {false, RouteReason::kUserDisabled};
+    // Explicit enablement requests the route; it does not waive eligibility.
+    result.overlap = result.overlap || routes.overlap.enabled;
+    result.verification = result.verification || routes.verification.enabled;
+    result.by_sampling.push_back(routes);
+  }
+  return result;
 }
 
 constexpr DecodeRouteChoice select_continuous_mtp(const DecodeRouteFacts &facts, bool overlap_selected,

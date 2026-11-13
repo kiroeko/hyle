@@ -14,13 +14,25 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location('recorded_draft_vocabulary', ROOT / 'scripts/prepare-mtp-draft-vocabulary.py')
 V = importlib.util.module_from_spec(spec); spec.loader.exec_module(V)
-import draft_vocabulary_preparation as P
+from engine import vocabulary as P
+from engine.tokenizer_identity import bind_source_tokenizer
+from engine.text.contracts import TokenEvent
 
 
 class PreparationTokenizer:
     all_special_ids = [7]
+    is_fast = True
+    chat_template = 'local template'
+    eos_token_id = 7
+
+    @property
+    def backend_tokenizer(self): return self
+    def get_vocab(self): return {'token' + str(i): i for i in range(8)}
+    def to_str(self): return json.dumps({'model': {'vocab': self.get_vocab()}})
 
     def apply_chat_template(self, messages, **kwargs):
+        if kwargs.get('tokenize'):
+            return {'input_ids': [5, 2, 5]}
         return messages[0]['content']
 
     def encode(self, text, **kwargs):
@@ -223,17 +235,22 @@ class RecordedCalibration(unittest.TestCase):
         argv=['prepare','--inputs',str(self.inputs),'--work-dir',str(report),'--output',str(output),
               '--hyle',str(model),'--tokenizer-dir',str(tokenizer_dir),'--rows','1',
               '--tokens','2','--languages','hu,en']
+        bind_source_tokenizer(self.inputs / 'tokenizer-binding.tsv', self.identity, 8, tokenizer)
         calls=[]
-        def run(command, *, stdout, stderr, timeout):
-            calls.append(command)
-            raw=dict(source_id=self.identity,sampling='greedy',mtp_max_drafts=0,
-                     live_committed_versions=0,sessions=[dict(result=dict(generated_ids=[2,3]))])
-            stdout.write(json.dumps(raw).encode('utf8'))
-            return types.SimpleNamespace(returncode=0)
+        submitted=[]
+        def submit(prompt, maximum):
+            submitted.append(prompt)
+            events = iter([TokenEvent('token', 2), TokenEvent('token', 3), TokenEvent('completed')])
+            return types.SimpleNamespace(read=lambda **kwargs: next(events), acknowledge=lambda: None, close=lambda: None)
+        worker = types.SimpleNamespace(vocabulary=8, source_identity=self.identity, submit=submit, close=lambda: None)
+        def create(command, **kwargs): calls.append(command); return worker
         with patch.object(sys,'argv',argv), patch.dict(sys.modules,{'transformers':fake_transformers}), \
-             patch.object(V.subprocess,'run',side_effect=run):
+             patch('engine.text.worker_client.WorkerClient', side_effect=create):
             V.main()
-        self.assertEqual(len(calls), len(P.calibration_prompts(P.language_preferences('hu,en'))))
+        self.assertEqual(len(calls), 1)
+        self.assertNotIn('--backend', calls[0])
+        self.assertIn('--engine-worker', calls[0])
+        self.assertEqual(len(submitted), len(P.calibration_prompts(P.language_preferences('hu,en'))))
         self.assertEqual(output.read_text().splitlines()[-1], '7')
         self.assertIn('languages=en,hu; shared=code', (report/'calibration.txt').read_text())
 
@@ -242,17 +259,14 @@ class RecordedCalibration(unittest.TestCase):
         tokenizer_dir=self.work/'tokenizer';tokenizer_dir.mkdir()
         fake_transformers=types.SimpleNamespace(AutoTokenizer=types.SimpleNamespace(
             from_pretrained=lambda *args, **kwargs: PreparationTokenizer()))
+        bind_source_tokenizer(self.inputs / 'tokenizer-binding.tsv', self.identity, 8, PreparationTokenizer())
         output=self.work/'bad.ids'
         argv=['prepare','--inputs',str(self.inputs),'--work-dir',str(self.work/'bad-report'),
               '--output',str(output),'--hyle',str(model),'--tokenizer-dir',str(tokenizer_dir),
               '--rows','4','--tokens','2','--languages','hu']
-        def run(command, *, stdout, stderr, timeout):
-            raw=dict(source_id='b'*64,sampling='greedy',mtp_max_drafts=0,
-                     live_committed_versions=0,sessions=[dict(result=dict(generated_ids=[2,3]))])
-            stdout.write(json.dumps(raw).encode('utf8'))
-            return types.SimpleNamespace(returncode=0)
+        worker = types.SimpleNamespace(vocabulary=8, source_identity='b'*64, close=lambda: None)
         with patch.object(sys,'argv',argv), patch.dict(sys.modules,{'transformers':fake_transformers}), \
-             patch.object(V.subprocess,'run',side_effect=run):
+             patch('engine.text.worker_client.WorkerClient', return_value=worker):
             with self.assertRaises(ValueError): V.main()
         self.assertFalse(output.exists())
 

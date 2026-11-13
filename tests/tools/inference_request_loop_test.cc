@@ -1094,7 +1094,7 @@ public:
       if (profiles_) {
         std::lock_guard lock(profiles_->mutex);
         profiles_->entries.push_back({stored.id, stored.execution_profile, incoming.sampling_index,
-            i::initial_sampling_cursor(stored, 999, slot), stored.max_draft_tokens});
+            i::initial_sampling_cursor(stored, 999), stored.max_draft_tokens});
       }
       return keys[slot];
     };
@@ -1142,13 +1142,14 @@ private:
 void schedule_admission_is_model_independent_and_overflow_safe() {
   using Error = i::RequestAdmissionError;
   i::GenerationSessionSchedule schedule{"finite", {{{1}, 1}}};
-  require(i::initial_sampling_cursor(schedule, 12, 3) == i::SamplingCursor{12, 3, 0},
+  require(i::initial_sampling_cursor(schedule, 12) == i::SamplingCursor{12, 0, 0},
       "request without a seed lost its configured default");
   schedule.sampling_seed = 0;
-  require(i::initial_sampling_cursor(schedule, 12, 4) == i::SamplingCursor{0, 4, 0},
+  require(i::initial_sampling_cursor(schedule, 12) == i::SamplingCursor{0, 0, 0},
       "explicit zero request seed was replaced by the configured default");
   schedule.sampling_seed = 98;
-  require(i::initial_sampling_cursor(schedule, 12, 5) == i::SamplingCursor{98, 5, 0},
+  schedule.sampling_stream = 5;
+  require(i::initial_sampling_cursor(schedule, 12) == i::SamplingCursor{98, 5, 0},
       "request seed did not initialize its independent cursor");
   require(!i::check_request_schedule(schedule, 1, 2), "exact one-token context was rejected");
   require(i::check_request_schedule(schedule, 0, 2) == Error::kInvalidLimits,
@@ -1175,6 +1176,27 @@ void schedule_admission_is_model_independent_and_overflow_safe() {
                     {std::vector<std::int32_t>(20, 1), 12}};
   require(!i::check_request_schedule(schedule, 64, 2),
       "future quotas were incorrectly combined before an early stop could release context");
+}
+
+void sampling_addresses_separate_logical_coordinates() {
+  using Cursor = i::SamplingCursor;
+  require(Cursor{42, 0, 7}.identity() != Cursor{43, 1, 7}.identity(),
+      "distinct seed/stream pairs collided through key folding");
+  const std::array<std::uint64_t, 3> coordinates{0, 1, UINT32_MAX};
+  for (const auto stream : coordinates) for (const auto draw : coordinates) {
+    const auto words = Cursor{UINT64_MAX, stream, draw}.identity();
+    require(words == std::array<std::uint32_t, 4>{UINT32_MAX, UINT32_MAX,
+        static_cast<std::uint32_t>(draw), static_cast<std::uint32_t>(stream)},
+        "logical RNG coordinates were truncated, folded or interchanged");
+  }
+  rejects<std::runtime_error>([] { (void)Cursor{1, std::uint64_t{UINT32_MAX} + 1, 0}.identity(); });
+  rejects<std::runtime_error>([] { (void)Cursor{1, 0, std::uint64_t{UINT32_MAX} + 1}.identity(); });
+  rejects<std::runtime_error>([] { (void)Cursor{1, 0, UINT32_MAX}.identity(1); });
+  rejects<std::runtime_error>([] { (void)Cursor{1, 0, UINT32_MAX}.advanced(1); });
+  const Cursor committed{42, 9, 10};
+  const auto candidate = committed.advanced(3);
+  require(committed.draw == 10 && candidate.identity() == committed.identity(3),
+      "reserving a draw range mutated the committed request cursor");
 }
 
 void model_provider_selects_one_owner_and_rejects_ambiguity() {
@@ -1461,7 +1483,7 @@ void application_uses_one_provider_path_for_cli_and_worker() {
   const auto cli_config = *application_loaded;
   auto worker = common; worker.insert(worker.begin(), "--engine-worker");
   const auto [worker_status, frames, worker_error] = run(worker, "Q\n");
-  require(!worker_status && frames.starts_with("READY\t2\t256\t128\t-") && frames.ends_with("BYE\n") && worker_error.empty() &&
+  require(!worker_status && frames.starts_with("READY\t3\t256\t128\t-\t-") && frames.ends_with("BYE\n") && worker_error.empty() &&
       application_loaded->execution.context == cli_config.execution.context &&
       application_loaded->execution.resident_sessions == cli_config.execution.resident_sessions &&
       application_loaded->execution.active_sequences == cli_config.execution.active_sequences &&
@@ -1541,7 +1563,7 @@ void token_worker_rejects_malformed_frames_without_starting_model() {
   std::ostringstream output;
   i::TokenWorker worker(std::make_unique<IngressTestExecutor>(control), 2, 2, 1, 16, input, output);
   require(worker.run() == 0, "worker protocol did not close cleanly");
-  require(output.str() == "READY\t2\t256\t128\t3,4\nE\t0\tprotocol\tinvalid request identity\n"
+  require(output.str() == "READY\t3\t256\t128\t3,4\t-\nE\t0\tprotocol\tinvalid request identity\n"
       "E\t7\tinvalid\tinvalid output limit or token list\n"
       "E\t8\tinvalid\tinvalid output limit or token list\n"
       "E\t10\tinvalid\tinvalid output limit or token list\n"
@@ -1623,7 +1645,7 @@ void token_worker_credit_and_cancellation_do_not_hang() {
       if (!output_buffer.line(line, std::chrono::seconds(3))) throw std::runtime_error("worker test timed out");
       return line;
     };
-    require(next() == "READY\t2\t256\t128\t3,4", "worker did not become ready");
+    require(next() == "READY\t3\t256\t128\t3,4\t-", "worker did not become ready");
     input_buffer.send("G\t1\t2\t10\n");
     require(next() == "A\t1" && next() == "T\t1\t10", "worker lost initial accepted token");
     std::string premature;
@@ -2230,6 +2252,7 @@ int main() {
     abandoned_transport_waits_for_actual_retirement();
     new_admission_skips_unreleased_transport_after_model_retirement();
     schedule_admission_is_model_independent_and_overflow_safe();
+    sampling_addresses_separate_logical_coordinates();
     model_provider_selects_one_owner_and_rejects_ambiguity();
     followup_admission_uses_actual_committed_context();
     request_owner_drives_input_output_and_real_retirement();

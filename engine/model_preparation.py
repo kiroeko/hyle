@@ -1,14 +1,11 @@
 """Cold application catalog for local, model-owned asset preparers."""
 from pathlib import Path
-from typing import Protocol
+from dataclasses import dataclass
+from typing import Callable, Protocol
 
 from .asset_store import AssetStore
-from .models.qwen35.runtime_assets import matches_source, prepare_assets, validate_tokenizer
-
-# Registration only. Each provider validates source meanings and its own
-# generated assets; request/HTTP modules never interpret a weight manifest.
-_PREPARERS = ((matches_source, prepare_assets, validate_tokenizer),)
-
+from .models.qwen35.runtime_assets import matches_source, prepare_assets, validate_tokenizer, source_identity
+from .models.qwen35.draft_vocabulary_preparation import write_vocabulary
 
 class PreparedAssetFiles(Protocol):
     directory: Path
@@ -19,15 +16,40 @@ class PreparedAssetFiles(Protocol):
     def artifacts(self) -> tuple[tuple[str, Path], ...]: ...
 
 
-def prepare_local_assets(inputs: Path, tokenizer_directory: Path, tokenizer, directory: Path, **recipe) -> PreparedAssetFiles:
-    selected = [prepare for matches, prepare, _ in _PREPARERS if matches(inputs)]
+@dataclass(frozen=True)
+class LocalPreparationProvider:
+    matches: Callable[[Path], bool]
+    prepare: Callable[..., PreparedAssetFiles]
+    validate_tokenizer: Callable[..., None]
+    source_identity: Callable[[Path], tuple[str, int]]
+    write_vocabulary: Callable[..., None]
+
+
+# Registration only; neither the request layer nor HTTP interprets a manifest.
+_PREPARERS = (LocalPreparationProvider(matches=matches_source, prepare=prepare_assets,
+    validate_tokenizer=validate_tokenizer, source_identity=source_identity, write_vocabulary=write_vocabulary),)
+
+
+def _select(inputs: Path) -> LocalPreparationProvider:
+    selected = [provider for provider in _PREPARERS if provider.matches(inputs)]
     if len(selected) != 1:
-        raise ValueError('no unique local asset preparer recognizes the model source')
-    return selected[0](inputs, tokenizer_directory, tokenizer, AssetStore(directory), **recipe)
+        raise ValueError('no unique local preparer recognizes the model source')
+    return selected[0]
+
+
+def prepare_local_assets(inputs: Path, tokenizer_directory: Path, tokenizer, directory: Path, **recipe) -> PreparedAssetFiles:
+    return _select(inputs).prepare(inputs, tokenizer_directory, tokenizer, AssetStore(directory), **recipe)
 
 
 def validate_local_tokenizer(inputs: Path, tokenizer) -> None:
-    selected = [validate for matches, _, validate in _PREPARERS if matches(inputs)]
-    if len(selected) != 1:
-        raise ValueError('no unique source tokenizer validator recognizes the model')
-    selected[0](inputs, tokenizer)
+    _select(inputs).validate_tokenizer(inputs, tokenizer)
+
+
+def prepared_source_identity(inputs: Path) -> tuple[str, int]:
+    return _select(inputs).source_identity(inputs)
+
+
+def write_prepared_vocabulary(inputs: Path, output, ids: list[int], recommended_drafts: int | None) -> None:
+    provider = _select(inputs)
+    identity, vocabulary = provider.source_identity(inputs)
+    provider.write_vocabulary(output, identity, vocabulary, ids, recommended_drafts)

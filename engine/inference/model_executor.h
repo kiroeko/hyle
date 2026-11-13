@@ -101,6 +101,8 @@ struct ModelDescription final {
   std::size_t vocabulary = 0, context = 0;
   std::vector<std::int32_t> stop_ids;
   std::vector<ExecutionProfileDescription> execution_profiles{ExecutionProfileDescription{}};
+  // Opaque immutable source identity from the provider, not a model family name.
+  std::string source_identity;
 };
 
 inline bool execution_profiles_co_resident(const ModelDescription &model, std::size_t a, std::size_t b) noexcept {

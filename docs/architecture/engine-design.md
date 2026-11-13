@@ -202,12 +202,12 @@ Qwen 可在冷期准备多个方案。它们共用原端点与不可变目标／
 
 ### 服务组合与制品生命周期
 
-文本配置、会话和协议分开：`configuration.py` 只描述冷选择与请求参数，`sessions.py` 通过原 live token 请求管理会话借用与回收，`responses.py` 解释 Responses JSON／SSE，`server.py` 只路由与交付。它们不解释权重、KV 张量或模型数学。`model_preparation.py` 只登记准备器；具体来源解释与行选择在模型目录，共用 `asset_store.py` 的锁、校验和原子发布。
+文本配置、会话和协议分开：`configuration.py` 只描述冷选择与请求参数，`sessions.py` 通过原 live token 请求管理会话借用与回收，`responses.py` 解释 Responses JSON／SSE，`server.py` 只路由与交付。它们不解释权重、KV 张量或模型数学。`model_preparation.py` 登记来源识别、tokenizer 验证和制品写出；`vocabulary.py` 负责通用语料与原 ID 选行，`calibration.py` 通过公共 token 合同采集生成结果。具体权重来源、角色与头编码仍在模型目录，共用 `asset_store.py` 的锁、校验和原子发布。校准显式选择后端，不依赖 Qwen 诊断 JSON。
 
 | 内容 | 所有者与生命周期 |
 | --- | --- |
 | 原始权重、端点、准备程序与草稿映射 | 模型加载期建立；原权重共享，方案状态分开。在途方案不可替换。 |
-| 采样选择、RNG、pending 与输出额度 | 选择已准备程序；原生请求／会话拥有 RNG 与 pending，额度按轮接纳。改变不兼容配置重新建立状态。 |
+| 采样选择、RNG、pending 与输出额度 | 冷期逐采样程序计算路线资格，按可共存路线汇总资源；编号只用于选择，不决定资源能力。原生请求／会话拥有逻辑 RNG 地址与 pending，额度按轮接纳。改变不兼容配置重新建立状态。 |
 | 不可变前缀 | 使用原完整状态、COW、版本预算与真实退休；按模型、采样数学及可信域隔离。目录可跨 execute 保留，未退休原生工作仍禁止复用。 |
 | HTTP 历史与 KV 驻留 | 响应记录容量／TTL、原生驻留槽与批宽分开。KV 淘汰保留受限历史；追加兼容时复用原会话，否则重建。不是 KV 磁盘检查点。 |
 | 派生文件 | 按实际来源、tokenizer 与配方生成；同配方并发只发布一次，新配方使用新目录。文件不在热步生成，也不覆盖在途引用。 |

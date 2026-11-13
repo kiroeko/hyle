@@ -18,13 +18,12 @@ import sys
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 from engine.tokenizer_identity import bind_source_tokenizer
+from engine import vocabulary as vocabulary_preparation
 
 if __package__:
     from . import draft_vocabulary_preparation, geometry, nf4_state
 else:
-    import draft_vocabulary_preparation
-    import geometry
-    import nf4_state
+    from engine.models.qwen35 import draft_vocabulary_preparation, geometry, nf4_state
 
 
 FP8_READER = "sglang-06992c92"
@@ -710,7 +709,7 @@ def main(argv=None) -> None:
                         help="prepare a source-bound draft subset automatically, from the local tokenizer, or not at all")
     parser.add_argument("--draft-rows", type=int,
                         help="optional tokenizer-selected draft row count; defaults to half the vocabulary")
-    parser.add_argument("--draft-languages", type=draft_vocabulary_preparation.language_preferences,
+    parser.add_argument("--draft-languages", type=vocabulary_preparation.language_preferences,
                         help="comma-separated local draft-language profiles, e.g. zh,en")
     weight_source = parser.add_mutually_exclusive_group()
     weight_source.add_argument("--role-files", type=Path,
@@ -724,9 +723,9 @@ def main(argv=None) -> None:
     parser.add_argument("--kv-cache-dtype", choices=['bf16','e4m3fn'],
                         help="explicit BF16 KV omission or target E4M3FN KV with original K/V scales; NextN KV remains plain activation storage")
     args = parser.parse_args(argv)
-    if args.draft_languages is not None and args.draft_languages - draft_vocabulary_preparation.LANGUAGES:
+    if args.draft_languages is not None and args.draft_languages - vocabulary_preparation.LANGUAGES:
         parser.error("unsupported built-in language profiles: " + ', '.join(sorted(
-            args.draft_languages - draft_vocabulary_preparation.LANGUAGES)))
+            args.draft_languages - vocabulary_preparation.LANGUAGES)))
     if not args.mtp and (args.draft_vocabulary != 'auto' or args.draft_rows is not None or args.draft_languages is not None):
         parser.error("draft vocabulary preparation requires --mtp")
     if args.draft_vocabulary == 'none' and (args.draft_rows is not None or args.draft_languages is not None):
@@ -778,7 +777,7 @@ def main(argv=None) -> None:
             raise ValueError("GGUF source requires exactly one vocabulary head role")
         use_tokenizer_vocabulary = use_tokenizer_vocabulary or head_roles[0][2] not in ("F32", "F16", "BF16")
     if use_tokenizer_vocabulary:
-        ids, fingerprint = draft_vocabulary_preparation.tokenizer_default_ids(
+        ids, fingerprint = vocabulary_preparation.tokenizer_default_ids(
             tokenizer, role_receipt["geometry"]["vocabulary"], args.draft_rows, args.draft_languages)
         draft_vocabulary = (ids, fingerprint)
     args.output.mkdir(parents=True)

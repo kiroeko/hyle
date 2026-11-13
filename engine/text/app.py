@@ -14,7 +14,7 @@ from .runtime import GenerationProgress, TextEngine
 from .server import TextHttpServer
 from .worker_client import WorkerClient
 from .configuration import PreparedChoices, Selection, read_configuration
-from ..model_preparation import prepare_local_assets, validate_local_tokenizer
+from ..model_preparation import prepare_local_assets, validate_local_tokenizer, prepared_source_identity
 
 
 class ResponsesServer(TextHttpServer):
@@ -125,6 +125,8 @@ def main(argv: list[str] | None = None) -> int:
     engine = None
     try:
         codec.validate_vocabulary(worker.vocabulary)
+        if worker.source_identity != prepared_source_identity(args.inputs)[0]:
+            raise ValueError('loaded model source identity differs from the tokenizer binding')
         engine = TextEngine(worker, codec, args.model_name, choices=choices,
                             session_policy=choices.sessions if args.command == 'serve' else None)
         if args.command == 'serve':

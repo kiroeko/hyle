@@ -11,7 +11,8 @@ import struct
 
 from ...asset_store import AssetStore, file_digest
 from ...tokenizer_identity import validate_source_binding
-from .draft_vocabulary_preparation import language_preferences, tokenizer_default_ids, write_vocabulary
+from ...vocabulary import language_preferences, tokenizer_default_ids
+from .draft_vocabulary_preparation import write_vocabulary
 
 
 @dataclass(frozen=True)
@@ -39,7 +40,7 @@ def matches_source(inputs: Path) -> bool:
         return stream.readline(129).strip() in ('HYLE_QWEN_ROLE_FILES_V2', 'HYLE_QWEN_GGUF_ROLE_FILES_V2')
 
 
-def validate_tokenizer(inputs: Path, tokenizer) -> None:
+def source_identity(inputs: Path) -> tuple[str, int]:
     with (Path(inputs) / 'weights.tsv').open(encoding='utf-8') as stream:
         signature, source, geometry = (stream.readline().strip() for _ in range(3))
     if signature not in ('HYLE_QWEN_ROLE_FILES_V2', 'HYLE_QWEN_GGUF_ROLE_FILES_V2'):
@@ -47,7 +48,15 @@ def validate_tokenizer(inputs: Path, tokenizer) -> None:
     fields = geometry.split()
     if len(fields) < 4 or fields[0] != 'geometry':
         raise ValueError('invalid source tokenizer geometry')
-    validate_source_binding(Path(inputs) / 'tokenizer-binding.tsv', source, int(fields[3]), tokenizer)
+    vocabulary = int(fields[3])
+    if not re.fullmatch('[0-9a-f]{64}', source) or vocabulary <= 0:
+        raise ValueError('invalid prepared source identity')
+    return source, vocabulary
+
+
+def validate_tokenizer(inputs: Path, tokenizer) -> None:
+    source, vocabulary = source_identity(inputs)
+    validate_source_binding(Path(inputs) / 'tokenizer-binding.tsv', source, vocabulary, tokenizer)
 
 
 def source_facts(inputs: Path) -> dict:

@@ -2514,7 +2514,7 @@ bool admit_waiting_generation(Model &model, inference::RequestLoop &loop,
       fresh.progress.bind_open_turns(fresh.live_turns, bound, bound);
     } else fresh.progress.bind_open_turns(visible_turns, bound, bound);
     fresh.progress.initial_sampling = inference::initial_sampling_cursor(
-        schedule, selected.sampling_seed, static_cast<std::uint64_t>(slot));
+        schedule, selected.sampling_seed);
     fresh.turn_observations.reserve(bound);
     fresh.turn_observations.emplace_back(); fresh.turn_observations[0].arrival = Clock::now();
     fresh.warm_inputs.reserve(bound);
@@ -3148,7 +3148,7 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
     else request.progress.bind_turns(visible_turns);
     if (!logits_providers.empty()) request.logits_provider = logits_providers[requests.size() - 1];
     request.progress.initial_sampling = inference::initial_sampling_cursor(
-        schedule, model.sampling_seed, static_cast<std::uint64_t>(requests.size() - 1));
+        schedule, request_model.sampling_seed);
     request.turn_observations.reserve(first_turn_only ? configured_bound : visible_turns.size());
     request.turn_observations.resize(visible_turns.size());
     if (first_turn_only) request.turn_observations[0].arrival = startup;
@@ -3624,6 +3624,7 @@ public:
         {model_eos_tokens.begin(), model_eos_tokens.end()}};
     description.execution_profiles[0].algorithm = mtp_ ? "mtp" : "ordinary";
     description.execution_profiles[0].max_draft_tokens = mtp_ ? model_.max_drafts() : 0;
+    description.source_identity = model_.source_identity;
     return description;
   }
   bool supports_dynamic_admission() const noexcept override { return true; }
@@ -3687,6 +3688,7 @@ public:
     inference::ModelDescription description{static_cast<std::size_t>(models_[0]->vocabulary), models_[0]->capacity,
         {model_eos_tokens.begin(), model_eos_tokens.end()}};
     description.execution_profiles.clear();
+    description.source_identity = models_[0]->source_identity;
     for (std::size_t j = 0; j < models_.size(); ++j) {
       const auto &model = *models_[j];
       inference::ExecutionProfileDescription profile{names_[j], model.cache_plan.draft_cache ? "mtp" : "ordinary",
@@ -3767,8 +3769,10 @@ std::pair<std::unique_ptr<Model>, bool> load_execution_profile(const inference::
       (profile.draft_count && *profile.draft_count >= config.execution.context))
     throw std::invalid_argument("model loading requires valid context, sequence, prefill and draft capacities");
   const auto execution = select_execution(BackendSelection{.primary = config.execution.backend}, 0);
+  const bool has_greedy_sampling = !config.sampling.random || std::ranges::any_of(config.additional_sampling,
+      [](const auto &policy) { return !policy.random; });
   const inference::ColdWorkloadFacts workload{
-      .natural_generation = true, .greedy = !config.sampling.random,
+      .natural_generation = true, .greedy = has_greedy_sampling,
       .max_sessions = config.execution.resident_sessions, .active_sequences = config.execution.active_sequences,
       .capacity = config.execution.context};
   namespace mtp_policy = inference::mtp;
@@ -3780,11 +3784,6 @@ std::pair<std::unique_ptr<Model>, bool> load_execution_profile(const inference::
       .workload = workload, .automatic_backend_eligible = execution.primary == BackendKind::kCuda,
       .max_drafts = requested_depth,
       .automatic_vocabulary = vocabulary_asset ? vocabulary_asset->mode == inference::ModelAssetMode::kAutomatic : !explicit_depth};
-  // An explicitly selected asset belongs to the prepared model, and can be
-  // consumed by any declared greedy profile even when profile zero samples.
-  if (explicit_depth && (vocabulary_asset || head_asset))
-    request.workload.greedy = !config.sampling.random || std::ranges::any_of(config.additional_sampling,
-        [](const auto &policy) { return !policy.random; });
   auto vocabulary = vocabulary_asset ? (vocabulary_asset->mode == inference::ModelAssetMode::kFile
       ? DraftAssetRequest::from_file(vocabulary_asset->path) : DraftAssetRequest::automatic()) :
       explicit_depth ? DraftAssetRequest::original() : DraftAssetRequest::automatic();
@@ -3820,23 +3819,35 @@ std::pair<std::unique_ptr<Model>, bool> load_execution_profile(const inference::
     retains_random_frontier = retains_random_frontier || policy.random;
   }
   const auto precision = PrecisionProfile::from_roles(source.roles);
-  const DeviceRelayCapabilities relay{execution.primary, false, false, config.sampling.random && mtp, false};
   const qwen35::DecodeRouteFacts facts{.workload = workload, .overlap_requested = true,
       .mtp_enabled = mtp, .max_drafts = depth, .max_device_drafts = kMaximumDeviceMtpDrafts,
       .stored_draft_head = supports_stored_draft_projection(source.roles),
-      .relay_eligible = relay.eligible(), .relay_refusal = relay.refusal_reason(),
       .has_decode = config.execution.context > 1, .resolved_active_sequences = config.execution.active_sequences};
-  const auto routes = qwen35::plan_decode_routes(facts);
-  const bool overlap = profile.overlap.value_or(qwen35::select_resident_decode_overlap(facts).enabled);
+  std::vector<qwen35::DecodeRouteFacts> sampling_routes;
+  sampling_routes.reserve(config.additional_sampling.size() + 1);
+  const auto append_sampling_route = [&](const inference::PreparedSamplingPolicy &policy) {
+    auto selected = facts;
+    selected.workload.greedy = !policy.random;
+    const DeviceRelayCapabilities relay{execution.primary, false, false, policy.random && mtp, false};
+    selected.relay_eligible = relay.eligible(); selected.relay_refusal = relay.refusal_reason();
+    sampling_routes.push_back(selected);
+  };
+  append_sampling_route(config.sampling);
+  for (const auto &policy : config.additional_sampling) append_sampling_route(policy);
+  const auto routes = qwen35::plan_prepared_decode_routes(sampling_routes, profile.overlap);
+  const bool overlap = routes.overlap;
   // The verifier can consume a standalone draft chain; it does not require
   // an overlapping successor. Keep its independently selected capacity.
-  const bool verification = routes.verification.enabled;
+  const bool verification = routes.verification;
   const auto query_rows = (std::max)(prefill, mtp ? cache::add(depth, 1) : std::size_t{1});
   const auto recurrent = recurrent_bytes(state_schema_for(geometry, config.execution.context, precision), geometry);
-  auto continuous = prepare_mtp_continuation({.routes = facts, .geometry = geometry, .source = source,
+  auto continuation_facts = sampling_routes.front();
+  for (std::size_t i = 0; i < routes.by_sampling.size(); ++i)
+    if (routes.by_sampling[i].overlap.enabled) { continuation_facts = sampling_routes[i]; break; }
+  auto continuous = prepare_mtp_continuation({.routes = continuation_facts, .geometry = geometry, .source = source,
       .precision = precision, .backend = execution, .context = config.execution.context, .residents = config.execution.resident_sessions,
       .active_sequences = config.execution.active_sequences, .query_rows = query_rows, .recurrent_bytes = recurrent,
-      .draft_depth = depth, .overlap = overlap, .verification = verification, .random = config.sampling.random,
+      .draft_depth = depth, .overlap = overlap, .verification = verification, .random = retains_random_frontier,
       .shared_endpoint = shared ? &shared->execution : nullptr});
   const auto plan = cache::plan(geometry, source.cache_row_bytes, config.execution.context, config.execution.resident_sessions,
       query_rows, recurrent, config.execution.active_sequences, mtp ? cache::add(depth, 1) : 1, mtp, retains_random_frontier,

@@ -85,7 +85,9 @@ OpenAI Python SDK 可通过 `extra_body={"hyle": {...}}` 传入。标准 `temper
 
 响应记录数、原生 KV 驻留上限和批内活动序列是三个独立预算。KV 满时先淘汰空闲原生会话，保留受限历史；全部忙时在有限接纳队列等待。原生终止确认前不复用预算，超时或退休失败会使会话服务失败关闭。TTL 也在没有新请求时回收空闲会话。
 
-满足相同方案、采样配置和实际 token 前缀时，续轮复用原会话的完整状态、pending 和 RNG。Jinja 改写历史前缀、改变配置、KV 淘汰或分叉时重建输入，不伪装缓存命中。保存的原始 token 与模板标记用于可追加模板；显示文本仍独立解码。重建不等于恢复完整 RNG 检查点，固定 seed 也不保证跨槽位／批形状的输出逐项一致。
+满足相同方案、采样配置和实际 token 前缀时，续轮复用原会话的完整状态、pending 和 RNG。Jinja 改写历史前缀、改变配置、KV 淘汰或分叉时重建输入，不伪装缓存命中。保存的原始 token 与模板标记用于可追加模板；显示文本仍独立解码。重建不等于恢复完整 RNG 检查点。
+
+请求初始随机地址由64位 seed、32位逻辑 stream 和32位 draw 分别编码，越界报错；物理槽位、批次位置和请求编号不参与。文本请求的逻辑 stream 为零，未传 seed 时使用配置默认值。相同 seed 在相同数学路径下重放相同随机地址；批形状改变浮点计算时不承诺输出 ID 逐位一致。续轮继续原游标，分叉重放重新开始，不伪装成 RNG 检查点恢复。
 
 响应 `metadata` 报告 `hyle.execution_profile`、`hyle.sampling_profile` 和 `hyle.context`（`new`／`continued`／`replayed`）。`usage.input_tokens_details.cached_tokens` 只计已确认的会话续接 token；原生前缀目录的额外复用不计入该字段。
 

@@ -14,6 +14,8 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from engine.models.qwen35 import draft_vocabulary_preparation, prepare
+from engine.vocabulary import tokenizer_default_ids
+from engine.model_preparation import validate_local_tokenizer
 
 
 def source_vocabulary(inputs: Path) -> tuple[str, int]:
@@ -52,7 +54,8 @@ def main(argv=None):
     parser.add_argument('--draft-vocabulary', choices=('auto','tokenizer','calibrated','none'), default='auto',
                         help='automatic, tokenizer-only, model-calibrated, or no draft subset')
     parser.add_argument('--draft-rows', type=int, help='selected original token rows; defaults to half the vocabulary')
-    parser.add_argument('--hyle', type=Path, help='local hyle_qwen35_diagnostic executable for model calibration')
+    parser.add_argument('--hyle', type=Path, help='local Hyle token-worker executable for model calibration')
+    parser.add_argument('--backend', choices=('cpu', 'cuda', 'apple', 'vulkan'), help='calibration backend')
     parser.add_argument('--calibration-run', type=Path, action='append', default=[],
                         help='reuse source-bound calibration records; repeat to combine')
     parser.add_argument('--draft-head-q4', type=Path, metavar='GGML_LIBRARY',
@@ -79,6 +82,8 @@ def main(argv=None):
         parser.error('--hyle and --calibration-run require --draft-vocabulary calibrated')
     if args.draft_vocabulary == 'calibrated' and bool(args.hyle) == bool(args.calibration_run):
         parser.error('calibration requires either --hyle or one or more --calibration-run directories')
+    if args.backend is not None and (args.draft_vocabulary != 'calibrated' or args.hyle is None):
+        parser.error('--backend requires live model calibration with --hyle')
     if len({path.resolve() for path in args.calibration_run}) != len(args.calibration_run) or \
             any(not path.is_dir() for path in args.calibration_run):
         parser.error('calibration directories must exist and must not be repeated')
@@ -133,8 +138,10 @@ def main(argv=None):
         os.environ.update(HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1', HF_DATASETS_OFFLINE='1',
                           HF_HUB_DISABLE_TELEMETRY='1', TOKENIZERS_PARALLELISM='false')
         from transformers import AutoTokenizer
-        tokenizer = AutoTokenizer.from_pretrained(tokenizer_dir.resolve(), local_files_only=True, trust_remote_code=False)
-        ids,_ = draft_vocabulary_preparation.tokenizer_default_ids(tokenizer,vocabulary,args.draft_rows)
+        tokenizer = AutoTokenizer.from_pretrained(tokenizer_dir.resolve(), local_files_only=True,
+                                                 trust_remote_code=False, use_fast=True)
+        validate_local_tokenizer(inputs, tokenizer)
+        ids,_ = tokenizer_default_ids(tokenizer,vocabulary,args.draft_rows)
         with mapping.open('x',encoding='ascii',newline='\n') as stream:
             draft_vocabulary_preparation.write_vocabulary(stream,identity,vocabulary,ids,None)
     if args.mtp and args.draft_vocabulary == 'calibrated':
@@ -143,6 +150,7 @@ def main(argv=None):
                    '--inputs',str(inputs),'--output',str(mapping),'--work-dir',str(output/'draft-calibration'),
                    '--rows',str(rows)]
         if args.hyle: command += ['--hyle',str(args.hyle.resolve()),'--tokenizer-dir',str(tokenizer_dir.resolve())]
+        if args.backend is not None: command += ['--backend', args.backend]
         for path in args.calibration_run: command += ['--calibration-run',str(path.resolve())]
         subprocess.run(command,cwd=ROOT,check=True)
 

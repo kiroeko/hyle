@@ -522,7 +522,7 @@ int qwen35::run(int argc, char **argv) {
     for (std::size_t s = 0; s < schedules.size(); ++s) {
       const auto &request = schedules[s];
       auto &run = runs[s];
-      run.saved_sampling = {model.sampling_seed, static_cast<std::uint64_t>(s), 0};
+      run.saved_sampling = {model.sampling_seed, 0, 0};
       run.summaries.resize(request.phases.size());
       if (prefix_enabled) run.history = std::make_shared<qwen35::cache::ReplayHistory>(capacity);
       run.trace_subdirectory = "session" + std::to_string(s) + "_" + request.id;
@@ -703,7 +703,7 @@ int qwen35::run(int argc, char **argv) {
         if (!defer_restore) {
           make_initial_room();
           run.session = model.create_session(run.chunks, {}, qwen35::GraphRole::kText,
-              qwen35::cache::SamplingCursor{model.sampling_seed, static_cast<std::uint64_t>(s), 0});
+              qwen35::cache::SamplingCursor{model.sampling_seed, 0, 0});
           note_committed_versions();
           // Recompute the original token/chunk tape; never resample or replace
           // already returned tokens. A different legal batch reduction may
@@ -881,7 +881,7 @@ int qwen35::run(int argc, char **argv) {
           for (const auto &part : run.history->chunks) remaining.push_back(part.count);
           remaining.insert(remaining.end(), run.chunks.begin() + static_cast<std::ptrdiff_t>(index), run.chunks.end());
           run.session = model.create_session(remaining, {}, qwen35::GraphRole::kText,
-              qwen35::cache::SamplingCursor{model.sampling_seed, static_cast<std::uint64_t>(s), 0});
+              qwen35::cache::SamplingCursor{model.sampling_seed, 0, 0});
           note_committed_versions();
           // Recompute actual evaluated chunks, including imported prefixes.
           // Keep any old shared history immutable: new checkpoint metadata

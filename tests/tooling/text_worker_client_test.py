@@ -7,6 +7,17 @@ from engine.text.worker_client import WorkerClient, WorkerError
 
 
 class WorkerClientLifecycleTest(unittest.TestCase):
+    def test_current_ready_reports_original_source_and_unknown_is_explicit(self):
+        for identity in ('a' * 64, '-'):
+            code = '\n'.join(('import sys',
+                f"print('READY\\t3\\t256\\t128\\t3\\t{identity}', flush=True)",
+                "assert sys.stdin.readline().rstrip() == 'Q'", "print('BYE', flush=True)"))
+            worker = WorkerClient([sys.executable, '-B', '-c', code], startup_timeout=3)
+            try:
+                self.assertEqual(worker.source_identity, None if identity == '-' else identity)
+            finally:
+                worker.close(timeout=3)
+
     def test_pipe_close_failure_is_reported_as_shutdown_error(self):
         code = "\n".join((
             "import sys",

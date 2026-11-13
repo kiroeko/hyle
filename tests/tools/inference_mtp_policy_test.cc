@@ -255,5 +255,30 @@ int main() {
   if (qwen35::select_mtp_default(typical,true).reason != RouteReason::kExplicitOff)
     throw std::runtime_error("explicit off reason differs");
   check_decode_routes();
+  {
+    using namespace qwen35;
+    DecodeRouteFacts greedy{.workload = {.natural_generation = true, .greedy = true,
+        .max_sessions = 1, .active_sequences = 1, .capacity = 128},
+        .overlap_requested = true, .mtp_enabled = true, .max_drafts = 3,
+        .max_device_drafts = 3, .stored_draft_head = true, .relay_eligible = true,
+        .has_decode = true, .resolved_active_sequences = 1};
+    auto random = greedy;
+    random.workload.greedy = false; random.relay_eligible = false; random.relay_refusal = RouteReason::kSampling;
+    for (const auto choices : {std::array{greedy, random}, std::array{random, greedy}}) {
+      const auto prepared = plan_prepared_decode_routes(choices);
+      if (!prepared.overlap || !prepared.verification || prepared.by_sampling.size() != 2)
+        throw std::runtime_error("default sampling order changed the cold resource union");
+      for (std::size_t index = 0; index < choices.size(); ++index)
+        if (prepared.by_sampling[index].overlap.enabled != choices[index].relay_eligible ||
+            prepared.by_sampling[index].verification.enabled != choices[index].relay_eligible)
+          throw std::runtime_error("one sampling program inherited another program's route");
+      const auto disabled = plan_prepared_decode_routes(choices, false);
+      if (disabled.overlap || !disabled.verification)
+        throw std::runtime_error("explicit overlap disable changed independent verification capacity");
+    }
+    const auto sampled_only = plan_prepared_decode_routes(std::array{random}, true);
+    if (sampled_only.overlap || sampled_only.verification)
+      throw std::runtime_error("explicit overlap enable waived actual route eligibility");
+  }
   std::printf("MTP cold policy: %zu configuration checks and decode route combinations passed\n", checks);
 }
