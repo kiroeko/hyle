@@ -3905,13 +3905,12 @@ std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::M
   namespace mtp_policy = inference::mtp;
   const bool explicit_depth = config.execution.draft_count.has_value();
   const auto requested_depth = config.execution.draft_count.value_or(1);
-  mtp_policy::DefaultRequest request{
+  MtpDefaultRequest request{
       .mode = !explicit_depth ? mtp_policy::RequestedMode::kAuto :
           requested_depth ? mtp_policy::RequestedMode::kOn : mtp_policy::RequestedMode::kOff,
       .workload = workload, .automatic_backend_eligible = execution.primary == BackendKind::kCuda,
       .max_drafts = requested_depth,
-      .automatic_vocabulary = vocabulary_asset ? vocabulary_asset->mode == inference::ModelAssetMode::kAutomatic : !explicit_depth,
-      .automatic_preference = automatic_mtp_preference(workload)};
+      .automatic_vocabulary = vocabulary_asset ? vocabulary_asset->mode == inference::ModelAssetMode::kAutomatic : !explicit_depth};
   // An explicitly selected asset belongs to the prepared model, and can be
   // consumed by any declared greedy profile even when profile zero samples.
   if (explicit_depth && (vocabulary_asset || head_asset))
@@ -4185,13 +4184,12 @@ int qwen35::run(int argc, char **argv) {
     // A source-bound vocabulary opts a prepared directory into drafting.
     // The policy inspects current configuration, never future requests.
     namespace mtp = hyle::inference::mtp;
-    const mtp::DefaultRequest default_request{
+    const qwen35::MtpDefaultRequest default_request{
         .mode = mtp_policy == "off" ? mtp::RequestedMode::kOff :
             mtp_policy == "on" ? mtp::RequestedMode::kOn : mtp::RequestedMode::kAuto,
         .workload = cold_workload,
         .automatic_backend_eligible = backend_selection.primary == qwen35::BackendKind::kCuda,
-        .max_drafts = max_drafts, .automatic_vocabulary = draft_vocabulary == "auto",
-        .automatic_preference = qwen35::automatic_mtp_preference(cold_workload)};
+        .max_drafts = max_drafts, .automatic_vocabulary = draft_vocabulary == "auto"};
     // The legacy CLI supports policy keywords; resolve them here so the
     // model's asset selection receives an unambiguous file or policy.
     auto vocabulary_request = draft_vocabulary == "auto" ? qwen35::DraftAssetRequest::automatic() :

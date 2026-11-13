@@ -144,11 +144,10 @@ int main() {
         .natural_generation=flag(0), .multiple_schedules=flag(1), .prefix_enabled=flag(2),
         .scheduler_progress=flag(3), .cpu_assist=flag(5), .greedy=flag(6),
         .max_sessions=sessions, .active_sequences=active, .capacity=capacity};
-    const m::DefaultRequest request{mode, workload, flag(4), depth, flag(9),
-                                    qwen35::automatic_mtp_preference(workload)};
+    const qwen35::MtpDefaultRequest request{mode, workload, flag(4), depth, flag(9)};
     const bool inspect = mode != m::RequestedMode::kOff && depth > 0 && request.automatic_backend_eligible &&
         request.workload.greedy && request.automatic_vocabulary;
-    if (m::inspect_prepared_vocabulary(request) != inspect)
+    if (qwen35::inspect_prepared_vocabulary(request) != inspect)
       throw std::runtime_error("prepared asset inspection changed");
     for (const bool exists : {false, true}) for (const bool original : {false, true})
       for (const bool explicit_asset : {false, true}) {
@@ -161,7 +160,7 @@ int main() {
           request.automatic_backend_eligible && !request.workload.cpu_assist && request.workload.greedy;
       const bool automatic = (prepared || (source_allowed && (original || explicit_asset))) && route;
       const bool enabled = mode == m::RequestedMode::kOn || automatic;
-      const auto selected = m::select_default(request, exists, original, explicit_asset);
+      const auto selected = qwen35::select_mtp_default(request, exists, original, explicit_asset);
       if (selected.automatic != automatic || selected.enabled != enabled ||
           selected.prepared_assets != (enabled && prepared))
         throw std::runtime_error("cold MTP policy changed an existing default or fallback");
@@ -172,15 +171,15 @@ int main() {
       ++checks;
     }
   }
-  m::DefaultRequest typical{.mode=m::RequestedMode::kAuto,
+  qwen35::MtpDefaultRequest typical{.mode=m::RequestedMode::kAuto,
       .workload={.natural_generation=true, .greedy=true, .capacity=32768},
       .automatic_backend_eligible=true, .max_drafts=1, .automatic_vocabulary=true};
-  if (m::select_default(typical,false).reason != RouteReason::kNoEligibleSource ||
-      m::select_default(typical,false,true).reason != RouteReason::kOriginalProjection ||
-      m::select_default(typical,true).reason != RouteReason::kPreparedVocabulary ||
-      m::select_default(typical,false,false,true).reason != RouteReason::kExplicitDraftAsset)
+  if (qwen35::select_mtp_default(typical,false).reason != RouteReason::kNoEligibleSource ||
+      qwen35::select_mtp_default(typical,false,true).reason != RouteReason::kOriginalProjection ||
+      qwen35::select_mtp_default(typical,true).reason != RouteReason::kPreparedVocabulary ||
+      qwen35::select_mtp_default(typical,false,false,true).reason != RouteReason::kExplicitDraftAsset)
     throw std::runtime_error("automatic source reason differs");
-  const auto automatic=m::select_default(typical,true);
+  const auto automatic=qwen35::select_mtp_default(typical,true);
   const auto recommended=m::select_draft_depth(automatic,false,1,2);
   const auto wider=m::select_draft_depth(automatic,false,1,8);
   const auto explicit_depth=m::select_draft_depth(automatic,true,1,2);
@@ -194,72 +193,65 @@ int main() {
       explicit_on_recommendation.max_drafts!=2 || explicit_on_recommendation.source!=RouteReason::kArtifactRecommendation)
     throw std::runtime_error("source recommendation, capability or explicit depth priority differs");
   struct ConstraintCase final {
-    void (*apply)(m::DefaultRequest &);
+    void (*apply)(qwen35::MtpDefaultRequest &);
     RouteReason reason;
   };
   constexpr std::array constraints{
-      ConstraintCase{+[](m::DefaultRequest &r) { r.workload.natural_generation=false; }, RouteReason::kNonNaturalRequest},
-      ConstraintCase{+[](m::DefaultRequest &r) { r.automatic_backend_eligible=false; }, RouteReason::kBackendPolicy},
-      ConstraintCase{+[](m::DefaultRequest &r) { r.workload.greedy=false; }, RouteReason::kSampling},
-      ConstraintCase{+[](m::DefaultRequest &r) {
-        r.workload.active_sequences=2;
-        r.automatic_preference=qwen35::automatic_mtp_preference(r.workload);
-      }, RouteReason::kMultipleSessionsOrSequences},
-      ConstraintCase{+[](m::DefaultRequest &r) { r.workload.prefix_enabled=true; }, RouteReason::kPrefixCache},
-      ConstraintCase{+[](m::DefaultRequest &r) { r.workload.scheduler_progress=true; }, RouteReason::kScheduler},
-      ConstraintCase{+[](m::DefaultRequest &r) { r.workload.cpu_assist=true; }, RouteReason::kCpuAssist},
-      ConstraintCase{+[](m::DefaultRequest &r) { r.workload.capacity=1; }, RouteReason::kInsufficientCapacity},
+      ConstraintCase{+[](qwen35::MtpDefaultRequest &r) { r.workload.natural_generation=false; }, RouteReason::kNonNaturalRequest},
+      ConstraintCase{+[](qwen35::MtpDefaultRequest &r) { r.automatic_backend_eligible=false; }, RouteReason::kBackendPolicy},
+      ConstraintCase{+[](qwen35::MtpDefaultRequest &r) { r.workload.greedy=false; }, RouteReason::kSampling},
+      ConstraintCase{+[](qwen35::MtpDefaultRequest &r) { r.workload.active_sequences=2; }, RouteReason::kMultipleSessionsOrSequences},
+      ConstraintCase{+[](qwen35::MtpDefaultRequest &r) { r.workload.prefix_enabled=true; }, RouteReason::kPrefixCache},
+      ConstraintCase{+[](qwen35::MtpDefaultRequest &r) { r.workload.scheduler_progress=true; }, RouteReason::kScheduler},
+      ConstraintCase{+[](qwen35::MtpDefaultRequest &r) { r.workload.cpu_assist=true; }, RouteReason::kCpuAssist},
+      ConstraintCase{+[](qwen35::MtpDefaultRequest &r) { r.workload.capacity=1; }, RouteReason::kInsufficientCapacity},
   };
   for (const auto &test : constraints) {
     auto request=typical;
     test.apply(request);
-    const auto result=m::select_default(request,true);
+    const auto result=qwen35::select_mtp_default(request,true);
     if (result.automatic || result.enabled || result.reason!=test.reason)
       throw std::runtime_error("automatic decision and constraint reason disagree");
   }
-  auto other_provider = typical;
-  other_provider.workload.max_sessions = 2;
-  other_provider.workload.active_sequences = 2;
-  if (!m::select_default(other_provider, true).automatic ||
-      qwen35::automatic_mtp_preference(other_provider.workload) != RouteReason::kMultipleSessionsOrSequences)
-    throw std::runtime_error("another provider inherited Qwen's multi-session default preference");
-  other_provider.automatic_preference = qwen35::automatic_mtp_preference(other_provider.workload);
-  other_provider.mode = m::RequestedMode::kOn;
-  if (!m::select_default(other_provider, true).enabled)
+  const m::DefaultRequest other_provider{m::RequestedMode::kAuto, RouteReason::kNone};
+  if (!m::select_default(other_provider, true).automatic)
+    throw std::runtime_error("common selection imposed a model-specific automatic restriction");
+  const m::DefaultRequest explicit_provider{m::RequestedMode::kOn, RouteReason::kMultipleSessionsOrSequences};
+  if (!m::select_default(explicit_provider, true).enabled)
     throw std::runtime_error("default preference blocked explicit MTP");
   auto multiple=typical;
   multiple.workload.greedy=false; multiple.workload.prefix_enabled=true;
-  if (m::select_default(multiple,true).reason!=RouteReason::kSampling)
+  if (qwen35::select_mtp_default(multiple,true).reason!=RouteReason::kSampling)
     throw std::runtime_error("first automatic constraint changed");
   typical.workload.capacity=1;
-  if (m::select_default(typical,true).enabled ||
-      m::select_default(typical,true).reason != RouteReason::kInsufficientCapacity)
+  if (qwen35::select_mtp_default(typical,true).enabled ||
+      qwen35::select_mtp_default(typical,true).reason != RouteReason::kInsufficientCapacity)
     throw std::runtime_error("short-context auto policy differs");
   typical.mode=m::RequestedMode::kOn;
-  if (!m::select_default(typical,true).enabled ||
-      m::select_default(typical,true).reason != RouteReason::kExplicitOn)
+  if (!qwen35::select_mtp_default(typical,true).enabled ||
+      qwen35::select_mtp_default(typical,true).reason != RouteReason::kExplicitOn)
     throw std::runtime_error("short-context explicit route was blocked by auto policy");
   typical.mode=m::RequestedMode::kAuto; typical.workload.capacity=2;
-  if (!m::select_default(typical,true).enabled)
+  if (!qwen35::select_mtp_default(typical,true).enabled)
     throw std::runtime_error("two-row auto policy was blocked by the old K3 preference");
   typical.mode=m::RequestedMode::kAuto; typical.workload.capacity=32768;
   typical.max_drafts=0;
-  if (m::select_default(typical,true).reason != RouteReason::kDraftingDisabled)
+  if (qwen35::select_mtp_default(typical,true).reason != RouteReason::kDraftingDisabled)
     throw std::runtime_error("zero drafts should report the disabled policy");
   typical.workload.greedy=false;
-  if (m::select_default(typical,true).reason != RouteReason::kDraftingDisabled)
+  if (qwen35::select_mtp_default(typical,true).reason != RouteReason::kDraftingDisabled)
     throw std::runtime_error("explicit zero should explain a disabled automatic route");
   typical.workload.greedy=true;
   typical.max_drafts=1;
   typical.workload.greedy=false;
-  if (m::select_default(typical,true).reason != RouteReason::kSampling)
+  if (qwen35::select_mtp_default(typical,true).reason != RouteReason::kSampling)
     throw std::runtime_error("sampling fallback reason differs");
   typical.workload.greedy=true; typical.max_drafts=4;
-  if (!m::select_default(typical,true).automatic)
+  if (!qwen35::select_mtp_default(typical,true).automatic)
     throw std::runtime_error("explicit depth should retain the finite automatic route");
   typical.max_drafts=1;
   typical.mode=m::RequestedMode::kOff;
-  if (m::select_default(typical,true).reason != RouteReason::kExplicitOff)
+  if (qwen35::select_mtp_default(typical,true).reason != RouteReason::kExplicitOff)
     throw std::runtime_error("explicit off reason differs");
   check_decode_routes();
   std::printf("MTP cold policy: %zu configuration checks and decode route combinations passed\n", checks);

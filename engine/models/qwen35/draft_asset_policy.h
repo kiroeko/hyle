@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../inference/mtp_policy.h"
+#include "mtp_default_policy.h"
 #include "mtp_capabilities.h"
 #include "precision_profile.h"
 #include "weights.h"
@@ -38,7 +39,7 @@ struct DraftAssetSelection final {
 };
 
 inline DraftAssetSelection select_draft_assets(const std::filesystem::path &input,
-    const hyle::inference::mtp::DefaultRequest &request,
+    const MtpDefaultRequest &request,
     DraftAssetRequest vocabulary_request, DraftAssetRequest head_request, bool encoded_rows_on_backend) {
   namespace mtp = hyle::inference::mtp;
   const auto valid = [](const DraftAssetRequest &asset) {
@@ -73,17 +74,17 @@ inline DraftAssetSelection select_draft_assets(const std::filesystem::path &inpu
     const auto roles = read_weight_roles(input / "weights.tsv", false);
     usable_automatic_vocabulary = supports_draft_vocabulary(roles, encoded_rows_on_backend);
   }
-  const bool has_vocabulary = mtp::inspect_prepared_vocabulary(request) && usable_automatic_vocabulary;
+  const bool has_vocabulary = inspect_prepared_vocabulary(request) && usable_automatic_vocabulary;
   bool original_projection_eligible = false;
   if (!has_vocabulary && !explicit_asset_selection && request.mode == mtp::RequestedMode::kAuto &&
-      mtp::select_default(request, true).automatic) {
+      select_mtp_default(request, true).automatic) {
     const auto roles = read_weight_roles(input / "weights.tsv", false);
     original_projection_eligible = roles.representation == prepared::SourceRepresentation::kGgufConverted &&
         roles.geometry.mtp_layers == 1 &&
         PrecisionProfile::from_roles(roles).activation_type() == hyle::compute::DataType::kFloat32 &&
         supports_stored_draft_projection(roles);
   }
-  const auto policy = mtp::select_default(request, has_vocabulary, original_projection_eligible,
+  const auto policy = select_mtp_default(request, has_vocabulary, original_projection_eligible,
       explicit_asset_selection);
   auto vocabulary_reason = vocabulary_request.kind == DraftAssetKind::kOriginal ? hyle::inference::RouteReason::kExplicitFull :
       vocabulary_request.kind == DraftAssetKind::kFile ? hyle::inference::RouteReason::kExplicitFile :
