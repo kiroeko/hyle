@@ -1,6 +1,6 @@
 # 文本 CLI 与 Responses 接口
 
-文本前端使用本地 Hugging Face tokenizer 和 Jinja 模板，将 token 请求交给一个常驻模型进程。准备目录和 tokenizer 应属于同一模型；ID 范围检查不能证明两者来源相同。模型和 tokenizer 声明的结束 ID 共同作为停止条件。前端不下载模型。Python 环境需要 `transformers`、`tokenizers` 和 `jinja2`；TOML 配置使用 `tomllib`，旧 Python 可安装 `tomli`。
+文本前端使用本地 Hugging Face tokenizer 和 Jinja 模板，将 token 请求交给一个常驻模型进程。源模型准备时生成 `tokenizer-binding.tsv`，绑定权重来源、词表容量与原 tokenizer 的实际分词语义。文本入口在启动模型进程前核验，ID 范围相同但映射、分词规则或特殊 token 不同也会拒绝。没有绑定的旧目录须用原模型目录重新准备；加载入口不自动认领当次传入的 tokenizer。模型和 tokenizer 声明的结束 ID 共同作为停止条件。前端不下载模型。Python 环境需要 `transformers`、`tokenizers` 和 `jinja2`；TOML 配置使用 `tomllib`，旧 Python 可安装 `tomli`。
 
 ```text
 python -B -m engine.text.app generate --engine <build-dir>/bin/hyle.exe --inputs <prepared-dir> --tokenizer-dir <model-dir> --backend cuda --text "1 + 1 = ?" --max-output-tokens 16
@@ -8,6 +8,8 @@ python -B -m engine.text.app serve --engine <build-dir>/bin/hyle.exe --inputs <p
 ```
 
 服务默认监听 `127.0.0.1:2048`，指标位于 `/metrics`，健康检查位于 `/health`。它是本地服务，没有访问控制。本阶段实际验证 Windows／CUDA／本地 Qwen3.5-2B；其他平台尚未实际验证完整服务。`--template FILE` 可选择本地 Jinja 模板。
+
+聊天模板和临时 padding／truncation 不属于 tokenizer 语义身份。模板仍参与草稿选行制品的配方身份；换模板可以生成另一套不可变制品，不必更换模型绑定。
 
 ## 冷期配置与请求选择
 

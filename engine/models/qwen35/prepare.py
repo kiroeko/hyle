@@ -13,8 +13,11 @@ import os
 import re
 from pathlib import Path
 import struct
+import sys
 
 ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT))
+from engine.tokenizer_identity import bind_source_tokenizer
 
 if __package__:
     from . import draft_vocabulary_preparation, geometry, nf4_state
@@ -752,7 +755,13 @@ def main(argv=None) -> None:
         role_lines, role_receipt = prepare_safetensors(args.model, args.mtp, config, args.fp8_reader, args.kv_cache_dtype)
     from transformers import AutoTokenizer
     tokenizer_dir = args.tokenizer_dir or args.model
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer_dir, local_files_only=True)
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_dir, local_files_only=True,
+                                             trust_remote_code=False, use_fast=True)
+    # The original model directory supplies the expected semantics. A separate
+    # selected tokenizer must agree; loading never blesses its own argument.
+    reference_tokenizer = (tokenizer if tokenizer_dir.resolve() == args.model.resolve() else
+        AutoTokenizer.from_pretrained(args.model, local_files_only=True,
+                                      trust_remote_code=False, use_fast=True))
     encoded = tokenizer.apply_chat_template([{"role": "user", "content": args.prompt}],
         add_generation_prompt=True, enable_thinking=False, tokenize=True, return_dict=True)
     prompt = encoded["input_ids"]
@@ -773,6 +782,8 @@ def main(argv=None) -> None:
             tokenizer, role_receipt["geometry"]["vocabulary"], args.draft_rows, args.draft_languages)
         draft_vocabulary = (ids, fingerprint)
     args.output.mkdir(parents=True)
+    bind_source_tokenizer(args.output / 'tokenizer-binding.tsv', role_receipt['source_id'],
+        role_receipt['geometry']['vocabulary'], reference_tokenizer, tokenizer)
     with (args.output / "weights.tsv").open("w", encoding="utf-8", newline="\n") as stream:
         stream.write("\n".join(role_lines) + "\n")
     for name, values in (("prompt.ids", prompt), ("continuation.ids", continuation)):

@@ -45,6 +45,7 @@ python scripts/build.py --name qwen-cuda --target hyle_engine --jobs 2
 
 默认准备器读取本地模型的 `config.json`、safetensors 索引与张量头，校验所需角色、类型、形状和文件范围，
 对实际使用的原权重范围计算 hash，生成权重偏移与 token IDs；不下载模型、不复制整份权重。
+同时生成 `tokenizer-binding.tsv`，把原模型目录中 tokenizer 的实际分词语义绑定到权重来源。另传 `--tokenizer-dir` 时必须与原 tokenizer 匹配；文本入口和运行制品准备会核验此绑定，旧目录须重新准备。原生 token CLI 不解释 tokenizer。
 指定 `--role-files` 时则核对固定 repository／revision 及原角色 hash，GGUF 使用 `--gguf-role-files`。
 本地原权重与 tokenizer 文件须保持可访问。Python tokenizer 需要兼容的 Transformers 环境，
 初始化 C++ 构建不会自动安装它或获取模型。

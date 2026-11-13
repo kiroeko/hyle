@@ -6,6 +6,7 @@ import unittest
 
 from engine.asset_store import AssetStore
 from engine.models.qwen35.runtime_assets import prepare_assets, tokenizer_identity
+from engine.tokenizer_identity import bind_source_tokenizer
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -13,6 +14,11 @@ ROOT = Path(__file__).resolve().parents[2]
 class Tokenizer:
     all_special_ids = [7]
     calls = 0
+    class Backend:
+        def to_str(self): return '{"model":{"vocab":{"a":0,"b":1}}}'
+    backend_tokenizer = Backend()
+
+    def get_vocab(self): return {'token' + str(i): i for i in range(8)}
 
     def apply_chat_template(self, messages, **kwargs):
         self.calls += 1
@@ -38,6 +44,7 @@ class RuntimeAssetsTest(unittest.TestCase):
         (self.inputs / 'head.bin').write_bytes(self.payload)
         (self.inputs / 'weights.tsv').write_text('HYLE_QWEN_ROLE_FILES_V2\n' + 'a' * 64 + '\n'
             'geometry 256 512 8\nmodel.language_model.embed_tokens.weight BF16 2 8 256 "head.bin" 0 4096\n')
+        bind_source_tokenizer(self.inputs / 'tokenizer-binding.tsv', 'a' * 64, 8, Tokenizer())
         self.store = AssetStore(self.root / 'cache')
 
     def prepare(self, tokenizer=None, **kwargs):
