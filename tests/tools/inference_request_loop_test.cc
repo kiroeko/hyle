@@ -1056,10 +1056,10 @@ public:
     if (!batch.input || batch.sessions.size() != 1) throw std::logic_error("dynamic fixture needs one initial request");
     i::RequestLoop owner; owner.prepare(2, 2); Adapter adapter{128, 128};
     std::array<i::GenerationSessionSchedule, 2> schedules;
-    std::array<std::optional<i::TokenDelivery>, 2> deliveries;
+    i::RequestOutputSlots deliveries(2);
     std::array<i::RequestKey, 2> keys{};
-    const auto admit = [&](std::size_t slot, i::GenerationSessionSchedule schedule) {
-      schedules[slot] = std::move(schedule);
+    const auto prepare = [&](std::size_t slot, i::GenerationAdmission incoming) -> i::RequestKey & {
+      schedules[slot] = std::move(incoming.schedule);
       auto &stored = schedules[slot];
       if (stored.accepts_live_input()) stored.turns.reserve(128);
       adapter.progress_values[slot].emplace(128);
@@ -1067,18 +1067,20 @@ public:
       if (stored.accepts_live_input()) progress.bind_open_turns(stored.turns, 128, 128);
       else progress.bind_turns(stored.turns);
       adapter.stopped[slot] = false;
-      deliveries[slot].emplace(consumer.max_pending(), stored.reports_turn_ends() ?
-          (stored.accepts_live_input() ? 128 : stored.turns.size()) : 0);
-      keys[slot] = owner.enqueue(slot, &deliveries[slot]->window());
-      deliveries[slot]->bind(owner, keys[slot]);
-      if (!consumer.start(keys[slot])) throw std::logic_error("dynamic fixture consumer refused slot");
+      return keys[slot];
     };
-    admit(0, batch.sessions.front());
+    const auto validate = [&](const i::GenerationAdmission &incoming) {
+      if (incoming.schedule.turns.front().prompt.front() < 0) throw i::RequestRejected("invalid test token");
+    };
+    i::validate_turn_delivery(batch.sessions.front().reports_turn_ends(), consumer);
+    prepare(0, {batch.sessions.front(), {}, 0});
+    deliveries.prepare(0, consumer.max_pending(), schedules[0].reports_turn_ends() ?
+        (schedules[0].accepts_live_input() ? 128 : schedules[0].turns.size()) : 0);
+    deliveries.start(owner, 0, keys[0], consumer);
     for (;;) {
-      bool progress = false;
-      for (auto &delivery : deliveries) if (delivery) progress = delivery->service(owner, adapter, consumer) || progress;
+      bool progress = deliveries.service(owner, adapter, consumer);
       const auto pumped = owner.pump_once(adapter);
-      for (auto &delivery : deliveries) if (delivery) progress = delivery->service(owner, adapter, consumer) || progress;
+      progress = deliveries.service(owner, adapter, consumer) || progress;
       for (std::size_t slot = 0; slot < keys.size(); ++slot) {
         if (!owner.matches(keys[slot]) || !adapter.progress(keys[slot]).waiting_for_input()) continue;
         auto input = batch.input->poll_turn(keys[slot]);
@@ -1097,14 +1099,7 @@ public:
         }
         owner.wake(keys[slot]); progress = true;
       }
-      while (const auto slot = owner.free_slot([&](auto index) { return batch.input->can_admit(index); })) {
-        auto incoming = batch.input->poll_admission(*slot);
-        if (!incoming) break;
-        if (incoming->schedule.turns.front().prompt.front() < 0) {
-          batch.input->reject_admission(*slot, std::make_exception_ptr(i::RequestRejected("invalid test token")));
-        } else admit(*slot, std::move(incoming->schedule));
-        progress = true;
-      }
+      progress = i::admit_waiting_requests(owner, *batch.input, consumer, deliveries, 128, validate, prepare) != 0 || progress;
       if (std::ranges::none_of(keys, [&](auto key) { return owner.matches(key); })) break;
       if (!pumped.executed && !pumped.waiting_retirement && !progress) consumer.wait();
     }
@@ -1274,6 +1269,83 @@ void request_owner_drives_input_output_and_real_retirement() {
         [](const auto &) {}, [](const auto &) {}, [](const auto &) { return i::RequestOwnerInputProgress{}; },
         [](const auto &, const auto &) { return false; });
   });
+}
+
+void request_assembly_keeps_admission_and_execution_failures_distinct() {
+  struct Source final {
+    std::deque<i::GenerationAdmission> pending;
+    std::vector<std::exception_ptr> rejected;
+    bool skip_first = false;
+    i::TurnInput poll_turn(i::RequestKey) noexcept { return {}; }
+    bool can_admit(std::size_t slot) noexcept { return !pending.empty() && !(skip_first && !slot); }
+    std::optional<i::GenerationAdmission> poll_admission(std::size_t) noexcept {
+      if (pending.empty()) return std::nullopt;
+      auto value = std::move(pending.front()); pending.pop_front(); return value;
+    }
+    void reject_admission(std::size_t, std::exception_ptr error) noexcept { rejected.push_back(error); }
+  } source;
+  source.rejected.reserve(4);
+  source.skip_first = true; // Model-free transport slot still belongs to its prior reader.
+  const auto request = [](std::string id) {
+    return i::GenerationAdmission{{std::move(id), {{{1}, 1}}}, {}, 0};
+  };
+  source.pending.push_back(request("invalid"));
+  source.pending.push_back(request("out-of-range"));
+  auto turns = request("turns"); turns.schedule.mode = i::GenerationSessionMode::kTurns;
+  source.pending.push_back(std::move(turns));
+  source.pending.push_back(request("valid"));
+  i::GenerationInputRef input(source);
+  i::RequestLoop owner; owner.prepare(2, 2);
+  i::RequestOutputSlots output(2); DeliveryConsumer consumer;
+  std::array<i::RequestKey, 2> keys{};
+  std::size_t preparations = 0;
+  const auto validate = [](const i::GenerationAdmission &incoming) {
+    if (incoming.schedule.id == "invalid") throw std::invalid_argument("test invalid admission");
+    if (incoming.schedule.id == "out-of-range") throw std::out_of_range("test invalid profile");
+  };
+  const auto prepare = [&](std::size_t slot, i::GenerationAdmission incoming) -> i::RequestKey & {
+    require(slot == 1 && incoming.schedule.id == "valid", "unreleased transport or rejected request reached preparation");
+    ++preparations; return keys[slot];
+  };
+  require(i::admit_waiting_requests(owner, input, consumer, output, 8, validate, prepare) == 1 &&
+      preparations == 1 && source.rejected.size() == 3 && owner.matches(keys[1]) && owner.free_slot() == 0,
+      "common admission changed slot selection, local rejection or original identity");
+  for (auto error : source.rejected) rejects<i::RequestRejected>([&] { std::rethrow_exception(error); });
+  i::TokenConsumerRef erased(consumer);
+  rejects<i::RequestRejected>([&] { i::validate_turn_delivery(true, erased); });
+  std::nullptr_t absent = nullptr;
+  i::validate_turn_delivery(false, absent);
+  rejects<i::RequestRejected>([&] { i::validate_turn_delivery(true, absent); });
+
+  // An error after the pure validation phase must escape, even when its type
+  // could otherwise be a request-local rejection. No key/retirement is invented.
+  Source failed; failed.rejected.reserve(1); failed.pending.push_back(request("prepare"));
+  i::GenerationInputRef failing_input(failed);
+  i::RequestLoop failing_owner; failing_owner.prepare(1, 1);
+  i::RequestOutputSlots failing_output(1);
+  rejects<std::out_of_range>([&] {
+    i::admit_waiting_requests(failing_owner, failing_input, consumer, failing_output, 8, validate,
+        [](std::size_t, i::GenerationAdmission) -> i::RequestKey & { throw std::out_of_range("test preparation failure"); });
+  });
+  require(failed.rejected.empty() && failing_owner.free_slot() == 0,
+      "preparation failure became an admission rejection or fabricated an identity");
+
+  struct RefusingConsumer final {
+    std::size_t max_pending() const noexcept { return 1; }
+    bool start(i::RequestKey) noexcept { return false; }
+    bool try_write(i::RequestKey, std::int32_t) noexcept { return false; }
+    bool cancel_requested(i::RequestKey) noexcept { return false; }
+    void finished(i::RequestKey, bool) noexcept {}
+    void wait() noexcept {}
+  } refusing;
+  failed.pending.push_back(request("start"));
+  i::RequestKey original;
+  rejects<std::runtime_error>([&] {
+    i::admit_waiting_requests(failing_owner, failing_input, refusing, failing_output, 8, validate,
+        [&](std::size_t, i::GenerationAdmission) -> i::RequestKey & { return original; });
+  });
+  require(failed.rejected.empty() && failing_owner.matches(original),
+      "consumer start refusal lost its original key or fabricated retirement");
 }
 
 void token_worker_rejects_malformed_frames_without_starting_model() {
@@ -1978,6 +2050,7 @@ int main() {
     model_provider_selects_one_owner_and_rejects_ambiguity();
     followup_admission_uses_actual_committed_context();
     request_owner_drives_input_output_and_real_retirement();
+    request_assembly_keeps_admission_and_execution_failures_distinct();
     token_worker_rejects_malformed_frames_without_starting_model();
     token_worker_credit_and_cancellation_do_not_hang();
     ingress_accepts_requests_during_execution_and_preserves_identity();

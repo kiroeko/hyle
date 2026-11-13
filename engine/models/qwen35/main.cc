@@ -1,6 +1,4 @@
 #include <atomic>
-#include <deque>
-
 #include "model_core.h"
 #include "prepared_executor.h"
 #include "device_mtp_planning.h"
@@ -2670,42 +2668,29 @@ void validate_reusable_batch(Model &model, inference::GenerationBatch batch, boo
   }
 }
 
-using RequestOutputDeliveries = std::deque<std::optional<inference::TokenDelivery>>;
-
 // This cold admission boundary is shared by all generation-mode template
 // instantiations. The original request loop remains the slot/retirement owner.
 bool admit_waiting_generation(Model &model, inference::RequestLoop &loop,
     inference::GenerationInputRef &input, inference::TokenConsumerRef &consumer,
     std::vector<GenerationRequest> &requests,
     std::vector<inference::GenerationSessionSchedule> &schedules,
-    RequestOutputDeliveries &deliveries, bool mtp, std::size_t prefill,
+    inference::RequestOutputSlots &deliveries, bool mtp, std::size_t prefill,
     std::size_t bound, std::size_t record_bound,
     std::size_t &active, std::size_t &total_turns, std::size_t &outputs) {
-  bool admitted = false;
-  while (const auto slot = loop.free_slot([&](std::size_t index) { return input.can_admit(index); })) {
-    auto next = input.poll_admission(*slot);
-    if (!next) break;
-    try {
-      const std::span one_schedule(&next->schedule, 1);
-      const std::span one_sampling(&next->sampling_index, 1);
-      const std::span one_stop(&next->stop, 1);
-      validate_reusable_batch(model, {one_schedule, one_sampling, one_stop}, mtp, prefill);
-      if (next->schedule.reports_turn_ends() && !consumer.supports_turn_ends())
-        throw std::invalid_argument("consumer does not support requested turn boundaries");
-    } catch (const std::invalid_argument &error) {
-      input.reject_admission(*slot, std::make_exception_ptr(inference::RequestRejected(error.what())));
-      continue;
-    } catch (const std::out_of_range &error) {
-      input.reject_admission(*slot, std::make_exception_ptr(inference::RequestRejected(error.what())));
-      continue;
-    }
-    if (requests[*slot].session || loop.matches(requests[*slot].request_key))
+  const auto validate = [&](const inference::GenerationAdmission &next) {
+    const std::span one_schedule(&next.schedule, 1);
+    const std::span one_sampling(&next.sampling_index, 1);
+    const std::span one_stop(&next.stop, 1);
+    validate_reusable_batch(model, {one_schedule, one_sampling, one_stop}, mtp, prefill);
+  };
+  const auto prepare = [&](std::size_t slot, inference::GenerationAdmission next) -> inference::RequestKey & {
+    if (requests[slot].session || loop.matches(requests[slot].request_key))
       throw std::logic_error("new request slot still owns a model session");
-    schedules[*slot] = std::move(next->schedule);
-    const auto &schedule = schedules[*slot];
+    schedules[slot] = std::move(next.schedule);
+    const auto &schedule = schedules[slot];
     const auto visible_turns = std::span(schedule.turns).first(1);
     GenerationRequest fresh(schedule.id, visible_turns.front().prompt, {}, bound,
-                            next->sampling_index, std::move(next->stop));
+                            next.sampling_index, std::move(next.stop));
     fresh.max_draft_tokens = schedule.max_draft_tokens.value_or(mtp ? model.max_drafts() : 0);
     fresh.cache_sharing_domain = schedule.cache_sharing_domain;
     if (schedule.accepts_live_input()) {
@@ -2714,7 +2699,7 @@ bool admit_waiting_generation(Model &model, inference::RequestLoop &loop,
       fresh.progress.bind_open_turns(fresh.live_turns, bound, bound);
     } else fresh.progress.bind_open_turns(visible_turns, bound, bound);
     fresh.progress.initial_sampling = inference::initial_sampling_cursor(
-        schedule, model.sampling_seed, static_cast<std::uint64_t>(*slot));
+        schedule, model.sampling_seed, static_cast<std::uint64_t>(slot));
     fresh.turn_observations.reserve(bound);
     fresh.turn_observations.emplace_back(); fresh.turn_observations[0].arrival = Clock::now();
     fresh.warm_inputs.reserve(bound);
@@ -2723,20 +2708,13 @@ bool admit_waiting_generation(Model &model, inference::RequestLoop &loop,
     fresh.ledger = std::make_unique<GenerationLedger>(record_bound, model.cache_plan.candidate_boundaries);
     fresh.round_emitted.resize(bound - 1);
     for (auto &emitted : fresh.round_emitted) emitted.reserve(model.cache_plan.candidate_boundaries);
-    requests[*slot] = std::move(fresh);
-    auto &delivery = deliveries[*slot];
-    delivery.emplace(consumer.max_pending(), schedule.reports_turn_ends()
-        ? (schedule.accepts_live_input() ? bound : schedule.turns.size()) : 0);
-    auto &request = requests[*slot];
-    request.request_key = loop.enqueue(*slot, &delivery->window());
-    delivery->bind(loop, request.request_key);
-    if (!consumer.start(request.request_key))
-      throw std::runtime_error("output consumer refused its original request identity");
-    ++active; ++total_turns;
+    requests[slot] = std::move(fresh);
     outputs = cache::add(outputs, visible_turns.front().max_outputs);
-    admitted = true;
-  }
-  return admitted;
+    return requests[slot].request_key;
+  };
+  const auto admitted = inference::admit_waiting_requests(loop, input, consumer, deliveries, bound, validate, prepare);
+  active = cache::add(active, admitted); total_turns = cache::add(total_turns, admitted);
+  return admitted != 0;
 }
 
 template<GenerationMode Mode, class BatchObserver = std::nullptr_t, class OutputConsumer = std::nullptr_t>
@@ -2754,20 +2732,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   if (std::ranges::any_of(schedules, [](const auto &schedule) { return schedule.accepts_live_input(); }) &&
       (!first_turn_only || !reuse || !live_input))
     throw inference::RequestRejected("live input requires a reusable request owner and input source");
-  if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>) {
-    if (std::ranges::any_of(schedules, [](const auto &schedule) { return schedule.reports_turn_ends(); })) {
-      if constexpr (requires { output_consumer.supports_turn_ends(); }) {
-        if (!output_consumer.supports_turn_ends())
-          throw inference::RequestRejected("consumer does not support requested turn boundaries");
-      } else if constexpr (!requires(inference::RequestKey key, std::size_t turn) {
-          { output_consumer.try_turn_end(key, turn) } noexcept -> std::same_as<bool>;
-        }) {
-        throw inference::RequestRejected("consumer does not support requested turn boundaries");
-      }
-    }
-  } else if (std::ranges::any_of(schedules, [](const auto &schedule) { return schedule.reports_turn_ends(); })) {
-    throw inference::RequestRejected("turn boundaries require an output consumer");
-  }
+  inference::validate_turn_delivery(std::ranges::any_of(schedules,
+      [](const auto &schedule) { return schedule.reports_turn_ends(); }), output_consumer);
   const auto configured_prefill = (std::min)({max_prefill_rows, std::size_t{512}, model.capacity});
   const bool reuse_ready = reuse && reuse->ready;
   if (reuse) {
@@ -3316,24 +3282,20 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   }
   request_loop.prepare(requests.size(), model.cache_plan.resident_sessions);
   using OutputDeliveries = std::conditional_t<std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>,
-      std::nullptr_t, RequestOutputDeliveries>;
+      std::nullptr_t, inference::RequestOutputSlots>;
   OutputDeliveries output_deliveries{};
   if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>) {
     static_assert(inference::TokenConsumer<std::remove_reference_t<OutputConsumer>>);
     output_deliveries.resize(requests.size());
     for (std::size_t index = 0; index < initial_request_count; ++index)
-      output_deliveries[index].emplace(output_consumer.max_pending(),
+      output_deliveries.prepare(index, output_consumer.max_pending(),
           schedules[index].reports_turn_ends() ? (schedules[index].accepts_live_input() ? configured_bound : schedules[index].turns.size()) : 0);
   }
   for (std::size_t index = 0; index < initial_request_count; ++index) {
     if constexpr (std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>)
       requests[index].request_key = request_loop.enqueue(index);
     else {
-      requests[index].request_key = request_loop.enqueue(index, &output_deliveries[index]->window());
-      output_deliveries[index]->bind(request_loop, requests[index].request_key);
-      if constexpr (requires { { output_consumer.start(requests[index].request_key) } noexcept -> std::same_as<bool>; })
-        if (!output_consumer.start(requests[index].request_key))
-          throw std::runtime_error("output consumer refused its original request identity");
+      output_deliveries.start(request_loop, index, requests[index].request_key, output_consumer);
     }
   }
   std::vector<std::size_t> dispatch, dispatch_turns;
@@ -3505,13 +3467,9 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   GenerationRequestAdapter adapter{model, prefix.get(), std::span(requests), trace_states, &evictions, execute_wave,
       {}, &continuation};
   const auto service_output = [&]() {
-    bool advanced = false;
-    if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>) {
-      for (std::size_t index = 0; index < requests.size(); ++index)
-        if (output_deliveries[index])
-          advanced = output_deliveries[index]->service(request_loop, adapter, output_consumer) || advanced;
-    }
-    return advanced;
+    if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>)
+      return output_deliveries.service(request_loop, adapter, output_consumer);
+    else return false;
   };
   const auto pump = [&] { return request_loop.pump_once(adapter); };
   const auto observe_pump = [&](const inference::RequestPumpResult &pumped) {
@@ -3620,15 +3578,14 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   // several requests and the original finite-report ledger is not that history.
   if (dynamic_admission) return 0;
   if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<OutputConsumer>>) {
-    const auto cancelled = static_cast<std::size_t>(std::count_if(output_deliveries.begin(), output_deliveries.end(),
-        [](const auto &delivery) { return delivery && delivery->cancelled(); }));
+    const auto cancelled = output_deliveries.cancelled_count();
     if (cancelled) {
       // Planned-turn timing and decode totals are not meaningful for an
       // interrupted workload. Preserve actual outputs without inventing them.
       report_out << "{\"cancelled_requests\":" << cancelled << ",\"sessions\":[";
       for (std::size_t index = 0; index < requests.size(); ++index) {
         report_out << (index ? "," : "") << "{\"slot\":" << index << ",\"cancelled\":"
-            << (output_deliveries[index]->cancelled() ? "true" : "false") << ",\"generated_ids\":[";
+            << (output_deliveries.cancelled(index) ? "true" : "false") << ",\"generated_ids\":[";
         const auto &ids = requests[index].progress.generated;
         for (std::size_t at = 0; at < ids.size(); ++at) report_out << (at ? "," : "") << ids[at];
         report_out << "]}";

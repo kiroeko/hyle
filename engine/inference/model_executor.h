@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "request_progress.h"
+#include "request_admission.h"
 #include "generation_input.h"
 #include "request_stop_policy.h"
 #include "token_consumer.h"
@@ -81,13 +82,6 @@ struct GenerationBatch final {
   std::span<const std::size_t> sampling_indices{};
   std::span<const RequestStopPolicy> stop_policies{};
   GenerationInputRef *input = nullptr;
-};
-
-// An admission rejection is known to precede native submission and state
-// mutation. Other exceptions do not imply that the model is reusable.
-class RequestRejected final : public std::invalid_argument {
-public:
-  using std::invalid_argument::invalid_argument;
 };
 
 // Immutable metadata from the selected model adapter, available before

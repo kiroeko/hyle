@@ -3,10 +3,18 @@
 #include <algorithm>
 #include <cstddef>
 #include <optional>
+#include <stdexcept>
 
 #include "request_progress.h"
 
 namespace hyle::inference {
+
+// An admission rejection precedes native submission and state mutation.
+// Other exceptions do not imply that the model is reusable.
+class RequestRejected final : public std::invalid_argument {
+public:
+  using std::invalid_argument::invalid_argument;
+};
 
 // Cold checks for the bounded schedule policy used by this caller. This is
 // not a universal context rule: sliding-window or other model policies may
