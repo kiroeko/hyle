@@ -147,7 +147,7 @@ Result run(const std::filesystem::path &input,bool fused,bool compound=false,boo
   }
   model.prepare_recursive_round_programs(0,false,64);
   if(parallel)model.finish_cold_families();
-  if(compound)model.prepare_shared_execution_workspace();
+  if(compound)model.prepare_execution_storage();
   Result result;
   for(const bool lag:{false,true})for(std::size_t accepted=1;accepted<=4;++accepted){
     auto session=model.create_session(seed_rows,{},q::GraphRole::kMtpPrefill);
@@ -249,7 +249,7 @@ qwen_device_continuation_case::Result continuous_chain(const std::filesystem::pa
     model.prepare_family(rows,false,1,role);model.plan_replay_uses(width,1,64,role);
   }
   if(device){model.prepare_family(rows,false,1,q::GraphRole::kMtpContinuation);model.plan_replay_uses(width,1,64,q::GraphRole::kMtpContinuation);}
-  model.prepare_shared_execution_workspace();if(device)(void)model.prepare_mtp_decode_recordings(0);
+  model.prepare_execution_storage();if(device)(void)model.prepare_mtp_decode_recordings(0);
   static constexpr std::array<std::int32_t,3>prompt{1,2,3};
   const auto prefill=[&]{auto session=model.create_session(seed,{},q::GraphRole::kMtpPrefill);
     model.prepare_evaluation(*session,prompt,nullptr,q::GraphRole::kMtpPrefill);model.submit_evaluations();

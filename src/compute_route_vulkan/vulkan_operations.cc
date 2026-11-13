@@ -1,6 +1,8 @@
 #include "vulkan_program_internal.h"
 #include "vulkan_carrier.h"
 #include "vulkan_tensor.h"
+#include "vulkan_packed_sequence.h"
+#include "hyle/compute/sequence_ops.h"
 #include "hyle/compute/sampling_ops.h"
 #include "hyle/compute/model_ops.h"
 #include "../compute_packed_shared/artifact_packed_linear.h"
@@ -21,6 +23,8 @@ Status lower_operation(ProgramState &program, const PlanStep &step,
                        RowCacheAccessFacts *access) noexcept {
   if (access) *access = {};
   try {
+    if (step.operation.custom_as<sequence_ops::PackedGatedDeltaNet>())
+      return lower_packed_gdn(program, step);
     if (step.operation.custom_as<model_ops::BlockwiseW4A8Linear>() ||
         step.operation.custom_as<model_ops::GroupedBlockwiseW4A8Linear>())
       return lower_blockwise_w4a8(program, step);

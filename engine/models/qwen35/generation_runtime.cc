@@ -2888,7 +2888,7 @@ StartupPrefillWarmup prepare_generation_programs(Model &model, const GenerationP
               dynamic ? model.max_drafts() : standalone_draft_limit(index));
   model.finish_cold_families();
   model.freeze_shape_plan();
-  if (first_turn_only) model.prepare_shared_execution_workspace();
+  if (first_turn_only) model.prepare_execution_storage();
   if (warmup_planned_shapes) {
     const auto begin = Clock::now();
     const auto shapes = model.prepare_planned_execution();

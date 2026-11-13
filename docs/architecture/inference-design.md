@@ -51,6 +51,10 @@ Qwen多执行方案先分析各方案的实际角色与reader合同，合并合�
 [WeightStorage](../../engine/models/qwen35/weight_storage.h)保活原端点、权重池和只读租约；方案不借用另一个Model作为资产入口。
 单方案继续直接加载。各方案的可变IO、状态和退休仍归原ColdResources；它是保活根，不是全部不可变的准备结果。
 
+执行存储在冷期按实际输出所有权准备。只有所有公开输出都由调用者独立持有时才共享Invocation workspace；
+producer持有或别名输出沿用原Invocation的存储和预算。共享scratch是资源优化，不是模型数学的前提；
+不能按后端名字强制共享，也不能把其他准备失败或预算不足解释为允许私自另行分配。
+
 首次请求和动态接纳共用[模型私有安装函数](../../engine/models/qwen35/request_installation.h)，调用者明确传入可见turn、额度、容量和已选方案。
 安装只建立请求载荷与输入保活，不读取隐藏的后续turn来选形状；诊断、开放输入、RNG与到达时间保持各自合同。
 

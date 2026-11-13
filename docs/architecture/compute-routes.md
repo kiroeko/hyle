@@ -66,6 +66,10 @@ ggml-Vulkan可能每次编码并分批提交，IREE与原生程序也有各自ru
 就具有相同replay成本。同一VkDevice或同一GPU仍不自动保证跨Provider对象可以共享。
 取消、OOM、提交失败和device lost分别处理；缺feature明确拒绝，不虚构同成本fallback。
 
+原生packed GDN目前接纳F32 Q/K/V、深度不超过256的状态行；准备时检查实际descriptor、buffer与workgroup限制。
+每次执行先通过原checked-dispatch机制核对整组序列偏移和快照长度，再写两个输出；空序列逐位保留状态，
+不读取padding。错误结果仍等待原生完成与退休，不由设备错误字授权提前复用资源。
+
 ## CPU与GPU组合
 
 先区分存放与计算：host保存权重、分批送GPU，不等于CPU承担模型数学；只有CPU与GPU各执行片段，

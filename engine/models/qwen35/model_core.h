@@ -999,6 +999,7 @@ public:
   // their shared scratch; IO, state pools and decode carriers stay independent.
   std::size_t bounded_prefill_rows = 0;
   g::InvocationWorkspace execution_workspace;
+  bool execution_storage_prepared = false;
   std::map<DraftProgramKey, std::unique_ptr<DraftProgram>> &draft_programs;
   std::map<PrefixSamplingKey, std::unique_ptr<PrefixSamplingProgram>> &prefix_sampling_programs;
   std::size_t draft_program_graph_calls = 0, prefix_decision_graph_calls = 0;
@@ -2620,8 +2621,8 @@ public:
         .invocation = {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
         .progress = {scheduler.get(), workers.get()}};
     if (execution_workspace.valid()) initialization.workspace = &execution_workspace;
-    else if (bounded_prefill_rows && packs_prefill(phase.family->packing))
-      throw std::logic_error("bounded prefill requires its qualified shared workspace before slot initialization");
+    else if (bounded_prefill_rows && packs_prefill(phase.family->packing) && !execution_storage_prepared)
+      throw std::logic_error("bounded prefill requires its cold execution storage plan before slot initialization");
     if (!phase.state_banks.empty()) initialization.slots.emplace(inference::ProgramInitialization::Slots{
         phase.state_graph(), phase.state_sources,
         {.host_workspace = execution.staging(), .resource_budget = execution_budget ? execution_budget : cache_budget}});
@@ -2758,22 +2759,27 @@ public:
     prepare_execution(capacities, requests, role, completion, sampling_index, RowPacking::kPrefill);
   }
 
-  // Qualify every cold-known role before any Invocation borrows the root.
-  // Failure is a typed Graph refusal, never permission to allocate private
-  // scratch instead. The original per-route slots/IO keep their own owners.
-  void prepare_shared_execution_workspace() {
-    if (active_step || successor_step || carrier_borrowed || execution_workspace.valid())
+  // Producer-owned outputs retain their original per-Invocation storage.
+  // Share scratch only when all public outputs permit it. Other sharing or
+  // budget failures still propagate; they never authorize a private fallback.
+  void prepare_execution_storage() {
+    if (active_step || successor_step || carrier_borrowed || execution_storage_prepared)
       throw std::logic_error("shared execution preparation requires its original idle uninitialized inventory");
     if (!execution_budget)
       throw std::logic_error("shared execution workspace requires the original execution resource budget");
     std::vector<g::Executable> routes;
     std::vector<ExecutionShape> shapes;
+    bool caller_owned_outputs = true;
     for (const auto &[key, family] : families) {
       if (!family) continue;
       for (const auto rows : family->chunks) {
         const auto selected = find_child(key.requests, rows, key.role, false, key.completion, key.sampling_index, key.packing);
         if (!selected) throw std::logic_error("shared execution lost its original exact child");
         routes.push_back(selected->program.compiled.executable);
+        const auto &route = routes.back();
+        for (std::size_t output = 0; output < route.output_count(); ++output)
+          if (take(route.output_ownership(output)) != g::OutputOwnership::kCaller)
+            caller_owned_outputs = false;
         const ExecutionShape shape{key.requests, rows, key.role, key.completion, key.sampling_index, false, key.packing};
         if (const auto found = phases.find(shape); found != phases.end())
           for (const auto &slot : found->second->slots.slots())
@@ -2784,9 +2790,16 @@ public:
     }
     if (routes.empty())
       throw inference::EvaluationFailure(hyle::Status::Unimplemented("no cold-known route supports shared scratch"));
-    execution_workspace = take(g::InvocationWorkspace::create(routes, {.resource_budget = execution_budget}));
-    std::cerr << "execution_shared_workspace routes=" << routes.size() << " bytes=" << execution_workspace.bytes()
-              << " resource_budget=execution configured_rows=" << bounded_prefill_rows << '\n';
+    if (caller_owned_outputs) {
+      execution_workspace = take(g::InvocationWorkspace::create(routes, {.resource_budget = execution_budget}));
+      std::cerr << "execution_shared_workspace routes=" << routes.size() << " bytes=" << execution_workspace.bytes()
+                << " resource_budget=execution configured_rows=" << bounded_prefill_rows << '\n';
+    } else {
+      std::cerr << "execution_private_workspace routes=" << routes.size()
+                << " reason=producer_owned_or_aliased_outputs resource_budget=execution configured_rows="
+                << bounded_prefill_rows << '\n';
+    }
+    execution_storage_prepared = true;
     for (const auto &shape : shapes) {
       const std::array rows{shape.tokens};
       prepare_prefill_execution(rows, shape.completion, shape.sampling_index, shape.requests, shape.role);

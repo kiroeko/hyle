@@ -179,9 +179,10 @@ Status retain_buffer_controller(Buffer &, void *owner,
     void (*release)(void *) noexcept, mem::AllocatorRef) noexcept;
 
 struct Run;
-// Residual shaders: up to five caller inputs plus their private status word.
+// Residual shaders: packed recurrence has seven inputs, two outputs and the
+// original private status word. Bound all byte origins, including outputs.
 // General custom pipelines retain their own raw push-constant contract.
-using TensorByteOrigins=std::array<std::uint32_t,6>;
+using TensorByteOrigins=std::array<std::uint32_t,10>;
 struct NativeEncoding;
 struct IreeStage;
 struct AsyncRun final {

@@ -1,6 +1,8 @@
 hyle_add_header_self_contained_test(compute_route_vulkan
   HEADER_DIR compute HEADERS vulkan.h vulkan_batch.h vulkan_row_cache.h detail/vulkan_plan.h)
 if(_HYLE_COMPUTE_HAVE_VULKAN)
+  hyle_add_test(compute_route_vulkan NAME sequence SOURCES sequence_test.cc)
+  hyle_stage_runtime(hyle_compute_route_vulkan_sequence_test)
   hyle_add_test(compute_route_vulkan NAME gdn_output_scale
     SOURCES ../compute_provider_native/gdn_output_scale_test.cc DEPS hyle_compute_provider_ggml_vulkan)
   target_compile_definitions(hyle_compute_route_vulkan_gdn_output_scale_test PRIVATE HYLE_GDN_SCALE_VULKAN=1)

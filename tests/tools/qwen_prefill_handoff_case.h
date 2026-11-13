@@ -31,7 +31,7 @@ inline std::unique_ptr<q::Model> make_model(const std::filesystem::path &input, 
   }
   model.bounded_prefill_rows = 2;
   model.freeze_shape_plan();
-  model.prepare_shared_execution_workspace();
+  model.prepare_execution_storage();
   if (replay != q::ReplayPolicy::kCommands) (void)model.prepare_prefill_recordings(0);
   return owner;
 }

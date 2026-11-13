@@ -1,0 +1,91 @@
+#version 450
+
+layout(local_size_x = 64) in;
+layout(binding = 0) readonly buffer Q { uint q[]; };
+layout(binding = 1) readonly buffer K { uint k[]; };
+layout(binding = 2) buffer Checked { uint checked[]; };
+layout(binding = 3) readonly buffer V { uint v[]; };
+layout(binding = 4) readonly buffer G { uint g[]; };
+layout(binding = 5) readonly buffer Beta { uint beta[]; };
+layout(binding = 6) readonly buffer Initial { uint initial[]; };
+layout(binding = 7) readonly buffer Offsets { int offsets[]; };
+layout(binding = 8) writeonly buffer Y { uint y[]; };
+layout(binding = 9) writeonly buffer States { uint states[]; };
+layout(push_constant) uniform Origins {
+  uint q; uint k; uint checked; uint v; uint g; uint beta;
+  uint initial; uint offsets; uint y; uint states;
+} origin;
+layout(constant_id = 0) const uint phase = 0;
+layout(constant_id = 1) const uint rows = 1;
+layout(constant_id = 2) const uint key_heads = 1;
+layout(constant_id = 3) const uint value_heads = 1;
+layout(constant_id = 4) const uint depth = 1;
+layout(constant_id = 5) const uint value_depth = 1;
+layout(constant_id = 6) const uint batches = 1;
+layout(constant_id = 7) const uint gate_depth = 1;
+layout(constant_id = 8) const uint snapshots = 1;
+layout(constant_id = 9) const float output_scale = 1.0;
+
+void main() {
+  if (phase == 0) {
+    if (gl_GlobalInvocationID.x != 0) return;
+    int previous = offsets[origin.offsets / 4u];
+    bool valid = previous == 0;
+    for (uint sequence = 0; valid && sequence < batches; ++sequence) {
+      int next = offsets[origin.offsets / 4u + sequence + 1u];
+      valid = next >= previous && next >= 0 && uint(next) <= rows;
+      if (valid && snapshots > 1u) valid = uint(next - previous) >= snapshots;
+      previous = next;
+    }
+    if (!valid) atomicOr(checked[origin.checked / 4u], 4u);
+    return;
+  }
+  // The original recorder's barrier orders the whole-input check before
+  // either output can be touched. Native completion observes this same word.
+  if (atomicOr(checked[origin.checked / 4u], 0u) != 0u) return;
+  uint lane = gl_GlobalInvocationID.x;
+  uint sequence = gl_GlobalInvocationID.y;
+  if (lane >= value_heads * value_depth || sequence >= batches) return;
+  uint head = lane / value_depth, channel = lane % value_depth;
+  uint first = uint(offsets[origin.offsets / 4u + sequence]);
+  uint last = uint(offsets[origin.offsets / 4u + sequence + 1u]);
+  uint state_width = value_heads * value_depth * depth;
+  uint state_row = (sequence * value_heads * value_depth + lane) * depth;
+  if (sequence + 1u == batches)
+    for (uint row = last; row < rows; ++row)
+      y[origin.y / 4u + row * value_heads * value_depth + lane] = 0u;
+  if (first == last) {
+    // Empty members preserve every stored bit, including NaN payloads and -0.
+    for (uint key = 0; key < depth; ++key)
+      states[origin.states / 4u + state_row + key] = initial[origin.initial / 4u + state_row + key];
+    return;
+  }
+  precise float carry[256];
+  for (uint key = 0; key < depth; ++key)
+    carry[key] = uintBitsToFloat(initial[origin.initial / 4u + state_row + key]);
+  for (uint row = first; row < last; ++row) {
+    uint qk = (row * key_heads + head % key_heads) * depth;
+    uint value = row * value_heads * value_depth + lane;
+    uint gate = (row * value_heads + head) * gate_depth + (gate_depth == 1u ? 0u : channel);
+    float decay = exp(uintBitsToFloat(g[origin.g / 4u + gate]));
+    float b = uintBitsToFloat(beta[origin.beta / 4u + row * value_heads + head]);
+    precise float prediction = 0.0;
+    for (uint key = 0; key < depth; ++key) {
+      carry[key] *= decay;
+      prediction = fma(carry[key], uintBitsToFloat(k[origin.k / 4u + qk + key]), prediction);
+    }
+    precise float delta = b * (uintBitsToFloat(v[origin.v / 4u + value]) - prediction);
+    precise float attended = 0.0;
+    for (uint key = 0; key < depth; ++key) {
+      carry[key] = fma(delta, uintBitsToFloat(k[origin.k / 4u + qk + key]), carry[key]);
+      attended = fma(carry[key], uintBitsToFloat(q[origin.q / 4u + qk + key]), attended);
+    }
+    y[origin.y / 4u + value] = floatBitsToUint(attended * output_scale);
+    if (row + snapshots >= last) {
+      uint snapshot = row + snapshots - last;
+      uint output_row = (sequence * snapshots + snapshot) * state_width + lane * depth;
+      for (uint key = 0; key < depth; ++key)
+        states[origin.states / 4u + output_row + key] = floatBitsToUint(carry[key]);
+    }
+  }
+}

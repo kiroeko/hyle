@@ -24,6 +24,7 @@ def main():
         parser.error('output stem must be a C++ header basename')
     args.output.mkdir(parents=True, exist_ok=True)
     variants = [
+        ('packed_gdn', str((args.tensor_source / 'packed_gdn.comp').resolve()), {}, {1}),
         ('cache_encode_e4', str((args.tensor_source / 'cache_encode_e4.comp').resolve()), {}, {1}),
         ('blockwise_w4a8', str((args.tensor_source / 'blockwise_w4a8.comp').resolve()), {}, {1}),
         ('blockwise_w4a8_grouped', str((args.tensor_source / 'blockwise_w4a8.comp').resolve()),

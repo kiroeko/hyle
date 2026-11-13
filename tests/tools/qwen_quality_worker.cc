@@ -58,7 +58,7 @@ int main(int argc,char **argv) {
       }
       if(drafts>1)model.prepare_recursive_round_programs(0,false,uses,drafts-1);
     }
-    model.prepare_shared_execution_workspace();model.prepare_execution(rows,1,single_role);
+    model.prepare_execution_storage();model.prepare_execution(rows,1,single_role);
     model.prepare_execution(chunks,1,prefill_role,q::TextCompletion::kStateOnly);
     if(mtp){const std::array round_rows{std::size_t{drafts+1}};
       model.prepare_execution(round_rows,1,q::GraphRole::kMtpRound);
