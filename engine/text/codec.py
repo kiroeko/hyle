@@ -84,6 +84,11 @@ class HuggingFaceTextCodec:
     def vocabulary_size(self) -> int:
         return len(self._tokenizer)
 
+    @property
+    def preparation_tokenizer(self):
+        """Cold asset preparation borrows the same local tokenizer/template."""
+        return self._tokenizer
+
     def encode_messages(self, messages: Sequence[dict[str, Any]]) -> list[int]:
         if not messages:
             raise ValueError("at least one message is required")

@@ -448,6 +448,7 @@ ModelGeometry read_weight_geometry(const std::filesystem::path &manifest) {
 prepared::Roles read_weight_roles(const std::filesystem::path &manifest, bool include_mtp) {
   return prepared::read_roles(manifest, include_mtp);
 }
+c::TensorDesc role_description(const prepared::Role &role);
 namespace {
 PreparedDraftHeadSource read_draft_head_source(const std::filesystem::path &path,
     const prepared::Roles &roles) {
@@ -465,7 +466,8 @@ PreparedDraftHeadSource read_draft_head_source(const std::filesystem::path &path
     return value;
   };
   const auto signature=line(64);
-  const bool compact=signature=="HYLE_QWEN_DRAFT_HEAD_Q4_K_SUBSET_V1";
+  const bool stored=signature=="HYLE_QWEN_DRAFT_HEAD_STORED_SUBSET_V1";
+  const bool compact=stored || signature=="HYLE_QWEN_DRAFT_HEAD_Q4_K_SUBSET_V1";
   if(!compact && signature!="HYLE_QWEN_DRAFT_HEAD_Q4_K_V1")
     throw std::runtime_error("draft head requires a prepared Q4_K format");
   const auto base_identity=line(65);prepared::validate_identity(base_identity);
@@ -473,9 +475,9 @@ PreparedDraftHeadSource read_draft_head_source(const std::filesystem::path &path
   const auto payload_identity=line(65);prepared::validate_identity(payload_identity);
   const auto quantizer=line(160);
   constexpr std::string_view prefix="llama.cpp@",suffix=":Q4_K:reference:no-imatrix";
-  if(quantizer.size()!=prefix.size()+40+suffix.size() || !quantizer.starts_with(prefix) || !quantizer.ends_with(suffix) ||
+  if(!stored && (quantizer.size()!=prefix.size()+40+suffix.size() || !quantizer.starts_with(prefix) || !quantizer.ends_with(suffix) ||
       !std::ranges::all_of(std::string_view(quantizer).substr(prefix.size(),40),[](char c){
-        return (c>='0' && c<='9') || (c>='a' && c<='f');}))
+        return (c>='0' && c<='9') || (c>='a' && c<='f');})))
     throw std::runtime_error("draft head requires its fixed Q4_K reference quantizer identity");
   std::int64_t rows=0,columns=0;
   std::istringstream shape(line(64));
@@ -485,9 +487,13 @@ PreparedDraftHeadSource read_draft_head_source(const std::filesystem::path &path
   const auto head=std::ranges::find(roles.selected,roles.geometry.head_role(),&prepared::Role::name);
   if(head==roles.selected.end() || head->shape!=std::vector<std::int64_t>{roles.geometry.vocabulary,columns} || head->projection_group_size ||
       (head->projection_codec!=prepared::ProjectionCodec::kDense && head->projection_codec!=prepared::ProjectionCodec::kUnspecified) ||
-      (head->dtype!="BF16" && head->dtype!="F16" && head->dtype!="F32"))
-    throw std::runtime_error("separate Q4_K draft head requires the original complete dense target head");
-  const auto description=take(c::gguf_weight_description(c::GgufQuantizedType::kQ4K,Type::kFloat32,columns,rows));
+      (stored ? !supports_draft_vocabulary(roles) || quantizer!="stored-rows-v1:"+head->dtype :
+          head->dtype!="BF16" && head->dtype!="F16" && head->dtype!="F32"))
+    throw std::runtime_error("draft head encoding differs from the original complete target projection");
+  auto role=*head;
+  role.shape={rows,columns};
+  if(!stored)role.dtype="Q4_K";
+  const auto description=role_description(role);
   const auto expected=take(description.required_bytes());
   std::string payload_path;std::uint64_t payload_bytes=0;
   std::istringstream payload(line(prepared::maximum_manifest_path_bytes+64));
@@ -506,8 +512,8 @@ PreparedDraftHeadSource read_draft_head_source(const std::filesystem::path &path
   file=std::filesystem::absolute(file).lexically_normal();
   if(!std::filesystem::is_regular_file(file) || std::filesystem::file_size(file,error)!=expected || error)
     throw std::runtime_error("draft head payload is missing or has a different byte extent");
-  auto role=*head;role.dtype="Q4_K";role.shape={rows,columns};role.source=std::move(file);role.offset=0;role.bytes=expected;
-  role.meaning=prepared::ParameterMeaning::kLinearWeight;role.physical_name="draft-head-q4_k";role.original_offset=0;
+  role.source=std::move(file);role.offset=0;role.bytes=expected;
+  role.meaning=prepared::ParameterMeaning::kLinearWeight;role.physical_name=stored ? "draft-head-stored" : "draft-head-q4_k";role.original_offset=0;
   role.projection_codec=prepared::ProjectionCodec::kUnspecified;role.projection_group_size=0;
   const auto identity_text=signature+'\n'+base_identity+'\n'+payload_identity+'\n'+quantizer+
       (compact ? '\n'+vocabulary_identity : std::string{});

@@ -123,7 +123,8 @@ def write_vocabulary(output, identity: str, vocabulary: int, ids: list[int],
     output.write(' '.join(map(str, ids)) + '\n')
 
 def tokenizer_default_ids(tokenizer, vocabulary: int, rows: int | None = None,
-                          languages: frozenset[str] | None = None) -> tuple[list[int], str]:
+                          languages: frozenset[str] | None = None,
+                          template: str | None = None) -> tuple[list[int], str]:
     """Select bounded common IDs from local tokenizer and preparation prompts."""
     if type(vocabulary) is not int or vocabulary <= 0:
         raise ValueError("positive source vocabulary required")
@@ -134,7 +135,7 @@ def tokenizer_default_ids(tokenizer, vocabulary: int, rows: int | None = None,
     encoded_prompts = []
     for prompt in calibration_prompts(languages):
         text = tokenizer.apply_chat_template([dict(role="user", content=prompt)], tokenize=False,
-                                             add_generation_prompt=True, enable_thinking=False)
+                                             add_generation_prompt=True, enable_thinking=False, chat_template=template)
         ids = tokenizer.encode(text, add_special_tokens=False)
         if not ids or any(type(token) is not int or not 0 <= token < vocabulary for token in ids):
             raise ValueError("tokenizer prompt contains IDs outside the source vocabulary")

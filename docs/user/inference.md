@@ -80,6 +80,17 @@ python scripts/prepare-qwen35.py --inputs <已有输入目录> --tokenizer-dir <
 hyle generate --inputs <已有输入目录> --tokens <prompt.ids> --draft-vocabulary .scratch/qwen-draft/mtp-draft-vocabulary.ids --max-output-tokens 64 --capacity 1024
 ```
 
+也可一次准备完整 token 表、草稿子词表和保持原编码的紧凑草稿头：
+
+```powershell
+python scripts/prepare-runtime-assets.py --inputs <已有输入目录> --tokenizer-dir <同模型的本地tokenizer目录> --output <资产缓存目录> --languages zh,en
+hyle generate --inputs <已有输入目录> --tokens <prompt.ids> --draft-count 1 --draft-vocabulary <工具打印的目录>/mtp-draft-vocabulary.ids --draft-head <工具打印的目录>/mtp-draft-head.tsv --max-output-tokens 64
+```
+
+该路径不运行模型、不下载文件、不重新量化，只复制所选原始行。支持独立稠密矩阵与受支持的逐行 GGUF 编码；不支持的头明确报错。`--rows` 指定行数，`--languages` 选择固定提示的语言倾向，例如 `zh,en,hu`；这不是接受率保证。完整 `vocabulary.tsv` 是来源绑定的可读导出，文本编解码仍使用原 tokenizer。
+
+相同权重来源、tokenizer 内容、模板及选行配方会复用同一不可变目录。首次准备先写完整文件，再原子发布；并发准备只生成一次，损坏文件报错，不覆盖在途引用。新配方使用新目录。Q4 CUDA 下，持久化原行与运行时选行的 K1／K3 各512个输出 ID 一致。
+
 需要独立 Q4_K 草稿头时，可以在一次准备中同时生成子词表和头：
 
 ```powershell
