@@ -3968,7 +3968,7 @@ public:
         if (packed_verify) {
           (void)inference::pack_sequence_prefixes(offsets, phase.prefix_rows, history_rows,
               io.prefix_id_values, io.history_select_values);
-          io.prefix_ids.write<std::int32_t>(io.prefix_id_values);
+          io.prefix_ids.template write<std::int32_t>(io.prefix_id_values);
         } else for (std::size_t j = 0; j < width; ++j) {
           const auto begin = step.members[j].input_row_begin;
           const auto length = step.members[j].input_tokens;
@@ -3980,9 +3980,9 @@ public:
           }
         }
         if (packed_prefill && !io.ordinary_io.packet_last_ids)
-          io.last_ids.write<std::int32_t>(io.last_id_values);
+          io.last_ids.template write<std::int32_t>(io.last_id_values);
         if (!io.ordinary_io.packet_history_select)
-          io.history_select.write<std::int32_t>(io.history_select_values);
+          io.history_select.template write<std::int32_t>(io.history_select_values);
       }
       const auto token_values = packed_target || width != 1
           ? std::span<const std::int32_t>(packed_ids) : requests[0].ids;
@@ -4022,16 +4022,16 @@ public:
             std::fill_n(mask.begin()+local,last-first,1.F);std::fill_n(boolean_mask.begin()+local,last-first,std::uint8_t{1});
           }
         }
-        if(io.image_mask.description.data_type()==Type::kFloat32)io.image_mask.write<float>(mask);
-        else io.image_mask.write<std::uint8_t>(boolean_mask);
-        io.position_cosine.write<float>(cosine);io.position_sine.write<float>(sine);
+        if(io.image_mask.description.data_type()==Type::kFloat32)io.image_mask.template write<float>(mask);
+        else io.image_mask.template write<std::uint8_t>(boolean_mask);
+        io.position_cosine.template write<float>(cosine);io.position_sine.template write<float>(sine);
       }
       const auto position_values = ahead
           ? std::span<const std::int32_t>(decode_ahead->positions.data(), decode_ahead->positions.size())
           : std::span<const std::int32_t>(positions);
       if (!io.ordinary_io.packet()) {
-        if (!relay && !recording_imported && !token_source) io.tokens.write<std::int32_t>(token_values);
-        if(!device_input_choice)io.positions.write<std::int32_t>(position_values);
+        if (!relay && !recording_imported && !token_source) io.tokens.template write<std::int32_t>(token_values);
+        if(!device_input_choice)io.positions.template write<std::int32_t>(position_values);
       }
       if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
         auto &identities = input_scratch.sampling_identities;
@@ -4046,7 +4046,7 @@ public:
           }
         }
         if (!io.ordinary_io.packet_sampling_identities)
-          io.sampling_identities.write<std::uint32_t>(identities);
+          io.sampling_identities.template write<std::uint32_t>(identities);
       }
       if (io.ordinary_io.packet()) {
         if (relay && !prefill_relay) throw std::logic_error("host input packet cannot replace a device relay token");

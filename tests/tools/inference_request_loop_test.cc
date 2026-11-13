@@ -14,9 +14,11 @@
 
 #include <array>
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <deque>
 #include <limits>
+#include <locale>
 #include <iostream>
 #include <cstdlib>
 #include <new>
@@ -1466,6 +1468,24 @@ private:
   i::RequestWindow window_;
 };
 
+void application_numbers_preserve_decimal_precision_and_grammar() {
+  const auto number = [](std::string_view value) { return hyle::engine::application_number<float>("test", value); };
+  require(number("0.8") == 0.8F && number(".5") == 0.5F && number("1.") == 1.F &&
+      number("1e-3") == 0.001F && number("1E+2") == 100.F,
+      "application numeric parsing lost ordinary decimal/scientific values");
+  require(std::signbit(number("-0")) &&
+      number("1.401298464324817e-45") == (std::numeric_limits<float>::denorm_min)(),
+      "application numeric parsing lost negative zero or a representable subnormal");
+  for (const auto value : {"", "+1", " 1", "1 ", "\t1", "1x", "0x1p2", "-0X1p2", "1e50", "1e-999"})
+    rejects<std::invalid_argument>([&] { (void)number(value); });
+  struct Comma : std::numpunct<char> { char do_decimal_point() const override { return ','; } };
+  const auto previous = std::locale();
+  std::locale::global(std::locale(previous, new Comma));
+  const auto decimal = number("0.8");
+  std::locale::global(previous);
+  require(decimal == 0.8F, "application numeric parsing follows the process locale");
+}
+
 void application_uses_one_provider_path_for_cli_and_worker() {
   const auto match = +[](const std::filesystem::path &source) { return source == "other-model"; };
   const auto load = +[](const i::ModelLoadConfig &config) -> std::unique_ptr<i::ModelExecutor> {
@@ -2297,6 +2317,7 @@ int main(int argc, char **argv) {
     request_owner_drives_input_output_and_real_retirement();
     request_assembly_keeps_admission_and_execution_failures_distinct();
     prepared_execution_choices_keep_sampling_rng_and_compatibility_separate();
+    application_numbers_preserve_decimal_precision_and_grammar();
     application_uses_one_provider_path_for_cli_and_worker();
     token_worker_reports_actual_profiles_without_executing_requests();
     token_worker_rejects_malformed_frames_without_starting_model();

@@ -15,6 +15,14 @@
 #include <string_view>
 #include <vector>
 
+#if defined(__APPLE__)
+#include <cerrno>
+#include <cmath>
+#include <cstdlib>
+#include <locale.h>
+#include <type_traits>
+#endif
+
 namespace hyle::engine {
 
 struct ApplicationOptions final {
@@ -28,8 +36,35 @@ struct ApplicationOptions final {
 
 template<class T> T application_number(std::string_view option, std::string_view value) {
   T result{};
-  const auto parsed = std::from_chars(value.data(), value.data() + value.size(), result);
-  if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size())
+  bool valid = false;
+#if defined(__APPLE__)
+  if constexpr (std::is_floating_point_v<T>) {
+    // libc++ floating from_chars requires macOS26, above our deployment floor.
+    // Parse directly to the requested precision in a private C numeric locale.
+    // No process locale change or double rounding through an intermediate.
+    const std::string text(value);
+    const auto locale = ::newlocale(LC_NUMERIC_MASK, "C", nullptr);
+    if (!locale) throw std::runtime_error("C numeric locale is unavailable");
+    char *end = nullptr;
+    errno = 0;
+    if constexpr (std::is_same_v<T, float>) result = ::strtof_l(text.c_str(), &end, locale);
+    else if constexpr (std::is_same_v<T, double>) result = ::strtod_l(text.c_str(), &end, locale);
+    else result = ::strtold_l(text.c_str(), &end, locale);
+    const auto range_error = errno == ERANGE;
+    ::freelocale(locale);
+    auto magnitude = value;
+    if (magnitude.starts_with('-')) magnitude.remove_prefix(1);
+    // Match general from_chars: no leading whitespace/plus or hexadecimal.
+    valid = !value.empty() && value.front() != '+' && value.find_first_of(" \t\r\n\f\v") != 0 &&
+        !magnitude.starts_with("0x") && !magnitude.starts_with("0X") && end == text.data() + text.size() &&
+        !(range_error && (result == 0 || !std::isfinite(result)));
+  } else
+#endif
+  {
+    const auto parsed = std::from_chars(value.data(), value.data() + value.size(), result);
+    valid = parsed.ec == std::errc{} && parsed.ptr == value.data() + value.size();
+  }
+  if (!valid)
     throw std::invalid_argument(std::string(option) + " requires a valid number");
   return result;
 }

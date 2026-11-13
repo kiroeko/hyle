@@ -189,11 +189,11 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
           const auto description = dense(Type::kInt32, {static_cast<std::int64_t>(count)});
           io.draft_hidden_select = phase_tensor(allocation_budget, execution.device(), description);
           io.draft_hidden_indices.resize(count);
-          io.draft_hidden_select.write<std::int32_t>(io.draft_hidden_indices);
+          io.draft_hidden_select.template write<std::int32_t>(io.draft_hidden_indices);
           if (draft_lag(role)) {
             io.draft_token_select = phase_tensor(allocation_budget, execution.device(), description);
             io.draft_token_indices.resize(count);
-            io.draft_token_select.write<std::int32_t>(io.draft_token_indices);
+            io.draft_token_select.template write<std::int32_t>(io.draft_token_indices);
           }
         }
         if (compact_draft) io.draft_last_ids = phase_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
@@ -206,7 +206,7 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
           io.last_ids = phase_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
           std::vector<std::int32_t> initial_last_ids(requests);
           for (std::size_t j = 0; j < requests; ++j) initial_last_ids[j] = static_cast<std::int32_t>((j + 1) * tokens - 1);
-          io.last_ids.write<std::int32_t>(initial_last_ids);
+          io.last_ids.template write<std::int32_t>(initial_last_ids);
         }
         if (packed_prefill) io.last_id_values.resize(requests);
       }
