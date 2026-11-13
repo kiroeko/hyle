@@ -21,14 +21,14 @@ prefill／decode及推测步骤、采样、模型状态与缓存操作、执行�
 外围提供采样参数和停止政策，内核执行采样并与模型状态一起提交RNG。
 缓存政策与物理状态共享同一真实所有权和退休事实，不另建执行器或账簿。
 
-原有token CLI仍是Qwen驱动；文本入口通过公共请求合同接入Qwen。模型、会话和请求装配仍有交叉；
-本定义不表示代码已完成拆分，也不声明稳定的引擎API。
-先整体设计通用引擎及其执行边界，再按实际实现和验证结果分步冻结；目标和迁移方向见[通用引擎设计](engine-design.md)。
+token CLI与文本工作进程共用公共模型提供者、装载配置和请求入口；Qwen的有限日程、重放和报告位于显式诊断目标。
+公共合同与模型内部结构分别维护，不将内部C++接口声明为稳定的安装后ABI。
+本阶段的固定范围与验收见[通用引擎设计](engine-design.md)。
 冻结后的具体模型、kernel、融合和策略仍可演进；合同变更须说明影响并完成相关验证。
 
 ### 冻结判定
 
-本阶段的审查范围、四项待关闭问题和固定验收见[架构审查与冻结修复基线](engine-design.md#架构审查与冻结修复基线)。下列要求用于检查这些问题的修复，不把全部未来模型、平台和产品功能自动加入本轮完成条件。
+本阶段R1–R4已关闭，职责与合同按[冻结范围和验证](engine-design.md#架构审查与冻结修复基线)收口。下列要求用于保持这些边界，不把全部未来模型、平台和产品功能自动加入本轮完成条件。
 
 内核冻结以当前实际实现和经过验证的执行合同为准，至少满足：
 
@@ -56,7 +56,8 @@ prefill／decode及推测步骤、采样、模型状态与缓存操作、执行�
 ## 分层
 
 ```text
-engine/main.cc              模型提供者装配、token工作进程及原有Qwen CLI
+engine/main.cc              静态登记提供者，调用公共应用入口
+engine/application.h        token CLI／worker的参数、装载与请求装配
 engine/text/                tokenizer、模板和协议无关的文本适配
 engine/text/app.py          本地文本CLI和服务装配
 engine/text/server.py       HTTP路由、连接和流式传输
@@ -96,9 +97,12 @@ Qwen的模型私有实现位于`engine/models/qwen35/`：
 | 几何、精度与状态容量 | `model_geometry.h`、`precision_profile.h`、`cache_precision.h`、`cache_plan.h` |
 | 冷构图与主干数学 | [graph_builder.h/.cc](../../engine/models/qwen35/graph_builder.h)、[target_graph.h/.cc](../../engine/models/qwen35/target_graph.h)、`block_graph.h`、`mtp_graph.h` |
 | Family、Phase与辅助程序 | [family_factory.h/.cc](../../engine/models/qwen35/family_factory.h)、[phase.h](../../engine/models/qwen35/phase.h)、[phase_preparation.cc](../../engine/models/qwen35/phase_preparation.cc)、`auxiliary_programs.h/.cc` |
-| 完整状态与请求适配 | `session_state.h`、`host_image.h`、`session_transfer.h`、`generation_ledger.h`、[model_core.h](../../engine/models/qwen35/model_core.h)中的Model／Session，以及`main.cc`中的请求适配 |
+| 完整状态与请求适配 | `session_state.h`、`host_image.h`、`session_transfer.h`、`generation_ledger.h`、[model_core.h](../../engine/models/qwen35/model_core.h)中的Model／Session，以及`generation_state.h`／`generation_runtime.cc`中的请求适配 |
 
-`model_core.h`是当前模型内部入口，不是已冻结的公共引擎API。`main.cc`仍包含请求适配和CLI；诊断消费者复用相同实现，按测试目标显式构建。
+`model_core.h`是模型内部入口，不是公共引擎API。正常产品编译`generation_runtime.cc`，不链接Qwen的完整报告格式器；
+冷路线归`mtp_default_policy.h`、`decode_route_policy.h`和`device_mtp_planning.h`。
+`generation_diagnostics.h`／`generation_report.cc`消费完成观察；`main.cc`与`diagnostic_main.cc`组成显式`hyle_qwen35_diagnostic`入口。
+部分原有私有探针继续包含这一诊断消费者。
 理论审查共同合同是否允许其它模型使用自己的状态和执行结构，不要求照搬Qwen目录内部的Family／Phase结构。
 
 ## 一次decode如何推进
@@ -114,7 +118,8 @@ RequestLoop选就绪请求 → 按兼容条件分组 → 选择已准备程序
 MTP可以是融合或递归执行，不必固定为三次提交。取消、背压及准备拒绝不能提前回收已接纳工作，
 后继记录命中也不能跳过实际Queue、资源权限或完整绑定检查。
 
-当前Qwen入口的`run_generation_sessions`装配请求和冷计划，`GenerationRequestAdapter`连接共同请求循环与模型步骤；
+Qwen的`execute_generation_sessions`消费公共批次与已选择的执行准备，冷程序／录制准备分别经`prepare_generation_programs`／`prepare_generation_recordings`；
+`GenerationRequestAdapter`连接共同请求循环与模型步骤。诊断包装器`run_generation_sessions`单独接入完成观察，不决定状态发布；
 `Model`准备、提交和完成原始工作，`Session`持有已提交的完整状态头，`WorkingState`执行状态交换。
 设备草稿交给目标验证器时，由`Model`准备原验证步骤、绑定实际输入并观察所属资源退休；
 请求适配器仍负责请求身份和账本，不直接写入该验证步骤的输入字段。
@@ -138,7 +143,7 @@ Source的共享引用只用于保活，不取代原Graph的权限与退休；失
 - 完整文本入口仍以Qwen为主；GLM／Kimi／DeepSeek已有组件消费者，尚非第二完整引擎模型。
 - 连续执行按实际后端、采样和状态资格选择，auto不适用时保留原单步路径；物理载体数、在途深度和批成员数分别表达。
 - Backend当前以一个主端点及可选CPU辅助端点为主；Graph多端点表达不等于多GPU分片／跨Context等待或多机已接通。
-- 原有Qwen CLI使用准备后的权重和token IDs；文本CLI与Responses文本服务使用本地tokenizer和模板。
+- token CLI使用准备后的权重和token IDs，与worker共用提供者装载；文本CLI与Responses文本服务使用本地tokenizer和模板。
   通用loader、C++ tokenizer、完整服务API和图片产品入口尚未交付；实际字段见[文本接口指南](../user/text-api.md)。
 
 各模型／制品实际范围见[模型覆盖](../implementation/model-operators.md)，性能结果见[decode资料](../developer/performance/decode.md)。
