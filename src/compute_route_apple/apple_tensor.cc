@@ -23,12 +23,14 @@
 
 #include "apple_internal.h"
 #include "apple_checks.h"
+#include "apple_sequence.h"
 #include "apple_mature_indexing.h"
 #include "apple_mature_artifact.h"
 #include "apple_mature_reduction.h"
 #include "../compute_provider_ggml_metal/native_program.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/sampling_ops.h"
+#include "hyle/compute/sequence_ops.h"
 
 namespace hyle::compute::apple::detail {
 namespace mx = mlx::core;
@@ -489,7 +491,8 @@ AttentionPath attention_path(const ScaledDotProductAttention &attention,
 }
 
 bool is_mlx_tensor_custom(const Operation &operation) noexcept {
-  return operation.custom_as<model_ops::GatherElements>().has_value() ||
+  return operation.custom_as<sequence_ops::PackedGatedDeltaNet>().has_value() ||
+         operation.custom_as<model_ops::GatherElements>().has_value() ||
          operation.custom_as<model_ops::CausalConv1d>().has_value() ||
          operation.custom_as<model_ops::SinkAttention>().has_value() ||
          operation.custom_as<model_ops::ArtifactWeightDecode>().has_value() ||
@@ -500,6 +503,12 @@ bool is_mlx_tensor_custom(const Operation &operation) noexcept {
 
 Result<bool> may_lower_operation(const Operation &operation,
                                  std::span<const TensorDesc> inputs) noexcept {
+  if (operation.custom_as<sequence_ops::PackedGatedDeltaNet>()) {
+    auto status = qualify_packed_gdn(operation, inputs);
+    if (status.IsUnimplemented()) return false;
+    HYLE_RETURN_IF_ERROR(status);
+    return true;
+  }
   // Test the original MLX branches before another carrier's restrictions.
   // In particular, typed MLX and mature float operations need not satisfy
   // ggml Metal's narrower shape/encoding limits.
@@ -574,6 +583,10 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
     std::vector<TensorDesc> outputs(operation_traits(operation).outputs);
     HYLE_RETURN_IF_ERROR(
         infer_output_descriptions(operation, descriptions, outputs));
+    if (operation.custom_as<sequence_ops::PackedGatedDeltaNet>()) {
+      HYLE_RETURN_IF_ERROR(qualify_packed_gdn(operation, descriptions));
+      return lower_packed_gdn(operation, inputs, stream);
+    }
     if (operation.custom_as<sampling_ops::RandomBits>() ||
         operation.custom_as<sampling_ops::Categorical>())
       return lower_sampling(operation, inputs, stream);

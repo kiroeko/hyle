@@ -23,6 +23,13 @@ Apple 后端需要可执行的 `metal` 和 `metallib`。Command Line Tools 存�
 在 Xcode Settings → Components 中安装 Metal Toolchain。初始化会检查并给出指引，
 不把某台验证机的工具目录、签名组件或临时 shim 当成用户安装步骤。
 
+激活 Xcode 后仍应实际运行下面两条命令；找到同名启动器不足以证明组件可用。
+
+```sh
+xcrun -sdk macosx metal --version
+xcrun -sdk macosx metallib --version
+```
+
 Vulkan 源码构建还需要宿主 shader 编译器；在线初始化可按 lock 准备缺少的 glslang。
 `io` 产品包含 TLS 与 HTTP/2。`init.py --components io` 自动查找已安装的 OpenSSL 3 开发包，
 非标准位置可用高级参数 `-D OPENSSL_ROOT_DIR=<prefix>` 指定。
