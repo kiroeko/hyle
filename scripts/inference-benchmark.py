@@ -56,7 +56,7 @@ def require(condition, message):
 
 def arguments():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--hyle", type=Path, required=True)
+    parser.add_argument("--hyle", type=Path, required=True, help="Explicit hyle_qwen35_diagnostic executable")
     parser.add_argument("--reference", type=Path, required=True)
     parser.add_argument("--model", type=Path, help="Ordinary reference GGUF; required when ordinary mode is selected")
     parser.add_argument("--mtp-model", type=Path, help="Reference GGUF with MTP; required when MTP mode is selected")

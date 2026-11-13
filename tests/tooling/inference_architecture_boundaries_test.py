@@ -21,6 +21,9 @@ CPP_SUFFIXES = {'.h', '.hpp', '.c', '.cc', '.cpp', '.cu', '.cuh', '.m', '.mm', '
 
 def source_files(roots):
     for root in roots:
+        if root.is_file() and root.suffix in CPP_SUFFIXES:
+            yield root
+            continue
         if not root.is_dir():
             raise AssertionError(f'missing architecture root: {root}')
         for path in root.rglob('*'):
@@ -76,6 +79,14 @@ class ArchitectureBoundariesTest(unittest.TestCase):
         self.assertEqual(inspect_includes([ROOT / 'engine/reporting'],
             [ROOT / 'engine/models', ROOT / 'engine/text']), [])
 
+    def test_product_application_is_independent_of_model_drivers(self):
+        self.assertEqual(inspect_includes([ROOT / 'engine/application.h'],
+            [ROOT / 'engine/models', ROOT / 'engine/text', ROOT / 'engine/reporting']), [])
+        model = ROOT / 'engine/models/qwen35'
+        self.assertEqual(inspect_includes([model / 'generation_runtime.cc'],
+            [model / 'driver.h', model / 'main.cc', model / 'generation_report.cc',
+             model / 'cache_report.h', model / 'weight_report.h']), [])
+
     def test_compute_and_graph_generators_do_not_import_engine(self):
         violations = []
         roots = [p for p in (ROOT / 'src').iterdir()
@@ -106,7 +117,7 @@ class ArchitectureBoundariesTest(unittest.TestCase):
 
     def test_common_request_and_route_policies_do_not_compile_in_backend_choices(self):
         files = ('request_admission.h', 'request_loop.h', 'request_owner.h', 'generation_dispatcher.h', 'token_worker.h',
-                 'mtp_policy.h', 'decode_route_policy.h', 'model_provider.h', 'model_executor.h')
+                 'mtp_policy.h', 'route_choice.h', 'model_provider.h', 'model_executor.h')
         violations = []
         for name in files:
             path = ROOT / 'engine/inference' / name

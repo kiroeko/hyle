@@ -6,7 +6,7 @@
 运行范围与限制：
 
 - 单机 CPU、单 GPU 或 CPU＋一张 GPU；具体制品和平台以[验证范围](#制品与验证范围)为准。
-- 原有 Qwen 入口使用本地权重清单和 token IDs，输出包含生成 IDs 与计时的 JSON。文本 CLI 和 Responses 文本服务使用本地 tokenizer 与模板，详见[文本接口](text-api.md)。
+- token CLI 与内部工作进程通过同一模型提供者装载。CLI 从文件或标准输入读取 token IDs，标准输出为生成 ID；诊断信息写入标准错误。文本 CLI 和 Responses 文本服务使用本地 tokenizer 与模板，详见[文本接口](text-api.md)。Qwen 的 JSON 报告与固定重放使用下方独立诊断目标。
 - 当前没有通用模型目录加载、C++ tokenizer 或图片输入；其它模型家族仍是组件级实现与检查。文本服务的实际平台与协议范围以文本接口指南为准。
 
 首次运行按“构建→准备本地输入并运行”两节完成；需要采样、MTP或多会话时再查[常用选项](#常用选项)。
@@ -51,7 +51,7 @@ python scripts/build.py --name qwen-cuda --target hyle_engine --jobs 2
 
 ```text
 python scripts/prepare-qwen35.py --model LOCAL_MODEL --output .scratch/qwen-input --prompt "Please calculate 2 + 3. Answer briefly."
-<build-dir>/bin/hyle --inputs .scratch/qwen-input --steps 64 --capacity 1024
+<build-dir>/bin/hyle generate --inputs .scratch/qwen-input --tokens .scratch/qwen-input/prompt.ids --max-output-tokens 64 --capacity 1024
 ```
 
 输出目录必须是新目录，只保存偏移、token IDs 与输入记录，共用原权重文件。
@@ -66,30 +66,55 @@ python scripts/prepare-qwen35.py --model LOCAL_MODEL --output .scratch/qwen-inpu
 
 ```powershell
 python scripts/prepare-qwen35.py --model <本地配置和tokenizer目录> --gguf <本地模型.gguf> --output .scratch/qwen-ready --mtp
-hyle --inputs .scratch/qwen-ready --steps 64 --capacity 1024
+hyle generate --inputs .scratch/qwen-ready --tokens .scratch/qwen-ready/prompt.ids --max-output-tokens 64 --capacity 1024
 ```
 
 工具按本地内容计算来源身份、校验张量范围并生成 `weights.tsv`、输入 ID；原始输出头为量化编码的 GGUF 默认同时生成来源绑定的草稿子词表。本地文件的内容身份不等于已核验发布方的原始文件。工具不下载或复制原模型；`weights.tsv` 引用的原权重文件必须保持不变且可访问。重复加载同一准备目录不需要重新执行工具。直接读取相同 GGUF 内容时，来源身份不依赖其文件名；不同来源记录生成的身份可能不同，草稿制品必须匹配实际输入清单。
 
-HF 原权重可省略 `--gguf`。`--draft-vocabulary tokenizer` 显式从本地 tokenizer 生成子词表，`--draft-rows N` 调整行数；`none` 不生成。默认 tokenizer 方法不运行模型，也不保证对所有提示或设备都最快。需要按模型输出离线校准时，可指定 `--draft-vocabulary calibrated --hyle <本地hyle.exe>`；它运行固定提示的普通生成。已有同来源校准结果可用重复的 `--calibration-run <目录>` 复用，此时不需要再次运行模型。
+HF 原权重可省略 `--gguf`。`--draft-vocabulary tokenizer` 显式从本地 tokenizer 生成子词表，`--draft-rows N` 调整行数；`none` 不生成。默认 tokenizer 方法不运行模型，也不保证对所有提示或设备都最快。需要按模型输出离线校准时，先构建下方独立诊断目标，再指定 `--draft-vocabulary calibrated --hyle <本地hyle_qwen35_diagnostic.exe>`；它运行固定提示的普通生成。已有同来源校准结果可用重复的 `--calibration-run <目录>` 复用，此时不需要再次运行模型。
 
 已有 Hyle 输入时，也可以只生成可复用资产，不重建权重清单：
 
 ```powershell
 python scripts/prepare-qwen35.py --inputs <已有输入目录> --tokenizer-dir <同模型的本地tokenizer目录> --output .scratch/qwen-draft --mtp --draft-rows 114688
-hyle --inputs <已有输入目录> --mtp-draft-vocabulary .scratch/qwen-draft/mtp-draft-vocabulary.ids --steps 64 --capacity 1024
+hyle generate --inputs <已有输入目录> --tokens <prompt.ids> --draft-vocabulary .scratch/qwen-draft/mtp-draft-vocabulary.ids --max-output-tokens 64 --capacity 1024
 ```
 
 需要独立 Q4_K 草稿头时，可以在一次准备中同时生成子词表和头：
 
 ```powershell
 python scripts/prepare-qwen35.py --model <本地HF模型目录> --output .scratch/qwen-q4-head --mtp --draft-vocabulary tokenizer --draft-head-q4 <本地ggml-base.dll> --quantizer-version llama.cpp@<40位实际提交号>
-hyle --inputs .scratch/qwen-q4-head --steps 64 --capacity 1024
+hyle generate --inputs .scratch/qwen-q4-head --tokens .scratch/qwen-q4-head/prompt.ids --max-output-tokens 64 --capacity 1024
 ```
 
-该工具只支持其可读取的原始稠密 HF 头；有子词表时生成与其绑定的紧凑头，不自动推荐 K3。对已有输入生成独立资产后，运行时还需显式指定 `--mtp-draft-head .scratch/qwen-draft/mtp-draft-head.tsv`；直接准备的新输入目录在同时有子词表时可自动发现这些制品，仅准备全头时可用 `--mtp on`。完整词表仍来自模型本身，无需生成另一份权重或词表文件。引擎加载模型后自动准备并持久化这些资产尚未实现。
+该工具只支持其可读取的原始稠密 HF 头；有子词表时生成与其绑定的紧凑头，不自动推荐 K3。对已有输入生成独立资产后，运行时还需显式指定 `--draft-head .scratch/qwen-draft/mtp-draft-head.tsv`；直接准备的新输入目录在同时有子词表时可自动发现这些制品，仅准备全头时可用 `--draft-count 1 --draft-head FILE`。完整词表仍来自模型本身，无需生成另一份权重或词表文件。引擎加载模型后自动准备并持久化这些资产尚未实现。
 
 ## 常用选项
+
+正常 `hyle generate` 和 `hyle --engine-worker` 共用 [application.h](../../engine/application.h) 的解析和提供者装载；模型登记位于 `model_catalog.h`，公共解析器不解释模型私有几何或状态。
+
+| 用途 | 参数与合同 |
+| --- | --- |
+| token 输入与额度 | CLI 要求 `--tokens FILE` 或 `--tokens -`，`--max-output-tokens` 默认 64，包含首 token；EOS 可提前停止。worker 的请求、输入与额度来自管道帧，不能混用这些 CLI 请求参数。 |
+| 端点与执行容量 | `--backend auto\|cpu\|cuda\|apple\|vulkan`；`--capacity` 默认 4096。CLI 默认一个常驻／活动会话，worker 默认两个，分别用 `--max-sessions` 与 `--active-sequences` 配置。它们不是草稿数或流水深度。 |
+| prefill | `--prefill-chunk-tokens N` 控制块长；当前 Qwen 冷准备还按模型容量与 512 行上限裁剪，不查看未来轮次。 |
+| 采样 | 默认 greedy；`--sampling random --temperature 0.8 --top-k 40 --top-p 0.95 --seed 42`。额外采样程序可用 `--additional-sampling random,0.8,40,0.95`，CLI 用 `--sampling-index N` 选择，请求 RNG 独立。 |
+| MTP | 不传 `--draft-count` 时由 Qwen 冷策略按来源制品和能力选择。`--draft-count 0` 准备普通生成，正数显式准备对应 MTP 上限；未指定草稿文件的显式正数使用原头与全词表。 |
+| 不可变辅助资产 | `--asset ROLE=FILE` 传递提供者命名的文件；`--draft-vocabulary FILE` 和 `--draft-head FILE` 是两个草稿角色的简写。这里没有路径哨兵，`auto`／`full` 是真实文件名；自动发现通过省略参数表达。未使用或不支持的显式资产报错。 |
+| 执行方案 | `--profile NAME` 声明额外执行准备，后续 `--draft-count`、`--overlap`、`--profile-asset ROLE=FILE` 属于该方案。CLI 的 `--execution-profile N` 与采样索引分开。当前 Qwen 每个所有者只准备方案零，明确拒绝额外方案；公共机制不伪装未实现的组合。 |
+
+正常执行自动选择可用快路；`--overlap on\|off` 可作明确对照。权重、模型状态和真实退休仍由原实现持有，CLI 不构造第二份缓存。
+
+## Qwen 专用诊断
+
+以下选项、自然日程、固定重放和 JSON 字段属于显式诊断消费者，不由正常 `hyle` 入口解析。需要时单独构建：
+
+```text
+python scripts/build.py --target hyle_qwen35_diagnostic --jobs 2
+<build-dir>/bin/hyle_qwen35_diagnostic --help
+```
+
+该目标不在默认产品构建中；它复用同一模型运行实现与冷准备，额外接入有限日程、trace 和报告消费。校准工具的 `--hyle` 参数也应指向它。正常多会话文本使用公共 worker／Responses，见[文本接口](text-api.md)。
 
 `--steps` 是最多输出数，包含 prefill 首 token，遇 EOS 可提前结束。
 命令行使用默认模型EOS；逐请求停止政策等C++扩展见[模型请求说明](../../engine/models/qwen35/README.md#自然生成批次与状态)。
@@ -170,8 +195,8 @@ Q5_K 的行复制、1～4行投影与原ID映射已用合成数据验证；本�
 也可用本地模型生成独立校准语料，按生成内容选行；例如为中英文和共享代码生成词表，默认选32768行：
 
 ```powershell
-python scripts/prepare-mtp-draft-vocabulary.py --hyle <hyle.exe> --inputs <准备目录> --tokenizer-dir <本地tokenizer目录> --languages zh,en --work-dir .scratch/draft-calibration --output .scratch/draft-vocabulary-zh-en.ids
-hyle --inputs <准备目录> --backend cuda --mtp on --mtp-draft-vocabulary .scratch/draft-vocabulary-zh-en.ids --schedule <自然请求文件>
+python scripts/prepare-mtp-draft-vocabulary.py --hyle <hyle_qwen35_diagnostic.exe> --inputs <准备目录> --tokenizer-dir <本地tokenizer目录> --languages zh,en --work-dir .scratch/draft-calibration --output .scratch/draft-vocabulary-zh-en.ids
+hyle_qwen35_diagnostic --inputs <准备目录> --backend cuda --mtp on --mtp-draft-vocabulary .scratch/draft-vocabulary-zh-en.ids --schedule <自然请求文件>
 ```
 
 该工具只用本地文件；不指定语言时使用24个独立提示，指定语言时使用对应提示和共享代码提示。内置 `ar,de,en,es,fr,hu,ja,ko,ru,th,vi,zh`，可用逗号选择多个语言，其中 `hu` 是匈牙利语。普通greedy每个提示默认最多生成256个token，可用 `--tokens 1024` 扩大校准；只统计生成的ID。指定语言时优先保留本地 tokenizer 的特殊 token，行数不足时按原 ID 选取。校准内容多也不能保证覆盖全部语言或优于全词表，应按实际负载比较。
@@ -210,7 +235,7 @@ BF16目标也可使用离线准备的全词表Q4_K草稿头。目标验证头与
 
 ```powershell
 python scripts/prepare-mtp-draft-head.py --inputs <准备目录> --ggml-library <本地ggml-base.dll> --quantizer-version llama.cpp@2cbca389f515df455412dafa07e2b1359cc72a6d --output .scratch/full-draft-head
-hyle --inputs <准备目录> --backend cuda --mtp on --mtp-max-drafts 3 --mtp-draft-head .scratch/full-draft-head/mtp-draft-head.tsv --schedule <自然请求文件>
+hyle_qwen35_diagnostic --inputs <准备目录> --backend cuda --mtp on --mtp-max-drafts 3 --mtp-draft-head .scratch/full-draft-head/mtp-draft-head.tsv --schedule <自然请求文件>
 ```
 
 输出目录必须是新目录。工具完整写入并验证编码行后才发布 `mtp-draft-head.tsv`；运行时校验元数据、原source identity、形状及payload范围，
@@ -225,7 +250,7 @@ hyle --inputs <准备目录> --backend cuda --mtp on --mtp-max-drafts 3 --mtp-dr
 
 ```powershell
 python scripts/prepare-mtp-draft-vocabulary.py --inputs <准备目录> --calibration-run <旧校准目录> --calibration-run <新增train校准目录> --rows 114688 --work-dir .scratch/draft-subset-calibration --output .scratch/draft-subset.ids
-hyle --inputs <准备目录> --backend cuda --mtp on --mtp-max-drafts 3 --mtp-draft-head .scratch/full-draft-head/mtp-draft-head.tsv --mtp-draft-vocabulary .scratch/draft-subset.ids --schedule <自然请求文件>
+hyle_qwen35_diagnostic --inputs <准备目录> --backend cuda --mtp on --mtp-max-drafts 3 --mtp-draft-head .scratch/full-draft-head/mtp-draft-head.tsv --mtp-draft-vocabulary .scratch/draft-subset.ids --schedule <自然请求文件>
 ```
 
 显式映射仍可与独立头组合。默认K3可使用下一段准备的成套制品。
@@ -238,7 +263,7 @@ hyle --inputs <准备目录> --backend cuda --mtp on --mtp-max-drafts 3 --mtp-dr
 
 ```powershell
 python scripts/prepare-mtp-draft-head.py --inputs <含MTP的BF16准备目录> --ggml-library <本地ggml-base.dll> --quantizer-version llama.cpp@2cbca389f515df455412dafa07e2b1359cc72a6d --default-k3-vocabulary <114688行映射.ids> --output .scratch/mtp-ready
-hyle --inputs .scratch/mtp-ready --backend cuda --capacity 32768 --schedule <自然请求文件>
+hyle_qwen35_diagnostic --inputs .scratch/mtp-ready --backend cuda --capacity 32768 --schedule <自然请求文件>
 ```
 
 运行命令无需额外MTP、K或草稿头参数。输出目录必须是新目录；工具离线编码并只保存所选Q4_K行，

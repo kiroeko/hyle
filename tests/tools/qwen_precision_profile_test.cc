@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
   {
     WeightInventoryFacts inventory;
     inventory.text_tensors = 320; inventory.mtp_tensors = 15;
-    hyle::engine::reporting::RouteDecisionFacts routes;
+    qwen35::RouteDecisionFacts routes;
     routes.mtp_selection_reason = hyle::inference::RouteReason::kSelected;
     inventory.draft_cache = true;
     auto report = hyle::engine::reporting::qwen35_weight_inventory(inventory, routes);

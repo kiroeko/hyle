@@ -82,7 +82,7 @@ def recorded_counts(folder: Path, identity: str, vocabulary: int,
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--hyle", type=Path)
+    parser.add_argument("--hyle", type=Path, help="Explicit hyle_qwen35_diagnostic executable; not the token CLI")
     parser.add_argument("--inputs", type=Path, required=True)
     parser.add_argument("--tokenizer-dir", type=Path)
     parser.add_argument("--work-dir", type=Path, required=True)

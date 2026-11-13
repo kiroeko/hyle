@@ -1,7 +1,7 @@
 #pragma once
 
 #include "model_core.h"
-#include "../../inference/decode_route_policy.h"
+#include "decode_route_policy.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -15,7 +15,7 @@ namespace qwen35 {
 // the provisional cache geometry and asks the actual backend about every
 // target cache storage. The returned endpoint is reused by the Model.
 struct MtpContinuationInputs final {
-  const hyle::inference::DecodeRouteFacts &routes;
+  const DecodeRouteFacts &routes;
   const ModelGeometry &geometry;
   const PreparedWeightSource &source;
   PrecisionProfile precision;
@@ -33,7 +33,7 @@ struct MtpContinuationPreparation final {
 inline MtpContinuationPreparation prepare_mtp_continuation(const MtpContinuationInputs &inputs) {
   namespace inference = hyle::inference;
   constexpr auto exact_token_domain = std::int64_t{1} << std::numeric_limits<float>::digits;
-  const auto decision = inference::select_continuous_mtp(inputs.routes, inputs.overlap, inputs.residents,
+  const auto decision = qwen35::select_continuous_mtp(inputs.routes, inputs.overlap, inputs.residents,
       inputs.geometry.attention_layers() != 0, inputs.geometry.vocabulary <= exact_token_domain);
   if (!decision.enabled) return {{}, false, decision.reason};
 

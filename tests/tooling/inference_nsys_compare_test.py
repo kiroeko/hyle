@@ -75,8 +75,9 @@ class PrefillScopeTest(unittest.TestCase):
     def test_preparer_accepts_split_model_core(self):
         source = ROOT / "engine/models/qwen35/main.cc"
         original, generated = prepare.annotate(source, "hyle")
-        self.assertIn('#include "model_core.h"', original)
+        self.assertIn('#include "generation_runtime.cc"', original)
         self.assertNotIn('#include "model_core.h"', generated)
+        self.assertNotIn('#include "generation_runtime.cc"', generated)
         self.assertEqual(generated.count('class Model final {'), 1)
         self.assertEqual(generated.count('inline std::string qwen35_cache_report('), 1)
         self.assertIn('hyle.host.cold_batch', generated)

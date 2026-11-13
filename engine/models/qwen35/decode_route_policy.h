@@ -1,11 +1,31 @@
 #pragma once
 
-#include "cold_workload.h"
-#include "route_reason.h"
+#include "../../inference/cold_workload.h"
+#include "../../inference/route_choice.h"
 
 #include <cstddef>
 
-namespace hyle::inference {
+namespace qwen35 {
+
+using hyle::inference::ColdWorkloadFacts;
+using hyle::inference::RouteReason;
+using DecodeRouteChoice = hyle::inference::RouteChoice;
+
+// Cold observations consumed by Qwen diagnostics, never a state owner.
+struct RouteDecisionFacts final {
+  RouteReason mtp_selection_reason = RouteReason::kNotConfigured;
+  RouteReason mtp_depth_source = RouteReason::kNotConfigured;
+  RouteReason draft_vocabulary_selection_reason = RouteReason::kNotConfigured;
+  RouteReason bounded_generation_plan_reason = RouteReason::kNotConfigured;
+  RouteReason decode_overlap_plan_reason = RouteReason::kNotConfigured;
+  RouteReason device_verification_plan_reason = RouteReason::kNotConfigured;
+  RouteReason overlap_depth_plan_reason = RouteReason::kNotConfigured;
+};
+
+// Qwen's current prepared routes, not requirements imposed on other models.
+// Workload form, replay/trace and source layout constrain these implementations;
+// the resident single-sequence preference and budget fallback order are cold
+// policy. Native permissions and actual retirement remain with Graph/Compute.
 
 // Cold, configuration-derived facts. The backend and the model still own
 // their actual resource and execution capability checks.
@@ -21,11 +41,6 @@ struct DecodeRouteFacts final {
   bool commands_replay = false;
   bool has_decode = false;
   std::size_t resolved_active_sequences = 0;
-};
-
-struct DecodeRouteChoice final {
-  bool enabled;
-  RouteReason reason = RouteReason::kNone;
 };
 
 // Bounds the workload's shape independently of how the backend progresses it.
@@ -138,4 +153,4 @@ constexpr DecodeRouteChoice select_continuous_mtp(const DecodeRouteFacts &facts,
   return {true, RouteReason::kSelected};
 }
 
-} // namespace hyle::inference
+} // namespace qwen35

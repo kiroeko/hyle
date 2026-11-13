@@ -8,7 +8,7 @@ extra warmup run, profiler, memory sampler, or automatic retry is started.
 MTP is off by default; --mtp on requires a reference GGUF containing its MTP weights.
 
 Example (add --dry-run to inspect without starting model processes):
-  python scripts/inference-compare.py --hyle BUILD/bin/hyle.exe \
+  python scripts/inference-compare.py --hyle BUILD/bin/hyle_qwen35_diagnostic.exe \
     --reference CACHE/peer.exe --model CACHE/model.gguf \
     --inputs CACHE/hyle-inputs --reference-inputs CACHE/peer-inputs \
     --schedule CACHE/schedule.txt --hyle-version COMMIT --reference-version PIN \
@@ -513,7 +513,7 @@ def execute(folder: Path, arm: Arm, scenario: Scenario, args: argparse.Namespace
 
 def arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--hyle", type=Path, required=True, help="Current Hyle executable")
+    parser.add_argument("--hyle", type=Path, required=True, help="Explicit Hyle Qwen diagnostic executable with finite-schedule reports")
     parser.add_argument("--reference", type=Path, required=True, help="Matched-input native reference consumer executable")
     parser.add_argument("--model", type=Path, required=True, help="Existing reference GGUF; Hyle weights are selected by --inputs")
     parser.add_argument("--mtp", choices=("off", "on"), default="off",

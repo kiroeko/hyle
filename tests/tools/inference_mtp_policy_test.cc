@@ -1,6 +1,6 @@
 #include "../../engine/inference/mtp_policy.h"
 #include "../../engine/models/qwen35/mtp_default_policy.h"
-#include "../../engine/inference/decode_route_policy.h"
+#include "../../engine/models/qwen35/decode_route_policy.h"
 
 #include <array>
 #include <cstdio>
@@ -10,6 +10,7 @@ using RouteReason = hyle::inference::RouteReason;
 
 void check_decode_routes() {
   using namespace hyle::inference;
+  using namespace qwen35;
   for (unsigned bits=0; bits<(1u<<8); ++bits)
     for (const auto drafts : {std::size_t{0},std::size_t{1},std::size_t{2},std::size_t{3},std::size_t{4}})
       for (const auto active : {std::size_t{0},std::size_t{1},std::size_t{2}}) {
@@ -164,7 +165,7 @@ int main() {
       if (selected.automatic != automatic || selected.enabled != enabled ||
           selected.prepared_assets != (enabled && prepared))
         throw std::runtime_error("cold MTP policy changed an existing default or fallback");
-      const auto bounded = hyle::inference::select_bounded_generation(
+      const auto bounded = qwen35::select_bounded_generation(
           {workload, request.automatic_backend_eligible, selected.enabled, depth});
       if (bounded.enabled && (workload.multiple_schedules || sessions > 1 || active > 1))
         throw std::runtime_error("bounded generation requires a single session");

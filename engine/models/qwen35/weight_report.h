@@ -1,27 +1,16 @@
 #pragma once
 
 #include "weight_inventory.h"
-#include "../../inference/route_reason.h"
+#include "decode_route_policy.h"
 
 #include <string>
 
 namespace hyle::engine::reporting {
 
-// Reasons describe the outer driver's decisions; they are not model state.
-struct RouteDecisionFacts final {
-  inference::RouteReason mtp_selection_reason = inference::RouteReason::kNotConfigured;
-  inference::RouteReason mtp_depth_source = inference::RouteReason::kNotConfigured;
-  inference::RouteReason draft_vocabulary_selection_reason = inference::RouteReason::kNotConfigured;
-  inference::RouteReason bounded_generation_plan_reason = inference::RouteReason::kNotConfigured;
-  inference::RouteReason decode_overlap_plan_reason = inference::RouteReason::kNotConfigured;
-  inference::RouteReason device_verification_plan_reason = inference::RouteReason::kNotConfigured;
-  inference::RouteReason overlap_depth_plan_reason = inference::RouteReason::kNotConfigured;
-};
-
 // JSON fragment for the existing CLI report. The model supplies cold facts;
 // this formatting does not select a route or own model state.
 inline std::string qwen35_weight_inventory(const qwen35::WeightInventoryFacts &facts,
-    const RouteDecisionFacts &routes = {}) {
+    const qwen35::RouteDecisionFacts &routes = {}) {
   using hyle::inference::route_reason_name;
   auto result = ",\"weight_count_scope\":\"selected_physical_roles\",\"text_tensors\":" +
       std::to_string(facts.text_tensors) + ",\"mtp_tensors\":" + std::to_string(facts.mtp_tensors);

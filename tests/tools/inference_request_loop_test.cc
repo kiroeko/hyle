@@ -10,6 +10,7 @@
 #include "../../engine/inference/generation_dispatcher.h"
 #include "../../engine/inference/token_worker.h"
 #include "../../engine/inference/request_wave_execution.h"
+#include "../../engine/application.h"
 
 #include <array>
 #include <chrono>
@@ -1395,6 +1396,97 @@ void request_assembly_keeps_admission_and_execution_failures_distinct() {
       "consumer start refusal lost its original key or fabricated retirement");
 }
 
+std::optional<i::ModelLoadConfig> application_loaded;
+class ApplicationTestExecutor final : public i::ModelExecutor {
+public:
+  explicit ApplicationTestExecutor(i::ModelLoadConfig config) : config_(std::move(config)) {}
+  i::ModelDescription describe() const override {
+    i::ModelDescription description{256, config_.execution.context, {}};
+    description.execution_profiles.clear();
+    for (const auto &profile : config_.execution_profiles)
+      description.execution_profiles.push_back({profile.name, "host-fixture", profile.draft_count.value_or(0), {}});
+    return description;
+  }
+  void validate(i::GenerationBatch batch) override {
+    for (std::size_t slot = 0; slot < batch.sessions.size(); ++slot)
+      if (batch.sessions[slot].execution_profile >= config_.execution_profiles.size() ||
+          (!batch.sampling_indices.empty() && batch.sampling_indices[slot] > config_.additional_sampling.size()))
+        throw i::RequestRejected("unprepared application fixture selection");
+  }
+  void execute(i::GenerationBatch batch, i::TokenConsumerRef &consumer) override {
+    window_.prepare(batch.sessions.size(), batch.sessions.size());
+    for (std::size_t slot = 0; slot < batch.sessions.size(); ++slot) {
+      const auto key = window_.enqueue(slot); window_.admitted(key);
+      require(consumer.start(key), "application consumer refused original identity");
+      const auto &schedule = batch.sessions[slot];
+      const auto sampling = batch.sampling_indices.empty() ? 0 : batch.sampling_indices[slot];
+      for (std::size_t n = 0; n < schedule.turns.front().max_outputs && !consumer.cancel_requested(key);) {
+        const auto token = static_cast<std::int32_t>(schedule.turns.front().prompt.front() + n +
+            schedule.execution_profile * 10 + sampling);
+        if (consumer.try_write(key, token)) ++n; else consumer.wait();
+      }
+      const bool cancelled = consumer.cancel_requested(key);
+      window_.retire_active(key); window_.release(key); consumer.finished(key, cancelled);
+    }
+  }
+private:
+  const i::ModelLoadConfig config_;
+  i::RequestWindow window_;
+};
+
+void application_uses_one_provider_path_for_cli_and_worker() {
+  const auto match = +[](const std::filesystem::path &source) { return source == "other-model"; };
+  const auto load = +[](const i::ModelLoadConfig &config) -> std::unique_ptr<i::ModelExecutor> {
+    application_loaded = config;
+    return std::make_unique<ApplicationTestExecutor>(config);
+  };
+  const std::array providers{i::ModelProvider{"another-provider", match, load}};
+  const auto run = [&](std::vector<std::string> arguments, std::string tokens = "2 3") {
+    arguments.insert(arguments.begin(), "hyle");
+    std::vector<char *> argv; for (auto &arg : arguments) argv.push_back(arg.data());
+    std::istringstream input(tokens); std::ostringstream output, error;
+    const auto status = hyle::engine::run_application(providers, static_cast<int>(argv.size()), argv.data(), input, output, error);
+    return std::tuple(status, output.str(), error.str());
+  };
+  application_loaded.reset();
+  const auto [help_status, help, help_error] = run({"--help"});
+  require(!help_status && help.find("Hyle text inference") != std::string::npos && !application_loaded && help_error.empty(),
+      "application help loaded a model or assumed a model family");
+  const std::vector<std::string> common{"--inputs", "other-model", "--capacity", "128", "--max-sessions", "2", "--active-sequences", "2", "--asset", "private.table=shared.bin",
+                                       "--sampling", "random", "--temperature", "0.8"};
+  auto cli = common; cli.insert(cli.end(), {"--tokens", "-", "--max-output-tokens", "3"});
+  const auto [cli_status, generated, cli_error] = run(cli);
+  require(!cli_status && generated == "2 3 4\n" && cli_error.empty() && application_loaded,
+      "generic CLI did not execute through its selected provider");
+  const auto cli_config = *application_loaded;
+  auto worker = common; worker.insert(worker.begin(), "--engine-worker");
+  const auto [worker_status, frames, worker_error] = run(worker, "Q\n");
+  require(!worker_status && frames.starts_with("READY\t2\t256\t128\t-") && frames.ends_with("BYE\n") && worker_error.empty() &&
+      application_loaded->execution.context == cli_config.execution.context &&
+      application_loaded->execution.resident_sessions == cli_config.execution.resident_sessions &&
+      application_loaded->execution.active_sequences == cli_config.execution.active_sequences &&
+      application_loaded->sampling.temperature == cli_config.sampling.temperature &&
+      application_loaded->assets.auxiliary.front().path == cli_config.assets.auxiliary.front().path,
+      "CLI and worker assembled different source/execution/sampling facts");
+  auto profiled = cli;
+  profiled.insert(profiled.end(), {"--profile", "alternate", "--profile-asset", "private.table=profile.bin", "--draft-count", "1",
+                                  "--execution-profile", "1", "--additional-sampling", "greedy", "--sampling-index", "1"});
+  const auto [profile_status, profile_output, profile_error] = run(profiled);
+  require(!profile_status && profile_output == "13 14 15\n" && profile_error.empty() &&
+      application_loaded->execution_profiles[1].name == "alternate" &&
+      application_loaded->execution_profiles[1].draft_count == 1 &&
+      i::find_model_asset(i::execution_profile_assets(*application_loaded, 1), "private.table")->path == "profile.bin",
+      "application confused execution/sampling selection or provider-owned assets");
+  require(std::get<0>(run({"--inputs", "unknown", "--tokens", "-"})) == 1 &&
+      std::get<0>(run(cli, "1 x")) == 1 &&
+      std::get<0>(run(cli, "1 9223372036854775808")) == 1 &&
+      std::get<0>(run(cli, "1 -9223372036854775809")) == 1 &&
+      std::get<0>(run(cli, "1 256")) == 1 &&
+      std::get<0>(run({"--inputs", "other-model", "--tokens", "-", "--asset", "malformed"})) == 1 &&
+      std::get<0>(run({"--engine-worker", "--inputs", "other-model", "--tokens", "-"})) == 1,
+      "application fell back to a model driver or ignored invalid input");
+}
+
 void prepared_execution_choices_keep_sampling_rng_and_compatibility_separate() {
   auto records = std::make_shared<ProfileAdmissions>();
   i::GenerationDispatcher dispatcher(std::make_unique<DynamicIngressTestExecutor>(true, records), 2, 8, 1);
@@ -2143,6 +2235,7 @@ int main() {
     request_owner_drives_input_output_and_real_retirement();
     request_assembly_keeps_admission_and_execution_failures_distinct();
     prepared_execution_choices_keep_sampling_rng_and_compatibility_separate();
+    application_uses_one_provider_path_for_cli_and_worker();
     token_worker_rejects_malformed_frames_without_starting_model();
     token_worker_credit_and_cancellation_do_not_hang();
     ingress_accepts_requests_during_execution_and_preserves_identity();

@@ -1,10 +1,19 @@
 include("${CMAKE_CURRENT_LIST_DIR}/cold_sources.cmake")
-target_sources(hyle_engine PRIVATE main.cc ${_hyle_qwen35_cold_sources})
+target_sources(hyle_engine PRIVATE generation_runtime.cc ${_hyle_qwen35_cold_sources})
 if(MSVC)
   # The combined model driver instantiations exceed the normal COFF section limit.
   # Limit the option to this source; other engine objects retain their flags.
-  set_property(SOURCE "${CMAKE_CURRENT_LIST_DIR}/main.cc" TARGET_DIRECTORY hyle_engine
+  set_property(SOURCE "${CMAKE_CURRENT_LIST_DIR}/generation_runtime.cc" TARGET_DIRECTORY hyle_engine
     APPEND PROPERTY COMPILE_OPTIONS /bigobj)
+endif()
+
+# Historical finite schedules, tracing and reports are an explicit consumer.
+# The product and text worker use the provider/runtime path only.
+add_executable(hyle_qwen35_diagnostic EXCLUDE_FROM_ALL
+  diagnostic_main.cc main.cc ${_hyle_qwen35_cold_sources})
+hyle_configure_engine_target(hyle_qwen35_diagnostic)
+if(MSVC)
+  target_compile_options(hyle_qwen35_diagnostic PRIVATE /bigobj)
 endif()
 
 # Real-weight diagnostics remain explicit targets, separate from the application.

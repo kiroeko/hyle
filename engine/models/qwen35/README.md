@@ -1,6 +1,7 @@
 # Qwen3.5-2B 模型实现与诊断
 
 这是 `hyle` 程序当前使用的真实文本模型实现；符合条件的准备目录可自动选择 MTP，草稿数来自制品推荐或默认 K1；尚未接视觉。
+正常 token CLI 与 worker 通过公共提供者装载，见[引擎指南](../../../docs/user/inference.md)。本文的有限日程、固定重放和 JSON 示例使用显式 `hyle_qwen35_diagnostic` 目标，按需构建，不属于默认产品入口。
 当前仍以真实模型检验底层支持，使用本地权重清单和 token IDs；通用目录 loader、C++ tokenizer、
 聊天服务及稳定引擎应用 API 留待后续。第一次构建、准备输入与运行见[引擎指南](../../../docs/user/inference.md)。
 模块用户仍可独立使用 Compute／Graph；模型、生成政策和请求编排归 `engine/`。
@@ -86,7 +87,7 @@ generate 64
 ```
 
 ```text
-hyle --inputs MTP_DIR --mtp on --session-schedules sessions.txt --capacity 1024
+hyle_qwen35_diagnostic --inputs MTP_DIR --mtp on --session-schedules sessions.txt --capacity 1024
 ```
 
 Model 共享权重、冷图族及执行资源，每个 Session 保留自己的完整 KV、conv／GDN、位置、pending 与 RNG；
@@ -160,7 +161,7 @@ cmake --build .scratch/qwen35-build --config Release --target hyle_engine
 
 ### 输入、会话与诊断参数
 
-常用参数可运行 `hyle --help` 查看；以下补充模型特有的文件、资源与诊断合同。
+诊断参数可运行 `hyle_qwen35_diagnostic --help` 查看；以下补充模型特有的文件、资源与诊断合同。
 
 - `--continuation IDS`：普通非schedule模式在prefill后追加给定token IDs；不适用于MTP。`--steps N`是最多输出数，包含prefill首token。
 - `--schedule FILE`：普通／MTP均支持prompt／generate自然多轮；一行prompt可配合`--steps`，显式generate与显式steps互斥。普通模式另支持prompt／decode固定重放，与显式steps互斥；MTP拒绝固定重放。schedule与continuation／decode-ids互斥。先检查完整语法，再读取所有ID并校验会话容量，最后创建Model。
@@ -197,7 +198,7 @@ decode decode2.ids
 ```
 
 ```text
-hyle --inputs DIR --schedule session/manifest.txt --capacity 1024
+hyle_qwen35_diagnostic --inputs DIR --schedule session/manifest.txt --capacity 1024
 ```
 
 每个prompt块产生一个逻辑结果，每个decode ID产生一次单token逻辑调用，固定输入允许跨过预测EOS；同波次的兼容调用可以合成一次真实Graph批次。
@@ -227,7 +228,7 @@ bob bob/manifest.txt
 ```
 
 ```text
-hyle --inputs DIR --session-schedules sessions.txt --capacity 1024
+hyle_qwen35_diagnostic --inputs DIR --session-schedules sessions.txt --capacity 1024
 ```
 
 一个prompt／decode完整turn是一份活跃请求；按活跃上限组成cohort，每个波次最多取各会话的一个下一调用。先完成该波次全部前缀查找／恢复，再按实际T和prompt／decode种类分桶，不padding、不将下一turn越过当前依赖。每桶使用一次原Invocation；所有桶完成后才发布本波次检查点，同波次调用不消费彼此的新检查点。turn完成后会话变空闲。这是一个Queue上顺序执行的真实批次，不是连续batch服务。

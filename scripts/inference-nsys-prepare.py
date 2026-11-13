@@ -104,31 +104,33 @@ def annotate(origin, arm):
         changes.append((old, new))
 
     if arm == "hyle":
-        # The model core is now a separate internal header. Inline it only in
-        # this generated diagnostic TU so the existing exact markers can be
-        # inserted at their original model execution sites. Reverse checking
-        # below also verifies this expansion against the actual driver source.
-        core_include = '#include "model_core.h"'
-        if core_include in text:
-            core = (origin.parent / "model_core.h").read_text(encoding="utf-8")
-            if not core.startswith("#pragma once\n\n"):
-                raise ValueError("hyle: unexpected model core header")
-            edit(core_include, core.removeprefix("#pragma once\n\n").rstrip("\n"))
-            # The model-specific report adapter normally includes the core.
-            # Expand it in this diagnostic TU without including the core a
-            # second time after its pragma-once header was expanded above.
-            report_include = '#include "cache_report.h"'
-            if report_include in text:
-                report = (origin.parent / "cache_report.h").read_text(encoding="utf-8")
-                core_dependency = '#include "model_core.h"\n'
-                if not report.startswith("#pragma once\n\n") or report.count(core_dependency) != 1:
-                    raise ValueError("hyle: unexpected model report header")
-                report = report.removeprefix("#pragma once\n\n").replace(core_dependency, "", 1)
-                edit(report_include, report.rstrip("\n"))
-        for include in dict.fromkeys(re.findall(r'^#include "([^\"]+)"', text, re.MULTILINE)):
-            resolved = (origin.parent / include).resolve()
-            if resolved.is_file():
-                edit('#include "' + include + '"', '#include "' + resolved.as_posix() + '"')
+        # Flatten only the diagnostic consumer and the internal headers which
+        # include the instrumented core. Preserve pragma-once semantics across
+        # their shared dependencies; all other headers remain ordinary includes.
+        expanded = set()
+        inline = {"generation_runtime.cc", "generation_report.cc", "generation_state.h",
+                  "generation_diagnostics.h", "model_core.h", "cache_report.h", "device_mtp_planning.h"}
+
+        def expand(source, parent):
+            def include(match):
+                resolved = (parent / match.group(1)).resolve()
+                if not resolved.is_file():
+                    return match.group(0)
+                if resolved.name not in inline:
+                    return '#include "' + resolved.as_posix() + '"'
+                if resolved in expanded:
+                    return "// already expanded: " + resolved.name
+                expanded.add(resolved)
+                body = resolved.read_text(encoding="utf-8")
+                if resolved.suffix == ".h":
+                    if not body.startswith("#pragma once\n\n"):
+                        raise ValueError("hyle: unexpected internal header: " + resolved.name)
+                    body = body.removeprefix("#pragma once\n\n")
+                return expand(body, resolved.parent).rstrip("\n")
+            return re.sub(r'^#include "([^\"]+)"', include, source, flags=re.MULTILINE)
+
+        if re.search(r'^#include "', text, flags=re.MULTILINE):
+            edit(before, expand(before, origin.parent))
         marker = "namespace qwen35 {\nnamespace sampling = hyle::inference::sampling;"
         edit(marker, REDIRECT + TRACE + "\n" + marker)
         marker = "  const auto start = Clock::now(); auto endpoint = start;"

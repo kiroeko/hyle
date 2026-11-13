@@ -48,7 +48,7 @@ Hyle 默认 BF16 为 K3，量化格式为子集头 K1；上游显式 K1，本窗
 - **尚未交付**：通用模型目录加载、C++ tokenizer、完整服务 API、图片输入及多卡／多机。
   GLM、DeepSeek、Kimi 等目前是组件级实现，没有完整引擎入口。
 
-运行需要先准备本地权重清单；原有 Qwen CLI 使用准备好的 token IDs，文本 CLI 和 Responses 可用本地 tokenizer 处理文本。初始化 C++ 构建不会下载模型或安装 tokenizer 环境。
+运行需要先准备本地权重清单。token CLI 与文本工作进程共用模型提供者和请求入口；文本 CLI 和 Responses 可用本地 tokenizer 处理文本。Qwen 重放、探针及 JSON 报告使用独立诊断目标。初始化 C++ 构建不会下载模型或安装 tokenizer 环境。
 
 ## 快速开始
 
@@ -66,7 +66,7 @@ CUDA、混合后端、独立基础库和 SDK 安装均在构建指南中选择�
 
 ```text
 python engine/models/qwen35/prepare.py --model LOCAL_MODEL --output .scratch/qwen-input --prompt "Please calculate 2 + 3. Answer briefly."
-<build-dir>/bin/hyle --inputs .scratch/qwen-input --mtp off --steps 64 --capacity 1024
+<build-dir>/bin/hyle generate --inputs .scratch/qwen-input --tokens .scratch/qwen-input/prompt.ids --draft-count 0 --max-output-tokens 64 --capacity 1024
 ```
 
 将 `<build-dir>` 换成构建脚本打印的目录，Windows 使用 `hyle.exe`。
