@@ -534,11 +534,11 @@ class [[nodiscard]] Result : public std::expected<T, detail::ResultError> {
 
   template <class U>
   friend constexpr bool operator==(const Result& result, const U& value)
+    // As with std::expected, check the value expression when this overload is
+    // used. Constraining it through ADL recursively considers this same friend
+    // for unrelated iterators whose callable value type contains Result<T>.
     requires(!std::is_void_v<T> &&
-             !std::is_same_v<std::remove_cvref_t<U>, Result> &&
-             requires(const T& a, const U& b) {
-               { a == b } -> std::convertible_to<bool>;
-             })
+             !std::is_same_v<std::remove_cvref_t<U>, Result>)
   {
     return result.has_value() && static_cast<bool>(*result == value);
   }
@@ -699,10 +699,7 @@ class [[nodiscard]] Result<T&> final : public detail::BorrowedResult<T> {
 
   template <class U>
   friend bool operator==(const Result& result, const U& value)
-    requires(!std::is_same_v<std::remove_cvref_t<U>, Result> &&
-             requires(const T& a, const U& b) {
-               { a == b } -> std::convertible_to<bool>;
-             })
+    requires(!std::is_same_v<std::remove_cvref_t<U>, Result>)
   {
     return result.has_value() && static_cast<bool>(*result == value);
   }

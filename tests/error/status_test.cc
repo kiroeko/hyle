@@ -3,10 +3,13 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <array>
 #include <cerrno>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <functional>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -727,6 +730,25 @@ TEST(Result, DefaultConstructionIsValueInitializedSuccess) {
   Result<int> result;
   ASSERT_TRUE(result.has_value());
   EXPECT_EQ(*result, 0);
+}
+
+TEST(Result, CallableRangesDoNotRequireComparablePayloads) {
+  struct Opaque { int value; };
+  using Owning = std::function<Result<Opaque>()>;
+  using Borrowed = std::function<Result<Opaque&>()>;
+  Opaque value{9};
+  const std::array<Owning, 1> owners{[]() -> Result<Opaque> { return Opaque{7}; }};
+  const std::array<Borrowed, 1> borrowers{[&]() -> Result<Opaque&> { return value; }};
+  const std::span<const Owning> owner_view(owners);
+  const std::span<const Borrowed> borrow_view(borrowers);
+  EXPECT_NE(owner_view.begin(), owner_view.end());
+  EXPECT_NE(borrow_view.begin(), borrow_view.end());
+  EXPECT_EQ(owner_view[0]()->value, 7);
+  EXPECT_EQ(std::addressof(*borrow_view[0]()), std::addressof(value));
+  Result<int> owning = 9;
+  Result<int&> borrowed = value.value;
+  EXPECT_TRUE(owning == 9 && 9 == owning);
+  EXPECT_TRUE(borrowed == 9 && 9 == borrowed);
 }
 
 TEST(Result, HoldsError) {
