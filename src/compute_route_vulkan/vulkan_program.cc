@@ -556,15 +556,9 @@ Result<Program> prepare_plan(const std::shared_ptr<Runtime> &runtime,
         continue;
       }
       ++index;
-      for (const auto input : step.inputs)
-        if (!program->values[input].description.is_plain())
-          return std::unexpected(Status::Unimplemented(
-              "Vulkan compressed storage requires a matching mature region"));
-      if (step.operation.get_if<GatedDeltaNet>())
-        return std::unexpected(Status::Unimplemented(
-            "Vulkan GatedDeltaNet requires dense F32 equal heads, "
-            "D16/32/64/128 and legal native resource limits"));
       if (const auto *view = step.operation.get_if<View>()) {
+        // Metadata aliases do not read the encoding. Preserve the validated
+        // root span before qualifying the downstream native computation.
         HYLE_ASSIGN_OR_RETURN(
             auto offset, compute::detail::view_alias_offset(
                              *view, program->values[step.inputs[0]].description,
@@ -581,6 +575,14 @@ Result<Program> prepare_plan(const std::shared_ptr<Runtime> &runtime,
         }
         continue;
       }
+      for (const auto input : step.inputs)
+        if (!program->values[input].description.is_plain())
+          return std::unexpected(Status::Unimplemented(
+              "Vulkan compressed storage requires a matching mature region"));
+      if (step.operation.get_if<GatedDeltaNet>())
+        return std::unexpected(Status::Unimplemented(
+            "Vulkan GatedDeltaNet requires dense F32 equal heads, "
+            "D16/32/64/128 and legal native resource limits"));
       RowCacheAccessFacts access;
       auto status = lower_operation(*program, step, resolver,
                                     facts ? &access : nullptr);

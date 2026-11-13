@@ -199,7 +199,7 @@ TEST(GgmlVulkanRegion, TargetEmbeddingFormatsAdmitOnlyInternalUncheckedRows) {
        {c::GgufQuantizedType::kQ2K, c::GgufQuantizedType::kQ3K,
         c::GgufQuantizedType::kQ4_0, c::GgufQuantizedType::kQ4_1,
         c::GgufQuantizedType::kQ5K, c::GgufQuantizedType::kQ4K, c::GgufQuantizedType::kQ6K,
-        c::GgufQuantizedType::kQ8_0}) {
+        c::GgufQuantizedType::kQ8_0, c::GgufQuantizedType::kIq3S}) {
     const auto stored =
         c::gguf_weight_description(type, c::DataType::kFloat32, 256, 3).value();
     const auto table = stored.transposed().value();
@@ -217,7 +217,9 @@ TEST(GgmlVulkanRegion, TargetEmbeddingFormatsAdmitOnlyInternalUncheckedRows) {
         c::Operation(c::Gather{1, c::IndexBoundsPolicy::kUnchecked}), inputs,
         outputs));
   }
-  const auto other = c::gguf_weight_description(c::GgufQuantizedType::kIq3S,
+  // Original IQ3_S rows have a native shader. The extended IQ1_XS carrier
+  // remains unavailable in the Vulkan source; valid metadata is not admission.
+  const auto other = c::gguf_weight_description(c::GgufQuantizedType::kIq1Xs,
                                                 c::DataType::kFloat32, 256, 3)
                          .value()
                          .transposed()

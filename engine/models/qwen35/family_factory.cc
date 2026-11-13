@@ -891,8 +891,13 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     inference::testing::record_compile();
 #endif
     auto compiled = execution.compile(definition.graph, assembly.constants(), assembly.options(compile_options));
-    if (!compiled && (packed_target || compact_draft) && compiled.error().IsUnimplemented() && !compiled.error().has_native_error())
+    if (!compiled && (packed_target || compact_draft) && compiled.error().IsUnimplemented() && !compiled.error().has_native_error()) {
+      family_log([&](std::ostream &out) {
+        out << "cold_family_refusal packing=" << static_cast<unsigned>(packing)
+            << " reason=" << compiled.error().message() << '\n';
+      });
       return {}; // Cold capability only; no execution/device error is a fallback.
+    }
     auto compiled_family = take(std::move(compiled));
     const auto &family_report = compiled_family.report;
     const auto storage = family_report.total_compiled_storage();

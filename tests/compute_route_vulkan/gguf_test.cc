@@ -39,6 +39,50 @@ TEST(VulkanGguf, EveryCatalogFormatUsesNativeDirectRegionAndReplays) {
   }
 }
 
+TEST(VulkanGguf, CompressedWeightTransposePlanKeepsOriginalStorageAndMath) {
+  QuantizerCleanup cleanup;
+  auto context = vulkan_test::context().value();
+  constexpr int k = 256, n = 8, m = 2;
+  const auto input_desc = vulkan_tensor_test::dense(c::DataType::kFloat32, {m, k});
+  const auto output_desc = vulkan_tensor_test::dense(c::DataType::kFloat32, {m, n});
+  const auto transpose = c::View::permute(std::array<std::int32_t, 2>{1, 0}).value();
+  for (const auto type : {c::GgufQuantizedType::kQ4K, c::GgufQuantizedType::kIq3S}) {
+    const auto rhs_desc = c::gguf_weight_description(type, c::DataType::kFloat32, k, n).value();
+    const auto stored_desc = rhs_desc.transposed().value();
+    const auto packed = pack(type, weights(n, k), n, k, *stored_desc.required_bytes());
+    const auto weight = context.upload(stored_desc, packed.bytes).value();
+    for (bool constant : {false, true}) {
+      SCOPED_TRACE(::testing::Message() << "format=" << static_cast<int>(type) << " constant=" << constant);
+      v::detail::Plan plan;
+      plan.values = {{input_desc, {}}, {stored_desc, constant ? weight : v::Tensor{}},
+                     {rhs_desc, {}}, {output_desc, {}}};
+      plan.inputs = constant ? std::vector<std::uint32_t>{0} : std::vector<std::uint32_t>{0, 1};
+      plan.outputs = {3};
+      plan.steps = {{c::Operation(transpose), {1}, {2}, {}, {1, 1, 1}, {}},
+                    {c::Operation(c::MatMul{}), {0, 2}, {3}, {}, {1, 1, 1}, {}}};
+      auto prepared = v::detail::prepare_plan(context, plan);
+      ASSERT_TRUE(prepared) << prepared.error().message();
+      const auto &state = *v::detail::Access::program(*prepared);
+      EXPECT_EQ(state.aliases[2].root, 1U);
+      EXPECT_EQ(state.aliases[2].byte_offset, 0U);
+      ASSERT_FALSE(state.dispatches.empty());
+      EXPECT_TRUE(state.dispatches.back().region);
+      if (constant)
+        EXPECT_EQ(state.values[1].constant.native_buffer(), weight.native_buffer());
+      auto slot = prepared->create_invocation().value();
+      for (int replay : {1, 2}) {
+        const auto x = activations(m, k, replay);
+        const auto input = vulkan_tensor_test::make(context, input_desc, x);
+        ASSERT_TRUE(constant ? slot.bind(input).ok() : slot.bind(input, weight).ok());
+        auto work = slot.submit().value();
+        auto result = work.wait();
+        ASSERT_TRUE(result) << result.error().message();
+        expect_native_projection(context, result->get()->tensors()[0], type, x, packed, m, n, k);
+      }
+    }
+  }
+}
+
 TEST(VulkanGguf, Iq1SOriginalQ8ActivationCauseCapture) {
   QuantizerCleanup cleanup;
   auto context = vulkan_test::context().value();
