@@ -78,6 +78,25 @@ class NinjaHeaderDepsRecoveryTest(unittest.TestCase):
                 result[match[1].replace("\\", "/")] = (int(match[2]), block.replace("\\", "/"))
         return result
 
+    def legacy_include_prefix(self, targets):
+        # Hosted MSVC can lack the Chinese language pack and ignore VSLANG.
+        # Reproduce the actual legacy failure (an unmatched Ninja include
+        # prefix) without requiring or installing a second compiler language.
+        rules = self.build / "CMakeFiles/rules.ninja"
+        contents = rules.read_bytes()
+        for target in targets:
+            pattern = rb"(?ms)^rule CXX_COMPILER__" + re.escape(target.encode()) + rb"_(?:unscanned_)?Release\r?\n.*?(?=\r?\nrule |\Z)"
+            match = re.search(pattern, contents)
+            self.assertIsNotNone(match, target)
+            replacement = b"  msvc_deps_prefix = HYLE_TEST_UNMATCHED_INCLUDE_PREFIX:"
+            if re.search(rb"(?m)^  msvc_deps_prefix = ", match[0]):
+                block = re.sub(rb"(?m)^  msvc_deps_prefix = [^\r\n]*", replacement, match[0])
+            else:
+                first = match[0].index(b"\n") + 1
+                block = match[0][:first] + replacement + b"\n" + match[0][first:]
+            contents = contents[:match.start()] + block + contents[match.end():]
+        rules.write_bytes(contents)
+
     def test_zero_missing_and_shared_scope_recover_once_without_source_or_command_changes(self):
         self.make_fixture("migration")
         (self.source / "CMakeLists.txt").write_text(
@@ -105,6 +124,7 @@ class NinjaHeaderDepsRecoveryTest(unittest.TestCase):
         (self.directory / "legacy-rule-no-recorder.ninja").write_bytes(legacy_rules)
         rules.write_bytes(legacy_rules)
         self.build_targets("build-healthy", ("healthy_shared", "independent", "empty", "missing"))
+        self.legacy_include_prefix(("damaged",))
         self.build_targets("build-localized-damaged", ("damaged",), dict(self.env, VSLANG="2052"))
         old_deps = self.deps("deps-before")
         obj = lambda target, source: f"CMakeFiles/{target}.dir/{source}.cc.obj"
@@ -191,6 +211,7 @@ class NinjaHeaderDepsRecoveryTest(unittest.TestCase):
         (dependency / "dep.cc").write_text('#include "dep.h"\nint dependency() { return VALUE; }\n')
         self.configure("configure-initial")
         self.build_targets("build-parent", ("parent_zero", "parent_healthy"))
+        self.legacy_include_prefix(("child_legacy", "owned_dep"))
         self.build_targets("build-child-localized", ("child_legacy", "owned_dep"), dict(self.env, VSLANG="2052"))
         parent_objects = [self.build / "CMakeFiles/parent_zero.dir/parent_zero.cc.obj",
                           self.build / "CMakeFiles/parent_healthy.dir/parent_healthy.cc.obj"]
@@ -232,6 +253,7 @@ class NinjaHeaderDepsRecoveryTest(unittest.TestCase):
         build = [OPTIONS.cmake, "--build", self.build, "--config", "Release", "--parallel", "1"]
         self.run_tool("configure-initial", config)
         self.run_tool("build-release-healthy", build + ["--target", "release_healthy"])
+        self.legacy_include_prefix(("nondefault",))
         self.run_tool("build-release-localized", build + ["--target", "nondefault"], dict(self.env, VSLANG="2052"))
         obj = "CMakeFiles/nondefault.dir/Release/main.cc.obj"
         self.assertEqual(self.deps("deps-before", "build-Release.ninja")[obj][0], 0)

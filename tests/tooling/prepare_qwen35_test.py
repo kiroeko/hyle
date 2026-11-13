@@ -2,6 +2,7 @@
 from contextlib import redirect_stderr
 import importlib.util
 import io
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -13,10 +14,15 @@ from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('prepare_qwen35_tool',ROOT/'scripts/prepare-qwen35.py')
 tool=importlib.util.module_from_spec(spec);spec.loader.exec_module(tool)
+from engine.tokenizer_identity import bind_source_tokenizer
 
 
 class Tokenizer:
     all_special_ids=[7]
+    def __init__(self):
+        self.backend_tokenizer=types.SimpleNamespace(to_str=lambda:json.dumps(
+            dict(model=dict(type='WordLevel',vocab=self.get_vocab()))))
+    def get_vocab(self): return {f't{i}':i for i in range(8)}
     def apply_chat_template(self,messages,**kwargs): return messages[0]['content']
     def encode(self,text,**kwargs): return [5,5,2]
 
@@ -30,11 +36,17 @@ class PrepareQwen35Test(unittest.TestCase):
         (self.inputs/'weights.tsv').write_text('HYLE_QWEN_ROLE_FILES_V2\n'+self.identity+
             '\ngeometry 4 8 8\nmtp.fc.weight\tBF16\n',encoding='utf-8')
         self.tokenizer=self.work/'tokenizer';self.tokenizer.mkdir()
+        bind_source_tokenizer(self.inputs/'tokenizer-binding.tsv',self.identity,8,Tokenizer())
         self.out=self.work/'assets'
 
     def fake_transformers(self):
+        def load(path, *, local_files_only, trust_remote_code, use_fast):
+            self.assertTrue(local_files_only)
+            self.assertFalse(trust_remote_code)
+            self.assertTrue(use_fast)
+            return Tokenizer()
         return types.SimpleNamespace(AutoTokenizer=types.SimpleNamespace(
-            from_pretrained=lambda path,local_files_only,trust_remote_code: Tokenizer()))
+            from_pretrained=load))
 
     def test_existing_inputs_create_reusable_subset_without_execution(self):
         args=['--inputs',str(self.inputs),'--output',str(self.out),'--mtp',

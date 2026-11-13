@@ -535,7 +535,7 @@ class OriginalHfRolesTest(unittest.TestCase):
             role.update(offset=6,sha256=hashlib.sha256(raw).hexdigest())
             with patch.object(roles,"ROOT",root):
                 source,values=roles.verify_role_source(role)
-                self.assertEqual((source,values),(root/"borrowed source.bin",raw))
+                self.assertEqual((source,values),((root/"borrowed source.bin").resolve(),raw))
                 role["sha256"]="0"*64
                 with self.assertRaisesRegex(ValueError,"SHA differs"):
                     roles.verify_role_source(role)
@@ -548,7 +548,7 @@ class OriginalHfRolesTest(unittest.TestCase):
                 shape=[1],bytes=2,path='scales.bf16',offset=2,sha256=hashlib.sha256(raw).hexdigest())
             with patch.object(roles,'ROOT',root):
                 source,values=roles.verify_role_source(role)
-                self.assertEqual((source,values),(root/'scales.bf16',raw))
+                self.assertEqual((source,values),((root/'scales.bf16').resolve(),raw))
                 self.assertEqual(roles.cache_scale_bits(values,role['name']),
                     dict(bf16_bits='3ce1',f32_bits='3ce10000'))
                 bad=dict(role,dtype='F32')
