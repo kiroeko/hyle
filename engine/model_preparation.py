@@ -20,7 +20,7 @@ class PreparedAssetFiles(Protocol):
 class LocalPreparationProvider:
     matches: Callable[[Path], bool]
     prepare: Callable[..., PreparedAssetFiles]
-    validate_tokenizer: Callable[..., None]
+    validate_tokenizer: Callable[..., tuple[str, int]]
     source_identity: Callable[[Path], tuple[str, int]]
     write_vocabulary: Callable[..., None]
 
@@ -41,15 +41,18 @@ def prepare_local_assets(inputs: Path, tokenizer_directory: Path, tokenizer, dir
     return _select(inputs).prepare(inputs, tokenizer_directory, tokenizer, AssetStore(directory), **recipe)
 
 
-def validate_local_tokenizer(inputs: Path, tokenizer) -> None:
-    _select(inputs).validate_tokenizer(inputs, tokenizer)
+def validate_local_tokenizer(inputs: Path, tokenizer) -> tuple[str, int]:
+    return _select(inputs).validate_tokenizer(inputs, tokenizer)
 
 
 def prepared_source_identity(inputs: Path) -> tuple[str, int]:
     return _select(inputs).source_identity(inputs)
 
 
-def write_prepared_vocabulary(inputs: Path, output, ids: list[int], recommended_drafts: int | None) -> None:
+def write_prepared_vocabulary(inputs: Path, output, ids: list[int], recommended_drafts: int | None, *,
+                              expected_source: tuple[str, int]) -> None:
     provider = _select(inputs)
     identity, vocabulary = provider.source_identity(inputs)
+    if (identity, vocabulary) != expected_source:
+        raise ValueError('prepared source changed after calibration')
     provider.write_vocabulary(output, identity, vocabulary, ids, recommended_drafts)

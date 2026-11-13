@@ -54,9 +54,10 @@ def source_identity(inputs: Path) -> tuple[str, int]:
     return source, vocabulary
 
 
-def validate_tokenizer(inputs: Path, tokenizer) -> None:
+def validate_tokenizer(inputs: Path, tokenizer) -> tuple[str, int]:
     source, vocabulary = source_identity(inputs)
     validate_source_binding(Path(inputs) / 'tokenizer-binding.tsv', source, vocabulary, tokenizer)
+    return source, vocabulary
 
 
 def source_facts(inputs: Path) -> dict:
@@ -122,8 +123,10 @@ def tokenizer_identity(directory: Path, template: Path | None = None, tokenizer=
 
 def prepare_assets(inputs: Path, tokenizer_directory: Path, tokenizer, store: AssetStore, *,
                    rows: int | None = None, languages: str | None = None, template: Path | None = None) -> PreparedAssets:
-    validate_tokenizer(inputs, tokenizer)
+    expected_source = validate_tokenizer(inputs, tokenizer)
     facts = source_facts(Path(inputs))
+    if (facts['identity'], facts['vocabulary']) != expected_source:
+        raise ValueError('prepared source changed after tokenizer validation')
     language_set = language_preferences(languages) if languages is not None else None
     selected_rows = (facts['vocabulary'] + 1) // 2 if rows is None else rows
     if type(selected_rows) is not int or not 0 < selected_rows < facts['vocabulary']:

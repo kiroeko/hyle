@@ -145,7 +145,8 @@ def main() -> None:
         args.work_dir.mkdir(parents=True)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         with args.output.open("x", encoding="utf-8", newline="\n") as output:
-            write_prepared_vocabulary(args.inputs, output, selected, args.recommended_drafts)
+            write_prepared_vocabulary(args.inputs, output, selected, args.recommended_drafts,
+                                      expected_source=(identity, vocabulary))
         summary = (f"source={identity}\nprompts={prompts}; generated={sum(counts.values())}; distinct={len(counts)}\n"
                    f"rows={len(selected)}; generated-frequency descending; ties=original ID ascending\n"
                    "Offline reuse only; validation split ignored; no executable, tokenizer or GPU was invoked.\n")
@@ -195,7 +196,8 @@ def main() -> None:
     selected = selected_ids(counts, vocabulary, args.rows, required)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("x", encoding="utf-8", newline="\n") as output:
-        write_prepared_vocabulary(args.inputs, output, sorted(selected), args.recommended_drafts)
+        write_prepared_vocabulary(args.inputs, output, sorted(selected), args.recommended_drafts,
+                                  expected_source=(identity, vocabulary))
     priority = "special IDs first; " if args.languages is not None else ""
     summary = (f"source={identity}\nprompts={len(prompts)}; generated={sum(counts.values())}; distinct={len(counts)}\n"
                f"rows={len(selected)}; {priority}generated-frequency descending; ties=original ID ascending\n"

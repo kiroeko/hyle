@@ -1,12 +1,15 @@
 from pathlib import Path
 import struct
+import io
 import tempfile
 import threading
 import unittest
+from unittest.mock import patch
 
 from engine.asset_store import AssetStore
-from engine.models.qwen35.runtime_assets import prepare_assets, tokenizer_identity
+from engine.models.qwen35.runtime_assets import prepare_assets, tokenizer_identity, source_facts
 from engine.tokenizer_identity import bind_source_tokenizer
+from engine.model_preparation import write_prepared_vocabulary
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -81,6 +84,19 @@ class RuntimeAssetsTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'modified'):
             self.prepare()
         self.assertEqual(payload.read_bytes(), b'x' * len(payload.read_bytes()))
+
+    def test_source_change_after_validation_cannot_relabel_tokenizer_assets(self):
+        changed = dict(source_facts(self.inputs), identity='b' * 64)
+        tokenizer = Tokenizer()
+        with patch('engine.models.qwen35.runtime_assets.source_facts', return_value=changed):
+            with self.assertRaisesRegex(ValueError, 'source changed'):
+                self.prepare(tokenizer)
+        self.assertEqual(tokenizer.calls, 0)
+        output = io.StringIO()
+        with self.assertRaisesRegex(ValueError, 'source changed'):
+            write_prepared_vocabulary(self.inputs, output, [0, 2], None,
+                                      expected_source=('b' * 64, 8))
+        self.assertEqual(output.getvalue(), '')
 
     def test_failed_preparation_does_not_publish_and_can_be_retried(self):
         def fail(path):
