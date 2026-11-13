@@ -13,6 +13,7 @@ from pathlib import Path
 import struct
 
 from . import gguf_header
+from .runtime_assets import source_identity
 
 
 def vision_shapes(config):
@@ -162,8 +163,7 @@ def prepare_vision(model: Path, inputs: Path, output: Path, *, mmproj: Path | No
     config, vision, processor = read_recipe(model)
     # Source identity is the same explicit model binding used by tokenizer and
     # draft assets. No filename, vocabulary size or backend name is an identity.
-    from ...model_preparation import prepared_source_identity
-    target = prepared_source_identity(inputs)[0]
+    target = source_identity(inputs)[0]
     roles = (_hf_roles(model, vision_shapes(vision)) if mmproj is None else
              _mmproj_roles(mmproj.resolve(), vision_shapes(vision), vision, output))
     header = ["HYLE_QWEN_VISION_V1", target,

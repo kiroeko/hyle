@@ -7,9 +7,9 @@
 
 推理引擎负责把应用请求组织为完整的推理过程。内核之外的引擎部分负责模型制品的识别和读取、
 输入输出与tokenizer、请求与会话管理、跨请求调度、资源接纳与淘汰政策、结果交付及应用入口。
-HTTP服务作为引擎外围适配器。当前本地文本CLI和Responses文本子集使用Python tokenizer／模板与常驻模型进程，
+HTTP服务作为引擎外围适配器。当前本地CLI及Responses、Chat Completions、Messages子集使用Python tokenizer／模板与常驻模型进程，
 支持冷期具名方案、进程内会话、可信前缀域与派生制品持久化。模型来源通过静态提供者分派，目前完整适配器是Qwen；
-C++ tokenizer和完整服务API尚未交付。
+C++ tokenizer和完整服务API尚未交付；图片输入的实际范围见[图片与mmproj](../user/vision.md)。
 
 推理引擎内核负责将已接纳的推理工作变为计算结果和新状态。它包括模型和设备的冷准备、模型计算、
 prefill／decode及推测步骤、采样、模型状态与缓存操作、执行依赖、完成观察和真实退休。

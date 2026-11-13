@@ -58,6 +58,23 @@ def inspect_includes(roots, forbidden):
 
 
 class ArchitectureBoundariesTest(unittest.TestCase):
+    def test_model_preparers_do_not_call_the_application_catalog(self):
+        violations = []
+        for path in (ROOT / 'engine/models').rglob('*.py'):
+            package = path.relative_to(ROOT).parts[:-1]
+            for node in ast.walk(ast.parse(path.read_text(encoding='utf-8'), filename=str(path))):
+                if isinstance(node, ast.Import):
+                    modules = [alias.name for alias in node.names]
+                elif isinstance(node, ast.ImportFrom):
+                    parent = package[:len(package) - node.level + 1] if node.level else ()
+                    module = '.'.join((*parent, *((node.module or '').split('.') if node.module else ())))
+                    modules = [module, *(module + '.' + alias.name for alias in node.names)]
+                else:
+                    continue
+                if any(module in {'engine.model_preparation', 'engine.model_catalog'} for module in modules):
+                    violations.append(f'{path.relative_to(ROOT)}:{node.lineno}: application catalog import')
+        self.assertEqual(violations, [])
+
     def test_common_calibration_and_selection_do_not_import_model_implementations(self):
         for name in ('calibration.py', 'vocabulary.py'):
             path = ROOT / 'engine' / name

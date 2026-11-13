@@ -42,6 +42,7 @@ class VisionPipelineTest(unittest.TestCase):
         self.temporary=tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[2]/'.scratch')
         self.addCleanup(self.temporary.cleanup)
         self.root=Path(self.temporary.name)
+        (self.root/'weights.tsv').write_text('HYLE_QWEN_ROLE_FILES_V2\n'+'a'*64+'\ngeometry 8 32 100\n')
         self.vision=dict(depth=1,hidden_size=16,intermediate_size=32,num_heads=4,patch_size=2,
             temporal_patch_size=2,spatial_merge_size=2,num_position_embeddings=16,out_hidden_size=8,
             in_channels=3,hidden_act='gelu_pytorch_tanh',deepstack_visual_indexes=[])
@@ -141,7 +142,7 @@ class VisionPipelineTest(unittest.TestCase):
         raw=json.dumps(header).encode()
         (self.root/'model.safetensors').write_bytes(struct.pack('<Q',len(raw))+raw+payload)
         output=self.root/'vision.tsv'
-        with mock.patch('engine.model_preparation.prepared_source_identity',return_value=('a'*64,100)):
+        with mock.patch('engine.model_preparation._select',side_effect=AssertionError('model must not reenter the application catalog')):
             first=prepare_vision(self.root,self.root,output)
             second=prepare_vision(self.root,self.root,output)
         self.assertEqual(first,second)
@@ -152,9 +153,8 @@ class VisionPipelineTest(unittest.TestCase):
 
     def test_incomplete_visual_checkpoint_is_an_error(self):
         raw=b'{}';(self.root/'model.safetensors').write_bytes(struct.pack('<Q',len(raw))+raw)
-        with mock.patch('engine.model_preparation.prepared_source_identity',return_value=('a'*64,100)):
-            with self.assertRaisesRegex(ValueError,'missing visual tensors'):
-                prepare_vision(self.root,self.root,self.root/'vision.tsv')
+        with self.assertRaisesRegex(ValueError,'missing visual tensors'):
+            prepare_vision(self.root,self.root,self.root/'vision.tsv')
 
     def test_same_placeholder_ids_cannot_reuse_different_image_state(self):
         worker=Worker();owner=TextSessions(worker,SessionPolicy(kv_capacity=1));self.addCleanup(owner.close)
