@@ -74,11 +74,15 @@ class DefaultPreparation(unittest.TestCase):
         model = work/'model'; model.mkdir(); (model/'config.json').write_text('{}')
         tokenizer_dir=work/'separate-tokenizer';tokenizer_dir.mkdir()
         class Tokenizer(PreparationTokenizer):
+            @property
+            def backend_tokenizer(self): return self
+            def get_vocab(self): return {'token' + str(i): i for i in range(8)}
+            def to_str(self): return json.dumps({'model': {'vocab': self.get_vocab()}})
             def apply_chat_template(self, messages, **kwargs):
                 return {'input_ids':[1, 2]} if kwargs['tokenize'] else messages[0]['content']
         tokenizer = Tokenizer()
         seen=[]
-        def from_pretrained(path, local_files_only):
+        def from_pretrained(path, local_files_only, **kwargs):
             self.assertTrue(local_files_only);seen.append(path);return tokenizer
         auto = types.SimpleNamespace(from_pretrained=from_pretrained)
         fake_transformers = types.SimpleNamespace(AutoTokenizer=auto)
@@ -104,7 +108,8 @@ class DefaultPreparation(unittest.TestCase):
                      patch.object(prepare.geometry, 'role_shapes', return_value={'mtp.test':(1,)}):
                     prepare.main()
                 artifact = out/'mtp-draft-vocabulary.ids'
-                self.assertEqual(seen[-1],tokenizer_dir)
+                self.assertEqual(seen[-2:], [tokenizer_dir, model])
+                self.assertTrue((out / 'tokenizer-binding.tsv').is_file())
                 self.assertEqual(json.loads((out/'input.json').read_text())['tokenizer_directory'],str(tokenizer_dir.resolve()))
                 self.assertEqual(artifact.exists(), expect_artifact)
                 if artifact.exists():
