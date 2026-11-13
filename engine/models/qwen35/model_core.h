@@ -591,6 +591,16 @@ struct PrefixSamplingResult final {
 // Actual cold storage and policy addresses borrowed by submitted Graphs. The
 // application Model and Session links are absent: a failed native prefix must
 // never retain or later dereference a destroyed host application object.
+struct WeightStorage final {
+  // When shared, the original endpoint outlives its read leases and pools.
+  std::optional<Backend> endpoint;
+  std::vector<c::LeasePool> pools;
+  std::map<std::string, LoadedWeight> weights;
+  WeightMeanings meanings;
+  std::string identity;
+  std::optional<WeightLoadReport> inventory;
+};
+
 struct ColdResources final {
   struct DeferredRootRelease final {
     hyle::sched::detail::BlockingJob job{};
@@ -613,15 +623,18 @@ struct ColdResources final {
   // The Model hands off its original endpoint on teardown, including normal
   // retirement. Destroy payloads before this resource controller's final owner.
   std::optional<Backend> retirement_backend;
-  std::vector<c::LeasePool> weight_pools;
-  std::map<std::string, LoadedWeight> weights;
+  // Prepared algorithms share only this original immutable bank. Their
+  // complete state, programs, sampling and retirement scopes stay separate.
+  std::shared_ptr<WeightStorage> weight_bank;
+  std::vector<c::LeasePool> &weight_pools;
+  std::map<std::string, LoadedWeight> &weights;
   ProjectionBindings projections;
   std::optional<inference::DraftVocabulary> draft_vocabulary;
   std::string draft_vocabulary_identity;
   std::optional<PreparedDraftHead> draft_head;
   double draft_head_prepare_seconds=0;
-  WeightMeanings weight_meanings;
-  std::string source_identity;
+  WeightMeanings &weight_meanings;
+  std::string &source_identity;
   std::vector<StateSchema> state_schema;
   const prepared::CachePolicy cache_policy;
   const std::vector<CacheStoragePair> attention_storage;
@@ -644,8 +657,12 @@ struct ColdResources final {
 
   explicit ColdResources(const ModelGeometry &geometry, std::size_t capacity, PrecisionProfile precision,
       SamplingConfiguration first, std::span<const SamplingConfiguration> additional,
-      prepared::CachePolicy policy, std::vector<CacheStoragePair> storage)
-      : state_schema(state_schema_for(geometry, capacity, precision)),
+      prepared::CachePolicy policy, std::vector<CacheStoragePair> storage,
+      std::shared_ptr<WeightStorage> shared_weights = {})
+      : weight_bank(shared_weights ? std::move(shared_weights) : std::make_shared<WeightStorage>()),
+        weight_pools(weight_bank->pools), weights(weight_bank->weights),
+        weight_meanings(weight_bank->meanings), source_identity(weight_bank->identity),
+        state_schema(state_schema_for(geometry, capacity, precision)),
         cache_policy(policy), attention_storage(std::move(storage)), state_pools(geometry.layers.size()),
         retain_sampling_frontier(first.enabled || !first.modifiers.empty() || std::ranges::any_of(additional,
             [](const auto &value) { return value.enabled || !value.modifiers.empty(); })) {
@@ -1051,7 +1068,8 @@ public:
       PreparedWeightSource source, const ModelGeometry &model_geometry, std::size_t selected_capacity,
       cache::Plan selected_cache, std::filesystem::path probe, bool progress, ReplayPolicy replay,
       std::size_t max_cache_bytes, Sampling sampling_configuration, std::size_t cpu_ffn_layer_count,
-      std::span<const SamplingConfiguration> additional_sampling = {})
+      std::span<const SamplingConfiguration> additional_sampling = {},
+      const Model *shared_weight_model = nullptr, bool retain_weight_inventory = false)
        : sampling_seed(sampling_configuration.seed), ffn_placement(source.roles, cpu_ffn_layer_count),
          precision(PrecisionProfile::from_roles(source.roles)),
          geometry(model_geometry), hidden(geometry.hidden), intermediate(geometry.intermediate), vocabulary(geometry.vocabulary),
@@ -1064,7 +1082,8 @@ public:
          execution(std::move(prepared_execution)),
          resources_(std::make_shared<ColdResources>(geometry, selected_capacity, precision,
               SamplingConfiguration{sampling_configuration.enabled, sampling_configuration.policy, sampling_configuration.modifiers}, additional_sampling,
-              source.roles.cache_policy, std::move(source.cache_storage))),
+              source.roles.cache_policy, std::move(source.cache_storage),
+              shared_weight_model ? shared_weight_model->resources_->weight_bank : nullptr)),
           default_sampler(resources_->sampling_configurations[0]->configuration),
          weight_pools(resources_->weight_pools), weights(resources_->weights), projections(resources_->projections),
          weight_meanings(resources_->weight_meanings), source_identity(resources_->source_identity),
@@ -1198,9 +1217,31 @@ public:
               !sampling.enabled && sampling.modifiers.empty()}.eligible()});
     }
     const auto weight_load_start = Clock::now();
-    auto loading = load_selected_weight_roles(source_roles, execution, weights, weight_pools, ffn_placement, allocation_budget);
-    source_identity = loading.identity;
-    weight_meanings = std::move(loading.meanings);
+    WeightLoadReport loading;
+    if (shared_weight_model) {
+      if (!execution.same_endpoint(shared_weight_model->execution) ||
+          geometry != shared_weight_model->geometry || source_roles.identity != shared_weight_model->source_identity ||
+          ffn_placement.cpu_layers() != shared_weight_model->ffn_placement.cpu_layers() ||
+          !resources_->weight_bank->inventory)
+        throw std::invalid_argument("shared weight bank differs from its original source, placement or endpoint");
+      for (const auto &role : source_roles.selected) {
+        const auto found = weights.find(role.name);
+        if (found == weights.end() || !found->second.tensor.ready || found->second.tensor.writer)
+          throw std::invalid_argument("shared weight bank lacks an immutable selected role: " + role.name);
+      }
+      loading = *resources_->weight_bank->inventory;
+      loading.stream = {}; // Aliasing original read leases performs no IO/copy.
+      std::cerr << "shared_weight_bank source=" << source_identity << " original_bytes=" << loading.bytes
+                << " newly_loaded_bytes=0\n";
+    } else {
+      loading = load_selected_weight_roles(source_roles, execution, weights, weight_pools, ffn_placement, allocation_budget);
+      source_identity = loading.identity;
+      weight_meanings = std::move(loading.meanings);
+    }
+    if (!shared_weight_model && retain_weight_inventory) {
+      resources_->weight_bank->endpoint.emplace(take(execution.share_endpoint()));
+      resources_->weight_bank->inventory = loading;
+    }
     projections = prepare_projection_bindings(weights, cache_plan.draft_cache, geometry);
     if(source.draft_head){
       const auto begin=Clock::now();

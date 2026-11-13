@@ -42,15 +42,19 @@ std::string fixture_from_environment() {
 } // namespace
 
 int main(int argc, char **argv) try {
-  if (argc > 3) throw std::runtime_error("usage: qwen_model_core_test [PREPARED_INPUT] [--cuda]");
+  if (argc > 4) throw std::runtime_error("usage: qwen_model_core_test [PREPARED_INPUT] [--cuda] [--shared]");
   const auto input = argc > 1 ? std::string(argv[1]) : fixture_from_environment();
   if (input.empty()) {
     std::cerr << "SKIP: pass prepared input or set HYLE_QWEN_CORE_INPUTS\n";
     return 77;
   }
-  const auto backend = argc > 2 && std::string_view(argv[2]) == "--cuda"
-      ? i::BackendKind::kCuda : i::BackendKind::kCpu;
-  if (argc > 2 && std::string_view(argv[2]) != "--cuda") throw std::runtime_error("unknown backend option");
+  auto backend = i::BackendKind::kCpu;
+  bool shared = false;
+  for (int j = 2; j < argc; ++j) {
+    if (std::string_view(argv[j]) == "--cuda") backend = i::BackendKind::kCuda;
+    else if (std::string_view(argv[j]) == "--shared") shared = true;
+    else throw std::runtime_error("unknown core option");
+  }
   if (std::ranges::find(i::Backend::compiled_backends(), backend) == i::Backend::compiled_backends().end()) {
     std::cerr << "SKIP: requested backend was not compiled\n";
     return 77;
@@ -63,10 +67,29 @@ int main(int argc, char **argv) try {
   const auto prompt = q::read_ids(directory / "prompt.ids", geometry.vocabulary, 16);
   require(prompt.size() >= 2, "core consumer needs at least two input IDs");
   constexpr std::size_t capacity = 16;
+  const auto precision = q::PrecisionProfile::from_roles(source.roles);
   const auto plan = q::cache::plan(geometry, source.cache_row_bytes, capacity, 1, 2,
-      q::recurrent_bytes(q::state_schema_for(geometry, capacity), geometry));
-  q::Model model(std::move(source), geometry, capacity, plan, {}, false,
-      q::ReplayPolicy::kCommands, SIZE_MAX, {}, 0, {.primary = backend});
+      q::recurrent_bytes(q::state_schema_for(geometry, capacity, precision), geometry),
+      1, 1, false, false, 1, 0, precision);
+  auto endpoint = q::create_execution(geometry, plan, 0, {.primary = backend});
+  auto original = std::make_unique<q::Model>(std::move(endpoint), hyle::compute::ResourceBudget{},
+      std::move(source), geometry, capacity, plan, std::filesystem::path{}, false,
+      q::ReplayPolicy::kCommands, SIZE_MAX, q::Model::Sampling{}, 0,
+      std::span<const q::SamplingConfiguration>{}, nullptr, shared);
+  std::unique_ptr<q::Model> alias;
+  if (shared) {
+    auto second_source = q::prepare_weight_source(directory / "weights.tsv", false);
+    auto same = q::take(original->execution.share_endpoint());
+    alias = std::make_unique<q::Model>(std::move(same), hyle::compute::ResourceBudget{},
+        std::move(second_source), geometry, capacity, plan, std::filesystem::path{}, false,
+        q::ReplayPolicy::kCommands, SIZE_MAX, q::Model::Sampling{}, 0,
+        std::span<const q::SamplingConfiguration>{}, original.get());
+    require(&original->weights == &alias->weights && &original->weight_pools == &alias->weight_pools &&
+        original->execution.same_endpoint(alias->execution), "prepared model copied weights or replaced the original endpoint");
+    require(original->resources_ != alias->resources_, "prepared profiles share mutable state resources");
+    original.reset(); // The alias must execute after its original loader dies.
+  }
+  auto &model = shared ? *alias : *original;
   bool missing_verifier_rejected = false, missing_timer_rejected = false;
   try { model.bind_device_verification_inputs(q::GraphRole::kVerify, {}); }
   catch (const std::logic_error &) { missing_verifier_rejected = true; }
@@ -102,7 +125,7 @@ int main(int argc, char **argv) try {
   session.reset();
   require(!model.active_step && !model.successor_step && !model.snapshot_versions.live,
       "core consumer retained a step or committed version");
-  std::cout << "PASS Qwen model core: prefill, decode, greedy RNG and actual session retirement\n";
+  std::cout << "PASS Qwen model core: prefill, decode, greedy RNG and actual session retirement shared=" << shared << '\n';
   return 0;
 } catch (const std::exception &error) {
   std::cerr << "qwen model core: " << error.what() << '\n';

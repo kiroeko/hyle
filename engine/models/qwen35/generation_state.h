@@ -17,7 +17,7 @@ struct GenerationRestoreStats final {
   double step_seconds = 0, seconds = 0;
 };
 
-enum class GenerationMode { kText, kMtp };
+enum class GenerationMode { kText, kMtp, kMixed };
 
 struct GenerationRequest {
   std::string id, memory_name;
@@ -57,6 +57,10 @@ struct GenerationRequest {
   std::vector<inference::GenerationTurn> live_turns;
   std::size_t last_idle = 0;
   std::size_t sampling_index;
+  // A cold-prepared algorithm owns this request's full state and programs.
+  // Null retains the original single-model/diagnostic fast path.
+  Model *prepared_model = nullptr;
+  std::size_t execution_profile = 0;
   std::size_t max_draft_tokens = SIZE_MAX;
   std::uint64_t cache_sharing_domain = 0;
   LogitsInputs logits; // One [1,V] snapshot for every conditional row in an output episode.

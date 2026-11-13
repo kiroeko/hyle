@@ -136,6 +136,19 @@ public:
   Backend(Backend &&) noexcept = default;
   Backend &operator=(Backend &&) noexcept = default;
 
+  // Cold composition only: prepared algorithms may share the original
+  // endpoint and its immutable weight storage. Contexts/queues keep their
+  // addresses and remain the sole native execution/retirement authority.
+  Result<Backend> share_endpoint() const noexcept {
+    if (!state_) return std::unexpected(Status::FailedPrecondition("cannot share an empty backend"));
+    Backend shared;
+    shared.state_ = state_;
+    return shared;
+  }
+  bool same_endpoint(const Backend &other) const noexcept {
+    return state_ && state_ == other.state_;
+  }
+
   static std::span<const BackendKind> compiled_backends() noexcept {
     static constexpr BackendKind kinds[]{
 #if defined(HYLE_COMPUTE_CPU)
@@ -226,9 +239,10 @@ private:
       return std::unexpected(Status::Unimplemented("CPU assistance requires the compiled CPU backend"));
 
     Backend result;
-    result.state_.reset(new (std::nothrow) State);
-    if (!result.state_)
+    try { result.state_ = std::make_shared<State>(); }
+    catch (const std::bad_alloc &) {
       return std::unexpected(Status::ResourceExhausted("cannot allocate the cold backend state"));
+    }
     auto &state = *result.state_;
     state.selection = selection;
     if (selection.primary == BackendKind::kApple || selection.primary == BackendKind::kVulkan) {
@@ -651,7 +665,7 @@ private:
   }
   // Moving Backend moves this pointer only. Native Contexts, cached Queue
   // bindings and exceptional-retirement callbacks keep their exact addresses.
-  std::unique_ptr<State> state_;
+  std::shared_ptr<State> state_;
 };
 
 } // namespace hyle::inference
