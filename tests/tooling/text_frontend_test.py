@@ -1,6 +1,7 @@
 import json
 import contextlib
 import io
+import os
 import queue
 import socket
 import struct
@@ -143,7 +144,8 @@ class TextFrontendTest(unittest.TestCase):
             connection.sendall(b'POST /v1/responses HTTP/1.1\r\nHost: localhost\r\n'
                                + f'Content-Length: {len(body)}\r\n\r\n'.encode() + body)
             self.assertTrue(request.started.wait(timeout=3))
-            connection.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('hh', 1, 0))
+            connection.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
+                                  struct.pack('HH' if os.name == 'nt' else 'ii', 1, 0))
             connection.close()
             self.assertTrue(request.closed_event.wait(timeout=.75), 'disconnect did not cancel ongoing generation')
             self.assertLess(request.produced, 100)

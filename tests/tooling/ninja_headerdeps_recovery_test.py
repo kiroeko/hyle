@@ -183,7 +183,7 @@ class NinjaHeaderDepsRecoveryTest(unittest.TestCase):
             "two_repeated_configures_and_builds_no_CXX": True, "stamp_bytes_times_stable": True,
             "product_CMake_uses_no_Python": True, "normal_cache_touched": False}
         (self.directory / "proof.json").write_text(json.dumps(proof, indent=2) + "\n")
-        print(f"\nHeaderdeps migration receipts: {self.directory}")
+        print(f"\nHeaderdeps migration receipts: {str(self.directory)!a}")
 
     def test_embedded_hyle_does_not_invalidate_parent_objects(self):
         self.make_fixture("embedded")
@@ -234,7 +234,7 @@ class NinjaHeaderDepsRecoveryTest(unittest.TestCase):
             "only_child_and_dedicated_dependency_sources_rebuilt": True, "child_real_headerdeps_restored": True,
             "dependency_base_equals_parent_binary": True,
             "repeat_no_CXX": True, "normal_cache_touched": False}, indent=2) + "\n")
-        print(f"\nEmbedded migration receipts: {self.directory}")
+        print(f"\nEmbedded migration receipts: {str(self.directory)!a}")
 
     def test_multiconfig_nondefault_release_dependency_record_recovers(self):
         self.make_fixture("multiconfig")
@@ -278,7 +278,7 @@ class NinjaHeaderDepsRecoveryTest(unittest.TestCase):
         (self.directory / "proof.json").write_text(json.dumps({"status": "PASS", "nondefault_config": "Release",
             "release_old_zero_deps_restored": True, "subsequent_header_change_rebuilds": True,
             "repeated_init_build_no_CXX": True, "stamp_stable": True, "normal_cache_touched": False}, indent=2) + "\n")
-        print(f"\nMulti-config migration receipts: {self.directory}")
+        print(f"\nMulti-config migration receipts: {str(self.directory)!a}")
 
 
 if __name__ == "__main__":

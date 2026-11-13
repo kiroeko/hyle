@@ -664,8 +664,10 @@ TEST(OneDnnProvider, ReportsMetadataOomWithoutLeakingOwnedState) {
                                                  description, description);
     ASSERT_FALSE(failed_wrapper.has_value());
     EXPECT_TRUE(failed_wrapper.error().IsResourceExhausted());
+    // Terminal provider errors retain their original cause; route selection
+    // labels admission declines, not failures after selecting an implementation.
     EXPECT_EQ(failed_wrapper.error().message(),
-              "onednn: oneDNN prepared wrapper allocation failed");
+              "oneDNN prepared wrapper allocation failed");
     probe.fail_at_attempt = 0;
 
     PreparedOperation prepared =
