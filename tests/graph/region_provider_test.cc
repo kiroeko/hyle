@@ -6636,6 +6636,47 @@ TEST(GraphRegions, KnownDiscoveryReplayCannotChangeBeforeArtifactCreation) {
   }
 }
 
+TEST(GraphRegions, CaptureEligibilityFiltersRegionsBeforeArtifactCreation) {
+  const auto logical = make_negations(2);
+  for (const bool available : {false,true}) {
+    RegionProbe first, second;
+    second.capture_supported=available;
+    second.artifact_properties.runtime.capture_compatible=available;
+    auto context=make_context(first,second);
+    auto compiled=hyle::graph::compile(logical.graph,context,
+        {.operation_fallback=OperationFallbackPolicy::kReject,
+         .provider_replay=ProviderReplayPolicy::kRequireCaptureCompatible});
+    ASSERT_EQ(compiled.has_value(),available);
+    EXPECT_EQ(first.compile_count,0u);
+    EXPECT_EQ(second.compile_count,available?1u:0u);
+    if(available) EXPECT_TRUE(compiled->report.step(0)->runtime.capture_compatible);
+  }
+  RegionProbe failed, fallback;
+  failed.resource_query_failure=Status::DataLoss("real resource qualification failure");
+  fallback.capture_supported=true;fallback.artifact_properties.runtime.capture_compatible=true;
+  auto context=make_context(failed,fallback);
+  const auto compiled=hyle::graph::compile(logical.graph,context,
+      {.operation_fallback=OperationFallbackPolicy::kReject,
+       .provider_replay=ProviderReplayPolicy::kRequireCaptureCompatible});
+  ASSERT_FALSE(compiled);EXPECT_TRUE(compiled.error().IsDataLoss());
+  EXPECT_EQ(failed.compile_count,0u);EXPECT_EQ(fallback.compile_count,0u);
+}
+
+TEST(GraphRegions, CaptureEligibilityFiltersLeavesBeforeArtifactCreation) {
+  const auto logical=make_negations(1);
+  RegionProbe first, second;
+  first.required_resource=second.required_resource=hyle::mem::system_resource();
+  second.cold_bindings_capture_compatible=true;
+  auto context=make_context(first,second);
+  const auto compiled=hyle::graph::compile(logical.graph,context,
+      {.region_selection=RegionSelectionPolicy::kDisabled,
+       .provider_replay=ProviderReplayPolicy::kRequireCaptureCompatible});
+  ASSERT_TRUE(compiled)<<compiled.error().message();
+  EXPECT_EQ(first.single_artifact_count,0u);
+  EXPECT_EQ(second.single_artifact_count,1u);
+  EXPECT_TRUE(compiled->report.step(0)->runtime.capture_compatible);
+}
+
 TEST(GraphRegions, PreparedOnlyFiltersLeafBeforeArtifactCreation) {
   const auto logical = make_negations(1);
   for (auto replay :

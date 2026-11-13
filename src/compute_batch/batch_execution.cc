@@ -12,6 +12,7 @@
 #include "hyle/core/assert.h"
 #include "hyle/util/ref_counted.h"
 #include "hyle/util/scope_guard.h"
+#include "device_batch_capability.h"
 #include <algorithm>
 #include <array>
 #include <atomic>
@@ -369,6 +370,42 @@ Result<d::BatchWorkspaceViews> graph_views(d::BatchInvocationData*s,const QueueI
   if(outputs[0].description()!=output)return std::unexpected(Status::InvalidArgument("Graph batch output differs from its prepared port contract"));
   HYLE_ASSIGN_OR_RETURN(auto views,workspace_views(*s));views.metadata=mirror;views.output=outputs[0].storage();return views;
 }
+Status validate_configuration_options(const d::ContextRef &context, const BatchProgramOptions &options) noexcept {
+  if(!context.valid() || !options.resource.valid() || !options.host_workspace.valid() || !options.allocator.valid() ||
+     !options.max_invocations || options.max_invocations==UINT32_MAX || !options.max_float_workspace_bytes ||
+     !options.max_int_workspace_bytes || !std::isfinite(options.scale))
+    return Status::InvalidArgument("batch program options are invalid");
+  HYLE_RETURN_IF_ERROR(validate_batch_attention_options(options.causal,options.window_left));
+  if(!context.is_open())return Status::FailedPrecondition("batch context is closed");
+  return Status::Ok();
+}
+
+Status validate_program_options(const d::ContextRef &context, const BatchProgramOptions &options) noexcept {
+  HYLE_RETURN_IF_ERROR(validate_configuration_options(context,options));
+  HYLE_RETURN_IF_ERROR(context.validate_resource(options.resource));
+  HYLE_RETURN_IF_ERROR(context.validate_resource(options.host_workspace));
+  return Status::Ok();
+}
+
+Status qualify_batch_provider(const d::ProviderExtensionRef &extension, BatchCapacity capacity,
+    const BatchProgramOptions &options, const d::BatchProviderVTable *&table,
+    ProviderRuntimeProperties &runtime) noexcept {
+  struct Qualification { BatchCapacity capacity; const BatchProgramOptions &options;
+    const d::BatchProviderVTable *&table; ProviderRuntimeProperties &runtime; } call{capacity,options,table,runtime};
+  return d::ProviderExtensionAccess::call(extension,[](void *native,const void *value,void *opaque) noexcept {
+    auto &q=*static_cast<Qualification*>(opaque);q.table=static_cast<const d::BatchProviderVTable*>(value);
+    if(!q.table || !q.table->qualify || !q.table->create || !q.table->destroy || !q.table->update ||
+       !q.table->plan || !q.table->run || (q.table->uses_caller_workspace && !q.table->workspace))
+      return Status::FailedPrecondition("batch provider interface is incomplete");
+    if(q.table->runtime)q.runtime=q.table->runtime(native);
+    if(!q.runtime.valid() || (q.runtime.capture_compatible &&
+       (!q.table->supports_command_capture || q.runtime.mode!=ProviderRuntimeMode::kSharedQueue ||
+        q.runtime.workspace_owner!=ProviderWorkspaceOwner::kProvider ||
+        q.runtime.replay_class!=ProviderReplayClass::kManaged || q.runtime.blocks_host || q.runtime.uses_private_threads)))
+      return Status::FailedPrecondition("batch provider recording runtime is invalid");
+    return q.table->qualify(native,q.capacity,q.options);
+  },&call);
+}
 } // namespace
 BatchProgram::BatchProgram(const BatchProgram&p)noexcept:data_(p.data_){if(data_)data_->incref();}
 BatchProgram&BatchProgram::operator=(const BatchProgram&p)noexcept{if(this!=&p){BatchProgram next(p);std::swap(data_,next.data_);}return *this;}
@@ -376,49 +413,65 @@ BatchProgram::BatchProgram(BatchProgram&&p)noexcept:data_(std::exchange(p.data_,
 BatchProgram&BatchProgram::operator=(BatchProgram&&p)noexcept{if(this!=&p){BatchProgram next(std::move(p));std::swap(data_,next.data_);}return *this;}
 BatchProgram::~BatchProgram(){if(data_)data_->decref();}
 BatchSchema BatchProgram::schema()const noexcept{return data_?data_->schema:BatchSchema{};}
+Result<bool> BatchProgram::supports_captured_device_lengths(const Context &context, Queue &queue,
+    BatchCapacity capacity, const BatchProgramOptions &options) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto retained,d::ContextRef::acquire(context));
+  HYLE_RETURN_IF_ERROR(validate_batch_capacity(capacity));
+  HYLE_RETURN_IF_ERROR(validate_configuration_options(retained,options));
+  HYLE_RETURN_IF_ERROR(retained.validate_resource(options.resource));
+  // This query creates no F2 upload or workspace bindings. In particular its
+  // default host workspace is not a CUDA tensor resource; that actual backing
+  // is admitted only by program/invocation preparation when it is used.
+  if(!queue.valid() || !retained.owns(queue))
+    return std::unexpected(Status::InvalidArgument("device batch query requires the original Context Queue"));
+  return d::supports_captured_device_batch(context, queue, capacity, options);
+}
 Result<BatchProgram> BatchProgram::prepare(const Context&context,BatchSchema schema,BatchProgramOptions options)noexcept{
   HYLE_ASSIGN_OR_RETURN(auto retained,d::ContextRef::acquire(context));
+  if(d::BatchLayoutAccess::is_row_cache(schema))
+    return std::unexpected(Status::InvalidArgument("row cache is not an attention program"));
+  if(!schema.valid())
+    return std::unexpected(Status::InvalidArgument("batch program schema is invalid"));
+  HYLE_RETURN_IF_ERROR(validate_program_options(retained,options));
   d::ProviderExtensionRef selected;
+  std::uint32_t selected_preference=UINT32_MAX;
+  Status unsupported;
   for(std::size_t index=0;index<context.provider_count();++index){
     auto extension=d::ProviderExtensionAccess::query(context,index,schema.mla_layout()==MlaCacheLayout::kNone?d::kBatchPlanningExtensionId:d::kMlaBatchPlanningExtensionId);
     if(!extension){if(extension.error().IsUnimplemented())continue;return std::unexpected(extension.error());}
-    selected=std::move(*extension);break;
+    const d::BatchProviderVTable *table=nullptr;ProviderRuntimeProperties runtime{};
+    const auto qualified=qualify_batch_provider(*extension,schema.capacity(),options,table,runtime);
+    if(!qualified.ok()){
+      if(qualified.IsUnimplemented()){unsupported=qualified;continue;}
+      return std::unexpected(qualified);
+    }
+    HYLE_ASSIGN_OR_RETURN(auto preference,retained.provider_preference(index));
+    // Native batch keeps registration order for equal ranks, but only among
+    // eligible providers. No descriptor or native execution was created yet.
+    if(!selected.valid() || preference<selected_preference){
+      selected=std::move(*extension);selected_preference=preference;
+    }
   }
+  if(!selected.valid() && !unsupported.ok())return std::unexpected(std::move(unsupported));
   return prepare(retained,selected,std::move(schema),std::move(options));
 }
 Result<BatchProgram> BatchProgram::prepare(const d::ContextRef&context,const d::ProviderExtensionRef&extension,
     BatchSchema schema,BatchProgramOptions options)noexcept{
   if(d::BatchLayoutAccess::is_row_cache(schema))return std::unexpected(Status::InvalidArgument("row cache is not an attention program"));
-  if(!context.valid() || !schema.valid() || !options.resource.valid() || !options.host_workspace.valid() || !options.allocator.valid() ||
-     !options.max_invocations || options.max_invocations==UINT32_MAX || !options.max_float_workspace_bytes || !options.max_int_workspace_bytes || !std::isfinite(options.scale))
+  if(!schema.valid())
     return std::unexpected(Status::InvalidArgument("batch program options are invalid"));
-  HYLE_RETURN_IF_ERROR(validate_batch_attention_options(options.causal,options.window_left));
-  if(!context.is_open())return std::unexpected(Status::FailedPrecondition("batch context is closed"));
+  HYLE_RETURN_IF_ERROR(validate_program_options(context,options));
+  if(options.resource_budget.valid() && !options.resource_budget.allows_unattributed())
+    return std::unexpected(Status::Unimplemented("native batch planning private bytes are unknown"));
   if(!extension.valid())return std::unexpected(Status::Unimplemented("selected route has no native BatchPlanning provider"));
   if(!context.owns(extension) || extension.id()!=(schema.mla_layout()==MlaCacheLayout::kNone?d::kBatchPlanningExtensionId:d::kMlaBatchPlanningExtensionId))
     return std::unexpected(Status::InvalidArgument("batch capability does not belong to the exact context/schema"));
-  HYLE_RETURN_IF_ERROR(context.validate_resource(options.resource));
-  HYLE_RETURN_IF_ERROR(context.validate_resource(options.host_workspace));
-  if(options.resource_budget.valid() && !options.resource_budget.allows_unattributed())
-    return std::unexpected(Status::Unimplemented("native batch planning private bytes are unknown"));
   auto a=options.allocator;if(options.resource_budget.valid()){HYLE_ASSIGN_OR_RETURN(a,options.resource_budget.metadata_allocator());}
   auto*p=a.construct<d::BatchProgramData>(std::move(schema),std::move(options),a);if(!p)return std::unexpected(Status::ResourceExhausted("batch program metadata"));
   BatchProgram result(p);
   p->context=context;
   p->extension=extension;
-  HYLE_RETURN_IF_ERROR(d::ProviderExtensionAccess::call(p->extension,[](void*context,const void*table,void*opaque)noexcept{
-    auto&p=*static_cast<d::BatchProgramData*>(opaque);p.table=static_cast<const d::BatchProviderVTable*>(table);
-    if(!p.table->qualify || !p.table->create || !p.table->destroy || !p.table->update || !p.table->plan || !p.table->run ||
-        (p.table->uses_caller_workspace && !p.table->workspace))return Status::FailedPrecondition("batch provider interface is incomplete");
-    if(p.table->runtime)p.runtime=p.table->runtime(context);
-    if(!p.runtime.valid() || (p.runtime.capture_compatible &&
-        (!p.table->supports_command_capture || p.runtime.mode!=ProviderRuntimeMode::kSharedQueue ||
-         p.runtime.workspace_owner!=ProviderWorkspaceOwner::kProvider ||
-         p.runtime.replay_class!=ProviderReplayClass::kManaged || p.runtime.blocks_host ||
-         p.runtime.uses_private_threads)))
-      return Status::FailedPrecondition("batch provider recording runtime is invalid");
-    return p.table->qualify(context,p.schema.capacity(),p.options);
-  },p));
+  HYLE_RETURN_IF_ERROR(qualify_batch_provider(p->extension,p->schema.capacity(),p->options,p->table,p->runtime));
   const auto bytes=p->schema.metadata_offsets().bytes;
   const std::array specs{CopyResourceSpec{p->options.host_workspace,bytes},CopyResourceSpec{p->options.resource,bytes}};
   HYLE_ASSIGN_OR_RETURN(p->upload,d::CopyStreamAccess::prepare(context,specs,{.max_resources=2,.max_copies=5,.max_phases=1,.max_bytes=bytes,.allocator=a,.resource_budget=p->options.resource_budget}));

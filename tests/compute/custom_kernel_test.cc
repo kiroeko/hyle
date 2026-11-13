@@ -397,6 +397,34 @@ TEST(CustomKernel, PreparationDeclinesFallbackButFatalFailuresStopBinding) {
   }
 }
 
+TEST(CustomKernel, ResourceEligibilityPrecedesEqualPreferenceAmbiguity) {
+  for (const bool reverse : {false, true}) {
+    Probe incompatible, eligible;
+    incompatible.non_host_memory = true;
+    const auto first = hyle::compute::ProviderBinding{provider(incompatible).value(), 100};
+    const auto second = hyle::compute::ProviderBinding{provider(eligible).value(), 100};
+    const auto providers = reverse ? std::array{second, first} : std::array{first, second};
+    auto context = Context::create(cpu::device(), {.providers = providers}).value();
+    const std::array descriptions{description()};
+    auto prepared = prepare(context, Operation::custom(Affine{}), descriptions, descriptions,
+                            hyle::mem::system_resource());
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    EXPECT_EQ(incompatible.preparations, 0);
+    EXPECT_EQ(eligible.preparations, 1);
+  }
+  Probe first, second;
+  const std::array providers{hyle::compute::ProviderBinding{provider(first).value(), 100},
+                            hyle::compute::ProviderBinding{provider(second).value(), 100}};
+  auto context = Context::create(cpu::device(), {.providers = providers}).value();
+  const std::array descriptions{description()};
+  auto ambiguous = prepare(context, Operation::custom(Affine{}), descriptions, descriptions,
+                           hyle::mem::system_resource());
+  ASSERT_FALSE(ambiguous);
+  EXPECT_TRUE(ambiguous.error().IsInvalidArgument());
+  EXPECT_EQ(first.preparations, 0);
+  EXPECT_EQ(second.preparations, 0);
+}
+
 TEST(CustomKernel, DescriptorPreparationPreservesQualifiedDeclineDiagnostics) {
   for (const bool qualified : {false, true}) {
     Probe first, last;

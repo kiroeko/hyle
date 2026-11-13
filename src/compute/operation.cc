@@ -199,6 +199,32 @@ Status match_requirement(const detail::ResourceBindingRequirement &requirement,
   return Status::Ok();
 }
 
+// Read-only eligibility, before preference ties or provider preparation. The
+// same predicate guards explicit candidates so the two entry points agree.
+Status qualify_resources(
+    std::span<const detail::ResourceBindingRequirement> inputs,
+    std::span<const detail::ResourceBindingRequirement> outputs,
+    OperationResourceBindings resources) noexcept {
+  if (inputs.size() != resources.inputs.size() || outputs.size() != resources.outputs.size())
+    return Status::InvalidArgument("operation resource counts do not match its bindings");
+  const auto qualify = [&](auto requirements, auto bindings) noexcept -> Status {
+    for (std::size_t index = 0; index < bindings.size(); ++index) {
+      HYLE_RETURN_IF_ERROR(validate_requirement(requirements[index]));
+      HYLE_RETURN_IF_ERROR(match_requirement(requirements[index], bindings[index]));
+    }
+    return Status::Ok();
+  };
+  HYLE_RETURN_IF_ERROR(qualify(inputs, resources.inputs));
+  return qualify(outputs, resources.outputs);
+}
+
+Status validate_bound_resources(detail::ContextState *state, OperationResourceBindings resources) noexcept {
+  for (const auto bindings : {resources.inputs, resources.outputs})
+    for (const auto resource : bindings)
+      HYLE_RETURN_IF_ERROR(state->backend_vtable->validate_resource(state->device, resource));
+  return Status::Ok();
+}
+
 Status validate_inferred_outputs(Operation operation,
                                  std::span<const TensorDesc> inputs,
                                  std::span<const TensorDesc> outputs,
@@ -849,32 +875,9 @@ detail::OperationPreparationAccess::prepare_candidate(
     return std::unexpected(std::move(mismatch));
   };
 
-  for (std::size_t index = 0; index < resources.inputs.size(); ++index) {
-    status = validate_requirement(input_requirements[index]);
-    if (!status.ok())
-      return std::unexpected(std::move(status));
-    status =
-        match_requirement(input_requirements[index], resources.inputs[index]);
-    if (!status.ok())
-      return resource_mismatch(std::move(status));
-    status = state->backend_vtable->validate_resource(state->device,
-                                                      resources.inputs[index]);
-    if (!status.ok())
-      return std::unexpected(std::move(status));
-  }
-  for (std::size_t index = 0; index < resources.outputs.size(); ++index) {
-    status = validate_requirement(output_requirements[index]);
-    if (!status.ok())
-      return std::unexpected(std::move(status));
-    status =
-        match_requirement(output_requirements[index], resources.outputs[index]);
-    if (!status.ok())
-      return resource_mismatch(std::move(status));
-    status = state->backend_vtable->validate_resource(state->device,
-                                                      resources.outputs[index]);
-    if (!status.ok())
-      return std::unexpected(std::move(status));
-  }
+  HYLE_RETURN_IF_ERROR(validate_bound_resources(state, resources));
+  status = qualify_resources(input_requirements, output_requirements, resources);
+  if (!status.ok()) return resource_mismatch(std::move(status));
 
   mem::MemoryResourceRef workspace_resource = resources.workspace_resource;
   if (proposal.runtime.workspace_owner == ProviderWorkspaceOwner::kCaller &&
@@ -1233,6 +1236,16 @@ prepare_for_mode(const Context &context, Operation operation,
         (!known_offsets_match(known_inputs, std::span<const detail::ResourceBindingRequirement>(input_requirements)) ||
          !known_offsets_match(known_outputs, std::span<const detail::ResourceBindingRequirement>(output_requirements))))
       continue;
+    HYLE_RETURN_IF_ERROR(validate_bound_resources(state, resources));
+    auto qualified = qualify_resources(input_requirements, output_requirements, resources);
+    if (!qualified.ok()) {
+      if (!qualified.IsUnimplemented()) return std::unexpected(std::move(qualified));
+      if (!prepared_decline) {
+        unsupported = std::move(qualified);
+        unsupported_provider = state->providers()[index].provider.identity().name;
+      }
+      continue;
+    }
     candidates[candidate_count++] = DirectCandidate{*proposal, offset};
   }
 

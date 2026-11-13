@@ -784,6 +784,10 @@ enum class ProviderReplayPolicy : std::uint8_t {
   // Only proposals declaring prepared replay may create artifacts. This is
   // independent of shared/delegated ownership and command capture support.
   kRequirePrepared,
+  // Filter provider-level command-capture eligibility while compiling. Actual
+  // addresses, queues and topology are still qualified by prepare_replay().
+  // Metadata Views and inserted backend transfers retain their own contracts.
+  kRequireCaptureCompatible,
 };
 
 enum class CompileSearchPolicy : std::uint8_t {

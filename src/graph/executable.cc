@@ -2918,7 +2918,13 @@ struct RouteDiagnostic final {
 constexpr bool replay_allowed(ProviderReplayPolicy policy,
                               compute::ProviderReplayClass replay) noexcept {
   return policy == ProviderReplayPolicy::kAllowAny ||
+         policy == ProviderReplayPolicy::kRequireCaptureCompatible ||
          replay == compute::ProviderReplayClass::kPrepared;
+}
+
+constexpr bool capture_allowed(ProviderReplayPolicy policy,
+    const compute::ProviderRuntimeProperties &runtime) noexcept {
+  return policy != ProviderReplayPolicy::kRequireCaptureCompatible || runtime.capture_compatible;
 }
 
 using RegionExtensions =
@@ -3519,7 +3525,8 @@ Status discover_operation_candidates(
           return std::move(proposal).error();
         }
         if (!replay_allowed(options.provider_replay,
-                            proposal->runtime.replay_class))
+                            proposal->runtime.replay_class) ||
+            !capture_allowed(options.provider_replay, proposal->runtime))
           continue;
         const std::size_t requirement_count = inputs.size() + outputs.size();
         const std::size_t begin = discovery.requirements.size();
@@ -4061,6 +4068,8 @@ discover_region_resources(const Graph &published_graph,
         candidate.replay_class != proposal.runtime.replay_class)
       return Status::Internal(
           "region provider changed its declared replay class");
+    if (status.ok() && !capture_allowed(options.provider_replay, proposal.runtime))
+      status = Status::Unimplemented("region provider does not support required command capture");
     if (status.ok() && (unknown_effects || !effects.empty()) &&
         !proposal.preserves_effects)
       status = Status::Unimplemented(
@@ -5755,7 +5764,8 @@ Status prepare_placed_steps_attempt(
           table->seal_bindings == nullptr || prepared.properties.workspace.size != 0 ||
           (table->output_contract && table->output_contract(prepared.state, 0) != RegionOutputContract{}))
         return Status::Internal("native transfer returned an invalid execution contract");
-      if (!replay_allowed(options.provider_replay, runtime.replay_class)) {
+      if (!replay_allowed(options.provider_replay, runtime.replay_class) ||
+          !capture_allowed(options.provider_replay, runtime)) {
         outcome.rejected_plan = true;
         return Status::Unimplemented("native transfer does not satisfy the replay policy");
       }
@@ -11262,7 +11272,8 @@ Result<CompiledGraph> compile_plan(
     return std::unexpected(
         Status::InvalidArgument("graph operation proposal budget is zero"));
   if (options.provider_replay != ProviderReplayPolicy::kAllowAny &&
-      options.provider_replay != ProviderReplayPolicy::kRequirePrepared) {
+      options.provider_replay != ProviderReplayPolicy::kRequirePrepared &&
+      options.provider_replay != ProviderReplayPolicy::kRequireCaptureCompatible) {
     return std::unexpected(
         Status::InvalidArgument("graph provider replay policy is invalid"));
   }

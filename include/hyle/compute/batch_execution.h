@@ -60,6 +60,11 @@ public:
   HYLE_COMPUTE_BATCH_API BatchProgram &operator=(BatchProgram &&) noexcept;
   HYLE_COMPUTE_BATCH_API ~BatchProgram();
   HYLE_COMPUTE_BATCH_API static Result<BatchProgram> prepare(const Context &,BatchSchema,BatchProgramOptions) noexcept;
+  // Cold configuration query on the original Context/Queue. This owns only
+  // temporary native metadata, submits no work, and does not prove concrete
+  // port layouts, addresses or recorded topology. Real errors are propagated.
+  HYLE_COMPUTE_BATCH_API static Result<bool> supports_captured_device_lengths(
+      const Context &, Queue &, BatchCapacity, const BatchProgramOptions &) noexcept;
   bool valid() const noexcept{return data_!=nullptr;}
   HYLE_COMPUTE_BATCH_API BatchSchema schema() const noexcept;
 private:

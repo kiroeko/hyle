@@ -63,6 +63,7 @@ struct Probe final {
   std::atomic<int> proposals{0}, preparations{0}, executions{0};
   Fault fault = Fault::kNone;
   bool concurrent = true;
+  bool non_host_memory = false;
   std::uint64_t prepare_token = 7;
   ProviderImplementationId implementation{};
   std::optional<std::size_t> invocation_private_bytes{};
@@ -164,10 +165,12 @@ struct alignas(128) Factory final {
       return std::unexpected(
           Status::Unimplemented("requires dense f32 tensors"));
     for (auto port : {inputs, outputs})
-      port[0] = {.required_properties =
+      port[0] = {.required_properties = config->probe->non_host_memory ? hyle::mem::MemoryProperty::kNone :
                      hyle::mem::MemoryProperty::kHostAccessible,
+                 .forbidden_properties = config->probe->non_host_memory ? hyle::mem::MemoryProperty::kHostAccessible :
+                     hyle::mem::MemoryProperty::kNone,
                  .minimum_alignment = alignof(float),
-                 .exact_resource = hyle::mem::system_resource()};
+                 .exact_resource = config->probe->non_host_memory ? hyle::mem::MemoryResourceRef{} : hyle::mem::system_resource()};
     auto facts = runtime;
     facts.supports_concurrent_invocations = config->probe->concurrent;
     if (config->probe->fault == Fault::kDelegatedProposal)

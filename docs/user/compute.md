@@ -478,6 +478,7 @@ ggml CUDA 也遵循 caller-owned 合同：按 `workspace_requirement()` 分配�
 Status 诊断分配仍由各自合同负责。direct 用户可在准备后、提交前检查该字段；Graph 用户可通过
 [`CompileOptions::provider_replay`](graph.md#何时要求-prepared-only) 在创建 artifact 前筛选 leaf/region。
 这不改变 direct `prepare()` 的 Provider 顺序，也不增加每次 submit 的政策查询。
+direct operation 在比较偏好与歧义前先核对实际资源要求；相同偏好但适用资源不同的提案不会互相阻挡。真实 Provider 准备错误继续直接返回。
 
 需要区分同一家 Provider 的多个配置实例时，使用
 `Context::provider_instance_id(index)`；`PreparedOperation` 和 `OperationInvocation` 的同名 accessor
@@ -1116,6 +1117,8 @@ Apple 的此 D512 域沿 MLX fallback，不是新的原生融合 kernel。这也
 压缩历史的物理 codec；分页联合承载见[批次边界](batch-attention.md)。
 
 ## CPU 多请求 ragged attention
+
+`BatchProgram::prepare()` 在冷期先检查各 Provider 对本次容量和资源的资格，再选择较低的 Context preference；同等级保留登记顺序。明确不支持的候选可以跳过，真实资格错误不回退。`supports_captured_device_lengths()` 在原 Context／Queue 上查询配置级能力，临时原生 descriptor 由 Compute 管理；它不代替具体端口与录图检查。
 
 `hyle/compute/batch_execution.h` 的 `BatchProgram` 在普通 `cpu::create_context()` 中冷选择
 原 ggml flash。当前候选域为 F16/BF16、GQA、D64/128/256，packed NHD Q/K/V。

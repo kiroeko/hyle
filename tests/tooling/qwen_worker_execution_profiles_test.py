@@ -109,6 +109,25 @@ def main():
         for request in sessions:
             request.close()
         worker.close(timeout=120)
+    # R1 cold planning must include greedy routes even when sampler zero is
+    # random. This also exercises the original Context/Queue capability query
+    # with its metadata-only default host workspace on actual CUDA.
+    ordered = []
+    for random_first in (False, True):
+        command = [args.engine, '--engine-worker', '--inputs', args.inputs, '--backend', 'cuda',
+            '--capacity', '128', '--max-sessions', '1', '--active-sequences', '1', '--draft-count', '3',
+            '--profile-asset', 'draft.vocabulary=' + args.vocabulary]
+        command += (['--sampling', 'random', '--temperature', '0.8', '--top-k', '40', '--top-p', '0.95',
+                     '--additional-sampling', 'greedy'] if random_first else
+                    ['--sampling', 'greedy', '--additional-sampling', 'random,0.8,40,0.95'])
+        single = WorkerClient(command, startup_timeout=120)
+        try:
+            request = single.open_session([1, 2, 3], 16, sampling_index=1 if random_first else 0)
+            ordered.append(turn(request, 0))
+            finish(request)
+        finally:
+            single.close(timeout=120)
+    assert ordered[0] == ordered[1], 'sampler order changed the prepared greedy K3 execution'
     print("PASS native subset K3/full K1/plain random: co-residency, live turns, RNG, backpressure, cancellation and slot reuse")
 
 

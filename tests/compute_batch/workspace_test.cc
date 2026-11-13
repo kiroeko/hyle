@@ -27,6 +27,8 @@ public:
 private:m::AllocatorRef allocator_;
 };
 struct Mock final {
+  hyle::Status qualification{};
+  unsigned qualifications=0;
   c::BatchProgramOptions options;unsigned plans=0,runs=0,queries=0,updates=0;
   unsigned fresh_queries=0,update_queries=0;
   bool permit_reuse=false,last_allow_update=false;
@@ -34,7 +36,8 @@ struct Mock final {
   std::size_t planned_float_bytes=0,planned_int_bytes=0;
   m::ConstBufferView planned_float_view;
   d::BatchProviderVTable batch{
-    .qualify=[](void*,c::BatchCapacity,const c::BatchProgramOptions&)noexcept{return hyle::Status::Ok();},
+    .qualify=[](void *p,c::BatchCapacity,const c::BatchProgramOptions&)noexcept{
+      auto &s=*static_cast<Mock*>(p);++s.qualifications;return s.qualification;},
     .create=[](void*p,c::BatchCapacity,const c::BatchProgramOptions&o,m::AllocatorRef,void**out)noexcept{static_cast<Mock*>(p)->options=o;*out=p;return hyle::Status::Ok();},
     .destroy=[](void*,m::AllocatorRef)noexcept{},
     .update=[](void*p,const c::BatchLayoutVersion&,c::BatchPlanReport*report)noexcept->hyle::Result<bool>{
@@ -137,6 +140,47 @@ TEST(BatchWorkspace, ColdLayoutSizesCallerScratchAndNativeOptOutKeepsActualViews
   EXPECT_EQ(backing[0],backing[1]);
   std::printf("batch_create_backing_caller=%llu native=%llu; caller scratch allocated only for cold layout\n",static_cast<unsigned long long>(backing[0]),static_cast<unsigned long long>(backing[1]));
 }
+TEST(BatchWorkspace, DirectSelectionSkipsOnlyUnsupportedCapacityBeforeBinding){
+  const auto storage=c::CacheStorage::plain(c::DataType::kFloat16).value();
+  const c::BatchCapacity capacity{.storage=c::BatchStorage::kRagged,.query_type=c::DataType::kFloat16,.output_type=c::DataType::kFloat16,
+      .key_storage=storage,.value_storage=storage,.max_requests=1,.max_query_rows=1,.max_kv_rows=1,.max_pages=0,.max_page_refs=0,
+      .query_heads=1,.kv_heads=1,.qk_head_dim=64,.value_head_dim=64,.page_size=1};
+  const auto schema=c::BatchSchema::create(capacity).value();
+  for (const bool fatal : {false,true}) {
+    Mock first, second;
+    first.qualification=fatal?hyle::Status::DataLoss("native qualification failed"):hyle::Status::Unimplemented("capacity unsupported");
+    const std::array providers{c::ProviderBinding{first.provider(),100},c::ProviderBinding{second.provider(),200}};
+    auto context=c::Context::create(c::cpu::device(),{.providers=providers}).value();
+    const auto program=c::BatchProgram::prepare(context,schema,{.resource=m::system_resource()});
+    EXPECT_EQ(program.has_value(),!fatal);
+    EXPECT_EQ(first.qualifications,1u);
+    if(fatal){EXPECT_TRUE(program.error().IsDataLoss());EXPECT_EQ(second.qualifications,0u);}
+    else EXPECT_GT(second.qualifications,0u);
+  }
+  Mock mock;
+  {
+    Mock higher_rank, preferred;
+    const std::array providers{c::ProviderBinding{higher_rank.provider(),200},c::ProviderBinding{preferred.provider(),100}};
+    auto selected_context=c::Context::create(c::cpu::device(),{.providers=providers}).value();
+    auto program=c::BatchProgram::prepare(selected_context,schema,{.resource=m::system_resource()});
+    ASSERT_TRUE(program);
+    auto selected_queue=selected_context.create_queue().value();
+    auto invocation=c::BatchInvocation::create(*program,selected_queue);
+    ASSERT_TRUE(invocation)<<invocation.error().message();
+    EXPECT_FALSE(higher_rank.options.resource.valid());
+    EXPECT_TRUE(preferred.options.resource.valid());
+  }
+  auto context=c::Context::create(c::cpu::device(),mock.provider()).value();
+  auto other=c::Context::create(c::cpu::device(),mock.provider()).value();
+  auto queue=context.create_queue().value(), foreign=other.create_queue().value();
+  const c::BatchProgramOptions options{.resource=m::system_resource()};
+  const auto supported=c::BatchProgram::supports_captured_device_lengths(context,queue,capacity,options);
+  ASSERT_TRUE(supported);EXPECT_FALSE(*supported);
+  const auto wrong=c::BatchProgram::supports_captured_device_lengths(context,foreign,capacity,options);
+  ASSERT_FALSE(wrong);EXPECT_TRUE(wrong.error().IsInvalidArgument());
+  EXPECT_EQ(mock.qualifications,0u);
+}
+
 TEST(BatchWorkspace, RetainedPreparationUsesExactOpenContextAndSelectedCapability){
   Mock mock;
   const auto storage=c::CacheStorage::plain(c::DataType::kFloat16).value();
