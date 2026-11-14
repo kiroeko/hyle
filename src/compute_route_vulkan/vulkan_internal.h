@@ -198,9 +198,14 @@ struct RunStage final {
       values; // Compact local port/value -> parent value.
   std::vector<ggml_vulkan::detail::RegionBinding> bindings;
 };
+struct PackedMatrixConstant;
 struct Runtime final {
   std::shared_ptr<Device> device;
   std::mutex mutex;
+  // Cold immutable layout reuse. Programs retain the original read owner and
+  // derived pack; this weak index never extends either payload's lifetime.
+  std::mutex constant_packs_mutex;
+  std::vector<std::weak_ptr<PackedMatrixConstant>> constant_packs;
   std::condition_variable retirement_changed;
   Run *pending = nullptr;
   bool closed = false;

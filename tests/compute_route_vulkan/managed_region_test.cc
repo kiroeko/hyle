@@ -15,6 +15,86 @@ namespace {
 using namespace vulkan_gate_norm_test;
 namespace d = v::detail;
 
+TEST(VulkanManaged, ImmutableMatrixPackIsSharedAcrossShapesAndExpiresWithPrograms) {
+  auto context = vulkan_test::context().value();
+  const auto description = dense(c::DataType::kFloat32, {37, 7});
+  const auto weight = make(context, description, std::vector<double>(37 * 7, 2));
+  const auto prepare = [&](std::int64_t rows) {
+    d::Plan plan;
+    plan.workload = workload_test::known(c::WorkloadPhase::kDecode);
+    plan.values = {{dense(c::DataType::kFloat32, {rows, 37}), {}},
+                   {description, weight},
+                   {dense(c::DataType::kFloat32, {rows, 7}), {}}};
+    plan.inputs = {0}; plan.outputs = {2};
+    plan.steps = {{c::Operation(c::MatMul{}), {0, 1}, {2}}};
+    return d::prepare_plan(context, plan);
+  };
+  auto first = prepare(1);
+  ASSERT_TRUE(first) << first.error().message();
+  auto second = prepare(4);
+  ASSERT_TRUE(second) << second.error().message();
+  const auto &first_packs = d::Access::program(*first)->constant_packs;
+  const auto &second_packs = d::Access::program(*second)->constant_packs;
+  ASSERT_EQ(first_packs.size(), 1u);
+  ASSERT_EQ(second_packs.size(), 1u);
+  EXPECT_EQ(first_packs.front(), second_packs.front());
+  std::weak_ptr<d::PackedMatrixConstant> lifetime = first_packs.front();
+  *first = {};
+  EXPECT_FALSE(lifetime.expired());
+  {
+    auto slot = second->create_invocation().value();
+    const auto input = make(context, dense(c::DataType::kFloat32, {4, 37}),
+                            std::vector<double>(4 * 37, 3));
+    ASSERT_TRUE(slot.bind(input).ok());
+    auto work = slot.submit().value();
+    auto result = work.wait();
+    ASSERT_TRUE(result) << result.error().message();
+    expect(context, result->get()->tensors()[0], std::vector<double>(4 * 7, 222));
+  }
+  *second = {};
+  EXPECT_TRUE(lifetime.expired());
+  auto third = prepare(2);
+  ASSERT_TRUE(third) << third.error().message();
+  EXPECT_TRUE(lifetime.expired());
+  ASSERT_EQ(d::Access::program(*third)->constant_packs.size(), 1u);
+}
+
+TEST(VulkanManaged, ImmutableMatrixPacksDistinguishPhysicalBanksAndViewOffsets) {
+  auto context = vulkan_test::context().value();
+  const auto description = dense(c::DataType::kFloat32, {37, 7});
+  const auto bank = make(context, dense(c::DataType::kFloat32, {74, 7}),
+                          std::vector<double>(74 * 7, 2));
+  const auto other = make(context, description, std::vector<double>(37 * 7, 5));
+  const auto prepare = [&](const v::Tensor &weight) {
+    d::Plan plan;
+    plan.workload = workload_test::known(c::WorkloadPhase::kDecode);
+    plan.values = {{dense(c::DataType::kFloat32, {1, 37}), {}},
+                   {description, weight},
+                   {dense(c::DataType::kFloat32, {1, 7}), {}}};
+    plan.inputs = {0}; plan.outputs = {2};
+    plan.steps = {{c::Operation(c::MatMul{}), {0, 1}, {2}}};
+    return d::prepare_plan(context, plan);
+  };
+  const auto head = bank.view(c::View::slice(0, 0, 37).value()).value();
+  const auto tail = bank.view(c::View::slice(0, 37, 37).value()).value();
+  auto first = prepare(head), second = prepare(tail), third = prepare(other);
+  ASSERT_TRUE(first) << first.error().message();
+  ASSERT_TRUE(second) << second.error().message();
+  ASSERT_TRUE(third) << third.error().message();
+  const auto pack = [](const v::Program &program) {
+    return d::Access::program(program)->constant_packs.at(0);
+  };
+  EXPECT_NE(pack(*first), pack(*second));
+  EXPECT_NE(pack(*first), pack(*third));
+  EXPECT_NE(pack(*second), pack(*third));
+  auto slot = third->create_invocation().value();
+  ASSERT_TRUE(slot.bind(make(context, dense(c::DataType::kFloat32, {1, 37}),
+                            std::vector<double>(37, 3))).ok());
+  auto result = slot.submit().value().wait();
+  ASSERT_TRUE(result) << result.error().message();
+  expect(context, result->get()->tensors()[0], std::vector<double>(7, 555));
+}
+
 TEST(VulkanManaged, ImmutableBfloatCastCapturesOneReadyPayloadAndKeepsPublicValues) {
   namespace f = derived_cast_test;
   auto context = vulkan_test::context().value();

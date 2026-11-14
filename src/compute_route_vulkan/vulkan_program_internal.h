@@ -53,10 +53,16 @@ struct RaggedContract final {
   bool causal=true;
   std::int32_t window_left=-1;
 };
+struct PackedMatrixConstant final {
+  Tensor source;
+  Tensor packed;
+  bool promoted = false;
+};
 struct ProgramState final {
   std::shared_ptr<Runtime> runtime;
   WorkloadContext workload;
   std::vector<PlanValue> values;
+  std::vector<std::shared_ptr<PackedMatrixConstant>> constant_packs;
   std::vector<std::uint32_t> inputs;
   std::vector<std::uint32_t> outputs;
   std::vector<TensorDesc> input_descriptions;

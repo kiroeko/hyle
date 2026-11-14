@@ -228,6 +228,57 @@ Status prepare_constant_casts(const std::shared_ptr<Runtime> &runtime,
   return Status::Ok();
 }
 
+Result<std::shared_ptr<PackedMatrixConstant>> pack_matrix_constant(
+    const std::shared_ptr<Runtime> &runtime, const Tensor &constant,
+    bool promote) {
+  // Native work uses Runtime::mutex. Keep cold pack serialization separate;
+  // no execution or retirement path ever acquires this index's mutex.
+  std::lock_guard lock(runtime->constant_packs_mutex);
+  std::erase_if(runtime->constant_packs,
+                [](const auto &entry) { return entry.expired(); });
+  const auto &source = Access::buffer(constant);
+  for (const auto &entry : runtime->constant_packs) {
+    auto packed = entry.lock();
+    if (!packed || packed->promoted != promote ||
+        packed->source.description() != constant.description())
+      continue;
+    const auto &previous = Access::buffer(packed->source);
+    // The retained source owns the original immutable capture/read lease.
+    // Its live native allocation prevents handle reuse; offsets and the full
+    // physical description distinguish separate views of the same bank.
+    if (previous->handle == source->handle && previous->offset == source->offset)
+      return packed;
+  }
+  const auto &description = constant.description();
+  std::array<std::int32_t, kMaxTensorRank> axes{};
+  std::iota(axes.begin(), axes.end(), 0);
+  std::swap(axes[description.rank() - 1], axes[description.rank() - 2]);
+  HYLE_ASSIGN_OR_RETURN(auto transpose,
+      View::permute(std::span(axes).first(description.rank())));
+  auto source_tensor = constant;
+  if (promote) {
+    const std::array arguments{Argument(constant)};
+    HYLE_ASSIGN_OR_RETURN(auto cast,
+        prepare_operation(runtime, Operation(Cast{DataType::kFloat32}), arguments));
+    HYLE_ASSIGN_OR_RETURN(auto slot, cast.create_invocation());
+    HYLE_ASSIGN_OR_RETURN(auto work, slot.submit());
+    HYLE_ASSIGN_OR_RETURN(auto ready, work.wait());
+    source_tensor = ready.get()->tensors()[0];
+  }
+  HYLE_ASSIGN_OR_RETURN(auto view, source_tensor.view(transpose));
+  const std::array arguments{Argument(view)};
+  HYLE_ASSIGN_OR_RETURN(auto copy,
+      prepare_operation(runtime, Operation(Copy{}), arguments));
+  HYLE_ASSIGN_OR_RETURN(auto slot, copy.create_invocation());
+  HYLE_ASSIGN_OR_RETURN(auto work, slot.submit());
+  HYLE_ASSIGN_OR_RETURN(auto ready, work.wait());
+  HYLE_ASSIGN_OR_RETURN(auto tensor, ready.get()->tensors()[0].view(transpose));
+  auto packed = std::make_shared<PackedMatrixConstant>(
+      PackedMatrixConstant{constant, std::move(tensor), promote});
+  runtime->constant_packs.push_back(packed);
+  return packed;
+}
+
 Status pack_matrix_constants(const std::shared_ptr<Runtime> &runtime,
                              ProgramState &program,
                              const Plan &source_plan, Plan &packed_plan) {
@@ -259,37 +310,11 @@ Status pack_matrix_constants(const std::shared_ptr<Runtime> &runtime,
     }
     auto &replacement = replacements[promote ? 1 : 0][source];
     if (replacement == UINT32_MAX) {
-      std::array<std::int32_t, kMaxTensorRank> axes{};
-      std::iota(axes.begin(), axes.end(), 0);
-      std::swap(axes[description.rank() - 1], axes[description.rank() - 2]);
-      HYLE_ASSIGN_OR_RETURN(auto transpose,
-          View::permute(std::span(axes).first(description.rank())));
-      auto source_tensor = constant;
-      if (promote) {
-        // Reuse the original widening primitive before the physical pack.
-        // Keep its owned result alive until the cold Copy has retired.
-        const std::array arguments{Argument(constant)};
-        HYLE_ASSIGN_OR_RETURN(auto cast,
-            prepare_operation(runtime, Operation(Cast{DataType::kFloat32}),
-                              arguments));
-        HYLE_ASSIGN_OR_RETURN(auto slot, cast.create_invocation());
-        HYLE_ASSIGN_OR_RETURN(auto work, slot.submit());
-        HYLE_ASSIGN_OR_RETURN(auto ready, work.wait());
-        source_tensor = ready.get()->tensors()[0];
-      }
-      HYLE_ASSIGN_OR_RETURN(auto view, source_tensor.view(transpose));
-      // Existing byte-addressed Copy owns the cold materialization and its
-      // accepted-prefix retirement. Only immutable captures enter this path.
-      const std::array arguments{Argument(view)};
-      HYLE_ASSIGN_OR_RETURN(auto copy,
-          prepare_operation(runtime, Operation(Copy{}), arguments));
-      HYLE_ASSIGN_OR_RETURN(auto slot, copy.create_invocation());
-      HYLE_ASSIGN_OR_RETURN(auto work, slot.submit());
-      HYLE_ASSIGN_OR_RETURN(auto ready, work.wait());
       HYLE_ASSIGN_OR_RETURN(auto packed,
-          ready.get()->tensors()[0].view(transpose));
+          pack_matrix_constant(runtime, constant, promote));
       const auto id = static_cast<std::uint32_t>(program.values.size());
-      program.values.push_back({packed.description(), std::move(packed)});
+      program.values.push_back({packed->packed.description(), packed->packed});
+      program.constant_packs.push_back(std::move(packed));
       program.aliases.push_back({id, 0});
       replacement = id;
     }
