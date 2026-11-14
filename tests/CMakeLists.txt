@@ -543,6 +543,15 @@ if(TARGET hyle_engine)
       FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
     add_dependencies(hyle_tests hyle_qwen_quality_worker)
   endif()
+  # Explicit real-weight consumer; keep it out of aggregate host/unit builds.
+  add_executable(hyle_qwen_cross_backend_state_test EXCLUDE_FROM_ALL tools/qwen_cross_backend_state_test.cc
+    ${_hyle_qwen35_cold_sources})
+  hyle_configure_engine_target(hyle_qwen_cross_backend_state_test)
+  if(MSVC)
+    target_compile_options(hyle_qwen_cross_backend_state_test PRIVATE /bigobj)
+  endif()
+  set_target_properties(hyle_qwen_cross_backend_state_test PROPERTIES
+    FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
   add_executable(hyle_qwen_host_image_test tools/qwen_host_image_test.cc
     ${_hyle_qwen35_cold_sources})
   hyle_configure_engine_target(hyle_qwen_host_image_test)

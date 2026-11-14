@@ -63,6 +63,18 @@ inline void retire(std::shared_ptr<q::Session> &session) {
 }
 inline q::MtpRoundResult round(q::Model &model, const std::shared_ptr<q::Session> &session) {
   const auto pending = session->head->next_id;
+  if (model.max_drafts() > 1) {
+    std::vector<q::c::ReadLease> probabilities;
+    const auto ids = model.propose_recursive(*session, model.max_drafts(), q::model_eos_tokens, &probabilities);
+    model.prepare_evaluation(*session, ids, nullptr, q::GraphRole::kVerify);
+    model.submit_evaluation(*session);
+    const std::array outputs{q::evaluation_output(model, session, {.name = "host-image-recursive-round", .trace_states = false})};
+    const std::array selections{q::MtpGenerationSelection{session, pending, model.max_drafts() + 1,
+        probabilities, model.max_drafts()}};
+    std::array<q::MtpRoundResult, 1> result;
+    model.finish_recursive_mtp(selections, q::model_eos_tokens, outputs, result, [](auto, const auto &) {});
+    return std::move(result[0]);
+  }
   const auto role = session->head->draft->lag ? q::GraphRole::kMtpCatchupRound : q::GraphRole::kMtpRound;
   model.prepare_evaluation(*session, std::span(&pending, 1), nullptr, role);
   model.submit_evaluation(*session);
@@ -88,7 +100,8 @@ struct ModeReport final {
   std::size_t continuation_lag = 0;
 };
 
-inline ModeReport run_mode(const std::filesystem::path &input, q::BackendKind kind, bool draft) {
+inline ModeReport run_mode(const std::filesystem::path &input, q::BackendKind kind, bool draft,
+    std::size_t maximum_drafts = 1, std::size_t cpu_ffn_layers = 0, bool random = true) {
   constexpr std::size_t host_limit = 256u << 20;
   std::shared_ptr<const q::cache::HostImage> escaped;
   std::shared_ptr<i::HostStateStorage> storage_after_model;
@@ -101,17 +114,34 @@ inline ModeReport run_mode(const std::filesystem::path &input, q::BackendKind ki
     const auto precision = q::PrecisionProfile::from_roles(source.roles);
     require(geometry.context_limit >= 16 && geometry.vocabulary >= 4 && (!draft || geometry.mtp_layers == 1),
         "host image case requires C16, four tokens and the selected original MTP roles");
-    const auto plan = q::cache::plan(geometry, source.cache_row_bytes, 16, 4, 3,
-        q::recurrent_bytes(q::state_schema_for(geometry, 16, precision), geometry), 1, draft ? 2 : 1, draft, true, 1, 0, precision);
+    const auto boundaries = draft ? maximum_drafts + 1 : 1;
+    const auto plan = q::cache::plan(geometry, source.cache_row_bytes, 16, 4, (std::max)(std::size_t{3}, boundaries),
+        q::recurrent_bytes(q::state_schema_for(geometry, 16, precision), geometry), 1, boundaries, draft, true, 1, 0, precision);
     q::Model model(std::move(source), geometry, 16, plan, {}, false, q::ReplayPolicy::kCommands, SIZE_MAX,
-        {.enabled = true, .policy = {1.F, 8, .9F}, .seed = 123}, 0, {.primary = kind});
+        {.enabled = random, .policy = random ? q::sampling::Policy{1.F, 8, .9F} : q::sampling::Policy{},
+         .seed = 123}, cpu_ffn_layers, {.primary = kind});
+    if (draft) model.configure_draft_policy({.max_drafts = maximum_drafts});
+    require(model.ffn_placement.cpu_layers() == cpu_ffn_layers,
+        "host image consumer did not prepare its requested mixed placement");
     cold = model.resources_;
     report.hidden = static_cast<std::size_t>(geometry.hidden); report.target_layers = geometry.layers.size();
     const auto prompt_role = draft ? q::GraphRole::kMtpPrefill : q::GraphRole::kText;
     const std::array prefill{std::size_t{3}};
     const std::array ordinary{std::size_t{3}, std::size_t{1}};
     const std::array pair{std::size_t{2}};
-    if (draft) {
+    if (draft && maximum_drafts > 1) {
+      model.prepare_family(prefill, false, 1, prompt_role); model.plan_replay_uses(3, 1, 12, prompt_role);
+      for (std::size_t width = 1; width <= boundaries; ++width) {
+        const std::array rows{width};
+        model.prepare_family(rows, false, 1, q::GraphRole::kVerify);
+        model.plan_replay_uses(width, 1, 12, q::GraphRole::kVerify);
+      }
+      model.prepare_recursive_round_programs();
+      model.prepare_execution(prefill, 1, prompt_role);
+      for (std::size_t width = 1; width <= boundaries; ++width) {
+        const std::array rows{width}; model.prepare_execution(rows, 1, q::GraphRole::kVerify);
+      }
+    } else if (draft) {
       model.prepare_family(prefill, false, 1, prompt_role); model.plan_replay_uses(3, 1, 12, prompt_role);
       for (auto role : {q::GraphRole::kMtpRound, q::GraphRole::kMtpCatchupRound}) {
         model.prepare_family(pair, false, 1, role); model.plan_replay_uses(2, 1, 12, role);
