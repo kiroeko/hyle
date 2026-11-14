@@ -149,6 +149,6 @@ Source的共享引用只用于保活，不取代原Graph的权限与退休；失
 - 连续执行按实际后端、采样和状态资格选择，auto不适用时保留原单步路径；物理载体数、在途深度和批成员数分别表达。
 - Backend当前以一个主端点及可选CPU辅助端点为主；Graph多端点表达不等于多GPU分片／跨Context等待或多机已接通。
 - token CLI使用准备后的权重和token IDs，与worker共用提供者装载；文本CLI与Responses文本服务使用本地tokenizer和模板。
-  通用loader、C++ tokenizer、完整服务API和图片产品入口尚未交付；实际字段见[文本接口指南](../user/text-api.md)。
+  图片和客户端工具已接入三协议；通用loader、C++ tokenizer、完整服务API与严格结构化生成尚未交付。实际字段及服务限额见[文本接口指南](../user/text-api.md)。
 
 各模型／制品实际范围见[模型覆盖](../implementation/model-operators.md)，性能结果见[decode资料](../developer/performance/decode.md)。
