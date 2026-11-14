@@ -14,7 +14,7 @@ import time
 from pathlib import Path
 from typing import Sequence
 
-from .contracts import ExecutionProfileFacts, TokenEvent, WorkerError
+from .contracts import ExecutionPlacementFacts, ExecutionProfileFacts, TokenEvent, WorkerError
 
 
 def _metadata_text(encoded: str) -> str:
@@ -217,6 +217,7 @@ class WorkerClient:
         self.context = 0
         self.stop_ids: frozenset[int] = frozenset()
         self.execution_profiles: tuple[ExecutionProfileFacts, ...] = ()
+        self.placement: ExecutionPlacementFacts | None = None
         self._ready = threading.Event()
         self._bye = threading.Event()
         self._reader = threading.Thread(target=self._read_frames, name="hyle-worker-output", daemon=True)
@@ -409,10 +410,19 @@ class WorkerClient:
                             self._ready.set()
                         continue
                     legacy = len(fields) == 5 and fields[:2] == ['READY', '2']
-                    profiled = len(fields) == 7 and fields[:2] == ['READY', '4']
+                    placed = len(fields) == 9 and fields[:2] == ['READY', '5']
+                    profiled = placed or (len(fields) == 7 and fields[:2] == ['READY', '4'])
                     current = profiled or (len(fields) == 6 and fields[:2] == ['READY', '3'])
                     if not legacy and not current:
                         raise WorkerError("protocol", "invalid model worker handshake")
+                    if placed:
+                        backend, layers = fields[7:]
+                        if (backend not in ('-', 'cpu', 'cuda', 'apple', 'vulkan') or
+                                not layers.isascii() or not layers.isdecimal() or not 0 <= int(layers) < 1 << 64 or
+                                (int(layers) and backend in ('-', 'cpu'))):
+                            raise WorkerError('protocol', 'invalid actual worker placement')
+                        if backend != '-':
+                            self.placement = ExecutionPlacementFacts(backend, int(layers))
                     self.source_identity = fields[5] if current and fields[5] != '-' else None
                     if self.source_identity is not None and (not self.source_identity or
                             any(not 32 < ord(char) < 127 for char in self.source_identity)):

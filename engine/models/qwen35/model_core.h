@@ -2760,8 +2760,9 @@ public:
   }
 
   // Producer-owned outputs retain their original per-Invocation storage.
-  // Share scratch only when all public outputs permit it. Other sharing or
-  // budget failures still propagate; they never authorize a private fallback.
+  // Shared scratch currently has one native allocation resource. A genuine
+  // two-endpoint graph keeps its original per-Invocation workspace, as do
+  // producer-owned outputs. Other sharing/budget failures still propagate.
   void prepare_execution_storage() {
     if (active_step || successor_step || carrier_borrowed || execution_storage_prepared)
       throw std::logic_error("shared execution preparation requires its original idle uninitialized inventory");
@@ -2790,13 +2791,14 @@ public:
     }
     if (routes.empty())
       throw inference::EvaluationFailure(hyle::Status::Unimplemented("no cold-known route supports shared scratch"));
-    if (caller_owned_outputs) {
+    if (caller_owned_outputs && !execution.has_cpu_assist()) {
       execution_workspace = take(g::InvocationWorkspace::create(routes, {.resource_budget = execution_budget}));
       std::cerr << "execution_shared_workspace routes=" << routes.size() << " bytes=" << execution_workspace.bytes()
                 << " resource_budget=execution configured_rows=" << bounded_prefill_rows << '\n';
     } else {
       std::cerr << "execution_private_workspace routes=" << routes.size()
-                << " reason=producer_owned_or_aliased_outputs resource_budget=execution configured_rows="
+                << " reason=" << (execution.has_cpu_assist() ? "multiple_native_resources" : "producer_owned_or_aliased_outputs")
+                << " resource_budget=execution configured_rows="
                 << bounded_prefill_rows << '\n';
     }
     execution_storage_prepared = true;

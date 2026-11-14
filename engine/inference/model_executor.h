@@ -15,6 +15,7 @@
 #include "generation_input.h"
 #include "request_stop_policy.h"
 #include "token_consumer.h"
+#include "backend_kind.h"
 
 namespace hyle::inference {
 
@@ -100,12 +101,20 @@ struct ExecutionProfileDescription final {
   std::vector<std::string> input_modalities{"text"};
 };
 
+struct ExecutionPlacementDescription final {
+  // Unknown is allowed for host-only contract fixtures, not a prepared native
+  // model. These are actual endpoint/placement facts, not requested options.
+  BackendKind primary = BackendKind::kDefault;
+  std::size_t cpu_ffn_layers = 0;
+};
+
 struct ModelDescription final {
   std::size_t vocabulary = 0, context = 0;
   std::vector<std::int32_t> stop_ids;
   std::vector<ExecutionProfileDescription> execution_profiles{ExecutionProfileDescription{}};
   // Opaque immutable source identity from the provider, not a model family name.
   std::string source_identity;
+  ExecutionPlacementDescription placement;
 };
 
 inline bool execution_profiles_co_resident(const ModelDescription &model, std::size_t a, std::size_t b) noexcept {
@@ -116,6 +125,9 @@ inline bool execution_profiles_co_resident(const ModelDescription &model, std::s
 }
 
 inline void validate_model_description(const ModelDescription &model) {
+  if (model.placement.cpu_ffn_layers && (model.placement.primary == BackendKind::kDefault ||
+      model.placement.primary == BackendKind::kCpu))
+    throw std::invalid_argument("CPU assistance requires an actual GPU primary endpoint");
   if (model.execution_profiles.empty()) throw std::invalid_argument("model has no prepared execution profile");
   for (std::size_t a = 0; a < model.execution_profiles.size(); ++a) {
     const auto &profile = model.execution_profiles[a];

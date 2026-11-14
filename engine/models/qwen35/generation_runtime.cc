@@ -3613,6 +3613,7 @@ public:
     description.execution_profiles[0].max_draft_tokens = mtp_ ? model_.max_drafts() : 0;
     if (model_.vision) description.execution_profiles[0].input_modalities.push_back("image");
     description.source_identity = model_.source_identity;
+    description.placement = {model_.execution.kind(), model_.ffn_placement.cpu_layers()};
     return description;
   }
   bool supports_dynamic_admission() const noexcept override { return true; }
@@ -3678,6 +3679,7 @@ public:
         {model_eos_tokens.begin(), model_eos_tokens.end()}};
     description.execution_profiles.clear();
     description.source_identity = models_[0]->source_identity;
+    description.placement = {models_[0]->execution.kind(), models_[0]->ffn_placement.cpu_layers()};
     for (std::size_t j = 0; j < models_.size(); ++j) {
       const auto &model = *models_[j];
       inference::ExecutionProfileDescription profile{names_[j], model.cache_plan.draft_cache ? "mtp" : "ordinary",
@@ -3753,6 +3755,7 @@ struct ExecutionProfilePreparation final {
   std::size_t draft_depth;
   bool overlap;
   std::filesystem::path vision_path;
+  std::size_t cpu_ffn_layers;
 };
 
 ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoadConfig &config,
@@ -3773,11 +3776,12 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
       config.execution.active_sequences > config.execution.resident_sessions || !config.execution.prefill_rows ||
       (profile.draft_count && *profile.draft_count >= config.execution.context))
     throw std::invalid_argument("model loading requires valid context, sequence, prefill and draft capacities");
-  const auto execution = select_execution(BackendSelection{.primary = config.execution.backend}, 0);
+  const auto cpu_layers = config.execution.cpu_ffn_layers;
+  const auto execution = select_execution(BackendSelection{.primary = config.execution.backend}, cpu_layers);
   const bool has_greedy_sampling = !config.sampling.random || std::ranges::any_of(config.additional_sampling,
       [](const auto &policy) { return !policy.random; });
   const inference::ColdWorkloadFacts workload{
-      .natural_generation = true, .greedy = has_greedy_sampling,
+      .natural_generation = true, .cpu_assist = cpu_layers != 0, .greedy = has_greedy_sampling,
       .max_sessions = config.execution.resident_sessions, .active_sequences = config.execution.active_sequences,
       .capacity = config.execution.context};
   namespace mtp_policy = inference::mtp;
@@ -3809,6 +3813,7 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
   const auto depth = (std::min)(selected_depth, config.execution.context - 1);
   if (mtp && !depth) throw std::invalid_argument("model draft depth requires a remaining context row");
   const auto geometry = source.roles.geometry;
+  FfnPlacement::validate(cpu_layers, geometry.layers.size());
   validate_mtp_source(geometry, mtp);
   const auto valid_sampling = [&](const inference::PreparedSamplingPolicy &policy) {
     if (policy.top_k > static_cast<std::size_t>(geometry.vocabulary))
@@ -3833,7 +3838,7 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
   const auto append_sampling_route = [&](const inference::PreparedSamplingPolicy &policy) {
     auto selected = facts;
     selected.workload.greedy = !policy.random;
-    const DeviceRelayCapabilities relay{execution.primary, false, false, policy.random && mtp, false};
+    const DeviceRelayCapabilities relay{execution.primary, cpu_layers != 0, false, policy.random && mtp, false};
     selected.relay_eligible = relay.eligible(); selected.relay_refusal = relay.refusal_reason();
     sampling_routes.push_back(selected);
   };
@@ -3860,9 +3865,9 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
   const Model::Sampling sampling{.enabled = config.sampling.random,
       .policy = {config.sampling.temperature, config.sampling.top_k, config.sampling.top_p}, .seed = 0};
   auto backend = shared_endpoint ? take(shared_endpoint->share_endpoint()) :
-      continuous.endpoint ? std::move(*continuous.endpoint) : create_execution(geometry, plan, 0, execution);
+      continuous.endpoint ? std::move(*continuous.endpoint) : create_execution(geometry, plan, cpu_layers, execution);
   return {std::move(source), std::move(backend), plan, sampling, std::move(additional_sampling), depth, overlap,
-      vision_asset?vision_asset->path:std::filesystem::path{}};
+      vision_asset?vision_asset->path:std::filesystem::path{}, cpu_layers};
 }
 
 std::unique_ptr<Model> instantiate_execution_profile(ExecutionProfilePreparation preparation,
@@ -3872,7 +3877,7 @@ std::unique_ptr<Model> instantiate_execution_profile(ExecutionProfilePreparation
   const auto vision_target=vision_path.empty()?prepared::Roles{}:preparation.source.roles;
   auto model = std::make_unique<Model>(std::move(preparation.endpoint), hyle::compute::ResourceBudget{}, std::move(preparation.source),
       geometry, capacity, preparation.cache, std::filesystem::path{}, false, ReplayPolicy::kAuto, SIZE_MAX,
-      preparation.sampling, 0, preparation.additional_sampling, std::move(weights));
+      preparation.sampling, preparation.cpu_ffn_layers, preparation.additional_sampling, std::move(weights));
   if (preparation.cache.draft_cache) model->configure_draft_policy({preparation.draft_depth});
   if(!vision_path.empty())model->vision=shared_vision?std::move(shared_vision):
       std::make_shared<VisionEncoder>(model->execution,vision_target,vision_path,model->allocation_budget);
@@ -3900,7 +3905,8 @@ std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::M
     std::vector<const PreparedWeightSource *> sources;
     sources.reserve(count);
     for (const auto &profile : prepared) sources.push_back(&profile.source);
-    auto weights = prepare_shared_weights(prepared.front().endpoint, shared_weight_roles(sources));
+    auto weights = prepare_shared_weights(prepared.front().endpoint, shared_weight_roles(sources),
+        config.execution.cpu_ffn_layers);
     std::map<std::filesystem::path,std::shared_ptr<VisionEncoder>> shared_vision;
     for (std::size_t j = 0; j < count; ++j) {
       const bool overlap = prepared[j].overlap;

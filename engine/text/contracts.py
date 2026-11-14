@@ -53,6 +53,12 @@ class PreparedPrompt:
 
 
 @dataclass(frozen=True)
+class ExecutionPlacementFacts:
+    primary_backend: str
+    cpu_ffn_layers: int
+
+
+@dataclass(frozen=True)
 class ExecutionProfileFacts:
     """Immutable facts from the actual prepared executor, not requested options."""
     name: str

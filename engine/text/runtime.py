@@ -163,6 +163,7 @@ class TextEngine:
                                   **({'attachments': prepared.attachments} if prepared.attachments else {}))
 
     def describe_capabilities(self) -> dict:
+        placement = getattr(self.worker, 'placement', None)
         describe = getattr(self.codec, 'describe_capabilities', None)
         frontend = describe() if describe is not None else {'input_modalities': None,
             'tools': {'supported': None if callable(getattr(self.codec, 'new_tool_decoder', None)) else False,
@@ -170,6 +171,8 @@ class TextEngine:
         return {'available': self.healthy, 'context_tokens': self.worker.context,
             'vocabulary_size': getattr(self.worker, 'vocabulary', None),
             'source_identity': getattr(self.worker, 'source_identity', None),
+            'placement': None if placement is None else {
+                'primary_backend': placement.primary_backend, 'cpu_ffn_layers': placement.cpu_ffn_layers},
             'execution_profiles': [{'name': profile.name, 'algorithm': profile.algorithm,
                 'max_draft_tokens': profile.max_draft_tokens, 'input_modalities': list(profile.input_modalities),
                 'co_resident_with': [self.execution_profiles[i].name for i in profile.co_resident_with]}

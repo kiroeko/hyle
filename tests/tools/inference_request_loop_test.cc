@@ -1505,6 +1505,7 @@ void application_uses_one_provider_path_for_cli_and_worker() {
   require(!help_status && help.find("Hyle text inference") != std::string::npos && !application_loaded && help_error.empty(),
       "application help loaded a model or assumed a model family");
   const std::vector<std::string> common{"--inputs", "other-model", "--capacity", "128", "--max-sessions", "2", "--active-sequences", "2", "--asset", "private.table=shared.bin",
+                                       "--backend", "cuda", "--cpu-ffn-layers", "2",
                                        "--sampling", "random", "--temperature", "0.8"};
   auto cli = common; cli.insert(cli.end(), {"--tokens", "-", "--max-output-tokens", "3"});
   const auto [cli_status, generated, cli_error] = run(cli);
@@ -1513,7 +1514,8 @@ void application_uses_one_provider_path_for_cli_and_worker() {
   const auto cli_config = *application_loaded;
   auto worker = common; worker.insert(worker.begin(), "--engine-worker");
   const auto [worker_status, frames, worker_error] = run(worker, "Q\n");
-  require(!worker_status && frames.starts_with("READY\t4\t256\t128\t-\t-\t1\nPROFILE\t0\t") && frames.ends_with("BYE\n") && worker_error.empty() &&
+  require(!worker_status && frames.starts_with("READY\t5\t256\t128\t-\t-\t1\t-\t0\nPROFILE\t0\t") && frames.ends_with("BYE\n") && worker_error.empty() &&
+      application_loaded->execution.cpu_ffn_layers == 2 && cli_config.execution.cpu_ffn_layers == 2 &&
       application_loaded->execution.context == cli_config.execution.context &&
       application_loaded->execution.resident_sessions == cli_config.execution.resident_sessions &&
       application_loaded->execution.active_sequences == cli_config.execution.active_sequences &&
@@ -1592,7 +1594,7 @@ void token_worker_reports_actual_profiles_without_executing_requests() {
   std::ostringstream output;
   i::TokenWorker worker(std::make_unique<ApplicationTestExecutor>(std::move(config)), 1, 1, 1, 16, input, output);
   require(worker.run() == 0, "profile metadata worker did not stop");
-  require(output.str() == "READY\t4\t256\t128\t-\t-\t2\n"
+  require(output.str() == "READY\t5\t256\t128\t-\t-\t2\t-\t0\n"
       "PROFILE\t0\tZGVmYXVsdA==\taG9zdC1maXh0dXJl\t0\tdGV4dA==\t-\n"
       "PROFILE\t1\tcGljdHVyZXMJCg==\taG9zdC1maXh0dXJl\t2\tdGV4dA==,aW1hZ2U=\t-\nBYE\n",
       "worker profile identity, actual depth, modality or UTF-8 framing differs");
@@ -1608,7 +1610,7 @@ void token_worker_rejects_malformed_frames_without_starting_model() {
   std::ostringstream output;
   i::TokenWorker worker(std::make_unique<IngressTestExecutor>(control), 2, 2, 1, 16, input, output);
   require(worker.run() == 0, "worker protocol did not close cleanly");
-  require(output.str() == "READY\t4\t256\t128\t3,4\t-\t1\nPROFILE\t0\tZGVmYXVsdA==\t\t0\tdGV4dA==\t-\n"
+  require(output.str() == "READY\t5\t256\t128\t3,4\t-\t1\t-\t0\nPROFILE\t0\tZGVmYXVsdA==\t\t0\tdGV4dA==\t-\n"
       "E\t0\tprotocol\tinvalid request identity\n"
       "E\t7\tinvalid\tinvalid output limit or token list\n"
       "E\t8\tinvalid\tinvalid output limit or token list\n"
@@ -1691,7 +1693,7 @@ void token_worker_credit_and_cancellation_do_not_hang() {
       if (!output_buffer.line(line, std::chrono::seconds(3))) throw std::runtime_error("worker test timed out");
       return line;
     };
-    require(next() == "READY\t4\t256\t128\t3,4\t-\t1", "worker did not become ready");
+    require(next() == "READY\t5\t256\t128\t3,4\t-\t1\t-\t0", "worker did not become ready");
     require(next() == "PROFILE\t0\tZGVmYXVsdA==\t\t0\tdGV4dA==\t-", "worker omitted prepared profile facts");
     input_buffer.send("G\t1\t2\t10\n");
     require(next() == "A\t1" && next() == "T\t1\t10", "worker lost initial accepted token");

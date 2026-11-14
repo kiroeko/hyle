@@ -11,7 +11,7 @@ import urllib.request
 from engine.text.app import TextApiServer
 from engine.text.codec import HuggingFaceTextCodec
 from engine.text.configuration import ExecutionChoice,PreparedChoices,SamplingChoice
-from engine.text.contracts import ExecutionProfileFacts
+from engine.text.contracts import ExecutionPlacementFacts, ExecutionProfileFacts
 from engine.text.runtime import TextEngine
 from engine.models.qwen35.tool_format import ToolFormat
 
@@ -27,6 +27,13 @@ def engine():
 
 
 class ModelFactsTest(unittest.TestCase):
+    def test_discovery_reports_actual_prepared_placement_and_unknown_remains_unknown(self):
+        actual = engine()
+        self.assertIsNone(actual.describe_capabilities()['placement'])
+        actual.worker.placement = ExecutionPlacementFacts('vulkan', 2)
+        self.assertEqual(actual.describe_capabilities()['placement'],
+                         {'primary_backend': 'vulkan', 'cpu_ffn_layers': 2})
+
     def test_declared_assets_and_draft_preferences_never_claim_native_capabilities(self):
         value=engine().describe_capabilities()
         self.assertEqual((value['context_tokens'],value['vocabulary_size'],value['source_identity']),(128,42,'actual-source'))

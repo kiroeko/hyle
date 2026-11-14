@@ -297,6 +297,10 @@ CPU分置、prefix、多会话、scheduler和随机采样不自动启用。`--re
 需要明确的 CPU＋GPU 分置时，用 `scripts/init.py` 的 `--backends cpu,cuda`、`cpu,metal` 或
 `cpu,vulkan` 分别准备对应构建，运行时选择 GPU 主后端并添加 `--cpu-ffn-layers 2`，将前两层 target FFN 及其
 原始权重放到 CPU；注意力、缓存和 MTP 留在所选 GPU。默认值 0 保持 GPU 放置。
+该参数在正式 token CLI、worker 和 `engine.text.app serve|generate` 使用同一冷装载路径；
+加载后不按请求改变放置。超过模型层数、缺少 CPU 路线或以 CPU 为主后端时明确报错。
+worker 和 `/v1/models` 的 `hyle.placement` 报告实际 `primary_backend` 与 `cpu_ffn_layers`，
+与实际执行方案的算法和草稿上限一起使用，不从启动参数推断能力。
 混合执行的适用制品和后端见[模型覆盖](../implementation/model-operators.md)；功能可用不代表比纯GPU更快。
 
 命令行保持原 CPU 线程默认值，不增加线程参数。程序集成可复用公开的

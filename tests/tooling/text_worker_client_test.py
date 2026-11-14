@@ -8,6 +8,26 @@ from engine.text.worker_client import WorkerClient, WorkerError
 
 
 class WorkerClientLifecycleTest(unittest.TestCase):
+    def test_actual_placement_is_validated_independently_of_requested_profiles(self):
+        profile = 'PROFILE\t0\tZGVmYXVsdA==\tb3JkaW5hcnk=\t0\tdGV4dA==\t-'
+        for backend, layers in (('cpu', '0'), ('cuda', '0'), ('vulkan', '2'), ('apple', '3')):
+            frames = [f'READY\t5\t256\t128\t3\t-\t1\t{backend}\t{layers}', profile]
+            code = '\n'.join(('import sys', *(f'print({frame!r}, flush=True)' for frame in frames),
+                "assert sys.stdin.readline().rstrip() == 'Q'", "print('BYE', flush=True)"))
+            worker = WorkerClient([sys.executable, '-B', '-c', code], startup_timeout=3)
+            try:
+                self.assertEqual((worker.placement.primary_backend, worker.placement.cpu_ffn_layers),
+                                 (backend, int(layers)))
+            finally:
+                worker.close(timeout=3)
+        for backend, layers in (('cpu', '1'), ('-', '1'), ('auto', '0'), ('cuda', '-1'),
+                                ('vulkan', '18446744073709551616'), ('apple', '٢')):
+            with self.subTest(backend=backend, layers=layers):
+                frame = f'READY\t5\t256\t128\t3\t-\t1\t{backend}\t{layers}'
+                with self.assertRaises(WorkerError):
+                    WorkerClient([sys.executable, '-B', '-c',
+                        f'import sys; sys.stdout.reconfigure(encoding="utf-8"); print({frame!r}, flush=True)'], startup_timeout=3)
+
     def test_prepared_metadata_reports_actual_profiles_and_escaped_names(self):
         name = 'pictures\t图\nprofile'
         encode = lambda value: base64.b64encode(value.encode('utf-8')).decode('ascii')

@@ -56,7 +56,7 @@ Qwen 的缓存和权重报告适配器放在其模型目录，公共报告层只
 
 文本层的 `engine/text/runtime.py` 负责消息编码、请求提交和有序文本交付；CLI、Responses、Chat Completions 和 Anthropic Messages 都使用这条路径。`contracts.py` 描述 token 传输合同，`worker_client.py` 连接内部工作进程；`server.py` 负责 HTTP 路由、连接和流式传输，各协议适配器解释字段与事件，`app.py` 在启动时组合入口和路由。输出消费者接收文本之后才归还 token 配额；传输失败由原请求的取消与退休路径处理。
 
-文本层按实际准备结果选路。`ModelDescription` 报告各方案的身份、算法、草稿深度、输入种类与驻留兼容性；worker 在 READY 4 后发送完整 PROFILE 快照，再接受请求。字符串按 UTF-8／base64 编码，名称中的空格、制表符和换行不会改变帧边界。文本层核对方案身份，按声明的输入能力选择程序，并在编码前拒绝超过实际草稿上限的请求；不从模型私有的资产角色推断视觉支持。Windows 应用通过[进程 manifest](https://learn.microsoft.com/en-us/windows/apps/design/globalizing/use-utf8-code-page)声明 UTF-8，使 argv、文件路径和 IPC 使用相同编码，不修改系统区域设置；该声明要求 Windows 10 1903 或更新版本。
+文本层按实际准备结果选路。`ModelDescription` 报告实际主后端与 CPU FFN 放置，以及各方案的身份、算法、草稿深度、输入种类与驻留兼容性；worker 在 READY 5 中发送放置事实，随后发送完整 PROFILE 快照，再接受请求。放置属于共享的冷执行配置；模型解释 FFN 角色和合法分界，并将同一选择用于端点、权重和图构造，请求不能改变它。字符串按 UTF-8／base64 编码，名称中的空格、制表符和换行不会改变帧边界。文本层核对方案身份，按声明的输入能力选择程序，并在编码前拒绝超过实际草稿上限的请求；不从模型私有的资产角色推断视觉支持。Windows 应用通过[进程 manifest](https://learn.microsoft.com/en-us/windows/apps/design/globalizing/use-utf8-code-page)声明 UTF-8，使 argv、文件路径和 IPC 使用相同编码，不修改系统区域设置；该声明要求 Windows 10 1903 或更新版本。
 
 ## 请求与生命周期
 

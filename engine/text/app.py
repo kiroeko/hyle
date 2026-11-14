@@ -34,6 +34,7 @@ def make_worker_command(args, choices: PreparedChoices | None = None) -> list[st
     command = [str(args.engine), '--engine-worker', '--inputs', str(args.inputs), '--backend', args.backend,
                '--capacity', str(args.capacity), '--max-sessions', str(args.max_sessions),
                '--active-sequences', str(args.active_sequences), '--sampling', args.sampling]
+    if args.cpu_ffn_layers: command += ['--cpu-ffn-layers', str(args.cpu_ffn_layers)]
     if args.sampling == 'random':
         command += ['--temperature', str(args.temperature), '--top-k', str(args.top_k),
                     '--top-p', str(args.top_p), '--seed', str(args.seed)]
@@ -82,6 +83,8 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     common.add_argument('--config', type=Path, help='cold execution/sampling and session policy TOML')
     common.add_argument('--asset-cache', type=Path, help='immutable store for configured automatic asset recipes')
     common.add_argument('--backend', choices=('auto', 'cpu', 'cuda', 'apple', 'vulkan'), default='auto')
+    common.add_argument('--cpu-ffn-layers', type=int, default=0,
+                        help='place the first N target FFNs on CPU at cold loading; requires CPU+GPU')
     common.add_argument('--capacity', type=int, default=4096)
     common.add_argument('--max-sessions', type=int, default=2)
     common.add_argument('--active-sequences', type=int, default=2)
@@ -107,6 +110,10 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     generate.add_argument('--sampling-profile', default='default')
     generate.add_argument('--request-seed', type=int)
     args = parser.parse_args(argv)
+    if args.cpu_ffn_layers < 0 or args.cpu_ffn_layers >= 1 << 64:
+        parser.error('--cpu-ffn-layers requires an unsigned 64-bit integer')
+    if args.cpu_ffn_layers and args.backend == 'cpu':
+        parser.error('--cpu-ffn-layers requires a GPU primary backend')
     if args.sampling != 'random' and any(value is not None for value in
                                           (args.temperature, args.top_k, args.top_p, args.seed)):
         parser.error('--temperature, --top-k, --top-p and --seed require --sampling random')
