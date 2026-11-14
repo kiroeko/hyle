@@ -7,12 +7,6 @@
 #include <cstring>
 #include <tuple>
 
-// These are the original locked ggml copy shader, already linked by the
-// managed Vulkan runtime. No conversion flags or floating arithmetic occur
-// in this same-type shader. Copy into aligned words before pipeline creation.
-extern const std::uint64_t contig_cpy_f16_f16_len;
-extern const unsigned char contig_cpy_f16_f16_data[];
-
 namespace hyle::compute::vulkan::detail {
 template<class T> using CopyArray = std::vector<T, mem::StdAllocator<T>>;
 struct CopyPair final {
@@ -91,11 +85,12 @@ Status prepare_halfwords(CopyRecording &recording, std::uint32_t capacity,
       device.properties.limits.maxComputeWorkGroupInvocations < 128 ||
       device.properties.limits.maxComputeWorkGroupSize[0] < 128)
     return Status::Unimplemented("Vulkan exact halfword copy needs enabled storage16 and 128 lanes");
-  if (contig_cpy_f16_f16_len % 4 || contig_cpy_f16_f16_len > SIZE_MAX)
-    return Status::Internal("Vulkan locked halfword copy shader size");
+  // The original locked same-type shader performs no conversion or floating
+  // arithmetic. Its provider retains the blob; copy to aligned words cold.
+  HYLE_ASSIGN_OR_RETURN(auto shader, ggml_vulkan::detail::exact_halfword_copy_shader());
   CopyArray<std::uint32_t> code{mem::StdAllocator<std::uint32_t>(allocator)};
-  code.resize(static_cast<std::size_t>(contig_cpy_f16_f16_len / 4));
-  std::memcpy(code.data(), contig_cpy_f16_f16_data, static_cast<std::size_t>(contig_cpy_f16_f16_len));
+  code.resize(shader.size() / 4);
+  std::memcpy(code.data(), shader.data(), shader.size());
   HYLE_ASSIGN_OR_RETURN(recording.halfword_pipeline, create_pipeline(recording.runtime->device,
       {code, 2, sizeof(HalfwordCopy::push), {}}));
   // A submitted Completion retains Run, not this reusable recording wrapper.

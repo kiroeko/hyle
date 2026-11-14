@@ -323,7 +323,8 @@ Status wait_native(const std::shared_ptr<Run> &run) noexcept;
 Result<CompletionPoll> poll_native(const std::shared_ptr<Run> &run) noexcept;
 Status submit_native(const Device &, VkCommandBuffer, VkFence) noexcept;
 // F2 same-runtime ordering proof only; no poll, wait or invented semaphore.
-Status qualify_copy_dependency(const std::shared_ptr<Runtime> &, cd::CompletionDependency) noexcept;
+HYLE_COMPUTE_ROUTE_VULKAN_API Status
+qualify_copy_dependency(const std::shared_ptr<Runtime> &, cd::CompletionDependency) noexcept;
 // Runtime::mutex protects the route's stage cursor and native submissions.
 bool advance_async_locked(Run &) noexcept;
 void memory_barrier(Device &device, VkCommandBuffer command,

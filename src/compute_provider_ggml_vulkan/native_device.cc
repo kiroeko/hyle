@@ -8,7 +8,17 @@
 
 #include "hyle/platform/dynlib.h"
 
+extern const std::uint64_t contig_cpy_f16_f16_len;
+extern const unsigned char contig_cpy_f16_f16_data[];
+
 namespace hyle::compute::ggml_vulkan::detail {
+Result<std::span<const std::byte>> exact_halfword_copy_shader() noexcept {
+  if (contig_cpy_f16_f16_len % 4 || contig_cpy_f16_f16_len > SIZE_MAX)
+    return std::unexpected(Status::Internal("Vulkan locked halfword copy shader size"));
+  return std::span<const std::byte>{
+      reinterpret_cast<const std::byte *>(contig_cpy_f16_f16_data),
+      static_cast<std::size_t>(contig_cpy_f16_f16_len)};
+}
 namespace {
 Status failure(bridge::Failure error) noexcept {
   switch (error.error) {

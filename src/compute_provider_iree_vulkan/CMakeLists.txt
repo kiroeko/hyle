@@ -66,12 +66,18 @@ block()
   if(MSVC)
     add_compile_options(/utf-8)
   endif()
+  # Linux enables libbacktrace by default and FetchContent would obtain an
+  # additional, unmanaged Git checkout. This qualified numerical runtime does
+  # not need optional host stack symbolization; retain its normal status errors.
   foreach(_option IN ITEMS BUILD_COMPILER BUILD_TESTS BUILD_BENCHMARKS BUILD_SAMPLES
       BUILD_PYTHON_BINDINGS BUILD_BINDINGS_TFLITE BUILD_BINDINGS_TFLITE_JAVA
-      HAL_DRIVER_DEFAULTS ENABLE_CPUINFO)
+      HAL_DRIVER_DEFAULTS ENABLE_CPUINFO ENABLE_LIBBACKTRACE)
     set(IREE_${_option} OFF)
   endforeach()
   set(IREE_HAL_DRIVER_VULKAN ON)
+  # An earlier upstream configure may have cached the optional target name.
+  # Shadow it as well, so disabling its source leaves no dangling link edge.
+  set(IREE_LIBBACKTRACE_TARGET "")
   add_subdirectory("${_source}" "${HYLE_DEP_BUILD_DIR}/iv/build" EXCLUDE_FROM_ALL)
 endblock()
 

@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <memory>
+#include <span>
 
 #include "hyle/mem/quota_allocator.h"
 #include "metadata_arena.h"
@@ -9,6 +10,11 @@
 
 namespace hyle::compute::ggml_vulkan::detail {
 class NativeWork;
+
+// Immutable locked shader bytes remain owned by this provider's original
+// runtime. Query only during cold pipeline preparation, including DLL builds.
+HYLE_GGML_VULKAN_INTERNAL_API Result<std::span<const std::byte>>
+exact_halfword_copy_shader() noexcept;
 
 struct NativeOptions final {
   const char *loader_path = nullptr;

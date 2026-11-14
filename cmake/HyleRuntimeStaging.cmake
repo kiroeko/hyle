@@ -169,7 +169,13 @@ function(_hyle_runtime_files_walk owner condition ancestors output)
       "IMPORTED_LINK_DEPENDENT_LIBRARIES_${_configuration}")
   endforeach()
   foreach(_property IN LISTS _link_properties)
-    get_target_property(_links "${owner}" "${_property}")
+    # An unset property has no link edge. get_target_property() manufactures a
+    # *-NOTFOUND sentinel that would otherwise trigger ancestor lookups for
+    # every absent imported configuration throughout a large native SDK DAG.
+    get_property(_links TARGET "${owner}" PROPERTY "${_property}")
+    if(_links STREQUAL "")
+      continue()
+    endif()
     list(REMOVE_DUPLICATES _links)
     set(_property_condition "${condition}")
     if(_links AND _property MATCHES "^IMPORTED_LINK_DEPENDENT_LIBRARIES_(.+)$")
