@@ -7,9 +7,17 @@ python -B -m engine.text.app generate --engine <build-dir>/bin/hyle.exe --inputs
 python -B -m engine.text.app serve --engine <build-dir>/bin/hyle.exe --inputs <prepared-dir> --tokenizer-dir <model-dir> --backend cuda --port 2048 --metrics
 ```
 
-服务默认监听 `127.0.0.1:2048`，指标位于 `/metrics`，健康检查位于 `/health`。它是本地服务，没有访问控制。本阶段实际验证 Windows／CUDA／本地 Qwen3.5-2B；其他平台尚未实际验证完整服务。`--template FILE` 可选择本地 Jinja 模板。`--cpu-ffn-layers N` 沿同一模型装载路径准备 CPU＋GPU 放置，加载后固定；模型发现的 `hyle.placement` 报告实际主后端和 CPU FFN 层数，不回显启动参数充当执行事实。
+服务默认监听 `127.0.0.1:2048`，指标位于 `/metrics`，健康检查位于 `/health`。它是本地服务，没有访问控制。现有 Qwen3.5-2B 原始 BF16 普通生成已通过以下三协议服务专项：
 
-`--prefill-chunk-tokens N` 设置加载时准备的物理预填行数上限，较长输入分块执行；它不缩小 `--capacity` 的逻辑上下文，也不是每请求选项。省略时保留模型提供者的默认准备。准备多个方案会增加执行资源，不能从权重已共享推断它们的工作区也能共享。Windows CPU＋CUDA（两层 FFN）、原始 BF16、32 行预填已通过三协议的同步／流式客户端工具闭环；这不代表其他混合平台或全部服务专项已完成。
+| 环境 | 已验收路线 |
+|---|---|
+| Windows x64 | CPU、CUDA、Vulkan、CPU＋CUDA、CPU＋Vulkan |
+| WSL2 Linux x64 | CPU、CUDA、CPU＋CUDA |
+| macOS ARM64 | Metal、Vulkan、CPU＋Metal |
+
+专项包含官方 SDK 的普通／SSE、停止、额度、断连退休与复用，以及客户端工具结果回填。其他路线、MTP 与多方案共存分别验收。Metal 使用 `--backend apple`。`--template FILE` 可选择本地 Jinja 模板。`--cpu-ffn-layers N` 沿同一模型装载路径准备 CPU＋GPU 放置，加载后固定；模型发现的 `hyle.placement` 报告实际主后端和 CPU FFN 层数，不回显启动参数充当执行事实。
+
+`--prefill-chunk-tokens N` 设置加载时准备的物理预填行数上限，较长输入分块执行；它不缩小 `--capacity` 的逻辑上下文，也不是每请求选项。省略时保留模型提供者的默认准备。准备多个方案会增加执行资源，不能从权重已共享推断它们的工作区也能共享。上述服务专项固定 32 行预填，混合路线使用两层 CPU FFN。
 
 `GET /v1/models` 列出当前已加载模型，`GET /v1/models/{id}` 查询该模型，未知 ID 返回 404。OpenAI SDK 使用标准模型对象；带 `anthropic-version` 的请求使用 Messages SDK 的模型对象和单模型分页。未知发布时间以 Unix epoch 表示。两种格式的 `hyle` 扩展相同，报告实际上下文、来源身份、已准备执行方案、可共驻方案、冷准备的采样预设、文本前端的图片／工具能力及会话预算。请求的草稿深度和资产角色不能代替实际执行能力；不提供严格 JSON／schema 约束。模型发现不会加载或切换模型。
 
@@ -178,10 +186,11 @@ SSE 使用各协议的函数参数事件和调用索引。Qwen 的 XML 参数在
 
 当前函数 schema 是非严格模型提示，`strict: true` 会在接纳前返回 400，不能作为严格结构化输出使用。Qwen XML 编码要求参数根是 object 或本地 object 引用；参数值按基础类型、本地引用和 nullable／组合类型转换，字符串中的空白和代码原样保留。不获取远程 schema；不能表示的根组合或参数名在接纳前拒绝。未实现托管工具、旧版 `functions`／`function_call` 请求字段或完整 JSON Schema 约束。字段与事件参照 [OpenAI 函数调用](https://developers.openai.com/api/docs/guides/function-calling)和 [Messages 工具定义](https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools)。
 
-本地验收通过 OpenAI 2.29.0、Anthropic 0.86.0 的普通与 SSE SDK：实际 Q4 模型先生成读文件调用，客户端回填文件内容；再生成编辑调用，客户端修改隔离文件并回填结果；模型最后回答。默认 `auto`、具名选择、调用 ID 和 Responses 的真实续接／重放均有实际消费者。复现命令：
+上表 BF16 路线和 Windows/CUDA 的 Q4 已通过 OpenAI 2.29.0、Anthropic 0.86.0 的普通与 SSE SDK：模型先生成读文件调用，客户端回填文件内容；再生成编辑调用，客户端修改隔离文件并回填结果；模型最后回答。默认 `auto`、具名选择、调用 ID 和 Responses 的真实续接／重放均有实际消费者。下面分别检查基础服务语义和工具循环；按上表选择 backend，混合路线增加 `--cpu-ffn-layers 2`：
 
 ```text
-python -B tests/tooling/text_tools_local_integration_test.py --engine <hyle> --inputs <prepared-dir> --tokenizer <model-dir> --fixture .scratch/tool-client-fixture --backend cuda --port 2048
+python -B tests/tooling/text_completion_local_integration_test.py --engine <hyle> --inputs <prepared-dir> --tokenizer-dir <model-dir> --backend cuda --prefill-chunk-tokens 32 --port 2048 --metrics
+python -B tests/tooling/text_tools_local_integration_test.py --engine <hyle> --inputs <prepared-dir> --tokenizer <model-dir> --fixture .scratch/tool-client-fixture --backend cuda --prefill-chunk-tokens 32 --port 2048
 ```
 
 ## 图片输入
