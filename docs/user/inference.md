@@ -332,7 +332,7 @@ worker 和 `/v1/models` 的 `hyle.placement` 报告实际 `primary_backend` 与 
 | NF4、CT asymmetric INT4、MLX affine4／8 | 有压缩权重及有限状态链／原组件接入；完整对应大模型、质量和吞吐未交付。 |
 | GLM、DeepSeek、Kimi | 组件级实现与检查，没有完整引擎入口。 |
 
-公共引擎共用请求、会话、完整状态、RNG 和 MTP 起草／验证／修复合同，后端执行能力仍有差异。上表的显式 MTP 可以使用原有递归提案与修复路径；设备接力目前只接通 CUDA。引擎的设备端长度批查询接入 CPU／CUDA，原编码草稿行复制资格只对 CUDA 声明。Metal／Vulkan 已有变长 packed convolution 和 GDN 前缀状态的原生实现，实际类型和形状见[计算合同](compute.md)。Mac Vulkan／CPU＋Vulkan 已通过普通随机、K1、K3 三方案共存、兼容双请求合批及取消后复用；Windows Vulkan 的三方案混合请求仍有原生内存分配失败。WSL Vulkan 完整服务与 GPU 设备接力仍在补齐；普通或显式 MTP 的短请求通过不表示这些项目已经齐全。
+公共引擎共用请求、会话、完整状态、RNG 和 MTP 起草／验证／修复合同，后端执行能力仍有差异。上表的显式 MTP 可以使用原有递归提案与修复路径；设备接力目前只接通 CUDA。引擎的设备端长度批查询接入 CPU／CUDA，原编码草稿行复制资格只对 CUDA 声明。Metal／Vulkan 已有变长 packed convolution 和 GDN 前缀状态的原生实现，实际类型和形状见[计算合同](compute.md)。Windows 和 Mac 的 Vulkan／CPU＋Vulkan 均已通过普通随机、K1、K3 三方案共存、兼容 K1 双请求合批、续轮、独立 RNG、取消后复用及方案装载顺序检查。检查使用容量 128、三个驻留会话和两个活跃序列；方案兼容不保证任意数量的已准备程序都能放入设备内存。WSL Vulkan 完整服务与 GPU 设备接力仍在补齐；这些短请求检查不表示设备侧闭环、长上下文或吞吐已经齐全。
 
 模型、格式、后端与原始检查统一查[模型与算子覆盖](../implementation/model-operators.md)。
 加载器不会预先展开整库，但实际计划可能分解计算并使用workspace；4bit文件大小不是运行内存上限。
