@@ -54,14 +54,21 @@ class ImageProcessor:
         patches = patches.transpose(0, 3, 6, 4, 7, 2, 1, 5, 8).reshape(gh*gw, 3*t*p*p)
         return (1, gh, gw), patches.astype('<f4', copy=False).tobytes()
 
-    def prepare(self, messages, *, template=None, continue_final_message=False, max_tokens=None):
+    def prepare(self, messages, *, template=None, continue_final_message=False, max_tokens=None,
+                template_options=None, generation_prefix=''):
         images = []
         for message in messages:
             if isinstance(message['content'], list):
                 images.extend(part['image'] for part in message['content'] if part['type'] == 'image')
-        tokenized = self.tokenizer.apply_chat_template(list(messages), chat_template=template,
-            tokenize=True, add_generation_prompt=not continue_final_message,
-            continue_final_message=continue_final_message)
+        if template_options is not None:
+            rendered = self.tokenizer.apply_chat_template(list(messages), chat_template=template,
+                tokenize=False, add_generation_prompt=not continue_final_message,
+                continue_final_message=continue_final_message, **template_options)
+            tokenized = self.tokenizer.encode(rendered + generation_prefix, add_special_tokens=False)
+        else:
+            tokenized = self.tokenizer.apply_chat_template(list(messages), chat_template=template,
+                tokenize=True, add_generation_prompt=not continue_final_message,
+                continue_final_message=continue_final_message)
         if hasattr(tokenized, 'input_ids'): tokenized = tokenized.input_ids
         budget=(self.context if max_tokens is None else max_tokens)-(len(tokenized)-len(images))
         if budget<len(images): raise ValueError('text and output leave no image context capacity')

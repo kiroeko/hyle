@@ -6,6 +6,8 @@ import os
 from pathlib import Path
 from typing import Any, Protocol, Sequence
 
+from .contracts import ToolOptions
+
 
 def has_images(messages):
     return any(isinstance(message.get('content'), list) and any(
@@ -31,7 +33,7 @@ class HuggingFaceTextCodec:
     remote model code is used. A custom template may be supplied explicitly.
     """
     def __init__(self, directory: Path, *, template: Path | None = None,
-                 expected_vocabulary: int | None = None, image_processor=None):
+                 expected_vocabulary: int | None = None, image_processor=None, model_format=None):
         directory = Path(directory).resolve(strict=True)
         if not directory.is_dir():
             raise ValueError("tokenizer path is not a directory")
@@ -72,6 +74,7 @@ class HuggingFaceTextCodec:
             raise ValueError("model end-token ID is outside the model vocabulary")
         self._stop_ids = frozenset(stop)
         self.image_processor = image_processor
+        self.model_format = model_format
 
     @staticmethod
     def _add_stop(target: set[int], value: Any) -> None:
@@ -100,9 +103,29 @@ class HuggingFaceTextCodec:
                                   for index in self._tokenizer.get_vocab().values()) or any(index >= vocabulary for index in self.stop_ids):
             raise ValueError('tokenizer or end-token IDs exceed the loaded model vocabulary')
 
-    def encode_messages(self, messages: Sequence[dict[str, Any]], *, continue_final_message: bool = False) -> list[int]:
+    def _messages(self, messages):
+        format = getattr(self, 'model_format', None)
+        return format.normalize_messages(messages) if format is not None else list(messages)
+
+    def _tool_rendering(self, tools: ToolOptions):
+        format = getattr(self, 'model_format', None)
+        if format is None:
+            if tools.enabled: raise ValueError('the model has no prepared tool format')
+            return {'tools': []}, ''
+        definitions = list(tools.definitions) if tools.enabled else []
+        format.validate_tools(definitions)
+        return {'tools': definitions}, format.generation_prefix(tools.choice, tools.name)
+
+    def encode_messages(self, messages: Sequence[dict[str, Any]], *, continue_final_message: bool = False,
+                        tools: ToolOptions | None = None) -> list[int]:
         if not messages:
             raise ValueError("at least one message is required")
+        messages = self._messages(messages)
+        if tools is not None:
+            options, prefix = self._tool_rendering(tools)
+            rendered = self._tokenizer.apply_chat_template(messages, chat_template=self._template, tokenize=False,
+                add_generation_prompt=not continue_final_message, continue_final_message=continue_final_message, **options)
+            return self._tokenizer.encode(rendered + prefix, add_special_tokens=False)
         encoded = self._tokenizer.apply_chat_template(
             list(messages), chat_template=self._template, tokenize=True,
             add_generation_prompt=not continue_final_message, continue_final_message=continue_final_message,
@@ -112,23 +135,32 @@ class HuggingFaceTextCodec:
             raise ValueError("template did not produce one token sequence")
         return ids
 
-    def prepare_images(self, messages, *, continue_final_message=False, max_tokens=None):
+    def encode_tool_messages(self, messages, *, tools, continue_final_message=False):
+        return self.encode_messages(messages, tools=tools, continue_final_message=continue_final_message)
+
+    def prepare_images(self, messages, *, continue_final_message=False, max_tokens=None, tools=None):
         if self.image_processor is None:
             raise ValueError('no image execution recipe was prepared for this model')
-        return self.image_processor.prepare(messages, template=self._template,
-            continue_final_message=continue_final_message,max_tokens=max_tokens)
+        options, prefix = self._tool_rendering(tools) if tools is not None else (None, '')
+        return self.image_processor.prepare(self._messages(messages), template=self._template,
+            continue_final_message=continue_final_message,max_tokens=max_tokens,
+            **({'template_options': options, 'generation_prefix': prefix} if options is not None else {}))
 
-    def continue_messages(self, tape: Sequence[int], messages: Sequence[dict[str, Any]]) -> list[int] | None:
+    def continue_messages(self, tape: Sequence[int], messages: Sequence[dict[str, Any]], *, tools=None) -> list[int] | None:
         # Tokenization at a text boundary need not reproduce generated IDs.
         # Prove the complete rendered prefix, then preserve its actual tokens
         # and tokenize only the new suffix. Arbitrary Jinja rewrites fall back
         # to ordinary complete rendering instead of guessing delimiters.
-        rendered = self._tokenizer.apply_chat_template(list(messages), chat_template=self._template,
-            tokenize=False, add_generation_prompt=True)
+        options, suffix = self._tool_rendering(tools) if tools is not None else ({}, '')
+        rendered = self._tokenizer.apply_chat_template(self._messages(messages), chat_template=self._template,
+            tokenize=False, add_generation_prompt=True, **options) + suffix
         prefix = self._tokenizer.decode(list(tape), skip_special_tokens=False, clean_up_tokenization_spaces=False)
         if not rendered.startswith(prefix):
             return None
         return list(tape) + self._tokenizer.encode(rendered[len(prefix):], add_special_tokens=False)
+
+    def continue_tool_messages(self, tape, messages, *, tools):
+        return self.continue_messages(tape, messages, tools=tools)
 
     def history_message(self, ids: Sequence[int], text: str) -> dict[str, str]:
         # Keep template-significant generated markers in saved model context;
@@ -142,14 +174,36 @@ class HuggingFaceTextCodec:
     def new_decoder(self) -> DecodeSession:
         return _HuggingFaceDecodeSession(self._tokenizer)
 
+    def new_tool_decoder(self, tools, on_call, incomplete, on_text, filter_text):
+        format = getattr(self, 'model_format', None)
+        if format is None: raise ValueError('the model has no prepared tool format')
+        prefix = format.generation_prefix(tools.choice, tools.name)
+        definitions = [d for d in tools.definitions if tools.choice != 'named' or d['function']['name'] == tools.name]
+        parser = format.new_parser(definitions, on_call, prefix=prefix,
+            required=tools.choice in ('required', 'named'), max_calls=None if tools.parallel and tools.choice != 'named' else 1,
+            on_text=on_text)
+        return _ToolDecodeSession(_HuggingFaceDecodeSession(self._tokenizer, skip_special_tokens=False), parser, incomplete, filter_text)
+
+
+class _ToolDecodeSession:
+    def __init__(self, decoder, parser, incomplete, filter_text):
+        self.decoder, self.parser, self.incomplete, self.filter_text = decoder, parser, incomplete, filter_text
+
+    def push(self, token):
+        return self.parser.push(self.filter_text(self.decoder.push(token)))
+
+    def finish(self):
+        return self.parser.push(self.filter_text(self.decoder.finish(), final=True)) + self.parser.finish(truncated=self.incomplete())
+
 
 class _HuggingFaceDecodeSession:
-    def __init__(self, tokenizer: Any):
+    def __init__(self, tokenizer: Any, *, skip_special_tokens=True):
         from tokenizers.decoders import DecodeStream
         self._tokenizer = tokenizer
-        self._stream = DecodeStream(skip_special_tokens=True)
+        self._skip_special_tokens = skip_special_tokens
+        self._stream = DecodeStream(skip_special_tokens=skip_special_tokens)
         self._ids: list[int] = []
-        self._emitted = ""
+        self._emitted: list[str] = []
         self._finished = False
 
     def push(self, token: int) -> str:
@@ -157,15 +211,16 @@ class _HuggingFaceDecodeSession:
             raise RuntimeError("decoder has already finished")
         self._ids.append(token)
         chunk = self._stream.step(self._tokenizer.backend_tokenizer, token) or ""
-        self._emitted += chunk
+        self._emitted.append(chunk)
         return chunk
 
     def finish(self) -> str:
         if self._finished:
             raise RuntimeError("decoder has already finished")
         self._finished = True
-        final = self._tokenizer.decode(self._ids, skip_special_tokens=True,
+        final = self._tokenizer.decode(self._ids, skip_special_tokens=self._skip_special_tokens,
                                        clean_up_tokenization_spaces=False)
-        if not final.startswith(self._emitted):
+        emitted = ''.join(self._emitted)
+        if not final.startswith(emitted):
             raise ValueError("streaming tokenizer output differs from final decode")
-        return final[len(self._emitted):]
+        return final[len(emitted):]

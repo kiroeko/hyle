@@ -5,10 +5,11 @@ import uuid
 from dataclasses import dataclass
 from typing import Any, Callable, Protocol
 
-from .contracts import TokenRequest, WorkerError
+from .contracts import TokenRequest, WorkerError, ToolOptions
 from .runtime import GenerationProgress, PreparedText, TextEngine
 from .server import ClientDisconnected, HttpExchange
 from .media import content_parts
+from .tools import history_call, validate_tool_history
 
 
 @dataclass(frozen=True)
@@ -22,6 +23,7 @@ class CompletionInput:
     top_k: int | None = None
     stops: tuple[str, ...] = ()
     continue_final: bool = False
+    tools: ToolOptions | None = None
 
 
 class CompletionPresentation(Protocol):
@@ -55,9 +57,31 @@ def message_list(value: Any, roles: tuple[str, ...], *, protocol='chat') -> list
     if not isinstance(value, list) or not value: raise ValueError('messages must be a nonempty list')
     messages = []
     for message in value:
-        if not isinstance(message, dict) or set(message) != {'role', 'content'} or message['role'] not in roles:
+        allowed = {'role', 'content'} | ({'tool_calls', 'tool_call_id', 'name', 'refusal'} if protocol == 'chat' else set())
+        if not isinstance(message, dict) or set(message) - allowed or message.get('role') not in roles:
             raise ValueError('messages require a supported role and content')
-        messages.append({'role': message['role'], 'content': content_parts(message['content'], protocol=protocol, role=message['role'])})
+        role, calls = message['role'], message.get('tool_calls')
+        content = message.get('content')
+        if content is None and role == 'assistant' and calls: content = ''
+        normalized = {'role': role, 'content': content_parts(content, protocol=protocol, role=role)}
+        if calls is not None:
+            if role != 'assistant' or not isinstance(calls, list) or not calls:
+                raise ValueError('assistant tool_calls must be a nonempty list')
+            normalized['tool_calls'] = []
+            for index, call in enumerate(calls):
+                if (not isinstance(call, dict) or not {'id', 'type', 'function'} <= call.keys() or
+                        set(call) - {'id', 'type', 'function', 'index'} or call.get('type') != 'function' or
+                        not isinstance(call['function'], dict) or set(call['function']) != {'name', 'arguments'}):
+                    raise ValueError('invalid assistant tool call')
+                if 'index' in call and (type(call['index']) is not int or call['index'] != index):
+                    raise ValueError('tool call index does not match its history position')
+                normalized['tool_calls'].append(history_call(call['id'], call['function']['name'], call['function']['arguments']))
+        if role == 'tool': normalized['tool_call_id'] = message.get('tool_call_id')
+        elif 'tool_call_id' in message: raise ValueError('only tool results accept tool_call_id')
+        if message.get('name') is not None and not isinstance(message['name'], str): raise ValueError('message name must be a string')
+        if message.get('refusal') is not None: raise ValueError('refusal history is not supported')
+        messages.append(normalized)
+    if protocol == 'chat': validate_tool_history(messages)
     return messages
 
 
@@ -107,7 +131,8 @@ def serve_completion(exchange: HttpExchange, engine: TextEngine,
         inputs, presentation = parse(exchange.read_json(), engine.model_name)
         selection = engine.choices.select(inputs.selection, temperature=inputs.temperature,
                                           top_p=inputs.top_p, top_k=inputs.top_k)
-        prepared = engine.prepare(inputs.messages, inputs.limit, selection, continue_final_message=inputs.continue_final)
+        prepared = engine.prepare(inputs.messages, inputs.limit, selection, continue_final_message=inputs.continue_final,
+            **({'tools': inputs.tools} if inputs.tools is not None else {}))
         selection = prepared.selection
     except (ValueError, UnicodeError, WorkerError) as error:
         send_error(exchange, 400 if invalid_request(error) else 503, str(error), False)
@@ -125,7 +150,8 @@ def serve_completion(exchange: HttpExchange, engine: TextEngine,
             exchange.begin_stream(); started = True
             presentation.start(exchange, engine, prepared)
         text = engine.generate(request, (lambda chunk: presentation.delta(exchange, chunk)) if inputs.stream else (lambda _: None),
-            progress, lambda: exchange.next_event(request), stop_sequences=inputs.stops)
+            progress, lambda: exchange.next_event(request), stop_sequences=inputs.stops, prepared=prepared,
+            on_tool_call=(lambda call: presentation.tool_call(exchange, call, len(progress.tool_calls)-1)) if inputs.stream else None)
         # Custom text stops may precede the native terminal. Confirm retirement
         # before announcing protocol success; no unused KV or RNG is saved.
         closed = True

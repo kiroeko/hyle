@@ -6,6 +6,31 @@ from typing import Protocol, Sequence
 
 
 @dataclass(frozen=True)
+class ToolOptions:
+    """Request-local tool declarations; execution remains with the client."""
+    definitions: tuple[dict, ...]
+    choice: str = 'auto'
+    name: str | None = None
+    parallel: bool = True
+
+    @property
+    def enabled(self) -> bool:
+        return bool(self.definitions) and self.choice != 'none'
+
+
+@dataclass(frozen=True)
+class ToolCall:
+    id: str
+    name: str
+    arguments: str
+
+    def history(self) -> dict:
+        import json
+        return {'id': self.id, 'type': 'function',
+                'function': {'name': self.name, 'arguments': json.loads(self.arguments)}}
+
+
+@dataclass(frozen=True)
 class ImageInput:
     media_type: str
     data: bytes

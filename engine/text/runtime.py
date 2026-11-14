@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import threading
+import json
+import uuid
 from array import array
 from dataclasses import dataclass, replace
 from typing import Any, Callable, Sequence
 
 from .codec import TextCodec, has_images
-from .contracts import TokenEvent, TokenRequest, TokenWorker, WorkerError, PromptAttachment
+from .contracts import TokenEvent, TokenRequest, TokenWorker, WorkerError, PromptAttachment, ToolOptions, ToolCall
 from .configuration import PreparedChoices, Selection, SessionPolicy
 from .sessions import TextSessions
 
@@ -18,6 +20,7 @@ class PreparedText:
     limit: int
     selection: Selection = Selection()
     attachments: tuple[PromptAttachment, ...] = ()
+    tools: ToolOptions | None = None
 
 
 @dataclass
@@ -25,6 +28,7 @@ class GenerationProgress:
     count: int = 0
     last: int | None = None
     stop_sequence: str | None = None
+    tool_calls: tuple[ToolCall, ...] = ()
 
 
 class _TextStops:
@@ -104,10 +108,15 @@ class TextEngine:
                                     getattr(codec, 'history_message', None)) if session_policy else None
 
     def prepare(self, messages: Sequence[dict[str, Any]], limit: int, selection: Selection = Selection(),
-                previous_tape: Sequence[int] | None = None, *, continue_final_message: bool = False) -> PreparedText:
+                previous_tape: Sequence[int] | None = None, *, continue_final_message: bool = False,
+                tools: ToolOptions | None = None) -> PreparedText:
         if type(limit) is not int or limit <= 0:
             raise ValueError("max_output_tokens must be a positive integer")
         try:
+            tool_encode = getattr(self.codec, 'encode_tool_messages', None) if tools is not None else None
+            if tools is not None and tools.enabled and (
+                    not callable(tool_encode) or not callable(getattr(self.codec, 'new_tool_decoder', None))):
+                raise ValueError('the model codec does not support tool calls')
             attachments = ()
             images = has_images(messages)
             if images and not self.execution_profiles:
@@ -128,18 +137,21 @@ class TextEngine:
                 prepare_images=getattr(self.codec,'prepare_images',None)
                 if prepare_images is None: raise ValueError('the loaded codec has no image preparation recipe')
                 prepared = prepare_images(messages, continue_final_message=continue_final_message,
-                    max_tokens=self.worker.context-limit+1)
+                    max_tokens=self.worker.context-limit+1, **({'tools': tools} if tool_encode is not None else {}))
                 ids, attachments = prepared.ids, prepared.attachments
-            continuation = getattr(self.codec, 'continue_messages', None)
+            continuation = getattr(self.codec, 'continue_tool_messages' if tools is not None else 'continue_messages', None)
             if not images:
-                ids = continuation(previous_tape, messages) if continuation and previous_tape and not continue_final_message else None
+                ids = continuation(previous_tape, messages, **({'tools': tools} if tools is not None else {})) if continuation and previous_tape and not continue_final_message else None
             if ids is None:
-                ids = self.codec.encode_messages(messages, continue_final_message=True) if continue_final_message else self.codec.encode_messages(messages)
+                options = {'continue_final_message': True} if continue_final_message else {}
+                if tool_encode is not None:
+                    ids = tool_encode(messages, tools=tools, **options)
+                else: ids = self.codec.encode_messages(messages, **options)
         except Exception as error:
             raise ValueError("chat template could not render the supplied messages: " + str(error)) from error
         if len(ids) > self.worker.context or limit - 1 > self.worker.context - len(ids):
             raise ValueError("prompt and output limit exceed the loaded model context")
-        return PreparedText(ids, limit, selection, attachments)
+        return PreparedText(ids, limit, selection, attachments, tools)
 
     def submit(self, prepared: PreparedText) -> TokenRequest:
         return self.worker.submit(prepared.ids, prepared.limit, stop_ids=self.extra_stop_ids,
@@ -157,11 +169,29 @@ class TextEngine:
         if self.sessions: self.sessions.close()
 
     def generate(self, request: TokenRequest, on_text: Callable[[str], None], progress: GenerationProgress,
-                 read: Callable[[], TokenEvent] | None = None, *, stop_sequences: Sequence[str] = ()) -> str:
-        decoder = self.codec.new_decoder()
-        read_next = read if read is not None else request.read
+                 read: Callable[[], TokenEvent] | None = None, *, stop_sequences: Sequence[str] = (),
+                 prepared: PreparedText | None = None, on_tool_call: Callable[[ToolCall], None] | None = None) -> str:
         chunks: list[str] = []
-        stops = _TextStops(stop_sequences) if stop_sequences else None
+        tool_mode = prepared is not None and prepared.tools is not None and prepared.tools.enabled
+        text_stops = _TextStops(stop_sequences) if stop_sequences else None
+        stops = None if tool_mode else text_stops
+        def tool_text(chunk):
+            if chunk: on_text(chunk); chunks.append(chunk)
+            return progress.stop_sequence is None
+        def filter_tools(chunk, *, final=False):
+            if text_stops: chunk, progress.stop_sequence = text_stops.push(chunk, final=final)
+            return chunk
+        def accept_call(name, arguments):
+            call = ToolCall('call_' + uuid.uuid4().hex, name,
+                json.dumps(arguments, ensure_ascii=False, allow_nan=False, separators=(',', ':')))
+            progress.tool_calls += (call,)
+            if on_tool_call is not None: on_tool_call(call)
+        if tool_mode:
+            decoder = getattr(self.codec, 'new_tool_decoder')(prepared.tools, accept_call,
+                lambda: progress.stop_sequence is not None or progress.count == prepared.limit and progress.last not in self.stop_ids,
+                tool_text, filter_tools)
+        else: decoder = self.codec.new_decoder()
+        read_next = read if read is not None else request.read
         while True:
             event = read_next()
             if event.kind == "token":

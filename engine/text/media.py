@@ -41,7 +41,8 @@ def content_parts(value: Any, *, protocol: str, role: str):
         if not isinstance(part, dict): raise ValueError('invalid message content block')
         kind = part.get('type')
         if kind in (('input_text', 'output_text') if protocol == 'responses' else ('text',)):
-            if set(part) != {'type', 'text'} or not isinstance(part['text'], str):
+            allowed = {'type', 'text'} | ({'annotations', 'logprobs'} if protocol == 'responses' and kind == 'output_text' else set())
+            if set(part) - allowed or not isinstance(part.get('text'), str):
                 raise ValueError('invalid text content block')
             result.append({'type': 'text', 'text': part['text']})
             continue

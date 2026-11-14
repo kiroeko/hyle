@@ -319,7 +319,7 @@ class TextFrontendTest(unittest.TestCase):
             self.assertEqual(command[command.index("--draft-count") + 1], str(count))
 
     def test_reject_unsupported_request_instead_of_ignoring(self):
-        for payload in ({"model": "hyle", "input": "x", "tools": []},
+        for payload in ({"model": "hyle", "input": "x", "background": True},
                         {"model": "hyle", "input": "x", "store": "true"},
                         {"model": "wrong", "input": "x"}):
             with self.subTest(payload=payload), self.assertRaises(InvalidRequest):

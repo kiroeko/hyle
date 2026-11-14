@@ -114,7 +114,7 @@ SDK 是可选客户端依赖，服务端不依赖它们。上述 key 只满足�
 
 ## Responses 与进程内会话
 
-`POST /v1/responses` 支持文本 `input`、`instructions`、`max_output_tokens`、`stream`、`store`、`previous_response_id` 及上述选择。`model` 必须匹配服务名，默认是 `hyle`。输入支持字符串或 system／user／assistant 文本消息；输出为文本响应或 SSE。其他字段明确拒绝。
+`POST /v1/responses` 支持文本 `input`、`instructions`、`max_output_tokens`、`stream`、`store`、`previous_response_id`、字符串值 `metadata`、下述函数工具及上述选择。`model` 必须匹配服务名，默认是 `hyle`。输入支持字符串或 developer／system／user／assistant 消息；输出为响应或 SSE。其他字段明确拒绝。
 
 服务默认 `store: true`，仅保存在当前进程，受 `sessions.capacity` 和空闲 TTL 限制。`store: false` 不保存新响应。续接时只传新输入和先前响应 ID：
 
@@ -142,9 +142,31 @@ Responses SSE 按[官方事件定义](https://developers.openai.com/api/referenc
 
 无效选择在流开始前返回 400；模型／传输失败返回服务错误，流已开始则交付 `error`。断连或写入失败会取消未完成生成并等待原生终止。TCP 半关闭与优雅完全关闭不能仅靠读 EOF 区分，后者有时需等写入失败。服务关闭先唤醒接纳及连接处理线程，再退休保留会话并关闭模型进程。
 
-本机严格 SDK 检查覆盖三方案并发、可追加模板下的真实 KV 续接、默认模板重建、分叉、查询／删除、非法选择隔离、SSE 和断连后的继续服务。
-三种协议支持下列图片输入；工具调用、结构化输出和专门的 thinking 协议字段尚未实现，遇到这些字段明确拒绝。
+本机 SDK 响应格式检查覆盖三方案并发、可追加模板下的真实 KV 续接、默认模板重建、分叉、查询／删除、非法选择隔离、SSE 和断连后的继续服务。
+三种协议支持下列图片和函数工具输入；结构化输出和专门的 thinking 协议字段尚未实现，遇到这些字段明确拒绝。
 当前也没有多模型／多量化同时接纳或 KV 磁盘恢复。
+
+## 客户端函数工具
+
+服务把工具定义交给模型模板，将模型输出转换为调用名、稳定调用 ID 和 JSON 参数。客户端执行工具，再提交结果；Hyle 不执行工具、命令或生成的代码。模型准备器选择模板和输出语法，三种协议共享生成、状态和退休流程。目前实际验证 Qwen3.5-2B 原模板；自定义模板仍须保留相容的工具语法。
+
+| 协议 | 定义与历史 | 工具选择 | 成功调用的结束原因 |
+|---|---|---|---|
+| Responses | `tools: [{"type":"function","name":...,"parameters":...}]`；`function_call`／`function_call_output` | `auto`、`none`、`required`、`{"type":"function","name":...}` | 响应 `completed`，输出含 `function_call` |
+| Chat | `tools: [{"type":"function","function":{...}}]`；assistant `tool_calls`、`role: tool` 与 `tool_call_id` | `auto`、`none`、`required`、`{"type":"function","function":{"name":...}}` | `tool_calls` |
+| Messages | 工具的 `input_schema`；assistant `tool_use`、user `tool_result` | `type` 为 `auto`／`none`／`any`／`tool`；具名选择另带 `name` | `tool_use` |
+
+Responses／Chat 用 `parallel_tool_calls: false` 限制一次调用，Messages 对应 `tool_choice.disable_parallel_tool_use: true`。允许多个调用时，每个调用有独立 ID，结果必须匹配未完成调用；重复 ID、孤立结果和缺失结果在接纳前拒绝。Responses 可用 `previous_response_id` 只回填新工具结果；Chat／Messages 每次传完整历史。改变模板或工具定义时，原生续接仍须证明完整 token 前缀，否则安全重放。
+
+SSE 使用各协议的函数参数事件和调用索引。Qwen 的 XML 参数在完整调用闭合后转换为 JSON，再作为参数 delta 交付；不承诺逐字符参数延迟。截断或自定义停止形成的不完整调用不被发布为成功工具。模型输出的非法语法或未声明工具返回生成错误。
+
+当前函数 schema 是非严格模型提示，`strict: true` 会在接纳前返回 400，不能作为严格结构化输出使用。Qwen XML 编码要求参数根是 object 或本地 object 引用；参数值按基础类型、本地引用和 nullable／组合类型转换，字符串中的空白和代码原样保留。不获取远程 schema；不能表示的根组合或参数名在接纳前拒绝。未实现托管工具、旧版 `functions`／`function_call` 请求字段或完整 JSON Schema 约束。字段与事件参照 [OpenAI 函数调用](https://developers.openai.com/api/docs/guides/function-calling)和 [Messages 工具定义](https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools)。
+
+本地验收通过 OpenAI 2.29.0、Anthropic 0.86.0 的普通与 SSE SDK：实际 Q4 模型先生成读文件调用，客户端回填文件内容；再生成编辑调用，客户端修改隔离文件并回填结果；模型最后回答。默认 `auto`、具名选择、调用 ID 和 Responses 的真实续接／重放均有实际消费者。复现命令：
+
+```text
+python -B tests/tooling/text_tools_local_integration_test.py --engine <hyle> --inputs <prepared-dir> --tokenizer <model-dir> --fixture .scratch/tool-client-fixture --backend cuda --port 2048
+```
 
 ## 图片输入
 

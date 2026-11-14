@@ -89,12 +89,12 @@ class CompletionParsingTest(unittest.TestCase):
         chat = {'model': 'hyle', 'messages': [{'role': 'user', 'content': 'x'}]}
         messages = {**chat, 'max_tokens': 3}
         for parse, base, changes in (
-            (parse_chat_completion, chat, [dict(n=2), dict(n=True), dict(tools=[]), dict(stop=['x'] * 5),
+            (parse_chat_completion, chat, [dict(n=2), dict(n=True), dict(tools=[{}]), dict(stop=['x'] * 5),
                 dict(max_tokens=3, max_completion_tokens=3), dict(seed=True), dict(seed=1 << 63),
                 dict(seed=1, hyle={'seed': True}), dict(stream_options={'include_usage': True}),
                 dict(stream=True, stream_options={'include_usage': 1}), dict(store=True)]),
             (parse_messages, messages, [dict(max_tokens=None), dict(max_tokens=True), dict(stop_sequences='x'),
-                dict(system={'text': 'x'}), dict(tools=[]), dict(thinking={'type': 'enabled'}), dict(stream='yes')])):
+                dict(system={'text': 'x'}), dict(tools=[{}]), dict(thinking={'type': 'enabled'}), dict(stream='yes')])):
             for change in changes:
                 with self.subTest(change=change), self.assertRaises(ValueError): parse({**base, **change}, 'hyle')
         for parse, base in ((parse_chat_completion, chat), (parse_messages, messages)):
@@ -262,7 +262,7 @@ class CompletionSdkTest(unittest.TestCase):
         import openai, anthropic
         for call, error in ((self.chat, openai.BadRequestError), (self.anthropic_message, anthropic.BadRequestError)):
             with self.assertRaises(error): call(temperature=.123)
-            with self.assertRaises(error): call(extra_body={'tools': []})
+            with self.assertRaises(error): call(extra_body={'tools': [{}]})
         self.assertEqual(self.worker.requests, [])
         self.assertEqual(self.chat().choices[0].message.content, 'a')
 

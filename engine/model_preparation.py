@@ -10,6 +10,7 @@ from .models.qwen35.runtime_assets import matches_source, prepare_assets, valida
 from .models.qwen35.draft_vocabulary_preparation import write_vocabulary
 from .models.qwen35.vision_preparation import prepare_vision
 from .models.qwen35.vision_processing import ImageProcessor
+from .models.qwen35.tool_format import ToolFormat
 
 class PreparedAssetFiles(Protocol):
     directory: Path
@@ -31,12 +32,13 @@ class LocalPreparationProvider:
     write_vocabulary: Callable[..., None] | None = None
     prepare_vision: Callable[..., str] | None = None
     image_processor: Callable[..., object] | None = None
+    text_format: Callable[[], object] | None = None
 
 
 # Registration only; neither the request layer nor HTTP interprets a manifest.
 _PREPARERS = (LocalPreparationProvider(matches=matches_source, prepare=prepare_assets,
     validate_tokenizer=validate_tokenizer, source_identity=source_identity, write_vocabulary=write_vocabulary,
-    prepare_vision=prepare_vision, image_processor=ImageProcessor),)
+    prepare_vision=prepare_vision, image_processor=ImageProcessor, text_format=ToolFormat),)
 
 
 def _select(inputs: Path) -> LocalPreparationProvider:
@@ -59,6 +61,11 @@ def validate_local_tokenizer(inputs: Path, tokenizer) -> tuple[str, int]:
 
 def prepared_source_identity(inputs: Path) -> tuple[str, int]:
     return _select(inputs).source_identity(inputs)
+
+
+def local_text_format(inputs: Path):
+    factory = _select(inputs).text_format
+    return factory() if factory is not None else None
 
 
 def prepare_local_vision(inputs: Path, model: Path, output: Path, *, mmproj: Path | None = None) -> str:

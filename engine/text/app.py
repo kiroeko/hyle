@@ -16,7 +16,7 @@ from .runtime import GenerationProgress, TextEngine
 from .server import TextHttpServer
 from .worker_client import WorkerClient
 from .configuration import PreparedChoices, Selection, ExecutionChoice, read_configuration
-from ..model_preparation import prepare_local_assets, validate_local_tokenizer, local_image_processor
+from ..model_preparation import prepare_local_assets, validate_local_tokenizer, local_image_processor, local_text_format
 
 
 class TextApiServer(TextHttpServer):
@@ -128,6 +128,7 @@ def main(argv: list[str] | None = None) -> int:
     choices = read_configuration(args)
     codec = HuggingFaceTextCodec(args.tokenizer_dir, template=args.template)
     expected_source = validate_local_tokenizer(args.inputs, codec.preparation_tokenizer)
+    codec.model_format = local_text_format(args.inputs)
     choices = prepare_choices(args, codec, choices)
     worker = WorkerClient(make_worker_command(args, choices))
     engine = None

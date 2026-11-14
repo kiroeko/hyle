@@ -70,10 +70,10 @@ class SessionTurn:
     def acknowledge(self) -> None:
         self.native.request.acknowledge()
 
-    def commit(self, text: str, result: dict) -> None:
+    def commit(self, text: str, result: dict, *, assistant_message=None) -> None:
         if not self.succeeded or self.closed or self.committed:
             raise RuntimeError('only a completed text turn can be stored')
-        self.owner._commit(self, text, result)
+        self.owner._commit(self, text, result, assistant_message=assistant_message)
         self.committed = True
 
     def close(self) -> None:
@@ -248,7 +248,7 @@ class TextSessions:
                 turn.close()
             raise
 
-    def _commit(self, turn: SessionTurn, text: str, result: dict):
+    def _commit(self, turn: SessionTurn, text: str, result: dict, *, assistant_message=None):
         evicted = []
         if not turn.save:
             self._retire(turn.native)
@@ -256,7 +256,8 @@ class TextSessions:
             self._check_open()
             self._active.discard(turn)
             if turn.save:
-                history = turn.messages + (self._history_message(turn.generated, text),)
+                history = turn.messages + (copy.deepcopy(assistant_message) if assistant_message is not None else
+                                          self._history_message(turn.generated, text),)
                 self._records[turn.key] = StoredTurn(turn.key, history, copy.deepcopy(result), turn.domain,
                     time.monotonic() + self.policy.ttl_seconds, turn.native.tape, turn.native)
                 while len(self._records) > self.policy.capacity:
