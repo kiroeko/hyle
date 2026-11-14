@@ -19,6 +19,7 @@ struct Work {
   bool recorded = false;
   ggml_cgraph *assessed_graph = nullptr;
   bool fixed_attention = false;
+  bool has_rms_norm = true;
 };
 
 VkFence work_fence(const Work *work) noexcept {
@@ -213,6 +214,8 @@ WorkReport submit_work(Work *work, ggml_cgraph *graph) noexcept {
     }
     if (work->assessed_graph != graph) {
       work->fixed_attention = fixed_attention_graph(graph);
+      work->has_rms_norm = std::any_of(graph->nodes, graph->nodes + graph->n_nodes,
+          [](const ggml_tensor *node) { return node->op == GGML_OP_RMS_NORM; });
       work->assessed_graph = graph;
     }
     const bool eligible = attach_to_last && work->fixed_attention;
@@ -224,9 +227,11 @@ WorkReport submit_work(Work *work, ggml_cgraph *graph) noexcept {
     const std::array<std::weak_ptr<vk_buffer_struct>, 4> recording_scratch{
         ctx->prealloc_x, ctx->prealloc_y, ctx->prealloc_split_k,
         ctx->prealloc_add_rms_partials};
-    // This finite graph has no Add/RmsNorm consumer. The original backend's
-    // default 1024-byte partials clear would create a needless UMA host memset.
-    if (eligible)
+    // Only an Add -> RmsNorm fusion consumes these partials. Every unrelated
+    // finite region otherwise inherits a private allocation and clear, even
+    // when it is not eligible for attention recording. Keep RMS regions on
+    // the original sizing path and restore that metadata after execution.
+    if (!work->has_rms_norm)
       ctx->prealloc_size_add_rms_partials = 0;
     ctx->compute_cmd_pool.hyle_record_commands =
         eligible ? &work->recorded_commands : nullptr;

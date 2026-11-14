@@ -28,7 +28,10 @@ struct GraphStorage {
   ggml_tensor *output = nullptr;
 };
 
-hyle::Result<std::shared_ptr<GraphStorage>> make_graph(const NativeDevice &device) {
+enum class GraphMath { kOriginal, kAdd, kAddRms };
+
+hyle::Result<std::shared_ptr<GraphStorage>> make_graph(const NativeDevice &device,
+                                                     GraphMath math = GraphMath::kOriginal) {
   auto result = std::make_shared<GraphStorage>();
   result->device = device;
   auto active = device.activate();
@@ -38,9 +41,15 @@ hyle::Result<std::shared_ptr<GraphStorage>> make_graph(const NativeDevice &devic
   auto *context = arena.get();
   result->input = ggml_new_tensor_1d(context, GGML_TYPE_F32, 2048);
   result->weight = ggml_new_tensor_1d(context, GGML_TYPE_F32, 2048);
-  auto *norm = ggml_rms_norm(context, result->input, 1e-6f);
-  auto *scaled = ggml_mul(context, norm, result->weight);
-  result->output = ggml_add(context, ggml_silu(context, scaled), result->input);
+  if (math == GraphMath::kOriginal) {
+    auto *norm = ggml_rms_norm(context, result->input, 1e-6f);
+    auto *scaled = ggml_mul(context, norm, result->weight);
+    result->output = ggml_add(context, ggml_silu(context, scaled), result->input);
+  } else {
+    result->output = ggml_add(context, result->input, result->weight);
+    if (math == GraphMath::kAddRms)
+      result->output = ggml_rms_norm(context, result->output, 1e-6f);
+  }
   ggml_set_input(result->input);
   ggml_set_input(result->weight);
   ggml_set_output(result->output);
@@ -117,6 +126,41 @@ TEST(GgmlVulkanWork, RepeatedIndependentSlotsRetainTheirResourceLeases) {
       }
       EXPECT_FALSE(slots[slot]->poll().pending);
     }
+  }
+}
+
+TEST(GgmlVulkanWork, AlternatingAddAndAddRmsGraphsKeepOriginalMathAndRetirement) {
+  auto device = NativeDevice::create().value();
+  auto work = device.create_work().value();
+  const std::array frames{make_graph(device, GraphMath::kAdd).value(),
+                          make_graph(device, GraphMath::kAddRms).value()};
+  std::vector<float> input(2048), weight(2048), sum(2048), actual(2048);
+  for (std::size_t iteration = 0; iteration < 6; ++iteration) {
+    const auto &frame = frames[iteration % 2];
+    double squares = 0;
+    for (std::size_t i = 0; i < input.size(); ++i) {
+      input[i] = float(int(i % 31) - 15) * (0.1F + float(iteration) * .02F);
+      weight[i] = float(i % 7) * .125F;
+      sum[i] = input[i] + weight[i];
+      squares += double(sum[i]) * sum[i];
+    }
+    {
+      auto active = device.activate();
+      ggml_backend_tensor_set(frame->input, input.data(), 0, input.size() * sizeof(float));
+      ggml_backend_tensor_set(frame->weight, weight.data(), 0, weight.size() * sizeof(float));
+    }
+    const auto admitted = work.submit(frame->graph, frame);
+    ASSERT_TRUE(admitted.status.ok()) << admitted.status.message();
+    const auto retired = work.wait();
+    ASSERT_TRUE(retired.status.ok()) << retired.status.message();
+    EXPECT_FALSE(retired.pending);
+    {
+      auto active = device.activate();
+      ggml_backend_tensor_get(frame->output, actual.data(), 0, actual.size() * sizeof(float));
+    }
+    const double scale = iteration % 2 ? 1.0 / std::sqrt(squares / sum.size() + 1e-6) : 1.0;
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      ASSERT_NEAR(actual[i], sum[i] * scale, 6e-6 * (1.0 + std::abs(sum[i] * scale)));
   }
 }
 
