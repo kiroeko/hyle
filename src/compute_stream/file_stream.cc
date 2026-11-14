@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <array>
+#include <cerrno>
+#include <cstring>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -54,6 +56,7 @@ struct StreamRequestCell final {
   bool live = false, ticket = false, write = false;
 };
 struct StreamSlotCell final {
+  bool host_buffered_reads = false;
   FileStreamState *owner = nullptr;
   std::uint32_t index = 0, group = 0;
   mem::FiberStack prepared_stack;
@@ -412,6 +415,39 @@ void abandon_failed_producers(FileStreamState &state) noexcept {
   }
 }
 
+// A CPU-writable native mapping need not be pinnable by asynchronous file IO.
+// This fallback uses the same IO context and injected coroutine allocator;
+// no payload-sized heap shadow or second producer/retirement path is created.
+sched::Task<io::TransferResult> read_mapped_via_host(mem::AllocatorRef allocator,
+    FileStreamState *state, StreamRequestCell *request, io::File *file,
+    std::uint64_t offset, std::span<std::byte> destination) noexcept {
+  std::array<std::byte, 256u * 1024u> buffer;
+  io::TransferResult result;
+  const auto alignment = file->direct_alignment();
+  void *address = buffer.data(); std::size_t available = buffer.size();
+  if (!std::align(alignment.memory_alignment, 1, address, available)) {
+    result.status = Status::ResourceExhausted("file stream host read alignment"); co_return result;
+  }
+  const auto quantum = (std::max)(alignment.offset_alignment, alignment.length_alignment);
+  const auto capacity = available / quantum * quantum;
+  if (!capacity) { result.status = Status::Unimplemented("file stream host read alignment exceeds scratch capacity"); co_return result; }
+  while (result.bytes < destination.size()) {
+    result.status = checkpoint(*request);
+    if (!result.status.ok()) co_return result;
+    const auto bytes = (std::min)(capacity, destination.size() - result.bytes);
+    auto scratch = std::span(static_cast<std::byte *>(address), bytes);
+    auto task = io::read_exact_at(allocator, *file, offset + result.bytes, scratch);
+    if (!task.valid()) { result.status = Status::ResourceExhausted("file stream host read coroutine"); co_return result; }
+    const auto transferred = co_await task;
+    count_io(*state, *request, transferred.bytes, false);
+    if (transferred.bytes > bytes) { result.status = Status::Internal("file stream host read exceeded its buffer"); co_return result; }
+    std::memcpy(destination.data() + result.bytes, scratch.data(), transferred.bytes);
+    result.bytes += transferred.bytes; result.eof = transferred.eof; result.status = transferred.status;
+    if (!result.status.ok() || transferred.bytes != bytes) co_return result;
+  }
+  co_return result;
+}
+
 // IO waits suspend the existing fiber. Only native waits and mapping page
 // faults leave it through IoContext's original BlockingPool.
 sched::Task<Status> process_group(mem::AllocatorRef allocator, FileStreamState *state,
@@ -452,9 +488,23 @@ sched::Task<Status> process_group(mem::AllocatorRef allocator, FileStreamState *
           // adopted handle). Cancellation/deadline stops later chunks here;
           // an accepted chunk retires before its stage/source can be released.
           // Do not ask IO to pretend an in-kernel read is natively cancellable.
-          auto task = io::read_exact_at(state->allocator, *file, range.file_offset + offset, buffer->first(bytes));
-          if (!task.valid()) co_return Status::ResourceExhausted("file stream read coroutine");
-          auto transferred = co_await task; count_io(*state, request, transferred.bytes, false);
+          io::TransferResult transferred;
+          if (!slot.host_buffered_reads) {
+            auto task = io::read_exact_at(state->allocator, *file, range.file_offset + offset, buffer->first(bytes));
+            if (!task.valid()) co_return Status::ResourceExhausted("file stream read coroutine");
+            transferred = co_await task; count_io(*state, request, transferred.bytes, false);
+            const auto native = transferred.status.native_error();
+            if (native.domain == NativeErrorDomain::PosixErrno && native.code == EFAULT)
+              slot.host_buffered_reads = true;
+          }
+          if (slot.host_buffered_reads) {
+            const auto prefix = transferred.bytes;
+            if (prefix > bytes) co_return Status::Internal("file stream read exceeded its staging range");
+            auto task = read_mapped_via_host(state->allocator, state, &request, file,
+                range.file_offset + offset + prefix, buffer->subspan(prefix, bytes - prefix));
+            if (!task.valid()) co_return Status::ResourceExhausted("file stream mapped read coroutine");
+            transferred = co_await task; transferred.bytes += prefix;
+          }
           if (!transferred.status.ok()) co_return transferred.status;
           if (transferred.bytes != bytes) co_return Status::OutOfRange("file stream source reached EOF");
           auto closed = mapped->close(); if (!closed.ok()) co_return closed;
