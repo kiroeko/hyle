@@ -400,6 +400,56 @@ TEST_F(IreeNative, RuntimeQuotaFailureKeepsOutputsPrivateAndReleasesResources) {
   EXPECT_EQ(quota.used(), 0u);
 }
 
+TEST_F(IreeNative, IndependentProgramsRearmNativeCompletionWithoutLosingProgress) {
+  auto native = GgmlDevice::create().value();
+  auto device = NativeDevice::create(native).value();
+  std::array programs{
+      NativeProgram::create(device, {ProgramKind::ScanInclusive, 1, 7}).value(),
+      NativeProgram::create(device, {ProgramKind::ScanExclusive, 1, 7}).value()};
+  Transfer transport(native);
+  struct Probe final {
+    NativeProgram *program = nullptr;
+    std::size_t calls = 0;
+    hyle::Status failure;
+    static void ready(void *data, const hyle::Status &status) noexcept {
+      auto &probe = *static_cast<Probe *>(data);
+      ++probe.calls;
+      if (!status.ok()) probe.failure = status;
+      else if (probe.calls == 1)
+        probe.failure = probe.program->after_native_submissions(ready, &probe);
+    }
+  };
+  std::array<Probe, 2> probes;
+  for (std::int32_t iteration = 0; iteration < 128; ++iteration) {
+    const std::array<std::int32_t, 7> values{1, -2, 3, iteration, -5, 6, 7};
+    for (const auto &program : programs)
+      transport.upload(program->input(0).value(), values.data());
+    // Both original programs are admitted before either wait. The first
+    // notification extends its own native completion without blocking the
+    // proactor; retirement must also include the second notification's tail.
+    for (std::size_t slot = 0; slot < programs.size(); ++slot) {
+      probes[slot] = {programs[slot].get(), 0, {}};
+      const auto admitted = programs[slot]->invoke(Probe::ready, &probes[slot]);
+      ASSERT_TRUE(admitted.status.ok()) << admitted.status.message();
+    }
+    for (std::size_t slot = 0; slot < programs.size(); ++slot) {
+      const auto retired = programs[slot]->wait();
+      ASSERT_TRUE(retired.status.ok()) << retired.status.message();
+      ASSERT_FALSE(retired.pending);
+      ASSERT_TRUE(probes[slot].failure.ok()) << probes[slot].failure.message();
+      ASSERT_EQ(probes[slot].calls, 2u);
+      std::array<std::int32_t, 7> actual{};
+      transport.download(programs[slot]->output(0).value(), actual.data());
+      std::int32_t sum = 0;
+      for (std::size_t i = 0; i < values.size(); ++i) {
+        const auto expected = slot ? sum : sum + values[i];
+        EXPECT_EQ(actual[i], expected);
+        sum += values[i];
+      }
+    }
+  }
+}
+
 TEST_F(IreeNative, RetirementIncludesTheNotificationReturning) {
   auto native = GgmlDevice::create();
   ASSERT_TRUE(native);

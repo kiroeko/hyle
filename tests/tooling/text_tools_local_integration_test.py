@@ -164,14 +164,16 @@ def run(args):
         assert 'hyle_http_connections ' in metrics.text
         print('PASS all3 protocols with official SDK sync/SSE local coding tool loops; SDKs', openai.__version__, anthropic.__version__, flush=True)
     finally:
-        if oa: oa.close()
-        if ant: ant.close()
-        if server:
-            server.shutdown()
-            if thread: thread.join(timeout=5)
-            server.server_close()
-        elif engine: engine.close()
-        worker.close()
+        try:
+            if oa: oa.close()
+            if ant: ant.close()
+            if server:
+                server.shutdown()
+                if thread: thread.join(timeout=5)
+                server.server_close()
+            elif engine: engine.close()
+        finally:
+            worker.close()
 
 
 def main():

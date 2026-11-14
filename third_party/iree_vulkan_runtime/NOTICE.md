@@ -20,8 +20,10 @@ External queue lookup preserves the actual VkDeviceQueueCreateFlags supplied
 by its owner, including internally synchronized queues. This changes resource
 wrapping only; the original scheduling and math remain unchanged.
 
-The external wrapper (including distinct logical lanes on one native queue) exposes original stop/drain completion through
-a retained HAL semaphore. No new worker, scheduler or math is introduced.
+The external wrapper gives compute and transfer aliases of the same native
+queue one FIFO, affinity and frontier axis. Distinct native family/index pairs
+retain independent axes. Original stop/drain completion uses a retained HAL
+semaphore. No new worker, scheduler or math is introduced.
 
 The POSIX and Windows IOCP semaphore completion paths clear their operation tracker reference
 before the final callback, which may free the operation under the original

@@ -237,6 +237,17 @@
           "after": "    // Final callback owns the operation and may free/reuse it immediately.\n    // Drop its tracker reference before returning that storage to the caller.\n    wait_op->base.next = NULL;\n    iree_async_proactor_complete_operation(&wait_op->base, status,\n                                           IREE_ASYNC_COMPLETION_FLAG_NONE);\n    ++drained_count;\n\n    iree_allocator_free(tracker->allocator, tracker);"
         }
       ]
+    },
+    {
+      "path": "runtime/src/iree/hal/drivers/vulkan/device_plan.c",
+      "before_sha256": "44dc7febfddce57780950ba32c81b8e0a9daef5fd56d333c897918fbb63b7ece",
+      "after_sha256": "2cd41441978366461c56dec90729934716c8f4f9c1537bd52232c511938004ac",
+      "edits": [
+        {
+          "before": "  out_queue_assignment->queue_count = IREE_HAL_VULKAN_DEFAULT_QUEUE_COUNT;\n  return iree_ok_status();\n}\n\niree_status_t iree_hal_vulkan_device_plan_initialize_for_wrap(",
+          "after": "  // Imported compute and transfer roles can refer to the same VkQueue.\n  // They share one physical FIFO and cannot be independent frontier axes:\n  // a wait accepted by one axis may otherwise block its producer behind it.\n  const bool shared_queue =\n      out_queue_assignment->compute.family_index ==\n          out_queue_assignment->transfer.family_index &&\n      out_queue_assignment->compute.queue_index ==\n          out_queue_assignment->transfer.queue_index;\n  if (shared_queue) {\n    out_queue_assignment->transfer.affinity =\n        out_queue_assignment->compute.affinity;\n  }\n  out_queue_assignment->queue_count =\n      shared_queue ? 1 : IREE_HAL_VULKAN_DEFAULT_QUEUE_COUNT;\n  return iree_ok_status();\n}\n\niree_status_t iree_hal_vulkan_device_plan_initialize_for_wrap("
+        }
+      ]
     }
   ]
 }
