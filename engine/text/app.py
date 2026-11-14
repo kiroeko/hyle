@@ -12,6 +12,7 @@ from .codec import HuggingFaceTextCodec
 from .responses import ResponsesAdapter
 from .chat_completions import ChatCompletionsAdapter
 from .anthropic import AnthropicMessagesAdapter
+from .models import ModelsAdapter
 from .runtime import GenerationProgress, TextEngine
 from .server import TextHttpServer
 from .worker_client import WorkerClient
@@ -23,8 +24,10 @@ class TextApiServer(TextHttpServer):
     """Cold composition of the three supported text protocol adapters."""
     def __init__(self, address, engine: TextEngine, metrics_enabled: bool):
         adapter = ResponsesAdapter()
+        models = ModelsAdapter()
         super().__init__(address, engine, metrics_enabled, {'/v1/responses': adapter, '/v1/responses/*': adapter,
-            '/v1/chat/completions': ChatCompletionsAdapter(), '/v1/messages': AnthropicMessagesAdapter()})
+            '/v1/chat/completions': ChatCompletionsAdapter(), '/v1/messages': AnthropicMessagesAdapter(),
+            '/v1/models': models, '/v1/models/*': models})
 
 
 def make_worker_command(args, choices: PreparedChoices | None = None) -> list[str]:

@@ -12,7 +12,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from types import MappingProxyType
 from typing import Any, Mapping, Protocol
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 from .contracts import TokenEvent, TokenRequest
 from .runtime import TextEngine
@@ -79,6 +79,12 @@ class HttpExchange:
     def __init__(self, handler: BaseHTTPRequestHandler):
         self._handler = handler
         self._next_peer_check = 0.0
+
+    def header(self, name: str) -> str | None:
+        return self._handler.headers.get(name)
+
+    def query_parameters(self) -> dict[str, list[str]]:
+        return parse_qs(urlsplit(self._handler.path).query, keep_blank_values=True)
 
     def read_json(self) -> Any:
         length = int(self._handler.headers.get('Content-Length', '-1'))

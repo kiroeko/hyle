@@ -103,6 +103,12 @@ class HuggingFaceTextCodec:
                                   for index in self._tokenizer.get_vocab().values()) or any(index >= vocabulary for index in self.stop_ids):
             raise ValueError('tokenizer or end-token IDs exceed the loaded model vocabulary')
 
+    def describe_capabilities(self):
+        format = getattr(self, 'model_format', None)
+        describe = getattr(format, 'tool_capabilities', None)
+        return {'input_modalities': ['text', 'image'] if self.image_processor is not None else ['text'],
+                'tools': describe() if describe is not None else {'supported': False, 'strict': False}}
+
     def _messages(self, messages):
         format = getattr(self, 'model_format', None)
         return format.normalize_messages(messages) if format is not None else list(messages)

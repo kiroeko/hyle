@@ -158,6 +158,28 @@ class TextEngine:
                                   **prepared.selection.worker_options(),
                                   **({'attachments': prepared.attachments} if prepared.attachments else {}))
 
+    def describe_capabilities(self) -> dict:
+        describe = getattr(self.codec, 'describe_capabilities', None)
+        frontend = describe() if describe is not None else {'input_modalities': None,
+            'tools': {'supported': None if callable(getattr(self.codec, 'new_tool_decoder', None)) else False,
+                      'strict': False}}
+        return {'available': self.healthy, 'context_tokens': self.worker.context,
+            'vocabulary_size': getattr(self.worker, 'vocabulary', None),
+            'source_identity': getattr(self.worker, 'source_identity', None),
+            'execution_profiles': [{'name': profile.name, 'algorithm': profile.algorithm,
+                'max_draft_tokens': profile.max_draft_tokens, 'input_modalities': list(profile.input_modalities),
+                'co_resident_with': [self.execution_profiles[i].name for i in profile.co_resident_with]}
+                for profile in self.execution_profiles],
+            'sampling_presets': [{'name': choice.name, 'mode': 'random' if choice.random else 'greedy',
+                'temperature': choice.temperature if choice.random else 0., 'top_k': choice.top_k,
+                'top_p': choice.top_p} for choice in self.choices.samplers],
+            'sampling_selection': 'cold_configuration', 'codec': frontend,
+            'structured_output': {'json_mode': False, 'strict_schema': False},
+            'sessions': {'enabled': self.sessions is not None,
+                **({'history_capacity': self.sessions.policy.capacity,
+                    'resident_capacity': self.sessions.policy.kv_capacity,
+                    'max_waiting': self.sessions.policy.max_waiting} if self.sessions is not None else {})}}
+
     def begin_close(self) -> None:
         if self.sessions: self.sessions.begin_close()
 

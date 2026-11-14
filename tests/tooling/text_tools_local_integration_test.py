@@ -56,6 +56,18 @@ def run(args):
         ant = anthropic.Anthropic(base_url=base, api_key='local-test', max_retries=0,
             http_client=httpx.Client(trust_env=False, timeout=90), _strict_response_validation=True)
 
+        oa_model = oa.models.retrieve('hyle')
+        ant_model = ant.models.retrieve('hyle')
+        capabilities = oa_model.model_dump()['hyle']
+        assert capabilities == ant_model.model_dump()['hyle'] == engine.describe_capabilities()
+        assert [m.id for m in oa.models.list().data] == [m.id for m in ant.models.list().data] == ['hyle']
+        assert capabilities['context_tokens'] == worker.context == 4096
+        assert capabilities['execution_profiles'][0]['algorithm'] == 'ordinary'
+        assert capabilities['execution_profiles'][0]['max_draft_tokens'] == 0
+        assert capabilities['codec']['tools']['supported'] and not capabilities['codec']['tools']['strict']
+        assert not capabilities['structured_output']['strict_schema']
+        print('PASS actual model discovery; both official SDK formats and actual READY capabilities', flush=True)
+
         def execute(name, arguments):
             assert arguments.get('path') == 'calc.py', arguments
             if name == 'read_file':

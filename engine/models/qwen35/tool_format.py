@@ -7,6 +7,13 @@ import re
 
 class ToolFormat:
     @staticmethod
+    def tool_capabilities():
+        return {'supported': True, 'strict': False, 'parallel_calls': True,
+            'choices': ['auto', 'none', 'required', 'named'],
+            'parameters': {'root': 'object_or_local_object_ref', 'remote_refs': False,
+                'local_ref_depth': 32, 'validation': 'model_guidance'}}
+
+    @staticmethod
     def validate_tools(definitions):
         for definition in definitions:
             root = definition['function']['parameters']
