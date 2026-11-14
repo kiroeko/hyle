@@ -253,8 +253,22 @@ uint evaluate(uint index, uint half_word) {
     }
     uint bits = load_bytes(0, offsets.x + half_word * 4u, min(width(type_a), 4u));
     if (operation == 0) return bits;
+#ifdef HYLE_TENSOR_REPRESENTATION
+    // Keep ReLU's NaN result in the integer storage domain. Some DXIL
+    // lowering folds an isnan/float-select into a non-propagating max.
+    if (operation == 3 && mode == 8 && type_a <= 2 &&
+        (float_storage_bits(bits, type_a) & 0x7fffffffu) > 0x7f800000u)
+        return bits | (type_d == 0 ? 0x00400000u : type_d == 1 ? 0x0200u : 0x0040u);
+#endif
     if (operation == 2) {
         if (type_a == 3 && type_d == 0) return signed_i32_f32_bits(bits);
+#ifdef HYLE_TENSOR_REPRESENTATION
+        if (type_a == 2 && type_d == 0) return bits << 16u;
+        if (type_a == 0 && type_d == 2) {
+            if ((bits & 0x7fffffffu) > 0x7f800000u) return (bits >> 16u) | 0x40u;
+            return (bits + 0x7fffu + ((bits >> 16u) & 1u)) >> 16u;
+        }
+#endif
         // Bool is stored as one byte. Compare source magnitude bits so even
         // subnormals and NaNs are nonzero independently of device float FTZ.
         if (type_d == 5) {

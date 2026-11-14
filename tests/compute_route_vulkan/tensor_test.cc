@@ -87,6 +87,39 @@ TEST(VulkanTensor, SmallPageQuotaAndExportedOwnerRetainOriginalLifetime) {
   }
 }
 
+TEST(VulkanTensor, CheckedGatherReadsOriginalRowsAcrossLimitedDescriptorWindows) {
+  for (const auto type : {c::DataType::kFloat32, c::DataType::kBFloat16}) {
+    auto context = vulkan_test::context().value();
+    v::detail::Access::runtime(context)->device->properties.limits.maxStorageBufferRange = 64U << 10;
+    constexpr std::int64_t rows = 1603, width = 37;
+    const auto description = dense(type, {rows, width});
+    std::vector<double> values(rows * width);
+    for (std::size_t i = 0; i < values.size(); ++i) values[i] = (int(i % 47) - 23) / 32.0;
+    const auto source = make(context, description, values);
+    EXPECT_GT(*description.required_bytes(), 64U << 10);
+    const auto indices_description = dense(c::DataType::kInt32, {8});
+    auto program = v::prepare(context, c::Gather{0, c::IndexBoundsPolicy::kChecked}, source, indices_description);
+    ASSERT_TRUE(program) << program.error().message();
+    auto slot = program->create_invocation().value();
+    for (const auto positions : {std::array<std::uint64_t,8>{0,127,128,383,384,767,768,1602},
+                                 std::array<std::uint64_t,8>{1602,768,767,384,383,128,127,0}}) {
+      const auto indices = context.upload(indices_description, payload(indices_description, positions)).value();
+      ASSERT_TRUE(slot.bind(indices).ok());
+      auto work = slot.submit(); ASSERT_TRUE(work) << work.error().message();
+      auto result = work->wait(); ASSERT_TRUE(result) << result.error().message();
+      std::vector<std::uint64_t> expected;
+      for (const auto row : positions) for (std::int64_t column = 0; column < width; ++column)
+        expected.push_back(encode(values[row * width + column], type));
+      EXPECT_EQ(bits(context, result->get()->tensors()[0]), expected);
+    }
+    const std::array<std::uint64_t,8> invalid{0,127,128,383,384,767,768,rows};
+    const auto indices = context.upload(indices_description, payload(indices_description, invalid)).value();
+    ASSERT_TRUE(slot.bind(indices).ok());
+    auto work = slot.submit(); ASSERT_TRUE(work) << work.error().message();
+    auto result = work->wait(); EXPECT_FALSE(result);
+  }
+}
+
 TEST(VulkanTensor, UnsignedPayloadViewConcatAndNoArithmetic) {
   auto context = vulkan_test::context().value();
   for (auto type : {c::DataType::kUInt8, c::DataType::kUInt32}) {

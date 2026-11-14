@@ -69,7 +69,8 @@ struct MemoryState final : mem::MemoryResource {
                 : mem::MemoryProperty::kDeviceAccessible | mem::MemoryProperty::kHostAccessible |
                   mem::MemoryProperty::kHostAddressIdentity,
             .minimum_alignment = 1,
-            .maximum_allocation = static_cast<std::size_t>(runtime->device->properties.limits.maxStorageBufferRange),
+            .maximum_allocation = static_cast<std::size_t>((std::min)(
+                runtime->device->maximum_allocation_bytes, VkDeviceSize{SIZE_MAX})),
             .domain = {runtime->device.get(), static_cast<std::uintptr_t>(kind)}};
   }
   Result<mem::ResourceAllocation> allocate(std::size_t bytes, std::size_t alignment) noexcept override {

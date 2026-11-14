@@ -203,7 +203,10 @@ Result<std::shared_ptr<Device>> create_device(ContextOptions options) noexcept {
     driver.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
     device->descriptor_properties.sType =
         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES;
-    driver.pNext = &device->descriptor_properties;
+    VkPhysicalDeviceMaintenance3Properties allocation_properties{};
+    allocation_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES;
+    allocation_properties.pNext = &device->descriptor_properties;
+    driver.pNext = &allocation_properties;
     VkPhysicalDeviceSubgroupProperties subgroup{};
     subgroup.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES;
     subgroup.pNext = &driver;
@@ -213,6 +216,8 @@ Result<std::shared_ptr<Device>> create_device(ContextOptions options) noexcept {
     instance.GetPhysicalDeviceProperties2(device->native.physical_device,
                                           &properties);
     device->properties = properties.properties;
+    device->maximum_allocation_bytes = allocation_properties.maxMemoryAllocationSize
+        ? allocation_properties.maxMemoryAllocationSize : properties.properties.limits.maxStorageBufferRange;
     auto &environment = device->environment;
     environment.shader_compiler = kShaderCompiler;
     environment.shader_revision = kShaderRevision;
@@ -299,8 +304,7 @@ allocate_buffer(const std::shared_ptr<Device> &device, VkDeviceSize bytes,
                 bool staging, bool shader_access, BufferAllocation allocation) noexcept {
   HYLE_ASSIGN_OR_RETURN(bytes, buffer_capacity(bytes));
   if (bytes > (std::numeric_limits<std::size_t>::max)() ||
-      ((!staging || shader_access) &&
-       bytes > device->properties.limits.maxStorageBufferRange))
+      bytes > device->maximum_allocation_bytes)
     return std::unexpected(
         Status::InvalidArgument("Vulkan buffer size exceeds domain"));
   try {
@@ -384,7 +388,8 @@ allocate_buffer(const std::shared_ptr<Device> &device, VkDeviceSize bytes,
     if (selected_score < 0)
       return std::unexpected(
           Status::Unavailable("Vulkan memory type unavailable"));
-    if (requirements.size > (std::numeric_limits<std::size_t>::max)())
+    if (requirements.size > device->maximum_allocation_bytes ||
+        requirements.size > (std::numeric_limits<std::size_t>::max)())
       return std::unexpected(
           Status::ResourceExhausted("Vulkan allocation size overflows"));
     VkDeviceSize memory_offset = 0;
@@ -560,7 +565,7 @@ Context::borrow_ready(const TensorDesc &description, VkBuffer buffer,
     return std::unexpected(std::move(bytes).error());
   const auto &limits = state_->device->properties.limits;
   HYLE_ASSIGN_OR_RETURN(auto capacity, detail::buffer_capacity(*bytes));
-  if (capacity > available_bytes || capacity > limits.maxStorageBufferRange ||
+  if (capacity > available_bytes || capacity > state_->device->maximum_allocation_bytes ||
       offset % (std::max)(VkDeviceSize{4},
                           limits.minStorageBufferOffsetAlignment) !=
           0 ||

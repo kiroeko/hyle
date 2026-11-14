@@ -6,6 +6,52 @@
 namespace {
 using namespace vulkan_topk_test;
 
+TEST(VulkanTopK, PortableSortKeepsPayloadsAndOldOutputsWithoutMemoryModel) {
+  auto context = vulkan_test::context().value();
+  // Mask an optional prepared capability, without changing the native device.
+  auto &native = const_cast<c::ggml_vulkan::bridge::Native &>(
+      v::detail::Access::runtime(context)->device->provider.native());
+  native.vulkan_memory_model = false;
+  for (std::int64_t width : {1025, 4097}) {
+    const auto desc = dense(c::DataType::kFloat32, {2, width});
+    for (bool largest : {false, true})
+      for (std::size_t count : {std::size_t{40}, static_cast<std::size_t>(width)}) {
+        SCOPED_TRACE(::testing::Message() << width << '/' << largest << '/' << count);
+        const c::TopK operation{.count = count, .largest = largest};
+        auto prepared = v::prepare(context, operation, desc);
+        ASSERT_TRUE(prepared) << prepared.error().message();
+        std::array<v::Tensor,2> retained;
+        std::array<std::vector<std::uint64_t>,2> retained_bits;
+        for (int phase : {0, 7}) {
+          const auto raw = pattern(*desc.element_count(), phase);
+          const auto input = context.upload(desc, payload(desc, raw)).value();
+          auto result = execute_all(*prepared, input);
+          ASSERT_TRUE(result) << result.error().message();
+          expect_pair(context, *result, reference(desc, raw, operation));
+          if (phase == 0) {
+            retained = *result;
+            for (std::size_t port = 0; port < 2; ++port) retained_bits[port] = bits(context, retained[port]);
+          } else {
+            for (std::size_t port = 0; port < 2; ++port) EXPECT_EQ(bits(context, retained[port]), retained_bits[port]);
+          }
+        }
+      }
+  }
+  const auto desc = dense(c::DataType::kFloat32, {4097});
+  const auto backing = dense(c::DataType::kFloat32, {4161});
+  const c::TopK operation{.count = 40};
+  auto prepared = v::prepare(context, operation, desc);
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  for (std::size_t first : {1U, 17U}) {
+    const auto raw = pattern(*backing.element_count(), static_cast<int>(first));
+    const auto storage = context.upload(backing, payload(backing, raw)).value();
+    const auto input = storage.view(c::View::slice(0, first, 4097).value()).value();
+    auto result = execute_all(*prepared, input);
+    ASSERT_TRUE(result) << result.error().message();
+    expect_pair(context, *result, reference(desc, std::span(raw).subspan(first, 4097), operation));
+  }
+}
+
 TEST(VulkanTopK, IntegerPaddingKeepsFinalWinnerAtLargePowerBoundaries) {
   auto context = vulkan_test::context().value();
   for (const std::int64_t width : {2097153, 2097151, 2097152}) {

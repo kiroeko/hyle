@@ -126,6 +126,7 @@ Failure create(const Options &options, Runtime **result,
         float_controls.shaderSignedZeroInfNanPreserveFloat32 != VK_FALSE};
     native->transfer_queue = device->transfer_queue->handle->queue;
     native->transfer_queue_family = device->transfer_queue->queue_family_index;
+    native->vulkan_memory_model = device->vulkan_memory_model;
     *result = runtime;
     return {};
   } catch (...) {

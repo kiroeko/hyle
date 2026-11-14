@@ -8,6 +8,7 @@
 #include <array>
 #include <bit>
 #include <new>
+#include <numeric>
 
 namespace hyle::compute::vulkan::detail {
 namespace provider = ggml_vulkan::detail;
@@ -143,6 +144,10 @@ bool adaptable_matrix_rhs(const TensorDesc &description) noexcept {
 
 bool region_operation(const ProgramState &program, const PlanStep &step,
                       bool promote_bfloat) noexcept {
+  // Native max/select ReLU does not guarantee the public NaN propagation
+  // contract on all compilers. The original typed shader owns that operation.
+  if (const auto *unary = step.operation.get_if<Unary>();
+      unary && unary->kind == UnaryKind::kRelu) return false;
   const auto max_inputs =
       step.operation.custom_as<model_ops::RecurrentGatedDeltaNet>() ? 8U : 6U;
   if (step.custom || step.inputs.size() > max_inputs || step.outputs.size() > 2)
@@ -352,9 +357,16 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
       !managed_reduction_limits(program, step.operation,
                                 program.values[step.inputs[0]].description))
     return false;
-  if (const auto *selection = step.operation.get_if<TopK>();
-      selection && !topk_limits(program, inputs[0], *selection))
-    return false;
+  if (const auto *selection = step.operation.get_if<TopK>()) {
+    if (!topk_limits(program, inputs[0], *selection)) return false;
+    const auto axis = static_cast<std::size_t>(selection->axis < 0
+        ? selection->axis + static_cast<std::int32_t>(inputs[0].rank()) : selection->axis);
+    const auto &limits = program.runtime->device->properties.limits;
+    if (!features.vulkan_memory_model &&
+        static_cast<std::uint64_t>(inputs[0].dimensions()[axis]) >
+            std::bit_floor(limits.maxComputeWorkGroupInvocations))
+      return false;
+  }
   return true;
 }
 } // namespace
@@ -464,7 +476,8 @@ bool bfloat_region_operation(const ProgramState &program,
       DataType::kFloat32,
       program.values[step.outputs[0]].description.dimensions());
   if (!wide || (type == DataType::kBFloat16 &&
-                !iree_precision_supported(*program.runtime->device, *wide)))
+                !iree_precision_supported(*program.runtime->device, *wide) &&
+                !tensor_bfloat_rounding_supported(*program.runtime->device, *wide)))
     return false;
   return region_operation(program, step, true);
 }
@@ -490,12 +503,18 @@ Status lower_bfloat_region(ProgramState &program,
         continue;
       HYLE_ASSIGN_OR_RETURN(auto converted,
                             append(program.values[input].description));
-      local.steps.push_back({Operation(Cast{DataType::kFloat32}),
-                             {input},
-                             {converted},
-                             {},
-                             {1, 1, 1},
-                             {}});
+      if (type == DataType::kBFloat16 &&
+          !iree_precision_supported(*program.runtime->device,
+                                    program.values[converted].description)) {
+        HYLE_RETURN_IF_ERROR(lower_native_cast(program, input, converted));
+      } else {
+        local.steps.push_back({Operation(Cast{DataType::kFloat32}),
+                               {input},
+                               {converted},
+                               {},
+                               {1, 1, 1},
+                               {}});
+      }
       input = converted;
     }
     HYLE_ASSIGN_OR_RETURN(auto result,
@@ -1048,34 +1067,60 @@ Status lower_gather(ProgramState &program, const PlanStep &step) noexcept {
       return lower_checked_copy(program, provider_output, step.outputs[0]);
     }
     const auto size = data_type_size(input.data_type());
-    if (direct_rows && size == 2 &&
-        (input.dimensions()[1] % 2 || input.byte_strides()[0] % 4)) {
+    HYLE_ASSIGN_OR_RETURN(auto source_bytes, input.required_bytes());
+    if (direct_rows && ((size == 2 &&
+        (input.dimensions()[1] % 2 || input.byte_strides()[0] % 4)) ||
+        (size >= 2 && size % 2 == 0 && source_bytes > limits.maxStorageBufferRange))) {
       // This checked native branch reads only selected original halfword rows.
       // It precedes the old word-padding/Concat adapter: packing the complete
       // bank would require rights not granted by a projected ready footprint.
-      HYLE_ASSIGN_OR_RETURN(auto source_bytes, input.required_bytes());
       HYLE_ASSIGN_OR_RETURN(auto output_bytes, output.required_bytes());
-      HYLE_ASSIGN_OR_RETURN(auto elements, output.element_count());
+      const auto elements = output_bytes / 2;
       if (!output.is_plain() || !output.is_dense() || output.data_type() != input.data_type() ||
-          elements > UINT32_MAX || source_bytes > limits.maxStorageBufferRange ||
+          elements > UINT32_MAX || output_bytes % 2 ||
           output_bytes > limits.maxStorageBufferRange || input.byte_strides()[0] / 2 > UINT32_MAX ||
           limits.maxComputeWorkGroupInvocations < 128 || limits.maxComputeWorkGroupSize[0] < 128)
         return Status::Unimplemented("Vulkan raw16 Gather exceeds storage/dispatch domain");
-      const std::array<SpecializationConstant, 3> specialization{{
-          {0, static_cast<std::uint32_t>(input.dimensions()[1])},
-          {1, static_cast<std::uint32_t>(input.byte_strides()[0] / 2)},
-          {2, static_cast<std::uint32_t>(elements)}}};
-      Dispatch dispatch;
-      HYLE_ASSIGN_OR_RETURN(dispatch.pipeline, create_halfword_pipeline(program.runtime->device,
-          {shaders::raw16_gather(), 4, 16, specialization}));
-      dispatch.values = {step.inputs[0], safe, *program.status_value, step.outputs[0]};
-      dispatch.tensor_byte_origins = true; dispatch.push.resize(16); dispatch.checked_status = true;
+      const auto pitch = static_cast<std::uint64_t>(input.byte_strides()[0]);
+      const auto width_bytes = static_cast<std::uint64_t>(input.dimensions()[1]) * size;
+      const auto alignment = (std::max)(std::uint64_t{4},
+          std::uint64_t{limits.minStorageBufferOffsetAlignment});
+      const auto grain = alignment / std::gcd(alignment, pitch);
+      auto rows_per_window = std::uint64_t{limits.maxStorageBufferRange} / pitch;
+      if (source_bytes <= limits.maxStorageBufferRange) rows_per_window = extent;
+      else rows_per_window = rows_per_window / grain * grain;
+      if (!rows_per_window || width_bytes / 2 > UINT32_MAX)
+        return Status::Unimplemented("Vulkan Gather row cannot fit an aligned storage window");
       const std::uint64_t groups = (elements + 127) / 128;
       const auto x = (std::min)(groups, static_cast<std::uint64_t>(limits.maxComputeWorkGroupCount[0]));
       if (!x || (groups + x - 1) / x > limits.maxComputeWorkGroupCount[1])
         return Status::Unimplemented("Vulkan raw16 Gather workgroup grid exceeds domain");
-      dispatch.groups = {static_cast<std::uint32_t>(x), static_cast<std::uint32_t>((groups + x - 1) / x), 1};
-      program.dispatches.push_back(std::move(dispatch));
+      for (std::uint64_t first = 0; first < extent; first += rows_per_window) {
+        const auto rows = (std::min)(rows_per_window, extent - first);
+        HYLE_ASSIGN_OR_RETURN(auto window_description, TensorDesc::strided_bytes(input.data_type(),
+            std::array{static_cast<std::int64_t>(rows), input.dimensions()[1]}, input.byte_strides()));
+        auto window = step.inputs[0];
+        if (source_bytes > limits.maxStorageBufferRange) {
+          const auto owner = program.aliases[window];
+          if (first * pitch > SIZE_MAX - owner.byte_offset)
+            return Status::InvalidArgument("Vulkan Gather window origin overflows");
+          window = append(window_description);
+          program.aliases[window] = {owner.root, owner.byte_offset + first * pitch};
+        }
+        const std::array<SpecializationConstant, 5> specialization{{
+            {0, static_cast<std::uint32_t>(width_bytes / 2)},
+            {1, static_cast<std::uint32_t>(pitch / 2)},
+            {2, static_cast<std::uint32_t>(elements)},
+            {3, static_cast<std::uint32_t>(first)},
+            {4, static_cast<std::uint32_t>(rows)}}};
+        Dispatch dispatch;
+        HYLE_ASSIGN_OR_RETURN(dispatch.pipeline, create_halfword_pipeline(program.runtime->device,
+            {shaders::raw16_gather(), 4, 16, specialization}));
+        dispatch.values = {window, safe, *program.status_value, step.outputs[0]};
+        dispatch.tensor_byte_origins = true; dispatch.push.resize(16); dispatch.checked_status = true;
+        dispatch.groups = {static_cast<std::uint32_t>(x), static_cast<std::uint32_t>((groups + x - 1) / x), 1};
+        program.dispatches.push_back(std::move(dispatch));
+      }
       return Status::Ok();
     }
     if (limits.maxComputeWorkGroupInvocations < 512 ||
@@ -1478,7 +1523,12 @@ Status lower_topk(ProgramState &program, const PlanStep &step) noexcept {
                            {1, 1, 1},
                            {}});
     std::vector<std::size_t> last_uses(program.values.size(), 0);
-    HYLE_RETURN_IF_ERROR(lower_region(program, local, 0, 1, last_uses));
+    if (!program.runtime->device->provider.native().vulkan_memory_model &&
+        static_cast<std::uint64_t>(width) > std::bit_floor(
+            program.runtime->device->properties.limits.maxComputeWorkGroupInvocations))
+      HYLE_RETURN_IF_ERROR(lower_portable_topk(program, local.steps[0]));
+    else
+      HYLE_RETURN_IF_ERROR(lower_region(program, local, 0, 1, last_uses));
     if (axis + 1 == rank)
       return Status::Ok();
     // Provider rows are the other axes in their original order. Restore the

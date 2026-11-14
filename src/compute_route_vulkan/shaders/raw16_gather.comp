@@ -13,12 +13,16 @@ layout(push_constant) uniform Origins { uint source; uint indices; uint status; 
 layout(constant_id = 0) const uint width = 1;
 layout(constant_id = 1) const uint pitch = 1;
 layout(constant_id = 2) const uint count = 1;
+layout(constant_id = 3) const uint first_row = 0;
+layout(constant_id = 4) const uint row_count = 0xffffffffu;
 
 void main() {
     uint index = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * gl_NumWorkGroups.x * 128u;
     if (index >= count || status[origin.status / 4u] != 0u) return;
     uint row = index / width;
     uint selected = indices[origin.indices / 4u + row];
+    if (selected < first_row || selected - first_row >= row_count) return;
+    selected -= first_row;
     destination[origin.destination / 2u + index] =
         source[origin.source / 2u + selected * pitch + index % width];
 }

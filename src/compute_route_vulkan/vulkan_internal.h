@@ -146,6 +146,7 @@ struct Device final {
   // Cold allocation capacity only. Original Buffers and Run retirement own
   // every live range; this pool keeps only weak page references.
   std::shared_ptr<SmallAllocationPool> small_allocations;
+  VkDeviceSize maximum_allocation_bytes = 0;
 };
 
 struct BufferBudget;

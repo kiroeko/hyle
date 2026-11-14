@@ -6,6 +6,7 @@
 
 namespace hyle::compute::vulkan::detail {
 std::optional<std::uint32_t> tensor_storage_type(DataType type) noexcept;
+bool tensor_bfloat_rounding_supported(const Device &, const TensorDesc &) noexcept;
 Status lower_tensor(ProgramState &program, const PlanStep &step);
 Status lower_nvfp4(ProgramState &program, const PlanStep &step) noexcept;
 Status lower_blockwise_w4a8(ProgramState &program, const PlanStep &step) noexcept;

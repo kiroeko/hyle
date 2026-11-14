@@ -22,6 +22,8 @@
 #include <limits>
 #include <new>
 #include <numeric>
+#include <optional>
+#include <string>
 #include <unordered_map>
 #include <utility>
 
@@ -290,6 +292,75 @@ Result<std::shared_ptr<PackedMatrixConstant>> pack_matrix_constant(
   return packed;
 }
 
+Result<std::optional<Plan>> tile_matrix_storage(const Runtime &runtime, const Plan &source) {
+  std::optional<Plan> tiled;
+  const auto &limits = runtime.device->properties.limits;
+  for (std::size_t index = 0; index < source.steps.size(); ++index) {
+    const auto &step = source.steps[index];
+    const bool projection = step.operation.custom_as<model_ops::DenseLinearF32>().has_value();
+    const auto tile_columns = [&]() -> std::uint64_t {
+      if ((!step.operation.get_if<MatMul>() && !projection) || step.custom ||
+          step.inputs.size() != 2 || step.outputs.size() != 1 ||
+          step.inputs[0] >= source.values.size() || step.inputs[1] >= source.values.size() ||
+          step.outputs[0] >= source.values.size()) return 0;
+      const auto a = source.values[step.inputs[0]].description;
+      const auto b = source.values[step.inputs[1]].description;
+      const auto output = source.values[step.outputs[0]].description;
+      if (!a.valid() || !b.valid() || !output.valid() || a.rank() != 2 || b.rank() != 2 ||
+          output.rank() != 2 || !a.is_plain() || !a.is_dense() || !b.is_plain() ||
+          !output.is_plain() || !output.is_dense()) return 0;
+      const auto canonical = projection ? Result<TensorDesc>(b) : b.transposed();
+      if (!canonical || !canonical->is_dense()) return 0;
+      const auto rows = static_cast<std::uint64_t>(a.dimensions()[0]);
+      const auto depth = static_cast<std::uint64_t>(b.dimensions()[projection ? 1 : 0]);
+      const auto columns = static_cast<std::uint64_t>(b.dimensions()[projection ? 0 : 1]);
+      const auto size = (std::max)(std::size_t{4}, data_type_size(b.data_type()));
+      if (!rows || !depth || !columns || depth > limits.maxStorageBufferRange / size ||
+          a.dimensions()[1] != static_cast<std::int64_t>(depth) || output.dimensions()[0] != a.dimensions()[0] ||
+          output.dimensions()[1] != static_cast<std::int64_t>(columns) ||
+          !a.required_bytes() || *a.required_bytes() > limits.maxStorageBufferRange ||
+          !output.required_bytes() || *output.required_bytes() > limits.maxStorageBufferRange) return 0;
+      // Original dot products and rounding remain whole. Bound each native
+      // operand, F32 layout/split-K workspace and grid before preparing it.
+      auto count = (std::min)({std::uint64_t{limits.maxStorageBufferRange} / (depth * size),
+          std::uint64_t{limits.maxStorageBufferRange} / rows / (8 * sizeof(float)),
+          std::uint64_t{limits.maxComputeWorkGroupCount[0]}});
+      if (columns <= count || !count) return 0;
+      const auto alignment = (std::max)(std::uint64_t{4},
+          std::uint64_t{limits.minStorageBufferOffsetAlignment});
+      const auto stride = static_cast<std::uint64_t>(b.byte_strides()[projection ? 0 : 1]);
+      const auto grain = alignment / std::gcd(alignment, stride);
+      return count / grain * grain;
+    }();
+    if (!tile_columns) { if (tiled) tiled->steps.push_back(step); continue; }
+    if (!tiled) {
+      tiled = source; tiled->steps.assign(source.steps.begin(), source.steps.begin() + index);
+    }
+    const auto b = source.values[step.inputs[1]].description;
+    const auto output = source.values[step.outputs[0]].description;
+    const auto columns = static_cast<std::uint64_t>(b.dimensions()[projection ? 0 : 1]);
+    std::vector<std::uint32_t> pieces;
+    for (std::uint64_t first = 0; first < columns; first += tile_columns) {
+      const auto count = (std::min)(tile_columns, columns - first);
+      HYLE_ASSIGN_OR_RETURN(auto view, View::slice(projection ? 0 : 1, first, count));
+      std::array<TensorDesc, 1> descriptions;
+      HYLE_RETURN_IF_ERROR(infer_output_descriptions(Operation(view), std::array{b}, descriptions));
+      const auto weight = static_cast<std::uint32_t>(tiled->values.size());
+      tiled->values.push_back({descriptions[0], {}});
+      tiled->steps.push_back({Operation(view), {step.inputs[1]}, {weight}, {}, {1,1,1}, {}, step.control_boundary});
+      HYLE_ASSIGN_OR_RETURN(auto result, TensorDesc::dense(output.data_type(),
+          std::array{output.dimensions()[0], static_cast<std::int64_t>(count)}));
+      const auto part = static_cast<std::uint32_t>(tiled->values.size());
+      tiled->values.push_back({result, {}}); pieces.push_back(part);
+      auto multiply = step; multiply.inputs[1] = weight; multiply.outputs = {part};
+      tiled->steps.push_back(std::move(multiply));
+    }
+    auto concatenate = step; concatenate.operation = Operation(Concat{1}); concatenate.inputs = std::move(pieces);
+    tiled->steps.push_back(std::move(concatenate));
+  }
+  return tiled;
+}
+
 Status pack_matrix_constants(const std::shared_ptr<Runtime> &runtime,
                              ProgramState &program,
                              const Plan &source_plan, Plan &packed_plan) {
@@ -375,6 +446,8 @@ Result<Program> prepare_plan(const std::shared_ptr<Runtime> &runtime,
   }
   try {
     std::vector<bool> available(plan.values.size(), false);
+    HYLE_ASSIGN_OR_RETURN(auto tiled, tile_matrix_storage(*runtime, plan));
+    if (tiled) return prepare_plan(runtime, *tiled, queue_policy, facts, resolver);
     std::vector<bool> produced(plan.values.size(), false);
     for (std::size_t index = 0; index < plan.values.size(); ++index) {
       const auto &value = plan.values[index];
@@ -385,7 +458,7 @@ Result<Program> prepare_plan(const std::shared_ptr<Runtime> &runtime,
           !tensor_storage_type(description.data_type()) ||
           (!description.is_plain() && !named_compressed_storage(description)) ||
           !bytes ||
-          *bytes > runtime->device->properties.limits.maxStorageBufferRange ||
+          *bytes > runtime->device->maximum_allocation_bytes ||
           !elements || (*elements > (std::numeric_limits<std::int32_t>::max)() &&
                         !iq1_storage_description(description) &&
                         !official_word_storage(description)))
@@ -393,7 +466,7 @@ Result<Program> prepare_plan(const std::shared_ptr<Runtime> &runtime,
             "Vulkan plan requires supported plain or named compressed "
             "storage within device limits"));
       HYLE_ASSIGN_OR_RETURN(auto capacity, buffer_capacity(*bytes));
-      if (capacity > runtime->device->properties.limits.maxStorageBufferRange)
+      if (capacity > runtime->device->maximum_allocation_bytes)
         return std::unexpected(Status::Unimplemented(
             "Vulkan padded storage exceeds device limits"));
       if (value.constant) {
@@ -622,8 +695,16 @@ Result<Program> prepare_plan(const std::shared_ptr<Runtime> &runtime,
       RowCacheAccessFacts access;
       auto status = lower_operation(*program, step, resolver,
                                     facts ? &access : nullptr);
-      if (!status.ok())
-        return std::unexpected(status);
+      if (!status.ok()) {
+        auto context = std::string("Vulkan operation ") + std::string(operation_name(step.operation));
+        for (const auto value : step.inputs) {
+          const auto &description = program->values[value].description;
+          context += " input(" + std::to_string(static_cast<unsigned>(description.data_type())) + ")[";
+          for (const auto dimension : description.dimensions()) context += std::to_string(dimension) + ',';
+          context += ']';
+        }
+        return std::unexpected(status.WithContext(context));
+      }
       if (facts && access.kind != RowCacheAccessKind::kNone) {
         access.step = index - 1;
         row_cache_accesses.push_back(access);
@@ -635,6 +716,16 @@ Result<Program> prepare_plan(const std::shared_ptr<Runtime> &runtime,
     while (program->aliases.size() < program->values.size()) {
       const auto index = static_cast<std::uint32_t>(program->aliases.size());
       program->aliases.push_back({index, 0});
+    }
+    // Storage may be larger than one shader binding. Every actual residual
+    // shader port still has to fit its descriptor; View metadata alone does
+    // not grant a shader permission to bind the whole backing allocation.
+    for (const auto &dispatch : program->dispatches) {
+      if (!dispatch.pipeline) continue;
+      for (const auto value : dispatch.values)
+        if (*program->values[value].description.required_bytes() >
+            runtime->device->properties.limits.maxStorageBufferRange)
+          return std::unexpected(Status::Unimplemented("Vulkan shader binding exceeds storage range"));
     }
     // Packing may replace a dense captured buffer with an immutable native
     // layout. Keep originals through all lowering for deduplication, then drop

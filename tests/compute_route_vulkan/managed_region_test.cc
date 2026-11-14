@@ -9,6 +9,7 @@
 #include "vulkan_program_internal.h"
 #include "vulkan_iree.h"
 #include "vulkan_policy.h"
+#include "hyle/compute/model_ops.h"
 #if defined(HYLE_TEST_GRAPH_VULKAN)
 #include "hyle/graph/vulkan.h"
 #include "../compute_models/derived_cast_fixture.h"
@@ -59,6 +60,49 @@ TEST(VulkanManaged, PrecisionStageBorrowsOnlyPrivateNonRotatingStorage) {
       EXPECT_EQ(vulkan_tensor_test::bits(context, actual), expected);
       if (retained) EXPECT_EQ(vulkan_tensor_test::bits(context, *retained), retained_bits);
       if (pass == 0) { retained = actual; retained_bits = expected; }
+    }
+  }
+}
+
+TEST(VulkanManaged, NativeMatrixColumnsRespectDescriptorWindowsAndOriginalRounding) {
+  for (const bool projection : {false, true})
+  for (const auto type : {c::DataType::kFloat32, c::DataType::kBFloat16}) {
+    SCOPED_TRACE(projection ? "F32 projection" : "same-type MatMul");
+    auto context = vulkan_test::context().value();
+    d::Access::runtime(context)->device->properties.limits.maxStorageBufferRange = 64U << 10;
+    constexpr std::int64_t rows = 3, depth = 37, columns = 1603;
+    const auto weight_description = dense(type, {columns, depth});
+    std::vector<double> weights(columns * depth);
+    for (std::int64_t n = 0; n < columns; ++n) for (std::int64_t k = 0; k < depth; ++k)
+      weights[n * depth + k] = (1 + (n * 7 + k * 11) % 17) / 32.0;
+    const auto storage = make(context, weight_description, weights);
+    const auto weight = projection ? storage :
+        storage.view(c::View::permute(std::array<std::int32_t,2>{1,0}).value()).value();
+    const auto input_description = dense(type, {rows, depth});
+    auto program = v::prepare(context, projection ? c::model_ops::dense_linear_f32() : c::Operation(c::MatMul{}),
+                              input_description, weight);
+    ASSERT_TRUE(program) << program.error().message();
+    auto first = program->create_invocation().value(), second = program->create_invocation().value();
+    v::Tensor previous; std::vector<std::uint64_t> previous_bits;
+    for (int phase = 0; phase < 3; ++phase) {
+      std::vector<double> values(rows * depth);
+      for (std::int64_t row = 0; row < rows; ++row) for (std::int64_t k = 0; k < depth; ++k)
+        values[row * depth + k] = (1 + (row * 13 + k * 3 + phase * 11) % 19) / 64.0;
+      const auto input = make(context, input_description, values);
+      auto &slot = phase == 0 ? first : second;
+      ASSERT_TRUE(slot.bind(input).ok());
+      auto work = slot.submit(); ASSERT_TRUE(work) << work.error().message();
+      auto result = work->wait(); ASSERT_TRUE(result) << result.error().message();
+      std::vector<std::uint64_t> expected;
+      for (std::int64_t row = 0; row < rows; ++row) for (std::int64_t n = 0; n < columns; ++n) {
+        double sum = 0;
+        for (std::int64_t k = 0; k < depth; ++k) sum += values[row * depth + k] * weights[n * depth + k];
+        expected.push_back(vulkan_tensor_test::encode(sum, projection ? c::DataType::kFloat32 : type));
+      }
+      const auto actual = result->get()->tensors()[0];
+      EXPECT_EQ(vulkan_tensor_test::bits(context, actual), expected);
+      if (previous) EXPECT_EQ(vulkan_tensor_test::bits(context, previous), previous_bits);
+      else { previous = actual; previous_bits = expected; }
     }
   }
 }
@@ -191,7 +235,8 @@ TEST(VulkanManaged, ImmutableBfloatCastCapturesOneReadyPayloadAndKeepsPublicValu
 TEST(VulkanManaged, BatchedRopePositionsAndPerTokenFrequenciesReplay) {
   namespace f = batched_rope_test;
   auto context = vulkan_test::context().value();
-  for (const auto type : {c::DataType::kFloat32, c::DataType::kFloat16})
+  for (const auto type : {c::DataType::kFloat32, c::DataType::kFloat16,
+                          c::DataType::kBFloat16})
     for (bool per_request : {false, true})
       for (bool per_token_frequency : {false, true})
         for (const auto layout : {c::RopeLayout::kInterleaved, c::RopeLayout::kHalfSplit}) {

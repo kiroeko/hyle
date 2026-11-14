@@ -9,6 +9,27 @@
 #include "hyle/compute/model_ops.h"
 
 namespace hyle::compute::vulkan::detail {
+bool tensor_bfloat_rounding_supported(const Device &device,
+                                      const TensorDesc &wide) noexcept {
+  const auto count = wide.element_count();
+  const auto &limits = device.properties.limits;
+  if (wide.data_type() != DataType::kFloat32 || !wide.is_plain() ||
+      !wide.is_dense() || !count || *count == 0 ||
+      *count > limits.maxStorageBufferRange / sizeof(float) ||
+      *count > UINT32_MAX / sizeof(float) ||
+      limits.maxComputeWorkGroupInvocations < 128 ||
+      limits.maxComputeWorkGroupSize[0] < 128 ||
+      limits.maxPerStageDescriptorStorageBuffers < 4 ||
+      limits.maxDescriptorSetStorageBuffers < 4)
+    return false;
+  const auto groups = (*count + 127) / 128;
+  const auto x = (std::min<std::uint64_t>)(groups,
+      std::uint64_t{limits.maxComputeWorkGroupCount[0]});
+  // The U32 shader preserves the original F32/BF16 representation and RNE
+  // boundary without optional float controls or 16-bit arithmetic/storage.
+  return x != 0 && (groups + x - 1) / x <= limits.maxComputeWorkGroupCount[1];
+}
+
 std::optional<std::uint32_t> tensor_storage_type(DataType type) noexcept {
   switch (type) {
   case DataType::kFloat32:
@@ -581,9 +602,18 @@ Status lower_tensor(ProgramState &program, const PlanStep &step) {
           ? (elements / output.dimensions().back() + rows_per_group - 1) /
                 rows_per_group
           : (words + 127) / 128);
+  // Keep representation-specific code out of unrelated shader modules. Native
+  // compilers can process every branch before applying specialization, so a
+  // cold fallback must not enlarge the ordinary Copy/arithmetic preparation.
+  const auto input_type = specialization[1].value;
+  const bool representation = (operation == 2 &&
+      ((input_type == 2 && *output_type == 0) ||
+       (input_type == 0 && *output_type == 2))) ||
+      (operation == 3 && mode == static_cast<std::uint32_t>(UnaryKind::kRelu));
   return append_tensor_dispatch(program, std::move(dispatch),
                                 normalization ? shaders::normalization()
-                                              : shaders::tensor(),
+                                : representation ? shaders::representation()
+                                                 : shaders::tensor(),
                                 specialization, groups);
 }
 } // namespace hyle::compute::vulkan::detail

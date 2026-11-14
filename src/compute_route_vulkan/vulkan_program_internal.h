@@ -37,7 +37,16 @@ struct Dispatch final {
   bool tensor_byte_origins = false;
   // Binding 2 is a private, mapped logical-error word for this native batch.
   bool checked_status = false;
+  // Zero retains the original all-origins push packet. A nonzero prefix
+  // leaves the remaining cold-frozen words unchanged during binding/replay.
+  std::uint32_t tensor_byte_origin_count = 0;
 };
+
+inline std::size_t tensor_origin_count(const Dispatch &dispatch) noexcept {
+  if (!dispatch.tensor_byte_origins) return 0;
+  return dispatch.tensor_byte_origin_count ? dispatch.tensor_byte_origin_count
+      : dispatch.push.size() / sizeof(std::uint32_t);
+}
 
 struct NativeEncoding final {
   std::vector<Dispatch> dispatches;
@@ -195,6 +204,7 @@ HYLE_COMPUTE_ROUTE_VULKAN_API bool
 direct_gather_rows(Operation, const TensorDesc &, const TensorDesc &) noexcept;
 Status lower_gather_elements(ProgramState &, const PlanStep &) noexcept;
 Status lower_scan(ProgramState &, const PlanStep &) noexcept;
+Status lower_portable_topk(ProgramState &, const PlanStep &) noexcept;
 bool mature_scatter_add_operation(const ProgramState &,
                                   const PlanStep &) noexcept;
 Status lower_mature_scatter_add(ProgramState &, const PlanStep &) noexcept;

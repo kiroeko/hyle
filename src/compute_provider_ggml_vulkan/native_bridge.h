@@ -69,6 +69,7 @@ struct Native {
   bool preserve_float32_specials = false;
   VkQueue transfer_queue = VK_NULL_HANDLE;
   std::uint32_t transfer_queue_family = 0;
+  bool vulkan_memory_model = false;
 };
 enum class Error {
   None,

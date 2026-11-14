@@ -2,12 +2,15 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <climits>
 #include <cstdint>
+#include <cstring>
 #include <new>
 
 #include "hyle/compute/sampling_ops.h"
 #include "vulkan_shaders.h"
+#include "vulkan_tensor.h"
 
 namespace hyle::compute::vulkan::detail {
 namespace {
@@ -25,6 +28,90 @@ bool device_limits(const Device &device, std::uint64_t groups,
          scratch_bytes <= limits.maxStorageBufferRange;
 }
 } // namespace
+
+Status lower_portable_topk(ProgramState &program, const PlanStep &step) noexcept {
+  try {
+    const auto selection = step.operation.get_if<TopK>();
+    if (!selection || step.inputs.size() != 1 || step.outputs.size() != 2)
+      return Status::InvalidArgument("Vulkan portable TopK schema");
+    const auto input = program.values[step.inputs[0]].description;
+    if (input.rank() != 2 || !input.is_plain() || !input.is_dense() ||
+        input.data_type() != DataType::kFloat32 || selection->axis != -1)
+      return Status::Unimplemented("Vulkan portable TopK requires canonical F32 rows");
+    const auto rows64 = static_cast<std::uint64_t>(input.dimensions()[0]);
+    const auto width64 = static_cast<std::uint64_t>(input.dimensions()[1]);
+    if (!rows64 || !width64 || width64 > (1U << 30) || !selection->count ||
+        selection->count > width64)
+      return Status::Unimplemented("Vulkan portable TopK row capacity");
+    const auto rows = static_cast<std::uint32_t>(rows64);
+    const auto width = static_cast<std::uint32_t>(width64);
+    const auto padded = std::bit_ceil(width);
+    const auto &limits = program.runtime->device->properties.limits;
+    if (limits.maxComputeWorkGroupInvocations < 128 ||
+        limits.maxComputeWorkGroupSize[0] < 128 ||
+        limits.maxPerStageDescriptorStorageBuffers < 4 ||
+        limits.maxDescriptorSetStorageBuffers < 4 ||
+        rows64 > limits.maxStorageBufferRange / 8 / padded ||
+        rows64 > UINT32_MAX / 8 / padded)
+      return Status::Unimplemented("Vulkan portable TopK scratch exceeds native limits");
+    const auto append = [&](TensorDesc description) {
+      const auto id = static_cast<std::uint32_t>(program.values.size());
+      program.values.push_back({description, {}});
+      program.aliases.push_back({id, 0});
+      return id;
+    };
+    HYLE_ASSIGN_OR_RETURN(auto scratch, TensorDesc::dense(DataType::kInt32,
+        std::array<std::int64_t,3>{rows, padded, 2}));
+    const std::array temporary{
+        append(program.values[step.outputs[0]].description),
+        append(program.values[step.outputs[1]].description)};
+    std::uint32_t source = append(scratch), destination = append(scratch);
+    std::array<std::shared_ptr<Pipeline>, 3> pipelines;
+    for (std::uint32_t mode = 0; mode < pipelines.size(); ++mode) {
+      const std::array<SpecializationConstant, 6> constants{
+          SpecializationConstant{0, mode}, {1, rows}, {2, width}, {3, padded},
+          {4, static_cast<std::uint32_t>(selection->count)}, {5, selection->largest ? 1U : 0U}};
+      HYLE_ASSIGN_OR_RETURN(pipelines[mode], create_pipeline(program.runtime->device,
+          {shaders::portable_topk(), 4, 24, constants}));
+    }
+    const auto dispatch = [&](std::uint32_t mode, std::uint32_t input_value,
+                              std::uint32_t output_value, std::uint32_t size = 0,
+                              std::uint32_t distance = 0) -> Status {
+      const auto elements = rows64 * (mode == 2 ? selection->count : padded);
+      const auto groups = (elements + 127) / 128;
+      const auto x = (std::min)(groups, std::uint64_t{limits.maxComputeWorkGroupCount[0]});
+      if (!x || (groups + x - 1) / x > limits.maxComputeWorkGroupCount[1])
+        return Status::Unimplemented("Vulkan portable TopK dispatch exceeds native limits");
+      Dispatch stage;
+      stage.pipeline = pipelines[mode];
+      stage.values = {input_value, output_value, temporary[0], temporary[1]};
+      const std::array<std::uint32_t,6> push{0,0,0,0,size,distance};
+      stage.push.resize(sizeof(push));
+      std::memcpy(stage.push.data(), push.data(), sizeof(push));
+      stage.tensor_byte_origins = true;
+      stage.tensor_byte_origin_count = 4;
+      stage.groups = {static_cast<std::uint32_t>(x),
+                      static_cast<std::uint32_t>((groups + x - 1) / x), 1};
+      program.dispatches.push_back(std::move(stage));
+      return Status::Ok();
+    };
+    HYLE_RETURN_IF_ERROR(dispatch(0, step.inputs[0], source));
+    for (std::uint32_t size = 2; size <= padded; size *= 2)
+      for (auto distance = size / 2; distance; distance /= 2) {
+        HYLE_RETURN_IF_ERROR(dispatch(1, source, destination, size, distance));
+        std::swap(source, destination);
+      }
+    HYLE_RETURN_IF_ERROR(dispatch(2, source, destination));
+    // Publish through the existing typed copy, including any output aliases.
+    // Private sort payloads and the original Work retire under the same owner.
+    for (std::size_t port = 0; port < temporary.size(); ++port)
+      HYLE_RETURN_IF_ERROR(lower_tensor(program,
+          {Operation(Copy{}), {temporary[port]}, {step.outputs[port]}, {}, {1,1,1}, {}}));
+    return Status::Ok();
+  } catch (const std::bad_alloc &) {
+    return Status::ResourceExhausted("Vulkan portable TopK metadata");
+  }
+}
 
 bool single_topk_operation(const ProgramState &program,
                              const PlanStep &step) noexcept {

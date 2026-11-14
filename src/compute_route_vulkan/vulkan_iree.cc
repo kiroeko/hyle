@@ -3,6 +3,7 @@
 #include "vulkan_iq1.h"
 #include "vulkan_official.h"
 #include "vulkan_memory_internal.h"
+#include "vulkan_tensor.h"
 
 #include <algorithm>
 #include <cstring>
@@ -442,6 +443,19 @@ Status lower_native_cast(ProgramState &program, std::uint32_t input,
     PlanStep convert{Operation(Cast{program.values[output].description.data_type()}),
         {input}, {output}, {}, {1, 1, 1}, {}};
     if (iree_operation(program, convert)) return lower_iree(program, convert);
+    const auto &source = program.values[input].description;
+    const auto &destination = program.values[output].description;
+    const bool widen = source.data_type() == DataType::kBFloat16 &&
+                      destination.data_type() == DataType::kFloat32;
+    const bool narrow = source.data_type() == DataType::kFloat32 &&
+                       destination.data_type() == DataType::kBFloat16;
+    const auto &wide = widen ? destination : source;
+    if ((widen || narrow) && source.is_plain() && source.is_dense() &&
+        destination.is_plain() && destination.is_dense() &&
+        std::ranges::equal(source.dimensions(), destination.dimensions()) &&
+        !iree_precision_supported(*program.runtime->device, wide) &&
+        tensor_bfloat_rounding_supported(*program.runtime->device, wide))
+      return lower_tensor(program, convert);
     if (!managed_operation(program, convert))
       return Status::Unimplemented("Vulkan original typed conversion domain");
     Plan local;

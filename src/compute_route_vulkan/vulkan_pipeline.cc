@@ -1,6 +1,7 @@
 #include "vulkan_program_internal.h"
 
 #include <algorithm>
+#include <cstring>
 #include <limits>
 #include <new>
 
@@ -154,9 +155,12 @@ std::uint32_t origin(const Buffer *buffer) noexcept {
 TensorByteOrigins origins(const Run &run,
                                      const Dispatch &dispatch) noexcept {
   TensorByteOrigins result{};
-  if (dispatch.tensor_byte_origins)
-    for (std::size_t port = 0; port < dispatch.push.size()/sizeof(std::uint32_t); ++port)
+  if (dispatch.tensor_byte_origins) {
+    if (!dispatch.push.empty())
+      std::memcpy(result.data(), dispatch.push.data(), dispatch.push.size());
+    for (std::size_t port = 0; port < tensor_origin_count(dispatch); ++port)
       result[port] = origin(run.retained_buffers[dispatch.values[port]].get());
+  }
   return result;
 }
 } // namespace
@@ -319,7 +323,8 @@ Status record(const std::shared_ptr<Run> &run,
           dispatch.push.size() != dispatch.pipeline->push_bytes ||
           (dispatch.tensor_byte_origins &&
            (dispatch.push.size()%sizeof(std::uint32_t) || dispatch.push.size()>sizeof(TensorByteOrigins) ||
-            dispatch.push.size()/sizeof(std::uint32_t)>dispatch.values.size())))
+            tensor_origin_count(dispatch)>dispatch.values.size() ||
+            tensor_origin_count(dispatch)>dispatch.push.size()/sizeof(std::uint32_t))))
         return Status::InvalidArgument(
             "Vulkan dispatch pipeline or binding arity");
       for (std::size_t axis = 0; axis < 3; ++axis)
@@ -395,7 +400,7 @@ Status record(const std::shared_ptr<Run> &run,
         const auto value = dispatch.values[binding];
         DescriptorBinding entry;
         entry.value = value;
-        entry.byte_origin = dispatch.tensor_byte_origins && binding < dispatch.push.size()/sizeof(std::uint32_t);
+        entry.byte_origin = binding < tensor_origin_count(dispatch);
         entry.storage_granularity = dispatch.pipeline->storage_granularity;
         const auto &buffer = run->retained_buffers[value];
         HYLE_ASSIGN_OR_RETURN(entry.buffer,
@@ -442,8 +447,7 @@ Status rebind_descriptors(Run &run, std::span<const PlanValue> values,
       const auto &buffer = run.retained_buffers[value];
       if (!buffer || buffer->handle == VK_NULL_HANDLE)
         return Status::FailedPrecondition("Vulkan descriptor rebind input is unbound");
-      const bool byte_origin = dispatch.tensor_byte_origins &&
-          port < dispatch.push.size() / sizeof(std::uint32_t);
+      const bool byte_origin = port < tensor_origin_count(dispatch);
       HYLE_ASSIGN_OR_RETURN(auto prospective,
           descriptor_buffer(buffer.get(), description(value), byte_origin, 0,
               dispatch.pipeline->storage_granularity));
@@ -455,8 +459,7 @@ Status rebind_descriptors(Run &run, std::span<const PlanValue> values,
     const auto &dispatch = dispatches[index];
     for (std::uint32_t port = 0; port < dispatch.values.size(); ++port) {
       const auto value = dispatch.values[port];
-      const bool byte_origin = dispatch.tensor_byte_origins &&
-          port < dispatch.push.size() / sizeof(std::uint32_t);
+      const bool byte_origin = port < tensor_origin_count(dispatch);
       HYLE_ASSIGN_OR_RETURN(auto buffer,
           descriptor_buffer(run.retained_buffers[value].get(), description(value), byte_origin, 0,
               dispatch.pipeline->storage_granularity));
