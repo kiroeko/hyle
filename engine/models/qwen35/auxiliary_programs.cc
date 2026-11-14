@@ -204,9 +204,11 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
     const std::array variants{g::ExactShapeVariant{binding}};
     const auto hidden_store = program.hidden_state.store;
     const auto extra_stores = hidden_store.valid() ? std::span(&hidden_store, 1) : std::span<const g::NodeId>{};
-    check(program.programs.prepare(take(execution.compile(program.graph, assembly.constants(),
+    auto compiled = execution.compile(program.graph, assembly.constants(),
         assembly.options({.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
-         .constants = assembly.constants(), .resource_budget = execution_budget}))), program.graph, variants,
+         .constants = assembly.constants(), .resource_budget = execution_budget}));
+    if (!compiled) throw inference::EvaluationFailure(std::move(compiled).error().WithContext("MTP draft program"));
+    check(program.programs.prepare(std::move(*compiled), program.graph, variants,
         {{}, extra_stores}, take(execution_budget.metadata_allocator())));
     const auto &compiled_program = program.programs.child(0).compiled;
     check(program.carrier.prepare(compiled_program, execution.queue_bindings()));
@@ -355,9 +357,11 @@ AuxiliaryProgramResult<PrefixSamplingProgram> build_prefix_sampling(
     program.graph = take(std::move(r.builder).finish());
     const std::array binding{g::ShapeBinding{r.last_row, 0}};
     const std::array variants{g::ExactShapeVariant{binding}};
-    check(program.programs.prepare(take(execution.compile(program.graph, assembly.constants(),
+    auto compiled = execution.compile(program.graph, assembly.constants(),
         assembly.options({.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
-         .constants = assembly.constants(), .resource_budget = execution_budget}))), program.graph, variants));
+         .constants = assembly.constants(), .resource_budget = execution_budget}));
+    if (!compiled) throw inference::EvaluationFailure(std::move(compiled).error().WithContext("MTP prefix sampling"));
+    check(program.programs.prepare(std::move(*compiled), program.graph, variants));
     const auto &compiled_program = program.programs.child(0).compiled;
     check(program.carrier.prepare(compiled_program, execution.queue_bindings()));
     const auto plan = inspect_execution_plan(execution, model.cpu_ffn_layers, compiled_program.report, assembly.constants());

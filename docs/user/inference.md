@@ -323,11 +323,12 @@ worker 和 `/v1/models` 的 `hyle.placement` 报告实际 `primary_backend` 与 
 |---|---|
 | Qwen3.5-2B完整入口 | 官方BF16及固定GPTQ、NVFP4、GGUF Q4等制品有列明范围的完整短旅程；不代表任意量化目录可直接加载。 |
 | 已实测的普通推理平台 | Qwen3.5-2B 原始 HF BF16 普通文本 prefill／decode 已在 Windows CPU／CUDA／Vulkan 和 MacBook Air M4 CPU／Metal 跑通；Windows 与 Mac 使用的原始权重逐字节相同。Windows CPU／Vulkan及WSL Linux CPU／CUDA另有2B Q4普通请求检查；WSL CUDA通过双活跃请求、状态搬运和关闭后恢复检查。Mac CPU／Metal另有多会话续接，Metal另通过取消后复用。Metal变长packed convolution尚未实现，冷期拒绝该路线后使用已有普通计划；双活跃会话不代表全部变长合批形状可用，也不表示 CUDA 的 MTP、图片及吞吐范围已移植。普通 BF16 速度见[性能记录](../developer/performance/decode.md)。 |
+| BF16 普通与显式 MTP | Windows CPU／CUDA／CPU＋CUDA，以及 MacBook Air M4 Metal／CPU＋Metal，已完成普通、K1／K2／K3，各含贪心和随机采样的两轮短请求。混合放置使用前两层 target FFN；每个请求只选择已准备的方案。使用正式入口的 `--draft-count 0|1|2|3`，不依赖 CUDA capture；这些功能检查不代表设备侧闭环、长上下文、并发或完整服务验收。Metal 的自动默认仍由独立的冷策略选择。 |
 | 较大Qwen制品 | Qwen3.8-27B有特定CPU／混合配置的完整短旅程；不能推广到全部制品或纯GPU常驻。 |
 | NF4、CT asymmetric INT4、MLX affine4／8 | 有压缩权重及有限状态链／原组件接入；完整对应大模型、质量和吞吐未交付。 |
 | GLM、DeepSeek、Kimi | 组件级实现与检查，没有完整引擎入口。 |
 
-公共引擎共用请求、会话、完整状态、RNG 和 MTP 起草／验证／修复合同，后端执行能力仍有差异。当前设备接力只接通 CUDA；引擎的设备端长度批查询接入 CPU／CUDA，原编码草稿行复制资格只对 CUDA 声明。Metal／Vulkan 还缺部分变长 packed convolution 实现。为它们补齐相应 MTP 路线需要增加后端实现与冷期接线，可沿用现有模型和公共请求合同；普通推理平台覆盖不表示这些加速设施已经齐全。
+公共引擎共用请求、会话、完整状态、RNG 和 MTP 起草／验证／修复合同，后端执行能力仍有差异。上表的显式 MTP 可以使用原有递归提案与修复路径；设备接力目前只接通 CUDA。引擎的设备端长度批查询接入 CPU／CUDA，原编码草稿行复制资格只对 CUDA 声明。Metal／Vulkan 还缺部分变长 packed convolution 实现。这些加速设施、Vulkan 的多执行方案组合以及完整跨后端服务仍在补齐；普通或显式 MTP 的短请求通过不表示它们已经齐全。
 
 模型、格式、后端与原始检查统一查[模型与算子覆盖](../implementation/model-operators.md)。
 加载器不会预先展开整库，但实际计划可能分解计算并使用workspace；4bit文件大小不是运行内存上限。

@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <span>
 #include <stdexcept>
 #include <vector>
@@ -87,7 +88,12 @@ Value sampled_prefix_packet(R &r, Value proposals, Value continuation,
     d::require_port(r, proposals, d::Type::kInt32, count);
     d::require_port(r, continuation, d::Type::kFloat32, count);
   }
-  const auto zero = d::integer(r, 0), one = d::integer(r, 1), no = d::false_value(r);
+  const auto zero = d::integer(r, 0), one = d::integer(r, 1);
+  // No proposal means one validity row and no acceptance/continuation edge.
+  // Do not emit an unused pure node: native region discovery excludes it,
+  // while a native-only execution source has no standalone fallback for it.
+  std::optional<Value> no;
+  if (count) no = d::false_value(r);
   const auto choose = [&](Value condition, Value a, Value b) {
     return r.one(d::c::Select{}, {condition, a, b}, r.dense_spec(d::Type::kInt32, {d::fixed(1)}));
   };
@@ -103,12 +109,12 @@ Value sampled_prefix_packet(R &r, Value proposals, Value continuation,
   for (std::size_t i = count; i-- > 0;) {
     const auto gate = r.cast(r.copy(r.slice(continuation, 0,
         d::fixed(static_cast<std::int64_t>(i)), d::fixed(1))), d::Type::kBool);
-    const auto proceed = r.one(d::c::Select{}, {gate, accepted[i], no},
+    const auto proceed = r.one(d::c::Select{}, {gate, accepted[i], *no},
         r.dense_spec(d::Type::kBool, {d::fixed(1)}));
     consumed = choose(proceed, consumed, d::integer(r, static_cast<std::int32_t>(i + 1)));
     next = choose(proceed, next, packet[4 + i]);
   }
-  packet[0] = choose(d::all_valid(r, valid, no), one, zero);
+  packet[0] = choose(count ? d::all_valid(r, valid, *no) : valid.front(), one, zero);
   packet[1] = consumed; packet[2] = next;
   packet[3] = count ? choose(accepted.front(), one, zero) : zero;
   return r.concat(std::span<const Value>(packet), 0,
@@ -122,8 +128,8 @@ Value validated_ids_packet(R &r, std::span<const Value> final_ids,
     std::span<const Value> valid) {
   namespace d = acceptance_graph_detail;
   d::require_ids(r, final_ids, valid);
-  const auto zero = d::integer(r, 0), one = d::integer(r, 1), no = d::false_value(r);
-  const auto predicate = d::all_valid(r, valid, no);
+  const auto zero = d::integer(r, 0), one = d::integer(r, 1);
+  const auto predicate = valid.size() == 1 ? valid.front() : d::all_valid(r, valid, d::false_value(r));
   std::vector<Value> packet;
   packet.reserve(final_ids.size() + 1);
   packet.push_back(r.one(d::c::Select{}, {predicate, one, zero}, r.dense_spec(d::Type::kInt32, {d::fixed(1)})));

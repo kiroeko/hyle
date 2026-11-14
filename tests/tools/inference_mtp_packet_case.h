@@ -74,6 +74,21 @@ inline std::size_t check_width(i::Backend &backend, std::size_t m,
       r.dense_spec(q::Type::kInt32, {q::f(static_cast<std::int64_t>(total_size))}));
   q::check(r.builder.publish(output));
   const auto graph = q::take(std::move(r.builder).finish());
+  // Native-only sources form regions from live nodes; a dead pure Fill has
+  // no standalone native fallback. Keep packet construction closed over its
+  // published output, including zero proposals and singleton validation.
+  std::vector<bool> live(graph.value_count());
+  for (std::size_t i = 0; i < graph.output_count(); ++i)
+    live[q::take(graph.output_id(i)).ordinal()] = true;
+  for (std::size_t i = graph.node_count(); i-- > 0;) {
+    const auto node = q::take(graph.node_id(i));
+    bool needed = false;
+    for (std::size_t j = 0; j < q::take(graph.node_output_count(node)); ++j)
+      needed = needed || live[q::take(graph.result(node, j)).ordinal()];
+    require(needed, "MTP packet contains an unreachable pure node");
+    for (std::size_t j = 0; j < q::take(graph.node_input_count(node)); ++j)
+      live[q::take(graph.node_input(node, j)).ordinal()] = true;
+  }
   const std::array shape{g::ShapeBinding{r.last_row, 0}};
   const std::array variants{g::ExactShapeVariant{shape}};
   auto compiled = q::take(backend.compile(graph, assembly.constants(),
