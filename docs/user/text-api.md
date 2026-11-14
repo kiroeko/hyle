@@ -42,6 +42,12 @@ capacity = 128
 kv_capacity = 3
 ttl_seconds = 900
 max_waiting = 64
+queue_timeout_seconds = 30
+
+[service]
+max_connections = 32
+read_idle_seconds = 30
+write_idle_seconds = 30
 
 [prefix_cache]
 entries = 3
@@ -129,6 +135,12 @@ SDK 是可选客户端依赖，服务端不依赖它们。上述 key 只满足�
 `GET /v1/responses/{id}` 查询保留结果，`DELETE /v1/responses/{id}` 删除该记录并等待它持有的原生会话退休；删除返回[标准删除对象](https://developers.openai.com/api/reference/resources/responses/methods/delete)。删除父记录不删除已有子响应。未知、过期或已淘汰 ID 返回 404。没有跨服务重启的响应／KV 恢复。
 
 响应记录数、原生 KV 驻留上限和批内活动序列是三个独立预算。KV 满时先淘汰空闲原生会话，保留受限历史；全部忙时在有限接纳队列等待。原生终止确认前不复用预算，超时或退休失败会使会话服务失败关闭。TTL 也在没有新请求时回收空闲会话。
+
+`sessions.queue_timeout_seconds` 是接纳的固定期限，唤醒不会延长期限。队列满或到期返回 503，附 `Retry-After: 1`。`service.max_connections` 限制同时处理的连接，包含未读完的请求和响应交付；超限在创建线程和接纳模型请求之前尽力返回相同的 busy 状态。不是额外的模型队列。
+
+读写空闲超时只计算等待 socket 进展的时间，不限制正常推理时长。未完成的 HTTP 头超时关闭连接，已解析请求的正文超时返回 408。写入失败或空闲超时取消生成，仍等待原 owner 确认退休；不能因客户端超时而复用在途状态。TCP 发送方向半关闭仍允许读取响应。上述限额均为启动配置，数值必须有限且为正。
+
+`/metrics` 提供累计请求／完成／失败／输出 token 数，以及 `hyle_http_connections` 和会话服务的 `hyle_sessions_waiting`、`hyle_sessions_active`、`hyle_sessions_resident`。waiting 是等待 KV 接纳的文本请求，active 是已安装但尚未退出的请求 owner，resident 包含驻留和等待退休的原生预算；它们不是 GPU 并行度。读取指标的连接也计入连接数。
 
 满足相同方案、采样配置和实际 token 前缀时，续轮复用原会话的完整状态、pending 和 RNG。Jinja 改写历史前缀、改变配置、KV 淘汰或分叉时重建输入，不伪装缓存命中。保存的原始 token 与模板标记用于可追加模板；显示文本仍独立解码。重建不等于恢复完整 RNG 检查点。
 

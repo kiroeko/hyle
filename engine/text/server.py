@@ -15,6 +15,7 @@ from typing import Any, Mapping, Protocol
 from urllib.parse import parse_qs, urlsplit
 
 from .contracts import TokenEvent, TokenRequest
+from .configuration import ServiceLimits
 from .runtime import TextEngine
 
 
@@ -22,35 +23,47 @@ class ClientDisconnected(ConnectionError):
     pass
 
 
-def _wait_socket(connection: socket.socket, closing: threading.Event, *, write: bool = False) -> None:
+class ReadIdleTimeout(ClientDisconnected):
+    pass
+
+
+def _wait_socket(connection: socket.socket, closing: threading.Event, *, deadline: float, write: bool = False) -> None:
     while not closing.is_set():
-        ready, writable, _ = select.select([] if write else [connection], [connection] if write else [], [], .25)
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            error = ClientDisconnected if write else ReadIdleTimeout
+            raise error('socket write idle timeout' if write else 'socket read idle timeout')
+        ready, writable, _ = select.select([] if write else [connection], [connection] if write else [], [], min(.25, remaining))
         if ready or writable:
             return
     raise ClientDisconnected('server closing')
 
 
 class _SocketReader(io.RawIOBase):
-    def __init__(self, connection: socket.socket, closing: threading.Event):
+    def __init__(self, connection: socket.socket, closing: threading.Event, idle_seconds: float):
         super().__init__()
         self.connection, self.closing = connection, closing
+        self.idle_seconds = idle_seconds
 
     def readable(self) -> bool:
         return True
 
     def readinto(self, target) -> int:
+        deadline = None
         while not self.closing.is_set():
             try:
                 return self.connection.recv_into(target)
             except (BlockingIOError, InterruptedError):
-                _wait_socket(self.connection, self.closing)
+                if deadline is None: deadline = time.monotonic() + self.idle_seconds
+                _wait_socket(self.connection, self.closing, deadline=deadline)
         raise ClientDisconnected('server closing')
 
 
 class _SocketWriter(io.RawIOBase):
-    def __init__(self, connection: socket.socket, closing: threading.Event):
+    def __init__(self, connection: socket.socket, closing: threading.Event, idle_seconds: float):
         super().__init__()
         self.connection, self.closing = connection, closing
+        self.idle_seconds = idle_seconds
 
     def writable(self) -> bool:
         return True
@@ -58,17 +71,20 @@ class _SocketWriter(io.RawIOBase):
     def write(self, data) -> int:
         remaining = memoryview(data)
         total = len(remaining)
+        deadline = None
         while remaining:
             if self.closing.is_set():
                 raise ClientDisconnected('server closing')
             try:
                 sent = self.connection.send(remaining)
             except (BlockingIOError, InterruptedError):
-                _wait_socket(self.connection, self.closing, write=True)
+                if deadline is None: deadline = time.monotonic() + self.idle_seconds
+                _wait_socket(self.connection, self.closing, deadline=deadline, write=True)
                 continue
             if not sent:
                 raise ClientDisconnected('client disconnected')
             remaining = remaining[sent:]
+            deadline = None  # Only real progress renews the idle budget.
         return total
 
 
@@ -102,6 +118,7 @@ class HttpExchange:
         handler.send_header('Content-Type', 'application/json')
         handler.send_header('Content-Length', str(len(data)))
         handler.send_header('Connection', 'close')
+        if status == 503: handler.send_header('Retry-After', '1')
         handler.end_headers()
         handler.wfile.write(data)
         handler.close_connection = True
@@ -168,8 +185,16 @@ class TextHttpHandler(BaseHTTPRequestHandler):
         self.wfile.close()
         self.connection.setblocking(False)
         closing = self.server.closing  # type: ignore[attr-defined]
-        self.rfile = io.BufferedReader(_SocketReader(self.connection, closing))
-        self.wfile = _SocketWriter(self.connection, closing)
+        limits = self.server.limits  # type: ignore[attr-defined]
+        self.rfile = io.BufferedReader(_SocketReader(self.connection, closing, limits.read_idle_seconds))
+        self.wfile = _SocketWriter(self.connection, closing, limits.write_idle_seconds)
+
+    def handle_one_request(self) -> None:
+        try: super().handle_one_request()
+        except ConnectionError:
+            # Incomplete headers have no established protocol exchange. Body
+            # timeouts are handled by do_POST; write failures cancel there.
+            self.close_connection = True
 
     def do_GET(self) -> None:
         exchange = HttpExchange(self)
@@ -179,7 +204,10 @@ class TextHttpHandler(BaseHTTPRequestHandler):
             healthy = server.engine.healthy  # type: ignore[attr-defined]
             exchange.send_json(200 if healthy else 503, {'status': 'ok' if healthy else 'unavailable'})
         elif path == '/metrics' and server.metrics_enabled:  # type: ignore[attr-defined]
-            data = server.engine.metrics.render()  # type: ignore[attr-defined]
+            sessions = server.engine.sessions  # type: ignore[attr-defined]
+            with server._connections_lock: connections = len(server._connections)  # type: ignore[attr-defined]
+            data = server.engine.metrics.render(sessions=sessions.snapshot() if sessions else None,
+                                                connections=connections)  # type: ignore[attr-defined]
             self.send_response(200)
             self.send_header('Content-Type', 'text/plain; version=0.0.4; charset=utf-8')
             self.send_header('Content-Length', str(len(data)))
@@ -204,14 +232,19 @@ class TextHttpHandler(BaseHTTPRequestHandler):
         if adapter is None:
             exchange.send_json(404, {'error': 'endpoint not found'})
             return
-        adapter.handle_post(exchange, self.server.engine)  # type: ignore[attr-defined]
+        try:
+            adapter.handle_post(exchange, self.server.engine)  # type: ignore[attr-defined]
+        except ReadIdleTimeout as error:
+            exchange.send_json(408, {'type': 'error', 'error': {'type': 'timeout_error', 'message': str(error)}})
 
 
 class TextHttpServer(ThreadingHTTPServer):
     daemon_threads = False
 
-    def __init__(self, address, engine: TextEngine, metrics_enabled: bool, routes: Mapping[str, TextHttpAdapter]):
+    def __init__(self, address, engine: TextEngine, metrics_enabled: bool, routes: Mapping[str, TextHttpAdapter], *,
+                 limits: ServiceLimits | None = None):
         self.engine, self.metrics_enabled = engine, metrics_enabled
+        self.limits = limits or engine.choices.service
         self.routes = MappingProxyType(dict(routes))
         self.closing = threading.Event()
         self._connections_lock = threading.Lock()
@@ -228,16 +261,43 @@ class TextHttpServer(ThreadingHTTPServer):
     def process_request(self, request, client_address) -> None:
         # Register before starting the handler so close cannot miss a thread
         # that has accepted a socket but has not started executing yet.
+        rejected = False
         with self._connections_lock:
             if self.closing.is_set():
                 self.shutdown_request(request)
                 return
-            self._connections.add(request)
+            if len(self._connections) >= self.limits.max_connections:
+                rejected = True
+            else:
+                self._connections.add(request)
+                try:
+                    super().process_request(request, client_address)
+                except BaseException:
+                    self._connections.discard(request)
+                    raise
+        if rejected:
+            # No handler thread, body parsing or native admission. The small
+            # best-effort response cannot hold the accept owner indefinitely.
+            data = b'{"type":"error","error":{"type":"overloaded_error","message":"connection capacity is full"}}'
+            response = (b'HTTP/1.1 503 Service Unavailable\r\nContent-Type: application/json\r\n'
+                b'Connection: close\r\nRetry-After: 1\r\nContent-Length: ' + str(len(data)).encode('ascii') + b'\r\n\r\n' + data)
             try:
-                super().process_request(request, client_address)
-            except BaseException:
-                self._connections.discard(request)
-                raise
+                request.settimeout(min(.1, self.limits.write_idle_seconds)); request.sendall(response)
+                request.shutdown(socket.SHUT_WR)
+                # Let ordinary SDKs receive the response before closing a
+                # socket with unread request headers (which can send RST).
+                # This is a bounded drain, never an admitted handler/body.
+                deadline = time.monotonic() + .1
+                remaining = 64 * 1024
+                while remaining and not self.closing.is_set():
+                    delay = deadline - time.monotonic()
+                    if delay <= 0: break
+                    request.settimeout(delay)
+                    data = request.recv(min(remaining, 8192))
+                    if not data: break
+                    remaining -= len(data)
+            except OSError: pass
+            finally: self.shutdown_request(request)
 
     def process_request_thread(self, request, client_address) -> None:
         try:

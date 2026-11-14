@@ -76,6 +76,7 @@ jobs:
           tests.tooling.text_completion_protocols_test
           tests.tooling.text_tools_test
           tests.tooling.text_models_test
+          tests.tooling.text_service_limits_test
           tests.tooling.text_worker_client_test
           tests.tooling.text_sessions_test
           tests.tooling.text_prepared_capabilities_test

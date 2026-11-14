@@ -154,6 +154,10 @@ def run(args):
                     'first choice',args.first_tool_choice,'two client tools+final answer;stable unique IDs;native contexts', native_contexts, flush=True)
         with httpx.Client(trust_env=False) as client:
             metrics = client.get(base+'/metrics'); assert metrics.status_code == 200
+        snapshot = engine.sessions.snapshot()
+        assert snapshot['waiting'] == snapshot['active'] == 0 and 0 <= snapshot['resident'] <= 2
+        for name, value in snapshot.items(): assert f'hyle_sessions_{name} {value}\n' in metrics.text
+        assert 'hyle_http_connections ' in metrics.text
         print('PASS all3 official SDKs sync/SSE actual local coding tool loops; SDKs', openai.__version__, anthropic.__version__, flush=True)
     finally:
         if oa: oa.close()

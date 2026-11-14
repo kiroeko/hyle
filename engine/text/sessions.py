@@ -118,6 +118,10 @@ class TextSessions:
         with self._condition:
             return not self._closing and self._failure is None
 
+    def snapshot(self) -> dict[str, int]:
+        with self._condition:
+            return {'waiting': self._waiting, 'active': len(self._active), 'resident': self._native_count}
+
     def parent(self, key: str) -> StoredTurn:
         expired = None
         with self._condition:
@@ -173,10 +177,14 @@ class TextSessions:
             raise
 
     def _reserve(self):
+        deadline = time.monotonic() + self.policy.queue_timeout_seconds
         while True:
             victim = None
             with self._condition:
                 self._check_open()
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise WorkerError('busy', 'text session admission deadline exceeded')
                 if self._native_count < self.policy.kv_capacity:
                     self._native_count += 1
                     return
@@ -189,7 +197,7 @@ class TextSessions:
                         raise WorkerError('busy', 'text session waiting capacity is full')
                     self._waiting += 1
                     try:
-                        self._condition.wait()
+                        self._condition.wait(remaining)
                     finally:
                         self._waiting -= 1
             if victim is not None:

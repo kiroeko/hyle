@@ -161,7 +161,8 @@ class ArchitectureBoundariesTest(unittest.TestCase):
     def test_text_core_does_not_import_protocol_or_model_implementations(self):
         allowed = {'__init__': set(), 'contracts': set(), 'codec': {'contracts'}, 'tools': {'contracts'}, 'worker_client': {'contracts'},
                    'configuration': set(), 'sessions': {'contracts', 'configuration'},
-                   'runtime': {'contracts', 'codec', 'configuration', 'sessions'}, 'server': {'contracts', 'runtime'}}
+                   'runtime': {'contracts', 'codec', 'configuration', 'sessions'},
+                   'server': {'contracts', 'runtime', 'configuration'}}
         violations = []
         for name, local_allowed in allowed.items():
             path = ROOT / 'engine/text' / (name + '.py')

@@ -44,6 +44,28 @@ class SessionPolicy:
     ttl_seconds: float = 900.
     max_waiting: int = 64
     shared_prefix: bool = False
+    queue_timeout_seconds: float = 30.
+
+    def __post_init__(self):
+        _positive_seconds(self.queue_timeout_seconds, 'session queue timeout')
+
+
+def _positive_seconds(value, label):
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
+        raise ValueError(label + ' must be finite and positive')
+
+
+@dataclass(frozen=True)
+class ServiceLimits:
+    max_connections: int = 32
+    read_idle_seconds: float = 30.
+    write_idle_seconds: float = 30.
+
+    def __post_init__(self):
+        if type(self.max_connections) is not int or self.max_connections <= 0:
+            raise ValueError('connection capacity must be a positive integer')
+        _positive_seconds(self.read_idle_seconds, 'read idle timeout')
+        _positive_seconds(self.write_idle_seconds, 'write idle timeout')
 
 
 @dataclass(frozen=True)
@@ -52,6 +74,7 @@ class PreparedChoices:
     samplers: tuple[SamplingChoice, ...] = (SamplingChoice(),)
     sessions: SessionPolicy = SessionPolicy()
     prefix_entries: int = 0
+    service: ServiceLimits = ServiceLimits()
 
     def select(self, values=None, *, temperature=None, top_p=None, top_k=None) -> Selection:
         values = {} if values is None else values
@@ -106,7 +129,7 @@ def read_configuration(args) -> PreparedChoices:
             except ModuleNotFoundError as error:
                 raise ValueError('TOML configuration requires tomllib or the optional tomli package') from error
         data = tomllib.loads(args.config.read_text(encoding='utf-8'))
-    if set(data) - {'default_profile', 'profiles', 'samplers', 'sessions', 'prefix_cache'}:
+    if set(data) - {'default_profile', 'profiles', 'samplers', 'sessions', 'prefix_cache', 'service'}:
         raise ValueError('unknown text configuration section')
     directory = args.config.resolve().parent if args.config else Path.cwd()
     def execution(value, *, default=False):
@@ -158,7 +181,7 @@ def read_configuration(args) -> PreparedChoices:
             raise ValueError('duplicate prepared choice name')
     sessions = data.get('sessions', {})
     prefix = data.get('prefix_cache', {})
-    if set(sessions) - {'capacity', 'kv_capacity', 'ttl_seconds', 'max_waiting'} or set(prefix) - {'entries', 'shared'}:
+    if set(sessions) - {'capacity', 'kv_capacity', 'ttl_seconds', 'max_waiting', 'queue_timeout_seconds'} or set(prefix) - {'entries', 'shared'}:
         raise ValueError('unknown session or prefix policy')
     policy = SessionPolicy(**sessions, shared_prefix=prefix.get('shared', False))
     if 'kv_capacity' not in sessions: policy = replace(policy, kv_capacity=args.max_sessions)
@@ -169,4 +192,7 @@ def read_configuration(args) -> PreparedChoices:
     entries = prefix.get('entries', 0)
     if type(entries) is not int or entries < 0 or type(policy.shared_prefix) is not bool:
         raise ValueError('invalid trusted prefix policy')
-    return PreparedChoices(executions, tuple(samplers), policy, entries)
+    service = data.get('service', {})
+    if not isinstance(service, dict) or set(service) - {'max_connections', 'read_idle_seconds', 'write_idle_seconds'}:
+        raise ValueError('unknown service limit')
+    return PreparedChoices(executions, tuple(samplers), policy, entries, ServiceLimits(**service))

@@ -84,12 +84,16 @@ class Metrics:
             self.failed += int(not completed)
             self.output_tokens += tokens
 
-    def render(self) -> bytes:
+    def render(self, *, sessions=None, connections=None) -> bytes:
         with self._lock:
-            return (f"hyle_requests_total {self.requests}\n"
+            text = (f"hyle_requests_total {self.requests}\n"
                     f"hyle_requests_completed_total {self.completed}\n"
                     f"hyle_requests_failed_total {self.failed}\n"
-                    f"hyle_output_tokens_total {self.output_tokens}\n").encode("ascii")
+                    f"hyle_output_tokens_total {self.output_tokens}\n")
+        if sessions is not None:
+            text += ''.join(f'hyle_sessions_{name} {sessions[name]}\n' for name in ('waiting', 'active', 'resident'))
+        if connections is not None: text += f'hyle_http_connections {connections}\n'
+        return text.encode('ascii')
 
 
 class TextEngine:
@@ -178,7 +182,8 @@ class TextEngine:
             'sessions': {'enabled': self.sessions is not None,
                 **({'history_capacity': self.sessions.policy.capacity,
                     'resident_capacity': self.sessions.policy.kv_capacity,
-                    'max_waiting': self.sessions.policy.max_waiting} if self.sessions is not None else {})}}
+                    'max_waiting': self.sessions.policy.max_waiting,
+                    'queue_timeout_seconds': self.sessions.policy.queue_timeout_seconds} if self.sessions is not None else {})}}
 
     def begin_close(self) -> None:
         if self.sessions: self.sessions.begin_close()
