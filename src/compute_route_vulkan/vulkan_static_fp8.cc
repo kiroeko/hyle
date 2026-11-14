@@ -54,7 +54,7 @@ Status lower_static_fp8(ProgramState &program, const PlanStep &step) noexcept tr
   dispatch.tensor_byte_origins = true;
   dispatch.push.resize(16); // Four original inputs; output owns aligned padded words.
   const auto pairs = (*output[0].element_count() + 1) / 2;
-  const auto x = (std::min)(pairs, std::uint64_t(limits.maxComputeWorkGroupCount[0]));
+  const auto x = (std::min<std::uint64_t>)(pairs, limits.maxComputeWorkGroupCount[0]);
   const auto y = (pairs + x - 1) / x;
   if (y > limits.maxComputeWorkGroupCount[1])
     return Status::Unimplemented("Vulkan static FP8 linear grid exceeds device limits");

@@ -38,7 +38,7 @@ Status lower_row_cache(ProgramState &program, const PlanStep &step,
         {3,std::uint32_t(m.query_offset/4)},{4,std::uint32_t(m.kv_offset/4)},{5,std::uint32_t(m.page_offset/4)},{6,std::uint32_t(m.tail_offset/4)},
         {7,m.page_size},{8,m.max_pages},{9,m.max_requests()},{10,m.max_refs()}}};
       HYLE_ASSIGN_OR_RETURN(dispatch.pipeline,create_pipeline(program.runtime->device,{shaders::row_cache_padded_map(),5,20,constants}));
-      const auto groups=(count+127)/128,x=std::min(groups,std::uint64_t(limits.maxComputeWorkGroupCount[0]));
+      const std::uint64_t groups=(count+127)/128,x=std::min(groups,std::uint64_t(limits.maxComputeWorkGroupCount[0]));
       if(!x || (groups+x-1)/x>limits.maxComputeWorkGroupCount[1])return Status::Unimplemented("Vulkan padded map grid");
       dispatch.groups={std::uint32_t(x),std::uint32_t((groups+x-1)/x),1};dispatch.tensor_byte_origins=true;dispatch.push.resize(20);
       program.dispatches.push_back(std::move(dispatch));return finish(fact);
@@ -62,7 +62,7 @@ Status lower_row_cache(ProgramState &program, const PlanStep &step,
           {5,std::uint32_t(map->query_offset/4)},{6,std::uint32_t(map->kv_offset/4)},{7,std::uint32_t(map->page_offset/4)},{8,std::uint32_t(map->tail_offset/4)},
           {9,map->page_size},{10,map->max_pages},{11,map->max_requests()},{12,map->max_refs()}}};
       HYLE_ASSIGN_OR_RETURN(dispatch.pipeline,create_pipeline(program.runtime->device,{shaders::row_cache(),4,12,constants}));
-      const auto groups=(count+127)/128,x=std::min(groups,std::uint64_t(limits.maxComputeWorkGroupCount[0]));
+      const std::uint64_t groups=(count+127)/128,x=std::min(groups,std::uint64_t(limits.maxComputeWorkGroupCount[0]));
       if(!x || (groups+x-1)/x>limits.maxComputeWorkGroupCount[1])return Status::Unimplemented("Vulkan row page map dispatch grid");
       dispatch.groups={std::uint32_t(x),std::uint32_t((groups+x-1)/x),1};dispatch.tensor_byte_origins=true;dispatch.push.resize(12);
       program.dispatches.push_back(std::move(dispatch));return finish(fact);

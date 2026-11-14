@@ -1070,7 +1070,7 @@ Status lower_gather(ProgramState &program, const PlanStep &step) noexcept {
           {shaders::raw16_gather(), 4, 16, specialization}));
       dispatch.values = {step.inputs[0], safe, *program.status_value, step.outputs[0]};
       dispatch.tensor_byte_origins = true; dispatch.push.resize(16); dispatch.checked_status = true;
-      const auto groups = (elements + 127) / 128;
+      const std::uint64_t groups = (elements + 127) / 128;
       const auto x = (std::min)(groups, static_cast<std::uint64_t>(limits.maxComputeWorkGroupCount[0]));
       if (!x || (groups + x - 1) / x > limits.maxComputeWorkGroupCount[1])
         return Status::Unimplemented("Vulkan raw16 Gather workgroup grid exceeds domain");
