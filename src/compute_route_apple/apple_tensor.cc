@@ -491,7 +491,8 @@ AttentionPath attention_path(const ScaledDotProductAttention &attention,
 }
 
 bool is_mlx_tensor_custom(const Operation &operation) noexcept {
-  return operation.custom_as<sequence_ops::PackedGatedDeltaNet>().has_value() ||
+  return operation.custom_as<sequence_ops::PackedCausalConv1d>().has_value() ||
+         operation.custom_as<sequence_ops::PackedGatedDeltaNet>().has_value() ||
          operation.custom_as<model_ops::GatherElements>().has_value() ||
          operation.custom_as<model_ops::CausalConv1d>().has_value() ||
          operation.custom_as<model_ops::SinkAttention>().has_value() ||
@@ -503,6 +504,12 @@ bool is_mlx_tensor_custom(const Operation &operation) noexcept {
 
 Result<bool> may_lower_operation(const Operation &operation,
                                  std::span<const TensorDesc> inputs) noexcept {
+  if (operation.custom_as<sequence_ops::PackedCausalConv1d>()) {
+    auto status = qualify_packed_conv(operation, inputs);
+    if (status.IsUnimplemented()) return false;
+    HYLE_RETURN_IF_ERROR(status);
+    return true;
+  }
   if (operation.custom_as<sequence_ops::PackedGatedDeltaNet>()) {
     auto status = qualify_packed_gdn(operation, inputs);
     if (status.IsUnimplemented()) return false;
@@ -583,6 +590,10 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
     std::vector<TensorDesc> outputs(operation_traits(operation).outputs);
     HYLE_RETURN_IF_ERROR(
         infer_output_descriptions(operation, descriptions, outputs));
+    if (operation.custom_as<sequence_ops::PackedCausalConv1d>()) {
+      HYLE_RETURN_IF_ERROR(qualify_packed_conv(operation, descriptions));
+      return lower_packed_conv(operation, inputs, stream);
+    }
     if (operation.custom_as<sequence_ops::PackedGatedDeltaNet>()) {
       HYLE_RETURN_IF_ERROR(qualify_packed_gdn(operation, descriptions));
       return lower_packed_gdn(operation, inputs, stream);

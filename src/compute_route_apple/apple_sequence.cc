@@ -11,6 +11,92 @@
 namespace hyle::compute::apple::detail {
 namespace mx = mlx::core;
 
+Status qualify_packed_conv(const Operation &operation,
+    std::span<const TensorDesc> inputs) noexcept {
+  if (!operation.custom_as<sequence_ops::PackedCausalConv1d>())
+    return Status::InvalidArgument("Apple packed convolution operation differs");
+  std::array<TensorDesc, 2> outputs;
+  HYLE_RETURN_IF_ERROR(infer_output_descriptions(operation, inputs, outputs));
+  for (const auto &description : inputs)
+    if (*description.element_count() > INT32_MAX - 63)
+      return Status::Unimplemented("Apple packed convolution input indexing limit");
+  for (const auto &description : outputs)
+    if (*description.element_count() > INT32_MAX - 63)
+      return Status::Unimplemented("Apple packed convolution output indexing limit");
+  return Status::Ok();
+}
+
+Result<std::vector<mx::array>> lower_packed_conv(const Operation &operation,
+    std::span<const mx::array> inputs, mx::Stream stream) {
+  if (!operation.custom_as<sequence_ops::PackedCausalConv1d>() || inputs.size() != 4)
+    return std::unexpected(Status::InvalidArgument("Apple packed convolution ports differ"));
+  const int rows = inputs[0].shape(0), channels = inputs[0].shape(1);
+  const int taps = inputs[1].shape(1), batches = inputs[2].shape(0);
+  static const auto check = mx::fast::metal_kernel("hyle_packed_conv_offsets",
+      {"offsets"}, {"status"}, R"METAL(
+    int previous = offsets[0];
+    bool valid = previous == 0;
+    for (int sequence = 0; valid && sequence < BATCHES; ++sequence) {
+      int next = offsets[sequence + 1];
+      valid = next >= previous && next >= 0 && next <= ROWS;
+      previous = next;
+    }
+    status[0] = valid ? 0 : INVALID;
+  )METAL", "", true, false, mx::CompileOptions{});
+  auto status = check({inputs[3]}, {{1}}, {mx::int32}, {1,1,1}, {1,1,1},
+      {{"BATCHES", batches}, {"ROWS", rows}, {"INVALID", kInvalidNumericInput}},
+      std::nullopt, false, stream)[0];
+  static const auto kernel = mx::fast::metal_kernel("hyle_packed_conv",
+      {"x", "w", "history", "offsets", "status", "x_bits", "history_bits"},
+      {"y", "next_bits"}, R"METAL(
+    if (status[0]) return;
+    uint channel = thread_position_in_grid.x, sequence = thread_position_in_grid.y;
+    if (channel >= CHANNELS || sequence >= BATCHES) return;
+    uint first = uint(offsets[sequence]), last = uint(offsets[sequence + 1]);
+    uint length = last - first;
+    if (sequence + 1 == BATCHES)
+      for (uint row = last; row < ROWS; ++row) y[row * CHANNELS + channel] = OutType(0);
+    for (uint row = 0; row < length; ++row) {
+      float sum = 0;
+      for (uint tap = 0; tap < TAPS; ++tap) {
+        uint position = row + tap;
+        float sample = position < TAPS - 1
+            ? float(history[(sequence * (TAPS - 1) + position) * CHANNELS + channel])
+            : float(x[(first + position - (TAPS - 1)) * CHANNELS + channel]);
+        sum = fma(sample, float(w[channel * TAPS + tap]), sum);
+      }
+      y[(first + row) * CHANNELS + channel] = OutType(sum);
+    }
+    for (uint row = 0; row < TAPS - 1; ++row) {
+      uint position = length + row;
+      next_bits[(sequence * (TAPS - 1) + row) * CHANNELS + channel] = position < TAPS - 1
+          ? history_bits[(sequence * (TAPS - 1) + position) * CHANNELS + channel]
+          : x_bits[(first + position - (TAPS - 1)) * CHANNELS + channel];
+    }
+  )METAL", "", true, false, mx::CompileOptions{});
+  // Empty physical ports cannot be bound as Metal buffers. Only these unused
+  // arguments/results use a one-element private carrier; the public shapes
+  // remain empty and retain the same checked status dependency.
+  auto x = rows ? inputs[0] : mx::zeros({1}, inputs[0].dtype(), stream);
+  auto history = taps > 1 ? inputs[2] : mx::zeros({1}, inputs[2].dtype(), stream);
+  const auto bits = inputs[0].itemsize() == 4 ? mx::uint32 : mx::uint16;
+  const std::vector args{x, inputs[1], history, inputs[3], status,
+      mx::view(x, bits, stream), mx::view(history, bits, stream)};
+  auto outputs = kernel(args,
+      {rows ? inputs[0].shape() : mx::Shape{1}, taps > 1 ? inputs[2].shape() : mx::Shape{1}},
+      {inputs[0].dtype(), bits}, {((channels + 63) / 64) * 64, batches, 1}, {64,1,1},
+      {{"OutType", inputs[0].dtype()}, {"ROWS", rows}, {"CHANNELS", channels},
+       {"TAPS", taps}, {"BATCHES", batches}}, std::nullopt, false, stream);
+  outputs[0] = rows ? outputs[0] : mx::zeros(inputs[0].shape(), inputs[0].dtype(), stream);
+  outputs[1] = taps > 1 ? mx::view(outputs[1], inputs[2].dtype(), stream)
+      : mx::zeros(inputs[2].shape(), inputs[2].dtype(), stream);
+  for (auto &output : outputs) {
+    HYLE_ASSIGN_OR_RETURN(auto checked, with_device_status(std::move(output), status, stream));
+    output = std::move(checked);
+  }
+  return outputs;
+}
+
 Status qualify_packed_gdn(const Operation &operation,
     std::span<const TensorDesc> inputs) noexcept {
   if (!operation.custom_as<sequence_ops::PackedGatedDeltaNet>())

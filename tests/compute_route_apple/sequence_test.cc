@@ -186,4 +186,154 @@ TEST(AppleSequence, NativePrivateStateLimitIsRejectedCold) {
   EXPECT_FALSE(result);
   if (!result) EXPECT_TRUE(result.error().IsUnimplemented())<<result.error().message();
 }
+
+struct ConvFixture {
+  static constexpr int batches=2;
+  int rows, channels, taps;
+  mx::Dtype type;
+  std::array<mx::Shape,3> shapes;
+  std::array<std::vector<double>,3> data;
+  ConvFixture(mx::Dtype dtype, int kernel=4, int capacity=8, int width=3)
+      : rows(capacity), channels(width), taps(kernel), type(dtype),
+        shapes{mx::Shape{rows,channels},{channels,taps},{batches,taps-1,channels}} {
+    for (std::size_t port=0;port<data.size();++port) {
+      std::size_t count=1;
+      for (int size:shapes[port]) count*=std::size_t(size);
+      data[port].resize(count);
+      for (std::size_t i=0;i<count;++i)
+        data[port][i]=rounded(double(int((i*7+port*11)%19)-9)/64,type);
+    }
+    for (std::size_t i=4*channels;i<data[0].size();++i)
+      data[0][i]=std::numeric_limits<double>::quiet_NaN();
+  }
+  std::vector<mx::array> inputs(std::array<std::int32_t,3> offsets,
+      std::vector<mx::array> *owners=nullptr) const {
+    std::vector<mx::array> result;
+    for (std::size_t i=0;i<data.size();++i) result.push_back(make(data[i],shapes[i],type));
+    result.push_back(mx::array(offsets.data(),{3},mx::int32));
+    for (auto &value:result) {
+      if (owners) {
+        auto owner=ready(mx::concatenate({mx::zeros({3},value.dtype(),stream()),
+            mx::reshape(value,{-1},stream()),mx::zeros({5},value.dtype(),stream())},0,stream()));
+        owners->push_back(owner);
+        value=mx::reshape(mx::slice(owner,{3},{3+int(value.size())},stream()),value.shape(),stream());
+      }
+      value=ready(value);
+    }
+    return result;
+  }
+  void expect(std::span<const mx::array> actual, std::array<std::int32_t,3> offsets) const {
+    std::vector<double> y(data[0].size(),0), history(data[2].size());
+    for (int b=0;b<batches;++b) for (int channel=0;channel<channels;++channel) {
+      // An independent concatenation oracle includes only this member's real rows.
+      std::vector<float> sequence;
+      for (int row=0;row<taps-1;++row)
+        sequence.push_back(float(data[2][(b*(taps-1)+row)*channels+channel]));
+      for (int row=offsets[b];row<offsets[b+1];++row)
+        sequence.push_back(float(data[0][row*channels+channel]));
+      for (int row=offsets[b];row<offsets[b+1];++row) {
+        float sum=0;
+        for (int tap=0;tap<taps;++tap)
+          sum=std::fma(sequence[row-offsets[b]+tap],float(data[1][channel*taps+tap]),sum);
+        y[row*channels+channel]=rounded(sum,type);
+      }
+      for (int row=0;row<taps-1;++row)
+        history[(b*(taps-1)+row)*channels+channel]=sequence[sequence.size()-(taps-1)+row];
+    }
+    EXPECT_EQ(values(actual[0]),y);
+    EXPECT_EQ(bits(actual[1]),bits(ready(make(history,shapes[2],type))));
+    const auto raw=bits(actual[0]);
+    for (std::size_t i=std::size_t(offsets.back())*channels;i<raw.size();++i) EXPECT_EQ(raw[i],0u);
+  }
+};
+
+TEST(AppleSequence, PackedConvolutionRaggedLengthsTypesAndInvocationReuse) {
+  auto context=a::Context::create().value();
+  for (auto type:{mx::float32,mx::float16,mx::bfloat16}) for (int taps:{1,4}) {
+    ConvFixture fixture(type,taps);
+    auto inputs=fixture.inputs({0,1,4});
+    auto program=context.prepare(c::sequence_ops::packed_causal_conv1d(),inputs);
+    ASSERT_TRUE(program)<<program.error().message();
+    auto slot=program->create_invocation().value();
+    for (auto offsets:{std::array<std::int32_t,3>{0,1,4},{0,0,3},{0,4,4}}) {
+      inputs=fixture.inputs(offsets); ASSERT_TRUE(slot.bind(inputs).ok());
+      auto work=slot.submit().value(); auto result=work.wait();
+      ASSERT_TRUE(result)<<result.error().message();
+      fixture.expect(result->get()->arrays(),offsets);
+    }
+  }
+}
+
+TEST(AppleSequence, PackedConvolutionBorrowedOriginsAndRetainedResults) {
+  auto context=a::Context::create().value(); ConvFixture fixture(mx::float32,4,8,65);
+  std::vector<mx::array> owners;
+  auto inputs=fixture.inputs({0,1,4},&owners);
+  std::vector<std::vector<std::uint64_t>> before;
+  for (const auto &owner:owners) before.push_back(bits(owner));
+  auto program=context.prepare(c::sequence_ops::packed_causal_conv1d(),inputs).value();
+  auto slot=program.create_invocation().value(); ASSERT_TRUE(slot.bind(inputs).ok());
+  std::vector<mx::array> retained;
+  {
+    auto work=slot.submit().value(); auto result=work.wait();
+    ASSERT_TRUE(result)<<result.error().message();
+    retained.assign(result->get()->arrays().begin(),result->get()->arrays().end());
+  }
+  for (std::size_t i=0;i<owners.size();++i) EXPECT_EQ(bits(owners[i]),before[i]);
+  inputs=fixture.inputs({0,0,3}); ASSERT_TRUE(slot.bind(inputs).ok());
+  {
+    auto work=slot.submit().value(); ASSERT_TRUE(work.wait());
+  }
+  slot={}; program={}; ASSERT_TRUE(context.close().ok());
+  fixture.expect(retained,{0,1,4});
+}
+
+TEST(AppleSequence, PackedConvolutionEmptyMembersPreserveRawHistoryBits) {
+  auto context=a::Context::create().value();
+  for (auto type:{mx::float32,mx::float16,mx::bfloat16}) for (int rows:{0,8}) {
+    ConvFixture fixture(type,4,rows);
+    auto inputs=fixture.inputs({0,0,0});
+    constexpr std::array<std::uint32_t,4> pattern32{0x80000000u,0x7f812345u,0x7fc12345u,0xff800000u};
+    constexpr std::array<std::uint16_t,4> pattern16{0x8000u,0x7f81u,0x7e45u,0xfc00u};
+    std::vector<std::uint64_t> expected(fixture.data[2].size());
+    if (type==mx::float32) {
+      std::vector<std::uint32_t> raw(expected.size());
+      for (std::size_t i=0;i<raw.size();++i) expected[i]=raw[i]=pattern32[i%pattern32.size()];
+      inputs[2]=ready(mx::view(mx::array(raw.data(),fixture.shapes[2],mx::uint32),type,stream()));
+    } else {
+      std::vector<std::uint16_t> raw(expected.size());
+      for (std::size_t i=0;i<raw.size();++i) expected[i]=raw[i]=pattern16[i%pattern16.size()];
+      inputs[2]=ready(mx::view(mx::array(raw.data(),fixture.shapes[2],mx::uint16),type,stream()));
+    }
+    auto program=context.prepare(c::sequence_ops::packed_causal_conv1d(),inputs).value();
+    auto slot=program.create_invocation().value(); ASSERT_TRUE(slot.bind(inputs).ok());
+    auto work=slot.submit().value(); auto result=work.wait();
+    ASSERT_TRUE(result)<<result.error().message();
+    EXPECT_EQ(bits(result->get()->arrays()[0]),std::vector<std::uint64_t>(fixture.data[0].size(),0));
+    EXPECT_EQ(bits(result->get()->arrays()[1]),expected);
+  }
+  ConvFixture fixture(mx::float32,1,0);
+  auto inputs=fixture.inputs({0,0,0});
+  auto program=context.prepare(c::sequence_ops::packed_causal_conv1d(),inputs).value();
+  auto slot=program.create_invocation().value(); ASSERT_TRUE(slot.bind(inputs).ok());
+  auto work=slot.submit().value(); auto result=work.wait();
+  ASSERT_TRUE(result)<<result.error().message();
+  for (const auto &output:result->get()->arrays()) EXPECT_EQ(output.size(),0);
+}
+
+TEST(AppleSequence, PackedConvolutionRejectsWholeInvalidOffsetDomainAndRecovers) {
+  auto context=a::Context::create().value(); ConvFixture fixture(mx::float32);
+  auto inputs=fixture.inputs({0,1,4});
+  auto program=context.prepare(c::sequence_ops::packed_causal_conv1d(),inputs).value();
+  for (auto offsets:{std::array<std::int32_t,3>{1,2,4},{0,-1,4},{0,4,3},{0,2,9},{0,1,4}}) {
+    inputs[3]=ready(mx::array(offsets.data(),{3},mx::int32));
+    auto slot=program.create_invocation().value(); ASSERT_TRUE(slot.bind(inputs).ok());
+    auto work=slot.submit().value(); auto result=work.wait();
+    if (offsets!=std::array<std::int32_t,3>{0,1,4}) {
+      EXPECT_FALSE(result);
+      if (!result) EXPECT_TRUE(result.error().IsInvalidArgument())<<result.error().message();
+    } else {
+      ASSERT_TRUE(result)<<result.error().message(); fixture.expect(result->get()->arrays(),offsets);
+    }
+  }
+}
 } // namespace
