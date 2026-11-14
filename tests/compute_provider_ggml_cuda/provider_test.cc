@@ -230,7 +230,8 @@ TEST(GgmlCuda, CallerCaptureIsRejectedBeforeNativeWorkAndSlotRemainsUsable) {
 }
 
 #if defined(HYLE_GGML_CUDA_PROVIDER_FAULTS)
-TEST(GgmlCuda, NativeCaptureFailureRetiresOnlyItsInvocation) {
+TEST(GgmlCuda, CommandsLeaveCaptureFailureWithItsCaller) {
+  namespace cd = compute::detail;
   auto context = compute::Context::create(cuda::device(0).value(),
                                           compute::ggml_cuda::provider())
                      .value();
@@ -249,15 +250,42 @@ TEST(GgmlCuda, NativeCaptureFailureRetiresOnlyItsInvocation) {
   ASSERT_TRUE(invocation.submit(queue, input.view.as_const(), output.view)
                   ->wait()
                   .ok());
+  struct ResetCaptureFault final {
+    ~ResetCaptureFault() { fail_capture = false; }
+  } reset_fault;
   fail_capture = true;
-  auto failed = invocation.submit(queue, input.view.as_const(), output.view);
-  ASSERT_TRUE(failed) << failed.error().message();
-  auto terminal = failed->wait();
-  EXPECT_FALSE(terminal.ok());
-  EXPECT_EQ(terminal.native_error().code, cudaErrorStreamCaptureUnsupported);
+  // Commands borrow the original native encoder; only the outer caller owns
+  // capture. An ordinary replay must not consume this armed capture failure.
+  auto commands = invocation.submit(queue, input.view.as_const(), output.view);
+  ASSERT_TRUE(commands) << commands.error().message();
+  ASSERT_TRUE(commands->wait().ok());
+  EXPECT_TRUE(fail_capture);
+  check_norm(values, output.read(), false);
+
+  auto extension = cd::CommandCaptureAccess::query(queue).value();
+  auto recording = cd::QueueSequence::begin(queue).value();
+  const auto rejected = cd::CommandCaptureAccess::begin(extension, recording);
+  if (rejected.ok()) {
+    // Always release an unexpected successful capture before reporting it.
+    cd::CommandCaptureAccess::abort(extension, recording).IgnoreError();
+    auto completed = recording.finish();
+    if (completed) completed->wait().IgnoreError();
+    FAIL() << "the caller's real capture did not consume the injected failure";
+  }
+  EXPECT_EQ(rejected.native_error().code, cudaErrorStreamCaptureUnsupported);
   EXPECT_FALSE(fail_capture);
+  recording.record(cd::EnqueueResult::rejected(rejected));
+  auto rejected_prefix = recording.finish();
+  ASSERT_FALSE(rejected_prefix);
+  EXPECT_EQ(rejected_prefix.error().native_error().code,
+            cudaErrorStreamCaptureUnsupported);
+
+  // No provider work entered that rejected capture, so its invocation and
+  // workspace remain usable after the caller has released the sequence.
   auto reuse = invocation.submit(queue, input.view.as_const(), output.view);
-  EXPECT_FALSE(reuse);
+  ASSERT_TRUE(reuse) << reuse.error().message();
+  ASSERT_TRUE(reuse->wait().ok());
+  check_norm(values, output.read(), false);
   auto recovered_workspace =
       ggml_cuda_test::workspace_buffer(prepared, memory.ref());
   auto recovered =

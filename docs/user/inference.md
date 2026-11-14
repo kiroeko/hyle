@@ -318,7 +318,7 @@ CPU分置、prefix、多会话、scheduler和随机采样不自动启用。`--re
 | 范围 | 当前边界 |
 |---|---|
 | Qwen3.5-2B完整入口 | 官方BF16及固定GPTQ、NVFP4、GGUF Q4等制品有列明范围的完整短旅程；不代表任意量化目录可直接加载。 |
-| 已实测的普通推理平台 | Windows CPU／Vulkan及WSL Linux CPU已通过2B Q4普通请求；Windows CUDA保留原有格式与路线范围。MacBook Air M4的CPU／Metal已通过现有2B BF16 HF普通请求和多会话续接，Metal另通过取消后复用。Metal变长packed convolution尚未实现，冷期拒绝该路线后使用已有普通计划；双活跃会话不代表全部变长合批形状可用，也不代表已验证CUDA同等功能或吞吐。 |
+| 已实测的普通推理平台 | Windows CPU／Vulkan及WSL Linux CPU／CUDA已通过2B Q4普通请求；WSL CUDA另通过双活跃请求、状态搬运和关闭后恢复检查。Windows CUDA保留原有格式与路线范围。MacBook Air M4的CPU／Metal已通过现有2B BF16 HF普通请求和多会话续接，Metal另通过取消后复用。Metal变长packed convolution尚未实现，冷期拒绝该路线后使用已有普通计划；双活跃会话不代表全部变长合批形状可用，也不代表已验证CUDA同等功能或吞吐。 |
 | 较大Qwen制品 | Qwen3.8-27B有特定CPU／混合配置的完整短旅程；不能推广到全部制品或纯GPU常驻。 |
 | NF4、CT asymmetric INT4、MLX affine4／8 | 有压缩权重及有限状态链／原组件接入；完整对应大模型、质量和吞吐未交付。 |
 | GLM、DeepSeek、Kimi | 组件级实现与检查，没有完整引擎入口。 |
