@@ -2,6 +2,11 @@ name: build
 
 on:
   workflow_dispatch:
+    inputs:
+      host_only:
+        description: 'Only Python engine host contracts (no native source changes)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -12,7 +17,7 @@ concurrency:
 
 jobs:
   foundation:
-    name: Foundation and engine host / ${{ matrix.os }}
+    name: ${{ inputs.host_only && 'Engine host' || 'Foundation and engine host' }} / ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -30,6 +35,7 @@ jobs:
         with:
           python-version: '3.13'
       - name: Set dependency cache path
+        if: ${{ !inputs.host_only }}
         shell: python
         run: |
           import os
@@ -38,23 +44,28 @@ jobs:
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as output:
               output.write(f"HYLE_DEP_SOURCE_CACHE={path}\n")
       - uses: actions/cache@v5
+        if: ${{ !inputs.host_only }}
         with:
           path: ${{ env.HYLE_DEP_SOURCE_CACHE }}
           key: ${{ runner.os }}-hyle-sources-${{ hashFiles('cmake/HyleDependencyLock.json') }}
       - name: Install Linux compiler
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && !inputs.host_only
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-14 g++-14 ninja-build
       - name: Initialize
+        if: ${{ !inputs.host_only }}
         run: >-
           python scripts/init.py --name ci-foundation
           --components core,error,platform,time,mem,container --tests --static
       - name: Build
+        if: ${{ !inputs.host_only }}
         run: python scripts/build.py --name ci-foundation --target hyle_tests --jobs 2
       - name: Test
+        if: ${{ !inputs.host_only }}
         run: python scripts/test.py --name ci-foundation --jobs 2
       - name: Verify native engine host coverage
+        if: ${{ !inputs.host_only }}
         shell: python
         run: |
           import json

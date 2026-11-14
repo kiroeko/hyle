@@ -10,6 +10,7 @@ import threading
 import time
 from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 from engine.text.app import TextApiServer, parse_arguments
 from engine.text.configuration import PreparedChoices, Selection, ServiceLimits, SessionPolicy, read_configuration
@@ -212,21 +213,27 @@ class ServiceHttpTest(unittest.TestCase):
 
 class SocketProgressTest(unittest.TestCase):
     def test_read_idle_renews_only_after_real_bytes_without_a_total_request_deadline(self):
-        left, right = socket.socketpair()
-        left.setblocking(False)
-        closing = threading.Event(); result = []
-        reader = io.BufferedReader(_SocketReader(left, closing, .12))
-        def read():
-            try: result.append(reader.read(3))
-            except Exception as error: result.append(error)
-        thread = threading.Thread(target=read); thread.start()
-        try:
-            for byte in (b'a', b'b', b'c'):
-                threading.Event().wait(.07); right.sendall(byte)
-            thread.join(timeout=2)
-            self.assertEqual(result, [b'abc'])
-        finally:
-            closing.set(); left.close(); right.close(); thread.join(timeout=2); reader.close()
+        # Assert progress/idle semantics without depending on sub-100ms cloud
+        # runner scheduling. Real blocked socket IO is covered above.
+        clock = [0.]
+        class Socket:
+            ready = False
+            chunks = iter(b'abc')
+            def recv_into(self, target):
+                if not self.ready: raise BlockingIOError()
+                self.ready = False; target[0] = next(self.chunks); return 1
+        connection = Socket()
+        def select_progress(readable, writable, exceptional, timeout):
+            self.assertEqual(readable, [connection])
+            clock[0] += min(.07, timeout)
+            if timeout < .07: return [], [], []
+            connection.ready = True
+            return [connection], [], []
+        with patch('engine.text.server.time.monotonic', lambda: clock[0]), \
+             patch('engine.text.server.select.select', select_progress), \
+             io.BufferedReader(_SocketReader(connection, threading.Event(), .12)) as reader:
+            self.assertEqual(reader.read(3), b'abc')
+        self.assertAlmostEqual(clock[0], .21)
 
 
 if __name__ == '__main__': unittest.main()
