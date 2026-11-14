@@ -25,6 +25,9 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     variants = [
         ('packed_gdn', str((args.tensor_source / 'packed_gdn.comp').resolve()), {}, {1}),
+        ('packed_conv', str((args.tensor_source / 'packed_conv.comp').resolve()), {}, {1}),
+        ('packed_conv_raw16', str((args.tensor_source / 'packed_conv.comp').resolve()),
+         dict(HYLE_CONV_RAW16='1'), {1, 4433}),
         ('cache_encode_e4', str((args.tensor_source / 'cache_encode_e4.comp').resolve()), {}, {1}),
         ('blockwise_w4a8', str((args.tensor_source / 'blockwise_w4a8.comp').resolve()), {}, {1}),
         ('blockwise_w4a8_grouped', str((args.tensor_source / 'blockwise_w4a8.comp').resolve()),

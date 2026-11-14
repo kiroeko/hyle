@@ -140,12 +140,18 @@ MTP 接受前缀时的选择、卷积历史与 KV 联合提交见[状态版本](
 F32 log-decay `[R,Hv,1或Dv]`、beta `[R,Hv,1]`、初态 `[B,Hv,Dv,Dk]`及I32 offsets `[B+1]`。
 offsets从0单调至实际行数A≤R；每个成员仅计算自己的区间，输出V形状不变，[A,R)为正零。
 K=1的空成员逐位保留初态；K>1要求每个实际长度≥K，返回各成员末K个真实状态。
+`sequence_ops::packed_gated_delta_net_prefixes(capacity, scale)`改为返回每个真实前缀的状态，
+形状始终是`[B,capacity,Hv,Dv,Dk]`，包括capacity=1。实际长度不得超过capacity；
+未使用槽为正零，空成员不发布初态或填充状态。
 `sequence_ops::packed_causal_conv1d()`的输入依次为x `[R,C]`、权重 `[C,K]`、
 history `[B,K-1,C]`及相同offsets，输出y及各成员真实输入更新后的history，不读取填充行。
-两者先检查全部offsets再写任何结果，输入不被覆盖；CPU／CUDA原默认路由支持F32／F16／BF16，
-当前CUDA GDN实现的key depth上限为256，其余准备资格仍由实际实现检查。
+这些操作先检查全部offsets再写任何结果，输入不被覆盖。CPU／CUDA原默认路由支持F32／F16／BF16；
+Metal原生卷积和packed GDN／前缀状态支持这三种浮点输入，Vulkan原生卷积支持三种类型，
+packed GDN／前缀状态当前要求F32 Q/K/V。CUDA、Metal和Vulkan的packed GDN key depth上限为256；
+其它布局、索引、存储和工作组资格仍在冷期按实际设备检查。Vulkan的16位卷积使用精确半字存取，
+需要已启用的storage16；借用视图的非零字节起点与空history遵守同一检查和保活合同。
 失败Invocation退休后须从原prepared对象或executable创建新Invocation，失败writer不能重新发布。
-这是底层数学与Graph能力，尚未接入Qwen引擎的有效长度prefill；[有限检查范围](../evidence/correctness/inference-packed-sequence-2026-10-28.json)不代表其它设备或完整模型结果。
+这些是底层数学与Graph能力；完整模型的后端和并发范围另见[推理运行说明](inference.md#制品与验证范围)。
 
 模型专用 MoE、压缩 attention、FP8/FP4 和 MTP 片段仍按真实端口、编码和形状准备，
 不会因模型名相同而继承其它接口的数值或设备支持。常用低精度接入见下文；

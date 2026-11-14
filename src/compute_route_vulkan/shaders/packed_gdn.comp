@@ -25,6 +25,7 @@ layout(constant_id = 6) const uint batches = 1;
 layout(constant_id = 7) const uint gate_depth = 1;
 layout(constant_id = 8) const uint snapshots = 1;
 layout(constant_id = 9) const float output_scale = 1.0;
+layout(constant_id = 10) const uint prefixes = 0;
 
 void main() {
   if (phase == 0) {
@@ -34,7 +35,8 @@ void main() {
     for (uint sequence = 0; valid && sequence < batches; ++sequence) {
       int next = offsets[origin.offsets / 4u + sequence + 1u];
       valid = next >= previous && next >= 0 && uint(next) <= rows;
-      if (valid && snapshots > 1u) valid = uint(next - previous) >= snapshots;
+      if (valid && prefixes != 0u) valid = uint(next - previous) <= snapshots;
+      else if (valid && snapshots > 1u) valid = uint(next - previous) >= snapshots;
       previous = next;
     }
     if (!valid) atomicOr(checked[origin.checked / 4u], 4u);
@@ -54,10 +56,17 @@ void main() {
   if (sequence + 1u == batches)
     for (uint row = last; row < rows; ++row)
       y[origin.y / 4u + row * value_heads * value_depth + lane] = 0u;
+  if (prefixes != 0u)
+    for (uint snapshot = last - first; snapshot < snapshots; ++snapshot) {
+      uint output_row = (sequence * snapshots + snapshot) * state_width + lane * depth;
+      for (uint key = 0; key < depth; ++key)
+        states[origin.states / 4u + output_row + key] = 0u;
+    }
   if (first == last) {
     // Empty members preserve every stored bit, including NaN payloads and -0.
-    for (uint key = 0; key < depth; ++key)
-      states[origin.states / 4u + state_row + key] = initial[origin.initial / 4u + state_row + key];
+    if (prefixes == 0u)
+      for (uint key = 0; key < depth; ++key)
+        states[origin.states / 4u + state_row + key] = initial[origin.initial / 4u + state_row + key];
     return;
   }
   precise float carry[256];
@@ -81,8 +90,8 @@ void main() {
       attended = fma(carry[key], uintBitsToFloat(q[origin.q / 4u + qk + key]), attended);
     }
     y[origin.y / 4u + value] = floatBitsToUint(attended * output_scale);
-    if (row + snapshots >= last) {
-      uint snapshot = row + snapshots - last;
+    if (prefixes != 0u || row >= last - snapshots) {
+      uint snapshot = prefixes != 0u ? row - first : row - (last - snapshots);
       uint output_row = (sequence * snapshots + snapshot) * state_width + lane * depth;
       for (uint key = 0; key < depth; ++key)
         states[origin.states / 4u + output_row + key] = floatBitsToUint(carry[key]);

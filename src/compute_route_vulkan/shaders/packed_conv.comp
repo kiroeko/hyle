@@ -1,0 +1,121 @@
+#version 450
+#ifdef HYLE_CONV_RAW16
+#extension GL_EXT_shader_16bit_storage : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int16 : require
+#define Scalar uint16_t
+#define LANE_BYTES 2u
+#else
+#define Scalar uint
+#define LANE_BYTES 4u
+#endif
+
+layout(local_size_x = 64) in;
+layout(binding = 0) readonly buffer X { Scalar x[]; };
+layout(binding = 1) readonly buffer Weights { Scalar weights[]; };
+layout(binding = 2) buffer Checked { uint checked[]; };
+layout(binding = 3) readonly buffer History { Scalar history[]; };
+layout(binding = 4) readonly buffer Offsets { int offsets[]; };
+layout(binding = 5) writeonly buffer Y { Scalar y[]; };
+layout(binding = 6) writeonly buffer NextHistory { Scalar next_history[]; };
+layout(push_constant) uniform Origins {
+  uint x; uint weights; uint checked; uint history; uint offsets; uint y; uint next_history;
+} origin;
+layout(constant_id = 0) const uint phase = 0;
+layout(constant_id = 1) const uint rows = 1;
+layout(constant_id = 2) const uint channels = 1;
+layout(constant_id = 3) const uint taps = 1;
+layout(constant_id = 4) const uint batches = 1;
+layout(constant_id = 5) const uint encoding = 0;
+
+float decode_value(uint bits) {
+  if (encoding == 1u) return unpackHalf2x16(bits).x;
+  return uintBitsToFloat(encoding == 2u ? bits << 16u : bits);
+}
+
+// Match tensor.comp's explicit IEEE round-to-nearest-even storage contract.
+uint half_rne(float value) {
+  uint bits = floatBitsToUint(value), sign_bit = (bits >> 16u) & 0x8000u;
+  uint exponent = (bits >> 23u) & 255u, mantissa = bits & 0x7fffffu;
+  if (exponent == 255u)
+    return sign_bit | 0x7c00u | (mantissa == 0u ? 0u : 0x200u | (mantissa >> 13u));
+  int e = int(exponent) - 127;
+  if (e > 15) return sign_bit | 0x7c00u;
+  if (e < -25) return sign_bit;
+  uint high, remainder, midpoint;
+  if (e >= -14) {
+    high = (uint(e + 15) << 10u) | (mantissa >> 13u);
+    remainder = mantissa & 0x1fffu;
+    midpoint = 0x1000u;
+  } else {
+    uint shift = uint(-e - 1);
+    mantissa |= 0x800000u;
+    high = mantissa >> shift;
+    remainder = mantissa & ((1u << shift) - 1u);
+    midpoint = 1u << (shift - 1u);
+  }
+  high += uint(remainder > midpoint || (remainder == midpoint && (high & 1u) != 0u));
+  return sign_bit | high;
+}
+
+uint encode_value(float value) {
+  if (encoding == 1u) return half_rne(value);
+  uint bits = floatBitsToUint(value);
+  if (encoding == 2u) {
+    if ((bits & 0x7fffffffu) > 0x7f800000u) return (bits >> 16u) | 0x40u;
+    return (bits + 0x7fffu + ((bits >> 16u) & 1u)) >> 16u;
+  }
+  return bits;
+}
+
+void main() {
+  if (phase == 0u) {
+    if (gl_GlobalInvocationID.x != 0u) return;
+    int previous = offsets[origin.offsets / 4u];
+    bool valid = previous == 0;
+    for (uint sequence = 0u; valid && sequence < batches; ++sequence) {
+      int following = offsets[origin.offsets / 4u + sequence + 1u];
+      valid = following >= previous && following >= 0 && uint(following) <= rows;
+      previous = following;
+    }
+    if (!valid) atomicOr(checked[origin.checked / 4u], 4u);
+    return;
+  }
+  // The existing recorder orders this checked dependency before either write.
+  if (atomicOr(checked[origin.checked / 4u], 0u) != 0u) return;
+  uint channel = gl_GlobalInvocationID.x, sequence = gl_GlobalInvocationID.y;
+  if (channel >= channels || sequence >= batches) return;
+  uint first = uint(offsets[origin.offsets / 4u + sequence]);
+  uint last = uint(offsets[origin.offsets / 4u + sequence + 1u]);
+  // Storage-only U16 permits width conversions, but not U16 constants.
+  uint zero = 0u;
+  if (sequence + 1u == batches)
+    for (uint row = last; row < rows; ++row)
+      y[origin.y / LANE_BYTES + row * channels + channel] = Scalar(zero);
+  for (uint row = 0u; row < last - first; ++row) {
+    precise float sum = 0.0;
+    for (uint tap = 0u; tap < taps; ++tap) {
+      uint position = row + tap;
+      // Promote each load before selection: selecting raw U16 temporaries
+      // would require shaderInt16 in addition to storageBuffer16BitAccess.
+      float value;
+      if (position < taps - 1u)
+        value = decode_value(uint(history[origin.history / LANE_BYTES +
+            (sequence * (taps - 1u) + position) * channels + channel]));
+      else
+        value = decode_value(uint(x[origin.x / LANE_BYTES +
+            (first + position - (taps - 1u)) * channels + channel]));
+      sum = fma(value, decode_value(uint(weights[origin.weights / LANE_BYTES + channel * taps + tap])), sum);
+    }
+    y[origin.y / LANE_BYTES + (first + row) * channels + channel] = Scalar(encode_value(sum));
+  }
+  // Raw lanes preserve NaN payloads and signed zero, including empty members.
+  for (uint row = 0u; row < taps - 1u; ++row) {
+    uint position = last - first + row;
+    if (position < taps - 1u)
+      next_history[origin.next_history / LANE_BYTES + (sequence * (taps - 1u) + row) * channels + channel] =
+          history[origin.history / LANE_BYTES + (sequence * (taps - 1u) + position) * channels + channel];
+    else
+      next_history[origin.next_history / LANE_BYTES + (sequence * (taps - 1u) + row) * channels + channel] =
+          x[origin.x / LANE_BYTES + (first + position - (taps - 1u)) * channels + channel];
+  }
+}

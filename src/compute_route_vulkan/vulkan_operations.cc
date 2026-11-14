@@ -23,7 +23,10 @@ Status lower_operation(ProgramState &program, const PlanStep &step,
                        RowCacheAccessFacts *access) noexcept {
   if (access) *access = {};
   try {
-    if (step.operation.custom_as<sequence_ops::PackedGatedDeltaNet>())
+    if (step.operation.custom_as<sequence_ops::PackedCausalConv1d>())
+      return lower_packed_conv(program, step);
+    if (step.operation.custom_as<sequence_ops::PackedGatedDeltaNet>() ||
+        step.operation.custom_as<sequence_ops::PackedGatedDeltaNetPrefixes>())
       return lower_packed_gdn(program, step);
     if (step.operation.custom_as<model_ops::BlockwiseW4A8Linear>() ||
         step.operation.custom_as<model_ops::GroupedBlockwiseW4A8Linear>())
