@@ -13,7 +13,7 @@ python -B -m engine.text.app serve --engine <build-dir>/bin/hyle.exe --inputs <p
 |---|---|
 | Windows x64 | CPU、CUDA、Vulkan、CPU＋CUDA、CPU＋Vulkan |
 | WSL2 Linux x64 | CPU、CUDA、CPU＋CUDA |
-| macOS ARM64 | Metal、Vulkan、CPU＋Metal |
+| macOS ARM64 | CPU、Metal、Vulkan、CPU＋Metal、CPU＋Vulkan |
 
 专项包含官方 SDK 的普通／SSE、停止、额度、断连退休与复用，以及客户端工具结果回填。其他路线、MTP 与多方案共存分别验收。Metal 使用 `--backend apple`。`--template FILE` 可选择本地 Jinja 模板。`--cpu-ffn-layers N` 沿同一模型装载路径准备 CPU＋GPU 放置，加载后固定；模型发现的 `hyle.placement` 报告实际主后端和 CPU FFN 层数，不回显启动参数充当执行事实。
 
