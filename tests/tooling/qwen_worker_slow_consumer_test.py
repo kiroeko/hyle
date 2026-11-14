@@ -14,7 +14,14 @@ def main():
     parser.add_argument('--cpu-ffn-layers', type=int, default=0)
     parser.add_argument('--prefill-chunk-tokens', type=int)
     parser.add_argument('--sampling', choices=('greedy', 'random', 'both'), default='greedy')
+    parser.add_argument('--event-timeout', type=float,
+        help='Bounded native cold-preparation wait in (0, 600]; default preserves existing 60/120s waits')
     args = parser.parse_args()
+    if args.event_timeout is not None and not 0 < args.event_timeout <= 600:
+        parser.error('--event-timeout must be in (0, 600]')
+
+    def event_wait(default):
+        return default if args.event_timeout is None else args.event_timeout
     command = [args.engine, '--engine-worker', '--inputs', args.inputs, '--backend', args.backend,
                            '--capacity', '128', '--max-sessions', '2', '--active-sequences', '2',
                            '--waiting-limit', '2', '--output-capacity', '4', '--draft-count', str(args.draft_count),
@@ -36,7 +43,7 @@ def main():
     def complete(request):
         tokens = []
         while True:
-            event = request.read(timeout=120)
+            event = request.read(timeout=event_wait(120))
             if event.kind == 'token':
                 tokens.append(event.token)
                 request.acknowledge()
@@ -48,7 +55,7 @@ def main():
     def exercise():
         slow = submit([1, 2, 3])
         peer = submit([3, 2, 1])
-        first = slow.read(timeout=60)
+        first = slow.read(timeout=event_wait(60))
         assert first.kind == 'token', (first.kind, first.message)
         # Leave slow's first token unacknowledged throughout both requests.
         peer_tokens = complete(peer)
@@ -65,7 +72,7 @@ def main():
         else:
             raise AssertionError('unacknowledged output unexpectedly became readable')
         assert slow.cancel()
-        terminal = slow.read(timeout=60)
+        terminal = slow.read(timeout=event_wait(60))
         assert terminal.kind == 'cancelled', (terminal.kind, terminal.message)
         final_tokens = complete(submit([2, 1, 3]))
         assert final_tokens and worker.healthy
@@ -73,8 +80,8 @@ def main():
         # a B2 trajectory can have a different numerical reduction order.
         reference = complete(submit([1, 2, 3]))
         cancelled = submit([1, 2, 3])
-        assert cancelled.read(timeout=120).kind == 'token'
-        assert cancelled.retire(timeout=120).kind == 'cancelled'
+        assert cancelled.read(timeout=event_wait(120)).kind == 'token'
+        assert cancelled.retire(timeout=event_wait(120)).kind == 'cancelled'
         assert complete(submit([1, 2, 3])) == reference, 'slot reuse changed the logical RNG stream or committed state'
         print(f'draft-count={args.draft_count}: stalled credit retained while peer={len(peer_tokens)} '
               f'and replacement={len(replacement_tokens)} tokens completed; '
