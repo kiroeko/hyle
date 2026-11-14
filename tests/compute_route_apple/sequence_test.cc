@@ -48,9 +48,10 @@ struct Fixture {
     return result;
   }
   void expect(std::span<const mx::array> actual, std::array<std::int32_t,3> offsets,
-      double scale) const {
+      double scale, unsigned prefixes=0) const {
     auto state=data[5];
     std::vector<double> y(data[2].size(),0);
+    std::vector<double> snapshots(prefixes*state.size(),0);
     for (int b=0;b<batches;++b) for (int row=offsets[b];row<offsets[b+1];++row)
       for (int h=0;h<hv;++h) for (int v=0;v<dv;++v) {
         const auto base=((b*hv+h)*dv+v)*dk, qk=(row*hk+h%hk)*dk;
@@ -64,10 +65,19 @@ struct Fixture {
         for (int k=0;k<dk;++k) {
           state[base+k]+=delta*data[1][qk+k];
           y[(row*hv+h)*dv+v]+=state[base+k]*data[0][qk+k]*scale;
+          if (prefixes)
+            snapshots[(((b*prefixes+row-offsets[b])*hv+h)*dv+v)*dk+k]=state[base+k];
         }
       }
     apple_tensor_test::expect(actual[0],y);
-    apple_tensor_test::expect(actual[1],state);
+    apple_tensor_test::expect(actual[1],prefixes?snapshots:state);
+    if (prefixes) {
+      const auto state_bits=bits(actual[1]);
+      for (int b=0;b<batches;++b)
+        for (unsigned row=unsigned(offsets[b+1]-offsets[b]);row<prefixes;++row)
+          for (int lane=0;lane<hv*dv*dk;++lane)
+            EXPECT_EQ(state_bits[(b*prefixes+row)*hv*dv*dk+lane],0u);
+    }
     const auto raw=bits(actual[0]);
     for (std::size_t i=std::size_t(offsets.back())*hv*dv;i<raw.size();++i) EXPECT_EQ(raw[i],0u);
   }
@@ -185,6 +195,74 @@ TEST(AppleSequence, NativePrivateStateLimitIsRejectedCold) {
   auto result=context.prepare(c::sequence_ops::packed_gated_delta_net(),fixture.inputs({0,1,4}));
   EXPECT_FALSE(result);
   if (!result) EXPECT_TRUE(result.error().IsUnimplemented())<<result.error().message();
+}
+
+TEST(AppleSequence, PackedGdnPrefixesRetainEveryRealPrefixAndZeroUnusedSlots) {
+  auto context=a::Context::create().value();
+  for (auto type:{mx::float32,mx::float16,mx::bfloat16}) {
+    Fixture fixture(3,2,type);
+    std::vector<mx::array> owners;
+    auto inputs=fixture.inputs({0,1,4},&owners);
+    std::vector<std::vector<std::uint64_t>> before;
+    for (const auto &owner:owners) before.push_back(bits(owner));
+    auto program=context.prepare(c::sequence_ops::packed_gated_delta_net_prefixes(4,.25F),inputs);
+    ASSERT_TRUE(program)<<program.error().message();
+    auto slot=program->create_invocation().value();
+    for (auto offsets:{std::array<std::int32_t,3>{0,1,4},{0,0,3},{0,2,4}}) {
+      if (offsets!=std::array<std::int32_t,3>{0,1,4}) inputs=fixture.inputs(offsets);
+      ASSERT_TRUE(slot.bind(inputs).ok());
+      auto work=slot.submit().value(); auto result=work.wait();
+      ASSERT_TRUE(result)<<result.error().message();
+      EXPECT_EQ(result->get()->arrays()[1].shape(),(mx::Shape{2,4,4,2,3}));
+      fixture.expect(result->get()->arrays(),offsets,.25,4);
+    }
+    for (std::size_t i=0;i<owners.size();++i) EXPECT_EQ(bits(owners[i]),before[i]);
+  }
+}
+
+TEST(AppleSequence, PackedGdnPrefixCapacityOneStaysRankFiveAndRejectsOverlongMembers) {
+  auto context=a::Context::create().value(); Fixture fixture(3,1);
+  auto inputs=fixture.inputs({0,1,2});
+  auto program=context.prepare(c::sequence_ops::packed_gated_delta_net_prefixes(1,.25F),inputs).value();
+  for (auto offsets:{std::array<std::int32_t,3>{1,1,2},{0,-1,2},{0,2,1},{0,1,9},{0,2,3},{0,1,2}}) {
+    inputs[6]=ready(mx::array(offsets.data(),{3},mx::int32));
+    auto slot=program.create_invocation().value(); ASSERT_TRUE(slot.bind(inputs).ok());
+    auto work=slot.submit().value(); auto result=work.wait();
+    if (offsets!=std::array<std::int32_t,3>{0,1,2}) {
+      EXPECT_FALSE(result);
+      if (!result) EXPECT_TRUE(result.error().IsInvalidArgument())<<result.error().message();
+    } else {
+      ASSERT_TRUE(result)<<result.error().message();
+      EXPECT_EQ(result->get()->arrays()[1].shape(),(mx::Shape{2,1,4,2,3}));
+      fixture.expect(result->get()->arrays(),offsets,.25,1);
+    }
+  }
+}
+
+TEST(AppleSequence, PackedGdnEmptyPrefixesDoNotPublishInitialOrPaddingState) {
+  auto context=a::Context::create().value(); Fixture fixture(3,1);
+  auto inputs=fixture.inputs({0,0,0});
+  inputs[5]=ready(mx::full(fixture.shapes[5],NAN,mx::float32,stream()));
+  for (bool empty_rows:{false,true}) {
+    if (empty_rows) for (std::size_t port=0;port<5;++port) {
+      auto shape=fixture.shapes[port]; shape[0]=0;
+      inputs[port]=ready(mx::zeros(shape,inputs[port].dtype(),stream()));
+    }
+    auto program=context.prepare(c::sequence_ops::packed_gated_delta_net_prefixes(3),inputs).value();
+    auto slot=program.create_invocation().value(); ASSERT_TRUE(slot.bind(inputs).ok());
+    auto work=slot.submit().value(); auto result=work.wait();
+    ASSERT_TRUE(result)<<result.error().message();
+    EXPECT_EQ(bits(result->get()->arrays()[0]),
+        std::vector<std::uint64_t>(empty_rows?0:fixture.data[2].size(),0));
+    EXPECT_EQ(bits(result->get()->arrays()[1]),std::vector<std::uint64_t>(3*fixture.data[5].size(),0));
+    if (empty_rows) {
+      inputs[6]=ready(mx::array({0,0,1}));
+      auto invalid_slot=program.create_invocation().value(); ASSERT_TRUE(invalid_slot.bind(inputs).ok());
+      auto invalid_work=invalid_slot.submit().value(); auto invalid=invalid_work.wait();
+      EXPECT_FALSE(invalid);
+      if (!invalid) EXPECT_TRUE(invalid.error().IsInvalidArgument())<<invalid.error().message();
+    }
+  }
 }
 
 struct ConvFixture {
