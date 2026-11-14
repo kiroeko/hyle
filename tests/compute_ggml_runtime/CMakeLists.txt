@@ -25,6 +25,9 @@ endif()
 if(HYLE_GGML_CPU_ENABLED)
   hyle_add_test(compute_ggml_runtime SOURCES execution_test.cc
     ../compute_provider_ggml_vulkan/metadata_test.cc)
+  if(HYLE_TARGET_PROCESSOR STREQUAL "aarch64")
+    target_sources(hyle_compute_ggml_runtime_test PRIVATE arm_bf16_dot_test.cc)
+  endif()
   target_include_directories(hyle_compute_ggml_runtime_test PRIVATE
     "${HYLE_SOURCE_DIR}/src/compute_provider_ggml_vulkan"
     "${HYLE_SOURCE_DIR}/src/compute_ggml_runtime")

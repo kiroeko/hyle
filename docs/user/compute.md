@@ -86,6 +86,9 @@ CUDA多批权重目前要求`N<=512`、偶数`K`。Vulkan的ggml设备路径暂�
 cuBLAS接受相同输入类型，混合类型由其它实际支持的Provider承接。
 普通 `MatMul` 继续遵守其原有类型规则。
 
+AArch64 的 ggml BF16 点积使用基线 NEON，保留原实现的 F32 乘积和 F64 累加；
+不要求可选的 BF16 指令，也不展开 F32 权重副本。其余原生 CPU 向量程序保持原有选择。
+
 - 普通张量算子见下方能力表；GGUF 原编码使用[原生压缩权重](#ggufggml-原生压缩权重)，
   NF4/AWQ/CT/MLX 使用[非 GGUF 接口](#cpu-非-gguf-原格式与压缩专家)。
 - `Float8BlockLinear`、`GroupedFloat8Linear`、`GroupedFloat4Linear`、编码 `MatMul` 和 roundtrip
