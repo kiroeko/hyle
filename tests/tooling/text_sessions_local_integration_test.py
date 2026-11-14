@@ -1,4 +1,4 @@
-"""Local CUDA Responses continuations and cold choices. No download/build."""
+"""Local native Responses continuations and cold choices. No download/build."""
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 import json
@@ -26,14 +26,20 @@ def main():
     parser.add_argument('--asset-cache', required=True)
     parser.add_argument('--template')
     parser.add_argument('--port', type=int, default=2048)
+    parser.add_argument('--backend', choices=('cpu', 'cuda', 'apple', 'vulkan'), default='cuda')
+    parser.add_argument('--cpu-ffn-layers', type=int, default=0)
+    parser.add_argument('--prefill-chunk-tokens', type=int)
     args = parser.parse_args()
     with socket.socket() as check:
         if check.connect_ex(('127.0.0.1', args.port)) == 0:
             raise RuntimeError('requested inference port is already occupied')
     arguments = ['serve', '--engine', args.engine, '--inputs', args.inputs,
-        '--tokenizer-dir', args.tokenizer_dir, '--backend', 'cuda', '--capacity', '4096',
+        '--tokenizer-dir', args.tokenizer_dir, '--backend', args.backend, '--capacity', '4096',
         '--max-sessions', '3', '--active-sequences', '2', '--config', args.config,
         '--asset-cache', args.asset_cache, '--port', str(args.port), '--metrics']
+    arguments += ['--cpu-ffn-layers', str(args.cpu_ffn_layers)]
+    if args.prefill_chunk_tokens is not None:
+        arguments += ['--prefill-chunk-tokens', str(args.prefill_chunk_tokens)]
     if args.template: arguments += ['--template', args.template]
     options = parse_arguments(arguments)
     choices = read_configuration(options)

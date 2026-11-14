@@ -9,6 +9,8 @@ python -B -m engine.text.app serve --engine <build-dir>/bin/hyle.exe --inputs <p
 
 服务默认监听 `127.0.0.1:2048`，指标位于 `/metrics`，健康检查位于 `/health`。它是本地服务，没有访问控制。本阶段实际验证 Windows／CUDA／本地 Qwen3.5-2B；其他平台尚未实际验证完整服务。`--template FILE` 可选择本地 Jinja 模板。`--cpu-ffn-layers N` 沿同一模型装载路径准备 CPU＋GPU 放置，加载后固定；模型发现的 `hyle.placement` 报告实际主后端和 CPU FFN 层数，不回显启动参数充当执行事实。
 
+`--prefill-chunk-tokens N` 设置加载时准备的物理预填行数上限，较长输入分块执行；它不缩小 `--capacity` 的逻辑上下文，也不是每请求选项。省略时保留模型提供者的默认准备。准备多个方案会增加执行资源，不能从权重已共享推断它们的工作区也能共享。Windows CPU＋CUDA（两层 FFN）、原始 BF16、32 行预填已通过三协议的同步／流式客户端工具闭环；这不代表其他混合平台或全部服务专项已完成。
+
 `GET /v1/models` 列出当前已加载模型，`GET /v1/models/{id}` 查询该模型，未知 ID 返回 404。OpenAI SDK 使用标准模型对象；带 `anthropic-version` 的请求使用 Messages SDK 的模型对象和单模型分页。未知发布时间以 Unix epoch 表示。两种格式的 `hyle` 扩展相同，报告实际上下文、来源身份、已准备执行方案、可共驻方案、冷准备的采样预设、文本前端的图片／工具能力及会话预算。请求的草稿深度和资产角色不能代替实际执行能力；不提供严格 JSON／schema 约束。模型发现不会加载或切换模型。
 
 聊天模板和临时 padding／truncation 不属于 tokenizer 语义身份。模板仍参与草稿选行制品的配方身份；换模板可以生成另一套不可变制品，不必更换模型绑定。

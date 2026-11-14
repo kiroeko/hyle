@@ -42,8 +42,11 @@ def run(args):
     fixture = args.fixture / 'calc.py'
     codec = HuggingFaceTextCodec(args.tokenizer, model_format=local_text_format(args.inputs))
     source, _ = validate_local_tokenizer(args.inputs, codec.preparation_tokenizer)
-    worker = WorkerClient([args.engine, '--engine-worker', '--inputs', args.inputs, '--backend', args.backend,
-        '--capacity', '4096', '--max-sessions', '2', '--active-sequences', '2', '--draft-count', '0', '--overlap', 'off'], startup_timeout=120)
+    command = [args.engine, '--engine-worker', '--inputs', args.inputs, '--backend', args.backend,
+        '--capacity', '4096', '--max-sessions', '2', '--active-sequences', '2', '--draft-count', '0', '--overlap', 'off',
+        '--cpu-ffn-layers', str(args.cpu_ffn_layers)]
+    if args.prefill_chunk_tokens is not None: command += ['--prefill-chunk-tokens', str(args.prefill_chunk_tokens)]
+    worker = WorkerClient(command, startup_timeout=120)
     engine = server = thread = oa = ant = None
     try:
         assert worker.source_identity == source
@@ -62,6 +65,7 @@ def run(args):
         assert capabilities == ant_model.model_dump()['hyle'] == engine.describe_capabilities()
         assert [m.id for m in oa.models.list().data] == [m.id for m in ant.models.list().data] == ['hyle']
         assert capabilities['context_tokens'] == worker.context == 4096
+        assert capabilities['placement'] == {'primary_backend': args.backend, 'cpu_ffn_layers': args.cpu_ffn_layers}
         assert capabilities['execution_profiles'][0]['algorithm'] == 'ordinary'
         assert capabilities['execution_profiles'][0]['max_draft_tokens'] == 0
         assert capabilities['codec']['tools']['supported'] and not capabilities['codec']['tools']['strict']
@@ -158,7 +162,7 @@ def run(args):
         assert snapshot['waiting'] == snapshot['active'] == 0 and 0 <= snapshot['resident'] <= 2
         for name, value in snapshot.items(): assert f'hyle_sessions_{name} {value}\n' in metrics.text
         assert 'hyle_http_connections ' in metrics.text
-        print('PASS all3 official SDKs sync/SSE actual local coding tool loops; SDKs', openai.__version__, anthropic.__version__, flush=True)
+        print('PASS all3 protocols with official SDK sync/SSE local coding tool loops; SDKs', openai.__version__, anthropic.__version__, flush=True)
     finally:
         if oa: oa.close()
         if ant: ant.close()
@@ -177,6 +181,8 @@ def main():
     parser.add_argument('--tokenizer', type=Path, required=True)
     parser.add_argument('--fixture', type=Path, required=True)
     parser.add_argument('--backend', choices=('cpu', 'cuda', 'apple', 'vulkan'), default='cuda')
+    parser.add_argument('--cpu-ffn-layers', type=int, default=0)
+    parser.add_argument('--prefill-chunk-tokens', type=int)
     parser.add_argument('--port', type=int, default=2048)
     parser.add_argument('--first-tool-choice', choices=('auto','required'), default='auto')
     args = parser.parse_args()

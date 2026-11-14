@@ -302,7 +302,7 @@ class TextFrontendTest(unittest.TestCase):
 
     def test_unspecified_overlap_is_selected_by_model_preparation(self):
         options = dict(engine="hyle", inputs="model", backend="cuda", capacity=128,
-                       max_sessions=1, active_sequences=1, draft_count=0, cpu_ffn_layers=0,
+                       max_sessions=1, active_sequences=1, draft_count=0, cpu_ffn_layers=0, prefill_chunk_tokens=None,
                        sampling="greedy", draft_vocabulary=None, draft_head=None)
         self.assertNotIn("--overlap", make_worker_command(Namespace(**options, overlap=None)))
         for setting, value in ((True, "on"), (False, "off")):
@@ -311,7 +311,7 @@ class TextFrontendTest(unittest.TestCase):
 
     def test_unspecified_draft_count_uses_model_policy(self):
         options = dict(engine="hyle", inputs="model", backend="cuda", capacity=128,
-                       max_sessions=1, active_sequences=1, overlap=None, cpu_ffn_layers=0,
+                       max_sessions=1, active_sequences=1, overlap=None, cpu_ffn_layers=0, prefill_chunk_tokens=None,
                        sampling="greedy", draft_vocabulary=None, draft_head=None)
         self.assertNotIn("--draft-count", make_worker_command(Namespace(**options, draft_count=None)))
         for count in (0, 1, 3):

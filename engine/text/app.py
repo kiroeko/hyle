@@ -35,6 +35,8 @@ def make_worker_command(args, choices: PreparedChoices | None = None) -> list[st
                '--capacity', str(args.capacity), '--max-sessions', str(args.max_sessions),
                '--active-sequences', str(args.active_sequences), '--sampling', args.sampling]
     if args.cpu_ffn_layers: command += ['--cpu-ffn-layers', str(args.cpu_ffn_layers)]
+    if args.prefill_chunk_tokens is not None:
+        command += ['--prefill-chunk-tokens', str(args.prefill_chunk_tokens)]
     if args.sampling == 'random':
         command += ['--temperature', str(args.temperature), '--top-k', str(args.top_k),
                     '--top-p', str(args.top_p), '--seed', str(args.seed)]
@@ -86,6 +88,8 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     common.add_argument('--cpu-ffn-layers', type=int, default=0,
                         help='place the first N target FFNs on CPU at cold loading; requires CPU+GPU')
     common.add_argument('--capacity', type=int, default=4096)
+    common.add_argument('--prefill-chunk-tokens', type=int,
+                        help='cold physical prefill row limit; does not reduce the model context')
     common.add_argument('--max-sessions', type=int, default=2)
     common.add_argument('--active-sequences', type=int, default=2)
     common.add_argument('--draft-count', type=int)
@@ -114,6 +118,8 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
         parser.error('--cpu-ffn-layers requires an unsigned 64-bit integer')
     if args.cpu_ffn_layers and args.backend == 'cpu':
         parser.error('--cpu-ffn-layers requires a GPU primary backend')
+    if args.prefill_chunk_tokens is not None and not 0 < args.prefill_chunk_tokens < 1 << 64:
+        parser.error('--prefill-chunk-tokens requires a positive unsigned 64-bit integer')
     if args.sampling != 'random' and any(value is not None for value in
                                           (args.temperature, args.top_k, args.top_p, args.seed)):
         parser.error('--temperature, --top-k, --top-p and --seed require --sampling random')
