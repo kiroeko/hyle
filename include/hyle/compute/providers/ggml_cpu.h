@@ -20,6 +20,9 @@ struct Options final {
   std::uint32_t native_threads = 1;
 };
 
+// Cold limit from the linked native implementation; no Context/team is made.
+HYLE_COMPUTE_PROVIDER_GGML_API std::uint32_t native_thread_limit() noexcept;
+
 // Original ggml CPU programs and qualified standard index algorithms.
 // Preparation owns each program's resources; replay updates bindings and
 // synchronously completes the fixed program.

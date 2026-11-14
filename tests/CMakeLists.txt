@@ -469,6 +469,18 @@ if(TARGET hyle_engine OR
 endif()
 
 if(TARGET hyle_engine)
+  add_executable(hyle_inference_cpu_thread_policy_test tools/inference_cpu_thread_policy_test.cc)
+  target_include_directories(hyle_inference_cpu_thread_policy_test PRIVATE "${HYLE_SOURCE_DIR}/include")
+  target_link_libraries(hyle_inference_cpu_thread_policy_test PRIVATE hyle_build_contract)
+  target_compile_features(hyle_inference_cpu_thread_policy_test PRIVATE cxx_std_23)
+  hyle_apply_warnings(hyle_inference_cpu_thread_policy_test)
+  hyle_apply_sanitizer(hyle_inference_cpu_thread_policy_test)
+  set_target_properties(hyle_inference_cpu_thread_policy_test PROPERTIES
+    FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+  add_dependencies(hyle_tests hyle_inference_cpu_thread_policy_test)
+  add_test(NAME hyle_inference_cpu_thread_policy_test COMMAND hyle_inference_cpu_thread_policy_test)
+  set_tests_properties(hyle_inference_cpu_thread_policy_test PROPERTIES
+    LABELS "tooling;inference;cpu;policy" TIMEOUT 30)
   # Exercise the model core as a separate consumer, without the CLI or the
   # engine reporting source. A local prepared fixture is optional.
   add_executable(hyle_qwen_model_core_test tools/qwen_model_core_test.cc tools/qwen_model_core_odr_test.cc

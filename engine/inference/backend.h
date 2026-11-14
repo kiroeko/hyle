@@ -23,8 +23,10 @@
 #endif
 
 #if defined(HYLE_COMPUTE_CPU)
+#include "cpu_thread_policy.h"
 #include "hyle/compute/cpu_file_stream.h"
 #include "hyle/graph/cpu.h"
+#include "hyle/platform/cpu_convenience.h"
 #endif
 #if defined(HYLE_COMPUTE_CUDA)
 #include "hyle/compute/backends/cuda.h"
@@ -649,7 +651,13 @@ private:
     if (cpu_options != nullptr) {
       HYLE_ASSIGN_OR_RETURN(endpoint.context, graph::cpu::create_context(*cpu_options));
     } else {
-      HYLE_ASSIGN_OR_RETURN(endpoint.context, graph::cpu::create_context());
+      compute::cpu::DefaultContextOptions options;
+      const auto capacity = platform::process_cpu_capacity();
+      const auto classes = platform::available_cpu_cache_classes();
+      if (capacity && classes)
+        options.native_threads = select_cpu_native_threads(*classes, *capacity,
+            compute::cpu::native_thread_limit());
+      HYLE_ASSIGN_OR_RETURN(endpoint.context, graph::cpu::create_context(options));
     }
     HYLE_ASSIGN_OR_RETURN(endpoint.memory, compute::cpu::memory_resource(compute::cpu::device()));
 #if defined(HYLE_TEST_INFERENCE_WARM_COST) && HYLE_TEST_INFERENCE_WARM_COST

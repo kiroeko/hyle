@@ -60,6 +60,11 @@ struct DefaultContextOptions final {
   std::uint32_t native_threads = 1;
 };
 
+// Useful native-team budget of this default factory. One when the native team
+// is not compiled; external executor concurrency is a separate contract.
+// Querying this limit neither initializes a runtime nor creates any workers.
+HYLE_COMPUTE_ROUTE_CPU_API std::uint32_t native_thread_limit() noexcept;
+
 // CPU Direct Compute with fixed implementation rules. Prepare
 // binds eligible mature oneDNN/ggml programs or the existing Native fallback.
 HYLE_COMPUTE_ROUTE_CPU_API Result<Context>

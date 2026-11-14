@@ -2587,4 +2587,7 @@ Provider with_extension(Options options, const Extension *extension) noexcept {
 Provider provider(Options options) noexcept {
   return internal::with_extension(options, nullptr);
 }
+std::uint32_t native_thread_limit() noexcept {
+  return GGML_MAX_N_THREADS;
+}
 } // namespace hyle::compute::ggml_cpu

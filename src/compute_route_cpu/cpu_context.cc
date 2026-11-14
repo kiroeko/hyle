@@ -53,6 +53,14 @@ Result<Context> create_context(DefaultContextOptions options) noexcept {
                                    std::move(ggml));
 }
 
+std::uint32_t native_thread_limit() noexcept {
+#if defined(HYLE_COMPUTE_GGML_CPU)
+  return ggml_cpu::native_thread_limit();
+#else
+  return 1;
+#endif
+}
+
 Result<Context> internal::create_context(DefaultContextOptions options,
                                          DefaultScope scope, Provider ggml,
                                          ProviderBinding region,

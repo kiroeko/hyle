@@ -303,8 +303,11 @@ worker 和 `/v1/models` 的 `hyle.placement` 报告实际 `primary_backend` 与 
 与实际执行方案的算法和草稿上限一起使用，不从启动参数推断能力。
 混合执行的适用制品和后端见[模型覆盖](../implementation/model-operators.md)；功能可用不代表比纯GPU更快。
 
-命令行保持原 CPU 线程默认值，不增加线程参数。程序集成可复用公开的
-`compute::cpu::DefaultContextOptions`；allocator／executor 支撑对象须活到全部派生制品和原生工作退休，
+引擎在 CPU 端点冷创建时，按进程可用的物理核心和 CPU 配额设置原有 ggml 原生线程组；
+已知性能核时优先使用性能核，线程数不超过所链接实现的上限。拓扑查询失败时保留单线程。
+这也用于混合放置的 CPU 端点，不改变纯 GPU 路线。命令行不增加线程参数。
+程序集成显式传入的 `compute::cpu::DefaultContextOptions` 保持调用方的线程预算与借用 executor；
+直接调用 Compute／Graph CPU 工厂的默认值仍为单线程。allocator／executor 支撑对象须活到全部派生制品和原生工作退休，
 具体组合见 [CPU executor 示例](../../samples/package/graph/cpu_executor/README.md)和[架构说明](../architecture/inference-design.md)。
 
 ### 多轮与多会话
