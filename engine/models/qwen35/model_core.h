@@ -1720,10 +1720,20 @@ public:
     if (!rows || !layer0_probe.empty()) return 0;
     const auto found = families.find({requests, role, 0, completion, sampling_index, RowPacking::kPrefill});
     if (found == families.end() || !found->second) return 0;
-    std::size_t selected = 0;
-    for (const auto physical : found->second->chunks)
-      if (physical >= rows && (!selected || physical < selected)) selected = physical;
-    return selected;
+    std::size_t selected = 0, resident = 0;
+    for (const auto physical : found->second->chunks) {
+      if (physical < rows) continue;
+      if (!selected || physical < selected) selected = physical;
+      if (execution_storage_prepared && !execution_workspace.valid()) {
+        const auto phase = phases.find({requests, physical, role, completion, sampling_index, false, RowPacking::kPrefill});
+        if (phase != phases.end() && phase->second->slots[0].carrier.initialized() && (!resident || physical < resident))
+          resident = physical;
+      }
+    }
+    // A private carrier owns native outputs/workspace. Reuse a fitting warm
+    // capacity before retaining a second one for a smaller logical suffix.
+    // The original batch layout still carries every request's actual rows.
+    return resident ? resident : selected;
   }
 
   std::size_t verification_capacity(std::size_t rows, std::size_t requests = 1,
@@ -2802,6 +2812,12 @@ public:
                 << bounded_prefill_rows << '\n';
     }
     execution_storage_prepared = true;
+    // Without shared scratch these cold programs own separate native storage.
+    // Keep the already compiled finite shape plan, but materialize only the
+    // prefill carrier selected at request admission. Preparing every spare
+    // shape here retains their private storage at the same time. Decode and
+    // explicitly requested planned warmup retain their existing preparation.
+    if (!execution_workspace.valid()) return;
     for (const auto &shape : shapes) {
       const std::array rows{shape.tokens};
       prepare_prefill_execution(rows, shape.completion, shape.sampling_index, shape.requests, shape.role);
