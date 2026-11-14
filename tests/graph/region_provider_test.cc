@@ -203,6 +203,9 @@ struct RegionProbe final {
   bool capture_recycling_supported = false;
   bool capture_private_arguments_stable = false;
   bool borrows_tensor_bindings = false;
+  bool retains_input_lease = false;
+  std::size_t binding_release_count = 0;
+  Status binding_release_failure{};
   hyle::mem::ConstBufferView recording_input{}, recording_output{};
   hyle::mem::ConstBufferView launched_input{}, launched_output{};
   bool capture_active = false;
@@ -370,6 +373,7 @@ struct RegionRun final {
   hyle::mem::ConstBufferView cold_input{};
   hyle::mem::BufferView cold_output{};
   std::uint32_t configuration_revision = 0;
+  hyle::compute::ReadLease retained_input;
 };
 
 struct PackingProbe final {
@@ -1219,6 +1223,18 @@ const hyle::graph::detail::RegionProjectedReadVTable kConfigurationVTable{
 const void *query_region_configuration(
     void *prepared, hyle::compute::ProviderExtensionId id) noexcept {
   const auto &probe = *static_cast<RegionPlan *>(prepared)->probe;
+  if (probe.retains_input_lease &&
+      id == hyle::graph::detail::kRegionBindingReleaseExtensionId) {
+    static constexpr hyle::graph::detail::RegionBindingReleaseVTable release{
+        .validate = [](void *value, void *) noexcept {
+          return static_cast<RegionPlan *>(value)->probe->binding_release_failure;
+        },
+        .release = [](void *, void *slot) noexcept {
+          auto &run = *static_cast<RegionRun *>(slot);
+          run.retained_input.reset(); ++run.probe->binding_release_count;
+        }};
+    return &release;
+  }
   if (probe.capture_private_arguments_stable &&
       id == hyle::graph::detail::kRegionCaptureBindingsExtensionId) {
     static constexpr hyle::graph::detail::RegionCaptureBindingsVTable capture{
@@ -1265,6 +1281,11 @@ const hyle::graph::ProviderRegionPreparedVTable kPrivateStableRegionVTable = [] 
       std::span<const TensorView> outputs) noexcept -> Status {
     if (inputs.size() != 1)
       return Status::InvalidArgument("private stable mock expects one input");
+    if (static_cast<RegionPlan *>(prepared)->probe->retains_input_lease) {
+      if (!inputs[0].lease || !inputs[0].lease->valid())
+        return Status::InvalidArgument("native input fixture requires its original read lease");
+      static_cast<RegionRun *>(slot)->retained_input = *inputs[0].lease;
+    }
     const std::array tensors{inputs[0].tensor};
     return prepare_unary_bindings(prepared, slot, tensors, outputs);
   };
@@ -1964,7 +1985,7 @@ Status compile_region_checked(void *context,
       .vtable = probe.artifact_properties.runtime.mode ==
                         hyle::compute::ProviderRuntimeMode::kDelegated
                     ? &kDelegatedRegionVTable
-                    : probe.capture_private_arguments_stable
+                    : (probe.capture_private_arguments_stable || probe.retains_input_lease)
                         ? &kPrivateStableRegionVTable : &kPreparedRegionVTable,
       .state = plan,
       .properties = probe.artifact_properties,
@@ -3956,6 +3977,83 @@ hyle::graph::detail::ProjectedReader selected_projected_reader(
   EXPECT_TRUE(status.ok()) << status.message();
   selected.permission_changes_preserve_commands = preserves;
   return selected;
+}
+
+TEST(GraphRouteBoundary, ConfigurationResetReleasesOnlyRetiredNativeImports) {
+  using Access = hyle::graph::detail::RegionAccess;
+  auto builder = GraphBuilder::create().value();
+  const auto metadata = builder.input(row(8)).value(), other = builder.input(row(8)).value();
+  const auto output = builder.add(Unary{UnaryKind::kNeg}, metadata).value();
+  const auto other_output = builder.add(Unary{UnaryKind::kNeg}, other).value();
+  ASSERT_TRUE(builder.publish(output).ok()); ASSERT_TRUE(builder.publish(other_output).ok());
+  const auto graph = std::move(builder).finish().value();
+  RegionProbe first{.mode = ProposalMode::kSingleton};
+  RegionProbe second{.mode = ProposalMode::kSingleton, .singleton_node = 1};
+  first.retains_input_lease = second.retains_input_lease = true;
+  first.require_cold_bindings = second.require_cold_bindings = true;
+  auto context = make_context(first, second);
+  auto compiled = hyle::graph::compile(graph, context,
+      {.operation_fallback = OperationFallbackPolicy::kReject}).value();
+  auto run = compiled.executable.create_invocation({.resources = hyle::graph::ResourceOptions{}}).value();
+  auto queue = context.create_queue().value();
+  const std::array<hyle::graph::QueueBinding, 1> queues{{{hyle::graph::ExecutionLaneId{0}, &queue}}};
+  auto pool = hyle::compute::LeasePool::create(hyle::mem::system_resource(), 64,
+      {.max_blocks = 1}).value();
+  auto other_pool = hyle::compute::LeasePool::create(hyle::mem::system_resource(), 64,
+      {.max_blocks = 1}).value();
+  auto writer = pool.allocate(32).value(), other_writer = other_pool.allocate(32).value();
+  ASSERT_TRUE(writer.view()->fill(std::byte{0}).ok());
+  ASSERT_TRUE(other_writer.view()->fill(std::byte{0}).ok());
+  auto ready = writer.publish().value(), other_ready = other_writer.publish().value();
+  const auto generation = ready.generation();
+  const auto original = ready.view().value();
+  auto result = make_tensor(row(8)), other_result = make_tensor(row(8));
+  ASSERT_TRUE(run.bind(other, row(8), other_ready).ok());
+  ASSERT_TRUE(run.bind(output, result.view).ok());
+  ASSERT_TRUE(run.bind(other_output, other_result.view).ok());
+  for (unsigned episode = 0; episode < 4; ++episode) {
+    SCOPED_TRACE(episode);
+    if (episode) {
+      ASSERT_TRUE(Access::reset_configuration(run).ok());
+      ASSERT_EQ(first.binding_release_count, episode);
+    }
+    auto write = ready.try_write();
+    ASSERT_TRUE(write) << write.error().message();
+    ASSERT_EQ(write->generation(), generation);
+    EXPECT_EQ(write->view()->native_handle(), original.native_handle());
+    EXPECT_EQ(write->view()->offset(), original.offset());
+    std::array<float, 8> values{}; values.fill(static_cast<float>(episode + 1));
+    ASSERT_TRUE(write->view()->write(std::as_bytes(std::span(values))).ok());
+    ready = write->publish().value();
+    ASSERT_TRUE(Access::bind_configuration(run, metadata, row(8), ready).ok());
+    ASSERT_TRUE(run.prepare_replay(queues).ok());
+    {
+      auto done = run.submit(queue).value(); ASSERT_TRUE(done.wait().ok());
+      auto retained = run.result(output).value();
+      EXPECT_TRUE(Access::reset_configuration(run).IsUnavailable());
+      EXPECT_FALSE(ready.try_write());
+    }
+    if (!episode) {
+      first.binding_release_failure = Status::Unavailable("retained native import");
+      EXPECT_TRUE(Access::reset_configuration(run).IsUnavailable());
+      EXPECT_EQ(first.binding_release_count, 0U);
+      EXPECT_FALSE(ready.try_write());
+      first.binding_release_failure = {};
+      auto done = run.submit(queue).value(); ASSERT_TRUE(done.wait().ok());
+    }
+    EXPECT_EQ(second.binding_release_count, 0U);
+    EXPECT_FALSE(other_ready.try_write());
+    for (const auto actual : read(result, 8)) EXPECT_EQ(actual, -static_cast<float>(episode + 1));
+    for (const auto actual : read(other_result, 8)) EXPECT_EQ(actual, 0.F);
+    EXPECT_EQ(pool.stats().live_blocks, 1U);
+  }
+  ASSERT_TRUE(Access::reset_configuration(run).ok());
+  EXPECT_EQ(first.binding_release_count, 4U);
+  EXPECT_TRUE(ready.try_write());
+  EXPECT_EQ(second.binding_release_count, 0U);
+  ASSERT_TRUE(run.unbind(other).ok());
+  EXPECT_EQ(second.binding_release_count, 1U);
+  EXPECT_TRUE(other_ready.try_write());
 }
 
 TEST(GraphRouteBoundary, ProjectedReadReleaseKeepsOtherBindingsAndRejectsPending) {

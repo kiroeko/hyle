@@ -10119,6 +10119,10 @@ Status detail::RegionAccess::reset_configuration(Invocation &invocation) noexcep
     detail::discard_configuration_spans(*state);
     return reset;
   }
+  // Private metadata is reused by the next layout. Withdraw retired native
+  // imports through the original transitive binding-release gate first;
+  // clearing only the Graph lease leaves native readers pinning its writer.
+  HYLE_RETURN_IF_ERROR(withdraw_bindings_impl(invocation, {}, false, nullptr, true));
   invalidate_unproven_bindings(*state);
   invalidate_binding_cache(*state, false);
   detail::reset_configuration_bindings(*state);

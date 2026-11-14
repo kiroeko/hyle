@@ -14,6 +14,7 @@
 #include <memory>
 #include <mutex>
 #include <new>
+#include <ranges>
 #include <utility>
 #include <vector>
 
@@ -621,32 +622,58 @@ std::span<const ExternalInputConsumer>
 projected_input_consumers(const PlanState &, std::uint32_t) noexcept;
 Status RegionAccess::withdraw_bindings_impl(Invocation &invocation,
     std::span<const ValueId> values, bool ready_projection, const InputSource *source_owner) noexcept {
+  return withdraw_bindings_impl(invocation, values, ready_projection, source_owner, false);
+}
+Status RegionAccess::withdraw_bindings_impl(Invocation &invocation,
+    std::span<const ValueId> values, bool ready_projection, const InputSource *source_owner,
+    bool configuration) noexcept {
   auto *state = InvocationAccess::state(invocation);
   if (ready_projection || source_owner) {
     if (!outcome_available(invocation) ||
         state->preparation_uses.load(std::memory_order_acquire) != 0)
       return Status::Unavailable("read projection still has native work/results/observations/preparation");
-  } else {
+  } else if (!configuration) {
     HYLE_RETURN_IF_ERROR(resource_control_ready(state));
   }
-  if (values.empty()) return Status::Ok();
+  // The configuration form is private to reset_configuration(), which has
+  // already passed this exact original retirement/result gate before reset.
+  if (values.empty() && !configuration) return Status::Ok();
   if (!state->resources)
-    return Status::FailedPrecondition("unbind requires its original resource episode");
+    return configuration ? Status::Ok()
+        : Status::FailedPrecondition("unbind requires its original resource episode");
   auto *episode = state->resources.get();
   const auto &plan = *state->plan;
+  // Plain tensor-view bindings retain no configuration read leases. Their
+  // existing physical replay candidate can survive the ordinary reset below.
+  if (configuration && std::ranges::none_of(state->step_bindings,
+      [](const auto &binding) { return binding.native_inputs; })) return Status::Ok();
+  auto selected = std::views::iota(std::size_t{},
+      configuration ? episode->fixed_binding_count : values.size())
+      | std::views::filter([&](std::size_t index) noexcept {
+          return !configuration || episode->bindings[index].scope == BindingScope::kConfiguration;
+        })
+      | std::views::transform([&](std::size_t index) noexcept {
+          return configuration ? episode->bindings[index].value : values[index];
+        });
+  if (std::ranges::empty(selected)) return Status::Ok();
   // Untaken original write/pending page owners are not ordinary caller ports.
   // Reject without asking the payload to reset or returning any source control.
   for (const auto &binding : episode->bindings) {
-    if (ready_projection || source_owner) break;
+    if (ready_projection || source_owner || configuration) break;
     if (binding.scope == BindingScope::kWrittenProjection ||
         (binding.scope == BindingScope::kProjected && !binding_ready_count(binding) &&
          !binding.permissionless))
       return Status::FailedPrecondition("take original page/source controls before unbinding caller ports");
   }
-  for (auto value : values) {
+  for (auto value : selected) {
     const auto *binding = find_binding(state, value);
     if (!binding) return Status::InvalidArgument("unbind needs this executable's caller input or output");
-    if (source_owner) {
+    if (configuration) {
+      if (!binding->input || binding->scope != BindingScope::kConfiguration ||
+          binding->exclusive || binding->write.valid() || binding->projection.valid() ||
+          binding->projected_writer || binding->projected_appender || has_input_source(*state, value))
+        return Status::FailedPrecondition("configuration withdrawal lost its original readonly input");
+    } else if (source_owner) {
       if (!binding->input || !input_source_matches(*state, value, *source_owner) ||
           (binding->scope != BindingScope::kCaller && binding->scope != BindingScope::kProjected) ||
           binding->borrowed || binding->exclusive || binding->write.valid() ||
@@ -674,12 +701,12 @@ Status RegionAccess::withdraw_bindings_impl(Invocation &invocation,
       instance = plan.alias_sources[instance];
     return instance;
   };
-  for (auto value : values) instances[root(plan.external_instances[value.ordinal()])] = 1;
+  for (auto value : selected) instances[root(plan.external_instances[value.ordinal()])] = 1;
   constexpr std::uint8_t release_native = 1, discard_recording = 2;
   const bool idle = !state->closed &&
       state->phase.load(std::memory_order_acquire) == InvocationPhase::kIdle;
   if (ready_projection || source_owner) {
-    for (const auto value : values) {
+    for (const auto value : selected) {
       const auto *binding = find_binding(state, value);
       if (binding->scope != BindingScope::kProjected) continue;
       for (const auto &consumer : projected_input_consumers(plan, value.ordinal())) {
@@ -773,7 +800,7 @@ Status RegionAccess::withdraw_bindings_impl(Invocation &invocation,
   episode->permissions.reset();
   episode->writer_publication_complete = false;
   if (ready_projection || source_owner) {
-    for (const auto value : values) {
+    for (const auto value : selected) {
       if (find_binding(state, value)->scope != BindingScope::kProjected) continue;
       const auto physical = root(plan.external_instances[value.ordinal()]);
       const bool aliases = std::binary_search(plan.external_input_aliases.begin(),
@@ -791,7 +818,7 @@ Status RegionAccess::withdraw_bindings_impl(Invocation &invocation,
           [&](const auto &binding) { return binding.projection == value; }), episode->bindings.end());
     }
   }
-  for (auto value : values) {
+  for (auto value : selected) {
     const auto physical = plan.external_instances[value.ordinal()];
     state->readable[physical] = {};
     state->writable[physical] = {};

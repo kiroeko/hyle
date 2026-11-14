@@ -431,6 +431,9 @@ private:
   static Status visit_pinned(InvocationState *,NodeId,RegionAccessFn,void *) noexcept;
   static Status withdraw_bindings_impl(Invocation&,std::span<const ValueId>,
       bool ready_projection, const InputSource *source_owner = nullptr) noexcept;
+  static Status withdraw_bindings_impl(Invocation&,std::span<const ValueId>,
+      bool ready_projection, const InputSource *source_owner,
+      bool configuration) noexcept;
   static Status validate_projected_writer(InvocationState&,const Graph&,
       ProjectedWriter) noexcept;
   static Status qualify_ordered_writer(InvocationState&,std::uint32_t,
