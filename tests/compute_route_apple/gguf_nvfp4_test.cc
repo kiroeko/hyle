@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "../compute_models/gguf_nvfp4_fixture.h"
+#include "../../src/compute_provider_ggml_metal/native_program.h"
 
 namespace c = hyle::compute;
 namespace a = c::apple;
@@ -424,6 +425,113 @@ void common_graph_domain() {
   std::puts("PASS common Graph: packed Gather/packed MM, two slots/rebind, GraphOutput gate/exported owner");
 }
 
+void encoded_view_domain(bool graph) {
+  const auto view = take(c::View::permute(std::array<std::int32_t, 2>{1, 0}));
+  for (const auto format : {c::GgufQuantizedType::kQ8_0, c::GgufQuantizedType::kQ4K,
+                            c::GgufQuantizedType::kNvfp4}) {
+    const auto weight = take(c::gguf_weight_description(format, c::DataType::kFloat32, 256, 5));
+    const auto table = take(weight.transposed());
+    auto context = take(a::Context::create());
+    a::Program program;
+    if (!graph) {
+      const std::array specs{take(a::input_spec(table))};
+      program = take(context.prepare(c::Operation(view), specs));
+    } else {
+      auto builder = take(g::GraphBuilder::create());
+      const auto input = take(builder.input(table));
+      const auto transposed = take(builder.add(view, input));
+      const auto restored = take(builder.add(view, transposed));
+      check(builder.publish(transposed));
+      check(builder.publish(restored));
+      program = take(g::apple::compile(context, take(std::move(builder).finish())));
+    }
+    auto first = take(program.create_invocation()), second = take(program.create_invocation());
+    std::optional<mx::array> retained;
+    std::vector<std::uint8_t> retained_bytes;
+    for (int pass = 0; pass < 3; ++pass) {
+      std::vector<std::uint8_t> bytes(take(table.required_bytes()));
+      for (std::size_t i = 0; i < bytes.size(); ++i)
+        bytes[i] = static_cast<std::uint8_t>((i * 17 + pass * 31) % 256);
+      auto input = ready(mx::array(bytes.data(), take(a::input_spec(table)).shape, mx::uint8));
+      const std::array args{input};
+      auto &call = pass == 0 ? first : second;
+      check(call.bind(args));
+      auto work = take(call.submit());
+      auto result = take(work.wait());
+      const auto arrays = result.get()->arrays();
+      require(arrays.size() == (graph ? 2u : 1u), "GGUF view output count");
+      for (const auto &output : arrays) {
+        require(output.dtype() == mx::uint8 && output.size() == bytes.size(), "GGUF view byte carrier");
+        require(output.data<std::uint8_t>() == input.data<std::uint8_t>(), "metadata View copied its original bytes");
+        require(std::equal(bytes.begin(), bytes.end(), output.data<std::uint8_t>()), "GGUF view changed code or scale bytes");
+      }
+      if (retained)
+        require(std::equal(retained_bytes.begin(), retained_bytes.end(), retained->data<std::uint8_t>()),
+                "rebinding another slot changed retained GGUF bytes");
+      if (pass == 0) { retained = arrays[0]; retained_bytes = bytes; }
+    }
+    check(context.close());
+    require(std::equal(retained_bytes.begin(), retained_bytes.end(), retained->data<std::uint8_t>()),
+            "closed context lost original encoded view owner");
+  }
+  std::printf("PASS %s: Q8_0/Q4_K/NVFP4 metadata transpose, original pointer/bytes, two slots/rebind/retained owner\n",
+              graph ? "Graph" : "Direct");
+}
+
+void encoded_view_matmul() {
+  constexpr int rows = 5, depth = 256, lane = 13;
+  const auto weight = take(c::gguf_weight_description(c::GgufQuantizedType::kQ8_0,
+      c::DataType::kFloat32, depth, rows));
+  const auto table = take(weight.transposed());
+  const auto activation = dense(c::DataType::kFloat32, {1, depth});
+  auto context = take(a::Context::create());
+  auto builder = take(g::GraphBuilder::create());
+  const auto x = take(builder.input(activation)), bank = take(builder.input(table));
+  const auto transposed = take(builder.add(take(c::View::permute(std::array<std::int32_t, 2>{1, 0})), bank));
+  check(builder.publish(take(builder.add(c::MatMul{}, x, transposed))));
+  auto program = take(g::apple::compile(context, take(std::move(builder).finish())));
+  auto call = take(program.create_invocation());
+  for (int pass = 0; pass < 3; ++pass) {
+    std::vector<std::uint8_t> bytes(rows * (depth / 32) * 34);
+    for (int row = 0; row < rows; ++row)
+      for (int block = 0; block < depth / 32; ++block) {
+        const auto base = (row * (depth / 32) + block) * 34;
+        bytes[base + 1] = 0x3c; // Original Q8_0 F16 scale1.
+        for (int k = 0; k < 32; ++k)
+          bytes[base + 2 + k] = static_cast<std::uint8_t>((row * 3 + k + pass) % 16 - 8);
+      }
+    std::vector<float> values(depth, 0); values[lane] = 1;
+    const std::array args{ready(mx::array(values.data(), {1, depth}, mx::float32)),
+        ready(mx::array(bytes.data(), take(a::input_spec(table)).shape, mx::uint8))};
+    check(call.bind(args));
+    auto work = take(call.submit());
+    auto result = take(work.wait());
+    const auto output = result.get()->arrays()[0];
+    require(output.dtype() == mx::float32 && output.size() == rows, "view consumer output shape/dtype");
+    for (int row = 0; row < rows; ++row)
+      require(output.data<float>()[row] == float((row * 3 + lane + pass) % 16 - 8),
+              "native Q8_0 MatMul interpreted transposed encoded bytes incorrectly");
+  }
+  std::puts("PASS Graph: metadata GGUF View to native Metal MatMul, original codes and repeated rebind");
+}
+
+void encoded_consumer_layout_rejection() {
+  const auto weights = take(c::gguf_grouped_weight_description(c::GgufQuantizedType::kQ8_0,
+      c::DataType::kFloat32, 3, 5, 256));
+  const auto permuted = take(weights.permuted(std::array<std::size_t, 3>{1, 0, 2}));
+  const std::array inputs{permuted, dense(c::DataType::kFloat32, {1, 1, 256}),
+      dense(c::DataType::kInt32, {1, 1})};
+  const auto operation = c::model_ops::grouped_matmul();
+  const auto native = c::ggml_metal::NativeProgram::validate(operation, inputs);
+  require(native.IsInvalidArgument(), "native packed consumer must preserve the existing mathematical stride rejection");
+  auto context = take(a::Context::create());
+  const std::array specs{take(a::input_spec(inputs[0])), take(a::input_spec(inputs[1])),
+      take(a::input_spec(inputs[2]))};
+  const auto prepared = context.prepare(operation, specs);
+  require(!prepared && prepared.error().IsInvalidArgument(), "Direct must preserve the mathematical stride rejection");
+  std::puts("PASS encoded consumer: noncanonical expert/row strides rejected before payload work");
+}
+
 int main() {
   try {
     for (const bool graph : {false, true}) {
@@ -435,7 +543,11 @@ int main() {
       gather_domain(graph);
     }
     common_graph_domain();
-    std::puts("PASS 12 native Direct/Graph domains and one ordinary shared Graph journey");
+    encoded_view_domain(false);
+    encoded_view_domain(true);
+    encoded_view_matmul();
+    encoded_consumer_layout_rejection();
+    std::puts("PASS 13 original native/Graph domains, seven encoded-view combinations and original layout rejection");
     return 0;
   } catch (const std::exception &error) {
     std::fprintf(stderr, "FAIL %s\n", error.what());

@@ -327,7 +327,7 @@ worker 和 `/v1/models` 的 `hyle.placement` 报告实际 `primary_backend` 与 
 | Qwen3.5-2B完整入口 | 官方BF16及固定GPTQ、NVFP4、GGUF Q4等制品有列明范围的完整短旅程；不代表任意量化目录可直接加载。 |
 | 已实测的普通推理平台 | Qwen3.5-2B 原始 HF BF16 普通文本 prefill／decode 已在 Windows CPU／CUDA／Vulkan 和 MacBook Air M4 CPU／Metal 跑通；Windows 与 Mac 使用的原始权重逐字节相同。Windows CPU／Vulkan及WSL Linux CPU／CUDA另有2B Q4普通请求检查；WSL CUDA通过双活跃请求、状态搬运和关闭后恢复检查。Mac CPU／Metal另有多会话续接，Metal另通过取消后复用。双活跃会话的检查仍有列明的计算形状和容量范围，CUDA 的 MTP、图片及吞吐结论须分别验证。普通 BF16 速度见[性能记录](../developer/performance/decode.md)。 |
 | BF16 普通与显式 MTP | Windows CPU／CUDA／Vulkan／CPU＋CUDA／CPU＋Vulkan，WSL CPU／CUDA／CPU＋CUDA，以及 MacBook Air M4 CPU／Metal／Vulkan／CPU＋Metal／CPU＋Vulkan，已完成普通、K1／K2／K3，各含贪心和随机采样的两轮短请求，容量为 128、单活跃会话。混合放置使用前两层 target FFN；每个请求只选择已准备的方案。使用正式入口的 `--draft-count 0|1|2|3`；这些功能检查不代表设备侧闭环、长上下文、并发或完整服务验收。WSL Vulkan 两条路线仍受原生缓冲区范围限制。自动默认由独立的冷策略选择。 |
-| GGUF 量化有限交叉 | Windows CPU／CUDA／Vulkan 已完成 Q8_0／Q4_K_M 的普通与显式 K1 贪心两轮请求，容量为 128、单活跃会话。它验证本地准备制品的实际执行，不代表其它格式、长上下文、随机采样或吞吐已经验收。 |
+| GGUF 量化有限交叉 | Windows CPU／CUDA／Vulkan 和 MacBook Air M4 Metal 已完成 Q8_0／Q4_K_M 的普通与显式 K1 贪心两轮请求，容量为 128、单活跃会话。它验证本地准备制品的实际执行，不代表其它格式、长上下文、随机采样或吞吐已经验收。 |
 | 较大Qwen制品 | Qwen3.8-27B有特定CPU／混合配置的完整短旅程；不能推广到全部制品或纯GPU常驻。 |
 | NF4、CT asymmetric INT4、MLX affine4／8 | 有压缩权重及有限状态链／原组件接入；完整对应大模型、质量和吞吐未交付。 |
 | GLM、DeepSeek、Kimi | 组件级实现与检查，没有完整引擎入口。 |

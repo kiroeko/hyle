@@ -189,6 +189,11 @@ row-contiguous 且从自身 Metal buffer 起点开始。Invocation 保有 array 
 HYLE 不加载 GGUF、不量化、不解码成常驻浮点副本，也不在 submit 时重排或重新选 Provider。
 examples overload 只能看到 `uint8`，无法猜出 Q4_K/IQ4_XS 等语义；压缩权重必须用上述 spec overload。
 
+typed Direct／Graph 的 GGUF `View` 使用原逻辑描述推导轴与步幅；保持编码、起点和完整字节跨度的
+元数据视图复用同一 U8 carrier，不转置编码字节、不解量化，也不新增 GPU 数学。
+Q8_0／Q4_K／NVFP4 的转置及往返视图已检查原指针、全部字节、独立槽重绑定和关闭后的保活；
+Q8_0 视图还通过后继原生 MatMul 的数值检查。消费端继续按实际数学与布局合同准入。
+
 当前 ggml Metal 路线接入 Q4_0、Q4_1、Q2_K、Q3_K、Q4_K、Q5_K、Q6_K、Q8_0、
 IQ2_XXS、IQ2_XS、IQ2_S、IQ3_XXS、IQ3_S、IQ4_NL、IQ4_XS、IQ1_S、IQ1_M、MXFP4、NVFP4，
 以及原Anemll IQ1_XS/IQ1_XXS/IQ1_XXXS的二维 MatMul 与 `[E,N,K]` GroupedMatMul。
@@ -284,7 +289,7 @@ Program 保有自己的原生 owner。HYLE 冷期检查并移除 dead pure nodes
 此Graph lowering接受固定F32/F16/BF16/I32/I64/Bool及所需U8/U32 carrier逻辑schema、
 View派生描述、上述MLX native packed/冷准备与GGUF MatMul/Grouped/checked embedding域。
 Graph用同一`apple::input_spec()`映射constant/input carrier；GGUF bytes只进入对应已准入
-native程序或精确所选行lowering，不作为普通浮点数组计算。
+native程序、保编码元数据视图或精确所选行lowering，不作为普通浮点数组计算。
 native arrays 的物理 stride、View 和必要布局整理仍由 MLX 管理；布局转换可能有成本，不能从
 HYLE 逻辑描述推断实际 MLX 分配或声称任意 native View 都零拷贝。符号维度、资源效果、显式 control edges 和
 未接入的 typed 操作会拒绝；需要这些能力时不能声称 Apple 已覆盖其它 Graph 路线的全部功能。

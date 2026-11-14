@@ -9,6 +9,14 @@
 
 namespace hyle::compute::apple::detail {
 
+// Metadata-only views retain the original GGUF byte carrier. Logical axes
+// belong to TensorDesc, not the U8 MLX array's physical shape.
+HYLE_COMPUTE_ROUTE_APPLE_API bool
+is_mlx_gguf_view(const Operation &, std::span<const TensorDesc>) noexcept;
+HYLE_COMPUTE_ROUTE_APPLE_API Result<std::vector<mlx::core::array>>
+lower_mlx_gguf_view(const Operation &, std::span<const TensorDesc>,
+    std::span<const mlx::core::array>, mlx::core::Stream) noexcept;
+
 // Descriptor-only cold selection shared by Direct and Graph. NativeProgram's
 // own validator owns its shape/encoding/output domain; actual pipeline/resource
 // preparation remains in ContextAccess::compile. There is no model-op roster.

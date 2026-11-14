@@ -388,7 +388,8 @@ Result<detail::RegionKind> detail::analyze_native_carrier(
     return RegionKind::kMlx;
   // The exact embedding path has a different dtype/GET_ROWS domain from
   // ggml's F32 carrier and deliberately keeps its original MLX implementation.
-  if (is_mlx_exact_gguf_gather(operation, inputs)) return RegionKind::kMlx;
+  if (is_mlx_gguf_view(operation, inputs) || is_mlx_exact_gguf_gather(operation, inputs))
+    return RegionKind::kMlx;
   if (is_mlx_attention_blocks(operation, inputs)) return RegionKind::kAttentionBlocks;
   const auto native = ggml_metal::NativeProgram::validate(operation, inputs);
   if (native.ok()) return RegionKind::kGgml;
@@ -447,6 +448,10 @@ Context::prepare(const Operation &operation, std::span<const InputSpec> inputs,
     }
     HYLE_ASSIGN_OR_RETURN(auto carrier,
         detail::analyze_native_carrier(operation, descriptions));
+    if (detail::is_mlx_gguf_view(operation, descriptions))
+      return compile([operation, descriptions](const auto &values, mx::Stream stream) {
+        return detail::lower_mlx_gguf_view(operation, descriptions, values, stream);
+      }, inputs, workload);
     if (detail::is_mlx_exact_gguf_gather(operation, descriptions))
       return compile([operation, descriptions](const auto &values, mx::Stream stream) {
         return detail::lower_mlx_exact_gguf_gather(operation, descriptions, values, stream);

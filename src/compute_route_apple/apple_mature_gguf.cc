@@ -1,7 +1,9 @@
 #include "hyle/compute/detail/apple_plan.h"
 #include "hyle/compute/low_precision.h"
 #include "apple_internal.h"
+#include "apple_carrier.h"
 #include "apple_checks.h"
+#include "../compute_ops/view_alias.h"
 #include "ggml_q4k_apple.h"
 #include <array>
 #include <limits>
@@ -9,6 +11,31 @@
 
 namespace hyle::compute::apple::detail {
 namespace mx = mlx::core;
+bool is_mlx_gguf_view(const Operation &operation,
+                      std::span<const TensorDesc> inputs) noexcept {
+  const auto *view = operation.get_if<View>();
+  if (!view || inputs.size() != 1 ||
+      !gguf_quantized_type(inputs[0].storage_format())) return false;
+  const auto output = infer_single_output(operation, inputs);
+  if (!output || output->storage_format() != inputs[0].storage_format()) return false;
+  const auto offset = compute::detail::view_alias_offset(*view, inputs[0], *output);
+  const auto before = inputs[0].required_bytes(), after = output->required_bytes();
+  return offset && *offset == 0 && before && after && *before == *after;
+}
+Result<std::vector<mx::array>> lower_mlx_gguf_view(const Operation &operation,
+    std::span<const TensorDesc> descriptions, std::span<const mx::array> inputs,
+    mx::Stream stream) noexcept {
+  try {
+    if (!is_mlx_gguf_view(operation, descriptions) || inputs.size() != 1)
+      return std::unexpected(Status::Unimplemented("Apple GGUF view must preserve its original byte span"));
+    HYLE_ASSIGN_OR_RETURN(auto source, input_spec(descriptions[0]));
+    if (inputs[0].dtype() != source.dtype || inputs[0].shape() != source.shape)
+      return std::unexpected(Status::InvalidArgument("Apple GGUF view byte carrier differs from its description"));
+    HYLE_ASSIGN_OR_RETURN(auto output, infer_single_output(operation, descriptions));
+    HYLE_ASSIGN_OR_RETURN(auto target, input_spec(output));
+    return std::vector{mx::reshape(inputs[0], target.shape, stream)};
+  } catch (...) { return std::unexpected(native_exception()); }
+}
 bool is_mlx_exact_gguf_gather(const Operation &operation,
                              std::span<const TensorDesc> inputs) noexcept {
   const auto *gather = operation.get_if<Gather>();

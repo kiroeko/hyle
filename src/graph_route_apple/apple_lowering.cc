@@ -22,6 +22,7 @@
 #include <memory>
 #include <new>
 #include <optional>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <mlx/ops.h>
@@ -244,6 +245,8 @@ Result<std::vector<mx::array>> trace(const Plan &plan,
     auto outputs =
         prepared.scales || prepared.biases
             ? ca::detail::lower_tensor(node.operation, arguments, stream, &prepared)
+        : ca::detail::is_mlx_gguf_view(node.operation, descriptions)
+            ? ca::detail::lower_mlx_gguf_view(node.operation, descriptions, arguments, stream)
         : ca::detail::is_mlx_exact_gguf_gather(node.operation, descriptions)
             ? ca::detail::lower_mlx_exact_gguf_gather(node.operation, descriptions, arguments, stream)
         :
@@ -675,9 +678,11 @@ static Result<ca::Program> compile_impl(const std::shared_ptr<ca::detail::Runtim
       std::vector<compute::TensorDesc> descriptions;
       for (auto id : node.inputs) descriptions.push_back(plan->descriptions[id]);
       if (has_gguf && node.carrier != ca::detail::RegionKind::kGgml &&
+          !ca::detail::is_mlx_gguf_view(node.operation, descriptions) &&
           !ca::detail::is_mlx_exact_gguf_gather(node.operation, descriptions))
         return std::unexpected(Status::Unimplemented(
-            "Apple Graph GGUF carrier requires a qualified native model operation"));
+            "Apple Graph GGUF carrier requires a qualified native model operation: " +
+            std::string(compute::operation_name(node.operation))));
     }
     // Cold bank descriptors do not grant projected-read permissions. Direct
     // and Graph use the original math's bank role, including contiguous scorer
