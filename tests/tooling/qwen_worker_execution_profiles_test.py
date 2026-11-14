@@ -5,11 +5,13 @@ import threading
 
 from engine.text.worker_client import WorkerClient
 
+_event_timeout = 120.0
+
 
 def turn(request, ordinal, count=8):
     tokens = []
     while True:
-        event = request.read(timeout=120)
+        event = request.read(timeout=_event_timeout)
         if event.kind == "token":
             tokens.append(event.token)
             request.acknowledge()
@@ -22,12 +24,13 @@ def turn(request, ordinal, count=8):
 
 
 def finish(request):
-    request.finish_input(timeout=120)
-    assert request.read(timeout=120).kind == "completed"
+    request.finish_input(timeout=_event_timeout)
+    assert request.read(timeout=_event_timeout).kind == "completed"
     request.close()
 
 
 def main():
+    global _event_timeout
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--engine", required=True)
     parser.add_argument("--inputs", required=True)
@@ -35,7 +38,12 @@ def main():
     parser.add_argument("--backend", choices=('cpu', 'cuda', 'apple', 'vulkan'), default='cuda')
     parser.add_argument("--cpu-ffn-layers", type=int, default=0)
     parser.add_argument("--prefill-chunk-tokens", type=int, default=32)
+    parser.add_argument("--event-timeout", type=float, default=120.0,
+                        help="Test deadline including first-use native preparation; does not change service timeouts")
     args = parser.parse_args()
+    if not 0 < args.event_timeout <= 600:
+        parser.error("--event-timeout must be in (0, 600]")
+    _event_timeout = args.event_timeout
     source = (Path(args.inputs) / 'weights.tsv').read_text(encoding='utf-8').splitlines()[1]
     assets = ['--profile-asset', 'draft.vocabulary=' + args.vocabulary] if args.vocabulary else []
     deep = 'subset' if args.vocabulary else 'K3'
@@ -68,7 +76,7 @@ def main():
         for index, profile in enumerate(worker.execution_profiles):
             assert set(range(3)) - {index} <= set(profile.co_resident_with), profile
         invalid = worker.submit([1, 2, 3], 2, execution_profile=3)
-        error = invalid.read(timeout=120)
+        error = invalid.read(timeout=_event_timeout)
         assert error.kind == "error" and error.error_kind == "admission", error
         invalid.close()
         sessions = [worker.open_session([1, 2, 3], 8, execution_profile=1),
@@ -87,16 +95,16 @@ def main():
         for thread in threads:
             thread.start()
         for thread in threads:
-            thread.join(timeout=120)
+            thread.join(timeout=_event_timeout)
         assert not errors and all(not thread.is_alive() for thread in threads), errors
         results[0] = turn(sessions[0], 0)
         assert set(results) == {0, 1, 2}
         for request in sessions:
-            request.append([4, 5], 8, timeout=120)
+            request.append([4, 5], 8, timeout=_event_timeout)
         followups = [turn(request, 1) for request in sessions]
         # A cancelled profile retires before its slot admits new native work.
         assert sessions[0].cancel()
-        assert sessions[0].read(timeout=120).kind == "cancelled"
+        assert sessions[0].read(timeout=_event_timeout).kind == "cancelled"
         sessions[0].close()
         replacement = worker.open_session([1, 2, 3], 8, execution_profile=0)
         turn(replacement, 0)
@@ -107,7 +115,7 @@ def main():
         # Both runs retain the same R1 mathematical shape.
         reference = worker.open_session([1, 2, 3], 8, execution_profile=2, sampling_index=1, seed=777)
         assert turn(reference, 0) == results[2], "mixed profiles changed independent random state"
-        reference.append([4, 5], 8, timeout=120)
+        reference.append([4, 5], 8, timeout=_event_timeout)
         assert turn(reference, 1) == followups[2], "mixed profiles changed continuation RNG/pending"
         finish(reference)
         print('PASS mixed profiles: independent RNG/live turns/backpressure/cancel/retirement/reuse', flush=True)
@@ -127,7 +135,7 @@ def main():
         for thread in threads:
             thread.start()
         for thread in threads:
-            thread.join(timeout=120)
+            thread.join(timeout=_event_timeout)
         assert not errors and all(not thread.is_alive() for thread in threads), errors
         for request in peers:
             finish(request)

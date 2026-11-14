@@ -164,6 +164,56 @@ TEST(GgmlVulkanWork, AlternatingAddAndAddRmsGraphsKeepOriginalMathAndRetirement)
   }
 }
 
+TEST(GgmlVulkanWork, ManyIndependentBindingsSurvivePartialOwnerRetirementAndReuse) {
+  auto device = NativeDevice::create().value();
+  using Work = hyle::compute::ggml_vulkan::detail::NativeWork;
+  std::vector<Work> works;
+  std::vector<std::shared_ptr<GraphStorage>> frames;
+  constexpr std::size_t first_count = 260, replacement_count = 32;
+  works.reserve(first_count + replacement_count);
+  frames.reserve(first_count + replacement_count);
+  for (std::size_t index = 0; index < first_count + replacement_count; ++index) {
+    works.push_back(device.create_work().value());
+    frames.push_back(make_graph(device, GraphMath::kAdd).value());
+    const std::vector<float> a(2048, float(index) + .25F), b(2048, .5F);
+    auto active = device.activate();
+    ggml_backend_tensor_set(frames.back()->input, a.data(), 0, a.size() * sizeof(float));
+    ggml_backend_tensor_set(frames.back()->weight, b.data(), 0, b.size() * sizeof(float));
+  }
+  const auto submit = [&](std::size_t index) {
+    const auto submitted = works[index].submit(frames[index]->graph, frames[index]);
+    ASSERT_TRUE(submitted.status.ok()) << submitted.status.message();
+    EXPECT_TRUE(submitted.pending);
+  };
+  const auto observe = [&](std::size_t index) {
+    const auto retired = works[index].wait();
+    ASSERT_TRUE(retired.status.ok()) << retired.status.message();
+    EXPECT_FALSE(retired.pending);
+    std::vector<float> output(2048);
+    auto active = device.activate();
+    ggml_backend_tensor_get(frames[index]->output, output.data(), 0, output.size() * sizeof(float));
+    for (const float value : output) ASSERT_EQ(value, float(index) + .75F);
+  };
+  // All real uploads precede admission; they cannot serialize away overlap.
+  for (std::size_t i = 0; i < first_count; ++i) submit(i);
+  for (std::size_t i = 0; i < first_count; ++i) observe(i);
+  // Keep odd owners alive while retired even owners return their native
+  // descriptor capacity. New bindings must never replace an odd owner's sets.
+  for (std::size_t i = 0; i < first_count; i += 2) works[i] = Work{};
+  // The fully owned native fixture permits in-place Add. As in the repeated
+  // slot case above, restore every input before admitting the next wave.
+  for (std::size_t i = 1; i < first_count; i += 2) {
+    const std::vector<float> a(2048, float(i) + .25F), b(2048, .5F);
+    auto active = device.activate();
+    ggml_backend_tensor_set(frames[i]->input, a.data(), 0, a.size() * sizeof(float));
+    ggml_backend_tensor_set(frames[i]->weight, b.data(), 0, b.size() * sizeof(float));
+  }
+  for (std::size_t i = first_count; i < works.size(); ++i) submit(i);
+  for (std::size_t i = 1; i < first_count; i += 2) submit(i);
+  for (std::size_t i = first_count; i < works.size(); ++i) observe(i);
+  for (std::size_t i = 1; i < first_count; i += 2) observe(i);
+}
+
 TEST(GgmlVulkanWork, MovedPendingOwnerDrainsBeforeDroppingItsLastGraphLease) {
   auto device = NativeDevice::create();
   ASSERT_TRUE(device);

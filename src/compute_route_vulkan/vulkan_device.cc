@@ -11,14 +11,41 @@
 #include "../compute_ops/view_alias.h"
 #include "hyle/core/compiler.h"
 #include "hyle/mem/std_allocator.h"
+#include "hyle/mem/range_allocator.h"
 
 namespace hyle::compute::vulkan::detail {
+
+struct SmallMemoryPage final {
+  std::shared_ptr<Device> device;
+  mem::QuotaAllocator::Reservation charge;
+  VkDeviceMemory memory = VK_NULL_HANDLE;
+  std::uint32_t memory_type = 0;
+  VkDeviceSize bytes = 0;
+  std::mutex mutex;
+  mem::RangeAllocator ranges;
+  ~SmallMemoryPage() {
+    if (memory) device->fn.FreeMemory(device->native.device, memory, nullptr);
+  }
+};
+struct SmallMemorySlice final {
+  std::shared_ptr<SmallMemoryPage> page;
+  mem::RangeAllocation range;
+  ~SmallMemorySlice() {
+    if (page) { std::lock_guard lock(page->mutex); range.reset(); }
+  }
+};
+struct SmallAllocationPool final {
+  PFN_vkGetBufferMemoryRequirements2 requirements = nullptr;
+  std::mutex mutex;
+  std::vector<std::weak_ptr<SmallMemoryPage>> pages;
+};
 
 struct BufferBudget final {
   mem::AllocatorRef allocator;
   compute::ResourceBudget::Reservation reservation;
   void *controller = nullptr;
   void (*release_controller)(void *) noexcept = nullptr;
+  std::shared_ptr<SmallMemorySlice> memory_slice;
 };
 
 Status retain_buffer_controller(Buffer &buffer, void *owner,
@@ -71,7 +98,7 @@ Buffer::~Buffer() {
     device->fn.UnmapMemory(device->native.device, memory);
   if (handle != VK_NULL_HANDLE && !external_owner)
     device->fn.DestroyBuffer(device->native.device, handle, nullptr);
-  if (memory != VK_NULL_HANDLE)
+  if (memory != VK_NULL_HANDLE && !(budget && budget->memory_slice))
     device->fn.FreeMemory(device->native.device, memory, nullptr);
   if (budget != nullptr) {
     const auto allocator = budget->allocator;
@@ -84,6 +111,57 @@ Buffer::~Buffer() {
 }
 
 namespace {
+
+constexpr VkDeviceSize kSmallMemoryPageBytes = 2ULL << 20;
+constexpr VkDeviceSize kSmallMemoryMaximumBytes = 64ULL << 10;
+Result<std::shared_ptr<SmallMemorySlice>> small_memory_slice(
+    const std::shared_ptr<Device> &device, const VkMemoryRequirements &requirements,
+    std::uint32_t memory_type, mem::AllocatorRef allocator) {
+  auto &pool = *device->small_allocations;
+  std::lock_guard lock(pool.mutex);
+  const auto take = [&](const std::shared_ptr<SmallMemoryPage> &page)
+      -> Result<std::shared_ptr<SmallMemorySlice>> {
+    auto slice = std::allocate_shared<SmallMemorySlice>(mem::StdAllocator<SmallMemorySlice>(allocator));
+    std::lock_guard page_lock(page->mutex);
+    HYLE_ASSIGN_OR_RETURN(slice->range, page->ranges.allocate(requirements.size, requirements.alignment));
+    slice->page = page;
+    return slice;
+  };
+  for (auto cursor = pool.pages.begin(); cursor != pool.pages.end();) {
+    const auto page = cursor->lock();
+    if (!page) { cursor = pool.pages.erase(cursor); continue; }
+    ++cursor;
+    if (page->memory_type != memory_type) continue;
+    auto slice = take(page);
+    if (slice) return slice;
+    if (!slice.error().IsResourceExhausted()) return std::unexpected(slice.error());
+  }
+  auto page = std::make_shared<SmallMemoryPage>();
+  page->device = device;
+  page->memory_type = memory_type;
+  page->bytes = kSmallMemoryPageBytes;
+  if (device->quota) {
+    auto charge = device->quota->try_reserve_bytes(static_cast<std::size_t>(page->bytes));
+    if (!charge) return std::shared_ptr<SmallMemorySlice>{}; // Try the original dedicated size.
+    page->charge = std::move(*charge);
+  }
+  HYLE_ASSIGN_OR_RETURN(page->ranges,
+      // Shared page metadata must outlive any individual request allocator.
+      mem::RangeAllocator::create(page->bytes, {.max_allocations = 4096}));
+  VkMemoryAllocateInfo info{};
+  info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+  info.allocationSize = page->bytes;
+  info.memoryTypeIndex = memory_type;
+  const auto allocated = native_status(device->fn.AllocateMemory(device->native.device, &info, nullptr,
+      &page->memory), "vkAllocateMemory(small page)");
+  if (!allocated.ok()) {
+    if (allocated.IsResourceExhausted()) return std::shared_ptr<SmallMemorySlice>{};
+    return std::unexpected(allocated);
+  }
+  HYLE_ASSIGN_OR_RETURN(auto slice, take(page));
+  pool.pages.push_back(page);
+  return slice;
+}
 
 bool has_extension(std::span<const VkExtensionProperties> extensions,
                    std::string_view name) noexcept {
@@ -186,6 +264,9 @@ Result<std::shared_ptr<Device>> create_device(ContextOptions options) noexcept {
 #undef HYLE_VULKAN_LOAD_DEVICE
     if (device->queue == VK_NULL_HANDLE)
       return std::unexpected(Status::Unavailable("null Vulkan compute queue"));
+    device->small_allocations = std::make_shared<SmallAllocationPool>();
+    device->small_allocations->requirements = reinterpret_cast<PFN_vkGetBufferMemoryRequirements2>(
+        instance.GetDeviceProcAddr(device->native.device, "vkGetBufferMemoryRequirements2"));
     return device;
   } catch (const std::bad_alloc &) {
     return std::unexpected(
@@ -263,8 +344,20 @@ allocate_buffer(const std::shared_ptr<Device> &device, VkDeviceSize bytes,
     if (!status.ok())
       return std::unexpected(status);
     VkMemoryRequirements requirements{};
-    device->fn.GetBufferMemoryRequirements(device->native.device,
-                                           buffer->handle, &requirements);
+    VkMemoryDedicatedRequirements dedicated{};
+    dedicated.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS;
+    if (device->small_allocations->requirements) {
+      VkBufferMemoryRequirementsInfo2 request{};
+      request.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2;
+      request.buffer = buffer->handle;
+      VkMemoryRequirements2 result{};
+      result.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+      result.pNext = &dedicated;
+      device->small_allocations->requirements(device->native.device, &request, &result);
+      requirements = result.memoryRequirements;
+    } else {
+      device->fn.GetBufferMemoryRequirements(device->native.device, buffer->handle, &requirements);
+    }
     const VkMemoryPropertyFlags required =
         staging ? VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
                 : VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
@@ -294,28 +387,54 @@ allocate_buffer(const std::shared_ptr<Device> &device, VkDeviceSize bytes,
     if (requirements.size > (std::numeric_limits<std::size_t>::max)())
       return std::unexpected(
           Status::ResourceExhausted("Vulkan allocation size overflows"));
-    if (device->quota != nullptr) {
-      auto charge = device->quota->try_reserve_bytes(
-          static_cast<std::size_t>(requirements.size));
-      if (!charge)
-        return std::unexpected(
-            Status::ResourceExhausted("Vulkan device memory quota"));
-      buffer->charge = std::move(*charge);
+    VkDeviceSize memory_offset = 0;
+    std::shared_ptr<SmallMemorySlice> slice;
+    if (!staging && requirements.size <= kSmallMemoryMaximumBytes &&
+        requirements.alignment <= kSmallMemoryPageBytes && device->small_allocations->requirements &&
+        !dedicated.requiresDedicatedAllocation && !dedicated.prefersDedicatedAllocation) {
+      HYLE_ASSIGN_OR_RETURN(slice, small_memory_slice(device, requirements, selected, allocator));
     }
-    VkMemoryAllocateInfo native_allocation{};
-    native_allocation.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    native_allocation.allocationSize = requirements.size;
-    native_allocation.memoryTypeIndex = selected;
-    status = native_status(device->fn.AllocateMemory(device->native.device,
-                                                     &native_allocation, nullptr,
-                                                     &buffer->memory),
-                           "vkAllocateMemory");
-    if (!status.ok())
-      return std::unexpected(status);
-    buffer->allocation_bytes = requirements.size;
+    if (slice) {
+      if (!buffer->budget) {
+        auto *owner = allocator.allocate(sizeof(BufferBudget), alignof(BufferBudget));
+        if (!owner) return std::unexpected(Status::ResourceExhausted("Vulkan small buffer owner metadata"));
+        buffer->budget = std::construct_at(static_cast<BufferBudget *>(owner), allocator,
+            compute::ResourceBudget::Reservation{});
+      }
+      buffer->budget->memory_slice = slice;
+      buffer->memory = slice->page->memory;
+      buffer->allocation_bytes = slice->page->bytes;
+      memory_offset = slice->range.offset();
+    } else {
+      if (device->quota != nullptr) {
+        auto charge = device->quota->try_reserve_bytes(
+            static_cast<std::size_t>(requirements.size));
+        if (!charge)
+          return std::unexpected(
+              Status::ResourceExhausted("Vulkan device memory quota"));
+        buffer->charge = std::move(*charge);
+      }
+      VkMemoryAllocateInfo native_allocation{};
+      native_allocation.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+      native_allocation.allocationSize = requirements.size;
+      native_allocation.memoryTypeIndex = selected;
+      VkMemoryDedicatedAllocateInfo dedicated_info{};
+      if (dedicated.requiresDedicatedAllocation || dedicated.prefersDedicatedAllocation) {
+        dedicated_info.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
+        dedicated_info.buffer = buffer->handle;
+        native_allocation.pNext = &dedicated_info;
+      }
+      status = native_status(device->fn.AllocateMemory(device->native.device,
+                                                       &native_allocation, nullptr,
+                                                       &buffer->memory),
+                             "vkAllocateMemory");
+      if (!status.ok())
+        return std::unexpected(status);
+      buffer->allocation_bytes = requirements.size;
+    }
     status = native_status(device->fn.BindBufferMemory(device->native.device,
                                                        buffer->handle,
-                                                       buffer->memory, 0),
+                                                       buffer->memory, memory_offset),
                            "vkBindBufferMemory");
     if (!status.ok())
       return std::unexpected(status);

@@ -34,6 +34,11 @@ if(_HYLE_COMPUTE_HAVE_VULKAN)
     "${HYLE_GGML_SOURCE_DIR}/src")
   target_link_libraries(hyle_compute_route_vulkan_test PRIVATE
     hyle_compute_provider_ggml_vulkan hyle_compute_ggml_runtime ggml)
+  if(TARGET hyle_graph_route_vulkan)
+    target_link_libraries(hyle_compute_route_vulkan_test PRIVATE hyle_graph_route_vulkan)
+    set_property(SOURCE managed_region_test.cc APPEND PROPERTY
+      COMPILE_DEFINITIONS HYLE_TEST_GRAPH_VULKAN=1)
+  endif()
   hyle_stage_runtime(hyle_compute_route_vulkan_test)
 endif()
 

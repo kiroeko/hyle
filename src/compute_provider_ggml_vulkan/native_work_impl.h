@@ -20,6 +20,8 @@ struct Work {
   ggml_cgraph *assessed_graph = nullptr;
   bool fixed_attention = false;
   bool has_rms_norm = true;
+  DescriptorPoolBlock *descriptor_pool = nullptr;
+  std::vector<vk::DescriptorSet> borrowed_descriptors;
 };
 
 VkFence work_fence(const Work *work) noexcept {
@@ -30,6 +32,60 @@ bool work_recording_ready(const Work *work) noexcept {
 }
 
 namespace {
+void prepare_descriptors(Work &work, ggml_backend_vk_context &context,
+                         const ggml_cgraph &graph) {
+  if (work.descriptor_pool || !context.descriptor_sets.empty() ||
+      graph.n_nodes >= VK_DEVICE_DESCRIPTOR_POOL_SIZE) return;
+  // The usual finite region has only a few nodes. Reserve a bounded first
+  // slice, then let the unchanged native allocator grow private overflow pools
+  // when a node needs several passes. Native pool indexing remains unchanged.
+  const auto count = static_cast<std::size_t>(graph.n_nodes);
+  work.borrowed_descriptors.reserve(count);
+  context.descriptor_sets.reserve(count);
+  std::lock_guard lock(work.runtime->descriptor_mutex);
+  DescriptorPoolBlock *selected = nullptr;
+  for (const auto &pool : work.runtime->descriptor_pools)
+    if (pool->available.size() >= count) { selected = pool.get(); break; }
+  if (!selected) {
+    auto pool = std::make_unique<DescriptorPoolBlock>();
+    pool->device = context.device;
+    const vk::DescriptorPoolSize size(vk::DescriptorType::eStorageBuffer,
+        MAX_PARAMETER_COUNT * VK_DEVICE_DESCRIPTOR_POOL_SIZE);
+    pool->pool = context.device->device.createDescriptorPool(
+        vk::DescriptorPoolCreateInfo({}, VK_DEVICE_DESCRIPTOR_POOL_SIZE, size));
+    const std::vector<vk::DescriptorSetLayout> layouts(
+        VK_DEVICE_DESCRIPTOR_POOL_SIZE, context.device->dsl);
+    pool->available = context.device->device.allocateDescriptorSets(
+        vk::DescriptorSetAllocateInfo(pool->pool, VK_DEVICE_DESCRIPTOR_POOL_SIZE, layouts.data()));
+    selected = pool.get();
+    work.runtime->descriptor_pools.push_back(std::move(pool));
+  }
+  const auto first = selected->available.end() - count;
+  work.borrowed_descriptors.assign(first, selected->available.end());
+  context.descriptor_sets.assign(work.borrowed_descriptors.begin(), work.borrowed_descriptors.end());
+  selected->available.resize(selected->available.size() - count);
+  ++selected->borrowers;
+  work.descriptor_pool = selected;
+}
+void release_descriptors(Work &work) noexcept {
+  if (!work.descriptor_pool) return;
+  std::lock_guard lock(work.runtime->descriptor_mutex);
+  auto *pool = work.descriptor_pool;
+  // Capacity was allocated once with the native pool; returning a retired
+  // slice cannot allocate metadata or recycle another Work's live sets.
+  GGML_ASSERT(pool->borrowers && pool->available.size() + work.borrowed_descriptors.size() <=
+      VK_DEVICE_DESCRIPTOR_POOL_SIZE);
+  pool->available.insert(pool->available.end(), work.borrowed_descriptors.begin(), work.borrowed_descriptors.end());
+  work.borrowed_descriptors.clear();
+  work.descriptor_pool = nullptr;
+  if (--pool->borrowers == 0) {
+    auto &pools = work.runtime->descriptor_pools;
+    const auto found = std::find_if(pools.begin(), pools.end(),
+        [&](const auto &candidate) { return candidate.get() == pool; });
+    GGML_ASSERT(found != pools.end());
+    pools.erase(found);
+  }
+}
 WorkReport report(const Work &work) noexcept {
   return {work.failure, work.pending, work.runtime->device_lost.load()};
 }
@@ -212,6 +268,7 @@ WorkReport submit_work(Work *work, ggml_cgraph *graph) noexcept {
       ctx->hyle_completion_fence = nullptr;
       return report(*work);
     }
+    prepare_descriptors(*work, *ctx, *graph);
     if (work->assessed_graph != graph) {
       work->fixed_attention = fixed_attention_graph(graph);
       work->has_rms_norm = std::any_of(graph->nodes, graph->nodes + graph->n_nodes,
@@ -336,6 +393,7 @@ void destroy_work(Work *work) noexcept {
     ctx->hyle_retired_failure = true;
     ggml_backend_free(work->backend);
   }
+  release_descriptors(*work);
   work->runtime->instance.devices[0]->device.destroyFence(work->fence);
   delete work;
 }

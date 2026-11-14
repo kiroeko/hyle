@@ -2,6 +2,7 @@
 
 #include "tensor_test_support.h"
 #include "vulkan_internal.h"
+#include "hyle/compute/vulkan_memory.h"
 
 namespace {
 using namespace vulkan_tensor_test;
@@ -9,6 +10,82 @@ constexpr std::array types{c::DataType::kFloat32,  c::DataType::kFloat16,
                            c::DataType::kBFloat16, c::DataType::kInt32,
                            c::DataType::kInt64,    c::DataType::kBool,
                            c::DataType::kUInt8,    c::DataType::kUInt32};
+
+TEST(VulkanTensor, SmallPagesKeepDistinctBuffersAcrossPartialRetirementAndReuse) {
+  auto context = vulkan_test::context().value();
+  const auto description = dense(c::DataType::kFloat32, {1024});
+  std::vector<v::Tensor> buffers;
+  bool shared_memory = false;
+  for (int i = 0; i < 129; ++i) {
+    const auto values = vulkan_test::data(1024, i);
+    auto tensor = context.upload(description, std::as_bytes(std::span(values))).value();
+    const auto &native = v::detail::Access::buffer(tensor);
+    ASSERT_TRUE(native->memory);
+    EXPECT_FALSE(native->is_view);
+    EXPECT_FALSE(native->external_owner);
+    EXPECT_EQ(native->offset, 0U);
+    for (const auto &prior : buffers) {
+      const auto &other = v::detail::Access::buffer(prior);
+      EXPECT_NE(native->handle, other->handle);
+      shared_memory = shared_memory || native->memory == other->memory;
+    }
+    buffers.push_back(std::move(tensor));
+  }
+  const auto &native = v::detail::Access::buffer(buffers.front());
+  const auto requirements = reinterpret_cast<PFN_vkGetBufferMemoryRequirements2>(
+      native->device->instance_fn.GetDeviceProcAddr(native->device->native.device, "vkGetBufferMemoryRequirements2"));
+  ASSERT_TRUE(requirements);
+  VkMemoryDedicatedRequirements dedicated{VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS};
+  VkMemoryRequirements2 actual{VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
+  actual.pNext = &dedicated;
+  const VkBufferMemoryRequirementsInfo2 request{VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2,
+      nullptr, native->handle};
+  requirements(native->device->native.device, &request, &actual);
+  if (!dedicated.requiresDedicatedAllocation && !dedicated.prefersDedicatedAllocation &&
+      actual.memoryRequirements.size <= (64U << 10)) EXPECT_TRUE(shared_memory);
+  for (std::size_t i = 0; i < buffers.size(); i += 2) buffers[i] = {};
+  std::vector<v::Tensor> replacement;
+  for (int i = 0; i < 65; ++i) {
+    const auto values = vulkan_test::data(1024, i + 1000);
+    replacement.push_back(context.upload(description, std::as_bytes(std::span(values))).value());
+  }
+  for (std::size_t i = 1; i < buffers.size(); i += 2)
+    EXPECT_EQ(vulkan_test::read(context, buffers[i]).value(), vulkan_test::data(1024, static_cast<int>(i)));
+  for (std::size_t i = 0; i < replacement.size(); ++i)
+    EXPECT_EQ(vulkan_test::read(context, replacement[i]).value(), vulkan_test::data(1024, static_cast<int>(i) + 1000));
+}
+
+TEST(VulkanTensor, SmallPageQuotaAndExportedOwnerRetainOriginalLifetime) {
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 4U << 20);
+  {
+    auto context = vulkan_test::context(&quota).value();
+    auto memory = v::MemoryResource::create(context, v::MemoryKind::kDevice).value();
+    const auto description = dense(c::DataType::kFloat32, {4});
+    const std::array values{1.f, 2.f, 3.f, 4.f};
+    auto tensor = context.upload(description, std::as_bytes(std::span(values))).value();
+    auto lease = memory.import_readonly(tensor).value();
+    const auto before = quota.used();
+    EXPECT_GT(before, 0U);
+    tensor = {};
+    EXPECT_EQ(quota.used(), before);
+    ASSERT_TRUE(context.close().ok());
+    EXPECT_TRUE(lease.view());
+    EXPECT_EQ(quota.used(), before);
+    lease = {};
+    EXPECT_EQ(quota.used(), 0U); // The pool's weak index retains no native page.
+  }
+  EXPECT_EQ(quota.used(), 0U);
+  hyle::mem::QuotaAllocator tight(hyle::mem::system_allocator(), 64U << 10);
+  {
+    auto context = vulkan_test::context(&tight).value();
+    auto memory = v::MemoryResource::create(context, v::MemoryKind::kDevice).value();
+    auto tensor = memory.allocate(dense(c::DataType::kFloat32, {4})).value();
+    EXPECT_GT(tight.used(), 0U);
+    EXPECT_LE(tight.used(), tight.limit()); // Dedicated fallback can fit below one page.
+    tensor = {};
+    EXPECT_EQ(tight.used(), 0U);
+  }
+}
 
 TEST(VulkanTensor, UnsignedPayloadViewConcatAndNoArithmetic) {
   auto context = vulkan_test::context().value();

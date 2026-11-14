@@ -433,6 +433,14 @@ Source保留冷配置，原生Program只保留解析后的pipeline，重放不�
   后仍可下载。可选 quota 计 HYLE、ggml 和 IREE 显式分配的 VkDeviceMemory（含 staging、适配、边界
   scratch 和原厂辅助 buffer）；driver/pipeline 私有内存不在该配额中，
   quota 本身须活过所有依赖资源。
+- 合格的小型 device buffer 使用不重叠、满足原生对齐的共享内存页；各自保留独立 VkBuffer 和原有
+  owner。最后一个范围退休后释放物理页，quota 计整页实际分配；页放不进配额时尝试原尺寸的独立
+  分配。staging、原生要求独占的分配及未知外部 buffer 保留原路径。常量物理分配观测按原生内存去重。
+- 同一 ggml runtime 内的有限 region 可共用 descriptor pool，但每个 Work 独占自己的 descriptor
+  sets、命令和 fence，直到原有退休确认后才归还；共享分配不允许共享在途绑定或提前复用槽。
+- IREE 精度转换可借用冷期证明地址稳定、不会作为公开输出轮换的私有中间输入；原有队列交接
+  发布前序写入，HAL 保留原 buffer owner，不重复分配和复制这份输入。请求输入、公开输出及无法
+  证明原生根存储的 view/import 仍保留复制边界。此规则不改变转换数学、输出存储和取消退休合同。
 - 冷期承担 packing、pipeline、边界内存规划、原生命令录制及每槽 ggml 图/存储。热期按固定
   片段次序提交同一 queue，等待最后实际 batch 的 fence；正常等待不阻止其他槽的 producer。
   原厂 region 的编码/私有分配仍有成本，不承诺整个 submit 零分配或只执行一次 QueueSubmit。

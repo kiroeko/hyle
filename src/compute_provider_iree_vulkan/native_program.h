@@ -163,8 +163,9 @@ struct BufferSpan final {
   std::uint64_t offset = 0;
   std::size_t bytes = 0;
 };
-// Only ready immutable native storage. The HAL wrapper retains owner until
-// its last reference retires; it never maps or frees the caller's allocation.
+// Fixed caller-owned native input storage. Writes must be ordered before
+// invocation on the original imported queue; the read-only HAL wrapper retains
+// owner through retirement and never maps or frees the caller's allocation.
 struct BorrowedInput final {
   std::size_t index = 0;
   VkDevice device = VK_NULL_HANDLE;

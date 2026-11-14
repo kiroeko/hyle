@@ -2,10 +2,26 @@
 // upstream types/algorithms while giving each HYLE owner isolated native state.
 #include "ggml-alloc.h"
 #include <atomic>
+#include <memory>
+#include <mutex>
+#include <vector>
 namespace hyle::compute::ggml_vulkan::bridge {
+// A native allocation pool, not an execution lane. Each Work borrows distinct
+// sets for its whole lifetime; command buffers and retirement stay per Work.
+struct DescriptorPoolBlock {
+  vk_device device;
+  vk::DescriptorPool pool;
+  std::vector<vk::DescriptorSet> available;
+  std::size_t borrowers = 0;
+  ~DescriptorPoolBlock() {
+    if (pool) device->device.destroyDescriptorPool(pool);
+  }
+};
 struct Runtime {
   vk_instance_t instance;
   std::atomic<bool> device_lost{false};
+  std::mutex descriptor_mutex;
+  std::vector<std::unique_ptr<DescriptorPoolBlock>> descriptor_pools;
 };
 
 void *enter(Runtime *runtime) noexcept {
@@ -44,6 +60,8 @@ void destroy(Runtime *runtime) noexcept {
     return;
   {
     Active active(runtime);
+    // Original NativeWork owners retain Runtime until their work has retired.
+    runtime->descriptor_pools.clear();
     // Callers retain Runtime until backend/buffer owners are retired. These
     // two caches otherwise form device -> buffer -> device ownership cycles.
     for (auto &device : runtime->instance.devices) {

@@ -662,11 +662,11 @@ Result<std::unique_ptr<NativeProgram>> NativeProgram::create(
     const std::size_t mlx_first = spec.kind == ProgramKind::MlxAffineEmbedding ? 0 : 1;
     const std::size_t mlx_end = mlx_affine(spec.kind) && !embedding ? 4 : 3;
     if (!((official_grouped(spec.kind) && (port == 1 || port == 2)) ||
-          (mlx && port >= mlx_first && port < mlx_end)))
-      return std::unexpected(Status::InvalidArgument("IREE borrowed constant port"));
+          (mlx && port >= mlx_first && port < mlx_end) || (precision && port == 0)))
+      return std::unexpected(Status::InvalidArgument("IREE borrowed input port"));
     for (std::size_t j = 0; j < i; ++j)
       if (borrowed[j].index == borrowed[i].index)
-        return std::unexpected(Status::InvalidArgument("duplicate IREE borrowed constant port"));
+        return std::unexpected(Status::InvalidArgument("duplicate IREE borrowed input port"));
   }
   try {
     auto state = std::make_unique<State>();
@@ -958,7 +958,7 @@ Result<std::unique_ptr<NativeProgram>> NativeProgram::create(
           static_cast<iree_hal_dim_t>(spec.rows * spec.columns)};
       HYLE_ASSIGN_OR_RETURN(
           state->views[0],
-          allocate_view(hal, shape,
+          input_view(0, shape,
                         spec.kind == ProgramKind::Float16ToBFloat16
                             ? IREE_HAL_ELEMENT_TYPE_FLOAT_16
                             : IREE_HAL_ELEMENT_TYPE_FLOAT_32));

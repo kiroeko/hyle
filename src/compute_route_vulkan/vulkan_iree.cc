@@ -463,9 +463,11 @@ create_iree_stage(const std::shared_ptr<Run> &run, const Dispatch &dispatch,
     const auto spec = *dispatch.iree;
     std::array<iv::BorrowedInput, 3> borrowed;
     std::size_t borrowed_count = 0;
-    const auto borrow_constant = [&](std::size_t port, std::uint32_t value,
-                                     VkDeviceSize offset) {
-      if (!values[value].constant.valid()) return;
+    const auto borrow_input = [&](std::size_t port, std::uint32_t value,
+                                     VkDeviceSize offset, bool allow_private = false) {
+      const bool private_stable = allow_private && value < run->stable_input_buffers.size() &&
+          run->stable_input_buffers[value];
+      if (!values[value].constant.valid() && !private_stable) return;
       const auto &device = *run->runtime->device;
       const auto &buffer = run->retained_buffers[value];
       // Unknown imports and lease/weight views retain their copy boundary:
@@ -491,13 +493,16 @@ create_iree_stage(const std::shared_ptr<Run> &run, const Dispatch &dispatch,
       const auto codes = static_cast<VkDeviceSize>(spec.experts) *
           spec.columns * spec.depth /
           (spec.kind == iv::ProgramKind::OfficialGrouped4F32 ? 2 : 1);
-      borrow_constant(1, dispatch.values[0], 0);
-      borrow_constant(2, dispatch.values[0], codes);
+      borrow_input(1, dispatch.values[0], 0);
+      borrow_input(2, dispatch.values[0], codes);
     } else if (iv::mlx_program(spec.kind)) {
       const std::size_t first = spec.kind == iv::ProgramKind::MlxAffineEmbedding ? 0 : 1;
       const std::size_t end = iv::mlx_affine(spec.kind) && first == 1 ? 4 : 3;
       for (std::size_t port = first; port < end; ++port)
-        borrow_constant(port, dispatch.values[port], 0);
+        borrow_input(port, dispatch.values[port], 0);
+    } else if (spec.kind == iv::ProgramKind::Float32ToBFloat16 ||
+               spec.kind == iv::ProgramKind::Float16ToBFloat16) {
+      borrow_input(0, dispatch.values[0], 0, true);
     }
     HYLE_ASSIGN_OR_RETURN(
         stage->program,
@@ -579,8 +584,20 @@ Status IreeStage::bind() noexcept {
         input.destination.bytes > buffer->bytes - input.offset ||
         buffer->offset > UINT64_MAX - input.offset)
       return Status::InvalidArgument("Vulkan IREE input range");
+    if (input.borrowed && (buffer->handle != input.destination.buffer ||
+        buffer->offset + input.offset != input.destination.offset))
+      return Status::FailedPrecondition("Vulkan IREE borrowed input changed its prepared storage");
   }
   HYLE_RETURN_IF_ERROR(begin_copy(*input_copy));
+  if (std::ranges::any_of(std::span(inputs.data(), input_count),
+          [](const auto &input) { return input.borrowed && !input.constant; })) {
+    // The original submission remains the dependency boundary even when its
+    // copy is unnecessary. Publish the predecessor's writes to IREE's compute
+    // reads on the same actual native queue, not merely to transfer reads.
+    memory_barrier(*parent->runtime->device, input_copy->command,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_ACCESS_MEMORY_WRITE_BIT,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_READ_BIT);
+  }
   if (constant_copy && !constants_submitted)
     HYLE_RETURN_IF_ERROR(begin_copy(*constant_copy));
   for (std::size_t port = 0; port < input_count; ++port) {

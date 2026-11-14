@@ -114,6 +114,17 @@ Status allocate_values(const ProgramState &program, Run &run) noexcept {
       blocks.push_back(std::move(*buffer));
     }
     run.retained_buffers.resize(program.values.size());
+    std::vector<bool> public_blocks(program.block_bytes.size(), false);
+    for (const auto output : program.outputs) {
+      const auto block = program.storage_blocks[program.aliases[output].root];
+      if (block < public_blocks.size()) public_blocks[block] = true;
+    }
+    run.stable_input_buffers.assign(program.values.size(), 0);
+    for (std::size_t value = 0; value < program.values.size(); ++value) {
+      const auto block = program.storage_blocks[value];
+      run.stable_input_buffers[value] = program.aliases[value].root == value &&
+          block < public_blocks.size() && !public_blocks[block];
+    }
     for (std::size_t value = 0; value < program.values.size(); ++value) {
       if (program.status_value == value) {
         HYLE_ASSIGN_OR_RETURN(
@@ -737,6 +748,8 @@ Result<Program> prepare_plan(const std::shared_ptr<Runtime> &runtime,
       const auto duplicate = std::ranges::unique(constants);
       constants.erase(duplicate.begin(), duplicate.end());
       snapshot.retained_constant_owner_count = constants.size();
+      std::vector<VkDeviceMemory> owned_allocations;
+      owned_allocations.reserve(constants.size());
       for (const auto *buffer : constants) {
         if (buffer->bytes >
             SIZE_MAX - snapshot.retained_constant_capacity_bytes)
@@ -746,7 +759,8 @@ Result<Program> prepare_plan(const std::shared_ptr<Runtime> &runtime,
             static_cast<std::size_t>(buffer->bytes);
         if (buffer->memory == VK_NULL_HANDLE) {
           snapshot.has_borrowed_constants = true;
-        } else {
+        } else if (std::ranges::find(owned_allocations, buffer->memory) == owned_allocations.end()) {
+          owned_allocations.push_back(buffer->memory);
           if (buffer->allocation_bytes >
               SIZE_MAX - snapshot.owned_constant_allocation_bytes)
             return std::unexpected(Status::ResourceExhausted(

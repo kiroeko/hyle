@@ -7,13 +7,61 @@
 #include "../compute/workload_fixture.h"
 #include "gate_norm_test_support.h"
 #include "vulkan_program_internal.h"
+#include "vulkan_iree.h"
 #include "vulkan_policy.h"
+#if defined(HYLE_TEST_GRAPH_VULKAN)
 #include "hyle/graph/vulkan.h"
 #include "../compute_models/derived_cast_fixture.h"
+#endif
 
 namespace {
 using namespace vulkan_gate_norm_test;
 namespace d = v::detail;
+
+TEST(VulkanManaged, PrecisionStageBorrowsOnlyPrivateNonRotatingStorage) {
+  for (const bool publish_intermediate : {false, true}) {
+    auto context = vulkan_test::context().value();
+    const auto input = dense(c::DataType::kFloat32, {1024});
+    const auto output = dense(c::DataType::kBFloat16, {1024});
+    d::Plan plan;
+    plan.values = {{input, {}}, {input, {}}, {output, {}}};
+    plan.inputs = {0}; plan.outputs = publish_intermediate ? std::vector<std::uint32_t>{1, 2}
+                                                          : std::vector<std::uint32_t>{2};
+    plan.steps = {{c::Operation(c::Unary{c::UnaryKind::kAbs}), {0}, {1}},
+                  {c::Operation(c::Cast{c::DataType::kBFloat16}), {1}, {2}}};
+    auto program = d::prepare_plan(context, plan);
+    ASSERT_TRUE(program) << program.error().message();
+    auto first = program->create_invocation().value(), second = program->create_invocation().value();
+    const auto &run = *d::Access::invocation(first)->run;
+    std::size_t stages = 0;
+    for (const auto &stage : run.stages) if (stage.iree) {
+      ++stages;
+      EXPECT_EQ(stage.iree->inputs[0].borrowed, !publish_intermediate);
+      if (!publish_intermediate)
+        EXPECT_EQ(stage.iree->inputs[0].destination.buffer, run.retained_buffers[1]->handle);
+    }
+    EXPECT_EQ(stages, 1U);
+    std::optional<v::Tensor> retained;
+    std::vector<std::uint64_t> retained_bits;
+    for (int pass = 0; pass < 3; ++pass) {
+      std::vector<float> values(1024);
+      std::vector<std::uint64_t> expected(1024);
+      for (std::size_t i = 0; i < values.size(); ++i) {
+        values[i] = -1.f - float(i + pass * 37) / 131072.f;
+        expected[i] = vulkan_tensor_test::encode(-values[i], c::DataType::kBFloat16);
+      }
+      const auto source = context.upload(input, std::as_bytes(std::span(values))).value();
+      auto &call = pass == 0 ? first : second;
+      ASSERT_TRUE(call.bind(source).ok());
+      auto work = call.submit(); ASSERT_TRUE(work) << work.error().message();
+      auto result = work->wait(); ASSERT_TRUE(result) << result.error().message();
+      const auto actual = result->get()->tensors()[publish_intermediate ? 1 : 0];
+      EXPECT_EQ(vulkan_tensor_test::bits(context, actual), expected);
+      if (retained) EXPECT_EQ(vulkan_tensor_test::bits(context, *retained), retained_bits);
+      if (pass == 0) { retained = actual; retained_bits = expected; }
+    }
+  }
+}
 
 TEST(VulkanManaged, ImmutableMatrixPackIsSharedAcrossShapesAndExpiresWithPrograms) {
   auto context = vulkan_test::context().value();
@@ -95,6 +143,7 @@ TEST(VulkanManaged, ImmutableMatrixPacksDistinguishPhysicalBanksAndViewOffsets) 
   expect(context, result->get()->tensors()[0], std::vector<double>(7, 555));
 }
 
+#if defined(HYLE_TEST_GRAPH_VULKAN)
 TEST(VulkanManaged, ImmutableBfloatCastCapturesOneReadyPayloadAndKeepsPublicValues) {
   namespace f = derived_cast_test;
   auto context = vulkan_test::context().value();
@@ -137,6 +186,8 @@ TEST(VulkanManaged, ImmutableBfloatCastCapturesOneReadyPayloadAndKeepsPublicValu
   }
 }
 
+#endif
+
 TEST(VulkanManaged, BatchedRopePositionsAndPerTokenFrequenciesReplay) {
   namespace f = batched_rope_test;
   auto context = vulkan_test::context().value();
@@ -174,6 +225,7 @@ TEST(VulkanManaged, BatchedRopePositionsAndPerTokenFrequenciesReplay) {
         }
 }
 
+#if defined(HYLE_TEST_GRAPH_VULKAN)
 TEST(VulkanManaged, DenseConstantRhsPacksOnceAndKeepsOtherConsumersAndDynamicWeights) {
   namespace g = hyle::graph;
   auto context = vulkan_test::context().value();
@@ -237,6 +289,8 @@ TEST(VulkanManaged, DenseConstantRhsPacksOnceAndKeepsOtherConsumersAndDynamicWei
       }
     }
 }
+
+#endif
 
 TEST(VulkanManaged, ColdRulesMatchFullConditionAxesAndUnknownDefault) {
   auto context=vulkan_test::context().value();

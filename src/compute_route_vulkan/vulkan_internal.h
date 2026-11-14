@@ -124,6 +124,7 @@ struct DeviceFunctions final {
 #undef HYLE_VULKAN_DECLARE
 };
 
+struct SmallAllocationPool;
 struct Device final {
   // One native owner for HYLE commands and complete managed ggml regions.
   // It outlives every Buffer/Run and owns loader, instance, device and queues.
@@ -142,6 +143,9 @@ struct Device final {
   std::atomic<std::uint64_t> descriptors_in_pools{0};
   Environment environment;
   mem::QuotaAllocator *quota = nullptr;
+  // Cold allocation capacity only. Original Buffers and Run retirement own
+  // every live range; this pool keeps only weak page references.
+  std::shared_ptr<SmallAllocationPool> small_allocations;
 };
 
 struct BufferBudget;
@@ -221,11 +225,15 @@ struct CheckedStatus final {
 // All mutable execution state and membership are protected by Runtime::mutex.
 struct Run final {
   explicit Run(mem::AllocatorRef allocator = mem::system_allocator())
-      : retained_buffers(mem::StdAllocator<std::shared_ptr<Buffer>>(allocator)) {}
+      : retained_buffers(mem::StdAllocator<std::shared_ptr<Buffer>>(allocator)),
+        stable_input_buffers(mem::StdAllocator<std::uint8_t>(allocator)) {}
   std::shared_ptr<Runtime> runtime;
   std::shared_ptr<Run> pending_owner;
   std::shared_ptr<Run> completion_owner;
   std::vector<std::shared_ptr<Buffer>, mem::StdAllocator<std::shared_ptr<Buffer>>> retained_buffers;
+  // Cold liveness proof: owned intermediate blocks that cannot rotate as
+  // public outputs. No input/source or published-output ownership is implied.
+  std::vector<std::uint8_t, mem::StdAllocator<std::uint8_t>> stable_input_buffers;
   std::vector<VkDescriptorSet> descriptor_sets;
   std::vector<TensorByteOrigins> recorded_origins;
   std::shared_ptr<const void> recording_owner;
