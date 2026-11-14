@@ -323,6 +323,8 @@ CPU分置、prefix、多会话、scheduler和随机采样不自动启用。`--re
 | NF4、CT asymmetric INT4、MLX affine4／8 | 有压缩权重及有限状态链／原组件接入；完整对应大模型、质量和吞吐未交付。 |
 | GLM、DeepSeek、Kimi | 组件级实现与检查，没有完整引擎入口。 |
 
+公共引擎共用请求、会话、完整状态、RNG 和 MTP 起草／验证／修复合同，后端执行能力仍有差异。当前设备接力只接通 CUDA；引擎的设备端长度批查询接入 CPU／CUDA，原编码草稿行复制资格只对 CUDA 声明。Metal／Vulkan 还缺部分变长 packed convolution 实现。为它们补齐相应 MTP 路线需要增加后端实现与冷期接线，可沿用现有模型和公共请求合同；普通推理平台覆盖不表示这些加速设施已经齐全。
+
 模型、格式、后端与原始检查统一查[模型与算子覆盖](../implementation/model-operators.md)。
 加载器不会预先展开整库，但实际计划可能分解计算并使用workspace；4bit文件大小不是运行内存上限。
 
