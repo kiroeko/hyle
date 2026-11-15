@@ -12,13 +12,26 @@ struct Recurrent final {
   std::vector<mlx::core::Shape> output_shapes;
   std::size_t proven_index_port = static_cast<std::size_t>(-1);
   std::int64_t proven_index_extent = 0;
+  bool host_indices = false;
+  mlx::core::Event completion_event;
+  std::uint64_t signal_value = 0;
+  std::vector<mlx::core::array> pending_inputs;
 
   static Result<std::unique_ptr<Recurrent>>
   create(Operation operation, std::span<const TensorDesc> inputs,
          std::size_t proven_index_port = static_cast<std::size_t>(-1),
          std::int64_t proven_index_extent = 0) noexcept;
   void detach_inputs() noexcept;
+  Result<bool> prepare_signal(mlx::core::Stream stream) noexcept;
+  Status finish() noexcept;
   Result<std::vector<mlx::core::array>>
   run(std::span<const mlx::core::array> inputs, mlx::core::Stream stream);
+  Result<std::vector<mlx::core::array>>
+  submit(std::span<const mlx::core::array> inputs, mlx::core::Stream stream,
+         void (*completed)(void *) noexcept, void *state);
+ private:
+  Result<std::vector<mlx::core::array>>
+  run_impl(std::span<const mlx::core::array> inputs, mlx::core::Stream stream,
+           ggml_metal::NativeSignal signal);
 };
 } // namespace hyle::compute::apple::detail

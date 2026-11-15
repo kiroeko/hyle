@@ -5,6 +5,8 @@
 #include <condition_variable>
 #include <mutex>
 #include <vector>
+#include <thread>
+#include <optional>
 
 #include <gtest/gtest.h>
 #include <mlx/ops.h>
@@ -13,6 +15,7 @@
 #include "../../src/compute_route_apple/apple_copy_internal.h"
 #include "../../src/compute_route_apple/apple_runtime_internal.h"
 #include "hyle/mem/quota_allocator.h"
+#include "recurrent_fixture.h"
 
 namespace {
 namespace a = hyle::compute::apple;
@@ -58,6 +61,76 @@ private:
   std::condition_variable changed_;
   bool admitted_ = false, entered_ = false, open_ = false, finished_ = false;
 };
+
+void exercise_native_signal_source(bool close_pending) {
+  auto context = a::Context::create();
+  ASSERT_TRUE(context) << context.error().message();
+  apple_test::Recurrent fixture(3, 2, 64);
+  const auto expected = fixture.oracle();
+  auto first = context->prepare(c::GatedDeltaNet{}, fixture.specs());
+  ASSERT_TRUE(first) << first.error().message();
+  const std::array specs{a::InputSpec{fixture.inputs.front().shape(), mx::float32}};
+  auto second = ad::ContextAccess::compile(ad::ContextAccess::runtime(*context),
+      [](const auto &args, mx::Stream stream) {
+        return std::vector<mx::array>{mx::multiply(args[0], mx::array(2.f), stream)};
+      }, specs);
+  ASSERT_TRUE(second) << second.error().message();
+  auto producer = first->create_invocation(), consumer = second->create_invocation();
+  ASSERT_TRUE(producer); ASSERT_TRUE(consumer);
+  auto source = ad::InvocationAccess::source(*producer, 0);
+  ASSERT_TRUE(source);
+  std::array<ad::InputBinding, 1> late;
+  late[0].source = std::move(*source);
+  ASSERT_TRUE(ad::InvocationAccess::prepare_inputs(*consumer, late).ok());
+  late[0].source.reset();
+  ASSERT_TRUE(producer->bind(fixture.inputs).ok());
+  auto runtime = ad::ContextAccess::runtime(*context);
+  for (int repeat = 0; repeat < (close_pending ? 1 : 3); ++repeat) {
+    std::optional<FifoGate> gate;
+    if (close_pending) {
+      gate.emplace();
+      ASSERT_TRUE(gate->enqueue(runtime).ok());
+      gate->wait_entered();
+    }
+    auto produced = producer->submit(), consumed = consumer->submit();
+    ASSERT_TRUE(produced) << produced.error().message();
+    ASSERT_TRUE(consumed) << consumed.error().message();
+    if (close_pending) {
+      hyle::Status closed;
+      std::thread closer([&] { closed = context->close(); });
+      // The original owner is gated. Close must reject new public admission
+      // and still accept the actual GPU tail of these already queued Jobs.
+      for (;;) {
+        bool closing;
+        { std::lock_guard lock(runtime->queue_mutex); closing = !runtime->accepting; }
+        if (closing) break;
+        std::this_thread::yield();
+      }
+      gate->open_and_join();
+      closer.join();
+      ASSERT_TRUE(closed.ok()) << closed.message();
+    }
+    ASSERT_TRUE(consumed->completion().wait().ok());
+    ASSERT_TRUE(produced->completion().wait().ok());
+    auto output = ad::InvocationAccess::output(*consumer, 0);
+    ASSERT_TRUE(output) << output.error().message();
+    ASSERT_EQ(output->size(), expected[0].size());
+    for (std::size_t index = 0; index < expected[0].size(); ++index)
+      EXPECT_NEAR(output->data<float>()[index], 2 * expected[0][index], 1.e-5);
+    {
+      std::lock_guard lock(runtime->queue_mutex);
+      EXPECT_GT(runtime->native_tail_peak, 0u);
+      EXPECT_EQ(runtime->native_tails, 0u);
+    }
+  }
+}
+
+TEST(AppleLateInput, NativeSignalFeedsMlxAndReusesTheOriginalProducer) {
+  exercise_native_signal_source(false);
+}
+TEST(AppleLateInput, CloseDrainsQueuedNativeSignalsBeforeStoppingTheOwner) {
+  exercise_native_signal_source(true);
+}
 
 TEST(AppleLateInput, PinsActualProducerUntilConsumerRetiresAndRejectsStaleEpoch) {
   auto context = a::Context::create();

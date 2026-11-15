@@ -17,11 +17,16 @@
 #include "metadata_arena.h"
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
+#include "hyle/core/assert.h"
 
 // Private, locked resource seams. These symbols never form an installed C API.
 extern "C" {
 ggml_backend_buffer_t ggml_hyle_metal_import(ggml_backend_t, void *);
 std::int64_t ggml_hyle_metal_checked_sync(ggml_backend_t);
+bool ggml_hyle_metal_can_signal(ggml_backend_t);
+bool ggml_hyle_metal_signal_begin(ggml_backend_t, void *, std::uint64_t,
+                                void (*)(void *), void *);
+bool ggml_hyle_metal_signal_end(ggml_backend_t);
 bool ggml_hyle_metal_prepare_gdn(ggml_backend_t, const ggml_tensor *);
 bool ggml_hyle_metal_prepare_graph(ggml_backend_t, ggml_cgraph *, bool *);
 }
@@ -245,6 +250,8 @@ struct NativeProgram::State {
   std::size_t checked_index_count = 0;
   std::int64_t checked_index_extent = 0;
   bool failed = false;
+  bool pending = false;
+  Status encoding_status;
 
   ~State() {
     if (backend != nullptr) {
@@ -599,6 +606,7 @@ std::size_t NativeProgram::output_bytes() const noexcept {
 
 void NativeProgram::detach_bindings() noexcept {
   auto &s = *state_;
+  HYLE_FATAL_ASSERT(!s.pending);
   for (std::size_t i = 0; i < s.port_count; ++i) {
     s.tensors[i]->buffer = nullptr; s.tensors[i]->data = nullptr;
     s.native_buffers[i] = nullptr;
@@ -612,6 +620,31 @@ Status NativeProgram::run(std::span<const BufferView> ports) noexcept {
   return run_impl(ports, false);
 }
 
+bool NativeProgram::can_signal() const noexcept {
+  return !state_->failed && ggml_hyle_metal_can_signal(state_->backend);
+}
+bool NativeProgram::pending() const noexcept { return state_->pending; }
+Status NativeProgram::submission_status() const noexcept { return state_->encoding_status; }
+bool NativeProgram::reads_indices() const noexcept { return state_->checked_index_count != 0; }
+Status NativeProgram::submit(std::span<const BufferView> ports,
+                            NativeSignal signal, std::size_t proven_port,
+                            std::int64_t proven_extent) noexcept {
+  if (!signal.valid()) return Status::InvalidArgument("native Metal signal is incomplete");
+  if (proven_extent && (proven_extent <= 0 || proven_port != state_->checked_index_port ||
+                        proven_extent != state_->checked_index_extent))
+    return Status::InvalidArgument("native Metal index proof differs from its prepared port/extent");
+  return run_impl(ports, proven_extent > 0, signal);
+}
+Status NativeProgram::finish() noexcept {
+  auto &s = *state_;
+  if (!s.pending) return Status::FailedPrecondition("native Metal prefix is not pending");
+  auto status = native_status(ggml_hyle_metal_checked_sync(s.backend));
+  status.Update(s.encoding_status);
+  s.pending = false;
+  s.failed = !status.ok();
+  return status;
+}
+
 Status NativeProgram::run_with_proven_indices(std::span<const BufferView> ports,
                                               std::size_t port, std::int64_t extent) noexcept {
   if (port != state_->checked_index_port || extent <= 0 ||
@@ -621,12 +654,15 @@ Status NativeProgram::run_with_proven_indices(std::span<const BufferView> ports,
 }
 
 Status NativeProgram::run_impl(std::span<const BufferView> ports,
-                              bool proven_indices) noexcept {
+                              bool proven_indices, NativeSignal signal) noexcept {
   auto &s = *state_;
+  if (s.pending)
+    return Status::Unavailable("native Metal program still owns its accepted prefix");
   if (s.failed)
     return Status::FailedPrecondition("failed ggml Metal program must be recreated");
   if (ports.size() != s.port_count)
     return Status::InvalidArgument("ggml Metal model buffer count mismatch");
+  bool signal_armed = false;
   try {
     std::array<BufferOwner, 9> replacements;
     for (std::size_t i = 0; i < ports.size(); ++i) {
@@ -672,7 +708,25 @@ Status NativeProgram::run_impl(std::span<const BufferView> ports,
                        s.output_offsets[i];
       }
     }
+    if (signal.valid()) {
+      if (!ggml_hyle_metal_signal_begin(s.backend, signal.event, signal.value,
+                                        signal.completed, signal.state))
+        return Status::Unimplemented("native Metal signal does not match its original endpoint");
+      signal_armed = true;
+    }
     const auto submitted = ggml_backend_graph_compute_async(s.backend, s.graph);
+    if (signal_armed) {
+      const bool accepted = ggml_hyle_metal_signal_end(s.backend);
+      signal_armed = false;
+      if (accepted) {
+        s.encoding_status = submitted == GGML_STATUS_SUCCESS ? Status::Ok() :
+            submitted == GGML_STATUS_ALLOC_FAILED
+                ? Status::ResourceExhausted("ggml Metal encoding allocation failed")
+                : Status::Internal("ggml Metal graph encoding failed");
+        s.pending = true;
+        return Status::Ok();
+      }
+    }
     const auto native_code = ggml_hyle_metal_checked_sync(s.backend);
     if (native_code > 0) {
       s.failed = true;
@@ -688,11 +742,17 @@ Status NativeProgram::run_impl(std::span<const BufferView> ports,
       s.failed = true;
       return native_status(native_code);
     }
-    return Status::Ok();
+    return signal.valid() ? Status::Internal("native Metal signal accepted no prefix") : Status::Ok();
   } catch (...) {
+    const auto failure = exception_status();
+    if (signal_armed && ggml_hyle_metal_signal_end(s.backend)) {
+      s.encoding_status = failure;
+      s.pending = true;
+      return Status::Ok();
+    }
     s.failed = true;
     (void)ggml_hyle_metal_checked_sync(s.backend);
-    return exception_status();
+    return failure;
   }
 }
 } // namespace hyle::compute::ggml_metal

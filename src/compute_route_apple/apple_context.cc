@@ -24,6 +24,7 @@
 #include "apple_internal.h"
 #include "apple_runtime_internal.h"
 #include "apple_recurrent.h"
+#include "apple_native_event.h"
 #include "apple_tensor.h"
 #include "completion_internal.h"
 #include "hyle/compute/detail/apple_plan.h"
@@ -188,6 +189,35 @@ void Runtime::poison(Status terminal) noexcept {
       failure = std::move(terminal);
   }
 
+Status Runtime::reserve_native_tail() noexcept {
+  std::lock_guard lock(queue_mutex);
+  if (native_tails == SIZE_MAX)
+    return Status::ResourceExhausted("Apple native retirement capacity");
+  ++native_tails;
+  native_tail_peak = (std::max)(native_tail_peak, native_tails);
+  return Status::Ok();
+}
+void Runtime::release_native_tail() noexcept {
+  {
+    std::lock_guard lock(queue_mutex);
+    HYLE_FATAL_ASSERT(native_tails);
+    --native_tails;
+  }
+  wake.unpark();
+}
+void Runtime::enqueue_retirement(Job &job) noexcept {
+  {
+    std::lock_guard lock(queue_mutex);
+    HYLE_FATAL_ASSERT(native_tails);
+    // These are observers of already accepted native work, not new public
+    // admission. Closing/poisoning cannot discard their original owners.
+    job.next = head;
+    head = &job;
+    if (!tail) tail = &job;
+  }
+  wake.unpark();
+}
+
 void Runtime::run() noexcept {
     owner_id.store(platform::this_thread::get_id(), std::memory_order_release);
     for (;;) {
@@ -199,7 +229,7 @@ void Runtime::run() noexcept {
           head = job->next;
           if (head == nullptr)
             tail = nullptr;
-        } else if (!accepting) {
+        } else if (!accepting && native_tails == 0) {
           break;
         }
       }
@@ -340,7 +370,8 @@ std::vector<mx::array> prepare_mlx(MlxProgram &program, RegionFunction region,
 
 Status evaluate_mlx(const MlxProgram &program,
                     const std::vector<mx::array> &inputs,
-                    std::vector<mx::array> &outputs) {
+                    std::vector<mx::array> &outputs, mx::Stream stream) {
+  encode_native_input_waits(inputs, stream);
   outputs = program.compiled(inputs);
   // MLX eval waits the original graph's synchronizer event and checks its
   // native error. A second stream synchronize commits an otherwise empty
@@ -386,7 +417,15 @@ struct ResultValues {
   std::vector<mx::array> arrays;
 };
 
+struct InvocationState;
+void execute_native_tail(Job *) noexcept;
+void native_prefix_completed(void *) noexcept;
+Status observe_native_prefix(InvocationState &) noexcept;
+Status observe_native_inputs(InvocationState &) noexcept;
+Status drain_native_regions(InvocationState &) noexcept;
+
 struct InvocationState : Job {
+  struct NativeTail final : Job { InvocationState *owner = nullptr; } native_tail;
   struct PreparedInput final {
     InputBinding binding;
     std::uint64_t expected_epoch = 0;
@@ -424,11 +463,19 @@ struct InvocationState : Job {
   cd::CompletionLifetime abandoned;
   CompletionNotification notification;
   Status terminal_hint;
+  bool native_async = false; // Selected once from this actual prepared Plan.
+  bool native_deferred = false, native_retired = false;
+  bool native_values_ready = false; // Published under binding_mutex.
+  std::uint64_t native_retired_epoch = 0;
+  Status native_terminal;
+  Status observe_inputs() noexcept;
 
   InvocationState(std::shared_ptr<ProgramState> p, cd::ResultSlot<Results> slot)
       : program(std::move(p)), values(std::make_shared<ResultValues>()),
         result_slot(std::move(slot)) {
     inputs.reserve(program->inputs.size());
+    native_tail.owner = this;
+    native_tail.execute = &execute_native_tail;
   }
 
   // Source snapshots are taken at native submission, not at cold binding.
@@ -476,18 +523,24 @@ struct InvocationState : Job {
       }
       auto &producer = *binding.source.state_;
       std::lock_guard lock(producer.binding_mutex);
+      const bool complete = producer.done.load(std::memory_order_acquire) != 0;
+      if (!complete && producer.native_deferred && !producer.native_terminal.ok())
+        return producer.native_terminal;
       if (producer.submitted_epoch.load(std::memory_order_acquire) != input.expected_epoch ||
-          producer.done.load(std::memory_order_acquire) == 0)
+          (!complete && !producer.native_values_ready))
         return Status::FailedPrecondition("Apple late input producer epoch is not ready");
-      if (!producer.terminal.ok()) return producer.terminal;
+      if (complete && !producer.terminal.ok()) return producer.terminal;
+      if (producer.native_retired && !producer.native_terminal.ok()) return producer.native_terminal;
       if (binding.source.port_ >= producer.values->arrays.size())
         return Status::Internal("Apple late input producer output is absent");
       const auto &value = producer.values->arrays[binding.source.port_];
       const auto &spec = program->inputs[inputs.size()];
-      if (value.status() != mx::array::available || value.shape() != spec.shape ||
+      const bool native_pending = !complete && producer.native_async &&
+          value.status() == mx::array::evaluated && value.event().valid();
+      if ((!native_pending && value.status() != mx::array::available) || value.shape() != spec.shape ||
           value.dtype() != spec.dtype)
         return Status::Internal("Apple late input producer output differs from its prepared carrier");
-      inputs.push_back(value); // Copies a ready native owner; capacity is cold.
+      inputs.push_back(value); // Original owner/event stays pinned through retirement.
     }
     return Status::Ok();
   }
@@ -506,7 +559,7 @@ Status evaluate_batch(RuntimeBatchInvocationState& state, mx::Stream stream) {
   const auto a=fn.initial.host(),b=state.layout.host();
   const auto equal=[](auto x,auto y){return x.size()==y.size() && std::equal(x.begin(),x.end(),y.begin());};
   if(equal(a.kv_indptr,b.kv_indptr) && equal(a.last_page_lengths,b.last_page_lengths))
-    return evaluate_mlx(*state.program,state.inputs,state.values->arrays);
+    return evaluate_mlx(*state.program,state.inputs,state.values->arrays,stream);
   CheckTrace trace;
   HYLE_ASSIGN_OR_RETURN(auto outputs,fn.build(state.layout,state.inputs,stream));
   // This private builder has the same cold-validated, selected-stream topology.
@@ -522,6 +575,7 @@ Status evaluate_batch(RuntimeBatchInvocationState& state, mx::Stream stream) {
 
 Status evaluate_attention_blocks(const AttentionBlocks &program, InvocationState &state,
                                  mx::Stream stream) {
+  encode_native_input_waits(state.arguments, stream);
   const auto &ports=state.arguments;
   auto &args=state.block_arguments;
   auto &outputs=state.block_outputs;
@@ -565,7 +619,7 @@ Status evaluate_attention_blocks(const AttentionBlocks &program, InvocationState
       args.push_back(ports[4]);
     }
     const auto &part=end-begin==128 ? program.full : *program.tail;
-    HYLE_RETURN_IF_ERROR(evaluate_mlx(part,args,outputs));
+    HYLE_RETURN_IF_ERROR(evaluate_mlx(part,args,outputs,stream));
     blocks.push_back(std::move(outputs[0]));
     outputs.clear();args.clear();
     begin=end;
@@ -594,12 +648,42 @@ Status execute_plan(InvocationState &state, mx::Stream stream) {
       state.arguments.push_back(*values[id]);
     if (region.kind == RegionKind::kMlx) {
       HYLE_RETURN_IF_ERROR(evaluate_mlx(*prepared.mlx[i], state.arguments,
-                                        state.region_outputs));
+                                        state.region_outputs,stream));
     } else if (region.kind == RegionKind::kAttentionBlocks) {
       HYLE_RETURN_IF_ERROR(evaluate_attention_blocks(*prepared.attention_blocks[i],state,stream));
     } else {
-      HYLE_ASSIGN_OR_RETURN(state.region_outputs,
-                            state.recurrent[i]->run(state.arguments, stream));
+      if (state.recurrent[i]->host_indices)
+        HYLE_RETURN_IF_ERROR(drain_native_regions(state));
+      if (state.recurrent[i]->host_indices)
+        HYLE_RETURN_IF_ERROR(observe_native_inputs(state));
+      if (state.native_async) {
+        HYLE_RETURN_IF_ERROR(state.program->runtime->reserve_native_tail());
+        state.native_deferred = true;
+        auto outputs = state.recurrent[i]->submit(state.arguments, stream,
+            &native_prefix_completed, &state);
+        if (!outputs) {
+          state.native_deferred = false;
+          state.program->runtime->release_native_tail();
+          return std::move(outputs).error();
+        }
+        state.region_outputs = std::move(*outputs);
+        state.native_terminal.Update(state.recurrent[i]->program->submission_status());
+      } else if (state.recurrent[i]->completion_event.valid()) {
+        auto &runtime = *state.program->runtime;
+        auto &program = *state.recurrent[i]->program;
+        HYLE_RETURN_IF_ERROR(runtime.reserve_native_tail());
+        struct PrefixAdmission final {
+          Runtime &runtime;
+          ggml_metal::NativeProgram &program;
+          ~PrefixAdmission() { if (!program.pending()) runtime.release_native_tail(); }
+        } admission{runtime, program};
+        HYLE_ASSIGN_OR_RETURN(state.region_outputs,
+            state.recurrent[i]->submit(state.arguments, stream, nullptr, nullptr));
+        HYLE_RETURN_IF_ERROR(program.submission_status());
+      } else {
+        HYLE_ASSIGN_OR_RETURN(state.region_outputs,
+                              state.recurrent[i]->run(state.arguments, stream));
+      }
     }
     for (std::size_t port = 0; port < region.outputs.size(); ++port)
       values[region.outputs[port]] = std::move(state.region_outputs[port]);
@@ -616,6 +700,10 @@ Status execute_plan(InvocationState &state, mx::Stream stream) {
     state.values->arrays.push_back(*values[id]);
   for (auto &value : values)
     value.reset();
+  if (state.native_deferred) {
+    std::lock_guard lock(state.binding_mutex);
+    state.native_values_ready = state.native_terminal.ok();
+  }
   return Status::Ok();
 }
 
@@ -678,10 +766,84 @@ void finish(InvocationState &state, Status terminal) noexcept {
   deliver_notification(notification);
 }
 
+Status drain_native_regions(InvocationState &state) noexcept {
+  Status terminal;
+  for (auto &region : state.recurrent) {
+    if (!region || !region->program->pending()) continue;
+    terminal.Update(region->finish());
+    state.program->runtime->release_native_tail();
+  }
+  return terminal;
+}
+
+// This proves native readiness on the original owner; public Completion and
+// slot reuse still wait for the original completion callback's tail Job.
+Status observe_native_prefix(InvocationState &state) noexcept {
+  if (!state.native_deferred || state.native_retired) return state.native_terminal;
+  state.native_terminal.Update(state.recurrent.front()->finish());
+  state.native_terminal.Update(observe_native_inputs(state));
+  if (state.native_terminal.ok()) {
+    try {
+      for (auto &output : state.values->arrays) output.wait();
+    } catch (...) {
+      state.native_terminal.Update(native_exception());
+      state.program->runtime->poison(state.native_terminal);
+    }
+  }
+  {
+    std::lock_guard lock(state.completion_mutex);
+    if (state.native_terminal.ok() && state.cancel.load(std::memory_order_acquire))
+      state.native_terminal = Status::Cancelled("Apple submission cancelled after native drain");
+    state.native_retired_epoch = state.submitted_epoch.load(std::memory_order_acquire);
+    state.native_retired = true;
+  }
+  return state.native_terminal;
+}
+Status InvocationState::observe_inputs() noexcept {
+  Status result;
+  for (const auto &input : prepared_inputs) {
+    if (!input.pinned) continue;
+    auto &producer = *input.binding.source.state_;
+    if (producer.native_deferred) result.Update(observe_native_prefix(producer));
+    if (producer.done.load(std::memory_order_acquire)) result.Update(producer.terminal);
+  }
+  return result;
+}
+Status observe_native_inputs(InvocationState &state) noexcept { return state.observe_inputs(); }
+void retire_invocation(InvocationState &state, Status terminal) noexcept {
+  if (terminal.ok() && state.cancel.load(std::memory_order_acquire))
+    terminal = Status::Cancelled("Apple submission cancelled after native drain");
+  state.block_arguments.clear(); state.block_outputs.clear(); state.output_blocks.clear();
+  if (state.source_bindings) state.inputs.clear();
+  state.release_source_pins();
+  finish(state, std::move(terminal));
+  release(&state);
+}
+void native_prefix_completed(void *opaque) noexcept {
+  auto &state = *static_cast<InvocationState *>(opaque);
+  state.program->runtime->enqueue_retirement(state.native_tail);
+}
+void execute_native_tail(Job *job) noexcept {
+  auto &state = *static_cast<InvocationState::NativeTail *>(job)->owner;
+  const auto terminal = observe_native_prefix(state);
+  state.program->runtime->release_native_tail();
+  retire_invocation(state, terminal);
+}
+
 template<class Evaluate>
 void execute_with(InvocationState& state, Evaluate evaluate) noexcept {
   HYLE_TRACE_ZONE_NAMED("hyle.apple.execute");
   auto &runtime = *state.program->runtime;
+  state.native_deferred = false;
+  {
+    std::lock_guard lock(state.completion_mutex);
+    state.native_retired = false;
+  }
+  state.native_terminal = {};
+  {
+    std::lock_guard lock(state.binding_mutex);
+    state.native_values_ready = false;
+  }
   // Clear borrowed fields before any finish/retirement callback can return the
   // source controls. Locals are used only before resolve/eval in this Job.
   const auto preflight = std::exchange(state.source_preflight, nullptr);
@@ -710,24 +872,37 @@ void execute_with(InvocationState& state, Evaluate evaluate) noexcept {
       }
       runtime.poison(terminal);
     }
-    if (terminal.ok() && state.cancel.load(std::memory_order_acquire))
-      terminal =
-          Status::Cancelled("Apple submission cancelled after native drain");
   }
+  if (state.native_deferred) {
+    if (state.recurrent.front()->program->pending()) {
+      state.native_terminal.Update(terminal);
+      return; // The accepted native tail keeps this original worker reference.
+    }
+    runtime.release_native_tail();
+    state.native_deferred = false;
+  }
+  auto native_terminal = drain_native_regions(state);
+  native_terminal.Update(terminal);
+  terminal = std::move(native_terminal);
+  if (terminal.ok()) {
+    try {
+      for (auto &output : state.values->arrays) output.wait();
+    } catch (...) {
+      terminal = native_exception();
+      runtime.poison(terminal);
+    }
+  }
+  terminal.Update(observe_native_inputs(state));
   // evaluate_mlx/execute_with have drained every accepted prefix before
   // temporary block owners are released. Whole-Job ports/uses retire in finish.
-  state.block_arguments.clear();state.block_outputs.clear();state.output_blocks.clear();
-  if (state.source_bindings) state.inputs.clear();
-  state.release_source_pins();
-  finish(state, std::move(terminal));
-  release(&state); // admitted worker reference
+  retire_invocation(state, std::move(terminal));
 }
 
 void execute_invocation(Job* job) noexcept {
   auto& state=*static_cast<InvocationState*>(job);
   execute_with(state,[&](mx::Stream stream){
     return state.program->native ? execute_plan(state,stream) :
-        evaluate_mlx(*state.program,state.inputs,state.values->arrays);
+        evaluate_mlx(*state.program,state.inputs,state.values->arrays,stream);
   });
 }
 void execute_batch_invocation(Job* job) noexcept {
@@ -774,7 +949,12 @@ const cd::CompletionVTable completion_vtable{
     .request_cancel =
         [](void *pointer) noexcept {
           auto &state = *static_cast<InvocationState *>(pointer);
-          state.cancel.store(true, std::memory_order_release);
+          std::lock_guard lock(state.completion_mutex);
+          // An original native terminal observation is immutable. Public
+          // readiness still waits for permission retirement in its tail Job.
+          if (!state.native_retired || state.native_retired_epoch !=
+              state.submitted_epoch.load(std::memory_order_acquire))
+            state.cancel.store(true, std::memory_order_release);
           return Status::Ok();
         }};
 Status subscribe_completion(cd::CompletionDependency source,
@@ -1190,6 +1370,9 @@ Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
                                           plan.regions[i].native_inputs,
                                           plan.regions[i].proven_index_port,
                                           plan.regions[i].proven_index_extent));
+            auto signal = state->recurrent[i]->prepare_signal(*state_->runtime->stream);
+            if (!signal) return std::move(signal).error();
+            if (plan.regions.size() == 1) state->native_async = *signal;
           }
         return Status::Ok();
       });
@@ -1286,9 +1469,11 @@ Result<mx::array> detail::InvocationAccess::source_output(const InputSource &sou
   if (runtime->owner_id.load(std::memory_order_acquire) != platform::this_thread::get_id())
     return std::unexpected(Status::FailedPrecondition("Apple source resolution requires its original FIFO owner"));
   auto &state = *source.state_;
+  if (state.native_deferred && !state.done.load(std::memory_order_acquire))
+    HYLE_RETURN_IF_ERROR(detail::observe_native_prefix(state));
   std::lock_guard lock(state.binding_mutex);
   if (!expected_epoch || state.submitted_epoch.load(std::memory_order_acquire) != expected_epoch ||
-      state.done.load(std::memory_order_acquire) == 0 || !state.source_readers)
+      (state.done.load(std::memory_order_acquire) == 0 && !state.native_retired) || !state.source_readers)
     return std::unexpected(Status::FailedPrecondition("Apple copy producer epoch is not ready/pinned"));
   if (!state.terminal.ok()) return std::unexpected(state.terminal);
   if (source.port_ >= state.values->arrays.size())

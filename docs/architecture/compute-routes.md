@@ -44,6 +44,11 @@ MLX生成array由实际owner保活，不为统一out-buffer形状强制影子复
 arrays/metadata，应按实际managed成本描述；不能从compile名称推断无分配重放。
 提交线程、stream、metallib与错误观测具有原生约束，host可见也不等于GPU工作成功完成。
 
+已准备的ggml-Metal region可在原命令缓冲尾部发布SharedEvent，MLX消费者显式编码GPU等待。
+MLX event的stream标记不是ggml的原生Queue身份，不能据此省略等待。原输入array、输出和Source
+保活到原生终态核对；事件就绪不代替错误检查或公共Completion的权限退休。关闭公共接纳后，
+原owner仍排空已接纳工作的完成通知。整张Graph的Source交接仍可需要HostWait，这与内部region事件桥接分开。
+
 Metal pipeline的static threadgroup memory上限与全局GPU buffer容量是不同限制。
 编译或验证选项可能改变某个pipeline的实际用量，应查询创建后的pipeline再决定合法tile/路径，
 不能把一次超限推导成统一buffer上限，也不能假定所有kernel的用量按相同比例变化。

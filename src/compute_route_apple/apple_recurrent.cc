@@ -2,6 +2,7 @@
 
 #include <array>
 #include <new>
+#include <limits>
 #include <optional>
 #include <utility>
 
@@ -10,6 +11,7 @@
 #include <mlx/transforms.h>
 
 #include "apple_internal.h"
+#include "apple_native_event.h"
 
 namespace hyle::compute::apple::detail {
 namespace mx = mlx::core;
@@ -34,11 +36,14 @@ mx::array packed_array(std::size_t bytes) {
 }
 
 mx::array output_view(const mx::array &packed, const mx::Shape &shape,
-                       std::size_t offset) {
+                       std::size_t offset, const mx::Event *event = nullptr) {
   mx::array result(shape, mx::float32, nullptr, {});
   result.copy_shared_buffer(packed, result.strides(), result.flags(),
                             result.size(), static_cast<std::int64_t>(offset));
-  result.set_status(mx::array::available);
+  if (event) {
+    result.attach_event(*event);
+    result.set_status(mx::array::evaluated);
+  } else result.set_status(mx::array::available);
   return result;
 }
 
@@ -61,6 +66,7 @@ Recurrent::create(Operation operation, std::span<const TensorDesc> inputs,
     result->input_descriptions.assign(inputs.begin(), inputs.end());
     result->proven_index_port = proven_index_port;
     result->proven_index_extent = proven_index_extent;
+    result->host_indices = proven_index_extent == 0 && result->program->reads_indices();
     result->output_shapes.resize(result->program->output_count());
     for (std::size_t port = 0; port < result->program->output_count(); ++port)
       for (auto d : result->program->output_description(port).dimensions())
@@ -73,8 +79,38 @@ Recurrent::create(Operation operation, std::span<const TensorDesc> inputs,
 
 void Recurrent::detach_inputs() noexcept { program->detach_bindings(); }
 
+Result<bool> Recurrent::prepare_signal(mx::Stream stream) noexcept {
+  if (!program->can_signal()) return false;
+  try {
+    completion_event = mx::Event(stream);
+    pending_inputs.reserve(input_descriptions.size());
+    return true;
+  } catch (...) { return std::unexpected(native_exception()); }
+}
+Status Recurrent::finish() noexcept {
+  const auto status = program->finish();
+  pending_inputs.clear(); // NativeProgram checked and drained the original prefix.
+  return status;
+}
+
 Result<std::vector<mx::array>>
 Recurrent::run(std::span<const mx::array> inputs, mx::Stream stream) {
+  return run_impl(inputs, stream, {});
+}
+Result<std::vector<mx::array>>
+Recurrent::submit(std::span<const mx::array> inputs, mx::Stream stream,
+                  void (*completed)(void *) noexcept, void *state) {
+  if (!completion_event.valid() || program->pending())
+    return std::unexpected(Status::FailedPrecondition("native Metal event is unprepared or still pending"));
+  if (signal_value == (std::numeric_limits<std::uint64_t>::max)())
+    return std::unexpected(Status::ResourceExhausted("native Metal event generation exhausted"));
+  completion_event.set_value(++signal_value);
+  return run_impl(inputs, stream,
+      {completion_event.cast<mx::metal::EventImpl>().mtl_event(), signal_value, completed, state});
+}
+Result<std::vector<mx::array>>
+Recurrent::run_impl(std::span<const mx::array> inputs, mx::Stream stream,
+                    ggml_metal::NativeSignal signal) {
   if (inputs.size() > 8)
     return std::unexpected(Status::InvalidArgument(
         "Apple native region exceeds eight input buffers"));
@@ -118,6 +154,7 @@ Recurrent::run(std::span<const mx::array> inputs, mx::Stream stream) {
     }
   }
   if (copied) {
+    encode_native_input_waits(inputs, stream);
     std::vector<mx::array> pending;
     pending.reserve(copied);
     for (auto &input : dense)
@@ -133,16 +170,24 @@ Recurrent::run(std::span<const mx::array> inputs, mx::Stream stream) {
     ports[i] = view(dense[i] ? *dense[i] : inputs[i]);
   ports[inputs.size()] = view(packed);
   const auto active_ports = std::span(ports).first(inputs.size() + 1);
-  HYLE_RETURN_IF_ERROR(proven_index_extent > 0
-      ? program->run_with_proven_indices(active_ports, proven_index_port, proven_index_extent)
-      : program->run(active_ports));
-  packed.set_status(mx::array::available);
+  // Prepare all throwing metadata/owners before the native prefix is accepted.
   std::vector<mx::array> outputs;
   outputs.reserve(output_shapes.size());
   for (std::size_t port = 0; port < output_shapes.size(); ++port)
     outputs.push_back(output_view(packed, output_shapes[port],
                                   program->output_offset(port) /
-                                      sizeof(float)));
+                                      sizeof(float), signal.valid() ? &completion_event : nullptr));
+  if (signal.valid()) {
+    pending_inputs.clear();
+    for (std::size_t i = 0; i < inputs.size(); ++i)
+      pending_inputs.push_back(dense[i] ? *dense[i] : inputs[i]);
+    auto status = program->submit(active_ports, signal, proven_index_port, proven_index_extent);
+    if (!status.ok()) { pending_inputs.clear(); return std::unexpected(std::move(status)); }
+  } else {
+    HYLE_RETURN_IF_ERROR(proven_index_extent > 0
+        ? program->run_with_proven_indices(active_ports, proven_index_port, proven_index_extent)
+        : program->run(active_ports));
+  }
   return outputs;
 }
 } // namespace hyle::compute::apple::detail

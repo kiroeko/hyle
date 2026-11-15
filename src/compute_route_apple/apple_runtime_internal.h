@@ -30,7 +30,12 @@ struct Runtime {
   Status failure;
   Environment environment;
   std::optional<mlx::core::Stream> stream;
+  std::size_t native_tails = 0;
+  std::size_t native_tail_peak = 0;
   Status enqueue(Job &job) noexcept;
+  Status reserve_native_tail() noexcept;
+  void release_native_tail() noexcept;
+  void enqueue_retirement(Job &job) noexcept;
   void poison(Status terminal) noexcept;
   void run() noexcept;
   Status close() noexcept;

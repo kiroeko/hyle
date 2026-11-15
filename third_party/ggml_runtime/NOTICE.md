@@ -34,9 +34,15 @@ libdispatch callbacks; accepted commands are drained before owners are released.
 The bridge symbols are private. The original embedded Metal sources provide
 relocatable delivery; library/pipeline construction stays in cold preparation.
 The imported array remains owned and allocated by MLX, never freed by ggml.
+Prepared native graphs can signal an original SharedEvent before command-buffer
+commit. Optional completion notification retains accepted work on its existing
+owner; original checked completion remains mandatory before public retirement.
+GPU consumers wait on the native event explicitly, including when an MLX event
+has the same allocation-stream tag. Native errors unblock waiting consumers but
+remain failures, and closing public admission still drains accepted callbacks.
 Native workspace buffer creation also checks metadata allocation and releases
 partially initialized Metal/host resources, including a failed C++ backend
-buffer wrapper. These changes affect cold allocation and failure paths only.
+buffer wrapper. These workspace changes affect cold allocation and failure paths only.
 
 The CPU paged-address integration maps logical K/V rows through a cold owned
 I32 physical page table for private tagged batch graphs. It retains the original

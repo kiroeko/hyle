@@ -9,6 +9,11 @@
 #include <tuple>
 #include <vector>
 
+#if defined(HYLE_COMPUTE_APPLE)
+#include "../../src/compute_route_apple/apple_carrier.h"
+#include "../../src/compute_route_apple/apple_runtime_internal.h"
+#endif
+
 // Included after the product Model. Uses only already prepared local weights;
 // ordinary and MTP are finite state/ownership checks, not quality or speed tests.
 namespace qwen_host_image_case {
@@ -313,6 +318,16 @@ inline ModeReport run_mode(const std::filesystem::path &input, q::BackendKind ki
     retire(old_reader); retire(baseline); retire(imported); old_alias.reset();
     require(!model.snapshot_versions.live && !model.active_step && !model.carrier_borrowed,
         "image roundtrip retained a model version, native episode or original execution carrier");
+#if defined(HYLE_COMPUTE_APPLE)
+    if (kind == q::BackendKind::kApple) {
+      auto *endpoint = q::take(model.execution.apple_context());
+      auto runtime = hyle::compute::apple::detail::ContextAccess::runtime(*endpoint);
+      std::lock_guard lock(runtime->queue_mutex);
+      require(runtime->native_tail_peak && !runtime->native_tails,
+          "complete model did not exercise and retire the original native GPU signal bridge");
+      std::cout << "native_signal_peak=" << runtime->native_tail_peak << " pending=0\n";
+    }
+#endif
     escaped = std::move(unchanged); storage_after_model = std::move(storage);
     retained_expected = std::move(original);
     require(storage_after_model->live_images() == 1, "escaped image lost its independent admission");

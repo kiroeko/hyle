@@ -244,7 +244,7 @@
     {
       "path": "src/ggml-metal/ggml-metal-context.m",
       "before_sha256": "2be28299672d17fbbe1ba13eff773f69cbe5e7604885d59fc82d57bb889e5c61",
-      "after_sha256": "7014a1c9e590673d6e5a05fa3ebb318fe0a9ca5990c42ea9e446cab933c179c2",
+      "after_sha256": "060ea620fad572932f54f245ac779ceaa7352ab0df15956f2c8b49462024db3a",
       "edits": [
         {
           "before": "struct ggml_metal_command_buffer {\n    id<MTLCommandBuffer> obj;\n};",
@@ -289,24 +289,40 @@
         {
           "before": "    ctx->encode_async = Block_copy(^(size_t iter) {\n        const int cb_idx = iter;\n        const int n_cb_l = ctx->n_cb;\n\n        const int n_nodes_0 = ctx->n_nodes_0;\n        const int n_nodes_1 = ctx->n_nodes_1;\n\n        const int n_nodes_per_cb = ctx->n_nodes_per_cb;\n\n        int idx_start = 0;\n        int idx_end   = n_nodes_0;\n\n        if (cb_idx < n_cb_l) {\n            idx_start = n_nodes_0 + (                                         (cb_idx + 0) * n_nodes_per_cb);\n            idx_end   = n_nodes_0 + (MIN((cb_idx == n_cb_l - 1) ? n_nodes_1 : (cb_idx + 1) * n_nodes_per_cb, n_nodes_1));\n        }\n\n        id<MTLCommandBuffer> cmd_buf = ctx->cmd_bufs[cb_idx].obj;\n\n        ctx->cmd_bufs[cb_idx].encode_status = ggml_metal_op_try_encode(\n            ctx->dev, cmd_buf, ctx->gf, ctx->finfo, idx_start, idx_end,\n            ctx->use_concurrency, ctx->capture_compute, ctx->debug_graph);\n\n        if (cb_idx < 2 || ctx->abort_callback == NULL) {\n            [cmd_buf commit];\n        }\n    });",
           "after": "    ctx->encode_async = Block_copy(^(size_t iter) {\n        const int cb_idx = iter;\n        const int n_cb_l = ctx->n_cb;\n\n        const int n_nodes_0 = ctx->n_nodes_0;\n        const int n_nodes_1 = ctx->n_nodes_1;\n\n        const int n_nodes_per_cb = ctx->n_nodes_per_cb;\n\n        int idx_start = 0;\n        int idx_end   = n_nodes_0;\n\n        if (cb_idx < n_cb_l) {\n            idx_start = n_nodes_0 + (                                         (cb_idx + 0) * n_nodes_per_cb);\n            idx_end   = n_nodes_0 + (MIN((cb_idx == n_cb_l - 1) ? n_nodes_1 : (cb_idx + 1) * n_nodes_per_cb, n_nodes_1));\n        }\n\n        id<MTLCommandBuffer> cmd_buf = ctx->cmd_bufs[cb_idx].obj;\n\n        ctx->cmd_bufs[cb_idx].encode_status = ggml_metal_op_try_encode(\n            ctx->dev, cmd_buf, ctx->gf, ctx->finfo, idx_start, idx_end,\n            ctx->use_concurrency, ctx->capture_compute, ctx->debug_graph);\n\n        if (cb_idx < 2 || ctx->abort_callback == NULL) {\n            [cmd_buf commit];\n        }\n    });\n    if (!ctx->encode_async) ctx->has_error = true;"
+        },
+        {
+          "before": "    bool has_error;",
+          "after": "    bool has_error;\n    id<MTLSharedEvent> hyle_event;\n    uint64_t hyle_value;\n    void (*hyle_done)(void *);\n    void * hyle_state;\n    bool hyle_submitted;\n    id<MTLCommandBuffer> hyle_buffer;"
+        },
+        {
+          "before": "void ggml_metal_graph_optimize(ggml_metal_t ctx, struct ggml_cgraph * gf) {",
+          "after": "bool ggml_metal_can_signal(ggml_metal_t ctx) {\n    return ctx->n_cb == 0 && !ctx->has_error && !ctx->hyle_event && ctx->capture_compute <= 0;\n}\nbool ggml_metal_signal_begin(ggml_metal_t ctx, void * raw, uint64_t value,\n                             void (*done)(void *), void * state) {\n    if (!ggml_metal_can_signal(ctx) || !raw || !value || (done && !state)) return false;\n    id<MTLSharedEvent> event = (id<MTLSharedEvent>)raw;\n    if (![event conformsToProtocol:@protocol(MTLSharedEvent)]) return false;\n    ctx->hyle_event = event;\n    ctx->hyle_value = value;\n    ctx->hyle_done = done;\n    ctx->hyle_state = state;\n    ctx->hyle_submitted = false;\n    ctx->hyle_buffer = nil;\n    return true;\n}\nbool ggml_metal_signal_end(ggml_metal_t ctx) {\n    id<MTLCommandBuffer> buffer = ctx->hyle_buffer;\n    const bool accepted = ctx->hyle_submitted || (ctx->hyle_event && buffer &&\n        buffer.status >= MTLCommandBufferStatusCommitted);\n    ctx->hyle_event = nil;\n    ctx->hyle_value = 0;\n    ctx->hyle_done = NULL;\n    ctx->hyle_state = NULL;\n    ctx->hyle_submitted = false;\n    ctx->hyle_buffer = nil;\n    return accepted;\n}\n\nvoid ggml_metal_graph_optimize(ggml_metal_t ctx, struct ggml_cgraph * gf) {"
+        },
+        {
+          "before": "        if (cb_idx < 2 || ctx->abort_callback == NULL) {\n            [cmd_buf commit];\n        }\n    });",
+          "after": "        if (cb_idx < 2 || ctx->abort_callback == NULL) {\n            const bool signal = n_cb_l == 0 && ctx->hyle_event;\n            if (signal) {\n                id<MTLSharedEvent> event = ctx->hyle_event;\n                const uint64_t value = ctx->hyle_value;\n                void (*done)(void *) = ctx->hyle_done;\n                void * state = ctx->hyle_state;\n                ctx->hyle_buffer = cmd_buf;\n                [cmd_buf encodeSignalEvent:event value:value];\n                [cmd_buf addCompletedHandler:^(id<MTLCommandBuffer> completed) {\n                    // A failed buffer may stop before its signal command.\n                    // Unblock GPU consumers; original checked retirement still\n                    // propagates this buffer's native failure before publish.\n                    if (completed.status == MTLCommandBufferStatusError && event.signaledValue < value)\n                        event.signaledValue = value;\n                    if (done) done(state);\n                }];\n            }\n            [cmd_buf commit];\n            if (signal) ctx->hyle_submitted = true;\n        }\n    });"
         }
       ]
     },
     {
       "path": "src/ggml-metal/ggml-metal-context.h",
       "before_sha256": "9f2d9d91ecc54470a6b0d19109a55871cc362212bfe79ba7ea8d4a7798068b98",
-      "after_sha256": "c0fa0998cf8cfde7b7e194132d6f1242f2038253aa595d1ecfebbb057aa82157",
+      "after_sha256": "ff6711ed3530b6ef1ac4acf9c357ae2e5d24bdbf433d79afd2dcb1361a81d265",
       "edits": [
         {
           "before": "void ggml_metal_synchronize(ggml_metal_t ctx);",
           "after": "int64_t ggml_metal_checked_sync(ggml_metal_t ctx);\nvoid ggml_metal_synchronize(ggml_metal_t ctx);"
+        },
+        {
+          "before": "int64_t ggml_metal_checked_sync(ggml_metal_t ctx);",
+          "after": "int64_t ggml_metal_checked_sync(ggml_metal_t ctx);\nbool ggml_metal_can_signal(ggml_metal_t ctx);\nbool ggml_metal_signal_begin(ggml_metal_t ctx, void *, uint64_t, void (*)(void *), void *);\nbool ggml_metal_signal_end(ggml_metal_t ctx);"
         }
       ]
     },
     {
       "path": "src/ggml-metal/ggml-metal.cpp",
       "before_sha256": "4331ba068dd06691214a7f7e00ff6946114006623b4057a104892387bfac0343",
-      "after_sha256": "2673b90d7b4baee5ef1f32ae421699b8fd54738471d7d08d0180a6254ecab235",
+      "after_sha256": "55ef73795430b666f5d6e2252b1b72e9a6411ef376c6c56dc35f146acefa096f",
       "edits": [
         {
           "before": "// backend\n",
@@ -343,6 +359,10 @@
         {
           "before": "           ggml_metal_library_get_pipeline_gated_delta_net(lib, tensor).pipeline;\n}\n\n// backend registry\n\nstruct ggml_backend_metal_reg {\n",
           "after": "           ggml_metal_library_get_pipeline_gated_delta_net(lib, tensor).pipeline;\n}\n\n// Cold specialization of the exact packed NVFP4 operation, no payload access.\nstatic bool ggml_hyle_metal_prepare_packed_op(ggml_backend_t backend, const ggml_tensor * op, bool * unsupported) {\n    if (op->op != GGML_OP_MUL_MAT && op->op != GGML_OP_MUL_MAT_ID &&\n        op->op != GGML_OP_GET_ROWS) return true;\n    if (!op->src[0] || op->src[0]->type != GGML_TYPE_NVFP4) return true;\n    auto dev = (ggml_metal_device_t) backend->device->context;\n    auto lib = ggml_metal_device_get_library(dev);\n    if (!lib) return false;\n    if (!ggml_metal_device_supports_op(dev, op)) { *unsupported = true; return false; }\n    const auto * props = ggml_metal_device_get_props(dev);\n    ggml_metal_pipeline_with_params p{};\n    size_t threads = 0;\n    if (op->op == GGML_OP_GET_ROWS) {\n        p = ggml_metal_library_get_pipeline_get_rows(lib, GGML_TYPE_NVFP4);\n        if (p.allocation_failed) throw std::bad_alloc();\n        if (!p.pipeline) return false;\n        threads = std::min<int64_t>(op->src[0]->ne[0]/16,\n                                  ggml_metal_pipeline_max_theads_per_threadgroup(p));\n    } else if (op->op == GGML_OP_MUL_MAT) {\n        if (ggml_metal_op_mul_mat_use_mm(op, props->has_simdgroup_mm)) {\n            p = ggml_metal_library_get_pipeline_mul_mm(lib, op);\n        } else {\n            p = ggml_metal_library_get_pipeline_mul_mv(lib, op);\n        }\n        threads = 32*p.nsg;\n    } else if (op->op == GGML_OP_MUL_MAT_ID) {\n        if (ggml_metal_op_mul_mat_id_use_mm(op, props->has_simdgroup_mm)) {\n            auto map = ggml_metal_library_get_pipeline_mul_mm_id_map0(lib, op->src[0]->ne[2], op->src[2]->ne[0]);\n            if (map.allocation_failed) throw std::bad_alloc();\n            if (!map.pipeline) return false;\n            if (!ggml_metal_pipeline_supports_launch(map, op->src[0]->ne[2],\n                    props->max_theadgroup_memory_size, false)) { *unsupported = true; return false; }\n            p = ggml_metal_library_get_pipeline_mul_mm_id(lib, op);\n            threads = 128;\n        } else {\n            p = ggml_metal_library_get_pipeline_mul_mv_id(lib, op);\n            threads = 32*p.nsg;\n        }\n    } else return false;\n    if (p.allocation_failed) throw std::bad_alloc();\n    if (!p.pipeline) return false;\n    *unsupported = !ggml_metal_pipeline_supports_launch(p, threads,\n        props->max_theadgroup_memory_size, op->op != GGML_OP_GET_ROWS);\n    return !*unsupported;\n}\n\nextern \"C\" bool ggml_hyle_metal_prepare_graph(ggml_backend_t backend, ggml_cgraph * graph, bool * unsupported) {\n    *unsupported = false;\n    for (int i = 0; i < ggml_graph_n_nodes(graph); ++i) {\n        if (!ggml_hyle_metal_prepare_packed_op(backend, ggml_graph_node(graph, i), unsupported)) return false;\n    }\n    return true;\n}\n\n// backend registry\n\nstruct ggml_backend_metal_reg {\n"
+        },
+        {
+          "before": "extern \"C\" int64_t ggml_hyle_metal_checked_sync(ggml_backend_t backend) {",
+          "after": "extern \"C\" bool ggml_hyle_metal_can_signal(ggml_backend_t);\nextern \"C\" bool ggml_hyle_metal_signal_begin(ggml_backend_t, void *, uint64_t, void (*)(void *), void *);\nextern \"C\" bool ggml_hyle_metal_signal_end(ggml_backend_t);\nextern \"C\" bool ggml_hyle_metal_can_signal(ggml_backend_t backend) {\n    return ggml_metal_can_signal((ggml_metal_t)backend->context);\n}\nextern \"C\" bool ggml_hyle_metal_signal_begin(ggml_backend_t backend, void * event,\n    uint64_t value, void (*done)(void *), void * state) {\n    return ggml_metal_signal_begin((ggml_metal_t)backend->context, event, value, done, state);\n}\nextern \"C\" bool ggml_hyle_metal_signal_end(ggml_backend_t backend) {\n    return ggml_metal_signal_end((ggml_metal_t)backend->context);\n}\nextern \"C\" int64_t ggml_hyle_metal_checked_sync(ggml_backend_t backend) {"
         }
       ]
     },
