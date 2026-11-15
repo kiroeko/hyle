@@ -459,6 +459,11 @@ readonly 原生导入只能作源。Vulkan 冷能力支持主机上传、下载�
 真实 resource/handle/子范围。CUDA 简单入口也接受 `compile(graph, context, owner, options)`。
 默认采用系统 metadata allocator；自定义 allocator 传其真实 `std::shared_ptr<Allocator>` 给
 `StorageOwner::adopt` 的第三参数，`.ref()` 必须与原 Context allocator 完整匹配。
+Apple／Vulkan 的原生 `MemoryResource` 可调用 `retain_storage_owner(context)`，
+保留同一分配控制器和实际 Runtime，再把返回的 owner 放进对应 `StorageDomain::owner`。
+此入口使用进程系统 metadata allocator，不创建 Compute Context／Queue，也不复制原生分配。
+`owner.endpoint_identity()` 表达实际分配端点；原生 owner 的 `context_identity()` 为空，
+不能用它推断存在公共 Compute Context。端点关闭后，保活不授予新的执行权限。
 已有 `LeasePool` 的完整独占 writer 可交给 `owner.freeze(pool, std::move(writer))`，
 零拷贝取得保活真实资源及 allocator 的只读 lease；成功后 pool／writer 均为空，失败均保持。
 该入口拒绝不同资源、无法保活的 allocator 和已经附有 lifetime owner 的 pool。
@@ -1180,9 +1185,18 @@ HYLE_RETURN_IF_ERROR(done.wait());
 ```
 
 需要先观察生产者完整完成结果时，可用`SubmissionSource::create_handoff`接管原提交。
-它要求同一实际Queue；`prepare_sources`可在生产者尚未完成时准备Commands元数据，
-`submit_sources`会等待原提交成功后才接纳消费者的GPU读写。共享工作区允许这类纯元数据准备重叠，
+它接受同一实际Queue，也接受同一原生端点上的无调用者Queue的managed Graph。
+原生handoff使用Commands和空`queues`；它不提供pending设备依赖，也不声称具备capture。
+`prepare_sources`可在生产者尚未完成时准备元数据，
+`submit_sources`等待原提交整体成功并实际退休，再把读取权限接纳到消费者原来的lease use batch。
+共享工作区允许这类纯元数据准备重叠，
 原生提交和capture仍独占工作区；生产者失败会在消费者原生提交前原样返回。
+
+`OutputSource`仍要求完整的caller-owned writer。原生算子的`Copy`输出也可能由Invocation拥有；
+需要固定外部结果时，用`ExternalResourceContract`明确指定原有的GPU可访问输出分配域，
+例如与计算域不同的staging域，由原Graph的已具备资格的转移路径物化。
+后继输入也声明其实际来源域，不能把已知地址当成ready权限。
+原生接续及失败恢复例子见[无公共Queue的输出接续检查](../../tests/tools/inference_native_handoff_case.h)。
 
 这不公开pending字节；原Queue、Source权限和最终物理绑定仍逐次校验，重绑实际输入会使原束失效。
 完成后先取回受影响的Store／Append，再用`release_sources(consumer)`撤回原束；原错误和真实退休要求不变。

@@ -12,10 +12,13 @@
 #include "hyle/compute/resource_leases.h"
 
 namespace hyle::compute {
+namespace detail { struct StorageOwnerAccess; }
 
-// Cold ownership of one actual typed resource and its original Context.
+// Cold ownership of one actual typed resource and its original endpoint.
 // Copies retain the same resource object; ref() never owns storage itself.
-// This scope submits no work and does not reopen a closed Context.
+// This scope submits no work and does not reopen a closed endpoint. Native
+// resources retain their real allocation controller/runtime without creating
+// a Compute Context; their typed route provides the qualified factory.
 class StorageOwner final {
 public:
   StorageOwner() noexcept = default;
@@ -93,6 +96,13 @@ public:
   const void *context_identity() const noexcept {
     return state_ ? state_->context.identity_key() : nullptr;
   }
+  // Actual allocation endpoint, including native runtimes which have no
+  // Compute Context or Queue. The legacy common-Context identity stays above.
+  const void *endpoint_identity() const noexcept {
+    if (!state_) return nullptr;
+    if (state_->context.valid()) return state_->context.identity_key();
+    return static_cast<const NativeState *>(state_.get())->endpoint.get();
+  }
 
   // Takes only ready, uniquely owned bytes from this exact resource. The
   // original ReadLease owns the allocation; its existing domain attachment
@@ -164,6 +174,7 @@ public:
   }
 
 private:
+  friend struct detail::StorageOwnerAccess;
   struct State {
     State(detail::ContextRef retained_context, mem::AllocatorRef selected,
           std::shared_ptr<void> retained_allocator) noexcept
@@ -184,6 +195,22 @@ private:
                   std::shared_ptr<void> allocator_owner, Resource &&resource) noexcept
         : State(std::move(context), allocator, std::move(allocator_owner)),
           owned_resource(std::move(resource)) {
+      this->resource = owned_resource.ref();
+    }
+    Resource owned_resource;
+  };
+
+  // Keep the original common State layout and ownership unchanged. Only an
+  // actual native route can create this alternative, with its retained real
+  // endpoint and exact resource. No synthetic Context is constructed.
+  struct NativeState : State {
+    explicit NativeState(std::shared_ptr<const void> retained) noexcept
+        : State({}, mem::system_allocator(), {}), endpoint(std::move(retained)) {}
+    std::shared_ptr<const void> endpoint;
+  };
+  template<class Resource> struct NativeResourceState final : NativeState {
+    NativeResourceState(std::shared_ptr<const void> endpoint, Resource &&resource) noexcept
+        : NativeState(std::move(endpoint)), owned_resource(std::move(resource)) {
       this->resource = owned_resource.ref();
     }
     Resource owned_resource;

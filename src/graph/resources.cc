@@ -2740,6 +2740,9 @@ struct SubmissionSourceState final : util::RefCounted<SubmissionSourceState> {
   }
   InvocationState *producer = nullptr;
   compute::detail::QueueRef queue;
+  // Managed native handoff retains the original endpoint, never a surrogate
+  // Compute Queue. Whole producer retirement precedes consumer admission.
+  ExecutionSource native_execution;
   // Independently retained through native retirement; the local owner above
   // also covers allocator teardown after the last public/native source ref.
   compute::StorageOwner metadata_owner;
@@ -3163,6 +3166,44 @@ Result<RegionReadyControl> RegionAccess::ready_control(const InvocationState *st
   return std::move(call.result);
 }
 namespace {
+Result<ExecutionSource> native_output_execution(const InvocationState &state) noexcept {
+  const auto &plan = *state.plan;
+  if (state.progress || plan.required_queue_count || plan.segments.empty())
+    return std::unexpected(Status::Unimplemented("native handoff requires original managed native segments"));
+  ExecutionSource result;
+  for (const auto &segment : plan.segments) {
+    if (shared_lane(plan, segment.lane))
+      return std::unexpected(Status::Unimplemented("native handoff cannot substitute for a shared Queue"));
+    const auto &execution = plan.targets[plan.lanes[segment.lane.ordinal()].target.ordinal()].source;
+    HYLE_ASSIGN_OR_RETURN(auto runtime, ExecutionSourceAccess::native_context(execution));
+    (void)runtime;
+    if (result && !result.same_owner(execution))
+      return std::unexpected(Status::Unimplemented("native handoff requires one original endpoint owner"));
+    if (!execution.is_open())
+      return std::unexpected(Status::FailedPrecondition("native handoff endpoint is closed"));
+    result = execution;
+  }
+  return result;
+}
+Status validate_source_storage(const InvocationState &state, const ExecutionSource &execution,
+    const compute::StorageOwner &storage) noexcept {
+  const auto context = ExecutionSourceAccess::compute(execution);
+  if (context) {
+    if ((*context)->identity_key() != storage.endpoint_identity())
+      return Status::InvalidArgument("source storage owner belongs to another Context");
+    return Status::Ok();
+  }
+  if (!context.error().IsUnimplemented()) return context.error();
+  HYLE_ASSIGN_OR_RETURN(auto runtime, ExecutionSourceAccess::native_context(execution));
+  (void)runtime;
+  HYLE_RETURN_IF_ERROR(execution.validate_resource(storage.ref()));
+  if (std::ranges::none_of(state.plan->storage_domains, [&](const auto &domain) {
+        return domain.owner && domain.owner.ref() == storage.ref() &&
+            domain.owner.endpoint_identity() == storage.endpoint_identity();
+      }))
+    return Status::FailedPrecondition("native source Plan must retain its actual storage owner");
+  return Status::Ok();
+}
 Result<compute::detail::QueueRef> output_queue(const InvocationState &state, bool handoff = false) noexcept {
   const auto &plan = *state.plan;
   if (state.progress || plan.segments.size() != 1 || plan.required_queue_count != 1)
@@ -3198,6 +3239,11 @@ const InputSourceVTable output_source_table{
       const auto &bundle = *static_cast<OutputBindingBundle *>(opaque);
       if (!bundle.preparing)
         return std::unexpected(Status::FailedPrecondition("pending output requires its metadata-only bundle preparation"));
+      if (bundle.submission->native_execution) {
+        if (queue || !bundle.submission->handoff)
+          return std::unexpected(Status::Unimplemented("native handoff has no shared Queue dependency"));
+        return InputDependencyRoute::kHostWait;
+      }
       if (!queue || !bundle.submission->queue.same_owner(*queue))
         return std::unexpected(Status::Unimplemented("output relay requires its original actual Queue"));
       return bundle.submission->handoff ? InputDependencyRoute::kHostWait : InputDependencyRoute::kDeviceWait;
@@ -3513,52 +3559,63 @@ Status check_output_consumer(Invocation &invocation, OutputBindingBundle &bundle
   if (state == source.producer)
     return Status::InvalidArgument("output relay cannot consume its own original submission");
   const auto &plan = *state->plan;
-  if (state->progress || plan.segments.size() != 1 || plan.required_queue_count != 1 ||
-      !shared_lane(plan, plan.segments.front().lane))
-    return Status::Unimplemented("output relay consumer requires one original shared segment");
-  bool commands = plan.source_commands_prepared || source.handoff;
-  if (!bundle.all_ready && !source.handoff) {
-    const bool retained = std::ranges::any_of(state->captured_ranges,
-        [](const auto &range) { return range.commands.valid(); }) ||
-        std::ranges::any_of(state->capture_rebuilds, [](const auto &range) {
-          return range.storage.valid() || std::ranges::any_of(range.variants,
-              [](const auto &variant) { return variant.commands.valid(); });
-        });
-    // Commands preparation destroys these native artifacts. A pending producer
-    // must not incur that driver cleanup; require the existing complete tuple
-    // below, even when every ordinary command is otherwise nonblocking.
-    if (retained) commands = false;
-  }
-  auto route = bundle.consumer ? bundle.consumer_route
-      : commands ? ReplayRoute::kCommands : ReplayRoute::kUnprepared;
-  if (!bundle.all_ready && route != ReplayRoute::kCommands) {
-    // Binding establishes source authority, not an executable final tuple.
-    // Imported Store destinations need that authority before their own cold
-    // bindings can be installed. Check the complete actual tuple at prepare
-    // AND submit; neither path may record or execute an incomplete capture.
-    if (require_binding) {
-      HYLE_ASSIGN_OR_RETURN(const auto reusable,
-          ReplayAccess::can_reuse_capture(invocation, bundle.replacements));
-      if (!reusable) {
-        if (coverage_miss) *coverage_miss = true;
-        return Status::Unavailable("pending outputs have no complete existing capture for their final physical tuple");
-      }
+  auto route = ReplayRoute::kCommands;
+  if (source.native_execution) {
+    if (!source.handoff || !queues.empty())
+      return Status::InvalidArgument("native handoff requires its original queue-free route");
+    HYLE_ASSIGN_OR_RETURN(auto execution, native_output_execution(*state));
+    if (!source.native_execution.same_owner(execution))
+      return Status::InvalidArgument("native handoff consumer belongs to another endpoint");
+    if (bundle.consumer && bundle.consumer_route != route)
+      return Status::FailedPrecondition("native handoff lost its original Commands route");
+  } else {
+    if (state->progress || plan.segments.size() != 1 || plan.required_queue_count != 1 ||
+        !shared_lane(plan, plan.segments.front().lane))
+      return Status::Unimplemented("output relay consumer requires one original shared segment");
+    bool commands = plan.source_commands_prepared || source.handoff;
+    if (!bundle.all_ready && !source.handoff) {
+      const bool retained = std::ranges::any_of(state->captured_ranges,
+          [](const auto &range) { return range.commands.valid(); }) ||
+          std::ranges::any_of(state->capture_rebuilds, [](const auto &range) {
+            return range.storage.valid() || std::ranges::any_of(range.variants,
+                [](const auto &variant) { return variant.commands.valid(); });
+          });
+      // Commands preparation destroys these native artifacts. A pending producer
+      // must not incur that driver cleanup; require the existing complete tuple
+      // below, even when every ordinary command is otherwise nonblocking.
+      if (retained) commands = false;
     }
-    const auto expected = plan.capture_command_count == plan.command_count
-        ? ReplayRoute::kCaptured : ReplayRoute::kHybrid;
-    if (bundle.consumer && route != expected)
-      return Status::FailedPrecondition("pending output bundle changed its original replay coverage");
-    route = expected;
-    const auto lane = plan.segments.front().lane;
-    if (!source.queue.same_owner(state->queues[lane.ordinal()]))
-      return Status::InvalidArgument("pending captured outputs require the producer's actual Queue");
-  } else if (!bundle.all_ready && !commands) {
-    return Status::Unimplemented("output relay requires prepared nonblocking shared commands");
+    route = bundle.consumer ? bundle.consumer_route
+        : commands ? ReplayRoute::kCommands : ReplayRoute::kUnprepared;
+    if (!bundle.all_ready && route != ReplayRoute::kCommands) {
+      // Binding establishes source authority, not an executable final tuple.
+      // Imported Store destinations need that authority before their own cold
+      // bindings can be installed. Check the complete actual tuple at prepare
+      // AND submit; neither path may record or execute an incomplete capture.
+      if (require_binding) {
+        HYLE_ASSIGN_OR_RETURN(const auto reusable,
+            ReplayAccess::can_reuse_capture(invocation, bundle.replacements));
+        if (!reusable) {
+          if (coverage_miss) *coverage_miss = true;
+          return Status::Unavailable("pending outputs have no complete existing capture for their final physical tuple");
+        }
+      }
+      const auto expected = plan.capture_command_count == plan.command_count
+          ? ReplayRoute::kCaptured : ReplayRoute::kHybrid;
+      if (bundle.consumer && route != expected)
+        return Status::FailedPrecondition("pending output bundle changed its original replay coverage");
+      route = expected;
+      const auto lane = plan.segments.front().lane;
+      if (!source.queue.same_owner(state->queues[lane.ordinal()]))
+        return Status::InvalidArgument("pending captured outputs require the producer's actual Queue");
+    } else if (!bundle.all_ready && !commands) {
+      return Status::Unimplemented("output relay requires prepared nonblocking shared commands");
+    }
+    if (!queues.empty() && (queues.size() != 1 || !queues.front().queue ||
+        queues.front().lane != plan.segments.front().lane ||
+        !source.queue.same_owner(*queues.front().queue)))
+      return Status::InvalidArgument("output relay requires the producer's actual Queue and consumer lane");
   }
-  if (!queues.empty() && (queues.size() != 1 || !queues.front().queue ||
-      queues.front().lane != plan.segments.front().lane ||
-      !source.queue.same_owner(*queues.front().queue)))
-    return Status::InvalidArgument("output relay requires the producer's actual Queue and consumer lane");
   if (require_binding) {
     if (bundle.consumer != state)
       return Status::FailedPrecondition("output bundle names another original consumer");
@@ -3695,6 +3752,12 @@ Result<StoreProjectionInputs> RegionAccess::store_source_projection(
 
 using namespace detail;
 
+namespace {
+using HandoffAdmission = Status (*)(void *, compute::LeaseUseBatch &) noexcept;
+Result<compute::Completion> submit_resource_invocation(Invocation &,
+    std::span<const QueueBinding>, OrderedGraphSubmission, HandoffAdmission) noexcept;
+}
+
 SubmissionSource::SubmissionSource(SubmissionSource &&other) noexcept
     : state_(std::exchange(other.state_, nullptr)) {}
 SubmissionSource &SubmissionSource::operator=(SubmissionSource &&other) noexcept {
@@ -3720,12 +3783,17 @@ Result<SubmissionSource> SubmissionSource::create_impl(Invocation &invocation,
     return std::unexpected(Status::FailedPrecondition("cold recording cannot export a SubmissionSource"));
   if (!state || !storage || !state->observation.owns(submission))
     return std::unexpected(Status::InvalidArgument("submission source requires its exact submitted Invocation proxy and metadata owner"));
-  HYLE_ASSIGN_OR_RETURN(auto queue, output_queue(*state, handoff));
   const auto &plan = *state->plan;
-  HYLE_ASSIGN_OR_RETURN(auto context, ExecutionSourceAccess::compute(
-      plan.targets[plan.lanes[plan.segments.front().lane.ordinal()].target.ordinal()].source));
-  if (context->identity_key() != storage.context_identity())
-    return std::unexpected(Status::InvalidArgument("submission metadata owner belongs to another Context"));
+  compute::detail::QueueRef queue;
+  ExecutionSource native_execution;
+  if (handoff && !plan.required_queue_count) {
+    HYLE_ASSIGN_OR_RETURN(native_execution, native_output_execution(*state));
+    HYLE_RETURN_IF_ERROR(validate_source_storage(*state, native_execution, storage));
+  } else {
+    HYLE_ASSIGN_OR_RETURN(queue, output_queue(*state, handoff));
+    const auto &execution = plan.targets[plan.lanes[plan.segments.front().lane.ordinal()].target.ordinal()].source;
+    HYLE_RETURN_IF_ERROR(validate_source_storage(*state, execution, storage));
+  }
   if (!handoff) {
     HYLE_ASSIGN_OR_RETURN(auto dependency, compute::detail::RetainedCompletion::native_dependency(submission));
     (void)dependency;
@@ -3748,6 +3816,7 @@ Result<SubmissionSource> SubmissionSource::create_impl(Invocation &invocation,
   }
   auto *owner = ::new (memory) SubmissionSourceState(state, std::move(queue), storage, std::move(submission));
   owner->handoff = handoff;
+  owner->native_execution = std::move(native_execution);
   return SubmissionSource(owner);
 }
 Result<compute::CompletionPoll> SubmissionSource::poll() noexcept {
@@ -3870,7 +3939,7 @@ Result<ResourceSource> ResourceSource::prepare(Invocation &invocation, ResourceS
     return std::unexpected(Status::ResourceExhausted("resource source permission count overflows"));
   if (std::ranges::none_of(parent->plan->storage_domains, [&](const auto &domain) {
         return domain.owner && domain.owner.ref() == storage.ref() &&
-            domain.owner.context_identity() == storage.context_identity();
+            domain.owner.endpoint_identity() == storage.endpoint_identity();
       }))
     return std::unexpected(Status::FailedPrecondition("resource source Plan must retain its actual storage owner"));
   auto allocator = options.allocator;
@@ -3942,7 +4011,7 @@ Status ResourceSource::capture(const SubmissionSource &submission, ResourceContr
       episode.nominated_writers[proof.step] != proof.node.ordinal())
     return Status::FailedPrecondition("resource contribution is not the original registered external writer");
   if (!contribution.capacity.valid() || contribution.capacity.storage().resource() != view.storage_owner.ref() ||
-      source.metadata_owner.context_identity() != view.storage_owner.context_identity() ||
+      source.metadata_owner.endpoint_identity() != view.storage_owner.endpoint_identity() ||
       contribution.ready.size() != permissions.ready.size() || contribution.full.size() != permissions.full.size() ||
       contribution.append.size() != permissions.append.size() || contribution.inherited.size() != view.inherited.size())
     return Status::InvalidArgument("resource contribution differs from its fixed geometry or actual owner");
@@ -4385,7 +4454,7 @@ Result<OutputSource> OutputSource::create(const SubmissionSource &submission, Va
   const auto domain = plan.instance_storage[instance];
   if (domain >= plan.storage_domains.size() || !plan.storage_domains[domain].owner ||
       plan.storage_domains[domain].owner.ref() != storage.ref() ||
-      plan.storage_domains[domain].owner.context_identity() != storage.context_identity())
+      plan.storage_domains[domain].owner.endpoint_identity() != storage.endpoint_identity())
     return std::unexpected(Status::FailedPrecondition(
         "output relay requires the original Plan to retain its actual storage owner"));
   HYLE_ASSIGN_OR_RETURN(auto writer_view, compute::detail::LeaseAccess::ordered_view(binding->write));
@@ -4401,7 +4470,7 @@ Result<OutputSource> OutputSource::create(const SubmissionSource &submission, Va
       allocator.free_fn() == system.free_fn() && allocator.realloc_fn() == system.realloc_fn() &&
       allocator.state() == system.state()))
     return std::unexpected(Status::InvalidArgument("output storage owner cannot retain the original pool allocator"));
-  if (storage.context_identity() != source.metadata_owner.context_identity())
+  if (storage.endpoint_identity() != source.metadata_owner.endpoint_identity())
     return std::unexpected(Status::InvalidArgument("output storage owner belongs to another Context"));
   if (source.borrows == SIZE_MAX)
     return std::unexpected(Status::ResourceExhausted("submission output borrow count"));
@@ -4534,13 +4603,11 @@ Result<StoreSourceState *> prepare_store_source(Invocation &invocation, NodeId n
   if (!call.binding || call.resource != storage.ref() ||
       std::ranges::none_of(plan.storage_domains, [&](const auto &domain) {
         return domain.owner && domain.owner.ref() == storage.ref() &&
-            domain.owner.context_identity() == storage.context_identity();
+            domain.owner.endpoint_identity() == storage.endpoint_identity();
       }))
     return std::unexpected(Status::FailedPrecondition("Store source Plan must retain its actual storage owner"));
   HYLE_ASSIGN_OR_RETURN(auto execution, RegionAccess::execution_source(invocation.executable(), call.lane));
-  HYLE_ASSIGN_OR_RETURN(auto context, ExecutionSourceAccess::compute(execution));
-  if (context->identity_key() != storage.context_identity())
-    return std::unexpected(Status::InvalidArgument("Store source owner belongs to another Context"));
+  HYLE_RETURN_IF_ERROR(validate_source_storage(*parent, execution, storage));
   auto allocator = options.allocator;
   if (options.resource_budget.valid()) {
     HYLE_ASSIGN_OR_RETURN(allocator, options.resource_budget.metadata_allocator());
@@ -4613,7 +4680,7 @@ Status StoreSource::capture(const SubmissionSource &submission) noexcept {
       view.tickets.size() > view.original_destination_count - view.first_destination ||
       exported.capacity.storage().resource() != view.storage_owner.ref() ||
       exported.indices.storage().resource() != view.storage_owner.ref() ||
-      source.metadata_owner.context_identity() != view.storage_owner.context_identity())
+      source.metadata_owner.endpoint_identity() != view.storage_owner.endpoint_identity())
     return Status::InvalidArgument("Store source transaction/resource differs from its prepared geometry");
   auto layout = exported.transaction->layout();
   HYLE_ASSIGN_OR_RETURN(auto schema,
@@ -5075,6 +5142,56 @@ Status release_sources(Invocation &invocation) noexcept {
   return Status::Ok();
 }
 namespace {
+Status admit_output_permissions(OutputBindingBundle &owner, compute::LeaseUseBatch &uses) noexcept {
+  auto &source = *owner.submission;
+  std::lock_guard guard(source.observation);
+  for (const auto &read : owner.private_controls)
+    HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::read_unique(uses, read));
+  for (const auto &entry : owner.entries) {
+    if (owner.all_ready && !entry.effect.node.valid()) continue;
+    if (entry.resource) {
+      const auto status = admit_resource_permissions(uses, *entry.resource,
+          entry.effect_reads, entry.effect.node.valid());
+      if (!status.ok()) {
+        auto observed = source.completion.poll();
+        if (!observed) return observed.error();
+        return status;
+      }
+    } else if (entry.store) {
+      HYLE_RETURN_IF_ERROR(admit_source_permissions(uses, entry.store_ready,
+          entry.store_ready.empty() ? std::span<const compute::detail::PendingReadTicket>(entry.store->tickets)
+                                    : std::span<const compute::detail::PendingReadTicket>{}, {}));
+    } else {
+      const auto &view = *entry.view;
+      if (view.retained_output.valid()) {
+        HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::read_unique(uses, view.retained_output));
+      } else if (view.writer->valid()) {
+        HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::ordered_read_unique(uses, *view.writer));
+      } else {
+        HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::read_unique(uses, *view.ready));
+      }
+    }
+  }
+  return Status::Ok();
+}
+Status admit_native_handoff(void *opaque, compute::LeaseUseBatch &uses) noexcept {
+  auto &bundle = *static_cast<OutputBindingBundle *>(opaque);
+  auto &source = *bundle.submission;
+  // Unlike a shared-Queue pending read, this admission is legal only after
+  // the original whole producer has succeeded AND actually retired.
+  {
+    std::lock_guard guard(source.observation);
+    if (!source.handoff || !source.native_execution)
+      return Status::FailedPrecondition("native handoff requires its original endpoint");
+    HYLE_ASSIGN_OR_RETURN(auto observed, source.completion.poll());
+    if (observed != compute::CompletionPoll::kComplete || (source.producer &&
+        (source.producer->phase.load(std::memory_order_acquire) != InvocationPhase::kIdle ||
+         !source.producer->outputs_ready.load(std::memory_order_acquire) ||
+         source.producer->preparation_uses.load(std::memory_order_acquire))))
+      return Status::Unavailable("native handoff producer has not successfully retired");
+  }
+  return admit_output_permissions(bundle, uses);
+}
 Status prepare_sources_impl(Invocation &invocation, std::span<const QueueBinding> queues,
     bool *coverage_miss = nullptr) noexcept {
   if (RecordingAccess::active(invocation))
@@ -5082,7 +5199,8 @@ Status prepare_sources_impl(Invocation &invocation, std::span<const QueueBinding
   HYLE_ASSIGN_OR_RETURN(auto owner, bound_output_bundle(invocation));
   auto *bundle = static_cast<OutputBindingBundle *>(owner.state());
   HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, *bundle, queues, true, coverage_miss));
-  if (queues.size() != 1) return Status::InvalidArgument("output relay requires one actual Queue");
+  if (bundle->submission->native_execution ? !queues.empty() : queues.size() != 1)
+    return Status::InvalidArgument("output relay differs from its original endpoint route");
   if (bundle->submitted) return Status::FailedPrecondition("output bundle consumer was already submitted");
   bundle->preparing = true;
   struct EndPreparation final {
@@ -5126,7 +5244,8 @@ Result<compute::Completion> submit_sources(Invocation &invocation,
   if (bundle->submission->handoff) HYLE_RETURN_IF_ERROR(wait_submission(*bundle->submission));
   HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, *bundle, queues, true));
   const auto expected = bundle->consumer_route;
-  if (queues.size() != 1 || invocation.replay_route() != expected)
+  if ((bundle->submission->native_execution ? !queues.empty() : queues.size() != 1) ||
+      invocation.replay_route() != expected)
     return std::unexpected(Status::FailedPrecondition("output relay lost its selected prepared replay route"));
   if (bundle->submitted)
     return std::unexpected(Status::FailedPrecondition("output bundle consumer was already submitted"));
@@ -5137,42 +5256,7 @@ Result<compute::Completion> submit_sources(Invocation &invocation,
         auto &source = *owner.submission;
         if (!source.queue.same_owner(sequence))
           return Status::InvalidArgument("ordered output reader has another actual Queue");
-        std::lock_guard guard(source.observation);
-        for (const auto &read : owner.private_controls)
-          HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::read_unique(uses, read));
-        for (const auto &entry : owner.entries) {
-          // The normal resource episode already admits every materialized
-          // ready input guard. read_unique requires its caller to deduplicate;
-          // only implicit effects still need their separate range admission.
-          if (owner.all_ready && !entry.effect.node.valid()) continue;
-          if (entry.resource) {
-            const auto status = admit_resource_permissions(uses, *entry.resource,
-                entry.effect_reads, entry.effect.node.valid());
-            if (!status.ok()) {
-              // Admission/control failure must not replace a real producer
-              // verdict (including a failure inherited through its sources).
-              auto observed = source.completion.poll();
-              if (!observed) return observed.error();
-              return status;
-            }
-            continue;
-          }
-          if (entry.store) {
-            HYLE_RETURN_IF_ERROR(admit_source_permissions(uses, entry.store_ready,
-                entry.store_ready.empty() ? std::span<const compute::detail::PendingReadTicket>(entry.store->tickets)
-                                          : std::span<const compute::detail::PendingReadTicket>{}, {}));
-            continue;
-          }
-          const auto &view = *entry.view;
-          if (view.retained_output.valid()) {
-            HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::read_unique(uses, view.retained_output));
-          } else if (view.writer->valid()) {
-            HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::ordered_read_unique(uses, *view.writer));
-          } else {
-            HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::read_unique(uses, *view.ready));
-          }
-        }
-        return Status::Ok();
+        return admit_output_permissions(owner, uses);
       },
       [](void *, compute::Completion &&completion) noexcept { return std::move(completion); },
       bundle,
@@ -5188,7 +5272,13 @@ Result<compute::Completion> submit_sources(Invocation &invocation,
                has_exact_effect_read(entry,range));
         });
       }};
-  auto result = RegionAccess::submit(invocation, queues, ordered);
+  auto result = [&]() -> Result<compute::Completion> {
+    if (!bundle->submission->native_execution)
+      return RegionAccess::submit(invocation, queues, ordered);
+    auto handoff = ordered;
+    handoff.admit = nullptr; // No shared sequence exists on this native route.
+    return submit_resource_invocation(invocation, queues, handoff, &admit_native_handoff);
+  }();
   if (result) bundle->submitted = true;
   return result;
 }
@@ -5332,8 +5422,10 @@ Status Invocation::bind(ValueId value, compute::TensorDesc description,
   episode->writer_publication_complete = false;
   return Status::Ok();
 }
-Result<detail::SubmissionCursor> detail::begin_submission(Invocation &invocation,
-    std::span<const QueueBinding> queues, OrderedGraphSubmission ordered) noexcept {
+namespace {
+Result<SubmissionCursor> begin_submission_impl(Invocation &invocation,
+    std::span<const QueueBinding> queues, OrderedGraphSubmission ordered,
+    HandoffAdmission handoff_admission) noexcept {
   auto *state = InvocationAccess::state(invocation);
   HYLE_RETURN_IF_ERROR(resource_control_ready(state));
   if (state->recording_only)
@@ -5361,7 +5453,7 @@ Result<detail::SubmissionCursor> detail::begin_submission(Invocation &invocation
     permissions.reset();
     for (const auto &binding : episode->bindings) {
       if(binding.pending_effect) {
-        if(!ordered.admit || !ordered.pending_effect)
+        if((!ordered.admit && !handoff_admission) || !ordered.pending_effect)
           return std::unexpected(Status::FailedPrecondition("pending effect read needs its exact ordered source admission"));
         if(binding.pending_registration && !binding.pending_registration->ranges.empty()){
           for(const auto range:binding.pending_registration->ranges)
@@ -5402,6 +5494,7 @@ Result<detail::SubmissionCursor> detail::begin_submission(Invocation &invocation
       }
     }
     if (permissions.enabled()) HYLE_RETURN_IF_ERROR(permissions.admit(batch));
+    if (handoff_admission) HYLE_RETURN_IF_ERROR(handoff_admission(ordered.owner, batch));
     const compute::detail::QueueRef *workspace_queue = nullptr;
     if (state->plan->segments.size() == 1 && state->plan->required_queue_count == 1 &&
         shared_lane(*state->plan, state->plan->segments.front().lane))
@@ -5424,6 +5517,12 @@ Result<detail::SubmissionCursor> detail::begin_submission(Invocation &invocation
   begin_input_sources(*state);
   return cursor;
 }
+} // namespace
+
+Result<detail::SubmissionCursor> detail::begin_submission(Invocation &invocation,
+    std::span<const QueueBinding> queues, OrderedGraphSubmission ordered) noexcept {
+  return begin_submission_impl(invocation, queues, ordered, nullptr);
+}
 
 Result<compute::Completion> detail::finish_submission(InvocationState &state,
     SubmissionCursor &cursor) noexcept {
@@ -5445,14 +5544,20 @@ Result<compute::Completion> detail::finish_submission(InvocationState &state,
   return completion;
 }
 
-Result<compute::Completion> detail::RegionAccess::submit(Invocation &invocation,
-    std::span<const QueueBinding> queues, OrderedGraphSubmission ordered) noexcept {
+namespace {
+Result<compute::Completion> submit_resource_invocation(Invocation &invocation,
+    std::span<const QueueBinding> queues, OrderedGraphSubmission ordered,
+    HandoffAdmission handoff_admission) noexcept {
   auto *state = InvocationAccess::state(invocation);
   HYLE_RETURN_IF_ERROR(resource_control_ready(state));
   if (state->recording_only)
     return std::unexpected(Status::FailedPrecondition("cold recording cannot submit Graph commands"));
-  if (state->progress) return state->progress.submit(invocation, queues, ordered);
-  HYLE_ASSIGN_OR_RETURN(auto cursor, begin_submission(invocation, queues, ordered));
+  if (state->progress) {
+    if (handoff_admission)
+      return std::unexpected(Status::Unimplemented("native handoff requires its original managed submission"));
+    return state->progress.submit(invocation, queues, ordered);
+  }
+  HYLE_ASSIGN_OR_RETURN(auto cursor, begin_submission_impl(invocation, queues, ordered, handoff_admission));
   const SharedSequenceFn before = ordered.admit ? &admit_submission_sequence : nullptr;
   while (!cursor.done()) {
     auto advanced = cursor.advance(true, &retain_submission_completion, state, before, state);
@@ -5467,6 +5572,12 @@ Result<compute::Completion> detail::RegionAccess::submit(Invocation &invocation,
       completion ? Status::Ok() : Status{completion.error()});
   if (!completion) return std::unexpected(std::move(completion).error());
   return state->observation.publish(std::move(*completion), true);
+}
+} // namespace
+
+Result<compute::Completion> detail::RegionAccess::submit(Invocation &invocation,
+    std::span<const QueueBinding> queues, OrderedGraphSubmission ordered) noexcept {
+  return submit_resource_invocation(invocation, queues, ordered, nullptr);
 }
 
 Result<GraphOutput> Invocation::result(ValueId value) noexcept {

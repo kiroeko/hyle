@@ -7,6 +7,7 @@
 
 #include "hyle/compute/resource_budget.h"
 #include "hyle/compute/resource_leases.h"
+#include "hyle/compute/storage_owner.h"
 #include "hyle/compute/batch_transfer.h"
 #include "hyle/compute/tensor.h"
 #include "hyle/mem/buffer.h"
@@ -152,6 +153,9 @@ public:
   create(const Context &context, MemoryKind kind,
          mem::AllocatorRef allocator = mem::system_allocator()) noexcept;
   bool valid() const noexcept { return state_ != nullptr; }
+  // Retain this exact allocation controller and the original native endpoint.
+  // No resource, allocation, Context or Queue is duplicated.
+  HYLE_COMPUTE_ROUTE_VULKAN_API Result<StorageOwner> retain_storage_owner(const Context &) const noexcept;
   HYLE_COMPUTE_ROUTE_VULKAN_API mem::MemoryResourceRef ref() const noexcept;
   HYLE_COMPUTE_ROUTE_VULKAN_API Result<Tensor>
   allocate(const TensorDesc &description, AllocationOptions options = {}) const noexcept;

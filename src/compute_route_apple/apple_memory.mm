@@ -1,6 +1,7 @@
 #include "hyle/compute/apple_memory.h"
 #include "hyle/compute/detail/apple_batch_access.h"
 #include "hyle/compute/detail/paged_arena_access.h"
+#include "hyle/compute/detail/storage_owner_access.h"
 
 #import <Metal/Metal.h>
 #include <algorithm>
@@ -345,6 +346,14 @@ Result<MemoryResource> MemoryResource::create(const Context &context) noexcept {
 }
 mem::MemoryResourceRef MemoryResource::ref() const noexcept {
   return state_ ? mem::MemoryResourceRef(*state_) : mem::MemoryResourceRef{};
+}
+Result<StorageOwner> MemoryResource::retain_storage_owner(const Context &context) const noexcept {
+  if (!context.valid() || !valid())
+    return std::unexpected(Status::InvalidArgument("Apple storage owner requires its original resource and Context"));
+  state_->retain();
+  MemoryResource retained{std::unique_ptr<detail::MemoryState>(state_.get())};
+  return compute::detail::StorageOwnerAccess::adopt_native(
+      detail::ContextAccess::runtime(context), std::move(retained));
 }
 Result<mx::array> MemoryResource::allocate(const TensorDesc &description, ResourceBudget budget,
                                          ResourceBudgetCategory category) const noexcept {

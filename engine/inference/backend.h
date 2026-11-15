@@ -293,10 +293,12 @@ private:
       auto &endpoint = state.primary.emplace<AppleEndpoint>();
       HYLE_ASSIGN_OR_RETURN(endpoint.context, compute::apple::Context::create());
       HYLE_ASSIGN_OR_RETURN(endpoint.memory, compute::apple::MemoryResource::create(endpoint.context));
+      HYLE_ASSIGN_OR_RETURN(auto owner, endpoint.memory.retain_storage_owner(endpoint.context));
       HYLE_ASSIGN_OR_RETURN(endpoint.staging, compute::apple::MemoryResource::create(endpoint.context));
+      HYLE_ASSIGN_OR_RETURN(staging_owner, endpoint.staging.retain_storage_owner(endpoint.context));
       HYLE_ASSIGN_OR_RETURN(endpoint.source, graph::apple::execution_source(endpoint.context));
       state.device = endpoint.memory.ref(); state.staging = endpoint.staging.ref();
-      state.domains[0] = {.resource = state.device, .workspace_budget_bytes = budgets.device};
+      state.domains[0] = {.resource = state.device, .workspace_budget_bytes = budgets.device, .owner = std::move(owner)};
       state.targets[0] = {endpoint.source, graph::StorageDomainId{0}};
       break;
     }
@@ -307,11 +309,13 @@ private:
       HYLE_ASSIGN_OR_RETURN(endpoint.context, compute::vulkan::Context::create());
       HYLE_ASSIGN_OR_RETURN(endpoint.memory, compute::vulkan::MemoryResource::create(
           endpoint.context, compute::vulkan::MemoryKind::kDevice));
+      HYLE_ASSIGN_OR_RETURN(auto owner, endpoint.memory.retain_storage_owner(endpoint.context));
       HYLE_ASSIGN_OR_RETURN(endpoint.staging, compute::vulkan::MemoryResource::create(
           endpoint.context, compute::vulkan::MemoryKind::kStaging));
+      HYLE_ASSIGN_OR_RETURN(staging_owner, endpoint.staging.retain_storage_owner(endpoint.context));
       HYLE_ASSIGN_OR_RETURN(endpoint.source, graph::vulkan::execution_source(endpoint.context));
       state.device = endpoint.memory.ref(); state.staging = endpoint.staging.ref();
-      state.domains[0] = {.resource = state.device, .workspace_budget_bytes = budgets.device};
+      state.domains[0] = {.resource = state.device, .workspace_budget_bytes = budgets.device, .owner = std::move(owner)};
       state.targets[0] = {endpoint.source, graph::StorageDomainId{0}};
       state.retirement_context = &endpoint.context;
       state.collect = [](void *context) noexcept {

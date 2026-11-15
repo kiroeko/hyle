@@ -54,11 +54,12 @@ private:
   detail::SourceBindingData data_{};
 };
 
-// One exact original Graph submission: one proxy, Queue and whole verdict.
+// One exact original Graph submission: one proxy, endpoint and whole verdict.
 // Typed views share this identity, but keep their own actual resource proofs.
 // Control calls are externally serialized; source observations use one mutex.
-// Requires one original shared producer Queue: nonblocking prepared commands
-// or complete actual command capture, retaining the original provider runtime.
+// Pending device dependencies require one original shared producer Queue.
+// Managed native handoff instead keeps the original native endpoint and waits
+// for whole producer success/retirement before admitting consumer permissions.
 class SubmissionSource final {
 public:
   SubmissionSource() noexcept = default;
@@ -75,8 +76,10 @@ public:
       compute::Completion &&, const compute::StorageOwner &metadata_owner) noexcept;
   // Bind metadata while this exact original submission is pending, then wait
   // for its whole successful native completion before consumer submission.
-  // One actual shared Queue is required; no pending native dependency is
-  // exported. Binding hooks remain metadata-only, as in ordinary preparation.
+  // Uses either one actual shared Queue or a queue-free managed native Graph
+  // on the same original endpoint. No pending device dependency is exported.
+  // Binding hooks remain metadata-only. Native reads join the original lease
+  // use batch only after whole producer success and actual retirement.
   // This admits managed Commands without claiming prepared/nonblocking replay.
   HYLE_GRAPH_API static Result<SubmissionSource> create_handoff(Invocation &,
       compute::Completion &&, const compute::StorageOwner &metadata_owner) noexcept;

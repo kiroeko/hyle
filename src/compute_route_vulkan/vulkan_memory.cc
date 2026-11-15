@@ -3,6 +3,7 @@
 #include "vulkan_transfer_internal.h"
 #include "hyle/compute/detail/vulkan_batch_access.h"
 #include "hyle/compute/detail/paged_arena_access.h"
+#include "hyle/compute/detail/storage_owner_access.h"
 
 #include <algorithm>
 #include <array>
@@ -783,6 +784,13 @@ Result<MemoryResource> MemoryResource::create(const Context &context, MemoryKind
 }
 mem::MemoryResourceRef MemoryResource::ref() const noexcept {
   return state_ ? mem::MemoryResourceRef(*state_) : mem::MemoryResourceRef{};
+}
+Result<StorageOwner> MemoryResource::retain_storage_owner(const Context &context) const noexcept {
+  if (!context.valid() || !valid() || state_->runtime != detail::Access::runtime(context))
+    return std::unexpected(Status::InvalidArgument("Vulkan storage owner requires its original resource and Context"));
+  MemoryResource retained{std::unique_ptr<detail::MemoryState>(state_->retain_controller())};
+  return compute::detail::StorageOwnerAccess::adopt_native(
+      state_->runtime, std::move(retained), state_->allocator);
 }
 Result<Tensor> MemoryResource::allocate(const TensorDesc &description, AllocationOptions options) const noexcept {
   if (!valid() || !description.valid()) return std::unexpected(Status::InvalidArgument("invalid Vulkan tensor allocation"));
