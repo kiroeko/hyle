@@ -25,7 +25,8 @@ ggml_backend_buffer_t ggml_hyle_metal_import(ggml_backend_t, void *);
 std::int64_t ggml_hyle_metal_checked_sync(ggml_backend_t);
 bool ggml_hyle_metal_can_signal(ggml_backend_t);
 bool ggml_hyle_metal_signal_begin(ggml_backend_t, void *, std::uint64_t,
-                                void (*)(void *), void *);
+                                void (*)(void *), void *, void *const *,
+                                const std::uint64_t *, std::size_t);
 bool ggml_hyle_metal_signal_end(ggml_backend_t);
 bool ggml_hyle_metal_prepare_gdn(ggml_backend_t, const ggml_tensor *);
 bool ggml_hyle_metal_prepare_graph(ggml_backend_t, ggml_cgraph *, bool *);
@@ -628,12 +629,13 @@ Status NativeProgram::submission_status() const noexcept { return state_->encodi
 bool NativeProgram::reads_indices() const noexcept { return state_->checked_index_count != 0; }
 Status NativeProgram::submit(std::span<const BufferView> ports,
                             NativeSignal signal, std::size_t proven_port,
-                            std::int64_t proven_extent) noexcept {
+                            std::int64_t proven_extent,
+                            std::span<const NativeWait> waits) noexcept {
   if (!signal.valid()) return Status::InvalidArgument("native Metal signal is incomplete");
   if (proven_extent && (proven_extent <= 0 || proven_port != state_->checked_index_port ||
                         proven_extent != state_->checked_index_extent))
     return Status::InvalidArgument("native Metal index proof differs from its prepared port/extent");
-  return run_impl(ports, proven_extent > 0, signal);
+  return run_impl(ports, proven_extent > 0, signal, waits);
 }
 Status NativeProgram::finish() noexcept {
   auto &s = *state_;
@@ -654,7 +656,8 @@ Status NativeProgram::run_with_proven_indices(std::span<const BufferView> ports,
 }
 
 Status NativeProgram::run_impl(std::span<const BufferView> ports,
-                              bool proven_indices, NativeSignal signal) noexcept {
+                              bool proven_indices, NativeSignal signal,
+                              std::span<const NativeWait> waits) noexcept {
   auto &s = *state_;
   if (s.pending)
     return Status::Unavailable("native Metal program still owns its accepted prefix");
@@ -662,6 +665,18 @@ Status NativeProgram::run_impl(std::span<const BufferView> ports,
     return Status::FailedPrecondition("failed ggml Metal program must be recreated");
   if (ports.size() != s.port_count)
     return Status::InvalidArgument("ggml Metal model buffer count mismatch");
+  if (waits.size() > 8 || (!waits.empty() && !signal.valid()))
+    return Status::InvalidArgument("native Metal input waits exceed its prepared ports");
+  if (!waits.empty() && !proven_indices && s.checked_index_count)
+    return Status::FailedPrecondition("checked Metal indices require retired inputs");
+  std::array<void *, 8> wait_events{};
+  std::array<std::uint64_t, 8> wait_values{};
+  for (std::size_t i = 0; i < waits.size(); ++i) {
+    if (!waits[i].event || !waits[i].value)
+      return Status::InvalidArgument("native Metal input wait is incomplete");
+    wait_events[i] = waits[i].event;
+    wait_values[i] = waits[i].value;
+  }
   bool signal_armed = false;
   try {
     std::array<BufferOwner, 9> replacements;
@@ -710,7 +725,8 @@ Status NativeProgram::run_impl(std::span<const BufferView> ports,
     }
     if (signal.valid()) {
       if (!ggml_hyle_metal_signal_begin(s.backend, signal.event, signal.value,
-                                        signal.completed, signal.state))
+                                        signal.completed, signal.state,
+                                        wait_events.data(), wait_values.data(), waits.size()))
         return Status::Unimplemented("native Metal signal does not match its original endpoint");
       signal_armed = true;
     }

@@ -40,6 +40,9 @@ owner; original checked completion remains mandatory before public retirement.
 GPU consumers wait on the native event explicitly, including when an MLX event
 has the same allocation-stream tag. Native errors unblock waiting consumers but
 remain failures, and closing public admission still drains accepted callbacks.
+The original native command buffer can also wait on borrowed MLX input events
+before encoding its operators. The owning invocation retains those inputs and
+checks deferred device status in region order before publication or retirement.
 Native workspace buffer creation also checks metadata allocation and releases
 partially initialized Metal/host resources, including a failed C++ backend
 buffer wrapper. These workspace changes affect cold allocation and failure paths only.

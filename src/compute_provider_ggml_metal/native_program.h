@@ -38,6 +38,12 @@ struct NativeSignal final {
   bool valid() const noexcept { return event && value && (!completed || state); }
 };
 
+// The original input/event owner outlives the accepted native prefix.
+struct NativeWait final {
+  void *event = nullptr;
+  std::uint64_t value = 0;
+};
+
 // One original backend/graph and its bindings per invocation. Caller completes
 // preceding GPU work before run(); run() checks and drains this backend before
 // returning. Thread-compatible, with no Graph or MLX dependency.
@@ -71,7 +77,8 @@ public:
   HYLE_GGML_METAL_INTERNAL_API Status
   submit(std::span<const BufferView> ports, NativeSignal signal,
          std::size_t proven_port = static_cast<std::size_t>(-1),
-         std::int64_t proven_extent = 0) noexcept;
+         std::int64_t proven_extent = 0,
+         std::span<const NativeWait> waits = {}) noexcept;
   HYLE_GGML_METAL_INTERNAL_API Status finish() noexcept;
   HYLE_GGML_METAL_INTERNAL_API bool pending() const noexcept;
   HYLE_GGML_METAL_INTERNAL_API Status submission_status() const noexcept;
@@ -95,7 +102,8 @@ private:
   // backend and workspace; the next run imports all external ports afresh.
   HYLE_GGML_METAL_INTERNAL_API void detach_bindings() noexcept;
   Status run_impl(std::span<const BufferView> ports, bool proven_indices,
-                  NativeSignal signal = {}) noexcept;
+                  NativeSignal signal = {},
+                  std::span<const NativeWait> waits = {}) noexcept;
   struct State;
   explicit NativeProgram(std::unique_ptr<State> state) noexcept;
   std::unique_ptr<State> state_;

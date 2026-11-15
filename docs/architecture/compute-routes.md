@@ -48,6 +48,9 @@ arrays/metadata，应按实际managed成本描述；不能从compile名称推断
 MLX event的stream标记不是ggml的原生Queue身份，不能据此省略等待。原输入array、输出和Source
 保活到原生终态核对；事件就绪不代替错误检查或公共Completion的权限退休。关闭公共接纳后，
 原owner仍排空已接纳工作的完成通知。整张Graph的Source交接仍可需要HostWait，这与内部region事件桥接分开。
+MLX→ggml也可在原命令缓冲等待输入事件；冷期根据实际region能力准备这条路径。
+算子的设备检查结果由原Invocation保活，退休时按region顺序核对，保留首个错误并阻止失败输出发布。
+后续原生算子需在CPU读取索引时，仍先完成前缀检查与退休；所选MLX region通过原生事件交接GPU依赖。
 
 Metal pipeline的static threadgroup memory上限与全局GPU buffer容量是不同限制。
 编译或验证选项可能改变某个pipeline的实际用量，应查询创建后的pipeline再决定合法tile/路径，

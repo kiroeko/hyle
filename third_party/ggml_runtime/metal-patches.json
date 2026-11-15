@@ -244,7 +244,7 @@
     {
       "path": "src/ggml-metal/ggml-metal-context.m",
       "before_sha256": "2be28299672d17fbbe1ba13eff773f69cbe5e7604885d59fc82d57bb889e5c61",
-      "after_sha256": "060ea620fad572932f54f245ac779ceaa7352ab0df15956f2c8b49462024db3a",
+      "after_sha256": "15509b239c9b2c6c40d7e8a248722ffc1d97dca1595c1e941884e6c1a91d1b4c",
       "edits": [
         {
           "before": "struct ggml_metal_command_buffer {\n    id<MTLCommandBuffer> obj;\n};",
@@ -301,13 +301,37 @@
         {
           "before": "        if (cb_idx < 2 || ctx->abort_callback == NULL) {\n            [cmd_buf commit];\n        }\n    });",
           "after": "        if (cb_idx < 2 || ctx->abort_callback == NULL) {\n            const bool signal = n_cb_l == 0 && ctx->hyle_event;\n            if (signal) {\n                id<MTLSharedEvent> event = ctx->hyle_event;\n                const uint64_t value = ctx->hyle_value;\n                void (*done)(void *) = ctx->hyle_done;\n                void * state = ctx->hyle_state;\n                ctx->hyle_buffer = cmd_buf;\n                [cmd_buf encodeSignalEvent:event value:value];\n                [cmd_buf addCompletedHandler:^(id<MTLCommandBuffer> completed) {\n                    // A failed buffer may stop before its signal command.\n                    // Unblock GPU consumers; original checked retirement still\n                    // propagates this buffer's native failure before publish.\n                    if (completed.status == MTLCommandBufferStatusError && event.signaledValue < value)\n                        event.signaledValue = value;\n                    if (done) done(state);\n                }];\n            }\n            [cmd_buf commit];\n            if (signal) ctx->hyle_submitted = true;\n        }\n    });"
+        },
+        {
+          "before": "    id<MTLCommandBuffer> hyle_buffer;",
+          "after": "    id<MTLCommandBuffer> hyle_buffer;\n    size_t hyle_wait_count;\n    id<MTLSharedEvent> hyle_wait_events[8];\n    uint64_t hyle_wait_values[8];"
+        },
+        {
+          "before": "bool ggml_metal_signal_begin(ggml_metal_t ctx, void * raw, uint64_t value,\n                             void (*done)(void *), void * state) {",
+          "after": "bool ggml_metal_signal_begin(ggml_metal_t ctx, void * raw, uint64_t value,\n                             void (*done)(void *), void * state,\n                             void *const * wait_events, const uint64_t * wait_values,\n                             size_t wait_count) {"
+        },
+        {
+          "before": "    if (!ggml_metal_can_signal(ctx) || !raw || !value || (done && !state)) return false;",
+          "after": "    if (!ggml_metal_can_signal(ctx) || !raw || !value || (done && !state) ||\n        wait_count > 8 || (wait_count && (!wait_events || !wait_values))) return false;"
+        },
+        {
+          "before": "    if (![event conformsToProtocol:@protocol(MTLSharedEvent)]) return false;",
+          "after": "    if (![event conformsToProtocol:@protocol(MTLSharedEvent)]) return false;\n    for (size_t i = 0; i < wait_count; ++i) {\n        id<MTLSharedEvent> input = (id<MTLSharedEvent>)wait_events[i];\n        if (!input || !wait_values[i] || ![input conformsToProtocol:@protocol(MTLSharedEvent)]) return false;\n    }\n    for (size_t i = 0; i < wait_count; ++i) {\n        ctx->hyle_wait_events[i] = (id<MTLSharedEvent>)wait_events[i];\n        ctx->hyle_wait_values[i] = wait_values[i];\n    }\n    ctx->hyle_wait_count = wait_count;"
+        },
+        {
+          "before": "    ctx->hyle_buffer = nil;\n    return accepted;",
+          "after": "    ctx->hyle_buffer = nil;\n    ctx->hyle_wait_count = 0;\n    return accepted;"
+        },
+        {
+          "before": "        id<MTLCommandBuffer> cmd_buf = ctx->cmd_bufs[cb_idx].obj;\n\n        ctx->cmd_bufs[cb_idx].encode_status",
+          "after": "        id<MTLCommandBuffer> cmd_buf = ctx->cmd_bufs[cb_idx].obj;\n        if (n_cb_l == 0 && ctx->hyle_event) {\n            for (size_t i = 0; i < ctx->hyle_wait_count; ++i)\n                [cmd_buf encodeWaitForEvent:ctx->hyle_wait_events[i] value:ctx->hyle_wait_values[i]];\n        }\n\n        ctx->cmd_bufs[cb_idx].encode_status"
         }
       ]
     },
     {
       "path": "src/ggml-metal/ggml-metal-context.h",
       "before_sha256": "9f2d9d91ecc54470a6b0d19109a55871cc362212bfe79ba7ea8d4a7798068b98",
-      "after_sha256": "ff6711ed3530b6ef1ac4acf9c357ae2e5d24bdbf433d79afd2dcb1361a81d265",
+      "after_sha256": "f505462e35365d267ecd073dc34db0942cc83328dcd692e171b63efca6f13b7b",
       "edits": [
         {
           "before": "void ggml_metal_synchronize(ggml_metal_t ctx);",
@@ -316,13 +340,17 @@
         {
           "before": "int64_t ggml_metal_checked_sync(ggml_metal_t ctx);",
           "after": "int64_t ggml_metal_checked_sync(ggml_metal_t ctx);\nbool ggml_metal_can_signal(ggml_metal_t ctx);\nbool ggml_metal_signal_begin(ggml_metal_t ctx, void *, uint64_t, void (*)(void *), void *);\nbool ggml_metal_signal_end(ggml_metal_t ctx);"
+        },
+        {
+          "before": "bool ggml_metal_signal_begin(ggml_metal_t ctx, void *, uint64_t, void (*)(void *), void *);",
+          "after": "bool ggml_metal_signal_begin(ggml_metal_t ctx, void *, uint64_t, void (*)(void *), void *,\n                             void *const *, const uint64_t *, size_t);"
         }
       ]
     },
     {
       "path": "src/ggml-metal/ggml-metal.cpp",
       "before_sha256": "4331ba068dd06691214a7f7e00ff6946114006623b4057a104892387bfac0343",
-      "after_sha256": "55ef73795430b666f5d6e2252b1b72e9a6411ef376c6c56dc35f146acefa096f",
+      "after_sha256": "3b0ef1721af42916a455d99e3c8d70336a5ce0aa90b4befdbe57bf3a51d18c05",
       "edits": [
         {
           "before": "// backend\n",
@@ -363,6 +391,14 @@
         {
           "before": "extern \"C\" int64_t ggml_hyle_metal_checked_sync(ggml_backend_t backend) {",
           "after": "extern \"C\" bool ggml_hyle_metal_can_signal(ggml_backend_t);\nextern \"C\" bool ggml_hyle_metal_signal_begin(ggml_backend_t, void *, uint64_t, void (*)(void *), void *);\nextern \"C\" bool ggml_hyle_metal_signal_end(ggml_backend_t);\nextern \"C\" bool ggml_hyle_metal_can_signal(ggml_backend_t backend) {\n    return ggml_metal_can_signal((ggml_metal_t)backend->context);\n}\nextern \"C\" bool ggml_hyle_metal_signal_begin(ggml_backend_t backend, void * event,\n    uint64_t value, void (*done)(void *), void * state) {\n    return ggml_metal_signal_begin((ggml_metal_t)backend->context, event, value, done, state);\n}\nextern \"C\" bool ggml_hyle_metal_signal_end(ggml_backend_t backend) {\n    return ggml_metal_signal_end((ggml_metal_t)backend->context);\n}\nextern \"C\" int64_t ggml_hyle_metal_checked_sync(ggml_backend_t backend) {"
+        },
+        {
+          "before": "extern \"C\" bool ggml_hyle_metal_signal_begin(ggml_backend_t, void *, uint64_t, void (*)(void *), void *);",
+          "after": "extern \"C\" bool ggml_hyle_metal_signal_begin(ggml_backend_t, void *, uint64_t, void (*)(void *), void *,\n                                            void *const *, const uint64_t *, size_t);"
+        },
+        {
+          "before": "    uint64_t value, void (*done)(void *), void * state) {\n    return ggml_metal_signal_begin((ggml_metal_t)backend->context, event, value, done, state);",
+          "after": "    uint64_t value, void (*done)(void *), void * state,\n    void *const * wait_events, const uint64_t * wait_values, size_t wait_count) {\n    return ggml_metal_signal_begin((ggml_metal_t)backend->context, event, value, done, state,\n                                   wait_events, wait_values, wait_count);"
         }
       ]
     },

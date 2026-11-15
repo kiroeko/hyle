@@ -181,7 +181,15 @@ Recurrent::run_impl(std::span<const mx::array> inputs, mx::Stream stream,
     pending_inputs.clear();
     for (std::size_t i = 0; i < inputs.size(); ++i)
       pending_inputs.push_back(dense[i] ? *dense[i] : inputs[i]);
-    auto status = program->submit(active_ports, signal, proven_index_port, proven_index_extent);
+    std::array<ggml_metal::NativeWait, 8> waits;
+    std::size_t wait_count = 0;
+    for (const auto &input : pending_inputs) {
+      const auto &event = input.event();
+      if (event.valid() && !event.is_signaled())
+        waits[wait_count++] = {event.cast<mx::metal::EventImpl>().mtl_event(), event.value()};
+    }
+    auto status = program->submit(active_ports, signal, proven_index_port,
+        proven_index_extent, std::span(waits).first(wait_count));
     if (!status.ok()) { pending_inputs.clear(); return std::unexpected(std::move(status)); }
   } else {
     HYLE_RETURN_IF_ERROR(proven_index_extent > 0

@@ -15,6 +15,8 @@
 #include "../../src/compute_route_apple/apple_copy_internal.h"
 #include "../../src/compute_route_apple/apple_runtime_internal.h"
 #include "hyle/mem/quota_allocator.h"
+#include "hyle/compute/detail/apple_plan.h"
+#include "hyle/compute/model_ops.h"
 #include "recurrent_fixture.h"
 
 namespace {
@@ -130,6 +132,112 @@ TEST(AppleLateInput, NativeSignalFeedsMlxAndReusesTheOriginalProducer) {
 }
 TEST(AppleLateInput, CloseDrainsQueuedNativeSignalsBeforeStoppingTheOwner) {
   exercise_native_signal_source(true);
+}
+
+TEST(AppleLateInput, MixedMlxNativeMlxPlanPreservesValuesAndReusesItsSlot) {
+  auto context = a::Context::create();
+  ASSERT_TRUE(context) << context.error().message();
+  apple_test::Recurrent fixture(3, 2, 64);
+  const auto expected = fixture.oracle(2);
+  auto specs = fixture.specs();
+  ad::RegionPlan plan;
+  plan.values = specs;
+  plan.inputs = {0, 1, 2, 3, 4, 5};
+  plan.values.push_back(specs[0]); // MLX query scaling.
+  plan.values.push_back(specs[2]); // Original native scores.
+  plan.values.push_back(specs[5]); // Complete native state.
+  plan.values.push_back(specs[2]); // Final MLX scores.
+  plan.outputs = {9, 8};
+  ad::Region first;
+  first.inputs = {0}; first.outputs = {6};
+  first.mlx = [](const auto &args, mx::Stream stream) {
+    return std::vector<mx::array>{mx::multiply(args[0], mx::array(2.f), stream)};
+  };
+  ad::Region native;
+  native.kind = ad::RegionKind::kGgml;
+  native.inputs = {6, 1, 2, 3, 4, 5}; native.outputs = {7, 8};
+  native.operation = c::Operation(c::GatedDeltaNet{});
+  for (const auto &input : fixture.inputs) {
+    std::vector<std::int64_t> shape(input.shape().begin(), input.shape().end());
+    native.native_inputs.push_back(c::TensorDesc::dense(c::DataType::kFloat32, shape).value());
+  }
+  ad::Region last;
+  last.inputs = {7}; last.outputs = {9};
+  last.mlx = [](const auto &args, mx::Stream stream) {
+    return std::vector<mx::array>{mx::multiply(args[0], mx::array(3.f), stream)};
+  };
+  plan.regions = {std::move(first), std::move(native), std::move(last)};
+  auto program = ad::ContextAccess::compile(*context, std::move(plan));
+  ASSERT_TRUE(program) << program.error().message();
+  auto invocation = program->create_invocation();
+  ASSERT_TRUE(invocation) << invocation.error().message();
+  for (int repeat = 0; repeat < 3; ++repeat) {
+    ASSERT_TRUE(invocation->bind(fixture.inputs).ok());
+    auto result = invocation->submit();
+    ASSERT_TRUE(result) << result.error().message();
+    ASSERT_TRUE(result->completion().wait().ok());
+    auto scores = ad::InvocationAccess::output(*invocation, 0);
+    auto state = ad::InvocationAccess::output(*invocation, 1);
+    ASSERT_TRUE(scores); ASSERT_TRUE(state);
+    for (std::size_t i = 0; i < expected[0].size(); ++i)
+      EXPECT_NEAR(scores->data<float>()[i], 3 * expected[0][i], 1.e-5);
+    for (std::size_t i = 0; i < expected[1].size(); ++i)
+      EXPECT_NEAR(state->data<float>()[i], expected[1][i], 1.e-5);
+  }
+  ASSERT_TRUE(context->close().ok());
+}
+
+TEST(AppleLateInput, DeferredMlxInputErrorPreventsPublicationAndKeepsTheRuntimeUsable) {
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+  const std::array<std::int64_t, 2> table_shape{4, 64}, dot_shape{1, 64};
+  const std::array<std::int64_t, 2> weight_shape{2, 64};
+  const std::array<std::int64_t, 1> index_shape{1};
+  const std::array descriptions{
+      c::TensorDesc::dense(c::DataType::kFloat32, table_shape).value(),
+      c::TensorDesc::dense(c::DataType::kInt32, index_shape).value()};
+  ad::RegionPlan plan;
+  plan.values = {{{4, 64}, mx::float32}, {{1}, mx::int32}, {{2, 64}, mx::float32},
+                 {{1, 64}, mx::float32}, {{1, 2}, mx::float32}};
+  plan.inputs = {0, 1, 2}; plan.outputs = {4};
+  ad::Region checked;
+  checked.inputs = {0, 1}; checked.outputs = {3};
+  checked.mlx = [descriptions](const auto &args, mx::Stream stream) {
+    return ad::lower_mlx_float(c::Operation(c::Gather{}), descriptions, args, stream).value();
+  };
+  ad::Region native;
+  native.kind = ad::RegionKind::kGgml;
+  native.inputs = {3, 2}; native.outputs = {4};
+  native.operation = c::model_ops::dense_linear_f32();
+  native.native_inputs = {
+      c::TensorDesc::dense(c::DataType::kFloat32, dot_shape).value(),
+      c::TensorDesc::dense(c::DataType::kFloat32, weight_shape).value()};
+  plan.regions = {std::move(checked), std::move(native)};
+  auto program = ad::ContextAccess::compile(*context, std::move(plan));
+  ASSERT_TRUE(program) << program.error().message();
+  std::array<float, 256> table_values; table_values.fill(1.f);
+  std::array<float, 128> weight_values; weight_values.fill(3.f / 64);
+  const mx::array table(table_values.data(), {4, 64}), weight(weight_values.data(), {2, 64});
+  for (const auto index : {8, 0}) {
+    auto invocation = program->create_invocation();
+    ASSERT_TRUE(invocation) << invocation.error().message();
+    const std::array inputs{table, mx::array({index}, mx::int32), weight};
+    ASSERT_TRUE(invocation->bind(inputs).ok());
+    auto result = invocation->submit();
+    ASSERT_TRUE(result);
+    const auto status = result->completion().wait();
+    if (index == 8) {
+      EXPECT_TRUE(status.IsOutOfRange()) << status.message();
+      EXPECT_FALSE(ad::InvocationAccess::output(*invocation, 0));
+    } else {
+      ASSERT_TRUE(status.ok()) << status.message();
+      auto output = ad::InvocationAccess::output(*invocation, 0);
+      ASSERT_TRUE(output);
+      EXPECT_FLOAT_EQ(output->data<float>()[0], 3.f);
+      EXPECT_FLOAT_EQ(output->data<float>()[1], 3.f);
+    }
+  }
+  ASSERT_TRUE(context->close().ok());
 }
 
 TEST(AppleLateInput, PinsActualProducerUntilConsumerRetiresAndRejectsStaleEpoch) {

@@ -370,9 +370,28 @@ std::vector<mx::array> prepare_mlx(MlxProgram &program, RegionFunction region,
 
 Status evaluate_mlx(const MlxProgram &program,
                     const std::vector<mx::array> &inputs,
-                    std::vector<mx::array> &outputs, mx::Stream stream) {
+                    std::vector<mx::array> &outputs, mx::Stream stream,
+                    std::vector<mx::Event> *pending = nullptr,
+                    std::optional<mx::array> *check = nullptr) {
   encode_native_input_waits(inputs, stream);
   outputs = program.compiled(inputs);
+  if (pending) {
+    // GPU eval encodes buffers/events before returning. Consumers import the
+    // original events; the same Invocation drains their errors at retirement.
+    mx::async_eval(outputs);
+    for (const auto &output : outputs) {
+      if (output.event().valid()) {
+        HYLE_FATAL_ASSERT(pending->size() < pending->capacity());
+        pending->push_back(output.event());
+      }
+    }
+    if (program.checks->present) {
+      HYLE_FATAL_ASSERT(check && !check->has_value());
+      check->emplace(outputs.back());
+      outputs.pop_back();
+    }
+    return Status::Ok();
+  }
   // MLX eval waits the original graph's synchronizer event and checks its
   // native error. A second stream synchronize commits an otherwise empty
   // command buffer after that graph and adds another host/device boundary.
@@ -422,7 +441,7 @@ void execute_native_tail(Job *) noexcept;
 void native_prefix_completed(void *) noexcept;
 Status observe_native_prefix(InvocationState &) noexcept;
 Status observe_native_inputs(InvocationState &) noexcept;
-Status drain_native_regions(InvocationState &) noexcept;
+Status drain_plan_regions(InvocationState &) noexcept;
 
 struct InvocationState : Job {
   struct NativeTail final : Job { InvocationState *owner = nullptr; } native_tail;
@@ -447,6 +466,10 @@ struct InvocationState : Job {
   std::vector<std::optional<mx::array>> native_values;
   std::vector<mx::array> arguments;
   std::vector<mx::array> region_outputs;
+  std::vector<mx::Event> mlx_events;
+  std::vector<std::size_t> mlx_event_ends;
+  std::vector<std::optional<mx::array>> mlx_checks;
+  bool defer_mlx = false;
   std::vector<mx::array> block_arguments, block_outputs, output_blocks;
   std::mutex binding_mutex;
   std::mutex completion_mutex;
@@ -648,12 +671,14 @@ Status execute_plan(InvocationState &state, mx::Stream stream) {
       state.arguments.push_back(*values[id]);
     if (region.kind == RegionKind::kMlx) {
       HYLE_RETURN_IF_ERROR(evaluate_mlx(*prepared.mlx[i], state.arguments,
-                                        state.region_outputs,stream));
+          state.region_outputs, stream, state.defer_mlx ? &state.mlx_events : nullptr,
+          state.defer_mlx ? &state.mlx_checks[i] : nullptr));
+      state.mlx_event_ends[i] = state.mlx_events.size();
     } else if (region.kind == RegionKind::kAttentionBlocks) {
       HYLE_RETURN_IF_ERROR(evaluate_attention_blocks(*prepared.attention_blocks[i],state,stream));
     } else {
       if (state.recurrent[i]->host_indices)
-        HYLE_RETURN_IF_ERROR(drain_native_regions(state));
+        HYLE_RETURN_IF_ERROR(drain_plan_regions(state));
       if (state.recurrent[i]->host_indices)
         HYLE_RETURN_IF_ERROR(observe_native_inputs(state));
       if (state.native_async) {
@@ -766,13 +791,39 @@ void finish(InvocationState &state, Status terminal) noexcept {
   deliver_notification(notification);
 }
 
-Status drain_native_regions(InvocationState &state) noexcept {
-  Status terminal;
-  for (auto &region : state.recurrent) {
-    if (!region || !region->program->pending()) continue;
-    terminal.Update(region->finish());
-    state.program->runtime->release_native_tail();
+Status drain_plan_regions(InvocationState &state) noexcept {
+  Status terminal, device_failure;
+  std::size_t cursor = 0;
+  // Observe the original region order, even if later encoding also failed.
+  // A deferred checked-input error must not become a later OOM/shape error.
+  for (std::size_t i = 0; i < state.recurrent.size(); ++i) {
+    const auto end = std::exchange(state.mlx_event_ends[i], 0);
+    for (; cursor < end; ++cursor) {
+      try { state.mlx_events[cursor].wait(); }
+      catch (...) {
+        auto failure = native_exception();
+        device_failure.Update(failure); terminal.Update(failure);
+      }
+    }
+    if (auto &check = state.mlx_checks[i]; check) {
+      try {
+        check->wait();
+        terminal.Update(algorithm_status(check->data<std::int32_t>()[0]));
+      } catch (...) {
+        auto failure = native_exception();
+        device_failure.Update(failure); terminal.Update(failure);
+      }
+      check.reset();
+    }
+    auto &region = state.recurrent[i];
+    if (region && region->program->pending()) {
+      terminal.Update(region->finish());
+      state.program->runtime->release_native_tail();
+    }
   }
+  HYLE_FATAL_ASSERT(cursor == state.mlx_events.size());
+  state.mlx_events.clear();
+  if (!device_failure.ok()) state.program->runtime->poison(device_failure);
   return terminal;
 }
 
@@ -834,6 +885,7 @@ template<class Evaluate>
 void execute_with(InvocationState& state, Evaluate evaluate) noexcept {
   HYLE_TRACE_ZONE_NAMED("hyle.apple.execute");
   auto &runtime = *state.program->runtime;
+  HYLE_FATAL_ASSERT(state.mlx_events.empty());
   state.native_deferred = false;
   {
     std::lock_guard lock(state.completion_mutex);
@@ -881,7 +933,7 @@ void execute_with(InvocationState& state, Evaluate evaluate) noexcept {
     runtime.release_native_tail();
     state.native_deferred = false;
   }
-  auto native_terminal = drain_native_regions(state);
+  auto native_terminal = drain_plan_regions(state);
   native_terminal.Update(terminal);
   terminal = std::move(native_terminal);
   if (terminal.ok()) {
@@ -1351,10 +1403,20 @@ Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
       const auto &plan = state_->native->description;
       state->native_values.resize(plan.values.size());
       state->recurrent.resize(plan.regions.size());
+      state->mlx_event_ends.resize(plan.regions.size());
+      state->mlx_checks.resize(plan.regions.size());
       state->values->arrays.reserve(plan.outputs.size());
       std::size_t max_inputs = 0;
-      for (const auto &region : plan.regions)
+      std::size_t mlx_outputs = 0;
+      for (const auto &region : plan.regions) {
         max_inputs = (std::max)(max_inputs, region.inputs.size());
+        if (region.kind == detail::RegionKind::kMlx) {
+          if (region.outputs.size() >= SIZE_MAX - mlx_outputs)
+            return std::unexpected(Status::ResourceExhausted("Apple region event capacity"));
+          mlx_outputs += region.outputs.size() + 1; // Optional device check result.
+        }
+      }
+      state->mlx_events.reserve(mlx_outputs);
       state->arguments.reserve(max_inputs);
       state->block_arguments.reserve(5);state->block_outputs.reserve(1);
       std::size_t max_output_blocks=0;
@@ -1363,6 +1425,7 @@ Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
             static_cast<std::size_t>((blocks->rows - 1) / 128 + 1));
       state->output_blocks.reserve(max_output_blocks);
       auto prepare = std::make_shared<detail::ColdJob>([&]() -> Status {
+        bool has_native = false, all_signal = true;
         for (std::size_t i = 0; i < plan.regions.size(); ++i)
           if (plan.regions[i].kind == detail::RegionKind::kGgml) {
             HYLE_ASSIGN_OR_RETURN(state->recurrent[i],
@@ -1372,8 +1435,11 @@ Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
                                           plan.regions[i].proven_index_extent));
             auto signal = state->recurrent[i]->prepare_signal(*state_->runtime->stream);
             if (!signal) return std::move(signal).error();
+            has_native = true;
+            all_signal &= *signal;
             if (plan.regions.size() == 1) state->native_async = *signal;
           }
+        state->defer_mlx = has_native && all_signal && mlx_outputs != 0;
         return Status::Ok();
       });
       HYLE_RETURN_IF_ERROR(detail::run_cold(*state_->runtime, prepare));
