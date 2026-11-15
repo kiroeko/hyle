@@ -1,6 +1,7 @@
 #include "native_device.h"
 #include "hyle/core/environment.h"
 
+#include <cstdio>
 #include <exception>
 #include <initializer_list>
 #include <new>
@@ -49,8 +50,12 @@ Status failure(bridge::Failure error) noexcept {
              error.native == VK_ERROR_FEATURE_NOT_PRESENT ||
              error.native == VK_ERROR_INITIALIZATION_FAILED)
       code = StatusCode::Unavailable;
+    char message[96];
+    std::snprintf(message, sizeof(message),
+                  "ggml Vulkan native operation (VkResult=%lld)",
+                  static_cast<long long>(error.native));
     return Status::FromNative(code, {NativeErrorDomain::Vulkan, error.native},
-                              "ggml Vulkan native operation");
+                              message);
   }
   case bridge::Error::Internal:
     return Status::Internal("ggml Vulkan adapter exception");
