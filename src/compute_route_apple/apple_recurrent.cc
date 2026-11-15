@@ -99,18 +99,23 @@ Recurrent::run(std::span<const mx::array> inputs, mx::Stream stream) {
 }
 Result<std::vector<mx::array>>
 Recurrent::submit(std::span<const mx::array> inputs, mx::Stream stream,
-                  void (*completed)(void *) noexcept, void *state) {
+                  void (*completed)(void *) noexcept, void *state,
+                  std::span<const ggml_metal::NativeWait> dependencies,
+                  std::span<mx::Event> dependency_events) {
   if (!completion_event.valid() || program->pending())
     return std::unexpected(Status::FailedPrecondition("native Metal event is unprepared or still pending"));
   if (signal_value == (std::numeric_limits<std::uint64_t>::max)())
     return std::unexpected(Status::ResourceExhausted("native Metal event generation exhausted"));
   completion_event.set_value(++signal_value);
   return run_impl(inputs, stream,
-      {completion_event.cast<mx::metal::EventImpl>().mtl_event(), signal_value, completed, state});
+      {completion_event.cast<mx::metal::EventImpl>().mtl_event(), signal_value, completed, state},
+      dependencies, dependency_events);
 }
 Result<std::vector<mx::array>>
 Recurrent::run_impl(std::span<const mx::array> inputs, mx::Stream stream,
-                    ggml_metal::NativeSignal signal) {
+                    ggml_metal::NativeSignal signal,
+                    std::span<const ggml_metal::NativeWait> dependencies,
+                    std::span<mx::Event> dependency_events) {
   if (inputs.size() > 8)
     return std::unexpected(Status::InvalidArgument(
         "Apple native region exceeds eight input buffers"));
@@ -154,6 +159,7 @@ Recurrent::run_impl(std::span<const mx::array> inputs, mx::Stream stream,
     }
   }
   if (copied) {
+    for (auto &event : dependency_events) event.wait(stream);
     encode_native_input_waits(inputs, stream);
     std::vector<mx::array> pending;
     pending.reserve(copied);
@@ -189,7 +195,7 @@ Recurrent::run_impl(std::span<const mx::array> inputs, mx::Stream stream,
         waits[wait_count++] = {event.cast<mx::metal::EventImpl>().mtl_event(), event.value()};
     }
     auto status = program->submit(active_ports, signal, proven_index_port,
-        proven_index_extent, std::span(waits).first(wait_count));
+        proven_index_extent, std::span(waits).first(wait_count), dependencies);
     if (!status.ok()) { pending_inputs.clear(); return std::unexpected(std::move(status)); }
   } else {
     HYLE_RETURN_IF_ERROR(proven_index_extent > 0

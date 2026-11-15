@@ -28,10 +28,14 @@ struct Recurrent final {
   run(std::span<const mlx::core::array> inputs, mlx::core::Stream stream);
   Result<std::vector<mlx::core::array>>
   submit(std::span<const mlx::core::array> inputs, mlx::core::Stream stream,
-         void (*completed)(void *) noexcept, void *state);
+         void (*completed)(void *) noexcept, void *state,
+         std::span<const ggml_metal::NativeWait> dependencies = {},
+         std::span<mlx::core::Event> dependency_events = {});
  private:
   Result<std::vector<mlx::core::array>>
   run_impl(std::span<const mlx::core::array> inputs, mlx::core::Stream stream,
-           ggml_metal::NativeSignal signal);
+           ggml_metal::NativeSignal signal,
+           std::span<const ggml_metal::NativeWait> dependencies = {},
+           std::span<mlx::core::Event> dependency_events = {});
 };
 } // namespace hyle::compute::apple::detail

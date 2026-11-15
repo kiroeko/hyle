@@ -47,6 +47,10 @@ Cold preparation keeps every bounded native region on one original command
 buffer. The last selected native region schedules the original invocation's
 tail Job; that Job checks the complete native/MLX plan and its input verdicts.
 There is no additional terminal GPU command buffer or retirement executor.
+The private input-wait bridge borrows inline arrays for the original eight
+input slots, or cold-reserved overflow arrays, only through synchronous
+single-buffer encoding. Order-only dependencies use their real producer
+frontiers independently of tensor-port count, without hot allocation.
 Native workspace buffer creation also checks metadata allocation and releases
 partially initialized Metal/host resources, including a failed C++ backend
 buffer wrapper. These workspace changes affect cold allocation and failure paths only.

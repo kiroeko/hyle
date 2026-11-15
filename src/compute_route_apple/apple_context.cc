@@ -20,6 +20,8 @@
 
 #include "apple_checks.h"
 #include "apple_carrier.h"
+#include "apple_copy_internal.h"
+#include "apple_dependencies.h"
 #include "apple_completion_internal.h"
 #include "apple_internal.h"
 #include "apple_runtime_internal.h"
@@ -437,6 +439,8 @@ struct ResultValues {
 };
 
 struct InvocationState;
+void retain(InvocationState *) noexcept;
+void release(InvocationState *) noexcept;
 void execute_native_tail(Job *) noexcept;
 void native_prefix_completed(void *) noexcept;
 Status observe_native_prefix(InvocationState &) noexcept;
@@ -462,6 +466,7 @@ struct InvocationState : Job {
   const void *pending_source = nullptr;
   std::vector<mx::array> inputs;
   std::vector<PreparedInput> prepared_inputs;
+  NativeDependencies dependencies;
   std::vector<std::unique_ptr<Recurrent>> recurrent;
   std::vector<std::optional<mx::array>> native_values;
   std::vector<mx::array> arguments;
@@ -493,6 +498,7 @@ struct InvocationState : Job {
   std::uint64_t native_retired_epoch = 0;
   Status native_terminal;
   Status observe_inputs() noexcept;
+  void encode_dependencies(mx::Stream stream) { dependencies.encode(stream); }
 
   InvocationState(std::shared_ptr<ProgramState> p, cd::ResultSlot<Results> slot)
       : program(std::move(p)), values(std::make_shared<ResultValues>()),
@@ -534,6 +540,7 @@ struct InvocationState : Job {
       --producer.source_readers;
       input.pinned = false;
     }
+    dependencies.clear();
   }
 
   Status resolve_inputs() {
@@ -671,11 +678,13 @@ Status execute_plan(InvocationState &state, mx::Stream stream) {
     for (auto id : region.inputs)
       state.arguments.push_back(*values[id]);
     if (region.kind == RegionKind::kMlx) {
+      state.encode_dependencies(stream);
       HYLE_RETURN_IF_ERROR(evaluate_mlx(*prepared.mlx[i], state.arguments,
           state.region_outputs, stream, state.defer_mlx ? &state.mlx_events : nullptr,
           state.defer_mlx ? &state.mlx_checks[i] : nullptr));
       state.mlx_event_ends[i] = state.mlx_events.size();
     } else if (region.kind == RegionKind::kAttentionBlocks) {
+      state.encode_dependencies(stream);
       HYLE_RETURN_IF_ERROR(evaluate_attention_blocks(*prepared.attention_blocks[i],state,stream));
     } else {
       if (state.recurrent[i]->host_indices)
@@ -710,7 +719,10 @@ Status execute_plan(InvocationState &state, mx::Stream stream) {
         }
         HYLE_ASSIGN_OR_RETURN(state.region_outputs,
             state.recurrent[i]->submit(state.arguments, stream,
-                tail ? &native_prefix_completed : nullptr, tail ? &state : nullptr));
+                tail ? &native_prefix_completed : nullptr, tail ? &state : nullptr,
+                state.recurrent[i]->host_indices ? std::span<const ggml_metal::NativeWait>{} : state.dependencies.waits(),
+                state.recurrent[i]->host_indices ? std::span<mx::Event>{} : state.dependencies.events()));
+        state.dependencies.native_submitted();
         HYLE_RETURN_IF_ERROR(program.submission_status());
       } else {
         HYLE_ASSIGN_OR_RETURN(state.region_outputs,
@@ -867,7 +879,86 @@ Status InvocationState::observe_inputs() noexcept {
     if (producer.native_deferred) result.Update(observe_native_prefix(producer));
     if (producer.done.load(std::memory_order_acquire)) result.Update(producer.terminal);
   }
+  result.Update(dependencies.observe());
   return result;
+}
+Status NativeDependencies::reserve(std::size_t capacity) noexcept {
+  if (!sources_.empty()) return Status::Unavailable("Apple dependencies are still pinned");
+  if (capacity > (SIZE_MAX - 8) / 2) return Status::OutOfRange("Apple dependency capacity overflows");
+  try {
+    sources_.reserve(capacity); events_.reserve(capacity);
+    native_events_.reserve(capacity); waits_.reserve(capacity);
+    return Status::Ok();
+  } catch (...) { return native_exception(); }
+}
+NativeDependencies::~NativeDependencies() { clear(); }
+void NativeDependencies::clear() noexcept {
+  for (const auto &dependency : sources_) {
+    if (dependency.copy) { release_copy_dependency(*dependency.copy); continue; }
+    auto &producer = *dependency.native;
+    { std::lock_guard lock(producer.binding_mutex);
+      HYLE_FATAL_ASSERT(producer.source_readers != 0); --producer.source_readers; }
+    release(&producer);
+  }
+  sources_.clear(); events_.clear(); native_events_.clear(); waits_.clear();
+  encoded_ = native_encoded_ = false;
+}
+void NativeDependencies::encode(mx::Stream stream) {
+  if (encoded_) return;
+  for (auto &event : events_) event.wait(stream);
+  encoded_ = true;
+}
+Status NativeDependencies::observe() noexcept {
+  Status status;
+  for (const auto &dependency : sources_) {
+    if (dependency.copy) { status.Update(observe_copy_dependency(*dependency.copy, dependency.epoch)); continue; }
+    auto &producer = *dependency.native;
+    if (producer.native_deferred) status.Update(observe_native_prefix(producer));
+    if (producer.done.load(std::memory_order_acquire)) status.Update(producer.terminal);
+  }
+  return status;
+}
+Status NativeDependencies::resolve() noexcept {
+  encoded_ = native_encoded_ = false;
+  HYLE_FATAL_ASSERT(events_.empty() && native_events_.empty() && waits_.empty());
+  const auto append = [&](const mx::Event &event, bool from_native) -> Status {
+    if (!event.valid() || event.is_signaled()) return Status::Ok();
+    auto &owners = from_native ? events_ : native_events_;
+    if (owners.size() == owners.capacity() ||
+        (!from_native && waits_.size() == waits_.capacity()))
+      return Status::Internal("Apple dependency frontier exceeds cold capacity");
+    owners.push_back(event);
+    if (!from_native)
+      waits_.push_back({event.cast<mx::metal::EventImpl>().mtl_event(), event.value()});
+    return Status::Ok();
+  };
+  // Runs only on the original FIFO owner. Each pinned producer's complete
+  // encoding precedes this Job, including its last real native and MLX events.
+  // The locked ggml device queue orders all native regions of this Runtime;
+  // the original MLX stream orders its own regions. Import only the opposite
+  // real queue's frontier, not a same-queue event or an MLX allocation-stream tag.
+  for (const auto &dependency : sources_) {
+    if (dependency.copy) {
+      HYLE_RETURN_IF_ERROR(observe_copy_dependency(*dependency.copy, dependency.epoch));
+      continue; // Original copy Jobs retire synchronously on this same FIFO.
+    }
+    auto &producer = *dependency.native;
+    if (producer.submitted_epoch.load(std::memory_order_acquire) != dependency.epoch)
+      return Status::FailedPrecondition("Apple native dependency epoch was replaced");
+    if (producer.done.load(std::memory_order_acquire)) {
+      HYLE_RETURN_IF_ERROR(producer.terminal);
+      continue;
+    }
+    if (!producer.native_deferred)
+      return Status::FailedPrecondition("Apple dependency has no original encoded prefix");
+    if (producer.native_retired || !producer.native_values_ready || !producer.native_terminal.ok()) {
+      HYLE_RETURN_IF_ERROR(observe_native_prefix(producer));
+      continue;
+    }
+    HYLE_RETURN_IF_ERROR(append(producer.recurrent[producer.native_tail_region]->completion_event, true));
+    if (!producer.mlx_events.empty()) HYLE_RETURN_IF_ERROR(append(producer.mlx_events.back(), false));
+  }
+  return Status::Ok();
 }
 Status observe_native_inputs(InvocationState &state) noexcept { return state.observe_inputs(); }
 void retire_invocation(InvocationState &state, Status terminal) noexcept {
@@ -919,7 +1010,8 @@ void execute_with(InvocationState& state, Evaluate evaluate) noexcept {
         Status::Cancelled("Apple submission cancelled before native execution");
   if (terminal.ok()) {
     try {
-      if (preflight) terminal = preflight(source);
+      terminal = state.dependencies.resolve();
+      if (terminal.ok() && preflight) terminal = preflight(source);
       if (terminal.ok()) terminal = state.resolve_inputs();
       if (terminal.ok()) terminal = evaluate(*runtime.stream);
     } catch (...) {
@@ -958,13 +1050,14 @@ void execute_with(InvocationState& state, Evaluate evaluate) noexcept {
 void execute_invocation(Job* job) noexcept {
   auto& state=*static_cast<InvocationState*>(job);
   execute_with(state,[&](mx::Stream stream){
+    if (!state.program->native) state.encode_dependencies(stream);
     return state.program->native ? execute_plan(state,stream) :
         evaluate_mlx(*state.program,state.inputs,state.values->arrays,stream);
   });
 }
 void execute_batch_invocation(Job* job) noexcept {
   auto& state=*static_cast<RuntimeBatchInvocationState*>(job);
-  execute_with(state,[&](mx::Stream stream){return evaluate_batch(state,stream);});
+  execute_with(state,[&](mx::Stream stream){state.encode_dependencies(stream);return evaluate_batch(state,stream);});
 }
 
 const cd::CompletionVTable completion_vtable{
@@ -1014,6 +1107,41 @@ const cd::CompletionVTable completion_vtable{
             state.cancel.store(true, std::memory_order_release);
           return Status::Ok();
         }};
+Status NativeDependencies::capture(const std::shared_ptr<Runtime> &runtime,
+    std::span<const cd::CompletionDependency> dependencies, InvocationState *consumer, CopyRecording *copy_consumer) noexcept {
+  HYLE_FATAL_ASSERT(sources_.empty());
+  for (const auto &source : dependencies) {
+    if (!source.terminal_hint) return Status::FailedPrecondition("Apple dependency is empty");
+    HYLE_RETURN_IF_ERROR(*source.terminal_hint);
+    if (!source.pending()) continue;
+    if (sources_.size() == sources_.capacity())
+      return Status::ResourceExhausted("Apple dependency count exceeds cold preparation");
+    if (source.vtable != &completion_vtable) {
+      if (source.state == copy_consumer) return Status::InvalidArgument("Apple copy cannot depend on itself");
+      std::uint64_t epoch = 0;
+      HYLE_ASSIGN_OR_RETURN(auto copy, pin_copy_dependency(runtime, source, &epoch));
+      sources_.push_back({nullptr, std::move(copy), epoch});
+      continue;
+    }
+    auto *producer = static_cast<InvocationState *>(source.state);
+    if (producer == consumer || producer->program->runtime != runtime)
+      return Status::InvalidArgument("Apple dependency has another Runtime or names its consumer");
+    if (sources_.size() == sources_.capacity())
+      return Status::ResourceExhausted("Apple dependency count exceeds cold preparation");
+    std::lock_guard lock(producer->binding_mutex);
+    const auto epoch = producer->submitted_epoch.load(std::memory_order_acquire);
+    if (!epoch) return Status::FailedPrecondition("Apple dependency has no accepted producer epoch");
+    if (producer->done.load(std::memory_order_acquire)) HYLE_RETURN_IF_ERROR(producer->terminal);
+    if (producer->cancel.load(std::memory_order_acquire))
+      return Status::Cancelled("Apple producer cancelled before dependency admission");
+    if (producer->source_readers == SIZE_MAX)
+      return Status::ResourceExhausted("Apple dependency reader capacity");
+    ++producer->source_readers;
+    retain(producer);
+    sources_.push_back({producer, {}, epoch});
+  }
+  return Status::Ok();
+}
 Status subscribe_completion(cd::CompletionDependency source,
                             CompletionNotification notification) noexcept {
   if (!notification.valid())
@@ -1652,6 +1780,27 @@ Result<OwnedResult<Results>> detail::InvocationAccess::submit_ordered(
     Status (*preflight)(const void *) noexcept, const void *source) noexcept {
   return invocation.submit_guarded(std::move(uses), preflight, source);
 }
+Status detail::InvocationAccess::reserve_dependencies(Invocation &invocation, std::size_t capacity) noexcept {
+  auto *state = invocation.state_;
+  if (!state) return Status::FailedPrecondition("empty Apple native invocation");
+  if (capacity > (SIZE_MAX - 8) / 2) return Status::OutOfRange("Apple dependency capacity overflows");
+  std::lock_guard lock(state->binding_mutex);
+  if (!state->done.load(std::memory_order_acquire) || state->retired.load(std::memory_order_acquire) ||
+      state->source_readers || !state->dependencies.empty())
+    return Status::Unavailable("Apple dependency preparation requires an idle original slot");
+  try {
+    HYLE_RETURN_IF_ERROR(state->dependencies.reserve(capacity));
+    for (auto &region : state->recurrent)
+      if (region) HYLE_RETURN_IF_ERROR(region->program->reserve_waits(8 + 2 * capacity));
+    return Status::Ok();
+  } catch (...) { return native_exception(); }
+}
+Result<OwnedResult<Results>> detail::InvocationAccess::submit_ordered(
+    Invocation &invocation, LeaseUseBatch uses,
+    Status (*preflight)(const void *) noexcept, const void *source,
+    std::span<const cd::CompletionDependency> dependencies) noexcept {
+  return invocation.submit_guarded(std::move(uses), preflight, source, dependencies);
+}
 Result<mx::array> detail::InvocationAccess::output(const Invocation &invocation,
     std::size_t port) noexcept {
   auto *state = invocation.state_;
@@ -1792,6 +1941,11 @@ Result<OwnedResult<Results>> Invocation::submit() noexcept {
 
 Result<OwnedResult<Results>> Invocation::submit_guarded(LeaseUseBatch uses,
     Status (*preflight)(const void *) noexcept, const void *source) noexcept {
+  return submit_guarded(std::move(uses), preflight, source, {});
+}
+Result<OwnedResult<Results>> Invocation::submit_guarded(LeaseUseBatch uses,
+    Status (*preflight)(const void *) noexcept, const void *source,
+    std::span<const cd::CompletionDependency> dependencies) noexcept {
   HYLE_TRACE_ZONE_NAMED("hyle.apple.submit");
   if (!state_)
     return std::unexpected(
@@ -1815,6 +1969,7 @@ Result<OwnedResult<Results>> Invocation::submit_guarded(LeaseUseBatch uses,
     ~SourcePins() { if (!admitted) state.release_source_pins(); }
   } pins{*state_};
   HYLE_RETURN_IF_ERROR(state_->snapshot_sources());
+  HYLE_RETURN_IF_ERROR(state_->dependencies.capture(state_->program->runtime, dependencies, state_));
   state_->values->arrays.clear();
   const Status populated = writer->emplace(Results(state_->values));
   if (!populated.ok())

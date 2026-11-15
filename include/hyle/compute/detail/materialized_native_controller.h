@@ -11,6 +11,7 @@
 #include "hyle/compute/detail/paged_arena_access.h"
 #include "hyle/compute/detail/copy_outcome_source.h"
 #include "hyle/compute/detail/generated_result.h"
+#include "hyle/compute/detail/completion_access.h"
 
 namespace hyle::compute::detail {
 // Fixed F5 metadata/permission glue instantiated only by the two native owners.
@@ -302,12 +303,22 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
     native_bank=prepared_bank;bound=true;return Status::Ok();
   }
   template<bool ConsumePreparation>auto submit_bound()noexcept->Result<typename T::Submission>{
+    return submit_bound<ConsumePreparation>({});
+  }
+  template<bool ConsumePreparation>auto submit_bound(
+      std::span<const CompletionDependency> dependencies)noexcept->Result<typename T::Submission>{
     HYLE_RETURN_IF_ERROR(open());if(!prepared || !bound)return std::unexpected(Status::FailedPrecondition("native batch is not prepared/bound"));
+    if constexpr(!requires(LeaseUseBatch batch){T::submit(native,std::move(batch),dependencies);})
+      if(!dependencies.empty())return std::unexpected(Status::Unimplemented("native batch cannot import ordered dependencies"));
     HYLE_ASSIGN_OR_RETURN(auto batch,uses.begin());page_reads.reset();for(const auto&lease:reads)if(lease.valid())HYLE_RETURN_IF_ERROR(page_reads.add(lease));
     for(const auto&page:PagedArenaAccess::pages(keys))HYLE_RETURN_IF_ERROR(page_reads.add(page));
     for(const auto&page:PagedArenaAccess::pages(values))HYLE_RETURN_IF_ERROR(page_reads.add(page));
     HYLE_RETURN_IF_ERROR(page_reads.admit(batch));
-    auto submitted=T::submit(native,std::move(batch));
+    auto submitted=[&](){
+      if constexpr(requires{T::submit(native,std::move(batch),dependencies);})
+        return T::submit(native,std::move(batch),dependencies);
+      else return T::submit(native,std::move(batch));
+    }();
     if constexpr(ConsumePreparation){prepared=false;bound=false;}
     if(!submitted){failed=true;prepared=false;bound=false;}return submitted;
   }
@@ -317,14 +328,24 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
   // permission use and the same native result writer; no flags are restored
   // after acceptance and no binding/planning happens on this path.
   auto replay_ready()noexcept->Result<typename T::Submission>{
+    return replay_ready({});
+  }
+  auto replay_ready(std::span<const CompletionDependency> dependencies)noexcept->Result<typename T::Submission>{
     HYLE_RETURN_IF_ERROR(T::reuse_gate(native));
-    return submit_bound<false>();
+    return submit_bound<false>(dependencies);
   }
   template<class Update,class Access>
   auto submit_pending(const PagedArenaPendingRead&k,const PagedArenaPendingRead&v,
       const Update&update)noexcept->Result<typename T::Submission>{
+    return submit_pending<Update,Access>(k,v,update,{});
+  }
+  template<class Update,class Access>
+  auto submit_pending(const PagedArenaPendingRead&k,const PagedArenaPendingRead&v,
+      const Update&update,std::span<const CompletionDependency> dependencies)noexcept->Result<typename T::Submission>{
     HYLE_RETURN_IF_ERROR(open());
     if(!prepared || !bound)return std::unexpected(Status::FailedPrecondition("native pending batch is not prepared/bound"));
+    if constexpr(!requires(LeaseUseBatch batch){T::submit_pending(native,std::move(batch),update,dependencies);})
+      if(!dependencies.empty())return std::unexpected(Status::Unimplemented("native pending batch cannot import ordered dependencies"));
     HYLE_ASSIGN_OR_RETURN(auto batch,uses.begin());
     for(const auto&lease:reads)if(lease.valid())HYLE_RETURN_IF_ERROR(batch.read(lease));
     page_reads.reset();
@@ -334,7 +355,9 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
     else for(const auto&page:PagedArenaAccess::pages(values))HYLE_RETURN_IF_ERROR(page_reads.add(page));
     HYLE_RETURN_IF_ERROR(page_reads.admit(batch));
     auto submitted=[&](){
-      if constexpr(requires{T::submit_pending(native,std::move(batch),update);})
+      if constexpr(requires{T::submit_pending(native,std::move(batch),update,dependencies);})
+        return T::submit_pending(native,std::move(batch),update,dependencies);
+      else if constexpr(requires{T::submit_pending(native,std::move(batch),update);})
         return T::submit_pending(native,std::move(batch),update);
       else return T::submit(native,std::move(batch));
     }();

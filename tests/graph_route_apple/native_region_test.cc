@@ -351,7 +351,7 @@ TEST(AppleNativeRegion, UnifiedInvocationKeepsNativeFusionOwnersAndBorrowedLimit
   EXPECT_FALSE(g::apple::execution_source(context));
 }
 
-TEST(AppleNativeRegion, DeferredNativePortsResolveOnOriginalOwnerAndKeepFailure) {
+void exercise_deferred_native_ports(bool order_only) {
   auto context = a::Context::create().value();
   auto memory = a::MemoryResource::create(context).value();
   const auto ids_description = c::TensorDesc::dense(c::DataType::kInt32,
@@ -361,7 +361,11 @@ TEST(AppleNativeRegion, DeferredNativePortsResolveOnOriginalOwnerAndKeepFailure)
   const auto ids = builder.input(ids_description).value();
   const auto selected_node = builder.add_node(c::Operation(c::Gather{.axis=0}), std::array{x, ids}).value();
   const auto selected = builder.result(selected_node).value();
-  const auto negative_node = builder.add_node(c::Operation(c::Unary{c::UnaryKind::kNeg}), std::array{selected}).value();
+  const auto independent_description = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 1>{2}).value();
+  const auto independent = order_only ? builder.input(independent_description).value() : g::ValueId{};
+  const auto negative_node = builder.add_node(c::Operation(c::Unary{c::UnaryKind::kNeg}),
+      std::array{order_only ? independent : selected}).value();
   const auto negative = builder.result(negative_node).value();
   ASSERT_TRUE(builder.depends_on(negative_node, selected_node).ok());
   ASSERT_TRUE(builder.publish(selected).ok()); ASSERT_TRUE(builder.publish(negative).ok());
@@ -467,24 +471,43 @@ TEST(AppleNativeRegion, DeferredNativePortsResolveOnOriginalOwnerAndKeepFailure)
     auto indices = input(memory, ids_description, std::array<std::int32_t, 2>{3, 1});
     ASSERT_TRUE(slot.bind(x, description, values).ok());
     ASSERT_TRUE(slot.bind(ids, ids_description, indices).ok());
+    if (order_only)
+      ASSERT_TRUE(slot.bind(independent, independent_description,
+          input(memory, independent_description, std::array<float, 2>{3.f, 5.f})).ok());
     ASSERT_TRUE(submit(slot).ok());
-    const auto wanted = phase == 0 ? std::array<float, 2>{-2.0f,1.5f} : std::array<float, 2>{0.0f,-0.5f};
+    if (order_only) {
+      const auto report = slot.replay_report().value();
+      EXPECT_GT(report.device_wait_dependency_count, 0U);
+      EXPECT_EQ(report.host_wait_dependency_count, 0U);
+    }
+    const auto wanted = order_only ? std::array<float, 2>{-3.f,-5.f} :
+        phase == 0 ? std::array<float, 2>{-2.0f,1.5f} : std::array<float, 2>{0.0f,-0.5f};
     auto result = slot.result(negative).value(); expect(result.tensor().value(), wanted);
     if (phase == 0) retained = result.storage_lease().value();
   }
   expect(retained.tensor(c::TensorDesc::dense(c::DataType::kFloat32,
-      std::array<std::int64_t, 1>{2}).value()).value(), std::array<float, 2>{-2.0f,1.5f});
+      std::array<std::int64_t, 1>{2}).value()).value(),
+      order_only ? std::array<float, 2>{-3.f,-5.f} : std::array<float, 2>{-2.0f,1.5f});
   auto failed = compiled->executable.create_invocation({.resources=g::ResourceOptions{}}).value();
   auto values = input(memory, description, std::array<float, 4>{1,2,3,4});
   auto bad = input(memory, ids_description, std::array<std::int32_t, 2>{0,4});
   ASSERT_TRUE(failed.bind(x, description, values).ok());
   ASSERT_TRUE(failed.bind(ids, ids_description, bad).ok());
+  if (order_only)
+    ASSERT_TRUE(failed.bind(independent, independent_description,
+        input(memory, independent_description, std::array<float, 2>{3.f, 5.f})).ok());
   ASSERT_TRUE(failed.prepare_replay({}).ok());
   auto accepted = failed.submit();
   ASSERT_TRUE(accepted) << accepted.error().message();
   const auto terminal = accepted->wait();
   EXPECT_TRUE(terminal.IsOutOfRange()) << terminal.message();
   EXPECT_FALSE(failed.result(selected)); EXPECT_FALSE(failed.result(negative));
+}
+TEST(AppleNativeRegion, DeferredNativePortsResolveOnOriginalOwnerAndKeepFailure) {
+  exercise_deferred_native_ports(false);
+}
+TEST(AppleNativeRegion, OrderOnlyEdgeRejectsIndependentOutputAfterProducerFailure) {
+  exercise_deferred_native_ports(true);
 }
 
 TEST(AppleNativeRegion, OwnedViewFeedbackKeepsOneExactLeaseOwner) {

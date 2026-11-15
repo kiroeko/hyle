@@ -63,6 +63,9 @@ struct PagedBatchAccess final {
   // The original source/suffix owner retains this Update until native retirement.
   HYLE_COMPUTE_ROUTE_APPLE_API static Result<OwnedResult<Results>> submit_pending(
       Invocation&,LeaseUseBatch,const CopyBatchUpdate&) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API static Result<OwnedResult<Results>> submit_pending(
+      Invocation&,LeaseUseBatch,const CopyBatchUpdate&,
+      std::span<const compute::detail::CompletionDependency>) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API static Status wait_native(Invocation&) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API static Status reuse_gate(Invocation&) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API static bool empty_cache_reads(const Invocation&) noexcept;

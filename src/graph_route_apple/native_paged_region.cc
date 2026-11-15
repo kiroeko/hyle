@@ -120,9 +120,17 @@ struct Traits final {
   static auto submit(Invocation &invocation, compute::LeaseUseBatch uses) {
     return an::PagedBatchAccess::submit(invocation, std::move(uses));
   }
+  static auto submit(Invocation &invocation, compute::LeaseUseBatch uses,
+      std::span<const cd::CompletionDependency> dependencies) {
+    return an::InvocationAccess::submit_ordered(invocation, std::move(uses), nullptr, nullptr, dependencies);
+  }
   static auto submit_pending(Invocation &invocation, compute::LeaseUseBatch uses,
       const ca::CopyBatchUpdate &source) {
     return an::PagedBatchAccess::submit_pending(invocation, std::move(uses), source);
+  }
+  static auto submit_pending(Invocation &invocation, compute::LeaseUseBatch uses,
+      const ca::CopyBatchUpdate &source, std::span<const cd::CompletionDependency> dependencies) {
+    return an::PagedBatchAccess::submit_pending(invocation, std::move(uses), source, dependencies);
   }
   static auto wait_native(Invocation &invocation) { return an::PagedBatchAccess::wait_native(invocation); }
   static auto reuse_gate(Invocation &invocation) { return an::PagedBatchAccess::reuse_gate(invocation); }
@@ -156,6 +164,7 @@ struct Slot final {
   mem::AllocatorRef allocator;
   Artifact &artifact;
   Controller *controller = nullptr;
+  std::size_t dependency_capacity = 0;
   std::array<compute::PagedArenaRead,2> frames;
   std::array<compute::PagedArenaPendingRead,2> pending_frames;
   struct Written final {
@@ -228,12 +237,14 @@ Status prepare(void *prepared, void *invocation, compute::BatchLayoutVersion lay
     // NodeLayout only after its cold replacement has prepared successfully.
     HYLE_ASSIGN_OR_RETURN(auto recipe, page_recipe(artifact, layout.origin_schema(), slot.allocator));
     HYLE_ASSIGN_OR_RETURN(auto replacement, make_controller(slot, std::move(recipe)));
-    const auto status = replacement->prepare(layout);
+    auto status = replacement->prepare(layout);
+    if (status.ok()) status = an::InvocationAccess::reserve_dependencies(replacement->native, slot.dependency_capacity);
     if (!status.ok()) { slot.allocator.destroy(replacement); return status; }
     auto *previous = slot.controller; slot.controller = replacement;
     if (previous) slot.allocator.destroy(previous);
   } else {
     HYLE_RETURN_IF_ERROR(slot.controller->prepare(std::move(layout)));
+    HYLE_RETURN_IF_ERROR(an::InvocationAccess::reserve_dependencies(slot.controller->native, slot.dependency_capacity));
   }
   slot.frames = {}; slot.pending_frames = {}; slot.written = {}; slot.pending_source = nullptr;
   return Status::Ok();
@@ -559,8 +570,6 @@ Result<compute::Completion> submit(void *, void *invocation,
     std::span<const compute::ConstTensorView>, std::span<const compute::TensorView>) noexcept {
   auto &slot = *static_cast<Slot *>(invocation);
   if (!slot.controller) return std::unexpected(Status::FailedPrecondition("Apple page layout is not prepared"));
-  for (const auto dependency : dependencies)
-    HYLE_RETURN_IF_ERROR(an::qualify_recording_dependency(slot.artifact.preparation.runtime, dependency));
   slot.result.reset(); clear_output(slot);
   const bool pending = std::ranges::any_of(slot.pending_frames, [](const auto &frame) { return frame.valid(); });
   auto accepted = [&]() -> Result<Traits::Submission> {
@@ -579,17 +588,17 @@ Result<compute::Completion> submit(void *, void *invocation,
         for (const auto &page : cd::PagedArenaAccess::pages(slot.frames[port-1])) HYLE_RETURN_IF_ERROR(reads.add(page));
       HYLE_RETURN_IF_ERROR(reads.admit(uses));
       auto result = an::InvocationAccess::submit_ordered(slot.controller->native, std::move(uses),
-          &before_written_read, &slot);
+          &before_written_read, &slot, dependencies);
       if (!result) { slot.controller->failed = true; slot.controller->prepared = false; slot.controller->bound = false; }
       return result;
     }
-    if (!pending) return slot.controller->replay_ready();
+    if (!pending) return slot.controller->replay_ready(dependencies);
     HYLE_RETURN_IF_ERROR(an::PagedBatchAccess::reuse_gate(slot.controller->native));
     if (!slot.pending_source)
       return std::unexpected(Status::FailedPrecondition("Apple page has no reserved pending source"));
     HYLE_RETURN_IF_ERROR(qualify_native_pending_source(*slot.pending_source, slot.pending_source->source.update()));
     return slot.controller->submit_pending<ca::CopyBatchUpdate, an::CopyStreamAccess>(
-        slot.pending_frames[0], slot.pending_frames[1], slot.pending_source->source.update());
+        slot.pending_frames[0], slot.pending_frames[1], slot.pending_source->source.update(), dependencies);
   }();
   if (!accepted) return std::unexpected(accepted.error());
   auto transfer = cd::ResultAccess::take_storage(std::move(*accepted));
@@ -624,6 +633,14 @@ const graph::detail::RegionBindingReleaseVTable binding_release_table{
       if (slot.controller) slot.controller->bound = false;
     }};
 
+const graph::detail::RegionDependenciesVTable dependencies_table{
+    [](void *, void *invocation, std::size_t capacity) noexcept -> Status {
+      auto &slot = *static_cast<Slot *>(invocation);
+      if (slot.controller && slot.controller->native.valid())
+        HYLE_RETURN_IF_ERROR(an::InvocationAccess::reserve_dependencies(slot.controller->native, capacity));
+      slot.dependency_capacity = capacity;
+      return Status::Ok();
+    }, true};
 const ProviderRegionPreparedVTable prepared_table{
     .destroy_prepared = [](void *p, mem::AllocatorRef a) noexcept { a.destroy(static_cast<Artifact *>(p)); },
     .alias_support = [](void *, std::size_t, std::size_t) noexcept { return compute::AliasSupport{}; },
@@ -639,6 +656,7 @@ const ProviderRegionPreparedVTable prepared_table{
     },
     .output_value = &value, .prepare_bindings = &bind, .seal_bindings = &seal, .output_lease = &lease,
     .query_extension = [](void *, compute::ProviderExtensionId id) noexcept -> const void * {
+      if (id == graph::detail::kRegionDependenciesExtensionId) return &dependencies_table;
       if (id == graph::detail::kRegionBindingReleaseExtensionId) return &binding_release_table;
       if (id == bd::kNativeBatchRegionExtensionId) return &page_table;
       if (id == bd::kNativePendingRegionExtensionId) return &pending_table;

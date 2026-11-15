@@ -95,6 +95,9 @@ HYLE_COMPUTE_ROUTE_APPLE_API Status bind_result_copy_recording(CopyRecording&,
 HYLE_COMPUTE_ROUTE_APPLE_API Status resolve_result_copy_recording(CopyRecording&,
     std::span<const compute::detail::CopyBackendRange>,ResultCopySourceFn,void*)noexcept;
 HYLE_COMPUTE_ROUTE_APPLE_API Result<Completion> submit_copy_recording(CopyRecording &) noexcept;
+HYLE_COMPUTE_ROUTE_APPLE_API Status reserve_copy_dependencies(CopyRecording &, std::size_t) noexcept;
+HYLE_COMPUTE_ROUTE_APPLE_API Result<Completion> submit_copy_recording(CopyRecording &,
+    std::span<const compute::detail::CompletionDependency>) noexcept;
 HYLE_COMPUTE_ROUTE_APPLE_API CopyBatchReport copy_recording_report(const CopyRecording &) noexcept;
 HYLE_COMPUTE_ROUTE_APPLE_API Status clear_copy_recording(CopyRecording &) noexcept;
 // A native producer is pinned at the original accepted copy epoch and released
@@ -109,4 +112,10 @@ HYLE_COMPUTE_ROUTE_APPLE_API Status set_copy_preflight(CopyRecording &, CopyPref
 HYLE_COMPUTE_ROUTE_APPLE_API Result<CompletionPoll> poll_copy_recording(const CopyRecording &) noexcept;
 Status wait_copy_recording(const CopyRecording &) noexcept;
 Status qualify_recording_dependency(const std::shared_ptr<Runtime> &, compute::detail::CompletionDependency) noexcept;
+// Pin the accepted original copy episode, including after public Completion
+// abandonment. Pins prevent rebinding/replay until the imported reader retires.
+Result<std::shared_ptr<CopyRecording>> pin_copy_dependency(const std::shared_ptr<Runtime> &,
+    compute::detail::CompletionDependency, std::uint64_t *epoch) noexcept;
+Status observe_copy_dependency(const CopyRecording &, std::uint64_t epoch) noexcept;
+void release_copy_dependency(CopyRecording &) noexcept;
 } // namespace hyle::compute::apple::detail

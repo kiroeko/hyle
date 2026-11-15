@@ -250,6 +250,10 @@ const gd::RegionBindingReleaseVTable release_table{
       slot.source.reset(); slot.rows_owner.reset(); slot.rows = {};
       slot.bound = false; slot.sealed = false; slot.submitted = false;
     }};
+const gd::RegionDependenciesVTable dependencies_table{
+    [](void *, void *invocation, std::size_t capacity) noexcept -> Status {
+      return an::reserve_copy_dependencies(*static_cast<Slot *>(invocation)->recording, capacity);
+    }, true};
 const ProviderRegionPreparedVTable prepared_table{
     .destroy_prepared = [](void *p, mem::AllocatorRef a) noexcept { a.destroy(static_cast<Artifact *>(p)); },
     .alias_support = [](void *, std::size_t, std::size_t) noexcept { return compute::AliasSupport{}; },
@@ -265,15 +269,13 @@ const ProviderRegionPreparedVTable prepared_table{
       return Status::Ok();
     },
     .destroy_invocation = [](void *p, mem::AllocatorRef a) noexcept { a.destroy(static_cast<Slot *>(p)); },
-    .delegated_submit = [](void *prepared, void *invocation, std::span<const cd::CompletionDependency> dependencies,
+    .delegated_submit = [](void *, void *invocation, std::span<const cd::CompletionDependency> dependencies,
         std::span<const compute::ConstTensorView> inputs, std::span<const compute::TensorView> outputs) noexcept -> Result<compute::Completion> {
-      const auto &artifact = *static_cast<Artifact *>(prepared); auto &slot = *static_cast<Slot *>(invocation);
+      auto &slot = *static_cast<Slot *>(invocation);
       if (!slot.sealed || !slot.pages.valid() || inputs.size() != 1 || !outputs.empty() ||
           (!slot.source.valid() && (!inputs[0].valid() || !same_range(inputs[0].storage(), slot.rows.storage()))))
         return std::unexpected(Status::FailedPrecondition("Apple append current ports/pages are not sealed"));
-      for (const auto dependency : dependencies)
-        HYLE_RETURN_IF_ERROR(an::qualify_recording_dependency(artifact.runtime, dependency));
-      HYLE_ASSIGN_OR_RETURN(auto completion, an::submit_copy_recording(*slot.recording));
+      HYLE_ASSIGN_OR_RETURN(auto completion, an::submit_copy_recording(*slot.recording, dependencies));
       slot.submitted = true; return completion;
     },
     .endpoint = [](void *prepared, void *) noexcept { return region_ordered_endpoint(static_cast<Artifact *>(prepared)->runtime); },
@@ -289,6 +291,7 @@ const ProviderRegionPreparedVTable prepared_table{
       slot.sealed = true; return Status::Ok();
     },
     .query_extension = [](void *, compute::ProviderExtensionId id) noexcept -> const void * {
+      if (id == gd::kRegionDependenciesExtensionId) return &dependencies_table;
       if (id == bd::kNativeAppendRegionExtensionId) return &append_table;
       if (id == gd::kRegionOrderedWriteExtensionId) return &ordered_table;
       if (id == gd::kRegionBindingReleaseExtensionId) return &release_table;

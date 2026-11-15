@@ -9,6 +9,7 @@
 #include <mlx/backend/metal/device.h>
 
 #include "apple_internal.h"
+#include "apple_dependencies.h"
 #include "completion_internal.h"
 #include "hyle/core/assert.h"
 #include "hyle/mem/std_allocator.h"
@@ -31,6 +32,9 @@ struct CopyRecording final : Job {
         resolved(mem::StdAllocator<cd::ResolvedCopyRange>(allocator)), commands(mem::StdAllocator<CopyCommand>(allocator)),
         host_targets(mem::StdAllocator<HostCopyTarget>(allocator)) {}
   std::shared_ptr<Runtime> runtime;
+  NativeDependencies dependencies;
+  std::size_t dependency_readers = 0;
+  std::uint64_t submitted_epoch = 0;
   // Both the original worker and public Completion hold a preallocated slot.
   // The worker owner is moved locally before done becomes visible.
   std::shared_ptr<CopyRecording> admitted_owner, completion_owner;
@@ -73,6 +77,7 @@ void deliver(cd::CompletionLifetime lifetime, Status terminal, const Status &hin
   terminal.Update(hint); lifetime.terminal(lifetime.state, terminal); lifetime.release(lifetime.state);
 }
 void finish(CopyRecording &state, Status terminal) noexcept {
+  state.dependencies.clear();
   cd::CompletionLifetime abandoned; Status hint;
   {
     std::lock_guard lock(state.completion_mutex);
@@ -204,6 +209,8 @@ void execute_copy(Job *job) noexcept {
     std::lock_guard lock(state.runtime->queue_mutex); terminal = state.runtime->failure;
   }
   if (state.cancel.load(std::memory_order_acquire)) terminal.Update(Status::Cancelled("Apple copy cancelled before native recording"));
+  if (terminal.ok()) terminal.Update(state.dependencies.resolve());
+  if (terminal.ok() && state.host_copy) terminal.Update(state.dependencies.observe());
   if (terminal.ok() && state.preflight) terminal.Update(state.preflight(state.preflight_state));
   bool use_blit = !state.host_copy;
   if (terminal.ok() && state.host_copy) terminal = execute_host_copy(state, &use_blit);
@@ -211,9 +218,9 @@ void execute_copy(Job *job) noexcept {
     @autoreleasepool {
       try {
         auto &encoder = mlx::core::metal::get_command_encoder(*state.runtime->stream);
-        // Prior original Jobs synchronize before their retirement, so these
-        // untracked buffers have no unfinished earlier encoder when this FIFO
-        // Job starts. End any encoder before the single original native blit.
+        state.dependencies.encode(*state.runtime->stream);
+        // Event imports order real pending writers before this original blit.
+        // A FIFO/host-visible buffer alone does not prove GPU readiness.
         encoder.end_encoding();
         auto native_command = NS::RetainPtr(encoder.get_command_buffer());
         id<MTLCommandBuffer> command = (__bridge id<MTLCommandBuffer>)native_command.get();
@@ -248,6 +255,7 @@ void execute_copy(Job *job) noexcept {
   }
   if (state.host_copy && state.cancel.load(std::memory_order_acquire))
     terminal.Update(Status::Cancelled("Apple host copy cancelled after original FIFO retirement"));
+  terminal.Update(state.dependencies.observe());
   finish(state, std::move(terminal));
 }
 const cd::CompletionVTable copy_completion_vtable{
@@ -307,7 +315,7 @@ Result<std::shared_ptr<CopyRecording>> prepare_copy_recording_runtime(const std:
 }
 namespace {
 Status mutable_recording(const CopyRecording &state) noexcept {
-  if (state.done.load(std::memory_order_acquire) == 0 || state.completion_owner || state.admitted_owner)
+  if (state.done.load(std::memory_order_acquire) == 0 || state.completion_owner || state.admitted_owner || state.dependency_readers)
     return Status::Unavailable("Apple copy phase is retained");
   return state.terminal;
 }
@@ -473,7 +481,7 @@ Status copy_recording_reuse_gate(const CopyRecording &state) noexcept {
 }
 Status copy_recording_retired_gate(const CopyRecording &state) noexcept {
   std::lock_guard lock(state.completion_mutex);
-  return state.done.load(std::memory_order_acquire) == 0 || state.completion_owner || state.admitted_owner ?
+  return state.done.load(std::memory_order_acquire) == 0 || state.completion_owner || state.admitted_owner || state.dependency_readers ?
       Status::Unavailable("Apple copy phase is retained") : Status::Ok();
 }
 Status bind_native_copy_source(CopyRecording &state, InputSource source,
@@ -496,7 +504,7 @@ Result<CopySpan> native_copy_source(CopyRecording &state) noexcept {
 }
 Status bind_copy_recording(CopyRecording &state, std::span<const cd::CopyBackendRange> ranges, bool prefix_marker) noexcept {
   std::lock_guard lock(state.completion_mutex);
-  if (state.done.load(std::memory_order_acquire) == 0 || state.completion_owner || state.admitted_owner)
+  if (state.done.load(std::memory_order_acquire) == 0 || state.completion_owner || state.admitted_owner || state.dependency_readers)
     return Status::Unavailable("Apple copy phase is retained");
   if (!state.terminal.ok()) return state.terminal;
   state.prepared = false;
@@ -526,20 +534,46 @@ Status bind_copy_recording(CopyRecording &state, std::span<const cd::CopyBackend
   return Status::Ok();
 }
 Result<Completion> submit_copy_recording(CopyRecording &state) noexcept {
+  return submit_copy_recording(state, {});
+}
+Status reserve_copy_dependencies(CopyRecording &state, std::size_t capacity) noexcept {
   std::lock_guard lock(state.completion_mutex);
-  if (!state.prepared || state.completion_owner || state.done.load(std::memory_order_acquire) == 0)
+  HYLE_RETURN_IF_ERROR(mutable_recording(state));
+  return state.dependencies.reserve(capacity);
+}
+Result<Completion> submit_copy_recording(CopyRecording &state,
+    std::span<const cd::CompletionDependency> dependencies) noexcept {
+  struct Admission final {
+    CopyRecording &state;
+    bool accepted = false, capturing = false;
+    ~Admission() {
+      if (accepted || !capturing) return;
+      if (state.source_pinned) {
+        InvocationAccess::release_source(state.host_source); state.source_pinned = false;
+      }
+      state.dependencies.clear();
+    }
+  } admission{state};
+  std::lock_guard lock(state.completion_mutex);
+  if (!state.prepared || state.completion_owner || state.dependency_readers || state.done.load(std::memory_order_acquire) == 0)
     return std::unexpected(Status::FailedPrecondition("Apple copy phase is not prepared/idle"));
   if (!state.terminal.ok()) return std::unexpected(state.terminal);
+  if (state.submitted_epoch == UINT64_MAX)
+    return std::unexpected(Status::ResourceExhausted("Apple copy epoch exhausted"));
+  admission.capturing = true;
+  HYLE_RETURN_IF_ERROR(state.dependencies.capture(state.runtime, dependencies, nullptr, &state));
   if (state.host_source.valid()) {
     HYLE_ASSIGN_OR_RETURN(state.expected_epoch, InvocationAccess::pin_source(
         state.host_source, state.runtime, state.consumed_epoch));
     state.source_pinned = true;
   }
   if (state.mode == CopyRecordingMode::kOnce) state.prepared = false;
-  if (state.report.active_copies == 0 && !state.prefix_marker) return Completion::completed();
+  if (state.report.active_copies == 0 && !state.prefix_marker && state.dependencies.empty())
+    return Completion::completed();
   auto owner = state.self.lock(); HYLE_FATAL_ASSERT(owner != nullptr);
   state.cancel.store(false, std::memory_order_relaxed); state.terminal = Status::Ok(); state.hint = Status::Ok();
   state.admitted_owner = owner; state.completion_owner = owner;
+  const auto previous_epoch = state.submitted_epoch++;
   state.done.store(0, std::memory_order_release);
   const auto admitted = state.runtime->enqueue(state);
   if (!admitted.ok()) {
@@ -547,15 +581,17 @@ Result<Completion> submit_copy_recording(CopyRecording &state) noexcept {
       InvocationAccess::release_source(state.host_source); state.source_pinned = false;
     }
     state.done.store(1, std::memory_order_release); state.admitted_owner.reset(); state.completion_owner.reset();
+    state.submitted_epoch = previous_epoch;
     return std::unexpected(admitted);
   }
   if (state.source_pinned) state.consumed_epoch = state.expected_epoch;
   state.report.phase_completions = 1;
+  admission.accepted = true;
   return cd::CompletionAccess::make(&copy_completion_vtable, &state);
 }
 Status bind_result_copy_recording(CopyRecording&state,std::span<const cd::CopyBackendRange>ranges)noexcept{
   std::lock_guard lock(state.completion_mutex);
-  if(state.done.load(std::memory_order_acquire)==0 || state.completion_owner || state.admitted_owner)
+  if(state.done.load(std::memory_order_acquire)==0 || state.completion_owner || state.admitted_owner || state.dependency_readers)
     return Status::Unavailable("Apple result-copy phase is retained");
   if(!state.terminal.ok())return state.terminal;
   state.prepared=false;
@@ -599,13 +635,13 @@ bool copy_recording_matches_source(const CopyRecording &state, const InputSource
 }
 Status clear_copy_recording(CopyRecording &state) noexcept {
   std::lock_guard lock(state.completion_mutex);
-  if (state.done.load(std::memory_order_acquire) == 0 || state.completion_owner || state.admitted_owner)
+  if (state.done.load(std::memory_order_acquire) == 0 || state.completion_owner || state.admitted_owner || state.dependency_readers)
     return Status::Unavailable("Apple copy phase is retained");
   state.prepared = false; return clear_host_copy(state);
 }
 Status set_copy_preflight(CopyRecording &state, CopyPreflight predicate, void *opaque) noexcept {
   std::lock_guard lock(state.completion_mutex);
-  if (state.done.load(std::memory_order_acquire) == 0 || state.completion_owner || state.admitted_owner)
+  if (state.done.load(std::memory_order_acquire) == 0 || state.completion_owner || state.admitted_owner || state.dependency_readers)
     return Status::Unavailable("Apple copy predicate slot is retained");
   state.preflight = predicate; state.preflight_state = opaque; return Status::Ok();
 }
@@ -628,5 +664,35 @@ Status qualify_recording_dependency(const std::shared_ptr<Runtime> &runtime, cd:
       state.cancel.load(std::memory_order_acquire))
     return Status::Cancelled("Apple copy producer cancelled before dependency admission");
   return Status::Ok();
+}
+Result<std::shared_ptr<CopyRecording>> pin_copy_dependency(const std::shared_ptr<Runtime> &runtime,
+    cd::CompletionDependency source, std::uint64_t *epoch) noexcept {
+  if (!epoch || source.vtable != &copy_completion_vtable || !source.state)
+    return std::unexpected(Status::Unimplemented("Apple dependency is not an original copy episode"));
+  auto &state = *static_cast<CopyRecording *>(source.state);
+  std::lock_guard lock(state.completion_mutex);
+  HYLE_RETURN_IF_ERROR(qualify_recording_dependency(runtime, source));
+  if (!state.submitted_epoch || !state.completion_owner)
+    return std::unexpected(Status::FailedPrecondition("Apple copy dependency has no retained accepted episode"));
+  if (state.dependency_readers == SIZE_MAX)
+    return std::unexpected(Status::ResourceExhausted("Apple copy dependency reader capacity"));
+  auto owner = state.self.lock();
+  if (!owner) return std::unexpected(Status::FailedPrecondition("Apple copy dependency owner expired"));
+  ++state.dependency_readers; *epoch = state.submitted_epoch;
+  return owner;
+}
+Status observe_copy_dependency(const CopyRecording &state, std::uint64_t epoch) noexcept {
+  if (state.runtime->owner_id.load(std::memory_order_acquire) != platform::this_thread::get_id())
+    return Status::FailedPrecondition("Apple copy dependency observation requires its original FIFO");
+  std::lock_guard lock(state.completion_mutex);
+  if (state.submitted_epoch != epoch || !state.dependency_readers)
+    return Status::FailedPrecondition("Apple copy dependency episode was replaced");
+  if (!state.done.load(std::memory_order_acquire))
+    return Status::FailedPrecondition("Apple copy dependency did not retire before its FIFO successor");
+  return state.terminal;
+}
+void release_copy_dependency(CopyRecording &state) noexcept {
+  std::lock_guard lock(state.completion_mutex);
+  HYLE_FATAL_ASSERT(state.dependency_readers); --state.dependency_readers;
 }
 } // namespace hyle::compute::apple::detail

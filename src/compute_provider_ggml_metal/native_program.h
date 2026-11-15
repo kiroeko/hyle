@@ -78,7 +78,9 @@ public:
   submit(std::span<const BufferView> ports, NativeSignal signal,
          std::size_t proven_port = static_cast<std::size_t>(-1),
          std::int64_t proven_extent = 0,
-         std::span<const NativeWait> waits = {}) noexcept;
+         std::span<const NativeWait> waits = {},
+         std::span<const NativeWait> dependencies = {}) noexcept;
+  HYLE_GGML_METAL_INTERNAL_API Status reserve_waits(std::size_t capacity) noexcept;
   HYLE_GGML_METAL_INTERNAL_API Status finish() noexcept;
   HYLE_GGML_METAL_INTERNAL_API bool pending() const noexcept;
   HYLE_GGML_METAL_INTERNAL_API Status submission_status() const noexcept;
@@ -103,7 +105,8 @@ private:
   HYLE_GGML_METAL_INTERNAL_API void detach_bindings() noexcept;
   Status run_impl(std::span<const BufferView> ports, bool proven_indices,
                   NativeSignal signal = {},
-                  std::span<const NativeWait> waits = {}) noexcept;
+                  std::span<const NativeWait> waits = {},
+                  std::span<const NativeWait> dependencies = {}) noexcept;
   struct State;
   explicit NativeProgram(std::unique_ptr<State> state) noexcept;
   std::unique_ptr<State> state_;

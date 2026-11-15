@@ -1839,6 +1839,11 @@ prepare_dependency_routes(detail::InvocationState &invocation,
        ++segment_index) {
     const detail::PlanSegment &segment = plan.segments[segment_index];
     const bool destination_shared = shared_lane(plan, segment.lane);
+    const bool explicit_native_import = [&]() noexcept {
+      if (destination_shared) return false;
+      auto selected = delegated_step_index(plan, segment);
+      return selected && plan.steps[*selected].region.same_endpoint_requires_import();
+    }();
     const auto &destination =
         invocation.candidate_queues[segment.lane.ordinal()];
     const std::size_t dependency_end =
@@ -1867,7 +1872,7 @@ prepare_dependency_routes(detail::InvocationState &invocation,
       const compute::detail::CompletionEndpoint destination_endpoint =
           invocation.candidate_lane_endpoints[segment.lane.ordinal()];
       if ((source_shared && destination_shared && source.same_owner(destination)) ||
-          (source_endpoint.valid() &&
+          (!explicit_native_import && source_endpoint.valid() &&
            source_endpoint == destination_endpoint)) {
         ++report.ordered_dependency_count;
       } else if (!source_endpoint.valid()) {
@@ -9225,7 +9230,8 @@ CompileReport::segment_dependency(std::size_t segment_index,
       state_->segment_dependencies[segment.dependency_begin + dependency_index];
   const ExecutionLaneId source_lane = state_->segments[source].lane;
   CompileDependencyRoute route = CompileDependencyRoute::kOrderedQueue;
-  if (source_lane != segment.lane) {
+  if (source_lane != segment.lane || state_->lanes[segment.lane.ordinal()].runtime_mode ==
+          compute::ProviderRuntimeMode::kDelegated) {
     const CompileLaneReport &source_report =
         state_->lanes[source_lane.ordinal()];
     route = (source_report.runtime_mode ==
@@ -9765,7 +9771,8 @@ Result<Invocation> Executable::create_invocation_impl(
         (step.kind == detail::PlanStepKind::kOperation || step.region.valid())) {
       if (step.region.valid()) {
         auto created = step.region.create_invocation(step_workspace,
-                                                     invocation->allocator);
+            invocation->allocator,
+            state_->segments[state_->step_segments[step_index]].dependency_count);
         if (!created) {
           Status error = std::move(created).error();
           detail::release(invocation);

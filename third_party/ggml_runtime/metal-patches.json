@@ -244,7 +244,7 @@
     {
       "path": "src/ggml-metal/ggml-metal-context.m",
       "before_sha256": "2be28299672d17fbbe1ba13eff773f69cbe5e7604885d59fc82d57bb889e5c61",
-      "after_sha256": "15509b239c9b2c6c40d7e8a248722ffc1d97dca1595c1e941884e6c1a91d1b4c",
+      "after_sha256": "ac03e20349977bf8601b8b1cc888d47df5c7e4356062e0d843719d6cf76aa816",
       "edits": [
         {
           "before": "struct ggml_metal_command_buffer {\n    id<MTLCommandBuffer> obj;\n};",
@@ -325,6 +325,26 @@
         {
           "before": "        id<MTLCommandBuffer> cmd_buf = ctx->cmd_bufs[cb_idx].obj;\n\n        ctx->cmd_bufs[cb_idx].encode_status",
           "after": "        id<MTLCommandBuffer> cmd_buf = ctx->cmd_bufs[cb_idx].obj;\n        if (n_cb_l == 0 && ctx->hyle_event) {\n            for (size_t i = 0; i < ctx->hyle_wait_count; ++i)\n                [cmd_buf encodeWaitForEvent:ctx->hyle_wait_events[i] value:ctx->hyle_wait_values[i]];\n        }\n\n        ctx->cmd_bufs[cb_idx].encode_status"
+        },
+        {
+          "before": "    id<MTLSharedEvent> hyle_wait_events[8];\n    uint64_t hyle_wait_values[8];",
+          "after": "    // Borrowed only through synchronous encoding of this prepared buffer.\n    void *const * hyle_wait_events;\n    const uint64_t * hyle_wait_values;"
+        },
+        {
+          "before": "        wait_count > 8 || (wait_count && (!wait_events || !wait_values))) return false;",
+          "after": "        (wait_count && (!wait_events || !wait_values))) return false;"
+        },
+        {
+          "before": "    for (size_t i = 0; i < wait_count; ++i) {\n        ctx->hyle_wait_events[i] = (id<MTLSharedEvent>)wait_events[i];\n        ctx->hyle_wait_values[i] = wait_values[i];\n    }\n    ctx->hyle_wait_count = wait_count;",
+          "after": "    ctx->hyle_wait_events = wait_events;\n    ctx->hyle_wait_values = wait_values;\n    ctx->hyle_wait_count = wait_count;"
+        },
+        {
+          "before": "    ctx->hyle_wait_count = 0;\n    return accepted;",
+          "after": "    ctx->hyle_wait_count = 0;\n    ctx->hyle_wait_events = NULL;\n    ctx->hyle_wait_values = NULL;\n    return accepted;"
+        },
+        {
+          "before": "                [cmd_buf encodeWaitForEvent:ctx->hyle_wait_events[i] value:ctx->hyle_wait_values[i]];",
+          "after": "                [cmd_buf encodeWaitForEvent:(id<MTLSharedEvent>)ctx->hyle_wait_events[i] value:ctx->hyle_wait_values[i]];"
         }
       ]
     },

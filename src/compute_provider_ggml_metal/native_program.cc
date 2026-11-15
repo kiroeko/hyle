@@ -253,6 +253,8 @@ struct NativeProgram::State {
   bool failed = false;
   bool pending = false;
   Status encoding_status;
+  std::vector<void *> wait_events;
+  std::vector<std::uint64_t> wait_values;
 
   ~State() {
     if (backend != nullptr) {
@@ -630,12 +632,22 @@ bool NativeProgram::reads_indices() const noexcept { return state_->checked_inde
 Status NativeProgram::submit(std::span<const BufferView> ports,
                             NativeSignal signal, std::size_t proven_port,
                             std::int64_t proven_extent,
-                            std::span<const NativeWait> waits) noexcept {
+                            std::span<const NativeWait> waits,
+                            std::span<const NativeWait> dependencies) noexcept {
   if (!signal.valid()) return Status::InvalidArgument("native Metal signal is incomplete");
   if (proven_extent && (proven_extent <= 0 || proven_port != state_->checked_index_port ||
                         proven_extent != state_->checked_index_extent))
     return Status::InvalidArgument("native Metal index proof differs from its prepared port/extent");
-  return run_impl(ports, proven_extent > 0, signal, waits);
+  return run_impl(ports, proven_extent > 0, signal, waits, dependencies);
+}
+Status NativeProgram::reserve_waits(std::size_t capacity) noexcept {
+  if (state_->pending) return Status::Unavailable("native Metal prefix is still pending");
+  if (capacity <= 8) return Status::Ok(); // Original mathematical input capacity.
+  try {
+    state_->wait_events.reserve(capacity);
+    state_->wait_values.reserve(capacity);
+    return Status::Ok();
+  } catch (...) { return exception_status(); }
 }
 Status NativeProgram::finish() noexcept {
   auto &s = *state_;
@@ -657,7 +669,8 @@ Status NativeProgram::run_with_proven_indices(std::span<const BufferView> ports,
 
 Status NativeProgram::run_impl(std::span<const BufferView> ports,
                               bool proven_indices, NativeSignal signal,
-                              std::span<const NativeWait> waits) noexcept {
+                              std::span<const NativeWait> waits,
+                              std::span<const NativeWait> dependencies) noexcept {
   auto &s = *state_;
   if (s.pending)
     return Status::Unavailable("native Metal program still owns its accepted prefix");
@@ -665,17 +678,32 @@ Status NativeProgram::run_impl(std::span<const BufferView> ports,
     return Status::FailedPrecondition("failed ggml Metal program must be recreated");
   if (ports.size() != s.port_count)
     return Status::InvalidArgument("ggml Metal model buffer count mismatch");
-  if (waits.size() > 8 || (!waits.empty() && !signal.valid()))
-    return Status::InvalidArgument("native Metal input waits exceed its prepared ports");
-  if (!waits.empty() && !proven_indices && s.checked_index_count)
+  if (waits.size() > SIZE_MAX - dependencies.size())
+    return Status::ResourceExhausted("native Metal wait count overflows");
+  const auto wait_count = waits.size() + dependencies.size();
+  std::array<void *, 8> inline_events{};
+  std::array<std::uint64_t, 8> inline_values{};
+  if (wait_count > inline_events.size() &&
+      (wait_count > s.wait_events.capacity() || wait_count > s.wait_values.capacity()))
+    return Status::ResourceExhausted("native Metal waits exceed cold preparation");
+  if ((!waits.empty() || !dependencies.empty()) && !signal.valid())
+    return Status::InvalidArgument("native Metal waits require their prepared signal");
+  if ((!waits.empty() || !dependencies.empty()) && !proven_indices && s.checked_index_count)
     return Status::FailedPrecondition("checked Metal indices require retired inputs");
-  std::array<void *, 8> wait_events{};
-  std::array<std::uint64_t, 8> wait_values{};
-  for (std::size_t i = 0; i < waits.size(); ++i) {
-    if (!waits[i].event || !waits[i].value)
-      return Status::InvalidArgument("native Metal input wait is incomplete");
-    wait_events[i] = waits[i].event;
-    wait_values[i] = waits[i].value;
+  auto *wait_events = inline_events.data();
+  auto *wait_values = inline_values.data();
+  if (wait_count > inline_events.size()) {
+    s.wait_events.resize(wait_count); s.wait_values.resize(wait_count);
+    wait_events = s.wait_events.data(); wait_values = s.wait_values.data();
+  }
+  std::size_t wait_index = 0;
+  for (auto group : {waits, dependencies}) {
+    for (auto wait : group) {
+      if (!wait.event || !wait.value)
+        return Status::InvalidArgument("native Metal input wait is incomplete");
+      wait_events[wait_index] = wait.event;
+      wait_values[wait_index++] = wait.value;
+    }
   }
   bool signal_armed = false;
   try {
@@ -726,7 +754,7 @@ Status NativeProgram::run_impl(std::span<const BufferView> ports,
     if (signal.valid()) {
       if (!ggml_hyle_metal_signal_begin(s.backend, signal.event, signal.value,
                                         signal.completed, signal.state,
-                                        wait_events.data(), wait_values.data(), waits.size()))
+                                        wait_events, wait_values, wait_count))
         return Status::Unimplemented("native Metal signal does not match its original endpoint");
       signal_armed = true;
     }

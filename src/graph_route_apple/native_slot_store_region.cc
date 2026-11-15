@@ -157,6 +157,10 @@ const gd::RegionOrderedWriteVTable ordered_table{
       return !reader || imports_region_ordered_endpoint(artifact.runtime, *reader)
           ? Status::Ok() : Status::InvalidArgument("Apple Store reader belongs to another Runtime");
     }};
+const gd::RegionDependenciesVTable dependencies_table{
+    [](void *, void *invocation, std::size_t capacity) noexcept -> Status {
+      return an::reserve_copy_dependencies(*static_cast<Slot *>(invocation)->recording, capacity);
+    }, true};
 const ProviderRegionPreparedVTable prepared_table{
     .destroy_prepared = [](void *p, mem::AllocatorRef a) noexcept { a.destroy(static_cast<Artifact *>(p)); },
     .alias_support = [](void *, std::size_t, std::size_t) noexcept { return compute::AliasSupport{}; },
@@ -184,9 +188,7 @@ const ProviderRegionPreparedVTable prepared_table{
           (!slot.source.valid() && (!inputs[artifact.rows_port].valid() ||
              !same_range(inputs[artifact.rows_port].storage(), slot.rows.storage()))))
         return std::unexpected(Status::FailedPrecondition("Apple Store ports/transaction are not sealed"));
-      for (const auto dependency : dependencies)
-        HYLE_RETURN_IF_ERROR(an::qualify_recording_dependency(artifact.runtime, dependency));
-      return an::submit_copy_recording(*slot.recording);
+      return an::submit_copy_recording(*slot.recording, dependencies);
     },
     .endpoint = [](void *prepared, void *) noexcept { return region_ordered_endpoint(static_cast<Artifact *>(prepared)->runtime); },
     .can_import_endpoint = [](void *prepared, void *, cd::CompletionEndpoint endpoint) noexcept {
@@ -203,6 +205,7 @@ const ProviderRegionPreparedVTable prepared_table{
       return Status::Ok();
     },
     .query_extension = [](void *, compute::ProviderExtensionId id) noexcept -> const void * {
+      if (id == gd::kRegionDependenciesExtensionId) return &dependencies_table;
       if (id == sd::kStoreBindingExtensionId) return &store_table;
       if (id == gd::kRegionOrderedWriteExtensionId) return &ordered_table;
       if (id == gd::kRegionBindingReleaseExtensionId) return &release_table;

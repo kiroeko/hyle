@@ -17,10 +17,15 @@ Result<OwnedResult<Results>> PagedBatchAccess::submit(Invocation&invocation,Leas
 }
 Result<OwnedResult<Results>> PagedBatchAccess::submit_pending(Invocation&invocation,
     LeaseUseBatch uses,const CopyBatchUpdate&source)noexcept{
+  return submit_pending(invocation,std::move(uses),source,{});
+}
+Result<OwnedResult<Results>> PagedBatchAccess::submit_pending(Invocation&invocation,
+    LeaseUseBatch uses,const CopyBatchUpdate&source,
+    std::span<const compute::detail::CompletionDependency> dependencies)noexcept{
   return invocation.submit_guarded(std::move(uses),
       [](const void*opaque)noexcept{
         return CopyStreamAccess::preflight(*static_cast<const CopyBatchUpdate*>(opaque));
-      }, &source);
+      }, &source, dependencies);
 }
 Status PagedBatchAccess::wait_native(Invocation&invocation)noexcept{return invocation.wait_native();}
 struct LeasedInvocationState final {

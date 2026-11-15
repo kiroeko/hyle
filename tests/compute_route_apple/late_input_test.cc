@@ -1,4 +1,5 @@
 #include "hyle/compute/apple.h"
+#include "hyle/compute/apple_memory.h"
 
 #include <array>
 #include <atomic>
@@ -20,6 +21,7 @@
 #include "../../src/compute_route_apple/apple_runtime_internal.h"
 #include "hyle/mem/quota_allocator.h"
 #include "hyle/compute/detail/apple_plan.h"
+#include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/model_ops.h"
 #include "recurrent_fixture.h"
 
@@ -178,7 +180,7 @@ TEST(AppleLateInput, CloseDrainsQueuedNativeSignalsBeforeStoppingTheOwner) {
   exercise_native_signal_source(true);
 }
 
-void exercise_mixed_plan(bool pending_chain, bool close_pending = false, bool cancel_pending = false) {
+void exercise_mixed_plan(bool pending_chain, bool close_pending = false, bool cancel_pending = false, std::size_t order_count = 0) {
   auto context = a::Context::create();
   ASSERT_TRUE(context) << context.error().message();
   apple_test::Recurrent fixture(3, 2, 64);
@@ -225,12 +227,21 @@ void exercise_mixed_plan(bool pending_chain, bool close_pending = false, bool ca
     auto next = program->create_invocation();
     ASSERT_TRUE(next) << next.error().message();
     consumer.emplace(std::move(*next));
+    if (order_count) {
+      ASSERT_TRUE(consumer->bind(fixture.inputs).ok());
+      ASSERT_TRUE(ad::InvocationAccess::reserve_dependencies(*consumer, order_count).ok());
+    }
     std::vector<ad::InputBinding> bindings(fixture.inputs.size());
     auto source = ad::InvocationAccess::source(*invocation, 0);
     ASSERT_TRUE(source);
     bindings[0].source = std::move(*source);
     for (std::size_t i = 1; i < bindings.size(); ++i) bindings[i].value = fixture.inputs[i];
-    ASSERT_TRUE(ad::InvocationAccess::prepare_inputs(*consumer, bindings).ok());
+    if (!order_count) ASSERT_TRUE(ad::InvocationAccess::prepare_inputs(*consumer, bindings).ok());
+  }
+  std::vector<a::Invocation> preceding;
+  for (std::size_t i = 1; i < order_count; ++i) {
+    auto slot = program->create_invocation(); ASSERT_TRUE(slot);
+    ASSERT_TRUE(slot->bind(fixture.inputs).ok()); preceding.push_back(std::move(*slot));
   }
   for (int repeat = 0; repeat < (close_pending || cancel_pending ? 1 : 3); ++repeat) {
     ASSERT_TRUE(invocation->bind(fixture.inputs).ok());
@@ -242,11 +253,24 @@ void exercise_mixed_plan(bool pending_chain, bool close_pending = false, bool ca
     auto result = invocation->submit();
     ASSERT_TRUE(result) << result.error().message();
     if (pending_chain) {
-      auto next = consumer->submit();
+      std::vector<c::OwnedResult<a::Results>> preceding_results;
+      preceding_results.reserve(preceding.size());
+      std::vector<c::detail::CompletionDependency> dependencies;
+      if (order_count) {
+        dependencies.push_back(c::detail::CompletionAccess::dependency(result->completion()));
+        for (auto &slot : preceding) {
+          auto work = slot.submit(); ASSERT_TRUE(work);
+          preceding_results.push_back(std::move(*work));
+          dependencies.push_back(c::detail::CompletionAccess::dependency(preceding_results.back().completion()));
+        }
+      }
+      auto next = order_count
+          ? ad::InvocationAccess::submit_ordered(*consumer, {}, nullptr, nullptr, dependencies)
+          : consumer->submit();
       ASSERT_TRUE(next) << next.error().message();
       FifoGate owner_gate;
       ASSERT_TRUE(owner_gate.enqueue(runtime).ok());
-      const bool owner_free = owner_gate.wait_entered_for(std::chrono::seconds(5));
+      const bool owner_free = owner_gate.wait_entered_for(std::chrono::seconds(2));
       EXPECT_TRUE(owner_free) << "Mixed Plans waited on the host before encoding the next Job";
       EXPECT_EQ(result->completion().poll().value(), c::CompletionPoll::kPending);
       EXPECT_EQ(next->completion().poll().value(), c::CompletionPoll::kPending);
@@ -279,10 +303,12 @@ void exercise_mixed_plan(bool pending_chain, bool close_pending = false, bool ca
       auto next_scores = ad::InvocationAccess::output(*consumer, 0);
       auto next_state = ad::InvocationAccess::output(*consumer, 1);
       ASSERT_TRUE(next_scores); ASSERT_TRUE(next_state);
-      for (std::size_t i = 0; i < next_expected[0].size(); ++i)
-        EXPECT_NEAR(next_scores->data<float>()[i], 3 * next_expected[0][i], 1.e-5);
-      for (std::size_t i = 0; i < next_expected[1].size(); ++i)
-        EXPECT_NEAR(next_state->data<float>()[i], next_expected[1][i], 1.e-5);
+      const auto &expected_next = order_count ? expected : next_expected;
+      for (std::size_t i = 0; i < expected_next[0].size(); ++i)
+        EXPECT_NEAR(next_scores->data<float>()[i], 3 * expected_next[0][i], 1.e-5);
+      for (std::size_t i = 0; i < expected_next[1].size(); ++i)
+        EXPECT_NEAR(next_state->data<float>()[i], expected_next[1][i], 1.e-5);
+      for (auto &work : preceding_results) ASSERT_TRUE(work.completion().wait().ok());
     }
     ASSERT_TRUE(result->completion().wait().ok());
     auto scores = ad::InvocationAccess::output(*invocation, 0);
@@ -310,7 +336,20 @@ TEST(AppleLateInput, CancelDrainsPendingMixedPlanAndRejectsDependentPublication)
   exercise_mixed_plan(true, false, true);
 }
 
-TEST(AppleLateInput, MultipleNativePrefixesRetireOnTheLastOriginalCallback) {
+TEST(AppleLateInput, NativeOrderEdgesKeepIndependentMathematicalInputs) {
+  exercise_mixed_plan(true, false, false, 1);
+}
+TEST(AppleLateInput, NativeOrderFanInExceedsTheTensorInputPortCount) {
+  exercise_mixed_plan(true, false, false, 9);
+}
+TEST(AppleLateInput, CloseDrainsOriginalOrderOnlyProducerAndConsumer) {
+  exercise_mixed_plan(true, true, false, 1);
+}
+TEST(AppleLateInput, CancelledOrderOnlyProducerRejectsIndependentOutput) {
+  exercise_mixed_plan(true, false, true, 1);
+}
+
+void exercise_multiple_native_prefixes(bool order_only) {
   auto context = a::Context::create();
   ASSERT_TRUE(context);
   const auto x = c::TensorDesc::dense(c::DataType::kFloat32,
@@ -341,6 +380,12 @@ TEST(AppleLateInput, MultipleNativePrefixesRetireOnTheLastOriginalCallback) {
   ASSERT_TRUE(program) << program.error().message();
   auto invocation = program->create_invocation();
   ASSERT_TRUE(invocation);
+  std::optional<a::Invocation> consumer;
+  if (order_only) {
+    auto next = program->create_invocation(); ASSERT_TRUE(next);
+    consumer = std::move(*next);
+    ASSERT_TRUE(ad::InvocationAccess::reserve_dependencies(*consumer, 1).ok());
+  }
   std::array<float, 64> input;
   std::array<float, 64 * 64> weights{};
   for (std::size_t i = 0; i < input.size(); ++i) {
@@ -353,21 +398,31 @@ TEST(AppleLateInput, MultipleNativePrefixesRetireOnTheLastOriginalCallback) {
   { auto warm = invocation->submit(); ASSERT_TRUE(warm); ASSERT_TRUE(warm->completion().wait().ok()); }
   for (int repeat = 0; repeat < 3; ++repeat) {
     ASSERT_TRUE(invocation->bind(inputs).ok());
+    if (consumer) ASSERT_TRUE(consumer->bind(inputs).ok());
     GpuEventGate gpu_gate(runtime);
     ASSERT_TRUE(gpu_gate.enqueue().ok());
     auto result = invocation->submit();
     ASSERT_TRUE(result);
+    std::optional<c::OwnedResult<a::Results>> dependent;
+    if (consumer) {
+      const std::array dependencies{c::detail::CompletionAccess::dependency(result->completion())};
+      auto submitted = ad::InvocationAccess::submit_ordered(*consumer, {}, nullptr, nullptr, dependencies);
+      ASSERT_TRUE(submitted); dependent = std::move(*submitted);
+    }
     FifoGate owner_gate;
     ASSERT_TRUE(owner_gate.enqueue(runtime).ok());
     const bool owner_free = owner_gate.wait_entered_for(std::chrono::seconds(2));
-    const auto pending = result->completion().poll();
+    auto &completion = dependent ? dependent->completion() : result->completion();
+    const auto pending = completion.poll();
     gpu_gate.open();
     owner_gate.open_and_join();
     EXPECT_TRUE(owner_free) << "The first prefix cannot retire the still-pending complete Plan";
     ASSERT_TRUE(pending) << pending.error().message(); EXPECT_EQ(*pending, c::CompletionPoll::kPending);
     ASSERT_TRUE(result->completion().wait().ok());
-    auto final = ad::InvocationAccess::output(*invocation, 0);
-    auto early = ad::InvocationAccess::output(*invocation, 1);
+    ASSERT_TRUE(completion.wait().ok());
+    auto &observed = consumer ? *consumer : *invocation;
+    auto final = ad::InvocationAccess::output(observed, 0);
+    auto early = ad::InvocationAccess::output(observed, 1);
     ASSERT_TRUE(final); ASSERT_TRUE(early);
     for (std::size_t i = 0; i < input.size(); ++i) {
       EXPECT_FLOAT_EQ(final->data<float>()[i], 6 * input[i]);
@@ -378,8 +433,14 @@ TEST(AppleLateInput, MultipleNativePrefixesRetireOnTheLastOriginalCallback) {
   }
   ASSERT_TRUE(context->close().ok());
 }
+TEST(AppleLateInput, MultipleNativePrefixesRetireOnTheLastOriginalCallback) {
+  exercise_multiple_native_prefixes(false);
+}
+TEST(AppleLateInput, MultipleNativeConsumerPrefixesKeepBothOriginalQueueFrontiers) {
+  exercise_multiple_native_prefixes(true);
+}
 
-TEST(AppleLateInput, DeferredMlxInputErrorPreventsPublicationAndKeepsTheRuntimeUsable) {
+void exercise_deferred_input_error(bool order_only) {
   auto context = a::Context::create();
   ASSERT_TRUE(context);
   const std::array<std::int64_t, 2> table_shape{4, 64}, dot_shape{1, 64};
@@ -423,14 +484,24 @@ TEST(AppleLateInput, DeferredMlxInputErrorPreventsPublicationAndKeepsTheRuntimeU
     ASSERT_TRUE(invocation->bind(inputs).ok());
     auto consumer = next_program->create_invocation();
     ASSERT_TRUE(consumer);
-    std::array<ad::InputBinding, 1> late;
-    late[0].source = ad::InvocationAccess::source(*invocation, 0).value();
-    ASSERT_TRUE(ad::InvocationAccess::prepare_inputs(*consumer, late).ok());
+    if (order_only) {
+      ASSERT_TRUE(ad::InvocationAccess::reserve_dependencies(*consumer, 1).ok());
+      ASSERT_TRUE(consumer->bind(std::array{mx::array({2.f, 3.f}, {1, 2})}).ok());
+    } else {
+      std::array<ad::InputBinding, 1> late;
+      late[0].source = ad::InvocationAccess::source(*invocation, 0).value();
+      ASSERT_TRUE(ad::InvocationAccess::prepare_inputs(*consumer, late).ok());
+    }
     FifoGate gate;
     ASSERT_TRUE(gate.enqueue(ad::ContextAccess::runtime(*context)).ok());
     gate.wait_entered();
-    auto result = invocation->submit(), consumed = consumer->submit();
-    ASSERT_TRUE(result); ASSERT_TRUE(consumed);
+    auto result = invocation->submit();
+    ASSERT_TRUE(result);
+    const std::array dependencies{c::detail::CompletionAccess::dependency(result->completion())};
+    auto consumed = order_only
+        ? ad::InvocationAccess::submit_ordered(*consumer, {}, nullptr, nullptr, dependencies)
+        : consumer->submit();
+    ASSERT_TRUE(consumed);
     gate.open_and_join();
     const auto child_status = consumed->completion().wait();
     const auto status = result->completion().wait();
@@ -448,11 +519,88 @@ TEST(AppleLateInput, DeferredMlxInputErrorPreventsPublicationAndKeepsTheRuntimeU
       ASSERT_TRUE(child_status.ok()) << child_status.message();
       auto child = ad::InvocationAccess::output(*consumer, 0);
       ASSERT_TRUE(child);
-      EXPECT_FLOAT_EQ(child->data<float>()[0], 6.f);
+      EXPECT_FLOAT_EQ(child->data<float>()[0], order_only ? 4.f : 6.f);
       EXPECT_FLOAT_EQ(child->data<float>()[1], 6.f);
     }
   }
   ASSERT_TRUE(context->close().ok());
+}
+TEST(AppleLateInput, DeferredMlxInputErrorPreventsPublicationAndKeepsTheRuntimeUsable) {
+  exercise_deferred_input_error(false);
+}
+TEST(AppleLateInput, OrderOnlyErrorPreventsIndependentConsumerPublication) {
+  exercise_deferred_input_error(true);
+}
+
+TEST(AppleLateInput, CopyAndMathPinOriginalOrderOnlyEpisodesAfterPublicHandleAbandonment) {
+  namespace m = hyle::mem;
+  auto context = a::Context::create().value();
+  const auto runtime = ad::ContextAccess::runtime(context);
+  const std::array specs{a::InputSpec{{4}, mx::float32}};
+  auto program = context.prepare(c::Unary{c::UnaryKind::kNeg}, specs).value();
+  auto producer = program.create_invocation().value(), consumer = program.create_invocation().value();
+  ASSERT_TRUE(producer.bind(std::array{mx::array({1.f, 2.f, 3.f, 4.f})}).ok());
+  ASSERT_TRUE(consumer.bind(std::array{mx::array({5.f, 6.f, 7.f, 8.f})}).ok());
+  ASSERT_TRUE(ad::InvocationAccess::reserve_dependencies(consumer, 1).ok());
+  const auto description = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 1>{4}).value();
+  auto memory = a::MemoryResource::create(context).value();
+  auto source = m::Buffer::create(memory.ref(), 16, alignof(float)).value();
+  auto target = m::Buffer::create(m::system_resource(), 16, alignof(float)).value();
+  const std::array<float, 4> values{10.f, 20.f, 30.f, 40.f};
+  ASSERT_TRUE(source.view().write(std::as_bytes(std::span(values))).ok());
+  auto copy = ad::prepare_copy_recording_runtime(runtime, 1, m::system_allocator(), 16,
+      ad::CopyRecordingMode::kReplayable).value();
+  ASSERT_TRUE(ad::reserve_copy_dependencies(*copy, 1).ok());
+  ASSERT_TRUE(ad::bind_host_copy_recording(*copy,
+      c::ConstTensorView::create(description, source.view()).value(), target.view(), {}).ok());
+  FifoGate gate;
+  ASSERT_TRUE(gate.enqueue(runtime).ok()); gate.wait_entered();
+  auto produced = producer.submit().value();
+  const std::array before_copy{c::detail::CompletionAccess::dependency(produced.completion())};
+  auto copied = ad::submit_copy_recording(*copy, before_copy).value();
+  const std::array before_math{c::detail::CompletionAccess::dependency(copied)};
+  auto consumed = ad::InvocationAccess::submit_ordered(consumer, {}, nullptr, nullptr, before_math);
+  ASSERT_TRUE(consumed) << consumed.error().message();
+  produced = {}; copied = {};
+  EXPECT_TRUE(ad::copy_recording_reuse_gate(*copy).IsUnavailable());
+  EXPECT_TRUE(ad::InvocationAccess::reuse_gate(producer).IsUnavailable());
+  auto replay = ad::submit_copy_recording(*copy);
+  ASSERT_FALSE(replay); EXPECT_TRUE(replay.error().IsFailedPrecondition());
+  gate.open_and_join();
+  ASSERT_TRUE(consumed->completion().wait().ok());
+  std::array<float, 4> observed{};
+  ASSERT_TRUE(target.view().read(std::as_writable_bytes(std::span(observed))).ok());
+  EXPECT_EQ(observed, values);
+  const auto output = ad::InvocationAccess::output(consumer, 0).value();
+  EXPECT_FLOAT_EQ(output.data<float>()[0], -5.f);
+  EXPECT_TRUE(ad::copy_recording_reuse_gate(*copy).ok());
+  EXPECT_TRUE(ad::InvocationAccess::reuse_gate(producer).ok());
+  ASSERT_TRUE(context.close().ok());
+}
+
+TEST(AppleLateInput, EmptyCopyStillPublishesItsOriginalOrderDependencyFailure) {
+  auto context = a::Context::create().value();
+  auto program = context.prepare(c::Gather{},
+      std::array{a::InputSpec{{4}, mx::float32}, a::InputSpec{{1}, mx::int32}}).value();
+  auto producer = program.create_invocation().value();
+  ASSERT_TRUE(producer.bind(std::array{mx::array({1.f, 2.f, 3.f, 4.f}), mx::array({9}, mx::int32)}).ok());
+  const auto runtime = ad::ContextAccess::runtime(context);
+  auto copy = ad::prepare_copy_recording_runtime(runtime, 1, hyle::mem::system_allocator(), 16,
+      ad::CopyRecordingMode::kReplayable).value();
+  ASSERT_TRUE(ad::reserve_copy_dependencies(*copy, 1).ok());
+  ASSERT_TRUE(ad::bind_copy_recording(*copy, {}).ok());
+  FifoGate gate;
+  ASSERT_TRUE(gate.enqueue(runtime).ok()); gate.wait_entered();
+  auto produced = producer.submit().value();
+  const std::array dependencies{c::detail::CompletionAccess::dependency(produced.completion())};
+  auto copied = ad::submit_copy_recording(*copy, dependencies);
+  ASSERT_TRUE(copied) << copied.error().message();
+  EXPECT_EQ(copied->poll().value(), c::CompletionPoll::kPending);
+  gate.open_and_join();
+  EXPECT_TRUE(copied->wait().IsOutOfRange());
+  EXPECT_TRUE(produced.completion().wait().IsOutOfRange());
+  ASSERT_TRUE(context.close().ok());
 }
 
 // Inject only at actual eval, after cold compilation and the native prefix.

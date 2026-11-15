@@ -122,9 +122,7 @@ Result<compute::Completion> copy_submit(void *prepared, void *invocation,
        (!inputs[0].valid() || inputs[0].description() != artifact.source.description ||
         !same_range(inputs[0].storage(), slot.source))))
     return std::unexpected(Status::FailedPrecondition("Apple replay copy ports are not sealed"));
-  for (const auto dependency : dependencies)
-    HYLE_RETURN_IF_ERROR(ca::detail::qualify_recording_dependency(artifact.runtime, dependency));
-  return ca::detail::submit_copy_recording(*slot.recording);
+  return ca::detail::submit_copy_recording(*slot.recording, dependencies);
 }
 const gd::RegionBindingReleaseVTable copy_release_table{
     .validate = [](void *, void *invocation) noexcept -> Status {
@@ -136,6 +134,10 @@ const gd::RegionBindingReleaseVTable copy_release_table{
       slot.reference = {}; slot.source = {}; slot.destination = {};
       slot.bound = false; slot.sealed = false;
     }};
+const gd::RegionDependenciesVTable copy_dependencies_table{
+    [](void *, void *invocation, std::size_t capacity) noexcept -> Status {
+      return ca::detail::reserve_copy_dependencies(*static_cast<CopySlot *>(invocation)->recording, capacity);
+    }, true};
 const ProviderRegionPreparedVTable copy_table{
     .destroy_prepared = [](void *state, mem::AllocatorRef allocator) noexcept {
       allocator.destroy(static_cast<CopyArtifact *>(state));
@@ -165,7 +167,9 @@ const ProviderRegionPreparedVTable copy_table{
     },
     .prepare_bindings = &copy_bind, .seal_bindings = &copy_seal,
     .query_extension = [](void *, compute::ProviderExtensionId id) noexcept -> const void * {
-      return id == gd::kRegionBindingReleaseExtensionId ? &copy_release_table : nullptr;
+      if (id == gd::kRegionBindingReleaseExtensionId) return &copy_release_table;
+      if (id == gd::kRegionDependenciesExtensionId) return &copy_dependencies_table;
+      return nullptr;
     }};
 Result<bool> can_copy(const gd::ExecutionSourceState &state,
     const gd::CopySourceDescription &source, mem::MemoryResourceRef destination) noexcept {

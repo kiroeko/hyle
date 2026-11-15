@@ -20,6 +20,7 @@
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/container/small_vector.h"
 #include "hyle/graph/executable.h"
+#include "hyle/graph/detail/region_access.h"
 #include "hyle/graph/region_provider.h"
 #include "hyle/mem/lifetime_plan.h"
 #include "hyle/util/ref_counted.h"
@@ -212,7 +213,14 @@ public:
 
   Result<RegionInvocation>
   create_invocation(mem::BufferView workspace,
-                    const mem::AllocatorRef &allocator) const noexcept;
+                    const mem::AllocatorRef &allocator,
+                    std::size_t dependency_capacity = 0) const noexcept;
+  bool same_endpoint_requires_import() const noexcept {
+    if (!valid() || !prepared_.vtable->query_extension) return false;
+    const auto *table = static_cast<const RegionDependenciesVTable *>(
+        prepared_.vtable->query_extension(prepared_.state, kRegionDependenciesExtensionId));
+    return table && table->same_endpoint_requires_import;
+  }
   compute::detail::EnqueueResult
   enqueue_prevalidated(
       void *invocation, compute::detail::QueueSequence &sequence,
@@ -321,7 +329,8 @@ inline Result<compute::Completion> RegionInvocation::submit_delegated(
 
 inline Result<RegionInvocation> PreparedRegion::create_invocation(
     mem::BufferView workspace,
-    const mem::AllocatorRef &allocator) const noexcept {
+    const mem::AllocatorRef &allocator,
+    std::size_t dependency_capacity) const noexcept {
   if (!valid() || prepared_.vtable->create_invocation == nullptr) {
     return std::unexpected(
         Status::FailedPrecondition("compiled graph region is invalid"));
@@ -331,13 +340,22 @@ inline Result<RegionInvocation> PreparedRegion::create_invocation(
     mem::BufferView workspace{};
     mem::AllocatorRef allocator{};
     void *state = nullptr;
-  } episode{this, workspace, allocator, nullptr};
+    std::size_t dependency_capacity = 0;
+  } episode{this, workspace, allocator, nullptr, dependency_capacity};
   const Status status = source_.call(
       +[](void *, const void *, void *opaque) noexcept -> Status {
         auto &call = *static_cast<Episode *>(opaque);
-        return call.region->prepared_.vtable->create_invocation(
+        const auto &prepared = call.region->prepared_;
+        HYLE_RETURN_IF_ERROR(prepared.vtable->create_invocation(
             call.region->prepared_.state, call.allocator, call.workspace,
-            &call.state);
+            &call.state));
+        if (call.dependency_capacity && prepared.vtable->query_extension) {
+          const auto *capacity = static_cast<const RegionDependenciesVTable *>(
+              prepared.vtable->query_extension(prepared.state, kRegionDependenciesExtensionId));
+          if (capacity && capacity->prepare)
+            return capacity->prepare(prepared.state, call.state, call.dependency_capacity);
+        }
+        return Status::Ok();
       },
       &episode);
   if (!status.ok()) {

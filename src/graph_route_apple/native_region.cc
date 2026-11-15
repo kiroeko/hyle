@@ -499,13 +499,12 @@ Result<compute::Completion> submit(void *, void *invocation,
     std::span<const cd::CompletionDependency> dependencies,
     std::span<const compute::ConstTensorView>, std::span<const compute::TensorView>) noexcept {
   auto &slot = *static_cast<Slot *>(invocation);
-  for (const auto source : dependencies)
-    HYLE_RETURN_IF_ERROR(an::qualify_copy_dependency(slot.artifact.runtime, source));
   slot.result.reset(); clear_projection(slot);
   const bool pending = std::ranges::any_of(slot.pending_frames,
       [](const auto &frame) { return frame.valid(); });
   auto submitted = [&]() -> Result<compute::OwnedResult<ca::Results>> {
-    if (!pending) return slot.invocation.submit();
+    if (!pending) return an::InvocationAccess::submit_ordered(
+        slot.invocation, {}, nullptr, nullptr, dependencies);
     if (slot.pending_consumed || !slot.pending_source || !slot.pending_uses.valid())
       return std::unexpected(Status::FailedPrecondition("Apple row pending source/episode is unavailable"));
     HYLE_RETURN_IF_ERROR(an::InvocationAccess::reuse_gate(slot.invocation));
@@ -518,7 +517,7 @@ Result<compute::Completion> submit(void *, void *invocation,
         HYLE_RETURN_IF_ERROR((cd::PagedArenaAccess::collect_reads<ca::CopyBatchUpdate,
             an::CopyStreamAccess>(slot.pending_reads, frame, update)));
     HYLE_RETURN_IF_ERROR(slot.pending_reads.admit(uses));
-    return an::PagedBatchAccess::submit_pending(slot.invocation, std::move(uses), update);
+    return an::PagedBatchAccess::submit_pending(slot.invocation, std::move(uses), update, dependencies);
   }();
   if (!submitted) return std::unexpected(submitted.error());
   if (pending) slot.pending_consumed = true;
@@ -752,6 +751,10 @@ const graph::detail::RegionBindingReleaseVTable binding_release_table{
       clear_bound_inputs(slot);
     }};
 
+const graph::detail::RegionDependenciesVTable dependencies_table{
+    [](void *, void *invocation, std::size_t capacity) noexcept -> Status {
+      return an::InvocationAccess::reserve_dependencies(static_cast<Slot *>(invocation)->invocation, capacity);
+    }, true};
 const ProviderRegionPreparedVTable prepared_table{
     .destroy_prepared = [](void *state, mem::AllocatorRef allocator) noexcept { allocator.destroy(static_cast<Artifact *>(state)); },
     .alias_support = [](void *, std::size_t, std::size_t) noexcept { return compute::AliasSupport{}; },
@@ -769,6 +772,7 @@ const ProviderRegionPreparedVTable prepared_table{
     },
     .output_value = &value, .prepare_bindings = &bind, .seal_bindings = &seal, .output_lease = &lease,
     .query_extension = [](void *prepared, compute::ProviderExtensionId id) noexcept -> const void * {
+      if (id == graph::detail::kRegionDependenciesExtensionId) return &dependencies_table;
       if (id == graph::detail::kRegionBindingReleaseExtensionId) return &binding_release_table;
       if (id == kNativeOutputExtensionId) return &native_output_table;
       if (id == bd::kNativePendingRegionExtensionId &&

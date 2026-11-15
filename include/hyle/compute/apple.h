@@ -22,6 +22,7 @@
 #include "hyle/error/result.h"
 #include "hyle/mem/allocator.h"
 
+namespace hyle::compute::detail { struct CompletionDependency; }
 namespace hyle::compute::apple {
 namespace detail {
 struct Runtime;
@@ -242,6 +243,10 @@ private:
   HYLE_COMPUTE_ROUTE_APPLE_API Result<OwnedResult<Results>> submit_guarded(
       LeaseUseBatch uses, Status (*preflight)(const void *) noexcept = nullptr,
       const void *source = nullptr) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Result<OwnedResult<Results>> submit_guarded(
+      LeaseUseBatch uses, Status (*preflight)(const void *) noexcept,
+      const void *source,
+      std::span<const compute::detail::CompletionDependency> dependencies) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Status wait_native() noexcept;
   explicit Invocation(detail::InvocationState *state) noexcept
       : state_(state) {}

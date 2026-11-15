@@ -14,6 +14,18 @@ HYLE_GRAPH_API Status bind_sources(Invocation &, std::span<const SourceBinding>)
 }
 namespace hyle::compute::detail { class AppendLease; class ReadLeaseGroup; }
 namespace hyle::graph::detail {
+// Cold metadata capacity of the exact selected invocation. Submission still
+// supplies the actual original CompletionDependencies; this creates no work,
+// permission or replacement execution owner.
+inline constexpr compute::ProviderExtensionId kRegionDependenciesExtensionId{
+    0x48594c4544455053ULL, 0x4341504143495401ULL, 1};
+struct RegionDependenciesVTable final {
+  Status (*prepare)(void *prepared, void *invocation,
+                    std::size_t capacity) noexcept = nullptr;
+  // One native import domain can contain multiple actual vendor queues.
+  // Equal endpoint identity then still needs the original completion import.
+  bool same_endpoint_requires_import = false;
+};
 struct PlanState;
 struct InvocationState;
 class InputSource;

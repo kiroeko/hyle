@@ -87,6 +87,7 @@ struct Slot final {
   std::optional<compute::ReadLease> exported;
   std::mutex output_mutex;
   bool bound = false;
+  std::size_t dependency_capacity = 0;
 };
 void clear_output(Slot &slot) noexcept {
   slot.exported.reset();
@@ -136,6 +137,7 @@ Status prepare(void *prepared, void *invocation,
         artifact.runtime, layout, artifact.attention,
         std::uint32_t(artifact.output.dimensions()[0]), artifact.workload));
     HYLE_ASSIGN_OR_RETURN(auto native, program.create_invocation(slot.allocator));
+    HYLE_RETURN_IF_ERROR(an::InvocationAccess::reserve_dependencies(native, slot.dependency_capacity));
     slot.native = std::move(native);
     slot.program = std::move(program);
   }
@@ -288,11 +290,10 @@ Result<compute::Completion> submit(void *, void *invocation,
   auto &slot = *static_cast<Slot *>(invocation);
   if (!slot.bound)
     return std::unexpected(Status::FailedPrecondition("Apple ragged inputs are not bound"));
-  for (const auto dependency : dependencies)
-    HYLE_RETURN_IF_ERROR(an::qualify_recording_dependency(slot.artifact.runtime, dependency));
   slot.result.reset();
   clear_output(slot);
-  HYLE_ASSIGN_OR_RETURN(auto accepted, slot.native.submit());
+  HYLE_ASSIGN_OR_RETURN(auto accepted, an::InvocationAccess::submit_ordered(
+      slot.native, {}, nullptr, nullptr, dependencies));
   auto transfer = cd::ResultAccess::take_storage(std::move(accepted));
   slot.result = std::move(transfer.owner);
   return std::move(transfer.completion);
@@ -312,6 +313,14 @@ const graph::detail::RegionBindingReleaseVTable binding_release_table{
       clear_bindings(slot);
     }};
 
+const graph::detail::RegionDependenciesVTable dependencies_table{
+    [](void *, void *invocation, std::size_t capacity) noexcept -> Status {
+      auto &slot = *static_cast<Slot *>(invocation);
+      if (slot.native.valid())
+        HYLE_RETURN_IF_ERROR(an::InvocationAccess::reserve_dependencies(slot.native, capacity));
+      slot.dependency_capacity = capacity;
+      return Status::Ok();
+    }, true};
 const ProviderRegionPreparedVTable prepared_table{
     .destroy_prepared = [](void *p, mem::AllocatorRef a) noexcept { a.destroy(static_cast<Artifact *>(p)); },
     .alias_support = [](void *, std::size_t, std::size_t) noexcept { return compute::AliasSupport{}; },
@@ -327,6 +336,7 @@ const ProviderRegionPreparedVTable prepared_table{
     },
     .output_value = &value, .prepare_bindings = &bind, .seal_bindings = &seal, .output_lease = &lease,
     .query_extension = [](void *, compute::ProviderExtensionId id) noexcept -> const void * {
+      if (id == graph::detail::kRegionDependenciesExtensionId) return &dependencies_table;
       if (id == graph::detail::kRegionBindingReleaseExtensionId) return &binding_release_table;
       if (id == bd::kNativeBatchRegionExtensionId) return &layout_table;
       if (id == kNativeOutputExtensionId) return &output_table;
