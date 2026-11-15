@@ -63,18 +63,21 @@ struct Bank final {
   std::size_t layer = 0;
   bool recurrent = false;
   std::array<c::LeaseSlotAddress, 2> sources{};
-  std::array<c::LeaseSlotAddress, 6> candidates{};
-  std::array<Bytes, 6> bytes;
+  std::vector<c::LeaseSlotAddress> candidates;
+  std::vector<Bytes> bytes;
 };
 inline Bank inspect(q::Model &model, q::StepState &step, std::size_t layer, bool recurrent,
     bool hidden = false) {
-  require(step.members.size() == 2 && step.phase->prefix_rows == 3 && step.phase->slots[step.state_slot].transactions.bound() &&
-      gd::RegionAccess::successful_outcome(*step.execution.run), "B2 inspection requires its successful original K3 Graph");
+  require(step.members.size() == 2 && step.phase->prefix_rows >= 3 && step.phase->prefix_rows <= 4 &&
+      step.phase->slots[step.state_slot].transactions.bound() &&
+      gd::RegionAccess::successful_outcome(*step.execution.run), "B2 inspection requires its successful original verifier Graph");
   const auto &ports = hidden ? step.phase->hidden_state
       : recurrent ? step.phase->layers[layer].recurrent : step.phase->layers[layer].history;
   const auto item = hidden ? q::dense(model.precision.activation_type(), {1, model.hidden})
       : recurrent ? model.state_schema[layer].recurrent : model.state_schema[layer].history;
   Bank bank{layer, recurrent, {}, {}, {}};
+  bank.candidates.resize(2 * step.phase->prefix_rows);
+  bank.bytes.resize(bank.candidates.size());
   for (auto &bytes : bank.bytes) bytes.resize(q::take(item.required_bytes()));
   struct Visit final {
     q::Model *model;
@@ -97,8 +100,9 @@ inline Bank inspect(q::Model &model, q::StepState &step, std::size_t layer, bool
           return hyle::Status::Unimplemented("B2 selected Store has no transaction extension");
         const hyle::graph::ProviderRegionPrepared prepared{.vtable = view.prepared_vtable, .state = view.prepared};
         HYLE_ASSIGN_OR_RETURN(auto facts, extension->inspect(prepared, view.invocation));
+        const auto destinations = v.bank->candidates.size();
         if (facts.store != v.ports->store || facts.destination_indices != v.ports->destination_ids ||
-            facts.destination_count != 6 || (v.hidden && facts.source.count) || (facts.source.count &&
+            facts.destination_count != destinations || (v.hidden && facts.source.count) || (facts.source.count &&
                 (facts.source.count != 2 || facts.source.gather != v.ports->gather ||
                  facts.source.capacity != v.ports->pool || facts.source.indices != v.ports->source_ids)))
           return hyle::Status::InvalidArgument("B2 Store facts differ from its actual ports");
@@ -107,9 +111,9 @@ inline Bank inspect(q::Model &model, q::StepState &step, std::size_t layer, bool
         HYLE_RETURN_IF_ERROR(binding->validate_authority());
         const auto *transaction = binding->transaction();
         const std::size_t source_count = v.hidden ? 0 : 2;
-        if (!transaction || transaction->source_count() != source_count || transaction->destination_count() != 6 ||
-            transaction->sources().size() != source_count || transaction->destinations().size() != 6 ||
-            transaction->source_addresses().size() != source_count || transaction->destination_addresses().size() != 6)
+        if (!transaction || transaction->source_count() != source_count || transaction->destination_count() != destinations ||
+            transaction->sources().size() != source_count || transaction->destinations().size() != destinations ||
+            transaction->source_addresses().size() != source_count || transaction->destination_addresses().size() != destinations)
           return hyle::Status::FailedPrecondition("B2 Store no longer owns its full original cohort");
         const auto layout = transaction->layout();
         HYLE_ASSIGN_OR_RETURN(auto schema, hyle::graph::slots::Schema::create(
@@ -123,7 +127,7 @@ inline Bank inspect(q::Model &model, q::StepState &step, std::size_t layer, bool
             return hyle::Status::InvalidArgument("B2 Store source belongs to another member");
           v.bank->sources[j] = address;
         }
-        for (std::size_t index = 0; index < 6; ++index) {
+        for (std::size_t index = 0; index < destinations; ++index) {
           const auto &writer = transaction->destinations()[index];
           HYLE_ASSIGN_OR_RETURN(auto address, layout.locate(writer));
           if (address != transaction->destination_addresses()[index])
@@ -171,8 +175,8 @@ inline std::size_t reclaim_unselected(q::Model &model, const Bank &bank,
   }
   require(exhausted, "B2 bounded free-slot check did not reach the original pool limit");
   std::size_t checked = 0;
-  for (std::size_t index = 0; index < 6; ++index) {
-    const bool selected = index == accepted[0] - 1 || index == 3 + accepted[1] - 1;
+  for (std::size_t index = 0; index < bank.candidates.size(); ++index) {
+    const bool selected = index == accepted[0] - 1 || index == bank.candidates.size() / 2 + accepted[1] - 1;
     const bool free = std::ranges::find(indices, bank.candidates[index].index) != indices.end();
     require(selected ? !free : free, "B2 selected state escaped or an unaccepted candidate stayed retained");
     checked += !selected;
@@ -180,27 +184,50 @@ inline std::size_t reclaim_unselected(q::Model &model, const Bank &bank,
   return checked; // Reclaimed permissions, not a claim that backing VRAM was freed.
 }
 
-inline int run(const std::filesystem::path &input, q::BackendKind kind) {
+inline int run(const std::filesystem::path &input, q::BackendKind kind,
+    std::size_t cpu_ffn_layers = 0, std::size_t verify_rows = 3, bool random = true) {
+  require(verify_rows == 3 || verify_rows == 4, "B2 verifier requires its finite three/four-row recipe");
   auto source = q::prepare_weight_source(input / "weights.tsv", true);
   const auto geometry = source.roles.geometry;
   require(geometry.context_limit >= 16 && geometry.vocabulary >= 16 && geometry.mtp_layers == 1,
       "B2 case requires its cached C16/MTP fixture");
-  const auto plan = q::cache::plan(geometry, source.cache_row_bytes, 16, 6, 3,
-      q::recurrent_bytes(q::state_schema_for(geometry, 16), geometry), 2, 3, true, true);
-  require(plan.state_slots == 12, "B2 K3 changed the original N+K*R capacity");
+  const auto plan = q::cache::plan(geometry, source.cache_row_bytes, 16, 6, verify_rows,
+      q::recurrent_bytes(q::state_schema_for(geometry, 16), geometry), 2, verify_rows, true, true);
+  require(plan.state_slots == 6 + 2 * verify_rows, "B2 verifier changed the original N+K*R capacity");
   q::Model model(std::move(source), geometry, 16, plan, {}, false, q::ReplayPolicy::kCommands, SIZE_MAX,
-      {.enabled = true, .policy = {1.F, 8, .9F}, .seed = 123}, 0, {.primary = kind});
+      {.enabled = random, .policy = random ? q::sampling::Policy{1.F, 8, .9F} : q::sampling::Policy{},
+       .seed = 123}, cpu_ffn_layers, {.primary = kind});
+  require(model.ffn_placement.cpu_layers() == cpu_ffn_layers, "B2 verifier did not use its requested placement");
+  if (verify_rows == 4) model.configure_draft_policy({.max_drafts = 3});
   const std::array calls{std::size_t{3}};
+  const std::array verifier{verify_rows};
   // Session admission uses its R1 call plan; the actual work below is B2.
   model.prepare_family(calls, false, 1, q::GraphRole::kMtpPrefill);
   model.plan_replay_uses(3, 1, 1, q::GraphRole::kMtpPrefill);
   for (const auto role : {q::GraphRole::kMtpPrefill, q::GraphRole::kVerify}) {
-    model.prepare_family(calls, false, 2, role);
-    model.plan_replay_uses(3, 2, 3, role);
+    const auto rows = role == q::GraphRole::kVerify ? verify_rows : 3;
+    const std::array shape{rows};
+    model.prepare_family(shape, false, 2, role);
+    model.plan_replay_uses(rows, 2, 3, role);
   }
   for (std::size_t rows = 1; rows <= 3; ++rows) model.prepare_draft_program(rows, false);
   for (std::size_t rows = 1; rows <= 2; ++rows) model.prepare_draft_program(rows, true);
-  for (const auto role : {q::GraphRole::kMtpPrefill, q::GraphRole::kVerify}) model.prepare_execution(calls, 2, role);
+  if (verify_rows == 4) {
+    model.prepare_recursive_round_programs();
+    // The resumed real request can have a shorter native proposal on EOS.
+    // Prepare every finite R1 verifier before submitting any test work.
+    for (std::size_t rows = 1; rows <= verify_rows; ++rows) {
+      const std::array shape{rows};
+      model.prepare_family(shape, false, 1, q::GraphRole::kVerify);
+      model.plan_replay_uses(rows, 1, 4, q::GraphRole::kVerify);
+    }
+    for (std::size_t rows = 1; rows <= verify_rows; ++rows) {
+      const std::array shape{rows};
+      model.prepare_execution(shape, 1, q::GraphRole::kVerify);
+    }
+  }
+  model.prepare_execution(calls, 2, q::GraphRole::kMtpPrefill);
+  model.prepare_execution(verifier, 2, q::GraphRole::kVerify);
   std::array sessions{model.create_session(calls, {}, q::GraphRole::kMtpPrefill, q::cache::SamplingCursor{123, 7, 11}),
       model.create_session(calls, {}, q::GraphRole::kMtpPrefill, q::cache::SamplingCursor{123, 8, 13})};
   const std::array<std::array<std::int32_t, 3>, 2> prompt{{{1, 2, 3}, {3, 2, 1}}};
@@ -278,18 +305,22 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   std::array<StateImage, 2> first_images;
   std::size_t bytes_checked = 0, reclaimed = 0;
   std::vector<Bank> diagnostics;
-  for (std::size_t round = 0; round < 2; ++round) {
-    const std::array accepted = round ? std::array<std::size_t, 2>{3, 1} : std::array<std::size_t, 2>{1, 3};
+  const auto rounds = verify_rows == 4 ? 3u : 2u;
+  for (std::size_t round = 0; round < rounds; ++round) {
+    const auto accepted = !round ? std::array<std::size_t, 2>{1, verify_rows}
+        : round == 1 && verify_rows == 4 ? std::array<std::size_t, 2>{2, 3}
+        : std::array<std::size_t, 2>{verify_rows, 1};
     const std::array pending = round ? std::array<std::int32_t, 2>{13, 14} : std::array<std::int32_t, 2>{11, 12};
     const std::array before{image(model, *sessions[0]->head), image(model, *sessions[1]->head)};
-    const std::array<std::array<std::int32_t, 3>, 2> ids{{{sessions[0]->head->next_id, 4, 5},
+    std::array<std::vector<std::int32_t>, 2> ids{{{sessions[0]->head->next_id, 4, 5},
         {sessions[1]->head->next_id, 6, 7}}};
+    if (verify_rows == 4) { ids[0].push_back(8); ids[1].push_back(9); }
     const std::array requests{q::EvaluationRequest{sessions[0], ids[0]}, q::EvaluationRequest{sessions[1], ids[1]}};
     std::vector<Bank> banks;
     std::array<Bytes, 2> carry, prior;
     model.prepare_evaluations(requests, nullptr, q::GraphRole::kVerify);
-    require(model.active_step->members.size() == 2 && model.active_step->phase->prefix_rows == 3,
-        "B2 case did not enter one real K3 verifier Graph");
+    require(model.active_step->members.size() == 2 && model.active_step->phase->prefix_rows == verify_rows,
+        "B2 case did not enter its complete original verifier Graph");
     model.submit_evaluations();
     model.finish_selected_evaluations(outputs, next,
         [&](auto, q::StepState &step, auto selected) {
@@ -321,7 +352,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
         const auto &pools = model.state_pools[bank.layer];
         const auto &layout = bank.recurrent ? pools.recurrent_layout : pools.history_layout;
         const auto &lease = bank.recurrent ? head.state[bank.layer].recurrent : head.state[bank.layer].history;
-        const auto selected = j * 3 + accepted[j] - 1;
+        const auto selected = j * verify_rows + accepted[j] - 1;
         require(q::take(layout.locate(lease)) == bank.candidates[selected] && read(model, lease) == bank.bytes[selected],
             "B2 member committed another prefix/member/pool candidate");
         bytes_checked += bank.bytes[selected].size();
@@ -335,12 +366,31 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       first[j] = sessions[j]->checkpoint(); first_images[j] = image(model, *first[j]);
     }
   }
+  if (verify_rows == 4) {
+    // Exercise the normal proposal/acceptance/repair path after the controlled
+    // branches. Prefix forcing above tests publication, not natural acceptance.
+    for (auto &session : sessions) {
+      const auto before = image(model, *session->head);
+      const auto epoch = session->head.epoch();
+      const auto resumed = qwen_host_image_case::round(model, session);
+      require(resumed.processed_target >= 1 && resumed.processed_target <= verify_rows &&
+          session->head.epoch() == epoch + 1 && session->length() == before.length + resumed.processed_target &&
+          !model.active_step && !model.successor_step && !model.carrier_borrowed,
+          "controlled prefix repair did not resume its real native MTP round");
+      (void)image(model, *session->head); // Includes canonical complete draft-frontier validation.
+    }
+    for (std::size_t j = 0; j < 2; ++j)
+      require(image(model, *original[j]) == original_images[j] && image(model, *first[j]) == first_images[j],
+          "native continuation changed a retained pre-repair checkpoint");
+  }
   first = {}; original = {};
   for (auto &session : sessions) qwen_host_image_case::retire(session);
   require(model.snapshot_versions.live == 0 && !model.active_step && !model.carrier_borrowed,
       "B2 state case retained a version or original episode");
   std::cout << "{\"status\":\"PASS\",\"backend\":\"" << qwen_host_image_case::backend_name(kind)
-      << "\",\"requests\":2,\"verify_rows\":3,\"candidate_prefixes\":3,\"rounds\":2,\"accepted\":[[1,3],[3,1]],"
+      << "\",\"requests\":2,\"verify_rows\":" << verify_rows << ",\"candidate_prefixes\":" << verify_rows
+      << ",\"rounds\":" << rounds << ",\"accepted\":"
+      << (verify_rows == 4 ? "[[1,4],[2,3],[4,1]]," : "[[1,3],[3,1]],")
       << "\"checked_selected_bytes\":" << bytes_checked << ",\"reclaimed_unselected_slots\":" << reclaimed
       << ",\"banks\":[";
   for (std::size_t n = 0; n < diagnostics.size(); ++n) {
@@ -356,6 +406,12 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       << "\"final_versions\":0,\"controlled_prefix_pending\":true,\"controlled_rng_unchanged\":true,"
       << "\"nextn_checked_id_failure_recovered\":true,\"same_program_valid_retry\":true,"
       << "\"natural_acceptance_quality_claim\":false,\"performance_claim\":false}\n";
+  if (verify_rows == 4) std::cout << "PASS mtp_prefix_repair backend=" << qwen_host_image_case::backend_name(kind)
+      << " cpu_ffn_layers=" << cpu_ffn_layers << " sampling=" << (random ? "random" : "greedy")
+      << " hidden=" << geometry.hidden << " vocabulary=" << geometry.vocabulary << " target_layers=" << geometry.layers.size()
+      << " drafts=3 controlled=zero,partial,full next_native_rounds=2"
+      << " checked_embedding_failure_recovered=1 selected_bytes=" << bytes_checked
+      << " unselected_slots_reclaimed=" << reclaimed << " versions=0\n" << std::flush;
   return 0;
 }
 } // namespace qwen_mtp_batch_state_case

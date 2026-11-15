@@ -2,6 +2,7 @@
 // No CLI, model diagnostics, fixture generation or download is included.
 #include "../../engine/models/qwen35/generation_runtime.cc"
 #include "qwen_host_image_case.h"
+#include "qwen_mtp_batch_state_case.h"
 #include "qwen_depth_case.h"
 #include "inference_program_carrier_case.h"
 
@@ -9,8 +10,9 @@ int main(int argc, char **argv) {
   try {
     const bool depth = argc == 6 && std::string_view(argv[5]) == "--depth-probe";
     const bool carrier = argc == 3 && std::string_view(argv[2]) == "--carrier-probe";
-    if (argc != 5 && !depth && !carrier) throw std::runtime_error(
-        "usage: qwen_cross_backend_state_test cpu|cuda|apple|vulkan INPUTS off|K3 CPU_FFN_LAYERS [--depth-probe]; or BACKEND --carrier-probe");
+    const bool prefix_repair = argc == 6 && std::string_view(argv[5]) == "--prefix-repair-probe";
+    if (argc != 5 && !depth && !carrier && !prefix_repair) throw std::runtime_error(
+        "usage: qwen_cross_backend_state_test cpu|cuda|apple|vulkan INPUTS off|K3 CPU_FFN_LAYERS [--depth-probe|--prefix-repair-probe]; or BACKEND --carrier-probe");
     const std::string_view name(argv[1]);
     auto kind = qwen35::BackendKind::kDefault;
     if (name == "cpu") kind = qwen35::BackendKind::kCpu;
@@ -25,6 +27,12 @@ int main(int argc, char **argv) {
     const auto layers = std::stoull(argv[4], &consumed);
     if (consumed != std::string_view(argv[4]).size()) throw std::runtime_error("invalid CPU placement");
     if (depth) return qwen_depth_case::run(argv[2], kind, mode == "K3", layers);
+    if (prefix_repair) {
+      if (mode != "K3") throw std::runtime_error("prefix repair requires the prepared three-draft consumer");
+      for (const bool random : {false, true})
+        qwen_mtp_batch_state_case::run(argv[2], kind, layers, 4, random);
+      return 0;
+    }
     for (const bool random : {false, true}) {
       const auto report = qwen_host_image_case::run_mode(argv[2], kind, mode == "K3", 3, layers, random);
       std::cout << "PASS complete_state backend=" << name << " cpu_ffn_layers=" << layers
