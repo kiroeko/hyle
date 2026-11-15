@@ -43,6 +43,10 @@ remain failures, and closing public admission still drains accepted callbacks.
 The original native command buffer can also wait on borrowed MLX input events
 before encoding its operators. The owning invocation retains those inputs and
 checks deferred device status in region order before publication or retirement.
+Cold preparation keeps every bounded native region on one original command
+buffer. The last selected native region schedules the original invocation's
+tail Job; that Job checks the complete native/MLX plan and its input verdicts.
+There is no additional terminal GPU command buffer or retirement executor.
 Native workspace buffer creation also checks metadata allocation and releases
 partially initialized Metal/host resources, including a failed C++ backend
 buffer wrapper. These workspace changes affect cold allocation and failure paths only.

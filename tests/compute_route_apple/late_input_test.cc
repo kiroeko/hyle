@@ -3,6 +3,7 @@
 #include <array>
 #include <atomic>
 #include <condition_variable>
+#include <chrono>
 #include <mutex>
 #include <vector>
 #include <thread>
@@ -10,6 +11,9 @@
 
 #include <gtest/gtest.h>
 #include <mlx/ops.h>
+#include <mlx/primitives.h>
+#include <stdexcept>
+#include <mlx/backend/metal/event.h>
 
 #include "../../src/compute_route_apple/apple_carrier.h"
 #include "../../src/compute_route_apple/apple_copy_internal.h"
@@ -50,6 +54,10 @@ public:
     std::unique_lock lock(mutex_);
     changed_.wait(lock, [&] { return entered_; });
   }
+  bool wait_entered_for(std::chrono::seconds limit) {
+    std::unique_lock lock(mutex_);
+    return changed_.wait_for(lock, limit, [&] { return entered_; });
+  }
   void open_and_join() {
     if (!admitted_) return;
     std::unique_lock lock(mutex_);
@@ -62,6 +70,42 @@ private:
   std::mutex mutex_;
   std::condition_variable changed_;
   bool admitted_ = false, entered_ = false, open_ = false, finished_ = false;
+};
+
+// Block real GPU work while the original FIFO remains free to encode Jobs.
+// Destruction always releases the event, including assertion exits.
+class GpuEventGate final : public ad::Job {
+public:
+  explicit GpuEventGate(std::shared_ptr<ad::Runtime> runtime) : runtime_(std::move(runtime)) {
+    execute = [](ad::Job *job) noexcept {
+      auto &gate = *static_cast<GpuEventGate *>(job);
+      auto event = mx::Event(*gate.runtime_->stream);
+      event.set_value(1);
+      event.wait(*gate.runtime_->stream);
+      auto &encoder = mx::metal::get_command_encoder(*gate.runtime_->stream);
+      encoder.end_encoding();
+      encoder.commit();
+      { std::lock_guard lock(gate.mutex_); gate.event_ = std::move(event); }
+      gate.changed_.notify_all();
+    };
+  }
+  hyle::Status enqueue() noexcept {
+    auto status = runtime_->enqueue(*this);
+    if (!status.ok()) return status;
+    std::unique_lock lock(mutex_);
+    changed_.wait(lock, [&] { return event_.valid(); });
+    return hyle::Status::Ok();
+  }
+  void open() {
+    std::lock_guard lock(mutex_);
+    if (event_.valid()) event_.cast<mx::metal::EventImpl>().signal(1);
+  }
+  ~GpuEventGate() { open(); }
+private:
+  std::shared_ptr<ad::Runtime> runtime_;
+  std::mutex mutex_;
+  std::condition_variable changed_;
+  mx::Event event_;
 };
 
 void exercise_native_signal_source(bool close_pending) {
@@ -134,7 +178,7 @@ TEST(AppleLateInput, CloseDrainsQueuedNativeSignalsBeforeStoppingTheOwner) {
   exercise_native_signal_source(true);
 }
 
-TEST(AppleLateInput, MixedMlxNativeMlxPlanPreservesValuesAndReusesItsSlot) {
+void exercise_mixed_plan(bool pending_chain, bool close_pending = false, bool cancel_pending = false) {
   auto context = a::Context::create();
   ASSERT_TRUE(context) << context.error().message();
   apple_test::Recurrent fixture(3, 2, 64);
@@ -171,10 +215,75 @@ TEST(AppleLateInput, MixedMlxNativeMlxPlanPreservesValuesAndReusesItsSlot) {
   ASSERT_TRUE(program) << program.error().message();
   auto invocation = program->create_invocation();
   ASSERT_TRUE(invocation) << invocation.error().message();
-  for (int repeat = 0; repeat < 3; ++repeat) {
+  std::optional<a::Invocation> consumer;
+  auto runtime = ad::ContextAccess::runtime(*context);
+  apple_test::Recurrent following(3, 2, 64);
+  for (std::size_t i = 0; i < expected[0].size(); ++i)
+    following.data[0][i] = float(3 * expected[0][i]);
+  const auto next_expected = following.oracle(2);
+  if (pending_chain) {
+    auto next = program->create_invocation();
+    ASSERT_TRUE(next) << next.error().message();
+    consumer.emplace(std::move(*next));
+    std::vector<ad::InputBinding> bindings(fixture.inputs.size());
+    auto source = ad::InvocationAccess::source(*invocation, 0);
+    ASSERT_TRUE(source);
+    bindings[0].source = std::move(*source);
+    for (std::size_t i = 1; i < bindings.size(); ++i) bindings[i].value = fixture.inputs[i];
+    ASSERT_TRUE(ad::InvocationAccess::prepare_inputs(*consumer, bindings).ok());
+  }
+  for (int repeat = 0; repeat < (close_pending || cancel_pending ? 1 : 3); ++repeat) {
     ASSERT_TRUE(invocation->bind(fixture.inputs).ok());
+    std::optional<GpuEventGate> gpu_gate;
+    if (pending_chain) {
+      gpu_gate.emplace(runtime);
+      ASSERT_TRUE(gpu_gate->enqueue().ok());
+    }
     auto result = invocation->submit();
     ASSERT_TRUE(result) << result.error().message();
+    if (pending_chain) {
+      auto next = consumer->submit();
+      ASSERT_TRUE(next) << next.error().message();
+      FifoGate owner_gate;
+      ASSERT_TRUE(owner_gate.enqueue(runtime).ok());
+      const bool owner_free = owner_gate.wait_entered_for(std::chrono::seconds(5));
+      EXPECT_TRUE(owner_free) << "Mixed Plans waited on the host before encoding the next Job";
+      EXPECT_EQ(result->completion().poll().value(), c::CompletionPoll::kPending);
+      EXPECT_EQ(next->completion().poll().value(), c::CompletionPoll::kPending);
+      if (cancel_pending) EXPECT_TRUE(result->request_cancel().ok());
+      // Release the real GPU before any blocking assertion/close path.
+      gpu_gate->open();
+      if (close_pending && owner_free) {
+        hyle::Status closed;
+        std::thread closer([&] { closed = context->close(); });
+        for (;;) {
+          bool closing;
+          { std::lock_guard lock(runtime->queue_mutex); closing = !runtime->accepting; }
+          if (closing) break;
+          std::this_thread::yield();
+        }
+        owner_gate.open_and_join();
+        closer.join();
+        ASSERT_TRUE(closed.ok()) << closed.message();
+      } else owner_gate.open_and_join();
+      const auto child_status = next->completion().wait();
+      if (cancel_pending) {
+        EXPECT_TRUE(child_status.IsCancelled()) << child_status.message();
+        EXPECT_TRUE(result->completion().wait().IsCancelled());
+        EXPECT_FALSE(ad::InvocationAccess::output(*invocation, 0));
+        EXPECT_FALSE(ad::InvocationAccess::output(*consumer, 0));
+        ASSERT_TRUE(context->close().ok());
+        return;
+      }
+      ASSERT_TRUE(child_status.ok()) << child_status.message();
+      auto next_scores = ad::InvocationAccess::output(*consumer, 0);
+      auto next_state = ad::InvocationAccess::output(*consumer, 1);
+      ASSERT_TRUE(next_scores); ASSERT_TRUE(next_state);
+      for (std::size_t i = 0; i < next_expected[0].size(); ++i)
+        EXPECT_NEAR(next_scores->data<float>()[i], 3 * next_expected[0][i], 1.e-5);
+      for (std::size_t i = 0; i < next_expected[1].size(); ++i)
+        EXPECT_NEAR(next_state->data<float>()[i], next_expected[1][i], 1.e-5);
+    }
     ASSERT_TRUE(result->completion().wait().ok());
     auto scores = ad::InvocationAccess::output(*invocation, 0);
     auto state = ad::InvocationAccess::output(*invocation, 1);
@@ -183,6 +292,89 @@ TEST(AppleLateInput, MixedMlxNativeMlxPlanPreservesValuesAndReusesItsSlot) {
       EXPECT_NEAR(scores->data<float>()[i], 3 * expected[0][i], 1.e-5);
     for (std::size_t i = 0; i < expected[1].size(); ++i)
       EXPECT_NEAR(state->data<float>()[i], expected[1][i], 1.e-5);
+  }
+  ASSERT_TRUE(context->close().ok());
+}
+
+TEST(AppleLateInput, MixedMlxNativeMlxPlanPreservesValuesAndReusesItsSlot) {
+  exercise_mixed_plan(false);
+}
+TEST(AppleLateInput, MixedPlansEncodePendingSourcesWithoutBlockingTheirOwner) {
+  exercise_mixed_plan(true);
+}
+TEST(AppleLateInput, CloseDrainsPendingMixedPlanSourcesOnTheirOriginalOwner) {
+  exercise_mixed_plan(true, true);
+}
+
+TEST(AppleLateInput, CancelDrainsPendingMixedPlanAndRejectsDependentPublication) {
+  exercise_mixed_plan(true, false, true);
+}
+
+TEST(AppleLateInput, MultipleNativePrefixesRetireOnTheLastOriginalCallback) {
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+  const auto x = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 2>{1, 64}).value();
+  const auto w = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 2>{64, 64}).value();
+  ad::RegionPlan plan;
+  plan.values = {{{1, 64}, mx::float32}, {{64, 64}, mx::float32},
+                 {{1, 64}, mx::float32}, {{1, 64}, mx::float32},
+                 {{1, 64}, mx::float32}, {{1, 64}, mx::float32}};
+  plan.inputs = {0, 1}; plan.outputs = {5, 2};
+  ad::Region first, middle, last, output;
+  first.kind = last.kind = ad::RegionKind::kGgml;
+  first.operation = last.operation = c::model_ops::dense_linear_f32();
+  first.native_inputs = last.native_inputs = {x, w};
+  first.inputs = {0, 1}; first.outputs = {2};
+  middle.inputs = {2}; middle.outputs = {3};
+  middle.mlx = [](const auto &args, mx::Stream stream) {
+    return std::vector<mx::array>{mx::multiply(args[0], mx::array(3.f), stream)};
+  };
+  last.inputs = {3, 1}; last.outputs = {4};
+  output.inputs = {4}; output.outputs = {5};
+  output.mlx = [](const auto &args, mx::Stream stream) {
+    return std::vector<mx::array>{mx::multiply(args[0], mx::array(.5f), stream)};
+  };
+  plan.regions = {std::move(first), std::move(middle), std::move(last), std::move(output)};
+  auto program = ad::ContextAccess::compile(*context, std::move(plan));
+  ASSERT_TRUE(program) << program.error().message();
+  auto invocation = program->create_invocation();
+  ASSERT_TRUE(invocation);
+  std::array<float, 64> input;
+  std::array<float, 64 * 64> weights{};
+  for (std::size_t i = 0; i < input.size(); ++i) {
+    input[i] = float(i + 1); weights[i * 64 + i] = 2.f;
+  }
+  const std::array inputs{mx::array(input.data(), {1, 64}), mx::array(weights.data(), {64, 64})};
+  auto runtime = ad::ContextAccess::runtime(*context);
+  // Exercise ready execution before the repeated pending-source episodes.
+  ASSERT_TRUE(invocation->bind(inputs).ok());
+  { auto warm = invocation->submit(); ASSERT_TRUE(warm); ASSERT_TRUE(warm->completion().wait().ok()); }
+  for (int repeat = 0; repeat < 3; ++repeat) {
+    ASSERT_TRUE(invocation->bind(inputs).ok());
+    GpuEventGate gpu_gate(runtime);
+    ASSERT_TRUE(gpu_gate.enqueue().ok());
+    auto result = invocation->submit();
+    ASSERT_TRUE(result);
+    FifoGate owner_gate;
+    ASSERT_TRUE(owner_gate.enqueue(runtime).ok());
+    const bool owner_free = owner_gate.wait_entered_for(std::chrono::seconds(2));
+    const auto pending = result->completion().poll();
+    gpu_gate.open();
+    owner_gate.open_and_join();
+    EXPECT_TRUE(owner_free) << "The first prefix cannot retire the still-pending complete Plan";
+    ASSERT_TRUE(pending) << pending.error().message(); EXPECT_EQ(*pending, c::CompletionPoll::kPending);
+    ASSERT_TRUE(result->completion().wait().ok());
+    auto final = ad::InvocationAccess::output(*invocation, 0);
+    auto early = ad::InvocationAccess::output(*invocation, 1);
+    ASSERT_TRUE(final); ASSERT_TRUE(early);
+    for (std::size_t i = 0; i < input.size(); ++i) {
+      EXPECT_FLOAT_EQ(final->data<float>()[i], 6 * input[i]);
+      EXPECT_FLOAT_EQ(early->data<float>()[i], 2 * input[i]);
+    }
+    std::lock_guard lock(runtime->queue_mutex);
+    EXPECT_EQ(runtime->native_tails, 0u);
   }
   ASSERT_TRUE(context->close().ok());
 }
@@ -261,6 +453,77 @@ TEST(AppleLateInput, DeferredMlxInputErrorPreventsPublicationAndKeepsTheRuntimeU
     }
   }
   ASSERT_TRUE(context->close().ok());
+}
+
+// Inject only at actual eval, after cold compilation and the native prefix.
+class LateEncodingFailure final : public mx::Primitive {
+public:
+  LateEncodingFailure(mx::Stream stream, std::shared_ptr<std::atomic<bool>> fail)
+      : Primitive(stream), fail_(std::move(fail)) {}
+  void eval_cpu(const std::vector<mx::array> &, std::vector<mx::array> &) override {
+    throw std::runtime_error("GPU encoding checkpoint cannot use CPU");
+  }
+  void eval_gpu(const std::vector<mx::array> &inputs, std::vector<mx::array> &outputs) override {
+    if (fail_->load()) throw std::runtime_error("injected late mixed-Plan encoding failure");
+    outputs[0].copy_shared_buffer(inputs[0]);
+  }
+  const char *name() const override { return "HyleLatePlanEncodingFailure"; }
+private:
+  std::shared_ptr<std::atomic<bool>> fail_;
+};
+
+TEST(AppleLateInput, EarlierDeviceCheckPrecedesLaterEncodingFailure) {
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+  const std::array<std::int64_t, 2> table_shape{4, 64}, dot_shape{1, 64};
+  const std::array<std::int64_t, 2> weight_shape{2, 64};
+  const std::array<std::int64_t, 1> index_shape{1};
+  const std::array descriptions{
+      c::TensorDesc::dense(c::DataType::kFloat32, table_shape).value(),
+      c::TensorDesc::dense(c::DataType::kInt32, index_shape).value()};
+  auto fail = std::make_shared<std::atomic<bool>>(false);
+  ad::RegionPlan plan;
+  plan.values = {{{4, 64}, mx::float32}, {{1}, mx::int32}, {{2, 64}, mx::float32},
+                 {{1, 64}, mx::float32}, {{1, 2}, mx::float32}};
+  plan.inputs = {0, 1, 2}; plan.outputs = {4};
+  ad::Region checked;
+  checked.inputs = {0, 1}; checked.outputs = {3};
+  checked.mlx = [descriptions](const auto &args, mx::Stream stream) {
+    return ad::lower_mlx_float(c::Operation(c::Gather{}), descriptions, args, stream).value();
+  };
+  ad::Region native;
+  native.kind = ad::RegionKind::kGgml;
+  native.inputs = {3, 2}; native.outputs = {4};
+  native.operation = c::model_ops::dense_linear_f32();
+  native.native_inputs = {
+      c::TensorDesc::dense(c::DataType::kFloat32, dot_shape).value(),
+      c::TensorDesc::dense(c::DataType::kFloat32, weight_shape).value()};
+  plan.values.push_back({{1, 2}, mx::float32}); plan.outputs = {5};
+  ad::Region finish;
+  finish.inputs = {4}; finish.outputs = {5};
+  finish.mlx = [fail](const auto &args, mx::Stream stream) {
+    return std::vector<mx::array>{mx::array(args[0].shape(), args[0].dtype(),
+        std::make_shared<LateEncodingFailure>(stream, fail), {args[0]})};
+  };
+  plan.regions = {std::move(checked), std::move(native), std::move(finish)};
+  auto program = ad::ContextAccess::compile(*context, std::move(plan));
+  ASSERT_TRUE(program) << program.error().message();
+  std::array<float, 256> table_values; table_values.fill(1.f);
+  std::array<float, 128> weight_values; weight_values.fill(3.f / 64);
+  const mx::array table(table_values.data(), {4, 64}), weight(weight_values.data(), {2, 64});
+  auto invocation = program->create_invocation();
+  ASSERT_TRUE(invocation);
+  const std::array inputs{table, mx::array({8}, mx::int32), weight};
+  ASSERT_TRUE(invocation->bind(inputs).ok());
+  fail->store(true);
+  auto result = invocation->submit();
+  ASSERT_TRUE(result);
+  const auto status = result->completion().wait();
+  EXPECT_TRUE(status.IsOutOfRange()) << status.message();
+  EXPECT_FALSE(ad::InvocationAccess::output(*invocation, 0));
+  { std::lock_guard lock(ad::ContextAccess::runtime(*context)->queue_mutex);
+    EXPECT_EQ(ad::ContextAccess::runtime(*context)->native_tails, 0u); }
+  context->close().IgnoreError(); // The actual encoding exception poisons this Runtime.
 }
 
 TEST(AppleLateInput, PinsActualProducerUntilConsumerRetiresAndRejectsStaleEpoch) {

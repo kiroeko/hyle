@@ -487,6 +487,7 @@ struct InvocationState : Job {
   CompletionNotification notification;
   Status terminal_hint;
   bool native_async = false; // Selected once from this actual prepared Plan.
+  std::size_t native_tail_region = SIZE_MAX;
   bool native_deferred = false, native_retired = false;
   bool native_values_ready = false; // Published under binding_mutex.
   std::uint64_t native_retired_epoch = 0;
@@ -558,7 +559,7 @@ struct InvocationState : Job {
         return Status::Internal("Apple late input producer output is absent");
       const auto &value = producer.values->arrays[binding.source.port_];
       const auto &spec = program->inputs[inputs.size()];
-      const bool native_pending = !complete && producer.native_async &&
+      const bool native_pending = !complete && producer.native_deferred &&
           value.status() == mx::array::evaluated && value.event().valid();
       if ((!native_pending && value.status() != mx::array::available) || value.shape() != spec.shape ||
           value.dtype() != spec.dtype)
@@ -681,29 +682,35 @@ Status execute_plan(InvocationState &state, mx::Stream stream) {
         HYLE_RETURN_IF_ERROR(drain_plan_regions(state));
       if (state.recurrent[i]->host_indices)
         HYLE_RETURN_IF_ERROR(observe_native_inputs(state));
-      if (state.native_async) {
-        HYLE_RETURN_IF_ERROR(state.program->runtime->reserve_native_tail());
-        state.native_deferred = true;
-        auto outputs = state.recurrent[i]->submit(state.arguments, stream,
-            &native_prefix_completed, &state);
-        if (!outputs) {
-          state.native_deferred = false;
-          state.program->runtime->release_native_tail();
-          return std::move(outputs).error();
-        }
-        state.region_outputs = std::move(*outputs);
-        state.native_terminal.Update(state.recurrent[i]->program->submission_status());
-      } else if (state.recurrent[i]->completion_event.valid()) {
+      if (state.recurrent[i]->completion_event.valid()) {
         auto &runtime = *state.program->runtime;
         auto &program = *state.recurrent[i]->program;
+        const bool tail = state.native_async && i == state.native_tail_region;
         HYLE_RETURN_IF_ERROR(runtime.reserve_native_tail());
         struct PrefixAdmission final {
           Runtime &runtime;
           ggml_metal::NativeProgram &program;
-          ~PrefixAdmission() { if (!program.pending()) runtime.release_native_tail(); }
-        } admission{runtime, program};
+          InvocationState &state;
+          bool owns_tail = false;
+          ~PrefixAdmission() {
+            if (program.pending()) return; // Accepted prefix owns its reservation.
+            runtime.release_native_tail();
+            if (owns_tail) {
+              state.native_deferred = false;
+              runtime.release_native_tail();
+            }
+          }
+        } admission{runtime, program, state};
+        if (tail) {
+          // Separate the actual prefix from its callback's original tail Job.
+          // A dependent may observe the prefix before that callback is drained.
+          HYLE_RETURN_IF_ERROR(runtime.reserve_native_tail());
+          admission.owns_tail = true;
+          state.native_deferred = true;
+        }
         HYLE_ASSIGN_OR_RETURN(state.region_outputs,
-            state.recurrent[i]->submit(state.arguments, stream, nullptr, nullptr));
+            state.recurrent[i]->submit(state.arguments, stream,
+                tail ? &native_prefix_completed : nullptr, tail ? &state : nullptr));
         HYLE_RETURN_IF_ERROR(program.submission_status());
       } else {
         HYLE_ASSIGN_OR_RETURN(state.region_outputs,
@@ -831,7 +838,9 @@ Status drain_plan_regions(InvocationState &state) noexcept {
 // slot reuse still wait for the original completion callback's tail Job.
 Status observe_native_prefix(InvocationState &state) noexcept {
   if (!state.native_deferred || state.native_retired) return state.native_terminal;
-  state.native_terminal.Update(state.recurrent.front()->finish());
+  auto terminal = drain_plan_regions(state);
+  terminal.Update(state.native_terminal); // Earlier device checks precede a later encoding failure.
+  state.native_terminal = std::move(terminal);
   state.native_terminal.Update(observe_native_inputs(state));
   if (state.native_terminal.ok()) {
     try {
@@ -926,12 +935,8 @@ void execute_with(InvocationState& state, Evaluate evaluate) noexcept {
     }
   }
   if (state.native_deferred) {
-    if (state.recurrent.front()->program->pending()) {
-      state.native_terminal.Update(terminal);
-      return; // The accepted native tail keeps this original worker reference.
-    }
-    runtime.release_native_tail();
-    state.native_deferred = false;
+    state.native_terminal.Update(terminal);
+    return; // The accepted original prefix callback owns this worker reference.
   }
   auto native_terminal = drain_plan_regions(state);
   native_terminal.Update(terminal);
@@ -1437,9 +1442,10 @@ Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
             if (!signal) return std::move(signal).error();
             has_native = true;
             all_signal &= *signal;
-            if (plan.regions.size() == 1) state->native_async = *signal;
+            state->native_tail_region = i;
           }
-        state->defer_mlx = has_native && all_signal && mlx_outputs != 0;
+        state->native_async = has_native && all_signal;
+        state->defer_mlx = state->native_async && mlx_outputs != 0;
         return Status::Ok();
       });
       HYLE_RETURN_IF_ERROR(detail::run_cold(*state_->runtime, prepare));

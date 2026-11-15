@@ -350,7 +350,7 @@
     {
       "path": "src/ggml-metal/ggml-metal.cpp",
       "before_sha256": "4331ba068dd06691214a7f7e00ff6946114006623b4057a104892387bfac0343",
-      "after_sha256": "3b0ef1721af42916a455d99e3c8d70336a5ce0aa90b4befdbe57bf3a51d18c05",
+      "after_sha256": "b95133bacf469500490aeaab8144149b21938a6a7421fdfdd771b548b4aecb1b",
       "edits": [
         {
           "before": "// backend\n",
@@ -399,6 +399,10 @@
         {
           "before": "    uint64_t value, void (*done)(void *), void * state) {\n    return ggml_metal_signal_begin((ggml_metal_t)backend->context, event, value, done, state);",
           "after": "    uint64_t value, void (*done)(void *), void * state,\n    void *const * wait_events, const uint64_t * wait_values, size_t wait_count) {\n    return ggml_metal_signal_begin((ggml_metal_t)backend->context, event, value, done, state,\n                                   wait_events, wait_values, wait_count);"
+        },
+        {
+          "before": "extern \"C\" bool ggml_hyle_metal_prepare_graph(ggml_backend_t backend, ggml_cgraph * graph, bool * unsupported) {\n    *unsupported = false;",
+          "after": "extern \"C\" bool ggml_hyle_metal_prepare_graph(ggml_backend_t backend, ggml_cgraph * graph, bool * unsupported) {\n    // Bounded prepared regions keep waits, math and signal on one original buffer.\n    ggml_backend_metal_set_n_cb(backend, 0);\n    *unsupported = false;"
         }
       ]
     },

@@ -51,6 +51,9 @@ MLX event的stream标记不是ggml的原生Queue身份，不能据此省略等�
 MLX→ggml也可在原命令缓冲等待输入事件；冷期根据实际region能力准备这条路径。
 算子的设备检查结果由原Invocation保活，退休时按region顺序核对，保留首个错误并阻止失败输出发布。
 后续原生算子需在CPU读取索引时，仍先完成前缀检查与退休；所选MLX region通过原生事件交接GPU依赖。
+冷期为有界原生region准备单命令缓冲，实际具备完整事件能力的计划复用最后一个原生region的完成通知。
+通知仅将原Invocation的退休Job交回原owner；完整MLX/原生前缀、输入Source、错误与权限仍按原合同核对。
+整段计划可以交接待完成array，不增加终态GPU命令缓冲；这不替代整张Graph的Source依赖适配。
 
 Metal pipeline的static threadgroup memory上限与全局GPU buffer容量是不同限制。
 编译或验证选项可能改变某个pipeline的实际用量，应查询创建后的pipeline再决定合法tile/路径，
