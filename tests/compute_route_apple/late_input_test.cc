@@ -218,23 +218,46 @@ TEST(AppleLateInput, DeferredMlxInputErrorPreventsPublicationAndKeepsTheRuntimeU
   std::array<float, 256> table_values; table_values.fill(1.f);
   std::array<float, 128> weight_values; weight_values.fill(3.f / 64);
   const mx::array table(table_values.data(), {4, 64}), weight(weight_values.data(), {2, 64});
+  const std::array source_specs{a::InputSpec{{1, 2}, mx::float32}};
+  auto next_program = ad::ContextAccess::compile(ad::ContextAccess::runtime(*context),
+      [](const auto &args, mx::Stream stream) {
+        return std::vector<mx::array>{mx::multiply(args[0], mx::array(2.f), stream)};
+      }, source_specs);
+  ASSERT_TRUE(next_program);
   for (const auto index : {8, 0}) {
     auto invocation = program->create_invocation();
     ASSERT_TRUE(invocation) << invocation.error().message();
     const std::array inputs{table, mx::array({index}, mx::int32), weight};
     ASSERT_TRUE(invocation->bind(inputs).ok());
-    auto result = invocation->submit();
-    ASSERT_TRUE(result);
+    auto consumer = next_program->create_invocation();
+    ASSERT_TRUE(consumer);
+    std::array<ad::InputBinding, 1> late;
+    late[0].source = ad::InvocationAccess::source(*invocation, 0).value();
+    ASSERT_TRUE(ad::InvocationAccess::prepare_inputs(*consumer, late).ok());
+    FifoGate gate;
+    ASSERT_TRUE(gate.enqueue(ad::ContextAccess::runtime(*context)).ok());
+    gate.wait_entered();
+    auto result = invocation->submit(), consumed = consumer->submit();
+    ASSERT_TRUE(result); ASSERT_TRUE(consumed);
+    gate.open_and_join();
+    const auto child_status = consumed->completion().wait();
     const auto status = result->completion().wait();
     if (index == 8) {
       EXPECT_TRUE(status.IsOutOfRange()) << status.message();
+      EXPECT_TRUE(child_status.IsOutOfRange()) << child_status.message();
       EXPECT_FALSE(ad::InvocationAccess::output(*invocation, 0));
+      EXPECT_FALSE(ad::InvocationAccess::output(*consumer, 0));
     } else {
       ASSERT_TRUE(status.ok()) << status.message();
       auto output = ad::InvocationAccess::output(*invocation, 0);
       ASSERT_TRUE(output);
       EXPECT_FLOAT_EQ(output->data<float>()[0], 3.f);
       EXPECT_FLOAT_EQ(output->data<float>()[1], 3.f);
+      ASSERT_TRUE(child_status.ok()) << child_status.message();
+      auto child = ad::InvocationAccess::output(*consumer, 0);
+      ASSERT_TRUE(child);
+      EXPECT_FLOAT_EQ(child->data<float>()[0], 6.f);
+      EXPECT_FLOAT_EQ(child->data<float>()[1], 6.f);
     }
   }
   ASSERT_TRUE(context->close().ok());
