@@ -9,6 +9,18 @@
 #include "hyle/compute/model_ops.h"
 
 namespace hyle::compute::vulkan::detail {
+bool tensor_representation_cast_supported(const Device &device,
+    const TensorDesc &source, const TensorDesc &destination) noexcept {
+  const bool widen = source.data_type() == DataType::kBFloat16 &&
+                     destination.data_type() == DataType::kFloat32;
+  const bool narrow = source.data_type() == DataType::kFloat32 &&
+                      destination.data_type() == DataType::kBFloat16;
+  return (widen || narrow) && source.is_plain() && source.is_dense() &&
+      destination.is_plain() && destination.is_dense() &&
+      std::ranges::equal(source.dimensions(), destination.dimensions()) &&
+      tensor_bfloat_rounding_supported(device, widen ? destination : source);
+}
+
 bool tensor_bfloat_rounding_supported(const Device &device,
                                       const TensorDesc &wide) noexcept {
   const auto count = wide.element_count();

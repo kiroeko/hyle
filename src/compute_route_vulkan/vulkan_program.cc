@@ -601,10 +601,16 @@ Result<Program> prepare_plan(const std::shared_ptr<Runtime> &runtime,
       if(step.operation.custom_as<model_ops::CacheEncode>()){
         HYLE_RETURN_IF_ERROR(lower_cache_encoder(*program,step,last_uses));++index;continue;
       }
-      if (queue_policy == PlanQueuePolicy::kRuntimeQueueOnly &&
-          step.operation.get_if<Cast>()) {
+      const bool representation_cast = step.operation.get_if<Cast>() &&
+          step.inputs.size() == 1 && step.outputs.size() == 1 &&
+          tensor_representation_cast_supported(*runtime->device,
+              program->values[step.inputs[0]].description,
+              program->values[step.outputs[0]].description);
+      if ((queue_policy == PlanQueuePolicy::kRuntimeQueueOnly &&
+           step.operation.get_if<Cast>()) || representation_cast) {
         // The existing typed shader preserves Cast's rounding and byte-origin
-        // contract on the original queue. Unconstrained plans keep defaults.
+        // contract on the original queue. A representation boundary needs no
+        // independent runtime context or duplicate input/output buffers.
         HYLE_RETURN_IF_ERROR(lower_tensor(*program, step));
         ++index;
         continue;
@@ -974,7 +980,13 @@ Program::create_invocation(mem::AllocatorRef allocator, InvocationAllocation all
     auto invocation = std::allocate_shared<detail::InvocationState>(mem::StdAllocator<detail::InvocationState>(allocator));
     invocation->program = state_;
     invocation->slot = std::move(*slot);
-    auto run = detail::create_run(state_->runtime, allocator);
+    // The existing final managed Work already owns this invocation's exclusive
+    // completion. An IREE callback/cancellation chain still needs its original
+    // parent fence; native tails and standalone submissions do as well.
+    const bool managed_completion = !state_->dispatches.empty() && state_->dispatches.back().region &&
+        std::ranges::none_of(state_->dispatches, [](const auto &dispatch) { return dispatch.iree.has_value(); });
+    auto run = managed_completion ? detail::create_recording_run(state_->runtime, allocator)
+                                 : detail::create_run(state_->runtime, allocator);
     if (!run)
       return std::unexpected(std::move(run).error());
     invocation->run = std::move(*run);

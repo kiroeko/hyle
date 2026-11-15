@@ -19,10 +19,34 @@ namespace {
 using namespace vulkan_gate_norm_test;
 namespace d = v::detail;
 
+TEST(VulkanManaged, ManagedTailKeepsItsExclusiveOriginalCompletion) {
+  auto context = vulkan_test::context().value();
+  const auto input = dense(c::DataType::kFloat32, {2, 32});
+  const auto weight = make(context, dense(c::DataType::kFloat32, {32, 32}),
+      std::vector<double>(1024, 0.25));
+  auto program = v::prepare(context, c::MatMul{}, input, weight).value();
+  ASSERT_TRUE(d::Access::program(program)->dispatches.back().region);
+  auto first = program.create_invocation().value(), second = program.create_invocation().value();
+  const auto &a = *d::Access::invocation(first)->run, &b = *d::Access::invocation(second)->run;
+  ASSERT_EQ(a.fence, VK_NULL_HANDLE); ASSERT_EQ(b.fence, VK_NULL_HANDLE);
+  ASSERT_NE(a.completion_fence, VK_NULL_HANDLE); ASSERT_NE(b.completion_fence, VK_NULL_HANDLE);
+  EXPECT_NE(a.completion_fence, b.completion_fence);
+  EXPECT_EQ(a.completion_fence, a.stages.back().managed->fence());
+  EXPECT_EQ(b.completion_fence, b.stages.back().managed->fence());
+  ASSERT_TRUE(first.bind(make(context, input, std::vector<double>(64, 1.25))).ok());
+  ASSERT_TRUE(second.bind(make(context, input, std::vector<double>(64, -2.5))).ok());
+  auto left = first.submit().value(), right = second.submit().value();
+  auto left_ready = left.wait().value(), right_ready = right.wait().value();
+  EXPECT_EQ(values(context, left_ready.get()->tensors()[0]), std::vector<double>(64, 10));
+  EXPECT_EQ(values(context, right_ready.get()->tensors()[0]), std::vector<double>(64, -20));
+}
+
 TEST(VulkanManaged, PrecisionStageBorrowsOnlyPrivateNonRotatingStorage) {
   for (const bool publish_intermediate : {false, true}) {
     auto context = vulkan_test::context().value();
-    const auto input = dense(c::DataType::kFloat32, {1024});
+    // F16 -> BF16 still uses the original IREE precision stage. F32/BF16
+    // representation boundaries now use the qualified native U32 shader.
+    const auto input = dense(c::DataType::kFloat16, {1024});
     const auto output = dense(c::DataType::kBFloat16, {1024});
     d::Plan plan;
     plan.values = {{input, {}}, {input, {}}, {output, {}}};
@@ -34,9 +58,22 @@ TEST(VulkanManaged, PrecisionStageBorrowsOnlyPrivateNonRotatingStorage) {
     ASSERT_TRUE(program) << program.error().message();
     auto first = program->create_invocation().value(), second = program->create_invocation().value();
     const auto &run = *d::Access::invocation(first)->run;
+    ASSERT_NE(run.fence, VK_NULL_HANDLE);
+    EXPECT_NE(run.fence, d::Access::invocation(second)->run->fence);
     std::size_t stages = 0;
-    for (const auto &stage : run.stages) if (stage.iree) {
+    for (const auto &stage : run.stages) {
+      if (stage.native) {
+        EXPECT_NE(stage.native->command, VK_NULL_HANDLE);
+        EXPECT_EQ(stage.native->fence, VK_NULL_HANDLE);
+      }
+      if (!stage.iree) continue;
       ++stages;
+      for (const auto &copy : {stage.iree->input_copy, stage.iree->constant_copy,
+                              stage.iree->output_copy, stage.iree->flag_copy})
+        if (copy) {
+          EXPECT_NE(copy->command, VK_NULL_HANDLE);
+          EXPECT_EQ(copy->fence, VK_NULL_HANDLE);
+        }
       EXPECT_EQ(stage.iree->inputs[0].borrowed, !publish_intermediate);
       if (!publish_intermediate)
         EXPECT_EQ(stage.iree->inputs[0].destination.buffer, run.retained_buffers[1]->handle);
@@ -45,13 +82,14 @@ TEST(VulkanManaged, PrecisionStageBorrowsOnlyPrivateNonRotatingStorage) {
     std::optional<v::Tensor> retained;
     std::vector<std::uint64_t> retained_bits;
     for (int pass = 0; pass < 3; ++pass) {
-      std::vector<float> values(1024);
+      std::vector<double> values(1024);
       std::vector<std::uint64_t> expected(1024);
       for (std::size_t i = 0; i < values.size(); ++i) {
         values[i] = -1.f - float(i + pass * 37) / 131072.f;
-        expected[i] = vulkan_tensor_test::encode(-values[i], c::DataType::kBFloat16);
+        expected[i] = vulkan_tensor_test::encode(
+            -vulkan_tensor_test::rounded(values[i], c::DataType::kFloat16), c::DataType::kBFloat16);
       }
-      const auto source = context.upload(input, std::as_bytes(std::span(values))).value();
+      const auto source = make(context, input, values);
       auto &call = pass == 0 ? first : second;
       ASSERT_TRUE(call.bind(source).ok());
       auto work = call.submit(); ASSERT_TRUE(work) << work.error().message();

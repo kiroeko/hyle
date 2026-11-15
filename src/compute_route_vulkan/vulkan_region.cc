@@ -1640,7 +1640,7 @@ Status record_regions(const std::shared_ptr<Run> &run,
             value = static_cast<std::uint32_t>(
                 std::ranges::lower_bound(stage.values, value) -
                 stage.values.begin());
-        HYLE_ASSIGN_OR_RETURN(stage.native, create_run(run->runtime));
+        HYLE_ASSIGN_OR_RETURN(stage.native, create_recording_run(run->runtime));
         std::vector<PlanValue> compact;
         for (const auto value : stage.values) {
           compact.push_back(values[value]);

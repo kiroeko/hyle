@@ -142,7 +142,9 @@ TEST(VulkanFileStream, OriginalNativeProducerOrdersResourceReadbackAndFileBytes)
   auto sink = host.file({}, 256); auto pipeline = native.create(host, 1);
   std::array<c::StreamWriteRange, 1> ranges{c::StreamWriteRange::produced(std::move(writer), std::move(producer), 0, 0, 256)};
   std::array<c::StreamWriteGroup, 1> groups{{{81, ranges}}};
-  auto ticket = pipeline.write(sink, groups).value(); ASSERT_TRUE(ticket.wait().status.ok());
+  auto ticket = pipeline.write(sink, groups).value();
+  const auto written = ticket.wait();
+  ASSERT_TRUE(written.status.ok()) << written.status.message();
   auto stored = hyle::platform::open_random_access_file(host.paths.back().c_str(), hyle::platform::kOpenRead).value();
   std::array<std::byte, 256> output; ASSERT_EQ(stored.read_at(0, output).value(), output.size());
   for (auto byte : output) EXPECT_EQ(byte, std::byte{0x5d});

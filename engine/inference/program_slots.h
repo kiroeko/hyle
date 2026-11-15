@@ -106,22 +106,40 @@ class ProgramSlots final {
   // no callback or borrowed result survives this synchronous installation.
   template<class PrepareInitialization>
   Status initialize_with(std::size_t index, PrepareInitialization&& prepare_initialization) {
+    return initialize_with(index, std::forward<PrepareInitialization>(prepare_initialization),
+        []() -> Result<bool> { return false; });
+  }
+
+  // A failed, unpublished cold installation can retry once after its owner
+  // reclaims genuinely retired storage. Warm/invalid/closing slots never
+  // invoke either cold callable; native work and retirement remain unchanged.
+  template<class PrepareInitialization, class ReclaimColdStorage>
+  Status initialize_with(std::size_t index, PrepareInitialization&& prepare_initialization,
+                         ReclaimColdStorage&& reclaim_cold_storage) {
     if (index >= size_)
       return Status::OutOfRange("program slot is outside its cold carrier plan");
     auto& slot = entries_[index];
     if (slot.carrier.closing())
       return Status::FailedPrecondition("program slot needs its original retired reset before initialization");
     if (slot.carrier.initialized()) return Status::Ok();
-#if defined(HYLE_TEST_INFERENCE_WARM_COST) && HYLE_TEST_INFERENCE_WARM_COST
-    testing::record_slot_initialization();
-#endif
     const auto& options = std::forward<PrepareInitialization>(prepare_initialization)();
-    HYLE_RETURN_IF_ERROR(slot.carrier.initialize({
+    const auto install = [&] {
+#if defined(HYLE_TEST_INFERENCE_WARM_COST) && HYLE_TEST_INFERENCE_WARM_COST
+      testing::record_slot_initialization();
+#endif
+      return slot.carrier.initialize({
         .io = slot.io,
         .invocation = options.invocation,
         .progress = options.progress,
         .slots = options.slots,
-        .workspace = options.workspace}));
+        .workspace = options.workspace});
+    };
+    auto status = install();
+    if (status.IsResourceExhausted()) {
+      HYLE_ASSIGN_OR_RETURN(auto retry, std::forward<ReclaimColdStorage>(reclaim_cold_storage)());
+      if (retry) status = install();
+    }
+    HYLE_RETURN_IF_ERROR(status);
     slot.preparation_uses = 0;
     return Status::Ok();
   }

@@ -152,7 +152,8 @@ struct RecorderState final {
 
 Result<std::shared_ptr<Pipeline>>
 create_pipeline(const std::shared_ptr<Device> &device,
-                const SpirvDescription &description) noexcept;
+                const SpirvDescription &description,
+                std::uint32_t storage_granularity = 4) noexcept;
 Result<std::shared_ptr<Pipeline>>
 create_halfword_pipeline(const std::shared_ptr<Device> &device,
                          const SpirvDescription &description) noexcept;

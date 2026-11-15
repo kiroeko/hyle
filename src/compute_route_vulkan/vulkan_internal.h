@@ -134,6 +134,14 @@ struct DeviceFunctions final {
 };
 
 struct SmallAllocationPool;
+struct Pipeline;
+struct PreparedPipeline final {
+  std::vector<std::uint32_t> code;
+  std::vector<SpecializationConstant> specialization;
+  std::uint32_t bindings = 0, push_bytes = 0, storage_granularity = 4;
+  bool rebindable = false;
+  std::weak_ptr<Pipeline> pipeline;
+};
 struct Device final {
   // One native owner for HYLE commands and complete managed ggml regions.
   // It outlives every Buffer/Run and owns loader, instance, device and queues.
@@ -156,6 +164,10 @@ struct Device final {
   // every live range; this pool keeps only weak page references.
   std::shared_ptr<SmallAllocationPool> small_allocations;
   VkDeviceSize maximum_allocation_bytes = 0;
+  // Exact cold artifact reuse on this original device. The weak index does
+  // not retain programs or change independent IO, native work or retirement.
+  std::mutex prepared_pipelines_mutex;
+  std::vector<PreparedPipeline> prepared_pipelines;
 #if defined(__linux__)
   // Driver-owned compiled artifacts shared only by this native device. Cold
   // pipeline creation supplies exact shader/layout/specialization identities;
@@ -347,6 +359,11 @@ allocate_buffer(const std::shared_ptr<Device> &device, VkDeviceSize bytes,
 Result<std::shared_ptr<Run>>
 create_run(const std::shared_ptr<Runtime> &runtime,
            mem::AllocatorRef allocator = mem::system_allocator()) noexcept;
+// A subordinate command buffer is submitted only by its original parent.
+// Its independent recording resources need no unused completion fence.
+Result<std::shared_ptr<Run>>
+create_recording_run(const std::shared_ptr<Runtime> &runtime,
+                     mem::AllocatorRef allocator = mem::system_allocator()) noexcept;
 Result<Completion> submit_locked(const std::shared_ptr<Run> &run,
                                  bool allow_closed = false) noexcept;
 Status collect(const std::shared_ptr<Runtime> &runtime, bool drain) noexcept;

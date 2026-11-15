@@ -2640,7 +2640,33 @@ public:
   }
 
   void initialize_slot(Phase &phase, std::size_t slot) {
-    check(phase.slots.initialize_with(slot, [&] { return slot_initialization(phase); }));
+    check(phase.slots.initialize_with(slot, [&] { return slot_initialization(phase); }, [&]() -> hyle::Result<bool> {
+      if (execution_workspace.valid() || phase.imported_sources)
+        return false;
+      // Retired private prefill workspaces can also prevent the first decode
+      // program from being installed. Trim them for any failed cold allocation,
+      // before this new Invocation exists or submits anything.
+      // Existing Sources/results keep their own original storage alive.
+      std::size_t released = 0;
+      for (auto &[shape, previous] : phases) {
+        (void)shape;
+        if (previous.get() == &phase || previous->imported_sources ||
+            !packs_prefill(previous->family->packing) ||
+            (active_step && active_step->phase == previous.get()) ||
+            (successor_step && successor_step->phase == previous.get())) continue;
+        for (auto &old : previous->slots.slots()) {
+          if (!old.carrier.initialized() || !old.carrier.retired() ||
+              old.transactions.bound() || old.data.small_results.in_flight()) continue;
+          HYLE_RETURN_IF_ERROR(old.carrier.reset_retired());
+          ++released;
+        }
+      }
+      if (released) {
+        std::cerr << "execution_prefill_storage_reclaimed invocations=" << released
+                  << " trigger=resource_exhausted\n";
+      }
+      return released != 0;
+    }));
   }
 
   Phase &prepare_child(std::size_t tokens, bool diagnostic, std::size_t requests = 1, GraphRole role = GraphRole::kText,

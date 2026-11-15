@@ -2,6 +2,7 @@
 #include "vulkan_internal.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <cstring>
 #include <exception>
 #include <limits>
@@ -96,8 +97,9 @@ Status native_status(VkResult result, const char *operation) noexcept {
   default:
     break;
   }
-  return Status::FromNative(code, {NativeErrorDomain::Vulkan, result},
-                            operation);
+  char message[192];
+  std::snprintf(message, sizeof(message), "%s (VkResult=%d)", operation, static_cast<int>(result));
+  return Status::FromNative(code, {NativeErrorDomain::Vulkan, result}, message);
 }
 
 Buffer::~Buffer() {
@@ -440,8 +442,15 @@ allocate_buffer(const std::shared_ptr<Device> &device, VkDeviceSize bytes,
                                                        &native_allocation, nullptr,
                                                        &buffer->memory),
                              "vkAllocateMemory");
-      if (!status.ok())
-        return std::unexpected(status);
+      if (!status.ok()) {
+        char details[192];
+        std::snprintf(details, sizeof(details),
+            "Vulkan allocation bytes=%llu buffer_bytes=%llu memory_type=%u staging=%d native=%lld",
+            static_cast<unsigned long long>(requirements.size),
+            static_cast<unsigned long long>(bytes), selected, int(staging),
+            static_cast<long long>(status.native_error().code));
+        return std::unexpected(std::move(status).WithContext(details));
+      }
       buffer->allocation_bytes = requirements.size;
     }
     status = native_status(device->fn.BindBufferMemory(device->native.device,

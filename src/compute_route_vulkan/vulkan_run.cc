@@ -37,7 +37,7 @@ Run::~Run() {
 }
 
 Result<std::shared_ptr<Run>>
-create_run(const std::shared_ptr<Runtime> &runtime, mem::AllocatorRef allocator) noexcept {
+create_recording_run(const std::shared_ptr<Runtime> &runtime, mem::AllocatorRef allocator) noexcept {
   try {
     if (!allocator.valid()) return std::unexpected(Status::InvalidArgument("invalid Vulkan run metadata allocator"));
     auto run = std::allocate_shared<Run>(mem::StdAllocator<Run>(allocator), allocator);
@@ -63,19 +63,25 @@ create_run(const std::shared_ptr<Runtime> &runtime, mem::AllocatorRef allocator)
                            "vkAllocateCommandBuffers");
     if (!status.ok())
       return std::unexpected(status);
-    VkFenceCreateInfo fence{};
-    fence.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    status = native_status(device.fn.CreateFence(device.native.device, &fence,
-                                                 nullptr, &run->fence),
-                           "vkCreateFence");
-    if (!status.ok())
-      return std::unexpected(status);
-    run->completion_fence = run->fence;
     return run;
   } catch (const std::bad_alloc &) {
     return std::unexpected(
         Status::ResourceExhausted("Vulkan submission metadata"));
   }
+}
+
+Result<std::shared_ptr<Run>>
+create_run(const std::shared_ptr<Runtime> &runtime, mem::AllocatorRef allocator) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto run, create_recording_run(runtime, allocator));
+  const auto &device = *runtime->device;
+  VkFenceCreateInfo fence{};
+  fence.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+  VkFence completion = VK_NULL_HANDLE;
+  HYLE_RETURN_IF_ERROR(native_status(device.fn.CreateFence(device.native.device, &fence,
+      nullptr, &completion), "vkCreateFence"));
+  run->fence = completion;
+  run->completion_fence = run->fence;
+  return run;
 }
 
 namespace {

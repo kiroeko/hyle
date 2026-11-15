@@ -3,19 +3,23 @@
 #include "../../engine/models/qwen35/generation_runtime.cc"
 #include "qwen_host_image_case.h"
 #include "qwen_depth_case.h"
+#include "inference_program_carrier_case.h"
 
 int main(int argc, char **argv) {
   try {
     const bool depth = argc == 6 && std::string_view(argv[5]) == "--depth-probe";
-    if (argc != 5 && !depth) throw std::runtime_error(
-        "usage: qwen_cross_backend_state_test cpu|cuda|apple|vulkan INPUTS off|K3 CPU_FFN_LAYERS [--depth-probe]");
-    const std::string_view name(argv[1]), mode(argv[3]);
+    const bool carrier = argc == 3 && std::string_view(argv[2]) == "--carrier-probe";
+    if (argc != 5 && !depth && !carrier) throw std::runtime_error(
+        "usage: qwen_cross_backend_state_test cpu|cuda|apple|vulkan INPUTS off|K3 CPU_FFN_LAYERS [--depth-probe]; or BACKEND --carrier-probe");
+    const std::string_view name(argv[1]);
     auto kind = qwen35::BackendKind::kDefault;
     if (name == "cpu") kind = qwen35::BackendKind::kCpu;
     else if (name == "cuda") kind = qwen35::BackendKind::kCuda;
     else if (name == "apple") kind = qwen35::BackendKind::kApple;
     else if (name == "vulkan") kind = qwen35::BackendKind::kVulkan;
     else throw std::runtime_error("unknown native backend");
+    if (carrier) return inference_program_carrier_case::run(kind);
+    const std::string_view mode(argv[3]);
     if (mode != "off" && mode != "K3") throw std::runtime_error("expected ordinary or K3 state consumer");
     std::size_t consumed = 0;
     const auto layers = std::stoull(argv[4], &consumed);

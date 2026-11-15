@@ -1,7 +1,10 @@
 #include <gtest/gtest.h>
 
+#include <numeric>
+
 #include "tensor_test_support.h"
 #include "vulkan_internal.h"
+#include "vulkan_program_internal.h"
 #include "hyle/compute/vulkan_memory.h"
 
 namespace {
@@ -10,6 +13,74 @@ constexpr std::array types{c::DataType::kFloat32,  c::DataType::kFloat16,
                            c::DataType::kBFloat16, c::DataType::kInt32,
                            c::DataType::kInt64,    c::DataType::kBool,
                            c::DataType::kUInt8,    c::DataType::kUInt32};
+
+TEST(VulkanTensor, ExactPreparedPipelinesShareOnlyImmutableArtifacts) {
+  auto context = vulkan_test::context().value();
+  const auto description = dense(c::DataType::kFloat32, {1024});
+  const c::Operation cast(c::Cast{c::DataType::kBFloat16});
+  std::weak_ptr<v::detail::Pipeline> original;
+  {
+    auto first = v::prepare(context, cast, description).value();
+    auto second = v::prepare(context, cast, description).value();
+    const auto &a = v::detail::Access::program(first)->dispatches.front().pipeline;
+    const auto &b = v::detail::Access::program(second)->dispatches.front().pipeline;
+    ASSERT_TRUE(a); ASSERT_EQ(a, b); original = a;
+    auto other = v::prepare(context, cast, dense(c::DataType::kFloat32, {1025})).value();
+    EXPECT_NE(a, v::detail::Access::program(other)->dispatches.front().pipeline);
+    auto one = first.create_invocation().value(), two = second.create_invocation().value();
+    const auto positive = make(context, description, std::vector<double>(1024, 1.25));
+    const auto negative = make(context, description, std::vector<double>(1024, -2.5));
+    ASSERT_TRUE(one.bind(positive).ok()); ASSERT_TRUE(two.bind(negative).ok());
+    auto left = one.submit().value(), right = two.submit().value();
+    auto left_ready = left.wait().value(), right_ready = right.wait().value();
+    EXPECT_EQ(bits(context, left_ready.get()->tensors()[0]),
+        std::vector<std::uint64_t>(1024, encode(1.25, c::DataType::kBFloat16)));
+    EXPECT_EQ(bits(context, right_ready.get()->tensors()[0]),
+        std::vector<std::uint64_t>(1024, encode(-2.5, c::DataType::kBFloat16)));
+  }
+  ASSERT_TRUE(context.drain().ok());
+  EXPECT_TRUE(original.expired()); // The device index owns no executable.
+}
+
+TEST(VulkanTensor, BfloatRepresentationCastsKeepAllEncodingsAndRoundingBoundaries) {
+  auto context = vulkan_test::context().value();
+  std::vector<std::uint64_t> encodings(65536);
+  std::iota(encodings.begin(), encodings.end(), std::uint64_t{0});
+  const auto narrow = dense(c::DataType::kBFloat16, {65536});
+  const auto original = context.upload(narrow, payload(narrow, encodings)).value();
+  const auto widened = execute(context, c::Operation(c::Cast{c::DataType::kFloat32}),
+      std::array{original});
+  ASSERT_TRUE(widened) << widened.error().message();
+  const auto wide_bits = bits(context, *widened);
+  ASSERT_EQ(wide_bits.size(), encodings.size());
+  for (std::size_t index = 0; index < wide_bits.size(); ++index)
+    ASSERT_EQ(wide_bits[index], encodings[index] << 16) << index;
+
+  // Cover every sign/exponent/significand prefix on both sides of a tie.
+  // The independent floating oracle also covers subnormals and overflow.
+  constexpr std::array tails{0u, 0x7fffu, 0x8000u, 0x8001u, 0xffffu};
+  std::vector<std::uint64_t> samples;
+  samples.reserve(encodings.size() * tails.size());
+  for (auto high : encodings)
+    for (auto low : tails) samples.push_back((high << 16) | low);
+  const auto description = dense(c::DataType::kFloat32,
+      {static_cast<std::int64_t>(samples.size())});
+  const auto input = context.upload(description, payload(description, samples)).value();
+  const auto rounded = execute(context, c::Operation(c::Cast{c::DataType::kBFloat16}),
+      std::array{input});
+  ASSERT_TRUE(rounded) << rounded.error().message();
+  const auto actual = bits(context, *rounded);
+  ASSERT_EQ(actual.size(), samples.size());
+  for (std::size_t index = 0; index < actual.size(); ++index) {
+    const auto raw = static_cast<std::uint32_t>(samples[index]);
+    if ((raw & 0x7fffffffu) > 0x7f800000u) {
+      ASSERT_EQ(actual[index] & 0xffc0u, (raw >> 16 & 0x8000u) | 0x7fc0u) << index;
+    } else {
+      const auto value = std::bit_cast<float>(raw);
+      ASSERT_EQ(actual[index], half_test::encode<B16>(static_cast<double>(value)).bits) << index;
+    }
+  }
+}
 
 TEST(VulkanTensor, SmallPagesKeepDistinctBuffersAcrossPartialRetirementAndReuse) {
   auto context = vulkan_test::context().value();

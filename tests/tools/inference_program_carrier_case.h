@@ -351,6 +351,8 @@ inline int run(q::BackendKind kind) {
   const auto missing = a.borrow();
   require(!missing && missing.error().IsFailedPrecondition(), "failed cold carrier admitted an original invocation");
   std::array<std::size_t, 2> initialization_calls{};
+  std::size_t reclamation_calls = 0;
+  const auto reclaim_cold_storage = [&]() -> hyle::Result<bool> { ++reclamation_calls; return true; };
   const auto initialize_a = [&] {
     ++initialization_calls[0];
     return ProgramSlots::Initialization{.invocation = options};
@@ -369,7 +371,7 @@ inline int run(q::BackendKind kind) {
   q::check(programs.initialize_with(1, initialize_b));
   require(b.initialized() && !a.initialized() && initialization_calls == std::array<std::size_t, 2>{0, 1},
       "initializing B repaired failed A or evaluated another slot's installation recipe");
-  q::check(programs.initialize_with(0, initialize_a));
+  q::check(programs.initialize_with(0, initialize_a, reclaim_cold_storage));
   require(initialization_calls == std::array<std::size_t, 2>{1, 1},
       "initial slot installation did not evaluate each original recipe exactly once");
   require(!caller_writer || a_output->pool().stats().live_blocks == 1,
@@ -398,8 +400,8 @@ inline int run(q::BackendKind kind) {
       "already initialized carrier replaced its live original invocation or touched its peer");
   a_slot.planned_uses = 5; a_slot.preparation_uses = 3;
   b_slot.planned_uses = 7; b_slot.preparation_uses = 4;
-  q::check(programs.initialize_with(0, initialize_a));
-  q::check(programs.initialize_with(1, initialize_b));
+  q::check(programs.initialize_with(0, initialize_a, reclaim_cold_storage));
+  q::check(programs.initialize_with(1, initialize_b, reclaim_cold_storage));
   q::check(programs.initialize_all({.invocation = options}));
   q::check(programs.initialize_all_with([&] {
     ++invalid_initialization_calls;
@@ -408,7 +410,7 @@ inline int run(q::BackendKind kind) {
   require(q::take(a.borrow()) == a_run && q::take(b.borrow()) == b_run &&
       a_slot.planned_uses == 5 && a_slot.preparation_uses == 3 &&
       b_slot.planned_uses == 7 && b_slot.preparation_uses == 4 &&
-      initialization_calls == std::array<std::size_t, 2>{1, 1} && !invalid_initialization_calls,
+      initialization_calls == std::array<std::size_t, 2>{1, 1} && !invalid_initialization_calls && !reclamation_calls,
       "idempotent slot-group initialization evaluated its recipe or replaced an original run or replay counter");
   q::check(a_run->prepare_replay(a.queues(), {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
   q::check(b_run->prepare_replay(b.queues(), {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));

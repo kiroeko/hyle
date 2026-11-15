@@ -19,7 +19,8 @@ Pipeline::~Pipeline() {
 
 Result<std::shared_ptr<Pipeline>>
 create_pipeline(const std::shared_ptr<Device> &device,
-                const SpirvDescription &description) noexcept {
+                const SpirvDescription &description,
+                std::uint32_t storage_granularity) noexcept {
   const auto &limits = device->properties.limits;
   const auto &indexing = device->descriptor_properties;
   const bool rebindable = device->environment.storage_update_after_bind;
@@ -42,10 +43,30 @@ create_pipeline(const std::shared_ptr<Device> &device,
     return std::unexpected(
         Status::InvalidArgument("Vulkan shader description exceeds domain"));
   try {
+    std::lock_guard artifacts(device->prepared_pipelines_mutex);
+    auto &prepared = device->prepared_pipelines;
+    std::erase_if(prepared, [](const auto &entry) { return entry.pipeline.expired(); });
+    for (const auto &entry : prepared) {
+      if (entry.bindings != description.storage_bindings ||
+          entry.push_bytes != description.push_constant_bytes ||
+          entry.storage_granularity != storage_granularity || entry.rebindable != rebindable ||
+          !std::ranges::equal(entry.specialization, description.specialization,
+              [](const auto &a, const auto &b) { return a.id == b.id && a.value == b.value; }) ||
+          !std::ranges::equal(entry.code, description.code)) continue;
+      if (auto pipeline = entry.pipeline.lock()) return pipeline;
+    }
+    PreparedPipeline artifact;
+    artifact.code.assign(description.code.begin(), description.code.end());
+    artifact.specialization.assign(description.specialization.begin(), description.specialization.end());
+    artifact.bindings = description.storage_bindings;
+    artifact.push_bytes = description.push_constant_bytes;
+    artifact.storage_granularity = storage_granularity;
+    artifact.rebindable = rebindable;
     auto pipeline = std::make_shared<Pipeline>();
     pipeline->device = device;
     pipeline->bindings = description.storage_bindings;
     pipeline->push_bytes = description.push_constant_bytes;
+    pipeline->storage_granularity = storage_granularity;
     std::vector<VkDescriptorSetLayoutBinding> bindings(pipeline->bindings);
     std::vector<VkDescriptorBindingFlags> binding_flags(
         pipeline->bindings,
@@ -168,6 +189,8 @@ create_pipeline(const std::shared_ptr<Device> &device,
     device->fn.DestroyShaderModule(device->native.device, shader, nullptr);
     if (!status.ok())
       return std::unexpected(status);
+    artifact.pipeline = pipeline;
+    prepared.push_back(std::move(artifact));
     return pipeline;
   } catch (const std::bad_alloc &) {
     return std::unexpected(
@@ -202,9 +225,7 @@ create_halfword_pipeline(const std::shared_ptr<Device> &device,
                          const SpirvDescription &description) noexcept {
   if (!device->provider.native().storage_buffer16)
     return std::unexpected(Status::Unimplemented("Vulkan raw16 shader needs enabled storage16"));
-  HYLE_ASSIGN_OR_RETURN(auto pipeline, create_pipeline(device, description));
-  pipeline->storage_granularity = 2;
-  return pipeline;
+  return create_pipeline(device, description, 2);
 }
 
 Result<VkDescriptorBufferInfo>

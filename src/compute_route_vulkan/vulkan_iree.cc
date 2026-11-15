@@ -442,20 +442,11 @@ Status lower_native_cast(ProgramState &program, std::uint32_t input,
   try {
     PlanStep convert{Operation(Cast{program.values[output].description.data_type()}),
         {input}, {output}, {}, {1, 1, 1}, {}};
-    if (iree_operation(program, convert)) return lower_iree(program, convert);
     const auto &source = program.values[input].description;
     const auto &destination = program.values[output].description;
-    const bool widen = source.data_type() == DataType::kBFloat16 &&
-                      destination.data_type() == DataType::kFloat32;
-    const bool narrow = source.data_type() == DataType::kFloat32 &&
-                       destination.data_type() == DataType::kBFloat16;
-    const auto &wide = widen ? destination : source;
-    if ((widen || narrow) && source.is_plain() && source.is_dense() &&
-        destination.is_plain() && destination.is_dense() &&
-        std::ranges::equal(source.dimensions(), destination.dimensions()) &&
-        !iree_precision_supported(*program.runtime->device, wide) &&
-        tensor_bfloat_rounding_supported(*program.runtime->device, wide))
+    if (tensor_representation_cast_supported(*program.runtime->device, source, destination))
       return lower_tensor(program, convert);
+    if (iree_operation(program, convert)) return lower_iree(program, convert);
     if (!managed_operation(program, convert))
       return Status::Unimplemented("Vulkan original typed conversion domain");
     Plan local;
@@ -564,15 +555,15 @@ create_iree_stage(const std::shared_ptr<Run> &run, const Dispatch &dispatch,
           std::span(borrowed.data(), borrowed_count),
           [port](const auto &entry) { return entry.index == port; });
     }
-    HYLE_ASSIGN_OR_RETURN(stage->input_copy, create_run(run->runtime));
+    HYLE_ASSIGN_OR_RETURN(stage->input_copy, create_recording_run(run->runtime));
     if (std::ranges::any_of(std::span(stage->inputs.data(), stage->input_count),
                            [](const auto &input) { return input.constant && !input.borrowed; })) {
-      HYLE_ASSIGN_OR_RETURN(stage->constant_copy, create_run(run->runtime));
+      HYLE_ASSIGN_OR_RETURN(stage->constant_copy, create_recording_run(run->runtime));
     }
-    HYLE_ASSIGN_OR_RETURN(stage->output_copy, create_run(run->runtime));
+    HYLE_ASSIGN_OR_RETURN(stage->output_copy, create_recording_run(run->runtime));
     stage->finite_input_flag = iv::official_checked(spec.kind);
     if (iree_requires_staging(spec.kind)) {
-      HYLE_ASSIGN_OR_RETURN(stage->flag_copy, create_run(run->runtime));
+      HYLE_ASSIGN_OR_RETURN(stage->flag_copy, create_recording_run(run->runtime));
       HYLE_ASSIGN_OR_RETURN(stage->flag,
                             allocate_buffer(run->runtime->device, 4, true, false,
                                 {.budget = run->allocation.resource_budget,

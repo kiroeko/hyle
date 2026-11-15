@@ -31,12 +31,12 @@ bool has_mature_dispatch(const v::Program &program) {
 }
 
 TEST(VulkanManaged,
-     D5Qwen35OfficialAllRegionShapesReachMatureProvidersInOneBatch) {
+     D5Qwen35OfficialRegionMathAndRepresentationBoundariesUseQualifiedCarriers) {
   auto context = vulkan_test::context().value();
   const auto workload =
       d5_qwen35_fixture::workload(c::WorkloadPhase::kDecode, 0xd5);
   const auto check = [&](std::string_view name, c::Operation operation,
-                         std::span<const c::TensorDesc> inputs) {
+                         std::span<const c::TensorDesc> inputs, bool mature_math = true) {
     SCOPED_TRACE(name);
     std::vector<v::Argument> arguments;
     arguments.reserve(inputs.size());
@@ -44,7 +44,14 @@ TEST(VulkanManaged,
       arguments.emplace_back(input);
     auto program = v::prepare(context, operation, arguments, workload);
     ASSERT_TRUE(program) << program.error().message();
-    EXPECT_TRUE(has_mature_dispatch(*program));
+    if (mature_math) EXPECT_TRUE(has_mature_dispatch(*program));
+    else {
+      const auto &dispatches = d::Access::program(*program)->dispatches;
+      EXPECT_FALSE(dispatches.empty());
+      EXPECT_TRUE(std::ranges::all_of(dispatches, [](const auto &dispatch) {
+        return dispatch.pipeline && !dispatch.region && !dispatch.iree;
+      }));
+    }
     EXPECT_EQ(program->workload(), workload);
   };
 
@@ -126,6 +133,6 @@ TEST(VulkanManaged,
   check("R14-projection", c::Operation(c::MatMul{}),
         std::array{joined, mtp_weight});
   check("R15-boundary", c::Operation(c::Cast{c::DataType::kFloat32}),
-        std::array{activation});
+        std::array{activation}, false);
 }
 } // namespace
