@@ -129,10 +129,42 @@ create_pipeline(const std::shared_ptr<Device> &device,
     compute.stage.pName = "main";
     compute.stage.pSpecializationInfo =
         entries.empty() ? nullptr : &specialization;
+#if defined(__linux__)
+    const auto compile = [&](VkPipelineCache cache) {
+      return native_status(device->fn.CreateComputePipelines(
+                               device->native.device, cache, 1, &compute,
+                               nullptr, &pipeline->handle),
+                           "vkCreateComputePipelines");
+    };
+    // Dozen enters its NIR/DXIL reuse path only with an explicit native cache.
+    // Other drivers retain their existing compiler preference: a broader cache
+    // regressed their measured preparation or prepared replay. This cold
+    // preference changes neither supported operations nor dispatch state.
+    if (device->environment.driver_name != "Dozen") {
+      status = compile(VK_NULL_HANDLE);
+    } else {
+      // Vulkan requires external synchronization for a shared pipeline cache.
+      // This lock and lookup are cold only; recording/submit never use them.
+      std::lock_guard lock(device->pipeline_cache_mutex);
+      if (device->pipeline_cache == VK_NULL_HANDLE) {
+        VkPipelineCacheCreateInfo cache{};
+        cache.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+        VkPipelineCache prepared = VK_NULL_HANDLE;
+        status = native_status(device->fn.CreatePipelineCache(
+                                   device->native.device, &cache, nullptr,
+                                   &prepared),
+                               "vkCreatePipelineCache");
+        if (status.ok()) device->pipeline_cache = prepared;
+      }
+      if (status.ok())
+        status = compile(device->pipeline_cache);
+    }
+#else
     status = native_status(device->fn.CreateComputePipelines(
                                device->native.device, VK_NULL_HANDLE, 1,
                                &compute, nullptr, &pipeline->handle),
                            "vkCreateComputePipelines");
+#endif
     device->fn.DestroyShaderModule(device->native.device, shader, nullptr);
     if (!status.ok())
       return std::unexpected(status);

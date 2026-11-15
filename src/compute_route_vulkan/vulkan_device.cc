@@ -15,6 +15,13 @@
 
 namespace hyle::compute::vulkan::detail {
 
+#if defined(__linux__)
+Device::~Device() {
+  if (pipeline_cache != VK_NULL_HANDLE)
+    fn.DestroyPipelineCache(native.device, pipeline_cache, nullptr);
+}
+#endif
+
 struct SmallMemoryPage final {
   std::shared_ptr<Device> device;
   mem::QuotaAllocator::Reservation charge;

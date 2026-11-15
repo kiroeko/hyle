@@ -8,6 +8,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <memory>
 #include <mutex>
@@ -76,6 +77,10 @@ struct NativeBoundary final {
        fail_idle = false;
   bool fail_bind_memory = false, fail_descriptors = false;
   bool fail_flush = false, fail_invalidate = false;
+#if defined(__linux__)
+  bool fail_pipeline_cache = false;
+  bool pipeline_cache_attempted = false;
+#endif
   RetirementGate *wait_gate = nullptr;
   std::atomic<bool> wait_gate_taken{false};
   bool fail_gated_wait = false;
@@ -104,6 +109,9 @@ struct NativeBoundary final {
     device.fn.AllocateDescriptorSets = allocate_descriptors;
     device.fn.FlushMappedMemoryRanges = flush_ranges;
     device.fn.InvalidateMappedMemoryRanges = invalidate_ranges;
+#if defined(__linux__)
+    device.fn.CreatePipelineCache = create_pipeline_cache;
+#endif
   }
   ~NativeBoundary() {
     device.fn = original;
@@ -115,6 +123,19 @@ struct NativeBoundary final {
     return wait_changed.wait_for(lock, std::chrono::seconds(3),
                                  [&] { return completed_waits != 0; });
   }
+#if defined(__linux__)
+  static VKAPI_ATTR VkResult VKAPI_CALL create_pipeline_cache(
+      VkDevice device, const VkPipelineCacheCreateInfo *info,
+      const VkAllocationCallbacks *allocator, VkPipelineCache *cache) {
+    active->pipeline_cache_attempted = true;
+    if (std::exchange(active->fail_pipeline_cache, false)) {
+      // Failed native creation cannot publish an unspecified output handle.
+      std::memset(cache, 0xa5, sizeof(*cache));
+      return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+    return active->original.CreatePipelineCache(device, info, allocator, cache);
+  }
+#endif
   static VKAPI_ATTR VkResult VKAPI_CALL queue_submit(VkQueue queue,
                                                      std::uint32_t count,
                                                      const VkSubmitInfo *info,
@@ -225,6 +246,26 @@ struct DrainLeaseContext final {
   v::Context &context;
   ~DrainLeaseContext() { context.close().IgnoreError(); }
 };
+
+#if defined(HYLE_VULKAN_TEST_SHADER) && defined(__linux__)
+TEST(VulkanLifecycle, PipelineCacheAllocationFailureLeavesColdPreparationRetryable) {
+  auto context = t::context().value();
+  NativeBoundary boundary(context);
+  boundary.fail_pipeline_cache = true;
+  const auto rejected = t::affine(context);
+  if (!boundary.pipeline_cache_attempted) {
+    ASSERT_TRUE(rejected) << rejected.error().message();
+    GTEST_SKIP() << "The selected native compiler retains its uncached pipeline preference";
+  }
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsResourceExhausted());
+  // Retry on the same real device. A failed cold allocation neither closes
+  // the endpoint nor leaves a partially accepted executable behind.
+  const auto kernel = t::affine(context);
+  ASSERT_TRUE(kernel) << kernel.error().message();
+  EXPECT_TRUE(context.close().ok());
+}
+#endif
 
 TEST(VulkanLeaseLifetime,
      CancellationAndAbandonmentKeepImportedOwnerUntilDrain) {

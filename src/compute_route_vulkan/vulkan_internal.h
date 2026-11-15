@@ -69,6 +69,14 @@ inline RouteFacts route_facts(const Environment &environment) noexcept {
   X(EnumerateDeviceExtensionProperties)                                        \
   X(GetDeviceProcAddr)
 
+#if defined(__linux__)
+#define HYLE_VULKAN_PIPELINE_CACHE_FUNCTIONS(X)                                \
+  X(CreatePipelineCache)                                                       \
+  X(DestroyPipelineCache)
+#else
+#define HYLE_VULKAN_PIPELINE_CACHE_FUNCTIONS(X)
+#endif
+
 #define HYLE_VULKAN_DEVICE_FUNCTIONS(X)                                        \
   X(CreateBuffer)                                                              \
   X(DestroyBuffer)                                                             \
@@ -111,7 +119,8 @@ inline RouteFacts route_facts(const Environment &environment) noexcept {
   X(CmdBindPipeline)                                                           \
   X(CmdBindDescriptorSets)                                                     \
   X(CmdPushConstants)                                                          \
-  X(CmdDispatch)
+  X(CmdDispatch)                                                               \
+  HYLE_VULKAN_PIPELINE_CACHE_FUNCTIONS(X)
 
 struct InstanceFunctions final {
 #define HYLE_VULKAN_DECLARE(name) PFN_vk##name name = nullptr;
@@ -147,6 +156,14 @@ struct Device final {
   // every live range; this pool keeps only weak page references.
   std::shared_ptr<SmallAllocationPool> small_allocations;
   VkDeviceSize maximum_allocation_bytes = 0;
+#if defined(__linux__)
+  // Driver-owned compiled artifacts shared only by this native device. Cold
+  // pipeline creation supplies exact shader/layout/specialization identities;
+  // dispatches keep their original independent pipelines and retirement.
+  std::mutex pipeline_cache_mutex;
+  VkPipelineCache pipeline_cache = VK_NULL_HANDLE;
+  ~Device();
+#endif
 };
 
 struct BufferBudget;
