@@ -183,6 +183,43 @@ TEST(AppleRegion, RejectsForeignStreamPendingInputAndWrongShape) {
   EXPECT_FLOAT_EQ(result->get()->arrays()[0].data<float>()[1], -2.f);
 }
 
+TEST(AppleRegion, CompletionPublishesAllIndependentNativeOutputsReady) {
+  auto context = apple::Context::create();
+  ASSERT_TRUE(context);
+  std::array inputs{mx::full({256, 256}, 0.25f),
+                    mx::full({256, 256}, 0.5f)};
+  mx::eval({inputs[0], inputs[1]});
+  for (auto &input : inputs)
+    input.wait();
+  auto program = context->compile(
+      [](const auto &args, mx::Stream stream) {
+        return std::vector<mx::array>{
+            mx::matmul(args[0], args[0], stream),
+            mx::matmul(args[1], args[1], stream)};
+      }, inputs);
+  ASSERT_TRUE(program) << program.error().message();
+  auto invocation = program->create_invocation();
+  ASSERT_TRUE(invocation);
+  ASSERT_TRUE(invocation->bind(inputs).ok());
+  auto work = invocation->submit();
+  ASSERT_TRUE(work);
+  auto result = work->wait();
+  ASSERT_TRUE(result);
+  ASSERT_EQ(result->get()->arrays().size(), 2u);
+  for (std::size_t port = 0; port < 2; ++port) {
+    const auto &output = result->get()->arrays()[port];
+    // data() could otherwise hide incomplete native work by evaluating it.
+    EXPECT_TRUE(output.is_available());
+    const auto *data = output.data<float>();
+    const float expected = port == 0 ? 16.f : 64.f;
+    for (std::size_t index = 0; index < output.size(); ++index)
+      ASSERT_EQ(data[index], expected) << port << ':' << index;
+  }
+  ASSERT_TRUE(context->close().ok());
+  EXPECT_EQ(result->get()->arrays()[0].data<float>()[0], 16.f);
+  EXPECT_EQ(result->get()->arrays()[1].data<float>()[0], 64.f);
+}
+
 TEST(AppleRegion, AbandonAndConcurrentWaitSurviveContextClose) {
   auto context = apple::Context::create();
   ASSERT_TRUE(context);

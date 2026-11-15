@@ -340,10 +340,14 @@ std::vector<mx::array> prepare_mlx(MlxProgram &program, RegionFunction region,
 
 Status evaluate_mlx(const MlxProgram &program,
                     const std::vector<mx::array> &inputs,
-                    std::vector<mx::array> &outputs, mx::Stream stream) {
+                    std::vector<mx::array> &outputs) {
   outputs = program.compiled(inputs);
-  mx::async_eval(outputs);
-  mx::synchronize(stream);
+  // MLX eval waits the original graph's synchronizer event and checks its
+  // native error. A second stream synchronize commits an otherwise empty
+  // command buffer after that graph and adds another host/device boundary.
+  mx::eval(outputs);
+  // Synchronous eval has retired the GPU work; retain the public ready-array
+  // contract before a following native region borrows its physical buffer.
   for (auto &output : outputs)
     output.wait();
   if (!program.checks->present)
@@ -502,7 +506,7 @@ Status evaluate_batch(RuntimeBatchInvocationState& state, mx::Stream stream) {
   const auto a=fn.initial.host(),b=state.layout.host();
   const auto equal=[](auto x,auto y){return x.size()==y.size() && std::equal(x.begin(),x.end(),y.begin());};
   if(equal(a.kv_indptr,b.kv_indptr) && equal(a.last_page_lengths,b.last_page_lengths))
-    return evaluate_mlx(*state.program,state.inputs,state.values->arrays,stream);
+    return evaluate_mlx(*state.program,state.inputs,state.values->arrays);
   CheckTrace trace;
   HYLE_ASSIGN_OR_RETURN(auto outputs,fn.build(state.layout,state.inputs,stream));
   // This private builder has the same cold-validated, selected-stream topology.
@@ -561,7 +565,7 @@ Status evaluate_attention_blocks(const AttentionBlocks &program, InvocationState
       args.push_back(ports[4]);
     }
     const auto &part=end-begin==128 ? program.full : *program.tail;
-    HYLE_RETURN_IF_ERROR(evaluate_mlx(part,args,outputs,stream));
+    HYLE_RETURN_IF_ERROR(evaluate_mlx(part,args,outputs));
     blocks.push_back(std::move(outputs[0]));
     outputs.clear();args.clear();
     begin=end;
@@ -590,7 +594,7 @@ Status execute_plan(InvocationState &state, mx::Stream stream) {
       state.arguments.push_back(*values[id]);
     if (region.kind == RegionKind::kMlx) {
       HYLE_RETURN_IF_ERROR(evaluate_mlx(*prepared.mlx[i], state.arguments,
-                                        state.region_outputs, stream));
+                                        state.region_outputs));
     } else if (region.kind == RegionKind::kAttentionBlocks) {
       HYLE_RETURN_IF_ERROR(evaluate_attention_blocks(*prepared.attention_blocks[i],state,stream));
     } else {
@@ -723,7 +727,7 @@ void execute_invocation(Job* job) noexcept {
   auto& state=*static_cast<InvocationState*>(job);
   execute_with(state,[&](mx::Stream stream){
     return state.program->native ? execute_plan(state,stream) :
-        evaluate_mlx(*state.program,state.inputs,state.values->arrays,stream);
+        evaluate_mlx(*state.program,state.inputs,state.values->arrays);
   });
 }
 void execute_batch_invocation(Job* job) noexcept {
