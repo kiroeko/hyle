@@ -256,7 +256,7 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
       if (diagnostic) for (const auto *output : phase.probe_facts)
         fixed_count += output && output->caller_owned();
       const auto readback_count = bool(phase.sampling_valid_port) + bool(phase.sampling_accept_port) +
-          (completion == TextCompletion::kEmitNext) + drafts_token(role) +
+          (completion == TextCompletion::kEmitNext) + bool(phase.delivery_id_port) + drafts_token(role) +
           bool(phase.successor_token_port) + bool(phase.successor_catchup_port) +
           bool(phase.successor_accepted_count_port) + bool(phase.successor_prefix_index_port) +
           bool(phase.successor_pending_port) + bool(phase.successor_lag_port) + bool(phase.successor_selected_catchup_port);
@@ -289,8 +289,12 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
           io.ordinary_io.packet_history_select ? io.input_packet.history_select() : io.history_select.read()));
       if (packed_verify) check(program_slot.io.add_fixed(phase.prefix_ids_port, io.prefix_ids.read()));
       if (io.logits.caller_owned()) check(program_slot.io.add_fixed_output(phase.logits_port, io.logits.view()));
-      if (completion == TextCompletion::kEmitNext)
-        io.next_id = take(program_slot.io.add_readback(phase.id_port, execution.storage_domains(), allocation_budget));
+      if (completion == TextCompletion::kEmitNext) {
+        io.source_id = take(program_slot.io.add_readback(phase.id_port, execution.storage_domains(), allocation_budget));
+        io.next_id = phase.delivery_id_port
+            ? take(program_slot.io.add_readback(phase.delivery_id_port, execution.storage_domains(), allocation_budget))
+            : io.source_id;
+      }
       if (phase.successor_token_port)
         io.successor_token = take(program_slot.io.add_readback(phase.successor_token_port, execution.storage_domains(), allocation_budget));
       if (phase.successor_catchup_port)
@@ -321,7 +325,8 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
       check(program_slot.io.seal());
       // Only these ordinary host-consumed results share a copy episode.
       // Device relay outputs and their full original writers remain unchanged.
-      if (ordinary_io.batched_small_results(bool(phase.sampling_valid_port), bool(phase.sampling_accept_port))) {
+      if (!phase.delivery_id_port &&
+          ordinary_io.batched_small_results(bool(phase.sampling_valid_port), bool(phase.sampling_accept_port))) {
         const std::array<const inference::PreparedReadback *, 2> results{
             take(program_slot.io.readback(io.sampling_valid)), take(program_slot.io.readback(io.next_id))};
         auto prepared = inference::PreparedReadbackBatch::prepare(execution, results, execution_budget);

@@ -3014,7 +3014,7 @@ public:
           (phase.family->role != GraphRole::kMtpContinuation || device_mtp_continuous_enabled()))) {
         if (phase.family->completion == TextCompletion::kEmitNext)
           next.token = output_view(mtp ? (device_pair ? phase.slots[slot].data.successor_pending
-              : phase.slots[slot].data.successor_token) : phase.slots[slot].data.next_id);
+              : phase.slots[slot].data.successor_token) : phase.slots[slot].data.source_id);
         if (mtp) next.catchup = output_view(device_pair ? phase.slots[slot].data.successor_selected_catchup
             : phase.slots[slot].data.successor_catchup);
         if (device_pair) next.prefix = output_view(phase.slots[slot].data.successor_prefix_index);
@@ -4370,7 +4370,7 @@ public:
     const bool native_handoff = queues.empty() && phase.next_id_owner && !storage.context_identity() &&
         phase.next_id_owner.endpoint_identity() == storage.endpoint_identity();
     if (!storage || (queues.size() != 1 && !native_handoff) ||
-        (!prefill && !take(phase.slots[step.state_slot].io.readback(phase.slots[step.state_slot].data.next_id))->pool().valid()))
+        (!prefill && !take(phase.slots[step.state_slot].io.readback(phase.slots[step.state_slot].data.source_id))->pool().valid()))
       throw inference::EvaluationFailure(hyle::Status::Unimplemented(
           "submission views require the original qualified endpoint and full token writer"));
     const bool device_choice = device_mtp_successor_ && mtp && bool(phase.successor_prefix_index_port);
@@ -4462,7 +4462,7 @@ public:
           step.execution.completion, {}, execution.storage_owner(), false,
           step.replay_route != g::ReplayRoute::kCaptured));
       else {
-        const auto *readback = take(program_slot.io.readback(io.next_id));
+        const auto *readback = take(program_slot.io.readback(io.source_id));
         const std::array outputs{inference::SubmissionViews::OutputCapture{phase.id_port, phase.next_id_owner, readback->pool()}};
         captured = take(sources.capture_outputs(*step.execution.run, step.execution.completion,
             outputs, execution.storage_owner(), optional_sources, program_slot.carrier.queues().empty()));

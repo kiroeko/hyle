@@ -806,6 +806,10 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
           (selected_sampler.enabled && has_mtp(role)) || (packed_prefill && is_mtp_prefill(role)))
         definition.id_port = r.copy(definition.id_port);
       r.publish(definition.logits_port); r.publish(definition.id_port);
+      if (control_storage) {
+        definition.delivery_id_port = r.reshape(definition.id_port, {batch, f(1)});
+        r.publish(definition.delivery_id_port);
+      }
     }
     if (successor_eligible) {
       // Two complete, independently owned I32[1] outputs. OutputSource cannot
@@ -903,13 +907,16 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         if (definition.sampling_valid_port) external_contracts.push_back({definition.sampling_valid_port, *native_results});
       }
       if (control_storage) {
-        // Only metadata uses host staging. The original token writer and
-        // predecessor input stay on the primary device for Source handoff.
+        // Metadata and scalar delivery use host staging. The original token
+        // writer and predecessor input stay on the device for Source handoff.
         external_contracts.push_back({definition.token_port, g::StorageDomainId{0}});
         external_contracts.push_back({definition.id_port, g::StorageDomainId{0}});
         external_contracts.push_back({definition.position_port, *control_storage});
         if (definition.sampling_identity_port)
           external_contracts.push_back({definition.sampling_identity_port, *control_storage});
+        external_contracts.push_back({definition.delivery_id_port, *control_storage});
+        if (definition.sampling_valid_port)
+          external_contracts.push_back({definition.sampling_valid_port, *control_storage});
       }
       selected_options.external_resources = external_contracts;
     }

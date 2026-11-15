@@ -49,7 +49,9 @@ struct PhaseIo final {
   Tensor predecessor_prefix;
   Tensor draft_hidden_select, draft_token_select, draft_last_ids;
   std::vector<std::int32_t> draft_hidden_indices, draft_token_indices;
-  inference::ProgramIo::Readback next_id, draft_id, sampling_valid, sampling_accept;
+  // next_id selects the prepared delivery port; source_id always names the
+  // original full token writer. They alias when no separate delivery is used.
+  inference::ProgramIo::Readback next_id, source_id, draft_id, sampling_valid, sampling_accept;
   inference::ProgramIo::Readback successor_token, successor_catchup;
   inference::ProgramIo::Readback successor_accepted_count, successor_prefix_index,
       successor_pending, successor_lag, successor_selected_catchup;

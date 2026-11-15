@@ -47,6 +47,9 @@ struct FamilyPorts {
   std::size_t draft_chain_steps=0;
   std::vector<DraftChainStage> draft_chain;
   V token_port, position_port, last_ids_port, metadata_port, logits_port, id_port, hidden_port;
+  // Optional host delivery of the selected ID. The original device id_port
+  // remains the complete writer used by predecessor Sources.
+  V delivery_id_port;
   V image_features_port, image_mask_port, position_cosine_port, position_sine_port;
   V sampling_identity_port, sampling_valid_port, sampling_accept_port;
   V sequence_offsets_port, history_select_port, prefix_ids_port;

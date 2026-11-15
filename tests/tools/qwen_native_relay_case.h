@@ -67,6 +67,11 @@ inline void run_recording_rng(const std::filesystem::path &input, bool control_i
             io.positions.storage().resource() == model->execution.staging() &&
             io.sampling_identities.storage().resource() == model->execution.staging(),
             "prepared ordinary controls or device token lost their exact owners");
+        h::require(phase->delivery_id_port && !io.ordinary_io.batched_results() &&
+            q::take(phase->slots[index].io.readback(io.source_id))->resource() == model->execution.device() &&
+            q::take(phase->slots[index].io.readback(io.next_id))->resource() == model->execution.staging() &&
+            q::take(phase->slots[index].io.readback(io.sampling_valid))->resource() == model->execution.staging(),
+            "ordinary scalar delivery escaped the original Graph or moved the device Source");
         ++control_slots;
       }
     }
