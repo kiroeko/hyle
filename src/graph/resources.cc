@@ -2269,11 +2269,16 @@ Result<mem::MemoryResourceRef> RegionAccess::projection_resource(const Executabl
   return plan->storage_domains[a].resource;
 }
 Status RegionAccess::validate_projection_binding(Invocation&invocation,ResourceProjection projection,
-    compute::ConstTensorView tensor,std::span<const compute::ReadLease>pages,bool pending)noexcept{
+    compute::ConstTensorView tensor,std::span<const compute::ReadLease>pages,bool pending,
+    bool retired_handoff)noexcept{
   auto*state=InvocationAccess::state(invocation);HYLE_ASSIGN_OR_RETURN(auto*episode, require_resources(state));
-  HYLE_ASSIGN_OR_RETURN(auto resource,projection_resource(invocation.executable(),projection));
-  HYLE_ASSIGN_OR_RETURN(auto access,projection_access(*state->plan,state,projection));
-  if(pending && !access.allows_pending)
+  HYLE_ASSIGN_OR_RETURN(auto resource,RegionAccess::projection_resource(invocation.executable(),projection));
+  HYLE_ASSIGN_OR_RETURN(auto access,RegionAccess::projection_access(*state->plan,state,projection));
+  // A checked Store Gather behind the exact native whole-producer handoff
+  // never executes with pending rows. Graph retains the original tickets and
+  // waits for success/retirement before admitting its existing lease batch.
+  // Other pending projections still require the selected native importer.
+  if(pending && !access.allows_pending && !retired_handoff)
     return Status::Unimplemented("selected projected reader has no pending source admission");
   const auto capacity=projection.capacity;
   auto*binding=find_binding(state,capacity);
@@ -2289,6 +2294,10 @@ Status RegionAccess::validate_projection_binding(Invocation&invocation,ResourceP
         view.offset()-storage.offset()>storage.size() || view.size()>storage.size()-(view.offset()-storage.offset()))
       return Status::InvalidArgument("row page guard outside original capacity");}
   return Status::Ok();
+}
+Status RegionAccess::validate_projection_binding(Invocation&invocation,ResourceProjection projection,
+    compute::ConstTensorView tensor,std::span<const compute::ReadLease>pages,bool pending)noexcept{
+  return validate_projection_binding(invocation,projection,tensor,pages,pending,false);
 }
 Status RegionAccess::validate_pending_projection(Invocation &invocation,
     ResourceProjection projection, compute::ConstTensorView tensor) noexcept {
@@ -3732,7 +3741,8 @@ Result<StoreProjectionInputs> RegionAccess::store_source_projection(
       found->store->submission.get() != bundle.submission.get())
     return std::unexpected(Status::InvalidArgument("Store projection differs from its actual retained Store entry"));
   HYLE_ASSIGN_OR_RETURN(auto access, projection_access(*state->plan, state, projection));
-  if (found->store_ready.empty() && !access.allows_pending)
+  if (found->store_ready.empty() && !access.allows_pending &&
+      !(bundle.submission->handoff && bundle.submission->native_execution))
     return std::unexpected(Status::Unimplemented("selected Store reader cannot import pending source permissions"));
   HYLE_RETURN_IF_ERROR(validate_bound_store(*state, *found));
   const auto step = state->plan->node_steps[projection.reader.ordinal()];
@@ -4991,8 +5001,8 @@ Status bind_sources(Invocation &invocation, std::span<const SourceBinding> bindi
       }
       if (!entry.store) continue;
       if (entry.store_ready.empty())
-        HYLE_RETURN_IF_ERROR(RegionAccess::validate_pending_projection(invocation,
-            entry.projection, entry.store->capacity));
+        HYLE_RETURN_IF_ERROR(RegionAccess::validate_projection_binding(invocation,
+            entry.projection, entry.store->capacity, {}, true, source->handoff && bool(source->native_execution)));
       else HYLE_RETURN_IF_ERROR(RegionAccess::validate_ready_projection(invocation,
           entry.projection, entry.store->capacity, entry.store_ready));
       HYLE_ASSIGN_OR_RETURN(auto ids, entry.store->indices_guard.view());

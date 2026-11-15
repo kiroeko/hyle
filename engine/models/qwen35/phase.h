@@ -66,6 +66,9 @@ struct Phase final : FamilyPorts {
   // The selected child is shared immutable model data, not copied per session.
   const inference::PreparedProgram *child = nullptr;
   const Family *family = nullptr;
+  // Exact caller-owned token allocation selected from this compiled child's
+  // report. Source capture borrows it without a hot resource/domain search.
+  c::StorageOwner next_id_owner;
   bool imported_sources = false;
   std::vector<StateBank> state_banks;
   using ExecutionSlots = inference::ProgramSlots<ColdResources, PhaseIo, execution_slot_count>;

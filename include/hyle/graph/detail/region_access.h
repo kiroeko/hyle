@@ -8,7 +8,9 @@ namespace hyle::graph {
 struct ProviderRegionPreparedVTable;
 struct ProviderRegionPrepared;
 class SubmissionSource;
+class SourceBinding;
 HYLE_GRAPH_API Status release_sources(Invocation &) noexcept;
+HYLE_GRAPH_API Status bind_sources(Invocation &, std::span<const SourceBinding>) noexcept;
 }
 namespace hyle::compute::detail { class AppendLease; class ReadLeaseGroup; }
 namespace hyle::graph::detail {
@@ -421,6 +423,9 @@ struct RegionAccess final {
 private:
   static Status validate_projection_binding(Invocation&,ResourceProjection,
       compute::ConstTensorView,std::span<const compute::ReadLease>,bool) noexcept;
+  static Status validate_projection_binding(Invocation&,ResourceProjection,
+      compute::ConstTensorView,std::span<const compute::ReadLease>,bool,bool retired_handoff) noexcept;
+  friend HYLE_GRAPH_API Status hyle::graph::bind_sources(Invocation &, std::span<const SourceBinding>) noexcept;
 public:
   // Cold successful idle caller output only; empty after readonly publication.
   HYLE_GRAPH_API static Result<compute::WriteLease> take_write(

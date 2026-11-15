@@ -706,12 +706,14 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
       if (has_mtp(role) || repair_draft) definition.state_sources.push_back({port.store, port.gather});
     }
     definition.hidden_port = last;
-    // Private View outputs cannot lend an independent storage lease to a
-    // transfer. Materialize only ordinary CUDA host-consumed small results;
-    // their original types/values stay exact and Graph owns every Copy.
-    const bool caller_small_results = OrdinaryIoCapabilities{
+    // Private Views cannot lend a full writer. Native outputs additionally
+    // need their explicit original allocation domain at compile time below.
+    const OrdinaryIoCapabilities ordinary_io{
         .backend = execution.kind(), .role = role, .completion = completion,
-        .packing = packing, .cpu_assist = execution.has_cpu_assist(), .diagnostic = diagnostic}.caller_small_results();
+        .packing = packing, .cpu_assist = execution.has_cpu_assist(), .diagnostic = diagnostic};
+    const auto native_results = prepared.emit_successor
+        ? native_ordinary_result_storage(execution, ordinary_io) : std::nullopt;
+    const bool caller_small_results = ordinary_io.caller_small_results() || native_results.has_value();
     const auto publish_valid = [&] {
       if (caller_small_results || (selected_sampler.enabled && has_mtp(role)))
         definition.sampling_valid_port = r.copy(definition.sampling_valid_port);
@@ -799,7 +801,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
       // A packed MTP token may be a reshape View of the native TopK result.
       // Keep its published bytes outside reusable Invocation scratch, exactly
       // as ordinary caller-owned small results, without another sampler draw.
-      if ((caller_small_results && definition.sampling_valid_port) ||
+      if (native_results || (caller_small_results && definition.sampling_valid_port) ||
           (selected_sampler.enabled && has_mtp(role)) || (packed_prefill && is_mtp_prefill(role)))
         definition.id_port = r.copy(definition.id_port);
       r.publish(definition.logits_port); r.publish(definition.id_port);
@@ -890,7 +892,16 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
 #if defined(HYLE_TEST_INFERENCE_WARM_COST) && HYLE_TEST_INFERENCE_WARM_COST
     inference::testing::record_compile();
 #endif
-    auto compiled = execution.compile(definition.graph, assembly.constants(), assembly.options(compile_options));
+    auto selected_options = assembly.options(compile_options);
+    std::vector<g::ExternalResourceContract> external_results;
+    if (native_results) {
+      external_results.assign(selected_options.external_resources.begin(), selected_options.external_resources.end());
+      external_results.push_back({definition.token_port, *native_results});
+      external_results.push_back({definition.id_port, *native_results});
+      if (definition.sampling_valid_port) external_results.push_back({definition.sampling_valid_port, *native_results});
+      selected_options.external_resources = external_results;
+    }
+    auto compiled = execution.compile(definition.graph, assembly.constants(), selected_options);
     if (!compiled && (packed_target || compact_draft) && compiled.error().IsUnimplemented() && !compiled.error().has_native_error()) {
       family_log([&](std::ostream &out) {
         out << "cold_family_refusal packing=" << static_cast<unsigned>(packing)

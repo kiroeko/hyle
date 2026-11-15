@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 
 #include "execution_mode.h"
 #include "../../inference/backend.h"
@@ -33,6 +34,27 @@ struct OrdinaryIoCapabilities final {
     return caller_small_results() && !imported_sources && has_valid && !has_accept;
   }
 };
+
+// A queue-free native program needs an explicit external allocation domain
+// before its small outputs can lend the original full writer. Qualify the
+// existing endpoint/resource owners here; Graph still qualifies each actual
+// transfer and the compiled output's ownership. This creates no resource.
+inline std::optional<hyle::graph::StorageDomainId> native_ordinary_result_storage(
+    const hyle::inference::Backend &execution, const OrdinaryIoCapabilities &facts) noexcept {
+  if (facts.role != GraphRole::kText || facts.completion != TextCompletion::kEmitNext ||
+      facts.cpu_assist || facts.diagnostic || !execution.queue_bindings().empty()) return {};
+  const auto &primary = execution.storage_owner();
+  if (!primary || primary.context_identity() || !primary.endpoint_identity() ||
+      execution.staging() == execution.device()) return {};
+  const auto domains = execution.storage_domains();
+  for (std::size_t index = 0; index < domains.size(); ++index) {
+    const auto &domain = domains[index];
+    if (domain.resource == execution.staging() && domain.owner &&
+        domain.owner.endpoint_identity() == primary.endpoint_identity())
+      return hyle::graph::StorageDomainId{static_cast<std::uint32_t>(index)};
+  }
+  return {};
+}
 
 enum class OrdinaryInputMode : std::uint8_t { kSeparate, kPacket };
 enum class OrdinaryResultMode : std::uint8_t { kSeparate, kBatchBool, kBatchFloat };

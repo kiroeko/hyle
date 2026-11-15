@@ -4361,10 +4361,13 @@ public:
       throw std::runtime_error("submission views require one complete supported prepared episode");
     auto &phase = *step.phase;
     const auto &storage = execution.storage_owner();
-    if (!storage || phase.slots[step.state_slot].carrier.queues().size() != 1 ||
+    const auto queues = phase.slots[step.state_slot].carrier.queues();
+    const bool native_handoff = queues.empty() && phase.next_id_owner && !storage.context_identity() &&
+        phase.next_id_owner.endpoint_identity() == storage.endpoint_identity();
+    if (!storage || (queues.size() != 1 && !native_handoff) ||
         (!prefill && !take(phase.slots[step.state_slot].io.readback(phase.slots[step.state_slot].data.next_id))->pool().valid()))
       throw inference::EvaluationFailure(hyle::Status::Unimplemented(
-          "submission views require the original owned shared Queue and full token writer"));
+          "submission views require the original qualified endpoint and full token writer"));
     const bool device_choice = device_mtp_successor_ && mtp && bool(phase.successor_prefix_index_port);
     auto sources = std::make_shared<StepSources>();
     sources->mtp_full_candidate = mtp;
@@ -4453,8 +4456,12 @@ public:
       } else if (sources.prefill) captured = take(sources.capture_outputs(*step.execution.run,
           step.execution.completion, {}, execution.storage_owner(), false,
           step.replay_route != g::ReplayRoute::kCaptured));
-      else captured = take(sources.capture(*step.execution.run, step.execution.completion,
-          phase.id_port, execution.storage_owner(), take(program_slot.io.readback(io.next_id))->pool(), optional_sources));
+      else {
+        const auto *readback = take(program_slot.io.readback(io.next_id));
+        const std::array outputs{inference::SubmissionViews::OutputCapture{phase.id_port, phase.next_id_owner, readback->pool()}};
+        captured = take(sources.capture_outputs(*step.execution.run, step.execution.completion,
+            outputs, execution.storage_owner(), optional_sources, program_slot.carrier.queues().empty()));
+      }
       if (!captured) step.execution.sources.reset();
     }
     step.submit_seconds = std::chrono::duration<double>(Clock::now() - step.start).count();

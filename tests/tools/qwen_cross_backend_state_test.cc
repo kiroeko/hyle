@@ -6,6 +6,7 @@
 #include "qwen_depth_case.h"
 #include "inference_program_carrier_case.h"
 #include "inference_native_handoff_case.h"
+#include "qwen_native_relay_case.h"
 
 int main(int argc, char **argv) {
   try {
@@ -13,8 +14,9 @@ int main(int argc, char **argv) {
     const bool carrier = argc == 3 && std::string_view(argv[2]) == "--carrier-probe";
     const bool handoff = argc == 3 && std::string_view(argv[2]) == "--native-handoff-probe";
     const bool prefix_repair = argc == 6 && std::string_view(argv[5]) == "--prefix-repair-probe";
-    if (argc != 5 && !depth && !carrier && !handoff && !prefix_repair) throw std::runtime_error(
-        "usage: qwen_cross_backend_state_test cpu|cuda|apple|vulkan INPUTS off|K3 CPU_FFN_LAYERS [--depth-probe|--prefix-repair-probe]; or BACKEND --carrier-probe|--native-handoff-probe");
+    const bool native_relay = argc == 6 && std::string_view(argv[5]) == "--native-relay-probe";
+    if (argc != 5 && !depth && !carrier && !handoff && !prefix_repair && !native_relay) throw std::runtime_error(
+        "usage: qwen_cross_backend_state_test cpu|cuda|apple|vulkan INPUTS off|K3 CPU_FFN_LAYERS [--depth-probe|--prefix-repair-probe|--native-relay-probe]; or BACKEND --carrier-probe|--native-handoff-probe");
     const std::string_view name(argv[1]);
     auto kind = qwen35::BackendKind::kDefault;
     if (name == "cpu") kind = qwen35::BackendKind::kCpu;
@@ -29,6 +31,11 @@ int main(int argc, char **argv) {
     std::size_t consumed = 0;
     const auto layers = std::stoull(argv[4], &consumed);
     if (consumed != std::string_view(argv[4]).size()) throw std::runtime_error("invalid CPU placement");
+    if (native_relay) {
+      if (mode != "off" || layers) throw std::runtime_error("native relay consumer requires ordinary GPU-only");
+      for (const bool random : {false, true}) qwen_native_relay_case::run(argv[2], kind, random);
+      return 0;
+    }
     if (depth) return qwen_depth_case::run(argv[2], kind, mode == "K3", layers);
     if (prefix_repair) {
       if (mode != "K3") throw std::runtime_error("prefix repair requires the prepared three-draft consumer");

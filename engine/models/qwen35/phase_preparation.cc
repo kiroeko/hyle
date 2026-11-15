@@ -46,6 +46,11 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
   const OrdinaryIoCapabilities ordinary_io{.backend = execution.kind(), .role = role,
       .completion = completion, .packing = packing, .cpu_assist = execution.has_cpu_assist(),
       .diagnostic = diagnostic, .imported_sources = imported_sources};
+  auto native_results = native_ordinary_result_storage(execution, ordinary_io);
+  if (native_results) {
+    const auto &output = selection.child.output(definition.id_port);
+    if (!output.caller_owned() || output.storage != *native_results) native_results.reset();
+  }
     auto result = std::make_unique<Phase>();
     auto &phase = *result;
     phase.imported_sources = imported_sources;
@@ -56,6 +61,11 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
     phase.attention_schema = definition.attention_schema;
     phase.child = &selection.child;
     phase.family = &definition;
+    if (completion == TextCompletion::kEmitNext) {
+      const auto &output = phase.child->output(phase.id_port);
+      if (output.caller_owned())
+        phase.next_id_owner = take(execution.storage_owner_for(take(execution.resource_for(output.storage))));
+    }
     std::vector<inference::SlotTransactionSpec> transactions;
     phase.state_banks.reserve(phase.state_sources.size() + (phase.hidden_state.store.valid() ? 1u : 0u));
     transactions.reserve(phase.state_banks.capacity());
@@ -152,7 +162,8 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
         io.ordinary_io.packet_sampling_identities = sampling_identity;
       }
       if (!io.ordinary_io.packet()) {
-        io.tokens = phase_tensor(allocation_budget, execution.device(), token_description);
+        io.tokens = phase_tensor(allocation_budget,
+            native_results ? take(execution.resource_for(*native_results)) : execution.device(), token_description);
         io.positions = phase_tensor(allocation_budget, execution.device(), position_description);
       }
       if (phase.predecessor_prefix_port) {

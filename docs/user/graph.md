@@ -1191,6 +1191,9 @@ HYLE_RETURN_IF_ERROR(done.wait());
 `submit_sources`等待原提交整体成功并实际退休，再把读取权限接纳到消费者原来的lease use batch。
 共享工作区允许这类纯元数据准备重叠，
 原生提交和capture仍独占工作区；生产者失败会在消费者原生提交前原样返回。
+原生handoff也可接续`StoreSource`的checked Gather。Graph保留原Store票据和真实索引权限，
+在完整生产者成功退休后才接纳读取；这不要求或授予后端导入pending行的能力。
+普通`submit()`仍不能绕过这条Source接纳路径。
 
 `OutputSource`仍要求完整的caller-owned writer。原生算子的`Copy`输出也可能由Invocation拥有；
 需要固定外部结果时，用`ExternalResourceContract`明确指定原有的GPU可访问输出分配域，
