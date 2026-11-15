@@ -10,7 +10,7 @@ namespace h = qwen_host_image_case;
 
 // The first public request can inherit an empty recording Session. Its cursor
 // must match a later request and an independently loaded serial executor.
-inline void run_recording_rng(const std::filesystem::path &input) {
+inline void run_recording_rng(const std::filesystem::path &input, bool control_inputs = false) {
   namespace i = hyle::inference;
   i::ModelLoadConfig config;
   config.assets.inputs = input;
@@ -49,12 +49,37 @@ inline void run_recording_rng(const std::filesystem::path &input) {
   h::require(imported_uses >= 16 && !model->active_step && !model->successor_step &&
       !model->carrier_borrowed && !model->snapshot_versions.live,
       "recording RNG regression did not exercise and retire its real relay");
+  std::size_t control_slots = 0;
+  if (control_inputs) {
+    h::require(q::ordinary_control_storage(model->execution, {}).has_value(),
+        "ordinary controls have no original queued staging owner");
+    for (const auto &[shape, phase] : model->phases) {
+      (void)shape;
+      if (phase->family->role != q::GraphRole::kText ||
+          phase->family->completion != q::TextCompletion::kEmitNext ||
+          phase->family->packing != q::RowPacking::kRectangular) continue;
+      h::require(phase->next_id_owner.ref() == model->execution.device(),
+          "ordinary successor token writer moved away from its device domain");
+      for (std::size_t index = 0; index < phase->slots.size(); ++index) {
+        auto &io = phase->slots[index].data;
+        h::require(!io.ordinary_io.packet() &&
+            io.tokens.storage().resource() == model->execution.device() &&
+            io.positions.storage().resource() == model->execution.staging() &&
+            io.sampling_identities.storage().resource() == model->execution.staging(),
+            "prepared ordinary controls or device token lost their exact owners");
+        ++control_slots;
+      }
+    }
+    h::require(control_slots >= 3, "ordinary controls did not cover the finite physical slots");
+  }
   executor.reset(); model.reset();
   config.execution_profiles[0].overlap = false;
   auto serial = q::load_model_executor(config);
   h::require(first == generate(*serial), "cold recorded and serial requests used different RNG draws");
-  std::cout << "PASS recording_request_rng backend=cuda seed=42 logical_stream=7 outputs=48"
+  std::cout << (control_inputs ? "PASS ordinary_control_inputs" : "PASS recording_request_rng")
+            << " backend=cuda seed=42 logical_stream=7 outputs=48"
             << " first_reused_serial_ids=equal imported_uses=" << imported_uses
+            << " control_slots=" << control_slots
             << " retired=1\n" << std::flush;
 }
 

@@ -344,7 +344,10 @@ private:
       state.queues[state.queue_count++] = {.lane = graph::ExecutionLaneId{1}, .queue = &endpoint.queue};
     }
 #endif
-    if (result.native_generated_storage() || selection.cpu_assist)
+    // Expose an existing distinct staging owner to cold Graph placement even
+    // on a single queued endpoint. Registering it creates no allocation/queue.
+    if (result.native_generated_storage() || selection.cpu_assist ||
+        (staging_owner && state.staging != state.device))
       state.domains[state.domain_count++] = {
           .resource = state.staging, .workspace_budget_bytes = budgets.staging, .owner = std::move(staging_owner)};
     return result;

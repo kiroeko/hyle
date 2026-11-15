@@ -35,6 +35,28 @@ struct OrdinaryIoCapabilities final {
   }
 };
 
+// Cold fixed metadata may be uploaded by the original Graph queue. Keep the
+// token port in its device domain so an actual predecessor Source still binds
+// without a host roundtrip. The concrete transfer/capture is qualified by Graph
+// on these exact owners, not inferred from a backend name or model geometry.
+inline std::optional<hyle::graph::StorageDomainId> ordinary_control_storage(
+    const hyle::inference::Backend &execution, const OrdinaryIoCapabilities &facts) noexcept {
+  if (facts.role != GraphRole::kText || facts.completion != TextCompletion::kEmitNext ||
+      facts.packing != RowPacking::kRectangular || facts.cpu_assist || facts.diagnostic ||
+      execution.queue_bindings().size() != 1 || !execution.staging() || execution.staging() == execution.device() ||
+      !execution.staging().properties().has(hyle::mem::MemoryProperty::kHostAccessible)) return {};
+  const auto &primary = execution.storage_owner();
+  if (!primary || !primary.context_identity()) return {};
+  const auto domains = execution.storage_domains();
+  for (std::size_t index = 0; index < domains.size(); ++index) {
+    const auto &domain = domains[index];
+    if (domain.resource == execution.staging() && domain.owner &&
+        domain.owner.context_identity() == primary.context_identity())
+      return hyle::graph::StorageDomainId{static_cast<std::uint32_t>(index)};
+  }
+  return {};
+}
+
 // A queue-free native program needs an explicit external allocation domain
 // before its small outputs can lend the original full writer. Qualify the
 // existing endpoint/resource owners here; Graph still qualifies each actual

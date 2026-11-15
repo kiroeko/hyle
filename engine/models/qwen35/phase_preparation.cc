@@ -46,6 +46,8 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
   const OrdinaryIoCapabilities ordinary_io{.backend = execution.kind(), .role = role,
       .completion = completion, .packing = packing, .cpu_assist = execution.has_cpu_assist(),
       .diagnostic = diagnostic, .imported_sources = imported_sources};
+  const auto control_storage = ordinary_control_storage(execution, ordinary_io);
+  const auto control_resource = control_storage ? take(execution.resource_for(*control_storage)) : execution.device();
   auto native_results = native_ordinary_result_storage(execution, ordinary_io);
   if (native_results) {
     const auto &output = selection.child.output(definition.id_port);
@@ -137,7 +139,7 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
       }
       const bool sampling_identity = selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify;
       const bool last_ids = (requests != 1 || packed_prefill) && !verifies_prefix(role);
-      if (ordinary_io.packet_inputs()) {
+      if (ordinary_io.packet_inputs() && !control_storage) {
         InputPacket::MetadataDescriptions metadata;
         if (packed_prefill) {
           metadata.last_ids = dense(Type::kInt32, {static_cast<std::int64_t>(requests)});
@@ -164,13 +166,13 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
       if (!io.ordinary_io.packet()) {
         io.tokens = phase_tensor(allocation_budget,
             native_results ? take(execution.resource_for(*native_results)) : execution.device(), token_description);
-        io.positions = phase_tensor(allocation_budget, execution.device(), position_description);
+        io.positions = phase_tensor(allocation_budget, control_resource, position_description);
       }
       if (phase.predecessor_prefix_port) {
         io.predecessor_prefix = phase_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {1}));
       }
       if (sampling_identity && !io.ordinary_io.packet_sampling_identities) {
-        io.sampling_identities = phase_tensor(allocation_budget, execution.device(), phase.batched_text_sampling
+        io.sampling_identities = phase_tensor(allocation_budget, control_resource, phase.batched_text_sampling
             ? dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 4})
             : dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 3, 4}));
       }

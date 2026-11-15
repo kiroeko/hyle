@@ -713,6 +713,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         .packing = packing, .cpu_assist = execution.has_cpu_assist(), .diagnostic = diagnostic};
     const auto native_results = prepared.emit_successor
         ? native_ordinary_result_storage(execution, ordinary_io) : std::nullopt;
+    const auto control_storage = ordinary_control_storage(execution, ordinary_io);
     const bool caller_small_results = ordinary_io.caller_small_results() || native_results.has_value();
     const auto publish_valid = [&] {
       if (caller_small_results || (selected_sampler.enabled && has_mtp(role)))
@@ -893,13 +894,24 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     inference::testing::record_compile();
 #endif
     auto selected_options = assembly.options(compile_options);
-    std::vector<g::ExternalResourceContract> external_results;
-    if (native_results) {
-      external_results.assign(selected_options.external_resources.begin(), selected_options.external_resources.end());
-      external_results.push_back({definition.token_port, *native_results});
-      external_results.push_back({definition.id_port, *native_results});
-      if (definition.sampling_valid_port) external_results.push_back({definition.sampling_valid_port, *native_results});
-      selected_options.external_resources = external_results;
+    std::vector<g::ExternalResourceContract> external_contracts;
+    if (native_results || control_storage) {
+      external_contracts.assign(selected_options.external_resources.begin(), selected_options.external_resources.end());
+      if (native_results) {
+        external_contracts.push_back({definition.token_port, *native_results});
+        external_contracts.push_back({definition.id_port, *native_results});
+        if (definition.sampling_valid_port) external_contracts.push_back({definition.sampling_valid_port, *native_results});
+      }
+      if (control_storage) {
+        // Only metadata uses host staging. The original token writer and
+        // predecessor input stay on the primary device for Source handoff.
+        external_contracts.push_back({definition.token_port, g::StorageDomainId{0}});
+        external_contracts.push_back({definition.id_port, g::StorageDomainId{0}});
+        external_contracts.push_back({definition.position_port, *control_storage});
+        if (definition.sampling_identity_port)
+          external_contracts.push_back({definition.sampling_identity_port, *control_storage});
+      }
+      selected_options.external_resources = external_contracts;
     }
     auto compiled = execution.compile(definition.graph, assembly.constants(), selected_options);
     if (!compiled && (packed_target || compact_draft) && compiled.error().IsUnimplemented() && !compiled.error().has_native_error()) {

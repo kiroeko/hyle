@@ -16,8 +16,9 @@ int main(int argc, char **argv) {
     const bool prefix_repair = argc == 6 && std::string_view(argv[5]) == "--prefix-repair-probe";
     const bool native_relay = argc == 6 && std::string_view(argv[5]) == "--native-relay-probe";
     const bool recording_rng = argc == 6 && std::string_view(argv[5]) == "--recording-rng-probe";
-    if (argc != 5 && !depth && !carrier && !handoff && !prefix_repair && !native_relay && !recording_rng) throw std::runtime_error(
-        "usage: qwen_cross_backend_state_test cpu|cuda|apple|vulkan INPUTS off|K3 CPU_FFN_LAYERS [--depth-probe|--prefix-repair-probe|--native-relay-probe|--recording-rng-probe]; or BACKEND --carrier-probe|--native-handoff-probe");
+    const bool control_inputs = argc == 6 && std::string_view(argv[5]) == "--control-inputs-probe";
+    if (argc != 5 && !depth && !carrier && !handoff && !prefix_repair && !native_relay && !recording_rng && !control_inputs) throw std::runtime_error(
+        "usage: qwen_cross_backend_state_test cpu|cuda|apple|vulkan INPUTS off|K3 CPU_FFN_LAYERS [--depth-probe|--prefix-repair-probe|--native-relay-probe|--recording-rng-probe|--control-inputs-probe]; or BACKEND --carrier-probe|--native-handoff-probe");
     const std::string_view name(argv[1]);
     auto kind = qwen35::BackendKind::kDefault;
     if (name == "cpu") kind = qwen35::BackendKind::kCpu;
@@ -32,10 +33,10 @@ int main(int argc, char **argv) {
     std::size_t consumed = 0;
     const auto layers = std::stoull(argv[4], &consumed);
     if (consumed != std::string_view(argv[4]).size()) throw std::runtime_error("invalid CPU placement");
-    if (recording_rng) {
+    if (recording_rng || control_inputs) {
       if (kind != qwen35::BackendKind::kCuda || mode != "off" || layers)
         throw std::runtime_error("recording RNG regression requires ordinary CUDA GPU-only");
-      qwen_native_relay_case::run_recording_rng(argv[2]);
+      qwen_native_relay_case::run_recording_rng(argv[2], control_inputs);
       return 0;
     }
     if (native_relay) {
