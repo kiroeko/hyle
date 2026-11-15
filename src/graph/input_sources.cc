@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <limits>
 #include <new>
 #include <tuple>
 #include <utility>
@@ -37,21 +38,27 @@ struct Prepared final {
         orders(mem::StdAllocator<Order>(allocator)),
         uses(mem::StdAllocator<Use>(allocator)),
         ranges(mem::StdAllocator<Range>(allocator)),
+        native_ranges(mem::StdAllocator<Range>(allocator)),
+        native_dependencies(mem::StdAllocator<compute::detail::CompletionDependency>(allocator)),
         results(mem::StdAllocator<std::size_t>(allocator)),
         ready(mem::StdAllocator<unsigned char>(allocator)) {}
   void clear() noexcept {
-    uses.clear(); ranges.clear(); orders.clear(); results.clear(); ready.clear(); sources.clear();
+    uses.clear(); ranges.clear(); native_ranges.clear(); native_dependencies.clear();
+    orders.clear(); results.clear(); ready.clear(); sources.clear();
     report = {}; valid = false;
   }
   void swap(Prepared &other) noexcept {
     sources.swap(other.sources); orders.swap(other.orders); uses.swap(other.uses);
     ranges.swap(other.ranges); results.swap(other.results); ready.swap(other.ready);
+    native_ranges.swap(other.native_ranges); native_dependencies.swap(other.native_dependencies);
     std::swap(report, other.report); std::swap(valid, other.valid);
   }
   Vector<InputSource> sources;
   Vector<Order> orders;
   Vector<Use> uses;
   Vector<Range> ranges;
+  Vector<Range> native_ranges;
+  Vector<compute::detail::CompletionDependency> native_dependencies;
   Vector<std::size_t> results;
   Vector<unsigned char> ready;
   InputSourceReport report{};
@@ -473,8 +480,11 @@ Status prepare_input_sources(InvocationState &state,
         if (route != InputDependencyRoute::kHostWait &&
             route != InputDependencyRoute::kDeviceWait)
           return Status::Internal("immutable input source returned an invalid route");
-        if (!queue && route != InputDependencyRoute::kHostWait)
-          return Status::Unimplemented("immutable input source has no delegated import adapter");
+        if (!queue && route == InputDependencyRoute::kDeviceWait) {
+          HYLE_ASSIGN_OR_RETURN(auto capacity,
+              native_input_source_capacity(source, state, consumer.segment));
+          (void)capacity;
+        }
         if (route == InputDependencyRoute::kHostWait && policy == HostWaitPolicy::kReject)
           return Status::Unimplemented("immutable input source requires a forbidden host wait");
         candidate.orders.push_back({consumer.source, consumer.group, route, false, false});
@@ -491,6 +501,34 @@ Status prepare_input_sources(InvocationState &state,
       if (range.count == 0) range.begin = index;
       ++range.count;
     }
+    // Allocate only for actual external native imports. Ordinary Queue/host
+    // inputs retain their old buffers and execution path.
+    for (const auto &use : candidate.uses) {
+      const auto &segment = plan.segments[use.segment];
+      const auto &order = candidate.orders[use.order];
+      if (shared_lane(plan, segment.lane) || order.route != InputDependencyRoute::kDeviceWait)
+        continue;
+      if (candidate.native_ranges.empty()) candidate.native_ranges.resize(plan.segments.size());
+      auto &range = candidate.native_ranges[use.segment];
+      if (range.count == 0) range.count = segment.dependency_count;
+      HYLE_ASSIGN_OR_RETURN(auto capacity,
+          native_input_source_capacity(candidate.sources[order.source], state, use.segment));
+      if (capacity > std::numeric_limits<std::size_t>::max() - range.count)
+        return Status::ResourceExhausted("native input dependency capacity overflow");
+      range.count += capacity;
+    }
+    std::size_t total = 0;
+    for (std::size_t index = 0; index < candidate.native_ranges.size(); ++index) {
+      auto &range = candidate.native_ranges[index];
+      if (!range.count) continue;
+      range.begin = total;
+      if (range.count > std::numeric_limits<std::size_t>::max() - total)
+        return Status::ResourceExhausted("native input dependency storage overflow");
+      total += range.count;
+      HYLE_ASSIGN_OR_RETURN(auto step, delegated_step_index(plan, plan.segments[index]));
+      HYLE_RETURN_IF_ERROR(state.invocations[step].region.reserve_dependencies(range.count));
+    }
+    candidate.native_dependencies.resize(total);
     candidate.report.source_count = candidate.sources.size();
     candidate.valid = true;
     return Status::Ok();
@@ -560,6 +598,59 @@ Status enqueue_input_sources(InvocationState &state, std::size_t segment,
     order.used = accepted;
   }
   return Status::Ok();
+}
+namespace {
+struct NativeInputAdmission final {
+  Prepared &prepared;
+  Range uses;
+  std::span<compute::detail::CompletionDependency> dependencies;
+  void *receiver;
+  NativeInputSubmit submit;
+  std::size_t next = 0, count = 0;
+  Result<compute::Completion> completion = std::unexpected(
+      Status::Internal("native input receiver was not called"));
+};
+Status admit_native_inputs(NativeInputAdmission &call) noexcept {
+  while (call.next < call.uses.count) {
+    const auto &use = call.prepared.uses[call.uses.begin + call.next++];
+    const auto &order = call.prepared.orders[use.order];
+    if (order.route != InputDependencyRoute::kDeviceWait) continue;
+    return with_native_input_source(call.prepared.sources[order.source],
+        call.dependencies.subspan(call.count), &call,
+        [](void *opaque, std::span<const compute::detail::CompletionDependency> imported) noexcept {
+          auto &c = *static_cast<NativeInputAdmission *>(opaque);
+          c.count += imported.size();
+          return admit_native_inputs(c);
+        });
+  }
+  call.completion = call.submit(call.receiver, call.dependencies.first(call.count));
+  if (!call.completion) return call.completion.error();
+  return Status::Ok();
+}
+} // namespace
+Result<compute::Completion> submit_native_input_sources(InvocationState &state,
+    std::size_t segment, std::span<const compute::detail::CompletionDependency> internal,
+    void *receiver, NativeInputSubmit submit) noexcept {
+  if (!state.input_sources) return submit(receiver, internal);
+  HYLE_ASSIGN_OR_RETURN(auto *active, prepared_for(state, segment));
+  if (active->native_ranges.empty() || !active->native_ranges[segment].count)
+    return submit(receiver, internal);
+  const auto reserved = active->native_ranges[segment];
+  auto dependencies = std::span(active->native_dependencies).subspan(reserved.begin, reserved.count);
+  if (internal.size() > dependencies.size())
+    return std::unexpected(Status::Internal("native input dependencies exceed their cold capacity"));
+  std::copy(internal.begin(), internal.end(), dependencies.begin());
+  NativeInputAdmission call{*active, active->ranges[segment], dependencies, receiver, submit};
+  call.count = internal.size();
+  const auto status = admit_native_inputs(call);
+  if (!status.ok()) return std::unexpected(status);
+  // Every segment imports through its own actual native queue. Do not dedup
+  // later imports merely because two queues share an endpoint/import domain.
+  for (std::size_t i = call.uses.begin; i < call.uses.begin + call.uses.count; ++i) {
+    auto &order = active->orders[active->uses[i].order];
+    if (order.route == InputDependencyRoute::kDeviceWait) order.used = true;
+  }
+  return std::move(call.completion);
 }
 Result<bool> input_results_ready(InvocationState &state) noexcept {
   if (!state.input_sources) return true;

@@ -136,17 +136,31 @@ bool borrow_native(RetainedCompletionState &state, Completion &native) noexcept 
   return true;
 }
 void return_native(RetainedCompletionState &state, Completion native,
-                   const Status &terminal = Status::Ok()) noexcept {
+                   const Status &terminal = Status::Ok(),
+                   bool forward_pending_cancel = false) noexcept {
   bool abandoned = false;
   Status hint;
-  {
-    std::lock_guard guard(state.lock);
-    HYLE_FATAL_ASSERT(state.native_active && !state.original.valid());
-    state.terminal.Update(terminal);
-    abandoned = state.abandoned;
-    hint = state.terminal;
-    if (!abandoned) state.original = std::move(native);
-    state.native_active = false;
+  for (;;) {
+    bool cancel = false;
+    {
+      std::lock_guard guard(state.lock);
+      HYLE_FATAL_ASSERT(state.native_active && !state.original.valid());
+      // A dependency admission can outlive a concurrent cancel call. Decide
+      // delivery and return under the same lock, leaving native_active set
+      // while invoking the backend. Later cancellation owns the restored cell.
+      cancel = forward_pending_cancel && state.cancel_requested;
+      if (cancel) {
+        forward_pending_cancel = false;
+      } else {
+        state.terminal.Update(terminal);
+        abandoned = state.abandoned;
+        hint = state.terminal;
+        if (!abandoned) state.original = std::move(native);
+        state.native_active = false;
+      }
+    }
+    if (!cancel) break;
+    if (native.valid()) (void)native.request_cancel();
   }
   if (abandoned) {
     CompletionAccess::append_terminal(native, hint);
@@ -464,6 +478,46 @@ Result<CompletionDependency> RetainedCompletion::native_dependency(const Complet
   }
   return std::unexpected(Status::ResourceExhausted("copy producer retained dependency depth exceeded"));
 }
+
+namespace {
+Status use_native_dependency(const Completion &source, void *opaque,
+    RetainedCompletion::NativeDependencyUse use, unsigned depth) noexcept {
+  if (depth == 32)
+    return Status::ResourceExhausted("producer retained dependency depth exceeded");
+  const auto dependency = CompletionAccess::dependency(source);
+  if (dependency.terminal_hint && !dependency.terminal_hint->ok())
+    return *dependency.terminal_hint;
+  if (dependency.vtable != &proxy_vtable) return use(opaque, dependency);
+
+  auto &state = *static_cast<RetainedCompletionState *>(dependency.state);
+  Completion native;
+  {
+    std::lock_guard guard(state.lock);
+    if (state.phase != RetainedPhase::Installed || state.native_active)
+      return Status::Unavailable("producer completion admission is pending");
+    if (!state.terminal.ok()) return state.terminal;
+    if (state.cancel_requested)
+      return Status::Cancelled("producer completion cancellation requested");
+    state.incref(); // public abandonment/root reset may run inside admission
+    state.native_active = true;
+    native = std::move(state.original);
+  }
+  // Unknown backend/compound vtables remain opaque. Keep every known wrapper's
+  // original cell borrowed until the receiver has pinned the native episode.
+  const auto result = use_native_dependency(native, opaque, use, depth + 1);
+  return_native(state, std::move(native), Status::Ok(), true);
+  state.decref();
+  return result;
+}
+} // namespace
+
+Status RetainedCompletion::with_native_dependency(const Completion &source,
+    void *state, NativeDependencyUse use) noexcept {
+  if (!source.valid() || !use)
+    return Status::InvalidArgument("producer dependency admission requires a completion and callback");
+  return use_native_dependency(source, state, use, 0);
+}
+
 struct DependentCompletionState final : util::RefCounted<DependentCompletionState> {
   explicit DependentCompletionState(mem::AllocatorRef selected) noexcept
       : allocator(selected) {}

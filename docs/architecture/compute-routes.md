@@ -47,17 +47,23 @@ arrays/metadata，应按实际managed成本描述；不能从compile名称推断
 已准备的ggml-Metal region可在原命令缓冲尾部发布SharedEvent，MLX消费者显式编码GPU等待。
 MLX event的stream标记不是ggml的原生Queue身份，不能据此省略等待。原输入array、输出和Source
 保活到原生终态核对；事件就绪不代替错误检查或公共Completion的权限退休。关闭公共接纳后，
-原owner仍排空已接纳工作的完成通知。整张Graph的Source交接仍可需要HostWait，这与内部region事件桥接分开。
+原owner仍排空已接纳工作的完成通知。整张Graph的Source交接与内部region事件桥接分别资格检查。
 MLX→ggml也可在原命令缓冲等待输入事件；冷期根据实际region能力准备这条路径。
 算子的设备检查结果由原Invocation保活，退休时按region顺序核对，保留首个错误并阻止失败输出发布。
 后续原生算子需在CPU读取索引时，仍先完成前缀检查与退休；所选MLX region通过原生事件交接GPU依赖。
 冷期为有界原生region准备单命令缓冲，实际具备完整事件能力的计划复用最后一个原生region的完成通知。
 通知仅将原Invocation的退休Job交回原owner；完整MLX/原生前缀、输入Source、错误与权限仍按原合同核对。
-整段计划可以交接待完成array，不增加终态GPU命令缓冲；这不替代整张Graph的Source依赖适配。
+整段计划可以交接待完成array，不增加终态GPU命令缓冲。
 同一Metal端点可以包含ggml与MLX两条原生队列；Graph内部region的纯控制依赖也须显式导入，
 不能凭端点相同省略等待。依赖容量在冷期按实际Plan预留，执行时保留原生产者的提交代际，
 等待其原生/MLX事件，并在原owner退休时核对完整失败结果。数学与复制Job复用这套原生依赖交接；
 CPU必须读取的索引或复制仍先核对生产者，空复制也不能丢掉尚未完成的控制依赖。
+
+整张原生Graph的Source可由具备实际终态端点的原提交导出；冷期逐一核对消费者是否能导入生产者的
+所有终态端点，并为原执行槽预留依赖容量。接纳期间借用原RetainedCompletion，防止并发drain消费
+仍在交给后端的句柄；后端在回调返回前保留原Job和提交代际。每段消费者按自己的原生队列导入，
+不能凭公共端点相同跳过后段。消费者真正退休后仍核对原生产者的完整结果，失败不得发布输出。
+这条路径保留原输出writer与权限；显式create_handoff仍是先等待完整生产者的HostWait合同。
 等待按真实队列来源区分：MLX只导入ggml队列的事件，ggml只导入MLX事件；同一原生队列的后续
 region复用首次成功提交的等待。原生产者的完整错误与代际仍独立核对，不用MLX的stream标记推断队列身份。
 

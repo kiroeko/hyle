@@ -87,11 +87,22 @@ public:
   // native retirement. An empty/unpublished root reports its cached terminal.
   HYLE_COMPUTE_API Result<CompletionPoll> poll() noexcept;
   HYLE_COMPUTE_API Status wait() noexcept;
-  // F2 opt-in dependency bridge. Resolves only this known retained owner;
-  // arbitrary backend/compound vtables remain opaque. The source owner stays
-  // alive and its control/observations are serialized through native use.
+  // Identity-only dependency bridge. Resolves only this known retained owner;
+  // arbitrary backend/compound vtables remain opaque. Every original observer
+  // must stay serialized until the receiver captures its own native reference.
+  // Use with_native_dependency when an independent root drain may observe it.
   HYLE_COMPUTE_API static Result<CompletionDependency>
   native_dependency(const Completion &source) noexcept;
+  // Borrow the original native handle through one synchronous admission. Root
+  // drain/poll cannot consume it before use returns. The callback must capture
+  // its own native references before returning; it must not wait on this root.
+  // No backend hook runs under the observation lock, and a callback rejection
+  // does not become a producer failure. Concurrent cancellation is forwarded
+  // before returning the borrowed handle. An uninstalled/busy owner rejects
+  // without waiting for native work or allocating another observation slot.
+  using NativeDependencyUse = Status (*)(void *, CompletionDependency) noexcept;
+  HYLE_COMPUTE_API static Status with_native_dependency(
+      const Completion &source, void *state, NativeDependencyUse use) noexcept;
   HYLE_COMPUTE_API void reset() noexcept;
 private:
   explicit RetainedCompletion(RetainedCompletionState *state) noexcept : state_(state) {}

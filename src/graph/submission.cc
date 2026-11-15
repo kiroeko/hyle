@@ -987,8 +987,17 @@ detail::SegmentSubmission detail::SubmissionCursor::submit_segment(
                       state_->completion_dependencies.data() +
                           segment.dependency_begin,
                       imported_count);
-        auto completion =
-            submit_delegated_segment(*state_, segment, dependencies);
+        struct Admission {
+          detail::InvocationState *state;
+          const detail::PlanSegment *segment;
+        } admission{state_, &segment};
+        auto completion = !state_->input_sources
+            ? submit_delegated_segment(*state_, segment, dependencies)
+            : submit_native_input_sources(*state_, segment_index, dependencies, &admission,
+                [](void *opaque, std::span<const compute::detail::CompletionDependency> imported) noexcept {
+                  auto &call = *static_cast<Admission *>(opaque);
+                  return submit_delegated_segment(*call.state, *call.segment, imported);
+                });
         if (!completion) {
           tail_error = std::move(completion).error();
           continue_segment = false;

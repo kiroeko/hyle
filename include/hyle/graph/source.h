@@ -57,9 +57,12 @@ private:
 // One exact original Graph submission: one proxy, endpoint and whole verdict.
 // Typed views share this identity, but keep their own actual resource proofs.
 // Control calls are externally serialized; source observations use one mutex.
-// Pending device dependencies require one original shared producer Queue.
-// Managed native handoff instead keeps the original native endpoint and waits
-// for whole producer success/retirement before admitting consumer permissions.
+// Pending dependencies use either the original shared Queue or a selected
+// native importer qualified for every original terminal endpoint. Native
+// admission pins those exact accepted episodes through receiver capture;
+// success still reconciles the whole producer after the consumer retires.
+// Explicit create_handoff instead waits for whole producer success/retirement
+// before admitting consumer permissions.
 class SubmissionSource final {
 public:
   SubmissionSource() noexcept = default;

@@ -769,12 +769,202 @@ TEST(CopyDependency, CachedUnknownErrorCannotManufactureNativeSuccessOrRelease) 
   auto dependency = detail::RetainedCompletion::native_dependency(source).value();
   EXPECT_FALSE(dependency.pending());
   EXPECT_TRUE(dependency.terminal_hint->IsUnavailable());
+  unsigned admissions = 0;
+  EXPECT_TRUE(detail::RetainedCompletion::with_native_dependency(source, &admissions,
+      [](void *opaque, detail::CompletionDependency) noexcept {
+        ++*static_cast<unsigned *>(opaque);
+        return hyle::Status::Ok();
+      }).IsUnavailable());
+  EXPECT_EQ(admissions, 0u);
   EXPECT_FALSE(probe.complete);
   ASSERT_TRUE(probe.abandoned.valid());
   probe.complete = true;
   probe.abandoned.terminal(probe.abandoned.state, probe.abandoned_hint);
   probe.abandoned.release(probe.abandoned.state); probe.abandoned = {};
   EXPECT_TRUE(owner.available());
+}
+
+TEST(CopyDependency, ScopedNativeAdmissionPinsNestedOriginalCellsWithoutObserving) {
+  using namespace hyle::compute;
+  auto inner = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  auto outer = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  AsyncProbe native;
+  auto source = outer.publish(inner.publish(detail::CompletionAccess::make(&kAsyncVTable, &native)));
+  struct Admission {
+    detail::RetainedCompletion &inner, &outer;
+    Completion &source;
+    AsyncProbe &native;
+    unsigned calls = 0;
+  } admission{inner, outer, source, native};
+  const auto accepted = detail::RetainedCompletion::with_native_dependency(
+      source, &admission, [](void *opaque, detail::CompletionDependency dependency) noexcept {
+        auto &a = *static_cast<Admission *>(opaque);
+        ++a.calls;
+        EXPECT_EQ(dependency.vtable, &kAsyncVTable);
+        EXPECT_EQ(dependency.state, &a.native);
+        EXPECT_EQ(a.inner.poll().value(), CompletionPoll::kPending);
+        EXPECT_EQ(a.outer.poll().value(), CompletionPoll::kPending);
+        EXPECT_FALSE(detail::RetainedCompletion::native_dependency(a.source));
+        EXPECT_EQ(a.native.polls, 0u);
+        EXPECT_EQ(a.native.waits, 0u);
+        EXPECT_FALSE(a.native.destroyed);
+        return hyle::Status::Ok();
+      });
+  EXPECT_TRUE(accepted.ok());
+  EXPECT_EQ(admission.calls, 1u);
+  ASSERT_TRUE(source.wait().ok());
+  EXPECT_TRUE(inner.available());
+  EXPECT_TRUE(outer.available());
+}
+
+TEST(CopyDependency, ScopedAdmissionRejectionDoesNotPoisonProducer) {
+  using namespace hyle::compute;
+  auto owner = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  AsyncProbe native;
+  auto source = owner.publish(detail::CompletionAccess::make(&kAsyncVTable, &native));
+  const auto rejected = detail::RetainedCompletion::with_native_dependency(
+      source, nullptr, [](void *, detail::CompletionDependency dependency) noexcept {
+        EXPECT_TRUE(dependency.pending());
+        return hyle::Status::ResourceExhausted("consumer rejected admission");
+      });
+  EXPECT_EQ(rejected.code(), hyle::StatusCode::ResourceExhausted);
+  EXPECT_EQ(native.waits, 0u);
+  ASSERT_TRUE(source.wait().ok());
+  EXPECT_TRUE(owner.available());
+}
+
+TEST(CopyDependency, ScopedAdmissionDefersConcurrentRootDrainUntilNativeUseReturns) {
+  using namespace hyle::compute;
+  auto owner = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  AsyncProbe native;
+  auto source = owner.publish(detail::CompletionAccess::make(&kAsyncVTable, &native));
+  struct Admission {
+    explicit Admission(detail::RetainedCompletion &selected) noexcept : owner(selected) {}
+    detail::RetainedCompletion &owner;
+    std::thread drain;
+    std::atomic<bool> observed{false}, finished{false};
+    hyle::Status terminal;
+  } admission{owner};
+  const auto accepted = detail::RetainedCompletion::with_native_dependency(
+      source, &admission, [](void *opaque, detail::CompletionDependency) noexcept {
+        auto &a = *static_cast<Admission *>(opaque);
+        a.drain = std::thread([&] {
+          EXPECT_EQ(a.owner.poll().value(), CompletionPoll::kPending);
+          a.observed.store(true, std::memory_order_release);
+          a.observed.notify_all();
+          a.terminal = a.owner.wait();
+          a.finished.store(true, std::memory_order_release);
+        });
+        a.observed.wait(false, std::memory_order_acquire);
+        EXPECT_FALSE(a.finished.load(std::memory_order_acquire));
+        return hyle::Status::Ok();
+      });
+  admission.drain.join();
+  EXPECT_TRUE(accepted.ok());
+  EXPECT_TRUE(admission.terminal.ok());
+  EXPECT_EQ(native.waits, 1u);
+  EXPECT_TRUE(source.wait().ok());
+  EXPECT_TRUE(owner.available());
+}
+
+TEST(CopyDependency, ScopedAdmissionForwardsCancellationAfterReceiverCapture) {
+  using namespace hyle::compute;
+  auto owner = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  AsyncProbe native;
+  auto source = owner.publish(detail::CompletionAccess::make(&kAsyncVTable, &native));
+  struct Admission { Completion &source; AsyncProbe &native; } admission{source, native};
+  const auto accepted = detail::RetainedCompletion::with_native_dependency(
+      source, &admission, [](void *opaque, detail::CompletionDependency dependency) noexcept {
+        auto &a = *static_cast<Admission *>(opaque);
+        EXPECT_TRUE(a.source.request_cancel().ok());
+        EXPECT_EQ(a.native.cancels, 0u);
+        EXPECT_EQ(dependency.state, &a.native);
+        EXPECT_FALSE(a.native.destroyed);
+        return hyle::Status::Ok();
+      });
+  EXPECT_TRUE(accepted.ok());
+  EXPECT_EQ(native.cancels, 1u);
+  EXPECT_TRUE(source.wait().IsCancelled());
+  EXPECT_TRUE(owner.available());
+}
+
+TEST(CopyDependency, ScopedAdmissionPinsAbandonedOwnerUntilOriginalRetirement) {
+  using namespace hyle::compute;
+  auto owner = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  AsyncProbe native;
+  auto source = owner.publish(detail::CompletionAccess::make(&kAsyncVTable, &native));
+  LifetimeProbe lifetime_probe;
+  detail::CompletionLifetime lifetime{&lifetime_probe, &observe_terminal, &release_lifetime};
+  ASSERT_TRUE(detail::CompletionAccess::attach_lifetime(source, lifetime).ok());
+  struct Admission {
+    detail::RetainedCompletion &owner;
+    Completion &source;
+    AsyncProbe &native;
+  } admission{owner, source, native};
+  const auto accepted = detail::RetainedCompletion::with_native_dependency(
+      source, &admission, [](void *opaque, detail::CompletionDependency dependency) noexcept {
+        auto &a = *static_cast<Admission *>(opaque);
+        a.source = {};
+        a.owner.reset();
+        EXPECT_EQ(dependency.state, &a.native);
+        EXPECT_FALSE(a.native.destroyed);
+        return hyle::Status::Ok();
+      });
+  EXPECT_TRUE(accepted.ok());
+  EXPECT_TRUE(native.destroyed);
+  EXPECT_EQ(lifetime_probe.release_count, 0u);
+  ASSERT_TRUE(native.abandoned.valid());
+  native.complete = true;
+  native.abandoned.terminal(native.abandoned.state, hyle::Status::Ok());
+  native.abandoned.release(native.abandoned.state);
+  native.abandoned = {};
+  EXPECT_EQ(lifetime_probe.release_count, 1u);
+}
+
+TEST(CopyDependency, ScopedAdmissionRejectsInvalidBusyAndFailedSourcesWithoutCallingReceiver) {
+  using namespace hyle::compute;
+  unsigned calls = 0;
+  const auto receiver = [](void *opaque, detail::CompletionDependency) noexcept {
+    ++*static_cast<unsigned *>(opaque);
+    return hyle::Status::Ok();
+  };
+  EXPECT_EQ(detail::RetainedCompletion::with_native_dependency({}, &calls, receiver).code(),
+            hyle::StatusCode::InvalidArgument);
+  auto owner = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  auto pending = owner.publish_pending();
+  EXPECT_TRUE(detail::RetainedCompletion::with_native_dependency(
+      pending.completion, &calls, receiver).IsUnavailable());
+  EXPECT_TRUE(pending.ticket.handoff(Completion::completed()).ok());
+  EXPECT_TRUE(pending.completion.wait().ok());
+  auto cancelled = Completion::completed(hyle::Status::Cancelled("producer cancelled"));
+  EXPECT_TRUE(detail::RetainedCompletion::with_native_dependency(
+      cancelled, &calls, receiver).IsCancelled());
+  auto valid = Completion::completed();
+  EXPECT_EQ(detail::RetainedCompletion::with_native_dependency(valid, nullptr, nullptr).code(),
+            hyle::StatusCode::InvalidArgument);
+  EXPECT_EQ(calls, 0u);
+}
+
+TEST(CopyDependency, ScopedAdmissionDepthRejectionReturnsEveryOriginalCell) {
+  using namespace hyle::compute;
+  std::array<detail::RetainedCompletion,32> owners;
+  AsyncProbe native;
+  auto source=detail::CompletionAccess::make(&kAsyncVTable,&native);
+  for (auto &owner:owners) {
+    owner=detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+    source=owner.publish(std::move(source));
+  }
+  unsigned calls=0;
+  const auto rejected=detail::RetainedCompletion::with_native_dependency(source,&calls,
+      [](void *opaque,detail::CompletionDependency) noexcept {
+        ++*static_cast<unsigned *>(opaque);
+        return hyle::Status::Ok();
+      });
+  EXPECT_EQ(rejected.code(),hyle::StatusCode::ResourceExhausted);
+  EXPECT_EQ(calls,0u);
+  EXPECT_EQ(native.polls,0u);
+  EXPECT_TRUE(source.wait().ok());
+  for (auto &owner:owners) EXPECT_TRUE(owner.available());
 }
 
 TEST(Completion, RetainedObserverDrainsWhilePublicHandleIsHeld) {

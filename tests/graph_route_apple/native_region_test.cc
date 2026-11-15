@@ -3,6 +3,8 @@
 #include "hyle/graph/apple.h"
 #include "hyle/graph/executable.h"
 #include "hyle/graph/detail/region_adapter.h"
+#include "hyle/graph/source.h"
+#include "../../src/compute_route_apple/apple_runtime_internal.h"
 #include "../../src/graph/execution_source_internal.h"
 #include "../../src/compute_route_apple/apple_copy_internal.h"
 #include "hyle/compute/apple_memory.h"
@@ -12,6 +14,12 @@
 #include <bit>
 #include <cstring>
 #include <iostream>
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
+#include <optional>
+#include <thread>
+#include <mlx/backend/metal/event.h>
 
 namespace {
 namespace c = hyle::compute;
@@ -21,6 +29,43 @@ namespace m = hyle::mem;
 
 const auto description = c::TensorDesc::dense(c::DataType::kFloat32,
     std::array<std::int64_t, 1>{4}).value();
+
+// Hold actual GPU progress while leaving the original owner free to admit
+// dependent work. Every test exit opens this original stream event.
+class NativeSourceGpuGate final : public a::detail::Job {
+public:
+  explicit NativeSourceGpuGate(std::shared_ptr<a::detail::Runtime> runtime)
+      : runtime_(std::move(runtime)) {
+    execute = [](a::detail::Job *job) noexcept {
+      auto &gate = *static_cast<NativeSourceGpuGate *>(job);
+      auto event = mlx::core::Event(*gate.runtime_->stream);
+      event.set_value(1);
+      event.wait(*gate.runtime_->stream);
+      auto &encoder = mlx::core::metal::get_command_encoder(*gate.runtime_->stream);
+      encoder.end_encoding();
+      encoder.commit();
+      { std::lock_guard lock(gate.mutex_); gate.event_ = std::move(event); }
+      gate.changed_.notify_all();
+    };
+  }
+  hyle::Status enqueue() {
+    auto status = runtime_->enqueue(*this);
+    if (!status.ok()) return status;
+    std::unique_lock lock(mutex_);
+    changed_.wait(lock, [&] { return event_.valid(); });
+    return hyle::Status::Ok();
+  }
+  void open() {
+    std::lock_guard lock(mutex_);
+    if (event_.valid()) event_.cast<mlx::core::metal::EventImpl>().signal(1);
+  }
+  ~NativeSourceGpuGate() { open(); }
+private:
+  std::shared_ptr<a::detail::Runtime> runtime_;
+  std::mutex mutex_;
+  std::condition_variable changed_;
+  mlx::core::Event event_;
+};
 
 template<class T, std::size_t N>
 c::ReadLease input(const a::MemoryResource &memory, const c::TensorDesc &desc,
@@ -594,5 +639,164 @@ TEST(AppleNativeRegion, OwnedViewFeedbackKeepsOneExactLeaseOwner) {
     expect(computed.tensor(description).value(), std::array<float, 4>{-0.25f, 1.5f, -3.75f, 0.0f});
   }
   EXPECT_EQ(counted.snapshot().live_count, 0U);
+}
+void exercise_native_graph_source(unsigned mode) {
+  auto context = a::Context::create().value();
+  auto memory = a::MemoryResource::create(context).value();
+  auto staging = a::MemoryResource::create(context).value();
+  auto owner = memory.retain_storage_owner(context).value();
+  auto staging_owner = staging.retain_storage_owner(context).value();
+  const std::array domains{g::StorageDomain{.resource=memory.ref(),.owner=owner},
+      g::StorageDomain{.resource=staging.ref(),.owner=staging_owner}};
+  const std::array targets{g::ExecutionTarget{g::apple::execution_source(context).value(),g::StorageDomainId{0}}};
+  auto builder = g::GraphBuilder::create().value();
+  const auto x = builder.input(description).value(), y = builder.input(description).value();
+  const auto sum = builder.add(c::Binary{.kind=c::BinaryKind::kAdd},x,y).value();
+  const auto out = builder.add(c::Copy{},sum).value();
+  ASSERT_TRUE(builder.publish(out).ok());
+  const auto graph = std::move(builder).finish().value();
+  const std::array external{g::ExternalResourceContract{x,g::StorageDomainId{1}},
+      g::ExternalResourceContract{out,g::StorageDomainId{1}}};
+  auto compiled = g::compile(graph,{domains,targets},{.external_resources=external});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  std::optional<g::CompiledGraph> checked;
+  auto producer_x=x, producer_y=y, producer_out=out;
+  const auto ids_description = c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t,1>{4}).value();
+  if (mode==4) {
+    auto checked_builder = g::GraphBuilder::create().value();
+    producer_x=checked_builder.input(description).value();
+    producer_y=checked_builder.input(ids_description).value();
+    const auto gathered=checked_builder.add(c::Gather{.axis=0,.bounds=c::IndexBoundsPolicy::kChecked},
+        producer_x,producer_y).value();
+    producer_out=checked_builder.add(c::Copy{},gathered).value();
+    ASSERT_TRUE(checked_builder.publish(producer_out).ok());
+    const auto checked_graph=std::move(checked_builder).finish().value();
+    const std::array checked_external{g::ExternalResourceContract{producer_x,g::StorageDomainId{1}},
+        g::ExternalResourceContract{producer_out,g::StorageDomainId{1}}};
+    auto prepared=g::compile(checked_graph,{domains,targets},{.external_resources=checked_external});
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    checked=std::move(*prepared);
+  }
+  auto producer = (checked ? checked->executable : compiled->executable)
+      .create_invocation({.resources=g::ResourceOptions{}}).value();
+  auto consumer = compiled->executable.create_invocation({.resources=g::ResourceOptions{}}).value();
+  const auto ready = [&](const c::StorageOwner &selected, const std::array<float,4> &values) {
+    auto buffer = m::Buffer::create(selected.ref(),sizeof(values),256).value();
+    EXPECT_TRUE(buffer.view().write(std::as_bytes(std::span(values))).ok());
+    return selected.adopt_buffer(std::move(buffer)).value();
+  };
+  auto left = ready(staging_owner,{1,2,3,4}), right = ready(owner,{10,20,30,40});
+  auto pool = c::LeasePool::create(staging.ref(),512,{.max_blocks=2,.backing_alignment=256}).value();
+  auto first_writer = pool.allocate(16,256).value(), second_writer = pool.allocate(16,256).value();
+  const auto original = first_writer.view().value();
+  ASSERT_TRUE(producer.bind(producer_x,description,left).ok());
+  if (mode==4) {
+    const std::array<std::int32_t,4> bad{-1,0,1,2};
+    auto buffer=m::Buffer::create(owner.ref(),sizeof(bad),256).value();
+    ASSERT_TRUE(buffer.view().write(std::as_bytes(std::span(bad))).ok());
+    auto indices=owner.adopt_buffer(std::move(buffer)).value();
+    ASSERT_TRUE(producer.bind(producer_y,ids_description,indices).ok());
+  } else {
+    ASSERT_TRUE(producer.bind(producer_y,description,right).ok());
+  }
+  ASSERT_TRUE(producer.bind(producer_out,description,std::move(first_writer)).ok());
+  ASSERT_TRUE(consumer.bind(y,description,right).ok());
+  ASSERT_TRUE(consumer.bind(out,description,std::move(second_writer)).ok());
+  ASSERT_TRUE(producer.prepare_replay({}, {.mode=g::ReplayMode::kCommands}).ok());
+  NativeSourceGpuGate gate(a::detail::ContextAccess::runtime(context));
+  ASSERT_TRUE(gate.enqueue().ok());
+  auto produced = producer.submit();
+  ASSERT_TRUE(produced) << produced.error().message();
+  auto source_result = g::SubmissionSource::create(producer,std::move(*produced),owner);
+  ASSERT_TRUE(source_result) << source_result.error().message();
+  auto source = std::move(*source_result);
+  EXPECT_EQ(source.poll().value(),c::CompletionPoll::kPending);
+  auto view = g::OutputSource::create(source,producer_out,staging_owner,pool).value();
+  const std::array bindings{view.reader_binding(x)};
+  ASSERT_TRUE(g::bind_sources(consumer,bindings).ok());
+  std::mutex mutex;
+  std::condition_variable changed;
+  bool finished = false;
+  hyle::Result<c::Completion> consumed = std::unexpected(hyle::Status::Internal("not admitted"));
+  std::thread admission([&] {
+    const auto prepared = g::prepare_sources(consumer,{});
+    if (!prepared.ok()) {
+      consumed = std::unexpected(prepared);
+    } else {
+      const auto report = consumer.input_source_report().value();
+      EXPECT_EQ(report.source_count,1U);
+      EXPECT_EQ(report.host_wait_count,0U);
+      EXPECT_EQ(report.device_wait_count,1U);
+      EXPECT_FALSE(consumer.submit()); // metadata never grants pending read authority
+      consumed = g::submit_sources(consumer,{});
+    }
+    { std::lock_guard lock(mutex); finished=true; }
+    changed.notify_all();
+  });
+  bool admitted_pending = false;
+  {
+    std::unique_lock lock(mutex);
+    admitted_pending = changed.wait_for(lock,std::chrono::seconds(2),[&]{return finished;});
+  }
+  if (!admitted_pending) gate.open();
+  admission.join();
+  ASSERT_TRUE(admitted_pending) << "native Graph consumer waited for GPU producer during admission";
+  ASSERT_TRUE(consumed) << consumed.error().message();
+  EXPECT_EQ(consumed->poll().value(),c::CompletionPoll::kPending);
+  std::thread drainer;
+  hyle::Status drained;
+  if (mode==2) drainer=std::thread([&]{drained=producer.drain();});
+  if (mode==3) EXPECT_TRUE(consumed->request_cancel().ok());
+  if (mode==1) { view={}; source={}; }
+  gate.open();
+  if (drainer.joinable()) drainer.join();
+  if (mode==2) EXPECT_TRUE(drained.ok()) << drained.message();
+  const auto terminal = consumed->wait();
+  if (mode==4) {
+    const auto original_failure=source.wait();
+    EXPECT_TRUE(original_failure.IsOutOfRange() || original_failure.IsInvalidArgument()) << original_failure.message();
+    EXPECT_EQ(terminal.code(),original_failure.code());
+    EXPECT_EQ(terminal.message(),original_failure.message());
+    EXPECT_FALSE(producer.result(producer_out));
+    EXPECT_FALSE(consumer.result(out));
+    return;
+  } else if (mode==3) {
+    EXPECT_TRUE(terminal.IsCancelled()) << terminal.message();
+    EXPECT_FALSE(consumer.result(out));
+  } else {
+    ASSERT_TRUE(terminal.ok()) << terminal.message();
+    auto result = consumer.result(out).value();
+    auto retained = result.storage_lease().value();
+    expect(retained.tensor(description).value(),std::array<float,4>{21,42,63,84});
+  }
+  if (mode!=1) {
+    ASSERT_TRUE(source.wait().ok());
+    ASSERT_TRUE(view.detach().ok());
+    ASSERT_TRUE(g::release_sources(consumer).ok());
+    ASSERT_TRUE(source.detach().ok());
+  }
+  auto result = producer.result(producer_out).value();
+  const auto retained = result.storage_lease().value();
+  const auto address = retained.view().value();
+  EXPECT_EQ(address.resource(),original.resource());
+  EXPECT_EQ(address.native_handle(),original.native_handle());
+  EXPECT_EQ(address.offset(),original.offset());
+}
+
+TEST(AppleNativeRegion, OriginalGraphSourceImportsPendingProducerWithoutHostWait) {
+  exercise_native_graph_source(0);
+}
+TEST(AppleNativeRegion, OriginalGraphSourcePinsAbandonedPublicSourceThroughConsumer) {
+  exercise_native_graph_source(1);
+}
+TEST(AppleNativeRegion, OriginalGraphSourceSurvivesOriginalProducerDrain) {
+  exercise_native_graph_source(2);
+}
+TEST(AppleNativeRegion, OriginalGraphSourceCancelsConsumerWithoutPublishingOutput) {
+  exercise_native_graph_source(3);
+}
+TEST(AppleNativeRegion, OriginalGraphSourcePreservesWholeProducerFailureAndRejectsOutput) {
+  exercise_native_graph_source(4);
 }
 } // namespace

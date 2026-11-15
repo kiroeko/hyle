@@ -4,6 +4,7 @@
 #include <span>
 
 #include "hyle/graph/executable.h"
+#include "hyle/compute/detail/completion_access.h"
 
 namespace hyle::graph::detail {
 struct InvocationState;
@@ -49,6 +50,21 @@ HYLE_GRAPH_API Status wait_input_sources(
     InvocationState &, std::size_t segment) noexcept;
 HYLE_GRAPH_API Status enqueue_input_sources(InvocationState &, std::size_t segment,
     compute::detail::QueueSequence &) noexcept;
+using NativeInputSubmit = Result<compute::Completion> (*)(void *,
+    std::span<const compute::detail::CompletionDependency>) noexcept;
+HYLE_GRAPH_API Result<compute::Completion> submit_native_input_sources(
+    InvocationState &, std::size_t segment,
+    std::span<const compute::detail::CompletionDependency>,
+    void *, NativeInputSubmit) noexcept;
+// Exact original Graph-output adapter only; opaque third-party InputSources
+// remain on their declared host/Queue route. The receiver's actual selected
+// native slot independently qualifies every terminal producer endpoint.
+HYLE_GRAPH_API Result<std::size_t> native_input_source_capacity(
+    const InputSource &, InvocationState &, std::size_t segment) noexcept;
+using NativeInputUse = Status (*)(void *,
+    std::span<const compute::detail::CompletionDependency>) noexcept;
+HYLE_GRAPH_API Status with_native_input_source(const InputSource &,
+    std::span<compute::detail::CompletionDependency>, void *, NativeInputUse) noexcept;
 HYLE_GRAPH_API Result<bool> input_results_ready(InvocationState &) noexcept;
 HYLE_GRAPH_API Status wait_input_results(InvocationState &) noexcept;
 HYLE_GRAPH_API void note_borrowed_input_source(InvocationState &, ValueId) noexcept;

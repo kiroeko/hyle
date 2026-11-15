@@ -2749,8 +2749,8 @@ struct SubmissionSourceState final : util::RefCounted<SubmissionSourceState> {
   }
   InvocationState *producer = nullptr;
   compute::detail::QueueRef queue;
-  // Managed native handoff retains the original endpoint, never a surrogate
-  // Compute Queue. Whole producer retirement precedes consumer admission.
+  // The original native endpoint, never a surrogate Compute Queue. Explicit
+  // handoff waits for retirement; qualified device imports pin its real jobs.
   ExecutionSource native_execution;
   // Independently retained through native retirement; the local owner above
   // also covers allocator teardown after the last public/native source ref.
@@ -3249,9 +3249,9 @@ const InputSourceVTable output_source_table{
       if (!bundle.preparing)
         return std::unexpected(Status::FailedPrecondition("pending output requires its metadata-only bundle preparation"));
       if (bundle.submission->native_execution) {
-        if (queue || !bundle.submission->handoff)
-          return std::unexpected(Status::Unimplemented("native handoff has no shared Queue dependency"));
-        return InputDependencyRoute::kHostWait;
+        if (queue)
+          return std::unexpected(Status::Unimplemented("native source has no shared Queue dependency"));
+        return bundle.submission->handoff ? InputDependencyRoute::kHostWait : InputDependencyRoute::kDeviceWait;
       }
       if (!queue || !bundle.submission->queue.same_owner(*queue))
         return std::unexpected(Status::Unimplemented("output relay requires its original actual Queue"));
@@ -3273,11 +3273,21 @@ const InputSourceVTable output_source_table{
       if (!ready) return compute::detail::EnqueueResult::rejected(ready.error());
       if (*ready == compute::CompletionPoll::kComplete)
         return compute::detail::EnqueueResult::no_op();
-      auto dependency = compute::detail::RetainedCompletion::native_dependency(source.completion);
-      if (!dependency) return compute::detail::EnqueueResult::rejected(dependency.error());
       // The native dependency is not the full verdict. InputSources reconciles
       // this same original Completion after the imported consumer really retires.
-      return sequence.enqueue_resolved_wait(*dependency);
+      struct Admission {
+        compute::detail::QueueSequence &sequence;
+        compute::detail::EnqueueResult result{};
+      } call{sequence};
+      const auto status = compute::detail::RetainedCompletion::with_native_dependency(
+          source.completion, &call,
+          [](void *opaque, compute::detail::CompletionDependency dependency) noexcept {
+            auto &c = *static_cast<Admission *>(opaque);
+            c.result = c.sequence.enqueue_resolved_wait(dependency);
+            return c.result.status;
+          });
+      if (!status.ok()) call.result.status.Update(status);
+      return call.result;
     },
     [](void *opaque) noexcept {
       return wait_submission(*static_cast<OutputBindingBundle *>(opaque)->submission);
@@ -3570,8 +3580,8 @@ Status check_output_consumer(Invocation &invocation, OutputBindingBundle &bundle
   const auto &plan = *state->plan;
   auto route = ReplayRoute::kCommands;
   if (source.native_execution) {
-    if (!source.handoff || !queues.empty())
-      return Status::InvalidArgument("native handoff requires its original queue-free route");
+    if (!queues.empty())
+      return Status::InvalidArgument("native source requires its original queue-free route");
     HYLE_ASSIGN_OR_RETURN(auto execution, native_output_execution(*state));
     if (!source.native_execution.same_owner(execution))
       return Status::InvalidArgument("native handoff consumer belongs to another endpoint");
@@ -3693,6 +3703,66 @@ Result<InputSource> bound_output_bundle(Invocation &invocation) noexcept {
 }
 } // namespace
 
+Result<std::size_t> native_input_source_capacity(const InputSource &input,
+    InvocationState &consumer, std::size_t segment) noexcept {
+  if (input.vtable() != &output_source_table)
+    return std::unexpected(Status::Unimplemented("input source has no original native Graph adapter"));
+  auto &bundle = *static_cast<OutputBindingBundle *>(input.state());
+  auto &source = *bundle.submission;
+  std::lock_guard guard(source.observation);
+  if (source.handoff || !source.native_execution || !source.producer ||
+      bundle.consumer != &consumer || segment >= consumer.plan->segments.size())
+    return std::unexpected(Status::FailedPrecondition("native input source lost its original producer or consumer"));
+  HYLE_ASSIGN_OR_RETURN(auto reader, delegated_step_index(*consumer.plan, consumer.plan->segments[segment]));
+  if (!consumer.plan->steps[reader].region.has_dependency_import())
+    return std::unexpected(Status::Unimplemented("selected native reader has no dependency capacity contract"));
+  for (const auto terminal : source.producer->plan->terminal_segments) {
+    HYLE_ASSIGN_OR_RETURN(auto writer, delegated_step_index(*source.producer->plan,
+        source.producer->plan->segments[terminal]));
+    const auto endpoint = source.producer->invocations[writer].region.delegated_endpoint();
+    if (!endpoint.valid() || !consumer.invocations[reader].region.can_import_endpoint(endpoint))
+      return std::unexpected(Status::Unimplemented("native reader cannot import the original producer terminal endpoint"));
+  }
+  return source.producer->plan->terminal_segments.size();
+}
+
+Status with_native_input_source(const InputSource &input,
+    std::span<compute::detail::CompletionDependency> dependencies,
+    void *receiver, NativeInputUse use) noexcept {
+  if (input.vtable() != &output_source_table || !use)
+    return Status::InvalidArgument("native input admission requires its exact Graph adapter");
+  auto &source = *static_cast<OutputBindingBundle *>(input.state())->submission;
+  std::lock_guard guard(source.observation);
+  if (source.handoff || !source.native_execution || !source.producer)
+    return Status::FailedPrecondition("native input source is no longer exportable");
+  struct Admission {
+    SubmissionSourceState &source;
+    std::span<compute::detail::CompletionDependency> dependencies;
+    void *receiver;
+    NativeInputUse use;
+  } call{source, dependencies, receiver, use};
+  return compute::detail::RetainedCompletion::with_native_dependency(source.completion,
+      &call, [](void *opaque, compute::detail::CompletionDependency) noexcept {
+        auto &c = *static_cast<Admission *>(opaque);
+        const auto &producer = *c.source.producer;
+        std::size_t count = 0;
+        // Root borrowing prevents another original drain/poll from consuming
+        // these exact terminal handles until the native receiver has pinned
+        // their accepted episodes. It is not a second completion observer.
+        for (const auto terminal : producer.plan->terminal_segments) {
+          const auto dependency = compute::detail::CompletionAccess::dependency(
+              producer.segment_completions[terminal]);
+          if (dependency.terminal_hint && !dependency.terminal_hint->ok())
+            return *dependency.terminal_hint;
+          if (!dependency.pending()) continue;
+          if (count == c.dependencies.size())
+            return Status::Internal("native producer exceeds its cold dependency capacity");
+          c.dependencies[count++] = dependency;
+        }
+        return c.use(c.receiver, c.dependencies.first(count));
+      });
+}
+
 Result<StoreProjectionInputs> RegionAccess::store_source_projection(
     const InvocationState *state, ResourceProjection projection) noexcept {
   if (!state || !state->plan || !state->resources)
@@ -3796,9 +3866,16 @@ Result<SubmissionSource> SubmissionSource::create_impl(Invocation &invocation,
   const auto &plan = *state->plan;
   compute::detail::QueueRef queue;
   ExecutionSource native_execution;
-  if (handoff && !plan.required_queue_count) {
+  if (!plan.required_queue_count) {
     HYLE_ASSIGN_OR_RETURN(native_execution, native_output_execution(*state));
     HYLE_RETURN_IF_ERROR(validate_source_storage(*state, native_execution, storage));
+    if (!handoff) {
+      for (const auto terminal : plan.terminal_segments) {
+        HYLE_ASSIGN_OR_RETURN(auto step, delegated_step_index(plan, plan.segments[terminal]));
+        if (!state->invocations[step].region.delegated_endpoint().valid())
+          return std::unexpected(Status::Unimplemented("native producer has no original completion endpoint"));
+      }
+    }
   } else {
     HYLE_ASSIGN_OR_RETURN(queue, output_queue(*state, handoff));
     const auto &execution = plan.targets[plan.lanes[plan.segments.front().lane.ordinal()].target.ordinal()].source;
@@ -5191,14 +5268,16 @@ Status admit_native_handoff(void *opaque, compute::LeaseUseBatch &uses) noexcept
   // the original whole producer has succeeded AND actually retired.
   {
     std::lock_guard guard(source.observation);
-    if (!source.handoff || !source.native_execution)
-      return Status::FailedPrecondition("native handoff requires its original endpoint");
-    HYLE_ASSIGN_OR_RETURN(auto observed, source.completion.poll());
-    if (observed != compute::CompletionPoll::kComplete || (source.producer &&
-        (source.producer->phase.load(std::memory_order_acquire) != InvocationPhase::kIdle ||
-         !source.producer->outputs_ready.load(std::memory_order_acquire) ||
-         source.producer->preparation_uses.load(std::memory_order_acquire))))
-      return Status::Unavailable("native handoff producer has not successfully retired");
+    if (!source.native_execution)
+      return Status::FailedPrecondition("native source requires its original endpoint");
+    if (source.handoff) {
+      HYLE_ASSIGN_OR_RETURN(auto observed, source.completion.poll());
+      if (observed != compute::CompletionPoll::kComplete || (source.producer &&
+          (source.producer->phase.load(std::memory_order_acquire) != InvocationPhase::kIdle ||
+           !source.producer->outputs_ready.load(std::memory_order_acquire) ||
+           source.producer->preparation_uses.load(std::memory_order_acquire))))
+        return Status::Unavailable("native handoff producer has not successfully retired");
+    }
   }
   return admit_output_permissions(bundle, uses);
 }

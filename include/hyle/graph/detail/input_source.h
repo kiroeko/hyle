@@ -11,8 +11,11 @@ namespace hyle::graph::detail {
 enum class InputDependencyRoute : unsigned char { kDeviceWait, kHostWait };
 
 // Same-build typed adapter for an immutable external tensor owner. DeviceWait
-// is legal only when enqueue transfers the source's complete terminal contract
-// into the original admitted Queue sequence. Other producers use HostWait.
+// is legal only when the original Queue or a qualified native adapter pins the
+// accepted producer through receiver admission and reconciles its full verdict
+// after native retirement. This table's enqueue callback serves Queue routes;
+// the original Graph-output adapter also supports native segment imports.
+// Other producers use HostWait.
 // Callbacks may run on different consumer lanes and must serialize their own
 // producer observations. They never create another Graph execution runtime.
 struct InputSourceVTable final {

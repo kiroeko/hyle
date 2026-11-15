@@ -77,9 +77,8 @@ inline int run(i::BackendKind kind) {
   check(consumer.bind(output, description, std::move(second_writer)));
   check(producer.prepare_replay({}, {.mode = g::ReplayMode::kCommands}));
   auto submitted = take(producer.submit());
-  const auto no_pending_dependency = g::SubmissionSource::create(producer, std::move(submitted), owner);
-  require(!no_pending_dependency && no_pending_dependency.error().IsUnimplemented() && submitted.valid(),
-      "native runtime masqueraded as a shared-Queue pending dependency");
+  // This case explicitly exercises whole-producer HostWait. Native runtimes
+  // with a qualified original dependency importer may also offer create().
   auto foreign = take(i::Backend::create({.primary = kind}));
   const auto wrong_owner = g::SubmissionSource::create_handoff(producer, std::move(submitted), foreign.storage_owner());
   require(!wrong_owner && submitted.valid(), "native handoff accepted a foreign metadata resource or consumed on rejection");

@@ -80,6 +80,7 @@ public:
   compute::detail::CompletionEndpoint delegated_endpoint() const noexcept;
   bool can_import_endpoint(
       compute::detail::CompletionEndpoint source) const noexcept;
+  Status reserve_dependencies(std::size_t capacity) noexcept;
   Result<compute::Completion> submit_delegated(
       std::span<const compute::detail::CompletionDependency> dependencies,
       std::span<const compute::ConstTensorView> inputs,
@@ -221,6 +222,29 @@ public:
         prepared_.vtable->query_extension(prepared_.state, kRegionDependenciesExtensionId));
     return table && table->same_endpoint_requires_import;
   }
+  bool has_dependency_import() const noexcept {
+    const auto *table = valid() && prepared_.vtable->query_extension
+        ? static_cast<const RegionDependenciesVTable *>(prepared_.vtable->query_extension(
+              prepared_.state, kRegionDependenciesExtensionId)) : nullptr;
+    return table && table->prepare;
+  }
+  Status reserve_dependencies(void *invocation, std::size_t capacity) const noexcept {
+    const auto *table = prepared_.vtable->query_extension
+        ? static_cast<const RegionDependenciesVTable *>(prepared_.vtable->query_extension(
+              prepared_.state, kRegionDependenciesExtensionId)) : nullptr;
+    if (!table || !table->prepare)
+      return Status::Unimplemented("selected native region cannot reserve external dependencies");
+    struct Call {
+      const PreparedRegion *region;
+      const RegionDependenciesVTable *table;
+      void *invocation;
+      std::size_t capacity;
+    } call{this, table, invocation, capacity};
+    return source_.call([](void *, const void *, void *opaque) noexcept {
+      auto &c = *static_cast<Call *>(opaque);
+      return c.table->prepare(c.region->prepared_.state, c.invocation, c.capacity);
+    }, &call);
+  }
   compute::detail::EnqueueResult
   enqueue_prevalidated(
       void *invocation, compute::detail::QueueSequence &sequence,
@@ -314,6 +338,11 @@ RegionInvocation::delegated_endpoint() const noexcept {
 inline bool RegionInvocation::can_import_endpoint(
     compute::detail::CompletionEndpoint source) const noexcept {
   return valid() && prepared_->can_import_endpoint(state_, source);
+}
+
+inline Status RegionInvocation::reserve_dependencies(std::size_t capacity) noexcept {
+  if (!valid()) return Status::FailedPrecondition("native reader invocation is invalid");
+  return prepared_->reserve_dependencies(state_, capacity);
 }
 
 inline Result<compute::Completion> RegionInvocation::submit_delegated(
