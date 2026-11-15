@@ -10,7 +10,7 @@ namespace hyle::compute::ggml_vulkan::bridge {
 struct Work {
   Runtime *runtime = nullptr;
   ggml_backend *backend = nullptr;
-  vk::Fence fence;
+  vk::Fence fence; // Borrowed from this Work's exclusive native backend.
   Failure failure;
   bool pending = false;
   bool needs_drain = false;
@@ -211,7 +211,16 @@ Failure create_work(Runtime *runtime, Work **result) noexcept {
     work = new Work();
     work->runtime = runtime;
     work->backend = ggml_backend_vk_init(0);
-    work->fence = runtime->instance.devices[0]->device.createFence({});
+    if (!work->backend) {
+      destroy_work(work);
+      return {Error::Unavailable};
+    }
+    // The backend already owns an independent completion fence. During an
+    // asynchronous region only its final batch signals that fence; serial
+    // prefixes retire/reset it before our existing final marker is submitted.
+    // Keep the original per-Work submission/retirement, without a third fence
+    // per native context or sharing completion between independent Works.
+    work->fence = static_cast<ggml_backend_vk_context *>(work->backend->context)->fence;
     *result = work;
     return {};
   } catch (...) {
@@ -394,7 +403,7 @@ void destroy_work(Work *work) noexcept {
     ggml_backend_free(work->backend);
   }
   release_descriptors(*work);
-  work->runtime->instance.devices[0]->device.destroyFence(work->fence);
+  // ggml_backend_free destroys the borrowed native completion fence once.
   delete work;
 }
 } // namespace hyle::compute::ggml_vulkan::bridge
