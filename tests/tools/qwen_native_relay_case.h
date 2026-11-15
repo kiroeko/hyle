@@ -2,10 +2,61 @@
 
 // Uses the original complete-state image checker, not a token-only oracle.
 #include "qwen_host_image_case.h"
+#include "qwen_depth_case.h"
 
 namespace qwen_native_relay_case {
 namespace q = qwen35;
 namespace h = qwen_host_image_case;
+
+// The first public request can inherit an empty recording Session. Its cursor
+// must match a later request and an independently loaded serial executor.
+inline void run_recording_rng(const std::filesystem::path &input) {
+  namespace i = hyle::inference;
+  i::ModelLoadConfig config;
+  config.assets.inputs = input;
+  config.execution = {.backend = q::BackendKind::kCuda, .context = 128,
+      .resident_sessions = 1, .active_sequences = 1, .prefill_rows = 32};
+  config.execution_profiles[0].draft_count = 0;
+  config.execution_profiles[0].overlap = true;
+  config.sampling = {.random = true, .temperature = .8F, .top_p = .95F, .top_k = 40};
+  auto preparation = q::prepare_execution_profile(config, 0);
+  h::require(preparation.overlap && preparation.cache.in_flight_batches == 2,
+      "recording RNG regression requires its original prepared relay");
+  auto model = q::instantiate_execution_profile(std::move(preparation), 128);
+  auto executor = q::make_prepared_executor(*model, false, 32, true);
+  const auto vocabulary = static_cast<std::size_t>(model->vocabulary);
+  std::array schedules{i::GenerationSessionSchedule{"recording-rng", {{{1, 2, 3}, 16}},
+      i::GenerationSessionMode::kFlat, 42}};
+  schedules.front().sampling_stream = 7;
+  const std::array stops{i::RequestStopPolicy(std::span<const std::int32_t>{}, true)};
+  const i::GenerationBatch batch{.sessions = schedules, .stop_policies = stops};
+  const auto generate = [&](i::ModelExecutor &prepared) {
+    qwen_depth_case::Tokens tokens; tokens.vocabulary = vocabulary;
+    i::TokenConsumerRef output(tokens);
+    prepared.validate(batch); prepared.execute(batch, output);
+    h::require(!tokens.invalid && !tokens.cancelled && tokens.count == 16 && tokens.endings == 1,
+        "recording RNG request did not deliver its complete output");
+    return tokens.ids;
+  };
+  const auto first = generate(*executor), reused = generate(*executor);
+  h::require(first == reused, "cold recording replaced the first request's logical RNG cursor");
+  std::size_t imported_uses = 0;
+  for (const auto &[shape, phase] : model->phases) if (phase->imported_sources) {
+    (void)shape;
+    for (std::size_t index = 0; index < phase->slots.size(); ++index)
+      imported_uses += phase->slots[index].preparation_uses;
+  }
+  h::require(imported_uses >= 16 && !model->active_step && !model->successor_step &&
+      !model->carrier_borrowed && !model->snapshot_versions.live,
+      "recording RNG regression did not exercise and retire its real relay");
+  executor.reset(); model.reset();
+  config.execution_profiles[0].overlap = false;
+  auto serial = q::load_model_executor(config);
+  h::require(first == generate(*serial), "cold recorded and serial requests used different RNG draws");
+  std::cout << "PASS recording_request_rng backend=cuda seed=42 logical_stream=7 outputs=48"
+            << " first_reused_serial_ids=equal imported_uses=" << imported_uses
+            << " retired=1\n" << std::flush;
+}
 
 inline void run(const std::filesystem::path &input, q::BackendKind kind, bool random) {
   auto source = q::prepare_weight_source(input / "weights.tsv", false);

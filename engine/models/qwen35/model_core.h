@@ -2881,16 +2881,19 @@ public:
   }
 
   DecodeRecording prepare_ordinary_decode_recordings(std::size_t sampling_index,
-      std::shared_ptr<Session> *prepared_session = nullptr) {
+      std::shared_ptr<Session> *prepared_session = nullptr,
+      std::optional<cache::SamplingCursor> initial_sampling = {}) {
     if (cache_plan.draft_cache) return {};
-    return prepare_decode_recordings(sampling_index, false, prepared_session, DecodeRecordingStage::kStartup);
+    return prepare_decode_recordings(sampling_index, false, prepared_session,
+        DecodeRecordingStage::kStartup, 0, initial_sampling);
   }
 
   DecodeRecording prepare_mtp_decode_recordings(std::size_t sampling_index,
       std::shared_ptr<Session> *prepared_session = nullptr,
-      DecodeRecordingStage stage = DecodeRecordingStage::kStartup) {
+      DecodeRecordingStage stage = DecodeRecordingStage::kStartup,
+      std::optional<cache::SamplingCursor> initial_sampling = {}) {
     if (!cache_plan.draft_cache || ((!device_mtp_successor_) && (max_drafts() != 1 || recursive_mtp()))) return {};
-    try { return prepare_decode_recordings(sampling_index, true, prepared_session, stage); }
+    try { return prepare_decode_recordings(sampling_index, true, prepared_session, stage, 0, initial_sampling); }
     catch (const inference::EvaluationFailure &failure) {
       if (!device_mtp_successor_ || !failure.status().IsUnimplemented() ||
           max_drafts()>1 ||
@@ -2900,7 +2903,7 @@ public:
       // An optional native shape was declined before request admission. The
       // real private recording episode has retired; preserve the old route.
       device_mtp_successor_ = false;
-      return prepare_decode_recordings(sampling_index, true, prepared_session, stage);
+      return prepare_decode_recordings(sampling_index, true, prepared_session, stage, 0, initial_sampling);
     }
   }
 
@@ -2943,7 +2946,7 @@ public:
 
   DecodeRecording prepare_decode_recordings(std::size_t sampling_index, bool mtp,
       std::shared_ptr<Session> *prepared_session, DecodeRecordingStage stage,
-      std::size_t prefill_rows = 0) {
+      std::size_t prefill_rows = 0, std::optional<cache::SamplingCursor> initial_sampling = {}) {
     DecodeRecording report;
     if (prepared_session && *prepared_session)
       throw std::runtime_error("decode recording requires an empty session destination");
@@ -2970,7 +2973,9 @@ public:
     const auto recording_phase = prefill_recording ? "prefill_recording"
         : stage == DecodeRecordingStage::kStartup ? "decode_warmup" : "decode_recovery";
     std::cerr << recording_phase << "_begin\n";
-    auto session = create_session(chunk, {}, role, {}, false, TextCompletion::kEmitNext, sampling_index);
+    // A donated empty Session already belongs to the request's logical stream.
+    // Recording must neither replace its cursor with the model default nor draw.
+    auto session = create_session(chunk, {}, role, initial_sampling, false, TextCompletion::kEmitNext, sampling_index);
     hyle::util::ScopeGuard retire_session{[&]() noexcept {
       (void)abort_episode(); session->stop().IgnoreError(); (void)session->drain();
     }};

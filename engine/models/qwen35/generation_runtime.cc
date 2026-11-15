@@ -2961,8 +2961,11 @@ void prepare_generation_recordings(Model &model, const GenerationProgramPlan &pl
       (plan.requests.size() == 1 || model.cache_plan.resident_sessions == 1) &&
       (plan.first_turn_only || std::ranges::any_of(plan.requests.front().progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; }))) {
     auto *prepared = plan.prefix_enabled ? nullptr : &plan.requests.front().session;
-    if constexpr (Mode == GenerationMode::kMtp) (void)model.prepare_mtp_decode_recordings(plan.requests.front().sampling_index, prepared);
-    else (void)model.prepare_ordinary_decode_recordings(plan.requests.front().sampling_index, prepared);
+    const auto &request = plan.requests.front();
+    if constexpr (Mode == GenerationMode::kMtp)
+      (void)model.prepare_mtp_decode_recordings(request.sampling_index, prepared,
+          DecodeRecordingStage::kStartup, request.progress.initial_sampling);
+    else (void)model.prepare_ordinary_decode_recordings(request.sampling_index, prepared, request.progress.initial_sampling);
   }
 }
 
