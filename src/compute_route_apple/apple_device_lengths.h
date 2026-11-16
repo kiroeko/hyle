@@ -15,5 +15,5 @@ HYLE_COMPUTE_ROUTE_APPLE_API Status qualify_device_lengths_paged_schema(
 HYLE_COMPUTE_ROUTE_APPLE_API Result<Program> prepare_device_lengths_paged_graph(
     std::shared_ptr<Runtime>, BatchSchema,
     std::uint32_t physical_query_rows, float scale, bool causal,
-    std::int32_t window_left, const WorkloadContext & = {}) noexcept;
+    std::int32_t window_left, const WorkloadContext & = {}, bool guard_writes = false) noexcept;
 } // namespace hyle::compute::apple::detail

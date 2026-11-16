@@ -44,10 +44,12 @@ template<class T> struct Cell final {
   std::uint32_t qk, dv, per_request_pages;
   std::vector<std::int32_t> page_indices;
   c::TensorDesc output;
+  bool guard_writes=false;
+  std::array<std::int32_t,2> write_status{};
 
   Cell(std::uint32_t key_depth, std::uint32_t value_depth, std::uint32_t history,
-      bool causal = true, std::int32_t window = -1)
-      : qk(key_depth), dv(value_depth), per_request_pages((history+15)/16) {
+      bool causal = true, std::int32_t window = -1,bool guarded = false)
+      : qk(key_depth), dv(value_depth), per_request_pages((history+15)/16),guard_writes(guarded) {
     const auto storage = take(c::CacheStorage::plain(half_test::data_type<T>()));
     capacity = {.query_type = half_test::data_type<T>(), .output_type = half_test::data_type<T>(),
         .key_storage = storage, .value_storage = storage, .max_requests = 2,
@@ -64,8 +66,8 @@ template<class T> struct Cell final {
     control_envelope = envelope;
     output = take(c::batch_output_description(capacity, queries));
     program = take(d::prepare_device_lengths_paged_graph(d::ContextAccess::runtime(context),
-        schema, queries, .125f, causal, window));
-    EXPECT_EQ(program.input_count(),6u);
+        schema, queries, .125f, causal, window,{},guard_writes));
+    EXPECT_EQ(program.input_count(),guard_writes?8u:6u);
   }
 
   template<class U> mlx::core::array binding(std::span<const U> payload, c::TensorDesc description,
@@ -112,8 +114,8 @@ template<class T> struct Cell final {
       const auto invalid_page = static_cast<std::int32_t>(capacity.max_pages);
       std::memcpy(reinterpret_cast<std::byte *>(metadata.data())+schema.metadata_offsets().page_indices,&invalid_page,sizeof(invalid_page));
     }
-    std::vector<c::LeasePool> pools; pools.reserve(6);
-    std::vector<c::ReadLease> owners; owners.reserve(6);
+    std::vector<c::LeasePool> pools; pools.reserve(8);
+    std::vector<c::ReadLease> owners; owners.reserve(8);
     std::vector<mlx::core::array> inputs;
     inputs.push_back(binding<T>(q,take(c::batch_query_description(capacity,queries)),pools,owners));
     inputs.push_back(binding<T>(k,take(c::batch_cache_description(schema,c::BatchCacheRole::kKey)),pools,owners));
@@ -123,6 +125,11 @@ template<class T> struct Cell final {
     inputs.push_back(binding<std::int32_t>(lengths,indices,pools,owners));
     inputs.push_back(binding<std::int32_t>(metadata,take(c::TensorDesc::dense(c::DataType::kInt32,
         std::array<std::int64_t,1>{static_cast<std::int64_t>(metadata.size())})),pools,owners));
+    if (guard_writes) {
+      const auto scalar=take(c::TensorDesc::dense(c::DataType::kInt32,std::array<std::int64_t,1>{1}));
+      for (std::size_t i=0;i<write_status.size();++i)
+        inputs.push_back(binding<std::int32_t>(std::span(write_status).subspan(i,1),scalar,pools,owners));
+    }
     std::optional<a::Invocation> producer;
     std::optional<c::OwnedResult<a::Results>> produced;
     if (device_controls) {
@@ -135,7 +142,7 @@ template<class T> struct Cell final {
       },specifications));
       producer.emplace(take(generator.create_invocation()));
       const std::array controls{inputs[3],inputs[4]}; check(producer->bind(controls));
-      std::array<d::InputBinding,6> bindings;
+      std::vector<d::InputBinding> bindings(inputs.size());
       for (std::size_t i = 0; i < inputs.size(); ++i)
         if (i != 3 && i != 4) bindings[i].value = inputs[i];
       bindings[3].source = take(d::InvocationAccess::source(*producer,0));
@@ -193,6 +200,15 @@ TEST(AppleDeviceLengths, PackedRequestsUseActualDeviceLengthsAndZeroInactiveRows
   // The same actual Program and Invocation consume changed owned bounds.
   // No rebuilding/tracing is needed when the per-request capacities change.
   cell.run(invocation,{3,1},{31,17});
+}
+TEST(AppleDeviceLengths, FailedOriginalCacheWriteIsGuardedBeforePoisonedInputsAreRead) {
+  Cell<BF16> cell(64,64,39,true,-1,true);
+  for (const auto status:std::array<std::array<std::int32_t,2>,2>{{{3,0},{0,3}}}) {
+    cell.write_status=status;auto invocation=take(cell.program.create_invocation());
+    cell.run(invocation,{1,3},{17,31},true,-1,1);
+  }
+  cell.write_status={0,0};auto invocation=take(cell.program.create_invocation());
+  cell.run(invocation,{1,3},{17,31});
 }
 TEST(AppleDeviceLengths, F32SplitPartialsKeepBothDeclaredStorageTypes) {
   for (const auto depth : {64u,128u,256u}) {

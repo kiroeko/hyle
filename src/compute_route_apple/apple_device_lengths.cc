@@ -8,6 +8,7 @@
 #include <cmath>
 #include <limits>
 #include <new>
+#include <string>
 #include <vector>
 
 #include <mlx/fast.h>
@@ -16,6 +17,17 @@
 namespace hyle::compute::apple::detail {
 namespace {
 namespace mx = mlx::core;
+
+constexpr auto written_guard = R"METAL(
+  if (key_status[0] != 0 || value_status[0] != 0) {
+    const uint lane = thread_index_in_simdgroup;
+    const uint group = threadgroup_position_in_grid.x;
+    const ulong base = ulong(group) * ulong(DV + 2);
+    for (uint d = lane; d < uint(DV + 2); d += 32) partial[base+d] = 0.f;
+    if (lane == 0) status[group] = 3;
+    return;
+  }
+)METAL";
 
 // Bounded split-key online softmax. As in the original native attention,
 // partials stay F32 and only the final output is converted to its declared
@@ -155,7 +167,7 @@ Status qualify_device_lengths_paged_schema(const BatchSchema &schema, float scal
 
 Result<Program> prepare_device_lengths_paged_graph(std::shared_ptr<Runtime> runtime,
     BatchSchema schema, std::uint32_t rows, float scale, bool causal,
-    std::int32_t window, const WorkloadContext &workload) noexcept {
+    std::int32_t window, const WorkloadContext &workload,bool guard_writes) noexcept {
   if (!runtime || !rows)
     return std::unexpected(Status::InvalidArgument("Apple device lengths require original Runtime and physical Q"));
   HYLE_RETURN_IF_ERROR(qualify_device_lengths_paged_schema(schema,scale,causal,window));
@@ -170,7 +182,7 @@ Result<Program> prepare_device_lengths_paged_graph(std::shared_ptr<Runtime> runt
     const auto groups = std::uint64_t(rows)*c.query_heads*splits;
     if (groups > INT32_MAX/32 || groups*(c.value_head_dim+2) > INT32_MAX)
       return std::unexpected(Status::OutOfRange("Apple device lengths dispatch/partial extent exceeds native indexing"));
-    std::array<TensorDesc,6> descriptions;
+    std::array<TensorDesc,8> descriptions;
     HYLE_ASSIGN_OR_RETURN(descriptions[0], batch_query_description(c, rows));
     HYLE_ASSIGN_OR_RETURN(descriptions[1], batch_cache_description(schema, BatchCacheRole::kKey));
     HYLE_ASSIGN_OR_RETURN(descriptions[2], batch_cache_description(schema, BatchCacheRole::kValue));
@@ -178,14 +190,19 @@ Result<Program> prepare_device_lengths_paged_graph(std::shared_ptr<Runtime> runt
     descriptions[4] = descriptions[3];
     HYLE_ASSIGN_OR_RETURN(descriptions[5], TensorDesc::dense(DataType::kInt32,
         std::array<std::int64_t,1>{static_cast<std::int64_t>(offsets.bytes/4)}));
-    std::array<InputSpec,6> specs;
+    HYLE_ASSIGN_OR_RETURN(descriptions[6],TensorDesc::dense(DataType::kInt32,std::array<std::int64_t,1>{1}));
+    descriptions[7]=descriptions[6];
+    std::vector<InputSpec> specs(guard_writes?8:6);
     for (std::size_t i = 0; i < specs.size(); ++i) { HYLE_ASSIGN_OR_RETURN(specs[i], input_spec(descriptions[i])); }
-    const auto function = [offsets, c, rows, splits, groups, scale, causal, window](
+    const auto function = [offsets, c, rows, splits, groups, scale, causal, window,guard_writes](
         const std::vector<mx::array> &inputs, mx::Stream stream) -> Result<std::vector<mx::array>> {
-      if (inputs.size() != 6) return std::unexpected(Status::InvalidArgument("Apple device lengths physical input count differs"));
+      if (inputs.size() != (guard_writes?8u:6u)) return std::unexpected(Status::InvalidArgument("Apple device lengths physical input count differs"));
       static const auto partial = mx::fast::metal_kernel("hyle_device_lengths_paged_partials",
           {"queries", "keys", "values", "query_lengths", "kv_lengths", "metadata", "scale"},
           {"partial", "status"}, partial_source, "", true, false, mx::CompileOptions{});
+      static const auto guarded_partial=mx::fast::metal_kernel("hyle_device_lengths_paged_written_partials",
+          {"queries","keys","values","query_lengths","kv_lengths","metadata","key_status","value_status","scale"},
+          {"partial","status"},std::string(written_guard)+partial_source,"",true,false,mx::CompileOptions{});
       static const auto merge = mx::fast::metal_kernel("hyle_device_lengths_paged_merge",
           {"partial"}, {"output"}, merge_source, "", true, false, mx::CompileOptions{});
       auto arguments = inputs;
@@ -199,7 +216,8 @@ Result<Program> prepare_device_lengths_paged_graph(std::shared_ptr<Runtime> runt
           {"META_Q",static_cast<int>(offsets.query_indptr/4)}, {"META_KV",static_cast<int>(offsets.kv_indptr/4)},
           {"META_PAGES",static_cast<int>(offsets.page_indices/4)}, {"META_TAIL",static_cast<int>(offsets.last_page_lengths/4)},
           {"SPLITS", splits}, {"CAUSAL", causal}, {"WINDOW_ENABLED", window >= 0}, {"WINDOW", std::max(window,0)}};
-      auto parts = partial(arguments, {{static_cast<int>(groups), static_cast<int>(c.value_head_dim+2)},
+      const auto &selected=guard_writes?guarded_partial:partial;
+      auto parts = selected(arguments, {{static_cast<int>(groups), static_cast<int>(c.value_head_dim+2)},
           {static_cast<int>(groups)}}, {mx::float32, mx::int32},
           {static_cast<int>(groups*32),1,1}, {32,1,1}, constants, std::nullopt, false, stream);
       auto output = merge({parts[0]}, {{static_cast<int>(rows), static_cast<int>(c.query_heads), static_cast<int>(c.value_head_dim)}},

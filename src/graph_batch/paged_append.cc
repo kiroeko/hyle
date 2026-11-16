@@ -1,4 +1,5 @@
 #include "paged_append.h"
+#include "native_device_append_regions.h"
 #include "pending_read_merge.h"
 #include "hyle/graph/detail/source_binding_access.h"
 #include "hyle/compute/detail/batch_provider.h"
@@ -1261,13 +1262,19 @@ Status bind_native(Invocation&invocation,const Graph&graph,const NativeAppendReg
   auto*retained=region.table->pages(region.invocation);auto*p=PagedAppendAccess::data(pages);
   if(!retained || retained->valid() || !p)
     return Status::FailedPrecondition("native paged append needs its selected idle slot and original transaction");
-  if(p->device_lengths)return Status::Unimplemented("device append lengths require their typed original Queue region");
+  const auto*device=native_device_append_table(region);
+  if(bool(device)!=p->device_lengths)
+    return p->device_lengths?Status::Unimplemented("selected native append has no device-length capacity interface"):
+        Status::InvalidArgument("ordinary append transaction cannot bind a device-controlled writer");
+  if(device && (!device->configure || !device->length_inputs || !device->status))
+    return Status::InvalidArgument("native device append interface is incomplete");
   HYLE_ASSIGN_OR_RETURN(auto facts,region.table->inspect(region.prepared,region.invocation));
   if(facts.node!=region.node || !facts.descriptor.schema.owns(p->layout) ||
       facts.descriptor.role!=p->descriptor.role || row_storage(facts.descriptor)!=row_storage(p->descriptor) ||
       p->successful)
     return Status::InvalidArgument("native paged append transaction differs from its selected operation");
   HYLE_RETURN_IF_ERROR(validate_row_extent(*p,facts.descriptor,facts.rows));
+  HYLE_RETURN_IF_ERROR(validate_length_writers(*p));
   HYLE_ASSIGN_OR_RETURN(auto capacity,cd::PagedArenaAccess::tensor(p->arena));
   if(capacity.storage().resource()!=facts.resource)
     return Status::InvalidArgument("native paged append arena belongs to another selected resource");
@@ -1297,6 +1304,30 @@ Status bind_native(Invocation&invocation,const Graph&graph,const NativeAppendReg
   const auto old=p->previous_source?std::span<const c::ReadLease>{}:std::span<const c::ReadLease>(p->old_pages);
   HYLE_ASSIGN_OR_RETURN(auto pending_reads,pending_reads_for_bind(*p,!writer_only));
   try{
+   if(device){
+    std::vector<NativeDeviceAppendPage,mem::StdAllocator<NativeDeviceAppendPage>>bindings{
+        mem::StdAllocator<NativeDeviceAppendPage>(p->allocator)};
+    bindings.reserve(p->capacity_pages.size());
+    HYLE_ASSIGN_OR_RETURN(auto old_ids,cd::BatchLayoutAccess::page_footprint(p->previous_layout));
+    for(const auto&record:p->capacity_pages){
+      const auto target=std::find_if(p->targets.begin(),p->targets.end(),[&](const auto&t){return t.page==record.destination_page;});
+      if(target==p->targets.end() || target->first_row)
+        return Status::InvalidArgument("native capacity append lost its original full COW writer");
+      NativeDeviceAppendPage binding{record,{},{}};
+      HYLE_ASSIGN_OR_RETURN(binding.destination,target->storage.subview(0,std::size_t(record.initialized_rows)*p->row_bytes));
+      if(record.source_rows){
+        const auto found=std::lower_bound(old_ids.begin(),old_ids.end(),std::int32_t(record.source_page));
+        if(found==old_ids.end() || *found!=std::int32_t(record.source_page))
+          return Status::InvalidArgument("native capacity append inherited page has no original source");
+        HYLE_ASSIGN_OR_RETURN(auto prefix,append_prefix(*p,std::size_t(found-old_ids.begin())));
+        HYLE_ASSIGN_OR_RETURN(binding.prefix,prefix.subview(0,std::size_t(record.source_rows)*p->row_bytes));
+      }
+      bindings.push_back(binding);
+    }
+    HYLE_RETURN_IF_ERROR(gd::RegionAccess::invalidate_commands(invocation,region.step));
+    HYLE_RETURN_IF_ERROR(device->configure(region.prepared,region.invocation,
+        {raw_layout(*p),capacity,p->length_bounds,bindings}));
+   }else{
     std::vector<NativeAppendRange,mem::StdAllocator<NativeAppendRange>>ranges{mem::StdAllocator<NativeAppendRange>(p->allocator)};
     ranges.reserve(p->ranges.size());
     for(const auto&range:p->ranges){
@@ -1314,6 +1345,7 @@ Status bind_native(Invocation&invocation,const Graph&graph,const NativeAppendReg
     // configure is cold and cannot enqueue or consume the caller's owners.
     HYLE_RETURN_IF_ERROR(gd::RegionAccess::invalidate_commands(invocation,region.step));
     HYLE_RETURN_IF_ERROR(region.table->configure(region.prepared,region.invocation,{p->layout,capacity,ranges}));
+   }
     const gd::ProjectedWriter proof{region.node,region.step,region.implementation,region.prepared};
     if(writer_only)HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_write_effect(invocation,graph,capacity,
         old,p->old_group,p->writer_ptrs,p->appender_ptrs,proof,{},options,pending_reads,bool(p->previous_source)));

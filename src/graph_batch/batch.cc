@@ -1680,7 +1680,11 @@ Status bind_append(Invocation&invocation,const Graph&graph,NodeId append,ValueId
     if(!native_writer || !reader.table->validate_written || !reader.table->commit_written)
       return Status::Unimplemented("native page reader needs its selected native append capability");
     HYLE_ASSIGN_OR_RETURN(auto selected,detail::inspect_native_batch_region(reader));
-    if(selected.layout!=facts.layout)
+    if(selected.device_lengths){
+      if(!facts.device_lengths || !same_cache_geometry(selected.layout,facts.layout) ||
+          selected.length_inputs[1]!=append_kv_lengths)
+        return Status::InvalidArgument("native device append needs the reader's exact cache capacity and original KV control");
+    }else if(facts.device_lengths || selected.layout!=facts.layout)
       return Status::InvalidArgument("native append differs from the reader's exact prepared layout");
     for(std::size_t port=1;port<reader.inputs.size();++port){
       if(reader.inputs[port]!=value)continue;

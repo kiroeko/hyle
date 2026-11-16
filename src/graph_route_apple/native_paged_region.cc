@@ -6,6 +6,7 @@
 
 #include "../compute_route_apple/apple_copy_internal.h"
 #include "../compute_route_apple/apple_device_lengths.h"
+#include "../graph_batch/native_device_append_regions.h"
 #include "hyle/compute/detail/apple_copy_stream_access.h"
 #include "../graph_batch/native_batch_regions.h"
 #include "hyle/compute/batch_ops.h"
@@ -172,6 +173,8 @@ struct Artifact final {
   ca::Program program;
   compute::ResourceBudget budget;
   compute::WorkloadContext workload;
+  compute::LeasePool status_pool;
+  compute::ReadLease zero_status;
 };
 struct Slot final {
   Slot(mem::AllocatorRef selected, Artifact &owner)
@@ -191,7 +194,7 @@ struct Slot final {
   };
   std::array<Written,2> written;
   NativePagePendingSource *pending_source = nullptr; // Borrowed from BatchResources.
-  std::array<an::InputBinding,6> bindings;
+  std::array<an::InputBinding,8> bindings;
   compute::LeasePool metadata_pool;
   compute::WriteLease metadata_writer;
   compute::ReadLease metadata;
@@ -338,13 +341,21 @@ Status frame(void *prepared, void *invocation, ValueId input,
     const compute::PagedArenaRead &value) noexcept {
   return validate_frame(prepared, invocation, input, value);
 }
+bool same_kv_envelope(compute::BatchLayoutVersion a,compute::BatchLayoutVersion b) noexcept {
+  if(!a.valid() || !b.valid() || !a.origin_schema().owns(b) || a.facts().requests!=b.facts().requests)return false;
+  const auto x=a.host(),y=b.host();
+  return std::ranges::equal(x.kv_indptr,y.kv_indptr) && std::ranges::equal(x.page_indices,y.page_indices) &&
+      std::ranges::equal(x.last_page_lengths,y.last_page_lengths);
+}
 Status validate_written(void *prepared, void *invocation, ValueId input,
     compute::BatchLayoutVersion layout, compute::ConstTensorView capacity,
     const bd::NativeAppendRegionRef &producer) noexcept {
   const auto &artifact = *static_cast<Artifact *>(prepared); auto &slot = *static_cast<Slot *>(invocation);
-  if (artifact.recipe.device_lengths())
-    return Status::Unimplemented("Apple device length attention needs its native device-controlled append writer");
-  if (!slot.controller || !slot.controller->prepared || layout != slot.controller->version.layout() || !capacity.valid() ||
+  const auto *device=bd::native_device_append_table(producer);
+  if(device && !artifact.recipe.device_lengths())
+    return Status::Unimplemented("device-controlled append needs a reader with a GPU write-status guard");
+  if (!slot.controller || !slot.controller->prepared ||
+      (artifact.recipe.device_lengths()?!same_kv_envelope(layout,slot.controller->version.layout()):layout!=slot.controller->version.layout()) || !capacity.valid() ||
       !producer.table || !producer.table->inspect || !producer.table->qualify_reader || !producer.table->before_read ||
       !producer.implementation || !producer.prepared || !producer.invocation)
     return Status::InvalidArgument("Apple same-Graph page needs its exact prepared layout and native writer");
@@ -368,6 +379,13 @@ Status validate_written(void *prepared, void *invocation, ValueId input,
       return Status::InvalidArgument("Apple same-Graph bank description/resource differs");
     HYLE_RETURN_IF_ERROR(producer.table->qualify_reader(producer.prepared, producer.invocation,
         region_ordered_endpoint(artifact.preparation.runtime)));
+    if(device){
+      if(!device->length_inputs || !device->status || device->length_inputs(producer.prepared)[1]!=artifact.length_inputs[1])
+        return Status::InvalidArgument("Apple append and attention must use the same original KV-length value");
+      // Common binding validates all readers before configuring/consuming the
+      // writer. Its original verdict carrier is checked at replay binding,
+      // after that cold configuration has actually allocated it.
+    }
     // Only addressability is imported; the common Graph owns exact page rights.
     HYLE_ASSIGN_OR_RETURN(auto borrowed, an::MemoryAccess::borrow_tensor(capacity));
     (void)borrowed;
@@ -497,7 +515,7 @@ Status bind(void *prepared, void *invocation, std::span<const RegionValue> input
         if (!input.tensor.valid() || input.reference.valid())
           return Status::InvalidArgument("Apple same-Graph bank requires its concrete capacity carrier");
         const auto actual = written.capacity.storage(), wanted = input.tensor.storage();
-        if (written.layout != controller.version.layout() ||
+        if ((artifact.recipe.device_lengths()?!same_kv_envelope(written.layout,controller.version.layout()):written.layout!=controller.version.layout()) ||
             actual.resource() != wanted.resource() || actual.native_handle() != wanted.native_handle() ||
             actual.offset() != wanted.offset() || actual.size() != wanted.size())
           return Status::InvalidArgument("Apple same-Graph bank differs from its exact cold writer binding");
@@ -546,6 +564,19 @@ Status bind(void *prepared, void *invocation, std::span<const RegionValue> input
     HYLE_ASSIGN_OR_RETURN(auto metadata,compute::TensorDesc::dense(compute::DataType::kInt32,
         std::array<std::int64_t,1>{static_cast<std::int64_t>(artifact.recipe.lengths_schema.metadata_offsets().bytes/4)}));
     HYLE_ASSIGN_OR_RETURN(slot.bindings[5].value,an::MemoryAccess::owned_tensor(controller.reads[3],metadata,controller.import));
+    HYLE_ASSIGN_OR_RETURN(auto status_description,compute::TensorDesc::dense(compute::DataType::kInt32,std::array<std::int64_t,1>{1}));
+    for(std::size_t bank=0;bank<2;++bank){
+      auto &binding=slot.bindings[6+bank];const auto &written=slot.written[bank];
+      const auto *writer=written.valid()?bd::native_device_append_table(written.producer):nullptr;
+      if(writer){
+        HYLE_ASSIGN_OR_RETURN(auto verdict,writer->status(written.producer.prepared,written.producer.invocation));
+        if(!verdict.valid() || verdict.description()!=status_description || !an::is_copy_resource(verdict.storage().resource()))
+          return Status::InvalidArgument("Apple append has no exact original device verdict");
+        HYLE_ASSIGN_OR_RETURN(binding.value,an::MemoryAccess::borrow_tensor(verdict));
+      }else{
+        HYLE_ASSIGN_OR_RETURN(binding.value,an::MemoryAccess::owned_tensor(artifact.zero_status,status_description,controller.import));
+      }
+    }
     HYLE_RETURN_IF_ERROR(an::InvocationAccess::prepare_inputs(controller.native,slot.bindings));
   } else if (artifact.recipe.external_metadata) {
     if (artifact.metadata_port >= inputs.size()) return Status::InvalidArgument("Apple page metadata boundary is missing");
@@ -866,7 +897,13 @@ compute::ProviderPrepareOutcome compile_native_paged(void *context, const Region
       HYLE_ASSIGN_OR_RETURN(artifact->native_recipe,page_recipe(*artifact,artifact->recipe.lengths_schema,allocator));
       HYLE_ASSIGN_OR_RETURN(artifact->program,an::prepare_device_lengths_paged_graph(artifact->preparation.runtime,
           artifact->recipe.lengths_schema,artifact->preparation.query_rows,artifact->recipe.options.scale,
-          artifact->recipe.options.causal,artifact->recipe.options.window_left,artifact->workload));
+          artifact->recipe.options.causal,artifact->recipe.options.window_left,artifact->workload,true));
+      HYLE_ASSIGN_OR_RETURN(artifact->status_pool,compute::LeasePool::create(artifact->device.ref(),sizeof(std::int32_t),
+          {.max_blocks=1,.allocator=allocator,.resource_budget=artifact->budget}));
+      HYLE_ASSIGN_OR_RETURN(auto status,artifact->status_pool.allocate(sizeof(std::int32_t),4));
+      HYLE_ASSIGN_OR_RETURN(auto status_bytes,status.view());
+      HYLE_RETURN_IF_ERROR(status_bytes.fill(std::byte{0}));
+      HYLE_ASSIGN_OR_RETURN(artifact->zero_status,status.publish());
     } else if (!artifact->recipe.external_metadata) {
       HYLE_ASSIGN_OR_RETURN(artifact->native_recipe, page_recipe(*artifact, artifact->recipe.layout.origin_schema(), allocator));
       HYLE_ASSIGN_OR_RETURN(artifact->program, an::PagedBatchAccess::prepare_program(

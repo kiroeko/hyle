@@ -2,7 +2,9 @@
 
 #include "native_region.h"
 #include "../compute_route_apple/apple_copy_internal.h"
+#include "../compute_route_apple/apple_device_append_internal.h"
 #include "../graph_batch/native_append_regions.h"
+#include "../graph_batch/native_device_append_regions.h"
 #include "../graph_batch/paged_append.h"
 #include "hyle/core/assert.h"
 #include "hyle/graph/detail/region_access.h"
@@ -35,16 +37,26 @@ struct Artifact final {
   mem::MemoryResourceRef resource;
   std::uint32_t range_capacity = 0, query_rows = 0;
   std::size_t max_bytes = 0, row_bytes = 0, input_bytes = 0;
+  bool device_lengths = false;
+  std::array<ValueId,3> inputs{};
+  std::array<std::uint32_t,3> ports{};
+  std::array<compute::TensorDesc,3> descriptions;
+  std::uint32_t boundary_count = 0;
 };
 struct Slot final {
   explicit Slot(mem::AllocatorRef allocator, Artifact &owner)
       : artifact(owner), ranges(mem::StdAllocator<bd::NativeAppendRange>(allocator)),
-        copies(mem::StdAllocator<cd::CopyBackendRange>(allocator)) {}
+        copies(mem::StdAllocator<cd::CopyBackendRange>(allocator)),
+        device_pages(mem::StdAllocator<an::DeviceAppendPageBinding>(allocator)) {}
   Artifact &artifact;
   batch::PagedAppendPages pages;
   std::shared_ptr<an::CopyRecording> recording;
   Vector<bd::NativeAppendRange> ranges;
   Vector<cd::CopyBackendRange> copies;
+  Vector<an::DeviceAppendPageBinding> device_pages;
+  std::array<an::InputBinding,3> device_inputs;
+  std::array<compute::ReadLease,3> device_owners;
+  std::array<compute::ConstTensorView,3> device_views;
   compute::BatchLayoutVersion layout;
   compute::ConstTensorView capacity, rows;
   an::InputSource source;
@@ -66,18 +78,33 @@ bool overlaps(const cd::PhysicalCopyResource &a, const cd::PhysicalCopyResource 
     return false;
   return a.origin <= b.origin ? b.origin - a.origin < a.capacity : a.origin - b.origin < b.capacity;
 }
-Result<batch::PagedAppend> qualify(const RegionCompileRequest &request) noexcept {
+struct AppendRecipe final { batch::PagedAppend descriptor; bool device_lengths = false; };
+Result<AppendRecipe> qualify(const RegionCompileRequest &request) noexcept {
   if (!request.graph || request.graph->dimension_count() || request.route != kNativePagedAppendRoute ||
-      request.nodes.size() != 1 || request.inputs.size() != 1 || !request.outputs.empty() ||
+      request.nodes.size() != 1 || request.inputs.empty() || request.inputs.size() > 3 || !request.outputs.empty() ||
       !request.has_unknown_effects || !request.effect_accesses.empty())
     return std::unexpected(Status::Unimplemented("Apple append requires one fixed zero-output typed effect"));
   HYLE_ASSIGN_OR_RETURN(auto operation, request.graph->operation(request.nodes[0]));
   const auto append = operation.custom_as<batch::PagedAppend>();
-  if (!append) return std::unexpected(Status::Unimplemented("not a typed paged append"));
-  HYLE_ASSIGN_OR_RETURN(auto rows, request.graph->value_description(request.inputs[0]));
-  const std::array descriptions{rows};
-  HYLE_RETURN_IF_ERROR(append->infer_output_descriptions(descriptions, {}));
-  return *append;
+  const auto lengths = operation.custom_as<batch::DeviceLengthsPagedAppend>();
+  if (!append && !lengths) return std::unexpected(Status::Unimplemented("not a typed paged append"));
+  if(lengths && lengths->schema.capacity().max_requests>32)
+    return std::unexpected(Status::Unimplemented("Apple device append supports at most32 requests"));
+  AppendRecipe recipe{append?*append:batch::PagedAppend{lengths->schema,lengths->role},bool(lengths)};
+  const auto count=recipe.device_lengths?3u:1u;
+  std::array<compute::TensorDesc,3> descriptions;
+  std::array<ValueId,3> values{};
+  for(std::size_t i=0;i<count;++i){
+    HYLE_ASSIGN_OR_RETURN(values[i],request.graph->node_input(request.nodes[0],i));
+    if(std::ranges::find(request.inputs,values[i])==request.inputs.end())
+      return std::unexpected(Status::Unimplemented("Apple append needs each original logical boundary input"));
+    HYLE_ASSIGN_OR_RETURN(descriptions[i],request.graph->value_description(values[i]));
+  }
+  for(auto input:request.inputs)if(std::find(values.begin(),values.begin()+count,input)==values.begin()+count)
+    return std::unexpected(Status::InvalidArgument("Apple append has a foreign boundary input"));
+  HYLE_RETURN_IF_ERROR(lengths?lengths->infer_output_descriptions(descriptions,{}) :
+      append->infer_output_descriptions(std::span(descriptions).first(1),{}));
+  return recipe;
 }
 Status actual_aliases(Slot &slot, const an::CopySpan &rows) noexcept {
   // The complete logical rows input is read authority, not its carrier tail.
@@ -117,6 +144,7 @@ Status preflight(void *opaque) noexcept {
 Status configure(void *prepared, void *invocation, const bd::NativeAppendConfiguration &configuration) noexcept {
   const auto &artifact = *static_cast<Artifact *>(prepared); auto &slot = *static_cast<Slot *>(invocation);
   HYLE_RETURN_IF_ERROR(open(artifact));
+  if(artifact.device_lengths)return Status::InvalidArgument("device append requires its capacity configuration");
   HYLE_RETURN_IF_ERROR(an::copy_recording_reuse_gate(*slot.recording));
   if (slot.pages.valid()) return Status::FailedPrecondition("take Apple append pages before rebinding");
   slot.configured = false; slot.bound = false; slot.sealed = false; slot.submitted = false;
@@ -170,10 +198,67 @@ Status configure(void *prepared, void *invocation, const bd::NativeAppendConfigu
   slot.configured = true;
   return Status::Ok();
 }
+Status configure_device(void *prepared,void *invocation,const bd::NativeDeviceAppendConfiguration &configuration) noexcept {
+  const auto &artifact=*static_cast<Artifact *>(prepared);auto &slot=*static_cast<Slot *>(invocation);
+  HYLE_RETURN_IF_ERROR(open(artifact));
+  HYLE_RETURN_IF_ERROR(an::copy_recording_reuse_gate(*slot.recording));
+  if(&slot.artifact!=&artifact || !artifact.device_lengths || slot.pages.valid() ||
+      !artifact.descriptor.schema.owns(configuration.layout) || !configuration.capacity.valid() ||
+      configuration.capacity.storage().resource()!=artifact.resource ||
+      configuration.layout.facts().query_rows!=artifact.query_rows ||
+      configuration.requests.size()!=artifact.descriptor.schema.capacity().max_requests ||
+      configuration.pages.size()>artifact.range_capacity)
+    return Status::InvalidArgument("Apple device append needs its exact original capacity episode");
+  try{
+    slot.device_pages.clear();
+    for(const auto &page:configuration.pages)
+      slot.device_pages.push_back({page.page,page.destination,page.prefix});
+  }catch(...){return Status::ResourceExhausted("Apple device append original page descriptors");}
+  HYLE_RETURN_IF_ERROR(an::clear_copy_recording(*slot.recording));
+  slot.configured=slot.bound=slot.sealed=slot.submitted=false;
+  slot.device_inputs={};slot.device_owners={};slot.device_views={};
+  HYLE_RETURN_IF_ERROR(an::configure_device_append_recording(*slot.recording,
+      configuration.capacity.storage(),configuration.requests,slot.device_pages));
+  slot.layout=configuration.layout;slot.capacity=configuration.capacity;slot.configured=true;
+  return Status::Ok();
+}
+Status bind_device(Slot &slot,std::span<const RegionValue> inputs,std::span<const compute::TensorView> outputs) noexcept {
+  const auto &artifact=slot.artifact;
+  if(!slot.configured || inputs.size()!=artifact.boundary_count || !outputs.empty())
+    return Status::InvalidArgument("Apple device append needs its configured native boundary");
+  HYLE_RETURN_IF_ERROR(an::copy_recording_reuse_gate(*slot.recording));
+  slot.device_inputs={};slot.device_owners={};slot.device_views={};
+  for(std::size_t i=0;i<3;++i){
+    if(artifact.ports[i]>=inputs.size())return Status::InvalidArgument("Apple device append logical port is absent");
+    const auto &input=inputs[artifact.ports[i]];const auto &description=artifact.descriptions[i];
+    if(input.description!=description)return Status::InvalidArgument("Apple device append original input description differs");
+    if(input.reference.valid()){
+      HYLE_ASSIGN_OR_RETURN(slot.device_inputs[i].source,native_output_source(input.reference,artifact.runtime,description));
+    }else{
+      if(!input.tensor.valid() || input.tensor.description()!=description)
+        return Status::InvalidArgument("Apple device append has no exact concrete native input");
+      HYLE_ASSIGN_OR_RETURN(auto bytes,description.required_bytes());
+      HYLE_ASSIGN_OR_RETURN(auto range,input.tensor.storage().subview(0,bytes));
+      if(input.lease){
+        HYLE_ASSIGN_OR_RETURN(auto owner,input.lease->view());
+        if(owner.resource()!=range.resource() || owner.native_handle()!=range.native_handle() ||
+            range.offset()<owner.offset() || range.offset()-owner.offset()>owner.size() ||
+            range.size()>owner.size()-(range.offset()-owner.offset()))
+          return Status::InvalidArgument("Apple device append lease does not cover its original input");
+        HYLE_ASSIGN_OR_RETURN(slot.device_owners[i],input.lease->subview(range.offset()-owner.offset(),range.size()));
+      }
+      HYLE_ASSIGN_OR_RETURN(slot.device_inputs[i].value,an::MemoryAccess::borrow_tensor(input.tensor));
+      slot.device_views[i]=input.tensor;
+    }
+  }
+  HYLE_RETURN_IF_ERROR(an::bind_device_append_inputs(*slot.recording,slot.device_inputs));
+  slot.bound=true;return Status::Ok();
+}
 Status bind(void *prepared, void *invocation, std::span<const RegionValue> inputs,
     std::span<const compute::TensorView> outputs) noexcept {
   const auto &artifact = *static_cast<Artifact *>(prepared); auto &slot = *static_cast<Slot *>(invocation);
   slot.bound = false; slot.sealed = false; slot.submitted = false;
+  if(artifact.device_lengths)return bind_device(slot,inputs,outputs);
   if (!slot.configured || inputs.size() != 1 || !outputs.empty() || inputs[0].description != artifact.rows)
     return Status::InvalidArgument("Apple append requires its configured exact rows input");
   HYLE_RETURN_IF_ERROR(an::copy_recording_reuse_gate(*slot.recording));
@@ -218,7 +303,10 @@ Status before_read(void *, void *invocation) noexcept {
   // Readability needs the exact original GPU prefix, not a scheduled tail's
   // public metadata callback. This proves all native/check errors and leaves
   // Source permissions and last-reader/slot retirement with their owners.
-  return an::observe_copy_recording_on_owner(*slot.recording);
+  // Device-controlled readers import the original event and inspect this
+  // writer's GPU verdict before touching a page. Public retirement still
+  // observes the full original copy/source outcome.
+  return slot.artifact.device_lengths?Status::Ok():an::observe_copy_recording_on_owner(*slot.recording);
 }
 Status qualify_reader(void *prepared, void *, cd::CompletionEndpoint endpoint) noexcept {
   const auto &artifact = *static_cast<const Artifact *>(prepared);
@@ -233,6 +321,17 @@ const bd::NativeAppendRegionVTable append_table{
     },
     .pages = [](void *invocation) noexcept { return &static_cast<Slot *>(invocation)->pages; },
     .configure = &configure, .qualify_reader = &qualify_reader, .before_read = &before_read};
+const bd::NativeDeviceAppendRegionVTable device_append_table{
+    .length_inputs=[](void *prepared) noexcept {
+      const auto &a=*static_cast<const Artifact *>(prepared);return std::array{a.inputs[1],a.inputs[2]};
+    },
+    .configure=&configure_device,
+    .status=[](void *prepared,void *invocation) noexcept -> Result<compute::ConstTensorView> {
+      auto &slot=*static_cast<Slot *>(invocation);
+      if(&slot.artifact!=prepared || !slot.artifact.device_lengths || !slot.configured)
+        return std::unexpected(Status::InvalidArgument("Apple append status has no original configured writer"));
+      return an::device_append_status(*slot.recording);
+    }};
 const gd::RegionOrderedWriteVTable ordered_table{
     [](const ProviderRegionPrepared &prepared, void *invocation, const cd::CompletionEndpoint *reader) noexcept -> Status {
       if (!prepared.state || !invocation) return Status::InvalidArgument("Apple append proof has no actual selected slot");
@@ -249,6 +348,7 @@ const gd::RegionBindingReleaseVTable release_table{
       auto &slot = *static_cast<Slot *>(invocation);
       HYLE_FATAL_ASSERT(an::clear_copy_recording(*slot.recording).ok());
       slot.source.reset(); slot.rows_owner.reset(); slot.rows = {};
+      slot.device_inputs={};slot.device_owners={};slot.device_views={};
       slot.bound = false; slot.sealed = false; slot.submitted = false;
     }};
 const gd::RegionDependenciesVTable dependencies_table{
@@ -265,7 +365,15 @@ const ProviderRegionPreparedVTable prepared_table{
       *out = slot;
       HYLE_ASSIGN_OR_RETURN(slot->recording, an::prepare_copy_recording_runtime(artifact.runtime,
           artifact.range_capacity, allocator, artifact.max_bytes, an::CopyRecordingMode::kReplayable));
-      try { slot->ranges.reserve(artifact.range_capacity); slot->copies.reserve(artifact.range_capacity); }
+      if(artifact.device_lengths){
+        const auto capacity=artifact.descriptor.schema.capacity();
+        HYLE_RETURN_IF_ERROR(an::prepare_device_append_recording(*slot->recording,
+            {{capacity.page_size,capacity.max_pages,artifact.query_rows,artifact.range_capacity+capacity.max_requests+1,artifact.row_bytes},capacity.max_requests},artifact.rows));
+      }
+      try {
+        if(artifact.device_lengths)slot->device_pages.reserve(artifact.range_capacity);
+        else { slot->ranges.reserve(artifact.range_capacity); slot->copies.reserve(artifact.range_capacity); }
+      }
       catch (...) { return Status::ResourceExhausted("Apple append reserved descriptors"); }
       return Status::Ok();
     },
@@ -273,7 +381,15 @@ const ProviderRegionPreparedVTable prepared_table{
     .delegated_submit = [](void *, void *invocation, std::span<const cd::CompletionDependency> dependencies,
         std::span<const compute::ConstTensorView> inputs, std::span<const compute::TensorView> outputs) noexcept -> Result<compute::Completion> {
       auto &slot = *static_cast<Slot *>(invocation);
-      if (!slot.sealed || !slot.pages.valid() || inputs.size() != 1 || !outputs.empty() ||
+      if(slot.artifact.device_lengths){
+        if(!slot.sealed || !slot.pages.valid() || inputs.size()!=slot.artifact.boundary_count || !outputs.empty())
+          return std::unexpected(Status::FailedPrecondition("Apple device append current boundary/pages are not sealed"));
+        for(std::size_t i=0;i<3;++i)if(!slot.device_inputs[i].source.valid()){
+          const auto &actual=inputs[slot.artifact.ports[i]];
+          if(!actual.valid() || !same_range(actual.storage(),slot.device_views[i].storage()))
+            return std::unexpected(Status::FailedPrecondition("Apple device append original native input changed"));
+        }
+      }else if (!slot.sealed || !slot.pages.valid() || inputs.size() != 1 || !outputs.empty() ||
           (!slot.source.valid() && (!inputs[0].valid() || !same_range(inputs[0].storage(), slot.rows.storage()))))
         return std::unexpected(Status::FailedPrecondition("Apple append current ports/pages are not sealed"));
       HYLE_ASSIGN_OR_RETURN(auto completion, an::submit_copy_recording(*slot.recording, dependencies));
@@ -291,16 +407,18 @@ const ProviderRegionPreparedVTable prepared_table{
       HYLE_RETURN_IF_ERROR(an::copy_recording_reuse_gate(*slot.recording));
       slot.sealed = true; return Status::Ok();
     },
-    .query_extension = [](void *, compute::ProviderExtensionId id) noexcept -> const void * {
+    .query_extension = [](void *prepared, compute::ProviderExtensionId id) noexcept -> const void * {
       if (id == gd::kRegionDependenciesExtensionId) return &dependencies_table;
       if (id == bd::kNativeAppendRegionExtensionId) return &append_table;
+      if (id == bd::kNativeDeviceAppendRegionExtensionId && static_cast<Artifact *>(prepared)->device_lengths)
+        return &device_append_table;
       if (id == gd::kRegionOrderedWriteExtensionId) return &ordered_table;
       if (id == gd::kRegionBindingReleaseExtensionId) return &release_table;
       return nullptr;
     }};
 } // namespace
 bool native_paged_append_operation(const compute::Operation &operation) noexcept {
-  return operation.custom_as<batch::PagedAppend>().has_value();
+  return operation.custom_as<batch::PagedAppend>().has_value() || operation.custom_as<batch::DeviceLengthsPagedAppend>().has_value();
 }
 Status propose_native_paged_append(void *, const RegionDiscoveryRequest &request,
     std::span<const std::uint8_t> needed, RegionProposalWriter &writer) noexcept {
@@ -323,11 +441,11 @@ Status native_paged_append_resources(void *, const RegionCompileRequest &request
     std::span<RegionInputRequirement> inputs, std::span<RegionOutputRequirement> outputs,
     RegionResourceProposal *proposal) noexcept {
   HYLE_ASSIGN_OR_RETURN(auto append, qualify(request)); (void)append;
-  if (inputs.size() != 1 || !outputs.empty()) return Status::InvalidArgument("Apple append physical boundary differs");
+  if (inputs.size() != request.inputs.size() || !outputs.empty()) return Status::InvalidArgument("Apple append physical boundary differs");
   const cd::ResourceBindingRequirement resource{
       .required_properties = mem::MemoryProperty::kHostAccessible | mem::MemoryProperty::kDeviceAccessible |
           mem::MemoryProperty::kHostDeviceCoherent, .minimum_alignment = 1};
-  inputs[0] = {resource, true};
+  std::ranges::fill(inputs,RegionInputRequirement{resource,true});
   *proposal = {.runtime = runtime_properties, .workspace_resource = resource, .preserves_effects = true};
   return Status::Ok();
 }
@@ -336,20 +454,38 @@ compute::ProviderPrepareOutcome compile_native_paged_append(void *context,
   using Outcome = compute::ProviderPrepareOutcome; *out = {};
   auto append = qualify(request);
   if (!append) return append.error().IsUnimplemented() ? Outcome::unsupported(append.error()) : Outcome::error(append.error());
-  if (request.input_resources.size() != 1 || !an::is_copy_resource(request.input_resources[0]))
+  if (request.input_resources.size() != request.inputs.size() ||
+      std::ranges::any_of(request.input_resources,[](auto resource){return !an::is_copy_resource(resource);}))
     return Outcome::unsupported(Status::Unimplemented("Apple append needs original shared Metal storage"));
   auto *artifact = allocator.construct<Artifact>();
   if (!artifact) return Outcome::error(Status::ResourceExhausted("Apple append artifact metadata"));
   *out = {.vtable = &prepared_table, .state = artifact};
   const auto build = [&]() noexcept -> Status {
     artifact->runtime = source_runtime(context); artifact->node = request.nodes[0];
-    artifact->descriptor = std::move(*append); artifact->resource = request.input_resources[0];
-    HYLE_ASSIGN_OR_RETURN(artifact->rows, request.graph->value_description(request.inputs[0]));
+    artifact->descriptor = std::move(append->descriptor);artifact->device_lengths=append->device_lengths;
+    artifact->boundary_count=static_cast<std::uint32_t>(request.inputs.size());
+    const auto count=artifact->device_lengths?3u:1u;
+    for(std::size_t i=0;i<count;++i){
+      HYLE_ASSIGN_OR_RETURN(artifact->inputs[i],request.graph->node_input(artifact->node,i));
+      const auto found=std::ranges::find(request.inputs,artifact->inputs[i]);
+      if(found==request.inputs.end())return Status::InvalidArgument("Apple append original logical input is absent");
+      artifact->ports[i]=static_cast<std::uint32_t>(found-request.inputs.begin());
+      HYLE_ASSIGN_OR_RETURN(artifact->descriptions[i],request.graph->value_description(artifact->inputs[i]));
+    }
+    artifact->resource=request.input_resources[artifact->ports[0]];artifact->rows=artifact->descriptions[0];
     HYLE_ASSIGN_OR_RETURN(artifact->input_bytes, artifact->rows.required_bytes());
     HYLE_ASSIGN_OR_RETURN(artifact->query_rows, bd::append_query_rows(artifact->descriptor, artifact->rows));
     const auto query = static_cast<std::size_t>(artifact->query_rows);
     artifact->row_bytes = artifact->input_bytes / query;
     const auto capacity = artifact->descriptor.schema.capacity();
+    if(artifact->device_lengths){
+      artifact->range_capacity=std::min(capacity.max_pages,capacity.max_page_refs);
+      if(!artifact->range_capacity || artifact->range_capacity>UINT32_MAX/3-capacity.max_requests-1 ||
+          !capacity.page_size || !artifact->row_bytes ||
+          std::uint64_t(artifact->range_capacity)*capacity.page_size>SIZE_MAX/artifact->row_bytes)
+        return Status::Unimplemented("Apple device append capacity exceeds its native descriptor/dispatch extent");
+      artifact->max_bytes=std::size_t(artifact->range_capacity)*capacity.page_size*artifact->row_bytes;
+    }else{
     const auto active = std::min(query, static_cast<std::size_t>(capacity.max_requests));
     if (query > UINT32_MAX / 2 || active > UINT32_MAX / 2 - query || !capacity.page_size ||
         (capacity.page_size > 1u && active > (SIZE_MAX - query) / (capacity.page_size - 1u)))
@@ -359,11 +495,12 @@ compute::ProviderPrepareOutcome compile_native_paged_append(void *context,
       return Status::OutOfRange("Apple append byte geometry overflows");
     artifact->range_capacity = static_cast<std::uint32_t>(query + active);
     artifact->max_bytes = copied_rows * artifact->row_bytes;
+    }
     out->properties = {.persistent_bytes = sizeof(Artifact), .runtime = runtime_properties,
         .preserves_effects = true, .invocation_private_bytes = std::nullopt};
     return Status::Ok();
   };
   const auto status = build();
-  return status.ok() ? Outcome::prepared() : Outcome::error(status);
+  return status.ok()?Outcome::prepared():status.IsUnimplemented()?Outcome::unsupported(status):Outcome::error(status);
 }
 } // namespace hyle::graph::apple::detail

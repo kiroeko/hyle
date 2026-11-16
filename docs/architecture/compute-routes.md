@@ -69,6 +69,12 @@ MLX的原buffer使用untracked资源；同一stream的blit pass通过冷期创�
 按声明的phase/resource上限冷期预留，复用原权限与退休。退休核对也等待原命令缓冲的错误处理
 回调完成，遵循[Metal完成合同](https://developer.apple.com/documentation/metal/mtlcommandbuffer/waituntilcompleted%28%29)。
 
+设备长度控制的分页追加复用原CopyRecording、fence和完成通知；原PagedAppendPages保留COW写权限、
+继承前缀和完整Graph的成功发布合同。追加与注意力可有不同的物理query容量，但须共享原KV长度值及
+同一schema的分页容量；值相同的另一个Graph输出不能代替原控制身份。读取程序在GPU检查原追加的
+状态字后才访问页面，失败仍由原依赖和完整Graph退休结算。该原生算子接线不等于完整MTP设备闭环；
+尚未稳定的MLX输出地址仍先观察生产前缀，引擎的后端设备长度能力须由完整消费者单独验收。
+
 整张原生Graph的Source可由具备实际终态端点的原提交导出；冷期逐一核对消费者是否能导入生产者的
 所有终态端点，并为原执行槽预留依赖容量。接纳期间借用原RetainedCompletion，防止并发drain消费
 仍在交给后端的句柄；后端在回调返回前保留原Job和提交代际。每段消费者按自己的原生队列导入，

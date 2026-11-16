@@ -13,6 +13,7 @@
 #include "completion_internal.h"
 #include "hyle/core/assert.h"
 #include "hyle/mem/std_allocator.h"
+#include "apple_device_append_metal.h"
 
 namespace hyle::compute::apple::detail {
 namespace cd = compute::detail;
@@ -35,8 +36,9 @@ struct CopyRecording final : Job {
     CopyRecording *owner;
     explicit NativeTail(CopyRecording &recording) noexcept : owner(&recording) {}
   } native_tail;
+  mem::AllocatorRef allocator;
   explicit CopyRecording(mem::AllocatorRef allocator)
-      : native_tail(*this), physical(mem::StdAllocator<cd::PhysicalCopyResource>(allocator)),
+      : native_tail(*this), allocator(allocator), physical(mem::StdAllocator<cd::PhysicalCopyResource>(allocator)),
         inputs(mem::StdAllocator<CopyRange>(allocator)), intervals(mem::StdAllocator<cd::CopyInterval>(allocator)),
         resolved(mem::StdAllocator<cd::ResolvedCopyRange>(allocator)), commands(mem::StdAllocator<CopyCommand>(allocator)),
         host_targets(mem::StdAllocator<HostCopyTarget>(allocator)) {}
@@ -83,6 +85,8 @@ struct CopyRecording final : Job {
   CopyArray<HostCopyTarget> host_targets;
   std::size_t host_range_count = 0;
   std::array<std::uint64_t, 1> closure{};
+  std::shared_ptr<DeviceAppendState> device_append;
+  bool device_append_active = false;
 };
 namespace {
 void deliver(cd::CompletionLifetime lifetime, Status terminal, const Status &hint) noexcept {
@@ -98,6 +102,7 @@ void finish(CopyRecording &state, Status terminal) noexcept {
       InvocationAccess::release_source(state.host_source);
       state.source_pinned = false;
     }
+    if (state.device_append) state.device_append->release();
     state.terminal = terminal; abandoned = std::exchange(state.abandoned, {}); hint = std::move(state.hint);
     state.done.store(1, std::memory_order_release);
   }
@@ -125,6 +130,7 @@ Status observe_copy_prefix(CopyRecording &state) noexcept {
   // An event proves device order only. Preserve the original upstream
   // checked verdict before this copy or any dependent can publish success.
   terminal.Update(state.native_terminal);
+  if (state.device_append_active) terminal.Update(state.device_append->observe());
   state.native_terminal = std::move(terminal);
   state.native_retired = true;
   return state.native_terminal;
@@ -261,12 +267,13 @@ void execute_copy(Job *job) noexcept {
   if (state.cancel.load(std::memory_order_acquire)) terminal.Update(Status::Cancelled("Apple copy cancelled before native recording"));
   if (terminal.ok()) terminal.Update(state.dependencies.resolve_copy());
   if (terminal.ok() && state.host_copy) terminal.Update(state.dependencies.observe());
+  if (terminal.ok() && state.device_append_active) terminal.Update(state.device_append->resolve(state.runtime));
   if (terminal.ok() && state.preflight) terminal.Update(state.preflight(state.preflight_state));
   bool use_blit = !state.host_copy;
   if (terminal.ok() && state.host_copy) terminal = execute_host_copy(state, &use_blit);
   // An empty phase with pending order inputs still needs their real native
   // frontier; complete it through the same event/tail without an owner drain.
-  if (terminal.ok() && use_blit && (state.report.active_copies != 0 || !state.dependencies.empty())) {
+  if (terminal.ok() && use_blit && (state.device_append_active || state.report.active_copies != 0 || !state.dependencies.empty())) {
     @autoreleasepool {
       bool callback_installed = false;
       bool reserved_tail = false;
@@ -284,23 +291,29 @@ void execute_copy(Job *job) noexcept {
         encoder.end_encoding();
         auto native_command = NS::RetainPtr(encoder.get_command_buffer());
         id<MTLCommandBuffer> command = (__bridge id<MTLCommandBuffer>)native_command.get();
-        id<MTLBlitCommandEncoder> blit = [command blitCommandEncoder];
-        if (blit == nil) {
-          terminal = Status::ResourceExhausted("Metal blit command encoder allocation failed");
+        auto &frontier = *state.runtime->copy_fence;
+        if (state.device_append_active) {
+          terminal = state.device_append->encode(command, frontier.native, frontier.encoded);
+          if (terminal.ok()) { frontier.encoded = true; state.calls.fetch_add(1, std::memory_order_relaxed); }
         } else {
-          // MLX allocates untracked buffers. Submission order does not make
-          // one raw blit pass's stores visible to the next pass's loads.
-          auto &frontier = *state.runtime->copy_fence;
-          if (frontier.encoded) [blit waitForFence:frontier.native];
-          for (std::size_t index = 0; index < state.report.active_copies; ++index) {
-            const auto &copy = state.commands[index];
-            [blit copyFromBuffer:(__bridge id<MTLBuffer>)copy.source sourceOffset:copy.source_offset
-                toBuffer:(__bridge id<MTLBuffer>)copy.destination destinationOffset:copy.destination_offset size:copy.bytes];
-            state.calls.fetch_add(1, std::memory_order_relaxed);
+          id<MTLBlitCommandEncoder> blit = [command blitCommandEncoder];
+          if (blit == nil) {
+            terminal = Status::ResourceExhausted("Metal blit command encoder allocation failed");
+          } else {
+            // MLX buffers are untracked; preserve the original memory frontier.
+            if (frontier.encoded) [blit waitForFence:frontier.native];
+            for (std::size_t index = 0; index < state.report.active_copies; ++index) {
+              const auto &copy = state.commands[index];
+              [blit copyFromBuffer:(__bridge id<MTLBuffer>)copy.source sourceOffset:copy.source_offset
+                  toBuffer:(__bridge id<MTLBuffer>)copy.destination destinationOffset:copy.destination_offset size:copy.bytes];
+              state.calls.fetch_add(1, std::memory_order_relaxed);
+            }
+            [blit updateFence:frontier.native];
+            frontier.encoded = true;
+            [blit endEncoding];
           }
-          [blit updateFence:frontier.native];
-          frontier.encoded = true;
-          [blit endEncoding];
+        }
+        if (terminal.ok()) {
           state.completion_event.set_value(state.submitted_epoch);
           state.completion_event.signal(*state.runtime->stream);
           state.native_command = std::move(native_command);
@@ -428,6 +441,8 @@ Status clear_host_copy(CopyRecording &state) noexcept {
   }
   state.host_range_count = 0;
   state.host_source.reset(); state.host_copy = false; state.host_output_bytes = {};
+  state.device_append_active = false;
+  if (state.device_append) { state.device_append->inputs = {}; state.device_append->bound = false; }
   state.host_owner.reset();
   state.host_bytes = 0; state.consumed_epoch = 0; state.expected_epoch = 0;
   return result;
@@ -654,6 +669,7 @@ Result<Completion> submit_copy_recording(CopyRecording &state,
       if (state.source_pinned) {
         InvocationAccess::release_source(state.host_source); state.source_pinned = false;
       }
+      if (state.device_append) state.device_append->release();
       state.dependencies.clear();
     }
   } admission{state};
@@ -670,6 +686,7 @@ Result<Completion> submit_copy_recording(CopyRecording &state,
         state.host_source, state.runtime, state.consumed_epoch));
     state.source_pinned = true;
   }
+  if (state.device_append_active) HYLE_RETURN_IF_ERROR(state.device_append->pin(state.runtime));
   if (state.mode == CopyRecordingMode::kOnce) state.prepared = false;
   if (state.report.active_copies == 0 && !state.prefix_marker && state.dependencies.empty())
     return Completion::completed();
@@ -684,11 +701,13 @@ Result<Completion> submit_copy_recording(CopyRecording &state,
     if (state.source_pinned) {
       InvocationAccess::release_source(state.host_source); state.source_pinned = false;
     }
+    if (state.device_append) state.device_append->release();
     state.done.store(1, std::memory_order_release); state.admitted_owner.reset(); state.completion_owner.reset();
     state.submitted_epoch = previous_epoch;
     return std::unexpected(admitted);
   }
   if (state.source_pinned) state.consumed_epoch = state.expected_epoch;
+  if (state.device_append_active) state.device_append->accepted();
   state.report.phase_completions = 1;
   admission.accepted = true;
   return cd::CompletionAccess::make(&copy_completion_vtable, &state);
@@ -831,5 +850,52 @@ Result<mlx::core::Event> copy_dependency_event(const CopyRecording &state, std::
 void release_copy_dependency(CopyRecording &state) noexcept {
   std::lock_guard lock(state.completion_mutex);
   HYLE_FATAL_ASSERT(state.dependency_readers); --state.dependency_readers;
+}
+Status prepare_device_append_recording(CopyRecording &state,
+    cd::DeviceLengthsPagedAppendSpec geometry,const TensorDesc &rows) noexcept {
+  std::lock_guard lock(state.completion_mutex);
+  HYLE_RETURN_IF_ERROR(mutable_recording(state));
+  if (std::uint64_t(geometry.storage.instruction_capacity) > std::uint64_t(state.limits.max_copies)+geometry.requests+1)
+    return Status::ResourceExhausted("Apple device append exceeds the original recording's metadata capacity");
+  try {
+    auto prepared=std::allocate_shared<DeviceAppendState>(mem::StdAllocator<DeviceAppendState>(state.allocator),state.allocator);
+    HYLE_RETURN_IF_ERROR(prepared->prepare(state.runtime,geometry,rows));
+    HYLE_RETURN_IF_ERROR(clear_host_copy(state));
+    state.prepared=false;state.device_append=std::move(prepared);
+    return Status::Ok();
+  }catch(...){return native_exception();}
+}
+Status configure_device_append_recording(CopyRecording &state,mem::ConstBufferView arena,
+    std::span<const cd::DeviceAppendRequest> requests,std::span<const DeviceAppendPageBinding> pages) noexcept {
+  std::lock_guard lock(state.completion_mutex);
+  HYLE_RETURN_IF_ERROR(mutable_recording(state));
+  if(!state.device_append)return Status::FailedPrecondition("Apple device append original recording is not prepared");
+  if (pages.size()>state.limits.max_copies)
+    return Status::ResourceExhausted("Apple device append exceeds the original page capacity");
+  std::size_t bytes=0;
+  for (const auto &page:pages) {
+    if (page.destination.size()>state.limits.max_bytes-bytes)
+      return Status::ResourceExhausted("Apple device append exceeds the original byte capacity");
+    bytes+=page.destination.size();
+  }
+  state.prepared=false;HYLE_RETURN_IF_ERROR(clear_host_copy(state));
+  HYLE_RETURN_IF_ERROR(state.device_append->configure(state.device,arena,requests,pages));
+  state.device_append_active=true;state.host_copy=false;state.prefix_marker=true;
+  state.report={};state.report.active_copies=static_cast<std::uint32_t>(pages.size());
+  for(const auto &page:pages)state.report.logical_bytes+=page.destination.size();
+  state.report.physical_bytes=state.report.logical_bytes;state.report.native_metadata_unknown=true;
+  state.calls.store(0,std::memory_order_relaxed);state.waits.store(0,std::memory_order_relaxed);
+  return Status::Ok();
+}
+Status bind_device_append_inputs(CopyRecording &state,std::span<const InputBinding> inputs) noexcept {
+  std::lock_guard lock(state.completion_mutex);
+  HYLE_RETURN_IF_ERROR(mutable_recording(state));state.prepared=false;
+  if(!state.device_append_active)return Status::FailedPrecondition("Apple device append has no original capacity episode");
+  HYLE_RETURN_IF_ERROR(state.device_append->bind(state.runtime,inputs));state.prepared=true;return Status::Ok();
+}
+Result<ConstTensorView> device_append_status(CopyRecording &state) noexcept {
+  std::lock_guard lock(state.completion_mutex);
+  if(!state.device_append_active)return std::unexpected(Status::FailedPrecondition("Apple device append is not selected"));
+  return state.device_append->status_view();
 }
 } // namespace hyle::compute::apple::detail
