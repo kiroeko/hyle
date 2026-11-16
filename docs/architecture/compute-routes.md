@@ -87,6 +87,10 @@ MLX的原buffer使用untracked资源；同一stream的blit pass通过冷期创�
 等待按真实队列及编码器来源区分：MLX导入ggml或原生复制事件，ggml导入MLX或原生复制事件；同一原生队列的后续
 region复用首次成功提交的等待。原生产者的完整错误与代际仍独立核对，不用MLX的stream标记推断队列身份。
 
+原生程序实际退休后可以归还输入绑定；后继仍在读取时，保留原输出array和提交代际，继续禁止重新绑定、
+提交和复用生产者。外部结果观察者仍阻止输入归还，输入归还也不代替后继的真实退休。Source依赖引用的
+原状态提示在该代际内保持有效，完成通知不移空它；下一次合法提交才重置本代际的提示。
+
 Metal pipeline的static threadgroup memory上限与全局GPU buffer容量是不同限制。
 编译或验证选项可能改变某个pipeline的实际用量，应查询创建后的pipeline再决定合法tile/路径，
 不能把一次超限推导成统一buffer上限，也不能假定所有kernel的用量按相同比例变化。

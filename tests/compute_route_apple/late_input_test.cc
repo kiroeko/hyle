@@ -850,6 +850,121 @@ TEST(AppleLateInput, EarlierDeviceCheckPrecedesLaterEncodingFailure) {
   context->close().IgnoreError(); // The actual encoding exception poisons this Runtime.
 }
 
+void exercise_retired_binding_detach(bool alias) {
+  auto context = a::Context::create();
+  ASSERT_TRUE(context) << context.error().message();
+  auto runtime = ad::ContextAccess::runtime(*context);
+  auto memory = a::MemoryResource::create(*context);
+  ASSERT_TRUE(memory);
+  auto pool = c::LeasePool::create(memory->ref(), 16, {.max_blocks = 1});
+  ASSERT_TRUE(pool);
+  const auto desc = c::TensorDesc::dense(c::DataType::kFloat32, std::array<std::int64_t, 1>{4}).value();
+  const std::array specs{a::InputSpec{{4}, mx::float32}};
+  auto first = ad::ContextAccess::compile(runtime,
+      [alias](const auto &args, mx::Stream stream) {
+        return std::vector<mx::array>{alias ? args[0] : mx::add(args[0], mx::array(1.f), stream)};
+      }, specs);
+  auto second = ad::ContextAccess::compile(runtime,
+      [](const auto &args, mx::Stream stream) {
+        return std::vector<mx::array>{mx::multiply(args[0], mx::array(2.f), stream)};
+      }, specs);
+  ASSERT_TRUE(first); ASSERT_TRUE(second);
+  auto producer = first->create_invocation(), consumer = second->create_invocation();
+  ASSERT_TRUE(producer); ASSERT_TRUE(consumer);
+  auto source = ad::InvocationAccess::source(*producer, 0);
+  ASSERT_TRUE(source);
+  auto dependency = ad::InvocationAccess::source_dependency(*source, runtime);
+  ASSERT_TRUE(dependency);
+  std::array<ad::InputBinding, 1> late;
+  late[0].source = std::move(*source);
+  ASSERT_TRUE(ad::InvocationAccess::prepare_inputs(*consumer, late).ok());
+  late[0].source.reset();
+  {
+    auto writer = pool->allocate(16);
+    ASSERT_TRUE(writer);
+    const std::array<float, 4> initial{1, 2, 3, 4};
+    ASSERT_TRUE(writer->view()->write(std::as_bytes(std::span(initial))).ok());
+    auto ready = writer->publish();
+    ASSERT_TRUE(ready);
+    auto array = memory->binding(*ready, desc);
+    ASSERT_TRUE(array);
+    const std::array values{*array};
+    ASSERT_TRUE(producer->bind(values).ok());
+  } // Only original native arrays now keep the aliased allocation alive.
+  c::detail::ResultTransfer retired;
+  {
+    FifoGate gate;
+    ASSERT_TRUE(gate.enqueue(runtime).ok()); gate.wait_entered();
+    auto produced = producer->submit();
+    ASSERT_TRUE(produced);
+    EXPECT_TRUE(ad::InvocationAccess::can_detach_inputs(*producer, {}).IsUnavailable());
+    gate.open_and_join();
+    ASSERT_TRUE(produced->completion().wait().ok());
+    ASSERT_TRUE(dependency->terminal_hint->ok()) << dependency->terminal_hint->message();
+    retired = c::detail::ResultAccess::take_storage(std::move(*produced));
+  }
+  // An escaped result is still a real observer, never discounted as private.
+  EXPECT_TRUE(ad::InvocationAccess::can_detach_inputs(*producer, {}).IsFailedPrecondition());
+  auto escaped = retired.owner;
+  EXPECT_TRUE(ad::InvocationAccess::can_detach_inputs(*producer, retired.owner).IsFailedPrecondition());
+  escaped.reset();
+  {
+    FifoGate gate;
+    ASSERT_TRUE(gate.enqueue(runtime).ok()); gate.wait_entered();
+    auto pending = consumer->submit();
+    ASSERT_TRUE(pending);
+    ASSERT_TRUE(ad::InvocationAccess::can_detach_inputs(*producer, retired.owner).ok());
+    retired.owner.reset();
+    ad::InvocationAccess::detach_inputs(*producer);
+    const std::array changed{mx::array({5.f, 6.f, 7.f, 8.f})};
+    EXPECT_TRUE(producer->bind(changed).IsUnavailable());
+    EXPECT_TRUE(ad::InvocationAccess::reuse_gate(*producer).IsUnavailable());
+    EXPECT_TRUE(ad::InvocationAccess::release_inputs(*producer).IsUnavailable());
+    EXPECT_EQ(pool->stats().live_blocks, 1u);
+    EXPECT_FALSE(producer->submit());
+    gate.open_and_join();
+    ASSERT_TRUE(pending->completion().wait().ok());
+    {
+      auto output = ad::InvocationAccess::output(*consumer, 0);
+      ASSERT_TRUE(output) << output.error().message();
+      for (int i = 0; i < 4; ++i)
+        EXPECT_FLOAT_EQ(output->data<float>()[i], 2.f * (i + (alias ? 1.f : 2.f)));
+    }
+    // An evaluated consumer result can still own its original input DAG.
+    // Return that consumer's own private result and bindings as well.
+    auto consumed = c::detail::ResultAccess::take_storage(std::move(*pending));
+    ASSERT_TRUE(ad::InvocationAccess::can_detach_inputs(*consumer, consumed.owner).ok());
+    consumed.owner.reset();
+    ad::InvocationAccess::detach_inputs(*consumer);
+  }
+  ASSERT_TRUE(ad::InvocationAccess::reuse_gate(*producer).ok());
+  source = ad::InvocationAccess::source(*producer, 0);
+  ASSERT_TRUE(source);
+  late[0].source = std::move(*source);
+  ASSERT_TRUE(ad::InvocationAccess::prepare_inputs(*consumer, late).ok());
+  late[0].source.reset();
+  const std::array changed{mx::array({5.f, 6.f, 7.f, 8.f})};
+  ASSERT_TRUE(producer->bind(changed).ok());
+  auto produced = producer->submit();
+  ASSERT_TRUE(produced);
+  ASSERT_TRUE(produced->completion().wait().ok());
+  ASSERT_TRUE(dependency->terminal_hint->ok()) << dependency->terminal_hint->message();
+  auto consumed = consumer->submit();
+  ASSERT_TRUE(consumed);
+  ASSERT_TRUE(consumed->completion().wait().ok());
+  auto output = ad::InvocationAccess::output(*consumer, 0);
+  ASSERT_TRUE(output);
+  for (int i = 0; i < 4; ++i)
+    EXPECT_FLOAT_EQ(output->data<float>()[i], 2.f * (i + (alias ? 5.f : 6.f)));
+}
+
+TEST(AppleLateInput, DetachRetiredBindingsPreservesPinnedGeneratedOutput) {
+  exercise_retired_binding_detach(false);
+}
+TEST(AppleLateInput, DetachRetiredBindingsPreservesPinnedAliasedOutput) {
+  exercise_retired_binding_detach(true);
+}
+
 TEST(AppleLateInput, PinsActualProducerUntilConsumerRetiresAndRejectsStaleEpoch) {
   auto context = a::Context::create();
   ASSERT_TRUE(context) << context.error().message();

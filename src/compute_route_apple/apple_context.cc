@@ -487,6 +487,7 @@ struct InvocationState : Job {
   // another slot's binding lock while holding the Runtime DAG monitor.
   std::atomic<std::uint64_t> submitted_epoch{0};
   std::size_t source_readers = 0; // Protected by binding_mutex.
+  bool outputs_detached = false; // Retired bindings withdrawn; readers still own outputs.
   Status terminal;
   cd::CompletionLifetime abandoned;
   CompletionNotification notification;
@@ -499,6 +500,12 @@ struct InvocationState : Job {
   Status native_terminal;
   Status observe_inputs() noexcept;
   void encode_dependencies(mx::Stream stream) { dependencies.encode(stream); }
+  // Caller holds this producer's binding_mutex. Returning the last real
+  // reader also returns any retired array's original input-lease alias.
+  void release_source_reader() noexcept {
+    HYLE_FATAL_ASSERT(source_readers != 0);
+    if (--source_readers == 0 && outputs_detached) values->arrays.clear();
+  }
 
   InvocationState(std::shared_ptr<ProgramState> p, cd::ResultSlot<Results> slot)
       : program(std::move(p)), values(std::make_shared<ResultValues>()),
@@ -536,8 +543,7 @@ struct InvocationState : Job {
       auto &producer = *input.binding.source.state_;
       // Never hold two producer monitors, and never wait for native work.
       std::lock_guard lock(producer.binding_mutex);
-      HYLE_FATAL_ASSERT(producer.source_readers != 0);
-      --producer.source_readers;
+      producer.release_source_reader();
       input.pinned = false;
     }
     dependencies.clear();
@@ -802,7 +808,9 @@ void finish(InvocationState &state, Status terminal) noexcept {
     // this same critical section before another episode can reuse the slot.
     abandoned = std::exchange(state.abandoned, {});
     notification = std::exchange(state.notification, {});
-    hint = std::move(state.terminal_hint);
+    // Source dependencies retain a pointer to this epoch's hint. Moving it
+    // would turn a successful retired producer into a code-only Unknown.
+    hint = state.terminal_hint;
     state.done.store(1, std::memory_order_release);
   }
   platform::detail::wake_all(&state.done);
@@ -899,7 +907,7 @@ void NativeDependencies::clear() noexcept {
     if (dependency.copy) { release_copy_dependency(*dependency.copy); continue; }
     auto &producer = *dependency.native;
     { std::lock_guard lock(producer.binding_mutex);
-      HYLE_FATAL_ASSERT(producer.source_readers != 0); --producer.source_readers; }
+      producer.release_source_reader(); }
     release(&producer);
   }
   sources_.clear(); events_.clear(); native_events_.clear(); waits_.clear();
@@ -1783,8 +1791,7 @@ Result<mx::array> detail::InvocationAccess::device_source_output(const InputSour
 void detail::InvocationAccess::release_source(const InputSource &source) noexcept {
   HYLE_FATAL_ASSERT(source.state_ != nullptr);
   std::lock_guard lock(source.state_->binding_mutex);
-  HYLE_FATAL_ASSERT(source.state_->source_readers != 0);
-  --source.state_->source_readers;
+  source.state_->release_source_reader();
 }
 
 Status detail::InvocationAccess::prepare_inputs(Invocation &invocation,
@@ -1952,10 +1959,13 @@ Status detail::PagedBatchAccess::can_detach_inputs(const Invocation &invocation,
   auto *state = invocation.state_;
   if (!state) return Status::FailedPrecondition("empty Apple native slot");
   std::lock_guard lock(state->binding_mutex);
-  if (!state->done.load(std::memory_order_acquire) || state->source_readers)
+  if (!state->done.load(std::memory_order_acquire))
     return Status::Unavailable("Apple native inputs are still in use");
   // done is published only after native/source/page uses retire. Failed or
   // closed slots may be cleaned; this does not reopen execution admission.
+  // Outgoing readers retain these original outputs, not permission to reuse
+  // the producer. detach_inputs preserves their arrays until those readers
+  // retire; bind/submit/reuse still reject every outstanding source reader.
   return cd::can_detach_retired(state->result_slot, result);
 }
 void detail::PagedBatchAccess::detach_inputs(Invocation &invocation) noexcept {
@@ -1964,7 +1974,9 @@ void detail::PagedBatchAccess::detach_inputs(Invocation &invocation) noexcept {
   cd::discard_retired_payload(state.result_slot);
   std::lock_guard source_lock(state.program->runtime->queue_mutex);
   state.prepared_inputs.clear(); state.source_bindings = false;
-  state.bound = false; state.inputs.clear(); state.values->arrays.clear();
+  state.bound = false; state.inputs.clear();
+  state.outputs_detached = true;
+  if (!state.source_readers) state.values->arrays.clear();
   for (auto &value : state.native_values) value.reset();
   state.arguments.clear(); state.region_outputs.clear();
   state.block_arguments.clear(); state.block_outputs.clear(); state.output_blocks.clear();
@@ -2066,11 +2078,13 @@ Result<OwnedResult<Results>> Invocation::submit_guarded(LeaseUseBatch uses,
   } pins{*state_};
   HYLE_RETURN_IF_ERROR(state_->snapshot_sources());
   HYLE_RETURN_IF_ERROR(state_->dependencies.capture(state_->program->runtime, dependencies, state_));
+  state_->outputs_detached = false;
   state_->values->arrays.clear();
   const Status populated = writer->emplace(Results(state_->values));
   if (!populated.ok())
     return std::unexpected(populated);
   state_->terminal = Status::Ok();
+  state_->terminal_hint = Status::Ok();
   state_->cancel.store(false, std::memory_order_relaxed);
   state_->done.store(0, std::memory_order_release);
   state_->native_uses = std::move(uses);

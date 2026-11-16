@@ -104,7 +104,7 @@ void finish(CopyRecording &state, Status terminal) noexcept {
       state.source_pinned = false;
     }
     if (state.device_append) state.device_append->release();
-    state.terminal = terminal; abandoned = std::exchange(state.abandoned, {}); hint = std::move(state.hint);
+    state.terminal = terminal; abandoned = std::exchange(state.abandoned, {}); hint = state.hint;
     state.done.store(1, std::memory_order_release);
   }
   platform::detail::wake_all(&state.done);
