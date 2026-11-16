@@ -11,10 +11,43 @@
 #include <mlx/transforms.h>
 
 #include "hyle/compute/low_precision.h"
+#include "tensor_test_support.h"
 
 namespace {
 namespace apple = hyle::compute::apple;
 namespace mx = mlx::core;
+
+TEST(AppleRegion, BfloatThinBatchesKeepEachOriginalSingleRowReduction) {
+  namespace c=hyle::compute;
+  namespace t=apple_tensor_test;
+  constexpr int depth=4096,columns=2048,rows=8;
+  auto context=apple::Context::create();
+  ASSERT_TRUE(context)<<context.error().message();
+  std::vector<double> weights(std::size_t(depth)*columns),inputs(std::size_t(rows)*depth);
+  for(std::size_t i=0;i<weights.size();++i)weights[i]=.125*std::sin(double(i%8191)*.071);
+  for(std::size_t i=0;i<inputs.size();++i)inputs[i]=std::cos(double(i%2053)*.137);
+  const auto original=t::make(weights,{columns,depth},mx::bfloat16);
+  const auto right=t::ready(mx::transpose(original,{1,0},t::stream()));
+  std::vector<std::vector<std::uint64_t>> expected;
+  for(int row=0;row<rows;++row){
+    const auto left=t::make(std::span(inputs).subspan(std::size_t(row)*depth,depth),{1,depth},mx::bfloat16);
+    const std::array operands{left,right};
+    auto result=t::execute(*context,c::MatMul{},operands);
+    ASSERT_TRUE(result)<<result.error().message();
+    expected.push_back(t::bits(*result));
+  }
+  for(const int count:{2,3,4,8}){
+    const auto left=t::make(std::span(inputs).first(std::size_t(count)*depth),{count,depth},mx::bfloat16);
+    const std::array operands{left,right};
+    auto result=t::execute(*context,c::MatMul{},operands);
+    ASSERT_TRUE(result)<<result.error().message();
+    const auto actual=t::bits(*result);
+    ASSERT_EQ(actual.size(),std::size_t(count)*columns);
+    for(int row=0;row<count;++row)
+      EXPECT_TRUE(std::equal(expected[row].begin(),expected[row].end(),actual.begin()+std::size_t(row)*columns))
+          <<"physical_rows="<<count<<" logical_row="<<row;
+  }
+}
 
 TEST(AppleRegion, BroadcastScalarReshapeKeepsOneStoredElementAcrossWideAxes) {
   const auto stream = mx::default_stream(mx::Device::gpu);

@@ -20,10 +20,10 @@ namespace mx = mlx::core;
 
 constexpr auto written_guard = R"METAL(
   if (key_status[0] != 0 || value_status[0] != 0) {
-    const uint lane = thread_index_in_simdgroup;
+    const uint lane = thread_index_in_threadgroup;
     const uint group = threadgroup_position_in_grid.x;
     const ulong base = ulong(group) * ulong(DV + 2);
-    for (uint d = lane; d < uint(DV + 2); d += 32) partial[base+d] = 0.f;
+    for (uint d = lane; d < uint(DV + 2); d += uint(THREADS)) partial[base+d] = 0.f;
     if (lane == 0) status[group] = 3;
     return;
   }
@@ -33,7 +33,7 @@ constexpr auto written_guard = R"METAL(
 // partials stay F32 and only the final output is converted to its declared
 // dtype. Each SIMD group owns one query/head/split, including its error word.
 // The scalar controls are checked before any Q, page-table or cache access.
-constexpr auto partial_source = R"METAL(
+constexpr auto control_source = R"METAL(
   const uint lane = thread_index_in_simdgroup;
   const uint group = threadgroup_position_in_grid.x;
   const uint split = group % uint(SPLITS);
@@ -70,10 +70,13 @@ constexpr auto partial_source = R"METAL(
     }
   }
   if (!valid || request < 0) {
-    for (uint d = lane; d < uint(DV + 2); d += 32) partial[base+d] = 0.f;
-    if (lane == 0) status[group] = valid ? 0 : 3;
+    for (uint d = thread_index_in_threadgroup; d < uint(DV + 2); d += uint(THREADS)) partial[base+d] = 0.f;
+    if (thread_index_in_threadgroup == 0) status[group] = valid ? 0 : 3;
     return;
   }
+)METAL";
+
+constexpr auto partial_source = R"METAL(
   const int end = CAUSAL ? history-active_queries+local_row+1 : history;
   const int begin = WINDOW_ENABLED ? int(max(0L, long(history)-active_queries+local_row-WINDOW)) : 0;
   const uint extent = uint(max(0, end-begin));
@@ -111,6 +114,58 @@ constexpr auto partial_source = R"METAL(
     partial[base+DV] = error || !denominator ? 0.f : maximum;
     partial[base+DV+1] = error ? 0.f : denominator;
     status[group] = error;
+  }
+)METAL";
+
+// Adapted from MLX sdpa_vector, Copyright (c) 2024 Apple Inc. (MIT).
+// Locked source and license: third_party/mlx_cast/NOTICE.md and LICENSE.
+// Preserve its contiguous per-lane dot reduction, 32-way striped keys,
+// pre-scaled F32 queries and original SIMD/threadgroup softmax merge.
+constexpr auto vector_source = R"METAL(
+  const uint simd = simdgroup_index_in_threadgroup;
+  const uint kh = head / uint(HEADS/KV_HEADS);
+  const int end = CAUSAL ? history-active_queries+local_row+1 : history;
+  const int begin = WINDOW_ENABLED ? int(max(0L, long(history)-active_queries+local_row-WINDOW)) : 0;
+  float q[QK/32], accum[DV/32];
+  for (uint d=0; d<uint(QK/32); ++d)
+    q[d] = float(scale)*float(queries[(ulong(row)*HEADS+head)*QK+lane*(QK/32)+d]);
+  for (uint d=0; d<uint(DV/32); ++d) accum[d]=0.f;
+  float maximum=-3.4028234663852886e38f, denominator=0.f;
+  int error=0;
+  for (uint k=simd; k<uint(history); k+=32) {
+    if (int(k)<begin || int(k)>=end) continue;
+    const uint entry=uint(metadata[META_KV+request])+k/uint(PAGE_ROWS);
+    if (entry>=uint(REFS)) { error=1; break; }
+    const int page=metadata[META_PAGES+entry];
+    if (page<0 || uint(page)>=uint(PAGES)) { error=1; break; }
+    const ulong physical=(ulong(page)*PAGE_ROWS+k%uint(PAGE_ROWS))*KV_HEADS+kh;
+    float score=0.f;
+    for (uint d=0; d<uint(QK/32); ++d)
+      score += q[d]*float(keys[physical*QK+lane*(QK/32)+d]);
+    score=simd_sum(score);
+    const float next=max(maximum,score);
+    const float factor=fast::exp(maximum-next),weight=fast::exp(score-next);
+    maximum=next; denominator=denominator*factor+weight;
+    for (uint d=0; d<uint(DV/32); ++d)
+      accum[d]=accum[d]*factor+weight*float(values[physical*DV+lane*(DV/32)+d]);
+  }
+  threadgroup float shared_outputs[32*32], maxima[32], sums[32];
+  threadgroup int errors[32];
+  if (lane==0) { maxima[simd]=maximum; sums[simd]=denominator; errors[simd]=error; }
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  maximum=maxima[lane];
+  const float next=simd_max(maximum),factor=fast::exp(maximum-next);
+  denominator=simd_sum(sums[lane]*factor); error=simd_max(errors[lane]);
+  for (uint d=0; d<uint(DV/32); ++d) {
+    shared_outputs[lane*32+simd]=accum[d];
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    accum[d]=simd_sum(shared_outputs[simd*32+lane]*factor);
+    accum[d]=denominator==0.f ? accum[d] : accum[d]/denominator;
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    if (lane==0) partial[base+simd*(DV/32)+d]=error ? 0.f : accum[d];
+  }
+  if (thread_index_in_threadgroup==0) {
+    partial[base+DV]=0.f; partial[base+DV+1]=error ? 0.f : 1.f; status[group]=error;
   }
 )METAL";
 
@@ -180,7 +235,8 @@ Result<Program> prepare_device_lengths_paged_graph(std::shared_ptr<Runtime> runt
       return std::unexpected(Status::OutOfRange("Apple device lengths metadata exceeds native indexing"));
     const auto splits = static_cast<int>(std::clamp((std::uint64_t(c.max_kv_rows)+255)/256, std::uint64_t{1}, std::uint64_t{32}));
     const auto groups = std::uint64_t(rows)*c.query_heads*splits;
-    if (groups > INT32_MAX/32 || groups*(c.value_head_dim+2) > INT32_MAX)
+    const auto threads=splits==1 ? 1024 : 32;
+    if (groups > std::uint64_t(INT32_MAX)/static_cast<unsigned>(threads) || groups*(c.value_head_dim+2) > INT32_MAX)
       return std::unexpected(Status::OutOfRange("Apple device lengths dispatch/partial extent exceeds native indexing"));
     std::array<TensorDesc,8> descriptions;
     HYLE_ASSIGN_OR_RETURN(descriptions[0], batch_query_description(c, rows));
@@ -199,14 +255,21 @@ Result<Program> prepare_device_lengths_paged_graph(std::shared_ptr<Runtime> runt
       if (inputs.size() != (guard_writes?8u:6u)) return std::unexpected(Status::InvalidArgument("Apple device lengths physical input count differs"));
       static const auto partial = mx::fast::metal_kernel("hyle_device_lengths_paged_partials",
           {"queries", "keys", "values", "query_lengths", "kv_lengths", "metadata", "scale"},
-          {"partial", "status"}, partial_source, "", true, false, mx::CompileOptions{});
+          {"partial", "status"}, std::string(control_source)+partial_source, "", true, false, mx::CompileOptions{});
       static const auto guarded_partial=mx::fast::metal_kernel("hyle_device_lengths_paged_written_partials",
           {"queries","keys","values","query_lengths","kv_lengths","metadata","key_status","value_status","scale"},
-          {"partial","status"},std::string(written_guard)+partial_source,"",true,false,mx::CompileOptions{});
+          {"partial","status"},std::string(written_guard)+control_source+partial_source,"",true,false,mx::CompileOptions{});
+      static const auto native_vector=mx::fast::metal_kernel("hyle_device_lengths_paged_vector",
+          {"queries","keys","values","query_lengths","kv_lengths","metadata","scale"},
+          {"partial","status"},std::string(control_source)+vector_source,"",true,false,mx::CompileOptions{});
+      static const auto guarded_vector=mx::fast::metal_kernel("hyle_device_lengths_paged_written_vector",
+          {"queries","keys","values","query_lengths","kv_lengths","metadata","key_status","value_status","scale"},
+          {"partial","status"},std::string(written_guard)+control_source+vector_source,"",true,false,mx::CompileOptions{});
       static const auto merge = mx::fast::metal_kernel("hyle_device_lengths_paged_merge",
           {"partial"}, {"output"}, merge_source, "", true, false, mx::CompileOptions{});
       auto arguments = inputs;
       arguments.emplace_back(scale);
+      const auto threads=splits==1 ? 1024 : 32;
       const std::vector<std::pair<std::string, mx::fast::TemplateArg>> constants{
           {"QK", static_cast<int>(c.qk_head_dim)}, {"DV", static_cast<int>(c.value_head_dim)},
           {"HEADS", static_cast<int>(c.query_heads)}, {"KV_HEADS", static_cast<int>(c.kv_heads)},
@@ -215,11 +278,11 @@ Result<Program> prepare_device_lengths_paged_graph(std::shared_ptr<Runtime> runt
           {"REFS",static_cast<int>(c.max_page_refs)}, {"MAX_KV",static_cast<int>(c.max_kv_rows)},
           {"META_Q",static_cast<int>(offsets.query_indptr/4)}, {"META_KV",static_cast<int>(offsets.kv_indptr/4)},
           {"META_PAGES",static_cast<int>(offsets.page_indices/4)}, {"META_TAIL",static_cast<int>(offsets.last_page_lengths/4)},
-          {"SPLITS", splits}, {"CAUSAL", causal}, {"WINDOW_ENABLED", window >= 0}, {"WINDOW", std::max(window,0)}};
-      const auto &selected=guard_writes?guarded_partial:partial;
+          {"SPLITS", splits}, {"THREADS",threads}, {"CAUSAL", causal}, {"WINDOW_ENABLED", window >= 0}, {"WINDOW", std::max(window,0)}};
+      const auto &selected=splits==1 ? (guard_writes?guarded_vector:native_vector) : (guard_writes?guarded_partial:partial);
       auto parts = selected(arguments, {{static_cast<int>(groups), static_cast<int>(c.value_head_dim+2)},
           {static_cast<int>(groups)}}, {mx::float32, mx::int32},
-          {static_cast<int>(groups*32),1,1}, {32,1,1}, constants, std::nullopt, false, stream);
+          {static_cast<int>(groups*threads),1,1}, {threads,1,1}, constants, std::nullopt, false, stream);
       auto output = merge({parts[0]}, {{static_cast<int>(rows), static_cast<int>(c.query_heads), static_cast<int>(c.value_head_dim)}},
           {mx::uint16}, {static_cast<int>(groups/splits*32),1,1}, {32,1,1},
           {{"DV",static_cast<int>(c.value_head_dim)}, {"SPLITS",splits}, {"BFLOAT",inputs[0].dtype()==mx::bfloat16}},

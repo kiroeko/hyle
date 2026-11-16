@@ -850,6 +850,19 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
           !floating(inputs[1].dtype()))
         return std::unexpected(Status::Unimplemented(
             "Apple MLX MatMul requires floating inputs and F32 accumulation"));
+      const auto &left=inputs[0],&right=inputs[1];
+      if(left.ndim()==2 && right.ndim()==2 && left.dtype()==mx::bfloat16 && right.dtype()==mx::bfloat16 &&
+          left.shape(0)>1 && left.shape(0)<=8){
+        // Retain the native single-row GEMV reduction for thin BF16 batches.
+        // Additional rows, including a fixed carrier's inactive suffix, then
+        // preserve this same per-row arithmetic without copying the weights.
+        const auto rows=left.shape(0),columns=right.shape(1);
+        auto vectors=mx::reshape(left,{rows,1,left.shape(1)},stream);
+        auto selected=mx::arange(rows,mx::uint32,stream);
+        auto shared=mx::zeros({rows},mx::uint32,stream);
+        auto result=mx::gather_mm(vectors,right,selected,shared,false,stream);
+        return std::vector{mx::reshape(result,{rows,columns},stream)};
+      }
       return std::vector{mx::matmul(inputs[0], inputs[1], stream)};
     }
     if (const auto *rope = operation.get_if<RoPE>())

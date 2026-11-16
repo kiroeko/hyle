@@ -4,6 +4,7 @@
 #include "../../src/compute_route_apple/apple_carrier.h"
 #include "hyle/compute/apple_memory.h"
 #include "hyle/compute/detail/apple_plan.h"
+#include "hyle/compute/detail/apple_batch_access.h"
 #include "../compute_provider_native/half_test_support.h"
 
 #include <algorithm>
@@ -91,7 +92,7 @@ template<class T> struct Cell final {
   }
   void run(a::Invocation &invocation, std::array<std::int32_t,2> active,
       std::array<std::int32_t,2> lengths, bool causal = true, std::int32_t window = -1,
-      int invalid = 0, bool bad_page = false, bool device_controls = false) {
+      int invalid = 0, bool bad_page = false, bool device_controls = false, bool native_reference = false) {
     const auto nan = half_test::encode<T>(std::numeric_limits<float>::quiet_NaN());
     std::vector<T> q(queries*heads*qk,nan), k(capacity.max_pages*16*kv_heads*qk,nan), v(capacity.max_pages*16*kv_heads*dv,nan);
     const auto actual_rows = invalid ? 0 : active[0]+active[1];
@@ -162,6 +163,30 @@ template<class T> struct Cell final {
     auto read = take(memory.import_readonly((*result)->arrays()[0],output));
     std::vector<T> values(queries*heads*dv);
     check(take(read.view()).read(std::as_writable_bytes(std::span(values))));
+    if (native_reference) {
+      std::array<std::int32_t,3> qp{0,active[0],active[0]+active[1]},kp{};
+      std::array<std::int32_t,2> tails{};
+      std::vector<std::int32_t> pages;
+      for(std::size_t request=0;request<2;++request){
+        const auto refs=(lengths[request]+15)/16;
+        for(int page=0;page<refs;++page)pages.push_back(page_indices[request*per_request_pages+page]);
+        kp[request+1]=static_cast<std::int32_t>(pages.size());
+        tails[request]=lengths[request] ? (lengths[request]-1)%16+1 : 0;
+      }
+      const auto layout=take(schema.version({qp,kp,pages,tails}));
+      auto recipe=take(c::NativePagedBatchProgram::prepare(schema,{.max_host_metadata_bytes=8192,
+          .scale=.125f,.causal=causal,.window_left=window}));
+      auto reference=take(d::PagedBatchAccess::prepare_paged_graph(d::ContextAccess::runtime(context),recipe,layout,queries,{}));
+      pages.resize(capacity.max_page_refs);
+      auto table=binding<std::int32_t>(pages,take(recipe.input_description(layout,3)),pools,owners);
+      const std::array arguments{inputs[0],inputs[1],inputs[2],table};
+      auto original=take(reference.create_invocation());check(original.bind(arguments));
+      auto submitted=take(original.submit());auto retired=submitted.wait();
+      ASSERT_TRUE(retired)<<retired.error().message();
+      auto source=take(memory.import_readonly((*retired)->arrays()[0],output));
+      std::vector<T> expected(values.size());check(take(source.view()).read(std::as_writable_bytes(std::span(expected))));
+      for(std::size_t i=0;i<values.size();++i)EXPECT_EQ(values[i].bits,expected[i].bits)<<i;
+    }
     std::uint32_t packed = 0;
     for (std::uint32_t request = 0; request < 2; ++request)
       for (int row = 0; row < active[request]; ++row,++packed)
@@ -216,6 +241,14 @@ TEST(AppleDeviceLengths, F32SplitPartialsKeepBothDeclaredStorageTypes) {
     auto first = take(half.program.create_invocation()); half.run(first,{1,3},{513,1019});
     Cell<BF16> bfloat(depth,depth,1031);
     auto second = take(bfloat.program.create_invocation()); bfloat.run(second,{1,3},{513,1019});
+  }
+}
+TEST(AppleDeviceLengths, ShortDeviceLengthsKeepOriginalNativeVectorArithmetic) {
+  for(const auto depth:{64u,128u,256u}){
+    Cell<F16> half(depth,depth,39);auto first=take(half.program.create_invocation());
+    half.run(first,{1,3},{17,31},true,-1,0,false,false,true);
+    Cell<BF16> bfloat(depth,depth,39);auto second=take(bfloat.program.create_invocation());
+    bfloat.run(second,{2,4},{37,39},true,-1,0,false,false,true);
   }
 }
 TEST(AppleDeviceLengths, SeparateValueDepthAndSlidingWindowArePreserved) {
