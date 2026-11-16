@@ -106,6 +106,11 @@ BF16 的无批次薄矩阵（2–8 行）复用 MLX 的逐行 GEMV，保留原�
 在不可重入的收集阶段借用它，GPU 和退休回调不保留此表。GPU 参数及错误 array 仍由每条复制记录独立保活到退休。
 这些机制不改变模型数学、状态发布或引擎的设备闭环准入。
 
+Apple 的 `device_prefix_execution_source()` 在同一个原 Context 上创建独立的冷期 Source 配置。
+它让纯 MLX 片段保留原设备事件，生成结果的物化使用原记录里的受检设备复制；普通
+`execution_source()` 保持原完成方式。两种配置身份独立，共享原资源与退休机制。
+混合原生配方仍遵守自己的完成和主机访问合同；该 Source 不代表整个模型已达到设备侧闭环。
+
 Metal pipeline的static threadgroup memory上限与全局GPU buffer容量是不同限制。
 编译或验证选项可能改变某个pipeline的实际用量，应查询创建后的pipeline再决定合法tile/路径，
 不能把一次超限推导成统一buffer上限，也不能假定所有kernel的用量按相同比例变化。

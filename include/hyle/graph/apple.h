@@ -64,6 +64,14 @@ struct SourceOptions final {
 HYLE_GRAPH_ROUTE_APPLE_API Result<ExecutionSource> execution_source(
     const compute::apple::Context &, SourceOptions = {}) noexcept;
 
+// Same original Context/resources, with pure MLX artifacts prepared to expose their
+// original pending device events. Completion still checks all outputs/errors
+// and retires original owners; this is not permission to read pending payloads.
+// A distinct cold Source configuration, leaving execution_source() unchanged.
+// Mixed native programs retain their own completion and host-access contracts.
+HYLE_GRAPH_ROUTE_APPLE_API Result<ExecutionSource> device_prefix_execution_source(
+    const compute::apple::Context &, SourceOptions = {}) noexcept;
+
 // Independently owned cold diagnostics. No Graph, Program, MLX array, custom
 // payload or Context is retained. Copies use the consumer's ordinary C++
 // allocator/STL contract. An unattempted report has Unknown status; a rejected

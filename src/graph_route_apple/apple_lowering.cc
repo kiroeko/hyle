@@ -406,7 +406,8 @@ static Result<ca::Program> compile_impl(const std::shared_ptr<ca::detail::Runtim
                                         const RegionCompileRequest *boundary = nullptr,
                                         bool *custom_failed = nullptr,
                                         detail::PreparedRowAccesses *row_accesses = nullptr,
-                                        detail::PreparedConstantStorage *storage = nullptr) noexcept {
+                                        detail::PreparedConstantStorage *storage = nullptr,
+                                        bool device_prefix = false) noexcept {
   HYLE_TRACE_ZONE_NAMED("hyle.graph.apple.compile");
   if (custom_failed) *custom_failed = false;
   if (row_accesses) row_accesses->clear();
@@ -766,12 +767,16 @@ static Result<ca::Program> compile_impl(const std::shared_ptr<ca::detail::Runtim
             "import; strided inputs use original MLX contiguous copy";
       }
     }
-    auto program = has_native_model_region || has_control || has_attention_blocks
-        ? compile_regions(runtime, plan, descriptor_values)
-        : ca::detail::ContextAccess::compile(runtime,
-            [plan](const auto &inputs, mx::Stream stream) {
-              return trace(*plan, plan->nodes, plan->inputs, plan->outputs, inputs, stream);
-            }, specs, options.workload, descriptor_inputs);
+    auto program = [&]() -> Result<ca::Program> {
+      if (has_native_model_region || has_control || has_attention_blocks)
+        return compile_regions(runtime, plan, descriptor_values);
+      const auto region = [plan](const auto &inputs, mx::Stream stream) {
+        return trace(*plan, plan->nodes, plan->inputs, plan->outputs, inputs, stream);
+      };
+      if (device_prefix)
+        return ca::detail::ContextAccess::compile_device_prefix(runtime, region, specs, options.workload, descriptor_inputs);
+      return ca::detail::ContextAccess::compile(runtime, region, specs, options.workload, descriptor_inputs);
+    }();
     if (!program) return std::unexpected(program.error());
     if (row_accesses && boundary) {
       for (const auto &candidate : row_trace.candidates) {
@@ -825,13 +830,13 @@ Result<ca::Program> compile(const ca::Context &context, const Graph &graph,
 Result<ca::Program> detail::prepare_region(const std::shared_ptr<ca::detail::Runtime> &runtime,
     const RegionCompileRequest &request, std::span<const mx::array> constants,
     CustomLowering custom, bool *custom_failed, PreparedRowAccesses *row_accesses,
-    PreparedConstantStorage *storage) noexcept {
+    PreparedConstantStorage *storage, bool device_prefix) noexcept {
   if (custom_failed) *custom_failed = false;
   if (storage) *storage = {};
   if (!request.graph) return std::unexpected(Status::InvalidArgument("Apple region has no graph"));
   return compile_impl(runtime, *request.graph, constants,
       {.custom = std::move(custom), .workload = request.workload}, &request,
-      custom_failed, row_accesses, storage);
+      custom_failed, row_accesses, storage, device_prefix);
 }
 
 } // namespace hyle::graph::apple

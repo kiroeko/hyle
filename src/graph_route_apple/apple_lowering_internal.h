@@ -26,5 +26,5 @@ Result<compute::apple::Program> prepare_region(
     const std::shared_ptr<compute::apple::detail::Runtime> &,
     const RegionCompileRequest &, std::span<const mlx::core::array>,
     CustomLowering, bool *custom_failed, PreparedRowAccesses *,
-    PreparedConstantStorage *) noexcept;
+    PreparedConstantStorage *, bool device_prefix = false) noexcept;
 }
