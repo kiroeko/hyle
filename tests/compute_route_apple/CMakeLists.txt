@@ -1,6 +1,9 @@
 hyle_add_header_self_contained_test(compute_route_apple
   HEADER_DIR compute HEADERS apple.h apple_batch.h apple_row_cache.h detail/apple_plan.h)
 if(_HYLE_COMPUTE_HAVE_APPLE)
+  hyle_add_test(compute_route_apple NAME device_lengths
+    SOURCES device_lengths_test.cc DEPS hyle_compute_batch hyle_simd)
+  hyle_stage_runtime(hyle_compute_route_apple_device_lengths_test)
   hyle_add_test(compute_route_apple NAME gdn_output_scale
     SOURCES ../compute_provider_native/gdn_output_scale_test.cc)
   target_compile_definitions(hyle_compute_route_apple_gdn_output_scale_test PRIVATE HYLE_GDN_SCALE_APPLE=1)

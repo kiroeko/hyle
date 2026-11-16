@@ -1,0 +1,17 @@
+#pragma once
+
+#include "hyle/compute/apple.h"
+#include "hyle/compute/batch_layout.h"
+
+namespace hyle::compute::apple::detail {
+// Cold native builder. The original schema/version bounds every page and
+// request; device lengths can only shorten that envelope. Input ports are
+// physical Q/K/V, I32 query/KV lengths, and canonical readonly layout metadata.
+// The prepared program freezes schema geometry, not one version's bounds;
+// another owned capacity version only replaces that original metadata binding.
+// Page permission/import and publication remain with the typed Graph owner.
+HYLE_COMPUTE_ROUTE_APPLE_API Result<Program> prepare_device_lengths_paged_graph(
+    std::shared_ptr<Runtime>, BatchLayoutVersion capacity_envelope,
+    std::uint32_t physical_query_rows, float scale, bool causal,
+    std::int32_t window_left, const WorkloadContext & = {}) noexcept;
+} // namespace hyle::compute::apple::detail
