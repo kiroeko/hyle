@@ -67,6 +67,26 @@ private:
   mlx::core::Event event_;
 };
 
+// This marker grants no GPU permission; it observes whether the existing FIFO
+// can finish encoding the admitted producer/copy/consumer while GPU work waits.
+class NativeSourceFifoMarker final : public a::detail::Job {
+public:
+  NativeSourceFifoMarker() {
+    execute=[](a::detail::Job *job) noexcept {
+      auto &self=*static_cast<NativeSourceFifoMarker *>(job);
+      std::lock_guard lock(self.mutex_);self.entered_=true;self.changed_.notify_all();
+    };
+  }
+  bool wait_for(std::chrono::seconds duration) {
+    std::unique_lock lock(mutex_);return changed_.wait_for(lock,duration,[&]{return entered_;});
+  }
+  void join() {std::unique_lock lock(mutex_);changed_.wait(lock,[&]{return entered_;});}
+private:
+  std::mutex mutex_;
+  std::condition_variable changed_;
+  bool entered_=false;
+};
+
 template<class T, std::size_t N>
 c::ReadLease input(const a::MemoryResource &memory, const c::TensorDesc &desc,
                    const std::array<T, N> &values) {
@@ -676,7 +696,7 @@ TEST(AppleNativeRegion, OwnedViewFeedbackKeepsOneExactLeaseOwner) {
   }
   EXPECT_EQ(counted.snapshot().live_count, 0U);
 }
-void exercise_native_graph_source(unsigned mode) {
+void exercise_native_graph_source(unsigned mode, bool device_prefix = false) {
   auto context = a::Context::create().value();
   auto memory = a::MemoryResource::create(context).value();
   auto staging = a::MemoryResource::create(context).value();
@@ -684,7 +704,9 @@ void exercise_native_graph_source(unsigned mode) {
   auto staging_owner = staging.retain_storage_owner(context).value();
   const std::array domains{g::StorageDomain{.resource=memory.ref(),.owner=owner},
       g::StorageDomain{.resource=staging.ref(),.owner=staging_owner}};
-  const std::array targets{g::ExecutionTarget{g::apple::execution_source(context).value(),g::StorageDomainId{0}}};
+  const std::array targets{g::ExecutionTarget{device_prefix
+      ? g::apple::device_prefix_execution_source(context).value()
+      : g::apple::execution_source(context).value(),g::StorageDomainId{0}}};
   auto builder = g::GraphBuilder::create().value();
   const auto x = builder.input(description).value(), y = builder.input(description).value();
   const auto sum = builder.add(c::Binary{.kind=c::BinaryKind::kAdd},x,y).value();
@@ -786,6 +808,15 @@ void exercise_native_graph_source(unsigned mode) {
   ASSERT_TRUE(admitted_pending) << "native Graph consumer waited for GPU producer during admission";
   ASSERT_TRUE(consumed) << consumed.error().message();
   EXPECT_EQ(consumed->poll().value(),c::CompletionPoll::kPending);
+  if (device_prefix) {
+    NativeSourceFifoMarker marker;
+    const auto queued=a::detail::ContextAccess::runtime(context)->enqueue(marker);
+    const bool encoded=queued.ok() && marker.wait_for(std::chrono::seconds(2));
+    if (!encoded) gate.open();
+    if (queued.ok()) marker.join();
+    ASSERT_TRUE(queued.ok());
+    EXPECT_TRUE(encoded) << "device-prefix Source blocked its original FIFO on pending GPU work";
+  }
   std::thread drainer;
   hyle::Status drained;
   if (mode==2) drainer=std::thread([&]{drained=producer.drain();});
@@ -863,5 +894,25 @@ TEST(AppleNativeRegion, OriginalGraphSourcePreservesWholeProducerFailureAndRejec
 }
 TEST(AppleNativeRegion, OriginalGraphSourceReadyOutputSurvivesClosedMetadataExports) {
   exercise_native_graph_source(5);
+}
+TEST(AppleNativeRegion, DevicePrefixSourceKeepsItsColdIdentityAndOriginalContext) {
+  auto context=a::Context::create().value();
+  auto ordinary=g::apple::execution_source(context).value();
+  auto same=g::apple::execution_source(context).value();
+  auto prefix=g::apple::device_prefix_execution_source(context).value();
+  auto retained=prefix;
+  EXPECT_TRUE(ordinary.same_owner(same));
+  EXPECT_TRUE(prefix.same_owner(retained));
+  EXPECT_FALSE(prefix.same_owner(ordinary));
+  auto memory=a::MemoryResource::create(context).value();
+  EXPECT_TRUE(prefix.validate_resource(memory.ref()).ok());
+  EXPECT_TRUE(ordinary.validate_resource(memory.ref()).ok());
+  ASSERT_TRUE(context.close().ok());
+  EXPECT_FALSE(g::apple::device_prefix_execution_source(context));
+}
+TEST(AppleNativeRegion, DevicePrefixSourceEncodesPureMathCopiesAndEveryOriginalLifetimeCase) {
+  for (unsigned mode=0;mode<6;++mode) {
+    SCOPED_TRACE(mode);exercise_native_graph_source(mode,true);
+  }
 }
 } // namespace

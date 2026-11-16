@@ -854,7 +854,7 @@ compute::ProviderPrepareOutcome compile(void *context, const RegionCompileReques
     }
     HYLE_ASSIGN_OR_RETURN(artifact->program, prepare_region(artifact->runtime, boundary, constants,
         static_cast<const SourceContext *>(context)->custom, &custom_failed, &artifact->row_accesses,
-        &prepared_constants));
+        &prepared_constants, static_cast<const SourceContext *>(context)->device_prefix));
     for (std::size_t access = 0; access < artifact->row_accesses.size(); ++access) {
       // Ordinary Gather uses Graph Source row tickets/control imports, not a
       // paged pending Frame or an immutable decoder layout registration.

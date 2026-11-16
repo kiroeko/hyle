@@ -115,7 +115,7 @@ inline void run(const std::filesystem::path &input, q::BackendKind kind, bool ra
         "unavailable prefill capture materialized unused native chunk storage");
     model.bounded_prefill_rows = 0;
   }
-  h::require(q::native_ordinary_io_domains(model.execution,
+  h::require(q::native_generated_io_domains(model.execution,
       {.role = q::GraphRole::kText, .completion = q::TextCompletion::kEmitNext}).has_value(),
       "native Model has no independently owned device and staging domains");
   const std::array rows{std::size_t{3}, std::size_t{1}};

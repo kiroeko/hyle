@@ -7,6 +7,7 @@
 #include "inference_program_carrier_case.h"
 #include "inference_native_handoff_case.h"
 #include "qwen_native_relay_case.h"
+#include "qwen_native_mtp_plan_case.h"
 
 int main(int argc, char **argv) {
   try {
@@ -17,8 +18,12 @@ int main(int argc, char **argv) {
     const bool native_relay = argc == 6 && std::string_view(argv[5]) == "--native-relay-probe";
     const bool recording_rng = argc == 6 && std::string_view(argv[5]) == "--recording-rng-probe";
     const bool control_inputs = argc == 6 && std::string_view(argv[5]) == "--control-inputs-probe";
-    if (argc != 5 && !depth && !carrier && !handoff && !prefix_repair && !native_relay && !recording_rng && !control_inputs) throw std::runtime_error(
-        "usage: qwen_cross_backend_state_test cpu|cuda|apple|vulkan INPUTS off|K3 CPU_FFN_LAYERS [--depth-probe|--prefix-repair-probe|--native-relay-probe|--recording-rng-probe|--control-inputs-probe]; or BACKEND --carrier-probe|--native-handoff-probe");
+    const bool native_mtp_plan = argc == 6 && std::string_view(argv[5]) == "--native-mtp-plan-probe";
+    const bool native_mtp_chain = argc == 6 && std::string_view(argv[5]) == "--native-mtp-chain-probe";
+    const bool native_mtp_state = argc == 6 && std::string_view(argv[5]) == "--native-mtp-state-probe";
+    const bool native_mtp_loader = argc == 6 && std::string_view(argv[5]) == "--native-mtp-loader-probe";
+    if (argc != 5 && !depth && !carrier && !handoff && !prefix_repair && !native_relay && !recording_rng && !control_inputs && !native_mtp_plan && !native_mtp_chain && !native_mtp_state && !native_mtp_loader) throw std::runtime_error(
+        "usage: qwen_cross_backend_state_test cpu|cuda|apple|vulkan INPUTS off|K3 CPU_FFN_LAYERS [--depth-probe|--prefix-repair-probe|--native-relay-probe|--recording-rng-probe|--control-inputs-probe]; or apple INPUTS K1 0 --native-mtp-plan-probe|--native-mtp-chain-probe|--native-mtp-state-probe; or BACKEND --carrier-probe|--native-handoff-probe");
     const std::string_view name(argv[1]);
     auto kind = qwen35::BackendKind::kDefault;
     if (name == "cpu") kind = qwen35::BackendKind::kCpu;
@@ -29,10 +34,15 @@ int main(int argc, char **argv) {
     if (carrier) return inference_program_carrier_case::run(kind);
     if (handoff) return inference_native_handoff_case::run(kind);
     const std::string_view mode(argv[3]);
-    if (mode != "off" && mode != "K3") throw std::runtime_error("expected ordinary or K3 state consumer");
+    if (mode != "off" && mode != "K3" && !((native_mtp_plan || native_mtp_chain || native_mtp_state || native_mtp_loader) && mode == "K1")) throw std::runtime_error("expected ordinary or K3 state consumer");
     std::size_t consumed = 0;
     const auto layers = std::stoull(argv[4], &consumed);
     if (consumed != std::string_view(argv[4]).size()) throw std::runtime_error("invalid CPU placement");
+    if(native_mtp_loader)return qwen_native_mtp_plan_case::loader_contract(argv[2],kind);
+    if(native_mtp_plan || native_mtp_chain || native_mtp_state) {
+      if(mode!="K1" || layers)throw std::runtime_error("native MTP cold plan probe requires GPU-only K1");
+      return qwen_native_mtp_plan_case::run(argv[2],kind,native_mtp_chain || native_mtp_state,native_mtp_state);
+    }
     if (recording_rng || control_inputs) {
       if (mode != "off" || layers || kind == qwen35::BackendKind::kCpu ||
           (control_inputs && kind != qwen35::BackendKind::kCuda))

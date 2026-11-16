@@ -22,6 +22,7 @@ struct Result final {
   std::optional<s::StateImage> final_state;
   std::size_t submitted = 0, a1_published = 0, a2_published = 0, reused = 0, recorded = 0;
   std::size_t draft_rows = 0;
+  std::size_t native_prepared = 0;
 };
 
 inline q::GraphRole role(const q::Session &session) {
@@ -46,11 +47,40 @@ inline void compare_state(q::Model &model, const s::StateImage &a, const s::Stat
   require(std::tie(a.length, a.frontier, a.lag, a.pending, a.catchup, a.sampling) ==
       std::tie(b.length, b.frontier, b.lag, b.pending, b.catchup, b.sampling),
       "device choice changed the complete final boundary or greedy RNG");
+  for (std::size_t bank = 0; bank < a.target.size() && bank < b.target.size(); ++bank) {
+    if (a.target[bank] == b.target[bank]) continue;
+    q::cache::HostPayloadDesc layout{};
+    layout.role = bank % 2 ? q::cache::HostPayloadRole::kTargetValue : q::cache::HostPayloadRole::kTargetKey;
+    layout.layer = static_cast<std::uint32_t>(model.attention_layer_ids[bank / 2]);
+    layout.bytes = a.target[bank].size();
+    const auto difference = p::compare_payload(model, layout, a.target[bank], b.target[bank]);
+    std::cerr << "device continuation target bank=" << bank << " first_byte=" << difference.first_byte
+        << " different_bytes=" << difference.different_bytes << " max_absolute=" << difference.maximum_absolute
+        << " max_relative=" << difference.maximum_relative << " nonfinite=" << difference.nonfinite_differences << '\n';
+  }
   require(a.target == b.target && a.payloads.size() == b.payloads.size(),
       "device choice changed target KV bytes or the complete payload inventory");
   std::vector<std::size_t> recurrent;
   for (std::size_t layer = 0; layer < model.geometry.layers.size(); ++layer)
     if (model.geometry.is_gdn(layer)) recurrent.push_back(layer);
+  for (std::size_t part = 0; part < a.payloads.size(); ++part) {
+    if (a.payloads[part] == b.payloads[part]) continue;
+    q::cache::HostPayloadDesc layout{};
+    if (part < recurrent.size()*2) {
+      layout.layer = static_cast<std::uint32_t>(recurrent[part/2]);
+      layout.role = part%2 ? q::cache::HostPayloadRole::kGdnState : q::cache::HostPayloadRole::kConvHistory;
+    } else {
+      constexpr std::array roles{q::cache::HostPayloadRole::kDraftKey,q::cache::HostPayloadRole::kDraftValue,
+          q::cache::HostPayloadRole::kCarryHidden,q::cache::HostPayloadRole::kPriorHidden};
+      layout.role = roles.at(part-recurrent.size()*2);
+    }
+    layout.bytes = a.payloads[part].size();
+    const auto difference = p::compare_payload(model,layout,a.payloads[part],b.payloads[part]);
+    std::cerr<<"device continuation payload="<<part<<" role="<<static_cast<unsigned>(layout.role)
+        <<" layer="<<layout.layer<<" first_byte="<<difference.first_byte<<" different_bytes="<<difference.different_bytes
+        <<" max_absolute="<<difference.maximum_absolute<<" max_relative="<<difference.maximum_relative
+        <<" nonfinite="<<difference.nonfinite_differences<<'\n';
+  }
   for (std::size_t part = 0; part < a.payloads.size(); ++part) {
     if (a.payloads[part] == b.payloads[part]) continue;
     // Preserve the existing complete-state oracle: only newly evaluated F32
@@ -118,7 +148,8 @@ inline void require_source(q::Model &model, const q::StepState &step,
       "producer did not retain its own three outputs, full GDN2 and real raw-envelope PageSources");
 }
 
-inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, bool continuous) {
+inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, bool continuous,
+    std::vector<s::StateImage> *observations = nullptr) {
   require(!model.active_step && !model.successor_step && !model.carrier_borrowed && !model.snapshot_versions.live,
       "continuous journey started with a retained original episode");
   const auto submitted_begin = model.submitted_draft_rows;
@@ -151,6 +182,8 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
   }
 
   for (std::size_t index = 0; index < episodes; ++index) {
+    const char *stage_name = "prepare parent";
+    try {
     const bool has_child = index + 1 < episodes;
     const auto quota = has_child ? std::size_t{4} : std::size_t{2};
     const auto before = q::generation_boundary(*session->head);
@@ -184,16 +217,22 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
       const std::array future{q::EvaluationRequest{session, {}}};
       const auto next_slot = index ? (current->state_slot + 1) % q::execution_slot_count
           : role(*session) == q::GraphRole::kMtpCatchupRound ? std::size_t{1} : std::size_t{0};
+      stage_name = "prepare successor";
       child = &model.prepare_relay_evaluations(future, current_source, next_slot, q::GraphRole::kMtpContinuation);
       lifetimes[index + 1] = model.successor_step;
+      const auto &carrier=child->phase->slots[child->state_slot].carrier;
+      const bool native_prepared=carrier.queues().empty() && carrier.native_source_dependencies();
       require(child->device_input_choice && child->draft_rows_deferred &&
           !child->members[0].selected_input_choice && !child->active_draft_rows &&
-          child->state_slot == next_slot && !child->capture_recorded && child->capture_reused,
-          "successor was not an unobserved recorded device-choice continuation");
+          child->state_slot == next_slot && !child->capture_recorded && (child->capture_reused || native_prepared),
+          "successor was not an unobserved prepared device-choice continuation");
       result.reused += child->capture_reused; result.recorded += child->capture_recorded;
+      result.native_prepared += native_prepared;
       // Every nonterminal continuation exports its own actual cB outputs and
       // filled physical envelope before submission, so it can in turn feed C.
+      stage_name = "export successor";
       if (index + 2 < episodes) child_source = model.prepare_submission_sources(*child);
+      stage_name = "submit successor";
       model.submit_evaluations(*child); ++result.submitted;
       if (child_source) require_source(model, *child, child_source);
       require(model.active_step.get() == current && model.successor_step.get() == child &&
@@ -209,8 +248,10 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
           "terminal quota2 episode retained an outgoing Source or attempted to reserve C");
     }
 
+    stage_name = "publish parent";
     const auto round = finish(model, session, ledger, pending, quota);
     append(result, round);
+    if (observations) observations->push_back(s::image(model, *session->head));
     require(session->head.epoch() == epoch + 1 && ledger.committed_count == ordinal + 1 &&
         ledger.records[ordinal].committed && !ledger.records[ordinal].input_deferred,
         "one strict K1 finish did not publish exactly one original model and ledger epoch");
@@ -240,6 +281,12 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
     } else {
       require(!model.active_step && !model.successor_step,
           "terminal or synchronous K1 episode retained submitted successor work");
+    }
+    } catch (const i::EvaluationFailure &error) {
+      std::cerr << "device continuation episode=" << index << " continuous=" << continuous
+          << " stage=" << stage_name << " status=" << static_cast<int>(error.status().code())
+          << " message=" << error.what() << '\n';
+      throw;
     }
   }
   current_source.reset();

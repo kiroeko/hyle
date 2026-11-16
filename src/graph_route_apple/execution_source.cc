@@ -21,12 +21,12 @@ constexpr compute::BackendId apple_backend{0x48594c4500000001ULL, 0x4150504c0000
 extern const gd::ExecutionSourceVTable source_table;
 struct AppleSource final : gd::ExecutionSourceState {
   AppleSource(std::shared_ptr<ca::detail::Runtime> owner, CustomLowering custom,
-              mem::AllocatorRef allocator) noexcept
+              mem::AllocatorRef allocator, bool device_prefix) noexcept
       : ExecutionSourceState(&source_table, allocator, owner.get()),
-        context{std::move(owner), std::move(custom)} {
+        context{std::move(owner), std::move(custom), device_prefix} {
     // Copies retain this configured owner. Independent custom capabilities on
     // the same native Runtime are distinct cold compilation sources.
-    if (context.custom) identity = &context;
+    if (context.custom || context.device_prefix) identity = &context;
   }
   detail::SourceContext context;
 };
@@ -43,6 +43,7 @@ struct CopyArtifact final {
   gd::CopySourceDescription source;
   mem::MemoryResourceRef destination;
   std::size_t bytes = 0;
+  bool device_copy = false;
 };
 struct CopySlot final {
   std::shared_ptr<ca::detail::CopyRecording> recording;
@@ -73,8 +74,9 @@ Status copy_bind(void *prepared, void *invocation, std::span<const RegionValue> 
     if (slot.bound && ca::detail::copy_recording_matches_source(*slot.recording, source) &&
         same_range(slot.destination, destination)) return Status::Ok();
     slot.bound = false;
-    HYLE_RETURN_IF_ERROR(ca::detail::bind_host_copy_recording(*slot.recording,
-        std::move(source), artifact.source.description, destination));
+    HYLE_RETURN_IF_ERROR(artifact.device_copy
+        ? ca::detail::bind_device_copy_recording(*slot.recording, std::move(source), artifact.source.description, destination)
+        : ca::detail::bind_host_copy_recording(*slot.recording, std::move(source), artifact.source.description, destination));
     slot.reference = inputs[0].reference; slot.source = {};
   } else {
     const auto &input = inputs[0];
@@ -153,6 +155,10 @@ const ProviderRegionPreparedVTable copy_table{
       HYLE_ASSIGN_OR_RETURN(slot->recording, ca::detail::prepare_copy_recording_runtime(
           artifact.runtime, 1, allocator, std::max(artifact.bytes, std::size_t{1}),
           ca::detail::CopyRecordingMode::kReplayable));
+      if (artifact.device_copy) {
+        HYLE_ASSIGN_OR_RETURN(auto supported, ca::detail::prepare_device_copy_recording(*slot->recording));
+        if (!supported) return Status::Unimplemented("Apple device-prefix materialization requires native checked copies");
+      }
       return Status::Ok();
     },
     .destroy_invocation = [](void *state, mem::AllocatorRef allocator) noexcept {
@@ -195,7 +201,8 @@ Status prepare_copy(const gd::ExecutionSourceState &state, const gd::CopySourceD
   HYLE_ASSIGN_OR_RETURN(auto bytes, source.description.required_bytes());
   HYLE_ASSIGN_OR_RETURN(auto carrier, ca::input_spec(source.description));
   (void)carrier;
-  auto *artifact = allocator.construct<CopyArtifact>(CopyArtifact{native(state).context.runtime, source, destination, bytes});
+  auto *artifact = allocator.construct<CopyArtifact>(CopyArtifact{native(state).context.runtime, source, destination, bytes,
+      native(state).context.device_prefix && bytes && source.value.kind == RegionOutputKind::kDeferredGenerated});
   if (!artifact) return Status::ResourceExhausted("Apple replay copy artifact metadata");
   result->vtable = &copy_table; result->state = artifact;
   result->properties = {.persistent_bytes = sizeof(CopyArtifact), .copy_bytes = bytes,
@@ -264,7 +271,8 @@ const gd::ExecutionSourceVTable source_table{
     }, &can_copy, &prepare_copy};
 }
 
-Result<ExecutionSource> execution_source(const ca::Context &context, SourceOptions options) noexcept {
+static Result<ExecutionSource> make_source(const ca::Context &context, SourceOptions options,
+                                         bool device_prefix) noexcept {
   if (!context || !options.allocator.valid())
     return std::unexpected(Status::InvalidArgument("Apple execution source requires a Context and allocator"));
   const auto &runtime = ca::detail::ContextAccess::runtime(context);
@@ -273,8 +281,14 @@ Result<ExecutionSource> execution_source(const ca::Context &context, SourceOptio
     if (!runtime->accepting) return std::unexpected(Status::FailedPrecondition("Apple execution source is closed"));
     HYLE_RETURN_IF_ERROR(runtime->failure);
   }
-  auto *source = options.allocator.construct<AppleSource>(runtime, std::move(options.custom), options.allocator);
+  auto *source = options.allocator.construct<AppleSource>(runtime, std::move(options.custom), options.allocator, device_prefix);
   if (!source) return std::unexpected(Status::ResourceExhausted("Apple execution source metadata"));
   return gd::ExecutionSourceAccess::adopt(source);
+}
+Result<ExecutionSource> execution_source(const ca::Context &context, SourceOptions options) noexcept {
+  return make_source(context, std::move(options), false);
+}
+Result<ExecutionSource> device_prefix_execution_source(const ca::Context &context, SourceOptions options) noexcept {
+  return make_source(context, std::move(options), true);
 }
 } // namespace hyle::graph::apple

@@ -12,6 +12,7 @@ inline constexpr std::uint64_t kNativeStaticFloat8Route = 5;
 struct SourceContext final {
   std::shared_ptr<compute::apple::detail::Runtime> runtime;
   CustomLowering custom;
+  bool device_prefix = false;
 };
 const std::shared_ptr<compute::apple::detail::Runtime> &source_runtime(void *) noexcept;
 const RegionProviderVTable *native_region_provider() noexcept;

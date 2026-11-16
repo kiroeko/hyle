@@ -34,6 +34,7 @@
 #include "hyle/graph/cuda.h"
 #endif
 #if defined(HYLE_COMPUTE_APPLE) && defined(__APPLE__)
+#include "hyle/compute/apple_batch.h"
 #include "hyle/compute/apple_file_stream.h"
 #include "hyle/compute/apple_memory.h"
 #include "hyle/graph/apple.h"
@@ -145,6 +146,7 @@ public:
     if (!state_) return std::unexpected(Status::FailedPrecondition("cannot share an empty backend"));
     Backend shared;
     shared.state_ = state_;
+    // Endpoint sharing does not inherit another algorithm's cold Source.
     return shared;
   }
   bool same_endpoint(const Backend &other) const noexcept {
@@ -498,6 +500,15 @@ public:
       std::span<const graph::ConstantBinding> constants, graph::CompileOptions options = {}) const noexcept {
     if (!state_) return std::unexpected(Status::FailedPrecondition("Backend is not initialized"));
     options.constants = constants;
+#if defined(HYLE_COMPUTE_APPLE) && defined(__APPLE__)
+    if (native_continuation_source_) {
+      auto targets = state_->targets;
+      targets[0].source = native_continuation_source_;
+      return graph::batch::compile(source_graph, {
+          .storage_domains = domains(), .targets = std::span(targets).first(state_->target_count),
+          .lanes = std::span(state_->lanes).first(state_->lane_count)}, options);
+    }
+#endif
     // Configured endpoints can remain idle for this program. Graph charges
     // the actual resources it uses; an unused domain needs no budget row.
     return graph::batch::compile(source_graph, {
@@ -595,6 +606,10 @@ public:
   Result<bool> supports_device_lengths_batch(compute::BatchCapacity capacity,
       const compute::ResourceBudget &budget = {}) noexcept {
     if (!state_) return std::unexpected(Status::FailedPrecondition("Backend is not initialized"));
+#if defined(HYLE_COMPUTE_APPLE) && defined(__APPLE__)
+    if(auto *endpoint=std::get_if<AppleEndpoint>(&state_->primary))
+      return compute::apple::supports_device_lengths_paged(endpoint->context,capacity,budget);
+#endif
     const auto context = common_context();
     if (!context) return false; // This initialized endpoint has no common batch provider.
     const auto queue = common_queue();
@@ -603,6 +618,20 @@ public:
     options.resource = device();
     options.resource_budget = budget;
     return detail::supports_captured_device_batch(**context, **queue, capacity, options);
+  }
+  // Cold configuration belongs to this prepared algorithm handle. Sharing an
+  // endpoint never changes another profile's Source, Context or stable assets.
+  Status configure_device_continuation(bool enabled) noexcept {
+    if (!state_) return Status::FailedPrecondition("Backend is not initialized");
+#if defined(HYLE_COMPUTE_APPLE) && defined(__APPLE__)
+    if (!enabled) native_continuation_source_ = {};
+    else if (auto *endpoint = std::get_if<AppleEndpoint>(&state_->primary)) {
+      HYLE_ASSIGN_OR_RETURN(native_continuation_source_, graph::apple::device_prefix_execution_source(endpoint->context));
+    }
+#else
+    (void)enabled;
+#endif
+    return Status::Ok();
   }
   Result<compute::Queue *> common_queue() noexcept {
     if (!state_) return std::unexpected(Status::FailedPrecondition("Backend is not initialized"));
@@ -681,6 +710,9 @@ private:
   // Moving Backend moves this pointer only. Native Contexts, cached Queue
   // bindings and exceptional-retirement callbacks keep their exact addresses.
   std::shared_ptr<State> state_;
+#if defined(HYLE_COMPUTE_APPLE) && defined(__APPLE__)
+  graph::ExecutionSource native_continuation_source_;
+#endif
 };
 
 } // namespace hyle::inference
