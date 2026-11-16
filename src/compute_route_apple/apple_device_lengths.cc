@@ -1,12 +1,15 @@
 #include "apple_device_lengths.h"
 
 #include "apple_checks.h"
+#include "apple_runtime_internal.h"
+#include "hyle/compute/apple_batch.h"
 #include "hyle/compute/detail/apple_plan.h"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <limits>
+#include <mutex>
 #include <new>
 #include <string>
 #include <vector>
@@ -69,10 +72,46 @@ constexpr auto control_source = R"METAL(
       total += uint(nq);
     }
   }
+)METAL";
+
+constexpr auto invalid_partial = R"METAL(
   if (!valid || request < 0) {
     for (uint d = thread_index_in_threadgroup; d < uint(DV + 2); d += uint(THREADS)) partial[base+d] = 0.f;
     if (thread_index_in_threadgroup == 0) status[group] = valid ? 0 : 3;
     return;
+  }
+)METAL";
+
+// All locked native vector implementations use one pass below 1024 keys.
+// Capacity is not active history: leave short rows to the final native vector
+// group even when the immutable page envelope needs several long-history splits.
+constexpr auto short_partial = R"METAL(
+  if (history < 1024) {
+    for (uint d=lane; d<uint(DV+2); d+=32) partial[base+d]=0.f;
+    if (lane==0) status[group]=0;
+    return;
+  }
+)METAL";
+
+constexpr auto final_guard = R"METAL(
+  if (!valid || request < 0) {
+    for (uint d=thread_index_in_threadgroup; d<uint(DV); d+=1024)
+      output[ulong(group)*DV+d]=0;
+    if (thread_index_in_threadgroup==0) status[group]=valid ? 0 : 3;
+    return;
+  }
+  if (thread_index_in_threadgroup==0) status[group]=0;
+)METAL";
+
+constexpr auto final_write_guard = R"METAL(
+  {
+    const uint lane=thread_index_in_simdgroup, group=threadgroup_position_in_grid.x;
+    const int failure=simd_max(lane<uint(PART_SPLITS) ? partial_status[group*PART_SPLITS+lane] : 0);
+    if (failure) {
+      for(uint d=thread_index_in_threadgroup; d<uint(DV); d+=1024) output[ulong(group)*DV+d]=0;
+      if(thread_index_in_threadgroup==0) status[group]=failure;
+      return;
+    }
   }
 )METAL";
 
@@ -162,32 +201,35 @@ constexpr auto vector_source = R"METAL(
     accum[d]=simd_sum(shared_outputs[simd*32+lane]*factor);
     accum[d]=denominator==0.f ? accum[d] : accum[d]/denominator;
     threadgroup_barrier(mem_flags::mem_threadgroup);
-    if (lane==0) partial[base+simd*(DV/32)+d]=error ? 0.f : accum[d];
+    if (lane==0) {
+      const float value=error ? 0.f : accum[d];
+      const uint bits=as_type<uint>(value);
+      output[ulong(group)*DV+simd*(DV/32)+d]=BFLOAT ?
+          ushort((bits & 0x7fffffffu)>0x7f800000u ? 0x7fc0u :
+              (bits+0x7fffu+((bits>>16)&1u))>>16) : as_type<ushort>(half(value));
+    }
   }
-  if (thread_index_in_threadgroup==0) {
-    partial[base+DV]=0.f; partial[base+DV+1]=error ? 0.f : 1.f; status[group]=error;
-  }
+  if (thread_index_in_threadgroup==0) status[group]=error;
 )METAL";
 
 constexpr auto merge_source = R"METAL(
-  const uint lane = thread_index_in_simdgroup;
-  const uint group = threadgroup_position_in_grid.x;
+  if (thread_index_in_threadgroup>=32) return;
   float maximum = -INFINITY;
-  for (uint split = 0; split < uint(SPLITS); ++split) {
-    const ulong base = (ulong(group)*SPLITS+split)*(DV+2);
-    if (partial[base+DV+1] > 0.f) maximum = max(maximum, partial[base+DV]);
+  for (uint split = 0; split < uint(PART_SPLITS); ++split) {
+    const ulong base = (ulong(group)*PART_SPLITS+split)*(DV+2);
+    if (partials[base+DV+1] > 0.f) maximum = max(maximum, partials[base+DV]);
   }
   float denominator = 0.f;
   float accum[DV/32];
   for (uint d = 0; d < uint(DV/32); ++d) accum[d] = 0.f;
-  for (uint split = 0; split < uint(SPLITS); ++split) {
-    const ulong base = (ulong(group)*SPLITS+split)*(DV+2);
-    const float sum = partial[base+DV+1];
+  for (uint split = 0; split < uint(PART_SPLITS); ++split) {
+    const ulong base = (ulong(group)*PART_SPLITS+split)*(DV+2);
+    const float sum = partials[base+DV+1];
     if (sum > 0.f) {
-      const float weight = exp(partial[base+DV]-maximum);
+      const float weight = exp(partials[base+DV]-maximum);
       denominator += sum*weight;
       for (uint d = 0; d < uint(DV/32); ++d)
-        accum[d] += partial[base+lane+32*d]*weight;
+        accum[d] += partials[base+lane+32*d]*weight;
     }
   }
   for (uint d = 0; d < uint(DV/32); ++d) {
@@ -198,6 +240,20 @@ constexpr auto merge_source = R"METAL(
             (bits + 0x7fffu + ((bits >> 16) & 1u)) >> 16) : as_type<ushort>(half(value));
   }
 )METAL";
+
+struct Launch final { int splits; std::uint64_t groups; };
+Result<Launch> launch_geometry(const BatchSchema &schema,std::uint32_t rows) noexcept {
+  const auto c=schema.capacity();
+  if(!rows || rows>c.max_query_rows)
+    return std::unexpected(Status::InvalidArgument("Apple device lengths envelope differs from physical requests/queries"));
+  const auto splits=static_cast<int>(std::clamp((std::uint64_t(c.max_kv_rows)+255)/256,
+      std::uint64_t{1},std::uint64_t{32}));
+  const auto groups=std::uint64_t(rows)*c.query_heads*splits;
+  if(groups>std::uint64_t(INT32_MAX)/32 || groups/splits>std::uint64_t(INT32_MAX)/1024 ||
+      groups*(c.value_head_dim+2)>INT32_MAX)
+    return std::unexpected(Status::OutOfRange("Apple device lengths dispatch/partial extent exceeds native indexing"));
+  return Launch{splits,groups};
+}
 } // namespace
 
 Status qualify_device_lengths_paged_schema(const BatchSchema &schema, float scale,
@@ -227,17 +283,12 @@ Result<Program> prepare_device_lengths_paged_graph(std::shared_ptr<Runtime> runt
     return std::unexpected(Status::InvalidArgument("Apple device lengths require original Runtime and physical Q"));
   HYLE_RETURN_IF_ERROR(qualify_device_lengths_paged_schema(schema,scale,causal,window));
   const auto c = schema.capacity();
-  if (rows > c.max_query_rows)
-    return std::unexpected(Status::InvalidArgument("Apple device lengths envelope differs from physical requests/queries"));
+  HYLE_ASSIGN_OR_RETURN(auto launch,launch_geometry(schema,rows));
   try {
     const auto offsets = schema.metadata_offsets();
     if (offsets.bytes/4 > INT32_MAX)
       return std::unexpected(Status::OutOfRange("Apple device lengths metadata exceeds native indexing"));
-    const auto splits = static_cast<int>(std::clamp((std::uint64_t(c.max_kv_rows)+255)/256, std::uint64_t{1}, std::uint64_t{32}));
-    const auto groups = std::uint64_t(rows)*c.query_heads*splits;
-    const auto threads=splits==1 ? 1024 : 32;
-    if (groups > std::uint64_t(INT32_MAX)/static_cast<unsigned>(threads) || groups*(c.value_head_dim+2) > INT32_MAX)
-      return std::unexpected(Status::OutOfRange("Apple device lengths dispatch/partial extent exceeds native indexing"));
+    const auto [splits,groups]=launch;
     std::array<TensorDesc,8> descriptions;
     HYLE_ASSIGN_OR_RETURN(descriptions[0], batch_query_description(c, rows));
     HYLE_ASSIGN_OR_RETURN(descriptions[1], batch_cache_description(schema, BatchCacheRole::kKey));
@@ -255,22 +306,21 @@ Result<Program> prepare_device_lengths_paged_graph(std::shared_ptr<Runtime> runt
       if (inputs.size() != (guard_writes?8u:6u)) return std::unexpected(Status::InvalidArgument("Apple device lengths physical input count differs"));
       static const auto partial = mx::fast::metal_kernel("hyle_device_lengths_paged_partials",
           {"queries", "keys", "values", "query_lengths", "kv_lengths", "metadata", "scale"},
-          {"partial", "status"}, std::string(control_source)+partial_source, "", true, false, mx::CompileOptions{});
+          {"partial", "status"}, std::string(control_source)+invalid_partial+short_partial+partial_source, "", true, false, mx::CompileOptions{});
       static const auto guarded_partial=mx::fast::metal_kernel("hyle_device_lengths_paged_written_partials",
           {"queries","keys","values","query_lengths","kv_lengths","metadata","key_status","value_status","scale"},
-          {"partial","status"},std::string(written_guard)+control_source+partial_source,"",true,false,mx::CompileOptions{});
-      static const auto native_vector=mx::fast::metal_kernel("hyle_device_lengths_paged_vector",
-          {"queries","keys","values","query_lengths","kv_lengths","metadata","scale"},
-          {"partial","status"},std::string(control_source)+vector_source,"",true,false,mx::CompileOptions{});
-      static const auto guarded_vector=mx::fast::metal_kernel("hyle_device_lengths_paged_written_vector",
-          {"queries","keys","values","query_lengths","kv_lengths","metadata","key_status","value_status","scale"},
-          {"partial","status"},std::string(written_guard)+control_source+vector_source,"",true,false,mx::CompileOptions{});
-      static const auto merge = mx::fast::metal_kernel("hyle_device_lengths_paged_merge",
-          {"partial"}, {"output"}, merge_source, "", true, false, mx::CompileOptions{});
+          {"partial","status"},std::string(written_guard)+control_source+invalid_partial+short_partial+partial_source,"",true,false,mx::CompileOptions{});
+      static const auto finish_source=std::string(final_write_guard)+control_source+final_guard+
+          "if(history<1024) {"+vector_source+"} else {"+merge_source+"}";
+      static const auto finish=mx::fast::metal_kernel("hyle_device_lengths_paged_finish",
+          {"queries","keys","values","query_lengths","kv_lengths","metadata","scale","partials","partial_status"},
+          {"output","status"},finish_source,"",true,false,mx::CompileOptions{});
+      static const auto guarded_finish=mx::fast::metal_kernel("hyle_device_lengths_paged_written_finish",
+          {"queries","keys","values","query_lengths","kv_lengths","metadata","key_status","value_status","scale","partials","partial_status"},
+          {"output","status"},finish_source,"",true,false,mx::CompileOptions{});
       auto arguments = inputs;
       arguments.emplace_back(scale);
-      const auto threads=splits==1 ? 1024 : 32;
-      const std::vector<std::pair<std::string, mx::fast::TemplateArg>> constants{
+      std::vector<std::pair<std::string, mx::fast::TemplateArg>> constants{
           {"QK", static_cast<int>(c.qk_head_dim)}, {"DV", static_cast<int>(c.value_head_dim)},
           {"HEADS", static_cast<int>(c.query_heads)}, {"KV_HEADS", static_cast<int>(c.kv_heads)},
           {"PAGE_ROWS", static_cast<int>(c.page_size)}, {"PAGES", static_cast<int>(c.max_pages)},
@@ -278,24 +328,53 @@ Result<Program> prepare_device_lengths_paged_graph(std::shared_ptr<Runtime> runt
           {"REFS",static_cast<int>(c.max_page_refs)}, {"MAX_KV",static_cast<int>(c.max_kv_rows)},
           {"META_Q",static_cast<int>(offsets.query_indptr/4)}, {"META_KV",static_cast<int>(offsets.kv_indptr/4)},
           {"META_PAGES",static_cast<int>(offsets.page_indices/4)}, {"META_TAIL",static_cast<int>(offsets.last_page_lengths/4)},
-          {"SPLITS", splits}, {"THREADS",threads}, {"CAUSAL", causal}, {"WINDOW_ENABLED", window >= 0}, {"WINDOW", std::max(window,0)}};
-      const auto &selected=splits==1 ? (guard_writes?guarded_vector:native_vector) : (guard_writes?guarded_partial:partial);
+          {"SPLITS", splits}, {"THREADS",32}, {"CAUSAL", causal}, {"WINDOW_ENABLED", window >= 0}, {"WINDOW", std::max(window,0)}};
+      const auto &selected=guard_writes?guarded_partial:partial;
       auto parts = selected(arguments, {{static_cast<int>(groups), static_cast<int>(c.value_head_dim+2)},
           {static_cast<int>(groups)}}, {mx::float32, mx::int32},
-          {static_cast<int>(groups*threads),1,1}, {threads,1,1}, constants, std::nullopt, false, stream);
-      auto output = merge({parts[0]}, {{static_cast<int>(rows), static_cast<int>(c.query_heads), static_cast<int>(c.value_head_dim)}},
-          {mx::uint16}, {static_cast<int>(groups/splits*32),1,1}, {32,1,1},
-          {{"DV",static_cast<int>(c.value_head_dim)}, {"SPLITS",splits}, {"BFLOAT",inputs[0].dtype()==mx::bfloat16}},
-          std::nullopt, false, stream)[0];
+          {static_cast<int>(groups*32),1,1}, {32,1,1}, constants, std::nullopt, false, stream);
+      arguments.push_back(parts[0]); arguments.push_back(parts[1]);
+      for(auto &[name,value]:constants){
+        if(name=="SPLITS")value=1;
+        if(name=="THREADS")value=1024;
+      }
+      constants.emplace_back("PART_SPLITS",splits);
+      constants.emplace_back("BFLOAT",inputs[0].dtype()==mx::bfloat16);
+      const auto &selected_finish=guard_writes?guarded_finish:finish;
+      auto finished=selected_finish(arguments,{{static_cast<int>(rows),static_cast<int>(c.query_heads),static_cast<int>(c.value_head_dim)},
+          {static_cast<int>(groups/splits)}},{mx::uint16,mx::int32},
+          {static_cast<int>(groups/splits*1024),1,1},{1024,1,1},constants,std::nullopt,false,stream);
+      auto output=finished[0];
       // The original 16-bit allocation is reinterpreted without a payload
       // cast/copy. Integer BF16 rounding preserves subnormal output values.
       output = mx::view(output, inputs[0].dtype(), stream);
-      HYLE_ASSIGN_OR_RETURN(output, with_device_status(std::move(output), mx::max(parts[1], -1, false, stream), stream));
+      HYLE_ASSIGN_OR_RETURN(output, with_device_status(std::move(output), mx::max(finished[1], -1, false, stream), stream));
       return std::vector{std::move(output)};
     };
-    return ContextAccess::compile(std::move(runtime), function, specs, workload);
+    return ContextAccess::compile_device_prefix(std::move(runtime), function, specs, workload);
   } catch (const std::bad_alloc &) {
     return std::unexpected(Status::ResourceExhausted("Apple device lengths cold metadata"));
   }
 }
 } // namespace hyle::compute::apple::detail
+
+namespace hyle::compute::apple {
+Result<bool> supports_device_lengths_paged(const Context &context,BatchCapacity capacity,
+    const ResourceBudget &budget) noexcept {
+  const auto runtime=detail::ContextAccess::runtime(context);
+  if(!runtime)return std::unexpected(Status::FailedPrecondition("Apple device lengths query requires its original Context"));
+  {
+    std::lock_guard lock(runtime->queue_mutex);
+    if(!runtime->accepting)return std::unexpected(Status::FailedPrecondition("Apple device lengths Context is closed"));
+    if(!runtime->failure.ok())return std::unexpected(runtime->failure);
+  }
+  HYLE_RETURN_IF_ERROR(validate_batch_capacity(capacity));
+  HYLE_ASSIGN_OR_RETURN(auto schema,BatchSchema::create(capacity,{.resource_budget=budget}));
+  const auto domain=detail::qualify_device_lengths_paged_schema(schema,1.f,true,-1);
+  if(domain.IsUnimplemented())return false;
+  HYLE_RETURN_IF_ERROR(domain);
+  HYLE_ASSIGN_OR_RETURN(auto launch,detail::launch_geometry(schema,capacity.max_query_rows));
+  (void)launch;
+  return !budget.valid() || budget.allows_unattributed();
+}
+} // namespace hyle::compute::apple

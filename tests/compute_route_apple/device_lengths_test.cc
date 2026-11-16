@@ -3,6 +3,7 @@
 #include "../../src/compute_route_apple/apple_device_lengths.h"
 #include "../../src/compute_route_apple/apple_carrier.h"
 #include "hyle/compute/apple_memory.h"
+#include "hyle/compute/apple_batch.h"
 #include "hyle/compute/detail/apple_plan.h"
 #include "hyle/compute/detail/apple_batch_access.h"
 #include "../compute_provider_native/half_test_support.h"
@@ -238,9 +239,9 @@ TEST(AppleDeviceLengths, FailedOriginalCacheWriteIsGuardedBeforePoisonedInputsAr
 TEST(AppleDeviceLengths, F32SplitPartialsKeepBothDeclaredStorageTypes) {
   for (const auto depth : {64u,128u,256u}) {
     Cell<F16> half(depth,depth,1031);
-    auto first = take(half.program.create_invocation()); half.run(first,{1,3},{513,1019});
+    auto first = take(half.program.create_invocation()); half.run(first,{1,3},{1024,1029});
     Cell<BF16> bfloat(depth,depth,1031);
-    auto second = take(bfloat.program.create_invocation()); bfloat.run(second,{1,3},{513,1019});
+    auto second = take(bfloat.program.create_invocation()); bfloat.run(second,{1,3},{1023,1024});
   }
 }
 TEST(AppleDeviceLengths, ShortDeviceLengthsKeepOriginalNativeVectorArithmetic) {
@@ -249,6 +250,16 @@ TEST(AppleDeviceLengths, ShortDeviceLengthsKeepOriginalNativeVectorArithmetic) {
     half.run(first,{1,3},{17,31},true,-1,0,false,false,true);
     Cell<BF16> bfloat(depth,depth,39);auto second=take(bfloat.program.create_invocation());
     bfloat.run(second,{2,4},{37,39},true,-1,0,false,false,true);
+  }
+}
+TEST(AppleDeviceLengths, ShortDeviceHistoryKeepsItsArithmeticInsideFullContextCapacity) {
+  // The page envelope is a reservation, not the length used by native SDPA.
+  // Check both dtypes/depths against the original packed native reference.
+  for(const auto depth:{64u,128u,256u}){
+    Cell<F16> half(depth,depth,16384);auto first=take(half.program.create_invocation());
+    half.run(first,{1,3},{513,1019},true,-1,0,false,false,true);
+    Cell<BF16> bfloat(depth,depth,16384);auto second=take(bfloat.program.create_invocation());
+    bfloat.run(second,{2,4},{511,1023},true,-1,0,false,false,true);
   }
 }
 TEST(AppleDeviceLengths, SeparateValueDepthAndSlidingWindowArePreserved) {
@@ -292,5 +303,39 @@ TEST(AppleDeviceLengths, DeviceProducedLengthsUseTheOriginalNativeSources) {
   auto invocation = take(cell.program.create_invocation());
   cell.run(invocation,{1,3},{17,31},true,-1,0,false,true);
   cell.run(invocation,{2,1},{31,17},true,-1,0,false,true);
+}
+TEST(AppleDeviceLengths, NativeColdQueryKeepsContextBudgetAndUnsupportedDomainSeparate) {
+  const auto plain=take(c::CacheStorage::plain(c::DataType::kBFloat16));
+  const c::BatchCapacity capacity{.query_type=c::DataType::kBFloat16,.output_type=c::DataType::kBFloat16,
+      .key_storage=plain,.value_storage=plain,.max_query_rows=3,.max_kv_rows=32768,
+      .max_pages=2048,.max_page_refs=2048,.query_heads=4,.kv_heads=2,.qk_head_dim=256,.value_head_dim=256};
+  a::Context absent;
+  const auto invalid=a::supports_device_lengths_paged(absent,capacity);
+  ASSERT_FALSE(invalid);EXPECT_TRUE(invalid.error().IsFailedPrecondition());
+  auto context=take(a::Context::create());
+  for(const auto depth:{64u,128u,256u}){
+    auto selected=capacity;selected.qk_head_dim=selected.value_head_dim=depth;
+    EXPECT_TRUE(take(a::supports_device_lengths_paged(context,selected)));
+  }
+  auto encoded=capacity;encoded.key_storage=encoded.value_storage=take(c::CacheStorage::q8_0());
+  EXPECT_FALSE(take(a::supports_device_lengths_paged(context,encoded)));
+  auto malformed=capacity;malformed.query_heads=0;
+  const auto rejected=a::supports_device_lengths_paged(context,malformed);
+  ASSERT_FALSE(rejected);EXPECT_TRUE(rejected.error().IsInvalidArgument());
+  auto huge=capacity;huge.max_query_rows=1000000;
+  const auto overflow=a::supports_device_lengths_paged(context,huge);
+  ASSERT_FALSE(overflow);EXPECT_TRUE(overflow.error().IsOutOfRange());
+  const std::array limits{c::ResourceBudgetLimit{hyle::mem::system_resource()}};
+  auto strict=take(c::ResourceBudget::create({.limits=limits}));
+  EXPECT_FALSE(take(a::supports_device_lengths_paged(context,capacity,strict)));
+  EXPECT_EQ(strict.unattributed_usage().unknown_private_owners,0u);
+  auto partial=take(c::ResourceBudget::create({.limits=limits,.allow_unattributed=true}));
+  const auto original_metadata=take(partial.usage(hyle::mem::system_resource())).live_bytes;
+  EXPECT_TRUE(take(a::supports_device_lengths_paged(context,capacity,partial)));
+  EXPECT_EQ(partial.unattributed_usage().unknown_private_owners,0u);
+  EXPECT_EQ(take(partial.usage(hyle::mem::system_resource())).live_bytes,original_metadata);
+  check(context.close());
+  const auto closed=a::supports_device_lengths_paged(context,capacity);
+  ASSERT_FALSE(closed);EXPECT_TRUE(closed.error().IsFailedPrecondition());
 }
 } // namespace

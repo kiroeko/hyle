@@ -13,6 +13,7 @@
 #include <utility>
 
 #include <mlx/compile.h>
+#include <mlx/backend/metal/device.h>
 #include <mlx/device.h>
 #include <mlx/ops.h>
 #include <mlx/primitives.h>
@@ -370,17 +371,23 @@ std::vector<mx::array> prepare_mlx(MlxProgram &program, RegionFunction region,
   return outputs;
 }
 
+struct InvocationState;
+Status arm_device_prefix(InvocationState &,mx::Stream,std::span<const mx::array>);
+void complete_device_encoding(InvocationState &,mx::Stream);
 Status evaluate_mlx(const MlxProgram &program,
                     const std::vector<mx::array> &inputs,
                     std::vector<mx::array> &outputs, mx::Stream stream,
                     std::vector<mx::Event> *pending = nullptr,
-                    std::optional<mx::array> *check = nullptr) {
+                    std::optional<mx::array> *check = nullptr,
+                    InvocationState *device_prefix = nullptr) {
   encode_native_input_waits(inputs, stream);
   outputs = program.compiled(inputs);
   if (pending) {
     // GPU eval encodes buffers/events before returning. Consumers import the
     // original events; the same Invocation drains their errors at retirement.
+    if(device_prefix)HYLE_RETURN_IF_ERROR(arm_device_prefix(*device_prefix,stream,outputs));
     mx::async_eval(outputs);
+    if(device_prefix)complete_device_encoding(*device_prefix,stream);
     for (const auto &output : outputs) {
       if (output.event().valid()) {
         HYLE_FATAL_ASSERT(pending->size() < pending->capacity());
@@ -432,6 +439,7 @@ struct ProgramState : MlxProgram {
   std::vector<InputSpec> inputs;
   std::vector<InputSpec> outputs;
   std::unique_ptr<PreparedPlan> native;
+  bool device_prefix = false;
 };
 
 struct ResultValues {
@@ -493,6 +501,9 @@ struct InvocationState : Job {
   CompletionNotification notification;
   Status terminal_hint;
   bool native_async = false; // Selected once from this actual prepared Plan.
+  std::optional<mx::array> device_prefix_check;
+  NS::SharedPtr<MTL::CommandBuffer> device_prefix_command;
+  mx::Event device_prefix_event;
   std::size_t native_tail_region = SIZE_MAX;
   bool native_deferred = false, native_retired = false;
   bool native_values_ready = false; // Published under binding_mutex.
@@ -820,13 +831,30 @@ void finish(InvocationState &state, Status terminal) noexcept {
 
 Status drain_plan_regions(InvocationState &state) noexcept {
   Status terminal, device_failure;
+  if(state.device_prefix_command){
+    try{state.device_prefix_command->waitUntilCompleted();}
+    catch(...){device_failure=native_exception();terminal.Update(device_failure);}
+    state.device_prefix_command.reset();
+  }
+  if(state.program->device_prefix){
+    try{
+      for(auto &event:state.mlx_events){event.wait();event.check_error();}
+      if(state.device_prefix_check){
+        state.device_prefix_check->wait();
+        terminal.Update(algorithm_status(state.device_prefix_check->data<std::int32_t>()[0]));
+      }
+    }catch(...){device_failure=native_exception();terminal.Update(device_failure);}
+    state.mlx_events.clear();state.device_prefix_check.reset();
+    if(!device_failure.ok())state.program->runtime->poison(device_failure);
+    return terminal;
+  }
   std::size_t cursor = 0;
   // Observe the original region order, even if later encoding also failed.
   // A deferred checked-input error must not become a later OOM/shape error.
   for (std::size_t i = 0; i < state.recurrent.size(); ++i) {
     const auto end = std::exchange(state.mlx_event_ends[i], 0);
     for (; cursor < end; ++cursor) {
-      try { state.mlx_events[cursor].wait(); }
+      try { state.mlx_events[cursor].wait();state.mlx_events[cursor].check_error(); }
       catch (...) {
         auto failure = native_exception();
         device_failure.Update(failure); terminal.Update(failure);
@@ -974,7 +1002,11 @@ Status NativeDependencies::resolve_impl(bool blit_stream) noexcept {
       HYLE_RETURN_IF_ERROR(observe_native_prefix(producer));
       continue;
     }
-    HYLE_RETURN_IF_ERROR(append(producer.recurrent[producer.native_tail_region]->completion_event, true));
+    if(producer.program->device_prefix){
+      HYLE_RETURN_IF_ERROR(append(producer.device_prefix_event,true));
+    }else{
+      HYLE_RETURN_IF_ERROR(append(producer.recurrent[producer.native_tail_region]->completion_event, true));
+    }
     if (!producer.mlx_events.empty()) {
       HYLE_RETURN_IF_ERROR(append(producer.mlx_events.back(), false));
       // Native append/blit encoders are outside MLX's resource fence table.
@@ -997,6 +1029,31 @@ void retire_invocation(InvocationState &state, Status terminal) noexcept {
 void native_prefix_completed(void *opaque) noexcept {
   auto &state = *static_cast<InvocationState *>(opaque);
   state.program->runtime->enqueue_retirement(state.native_tail);
+}
+Status arm_device_prefix(InvocationState &state,mx::Stream stream,std::span<const mx::array> outputs){
+  if(state.native_deferred || std::ranges::all_of(outputs,[](const auto &value){return value.is_available();}))
+    return Status::Ok();
+  auto &runtime=*state.program->runtime;
+  state.device_prefix_command=NS::RetainPtr(mx::metal::get_command_encoder(stream).get_command_buffer());
+  if(!state.device_prefix_command)return Status::ResourceExhausted("Apple original MLX command buffer allocation failed");
+  const auto admitted=runtime.reserve_native_tail();
+  if(!admitted.ok()){state.device_prefix_command.reset();return admitted;}
+  try{
+    auto *original=&state;
+    state.device_prefix_command->addCompletedHandler([original](MTL::CommandBuffer *){native_prefix_completed(original);});
+    state.native_deferred=true;
+  }catch(...){state.device_prefix_command.reset();runtime.release_native_tail();throw;}
+  return Status::Ok();
+}
+void complete_device_encoding(InvocationState &state,mx::Stream stream){
+  if(!state.native_deferred || !state.device_prefix_command)return;
+  // A view-only recipe may encode no new GPU kernel. Commit only its already
+  // retained original buffer, never create a second completion-only buffer.
+  if(state.device_prefix_command->status()==MTL::CommandBufferStatusNotEnqueued){
+    auto &encoder=mx::metal::get_command_encoder(stream);
+    HYLE_FATAL_ASSERT(encoder.get_command_buffer()==state.device_prefix_command.get());
+    encoder.commit();
+  }
 }
 void execute_native_tail(Job *job) noexcept {
   auto &state = *static_cast<InvocationState::NativeTail *>(job)->owner;
@@ -1073,10 +1130,18 @@ void execute_with(InvocationState& state, Evaluate evaluate) noexcept {
 
 void execute_invocation(Job* job) noexcept {
   auto& state=*static_cast<InvocationState*>(job);
-  execute_with(state,[&](mx::Stream stream){
+  execute_with(state,[&](mx::Stream stream)->Status{
     if (!state.program->native) state.encode_dependencies(stream);
-    return state.program->native ? execute_plan(state,stream) :
+    if(!state.program->device_prefix)return state.program->native ? execute_plan(state,stream) :
         evaluate_mlx(*state.program,state.inputs,state.values->arrays,stream);
+    HYLE_RETURN_IF_ERROR(evaluate_mlx(*state.program,state.inputs,state.values->arrays,stream,
+        &state.mlx_events,&state.device_prefix_check,&state));
+    if(state.native_deferred){
+      std::lock_guard lock(state.binding_mutex);
+      if(!state.mlx_events.empty())state.device_prefix_event=state.mlx_events.back();
+      state.native_values_ready=true;
+    }
+    return Status::Ok();
   });
 }
 void execute_batch_invocation(Job* job) noexcept {
@@ -1197,9 +1262,17 @@ Status invocation_device_checks(InvocationState &state,DeviceCheckInputs &inputs
   if(state.native_retired)return Status::Ok();
   if(!state.native_deferred || !state.native_values_ready)
     return Status::FailedPrecondition("Apple source checks require its original encoded producer");
+  HYLE_ASSIGN_OR_RETURN(auto fresh,visit_device_check(inputs,&state,state.submitted_epoch.load(std::memory_order_acquire)));
+  if(!fresh)return Status::Ok();
   for(const auto &check:state.mlx_checks)if(check){
     if(check->dtype()!=mx::int32 || check->size()!=1)
       return Status::Internal("Apple producer check differs from its native I32 contract");
+    HYLE_ASSIGN_OR_RETURN(auto word,MemoryAccess::submitted_storage_info(*check));
+    HYLE_RETURN_IF_ERROR(append_device_check(inputs,word,check));
+  }
+  if(const auto &check=state.device_prefix_check;check){
+    if(check->dtype()!=mx::int32 || check->size()!=1)
+      return Status::Internal("Apple device prefix check differs from its original I32 contract");
     HYLE_ASSIGN_OR_RETURN(auto word,MemoryAccess::submitted_storage_info(*check));
     HYLE_RETURN_IF_ERROR(append_device_check(inputs,word,check));
   }
@@ -1384,6 +1457,14 @@ Result<Program> detail::ContextAccess::compile(std::shared_ptr<Runtime> runtime,
 
 WorkloadContext Program::workload() const noexcept {
   return state_ ? state_->workload : WorkloadContext{};
+}
+
+Result<Program> detail::ContextAccess::compile_device_prefix(std::shared_ptr<Runtime> runtime,
+    RegionFunction region,std::span<const InputSpec> inputs,const WorkloadContext &workload,
+    std::span<const std::size_t> descriptor_inputs) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto program,compile(std::move(runtime),std::move(region),inputs,workload,descriptor_inputs));
+  program.state_->device_prefix=true;
+  return program;
 }
 
 Result<Program> detail::ContextAccess::compile(const Context &context,
@@ -1608,6 +1689,7 @@ Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
     }
     auto state = std::make_unique<detail::InvocationState>(state_, std::move(*slot));
     state->execute = detail::execute_invocation;
+    if(state_->device_prefix)state->mlx_events.reserve(state_->outputs.size()+1);
     if (state_->native) {
       const auto &plan = state_->native->description;
       state->native_values.resize(plan.values.size());

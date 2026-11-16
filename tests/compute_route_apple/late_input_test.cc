@@ -908,6 +908,12 @@ void exercise_retired_binding_detach(bool alias) {
   auto escaped = retired.owner;
   EXPECT_TRUE(ad::InvocationAccess::can_detach_inputs(*producer, retired.owner).IsFailedPrecondition());
   escaped.reset();
+  const float *original_output=nullptr;
+  {
+    auto output=ad::InvocationAccess::output(*producer,0);
+    ASSERT_TRUE(output)<<output.error().message();
+    original_output=output->data<float>();
+  } // Keep only its address; the test must not retain the output allocation.
   {
     FifoGate gate;
     ASSERT_TRUE(gate.enqueue(runtime).ok()); gate.wait_entered();
@@ -920,7 +926,15 @@ void exercise_retired_binding_detach(bool alias) {
     EXPECT_TRUE(producer->bind(changed).IsUnavailable());
     EXPECT_TRUE(ad::InvocationAccess::reuse_gate(*producer).IsUnavailable());
     EXPECT_TRUE(ad::InvocationAccess::release_inputs(*producer).IsUnavailable());
-    EXPECT_EQ(pool->stats().live_blocks, 1u);
+    if(alias)EXPECT_EQ(pool->stats().live_blocks, 1u);
+    // A generated output need not retain its retired input allocation. Prove
+    // that the consumer's pin keeps the original output itself, not that DAG
+    // detachment happens at one incidental time in the MLX allocator.
+    {
+      auto output=ad::InvocationAccess::output(*producer,0);
+      ASSERT_TRUE(output)<<output.error().message();
+      EXPECT_EQ(output->data<float>(),original_output);
+    }
     EXPECT_FALSE(producer->submit());
     gate.open_and_join();
     ASSERT_TRUE(pending->completion().wait().ok());
@@ -1200,5 +1214,123 @@ TEST(AppleLateInput, RejectsCyclesPortsAndForeignRuntimeAndPropagatesCheckedFail
   auto output = ad::InvocationAccess::output(*second, 0);
   ASSERT_TRUE(output);
   EXPECT_FLOAT_EQ(output->data<float>()[0], -3.f);
+}
+TEST(AppleLateInput, OriginalMlxPrefixEncodesPendingMathAndCheckedCopiesWithoutAnOwnerWait) {
+  auto context=a::Context::create();ASSERT_TRUE(context)<<context.error().message();
+  auto runtime=ad::ContextAccess::runtime(*context);
+  const std::array specs{a::InputSpec{{4},mx::float32},a::InputSpec{{1},mx::int32}};
+  auto first=ad::ContextAccess::compile_device_prefix(runtime,[](const auto &args,mx::Stream stream){
+    return a::lower(c::Operation{c::Gather{.axis=0,.bounds=c::IndexBoundsPolicy::kChecked}},args,stream);
+  },specs);
+  const std::array one{a::InputSpec{{1},mx::float32}};
+  auto second=ad::ContextAccess::compile_device_prefix(runtime,[](const auto &args,mx::Stream stream){
+    return std::vector<mx::array>{mx::multiply(args[0],mx::array(2.f),stream)};
+  },one);
+  ASSERT_TRUE(first)<<first.error().message();ASSERT_TRUE(second)<<second.error().message();
+  auto memory=a::MemoryResource::create(*context);ASSERT_TRUE(memory);
+  auto target=hyle::mem::Buffer::create(memory->ref(),sizeof(float),256);
+  auto other=hyle::mem::Buffer::create(memory->ref(),sizeof(float),256);
+  ASSERT_TRUE(target);ASSERT_TRUE(other);
+  const auto description=c::TensorDesc::dense(c::DataType::kFloat32,std::array<std::int64_t,1>{1}).value();
+  // A checked GPU failure must preserve the same Context for the following
+  // valid pair; the failed slots themselves remain retired. Both original
+  // producers/consumers encode while the actual GPU is held.
+  for(const bool ranges:{false,true})for(const std::int32_t index:{2,9,1}){
+    auto producer=first->create_invocation(),consumer=second->create_invocation();
+    ASSERT_TRUE(producer);ASSERT_TRUE(consumer);
+    auto source=ad::InvocationAccess::source(*producer,0);ASSERT_TRUE(source);
+    std::array<ad::InputBinding,1> late;late[0].source=std::move(*source);
+    ASSERT_TRUE(ad::InvocationAccess::prepare_inputs(*consumer,late).ok());late[0].source.reset();
+    const std::array<float,1> sentinel{-17.f};
+    ASSERT_TRUE(target->view().write(std::as_bytes(std::span(sentinel))).ok());
+    ASSERT_TRUE(other->view().write(std::as_bytes(std::span(sentinel))).ok());
+    auto copy=ad::prepare_copy_recording_runtime(runtime,2,hyle::mem::system_allocator(),sizeof(float)*2,
+        ad::CopyRecordingMode::kReplayable).value();
+    auto copied_source=ad::InvocationAccess::source(*producer,0).value();
+    if(ranges){
+      const std::array spans{ad::HostCopyRange{0,target->view()},ad::HostCopyRange{0,other->view()}};
+      ASSERT_TRUE(ad::bind_device_copy_ranges(*copy,std::move(copied_source),description,spans).ok());
+    }else ASSERT_TRUE(ad::bind_device_copy_recording(*copy,std::move(copied_source),description,target->view()).ok());
+    const std::array values{mx::array({1.f,2.f,3.f,4.f}),mx::array({index})};
+    ASSERT_TRUE(producer->bind(values).ok());
+    GpuEventGate gpu(runtime);ASSERT_TRUE(gpu.enqueue().ok());
+    auto a_work=producer->submit();ASSERT_TRUE(a_work)<<a_work.error().message();
+    auto b_work=consumer->submit();ASSERT_TRUE(b_work)<<b_work.error().message();
+    auto copied=ad::submit_copy_recording(*copy);ASSERT_TRUE(copied)<<copied.error().message();
+    FifoGate owner;
+    const auto admitted=owner.enqueue(runtime);
+    const bool free=admitted.ok() && owner.wait_entered_for(std::chrono::seconds(2));
+    const auto a_pending=a_work->completion().poll(),b_pending=b_work->completion().poll(),copy_pending=copied->poll();
+    const auto rebind=producer->bind(values);
+    gpu.open();owner.open_and_join();
+    ASSERT_TRUE(admitted.ok())<<admitted.message();EXPECT_TRUE(free);
+    ASSERT_TRUE(a_pending);ASSERT_TRUE(b_pending);ASSERT_TRUE(copy_pending);
+    EXPECT_EQ(*a_pending,c::CompletionPoll::kPending);EXPECT_EQ(*b_pending,c::CompletionPoll::kPending);
+    EXPECT_EQ(*copy_pending,c::CompletionPoll::kPending);
+    EXPECT_TRUE(rebind.IsFailedPrecondition());
+    const auto a_done=a_work->completion().wait(),b_done=b_work->completion().wait();
+    const auto copy_done=copied->wait();
+    if(index==9){EXPECT_TRUE(a_done.IsOutOfRange());EXPECT_TRUE(b_done.IsOutOfRange());EXPECT_TRUE(copy_done.IsOutOfRange());}
+    else{
+      ASSERT_TRUE(a_done.ok())<<a_done.message();ASSERT_TRUE(b_done.ok())<<b_done.message();
+      ASSERT_TRUE(copy_done.ok())<<copy_done.message();
+      auto result=ad::InvocationAccess::output(*consumer,0);ASSERT_TRUE(result);
+      EXPECT_TRUE(result->is_available());EXPECT_FLOAT_EQ(result->data<float>()[0],2.f*(index+1));
+    }
+    std::array<float,1> observed{};
+    ASSERT_TRUE(target->view().read(std::as_writable_bytes(std::span(observed))).ok());
+    EXPECT_FLOAT_EQ(observed[0],index==9?sentinel[0]:float(index+1));
+    ASSERT_TRUE(other->view().read(std::as_writable_bytes(std::span(observed))).ok());
+    EXPECT_FLOAT_EQ(observed[0],!ranges || index==9?sentinel[0]:float(index+1));
+    EXPECT_EQ(ad::copy_recording_report(*copy).native_calls,1u);
+    EXPECT_EQ(ad::copy_recording_report(*copy).host_waits,0u);
+  }
+  {std::lock_guard lock(runtime->queue_mutex);EXPECT_EQ(runtime->native_tails,0u);}
+  ASSERT_TRUE(context->close().ok());
+}
+TEST(AppleLateInput, SharedPendingAncestorsAreCollectedOnceBeforeNativeCopy) {
+  auto context=a::Context::create().value();auto runtime=ad::ContextAccess::runtime(context);
+  const std::array gather_specs{a::InputSpec{{4},mx::float32},a::InputSpec{{1},mx::int32}};
+  auto first=ad::ContextAccess::compile_device_prefix(runtime,[](const auto &args,mx::Stream stream){
+    return a::lower(c::Operation{c::Gather{}},args,stream);
+  },gather_specs).value();
+  const std::array pair{a::InputSpec{{1},mx::float32},a::InputSpec{{1},mx::float32}};
+  auto twice=ad::ContextAccess::compile_device_prefix(runtime,[](const auto &args,mx::Stream stream){
+    return std::vector<mx::array>{mx::add(args[0],args[1],stream)};
+  },pair).value();
+  auto memory=a::MemoryResource::create(context).value();
+  auto target=hyle::mem::Buffer::create(memory.ref(),sizeof(float),256).value();
+  const auto description=c::TensorDesc::dense(c::DataType::kFloat32,std::array<std::int64_t,1>{1}).value();
+  for(const bool fail:{false,true}){
+    auto root=first.create_invocation().value();
+    ASSERT_TRUE(root.bind(std::array{mx::array({1.f,2.f,3.f,4.f}),mx::array({fail?9:2},mx::int32)}).ok());
+    std::vector<a::Invocation> chain;chain.reserve(24);
+    for(int i=0;i<24;++i){
+      auto source=ad::InvocationAccess::source(i?chain.back():root,0).value();
+      auto &node=chain.emplace_back(twice.create_invocation().value());
+      std::array<ad::InputBinding,2> bindings;bindings[0].source=source;bindings[1].source=std::move(source);
+      ASSERT_TRUE(ad::InvocationAccess::prepare_inputs(node,bindings).ok());
+    }
+    auto copy=ad::prepare_copy_recording_runtime(runtime,1,hyle::mem::system_allocator(),sizeof(float)).value();
+    ASSERT_TRUE(ad::bind_device_copy_recording(*copy,ad::InvocationAccess::source(chain.back(),0).value(),description,target.view()).ok());
+    const std::array<float,1> sentinel{-123.f};
+    ASSERT_TRUE(target.view().write(std::as_bytes(std::span(sentinel))).ok());
+    GpuEventGate gpu(runtime);ASSERT_TRUE(gpu.enqueue().ok());
+    auto produced=root.submit().value();
+    std::vector<c::OwnedResult<a::Results>> pending;pending.reserve(chain.size());
+    for(auto &node:chain){auto work=node.submit();ASSERT_TRUE(work)<<work.error().message();pending.push_back(std::move(*work));}
+    auto copied=ad::submit_copy_recording(*copy).value();
+    FifoGate owner;const auto admitted=owner.enqueue(runtime);
+    const bool free=admitted.ok() && owner.wait_entered_for(std::chrono::seconds(2));
+    const auto poll=copied.poll();gpu.open();owner.open_and_join();
+    ASSERT_TRUE(admitted.ok());EXPECT_TRUE(free);ASSERT_TRUE(poll);EXPECT_EQ(*poll,c::CompletionPoll::kPending);
+    const auto result=copied.wait();
+    EXPECT_EQ(result.IsOutOfRange(),fail);EXPECT_EQ(produced.completion().wait().code(),result.code());
+    for(auto &work:pending)EXPECT_EQ(work.completion().wait().code(),result.code());
+    std::array<float,1> actual{};ASSERT_TRUE(target.view().read(std::as_writable_bytes(std::span(actual))).ok());
+    EXPECT_FLOAT_EQ(actual[0],fail?sentinel[0]:3.f*float(std::uint32_t{1}<<24));
+    EXPECT_EQ(ad::copy_recording_report(*copy).native_calls,1u);
+  }
+  ASSERT_TRUE(context.close().ok());
 }
 } // namespace

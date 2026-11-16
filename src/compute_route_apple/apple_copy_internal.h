@@ -81,6 +81,13 @@ HYLE_COMPUTE_ROUTE_APPLE_API Status bind_host_copy_ranges(CopyRecording &,
     InputSource, const TensorDesc &, std::span<const HostCopyRange>) noexcept;
 HYLE_COMPUTE_ROUTE_APPLE_API Status bind_host_copy_ranges(CopyRecording &,
     ConstTensorView source, std::span<const HostCopyRange>, ReadLease source_owner = {}) noexcept;
+// Distinct cold preparation for pending native Sources and aligned, original
+// shared Metal targets. GPU error words guard every write; public retirement
+// still observes original verdicts. No implicit change to ordinary host copies.
+HYLE_COMPUTE_ROUTE_APPLE_API Status bind_device_copy_recording(CopyRecording &,
+    InputSource, const TensorDesc &, mem::BufferView destination) noexcept;
+HYLE_COMPUTE_ROUTE_APPLE_API Status bind_device_copy_ranges(CopyRecording &,
+    InputSource, const TensorDesc &, std::span<const HostCopyRange>) noexcept;
 HYLE_COMPUTE_ROUTE_APPLE_API Status copy_recording_reuse_gate(const CopyRecording &) noexcept;
 // Cleanup only: actual work/public ownership must be retired. Native readers
 // may retain the immutable epoch/verdict while consumed input mappings are
