@@ -711,8 +711,8 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     const OrdinaryIoCapabilities ordinary_io{
         .backend = execution.kind(), .role = role, .completion = completion,
         .packing = packing, .cpu_assist = execution.has_cpu_assist(), .diagnostic = diagnostic};
-    const auto native_results = prepared.emit_successor
-        ? native_ordinary_io_domains(execution, ordinary_io) : std::nullopt;
+    const auto native_results = prepared.emit_successor && (role==GraphRole::kText || successor_eligible)
+        ? native_generated_io_domains(execution, ordinary_io) : std::nullopt;
     const auto control_storage = ordinary_control_storage(execution, ordinary_io);
     const bool caller_small_results = ordinary_io.caller_small_results() || native_results.has_value();
     const auto publish_valid = [&] {
@@ -807,7 +807,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         definition.id_port = r.copy(definition.id_port);
       r.publish(definition.logits_port); r.publish(definition.id_port);
       if (control_storage || native_results) {
-        definition.delivery_id_port = r.reshape(definition.id_port, {batch, f(1)});
+        definition.delivery_id_port = r.reshape(definition.id_port, {verifies_prefix(role)?packed:batch, f(1)});
         r.publish(definition.delivery_id_port);
       }
     }
@@ -906,6 +906,17 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         external_contracts.push_back({definition.id_port, native_results->device});
         external_contracts.push_back({definition.delivery_id_port, native_results->staging});
         if (definition.sampling_valid_port) external_contracts.push_back({definition.sampling_valid_port, native_results->staging});
+        // These exact original scalar writers cross MTP episodes. Keep the
+        // selected device decision on the native endpoint; host delivery is
+        // separate and never substitutes a staging writer for this Source.
+        if(emit_device_decision){
+          for(const auto output:{definition.successor_pending_port,definition.successor_prefix_index_port,
+              definition.successor_selected_catchup_port})
+            if(output)external_contracts.push_back({output,native_results->device});
+        }else if(successor_eligible){
+          for(const auto output:{definition.successor_token_port,definition.successor_catchup_port})
+            if(output)external_contracts.push_back({output,native_results->device});
+        }
       }
       if (control_storage) {
         // Metadata and scalar delivery use host staging. The original token

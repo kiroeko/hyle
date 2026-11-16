@@ -6,6 +6,13 @@
 #include "hyle/compute/batch_paged_native.h"
 #include "hyle/compute/apple_memory.h"
 namespace hyle::compute::apple {
+// Cold configuration query on the original native Context. Creates no GPU
+// program, queue, payload or execution right; concrete ports, page authority,
+// Source imports and the prepared Graph remain separately qualified.
+// Native/private MLX storage is opaque: a strict attributed budget cannot
+// admit it. Unsupported valid configurations return false; real errors remain.
+HYLE_COMPUTE_ROUTE_APPLE_API Result<bool> supports_device_lengths_paged(
+    const Context&, BatchCapacity, const ResourceBudget& = {}) noexcept;
 // Cold immutable host-known ragged layout, F16/BF16 D64/128/256 and plain
 // 512/576-to-512. Three original
 // packed-capacity Q/K/V ports and one active packed Q output. Original MLX

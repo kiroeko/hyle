@@ -34,6 +34,7 @@
 #include "hyle/graph/cuda.h"
 #endif
 #if defined(HYLE_COMPUTE_APPLE) && defined(__APPLE__)
+#include "hyle/compute/apple_batch.h"
 #include "hyle/compute/apple_file_stream.h"
 #include "hyle/compute/apple_memory.h"
 #include "hyle/graph/apple.h"
@@ -595,6 +596,10 @@ public:
   Result<bool> supports_device_lengths_batch(compute::BatchCapacity capacity,
       const compute::ResourceBudget &budget = {}) noexcept {
     if (!state_) return std::unexpected(Status::FailedPrecondition("Backend is not initialized"));
+#if defined(HYLE_COMPUTE_APPLE) && defined(__APPLE__)
+    if(auto *endpoint=std::get_if<AppleEndpoint>(&state_->primary))
+      return compute::apple::supports_device_lengths_paged(endpoint->context,capacity,budget);
+#endif
     const auto context = common_context();
     if (!context) return false; // This initialized endpoint has no common batch provider.
     const auto queue = common_queue();

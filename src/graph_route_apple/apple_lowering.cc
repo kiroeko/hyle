@@ -768,7 +768,7 @@ static Result<ca::Program> compile_impl(const std::shared_ptr<ca::detail::Runtim
     }
     auto program = has_native_model_region || has_control || has_attention_blocks
         ? compile_regions(runtime, plan, descriptor_values)
-        : ca::detail::ContextAccess::compile(runtime,
+        : ca::detail::ContextAccess::compile_device_prefix(runtime,
             [plan](const auto &inputs, mx::Stream stream) {
               return trace(*plan, plan->nodes, plan->inputs, plan->outputs, inputs, stream);
             }, specs, options.workload, descriptor_inputs);

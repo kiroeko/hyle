@@ -51,6 +51,13 @@ struct ContextAccess final {
           std::span<const InputSpec> inputs,
           const WorkloadContext &workload = {},
           std::span<const std::size_t> descriptor_inputs = {}) noexcept;
+  // Private fixed GPU recipe. Reuse its original MLX command-buffer callback;
+  // the same owner checks every actual output event/status before retirement.
+  // Ordinary compile keeps its ready-array execution behavior.
+  HYLE_COMPUTE_ROUTE_APPLE_API static Result<Program>
+  compile_device_prefix(std::shared_ptr<Runtime>, RegionFunction,
+      std::span<const InputSpec>, const WorkloadContext& = {},
+      std::span<const std::size_t> descriptor_inputs = {}) noexcept;
 };
 
 // One cold admission predicate for typed model-native MLX custom lowering.

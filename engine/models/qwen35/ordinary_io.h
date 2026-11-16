@@ -57,7 +57,7 @@ inline std::optional<hyle::graph::StorageDomainId> ordinary_control_storage(
   return {};
 }
 
-struct NativeOrdinaryIoDomains final {
+struct NativeGeneratedIoDomains final {
   hyle::graph::StorageDomainId device;
   hyle::graph::StorageDomainId staging;
 };
@@ -66,9 +66,9 @@ struct NativeOrdinaryIoDomains final {
 // delivery owns a separate output, without changing the Source's origin.
 // Qualify existing endpoint/resource owners; Graph still qualifies the actual
 // transfers and external allocations. These facts grant no execution right.
-inline std::optional<NativeOrdinaryIoDomains> native_ordinary_io_domains(
+inline std::optional<NativeGeneratedIoDomains> native_generated_io_domains(
     const hyle::inference::Backend &execution, const OrdinaryIoCapabilities &facts) noexcept {
-  if (facts.role != GraphRole::kText || facts.completion != TextCompletion::kEmitNext ||
+  if (facts.completion != TextCompletion::kEmitNext ||
       facts.cpu_assist || facts.diagnostic || !execution.queue_bindings().empty()) return {};
   const auto &primary = execution.storage_owner();
   if (!primary || primary.context_identity() || !primary.endpoint_identity() ||
@@ -83,7 +83,7 @@ inline std::optional<NativeOrdinaryIoDomains> native_ordinary_io_domains(
     if (domain.resource == execution.staging()) staging = id;
   }
   if (!device || !staging) return {};
-  return NativeOrdinaryIoDomains{*device, *staging};
+  return NativeGeneratedIoDomains{*device, *staging};
 }
 
 enum class OrdinaryInputMode : std::uint8_t { kSeparate, kPacket };
@@ -108,7 +108,7 @@ struct OrdinaryIoPlan final {
 struct DeviceRelayCapabilities final {
   hyle::inference::BackendKind backend = hyle::inference::BackendKind::kDefault;
   bool cpu_assist = false, scheduler = false, sampled_mtp = false, logits_modifiers = false;
-  // Provision the existing second candidate slot for an ordinary native route.
+  // Provision the existing candidate slots for a native Source route.
   // The actual prepared Graph must qualify before decode can select it; this
   // request is not a claim that every region/backend imports pending sources.
   bool native_source_candidate = false;

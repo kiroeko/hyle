@@ -65,11 +65,28 @@ struct InputBinding final {
 
 // Borrowed error words of original pinned producer episodes. A caller-owned
 // bounded span is prepared cold; collection never allocates or observes data.
+struct DeviceCheckVisit final { const void *original=nullptr; std::uint64_t epoch=0; };
 struct DeviceCheckInputs final {
   std::span<NativeStorage> words;
   std::span<std::optional<mlx::core::array>> owners;
   std::size_t count = 0;
+  // Per-collection traversal scratch, not another ownership/permission table.
+  // A shared DAG ancestor contributes its exact epoch only once.
+  std::span<DeviceCheckVisit> visited;
+  std::size_t visit_count=0;
 };
+inline Result<bool> visit_device_check(DeviceCheckInputs &inputs,const void *original,std::uint64_t epoch) noexcept {
+  const auto size=inputs.visited.size();
+  if(!original || !epoch || !size || (size&(size-1)))
+    return std::unexpected(Status::InvalidArgument("Apple source checks require bounded power-of-two traversal scratch"));
+  auto index=((reinterpret_cast<std::uintptr_t>(original)>>4)^(epoch*0x9e3779b97f4a7c15ULL))&(size-1);
+  for(std::size_t n=0;n<size;++n,index=(index+1)&(size-1)){
+    auto &entry=inputs.visited[index];
+    if(entry.original==original && entry.epoch==epoch)return false;
+    if(!entry.original){entry={original,epoch};++inputs.visit_count;return true;}
+  }
+  return std::unexpected(Status::ResourceExhausted("Apple source-check traversal exceeds cold capacity"));
+}
 HYLE_COMPUTE_ROUTE_APPLE_API Status append_device_check(DeviceCheckInputs &, NativeStorage,
     const std::optional<mlx::core::array> & = {}) noexcept;
 

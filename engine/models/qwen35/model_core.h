@@ -851,7 +851,8 @@ public:
       }
     }
     const GreedyChainCapabilities chain{policy.max_drafts,
-        DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler), false, false}.eligible(),
+        DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler), false, false,
+            execution.native_generated_storage() && device_mtp_attention_available()}.eligible(),
         cache_plan.active_sequences, cache_plan.auxiliary_hidden_rows, cache_plan.private_draft_stages,
         replay_policy != ReplayPolicy::kCommands, supported_projection};
     draft_packet_available_ = chain.packet_available();
@@ -877,6 +878,9 @@ public:
     if (!device_mtp_model_contract()) return false;
     if (max_drafts() > 1 && std::ranges::none_of(resources_->sampling_configurations,
         [&](const auto &prepared) { return greedy_draft_chain_enabled(prepared->configuration); })) return false;
+    return device_mtp_attention_available();
+  }
+  bool device_mtp_attention_available() {
     if (!backend_device_mtp_support_) {
       backend_device_mtp_support_ = supports_mtp_attention(execution, attention_capacity(),
           resources_->attention_storage, allocation_budget);
@@ -887,7 +891,7 @@ public:
     if (preparation_started_)
       throw std::runtime_error("configure device MTP continuation before model preparation");
     if (enabled && !supports_device_mtp())
-      throw std::runtime_error("device MTP continuation requires bounded CUDA greedy R1 N1");
+      throw std::runtime_error("device MTP continuation requires bounded R1 N1 with supported attention and proposal recipe");
     device_mtp_successor_ = enabled;
   }
 
@@ -1219,13 +1223,15 @@ public:
                                                           std::chrono::seconds(10), &status);
       check(status);
     }
+    const bool native_relay=execution.native_generated_storage() &&
+        (!cache_plan.draft_cache || device_mtp_attention_available());
     relay_by_sampling_.reserve(resources_->sampling_configurations.size());
     for (const auto &prepared : resources_->sampling_configurations) {
       const auto &sampling = prepared->configuration;
       relay_by_sampling_.push_back({
           DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
               sampling.enabled && cache_plan.draft_cache, !sampling.modifiers.empty(),
-              execution.native_generated_storage() && !cache_plan.draft_cache}.eligible(),
+              native_relay}.eligible(),
           PrefillRelayFacts{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
               cache_plan.draft_cache, cache_plan.in_flight_batches,
               !sampling.enabled && sampling.modifiers.empty()}.eligible()});
@@ -4372,7 +4378,7 @@ public:
     auto &carrier = phase->slots[slot].carrier;
     if (!carrier.initialized() || carrier.closing() || !carrier.retired()) return false;
     if (carrier.queues().empty())
-      return !device_mtp && carrier.native_source_dependencies();
+      return carrier.native_source_dependencies();
     auto *run = take(carrier.borrow());
     return take(g::detail::ReplayAccess::has_capture_candidate(*run,
         source.primary_output.reader_binding(phase->token_port)));

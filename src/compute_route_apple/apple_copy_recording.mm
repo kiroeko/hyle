@@ -14,19 +14,17 @@
 #include "hyle/core/assert.h"
 #include "hyle/mem/std_allocator.h"
 #include "apple_device_append_metal.h"
+#include "apple_deferred_copy_metal.h"
 
 namespace hyle::compute::apple::detail {
 namespace cd = compute::detail;
 struct CopyFence final {
   id<MTLFence> native = nil;
+  id<MTLComputePipelineState> checked_copy = nil;
   bool encoded = false;
-  ~CopyFence() { [native release]; }
+  ~CopyFence() { [native release]; [checked_copy release]; }
 };
 template<class T> using CopyArray = std::vector<T, mem::StdAllocator<T>>;
-struct CopyCommand final {
-  void *source = nullptr, *destination = nullptr;
-  std::size_t source_offset = 0, destination_offset = 0, bytes = 0;
-};
 struct HostCopyTarget final {
   mem::HostMapping mapping;
   std::span<std::byte> bytes;
@@ -88,6 +86,8 @@ struct CopyRecording final : Job {
   std::array<std::uint64_t, 1> closure{};
   std::shared_ptr<DeviceAppendState> device_append;
   bool device_append_active = false;
+  std::shared_ptr<DeferredCopyState> deferred_copy;
+  bool deferred_copy_active = false;
 };
 namespace {
 void deliver(cd::CompletionLifetime lifetime, Status terminal, const Status &hint) noexcept {
@@ -96,6 +96,7 @@ void deliver(cd::CompletionLifetime lifetime, Status terminal, const Status &hin
 }
 void finish(CopyRecording &state, Status terminal) noexcept {
   state.dependencies.clear();
+  if(state.deferred_copy)state.deferred_copy->clear();
   cd::CompletionLifetime abandoned; Status hint;
   {
     std::lock_guard lock(state.completion_mutex);
@@ -122,6 +123,10 @@ Status observe_copy_prefix(CopyRecording &state) noexcept {
   // This runs at observation/retirement, never at ordinary blit submission.
   [command waitUntilCompleted];
   auto terminal = state.dependencies.observe();
+  if(state.deferred_copy_active){
+    auto source=InvocationAccess::source_output(state.host_source,state.runtime,state.expected_epoch);
+    if(!source)terminal.Update(source.error());
+  }
   if (command.status == MTLCommandBufferStatusError) {
     const auto *message = command.error.localizedDescription.UTF8String;
     terminal.Update(Status::Internal(message ? message : "Metal blit command failed"));
@@ -150,13 +155,14 @@ void execute_copy_tail(Job *job) noexcept {
 }
 // Only the original FIFO owner may resolve a pinned producer. The pin keeps
 // its successfully produced array and actual backing alive through finish().
-Result<CopySpan> resolve_native_source(CopyRecording &state) noexcept {
-  HYLE_ASSIGN_OR_RETURN(auto output, InvocationAccess::source_output(
-      state.host_source, state.runtime, state.expected_epoch));
+Result<CopySpan> resolve_native_source(CopyRecording &state,DeviceCheckInputs *checks=nullptr) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto output, checks
+      ?InvocationAccess::device_source_output(state.host_source,state.runtime,state.expected_epoch,*checks)
+      :InvocationAccess::source_output(state.host_source, state.runtime, state.expected_epoch));
   if (output.shape() != state.host_spec.shape || output.dtype() != state.host_spec.dtype ||
       !output.flags().row_contiguous || output.nbytes() != state.host_bytes)
     return std::unexpected(Status::InvalidArgument("Apple native copy producer layout changed"));
-  HYLE_ASSIGN_OR_RETURN(auto storage, MemoryAccess::storage_info(output));
+  HYLE_ASSIGN_OR_RETURN(auto storage, checks?MemoryAccess::submitted_storage_info(output):MemoryAccess::storage_info(output));
   if (storage.view_bytes != state.host_bytes)
     return std::unexpected(Status::InvalidArgument("Apple native copy producer byte span differs"));
   // The original single-destination API accepts an empty producer without
@@ -257,6 +263,32 @@ Status execute_host_copy(CopyRecording &state, bool *use_blit) noexcept {
   if (state.host_bytes) std::memmove(state.host_output_bytes.data(), source, state.host_bytes);
   return state.host_output.flush();
 }
+// Native shared destinations do not require a CPU observation. Resolve only
+// original encoded addresses/error words and preserve the exact cold spans.
+// Unaligned/memmove cases retain the established host route before any encode.
+Status resolve_deferred_copy(CopyRecording &state,bool *selected) noexcept {
+  *selected=false;
+  auto &copy=*state.deferred_copy;copy.clear();auto checks=copy.inputs();
+  HYLE_RETURN_IF_ERROR(state.dependencies.device_checks(checks));
+  HYLE_ASSIGN_OR_RETURN(auto source,resolve_native_source(state,&checks));
+  copy.check_count=checks.count;
+  if(state.host_range_count){
+    HYLE_ASSIGN_OR_RETURN(auto report,validate_host_ranges(state,source.physical));
+    if(report.active_copies!=state.host_range_count)return Status::Internal("Apple deferred copy descriptor set changed");
+    for(std::size_t i=0;i<state.host_range_count;++i){
+      const auto &range=state.resolved[i];const auto &target=state.physical[range.destination];
+      state.commands[i]={source.buffer,reinterpret_cast<void *>(static_cast<std::uintptr_t>(target.backing)),
+          source.physical.origin+range.source_offset,target.origin,range.logical_bytes};
+    }
+  }else{
+    const auto &target=state.physical[1];
+    if(overlaps(source.physical,target))return Status::Ok();
+    state.commands[0].source=source.buffer;state.commands[0].source_offset=source.physical.origin;
+  }
+  for(const auto &command:std::span(state.commands).first(state.report.active_copies))
+    if(command.source_offset%4 || command.destination_offset%4 || command.bytes%4)return Status::Ok();
+  *selected=true;return Status::Ok();
+}
 void execute_copy(Job *job) noexcept {
   auto &state = *static_cast<CopyRecording *>(job);
   std::shared_ptr<CopyRecording> owner;
@@ -267,11 +299,14 @@ void execute_copy(Job *job) noexcept {
   }
   if (state.cancel.load(std::memory_order_acquire)) terminal.Update(Status::Cancelled("Apple copy cancelled before native recording"));
   if (terminal.ok()) terminal.Update(state.dependencies.resolve_copy());
-  if (terminal.ok() && state.host_copy) terminal.Update(state.dependencies.observe());
+  bool deferred=false;
+  if(terminal.ok() && state.host_copy && state.deferred_copy_active)
+    terminal.Update(resolve_deferred_copy(state,&deferred));
+  if (terminal.ok() && state.host_copy && !deferred) terminal.Update(state.dependencies.observe());
   if (terminal.ok() && state.device_append_active) terminal.Update(state.device_append->resolve(state.runtime,state.dependencies));
   if (terminal.ok() && state.preflight) terminal.Update(state.preflight(state.preflight_state));
-  bool use_blit = !state.host_copy;
-  if (terminal.ok() && state.host_copy) terminal = execute_host_copy(state, &use_blit);
+  bool use_blit = !state.host_copy || deferred;
+  if (terminal.ok() && state.host_copy && !deferred) terminal = execute_host_copy(state, &use_blit);
   // An empty phase with pending order inputs still needs their real native
   // frontier; complete it through the same event/tail without an owner drain.
   if (terminal.ok() && use_blit && (state.device_append_active || state.report.active_copies != 0 || !state.dependencies.empty())) {
@@ -296,6 +331,10 @@ void execute_copy(Job *job) noexcept {
         if (state.device_append_active) {
           terminal = state.device_append->encode(command, frontier.native, frontier.encoded);
           if (terminal.ok()) { frontier.encoded = true; state.calls.fetch_add(1, std::memory_order_relaxed); }
+        } else if(deferred && state.deferred_copy->check_count){
+          terminal=state.deferred_copy->encode(command,frontier.checked_copy,frontier.native,frontier.encoded,
+              std::span(state.commands).first(state.report.active_copies));
+          if(terminal.ok()){frontier.encoded=true;state.calls.fetch_add(1,std::memory_order_relaxed);}
         } else {
           id<MTLBlitCommandEncoder> blit = [command blitCommandEncoder];
           if (blit == nil) {
@@ -442,6 +481,8 @@ Status clear_host_copy(CopyRecording &state) noexcept {
   }
   state.host_range_count = 0;
   state.host_source.reset(); state.host_copy = false; state.host_output_bytes = {};
+  state.deferred_copy_active=false;
+  if(state.deferred_copy)state.deferred_copy->clear();
   state.device_append_active = false;
   if (state.device_append) { state.device_append->inputs = {}; state.device_append->bound = false; }
   state.host_owner.reset();
@@ -467,6 +508,22 @@ void host_copy_report(CopyRecording &state, std::size_t bytes) noexcept {
   state.prefix_marker = true; state.prepared = true; state.host_copy = true;
   state.calls.store(0, std::memory_order_relaxed); state.waits.store(0, std::memory_order_relaxed);
 }
+Status prepare_deferred_copy(CopyRecording &state) noexcept {
+  state.prepared=false;
+  state.deferred_copy_active=false;
+  try {
+  if(!state.deferred_copy)
+    state.deferred_copy=std::allocate_shared<DeferredCopyState>(mem::StdAllocator<DeferredCopyState>(state.allocator));
+  std::lock_guard lock(state.runtime->queue_mutex);
+  @autoreleasepool {
+    auto device=(__bridge id<MTLDevice>)reinterpret_cast<void *>(state.device);
+    HYLE_ASSIGN_OR_RETURN(state.deferred_copy_active,state.deferred_copy->prepare(device,state.limits.max_copies,
+        state.runtime->copy_fence->checked_copy));
+  }
+  state.prepared=true;
+  return Status::Ok();
+  }catch(...){return native_exception();}
+}
 }
 Status bind_host_copy_recording(CopyRecording &state, InputSource source,
     const TensorDesc &description, mem::BufferView destination) noexcept {
@@ -486,6 +543,16 @@ Status bind_host_copy_recording(CopyRecording &state, InputSource source,
   state.host_output = std::move(mapping); state.host_output_bytes = output;
   state.host_bytes = bytes; state.consumed_epoch = epoch;
   host_copy_report(state, bytes);
+  if(bytes && bytes%4==0 && is_copy_resource(destination.resource())){
+    HYLE_ASSIGN_OR_RETURN(auto range,destination.subview(0,bytes));
+    HYLE_ASSIGN_OR_RETURN(auto target,copy_span(range,mem::HostAccess::kWrite));
+    if(target.physical.address_space!=state.device)return Status::InvalidArgument("Apple deferred copy destination Device differs");
+    if(target.physical.origin%4==0){
+      state.physical[1]=target.physical;
+      state.commands[0]={nullptr,target.buffer,0,target.physical.origin,bytes};
+      HYLE_RETURN_IF_ERROR(prepare_deferred_copy(state));
+    }
+  }
   return Status::Ok();
 }
 Status bind_host_copy_recording(CopyRecording &state, ConstTensorView source,
@@ -571,6 +638,10 @@ Status bind_host_copy_ranges(CopyRecording &state, InputSource source,
   HYLE_RETURN_IF_ERROR(discard_failed_host_ranges(state, bind_host_ranges(state, bytes, nullptr, ranges)));
   state.host_source = std::move(source); state.host_spec = std::move(spec);
   state.consumed_epoch = epoch;
+  bool aligned=true;
+  for(std::size_t i=0;i<state.host_range_count;++i)
+    aligned=aligned && state.inputs[i].source_offset%4==0 && state.inputs[i].bytes%4==0 && state.physical[i+1].origin%4==0;
+  if(aligned)HYLE_RETURN_IF_ERROR(prepare_deferred_copy(state));
   return Status::Ok();
 }
 Status bind_host_copy_ranges(CopyRecording &state, ConstTensorView source,
@@ -914,6 +985,8 @@ Status copy_device_checks(CopyRecording &state,DeviceCheckInputs &checks) noexce
   HYLE_RETURN_IF_ERROR(state.native_terminal);
   if(state.native_retired)return Status::Ok();
   if(!state.native_encoded)return Status::FailedPrecondition("Apple copy check has no original encoded prefix");
+  HYLE_ASSIGN_OR_RETURN(auto fresh,visit_device_check(checks,&state,state.submitted_epoch));
+  if(!fresh)return Status::Ok();
   HYLE_RETURN_IF_ERROR(state.dependencies.device_checks(checks));
   if(state.host_source.valid()){
     auto source=InvocationAccess::device_source_output(state.host_source,state.runtime,state.expected_epoch,checks);
