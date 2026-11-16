@@ -57,11 +57,16 @@ inline std::optional<hyle::graph::StorageDomainId> ordinary_control_storage(
   return {};
 }
 
-// A queue-free native program needs an explicit external allocation domain
-// before its small outputs can lend the original full writer. Qualify the
-// existing endpoint/resource owners here; Graph still qualifies each actual
-// transfer and the compiled output's ownership. This creates no resource.
-inline std::optional<hyle::graph::StorageDomainId> native_ordinary_result_storage(
+struct NativeOrdinaryIoDomains final {
+  hyle::graph::StorageDomainId device;
+  hyle::graph::StorageDomainId staging;
+};
+
+// A native program keeps its original token input/writer on the device. Host
+// delivery owns a separate output, without changing the Source's origin.
+// Qualify existing endpoint/resource owners; Graph still qualifies the actual
+// transfers and external allocations. These facts grant no execution right.
+inline std::optional<NativeOrdinaryIoDomains> native_ordinary_io_domains(
     const hyle::inference::Backend &execution, const OrdinaryIoCapabilities &facts) noexcept {
   if (facts.role != GraphRole::kText || facts.completion != TextCompletion::kEmitNext ||
       facts.cpu_assist || facts.diagnostic || !execution.queue_bindings().empty()) return {};
@@ -69,13 +74,16 @@ inline std::optional<hyle::graph::StorageDomainId> native_ordinary_result_storag
   if (!primary || primary.context_identity() || !primary.endpoint_identity() ||
       execution.staging() == execution.device()) return {};
   const auto domains = execution.storage_domains();
+  std::optional<hyle::graph::StorageDomainId> device, staging;
   for (std::size_t index = 0; index < domains.size(); ++index) {
     const auto &domain = domains[index];
-    if (domain.resource == execution.staging() && domain.owner &&
-        domain.owner.endpoint_identity() == primary.endpoint_identity())
-      return hyle::graph::StorageDomainId{static_cast<std::uint32_t>(index)};
+    if (!domain.owner || domain.owner.endpoint_identity() != primary.endpoint_identity()) continue;
+    const auto id = hyle::graph::StorageDomainId{static_cast<std::uint32_t>(index)};
+    if (domain.resource == execution.device()) device = id;
+    if (domain.resource == execution.staging()) staging = id;
   }
-  return {};
+  if (!device || !staging) return {};
+  return NativeOrdinaryIoDomains{*device, *staging};
 }
 
 enum class OrdinaryInputMode : std::uint8_t { kSeparate, kPacket };

@@ -247,6 +247,42 @@ TEST(AppleNativeRegion, ColdConstantBatchChecksReadonlyTargetsAndKeepsReadErrors
   expect(owner.tensor(description).value(), std::array<float, 4>{7, 8, 9, 10});
 }
 
+TEST(AppleNativeRegion, ExplicitDeviceCopyKeepsItsCompleteCallerWriter) {
+  auto context = a::Context::create().value();
+  auto memory = a::MemoryResource::create(context).value();
+  auto builder = g::GraphBuilder::create().value();
+  const auto x = builder.input(description).value();
+  const auto negative = builder.add(c::Unary{c::UnaryKind::kNeg}, x).value();
+  const auto copied = builder.add(c::Copy{}, negative).value();
+  ASSERT_TRUE(builder.publish(negative).ok());
+  ASSERT_TRUE(builder.publish(copied).ok());
+  auto graph = std::move(builder).finish().value();
+  const std::array domains{g::StorageDomain{memory.ref()}};
+  const std::array targets{g::ExecutionTarget{g::apple::execution_source(context).value(), g::StorageDomainId{0}}};
+  const std::array contracts{g::ExternalResourceContract{copied, g::StorageDomainId{0}}};
+  auto compiled = g::compile(graph, {domains, targets}, {.external_resources = contracts});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(compiled->executable.output_ownership(0).value(), g::OutputOwnership::kInvocation);
+  ASSERT_EQ(compiled->executable.output_ownership(1).value(), g::OutputOwnership::kCaller);
+  auto invocation = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(invocation.prepare_resources().ok());
+  auto values = input(memory, description, std::array<float, 4>{1, -2, 3, -4});
+  auto pool = c::LeasePool::create(memory.ref(), 16, {.max_blocks = 1}).value();
+  auto writer = pool.allocate(16).value();
+  const auto original = writer.view().value();
+  ASSERT_TRUE(invocation.bind(x, description, values).ok());
+  ASSERT_TRUE(invocation.bind(copied, description, std::move(writer)).ok());
+  ASSERT_TRUE(submit(invocation).ok());
+  auto result = invocation.result(copied).value();
+  auto retained = result.storage_lease().value();
+  const auto actual = retained.view().value();
+  EXPECT_EQ(actual.resource(), original.resource());
+  EXPECT_EQ(actual.native_handle(), original.native_handle());
+  EXPECT_EQ(actual.offset(), original.offset());
+  EXPECT_EQ(actual.size(), original.size());
+  expect(retained.tensor(description).value(), std::array<float, 4>{-1, 2, -3, 4});
+}
+
 TEST(AppleNativeRegion, ReadonlyNativeOutputsRejectMutableMemAndBlitAccess) {
   auto context = a::Context::create().value();
   auto memory = a::MemoryResource::create(context).value();

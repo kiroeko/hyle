@@ -48,10 +48,11 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
       .diagnostic = diagnostic, .imported_sources = imported_sources};
   const auto control_storage = ordinary_control_storage(execution, ordinary_io);
   const auto control_resource = control_storage ? take(execution.resource_for(*control_storage)) : execution.device();
-  auto native_results = native_ordinary_result_storage(execution, ordinary_io);
+  auto native_results = native_ordinary_io_domains(execution, ordinary_io);
   if (native_results) {
     const auto &output = selection.child.output(definition.id_port);
-    if (!output.caller_owned() || output.storage != *native_results) native_results.reset();
+    if (!output.caller_owned() || output.storage != native_results->device || !definition.delivery_id_port ||
+        selection.child.output(definition.delivery_id_port).storage != native_results->staging) native_results.reset();
   }
     auto result = std::make_unique<Phase>();
     auto &phase = *result;
@@ -165,7 +166,7 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
       }
       if (!io.ordinary_io.packet()) {
         io.tokens = phase_tensor(allocation_budget,
-            native_results ? take(execution.resource_for(*native_results)) : execution.device(), token_description);
+            native_results ? take(execution.resource_for(native_results->device)) : execution.device(), token_description);
         io.positions = phase_tensor(allocation_budget, control_resource, position_description);
       }
       if (phase.predecessor_prefix_port) {

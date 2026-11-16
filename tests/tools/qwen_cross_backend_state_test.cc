@@ -37,7 +37,9 @@ int main(int argc, char **argv) {
       if (mode != "off" || layers || kind == qwen35::BackendKind::kCpu ||
           (control_inputs && kind != qwen35::BackendKind::kCuda))
         throw std::runtime_error("recording RNG requires ordinary GPU-only; queued controls require CUDA");
-      qwen_native_relay_case::run_recording_rng(argv[2], control_inputs, kind);
+      if (control_inputs) for (const bool random : {false, true})
+        qwen_native_relay_case::run_recording_rng(argv[2], true, kind, random);
+      else qwen_native_relay_case::run_recording_rng(argv[2], false, kind);
       return 0;
     }
     if (native_relay) {

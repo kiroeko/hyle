@@ -712,7 +712,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         .backend = execution.kind(), .role = role, .completion = completion,
         .packing = packing, .cpu_assist = execution.has_cpu_assist(), .diagnostic = diagnostic};
     const auto native_results = prepared.emit_successor
-        ? native_ordinary_result_storage(execution, ordinary_io) : std::nullopt;
+        ? native_ordinary_io_domains(execution, ordinary_io) : std::nullopt;
     const auto control_storage = ordinary_control_storage(execution, ordinary_io);
     const bool caller_small_results = ordinary_io.caller_small_results() || native_results.has_value();
     const auto publish_valid = [&] {
@@ -806,7 +806,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
           (selected_sampler.enabled && has_mtp(role)) || (packed_prefill && is_mtp_prefill(role)))
         definition.id_port = r.copy(definition.id_port);
       r.publish(definition.logits_port); r.publish(definition.id_port);
-      if (control_storage) {
+      if (control_storage || native_results) {
         definition.delivery_id_port = r.reshape(definition.id_port, {batch, f(1)});
         r.publish(definition.delivery_id_port);
       }
@@ -902,9 +902,10 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     if (native_results || control_storage) {
       external_contracts.assign(selected_options.external_resources.begin(), selected_options.external_resources.end());
       if (native_results) {
-        external_contracts.push_back({definition.token_port, *native_results});
-        external_contracts.push_back({definition.id_port, *native_results});
-        if (definition.sampling_valid_port) external_contracts.push_back({definition.sampling_valid_port, *native_results});
+        external_contracts.push_back({definition.token_port, native_results->device});
+        external_contracts.push_back({definition.id_port, native_results->device});
+        external_contracts.push_back({definition.delivery_id_port, native_results->staging});
+        if (definition.sampling_valid_port) external_contracts.push_back({definition.sampling_valid_port, native_results->staging});
       }
       if (control_storage) {
         // Metadata and scalar delivery use host staging. The original token

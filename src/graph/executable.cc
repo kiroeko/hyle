@@ -5684,9 +5684,31 @@ Status prepare_placed_steps_attempt(
   }
 
   for (std::uint32_t value : graph.outputs) {
+    const auto producer = graph.values[value].producer;
+    const auto source = producer_instances[value];
+    // An explicitly bound Copy requests a complete caller writer, including
+    // when a native region owns the Copy's generated value in this same
+    // storage domain. Materialize through the original qualified transfer;
+    // never reinterpret the native carrier as a mutable caller allocation.
+    if (external_seen[value] != 0 && producer != detail::kNoNode &&
+        graph.nodes[producer].kind() == compute::OperationKind::kCopy &&
+        source != kNone &&
+        plan.instance_output_contracts[source].kind != RegionOutputKind::kCaller) {
+      const auto storage = plan.external_storage[value];
+      auto destination = instances[static_cast<std::size_t>(value) * storage_count + storage];
+      if (destination == kNone ||
+          plan.instance_output_contracts[destination].kind != RegionOutputKind::kCaller) {
+        HYLE_ASSIGN_OR_RETURN(destination, add_instance(value, storage, detail::kExternalOutput));
+        HYLE_RETURN_IF_ERROR(append_copy(source, destination));
+      } else {
+        plan.instance_roles[destination] |= detail::kExternalOutput;
+      }
+      plan.instance_roles[source] &= ~detail::kExternalOutput;
+      plan.external_instances[value] = destination;
+      continue;
+    }
     if (plan.external_instances[value] != kNone)
       continue;
-    const std::uint32_t source = producer_instances[value];
     if (source == kNone)
       return Status::Internal("published graph value has no physical source");
     const std::uint32_t storage = plan.external_storage[value];

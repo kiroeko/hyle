@@ -1104,6 +1104,9 @@ Region 编译收到按域合并的访问集与 backing 声明。Provider 必须�
   原生生成结果也属于 `kInvocation`，直接使用原生 backing，不重复申请 Graph workspace。
   `GraphOutput::description()` 不要求 Mem 表示；`tensor()` 只返回真实存在的内存投影，独立只读 owner 用
   `storage_lease()` 导出。旧 GraphOutput 或导出的原生 lease 仍会阻止覆盖。
+- 已发布的 `Copy{}` 输出若声明 `ExternalResourceContract`，会在指定域取得完整的调用方 writer。
+  原生 region 即使在同域生成结果，也通过已资格化的搬运写入该 writer；不会将原生只读 backing
+  当作可变分配。未声明这种绑定的原生输出仍可保留 `kInvocation` 所有权。
 - `reset()` 保留已规划 workspace，但清 external bindings；in-flight 时失败。失败终态后的 Invocation
   已退役，submit/bind/reset/prepare_replay 均拒绝；需从 Executable 创建新槽。未接纳工作的拒绝仍可
   修正参数后重试。设备/Provider 的恢复限制另按其 owner 合同处理。正常 bind/reset 后 replay route

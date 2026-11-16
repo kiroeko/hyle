@@ -11,7 +11,7 @@ namespace h = qwen_host_image_case;
 // The first public request can inherit an empty recording Session. Its cursor
 // must match a later request and an independently loaded serial executor.
 inline void run_recording_rng(const std::filesystem::path &input, bool control_inputs = false,
-    q::BackendKind kind = q::BackendKind::kCuda) {
+    q::BackendKind kind = q::BackendKind::kCuda, bool random = true) {
   namespace i = hyle::inference;
   i::ModelLoadConfig config;
   config.assets.inputs = input;
@@ -19,7 +19,7 @@ inline void run_recording_rng(const std::filesystem::path &input, bool control_i
       .resident_sessions = 1, .active_sequences = 1, .prefill_rows = 32};
   config.execution_profiles[0].draft_count = 0;
   config.execution_profiles[0].overlap = true;
-  config.sampling = {.random = true, .temperature = .8F, .top_p = .95F, .top_k = 40};
+  if (random) config.sampling = {.random = true, .temperature = .8F, .top_p = .95F, .top_k = 40};
   auto preparation = q::prepare_execution_profile(config, 0);
   h::require(preparation.overlap && preparation.cache.in_flight_batches == 2,
       "recording RNG regression requires its original prepared relay");
@@ -66,12 +66,13 @@ inline void run_recording_rng(const std::filesystem::path &input, bool control_i
         h::require(!io.ordinary_io.packet() &&
             io.tokens.storage().resource() == model->execution.device() &&
             io.positions.storage().resource() == model->execution.staging() &&
-            io.sampling_identities.storage().resource() == model->execution.staging(),
+            (!random || io.sampling_identities.storage().resource() == model->execution.staging()),
             "prepared ordinary controls or device token lost their exact owners");
         h::require(phase->delivery_id_port && !io.ordinary_io.batched_results() &&
             q::take(phase->slots[index].io.readback(io.source_id))->resource() == model->execution.device() &&
             q::take(phase->slots[index].io.readback(io.next_id))->resource() == model->execution.staging() &&
-            q::take(phase->slots[index].io.readback(io.sampling_valid))->resource() == model->execution.staging(),
+            (!phase->sampling_valid_port ||
+             q::take(phase->slots[index].io.readback(io.sampling_valid))->resource() == model->execution.staging()),
             "ordinary scalar delivery escaped the original Graph or moved the device Source");
         ++control_slots;
       }
@@ -83,7 +84,8 @@ inline void run_recording_rng(const std::filesystem::path &input, bool control_i
   auto serial = q::load_model_executor(config);
   h::require(first == generate(*serial), "cold recorded and serial requests used different RNG draws");
   std::cout << (control_inputs ? "PASS ordinary_control_inputs" : "PASS recording_request_rng")
-            << " backend=" << h::backend_name(kind) << " seed=42 logical_stream=7 outputs=48"
+            << " backend=" << h::backend_name(kind) << " sampling=" << (random ? "random" : "greedy")
+            << " seed=42 logical_stream=7 outputs=48"
             << " first_reused_serial_ids=equal imported_uses=" << imported_uses
             << " control_slots=" << control_slots
             << " retired=1\n" << std::flush;
@@ -113,9 +115,9 @@ inline void run(const std::filesystem::path &input, q::BackendKind kind, bool ra
         "unavailable prefill capture materialized unused native chunk storage");
     model.bounded_prefill_rows = 0;
   }
-  h::require(q::native_ordinary_result_storage(model.execution,
+  h::require(q::native_ordinary_io_domains(model.execution,
       {.role = q::GraphRole::kText, .completion = q::TextCompletion::kEmitNext}).has_value(),
-      "native Model has no independently owned original staging result domain");
+      "native Model has no independently owned device and staging domains");
   const std::array rows{std::size_t{3}, std::size_t{1}};
   model.prepare_family(rows);
   for (const auto count : rows) model.plan_replay_uses(count, 1, 8);
@@ -169,8 +171,13 @@ inline void run(const std::filesystem::path &input, q::BackendKind kind, bool ra
       "native model relay lost its actual output/complete-state Source");
   const auto &output = producer->phase->child->output(producer->phase->id_port);
   h::require(output.caller_owned() &&
-      q::take(model.execution.resource_for(output.storage)) == model.execution.staging(),
-      "native token output is not its original explicit external allocation");
+      q::take(model.execution.resource_for(output.storage)) == model.execution.device(),
+      "native original token writer escaped its device allocation domain");
+  auto &slot = producer->phase->slots[producer->state_slot];
+  h::require(producer->phase->delivery_id_port &&
+      q::take(slot.io.readback(slot.data.source_id))->resource() == model.execution.device() &&
+      q::take(slot.io.readback(slot.data.next_id))->resource() == model.execution.staging(),
+      "native token delivery replaced the original device Source or lost staging");
   const std::array following{q::EvaluationRequest{session, {}}};
   auto &consumer = model.prepare_relay_evaluations(following, sources, 1);
   const auto report = q::take(consumer.execution.run->input_source_report());
