@@ -103,6 +103,16 @@ inline void run(const std::filesystem::path &input, q::BackendKind kind, bool ra
   h::require(model.execution.queue_bindings().empty(), "native model relay unexpectedly uses a caller Queue");
   h::require(bool(model.execution.storage_owner()), "native Model has no original primary storage owner");
   h::require(!model.execution.storage_owner().context_identity(), "native Model has a synthetic common Context");
+  if (!model.supports_prefill_relay(0)) {
+    // Native decode imports do not qualify prefill capture. There is no
+    // prefill family yet: a refusal must not construct private chunk slots.
+    model.bounded_prefill_rows = 2;
+    const auto phases = model.phases.size();
+    const auto recording = model.prepare_prefill_recordings(0);
+    h::require(!recording.preparations && model.phases.size() == phases,
+        "unavailable prefill capture materialized unused native chunk storage");
+    model.bounded_prefill_rows = 0;
+  }
   h::require(q::native_ordinary_result_storage(model.execution,
       {.role = q::GraphRole::kText, .completion = q::TextCompletion::kEmitNext}).has_value(),
       "native Model has no independently owned original staging result domain");

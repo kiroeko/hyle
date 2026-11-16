@@ -3188,8 +3188,10 @@ Result<ExecutionSource> native_output_execution(const InvocationState &state) no
     (void)runtime;
     if (result && !result.same_owner(execution))
       return std::unexpected(Status::Unimplemented("native handoff requires one original endpoint owner"));
-    if (!execution.is_open())
-      return std::unexpected(Status::FailedPrecondition("native handoff endpoint is closed"));
+    // Preserve the original endpoint's failure (including native device
+    // errors); an is_open() boolean cannot distinguish it from close.
+    HYLE_RETURN_IF_ERROR(ExecutionSourceAccess::call(execution,
+        [](void *) noexcept { return Status::Ok(); }, nullptr));
     result = execution;
   }
   return result;

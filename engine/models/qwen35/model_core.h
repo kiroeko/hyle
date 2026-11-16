@@ -3107,6 +3107,10 @@ public:
   }
 
   DecodeRecording prepare_prefill_recordings(std::size_t sampling_index) {
+    // Decode imports and prefill capture are independent cold capabilities.
+    // A native decode importer must not materialize the unused full-chunk
+    // direct/three-slot prefill inventory merely to decline Commands below.
+    if (!supports_prefill_relay(sampling_index)) return {};
     // A chunk covering the entire context cannot have a later state-only
     // chunk. No such finite family exists or needs capture preparation.
     if (cache_plan.draft_cache || !bounded_prefill_rows || bounded_prefill_rows >= capacity) return {};
