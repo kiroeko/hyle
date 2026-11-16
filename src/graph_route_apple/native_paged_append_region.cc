@@ -215,9 +215,10 @@ Status before_read(void *, void *invocation) noexcept {
   const auto &slot = *static_cast<const Slot *>(invocation);
   if (!slot.submitted || !slot.pages.valid())
     return Status::FailedPrecondition("Apple append producer has no accepted current page episode");
-  HYLE_ASSIGN_OR_RETURN(auto ready, an::poll_copy_recording(*slot.recording));
-  return ready == compute::CompletionPoll::kComplete ? Status::Ok() :
-      Status::Unavailable("Apple append producer has not reached its original FIFO retirement");
+  // Readability needs the exact original GPU prefix, not a scheduled tail's
+  // public metadata callback. This proves all native/check errors and leaves
+  // Source permissions and last-reader/slot retirement with their owners.
+  return an::observe_copy_recording_on_owner(*slot.recording);
 }
 Status qualify_reader(void *prepared, void *, cd::CompletionEndpoint endpoint) noexcept {
   const auto &artifact = *static_cast<const Artifact *>(prepared);

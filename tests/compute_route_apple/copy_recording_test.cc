@@ -41,7 +41,7 @@ TEST(AppleCopyRecording, OriginalGpuStreamBlitThreeStagesAndTwoColdSlotsPreserve
     EXPECT_EQ(d::copy_recording_report(*one).native_calls, 2u);
     EXPECT_EQ(d::copy_recording_report(*two).native_calls, 1u); EXPECT_EQ(d::copy_recording_report(*three).native_calls, 1u);
     EXPECT_EQ(d::copy_recording_report(*one).phase_completions, 1u);
-    EXPECT_EQ(d::copy_recording_report(*one).host_waits, 1u); EXPECT_TRUE(d::copy_recording_report(*one).native_metadata_unknown);
+    EXPECT_EQ(d::copy_recording_report(*one).host_waits, 0u); EXPECT_TRUE(d::copy_recording_report(*one).native_metadata_unknown);
     EXPECT_EQ(metadata.used(), cold_bytes);
   }
   ASSERT_TRUE(d::bind_copy_recording(*one, {}).ok()); auto empty = d::submit_copy_recording(*one).value();

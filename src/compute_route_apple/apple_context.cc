@@ -939,8 +939,9 @@ Status NativeDependencies::resolve() noexcept {
   // real queue's frontier, not a same-queue event or an MLX allocation-stream tag.
   for (const auto &dependency : sources_) {
     if (dependency.copy) {
-      HYLE_RETURN_IF_ERROR(observe_copy_dependency(*dependency.copy, dependency.epoch));
-      continue; // Original copy Jobs retire synchronously on this same FIFO.
+      HYLE_ASSIGN_OR_RETURN(auto event, copy_dependency_event(*dependency.copy, dependency.epoch));
+      HYLE_RETURN_IF_ERROR(append(event, false));
+      continue; // Original MLX stream is ordered; the native queue imports it.
     }
     auto &producer = *dependency.native;
     if (producer.submitted_epoch.load(std::memory_order_acquire) != dependency.epoch)

@@ -26,13 +26,21 @@ struct HostCopyTarget final {
   std::span<std::byte> bytes;
 };
 struct CopyRecording final : Job {
+  struct NativeTail final : Job {
+    CopyRecording *owner;
+    explicit NativeTail(CopyRecording &recording) noexcept : owner(&recording) {}
+  } native_tail;
   explicit CopyRecording(mem::AllocatorRef allocator)
-      : physical(mem::StdAllocator<cd::PhysicalCopyResource>(allocator)),
+      : native_tail(*this), physical(mem::StdAllocator<cd::PhysicalCopyResource>(allocator)),
         inputs(mem::StdAllocator<CopyRange>(allocator)), intervals(mem::StdAllocator<cd::CopyInterval>(allocator)),
         resolved(mem::StdAllocator<cd::ResolvedCopyRange>(allocator)), commands(mem::StdAllocator<CopyCommand>(allocator)),
         host_targets(mem::StdAllocator<HostCopyTarget>(allocator)) {}
   std::shared_ptr<Runtime> runtime;
   NativeDependencies dependencies;
+  mlx::core::Event completion_event;
+  NS::SharedPtr<MTL::CommandBuffer> native_command;
+  bool native_encoded = false, native_retired = false;
+  Status native_terminal;
   std::size_t dependency_readers = 0;
   std::uint64_t submitted_epoch = 0;
   // Both the original worker and public Completion hold a preallocated slot.
@@ -90,6 +98,43 @@ void finish(CopyRecording &state, Status terminal) noexcept {
   }
   platform::detail::wake_all(&state.done);
   deliver(abandoned, std::move(terminal), hint);
+}
+Status observe_copy_prefix(CopyRecording &state) noexcept {
+  if (!state.native_encoded || !state.native_command)
+    return Status::FailedPrecondition("Apple copy has no original encoded prefix");
+  if (state.native_retired) return state.native_terminal;
+  id<MTLCommandBuffer> command = (__bridge id<MTLCommandBuffer>)state.native_command.get();
+  if (command.status != MTLCommandBufferStatusCompleted && command.status != MTLCommandBufferStatusError)
+    state.waits.fetch_add(1, std::memory_order_relaxed);
+  // Join all original handlers even if status already says Completed: MLX
+  // installs native/event error metadata in its own completion handler.
+  // This runs at observation/retirement, never at ordinary blit submission.
+  [command waitUntilCompleted];
+  auto terminal = state.dependencies.observe();
+  if (command.status == MTLCommandBufferStatusError) {
+    const auto *message = command.error.localizedDescription.UTF8String;
+    terminal.Update(Status::Internal(message ? message : "Metal blit command failed"));
+  }
+  try {state.completion_event.check_error();}
+  catch(...) {auto failure=native_exception();state.runtime->poison(failure);terminal.Update(failure);}
+  // An event proves device order only. Preserve the original upstream
+  // checked verdict before this copy or any dependent can publish success.
+  terminal.Update(state.native_terminal);
+  state.native_terminal = std::move(terminal);
+  state.native_retired = true;
+  return state.native_terminal;
+}
+void execute_copy_tail(Job *job) noexcept {
+  auto &state = *static_cast<CopyRecording::NativeTail *>(job)->owner;
+  std::shared_ptr<CopyRecording> owner;
+  { std::lock_guard lock(state.completion_mutex); owner = std::move(state.admitted_owner); }
+  auto terminal = observe_copy_prefix(state);
+  if (state.cancel.load(std::memory_order_acquire))
+    terminal.Update(Status::Cancelled("Apple copy cancelled after native retirement"));
+  state.native_terminal = terminal;
+  state.native_command.reset();
+  state.runtime->release_native_tail();
+  finish(state, std::move(terminal));
 }
 // Only the original FIFO owner may resolve a pinned producer. The pin keeps
 // its successfully produced array and actual backing alive through finish().
@@ -214,9 +259,19 @@ void execute_copy(Job *job) noexcept {
   if (terminal.ok() && state.preflight) terminal.Update(state.preflight(state.preflight_state));
   bool use_blit = !state.host_copy;
   if (terminal.ok() && state.host_copy) terminal = execute_host_copy(state, &use_blit);
-  if (terminal.ok() && use_blit && state.report.active_copies != 0) {
+  // An empty phase with pending order inputs still needs their real native
+  // frontier; complete it through the same event/tail without an owner drain.
+  if (terminal.ok() && use_blit && (state.report.active_copies != 0 || !state.dependencies.empty())) {
     @autoreleasepool {
+      bool callback_installed = false;
+      bool reserved_tail = false;
       try {
+        terminal = state.runtime->reserve_native_tail();
+        if (!terminal.ok()) {
+          auto prerequisite = state.dependencies.observe(); prerequisite.Update(terminal);
+          finish(state, std::move(prerequisite)); return;
+        }
+        reserved_tail = true;
         auto &encoder = mlx::core::metal::get_command_encoder(*state.runtime->stream);
         state.dependencies.encode(*state.runtime->stream);
         // Event imports order real pending writers before this original blit.
@@ -235,12 +290,20 @@ void execute_copy(Job *job) noexcept {
             state.calls.fetch_add(1, std::memory_order_relaxed);
           }
           [blit endEncoding];
-          state.waits.fetch_add(1, std::memory_order_relaxed); // original owner-thread boundary
-          encoder.synchronize(); // original stream commit, actual MCB wait and native error check
-          if (command.status == MTLCommandBufferStatusError) {
-            const auto *description = command.error.localizedDescription.UTF8String;
-            terminal = Status::Internal(description ? description : "Metal blit command failed");
-          }
+          state.completion_event.set_value(state.submitted_epoch);
+          state.completion_event.signal(*state.runtime->stream);
+          state.native_command = std::move(native_command);
+          state.native_encoded = true;
+          { std::lock_guard lock(state.completion_mutex); state.admitted_owner = std::move(owner); }
+          auto *original = &state;
+          [command addCompletedHandler:^(id<MTLCommandBuffer>) {
+            original->runtime->enqueue_retirement(original->native_tail);
+          }];
+          callback_installed = true;
+          encoder.commit();
+          // The original native tail owns the accepted copy and its leases.
+          // No main/owner wait, extra queue or second completion is created.
+          return;
         }
       } catch (...) {
         terminal = native_exception();
@@ -249,14 +312,25 @@ void execute_copy(Job *job) noexcept {
         try { state.waits.fetch_add(1, std::memory_order_relaxed); mlx::core::metal::get_command_encoder(*state.runtime->stream).synchronize(); }
         catch (...) {}
         state.runtime->poison(terminal);
+        if (callback_installed) {
+          state.native_terminal.Update(terminal);
+          // The registered original callback owns retirement of this accepted
+          // prefix, including a failure while committing its stream.
+          return;
+        }
       }
+      if (reserved_tail) state.runtime->release_native_tail();
+      if (!owner) {
+        std::lock_guard lock(state.completion_mutex); owner = std::move(state.admitted_owner);
+      }
+      state.native_command.reset();
     }
     if (state.cancel.load(std::memory_order_acquire)) terminal.Update(Status::Cancelled("Apple copy cancelled after native retirement"));
   }
   if (state.host_copy && state.cancel.load(std::memory_order_acquire))
     terminal.Update(Status::Cancelled("Apple host copy cancelled after original FIFO retirement"));
-  terminal.Update(state.dependencies.observe());
-  finish(state, std::move(terminal));
+  auto prerequisite = state.dependencies.observe(); prerequisite.Update(terminal);
+  finish(state, std::move(prerequisite));
 }
 const cd::CompletionVTable copy_completion_vtable{
     .destroy = [](void *opaque, cd::CompletionLifetime lifetime, Status hint) noexcept {
@@ -303,6 +377,8 @@ Result<std::shared_ptr<CopyRecording>> prepare_copy_recording_runtime(const std:
     auto state = std::allocate_shared<CopyRecording>(mem::StdAllocator<CopyRecording>(allocator), allocator);
     state->self = state;
     state->runtime = runtime; state->execute = &execute_copy;
+    state->native_tail.execute = &execute_copy_tail;
+    state->completion_event = mlx::core::Event(*runtime->stream);
     state->mode = mode;
     state->device = reinterpret_cast<std::uintptr_t>(mlx::core::metal::device(runtime->stream->device).mtl_device());
     state->limits.max_resources = capacity * 2; state->limits.max_copies = capacity;
@@ -575,6 +651,7 @@ Result<Completion> submit_copy_recording(CopyRecording &state,
     return Completion::completed();
   auto owner = state.self.lock(); HYLE_FATAL_ASSERT(owner != nullptr);
   state.cancel.store(false, std::memory_order_relaxed); state.terminal = Status::Ok(); state.hint = Status::Ok();
+  state.native_encoded = state.native_retired = false; state.native_terminal = Status::Ok();
   state.admitted_owner = owner; state.completion_owner = owner;
   const auto previous_epoch = state.submitted_epoch++;
   state.done.store(0, std::memory_order_release);
@@ -690,12 +767,42 @@ Result<std::shared_ptr<CopyRecording>> pin_copy_dependency(const std::shared_ptr
 Status observe_copy_dependency(const CopyRecording &state, std::uint64_t epoch) noexcept {
   if (state.runtime->owner_id.load(std::memory_order_acquire) != platform::this_thread::get_id())
     return Status::FailedPrecondition("Apple copy dependency observation requires its original FIFO");
+  {
+    std::lock_guard lock(state.completion_mutex);
+    if (state.submitted_epoch != epoch || !state.dependency_readers)
+      return Status::FailedPrecondition("Apple copy dependency episode was replaced");
+    if (state.done.load(std::memory_order_acquire)) return state.terminal;
+  }
+  return observe_copy_prefix(const_cast<CopyRecording &>(state));
+}
+Status observe_copy_recording_on_owner(CopyRecording &state) noexcept {
+  {
+    std::lock_guard lock(state.completion_mutex);
+    if(state.done.load(std::memory_order_acquire)) return state.terminal;
+  }
+  if (state.runtime->owner_id.load(std::memory_order_acquire) != platform::this_thread::get_id())
+    return Status::Unavailable("Apple copy prefix still requires its original FIFO observer");
+  return observe_copy_prefix(state);
+}
+Status observe_copy_inputs_on_owner(CopyRecording &state) noexcept {
+  if (state.runtime->owner_id.load(std::memory_order_acquire) != platform::this_thread::get_id())
+    return Status::FailedPrecondition("Apple copy input observation requires its original FIFO");
+  return state.dependencies.observe();
+}
+Result<mlx::core::Event> copy_dependency_event(const CopyRecording &state, std::uint64_t epoch) noexcept {
+  if (state.runtime->owner_id.load(std::memory_order_acquire) != platform::this_thread::get_id())
+    return std::unexpected(Status::FailedPrecondition("Apple copy event requires its original FIFO"));
   std::lock_guard lock(state.completion_mutex);
   if (state.submitted_epoch != epoch || !state.dependency_readers)
-    return Status::FailedPrecondition("Apple copy dependency episode was replaced");
-  if (!state.done.load(std::memory_order_acquire))
-    return Status::FailedPrecondition("Apple copy dependency did not retire before its FIFO successor");
-  return state.terminal;
+    return std::unexpected(Status::FailedPrecondition("Apple copy event episode was replaced"));
+  if (state.done.load(std::memory_order_acquire)) {
+    if (!state.terminal.ok()) return std::unexpected(state.terminal);
+    return mlx::core::Event{};
+  }
+  if (!state.native_encoded || !state.native_command || state.completion_event.value() != epoch)
+    return std::unexpected(Status::FailedPrecondition("Apple copy has no original pending event"));
+  if (state.native_retired && !state.native_terminal.ok()) return std::unexpected(state.native_terminal);
+  return state.completion_event;
 }
 void release_copy_dependency(CopyRecording &state) noexcept {
   std::lock_guard lock(state.completion_mutex);

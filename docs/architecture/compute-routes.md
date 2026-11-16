@@ -59,6 +59,13 @@ MLX→ggml也可在原命令缓冲等待输入事件；冷期根据实际region�
 等待其原生/MLX事件，并在原owner退休时核对完整失败结果。数学与复制Job复用这套原生依赖交接；
 CPU必须读取的索引或复制仍先核对生产者，空复制也不能丢掉尚未完成的控制依赖。
 
+GPU复制在原MLX stream提交blit及本次代际的事件，完成通知只把原复制记录的退休Job交回原owner。
+复制到复制、复制到ggml计算均导入原事件；不再把主机FIFO已执行当成GPU已完成。需要CPU读取的
+结果及尚未稳定的原生输出地址仍须核对实际前缀。前缀观察不结算公共Completion，不发布lease，
+也不允许提前复用；公开复制结果还核对原依赖闭包及生产者的完整结果。多阶段复制的依赖容量
+按声明的phase/resource上限冷期预留，复用原权限与退休。退休核对也等待原命令缓冲的错误处理
+回调完成，遵循[Metal完成合同](https://developer.apple.com/documentation/metal/mtlcommandbuffer/waituntilcompleted%28%29)。
+
 整张原生Graph的Source可由具备实际终态端点的原提交导出；冷期逐一核对消费者是否能导入生产者的
 所有终态端点，并为原执行槽预留依赖容量。接纳期间借用原RetainedCompletion，防止并发drain消费
 仍在交给后端的句柄；后端在回调返回前保留原Job和提交代际。每段消费者按自己的原生队列导入，

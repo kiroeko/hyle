@@ -59,7 +59,10 @@ TEST(AppleCopyProgram, TwoSlotsPhaseOutputsAndThreeReplaysKeepActualMetadataFixe
     std::array<std::byte, 32> x, y; ASSERT_TRUE(left.view()->read(x).ok()); ASSERT_TRUE(right.view()->read(y).ok());
     for (auto byte : x) EXPECT_EQ(byte, std::byte(17 + replay)); for (auto byte : y) EXPECT_EQ(byte, std::byte(79 + replay));
     EXPECT_EQ(one.report().native_calls, 4u); EXPECT_EQ(one.report().phase_completions, 3u);
-    EXPECT_GE(one.report().host_waits, 3u); EXPECT_EQ(one.report().native_waits, 0u);
+    // Public wait may observe already-completed phases. Native blit Jobs no
+    // longer impose an owner wait per phase; at most these three public
+    // phase observations need to wait in this ready-input case.
+    EXPECT_LE(one.report().host_waits, 3u); EXPECT_EQ(one.report().native_waits, 0u);
     EXPECT_EQ(one.report().metadata_bytes, metadata.used()); EXPECT_EQ(metadata.used(), cold_bytes);
     EXPECT_FALSE(left.try_write().has_value()); one = {}; two = {};
     ASSERT_TRUE(first.reset().ok()); ASSERT_TRUE(second.reset().ok()); EXPECT_TRUE(left.try_write().has_value()); right.reset();

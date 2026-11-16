@@ -665,6 +665,120 @@ TEST(AppleLateInput, RetiredCopyInputReleaseKeepsNativeReaderEpochAndVerdict) {
   }
 }
 
+void exercise_pending_gpu_copy(unsigned mode) {
+  namespace m=hyle::mem;
+  auto context=a::Context::create().value();
+  const auto runtime=ad::ContextAccess::runtime(context);
+  auto memory=a::MemoryResource::create(context).value();
+  apple_test::Recurrent fixture(3,2,64);
+  const auto expected=fixture.oracle();
+  auto program=context.prepare(c::GatedDeltaNet{},fixture.specs()).value();
+  auto consumer=program.create_invocation().value();
+  ASSERT_TRUE(ad::InvocationAccess::reserve_dependencies(consumer,1).ok());
+  const auto bytes=fixture.inputs.front().nbytes();
+  auto source=m::Buffer::create(memory.ref(),bytes,256).value();
+  auto intermediate=m::Buffer::create(memory.ref(),bytes,256).value();
+  auto target=m::Buffer::create(memory.ref(),bytes,256).value();
+  ASSERT_TRUE(source.view().write(std::as_bytes(std::span(
+      fixture.inputs.front().data<float>(),fixture.inputs.front().size()))).ok());
+  const std::vector<std::int64_t> dimensions(fixture.inputs.front().shape().begin(),fixture.inputs.front().shape().end());
+  const auto description=c::TensorDesc::dense(c::DataType::kFloat32,dimensions).value();
+  auto inputs=fixture.inputs;
+  inputs.front()=ad::MemoryAccess::borrow_tensor(c::ConstTensorView::create(description,
+      mode==4?intermediate.view():target.view()).value()).value();
+  m::QuotaAllocator metadata(m::system_allocator());
+  auto first=ad::prepare_copy_recording_runtime(runtime,1,metadata.get(),bytes,ad::CopyRecordingMode::kReplayable).value();
+  auto second=ad::prepare_copy_recording_runtime(runtime,1,metadata.get(),bytes,ad::CopyRecordingMode::kReplayable).value();
+  ASSERT_TRUE(ad::reserve_copy_dependencies(*second,1).ok());
+  const std::array<c::detail::CopyBackendRange,1> to_intermediate{{{intermediate.view(),source.view()}}};
+  const std::array<c::detail::CopyBackendRange,1> to_target{{{target.view(),intermediate.view()}}};
+  ASSERT_TRUE(ad::bind_copy_recording(*first,to_intermediate).ok());
+  ASSERT_TRUE(ad::bind_copy_recording(*second,mode==4?
+      std::span<const c::detail::CopyBackendRange>{}:std::span<const c::detail::CopyBackendRange>{to_target}).ok());
+  const auto cold_metadata=metadata.used();
+  for (unsigned replay=0;replay<(mode==0?2u:1u);++replay) {
+    ASSERT_TRUE(consumer.bind(inputs).ok());
+    GpuEventGate gpu(runtime);
+    ASSERT_TRUE(gpu.enqueue().ok());
+    auto produced=ad::submit_copy_recording(*first).value();
+    const std::array before_copy{c::detail::CompletionAccess::dependency(produced)};
+    auto copied=ad::submit_copy_recording(*second,before_copy).value();
+    const std::array before_math{c::detail::CompletionAccess::dependency(copied)};
+    auto consumed=ad::InvocationAccess::submit_ordered(consumer,{},nullptr,nullptr,before_math).value();
+    FifoGate witness;
+    ASSERT_TRUE(witness.enqueue(runtime).ok());
+    const bool encoded=witness.wait_entered_for(std::chrono::seconds(2));
+    if (!encoded) gpu.open();
+    if (encoded) {
+      EXPECT_EQ(produced.poll().value(),c::CompletionPoll::kPending);
+      EXPECT_EQ(copied.poll().value(),c::CompletionPoll::kPending);
+      EXPECT_EQ(consumed.completion().poll().value(),c::CompletionPoll::kPending);
+      EXPECT_TRUE(ad::copy_recording_reuse_gate(*first).IsUnavailable());
+      EXPECT_TRUE(ad::copy_recording_reuse_gate(*second).IsUnavailable());
+      EXPECT_TRUE(ad::observe_copy_recording_on_owner(*first).IsUnavailable());
+    }
+    witness.open_and_join();
+    ASSERT_TRUE(encoded) << "original FIFO waited for a GPU copy instead of importing its real event";
+    if (mode==1) { produced={};copied={}; }
+    if (mode==2) EXPECT_TRUE(consumed.request_cancel().ok());
+    std::thread closer;
+    hyle::Status closed;
+    std::atomic<bool> close_returned{false};
+    if (mode==3) {
+      closer=std::thread([&]{closed=context.close();close_returned.store(true,std::memory_order_release);});
+      bool closing=false;
+      const auto limit=std::chrono::steady_clock::now()+std::chrono::seconds(2);
+      do {
+        { std::lock_guard lock(runtime->queue_mutex); closing=!runtime->accepting; }
+        if(!closing) std::this_thread::yield();
+      } while(!closing && std::chrono::steady_clock::now()<limit);
+      EXPECT_TRUE(closing);
+      EXPECT_FALSE(close_returned.load(std::memory_order_acquire));
+    }
+    gpu.open();
+    const auto terminal=consumed.completion().wait();
+    if (mode!=1) {
+      EXPECT_TRUE(produced.wait().ok());
+      EXPECT_TRUE(copied.wait().ok());
+    }
+    if (closer.joinable()) closer.join();
+    EXPECT_TRUE(mode==2?terminal.IsCancelled():terminal.ok()) << terminal.message();
+    EXPECT_EQ(metadata.used(),cold_metadata);
+    EXPECT_EQ(ad::copy_recording_report(*first).host_waits,0u);
+    EXPECT_EQ(ad::copy_recording_report(*second).host_waits,0u);
+    if(mode==4) {
+      EXPECT_EQ(ad::copy_recording_report(*second).native_calls,0u);
+      EXPECT_EQ(ad::copy_recording_report(*second).phase_completions,1u);
+    }
+    if (mode!=2) {
+      auto actual=ad::InvocationAccess::output(consumer,0).value();
+      ASSERT_EQ(actual.size(),expected[0].size());
+      for(std::size_t i=0;i<actual.size();++i) EXPECT_NEAR(actual.data<float>()[i],expected[0][i],1.e-5);
+    } else EXPECT_FALSE(ad::InvocationAccess::output(consumer,0));
+    if (mode==3) EXPECT_TRUE(closed.ok()) << closed.message();
+  }
+  EXPECT_TRUE(context.close().ok());
+  EXPECT_TRUE(ad::copy_recording_reuse_gate(*first).ok());
+  EXPECT_TRUE(ad::copy_recording_reuse_gate(*second).ok());
+  EXPECT_TRUE(ad::observe_copy_recording_on_owner(*first).ok());
+  { std::lock_guard lock(runtime->queue_mutex); EXPECT_EQ(runtime->native_tails,0u); }
+}
+TEST(AppleLateInput, PendingGpuBlitsFeedTheOriginalNativeQueueWithoutBlockingTheirOwner) {
+  exercise_pending_gpu_copy(0);
+}
+TEST(AppleLateInput, PendingGpuCopyChainSurvivesPublicCompletionAbandonment) {
+  exercise_pending_gpu_copy(1);
+}
+TEST(AppleLateInput, PendingGpuCopyReaderCancelKeepsTheOriginalCopyVerdicts) {
+  exercise_pending_gpu_copy(2);
+}
+TEST(AppleLateInput, CloseDrainsTheOriginalGpuCopyCallbacksAndNativeConsumer) {
+  exercise_pending_gpu_copy(3);
+}
+TEST(AppleLateInput, EmptyGpuCopyPhaseImportsItsOriginalPendingOrderWithoutOwnerDrain) {
+  exercise_pending_gpu_copy(4);
+}
+
 // Inject only at actual eval, after cold compilation and the native prefix.
 class LateEncodingFailure final : public mx::Primitive {
 public:

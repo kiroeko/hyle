@@ -1,5 +1,7 @@
 #pragma once
 
+#include <mlx/event.h>
+
 #include "apple_runtime_internal.h"
 #include "apple_carrier.h"
 #include "hyle/compute/apple_memory.h"
@@ -118,5 +120,15 @@ Status qualify_recording_dependency(const std::shared_ptr<Runtime> &, compute::d
 Result<std::shared_ptr<CopyRecording>> pin_copy_dependency(const std::shared_ptr<Runtime> &,
     compute::detail::CompletionDependency, std::uint64_t *epoch) noexcept;
 Status observe_copy_dependency(const CopyRecording &, std::uint64_t epoch) noexcept;
+// Original FIFO physical proof only. These do not settle a public Completion,
+// publish a lease, release a native tail or make the recording reusable.
+// A cached completed recording may be read from any thread; a pending prefix
+// remains Unavailable outside its original FIFO owner.
+HYLE_COMPUTE_ROUTE_APPLE_API Status observe_copy_recording_on_owner(CopyRecording &) noexcept;
+HYLE_COMPUTE_ROUTE_APPLE_API Status observe_copy_inputs_on_owner(CopyRecording &) noexcept;
+// Original FIFO only. A pending GPU blit exposes its own immutable event;
+// synchronous CPU copies have already retired when their successor runs.
+// This grants ordering, not publication or permission to recycle the slot.
+Result<mlx::core::Event> copy_dependency_event(const CopyRecording &, std::uint64_t epoch) noexcept;
 void release_copy_dependency(CopyRecording &) noexcept;
 } // namespace hyle::compute::apple::detail

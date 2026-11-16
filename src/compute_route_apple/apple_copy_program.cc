@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "apple_copy_internal.h"
+#include "completion_internal.h"
 #include "hyle/compute/detail/apple_copy_stream_access.h"
 #include "hyle/compute/detail/copy_control.h"
 #include "hyle/compute/detail/native_lease_inputs.h"
@@ -68,7 +69,8 @@ struct CopyInvocationState final : util::RefCounted<CopyInvocationState> {
         leader(mem::StdAllocator<std::uint32_t>(allocator())), last_write(mem::StdAllocator<std::uint32_t>(allocator())),
         producers(mem::StdAllocator<std::uint32_t>(allocator())), roles(mem::StdAllocator<unsigned char>(allocator())),
         root_uses(mem::StdAllocator<cd::CopyRootUse>(allocator())), written(mem::StdAllocator<cd::CopyWrittenSpan>(allocator())),
-        ranges(mem::StdAllocator<cd::CopyBackendRange>(allocator())), tickets(mem::StdAllocator<LeaseUseBatch>(allocator())) { program->incref(); }
+        ranges(mem::StdAllocator<cd::CopyBackendRange>(allocator())), tickets(mem::StdAllocator<LeaseUseBatch>(allocator())),
+        dependencies(mem::StdAllocator<cd::CompletionDependency>(allocator())) { program->incref(); }
   mem::AllocatorRef allocator() const noexcept { return program->allocator; }
   bool busy() const noexcept { return pending.load(std::memory_order_acquire) != 0; }
   Status mutable_slot(bool recover_writer = false) const noexcept {
@@ -119,6 +121,7 @@ struct CopyInvocationState final : util::RefCounted<CopyInvocationState> {
   CopyArray<cd::CopyWrittenSpan> written;
   CopyArray<cd::CopyBackendRange> ranges;
   CopyArray<LeaseUseBatch> tickets;
+  CopyArray<cd::CompletionDependency> dependencies; // Cold bounded Source admission scratch.
 };
 namespace {
 template<class Visitor>
@@ -156,55 +159,23 @@ Result<CopySpan> result_source_range(void*opaque,std::size_t index)noexcept {
 void phase_terminal(void *opaque, const Status &native) noexcept {
   auto &phase = *static_cast<CopyNativePhase *>(opaque); auto &state = *phase.owner;
   std::lock_guard lock(state.observations);
-  Status terminal = native;
-  const auto &plan = state.plans[phase.index];
-  // Original FIFO Jobs have retired their native work before this predicate
-  // or retirement callback. Serialize internal and public observations of
-  // the same Completion, never race worker polling with output()/wait().
-  auto dependencies = plan.dependency_mask;
-  while (dependencies != 0) {
-    const auto prior = static_cast<std::size_t>(std::countr_zero(dependencies));
-    auto &source = *state.phases[prior];
-    auto observed = source.completion.valid() ? source.completion.poll() : poll_copy_recording(*source.recording);
-    if (!observed) terminal.Update(observed.error());
-    else if (*observed == CompletionPoll::kPending || !source.retired.load(std::memory_order_acquire))
-      terminal.Update(Status::Unavailable("Apple copy predecessor retirement is unproven"));
-    else terminal.Update(source.terminal);
-    dependencies &= dependencies - 1;
-  }
-  for (std::size_t index = plan.producer_first; index < plan.producer_first + plan.producer_count; ++index) {
-    auto observed = state.bindings[state.producers[index]].producer.poll();
-    if (!observed) terminal.Update(observed.error());
-    else if (*observed == CompletionPoll::kPending)
-      terminal.Update(Status::Unavailable("Apple copy producer retirement is unproven"));
-  }
-  cd::LeaseAccess::retire_native(phase.use, terminal);
-  phase.terminal = terminal; phase.retired.store(true, std::memory_order_release);
+  // The original recording observed every imported native dependency after
+  // real GPU retirement. A later callback may arrive before an ancestor's
+  // metadata callback; that is not a failure or permission to publish it.
+  cd::LeaseAccess::retire_native(phase.use, native);
+  phase.terminal = native; phase.retired.store(true, std::memory_order_release);
 }
 Status phase_preflight(void *opaque) noexcept {
   auto &phase = *static_cast<CopyNativePhase *>(opaque); auto &state = *phase.owner;
   std::lock_guard lock(state.observations);
   Status terminal;
   const auto &plan = state.plans[phase.index];
-  auto dependencies = plan.dependency_mask;
-  while (dependencies != 0) {
-    auto &prior = *state.phases[static_cast<std::size_t>(std::countr_zero(dependencies))];
-    auto observed = prior.completion.valid() ? prior.completion.poll() : poll_copy_recording(*prior.recording);
-    if (!observed) terminal.Update(observed.error());
-    else if (*observed == CompletionPoll::kPending || !prior.retired.load(std::memory_order_acquire))
-      terminal.Update(Status::Unavailable("Apple copy preceding FIFO Job is not retired"));
-    else terminal.Update(prior.terminal);
-    dependencies &= dependencies - 1;
-  }
-  for (std::size_t index = plan.producer_first; index < plan.producer_first + plan.producer_count; ++index) {
-    auto observed = state.bindings[state.producers[index]].producer.poll();
-    if (!observed) terminal.Update(observed.error());
-    else if (*observed == CompletionPoll::kPending)
-      terminal.Update(Status::Unavailable("Apple copy producer FIFO Job is not retired"));
-  }
   if(terminal.ok() && state.result_sources && !state.result_sources->results.ids().empty()){
     auto&extra=*state.result_sources;
     if(!extra.resolved){
+      // Late native output addresses require a real ready array. Prove that
+      // prefix on its original owner, without consuming a public observer.
+      HYLE_RETURN_IF_ERROR(observe_copy_inputs_on_owner(*phase.recording));
       for(const auto id:extra.results.ids()){
         const bool used=std::any_of(state.copies.begin(),state.copies.begin()+state.report.active_copies,
             [&](const auto&copy){return copy.source==id.value;});
@@ -212,8 +183,6 @@ Status phase_preflight(void *opaque) noexcept {
         const auto producer=std::find_if(state.bindings.begin(),state.bindings.end(),
             [&](const auto&binding){return binding.root==extra.results.root(id.value) && binding.producer.valid();});
         if(producer==state.bindings.end())return Status::Internal("Apple result source lost its original producer");
-        auto ready=producer->producer.poll();if(!ready)return ready.error();
-        if(*ready!=CompletionPoll::kComplete)return Status::Unavailable("Apple result source FIFO producer is not retired");
         HYLE_ASSIGN_OR_RETURN(extra.spans[id.value],result_copy_span(extra.results.payload(id.value),
             extra.results.output(id.value),extra.results.description(id.value)));
         state.physical[id.value]=extra.spans[id.value].physical;
@@ -236,6 +205,70 @@ Status phase_preflight(void *opaque) noexcept {
         std::span(state.ranges).subspan(plan.first,plan.copies),&result_source_range,&phase));
   }
   return terminal;
+}
+Status phase_source_verdicts(CopyInvocationState &state,std::uint32_t selected) noexcept {
+  // Public observation traverses the existing cold transitive dependency
+  // closure. Device-prefix completion alone never publishes a source lease.
+  auto phases=state.closure[selected] | (std::uint64_t{1}<<selected);
+  while(phases) {
+    const auto id=static_cast<std::uint32_t>(std::countr_zero(phases));
+    auto &phase=*state.phases[id];
+    HYLE_ASSIGN_OR_RETURN(auto ready,phase.completion.poll());
+    if(ready!=CompletionPoll::kComplete || !phase.retired.load(std::memory_order_acquire))
+      return Status::Unavailable("Apple copy source metadata is not retired");
+    HYLE_RETURN_IF_ERROR(phase.terminal);
+    const auto &plan=state.plans[id];
+    for(std::size_t i=plan.producer_first;i<plan.producer_first+plan.producer_count;++i) {
+      HYLE_ASSIGN_OR_RETURN(auto original,state.bindings[state.producers[i]].producer.poll());
+      if(original!=CompletionPoll::kComplete)
+        return Status::Unavailable("Apple copy source verdict is pending");
+    }
+    phases&=phases-1;
+  }
+  return Status::Ok();
+}
+struct PhaseAdmission final {
+  CopyInvocationState &state;
+  CopyNativePhase &phase;
+  std::size_t cursor,end,count;
+  Completion accepted;
+};
+Status qualify_original_source(const std::shared_ptr<Runtime> &runtime,const Completion &source) noexcept {
+  struct Qualification final {const std::shared_ptr<Runtime> &runtime;} request{runtime};
+  return cd::RetainedCompletion::with_native_dependency(source,&request,
+      [](void *opaque,cd::CompletionDependency dependency) noexcept {
+        return qualify_recording_dependency(static_cast<Qualification *>(opaque)->runtime,dependency);
+      });
+}
+Status admit_phase_sources(PhaseAdmission &admission) noexcept {
+  auto &state=admission.state;
+  if(admission.cursor==admission.end) {
+    HYLE_ASSIGN_OR_RETURN(admission.accepted,submit_copy_recording(*admission.phase.recording,
+        std::span(state.dependencies).first(admission.count)));
+    return Status::Ok();
+  }
+  const auto binding=state.producers[admission.cursor++];
+  return cd::RetainedCompletion::with_native_dependency(state.bindings[binding].producer,&admission,
+      [](void *opaque,cd::CompletionDependency dependency) noexcept {
+        auto &call=*static_cast<PhaseAdmission *>(opaque);
+        if(call.count>=call.state.dependencies.size())
+          return Status::Internal("Apple copy Source count exceeds its cold capacity");
+        call.state.dependencies[call.count++]=dependency;
+        return admit_phase_sources(call);
+      });
+}
+Result<Completion> submit_phase(CopyInvocationState &state,CopyNativePhase &phase) noexcept {
+  const auto &plan=state.plans[phase.index];
+  PhaseAdmission admission{state,phase,plan.producer_first,
+      plan.producer_first+plan.producer_count,0,{}};
+  auto mask=plan.dependency_mask;
+  while(mask) {
+    const auto id=static_cast<std::size_t>(std::countr_zero(mask));
+    state.dependencies[admission.count++]=cd::CompletionAccess::dependency(state.phases[id]->completion);
+    mask&=mask-1;
+  }
+  HYLE_RETURN_IF_ERROR(admit_phase_sources(admission));
+  return std::move(admission.accepted);
 }
 void phase_release(void *opaque) noexcept {
   auto *owner = static_cast<CopyNativePhase *>(opaque)->owner;
@@ -275,6 +308,27 @@ Status wait(CopyInvocationState *state) noexcept {
     if (phase.retired.load(std::memory_order_acquire)) result.Update(phase.terminal);
     else result.Update(Status::Unavailable("Apple copy actual retirement is unproven"));
   }
+  // Public success includes complete original Source verdicts, not just their
+  // device prefixes. Our phase callbacks no longer poll these observers.
+  { std::unique_lock lock(state->observations);
+    for_each_retirement_source(*state,[&](Completion &source,std::size_t) noexcept {
+      auto ready=source.poll();
+      if(ready && *ready==CompletionPoll::kPending) {
+        // Keep this exact native cell borrowed while allowing its original
+        // FIFO callbacks/preflights to acquire our metadata monitor.
+        const auto observed=cd::RetainedCompletion::with_native_dependency(source,&lock,
+            [](void *opaque,cd::CompletionDependency dependency) noexcept {
+              if(!dependency.pending())return dependency.terminal_hint?*dependency.terminal_hint:Status::Ok();
+              auto &monitor=*static_cast<std::unique_lock<std::recursive_mutex> *>(opaque);
+              monitor.unlock();const auto status=dependency.vtable->wait(dependency.state);monitor.lock();
+              return status;
+            });
+        ready=source.poll();
+        result.Update(observed);
+      }
+      if(!ready)result.Update(ready.error());
+      else if(*ready==CompletionPoll::kPending)result.Update(Status::Unavailable("Apple original source verdict is still pending"));
+    }); }
   result.Update(state->tail); if (!result.ok()) state->failed = true;
   return result;
 }
@@ -345,6 +399,7 @@ Result<CopyBatchInvocation> CopyBatchInvocation::create(const CopyBatchProgram &
     state->order.resize(n); state->leader.resize(n); state->last_write.resize(n); state->producers.resize(static_cast<std::size_t>(r) * 2);
     state->roles.resize(n * g); state->root_uses.resize(static_cast<std::size_t>(r) * 2);
     state->written.resize(r); state->ranges.resize(r); state->tickets.resize(g);
+    state->dependencies.resize(g+n);
   } catch (...) { return std::unexpected(Status::ResourceExhausted("Apple copy fixed metadata")); }
   for (std::uint32_t id = 0; id < g; ++id) {
     auto *memory = allocator.allocate(sizeof(detail::CopyNativePhase), alignof(detail::CopyNativePhase));
@@ -352,6 +407,7 @@ Result<CopyBatchInvocation> CopyBatchInvocation::create(const CopyBatchProgram &
     auto *phase = std::construct_at(static_cast<detail::CopyNativePhase *>(memory));
     phase->owner = state; phase->index = id; state->phases.push_back(phase);
     HYLE_ASSIGN_OR_RETURN(phase->recording, detail::prepare_copy_recording_runtime(program->runtime, r, allocator, program->options.max_bytes));
+    HYLE_RETURN_IF_ERROR(detail::reserve_copy_dependencies(*phase->recording,g+n));
   }
   HYLE_ASSIGN_OR_RETURN(state->uses, LeaseUsePool::create({.max_batches = g,
       .max_resources_per_batch = static_cast<std::uint32_t>((std::max)(n, std::size_t{1})), .allocator = allocator}));
@@ -459,8 +515,7 @@ Status CopyBatchInvocation::bind_producer(CopyResourceId id, Completion &&produc
   HYLE_RETURN_IF_ERROR(detail::valid_binding(state_, id));
   if(state_->result_sources && state_->result_sources->results.owns(id.value))return Status::FailedPrecondition("native result binding needs reset before replacement");
   if (!state_->bindings[id.value].root) return Status::FailedPrecondition("Apple copy producer resource is unbound");
-  HYLE_ASSIGN_OR_RETURN(auto dependency, compute::detail::RetainedCompletion::native_dependency(producer));
-  HYLE_RETURN_IF_ERROR(detail::qualify_recording_dependency(state_->program->runtime, dependency));
+  HYLE_RETURN_IF_ERROR(detail::qualify_original_source(state_->program->runtime,producer));
   state_->bindings[id.value].producer = std::move(producer); state_->prepared = false; return Status::Ok();
 }
 Status CopyBatchInvocation::prepare_replay(std::span<const CopyPhase> phases, std::span<const CopyRange> ranges) noexcept {
@@ -494,6 +549,8 @@ Status CopyBatchInvocation::prepare_replay(std::span<const CopyPhase> phases, st
     }
     HYLE_RETURN_IF_ERROR(detail::set_copy_preflight(*state_->phases[id]->recording,
         &detail::phase_preflight, state_->phases[id]));
+    const auto count=static_cast<std::size_t>(std::popcount(plan.dependency_mask))+plan.producer_count;
+    if(count>state_->dependencies.size())return Status::Internal("Apple copy sources exceed declared phase/resource capacity");
     state_->phases[id]->completion = {}; state_->phases[id]->terminal = Status::Ok();
     state_->phases[id]->retired.store(false, std::memory_order_relaxed);
   }
@@ -511,8 +568,8 @@ Result<CopyBatchSubmission> CopyBatchInvocation::submit() noexcept {
   for (std::uint32_t id = 0; id < state_->phase_count; ++id) {
     const auto &plan = state_->plans[id];
     for (std::size_t index = plan.producer_first; index < plan.producer_first + plan.producer_count; ++index) {
-      HYLE_ASSIGN_OR_RETURN(auto dependency, compute::detail::RetainedCompletion::native_dependency(state_->bindings[state_->producers[index]].producer));
-      HYLE_RETURN_IF_ERROR(detail::qualify_recording_dependency(state_->program->runtime, dependency));
+      HYLE_RETURN_IF_ERROR(detail::qualify_original_source(state_->program->runtime,
+          state_->bindings[state_->producers[index]].producer));
     }
   }
   HYLE_RETURN_IF_ERROR(compute::detail::admit_copy_control(state_->uses, state_->bindings,
@@ -522,7 +579,7 @@ Result<CopyBatchSubmission> CopyBatchInvocation::submit() noexcept {
   state_->prepared = false;
   for (std::uint32_t id = 0; id < state_->phase_count; ++id) {
     auto &phase = *state_->phases[id];
-    auto completion = detail::submit_copy_recording(*phase.recording);
+    auto completion = detail::submit_phase(*state_,phase);
     if (!completion) { state_->tail = completion.error(); break; }
     phase.use = std::move(state_->tickets[id]);
     state_->incref(); state_->pending.fetch_add(1, std::memory_order_relaxed);
@@ -573,6 +630,7 @@ Result<ReadLease> CopyBatchSubmission::output(CopyPhaseId phase, CopyResourceId 
   if (*poll == CompletionPoll::kPending || !observed.retired.load(std::memory_order_acquire))
     return std::unexpected(Status::Unavailable("Apple copy output is pending"));
   if (!observed.terminal.ok()) return std::unexpected(observed.terminal);
+  HYLE_RETURN_IF_ERROR(detail::phase_source_verdicts(*state_,phase.value));
   if (state_->last_write[state_->leader[id.value]] != phase.value)
     return std::unexpected(Status::Unavailable("Apple copy block has a later write or no output"));
   auto &binding = state_->bindings[id.value];
@@ -726,9 +784,7 @@ Status detail::CopyStreamAccess::preflight(const CopyBatchUpdate &owner) noexcep
     HYLE_ASSIGN_OR_RETURN(auto native,
         compute::detail::RetainedCompletion::native_dependency(phase.completion));
     if (native.terminal_hint) HYLE_RETURN_IF_ERROR(*native.terminal_hint);
-    HYLE_ASSIGN_OR_RETURN(auto ready, detail::poll_copy_recording(*phase.recording));
-    if (ready != CompletionPoll::kComplete)
-      return Status::Unavailable("Apple pending source FIFO recording is not retired");
+    HYLE_RETURN_IF_ERROR(detail::observe_copy_recording_on_owner(*phase.recording));
     if (phase.retired.load(std::memory_order_acquire)) HYLE_RETURN_IF_ERROR(phase.terminal);
   }
   if (state->failed) return Status::FailedPrecondition("Apple pending copy source failed");
