@@ -178,6 +178,72 @@ TEST(AppleDeviceAppend, FailedNativeControlProducerPreservesItsErrorAndLeavesEve
   if(copied)EXPECT_TRUE(copied->wait().IsOutOfRange());else EXPECT_TRUE(copied.error().IsOutOfRange());
   EXPECT_TRUE(produced.completion().wait().IsOutOfRange());EXPECT_EQ(cell.read(),cell.original);
 }
+
+void pending_source(bool invalid,bool transitive){
+  Cell cell;auto runtime=d::ContextAccess::runtime(cell.context);auto slot=cell.slot();
+  const auto weight_desc=take(c::TensorDesc::dense(c::DataType::kBFloat16,std::array<std::int64_t,2>{row_words,row_words}));
+  const auto float_desc=take(c::TensorDesc::dense(c::DataType::kFloat32,std::array<std::int64_t,2>{input_rows,row_words}));
+  d::RegionPlan plan;
+  for(const auto &description:std::array{cell.row_desc,weight_desc,cell.control_desc,cell.control_desc,
+      cell.control_desc,float_desc,cell.row_desc,cell.control_desc,cell.control_desc})
+    plan.values.push_back(take(a::input_spec(description)));
+  plan.inputs={0,1,2,3,4};plan.outputs={6,7,8};
+  d::Region native;native.kind=d::RegionKind::kGgml;native.inputs={0,1};native.outputs={5};
+  native.operation=c::model_ops::dense_linear_f32();native.native_inputs={cell.row_desc,weight_desc};
+  d::Region tail;tail.inputs={5,2,3,4};tail.outputs={6,7,8};
+  const auto float_control=take(c::TensorDesc::dense(c::DataType::kFloat32,std::array<std::int64_t,2>{2,1}));
+  tail.mlx=[descriptions=std::array{float_control,cell.control_desc}](const auto &args,mlx::core::Stream stream)
+      ->hyle::Result<std::vector<mlx::core::array>> {
+    const std::array indices{mlx::core::reshape(mlx::core::astype(args[1],mlx::core::float32,stream),{2,1},stream),args[3]};
+    auto checked=d::lower_mlx_float(c::Operation(c::Gather{}),descriptions,indices,stream);
+    if(!checked)return std::unexpected(checked.error());
+    return std::vector{mlx::core::astype(args[0],mlx::core::bfloat16,stream),
+        mlx::core::reshape(mlx::core::astype((*checked)[0],mlx::core::int32,stream),{2},stream),
+        mlx::core::add(args[2],mlx::core::array(0),stream)};
+  };
+  plan.regions={std::move(native),std::move(tail)};
+  auto program=take(d::ContextAccess::compile(cell.context,std::move(plan)));
+  auto first=take(program.create_invocation()),second=take(program.create_invocation());
+  auto weights=take(m::Buffer::create(cell.memory.ref(),row_words*row_words*2));
+  std::array<std::uint16_t,row_words*row_words> identity{};
+  for(std::size_t i=0;i<row_words;++i)identity[i*row_words+i]=0x3f80;
+  check(weights.write(0,std::as_bytes(std::span(identity))));
+  auto source=cell.inputs({2,3},{5,5});
+  auto index_buffer=take(m::Buffer::create(cell.memory.ref(),8));
+  const std::array<std::int32_t,2> index{0,invalid?2:1};check(index_buffer.write(0,std::as_bytes(std::span(index))));
+  const std::array arrays{*source[0].value,cell.array(weights.view(),weight_desc),*source[1].value,
+      *source[2].value,cell.array(index_buffer.view(),cell.control_desc)};
+  check(first.bind(arrays));
+  auto valid_index_buffer=take(m::Buffer::create(cell.memory.ref(),8));const std::array<std::int32_t,2> valid_index{0,1};
+  check(valid_index_buffer.write(0,std::as_bytes(std::span(valid_index))));
+  if(transitive){
+    std::array<d::InputBinding,5> bindings;
+    bindings[0].source=take(d::InvocationAccess::source(first,0));bindings[1].value=arrays[1];
+    bindings[2].source=take(d::InvocationAccess::source(first,1));bindings[3].source=take(d::InvocationAccess::source(first,2));
+    bindings[4].value=cell.array(valid_index_buffer.view(),cell.control_desc);
+    check(d::InvocationAccess::prepare_inputs(second,bindings));
+  }
+  auto &producer=transitive?second:first;
+  for(std::size_t i=0;i<3;++i){source[i].value.reset();source[i].source=take(d::InvocationAccess::source(producer,i));}
+  check(d::bind_device_append_inputs(*slot,source));
+  GpuGate gpu(runtime);Hold admission(runtime);
+  auto a=take(first.submit());std::optional<c::OwnedResult<a::Results>> b;
+  if(transitive)b.emplace(take(second.submit()));
+  // Input pins add the original device dependencies even without an external
+  // Completion list. All three ports share one exact producer epoch.
+  auto appended=take(d::submit_copy_recording(*slot));Hold witness(runtime,false);admission.finish();
+  const bool encoded=witness.entered.try_acquire_for(std::chrono::seconds(2));
+  if(encoded)EXPECT_EQ(take(appended.poll()),c::CompletionPoll::kPending);
+  gpu.open();witness.finish();EXPECT_TRUE(encoded)<<"source address/error handoff waited on the FIFO owner";
+  const auto result=appended.wait();
+  if(invalid){EXPECT_TRUE(result.IsOutOfRange())<<result.message();EXPECT_TRUE(a.completion().wait().IsOutOfRange());
+    if(b)EXPECT_TRUE(b->completion().wait().IsOutOfRange());EXPECT_EQ(cell.read(),cell.original);
+  }else{check(result);check(a.completion().wait());if(b)check(b->completion().wait());cell.expect({2,3},{5,5});}
+  EXPECT_EQ(d::copy_recording_report(*slot).host_waits,0u);
+}
+TEST(AppleDeviceAppend, PendingOriginalSourcesAndChecksDoNotBlockTheFifoOwner){pending_source(false,false);}
+TEST(AppleDeviceAppend, PendingProducerErrorGuardsEveryCowPageOnTheGpu){pending_source(true,false);}
+TEST(AppleDeviceAppend, TransitiveProducerErrorStillGuardsAnUncheckedSuccessor){pending_source(true,true);}
 TEST(AppleDeviceAppend, OriginalGpuEventFeedsAnUnobservedReaderWhileTheFifoOwnerContinues){
   Cell cell;auto runtime=d::ContextAccess::runtime(cell.context);auto slot=cell.slot();cell.bind(*slot,{2,3},{5,5});
   constexpr auto words=bank_bytes/2;

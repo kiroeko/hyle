@@ -563,6 +563,12 @@ Result<NativeStorage> MemoryResource::storage_info(const mx::array &array) const
 Result<NativeStorage> detail::MemoryAccess::storage_info(const mx::array &array) noexcept {
   if (array.status() != mx::array::available)
     return std::unexpected(Status::FailedPrecondition("Apple storage requires a ready native array"));
+  return submitted_storage_info(array);
+}
+Result<NativeStorage> detail::MemoryAccess::submitted_storage_info(const mx::array &array) noexcept {
+  if (array.status() != mx::array::available &&
+      (array.status() != mx::array::evaluated || !array.event().valid()))
+    return std::unexpected(Status::FailedPrecondition("Apple source address requires its original encoded array/event"));
   if (array.offset() < 0)
     return std::unexpected(Status::OutOfRange("Apple native array offset is negative"));
   // Logical nbytes excludes gaps and can understate an alias's permissions.

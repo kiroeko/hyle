@@ -44,6 +44,7 @@ struct CopyRecording final : Job {
         host_targets(mem::StdAllocator<HostCopyTarget>(allocator)) {}
   std::shared_ptr<Runtime> runtime;
   NativeDependencies dependencies;
+  std::size_t dependency_capacity=0;
   mlx::core::Event completion_event;
   NS::SharedPtr<MTL::CommandBuffer> native_command;
   bool native_encoded = false, native_retired = false;
@@ -267,7 +268,7 @@ void execute_copy(Job *job) noexcept {
   if (state.cancel.load(std::memory_order_acquire)) terminal.Update(Status::Cancelled("Apple copy cancelled before native recording"));
   if (terminal.ok()) terminal.Update(state.dependencies.resolve_copy());
   if (terminal.ok() && state.host_copy) terminal.Update(state.dependencies.observe());
-  if (terminal.ok() && state.device_append_active) terminal.Update(state.device_append->resolve(state.runtime));
+  if (terminal.ok() && state.device_append_active) terminal.Update(state.device_append->resolve(state.runtime,state.dependencies));
   if (terminal.ok() && state.preflight) terminal.Update(state.preflight(state.preflight_state));
   bool use_blit = !state.host_copy;
   if (terminal.ok() && state.host_copy) terminal = execute_host_copy(state, &use_blit);
@@ -657,7 +658,9 @@ Result<Completion> submit_copy_recording(CopyRecording &state) noexcept {
 Status reserve_copy_dependencies(CopyRecording &state, std::size_t capacity) noexcept {
   std::lock_guard lock(state.completion_mutex);
   HYLE_RETURN_IF_ERROR(mutable_recording(state));
-  return state.dependencies.reserve(capacity);
+  if(capacity>SIZE_MAX-3)return Status::OutOfRange("Apple copy dependency capacity overflows");
+  HYLE_RETURN_IF_ERROR(state.dependencies.reserve(capacity+(state.device_append?3u:0u)));
+  state.dependency_capacity=capacity;return Status::Ok();
 }
 Result<Completion> submit_copy_recording(CopyRecording &state,
     std::span<const cd::CompletionDependency> dependencies) noexcept {
@@ -686,7 +689,13 @@ Result<Completion> submit_copy_recording(CopyRecording &state,
         state.host_source, state.runtime, state.consumed_epoch));
     state.source_pinned = true;
   }
-  if (state.device_append_active) HYLE_RETURN_IF_ERROR(state.device_append->pin(state.runtime));
+  if (state.device_append_active) {
+    HYLE_RETURN_IF_ERROR(state.device_append->pin(state.runtime));
+    for(const auto &input:state.device_append->inputs)if(input.source.valid()){
+      HYLE_ASSIGN_OR_RETURN(auto dependency,InvocationAccess::source_dependency(input.source,state.runtime));
+      HYLE_RETURN_IF_ERROR(state.dependencies.append(state.runtime,std::span(&dependency,1),nullptr,&state));
+    }
+  }
   if (state.mode == CopyRecordingMode::kOnce) state.prepared = false;
   if (state.report.active_copies == 0 && !state.prefix_marker && state.dependencies.empty())
     return Completion::completed();
@@ -860,6 +869,8 @@ Status prepare_device_append_recording(CopyRecording &state,
   try {
     auto prepared=std::allocate_shared<DeviceAppendState>(mem::StdAllocator<DeviceAppendState>(state.allocator),state.allocator);
     HYLE_RETURN_IF_ERROR(prepared->prepare(state.runtime,geometry,rows));
+    if(state.dependency_capacity>SIZE_MAX-3)return Status::OutOfRange("Apple append dependency capacity overflows");
+    HYLE_RETURN_IF_ERROR(state.dependencies.reserve(state.dependency_capacity+3));
     HYLE_RETURN_IF_ERROR(clear_host_copy(state));
     state.prepared=false;state.device_append=std::move(prepared);
     return Status::Ok();
@@ -897,5 +908,22 @@ Result<ConstTensorView> device_append_status(CopyRecording &state) noexcept {
   std::lock_guard lock(state.completion_mutex);
   if(!state.device_append_active)return std::unexpected(Status::FailedPrecondition("Apple device append is not selected"));
   return state.device_append->status_view();
+}
+Status copy_device_checks(CopyRecording &state,DeviceCheckInputs &checks) noexcept {
+  if(state.done.load(std::memory_order_acquire))return state.terminal;
+  HYLE_RETURN_IF_ERROR(state.native_terminal);
+  if(state.native_retired)return Status::Ok();
+  if(!state.native_encoded)return Status::FailedPrecondition("Apple copy check has no original encoded prefix");
+  HYLE_RETURN_IF_ERROR(state.dependencies.device_checks(checks));
+  if(state.host_source.valid()){
+    auto source=InvocationAccess::device_source_output(state.host_source,state.runtime,state.expected_epoch,checks);
+    if(!source)return source.error();
+  }
+  if(state.device_append_active){
+    HYLE_ASSIGN_OR_RETURN(auto verdict,state.device_append->status_view());
+    HYLE_ASSIGN_OR_RETURN(auto storage,copy_span(verdict.storage(),mem::HostAccess::kRead));
+    HYLE_RETURN_IF_ERROR(append_device_check(checks,{storage.buffer,storage.physical.origin,sizeof(std::int32_t),0}));
+  }
+  return Status::Ok();
 }
 } // namespace hyle::compute::apple::detail

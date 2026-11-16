@@ -2,6 +2,7 @@
 
 #include "hyle/compute/detail/apple_plan.h"
 #include "hyle/compute/detail/generated_result.h"
+#include "hyle/compute/apple_memory.h"
 
 #include <cstdint>
 #include <memory>
@@ -62,6 +63,16 @@ struct InputBinding final {
   InputSource source;
 };
 
+// Borrowed error words of original pinned producer episodes. A caller-owned
+// bounded span is prepared cold; collection never allocates or observes data.
+struct DeviceCheckInputs final {
+  std::span<NativeStorage> words;
+  std::span<std::optional<mlx::core::array>> owners;
+  std::size_t count = 0;
+};
+HYLE_COMPUTE_ROUTE_APPLE_API Status append_device_check(DeviceCheckInputs &, NativeStorage,
+    const std::optional<mlx::core::array> & = {}) noexcept;
+
 struct InvocationAccess final {
   HYLE_COMPUTE_ROUTE_APPLE_API static Result<InputSource>
   source(const Invocation &, std::size_t output_port) noexcept;
@@ -76,6 +87,11 @@ struct InvocationAccess final {
   HYLE_COMPUTE_ROUTE_APPLE_API static Result<mlx::core::array>
   source_output(const InputSource &, const std::shared_ptr<Runtime> &,
                 std::uint64_t expected_epoch) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API static Result<compute::detail::CompletionDependency>
+  source_dependency(const InputSource &, const std::shared_ptr<Runtime> &) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API static Result<mlx::core::array>
+  device_source_output(const InputSource &, const std::shared_ptr<Runtime> &,
+      std::uint64_t expected_epoch, DeviceCheckInputs &) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API static void release_source(const InputSource &) noexcept;
   // Sources must submit after this cold baseline and before the consumer.
   // The consumer snapshots each source's own epoch, consumes it once, and

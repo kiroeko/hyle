@@ -17,10 +17,12 @@ struct Geometry {
   ulong row_bytes;
   uint requests;
 };
+struct SourceCheck { const device int *word; };
 kernel void hyle_device_lengths_append(device ushort *arena [[buffer(0)]],
     const device ushort *input [[buffer(1)]], const device uint *metadata [[buffer(2)]],
     const device int *query [[buffer(3)]], const device int *kv [[buffer(4)]],
     device atomic_uint *status [[buffer(5)]], constant Geometry &s [[buffer(6)]],
+    const device SourceCheck *checks [[buffer(7)]], constant uint &check_count [[buffer(8)]],
     uint3 grid [[threadgroup_position_in_grid]], uint tid [[thread_index_in_threadgroup]]) {
   threadgroup int offsets[33],previous[32],last[32];
   threadgroup uint verdict;
@@ -30,6 +32,7 @@ kernel void hyle_device_lengths_append(device ushort *arena [[buffer(0)]],
         !metadata[1] && !metadata[2] && !metadata[3] && words[0]==s.requests &&
         words[1]<=metadata[0]-1-s.requests && words[1]<=s.physical_pages;
     for(uint i=2;i<8;++i)if(words[i])valid=false;
+    for(uint i=0;i<check_count;++i)if(*checks[i].word)valid=false;
     offsets[0]=0;
     if(valid)for(uint r=0;r<s.requests;++r) {
       const device uint *b=words+8*(1+r);
@@ -92,10 +95,16 @@ struct DeviceAppendState final {
   id<MTLComputePipelineState> pipeline=nil;
   id<MTLBuffer> metadata=nil;
   CopySpan arena;
+  // Bounded private error metadata, independent of model, K or row geometry.
+  static constexpr std::size_t check_capacity=256;
+  std::array<NativeStorage,check_capacity> check_words{};
+  std::array<std::optional<mlx::core::array>,check_capacity> check_owners;
+  std::uint32_t check_count=0;
+  id<MTLBuffer> check_arguments=nil;
   Resources targets,prefixes;
   std::uint32_t pages=0;
   bool configured=false,bound=false;
-  ~DeviceAppendState(){[metadata release];[pipeline release];}
+  ~DeviceAppendState(){[check_arguments release];[metadata release];[pipeline release];}
   Status prepare(const std::shared_ptr<Runtime>&runtime,daw::DeviceLengthsPagedAppendSpec s,
       const TensorDesc &description) noexcept {
     const auto b=s.storage;
@@ -114,8 +123,12 @@ struct DeviceAppendState final {
     HYLE_ASSIGN_OR_RETURN(specs[1],input_spec(control));specs[2]=specs[1];
     @autoreleasepool {
       id<MTLDevice> device=(__bridge id<MTLDevice>)mlx::core::metal::device(runtime->stream->device).mtl_device();
+      if(device.argumentBuffersSupport!=MTLArgumentBuffersTier2)
+        return Status::Unimplemented("Apple device append requires native argument-buffer tier2 for original error words");
       NSError *error=nil;
-      id<MTLLibrary> library=[device newLibraryWithSource:[NSString stringWithUTF8String:device_append_source] options:nil error:&error];
+      MTLCompileOptions *options=[[MTLCompileOptions alloc] init];options.languageVersion=MTLLanguageVersion3_0;
+      id<MTLLibrary> library=[device newLibraryWithSource:[NSString stringWithUTF8String:device_append_source] options:options error:&error];
+      [options release];
       if(library==nil)return Status::Internal(error.localizedDescription.UTF8String?:"Apple device append library failed");
       id<MTLFunction> function=[library newFunctionWithName:@"hyle_device_lengths_append"];
       if(function!=nil)pipeline=[device newComputePipelineStateWithFunction:function error:&error];
@@ -124,6 +137,8 @@ struct DeviceAppendState final {
       const auto size=sizeof(daw::PagedAppendMetadata)+std::size_t(b.instruction_capacity)*sizeof(daw::PagedAppendInstruction);
       metadata=[device newBufferWithLength:size options:MTLResourceStorageModeShared];
       if(metadata==nil)return Status::ResourceExhausted("Apple device append capacity metadata");
+      check_arguments=[device newBufferWithLength:check_capacity*sizeof(std::uint64_t) options:MTLResourceStorageModeShared];
+      if(check_arguments==nil)return Status::ResourceExhausted("Apple device append source-check capacity");
     }
     return Status::Ok();
   }
@@ -219,6 +234,7 @@ struct DeviceAppendState final {
   }
   void release() noexcept {
     for(std::size_t i=0;i<3;++i)if(pinned[i]){InvocationAccess::release_source(inputs[i].source);pinned[i]=false;}
+    for(auto &owner:check_owners)owner.reset();check_count=0;
   }
   Status pin(const std::shared_ptr<Runtime>&runtime) noexcept {
     if(!bound)return Status::FailedPrecondition("Apple device append inputs are not bound");
@@ -229,16 +245,18 @@ struct DeviceAppendState final {
     return Status::Ok();
   }
   void accepted() noexcept {for(std::size_t i=0;i<3;++i)if(pinned[i])consumed[i]=expected[i];}
-  Status resolve(const std::shared_ptr<Runtime>&runtime) noexcept {
+  Status resolve(const std::shared_ptr<Runtime>&runtime,NativeDependencies &dependencies) noexcept {
+    DeviceCheckInputs checks{check_words,check_owners};
+    HYLE_RETURN_IF_ERROR(dependencies.device_checks(checks));
     for(std::size_t i=0;i<3;++i){
       std::optional<mlx::core::array> value;
       if(inputs[i].source.valid()){
         if(!pinned[i])return Status::FailedPrecondition("Apple device append source is not pinned");
-        HYLE_ASSIGN_OR_RETURN(value,InvocationAccess::source_output(inputs[i].source,runtime,expected[i]));
+        HYLE_ASSIGN_OR_RETURN(value,InvocationAccess::device_source_output(inputs[i].source,runtime,expected[i],checks));
       }else value=inputs[i].value;
       if(!value || value->shape()!=specs[i].shape || value->dtype()!=specs[i].dtype || !value->flags().row_contiguous)
         return Status::InvalidArgument("Apple device append actual native input geometry changed");
-      HYLE_ASSIGN_OR_RETURN(auto storage,MemoryAccess::storage_info(*value));
+      HYLE_ASSIGN_OR_RETURN(auto storage,MemoryAccess::submitted_storage_info(*value));
       if(storage.view_bytes!=value->nbytes())return Status::InvalidArgument("Apple device append actual native span changed");
       id<MTLBuffer> buffer=(__bridge id<MTLBuffer>)storage.buffer;
       if(buffer==nil || buffer.storageMode!=MTLStorageModeShared ||
@@ -251,6 +269,20 @@ struct DeviceAppendState final {
           return Status::InvalidArgument("Apple device append input overlaps a dirty destination");
       resolved[i]={const_cast<void *>(storage.buffer),physical};
     }
+    auto *addresses=static_cast<std::uint64_t *>(check_arguments.contents);
+    for(std::size_t i=0;i<checks.count;++i){
+      const auto &word=check_words[i];id<MTLBuffer> buffer=(__bridge id<MTLBuffer>)word.buffer;
+      if(buffer==nil || reinterpret_cast<std::uintptr_t>((__bridge void *)buffer.device)!=arena.physical.address_space ||
+          buffer.storageMode!=MTLStorageModeShared || word.offset_bytes>buffer.length ||
+          sizeof(std::int32_t)>buffer.length-word.offset_bytes || !buffer.gpuAddress)
+        return Status::InvalidArgument("Apple source check Device/backing differs from its original native buffer");
+      if(word.buffer==arena.buffer)for(const auto &target:targets)
+        if(word.offset_bytes<=target.origin?target.origin-word.offset_bytes<sizeof(std::int32_t):
+            word.offset_bytes-target.origin<target.capacity)
+          return Status::InvalidArgument("Apple source check overlaps an original dirty COW destination");
+      addresses[i]=buffer.gpuAddress+word.offset_bytes;
+    }
+    check_count=static_cast<std::uint32_t>(checks.count);
     return Status::Ok();
   }
   Status encode(id<MTLCommandBuffer> command,id<MTLFence> frontier,bool wait) noexcept {
@@ -265,6 +297,10 @@ struct DeviceAppendState final {
     for(std::size_t i=1;i<3;++i)[encoder setBuffer:(__bridge id<MTLBuffer>)resolved[i].buffer offset:resolved[i].physical.origin atIndex:i+2];
     [encoder setBuffer:(__bridge id<MTLBuffer>)result.buffer offset:result.physical.origin atIndex:5];
     [encoder setBytes:&geometry length:sizeof(geometry) atIndex:6];
+    [encoder setBuffer:check_arguments offset:0 atIndex:7];
+    [encoder setBytes:&check_count length:sizeof(check_count) atIndex:8];
+    for(std::size_t i=0;i<check_count;++i)
+      [encoder useResource:(__bridge id<MTLBuffer>)check_words[i].buffer usage:MTLResourceUsageRead];
     [encoder dispatchThreadgroups:MTLSizeMake(std::max(1u,pages)*3u,1,1) threadsPerThreadgroup:MTLSizeMake(128,1,1)];
     [encoder updateFence:frontier];[encoder endEncoding];return Status::Ok();
   }

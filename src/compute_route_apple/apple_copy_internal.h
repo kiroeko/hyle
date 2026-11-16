@@ -9,6 +9,8 @@
 
 namespace hyle::compute::apple::detail {
 struct CopyRecording;
+struct DeviceCheckInputs;
+Status copy_device_checks(CopyRecording &, DeviceCheckInputs &) noexcept;
 enum class CopyRecordingMode : std::uint8_t { kOnce, kReplayable };
 struct CopySpan final {
   void *buffer = nullptr;
@@ -43,6 +45,9 @@ struct MemoryAccess final {
   HYLE_COMPUTE_ROUTE_APPLE_API static Result<ReadLease> export_readonly(const mlx::core::array &,
       const TensorDesc &, LeaseImportOptions = {}) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API static Result<NativeStorage> storage_info(const mlx::core::array &) noexcept;
+  // Original encoded array/event, with its source pinned through retirement.
+  // Address inspection never authorizes a host read or ready publication.
+  HYLE_COMPUTE_ROUTE_APPLE_API static Result<NativeStorage> submitted_storage_info(const mlx::core::array &) noexcept;
 };
 // A readonly MLX export owns a distinct resource token for correct freeing.
 // Only that private carrier may match a nominated native source family.

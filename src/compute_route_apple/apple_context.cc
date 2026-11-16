@@ -886,7 +886,9 @@ Status NativeDependencies::reserve(std::size_t capacity) noexcept {
   if (!sources_.empty()) return Status::Unavailable("Apple dependencies are still pinned");
   if (capacity > (SIZE_MAX - 8) / 2) return Status::OutOfRange("Apple dependency capacity overflows");
   try {
-    sources_.reserve(capacity); events_.reserve(capacity);
+    // A copy encoder imports both the native and MLX memory frontiers of
+    // each original producer. Math consumers still use at most one of each.
+    sources_.reserve(capacity); events_.reserve(2*capacity);
     native_events_.reserve(capacity); waits_.reserve(capacity);
     return Status::Ok();
   } catch (...) { return native_exception(); }
@@ -965,7 +967,12 @@ Status NativeDependencies::resolve_impl(bool blit_stream) noexcept {
       continue;
     }
     HYLE_RETURN_IF_ERROR(append(producer.recurrent[producer.native_tail_region]->completion_event, true));
-    if (!producer.mlx_events.empty()) HYLE_RETURN_IF_ERROR(append(producer.mlx_events.back(), false));
+    if (!producer.mlx_events.empty()) {
+      HYLE_RETURN_IF_ERROR(append(producer.mlx_events.back(), false));
+      // Native append/blit encoders are outside MLX's resource fence table.
+      // They need its real memory frontier even on this same stream.
+      if(blit_stream)HYLE_RETURN_IF_ERROR(append(producer.mlx_events.back(), true));
+    }
   }
   return Status::Ok();
 }
@@ -1119,10 +1126,21 @@ const cd::CompletionVTable completion_vtable{
 Status NativeDependencies::capture(const std::shared_ptr<Runtime> &runtime,
     std::span<const cd::CompletionDependency> dependencies, InvocationState *consumer, CopyRecording *copy_consumer) noexcept {
   HYLE_FATAL_ASSERT(sources_.empty());
+  return capture_impl(runtime,dependencies,consumer,copy_consumer,false);
+}
+Status NativeDependencies::append(const std::shared_ptr<Runtime> &runtime,
+    std::span<const cd::CompletionDependency> dependencies, InvocationState *consumer, CopyRecording *copy_consumer) noexcept {
+  return capture_impl(runtime,dependencies,consumer,copy_consumer,true);
+}
+Status NativeDependencies::capture_impl(const std::shared_ptr<Runtime> &runtime,
+    std::span<const cd::CompletionDependency> dependencies,InvocationState *consumer,CopyRecording *copy_consumer,bool deduplicate) noexcept {
   for (const auto &source : dependencies) {
     if (!source.terminal_hint) return Status::FailedPrecondition("Apple dependency is empty");
     HYLE_RETURN_IF_ERROR(*source.terminal_hint);
     if (!source.pending()) continue;
+    if(deduplicate && std::ranges::any_of(sources_,[&](const Source &captured){
+      return source.vtable==&completion_vtable?captured.native==source.state:captured.copy.get()==source.state;
+    }))continue;
     if (sources_.size() == sources_.capacity())
       return Status::ResourceExhausted("Apple dependency count exceeds cold preparation");
     if (source.vtable != &completion_vtable) {
@@ -1148,6 +1166,47 @@ Status NativeDependencies::capture(const std::shared_ptr<Runtime> &runtime,
     ++producer->source_readers;
     retain(producer);
     sources_.push_back({producer, {}, epoch});
+  }
+  return Status::Ok();
+}
+Status append_device_check(DeviceCheckInputs &inputs,NativeStorage word,const std::optional<mx::array> &owner) noexcept {
+  if(inputs.count>inputs.words.size() || inputs.owners.size()!=inputs.words.size())
+    return Status::InvalidArgument("Apple producer checks need their original bounded owner storage");
+  if(!word.buffer || word.view_bytes!=sizeof(std::int32_t) || word.offset_bytes%alignof(std::int32_t))
+    return Status::InvalidArgument("Apple producer check is not its original I32 word");
+  for(std::size_t i=0;i<inputs.count;++i){const auto &existing=inputs.words[i];
+    if(existing.buffer==word.buffer && existing.offset_bytes==word.offset_bytes){
+      if(owner && !inputs.owners[i])inputs.owners[i]=owner;
+      return Status::Ok();
+    }
+  }
+  if(inputs.count==inputs.words.size())return Status::ResourceExhausted("Apple source checks exceed cold reserved capacity");
+  inputs.words[inputs.count]=word;inputs.owners[inputs.count++]=owner;return Status::Ok();
+}
+Status invocation_device_checks(InvocationState &state,DeviceCheckInputs &inputs) noexcept {
+  if(state.done.load(std::memory_order_acquire))return state.terminal;
+  HYLE_RETURN_IF_ERROR(state.native_terminal);
+  if(state.native_retired)return Status::Ok();
+  if(!state.native_deferred || !state.native_values_ready)
+    return Status::FailedPrecondition("Apple source checks require its original encoded producer");
+  for(const auto &check:state.mlx_checks)if(check){
+    if(check->dtype()!=mx::int32 || check->size()!=1)
+      return Status::Internal("Apple producer check differs from its native I32 contract");
+    HYLE_ASSIGN_OR_RETURN(auto word,MemoryAccess::submitted_storage_info(*check));
+    HYLE_RETURN_IF_ERROR(append_device_check(inputs,word,check));
+  }
+  for(const auto &input:state.prepared_inputs)if(input.pinned){
+    // The original cold DAG and epoch pins retain these exact ancestors.
+    // Resolve their metadata, never their payload or public Completion.
+    auto source=InvocationAccess::device_source_output(input.binding.source,state.program->runtime,input.expected_epoch,inputs);
+    if(!source)return source.error();
+  }
+  return state.dependencies.device_checks(inputs);
+}
+Status NativeDependencies::device_checks(DeviceCheckInputs &inputs) noexcept {
+  for(const auto &source:sources_){
+    if(source.copy)HYLE_RETURN_IF_ERROR(copy_device_checks(*source.copy,inputs));
+    else HYLE_RETURN_IF_ERROR(invocation_device_checks(*source.native,inputs));
   }
   return Status::Ok();
 }
@@ -1691,6 +1750,34 @@ Result<mx::array> detail::InvocationAccess::source_output(const InputSource &sou
   const auto &spec = state.program->outputs[source.port_];
   if (value.status() != mx::array::available || value.shape() != spec.shape || value.dtype() != spec.dtype)
     return std::unexpected(Status::Internal("Apple copy output differs from its prepared carrier"));
+  return value;
+}
+Result<cd::CompletionDependency> detail::InvocationAccess::source_dependency(
+    const InputSource &source,const std::shared_ptr<Runtime> &runtime) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto epoch,source_epoch(source,runtime));(void)epoch;
+  return cd::CompletionDependency{&detail::completion_vtable,source.state_,&source.state_->terminal_hint};
+}
+Result<mx::array> detail::InvocationAccess::device_source_output(const InputSource &source,
+    const std::shared_ptr<Runtime> &runtime,std::uint64_t expected_epoch,DeviceCheckInputs &checks) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto epoch,source_epoch(source,runtime));(void)epoch;
+  if(runtime->owner_id.load(std::memory_order_acquire)!=platform::this_thread::get_id())
+    return std::unexpected(Status::FailedPrecondition("Apple device source resolution requires its original FIFO owner"));
+  auto &state=*source.state_;
+  {
+    std::lock_guard lock(state.binding_mutex);
+    if(!expected_epoch || state.submitted_epoch.load(std::memory_order_acquire)!=expected_epoch || !state.source_readers)
+      return std::unexpected(Status::FailedPrecondition("Apple device source lost its original pinned epoch"));
+    if(state.done.load(std::memory_order_acquire))HYLE_RETURN_IF_ERROR(state.terminal);
+    else if(!state.native_deferred || !state.native_values_ready)
+      return std::unexpected(Status::FailedPrecondition("Apple device source has no original encoded values"));
+    HYLE_RETURN_IF_ERROR(state.native_terminal);
+    if(source.port_>=state.values->arrays.size())return std::unexpected(Status::Internal("Apple device source output is absent"));
+  }
+  HYLE_RETURN_IF_ERROR(detail::invocation_device_checks(state,checks));
+  const auto &value=state.values->arrays[source.port_];const auto &spec=state.program->outputs[source.port_];
+  if(value.shape()!=spec.shape || value.dtype()!=spec.dtype)
+    return std::unexpected(Status::Internal("Apple device source differs from its original prepared carrier"));
+  HYLE_ASSIGN_OR_RETURN(auto storage,detail::MemoryAccess::submitted_storage_info(value));(void)storage;
   return value;
 }
 void detail::InvocationAccess::release_source(const InputSource &source) noexcept {

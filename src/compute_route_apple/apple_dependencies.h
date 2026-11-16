@@ -10,6 +10,7 @@ namespace hyle::compute::apple::detail {
 struct Runtime;
 struct InvocationState;
 struct CopyRecording;
+struct DeviceCheckInputs;
 
 // Inline metadata in an original math/copy Job. References pin the original
 // accepted episodes; this owns no execution queue, tensor or permission ledger.
@@ -23,6 +24,10 @@ public:
   Status capture(const std::shared_ptr<Runtime> &,
       std::span<const compute::detail::CompletionDependency>,
       InvocationState *consumer = nullptr, CopyRecording *copy_consumer = nullptr) noexcept;
+  Status append(const std::shared_ptr<Runtime> &,
+      std::span<const compute::detail::CompletionDependency>,
+      InvocationState *consumer = nullptr, CopyRecording *copy_consumer = nullptr) noexcept;
+  Status device_checks(DeviceCheckInputs &) noexcept;
   Status resolve() noexcept; // Original FIFO owner only.
   // Raw copies on this same Runtime already import their blit memory fence.
   // Keep the original producer/error owners without duplicating that wait.
@@ -40,6 +45,9 @@ public:
   void native_submitted() noexcept { native_encoded_ = true; }
   auto events() noexcept { return std::span<mlx::core::Event>(events_); }
 private:
+  Status capture_impl(const std::shared_ptr<Runtime> &,
+      std::span<const compute::detail::CompletionDependency>,
+      InvocationState *,CopyRecording *,bool deduplicate) noexcept;
   Status resolve_impl(bool blit_stream) noexcept;
   struct Source final {
     InvocationState *native = nullptr;
