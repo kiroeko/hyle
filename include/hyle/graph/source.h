@@ -72,6 +72,14 @@ public:
   HYLE_GRAPH_API SubmissionSource &operator=(SubmissionSource &&) noexcept;
   HYLE_GRAPH_API ~SubmissionSource();
 
+  // Cold qualification of a whole native producer/control dependency. Every
+  // selected consumer segment must import every original terminal endpoint
+  // and provide bounded dependency preparation. Both invocations must be
+  // idle on the same original native owner. No work, bindings or permissions
+  // are created. Actual Source binding still validates its exact readers.
+  HYLE_GRAPH_API static Status check_native_dependency(
+      const Invocation &producer, const Invocation &consumer) noexcept;
+
   // Success-only transfer of the exact unobserved submit proxy. The owner
   // retains this metadata's allocator through actual native retirement.
   // Arbitrary Graph metadata keeps its original caller lifetime contract.

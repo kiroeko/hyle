@@ -588,8 +588,13 @@ Status inspect_row_node(const ProviderRegionPrepared &prepared, void *invocation
     *output = {.access = {.projected_input = access.input_port,
         .allows_empty_footprint = empty_row_layout(artifact, static_cast<const Slot *>(invocation), i),
         .requires_configuration = !gather},
+        // Ordinary checked Gather borrows the exact addressable bank. Graph's
+        // original Source admits its pending row tickets and supplies native
+        // control dependencies before this invocation can execute. This is
+        // distinct from a paged Frame, whose own decoder registration remains
+        // limited to pending_ports below; metadata never grants read authority.
         .allows_pending = access.input_port != cd::OperationPreparedAccess::kNoInput &&
-            std::ranges::find(artifact.pending_ports, access.input_port) != artifact.pending_ports.end()};
+            (gather || std::ranges::find(artifact.pending_ports, access.input_port) != artifact.pending_ports.end())};
     return Status::Ok();
   }
   return Status::Unimplemented("Apple node has no selected row access proof");
@@ -851,8 +856,8 @@ compute::ProviderPrepareOutcome compile(void *context, const RegionCompileReques
         static_cast<const SourceContext *>(context)->custom, &custom_failed, &artifact->row_accesses,
         &prepared_constants));
     for (std::size_t access = 0; access < artifact->row_accesses.size(); ++access) {
-      // Ordinary Gather proves ready selected rows only. It neither accepts a
-      // pending paged producer nor inherits a RowCache layout/ordering proof.
+      // Ordinary Gather uses Graph Source row tickets/control imports, not a
+      // paged pending Frame or an immutable decoder layout registration.
       if (artifact->row_accesses[access].native.kind == an::RowCacheAccessKind::kCheckedGather) continue;
       const auto port = artifact->row_accesses[access].input_port;
       if (port == cd::OperationPreparedAccess::kNoInput) continue;

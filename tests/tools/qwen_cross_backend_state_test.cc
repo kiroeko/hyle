@@ -34,9 +34,10 @@ int main(int argc, char **argv) {
     const auto layers = std::stoull(argv[4], &consumed);
     if (consumed != std::string_view(argv[4]).size()) throw std::runtime_error("invalid CPU placement");
     if (recording_rng || control_inputs) {
-      if (kind != qwen35::BackendKind::kCuda || mode != "off" || layers)
-        throw std::runtime_error("recording RNG regression requires ordinary CUDA GPU-only");
-      qwen_native_relay_case::run_recording_rng(argv[2], control_inputs);
+      if (mode != "off" || layers || kind == qwen35::BackendKind::kCpu ||
+          (control_inputs && kind != qwen35::BackendKind::kCuda))
+        throw std::runtime_error("recording RNG requires ordinary GPU-only; queued controls require CUDA");
+      qwen_native_relay_case::run_recording_rng(argv[2], control_inputs, kind);
       return 0;
     }
     if (native_relay) {

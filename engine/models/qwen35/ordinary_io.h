@@ -100,9 +100,14 @@ struct OrdinaryIoPlan final {
 struct DeviceRelayCapabilities final {
   hyle::inference::BackendKind backend = hyle::inference::BackendKind::kDefault;
   bool cpu_assist = false, scheduler = false, sampled_mtp = false, logits_modifiers = false;
+  // Provision the existing second candidate slot for an ordinary native route.
+  // The actual prepared Graph must qualify before decode can select it; this
+  // request is not a claim that every region/backend imports pending sources.
+  bool native_source_candidate = false;
 
   constexpr hyle::inference::RouteReason refusal_reason() const noexcept {
-    if (backend != hyle::inference::BackendKind::kCuda) return hyle::inference::RouteReason::kBackend;
+    if (backend != hyle::inference::BackendKind::kCuda && !native_source_candidate)
+      return hyle::inference::RouteReason::kBackend;
     if (cpu_assist) return hyle::inference::RouteReason::kCpuAssist;
     if (scheduler) return hyle::inference::RouteReason::kScheduler;
     if (sampled_mtp) return hyle::inference::RouteReason::kSampling;

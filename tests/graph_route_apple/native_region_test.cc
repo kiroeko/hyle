@@ -681,6 +681,9 @@ void exercise_native_graph_source(unsigned mode) {
   auto producer = (checked ? checked->executable : compiled->executable)
       .create_invocation({.resources=g::ResourceOptions{}}).value();
   auto consumer = compiled->executable.create_invocation({.resources=g::ResourceOptions{}}).value();
+  EXPECT_TRUE(g::SubmissionSource::check_native_dependency(producer,consumer).ok());
+  EXPECT_TRUE(g::SubmissionSource::check_native_dependency(consumer,consumer).ok());
+  EXPECT_TRUE(g::SubmissionSource::check_native_dependency({},consumer).IsFailedPrecondition());
   const auto ready = [&](const c::StorageOwner &selected, const std::array<float,4> &values) {
     auto buffer = m::Buffer::create(selected.ref(),sizeof(values),256).value();
     EXPECT_TRUE(buffer.view().write(std::as_bytes(std::span(values))).ok());
@@ -708,11 +711,14 @@ void exercise_native_graph_source(unsigned mode) {
   ASSERT_TRUE(gate.enqueue().ok());
   auto produced = producer.submit();
   ASSERT_TRUE(produced) << produced.error().message();
+  EXPECT_TRUE(g::SubmissionSource::check_native_dependency(producer,consumer).IsUnavailable());
   auto source_result = g::SubmissionSource::create(producer,std::move(*produced),owner);
   ASSERT_TRUE(source_result) << source_result.error().message();
   auto source = std::move(*source_result);
   EXPECT_EQ(source.poll().value(),c::CompletionPoll::kPending);
   auto view = g::OutputSource::create(source,producer_out,staging_owner,pool).value();
+  std::optional<g::OutputSource> ready_view;
+  if (mode==5) ready_view=g::OutputSource::create(source,producer_out,staging_owner,pool).value();
   const std::array bindings{view.reader_binding(x)};
   ASSERT_TRUE(g::bind_sources(consumer,bindings).ok());
   std::mutex mutex;
@@ -773,6 +779,26 @@ void exercise_native_graph_source(unsigned mode) {
   if (mode!=1) {
     ASSERT_TRUE(source.wait().ok());
     ASSERT_TRUE(view.detach().ok());
+    if (mode==5) {
+      // The ready original output remains a valid input after closing the
+      // producer's metadata export. Use its own single-consumer view; closing
+      // metadata never grants an already consumed view a second binding.
+      ASSERT_TRUE(ready_view->detach().ok());
+      ASSERT_TRUE(source.detach().ok());
+      auto later=compiled->executable.create_invocation({.resources=g::ResourceOptions{}}).value();
+      auto later_pool=c::LeasePool::create(staging.ref(),256,{.max_blocks=1,.backing_alignment=256}).value();
+      ASSERT_TRUE(later.bind(y,description,right).ok());
+      ASSERT_TRUE(later.bind(out,description,later_pool.allocate(16,256).value()).ok());
+      const std::array ready_binding{ready_view->reader_binding(x)};
+      const auto bound=g::bind_sources(later,ready_binding);
+      ASSERT_TRUE(bound.ok()) << bound.message();
+      ASSERT_TRUE(g::prepare_sources(later,{}).ok());
+      auto accepted=g::submit_sources(later,{});
+      ASSERT_TRUE(accepted) << accepted.error().message();
+      ASSERT_TRUE(accepted->wait().ok());
+      auto ready_output=later.result(out).value().storage_lease().value();
+      expect(ready_output.tensor(description).value(),std::array<float,4>{21,42,63,84});
+    }
     ASSERT_TRUE(g::release_sources(consumer).ok());
     ASSERT_TRUE(source.detach().ok());
   }
@@ -798,5 +824,8 @@ TEST(AppleNativeRegion, OriginalGraphSourceCancelsConsumerWithoutPublishingOutpu
 }
 TEST(AppleNativeRegion, OriginalGraphSourcePreservesWholeProducerFailureAndRejectsOutput) {
   exercise_native_graph_source(4);
+}
+TEST(AppleNativeRegion, OriginalGraphSourceReadyOutputSurvivesClosedMetadataExports) {
+  exercise_native_graph_source(5);
 }
 } // namespace

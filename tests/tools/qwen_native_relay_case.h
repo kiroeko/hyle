@@ -10,11 +10,12 @@ namespace h = qwen_host_image_case;
 
 // The first public request can inherit an empty recording Session. Its cursor
 // must match a later request and an independently loaded serial executor.
-inline void run_recording_rng(const std::filesystem::path &input, bool control_inputs = false) {
+inline void run_recording_rng(const std::filesystem::path &input, bool control_inputs = false,
+    q::BackendKind kind = q::BackendKind::kCuda) {
   namespace i = hyle::inference;
   i::ModelLoadConfig config;
   config.assets.inputs = input;
-  config.execution = {.backend = q::BackendKind::kCuda, .context = 128,
+  config.execution = {.backend = kind, .context = 128,
       .resident_sessions = 1, .active_sequences = 1, .prefill_rows = 32};
   config.execution_profiles[0].draft_count = 0;
   config.execution_profiles[0].overlap = true;
@@ -82,7 +83,7 @@ inline void run_recording_rng(const std::filesystem::path &input, bool control_i
   auto serial = q::load_model_executor(config);
   h::require(first == generate(*serial), "cold recorded and serial requests used different RNG draws");
   std::cout << (control_inputs ? "PASS ordinary_control_inputs" : "PASS recording_request_rng")
-            << " backend=cuda seed=42 logical_stream=7 outputs=48"
+            << " backend=" << h::backend_name(kind) << " seed=42 logical_stream=7 outputs=48"
             << " first_reused_serial_ids=equal imported_uses=" << imported_uses
             << " control_slots=" << control_slots
             << " retired=1\n" << std::flush;
@@ -127,6 +128,7 @@ inline void run(const std::filesystem::path &input, q::BackendKind kind, bool ra
   const auto pending = session->head->next_id;
   model.prepare_evaluation(*session, std::span(&pending, 1));
   auto *producer = model.active_step.get();
+  const bool device_dependency = producer->phase->slots[producer->state_slot].carrier.native_source_dependencies();
   auto sources = model.prepare_submission_sources(*producer);
   model.submit_evaluations(*producer);
   h::require(sources->submission.valid() && sources->primary_output.valid(),
@@ -138,8 +140,10 @@ inline void run(const std::filesystem::path &input, q::BackendKind kind, bool ra
   const std::array following{q::EvaluationRequest{session, {}}};
   auto &consumer = model.prepare_relay_evaluations(following, sources, 1);
   const auto report = q::take(consumer.execution.run->input_source_report());
-  h::require(report.source_count && report.host_wait_count && !report.device_wait_count,
-      "native model relay concealed its original HostWait contract");
+  h::require(report.source_count && (device_dependency
+          ? report.device_wait_count && !report.host_wait_count
+          : report.host_wait_count && !report.device_wait_count),
+      "native model relay differs from its cold-qualified Source dependency route");
   h::require(!consumer.execution.run->submit(),
       "ordinary native submit bypassed the original complete-state Source admission");
   model.submit_evaluations(consumer);
@@ -169,6 +173,7 @@ inline void run(const std::filesystem::path &input, q::BackendKind kind, bool ra
   std::cout << "PASS native_model_relay backend=" << h::backend_name(kind)
             << " sampling=" << (random ? "random" : "greedy")
             << " original_queue_count=0 original_state_sources=1 token_host_roundtrip=0"
+            << " source_device_wait=" << (device_dependency ? 1 : 0)
             << " publication_before_owner_finish=0 serial_ids=3 complete_state_bytes=" << expected_bytes.total_bytes
             << " source_retired=1 next_reuse=equal\n" << std::flush;
 }

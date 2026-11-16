@@ -481,7 +481,10 @@ Status copy_recording_reuse_gate(const CopyRecording &state) noexcept {
 }
 Status copy_recording_retired_gate(const CopyRecording &state) noexcept {
   std::lock_guard lock(state.completion_mutex);
-  return state.done.load(std::memory_order_acquire) == 0 || state.completion_owner || state.admitted_owner || state.dependency_readers ?
+  // Downstream readers retain the completed episode's epoch/verdict, not
+  // these already-consumed input mappings. Rebinding/submission still uses
+  // mutable_recording and cannot overwrite that episode while readers exist.
+  return state.done.load(std::memory_order_acquire) == 0 || state.completion_owner || state.admitted_owner ?
       Status::Unavailable("Apple copy phase is retained") : Status::Ok();
 }
 Status bind_native_copy_source(CopyRecording &state, InputSource source,
@@ -635,8 +638,11 @@ bool copy_recording_matches_source(const CopyRecording &state, const InputSource
 }
 Status clear_copy_recording(CopyRecording &state) noexcept {
   std::lock_guard lock(state.completion_mutex);
-  if (state.done.load(std::memory_order_acquire) == 0 || state.completion_owner || state.admitted_owner || state.dependency_readers)
+  if (state.done.load(std::memory_order_acquire) == 0 || state.completion_owner || state.admitted_owner)
     return Status::Unavailable("Apple copy phase is retained");
+  // Keep submitted_epoch, terminal and reader ownership intact. This only
+  // releases inputs after real retirement; mutable_recording still gates
+  // every replacement or subsequent submission against the last reader.
   state.prepared = false; return clear_host_copy(state);
 }
 Status set_copy_preflight(CopyRecording &state, CopyPreflight predicate, void *opaque) noexcept {

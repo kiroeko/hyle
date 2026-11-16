@@ -1017,6 +1017,22 @@ public:
   bool supports_prefill_relay(std::size_t sampling_index) const {
     return relay_by_sampling_.at(sampling_index).prefill;
   }
+  // Called only after the original ordinary decode slot has been cold
+  // installed. Resource intent can reserve two candidates before compilation;
+  // actual native Source imports decide availability, once per prepared slot.
+  void qualify_native_decode_relay(std::size_t sampling_index) {
+    if (!execution.native_generated_storage() || cache_plan.draft_cache) return;
+    auto &route = relay_by_sampling_.at(sampling_index);
+    if (!route.decode) return;
+    const auto found = phases.find({1,1,GraphRole::kText,TextCompletion::kEmitNext,
+        sampling_index,false,RowPacking::kRectangular});
+    if (found == phases.end() || !found->second->slots[0].carrier.initialized())
+      throw std::logic_error("qualify native relay after its original decode slot installation");
+    route.decode = found->second->slots[0].carrier.native_source_dependencies();
+    std::cerr << "native_decode_source sampling=" << sampling_index
+              << " route=" << (route.decode ? "device" : "ordinary")
+              << " reason=" << (route.decode ? "selected_native_import" : "native_import_unavailable") << '\n';
+  }
   std::size_t sampling_index(const PreparedSampling *value) const { return resources_->sampling_index(value); }
   bool retains_sampling_frontier() const noexcept {
     return resources_->retain_sampling_frontier;
@@ -1208,7 +1224,8 @@ public:
       const auto &sampling = prepared->configuration;
       relay_by_sampling_.push_back({
           DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
-              sampling.enabled && cache_plan.draft_cache, !sampling.modifiers.empty()}.eligible(),
+              sampling.enabled && cache_plan.draft_cache, !sampling.modifiers.empty(),
+              execution.native_generated_storage() && !cache_plan.draft_cache}.eligible(),
           PrefillRelayFacts{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
               cache_plan.draft_cache, cache_plan.in_flight_batches,
               !sampling.enabled && sampling.modifiers.empty()}.eligible()});
@@ -4312,9 +4329,10 @@ public:
     return successor_step ? *successor_step : *active_step;
   }
 
-  // Inspect the actual prepared Phase and its original carrier; this only
-  // finds a capture candidate and does not grant submission or Source rights.
-  bool has_relay_successor_capture(const StepState *producer, const StepSources &source,
+  // Inspect the actual prepared Phase/carrier: a native dependency importer
+  // or a shared-Queue capture candidate. Neither grants Source/read rights;
+  // successor preparation still checks the complete actual binding tuple.
+  bool has_relay_successor_program(const StepState *producer, const StepSources &source,
       std::size_t requests, std::size_t outputs, GraphRole role, std::size_t sampling_index,
       std::size_t slot, bool device_mtp) {
     Phase *phase = producer ? producer->phase : nullptr;
@@ -4332,6 +4350,8 @@ public:
       throw std::logic_error("successor lost its original imported Phase geometry");
     auto &carrier = phase->slots[slot].carrier;
     if (!carrier.initialized() || carrier.closing() || !carrier.retired()) return false;
+    if (carrier.queues().empty())
+      return !device_mtp && carrier.native_source_dependencies();
     auto *run = take(carrier.borrow());
     return take(g::detail::ReplayAccess::has_capture_candidate(*run,
         source.primary_output.reader_binding(phase->token_port)));
@@ -4460,12 +4480,14 @@ public:
         if (captured) for (auto &source : sources.draft_stage_sources) check(source.capture(sources.submission));
       } else if (sources.prefill) captured = take(sources.capture_outputs(*step.execution.run,
           step.execution.completion, {}, execution.storage_owner(), false,
-          step.replay_route != g::ReplayRoute::kCaptured));
+          program_slot.carrier.queues().empty() ? !program_slot.carrier.native_source_dependencies()
+              : step.replay_route != g::ReplayRoute::kCaptured));
       else {
         const auto *readback = take(program_slot.io.readback(io.source_id));
         const std::array outputs{inference::SubmissionViews::OutputCapture{phase.id_port, phase.next_id_owner, readback->pool()}};
         captured = take(sources.capture_outputs(*step.execution.run, step.execution.completion,
-            outputs, execution.storage_owner(), optional_sources, program_slot.carrier.queues().empty()));
+            outputs, execution.storage_owner(), optional_sources,
+            program_slot.carrier.queues().empty() && !program_slot.carrier.native_source_dependencies()));
       }
       if (!captured) step.execution.sources.reset();
     }

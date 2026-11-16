@@ -508,11 +508,12 @@ Status prepare_input_sources(InvocationState &state,
       const auto &order = candidate.orders[use.order];
       if (shared_lane(plan, segment.lane) || order.route != InputDependencyRoute::kDeviceWait)
         continue;
+      HYLE_ASSIGN_OR_RETURN(auto capacity,
+          native_input_source_capacity(candidate.sources[order.source], state, use.segment));
+      if (!capacity) continue; // exact whole producer is already terminal
       if (candidate.native_ranges.empty()) candidate.native_ranges.resize(plan.segments.size());
       auto &range = candidate.native_ranges[use.segment];
       if (range.count == 0) range.count = segment.dependency_count;
-      HYLE_ASSIGN_OR_RETURN(auto capacity,
-          native_input_source_capacity(candidate.sources[order.source], state, use.segment));
       if (capacity > std::numeric_limits<std::size_t>::max() - range.count)
         return Status::ResourceExhausted("native input dependency capacity overflow");
       range.count += capacity;

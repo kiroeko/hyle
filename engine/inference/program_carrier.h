@@ -11,6 +11,7 @@
 
 #include "hyle/graph/progress.h"
 #include "hyle/graph/slots.h"
+#include "hyle/graph/source.h"
 #include "hyle/graph/workspace.h"
 #include "hyle/sched/blocking.h"
 #include "execution_resources.h"
@@ -90,6 +91,9 @@ public:
   // need their owner's take/recovery before the invocation can be reset.
   bool retired() const noexcept { return !run_.in_flight() && !pending(); }
   std::span<const graph::QueueBinding> queues() const noexcept { return queue_span(queues_); }
+  bool native_source_dependencies() const noexcept {
+    return run_.valid() && native_source_dependencies_;
+  }
 
   // The complete installation order is shared by target, draft and private
   // programs. A partial bind never publishes a half-initialized run. Original
@@ -123,7 +127,14 @@ public:
       const auto &slots = *installation.slots;
       HYLE_RETURN_IF_ERROR(graph::slots::prepare(candidate, slots.graph, queues(), slots.sources, slots.options));
     }
+    bool native_dependencies = false;
+    if (queues().empty()) {
+      const auto eligible = graph::SubmissionSource::check_native_dependency(candidate, candidate);
+      if (eligible.ok()) native_dependencies = true;
+      else if (!eligible.IsUnimplemented() || eligible.has_native_error()) return eligible;
+    }
     run_ = std::move(candidate);
+    native_source_dependencies_ = native_dependencies;
     return Status::Ok();
   }
 
@@ -275,6 +286,7 @@ private:
   std::shared_ptr<DeferredReset> deferred_reset_;
   bool closing_ = false;
   bool handed_off_ = false;
+  bool native_source_dependencies_ = false;
 };
 
 } // namespace hyle::inference

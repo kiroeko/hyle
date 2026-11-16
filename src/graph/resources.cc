@@ -3710,9 +3710,19 @@ Result<std::size_t> native_input_source_capacity(const InputSource &input,
   auto &bundle = *static_cast<OutputBindingBundle *>(input.state());
   auto &source = *bundle.submission;
   std::lock_guard guard(source.observation);
-  if (source.handoff || !source.native_execution || !source.producer ||
-      bundle.consumer != &consumer || segment >= consumer.plan->segments.size())
-    return std::unexpected(Status::FailedPrecondition("native input source lost its original producer or consumer"));
+  if (source.handoff || !source.native_execution)
+    return std::unexpected(Status::FailedPrecondition("native input source has another selected dependency route"));
+  if (bundle.consumer != &consumer)
+    return std::unexpected(Status::FailedPrecondition("native input source belongs to another original consumer"));
+  if (segment >= consumer.plan->segments.size())
+    return std::unexpected(Status::InvalidArgument("native input source segment is outside its consumer Plan"));
+  // Ready leases may outlive closed metadata exports. Their immutable whole
+  // verdict needs no event import and no live producer Plan. A pending or
+  // failed source cannot acquire this route from a cached readiness guess.
+  HYLE_ASSIGN_OR_RETURN(auto observed, source.completion.poll());
+  if (observed == compute::CompletionPoll::kComplete) return std::size_t{0};
+  if (!source.producer)
+    return std::unexpected(Status::FailedPrecondition("pending native input source producer export is closed"));
   HYLE_ASSIGN_OR_RETURN(auto reader, delegated_step_index(*consumer.plan, consumer.plan->segments[segment]));
   if (!consumer.plan->steps[reader].region.has_dependency_import())
     return std::unexpected(Status::Unimplemented("selected native reader has no dependency capacity contract"));
@@ -3733,8 +3743,14 @@ Status with_native_input_source(const InputSource &input,
     return Status::InvalidArgument("native input admission requires its exact Graph adapter");
   auto &source = *static_cast<OutputBindingBundle *>(input.state())->submission;
   std::lock_guard guard(source.observation);
-  if (source.handoff || !source.native_execution || !source.producer)
+  if (source.handoff || !source.native_execution)
     return Status::FailedPrecondition("native input source is no longer exportable");
+  if (!source.producer) {
+    HYLE_ASSIGN_OR_RETURN(auto observed, source.completion.poll());
+    if (observed != compute::CompletionPoll::kComplete)
+      return Status::FailedPrecondition("closed native source has not actually completed");
+    return use(receiver, {});
+  }
   struct Admission {
     SubmissionSourceState &source;
     std::span<compute::detail::CompletionDependency> dependencies;
@@ -3848,6 +3864,30 @@ SubmissionSource &SubmissionSource::operator=(SubmissionSource &&other) noexcept
   return *this;
 }
 SubmissionSource::~SubmissionSource() { if (state_) state_->decref(); }
+Status SubmissionSource::check_native_dependency(const Invocation &producer,
+    const Invocation &consumer) noexcept {
+  const auto *source = InvocationAccess::state(producer);
+  const auto *destination = InvocationAccess::state(consumer);
+  HYLE_RETURN_IF_ERROR(resource_control_ready(source));
+  HYLE_RETURN_IF_ERROR(resource_control_ready(destination));
+  HYLE_ASSIGN_OR_RETURN(auto source_owner, native_output_execution(*source));
+  HYLE_ASSIGN_OR_RETURN(auto destination_owner, native_output_execution(*destination));
+  if (!source_owner.same_owner(destination_owner))
+    return Status::Unimplemented("native Source dependency requires the same original endpoint owner");
+  for (const auto &segment : destination->plan->segments) {
+    HYLE_ASSIGN_OR_RETURN(auto reader, delegated_step_index(*destination->plan, segment));
+    if (!destination->plan->steps[reader].region.has_dependency_import())
+      return Status::Unimplemented("selected native Source reader has no dependency capacity contract");
+    for (const auto terminal : source->plan->terminal_segments) {
+      HYLE_ASSIGN_OR_RETURN(auto writer, delegated_step_index(*source->plan,
+          source->plan->segments[terminal]));
+      const auto endpoint = source->invocations[writer].region.delegated_endpoint();
+      if (!endpoint.valid() || !destination->invocations[reader].region.can_import_endpoint(endpoint))
+        return Status::Unimplemented("selected native Source reader cannot import an original terminal endpoint");
+    }
+  }
+  return Status::Ok();
+}
 Result<SubmissionSource> SubmissionSource::create(Invocation &invocation,
     compute::Completion &&submission, const compute::StorageOwner &storage) noexcept {
   return create_impl(invocation, std::move(submission), storage, false);

@@ -1365,7 +1365,7 @@ struct GenerationStepAdapter final {
         })) return inference::StepSuccessor::kNone;
     // Candidate lookup stays with the model that owns the original Phase and
     // carrier; preparation below still proves the actual submission rights.
-    if (!model.has_relay_successor_capture(a, *a_source, calls.size(), maximum_outputs,
+    if (!model.has_relay_successor_program(a, *a_source, calls.size(), maximum_outputs,
             successor_role, calls.front().request->sampling_index, next_slot, device_mtp))
       return inference::StepSuccessor::kNone;
     for (std::size_t j = 0; j < calls.size(); ++j) {
@@ -2912,6 +2912,7 @@ StartupPrefillWarmup prepare_generation_programs(Model &model, const GenerationP
           (first_turn_only || std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; })); }))
       {
         model.prepare_execution(decode, 1, GraphRole::kText, TextCompletion::kEmitNext, i);
+        model.qualify_native_decode_relay(i);
         if (decode_overlap && model.cache_plan.in_flight_batches >= 2 &&
             model.supports_device_relay(i)) {
           const auto eligible = static_cast<std::size_t>(std::count_if(requests.begin(), requests.end(), [i, first_turn_only](const auto &request) {
@@ -3841,7 +3842,10 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
   const auto append_sampling_route = [&](const inference::PreparedSamplingPolicy &policy) {
     auto selected = facts;
     selected.workload.greedy = !policy.random;
-    const DeviceRelayCapabilities relay{execution.primary, cpu_layers != 0, false, policy.random && mtp, false};
+    const bool native_candidate = !mtp &&
+        (execution.primary == BackendKind::kApple || execution.primary == BackendKind::kVulkan);
+    const DeviceRelayCapabilities relay{execution.primary, cpu_layers != 0, false, policy.random && mtp, false,
+        native_candidate};
     selected.relay_eligible = relay.eligible(); selected.relay_refusal = relay.refusal_reason();
     sampling_routes.push_back(selected);
   };

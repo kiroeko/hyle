@@ -603,6 +603,68 @@ TEST(AppleLateInput, EmptyCopyStillPublishesItsOriginalOrderDependencyFailure) {
   ASSERT_TRUE(context.close().ok());
 }
 
+TEST(AppleLateInput, RetiredCopyInputReleaseKeepsNativeReaderEpochAndVerdict) {
+  for (const bool fail : {false,true}) {
+    auto context=a::Context::create().value();
+    auto runtime=ad::ContextAccess::runtime(context);
+    auto program=context.prepare(c::Gather{},
+        std::array{a::InputSpec{{4},mx::float32},a::InputSpec{{1},mx::int32}}).value();
+    auto producer=program.create_invocation().value();
+    ASSERT_TRUE(producer.bind(std::array{mx::array({1.f,2.f,3.f,4.f}),mx::array({fail?9:0},mx::int32)}).ok());
+    auto memory=a::MemoryResource::create(context).value();
+    const auto description=c::TensorDesc::dense(c::DataType::kFloat32,
+        std::array<std::int64_t,1>{1}).value();
+    auto source=hyle::mem::Buffer::create(memory.ref(),sizeof(float),256).value();
+    auto target=hyle::mem::Buffer::create(memory.ref(),sizeof(float),256).value();
+    const std::array<float,1> input{17.f},sentinel{-7.f};
+    ASSERT_TRUE(source.view().write(std::as_bytes(std::span(input))).ok());
+    ASSERT_TRUE(target.view().write(std::as_bytes(std::span(sentinel))).ok());
+    auto copy=ad::prepare_copy_recording_runtime(runtime,1,hyle::mem::system_allocator(),sizeof(float),
+        ad::CopyRecordingMode::kReplayable).value();
+    ASSERT_TRUE(ad::reserve_copy_dependencies(*copy,1).ok());
+    ASSERT_TRUE(ad::bind_host_copy_recording(*copy,
+        c::ConstTensorView::create(description,source.view()).value(),target.view(),{}).ok());
+    FifoGate gate;
+    ASSERT_TRUE(gate.enqueue(runtime).ok());gate.wait_entered();
+    auto produced=producer.submit().value();
+    const std::array dependencies{c::detail::CompletionAccess::dependency(produced.completion())};
+    auto copied=ad::submit_copy_recording(*copy,dependencies).value();
+    std::uint64_t epoch=0;
+    auto pinned=ad::pin_copy_dependency(runtime,c::detail::CompletionAccess::dependency(copied),&epoch).value();
+    gate.open_and_join();
+    const auto terminal=copied.wait();
+    EXPECT_EQ(terminal.ok(),!fail);
+    EXPECT_EQ(produced.completion().wait().code(),terminal.code());
+    EXPECT_TRUE(ad::copy_recording_retired_gate(*copy).ok());
+    EXPECT_TRUE(ad::copy_recording_reuse_gate(*copy).IsUnavailable());
+    ASSERT_TRUE(ad::clear_copy_recording(*copy).ok());
+    EXPECT_TRUE(ad::copy_recording_reuse_gate(*copy).IsUnavailable());
+    struct Observation final:ad::Job {
+      ad::CopyRecording *copy;
+      std::uint64_t epoch;
+      hyle::Status terminal;
+      std::atomic<bool> done{false};
+      Observation(ad::CopyRecording &selected,std::uint64_t generation):copy(&selected),epoch(generation) {
+        execute=[](ad::Job *job) noexcept {
+          auto &call=*static_cast<Observation *>(job);
+          call.terminal=ad::observe_copy_dependency(*call.copy,call.epoch);
+          call.done.store(true,std::memory_order_release);call.done.notify_all();
+        };
+      }
+    } observation(*copy,epoch);
+    ASSERT_TRUE(runtime->enqueue(observation).ok());
+    observation.done.wait(false,std::memory_order_acquire);
+    EXPECT_EQ(observation.terminal.code(),terminal.code());
+    EXPECT_EQ(observation.terminal.message(),terminal.message());
+    ad::release_copy_dependency(*pinned);pinned.reset();
+    EXPECT_EQ(ad::copy_recording_reuse_gate(*copy).code(),terminal.code());
+    std::array<float,1> actual{};
+    ASSERT_TRUE(target.view().read(std::as_writable_bytes(std::span(actual))).ok());
+    EXPECT_EQ(actual,fail?sentinel:input);
+    ASSERT_TRUE(context.close().ok());
+  }
+}
+
 // Inject only at actual eval, after cold compilation and the native prefix.
 class LateEncodingFailure final : public mx::Primitive {
 public:

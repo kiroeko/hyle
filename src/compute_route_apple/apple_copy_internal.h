@@ -75,8 +75,9 @@ HYLE_COMPUTE_ROUTE_APPLE_API Status bind_host_copy_ranges(CopyRecording &,
 HYLE_COMPUTE_ROUTE_APPLE_API Status bind_host_copy_ranges(CopyRecording &,
     ConstTensorView source, std::span<const HostCopyRange>, ReadLease source_owner = {}) noexcept;
 HYLE_COMPUTE_ROUTE_APPLE_API Status copy_recording_reuse_gate(const CopyRecording &) noexcept;
-// Cleanup only: actual owners must be retired, but failed terminal work may
-// release imports without reopening its execution slot.
+// Cleanup only: actual work/public ownership must be retired. Native readers
+// may retain the immutable epoch/verdict while consumed input mappings are
+// released. Rebinding/submission still requires the strict reuse gate.
 HYLE_COMPUTE_ROUTE_APPLE_API Status copy_recording_retired_gate(const CopyRecording &) noexcept;
 // The recording retains the actual producer state, preventing recycled wrapper
 // addresses from qualifying a different native output after a cold rebind.
