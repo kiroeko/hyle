@@ -16,6 +16,11 @@
 
 namespace hyle::compute::apple::detail {
 namespace cd = compute::detail;
+struct CopyFence final {
+  id<MTLFence> native = nil;
+  bool encoded = false;
+  ~CopyFence() { [native release]; }
+};
 template<class T> using CopyArray = std::vector<T, mem::StdAllocator<T>>;
 struct CopyCommand final {
   void *source = nullptr, *destination = nullptr;
@@ -254,7 +259,7 @@ void execute_copy(Job *job) noexcept {
     std::lock_guard lock(state.runtime->queue_mutex); terminal = state.runtime->failure;
   }
   if (state.cancel.load(std::memory_order_acquire)) terminal.Update(Status::Cancelled("Apple copy cancelled before native recording"));
-  if (terminal.ok()) terminal.Update(state.dependencies.resolve());
+  if (terminal.ok()) terminal.Update(state.dependencies.resolve_copy());
   if (terminal.ok() && state.host_copy) terminal.Update(state.dependencies.observe());
   if (terminal.ok() && state.preflight) terminal.Update(state.preflight(state.preflight_state));
   bool use_blit = !state.host_copy;
@@ -283,12 +288,18 @@ void execute_copy(Job *job) noexcept {
         if (blit == nil) {
           terminal = Status::ResourceExhausted("Metal blit command encoder allocation failed");
         } else {
+          // MLX allocates untracked buffers. Submission order does not make
+          // one raw blit pass's stores visible to the next pass's loads.
+          auto &frontier = *state.runtime->copy_fence;
+          if (frontier.encoded) [blit waitForFence:frontier.native];
           for (std::size_t index = 0; index < state.report.active_copies; ++index) {
             const auto &copy = state.commands[index];
             [blit copyFromBuffer:(__bridge id<MTLBuffer>)copy.source sourceOffset:copy.source_offset
                 toBuffer:(__bridge id<MTLBuffer>)copy.destination destinationOffset:copy.destination_offset size:copy.bytes];
             state.calls.fetch_add(1, std::memory_order_relaxed);
           }
+          [blit updateFence:frontier.native];
+          frontier.encoded = true;
           [blit endEncoding];
           state.completion_event.set_value(state.submitted_epoch);
           state.completion_event.signal(*state.runtime->stream);
@@ -381,6 +392,19 @@ Result<std::shared_ptr<CopyRecording>> prepare_copy_recording_runtime(const std:
     state->completion_event = mlx::core::Event(*runtime->stream);
     state->mode = mode;
     state->device = reinterpret_cast<std::uintptr_t>(mlx::core::metal::device(runtime->stream->device).mtl_device());
+    {
+      std::lock_guard lock(runtime->queue_mutex);
+      if (!runtime->copy_fence) {
+        auto frontier = std::make_shared<CopyFence>();
+        @autoreleasepool {
+          auto device = (__bridge id<MTLDevice>)reinterpret_cast<void *>(state->device);
+          frontier->native = [device newFence];
+        }
+        if (frontier->native == nil)
+          return std::unexpected(Status::ResourceExhausted("Metal copy memory fence allocation failed"));
+        runtime->copy_fence = std::move(frontier);
+      }
+    }
     state->limits.max_resources = capacity * 2; state->limits.max_copies = capacity;
     state->limits.max_phases = 1; state->limits.max_bytes = max_bytes;
     state->physical.resize(static_cast<std::size_t>(capacity) * 2); state->inputs.resize(capacity);

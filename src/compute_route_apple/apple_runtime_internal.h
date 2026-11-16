@@ -16,6 +16,7 @@ struct Job {
   void (*execute)(Job *) noexcept = nullptr;
   Job *next = nullptr;
 };
+struct CopyFence;
 // The original Runtime/Job owner, shared by native math and F2 blit. No new
 // thread, queue or progress engine is constructed by the copy capability.
 struct Runtime {
@@ -32,6 +33,9 @@ struct Runtime {
   std::optional<mlx::core::Stream> stream;
   std::size_t native_tails = 0;
   std::size_t native_tail_peak = 0;
+  // Original blit stream's memory frontier for untracked MLX allocations.
+  // Prepared once; only the original FIFO owner encodes fence operations.
+  std::shared_ptr<CopyFence> copy_fence;
   Status enqueue(Job &job) noexcept;
   Status reserve_native_tail() noexcept;
   void release_native_tail() noexcept;

@@ -919,6 +919,12 @@ Status NativeDependencies::observe() noexcept {
   return status;
 }
 Status NativeDependencies::resolve() noexcept {
+  return resolve_impl(false);
+}
+Status NativeDependencies::resolve_copy() noexcept {
+  return resolve_impl(true);
+}
+Status NativeDependencies::resolve_impl(bool blit_stream) noexcept {
   encoded_ = native_encoded_ = false;
   HYLE_FATAL_ASSERT(events_.empty() && native_events_.empty() && waits_.empty());
   const auto append = [&](const mx::Event &event, bool from_native) -> Status {
@@ -936,12 +942,14 @@ Status NativeDependencies::resolve() noexcept {
   // encoding precedes this Job, including its last real native and MLX events.
   // The locked ggml device queue orders all native regions of this Runtime;
   // the original MLX stream orders its own regions. Import only the opposite
-  // real queue's frontier, not a same-queue event or an MLX allocation-stream tag.
+  // real queue's frontier. Raw blits are outside MLX's resource fence table,
+  // so their memory frontier also needs an explicit MLX event import.
   for (const auto &dependency : sources_) {
     if (dependency.copy) {
       HYLE_ASSIGN_OR_RETURN(auto event, copy_dependency_event(*dependency.copy, dependency.epoch));
       HYLE_RETURN_IF_ERROR(append(event, false));
-      continue; // Original MLX stream is ordered; the native queue imports it.
+      if (!blit_stream) HYLE_RETURN_IF_ERROR(append(event, true));
+      continue;
     }
     auto &producer = *dependency.native;
     if (producer.submitted_epoch.load(std::memory_order_acquire) != dependency.epoch)

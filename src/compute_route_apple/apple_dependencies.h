@@ -24,6 +24,9 @@ public:
       std::span<const compute::detail::CompletionDependency>,
       InvocationState *consumer = nullptr, CopyRecording *copy_consumer = nullptr) noexcept;
   Status resolve() noexcept; // Original FIFO owner only.
+  // Raw copies on this same Runtime already import their blit memory fence.
+  // Keep the original producer/error owners without duplicating that wait.
+  Status resolve_copy() noexcept;
   Status observe() noexcept;
   void encode(mlx::core::Stream);
   void clear() noexcept; // Only after actual retirement or failed admission.
@@ -37,6 +40,7 @@ public:
   void native_submitted() noexcept { native_encoded_ = true; }
   auto events() noexcept { return std::span<mlx::core::Event>(events_); }
 private:
+  Status resolve_impl(bool blit_stream) noexcept;
   struct Source final {
     InvocationState *native = nullptr;
     std::shared_ptr<CopyRecording> copy;

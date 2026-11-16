@@ -60,8 +60,11 @@ MLX→ggml也可在原命令缓冲等待输入事件；冷期根据实际region�
 CPU必须读取的索引或复制仍先核对生产者，空复制也不能丢掉尚未完成的控制依赖。
 
 GPU复制在原MLX stream提交blit及本次代际的事件，完成通知只把原复制记录的退休Job交回原owner。
-复制到复制、复制到ggml计算均导入原事件；不再把主机FIFO已执行当成GPU已完成。需要CPU读取的
-结果及尚未稳定的原生输出地址仍须核对实际前缀。前缀观察不结算公共Completion，不发布lease，
+MLX的原buffer使用untracked资源；同一stream的blit pass通过冷期创建的原生fence交接访存，
+不能只依靠主机FIFO提交顺序。原Runtime保活一个fence，由原owner编码等待与更新，见
+[Metal blit访存合同](https://developer.apple.com/documentation/metal/mtlblitcommandencoder)。
+显式复制依赖向ggml和MLX计算导入实际事件；原生blit不在MLX的资源fence表中，同stream也不省略这条依赖。
+需要CPU读取的结果及尚未稳定的原生输出地址仍须核对实际前缀。前缀观察不结算公共Completion，不发布lease，
 也不允许提前复用；公开复制结果还核对原依赖闭包及生产者的完整结果。多阶段复制的依赖容量
 按声明的phase/resource上限冷期预留，复用原权限与退休。退休核对也等待原命令缓冲的错误处理
 回调完成，遵循[Metal完成合同](https://developer.apple.com/documentation/metal/mtlcommandbuffer/waituntilcompleted%28%29)。
@@ -71,7 +74,7 @@ GPU复制在原MLX stream提交blit及本次代际的事件，完成通知只把
 仍在交给后端的句柄；后端在回调返回前保留原Job和提交代际。每段消费者按自己的原生队列导入，
 不能凭公共端点相同跳过后段。消费者真正退休后仍核对原生产者的完整结果，失败不得发布输出。
 这条路径保留原输出writer与权限；显式create_handoff仍是先等待完整生产者的HostWait合同。
-等待按真实队列来源区分：MLX只导入ggml队列的事件，ggml只导入MLX事件；同一原生队列的后续
+等待按真实队列及编码器来源区分：MLX导入ggml或原生复制事件，ggml导入MLX或原生复制事件；同一原生队列的后续
 region复用首次成功提交的等待。原生产者的完整错误与代际仍独立核对，不用MLX的stream标记推断队列身份。
 
 Metal pipeline的static threadgroup memory上限与全局GPU buffer容量是不同限制。
