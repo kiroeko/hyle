@@ -99,7 +99,6 @@ struct DeviceAppendState final {
   static constexpr std::size_t check_capacity=256;
   std::array<NativeStorage,check_capacity> check_words{};
   std::array<std::optional<mlx::core::array>,check_capacity> check_owners;
-  std::array<DeviceCheckVisit,4096> check_visits{};
   std::uint32_t check_count=0;
   id<MTLBuffer> check_arguments=nil;
   Resources targets,prefixes;
@@ -247,8 +246,7 @@ struct DeviceAppendState final {
   }
   void accepted() noexcept {for(std::size_t i=0;i<3;++i)if(pinned[i])consumed[i]=expected[i];}
   Status resolve(const std::shared_ptr<Runtime>&runtime,NativeDependencies &dependencies) noexcept {
-    check_visits.fill({});
-    DeviceCheckInputs checks{check_words,check_owners,0,check_visits};
+    DeviceCheckInputs checks{check_words,check_owners,0,borrow_copy_check_visits(*runtime)};
     HYLE_RETURN_IF_ERROR(dependencies.device_checks(checks));
     for(std::size_t i=0;i<3;++i){
       std::optional<mlx::core::array> value;

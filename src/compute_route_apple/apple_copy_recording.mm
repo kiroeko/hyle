@@ -2,6 +2,7 @@
 
 #import <Metal/Metal.h>
 
+#include <algorithm>
 #include <array>
 #include <cstring>
 #include <mutex>
@@ -21,9 +22,15 @@ namespace cd = compute::detail;
 struct CopyFence final {
   id<MTLFence> native = nil;
   id<MTLComputePipelineState> checked_copy = nil;
+  std::array<DeviceCheckVisit,4096> check_visits{};
   bool encoded = false;
   ~CopyFence() { [native release]; [checked_copy release]; }
 };
+std::span<DeviceCheckVisit> borrow_copy_check_visits(Runtime &runtime) noexcept {
+  HYLE_FATAL_ASSERT(runtime.owner_id.load(std::memory_order_acquire)==platform::this_thread::get_id());
+  HYLE_FATAL_ASSERT(runtime.copy_fence);
+  auto &visits=runtime.copy_fence->check_visits;visits.fill({});return visits;
+}
 template<class T> using CopyArray = std::vector<T, mem::StdAllocator<T>>;
 struct HostCopyTarget final {
   mem::HostMapping mapping;
@@ -265,10 +272,11 @@ Status execute_host_copy(CopyRecording &state, bool *use_blit) noexcept {
 }
 // Native shared destinations do not require a CPU observation. Resolve only
 // original encoded addresses/error words and preserve the exact cold spans.
-// Actual spans must preserve the original cold alignment and nonalias contract.
+// Exact byte spans retain their original nonalias contract.
 Status resolve_deferred_copy(CopyRecording &state,bool *selected) noexcept {
   *selected=false;
-  auto &copy=*state.deferred_copy;copy.clear();auto checks=copy.inputs();
+  auto &copy=*state.deferred_copy;copy.clear();
+  auto checks=copy.inputs(borrow_copy_check_visits(*state.runtime));
   HYLE_RETURN_IF_ERROR(state.dependencies.device_checks(checks));
   HYLE_ASSIGN_OR_RETURN(auto source,resolve_native_source(state,&checks));
   copy.check_count=checks.count;
@@ -285,10 +293,12 @@ Status resolve_deferred_copy(CopyRecording &state,bool *selected) noexcept {
     if(overlaps(source.physical,target))return Status::InvalidArgument("Apple device copy source overlaps its destination");
     state.commands[0].source=source.buffer;state.commands[0].source_offset=source.physical.origin;
   }
-  for(const auto &command:std::span(state.commands).first(state.report.active_copies))
-    if(command.source_offset%4 || command.destination_offset%4 || command.bytes%4)
-      return Status::InvalidArgument("Apple device copy actual source alignment differs from preparation");
   *selected=true;return Status::Ok();
+}
+bool aligned_copy_commands(const CopyRecording &state) noexcept {
+  return std::ranges::all_of(std::span(state.commands).first(state.report.active_copies),[](const auto &copy){
+    return copy.source_offset%4==0 && copy.destination_offset%4==0 && copy.bytes%4==0;
+  });
 }
 void execute_copy(Job *job) noexcept {
   auto &state = *static_cast<CopyRecording *>(job);
@@ -332,7 +342,7 @@ void execute_copy(Job *job) noexcept {
         if (state.device_append_active) {
           terminal = state.device_append->encode(command, frontier.native, frontier.encoded);
           if (terminal.ok()) { frontier.encoded = true; state.calls.fetch_add(1, std::memory_order_relaxed); }
-        } else if(deferred && state.deferred_copy->check_count){
+        } else if(deferred && (state.deferred_copy->check_count || !aligned_copy_commands(state))){
           terminal=state.deferred_copy->encode(command,frontier.checked_copy,frontier.native,frontier.encoded,
               std::span(state.commands).first(state.report.active_copies));
           if(terminal.ok()){frontier.encoded=true;state.calls.fetch_add(1,std::memory_order_relaxed);}
@@ -515,6 +525,8 @@ Status prepare_deferred_copy(CopyRecording &state) noexcept {
   try {
   if(!state.deferred_copy)
     state.deferred_copy=std::allocate_shared<DeferredCopyState>(mem::StdAllocator<DeferredCopyState>(state.allocator));
+  if(state.dependency_capacity==SIZE_MAX)return Status::OutOfRange("Apple device copy source capacity overflows");
+  HYLE_RETURN_IF_ERROR(state.dependencies.reserve(state.dependency_capacity+1));
   std::lock_guard lock(state.runtime->queue_mutex);
   @autoreleasepool {
     auto device=(__bridge id<MTLDevice>)reinterpret_cast<void *>(state.device);
@@ -525,6 +537,17 @@ Status prepare_deferred_copy(CopyRecording &state) noexcept {
   return Status::Ok();
   }catch(...){return native_exception();}
 }
+}
+Result<bool> prepare_device_copy_recording(CopyRecording &state) noexcept {
+  std::lock_guard lock(state.completion_mutex);
+  HYLE_RETURN_IF_ERROR(mutable_recording(state));
+  if(state.prepared || state.host_copy || state.device_append)
+    return std::unexpected(Status::FailedPrecondition("Apple device-copy preparation needs an unbound original recording"));
+  const auto status=prepare_deferred_copy(state);
+  const auto available=state.deferred_copy_active;
+  state.prepared=false;state.deferred_copy_active=false;
+  HYLE_RETURN_IF_ERROR(status);
+  return available;
 }
 Status bind_host_copy_recording(CopyRecording &state, InputSource source,
     const TensorDesc &description, mem::BufferView destination) noexcept {
@@ -551,12 +574,11 @@ Status bind_device_copy_recording(CopyRecording &state,InputSource source,
   HYLE_RETURN_IF_ERROR(bind_host_copy_recording(state,std::move(source),description,destination));
   std::lock_guard lock(state.completion_mutex);state.prepared=false;
   const auto bytes=state.host_bytes;
-  if(!bytes || bytes%4 || !is_copy_resource(destination.resource()))
-    return Status::Unimplemented("Apple device copy requires a positive aligned native destination");
+  if(!bytes || !is_copy_resource(destination.resource()))
+    return Status::Unimplemented("Apple device copy requires a positive native destination");
   HYLE_ASSIGN_OR_RETURN(auto range,destination.subview(0,bytes));
   HYLE_ASSIGN_OR_RETURN(auto target,copy_span(range,mem::HostAccess::kWrite));
   if(target.physical.address_space!=state.device)return Status::InvalidArgument("Apple device copy destination Device differs");
-  if(target.physical.origin%4)return Status::Unimplemented("Apple device copy destination alignment differs");
   state.physical[1]=target.physical;
   state.commands[0]={nullptr,target.buffer,0,target.physical.origin,bytes};
   HYLE_RETURN_IF_ERROR(prepare_deferred_copy(state));
@@ -652,9 +674,6 @@ Status bind_device_copy_ranges(CopyRecording &state,InputSource source,
     const TensorDesc &description,std::span<const HostCopyRange> ranges) noexcept {
   HYLE_RETURN_IF_ERROR(bind_host_copy_ranges(state,std::move(source),description,ranges));
   std::lock_guard lock(state.completion_mutex);state.prepared=false;
-  for(std::size_t i=0;i<state.host_range_count;++i)
-    if(state.inputs[i].source_offset%4 || state.inputs[i].bytes%4 || state.physical[i+1].origin%4)
-      return Status::Unimplemented("Apple device copy ranges require original 4-byte alignment");
   HYLE_RETURN_IF_ERROR(prepare_deferred_copy(state));
   if(!state.deferred_copy_active){state.prepared=false;return Status::Unimplemented("Apple device copy requires argument-buffer tier2");}
   return Status::Ok();
@@ -745,7 +764,7 @@ Status reserve_copy_dependencies(CopyRecording &state, std::size_t capacity) noe
   std::lock_guard lock(state.completion_mutex);
   HYLE_RETURN_IF_ERROR(mutable_recording(state));
   if(capacity>SIZE_MAX-3)return Status::OutOfRange("Apple copy dependency capacity overflows");
-  HYLE_RETURN_IF_ERROR(state.dependencies.reserve(capacity+(state.device_append?3u:0u)));
+  HYLE_RETURN_IF_ERROR(state.dependencies.reserve(capacity+(state.device_append?3u:state.deferred_copy?1u:0u)));
   state.dependency_capacity=capacity;return Status::Ok();
 }
 Result<Completion> submit_copy_recording(CopyRecording &state,
@@ -774,6 +793,10 @@ Result<Completion> submit_copy_recording(CopyRecording &state,
     HYLE_ASSIGN_OR_RETURN(state.expected_epoch, InvocationAccess::pin_source(
         state.host_source, state.runtime, state.consumed_epoch));
     state.source_pinned = true;
+    if(state.deferred_copy_active){
+      HYLE_ASSIGN_OR_RETURN(auto dependency,InvocationAccess::source_dependency(state.host_source,state.runtime));
+      HYLE_RETURN_IF_ERROR(state.dependencies.append(state.runtime,std::span(&dependency,1),nullptr,&state));
+    }
   }
   if (state.device_append_active) {
     HYLE_RETURN_IF_ERROR(state.device_append->pin(state.runtime));

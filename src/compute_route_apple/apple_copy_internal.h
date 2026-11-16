@@ -11,6 +11,9 @@ namespace hyle::compute::apple::detail {
 struct CopyRecording;
 struct DeviceCheckInputs;
 Status copy_device_checks(CopyRecording &, DeviceCheckInputs &) noexcept;
+// CPU-only traversal scratch of the original Runtime. Borrowed only during
+// one non-reentrant FIFO collection; neither GPU commands nor tails retain it.
+std::span<DeviceCheckVisit> borrow_copy_check_visits(Runtime &) noexcept;
 enum class CopyRecordingMode : std::uint8_t { kOnce, kReplayable };
 struct CopySpan final {
   void *buffer = nullptr;
@@ -81,8 +84,11 @@ HYLE_COMPUTE_ROUTE_APPLE_API Status bind_host_copy_ranges(CopyRecording &,
     InputSource, const TensorDesc &, std::span<const HostCopyRange>) noexcept;
 HYLE_COMPUTE_ROUTE_APPLE_API Status bind_host_copy_ranges(CopyRecording &,
     ConstTensorView source, std::span<const HostCopyRange>, ReadLease source_owner = {}) noexcept;
-// Distinct cold preparation for pending native Sources and aligned, original
-// shared Metal targets. GPU error words guard every write; public retirement
+// Provision only fixed native metadata/pipeline, without binding rows or
+// accepting work. False is a native feature decline, not an execution fallback.
+HYLE_COMPUTE_ROUTE_APPLE_API Result<bool> prepare_device_copy_recording(CopyRecording &) noexcept;
+// Distinct cold preparation for pending native Sources and exact original
+// shared Metal byte spans. GPU error words guard every write; public retirement
 // still observes original verdicts. No implicit change to ordinary host copies.
 HYLE_COMPUTE_ROUTE_APPLE_API Status bind_device_copy_recording(CopyRecording &,
     InputSource, const TensorDesc &, mem::BufferView destination) noexcept;

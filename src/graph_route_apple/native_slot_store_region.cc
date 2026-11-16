@@ -45,7 +45,7 @@ struct Slot final {
   compute::ConstTensorView rows;
   compute::ReadLease rows_owner;
   an::InputSource source;
-  bool configured = false, bound = false, sealed = false;
+  bool configured = false, bound = false, sealed = false, device_copy = false;
   std::shared_ptr<an::CopyRecording> recording;
 };
 Status open(const Artifact &artifact) noexcept {
@@ -91,7 +91,9 @@ Status bind(void *prepared, void *opaque, std::span<const RegionValue> inputs,
   const auto &input = inputs[artifact.rows_port];
   if (input.reference.valid()) {
     HYLE_ASSIGN_OR_RETURN(slot.source, native_output_source(input.reference, artifact.runtime, artifact.rows));
-    HYLE_RETURN_IF_ERROR(an::bind_host_copy_ranges(*slot.recording, slot.source, artifact.rows, slot.copies));
+    HYLE_RETURN_IF_ERROR(slot.device_copy
+        ?an::bind_device_copy_ranges(*slot.recording,slot.source,artifact.rows,slot.copies)
+        :an::bind_host_copy_ranges(*slot.recording,slot.source,artifact.rows,slot.copies));
   } else {
     if (!input.tensor.valid() || input.tensor.description() != artifact.rows)
       return Status::InvalidArgument("Apple Store has no concrete or native rows carrier");
@@ -173,6 +175,7 @@ const ProviderRegionPreparedVTable prepared_table{
       HYLE_ASSIGN_OR_RETURN(slot->recording, an::prepare_copy_recording_runtime(artifact.runtime,
           static_cast<std::uint32_t>(artifact.facts.destination_count), a,
           artifact.input_bytes, an::CopyRecordingMode::kReplayable));
+      HYLE_ASSIGN_OR_RETURN(slot->device_copy,an::prepare_device_copy_recording(*slot->recording));
       try { slot->copies.resize(artifact.facts.destination_count); }
       catch (...) { return Status::ResourceExhausted("Apple Store fixed copy descriptors"); }
       return Status::Ok();

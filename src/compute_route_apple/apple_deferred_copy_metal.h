@@ -10,15 +10,20 @@ struct CopyCommand final {
   void *source = nullptr, *destination = nullptr;
   std::size_t source_offset = 0, destination_offset = 0, bytes = 0;
 };
+constexpr std::size_t native_copy_tile_bytes=8192;
 
 constexpr auto deferred_copy_source = R"METAL(
 #include <metal_stdlib>
 using namespace metal;
-struct Copy { const device uint *source; device uint *destination; ulong words; };
+struct Copy { const device uchar *source; device uchar *destination; ulong bytes; ulong word_copy; };
 struct Check { const device int *word; };
 kernel void hyle_checked_native_copy(const device Copy *copies [[buffer(0)]],
     const device Check *checks [[buffer(1)]], constant uint &check_count [[buffer(2)]],
     uint3 grid [[threadgroup_position_in_grid]], uint tid [[thread_index_in_threadgroup]]) {
+  const auto copy=copies[grid.x];
+  const ulong base=ulong(grid.y)*HYLE_COPY_TILE_BYTES;
+  if(base>=copy.bytes)return;
+  const ulong bytes=min(copy.bytes-base,ulong(HYLE_COPY_TILE_BYTES));
   threadgroup bool failed;
   if(tid==0) {
     failed=false;
@@ -28,8 +33,13 @@ kernel void hyle_checked_native_copy(const device Copy *copies [[buffer(0)]],
   // An invalid original producer must not even read its payload, nor change
   // any destination. Public failure still comes from that original episode.
   if(failed)return;
-  const auto copy=copies[grid.x];
-  for(ulong i=tid;i<copy.words;i+=128)copy.destination[i]=copy.source[i];
+  if(copy.word_copy){
+    const device uint *source=reinterpret_cast<const device uint *>(copy.source);
+    device uint *destination=reinterpret_cast<device uint *>(copy.destination);
+    for(ulong i=tid;i<bytes/4;i+=128)destination[base/4+i]=source[base/4+i];
+  }else{
+    for(ulong i=tid;i<bytes;i+=128)copy.destination[base+i]=copy.source[base+i];
+  }
 }
 )METAL";
 
@@ -37,7 +47,6 @@ struct DeferredCopyState final {
   static constexpr std::size_t check_capacity=256;
   std::array<NativeStorage,check_capacity> words{};
   std::array<std::optional<mlx::core::array>,check_capacity> owners;
-  std::array<DeviceCheckVisit,4096> visits{};
   std::size_t check_count=0;
   id<MTLBuffer> arguments=nil,checks=nil;
   ~DeferredCopyState(){[arguments release];[checks release];}
@@ -51,6 +60,7 @@ struct DeferredCopyState final {
       NSError *error=nil;
       MTLCompileOptions *options=[[MTLCompileOptions alloc] init];
       options.languageVersion=MTLLanguageVersion3_0;
+      options.preprocessorMacros=@{@"HYLE_COPY_TILE_BYTES":@(native_copy_tile_bytes)};
       id<MTLLibrary> library=[device newLibraryWithSource:[NSString stringWithUTF8String:deferred_copy_source]
           options:options error:&error];
       [options release];
@@ -60,17 +70,16 @@ struct DeferredCopyState final {
       [function release];[library release];
       if(pipeline==nil)return std::unexpected(Status::Internal(error.localizedDescription.UTF8String?:"Apple deferred copy pipeline failed"));
     }
-    if(arguments==nil)arguments=[device newBufferWithLength:capacity*3*sizeof(std::uint64_t) options:MTLResourceStorageModeShared];
+    if(arguments==nil)arguments=[device newBufferWithLength:capacity*4*sizeof(std::uint64_t) options:MTLResourceStorageModeShared];
     if(checks==nil)checks=[device newBufferWithLength:check_capacity*sizeof(std::uint64_t) options:MTLResourceStorageModeShared];
     if(arguments==nil || checks==nil)return std::unexpected(Status::ResourceExhausted("Apple deferred copy fixed metadata"));
     return true;
   }
   void clear() noexcept {
     for(auto &owner:owners)owner.reset();
-    visits.fill({});
     check_count=0;
   }
-  DeviceCheckInputs inputs() noexcept {return {words,owners,check_count,visits};}
+  DeviceCheckInputs inputs(std::span<DeviceCheckVisit> visits) noexcept {return {words,owners,check_count,visits};}
   Status encode(id<MTLCommandBuffer> command,id<MTLComputePipelineState> pipeline,
       id<MTLFence> fence,bool previous,std::span<const CopyCommand> copies) noexcept {
     auto *descriptions=static_cast<std::uint64_t *>(arguments.contents);
@@ -86,7 +95,7 @@ struct DeferredCopyState final {
       const auto &copy=copies[i];
       id<MTLBuffer> source=(__bridge id<MTLBuffer>)copy.source,destination=(__bridge id<MTLBuffer>)copy.destination;
       if(source==nil || destination==nil || source.device!=command.device || destination.device!=command.device ||
-          !source.gpuAddress || !destination.gpuAddress || copy.source_offset%4 || copy.destination_offset%4 || copy.bytes%4 ||
+          !source.gpuAddress || !destination.gpuAddress ||
           copy.source_offset>source.length || copy.bytes>source.length-copy.source_offset ||
           copy.destination_offset>destination.length || copy.bytes>destination.length-copy.destination_offset)
         return Status::InvalidArgument("Apple deferred copy original physical span differs");
@@ -97,9 +106,10 @@ struct DeferredCopyState final {
             :word.offset_bytes-copy.destination_offset<copy.bytes))
           return Status::InvalidArgument("Apple deferred copy destination aliases an original error word");
       }
-      descriptions[3*i]=source.gpuAddress+copy.source_offset;
-      descriptions[3*i+1]=destination.gpuAddress+copy.destination_offset;
-      descriptions[3*i+2]=copy.bytes/4;
+      descriptions[4*i]=source.gpuAddress+copy.source_offset;
+      descriptions[4*i+1]=destination.gpuAddress+copy.destination_offset;
+      descriptions[4*i+2]=copy.bytes;
+      descriptions[4*i+3]=!(copy.source_offset%4 || copy.destination_offset%4 || copy.bytes%4);
     }
     id<MTLComputeCommandEncoder> encoder=[command computeCommandEncoder];
     if(encoder==nil)return Status::ResourceExhausted("Apple deferred copy encoder allocation failed");
@@ -113,7 +123,10 @@ struct DeferredCopyState final {
       [encoder useResource:(__bridge id<MTLBuffer>)copy.source usage:MTLResourceUsageRead];
       [encoder useResource:(__bridge id<MTLBuffer>)copy.destination usage:MTLResourceUsageWrite];
     }
-    [encoder dispatchThreadgroups:MTLSizeMake(copies.size(),1,1) threadsPerThreadgroup:MTLSizeMake(128,1,1)];
+    std::size_t largest=0;
+    for(const auto &copy:copies)largest=std::max(largest,copy.bytes);
+    const auto tiles=largest?(largest-1)/native_copy_tile_bytes+1:1;
+    [encoder dispatchThreadgroups:MTLSizeMake(copies.size(),tiles,1) threadsPerThreadgroup:MTLSizeMake(128,1,1)];
     [encoder updateFence:fence];[encoder endEncoding];
     return Status::Ok();
   }
