@@ -119,8 +119,32 @@ inline void run(const std::filesystem::path &input, q::BackendKind kind, bool ra
   const std::array rows{std::size_t{3}, std::size_t{1}};
   model.prepare_family(rows);
   for (const auto count : rows) model.plan_replay_uses(count, 1, 8);
+  // A larger warm capacity covers later smaller suffixes. Its private native
+  // scratch may be allocated on first submit, after Invocation installation;
+  // do not retain the superseded small Invocation until that allocation fails.
+  const std::array private_prefill_shapes{std::size_t{2}, std::size_t{3}};
+  h::require(model.prepare_prefill_family(private_prefill_shapes, q::TextCompletion::kStateOnly),
+      "native prefill admission regression has no actual packed programs");
+  for (const auto count : private_prefill_shapes)
+    model.plan_replay_uses(count, 1, 8, q::GraphRole::kText,
+        q::TextCompletion::kStateOnly, 0, q::RowPacking::kPrefill);
   model.prepare_execution(rows);
   model.prepare_relay_execution();
+  const std::array small_prefill{std::size_t{2}}, larger_prefill{std::size_t{3}};
+  model.prepare_prefill_execution(small_prefill, q::TextCompletion::kStateOnly);
+  auto &small = model.prepare_child(2, false, 1, q::GraphRole::kText,
+      q::TextCompletion::kStateOnly, 0, false, q::RowPacking::kPrefill);
+  h::require(small.slots[0].carrier.initialized(), "small native prefill was not installed");
+  model.prepare_prefill_execution(larger_prefill, q::TextCompletion::kStateOnly);
+  auto &larger = model.prepare_child(3, false, 1, q::GraphRole::kText,
+      q::TextCompletion::kStateOnly, 0, false, q::RowPacking::kPrefill);
+  h::require(!small.slots[0].carrier.initialized() && larger.slots[0].carrier.initialized() &&
+      small.private_capacity_preferred && larger.private_capacity_preferred,
+      "larger private prefill retained its superseded retired Invocation");
+  model.prepare_prefill_execution(small_prefill, q::TextCompletion::kStateOnly);
+  h::require(small.slots[0].carrier.initialized() && !larger.slots[0].carrier.initialized() &&
+      small.private_capacity_preferred && larger.private_capacity_preferred,
+      "private prefill eviction changed its prepared-capacity preference or retained the previous workspace");
   const std::array prefill{std::size_t{3}};
   auto session = model.create_session(prefill, {}, q::GraphRole::kText, q::cache::SamplingCursor{123, 7, 0});
   const std::array<std::int32_t, 3> prompt{1, 2, 3};

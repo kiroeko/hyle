@@ -1743,13 +1743,15 @@ public:
       if (!selected || physical < selected) selected = physical;
       if (execution_storage_prepared && !execution_workspace.valid()) {
         const auto phase = phases.find({requests, physical, role, completion, sampling_index, false, RowPacking::kPrefill});
-        if (phase != phases.end() && phase->second->slots[0].carrier.initialized() && (!resident || physical < resident))
+        if (phase != phases.end() &&
+            (phase->second->private_capacity_preferred || phase->second->slots[0].carrier.initialized()) &&
+            (!resident || physical < resident))
           resident = physical;
       }
     }
-    // A private carrier owns native outputs/workspace. Reuse a fitting warm
-    // capacity before retaining a second one for a smaller logical suffix.
-    // The original batch layout still carries every request's actual rows.
+    // Preserve the original prepared-capacity preference even if its private
+    // Invocation was evicted. Resource residency must not choose a different
+    // padded math shape. The batch layout still carries the actual row count.
     return resident ? resident : selected;
   }
 
@@ -2656,13 +2658,9 @@ public:
     return initialization;
   }
 
-  void initialize_slot(Phase &phase, std::size_t slot) {
-    check(phase.slots.initialize_with(slot, [&] { return slot_initialization(phase); }, [&]() -> hyle::Result<bool> {
+  hyle::Result<std::size_t> reclaim_retired_prefill_storage(const Phase &phase, bool superseded_only) {
       if (execution_workspace.valid() || phase.imported_sources)
-        return false;
-      // Retired private prefill workspaces can also prevent the first decode
-      // program from being installed. Trim them for any failed cold allocation,
-      // before this new Invocation exists or submits anything.
+        return std::size_t{0};
       // Existing Sources/results keep their own original storage alive.
       std::size_t released = 0;
       for (auto &[shape, previous] : phases) {
@@ -2671,6 +2669,7 @@ public:
             !packs_prefill(previous->family->packing) ||
             (active_step && active_step->phase == previous.get()) ||
             (successor_step && successor_step->phase == previous.get())) continue;
+        if (superseded_only && previous->family != phase.family) continue;
         for (auto &old : previous->slots.slots()) {
           if (!old.carrier.initialized() || !old.carrier.retired() ||
               old.transactions.bound() || old.data.small_results.in_flight()) continue;
@@ -2680,8 +2679,26 @@ public:
       }
       if (released) {
         std::cerr << "execution_prefill_storage_reclaimed invocations=" << released
-                  << " trigger=resource_exhausted\n";
+                  << " trigger=" << (superseded_only ? "private_prefill_capacity" : "resource_exhausted") << '\n';
       }
+      return released;
+  }
+
+  void initialize_slot(Phase &phase, std::size_t slot) {
+    check(phase.slots.initialize_with(slot, [&] {
+      // A selected private capacity is reused by prefill_capacity(). When
+      // it changes, retire the superseded instances before installing
+      // the new one: native providers may allocate scratch only on submission,
+      // where a failed submitted episode cannot be retried as cold admission.
+      if (packs_prefill(phase.family->packing)) {
+        (void)take(reclaim_retired_prefill_storage(phase, true));
+        phase.private_capacity_preferred = true;
+      }
+      return slot_initialization(phase);
+    }, [&]() -> hyle::Result<bool> {
+      // Retired private prefill workspaces can also prevent the first decode
+      // program from being installed. Retry only an unpublished installation.
+      HYLE_ASSIGN_OR_RETURN(auto released, reclaim_retired_prefill_storage(phase, false));
       return released != 0;
     }));
   }

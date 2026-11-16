@@ -80,6 +80,9 @@ struct Phase final : FamilyPorts {
   }
   const PreparedOutputFacts *logits_facts = nullptr, *hidden_facts = nullptr;
   std::array<const PreparedOutputFacts *, 9> probe_facts{};
+  // Cold physical-capacity preference survives eviction of private scratch.
+  // This is selection history, never native liveness or execution permission.
+  bool private_capacity_preferred = false;
 };
 
 struct PhaseSelection final {
