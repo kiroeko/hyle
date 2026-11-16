@@ -133,12 +133,10 @@ constexpr auto merge_source = R"METAL(
 )METAL";
 } // namespace
 
-Result<Program> prepare_device_lengths_paged_graph(std::shared_ptr<Runtime> runtime,
-    BatchLayoutVersion envelope, std::uint32_t rows, float scale, bool causal,
-    std::int32_t window, const WorkloadContext &workload) noexcept {
-  if (!runtime || !envelope.valid() || !rows || !std::isfinite(scale))
-    return std::unexpected(Status::InvalidArgument("Apple device lengths require original Runtime/capacity/physical Q"));
-  const auto schema = envelope.origin_schema();
+Status qualify_device_lengths_paged_schema(const BatchSchema &schema, float scale,
+    bool causal, std::int32_t window) noexcept {
+  if (!schema.valid() || !std::isfinite(scale))
+    return Status::InvalidArgument("Apple device lengths require original schema and finite scale");
   const auto c = schema.capacity();
   HYLE_RETURN_IF_ERROR(validate_batch_capacity(c));
   HYLE_RETURN_IF_ERROR(validate_batch_attention_options(causal, window));
@@ -149,11 +147,21 @@ Result<Program> prepare_device_lengths_paged_graph(std::shared_ptr<Runtime> runt
       (c.query_type != DataType::kFloat16 && c.query_type != DataType::kBFloat16) ||
       (c.qk_head_dim != 64 && c.qk_head_dim != 128 && c.qk_head_dim != 256) ||
       (c.value_head_dim != 64 && c.value_head_dim != 128 && c.value_head_dim != 256))
-    return std::unexpected(Status::Unimplemented("Apple device lengths require plain F16/BF16 GQA and bounded native head depths"));
-  if (envelope.facts().requests != c.max_requests || envelope.facts().query_rows != rows ||
-      rows > c.max_query_rows)
+    return Status::Unimplemented("Apple device lengths require plain F16/BF16 GQA and bounded native head depths");
+  if (schema.metadata_offsets().bytes/4 > INT32_MAX)
+    return Status::OutOfRange("Apple device lengths metadata exceeds native indexing");
+  return Status::Ok();
+}
+
+Result<Program> prepare_device_lengths_paged_graph(std::shared_ptr<Runtime> runtime,
+    BatchSchema schema, std::uint32_t rows, float scale, bool causal,
+    std::int32_t window, const WorkloadContext &workload) noexcept {
+  if (!runtime || !rows)
+    return std::unexpected(Status::InvalidArgument("Apple device lengths require original Runtime and physical Q"));
+  HYLE_RETURN_IF_ERROR(qualify_device_lengths_paged_schema(schema,scale,causal,window));
+  const auto c = schema.capacity();
+  if (rows > c.max_query_rows)
     return std::unexpected(Status::InvalidArgument("Apple device lengths envelope differs from physical requests/queries"));
-  HYLE_RETURN_IF_ERROR(validate_batch_attention_layout(envelope, causal, window));
   try {
     const auto offsets = schema.metadata_offsets();
     if (offsets.bytes/4 > INT32_MAX)

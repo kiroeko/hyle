@@ -5,6 +5,7 @@
 #include "native_region.h"
 
 #include "../compute_route_apple/apple_copy_internal.h"
+#include "../compute_route_apple/apple_device_lengths.h"
 #include "hyle/compute/detail/apple_copy_stream_access.h"
 #include "../graph_batch/native_batch_regions.h"
 #include "hyle/compute/batch_ops.h"
@@ -38,8 +39,12 @@ struct Recipe final {
   compute::BatchCapacity capacity{};
   compute::MlaCacheLayout mla = compute::MlaCacheLayout::kNone;
   bool external_metadata = false;
+  compute::BatchSchema lengths_schema{};
+  bool device_lengths() const noexcept { return lengths_schema.valid(); }
 };
 Result<Recipe> recipe(const compute::Operation &operation) noexcept {
+  if (const auto value = operation.custom_as<batch::DeviceLengthsPagedAttention>())
+    return Recipe{.options=value->options, .capacity=value->schema.capacity(), .lengths_schema=value->schema};
   if (const auto value = operation.custom_as<batch::PagedAttention>())
     return Recipe{value->layout, value->options, value->layout.origin_schema().capacity(), value->layout.origin_schema().mla_layout()};
   if (const auto value = operation.custom_as<batch::PagedMlaAttention>())
@@ -69,6 +74,14 @@ Status qualify(const std::shared_ptr<an::Runtime> &owner, const Recipe &value,
   }
   HYLE_RETURN_IF_ERROR(compute::validate_batch_capacity(value.capacity));
   HYLE_RETURN_IF_ERROR(compute::validate_batch_attention_options(value.options.causal, value.options.window_left));
+  if (value.device_lengths()) {
+    HYLE_RETURN_IF_ERROR(an::qualify_device_lengths_paged_schema(value.lengths_schema,
+        value.options.scale,value.options.causal,value.options.window_left));
+    if (!layout.valid()) return Status::Ok();
+    if (!value.lengths_schema.owns(layout) || layout.facts().requests != value.capacity.max_requests)
+      return Status::InvalidArgument("Apple device lengths envelope differs from its original schema/requests");
+    return compute::validate_batch_attention_layout(layout,value.options.causal,value.options.window_left);
+  }
   if (value.capacity.storage != compute::BatchStorage::kPaged || value.capacity.page_size != 16 ||
       value.capacity.max_pages > std::uint32_t(INT32_MAX/16) ||
       !an::PagedBatchAccess::cache_domain(value.capacity))
@@ -150,6 +163,9 @@ struct Artifact final {
   ValueId metadata;
   std::uint32_t metadata_port = 0;
   std::array<compute::TensorDesc,4> descriptions;
+  std::array<ValueId,2> length_inputs{};
+  std::array<std::uint32_t,2> length_ports{};
+  compute::TensorDesc lengths_description;
   compute::TensorDesc output;
   Preparation preparation;
   Resource device, staging;
@@ -175,7 +191,11 @@ struct Slot final {
   };
   std::array<Written,2> written;
   NativePagePendingSource *pending_source = nullptr; // Borrowed from BatchResources.
-  std::array<an::InputBinding,4> bindings;
+  std::array<an::InputBinding,6> bindings;
+  compute::LeasePool metadata_pool;
+  compute::WriteLease metadata_writer;
+  compute::ReadLease metadata;
+  compute::BatchLayoutVersion metadata_layout;
   cd::ResultStorageOwner result;
   std::optional<mx::array> projected;
   std::optional<compute::ReadLease> exported;
@@ -214,7 +234,7 @@ Result<Controller *> make_controller(Slot &slot, compute::NativePagedBatchProgra
   const auto status = controller->initialize(artifact.preparation, std::move(program), std::move(recipe),
       artifact.device, artifact.staging, {.max_metadata_backing_bytes = SIZE_MAX,
           .allocator = slot.allocator, .resource_budget = artifact.budget}, artifact.workload,
-      artifact.recipe.external_metadata);
+      artifact.recipe.external_metadata || artifact.recipe.device_lengths());
   if (!status.ok()) { slot.allocator.destroy(controller); return std::unexpected(status); }
   return controller;
 }
@@ -229,6 +249,37 @@ Status prepare(void *prepared, void *invocation, compute::BatchLayoutVersion lay
     HYLE_RETURN_IF_ERROR(slot.controller->open());
     HYLE_RETURN_IF_ERROR(an::PagedBatchAccess::reuse_gate(slot.controller->native));
     if (slot.controller->uses.active_batches()) return Status::Unavailable("Apple page permissions still in use");
+  }
+  if (artifact.recipe.device_lengths()) {
+    if (!slot.controller) return Status::FailedPrecondition("Apple device lengths original native slot is missing");
+    auto &controller = *slot.controller;
+    HYLE_RETURN_IF_ERROR(an::PagedBatchAccess::release_inputs(controller.native));
+    for (auto &binding : slot.bindings) { binding.value.reset(); binding.source.reset(); }
+    controller.reads = {}; controller.keys = {}; controller.values = {};
+    controller.prepared = false; controller.bound = false;
+    const auto bytes = artifact.recipe.lengths_schema.metadata_offsets().bytes;
+    const bool upload = !slot.metadata.valid() || slot.metadata_layout != layout;
+    if (upload) {
+      if (!slot.metadata_pool.valid()) {
+        HYLE_ASSIGN_OR_RETURN(slot.metadata_pool, compute::LeasePool::create(artifact.device.ref(),bytes,
+            {.max_blocks=1,.allocator=slot.allocator,.resource_budget=artifact.budget}));
+      }
+      if (slot.metadata.valid()) { HYLE_ASSIGN_OR_RETURN(slot.metadata_writer,slot.metadata.try_write()); slot.metadata.reset(); }
+      if (!slot.metadata_writer.valid()) { HYLE_ASSIGN_OR_RETURN(slot.metadata_writer,slot.metadata_pool.allocate(bytes,8)); }
+      HYLE_ASSIGN_OR_RETURN(auto original,layout.metadata());
+      HYLE_ASSIGN_OR_RETURN(auto source,original.view());
+      HYLE_ASSIGN_OR_RETURN(auto mapped,source.map_host());
+      HYLE_ASSIGN_OR_RETURN(auto destination,slot.metadata_writer.view());
+      auto status = destination.write(mapped.bytes()); status.Update(mapped.close()); HYLE_RETURN_IF_ERROR(status);
+      HYLE_ASSIGN_OR_RETURN(slot.metadata,slot.metadata_writer.publish()); slot.metadata_layout=layout;
+    }
+    HYLE_ASSIGN_OR_RETURN(controller.version,controller.recipe.version(layout));
+    controller.reads[3]=slot.metadata; controller.prepared=true; controller.prepared_bank=-1;
+    controller.report.layout_generation=layout.generation(); controller.report.reused_native_plan=true;
+    controller.report.uploaded_bytes=upload?bytes:0; controller.report.upload_host_waits=0;
+    controller.report.device_mirror_bytes=bytes; controller.report.backing_bytes=bytes;
+    slot.frames={}; slot.pending_frames={}; slot.written={}; slot.pending_source=nullptr;
+    return Status::Ok();
   }
   if (!slot.controller || !slot.controller->recipe.schema().owns(layout) ||
       slot.controller->recipe.schema().capacity()!=artifact.recipe.capacity ||
@@ -291,6 +342,8 @@ Status validate_written(void *prepared, void *invocation, ValueId input,
     compute::BatchLayoutVersion layout, compute::ConstTensorView capacity,
     const bd::NativeAppendRegionRef &producer) noexcept {
   const auto &artifact = *static_cast<Artifact *>(prepared); auto &slot = *static_cast<Slot *>(invocation);
+  if (artifact.recipe.device_lengths())
+    return Status::Unimplemented("Apple device length attention needs its native device-controlled append writer");
   if (!slot.controller || !slot.controller->prepared || layout != slot.controller->version.layout() || !capacity.valid() ||
       !producer.table || !producer.table->inspect || !producer.table->qualify_reader || !producer.table->before_read ||
       !producer.implementation || !producer.prepared || !producer.invocation)
@@ -347,7 +400,8 @@ const bd::NativeBatchRegionVTable page_table{
           .input_ports = std::span(artifact.ports).first(artifact.count),
           .metadata_input = artifact.metadata,
           .output_query_rows = artifact.preparation.query_rows,
-          .layout = slot.controller ? slot.controller->version.layout() : compute::BatchLayoutVersion{}};
+          .layout = slot.controller ? slot.controller->version.layout() : compute::BatchLayoutVersion{},
+          .device_lengths = artifact.recipe.device_lengths(), .length_inputs = artifact.length_inputs};
     }, &prepare, &frame,
     [](void *prepared, void *invocation, ValueId input, compute::PagedArenaRead value) noexcept {
       const auto &artifact = *static_cast<Artifact *>(prepared); auto &slot = *static_cast<Slot *>(invocation);
@@ -399,6 +453,7 @@ Status create_slot(void *prepared, mem::AllocatorRef allocator, mem::BufferView,
   *out = slot;
   if (artifact.recipe.external_metadata) return Status::Ok();
   HYLE_ASSIGN_OR_RETURN(slot->controller, make_controller(*slot, artifact.native_recipe, artifact.program));
+  if (artifact.recipe.device_lengths()) return Status::Ok();
   HYLE_ASSIGN_OR_RETURN(slot->controller->version, artifact.native_recipe.version(artifact.recipe.layout));
   return Status::Ok();
 }
@@ -468,7 +523,31 @@ Status bind(void *prepared, void *invocation, std::span<const RegionValue> input
           import(slot.pending_frames[port-1]) : import(slot.frames[port-1]));
     }
   }
-  if (artifact.recipe.external_metadata) {
+  if (artifact.recipe.device_lengths()) {
+    for (std::size_t control=0; control<2; ++control) {
+      if (artifact.length_ports[control] >= inputs.size()) return Status::InvalidArgument("Apple device length control boundary is missing");
+      const auto &input=inputs[artifact.length_ports[control]];
+      auto &binding=slot.bindings[3+control];
+      if (input.description != artifact.lengths_description)
+        return Status::InvalidArgument("Apple device length control description differs");
+      if (input.reference.valid()) {
+        HYLE_ASSIGN_OR_RETURN(binding.source,native_output_source(input.reference,artifact.preparation.runtime,artifact.lengths_description));
+      } else if (input.lease) {
+        HYLE_ASSIGN_OR_RETURN(auto owner,input.lease->view()); const auto wanted=input.tensor.storage();
+        if (!input.tensor.valid() || owner.resource()!=wanted.resource() || owner.native_handle()!=wanted.native_handle() ||
+            wanted.offset()<owner.offset() || wanted.offset()-owner.offset()>owner.size() || wanted.size()>owner.size()-(wanted.offset()-owner.offset()))
+          return Status::InvalidArgument("Apple device length lease does not cover its actual control");
+        HYLE_ASSIGN_OR_RETURN(auto selected,input.lease->subview(wanted.offset()-owner.offset(),wanted.size()));
+        HYLE_ASSIGN_OR_RETURN(binding.value,an::MemoryAccess::owned_tensor(std::move(selected),artifact.lengths_description,controller.import));
+      } else {
+        HYLE_ASSIGN_OR_RETURN(binding.value,an::MemoryAccess::borrow_tensor(input.tensor));
+      }
+    }
+    HYLE_ASSIGN_OR_RETURN(auto metadata,compute::TensorDesc::dense(compute::DataType::kInt32,
+        std::array<std::int64_t,1>{static_cast<std::int64_t>(artifact.recipe.lengths_schema.metadata_offsets().bytes/4)}));
+    HYLE_ASSIGN_OR_RETURN(slot.bindings[5].value,an::MemoryAccess::owned_tensor(controller.reads[3],metadata,controller.import));
+    HYLE_RETURN_IF_ERROR(an::InvocationAccess::prepare_inputs(controller.native,slot.bindings));
+  } else if (artifact.recipe.external_metadata) {
     if (artifact.metadata_port >= inputs.size()) return Status::InvalidArgument("Apple page metadata boundary is missing");
     const auto &input = inputs[artifact.metadata_port];
     HYLE_ASSIGN_OR_RETURN(auto description, controller.recipe.schema().metadata_description());
@@ -490,9 +569,9 @@ Status bind(void *prepared, void *invocation, std::span<const RegionValue> input
     HYLE_ASSIGN_OR_RETURN(controller.reads[3], input.lease->subview(
         wanted.offset()-owner.offset()+offsets.page_indices, bytes));
   }
-  if (empty_program(artifact, slot)) {
+  if (!artifact.recipe.device_lengths() && empty_program(artifact, slot)) {
     HYLE_RETURN_IF_ERROR(an::InvocationAccess::prepare_inputs(controller.native, std::span(slot.bindings).first(1)));
-  } else {
+  } else if (!artifact.recipe.device_lengths()) {
     HYLE_ASSIGN_OR_RETURN(auto metadata, controller.recipe.input_description(controller.version.layout(), artifact.count));
     HYLE_ASSIGN_OR_RETURN(slot.bindings[artifact.count].value,
         an::MemoryAccess::owned_tensor(controller.reads[3], metadata, controller.import));
@@ -666,7 +745,7 @@ const ProviderRegionPreparedVTable prepared_table{
     }};
 } // namespace
 bool native_paged_operation(const compute::Operation &operation) noexcept {
-  return operation.custom_as<batch::PagedAttention>() || operation.custom_as<batch::PagedMlaAttention>() ||
+  return operation.custom_as<batch::DeviceLengthsPagedAttention>() || operation.custom_as<batch::PagedAttention>() || operation.custom_as<batch::PagedMlaAttention>() ||
       operation.custom_as<compute::PagedAttention>() || operation.custom_as<compute::PagedMlaAttention>();
 }
 Status propose_native_paged(void *context, const RegionDiscoveryRequest &request,
@@ -691,7 +770,6 @@ Status native_paged_resources(void *context, const RegionCompileRequest &request
     std::span<RegionInputRequirement> inputs, std::span<RegionOutputRequirement> outputs,
     RegionResourceProposal *proposal) noexcept {
   HYLE_ASSIGN_OR_RETURN(auto selected, qualify(context, request));
-  (void)selected;
   if (inputs.size() != request.inputs.size() || outputs.size() != request.outputs.size())
     return Status::InvalidArgument("Apple page resource boundary differs");
   const cd::ResourceBindingRequirement resource{
@@ -702,6 +780,12 @@ Status native_paged_resources(void *context, const RegionCompileRequest &request
   const auto found = std::ranges::find(request.inputs, query);
   if (found == request.inputs.end()) return Status::InvalidArgument("Apple page query boundary is missing");
   inputs[std::size_t(found-request.inputs.begin())].accepts_reference = true;
+  if (selected.device_lengths()) for (std::size_t control=3; control<5; ++control) {
+    HYLE_ASSIGN_OR_RETURN(auto input,request.graph->node_input(request.nodes[0],control));
+    const auto port=std::ranges::find(request.inputs,input);
+    if (port==request.inputs.end()) return Status::InvalidArgument("Apple device length boundary is missing");
+    inputs[std::size_t(port-request.inputs.begin())].accepts_reference=true;
+  }
   std::ranges::fill(outputs, RegionOutputRequirement{resource,
       {RegionOutputKind::kDeferredGenerated, RegionOutputProjection::kNativeOnly}});
   *proposal = {.runtime = runtime_properties, .workspace_resource = resource}; return Status::Ok();
@@ -753,15 +837,37 @@ compute::ProviderPrepareOutcome compile_native_paged(void *context, const Region
     }
     HYLE_ASSIGN_OR_RETURN(auto operation, request.graph->operation(artifact->node));
     compute::TensorDesc expected;
-    HYLE_RETURN_IF_ERROR(compute::infer_output_descriptions(operation,
-        std::span(artifact->descriptions).first(input_count), std::span(&expected, 1)));
+    if (!artifact->recipe.device_lengths())
+      HYLE_RETURN_IF_ERROR(compute::infer_output_descriptions(operation,
+          std::span(artifact->descriptions).first(input_count), std::span(&expected, 1)));
     HYLE_ASSIGN_OR_RETURN(auto output, request.graph->result(artifact->node));
     HYLE_ASSIGN_OR_RETURN(artifact->output, request.graph->value_description(output));
-    if (artifact->output != expected || artifact->output.rank() != 3 ||
+    if ((!artifact->recipe.device_lengths() && artifact->output != expected) || artifact->output.rank() != 3 ||
         artifact->output.dimensions()[0] < 0 || std::uint64_t(artifact->output.dimensions()[0]) > UINT32_MAX)
       return Status::InvalidArgument("Apple page concrete Q/output descriptions differ");
     artifact->preparation.query_rows = std::uint32_t(artifact->output.dimensions()[0]);
-    if (!artifact->recipe.external_metadata) {
+    if (artifact->recipe.device_lengths()) {
+      HYLE_ASSIGN_OR_RETURN(artifact->lengths_description,compute::TensorDesc::dense(compute::DataType::kInt32,
+          std::array<std::int64_t,1>{artifact->recipe.capacity.max_requests}));
+      for (std::size_t control=0; control<2; ++control) {
+        HYLE_ASSIGN_OR_RETURN(auto input,request.graph->node_input(artifact->node,3+control));
+        const auto found=std::ranges::find(request.inputs,input);
+        if (found==request.inputs.end()) return Status::InvalidArgument("Apple device length boundary is missing");
+        const auto boundary=std::uint32_t(found-request.inputs.begin());
+        HYLE_ASSIGN_OR_RETURN(auto description,request.graph->value_description(input));
+        if (description!=artifact->lengths_description || !an::is_copy_resource(request.input_resources[boundary]))
+          return Status::InvalidArgument("Apple device length control resource/description differs");
+        artifact->length_inputs[control]=input; artifact->length_ports[control]=boundary;
+      }
+      const std::array descriptions{artifact->descriptions[0],artifact->descriptions[1],artifact->descriptions[2],
+          artifact->lengths_description,artifact->lengths_description};
+      HYLE_RETURN_IF_ERROR(compute::infer_output_descriptions(operation,descriptions,std::span(&expected,1)));
+      if (expected!=artifact->output) return Status::InvalidArgument("Apple device length physical output differs");
+      HYLE_ASSIGN_OR_RETURN(artifact->native_recipe,page_recipe(*artifact,artifact->recipe.lengths_schema,allocator));
+      HYLE_ASSIGN_OR_RETURN(artifact->program,an::prepare_device_lengths_paged_graph(artifact->preparation.runtime,
+          artifact->recipe.lengths_schema,artifact->preparation.query_rows,artifact->recipe.options.scale,
+          artifact->recipe.options.causal,artifact->recipe.options.window_left,artifact->workload));
+    } else if (!artifact->recipe.external_metadata) {
       HYLE_ASSIGN_OR_RETURN(artifact->native_recipe, page_recipe(*artifact, artifact->recipe.layout.origin_schema(), allocator));
       HYLE_ASSIGN_OR_RETURN(artifact->program, an::PagedBatchAccess::prepare_program(
           artifact->preparation.runtime, artifact->native_recipe, artifact->recipe.layout, artifact->workload));

@@ -8,6 +8,7 @@
 #include "hyle/mem/std_allocator.h"
 
 #include <utility>
+#include <array>
 #include <vector>
 
 namespace hyle::graph::batch::detail {
@@ -16,7 +17,7 @@ namespace hyle::graph::batch::detail {
 // input is bound once by the typed preparation; it is never a second executor.
 // The physical input indices are the original region boundary port indices.
 inline constexpr compute::ProviderExtensionId kNativeBatchRegionExtensionId{
-    0x48594c454e415450ULL, 0x414745445245474eULL, 6};
+    0x48594c454e415450ULL, 0x414745445245474eULL, 7};
 struct NativeBatchRegionFacts final {
   NodeId node;
   // Nonnull only for the operation's immutable owned-layout recipe. Explicit
@@ -38,6 +39,11 @@ struct NativeBatchRegionFacts final {
   // Explicit metadata operations have no owned initial layout. This is empty
   // until their first prepare, then names the actual owned slot version.
   compute::BatchLayoutVersion layout;
+  // A device-length node owns its schema before a layout is installed. The
+  // original prepared recipe freezes geometry; these actual Graph values
+  // supply runtime Q/KV lengths without granting additional page authority.
+  bool device_lengths = false;
+  std::array<ValueId,2> length_inputs{};
 };
 struct NativeBatchRegionVTable final {
   Result<NativeBatchRegionFacts> (*inspect)(void *prepared,
@@ -84,6 +90,8 @@ struct NativeBatchRegionRef final {
   bool causal = true;
   std::int32_t window_left = -1;
   std::uint32_t output_query_rows = 0;
+  bool device_lengths = false;
+  std::array<ValueId,2> length_inputs{};
 };
 using NativeBatchRegions = std::vector<NativeBatchRegionRef,
     mem::StdAllocator<NativeBatchRegionRef>>;
@@ -94,7 +102,11 @@ Status collect_native_batch_regions(Invocation &, NativeBatchRegions &) noexcept
 Result<NativeBatchRegionFacts> inspect_native_batch_region(
     const NativeBatchRegionRef &) noexcept;
 Status split_native_batch_layouts(std::span<const NativeBatchRegionRef>,
-    std::span<const NodeLayout>, NodeLayouts &shared) noexcept;
+    std::span<const NodeLayout>, NodeLayouts &shared, bool device_lengths = false) noexcept;
+// Non-mutating original-node/schema preflight before prepare_lengths revokes
+// a preceding episode. Native routes use their actual endpoint, not Queue.
+Status validate_native_lengths_preparation(Invocation &,
+    std::span<const NodeLayout>) noexcept;
 Status prepare_native_batch_regions(std::span<const NativeBatchRegionRef>,
     std::span<const NodeLayout>) noexcept;
 Status reset_native_batch_regions(std::span<const NativeBatchRegionRef>) noexcept;

@@ -64,7 +64,7 @@ template<class T> struct Cell final {
     control_envelope = envelope;
     output = take(c::batch_output_description(capacity, queries));
     program = take(d::prepare_device_lengths_paged_graph(d::ContextAccess::runtime(context),
-        envelope, queries, .125f, causal, window));
+        schema, queries, .125f, causal, window));
     EXPECT_EQ(program.input_count(),6u);
   }
 
@@ -232,10 +232,10 @@ TEST(AppleDeviceLengths, InvalidPageDoesNotBecomeAReadableOutput) {
   auto invocation = take(cell.program.create_invocation());
   cell.run(invocation,{1,3},{17,31},true,-1,0,true);
 }
-TEST(AppleDeviceLengths, RejectsForeignPhysicalEnvelopeBeforePreparation) {
+TEST(AppleDeviceLengths, RejectsPhysicalRowsOutsideTheOriginalSchema) {
   Cell<BF16> cell(64,64,39);
   const auto result = d::prepare_device_lengths_paged_graph(d::ContextAccess::runtime(cell.context),
-      cell.envelope,5,.125f,true,-1);
+      cell.schema,7,.125f,true,-1);
   ASSERT_FALSE(result); EXPECT_TRUE(result.error().IsInvalidArgument());
 }
 TEST(AppleDeviceLengths, DeviceProducedLengthsUseTheOriginalNativeSources) {

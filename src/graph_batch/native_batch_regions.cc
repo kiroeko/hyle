@@ -21,10 +21,11 @@ Status validate_facts(const NativeBatchRegionFacts &facts) noexcept {
   const auto count = facts.mla == c::MlaCacheLayout::kNone ? 3u : 2u;
   if (facts.paged_program) {
     const auto &program = *facts.paged_program;
-    if (!paged || !program.valid() || !facts.layout.valid() || !program.schema().owns(facts.layout) ||
+    if (!paged || !program.valid() || (!facts.layout.valid() && !facts.device_lengths) ||
+        (facts.layout.valid() && !program.schema().owns(facts.layout)) ||
         program.schema().capacity() != facts.capacity || program.schema().mla_layout() != facts.mla ||
         program.causal() != facts.causal || program.window_left() != facts.window_left ||
-        facts.metadata_input.valid() || facts.output_query_rows != facts.layout.facts().query_rows)
+        facts.metadata_input.valid() || (facts.layout.valid() && facts.output_query_rows != facts.layout.facts().query_rows))
       return Status::FailedPrecondition("native page region has no exact owned recipe/layout");
   } else {
     if (!facts.metadata_input.valid() || facts.metadata_input.kind() != ValueKind::kInput)
@@ -36,6 +37,17 @@ Status validate_facts(const NativeBatchRegionFacts &facts) noexcept {
         facts.layout.origin_schema().mla_layout() != facts.mla ||
         facts.layout.facts().query_rows > facts.output_query_rows))
       return Status::InvalidArgument("native capacity prepared layout differs");
+  }
+  if (facts.device_lengths) {
+    if (!facts.paged_program || facts.mla != c::MlaCacheLayout::kNone || !facts.output_query_rows ||
+        (facts.layout.valid() && facts.layout.facts().requests != facts.capacity.max_requests))
+      return Status::InvalidArgument("native device lengths require their original paged schema and request capacity");
+    for (auto input : facts.length_inputs) {
+      if (!input.valid() || std::ranges::find(facts.inputs,input) != facts.inputs.end())
+        return Status::InvalidArgument("native device length controls differ from their actual Graph values");
+    }
+  } else if (facts.length_inputs[0].valid() || facts.length_inputs[1].valid()) {
+    return Status::InvalidArgument("ordinary native batch cannot claim device length controls");
   }
   if (facts.inputs.size() != count || facts.input_ports.size() != count)
     return Status::InvalidArgument("native page region physical port map differs");
@@ -63,6 +75,8 @@ Status validate_layout(const NativeBatchRegionFacts &facts,
   if (facts.paged_program && (layout.facts().query_rows != facts.output_query_rows ||
       !facts.paged_program->schema().owns(layout)))
     return Status::InvalidArgument("native page layout schema/active output differs");
+  if (facts.device_lengths && layout.facts().requests != facts.capacity.max_requests)
+    return Status::InvalidArgument("native device length envelope request capacity differs");
   return c::validate_batch_attention_layout(layout, facts.causal, facts.window_left);
 }
 } // namespace
@@ -74,6 +88,7 @@ Result<NativeBatchRegionFacts> inspect_native_batch_region(const NativeBatchRegi
       facts.capacity != region.capacity || facts.mla != region.mla ||
       facts.causal != region.causal || facts.window_left != region.window_left ||
       facts.output_query_rows != region.output_query_rows ||
+      facts.device_lengths != region.device_lengths || facts.length_inputs != region.length_inputs ||
       facts.inputs.size() != region.inputs.size() ||
       facts.input_ports.size() != region.input_ports.size() ||
       !std::equal(facts.inputs.begin(), facts.inputs.end(), region.inputs.begin()) ||
@@ -109,7 +124,7 @@ Status collect_native_batch_regions(Invocation &invocation, NativeBatchRegions &
           regions.push_back({table, view.prepared_vtable, view.prepared, view.invocation,
               view.step, view.lane, facts.node, facts.paged_program, facts.inputs,
               facts.input_ports, facts.metadata_input, facts.capacity, facts.mla,
-              facts.causal, facts.window_left, facts.output_query_rows});
+              facts.causal, facts.window_left, facts.output_query_rows, facts.device_lengths, facts.length_inputs});
         } catch (...) {
           return Status::ResourceExhausted("native page original slot references");
         }
@@ -118,7 +133,7 @@ Status collect_native_batch_regions(Invocation &invocation, NativeBatchRegions &
 }
 
 Status split_native_batch_layouts(std::span<const NativeBatchRegionRef> regions,
-    std::span<const NodeLayout> layouts, NodeLayouts &shared) noexcept {
+    std::span<const NodeLayout> layouts, NodeLayouts &shared, bool device_lengths) noexcept {
   shared.clear();
   for (std::size_t i = 0; i < layouts.size(); ++i) {
     const auto &binding = layouts[i];
@@ -136,6 +151,8 @@ Status split_native_batch_layouts(std::span<const NativeBatchRegionRef> regions,
       continue;
     }
     HYLE_ASSIGN_OR_RETURN(auto facts, inspect_native_batch_region(*found));
+    if (facts.device_lengths && !device_lengths)
+      return Status::InvalidArgument("native device length attention requires prepare_lengths");
     HYLE_RETURN_IF_ERROR(validate_layout(facts, binding.layout));
   }
   for (const auto &region : regions)
@@ -163,6 +180,24 @@ Status split_native_batch_layouts(std::span<const NativeBatchRegionRef> regions,
     }
   }
   return Status::Ok();
+}
+
+Status validate_native_lengths_preparation(Invocation &invocation,
+    std::span<const NodeLayout> envelopes) noexcept {
+  struct Call { std::span<const NodeLayout> envelopes; } call{envelopes};
+  return gd::RegionAccess::visit(invocation, [](void *opaque, const gd::RegionAccessView &view) noexcept -> Status {
+    if (!view.prepared_vtable || !view.prepared_vtable->query_extension) return Status::Ok();
+    const auto *table = static_cast<const NativeBatchRegionVTable *>(
+        view.prepared_vtable->query_extension(view.prepared, kNativeBatchRegionExtensionId));
+    if (!table || !table->inspect) return Status::Ok();
+    HYLE_ASSIGN_OR_RETURN(auto facts, table->inspect(view.prepared,view.invocation));
+    HYLE_RETURN_IF_ERROR(validate_facts(facts));
+    if (!facts.device_lengths) return Status::Ok();
+    const auto envelopes = static_cast<Call *>(opaque)->envelopes;
+    const auto found = std::ranges::find(envelopes,facts.node,&NodeLayout::node);
+    if (found == envelopes.end()) return Status::InvalidArgument("native device length capacity envelope is missing");
+    return validate_layout(facts,found->layout);
+  }, &call);
 }
 
 Status prepare_native_batch_regions(std::span<const NativeBatchRegionRef> regions,

@@ -1244,7 +1244,7 @@ Status prepare_all(graph::Invocation&invocation,const Graph*graph,std::span<cons
     if(!cached)HYLE_RETURN_IF_ERROR(detail::collect_native_batch_regions(invocation,native));
     detail::NodeLayouts local_layouts{mem::StdAllocator<NodeLayout>(options.allocator)};
     auto&shared_layouts=cached?p->shared_layouts:local_layouts;
-    HYLE_RETURN_IF_ERROR(detail::split_native_batch_layouts(native,layouts,shared_layouts));
+    HYLE_RETURN_IF_ERROR(detail::split_native_batch_layouts(native,layouts,shared_layouts,device_lengths));
     if(!cached){
       bool typed=!native.empty();
       HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit(invocation,[](void*opaque,const gd::RegionAccessView&view)noexcept->Status{
@@ -1400,6 +1400,7 @@ Status prepare_lengths(graph::Invocation&invocation,std::span<const QueueBinding
       return Status::InvalidArgument("device-length Queue differs from the original Context");
     return Status::Ok();
   },&call));
+  HYLE_RETURN_IF_ERROR(detail::validate_native_lengths_preparation(invocation,envelopes));
   return prepare_all(invocation,nullptr,queues,envelopes,{},std::move(options),true);
 }
 Status prepare(graph::Invocation&invocation,const Graph&graph,std::span<const QueueBinding>queues,
