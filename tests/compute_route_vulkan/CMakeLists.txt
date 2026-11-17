@@ -1,6 +1,10 @@
 hyle_add_header_self_contained_test(compute_route_vulkan
   HEADER_DIR compute HEADERS vulkan.h vulkan_batch.h vulkan_row_cache.h detail/vulkan_plan.h)
 if(_HYLE_COMPUTE_HAVE_VULKAN)
+  hyle_add_test(compute_route_vulkan NAME device_append SOURCES device_append_test.cc)
+  target_include_directories(hyle_compute_route_vulkan_device_append_test PRIVATE
+    "${HYLE_SOURCE_DIR}/src/compute_route_vulkan")
+  hyle_stage_runtime(hyle_compute_route_vulkan_device_append_test)
   hyle_add_test(compute_route_vulkan NAME device_lengths
     SOURCES device_lengths_test.cc DEPS hyle_compute_batch hyle_simd)
   target_include_directories(hyle_compute_route_vulkan_device_lengths_test PRIVATE

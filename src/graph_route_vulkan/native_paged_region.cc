@@ -3,6 +3,7 @@
 #include "native_paged_pending.h"
 #include "native_region.h"
 #include "vulkan_source.h"
+#include "native_value.h"
 
 #include <algorithm>
 #include <array>
@@ -17,6 +18,7 @@
 #include "../compute_route_vulkan/vulkan_memory_internal.h"
 #include "../compute_route_vulkan/vulkan_program_internal.h"
 #include "../graph_batch/native_batch_regions.h"
+#include "../graph_batch/native_device_append_regions.h"
 #include "hyle/compute/detail/materialized_native_controller.h"
 #include "hyle/compute/detail/vulkan_batch_access.h"
 
@@ -158,6 +160,8 @@ struct Artifact final {
   PreparedProgram program;
   compute::WorkloadContext workload;
   mem::MemoryResourceRef output_resource;
+  compute::LeasePool status_pool;
+  compute::ReadLease zero_status;
 };
 struct Slot final {
   struct WrittenBank final {
@@ -185,6 +189,9 @@ struct Slot final {
   compute::WriteLease metadata_writer;
   compute::ReadLease metadata;
   compute::BatchLayoutVersion metadata_layout;
+  std::vector<cv::Tensor> checks;
+  bool checks_complete=false;
+  NativeValue origin;
   bool sealed = false, needs_seal = false;
 };
 
@@ -329,7 +336,9 @@ Status prepare(void *prepared, void *invocation, compute::BatchLayoutVersion lay
     c.report.uploaded_bytes=upload?bytes:0; c.report.upload_host_waits=upload?1:0;
     c.report.device_mirror_bytes=bytes; c.report.backing_bytes=bytes;
     s.frames={}; s.pending_frames={}; s.pending_source=nullptr; s.written={};
-    if (!s.output.valid()) HYLE_RETURN_IF_ERROR(refresh_output(a,s));
+    bool refresh=false;
+    HYLE_RETURN_IF_ERROR(vn::CompositionAccess::prepare_outputs(c.native,&refresh));
+    if (refresh || !s.output.valid()) HYLE_RETURN_IF_ERROR(refresh_output(a,s));
     return Status::Ok();
   }
   if (a.recipe.explicit_metadata && (!s.controller().recipe.schema().owns(layout) ||
@@ -401,19 +410,26 @@ Status reset(void *, void *invocation) noexcept {
   return Status::Ok();
 }
 cd::CompletionEndpoint endpoint(void *, void *) noexcept;
+bool same_kv_envelope(compute::BatchLayoutVersion a,compute::BatchLayoutVersion b) noexcept {
+  if(!a.valid() || !b.valid() || !a.origin_schema().owns(b))return false;
+  const auto x=a.host(),y=b.host();
+  return std::ranges::equal(x.kv_indptr,y.kv_indptr) && std::ranges::equal(x.page_indices,y.page_indices) &&
+      std::ranges::equal(x.last_page_lengths,y.last_page_lengths);
+}
 Status validate_written(void *prepared, void *invocation, ValueId input,
     compute::BatchLayoutVersion layout, compute::ConstTensorView capacity,
     const bd::NativeAppendRegionRef &writer) noexcept {
   const auto &a = *static_cast<const Artifact *>(prepared);
   auto &s = *static_cast<Slot *>(invocation);
-  if (!s.controller().prepared || s.controller().bound || layout != s.controller().version.layout() ||
+  const auto *device=bd::native_device_append_table(writer);
+  if(device && !a.recipe.device_lengths())return Status::Unimplemented("device append needs a reader with its native write guard");
+  if (!s.controller().prepared || s.controller().bound ||
+      (a.recipe.device_lengths()?!same_kv_envelope(layout,s.controller().version.layout()):layout!=s.controller().version.layout()) ||
       !page_recipe(a, s).schema().owns(layout) || !capacity.valid() || !writer.table ||
       !writer.table->inspect || !writer.table->qualify_reader || !writer.table->before_read ||
       !writer.prepared || !writer.invocation ||
       std::ranges::any_of(s.pending_frames, [](const auto &f) { return f.valid(); }))
     return Status::FailedPrecondition("Vulkan written bank needs its exact unbound native layout");
-  if (a.recipe.device_lengths())
-    return Status::Unimplemented("Vulkan device-length reader needs native checked device append admission");
   std::size_t port = 1;
   for (; port < a.count; ++port) if (a.inputs[port] == input) break;
   if (port == a.count || s.frames[port - 1].valid() || s.written[port - 1].committed)
@@ -436,6 +452,9 @@ Status validate_written(void *prepared, void *invocation, ValueId input,
   HYLE_RETURN_IF_ERROR(vn::CompositionAccess::prepare_bindings(s.controller().native));
   HYLE_RETURN_IF_ERROR(writer.table->qualify_reader(writer.prepared, writer.invocation,
       endpoint(prepared, invocation)));
+  if(device && (!device->length_inputs || !device->status ||
+      device->length_inputs(writer.prepared)[1]!=a.length_inputs[1]))
+    return Status::InvalidArgument("Vulkan append and reader must use the same original KV-length value");
   // This owns only the native backing. Core has not granted page permission yet.
   HYLE_ASSIGN_OR_RETURN(auto tensor, vn::MemoryAccess::tensor_view(s.preparation.runtime,
       capacity, s.allocator, s.controller().import.resource_budget));
@@ -540,7 +559,15 @@ Status bind(void *prepared, void *invocation, std::span<const RegionValue> input
   HYLE_RETURN_IF_ERROR(vn::CompositionAccess::prepare_outputs(c.native, &refresh));
   c.bound = false; s.needs_seal = false;
   if (refresh || !s.output.valid()) HYLE_RETURN_IF_ERROR(refresh_output(a, s));
-  std::array<cv::Tensor, 6> native;
+  std::array<cv::Tensor, 8> native;
+  s.checks.clear();s.checks_complete=true;
+  for(const auto &input:inputs) {
+    if(const auto *origin=native_value(input)) {
+      const auto inherited=append_native_checks(*origin,s.preparation.runtime,s.checks);
+      if(inherited.IsUnimplemented())s.checks_complete=false;
+      else HYLE_RETURN_IF_ERROR(inherited);
+    } else if(input.native_type)s.checks_complete=false;
+  }
   for (std::size_t port = 0; port < a.count; ++port) {
     HYLE_ASSIGN_OR_RETURN(auto description, input_description(a, s, port));
     if (a.ports[port] >= inputs.size()) return Status::InvalidArgument("native page boundary port differs");
@@ -560,7 +587,7 @@ Status bind(void *prepared, void *invocation, std::span<const RegionValue> input
       const auto &written = s.written[port - 1];
       if (written.committed) {
         const auto actual = written.capacity.storage(), expected = input.tensor.storage();
-        if (written.layout != c.version.layout() || !written.tensor.valid() ||
+        if ((a.recipe.device_lengths()?!same_kv_envelope(written.layout,c.version.layout()):written.layout!=c.version.layout()) || !written.tensor.valid() ||
             actual.resource() != expected.resource() || actual.native_handle() != expected.native_handle() ||
             actual.offset() != expected.offset() || actual.size() != expected.size())
           return Status::InvalidArgument("Vulkan native input differs from its proved same-Graph bank");
@@ -608,6 +635,20 @@ Status bind(void *prepared, void *invocation, std::span<const RegionValue> input
     const auto metadata=s.controller().native.valid() ? a.program.native.input_descriptions()[5] : compute::TensorDesc{};
     HYLE_ASSIGN_OR_RETURN(native[5],vn::MemoryAccess::lease_tensor(s.preparation.runtime,
         a.device.resource,c.reads[3],metadata,c.import));
+    HYLE_ASSIGN_OR_RETURN(auto status,compute::TensorDesc::dense(compute::DataType::kInt32,std::array<std::int64_t,1>{1}));
+    for(std::size_t bank=0;bank<2;++bank) {
+      const auto &written=s.written[bank];
+      const auto *writer=written.committed?bd::native_device_append_table(written.writer):nullptr;
+      if(writer) {
+        HYLE_ASSIGN_OR_RETURN(auto verdict,writer->status(written.writer.prepared,written.writer.invocation));
+        if(!verdict.valid() || verdict.description()!=status)
+          return Status::InvalidArgument("Vulkan written bank has no exact original device verdict");
+        HYLE_ASSIGN_OR_RETURN(native[6+bank],vn::MemoryAccess::tensor_view(s.preparation.runtime,verdict,s.allocator,c.import.resource_budget));
+      }else {
+        HYLE_ASSIGN_OR_RETURN(native[6+bank],vn::MemoryAccess::lease_tensor(s.preparation.runtime,
+            a.device.resource,a.zero_status,status,c.import));
+      }
+    }
     HYLE_RETURN_IF_ERROR(c.native.bind(native));
   } else if (a.recipe.explicit_metadata) {
     if (a.metadata_port >= inputs.size())
@@ -657,7 +698,8 @@ Result<RegionValue> value(void *prepared, void *invocation, std::size_t port) no
   if (port >= a.public_outputs || !s.output.valid() || !s.backing.valid())
     return std::unexpected(Status::FailedPrecondition("native page output is not cold prepared"));
   HYLE_ASSIGN_OR_RETURN(auto tensor, compute::ConstTensorView::create(s.output.description(), s.backing.view()));
-  return RegionValue{s.output.description(), tensor, &tensor_type, &s.output};
+  s.origin={&s.output,&vn::Access::invocation(s.controller().native)->run,&s.checks,&s.checks_complete};
+  return RegionValue{s.output.description(), tensor, native_value_type(), &s.origin};
 }
 Result<compute::ReadLease> lease(void *prepared, void *invocation, std::size_t port) noexcept {
   const auto &a = *static_cast<Artifact *>(prepared); auto &s = *static_cast<Slot *>(invocation);
@@ -895,7 +937,12 @@ compute::ProviderPrepareOutcome compile_native_paged(void *context,
       if (expected!=output) return Status::InvalidArgument("Vulkan device length output description differs");
       HYLE_ASSIGN_OR_RETURN(a->native_recipe,make_recipe(*a,schema,allocator));
       HYLE_ASSIGN_OR_RETURN(a->program.native,vn::prepare_device_lengths_paged_graph(runtime,schema,
-          a->output_query_rows,a->recipe.options.scale,a->recipe.options.causal,a->recipe.options.window_left,a->workload));
+          a->output_query_rows,a->recipe.options.scale,a->recipe.options.causal,a->recipe.options.window_left,a->workload,true));
+      HYLE_ASSIGN_OR_RETURN(a->status_pool,compute::LeasePool::create(a->device.resource,4,
+          {.max_blocks=1,.allocator=allocator,.resource_budget=request.resource_budget}));
+      HYLE_ASSIGN_OR_RETURN(auto zero,a->status_pool.allocate(4,4));
+      HYLE_ASSIGN_OR_RETURN(auto view,zero.view());HYLE_RETURN_IF_ERROR(view.fill(std::byte{0}));
+      HYLE_ASSIGN_OR_RETURN(a->zero_status,zero.publish());
       a->program.allocation=a->preparation.allocation;
     } else if (a->recipe.explicit_metadata) {
       HYLE_ASSIGN_OR_RETURN(a->metadata_input, request.graph->node_input(a->node, 3));

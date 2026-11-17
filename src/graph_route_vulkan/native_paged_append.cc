@@ -1,6 +1,7 @@
 #include "native_paged_append.h"
 #include "native_region.h"
 #include "vulkan_source.h"
+#include "native_value.h"
 
 #include <algorithm>
 #include <array>
@@ -10,7 +11,9 @@
 #include <vector>
 
 #include "../compute_route_vulkan/vulkan_copy_internal.h"
+#include "../compute_route_vulkan/vulkan_device_append_internal.h"
 #include "../graph_batch/native_append_regions.h"
+#include "../graph_batch/native_device_append_regions.h"
 #include "../graph_batch/paged_append.h"
 #include "hyle/core/assert.h"
 
@@ -28,6 +31,12 @@ constexpr compute::ProviderRuntimeProperties properties{
 struct Artifact final {
   std::shared_ptr<vn::Runtime> runtime;
   bd::NativeAppendRegionFacts facts;
+  bool device_lengths = false;
+  std::array<ValueId,3> inputs{};
+  std::array<std::uint32_t,3> ports{};
+  std::array<compute::TensorDesc,3> descriptions;
+  std::size_t count = 1;
+  cv::InvocationAllocation allocation;
 };
 struct Slot final {
   Slot(mem::AllocatorRef a, const Artifact &owner) : artifact(owner), allocator(a),
@@ -42,6 +51,10 @@ struct Slot final {
   std::vector<cd::CopyBackendRange, mem::StdAllocator<cd::CopyBackendRange>> copies;
   std::shared_ptr<vn::CopyRecording> recording;
   mem::ConstBufferView rows;
+  std::array<cv::Tensor,3> device_inputs;
+  std::array<compute::ConstTensorView,3> device_views;
+  std::array<compute::ReadLease,3> device_owners;
+  std::vector<cv::Tensor> checks;
   bool configured = false, recorded = false, sealed = false, submitted = false;
 };
 Status open(const Artifact &a) noexcept {
@@ -59,25 +72,39 @@ Status aligned(const std::shared_ptr<vn::Runtime> &runtime, mem::ConstBufferView
     return Status::Unimplemented("Vulkan append needs exact four-byte aligned copy ranges");
   return Status::Ok();
 }
-Result<batch::PagedAppend> qualify(const RegionCompileRequest &r) noexcept {
+struct AppendRecipe final { batch::PagedAppend descriptor; bool device_lengths = false; };
+Result<AppendRecipe> qualify(const RegionCompileRequest &r) noexcept {
   if (!r.graph || r.graph->dimension_count() || r.route != kNativeAppendRoute ||
-      r.nodes.size() != 1 || r.inputs.size() != 1 || !r.outputs.empty() ||
+      r.nodes.size() != 1 || r.inputs.empty() || r.inputs.size() > 3 || !r.outputs.empty() ||
       !r.has_unknown_effects || !r.effect_accesses.empty())
     return std::unexpected(Status::Unimplemented("Vulkan append needs one exact zero-output write node"));
   HYLE_ASSIGN_OR_RETURN(auto operation, r.graph->operation(r.nodes[0]));
   const auto append = operation.custom_as<batch::PagedAppend>();
-  if (!append) return std::unexpected(Status::Unimplemented("not a typed paged append"));
-  HYLE_ASSIGN_OR_RETURN(auto rows, r.graph->value_description(r.inputs[0]));
-  HYLE_RETURN_IF_ERROR(append->infer_output_descriptions(std::span(&rows, 1), {}));
+  const auto device = operation.custom_as<batch::DeviceLengthsPagedAppend>();
+  if (!append && !device) return std::unexpected(Status::Unimplemented("not a typed paged append"));
+  const auto count = device ? 3U : 1U;
+  std::array<compute::TensorDesc,3> descriptions;
+  std::array<ValueId,3> values;
+  for (std::size_t i=0;i<count;++i) {
+    HYLE_ASSIGN_OR_RETURN(values[i],r.graph->node_input(r.nodes[0],i));
+    if (std::ranges::find(r.inputs,values[i])==r.inputs.end())
+      return std::unexpected(Status::Unimplemented("Vulkan append requires each original logical boundary"));
+    HYLE_ASSIGN_OR_RETURN(descriptions[i],r.graph->value_description(values[i]));
+  }
+  for (auto input:r.inputs) if (std::find(values.begin(),values.begin()+count,input)==values.begin()+count)
+    return std::unexpected(Status::InvalidArgument("Vulkan append has a foreign boundary input"));
+  HYLE_RETURN_IF_ERROR(device ? device->infer_output_descriptions(descriptions,{}) :
+      append->infer_output_descriptions(std::span(descriptions).first(1), {}));
   // Common inference proved the complete original cache carrier. This route
   // copies bytes; exact native resources and four-byte ranges are checked below.
-  return *append;
+  return AppendRecipe{append ? *append : batch::PagedAppend{device->schema,device->role},bool(device)};
 }
 Status configure(void *prepared, void *invocation,
                  const bd::NativeAppendConfiguration &config) noexcept try {
   const auto &a = *static_cast<const Artifact *>(prepared);
   auto &s = *static_cast<Slot *>(invocation);
   HYLE_RETURN_IF_ERROR(open(a));
+  if (a.device_lengths) return Status::InvalidArgument("device append requires its exact capacity configuration");
   // A retired cancelled/failed copy may be replaced cold. Source/device
   // failure was checked above; this gate never treats pending work as retired.
   if (s.recording) HYLE_RETURN_IF_ERROR(vn::copy_recording_retired_gate(*s.recording));
@@ -136,6 +163,46 @@ Status configure(void *prepared, void *invocation,
 } catch (const std::bad_alloc &) {
   return Status::ResourceExhausted("Vulkan append range metadata");
 }
+Status configure_device(void *prepared,void *invocation,const bd::NativeDeviceAppendConfiguration &config) noexcept try {
+  const auto &a=*static_cast<Artifact *>(prepared);auto &s=*static_cast<Slot *>(invocation);
+  HYLE_RETURN_IF_ERROR(open(a));
+  if (s.recording) HYLE_RETURN_IF_ERROR(vn::copy_recording_retired_gate(*s.recording));
+  HYLE_ASSIGN_OR_RETURN(auto carrier_rows,bd::append_query_rows(a.facts.descriptor,a.facts.rows));
+  if (&s.artifact!=&a || !a.device_lengths || s.pages.valid() ||
+      !a.facts.descriptor.schema.owns(config.layout) || !config.capacity.valid() ||
+      config.capacity.storage().resource()!=a.facts.resource ||
+      config.layout.facts().query_rows!=carrier_rows)
+    return Status::InvalidArgument("Vulkan device append needs its exact original capacity episode");
+  HYLE_ASSIGN_OR_RETURN(auto expected,compute::batch_cache_description(a.facts.descriptor.schema,a.facts.descriptor.role));
+  if (config.capacity.description()!=expected)
+    return Status::InvalidArgument("Vulkan device append physical cache description differs");
+  const auto capacity=a.facts.descriptor.schema.capacity();
+  const auto limit=(std::min)(capacity.max_pages,capacity.max_page_refs);
+  HYLE_ASSIGN_OR_RETURN(auto bytes,a.facts.rows.required_bytes());
+  const auto row_bytes=bytes/carrier_rows;
+  if (config.pages.size()>limit || limit>UINT32_MAX-capacity.max_requests-1 ||
+      std::size_t(limit)>SIZE_MAX/capacity.page_size/row_bytes)
+    return Status::ResourceExhausted("Vulkan device append original metadata/byte bounds");
+  // A terminal episode may be replaced only after its original retirement.
+  // No old pages are consumed by constructing this cold native encoding.
+  if (!s.recording || !vn::copy_recording_reuse_gate(*s.recording).ok()) {
+    HYLE_ASSIGN_OR_RETURN(s.recording,vn::prepare_copy_recording_runtime(a.runtime,limit,s.allocator,
+        std::size_t(limit)*capacity.page_size*row_bytes,vn::CopyRecordingMode::kReplayable));
+    HYLE_RETURN_IF_ERROR(vn::prepare_device_append_recording(*s.recording,
+        {{capacity.page_size,capacity.max_pages,carrier_rows,limit+capacity.max_requests+1,row_bytes},capacity.max_requests},
+        a.facts.rows,a.allocation));
+  } else HYLE_RETURN_IF_ERROR(vn::clear_copy_recording(*s.recording));
+  std::vector<vn::DeviceAppendPageBinding> pages;pages.reserve(config.pages.size());
+  for (const auto &page:config.pages) pages.push_back({page.page,page.destination,page.prefix});
+  s.configured=s.recorded=s.sealed=s.submitted=false;s.device_inputs={};s.device_views={};s.device_owners={};s.checks.clear();
+  HYLE_RETURN_IF_ERROR(vn::configure_device_append_recording(*s.recording,config.capacity.storage(),config.requests,pages));
+  s.layout=config.layout;s.capacity=config.capacity;s.rows={};s.configured=true;
+  return Status::Ok();
+} catch (const std::bad_alloc &) { return Status::ResourceExhausted("Vulkan device append cold bindings"); }
+const bd::NativeDeviceAppendRegionVTable device_table{
+    [](void *p) noexcept { const auto &a=*static_cast<Artifact *>(p);return std::array{a.inputs[1],a.inputs[2]}; },
+    &configure_device,
+    [](void *,void *s) noexcept { return vn::device_append_status(*static_cast<Slot *>(s)->recording); }};
 Status reader(void *prepared, void *, cd::CompletionEndpoint endpoint) noexcept {
   const auto &a = *static_cast<const Artifact *>(prepared);
   HYLE_RETURN_IF_ERROR(open(a));
@@ -173,6 +240,7 @@ const gd::RegionBindingReleaseVTable release_table{
       auto &slot = *static_cast<Slot *>(s);
       if (slot.recording) HYLE_FATAL_ASSERT(vn::clear_copy_recording(*slot.recording).ok());
       slot.rows = {}; slot.recorded = false; slot.sealed = false; slot.submitted = false;
+      slot.device_inputs={};slot.device_views={};slot.device_owners={};slot.checks.clear();
     }};
 Status record_rows(void *, void *) noexcept;
 Status bind(void *p, void *opaque, std::span<const RegionValue> inputs,
@@ -180,6 +248,34 @@ Status bind(void *p, void *opaque, std::span<const RegionValue> inputs,
   const auto &a = *static_cast<const Artifact *>(p); auto &s = *static_cast<Slot *>(opaque);
   HYLE_RETURN_IF_ERROR(open(a));
   s.recorded = false; s.sealed = false; s.submitted = false;
+  if (a.device_lengths) {
+    if (!s.configured || !s.pages.valid() || s.pages.layout()!=s.layout || inputs.size()!=a.count || !outputs.empty())
+      return Status::FailedPrecondition("Vulkan device append original transaction is not bound");
+    HYLE_RETURN_IF_ERROR(vn::copy_recording_reuse_gate(*s.recording));
+    s.device_inputs={};s.device_views={};s.device_owners={};s.checks.clear();
+    for (std::size_t i=0;i<3;++i) {
+      const auto &input=inputs[a.ports[i]];
+      if (input.description!=a.descriptions[i] || !input.tensor.valid() || input.tensor.description()!=a.descriptions[i])
+        return Status::InvalidArgument("Vulkan device append original native input differs");
+      if (input.lease) {
+        HYLE_ASSIGN_OR_RETURN(auto owner,input.lease->view());const auto range=input.tensor.storage();
+        if (owner.resource()!=range.resource() || owner.native_handle()!=range.native_handle() ||
+            range.offset()<owner.offset() || range.offset()-owner.offset()>owner.size() ||
+            range.size()>owner.size()-(range.offset()-owner.offset()))
+          return Status::InvalidArgument("Vulkan device append lease does not cover its exact input");
+        HYLE_ASSIGN_OR_RETURN(s.device_owners[i],input.lease->subview(range.offset()-owner.offset(),range.size()));
+      }
+      if (const auto *origin=native_value(input)) {
+        HYLE_RETURN_IF_ERROR(append_native_checks(*origin,a.runtime,s.checks));s.device_inputs[i]=*origin->tensor;
+      } else {
+        if (input.native_type) return Status::Unimplemented("Vulkan device append source has no original native error provenance");
+        HYLE_ASSIGN_OR_RETURN(s.device_inputs[i],vn::MemoryAccess::tensor_view(a.runtime,input.tensor,s.allocator,a.allocation.resource_budget));
+      }
+      s.device_views[i]=input.tensor;
+    }
+    HYLE_RETURN_IF_ERROR(vn::bind_device_append_inputs(*s.recording,s.device_inputs,s.checks));
+    s.rows=s.device_views[0].storage();s.recorded=true;return Status::Ok();
+  }
   if (!s.configured || !s.pages.valid() || s.pages.layout() != s.layout ||
       inputs.size() != 1 || !outputs.empty() || inputs[0].description != a.facts.rows ||
       !inputs[0].tensor.valid() || inputs[0].tensor.description() != a.facts.rows)
@@ -231,10 +327,13 @@ Result<compute::Completion> submit(void *p, void *opaque,
     std::span<const compute::ConstTensorView> inputs,
     std::span<const compute::TensorView> outputs) noexcept {
   const auto &a = *static_cast<const Artifact *>(p); auto &s = *static_cast<Slot *>(opaque);
-  if (!s.sealed || !s.pages.valid() || s.pages.layout() != s.layout || inputs.size() != 1 ||
-      !outputs.empty() || inputs[0].description() != a.facts.rows ||
-      !same(inputs[0].storage(), s.rows))
+  if (!s.sealed || !s.pages.valid() || s.pages.layout() != s.layout || inputs.size() != a.count ||
+      !outputs.empty() || (!a.device_lengths && (inputs[0].description() != a.facts.rows ||
+      !same(inputs[0].storage(), s.rows))))
     return std::unexpected(Status::FailedPrecondition("Vulkan append rows/owned pages are not sealed"));
+  if (a.device_lengths) for (std::size_t i=0;i<3;++i)
+    if (!inputs[a.ports[i]].valid() || !same(inputs[a.ports[i]].storage(),s.device_views[i].storage()))
+      return std::unexpected(Status::FailedPrecondition("Vulkan device append input changed after cold binding"));
   for (const auto dependency : dependencies)
     HYLE_RETURN_IF_ERROR(vn::qualify_copy_dependency(a.runtime, dependency));
   s.submitted = false;
@@ -256,15 +355,17 @@ const ProviderRegionPreparedVTable table{
       return imports_region_ordered_endpoint(static_cast<Artifact *>(p)->runtime, source);
     },
     .prepare_bindings = &bind, .seal_bindings = &seal,
-    .query_extension = [](void *, compute::ProviderExtensionId id) noexcept -> const void * {
+    .query_extension = [](void *p, compute::ProviderExtensionId id) noexcept -> const void * {
       if (id == bd::kNativeAppendRegionExtensionId) return &append_table;
+      if (id == bd::kNativeDeviceAppendRegionExtensionId && static_cast<Artifact *>(p)->device_lengths)
+        return &device_table;
       if (id == gd::kRegionOrderedWriteExtensionId) return &ordered_write;
       if (id == gd::kRegionBindingReleaseExtensionId) return &release_table;
       return nullptr;
     }};
 } // namespace
 bool native_append_operation(const compute::Operation &op) noexcept {
-  return op.custom_as<batch::PagedAppend>().has_value();
+  return op.custom_as<batch::PagedAppend>().has_value() || op.custom_as<batch::DeviceLengthsPagedAppend>().has_value();
 }
 Status propose_native_append(const RegionDiscoveryRequest &r, RegionProposalWriter &writer) noexcept {
   for (std::size_t i = 0; i < r.graph.node_count(); ++i) {
@@ -286,12 +387,13 @@ Status native_append_resources(void *opaque, const RegionCompileRequest &r,
     std::span<RegionInputRequirement> inputs, std::span<RegionOutputRequirement> outputs,
     RegionResourceProposal *out) noexcept {
   HYLE_ASSIGN_OR_RETURN(auto descriptor, qualify(r)); (void)descriptor;
-  if (inputs.size() != 1 || !outputs.empty()) return Status::InvalidArgument("Vulkan append port arity differs");
+  if (inputs.size() != r.inputs.size() || !outputs.empty()) return Status::InvalidArgument("Vulkan append port arity differs");
   const auto &runtime = static_cast<SourceContext *>(opaque)->runtime;
-  inputs[0].resource = {.required_properties = mem::MemoryProperty::kDeviceAccessible,
+  const cd::ResourceBindingRequirement resource{.required_properties = mem::MemoryProperty::kDeviceAccessible,
       .forbidden_properties = mem::MemoryProperty::kHostAccessible, .minimum_alignment = 1,
       .exact_domain = {runtime->device.get(), static_cast<std::uintptr_t>(cv::MemoryKind::kDevice)},
       .requires_exact_domain = true};
+  std::ranges::fill(inputs,RegionInputRequirement{.resource=resource});
   *out = {.runtime = properties, .preserves_effects = true}; return Status::Ok();
 }
 compute::ProviderPrepareOutcome compile_native_append(void *opaque, const RegionCompileRequest &r,
@@ -299,18 +401,39 @@ compute::ProviderPrepareOutcome compile_native_append(void *opaque, const Region
   using Outcome = compute::ProviderPrepareOutcome; *out = {};
   auto descriptor = qualify(r);
   if (!descriptor) return descriptor.error().IsUnimplemented() ? Outcome::unsupported(descriptor.error()) : Outcome::error(descriptor.error());
-  if (r.input_resources.size() != 1) return Outcome::error(Status::InvalidArgument("Vulkan append input resource is absent"));
+  if (r.input_resources.size() != r.inputs.size()) return Outcome::error(Status::InvalidArgument("Vulkan append input resource is absent"));
   const auto &runtime = static_cast<SourceContext *>(opaque)->runtime;
-  const auto admitted = vn::MemoryAccess::validate_resource(runtime, r.input_resources[0]);
-  if (!admitted.ok()) return Outcome::error(admitted);
-  auto rows = r.graph->value_description(r.inputs[0]);
-  if (!rows) return Outcome::error(rows.error());
+  for(auto resource:r.input_resources) {
+    const auto admitted=vn::MemoryAccess::validate_resource(runtime,resource);
+    if(!admitted.ok())return Outcome::error(admitted);
+  }
   auto *a = allocator.construct<Artifact>();
   if (!a) return Outcome::error(Status::ResourceExhausted("Vulkan append artifact"));
-  a->runtime = runtime; a->facts = {r.nodes[0], *descriptor, *rows, r.input_resources[0]};
+  a->runtime = runtime; a->device_lengths=descriptor->device_lengths;a->count=r.inputs.size();
   *out = {.vtable = &table, .state = a,
       .properties = {.persistent_bytes = sizeof(Artifact), .runtime = properties,
           .preserves_effects = true, .invocation_private_bytes = std::nullopt}};
+  const auto build=[&]() -> Status {
+    const auto count=a->device_lengths?3U:1U;
+    for(std::size_t i=0;i<count;++i) {
+      HYLE_ASSIGN_OR_RETURN(a->inputs[i],r.graph->node_input(r.nodes[0],i));
+      a->ports[i]=static_cast<std::uint32_t>(std::ranges::find(r.inputs,a->inputs[i])-r.inputs.begin());
+      HYLE_ASSIGN_OR_RETURN(a->descriptions[i],r.graph->value_description(a->inputs[i]));
+    }
+    a->facts={r.nodes[0],descriptor->descriptor,a->descriptions[0],r.input_resources[a->ports[0]]};
+    a->allocation.resource_budget=r.resource_budget;a->allocation.device=a->facts.resource;
+    if(a->device_lengths) {
+      for(const auto &domain:r.available_storage_domains)
+        if(vn::MemoryAccess::validate_resource(runtime,domain.resource).ok() &&
+            domain.resource.properties().has(mem::MemoryProperty::kHostAccessible)) {
+          a->allocation.staging=domain.resource;break;
+        }
+      if(!a->allocation.staging.valid())return Status::Unimplemented("Vulkan device append needs its original staging metadata domain");
+    }
+    return Status::Ok();
+  };
+  const auto status=build();
+  if(!status.ok())return status.IsUnimplemented()?Outcome::unsupported(status):Outcome::error(status);
   return Outcome::prepared();
 }
 } // namespace hyle::graph::vulkan::detail

@@ -1,6 +1,7 @@
 #include "vulkan_copy_internal.h"
 #include "vulkan_transfer_internal.h"
 #include "vulkan_program_internal.h"
+#include "vulkan_device_append_native.h"
 
 #include <algorithm>
 #include <array>
@@ -47,6 +48,7 @@ struct CopyRecording final {
   CopyArray<VkBufferCopy> regions;
   CopyArray<HalfwordCopy> halfwords;
   std::shared_ptr<Pipeline> halfword_pipeline;
+  std::shared_ptr<DeviceAppendState> device_append;
   std::array<std::uint64_t, 1> closure{};
 };
 namespace {
@@ -178,6 +180,7 @@ Result<std::shared_ptr<CopyRecording>> prepare_copy_recording_runtime(const std:
     auto recording = std::allocate_shared<CopyRecording>(mem::StdAllocator<CopyRecording>(allocator), allocator);
     recording->runtime = runtime;
     recording->mode = mode;
+    recording->limits.allocator = allocator;
     recording->limits.max_resources = capacity * 2; recording->limits.max_copies = capacity;
     recording->limits.max_phases = 1;
     recording->limits.max_bytes = max_bytes;
@@ -199,6 +202,8 @@ Status bind_copy_recording(CopyRecording &recording,
     ResultCopySourceFn resolve_source,void*source_owner) noexcept {
   std::lock_guard lock(recording.runtime->mutex);
   HYLE_RETURN_IF_ERROR(mutable_recording(recording));
+  if (recording.device_append)
+    return Status::FailedPrecondition("Vulkan device append owns this original recording's native encoding");
   recording.prepared = false;
   recording.prefix_marker = prefix_marker;
   if (ranges.size() > recording.limits.max_copies)
@@ -336,10 +341,15 @@ Result<Completion> submit_copy_recording(CopyRecording &recording) noexcept {
   if (recording.report.active_copies == 0 && !recording.prefix_marker) return Completion::completed();
   // Native retirement may release episode pins. The recording keeps the real
   // backing owners, and these pre-sized slots need no allocation on replay.
-  for (std::size_t index = 0; index < recording.report.active_copies; ++index) {
-    recording.run->retained_buffers[2 * index] = recording.pairs[index].source;
-    recording.run->retained_buffers[2 * index + 1] = recording.pairs[index].destination;
-  }
+  if (recording.device_append) {
+    const auto &state=*recording.device_append;
+    if (!state.bound || state.owners.size()!=recording.run->retained_buffers.size())
+      return std::unexpected(Status::FailedPrecondition("Vulkan device append inputs are not cold bound"));
+    std::copy(state.owners.begin(),state.owners.end(),recording.run->retained_buffers.begin());
+  } else for (std::size_t index = 0; index < recording.report.active_copies; ++index) {
+      recording.run->retained_buffers[2 * index] = recording.pairs[index].source;
+      recording.run->retained_buffers[2 * index + 1] = recording.pairs[index].destination;
+    }
   auto completion = submit_locked(recording.run);
   if (completion) ++recording.report.phase_completions;
   else if (recording.mode == CopyRecordingMode::kReplayable)
@@ -380,7 +390,68 @@ Status clear_copy_recording(CopyRecording &recording) noexcept {
     return Status::Unavailable("Vulkan copy recording still has actual work");
   for (auto &pair : recording.pairs) pair = {};
   for (auto &buffer : recording.run->retained_buffers) buffer.reset();
+  if (recording.device_append) recording.device_append->clear();
   recording.prepared = false;
   return Status::Ok();
+}
+Status prepare_device_append_recording(CopyRecording &recording,
+    cd::DeviceLengthsPagedAppendSpec geometry,const TensorDesc &rows,
+    InvocationAllocation allocation) noexcept {
+  std::lock_guard lock(recording.runtime->mutex);
+  HYLE_RETURN_IF_ERROR(mutable_recording(recording));
+  if (recording.device_append || recording.halfword_pipeline)
+    return Status::FailedPrecondition("Vulkan recording already has an immutable specialized native encoding");
+  if (std::uint64_t(geometry.storage.instruction_capacity)>
+      std::uint64_t(recording.limits.max_copies)+geometry.requests+1)
+    return Status::ResourceExhausted("Vulkan device append exceeds the original recording metadata capacity");
+  try {
+    auto state=std::allocate_shared<DeviceAppendState>(mem::StdAllocator<DeviceAppendState>(recording.limits.allocator));
+    HYLE_RETURN_IF_ERROR(state->prepare(recording.runtime,recording.limits.max_copies,
+        geometry,rows,recording.limits.allocator,std::move(allocation)));
+    for (auto &pair:recording.pairs) pair={};
+    for (auto &buffer:recording.run->retained_buffers) buffer.reset();
+    recording.prepared=false;recording.device_append=std::move(state);
+    // Completion retains the original Run after wrapper abandonment. The
+    // encoding owns only its buffers/pipelines, and never owns Run back.
+    recording.run->recording_owner=recording.device_append;
+    return Status::Ok();
+  } catch (const std::bad_alloc &) { return Status::ResourceExhausted("Vulkan device append native preparation"); }
+}
+Status configure_device_append_recording(CopyRecording &recording,mem::ConstBufferView arena,
+    std::span<const cd::DeviceAppendRequest> requests,std::span<const DeviceAppendPageBinding> pages) noexcept {
+  std::lock_guard lock(recording.runtime->mutex);
+  HYLE_RETURN_IF_ERROR(mutable_recording(recording));recording.prepared=false;
+  if (!recording.device_append) return Status::FailedPrecondition("Vulkan device append encoding is not prepared");
+  if (pages.size()>recording.limits.max_copies) return Status::ResourceExhausted("Vulkan device append page budget");
+  std::size_t bytes=0;
+  for (const auto &page:pages) {
+    if (page.destination.size()>recording.limits.max_bytes-bytes)
+      return Status::ResourceExhausted("Vulkan device append exact byte budget");
+    bytes+=page.destination.size();
+  }
+  try {
+    HYLE_RETURN_IF_ERROR(recording.device_append->configure(recording.runtime,arena,requests,pages));
+    recording.prefix_marker=true;recording.report={};
+    recording.report.active_copies=static_cast<std::uint32_t>(pages.size());
+    recording.report.logical_bytes=recording.report.physical_bytes=bytes;
+    recording.report.native_metadata_unknown=true;
+    return Status::Ok();
+  } catch (const std::bad_alloc &) { return Status::ResourceExhausted("Vulkan device append COW descriptors"); }
+}
+Status bind_device_append_inputs(CopyRecording &recording,std::span<const Tensor> inputs,
+    std::span<const Tensor> source_checks) noexcept {
+  std::lock_guard lock(recording.runtime->mutex);
+  HYLE_RETURN_IF_ERROR(mutable_recording(recording));recording.prepared=false;
+  if (!recording.device_append) return Status::FailedPrecondition("Vulkan device append encoding is not prepared");
+  try {
+    HYLE_RETURN_IF_ERROR(recording.device_append->bind(recording.runtime,recording.run,inputs,source_checks));
+    recording.report.native_calls=recording.device_append->dispatches.size();recording.prepared=true;
+    return Status::Ok();
+  } catch (const std::bad_alloc &) { return Status::ResourceExhausted("Vulkan device append native bindings"); }
+}
+Result<ConstTensorView> device_append_status(CopyRecording &recording) noexcept {
+  std::lock_guard lock(recording.runtime->mutex);
+  if (!recording.device_append) return std::unexpected(Status::FailedPrecondition("Vulkan device append encoding is not prepared"));
+  return recording.device_append->status_view();
 }
 } // namespace hyle::compute::vulkan::detail

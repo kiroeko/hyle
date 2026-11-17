@@ -5,6 +5,7 @@
 #include "native_ragged_region.h"
 #include "native_paged_pending.h"
 #include "vulkan_source.h"
+#include "native_value.h"
 
 #include <algorithm>
 #include <mutex>
@@ -136,6 +137,9 @@ struct Slot final {
         pending_reads(owner) {}
   mem::AllocatorRef allocator;
   cv::Invocation invocation;
+  std::vector<cv::Tensor> checks;
+  std::vector<NativeValue> origins;
+  bool checks_complete = false;
   Vector<cv::Tensor> inputs, outputs;
   Vector<mem::Buffer> backing;
   Vector<RowLayout> row_layouts;
@@ -337,6 +341,7 @@ Status create_slot(void *prepared, mem::AllocatorRef allocator,
     bool refresh = false;
     HYLE_RETURN_IF_ERROR(vn::CompositionAccess::prepare_outputs(slot->invocation, &refresh));
     slot->inputs.resize(artifact.input_ports.size());
+    slot->origins.resize(artifact.output_resources.size());
     slot->row_layouts.resize(artifact.row_accesses.size());
     slot->pending_frames.resize(artifact.pending_inputs.size());
     slot->outputs.reserve(artifact.output_resources.size());
@@ -347,6 +352,8 @@ Status create_slot(void *prepared, mem::AllocatorRef allocator,
           runtime(artifact), artifact.output_resources[port], tensor, allocator));
       slot->outputs.push_back(std::move(tensor));
       slot->backing.push_back(std::move(backing));
+      slot->origins[port] = {&slot->outputs.back(), &vn::Access::invocation(slot->invocation)->run,
+          &slot->checks, &slot->checks_complete};
     }
     return Status::Ok();
   } catch (const std::bad_alloc &) {
@@ -398,6 +405,7 @@ Status bind(void *prepared, void *invocation, std::span<const RegionValue> input
     HYLE_RETURN_IF_ERROR(vn::CompositionAccess::prepare_outputs(slot.invocation, &refresh));
     if (refresh) HYLE_RETURN_IF_ERROR(refresh_outputs(artifact, slot));
   }
+  slot.checks.clear(); slot.checks_complete = true;
   for (std::size_t port = 0; port < artifact.input_ports.size(); ++port) {
     const auto index = artifact.input_ports[port];
     if (index >= inputs.size())
@@ -413,9 +421,15 @@ Status bind(void *prepared, void *invocation, std::span<const RegionValue> input
           expected.offset() != actual.offset() || expected.size() != actual.size())
         return Status::InvalidArgument("Vulkan row input differs from its exact pending frame");
     }
-    if (input.native_type == &tensor_type && input.native_handle != nullptr) {
+    if (const auto *origin = native_value(input)) {
+      const auto inherited = append_native_checks(*origin, runtime(artifact), slot.checks);
+      if (inherited.IsUnimplemented()) slot.checks_complete = false;
+      else HYLE_RETURN_IF_ERROR(inherited);
+      slot.inputs[port] = *origin->tensor;
+    } else if (input.native_type == &tensor_type && input.native_handle != nullptr) {
       slot.inputs[port] = *static_cast<const cv::Tensor *>(input.native_handle);
     } else {
+      if (input.native_type) slot.checks_complete = false;
       HYLE_ASSIGN_OR_RETURN(slot.inputs[port], vn::MemoryAccess::tensor_view(
           runtime(artifact), input.tensor, slot.allocator, artifact.allocation.resource_budget));
     }
@@ -457,7 +471,7 @@ Result<RegionValue> value(void *prepared, void *invocation, std::size_t port) no
       tensor.description(), slot.backing[port].view()));
   if (binding.storage().resource() != artifact.output_resources[port])
     return std::unexpected(Status::Internal("Vulkan generated output resource changed"));
-  return RegionValue{tensor.description(), binding, &tensor_type, &tensor};
+  return RegionValue{tensor.description(), binding, native_value_type(), &slot.origins[port]};
 }
 
 Result<compute::ReadLease> lease(void *prepared, void *invocation, std::size_t port) noexcept {
@@ -1032,4 +1046,29 @@ bool imports_region_ordered_endpoint(const std::shared_ptr<vn::Runtime> &owner,
 }
 
 const RegionProviderVTable *native_region_provider() noexcept { return &region_table; }
+
+const void *native_value_type() noexcept { static const unsigned marker = 0; return &marker; }
+const NativeValue *native_value(const RegionValue &value) noexcept {
+  return value.native_type == native_value_type() && value.native_handle
+      ? static_cast<const NativeValue *>(value.native_handle) : nullptr;
+}
+Status append_native_checks(const NativeValue &value, const std::shared_ptr<vn::Runtime> &owner,
+    std::vector<cv::Tensor> &out) noexcept try {
+  if (!value.tensor || !value.tensor->valid() || !value.run || !*value.run ||
+      (*value.run)->runtime != owner || !value.checks || !value.complete || !*value.complete)
+    return Status::Unimplemented("native Vulkan input has no complete original error provenance");
+  const auto add = [&](const cv::Tensor &word) {
+    if (std::ranges::none_of(out, [&](const auto &old) {
+          return vn::Access::buffer(old) == vn::Access::buffer(word);
+        })) out.push_back(word);
+  };
+  for (const auto &word : *value.checks) add(word);
+  HYLE_ASSIGN_OR_RETURN(auto scalar, compute::TensorDesc::dense(compute::DataType::kInt32,
+      std::array<std::int64_t,1>{1}));
+  if ((*value.run)->checked) for (const auto &buffer : (*value.run)->checked->buffers)
+    add(vn::Access::tensor(scalar, buffer));
+  return Status::Ok();
+} catch (const std::bad_alloc &) {
+  return Status::ResourceExhausted("native Vulkan original error-word imports");
+}
 } // namespace hyle::graph::vulkan::detail
