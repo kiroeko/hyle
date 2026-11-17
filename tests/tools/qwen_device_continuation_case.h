@@ -22,7 +22,7 @@ struct Result final {
   std::vector<q::GenerationCommitRecord> records;
   std::optional<s::StateImage> final_state;
   std::size_t submitted = 0, a1_published = 0, a2_published = 0, reused = 0, recorded = 0;
-  std::size_t draft_rows = 0;
+  std::size_t draft_rows = 0, native_prepared = 0;
   bool stopped = false;
 };
 
@@ -86,9 +86,73 @@ inline void compare_records(const Result &a, const Result &b) {
       "device choice changed the complete IDs or ledger length");
   for (std::size_t ordinal = 0; ordinal < a.records.size(); ++ordinal) {
     const auto &x = a.records[ordinal]; const auto &y = b.records[ordinal];
-    require(x.same_result(y) && x.committed == y.committed && x.user_output == y.user_output &&
+    const bool equal = x.same_result(y) && x.committed == y.committed && x.user_output == y.user_output &&
         x.imported == y.imported && x.turn == y.turn &&
-        std::ranges::equal(x.ids(), y.ids()) && std::ranges::equal(x.committed_ids(), y.committed_ids()),
+        std::ranges::equal(x.ids(), y.ids()) && std::ranges::equal(x.committed_ids(), y.committed_ids());
+    if (!equal) {
+      // Keep the exact oracle. Report original host ledger facts only after
+      // its failure; no extra device read or synchronization can hide it.
+      std::cerr << "continuation_record_difference ordinal=" << ordinal << '\n';
+      std::cerr << "ledger_context length=" << x.before.length << " pending=" << x.before.next_id
+                << " draft=" << x.draft << " accepted=" << x.accepted
+                << " consumed_drafts=" << x.consumed_drafts << " agreed=" << x.agreed
+                << " accepted_draft=" << x.accepted_draft << " target_first=" << x.target_first
+                << " target_second_old=" << x.target_second << " target_second_new=" << y.target_second << '\n';
+      std::cerr << "ledger_verification_inputs=";
+      for (const auto id : x.verification_inputs) std::cerr << id << ',';
+      std::cerr << '\n';
+      const auto scalar = [](const char *name, auto old, auto current) {
+        if (old != current) std::cerr << "ledger_field=" << name << " old=" << old << " new=" << current << '\n';
+      };
+      scalar("role", static_cast<unsigned>(x.role), static_cast<unsigned>(y.role));
+      scalar("completion", static_cast<unsigned>(x.completion), static_cast<unsigned>(y.completion));
+      scalar("generation", x.generation, y.generation);
+      scalar("committed", x.committed, y.committed);
+      scalar("user_output", x.user_output, y.user_output);
+      scalar("imported", x.imported, y.imported);
+      scalar("input_deferred", x.input_deferred, y.input_deferred);
+      scalar("prefill_complete", x.prefill_complete, y.prefill_complete);
+      scalar("requests", x.requests, y.requests);
+      scalar("member_index", x.member_index, y.member_index);
+      scalar("input_begin", x.input_begin, y.input_begin);
+      scalar("turn", x.turn, y.turn);
+      scalar("quota", x.quota, y.quota);
+      scalar("accepted", x.accepted, y.accepted);
+      scalar("draft_rows", x.draft_rows, y.draft_rows);
+      scalar("draft_limit", x.draft_limit, y.draft_limit);
+      scalar("verified_rows", x.verified_rows, y.verified_rows);
+      scalar("consumed_drafts", x.consumed_drafts, y.consumed_drafts);
+      scalar("auxiliary_graph_calls", x.auxiliary_graph_calls, y.auxiliary_graph_calls);
+      scalar("draft", x.draft, y.draft);
+      scalar("target_first", x.target_first, y.target_first);
+      scalar("target_second", x.target_second, y.target_second);
+      scalar("agreed", x.agreed, y.agreed);
+      scalar("accepted_draft", x.accepted_draft, y.accepted_draft);
+      scalar("stopped", x.stopped, y.stopped);
+      scalar("emitted_count", x.emitted_count, y.emitted_count);
+      const auto boundary = [](const char *name, const q::GenerationBoundary &value) {
+        std::cerr << "ledger_boundary=" << name << " length=" << value.length << " frontier=" << value.frontier
+                  << " lag=" << value.lag << " pending=" << value.next_id << " catchup=" << value.catchup_token
+                  << " rotary_offset=" << value.rotary_offset << " seed=" << value.sampling.seed
+                  << " stream=" << value.sampling.stream << " draw=" << value.sampling.draw << '\n';
+      };
+      if (x.before != y.before) { boundary("before_old", x.before); boundary("before_new", y.before); }
+      if (x.after != y.after) { boundary("after_old", x.after); boundary("after_new", y.after); }
+      const auto tokens = [](const char *name, const auto &old, const auto &current) {
+        if (std::ranges::equal(old, current)) return;
+        std::cerr << "ledger_tokens=" << name << " old=";
+        for (const auto id : old) std::cerr << id << ',';
+        std::cerr << " new=";
+        for (const auto id : current) std::cerr << id << ',';
+        std::cerr << '\n';
+      };
+      tokens("emitted", x.emitted, y.emitted);
+      tokens("accepted_inputs", x.accepted_inputs, y.accepted_inputs);
+      tokens("verification_inputs", x.verification_inputs, y.verification_inputs);
+      tokens("ids", x.ids(), y.ids());
+      tokens("committed_ids", x.committed_ids(), y.committed_ids());
+    }
+    require(equal,
         "device choice changed an actual role, quota, token, prefix, frontier or RNG ledger fact");
   }
 }
@@ -206,10 +270,18 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
           : role(*session) == q::GraphRole::kMtpCatchupRound ? std::size_t{1} : std::size_t{0};
       child = &model.prepare_relay_evaluations(future, current_source, next_slot, q::GraphRole::kMtpContinuation);
       lifetimes[index + 1] = model.successor_step;
+      const auto &carrier = child->phase->slots[child->state_slot].carrier;
+      const bool native_source = carrier.queues().empty() && carrier.native_source_dependencies();
+      if (native_source) {
+        const auto report = q::take(child->execution.run->input_source_report());
+        require(report.source_count && report.device_wait_count && !report.host_wait_count,
+            "native MTP successor lost its actual pending device Source edge");
+      }
       require(child->device_input_choice && child->draft_rows_deferred &&
           !child->members[0].selected_input_choice && !child->active_draft_rows &&
-          child->state_slot == next_slot && !child->capture_recorded && child->capture_reused,
-          "successor was not an unobserved recorded device-choice continuation");
+          child->state_slot == next_slot && !child->capture_recorded && (child->capture_reused || native_source),
+          "successor was not an unobserved prepared device-choice continuation");
+      result.native_prepared += native_source;
       result.reused += child->capture_reused; result.recorded += child->capture_recorded;
       // Every nonterminal continuation exports its own actual cB outputs and
       // filled physical envelope before submission, so it can in turn feed C.
@@ -382,7 +454,22 @@ inline Result boundary_journey(q::Model &model, std::span<const std::int32_t> pr
   result.submitted = continuation.successor_submissions;
   result.records.assign(request.ledger->records.begin(), request.ledger->records.begin() + request.ledger->committed_count);
   result.final_state = s::image(model, *request.session->head);
-  h::retire(request.session);
+  if (selected == BoundaryCase::kCancel) {
+    // A real native cancellation may remain the stopped Session's terminal
+    // outcome. It does not prove retirement or permit any other native error.
+    const auto check_cancelled = [](const hyle::Status &status) {
+      if (status.IsCancelled() && !status.has_native_error()) return;
+      q::check(status);
+    };
+    require(request.session->stopping, "cancel boundary lost the original stopped owner");
+    check_cancelled(request.session->stop());
+    const auto drained = request.session->drain(); check_cancelled(drained.status);
+    require(drained.retired, "cancel boundary did not drain its original native work");
+    const auto observed = request.session->try_retire(); check_cancelled(observed.status);
+    require(observed.retired && !request.session->head && !request.session->pending,
+        "cancel boundary did not retire the original Session head and pending owner");
+    request.session.reset();
+  } else h::retire(request.session);
   require(!model.active_step && !model.successor_step && !model.carrier_borrowed && !model.snapshot_versions.live &&
       model.page_inventory.free_ids.size() == model.page_inventory.owners.size() &&
       model.draft_inventory.free_ids.size() == model.draft_inventory.owners.size(),

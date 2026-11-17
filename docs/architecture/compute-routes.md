@@ -53,6 +53,8 @@ arrays/metadata，应按实际managed成本描述；不能从compile名称推断
 纯MLX前缀在全部真实输出编码后，将原Invocation回调登记到实际尾部命令缓冲；
 MLX一次评估可以提交多张缓冲，不能用首张缓冲的完成通知提前阻塞原owner。
 待完成的view使用本次评估的事件，退休核对仍等待真实尾缓冲及其全部完成处理程序。
+MLX允许已就绪数组脱离已发信号的事件，而原始状态仍为evaluated；晚绑定和原Source取址使用
+`is_available`非阻塞地正规化就绪状态，仍核对原Source、提交代际、形状、类型及完整错误与退休。
 
 已准备的ggml-Metal region可在原命令缓冲尾部发布SharedEvent，MLX消费者显式编码GPU等待。
 MLX event的stream标记不是ggml的原生Queue身份，不能据此省略等待。原输入array、输出和Source
