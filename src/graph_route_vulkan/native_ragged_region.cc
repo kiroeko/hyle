@@ -59,6 +59,7 @@ struct Slot final {
   explicit Slot(mem::AllocatorRef selected) : allocator(selected) {}
   mem::AllocatorRef allocator;
   cv::Invocation native;
+  std::size_t dependency_capacity = 0;
   compute::BatchLayoutVersion layout;
   cv::Tensor output;
   mem::Buffer backing;
@@ -235,6 +236,7 @@ Result<compute::Completion> submit(void *prepared, void *invocation,
     std::span<const cd::CompletionDependency> dependencies,
     std::span<const compute::ConstTensorView>, std::span<const compute::TensorView>) noexcept {
   const auto &a = *static_cast<Artifact *>(prepared); auto &s = *static_cast<Slot *>(invocation);
+  HYLE_RETURN_IF_ERROR(qualify_region_dependencies(s.dependency_capacity, dependencies));
   if (!s.prepared) return std::unexpected(Status::FailedPrecondition("native ragged layout is not prepared"));
   for (const auto dependency : dependencies) HYLE_RETURN_IF_ERROR(vn::qualify_copy_dependency(a.runtime, dependency));
   s.result.reset();
@@ -285,6 +287,14 @@ const ProviderRegionPreparedVTable prepared_table{
         .kind = RegionOutputKind::kBoundGenerated, .projection = RegionOutputProjection::kTensorView}; },
     .output_value = &value, .prepare_bindings = &bind, .seal_bindings = &seal, .output_lease = &lease,
     .query_extension = [](void *, compute::ProviderExtensionId id) noexcept -> const void * {
+      static const graph::detail::RegionDependenciesVTable dependencies_table{
+          [](void *prepared, void *invocation, std::size_t capacity) noexcept -> Status {
+            auto &s = *static_cast<Slot *>(invocation);
+            return reserve_region_dependencies(static_cast<Artifact *>(prepared)->runtime,
+                s.dependency_capacity, capacity,
+                s.native.valid() ? vn::Access::invocation_state(s.native)->run.get() : nullptr);
+          }};
+      if (id == graph::detail::kRegionDependenciesExtensionId) return &dependencies_table;
       if (id == graph::detail::kRegionBindingReleaseExtensionId) return &binding_release_table;
       if (id == bd::kNativeBatchRegionExtensionId) return &batch_table;
       return nullptr;

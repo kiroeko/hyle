@@ -44,6 +44,7 @@ struct Slot final {
   sd::StoreConfiguration configuration;
   std::vector<cd::CopyBackendRange, mem::StdAllocator<cd::CopyBackendRange>> copies;
   std::shared_ptr<vn::CopyRecording> recording;
+  std::size_t dependency_capacity = 0;
   c::ConstTensorView rows, ids;
   bool configured = false, recorded = false, sealed = false;
 };
@@ -203,6 +204,7 @@ const ProviderRegionPreparedVTable table{
         std::span<const c::ConstTensorView> inputs,
         std::span<const c::TensorView> outputs) noexcept -> Result<c::Completion> {
       const auto &a = *static_cast<const Artifact *>(opaque); auto &s = *static_cast<Slot *>(slot);
+      HYLE_RETURN_IF_ERROR(qualify_region_dependencies(s.dependency_capacity, dependencies));
       HYLE_RETURN_IF_ERROR(open(a));
       if (!s.sealed || !s.recorded || inputs.size() != 2 || !outputs.empty() ||
           !same(inputs[a.description.rows_port].storage(), s.rows.storage()) ||
@@ -236,6 +238,14 @@ const ProviderRegionPreparedVTable table{
       s.sealed = true; return Status::Ok();
     },
     .query_extension = [](void *, c::ProviderExtensionId id) noexcept -> const void * {
+      static const gd::RegionDependenciesVTable dependencies_table{
+          [](void *prepared, void *invocation, std::size_t capacity) noexcept -> Status {
+            auto &s = *static_cast<Slot *>(invocation);
+            HYLE_RETURN_IF_ERROR(vn::copy_recording_reuse_gate(*s.recording));
+            return reserve_region_dependencies(static_cast<Artifact *>(prepared)->runtime,
+                s.dependency_capacity, capacity);
+          }};
+      if (id == gd::kRegionDependenciesExtensionId) return &dependencies_table;
       if (id == sd::kStoreBindingExtensionId) return &store_table;
       if (id == gd::kRegionBindingReleaseExtensionId) return &release_table;
       if (id == gd::kRegionOrderedWriteExtensionId) return &ordered_write;

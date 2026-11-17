@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cmath>
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -28,7 +29,7 @@ struct GraphStorage {
   ggml_tensor *output = nullptr;
 };
 
-enum class GraphMath { kOriginal, kAdd, kAddRms };
+enum class GraphMath { kOriginal, kAdd, kAddRms, kView };
 
 hyle::Result<std::shared_ptr<GraphStorage>> make_graph(const NativeDevice &device,
                                                      GraphMath math = GraphMath::kOriginal) {
@@ -41,7 +42,9 @@ hyle::Result<std::shared_ptr<GraphStorage>> make_graph(const NativeDevice &devic
   auto *context = arena.get();
   result->input = ggml_new_tensor_1d(context, GGML_TYPE_F32, 2048);
   result->weight = ggml_new_tensor_1d(context, GGML_TYPE_F32, 2048);
-  if (math == GraphMath::kOriginal) {
+  if (math == GraphMath::kView) {
+    result->output = ggml_view_1d(context, result->input, 2048, 0);
+  } else if (math == GraphMath::kOriginal) {
     auto *norm = ggml_rms_norm(context, result->input, 1e-6f);
     auto *scaled = ggml_mul(context, norm, result->weight);
     result->output = ggml_add(context, ggml_silu(context, scaled), result->input);
@@ -58,6 +61,161 @@ hyle::Result<std::shared_ptr<GraphStorage>> make_graph(const NativeDevice &devic
   HYLE_ASSIGN_OR_RETURN(result->storage,
       NativeGraph::allocate(device, std::move(arena), result->graph));
   return result;
+}
+
+hyle::Result<std::shared_ptr<GraphStorage>>
+make_bfloat_producer(const NativeDevice &device, bool attention) {
+  auto result = std::make_shared<GraphStorage>();
+  result->device = device;
+  auto active = device.activate();
+  HYLE_ASSIGN_OR_RETURN(auto arena, MetadataArena::for_graph(
+      8, 16, hyle::mem::system_allocator()));
+  auto *context = arena.get();
+  result->input = attention
+      ? ggml_new_tensor_3d(context, GGML_TYPE_F32, 64, 31, 2)
+      : ggml_new_tensor_2d(context, GGML_TYPE_F32, 2048, 3);
+  result->output = ggml_cast(context, result->input, GGML_TYPE_BF16);
+  ggml_set_input(result->input);
+  ggml_set_output(result->output);
+  result->graph = ggml_new_graph_custom(context, 16, false);
+  ggml_build_forward_expand(result->graph, result->output);
+  HYLE_ASSIGN_OR_RETURN(result->storage,
+      NativeGraph::allocate(device, std::move(arena), result->graph));
+  return result;
+}
+
+hyle::Result<std::shared_ptr<GraphStorage>> make_bfloat_consumer(
+    const NativeDevice &device, const std::shared_ptr<GraphStorage> &producer,
+    bool attention) {
+  auto result = std::make_shared<GraphStorage>();
+  result->device = device;
+  auto active = device.activate();
+  HYLE_ASSIGN_OR_RETURN(auto arena, MetadataArena::for_graph(
+      12, 24, hyle::mem::system_allocator()));
+  auto *context = arena.get();
+  result->input = ggml_dup_tensor(context, producer->output);
+  auto *root = producer->output;
+  while (root->view_src) root = root->view_src;
+  const auto offset = reinterpret_cast<std::uintptr_t>(producer->output->data) -
+      reinterpret_cast<std::uintptr_t>(ggml_backend_buffer_get_base(root->buffer));
+  HYLE_ASSIGN_OR_RETURN(auto allocation,
+      device.borrow(device.buffer_handle(root->buffer),
+          ggml_backend_buffer_get_size(root->buffer), producer));
+  auto imported = std::shared_ptr<ggml_backend_buffer>(allocation,
+      [owner = device](ggml_backend_buffer *buffer) {
+        auto active = owner.activate();
+        ggml_backend_buffer_free(buffer);
+      });
+  if (ggml_backend_tensor_alloc(imported.get(), result->input,
+          static_cast<char *>(ggml_backend_buffer_get_base(imported.get())) +
+              offset) != GGML_STATUS_SUCCESS)
+    return std::unexpected(hyle::Status::Internal("test BF16 input binding"));
+  ggml_set_input(result->input);
+  auto *converted = ggml_cast(context, result->input, GGML_TYPE_F32);
+  if (attention) {
+    auto *query = ggml_view_4d(context, converted, 64, 1, 2, 1,
+        converted->nb[1], converted->nb[2], converted->nb[3], 0);
+    result->output = ggml_flash_attn_ext(context, query, converted, converted,
+        nullptr, .125F, 0.F, 0.F);
+    if (!ggml_prec_set_acc(result->output, GGML_PREC_F32))
+      return std::unexpected(hyle::Status::Internal("test flash precision"));
+    namespace bridge = hyle::compute::ggml_vulkan::bridge;
+    result->output->op_params[bridge::kFlashAttentionMathSlot] =
+        bridge::kFlashAttentionFullF32;
+  } else {
+    result->output = converted;
+  }
+  ggml_set_output(result->output);
+  result->graph = ggml_new_graph_custom(context, 24, false);
+  ggml_build_forward_expand(result->graph, result->output);
+  HYLE_ASSIGN_OR_RETURN(result->storage, NativeGraph::allocate(
+      device, std::move(arena), result->graph, imported));
+  return result;
+}
+
+void check_bfloat_handoff(bool attention) {
+  auto device = NativeDevice::create().value();
+  auto producer = make_bfloat_producer(device, attention).value();
+  auto consumer = make_bfloat_consumer(device, producer, attention).value();
+  auto writer = device.create_work().value();
+  auto reader = device.create_work().value();
+  std::vector<float> input(ggml_nelements(producer->input));
+  std::vector<float> output(ggml_nelements(consumer->output));
+  for (std::size_t step = 0; step < 6; ++step) {
+    SCOPED_TRACE(step);
+    for (std::size_t i = 0; i < input.size(); ++i)
+      input[i] = float(step) * .125F +
+          (attention ? float(i / (64 * 31)) * .25F : float(i % 7) * .03125F);
+    {
+      auto active = device.activate();
+      ggml_backend_tensor_set(producer->input, input.data(), 0,
+          input.size() * sizeof(float));
+    }
+    // Both original independent Works are accepted before any wait, poll,
+    // readback or further upload. The shared BF16 bytes come from the writer.
+    const auto produced = writer.submit(producer->graph, producer);
+    ASSERT_TRUE(produced.status.ok()) << produced.status.message();
+    ASSERT_TRUE(produced.pending);
+    const auto consumed = reader.submit(consumer->graph, consumer);
+    ASSERT_TRUE(consumed.status.ok()) << consumed.status.message();
+    ASSERT_TRUE(consumed.pending);
+    const auto read_done = reader.wait();
+    ASSERT_TRUE(read_done.status.ok()) << read_done.status.message();
+    ASSERT_FALSE(read_done.pending);
+    const auto write_done = writer.wait();
+    ASSERT_TRUE(write_done.status.ok()) << write_done.status.message();
+    ASSERT_FALSE(write_done.pending);
+    if (attention && step > 0)
+      ASSERT_TRUE(reader.recording_ready());
+    if (!attention) EXPECT_FALSE(reader.recording_ready());
+    {
+      auto active = device.activate();
+      ggml_backend_tensor_get(consumer->output, output.data(), 0,
+          output.size() * sizeof(float));
+    }
+    for (std::size_t i = 0; i < output.size(); ++i) {
+      const auto expected = attention
+          ? float(step) * .125F + float(i / 64) * .25F : input[i];
+      ASSERT_NEAR(output[i], expected, 1.e-5F) << i;
+    }
+  }
+}
+
+TEST(GgmlVulkanWork, IndependentBfloatProducerAndConsumerUseOriginalQueueDependency) {
+  check_bfloat_handoff(false);
+}
+
+TEST(GgmlVulkanWork, RecordedFlashRetainsBfloatHandoffDependencyOnReplay) {
+  check_bfloat_handoff(true);
+}
+
+TEST(GgmlVulkanWork, ViewOnlyGraphRetiresAndReusesWithoutCreatingComputeWork) {
+  auto device = NativeDevice::create().value();
+  auto frame_result = make_graph(device, GraphMath::kView);
+  ASSERT_TRUE(frame_result) << frame_result.error().message();
+  auto frame = *frame_result;
+  ASSERT_EQ(ggml_graph_n_nodes(frame->graph), 1);
+  auto work = device.create_work().value();
+  std::vector<float> expected(2048), actual(2048);
+  for (int step = 0; step < 3; ++step) {
+    for (std::size_t i = 0; i < expected.size(); ++i)
+      expected[i] = float(step) * .25F + float(i % 11) * .03125F;
+    {
+      auto active = device.activate();
+      ggml_backend_tensor_set(frame->input, expected.data(), 0,
+          expected.size() * sizeof(float));
+    }
+    const auto admitted = work.submit(frame->graph, frame);
+    ASSERT_TRUE(admitted.status.ok()) << admitted.status.message();
+    const auto retired = work.wait();
+    ASSERT_TRUE(retired.status.ok()) << retired.status.message();
+    EXPECT_FALSE(retired.pending);
+    EXPECT_FALSE(work.recording_ready());
+    auto active = device.activate();
+    ggml_backend_tensor_get(frame->output, actual.data(), 0,
+        actual.size() * sizeof(float));
+    EXPECT_EQ(actual, expected);
+  }
 }
 
 TEST(GgmlVulkanWork, RepeatedIndependentSlotsRetainTheirResourceLeases) {

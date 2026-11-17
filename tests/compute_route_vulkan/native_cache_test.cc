@@ -3,6 +3,7 @@
 #include <hyle/compute/vulkan_memory.h>
 #include <hyle/compute/model_ops.h>
 #include "../compute_provider_native/half_test_support.h"
+#include "vulkan_program_internal.h"
 
 #include <array>
 #include <algorithm>
@@ -363,5 +364,115 @@ TEST(VulkanCacheEncode, AcceptedNumericFailureUsesOriginalResultsStatus) {
   const auto overflow=encode_words(context,memory,c::DataType::kFloat32,huge,bytes,&accepted);
   EXPECT_TRUE(accepted);EXPECT_TRUE(overflow.IsInvalidArgument())<<overflow.message();
   ASSERT_TRUE(context.close().ok());
+}
+template<class T> struct ResidentPagedBanks final {
+  static constexpr std::size_t pages = 64, heads = 2, depth = 64;
+  n::Context context = n::Context::create().value();
+  c::TensorDesc query = c::TensorDesc::dense(half_test::data_type<T>(),
+      std::array<std::int64_t, 4>{1, 2, 4, depth}).value();
+  c::TensorDesc bank = c::TensorDesc::dense(half_test::data_type<T>(),
+      std::array<std::int64_t, 4>{pages, 16, heads, depth}).value();
+  c::TensorDesc table = c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t, 1>{2}).value();
+  n::Tensor q, k, ids;
+  n::Program program;
+  n::detail::PlanFacts facts;
+  ResidentPagedBanks() {
+    const std::vector<T> zeros_query(*query.element_count(), half_test::encode<T>(0.F));
+    const std::vector<T> zeros_bank(*bank.element_count(), half_test::encode<T>(0.F));
+    const std::array<std::int32_t, 2> page_ids{1, 0};
+    q = context.upload(query, std::as_bytes(std::span(zeros_query))).value();
+    k = context.upload(bank, std::as_bytes(std::span(zeros_bank))).value();
+    ids = context.upload(table, std::as_bytes(std::span(page_ids))).value();
+    namespace p = c::ggml_vulkan::detail;
+    const auto operation = c::Operation::custom(p::PagedAttentionRead{
+        .logical_rows = 19, .scale = .125F, .causal = false});
+    const auto output = c::infer_single_output(operation, std::array{query, bank, bank, table}).value();
+    n::detail::Plan plan;
+    plan.values = {{query, {}}, {bank, {}}, {bank, {}}, {table, {}}, {output, {}}};
+    plan.inputs = {0, 1, 2, 3}; plan.outputs = {4};
+    plan.steps.push_back({operation, {0, 1, 2, 3}, {4}});
+    program = n::detail::prepare_plan(context, plan, &facts).value();
+  }
+  n::Tensor values(unsigned phase) {
+    std::vector<T> data(*bank.element_count());
+    for (std::size_t row = 0; row < pages * 16; ++row)
+      std::fill_n(data.begin() + row * heads * depth, heads * depth,
+          half_test::encode<T>(float(row / 16 + 1) + float(phase) * .25F));
+    return context.upload(bank, std::as_bytes(std::span(data))).value();
+  }
+  void expect_values(const n::Results &result, unsigned phase) {
+    std::vector<float> actual(*result.tensors()[0].description().element_count());
+    ASSERT_TRUE(context.download(result.tensors()[0], std::as_writable_bytes(std::span(actual))).ok());
+    for (const auto value : actual) EXPECT_NEAR(value, 35.F / 19.F + float(phase) * .25F, 1.e-5F);
+  }
+};
+
+TEST(VulkanCache, PreparedPagedReadBorrowsBothPhysicalBanksWithoutCapacityCopies) {
+  const auto exercise = []<class T>() {
+    ResidentPagedBanks<T> fixture;
+    const auto &state = *n::detail::Access::program(fixture.program);
+    const auto managed = std::ranges::find_if(state.dispatches,
+        [](const auto &dispatch) { return bool(dispatch.region); });
+    ASSERT_NE(managed, state.dispatches.end());
+    ASSERT_EQ(managed->values.size(), 5U);
+    ASSERT_FALSE(fixture.facts.invocation_storage_block_bytes.empty());
+    std::fprintf(stderr, "paged resident witness type=%u K=%u V=%u capacity=%zu max_block=%zu\n",
+        unsigned(half_test::data_type<T>()), managed->values[1], managed->values[2],
+        *fixture.bank.required_bytes(), *std::ranges::max_element(fixture.facts.invocation_storage_block_bytes));
+    EXPECT_EQ(managed->values[1], 1U);
+    EXPECT_EQ(managed->values[2], 2U);
+    EXPECT_LT(*std::ranges::max_element(fixture.facts.invocation_storage_block_bytes),
+        *fixture.bank.required_bytes());
+    auto invocation = fixture.program.create_invocation().value();
+    for (unsigned phase = 0; phase < 3; ++phase) {
+      const auto value = fixture.values(phase);
+      ASSERT_TRUE(invocation.bind(std::array{fixture.q, fixture.k, value, fixture.ids}).ok());
+      auto work = invocation.submit().value();
+      const auto result = work.wait(); ASSERT_TRUE(result) << result.error().message();
+      fixture.expect_values(*result->get(), phase);
+    }
+  };
+  exercise.template operator()<F16>();
+  exercise.template operator()<BF16>();
+}
+
+TEST(VulkanCache, ResidentPagedBankChecksActualOriginAndSurvivesCancellation) {
+  ResidentPagedBanks<BF16> fixture;
+  const auto flat = c::TensorDesc::dense(c::DataType::kBFloat16,
+      std::array<std::int64_t, 1>{std::int64_t(*fixture.bank.element_count()) + 8}).value();
+  const std::vector<BF16> zeros(*flat.element_count(), half_test::encode<BF16>(0.F));
+  auto source = fixture.context.upload(flat, std::as_bytes(std::span(zeros))).value();
+  auto shifted = source.view(c::View::slice(0, 2, *fixture.bank.element_count()).value()).value();
+  shifted = shifted.view(c::View::reshape(c::TensorShape::create(fixture.bank.dimensions()).value()).value()).value();
+  ASSERT_EQ(shifted.native_offset() % 16, 4U);
+  const auto value = fixture.values(0);
+  {
+    auto invalid = fixture.program.create_invocation().value();
+    const auto bound = invalid.bind(std::array{fixture.q, shifted, value, fixture.ids});
+    if (!bound.ok()) EXPECT_TRUE(bound.IsInvalidArgument()) << bound.message();
+    else {
+      auto work = invalid.submit();
+      if (!work) EXPECT_TRUE(work.error().IsInvalidArgument()) << work.error().message();
+      else {
+        const auto result = work->wait();
+        ASSERT_FALSE(result);
+        EXPECT_TRUE(result.error().IsInvalidArgument()) << result.error().message();
+      }
+    }
+  }
+  {
+    auto cancelled = fixture.program.create_invocation().value();
+    ASSERT_TRUE(cancelled.bind(std::array{fixture.q, fixture.k, value, fixture.ids}).ok());
+    auto work = cancelled.submit().value();
+    ASSERT_TRUE(work.request_cancel().ok());
+    const auto result = work.wait(); ASSERT_FALSE(result);
+    EXPECT_TRUE(result.error().IsCancelled()) << result.error().message();
+  }
+  auto reused = fixture.program.create_invocation().value();
+  ASSERT_TRUE(reused.bind(std::array{fixture.q, fixture.k, value, fixture.ids}).ok());
+  auto work = reused.submit().value();
+  const auto result = work.wait(); ASSERT_TRUE(result) << result.error().message();
+  fixture.expect_values(*result->get(), 0);
 }
 } // namespace

@@ -175,6 +175,7 @@ struct Slot final {
   ~Slot() { if (state) allocator.destroy(state); }
   mem::AllocatorRef allocator;
   Preparation preparation; // Outlives the controller's original cold borrow.
+  std::size_t dependency_capacity = 0;
   Controller *state = nullptr;
   Controller &controller() noexcept { return *state; }
   const Controller &controller() const noexcept { return *state; }
@@ -738,6 +739,7 @@ Result<compute::Completion> submit(void *, void *invocation,
     std::span<const cd::CompletionDependency> dependencies,
     std::span<const compute::ConstTensorView>, std::span<const compute::TensorView>) noexcept {
   auto &s = *static_cast<Slot *>(invocation);
+  HYLE_RETURN_IF_ERROR(qualify_region_dependencies(s.dependency_capacity, dependencies));
   for (const auto dependency : dependencies) HYLE_RETURN_IF_ERROR(vn::qualify_copy_dependency(s.preparation.runtime, dependency));
   s.result.reset();
   const bool pending = std::ranges::any_of(s.pending_frames, [](const auto &frame) { return frame.valid(); });
@@ -805,6 +807,14 @@ const ProviderRegionPreparedVTable prepared_table{
         .kind = RegionOutputKind::kBoundGenerated, .projection = RegionOutputProjection::kTensorView}; },
     .output_value = &value, .prepare_bindings = &bind, .seal_bindings = &seal, .output_lease = &lease,
     .query_extension = [](void *, compute::ProviderExtensionId id) noexcept -> const void * {
+      static const graph::detail::RegionDependenciesVTable dependencies_table{
+          [](void *prepared, void *invocation, std::size_t capacity) noexcept -> Status {
+            auto &s = *static_cast<Slot *>(invocation);
+            return reserve_region_dependencies(static_cast<Artifact *>(prepared)->preparation.runtime,
+                s.dependency_capacity, capacity, s.controller().native.valid()
+                    ? vn::Access::invocation_state(s.controller().native)->run.get() : nullptr);
+          }};
+      if (id == graph::detail::kRegionDependenciesExtensionId) return &dependencies_table;
       if (id == graph::detail::kRegionBindingReleaseExtensionId) return &binding_release_table;
       if (id == bd::kNativeBatchRegionExtensionId) return &page_table;
       if (id == bd::kNativePendingRegionExtensionId) return &pending_table;

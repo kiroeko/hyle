@@ -20,6 +20,7 @@ struct Work {
   ggml_cgraph *assessed_graph = nullptr;
   bool fixed_attention = false;
   bool has_rms_norm = true;
+  bool has_dispatch = false;
   DescriptorPoolBlock *descriptor_pool = nullptr;
   std::vector<vk::DescriptorSet> borrowed_descriptors;
 };
@@ -282,6 +283,11 @@ WorkReport submit_work(Work *work, ggml_cgraph *graph) noexcept {
       work->fixed_attention = fixed_attention_graph(graph);
       work->has_rms_norm = std::any_of(graph->nodes, graph->nodes + graph->n_nodes,
           [](const ggml_tensor *node) { return node->op == GGML_OP_RMS_NORM; });
+      work->has_dispatch = std::any_of(graph->nodes, graph->nodes + graph->n_nodes,
+          [](ggml_tensor *node) {
+            return !ggml_vk_is_empty(node) &&
+                   (node->flags & GGML_TENSOR_FLAG_COMPUTE) != 0;
+          });
       work->assessed_graph = graph;
     }
     const bool eligible = attach_to_last && work->fixed_attention;
@@ -302,6 +308,18 @@ WorkReport submit_work(Work *work, ggml_cgraph *graph) noexcept {
     ctx->compute_cmd_pool.hyle_record_commands =
         eligible ? &work->recorded_commands : nullptr;
     ctx->compute_cmd_pool.hyle_record_safe = eligible;
+    // Native graph dependency tracking covers this Work's own tensors only.
+    // Imported inputs may have been written by a different Work or route on
+    // the same ordered queue. Establish their device visibility in the first
+    // original command buffer, after recording is enabled so replay keeps it.
+    // Perf and RMS-partial initialization already emit this entry dependency.
+    // A graph made only of views must not acquire an unused compute context.
+    vk_context imported_inputs;
+    if (work->has_dispatch && !vk_perf_logger_enabled &&
+        !ctx->prealloc_size_add_rms_partials) {
+      imported_inputs = ggml_vk_get_compute_ctx(ctx);
+      ggml_vk_sync_buffers(ctx, imported_inputs);
+    }
     if (ggml_backend_vk_graph_compute(work->backend, graph) !=
         GGML_STATUS_SUCCESS) {
       remember(*work, {Error::Internal});

@@ -59,6 +59,7 @@ struct CopySlot final {
   compute::detail::PhysicalCopyResource source_physical, destination_physical;
   bool bound = false;
   bool sealed = false;
+  std::size_t dependency_capacity = 0;
 };
 bool same_range(mem::ConstBufferView a, mem::ConstBufferView b) noexcept {
   return a.resource() == b.resource() && a.native_handle() == b.native_handle() &&
@@ -124,6 +125,7 @@ Result<compute::Completion> copy_submit(void *prepared, void *invocation,
     std::span<const compute::TensorView> outputs) noexcept {
   const auto &artifact = *static_cast<const CopyArtifact *>(prepared);
   auto &slot = *static_cast<CopySlot *>(invocation);
+  HYLE_RETURN_IF_ERROR(detail::qualify_region_dependencies(slot.dependency_capacity, dependencies));
   if (!slot.sealed || inputs.size() != 1 || outputs.size() != 1 ||
       inputs[0].description() != artifact.description ||
       outputs[0].description() != artifact.description ||
@@ -181,6 +183,14 @@ const ProviderRegionPreparedVTable copy_table{
     .prepare_bindings = &copy_bind,
     .seal_bindings = &copy_seal,
     .query_extension = [](void *, compute::ProviderExtensionId id) noexcept -> const void * {
+      static const gd::RegionDependenciesVTable dependencies_table{
+          [](void *prepared, void *invocation, std::size_t capacity) noexcept -> Status {
+            auto &slot = *static_cast<CopySlot *>(invocation);
+            HYLE_RETURN_IF_ERROR(cv::detail::copy_recording_reuse_gate(*slot.recording));
+            return detail::reserve_region_dependencies(static_cast<CopyArtifact *>(prepared)->runtime,
+                slot.dependency_capacity, capacity);
+          }};
+      if (id == gd::kRegionDependenciesExtensionId) return &dependencies_table;
       return id == gd::kRegionBindingReleaseExtensionId ? &copy_release_table : nullptr;
     }};
 Result<bool> can_copy(const gd::ExecutionSourceState &state,

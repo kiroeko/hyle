@@ -137,6 +137,7 @@ struct Slot final {
         pending_reads(owner) {}
   mem::AllocatorRef allocator;
   cv::Invocation invocation;
+  std::size_t dependency_capacity = 0;
   std::vector<cv::Tensor> checks;
   std::vector<NativeValue> origins;
   bool checks_complete = false;
@@ -187,13 +188,44 @@ Status propose(void *context, const RegionDiscoveryRequest &request,
   HYLE_RETURN_IF_ERROR(propose_native_ragged(request, analysis.needed, writer));
   const auto ordinary_begin = writer.size();
   HYLE_RETURN_IF_ERROR(graph::detail::discover_regions(graph, allocator,
-      [&](NodeId node) -> Result<bool> {
+      [&](NodeId node, std::span<const NodeId> candidate) -> Result<bool> {
         if (!analysis.needed[node.ordinal()] ||
             (!request.allowed_nodes.empty() && !request.allowed_nodes[node.ordinal()]))
           return false;
         HYLE_ASSIGN_OR_RETURN(const auto &operation, graph.operation(node));
         if (native_paged_operation(operation) || native_ragged_operation(operation) ||
             native_append_operation(operation) || native_slot_store_operation(operation)) return false;
+        if (operation.get_if<compute::View>()) {
+          const auto inside = [&](NodeId producer) noexcept {
+            return std::ranges::find(candidate, producer) != candidate.end();
+          };
+          HYLE_ASSIGN_OR_RETURN(auto input, graph.node_input(node, 0));
+          if (input.kind() == ValueKind::kNodeOutput) {
+            HYLE_ASSIGN_OR_RETURN(auto producer, graph.producer(input));
+            if (inside(producer)) return true;
+          }
+          // A prefix constant View belongs to Graph's metadata path as well:
+          // exporting it from a separate native region would hide its original
+          // immutable alias from later consumers. Preserve the old native
+          // control semantics whenever that View has any control predecessor.
+          auto root = input;
+          while (root.kind() == ValueKind::kNodeOutput) {
+            HYLE_ASSIGN_OR_RETURN(auto producer, graph.producer(root));
+            HYLE_ASSIGN_OR_RETURN(const auto &parent, graph.operation(producer));
+            if (!parent.get_if<compute::View>()) break;
+            HYLE_ASSIGN_OR_RETURN(root, graph.node_input(producer, 0));
+          }
+          HYLE_ASSIGN_OR_RETURN(auto dependencies, graph.node_dependency_count(node));
+          if (root.kind() == ValueKind::kConstant) return dependencies != 0;
+          for (std::size_t edge = 0; edge < dependencies; ++edge) {
+            HYLE_ASSIGN_OR_RETURN(auto before, graph.node_dependency(node, edge));
+            if (inside(before)) return true;
+          }
+          // Keep external-input metadata in Graph's original View step. It
+          // inherits the input's actual read permission instead of publishing
+          // a mutable native generated-output carrier for the same bytes.
+          return false;
+        }
         // Discovery is structural, without per-node prepare/JIT. Actual typed
         // mathematics and device limits remain the final lowerer's admission.
         return graph::detail::validate_native_node(operation).ok();
@@ -205,7 +237,7 @@ Status propose(void *context, const RegionDiscoveryRequest &request,
                      .repack_bytes = std::nullopt, .synchronization_count = 0, .dispatch_count = 1},
             .route = 1, .replay_class = compute::ProviderReplayClass::kManaged,
             .implementation = compute::ProviderImplementationId{1}, .preference = 200});
-      }));
+      }, {.constant_views_at_entry = true}));
   const auto ordinary_end = writer.size();
   if (!request.allowed_nodes.empty() && !writer.proposal_limit_reached() && !writer.node_limit_reached())
     HYLE_RETURN_IF_ERROR(graph::detail::add_region_singleton_fallbacks(writer, ordinary_begin));
@@ -534,6 +566,7 @@ Result<compute::Completion> submit(void *prepared, void *invocation,
     std::span<const compute::TensorView>) noexcept {
   const auto &artifact = *static_cast<Artifact *>(prepared);
   auto &slot = *static_cast<Slot *>(invocation);
+  HYLE_RETURN_IF_ERROR(qualify_region_dependencies(slot.dependency_capacity, dependencies));
   for (const auto dependency : dependencies)
     HYLE_RETURN_IF_ERROR(vn::qualify_copy_dependency(runtime(artifact), dependency));
   slot.result.reset(); // Never pre-retain the original storage before begin().
@@ -606,7 +639,14 @@ Status inspect_row_node(const ProviderRegionPrepared &prepared, void *invocation
   if (capability == cd::kProjectedInputReadExtensionId) {
     for (const auto &access : artifact.gather_accesses)
       if (access.node == node) {
-        *output = {.access = {.projected_input = access.input_port}};
+        // Only the selected direct checked Gather reads this original bank;
+        // compilation already excludes packing, extra readers and publication.
+        // Graph's StoreSource retains the exact pending row tickets and the
+        // whole producer dependency. A real fixed-queue importer can consume
+        // them without a host wait; async/IREE native recipes still refuse.
+        *output = {.access = {.projected_input = access.input_port},
+            .allows_pending = invocation && imports(prepared.state, invocation,
+                region_ordered_endpoint(runtime(artifact)))};
         return Status::Ok();
       }
     return Status::Unimplemented("Vulkan node has no selected direct row Gather");
@@ -813,6 +853,14 @@ const ProviderRegionPreparedVTable prepared_table{
     .output_value = &value, .prepare_bindings = &bind,
     .seal_bindings = &seal, .output_lease = &lease,
     .query_extension = [](void *prepared, compute::ProviderExtensionId id) noexcept -> const void * {
+      static const graph::detail::RegionDependenciesVTable dependencies_table{
+          [](void *prepared, void *invocation, std::size_t capacity) noexcept -> Status {
+            auto &slot = *static_cast<Slot *>(invocation);
+            return reserve_region_dependencies(runtime(*static_cast<Artifact *>(prepared)),
+                slot.dependency_capacity, capacity,
+                vn::Access::invocation_state(slot.invocation)->run.get());
+          }};
+      if (id == graph::detail::kRegionDependenciesExtensionId) return &dependencies_table;
       if (id == graph::detail::kRegionBindingReleaseExtensionId) return &binding_release_table;
       if (id == graph::detail::kRegionProjectedReadExtensionId) return &row_projected_table;
       if (id == bd::kNativePendingRegionExtensionId &&
@@ -1046,6 +1094,29 @@ bool imports_region_ordered_endpoint(const std::shared_ptr<vn::Runtime> &owner,
 }
 
 const RegionProviderVTable *native_region_provider() noexcept { return &region_table; }
+Status reserve_region_dependencies(const std::shared_ptr<vn::Runtime> &runtime,
+    std::size_t &capacity, std::size_t requested, const vn::Run *run) noexcept {
+  std::lock_guard lock(runtime->mutex);
+  if (runtime->closed)
+    return Status::FailedPrecondition("Vulkan region dependency Context is closed");
+  HYLE_RETURN_IF_ERROR(runtime->failure);
+  if (run) {
+    if (run->runtime != runtime)
+      return Status::InvalidArgument("Vulkan dependency slot belongs to another Runtime");
+    if (run->pending || run->observers || run->retiring || run->completion_owner)
+      return Status::Unavailable("Vulkan region dependency slot has not retired");
+    HYLE_RETURN_IF_ERROR(run->submission_failure);
+    HYLE_RETURN_IF_ERROR(run->observation_error);
+    HYLE_RETURN_IF_ERROR(run->terminal);
+  }
+  capacity = std::max(capacity, requested);
+  return Status::Ok();
+}
+Status qualify_region_dependencies(std::size_t capacity,
+    std::span<const cd::CompletionDependency> dependencies) noexcept {
+  return dependencies.size() <= capacity ? Status::Ok()
+      : Status::FailedPrecondition("Vulkan region dependency capacity was not cold prepared");
+}
 
 const void *native_value_type() noexcept { static const unsigned marker = 0; return &marker; }
 const NativeValue *native_value(const RegionValue &value) noexcept {

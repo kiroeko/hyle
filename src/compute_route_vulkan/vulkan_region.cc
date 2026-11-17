@@ -731,6 +731,8 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
       bool descriptor_aligned = false;
       bool resident_attention = false;
       bool other_reader = false;
+      bool resident_paged_cache = false;
+      bool other_paged_cache_reader = false;
       bool grouped_activation = false;
       bool other_grouped_reader = false;
       bool selected_rows = false;
@@ -754,6 +756,19 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
           (depth == 64 || depth == 128 || depth == 256) &&
           program.values[step.inputs[1]].description.dimensions().back() == depth &&
           program.values[step.inputs[2]].description.dimensions().back() == depth;
+      const auto paged = step.operation.custom_as<provider::PagedAttentionRead>();
+      bool paged_cache = false;
+      if (paged && paged->paged && !paged->compact_mla && !paged->float8_cache &&
+          step.inputs.size() == 4 && step.outputs.size() == 1) {
+        const std::array descriptions{
+            program.values[step.inputs[0]].description,
+            program.values[step.inputs[1]].description,
+            program.values[step.inputs[2]].description,
+            program.values[step.inputs[3]].description};
+        std::array<TensorDesc, 1> inferred;
+        paged_cache = paged->infer_output_descriptions(descriptions, inferred).ok() &&
+            inferred[0] == program.values[step.outputs[0]].description;
+      }
       for (const auto input : node.inputs) {
         uses[input].resident_attention |= resident;
         uses[input].other_reader |= !resident;
@@ -762,6 +777,9 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
           step.operation.custom_as<model_ops::GroupedMatMul>().has_value() &&
           region_operation(program, step, false);
       for (std::size_t port = 0; port < node.inputs.size(); ++port) {
+        const bool cache_port = paged_cache && (port == 1 || port == 2);
+        uses[node.inputs[port]].resident_paged_cache |= cache_port;
+        uses[node.inputs[port]].other_paged_cache_reader |= !cache_port;
         const bool activation = grouped && port == 1;
         uses[node.inputs[port]].grouped_activation |= activation;
         uses[node.inputs[port]].other_grouped_reader |= !activation;
@@ -844,11 +862,19 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
         dispatch.values.push_back(value);
         continue;
       }
-      bool resident =
-          uses[input].resident_attention && !uses[input].other_reader &&
+      const auto type = description.data_type();
+      const bool ordinary_resident = uses[input].resident_attention &&
+          !uses[input].other_reader &&
+          (type == DataType::kFloat32 || type == DataType::kFloat16);
+      // The already qualified private paged read consumes the original K/V
+      // banks, including BF16. Copying their entire physical capacity is not
+      // required by its flash recipe. Query/table and other readers retain
+      // their existing adapters; native binding still checks the real origin.
+      const bool paged_resident = uses[input].resident_paged_cache &&
+          !uses[input].other_paged_cache_reader &&
+          (type == DataType::kFloat16 || type == DataType::kBFloat16);
+      bool resident = (ordinary_resident || paged_resident) &&
           description.rank() == 4 &&
-          (description.data_type() == DataType::kFloat32 ||
-           description.data_type() == DataType::kFloat16) &&
           description.byte_strides()[3] == static_cast<std::int64_t>(
               data_type_size(description.data_type()));
       for (std::size_t axis = 0; resident && axis < 3; ++axis)

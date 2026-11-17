@@ -50,6 +50,7 @@ struct Slot final {
   std::vector<bd::NativeAppendRange, mem::StdAllocator<bd::NativeAppendRange>> ranges;
   std::vector<cd::CopyBackendRange, mem::StdAllocator<cd::CopyBackendRange>> copies;
   std::shared_ptr<vn::CopyRecording> recording;
+  std::size_t dependency_capacity = 0;
   mem::ConstBufferView rows;
   std::array<cv::Tensor,3> device_inputs;
   std::array<compute::ConstTensorView,3> device_views;
@@ -327,6 +328,7 @@ Result<compute::Completion> submit(void *p, void *opaque,
     std::span<const compute::ConstTensorView> inputs,
     std::span<const compute::TensorView> outputs) noexcept {
   const auto &a = *static_cast<const Artifact *>(p); auto &s = *static_cast<Slot *>(opaque);
+  HYLE_RETURN_IF_ERROR(qualify_region_dependencies(s.dependency_capacity, dependencies));
   if (!s.sealed || !s.pages.valid() || s.pages.layout() != s.layout || inputs.size() != a.count ||
       !outputs.empty() || (!a.device_lengths && (inputs[0].description() != a.facts.rows ||
       !same(inputs[0].storage(), s.rows))))
@@ -356,6 +358,14 @@ const ProviderRegionPreparedVTable table{
     },
     .prepare_bindings = &bind, .seal_bindings = &seal,
     .query_extension = [](void *p, compute::ProviderExtensionId id) noexcept -> const void * {
+      static const gd::RegionDependenciesVTable dependencies_table{
+          [](void *prepared, void *invocation, std::size_t capacity) noexcept -> Status {
+            auto &s = *static_cast<Slot *>(invocation);
+            if (s.recording) HYLE_RETURN_IF_ERROR(vn::copy_recording_reuse_gate(*s.recording));
+            return reserve_region_dependencies(static_cast<Artifact *>(prepared)->runtime,
+                s.dependency_capacity, capacity);
+          }};
+      if (id == gd::kRegionDependenciesExtensionId) return &dependencies_table;
       if (id == bd::kNativeAppendRegionExtensionId) return &append_table;
       if (id == bd::kNativeDeviceAppendRegionExtensionId && static_cast<Artifact *>(p)->device_lengths)
         return &device_table;
