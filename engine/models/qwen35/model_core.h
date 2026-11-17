@@ -800,7 +800,7 @@ public:
 private:
   DraftPolicy draft_policy_;
   bool preparation_started_ = false;
-  bool greedy_chain_available_ = false;
+  bool draft_chain_available_ = false;
   bool draft_packet_available_ = false;
   // Immutable while programs exist; resolved after backend/draft configuration.
   struct RelayPlan final { bool decode = false, prefill = false; };
@@ -866,12 +866,12 @@ public:
         }
       }
     }
-    const GreedyChainCapabilities chain{policy.max_drafts,
+    const DraftChainCapabilities chain{policy.max_drafts,
         DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler), false, false}.eligible(),
         cache_plan.active_sequences, cache_plan.auxiliary_hidden_rows, cache_plan.private_draft_stages,
         replay_policy != ReplayPolicy::kCommands, supported_projection};
     draft_packet_available_ = chain.packet_available();
-    greedy_chain_available_ = chain.available();
+    draft_chain_available_ = chain.available();
   }
   bool recursive_mtp() const noexcept { return max_drafts() > 1; }
   bool device_mtp_successor_enabled() const noexcept { return device_mtp_successor_; }
@@ -892,7 +892,7 @@ public:
   bool supports_device_mtp() {
     if (!device_mtp_model_contract()) return false;
     if (max_drafts() > 1 && std::ranges::none_of(resources_->sampling_configurations,
-        [&](const auto &prepared) { return greedy_draft_chain_enabled(prepared->configuration); })) return false;
+        [&](const auto &prepared) { return compound_mtp_round_enabled(prepared->configuration); })) return false;
     if (!backend_device_mtp_support_) {
       backend_device_mtp_support_ = supports_mtp_attention(execution, attention_capacity(),
           resources_->attention_storage, allocation_budget);
@@ -1602,7 +1602,7 @@ public:
              greedy_draft_chain_enabled(selected_sampler) && cache_plan.in_flight_batches >= 3,
          (role == GraphRole::kMtpRound || role == GraphRole::kMtpCatchupRound || role==GraphRole::kMtpContinuation) && requests == 1 &&
              packing == RowPacking::kRectangular && prefix_rows == max_drafts() + 1 &&
-             greedy_draft_chain_enabled(selected_sampler) && cache_plan.in_flight_batches >= 3 ? max_drafts() : 0},
+             compound_mtp_round_enabled(selected_sampler) && cache_plan.in_flight_batches >= 3 ? max_drafts() : 0},
         selected_sampler, {execution, allocation_budget, execution_budget});
   }
 
@@ -1649,7 +1649,7 @@ public:
     const std::size_t prefix_rows = role == GraphRole::kVerify ? planned_chunks.front()
         : drafts_token(role) ? ((role == GraphRole::kMtpRound || role == GraphRole::kMtpCatchupRound || role==GraphRole::kMtpContinuation) &&
             requests == 1 && packing == RowPacking::kRectangular &&
-            greedy_draft_chain_enabled(sampling_configuration(sampling_index).configuration) &&
+            compound_mtp_round_enabled(sampling_configuration(sampling_index).configuration) &&
             cache_plan.in_flight_batches >= 3 ? max_drafts() + 1 : 2) : 1;
     if (!prefix_rows || prefix_rows > cache_plan.candidate_boundaries)
       throw std::runtime_error("verification width exceeds the positive prepared prefix capacity");
@@ -1911,8 +1911,12 @@ public:
   bool draft_packet_enabled(const SamplingConfiguration &sampling) const noexcept {
     return draft_packet_available_ && !sampling.enabled && sampling.modifiers.empty();
   }
+  bool compound_mtp_round_enabled(const SamplingConfiguration &sampling) const noexcept {
+    return draft_chain_available_ && sampling.modifiers.empty() &&
+        device_mtp_sampling_supported(sampling.enabled, max_drafts());
+  }
   bool greedy_draft_chain_enabled(const SamplingConfiguration &sampling) const noexcept {
-    return greedy_chain_available_ && !sampling.enabled && sampling.modifiers.empty();
+    return draft_chain_available_ && !sampling.enabled && sampling.modifiers.empty();
   }
 
   // Each finite stage has independent COW writers from the same real base.
@@ -3178,7 +3182,8 @@ public:
         (step.draft_rows_deferred && attention>SIZE_MAX-draft_chain_attention_rows))
       return hyle::Status::OutOfRange("device successor row accounting exceeds its original capacity");
     if (step.phase->family->sampling->configuration.enabled &&
-        (!head.sampling.can_advance(3) || member.next->sampling != head.sampling.advanced(3)))
+        (!head.sampling.can_advance(2 * (step.phase->prefix_rows - 1) + 1) ||
+            member.next->sampling != head.sampling.advanced(2 * (step.phase->prefix_rows - 1) + 1)))
       return hyle::Status::InvalidArgument("sampled successor lost its original logical draw range");
     const auto target_pages=member.target_input_choices[choice].host().page_indices.size();
     const auto draft_pages=member.draft_input_choices[choice].host().page_indices.size();
@@ -3852,7 +3857,7 @@ public:
     if (compact_draft) packing = RowPacking::kDraft;
     const bool compound_round = requests.size() == 1 &&
         (role == GraphRole::kMtpRound || role == GraphRole::kMtpCatchupRound || role==GraphRole::kMtpContinuation) &&
-        greedy_draft_chain_enabled(selected_sampler) && cache_plan.in_flight_batches >= 3;
+        compound_mtp_round_enabled(selected_sampler) && cache_plan.in_flight_batches >= 3;
     auto tokens = drafts_token(role) ? (compound_round ? max_drafts() + 1 : std::size_t{2}) : supplied_tokens;
     if (packed_target) for (const auto &request : requests) tokens = (std::max)(tokens, request.ids.size());
     const auto physical_tokens = packed_target ? physical_rows : tokens;
@@ -4136,9 +4141,11 @@ public:
       if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
         auto &identities = input_scratch.sampling_identities;
         identities.clear();
+        const auto draws = drafts_token(role) ? 2 * (phase.prefix_rows - 1) + 1 : 1;
+        const auto identity_slots = phase.batched_text_sampling ? 1 : phase.draft_chain_steps ? draws : 3;
         for (const auto &member : step.members) {
-          if (role != GraphRole::kText) (void)member.base->sampling.advanced(drafts_token(role) ? 3 : 1);
-          for (std::size_t draw = 0; draw < (phase.batched_text_sampling ? 1u : 3u); ++draw) {
+          if (role != GraphRole::kText) (void)member.base->sampling.advanced(draws);
+          for (std::size_t draw = 0; draw < identity_slots; ++draw) {
             // Batched ordinary Text binds one original slot0 key per row.
             // Other non-round roles retain three slots and consume slot0.
             const auto identity = member.base->sampling.identity(drafts_token(role) ? draw : 0);
@@ -4200,7 +4207,7 @@ public:
           member.next->rotary_offset=next-static_cast<std::int64_t>(member.next->length);
         }
         member.next->sampling = selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify
-            ? member.base->sampling.advanced(drafts_token(role) ? 3 : 1) : member.base->sampling;
+            ? member.base->sampling.advanced(drafts_token(role) ? 2 * (phase.prefix_rows - 1) + 1 : 1) : member.base->sampling;
       };
       const auto member_at = [&](std::size_t j) noexcept -> inference::PagedAppendMember {
         auto &member = step.members[j]; auto &session = *member.session;
@@ -4704,10 +4711,14 @@ public:
             if (successor_step && successor_step->device_input_choice && successor_step->submitted &&
                 successor_step->draft_rows_deferred && step.members.size() == 1 &&
                 successor_step->members.size() == 1 && io.prefix_candidates.size() == phase.prefix_rows) {
-              std::size_t index=phase.family->sampling->configuration.enabled ? std::size_t(step.members[0].sampled_accept) : 0;
-              for(;!phase.family->sampling->configuration.enabled && index+1<phase.prefix_rows;++index){
-                const auto draft=phase.draft_chain_steps?step.members[0].verification_inputs[index+1]:step.members[0].draft_token;
-                if(io.prefix_candidates[index]!=draft)break;
+              std::size_t index = 0;
+              for (; index + 1 < phase.prefix_rows; ++index) {
+                if (phase.family->sampling->configuration.enabled) {
+                  if (!io.sampling_accept_values[index]) break;
+                } else {
+                  const auto draft = phase.draft_chain_steps ? step.members[0].verification_inputs[index + 1] : step.members[0].draft_token;
+                  if (io.prefix_candidates[index] != draft) break;
+                }
               }
               const auto lag=index?1u:0u;
               const auto rows=successor_step->phase->prefix_rows-1+lag;
@@ -5204,7 +5215,8 @@ public:
         [&](std::span<const std::int32_t> candidates, StepState &step, std::span<std::int32_t> selected) {
       c::ReadLease logits_owner;
       mem::ConstBufferView logits_storage;
-      if (selected_sampler.enabled || !selected_sampler.modifiers.empty()) {
+      const bool sampled_chain = step.phase->draft_chain_steps && selected_sampler.enabled;
+      if ((selected_sampler.enabled || !selected_sampler.modifiers.empty()) && !sampled_chain) {
         auto &logits = step.phase->slots[step.state_slot].data.logits;
         if (logits.caller_owned()) logits_storage = logits.storage();
         else {
@@ -5225,7 +5237,19 @@ public:
         result.draft = width > 1 ? member.verification_inputs[1] : -1;
         result.target_first = rows[0]; result.target_second = width > 1 ? rows[1] : -1;
         hyle::inference::mtp::AcceptedPrefix accepted;
-        if (selected_sampler.enabled || !selected_sampler.modifiers.empty()) {
+        if (sampled_chain) {
+          const auto &flags = step.phase->slots[step.state_slot].data.sampling_accept_values;
+          if (flags.size() != width - 1) throw std::logic_error("sampled chain lost its actual per-proposal decisions");
+          std::array<std::int32_t, kMaximumDeviceMtpDrafts> finals;
+          if (width - 1 > finals.size()) throw std::logic_error("sampled chain exceeds its prepared model bound");
+          std::copy_n(rows.begin(), width - 1, finals.begin());
+          if (flags.back()) finals[width - 2] = rows.back();
+          accepted = inference::mtp::select_sampled_prefix(member.verification_inputs, flags,
+              std::span<const std::int32_t>(finals).first(width - 1),
+              selection.output_quota, eos, static_cast<std::int32_t>(vocabulary), result.emitted, member.stop_policy);
+          result.target_first = result.emitted.front();
+          result.target_second = result.emitted.size() > 1 ? result.emitted[1] : rows[1];
+        } else if (selected_sampler.enabled || !selected_sampler.modifiers.empty()) {
           if (selected_sampler.enabled && selection.draft_log_probabilities.size() != width - 1)
             throw std::runtime_error("stochastic verification requires every actual q row");
           const auto bytes = cache::multiply(cache::multiply(width, vocabulary), sizeof(float));

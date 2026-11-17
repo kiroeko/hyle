@@ -36,6 +36,11 @@ struct DraftChainControl final {
 struct DraftChainValues final {
   V packet,hidden;
   std::vector<DraftChainStage> stages;
+  std::vector<sampling::Distribution> distributions;
+  std::vector<V> proposal_ids;
+};
+struct DraftChainSamplingValues final {
+  V ids, accepted, valid;
 };
 
 struct FamilyPorts {
@@ -163,6 +168,10 @@ V draft_scores(Recipe &recipe, V selected_hidden, DraftProjectionView projection
 V original_draft_id(Recipe &recipe, V compact_id, DraftProjectionView projection);
 DraftChainValues emit_draft_chain(Recipe &recipe,V tokens,V shifted,V positions,V frequencies,
     std::size_t rows,std::size_t steps,const c::BatchSchema&schema,DraftProjectionView head,
-    std::span<const DraftChainControl>controls={},V has_lag={});
+    std::span<const DraftChainControl>controls={},V has_lag={},
+    std::span<const V> proposal_identities={},const SamplingConfiguration &sampling={});
+DraftChainSamplingValues decide_draft_chain(Recipe &recipe, V target_logits,
+    std::span<const sampling::Distribution> draft, std::span<const V> proposals,
+    std::span<const V> identities, sampling::Policy policy);
 
 } // namespace qwen35

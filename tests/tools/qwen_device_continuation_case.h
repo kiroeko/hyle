@@ -30,9 +30,9 @@ inline q::GraphRole role(const q::Session &session) {
   return session.head->draft->lag ? q::GraphRole::kMtpCatchupRound : q::GraphRole::kMtpRound;
 }
 inline void stage(q::GenerationLedger &ledger, const std::shared_ptr<q::Session> &session,
-           std::size_t quota, q::GraphRole selected) {
+           std::size_t quota, q::GraphRole selected, std::size_t maximum = 1) {
   const auto pending = session->head->next_id;
-  q::prepare_generation_record(ledger, *session, selected, std::span(&pending, 1), true, quota, 0);
+  q::prepare_generation_record(ledger, *session, selected, std::span(&pending, 1), true, quota, 0, {}, maximum);
 }
 inline q::MtpRoundResult finish(q::Model &model, const std::shared_ptr<q::Session> &session,
                          q::GenerationLedger &ledger, std::int32_t pending, std::size_t quota) {
@@ -122,8 +122,8 @@ inline void require_source(q::Model &model, const q::StepState &step,
       source->primary_output.valid() && source->extra_outputs.size() == 2 &&
       source->extra_outputs[0].valid() && source->extra_outputs[1].valid() &&
       source->successor_states.size() == model.geometry.recurrent_layers() * 2 &&
-      std::ranges::all_of(source->successor_states, [](const auto &state) {
-        return state.valid() && state.destination_count() == 2;
+      std::ranges::all_of(source->successor_states, [&](const auto &state) {
+        return state.valid() && state.destination_count() == model.max_drafts() + 1;
       }) && source->pages.size() == model.draft_bank + 2 &&
       std::ranges::all_of(source->pages, [](const auto &page) { return page.valid(); }) &&
       source->boundaries.size() == 1 && source->boundaries[0].candidate == step.members[0].next.get() &&
@@ -141,7 +141,8 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
   const auto submitted_begin = model.submitted_draft_rows;
   const std::array prefill{prompt.size()};
   auto session = model.create_session(prefill, {}, q::GraphRole::kMtpPrefill, cursor);
-  q::GenerationLedger ledger(episodes + 2, 2);
+  const auto proposals = model.max_drafts(), width = proposals + 1;
+  q::GenerationLedger ledger(episodes + 2, width);
   Result result;
   std::array<std::weak_ptr<q::StepState>, episodes> lifetimes;
   hyle::util::ScopeGuard cleanup{[&]() noexcept {
@@ -160,7 +161,7 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
   std::shared_ptr<q::StepSources> current_source;
   if (continuous) {
     const auto pending = session->head->next_id;
-    stage(ledger, session, 4, role(*session));
+    stage(ledger, session, 2 * width, role(*session), proposals);
     model.prepare_evaluation(*session, std::span(&pending, 1), nullptr, role(*session));
     lifetimes[0] = model.active_step;
     current_source = model.prepare_submission_sources(*model.active_step);
@@ -170,13 +171,13 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
 
   for (std::size_t index = 0; index < episodes; ++index) {
     const bool has_child = index + 1 < episodes;
-    const auto quota = has_child ? std::size_t{4} : std::size_t{2};
+    const auto quota = has_child ? 2 * width : width;
     const auto before = q::generation_boundary(*session->head);
     const auto epoch = session->head.epoch();
     const auto ordinal = ledger.committed_count;
     const auto pending = before.next_id;
     if (!continuous) {
-      stage(ledger, session, quota, role(*session));
+      stage(ledger, session, quota, role(*session), proposals);
       model.prepare_evaluation(*session, std::span(&pending, 1), nullptr, role(*session));
       lifetimes[index] = model.active_step;
       model.submit_evaluations(); ++result.submitted;
@@ -199,7 +200,7 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
     if (continuous && has_child) {
       if (wait_before_successor) q::check(current->execution.wait());
       require_source(model, *current, current_source);
-      (void)ledger.reserve_successor(ordinal, 2, 0);
+      (void)ledger.reserve_successor(ordinal, width, 0);
       const std::array future{q::EvaluationRequest{session, {}}};
       const auto next_slot = index ? (current->state_slot + 1) % q::execution_slot_count
           : role(*session) == q::GraphRole::kMtpCatchupRound ? std::size_t{1} : std::size_t{0};
@@ -237,24 +238,24 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
     if (continuous && has_child) {
       require(model.active_step.get() == child && !child->cancelled && !model.successor_step &&
           child->members[0].selected_input_choice == round.processed_target - 1 &&
-          child->members[0].draft_input_rows == round.processed_target &&
-          child->active_draft_rows == round.processed_target && !child->draft_rows_deferred,
+          child->members[0].draft_input_rows == proposals + (round.processed_target > 1) &&
+          child->active_draft_rows == proposals + (round.processed_target > 1) && !child->draft_rows_deferred,
           "promoted successor did not retain the exact selected input and real submitted draft row count");
       auto &record = ledger.bind_successor(q::generation_boundary(*session->head),
           ledger.committed_count, 0, round.emitted.back(), true);
       require(record.role == role(*session) && record.pending_input == session->head->next_id &&
-          record.quota == 2 && !record.input_deferred,
+          record.quota == width && !record.input_deferred,
           "successor ledger did not bind its actual Round/Catchup role and pending token");
       if (index + 2 < episodes) {
-        const auto remaining = std::size_t{2} * (episodes - index - 1);
+        const auto remaining = width * (episodes - index - 1);
         auto &renewed = ledger.renew_pending_quota(q::generation_boundary(*session->head),
-            ledger.committed_count, 0, remaining, 2, 2);
-        require(renewed.quota == 4 && !ledger.successor_ordinal(),
+            ledger.committed_count, 0, remaining, width, width);
+        require(renewed.quota == 2 * width && !ledger.successor_ordinal(),
             "bound successor did not renew its original two-output reservation before reserving a child");
         require_source(model, *child, child_source);
       }
       if (round.processed_target == 1) ++result.a1_published;
-      else if (round.processed_target == 2) ++result.a2_published;
+      else if (round.processed_target <= width) ++result.a2_published;
       else throw std::runtime_error("strict K1 predecessor published a non-K1 prefix");
       current_source = std::move(child_source);
     } else {
@@ -305,7 +306,7 @@ enum class BoundaryCase { kStop, kCancel, kHostFailure, kRecovery };
 // stop predicate with a real generated token; it is not a real-model EOS test.
 inline Result boundary_journey(q::Model &model, std::span<const std::int32_t> prompt,
     std::int32_t stop_id, bool continuous, BoundaryCase selected) {
-  constexpr std::size_t outputs = 8;
+  const auto outputs = 2 * (model.max_drafts() + 1) + 4;
   const std::array extra{stop_id};
   const i::RequestStopPolicy policy(selected == BoundaryCase::kStop
       ? std::span<const std::int32_t>(extra) : std::span<const std::int32_t>{});

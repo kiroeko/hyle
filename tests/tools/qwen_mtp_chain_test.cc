@@ -40,7 +40,7 @@ void cold_policy_facts() {
             for (const auto stages : {0u, 1u, 2u, 3u, 4u})
               for (const bool capture : {false, true})
                 for (const bool projection : {false, true}) {
-                  const q::GreedyChainCapabilities facts{drafts, relay, active, hidden, stages,
+                  const q::DraftChainCapabilities facts{drafts, relay, active, hidden, stages,
                       capture, projection};
                   const bool old_packet = drafts > 1 && drafts <= 3 && relay &&
                       active == 1 && hidden >= 2 && capture;
@@ -48,7 +48,7 @@ void cold_policy_facts() {
                   require(facts.available() == (old_packet && stages >= drafts && projection),
                       "greedy chain admission changed");
                 }
-  const q::GreedyChainCapabilities valid{3, true, 1, 2, 3, true, true};
+  const q::DraftChainCapabilities valid{3, true, 1, 2, 3, true, true};
   require(valid.available(), "complete K3 capability was refused");
   auto changed = valid;
   changed.max_drafts = 1; require(!changed.available(), "K1 selected the multi-stage chain");

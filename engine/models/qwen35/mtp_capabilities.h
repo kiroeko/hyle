@@ -13,9 +13,15 @@ namespace qwen35 {
 // The currently built bounded device draft chain has up to three proposals.
 inline constexpr std::size_t kMaximumDeviceMtpDrafts = 3;
 
+// The bounded model recipe retains every actual proposal distribution and
+// acceptance bit, reserving 2K+1 request draws independently of the prefix.
+constexpr bool device_mtp_sampling_supported(bool random, std::size_t proposals) noexcept {
+  return !random || (proposals >= 1 && proposals <= kMaximumDeviceMtpDrafts);
+}
+
 // Prepared model and endpoint facts for the existing device draft chain.
 // Sampling, Source permissions, state and retirement remain separate checks.
-struct GreedyChainCapabilities final {
+struct DraftChainCapabilities final {
   std::size_t max_drafts = 0;
   bool device_relay = false;
   std::size_t active_sequences = 0, auxiliary_hidden_rows = 0, private_draft_stages = 0;

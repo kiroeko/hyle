@@ -1146,7 +1146,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
         : one ? (lag ? GraphRole::kMtpCatchupSingle : GraphRole::kMtpSingle)
         : !call.logits_provider && (!model.recursive_mtp() ||
             (call.maximum == model.max_drafts() && model.cache_plan.in_flight_batches >= 3 &&
-             model.greedy_draft_chain_enabled(sampler)))
+             model.compound_mtp_round_enabled(sampler)))
             ? (lag ? GraphRole::kMtpCatchupRound : GraphRole::kMtpRound) : GraphRole::kVerify;
     call.name = (request.progress.turn_index ? "round" + std::to_string(request.progress.turn_index + 1) + "_" : "") +
         (model.cache_plan.draft_cache ? "mtp" : "decode") + std::to_string(request.rounds.size() + 1);
@@ -1372,7 +1372,7 @@ struct GenerationStepAdapter final {
     for (const auto &member : a->members) {
       const auto &sampling = member.session->sampling_configuration().configuration;
       if (sampling.enabled && (!member.next ||
-          !member.next->sampling.can_advance(mtp ? 3 : 1))) return inference::StepSuccessor::kNone;
+          !member.next->sampling.can_advance(mtp ? 2 * (a->phase->prefix_rows - 1) + 1 : 1))) return inference::StepSuccessor::kNone;
     }
     // Candidate lookup stays with the model that owns the original Phase and
     // carrier; preparation below still proves the actual submission rights.
@@ -2693,7 +2693,7 @@ StartupPrefillWarmup prepare_generation_programs(Model &model, const GenerationP
     const auto maximum = model.max_drafts();
     if constexpr (mtp) if (first_turn_only && requests.size() == 1 &&
         !requests.front().logits_provider && model.cache_plan.in_flight_batches >= 3 &&
-        model.greedy_draft_chain_enabled(model.sampling_configuration(sampling_index).configuration))
+        model.compound_mtp_round_enabled(model.sampling_configuration(sampling_index).configuration))
       return maximum - 1;
     return maximum;
   };
@@ -2745,7 +2745,7 @@ StartupPrefillWarmup prepare_generation_programs(Model &model, const GenerationP
         shapes[{GraphRole::kMtpContinuation, TextCompletion::kEmitNext}][model.max_drafts()+1] = decode_bound;
       if constexpr (mtp) for (auto role : roles) {
         const bool compound = width == 1 && model.cache_plan.in_flight_batches >= 3 &&
-            model.greedy_draft_chain_enabled(model.sampling_configuration(sampling_index).configuration);
+            model.compound_mtp_round_enabled(model.sampling_configuration(sampling_index).configuration);
         if (drafts_token(role) && (((model.max_drafts() != 1 || model.recursive_mtp()) && !compound) ||
             width > policy_decoding_requests - dynamic_decoding_requests)) continue;
         auto &uses = shapes[{role, TextCompletion::kEmitNext}][drafts_token(role)

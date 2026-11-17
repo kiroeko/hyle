@@ -15,6 +15,7 @@
 
 #include "mtp_graph.h"
 #include "ordinary_io.h"
+#include "mtp_capabilities.h"
 #include "../../inference/backend.h"
 
 #if defined(HYLE_TEST_INFERENCE_WARM_COST) && HYLE_TEST_INFERENCE_WARM_COST
@@ -119,10 +120,13 @@ V original_draft_id(Recipe &recipe, V compact_id, DraftProjectionView projection
 
 DraftChainValues emit_draft_chain(Recipe&r,V tokens,V shifted,V positions,V frequencies,
     std::size_t rows,std::size_t steps,const c::BatchSchema&schema,DraftProjectionView head,
-    std::span<const DraftChainControl>controls,V has_lag){
+    std::span<const DraftChainControl>controls,V has_lag,
+    std::span<const V> proposal_identities,const SamplingConfiguration &sampler){
   if(!rows || rows>2 || steps<2 || steps>3 ||
       (!controls.empty() && (controls.size()!=steps || rows!=2 || !has_lag)))
     throw std::logic_error("draft chain requires its bounded original R1 rows and matching device controls");
+  if (sampler.enabled && (proposal_identities.size() != steps || head.original_ids || !sampler.modifiers.empty()))
+    throw std::logic_error("sampled draft chain requires original full-vocabulary q rows and one identity per proposal");
   DraftChainValues result;result.stages.reserve(steps);
   auto ids=tokens;mtp::Projection prefix;mtp::KeyValue prefix_kv;
   V last_query_lengths;
@@ -163,12 +167,47 @@ DraftChainValues emit_draft_chain(Recipe&r,V tokens,V shifted,V positions,V freq
         [&](Recipe&recipe,V hidden){return draft_scores(recipe,hidden,head);},controls.empty()?V{}:controls[i].last_index,i!=0);
     stage.append_key=selected.append_nodes.key;stage.append_value=selected.append_nodes.value;
     stage.attention=selected.attention_node;result.stages.push_back(stage);result.hidden=selected.selected_hidden;
-    const auto id=original_draft_id(r,r.op(c::Operation(c::TopK{.count=1}),{selected.logits},
+    V id;
+    if (sampler.enabled) {
+      result.distributions.push_back(sampling::distribution(r, selected.logits, sampler.policy));
+      id = r.one(c::sampling_ops::categorical(),
+          {result.distributions.back().log_probabilities, proposal_identities[i]});
+      result.proposal_ids.push_back(id);
+    } else id=original_draft_id(r,r.op(c::Operation(c::TopK{.count=1}),{selected.logits},
         {r.dense_spec(Type::kFloat32,{f(1),f(1)}),r.dense_spec(Type::kInt32,{f(1),f(1)})})[1],head);
     ids=r.reshape(id,{f(1)});shifted=result.hidden;packet.push_back(ids);prefix=projection;prefix_kv=kv;
   }
   result.packet=r.copy(r.concat(packet,0,r.dense_spec(Type::kInt32,{f(static_cast<std::int64_t>(packet.size()))})));
   return result;
+}
+
+
+DraftChainSamplingValues decide_draft_chain(Recipe &r, V target_logits,
+    std::span<const sampling::Distribution> draft, std::span<const V> proposals,
+    std::span<const V> identities, sampling::Policy policy) {
+  const auto count = draft.size();
+  if (!count || count > kMaximumDeviceMtpDrafts || proposals.size() != count || identities.size() != 2 * count + 1)
+    throw std::logic_error("sampled chain requires its complete original q/proposal/draw inventory");
+  std::vector<sampling::Distribution> target;
+  for (std::size_t i = 0; i <= count; ++i)
+    target.push_back(sampling::distribution(r,
+        r.copy(r.slice(target_logits, 0, f(static_cast<std::int64_t>(i)), f(1))), policy));
+  std::vector<V> ids, accepted;
+  auto valid = target[0].valid;
+  const auto no = r.cast(r.scalar(0), Type::kBool);
+  for (std::size_t i = 0; i < count; ++i) {
+    const auto decision = sampling::decision(r, target[i].log_probabilities,
+        draft[i].log_probabilities, target[i + 1].log_probabilities,
+        proposals[i], identities[2 * i + 1], identities[2 * count]);
+    ids.push_back(r.one(c::Select{}, {decision.accepted, proposals[i], decision.final_id}));
+    if (i + 1 == count) ids.push_back(decision.final_id);
+    accepted.push_back(decision.accepted);
+    for (const auto check : {target[i + 1].valid, draft[i].valid, decision.valid})
+      valid = r.one(c::Select{}, {valid, check, no});
+  }
+  const auto rows = f(static_cast<std::int64_t>(count + 1));
+  return {r.reshape(r.concat(ids, 0, r.dense_spec(Type::kInt32, {rows})), {rows, f(1)}),
+      r.concat(accepted, 0, r.dense_spec(Type::kBool, {f(static_cast<std::int64_t>(count))})), valid};
 }
 
 ExecutionPlanFacts inspect_execution_plan(const inference::Backend &execution,
@@ -260,8 +299,8 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
   const auto chain_steps = prepared.draft_chain_steps;
   if (chain_steps && (requests != 1 || prefix_rows != chain_steps + 1 || chain_steps < 2 || chain_steps > 3 ||
       (role != GraphRole::kMtpRound && role != GraphRole::kMtpCatchupRound && !device_continuation) ||
-      packing != RowPacking::kRectangular || selected_sampler.enabled || !selected_sampler.modifiers.empty()))
-    throw std::runtime_error("compound MTP round requires its exact fixed greedy R1 family");
+      packing != RowPacking::kRectangular || !selected_sampler.modifiers.empty()))
+    throw std::runtime_error("compound MTP round requires its exact fixed R1 sampling family");
   if (repair_draft && (role != GraphRole::kVerify || requests != 1 || prefix_rows < 2 ||
       packing != RowPacking::kRectangular || selected_sampler.enabled || !selected_sampler.modifiers.empty()))
     throw std::runtime_error("fused draft repair requires the original greedy exact R1 verifier");
@@ -372,7 +411,8 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify)
       definition.sampling_identity_port = r.input(definition.batched_text_sampling
           ? dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 4})
-          : dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 3, 4}));
+          : dense(Type::kUInt32, {static_cast<std::int64_t>(requests),
+              static_cast<std::int64_t>(chain_steps ? 2 * chain_steps + 1 : 3), 4}));
     const auto sampling_identity = [&](std::size_t request, std::size_t draw) {
       return r.copy(r.reshape(r.slice(r.slice(definition.sampling_identity_port, 0,
           f(static_cast<std::int64_t>(request)), f(1)), 1,
@@ -515,9 +555,14 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
           }
         }
         if (chain_steps) {
+          std::vector<V> proposal_identities;
+          if (selected_sampler.enabled) for (std::size_t i = 0; i < chain_steps; ++i)
+            proposal_identities.push_back(sampling_identity(0, 2 * i));
           auto chain = emit_draft_chain(r, ids, hidden_rows, draft_positions, frequencies,
               device_continuation?2:1+draft_lag(role), chain_steps, attention_schema, prepared.draft_projection,
-              device_chain_controls,predecessor_has_lag);
+              device_chain_controls,predecessor_has_lag,proposal_identities,selected_sampler);
+          draft_distributions = std::move(chain.distributions);
+          proposal_ids = std::move(chain.proposal_ids);
           target_tokens = chain.packet; definition.draft_chain = std::move(chain.stages);
           definition.draft_id_port = r.copy(r.reshape(r.slice(target_tokens, 0, f(1),
               f(static_cast<std::int64_t>(chain_steps))), {f(static_cast<std::int64_t>(chain_steps)), f(1)}));
@@ -729,7 +774,20 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     V sampled_acceptance;
     if (completion == TextCompletion::kEmitNext) {
       definition.logits_port = r.scores(last, std::string(geometry.head_role()));
-      if ((!selected_sampler.enabled && selected_sampler.modifiers.empty()) || role == GraphRole::kVerify) definition.id_port = r.op(c::Operation(c::TopK{.count = 1}), {definition.logits_port},
+      if (chain_steps && selected_sampler.enabled) {
+        std::vector<V> identities;
+        for (std::size_t draw = 0; draw <= 2 * chain_steps; ++draw)
+          identities.push_back(sampling_identity(0, draw));
+        const auto decision = decide_draft_chain(r, definition.logits_port,
+            draft_distributions, proposal_ids, identities, selected_sampler.policy);
+        definition.id_port = r.reshape(decision.ids, {packed, f(1)});
+        const auto valid = decision.valid;
+        definition.sampling_valid_port = r.host_predicate(valid);
+        publish_valid();
+        sampled_acceptance = decision.accepted;
+        definition.sampling_accept_port = r.copy(r.host_predicate(sampled_acceptance));
+        r.publish(definition.sampling_accept_port);
+      } else if ((!selected_sampler.enabled && selected_sampler.modifiers.empty()) || role == GraphRole::kVerify) definition.id_port = r.op(c::Operation(c::TopK{.count = 1}), {definition.logits_port},
           {r.dense_spec(Type::kFloat32, {verifies_prefix(role) ? packed : batch, f(1)}),
            r.dense_spec(Type::kInt32, {verifies_prefix(role) ? packed : batch, f(1)})})[1];
       else if (definition.batched_text_sampling) {
@@ -846,7 +904,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         // IDs are exactly representable in F32. Stop/quota remain host policy.
         for(std::size_t i=proposals;i-- >0;){
           const auto predicate=selected_sampler.enabled
-              ? sampled_acceptance
+              ? (chain_steps ? r.copy(r.slice(sampled_acceptance,0,f(static_cast<std::int64_t>(i)),f(1))) : sampled_acceptance)
               : r.cast(r.binary(c::BinaryKind::kSubtract,r.cast(targets[i],Type::kFloat32),r.cast(drafts[i],Type::kFloat32)),Type::kBool);
           const auto choose=[&](V rejected,V accepted){
             return selected_sampler.enabled?select(predicate,accepted,rejected):select(predicate,rejected,accepted);

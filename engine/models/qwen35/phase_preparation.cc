@@ -149,7 +149,7 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
         }
         if (sampling_identity) metadata.sampling_identities = phase.batched_text_sampling
             ? dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 4})
-            : dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 3, 4});
+            : dense(Type::kUInt32, {static_cast<std::int64_t>(requests), static_cast<std::int64_t>(phase.draft_chain_steps ? 2 * phase.draft_chain_steps + 1 : 3), 4});
         io.input_packet_preparation = io.input_packet.prepare(token_description, position_description,
             execution.device(), allocation_budget, execution_budget, metadata);
         // Packing is optional under a finite requested-byte cap. Release the
@@ -175,16 +175,16 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
       if (sampling_identity && !io.ordinary_io.packet_sampling_identities) {
         io.sampling_identities = phase_tensor(allocation_budget, control_resource, phase.batched_text_sampling
             ? dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 4})
-            : dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 3, 4}));
+            : dense(Type::kUInt32, {static_cast<std::int64_t>(requests), static_cast<std::int64_t>(phase.draft_chain_steps ? 2 * phase.draft_chain_steps + 1 : 3), 4}));
       }
       if (phase.sampling_valid_port) {
         io.sampling_valid_values.resize(requests);
         bool float_predicates = phase.child->output(phase.sampling_valid_port).description.data_type() == Type::kFloat32;
         if (phase.sampling_accept_port) {
-          io.sampling_accept_values.resize(requests);
+          io.sampling_accept_values.resize(requests * (phase.draft_chain_steps ? phase.draft_chain_steps : 1));
           float_predicates = float_predicates || phase.child->output(phase.sampling_accept_port).description.data_type() == Type::kFloat32;
         }
-        if (float_predicates) io.sampling_scratch.resize(requests);
+        if (float_predicates) io.sampling_scratch.resize((std::max)(requests, io.sampling_accept_values.size()));
       }
       if (has_mtp(role) || phase.recursive_draft_repair) {
         const auto draft_rows = phase.draft_chain_steps ? static_cast<std::int64_t>(phase.draft_chain_steps+draft_lag(role)) :

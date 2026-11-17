@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
     const bool control_inputs = argc == 6 && std::string_view(argv[5]) == "--control-inputs-probe";
     const bool sampled_continuation = argc == 6 && std::string_view(argv[5]) == "--sampled-continuation-probe";
     if (argc != 5 && !depth && !carrier && !handoff && !prefix_repair && !native_relay && !recording_rng && !control_inputs && !sampled_continuation) throw std::runtime_error(
-        "usage: qwen_cross_backend_state_test cpu|cuda|apple|vulkan INPUTS off|K3 CPU_FFN_LAYERS [--depth-probe|--prefix-repair-probe|--native-relay-probe|--recording-rng-probe|--control-inputs-probe]; or cuda INPUTS K1 0 --sampled-continuation-probe; or BACKEND --carrier-probe|--native-handoff-probe");
+        "usage: qwen_cross_backend_state_test cpu|cuda|apple|vulkan INPUTS off|K3 CPU_FFN_LAYERS [--depth-probe|--prefix-repair-probe|--native-relay-probe|--recording-rng-probe|--control-inputs-probe]; or cuda INPUTS K1|K2|K3 0 --sampled-continuation-probe; or BACKEND --carrier-probe|--native-handoff-probe");
     const std::string_view name(argv[1]);
     auto kind = qwen35::BackendKind::kDefault;
     if (name == "cpu") kind = qwen35::BackendKind::kCpu;
@@ -31,15 +31,15 @@ int main(int argc, char **argv) {
     if (carrier) return inference_program_carrier_case::run(kind);
     if (handoff) return inference_native_handoff_case::run(kind);
     const std::string_view mode(argv[3]);
-    if (mode != "off" && mode != "K3" && !(sampled_continuation && mode == "K1"))
-      throw std::runtime_error("expected ordinary or K3 state consumer; sampled continuation requires K1");
+    if (mode != "off" && mode != "K3" && !(sampled_continuation && (mode == "K1" || mode == "K2")))
+      throw std::runtime_error("expected ordinary or K3 state consumer; sampled continuation requires K1/K2/K3");
     std::size_t consumed = 0;
     const auto layers = std::stoull(argv[4], &consumed);
     if (consumed != std::string_view(argv[4]).size()) throw std::runtime_error("invalid CPU placement");
     if (sampled_continuation) {
-      if (mode != "K1" || layers || kind != qwen35::BackendKind::kCuda)
-        throw std::runtime_error("sampled continuation consumer requires CUDA GPU-only K1");
-      return qwen_sampled_continuation_case::run(argv[2]);
+      if ((mode != "K1" && mode != "K2" && mode != "K3") || layers || kind != qwen35::BackendKind::kCuda)
+        throw std::runtime_error("sampled continuation consumer requires CUDA GPU-only K1/K2/K3");
+      return qwen_sampled_continuation_case::run(argv[2], static_cast<std::size_t>(mode[1] - '0'));
     }
     if (recording_rng || control_inputs) {
       if (mode != "off" || layers || kind == qwen35::BackendKind::kCpu ||

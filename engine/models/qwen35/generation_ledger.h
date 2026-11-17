@@ -113,7 +113,7 @@ private:
     return records[committed_count];
   }
   // The immutable bound sampler owns the draw contract; a zero cursor alone
-  // cannot identify greedy. Only the original sampled K1 reserves three draws.
+  // cannot identify greedy. A sampled K-proposal recipe reserves 2K+1 draws.
   bool mtp_pending_boundary(const GenerationCommitRecord &record) const noexcept {
     return drafts_token(record.role) && record.draft_limit && record.draft_limit<SIZE_MAX/2 &&
         record.draft_limit+1<=record.emitted.capacity() && record.draft_limit+1<=record.accepted_inputs.capacity() &&
@@ -123,15 +123,17 @@ private:
         record.before.frontier <= record.before.length &&
         record.before.length - record.before.frontier == record.before.lag &&
         record.pending_input >= 0 && record.pending_input == record.before.next_id &&
-        (sampled_ ? record.draft_limit == 1 && record.before.sampling.can_advance(3)
+        (sampled_ ? record.draft_limit < SIZE_MAX / 2 &&
+            record.before.sampling.can_advance(2 * record.draft_limit + 1)
                   : record.before.sampling == hyle::inference::SamplingCursor{});
   }
   bool k1_pending_boundary(const GenerationCommitRecord&record) const noexcept {
     return record.draft_limit==1 && mtp_pending_boundary(record);
   }
   bool mtp_sampling_after(const GenerationCommitRecord &record, const GenerationBoundary &actual) const noexcept {
-    return sampled_ ? record.draft_limit == 1 && record.before.sampling.can_advance(3) &&
-        actual.sampling == record.before.sampling.advanced(3) : actual.sampling == record.before.sampling;
+    return sampled_ ? record.draft_limit < SIZE_MAX / 2 &&
+            record.before.sampling.can_advance(2 * record.draft_limit + 1) &&
+        actual.sampling == record.before.sampling.advanced(2 * record.draft_limit + 1) : actual.sampling == record.before.sampling;
   }
 
 public:
@@ -230,7 +232,7 @@ public:
         previous.ids().size() != 1 || previous.pending_input < 0 || previous.turn != turn ||
         (ordinary ? quota >= previous.quota
                   : previous.quota < 2*width || quota < width || quota > previous.quota - width) ||
-        (!ordinary && sampled_ && !previous.before.sampling.can_advance(6)) ||
+        (!ordinary && sampled_ && !previous.before.sampling.can_advance(4 * previous.draft_limit + 2)) ||
         records[committed_count + 1].committed)
       throw std::runtime_error("generation successor requires one bounded pending predecessor");
     const auto ordinal = committed_count + 1;
@@ -317,20 +319,20 @@ public:
           consumed<1 || consumed>width || previous.verified_rows!=width || previous.consumed_drafts!=consumed-1 ||
           previous.agreed!=(consumed>1) || previous.accepted_draft!=(consumed>1) ||
           previous.draft<0 || previous.target_first<0 || previous.target_second<0 ||
-          (previous.target_first==previous.draft)!=(consumed>1) ||
+          (!sampled_ && (previous.target_first==previous.draft)!=(consumed>1)) ||
           previous.emitted_count!=consumed || previous.emitted.size()<consumed ||
           previous.accepted_inputs.size()<consumed || previous.verification_inputs.size()!=width ||
           previous.verification_inputs[0]!=previous.pending_input || previous.verification_inputs[1]!=previous.draft ||
           previous.emitted[0]!=previous.target_first || (consumed>1 && previous.emitted[1]!=previous.target_second) ||
           previous.emitted[consumed-1]!=actual.next_id ||
-          (consumed<width && actual.next_id==previous.verification_inputs[consumed]) ||
+          (!sampled_ && consumed<width && actual.next_id==previous.verification_inputs[consumed]) ||
           actual.length<previous.before.length || actual.length-previous.before.length!=consumed ||
           actual.frontier<previous.before.frontier ||
           actual.frontier-previous.before.frontier!=previous.before.lag+(consumed==1?1:consumed-1) ||
           previous.draft_rows!=2*(previous.draft_limit+previous.before.lag) || actual.lag!=lag ||
           actual.frontier>actual.length || actual.length-actual.frontier!=lag ||
           actual.catchup_token!=(lag?previous.verification_inputs[consumed-1]:-1) ||
-          actual.sampling!=previous.before.sampling || record.role!=GraphRole::kMtpCatchupRound ||
+          !mtp_sampling_after(previous, actual) || record.role!=GraphRole::kMtpCatchupRound ||
           record.draft_limit!=previous.draft_limit)return false;
       for(std::size_t i=0;i<consumed;++i){
         if(previous.accepted_inputs[i]!=previous.verification_inputs[i] || previous.accepted_inputs[i]<0 || previous.emitted[i]<0)return false;

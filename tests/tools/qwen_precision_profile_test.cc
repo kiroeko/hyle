@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
   using namespace qwen35;
   using hyle::compute::DataType;
   // Test model-owned cold chain capability without including the engine driver.
-  constexpr GreedyChainCapabilities k3{3, true, 1, 2, 3, true, true};
+  constexpr DraftChainCapabilities k3{3, true, 1, 2, 3, true, true};
   static_assert(k3.packet_available() && k3.available());
   auto chain = k3;
   chain.max_drafts = 1;

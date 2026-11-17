@@ -101,13 +101,6 @@ struct OrdinaryIoPlan final {
   constexpr bool batched_results() const noexcept { return results != OrdinaryResultMode::kSeparate; }
 };
 
-// The prepared one-proposal sampler publishes one real acceptance bit and
-// reserves exactly three logical draws, independently of accepting the draft.
-// Longer sampled chains retain their own separately qualified recipe.
-constexpr bool device_mtp_sampling_supported(bool random, std::size_t proposals) noexcept {
-  return !random || proposals == 1;
-}
-
 // A different capability from host input/result IO: device relay requires an
 // unmodified ordinary sampler or a qualified MTP recipe. Sampled MTP retains
 // its actual acceptance/publishing path. Keep actual cohort/Source/capture
