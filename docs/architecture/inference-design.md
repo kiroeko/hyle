@@ -147,9 +147,9 @@ context容量配置决定资源上界，不能为每个实际KV长度录一张�
 
 `DeviceLengthsPagedAttention`接收Q／K／V和dense I32[R]的query／KV长度。
 `prepare_lengths`保留完整R容量布局和原页权限。Queue路线沿原Queue更新私有metadata和整数调度表；
-原生路线使用所属Runtime的原Invocation，不制造公共Queue。Metal的F16／BF16 GQA注意力直接消费设备I32长度和只读容量metadata；
+原生路线使用所属Runtime的原Invocation，不制造公共Queue。Metal与Vulkan的F16／BF16 GQA注意力直接消费设备I32长度和只读容量metadata；
 程序按原schema和物理形状冷准备，同一schema的新容量版本只替换槽内metadata绑定，不扩大页权限。
-槽内metadata、输入保活和程序仍受原最后读者退休约束。这里只声明原生注意力资格，Metal设备长度Append和整模型MTP设备闭环尚未接通。
+槽内metadata、输入保活和程序仍受原最后读者退休约束。这里只声明原生注意力资格；设备长度Append及整模型MTP设备闭环须分别验收。
 4070上的BF16 Graph测试覆盖R1／2／4、每请求Q2／4／8、C1K／4K／32K、非均匀长度、空批次、非法值和固定地址捕获重放。
 非零Q／K另对照FP64 softmax；BF16绝对容差0.016，未活动输出逐bit为零。
 非2次幂容量另验R1／3、每请求Q3／5／7、C31／257：同一捕获、相同地址下改变有效长度，

@@ -1,0 +1,194 @@
+#version 450
+
+layout(local_size_x = 64) in;
+layout(binding=0) readonly buffer Q { uint q[]; };
+layout(binding=1) readonly buffer K { uint k[]; };
+layout(binding=2) buffer Checked { uint checked[]; };
+layout(binding=3) readonly buffer V { uint v[]; };
+layout(binding=4) readonly buffer QLengths { int qlengths[]; };
+layout(binding=5) readonly buffer KLengths { int klengths[]; };
+layout(binding=6) readonly buffer Metadata { int metadata[]; };
+layout(binding=7) buffer Partials { float partials[]; };
+layout(binding=8) writeonly buffer Y { uint y[]; };
+layout(binding=9) readonly buffer KeyStatus { int key_status[]; };
+layout(binding=10) readonly buffer ValueStatus { int value_status[]; };
+layout(push_constant) uniform Origins {
+  uint q; uint k; uint checked; uint v; uint qlengths; uint klengths;
+  uint metadata; uint partials; uint y;
+} origin;
+layout(constant_id=0) const uint phase=0;
+layout(constant_id=1) const uint rows=1;
+layout(constant_id=2) const uint heads=1;
+layout(constant_id=3) const uint kv_heads=1;
+layout(constant_id=4) const uint qk=64;
+layout(constant_id=5) const uint dv=64;
+layout(constant_id=6) const uint requests=1;
+layout(constant_id=7) const uint pages=1;
+layout(constant_id=8) const uint refs=1;
+layout(constant_id=9) const uint page_rows=16;
+layout(constant_id=10) const uint max_kv=1;
+layout(constant_id=11) const uint qkind=1;
+layout(constant_id=12) const uint kkind=1;
+layout(constant_id=13) const uint vkind=1;
+layout(constant_id=14) const uint ykind=1;
+layout(constant_id=15) const uint splits=1;
+layout(constant_id=16) const uint causal=1;
+layout(constant_id=17) const int window_left=-1;
+layout(constant_id=18) const float scale=1.0;
+layout(constant_id=19) const uint meta_q=0;
+layout(constant_id=20) const uint meta_kv=0;
+layout(constant_id=21) const uint meta_pages=0;
+layout(constant_id=22) const uint meta_tail=0;
+layout(constant_id=23) const uint guarded=0;
+
+shared float weights[64];
+shared float reduction[64];
+shared float tile_maximum, tile_denominator, previous_factor;
+float decode(uint word, uint index, uint kind) {
+  if (kind==2u) return uintBitsToFloat(((word >> (16u*(index&1u)))&65535u)<<16u);
+  return unpackHalf2x16(word)[index&1u];
+}
+float query(uint index) { return decode(q[origin.q/4u+index/2u],index,qkind); }
+float key(uint index) { return decode(k[origin.k/4u+index/2u],index,kkind); }
+float value(uint index) { return decode(v[origin.v/4u+index/2u],index,vkind); }
+uint bf16(float x) {
+  uint bits=floatBitsToUint(x);
+  if ((bits&0x7fffffffu)>0x7f800000u) return (bits>>16u&0x8000u)|0x7fc0u;
+  return (bits+0x7fffu+((bits>>16u)&1u))>>16u;
+}
+uint encode_pair(float a,float b) {
+  return ykind==2u ? bf16(a)|(bf16(b)<<16u) : packHalf2x16(vec2(a,b));
+}
+int meta(uint offset) { return metadata[origin.metadata/4u+offset]; }
+void fail(uint bits) { atomicOr(checked[origin.checked/4u],bits); }
+void main() {
+  uint lane=gl_LocalInvocationID.x, group=gl_WorkGroupID.x;
+  if (phase==0u) {
+    if (lane!=0u) return;
+    if (guarded!=0u && (key_status[0]!=0 || value_status[0]!=0)) {
+      fail(4u); return;
+    }
+    if (meta(meta_q)!=0 || meta(meta_kv)!=0) { fail(4u); return; }
+    uint total_q=0u, total_k=0u;
+    for (uint r=0u;r<requests;++r) {
+      int qa=meta(meta_q+r), qb=meta(meta_q+r+1u);
+      int ka=meta(meta_kv+r), kb=meta(meta_kv+r+1u), tail=meta(meta_tail+r);
+      if (qa<0 || qb<qa || uint(qb)>rows || ka<0 || kb<ka || uint(kb)>refs ||
+          (ka==kb ? tail!=0 : tail<1 || uint(tail)>page_rows)) { fail(4u); return; }
+      // Division proves the product fits before computing the last page extent.
+      uint count=uint(kb-ka);
+      if (count!=0u && (uint(tail)>max_kv || count-1u>(max_kv-uint(tail))/page_rows)) { fail(4u); return; }
+      uint capacity=count==0u ? 0u : (count-1u)*page_rows+uint(tail);
+      int nq=qlengths[origin.qlengths/4u+r], nk=klengths[origin.klengths/4u+r];
+      if (nq<0 || nq>qb-qa || nk<0 || uint(nk)>capacity ||
+          (nq!=0 && nk==0) || (causal!=0u && nq>nk) ||
+          uint(nq)>rows-total_q || uint(nk)>max_kv-total_k) { fail(4u); return; }
+      total_q+=uint(nq); total_k+=uint(nk);
+      // Inactive requests never read page entries or poisoned Q/K/V tails.
+      if (nq!=0) for (uint p=0u;p<(uint(nk)+page_rows-1u)/page_rows;++p) {
+        int page=meta(meta_pages+uint(ka)+p);
+        if (page<0 || uint(page)>=pages) { fail(1u); return; }
+      }
+    }
+    return;
+  }
+  // The original native recorder orders the complete control check before
+  // either arithmetic pass. Failed controls cannot publish or read cache data.
+  if (atomicOr(checked[origin.checked/4u],0u)!=0u) return;
+  if (phase==1u) {
+    uint split=group%splits, head=(group/splits)%heads, row=group/(splits*heads);
+    int request=-1, local_row=0, nq=0, nk=0;
+    uint first_query=0u;
+    for (uint r=0u;r<requests;++r) {
+      int active_count=qlengths[origin.qlengths/4u+r];
+      if (row>=first_query && row-first_query<uint(active_count)) {
+        request=int(r); local_row=int(row-first_query); nq=active_count; nk=klengths[origin.klengths/4u+r];
+      }
+      first_query+=uint(active_count);
+    }
+    uint base=origin.partials/4u+group*(dv+2u);
+    float accum[4]; for (uint i=0u;i<4u;++i) accum[i]=0.0;
+    float maximum=-uintBitsToFloat(0x7f800000u), denominator=0.0;
+    if (request>=0) {
+      uint end=causal!=0u ? uint(nk-nq+local_row+1) : uint(nk);
+      int position=nk-nq+local_row;
+      uint begin=window_left<0 ? 0u : uint(max(0,position-window_left));
+      uint extent=end-begin, active_splits=nk<1024 ? 1u : splits;
+      uint chunk=(extent+active_splits-1u)/active_splits;
+      uint first=begin+(split<active_splits ? min(extent,split*chunk) : extent);
+      uint last=begin+(split<active_splits ? min(extent,(split+1u)*chunk) : extent);
+      uint kh=head/(heads/kv_heads);
+      for (uint tile=first;tile<last;tile+=64u) {
+        uint logical=tile+lane;
+        float score=-uintBitsToFloat(0x7f800000u);
+        if (logical<last) {
+          uint page=uint(meta(meta_pages+uint(meta(meta_kv+uint(request)))+logical/page_rows));
+          uint physical=(page*page_rows+logical%page_rows)*kv_heads+kh;
+          precise float dot=0.0;
+          for (uint d=0u;d<qk;++d) dot=fma(query((row*heads+head)*qk+d),key(physical*qk+d),dot);
+          score=dot*scale;
+        }
+        reduction[lane]=score; barrier();
+        for (uint stride=32u;stride!=0u;stride/=2u) {
+          if (lane<stride) reduction[lane]=max(reduction[lane],reduction[lane+stride]);
+          barrier();
+        }
+        if (lane==0u) {
+          tile_maximum=max(maximum,reduction[0]);
+          previous_factor=exp(maximum-tile_maximum);
+        }
+        barrier();
+        float weight=logical<last ? exp(score-tile_maximum) : 0.0;
+        weights[lane]=weight; reduction[lane]=weight; barrier();
+        for (uint stride=32u;stride!=0u;stride/=2u) {
+          if (lane<stride) reduction[lane]+=reduction[lane+stride];
+          barrier();
+        }
+        if (lane==0u) tile_denominator=reduction[0];
+        barrier();
+        for (uint part=0u;part<4u;++part) {
+          uint d=lane*2u+(part/2u)*128u+part%2u;
+          if (d>=dv) continue;
+          precise float sum=accum[part]*previous_factor;
+          for (uint j=0u;j<min(64u,last-tile);++j) {
+            uint index=tile+j;
+            uint page=uint(meta(meta_pages+uint(meta(meta_kv+uint(request)))+index/page_rows));
+            uint physical=(page*page_rows+index%page_rows)*kv_heads+kh;
+            sum=fma(weights[j],value(physical*dv+d),sum);
+          }
+          accum[part]=sum;
+        }
+        denominator=denominator*previous_factor+tile_denominator; maximum=tile_maximum;
+        barrier();
+      }
+    }
+    for (uint part=0u;part<4u;++part) {
+      uint d=lane*2u+(part/2u)*128u+part%2u;
+      if (d<dv) partials[base+d]=accum[part];
+    }
+    if (lane==0u) { partials[base+dv]=denominator==0.0 ? 0.0 : maximum; partials[base+dv+1u]=denominator; }
+    return;
+  }
+  uint first=origin.partials/4u+group*splits*(dv+2u);
+  if (lane==0u) {
+    float maximum=-uintBitsToFloat(0x7f800000u);
+    for (uint s=0u;s<splits;++s) if (partials[first+s*(dv+2u)+dv+1u]!=0.0)
+      maximum=max(maximum,partials[first+s*(dv+2u)+dv]);
+    float denominator=0.0;
+    for (uint s=0u;s<splits;++s) {
+      uint base=first+s*(dv+2u); float norm=partials[base+dv+1u];
+      float factor=norm==0.0 ? 0.0 : exp(partials[base+dv]-maximum);
+      weights[s]=factor; denominator+=norm*factor;
+    }
+    tile_denominator=denominator;
+  }
+  barrier();
+  for (uint pair=lane;pair<dv/2u;pair+=64u) {
+    precise float a=0.0, b=0.0;
+    for (uint s=0u;s<splits;++s) {
+      uint base=first+s*(dv+2u)+pair*2u;
+      a=fma(partials[base],weights[s],a); b=fma(partials[base+1u],weights[s],b);
+    }
+    y[origin.y/4u+(group*dv)/2u+pair]=tile_denominator==0.0 ? 0u : encode_pair(a/tile_denominator,b/tile_denominator);
+  }
+}

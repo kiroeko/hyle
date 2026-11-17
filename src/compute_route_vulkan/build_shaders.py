@@ -24,6 +24,7 @@ def main():
         parser.error('output stem must be a C++ header basename')
     args.output.mkdir(parents=True, exist_ok=True)
     variants = [
+        ('device_lengths_paged', str((args.tensor_source / 'device_lengths_paged.comp').resolve()), {}, {1}),
         ('packed_gdn', str((args.tensor_source / 'packed_gdn.comp').resolve()), {}, {1}),
         ('packed_conv', str((args.tensor_source / 'packed_conv.comp').resolve()), {}, {1}),
         ('packed_conv_raw16', str((args.tensor_source / 'packed_conv.comp').resolve()),

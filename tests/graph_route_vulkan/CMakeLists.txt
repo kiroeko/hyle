@@ -1,6 +1,9 @@
 hyle_add_header_self_contained_test(graph_route_vulkan
   HEADER_DIR graph HEADERS vulkan.h)
 if(_HYLE_COMPUTE_HAVE_VULKAN)
+  hyle_add_test(graph_route_vulkan NAME device_lengths
+    SOURCES device_lengths_test.cc DEPS hyle_graph_batch hyle_simd)
+  hyle_stage_runtime(hyle_graph_route_vulkan_device_lengths_test)
   hyle_add_test(graph_route_vulkan NAME slot_store SOURCES slot_store_test.cc)
   hyle_stage_runtime(hyle_graph_route_vulkan_slot_store_test)
   hyle_add_test(graph_route_vulkan NAME retirement SOURCES retirement_test.cc

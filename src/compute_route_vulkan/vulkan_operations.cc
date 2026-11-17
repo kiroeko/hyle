@@ -2,6 +2,7 @@
 #include "vulkan_carrier.h"
 #include "vulkan_tensor.h"
 #include "vulkan_packed_sequence.h"
+#include "vulkan_device_lengths.h"
 #include "hyle/compute/sequence_ops.h"
 #include "hyle/compute/sampling_ops.h"
 #include "hyle/compute/model_ops.h"
@@ -23,6 +24,8 @@ Status lower_operation(ProgramState &program, const PlanStep &step,
                        RowCacheAccessFacts *access) noexcept {
   if (access) *access = {};
   try {
+    if (step.operation.custom_as<DeviceLengthsPagedRead>())
+      return lower_device_lengths_paged(program, step);
     if (step.operation.custom_as<sequence_ops::PackedCausalConv1d>())
       return lower_packed_conv(program, step);
     if (step.operation.custom_as<sequence_ops::PackedGatedDeltaNet>() ||

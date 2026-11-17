@@ -12,6 +12,7 @@
 #include <new>
 
 #include "../compute_route_vulkan/vulkan_composition_access.h"
+#include "../compute_route_vulkan/vulkan_device_lengths.h"
 #include "hyle/compute/detail/vulkan_copy_stream_access.h"
 #include "../compute_route_vulkan/vulkan_memory_internal.h"
 #include "../compute_route_vulkan/vulkan_program_internal.h"
@@ -37,8 +38,12 @@ struct Recipe final {
   batch::PagedAttentionOptions options;
   compute::BatchCapacity capacity{};
   bool explicit_metadata = false;
+  compute::BatchSchema lengths_schema;
+  bool device_lengths() const noexcept { return lengths_schema.valid(); }
 };
 Result<Recipe> recipe(const compute::Operation &operation) noexcept {
+  if (const auto d = operation.custom_as<batch::DeviceLengthsPagedAttention>())
+    return Recipe{.options=d->options, .capacity=d->schema.capacity(), .lengths_schema=d->schema};
   if (const auto d = operation.custom_as<batch::PagedAttention>())
     return Recipe{d->layout, d->options};
   if (const auto d = operation.custom_as<batch::PagedMlaAttention>())
@@ -49,6 +54,9 @@ Result<Recipe> recipe(const compute::Operation &operation) noexcept {
   return std::unexpected(Status::Unimplemented("not paged attention"));
 }
 Status qualify(const Recipe &value) noexcept {
+  if (value.device_lengths())
+    return vn::qualify_device_lengths_paged_schema(value.lengths_schema, value.options.scale,
+        value.options.causal, value.options.window_left);
   if ((!value.explicit_metadata && !value.layout.valid()) || !std::isfinite(value.options.scale))
     return Status::InvalidArgument("native Vulkan page layout/scale is invalid");
   const auto capacity = value.explicit_metadata ? value.capacity : value.layout.origin_schema().capacity();
@@ -139,6 +147,9 @@ struct Artifact final {
   std::array<ValueId, 3> inputs{};
   std::array<std::uint32_t, 3> ports{};
   ValueId metadata_input;
+  std::array<ValueId,2> length_inputs{};
+  std::array<std::uint32_t,2> length_ports{};
+  compute::TensorDesc lengths_description;
   std::uint32_t metadata_port = 0, output_query_rows = 0;
   compute::TensorDesc query_description;
   std::size_t count = 0, public_outputs = 0;
@@ -170,6 +181,10 @@ struct Slot final {
   cv::Tensor output;
   mem::Buffer backing;
   cd::ResultStorageOwner result;
+  compute::LeasePool metadata_pool;
+  compute::WriteLease metadata_writer;
+  compute::ReadLease metadata;
+  compute::BatchLayoutVersion metadata_layout;
   bool sealed = false, needs_seal = false;
 };
 
@@ -183,6 +198,7 @@ Result<compute::TensorDesc> input_description(const Artifact &a, const Slot &s,
 }
 
 bool empty_program(const Artifact &a, const Slot &s) noexcept {
+  if (a.recipe.device_lengths()) return false;
   const auto &layout = s.controller().version.layout();
   if (!s.controller().prepared || !layout.valid() ||
       !page_recipe(a, s).schema().owns(layout) || layout.facts().query_rows ||
@@ -285,6 +301,37 @@ Status prepare(void *prepared, void *invocation, compute::BatchLayoutVersion lay
     HYLE_RETURN_IF_ERROR(vn::CompositionAccess::prepare_bindings(s.controller().native));
   s.controller().prepared = false; s.controller().bound = false;
   s.needs_seal = false;
+  if (a.recipe.device_lengths()) {
+    auto &c = s.controller();
+    if (layout.facts().requests != a.recipe.capacity.max_requests)
+      return Status::InvalidArgument("Vulkan device lengths need every original request envelope");
+    HYLE_RETURN_IF_ERROR(vn::PagedBatchAccess::release_inputs(c.native));
+    c.reads = {}; c.keys = {}; c.values = {};
+    const auto bytes = a.recipe.lengths_schema.metadata_offsets().bytes;
+    const bool upload = !s.metadata.valid() || s.metadata_layout != layout;
+    if (upload) {
+      if (!s.metadata_pool.valid()) {
+        HYLE_ASSIGN_OR_RETURN(s.metadata_pool, compute::LeasePool::create(a.device.ref(), bytes,
+            {.max_blocks=1,.allocator=s.allocator,.resource_budget=a.preparation.allocation.resource_budget}));
+      }
+      if (s.metadata.valid()) { HYLE_ASSIGN_OR_RETURN(s.metadata_writer,s.metadata.try_write()); s.metadata.reset(); }
+      if (!s.metadata_writer.valid()) { HYLE_ASSIGN_OR_RETURN(s.metadata_writer,s.metadata_pool.allocate(bytes,8)); }
+      HYLE_ASSIGN_OR_RETURN(auto original,layout.metadata());
+      HYLE_ASSIGN_OR_RETURN(auto source,original.view());
+      HYLE_ASSIGN_OR_RETURN(auto mapped,source.map_host());
+      HYLE_ASSIGN_OR_RETURN(auto destination,s.metadata_writer.view());
+      auto status=destination.write(mapped.bytes()); status.Update(mapped.close()); HYLE_RETURN_IF_ERROR(status);
+      HYLE_ASSIGN_OR_RETURN(s.metadata,s.metadata_writer.publish()); s.metadata_layout=layout;
+    }
+    HYLE_ASSIGN_OR_RETURN(c.version,c.recipe.version(layout));
+    c.reads[3]=s.metadata; c.prepared=true; c.prepared_bank=-1;
+    c.report.layout_generation=layout.generation(); c.report.reused_native_plan=true;
+    c.report.uploaded_bytes=upload?bytes:0; c.report.upload_host_waits=upload?1:0;
+    c.report.device_mirror_bytes=bytes; c.report.backing_bytes=bytes;
+    s.frames={}; s.pending_frames={}; s.pending_source=nullptr; s.written={};
+    if (!s.output.valid()) HYLE_RETURN_IF_ERROR(refresh_output(a,s));
+    return Status::Ok();
+  }
   if (a.recipe.explicit_metadata && (!s.controller().recipe.schema().owns(layout) ||
       s.controller().recipe.schema().capacity()!=a.recipe.capacity ||
       s.controller().recipe.schema().mla_layout()!=compute::MlaCacheLayout::kNone)) {
@@ -365,6 +412,8 @@ Status validate_written(void *prepared, void *invocation, ValueId input,
       !writer.prepared || !writer.invocation ||
       std::ranges::any_of(s.pending_frames, [](const auto &f) { return f.valid(); }))
     return Status::FailedPrecondition("Vulkan written bank needs its exact unbound native layout");
+  if (a.recipe.device_lengths())
+    return Status::Unimplemented("Vulkan device-length reader needs native checked device append admission");
   std::size_t port = 1;
   for (; port < a.count; ++port) if (a.inputs[port] == input) break;
   if (port == a.count || s.frames[port - 1].valid() || s.written[port - 1].committed)
@@ -419,7 +468,8 @@ const bd::NativeBatchRegionVTable page_table{
           .window_left = a.recipe.options.window_left,
           .inputs = std::span(a.inputs).first(a.count), .input_ports = std::span(a.ports).first(a.count),
           .metadata_input = a.metadata_input, .output_query_rows = a.output_query_rows,
-          .layout = s.controller().version.layout()};
+          .layout = s.controller().version.layout(),
+          .device_lengths = a.recipe.device_lengths(), .length_inputs = a.length_inputs};
     }, &prepare, &frame,
     [](void *prepared, void *invocation, ValueId input, compute::PagedArenaRead value) noexcept {
       const auto &a = *static_cast<Artifact *>(prepared); auto &s = *static_cast<Slot *>(invocation);
@@ -474,7 +524,8 @@ Status create_slot(void *prepared, mem::AllocatorRef allocator, mem::BufferView,
       .allocator = allocator, .resource_budget = a.preparation.allocation.resource_budget};
   if (a.recipe.explicit_metadata) return Status::Ok();
   HYLE_RETURN_IF_ERROR(s->controller().initialize(s->preparation, a.program, a.native_recipe,
-      a.device, a.staging, options, a.workload));
+      a.device, a.staging, options, a.workload, a.recipe.device_lengths()));
+  if (a.recipe.device_lengths()) return Status::Ok();
   HYLE_ASSIGN_OR_RETURN(s->controller().version, a.native_recipe.version(a.recipe.layout));
   return Status::Ok();
 }
@@ -489,7 +540,7 @@ Status bind(void *prepared, void *invocation, std::span<const RegionValue> input
   HYLE_RETURN_IF_ERROR(vn::CompositionAccess::prepare_outputs(c.native, &refresh));
   c.bound = false; s.needs_seal = false;
   if (refresh || !s.output.valid()) HYLE_RETURN_IF_ERROR(refresh_output(a, s));
-  std::array<cv::Tensor, 4> native;
+  std::array<cv::Tensor, 6> native;
   for (std::size_t port = 0; port < a.count; ++port) {
     HYLE_ASSIGN_OR_RETURN(auto description, input_description(a, s, port));
     if (a.ports[port] >= inputs.size()) return Status::InvalidArgument("native page boundary port differs");
@@ -533,7 +584,32 @@ Status bind(void *prepared, void *invocation, std::span<const RegionValue> input
           import(s.pending_frames[port-1]) : import(s.frames[port-1]));
     }
   }
-  if (a.recipe.explicit_metadata) {
+  if (a.recipe.device_lengths()) {
+    for (std::size_t control=0;control<2;++control) {
+      if (a.length_ports[control]>=inputs.size()) return Status::InvalidArgument("Vulkan device length boundary is missing");
+      const auto &input=inputs[a.length_ports[control]];
+      if (input.description!=a.lengths_description || !input.tensor.valid() || input.tensor.description()!=a.lengths_description)
+        return Status::InvalidArgument("Vulkan device length control description differs");
+      if (input.lease) {
+        HYLE_ASSIGN_OR_RETURN(auto owner,input.lease->view()); const auto wanted=input.tensor.storage();
+        if (owner.resource()!=wanted.resource() || owner.native_handle()!=wanted.native_handle() ||
+            wanted.offset()<owner.offset() || wanted.offset()-owner.offset()>owner.size() ||
+            wanted.size()>owner.size()-(wanted.offset()-owner.offset()))
+          return Status::InvalidArgument("Vulkan device length lease does not cover its actual control");
+        HYLE_ASSIGN_OR_RETURN(c.reads[1+control],input.lease->subview(wanted.offset()-owner.offset(),wanted.size()));
+        HYLE_ASSIGN_OR_RETURN(native[3+control],vn::MemoryAccess::lease_tensor(s.preparation.runtime,
+            wanted.resource(),c.reads[1+control],a.lengths_description,c.import));
+      } else {
+        c.reads[1+control]={};
+        HYLE_ASSIGN_OR_RETURN(native[3+control],vn::MemoryAccess::tensor_view(
+            s.preparation.runtime,input.tensor,s.allocator,c.import.resource_budget));
+      }
+    }
+    const auto metadata=s.controller().native.valid() ? a.program.native.input_descriptions()[5] : compute::TensorDesc{};
+    HYLE_ASSIGN_OR_RETURN(native[5],vn::MemoryAccess::lease_tensor(s.preparation.runtime,
+        a.device.resource,c.reads[3],metadata,c.import));
+    HYLE_RETURN_IF_ERROR(c.native.bind(native));
+  } else if (a.recipe.explicit_metadata) {
     if (a.metadata_port >= inputs.size())
       return Status::InvalidArgument("native page metadata boundary port differs");
     const auto &metadata = inputs[a.metadata_port];
@@ -549,7 +625,10 @@ Status bind(void *prepared, void *invocation, std::span<const RegionValue> input
     HYLE_ASSIGN_OR_RETURN(c.reads[3], metadata.lease->subview(
         offsets.page_indices, c.recipe.costs().index_bytes));
   }
-  if (empty_program(a, s)) {
+  if (a.recipe.device_lengths()) {
+    // All six original native arguments were bound above. Runtime lengths
+    // remain device inputs; no host metadata decoding is on the replay path.
+  } else if (empty_program(a, s)) {
     HYLE_RETURN_IF_ERROR(c.native.bind(std::span(native).first(1)));
   } else {
     HYLE_ASSIGN_OR_RETURN(auto metadata, input_description(a, s, a.count));
@@ -693,7 +772,8 @@ const ProviderRegionPreparedVTable prepared_table{
 } // namespace
 
 bool native_paged_operation(const compute::Operation &operation) noexcept {
-  return operation.custom_as<batch::PagedAttention>() || operation.custom_as<batch::PagedMlaAttention>() ||
+  return operation.custom_as<batch::DeviceLengthsPagedAttention>() ||
+      operation.custom_as<batch::PagedAttention>() || operation.custom_as<batch::PagedMlaAttention>() ||
       operation.custom_as<compute::PagedAttention>();
 }
 Status propose_native_paged(void *, const RegionDiscoveryRequest &request,
@@ -750,7 +830,7 @@ compute::ProviderPrepareOutcome compile_native_paged(void *context,
   *out = {.vtable = &prepared_table, .state = a};
   const auto build = [&]() noexcept -> Status {
     a->recipe = std::move(*selected); a->node = request.nodes[0]; a->workload = request.workload;
-    const auto schema = a->recipe.layout.origin_schema();
+    const auto schema = a->recipe.device_lengths() ? a->recipe.lengths_schema : a->recipe.layout.origin_schema();
     const auto capacity = a->recipe.explicit_metadata ? a->recipe.capacity : schema.capacity();
     HYLE_ASSIGN_OR_RETURN(auto query, request.graph->node_input(a->node, 0));
     HYLE_ASSIGN_OR_RETURN(a->query_description, request.graph->value_description(query));
@@ -765,7 +845,7 @@ compute::ProviderPrepareOutcome compile_native_paged(void *context,
     const auto &runtime = static_cast<SourceContext *>(context)->runtime;
     a->preparation.runtime = runtime; a->preparation.allocation.resource_budget = request.resource_budget;
     a->preparation.physical_query_rows = a->output_query_rows;
-    a->preparation.native_queue_only = a->recipe.explicit_metadata;
+    a->preparation.native_queue_only = a->recipe.explicit_metadata || a->recipe.device_lengths();
     const auto consider = [&](mem::MemoryResourceRef resource) {
       if (!vn::MemoryAccess::validate_resource(runtime, resource).ok()) return;
       if (resource.properties().has(mem::MemoryProperty::kHostAccessible)) {
@@ -789,7 +869,35 @@ compute::ProviderPrepareOutcome compile_native_paged(void *context,
       HYLE_RETURN_IF_ERROR(vn::MemoryAccess::validate_resource(runtime,
           request.input_resources[a->ports[port]]));
     }
-    if (a->recipe.explicit_metadata) {
+    if (a->recipe.device_lengths()) {
+      HYLE_ASSIGN_OR_RETURN(a->lengths_description,compute::TensorDesc::dense(compute::DataType::kInt32,
+          std::array<std::int64_t,1>{capacity.max_requests}));
+      std::array<compute::TensorDesc,5> descriptions;
+      for (std::size_t port=0;port<3;++port) {
+        HYLE_ASSIGN_OR_RETURN(descriptions[port],request.graph->value_description(a->inputs[port]));
+      }
+      for (std::size_t control=0;control<2;++control) {
+        HYLE_ASSIGN_OR_RETURN(auto input,request.graph->node_input(a->node,3+control));
+        const auto found=std::ranges::find(request.inputs,input);
+        if (found==request.inputs.end()) return Status::InvalidArgument("Vulkan device length boundary is missing");
+        const auto boundary=static_cast<std::uint32_t>(found-request.inputs.begin());
+        HYLE_ASSIGN_OR_RETURN(descriptions[3+control],request.graph->value_description(input));
+        if (descriptions[3+control]!=a->lengths_description)
+          return Status::InvalidArgument("Vulkan device length control description differs");
+        HYLE_RETURN_IF_ERROR(vn::MemoryAccess::validate_resource(runtime,request.input_resources[boundary]));
+        a->length_inputs[control]=input; a->length_ports[control]=boundary;
+      }
+      HYLE_ASSIGN_OR_RETURN(auto operation,request.graph->operation(a->node));
+      compute::TensorDesc expected;
+      HYLE_RETURN_IF_ERROR(compute::infer_output_descriptions(operation,descriptions,std::span(&expected,1)));
+      HYLE_ASSIGN_OR_RETURN(auto result,request.graph->result(a->node));
+      HYLE_ASSIGN_OR_RETURN(auto output,request.graph->value_description(result));
+      if (expected!=output) return Status::InvalidArgument("Vulkan device length output description differs");
+      HYLE_ASSIGN_OR_RETURN(a->native_recipe,make_recipe(*a,schema,allocator));
+      HYLE_ASSIGN_OR_RETURN(a->program.native,vn::prepare_device_lengths_paged_graph(runtime,schema,
+          a->output_query_rows,a->recipe.options.scale,a->recipe.options.causal,a->recipe.options.window_left,a->workload));
+      a->program.allocation=a->preparation.allocation;
+    } else if (a->recipe.explicit_metadata) {
       HYLE_ASSIGN_OR_RETURN(a->metadata_input, request.graph->node_input(a->node, 3));
       if (a->metadata_input.kind() != ValueKind::kInput)
         return Status::InvalidArgument("native page metadata needs an exact external input");
