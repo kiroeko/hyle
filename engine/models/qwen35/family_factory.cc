@@ -413,10 +413,19 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
           ? dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 4})
           : dense(Type::kUInt32, {static_cast<std::int64_t>(requests),
               static_cast<std::int64_t>(chain_steps ? 2 * chain_steps + 1 : 3), 4}));
+    const auto sampling_draws = chain_steps ? 2 * chain_steps + 1 : std::size_t{3};
+    std::vector<V> sampling_identities;
+    if (definition.sampling_identity_port) sampling_identities.resize(cache::multiply(requests, sampling_draws));
     const auto sampling_identity = [&](std::size_t request, std::size_t draw) {
-      return r.copy(r.reshape(r.slice(r.slice(definition.sampling_identity_port, 0,
+      if (request >= requests || draw >= sampling_draws || sampling_identities.empty())
+        throw std::logic_error("sampling identity is outside its prepared request/draw inventory");
+      // Proposal and verification share this original logical draw. Reusing
+      // its value avoids a second, unused Copy for proposal-only coordinates.
+      auto &identity = sampling_identities[request * sampling_draws + draw];
+      if (!identity) identity = r.copy(r.reshape(r.slice(r.slice(definition.sampling_identity_port, 0,
           f(static_cast<std::int64_t>(request)), f(1)), 1,
           f(static_cast<std::int64_t>(draw)), f(1)), {f(1), f(4)}));
+      return identity;
     };
     const auto sampling_row = [&](V values, std::size_t row) {
       return r.copy(r.slice(values, 0, f(static_cast<std::int64_t>(row)), f(1)));
@@ -584,12 +593,24 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
             definition.draft_metadata_port = r.input(take(attention_schema.metadata_description()));
           definition.append_cache_inputs[draft_bank] = definition.draft_key_port;
           definition.append_cache_inputs[draft_bank + 1] = definition.draft_value_port;
+          V last_query_lengths;
+          if (device_continuation) {
+            // Both chronological inputs still supply the original draft KV.
+            // Only the selected final query contributes to this proposal.
+            auto &literal = assembly.literal_at(assembly.primary(), dense(Type::kInt32, {1}));
+            constexpr std::array<std::int32_t, 1> one{1};
+            literal.write<std::int32_t>(one);
+            last_query_lengths = r.constant(literal);
+          }
+          // Lag0 repeats token, hidden and position in both physical rows;
+          // row1 is therefore also its final query. Lag1 uses that same
+          // static final row. Original device lengths still bound KV writes.
           const auto head = mtp::full_head(r, projection, kv, draft_positions, frequencies,
               {attention_schema, definition.draft_key_port, definition.draft_value_port,
-               definition.draft_metadata_port, draft_query_lengths, draft_kv_lengths},
+               definition.draft_metadata_port, draft_query_lengths, draft_kv_lengths, last_query_lengths},
               f(static_cast<std::int64_t>(draft_lag(role))), row_geometry,
               [&](Recipe &recipe, V selected) { return qwen35::draft_scores(recipe, selected, prepared.draft_projection); },
-              device_continuation ? predecessor_prefix_index : definition.draft_last_ids_port);
+              device_continuation ? V{} : definition.draft_last_ids_port);
           append = head.append_nodes; definition.draft_attention_node = head.attention_node;
           if (!selected_sampler.enabled && selected_sampler.modifiers.empty())
             definition.draft_id_port = qwen35::original_draft_id(r, r.op(c::Operation(c::TopK{.count = 1}), {head.logits},
@@ -756,8 +777,8 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     const OrdinaryIoCapabilities ordinary_io{
         .backend = execution.kind(), .role = role, .completion = completion,
         .packing = packing, .cpu_assist = execution.has_cpu_assist(), .diagnostic = diagnostic};
-    const auto native_results = prepared.emit_successor
-        ? native_ordinary_io_domains(execution, ordinary_io) : std::nullopt;
+    const auto native_results = prepared.emit_successor && (role == GraphRole::kText || successor_eligible)
+        ? native_generated_io_domains(execution, ordinary_io) : std::nullopt;
     const auto control_storage = generation_control_storage(execution, ordinary_io);
     const bool caller_small_results = ordinary_io.caller_small_results() || native_results.has_value();
     const auto publish_valid = [&] {
@@ -971,6 +992,16 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         external_contracts.push_back({definition.id_port, native_results->device});
         external_contracts.push_back({definition.delivery_id_port, native_results->staging});
         if (definition.sampling_valid_port) external_contracts.push_back({definition.sampling_valid_port, native_results->staging});
+        // The existing three scalar writers carry the selected MTP prefix.
+        // Keep their original Source on device; staging is only host delivery.
+        if (emit_device_decision) {
+          for (const auto output : {definition.successor_pending_port, definition.successor_prefix_index_port,
+              definition.successor_selected_catchup_port})
+            if (output) external_contracts.push_back({output, native_results->device});
+        } else if (successor_eligible) {
+          for (const auto output : {definition.successor_token_port, definition.successor_catchup_port})
+            if (output) external_contracts.push_back({output, native_results->device});
+        }
       }
       if (control_storage) {
         // Metadata and scalar delivery use host staging. The original token
