@@ -337,7 +337,10 @@ V Recipe::emit_projection(V x, const ProjectionBinding &binding, bool scores) {
         const auto output = one(c::MatMul{}, {cast(x, Type::kFloat32), rhs}, dense_spec(Type::kFloat32, dimensions));
         return scores ? output : cast(output, activation_type());
       }
-      if (scores || stored.data_type() == Type::kFloat16 || stored.data_type() == Type::kFloat32) {
+      // F32 activations retain the original BF16 weight bank. The ordinary
+      // BF16-output MatMul below is not the selected activation contract.
+      if (scores || activation_type() == Type::kFloat32 ||
+          stored.data_type() == Type::kFloat16 || stored.data_type() == Type::kFloat32) {
         const auto output = one(c::model_ops::dense_linear_f32(),
             {stored.data_type() == Type::kBFloat16 ? x : cast(x, Type::kFloat32), original},
             dense_spec(Type::kFloat32, dimensions));
