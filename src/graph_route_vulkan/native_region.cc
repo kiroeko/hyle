@@ -158,6 +158,62 @@ const std::shared_ptr<vn::Runtime> &runtime(const Artifact &artifact) noexcept {
   return vn::Access::program(artifact.program)->runtime;
 }
 
+// A word-addressed Copy/Cast of a subword View needs the original computed Tensor,
+// including its actual native scope. Keep only closed View prefixes with the
+// consuming computation; a published/shared View remains Graph metadata.
+// This qualifies a proposal before Graph chooses its boundary or resources.
+Result<bool> extend_subword_views(const RegionDiscoveryRequest &request,
+    std::span<const NodeId> nodes, const CtPattern::Uses &uses,
+    std::span<const std::uint8_t> internal_views,
+    mem::AllocatorRef allocator, Vector<NodeId> &extended) {
+  const auto &graph = request.graph;
+  extended.assign(nodes.begin(), nodes.end());
+  Vector<NodeId> prefix{mem::StdAllocator<NodeId>(allocator)};
+  for (const auto terminal : nodes) {
+    HYLE_ASSIGN_OR_RETURN(const auto &operation, graph.operation(terminal));
+    const bool copy = operation.get_if<compute::Copy>() != nullptr;
+    if ((!copy && !operation.get_if<compute::Cast>()) ||
+        compute::operation_traits(operation).alias != compute::AliasPolicy::kNone) continue;
+    HYLE_ASSIGN_OR_RETURN(auto input, graph.node_input(terminal, 0));
+    HYLE_ASSIGN_OR_RETURN(const auto &input_desc, graph.value_description(input));
+    HYLE_ASSIGN_OR_RETURN(auto output, graph.result(terminal));
+    HYLE_ASSIGN_OR_RETURN(const auto &output_desc, graph.value_description(output));
+    const auto element_bytes = compute::data_type_size(input_desc.data_type());
+    if (!element_bytes || element_bytes >= sizeof(std::uint32_t) ||
+        (!copy && input_desc.data_type() == output_desc.data_type())) continue;
+    prefix.clear();
+    auto reader = terminal;
+    bool closed = true;
+    while (input.kind() == ValueKind::kNodeOutput) {
+      HYLE_ASSIGN_OR_RETURN(auto producer, graph.producer(input));
+      // That original program already preserves the View's computed root.
+      // Moving its View into this consumer would steal a node from the
+      // producer's only complete candidate and lose whole-graph coverage.
+      if (internal_views[producer.ordinal()]) break;
+      HYLE_ASSIGN_OR_RETURN(const auto &parent, graph.operation(producer));
+      if (!parent.get_if<compute::View>()) break;
+      if (uses.data[input.ordinal()] != 1 || uses.reader[input.ordinal()] != reader) {
+        closed = false; break;
+      }
+      prefix.push_back(producer);
+      reader = producer;
+      HYLE_ASSIGN_OR_RETURN(input, graph.node_input(producer, 0));
+    }
+    if (!closed || prefix.empty() || input.kind() != ValueKind::kNodeOutput) continue;
+    for (const auto view : prefix) {
+      if (!request.allowed_nodes.empty() && !request.allowed_nodes[view.ordinal()]) return false;
+      if (std::ranges::find(extended, view) == extended.end()) extended.push_back(view);
+    }
+  }
+  if (extended.size() == nodes.size()) return true;
+  std::ranges::sort(extended, {}, &NodeId::ordinal);
+  // The original graph's data and control edges decide convexity; no outside
+  // operation is silently absorbed and no resource/execute error is retried.
+  // Keep every original node/control edge: unlike a composite lowering, this
+  // does not erase a View that is also an outside node's control predecessor.
+  return is_region_contractible(graph, extended, allocator);
+}
+
 Status qualify(const RegionCompileRequest &request) noexcept {
   if (!request.graph || request.graph->dimension_count() != 0 ||
       (request.route != 1 && request.route != kCtPackedRoute && request.route != kStaticFp8Route) || request.nodes.empty() ||
@@ -186,9 +242,16 @@ Status propose(void *context, const RegionDiscoveryRequest &request,
   HYLE_RETURN_IF_ERROR(propose_native_append(request, writer));
   HYLE_RETURN_IF_ERROR(propose_native_slot_store(request, writer));
   HYLE_RETURN_IF_ERROR(propose_native_ragged(request, analysis.needed, writer));
+  CtPattern::Uses ct_uses(allocator);
+  HYLE_RETURN_IF_ERROR(ct_uses.initialize(graph));
+  Vector<NodeId> extended{mem::StdAllocator<NodeId>(allocator)};
+  Vector<NodeId> ordinary_nodes{mem::StdAllocator<NodeId>(allocator)};
+  Vector<std::pair<std::size_t, std::size_t>> ordinary_groups{
+      mem::StdAllocator<std::pair<std::size_t, std::size_t>>(allocator)};
+  Vector<std::uint8_t> internal_views(graph.node_count(), 0,
+      mem::StdAllocator<std::uint8_t>(allocator));
   const auto ordinary_begin = writer.size();
-  HYLE_RETURN_IF_ERROR(graph::detail::discover_regions(graph, allocator,
-      [&](NodeId node, std::span<const NodeId> candidate) -> Result<bool> {
+  const auto eligible = [&](NodeId node, std::span<const NodeId> candidate) -> Result<bool> {
         if (!analysis.needed[node.ordinal()] ||
             (!request.allowed_nodes.empty() && !request.allowed_nodes[node.ordinal()]))
           return false;
@@ -229,23 +292,71 @@ Status propose(void *context, const RegionDiscoveryRequest &request,
         // Discovery is structural, without per-node prepare/JIT. Actual typed
         // mathematics and device limits remain the final lowerer's admission.
         return graph::detail::validate_native_node(operation).ok();
-      },
+      };
+  HYLE_RETURN_IF_ERROR(graph::detail::discover_regions(graph, allocator, eligible,
       [&](std::span<const NodeId> nodes) -> Result<bool> {
         if (nodes.empty()) return true;
-        return writer.try_add({.nodes = nodes,
+        ordinary_groups.emplace_back(ordinary_nodes.size(), nodes.size());
+        ordinary_nodes.insert(ordinary_nodes.end(), nodes.begin(), nodes.end());
+        return true;
+      }, {.constant_views_at_entry = true}));
+  // Discovery partitions the ordinary nodes. Preserve Views already kept with
+  // their actual computed root; only metadata prefixes need to join a Copy/Cast.
+  for (const auto [begin, count] : ordinary_groups) {
+    const auto nodes = std::span<const NodeId>(ordinary_nodes).subspan(begin, count);
+    for (const auto node : nodes) {
+      HYLE_ASSIGN_OR_RETURN(auto operation, graph.operation(node));
+      if (!operation.get_if<compute::View>()) continue;
+      HYLE_ASSIGN_OR_RETURN(auto root, graph.node_input(node, 0));
+      while (root.kind() == ValueKind::kNodeOutput) {
+        HYLE_ASSIGN_OR_RETURN(auto producer, graph.producer(root));
+        HYLE_ASSIGN_OR_RETURN(auto parent, graph.operation(producer));
+        if (!parent.get_if<compute::View>()) {
+          internal_views[node.ordinal()] = std::ranges::find(nodes, producer) != nodes.end();
+          break;
+        }
+        HYLE_ASSIGN_OR_RETURN(root, graph.node_input(producer, 0));
+      }
+    }
+  }
+  for (const auto [begin, count] : ordinary_groups) {
+    const auto nodes = std::span<const NodeId>(ordinary_nodes).subspan(begin, count);
+    HYLE_ASSIGN_OR_RETURN(auto valid, extend_subword_views(request, nodes, ct_uses, internal_views, allocator, extended));
+    if (!valid) continue;
+    HYLE_ASSIGN_OR_RETURN(auto more, writer.try_add({.nodes = extended,
             .cost = {.persistent_bytes = std::nullopt, .copy_bytes = std::nullopt,
                      .repack_bytes = std::nullopt, .synchronization_count = 0, .dispatch_count = 1},
             .route = 1, .replay_class = compute::ProviderReplayClass::kManaged,
-            .implementation = compute::ProviderImplementationId{1}, .preference = 200});
-      }, {.constant_views_at_entry = true}));
+            .implementation = compute::ProviderImplementationId{1}, .preference = 200}));
+    if (!more) break;
+  }
   const auto ordinary_end = writer.size();
-  if (!request.allowed_nodes.empty() && !writer.proposal_limit_reached() && !writer.node_limit_reached())
-    HYLE_RETURN_IF_ERROR(graph::detail::add_region_singleton_fallbacks(writer, ordinary_begin));
+  if (!request.allowed_nodes.empty() && !writer.proposal_limit_reached() && !writer.node_limit_reached()) {
+    // A fallback is subject to the same physical qualification. Never recreate
+    // a detached View or a Copy/Cast lacking its closed subword input prefix.
+    const auto maximal = writer.proposals().subspan(ordinary_begin, ordinary_end - ordinary_begin);
+    bool more = true;
+    for (const auto &region : maximal) {
+      if (!more) break;
+      if (region.nodes.size() < 2) continue;
+      for (const auto node : region.nodes) {
+        HYLE_ASSIGN_OR_RETURN(auto operation, graph.operation(node));
+        if (operation.get_if<compute::View>()) {
+          HYLE_ASSIGN_OR_RETURN(auto selected, eligible(node, {}));
+          if (!selected) continue;
+        }
+        HYLE_ASSIGN_OR_RETURN(auto valid, extend_subword_views(request, std::span(&node, 1), ct_uses, internal_views, allocator, extended));
+        if (!valid) continue;
+        auto leaf = region;
+        leaf.nodes = extended;
+        HYLE_ASSIGN_OR_RETURN(more, writer.try_add(leaf));
+        if (!more) break;
+      }
+    }
+  }
   // The exact same whole-region boundary remains available in its original
   // form. Never turn a contracted-only route into a singleton fallback.
   const auto ordinary = writer.proposals().subspan(ordinary_begin, ordinary_end - ordinary_begin);
-  CtPattern::Uses ct_uses(allocator);
-  HYLE_RETURN_IF_ERROR(ct_uses.initialize(graph));
   Vector<std::uint8_t> ct_allowed(graph.node_count(), 0,
       mem::StdAllocator<std::uint8_t>(allocator));
   for (const auto &candidate : ordinary) {

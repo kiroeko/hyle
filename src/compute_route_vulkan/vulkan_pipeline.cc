@@ -1,6 +1,7 @@
 #include "vulkan_program_internal.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <cstring>
 #include <limits>
 #include <new>
@@ -270,9 +271,23 @@ descriptor_buffer(const Buffer *buffer, const TensorDesc &description,
   if (buffer &&
       (result.range > buffer->device->properties.limits.maxStorageBufferRange ||
        (buffer->handle != VK_NULL_HANDLE &&
-        result.range > prefix + buffer->bytes - relative_offset)))
-    return std::unexpected(Status::InvalidArgument(
-        "Vulkan padded descriptor exceeds its native range"));
+        result.range > prefix + buffer->bytes - relative_offset))) {
+    char message[512];
+    std::snprintf(message, sizeof(message),
+        "Vulkan padded descriptor exceeds its native range: dtype=%u "
+        "logical_required_bytes=%llu buffer_offset=%llu buffer_bytes=%llu "
+        "relative_offset=%llu prefix=%llu padded_range=%llu "
+        "storage_granularity=%u maxStorageBufferRange=%u",
+        static_cast<unsigned>(description.data_type()),
+        static_cast<unsigned long long>(bytes),
+        static_cast<unsigned long long>(buffer->offset),
+        static_cast<unsigned long long>(buffer->bytes),
+        static_cast<unsigned long long>(relative_offset),
+        static_cast<unsigned long long>(prefix),
+        static_cast<unsigned long long>(result.range), storage_granularity,
+        static_cast<unsigned>(buffer->device->properties.limits.maxStorageBufferRange));
+    return std::unexpected(Status::InvalidArgument(message));
+  }
   return result;
 }
 
