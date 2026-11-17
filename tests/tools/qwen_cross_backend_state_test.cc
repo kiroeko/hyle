@@ -19,9 +19,10 @@ int main(int argc, char **argv) {
     const bool recording_rng = argc == 6 && std::string_view(argv[5]) == "--recording-rng-probe";
     const bool control_inputs = argc == 6 && std::string_view(argv[5]) == "--control-inputs-probe";
     const bool sampled_continuation = argc == 6 && std::string_view(argv[5]) == "--sampled-continuation-probe";
+    const bool sampled_attention = argc == 6 && std::string_view(argv[5]) == "--sampled-attention-probe";
     const bool wide_prefill = argc == 6 && std::string_view(argv[5]) == "--wide-prefill-probe";
-    if (argc != 5 && !depth && !carrier && !handoff && !prefix_repair && !native_relay && !recording_rng && !control_inputs && !sampled_continuation && !wide_prefill) throw std::runtime_error(
-        "usage: qwen_cross_backend_state_test cpu|cuda|apple|vulkan INPUTS off|K3 CPU_FFN_LAYERS [--depth-probe|--prefix-repair-probe|--native-relay-probe|--recording-rng-probe|--control-inputs-probe|--wide-prefill-probe]; or cuda INPUTS K1|K2|K3 0 --sampled-continuation-probe; or BACKEND --carrier-probe|--native-handoff-probe");
+    if (argc != 5 && !depth && !carrier && !handoff && !prefix_repair && !native_relay && !recording_rng && !control_inputs && !sampled_continuation && !sampled_attention && !wide_prefill) throw std::runtime_error(
+        "usage: qwen_cross_backend_state_test cpu|cuda|apple|vulkan INPUTS off|K3 CPU_FFN_LAYERS [--depth-probe|--prefix-repair-probe|--native-relay-probe|--recording-rng-probe|--control-inputs-probe|--wide-prefill-probe]; or GPU_BACKEND INPUTS K1|K2|K3 0 --sampled-continuation-probe; or vulkan INPUTS K2 0 --sampled-attention-probe; or BACKEND --carrier-probe|--native-handoff-probe");
     const std::string_view name(argv[1]);
     auto kind = qwen35::BackendKind::kDefault;
     if (name == "cpu") kind = qwen35::BackendKind::kCpu;
@@ -32,15 +33,17 @@ int main(int argc, char **argv) {
     if (carrier) return inference_program_carrier_case::run(kind);
     if (handoff) return inference_native_handoff_case::run(kind);
     const std::string_view mode(argv[3]);
-    if (mode != "off" && mode != "K3" && !(sampled_continuation && (mode == "K1" || mode == "K2")))
+    if (mode != "off" && mode != "K3" && !((sampled_continuation || sampled_attention) && (mode == "K1" || mode == "K2")))
       throw std::runtime_error("expected ordinary or K3 state consumer; sampled continuation requires K1/K2/K3");
     std::size_t consumed = 0;
     const auto layers = std::stoull(argv[4], &consumed);
     if (consumed != std::string_view(argv[4]).size()) throw std::runtime_error("invalid CPU placement");
-    if (sampled_continuation) {
-      if ((mode != "K1" && mode != "K2" && mode != "K3") || layers || kind != qwen35::BackendKind::kCuda)
-        throw std::runtime_error("sampled continuation consumer requires CUDA GPU-only K1/K2/K3");
-      return qwen_sampled_continuation_case::run(argv[2], static_cast<std::size_t>(mode[1] - '0'));
+    if (sampled_continuation || sampled_attention) {
+      if ((mode != "K1" && mode != "K2" && mode != "K3") || layers || kind == qwen35::BackendKind::kCpu)
+        throw std::runtime_error("sampled continuation consumer requires GPU-only K1/K2/K3");
+      if (sampled_attention && (mode != "K2" || kind != qwen35::BackendKind::kVulkan))
+        throw std::runtime_error("actual short-prefix attention observation requires Vulkan K2");
+      return qwen_sampled_continuation_case::run(argv[2], static_cast<std::size_t>(mode[1] - '0'), kind, sampled_attention);
     }
     if (recording_rng || control_inputs) {
       if (mode != "off" || layers || kind == qwen35::BackendKind::kCpu ||
