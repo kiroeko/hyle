@@ -1246,6 +1246,15 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
     result = ggml_mul_mat(context, right, left);
     if (!ggml_prec_set_acc(result, GGML_PREC_F32))
       return {};
+#if defined(__APPLE__)
+    // The native BLAS device owns its shape/capability decision. Widen only
+    // admitted floating activations exactly; one-row decode keeps its kernel.
+    if (ggml_runtime::blas_activation_widening_supported(*result)) {
+      result = ggml_mul_mat(context, right, ggml_cast(context, left, GGML_TYPE_F32));
+      if (!ggml_prec_set_acc(result, GGML_PREC_F32))
+        return {};
+    }
+#endif
     (void)matmul;
   } else if (const auto *rope = node.operation.get_if<RoPE>()) {
     result = ggml_runtime::explicit_rope(

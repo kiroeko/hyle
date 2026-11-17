@@ -22,6 +22,13 @@ oneDNN、Native、ggml/ATen等实现按实际端口和资源绑定。第三方�
 不能将进程全局开关伪装成对象局部配置。复用现有Sched executor组合，避免第二个调度runtime。
 部分任务接纳后排空其前缀，嵌套等待不能因占满同一线程池而自锁。
 
+Apple CPU的浮点矩阵在冷期向原生BLAS查询实际形状资格。半精度激活只做精确F32拓宽，
+原图中需要隐式舍入的混合输入保留原CPU程序；单行和量化点积也保留原实现。
+已接纳的CPU／BLAS片段共用原Context的串行团队，各槽保留独立IO和CPU工作区，
+Context在准备期预留最大单矩阵的转换临时区，执行期间复用这份空间。
+BLAS片段在提交线程执行，要求实际可用的macOS15线程局部控制，并在返回前恢复调用方政策；
+不满足这项能力的系统保留原CPU程序。完成、取消和资源回收沿用原同步执行合同。
+
 ## CUDA
 
 cuBLAS/cuBLASLt、原生kernel和ggml等完整region互补。准备时完成适用的handle、stream、tactic、

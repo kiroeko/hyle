@@ -11,6 +11,11 @@
 #include <limits>
 #include <thread>
 #include <utility>
+#if defined(__APPLE__)
+#include <Accelerate/Accelerate.h>
+#include <stdexcept>
+#include <vector>
+#endif
 
 #include <gtest/gtest.h>
 
@@ -425,6 +430,151 @@ TEST(GgmlCpuExecution, OriginalNarrowIq1MatMulAndGatherReplayEncodedBlocks) {
       }
     }
     EXPECT_EQ(workspace.used(), 0u);
+  }
+}
+#endif
+
+#if defined(__APPLE__)
+struct BlasRegion final {
+  int rows, inner, columns;
+  std::vector<float> input, scaled, widened, product, bias, output;
+  std::vector<ggml_bf16_t> matrix, narrowed;
+  MetadataArena arena;
+  ggml_tensor *native_matrix = nullptr;
+  ggml_cgraph *graph = nullptr;
+  BlasRegion(int m, int k, int n, bool explicit_widening=true)
+      : rows(m), inner(k), columns(n), input(std::size_t(m)*k), scaled(input.size()),
+        widened(input.size()),product(std::size_t(m)*n), bias(n), output(product.size(),77.F),
+        matrix(std::size_t(n)*k),narrowed(input.size()) {
+    for(std::size_t i=0;i<input.size();++i)input[i]=float(int(i%17)-8)/13.F;
+    for(std::size_t i=0;i<matrix.size();++i)matrix[i]=ggml_fp32_to_bf16(float(int(i%19)-9)/23.F);
+    for(int i=0;i<n;++i)bias[i]=float(i%5-2)/31.F;
+    auto created=MetadataArena::for_graph(20,20,hyle::mem::system_allocator());
+    if(!created)throw std::runtime_error(std::string(created.error().message()));
+    arena=std::move(*created);
+    auto *x=ggml_new_tensor_2d(arena.get(),GGML_TYPE_F32,k,m);x->data=input.data();
+    auto *scale=ggml_scale(arena.get(),x,.5F);scale->data=scaled.data();
+    auto *activation=scale;
+    if(explicit_widening) {
+      auto *half=ggml_cast(arena.get(),scale,GGML_TYPE_BF16);half->data=narrowed.data();
+      activation=ggml_cast(arena.get(),half,GGML_TYPE_F32);activation->data=widened.data();
+    }
+    native_matrix=ggml_new_tensor_2d(arena.get(),GGML_TYPE_BF16,k,n);native_matrix->data=matrix.data();
+    auto *multiply=ggml_mul_mat(arena.get(),native_matrix,activation);multiply->data=product.data();
+    if(!ggml_prec_set_acc(multiply,GGML_PREC_F32))throw std::runtime_error("original F32 accumulation");
+    auto *b=ggml_new_tensor_1d(arena.get(),GGML_TYPE_F32,n);b->data=bias.data();
+    auto *y=ggml_add(arena.get(),multiply,b);y->data=output.data();
+    graph=ggml_new_graph_custom(arena.get(),20,false);ggml_build_forward_expand(graph,y);
+  }
+  void check() const {
+    for(int row=0;row<rows;++row)for(int column=0;column<columns;++column) {
+      double expected=bias[column];
+      for(int k=0;k<inner;++k)
+        expected+=double(ggml_bf16_to_fp32(ggml_fp32_to_bf16(input[std::size_t(row)*inner+k]*.5F)))*
+            ggml_bf16_to_fp32(matrix[std::size_t(column)*inner+k]);
+      EXPECT_NEAR(output[std::size_t(row)*columns+column],expected,
+          3e-5*std::max(1.,std::abs(expected)))<<row<<','<<column;
+    }
+  }
+};
+
+TEST(GgmlCpuExecution, NativeBlasAndCpuSegmentsReuseColdWorkspaceAndMoveSafely) {
+  if (__builtin_available(macOS 15.0, *)) {} else { GTEST_SKIP() << "native BLAS thread control requires macOS15"; }
+  BlasRegion region(32,64,64);
+  auto team=CpuTeam::create(2,hyle::mem::system_allocator());ASSERT_TRUE(team);
+  hyle::mem::QuotaAllocator workspace(hyle::mem::system_allocator(),65536);
+  {
+    auto execution=CpuExecution::prepare(region.graph,*team,workspace.get());
+    ASSERT_TRUE(execution)<<execution.error().message();ASSERT_TRUE(execution->uses_blas());
+    const auto allocated=workspace.used();
+    for(int pass=0;pass<3;++pass) {
+      for(auto &value:region.input)value+=.03125F;
+      ASSERT_TRUE(execution->run().ok());region.check();EXPECT_EQ(workspace.used(),allocated);
+    }
+    auto moved=std::move(*execution);EXPECT_TRUE(execution->run().IsFailedPrecondition());
+    ASSERT_TRUE(moved.uses_blas());ASSERT_TRUE(moved.run().ok());region.check();
+  }
+  EXPECT_EQ(workspace.used(),0u);
+}
+
+TEST(GgmlCpuExecution, NativeBlasPlansShareOnlyTheOriginalSerializedTeamScratch) {
+  if (__builtin_available(macOS 15.0, *)) {} else { GTEST_SKIP() << "native BLAS thread control requires macOS15"; }
+  BlasRegion first(32,64,64),second(35,96,96);
+  for(auto &value:second.input)value=-value+.25F;
+  auto team=CpuTeam::create(2,hyle::mem::system_allocator());ASSERT_TRUE(team);
+  auto a=CpuExecution::prepare(first.graph,*team,hyle::mem::system_allocator());
+  auto b=CpuExecution::prepare(second.graph,*team,hyle::mem::system_allocator());
+  ASSERT_TRUE(a);ASSERT_TRUE(b);ASSERT_TRUE(a->uses_blas());ASSERT_TRUE(b->uses_blas());
+  hyle::Status left,right;
+  std::thread one([&]{left=a->run();}),two([&]{right=b->run();});
+  one.join();two.join();ASSERT_TRUE(left.ok());ASSERT_TRUE(right.ok());first.check();second.check();
+  ASSERT_TRUE(a->run().ok());first.check(); // Larger cold reserve did not invalidate the old plan.
+}
+
+TEST(GgmlCpuExecution, NativeBlasCancellationLeavesUnsubmittedOutputsUntouchedAndTeamReusable) {
+  if (__builtin_available(macOS 15.0, *)) {} else { GTEST_SKIP() << "native BLAS thread control requires macOS15"; }
+  BlasRegion region(32,64,64);
+  auto team=CpuTeam::create(2,hyle::mem::system_allocator());ASSERT_TRUE(team);
+  std::atomic<bool> abort{true};
+  auto execution=CpuExecution::prepare(region.graph,*team,hyle::mem::system_allocator(),
+      [](void *p){return static_cast<std::atomic<bool> *>(p)->load();},&abort);
+  ASSERT_TRUE(execution);ASSERT_TRUE(execution->uses_blas());
+  EXPECT_TRUE(execution->run().IsCancelled());
+  EXPECT_TRUE(std::ranges::all_of(region.output,[](float x){return x==77.F;}));
+  abort=false;ASSERT_TRUE(execution->run().ok());region.check();
+}
+
+TEST(GgmlCpuExecution, MixedNativeActivationKeepsItsOriginalImplicitStorageRounding) {
+  BlasRegion region(32,64,64,false);
+  auto team=CpuTeam::create(2,hyle::mem::system_allocator());ASSERT_TRUE(team);
+  auto execution=CpuExecution::prepare(region.graph,*team,hyle::mem::system_allocator());
+  ASSERT_TRUE(execution);EXPECT_FALSE(execution->uses_blas());
+  ASSERT_TRUE(execution->run().ok());region.check();
+}
+
+TEST(GgmlCpuExecution, LosslessBlasWideningUsesActualNativeQualificationAndKeepsDecode) {
+  using hyle::compute::ggml_runtime::blas_activation_widening_supported;
+  BlasRegion decode(1,64,64),prefill(32,64,64);
+  auto team=CpuTeam::create(2,hyle::mem::system_allocator());ASSERT_TRUE(team);
+  auto original=CpuExecution::prepare(decode.graph,*team,hyle::mem::system_allocator());
+  ASSERT_TRUE(original);EXPECT_FALSE(original->uses_blas());ASSERT_TRUE(original->run().ok());decode.check();
+  for(auto *region:{&decode,&prefill}) {
+    auto *activation=ggml_new_tensor_2d(region->arena.get(),GGML_TYPE_BF16,region->inner,region->rows);
+    auto *product=ggml_mul_mat(region->arena.get(),region->native_matrix,activation);
+    ASSERT_TRUE(ggml_prec_set_acc(product,GGML_PREC_F32));
+    if (__builtin_available(macOS 15.0, *))
+      EXPECT_EQ(blas_activation_widening_supported(*product),region->rows!=1);
+    else
+      EXPECT_FALSE(blas_activation_widening_supported(*product));
+    EXPECT_EQ(activation->type,GGML_TYPE_BF16);EXPECT_EQ(activation->data,nullptr);
+  }
+}
+
+TEST(GgmlCpuExecution, NativeBlasPreservesTheCallingThreadsPolicyAndOneThreadBudget) {
+  if (__builtin_available(macOS 15.0, *)) {
+    const auto original = BLASGetThreading();
+    struct Restore final {
+      enum BLAS_THREADING policy;
+      ~Restore() {
+        if (__builtin_available(macOS 15.0, *))
+          (void)BLASSetThreading(policy);
+      }
+    } restore{original};
+    BlasRegion region(32,64,64);
+    auto team=CpuTeam::create(1,hyle::mem::system_allocator());ASSERT_TRUE(team);
+    std::atomic<bool> abort{false};
+    auto execution=CpuExecution::prepare(region.graph,*team,hyle::mem::system_allocator(),
+        [](void *p){return static_cast<std::atomic<bool> *>(p)->load();},&abort);
+    ASSERT_TRUE(execution);ASSERT_TRUE(execution->uses_blas());
+    for (const auto policy : {BLAS_THREADING_MULTI_THREADED, BLAS_THREADING_SINGLE_THREADED}) {
+      ASSERT_EQ(BLASSetThreading(policy),0);
+      ASSERT_TRUE(execution->run().ok());region.check();
+      EXPECT_EQ(BLASGetThreading(),policy);
+      abort=true;EXPECT_TRUE(execution->run().IsCancelled());
+      EXPECT_EQ(BLASGetThreading(),policy);abort=false;
+    }
+  } else {
+    GTEST_SKIP() << "native BLAS thread control requires macOS15";
   }
 }
 #endif

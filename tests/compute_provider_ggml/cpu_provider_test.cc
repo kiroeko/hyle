@@ -2089,6 +2089,46 @@ TEST(GgmlCpuProvider, DenseLinearRetainsOriginalHalfBfloatAndFloatSources) {
   dense_linear_original_precision<float,float>();
 }
 
+TEST(GgmlCpuProvider, BfloatDensePrefillReplaysOriginalRowsAcrossNativeMatrixShapes) {
+  using BF16=hyle::simd::bfloat16_t;
+  constexpr std::int64_t width=64,columns=64;
+  auto context=Context::create(cpu::device(),ggml_cpu::provider()).value();
+  for(const auto rows:{std::int64_t{1},std::int64_t{31},std::int64_t{32},std::int64_t{37}}) {
+    SCOPED_TRACE(rows);
+    const auto ad=dense(DataType::kBFloat16,{rows,width});
+    const auto wd=dense(DataType::kBFloat16,{columns,width});
+    const auto yd=dense(DataType::kFloat32,{rows,columns});
+    std::vector<BF16> a(std::size_t(rows*width)),w(std::size_t(columns*width));
+    for(std::size_t i=0;i<w.size();++i)w[i]=half_test::encode<BF16>(float(int(i%19)-9)/23.F);
+    auto activation=half_test::buffer<BF16>(a),weights=half_test::buffer<BF16>(w);
+    auto output=output_buffer(yd);
+    const std::array inputs{ConstTensorView::create(ad,activation.view()).value(),
+                            ConstTensorView::create(wd,weights.view()).value()};
+    auto target=TensorView::create(yd,output.view()).value();
+    auto prepared=prepare(context,model_ops::dense_linear_f32(),inputs,std::span(&target,1));
+    ASSERT_TRUE(prepared)<<prepared.error().message();
+    auto invocation=prepared->create_invocation();ASSERT_TRUE(invocation);
+    auto queue=context.create_queue();ASSERT_TRUE(queue);
+    for(int pass=0;pass<2;++pass) {
+      for(std::size_t i=0;i<a.size();++i)a[i]=half_test::encode<BF16>(float(int(i%17)-8+pass)/13.F);
+      ASSERT_TRUE(activation.view().write(std::as_bytes(std::span(a))).ok());
+      auto completion=invocation->submit(*queue,inputs,std::span(&target,1));ASSERT_TRUE(completion);
+      ASSERT_TRUE(completion->wait().ok());
+      const auto actual=half_test::read<float>(output);
+      for(std::int64_t row=0;row<rows;++row)for(std::int64_t column=0;column<columns;++column) {
+        double expected=0;
+        for(std::int64_t k=0;k<width;++k)
+          expected+=double(half_test::decode(a[std::size_t(row*width+k)]))*
+                    half_test::decode(w[std::size_t(column*width+k)]);
+        EXPECT_NEAR(actual[std::size_t(row*columns+column)],expected,
+            3e-5*std::max(1.,std::abs(expected)))<<row<<','<<column;
+      }
+    }
+    const auto unchanged=half_test::read<BF16>(weights);
+    for(std::size_t i=0;i<w.size();++i)EXPECT_EQ(unchanged[i].bits,w[i].bits);
+  }
+}
+
 TEST(GgmlCpuProvider, BatchedBfloatWeightsPreserveOriginalFloat32Rows) {
   using BF16 = hyle::simd::bfloat16_t;
   constexpr std::int64_t batches=3,width=66,columns=4;

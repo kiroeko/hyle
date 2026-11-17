@@ -7,6 +7,14 @@
 namespace hyle::compute::ggml_runtime {
 
 struct CpuProgram;
+#if defined(__APPLE__)
+struct CpuBlasSegments;
+// Ask the actual native BLAS device whether an exact widening of this
+// floating activation would admit its original matrix recipe. Cold metadata
+// only: no Context, payload, backend compute or ready permission is created.
+HYLE_GGML_RUNTIME_INTERNAL_API bool
+blas_activation_widening_supported(const ggml_tensor &) noexcept;
+#endif
 
 // One cold provider-Context native team, retained by all derived programs and
 // slots. Construction allocates metadata only; first prepare lazily selects
@@ -56,6 +64,9 @@ public:
   // Returns only after all workers have completed, including on cancellation.
   HYLE_GGML_RUNTIME_INTERNAL_API Status run() noexcept;
   std::size_t workspace_bytes() const noexcept { return plan_.work_size; }
+#if defined(__APPLE__)
+  bool uses_blas() const noexcept { return blas_segments_ != nullptr; }
+#endif
 
 private:
   void reset() noexcept;
@@ -64,6 +75,9 @@ private:
   const CpuProgram *program_ = nullptr;
   ggml_cgraph *graph_ = nullptr;
   ggml_cplan plan_{};
+#if defined(__APPLE__)
+  CpuBlasSegments *blas_segments_ = nullptr;
+#endif
 };
 
 } // namespace hyle::compute::ggml_runtime

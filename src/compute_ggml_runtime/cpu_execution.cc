@@ -8,7 +8,30 @@
 #include <system_error>
 #include <utility>
 
+#if defined(__APPLE__)
+#include "cpu_blas_bridge.h"
+#include "ggml-blas.h"
+#include "ggml-impl.h"
+#include "hyle/mem/std_allocator.h"
+#include <algorithm>
+#include <new>
+#include <vector>
+#endif
+
 namespace hyle::compute::ggml_runtime {
+#if defined(__APPLE__)
+struct CpuBlasSegments final {
+  struct Segment final {
+    ggml_cgraph graph{};
+    ggml_cplan plan{};
+    bool blas = false;
+  };
+  explicit CpuBlasSegments(mem::AllocatorRef allocator)
+      : segments(mem::StdAllocator<Segment>(allocator)) {}
+  std::vector<Segment, mem::StdAllocator<Segment>> segments;
+  std::size_t cpu_bytes = 0, blas_bytes = 0;
+};
+#endif
 namespace {
 
 struct ActiveTeam final {
@@ -16,6 +39,66 @@ struct ActiveTeam final {
   ActiveTeam *previous;
 };
 thread_local ActiveTeam *active_team = nullptr;
+
+#if defined(__APPLE__)
+Result<CpuBlasSegments *> prepare_blas_segments(ggml_cgraph *graph,
+    const CpuProgram &program, int threads, ggml_threadpool *pool,
+    mem::AllocatorRef allocator) noexcept {
+  bool needed = false;
+  for (int i = 0; i < graph->n_nodes; ++i)
+    needed = needed || ggml_hyle_blas_supports(graph->nodes[i]);
+  if (!needed)
+    return nullptr; // Preserve the original single-program path exactly.
+  auto *result = allocator.construct<CpuBlasSegments>(allocator);
+  if (!result)
+    return std::unexpected(Status::ResourceExhausted("CPU BLAS segment metadata"));
+  try {
+    for (int begin = 0; begin < graph->n_nodes;) {
+      const bool blas = ggml_hyle_blas_supports(graph->nodes[begin]);
+      int end = begin + 1;
+      while (end < graph->n_nodes &&
+             ggml_hyle_blas_supports(graph->nodes[end]) == blas)
+        ++end;
+      result->segments.push_back({.graph = ggml_graph_view(graph, begin, end),
+                                  .blas = blas});
+      begin = end;
+    }
+    // The vector is now fixed; plans see the final original graph-view addresses.
+    for (auto &segment : result->segments) {
+      if (!segment.blas) {
+        segment.plan = program.plan(&segment.graph, threads, pool);
+        result->cpu_bytes = (std::max)(result->cpu_bytes, segment.plan.work_size);
+      } else for (int i = 0; i < segment.graph.n_nodes; ++i) {
+        const auto *weights = segment.graph.nodes[i]->src[0];
+        if (weights->type == GGML_TYPE_F32)
+          continue;
+        const auto count = ggml_nelements(weights);
+        if (count <= 0 || static_cast<std::uint64_t>(count) >
+                static_cast<std::uint64_t>(PTRDIFF_MAX) / sizeof(float)) {
+          allocator.destroy(result);
+          return std::unexpected(Status::ResourceExhausted("CPU BLAS weight workspace"));
+        }
+        result->blas_bytes = (std::max)(result->blas_bytes,
+            static_cast<std::size_t>(count) * sizeof(float));
+      }
+    }
+    return result;
+  } catch (const std::bad_alloc &) {
+    allocator.destroy(result);
+    return std::unexpected(Status::ResourceExhausted("CPU BLAS segment metadata"));
+  }
+}
+
+Status blas_status(ggml_status status) noexcept {
+  switch (status) {
+  case GGML_STATUS_SUCCESS: return Status::Ok();
+  case GGML_STATUS_ABORTED: return Status::Cancelled("ggml CPU execution");
+  case GGML_STATUS_ALLOC_FAILED: return Status::ResourceExhausted("ggml CPU execution");
+  case GGML_STATUS_FAILED: return Status::Internal("ggml CPU execution");
+  }
+  return Status::Internal("unknown ggml CPU status");
+}
+#endif
 
 // The executor invokes the complete compute synchronously. Only that callback
 // locks the native team; no lock is held while dispatching into the executor.
@@ -56,6 +139,9 @@ struct CpuTeam::State final : util::RefCounted<State> {
   const CpuProgram *program = nullptr;
   ggml_threadpool *pool = nullptr;
   std::mutex gate;
+#if defined(__APPLE__)
+  ggml_backend_t blas = nullptr;
+#endif
 
   State(mem::AllocatorRef source, int count) noexcept
       : allocator(source), threads(count) {}
@@ -63,6 +149,10 @@ struct CpuTeam::State final : util::RefCounted<State> {
     const auto source = allocator;
     if (pool)
       program->free_pool(pool);
+#if defined(__APPLE__)
+    if (blas)
+      ggml_backend_free(blas);
+#endif
     this->~State();
     source.deallocate(this, sizeof(State), alignof(State));
   }
@@ -96,7 +186,47 @@ struct CpuTeam::State final : util::RefCounted<State> {
     pool = prepared;
     return Status::Ok();
   }
+#if defined(__APPLE__)
+  Status prepare_blas(std::size_t bytes) noexcept try {
+    // Called under the SAME gate as original native team planning/compute.
+    // All slots share one bounded maximum scratch, not an F32 weight bank.
+    if (!blas)
+      blas = ggml_backend_blas_init();
+    if (!blas || !ggml_hyle_blas_reserve(blas, bytes))
+      return Status::ResourceExhausted("native CPU BLAS workspace");
+    return Status::Ok();
+  } catch (const std::bad_alloc &) {
+    return Status::ResourceExhausted("native CPU BLAS context");
+  }
+#endif
 };
+
+#if defined(__APPLE__)
+bool blas_activation_widening_supported(const ggml_tensor &node) noexcept {
+  if (node.op != GGML_OP_MUL_MAT || !node.src[1] ||
+      (node.src[1]->type != GGML_TYPE_F16 && node.src[1]->type != GGML_TYPE_BF16) ||
+      !ggml_is_contiguous(node.src[1]))
+    return false;
+  auto activation = *node.src[1];
+  activation.type = GGML_TYPE_F32;
+  activation.op = GGML_OP_CPY;
+  activation.src[0] = node.src[1];
+  activation.src[1] = nullptr;
+  std::size_t stride = sizeof(float);
+  for (int i = 0; i < GGML_MAX_DIMS; ++i) {
+    if (activation.ne[i] < 0 || static_cast<std::uint64_t>(activation.ne[i]) >
+            SIZE_MAX / stride)
+      return false;
+    activation.nb[i] = stride;
+    stride *= static_cast<std::size_t>(activation.ne[i]);
+    if (!stride)
+      return false;
+  }
+  auto candidate = node;
+  candidate.src[1] = &activation;
+  return ggml_hyle_blas_supports(&candidate);
+}
+#endif
 
 Result<CpuTeam> CpuTeam::create(int threads,
                                 mem::AllocatorRef allocator) noexcept {
@@ -157,6 +287,14 @@ Result<CpuExecution> CpuExecution::prepare(ggml_cgraph *graph,
     execution.program_ = state.program;
     // Planning reads the same native pool used by compute and is serialized
     // with it. Each slot still owns its independent plan and workspace.
+#if defined(__APPLE__)
+    HYLE_ASSIGN_OR_RETURN(execution.blas_segments_, prepare_blas_segments(
+        graph, *state.program, state.threads, state.pool, allocator));
+    if (execution.blas_segments_) {
+      HYLE_RETURN_IF_ERROR(state.prepare_blas(execution.blas_segments_->blas_bytes));
+      execution.plan_.work_size = execution.blas_segments_->cpu_bytes;
+    } else
+#endif
     execution.plan_ = state.program->plan(graph, state.threads, state.pool);
   }
   execution.plan_.abort_callback = abort;
@@ -171,6 +309,14 @@ Result<CpuExecution> CpuExecution::prepare(ggml_cgraph *graph,
     if (execution.plan_.work_data == nullptr)
       return std::unexpected(Status::ResourceExhausted("ggml CPU workspace"));
   }
+#if defined(__APPLE__)
+  if (execution.blas_segments_)
+    for (auto &segment : execution.blas_segments_->segments) {
+      segment.plan.work_data = execution.plan_.work_data;
+      segment.plan.abort_callback = abort;
+      segment.plan.abort_callback_data = abort_data;
+    }
+#endif
   return execution;
 }
 
@@ -180,6 +326,21 @@ Status CpuExecution::run() noexcept {
   auto &state = *team_.state_;
   TeamScope scope(state.gate, &state);
   HYLE_RETURN_IF_ERROR(scope.enter());
+#if defined(__APPLE__)
+  if (blas_segments_) {
+    for (auto &segment : blas_segments_->segments) {
+      if (plan_.abort_callback && plan_.abort_callback(plan_.abort_callback_data))
+        return Status::Cancelled("ggml CPU execution");
+      const auto status = segment.blas
+          ? ggml_hyle_blas_compute(state.blas, &segment.graph)
+          : program_->compute(&segment.graph, &segment.plan);
+      HYLE_RETURN_IF_ERROR(blas_status(status));
+    }
+    if (plan_.abort_callback && plan_.abort_callback(plan_.abort_callback_data))
+      return Status::Cancelled("ggml CPU execution");
+    return Status::Ok();
+  }
+#endif
   switch (program_->compute(graph_, &plan_)) {
   case GGML_STATUS_SUCCESS:
     return Status::Ok();
@@ -197,7 +358,11 @@ CpuExecution::CpuExecution(CpuExecution &&other) noexcept
     : allocator_(other.allocator_), team_(std::move(other.team_)),
       program_(std::exchange(other.program_, nullptr)),
       graph_(std::exchange(other.graph_, nullptr)),
-      plan_(std::exchange(other.plan_, ggml_cplan{})) {}
+      plan_(std::exchange(other.plan_, ggml_cplan{}))
+#if defined(__APPLE__)
+      , blas_segments_(std::exchange(other.blas_segments_, nullptr))
+#endif
+      {}
 
 CpuExecution &CpuExecution::operator=(CpuExecution &&other) noexcept {
   if (this != &other) {
@@ -207,6 +372,9 @@ CpuExecution &CpuExecution::operator=(CpuExecution &&other) noexcept {
     program_ = std::exchange(other.program_, nullptr);
     graph_ = std::exchange(other.graph_, nullptr);
     plan_ = std::exchange(other.plan_, ggml_cplan{});
+#if defined(__APPLE__)
+    blas_segments_ = std::exchange(other.blas_segments_, nullptr);
+#endif
   }
   return *this;
 }
@@ -217,6 +385,10 @@ void CpuExecution::reset() noexcept {
   const auto plan = std::exchange(plan_, ggml_cplan{});
   graph_ = nullptr;
   program_ = nullptr;
+#if defined(__APPLE__)
+  if (auto *segments = std::exchange(blas_segments_, nullptr))
+    allocator_.destroy(segments);
+#endif
   // The last team drop joins/frees its native workers before releasing this
   // slot's workspace. Other active slots retain the team independently.
   team_ = {};

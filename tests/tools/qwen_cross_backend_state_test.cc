@@ -19,8 +19,9 @@ int main(int argc, char **argv) {
     const bool recording_rng = argc == 6 && std::string_view(argv[5]) == "--recording-rng-probe";
     const bool control_inputs = argc == 6 && std::string_view(argv[5]) == "--control-inputs-probe";
     const bool sampled_continuation = argc == 6 && std::string_view(argv[5]) == "--sampled-continuation-probe";
-    if (argc != 5 && !depth && !carrier && !handoff && !prefix_repair && !native_relay && !recording_rng && !control_inputs && !sampled_continuation) throw std::runtime_error(
-        "usage: qwen_cross_backend_state_test cpu|cuda|apple|vulkan INPUTS off|K3 CPU_FFN_LAYERS [--depth-probe|--prefix-repair-probe|--native-relay-probe|--recording-rng-probe|--control-inputs-probe]; or cuda INPUTS K1|K2|K3 0 --sampled-continuation-probe; or BACKEND --carrier-probe|--native-handoff-probe");
+    const bool wide_prefill = argc == 6 && std::string_view(argv[5]) == "--wide-prefill-probe";
+    if (argc != 5 && !depth && !carrier && !handoff && !prefix_repair && !native_relay && !recording_rng && !control_inputs && !sampled_continuation && !wide_prefill) throw std::runtime_error(
+        "usage: qwen_cross_backend_state_test cpu|cuda|apple|vulkan INPUTS off|K3 CPU_FFN_LAYERS [--depth-probe|--prefix-repair-probe|--native-relay-probe|--recording-rng-probe|--control-inputs-probe|--wide-prefill-probe]; or cuda INPUTS K1|K2|K3 0 --sampled-continuation-probe; or BACKEND --carrier-probe|--native-handoff-probe");
     const std::string_view name(argv[1]);
     auto kind = qwen35::BackendKind::kDefault;
     if (name == "cpu") kind = qwen35::BackendKind::kCpu;
@@ -63,9 +64,11 @@ int main(int argc, char **argv) {
       return 0;
     }
     for (const bool random : {false, true}) {
-      const auto report = qwen_host_image_case::run_mode(argv[2], kind, mode == "K3", 3, layers, random);
+      const auto report = qwen_host_image_case::run_mode(argv[2], kind, mode == "K3", 3, layers, random,
+          wide_prefill ? 32 : 3);
       std::cout << "PASS complete_state backend=" << name << " cpu_ffn_layers=" << layers
                 << " algorithm=" << mode << " sampling=" << (random ? "random" : "greedy")
+                << " prefill_rows=" << (wide_prefill ? 32 : 3)
                 << " payloads=" << report.payloads << " bytes=" << report.total_bytes
                 << " versions=0 images=0 historical_boundary=preserved restored_continuation=equal\n" << std::flush;
     }

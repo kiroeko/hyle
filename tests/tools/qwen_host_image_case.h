@@ -106,7 +106,10 @@ struct ModeReport final {
 };
 
 inline ModeReport run_mode(const std::filesystem::path &input, q::BackendKind kind, bool draft,
-    std::size_t maximum_drafts = 1, std::size_t cpu_ffn_layers = 0, bool random = true) {
+    std::size_t maximum_drafts = 1, std::size_t cpu_ffn_layers = 0, bool random = true,
+    std::size_t prompt_rows = 3) {
+  require(prompt_rows > 0 && prompt_rows <= 4096, "host image prefill rows are outside the bounded fixture");
+  const auto capacity = (std::max)(std::size_t{16}, prompt_rows + 13);
   constexpr std::size_t host_limit = 256u << 20;
   std::shared_ptr<const q::cache::HostImage> escaped;
   std::shared_ptr<i::HostStateStorage> storage_after_model;
@@ -117,12 +120,12 @@ inline ModeReport run_mode(const std::filesystem::path &input, q::BackendKind ki
     auto source = q::prepare_weight_source(input / "weights.tsv", draft);
     const auto geometry = source.roles.geometry;
     const auto precision = q::PrecisionProfile::from_roles(source.roles);
-    require(geometry.context_limit >= 16 && geometry.vocabulary >= 4 && (!draft || geometry.mtp_layers == 1),
-        "host image case requires C16, four tokens and the selected original MTP roles");
+    require(geometry.context_limit >= capacity && geometry.vocabulary >= 4 && (!draft || geometry.mtp_layers == 1),
+        "host image case requires its prefill capacity, four tokens and the selected original MTP roles");
     const auto boundaries = draft ? maximum_drafts + 1 : 1;
-    const auto plan = q::cache::plan(geometry, source.cache_row_bytes, 16, 4, (std::max)(std::size_t{3}, boundaries),
-        q::recurrent_bytes(q::state_schema_for(geometry, 16, precision), geometry), 1, boundaries, draft, true, 1, 0, precision);
-    q::Model model(std::move(source), geometry, 16, plan, {}, false, q::ReplayPolicy::kCommands, SIZE_MAX,
+    const auto plan = q::cache::plan(geometry, source.cache_row_bytes, capacity, 4, (std::max)(prompt_rows, boundaries),
+        q::recurrent_bytes(q::state_schema_for(geometry, capacity, precision), geometry), 1, boundaries, draft, true, 1, 0, precision);
+    q::Model model(std::move(source), geometry, capacity, plan, {}, false, q::ReplayPolicy::kCommands, SIZE_MAX,
         {.enabled = random, .policy = random ? q::sampling::Policy{1.F, 8, .9F} : q::sampling::Policy{},
          .seed = 123}, cpu_ffn_layers, {.primary = kind});
     if (draft) model.configure_draft_policy({.max_drafts = maximum_drafts});
@@ -131,11 +134,11 @@ inline ModeReport run_mode(const std::filesystem::path &input, q::BackendKind ki
     cold = model.resources_;
     report.hidden = static_cast<std::size_t>(geometry.hidden); report.target_layers = geometry.layers.size();
     const auto prompt_role = draft ? q::GraphRole::kMtpPrefill : q::GraphRole::kText;
-    const std::array prefill{std::size_t{3}};
-    const std::array ordinary{std::size_t{3}, std::size_t{1}};
+    const std::array prefill{prompt_rows};
+    const std::array ordinary{prompt_rows, std::size_t{1}};
     const std::array pair{std::size_t{2}};
     if (draft && maximum_drafts > 1) {
-      model.prepare_family(prefill, false, 1, prompt_role); model.plan_replay_uses(3, 1, 12, prompt_role);
+      model.prepare_family(prefill, false, 1, prompt_role); model.plan_replay_uses(prompt_rows, 1, 12, prompt_role);
       for (std::size_t width = 1; width <= boundaries; ++width) {
         const std::array rows{width};
         model.prepare_family(rows, false, 1, q::GraphRole::kVerify);
@@ -147,7 +150,7 @@ inline ModeReport run_mode(const std::filesystem::path &input, q::BackendKind ki
         const std::array rows{width}; model.prepare_execution(rows, 1, q::GraphRole::kVerify);
       }
     } else if (draft) {
-      model.prepare_family(prefill, false, 1, prompt_role); model.plan_replay_uses(3, 1, 12, prompt_role);
+      model.prepare_family(prefill, false, 1, prompt_role); model.plan_replay_uses(prompt_rows, 1, 12, prompt_role);
       for (auto role : {q::GraphRole::kMtpRound, q::GraphRole::kMtpCatchupRound}) {
         model.prepare_family(pair, false, 1, role); model.plan_replay_uses(2, 1, 12, role);
       }
@@ -159,7 +162,9 @@ inline ModeReport run_mode(const std::filesystem::path &input, q::BackendKind ki
       model.prepare_execution(ordinary);
     }
     auto session = model.create_session(prefill, {}, prompt_role, q::cache::SamplingCursor{123, 7, 0});
-    const std::array<std::int32_t, 3> prompt{1, 2, 3};
+    std::vector<std::int32_t> prompt(prompt_rows);
+    for (std::size_t row = 0; row < prompt_rows; ++row)
+      prompt[row] = static_cast<std::int32_t>(1 + row % 3);
     model.prepare_evaluation(*session, prompt, nullptr, prompt_role); model.submit_evaluation(*session);
     (void)q::finish_evaluation(model, *session, "host-image-prefill", {}, false);
     const auto evaluated_next = session->head->state_identity()->next_id;
