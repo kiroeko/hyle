@@ -225,10 +225,12 @@ void Runtime::run() noexcept {
     owner_id.store(platform::this_thread::get_id(), std::memory_order_release);
     for (;;) {
       Job *job;
+      Job *last_queued = nullptr;
       {
         std::lock_guard lock(queue_mutex);
         job = head;
         if (job != nullptr) {
+          last_queued = tail;
           head = job->next;
           if (head == nullptr)
             tail = nullptr;
@@ -236,10 +238,19 @@ void Runtime::run() noexcept {
           break;
         }
       }
-      if (job != nullptr)
+      if (job != nullptr) {
+        if (!begin_copy_encoding(*this, *job, last_queued)) {
+          auto status = flush_copy_encoding(*this);
+          if (!status.ok()) poison(status);
+        }
         job->execute(job);
-      else
+        auto status = finish_copy_encoding_job(*this, job);
+        if (!status.ok()) poison(status);
+      } else {
+        auto status = finish_copy_encoding_job(*this, nullptr);
+        if (!status.ok()) poison(status);
         wake.park();
+      }
     }
   }
 
@@ -605,7 +616,10 @@ struct InvocationState : Job {
       const auto &spec = program->inputs[inputs.size()];
       const bool native_pending = !complete && producer.native_deferred &&
           value.status() == mx::array::evaluated && value.event().valid();
-      if ((!native_pending && value.status() != mx::array::available) || value.shape() != spec.shape ||
+      // MLX can detach an already signaled event while leaving the raw
+      // status evaluated. Its nonblocking availability query normalizes that
+      // legitimate ready state; Source success/epoch and carrier remain exact.
+      if ((!native_pending && !value.is_available()) || value.shape() != spec.shape ||
           value.dtype() != spec.dtype)
         return Status::Internal("Apple late input producer output differs from its prepared carrier");
       inputs.push_back(value); // Original owner/event stays pinned through retirement.

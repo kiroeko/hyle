@@ -22,7 +22,7 @@ struct Result final {
   std::vector<q::GenerationCommitRecord> records;
   std::optional<s::StateImage> final_state;
   std::size_t submitted = 0, a1_published = 0, a2_published = 0, reused = 0, recorded = 0;
-  std::size_t draft_rows = 0;
+  std::size_t draft_rows = 0, native_prepared = 0;
   bool stopped = false;
 };
 
@@ -206,10 +206,18 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
           : role(*session) == q::GraphRole::kMtpCatchupRound ? std::size_t{1} : std::size_t{0};
       child = &model.prepare_relay_evaluations(future, current_source, next_slot, q::GraphRole::kMtpContinuation);
       lifetimes[index + 1] = model.successor_step;
+      const auto &carrier = child->phase->slots[child->state_slot].carrier;
+      const bool native_source = carrier.queues().empty() && carrier.native_source_dependencies();
+      if (native_source) {
+        const auto report = q::take(child->execution.run->input_source_report());
+        require(report.source_count && report.device_wait_count && !report.host_wait_count,
+            "native MTP successor lost its actual pending device Source edge");
+      }
       require(child->device_input_choice && child->draft_rows_deferred &&
           !child->members[0].selected_input_choice && !child->active_draft_rows &&
-          child->state_slot == next_slot && !child->capture_recorded && child->capture_reused,
-          "successor was not an unobserved recorded device-choice continuation");
+          child->state_slot == next_slot && !child->capture_recorded && (child->capture_reused || native_source),
+          "successor was not an unobserved prepared device-choice continuation");
+      result.native_prepared += native_source;
       result.reused += child->capture_reused; result.recorded += child->capture_recorded;
       // Every nonterminal continuation exports its own actual cB outputs and
       // filled physical envelope before submission, so it can in turn feed C.
@@ -382,7 +390,22 @@ inline Result boundary_journey(q::Model &model, std::span<const std::int32_t> pr
   result.submitted = continuation.successor_submissions;
   result.records.assign(request.ledger->records.begin(), request.ledger->records.begin() + request.ledger->committed_count);
   result.final_state = s::image(model, *request.session->head);
-  h::retire(request.session);
+  if (selected == BoundaryCase::kCancel) {
+    // A real native cancellation may remain the stopped Session's terminal
+    // outcome. It does not prove retirement or permit any other native error.
+    const auto check_cancelled = [](const hyle::Status &status) {
+      if (status.IsCancelled() && !status.has_native_error()) return;
+      q::check(status);
+    };
+    require(request.session->stopping, "cancel boundary lost the original stopped owner");
+    check_cancelled(request.session->stop());
+    const auto drained = request.session->drain(); check_cancelled(drained.status);
+    require(drained.retired, "cancel boundary did not drain its original native work");
+    const auto observed = request.session->try_retire(); check_cancelled(observed.status);
+    require(observed.retired && !request.session->head && !request.session->pending,
+        "cancel boundary did not retire the original Session head and pending owner");
+    request.session.reset();
+  } else h::retire(request.session);
   require(!model.active_step && !model.successor_step && !model.carrier_borrowed && !model.snapshot_versions.live &&
       model.page_inventory.free_ids.size() == model.page_inventory.owners.size() &&
       model.draft_inventory.free_ids.size() == model.draft_inventory.owners.size(),

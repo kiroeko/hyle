@@ -15,6 +15,8 @@
 
 #include <gtest/gtest.h>
 #include <mlx/ops.h>
+#include <mlx/memory.h>
+#include <mlx/transforms.h>
 #include <mlx/primitives.h>
 #include <stdexcept>
 #include <mlx/backend/metal/event.h>
@@ -325,6 +327,192 @@ TEST(AppleLateInput, DevicePrefixPendingViewKeepsItsOriginalSourceAndActualTail)
     EXPECT_FLOAT_EQ(view_output.data<float>()[i], expected[i]);
   ASSERT_TRUE(context.close().ok());
   { std::lock_guard lock(runtime->queue_mutex); EXPECT_EQ(runtime->native_tails, 0u); }
+}
+
+// Hold only the callback which publishes the original prefix's completion.
+// Its actual GPU event can signal first, as it does during ordinary MLX eval.
+class PrefixCallbackGate final : public std::enable_shared_from_this<PrefixCallbackGate> {
+public:
+  void arm() { armed_.store(true, std::memory_order_release); }
+  void install(mx::Stream stream) {
+    if (!armed_.exchange(false, std::memory_order_acq_rel)) return;
+    auto *command = mx::metal::get_command_encoder(stream).get_command_buffer();
+    if (!command) throw std::runtime_error("original prefix command buffer is absent");
+    command->addCompletedHandler([self = shared_from_this()](MTL::CommandBuffer *) {
+      std::unique_lock lock(self->mutex_);
+      self->entered_ = true; self->changed_.notify_all();
+      self->changed_.wait(lock, [&] { return self->open_; });
+    });
+  }
+  bool wait_entered_for(std::chrono::seconds limit) {
+    std::unique_lock lock(mutex_);
+    return changed_.wait_for(lock, limit, [&] { return entered_; });
+  }
+  void open() {
+    std::lock_guard lock(mutex_); open_ = true; changed_.notify_all();
+  }
+private:
+  std::atomic<bool> armed_{false};
+  std::mutex mutex_;
+  std::condition_variable changed_;
+  bool entered_ = false, open_ = false;
+};
+class PrefixCallbackCheckpoint final : public mx::Primitive {
+public:
+  PrefixCallbackCheckpoint(mx::Stream stream, std::shared_ptr<PrefixCallbackGate> gate)
+      : Primitive(stream), gate_(std::move(gate)) {}
+  void eval_cpu(const std::vector<mx::array> &, std::vector<mx::array> &) override {
+    throw std::logic_error("prefix callback checkpoint requires its original GPU");
+  }
+  void eval_gpu(const std::vector<mx::array> &inputs, std::vector<mx::array> &outputs) override {
+    outputs[0].copy_shared_buffer(inputs[0]);
+    gate_->install(stream());
+  }
+  const char *name() const override { return "HyleTestPrefixCallbackCheckpoint"; }
+private:
+  std::shared_ptr<PrefixCallbackGate> gate_;
+};
+class DetachSignaledSource final : public ad::Job {
+public:
+  DetachSignaledSource(std::shared_ptr<ad::Runtime> runtime, ad::InputSource source,
+      std::shared_ptr<PrefixCallbackGate> callback, bool inspect_address)
+      : runtime_(std::move(runtime)), source_(std::move(source)), callback_(std::move(callback)),
+        inspect_address_(inspect_address) {
+    execute = [](ad::Job *job) noexcept { static_cast<DetachSignaledSource *>(job)->run(); };
+  }
+  hyle::Status enqueue() { return runtime_->enqueue(*this); }
+  bool wait_entered_for(std::chrono::seconds limit) {
+    std::unique_lock lock(mutex_);
+    return changed_.wait_for(lock, limit, [&] { return entered_ || done_; });
+  }
+  bool wait_done_for(std::chrono::seconds limit) {
+    std::unique_lock lock(mutex_);
+    return changed_.wait_for(lock, limit, [&] { return done_; });
+  }
+  hyle::Status status() { std::lock_guard lock(mutex_); return status_; }
+private:
+  void run() noexcept {
+    hyle::Status status;
+    try {
+      std::array<a::NativeStorage, 4> words;
+      std::array<std::optional<mx::array>, 4> owners;
+      std::array<ad::DeviceCheckVisit, 8> visited{};
+      ad::DeviceCheckInputs checks{words, owners, 0, visited};
+      auto epoch = ad::InvocationAccess::source_epoch(source_, runtime_);
+      if (!epoch) throw std::runtime_error(std::string(epoch.error().message()));
+      auto actual = ad::InvocationAccess::device_source_output(source_, runtime_, *epoch, checks);
+      if (!actual) throw std::runtime_error(std::string(actual.error().message()));
+      auto value = std::move(*actual);
+      if (value.status() != mx::array::evaluated || !value.event().valid())
+        throw std::runtime_error("original producer has no actual evaluated GPU event");
+      std::optional<a::NativeStorage> original_address;
+      if (inspect_address_) {
+        auto address = ad::MemoryAccess::submitted_storage_info(value);
+        if (!address) throw std::runtime_error(std::string(address.error().message()));
+        original_address = *address;
+      }
+      { std::lock_guard lock(mutex_); entered_ = true; changed_.notify_all(); }
+      // The test's independent caller opens the real GPU gate. The public
+      // event wait does not wait for the deliberately held completed handler.
+      value.event().wait();
+      if (!value.event().is_signaled() || !callback_->wait_entered_for(std::chrono::seconds(2)))
+        throw std::runtime_error("original GPU event/held callback frontier was not reached");
+      value.detach_event(); // The same legal operation used by MLX transforms.
+      if (value.status() != mx::array::evaluated || value.event().valid())
+        throw std::runtime_error("detaching the signaled original event changed raw evaluation state");
+      if (inspect_address_) {
+        // This is the original pinned Source, before the next Context input
+        // resolves it. Ready normalization grants no different native bytes.
+        auto address = ad::MemoryAccess::submitted_storage_info(value);
+        if (!address) throw std::runtime_error(std::string(address.error().message()));
+        if (address->buffer != original_address->buffer || address->offset_bytes != original_address->offset_bytes ||
+            address->view_bytes != original_address->view_bytes || address->backing_bytes != original_address->backing_bytes)
+          throw std::runtime_error("event normalization changed the original native address/span");
+      }
+      auto unchanged = ad::InvocationAccess::source_epoch(source_, runtime_);
+      if (!unchanged || *unchanged != *epoch)
+        throw std::runtime_error("event normalization replaced the original Source epoch");
+    } catch (const std::exception &failure) { status = hyle::Status::Internal(failure.what()); }
+    { std::lock_guard lock(mutex_); status_ = std::move(status); done_ = true; changed_.notify_all(); }
+  }
+  std::shared_ptr<ad::Runtime> runtime_;
+  ad::InputSource source_;
+  std::shared_ptr<PrefixCallbackGate> callback_;
+  std::mutex mutex_;
+  std::condition_variable changed_;
+  hyle::Status status_;
+  bool entered_ = false, done_ = false, inspect_address_ = false;
+};
+void exercise_device_prefix_detached_source(bool inspect_address) {
+  auto context = a::Context::create().value();
+  auto runtime = ad::ContextAccess::runtime(context);
+  auto callback = std::make_shared<PrefixCallbackGate>();
+  const std::array specs{a::InputSpec{{4}, mx::float32}};
+  auto first = ad::ContextAccess::compile_device_prefix(runtime,
+      [callback](const auto &inputs, mx::Stream stream) {
+        auto value = mx::square(inputs[0], stream);
+        return std::vector<mx::array>{mx::array(value.shape(), value.dtype(),
+            std::make_shared<PrefixCallbackCheckpoint>(stream, callback), {value})};
+      }, specs).value();
+  auto second = ad::ContextAccess::compile_device_prefix(runtime,
+      [](const auto &inputs, mx::Stream stream) { return std::vector<mx::array>{mx::square(inputs[0], stream)}; }, specs).value();
+  auto producer = first.create_invocation().value(), consumer = second.create_invocation().value();
+  const std::array inputs{mx::array({1.f, 2.f, 3.f, 4.f})};
+  ASSERT_TRUE(producer.bind(inputs).ok());
+  const auto original = ad::InvocationAccess::source(producer, 0).value();
+  std::array<ad::InputBinding, 1> late;
+  late[0].source = original;
+  ASSERT_TRUE(ad::InvocationAccess::prepare_inputs(consumer, late).ok());
+  GpuEventGate gpu(runtime);
+  FifoGate before, after;
+  DetachSignaledSource detach(runtime, original, callback, inspect_address);
+  struct OpenOnExit final {
+    GpuEventGate &gpu; FifoGate &before; FifoGate &after; std::shared_ptr<PrefixCallbackGate> callback;
+    ~OpenOnExit() { gpu.open(); callback->open(); before.open_and_join(); after.open_and_join(); }
+  } release{gpu, before, after, callback};
+  ASSERT_TRUE(gpu.enqueue().ok());
+  ASSERT_TRUE(before.enqueue(runtime).ok()); before.wait_entered();
+  callback->arm();
+  auto produced = producer.submit().value();
+  ASSERT_TRUE(detach.enqueue().ok());
+  auto consumed = consumer.submit().value();
+  before.open_and_join();
+  const bool entered = detach.wait_entered_for(std::chrono::seconds(2));
+  gpu.open();
+  const bool detached = detach.wait_done_for(std::chrono::seconds(2));
+  const auto after_admitted = after.enqueue(runtime);
+  if (after_admitted.ok()) (void)after.wait_entered_for(std::chrono::seconds(2));
+  const auto pending_producer = produced.completion().poll();
+  callback->open(); after.open_and_join();
+  const auto consumer_terminal = consumed.completion().wait();
+  const auto producer_terminal = produced.completion().wait();
+  ASSERT_TRUE(entered); ASSERT_TRUE(detached);
+  ASSERT_TRUE(detach.status().ok()) << detach.status().message();
+  ASSERT_TRUE(after_admitted.ok());
+  ASSERT_TRUE(pending_producer); EXPECT_EQ(*pending_producer, c::CompletionPoll::kPending);
+  ASSERT_TRUE(producer_terminal.ok()) << producer_terminal.message();
+  ASSERT_TRUE(consumer_terminal.ok()) << consumer_terminal.message();
+  {
+    auto output = ad::InvocationAccess::output(consumer, 0).value();
+    const std::array<float, 4> expected{1.f, 16.f, 81.f, 256.f};
+    for (std::size_t at = 0; at < expected.size(); ++at) EXPECT_FLOAT_EQ(output.data<float>()[at], expected[at]);
+  }
+  produced = {}; consumed = {}; // Release original result readers before reuse.
+  ASSERT_TRUE(producer.bind(inputs).ok());
+  auto reused_producer = producer.submit();
+  ASSERT_TRUE(reused_producer) << reused_producer.error().message();
+  auto reused_consumer = consumer.submit();
+  ASSERT_TRUE(reused_consumer) << reused_consumer.error().message();
+  ASSERT_TRUE(reused_consumer->completion().wait().ok());
+  ASSERT_TRUE(reused_producer->completion().wait().ok());
+  ASSERT_TRUE(context.close().ok());
+  { std::lock_guard lock(runtime->queue_mutex); EXPECT_EQ(runtime->native_tails, 0u); }
+}
+TEST(AppleLateInput, DevicePrefixSignaledDetachedEventKeepsItsOriginalSourceEpoch) {
+  exercise_device_prefix_detached_source(false);
+}
+TEST(AppleLateInput, DevicePrefixDetachedReadySourceRetainsItsOriginalNativeAddress) {
+  exercise_device_prefix_detached_source(true);
 }
 
 void exercise_native_signal_source(bool close_pending) {
@@ -880,6 +1068,194 @@ TEST(AppleLateInput, RetiredCopyInputReleaseKeepsNativeReaderEpochAndVerdict) {
     EXPECT_EQ(actual,fail?sentinel:input);
     ASSERT_TRUE(context.close().ok());
   }
+}
+
+TEST(AppleLateInput, NativeCopyOwnsItsCommandWithoutAdvancingTheOriginalMlxBuffer) {
+  namespace m = hyle::mem;
+  auto context = a::Context::create().value();
+  const auto runtime = ad::ContextAccess::runtime(context);
+  auto memory = a::MemoryResource::create(context).value();
+  auto source = m::Buffer::create(memory.ref(), 32).value();
+  auto target = m::Buffer::create(memory.ref(), 32).value();
+  ASSERT_TRUE(source.fill(0, 32, std::byte{71}).ok());
+  auto copy = ad::prepare_copy_recording_runtime(runtime, 1, m::system_allocator(), 32,
+      ad::CopyRecordingMode::kReplayable).value();
+  const std::array<c::detail::CopyBackendRange, 1> ranges{{{target.view(), source.view()}}};
+  ASSERT_TRUE(ad::bind_copy_recording(*copy, ranges).ok());
+  struct BufferSnapshot final : ad::Job {
+    std::shared_ptr<ad::Runtime> runtime;
+    NS::SharedPtr<MTL::CommandBuffer> buffer;
+    bool synchronize;
+    hyle::Status terminal;
+    explicit BufferSnapshot(std::shared_ptr<ad::Runtime> owner, bool wait = false)
+        : runtime(std::move(owner)), synchronize(wait) {
+      execute = [](ad::Job *job) noexcept {
+        auto &snapshot = *static_cast<BufferSnapshot *>(job);
+        try {
+          if (snapshot.synchronize) mx::synchronize(*snapshot.runtime->stream);
+          snapshot.buffer = NS::RetainPtr(mx::metal::get_command_encoder(*snapshot.runtime->stream).get_command_buffer());
+        } catch (const std::exception &error) { snapshot.terminal = hyle::Status::Internal(error.what()); }
+        catch (...) { snapshot.terminal = hyle::Status::Internal("original MLX buffer inspection failed"); }
+      };
+    }
+  } before(runtime), after(runtime);
+  GpuEventGate gpu(runtime);
+  ASSERT_TRUE(gpu.enqueue().ok());
+  FifoGate first, last;
+  struct Release final {
+    GpuEventGate &gpu; FifoGate &first; FifoGate &last;
+    ~Release() { gpu.open(); first.open_and_join(); last.open_and_join(); }
+  } release{gpu, first, last};
+  ASSERT_TRUE(runtime->enqueue(before).ok());
+  ASSERT_TRUE(first.enqueue(runtime).ok());
+  first.wait_entered();
+  auto copied = ad::submit_copy_recording(*copy).value();
+  ASSERT_TRUE(runtime->enqueue(after).ok());
+  ASSERT_TRUE(last.enqueue(runtime).ok());
+  first.open_and_join();
+  const bool encoded = last.wait_entered_for(std::chrono::seconds(2));
+  if (!encoded) gpu.open();
+  EXPECT_TRUE(encoded) << "copy submission blocked the original owner on held GPU work";
+  if (encoded) {
+    ASSERT_TRUE(before.buffer && after.buffer);
+    EXPECT_EQ(before.buffer.get(), after.buffer.get())
+        << "a native copy must not consume the MLX evaluator's current command buffer";
+    EXPECT_EQ(copied.poll().value(), c::CompletionPoll::kPending);
+    EXPECT_TRUE(ad::copy_recording_reuse_gate(*copy).IsUnavailable());
+  }
+  last.open_and_join();
+  gpu.open();
+  ASSERT_TRUE(copied.wait().ok());
+  std::array<std::byte, 32> bytes;
+  ASSERT_TRUE(target.read(0, bytes).ok());
+  for (auto byte : bytes) EXPECT_EQ(byte, std::byte{71});
+  ASSERT_TRUE(source.fill(0, 32, std::byte{83}).ok());
+  ASSERT_TRUE(target.fill(0, 32, std::byte{17}).ok());
+  BufferSnapshot synchronize(runtime, true);
+  FifoGate synchronized;
+  ASSERT_TRUE(runtime->enqueue(synchronize).ok());
+  ASSERT_TRUE(synchronized.enqueue(runtime).ok());
+  synchronized.wait_entered();
+  synchronized.open_and_join();
+  ASSERT_TRUE(synchronize.terminal.ok());
+  ASSERT_TRUE(target.read(0, bytes).ok());
+  for (auto byte : bytes) EXPECT_EQ(byte, std::byte{17});
+  EXPECT_EQ(ad::copy_recording_report(*copy).host_waits, 0u);
+  EXPECT_TRUE(ad::copy_recording_reuse_gate(*copy).ok());
+  EXPECT_TRUE(context.close().ok());
+  { std::lock_guard lock(runtime->queue_mutex); EXPECT_EQ(runtime->native_tails, 0u); }
+}
+
+TEST(AppleLateInput, FiniteIndependentNativeCopyBurstSharesPhysicalAdmissionWhileGpuIsHeld) {
+  namespace m = hyle::mem;
+  constexpr std::size_t count = 96;
+  auto context = a::Context::create().value();
+  const auto runtime = ad::ContextAccess::runtime(context);
+  auto memory = a::MemoryResource::create(context).value();
+  auto source = m::Buffer::create(memory.ref(), 32).value();
+  ASSERT_TRUE(source.fill(0, 32, std::byte{71}).ok());
+  std::vector<m::Buffer> targets;
+  std::vector<std::shared_ptr<ad::CopyRecording>> recordings;
+  std::vector<c::Completion> completions;
+  targets.reserve(count); recordings.reserve(count); completions.reserve(count);
+  for (std::size_t i = 0; i < count; ++i) {
+    targets.push_back(m::Buffer::create(memory.ref(), 32).value());
+    recordings.push_back(ad::prepare_copy_recording_runtime(runtime, 1, m::system_allocator(), 32,
+        ad::CopyRecordingMode::kReplayable).value());
+    const std::array<c::detail::CopyBackendRange, 1> ranges{{{targets.back().view(), source.view()}}};
+    ASSERT_TRUE(ad::bind_copy_recording(*recordings.back(), ranges).ok());
+  }
+  GpuEventGate gpu(runtime);
+  ASSERT_TRUE(gpu.enqueue().ok());
+  FifoGate before, after;
+  struct Release final {
+    GpuEventGate &gpu; FifoGate &before; FifoGate &after;
+    ~Release() { gpu.open(); before.open_and_join(); after.open_and_join(); }
+  } release{gpu, before, after};
+  ASSERT_TRUE(before.enqueue(runtime).ok());
+  before.wait_entered();
+  for (auto &recording : recordings)
+    completions.push_back(ad::submit_copy_recording(*recording).value());
+  ASSERT_TRUE(after.enqueue(runtime).ok());
+  before.open_and_join();
+  const bool encoded = after.wait_entered_for(std::chrono::seconds(2));
+  if (!encoded) gpu.open();
+  EXPECT_TRUE(encoded) << "independent copies consumed one physical command-buffer admission per recording";
+  if (encoded) {
+    for (auto &completion : completions) EXPECT_EQ(completion.poll().value(), c::CompletionPoll::kPending);
+    std::lock_guard lock(runtime->queue_mutex);
+    EXPECT_EQ(runtime->native_tails, count);
+    RecordProperty("original_recording_tail_peak", runtime->native_tail_peak);
+  }
+  after.open_and_join();
+  gpu.open();
+  for (auto &completion : completions) ASSERT_TRUE(completion.wait().ok());
+  completions.clear();
+  for (std::size_t i = 0; i < count; ++i) {
+    std::array<std::byte, 32> bytes;
+    ASSERT_TRUE(targets[i].read(0, bytes).ok());
+    for (auto byte : bytes) EXPECT_EQ(byte, std::byte{71});
+    EXPECT_TRUE(ad::copy_recording_reuse_gate(*recordings[i]).ok());
+    EXPECT_EQ(ad::copy_recording_report(*recordings[i]).host_waits, 0u);
+  }
+  EXPECT_TRUE(context.close().ok());
+  { std::lock_guard lock(runtime->queue_mutex); EXPECT_EQ(runtime->native_tails, 0u); }
+}
+
+TEST(AppleCopyResidency, NewOriginalQueueSetsCoverNativeCopiesAndSubsequentMlxReads) {
+  namespace m = hyle::mem;
+  auto context = a::Context::create().value();
+  const auto runtime = ad::ContextAccess::runtime(context);
+  auto memory = a::MemoryResource::create(context).value();
+  auto &sets = mx::metal::device(runtime->stream->device).residency_sets();
+  if (!sets.enabled()) GTEST_SKIP() << "native residency sets require the real Metal/macOS capability";
+  GpuEventGate initialized(runtime);
+  ASSERT_TRUE(initialized.enqueue().ok());
+  initialized.open(); // Construct the original queue before any new set exists.
+  const auto old_maximum = sets.max_bytes_per_set();
+  sets.set_max_bytes_per_set(1024);
+  const auto old_wired = mx::set_wired_limit(32u << 20);
+  struct Restore final {
+    a::Context &context; mx::metal::ResidencySets &sets; std::size_t maximum, wired;
+    ~Restore() { context.close().IgnoreError(); sets.set_max_bytes_per_set(maximum); (void)mx::set_wired_limit(wired); }
+  } restore{context, sets, old_maximum, old_wired};
+  for (std::size_t iteration = 0; iteration < 2; ++iteration) {
+    const auto previous = sets.num_sets();
+    const auto rows = 256 + 64 * iteration;
+    std::vector<float> values(rows, static_cast<float>(71 + iteration));
+    auto source = m::Buffer::create(memory.ref(), rows * sizeof(float)).value();
+    auto target = m::Buffer::create(memory.ref(), rows * sizeof(float)).value();
+    ASSERT_TRUE(source.write(0, std::as_bytes(std::span(values))).ok());
+    ASSERT_GT(sets.num_sets(), previous) << "this isolated witness must create real later residency sets";
+    auto recording = ad::prepare_copy_recording_runtime(runtime, 1, m::system_allocator(),
+        rows * sizeof(float), ad::CopyRecordingMode::kReplayable).value();
+    const std::array<c::detail::CopyBackendRange, 1> ranges{{{target.view(), source.view()}}};
+    ASSERT_TRUE(ad::bind_copy_recording(*recording, ranges).ok());
+    auto copied = ad::submit_copy_recording(*recording).value();
+    ASSERT_TRUE(copied.wait().ok());
+    const auto description = c::TensorDesc::dense(c::DataType::kFloat32,
+        std::array<std::int64_t, 1>{static_cast<std::int64_t>(rows)}).value();
+    struct ReadMlx final : ad::Job {
+      std::shared_ptr<ad::Runtime> runtime; mx::array input; float sum = 0; hyle::Status terminal;
+      ReadMlx(std::shared_ptr<ad::Runtime> owner, mx::array values) : runtime(std::move(owner)), input(std::move(values)) {
+        execute = [](ad::Job *job) noexcept {
+          auto &read = *static_cast<ReadMlx *>(job);
+          try { auto sum = mx::sum(read.input, *read.runtime->stream); mx::eval({sum}); read.sum = sum.item<float>(); }
+          catch (const std::exception &error) { read.terminal = hyle::Status::Internal(error.what()); }
+          catch (...) { read.terminal = hyle::Status::Internal("MLX residency consumer failed"); }
+        };
+      }
+    } read(runtime, ad::MemoryAccess::borrow_tensor(c::ConstTensorView::create(description, target.view()).value()).value());
+    FifoGate completed;
+    ASSERT_TRUE(runtime->enqueue(read).ok());
+    ASSERT_TRUE(completed.enqueue(runtime).ok());
+    completed.wait_entered(); completed.open_and_join();
+    ASSERT_TRUE(read.terminal.ok()) << read.terminal.message();
+    EXPECT_EQ(read.sum, static_cast<float>(rows * (71 + iteration)));
+    RecordProperty(iteration ? "sets_after_second_copy" : "sets_after_first_copy", sets.num_sets());
+  }
+  EXPECT_TRUE(context.close().ok());
+  { std::lock_guard lock(runtime->queue_mutex); EXPECT_EQ(runtime->native_tails, 0u); }
 }
 
 void exercise_pending_gpu_copy(unsigned mode) {

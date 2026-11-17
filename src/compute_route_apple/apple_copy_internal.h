@@ -10,6 +10,11 @@
 namespace hyle::compute::apple::detail {
 struct CopyRecording;
 struct DeviceCheckInputs;
+// Same-owner physical encoding only. A finite burst ends at the original
+// FIFO tail snapshot; every event export, observer and idle boundary flushes.
+bool begin_copy_encoding(Runtime &, const Job &, const Job *last_queued) noexcept;
+Status finish_copy_encoding_job(Runtime &, const Job *) noexcept;
+Status flush_copy_encoding(Runtime &) noexcept;
 Status copy_device_checks(CopyRecording &, DeviceCheckInputs &) noexcept;
 // CPU-only traversal scratch of the original Runtime. Borrowed only during
 // one non-reentrant FIFO collection; neither GPU commands nor tails retain it.
