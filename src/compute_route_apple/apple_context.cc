@@ -605,7 +605,10 @@ struct InvocationState : Job {
       const auto &spec = program->inputs[inputs.size()];
       const bool native_pending = !complete && producer.native_deferred &&
           value.status() == mx::array::evaluated && value.event().valid();
-      if ((!native_pending && value.status() != mx::array::available) || value.shape() != spec.shape ||
+      // MLX can detach an already signaled event while leaving the raw
+      // status evaluated. Its nonblocking availability query normalizes that
+      // legitimate ready state; Source success/epoch and carrier remain exact.
+      if ((!native_pending && !value.is_available()) || value.shape() != spec.shape ||
           value.dtype() != spec.dtype)
         return Status::Internal("Apple late input producer output differs from its prepared carrier");
       inputs.push_back(value); // Original owner/event stays pinned through retirement.

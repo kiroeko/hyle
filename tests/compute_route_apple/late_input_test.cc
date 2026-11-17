@@ -327,6 +327,192 @@ TEST(AppleLateInput, DevicePrefixPendingViewKeepsItsOriginalSourceAndActualTail)
   { std::lock_guard lock(runtime->queue_mutex); EXPECT_EQ(runtime->native_tails, 0u); }
 }
 
+// Hold only the callback which publishes the original prefix's completion.
+// Its actual GPU event can signal first, as it does during ordinary MLX eval.
+class PrefixCallbackGate final : public std::enable_shared_from_this<PrefixCallbackGate> {
+public:
+  void arm() { armed_.store(true, std::memory_order_release); }
+  void install(mx::Stream stream) {
+    if (!armed_.exchange(false, std::memory_order_acq_rel)) return;
+    auto *command = mx::metal::get_command_encoder(stream).get_command_buffer();
+    if (!command) throw std::runtime_error("original prefix command buffer is absent");
+    command->addCompletedHandler([self = shared_from_this()](MTL::CommandBuffer *) {
+      std::unique_lock lock(self->mutex_);
+      self->entered_ = true; self->changed_.notify_all();
+      self->changed_.wait(lock, [&] { return self->open_; });
+    });
+  }
+  bool wait_entered_for(std::chrono::seconds limit) {
+    std::unique_lock lock(mutex_);
+    return changed_.wait_for(lock, limit, [&] { return entered_; });
+  }
+  void open() {
+    std::lock_guard lock(mutex_); open_ = true; changed_.notify_all();
+  }
+private:
+  std::atomic<bool> armed_{false};
+  std::mutex mutex_;
+  std::condition_variable changed_;
+  bool entered_ = false, open_ = false;
+};
+class PrefixCallbackCheckpoint final : public mx::Primitive {
+public:
+  PrefixCallbackCheckpoint(mx::Stream stream, std::shared_ptr<PrefixCallbackGate> gate)
+      : Primitive(stream), gate_(std::move(gate)) {}
+  void eval_cpu(const std::vector<mx::array> &, std::vector<mx::array> &) override {
+    throw std::logic_error("prefix callback checkpoint requires its original GPU");
+  }
+  void eval_gpu(const std::vector<mx::array> &inputs, std::vector<mx::array> &outputs) override {
+    outputs[0].copy_shared_buffer(inputs[0]);
+    gate_->install(stream());
+  }
+  const char *name() const override { return "HyleTestPrefixCallbackCheckpoint"; }
+private:
+  std::shared_ptr<PrefixCallbackGate> gate_;
+};
+class DetachSignaledSource final : public ad::Job {
+public:
+  DetachSignaledSource(std::shared_ptr<ad::Runtime> runtime, ad::InputSource source,
+      std::shared_ptr<PrefixCallbackGate> callback, bool inspect_address)
+      : runtime_(std::move(runtime)), source_(std::move(source)), callback_(std::move(callback)),
+        inspect_address_(inspect_address) {
+    execute = [](ad::Job *job) noexcept { static_cast<DetachSignaledSource *>(job)->run(); };
+  }
+  hyle::Status enqueue() { return runtime_->enqueue(*this); }
+  bool wait_entered_for(std::chrono::seconds limit) {
+    std::unique_lock lock(mutex_);
+    return changed_.wait_for(lock, limit, [&] { return entered_ || done_; });
+  }
+  bool wait_done_for(std::chrono::seconds limit) {
+    std::unique_lock lock(mutex_);
+    return changed_.wait_for(lock, limit, [&] { return done_; });
+  }
+  hyle::Status status() { std::lock_guard lock(mutex_); return status_; }
+private:
+  void run() noexcept {
+    hyle::Status status;
+    try {
+      std::array<a::NativeStorage, 4> words;
+      std::array<std::optional<mx::array>, 4> owners;
+      std::array<ad::DeviceCheckVisit, 8> visited{};
+      ad::DeviceCheckInputs checks{words, owners, 0, visited};
+      auto epoch = ad::InvocationAccess::source_epoch(source_, runtime_);
+      if (!epoch) throw std::runtime_error(std::string(epoch.error().message()));
+      auto actual = ad::InvocationAccess::device_source_output(source_, runtime_, *epoch, checks);
+      if (!actual) throw std::runtime_error(std::string(actual.error().message()));
+      auto value = std::move(*actual);
+      if (value.status() != mx::array::evaluated || !value.event().valid())
+        throw std::runtime_error("original producer has no actual evaluated GPU event");
+      std::optional<a::NativeStorage> original_address;
+      if (inspect_address_) {
+        auto address = ad::MemoryAccess::submitted_storage_info(value);
+        if (!address) throw std::runtime_error(std::string(address.error().message()));
+        original_address = *address;
+      }
+      { std::lock_guard lock(mutex_); entered_ = true; changed_.notify_all(); }
+      // The test's independent caller opens the real GPU gate. The public
+      // event wait does not wait for the deliberately held completed handler.
+      value.event().wait();
+      if (!value.event().is_signaled() || !callback_->wait_entered_for(std::chrono::seconds(2)))
+        throw std::runtime_error("original GPU event/held callback frontier was not reached");
+      value.detach_event(); // The same legal operation used by MLX transforms.
+      if (value.status() != mx::array::evaluated || value.event().valid())
+        throw std::runtime_error("detaching the signaled original event changed raw evaluation state");
+      if (inspect_address_) {
+        // This is the original pinned Source, before the next Context input
+        // resolves it. Ready normalization grants no different native bytes.
+        auto address = ad::MemoryAccess::submitted_storage_info(value);
+        if (!address) throw std::runtime_error(std::string(address.error().message()));
+        if (address->buffer != original_address->buffer || address->offset_bytes != original_address->offset_bytes ||
+            address->view_bytes != original_address->view_bytes || address->backing_bytes != original_address->backing_bytes)
+          throw std::runtime_error("event normalization changed the original native address/span");
+      }
+      auto unchanged = ad::InvocationAccess::source_epoch(source_, runtime_);
+      if (!unchanged || *unchanged != *epoch)
+        throw std::runtime_error("event normalization replaced the original Source epoch");
+    } catch (const std::exception &failure) { status = hyle::Status::Internal(failure.what()); }
+    { std::lock_guard lock(mutex_); status_ = std::move(status); done_ = true; changed_.notify_all(); }
+  }
+  std::shared_ptr<ad::Runtime> runtime_;
+  ad::InputSource source_;
+  std::shared_ptr<PrefixCallbackGate> callback_;
+  std::mutex mutex_;
+  std::condition_variable changed_;
+  hyle::Status status_;
+  bool entered_ = false, done_ = false, inspect_address_ = false;
+};
+void exercise_device_prefix_detached_source(bool inspect_address) {
+  auto context = a::Context::create().value();
+  auto runtime = ad::ContextAccess::runtime(context);
+  auto callback = std::make_shared<PrefixCallbackGate>();
+  const std::array specs{a::InputSpec{{4}, mx::float32}};
+  auto first = ad::ContextAccess::compile_device_prefix(runtime,
+      [callback](const auto &inputs, mx::Stream stream) {
+        auto value = mx::square(inputs[0], stream);
+        return std::vector<mx::array>{mx::array(value.shape(), value.dtype(),
+            std::make_shared<PrefixCallbackCheckpoint>(stream, callback), {value})};
+      }, specs).value();
+  auto second = ad::ContextAccess::compile_device_prefix(runtime,
+      [](const auto &inputs, mx::Stream stream) { return std::vector<mx::array>{mx::square(inputs[0], stream)}; }, specs).value();
+  auto producer = first.create_invocation().value(), consumer = second.create_invocation().value();
+  const std::array inputs{mx::array({1.f, 2.f, 3.f, 4.f})};
+  ASSERT_TRUE(producer.bind(inputs).ok());
+  const auto original = ad::InvocationAccess::source(producer, 0).value();
+  std::array<ad::InputBinding, 1> late;
+  late[0].source = original;
+  ASSERT_TRUE(ad::InvocationAccess::prepare_inputs(consumer, late).ok());
+  GpuEventGate gpu(runtime);
+  FifoGate before, after;
+  DetachSignaledSource detach(runtime, original, callback, inspect_address);
+  struct OpenOnExit final {
+    GpuEventGate &gpu; FifoGate &before; FifoGate &after; std::shared_ptr<PrefixCallbackGate> callback;
+    ~OpenOnExit() { gpu.open(); callback->open(); before.open_and_join(); after.open_and_join(); }
+  } release{gpu, before, after, callback};
+  ASSERT_TRUE(gpu.enqueue().ok());
+  ASSERT_TRUE(before.enqueue(runtime).ok()); before.wait_entered();
+  callback->arm();
+  auto produced = producer.submit().value();
+  ASSERT_TRUE(detach.enqueue().ok());
+  auto consumed = consumer.submit().value();
+  before.open_and_join();
+  const bool entered = detach.wait_entered_for(std::chrono::seconds(2));
+  gpu.open();
+  const bool detached = detach.wait_done_for(std::chrono::seconds(2));
+  const auto after_admitted = after.enqueue(runtime);
+  if (after_admitted.ok()) (void)after.wait_entered_for(std::chrono::seconds(2));
+  const auto pending_producer = produced.completion().poll();
+  callback->open(); after.open_and_join();
+  const auto consumer_terminal = consumed.completion().wait();
+  const auto producer_terminal = produced.completion().wait();
+  ASSERT_TRUE(entered); ASSERT_TRUE(detached);
+  ASSERT_TRUE(detach.status().ok()) << detach.status().message();
+  ASSERT_TRUE(after_admitted.ok());
+  ASSERT_TRUE(pending_producer); EXPECT_EQ(*pending_producer, c::CompletionPoll::kPending);
+  ASSERT_TRUE(producer_terminal.ok()) << producer_terminal.message();
+  ASSERT_TRUE(consumer_terminal.ok()) << consumer_terminal.message();
+  {
+    auto output = ad::InvocationAccess::output(consumer, 0).value();
+    const std::array<float, 4> expected{1.f, 16.f, 81.f, 256.f};
+    for (std::size_t at = 0; at < expected.size(); ++at) EXPECT_FLOAT_EQ(output.data<float>()[at], expected[at]);
+  }
+  produced = {}; consumed = {}; // Release original result readers before reuse.
+  ASSERT_TRUE(producer.bind(inputs).ok());
+  auto reused_producer = producer.submit();
+  ASSERT_TRUE(reused_producer) << reused_producer.error().message();
+  auto reused_consumer = consumer.submit();
+  ASSERT_TRUE(reused_consumer) << reused_consumer.error().message();
+  ASSERT_TRUE(reused_consumer->completion().wait().ok());
+  ASSERT_TRUE(reused_producer->completion().wait().ok());
+  ASSERT_TRUE(context.close().ok());
+  { std::lock_guard lock(runtime->queue_mutex); EXPECT_EQ(runtime->native_tails, 0u); }
+}
+TEST(AppleLateInput, DevicePrefixSignaledDetachedEventKeepsItsOriginalSourceEpoch) {
+  exercise_device_prefix_detached_source(false);
+}
+TEST(AppleLateInput, DevicePrefixDetachedReadySourceRetainsItsOriginalNativeAddress) {
+  exercise_device_prefix_detached_source(true);
+}
+
 void exercise_native_signal_source(bool close_pending) {
   auto context = a::Context::create();
   ASSERT_TRUE(context) << context.error().message();

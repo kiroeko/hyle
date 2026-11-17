@@ -566,9 +566,13 @@ Result<NativeStorage> detail::MemoryAccess::storage_info(const mx::array &array)
   return submitted_storage_info(array);
 }
 Result<NativeStorage> detail::MemoryAccess::submitted_storage_info(const mx::array &array) noexcept {
-  if (array.status() != mx::array::available &&
-      (array.status() != mx::array::evaluated || !array.event().valid()))
-    return std::unexpected(Status::FailedPrecondition("Apple source address requires its original encoded array/event"));
+  try {
+    const bool pending = array.status() == mx::array::evaluated && array.event().valid();
+    // MLX may already have detached a signaled event without changing its raw
+    // evaluated status. Ready normalization neither waits nor grants a lease.
+    if (!pending && !array.is_available())
+      return std::unexpected(Status::FailedPrecondition("Apple source address requires its original encoded array/event"));
+  } catch (...) { return std::unexpected(native_exception()); }
   if (array.offset() < 0)
     return std::unexpected(Status::OutOfRange("Apple native array offset is negative"));
   // Logical nbytes excludes gaps and can understate an alias's permissions.
