@@ -17,7 +17,10 @@
 #include "hyle/graph/detail/recording_access.h"
 #include "../../src/graph_route_vulkan/vulkan_source.h"
 #include "../../src/graph_route_vulkan/native_value.h"
+#include "../../src/compute_route_vulkan/vulkan_composition_access.h"
 #include "../../src/compute_route_vulkan/vulkan_internal.h"
+#include "../../src/compute_route_vulkan/vulkan_program_internal.h"
+#include "hyle/compute/detail/vulkan_batch_access.h"
 #include "hyle/simd/dtype.h"
 
 namespace {
@@ -32,6 +35,10 @@ void check(hyle::Status status) {
 template<class T> T take_at(hyle::Result<T> value, const char *stage) {
   if (!value) throw std::runtime_error(std::string(stage) + ": " + std::string(value.error().message()));
   return std::move(*value);
+}
+void check_at(hyle::Status status, const char *stage) {
+  if (!status.ok()) throw std::runtime_error(std::string(stage) + ": " +
+      std::string(hyle::status_code_name(status.code())) + ": " + std::string(status.message()));
 }
 struct NativeEndpoint final {
   v::Context context = v::Context::create().value();
@@ -281,6 +288,315 @@ TEST(VulkanExecutionSource, ComputedViewsStayInsideTheirOriginalNativeRegion) {
   std::array<float, 4> actual{};
   check(read.view()->read(std::as_writable_bytes(std::span(actual))));
   EXPECT_EQ(actual, (std::array{-1.F, 2.F, -3.F, 4.F}));
+}
+
+TEST(VulkanExecutionSource, ComputedBoolSliceAcrossExternalControlRetainsItsNativeRoot) {
+  NativeEndpoint endpoint;
+  const auto values = take_at(c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 1>{2}), "computed Bool: F32 description");
+  auto builder = take_at(g::GraphBuilder::create(), "computed Bool: GraphBuilder");
+  const auto left = take_at(builder.input(values), "computed Bool: left input");
+  const auto right = take_at(builder.input(values), "computed Bool: right input");
+  const auto external = take_at(builder.input(values), "computed Bool: control input");
+  // A real floating != comparison, using the existing Subtract/Bool Cast
+  // recipe. The complete computed Bool[2] belongs to this original region.
+  const auto difference = take_at(builder.add(c::Binary{c::BinaryKind::kSubtract}, left, right),
+      "computed Bool: subtraction");
+  const auto predicate = take_at(builder.add(c::Cast{c::DataType::kBool}, difference),
+      "computed Bool: comparison Cast");
+  const auto shape = take_at(c::TensorShape::create(std::array<std::int64_t, 2>{1, 2}),
+      "computed Bool: control shape");
+  const auto reshape = take_at(c::View::reshape(shape), "computed Bool: control reshape");
+  const auto control = take_at(builder.add_node(c::Operation(reshape), std::array{external}),
+      "computed Bool: control View");
+  const auto select = take_at(c::View::slice(0, 1, 1), "computed Bool: Slice descriptor");
+  const auto slice = take_at(builder.add_node(c::Operation(select), std::array{predicate}),
+      "computed Bool: Slice node");
+  check_at(builder.depends_on(slice, control), "computed Bool: external control edge");
+  const auto selected = take_at(builder.result(slice), "computed Bool: Slice result");
+  // Bool->F32 is the existing native tensor Cast; Bool->I32 is unsupported.
+  // Its input still performs the same checked word32 load of Bool byte1.
+  const auto output = take_at(builder.add(c::Cast{c::DataType::kFloat32}, selected),
+      "computed Bool: result Cast");
+  check_at(builder.publish(output), "computed Bool: publish");
+  const auto graph = take_at(std::move(builder).finish(), "computed Bool: finish Graph");
+  const auto compiled = take_at(g::compile(graph, {endpoint.domains, endpoint.targets}),
+      "computed Bool: compile Graph");
+  const auto producer_step = compiled_step(compiled,
+      take_at(graph.producer(predicate), "computed Bool: producer node"));
+  const auto slice_step = compiled_step(compiled, slice);
+  const auto cast_step = compiled_step(compiled,
+      take_at(graph.producer(output), "computed Bool: result Cast node"));
+  EXPECT_EQ(compiled.report.region_count(), 2U);
+  EXPECT_EQ(producer_step.second, g::CompileStepKind::kProviderRegion);
+  EXPECT_EQ(compiled_step(compiled, control).second, g::CompileStepKind::kView);
+  EXPECT_EQ(slice_step.second, g::CompileStepKind::kProviderRegion);
+  EXPECT_EQ(slice_step, cast_step);
+  EXPECT_NE(producer_step.first, slice_step.first);
+  EXPECT_NE(compiled_step(compiled, control).first, slice_step.first);
+
+  auto pool = take_at(c::LeasePool::create(endpoint.device_owner.ref(), 1024,
+      {.max_blocks = 4, .backing_alignment = 256}), "computed Bool: input pool");
+  auto writer = take_at(pool.allocate(2 * sizeof(float), 256), "computed Bool: input writer");
+  const auto generation = writer.generation();
+  const auto original = take_at(writer.view(), "computed Bool: original writer view");
+  const std::array<std::array<float, 2>, 3> inputs{{{2.F, 1.F}, {3.F, 0.F}, {-1.F, -2.F}}};
+  check_at(original.write(std::as_bytes(std::span(inputs[0]))), "computed Bool: initialize writer");
+  auto first = take_at(writer.publish(), "computed Bool: publish input");
+  auto invocation = take_at(compiled.executable.create_invocation({.resources = g::ResourceOptions{}}),
+      "computed Bool: create Graph invocation");
+  const auto upload = [&](const std::array<float, 2> &data) {
+    const auto tensor = take_at(endpoint.context.upload(values, std::as_bytes(std::span(data))),
+        "computed Bool: upload ready input");
+    return take_at(endpoint.device.import_readonly(tensor), "computed Bool: import ready input");
+  };
+  const auto rhs = upload(std::array{2.F, 0.F});
+  const auto control_input = upload(std::array{3.F, 4.F});
+  for (std::size_t replay = 0; replay < inputs.size(); ++replay) {
+    SCOPED_TRACE(replay);
+    check_at(invocation.bind(left, values, replay == 0 ? first : upload(inputs[replay])), "computed Bool: bind left");
+    check_at(invocation.bind(right, values, rhs), "computed Bool: bind right");
+    check_at(invocation.bind(external, values, control_input), "computed Bool: bind control");
+    check_at(invocation.prepare_replay({}, {.mode = g::ReplayMode::kCommands}), "computed Bool: prepare replay");
+    if (replay == 0) {
+      HoldObservation hold(endpoint.context);
+      auto done = take_at(invocation.submit(), "computed Bool: submit held replay");
+      EXPECT_EQ(take_at(done.poll(), "computed Bool: poll held replay"), c::CompletionPoll::kPending);
+      EXPECT_FALSE(invocation.prepare_replay({}, {.mode = g::ReplayMode::kCommands}).ok());
+      EXPECT_FALSE(first.try_write());
+      hold.held = false;
+      check_at(done.wait(), "computed Bool: retire held replay"); done = {};
+    } else {
+      auto done = take_at(invocation.submit(), "computed Bool: submit replay");
+      check_at(done.wait(), "computed Bool: retire replay"); done = {};
+    }
+    const auto result = take_at(invocation.result(output), "computed Bool: Graph result");
+    auto read = take_at(result.storage_lease(), "computed Bool: result lease");
+    std::array<float, 1> actual{};
+    const auto view = take_at(read.view(), "computed Bool: result lease view");
+    check_at(view.read(std::as_writable_bytes(std::span(actual))), "computed Bool: read F32 result");
+    EXPECT_EQ(actual[0], replay == 1 ? 0.F : 1.F);
+  }
+  invocation = {};
+  auto recovered = take_at(first.try_write(), "computed Bool: reclaim original writer");
+  EXPECT_EQ(recovered.generation(), generation);
+  const auto restored = take_at(recovered.view(), "computed Bool: restored writer view");
+  EXPECT_EQ(restored.native_handle(), original.native_handle());
+  EXPECT_EQ(restored.offset(), original.offset());
+}
+
+TEST(VulkanExecutionSource, CallerBoolSubviewCannotBorrowItsUnleasedWordTail) {
+  NativeEndpoint endpoint;
+  const auto bit = take_at(c::TensorDesc::dense(c::DataType::kBool,
+      std::array<std::int64_t, 1>{1}), "caller Bool: description");
+  auto builder = take_at(g::GraphBuilder::create(), "caller Bool: GraphBuilder");
+  const auto input = take_at(builder.input(bit), "caller Bool: Graph input");
+  const auto output = take_at(builder.add(c::Cast{c::DataType::kFloat32}, input),
+      "caller Bool: supported F32 Cast");
+  check_at(builder.publish(output), "caller Bool: publish");
+  const auto graph = take_at(std::move(builder).finish(), "caller Bool: finish Graph");
+  const auto compiled = take_at(g::compile(graph, {endpoint.domains, endpoint.targets}), "caller Bool: compile Graph");
+  auto pool = take_at(c::LeasePool::create(endpoint.device_owner.ref(), 1024,
+      {.max_blocks = 4, .backing_alignment = 256}), "caller Bool: pool");
+  auto writer = take_at(pool.allocate(4, 256), "caller Bool: writer");
+  const auto generation = writer.generation();
+  const std::array<std::uint8_t, 4> bits{0, 1, 0, 1};
+  const auto original = take_at(writer.view(), "caller Bool: writer view");
+  check_at(original.write(std::as_bytes(std::span(bits))), "caller Bool: initialize backing");
+  auto backing = take_at(writer.publish(), "caller Bool: publish backing");
+  auto exact = take_at(backing.subview(1, 1), "caller Bool: exact one-byte sublease");
+  ASSERT_EQ(exact.size(), 1U);
+  EXPECT_EQ(take_at(exact.view(), "caller Bool: exact lease view").offset(),
+      take_at(backing.view(), "caller Bool: backing lease view").offset() + 1);
+  auto invocation = take_at(compiled.executable.create_invocation({.resources = g::ResourceOptions{}}),
+      "caller Bool: create Graph invocation");
+  auto refused = invocation.bind(input, bit, exact);
+  if (refused.ok()) refused = invocation.prepare_replay({}, {.mode = g::ReplayMode::kCommands});
+  // The physical allocation has four bytes; the actual caller lease grants
+  // only byte1. It cannot authorize a shader's containing 32-bit word load.
+  EXPECT_TRUE(refused.IsInvalidArgument()) << "caller Bool: exact lease bind/replay: "
+      << hyle::status_code_name(refused.code()) << ": " << refused.message();
+  const auto submitted = invocation.submit();
+  EXPECT_FALSE(submitted) << "caller Bool: refused exact lease must not submit";
+  EXPECT_FALSE(backing.try_write());
+  invocation = {}; exact.reset();
+  auto recovered = take_at(backing.try_write(), "caller Bool: reclaim backing writer");
+  EXPECT_EQ(recovered.generation(), generation);
+}
+
+TEST(VulkanExecutionSource, ComputedBoolViewOnlyOutputRetainsItsInputAliasDetachRestriction) {
+  NativeEndpoint endpoint;
+  const auto floats = take_at(c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 1>{2}), "Bool alias: F32 description");
+  const auto bits = take_at(c::TensorDesc::dense(c::DataType::kBool,
+      std::array<std::int64_t, 1>{2}), "Bool alias: Bool description");
+  const std::array<float, 2> values{0.F, 1.F};
+  const auto input = take_at(endpoint.context.upload(floats, std::as_bytes(std::span(values))), "Bool alias: upload");
+  const auto producer_program = take_at(v::prepare(endpoint.context, c::Cast{c::DataType::kBool}, floats),
+      "Bool alias: prepare producer");
+  auto producer = take_at(producer_program.create_invocation(), "Bool alias: create producer");
+  check_at(producer.bind(input), "Bool alias: bind producer");
+  v::Tensor computed;
+  {
+    auto submitted = take_at(producer.submit(), "Bool alias: submit producer");
+    const auto ready = take_at(submitted.wait(), "Bool alias: retire producer");
+    computed = ready->tensors()[0];
+  }
+  auto original_read = take_at(endpoint.device.import_readonly(computed), "Bool alias: import original read");
+  const auto imported = take_at(endpoint.device.binding(original_read, bits), "Bool alias: original native binding");
+  const auto slice = take_at(c::View::slice(0, 1, 1), "Bool alias: Slice descriptor");
+  const auto program = take_at(v::prepare(endpoint.context, slice, bits), "Bool alias: prepare View");
+  const auto &plan = *v::detail::Access::program(program);
+  ASSERT_EQ(plan.inputs.size(), 1U); ASSERT_EQ(plan.outputs.size(), 1U);
+  // Computed in the producer does not mean owned by this receiving region.
+  // Graph's native output contract classifies this same root as BoundGenerated.
+  EXPECT_EQ(plan.aliases[plan.outputs[0]].root, plan.inputs[0]);
+  auto invocation = take_at(program.create_invocation(), "Bool alias: create invocation");
+  check_at(invocation.bind(imported), "Bool alias: bind imported tensor");
+  {
+    const auto alias = take_at(v::detail::CompositionAccess::output(invocation, 0), "Bool alias: observe cold output");
+    EXPECT_EQ(alias.native_buffer(), computed.native_buffer());
+    EXPECT_EQ(alias.native_offset(), computed.native_offset() + 1);
+    EXPECT_EQ(alias.description().data_type(), c::DataType::kBool);
+    EXPECT_EQ(take_at(alias.description().required_bytes(), "Bool alias: output bytes"), 1U);
+  } // Drop the observation before sealing the original private-owner baseline.
+  check_at(v::detail::CompositionAccess::seal(invocation), "Bool alias: seal original baseline");
+  const auto cold_refusal = v::detail::PagedBatchAccess::can_detach_inputs(invocation, {});
+  EXPECT_TRUE(cold_refusal.IsUnimplemented()) << "Bool alias: cold detach: "
+      << hyle::status_code_name(cold_refusal.code()) << ": " << cold_refusal.message();
+  auto submitted = take_at(invocation.submit(), "Bool alias: submit View");
+  {
+    const auto ready = take_at(submitted.wait(), "Bool alias: retire View");
+    std::array<std::byte, 1> actual{};
+    check_at(endpoint.context.download(ready->tensors()[0], actual), "Bool alias: read original byte");
+    EXPECT_EQ(actual[0], std::byte{1});
+  }
+  auto retired = c::detail::ResultAccess::take_storage(std::move(submitted));
+  const auto retired_refusal = v::detail::PagedBatchAccess::can_detach_inputs(invocation, retired.owner);
+  EXPECT_TRUE(retired_refusal.IsUnimplemented()) << "Bool alias: retired detach: "
+      << hyle::status_code_name(retired_refusal.code()) << ": " << retired_refusal.message();
+  // Neither readiness nor the computed origin grants detach permission.
+  // Keep the original imported read, alias carrier and result owners intact.
+}
+
+TEST(VulkanExecutionSource, EscapingComputedIdsViewsStayMetadataBesideARealNativeDispatch) {
+  NativeEndpoint endpoint;
+  const auto matrix = take_at(c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 2>{2, 2}), "escaping IDs: matrix description");
+  const auto control_description = take_at(c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 1>{2}), "escaping IDs: control description");
+  auto builder = take_at(g::GraphBuilder::create(), "escaping IDs: GraphBuilder");
+  const auto input = take_at(builder.input(matrix), "escaping IDs: matrix input");
+  const auto external = take_at(builder.input(control_description), "escaping IDs: control input");
+  const auto top = take_at(builder.add_node(c::Operation(c::TopK{.count = 1}), std::array{input}),
+      "escaping IDs: TopK node");
+  const auto ids = take_at(builder.result(top, 1), "escaping IDs: original rank2 IDs");
+  const auto row_shape = take_at(c::TensorShape::create(std::array<std::int64_t, 2>{1, 2}),
+      "escaping IDs: row shape");
+  const auto row_view = take_at(c::View::reshape(row_shape), "escaping IDs: row reshape");
+  const auto control = take_at(builder.add_node(c::Operation(row_view), std::array{external}),
+      "escaping IDs: external metadata control");
+  const auto flat_shape = take_at(c::TensorShape::create(std::array<std::int64_t, 1>{2}),
+      "escaping IDs: flat shape");
+  const auto flat_view = take_at(c::View::reshape(flat_shape), "escaping IDs: flat reshape");
+  const auto flat_node = take_at(builder.add_node(c::Operation(flat_view), std::array{ids}),
+      "escaping IDs: flat View node");
+  check_at(builder.depends_on(flat_node, control), "escaping IDs: real control frontier");
+  const auto flat = take_at(builder.result(flat_node), "escaping IDs: flat result");
+  const auto row_node = take_at(builder.add_node(c::Operation(row_view), std::array{ids}),
+      "escaping IDs: second escaping View node");
+  const auto row = take_at(builder.result(row_node), "escaping IDs: row result");
+  // A real, supported dispatch is not ownership evidence for either sibling
+  // alias. The over-broad candidate exports both I32 Views and this F32 output.
+  const auto widened = take_at(builder.add(c::Cast{c::DataType::kFloat32}, flat),
+      "escaping IDs: native I32-to-F32 Cast");
+  for (const auto output : {flat, row, widened})
+    check_at(builder.publish(output), "escaping IDs: publish exact output");
+  const auto graph = take_at(std::move(builder).finish(), "escaping IDs: finish Graph");
+  const auto compiled = take_at(g::compile(graph, {endpoint.domains, endpoint.targets}),
+      "escaping IDs: cold Graph qualification");
+  const auto top_step = compiled_step(compiled, top);
+  const auto cast_step = compiled_step(compiled,
+      take_at(graph.producer(widened), "escaping IDs: Cast producer"));
+  EXPECT_EQ(compiled.report.region_count(), 2U);
+  EXPECT_EQ(top_step.second, g::CompileStepKind::kProviderRegion);
+  EXPECT_EQ(cast_step.second, g::CompileStepKind::kProviderRegion);
+  EXPECT_NE(top_step.first, cast_step.first);
+  EXPECT_EQ(compiled_step(compiled, control).second, g::CompileStepKind::kView);
+  EXPECT_EQ(compiled_step(compiled, flat_node).second, g::CompileStepKind::kView);
+  EXPECT_EQ(compiled_step(compiled, row_node).second, g::CompileStepKind::kView);
+  for (const auto output : {flat, row}) {
+    bool found = false;
+    for (std::size_t index = 0; index < compiled.report.physical_value_count(); ++index) {
+      const auto value = take_at(compiled.report.physical_value(index), "escaping IDs: physical View");
+      if (value.value != output) continue;
+      found = true;
+      ASSERT_TRUE(value.alias_source.has_value());
+      const auto root = take_at(compiled.report.physical_value(*value.alias_source), "escaping IDs: original alias root");
+      EXPECT_EQ(root.value, ids);
+      EXPECT_EQ(root.description.data_type(), c::DataType::kInt32);
+      EXPECT_EQ(root.description.rank(), 2U);
+      EXPECT_EQ(value.storage, root.storage);
+      EXPECT_FALSE(value.constant);
+    }
+    EXPECT_TRUE(found);
+  }
+
+  const std::array<std::array<float, 4>, 3> inputs{{
+      {1.F, 3.F, 4.F, 2.F}, {5.F, 2.F, 1.F, 6.F}, {-2.F, -1.F, -8.F, -3.F}}};
+  const std::array<std::array<std::int32_t, 2>, 3> expected{{{1, 0}, {0, 1}, {1, 1}}};
+  auto pool = take_at(c::LeasePool::create(endpoint.device_owner.ref(), 1024,
+      {.max_blocks = 4, .backing_alignment = 256}), "escaping IDs: input pool");
+  auto writer = take_at(pool.allocate(sizeof(inputs[0]), 256), "escaping IDs: original writer");
+  const auto generation = writer.generation();
+  const auto original = take_at(writer.view(), "escaping IDs: original writer view");
+  check_at(original.write(std::as_bytes(std::span(inputs[0]))), "escaping IDs: initialize first input");
+  auto first = take_at(writer.publish(), "escaping IDs: publish first input");
+  const std::array<float, 2> controls{3.F, 4.F};
+  const auto control_tensor = take_at(endpoint.context.upload(control_description, std::as_bytes(std::span(controls))),
+      "escaping IDs: upload control");
+  const auto control_read = take_at(endpoint.device.import_readonly(control_tensor), "escaping IDs: control read");
+  auto invocation = take_at(compiled.executable.create_invocation({.resources = g::ResourceOptions{}}),
+      "escaping IDs: create original invocation");
+  c::ReadLease escaped;
+  for (std::size_t replay = 0; replay < inputs.size(); ++replay) {
+    SCOPED_TRACE(replay);
+    auto ready = first;
+    if (replay != 0) {
+      const auto uploaded = take_at(endpoint.context.upload(matrix, std::as_bytes(std::span(inputs[replay]))),
+          "escaping IDs: upload next input");
+      ready = take_at(endpoint.device.import_readonly(uploaded), "escaping IDs: next input read");
+    }
+    check_at(invocation.bind(input, matrix, ready), "escaping IDs: bind matrix");
+    check_at(invocation.bind(external, control_description, control_read), "escaping IDs: bind control");
+    check_at(invocation.prepare_replay({}, {.mode = g::ReplayMode::kCommands}), "escaping IDs: prepare replay");
+    auto done = take_at(invocation.submit(), "escaping IDs: submit real native graph");
+    check_at(done.wait(), "escaping IDs: retire original graph"); done = {};
+    for (const auto output : {flat, row}) {
+      const auto result = take_at(invocation.result(output), "escaping IDs: metadata result");
+      auto read = take_at(result.storage_lease(), "escaping IDs: original alias read");
+      const auto view = take_at(read.view(), "escaping IDs: alias read view");
+      std::array<std::int32_t, 2> actual{};
+      check_at(view.read(std::as_writable_bytes(std::span(actual))), "escaping IDs: read I32 alias");
+      EXPECT_EQ(actual, expected[replay]);
+      if (replay + 1 == inputs.size() && output == flat) escaped = std::move(read);
+    }
+    const auto result = take_at(invocation.result(widened), "escaping IDs: owned Cast result");
+    const auto read = take_at(result.storage_lease(), "escaping IDs: owned Cast read");
+    const auto view = take_at(read.view(), "escaping IDs: owned Cast view");
+    std::array<float, 2> actual{};
+    check_at(view.read(std::as_writable_bytes(std::span(actual))), "escaping IDs: read real Cast output");
+    for (std::size_t index = 0; index < actual.size(); ++index)
+      EXPECT_EQ(actual[index], static_cast<float>(expected[replay][index]));
+  }
+  invocation = {};
+  std::array<std::int32_t, 2> retained{};
+  const auto retained_view = take_at(escaped.view(), "escaping IDs: escaped read after invocation destruction");
+  check_at(retained_view.read(std::as_writable_bytes(std::span(retained))), "escaping IDs: retained original IDs");
+  EXPECT_EQ(retained, expected.back());
+  escaped.reset();
+  const auto recovered = take_at(first.try_write(), "escaping IDs: reclaim original input after retirement");
+  EXPECT_EQ(recovered.generation(), generation);
 }
 
 void constant_weight_view_case(bool control_frontier, bool metadata_chain) {

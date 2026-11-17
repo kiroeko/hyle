@@ -8,6 +8,7 @@
 #include "native_value.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <mutex>
 #include <new>
 #include <unordered_set>
@@ -163,6 +164,37 @@ Status qualify(const RegionCompileRequest &request) noexcept {
       (request.route != 1 && request.route != kCtPackedRoute && request.route != kStaticFp8Route) || request.nodes.empty() ||
       request.has_unknown_effects || !request.effect_accesses.empty())
     return Status::Unimplemented("Vulkan native region requires a fixed pure boundary");
+  // A prefix View may borrow a computed input for internal consumption, but
+  // exporting that alias would pin the input carrier across slot rearming.
+  // Leave such boundaries to Graph metadata instead of claiming native output
+  // ownership. Qualification also covers masked singleton proposals.
+  const auto qualify_output = [&](ValueId output) -> Status {
+    auto root = output;
+    bool view = false;
+    while (root.kind() == ValueKind::kNodeOutput) {
+      HYLE_ASSIGN_OR_RETURN(auto producer, request.graph->producer(root));
+      HYLE_ASSIGN_OR_RETURN(const auto &operation, request.graph->operation(producer));
+      if (!operation.get_if<compute::View>()) break;
+      view = true;
+      HYLE_ASSIGN_OR_RETURN(root, request.graph->node_input(producer, 0));
+    }
+    if (view && root.kind() == ValueKind::kNodeOutput) {
+      HYLE_ASSIGN_OR_RETURN(auto producer, request.graph->producer(root));
+      if (std::ranges::find(request.nodes, producer) == request.nodes.end())
+        return Status::Unimplemented("Vulkan external computed View requires a metadata boundary");
+    }
+    return Status::Ok();
+  };
+  for (const auto output : request.outputs) HYLE_RETURN_IF_ERROR(qualify_output(output));
+  // Control-only fragments expose their last native results privately too.
+  if (request.outputs.empty()) {
+    const auto terminal = request.nodes.back();
+    HYLE_ASSIGN_OR_RETURN(auto outputs, request.graph->node_output_count(terminal));
+    for (std::size_t port = 0; port < outputs; ++port) {
+      HYLE_ASSIGN_OR_RETURN(auto output, request.graph->result(terminal, port));
+      HYLE_RETURN_IF_ERROR(qualify_output(output));
+    }
+  }
   for (const auto node : request.nodes) {
     HYLE_ASSIGN_OR_RETURN(auto operation, request.graph->operation(node));
     const auto traits = compute::operation_traits(operation);
@@ -217,6 +249,12 @@ Status propose(void *context, const RegionDiscoveryRequest &request,
           }
           HYLE_ASSIGN_OR_RETURN(auto dependencies, graph.node_dependency_count(node));
           if (root.kind() == ValueKind::kConstant) return dependencies != 0;
+          // A computed producer can precede a real region frontier. Keep its
+          // View with the consuming native computation so the original whole
+          // Tensor (and its actual granted scope) crosses that boundary.
+          // Converting a packed-byte slice to a metadata-only external input
+          // would narrow it before the word-addressed consumer can bind it.
+          if (root.kind() == ValueKind::kNodeOutput) return true;
           for (std::size_t edge = 0; edge < dependencies; ++edge) {
             HYLE_ASSIGN_OR_RETURN(auto before, graph.node_dependency(node, edge));
             if (inside(before)) return true;
@@ -824,7 +862,25 @@ const graph::detail::RegionBindingReleaseVTable binding_release_table{
       const auto &slot = *static_cast<const Slot *>(invocation);
       if (!slot.invocation.valid())
         return slot.result ? Status::FailedPrecondition("native result has no invocation") : Status::Ok();
-      return vn::PagedBatchAccess::can_detach_inputs(slot.invocation, slot.result);
+      const auto status = vn::PagedBatchAccess::can_detach_inputs(slot.invocation, slot.result);
+      if (!status.IsUnimplemented()) return status;
+      const auto &program = *vn::Access::invocation_state(slot.invocation)->program;
+      for (std::size_t port = 0; port < program.outputs.size(); ++port) {
+        const auto value = program.outputs[port];
+        const auto alias = program.aliases[value];
+        if (std::ranges::find(program.inputs, alias.root) == program.inputs.end()) continue;
+        char message[512];
+        std::snprintf(message, sizeof(message),
+            "Vulkan input-alias output cannot detach its fixed carrier: "
+            "port=%zu dtype=%u rank=%zu root_rank=%zu alias_offset=%llu "
+            "inputs=%zu outputs=%zu dispatches=%zu values=%zu",
+            port, static_cast<unsigned>(program.values[value].description.data_type()),
+            program.values[value].description.rank(), program.values[alias.root].description.rank(),
+            static_cast<unsigned long long>(alias.byte_offset), program.inputs.size(),
+            program.outputs.size(), program.dispatches.size(), program.values.size());
+        return Status::Unimplemented(message);
+      }
+      return status;
     },
     .release = [](void *, void *invocation) noexcept {
       auto &slot = *static_cast<Slot *>(invocation);
