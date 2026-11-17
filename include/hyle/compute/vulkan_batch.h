@@ -6,6 +6,14 @@
 #include "hyle/compute/batch_paged_native.h"
 #include "hyle/compute/vulkan_memory.h"
 namespace hyle::compute::vulkan {
+// Cold metadata-only qualification on the original Context and real device
+// limits. This describes device-length paged attention, not append, capture,
+// pending Source import or an entire model's execution route. Invalid inputs
+// and closed/failed Contexts retain their errors; unsupported recipes return
+// false. No native program, tensor storage or submitted work is created.
+HYLE_COMPUTE_ROUTE_VULKAN_API Result<bool> supports_device_lengths_paged(
+    const Context &, BatchCapacity, const ResourceBudget & = {}) noexcept;
+
 // Cold immutable host-known ragged layout. Three packed-capacity Q/K/V ports;
 // output contains this layout's active packed Q rows. Reuse the original
 // Program/Invocation and owners; another Q topology needs explicit preparation.

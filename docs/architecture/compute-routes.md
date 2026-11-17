@@ -148,6 +148,9 @@ ggml-Vulkan可能每次编码并分批提交，IREE与原生程序也有各自ru
 不读取padding。错误结果仍等待原生完成与退休，不由设备错误字授权提前复用资源。
 
 设备长度分页注意力使用原Vulkan Runtime／Invocation，冷期固定schema、物理Q形状、pipeline和F32分段工作区。
+`supports_device_lengths_paged`在原Context上复用实际lowering的形状、索引、descriptor和设备限制检查，
+只查询元数据，不创建pipeline、分配设备载荷或提交工作。严格预算不允许未归因的原生私有存储时返回不支持；
+无效输入、已关闭或失败的Context仍返回原错误，查询通过不授予Graph、Source或整模型的执行资格。
 目前接纳普通F16／BF16 KV、偶数QK深度和不超过256的偶数V深度。每次先检查整组设备Q／KV长度和实际使用的页索引，
 再计算注意力并将非活动输出置零；不将实际长度回读到主机重新准备程序。
 公共布局身份和页权限仍归原Graph所有；原生程序接收其只读I32物理视图，同schema的新容量版本仅更新槽内元数据。

@@ -1,11 +1,13 @@
 #include "vulkan_device_lengths.h"
 #include "vulkan_carrier.h"
 #include "vulkan_program_internal.h"
+#include "hyle/compute/vulkan_batch.h"
 
 #include <algorithm>
 #include <array>
 #include <bit>
 #include <cmath>
+#include <mutex>
 #include <new>
 
 namespace hyle::compute::vulkan::detail {
@@ -36,6 +38,37 @@ Result<std::vector<TensorDesc>> descriptions(const DeviceLengthsPagedRead &d) no
   return std::unexpected(Status::ResourceExhausted("Vulkan device length descriptions"));
 }
 std::uint32_t encoding(DataType type) noexcept { return type == DataType::kBFloat16 ? 2U : 1U; }
+struct PagedLaunch final {
+  TensorDesc partials;
+  std::uint32_t splits = 0;
+  std::uint32_t groups = 0;
+};
+// The public cold query and actual native lowering use the same physical
+// qualification. This function reads immutable descriptors and device limits;
+// it creates no VkPipeline, backing allocation or execution authority.
+Result<PagedLaunch> qualify_launch(const VkPhysicalDeviceLimits &limits,
+    const DeviceLengthsPagedRead &description,
+    std::span<const TensorDesc> inputs, const TensorDesc &output) noexcept {
+  if (limits.maxComputeWorkGroupInvocations < 64 || limits.maxComputeWorkGroupSize[0] < 64 ||
+      limits.maxPerStageDescriptorStorageBuffers < bindings || limits.maxDescriptorSetStorageBuffers < bindings ||
+      limits.maxPushConstantsSize < push_bytes || limits.maxComputeSharedMemorySize < 512)
+    return std::unexpected(Status::Unimplemented("Vulkan device length descriptor/workgroup limits"));
+  for (const auto &input : inputs)
+    if (*input.element_count() > UINT32_MAX || *input.required_bytes() > limits.maxStorageBufferRange)
+      return std::unexpected(Status::Unimplemented("Vulkan device length input indexing/buffer limits"));
+  if (*output.element_count() > UINT32_MAX || *output.required_bytes() > limits.maxStorageBufferRange)
+    return std::unexpected(Status::Unimplemented("Vulkan device length output indexing/buffer limits"));
+  const auto c = description.schema.capacity();
+  const auto splits = std::min(32U, std::max(1U, (c.max_kv_rows + 511U) / 512U));
+  const auto groups = std::uint64_t(description.rows) * c.query_heads * splits;
+  if (groups > limits.maxComputeWorkGroupCount[0])
+    return std::unexpected(Status::Unimplemented("Vulkan device length dispatch limit"));
+  HYLE_ASSIGN_OR_RETURN(auto partials, TensorDesc::dense(DataType::kFloat32,
+      std::array<std::int64_t, 2>{static_cast<std::int64_t>(groups), c.value_head_dim + 2}));
+  if (*partials.element_count() > UINT32_MAX || *partials.required_bytes() > limits.maxStorageBufferRange)
+    return std::unexpected(Status::Unimplemented("Vulkan device length partial buffer limit"));
+  return PagedLaunch{std::move(partials), splits, static_cast<std::uint32_t>(groups)};
+}
 } // namespace
 
 Status qualify_device_lengths_paged_schema(const BatchSchema &schema, float scale,
@@ -101,27 +134,12 @@ Status lower_device_lengths_paged(ProgramState &program, const PlanStep &step) n
   HYLE_RETURN_IF_ERROR(d->infer_output_descriptions(inputs, std::span(&output, 1)));
   if (output != program.values[step.outputs[0]].description)
     return Status::InvalidArgument("Vulkan device length output differs");
-  const auto &limits = program.runtime->device->properties.limits;
-  if (limits.maxComputeWorkGroupInvocations < 64 || limits.maxComputeWorkGroupSize[0] < 64 ||
-      limits.maxPerStageDescriptorStorageBuffers < bindings || limits.maxDescriptorSetStorageBuffers < bindings ||
-      limits.maxPushConstantsSize < push_bytes || limits.maxComputeSharedMemorySize < 512)
-    return Status::Unimplemented("Vulkan device length descriptor/workgroup limits");
-  for (const auto &input : inputs)
-    if (*input.element_count() > UINT32_MAX || *input.required_bytes() > limits.maxStorageBufferRange)
-      return Status::Unimplemented("Vulkan device length input indexing/buffer limits");
-  if (*output.element_count() > UINT32_MAX || *output.required_bytes() > limits.maxStorageBufferRange)
-    return Status::Unimplemented("Vulkan device length output indexing/buffer limits");
+  HYLE_ASSIGN_OR_RETURN(auto launch, qualify_launch(program.runtime->device->properties.limits,
+      *d, inputs, output));
   const auto c = d->schema.capacity();
-  const auto splits = std::min(32U, std::max(1U, (c.max_kv_rows + 511U) / 512U));
-  const auto groups = std::uint64_t(d->rows) * c.query_heads * splits;
-  if (groups > limits.maxComputeWorkGroupCount[0])
-    return Status::Unimplemented("Vulkan device length dispatch limit");
-  HYLE_ASSIGN_OR_RETURN(auto partials, TensorDesc::dense(DataType::kFloat32,
-      std::array<std::int64_t, 2>{static_cast<std::int64_t>(groups), c.value_head_dim + 2}));
-  if (*partials.element_count() > UINT32_MAX || *partials.required_bytes() > limits.maxStorageBufferRange)
-    return Status::Unimplemented("Vulkan device length partial buffer limit");
+  const auto splits = launch.splits, groups = launch.groups;
   const auto partial = static_cast<std::uint32_t>(program.values.size());
-  program.values.push_back({partials, {}}); program.aliases.push_back({partial, 0});
+  program.values.push_back({std::move(launch.partials), {}}); program.aliases.push_back({partial, 0});
   if (!program.status_value) {
     HYLE_ASSIGN_OR_RETURN(auto status, TensorDesc::dense(DataType::kInt32, {}));
     const auto id = static_cast<std::uint32_t>(program.values.size());
@@ -161,3 +179,33 @@ Status lower_device_lengths_paged(ProgramState &program, const PlanStep &step) n
   return Status::ResourceExhausted("Vulkan device length pipeline metadata");
 }
 } // namespace hyle::compute::vulkan::detail
+
+namespace hyle::compute::vulkan {
+Result<bool> supports_device_lengths_paged(const Context &context, BatchCapacity capacity,
+    const ResourceBudget &budget) noexcept {
+  if (!context.valid())
+    return std::unexpected(Status::FailedPrecondition("Vulkan device lengths query requires its original Context"));
+  const auto &runtime = detail::Access::runtime(context);
+  {
+    std::lock_guard lock(runtime->mutex);
+    if (runtime->closed)
+      return std::unexpected(Status::FailedPrecondition("Vulkan device lengths Context is closed"));
+    HYLE_RETURN_IF_ERROR(runtime->failure);
+  }
+  HYLE_RETURN_IF_ERROR(validate_batch_capacity(capacity));
+  HYLE_ASSIGN_OR_RETURN(auto schema, BatchSchema::create(capacity, {.resource_budget = budget}));
+  const auto domain = detail::qualify_device_lengths_paged_schema(schema, 1.F, true, -1);
+  if (domain.IsUnimplemented()) return false;
+  HYLE_RETURN_IF_ERROR(domain);
+  const detail::DeviceLengthsPagedRead description{std::move(schema), capacity.max_query_rows,
+      1.F, true, -1, true};
+  HYLE_ASSIGN_OR_RETURN(auto inputs, detail::descriptions(description));
+  HYLE_ASSIGN_OR_RETURN(auto output, batch_output_description(capacity, capacity.max_query_rows));
+  auto launch = detail::qualify_launch(runtime->device->properties.limits, description, inputs, output);
+  if (!launch && launch.error().IsUnimplemented()) return false;
+  if (!launch) return std::unexpected(launch.error());
+  // The native implementation still reports driver/pipeline-private storage
+  // as unattributed; a strict budget cannot be advertised as qualified.
+  return !budget.valid() || budget.allows_unattributed();
+}
+} // namespace hyle::compute::vulkan

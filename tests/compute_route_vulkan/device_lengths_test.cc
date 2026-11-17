@@ -3,6 +3,7 @@
 #include "../../src/compute_route_vulkan/vulkan_device_lengths.h"
 #include "../../src/compute_route_vulkan/vulkan_program_internal.h"
 #include "../../src/compute_route_vulkan/vulkan_composition_access.h"
+#include "hyle/compute/vulkan_batch.h"
 #include "tensor_test_support.h"
 
 #include <optional>
@@ -239,5 +240,43 @@ TEST(VulkanDeviceLengths, ColdAdmissionRejectsEmptyAndUnsupportedMathematicalSch
     auto unsupported=take(c::BatchSchema::create(capacity));
     EXPECT_TRUE(d::qualify_device_lengths_paged_schema(unsupported,1.F,true,-1).IsUnimplemented());
   }
+}
+TEST(VulkanDeviceLengths, OriginalContextQuerySharesNativeShapeAndDeviceLimitQualification) {
+  Cell<BF16> cell(64,64,39);
+  v::Context absent;
+  const auto missing = v::supports_device_lengths_paged(absent, cell.capacity);
+  ASSERT_FALSE(missing); EXPECT_TRUE(missing.error().IsFailedPrecondition());
+  for (const auto type : {c::DataType::kFloat16, c::DataType::kBFloat16}) {
+    auto capacity = cell.capacity;
+    capacity.query_type = capacity.output_type = type;
+    capacity.key_storage = capacity.value_storage = take(c::CacheStorage::plain(type));
+    EXPECT_TRUE(take(v::supports_device_lengths_paged(cell.context, capacity)));
+  }
+  auto unsupported = cell.capacity;
+  unsupported.query_type = c::DataType::kFloat32;
+  EXPECT_FALSE(take(v::supports_device_lengths_paged(cell.context, unsupported)));
+  unsupported = cell.capacity; unsupported.value_head_dim = 258;
+  EXPECT_FALSE(take(v::supports_device_lengths_paged(cell.context, unsupported)));
+  // A valid logical schema may still exceed the actual physical device's
+  // storage-buffer range. No cache payload or native work is allocated here.
+  unsupported = cell.capacity; unsupported.max_pages = INT32_MAX;
+  EXPECT_FALSE(take(v::supports_device_lengths_paged(cell.context, unsupported)));
+  auto invalid = cell.capacity; invalid.max_query_rows = 0;
+  const auto malformed = v::supports_device_lengths_paged(cell.context, invalid);
+  ASSERT_FALSE(malformed); EXPECT_TRUE(malformed.error().IsInvalidArgument());
+  EXPECT_EQ(d::Access::runtime(cell.context)->pending, nullptr);
+}
+TEST(VulkanDeviceLengths, ColdQueryPreservesUnknownBudgetAndClosedContextContracts) {
+  Cell<BF16> cell(64,64,39);
+  const std::array limits{c::ResourceBudgetLimit{hyle::mem::system_resource(), 1u << 20}};
+  const auto strict = take(c::ResourceBudget::create({.limits = limits}));
+  const auto partial = take(c::ResourceBudget::create({.limits = limits, .allow_unattributed = true}));
+  EXPECT_FALSE(take(v::supports_device_lengths_paged(cell.context, cell.capacity, strict)));
+  EXPECT_TRUE(take(v::supports_device_lengths_paged(cell.context, cell.capacity, partial)));
+  check(cell.context.close());
+  const auto closed = v::supports_device_lengths_paged(cell.context, cell.capacity);
+  ASSERT_FALSE(closed); EXPECT_TRUE(closed.error().IsFailedPrecondition());
+  auto independent = take(vulkan_test::context());
+  EXPECT_TRUE(take(v::supports_device_lengths_paged(independent, cell.capacity)));
 }
 } // namespace
