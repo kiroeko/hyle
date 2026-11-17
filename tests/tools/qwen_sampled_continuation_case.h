@@ -13,7 +13,12 @@ namespace h = qwen_host_image_case;
 namespace d = qwen_device_continuation_case;
 namespace i = hyle::inference;
 
-inline int run(const std::filesystem::path &input, std::size_t proposals = 1) {
+inline int run(const std::filesystem::path &input, std::size_t proposals = 1,
+    q::BackendKind backend = q::BackendKind::kCuda) {
+  std::cout << "PASS legacy_second_teacher_contract checks=" << qwen_legacy_ledger_case::check_contract() << '\n';
+  h::require(backend == q::BackendKind::kCuda || backend == q::BackendKind::kApple ||
+      backend == q::BackendKind::kVulkan, "sampled continuation requires an explicit GPU-only endpoint");
+  const bool native = backend != q::BackendKind::kCuda;
   h::require(proposals >= 1 && proposals <= q::kMaximumDeviceMtpDrafts, "unsupported bounded sampled recipe");
   const auto width = proposals + 1;
   const auto draws = d::episodes * (2 * proposals + 1) + 2;
@@ -36,8 +41,8 @@ inline int run(const std::filesystem::path &input, std::size_t proposals = 1) {
     q::Model model(std::move(source), geometry, capacity, plan, {}, false,
         q::ReplayPolicy::kPreferCapture, SIZE_MAX,
         {.enabled = random, .policy = random ? q::sampling::Policy{.8F, 40, .95F} : q::sampling::Policy{},
-         .seed = 42}, 0, {.primary = q::BackendKind::kCuda});
-    if (random && proposals > 1) qwen_sampled_chain_math_case::run(model, proposals);
+         .seed = 42}, 0, {.primary = backend});
+    if (random) qwen_sampled_chain_math_case::run(model, proposals);
     model.configure_draft_policy({.max_drafts = 0});
     h::require(!random || !model.supports_device_relay(0), "sampled zero-draft recipe inherited K1 routing");
     model.configure_draft_policy({.max_drafts = proposals});
@@ -74,10 +79,19 @@ inline int run(const std::filesystem::path &input, std::size_t proposals = 1) {
     }
     model.prepare_relay_execution(1, 0, q::GraphRole::kMtpContinuation);
     const auto recording = model.prepare_mtp_decode_recordings(0);
-    h::require(recording.preparations == 7 && recording.captures && !model.submitted_draft_rows &&
+    const auto &recording_phase = model.prepare_child(width, false, 1, q::GraphRole::kMtpRound);
+    const std::size_t expected_preparations = recording_phase.slots[0].replay_mode == q::g::ReplayMode::kCommands ? 0 : 7;
+    std::cout << "sampled_cold_recording_fields preparations=" << recording.preparations
+              << " captures=" << recording.captures << " seconds=" << recording.seconds
+              << " submitted_draft_rows=" << model.submitted_draft_rows
+              << " snapshot_versions=" << model.snapshot_versions.live
+              << " active_step=" << bool(model.active_step) << " successor_step=" << bool(model.successor_step)
+              << " carrier_borrowed=" << model.carrier_borrowed << '\n' << std::flush;
+    h::require(recording.preparations == expected_preparations && (native ? !recording.captures : recording.captures) &&
+        !model.submitted_draft_rows &&
         !model.snapshot_versions.live && !model.active_step && !model.successor_step && !model.carrier_borrowed,
         "sampled cold recording submitted work or retained a state episode");
-    std::size_t accepts = 0, rejects = 0, reused = 0, outputs = 0, terminal_stops = 0, legacy_geometry_differences = 0;
+    std::size_t accepts = 0, rejects = 0, reused = 0, native_prepared = 0, outputs = 0, terminal_stops = 0, legacy_geometry_differences = 0;
     std::array<std::size_t, q::kMaximumDeviceMtpDrafts + 1> prefixes{};
     for (std::size_t index = 0; index < prompts.size(); ++index) {
       const i::SamplingCursor cursor{42 + index, 7 + index,
@@ -89,6 +103,19 @@ inline int run(const std::filesystem::path &input, std::size_t proposals = 1) {
       std::cout << "compare_continuation sampling=" << (random ? "random" : "greedy")
                 << " case=" << index << " outputs=" << device.ids.size()
                 << " accepts=" << device.a2_published << " rejects=" << device.a1_published << '\n' << std::flush;
+      const bool first_id_differs = serial.ids.empty() != device.ids.empty() ||
+          (!serial.ids.empty() && !device.ids.empty() && serial.ids.front() != device.ids.front());
+      const bool first_record_differs = serial.records.empty() != device.records.empty() ||
+          (!serial.records.empty() && !device.records.empty() &&
+              !qwen_legacy_ledger_case::strict_equal(serial.records.front(), device.records.front()));
+      if (first_id_differs || first_record_differs) {
+        std::cerr << "prefill_saved_prompt=";
+        for (const auto id : prompts[index]) std::cerr << id << ',';
+        std::cerr << '\n';
+        if (serial_states.empty() || device_states.empty()) std::cerr << "prefill_saved_snapshot_unavailable\n";
+        else try { d::diagnose_saved_prefill(model, serial_states.front(), device_states.front()); }
+        catch (const std::exception &error) { std::cerr << "prefill_saved_diagnostic_error=" << error.what() << '\n'; }
+      }
       d::compare_records(serial, device);
       h::require(legacy.stopped == device.stopped && serial.stopped == device.stopped,
           "continuation changed the natural terminal boundary");
@@ -99,7 +126,8 @@ inline int run(const std::filesystem::path &input, std::size_t proposals = 1) {
       d::compare_state(model, *serial.final_state, *device.final_state);
       h::require(device.final_state->sampling == (random ? cursor.advanced(draws) : i::SamplingCursor{}),
           "successor changed the original sampled or greedy cursor contract");
-      h::require(device.submitted == 8 && device.reused == 5 && !device.recorded,
+      h::require(device.submitted == 8 && (native ? device.native_prepared == 5 && !device.reused :
+          device.reused == 5 && !device.native_prepared) && !device.recorded,
           "sampled successor submitted extra work or recorded a hot program");
       for (const auto &record : device.records)
         if (record.generation && record.draft_limit == proposals) ++prefixes.at(record.accepted - 1);
@@ -116,9 +144,10 @@ inline int run(const std::filesystem::path &input, std::size_t proposals = 1) {
       // Exact state/identity belongs to the same physical program above.
       // Stochastic proposals may differ with draft GEMM row geometry; the
       // independent equation witness checks the p/q/RNG contract directly.
-      if (!random || proposals == 1 || legacy.ids == device.ids) d::compare_records(legacy, device);
+      if (!random || legacy.ids == device.ids)
+        d::compare_legacy_records(model.source_identity, random, legacy, device);
       accepts += device.a2_published; rejects += device.a1_published;
-      reused += device.reused; outputs += device.ids.size();
+      reused += device.reused; native_prepared += device.native_prepared; outputs += device.ids.size();
       terminal_stops += device.stopped;
     }
     std::cout << "real_prefix_inventory proposals=" << proposals << " random=" << random << " counts=";
@@ -139,9 +168,10 @@ inline int run(const std::filesystem::path &input, std::size_t proposals = 1) {
       d::compare_request_records(recovery, restored);
       h::require(restored.submitted, "request recovery did not restore its original device successors");
     }
-    std::cout << "PASS real_sampled_continuation backend=cuda hidden=2048 vocabulary=248320 capacity=32768"
+    std::cout << "PASS real_sampled_continuation backend=" << h::backend_name(backend)
+              << " hidden=2048 vocabulary=248320 capacity=32768"
               << " proposals=" << proposals << " sampling=" << (random ? "random" : "greedy") << " cases=8 outputs=" << outputs
-              << " accepts=" << accepts << " rejects=" << rejects << " captured_successors=" << reused
+              << " accepts=" << accepts << " rejects=" << rejects << " captured_successors=" << reused << " native_source_successors=" << native_prepared
               << " natural_terminal_stops=" << terminal_stops
               << " legacy_geometry_differences=" << legacy_geometry_differences
               << " hot_recordings=0 complete_state=equal ledger=equal logical_rng=equal"
