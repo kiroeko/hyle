@@ -3,6 +3,7 @@
 #include "../../src/compute_route_vulkan/vulkan_device_lengths.h"
 #include "../../src/compute_route_vulkan/vulkan_program_internal.h"
 #include "../../src/compute_route_vulkan/vulkan_composition_access.h"
+#include "hyle/compute/detail/vulkan_batch_access.h"
 #include "hyle/compute/vulkan_batch.h"
 #include "tensor_test_support.h"
 
@@ -278,5 +279,133 @@ TEST(VulkanDeviceLengths, ColdQueryPreservesUnknownBudgetAndClosedContextContrac
   ASSERT_FALSE(closed); EXPECT_TRUE(closed.error().IsFailedPrecondition());
   auto independent = take(vulkan_test::context());
   EXPECT_TRUE(take(v::supports_device_lengths_paged(independent, cell.capacity)));
+}
+
+TEST(VulkanDeviceLengths, ShortBfloatPrefixComparesOriginalHostAndDeviceReaders) {
+  constexpr std::uint32_t rows = 3, history = 7, heads = 8, kv_heads = 2, depth = 256;
+  constexpr std::uint32_t capacity_rows = 32768, page_size = 16, physical_page = 17;
+  constexpr float scale = 1.F / 16.F;
+  auto context = take(vulkan_test::context());
+  const auto storage = take(c::CacheStorage::plain(c::DataType::kBFloat16));
+  const c::BatchCapacity capacity{.query_type = c::DataType::kBFloat16,
+      .output_type = c::DataType::kBFloat16, .key_storage = storage, .value_storage = storage,
+      .max_requests = 1, .max_query_rows = rows, .max_kv_rows = capacity_rows,
+      .max_pages = capacity_rows / page_size, .max_page_refs = capacity_rows / page_size,
+      .query_heads = heads, .kv_heads = kv_heads, .qk_head_dim = depth,
+      .value_head_dim = depth, .page_size = page_size};
+  const auto schema = take(c::BatchSchema::create(capacity));
+  const std::array<std::int32_t, 2> query_indptr{0, rows}, kv_indptr{0, 1};
+  const std::array<std::int32_t, 1> pages{physical_page}, active_tail{history}, envelope_tail{page_size};
+  const auto host_layout = take(schema.version({query_indptr, kv_indptr, pages, active_tail}));
+  const auto envelope = take(schema.version({query_indptr, kv_indptr, pages, envelope_tail}));
+  const auto recipe = take(c::NativePagedBatchProgram::prepare(schema,
+      {.max_host_metadata_bytes = capacity.max_page_refs * sizeof(std::int32_t),
+       .scale = scale, .causal = true, .window_left = -1}));
+  const auto host_program = take(d::PagedBatchAccess::prepare_paged_graph(
+      d::Access::runtime(context), recipe, host_layout, rows, {}));
+  const auto device_program = take(d::prepare_device_lengths_paged_graph(
+      d::Access::runtime(context), schema, rows, scale, true, -1));
+  ASSERT_EQ(host_program.input_descriptions().size(), 4U);
+  ASSERT_EQ(device_program.input_descriptions().size(), 6U);
+  for (std::size_t port = 0; port < 3; ++port)
+    ASSERT_EQ(host_program.input_descriptions()[port], device_program.input_descriptions()[port]);
+  const auto output_description = take(c::batch_output_description(capacity, rows));
+  ASSERT_EQ(host_program.output_descriptions()[0], output_description);
+  ASSERT_EQ(device_program.output_descriptions()[0], output_description);
+
+  const auto poison = half_test::encode<BF16>(std::numeric_limits<double>::quiet_NaN());
+  std::vector<BF16> query(rows * heads * depth),
+      key(std::size_t(capacity_rows) * kv_heads * depth, poison), value(key.size(), poison);
+  for (std::uint32_t row = 0; row < rows; ++row)
+    for (std::uint32_t head = 0; head < heads; ++head)
+      for (std::uint32_t channel = 0; channel < depth; ++channel)
+        query[(row * heads + head) * depth + channel] =
+            half_test::encode<BF16>(Cell<BF16>::qvalue(row, head, channel));
+  for (std::uint32_t row = 0; row < history; ++row)
+    for (std::uint32_t head = 0; head < kv_heads; ++head)
+      for (std::uint32_t channel = 0; channel < depth; ++channel) {
+        const auto index = ((std::size_t(physical_page) * page_size + row) * kv_heads + head) * depth + channel;
+        key[index] = half_test::encode<BF16>(Cell<BF16>::kvalue(0, row, head, channel));
+        value[index] = half_test::encode<BF16>(Cell<BF16>::vvalue(0, row, head, channel));
+      }
+  // The same original three native tensors feed both readers. Only the seven
+  // live cache rows are initialized; the rest of the 64 MiB K/V capacity and
+  // the selected page's inactive tail are NaN, not a second reference payload.
+  const auto query_tensor = take(context.upload(host_program.input_descriptions()[0], std::as_bytes(std::span(query))));
+  const auto key_tensor = take(context.upload(host_program.input_descriptions()[1], std::as_bytes(std::span(key))));
+  const auto value_tensor = take(context.upload(host_program.input_descriptions()[2], std::as_bytes(std::span(value))));
+  const auto indices_lease = take(take(recipe.version(host_layout)).indices());
+  std::vector<std::int32_t> indices(*host_program.input_descriptions()[3].element_count());
+  check(take(indices_lease.view()).read(std::as_writable_bytes(std::span(indices))));
+  const auto index_tensor = take(context.upload(host_program.input_descriptions()[3], std::as_bytes(std::span(indices))));
+  const std::array<std::int32_t, 1> active{rows}, lengths{history};
+  const auto query_lengths = take(context.upload(device_program.input_descriptions()[3], std::as_bytes(std::span(active))));
+  const auto kv_lengths = take(context.upload(device_program.input_descriptions()[4], std::as_bytes(std::span(lengths))));
+  std::vector<std::int32_t> metadata(*device_program.input_descriptions()[5].element_count());
+  check(take(take(envelope.metadata()).view()).read(std::as_writable_bytes(std::span(metadata))));
+  const auto metadata_tensor = take(context.upload(device_program.input_descriptions()[5], std::as_bytes(std::span(metadata))));
+  const auto execute = [&](const v::Program &program, std::span<const v::Tensor> inputs) {
+    auto invocation = take(program.create_invocation());
+    check(invocation.bind(inputs));
+    auto submitted = take(invocation.submit());
+    const auto result = take(submitted.wait());
+    std::vector<BF16> output(*output_description.element_count());
+    check(context.download(result->tensors()[0], std::as_writable_bytes(std::span(output))));
+    return output;
+  };
+  const auto host = execute(host_program, std::array{query_tensor, key_tensor, value_tensor, index_tensor});
+  const auto device = execute(device_program,
+      std::array{query_tensor, key_tensor, value_tensor, query_lengths, kv_lengths, metadata_tensor});
+
+  std::vector<double> oracle(host.size());
+  for (std::uint32_t row = 0; row < rows; ++row)
+    for (std::uint32_t head = 0; head < heads; ++head) {
+      const auto cache_head = head / (heads / kv_heads);
+      const auto end = history - rows + row + 1; // Absolute query positions 4,5,6.
+      std::array<double, history> weights{};
+      double maximum = -std::numeric_limits<double>::infinity(), denominator = 0;
+      for (std::uint32_t token = 0; token < end; ++token) {
+        double dot = 0;
+        for (std::uint32_t channel = 0; channel < depth; ++channel)
+          dot += half_test::decode(query[(row * heads + head) * depth + channel]) *
+              half_test::decode(key[((std::size_t(physical_page) * page_size + token) * kv_heads + cache_head) * depth + channel]);
+        weights[token] = dot * double(scale); maximum = std::max(maximum, weights[token]);
+      }
+      for (std::uint32_t token = 0; token < end; ++token) {
+        weights[token] = std::exp(weights[token] - maximum); denominator += weights[token];
+      }
+      for (std::uint32_t channel = 0; channel < depth; ++channel) {
+        double sum = 0;
+        for (std::uint32_t token = 0; token < end; ++token)
+          sum += weights[token] * half_test::decode(value[
+              ((std::size_t(physical_page) * page_size + token) * kv_heads + cache_head) * depth + channel]);
+        oracle[(row * heads + head) * depth + channel] = sum / denominator;
+      }
+    }
+  double host_error = 0, device_error = 0, device_rounded_error = 0, between = 0;
+  std::size_t nonfinite = 0, different_bits = 0, first_difference = host.size();
+  for (std::size_t i = 0; i < oracle.size(); ++i) {
+    const auto a = half_test::decode(host[i]), b = half_test::decode(device[i]);
+    const auto rounded = half_test::decode(half_test::encode<BF16>(float(oracle[i])));
+    nonfinite += !std::isfinite(a) || !std::isfinite(b);
+    host_error = std::max(host_error, std::isfinite(a) ? std::abs(a - oracle[i]) : INFINITY);
+    device_error = std::max(device_error, std::isfinite(b) ? std::abs(b - oracle[i]) : INFINITY);
+    device_rounded_error = std::max(device_rounded_error, std::isfinite(b) ? std::abs(b - rounded) : INFINITY);
+    between = std::max(between, std::isfinite(a) && std::isfinite(b) ? std::abs(a - b) : INFINITY);
+    if (host[i].bits != device[i].bits) { ++different_bits; first_difference = std::min(first_difference, i); }
+  }
+  std::fprintf(stderr, "attention_reader_pair Q=3 KV=7 query0=4 heads=8 kv_heads=2 depth=256 page16=1 "
+      "capacity=32768 device_splits=32 envelope_KV=16 poisoned_tail=1 host_maxabs_double=%.12g "
+      "device_maxabs_double=%.12g device_maxabs_bf16_oracle=%.12g between_maxabs=%.12g "
+      "different_bits=%zu bit_equal=%d first_difference=%zu nonfinite=%zu\n",
+      host_error, device_error, device_rounded_error, between, different_bits, !different_bits, first_difference, nonfinite);
+  EXPECT_EQ(nonfinite, 0U);
+  // Preserve both existing gates exactly: native_cache_test's BF16 comparison
+  // is against double (.008); this file's Cell::run already BF16-rounds its
+  // double oracle before comparing (.003). Raw double errors are reported too.
+  EXPECT_LE(host_error, .008);
+  EXPECT_LE(device_rounded_error, .003);
+  // Cross-implementation equality is an observation, not an asserted premise.
+  check(context.close());
 }
 } // namespace
