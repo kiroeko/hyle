@@ -802,9 +802,24 @@ private:
   bool preparation_started_ = false;
   bool greedy_chain_available_ = false;
   bool draft_packet_available_ = false;
-  // Immutable per-sampler route eligibility, resolved once after backend setup.
+  // Immutable while programs exist; resolved after backend/draft configuration.
   struct RelayPlan final { bool decode = false, prefill = false; };
   std::vector<RelayPlan> relay_by_sampling_;
+  void prepare_sampling_relay_routes() {
+    relay_by_sampling_.clear();
+    relay_by_sampling_.reserve(resources_->sampling_configurations.size());
+    for (const auto &prepared : resources_->sampling_configurations) {
+      const auto &sampling = prepared->configuration;
+      relay_by_sampling_.push_back({
+          DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
+              sampling.enabled && cache_plan.draft_cache, !sampling.modifiers.empty(),
+              execution.native_generated_storage() && !cache_plan.draft_cache,
+              device_mtp_sampling_supported(sampling.enabled, max_drafts())}.eligible(),
+          PrefillRelayFacts{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
+              cache_plan.draft_cache, cache_plan.in_flight_batches,
+              !sampling.enabled && sampling.modifiers.empty()}.eligible()});
+    }
+  }
   struct ColdFamilyOutcome final {
     std::optional<FamilyBuildResult> result;
     std::exception_ptr error;
@@ -836,6 +851,7 @@ public:
     if ((resources_->draft_vocabulary || resources_->draft_head) && !policy.max_drafts)
       throw std::runtime_error("prepared draft projection requires active drafting");
     draft_policy_ = policy;
+    prepare_sampling_relay_routes();
     bool supported_projection = false;
     if (policy.max_drafts >= 2 && policy.max_drafts <= kMaximumDeviceMtpDrafts) {
       const auto found = projections.find(geometry.head_role());
@@ -887,7 +903,7 @@ public:
     if (preparation_started_)
       throw std::runtime_error("configure device MTP continuation before model preparation");
     if (enabled && !supports_device_mtp())
-      throw std::runtime_error("device MTP continuation requires bounded CUDA greedy R1 N1");
+      throw std::runtime_error("device MTP continuation requires its bounded native R1 N1 recipe");
     device_mtp_successor_ = enabled;
   }
 
@@ -1219,17 +1235,7 @@ public:
                                                           std::chrono::seconds(10), &status);
       check(status);
     }
-    relay_by_sampling_.reserve(resources_->sampling_configurations.size());
-    for (const auto &prepared : resources_->sampling_configurations) {
-      const auto &sampling = prepared->configuration;
-      relay_by_sampling_.push_back({
-          DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
-              sampling.enabled && cache_plan.draft_cache, !sampling.modifiers.empty(),
-              execution.native_generated_storage() && !cache_plan.draft_cache}.eligible(),
-          PrefillRelayFacts{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
-              cache_plan.draft_cache, cache_plan.in_flight_batches,
-              !sampling.enabled && sampling.modifiers.empty()}.eligible()});
-    }
+    prepare_sampling_relay_routes();
     const auto weight_load_start = Clock::now();
     WeightLoadReport loading;
     if (shared_weights) {
@@ -1590,7 +1596,8 @@ public:
              (role != GraphRole::kMtpContinuation || device_mtp_continuous_enabled()),
          prepared_draft_projection(subset), device_mtp_successor_ && requests == 1 &&
              drafts_token(role) && (role != GraphRole::kMtpContinuation || device_mtp_continuous_enabled()) &&
-             !selected_sampler.enabled && selected_sampler.modifiers.empty(), device_mtp_continuous_enabled(),
+             device_mtp_sampling_supported(selected_sampler.enabled, max_drafts()) &&
+             selected_sampler.modifiers.empty(), device_mtp_continuous_enabled(),
          role == GraphRole::kVerify && prefix_rows >= 2 && requests == 1 && packing == RowPacking::kRectangular &&
              greedy_draft_chain_enabled(selected_sampler) && cache_plan.in_flight_batches >= 3,
          (role == GraphRole::kMtpRound || role == GraphRole::kMtpCatchupRound || role==GraphRole::kMtpContinuation) && requests == 1 &&
@@ -1609,8 +1616,9 @@ public:
     const auto &prepared_sampling = sampling_configuration(sampling_index);
     const auto &selected_sampler = prepared_sampling.configuration;
     if (role == GraphRole::kMtpContinuation && (!device_mtp_successor_ || requests != 1 ||
-        selected_sampler.enabled || !selected_sampler.modifiers.empty() || packing != RowPacking::kRectangular))
-      throw std::runtime_error("device MTP family requires its original configured greedy R1 continuation");
+        !device_mtp_sampling_supported(selected_sampler.enabled, max_drafts()) ||
+        !selected_sampler.modifiers.empty() || packing != RowPacking::kRectangular))
+      throw std::runtime_error("device MTP family requires its original configured R1 continuation recipe");
     if (!supports_completion(role, completion))
       throw std::runtime_error("state-only completion requires a Text or teacher-forced MTP input family");
     if (packed_prefill && (diagnostic || admitted_exact ||
@@ -2722,7 +2730,8 @@ public:
       const bool mtp = tokens == max_drafts()+1 && requests == 1 &&
           (role == GraphRole::kMtpCatchupRound || (role == GraphRole::kMtpContinuation && device_mtp_successor_)) &&
           cache_plan.draft_cache && (definition.successor_token_port || role == GraphRole::kMtpContinuation) &&
-          !selected_sampler.enabled && selected_sampler.modifiers.empty() && packing == RowPacking::kRectangular;
+          device_mtp_sampling_supported(selected_sampler.enabled, max_drafts()) &&
+          selected_sampler.modifiers.empty() && packing == RowPacking::kRectangular;
       if ((!ordinary && !mtp && !prefill) || diagnostic || (!prefill && completion != TextCompletion::kEmitNext) ||
           cache_plan.in_flight_batches < 2 || scheduler)
         throw std::runtime_error("imported decode carriers require a complete supported predecessor and two candidate depths");
@@ -3168,6 +3177,9 @@ public:
         work > SIZE_MAX - submitted_draft_rows || work > SIZE_MAX - member.session->submitted_draft_rows ||
         (step.draft_rows_deferred && attention>SIZE_MAX-draft_chain_attention_rows))
       return hyle::Status::OutOfRange("device successor row accounting exceeds its original capacity");
+    if (step.phase->family->sampling->configuration.enabled &&
+        (!head.sampling.can_advance(3) || member.next->sampling != head.sampling.advanced(3)))
+      return hyle::Status::InvalidArgument("sampled successor lost its original logical draw range");
     const auto target_pages=member.target_input_choices[choice].host().page_indices.size();
     const auto draft_pages=member.draft_input_choices[choice].host().page_indices.size();
     if(member.next->paged.pages.size()<target_pages || member.next->draft->paged.pages.size()<draft_pages)
@@ -3817,8 +3829,9 @@ public:
         selected_sampler.enabled || !selected_sampler.modifiers.empty() ||
         !token_source->submission.valid() || !token_source->primary_output.valid()))
       throw std::runtime_error("device verifier tokens require one original greedy target episode");
-    if (mtp_relay && (selected_sampler.enabled || !selected_sampler.modifiers.empty()))
-      throw std::runtime_error("MTP full-candidate successor requires its original greedy sampling configuration");
+    if (mtp_relay && (!device_mtp_sampling_supported(selected_sampler.enabled, max_drafts()) ||
+        !selected_sampler.modifiers.empty()))
+      throw std::runtime_error("MTP full-candidate successor requires its original prepared sampling recipe");
     const auto supplied_tokens = relay && !prefill_relay ? std::size_t{1} : requests.front().ids.size();
     const bool packed_prefill = packs_prefill(packing), packed_verify = packs_verify(packing);
     const bool packed_target = packs_target(packing);
@@ -4691,8 +4704,8 @@ public:
             if (successor_step && successor_step->device_input_choice && successor_step->submitted &&
                 successor_step->draft_rows_deferred && step.members.size() == 1 &&
                 successor_step->members.size() == 1 && io.prefix_candidates.size() == phase.prefix_rows) {
-              std::size_t index=0;
-              for(;index+1<phase.prefix_rows;++index){
+              std::size_t index=phase.family->sampling->configuration.enabled ? std::size_t(step.members[0].sampled_accept) : 0;
+              for(;!phase.family->sampling->configuration.enabled && index+1<phase.prefix_rows;++index){
                 const auto draft=phase.draft_chain_steps?step.members[0].verification_inputs[index+1]:step.members[0].draft_token;
                 if(io.prefix_candidates[index]!=draft)break;
               }

@@ -52,7 +52,7 @@ inline void run_recording_rng(const std::filesystem::path &input, bool control_i
       "recording RNG regression did not exercise and retire its real relay");
   std::size_t control_slots = 0;
   if (control_inputs) {
-    h::require(q::ordinary_control_storage(model->execution, {}).has_value(),
+    h::require(q::generation_control_storage(model->execution, {}).has_value(),
         "ordinary controls have no original queued staging owner");
     for (const auto &[shape, phase] : model->phases) {
       (void)shape;

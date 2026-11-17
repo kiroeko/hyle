@@ -97,6 +97,7 @@ private:
   std::optional<hyle::inference::RequestStopPolicy> stop_policy_;
   std::optional<std::size_t> successor_ordinal_;
   std::optional<hyle::inference::HistoryCounts> history_counts_;
+  bool sampled_ = false;
 
   static void reset_record(GenerationCommitRecord &record) noexcept {
     auto emitted = std::move(record.emitted), accepted = std::move(record.accepted_inputs);
@@ -111,9 +112,9 @@ private:
       throw std::runtime_error("MTP replay ledger has no uncommitted reserved record");
     return records[committed_count];
   }
-  // A bounded MTP successor needs the original greedy R1 pending boundary. The Model
-  // still proves its sampler/capability; a zero cursor is only a ledger fact.
-  static bool mtp_pending_boundary(const GenerationCommitRecord &record) noexcept {
+  // The immutable bound sampler owns the draw contract; a zero cursor alone
+  // cannot identify greedy. Only the original sampled K1 reserves three draws.
+  bool mtp_pending_boundary(const GenerationCommitRecord &record) const noexcept {
     return drafts_token(record.role) && record.draft_limit && record.draft_limit<SIZE_MAX/2 &&
         record.draft_limit+1<=record.emitted.capacity() && record.draft_limit+1<=record.accepted_inputs.capacity() &&
         record.draft_limit+1<=record.verification_inputs.capacity() &&
@@ -122,10 +123,15 @@ private:
         record.before.frontier <= record.before.length &&
         record.before.length - record.before.frontier == record.before.lag &&
         record.pending_input >= 0 && record.pending_input == record.before.next_id &&
-        record.before.sampling == hyle::inference::SamplingCursor{};
+        (sampled_ ? record.draft_limit == 1 && record.before.sampling.can_advance(3)
+                  : record.before.sampling == hyle::inference::SamplingCursor{});
   }
-  static bool k1_pending_boundary(const GenerationCommitRecord&record)noexcept{
+  bool k1_pending_boundary(const GenerationCommitRecord&record) const noexcept {
     return record.draft_limit==1 && mtp_pending_boundary(record);
+  }
+  bool mtp_sampling_after(const GenerationCommitRecord &record, const GenerationBoundary &actual) const noexcept {
+    return sampled_ ? record.draft_limit == 1 && record.before.sampling.can_advance(3) &&
+        actual.sampling == record.before.sampling.advanced(3) : actual.sampling == record.before.sampling;
   }
 
 public:
@@ -162,9 +168,7 @@ public:
     if (sampling && (sampling_owner.expired() || sampling_owner.owner_before(owner) || owner.owner_before(sampling_owner) || sampling != &value))
       throw std::runtime_error("generation ledger sampling belongs to another model or configuration");
   }
-  void bind_sampling(const PreparedSampling &value, const std::weak_ptr<ColdResources> &owner) {
-    validate_sampling(value, owner); sampling = &value; sampling_owner = owner;
-  }
+  void bind_sampling(const PreparedSampling &value, const std::weak_ptr<ColdResources> &owner);
   explicit GenerationLedger(std::size_t capacity, std::size_t maximum_width = 2) : records(capacity) {
     for (auto &record : records)
       if (!record.emitted.try_reserve(maximum_width) || !record.accepted_inputs.try_reserve(maximum_width) ||
@@ -226,6 +230,7 @@ public:
         previous.ids().size() != 1 || previous.pending_input < 0 || previous.turn != turn ||
         (ordinary ? quota >= previous.quota
                   : previous.quota < 2*width || quota < width || quota > previous.quota - width) ||
+        (!ordinary && sampled_ && !previous.before.sampling.can_advance(6)) ||
         records[committed_count + 1].committed)
       throw std::runtime_error("generation successor requires one bounded pending predecessor");
     const auto ordinal = committed_count + 1;
@@ -260,7 +265,7 @@ public:
         previous.accepted == 1 && previous.verified_rows == 1 &&
         previous.emitted_count == 1 && !previous.emitted.empty() &&
         previous.emitted[0] == actual.next_id && record.role == GraphRole::kText;
-    const bool full_k1 = k1_pending_boundary(previous) &&
+    const bool full_k1 = !sampled_ && k1_pending_boundary(previous) &&
         previous.quota >= 4 && record.quota >= 2 && record.quota <= previous.quota - 2 &&
         previous.accepted == 2 && previous.verified_rows == 2 && previous.consumed_drafts == 1 &&
         previous.agreed && previous.accepted_draft && previous.draft >= 0 &&
@@ -287,7 +292,7 @@ public:
         previous.consumed_drafts == consumed - 1 && previous.agreed == (consumed == 2) &&
         previous.accepted_draft == (consumed == 2) && previous.draft >= 0 &&
         previous.target_first >= 0 && previous.target_second >= 0 &&
-        (previous.target_first == previous.draft) == (consumed == 2) &&
+        (sampled_ || (previous.target_first == previous.draft) == (consumed == 2)) &&
         actual.next_id == (consumed == 2 ? previous.target_second : previous.target_first) &&
         previous.emitted_count == consumed && previous.emitted.size() >= consumed &&
         previous.emitted[0] == previous.target_first &&
@@ -302,7 +307,7 @@ public:
         previous.draft_rows == previous.before.lag + 1 && actual.lag == consumed - 1 &&
         actual.frontier <= actual.length && actual.length - actual.frontier == consumed - 1 &&
         actual.catchup_token == (consumed == 2 ? previous.draft : -1) &&
-        actual.sampling == previous.before.sampling &&
+        mtp_sampling_after(previous, actual) &&
         record.role == GraphRole::kMtpCatchupRound && record.draft_limit == 1;
     const bool chosen_kstep=[&]{
       if(!device_k1_choice || previous.draft_limit<2 || !mtp_pending_boundary(previous))return false;

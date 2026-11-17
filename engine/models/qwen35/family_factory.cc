@@ -267,11 +267,11 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     throw std::runtime_error("fused draft repair requires the original greedy exact R1 verifier");
   if (device_continuation && (requests != 1 || prefix_rows != (chain_steps?chain_steps+1:2) ||
       packing != RowPacking::kRectangular || completion != TextCompletion::kEmitNext ||
-      selected_sampler.enabled || !selected_sampler.modifiers.empty() ||
+      !device_mtp_sampling_supported(selected_sampler.enabled, prefix_rows - 1) || !selected_sampler.modifiers.empty() ||
       std::ranges::any_of(build_request.chunks, [&](auto rows) { return rows != prefix_rows; })))
-    throw std::runtime_error("device MTP continuation requires its bounded greedy R1 rectangular family");
+    throw std::runtime_error("device MTP continuation requires its bounded R1 rectangular sampling family");
   const bool successor_eligible = drafts_token(role) && requests == 1 &&
-      packing == RowPacking::kRectangular && !selected_sampler.enabled &&
+      packing == RowPacking::kRectangular && device_mtp_sampling_supported(selected_sampler.enabled, prefix_rows - 1) &&
       selected_sampler.modifiers.empty() && (prepared.emit_successor || continuous_successor);
   if (emit_device_decision &&
       (!successor_eligible || vocabulary > (std::int64_t{1} << 24)))
@@ -713,7 +713,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         .packing = packing, .cpu_assist = execution.has_cpu_assist(), .diagnostic = diagnostic};
     const auto native_results = prepared.emit_successor
         ? native_ordinary_io_domains(execution, ordinary_io) : std::nullopt;
-    const auto control_storage = ordinary_control_storage(execution, ordinary_io);
+    const auto control_storage = generation_control_storage(execution, ordinary_io);
     const bool caller_small_results = ordinary_io.caller_small_results() || native_results.has_value();
     const auto publish_valid = [&] {
       if (caller_small_results || (selected_sampler.enabled && has_mtp(role)))
@@ -726,6 +726,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         inputs.counts = sampling::advance_history_counts(r, *inputs.counts, r.reshape(proposal_ids[request], {f(1)}));
       return inputs;
     };
+    V sampled_acceptance;
     if (completion == TextCompletion::kEmitNext) {
       definition.logits_port = r.scores(last, std::string(geometry.head_role()));
       if ((!selected_sampler.enabled && selected_sampler.modifiers.empty()) || role == GraphRole::kVerify) definition.id_port = r.op(c::Operation(c::TopK{.count = 1}), {definition.logits_port},
@@ -790,7 +791,8 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         definition.sampling_valid_port = r.host_predicate(r.concat(valid, 0, r.dense_spec(Type::kBool, {batch})));
         publish_valid();
         if (drafts_token(role)) {
-          definition.sampling_accept_port = r.host_predicate(r.concat(accepted, 0, r.dense_spec(Type::kBool, {batch})));
+          sampled_acceptance = r.concat(accepted, 0, r.dense_spec(Type::kBool, {batch}));
+          definition.sampling_accept_port = r.host_predicate(sampled_acceptance);
           if (selected_sampler.enabled && has_mtp(role))
             definition.sampling_accept_port = r.copy(definition.sampling_accept_port);
           r.publish(definition.sampling_accept_port);
@@ -807,7 +809,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         definition.id_port = r.copy(definition.id_port);
       r.publish(definition.logits_port); r.publish(definition.id_port);
       if (control_storage || native_results) {
-        definition.delivery_id_port = r.reshape(definition.id_port, {batch, f(1)});
+        definition.delivery_id_port = r.reshape(definition.id_port, {verifies_prefix(role) ? packed : batch, f(1)});
         r.publish(definition.delivery_id_port);
       }
     }
@@ -843,12 +845,17 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         // longer chains retain the same first-forward-mismatch semantics.
         // IDs are exactly representable in F32. Stop/quota remain host policy.
         for(std::size_t i=proposals;i-- >0;){
-          const auto mismatch=r.cast(r.binary(c::BinaryKind::kSubtract,r.cast(targets[i],Type::kFloat32),r.cast(drafts[i],Type::kFloat32)),Type::kBool);
-          selected=select(mismatch,integers[i],selected);
-          count=select(mismatch,integers[i+1],count);
-          pending=select(mismatch,targets[i],pending);
-          lag=select(mismatch,integers[i?1:0],lag);
-          catchup=select(mismatch,i?drafts[i-1]:absent,catchup);
+          const auto predicate=selected_sampler.enabled
+              ? sampled_acceptance
+              : r.cast(r.binary(c::BinaryKind::kSubtract,r.cast(targets[i],Type::kFloat32),r.cast(drafts[i],Type::kFloat32)),Type::kBool);
+          const auto choose=[&](V rejected,V accepted){
+            return selected_sampler.enabled?select(predicate,accepted,rejected):select(predicate,rejected,accepted);
+          };
+          selected=choose(integers[i],selected);
+          count=choose(integers[i+1],count);
+          pending=choose(targets[i],pending);
+          lag=choose(integers[i?1:0],lag);
+          catchup=choose(i?drafts[i-1]:absent,catchup);
         }
         definition.successor_accepted_count_port=r.copy(count);
         definition.successor_prefix_index_port=r.copy(selected);
@@ -918,6 +925,8 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         external_contracts.push_back({definition.delivery_id_port, *control_storage});
         if (definition.sampling_valid_port)
           external_contracts.push_back({definition.sampling_valid_port, *control_storage});
+        if (definition.sampling_accept_port)
+          external_contracts.push_back({definition.sampling_accept_port, *control_storage});
       }
       selected_options.external_resources = external_contracts;
     }

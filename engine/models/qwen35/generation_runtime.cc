@@ -34,6 +34,11 @@
 
 namespace qwen35 {
 
+void GenerationLedger::bind_sampling(const PreparedSampling &value, const std::weak_ptr<ColdResources> &owner) {
+  validate_sampling(value, owner);
+  sampling = &value; sampling_owner = owner; sampled_ = value.configuration.enabled;
+}
+
 Model &generation_model(Model &fallback, const GenerationRequest &request) noexcept {
   return request.prepared_model ? *request.prepared_model : fallback;
 }
@@ -1363,6 +1368,12 @@ struct GenerationStepAdapter final {
               request.rounds.capacity() - request.rounds.size() >= 2 &&
               ledger.records.size() - ledger.committed_count >= 2;
         })) return inference::StepSuccessor::kNone;
+    // Declining B at cursor exhaustion leaves the last legal A publishable.
+    for (const auto &member : a->members) {
+      const auto &sampling = member.session->sampling_configuration().configuration;
+      if (sampling.enabled && (!member.next ||
+          !member.next->sampling.can_advance(mtp ? 3 : 1))) return inference::StepSuccessor::kNone;
+    }
     // Candidate lookup stays with the model that owns the original Phase and
     // carrier; preparation below still proves the actual submission rights.
     if (!model.has_relay_successor_program(a, *a_source, calls.size(), maximum_outputs,
@@ -2728,7 +2739,8 @@ StartupPrefillWarmup prepare_generation_programs(Model &model, const GenerationP
     }
     if (decode_bound && width <= policy_decoding_requests) {
       if constexpr (mtp) if (width == 1 && model.device_mtp_successor_enabled() &&
-          !model.sampling_configuration(sampling_index).configuration.enabled &&
+          device_mtp_sampling_supported(model.sampling_configuration(sampling_index).configuration.enabled,
+              model.max_drafts()) &&
           model.sampling_configuration(sampling_index).configuration.modifiers.empty())
         shapes[{GraphRole::kMtpContinuation, TextCompletion::kEmitNext}][model.max_drafts()+1] = decode_bound;
       if constexpr (mtp) for (auto role : roles) {
@@ -3845,7 +3857,7 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
     const bool native_candidate = !mtp &&
         (execution.primary == BackendKind::kApple || execution.primary == BackendKind::kVulkan);
     const DeviceRelayCapabilities relay{execution.primary, cpu_layers != 0, false, policy.random && mtp, false,
-        native_candidate};
+        native_candidate, device_mtp_sampling_supported(policy.random, depth)};
     selected.relay_eligible = relay.eligible(); selected.relay_refusal = relay.refusal_reason();
     sampling_routes.push_back(selected);
   };

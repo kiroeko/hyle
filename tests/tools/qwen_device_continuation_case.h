@@ -3,6 +3,7 @@
 #include "qwen_host_image_case.h"
 #include "qwen_mtp_batch_state_case.h"
 #include "qwen_packed_prefill_case.h"
+#include "../../engine/models/qwen35/request_installation.h"
 
 // Native Model-only correctness consumer. Uses existing local GA/MTP weights,
 // the original strict greedy acceptance and original ordered ledger/Head
@@ -22,6 +23,7 @@ struct Result final {
   std::optional<s::StateImage> final_state;
   std::size_t submitted = 0, a1_published = 0, a2_published = 0, reused = 0, recorded = 0;
   std::size_t draft_rows = 0;
+  bool stopped = false;
 };
 
 inline q::GraphRole role(const q::Session &session) {
@@ -38,14 +40,14 @@ inline q::MtpRoundResult finish(q::Model &model, const std::shared_ptr<q::Sessio
       {.name = "device-continuous-model-correctness", .trace_states = false}, {&ledger, nullptr});
 }
 inline void append(Result &result, const q::MtpRoundResult &round) {
-  require(!round.stopped && !round.emitted.empty(), "tiny GA probe unexpectedly reached an EOS boundary");
+  require(!round.stopped && !round.emitted.empty(), "continuation journey unexpectedly reached an EOS boundary");
   result.ids.insert(result.ids.end(), round.emitted.begin(), round.emitted.end());
 }
 
 inline void compare_state(q::Model &model, const s::StateImage &a, const s::StateImage &b) {
   require(std::tie(a.length, a.frontier, a.lag, a.pending, a.catchup, a.sampling) ==
       std::tie(b.length, b.frontier, b.lag, b.pending, b.catchup, b.sampling),
-      "device choice changed the complete final boundary or greedy RNG");
+      "device choice changed the complete final boundary or logical RNG");
   require(a.target == b.target && a.payloads.size() == b.payloads.size(),
       "device choice changed target KV bytes or the complete payload inventory");
   std::vector<std::size_t> recurrent;
@@ -55,8 +57,21 @@ inline void compare_state(q::Model &model, const s::StateImage &a, const s::Stat
     if (a.payloads[part] == b.payloads[part]) continue;
     // Preserve the existing complete-state oracle: only newly evaluated F32
     // GDN admits its existing 3e-6 budget. KV/history/hidden stay byte exact.
-    require(part < recurrent.size() * 2 && part % 2 == 1,
-        "device choice changed draft KV, history or hidden bytes");
+    if (!(part < recurrent.size() * 2 && part % 2 == 1)) {
+      std::cerr << "continuation_payload_difference part=" << part << " recurrent_payloads=" << recurrent.size() * 2
+                << " bytes=" << a.payloads[part].size() << '\n';
+      const auto first = std::mismatch(a.payloads[part].begin(), a.payloads[part].end(), b.payloads[part].begin()).first;
+      const auto offset = static_cast<std::size_t>(first - a.payloads[part].begin());
+      std::cerr << "first_different_byte=" << offset << '\n';
+      if (part >= recurrent.size() * 2 && model.precision.cache_type() == q::Type::kBFloat16) {
+        std::uint16_t x, y;
+        std::memcpy(&x, a.payloads[part].data() + (offset / 2) * 2, 2);
+        std::memcpy(&y, b.payloads[part].data() + (offset / 2) * 2, 2);
+        std::cerr << "bf16_serial=" << std::bit_cast<float>(std::uint32_t(x) << 16)
+                  << " bf16_device=" << std::bit_cast<float>(std::uint32_t(y) << 16) << '\n';
+      }
+      throw std::runtime_error("device choice changed draft KV, history or hidden bytes");
+    }
     q::cache::HostPayloadDesc layout{};
     layout.role = q::cache::HostPayloadRole::kGdnState;
     layout.layer = static_cast<std::uint32_t>(recurrent[part / 2]);
@@ -68,7 +83,7 @@ inline void compare_state(q::Model &model, const s::StateImage &a, const s::Stat
 }
 inline void compare_records(const Result &a, const Result &b) {
   require(a.ids == b.ids && a.records.size() == b.records.size(),
-      "device choice changed the complete greedy IDs or ledger length");
+      "device choice changed the complete IDs or ledger length");
   for (std::size_t ordinal = 0; ordinal < a.records.size(); ++ordinal) {
     const auto &x = a.records[ordinal]; const auto &y = b.records[ordinal];
     require(x.same_result(y) && x.committed == y.committed && x.user_output == y.user_output &&
@@ -118,12 +133,14 @@ inline void require_source(q::Model &model, const q::StepState &step,
       "producer did not retain its own three outputs, full GDN2 and real raw-envelope PageSources");
 }
 
-inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, bool continuous) {
+inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, bool continuous,
+    std::optional<i::SamplingCursor> cursor = {}, std::vector<s::StateImage> *observations = nullptr,
+    bool wait_before_successor = false) {
   require(!model.active_step && !model.successor_step && !model.carrier_borrowed && !model.snapshot_versions.live,
       "continuous journey started with a retained original episode");
   const auto submitted_begin = model.submitted_draft_rows;
   const std::array prefill{prompt.size()};
-  auto session = model.create_session(prefill, {}, q::GraphRole::kMtpPrefill);
+  auto session = model.create_session(prefill, {}, q::GraphRole::kMtpPrefill, cursor);
   q::GenerationLedger ledger(episodes + 2, 2);
   Result result;
   std::array<std::weak_ptr<q::StepState>, episodes> lifetimes;
@@ -138,6 +155,7 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
   model.submit_evaluations(); ++result.submitted;
   result.ids.push_back(q::finish_evaluation(model, *session, "device-continuous-prefill", {}, false,
       nullptr, nullptr, nullptr, nullptr, {}, &ledger));
+  if (observations) observations->push_back(s::image(model, *session->head));
 
   std::shared_ptr<q::StepSources> current_source;
   if (continuous) {
@@ -179,6 +197,7 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
     q::StepState *child = nullptr;
     std::shared_ptr<q::StepSources> child_source;
     if (continuous && has_child) {
+      if (wait_before_successor) q::check(current->execution.wait());
       require_source(model, *current, current_source);
       (void)ledger.reserve_successor(ordinal, 2, 0);
       const std::array future{q::EvaluationRequest{session, {}}};
@@ -211,6 +230,7 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
 
     const auto round = finish(model, session, ledger, pending, quota);
     append(result, round);
+    if (observations) observations->push_back(s::image(model, *session->head));
     require(session->head.epoch() == epoch + 1 && ledger.committed_count == ordinal + 1 &&
         ledger.records[ordinal].committed && !ledger.records[ordinal].input_deferred,
         "one strict K1 finish did not publish exactly one original model and ledger epoch");
@@ -256,7 +276,10 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
   const auto tail = finish(model, session, ledger, pending, 1);
   require(tail.emitted.size() == 1 && tail.processed_target == 1 && !tail.proposal_count,
       "one-output quota remainder did not use its original single-row math");
-  append(result, tail);
+  // A natural EOS at the final quota boundary has no outgoing successor.
+  // Preserve that terminal result rather than replacing or filtering it.
+  result.ids.insert(result.ids.end(), tail.emitted.begin(), tail.emitted.end());
+  result.stopped = tail.stopped;
   result.final_state = s::image(model, *session->head);
   require(result.final_state->length == prompt.size() + result.ids.size() - 1,
       "complete emitted IDs do not match the final evaluated pending boundary");
@@ -286,16 +309,13 @@ inline Result boundary_journey(q::Model &model, std::span<const std::int32_t> pr
   const std::array extra{stop_id};
   const i::RequestStopPolicy policy(selected == BoundaryCase::kStop
       ? std::span<const std::int32_t>(extra) : std::span<const std::int32_t>{});
+  const i::GenerationSessionSchedule schedule{"device-boundary",
+      {{std::vector<std::int32_t>(prompt.begin(), prompt.end()), outputs}}};
   std::vector<q::GenerationRequest> requests;
-  requests.emplace_back("device-boundary", prompt, std::filesystem::path{}, outputs, 0, policy);
+  requests.push_back(q::install_generation_request({.schedule = schedule, .visible_turns = schedule.turns,
+      .model = model, .output_capacity = outputs, .turn_capacity = 1, .record_capacity = outputs, .stop = policy}));
   auto &request = requests.front();
-  auto owned = std::make_shared<std::vector<std::int32_t>>(prompt.begin(), prompt.end());
-  request.prompt = *owned; request.warm_inputs.push_back(std::move(owned));
   request.input = q::cache::token_plan(request.prompt, model.capacity);
-  request.ledger = std::make_unique<q::GenerationLedger>(outputs, 3);
-  request.round_emitted.resize(outputs - 1);
-  for (auto &row : request.round_emitted) row.reserve(3);
-  request.turn_observations.resize(1);
   i::RequestWindow keys; keys.prepare(1, 1); request.request_key = keys.enqueue(0);
   q::GenerationContinuation continuation; continuation.enabled = continuous; continuation.prepare(1);
   const auto unused_wave = [](i::RequestWave, std::span<std::size_t>) -> i::RequestWaveResult {
@@ -304,6 +324,7 @@ inline Result boundary_journey(q::Model &model, std::span<const std::int32_t> pr
   q::GenerationRequestAdapter admission{model, nullptr, std::span<q::GenerationRequest>(requests),
       false, nullptr, unused_wave, {}, &continuation};
   admission.admission_preflight(request.request_key);
+  admission.admit(request.request_key, {});
   hyle::util::ScopeGuard cleanup{[&]() noexcept {
     continuation.reset(); (void)model.abort_episode();
     if (request.session) {

@@ -15,6 +15,9 @@ struct SamplingCursor final {
   static constexpr std::uint64_t maximum_coordinate = UINT32_MAX;
   std::uint64_t seed = 0, stream = 0, draw = 0;
   friend bool operator==(const SamplingCursor &, const SamplingCursor &) = default;
+  constexpr bool can_advance(std::uint64_t count) const noexcept {
+    return stream <= maximum_coordinate && draw <= maximum_coordinate && count <= maximum_coordinate - draw;
+  }
   std::array<std::uint32_t, 4> identity(std::uint64_t offset = 0) const {
     if (stream > maximum_coordinate || draw > maximum_coordinate || offset > maximum_coordinate - draw)
       throw std::runtime_error("sampling draw address overflows");
@@ -22,7 +25,7 @@ struct SamplingCursor final {
         static_cast<std::uint32_t>(draw + offset), static_cast<std::uint32_t>(stream)};
   }
   SamplingCursor advanced(std::uint64_t count) const {
-    if (stream > maximum_coordinate || draw > maximum_coordinate || count > maximum_coordinate - draw)
+    if (!can_advance(count))
       throw std::runtime_error("sampling draw cursor is exhausted");
     auto result = *this; result.draw += count; return result;
   }

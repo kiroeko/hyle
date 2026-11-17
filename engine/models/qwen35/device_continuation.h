@@ -22,7 +22,7 @@ inline void Model::prepare_device_mtp_inputs(StepState &step, bool recording_onl
       step.phase->family->packing != RowPacking::kRectangular ||
       step.phase->family->completion != TextCompletion::kEmitNext || step.phase->query_rows != step.phase->prefix_rows ||
       step.state_slot >= step.phase->slots.size())
-    throw std::logic_error("device MTP inputs require the original greedy R1 continuation episode");
+    throw std::logic_error("device MTP inputs require the original R1 continuation episode");
   auto &phase = *step.phase;
   auto &io = phase.slots[step.state_slot].data;
   auto &member = step.members[0];
@@ -78,7 +78,8 @@ inline void Model::prepare_device_mtp_inputs(StepState &step, bool recording_onl
   member.next = reserve_state(*member.owner_state);
   if (!member.next_tails.try_resize(draft_bank)) throw std::bad_alloc{};
   member.next->length = target_before.back() + outcomes;
-  member.next->sampling = member.base->sampling;
+  member.next->sampling = phase.family->sampling->configuration.enabled
+      ? member.base->sampling.advanced(3) : member.base->sampling;
   member.next->draft.emplace();
   if (!member.next->draft->paged.frames.try_resize(2)) throw std::bad_alloc{};
   member.next->draft->frontier = maximum_draft_after;

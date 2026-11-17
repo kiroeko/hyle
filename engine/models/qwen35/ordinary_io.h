@@ -39,9 +39,9 @@ struct OrdinaryIoCapabilities final {
 // token port in its device domain so an actual predecessor Source still binds
 // without a host roundtrip. The concrete transfer/capture is qualified by Graph
 // on these exact owners, not inferred from a backend name or model geometry.
-inline std::optional<hyle::graph::StorageDomainId> ordinary_control_storage(
+inline std::optional<hyle::graph::StorageDomainId> generation_control_storage(
     const hyle::inference::Backend &execution, const OrdinaryIoCapabilities &facts) noexcept {
-  if (facts.role != GraphRole::kText || facts.completion != TextCompletion::kEmitNext ||
+  if ((facts.role != GraphRole::kText && !has_mtp(facts.role)) || facts.completion != TextCompletion::kEmitNext ||
       facts.packing != RowPacking::kRectangular || facts.cpu_assist || facts.diagnostic ||
       execution.queue_bindings().size() != 1 || !execution.staging() || execution.staging() == execution.device() ||
       !execution.staging().properties().has(hyle::mem::MemoryProperty::kHostAccessible)) return {};
@@ -101,9 +101,16 @@ struct OrdinaryIoPlan final {
   constexpr bool batched_results() const noexcept { return results != OrdinaryResultMode::kSeparate; }
 };
 
+// The prepared one-proposal sampler publishes one real acceptance bit and
+// reserves exactly three logical draws, independently of accepting the draft.
+// Longer sampled chains retain their own separately qualified recipe.
+constexpr bool device_mtp_sampling_supported(bool random, std::size_t proposals) noexcept {
+  return !random || proposals == 1;
+}
+
 // A different capability from host input/result IO: device relay requires an
-// unmodified ordinary sampler or deterministic MTP. Sampled MTP has a
-// separate acceptance/publishing path. Keep actual cohort/Source/capture
+// unmodified ordinary sampler or a qualified MTP recipe. Sampled MTP retains
+// its actual acceptance/publishing path. Keep actual cohort/Source/capture
 // checks with their original runtime owners.
 struct DeviceRelayCapabilities final {
   hyle::inference::BackendKind backend = hyle::inference::BackendKind::kDefault;
@@ -112,13 +119,14 @@ struct DeviceRelayCapabilities final {
   // The actual prepared Graph must qualify before decode can select it; this
   // request is not a claim that every region/backend imports pending sources.
   bool native_source_candidate = false;
+  bool sampled_mtp_successor = false;
 
   constexpr hyle::inference::RouteReason refusal_reason() const noexcept {
     if (backend != hyle::inference::BackendKind::kCuda && !native_source_candidate)
       return hyle::inference::RouteReason::kBackend;
     if (cpu_assist) return hyle::inference::RouteReason::kCpuAssist;
     if (scheduler) return hyle::inference::RouteReason::kScheduler;
-    if (sampled_mtp) return hyle::inference::RouteReason::kSampling;
+    if (sampled_mtp && !sampled_mtp_successor) return hyle::inference::RouteReason::kSampling;
     if (logits_modifiers) return hyle::inference::RouteReason::kLogitsModifiers;
     return hyle::inference::RouteReason::kNone;
   }
