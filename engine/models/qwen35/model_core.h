@@ -5282,7 +5282,8 @@ public:
                    cache::multiply(cache::multiply(member.input_row_begin, vocabulary), sizeof(float)), bytes))));
           PrefixSamplingResult decision;
           try {
-            hyle::experimental::r1_payload28::TargetScope payload_target(member.session.get(), logits_owner, logits,
+            hyle::experimental::r1_payload28::TargetScope payload_target(member.session.get(), logits_owner,
+                step.phase->slots[step.state_slot].data.logits, step.execution.carrier, logits,
                 step.members.size(), step.phase->query_rows, step.state_slot);
             decision = sample_recursive_prefix(logits,
                 std::span<const std::int32_t>(member.verification_inputs).subspan(1),

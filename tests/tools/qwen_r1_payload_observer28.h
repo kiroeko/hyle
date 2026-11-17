@@ -1,6 +1,6 @@
 #pragma once
 
-// EXPERIMENT ONLY. Included solely by the named, unbuilt Model overlay.
+// EXPERIMENT ONLY. Owned-buffer29 revision is NOT built or run.
 // Reads add synchronous GPU transfers and may hide the original race.
 // No graph outputs, math, permissions, published records or assertions change.
 #include <algorithm>
@@ -30,7 +30,9 @@ inline constexpr std::size_t maximum_vocabulary = 248320;
 inline constexpr std::size_t maximum_float_words = 20 * maximum_vocabulary;
 struct Floats final { std::vector<float> value; };
 struct Sample final {
-  bool armed = false, before = false, after = false;
+  bool armed = false, before = false, after = false, target_selected = false;
+  bool target_ok = false, fixed_before_ok = false, fixed_after_ok = false;
+  std::array<bool,3> fresh_q_ok{}, draft_key_ok{}, prefix_q_ok{}, post_q_ok{};
   unsigned request = 0;
   const void *session = nullptr; // Identity only; never dereferenced or retained.
   SamplingCursor cursor{};
@@ -57,6 +59,12 @@ struct State final {
     std::memcpy(text.data() + used, line, std::size_t(count)); used += std::size_t(count);
   }
   ~State() noexcept {
+    for (const auto &sample : samples) note("R1_COMPONENT_STATUS request=%u fresh_q=%d,%d,%d draft_keys=%d,%d,%d prefix_q=%d,%d,%d post_q=%d,%d,%d target=%d fixed_before=%d fixed_after=%d\n",
+        sample.request,int(sample.fresh_q_ok[0]),int(sample.fresh_q_ok[1]),int(sample.fresh_q_ok[2]),
+        int(sample.draft_key_ok[0]),int(sample.draft_key_ok[1]),int(sample.draft_key_ok[2]),
+        int(sample.prefix_q_ok[0]),int(sample.prefix_q_ok[1]),int(sample.prefix_q_ok[2]),
+        int(sample.post_q_ok[0]),int(sample.post_q_ok[1]),int(sample.post_q_ok[2]),
+        int(sample.target_ok),int(sample.fixed_before_ok),int(sample.fixed_after_ok));
     note("R1_PAYLOAD28_STATUS request12=%d/%d request14=%d/%d compared=%d incomplete=%d overflow=%d float_words=%zu max_float_words=%zu timing_perturbed=1 internal_P_observed=0\n",
         int(samples[0].before), int(samples[0].after), int(samples[1].before), int(samples[1].after),
         int(compared), int(incomplete || !samples[0].after || !samples[1].after), int(overflow),
@@ -72,47 +80,54 @@ inline void failure(std::string_view where, std::string_view message) noexcept {
   state.note("R1_PAYLOAD28_UNAVAILABLE stage=%.*s message=%.*s\n", int(where.size()), where.data(),
       int((std::min)(message.size(), std::size_t{512})), message.data());
 }
-template<class Action> inline void observe(std::string_view where, Action &&action) noexcept {
-  try { action(); }
+template<class Action> inline bool observe(std::string_view where, Action &&action) noexcept {
+  try { action(); return true; }
   catch (const hyle::inference::EvaluationFailure &error) { failure(where, error.status().message()); }
   catch (const std::exception &error) { failure(where, error.what()); }
   catch (...) { failure(where, "unknown observer failure"); }
+  return false;
 }
 
-// A view is admitted only from the original ReadLease/WriteLease below.
+// Views below come from an original lease OR the original move-only Tensor Buffer.
 // Native span lookup is backend-private observation, never Model policy.
 inline void identity(const char *label, unsigned request, std::size_t row,
     mem::ConstBufferView view, const c::TensorDesc &description, std::uint64_t generation,
-    hyle::inference::Backend &backend) {
+    hyle::inference::Backend &backend, const char *source="original_read_lease", bool generation_valid=true) {
   auto *context = take(backend.vulkan_context());
   const auto &runtime = vn::Access::runtime(*context);
   const auto physical = vn::MemoryAccess::copy_span(runtime, view);
   if (!physical) {
     state.incomplete = true;
-    state.note("R1_STORAGE_UNAVAILABLE label=%s request=%u row=%zu bytes=%zu generation=%llu message=%.*s payload_read_still_uses_original_lease=1\n",
+    state.note("R1_STORAGE_UNAVAILABLE label=%s request=%u row=%zu bytes=%zu generation=%llu message=%.*s payload_read_still_uses_original_owner=1\n",
         label,request,row,view.size(),static_cast<unsigned long long>(generation),
         int((std::min)(physical.error().message().size(),std::size_t{256})),physical.error().message().data());
     return;
   }
   const auto dimensions=description.dimensions();
-  state.note("R1_STORAGE label=%s request=%u row=%zu dtype=%u rank=%zu dim0=%lld dim1=%lld bytes=%zu view_offset=%zu generation=%llu backing=%llu physical_offset=%zu physical_bytes=%zu source=original_lease\n",
+  state.note("R1_STORAGE label=%s request=%u row=%zu dtype=%u rank=%zu dim0=%lld dim1=%lld bytes=%zu view_offset=%zu generation=%llu backing=%llu physical_offset=%zu physical_bytes=%zu source=%s lease_generation_valid=%d no_lease_generation=%d\n",
       label, request, row, unsigned(description.data_type()), dimensions.size(),
       static_cast<long long>(dimensions.empty()?-1:dimensions[0]),static_cast<long long>(dimensions.size()>1?dimensions[1]:-1),view.size(), view.offset(),
       static_cast<unsigned long long>(generation), static_cast<unsigned long long>(physical->physical.backing),
-      physical->physical.origin, physical->physical.capacity);
+      physical->physical.origin, physical->physical.capacity,source,int(generation_valid),int(!generation_valid));
 }
-inline void read_float(const char *label, Sample &sample, std::size_t row,
-    const c::ReadLease &lease, const c::TensorDesc &description, Floats &destination,
+inline void read_float_view(const char *label, Sample &sample, std::size_t row,
+    mem::ConstBufferView view, const c::TensorDesc &description, Floats &destination,
+    std::uint64_t generation, const char *source, bool generation_valid,
     hyle::inference::Backend &backend) {
   if (description.data_type() != c::DataType::kFloat32) throw std::runtime_error("expected original F32 input");
-  const auto view = take(lease.view());
   const auto bytes = take(description.required_bytes());
   if (view.size() != bytes || bytes % sizeof(float)) throw std::runtime_error("lease exact F32 extent differs");
   const auto words = bytes / sizeof(float);
   if (words > maximum_float_words - state.float_words) throw std::runtime_error("fixed host payload budget exceeded");
   destination.value.resize(words); state.float_words += words;
-  identity(label, sample.request, row, view, description, lease.generation(), backend);
+  identity(label, sample.request, row, view, description, generation, backend,source,generation_valid);
   check(view.read(std::as_writable_bytes(std::span(destination.value))));
+}
+inline void read_float(const char *label, Sample &sample, std::size_t row,
+    const c::ReadLease &lease, const c::TensorDesc &description, Floats &destination,
+    hyle::inference::Backend &backend) {
+  read_float_view(label,sample,row,take(lease.view()),description,destination,
+      lease.generation(),"original_read_lease",true,backend);
 }
 
 inline void difference(const char *label, std::span<const float> before, std::span<const float> after,
@@ -155,18 +170,35 @@ inline void compare_live_q(const char *label, Sample &sample, std::size_t row,
       label, sample.request, row, original.value.size(), different, maximum, nonfinite);
 }
 
-// Read the existing exclusive input writer only after its actual invocation
-// has completed; never publish/downgrade it or invent an adopted read lease.
-template<class Word> inline void read_fixed(const char *label, Sample &sample,
-    qwen35::Tensor &tensor, std::span<Word> output, hyle::inference::Backend &backend) {
+struct OriginalTensorView final {
   mem::ConstBufferView view;
   std::uint64_t generation = 0;
-  if (tensor.ready.valid()) { view = take(tensor.ready.view()); generation = tensor.ready.generation(); }
-  else if (tensor.writer.valid()) { view = take(tensor.writer.view()); generation = tensor.writer.generation(); }
-  else throw std::runtime_error("original fixed input has no independent ready/exclusive lease; no permission workaround");
-  if (view.size() != output.size_bytes()) throw std::runtime_error("fixed input exact extent differs");
-  identity(label, sample.request, 0, view, tensor.description, generation, backend);
-  check(view.read(std::as_writable_bytes(output)));
+  const char *source = nullptr;
+  bool generation_valid = false;
+};
+inline OriginalTensorView original_tensor_view(qwen35::Tensor &tensor) {
+  // pool is the original backing allocator, not another live payload authority.
+  // Exactly one payload owner is allowed; ambiguous Buffer/writer/ready mixtures fail.
+  if (unsigned(tensor.buffer.valid())+unsigned(tensor.writer.valid())+unsigned(tensor.ready.valid())!=1)
+    throw std::runtime_error("Tensor has missing or mixed original payload ownership");
+  OriginalTensorView owned;
+  if (tensor.ready.valid()) owned={take(tensor.ready.view()),tensor.ready.generation(),"original_read_lease",true};
+  else if (tensor.writer.valid()) owned={take(tensor.writer.view()),tensor.writer.generation(),"original_exclusive_writer",true};
+  else owned={tensor.buffer.view(),0,"original_owned_buffer",false};
+  owned.view=take(owned.view.subview(0,take(tensor.description.required_bytes())));
+  return owned;
+}
+// The ORIGINAL program remains alive on this stack, is really retired, and
+// has not started its next input write. Buffer::read/Tensor::read explicitly
+// authorize this owner-backed read. Never adopt/publish/upgrade a fake lease.
+template<class Word> inline void read_fixed(const char *label, Sample &sample,
+    qwen35::Tensor &tensor, const hyle::inference::ProgramCarrier<qwen35::ColdResources> &carrier,
+    std::span<Word> output, hyle::inference::Backend &backend) {
+  if (!carrier.retired()) throw std::runtime_error("fixed input original carrier has not actually retired");
+  const auto owned=original_tensor_view(tensor);
+  if (owned.view.size() != output.size_bytes()) throw std::runtime_error("fixed input exact extent differs");
+  identity(label,sample.request,0,owned.view,tensor.description,owned.generation,backend,owned.source,owned.generation_valid);
+  check(owned.view.read(std::as_writable_bytes(output)));
 }
 
 template<class Model, class Call> inline void prepared(Model &model, const Call &call, std::size_t credit) noexcept {
@@ -228,19 +260,22 @@ struct ProposalScope final {
 inline void proposal(qwen35::DraftProgram &program, const c::ReadLease &q, std::int32_t id,
     const std::array<std::uint32_t,4> &expected, hyle::inference::Backend &backend) noexcept {
   if (!draft_sample) return;
-  observe("q_fresh", [&] {
-    auto &sample = *draft_sample; const auto row = sample.fresh_count;
+  observe("draft_context", [&] {
+    auto &sample = *draft_sample; const auto row = sample.fresh_count++;
     if (row >= 3 || !program.carrier.retired()) throw std::runtime_error("draft count/actual retirement differs");
     const auto description = program.io.output_facts(program.probabilities_output).description;
-    read_float("q_just_retained", sample, row, q, description, sample.fresh_q[row], backend);
-    read_fixed("draft_gpu_identity", sample, program.identity_values,
-        std::span(sample.draft_keys).subspan(4 * row, 4), backend);
     sample.draft_ids[row] = id;
-    state.note("R1_DRAFT request=%u row=%zu program_rows=%zu sampler=%zu steps=%zu id=%d gpu_key=%u,%u,%u,%u expected_cpu=%u,%u,%u,%u\n",
-        sample.request,row,program.rows,program.sampling_index,program.steps,id,
-        sample.draft_keys[4*row],sample.draft_keys[4*row+1],sample.draft_keys[4*row+2],sample.draft_keys[4*row+3],
-        expected[0],expected[1],expected[2],expected[3]);
-    ++sample.fresh_count;
+    sample.fresh_q_ok[row]=observe("q_fresh",[&] {
+      read_float("q_just_retained",sample,row,q,description,sample.fresh_q[row],backend);
+    });
+    sample.draft_key_ok[row]=observe("draft_gpu_identity",[&] {
+      read_fixed("draft_gpu_identity",sample,program.identity_values,program.carrier,
+          std::span(sample.draft_keys).subspan(4*row,4),backend);
+      state.note("R1_DRAFT request=%u row=%zu program_rows=%zu sampler=%zu steps=%zu id=%d gpu_key=%u,%u,%u,%u expected_cpu=%u,%u,%u,%u\n",
+          sample.request,row,program.rows,program.sampling_index,program.steps,id,
+          sample.draft_keys[4*row],sample.draft_keys[4*row+1],sample.draft_keys[4*row+2],sample.draft_keys[4*row+3],
+          expected[0],expected[1],expected[2],expected[3]);
+    });
   });
 }
 
@@ -249,19 +284,42 @@ struct TargetScope final {
   TargetScope *previous = current;
   Sample *sample = nullptr;
   const c::ReadLease *generated = nullptr;
+  qwen35::Tensor *caller = nullptr;
+  const hyle::inference::ProgramCarrier<qwen35::ColdResources> *carrier = nullptr;
   c::ConstTensorView exact;
-  TargetScope(const void *session, const c::ReadLease &lease, c::ConstTensorView view,
+  TargetScope(const void *session, const c::ReadLease &lease, qwen35::Tensor &tensor,
+      const hyle::inference::ProgramCarrier<qwen35::ColdResources> *original, c::ConstTensorView view,
       std::size_t members,std::size_t physical_rows,std::size_t state_slot) noexcept
-      : generated(&lease), exact(view) {
-    for (auto &candidate : state.samples) if (candidate.armed && candidate.session == session && !candidate.after) sample = &candidate;
+      : generated(&lease), caller(&tensor), carrier(original), exact(view) {
+    for (auto &candidate : state.samples) if (candidate.armed && candidate.session == session && !candidate.target_selected) {
+      sample=&candidate; candidate.target_selected=true; // Exactly one third-round attempt, even if observation fails.
+    }
     if (sample) {
       state.note("R1_TARGET_CONTEXT request=%u members=%zu physical_query_rows=%zu state_slot=%zu\n",sample->request,members,physical_rows,state_slot);
-      if (members!=1) { failure("target_scope","actual target is not R1; payload pair not observed"); sample=nullptr; }
+      if (members!=1 || !carrier || !carrier->retired()) {
+        failure("target_scope","actual target is not R1 or its original carrier has not retired; payload not observed"); sample=nullptr;
+      }
     }
     current = this;
   }
   ~TargetScope() { current = previous; }
 };
+
+inline void read_target(TargetScope &scope, Sample &sample, hyle::inference::Backend &backend) {
+  if (!scope.carrier || !scope.carrier->retired()) throw std::runtime_error("target original carrier has not actually retired");
+  OriginalTensorView owned;
+  if (scope.generated->valid()) owned={take(scope.generated->view()),scope.generated->generation(),"original_read_lease",true};
+  else owned=original_tensor_view(*scope.caller); // Borrow the actual original step-slot Tensor, never only the raw argument.
+  const auto wanted=scope.exact.storage();
+  const auto bytes=take(scope.exact.description().required_bytes());
+  if (owned.view.resource()!=wanted.resource() || owned.view.native_handle()!=wanted.native_handle() ||
+      wanted.offset()<owned.view.offset()) throw std::runtime_error("target exact view differs from its original owner");
+  const auto offset=wanted.offset()-owned.view.offset();
+  if (offset>owned.view.size() || bytes>owned.view.size()-offset || bytes>wanted.size())
+    throw std::runtime_error("target exact view exceeds its original owned bytes");
+  read_float_view("target_RAW_logits_NOT_processed_P",sample,0,take(owned.view.subview(offset,bytes)),
+      scope.exact.description(),sample.target_raw_logits,owned.generation,owned.source,owned.generation_valid,backend);
+}
 
 inline void prefix_before(qwen35::PrefixSamplingProgram &program, std::span<const c::ReadLease> q,
     std::span<const std::int32_t> ids, SamplingCursor cursor, std::size_t quota,
@@ -270,7 +328,7 @@ inline void prefix_before(qwen35::PrefixSamplingProgram &program, std::span<cons
   auto *scope = TargetScope::current; if (!scope || !scope->sample) return;
   observe("prefix_before", [&] {
     auto &sample = *scope->sample;
-    if (sample.before || q.size() != ids.size() || q.size() > 3 || sample.fresh_count != q.size() || cursor != sample.cursor || quota != sample.quota)
+    if (sample.before || q.size() != ids.size() || q.size() > 3 || sample.fresh_count != q.size() || cursor != sample.cursor || quota != sample.quota || !program.carrier.retired())
       throw std::runtime_error("actual prefix identity/count/owner differs from retained draft cohort");
     sample.proposals = q.size();
     state.note("R1_PREFIX request=%u actual_K=%zu verified_rows=%zu quota=%zu seed=%llu stream=%llu draw=%llu bias=%d allowed=%d counts=%d conditional_rows=%zu\n",
@@ -281,29 +339,27 @@ inline void prefix_before(qwen35::PrefixSamplingProgram &program, std::span<cons
       throw std::runtime_error("unexpected actual conditional inputs; not read or silently treated equal");
     for (std::size_t row=0; row<q.size(); ++row) {
       if (ids[row] != sample.draft_ids[row]) throw std::runtime_error("prefix proposal id differs from its original completed draft");
-      read_float("q_before_prefix",sample,row,q[row],program.io.input_facts(program.q_inputs[row]).description,sample.prefix_q[row],backend);
-      difference("q_fresh_to_prefix",sample.fresh_q[row].value,sample.prefix_q[row].value,sample.request,row);
+      sample.prefix_q_ok[row]=observe("q_before_prefix",[&] {
+        read_float("q_before_prefix",sample,row,q[row],program.io.input_facts(program.q_inputs[row]).description,sample.prefix_q[row],backend);
+        if (sample.fresh_q_ok[row]) difference("q_fresh_to_prefix",sample.fresh_q[row].value,sample.prefix_q[row].value,sample.request,row);
+        else state.note("R1_COMPONENT_UNOBSERVED request=%u row=%zu component=q_fresh_to_prefix missing=fresh_q\n",sample.request,row);
+      });
     }
-    c::ReadLease target; // Independent subview of the original ready owner, never a fabricated permission.
-    if (scope->generated->valid()) {
-      const auto root=take(scope->generated->view()), wanted=scope->exact.storage();
-      if (root.resource()!=wanted.resource() || root.native_handle()!=wanted.native_handle() || wanted.offset()<root.offset())
-        throw std::runtime_error("target original lease root differs");
-      target=take(scope->generated->subview(wanted.offset()-root.offset(),take(scope->exact.description().required_bytes())));
-    } else throw std::runtime_error("caller-owned target has no existing ready ReadLease; no publish/adopt/permission workaround");
-    read_float("target_RAW_logits_NOT_processed_P",sample,0,target,scope->exact.description(),sample.target_raw_logits,backend);
-    read_fixed("prefix_gpu_identity_before",sample,program.identity_values,std::span(sample.prefix_keys).first(4*(q.size()+1)),backend);
-    if (!q.empty()) {
-      read_fixed("prefix_gpu_proposals_before",sample,program.id_values,std::span(sample.prefix_ids).first(q.size()),backend);
-      read_fixed("prefix_gpu_continuation_before",sample,program.continuation_values,std::span(sample.continuation).first(q.size()),backend);
-    }
-    for (std::size_t row=0; row<=q.size(); ++row) {
-      const auto expected=cursor.identity(row==q.size()?2*q.size():2*row+1);
-      state.note("R1_PREFIX_KEY request=%u row=%zu gpu=%u,%u,%u,%u cpu=%u,%u,%u,%u\n",sample.request,row,
-          sample.prefix_keys[4*row],sample.prefix_keys[4*row+1],sample.prefix_keys[4*row+2],sample.prefix_keys[4*row+3],expected[0],expected[1],expected[2],expected[3]);
-    }
-    for (std::size_t row=0; row<q.size(); ++row) state.note("R1_PREFIX_FIXED request=%u row=%zu gpu_id=%d cpu_id=%d continuation_bits=%08x\n",
-        sample.request,row,sample.prefix_ids[row],ids[row],std::bit_cast<std::uint32_t>(sample.continuation[row]));
+    sample.target_ok=observe("target_raw_logits",[&] {read_target(*scope,sample,backend);});
+    sample.fixed_before_ok=observe("prefix_fixed_before",[&] {
+      read_fixed("prefix_gpu_identity_before",sample,program.identity_values,program.carrier,std::span(sample.prefix_keys).first(4*(q.size()+1)),backend);
+      if (!q.empty()) {
+        read_fixed("prefix_gpu_proposals_before",sample,program.id_values,program.carrier,std::span(sample.prefix_ids).first(q.size()),backend);
+        read_fixed("prefix_gpu_continuation_before",sample,program.continuation_values,program.carrier,std::span(sample.continuation).first(q.size()),backend);
+      }
+      for (std::size_t row=0; row<=q.size(); ++row) {
+        const auto expected=cursor.identity(row==q.size()?2*q.size():2*row+1);
+        state.note("R1_PREFIX_KEY request=%u row=%zu gpu=%u,%u,%u,%u cpu=%u,%u,%u,%u\n",sample.request,row,
+            sample.prefix_keys[4*row],sample.prefix_keys[4*row+1],sample.prefix_keys[4*row+2],sample.prefix_keys[4*row+3],expected[0],expected[1],expected[2],expected[3]);
+      }
+      for (std::size_t row=0; row<q.size(); ++row) state.note("R1_PREFIX_FIXED request=%u row=%zu gpu_id=%d cpu_id=%d continuation_bits=%08x\n",
+          sample.request,row,sample.prefix_ids[row],ids[row],std::bit_cast<std::uint32_t>(sample.continuation[row]));
+    });
     sample.before=true;
   });
 }
@@ -315,28 +371,45 @@ inline void prefix_after(qwen35::PrefixSamplingProgram &program, std::span<const
     auto &sample=*scope->sample;
     if (!sample.before || sample.after || !program.carrier.retired()) throw std::runtime_error("actual prefix completion/observation missing");
     std::array<std::uint32_t,16> keys{}; std::array<std::int32_t,3> ids{}; std::array<float,3> continuation{};
-    read_fixed("prefix_gpu_identity_after",sample,program.identity_values,std::span(keys).first(4*(q.size()+1)),backend);
-    if (!q.empty()) {
-      read_fixed("prefix_gpu_proposals_after",sample,program.id_values,std::span(ids).first(q.size()),backend);
-      read_fixed("prefix_gpu_continuation_after",sample,program.continuation_values,std::span(continuation).first(q.size()),backend);
+    sample.fixed_after_ok=observe("prefix_fixed_after",[&] {
+      read_fixed("prefix_gpu_identity_after",sample,program.identity_values,program.carrier,std::span(keys).first(4*(q.size()+1)),backend);
+      if (!q.empty()) {
+        read_fixed("prefix_gpu_proposals_after",sample,program.id_values,program.carrier,std::span(ids).first(q.size()),backend);
+        read_fixed("prefix_gpu_continuation_after",sample,program.continuation_values,program.carrier,std::span(continuation).first(q.size()),backend);
+      }
+      if (sample.fixed_before_ok) state.note("R1_FIXED_STABILITY request=%u keys_equal=%d ids_equal=%d continuation_bits_equal=%d\n",sample.request,
+          int(keys==sample.prefix_keys),int(ids==sample.prefix_ids),int(std::memcmp(continuation.data(),sample.continuation.data(),sizeof(continuation))==0));
+      else state.note("R1_COMPONENT_UNOBSERVED request=%u component=fixed_stability missing=fixed_before\n",sample.request);
+    });
+    for (std::size_t row=0; row<q.size(); ++row) {
+      if (sample.prefix_q_ok[row]) sample.post_q_ok[row]=observe("q_prefix_consumption",[&] {
+        compare_live_q("q_prefix_consumption",sample,row,q[row],sample.prefix_q[row]);
+      });
+      else state.note("R1_COMPONENT_UNOBSERVED request=%u row=%zu component=q_prefix_consumption missing=prefix_q\n",sample.request,row);
     }
-    state.note("R1_FIXED_STABILITY request=%u keys_equal=%d ids_equal=%d continuation_bits_equal=%d\n",sample.request,
-        int(keys==sample.prefix_keys),int(ids==sample.prefix_ids),int(std::memcmp(continuation.data(),sample.continuation.data(),sizeof(continuation))==0));
-    for (std::size_t row=0; row<q.size(); ++row) compare_live_q("q_prefix_consumption",sample,row,q[row],sample.prefix_q[row]);
     for (std::size_t i=0;i<program.packet_host.size();++i) state.note("R1_ORIGINAL_PACKET request=%u word=%zu value=%d\n",sample.request,i,program.packet_host[i]);
     sample.after=true;
     const auto &a=state.samples[0], &b=state.samples[1];
     if (!a.after || !b.after) return;
     if (a.vocabulary!=b.vocabulary || a.proposals!=b.proposals) throw std::runtime_error("cross-request sampler input shapes differ; no fake equality");
-    difference("request12_vs14_target_RAW_logits",a.target_raw_logits.value,b.target_raw_logits.value,14,0);
+    bool complete=a.target_ok && b.target_ok && a.fixed_before_ok && b.fixed_before_ok && a.fixed_after_ok && b.fixed_after_ok;
+    if (a.target_ok && b.target_ok) difference("request12_vs14_target_RAW_logits",a.target_raw_logits.value,b.target_raw_logits.value,14,0);
+    else state.note("R1_COMPONENT_UNOBSERVED component=cross_target_raw_logits missing=target\n");
     for (std::size_t row=0;row<a.proposals;++row) {
-      difference("request12_vs14_q_fresh",a.fresh_q[row].value,b.fresh_q[row].value,14,row);
-      difference("request12_vs14_q_before_prefix",a.prefix_q[row].value,b.prefix_q[row].value,14,row);
+      complete=complete && a.fresh_q_ok[row] && b.fresh_q_ok[row] && a.prefix_q_ok[row] && b.prefix_q_ok[row] &&
+          a.post_q_ok[row] && b.post_q_ok[row] && a.draft_key_ok[row] && b.draft_key_ok[row];
+      if (a.fresh_q_ok[row] && b.fresh_q_ok[row]) difference("request12_vs14_q_fresh",a.fresh_q[row].value,b.fresh_q[row].value,14,row);
+      else state.note("R1_COMPONENT_UNOBSERVED row=%zu component=cross_fresh_q missing=fresh_q\n",row);
+      if (a.prefix_q_ok[row] && b.prefix_q_ok[row]) difference("request12_vs14_q_before_prefix",a.prefix_q[row].value,b.prefix_q[row].value,14,row);
+      else state.note("R1_COMPONENT_UNOBSERVED row=%zu component=cross_prefix_q missing=prefix_q\n",row);
     }
-    state.note("R1_CROSS_FIXED cpu_cursor_equal=%d quota_equal=%d planned_K_equal=%d draft_gpu_keys_equal=%d prefix_gpu_keys_equal=%d proposal_ids_equal=%d continuation_bits_equal=%d\n",
+    const auto draft_keys_complete=[&](const Sample &s) {return std::ranges::all_of(std::span(s.draft_key_ok).first(s.proposals),[](bool x){return x;});};
+    if (draft_keys_complete(a) && draft_keys_complete(b) && a.fixed_before_ok && b.fixed_before_ok)
+      state.note("R1_CROSS_FIXED cpu_cursor_equal=%d quota_equal=%d planned_K_equal=%d draft_gpu_keys_equal=%d prefix_gpu_keys_equal=%d proposal_ids_equal=%d continuation_bits_equal=%d\n",
         int(a.cursor==b.cursor),int(a.quota==b.quota),int(a.planned==b.planned),int(a.draft_keys==b.draft_keys),int(a.prefix_keys==b.prefix_keys),
         int(a.prefix_ids==b.prefix_ids),int(std::memcmp(a.continuation.data(),b.continuation.data(),sizeof(a.continuation))==0));
-    state.compared=true;
+    else state.note("R1_COMPONENT_UNOBSERVED component=cross_fixed missing=draft_or_prefix_key\n");
+    state.compared=complete;
   });
 }
 template<class Model, class Call> inline void published(Model &, std::span<Call> calls) noexcept {
