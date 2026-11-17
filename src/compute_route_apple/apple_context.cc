@@ -372,8 +372,8 @@ std::vector<mx::array> prepare_mlx(MlxProgram &program, RegionFunction region,
 }
 
 struct InvocationState;
-Status arm_device_prefix(InvocationState &,mx::Stream,std::span<const mx::array>);
-void complete_device_encoding(InvocationState &,mx::Stream);
+Status evaluate_device_prefix(InvocationState &, mx::Stream,
+                             const std::vector<mx::array> &);
 Status evaluate_mlx(const MlxProgram &program,
                     const std::vector<mx::array> &inputs,
                     std::vector<mx::array> &outputs, mx::Stream stream,
@@ -385,9 +385,10 @@ Status evaluate_mlx(const MlxProgram &program,
   if (pending) {
     // GPU eval encodes buffers/events before returning. Consumers import the
     // original events; the same Invocation drains their errors at retirement.
-    if(device_prefix)HYLE_RETURN_IF_ERROR(arm_device_prefix(*device_prefix,stream,outputs));
-    mx::async_eval(outputs);
-    if(device_prefix)complete_device_encoding(*device_prefix,stream);
+    if (device_prefix)
+      HYLE_RETURN_IF_ERROR(evaluate_device_prefix(*device_prefix, stream, outputs));
+    else
+      mx::async_eval(outputs);
     for (const auto &output : outputs) {
       if (output.event().valid()) {
         HYLE_FATAL_ASSERT(pending->size() < pending->capacity());
@@ -455,6 +456,24 @@ Status observe_native_prefix(InvocationState &) noexcept;
 Status observe_native_inputs(InvocationState &) noexcept;
 Status drain_plan_regions(InvocationState &) noexcept;
 
+// The locked MLX evaluator can commit several command buffers within one
+// async_eval. Install the original Invocation callback after ALL actual output
+// dependencies, rather than on whichever buffer existed before evaluation.
+// This borrowed alias adds no Metal kernel or buffer and is never compiled
+// into the model's mathematical recipe.
+class DevicePrefixTail final : public mx::Primitive {
+public:
+  DevicePrefixTail(mx::Stream stream, InvocationState *owner)
+      : Primitive(stream), owner_(owner) {}
+  void eval_cpu(const std::vector<mx::array> &, std::vector<mx::array> &) override {
+    throw std::logic_error("Apple device prefix tail requires its native GPU stream");
+  }
+  void eval_gpu(const std::vector<mx::array> &, std::vector<mx::array> &) override;
+  const char *name() const override { return "HyleOriginalDevicePrefixTail"; }
+private:
+  InvocationState *owner_;
+};
+
 struct InvocationState : Job {
   struct NativeTail final : Job { InvocationState *owner = nullptr; } native_tail;
   struct PreparedInput final {
@@ -501,6 +520,7 @@ struct InvocationState : Job {
   CompletionNotification notification;
   Status terminal_hint;
   bool native_async = false; // Selected once from this actual prepared Plan.
+  std::shared_ptr<DevicePrefixTail> device_prefix_tail;
   std::optional<mx::array> device_prefix_check;
   NS::SharedPtr<MTL::CommandBuffer> device_prefix_command;
   mx::Event device_prefix_event;
@@ -839,6 +859,10 @@ Status drain_plan_regions(InvocationState &state) noexcept {
   if(state.program->device_prefix){
     try{
       for(auto &event:state.mlx_events){event.wait();event.check_error();}
+      if (state.device_prefix_event.valid()) {
+        state.device_prefix_event.wait();
+        state.device_prefix_event.check_error();
+      }
       if(state.device_prefix_check){
         state.device_prefix_check->wait();
         terminal.Update(algorithm_status(state.device_prefix_check->data<std::int32_t>()[0]));
@@ -1030,8 +1054,8 @@ void native_prefix_completed(void *opaque) noexcept {
   auto &state = *static_cast<InvocationState *>(opaque);
   state.program->runtime->enqueue_retirement(state.native_tail);
 }
-Status arm_device_prefix(InvocationState &state,mx::Stream stream,std::span<const mx::array> outputs){
-  if(state.native_deferred || std::ranges::all_of(outputs,[](const auto &value){return value.is_available();}))
+Status arm_device_prefix(InvocationState &state, mx::Stream stream) {
+  if (state.native_deferred)
     return Status::Ok();
   auto &runtime=*state.program->runtime;
   state.device_prefix_command=NS::RetainPtr(mx::metal::get_command_encoder(stream).get_command_buffer());
@@ -1045,15 +1069,34 @@ Status arm_device_prefix(InvocationState &state,mx::Stream stream,std::span<cons
   }catch(...){state.device_prefix_command.reset();runtime.release_native_tail();throw;}
   return Status::Ok();
 }
-void complete_device_encoding(InvocationState &state,mx::Stream stream){
-  if(!state.native_deferred || !state.device_prefix_command)return;
-  // A view-only recipe may encode no new GPU kernel. Commit only its already
-  // retained original buffer, never create a second completion-only buffer.
-  if(state.device_prefix_command->status()==MTL::CommandBufferStatusNotEnqueued){
-    auto &encoder=mx::metal::get_command_encoder(stream);
-    HYLE_FATAL_ASSERT(encoder.get_command_buffer()==state.device_prefix_command.get());
-    encoder.commit();
+void DevicePrefixTail::eval_gpu(const std::vector<mx::array> &inputs,
+                                std::vector<mx::array> &outputs) {
+  HYLE_FATAL_ASSERT(!inputs.empty() && outputs.size() == 1);
+  outputs[0].copy_shared_buffer(inputs[0]);
+  const auto status = arm_device_prefix(*owner_, stream());
+  if (!status.ok()) throw RegionFailure{status};
+  // This event belongs to this whole async_eval, even if every mathematical
+  // output is only a view retaining an earlier producer's different event.
+  HYLE_FATAL_ASSERT(outputs[0].event().valid());
+  owner_->device_prefix_event = outputs[0].event();
+}
+Status evaluate_device_prefix(InvocationState &state, mx::Stream stream,
+                             const std::vector<mx::array> &outputs) {
+  if (outputs.empty() || std::ranges::all_of(outputs,
+          [](const auto &value) { return value.is_available(); })) {
+    mx::async_eval(outputs);
+    return Status::Ok();
   }
+  HYLE_FATAL_ASSERT(state.device_prefix_tail &&
+                    state.device_prefix_tail->stream() == stream);
+  // This fresh array descriptor must stay outside MLX compile/CSE. All real
+  // outputs, including the checked status, precede it. MLX finishes its own
+  // normal event/finalize epilogue, including for a pending view-only recipe;
+  // HYLE creates no separate completion-only command buffer.
+  auto marker = mx::array(outputs.front().shape(), outputs.front().dtype(),
+                         state.device_prefix_tail, outputs);
+  mx::async_eval({std::move(marker)});
+  return Status::Ok();
 }
 void execute_native_tail(Job *job) noexcept {
   auto &state = *static_cast<InvocationState::NativeTail *>(job)->owner;
@@ -1068,6 +1111,7 @@ void execute_with(InvocationState& state, Evaluate evaluate) noexcept {
   auto &runtime = *state.program->runtime;
   HYLE_FATAL_ASSERT(state.mlx_events.empty());
   state.native_deferred = false;
+  if (state.program->device_prefix) state.device_prefix_event = {};
   {
     std::lock_guard lock(state.completion_mutex);
     state.native_retired = false;
@@ -1138,7 +1182,7 @@ void execute_invocation(Job* job) noexcept {
         &state.mlx_events,&state.device_prefix_check,&state));
     if(state.native_deferred){
       std::lock_guard lock(state.binding_mutex);
-      if(!state.mlx_events.empty())state.device_prefix_event=state.mlx_events.back();
+      HYLE_FATAL_ASSERT(state.device_prefix_event.valid());
       state.native_values_ready=true;
     }
     return Status::Ok();
@@ -1689,7 +1733,11 @@ Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
     }
     auto state = std::make_unique<detail::InvocationState>(state_, std::move(*slot));
     state->execute = detail::execute_invocation;
-    if(state_->device_prefix)state->mlx_events.reserve(state_->outputs.size()+1);
+    if (state_->device_prefix) {
+      state->mlx_events.reserve(state_->outputs.size()+1);
+      state->device_prefix_tail = std::make_shared<detail::DevicePrefixTail>(
+          *state_->runtime->stream, state.get());
+    }
     if (state_->native) {
       const auto &plan = state_->native->description;
       state->native_values.resize(plan.values.size());

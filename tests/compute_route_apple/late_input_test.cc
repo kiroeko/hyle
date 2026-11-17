@@ -11,6 +11,7 @@
 #include <vector>
 #include <thread>
 #include <optional>
+#include <tuple>
 
 #include <gtest/gtest.h>
 #include <mlx/ops.h>
@@ -111,6 +112,220 @@ private:
   std::condition_variable changed_;
   mx::Event event_;
 };
+
+// Let MLX commit actual prefix math at its real operation threshold, then hold
+// only the remaining GPU work. A first-buffer Source callback would prepend a
+// blocking retirement Job while this graph's real suffix still waits.
+class SplitGpuFrontier final {
+public:
+  explicit SplitGpuFrontier(std::shared_ptr<ad::Runtime> runtime)
+      : runtime_(std::move(runtime)) {
+    capture_.owner = this;
+    capture_.execute = [](ad::Job *job) noexcept {
+      auto &self = *static_cast<Capture *>(job)->owner;
+      auto &stream = *self.runtime_->stream;
+      const auto limits = mx::metal::device(stream.device).get_max_ops_mb_per_buffer();
+      auto first = NS::RetainPtr(mx::metal::get_command_encoder(stream).get_command_buffer());
+      {
+        std::lock_guard lock(self.mutex_);
+        self.first_ = std::move(first);
+        self.maximum_ops_ = std::get<0>(limits);
+        self.recorded_ = true;
+      }
+      self.changed_.notify_all();
+    };
+  }
+  hyle::Status capture() {
+    { std::lock_guard lock(mutex_); recorded_ = false; }
+    const auto status = runtime_->enqueue(capture_);
+    if (!status.ok()) return status;
+    std::unique_lock lock(mutex_);
+    changed_.wait(lock, [&] { return recorded_; });
+    return hyle::Status::Ok();
+  }
+  int maximum_ops() { std::lock_guard lock(mutex_); return maximum_ops_; }
+  void arm() { armed_.store(true, std::memory_order_release); }
+  void encode(mx::Stream stream) {
+    if (!armed_.exchange(false, std::memory_order_acq_rel)) return;
+    NS::SharedPtr<MTL::CommandBuffer> first;
+    { std::lock_guard lock(mutex_); first = first_; }
+    // Softmax is not a fusable primitive in locked MLX. Its real dispatches
+    // have naturally exceeded the queried threshold, so MLX's gpu::eval has
+    // already committed this buffer and installed its own handlers correctly.
+    if (!first || first->status() == MTL::CommandBufferStatusNotEnqueued)
+      throw std::runtime_error("natural MLX operation threshold did not commit the first buffer");
+    first->waitUntilCompleted();
+    auto event = mx::Event(stream);
+    event.set_value(1);
+    event.wait(stream);
+    {
+      std::lock_guard lock(mutex_);
+      event_ = std::move(event);
+      if (open_) event_.cast<mx::metal::EventImpl>().signal(1);
+    }
+    changed_.notify_all();
+  }
+  bool wait_entered_for(std::chrono::seconds limit) {
+    std::unique_lock lock(mutex_);
+    return changed_.wait_for(lock, limit, [&] { return event_.valid(); });
+  }
+  void open() {
+    std::lock_guard lock(mutex_);
+    open_ = true;
+    if (event_.valid()) event_.cast<mx::metal::EventImpl>().signal(1);
+  }
+private:
+  struct Capture final : ad::Job { SplitGpuFrontier *owner = nullptr; } capture_;
+  std::shared_ptr<ad::Runtime> runtime_;
+  NS::SharedPtr<MTL::CommandBuffer> first_;
+  std::atomic<bool> armed_{false};
+  std::mutex mutex_;
+  std::condition_variable changed_;
+  mx::Event event_;
+  int maximum_ops_ = 0;
+  bool open_ = false, recorded_ = false;
+};
+class SplitGpuCheckpoint final : public mx::Primitive {
+public:
+  SplitGpuCheckpoint(mx::Stream stream, std::shared_ptr<SplitGpuFrontier> frontier)
+      : Primitive(stream), frontier_(std::move(frontier)) {}
+  void eval_cpu(const std::vector<mx::array> &, std::vector<mx::array> &) override {
+    throw std::logic_error("split GPU checkpoint requires its original Metal stream");
+  }
+  void eval_gpu(const std::vector<mx::array> &inputs,
+                std::vector<mx::array> &outputs) override {
+    frontier_->encode(stream());
+    outputs[0].copy_shared_buffer(inputs[0]);
+  }
+  const char *name() const override { return "HyleTestSplitGpuPrefix"; }
+private:
+  std::shared_ptr<SplitGpuFrontier> frontier_;
+};
+
+void exercise_device_prefix_last_buffer(bool cancel) {
+  auto context = a::Context::create();
+  ASSERT_TRUE(context) << context.error().message();
+  auto runtime = ad::ContextAccess::runtime(*context);
+  auto frontier = std::make_shared<SplitGpuFrontier>(runtime);
+  ASSERT_TRUE(frontier->capture().ok());
+  const auto maximum_ops = frontier->maximum_ops();
+  ASSERT_GT(maximum_ops, 0);
+  ASSERT_LE(maximum_ops, 256) << "bounded fixture requires at most 258 real softmax dispatches";
+  const auto prefix_ops = (std::max)(std::size_t{32}, static_cast<std::size_t>(maximum_ops) + 2);
+  struct OpenOnExit final {
+    std::shared_ptr<SplitGpuFrontier> frontier;
+    ~OpenOnExit() { frontier->open(); }
+  } release{frontier};
+  const std::array specs{a::InputSpec{{4}, mx::float32}};
+  auto program = ad::ContextAccess::compile_device_prefix(runtime,
+      [frontier, prefix_ops](const auto &inputs, mx::Stream stream) {
+        auto prefix = inputs[0];
+        for (std::size_t i = 0; i < prefix_ops; ++i)
+          prefix = mx::softmax(prefix, -1, true, stream);
+        auto middle = mx::array(prefix.shape(), prefix.dtype(),
+            std::make_shared<SplitGpuCheckpoint>(stream, frontier), {prefix});
+        return std::vector<mx::array>{mx::square(middle, stream)};
+      }, specs);
+  ASSERT_TRUE(program) << program.error().message();
+  auto slot = program->create_invocation();
+  ASSERT_TRUE(slot) << slot.error().message();
+  const std::array inputs{mx::array({1.f, 2.f, 3.f, 4.f})};
+  ASSERT_TRUE(slot->bind(inputs).ok());
+  ASSERT_TRUE(frontier->capture().ok()); // After every cold compile/finalize.
+  frontier->arm();
+  auto work = slot->submit();
+  ASSERT_TRUE(work) << work.error().message();
+  ASSERT_TRUE(frontier->wait_entered_for(std::chrono::seconds(2)));
+  FifoGate owner;
+  const auto admitted = owner.enqueue(runtime);
+  const bool forward = admitted.ok() && owner.wait_entered_for(std::chrono::seconds(2));
+  const auto pending = work->completion().poll();
+  if (cancel) EXPECT_TRUE(work->request_cancel().ok());
+  frontier->open();
+  owner.open_and_join();
+  ASSERT_TRUE(admitted.ok()) << admitted.message();
+  EXPECT_TRUE(forward) << "first-buffer callback blocked the original owner before the actual prefix ended";
+  ASSERT_TRUE(pending) << pending.error().message();
+  EXPECT_EQ(*pending, c::CompletionPoll::kPending);
+  const auto terminal = work->completion().wait();
+  EXPECT_TRUE(cancel ? terminal.IsCancelled() : terminal.ok()) << terminal.message();
+  if (!cancel) {
+    auto output = ad::InvocationAccess::output(*slot, 0);
+    ASSERT_TRUE(output) << output.error().message();
+    const std::array<float, 4> expected{.0625f, .0625f, .0625f, .0625f};
+    for (std::size_t i = 0; i < expected.size(); ++i)
+      EXPECT_FLOAT_EQ(output->data<float>()[i], expected[i]);
+  }
+  auto fresh = program->create_invocation();
+  ASSERT_TRUE(fresh) << fresh.error().message();
+  ASSERT_TRUE(fresh->bind(inputs).ok());
+  auto reused = fresh->submit();
+  ASSERT_TRUE(reused) << reused.error().message();
+  EXPECT_TRUE(reused->completion().wait().ok());
+  ASSERT_TRUE(context->close().ok());
+  { std::lock_guard lock(runtime->queue_mutex); EXPECT_EQ(runtime->native_tails, 0u); }
+}
+TEST(AppleLateInput, DevicePrefixRetirementFollowsLastBufferWithoutBlockingTheOriginalOwner) {
+  exercise_device_prefix_last_buffer(false);
+}
+TEST(AppleLateInput, DevicePrefixLastBufferCancelRetiresBeforeFreshSlotReuse) {
+  exercise_device_prefix_last_buffer(true);
+}
+TEST(AppleLateInput, DevicePrefixReadyViewNeedsNoNativeRetirementBuffer) {
+  auto context = a::Context::create().value();
+  auto runtime = ad::ContextAccess::runtime(context);
+  const std::array specs{a::InputSpec{{4}, mx::float32}};
+  auto program = ad::ContextAccess::compile_device_prefix(runtime,
+      [](const auto &inputs, mx::Stream) { return std::vector<mx::array>{inputs[0]}; }, specs);
+  ASSERT_TRUE(program) << program.error().message();
+  auto slot = program->create_invocation().value();
+  const std::array inputs{mx::array({1.f, 2.f, 3.f, 4.f})};
+  ASSERT_TRUE(slot.bind(inputs).ok());
+  auto work = slot.submit().value();
+  ASSERT_TRUE(work.completion().wait().ok());
+  auto output = ad::InvocationAccess::output(slot, 0).value();
+  EXPECT_EQ(output.data_shared_ptr(), inputs[0].data_shared_ptr());
+  { std::lock_guard lock(runtime->queue_mutex);
+    EXPECT_EQ(runtime->native_tail_peak, 0u); EXPECT_EQ(runtime->native_tails, 0u); }
+  EXPECT_TRUE(context.close().ok());
+}
+TEST(AppleLateInput, DevicePrefixPendingViewKeepsItsOriginalSourceAndActualTail) {
+  auto context = a::Context::create().value();
+  auto runtime = ad::ContextAccess::runtime(context);
+  const std::array specs{a::InputSpec{{4}, mx::float32}};
+  auto first = ad::ContextAccess::compile_device_prefix(runtime,
+      [](const auto &inputs, mx::Stream stream) {
+        return std::vector<mx::array>{mx::square(inputs[0], stream)};
+      }, specs).value();
+  auto view = ad::ContextAccess::compile_device_prefix(runtime,
+      [](const auto &inputs, mx::Stream) { return std::vector<mx::array>{inputs[0]}; }, specs).value();
+  auto producer = first.create_invocation().value(), consumer = view.create_invocation().value();
+  const std::array inputs{mx::array({1.f, 2.f, 3.f, 4.f})};
+  ASSERT_TRUE(producer.bind(inputs).ok());
+  std::array<ad::InputBinding, 1> late;
+  late[0].source = ad::InvocationAccess::source(producer, 0).value();
+  ASSERT_TRUE(ad::InvocationAccess::prepare_inputs(consumer, late).ok());
+  GpuEventGate gpu(runtime);
+  ASSERT_TRUE(gpu.enqueue().ok());
+  auto produced = producer.submit().value(), consumed = consumer.submit().value();
+  FifoGate owner;
+  const auto admitted = owner.enqueue(runtime);
+  const bool forward = admitted.ok() && owner.wait_entered_for(std::chrono::seconds(2));
+  const auto pending = consumed.completion().poll();
+  gpu.open(); owner.open_and_join();
+  ASSERT_TRUE(admitted.ok()); EXPECT_TRUE(forward);
+  ASSERT_TRUE(pending); EXPECT_EQ(*pending, c::CompletionPoll::kPending);
+  ASSERT_TRUE(consumed.completion().wait().ok());
+  ASSERT_TRUE(produced.completion().wait().ok());
+  auto source_output = ad::InvocationAccess::output(producer, 0).value();
+  auto view_output = ad::InvocationAccess::output(consumer, 0).value();
+  EXPECT_EQ(source_output.data_shared_ptr(), view_output.data_shared_ptr());
+  const std::array<float, 4> expected{1.f, 4.f, 9.f, 16.f};
+  for (std::size_t i = 0; i < expected.size(); ++i)
+    EXPECT_FLOAT_EQ(view_output.data<float>()[i], expected[i]);
+  ASSERT_TRUE(context.close().ok());
+  { std::lock_guard lock(runtime->queue_mutex); EXPECT_EQ(runtime->native_tails, 0u); }
+}
 
 void exercise_native_signal_source(bool close_pending) {
   auto context = a::Context::create();

@@ -50,6 +50,9 @@ MLX GPU后端本来使用Metal，优先在同一runtime内复用成熟compiled r
 MLX生成array由实际owner保活，不为统一out-buffer形状强制影子复制。cache hit仍可能构造执行
 arrays/metadata，应按实际managed成本描述；不能从compile名称推断无分配重放。
 提交线程、stream、metallib与错误观测具有原生约束，host可见也不等于GPU工作成功完成。
+纯MLX前缀在全部真实输出编码后，将原Invocation回调登记到实际尾部命令缓冲；
+MLX一次评估可以提交多张缓冲，不能用首张缓冲的完成通知提前阻塞原owner。
+待完成的view使用本次评估的事件，退休核对仍等待真实尾缓冲及其全部完成处理程序。
 
 已准备的ggml-Metal region可在原命令缓冲尾部发布SharedEvent，MLX消费者显式编码GPU等待。
 MLX event的stream标记不是ggml的原生Queue身份，不能据此省略等待。原输入array、输出和Source
