@@ -191,7 +191,7 @@ struct CpuTeam::State final : util::RefCounted<State> {
     // Called under the SAME gate as original native team planning/compute.
     // All slots share one bounded maximum scratch, not an F32 weight bank.
     if (!blas)
-      blas = ggml_backend_blas_init();
+      blas = ggml_hyle_blas_init();
     if (!blas || !ggml_hyle_blas_reserve(blas, bytes))
       return Status::ResourceExhausted("native CPU BLAS workspace");
     return Status::Ok();

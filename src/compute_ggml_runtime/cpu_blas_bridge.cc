@@ -24,6 +24,27 @@ bool native_threading_available() noexcept {
 }
 } // namespace
 
+// Own both cold allocations until the original native backend is complete.
+// The mature iface/guid/device, context type and free path remain unchanged.
+extern "C" ggml_backend_t ggml_hyle_blas_init() noexcept try {
+  std::unique_ptr<ggml_backend_blas_context> context(
+      new (std::nothrow) ggml_backend_blas_context);
+  if (!context)
+    return nullptr;
+  std::unique_ptr<ggml_backend> backend(new (std::nothrow) ggml_backend{
+      /* .guid    = */ ggml_backend_blas_guid(),
+      /* .iface   = */ blas_backend_i,
+      /* .device  = */ ggml_backend_reg_dev_get(ggml_backend_blas_reg(), 0),
+      /* .context = */ context.get(),
+  });
+  if (!backend)
+    return nullptr;
+  context.release();
+  return backend.release();
+} catch (const std::bad_alloc &) {
+  return nullptr;
+}
+
 extern "C" bool ggml_hyle_blas_supports(const ggml_tensor *node) noexcept {
   if (!native_threading_available() || !node ||
       node->op != GGML_OP_MUL_MAT || !node->src[0] || !node->src[1] ||
