@@ -191,6 +191,9 @@ struct ResourceEpisode final {
   // Actual shared capacity of bindings, permissions and LeaseUsePool, rather
   // than the last caller's extra count or vector's geometric over-allocation.
   std::uint32_t permission_capacity = 0;
+  // The attached Source can admit roots outside the registered binding table.
+  // Keep those roots reserved when a later projection adds its own bindings.
+  std::uint32_t source_permission_roots = 0;
   // One-way algorithm eligibility, never a permission or exact live counter.
   // Only successful pending/ready group commit points can set this fact.
   bool ever_installed_compact_registration = false;
@@ -204,6 +207,7 @@ Status validate_immutable_group(const ResourceEpisode&,compute::ConstTensorView,
     const compute::detail::ReadLeaseGroup&,
     std::span<const compute::WriteLease*const>,
     std::span<const compute::detail::AppendLease*const>)noexcept;
+bool has_output_bundle(const InvocationState &state) noexcept;
 }
 
 // Preserve the original virtual per-range count for native-use capacity.
@@ -232,7 +236,8 @@ Result<std::uint32_t> registered_permission_count(const ResourceEpisode&episode)
 Result<bool> projection_capacity_available(const ResourceEpisode&episode,
     std::size_t extra,ValueId replacement={})noexcept{
   std::size_t occupied=episode.bindings.size(),limit=episode.bindings.capacity();
-  if(episode.ever_installed_compact_registration){
+  const auto source_roots = episode.source_permission_roots;
+  if(episode.ever_installed_compact_registration || source_roots){
     HYLE_ASSIGN_OR_RETURN(auto registered,registered_permission_count(episode));
     occupied=registered;
     limit=(std::min)(limit,std::size_t{episode.permission_capacity});
@@ -244,7 +249,7 @@ Result<bool> projection_capacity_available(const ResourceEpisode&episode,
         entry.ready_registration?entry.ready_registration->guards.size():std::size_t{1};
     HYLE_FATAL_ASSERT(weight<=occupied);occupied-=weight;
   }
-  return occupied<=limit && extra<=limit-occupied;
+  return occupied<=limit && source_roots<=limit-occupied && extra<=limit-occupied-source_roots;
 }
 
 // A whole relative run constructed only by the two original bind commit
@@ -838,6 +843,7 @@ void reset_resource_bindings(InvocationState &state) noexcept {
   auto &episode = *state.resources.get();
   episode.input_lease_candidates.clear();
   episode.writer_publication_complete = false;
+  episode.source_permission_roots = 0;
   // All extra records are anonymous page guards; fixed ValueId slots never
   // move. Shrinking releases exactly the old projected permission suffix.
   episode.bindings.resize(episode.fixed_binding_count);
@@ -936,13 +942,16 @@ void reset_configuration_bindings(InvocationState &state) noexcept {
 void note_borrowed_binding(InvocationState &state, ValueId value) noexcept {
   const auto *previous = find_binding(&state, value);
   const auto previous_writer=previous?previous->writer_step:UINT32_MAX;
+  auto *resources = state.resources.get();
+  const bool replaces_source = resources && resources->source_permission_roots && has_input_source(state, value);
   if (state.input_sources || (previous &&
       (previous->read.valid() || previous->write.valid() ||
        previous->scope != BindingScope::kCaller)))
     invalidate_native_input_bindings(state, value);
   note_borrowed_input_source(state, value);
-  if (!state.resources) return;
-  auto &episode = *state.resources.get();
+  if (!resources) return;
+  auto &episode = *resources;
+  if (replaces_source && !has_output_bundle(state)) episode.source_permission_roots = 0;
   if (previous_writer < episode.nominated_writers.size())
     episode.nominated_writers[previous_writer] = UINT32_MAX;
   auto &bindings = episode.bindings;
@@ -996,9 +1005,12 @@ Status RegionAccess::reserve_reads(Invocation &invocation, std::uint32_t extra,
   // Growth is cold and idle-gated; existing leases do not refer to this pool.
   // Keep the old pool until every replacement allocation has succeeded.
   HYLE_ASSIGN_OR_RETURN(auto registered,registered_permission_count(*episode));
-  if (extra > UINT32_MAX - 1 || registered > UINT32_MAX - 1 - extra)
+  constexpr auto limit = UINT32_MAX - 1u; // Leave room for the workspace root.
+  const auto source_roots = episode->source_permission_roots;
+  if (registered > limit || source_roots > limit - registered ||
+      extra > limit - registered - source_roots)
     return Status::ResourceExhausted("graph permission capacity overflow");
-  const auto required = static_cast<std::uint32_t>(registered + extra);
+  const auto required = registered + source_roots + extra;
   if (required <= episode->permission_capacity) {
     try { episode->input_lease_candidates.reserve(episode->bindings.capacity()); }
     catch (...) { return Status::ResourceExhausted("graph fixed read lookup metadata"); }
@@ -3297,6 +3309,9 @@ const InputSourceVTable output_source_table{
 Result<InputSource> output_input_source(OutputBindingBundle *bundle) noexcept {
   return InputSource::acquire(bundle, &output_source_table, bundle->submission.get());
 }
+bool has_output_bundle(const InvocationState &state) noexcept {
+  return has_input_source_table(state, &output_source_table);
+}
 Status admit_source_permissions(compute::LeaseUseBatch &uses,
     std::span<const compute::ReadLease> ready,
     std::span<const compute::detail::PendingReadTicket> full,
@@ -4961,7 +4976,7 @@ Status bind_sources(Invocation &invocation, std::span<const SourceBinding> bindi
     return Status::FailedPrecondition("cold recording cannot bind an execution Source bundle");
   if (bindings.empty() || bindings.size() > state->plan->input_ids.size()+state->plan->steps.size())
     return Status::InvalidArgument("output bundle has an invalid size");
-  if (has_input_source_table(*state, &output_source_table))
+  if (has_output_bundle(*state))
     return Status::FailedPrecondition("original consumer already has its complete pending submission bundle");
   const auto &first = SourceBindingAccess::get(bindings.front());
   auto *first_token = OutputSourceAccess::state(first.output);
@@ -5016,7 +5031,8 @@ Status bind_sources(Invocation &invocation, std::span<const SourceBinding> bindi
           binding.ready_inputs.size() > SIZE_MAX - ready_input_count ||
           binding.effect_reads.size() > SIZE_MAX-effect_read_count)
         return Status::InvalidArgument("resource source needs its complete selected reader proof");
-      const auto permissions = resource->lookup.size()+resource->immutable.size();
+      const auto permissions = effect ? binding.effect_reads.size()
+                                      : resource->lookup.size() + resource->immutable.size();
       if (permissions > UINT32_MAX - ticket_count)
         return Status::ResourceExhausted("resource source bundle permission count overflows");
       reader_count += binding.readers.size(); ready_input_count += binding.ready_inputs.size();
@@ -5168,6 +5184,15 @@ Status bind_sources(Invocation &invocation, std::span<const SourceBinding> bindi
     if (bundle->private_controls.size() > UINT32_MAX - ticket_count)
       return Status::ResourceExhausted("resource private control permission count overflows");
     ticket_count += bundle->private_controls.size();
+    // Ready non-effect entries are charged through the installed bindings.
+    // A partially ready bundle may additionally install explicit Store guards
+    // before submission still admits its complete original Source tickets.
+    const auto source_roots = bundle->all_ready ? effect_read_count + bundle->private_controls.size() : ticket_count;
+    if (!bundle->all_ready) {
+      if (store_ready_count > UINT32_MAX - ticket_count)
+        return Status::ResourceExhausted("ready Store bundle permission count overflows");
+      ticket_count += store_ready_count;
+    }
     if (ticket_count)
       HYLE_RETURN_IF_ERROR(RegionAccess::reserve_reads(invocation,
           static_cast<std::uint32_t>(ticket_count), reserve_options));
@@ -5176,6 +5201,7 @@ Status bind_sources(Invocation &invocation, std::span<const SourceBinding> bindi
     // serialized, so no observer can submit between this atomic commit and
     // installing its exact pending/ready resource facts.
     bundle->consumer = state;
+    state->resources.get()->source_permission_roots = static_cast<std::uint32_t>(source_roots);
     for (const auto &entry : bundle->entries) {
       if(entry.effect.node.valid()) {
         entry.resource->bundle=bundle.get();entry.resource->bound_once=true;
@@ -5234,7 +5260,7 @@ Status release_sources(Invocation &invocation) noexcept {
   if (!RegionAccess::outcome_available(invocation) ||
       state->preparation_uses.load(std::memory_order_acquire))
     return Status::Unavailable("source bundle still has native work, results, observations or preparation");
-  const auto &episode = *state->resources.get();
+  auto &episode = *state->resources.get();
   for (const auto &replacement : bundle->replacements) {
     if (!input_source_matches(*state, replacement.input, owner))
       return Status::FailedPrecondition("source release lost its exact original input attachment");
@@ -5262,6 +5288,7 @@ Status release_sources(Invocation &invocation) noexcept {
   // Original withdrawal has completed every fallible/native qualification.
   // The local owner keeps this complete bundle alive through attachment drops.
   release_bound_input_sources(*state, bundle->release_values, bundle->release_effects);
+  episode.source_permission_roots = 0;
   for (const auto &entry : bundle->entries) {
     if (entry.view && entry.view->bundle == bundle) entry.view->bundle = nullptr;
     if (entry.store && entry.store->bundle == bundle) entry.store->bundle = nullptr;
