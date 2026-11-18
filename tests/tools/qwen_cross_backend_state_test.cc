@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
     const bool sampled_continuation = argc == 6 && std::string_view(argv[5]) == "--sampled-continuation-probe";
     const bool wide_prefill = argc == 6 && std::string_view(argv[5]) == "--wide-prefill-probe";
     if (argc != 5 && !depth && !carrier && !handoff && !prefix_repair && !native_relay && !recording_rng && !control_inputs && !sampled_continuation && !wide_prefill) throw std::runtime_error(
-        "usage: qwen_cross_backend_state_test cpu|cuda|apple|vulkan INPUTS off|K3 CPU_FFN_LAYERS [--depth-probe|--prefix-repair-probe|--native-relay-probe|--recording-rng-probe|--control-inputs-probe|--wide-prefill-probe]; or cuda INPUTS K1|K2|K3 0 --sampled-continuation-probe; or BACKEND --carrier-probe|--native-handoff-probe");
+        "usage: qwen_cross_backend_state_test cpu|cuda|apple|vulkan INPUTS off|K3 CPU_FFN_LAYERS [--depth-probe|--prefix-repair-probe|--native-relay-probe|--recording-rng-probe|--control-inputs-probe|--wide-prefill-probe]; or GPU_BACKEND INPUTS K1|K2|K3 0 --sampled-continuation-probe; or BACKEND --carrier-probe|--native-handoff-probe");
     const std::string_view name(argv[1]);
     auto kind = qwen35::BackendKind::kDefault;
     if (name == "cpu") kind = qwen35::BackendKind::kCpu;
@@ -38,9 +38,9 @@ int main(int argc, char **argv) {
     const auto layers = std::stoull(argv[4], &consumed);
     if (consumed != std::string_view(argv[4]).size()) throw std::runtime_error("invalid CPU placement");
     if (sampled_continuation) {
-      if ((mode != "K1" && mode != "K2" && mode != "K3") || layers || kind != qwen35::BackendKind::kCuda)
-        throw std::runtime_error("sampled continuation consumer requires CUDA GPU-only K1/K2/K3");
-      return qwen_sampled_continuation_case::run(argv[2], static_cast<std::size_t>(mode[1] - '0'));
+      if ((mode != "K1" && mode != "K2" && mode != "K3") || layers || kind == qwen35::BackendKind::kCpu)
+        throw std::runtime_error("sampled continuation consumer requires GPU-only K1/K2/K3");
+      return qwen_sampled_continuation_case::run(argv[2], static_cast<std::size_t>(mode[1] - '0'), kind);
     }
     if (recording_rng || control_inputs) {
       if (mode != "off" || layers || kind == qwen35::BackendKind::kCpu ||

@@ -2,7 +2,7 @@
 
 #include "../compute_models/sampling_fixture.h"
 
-// Independent Philox/Gumbel equations validate the compound graph's proposal,
+// Independent Philox/Gumbel equations validate the K1/compound graph's proposal,
 // accept and shared-final addresses. No model text or trajectory is its oracle.
 namespace qwen_sampled_chain_math_case {
 namespace q = qwen35;
@@ -30,8 +30,8 @@ inline std::pair<std::int32_t, double> draw(std::span<const double> weights,
 }
 
 inline void run(q::Model &model, std::size_t count) {
-  require(count >= 2 && count <= q::kMaximumDeviceMtpDrafts,
-      "compound math witness requires the actual bounded K2/K3 recipe");
+  require(count >= 1 && count <= q::kMaximumDeviceMtpDrafts,
+      "sampled math witness requires the actual bounded K1/K2/K3 recipe");
   const std::array<Row, 4> p{{{.10, .20, .30, .40}, {.40, .30, .20, .10},
       {.20, .15, .25, .40}, {.10, .50, .15, .25}}};
   const std::array<Row, 3> qrows{{{.40, .10, .40, .10}, {.10, .50, .10, .30}, {.45, .25, .20, .10}}};
@@ -50,7 +50,24 @@ inline void run(q::Model &model, std::size_t count) {
     proposals.push_back(r.one(q::c::sampling_ops::categorical(),
         {distributions.back().log_probabilities, identities[2 * at]}));
   }
-  const auto decision = q::decide_draft_chain(r, target, distributions, proposals, identities, {});
+  const auto decision = [&]() -> q::DraftChainSamplingValues {
+    if (count != 1) return q::decide_draft_chain(r, target, distributions, proposals, identities, {});
+    // Match the real K1 Family, not the recursive K2/K3 chain helper: q uses
+    // draw0, accept uses draw1, and residual/bonus shares the final draw2.
+    const auto p = q::sampling::distribution(r, r.copy(r.slice(target, 0, q::f(0), q::f(1))));
+    const auto bonus = q::sampling::distribution(r, r.copy(r.slice(target, 0, q::f(1), q::f(1))));
+    const auto selected = q::sampling::decision(r, p.log_probabilities,
+        distributions[0].log_probabilities, bonus.log_probabilities, proposals[0], identities[1], identities[2]);
+    const std::array ids{r.one(q::c::Select{}, {selected.accepted, proposals[0], selected.final_id}), selected.final_id};
+    const auto no = r.cast(r.scalar(0), q::Type::kBool);
+    auto valid = r.one(q::c::Select{}, {p.valid, distributions[0].valid, no});
+    valid = r.one(q::c::Select{}, {valid, bonus.valid, no});
+    valid = r.one(q::c::Select{}, {valid, selected.valid, no});
+    const std::array accepts{selected.accepted}, validity{valid};
+    return {r.reshape(r.concat(ids, 0, r.dense_spec(q::Type::kInt32, {q::f(2)})), {q::f(2), q::f(1)}),
+        r.concat(accepts, 0, r.dense_spec(q::Type::kBool, {q::f(1)})),
+        r.concat(validity, 0, r.dense_spec(q::Type::kBool, {q::f(1)}))};
+  }();
   // Match the real Family: its token packet is materialized before publication.
   const std::array ports{r.copy(decision.ids), r.host_predicate(decision.accepted),
       r.host_predicate(decision.valid), r.concat(proposals, 0,

@@ -807,13 +807,15 @@ private:
   std::vector<RelayPlan> relay_by_sampling_;
   void prepare_sampling_relay_routes() {
     relay_by_sampling_.clear();
+    const bool native_relay = execution.native_generated_storage() &&
+        (!cache_plan.draft_cache || device_mtp_attention_available());
     relay_by_sampling_.reserve(resources_->sampling_configurations.size());
     for (const auto &prepared : resources_->sampling_configurations) {
       const auto &sampling = prepared->configuration;
       relay_by_sampling_.push_back({
           DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
               sampling.enabled && cache_plan.draft_cache, !sampling.modifiers.empty(),
-              execution.native_generated_storage() && !cache_plan.draft_cache,
+              native_relay,
               device_mtp_sampling_supported(sampling.enabled, max_drafts())}.eligible(),
           PrefillRelayFacts{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
               cache_plan.draft_cache, cache_plan.in_flight_batches,
@@ -867,7 +869,8 @@ public:
       }
     }
     const DraftChainCapabilities chain{policy.max_drafts,
-        DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler), false, false}.eligible(),
+        DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler), false, false,
+            execution.native_generated_storage() && device_mtp_attention_available()}.eligible(),
         cache_plan.active_sequences, cache_plan.auxiliary_hidden_rows, cache_plan.private_draft_stages,
         replay_policy != ReplayPolicy::kCommands, supported_projection};
     draft_packet_available_ = chain.packet_available();
@@ -893,6 +896,9 @@ public:
     if (!device_mtp_model_contract()) return false;
     if (max_drafts() > 1 && std::ranges::none_of(resources_->sampling_configurations,
         [&](const auto &prepared) { return compound_mtp_round_enabled(prepared->configuration); })) return false;
+    return device_mtp_attention_available();
+  }
+  bool device_mtp_attention_available() {
     if (!backend_device_mtp_support_) {
       backend_device_mtp_support_ = supports_mtp_attention(execution, attention_capacity(),
           resources_->attention_storage, allocation_budget);
@@ -904,11 +910,12 @@ public:
       throw std::runtime_error("configure device MTP continuation before model preparation");
     if (enabled && !supports_device_mtp())
       throw std::runtime_error("device MTP continuation requires its bounded native R1 N1 recipe");
+    check(execution.configure_device_continuation(enabled));
     device_mtp_successor_ = enabled;
   }
 
   void prepare_default_device_mtp_successor(bool requested) {
-    if (requested && !preparation_started_ && supports_device_mtp()) device_mtp_successor_ = true;
+    if (requested && !preparation_started_ && supports_device_mtp()) configure_device_mtp_successor(true);
   }
 
   bool prepare_draft_projection(const SamplingConfiguration &sampling) {
@@ -2670,7 +2677,10 @@ public:
     return initialization;
   }
 
-  hyle::Result<std::size_t> reclaim_retired_prefill_storage(const Phase &phase, bool superseded_only) {
+  enum class PrefillReclaimTrigger { kColdInstallation, kResourceExhausted };
+
+  hyle::Result<std::size_t> reclaim_retired_prefill_storage(
+      const Phase &phase, PrefillReclaimTrigger trigger) {
       if (execution_workspace.valid() || phase.imported_sources)
         return std::size_t{0};
       // Existing Sources/results keep their own original storage alive.
@@ -2681,7 +2691,6 @@ public:
             !packs_prefill(previous->family->packing) ||
             (active_step && active_step->phase == previous.get()) ||
             (successor_step && successor_step->phase == previous.get())) continue;
-        if (superseded_only && previous->family != phase.family) continue;
         for (auto &old : previous->slots.slots()) {
           if (!old.carrier.initialized() || !old.carrier.retired() ||
               old.transactions.bound() || old.data.small_results.in_flight()) continue;
@@ -2691,26 +2700,29 @@ public:
       }
       if (released) {
         std::cerr << "execution_prefill_storage_reclaimed invocations=" << released
-                  << " trigger=" << (superseded_only ? "private_prefill_capacity" : "resource_exhausted") << '\n';
+                  << " trigger=" << (trigger == PrefillReclaimTrigger::kColdInstallation
+                      ? "cold_prefill_installation" : "resource_exhausted") << '\n';
       }
       return released;
   }
 
   void initialize_slot(Phase &phase, std::size_t slot) {
     check(phase.slots.initialize_with(slot, [&] {
-      // A selected private capacity is reused by prefill_capacity(). When
-      // it changes, retire the superseded instances before installing
-      // the new one: native providers may allocate scratch only on submission,
-      // where a failed submitted episode cannot be retried as cold admission.
+      // Already initialized carriers do not evaluate this cold recipe.
+      // A new private prefill carrier retires every idle private prefill
+      // companion, including other roles/families, before native providers
+      // can allocate scratch on its first submission. Original Sources and
+      // retained outputs keep their actual storage; cold shape preference
+      // remains in the existing Phase metadata.
       if (packs_prefill(phase.family->packing)) {
-        (void)take(reclaim_retired_prefill_storage(phase, true));
+        (void)take(reclaim_retired_prefill_storage(phase, PrefillReclaimTrigger::kColdInstallation));
         phase.private_capacity_preferred = true;
       }
       return slot_initialization(phase);
     }, [&]() -> hyle::Result<bool> {
       // Retired private prefill workspaces can also prevent the first decode
       // program from being installed. Retry only an unpublished installation.
-      HYLE_ASSIGN_OR_RETURN(auto released, reclaim_retired_prefill_storage(phase, false));
+      HYLE_ASSIGN_OR_RETURN(auto released, reclaim_retired_prefill_storage(phase, PrefillReclaimTrigger::kResourceExhausted));
       return released != 0;
     }));
   }
@@ -4287,7 +4299,17 @@ public:
           io.batch_layouts[i].layout = step.members.front().target_capacity_layout;
         if(phase.draft_chain_steps)for(std::size_t i=0;i<phase.draft_chain_steps;++i)
           io.batch_layouts[phase.attention_nodes.size()+i].layout=step.members.front().draft_chain_layouts[i];
-        else io.batch_layouts.back().layout = step.members.front().draft_capacity_layout;
+        else {
+          // The full draft writer catches up both chronological inputs. Its
+          // attention reader needs only the selected final query, as in K>1.
+          const auto &member = step.members.front();
+          const auto kv_rows = member.draft_capacity_layout.facts().kv_rows;
+          auto &reader = input_scratch.paged_append_capacity.next;
+          reader.reset();
+          check(reader.append(1, kv_rows, cache::Plan::page_rows,
+              std::span<const inference::PagedPageRef>(member.draft_capacity_pages)));
+          io.batch_layouts.back().layout = take(attention_schema.version(reader.layout()));
+        }
         check(step.execution.prepare_length_appends(phase.family->graph,io.batch_layouts,0,append_banks,
             std::span<const V>(phase.append_cache_inputs).first(append_banks), {.host_workspace = execution.staging()}));
       } else {
@@ -4392,7 +4414,7 @@ public:
     auto &carrier = phase->slots[slot].carrier;
     if (!carrier.initialized() || carrier.closing() || !carrier.retired()) return false;
     if (carrier.queues().empty())
-      return !device_mtp && carrier.native_source_dependencies();
+      return carrier.native_source_dependencies();
     auto *run = take(carrier.borrow());
     return take(g::detail::ReplayAccess::has_capture_candidate(*run,
         source.primary_output.reader_binding(phase->token_port)));
