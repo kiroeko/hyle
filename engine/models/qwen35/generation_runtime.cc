@@ -3895,13 +3895,6 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
   if (qualify_native_mtp) {
     query_endpoint.emplace(shared_endpoint ? take(shared_endpoint->share_endpoint()) : take(Backend::create(execution)));
     bool native_mtp_available = query_endpoint->native_generated_storage();
-#if defined(HYLE_COMPUTE_VULKAN)
-    if (vulkan_mtp_requested && depth == kMaximumDeviceMtpDrafts) {
-      // Dozen K3 has exceeded the worker's graceful-close window.
-      const auto *context = take(query_endpoint->vulkan_context());
-      native_mtp_available = native_mtp_available && context->environment().driver_id != VK_DRIVER_ID_MESA_DOZEN;
-    }
-#endif
     if (native_mtp_available) {
       const auto provisional = cache::plan(geometry, source.cache_row_bytes, config.execution.context,
           config.execution.resident_sessions, query_rows, recurrent, config.execution.active_sequences,

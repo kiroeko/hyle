@@ -155,7 +155,7 @@ CUDA greedy单会话K1—K3已接入自然接力。固定K2／K3把起草、验�
 中间token和下一轮接受位置留在设备。冷期只按配置容量和已到达首轮准备，后续长度与配额不参与规划。
 CUDA 单活动请求的随机 K1／K2／K3 也可使用设备接力：显式设置 `--draft-count 1`、`2` 或 `3`，配合 `--sampling random` 和已准备的采样参数。起草和验证共享每个提案的实际概率与接受位；K 个提案固定保留 `2K+1` 个请求 RNG 地址，拒绝和配额截断也不另取游标。Windows／WSL 已检查完整状态、逻辑 RNG、停止、取消及失败后的复用。相同采样方案与物理程序内可复现；不同草稿 GEMM 形状可能改变提案和随机轨迹，不保证逐 token 相同。
 Metal 上已验证 Qwen3.5-2B BF16 的 GPU-only 单驻留、单活动请求。指定草稿深度 K1、K2 或 K3 并传 `--overlap on`，可请求原生 MTP 接力。是否提交后继还取决于实际原生前驱和输出额度。默认采用串行执行。在 M4 的同程序 K2 单轮对照中，接力的 decode 耗时处于 A/A 波动范围内，完整耗时增加 12.2%，主要差在首轮准备。
-Vulkan 的 BF16 GPU-only 单驻留、单活动请求可用 `--draft-count` 和 `--overlap on` 请求原生接力。已在 Windows RTX 4070 和 macOS M4 的 MoltenVK 路线上验证 K1、K2、K3，在 WSL Mesa Dozen 上验证 K1、K2，均覆盖容量 128 下的贪心与随机双轮生成。Vulkan 的 MTP 默认串行。Mesa Dozen 的原生 K3 曾超过 30 秒关闭时限，目前选择串行 K3。
+Vulkan 的 BF16 GPU-only 单驻留、单活动请求可用 `--draft-count` 和 `--overlap on` 请求原生接力。Windows RTX 4070、macOS M4 MoltenVK 和 WSL Mesa Dozen 均已验证 K1、K2、K3，覆盖容量 128 下的贪心与随机双轮生成和进程正常退出。Vulkan 的 MTP 默认串行。
 符合条件的 MTP 根据来源绑定的草稿制品读取推荐草稿数；没有推荐时默认为 K1。K3 的收益与资源边界见性能表。
 单会话有界生成按配置容量准备接力；其它有限日程在有多于一个输出额度且执行能力允许时准备两层候选。
 需要强制只使用不依赖未来请求形状的路径时，可设置 `--require-bounded-generation on`；不符合该条件的配置会报错。

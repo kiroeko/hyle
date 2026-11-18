@@ -691,6 +691,53 @@ TEST(VulkanManaged, ByteUnalignedDenseViewsAndFixedRecorderUseFrozenAdapters) {
   }
 }
 
+TEST(VulkanManaged, DozenBfloatWidenUsesTheInternalProducerAllocation) {
+  auto context = vulkan_test::context().value();
+  if (context.environment().driver_id != VK_DRIVER_ID_MESA_DOZEN)
+    GTEST_SKIP() << "Requires Mesa Dozen's BF16 region lowering";
+  const auto type = c::DataType::kBFloat16;
+  const auto input = dense(type, {4, 64});
+  const auto weight = dense(type, {64, 128});
+  const auto output = dense(type, {4, 128});
+  const c::Operation silu(c::Unary{c::UnaryKind::kSilu});
+  d::Plan plan;
+  plan.values = {{input, {}},
+                 {weight, make(context, weight, std::vector<double>(64 * 128, 1.0 / 64))},
+                 {output, {}}, {output, {}}};
+  plan.inputs = {0};
+  plan.outputs = {3};
+  plan.steps = {{c::Operation(c::MatMul{}), {0, 1}, {2}}, {silu, {2}, {3}}};
+  auto program = d::prepare_plan(context, plan).value();
+  const auto &dispatches = d::Access::program(program)->dispatches;
+  EXPECT_EQ(std::ranges::count_if(dispatches,
+      [](const auto &dispatch) { return dispatch.region != nullptr; }), 2);
+  EXPECT_EQ(std::ranges::count_if(dispatches, [](const auto &dispatch) {
+    return dispatch.region && std::ranges::any_of(dispatch.region->nodes,
+        [](const auto &node) { return node.operation.template get_if<c::Cast>(); });
+  }), 1);
+
+  auto slot = program.create_invocation().value();
+  auto other = program.create_invocation().value();
+  EXPECT_EQ(d::Access::invocation(slot)->run->stages.size(), 4u);
+  EXPECT_EQ(d::Access::invocation(other)->run->stages.size(), 4u);
+  auto exposed = v::prepare(context, c::Unary{c::UnaryKind::kSilu}, output).value();
+  auto external = exposed.create_invocation().value();
+  EXPECT_EQ(d::Access::invocation(external)->run->stages.size(), 3u);
+
+  const auto input_a = make(context, input, std::vector<double>(4 * 64, 0.25));
+  const auto backing = make(context, dense(type, {5, 64}), std::vector<double>(5 * 64, -0.5));
+  const auto input_b = backing.view(c::View::slice(0, 1, 4, 1).value()).value();
+  ASSERT_NE(input_b.native_offset(), backing.native_offset());
+  ASSERT_TRUE(slot.bind(input_a).ok());
+  ASSERT_TRUE(other.bind(input_b).ok());
+  auto submitted_a = slot.submit().value(), submitted_b = other.submit().value();
+  auto result_a = submitted_a.wait().value(), result_b = submitted_b.wait().value();
+  const auto expected_a = vulkan_tensor_test::unary(c::UnaryKind::kSilu, 0.25);
+  const auto expected_b = vulkan_tensor_test::unary(c::UnaryKind::kSilu, -0.5);
+  expect(context, result_a.get()->tensors()[0], std::vector<double>(4 * 128, expected_a));
+  expect(context, result_b.get()->tensors()[0], std::vector<double>(4 * 128, expected_b));
+}
+
 TEST(VulkanManaged, PointwiseFamilyUsesRealProviderWithoutNormAnchor) {
   auto context = vulkan_test::context().value();
   const std::array kinds{c::UnaryKind::kAbs,     c::UnaryKind::kNeg,

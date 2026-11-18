@@ -503,17 +503,29 @@ Status lower_bfloat_region(ProgramState &program,
         continue;
       HYLE_ASSIGN_OR_RETURN(auto converted,
                             append(program.values[input].description));
+      PlanStep widen{Operation(Cast{DataType::kFloat32}), {input}, {converted},
+                     {}, {1, 1, 1}, {}};
+      const auto &device = *program.runtime->device;
+      bool fold_bfloat_widen = false;
       if (type == DataType::kBFloat16 &&
-          !iree_precision_supported(*program.runtime->device,
-                                    program.values[converted].description)) {
+          device.environment.driver_id == VK_DRIVER_ID_MESA_DOZEN) {
+        const auto &description = program.values[input].description;
+        const auto &alias = program.aliases[input];
+        const auto canonical = TensorDesc::dense(type, description.dimensions());
+        // The managed import requires a canonical internal port at a
+        // word-aligned origin. External inputs keep the original widen, which
+        // already handles their byte origins without a separate layout copy.
+        fold_bfloat_widen = canonical && *canonical == description &&
+            !program.values[alias.root].constant.valid() &&
+            std::ranges::find(program.inputs, alias.root) == program.inputs.end() &&
+            alias.byte_offset % sizeof(float) == 0 && managed_operation(program, widen);
+      }
+      if (type == DataType::kBFloat16 &&
+          !iree_precision_supported(device, program.values[converted].description) &&
+          !fold_bfloat_widen) {
         HYLE_RETURN_IF_ERROR(lower_native_cast(program, input, converted));
       } else {
-        local.steps.push_back({Operation(Cast{DataType::kFloat32}),
-                               {input},
-                               {converted},
-                               {},
-                               {1, 1, 1},
-                               {}});
+        local.steps.push_back(std::move(widen));
       }
       input = converted;
     }
