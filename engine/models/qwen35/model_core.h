@@ -113,6 +113,9 @@
 #include "hyle/sched/scheduler.h"
 #include "hyle/util/scope_guard.h"
 
+// Named post-decision experiment only; no main/runtime switch.
+#include "../../../tests/tools/qwen_r1_after_prefix30.h"
+
 namespace qwen35 {
 namespace sampling = hyle::inference::sampling;
 namespace inference = hyle::inference;
@@ -807,13 +810,15 @@ private:
   std::vector<RelayPlan> relay_by_sampling_;
   void prepare_sampling_relay_routes() {
     relay_by_sampling_.clear();
+    const bool native_relay = execution.native_generated_storage() &&
+        (!cache_plan.draft_cache || device_mtp_attention_available());
     relay_by_sampling_.reserve(resources_->sampling_configurations.size());
     for (const auto &prepared : resources_->sampling_configurations) {
       const auto &sampling = prepared->configuration;
       relay_by_sampling_.push_back({
           DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
               sampling.enabled && cache_plan.draft_cache, !sampling.modifiers.empty(),
-              execution.native_generated_storage() && !cache_plan.draft_cache,
+              native_relay,
               device_mtp_sampling_supported(sampling.enabled, max_drafts())}.eligible(),
           PrefillRelayFacts{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
               cache_plan.draft_cache, cache_plan.in_flight_batches,
@@ -867,7 +872,8 @@ public:
       }
     }
     const DraftChainCapabilities chain{policy.max_drafts,
-        DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler), false, false}.eligible(),
+        DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler), false, false,
+            execution.native_generated_storage() && device_mtp_attention_available()}.eligible(),
         cache_plan.active_sequences, cache_plan.auxiliary_hidden_rows, cache_plan.private_draft_stages,
         replay_policy != ReplayPolicy::kCommands, supported_projection};
     draft_packet_available_ = chain.packet_available();
@@ -893,6 +899,9 @@ public:
     if (!device_mtp_model_contract()) return false;
     if (max_drafts() > 1 && std::ranges::none_of(resources_->sampling_configurations,
         [&](const auto &prepared) { return compound_mtp_round_enabled(prepared->configuration); })) return false;
+    return device_mtp_attention_available();
+  }
+  bool device_mtp_attention_available() {
     if (!backend_device_mtp_support_) {
       backend_device_mtp_support_ = supports_mtp_attention(execution, attention_capacity(),
           resources_->attention_storage, allocation_budget);
@@ -904,11 +913,12 @@ public:
       throw std::runtime_error("configure device MTP continuation before model preparation");
     if (enabled && !supports_device_mtp())
       throw std::runtime_error("device MTP continuation requires its bounded native R1 N1 recipe");
+    check(execution.configure_device_continuation(enabled));
     device_mtp_successor_ = enabled;
   }
 
   void prepare_default_device_mtp_successor(bool requested) {
-    if (requested && !preparation_started_ && supports_device_mtp()) device_mtp_successor_ = true;
+    if (requested && !preparation_started_ && supports_device_mtp()) configure_device_mtp_successor(true);
   }
 
   bool prepare_draft_projection(const SamplingConfiguration &sampling) {
@@ -2160,6 +2170,8 @@ public:
               }
               check(program.io.read(run, program.id_value, std::as_writable_bytes(std::span(&output.id, 1))));
               if (output.id < 0 || output.id >= vocabulary) throw std::runtime_error("NextN proposal is outside vocabulary");
+              if (selected_sampler.enabled) hyle::experimental::r1_after_prefix30::proposal(
+                  program, output.log_probabilities, output.id, identity, execution);
               if (program.next_counts) output.next_counts =
                   take(program.io.retain(run, program.next_counts_output, execution_budget));
             }
@@ -2330,10 +2342,12 @@ public:
         check(program.io.bind(run, program.q_inputs[row], q[row]));
       const auto queues = program.carrier.queues();
       check(run.prepare_replay(queues, {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
+      hyle::experimental::r1_after_prefix30::prefix_before(program, q, proposals, cursor, quota, inputs, conditional_inputs, execution);
       auto done = take(program.carrier.submit(resources_)); check(done.wait());
       ++prefix_decision_graph_calls;
       check(program.io.read(run, program.packet_value,
           std::as_writable_bytes(std::span(program.packet_host))));
+      hyle::experimental::r1_after_prefix30::prefix_after(program, q, execution);
       const auto words = std::span<const std::int32_t>(program.packet_host);
       if (words[0] == 0) throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
           "recursive target/q/residual distribution is invalid; no head or RNG was published"));
@@ -4287,7 +4301,17 @@ public:
           io.batch_layouts[i].layout = step.members.front().target_capacity_layout;
         if(phase.draft_chain_steps)for(std::size_t i=0;i<phase.draft_chain_steps;++i)
           io.batch_layouts[phase.attention_nodes.size()+i].layout=step.members.front().draft_chain_layouts[i];
-        else io.batch_layouts.back().layout = step.members.front().draft_capacity_layout;
+        else {
+          // The full draft writer catches up both chronological inputs. Its
+          // attention reader needs only the selected final query, as in K>1.
+          const auto &member = step.members.front();
+          const auto kv_rows = member.draft_capacity_layout.facts().kv_rows;
+          auto &reader = input_scratch.paged_append_capacity.next;
+          reader.reset();
+          check(reader.append(1, kv_rows, cache::Plan::page_rows,
+              std::span<const inference::PagedPageRef>(member.draft_capacity_pages)));
+          io.batch_layouts.back().layout = take(attention_schema.version(reader.layout()));
+        }
         check(step.execution.prepare_length_appends(phase.family->graph,io.batch_layouts,0,append_banks,
             std::span<const V>(phase.append_cache_inputs).first(append_banks), {.host_workspace = execution.staging()}));
       } else {
@@ -4392,7 +4416,7 @@ public:
     auto &carrier = phase->slots[slot].carrier;
     if (!carrier.initialized() || carrier.closing() || !carrier.retired()) return false;
     if (carrier.queues().empty())
-      return !device_mtp && carrier.native_source_dependencies();
+      return carrier.native_source_dependencies();
     auto *run = take(carrier.borrow());
     return take(g::detail::ReplayAccess::has_capture_candidate(*run,
         source.primary_output.reader_binding(phase->token_port)));
@@ -5258,6 +5282,9 @@ public:
                    cache::multiply(cache::multiply(member.input_row_begin, vocabulary), sizeof(float)), bytes))));
           PrefixSamplingResult decision;
           try {
+            hyle::experimental::r1_after_prefix30::TargetScope payload_target(member.session.get(), logits_owner,
+                step.phase->slots[step.state_slot].data.logits, step.execution.carrier, logits,
+                step.members.size(), step.phase->query_rows, step.state_slot);
             decision = sample_recursive_prefix(logits,
                 std::span<const std::int32_t>(member.verification_inputs).subspan(1),
                 selection.draft_log_probabilities, member.base->sampling, selection.output_quota,
