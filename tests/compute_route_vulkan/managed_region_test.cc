@@ -44,6 +44,40 @@ TEST(VulkanManaged, ManagedTailKeepsItsExclusiveOriginalCompletion) {
   EXPECT_EQ(values(context, right_ready.get()->tensors()[0]), std::vector<double>(64, -20));
 }
 
+TEST(VulkanManaged, NativeTailKeepsItsExclusiveOriginalCompletion) {
+  auto context = vulkan_test::context().value();
+  const auto input = dense(c::DataType::kFloat32, {2, 32});
+  const auto weights = dense(c::DataType::kFloat32, {32, 32});
+  const auto output = dense(c::DataType::kBFloat16, {2, 32});
+  d::Plan plan;
+  plan.values = {{input, {}}, {weights, make(context, weights, std::vector<double>(1024, .25))},
+                 {input, {}}, {output, {}}};
+  plan.inputs = {0};
+  plan.outputs = {3};
+  plan.steps = {{c::Operation(c::MatMul{}), {0, 1}, {2}},
+                {c::Operation(c::Cast{c::DataType::kBFloat16}), {2}, {3}}};
+  auto program = d::prepare_plan(context, plan).value();
+  auto first = program.create_invocation().value(), second = program.create_invocation().value();
+  const auto &a = *d::Access::invocation(first)->run, &b = *d::Access::invocation(second)->run;
+  for (const auto *run : {&a, &b}) {
+    ASSERT_GE(run->stages.size(), 2u);
+    ASSERT_TRUE(std::ranges::any_of(run->stages, [](const auto &stage) { return stage.managed != nullptr; }));
+    ASSERT_TRUE(run->stages.back().native);
+    EXPECT_EQ(run->command_pool, VK_NULL_HANDLE);
+    EXPECT_EQ(run->command, VK_NULL_HANDLE);
+    EXPECT_NE(run->stages.back().native->command, VK_NULL_HANDLE);
+    ASSERT_NE(run->fence, VK_NULL_HANDLE);
+    EXPECT_EQ(run->completion_fence, run->fence);
+  }
+  EXPECT_NE(a.fence, b.fence);
+  ASSERT_TRUE(first.bind(make(context, input, std::vector<double>(64, 1.25))).ok());
+  ASSERT_TRUE(second.bind(make(context, input, std::vector<double>(64, -2.5))).ok());
+  auto left = first.submit().value(), right = second.submit().value();
+  auto left_ready = left.wait().value(), right_ready = right.wait().value();
+  EXPECT_EQ(values(context, left_ready.get()->tensors()[0]), std::vector<double>(64, 10));
+  EXPECT_EQ(values(context, right_ready.get()->tensors()[0]), std::vector<double>(64, -20));
+}
+
 TEST(VulkanManaged, PrecisionStageBorrowsOnlyPrivateNonRotatingStorage) {
   for (const bool publish_intermediate : {false, true}) {
     auto context = vulkan_test::context().value();

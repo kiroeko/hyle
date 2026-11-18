@@ -980,14 +980,18 @@ Program::create_invocation(mem::AllocatorRef allocator, InvocationAllocation all
     auto invocation = std::allocate_shared<detail::InvocationState>(mem::StdAllocator<detail::InvocationState>(allocator));
     invocation->program = state_;
     invocation->slot = std::move(*slot);
-    // Composed stages record their own commands. With a managed tail and no
-    // IREE callbacks, the final Work also owns the completion fence.
-    const bool managed_completion = !state_->dispatches.empty() && state_->dispatches.back().region &&
-        std::ranges::none_of(state_->dispatches, [](const auto &dispatch) { return dispatch.iree.has_value(); });
-    if (managed_completion) {
+    // Stages on the original queue record their own commands. A native tail
+    // signals the parent's fence; a managed tail supplies its own fence.
+    const bool ordered_stages = std::ranges::any_of(state_->dispatches,
+        [](const auto &dispatch) { return dispatch.region != nullptr; }) &&
+        std::ranges::none_of(state_->dispatches,
+        [](const auto &dispatch) { return dispatch.iree.has_value(); });
+    if (ordered_stages) {
       invocation->run = std::allocate_shared<detail::Run>(
           mem::StdAllocator<detail::Run>(allocator), allocator);
       invocation->run->runtime = state_->runtime;
+      if (!state_->dispatches.back().region)
+        HYLE_RETURN_IF_ERROR(detail::create_run_fence(*invocation->run));
     } else {
       HYLE_ASSIGN_OR_RETURN(invocation->run, detail::create_run(state_->runtime, allocator));
     }

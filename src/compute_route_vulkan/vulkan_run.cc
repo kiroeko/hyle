@@ -73,15 +73,20 @@ create_recording_run(const std::shared_ptr<Runtime> &runtime, mem::AllocatorRef 
 Result<std::shared_ptr<Run>>
 create_run(const std::shared_ptr<Runtime> &runtime, mem::AllocatorRef allocator) noexcept {
   HYLE_ASSIGN_OR_RETURN(auto run, create_recording_run(runtime, allocator));
-  const auto &device = *runtime->device;
+  HYLE_RETURN_IF_ERROR(create_run_fence(*run));
+  return run;
+}
+
+Status create_run_fence(Run &run) noexcept {
+  const auto &device = *run.runtime->device;
   VkFenceCreateInfo fence{};
   fence.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
   VkFence completion = VK_NULL_HANDLE;
   HYLE_RETURN_IF_ERROR(native_status(device.fn.CreateFence(device.native.device, &fence,
       nullptr, &completion), "vkCreateFence"));
-  run->fence = completion;
-  run->completion_fence = run->fence;
-  return run;
+  run.fence = completion;
+  run.completion_fence = completion;
+  return Status::Ok();
 }
 
 namespace {

@@ -359,6 +359,7 @@ allocate_buffer(const std::shared_ptr<Device> &device, VkDeviceSize bytes,
 Result<std::shared_ptr<Run>>
 create_run(const std::shared_ptr<Runtime> &runtime,
            mem::AllocatorRef allocator = mem::system_allocator()) noexcept;
+Status create_run_fence(Run &run) noexcept;
 // A subordinate command buffer is submitted only by its original parent.
 // Its independent recording resources need no unused completion fence.
 Result<std::shared_ptr<Run>>
