@@ -149,7 +149,7 @@ Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-di
 ### 连续接力
 
 普通 CUDA 自然生成在符合执行条件时自动使用连续接力，无需额外参数；greedy 已有限检查单活动请求及双活动请求，随机采样已有限检查单活动请求。
-普通 Metal 单活动请求的 greedy／随机采样也使用冷期合格的原生 Source 接力。实际准备的 Graph 必须能在原端点导入完整前驱依赖；否则保留普通执行，冷期日志 `native_decode_source` 给出实际选择和原因。本机 M4 已检查首次请求、执行器复用、同 seed／逻辑 stream 的独立普通执行，以及取消后复用。此处不表示 Metal MTP 或完整设备侧闭环已经完成；Vulkan 当前仍报告 `native_import_unavailable`。
+普通 Metal／Vulkan 的 GPU-only 单活动请求在 greedy 和随机采样下均可使用原生 Source 接力。准备好的 Graph 在原端点导入完整前驱依赖时启用接力。冷期日志 `native_decode_source` 给出实际选择和回落原因。普通路线已在 macOS M4 Metal，以及 Windows、WSL 和 macOS Vulkan 上检查设备前驱、完整状态发布和取消后复用。
 decode 接力和 prefill capture 分别查询冷能力；前者可用不意味着需要准备后者的私有载体。
 CUDA greedy单会话K1—K3已接入自然接力。固定K2／K3把起草、验证及draft KV修复放入同一张轮图，
 中间token和下一轮接受位置留在设备。冷期只按配置容量和已到达首轮准备，后续长度与配额不参与规划。
