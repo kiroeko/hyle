@@ -2,11 +2,13 @@
 // callback, model admission or second Invocation/transaction/retirement owner.
 #include "auxiliary_programs.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "../../inference/backend.h"
 #include "../../inference/mtp_acceptance_graph.h"
@@ -17,6 +19,21 @@ namespace {
 Tensor auxiliary_tensor(const c::ResourceBudget &budget, mem::MemoryResourceRef resource,
                         c::TensorDesc description, bool caller = true) {
   return Tensor(resource, description, caller, budget);
+}
+
+hyle::Result<g::CompiledGraph> compile_draft_graph(const g::Graph &graph, const GraphAssembly &assembly,
+    const inference::Backend &execution, g::CompileOptions options, V verification_packet) {
+  auto selected = assembly.options(options);
+  std::vector<g::ExternalResourceContract> contracts;
+  if (verification_packet && std::ranges::find(selected.external_resources, verification_packet,
+      &g::ExternalResourceContract::value) == selected.external_resources.end()) {
+    // A standalone verifier borrows the complete proposal packet on the primary
+    // endpoint. Explicitly materialize its Copy into the original caller writer.
+    contracts.assign(selected.external_resources.begin(), selected.external_resources.end());
+    contracts.push_back({verification_packet, GraphAssembly::primary().storage});
+    selected.external_resources = contracts;
+  }
+  return execution.compile(graph, assembly.constants(), selected);
 }
 
 AuxiliaryProgramResult<DraftProgram> build_draft_chain(
@@ -67,9 +84,10 @@ AuxiliaryProgramResult<DraftProgram> build_draft_chain(
   const std::array binding{g::ShapeBinding{r.last_row, total - 1}};
   const std::array variants{g::ExactShapeVariant{binding}};
   const std::array stores{port.store};
-  check(program.programs.prepare(take(execution.compile(program.graph, assembly.constants(),
-      assembly.options({.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
-          .constants = assembly.constants(), .resource_budget = context.execution_budget}))),
+  const auto packet_source = request.verification_rows ? program.verification_packet : V{};
+  check(program.programs.prepare(take(compile_draft_graph(program.graph, assembly, execution,
+      {.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
+          .resource_budget = context.execution_budget}, packet_source)),
       program.graph, variants, {{}, stores}, take(context.execution_budget.metadata_allocator())));
   const auto &compiled = program.programs.child(0).compiled;
   check(program.carrier.prepare(compiled, execution.queue_bindings()));
@@ -204,9 +222,9 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
     const std::array variants{g::ExactShapeVariant{binding}};
     const auto hidden_store = program.hidden_state.store;
     const auto extra_stores = hidden_store.valid() ? std::span(&hidden_store, 1) : std::span<const g::NodeId>{};
-    auto compiled = execution.compile(program.graph, assembly.constants(),
-        assembly.options({.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
-         .constants = assembly.constants(), .resource_budget = execution_budget}));
+    auto compiled = compile_draft_graph(program.graph, assembly, execution,
+        {.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
+         .resource_budget = execution_budget}, program.verification_packet);
     if (!compiled) throw inference::EvaluationFailure(std::move(compiled).error().WithContext("MTP draft program"));
     check(program.programs.prepare(std::move(*compiled), program.graph, variants,
         {{}, extra_stores}, take(execution_budget.metadata_allocator())));
