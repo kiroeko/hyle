@@ -2677,7 +2677,10 @@ public:
     return initialization;
   }
 
-  hyle::Result<std::size_t> reclaim_retired_prefill_storage(const Phase &phase, bool superseded_only) {
+  enum class PrefillReclaimTrigger { kColdInstallation, kResourceExhausted };
+
+  hyle::Result<std::size_t> reclaim_retired_prefill_storage(
+      const Phase &phase, PrefillReclaimTrigger trigger) {
       if (execution_workspace.valid() || phase.imported_sources)
         return std::size_t{0};
       // Existing Sources/results keep their own original storage alive.
@@ -2688,7 +2691,6 @@ public:
             !packs_prefill(previous->family->packing) ||
             (active_step && active_step->phase == previous.get()) ||
             (successor_step && successor_step->phase == previous.get())) continue;
-        if (superseded_only && previous->family != phase.family) continue;
         for (auto &old : previous->slots.slots()) {
           if (!old.carrier.initialized() || !old.carrier.retired() ||
               old.transactions.bound() || old.data.small_results.in_flight()) continue;
@@ -2698,26 +2700,29 @@ public:
       }
       if (released) {
         std::cerr << "execution_prefill_storage_reclaimed invocations=" << released
-                  << " trigger=" << (superseded_only ? "private_prefill_capacity" : "resource_exhausted") << '\n';
+                  << " trigger=" << (trigger == PrefillReclaimTrigger::kColdInstallation
+                      ? "cold_prefill_installation" : "resource_exhausted") << '\n';
       }
       return released;
   }
 
   void initialize_slot(Phase &phase, std::size_t slot) {
     check(phase.slots.initialize_with(slot, [&] {
-      // A selected private capacity is reused by prefill_capacity(). When
-      // it changes, retire the superseded instances before installing
-      // the new one: native providers may allocate scratch only on submission,
-      // where a failed submitted episode cannot be retried as cold admission.
+      // Already initialized carriers do not evaluate this cold recipe.
+      // A new private prefill carrier retires every idle private prefill
+      // companion, including other roles/families, before native providers
+      // can allocate scratch on its first submission. Original Sources and
+      // retained outputs keep their actual storage; cold shape preference
+      // remains in the existing Phase metadata.
       if (packs_prefill(phase.family->packing)) {
-        (void)take(reclaim_retired_prefill_storage(phase, true));
+        (void)take(reclaim_retired_prefill_storage(phase, PrefillReclaimTrigger::kColdInstallation));
         phase.private_capacity_preferred = true;
       }
       return slot_initialization(phase);
     }, [&]() -> hyle::Result<bool> {
       // Retired private prefill workspaces can also prevent the first decode
       // program from being installed. Retry only an unpublished installation.
-      HYLE_ASSIGN_OR_RETURN(auto released, reclaim_retired_prefill_storage(phase, false));
+      HYLE_ASSIGN_OR_RETURN(auto released, reclaim_retired_prefill_storage(phase, PrefillReclaimTrigger::kResourceExhausted));
       return released != 0;
     }));
   }

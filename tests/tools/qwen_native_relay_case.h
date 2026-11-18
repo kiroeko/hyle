@@ -130,9 +130,14 @@ inline void run(const std::filesystem::path &input, q::BackendKind kind, bool ra
   for (const auto count : private_prefill_shapes)
     model.plan_replay_uses(count, 1, 8, q::GraphRole::kText,
         q::TextCompletion::kStateOnly, 0, q::RowPacking::kPrefill);
+  const std::array small_prefill{std::size_t{2}}, larger_prefill{std::size_t{3}};
+  // All finite Families and replay-use plans precede the first carrier.
+  h::require(model.prepare_prefill_family(small_prefill, q::TextCompletion::kEmitNext),
+      "cross-family native prefill lifecycle has no emit-next packed program");
+  model.plan_replay_uses(2, 1, 8, q::GraphRole::kText,
+      q::TextCompletion::kEmitNext, 0, q::RowPacking::kPrefill);
   model.prepare_execution(rows);
   model.prepare_relay_execution();
-  const std::array small_prefill{std::size_t{2}}, larger_prefill{std::size_t{3}};
   model.prepare_prefill_execution(small_prefill, q::TextCompletion::kStateOnly);
   auto &small = model.prepare_child(2, false, 1, q::GraphRole::kText,
       q::TextCompletion::kStateOnly, 0, false, q::RowPacking::kPrefill);
@@ -147,6 +152,40 @@ inline void run(const std::filesystem::path &input, q::BackendKind kind, bool ra
   h::require(small.slots[0].carrier.initialized() && !larger.slots[0].carrier.initialized() &&
       small.private_capacity_preferred && larger.private_capacity_preferred,
       "private prefill eviction changed its prepared-capacity preference or retained the previous workspace");
+  // A warm install must keep the exact original Invocation and its existing
+  // physical-capacity preference. No fake active/retired peer is required.
+  {
+    const auto *original_run = q::take(small.slots[0].carrier.borrow());
+    model.prepare_prefill_execution(small_prefill, q::TextCompletion::kStateOnly);
+    h::require(q::take(small.slots[0].carrier.borrow()) == original_run &&
+        small.private_capacity_preferred && larger.private_capacity_preferred &&
+        model.prefill_capacity(2, q::TextCompletion::kStateOnly, 0) == 2,
+        "warm private prefill replaced its Invocation or physical-capacity preference");
+  }
+  // Completion is part of the actual finite Family key. This creates a real
+  // second Family at the same physical extent, rather than fabricating state
+  // or changing the Model's mathematics to resemble an MTP prefill role.
+  model.prepare_prefill_execution(small_prefill, q::TextCompletion::kEmitNext);
+  auto &emitting = model.prepare_child(2, false, 1, q::GraphRole::kText,
+      q::TextCompletion::kEmitNext, 0, false, q::RowPacking::kPrefill);
+  h::require(emitting.family != small.family &&
+      !small.slots[0].carrier.initialized() && emitting.slots[0].carrier.initialized() &&
+      small.private_capacity_preferred && larger.private_capacity_preferred && emitting.private_capacity_preferred &&
+      model.prefill_capacity(2, q::TextCompletion::kStateOnly, 0) == 2 &&
+      model.prefill_capacity(2, q::TextCompletion::kEmitNext, 0) == 2,
+      "different completion Family retained a retired private prefill Invocation or changed capacity");
+  {
+    const auto *original_run = q::take(emitting.slots[0].carrier.borrow());
+    model.prepare_prefill_execution(small_prefill, q::TextCompletion::kEmitNext);
+    h::require(q::take(emitting.slots[0].carrier.borrow()) == original_run &&
+        emitting.private_capacity_preferred &&
+        model.prefill_capacity(2, q::TextCompletion::kEmitNext, 0) == 2,
+        "warm emit-next prefill replaced its Invocation or physical-capacity preference");
+  }
+  model.prepare_prefill_execution(small_prefill, q::TextCompletion::kStateOnly);
+  h::require(small.slots[0].carrier.initialized() && !emitting.slots[0].carrier.initialized() &&
+      small.private_capacity_preferred && larger.private_capacity_preferred && emitting.private_capacity_preferred,
+      "return to the original completion Family retained its idle peer or lost prepared preference");
   const std::array prefill{std::size_t{3}};
   auto session = model.create_session(prefill, {}, q::GraphRole::kText, q::cache::SamplingCursor{123, 7, 0});
   const std::array<std::int32_t, 3> prompt{1, 2, 3};

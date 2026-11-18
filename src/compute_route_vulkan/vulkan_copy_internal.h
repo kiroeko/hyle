@@ -10,6 +10,8 @@ enum class CopyRecordingMode : std::uint8_t { kOnce, kReplayable };
 // The optional halfword path is an exact storage-buffer copy on the original
 // compute queue. Ordinary transfer recordings retain their four-byte contract.
 enum class CopyGranularity : std::uint8_t { kWord, kHalfword };
+// Reserve a separate native queue handoff only for prepared host uploads.
+enum class CopyQueueUse : std::uint8_t { kComputeOnly, kHostUpload };
 using ResultCopySourceFn=Result<CopySpan>(*)(void*,std::size_t)noexcept;
 Result<CopySpan> result_copy_span(const std::shared_ptr<Runtime>&,const Results&,
     std::size_t,const TensorDesc&)noexcept;
@@ -27,6 +29,10 @@ HYLE_COMPUTE_ROUTE_VULKAN_API Result<std::shared_ptr<CopyRecording>>
 prepare_copy_recording_runtime(const std::shared_ptr<Runtime> &runtime,
     std::uint32_t capacity, mem::AllocatorRef allocator, std::size_t max_bytes,
     CopyRecordingMode mode, CopyGranularity granularity) noexcept;
+Result<std::shared_ptr<CopyRecording>>
+prepare_copy_recording_runtime(const std::shared_ptr<Runtime> &runtime,
+    std::uint32_t capacity, mem::AllocatorRef allocator, std::size_t max_bytes,
+    CopyRecordingMode mode, CopyGranularity granularity, CopyQueueUse queues) noexcept;
 HYLE_COMPUTE_ROUTE_VULKAN_API Status bind_copy_recording(CopyRecording &recording,
     std::span<const compute::detail::CopyBackendRange> ranges,
     bool host_upload_ready = false, bool prefix_marker = false,
