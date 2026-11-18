@@ -161,10 +161,11 @@ Result<TransferSlot> detail::TransferAccess::create(const std::shared_ptr<Runtim
     slot.state_ = std::allocate_shared<detail::TransferState>(mem::StdAllocator<detail::TransferState>(allocator));
     slot.state_->runtime = runtime;
     slot.state_->capacity = capacity;
-    slot.state_->staging = std::move(staging);
     HYLE_ASSIGN_OR_RETURN(slot.state_->run, detail::create_run(runtime, allocator));
     slot.state_->run->retained_buffers.resize(2);
-    HYLE_RETURN_IF_ERROR(create_transfer_commands(*slot.state_->run));
+    if (buffer->transfer_eligible)
+      HYLE_RETURN_IF_ERROR(create_transfer_commands(*slot.state_->run));
+    slot.state_->staging = std::move(staging);
     return slot;
   } catch (const std::bad_alloc &) {
     return std::unexpected(Status::ResourceExhausted("Vulkan transfer slot metadata"));

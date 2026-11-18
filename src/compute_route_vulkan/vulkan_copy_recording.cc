@@ -161,7 +161,8 @@ Status halfword_range(const Device &device, const CopyPair &pair, HalfwordCopy &
 Result<std::shared_ptr<CopyRecording>> prepare_copy_recording(const Context &context,
     std::uint32_t capacity, mem::AllocatorRef allocator) noexcept {
   if (!context.valid()) return std::unexpected(Status::InvalidArgument("Vulkan copy Context is invalid"));
-  return prepare_copy_recording_runtime(Access::runtime(context), capacity, allocator);
+  return prepare_copy_recording_runtime(Access::runtime(context), capacity, allocator,
+      64u * 1024u * 1024u, CopyRecordingMode::kOnce, CopyGranularity::kWord, CopyQueueUse::kHostUpload);
 }
 Result<std::shared_ptr<CopyRecording>> prepare_copy_recording_runtime(const std::shared_ptr<Runtime> &runtime,
     std::uint32_t capacity, mem::AllocatorRef allocator, std::size_t max_bytes,
@@ -171,6 +172,12 @@ Result<std::shared_ptr<CopyRecording>> prepare_copy_recording_runtime(const std:
 Result<std::shared_ptr<CopyRecording>> prepare_copy_recording_runtime(const std::shared_ptr<Runtime> &runtime,
     std::uint32_t capacity, mem::AllocatorRef allocator, std::size_t max_bytes,
     CopyRecordingMode mode, CopyGranularity granularity) noexcept {
+  return prepare_copy_recording_runtime(runtime, capacity, allocator, max_bytes, mode,
+      granularity, CopyQueueUse::kComputeOnly);
+}
+Result<std::shared_ptr<CopyRecording>> prepare_copy_recording_runtime(const std::shared_ptr<Runtime> &runtime,
+    std::uint32_t capacity, mem::AllocatorRef allocator, std::size_t max_bytes,
+    CopyRecordingMode mode, CopyGranularity granularity, CopyQueueUse queues) noexcept {
   if (!runtime || !allocator.valid() || capacity == 0 || capacity > UINT32_MAX / 2 || max_bytes == 0)
     return std::unexpected(Status::InvalidArgument("Vulkan copy capacity/allocator is invalid"));
   std::lock_guard lock(runtime->mutex);
@@ -189,7 +196,8 @@ Result<std::shared_ptr<CopyRecording>> prepare_copy_recording_runtime(const std:
     recording->resolved.resize(capacity); recording->pairs.resize(capacity); recording->regions.resize(capacity);
     HYLE_ASSIGN_OR_RETURN(recording->run, create_run(runtime, allocator));
     recording->run->retained_buffers.resize(static_cast<std::size_t>(capacity) * 2);
-    HYLE_RETURN_IF_ERROR(prepare_transfer_run(*recording->run));
+    if (queues == CopyQueueUse::kHostUpload)
+      HYLE_RETURN_IF_ERROR(prepare_transfer_run(*recording->run));
     if (granularity == CopyGranularity::kHalfword)
       HYLE_RETURN_IF_ERROR(prepare_halfwords(*recording, capacity, allocator));
     return recording;
