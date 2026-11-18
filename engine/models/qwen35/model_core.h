@@ -2677,17 +2677,17 @@ public:
     return initialization;
   }
 
-  enum class PrefillReclaimTrigger { kColdInstallation, kResourceExhausted };
+  enum class PrefillReclaimTrigger { kColdInstallation, kResourceExhausted, kBeforeFirstDecode };
 
   hyle::Result<std::size_t> reclaim_retired_prefill_storage(
-      const Phase &phase, PrefillReclaimTrigger trigger) {
-      if (execution_workspace.valid() || phase.imported_sources)
+      const Phase *keep, PrefillReclaimTrigger trigger) {
+      if (execution_workspace.valid() || (keep && keep->imported_sources))
         return std::size_t{0};
       // Existing Sources/results keep their own original storage alive.
       std::size_t released = 0;
       for (auto &[shape, previous] : phases) {
         (void)shape;
-        if (previous.get() == &phase || previous->imported_sources ||
+        if (previous.get() == keep || previous->imported_sources ||
             !packs_prefill(previous->family->packing) ||
             (active_step && active_step->phase == previous.get()) ||
             (successor_step && successor_step->phase == previous.get())) continue;
@@ -2701,9 +2701,18 @@ public:
       if (released) {
         std::cerr << "execution_prefill_storage_reclaimed invocations=" << released
                   << " trigger=" << (trigger == PrefillReclaimTrigger::kColdInstallation
-                      ? "cold_prefill_installation" : "resource_exhausted") << '\n';
+                      ? "cold_prefill_installation" : trigger == PrefillReclaimTrigger::kBeforeFirstDecode
+                          ? "before_first_decode" : "resource_exhausted") << '\n';
       }
       return released;
+  }
+
+  // Experiment: only the owner of a completed final prefill requests this.
+  // Never drain another live episode or revoke an escaped Source/read lease.
+  // The existing per-carrier guards and reset_retired remain authoritative.
+  hyle::Result<std::size_t> reclaim_private_prefill_before_decode() {
+    if (active_step || successor_step || carrier_borrowed) return std::size_t{0};
+    return reclaim_retired_prefill_storage(nullptr, PrefillReclaimTrigger::kBeforeFirstDecode);
   }
 
   void initialize_slot(Phase &phase, std::size_t slot) {
@@ -2715,14 +2724,14 @@ public:
       // retained outputs keep their actual storage; cold shape preference
       // remains in the existing Phase metadata.
       if (packs_prefill(phase.family->packing)) {
-        (void)take(reclaim_retired_prefill_storage(phase, PrefillReclaimTrigger::kColdInstallation));
+        (void)take(reclaim_retired_prefill_storage(&phase, PrefillReclaimTrigger::kColdInstallation));
         phase.private_capacity_preferred = true;
       }
       return slot_initialization(phase);
     }, [&]() -> hyle::Result<bool> {
       // Retired private prefill workspaces can also prevent the first decode
       // program from being installed. Retry only an unpublished installation.
-      HYLE_ASSIGN_OR_RETURN(auto released, reclaim_retired_prefill_storage(phase, PrefillReclaimTrigger::kResourceExhausted));
+      HYLE_ASSIGN_OR_RETURN(auto released, reclaim_retired_prefill_storage(&phase, PrefillReclaimTrigger::kResourceExhausted));
       return released != 0;
     }));
   }

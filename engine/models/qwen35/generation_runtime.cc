@@ -1886,6 +1886,19 @@ struct SynchronousGenerationStepAdapter final {
     if (target_seconds == 0) target_seconds = std::chrono::duration<double>(Clock::now() - episode_start).count();
     observe_generation_batch(batch_observer, selected_calls, input_rows, target_seconds + proposal_seconds, active_rows, physical_rows);
     for (auto &call : selected_calls) { finish_generation_call(model, call); call.conditional_logits = {}; }
+    // Experimental one-time turn boundary, after publication, observers,
+    // returned readback admission and original conditional-input withdrawal.
+    // N1 is execution concurrency; idle resident/checkpoint sessions retain
+    // their original state/read leases. No decode step scans private phases.
+    if (!generation && packed_prefill && selected_calls.size() == 1 &&
+        model.execution.kind() == BackendKind::kVulkan && !model.execution.has_cpu_assist() &&
+        model.device_mtp_successor_enabled() && model.cache_plan.active_sequences == 1 &&
+        !model.execution_workspace.valid() && is_mtp_prefill(selected_calls[0].role) &&
+        !selected_calls[0].full_hit && selected_calls[0].prefill_complete &&
+        selected_calls[0].disposition == EvaluationDisposition::kPublished &&
+        !selected_calls[0].request->progress.turn_done &&
+        selected_calls[0].request->progress.remaining_outputs())
+      (void)take(model.reclaim_private_prefill_before_decode());
     if (prepared_ahead)
       for (const auto &call : selected_calls)
         if (call.disposition != EvaluationDisposition::kPublished || call.request->progress.turn_done ||

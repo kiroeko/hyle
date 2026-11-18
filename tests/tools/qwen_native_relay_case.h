@@ -132,10 +132,11 @@ inline void run(const std::filesystem::path &input, q::BackendKind kind, bool ra
         q::TextCompletion::kStateOnly, 0, q::RowPacking::kPrefill);
   const std::array small_prefill{std::size_t{2}}, larger_prefill{std::size_t{3}};
   // All finite Families and replay-use plans precede the first carrier.
-  h::require(model.prepare_prefill_family(small_prefill, q::TextCompletion::kEmitNext),
+  h::require(model.prepare_prefill_family(private_prefill_shapes, q::TextCompletion::kEmitNext),
       "cross-family native prefill lifecycle has no emit-next packed program");
-  model.plan_replay_uses(2, 1, 8, q::GraphRole::kText,
-      q::TextCompletion::kEmitNext, 0, q::RowPacking::kPrefill);
+  for (const auto count : private_prefill_shapes)
+    model.plan_replay_uses(count, 1, 8, q::GraphRole::kText,
+        q::TextCompletion::kEmitNext, 0, q::RowPacking::kPrefill);
   model.prepare_execution(rows);
   model.prepare_relay_execution();
   model.prepare_prefill_execution(small_prefill, q::TextCompletion::kStateOnly);
@@ -186,6 +187,55 @@ inline void run(const std::filesystem::path &input, q::BackendKind kind, bool ra
   h::require(small.slots[0].carrier.initialized() && !emitting.slots[0].carrier.initialized() &&
       small.private_capacity_preferred && larger.private_capacity_preferred && emitting.private_capacity_preferred,
       "return to the original completion Family retained its idle peer or lost prepared preference");
+  // A real packed prefill owns native Work/gallocr storage, unlike a
+  // never-submitted cold placeholder. Keep its published Head across reset.
+  {
+    const std::array boundary_rows{std::size_t{3}};
+    const std::array<std::int32_t, 3> boundary_prompt{1, 2, 3};
+    auto packed = model.create_session(boundary_rows, {}, q::GraphRole::kText,
+        q::cache::SamplingCursor{123, 7, 0});
+    const std::array request{q::EvaluationRequest{packed, boundary_prompt}};
+    model.prepare_prefill_evaluations(request);
+    auto *step = model.active_step.get(); auto *phase = step->phase;
+    const auto slot = step->state_slot;
+    h::require(q::packs_prefill(phase->family->packing), "decode-boundary fixture did not execute packed prefill");
+    model.submit_evaluations(*step);
+    (void)q::finish_evaluation(model, *packed, "decode-boundary-packed-prefill", {}, false);
+    h::require(!model.active_step && !model.successor_step && !model.carrier_borrowed &&
+        phase->slots[slot].carrier.initialized() && phase->slots[slot].carrier.retired(),
+        "decode-boundary fixture still holds its original prefill episode");
+    auto checkpoint = packed->checkpoint();
+    const auto epoch = packed->head.epoch();
+    auto images = q::take(q::inference::HostStateStorage::create(model.execution, 2, 256u << 20));
+    auto before = model.export_session(*packed, images);
+    const auto before_bytes = h::read_image(*before); before.reset();
+    const auto released = q::take(model.reclaim_private_prefill_before_decode());
+    h::require(released && !phase->slots[slot].carrier.initialized() &&
+        phase->private_capacity_preferred && model.prefill_capacity(3, q::TextCompletion::kEmitNext, 0) == 3 &&
+        packed->head.epoch() == epoch && packed->head.get() == checkpoint.get(),
+        "decode-boundary reset changed Head/capacity or retained the retired invocation");
+    auto after = model.export_session(*packed, images);
+    h::same_image(before_bytes, h::read_image(*after)); after.reset();
+    auto reference = model.create_session({}, checkpoint);
+    const auto pending = packed->head->next_id;
+    const auto wanted = q::evaluate(model, *reference, std::span(&pending, 1), "decode-boundary-reference", {}, false);
+    const auto actual = q::evaluate(model, *packed, std::span(&pending, 1), "decode-boundary-next", {}, false);
+    h::require(actual == wanted, "decode after retired prefill reset changed its next token");
+    auto wanted_image = model.export_session(*reference, images);
+    auto actual_image = model.export_session(*packed, images);
+    h::same_image(h::read_image(*wanted_image), h::read_image(*actual_image));
+    wanted_image.reset(); actual_image.reset(); checkpoint.reset();
+    h::retire(reference); h::retire(packed);
+    h::require(!images->live_images() && !model.snapshot_versions.live && !model.carrier_borrowed,
+        "decode-boundary fixture retained state, images or admission");
+    std::cout << "PASS retired_private_prefill_before_decode backend=" << h::backend_name(kind)
+              << " sampling=" << (random ? "random" : "greedy")
+              << " executed_packed_rows=3 state_unchanged=1 next_state=equal retained_head=1"
+              << " capacity_preference=preserved retired=1\n" << std::flush;
+  }
+  // Restore the original idle private carrier before the unchanged relay
+  // fixture; a live producer/Source must not trigger this idle-boundary action.
+  model.prepare_prefill_execution(small_prefill, q::TextCompletion::kStateOnly);
   const std::array prefill{std::size_t{3}};
   auto session = model.create_session(prefill, {}, q::GraphRole::kText, q::cache::SamplingCursor{123, 7, 0});
   const std::array<std::int32_t, 3> prompt{1, 2, 3};
@@ -206,6 +256,8 @@ inline void run(const std::filesystem::path &input, q::BackendKind kind, bool ra
   const bool device_dependency = producer->phase->slots[producer->state_slot].carrier.native_source_dependencies();
   auto sources = model.prepare_submission_sources(*producer);
   model.submit_evaluations(*producer);
+  h::require(q::take(model.reclaim_private_prefill_before_decode()) == 0 && small.slots[0].carrier.initialized(),
+      "active native Source permitted idle-boundary prefill destruction");
   h::require(sources->submission.valid() && sources->primary_output.valid(),
       "native model relay lost its actual output/complete-state Source");
   const auto &output = producer->phase->child->output(producer->phase->id_port);
