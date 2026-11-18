@@ -391,6 +391,95 @@ TEST(GgmlVulkanRegion, DenseLinearRetainsOriginalHalfBfloatAndFloatSources) {
   dense_original_sources<float,float>(*device);
 }
 
+TEST(GgmlVulkanRegion, FloatMatMulUsesActualShaderSharedMemoryAndRebindsOwners) {
+  namespace d = c::ggml_vulkan::detail;
+  constexpr std::int64_t m = 105, k = 66, n = 257;
+  auto device = NativeDevice::create();
+  ASSERT_TRUE(device) << device.error().message();
+  auto scope = device->activate();
+  const auto matrix = [](std::int64_t rows, std::int64_t cols) {
+    return c::TensorDesc::dense(c::DataType::kFloat32,
+                              std::array{rows, cols}).value();
+  };
+  const auto operation = c::Operation(c::MatMul{});
+  const std::array inputs{matrix(m, k), matrix(k, n)};
+  const auto output = c::infer_single_output(operation, inputs).value();
+  d::RegionRecipe recipe;
+  recipe.values = {inputs[0], inputs[1], output};
+  recipe.inputs = {0, 1};
+  recipe.outputs = {2};
+  recipe.nodes = {{operation, {0, 1}, {2}}};
+  auto region = d::Region::create(*device, recipe);
+  ASSERT_TRUE(region) << region.error().message();
+  // Generic MatMul reaches the native F32 GEMM. DenseLinearF32's original
+  // matvec reshape would conceal a too-large GEMM shared-memory configuration.
+  std::vector<VkBuffer> previous;
+  for (int generation = 0; generation != 3; ++generation) {
+    auto arena = MetadataArena::create(3 * ggml_tensor_overhead(),
+                                       hyle::mem::system_allocator()).value();
+    std::vector<std::shared_ptr<ggml_backend_buffer>> owners;
+    std::vector<ggml_tensor *> tensors;
+    std::vector<d::RegionBinding> bindings;
+    std::vector<VkBuffer> handles;
+    for (const auto &desc : recipe.values) {
+      const auto bytes = desc.required_bytes().value();
+      auto buffer = device->allocate_buffer(bytes);
+      ASSERT_TRUE(buffer) << buffer.error().message();
+      owners.emplace_back(*buffer, [device = *device](auto *p) {
+        auto active = device.activate();
+        ggml_backend_buffer_free(p);
+      });
+      const auto handle = device->buffer_handle(*buffer);
+      // The region still pins all previous owners while new buffers allocate.
+      ASSERT_EQ(std::ranges::find(previous, handle), previous.end());
+      handles.push_back(handle);
+      auto *tensor = ggml_new_tensor_1d(arena.get(), GGML_TYPE_F32,
+          std::int64_t(desc.element_count().value()));
+      ASSERT_EQ(ggml_backend_tensor_alloc(*buffer, tensor,
+                    ggml_backend_buffer_get_base(*buffer)), GGML_STATUS_SUCCESS);
+      tensors.push_back(tensor);
+      bindings.push_back({handle, 0, bytes, owners.back()});
+    }
+    ASSERT_TRUE(region->bind(bindings).ok());
+    for (int replay = 1; replay <= 2; ++replay) {
+      SCOPED_TRACE(testing::Message() << "owner generation=" << generation
+                                    << " stable-binding replay=" << replay);
+      std::vector<float> a(std::size_t(m * k), 0.F);
+      std::vector<float> b(std::size_t(k * n), 0.F);
+      for (std::int64_t row = 0; row < m; ++row) {
+        a[std::size_t(row * k)] =
+            1.F + float(2 * generation + replay + row % 3) / 262144.F;
+        a[std::size_t(row * k + 1)] = -1.F;
+        a[std::size_t(row * k + 65)] = .25F;
+      }
+      for (std::int64_t col = 0; col < n; ++col) {
+        b[std::size_t(col)] = b[std::size_t(n + col)] = float(1 + col % 4);
+        b[std::size_t(65 * n + col)] = .5F + float(col % 129) / 256.F;
+      }
+      ggml_backend_tensor_set(tensors[0], a.data(), 0, a.size() * sizeof(float));
+      ggml_backend_tensor_set(tensors[1], b.data(), 0, b.size() * sizeof(float));
+      ASSERT_TRUE(region->submit().status.ok());
+      const auto done = region->wait();
+      ASSERT_TRUE(done.status.ok()) << done.status.message();
+      ASSERT_FALSE(done.pending);
+      ASSERT_TRUE(region->can_detach_bindings().ok());
+      std::vector<float> actual(std::size_t(m * n));
+      ggml_backend_tensor_get(tensors[2], actual.data(), 0,
+                               actual.size() * sizeof(float));
+      for (std::int64_t row = 0; row < m; ++row)
+        for (std::int64_t col = 0; col < n; ++col) {
+          double expected = 0.;
+          for (std::int64_t inner = 0; inner < k; ++inner)
+            expected += double(a[std::size_t(row * k + inner)]) *
+                        double(b[std::size_t(inner * n + col)]);
+          ASSERT_NEAR(actual[std::size_t(row * n + col)], float(expected), 2.e-8F)
+              << "row=" << row << " col=" << col;
+        }
+    }
+    previous = std::move(handles);
+  }
+}
+
 TEST(GgmlVulkanRegion, ModelWidthNormGateResidualWithChangingInputs) {
 #if defined(_WIN32)
   SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX |
