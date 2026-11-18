@@ -3851,10 +3851,12 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
       .mtp_enabled = mtp, .max_drafts = depth, .max_device_drafts = kMaximumDeviceMtpDrafts,
       .stored_draft_head = supports_stored_draft_projection(source.roles),
       .has_decode = config.execution.context > 1, .resolved_active_sequences = config.execution.active_sequences};
-  // Qualify the native Metal recipe for a single resident request. Use the
-  // serial default because this device's matched K2 window shows extra
-  // preparation time without a measurable decode gain.
-  const bool qualify_native_mtp = mtp && !cpu_layers && execution.primary == BackendKind::kApple &&
+  // Keep the serial default for native MTP. Vulkan's explicit K1 route uses
+  // the original native Source; deeper Vulkan chains still use serial
+  // execution while their complete lifetime is being qualified.
+  const bool native_mtp_backend = execution.primary == BackendKind::kApple ||
+      (execution.primary == BackendKind::kVulkan && depth == 1 && profile.overlap.value_or(false));
+  const bool qualify_native_mtp = mtp && !cpu_layers && native_mtp_backend &&
       workload.max_sessions == 1 && workload.active_sequences == 1;
   std::optional<Backend> query_endpoint;
   bool native_candidate = !mtp &&
