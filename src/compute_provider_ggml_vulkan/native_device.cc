@@ -172,6 +172,26 @@ Status NativeDevice::allocate_graph(ggml_cgraph *graph, bool owns_imports,
   return failure(bridge::create_storage(state_->runtime, graph, owns_imports,
                                         storage, bytes));
 }
+Result<std::shared_ptr<bridge::RunArena>> NativeDevice::create_run_arena() const noexcept {
+  if (!state_) return std::unexpected(Status::InvalidArgument("empty Vulkan arena device"));
+  std::shared_ptr<bridge::RunArena> result;
+  HYLE_RETURN_IF_ERROR(failure(bridge::create_run_arena(state_->runtime, state_, &result)));
+  return result;
+}
+Status NativeDevice::seal_run_arena(const std::shared_ptr<bridge::RunArena> &arena) const noexcept {
+  if (!state_) return Status::InvalidArgument("empty Vulkan arena device");
+  return failure(bridge::seal_run_arena(state_->runtime, arena));
+}
+Status NativeDevice::allocate_graph_for_run(ggml_cgraph *graph, bool imports,
+    const std::shared_ptr<bridge::RunArena> &arena, bridge::Storage **storage,
+    std::size_t *bytes) const noexcept {
+  if (!state_) return Status::InvalidArgument("empty Vulkan arena device");
+  return failure(bridge::create_storage_for_run(state_->runtime, graph, imports, arena, storage, bytes));
+}
+Status NativeDevice::materialize_graph(bridge::Storage *storage) const noexcept {
+  if (!state_) return Status::InvalidArgument("empty Vulkan arena device");
+  return failure(bridge::materialize_storage(state_->runtime, storage));
+}
 void NativeDevice::free_graph(bridge::Storage *storage) const noexcept {
   bridge::destroy_storage(storage);
 }

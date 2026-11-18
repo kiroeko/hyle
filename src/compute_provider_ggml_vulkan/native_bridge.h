@@ -37,6 +37,7 @@ inline constexpr std::int32_t kCacheEncoderCopyExact = 0x48595138;
 struct Runtime;
 struct Work;
 struct Storage;
+struct RunArena;
 struct Options {
   PFN_vkGetInstanceProcAddr get_instance_proc_addr = nullptr;
   std::uint32_t device_index = UINT32_MAX;
@@ -149,4 +150,11 @@ VkFence work_fence(const Work *) noexcept;
 Failure create_storage(Runtime *, ggml_cgraph *, bool owns_imports, Storage **,
                        std::size_t *bytes) noexcept;
 void destroy_storage(Storage *) noexcept;
+// Private cold materialization only; no public execution/resource ABI.
+Failure create_run_arena(Runtime *, std::shared_ptr<const void>,
+                         std::shared_ptr<RunArena> *) noexcept;
+Failure seal_run_arena(Runtime *, const std::shared_ptr<RunArena> &) noexcept;
+Failure create_storage_for_run(Runtime *, ggml_cgraph *, bool owns_imports,
+    const std::shared_ptr<RunArena> &, Storage **, std::size_t *) noexcept;
+Failure materialize_storage(Runtime *, Storage *) noexcept;
 } // namespace hyle::compute::ggml_vulkan::bridge

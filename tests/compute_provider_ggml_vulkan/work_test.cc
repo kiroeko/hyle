@@ -1,15 +1,16 @@
-#include "native_device.h"
-#include "native_graph.h"
+#include "C:/public/project-hyle/hyle/.scratch/cross-backend-closeout-20261114/vulkan-run-arena51/component/source/src/compute_provider_ggml_vulkan/native_device.h"
+#include "C:/public/project-hyle/hyle/.scratch/cross-backend-closeout-20261114/vulkan-run-arena51/component/source/src/compute_provider_ggml_vulkan/native_graph.h"
 
 #include <array>
+#include <cstdio>
 #include <cmath>
 #include <cstdint>
 #include <memory>
 #include <vector>
 
 #include <gtest/gtest.h>
-#include "ggml-backend.h"
-#include "ggml.h"
+#include "C:/public/project-hyle/hyle/.scratch/cross-backend-closeout-20261114/windows-current/vulkan-sdk/src/compute_ggml_runtime/source-f36c8fffb0df7df9/include/ggml-backend.h"
+#include "C:/public/project-hyle/hyle/.scratch/cross-backend-closeout-20261114/windows-current/vulkan-sdk/src/compute_ggml_runtime/source-f36c8fffb0df7df9/include/ggml.h"
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -396,3 +397,160 @@ TEST(GgmlVulkanWork, MovedPendingOwnerDrainsBeforeDroppingItsLastGraphLease) {
   EXPECT_TRUE(lifetime.expired());
 }
 } // namespace
+
+
+namespace {
+void actual_arena_device51(const NativeDevice &device) {
+  const auto &native=device.native();
+  auto properties_fn=reinterpret_cast<PFN_vkGetPhysicalDeviceProperties>(
+      native.get_instance_proc_addr(native.instance,"vkGetPhysicalDeviceProperties"));
+  ASSERT_NE(properties_fn,nullptr); VkPhysicalDeviceProperties properties{};
+  properties_fn(native.physical,&properties);
+  std::printf("ARENA51_ACTUAL_DEVICE %s vendor=%u type=%u\n",properties.deviceName,
+      properties.vendorID,static_cast<unsigned>(properties.deviceType));
+  ASSERT_EQ(properties.vendorID,0x10deu);
+  ASSERT_EQ(properties.deviceType,VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+#if defined(_WIN32)
+  const auto module=GetModuleHandleW(L"hyle_compute_provider_ggml_vulkan.dll");
+  ASSERT_NE(module,nullptr); wchar_t name[32768]{};
+  ASSERT_GT(GetModuleFileNameW(module,name,32768),0u);
+  std::printf("ARENA51_ACTUAL_PROVIDER %ls\n",name);
+#endif
+}
+struct RunArenaPorts51 {
+  NativeDevice device;
+  std::vector<std::shared_ptr<ggml_backend_buffer>> buffers;
+  std::shared_ptr<RunArenaPorts51> previous;
+};
+struct RunArenaFrame51 {
+  std::shared_ptr<RunArenaPorts51> ports;
+  NativeGraph storage;
+  ggml_tensor *input = nullptr, *weight = nullptr, *temporary = nullptr, *output = nullptr;
+};
+hyle::Result<std::shared_ptr<RunArenaFrame51>> make_run_arena_frame51(
+    const NativeDevice &device,
+    const std::shared_ptr<hyle::compute::ggml_vulkan::bridge::RunArena> &scratch,
+    const std::shared_ptr<RunArenaFrame51> &previous = {}) {
+  auto frame = std::make_shared<RunArenaFrame51>();
+  frame->ports = std::make_shared<RunArenaPorts51>();
+  frame->ports->device = device;
+  auto active = device.activate();
+  HYLE_ASSIGN_OR_RETURN(auto metadata, MetadataArena::for_graph(
+      8, 12, hyle::mem::system_allocator()));
+  auto *ctx = metadata.get();
+  frame->input = ggml_new_tensor_1d(ctx, GGML_TYPE_F32, 2048);
+  frame->weight = ggml_new_tensor_1d(ctx, GGML_TYPE_F32, 2048);
+  frame->temporary = ggml_add(ctx, frame->input, frame->weight);
+  frame->output = ggml_neg(ctx, frame->temporary);
+  ggml_set_input(frame->input); ggml_set_input(frame->weight);
+  ggml_set_output(frame->output);
+  const auto bind_owned = [&](ggml_tensor *tensor) -> hyle::Status {
+    HYLE_ASSIGN_OR_RETURN(auto raw, device.allocate_buffer(ggml_nbytes(tensor)));
+    std::shared_ptr<ggml_backend_buffer> buffer(raw, [device](auto *p) {
+      auto active = device.activate(); ggml_backend_buffer_free(p);
+    });
+    if (ggml_backend_tensor_alloc(buffer.get(), tensor,
+          ggml_backend_buffer_get_base(buffer.get())) != GGML_STATUS_SUCCESS)
+      return hyle::Status::Internal("arena fixture original port binding");
+    frame->ports->buffers.push_back(std::move(buffer));
+    return hyle::Status::Ok();
+  };
+  if (previous) {
+    frame->ports->previous = previous->ports;
+    if (ggml_backend_tensor_alloc(previous->output->buffer, frame->input,
+          previous->output->data) != GGML_STATUS_SUCCESS)
+      return std::unexpected(hyle::Status::Internal("arena fixture complete original handoff"));
+  } else { HYLE_RETURN_IF_ERROR(bind_owned(frame->input)); }
+  HYLE_RETURN_IF_ERROR(bind_owned(frame->weight));
+  HYLE_RETURN_IF_ERROR(bind_owned(frame->output));
+  auto *graph = ggml_new_graph_custom(ctx, 12, false);
+  ggml_build_forward_expand(graph, frame->output);
+  HYLE_ASSIGN_OR_RETURN(frame->storage, NativeGraph::allocate_for_run(
+      device, std::move(metadata), graph, frame->ports, scratch));
+  return frame;
+}
+} // namespace
+
+TEST(GgmlVulkanWork, RunArenaSharesTwoNonzeroPrivateGraphsAndPreservesPorts) {
+  auto created = NativeDevice::create();
+  if (!created) GTEST_SKIP() << created.error().message();
+  auto device = *created;
+  actual_arena_device51(device);
+  auto planned = device.create_run_arena(); ASSERT_TRUE(planned) << planned.error().message();
+  auto scratch = *planned;
+  auto left_result = make_run_arena_frame51(device, scratch); ASSERT_TRUE(left_result);
+  auto left = *left_result;
+  auto right_result = make_run_arena_frame51(device, scratch, left); ASSERT_TRUE(right_result);
+  auto right = *right_result;
+  EXPECT_GT(left->storage.storage_bytes(), 0u);
+  EXPECT_GT(right->storage.storage_bytes(), 0u);
+  EXPECT_EQ(left->storage.get(), nullptr);
+  EXPECT_FALSE(left->storage.materialize_run_storage().ok()); // Not sealed.
+  ASSERT_TRUE(device.seal_run_arena(scratch).ok());
+  ASSERT_TRUE(left->storage.materialize_run_storage().ok());
+  ASSERT_TRUE(right->storage.materialize_run_storage().ok());
+  const auto backing = device.buffer_handle(left->temporary->buffer);
+  ASSERT_NE(backing, VK_NULL_HANDLE);
+  ASSERT_EQ(backing, device.buffer_handle(right->temporary->buffer));
+  EXPECT_NE(backing, device.buffer_handle(left->output->buffer));
+  EXPECT_NE(backing, device.buffer_handle(right->output->buffer));
+  auto a = device.create_work(); ASSERT_TRUE(a);
+  auto b = device.create_work(); ASSERT_TRUE(b);
+  for (int replay = 0; replay < 3; ++replay) {
+    std::vector<float> x(2048, float(replay) + .25F), w(2048, .5F), z(2048, .75F);
+    { auto active = device.activate();
+      ggml_backend_tensor_set(left->input, x.data(), 0, x.size()*sizeof(float));
+      ggml_backend_tensor_set(left->weight, w.data(), 0, w.size()*sizeof(float));
+      ggml_backend_tensor_set(right->weight, z.data(), 0, z.size()*sizeof(float)); }
+    const auto first = a->submit(left->storage.get(), left->storage.lease());
+    ASSERT_TRUE(first.status.ok()); ASSERT_TRUE(first.pending);
+    const auto second = b->submit(right->storage.get(), right->storage.lease());
+    ASSERT_TRUE(second.status.ok()); ASSERT_TRUE(second.pending); // No wait between stages.
+    ASSERT_TRUE(b->wait().status.ok()); ASSERT_TRUE(a->wait().status.ok());
+    std::vector<float> retained(2048), output(2048);
+    { auto active = device.activate();
+      ggml_backend_tensor_get(left->output, retained.data(), 0, retained.size()*sizeof(float));
+      ggml_backend_tensor_get(right->output, output.data(), 0, output.size()*sizeof(float)); }
+    for (std::size_t i=0;i<x.size();++i) {
+      ASSERT_EQ(retained[i], -(x[i]+.5F));
+      ASSERT_EQ(output[i], x[i]-.25F);
+    }
+    EXPECT_EQ(backing, device.buffer_handle(left->temporary->buffer));
+  }
+}
+
+TEST(GgmlVulkanWork, RunArenasKeepSlotsSeparateAndRetainPendingGraphOnFailure) {
+  auto created = NativeDevice::create();
+  if (!created) GTEST_SKIP() << created.error().message();
+  auto device = *created;
+  actual_arena_device51(device);
+  auto first = device.create_run_arena(); ASSERT_TRUE(first);
+  auto second = device.create_run_arena(); ASSERT_TRUE(second);
+  auto a_result=make_run_arena_frame51(device,*first); ASSERT_TRUE(a_result);
+  auto b_result=make_run_arena_frame51(device,*second); ASSERT_TRUE(b_result);
+  auto a_frame=*a_result; auto b_frame=*b_result;
+  ASSERT_TRUE(device.seal_run_arena(*first).ok());
+  ASSERT_TRUE(device.seal_run_arena(*second).ok());
+  ASSERT_TRUE(a_frame->storage.materialize_run_storage().ok());
+  ASSERT_TRUE(b_frame->storage.materialize_run_storage().ok());
+  ASSERT_NE(device.buffer_handle(a_frame->temporary->buffer),
+            device.buffer_handle(b_frame->temporary->buffer));
+  auto work=device.create_work(); ASSERT_TRUE(work);
+  std::vector<float> input(2048,2.F),weight(2048,.5F);
+  { auto active=device.activate();
+    ggml_backend_tensor_set(a_frame->input,input.data(),0,input.size()*sizeof(float));
+    ggml_backend_tensor_set(a_frame->weight,weight.data(),0,weight.size()*sizeof(float)); }
+  const auto accepted=work->submit(a_frame->storage.get(),a_frame->storage.lease());
+  ASSERT_TRUE(accepted.status.ok()); ASSERT_TRUE(accepted.pending);
+  const auto rejected=work->submit(b_frame->storage.get(),b_frame->storage.lease());
+  EXPECT_FALSE(rejected.status.ok()); EXPECT_TRUE(rejected.pending);
+  // Work's original lease alone keeps graph metadata and scratch alive.
+  // Retain only independently owned public IO for the post-retirement read.
+  auto io=a_frame->ports; const auto output=*a_frame->output;
+  a_frame.reset(); a_result->reset(); first->reset();
+  const auto retired=work->wait(); ASSERT_TRUE(retired.status.ok()); EXPECT_FALSE(retired.pending);
+  std::vector<float> observed(2048);
+  { auto active=device.activate();
+    ggml_backend_tensor_get(&output,observed.data(),0,observed.size()*sizeof(float)); }
+  for (const float value:observed) ASSERT_EQ(value,-2.5F);
+}

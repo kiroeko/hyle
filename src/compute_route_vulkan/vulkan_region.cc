@@ -1631,6 +1631,14 @@ Status record_regions(const std::shared_ptr<Run> &run,
                       std::span<const Dispatch> dispatches,
                       std::vector<DescriptorBinding> *dynamic) noexcept {
   try {
+    std::shared_ptr<ggml_vulkan::bridge::RunArena> scratch;
+    // The original non-IREE composed path enqueues every stage in order on
+    // this exact NativeDevice compute queue. No async/transfer generalization.
+    if (run->stages.empty() && !run->pending && !run->async &&
+        !run->transfer_submission && std::ranges::none_of(dispatches,
+            [](const auto &dispatch) { return dispatch.iree.has_value(); })) {
+      HYLE_ASSIGN_OR_RETURN(scratch, run->runtime->device->provider.create_run_arena());
+    }
     for (std::size_t first = 0; first < dispatches.size();) {
       RunStage stage;
       if (dispatches[first].iree) {
@@ -1644,8 +1652,8 @@ Status record_regions(const std::shared_ptr<Run> &run,
         stage.bindings.resize(stage.values.size());
         std::lock_guard lock(run->runtime->mutex);
         HYLE_ASSIGN_OR_RETURN(
-            auto region, provider::Region::create(
-                             run->runtime->device->provider, *dispatch.region));
+            auto region, provider::Region::create_for_run(
+                             run->runtime->device->provider, *dispatch.region, scratch));
         stage.managed = std::make_unique<provider::Region>(std::move(region));
       } else {
         auto end = first + 1;
@@ -1687,6 +1695,11 @@ Status record_regions(const std::shared_ptr<Run> &run,
       run->stages.push_back(std::move(stage));
     }
     std::lock_guard lock(run->runtime->mutex);
+    if (scratch) {
+      HYLE_RETURN_IF_ERROR(run->runtime->device->provider.seal_run_arena(scratch));
+      for (auto &stage : run->stages)
+        if (stage.managed) HYLE_RETURN_IF_ERROR(stage.managed->materialize_run_storage());
+    }
     HYLE_RETURN_IF_ERROR(bind_regions(*run));
     const auto &last = run->stages.back();
     run->completion_fence = last.managed ? last.managed->fence() : run->fence;

@@ -981,6 +981,10 @@ struct Region::State final {
 
 Result<Region> Region::create(NativeDevice device,
                               const RegionRecipe &recipe) noexcept {
+  return create_for_run(std::move(device), recipe, {});
+}
+Result<Region> Region::create_for_run(NativeDevice device,
+    const RegionRecipe &recipe, const std::shared_ptr<bridge::RunArena> &scratch) noexcept {
   if (!device || recipe.nodes.empty() || recipe.outputs.empty() ||
       recipe.values.size() > INT32_MAX / 8 ||
       recipe.nodes.size() > INT32_MAX / 16)
@@ -1977,8 +1981,8 @@ Result<Region> Region::create(NativeDevice device,
             Status::Internal("ggml Vulkan region port storage"));
     }
     HYLE_ASSIGN_OR_RETURN(state.graph,
-                          NativeGraph::allocate(state.device, std::move(arena),
-                                                graph, state.imports));
+                          NativeGraph::allocate_for_run(state.device, std::move(arena),
+                                                graph, state.imports, scratch));
     if (state.imports->constant_bytes > SIZE_MAX - state.graph.storage_bytes())
       return std::unexpected(
           Status::OutOfRange("ggml Vulkan region storage overflows"));
@@ -2023,6 +2027,11 @@ Status Region::update_batch_layout(std::span<const std::int32_t> indptr,
   return Status::Ok();
 }
 
+Status Region::materialize_run_storage() noexcept {
+  if (!state_ || state_->pending || state_->bound)
+    return Status::FailedPrecondition("Vulkan run storage requires a cold unbound region");
+  return state_->graph.materialize_run_storage();
+}
 Status
 Region::validate(std::span<const RegionBinding> bindings) const noexcept {
   if (!state_ || state_->pending || bindings.size() != state_->ports.size())
@@ -2050,6 +2059,8 @@ Region::validate(std::span<const RegionBinding> bindings) const noexcept {
 
 Status Region::bind(std::span<const RegionBinding> bindings) noexcept {
   HYLE_RETURN_IF_ERROR(validate(bindings));
+  if (!state_->graph.get())
+    return Status::FailedPrecondition("Vulkan run storage is not materialized");
   auto active = state_->device.activate();
   bool changed = !state_->bound;
   for (std::size_t i = 0; i < bindings.size(); ++i) {

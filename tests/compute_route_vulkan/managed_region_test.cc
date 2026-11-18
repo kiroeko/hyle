@@ -2,17 +2,17 @@
 
 #include <algorithm>
 
-#include "../compute_models/d5_qwen35_fixture.h"
-#include "../compute_models/batched_rope_fixture.h"
-#include "../compute/workload_fixture.h"
-#include "gate_norm_test_support.h"
-#include "vulkan_program_internal.h"
-#include "vulkan_iree.h"
-#include "vulkan_policy.h"
-#include "hyle/compute/model_ops.h"
+#include "C:/public/project-hyle/hyle/tests/compute_models/d5_qwen35_fixture.h"
+#include "C:/public/project-hyle/hyle/tests/compute_models/batched_rope_fixture.h"
+#include "C:/public/project-hyle/hyle/tests/compute/workload_fixture.h"
+#include "C:/public/project-hyle/hyle/tests/compute_route_vulkan/gate_norm_test_support.h"
+#include "C:/public/project-hyle/hyle/.scratch/cross-backend-closeout-20261114/vulkan-run-arena51/run/source/src/compute_route_vulkan/vulkan_program_internal.h"
+#include "C:/public/project-hyle/hyle/.scratch/cross-backend-closeout-20261114/vulkan-run-arena51/run/source/src/compute_route_vulkan/vulkan_iree.h"
+#include "C:/public/project-hyle/hyle/.scratch/cross-backend-closeout-20261114/vulkan-run-arena51/run/source/src/compute_route_vulkan/vulkan_policy.h"
+#include "C:/public/project-hyle/hyle/include/hyle/compute/model_ops.h"
 #if defined(HYLE_TEST_GRAPH_VULKAN)
-#include "hyle/graph/vulkan.h"
-#include "../compute_models/derived_cast_fixture.h"
+#include "C:/public/project-hyle/hyle/include/hyle/graph/vulkan.h"
+#include "C:/public/project-hyle/hyle/tests/compute_models/derived_cast_fixture.h"
 #endif
 
 namespace {
@@ -1082,6 +1082,74 @@ TEST(VulkanManaged, B2MatureCausalGqaRetainsReplayResults) {
       retained = result->get()->tensors()[0];
     else
       expect(context, retained, std::array{3.0, 3.0});
+  }
+}
+} // namespace
+
+#include <cstdio>
+#if defined(_WIN32)
+#include <windows.h>
+#endif
+namespace {
+TEST(VulkanManaged, RunArenaOwnsTwoNonzeroManagedRegionsAndKeepsSlotsIndependent) {
+  auto made=vulkan_test::context(); ASSERT_TRUE(made) << made.error().message();
+  auto &context=*made;
+  std::printf("ARENA51_RUN_DEVICE %s\n",context.environment().device_name.c_str());
+  ASSERT_EQ(context.environment().device_name,"NVIDIA GeForce RTX 4070");
+#if defined(_WIN32)
+  for (const auto *dll : {L"hyle_compute_route_vulkan.dll",L"hyle_compute_provider_ggml_vulkan.dll"}) {
+    const auto module=GetModuleHandleW(dll);ASSERT_NE(module,nullptr);
+    wchar_t name[32768]{};ASSERT_GT(GetModuleFileNameW(module,name,32768),0u);
+    std::printf("ARENA51_RUN_MODULE %ls\n",name);
+  }
+#endif
+  const auto description=dense(c::DataType::kFloat32,{2048});
+  const auto weight=make(context,description,std::vector<double>(2048,.5));
+  d::Plan plan;plan.values.resize(7,{description,{}});plan.values[1].constant=weight;
+  plan.inputs={0};plan.outputs={3,6};
+  auto shape=c::TensorShape::create(std::array<std::int64_t,1>{2048});ASSERT_TRUE(shape);
+  auto reshape=c::View::reshape(*shape);ASSERT_TRUE(reshape);
+  plan.steps={{c::Operation(c::Binary{c::BinaryKind::kAdd}),{0,1},{2}},
+              {c::Operation(c::Unary{c::UnaryKind::kNeg}),{2},{3}},
+              {c::Operation(*reshape),{3},{4}},
+              {c::Operation(c::Binary{c::BinaryKind::kAdd}),{4,1},{5}},
+              {c::Operation(c::Unary{c::UnaryKind::kNeg}),{5},{6}}};
+  // Real cold control frontier leaves each Add->Neg fragment intact.
+  plan.steps[2].control_boundary=true;
+  auto prepared=d::prepare_plan(context,plan);ASSERT_TRUE(prepared) << prepared.error().message();
+  std::printf("ARENA51_RUN_BEGIN slot=A\n");std::fflush(stdout);
+  auto first=prepared->create_invocation();ASSERT_TRUE(first) << first.error().message();
+  const auto inspect=[&](const v::Invocation &call,const char *slot) {
+    const auto &run=*d::Access::invocation(call)->run;
+    std::size_t count=0,total=0,maximum=0;
+    EXPECT_FALSE(run.async);EXPECT_FALSE(run.transfer_submission);
+    for (const auto &stage:run.stages) {
+      EXPECT_FALSE(stage.iree);
+      if (!stage.managed)continue;
+      ++count;const auto bytes=stage.managed->storage_bytes();EXPECT_GT(bytes,0u);
+      total+=bytes;maximum=(std::max)(maximum,bytes);
+    }
+    EXPECT_EQ(count,2u);EXPECT_GT(total,maximum);
+    std::printf("ARENA51_RUN_COLD_END slot=%s managed=%zu scratch_sum=%zu scratch_max=%zu\n",slot,count,total,maximum);
+    std::fflush(stdout);
+  };
+  inspect(*first,"A");
+  std::printf("ARENA51_RUN_BEGIN slot=B\n");std::fflush(stdout);
+  auto second=prepared->create_invocation();ASSERT_TRUE(second) << second.error().message();
+  inspect(*second,"B");
+  EXPECT_NE(d::Access::invocation(*first)->run,d::Access::invocation(*second)->run);
+  std::optional<v::Tensor> retained;
+  for (int pass=0;pass<3;++pass) {
+    auto &call=pass==0?*first:*second;
+    const double x=double(pass)+.25;
+    ASSERT_TRUE(call.bind(make(context,description,std::vector<double>(2048,x))).ok());
+    auto work=call.submit();ASSERT_TRUE(work) << work.error().message();
+    auto result=work->wait();ASSERT_TRUE(result) << result.error().message();
+    const auto tensors=result->get()->tensors();ASSERT_EQ(tensors.size(),2u);
+    EXPECT_EQ(values(context,tensors[0]),std::vector<double>(2048,-(x+.5)));
+    EXPECT_EQ(values(context,tensors[1]),std::vector<double>(2048,x));
+    if (retained)EXPECT_EQ(values(context,*retained),std::vector<double>(2048,-.75));
+    if (pass==0)retained=tensors[0];
   }
 }
 } // namespace
