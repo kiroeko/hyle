@@ -303,13 +303,15 @@ inline constexpr double teacher_second_score = 16.955802917480469;
 static_assert(teacher_first_score > teacher_second_score &&
     teacher_first_score - teacher_second_score < 0.1);
 
-// The two local source IDs commit to the same 335 original role SHA values.
-// Recomputing e592 on the Mac and changing only its local repository label
-// reproduces the existing Windows 4a76 identity. No runtime identity is changed.
-inline constexpr std::string_view equivalent_local_source =
+// These local source IDs were reproduced with the same 335 role SHA values
+// and geometry, varying only the local repository path.
+inline constexpr std::string_view teacher_mac_source =
     "e592759b224d98daf926892c96d792d8dbdfec436e3b71bbedc1b1467807cfc4";
+inline constexpr std::string_view teacher_wsl_source =
+    "5103d47180f0aef9e73552c9e3a300d5934902572f5ce9448b87efc5f13d8583";
 inline constexpr std::array<std::string_view, 1> teacher_sources{teacher_source};
-inline constexpr std::array<std::string_view, 2> teacher_sources10{teacher_source, equivalent_local_source};
+inline constexpr std::array<std::string_view, 3> teacher_sources10{
+    teacher_source, teacher_mac_source, teacher_wsl_source};
 inline constexpr std::array<std::int32_t, 10> teacher_prefix10{19, 20, 21, 18, 14, 20, 24, 17, 18, 12};
 struct RejectedSecondWitness final {
   std::span<const std::string_view> sources;
@@ -480,12 +482,13 @@ inline std::size_t check_prefix10_witness_contract() {
   round.before = prefill.after;
   round.after = {.length = 9, .frontier = 9, .next_id = 28};
   auto actual = expected; actual[1].target_second = 16;
-  const auto match = [&](const auto &x, const auto &y, std::string_view source = equivalent_local_source,
+  const auto match = [&](const auto &x, const auto &y, std::string_view source = teacher_mac_source,
                          bool unmodified_greedy = true) {
     return match_rejected_second_witness(source, unmodified_greedy, x, y, 1);
   };
   require(match(expected, actual) != nullptr);
   require(match(expected, actual, teacher_source) != nullptr);
+  require(match(expected, actual, teacher_wsl_source) != nullptr);
   const auto *witness = match(expected, actual);
   require(witness && witness->prefix.size() == 10 && witness->top1 == 16 && witness->top2 == 21 &&
       witness->gap() >= 0 && witness->gap() < 0.1);
@@ -496,7 +499,7 @@ inline std::size_t check_prefix10_witness_contract() {
   const std::array<std::int32_t, 8> other_prompt{19, 20, 21, 18, 14, 20, 24, 16};
   auto x = expected, y = actual; x[0].prompt_ids = y[0].prompt_ids = other_prompt;
   require(!match(x, y));
-  require(!match(expected, actual, equivalent_local_source, false));
+  require(!match(expected, actual, teacher_mac_source, false));
   x = expected; y = actual;
   for (auto *record : {&x[1], &y[1]}) {
     record->accepted = record->emitted_count = 2; record->consumed_drafts = 1;
